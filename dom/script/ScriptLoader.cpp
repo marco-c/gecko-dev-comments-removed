@@ -3370,15 +3370,10 @@ nsresult ScriptLoader::MaybePrepareModuleForDiskCacheAfterExecute(
     ModuleLoadRequest* aRequest, nsresult aRv) {
   MOZ_ASSERT(aRequest->IsTopLevel());
 
-  if (aRequest->isInList()) {
-    
-    
-    
-    
-    
-    
-    return aRv;
-  }
+  
+  
+  
+  
 
   aRv = MaybePrepareForDiskCacheAfterExecute(aRequest, aRv);
 
@@ -3499,7 +3494,9 @@ void ScriptLoader::RegisterForDiskCache(ScriptLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->HasStencil());
   MOZ_ASSERT(aRequest->getLoadedScript()->HasDiskCacheReference());
   MOZ_DIAGNOSTIC_ASSERT(!aRequest->isInList());
-  mDiskCacheQueue.AppendElement(aRequest);
+  MOZ_ASSERT(!IsWebExtensionRequest(aRequest),
+             "Bytecode for web extension content scrips is not cached");
+  mDiskCacheQueue.AppendElement(aRequest->getLoadedScript());
 }
 
 void ScriptLoader::LoadEventFired() {
@@ -3536,7 +3533,7 @@ void ScriptLoader::MaybeUpdateDiskCache() {
   }
 
   
-  if (mDiskCacheQueue.isEmpty()) {
+  if (mDiskCacheQueue.IsEmpty()) {
     LOG(("ScriptLoader (%p): No script in queue to be saved to the disk.",
          this));
     return;
@@ -3582,12 +3579,7 @@ void ScriptLoader::UpdateDiskCache() {
     return;
   }
 
-  RefPtr<ScriptLoadRequest> request;
-  while (!mDiskCacheQueue.isEmpty()) {
-    request = mDiskCacheQueue.StealFirst();
-    MOZ_ASSERT(!IsWebExtensionRequest(request),
-               "Bytecode for web extension content scrips is not cached");
-
+  for (auto& loadedScript : mDiskCacheQueue) {
     
     
     
@@ -3595,15 +3587,16 @@ void ScriptLoader::UpdateDiskCache() {
     
     
     
-    if (!request->getLoadedScript()->HasDiskCacheReference()) {
+    if (!loadedScript->HasDiskCacheReference()) {
       continue;
     }
 
-    EncodeBytecodeAndSave(fc, request->getLoadedScript());
+    EncodeBytecodeAndSave(fc, loadedScript);
 
-    request->DropBytecode();
-    request->getLoadedScript()->DropDiskCacheReference();
+    loadedScript->DropDiskCacheReference();
+    loadedScript->DropBytecode();
   }
+  mDiskCacheQueue.Clear();
 
   JS::DestroyFrontendContext(fc);
 }
@@ -3690,15 +3683,13 @@ void ScriptLoader::GiveUpDiskCaching() {
   
   mGiveUpDiskCaching = true;
 
-  while (!mDiskCacheQueue.isEmpty()) {
-    RefPtr<ScriptLoadRequest> request = mDiskCacheQueue.StealFirst();
-    LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
-    TRACE_FOR_TEST_NONE(request, "scriptloader_bytecode_failed");
-    MOZ_ASSERT(!IsWebExtensionRequest(request));
+  for (auto& loadedScript : mDiskCacheQueue) {
+    LOG(("LoadedScript (%p): Cannot serialize bytecode", loadedScript.get()));
 
-    request->getLoadedScript()->DropBytecode();
-    request->getLoadedScript()->DropDiskCacheReference();
+    loadedScript->DropDiskCacheReference();
+    loadedScript->DropBytecode();
   }
+  mDiskCacheQueue.Clear();
 
   while (!mDiskCacheableDependencyModules.isEmpty()) {
     RefPtr<ScriptLoadRequest> request =

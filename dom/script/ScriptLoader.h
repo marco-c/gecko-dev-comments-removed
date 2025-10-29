@@ -858,7 +858,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   
   
-  JS::loader::ScriptLoadRequestList mDiskCacheQueue;
+  
+  nsTArray<RefPtr<JS::loader::LoadedScript>> mDiskCacheQueue;
 
   
   struct PreloadInfo {
