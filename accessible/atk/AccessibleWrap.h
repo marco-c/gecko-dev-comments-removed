@@ -64,11 +64,12 @@ class AccessibleWrap : public LocalAccessible {
 
   bool IsValidObject();
 
-  static const char* ReturnString(nsAString& aString) {
-    static nsCString returnedString;
-    CopyUTF16toUTF8(aString, returnedString);
-    return returnedString.get();
-  }
+  
+
+
+
+
+  static const char* ReturnString(nsAString& aString);
 
   static void GetKeyBinding(Accessible* aAccessible, nsAString& aResult);
 
