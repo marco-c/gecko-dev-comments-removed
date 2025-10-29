@@ -550,6 +550,7 @@ class PermissionDelegateTest : BaseSessionTest() {
 
     
     
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun trackingProtectionPermissionOnAllPages() {
         val settings = sessionRule.runtime.settings
         val aboutConfigEnabled = settings.aboutConfigEnabled
@@ -1207,6 +1208,8 @@ class PermissionDelegateTest : BaseSessionTest() {
     @Test
     fun localDeviceAccessPermission() {
         sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.blocking" to true))
+        
+        sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.local-network-to-localhost.skip-checks" to false))
 
         mainSession.loadUri("https://example.com/")
         mainSession.waitForPageStop()
