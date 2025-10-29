@@ -171,8 +171,7 @@ bool NodeInfo::NamespaceEquals(const nsAString& aNamespaceURI) const {
 
 void NodeInfo::DeleteCycleCollectable() {
   RefPtr<nsNodeInfoManager> kungFuDeathGrip = mOwnerManager;
-  mozilla::Unused
-      << kungFuDeathGrip;  
+  (void)kungFuDeathGrip;  
   delete this;
 }
 

@@ -27,7 +27,6 @@
 #include "mozilla/net/DocumentChannelParent.h"
 #include "mozilla/net/SimpleChannelParent.h"
 #include "mozilla/net/AltDataOutputStreamParent.h"
-#include "mozilla/Unused.h"
 #include "mozilla/net/FileChannelParent.h"
 #include "mozilla/net/DNSRequestParent.h"
 #include "mozilla/net/IPCTransportProvider.h"
@@ -263,7 +262,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvPDocumentChannelConstructor(
   DocumentChannelParent* p = static_cast<DocumentChannelParent*>(aActor);
 
   if (aContext.IsNullOrDiscarded()) {
-    Unused << p->SendFailedAsyncOpen(NS_ERROR_FAILURE);
+    (void)p->SendFailedAsyncOpen(NS_ERROR_FAILURE);
     return IPC_OK();
   }
 
@@ -838,7 +837,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
         
         
         
-        Unused << NS_WARN_IF(NS_FAILED(aRv));
+        (void)NS_WARN_IF(NS_FAILED(aRv));
         aResolver(Nothing());
       });
 
@@ -887,7 +886,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageIconStream(
         
         
         
-        Unused << NS_WARN_IF(NS_FAILED(aRv));
+        (void)NS_WARN_IF(NS_FAILED(aRv));
         aResolver(Nothing());
       });
 

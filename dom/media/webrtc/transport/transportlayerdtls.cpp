@@ -19,7 +19,6 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsNetCID.h"
@@ -487,7 +486,7 @@ bool TransportLayerDtls::Setup() {
     return false;
   }
 
-  Unused << pr_fd.release();  
+  (void)pr_fd.release();  
 
   if (role_ == CLIENT) {
     MOZ_MTLOG(ML_INFO, "Setting up DTLS as client");

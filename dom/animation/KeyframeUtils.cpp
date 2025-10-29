@@ -875,7 +875,7 @@ static void BuildSegmentsFromValueEntries(
         
         
         
-        Unused << HandleMissingInitialKeyframe(aResult, aEntries[i]);
+        (void)HandleMissingInitialKeyframe(aResult, aEntries[i]);
       }
       animationProperty = nullptr;
       break;

@@ -13,7 +13,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/ipc/ProtocolUtils.h"  
 #include "mozilla/TimeStamp.h"          
-#include "mozilla/Unused.h"
 #include "VRManager.h"
 #include "VRThread.h"
 
@@ -218,13 +217,13 @@ mozilla::ipc::IPCResult VRManagerParent::RecvRunPuppet(
 #if defined(MOZ_WIDGET_ANDROID)
   
   
-  Unused << SendNotifyPuppetCommandBufferCompleted(false);
+  (void)SendNotifyPuppetCommandBufferCompleted(false);
 #else
   VRManager* vm = VRManager::Get();
   if (!vm->RunPuppet(aBuffer, this)) {
     
     
-    Unused << SendNotifyPuppetCommandBufferCompleted(false);
+    (void)SendNotifyPuppetCommandBufferCompleted(false);
   }
 #endif  
   return IPC_OK();

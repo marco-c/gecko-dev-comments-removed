@@ -687,7 +687,7 @@ void WidgetEvent::PreventDefault(bool aCalledByDefaultHandler,
     }
     if (aPrincipal) {
       nsAutoString addonId;
-      Unused << NS_WARN_IF(NS_FAILED(aPrincipal->GetAddonId(addonId)));
+      (void)NS_WARN_IF(NS_FAILED(aPrincipal->GetAddonId(addonId)));
       if (!addonId.IsEmpty()) {
         
         return;

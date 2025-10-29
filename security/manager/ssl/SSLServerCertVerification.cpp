@@ -110,7 +110,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
@@ -709,7 +708,7 @@ PRErrorCode AuthCertificateParseResults(
   if (NS_FAILED(rv)) {
     return aCertVerificationError;
   }
-  Unused << isTemporaryOverride;
+  (void)isTemporaryOverride;
   if (haveOverride) {
     uint32_t probeValue =
         MapOverridableErrorToProbeValue(aCertVerificationError);
@@ -792,7 +791,7 @@ SSLServerCertVerificationJob::Run() {
   if (!certVerifier) {
     
     
-    Unused << mResultTask.forget();
+    mResultTask.forget().leak();
     return NS_ERROR_FAILURE;
   }
 
@@ -826,7 +825,7 @@ SSLServerCertVerificationJob::Run() {
     if (NS_FAILED(rv)) {
       
       
-      Unused << mResultTask.forget();
+      mResultTask.forget().leak();
     }
     return rv;
   }
@@ -857,7 +856,7 @@ SSLServerCertVerificationJob::Run() {
   if (NS_FAILED(rv)) {
     
     
-    Unused << mResultTask.forget();
+    mResultTask.forget().leak();
   }
   return rv;
 }
@@ -1128,7 +1127,7 @@ nsresult SSLServerCertVerificationResult::Dispatch(
   MOZ_ASSERT(stsTarget, "Failed to get socket transport service event target");
   if (!stsTarget) {
     
-    Unused << mSocketControl.forget();
+    mSocketControl.forget().leak();
     return NS_ERROR_FAILURE;
   }
   rv = stsTarget->Dispatch(this, NS_DISPATCH_NORMAL);

@@ -201,7 +201,7 @@ nsresult FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
   nsAutoCString computedReferrerSpec;
   referrerInfo = aChannel->GetReferrerInfo();
   if (referrerInfo) {
-    Unused << referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
+    (void)referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
   }
 
   

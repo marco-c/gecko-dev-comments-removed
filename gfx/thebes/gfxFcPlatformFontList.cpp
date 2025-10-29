@@ -959,7 +959,7 @@ SharedFTFace* gfxFontconfigFontEntry::GetFTFace() {
     RefPtr<SharedFTFace> face = CreateFaceForPattern(mFontPattern);
     if (face) {
       if (mFTFace.compareExchange(nullptr, face.get())) {
-        Unused << face.forget();  
+        face.forget().leak();  
         mFTFaceInitialized = true;
       } else {
         
@@ -1348,7 +1348,7 @@ already_AddRefed<ScaledFont> gfxFontconfigFont::GetScaledFont(
   InitializeScaledFont(newScaledFont);
 
   if (mAzureScaledFont.compareExchange(nullptr, newScaledFont.get())) {
-    Unused << newScaledFont.forget();
+    newScaledFont.forget().leak();
   }
   ScaledFont* scaledFont = mAzureScaledFont;
   return do_AddRef(scaledFont);

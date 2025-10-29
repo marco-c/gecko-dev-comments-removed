@@ -1467,7 +1467,7 @@ inline bool WrapNewBindingNonWrapperCachedObject(
     }
 
     
-    Unused << value.release();
+    (void)value.release();
   }
 
   return FinishWrapping(cx, obj, rval);

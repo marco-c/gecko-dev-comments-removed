@@ -820,7 +820,7 @@ ogg_packet* OggDemuxer::GetNextPacket(TrackInfo::TrackType aType) {
 
   while (true) {
     if (packet) {
-      Unused << state->PacketOut();
+      (void)state->PacketOut();
     }
     DemuxUntilPacketAvailable(aType, state);
 
@@ -1136,7 +1136,7 @@ nsresult OggDemuxer::SeekInternal(TrackInfo::TrackType aType,
       tempPackets.Append(state->PacketOut());
     } else {
       
-      Unused << state->PacketOut();
+      (void)state->PacketOut();
     }
   }
   

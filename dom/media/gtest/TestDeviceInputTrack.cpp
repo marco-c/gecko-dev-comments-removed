@@ -304,12 +304,12 @@ TEST_F(TestDeviceInputTrack, StartAndStop) {
     EXPECT_EQ(track->DevicePreference(), AudioInputType::Voice);
 
     
-    Unused << WaitFor(stream->FramesProcessedEvent());
+    (void)WaitFor(stream->FramesProcessedEvent());
 
     DispatchFunction([&] { track->StopAudio(); });
 
     
-    Unused << WaitFor(cubeb->StreamDestroyEvent());
+    (void)WaitFor(cubeb->StreamDestroyEvent());
 
     
     EXPECT_EQ(track->NumberOfChannels(), 0U);
@@ -342,12 +342,12 @@ TEST_F(TestDeviceInputTrack, StartAndStop) {
     EXPECT_EQ(stream->SampleRate(), static_cast<uint32_t>(rate));
 
     
-    Unused << WaitFor(stream->FramesProcessedEvent());
+    (void)WaitFor(stream->FramesProcessedEvent());
 
     DispatchFunction([&] { track->StopAudio(); });
 
     
-    Unused << WaitFor(cubeb->StreamDestroyEvent());
+    (void)WaitFor(cubeb->StreamDestroyEvent());
   }
 
   
@@ -418,7 +418,7 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
   EXPECT_EQ(stream->SampleRate(), static_cast<uint32_t>(rate));
 
   
-  Unused << WaitFor(stream->FramesProcessedEvent());
+  (void)WaitFor(stream->FramesProcessedEvent());
   track->ProcessInput(current, next, flags);
   {
     AudioSegment data;
@@ -437,7 +437,7 @@ TEST_F(TestDeviceInputTrack, NonNativeInputTrackData) {
   ASSERT_NE(current, next);  
 
   DispatchFunction([&] { track->StopAudio(); });
-  Unused << WaitFor(cubeb->StreamDestroyEvent());
+  (void)WaitFor(cubeb->StreamDestroyEvent());
 
   track->ProcessInput(current, next, flags);
   {
@@ -494,7 +494,7 @@ TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
   EXPECT_EQ(stream->SampleRate(), static_cast<uint32_t>(rate));
 
   
-  Unused << WaitFor(stream->FramesProcessedEvent());
+  (void)WaitFor(stream->FramesProcessedEvent());
 
   
   DispatchFunction([&] { stream->ForceDeviceChanged(); });
@@ -502,7 +502,7 @@ TEST_F(TestDeviceInputTrack, NonNativeDeviceChangedCallback) {
 
   
   DispatchFunction([&] { track->StopAudio(); });
-  Unused << WaitFor(cubeb->StreamDestroyEvent());
+  (void)WaitFor(cubeb->StreamDestroyEvent());
 
   
   track->Destroy();
@@ -554,7 +554,7 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
   EXPECT_EQ(stream->SampleRate(), static_cast<uint32_t>(rate));
 
   
-  Unused << WaitFor(stream->FramesProcessedEvent());
+  (void)WaitFor(stream->FramesProcessedEvent());
 
   
   DispatchFunction([&] { stream->ForceError(); });
@@ -562,7 +562,7 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
 
   
   DispatchFunction([&] { track->StopAudio(); });
-  Unused << WaitFor(cubeb->StreamDestroyEvent());
+  (void)WaitFor(cubeb->StreamDestroyEvent());
 
   
   track->Destroy();

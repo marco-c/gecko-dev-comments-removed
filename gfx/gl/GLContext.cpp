@@ -2725,7 +2725,7 @@ void MesaMemoryLeakWorkaround() {
 
   if (foundPath) {
     
-    Unused << dlopen(foundPath->get(), RTLD_LAZY);
+    (void)dlopen(foundPath->get(), RTLD_LAZY);
   }
 #endif  
 }

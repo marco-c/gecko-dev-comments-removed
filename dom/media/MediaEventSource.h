@@ -13,7 +13,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/Unused.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -723,7 +722,7 @@ class MediaEventSourceImpl {
         
         
         listenerBatches.AppendElement(new ListenerBatch(nsCOMPtr(target)));
-        Unused << listenerBatches.LastElement()->MaybeAddListener(l);
+        (void)listenerBatches.LastElement()->MaybeAddListener(l);
       }
     }
 

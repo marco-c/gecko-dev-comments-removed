@@ -9,7 +9,6 @@
 #include "mozilla/Base64.h"
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/PermissionStatusBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseWorkerProxy.h"
@@ -188,7 +187,7 @@ class GetSubscriptionCallback final : public nsIPushSubscriptionCallback {
 
   
   void OnPushSubscriptionError(nsresult aStatus) {
-    Unused << NS_WARN_IF(NS_FAILED(OnPushSubscription(aStatus, nullptr)));
+    (void)NS_WARN_IF(NS_FAILED(OnPushSubscription(aStatus, nullptr)));
   }
 
  protected:
@@ -347,7 +346,7 @@ class PermissionStateRunnable final : public Runnable {
 
     
     
-    Unused << NS_WARN_IF(!r->Dispatch(mProxy->GetWorkerPrivate()));
+    (void)NS_WARN_IF(!r->Dispatch(mProxy->GetWorkerPrivate()));
 
     return NS_OK;
   }

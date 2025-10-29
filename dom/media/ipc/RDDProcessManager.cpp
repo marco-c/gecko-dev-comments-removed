@@ -166,7 +166,7 @@ RefPtr<GenericNonExclusivePromise> RDDProcessManager::LaunchRDDProcess() {
         
         
         for (const mozilla::dom::Pref& pref : mQueuedPrefs) {
-          Unused << NS_WARN_IF(!mRDDChild->SendPreferenceUpdate(pref));
+          (void)NS_WARN_IF(!mRDDChild->SendPreferenceUpdate(pref));
         }
         mQueuedPrefs.Clear();
 

@@ -7,7 +7,6 @@
 #include "CookieStoreNotificationWatcher.h"
 
 #include "mozilla/Services.h"
-#include "mozilla/Unused.h"
 #include "nsICookie.h"
 #include "nsICookieNotification.h"
 #include "nsIObserverService.h"
@@ -116,7 +115,7 @@ void CookieStoreNotificationWatcher::ReleaseOnMainThread(
     ~ReleaseWatcher() {
       
       if (mDoomed) {
-        Unused << mDoomed.forget().take();
+        mDoomed.forget().leak();
       }
     }
 

@@ -23,7 +23,7 @@ class SynchronousConnectionInterruptionTest : public ::testing::Test {
 
   void TearDown() override {
     
-    mozilla::Unused << mConnection->Close();
+    (void)mConnection->Close();
 
     ASSERT_EQ(NS_OK, mThread->Shutdown());
   }

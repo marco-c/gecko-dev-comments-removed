@@ -120,8 +120,8 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   
   
   RefPtr<nsDocShellTreeOwner> docShellTreeOwner = browser->mDocShellTreeOwner;
-  Unused << docShell->AddProgressListener(docShellTreeOwner,
-                                          nsIWebProgress::NOTIFY_ALL);
+  (void)docShell->AddProgressListener(docShellTreeOwner,
+                                      nsIWebProgress::NOTIFY_ALL);
 
   docShell->SetTreeOwner(docShellTreeOwner);
 
@@ -807,7 +807,7 @@ nsWebBrowser::SaveDocument(nsISupports* aDocumentish, nsISupports* aFile,
   mPersist = do_CreateInstance(NS_WEBBROWSERPERSIST_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
   RefPtr<nsIWebBrowserPersist> localPersist(mPersist);
-  Unused << localPersist;
+  (void)localPersist;
   mPersist->SetProgressListener(this);
   mPersist->SetPersistFlags(mPersistFlags);
   mPersist->GetCurrentState(&mPersistCurrentState);
@@ -1036,7 +1036,7 @@ void nsWebBrowser::SetDocShell(nsDocShell* aDocShell) {
   
   
   nsCOMPtr<nsIDocShell> kungFuDeathGrip(mDocShell);
-  mozilla::Unused << kungFuDeathGrip;
+  (void)kungFuDeathGrip;
 
   if (aDocShell) {
     MOZ_ASSERT(!mDocShell, "Should not overwrite an existing value!");

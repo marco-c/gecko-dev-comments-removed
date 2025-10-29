@@ -1425,7 +1425,7 @@ nsresult PendingLookup::DoLookupInternal() {
   resource->set_type(ClientDownloadRequest::DOWNLOAD_URL);
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
-  mozilla::Unused << mQuery->GetReferrerInfo(getter_AddRefs(referrerInfo));
+  (void)mQuery->GetReferrerInfo(getter_AddRefs(referrerInfo));
   nsCOMPtr<nsIURI> referrer;
   
   
@@ -1700,7 +1700,7 @@ nsresult PendingLookup::SendRemoteQueryInternal(Reason& aReason) {
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel, &rv));
   NS_ENSURE_SUCCESS(rv, rv);
-  mozilla::Unused << httpChannel;
+  (void)httpChannel;
 
   
   nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(mChannel, &rv);

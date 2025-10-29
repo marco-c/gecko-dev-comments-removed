@@ -170,16 +170,16 @@ void SocketProcessHost::InitAfterConnect(bool aSucceeded) {
                                 attributes.mSandboxBroker().ref());
       
       
-      Unused << NS_WARN_IF(mSandboxBroker == nullptr);
+      (void)NS_WARN_IF(mSandboxBroker == nullptr);
       MOZ_ASSERT(attributes.mSandboxBroker().ref().IsValid());
     }
     attributes.mInitSandbox() = true;
   }
 #endif  
 
-  Unused << GetActor()->SendInit(attributes);
+  (void)GetActor()->SendInit(attributes);
 
-  Unused << GetActor()->SendInitProfiler(
+  (void)GetActor()->SendInitProfiler(
       ProfilerParent::CreateForProcess(GetActor()->OtherPid()));
 
   if (mListener) {

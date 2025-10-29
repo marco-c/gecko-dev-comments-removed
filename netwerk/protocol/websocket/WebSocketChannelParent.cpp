@@ -325,8 +325,8 @@ void WebSocketChannelParent::ActorDestroy(ActorDestroyReason why) {
   
   
   if (mChannel) {
-    Unused << mChannel->Close(nsIWebSocketChannel::CLOSE_GOING_AWAY,
-                              "Child was killed"_ns);
+    (void)mChannel->Close(nsIWebSocketChannel::CLOSE_GOING_AWAY,
+                          "Child was killed"_ns);
   }
 }
 

@@ -539,7 +539,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     
     
     
-    Unused << mDeviceContext->CheckDPIChange();
+    (void)mDeviceContext->CheckDPIChange();
     OwningNonNull<mozilla::PresShell> presShell(*mPresShell);
     
     
@@ -1471,7 +1471,7 @@ void nsPresContext::UpdateTopInnerSizeForRFP() {
       break;
   }
 
-  Unused << mDocument->GetBrowsingContext()->SetTopInnerSizeForRFP(
+  (void)mDocument->GetBrowsingContext()->SetTopInnerSizeForRFP(
       CSSIntSize{(int)size.width, (int)size.height});
 }
 

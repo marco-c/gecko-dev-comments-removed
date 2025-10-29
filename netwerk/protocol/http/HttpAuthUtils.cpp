@@ -30,7 +30,7 @@ bool MatchesBaseURI(const nsACString& matchScheme, const nsACString& matchHost,
   
   t.Record();
 
-  mozilla::Unused << t.Next(token);
+  (void)t.Next(token);
 
   
   bool ipv6 = false;
@@ -154,7 +154,7 @@ bool URIMatchesPrefPattern(nsIURI* uri, const char* pref) {
   while (!t.CheckEOF()) {
     t.SkipWhites();
     nsDependentCSubstring url;
-    mozilla::Unused << t.ReadUntil(mozilla::Tokenizer::Token::Char(','), url);
+    (void)t.ReadUntil(mozilla::Tokenizer::Token::Char(','), url);
     if (url.IsEmpty()) {
       continue;
     }

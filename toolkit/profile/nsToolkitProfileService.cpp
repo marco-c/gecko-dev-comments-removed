@@ -203,7 +203,7 @@ nsresult RemoveProfileFiles(nsIFile* aRootDir, nsIFile* aLocalDir,
   if (undeletedFiles.Length() > 0) {
     uint32_t retries = 1;
     while (undeletedFiles.Length() > 0 && retries <= 10) {
-      Unused << PR_Sleep(PR_MillisecondsToInterval(10 * retries));
+      (void)PR_Sleep(PR_MillisecondsToInterval(10 * retries));
       for (auto&& file :
            std::exchange(undeletedFiles, nsTArray<nsCOMPtr<nsIFile>>{})) {
         RemoveProfileRecursion(file,
@@ -234,7 +234,7 @@ nsresult RemoveProfileFiles(nsIFile* aRootDir, nsIFile* aLocalDir,
     
     
     
-    Unused << aRootDir->Remove(true);
+    (void)aRootDir->Remove(true);
   }
 
   return NS_OK;
@@ -1744,11 +1744,11 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
         rv =
             mProfileDB.SetString("BackgroundTasksProfiles", profilePrefix.get(),
                                  saltedProfilePrefix.get());
-        Unused << NS_WARN_IF(NS_FAILED(rv));
+        (void)NS_WARN_IF(NS_FAILED(rv));
 
         if (NS_SUCCEEDED(rv)) {
           rv = Flush();
-          Unused << NS_WARN_IF(NS_FAILED(rv));
+          (void)NS_WARN_IF(NS_FAILED(rv));
         }
       }
     }
@@ -2299,7 +2299,7 @@ NS_IMETHODIMP
 nsToolkitProfileService::GetProfileCount(uint32_t* aResult) {
   *aResult = 0;
   for (nsToolkitProfile* profile : mProfiles) {
-    Unused << profile;
+    (void)profile;
     (*aResult)++;
   }
 

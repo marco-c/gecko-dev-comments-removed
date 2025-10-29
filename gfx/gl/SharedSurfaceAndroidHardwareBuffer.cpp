@@ -142,7 +142,7 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
     return;
   }
   
-  Unused << fenceFd.release();
+  (void)fenceFd.release();
 
   egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
   egl->fDestroySync(sync);

@@ -8,6 +8,4 @@
 #  include <tests/style/BadIncludes2.h>  
 #elif D
 #  include "stdio.h"  
-#elif E
-#  include "mozilla/Unused.h"  
 #endif

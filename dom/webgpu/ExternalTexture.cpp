@@ -152,7 +152,7 @@ RefPtr<ExternalTextureSourceClient> ExternalTextureCache::GetOrCreateSource(
     
     
     
-    Unused << mSources.add(p, source->mImage->GetSerial(), source);
+    (void)mSources.add(p, source->mImage->GetSerial(), source);
   }
   return source;
 }
@@ -400,7 +400,7 @@ RefPtr<ExternalTexture> ExternalTextureSourceClient::GetOrCreateExternalTexture(
     } else {
       
       
-      Unused << mExternalTextures.add(p, aDesc.mColorSpace, externalTexture);
+      (void)mExternalTextures.add(p, aDesc.mColorSpace, externalTexture);
     }
   }
 

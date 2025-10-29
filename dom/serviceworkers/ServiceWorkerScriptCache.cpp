@@ -14,7 +14,6 @@
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseWorkerProxy.h"
@@ -1046,7 +1045,7 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
     
     
     uint32_t status = 0;
-    Unused << httpChannel->GetResponseStatus(
+    (void)httpChannel->GetResponseStatus(
         &status);  
     nsAutoString statusAsText;
     statusAsText.AppendInt(status);
@@ -1062,8 +1061,7 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
 
   
   
-  Unused << httpChannel->GetResponseHeader("Service-Worker-Allowed"_ns,
-                                           mMaxScope);
+  (void)httpChannel->GetResponseHeader("Service-Worker-Allowed"_ns, mMaxScope);
 
   
   

@@ -16,7 +16,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
 #include "XPCMaps.h"
-#include "mozilla/Unused.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/RealmIterators.h"
@@ -414,7 +413,7 @@ void XPCWrappedNativeScope::DebugDumpAllScopes(int16_t depth) {
   
   int count = 0;
   for (XPCWrappedNativeScope* cur : AllScopes()) {
-    mozilla::Unused << cur;
+    (void)cur;
     count++;
   }
 

@@ -1450,9 +1450,9 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest) {
   bool succeeded;
   if (hc && NS_SUCCEEDED(hc->GetRequestSucceeded(&succeeded)) && !succeeded) {
     uint32_t responseStatus = 0;
-    Unused << hc->GetResponseStatus(&responseStatus);
+    (void)hc->GetResponseStatus(&responseStatus);
     nsAutoCString statusText;
-    Unused << hc->GetResponseStatusText(statusText);
+    (void)hc->GetResponseStatusText(statusText);
     
     if (statusText.IsEmpty()) {
       net_GetDefaultStatusTextForCode(responseStatus, statusText);
@@ -1893,7 +1893,7 @@ class HTMLMediaElement::ChannelLoader final {
     nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
     if (setAttrs) {
       
-      Unused << loadInfo->SetOriginAttributes(
+      (void)loadInfo->SetOriginAttributes(
           triggeringPrincipal->OriginAttributesRef());
     }
     loadInfo->SetIsMediaRequest(true);
