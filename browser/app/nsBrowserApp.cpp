@@ -105,6 +105,10 @@ using namespace mozilla;
 
 #define kDesktopFolder "browser"
 
+#ifdef MOZ_BACKGROUNDTASKS
+static bool gIsBackgroundTask = false;
+#endif
+
 static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -112,27 +116,47 @@ static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
 #ifndef XP_WIN
   vfprintf(stderr, fmt, ap);
 #else
+  bool showMessageBox = true;
+
   char msg[2048];
   vsnprintf_s(msg, _countof(msg), _TRUNCATE, fmt, ap);
 
   wchar_t wide_msg[2048];
   MultiByteToWideChar(CP_UTF8, 0, msg, -1, wide_msg, _countof(wide_msg));
+
 #  if MOZ_WINCONSOLE
-  fwprintf_s(stderr, wide_msg);
-#  else
+  showMessageBox = false;
+#  elif defined(MOZ_BACKGROUNDTASKS)
   
-  
-  HMODULE user32 = LoadLibraryW(L"user32.dll");
-  if (user32) {
-    decltype(MessageBoxW)* messageBoxW =
-        (decltype(MessageBoxW)*)GetProcAddress(user32, "MessageBoxW");
-    if (messageBoxW) {
-      messageBoxW(nullptr, wide_msg, L"Firefox",
-                  MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
-    }
-    FreeLibrary(user32);
-  }
+  showMessageBox = !gIsBackgroundTask;
 #  endif
+
+  if (showMessageBox) {
+    
+    
+    
+
+    
+    
+    HMODULE user32 = LoadLibraryW(L"user32.dll");
+    if (user32) {
+      decltype(MessageBoxW)* messageBoxW =
+          (decltype(MessageBoxW)*)GetProcAddress(user32, "MessageBoxW");
+      if (messageBoxW) {
+        messageBoxW(nullptr, wide_msg, L"Firefox",
+                    MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+      } else {
+        showMessageBox = false;
+      }
+      FreeLibrary(user32);
+    } else {
+      showMessageBox = false;
+    }
+  }
+
+  if (!showMessageBox) {
+    fwprintf_s(stderr, wide_msg);
+  }
 #endif
 
   va_end(ap);
@@ -141,7 +165,9 @@ static MOZ_FORMAT_PRINTF(1, 2) void Output(const char* fmt, ...) {
 
 
 
-static bool IsArg(const char* arg, const char* s) {
+
+
+static bool IsFlag(const char* arg, const char* s) {
   if (*arg == '-') {
     if (*++arg == '-') ++arg;
     return !strcasecmp(arg, s);
@@ -154,13 +180,27 @@ static bool IsArg(const char* arg, const char* s) {
   return false;
 }
 
+
+
+
+
+
+static bool HasFlag(int argc, char* argv[], const char* s) {
+  for (int i = 1; i < argc; i++) {
+    if (IsFlag(argv[i], s)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 MOZ_RUNINIT Bootstrap::UniquePtr gBootstrap;
 
 static int do_main(int argc, char* argv[], char* envp[]) {
   
   
   const char* appDataFile = getenv("XUL_APP_FILE");
-  if ((!appDataFile || !*appDataFile) && (argc > 1 && IsArg(argv[1], "app"))) {
+  if ((!appDataFile || !*appDataFile) && (argc > 1 && IsFlag(argv[1], "app"))) {
     if (argc == 2) {
       Output("Incorrect number of arguments passed to -app");
       return 255;
@@ -176,7 +216,7 @@ static int do_main(int argc, char* argv[], char* envp[]) {
     argv[2] = argv[0];
     argv += 2;
     argc -= 2;
-  } else if (argc > 1 && IsArg(argv[1], "xpcshell")) {
+  } else if (argc > 1 && IsFlag(argv[1], "xpcshell")) {
     for (int i = 1; i < argc; i++) {
       argv[i] = argv[i + 1];
     }
@@ -299,8 +339,14 @@ int main(int argc, char* argv[], char* envp[]) {
   ReserveDefaultFileDescriptors();
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+  
+  
+  gIsBackgroundTask = HasFlag(argc, argv, "backgroundtask");
+#endif
+
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
-  if (argc > 1 && IsArg(argv[1], "contentproc")) {
+  if (argc > 1 && IsFlag(argv[1], "contentproc")) {
     
     SetGeckoProcessType(argv[--argc]);
     SetGeckoChildID(argv[--argc]);
@@ -436,7 +482,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
-  if (argc > 1 && IsArg(argv[1], "silentmode")) {
+  if (argc > 1 && IsFlag(argv[1], "silentmode")) {
     ::putenv(const_cast<char*>("MOZ_APP_SILENT_START=1"));
 #  if defined(XP_WIN)
     
