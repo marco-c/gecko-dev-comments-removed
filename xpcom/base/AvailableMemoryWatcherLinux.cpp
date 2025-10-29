@@ -306,11 +306,11 @@ void nsAvailableMemoryWatcher::HandleLowMemory() {
   }
   if (!mUnderMemoryPressure) {
     mUnderMemoryPressure = true;
-    UpdatePSIInfo(lock);
-    UpdateCrashAnnotation(lock);
     
     StartPolling(lock);
   }
+  UpdatePSIInfo(lock);
+  UpdateCrashAnnotation(lock);
   UpdateLowMemoryTimeStamp();
   
   
@@ -360,9 +360,9 @@ void nsAvailableMemoryWatcher::MaybeHandleHighMemory() {
     RecordTelemetryEventOnHighMemory(lock);
     NS_NotifyOfEventualMemoryPressure(MemoryPressureState::NoPressure);
     mUnderMemoryPressure = false;
-    UpdatePSIInfo(lock);
-    UpdateCrashAnnotation(lock);
   }
+  UpdatePSIInfo(lock);
+  UpdateCrashAnnotation(lock);
   StartPolling(lock);
 }
 
