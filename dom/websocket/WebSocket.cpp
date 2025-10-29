@@ -273,7 +273,6 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
 
   RefPtr<WebSocketEventService> mService;
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
-  Maybe<ClientInfo> mClientInfo;
 
   RefPtr<WebSocketImplProxy> mImplProxy;
 
@@ -1670,7 +1669,6 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
   }
 
   mIsServerSide = aIsServerSide;
-  mClientInfo = aClientInfo;
 
   
   
@@ -1936,7 +1934,7 @@ nsresult WebSocketImpl::InitializeConnection(
       doc, doc ? doc->NodePrincipal() : aPrincipal, aPrincipal,
       aCookieJarSettings,
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-      nsIContentPolicy::TYPE_WEBSOCKET, mClientInfo, 0);
+      nsIContentPolicy::TYPE_WEBSOCKET, 0);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   if (!mRequestedProtocolList.IsEmpty()) {
