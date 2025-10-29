@@ -7,30 +7,28 @@
 #include "FormatZlib.h"
 
 #include "BaseAlgorithms.h"
-#include "mozilla/dom/BufferSourceBinding.h"
-#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/CompressionStreamBinding.h"
 #include "mozilla/dom/TransformStreamDefaultController.h"
-#include "mozilla/dom/UnionTypes.h"
 
 namespace mozilla::dom::compression {
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(CompressionStreamAlgorithms,
+NS_IMPL_CYCLE_COLLECTION_INHERITED(ZLibCompressionStreamAlgorithms,
                                    TransformerAlgorithmsBase)
-NS_IMPL_ADDREF_INHERITED(CompressionStreamAlgorithms, TransformerAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(CompressionStreamAlgorithms,
+NS_IMPL_ADDREF_INHERITED(ZLibCompressionStreamAlgorithms,
+                         TransformerAlgorithmsBase)
+NS_IMPL_RELEASE_INHERITED(ZLibCompressionStreamAlgorithms,
                           TransformerAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CompressionStreamAlgorithms)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ZLibCompressionStreamAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(ZLibDecompressionStreamAlgorithms,
-                                   DecompressionStreamAlgorithms)
+                                   TransformerAlgorithmsBase)
 NS_IMPL_ADDREF_INHERITED(ZLibDecompressionStreamAlgorithms,
-                         DecompressionStreamAlgorithms)
+                         TransformerAlgorithmsBase)
 NS_IMPL_RELEASE_INHERITED(ZLibDecompressionStreamAlgorithms,
-                          DecompressionStreamAlgorithms)
+                          TransformerAlgorithmsBase)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ZLibDecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(DecompressionStreamAlgorithms)
+NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
 
 inline uint8_t intoZLibFlush(Flush aFlush) {
   switch (aFlush) {
@@ -72,14 +70,15 @@ inline int8_t ZLibWindowBits(CompressionFormat format) {
   }
 }
 
-Result<already_AddRefed<CompressionStreamAlgorithms>, nsresult>
-CompressionStreamAlgorithms::Create(CompressionFormat format) {
-  RefPtr<CompressionStreamAlgorithms> alg = new CompressionStreamAlgorithms();
+Result<already_AddRefed<ZLibCompressionStreamAlgorithms>, nsresult>
+ZLibCompressionStreamAlgorithms::Create(CompressionFormat format) {
+  RefPtr<ZLibCompressionStreamAlgorithms> alg =
+      new ZLibCompressionStreamAlgorithms();
   MOZ_TRY(alg->Init(format));
   return alg.forget();
 }
 
-[[nodiscard]] nsresult CompressionStreamAlgorithms::Init(
+[[nodiscard]] nsresult ZLibCompressionStreamAlgorithms::Init(
     CompressionFormat format) {
   int8_t err = deflateInit2(&mZStream, Z_DEFAULT_COMPRESSION, Z_DEFLATED,
                             ZLibWindowBits(format), 8 ,
@@ -94,71 +93,12 @@ CompressionStreamAlgorithms::Create(CompressionFormat format) {
 
 
 
-
-MOZ_CAN_RUN_SCRIPT
-void CompressionStreamAlgorithms::TransformCallbackImpl(
-    JS::Handle<JS::Value> aChunk, TransformStreamDefaultController& aController,
+void ZLibCompressionStreamAlgorithms::Compress(
+    JSContext* aCx, Span<const uint8_t> aInput,
+    JS::MutableHandleVector<JSObject*> aOutput, Flush aFlush,
     ErrorResult& aRv) {
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(aController.GetParentObject())) {
-    aRv.ThrowUnknownError("Internal error");
-    return;
-  }
-  JSContext* cx = jsapi.cx();
-
-  
-
-  
-  RootedUnion<OwningBufferSource> bufferSource(cx);
-  if (!bufferSource.Init(cx, aChunk)) {
-    aRv.MightThrowJSException();
-    aRv.StealExceptionFromJSContext(cx);
-    return;
-  }
-
-  
-  
-  
-  ProcessTypedArraysFixed(
-      bufferSource,
-      [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-        CompressAndEnqueue(cx, aData, Flush::No, aController, aRv);
-      });
-}
-
-
-
-
-
-MOZ_CAN_RUN_SCRIPT void CompressionStreamAlgorithms::FlushCallbackImpl(
-    TransformStreamDefaultController& aController, ErrorResult& aRv) {
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(aController.GetParentObject())) {
-    aRv.ThrowUnknownError("Internal error");
-    return;
-  }
-  JSContext* cx = jsapi.cx();
-
-  
-
-  
-  
-  
-  CompressAndEnqueue(cx, Span<const uint8_t>(), Flush::Yes, aController, aRv);
-}
-
-
-
-
-MOZ_CAN_RUN_SCRIPT void CompressionStreamAlgorithms::CompressAndEnqueue(
-    JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-    TransformStreamDefaultController& aController, ErrorResult& aRv) {
-  MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
-
   mZStream.avail_in = aInput.Length();
   mZStream.next_in = const_cast<uint8_t*>(aInput.Elements());
-
-  JS::RootedVector<JSObject*> array(aCx);
 
   do {
     static uint16_t kBufferSize = 16384;
@@ -220,7 +160,7 @@ MOZ_CAN_RUN_SCRIPT void CompressionStreamAlgorithms::CompressAndEnqueue(
 
     JS::Rooted<JSObject*> view(aCx, nsJSUtils::MoveBufferAsUint8Array(
                                         aCx, written, std::move(buffer)));
-    if (!view || !array.append(view)) {
+    if (!view || !aOutput.append(view)) {
       JS_ClearPendingException(aCx);
       aRv.ThrowTypeError("Out of memory");
       return;
@@ -230,18 +170,9 @@ MOZ_CAN_RUN_SCRIPT void CompressionStreamAlgorithms::CompressAndEnqueue(
   
   
   
-
-  
-  for (const auto& view : array) {
-    JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
-    aController.Enqueue(aCx, value, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  }
 }
 
-CompressionStreamAlgorithms::~CompressionStreamAlgorithms() {
+ZLibCompressionStreamAlgorithms::~ZLibCompressionStreamAlgorithms() {
   deflateEnd(&mZStream);
 };
 

@@ -17,12 +17,41 @@ namespace mozilla::dom::compression {
 
 enum class Flush : bool { No, Yes };
 
+class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
+ public:
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT
+  void TransformCallbackImpl(JS::Handle<JS::Value> aChunk,
+                             TransformStreamDefaultController& aController,
+                             ErrorResult& aRv) override;
+
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT void FlushCallbackImpl(
+      TransformStreamDefaultController& aController, ErrorResult& aRv) override;
+
+ protected:
+  static const uint16_t kBufferSize = 16384;
+
+  ~CompressionStreamAlgorithms() = default;
+
+  virtual void Compress(JSContext* aCx, Span<const uint8_t> aInput,
+                        JS::MutableHandleVector<JSObject*> aOutput,
+                        Flush aFlush, ErrorResult& aRv) = 0;
+
+ private:
+  MOZ_CAN_RUN_SCRIPT void CompressAndEnqueue(
+      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
+      TransformStreamDefaultController& aController, ErrorResult& aRv);
+};
+
 class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
  public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DecompressionStreamAlgorithms,
-                                           TransformerAlgorithmsBase)
-
   
   
   

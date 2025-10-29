@@ -20,44 +20,28 @@ enum class CompressionFormat : uint8_t;
 
 namespace mozilla::dom::compression {
 
-class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
+class ZLibCompressionStreamAlgorithms : public CompressionStreamAlgorithms {
  public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompressionStreamAlgorithms,
-                                           TransformerAlgorithmsBase)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZLibCompressionStreamAlgorithms,
+                                           CompressionStreamAlgorithms)
 
-  static Result<already_AddRefed<CompressionStreamAlgorithms>, nsresult> Create(
-      CompressionFormat format);
+  static Result<already_AddRefed<ZLibCompressionStreamAlgorithms>, nsresult>
+  Create(CompressionFormat format);
 
  private:
-  CompressionStreamAlgorithms() = default;
+  ZLibCompressionStreamAlgorithms() = default;
 
   [[nodiscard]] nsresult Init(CompressionFormat format);
 
   
   
   
-  
-  MOZ_CAN_RUN_SCRIPT
-  void TransformCallbackImpl(JS::Handle<JS::Value> aChunk,
-                             TransformStreamDefaultController& aController,
-                             ErrorResult& aRv) override;
+  void Compress(JSContext* aCx, Span<const uint8_t> aInput,
+                JS::MutableHandleVector<JSObject*> aOutput, Flush aFlush,
+                ErrorResult& aRv) override;
 
-  
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT void FlushCallbackImpl(
-      TransformStreamDefaultController& aController, ErrorResult& aRv) override;
-
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT void CompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-      TransformStreamDefaultController& aController, ErrorResult& aRv);
-
-  ~CompressionStreamAlgorithms() override;
+  ~ZLibCompressionStreamAlgorithms() override;
 
   z_stream mZStream = {};
 };

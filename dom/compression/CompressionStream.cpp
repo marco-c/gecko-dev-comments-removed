@@ -60,7 +60,7 @@ already_AddRefed<CompressionStream> CompressionStream::Constructor(
   
   
   Result<already_AddRefed<CompressionStreamAlgorithms>, nsresult> algorithms =
-      CompressionStreamAlgorithms::Create(aFormat);
+      ZLibCompressionStreamAlgorithms::Create(aFormat);
   if (algorithms.isErr()) {
     aRv.ThrowUnknownError("Not enough memory");
     return nullptr;
