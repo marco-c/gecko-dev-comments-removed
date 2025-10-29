@@ -56,16 +56,16 @@ async def makeHttpRequest(method, url, payload, headers, retries=utils.MAX_RETRI
                 
                 raise rerr
             except ValueError as rerr:
-                log.warn('ValueError from aiohttp: redirect to non-http or https')
+                log.warning('ValueError from aiohttp: redirect to non-http or https')
                 raise rerr
             except RuntimeError as rerr:
-                log.warn('RuntimeError from aiohttp: session closed')
+                log.warning('RuntimeError from aiohttp: session closed')
                 raise rerr
             
             status = response.status
             if 500 <= status and status < 600 and retry < retries:
                 if retry < retries:
-                    log.warn('Retrying because of: %d status' % status)
+                    log.warning('Retrying because of: %d status' % status)
                     continue
                 else:
                     raise exceptions.TaskclusterRestFailure("Unknown Server Error", superExc=None)

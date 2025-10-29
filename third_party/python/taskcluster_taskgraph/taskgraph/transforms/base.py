@@ -6,7 +6,7 @@
 import functools
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Union
+from typing import Union
 
 from taskgraph.task import Task
 
@@ -42,14 +42,14 @@ class TransformConfig:
     path: str
 
     
-    config: Dict
+    config: dict
 
     
     params: Parameters
 
     
     
-    kind_dependencies_tasks: Dict[str, Task]
+    kind_dependencies_tasks: dict[str, Task]
 
     
     graph_config: GraphConfig
@@ -58,7 +58,7 @@ class TransformConfig:
     write_artifacts: bool
 
     @property
-    @functools.lru_cache(maxsize=None)
+    @functools.cache
     def repo_configs(self):
         repositories = self.graph_config["taskgraph"]["repositories"]
         if len(repositories) == 1:
@@ -119,7 +119,7 @@ class TransformSequence:
     sequence.
     """
 
-    _transforms: List = field(default_factory=list)
+    _transforms: list = field(default_factory=list)
 
     def __call__(self, config, items):
         for xform in self._transforms:

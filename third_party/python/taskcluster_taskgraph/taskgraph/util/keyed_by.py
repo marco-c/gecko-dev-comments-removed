@@ -2,14 +2,15 @@
 
 
 
-from typing import Any, Dict, Generator, Tuple
+from collections.abc import Generator
+from typing import Any
 
 from taskgraph.util.attributes import keymatch
 
 
 def iter_dot_path(
-    container: Dict[str, Any], subfield: str
-) -> Generator[Tuple[Dict[str, Any], str], None, None]:
+    container: dict[str, Any], subfield: str
+) -> Generator[tuple[dict[str, Any], str], None, None]:
     """Given a container and a subfield in dot path notation, yield the parent
     container of the dotpath's leaf node, along with the leaf node name that it
     contains.
