@@ -46,6 +46,11 @@ using namespace mozilla::dom;
 static bool gConstructingMenu = false;
 static bool gMenuMethodsSwizzled = false;
 
+
+
+
+static const size_t kMaxMenuNestingDepth = 20;
+
 int32_t nsMenuX::sIndexingMenuLevel = 0;
 
 
@@ -86,7 +91,10 @@ static void SwizzleDynamicIndexingMethods() {
 
 nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
                  nsIContent* aContent)
-    : mContent(aContent), mParent(aParent), mMenuGroupOwner(aMenuGroupOwner) {
+    : mContent(aContent),
+      mParent(aParent),
+      mMenuGroupOwner(aMenuGroupOwner),
+      mNestingDepth(aParent ? aParent->NestingDepth() + 1 : 0) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   MOZ_COUNT_CTOR(nsMenuX);
@@ -120,6 +128,12 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
                                                     action:nil
                                              keyEquivalent:@""];
   mNativeMenuItem.submenu = mNativeMenu;
+
+  if (mNestingDepth > kMaxMenuNestingDepth) {
+    
+    
+    mNativeMenuItem.submenu = nil;
+  }
 
   SetEnabled(!mContent->IsElement() ||
              !mContent->AsElement()->AttrValueIs(
