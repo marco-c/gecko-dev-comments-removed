@@ -933,15 +933,14 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     
     
     
-    fn adjust_for_try_tactic(&mut self, tactic: PositionTryFallbacksTryTactic) {
+    fn adjust_for_try_tactic(&mut self, tactic: &PositionTryFallbacksTryTactic) {
         debug_assert!(!tactic.is_empty());
         
         let wm = self.style.writing_mode;
         
-        for tactic in tactic.into_iter() {
+        for tactic in tactic.iter() {
             use PositionTryFallbacksTryTacticKeyword::*;
             match tactic {
-                None => break,
                 FlipBlock => {
                     self.flip_self_alignment( true);
                     self.flip_insets_and_margins( wm.is_vertical());
@@ -1127,7 +1126,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         &mut self,
         layout_parent_style: &ComputedValues,
         element: Option<E>,
-        try_tactic: PositionTryFallbacksTryTactic,
+        try_tactic: &PositionTryFallbacksTryTactic,
     ) where
         E: TElement,
     {

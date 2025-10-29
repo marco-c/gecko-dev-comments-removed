@@ -6842,7 +6842,7 @@ pub extern "C" fn Servo_ReparentStyle(
             Some(parent_style),
             Some(layout_parent_style),
             FirstLineReparenting::Yes { style_to_reparent },
-             Default::default(),
+             &Default::default(),
              None,
             &mut RuleCacheConditions::default(),
         )
