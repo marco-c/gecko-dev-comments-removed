@@ -229,6 +229,15 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Indicates what toolbar shortcut key is currently selected.
+     */
+    var toolbarShortcutKey: String by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_toolbar_shortcut),
+        default = { "new_tab" },
+        persistDefaultIfNotExists = true,
+    )
+
+    /**
      * Indicates if the Pocket recommendations homescreen section should also show sponsored stories.
      */
     val showPocketSponsoredStories by lazyFeatureFlagPreference(
@@ -636,8 +645,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     /**
      * The maximum number of times the Terms of Use prompt should be displayed.
+     *
+     * Use a function to ensure the most up-to-date Nimbus value is retrieved.
      */
-    var termsOfUseMaxDisplayCount = FxNimbus.features.termsOfUsePrompt.value().maxDisplayCount
+    fun getTermsOfUseMaxDisplayCount() = FxNimbus.features.termsOfUsePrompt.value().maxDisplayCount
 
     /**
      * The total number of times the Terms of Use prompt has been displayed.
@@ -897,6 +908,15 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         key = appContext.getPreferenceKey(R.string.pref_key_enable_isolated_process),
         featureFlag = true,
         default = { FxNimbus.features.isolatedContentProcesses.value().enabled },
+    )
+
+    /**
+     * Indicates whether app Zygote preloading using isolated content processes are enabled or not.
+     */
+    var isAppZygoteEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_app_zygote_process),
+        featureFlag = true,
+        default = { FxNimbus.features.isolatedContentProcesses.value().appZygotePreloading },
     )
 
     /**
@@ -1392,13 +1412,8 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         persistDefaultIfNotExists = true,
     )
 
-    var shouldShowSimpleToolbarCustomization by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_simple_toolbar_customization),
-        default = { FxNimbus.features.toolbarRedesignOption.value().showSimpleCustomization },
-    )
-
-    var shouldShowExpandedToolbarCustomization by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_expanded_toolbar_customization),
+    var shouldShowToolbarCustomization by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_toolbar_customization),
         default = { FxNimbus.features.toolbarRedesignOption.value().showExpandedCustomization },
     )
 
