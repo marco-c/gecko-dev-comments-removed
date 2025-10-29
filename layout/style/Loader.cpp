@@ -1822,14 +1822,18 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   if (!isSheetFromCache) {
     sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
                                    SRIMetadata{});
-    nsIReferrerInfo* referrerInfo =
-        aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-    sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
     
     
     
     sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
   }
+  
+  
+  
+  
+  nsIReferrerInfo* referrerInfo =
+      aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
+  sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
 
   auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
                               isAlternate, aInfo.mIsExplicitlyEnabled);
