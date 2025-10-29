@@ -3,6 +3,12 @@
 
 
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+});
+
 export var SelectionUtils = {
   
 
@@ -81,12 +87,13 @@ export var SelectionUtils = {
       
       
       linkText = selectionStr.trim();
-      if (/^(?:https?|ftp):/i.test(linkText)) {
-        try {
-          url = Services.io.newURI(linkText);
-        } catch (ex) {}
-      } else if (/^(?:[a-z\d-]+\.)+[a-z]+$/i.test(linkText)) {
-        
+
+      if (
+        lazy.UrlUtils.looksLikeUrl(linkText, {
+          requirePath: false,
+          validateOrigin: true,
+        })
+      ) {
         
         
         
@@ -138,7 +145,13 @@ export var SelectionUtils = {
       selectionStr = this.trimSelection(selectionStr, aCharLen);
     }
 
-    if (url && !url.host) {
+    
+    
+    try {
+      if (url && !url.host) {
+        url = null;
+      }
+    } catch (ex) {
       url = null;
     }
 
