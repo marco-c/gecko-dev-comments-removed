@@ -13,6 +13,7 @@
 #include "tempfile_name.h"
 
 #define DOWNLOAD_PAGE L"https://www.mozilla.org/firefox/new/"
+#define STUB_INSTALLER_ARGS L"/Prompt /LaunchedBy:desktoplauncher"
 
 int wmain() {
   
@@ -54,10 +55,15 @@ int wmain() {
   }
   
   if (download_completed) {
-    HINSTANCE hinst =
-        ShellExecuteW(nullptr, nullptr, tempfileName.value().c_str(),
-                      L"/Prompt", nullptr, SW_SHOWNORMAL);
-    if ((INT_PTR)hinst > 32) {
+    SHELLEXECUTEINFOW sei = {0};
+    sei.cbSize = sizeof(sei);
+    sei.fMask = SEE_MASK_WAITFORINPUTIDLE | SEE_MASK_NOASYNC;
+    sei.lpFile = tempfileName.value().c_str();
+    sei.lpParameters = STUB_INSTALLER_ARGS;
+    sei.nShow = SW_SHOWNORMAL;
+    ShellExecuteExW(&sei);
+
+    if ((INT_PTR)sei.hInstApp > 32) {
       
       std::wcout << L"Firefox installer launched" << std::endl;
       return 0;
