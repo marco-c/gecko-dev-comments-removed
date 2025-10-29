@@ -699,8 +699,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
       IsDebuggerScript()) {
-    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, referrerPolicy,
-                                    fetchOptions, SRIMetadata(),
+    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
+                                    SRIMetadata(),
                                     nullptr,  
                                     loadContext);
   } else {
@@ -729,9 +729,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
 
     
     request = new ModuleLoadRequest(
-        uri, JS::ModuleType::JavaScript, referrerPolicy, fetchOptions,
-        SRIMetadata(), referrer, loadContext, ModuleLoadRequest::Kind::TopLevel,
-        moduleLoader, nullptr);
+        uri, JS::ModuleType::JavaScript, fetchOptions, SRIMetadata(), referrer,
+        loadContext, ModuleLoadRequest::Kind::TopLevel, moduleLoader, nullptr);
   }
 
   
