@@ -128,6 +128,7 @@ class ContentDelegateTest : BaseSessionTest() {
     fun crashContent() {
         
         assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        assumeThat(sessionRule.env.isAppZygoteProcess, equalTo(false))
 
         mainSession.loadUri(CONTENT_CRASH_URL)
         mainSession.waitUntilCalled(object : ContentDelegate {
@@ -158,6 +159,7 @@ class ContentDelegateTest : BaseSessionTest() {
     fun crashContent_tapAfterCrash() {
         
         assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        assumeThat(sessionRule.env.isAppZygoteProcess, equalTo(false))
 
         mainSession.delegateUntilTestEnd(object : ContentDelegate {
             override fun onCrash(session: GeckoSession) {
