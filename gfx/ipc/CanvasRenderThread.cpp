@@ -9,7 +9,6 @@
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/CanvasManagerParent.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CanvasTranslator.h"
@@ -32,11 +31,9 @@ static bool sCanvasRenderThreadEverStarted = false;
 #endif
 
 CanvasRenderThread::CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread,
-                                       nsCOMPtr<nsIThreadPool>&& aWorkers,
                                        bool aCreatedThread)
     : mMutex("CanvasRenderThread::mMutex"),
       mThread(std::move(aThread)),
-      mWorkers(std::move(aWorkers)),
       mCreatedThread(aCreatedThread) {}
 
 CanvasRenderThread::~CanvasRenderThread() = default;
@@ -53,36 +50,6 @@ void CanvasRenderThread::Start() {
   sCanvasRenderThreadEverStarted = true;
 #endif
 
-  
-  
-  int32_t threadPref =
-      gfxVars::RemoteCanvasEnabled()
-          ? StaticPrefs::gfx_canvas_remote_worker_threads_AtStartup()
-          : 0;
-
-  uint32_t threadLimit;
-  if (threadPref < 0) {
-    
-    
-    
-    
-    
-    
-    threadLimit = std::max(2, PR_GetNumberOfProcessors() / 2);
-  } else {
-    threadLimit = uint32_t(threadPref);
-  }
-
-  
-  
-  nsCOMPtr<nsIThreadPool> workers;
-  if (threadLimit > 0) {
-    workers = SharedThreadPool::Get("CanvasWorkers"_ns, threadLimit);
-    if (NS_WARN_IF(!workers)) {
-      return;
-    }
-  }
-
   nsCOMPtr<nsIThread> thread;
   if (!gfxVars::SupportsThreadsafeGL()) {
     thread = wr::RenderThread::GetRenderThread();
@@ -93,8 +60,8 @@ void CanvasRenderThread::Start() {
   }
 
   if (thread) {
-    sCanvasRenderThread = new CanvasRenderThread(
-        std::move(thread), std::move(workers),  false);
+    sCanvasRenderThread =
+        new CanvasRenderThread(std::move(thread),  false);
     return;
   }
 
@@ -139,8 +106,8 @@ void CanvasRenderThread::Start() {
     return;
   }
 
-  sCanvasRenderThread = new CanvasRenderThread(
-      std::move(thread), std::move(workers),  true);
+  sCanvasRenderThread =
+      new CanvasRenderThread(std::move(thread),  true);
 }
 
 
@@ -160,27 +127,9 @@ void CanvasRenderThread::Shutdown() {
   
   layers::CanvasTranslator::Shutdown();
 
-  
-  
-  
-  while (true) {
-    RefPtr<TaskQueue> taskQueue;
-    {
-      MutexAutoLock lock(sCanvasRenderThread->mMutex);
-
-      auto& pendingQueues = sCanvasRenderThread->mPendingShutdownTaskQueues;
-      if (pendingQueues.IsEmpty()) {
-        break;
-      }
-
-      taskQueue = pendingQueues.PopLastElement();
-    }
-    taskQueue->AwaitShutdownAndIdle();
-  }
 
   bool createdThread = sCanvasRenderThread->mCreatedThread;
   nsCOMPtr<nsIThread> oldThread = sCanvasRenderThread->GetCanvasRenderThread();
-  nsCOMPtr<nsIThreadPool> oldWorkers = sCanvasRenderThread->mWorkers;
 
   
   
@@ -191,10 +140,6 @@ void CanvasRenderThread::Shutdown() {
   
   
   sCanvasRenderThread = nullptr;
-
-  if (oldWorkers) {
-    oldWorkers->Shutdown();
-  }
 
   
   
@@ -213,19 +158,14 @@ bool CanvasRenderThread::IsInCanvasRenderThread() {
   
   
   return sCanvasRenderThread &&
-         ((sCanvasRenderThread->mWorkers &&
-           sCanvasRenderThread->mWorkers->IsOnCurrentThread()) ||
-          (!sCanvasRenderThread->mWorkers &&
-           sCanvasRenderThread->mThread == NS_GetCurrentThread()));
+         sCanvasRenderThread->mThread == NS_GetCurrentThread();
 }
 
  bool CanvasRenderThread::IsInCanvasRenderOrWorkerThread() {
   
   
   return sCanvasRenderThread &&
-         (sCanvasRenderThread->mThread == NS_GetCurrentThread() ||
-          (sCanvasRenderThread->mWorkers &&
-           sCanvasRenderThread->mWorkers->IsOnCurrentThread()));
+         sCanvasRenderThread->mThread == NS_GetCurrentThread();
 }
 
 
@@ -235,43 +175,6 @@ already_AddRefed<nsIThread> CanvasRenderThread::GetCanvasRenderThread() {
     thread = sCanvasRenderThread->mThread;
   }
   return thread.forget();
-}
-
- already_AddRefed<TaskQueue>
-CanvasRenderThread::CreateWorkerTaskQueue() {
-  if (!sCanvasRenderThread || !sCanvasRenderThread->mWorkers) {
-    return nullptr;
-  }
-
-  return TaskQueue::Create(do_AddRef(sCanvasRenderThread->mWorkers),
-                           "CanvasWorker")
-      .forget();
-}
-
- void CanvasRenderThread::ShutdownWorkerTaskQueue(
-    TaskQueue* aTaskQueue) {
-  MOZ_ASSERT(aTaskQueue);
-
-  aTaskQueue->BeginShutdown();
-
-  if (!sCanvasRenderThread) {
-    MOZ_ASSERT_UNREACHABLE("No CanvasRenderThread!");
-    return;
-  }
-
-  MutexAutoLock lock(sCanvasRenderThread->mMutex);
-  auto& pendingQueues = sCanvasRenderThread->mPendingShutdownTaskQueues;
-  pendingQueues.AppendElement(aTaskQueue);
-}
-
- void CanvasRenderThread::FinishShutdownWorkerTaskQueue(
-    TaskQueue* aTaskQueue) {
-  if (!sCanvasRenderThread) {
-    return;
-  }
-
-  MutexAutoLock lock(sCanvasRenderThread->mMutex);
-  sCanvasRenderThread->mPendingShutdownTaskQueues.RemoveElement(aTaskQueue);
 }
 
  void CanvasRenderThread::Dispatch(
