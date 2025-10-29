@@ -6110,7 +6110,7 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mNetworkState == NETWORK_LOADING);
 
-  TimeStamp now = TimeStamp::Now();
+  TimeStamp now = TimeStamp::NowLoRes();
 
   if (aHaveNewProgress) {
     mDataTime = now;
@@ -6128,7 +6128,14 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
                  TimeDuration::FromMilliseconds(PROGRESS_MS) &&
              mDataTime > mProgressTime)) {
     QueueEvent(u"progress"_ns);
-    mProgressTime = now;
+    
+    
+    
+    
+    mProgressTime = now - TimeDuration::Resolution();
+    if (mDataTime > mProgressTime) {
+      mDataTime = mProgressTime;
+    }
     if (!mProgressTimer) {
       NS_ASSERTION(aHaveNewProgress,
                    "timer dispatched when there was no timer");
@@ -6179,7 +6186,7 @@ void HTMLMediaElement::StartProgressTimer() {
 
 void HTMLMediaElement::StartProgress() {
   
-  mDataTime = TimeStamp::Now();
+  mDataTime = TimeStamp::NowLoRes();
   
   
   mProgressTime = TimeStamp();
