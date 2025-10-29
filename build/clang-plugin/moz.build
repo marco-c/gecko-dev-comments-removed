@@ -134,6 +134,9 @@ if CONFIG["HOST_OS_ARCH"] == "WINNT":
     
     
     HOST_DEFINES["LLVM_FORCE_USE_OLD_TOOLCHAIN"] = True
+    
+    if CONFIG["HOST_CC_VERSION"] and int(CONFIG["HOST_CC_VERSION"].split(".")[0]) >= 20:
+        extra_cxxflags += ["/Zc:dllexportInlines-"]
 else:
     extra_cxxflags = ["-fno-rtti", "-fno-exceptions"]
 
