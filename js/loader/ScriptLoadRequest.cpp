@@ -193,7 +193,6 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
       MOZ_ASSERT(aLoadedScript->IsModuleScript());
 
       mLoadedScript = ModuleScript::FromCache(*aLoadedScript);
-      mBaseURL = mLoadedScript->BaseURL();
 
       
       
@@ -213,6 +212,7 @@ void ScriptLoadRequest::NoCacheEntryFound(
   
   
   
+  
   switch (mKind) {
     case ScriptKind::eClassic:
       mLoadedScript = new ClassicScript(aReferrerPolicy, aFetchOptions, aURI);
@@ -228,22 +228,6 @@ void ScriptLoadRequest::NoCacheEntryFound(
       break;
   }
   mState = State::Fetching;
-}
-
-static bool IsInternalURIScheme(nsIURI* uri) {
-  return uri->SchemeIs("moz-extension") || uri->SchemeIs("resource") ||
-         uri->SchemeIs("moz-src") || uri->SchemeIs("chrome");
-}
-
-void ScriptLoadRequest::SetBaseURLFromChannelAndOriginalURI(
-    nsIChannel* aChannel, nsIURI* aOriginalURI) {
-  
-  
-  if (aOriginalURI && IsInternalURIScheme(aOriginalURI)) {
-    mBaseURL = aOriginalURI;
-  } else {
-    aChannel->GetURI(getter_AddRefs(mBaseURL));
-  }
 }
 
 }  

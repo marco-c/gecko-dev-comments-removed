@@ -962,7 +962,7 @@ void ModuleLoaderBase::DispatchModuleErrored(ModuleLoadRequest* aRequest) {
 
 nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(!aRequest->mModuleScript);
-  MOZ_ASSERT(aRequest->mBaseURL);
+  MOZ_ASSERT(aRequest->BaseURL());
 
   LOG(("ScriptLoadRequest (%p): Create module script", aRequest));
 
@@ -1002,19 +1002,6 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
     }
 
     MOZ_ASSERT(aRequest->mLoadedScript->IsModuleScript());
-    if (!aRequest->mLoadedScript->BaseURL()) {
-      
-      
-      aRequest->mLoadedScript->SetBaseURL(aRequest->mBaseURL);
-    } else {
-      
-      
-#ifdef DEBUG
-      bool equals = false;
-      aRequest->mBaseURL->Equals(aRequest->mLoadedScript->BaseURL(), &equals);
-      MOZ_ASSERT(equals);
-#endif
-    }
     RefPtr<ModuleScript> moduleScript =
         aRequest->mLoadedScript->AsModuleScript();
 
@@ -1698,7 +1685,7 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
   
   
   
-  return ImportMap::ParseString(jsapi.cx(), text, aRequest->mBaseURL, warning);
+  return ImportMap::ParseString(jsapi.cx(), text, aRequest->BaseURL(), warning);
 }
 
 void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
