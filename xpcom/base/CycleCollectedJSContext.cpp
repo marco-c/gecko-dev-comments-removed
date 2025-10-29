@@ -1120,6 +1120,12 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
   JSContext* cx = Context();
 
   if (StaticPrefs::javascript_options_use_js_microtask_queue()) {
+    
+    
+    if (!cx) {
+      return false;
+    }
+
     if (!JS::HasAnyMicroTasks(cx)) {
       MOZ_ASSERT(mDebuggerMicroTaskQueue.empty());
       MOZ_ASSERT(mPendingMicroTaskRunnables.empty());
