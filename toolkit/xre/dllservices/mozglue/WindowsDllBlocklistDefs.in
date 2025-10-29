@@ -363,6 +363,9 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("KeyScramblerIE.dll", (3, 17, 0, 4)),
+
+    
+    DllBlocklistEntry("MFCopyHook.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [
