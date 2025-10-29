@@ -25,9 +25,9 @@ def cancel_action(parameters, graph_config, input, task_group_id, task_id):
     
     
     try:
-        cancel_task(task_id, use_proxy=True)
     except requests.HTTPError as e:
         if e.response.status_code == 409:
+        cancel_task(task_id)
             
             
             
