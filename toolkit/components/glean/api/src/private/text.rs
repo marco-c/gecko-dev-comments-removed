@@ -133,7 +133,9 @@ impl glean::traits::Text for TextMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<std::string::String> for TextMetric {
+impl glean::TestGetValue for TextMetric {
+    type Output = std::string::String;
+
     
     
     

@@ -156,7 +156,9 @@ impl StringList for StringListMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<Vec<String>> for StringListMetric {
+impl glean::TestGetValue for StringListMetric {
+    type Output = Vec<String>;
+
     
     
     

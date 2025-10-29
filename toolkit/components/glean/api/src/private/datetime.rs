@@ -295,7 +295,9 @@ impl Datetime for DatetimeMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<glean::Datetime> for DatetimeMetric {
+impl glean::TestGetValue for DatetimeMetric {
+    type Output = glean::Datetime;
+
     
     
     

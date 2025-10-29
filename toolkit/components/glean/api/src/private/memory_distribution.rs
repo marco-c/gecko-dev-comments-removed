@@ -222,7 +222,9 @@ impl MemoryDistribution for MemoryDistributionMetric {
 }
 
 #[inherent]
-impl glean::TestGetValue<DistributionData> for MemoryDistributionMetric {
+impl glean::TestGetValue for MemoryDistributionMetric {
+    type Output = DistributionData;
+
     
     
     
