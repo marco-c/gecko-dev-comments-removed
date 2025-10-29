@@ -44,8 +44,17 @@
 
 mozilla::LazyLogModule gNavigationAPILog("NavigationAPI");
 
-#define LOG_FMT(format, ...) \
+#define LOG_FMTW(format, ...) \
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Warning, format, ##__VA_ARGS__);
+
+#define LOG_FMTI(format, ...) \
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Info, format, ##__VA_ARGS__);
+
+#define LOG_FMTD(format, ...) \
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, format, ##__VA_ARGS__);
+
+#define LOG_FMTV(format, ...) \
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose, format, ##__VA_ARGS__);
 
 namespace mozilla::dom {
 
@@ -227,6 +236,7 @@ already_AddRefed<NavigationHistoryEntry> Navigation::GetCurrentEntry() const {
 void Navigation::UpdateCurrentEntry(
     JSContext* aCx, const NavigationUpdateCurrentEntryOptions& aOptions,
     ErrorResult& aRv) {
+  LOG_FMTI("Called navigation.updateCurrentEntry()");
   RefPtr currentEntry(GetCurrentEntry());
   if (!currentEntry) {
     aRv.ThrowInvalidStateError(
@@ -287,10 +297,10 @@ bool Navigation::HasEntriesAndEventsDisabled() const {
 void Navigation::InitializeHistoryEntries(
     mozilla::Span<const SessionHistoryInfo> aNewSHInfos,
     const SessionHistoryInfo* aInitialSHInfo) {
-  LOG_FMT("Attempting to initialize history entries for {}.",
-          aInitialSHInfo->GetURI()
-              ? aInitialSHInfo->GetURI()->GetSpecOrDefault()
-              : "<no uri>"_ns)
+  LOG_FMTD("Attempting to initialize history entries for {}.",
+           aInitialSHInfo->GetURI()
+               ? aInitialSHInfo->GetURI()->GetSpecOrDefault()
+               : "<no uri>"_ns)
 
   mEntries.Clear();
   mCurrentEntryIndex.reset();
@@ -332,13 +342,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   switch (aNavigationType) {
     case NavigationType::Traverse:
       MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Traverse navigation"));
-      mCurrentEntryIndex.reset();
-      for (auto i = 0ul; i < mEntries.Length(); i++) {
-        if (mEntries[i]->IsSameEntry(aDestinationSHE)) {
-          mCurrentEntryIndex = Some(i);
-          break;
-        }
-      }
+      SetCurrentEntryIndex(aDestinationSHE);
       MOZ_ASSERT(mCurrentEntryIndex);
       break;
 
@@ -493,9 +497,8 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
 void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
                           const NavigationNavigateOptions& aOptions,
                           NavigationResult& aResult) {
-  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
-              "Called navigation.navigate() with url = {}",
-              NS_ConvertUTF16toUTF8(aUrl));
+  LOG_FMTI("Called navigation.navigate() with url = {}",
+           NS_ConvertUTF16toUTF8(aUrl));
   
   const RefPtr<Document> document = GetAssociatedDocument();
   if (!document) {
@@ -607,7 +610,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
                                             const NavigationOptions& aOptions,
                                             NavigationResult& aResult) {
-  LOG_FMT("traverse navigation to {}", aKey.ToString().get());
+  LOG_FMTV("traverse navigation to {}", aKey.ToString().get());
   
   
   const Document* document = GetAssociatedDocument();
@@ -730,7 +733,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
 void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
                         NavigationResult& aResult) {
-  MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Called navigation.reload()"));
+  LOG_FMTI("Called navigation.reload()");
   
   const RefPtr<Document> document = GetAssociatedDocument();
   if (!document) {
@@ -809,9 +812,8 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
 void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
                             const NavigationOptions& aOptions,
                             NavigationResult& aResult) {
-  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
-              "Called navigation.traverseTo() with key = {}",
-              NS_ConvertUTF16toUTF8(aKey).get());
+  LOG_FMTI("Called navigation.traverseTo() with key = {}",
+           NS_ConvertUTF16toUTF8(aKey).get());
 
   
   
@@ -846,7 +848,7 @@ void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
 
 void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
                       NavigationResult& aResult) {
-  MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Called navigation.back()"));
+  LOG_FMTI("Called navigation.back()");
   
   
   if (mCurrentEntryIndex.isNothing() || *mCurrentEntryIndex == 0 ||
@@ -869,7 +871,7 @@ void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
 
 void Navigation::Forward(JSContext* aCx, const NavigationOptions& aOptions,
                          NavigationResult& aResult) {
-  MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Called navigation.forward()"));
+  LOG_FMTI("Called navigation.forward()");
 
   
   
@@ -1111,7 +1113,7 @@ static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
     }
   }
 
-  LOG_FMT("{}", fmt::join(log.begin(), log.end(), std::string_view{" "}));
+  LOG_FMTD("{}", fmt::join(log.begin(), log.end(), std::string_view{" "}));
 }
 
 nsresult Navigation::FireEvent(const nsAString& aName) {
@@ -1384,6 +1386,11 @@ bool Navigation::InnerFireNavigateEvent(
           
           ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
                                     navigable->Top(), userInvolvement);
+
+          
+          
+          MOZ_ASSERT(entry->Index() >= 0);
+          mCurrentEntryIndex = Some(entry->Index());
         }
 
         break;
@@ -1555,7 +1562,7 @@ bool Navigation::InnerFireNavigateEvent(
     
     
     if (apiMethodTracker) {
-      LOG_FMT("Waiting for committed");
+      LOG_FMTD("Waiting for committed");
       apiMethodTracker->CommittedPromise()->AddCallbacksWithCycleCollectedArgs(
           [successSteps, failureSteps](
               JSContext*, JS::Handle<JS::Value>, ErrorResult&,
@@ -1572,7 +1579,7 @@ bool Navigation::InnerFireNavigateEvent(
           nsCOMPtr(globalObject),
           nsTArray<RefPtr<Promise>>(std::move(promiseList)), scope);
     } else {
-      LOG_FMT("No API method tracker, not waiting for committed");
+      LOG_FMTD("No API method tracker, not waiting for committed");
       
       
       Promise::WaitForAll(globalObject, promiseList, successSteps, failureSteps,
@@ -1652,6 +1659,16 @@ void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
       navigation->mUpcomingTraverseAPIMethodTrackers.Contains(*key));
 
   navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
+}
+
+void Navigation::SetCurrentEntryIndex(const SessionHistoryInfo* aTargetInfo) {
+  mCurrentEntryIndex.reset();
+  if (auto* entry = FindNavigationHistoryEntry(*aTargetInfo)) {
+    MOZ_ASSERT(entry->Index() > 0);
+    mCurrentEntryIndex = Some(entry->Index());
+  }
+
+  LOG_FMTW("Session history entry did not exist");
 }
 
 
@@ -1957,3 +1974,7 @@ void Navigation::CreateNavigationActivationFrom(
 }
 
 }  
+
+#undef LOG_FMTV
+#undef LOG_FMTD
+#undef LOG_FMTI

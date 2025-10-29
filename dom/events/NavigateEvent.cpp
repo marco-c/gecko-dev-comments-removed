@@ -19,6 +19,9 @@
 
 extern mozilla::LazyLogModule gNavigationAPILog;
 
+#define LOG_FMTI(format, ...) \
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Info, format, ##__VA_ARGS__);
+
 #define LOG_FMT(format, ...) \
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, format, ##__VA_ARGS__);
 
@@ -136,6 +139,8 @@ static void MaybeReportWarningToConsole(Document* aDocument,
 
 void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
                               ErrorResult& aRv) {
+  LOG_FMTI("Called NavigateEvent.intercept()");
+
   
   if (PerformSharedChecks(aRv); aRv.Failed()) {
     return;
@@ -197,6 +202,8 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
 
 
 void NavigateEvent::Scroll(ErrorResult& aRv) {
+  LOG_FMTI("Called NavigateEvent.scroll()");
+
   
   if (PerformSharedChecks(aRv); aRv.Failed()) {
     return;
@@ -474,4 +481,5 @@ void NavigateEvent::ProcessScrollBehavior() {
 }
 }  
 
+#undef LOG_FMTI
 #undef LOG_FMT
