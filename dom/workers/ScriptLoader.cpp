@@ -736,7 +736,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   request->mURL = NS_ConvertUTF16toUTF8(aScriptURL);
 
-  request->NoCacheEntryFound(referrerPolicy);
+  request->NoCacheEntryFound(referrerPolicy, fetchOptions);
 
   return request.forget();
 }
