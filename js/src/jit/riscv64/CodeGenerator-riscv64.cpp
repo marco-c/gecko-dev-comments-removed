@@ -1527,18 +1527,14 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
 
   
   masm.loadConstantDouble(NegativeInfinity<double>(), fpscratch);
-  UseScratchRegisterScope temps(&masm);
-  Register scratch = temps.Acquire();
-
-  masm.ma_compareF64(scratch, Assembler::DoubleNotEqualOrUnordered, input,
-                     fpscratch);
-  masm.ma_b(scratch, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
-  
-  
-  masm.fneg_d(output, fpscratch);
-  masm.ma_branch(&done, ShortJump);
-
+  masm.BranchFloat64(Assembler::DoubleNotEqualOrUnordered, input, fpscratch,
+                     &skip, ShortJump);
+  {
+    masm.fneg_d(output, fpscratch);
+    masm.ma_branch(&done, ShortJump);
+  }
   masm.bind(&skip);
+
   
   
   masm.loadConstantDouble(0.0, fpscratch);
