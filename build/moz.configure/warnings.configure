@@ -23,6 +23,8 @@ def warnings_as_errors(warnings_as_errors):
 set_config("WARNINGS_AS_ERRORS", warnings_as_errors)
 
 not_clang_cl = depends(c_compiler)(lambda c: c.type != "clang-cl")
+not_clang = depends(c_compiler)(lambda c: c.type != "clang")
+not_clang_based = depends(c_compiler)(lambda c: c.type not in ("clang", "clang-cl"))
 
 
 
@@ -34,13 +36,13 @@ add_warning("-Wall", when=not_clang_cl)
 add_warning("-W3", when=depends(c_compiler)(lambda c: c.type == "clang-cl"))
 
 
-check_and_add_warning("-Wbitfield-enum-conversion")
+check_and_add_warning("-Wbitfield-enum-conversion", min_clang_version="5.0.0")
 
 
 add_warning("-Wempty-body")
 
 
-check_and_add_warning("-Wformat-type-confusion")
+check_and_add_warning("-Wformat-type-confusion", min_clang_version="10.0.0")
 
 
 add_warning("-Wignored-qualifiers")
@@ -49,28 +51,35 @@ add_warning("-Wignored-qualifiers")
 add_warning("-Wpointer-arith")
 
 
-check_and_add_warning("-Wshadow-field-in-constructor-modified")
+check_and_add_warning(
+    "-Wshadow-field-in-constructor-modified", min_clang_version="4.0.0"
+)
 
 
 add_warning("-Wsign-compare")
 
 
-check_and_add_warning("-Wtautological-constant-in-range-compare")
+check_and_add_warning(
+    "-Wtautological-constant-in-range-compare", min_clang_version="6.0.0"
+)
 
 
 add_warning("-Wtype-limits")
 
 
-check_and_add_warning("-Wno-error=tautological-type-limit-compare")
+check_and_add_warning(
+    "-Wno-error=tautological-type-limit-compare", min_clang_version="6.0.0"
+)
 
 
 add_warning("-Wunreachable-code")
-check_and_add_warning("-Wunreachable-code-return")
+check_and_add_warning("-Wunreachable-code-return", min_clang_version="4.0.0")
 
 
 
 check_and_add_warning(
     "-Wunused-but-set-parameter",
+    min_clang_version="13.0.0",
     when=depends(c_compiler)(lambda c: c.type in ("clang", "clang-cl")),
 )
 
@@ -78,36 +87,43 @@ check_and_add_warning(
 add_warning("-Wno-invalid-offsetof", cxx_compiler)
 
 
-check_and_add_warning("-Wclass-varargs")
+check_and_add_warning("-Wclass-varargs", min_clang_version="4.0.0")
 
 
-check_and_add_warning("-Wempty-init-stmt", cxx_compiler)
+check_and_add_warning("-Wempty-init-stmt", cxx_compiler, min_clang_version="8.0.0")
 
 
-check_and_add_warning("-Wfloat-overflow-conversion")
-check_and_add_warning("-Wfloat-zero-conversion")
+check_and_add_warning("-Wfloat-overflow-conversion", min_clang_version="4.0.0")
+check_and_add_warning("-Wfloat-zero-conversion", min_clang_version="4.0.0")
 
 
-check_and_add_warning("-Wloop-analysis")
+check_and_add_warning("-Wloop-analysis", min_clang_version="4.0.0")
 
 
-check_and_add_warning("-Wno-range-loop-analysis")
-
-
-
-check_and_add_warning("-Wcomma-subscript", cxx_compiler)
-check_and_add_warning("-Wenum-compare-conditional")
-check_and_add_warning("-Wenum-float-conversion")
-check_and_add_warning("-Wvolatile", cxx_compiler)
-
-
-check_and_add_warning("-Wno-deprecated-anon-enum-enum-conversion", cxx_compiler)
-check_and_add_warning("-Wno-deprecated-enum-enum-conversion", cxx_compiler)
+check_and_add_warning("-Wno-range-loop-analysis", min_clang_version="4.0.0")
 
 
 
+check_and_add_warning("-Wcomma-subscript", cxx_compiler, when=not_clang_based)
+check_and_add_warning("-Wenum-compare-conditional", min_clang_version="10.0.0")
+check_and_add_warning("-Wenum-float-conversion", min_clang_version="10.0.0")
+check_and_add_warning("-Wvolatile", cxx_compiler, when=not_clang)
 
-check_and_add_warning("-Wno-deprecated-this-capture", cxx_compiler)
+
+check_and_add_warning(
+    "-Wno-deprecated-anon-enum-enum-conversion",
+    cxx_compiler,
+    min_clang_version="10.0.0",
+)
+check_and_add_warning(
+    "-Wno-deprecated-enum-enum-conversion", cxx_compiler, min_clang_version="10.0.0"
+)
+
+
+
+check_and_add_warning(
+    "-Wno-deprecated-this-capture", cxx_compiler, min_clang_version="6.0.0"
+)
 check_and_add_warning("-Wno-error=deprecated", when=building_with_gcc)
 
 
@@ -116,16 +132,16 @@ check_and_add_warning("-Wdeprecated-literal-operator", cxx_compiler)
 check_and_add_warning("-Winvalid-utf8")
 
 
-check_and_add_warning("-Wcomma", cxx_compiler)
+check_and_add_warning("-Wcomma", cxx_compiler, min_clang_version="4.0.0")
 
 
-check_and_add_warning("-Wduplicated-cond")
+check_and_add_warning("-Wduplicated-cond", when=not_clang_based)
 
 
-check_and_add_warning("-Wimplicit-fallthrough", cxx_compiler)
+check_and_add_warning("-Wimplicit-fallthrough", cxx_compiler, min_clang_version="4.0.0")
 
 
-check_and_add_warning("-Wlogical-op")
+check_and_add_warning("-Wlogical-op", when=not_clang_based)
 
 
 with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
@@ -148,39 +164,39 @@ with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
     check_and_add_warning("-Wsuper-class-method-mismatch")
 
 
-check_and_add_warning("-Wstring-conversion")
+check_and_add_warning("-Wstring-conversion", min_clang_version="4.0.0")
 
 
-check_and_add_warning("-Wno-inline-new-delete", cxx_compiler)
-
-
-
-check_and_add_warning("-Wno-error=maybe-uninitialized")
+check_and_add_warning("-Wno-inline-new-delete", cxx_compiler, min_clang_version="4.0.0")
 
 
 
-check_and_add_warning("-Wno-error=deprecated-declarations")
-
-
-check_and_add_warning("-Wno-error=array-bounds")
-
-
-check_and_add_warning("-Wno-error=free-nonheap-object")
-
-
-check_and_add_warning("-Wno-multistatement-macros")
+check_and_add_warning("-Wno-error=maybe-uninitialized", when=not_clang_based)
 
 
 
-check_and_add_warning("-Wno-error=class-memaccess")
+check_and_add_warning("-Wno-error=deprecated-declarations", min_clang_version="4.0.0")
+
+
+check_and_add_warning("-Wno-error=array-bounds", min_clang_version="4.0.0")
+
+
+check_and_add_warning("-Wno-error=free-nonheap-object", min_clang_version="12.0.0")
+
+
+check_and_add_warning("-Wno-multistatement-macros", when=not_clang_based)
 
 
 
-check_and_add_warning("-Wno-error=atomic-alignment")
+check_and_add_warning("-Wno-error=class-memaccess", when=not_clang_based)
 
 
 
-check_and_add_warning("-Wno-error=deprecated-builtins")
+check_and_add_warning("-Wno-error=atomic-alignment", min_clang_version="7.0.0")
+
+
+
+check_and_add_warning("-Wno-error=deprecated-builtins", min_clang_version="15.0.0")
 
 
 c_format_warning, cxx_format_warning = check_and_add_warning(
@@ -190,8 +206,14 @@ c_format_warning, cxx_format_warning = check_and_add_warning(
 
 
 
-check_and_add_warning("-Wformat-security", when=c_format_warning & cxx_format_warning)
-check_and_add_warning("-Wformat-overflow=2", when=c_format_warning & cxx_format_warning)
+check_and_add_warning(
+    "-Wformat-security",
+    when=c_format_warning & cxx_format_warning,
+    min_clang_version="4.0.0",
+)
+check_and_add_warning(
+    "-Wformat-overflow=2", when=c_format_warning & cxx_format_warning & not_clang_based
+)
 
 
 with only_when(target_is_windows):
@@ -284,15 +306,18 @@ with only_when(target_is_windows):
         check_and_add_warning("-Wno-enum-compare")
 
 
-check_and_add_warning("-Werror=implicit-function-declaration", c_compiler)
+check_and_add_warning(
+    "-Werror=implicit-function-declaration", c_compiler, min_clang_version="4.0.0"
+)
 
 
-check_and_add_warning("-Wno-psabi")
+check_and_add_warning("-Wno-psabi", min_clang_version="11.0.0")
 
 
 check_and_add_warning(
     "-Wno-missing-braces",
     when=depends(c_compiler)(lambda c: c.type == "clang" and c.version < "6.0"),
+    min_clang_version="4.0.0",
 )
 
 
@@ -302,28 +327,33 @@ check_and_add_warning(
     when=depends(c_compiler)(
         lambda c: c.type in ("clang", "clang-cl") and c.version >= "8.0"
     ),
+    min_clang_version="4.0.0",
 )
 
 
-check_and_add_warning("-Werror=unguarded-availability-new", when=target_is_osx)
+check_and_add_warning(
+    "-Werror=unguarded-availability-new", when=target_is_osx, min_clang_version="5.0.0"
+)
 
 
 
 
-check_and_add_warning("-Wno-error=builtin-macro-redefined")
+check_and_add_warning("-Wno-error=builtin-macro-redefined", min_clang_version="4.0.0")
 
 
 
-check_and_add_warning("-Wno-vla-cxx-extension", cxx_compiler)
+check_and_add_warning(
+    "-Wno-vla-cxx-extension", cxx_compiler, min_clang_version="18.0.0"
+)
+
+
+check_and_add_warning("-Wno-unknown-warning-option", min_clang_version="4.0.0")
 
 
 
-
-check_and_add_warning("-Wno-unknown-warning-option")
-
+check_and_add_warning("-Wno-character-conversion", min_clang_version="21.0.0")
 
 
-check_and_add_warning("-Wno-character-conversion")
 
 set_config("WARNINGS_CFLAGS", warnings_flags.cflags)
 set_config("WARNINGS_CXXFLAGS", warnings_flags.cxxflags)
