@@ -2195,8 +2195,14 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
       return nullptr;
     }
 
+    
+    
+    
+    
+    
+    UniqueChars error;
     ModuleGenerator mg(*codeMeta_, compilerEnv_, compilerEnv_.initialState(),
-                       nullptr, nullptr, nullptr);
+                       nullptr, &error, nullptr);
     if (!mg.initializeCompleteTier(codeMetaForAsmJS_.get())) {
       return nullptr;
     }
