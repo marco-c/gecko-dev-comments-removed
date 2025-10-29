@@ -39,6 +39,7 @@ https_first_disabled = true
 ["browser_bfcache_exemption_about_pages.js"]
 run-if = ["fission"]
 skip-if = [
+  "verify-standalone",
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1934436
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1934436
 ]
@@ -582,6 +583,11 @@ skip-if = [
 ]
 
 ["browser_tab_splitview.js"]
+
+["browser_tab_splitview_contextmenu.js"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1994508
+]
 
 ["browser_tab_splitview_keyboard_focus.js"]
 
