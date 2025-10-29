@@ -21,7 +21,6 @@
 #include "nsString.h"
 #include "nsCOMArray.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
 #include "Dictionary.h"
@@ -119,6 +118,12 @@ class CacheEntry final : public nsIRunnable,
   bool IsFileDoomed();
   bool IsDoomed() const { return mIsDoomed; }
   bool IsPinned() const { return mPinned; }
+
+  
+  void SetBypassWriterLock(bool aBypass);
+  bool ShouldBypassWriterLock() const MOZ_REQUIRES(mLock) {
+    return mBypassWriterLock;
+  }
 
   
   
@@ -366,6 +371,8 @@ class CacheEntry final : public nsIRunnable,
   
   
   bool mPinningKnown : 1 MOZ_GUARDED_BY(mLock);
+  
+  bool mBypassWriterLock : 1 MOZ_GUARDED_BY(mLock);
 
   static char const* StateString(uint32_t aState);
 
@@ -553,6 +560,10 @@ class CacheEntryHandle final : public nsICacheEntry {
   }
   NS_IMETHOD SetDictionary(DictionaryCacheEntry* aDict) override {
     return mEntry->SetDictionary(aDict);
+  }
+  NS_IMETHOD SetBypassWriterLock(bool aBypass) override {
+    mEntry->SetBypassWriterLock(aBypass);
+    return NS_OK;
   }
 
   

@@ -9,7 +9,6 @@
 
 
 
-#include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsAHttpTransaction.h"

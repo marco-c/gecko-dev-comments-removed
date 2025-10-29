@@ -5,7 +5,6 @@
 
 
 #include "SimpleChannel.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 
 #include "nsProtocolProxyService.h"

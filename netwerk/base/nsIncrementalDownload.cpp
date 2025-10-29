@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/Attributes.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/UniquePtr.h"

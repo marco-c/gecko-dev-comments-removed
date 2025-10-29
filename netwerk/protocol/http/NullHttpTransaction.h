@@ -8,7 +8,6 @@
 #define mozilla_net_NullHttpTransaction_h
 
 #include "nsAHttpTransaction.h"
-#include "mozilla/Attributes.h"
 #include "TimingStruct.h"
 
 

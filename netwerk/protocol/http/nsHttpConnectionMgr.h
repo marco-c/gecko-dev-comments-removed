@@ -16,7 +16,6 @@
 #include "nsClassHashtable.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Attributes.h"
 #include "ARefBase.h"
 #include "nsWeakReference.h"
 #include "ConnectionEntry.h"
@@ -284,7 +283,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   [[nodiscard]] nsresult TryDispatchExtendedCONNECTransaction(
       ConnectionEntry* aEnt, nsHttpTransaction* aTrans,
       nsHttpConnection* aConn);
-  void ReportProxyTelemetry(ConnectionEntry* ent);
   void StartedConnect();
   void RecvdConnect();
 

@@ -36,7 +36,6 @@
 #include "DNSAdditionalInfo.h"
 #include "TRRService.h"
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/ChildDNSService.h"
@@ -1430,7 +1429,7 @@ NS_IMETHODIMP
 nsDNSService::ClearCache(bool aTrrToo) {
   RefPtr<nsHostResolver> resolver = GetResolverLocked();
   NS_ENSURE_TRUE(resolver, NS_ERROR_NOT_INITIALIZED);
-  resolver->FlushCache(aTrrToo);
+  resolver->FlushCache(aTrrToo, true);
   return NS_OK;
 }
 
