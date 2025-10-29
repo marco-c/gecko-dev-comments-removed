@@ -2,7 +2,6 @@
 
 
 
-#include "mozilla/UniquePtr.h"
 #include "RemoteSpellCheckEngineChild.h"
 
 namespace mozilla {

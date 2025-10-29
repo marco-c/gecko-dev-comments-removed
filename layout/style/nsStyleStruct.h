@@ -23,7 +23,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WindowButtonType.h"
 #include "nsChangeHint.h"
 #include "nsColor.h"
@@ -934,8 +933,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   using LogicalAxis = mozilla::LogicalAxis;
   using StyleImplicitGridTracks = mozilla::StyleImplicitGridTracks;
   using ComputedStyle = mozilla::ComputedStyle;
-  using StyleAlignSelf = mozilla::StyleAlignSelf;
-  using StyleJustifySelf = mozilla::StyleJustifySelf;
+  using StyleSelfAlignment = mozilla::StyleSelfAlignment;
 
   nsChangeHint CalcDifference(const nsStylePosition& aNewData,
                               const ComputedStyle& aOldStyle) const;
@@ -973,13 +971,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
 
 
 
-  StyleAlignSelf UsedAlignSelf(const ComputedStyle*) const;
+  StyleSelfAlignment UsedAlignSelf(const ComputedStyle*) const;
 
   
 
 
 
-  StyleJustifySelf UsedJustifySelf(const ComputedStyle*) const;
+  StyleSelfAlignment UsedJustifySelf(const ComputedStyle*) const;
 
   
 
@@ -1020,12 +1018,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   mozilla::StyleGridAutoFlow mGridAutoFlow;
   mozilla::StyleMasonryAutoFlow mMasonryAutoFlow;
 
-  mozilla::StyleAlignContent mAlignContent;
-  mozilla::StyleAlignItems mAlignItems;
-  mozilla::StyleAlignSelf mAlignSelf;
-  mozilla::StyleJustifyContent mJustifyContent;
+  mozilla::StyleContentDistribution mAlignContent;
+  mozilla::StyleItemPlacement mAlignItems;
+  mozilla::StyleSelfAlignment mAlignSelf;
+  mozilla::StyleContentDistribution mJustifyContent;
   mozilla::StyleComputedJustifyItems mJustifyItems;
-  mozilla::StyleJustifySelf mJustifySelf;
+  mozilla::StyleSelfAlignment mJustifySelf;
   mozilla::StyleFlexDirection mFlexDirection;
   mozilla::StyleFlexWrap mFlexWrap;
   mozilla::StyleObjectFit mObjectFit;

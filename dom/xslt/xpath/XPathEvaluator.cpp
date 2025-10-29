@@ -1,14 +1,13 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/dom/XPathEvaluator.h"
 
 #include <utility>
 
 #include "XPathResult.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/XPathEvaluatorBinding.h"
@@ -27,7 +26,7 @@
 
 namespace mozilla::dom {
 
-// txIParseContext implementation
+
 class XPathEvaluatorParseContext : public txIParseContext {
  public:
   XPathEvaluatorParseContext(XPathNSResolver* aResolver, bool aIsCaseSensitive)
@@ -106,7 +105,7 @@ bool XPathEvaluator::WrapObject(JSContext* aCx,
   return dom::XPathEvaluator_Binding::Wrap(aCx, this, aGivenProto, aReflector);
 }
 
-/* static */
+
 UniquePtr<XPathEvaluator> XPathEvaluator::Constructor(
     const GlobalObject& aGlobal) {
   return MakeUnique<XPathEvaluator>(nullptr);
@@ -124,10 +123,10 @@ already_AddRefed<XPathResult> XPathEvaluator::Evaluate(
   return expression->Evaluate(aCx, aContextNode, aType, aResult, rv);
 }
 
-/*
- * Implementation of txIParseContext private to XPathEvaluator, based on a
- * XPathNSResolver
- */
+
+
+
+
 
 int32_t XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix) {
   if (!mResolver && !mResolverNode) {
@@ -163,7 +162,7 @@ int32_t XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix) {
     return kNameSpaceID_None;
   }
 
-  // get the namespaceID for the URI
+  
   int32_t id;
   return NS_SUCCEEDED(
              nsNameSpaceManager::GetInstance()->RegisterNameSpace(ns, id))
@@ -183,4 +182,4 @@ bool XPathEvaluatorParseContext::caseInsensitiveNameTests() {
 
 void XPathEvaluatorParseContext::SetErrorOffset(uint32_t aOffset) {}
 
-}  // namespace mozilla::dom
+}  

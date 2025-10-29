@@ -9,7 +9,6 @@
 
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptFetchOptions.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SerializedStackHolder.h"
 
 namespace mozilla::dom::workerinternals::loader {
@@ -91,6 +90,14 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
   void OnModuleLoadComplete(ModuleLoadRequest* aRequest) override;
 
   bool IsModuleEvaluationAborted(ModuleLoadRequest* aRequest) override;
+
+  bool IsModuleTypeAllowed(JS::ModuleType aModuleType) override {
+    
+    
+    
+    return aModuleType != JS::ModuleType::Unknown &&
+           aModuleType != JS::ModuleType::CSS;
+  }
 };
 
 }  

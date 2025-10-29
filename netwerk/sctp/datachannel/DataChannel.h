@@ -16,7 +16,6 @@
 #include "nsCOMPtr.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/StopGapEventTarget.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsString.h"
@@ -336,16 +335,9 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   
 
   
-  bool mSendInterleaved = false;
-  uint32_t mCurrentStream = 0;
   std::set<RefPtr<DataChannel>> mPending;
   uint16_t mNegotiatedIdLimit = 0;
   PendingType mPendingType = PendingType::None;
-  
-  nsTArray<OutgoingMsg> mBufferedControl;
-  
-  Maybe<IncomingMsg> mRecvBuffer;
-  bool mSctpConfigured = false;
   std::string mTransportId;
   bool mConnectedToTransportHandler = false;
   RefPtr<MediaTransportHandler> mTransportHandler;

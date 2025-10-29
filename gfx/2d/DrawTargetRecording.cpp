@@ -18,7 +18,6 @@
 #include "mozilla/layers/RecordedCanvasEventImpl.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/TextureRecorded.h"
-#include "mozilla/UniquePtr.h"
 #include "nsXULAppAPI.h"  
 #include "RecordingTypes.h"
 #include "RecordedEventImpl.h"

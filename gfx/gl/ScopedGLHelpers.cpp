@@ -3,8 +3,6 @@
 
 
 
-#include "mozilla/UniquePtr.h"
-
 #include "GLContext.h"
 #include "ScopedGLHelpers.h"
 

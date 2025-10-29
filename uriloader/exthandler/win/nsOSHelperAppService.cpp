@@ -16,7 +16,6 @@
 #include "nsLocalFile.h"
 #include "nsIWindowsRegKey.h"
 #include "nsXULAppAPI.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 
 #include <shellapi.h>

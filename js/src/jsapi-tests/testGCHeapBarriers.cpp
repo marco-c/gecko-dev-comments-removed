@@ -6,7 +6,6 @@
 
 
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 
 #include "gc/AllocKind.h"
 #include "gc/Cell.h"

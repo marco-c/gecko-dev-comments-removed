@@ -20,7 +20,6 @@
 #include "mozilla/net/DashboardTypes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "nsHostRecord.h"
 #include "nsRefPtrHashtable.h"
 #include "nsIThreadPool.h"
@@ -168,7 +167,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
 
 
-  void FlushCache(bool aTrrToo);
+  void FlushCache(bool aTrrToo, bool aFlushEvictionQueue = false);
 
   LookupStatus CompleteLookup(nsHostRecord*, nsresult, mozilla::net::AddrInfo*,
                               bool pb, const nsACString& aOriginsuffix,
