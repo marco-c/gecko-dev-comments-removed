@@ -3017,7 +3017,7 @@ def stl_hardening_flags(
 
     
     
-    if debug:
+    if debug and enabled.origin == "default":
         return
 
     die("C++ STL does not support hardening")
