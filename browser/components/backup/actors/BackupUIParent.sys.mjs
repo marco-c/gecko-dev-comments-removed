@@ -128,7 +128,7 @@ export class BackupUIParent extends JSWindowActorParent {
       }
       this.#bs.setScheduledBackups(false);
     } else if (message.name == "ShowFilepicker") {
-      let { win, filter, displayDirectoryPath } = message.data;
+      let { win, filter, existingBackupPath } = message.data;
 
       let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
 
@@ -141,11 +141,11 @@ export class BackupUIParent extends JSWindowActorParent {
         fp.appendFilters(Ci.nsIFilePicker[filter]);
       }
 
-      if (displayDirectoryPath) {
+      if (existingBackupPath) {
         try {
-          let exists = await IOUtils.exists(displayDirectoryPath);
-          if (exists) {
-            fp.displayDirectory = await IOUtils.getFile(displayDirectoryPath);
+          let folder = (await IOUtils.getFile(existingBackupPath)).parent;
+          if (folder.exists()) {
+            fp.displayDirectory = folder;
           }
         } catch (_) {
           // If the file can not be found we will skip setting the displayDirectory.
@@ -240,6 +240,26 @@ export class BackupUIParent extends JSWindowActorParent {
     } else if (message.name == "EditBackupLocation") {
       const window = this.browsingContext.topChromeWindow;
       this.#bs.editBackupLocation(window);
+    } else if (message.name == "QuitCurrentProfile") {
+      // Notify windows that a quit has been requested.
+      let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+        Ci.nsISupportsPRBool
+      );
+      Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+      if (cancelQuit.data) {
+        // Something blocked our attempt to quit.
+        return null;
+      }
+
+      try {
+        Services.startup.quit(Services.startup.eAttemptQuit);
+      } catch (e) {
+        // let's silently resolve this error
+        lazy.logConsole.error(
+          `There was a problem while quitting the current profile: `,
+          e
+        );
+      }
     }
 
     return null;

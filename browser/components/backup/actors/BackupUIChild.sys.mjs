@@ -60,7 +60,7 @@ export class BackupUIChild extends JSWindowActorChild {
       let { path, filename, iconURL } = await this.sendQuery("ShowFilepicker", {
         win: event.detail?.win,
         filter: event.detail?.filter,
-        displayDirectoryPath: event.detail?.displayDirectoryPath,
+        existingBackupPath: event.detail?.existingBackupPath,
       });
 
       let widgets = ChromeUtils.nondeterministicGetWeakSetKeys(
@@ -101,6 +101,9 @@ export class BackupUIChild extends JSWindowActorChild {
 
       if (result.success) {
         event.target.restoreFromBackupDialogEl?.close();
+
+        // Since we always launch the new profile from this event, let's close the current instance now
+        this.sendAsyncMessage("QuitCurrentProfile");
       }
     } else if (event.type == "BackupUI:RestoreFromBackupChooseFile") {
       this.sendAsyncMessage("RestoreFromBackupChooseFile");
