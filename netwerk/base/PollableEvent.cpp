@@ -22,6 +22,34 @@
 #  define USEPIPE 1
 #endif
 
+
+
+
+
+
+
+typedef enum {
+  _PR_TRI_TRUE = 1,
+  _PR_TRI_FALSE = 0,
+  _PR_TRI_UNKNOWN = -1
+} _PRTriStateBool;
+
+struct _MDFileDesc {
+  PROsfd osfd;
+};
+
+struct PRFilePrivate {
+  int32_t state;
+  bool nonblocking;
+  _PRTriStateBool inheritable;
+  PRFileDesc* next;
+  int lockCount; 
+
+
+  bool appendMode;
+  _MDFileDesc md;
+};
+
 namespace mozilla {
 namespace net {
 
@@ -157,6 +185,12 @@ PollableEvent::PollableEvent()
     fd = PR_FileDesc2NativeHandle(mWriteFD);
     flags = fcntl(fd, F_GETFL, 0);
     (void)fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+    
+    
+    
+    mReadFD->secret->nonblocking = true;
+    mWriteFD->secret->nonblocking = true;
   } else {
     mReadFD = nullptr;
     mWriteFD = nullptr;
