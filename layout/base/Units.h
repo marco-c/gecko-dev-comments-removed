@@ -178,7 +178,6 @@ typedef gfx::SizeTyped<DesktopPixel> DesktopSize;
 typedef gfx::IntSizeTyped<DesktopPixel> DesktopIntSize;
 typedef gfx::RectTyped<DesktopPixel> DesktopRect;
 typedef gfx::IntRectTyped<DesktopPixel> DesktopIntRect;
-typedef gfx::IntMarginTyped<DesktopPixel> DesktopIntMargin;
 
 typedef gfx::CoordTyped<ExternalPixel> ExternalCoord;
 typedef gfx::IntCoordTyped<ExternalPixel> ExternalIntCoord;
@@ -708,9 +707,6 @@ struct ParentLayerPixel {};
 
 
 
-
-
-
 struct DesktopPixel {};
 
 struct ExternalPixel {};
@@ -952,15 +948,6 @@ gfx::MarginTyped<Dst, F> operator/(
   return gfx::MarginTyped<Dst, F>(
       aMargin.top.value / aScale.yScale, aMargin.right.value / aScale.xScale,
       aMargin.bottom.value / aScale.yScale, aMargin.left.value / aScale.xScale);
-}
-
-template <class Src, class Dst>
-gfx::MarginTyped<Dst> operator*(const gfx::IntMarginTyped<Src>& aMargin,
-                                const gfx::ScaleFactor<Src, Dst>& aScale) {
-  return gfx::MarginTyped<Dst>(float(aMargin.top.value) * aScale.scale,
-                               float(aMargin.right.value) * aScale.scale,
-                               float(aMargin.bottom.value) * aScale.scale,
-                               float(aMargin.left.value) * aScale.scale);
 }
 
 
