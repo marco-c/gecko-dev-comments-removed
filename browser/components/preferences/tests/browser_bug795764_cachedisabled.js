@@ -25,6 +25,9 @@ function test() {
 }
 
 async function runTest(win) {
+  const ipProtectionExperiment = SpecialPowers.getStringPref(
+    "browser.ipProtection.variant"
+  );
   is(gBrowser.currentURI.spec, "about:preferences", "about:preferences loaded");
 
   let tab = win.document;
@@ -38,6 +41,14 @@ async function runTest(win) {
     
     
     if (element.id === "cookieBannerHandlingGroup") {
+      continue;
+    }
+
+    
+    if (
+      element.id === "dataIPProtectionGroup" &&
+      ipProtectionExperiment !== "beta"
+    ) {
       continue;
     }
 

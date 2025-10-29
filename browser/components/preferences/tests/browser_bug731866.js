@@ -10,6 +10,9 @@ const cookieBannerHandlingDisabled = !SpecialPowers.getBoolPref(
 const backupSectionDisabled = !SpecialPowers.getBoolPref(
   "browser.backup.preferences.ui.enabled"
 );
+const ipProtectionExperiment = SpecialPowers.getStringPref(
+  "browser.ipProtection.variant"
+);
 const profilesGroupDisabled = !SelectableProfileService.isEnabled;
 const updatePrefContainers = ["updatesCategory", "updateApp"];
 const updateContainersGroupDisabled =
@@ -72,6 +75,14 @@ function checkElements(expectedPane) {
 
     
     if (element.id === "profilesGroup" && profilesGroupDisabled) {
+      continue;
+    }
+
+    
+    if (
+      element.id === "dataIPProtectionGroup" &&
+      ipProtectionExperiment !== "beta"
+    ) {
       continue;
     }
 

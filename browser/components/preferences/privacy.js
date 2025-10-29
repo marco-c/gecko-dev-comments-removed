@@ -211,6 +211,9 @@ Preferences.addAll([
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
 
   
+  { id: "browser.ipProtection.variant", type: "string" },
+
+  
   { id: "media.autoplay.default", type: "int" },
 
   
@@ -1250,6 +1253,17 @@ Preferences.addSetting({
     "etpStrictEnabled",
     ...SECURITY_WARNINGS.map(warning => warning.id),
   ],
+});
+
+Preferences.addSetting({
+  id: "ipProtectionVisible",
+  pref: "browser.ipProtection.variant",
+  get: prefVal => prefVal == "beta",
+});
+Preferences.addSetting({
+  id: "ipProtectionPlaceholderMessage",
+  deps: ["ipProtectionVisible"],
+  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
 });
 
 
@@ -2367,6 +2381,7 @@ var gPrivacyPane = {
     initSettingGroup("browsingProtection");
     initSettingGroup("cookiesAndSiteData");
     initSettingGroup("certificates");
+    initSettingGroup("ipprotection");
 
     this._updateSanitizeSettingsButton();
     this.initializeHistoryMode();
