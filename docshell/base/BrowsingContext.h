@@ -1446,6 +1446,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DidSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>, bool aOldValue);
 
+  void DidSet(FieldIndex<IDX_ForceOffline>, bool aOldValue);
+
   
   
   
