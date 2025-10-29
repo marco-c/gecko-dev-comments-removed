@@ -18,63 +18,75 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 
+class HTMLEditor extends EventEmitter {
+  
 
 
 
 
-function HTMLEditor(htmlDocument) {
-  this.doc = htmlDocument;
-  this.container = this.doc.createElement("div");
-  this.container.className = "html-editor theme-body";
-  this.container.style.display = "none";
-  this.editorInner = this.doc.createElement("div");
-  this.editorInner.className = "html-editor-inner";
-  this.container.appendChild(this.editorInner);
+  constructor(htmlDocument) {
+    super();
 
-  this.doc.body.appendChild(this.container);
-  this.hide = this.hide.bind(this);
-  this.refresh = this.refresh.bind(this);
+    this.doc = htmlDocument;
+    this.#container = this.doc.createElement("div");
+    this.#container.className = "html-editor theme-body";
+    this.#container.style.display = "none";
+    this.#editorInner = this.doc.createElement("div");
+    this.#editorInner.className = "html-editor-inner";
+    this.#container.appendChild(this.#editorInner);
+    this.doc.body.appendChild(this.#container);
+    this.doc.defaultView.addEventListener("resize", this.refresh, true);
 
-  EventEmitter.decorate(this);
+    const config = {
+      mode: Editor.modes.html,
+      lineWrapping: true,
+      styleActiveLine: false,
+      extraKeys: {},
+      theme: "mozilla markup-view",
+    };
+    config.extraKeys[HTMLEditor.#ctrl("Enter")] = this.hide;
+    config.extraKeys.F2 = this.hide;
+    config.extraKeys.Esc = this.hide.bind(this, false);
 
-  this.doc.defaultView.addEventListener("resize", this.refresh, true);
+    this.#container.addEventListener("click", this.hide);
+    this.#editorInner.addEventListener("click", HTMLEditor.#stopPropagation);
 
-  const config = {
-    mode: Editor.modes.html,
-    lineWrapping: true,
-    styleActiveLine: false,
-    extraKeys: {},
-    theme: "mozilla markup-view",
-  };
+    this.editor = new Editor(config);
+    this.editor.appendToLocalElement(this.#editorInner);
 
-  config.extraKeys[ctrl("Enter")] = this.hide;
-  config.extraKeys.F2 = this.hide;
-  config.extraKeys.Esc = this.hide.bind(this, false);
+    this.hide(false);
+  }
 
-  this.container.addEventListener("click", this.hide);
-  this.editorInner.addEventListener("click", stopPropagation);
-  this.editor = new Editor(config);
+  editor = null;
+  doc = null;
 
-  this.editor.appendToLocalElement(this.editorInner);
-  this.hide(false);
-}
+  #container = null;
+  #editorInner = null;
+  #attachedElement = null;
 
-HTMLEditor.prototype = {
+  static #ctrl(k) {
+    return (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") + k;
+  }
+
+  static #stopPropagation(e) {
+    e.stopPropagation();
+  }
+
   
 
 
 
   refresh() {
-    const element = this._attachedElement;
+    const element = this.#attachedElement;
 
     if (element) {
-      this.container.style.top = element.offsetTop + "px";
-      this.container.style.left = element.offsetLeft + "px";
-      this.container.style.width = element.offsetWidth + "px";
-      this.container.style.height = element.parentNode.offsetHeight + "px";
+      this.#container.style.top = element.offsetTop + "px";
+      this.#container.style.left = element.offsetLeft + "px";
+      this.#container.style.width = element.offsetWidth + "px";
+      this.#container.style.height = element.parentNode.offsetHeight + "px";
       this.editor.refresh();
     }
-  },
+  }
 
   
 
@@ -83,22 +95,22 @@ HTMLEditor.prototype = {
 
 
 
-  _attach(element) {
-    this._detach();
-    this._attachedElement = element;
+  #attach(element) {
+    this.#detach();
+    this.#attachedElement = element;
     element.classList.add("html-editor-container");
     this.refresh();
-  },
+  }
 
   
 
 
-  _detach() {
-    if (this._attachedElement) {
-      this._attachedElement.classList.remove("html-editor-container");
-      this._attachedElement = undefined;
+  #detach() {
+    if (this.#attachedElement) {
+      this.#attachedElement.classList.remove("html-editor-container");
+      this.#attachedElement = undefined;
     }
-  },
+  }
 
   
 
@@ -111,23 +123,23 @@ HTMLEditor.prototype = {
 
 
 
-  show(element, text) {
-    if (this._visible) {
+  show = (element, text) => {
+    if (this.isVisible) {
       return;
     }
 
     this._originalValue = text;
     this.editor.setText(text);
-    this._attach(element);
-    this.container.style.display = "flex";
-    this._visible = true;
+    this.#attach(element);
+    this.#container.style.display = "flex";
+    this.isVisible = true;
 
     this.editor.refresh();
     this.editor.focus();
     this.editor.clearHistory();
 
     this.emit("popupshown");
-  },
+  };
 
   
 
@@ -136,42 +148,34 @@ HTMLEditor.prototype = {
 
 
 
-  hide(shouldCommit) {
-    if (!this._visible) {
+  hide = shouldCommit => {
+    if (!this.isVisible) {
       return;
     }
 
-    this.container.style.display = "none";
-    this._detach();
+    this.#container.style.display = "none";
+    this.#detach();
 
     const newValue = this.editor.getText();
     const valueHasChanged = this._originalValue !== newValue;
     const preventCommit = shouldCommit === false || !valueHasChanged;
     this._originalValue = undefined;
-    this._visible = undefined;
+    this.isVisible = undefined;
     this.emit("popuphidden", !preventCommit, newValue);
-  },
+  };
 
   
 
 
   destroy() {
     this.doc.defaultView.removeEventListener("resize", this.refresh, true);
-    this.container.removeEventListener("click", this.hide);
-    this.editorInner.removeEventListener("click", stopPropagation);
+    this.#container.removeEventListener("click", this.hide);
+    this.#editorInner.removeEventListener("click", HTMLEditor.#stopPropagation);
 
     this.hide(false);
-    this.container.remove();
+    this.#container.remove();
     this.editor.destroy();
-  },
-};
-
-function ctrl(k) {
-  return (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") + k;
-}
-
-function stopPropagation(e) {
-  e.stopPropagation();
+  }
 }
 
 module.exports = HTMLEditor;
