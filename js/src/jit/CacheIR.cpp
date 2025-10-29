@@ -465,7 +465,6 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
 
     if (nameOrSymbol) {
       TRY_ATTACH(tryAttachObjectLength(obj, objId, id));
-      TRY_ATTACH(tryAttachDataView(obj, objId, id));
       TRY_ATTACH(tryAttachArrayBufferMaybeShared(obj, objId, id));
       TRY_ATTACH(tryAttachRegExp(obj, objId, id));
       TRY_ATTACH(tryAttachNative(obj, objId, id, receiverId));
@@ -2461,115 +2460,6 @@ AttachDecision GetPropIRGenerator::tryAttachInlinableNativeGetter(
   InlinableNativeIRGenerator nativeGen(*this, target, thisValue, flags,
                                        receiverId);
   return nativeGen.tryAttachStub();
-}
-
-AttachDecision GetPropIRGenerator::tryAttachDataView(HandleObject obj,
-                                                     ObjOperandId objId,
-                                                     HandleId id) {
-  if (!obj->is<DataViewObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* dv = &obj->as<DataViewObject>();
-
-  if (mode_ != ICState::Mode::Specialized) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  bool isByteOffset = id.isAtom(cx_->names().byteOffset);
-  if (!isByteOffset && !id.isAtom(cx_->names().byteLength)) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (dv->hasDetachedBuffer()) {
-    
-    
-    MOZ_ASSERT(!dv->is<ImmutableDataViewObject>(),
-               "immutable data views can't have their buffer detached");
-    return AttachDecision::NoAction;
-  }
-
-  
-  if (dv->is<ResizableDataViewObject>() &&
-      dv->as<ResizableDataViewObject>().isOutOfBounds()) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* holder = nullptr;
-  Maybe<PropertyInfo> prop;
-  NativeGetPropKind kind =
-      CanAttachNativeGetProp(cx_, obj, id, &holder, &prop, pc_);
-  if (kind != NativeGetPropKind::NativeGetter) {
-    return AttachDecision::NoAction;
-  }
-
-  auto& fun = holder->getGetter(*prop)->as<JSFunction>();
-  if (isByteOffset) {
-    if (!DataViewObject::isOriginalByteOffsetGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  } else {
-    if (!DataViewObject::isOriginalByteLengthGetter(fun.native())) {
-      return AttachDecision::NoAction;
-    }
-  }
-
-  maybeEmitIdGuard(id);
-  
-  
-  emitCallGetterResultGuards(dv, holder, id, *prop, objId);
-
-  
-  if (!dv->is<ImmutableDataViewObject>()) {
-    writer.guardHasAttachedArrayBuffer(objId);
-  } else {
-#ifdef DEBUG
-    
-    
-    writer.guardHasAttachedArrayBuffer(objId);
-#endif
-  }
-
-  
-  if (dv->is<ResizableDataViewObject>()) {
-    writer.guardResizableArrayBufferViewInBounds(objId);
-  }
-
-  if (isByteOffset) {
-    
-    
-    size_t byteOffset = dv->byteOffset().valueOr(0);
-    if (byteOffset <= INT32_MAX) {
-      writer.arrayBufferViewByteOffsetInt32Result(objId);
-    } else {
-      writer.arrayBufferViewByteOffsetDoubleResult(objId);
-    }
-    trackAttached("GetProp.DataViewByteOffset");
-  } else {
-    size_t byteLength = dv->byteLength().valueOr(0);
-    if (!dv->is<ResizableDataViewObject>()) {
-      if (byteLength <= INT32_MAX) {
-        writer.loadArrayBufferViewLengthInt32Result(objId);
-      } else {
-        writer.loadArrayBufferViewLengthDoubleResult(objId);
-      }
-    } else {
-      if (byteLength <= INT32_MAX) {
-        writer.resizableDataViewByteLengthInt32Result(objId);
-      } else {
-        writer.resizableDataViewByteLengthDoubleResult(objId);
-      }
-    }
-    trackAttached("GetProp.DataViewByteLength");
-  }
-  writer.returnFromIC();
-
-  return AttachDecision::Attach;
 }
 
 AttachDecision GetPropIRGenerator::tryAttachArrayBufferMaybeShared(
@@ -7135,14 +7025,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (dv->is<FixedLengthDataViewObject>()) {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::FixedLengthDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
   } else if (dv->is<ImmutableDataViewObject>()) {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::ImmutableDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ImmutableDataView);
   } else {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::ResizableDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
   }
 
   
@@ -7215,11 +7102,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   ObjOperandId objId = writer.guardToObject(thisValId);
 
   if (dv->is<FixedLengthDataViewObject>()) {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::FixedLengthDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
   } else {
-    emitOptimisticClassGuard(objId, &thisval_.toObject(),
-                             GuardClassKind::ResizableDataView);
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
   }
 
   
@@ -7246,6 +7131,166 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   writer.returnFromIC();
 
   trackAttached("DataViewSet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteLength() {
+  
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<DataViewObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* dv = &thisval_.toObject().as<DataViewObject>();
+
+  
+  if (dv->hasDetachedBuffer()) {
+    
+    
+    MOZ_ASSERT(!dv->is<ImmutableDataViewObject>(),
+               "immutable data views can't have their buffer detached");
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (dv->is<ResizableDataViewObject>() &&
+      dv->as<ResizableDataViewObject>().isOutOfBounds()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  if (dv->is<FixedLengthDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
+  } else if (dv->is<ImmutableDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ImmutableDataView);
+  } else {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
+  }
+
+  
+  if (!dv->is<ImmutableDataViewObject>()) {
+    writer.guardHasAttachedArrayBuffer(objId);
+  } else {
+#ifdef DEBUG
+    
+    
+    writer.guardHasAttachedArrayBuffer(objId);
+#endif
+  }
+
+  
+  if (dv->is<ResizableDataViewObject>()) {
+    writer.guardResizableArrayBufferViewInBounds(objId);
+  }
+
+  size_t byteLength = dv->byteLength().valueOr(0);
+  if (!dv->is<ResizableDataViewObject>()) {
+    if (byteLength <= INT32_MAX) {
+      writer.loadArrayBufferViewLengthInt32Result(objId);
+    } else {
+      writer.loadArrayBufferViewLengthDoubleResult(objId);
+    }
+  } else {
+    if (byteLength <= INT32_MAX) {
+      writer.resizableDataViewByteLengthInt32Result(objId);
+    } else {
+      writer.resizableDataViewByteLengthDoubleResult(objId);
+    }
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("DataViewByteLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDataViewByteOffset() {
+  
+  if (args_.length() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isObject() || !thisval_.toObject().is<DataViewObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* dv = &thisval_.toObject().as<DataViewObject>();
+
+  
+  if (dv->hasDetachedBuffer()) {
+    
+    
+    MOZ_ASSERT(!dv->is<ImmutableDataViewObject>(),
+               "immutable data views can't have their buffer detached");
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (dv->is<ResizableDataViewObject>() &&
+      dv->as<ResizableDataViewObject>().isOutOfBounds()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId = initializeInputOperand();
+
+  
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  if (dv->is<FixedLengthDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::FixedLengthDataView);
+  } else if (dv->is<ImmutableDataViewObject>()) {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ImmutableDataView);
+  } else {
+    emitOptimisticClassGuard(objId, dv, GuardClassKind::ResizableDataView);
+  }
+
+  
+  if (!dv->is<ImmutableDataViewObject>()) {
+    writer.guardHasAttachedArrayBuffer(objId);
+  } else {
+#ifdef DEBUG
+    
+    
+    writer.guardHasAttachedArrayBuffer(objId);
+#endif
+  }
+
+  
+  if (dv->is<ResizableDataViewObject>()) {
+    writer.guardResizableArrayBufferViewInBounds(objId);
+  }
+
+  
+  
+  size_t byteOffset = dv->byteOffset().valueOr(0);
+  if (byteOffset <= INT32_MAX) {
+    writer.arrayBufferViewByteOffsetInt32Result(objId);
+  } else {
+    writer.arrayBufferViewByteOffsetDoubleResult(objId);
+  }
+
+  writer.returnFromIC();
+
+  trackAttached("DataViewByteOffset");
   return AttachDecision::Attach;
 }
 
@@ -13084,6 +13129,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachDataViewSet(Scalar::BigInt64);
     case InlinableNative::DataViewSetBigUint64:
       return tryAttachDataViewSet(Scalar::BigUint64);
+    case InlinableNative::DataViewByteLength:
+      return tryAttachDataViewByteLength();
+    case InlinableNative::DataViewByteOffset:
+      return tryAttachDataViewByteOffset();
 
     
     case InlinableNative::FunctionBind:
