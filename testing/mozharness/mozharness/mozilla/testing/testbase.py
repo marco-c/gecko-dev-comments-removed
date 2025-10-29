@@ -3,13 +3,11 @@
 
 
 
-import concurrent.futures
 import copy
 import json
 import os
 import platform
 import ssl
-import traceback
 
 from six.moves import urllib
 from six.moves.urllib.parse import ParseResult, urlparse
@@ -387,8 +385,7 @@ You can set this by specifying --test-url URL
                 )
         return package_requirements
 
-    def _download_test_packages(self, suite_categories, extract_dirs, executor):
-        futures = set()
+    def _download_test_packages(self, suite_categories, extract_dirs):
         
         
         
@@ -472,13 +469,7 @@ You can set this by specifying --test-url URL
                 unpack_dirs = None
 
             url = self.query_build_dir_url(file_name)
-            futures.add(
-                executor.submit(
-                    self.download_unpack, url, target_dir, extract_dirs=unpack_dirs
-                )
-            )
-
-        return futures
+            self.download_unpack(url, target_dir, extract_dirs=unpack_dirs)
 
     def _download_test_zip(self, extract_dirs=None):
         dirs = self.query_abs_dirs()
@@ -576,54 +567,33 @@ You can set this by specifying --test-url URL
                 self.info("Replacing url %s -> %s" % (url, new_url))
                 setattr(self, attr, new_url)
 
-        futures = set()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            if "test_url" in self.config:
-                
-                
-                if self.test_packages_url:
-                    self.error(
-                        'Test data will be downloaded from "%s", the specified test '
-                        ' package data at "%s" will be ignored.'
-                        % (self.config.get("test_url"), self.test_packages_url)
-                    )
-
-                futures.add(executor.submit(self._download_test_zip, extract_dirs))
-            else:
-                if not self.test_packages_url:
-                    
-                    
-                    
-                    
-                    self.test_packages_url = self.query_prefixed_build_dir_url(
-                        ".test_packages.json"
-                    )
-
-                suite_categories = suite_categories or ["common"]
-                futures.update(
-                    self._download_test_packages(
-                        suite_categories, extract_dirs, executor
-                    )
+        if "test_url" in self.config:
+            
+            
+            if self.test_packages_url:
+                self.error(
+                    'Test data will be downloaded from "%s", the specified test '
+                    ' package data at "%s" will be ignored.'
+                    % (self.config.get("test_url"), self.test_packages_url)
                 )
 
-            futures.add(executor.submit(self._download_installer))
-            if self.config.get("download_symbols"):
-                futures.add(executor.submit(self._download_and_extract_symbols))
+            self._download_test_zip(extract_dirs)
+        else:
+            if not self.test_packages_url:
+                
+                
+                
+                
+                self.test_packages_url = self.query_prefixed_build_dir_url(
+                    ".test_packages.json"
+                )
 
-        concurrent.futures.wait(futures)
+            suite_categories = suite_categories or ["common"]
+            self._download_test_packages(suite_categories, extract_dirs)
 
-        exceptions = []
-        for future in futures:
-            if exc := future.exception():
-                exceptions.append(exc)
-        if exceptions:
-            
-            
-            
-            msg = ["Got download error(s):\n"]
-            for exc in exceptions:
-                msg.extend(traceback.format_exception(exc))
-            self.fatal("".join(msg))
+        self._download_installer()
+        if self.config.get("download_symbols"):
+            self._download_and_extract_symbols()
 
     
 
