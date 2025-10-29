@@ -5,6 +5,7 @@
 
 
 
+
 'use strict';
 
 
@@ -13,8 +14,7 @@ const expectations = [
     format: 'deflate',
 
     
-    baseInput: [120, 156, 75, 173, 40, 72, 77, 46, 73, 77, 81, 200, 47, 45, 41,
-                40, 45, 1, 0, 48, 173, 6, 36],
+    baseInput: deflateChunkValue,
 
     
     
@@ -102,9 +102,7 @@ const expectations = [
     format: 'gzip',
 
     
-    baseInput: [31, 139, 8, 0, 0, 0, 0, 0, 0, 3, 75, 173, 40, 72, 77, 46, 73,
-                77, 81, 200, 47, 45, 41, 40, 45, 1, 0, 176, 1, 57, 179, 15, 0,
-                0, 0],
+    baseInput: gzipChunkValue,
 
     
     
@@ -274,18 +272,18 @@ function corruptInput(input, offset, length, value) {
 
 for (const { format, baseInput, fields } of expectations) {
   promise_test(async () => {
-    const { result } = await tryDecompress(new Uint8Array(baseInput), format);
+    const { result } = await tryDecompress(baseInput, format);
     assert_equals(result, 'success', 'decompression should succeed');
   }, `the unchanged input for '${format}' should decompress successfully`);
 
   promise_test(async () => {
-    const truncatedInput = new Uint8Array(baseInput.slice(0, -1));
+    const truncatedInput = baseInput.subarray(0, -1);
     const { result } = await tryDecompress(truncatedInput, format);
     assert_equals(result, 'error', 'decompression should fail');
   }, `truncating the input for '${format}' should give an error`);
 
   promise_test(async () => {
-    const extendedInput = new Uint8Array(baseInput.concat([0]));
+    const extendedInput = new Uint8Array([...baseInput, 0]);
     const { result } = await tryDecompress(extendedInput, format);
     assert_equals(result, 'error', 'decompression should fail');
   }, `trailing junk for '${format}' should give an error`);
