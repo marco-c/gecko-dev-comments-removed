@@ -1374,7 +1374,11 @@ MarkupView.prototype = {
     } else if (type == "idref") {
       
       nodeFront.walkerFront
-        .getIdrefNode(nodeFront, CSS.escape(link))
+        .getIdrefNode(
+          nodeFront,
+          
+          link
+        )
         .then(node => {
           if (!node) {
             this.emitForTests("idref-attribute-link-failed");
