@@ -3875,6 +3875,14 @@ locked_profiler_stream_json_for_this_process(
       ActivePS::GatherJSSources(aLock);
 
   
+  
+  Maybe<nsTHashMap<SourceId, IndexIntoSourceTable>> sourceIdToIndexMap;
+  if (!jsSourceEntries.IsEmpty()) {
+    sourceIdToIndexMap.emplace(
+        buffer.StreamSourceTableToJSON(aWriter, jsSourceEntries));
+  }
+
+  
   aWriter.StartArrayProperty("threads");
   {
     ActivePS::DiscardExpiredDeadProfiledThreads(aLock);
