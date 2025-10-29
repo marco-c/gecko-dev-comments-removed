@@ -455,7 +455,7 @@ nsWindow::nsWindow()
       mConfiguredClearColor(false),
       mGotNonBlankPaint(false),
       mNeedsToRetryCapturingMouse(false) {
-  mSizeConstraints.mMaxSize = GetSafeWindowSize(mSizeConstraints.mMaxSize);
+  SetSafeWindowSize(mSizeConstraints.mMaxSize);
 
   if (!gGlobalsInitialized) {
     gGlobalsInitialized = true;
@@ -592,15 +592,14 @@ void nsWindow::DispatchResized() {
 
   auto clientSize = GetClientSize();
 
-  LOG("nsWindow::DispatchResized() size [%d, %d] client size [%d, %d]",
-      (int)(mBounds.width), (int)(mBounds.height), (int)clientSize.width,
+  LOG("nsWindow::DispatchResized() client size [%d, %d]", (int)clientSize.width,
       (int)clientSize.height);
 
   
   if (mCompositorSession &&
-      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
-    gfxCriticalNoteOnce << "Invalid mBounds in MaybeDispatchResized " << mBounds
-                        << " size state " << mSizeMode;
+      !wr::WindowSizeSanityCheck(clientSize.width, clientSize.height)) {
+    gfxCriticalNoteOnce << "Invalid mClientArea in MaybeDispatchResized "
+                        << clientSize << " size state " << mSizeMode;
   }
 
   
@@ -771,14 +770,7 @@ float nsWindow::GetDPI() {
 double nsWindow::GetDefaultScaleInternal() { return FractionalScaleFactor(); }
 
 DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() {
-#ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    return DesktopToLayoutDeviceScale(FractionalScaleFactor());
-  }
-#endif
-
-  
-  return DesktopToLayoutDeviceScale(1.0);
+  return DesktopToLayoutDeviceScale(FractionalScaleFactor());
 }
 
 bool nsWindow::WidgetTypeSupportsAcceleration() {
@@ -895,8 +887,9 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   double dpiScale = GetDefaultScale().scale;
 
   
-  int32_t logWidth = std::max(NSToIntRound(mBounds.width / dpiScale), 1);
-  int32_t logHeight = std::max(NSToIntRound(mBounds.height / dpiScale), 1);
+  auto bounds = GetScreenBounds();
+  int32_t logWidth = std::max(NSToIntRound(bounds.width / dpiScale), 1);
+  int32_t logHeight = std::max(NSToIntRound(bounds.height / dpiScale), 1);
 
   
 
@@ -927,33 +920,43 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   aPoint = ConstrainPositionToBounds(aPoint, {logWidth, logHeight}, screenRect);
 }
 
-void nsWindow::ConstrainSize(int* aWidth, int* aHeight) {
+bool nsWindow::ConstrainSizeWithScale(int* aWidth, int* aHeight,
+                                      double aScale) {
   
   
-  *aWidth -= mClientMargin.LeftRight();
-  *aHeight -= mClientMargin.TopBottom();
-  nsIWidget::ConstrainSize(aWidth, aHeight);
-  *aWidth += mClientMargin.LeftRight();
-  *aHeight += mClientMargin.TopBottom();
+  int scaledWidth = (*aWidth - mClientMargin.LeftRight()) * aScale;
+  int scaledHeight = (*aHeight - mClientMargin.TopBottom()) * aScale;
+  int tmpWidth = scaledWidth, tmpHeight = scaledHeight;
+  nsIWidget::ConstrainSize(&tmpWidth, &tmpHeight);
+  if (tmpWidth != scaledWidth || tmpHeight != scaledHeight) {
+    *aWidth = int(round(tmpWidth / aScale)) + mClientMargin.LeftRight();
+    *aHeight = int(round(tmpHeight / aScale)) + mClientMargin.TopBottom();
+    return true;
+  }
+  return false;
 }
 
+
+
 void nsWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
-  mSizeConstraints.mMinSize = GetSafeWindowSize(aConstraints.mMinSize);
-  mSizeConstraints.mMaxSize = GetSafeWindowSize(aConstraints.mMaxSize);
+  mSizeConstraints = aConstraints;
+  SetSafeWindowSize(mSizeConstraints.mMinSize);
+  SetSafeWindowSize(mSizeConstraints.mMaxSize);
 
   
   if (SizeMode() == nsSizeMode_Normal) {
+    auto margin = ToLayoutDevicePixels(mClientMargin);
     if (mSizeConstraints.mMinSize.height) {
-      mSizeConstraints.mMinSize.height -= mClientMargin.TopBottom();
+      mSizeConstraints.mMinSize.height -= margin.TopBottom();
     }
     if (mSizeConstraints.mMinSize.width) {
-      mSizeConstraints.mMinSize.width -= mClientMargin.LeftRight();
+      mSizeConstraints.mMinSize.width -= margin.LeftRight();
     }
     if (mSizeConstraints.mMaxSize.height != NS_MAXSIZE) {
-      mSizeConstraints.mMaxSize.height -= mClientMargin.TopBottom();
+      mSizeConstraints.mMaxSize.height -= margin.TopBottom();
     }
     if (mSizeConstraints.mMaxSize.width != NS_MAXSIZE) {
-      mSizeConstraints.mMaxSize.width -= mClientMargin.LeftRight();
+      mSizeConstraints.mMaxSize.width -= margin.LeftRight();
     }
   }
 
@@ -1000,19 +1003,21 @@ void nsWindow::ApplySizeConstraints() {
   if (constraints.mMinSize != LayoutDeviceIntSize()) {
     gtk_widget_set_size_request(
         GTK_WIDGET(mContainer),
-        DevicePixelsToGdkCoordRoundUp(constraints.mMinSize.width),
-        DevicePixelsToGdkCoordRoundUp(constraints.mMinSize.height));
+        DevicePixelsToGdkCoordRound(constraints.mMinSize.width),
+        DevicePixelsToGdkCoordRound(constraints.mMinSize.height));
     if (ToplevelUsesCSD()) {
-      constraints.mMinSize.height += mClientMargin.TopBottom();
-      constraints.mMinSize.width += mClientMargin.LeftRight();
+      auto margin = ToLayoutDevicePixels(mClientMargin);
+      constraints.mMinSize.height += margin.TopBottom();
+      constraints.mMinSize.width += margin.LeftRight();
     }
     hints |= GDK_HINT_MIN_SIZE;
   }
   if (mSizeConstraints.mMaxSize !=
       LayoutDeviceIntSize(NS_MAXSIZE, NS_MAXSIZE)) {
     if (ToplevelUsesCSD()) {
-      constraints.mMaxSize.height += mClientMargin.TopBottom();
-      constraints.mMaxSize.width += mClientMargin.LeftRight();
+      auto margin = ToLayoutDevicePixels(mClientMargin);
+      constraints.mMaxSize.height += margin.TopBottom();
+      constraints.mMaxSize.width += margin.LeftRight();
     }
     hints |= GDK_HINT_MAX_SIZE;
   }
@@ -1020,11 +1025,10 @@ void nsWindow::ApplySizeConstraints() {
   
   
   GdkGeometry geometry{
-      .min_width = DevicePixelsToGdkCoordRoundUp(constraints.mMinSize.width),
-      .min_height = DevicePixelsToGdkCoordRoundUp(constraints.mMinSize.height),
-      .max_width = DevicePixelsToGdkCoordRoundDown(constraints.mMaxSize.width),
-      .max_height =
-          DevicePixelsToGdkCoordRoundDown(constraints.mMaxSize.height),
+      .min_width = DevicePixelsToGdkCoordRound(constraints.mMinSize.width),
+      .min_height = DevicePixelsToGdkCoordRound(constraints.mMinSize.height),
+      .max_width = DevicePixelsToGdkCoordRound(constraints.mMaxSize.width),
+      .max_height = DevicePixelsToGdkCoordRound(constraints.mMaxSize.height),
   };
 
   if (mAspectRatio != 0.0f && !mAspectResizer) {
@@ -1072,33 +1076,58 @@ void nsWindow::Show(bool aState) {
   RefreshWindowClass();
 }
 
-void nsWindow::ResizeInt(const Maybe<LayoutDeviceIntPoint>& aMove,
-                         LayoutDeviceIntSize aSize) {
+LayoutDeviceIntPoint nsWindow::ToLayoutDevicePixels(
+    const DesktopIntPoint& aPoint) {
+  return LayoutDeviceIntPoint::Round(aPoint * GetDesktopToDeviceScale());
+}
+
+LayoutDeviceIntSize nsWindow::ToLayoutDevicePixels(
+    const DesktopIntSize& aSize) {
+  return LayoutDeviceIntSize::Round(aSize * GetDesktopToDeviceScale());
+}
+
+LayoutDeviceIntRect nsWindow::ToLayoutDevicePixels(
+    const DesktopIntRect& aRect) {
+  return LayoutDeviceIntRect::Round(aRect * GetDesktopToDeviceScale());
+}
+
+LayoutDeviceIntMargin nsWindow::ToLayoutDevicePixels(
+    const DesktopIntMargin& aMargin) {
+  return (aMargin * GetDesktopToDeviceScale()).Rounded();
+}
+
+DesktopIntPoint nsWindow::ToDesktopPixels(const LayoutDeviceIntPoint& aPoint) {
+  return DesktopIntPoint::Round(aPoint / GetDesktopToDeviceScale());
+}
+
+DesktopIntSize nsWindow::ToDesktopPixels(const LayoutDeviceIntSize& aSize) {
+  return DesktopIntSize::Round(aSize / GetDesktopToDeviceScale());
+}
+
+DesktopIntRect nsWindow::ToDesktopPixels(const LayoutDeviceIntRect& aRect) {
+  return DesktopIntRect::Round(aRect / GetDesktopToDeviceScale());
+}
+
+void nsWindow::ResizeInt(const Maybe<DesktopIntPoint>& aMove,
+                         DesktopIntSize aSize) {
   LOG("nsWindow::ResizeInt w:%d h:%d\n", aSize.width, aSize.height);
+
   const bool moved =
-      aMove && (*aMove != mLastMoveRequest || mBounds.TopLeft() != *aMove);
+      aMove && (*aMove != mLastMoveRequest || mClientArea.TopLeft() != *aMove);
   if (moved) {
     LOG("  with move to left:%d top:%d", aMove->x.value, aMove->y.value);
     mLastMoveRequest = *aMove;
   }
 
-  ConstrainSize(&aSize.width, &aSize.height);
-  LOG("  ConstrainSize: w:%d h;%d\n", aSize.width, aSize.height);
-
-  const bool resized = aSize != mLastSizeRequest || mBounds.Size() != aSize;
+  const bool resized = aSize != mLastSizeRequest || mClientArea.Size() != aSize;
 #if MOZ_LOGGING
-  LOG("  resized %d aSize [%d, %d] mLastSizeRequest [%d, %d] mBounds [%d, %d]",
+  LOG("  resized %d aSize [%d, %d] mLastSizeRequest [%d, %d] "
+      "mClientArea [%d, %d]",
       resized, aSize.width, aSize.height, mLastSizeRequest.width,
-      mLastSizeRequest.height, mBounds.width, mBounds.height);
+      mLastSizeRequest.height, mClientArea.width, mClientArea.height);
 #endif
 
   mLastSizeRequest = aSize;
-  
-  if (mCompositorSession &&
-      !wr::WindowSizeSanityCheck(aSize.width, aSize.height)) {
-    gfxCriticalNoteOnce << "Invalid aSize in ResizeInt " << aSize
-                        << " size state " << mSizeMode;
-  }
 
   
   if (mAspectRatio != 0.0) {
@@ -1118,22 +1147,46 @@ void nsWindow::ResizeInt(const Maybe<LayoutDeviceIntPoint>& aMove,
 }
 
 void nsWindow::Resize(const DesktopSize& aSize, bool aRepaint) {
-  auto size = LayoutDeviceIntSize::Round(aSize * GetDesktopToDeviceScale());
   LOG("nsWindow::Resize %s (scaled %s)", ToString(aSize).c_str(),
-      ToString(size).c_str());
+      ToString(aSize).c_str());
+
+  double scale = GetDesktopToDeviceScale().scale;
+  auto size = DesktopIntSize::Round(aSize);
+  auto scaledSize = ToLayoutDevicePixels(size);
+
+  if (ConstrainSizeWithScale(&size.width, &size.height, scale)) {
+    LOG("  ConstrainSizeWithScale: w:%d h:%d coord scale %f", size.width,
+        size.height, scale);
+  }
+  if (mCompositorSession &&
+      !wr::WindowSizeSanityCheck(scaledSize.width, scaledSize.height)) {
+    gfxCriticalNoteOnce << "Invalid aSize in ResizeInt " << scaledSize
+                        << " size state " << mSizeMode;
+  }
+
   ResizeInt(Nothing(), size);
 }
 
 void nsWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
-  auto size =
-      LayoutDeviceIntSize::Round(aRect.Size() * GetDesktopToDeviceScale());
-  auto topLeft =
-      LayoutDeviceIntPoint::Round(aRect.TopLeft() * GetDesktopToDeviceScale());
+  double scale = GetDesktopToDeviceScale().scale;
+  auto size = DesktopIntSize::Round(aRect.Size());
+  auto topLeft = DesktopIntPoint::Round(aRect.TopLeft());
+  auto scaledSize = ToLayoutDevicePixels(size);
 
   LOG("nsWindow::Resize [%.2f,%.2f] -> [%.2f x %.2f] scaled [%d,%d] -> "
-      "[%d x %d] repaint %d\n",
+      "[%d x %d] repaint %d",
       aRect.x, aRect.y, aRect.width, aRect.height, topLeft.x.value,
       topLeft.y.value, size.width, size.height, aRepaint);
+
+  if (ConstrainSizeWithScale(&size.width, &size.height, scale)) {
+    LOG("  ConstrainSizeWithScale: w:%d h:%d coord scale %f", size.width,
+        size.height, scale);
+  }
+  if (mCompositorSession &&
+      !wr::WindowSizeSanityCheck(scaledSize.width, scaledSize.height)) {
+    gfxCriticalNoteOnce << "Invalid aSize in ResizeInt " << scaledSize
+                        << " size state " << mSizeMode;
+  }
 
   ResizeInt(Some(topLeft), size);
 }
@@ -1143,27 +1196,30 @@ void nsWindow::Enable(bool aState) { mEnabled = aState; }
 bool nsWindow::IsEnabled() const { return mEnabled; }
 
 void nsWindow::Move(const DesktopPoint& aTopLeft) {
-  auto request =
-      LayoutDeviceIntPoint::Round(aTopLeft * GetDesktopToDeviceScale());
-  LOG("nsWindow::Move to %d x %d\n", request.x.value, request.y.value);
+  double scale = GetDesktopToDeviceScale().scale;
+  auto request = DesktopIntPoint::Round(aTopLeft);
+
+  LOG("nsWindow::Move to [%d x %d] scale %f scaled [%.2f x %.2f]",
+      request.x.value, request.y.value, scale, request.x.value * scale,
+      request.y.value * scale);
 
   if (mSizeMode != nsSizeMode_Normal && IsTopLevelWidget()) {
-    LOG("  size state is not normal, bailing");
+    LOG("  size state is not normal, can't move, bailing");
     return;
   }
 
   
   
   
-  LOG("  bounds %d x %d\n", mBounds.x, mBounds.y);
-  if (mBounds.TopLeft() == request && mLastMoveRequest == request &&
+  auto pos = GetScreenBoundsUnscaled().TopLeft();
+  LOG("  bounds %d x %d\n", int(pos.x), int(pos.y));
+  if (pos == request && mLastMoveRequest == request &&
       mWindowType != WindowType::Popup) {
     LOG("  position is the same, return\n");
     return;
   }
 
   
-
   mLastMoveRequest = request;
 
   if (!mCreated) {
@@ -1568,10 +1624,8 @@ void nsWindow::WaylandPopupHierarchyCalculatePositions() {
     
     
     LOG("  popup [%p] bounds [%d, %d] -> [%d x %d]", popup,
-        (int)(popup->mBounds.x / FractionalScaleFactor()),
-        (int)(popup->mBounds.y / FractionalScaleFactor()),
-        (int)(popup->mBounds.width / FractionalScaleFactor()),
-        (int)(popup->mBounds.height / FractionalScaleFactor()));
+        (int)(popup->mClientArea.x), (int)(popup->mClientArea.y),
+        (int)(popup->mClientArea.width), (int)(popup->mClientArea.height));
 #ifdef MOZ_LOGGING
     if (LOG_ENABLED()) {
       if (nsMenuPopupFrame* popupFrame = GetPopupFrame()) {
@@ -1661,7 +1715,8 @@ GdkPoint nsWindow::WaylandGetParentPosition() {
   GdkPoint topLeft = {0, 0};
   nsWindow* window = GetEffectiveParent();
   if (window->IsPopup()) {
-    topLeft = DevicePixelsToGdkPointRoundDown(window->WidgetToScreenOffset());
+    auto offset = window->WidgetToScreenOffsetUnscaled();
+    topLeft = GdkPoint{offset.x, offset.y};
   }
   LOG("nsWindow::WaylandGetParentPosition() [%d, %d]\n", topLeft.x, topLeft.y);
   return topLeft;
@@ -2015,10 +2070,17 @@ void nsWindow::WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize) {
     }
   }
   if (aMove) {
-    LOG("  needPositionUpdate, bounds [%d, %d]", mBounds.x, mBounds.y);
-    NotifyWindowMoved(mBounds.x, mBounds.y, ByMoveToRect::Yes);
+    auto pos = ToLayoutDevicePixels(mClientArea);
+    LOG("  needPositionUpdate, bounds [%d, %d]", pos.x, pos.y);
+    NotifyWindowMoved(pos.x, pos.y, ByMoveToRect::Yes);
   }
 }
+
+#ifdef MOZ_WAYLAND
+LayoutDeviceIntSize nsWindow::GetMoveToRectPopupSize() {
+  return ToLayoutDevicePixels(mMoveToRectPopupSize);
+}
+#endif
 
 void nsWindow::NativeMoveResizeWaylandPopupCallback(
     const GdkRectangle* aFinalSize, bool aFlippedX, bool aFlippedY) {
@@ -2062,7 +2124,8 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   
   
   
-  const GdkRectangle currentGdkRect = DevicePixelsToGdkRectRoundOut(mBounds);
+  const GdkRectangle currentGdkRect{mClientArea.x, mClientArea.y,
+                                    mClientArea.width, mClientArea.height};
   auto scale = GdkCeiledScaleFactor();
   auto IsSubstantiallyDifferent = [=](gint a, gint b) {
     return std::abs(a - b) > scale;
@@ -2074,17 +2137,17 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   const bool needsSizeUpdate =
       IsSubstantiallyDifferent(finalGdkRect.width, currentGdkRect.width) ||
       IsSubstantiallyDifferent(finalGdkRect.height, currentGdkRect.height);
+  const DesktopIntRect newClientArea = DesktopIntRect(
+      finalGdkRect.x, finalGdkRect.y, finalGdkRect.width, finalGdkRect.height);
 
-  const LayoutDeviceIntRect newBounds =
-      MaybeRoundToDisplayPixels(GdkRectToDevicePixels(finalGdkRect));
-  LOG("  orig gdk [%d, %d] -> [%d x %d]\n", currentGdkRect.x, currentGdkRect.y,
+  LOG("  orig gdk [%d, %d] -> [%d x %d]", currentGdkRect.x, currentGdkRect.y,
       currentGdkRect.width, currentGdkRect.height);
   LOG("  new gdk [%d, %d] -> [%d x %d]\n", finalGdkRect.x, finalGdkRect.y,
       finalGdkRect.width, finalGdkRect.height);
-  LOG("  orig mBounds [%d, %d] -> [%d x %d]\n", mBounds.x, mBounds.y,
-      mBounds.width, mBounds.height);
-  LOG("  new mBounds [%d, %d] -> [%d x %d]", newBounds.x, newBounds.y,
-      newBounds.width, newBounds.height);
+  LOG("  orig mClientArea [%d, %d] -> [%d x %d]", mClientArea.x, mClientArea.y,
+      mClientArea.width, mClientArea.height);
+  LOG("  new mClientArea [%d, %d] -> [%d x %d]", newClientArea.x,
+      newClientArea.y, newClientArea.width, newClientArea.height);
 
   if (!needsSizeUpdate && !needsPositionUpdate) {
     return;
@@ -2095,22 +2158,25 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
     
     
     
-    if (newBounds.width < mLastSizeRequest.width) {
-      mMoveToRectPopupSize.width = newBounds.width;
+    if (mClientArea.width < mLastSizeRequest.width) {
+      mMoveToRectPopupSize.width = newClientArea.width;
     }
-    if (newBounds.height < mLastSizeRequest.height) {
-      mMoveToRectPopupSize.height = newBounds.height;
+    if (mClientArea.height < mLastSizeRequest.height) {
+      mMoveToRectPopupSize.height = newClientArea.height;
     }
     LOG("  mMoveToRectPopupSize set to [%d, %d]", mMoveToRectPopupSize.width,
         mMoveToRectPopupSize.height);
   }
-  mBounds = newBounds;
-  mLastSizeRequest = newBounds.Size();
-  mLastMoveRequest = newBounds.TopLeft();
+
+  mClientArea = newClientArea;
+  mLastSizeRequest = newClientArea.Size();
+  mLastMoveRequest = newClientArea.TopLeft();
+
   
+  auto scaledSize = ToLayoutDevicePixels(mClientArea);
   if (mCompositorSession &&
-      !wr::WindowSizeSanityCheck(mBounds.width, mBounds.height)) {
-    gfxCriticalNoteOnce << "Invalid mBounds in PopupCallback " << mBounds
+      !wr::WindowSizeSanityCheck(scaledSize.width, scaledSize.height)) {
+    gfxCriticalNoteOnce << "Invalid mClientArea in PopupCallback " << scaledSize
                         << " size state " << mSizeMode;
   }
   WaylandPopupPropagateChangesToLayout(needsPositionUpdate, needsSizeUpdate);
@@ -2151,14 +2217,15 @@ bool nsWindow::IsPopupDirectionRTL() {
 
 
 void nsWindow::WaylandPopupSetDirectPosition() {
-  const LayoutDeviceIntRect frameRect(mLastMoveRequest, mLastSizeRequest);
-  GdkRectangle rect = DevicePixelsToGdkRectRoundOut(frameRect);
+  GdkRectangle rect{mLastMoveRequest.x, mLastMoveRequest.y,
+                    mLastSizeRequest.width, mLastSizeRequest.height};
 
   LOG("nsWindow::WaylandPopupSetDirectPosition %d,%d -> %d x %d\n", rect.x,
       rect.y, rect.width, rect.height);
 
   mPopupPosition = {rect.x, rect.y};
-  mBounds = frameRect;
+  mClientArea.MoveTo(mLastMoveRequest);
+  mClientArea.SizeTo(mLastSizeRequest);
 
   if (mIsDragPopup) {
     gtk_window_move(GTK_WINDOW(mShell), rect.x, rect.y);
@@ -2205,8 +2272,8 @@ void nsWindow::WaylandPopupSetDirectPosition() {
   gtk_window_resize(GTK_WINDOW(mShell), rect.width, rect.height);
 
   if (mPopupPosition.x != rect.x) {
-    mBounds.MoveTo(GdkPointToDevicePixels(mPopupPosition));
-    LOG("  setting new bounds [%d, %d]\n", mBounds.x, mBounds.y);
+    mClientArea.MoveTo(mPopupPosition.x, mPopupPosition.y);
+    LOG("  setting new client area [%d, %d]\n", mClientArea.x, mClientArea.y);
     WaylandPopupPropagateChangesToLayout( true,  false);
   }
 }
@@ -2228,8 +2295,8 @@ bool nsWindow::WaylandPopupFitsToplevelWindow() {
   int parentHeight = gdk_window_get_height(toplevelGdkWindow);
   LOG("  parent size %d x %d", parentWidth, parentHeight);
 
-  GdkRectangle requestedRect = DevicePixelsToGdkRectRoundOut(
-      LayoutDeviceIntRect(mLastMoveRequest, mLastSizeRequest));
+  GdkRectangle requestedRect{mLastMoveRequest.x, mLastMoveRequest.y,
+                             mLastSizeRequest.width, mLastSizeRequest.height};
   LOG("  popup topleft %d, %d size %d x %d", requestedRect.x, requestedRect.y,
       requestedRect.width, requestedRect.height);
   bool fits = requestedRect.x >= 0 && requestedRect.y >= 0 &&
@@ -2240,10 +2307,10 @@ bool nsWindow::WaylandPopupFitsToplevelWindow() {
 }
 
 void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
-  const LayoutDeviceIntRect frameRect(mLastMoveRequest, mLastSizeRequest);
-  GdkRectangle rect = DevicePixelsToGdkRectRoundOut(frameRect);
+  GdkRectangle rect{mLastMoveRequest.x, mLastMoveRequest.y,
+                    mLastSizeRequest.width, mLastSizeRequest.height};
 
-  LOG("nsWindow::NativeMoveResizeWaylandPopup Bounds %d,%d -> %d x %d move %d "
+  LOG("nsWindow::NativeMoveResizeWaylandPopup [%d,%d] -> [%d x %d] move %d "
       "resize %d\n",
       rect.x, rect.y, rect.width, rect.height, aMove, aResize);
 
@@ -2253,6 +2320,20 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
     LOG("  Bounds are not sane (width: %d height: %d)\n",
         mLastSizeRequest.width, mLastSizeRequest.height);
     return;
+  }
+
+  
+  
+  if (!mClientMargin.IsAllZero()) {
+    gfxCriticalNoteOnce << "Invalid non-zero margin for WaylandPopup!";
+    if (aMove) {
+      gtk_window_move(GTK_WINDOW(mShell), mLastMoveRequest.x,
+                      mLastMoveRequest.y);
+    }
+    if (aResize) {
+      gtk_window_resize(GTK_WINDOW(mShell), mLastSizeRequest.width,
+                        mLastSizeRequest.height);
+    }
   }
 
   if (mWaitingForMoveToRectCallback) {
@@ -2304,7 +2385,8 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   LOG("  popup position changed from [%d, %d] to [%d, %d]\n", mPopupPosition.x,
       mPopupPosition.y, rect.x, rect.y);
   mPopupPosition = {rect.x, rect.y};
-  mBounds = frameRect;
+  mClientArea.MoveTo(mLastMoveRequest);
+  mClientArea.SizeTo(mLastSizeRequest);
 
   UpdateWaylandPopupHierarchy();
 }
@@ -2618,15 +2700,18 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
   
   
   
-  LayoutDeviceIntRect anchorRect = mPopupMoveToRectParams.mAnchorRect;
+  DesktopIntRect anchorRect =
+      ToDesktopPixels(mPopupMoveToRectParams.mAnchorRect);
   if (!WaylandPopupIsFirst()) {
     GdkPoint parent = WaylandGetParentPosition();
     LOG("  subtract parent position from anchor [%d, %d]\n", parent.x,
         parent.y);
-    anchorRect.MoveBy(-GdkPointToDevicePixels(parent));
+    anchorRect.x -= parent.x;
+    anchorRect.y -= parent.y;
   }
 
-  *aPopupAnchor = DevicePixelsToGdkRectRoundOut(anchorRect);
+  *aPopupAnchor = GdkRectangle{anchorRect.x, anchorRect.y, anchorRect.width,
+                               anchorRect.height};
   LOG("  anchored to rectangle [%d, %d] -> [%d x %d]", aPopupAnchor->x,
       aPopupAnchor->y, aPopupAnchor->width, aPopupAnchor->height);
 
@@ -3183,16 +3268,32 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   LOG("  widget now has focus in SetFocus()");
 }
 
-LayoutDeviceIntRect nsWindow::GetScreenBounds() { return mBounds; }
+DesktopIntRect nsWindow::GetScreenBoundsUnscaled() {
+  DesktopIntRect bounds = mClientArea;
+  bounds.Inflate(mClientMargin);
+  return bounds;
+}
+
+LayoutDeviceIntRect nsWindow::GetScreenBounds() {
+  return ToLayoutDevicePixels(GetScreenBoundsUnscaled());
+}
+
+LayoutDeviceIntRect nsWindow::GetBounds() {
+  return ToLayoutDevicePixels(GetScreenBoundsUnscaled());
+}
 
 LayoutDeviceIntSize nsWindow::GetClientSize() {
-  return GetClientBounds().Size();
+  return ToLayoutDevicePixels(mClientArea).Size();
 }
 
 LayoutDeviceIntRect nsWindow::GetClientBounds() {
-  LayoutDeviceIntRect rect = GetBounds();
-  rect.Deflate(mClientMargin);
-  return rect;
+  return ToLayoutDevicePixels(mClientArea);
+}
+
+LayoutDeviceIntPoint nsWindow::GetClientOffset() {
+  auto scale = FractionalScaleFactor();
+  return LayoutDeviceIntPoint(int(round(mClientMargin.left * scale)),
+                              int(round(mClientMargin.top * scale)));
 }
 
 nsresult nsWindow::GetRestoredBounds(LayoutDeviceIntRect& aRect) {
@@ -3205,12 +3306,13 @@ nsresult nsWindow::GetRestoredBounds(LayoutDeviceIntRect& aRect) {
   
   aRect = GetScreenBounds();
   aRect.SizeTo(GetClientSize());
+  LOG("nsWindow::GetRestoredBounds() %s", ToString(aRect).c_str());
   return NS_OK;
 }
 
 LayoutDeviceIntMargin nsWindow::NormalSizeModeClientToWindowMargin() {
   if (SizeMode() == nsSizeMode_Normal) {
-    return mClientMargin;
+    return ToLayoutDevicePixels(mClientMargin);
   }
   
   
@@ -3231,85 +3333,109 @@ LayoutDeviceIntCoord GetXWindowBorder(GdkWindow* aWin) {
 }
 #endif
 
-void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
-  const bool mayChangeCsdMargin =
-      aMayChangeCsdMargin == MayChangeCsdMargin::Yes;
-  LOG("RecomputeBounds(%d)", mayChangeCsdMargin);
-  mPendingBoundsChange = false;
-  mPendingBoundsChangeMayChangeCsdMargin = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef MOZ_X11
+void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
+  LOG("RecomputeBoundsX11(%d)", aMayChangeCsdMargin);
 
   auto* toplevel = GetToplevelGdkWindow();
-  if (!toplevel || mIsDestroyed) {
-    return;
-  }
 
-  auto GetFrameBounds = [&](GdkWindow* aWin) {
+  
+  auto GetFrameTitlebarBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
     gdk_window_get_frame_extents(aWin, &b);
-#ifdef MOZ_X11
-    const bool isX11 = GdkIsX11Display();
-    if (isX11 && gtk_check_version(3, 24, 35) &&
+    if (gtk_check_version(3, 24, 35) &&
         gdk_window_get_window_type(aWin) == GDK_WINDOW_TEMP) {
       
       
       
-      return LayoutDeviceRect(b.x, b.y, b.width, b.height);
+      double scale = FractionalScaleFactor();
+      return DesktopIntRect(int(round(b.x / scale)), int(round(b.y / scale)),
+                            int(round(b.width / scale)),
+                            int(round(b.height / scale)));
     }
-#endif
-    auto result = GdkRectToFloatDevicePixels(b);
-#ifdef MOZ_X11
-    if (isX11 && gtk_check_version(3, 24, 50)) {
+    auto result = DesktopIntRect(b.x, b.y, b.width, b.height);
+    if (gtk_check_version(3, 24, 50)) {
       if (auto border = GetXWindowBorder(aWin)) {
         
         
         
-        result.width += 2 * border;
-        result.height += 2 * border;
+        double scale = FractionalScaleFactor();
+        result.width += 2 * border / scale;
+        result.height += 2 * border / scale;
       }
     }
-#endif
     return result;
   };
 
+  
   auto GetBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
-    if (IsTopLevelWidget() && GdkIsX11Display() && aWin == toplevel) {
+    if (IsTopLevelWidget() && aWin == toplevel) {
       
       
       gdk_window_get_geometry(aWin, nullptr, nullptr, &b.width, &b.height);
       gdk_window_get_origin(aWin, &b.x, &b.y);
-      return GdkRectToFloatDevicePixels(b);
+      return DesktopIntRect(b.x, b.y, b.width, b.height);
     }
     gdk_window_get_position(aWin, &b.x, &b.y);
     b.width = gdk_window_get_width(aWin);
     b.height = gdk_window_get_height(aWin);
-    return GdkRectToFloatDevicePixels(b);
+    return DesktopIntRect(b.x, b.y, b.width, b.height);
   };
 
-  const auto oldBounds = mBounds;
-  const auto oldMargin = mClientMargin;
-  const auto frameBounds = GetFrameBounds(toplevel);
-  const bool decorated =
-      IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
+  const auto toplevelBoundsWithTitlebar = GetFrameTitlebarBounds(toplevel);
   const auto toplevelBounds = GetBounds(toplevel);
 
-  mBounds = [&] {
-    auto bounds = frameBounds;
+  
+  DesktopIntRect finalBounds = [&] {
+    auto bounds = toplevelBoundsWithTitlebar;
     
     
     
     
     bounds.width = std::max(bounds.width, toplevelBounds.width);
     bounds.height = std::max(bounds.height, toplevelBounds.height);
-    return LayoutDeviceIntRect::Round(bounds);
+    return bounds;
   }();
 
+  const bool decorated =
+      IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
   if (!decorated) {
     mClientMargin = {};
-  } else if (mayChangeCsdMargin) {
-    const auto clientRectRelativeToFrame = [&] {
+  } else if (aMayChangeCsdMargin) {
+    
+    const DesktopIntRect clientRectRelativeToFrame = [&] {
       auto topLevelBoundsRelativeToFrame = toplevelBounds;
-      topLevelBoundsRelativeToFrame -= frameBounds.TopLeft();
+      topLevelBoundsRelativeToFrame -= toplevelBoundsWithTitlebar.TopLeft();
       if (!mGdkWindow) {
         return topLevelBoundsRelativeToFrame;
       }
@@ -3323,20 +3449,90 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       return gdkWindowBounds + topLevelBoundsRelativeToFrame.TopLeft();
     }();
 
-    
-    
-    
-    
-    const LayoutDeviceIntRect roundedClientRect(
-        LayoutDeviceIntPoint::Round(clientRectRelativeToFrame.TopLeft()),
-        LayoutDeviceIntSize::Round(clientRectRelativeToFrame.Size()));
-    mClientMargin =
-        LayoutDeviceIntRect(LayoutDeviceIntPoint(), mBounds.Size()) -
-        roundedClientRect;
-    mClientMargin.EnsureAtLeast(LayoutDeviceIntMargin());
+    mClientMargin = DesktopIntRect(DesktopIntPoint(), finalBounds.Size()) -
+                    clientRectRelativeToFrame;
+    mClientMargin.EnsureAtLeast(DesktopIntMargin());
   } else {
     
   }
+
+  mClientArea = finalBounds;
+  mClientArea.Deflate(mClientMargin);
+}
+#endif
+#ifdef MOZ_WAYLAND
+void nsWindow::RecomputeBoundsWayland(bool aMayChangeCsdMargin) {
+  LOG("RecomputeBoundsWayland(%d)", aMayChangeCsdMargin);
+
+  auto GetBounds = [&](GdkWindow* aWin) {
+    GdkRectangle b{0};
+    gdk_window_get_position(aWin, &b.x, &b.y);
+    b.width = gdk_window_get_width(aWin);
+    b.height = gdk_window_get_height(aWin);
+    return DesktopIntRect(b.x, b.y, b.width, b.height);
+  };
+
+  const auto toplevelBounds = GetBounds(GetToplevelGdkWindow());
+
+  mClientArea = GetBounds(mGdkWindow);
+  if (mClientArea.X() < 0 || mClientArea.Y() < 0 || mClientArea.Width() <= 1 ||
+      mClientArea.Height() <= 1) {
+    
+    mClientArea = toplevelBounds;
+  }
+
+  const bool decorated =
+      IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
+  if (!decorated) {
+    mClientMargin = {};
+  } else if (aMayChangeCsdMargin) {
+    mClientMargin =
+        DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) - mClientArea;
+    mClientMargin.EnsureAtLeast(DesktopIntMargin());
+  } else {
+    
+  }
+}
+#endif
+
+void nsWindow::RecomputeBounds(bool aMayChangeCsdMargin, bool aScaleChange) {
+  LOG("RecomputeBounds() margin %d scale change %d", aMayChangeCsdMargin,
+      aScaleChange);
+
+  mPendingBoundsChange = false;
+  mPendingBoundsChangeMayChangeCsdMargin = false;
+
+  auto* toplevel = GetToplevelGdkWindow();
+  if (!toplevel || mIsDestroyed) {
+    return;
+  }
+
+  const auto oldClientArea = mClientArea;
+  const auto oldMargin = mClientMargin;
+
+#ifdef MOZ_X11
+  if (GdkIsX11Display()) {
+    RecomputeBoundsX11(aMayChangeCsdMargin);
+  }
+#endif
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    RecomputeBoundsWayland(aMayChangeCsdMargin);
+  }
+#endif
+
+#ifdef MOZ_LOGGING
+  if (LOG_ENABLED()) {
+    if (mHasReceivedSizeAllocate) {
+      if (!(mClientArea == mReceivedClientArea)) {
+        LOG("Received and calculated client areas are different! received %s "
+            "calculated %s",
+            ToString(mReceivedClientArea).c_str(),
+            ToString(mClientArea).c_str());
+      }
+    }
+  }
+#endif
 
   if (IsPopup()) {
     
@@ -3349,19 +3545,19 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
     
     
     
-    MOZ_ASSERT(mLastMoveRequest == oldBounds.TopLeft());
-    mBounds.MoveTo(oldBounds.TopLeft());
+    MOZ_ASSERT(mLastMoveRequest == oldClientArea.TopLeft());
+    mClientArea.MoveTo(oldClientArea.TopLeft());
   }
 
   
   
-  auto unconstrainedBounds = mBounds;
-  mBounds.SizeTo(GetSafeWindowSize(mBounds.Size()));
+  auto size = mClientArea.Size();
+  if (SetSafeWindowSize(size)) {
+    mClientArea.SizeTo(size);
+  }
 
-  LOG("bounds old: %s new -> %s (%s unconstrained, frame = %s, toplevel = %s)",
-      ToString(oldBounds).c_str(), ToString(mBounds).c_str(),
-      ToString(unconstrainedBounds).c_str(), ToString(frameBounds).c_str(),
-      ToString(toplevelBounds).c_str());
+  LOG("client area old: %s new -> %s", ToString(oldClientArea).c_str(),
+      ToString(mClientArea).c_str());
   LOG("margin old: %s new -> %s", ToString(oldMargin).c_str(),
       ToString(mClientMargin).c_str());
 
@@ -3376,10 +3572,10 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
 
   
   
-  const bool moved =
-      clientMarginsChanged || oldBounds.TopLeft() != mBounds.TopLeft();
-  const bool resized =
-      clientMarginsChanged || oldBounds.Size() != mBounds.Size();
+  const bool moved = aScaleChange || aMayChangeCsdMargin ||
+                     oldClientArea.TopLeft() != mClientArea.TopLeft();
+  const bool resized = aScaleChange || aMayChangeCsdMargin ||
+                       oldClientArea.Size() != mClientArea.Size();
 
   if (moved) {
     if (IsTopLevelWidget()) {
@@ -3387,7 +3583,8 @@ void nsWindow::RecomputeBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
       
       RollupAllMenus();
     }
-    NotifyWindowMoved(mBounds.x, mBounds.y);
+    auto pos = ToLayoutDevicePixels(mClientArea.TopLeft());
+    NotifyWindowMoved(pos.x, pos.y);
   }
   if (resized) {
     DispatchResized();
@@ -3685,7 +3882,11 @@ void nsWindow::SetIcon(const nsAString& aIconSpec) {
 }
 
 LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
-  return mBounds.TopLeft() + GetClientOffset();
+  return ToLayoutDevicePixels(mClientArea.TopLeft());
+}
+
+DesktopIntPoint nsWindow::WidgetToScreenOffsetUnscaled() {
+  return DesktopIntPoint(mClientArea.x, mClientArea.y);
 }
 
 void nsWindow::CaptureRollupEvents(bool aDoCapture) {
@@ -4122,19 +4323,19 @@ gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
 }
 
 void nsWindow::OnContainerSizeAllocate(GtkAllocation* aAllocation) {
-  LOG("nsWindow::OnContainerSizeAllocate [%d,%d] -> [%d x %d] scaled[%.2f] "
-      "[%.2f x "
-      "%.2f]",
+  LOG("nsWindow::OnContainerSizeAllocate [%d,%d] -> [%d x %d] scaled [%.2f] "
+      "[%.2f x %.2f]",
       aAllocation->x, aAllocation->y, aAllocation->width, aAllocation->height,
       FractionalScaleFactor(), aAllocation->width * FractionalScaleFactor(),
       aAllocation->height * FractionalScaleFactor());
 
   mHasReceivedSizeAllocate = true;
+  mReceivedClientArea = DesktopIntRect(aAllocation->x, aAllocation->y,
+                                       aAllocation->width, aAllocation->height);
+
   if (!mGdkWindow) {
     return;
   }
-
-  auto oldClientBounds = GetClientBounds();
 
   
   
@@ -4148,21 +4349,19 @@ void nsWindow::OnContainerSizeAllocate(GtkAllocation* aAllocation) {
   
   
   
-  LayoutDeviceIntRect newClientBounds = GdkRectToDevicePixels(*aAllocation);
-  if (oldClientBounds.Size() == newClientBounds.Size()) {
+  if (mClientArea.Size() == mReceivedClientArea.Size()) {
     return;
   }
 
-  if (oldClientBounds.width < newClientBounds.width) {
-    GdkRectangle rect = DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect(
-        oldClientBounds.width, 0, newClientBounds.width - oldClientBounds.width,
-        newClientBounds.height));
+  if (mClientArea.width < mReceivedClientArea.width) {
+    GdkRectangle rect{mClientArea.width, 0,
+                      mReceivedClientArea.width - mClientArea.width,
+                      mReceivedClientArea.height};
     gdk_window_invalidate_rect(mGdkWindow, &rect, FALSE);
   }
-  if (oldClientBounds.height < newClientBounds.height) {
-    GdkRectangle rect = DevicePixelsToGdkRectRoundOut(
-        LayoutDeviceIntRect(0, oldClientBounds.height, newClientBounds.width,
-                            newClientBounds.height - oldClientBounds.height));
+  if (mClientArea.height < mReceivedClientArea.height) {
+    GdkRectangle rect{0, mClientArea.height, mReceivedClientArea.width,
+                      mReceivedClientArea.height - mClientArea.height};
     gdk_window_invalidate_rect(mGdkWindow, &rect, FALSE);
   }
 }
@@ -4181,7 +4380,7 @@ void nsWindow::SchedulePendingBounds(MayChangeCsdMargin aMayChangeCsdMargin) {
 void nsWindow::MaybeRecomputeBounds() {
   LOG("MaybeRecomputeBounds %d", mPendingBoundsChange);
   if (mPendingBoundsChange) {
-    RecomputeBounds(MayChangeCsdMargin(mPendingBoundsChangeMayChangeCsdMargin));
+    RecomputeBounds(mPendingBoundsChangeMayChangeCsdMargin);
   }
 }
 
@@ -4320,10 +4519,11 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
   const int resizerHeight = 15 * GdkCeiledScaleFactor();
   const int resizerWidth = resizerHeight * 4;
 
+  auto bounds = GetScreenBounds();
   const int topDist = aPoint.y;
   const int leftDist = aPoint.x;
-  const int rightDist = mBounds.width - aPoint.x;
-  const int bottomDist = mBounds.height - aPoint.y;
+  const int rightDist = bounds.width - aPoint.x;
+  const int bottomDist = bounds.height - aPoint.y;
 
   
   
@@ -4390,7 +4590,7 @@ void nsWindow::EmulateResizeDrag(GdkEventMotion* aEvent) {
   auto oldPoint = mLastResizePoint;
   mLastResizePoint = newPoint;
 
-  GdkRectangle size = DevicePixelsToGdkSizeRoundUp(mBounds.Size());
+  auto size = GetScreenBoundsUnscaled().Size();
   size.width += newPoint.x - oldPoint.x;
   size.height += newPoint.y - oldPoint.y;
 
@@ -5484,7 +5684,7 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
   }();
 
   if (mSizeMode != oldSizeMode || mIsTiled != oldIsTiled) {
-    RecomputeBounds(MayChangeCsdMargin::No);
+    RecomputeBounds( false);
   }
   if (mSizeMode != oldSizeMode) {
     if (mWidgetListener) {
@@ -5580,7 +5780,7 @@ void nsWindow::RefreshScale(bool aRefreshScreen, bool aForceRefresh) {
     return;
   }
 
-  RecomputeBounds(MayChangeCsdMargin::Yes);
+  RecomputeBounds( true,  true);
 
   if (mWidgetListener) {
     if (PresShell* presShell = mWidgetListener->GetPresShell()) {
@@ -6066,7 +6266,6 @@ void nsWindow::ConfigureCompositor() {
 nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                           const widget::InitData& aInitData) {
   MOZ_DIAGNOSTIC_ASSERT(aInitData.mWindowType != WindowType::Invisible);
-
 #ifdef ACCESSIBILITY
   
   a11y::PreInit();
@@ -6089,13 +6288,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   LOG("nsWindow::Create()");
 
   
-  mBounds = aRect;
-  LOG("  mBounds: x:%d y:%d w:%d h:%d\n", mBounds.x, mBounds.y, mBounds.width,
-      mBounds.height);
+  LOG("  mBounds: x:%d y:%d w:%d h:%d\n", aRect.x, aRect.y, aRect.width,
+      aRect.height);
 
-  ConstrainSize(&mBounds.width, &mBounds.height);
-  mLastSizeRequest = mBounds.Size();
-  mLastMoveRequest = mBounds.TopLeft();
+  mClientArea = ToDesktopPixels(aRect);
+  ConstrainSizeWithScale(&mClientArea.width, &mClientArea.height,
+                         GetDesktopToDeviceScale().scale);
+  mLastSizeRequest = mClientArea.Size();
+  mLastMoveRequest = mClientArea.TopLeft();
 
   const bool popupNeedsAlphaVisual =
       mWindowType == WindowType::Popup &&
@@ -6106,7 +6306,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   LOG("  parent window [%p]", parentnsWindow);
 
   MOZ_ASSERT_IF(mWindowType == WindowType::Popup, parentnsWindow);
-
   if (mWindowType != WindowType::Dialog && mWindowType != WindowType::Popup &&
       mWindowType != WindowType::TopLevel) {
     MOZ_ASSERT_UNREACHABLE("Unexpected eWindowType");
@@ -6186,10 +6385,10 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   
   
   if (AreBoundsSane()) {
-    GdkRectangle size = DevicePixelsToGdkSizeRoundUp(mBounds.Size());
-    LOG("  nsWindow::Create() Initial resize to %d x %d\n", size.width,
-        size.height);
-    gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
+    LOG("  nsWindow::Create() Initial resize to %d x %d\n", mClientArea.width,
+        mClientArea.height);
+    gtk_window_resize(GTK_WINDOW(mShell), mClientArea.width,
+                      mClientArea.height);
   }
   if (mIsPIPWindow) {
     LOG("  Is PIP window\n");
@@ -6258,8 +6457,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     if (GdkIsX11Display()) {
       NativeMoveResize( true,  false);
     } else if (AreBoundsSane()) {
-      GdkRectangle rect = DevicePixelsToGdkRectRoundOut(mBounds);
-      mPopupPosition = {rect.x, rect.y};
+      mPopupPosition = {mClientArea.x, mClientArea.y};
     }
   } else {  
     mGtkWindowRoleName = "Toplevel";
@@ -6284,7 +6482,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     mSurface = new WaylandSurface(
         parentnsWindow ? MOZ_WL_SURFACE(parentnsWindow->GetMozContainer())
                        : nullptr,
-        gfx::IntSize(mLastSizeRequest.width, mLastSizeRequest.height));
+        gfx::IntSize(ToLayoutDevicePixels(mLastSizeRequest).ToUnknownSize()));
   }
   container = moz_container_new(this, mSurface);
 #else
@@ -6619,21 +6817,28 @@ nsAutoCString nsWindow::GetDebugTag() const {
 }
 
 void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
-  const LayoutDeviceIntRect frameRect(mLastMoveRequest, mLastSizeRequest);
+  const DesktopIntRect frameRect(mLastMoveRequest, mLastSizeRequest);
+
+  
+  
   GdkRectangle moveResizeRect = [&] {
     auto cr = frameRect;
+    
+    
     cr.Deflate(mClientMargin);
     
     
     if (!ToplevelUsesCSD()) {
-      cr -= GetClientOffset();
+      cr -= DesktopIntPoint(mClientMargin.left, mClientMargin.top);
     }
-    return DevicePixelsToGdkRectRoundOut(cr);
+    return GdkRectangle{cr.x, cr.y, cr.width, cr.height};
   }();
 
-  LOG("nsWindow::NativeMoveResize move %d resize %d to %d,%d -> %d x %d\n",
-      aMoved, aResized, moveResizeRect.x, moveResizeRect.y,
-      moveResizeRect.width, moveResizeRect.height);
+  LOG("nsWindow::NativeMoveResize mLastMoveRequest [%d,%d] mClientMargin "
+      "[%d,%d] move %d resize %d to [%d,%d] -> [%d x %d]\n",
+      int(mLastMoveRequest.x), int(mLastMoveRequest.y), int(mClientMargin.left),
+      int(mClientMargin.top), aMoved, aResized, moveResizeRect.x,
+      moveResizeRect.y, moveResizeRect.width, moveResizeRect.height);
 
   if (aResized && !AreBoundsSane()) {
     LOG("  bounds are insane, hidding the window");
@@ -6659,10 +6864,11 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   
   if (aMoved && GdkIsX11Display() && IsPopup() &&
       !gtk_widget_get_visible(GTK_WIDGET(mShell))) {
-    LOG("  store position of hidden popup window");
     mHiddenPopupPositioned = true;
     mPopupPosition = {moveResizeRect.x, moveResizeRect.y};
-    mBounds.MoveTo(mLastMoveRequest);
+    mClientArea.MoveTo(mLastMoveRequest);
+    LOG("  store position of hidden popup window [%d, %d]", mPopupPosition.x,
+        mPopupPosition.y);
   }
 
   if (IsWaylandPopup()) {
@@ -6712,11 +6918,12 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   bool isOrWillBeVisible = mHasReceivedSizeAllocate || mNeedsShow || mIsShown;
   if (!isOrWillBeVisible || IsPopup()) {
     if (aResized) {
-      mBounds.SizeTo(mLastSizeRequest);
+      mClientArea.SizeTo(mLastSizeRequest);
     }
     if (aMoved) {
-      mBounds.MoveTo(mLastMoveRequest);
-      NotifyWindowMoved(mBounds.x, mBounds.y);
+      mClientArea.MoveTo(mLastMoveRequest);
+      auto pos = ToLayoutDevicePixels(mLastMoveRequest);
+      NotifyWindowMoved(pos.x, pos.y);
     }
     if (aResized) {
       DispatchResized();
@@ -6808,7 +7015,8 @@ void nsWindow::NativeShow(bool aAction) {
 #endif
     }
     if (mHiddenPopupPositioned && IsPopup()) {
-      LOG("  re-position hidden popup window");
+      LOG("  re-position hidden popup window [%d, %d]", mPopupPosition.x,
+          mPopupPosition.y);
       gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
       mHiddenPopupPositioned = false;
     }
@@ -6874,26 +7082,38 @@ void nsWindow::SetHasMappedToplevel(bool aState) {
   }
 }
 
-LayoutDeviceIntSize nsWindow::GetSafeWindowSize(LayoutDeviceIntSize aSize) {
+bool nsWindow::SetSafeWindowSize(LayoutDeviceIntSize& aSize) {
   
   
   
   
   
   
-  LayoutDeviceIntSize result = aSize;
-  int32_t maxSize = 32767;
+  
+  bool changed = false;
+  int32_t maxSize = 32000;
   if (mWindowRenderer && mWindowRenderer->AsKnowsCompositor()) {
     maxSize = std::min(
         maxSize, mWindowRenderer->AsKnowsCompositor()->GetMaxTextureSize());
   }
-  if (result.width > maxSize) {
-    result.width = maxSize;
+  if (aSize.width > maxSize) {
+    aSize.width = maxSize;
+    changed = true;
   }
-  if (result.height > maxSize) {
-    result.height = maxSize;
+  if (aSize.height > maxSize) {
+    aSize.height = maxSize;
+    changed = true;
   }
-  return result;
+  return changed;
+}
+
+bool nsWindow::SetSafeWindowSize(DesktopIntSize& aSize) {
+  auto layoutDeviceSize = ToLayoutDevicePixels(aSize);
+  auto ret = SetSafeWindowSize(layoutDeviceSize);
+  if (ret) {
+    aSize = ToDesktopPixels(layoutDeviceSize);
+  }
+  return ret;
 }
 
 void nsWindow::SetTransparencyMode(TransparencyMode aMode) {
@@ -6960,10 +7180,10 @@ void nsWindow::SetInputRegion(const InputRegion& aInputRegion) {
   if (aInputRegion.mFullyTransparent) {
     region = cairo_region_create_rectangle(&rect);
   } else if (aInputRegion.mMargin != 0) {
-    LayoutDeviceIntRect inputRegion(LayoutDeviceIntPoint(), mLastSizeRequest);
+    DesktopIntRect inputRegion(DesktopIntPoint(), mLastSizeRequest);
     inputRegion.Deflate(aInputRegion.mMargin);
-    GdkRectangle gdkRect = DevicePixelsToGdkRectRoundOut(inputRegion);
-    rect = {gdkRect.x, gdkRect.y, gdkRect.width, gdkRect.height};
+    rect = {inputRegion.x, inputRegion.y, inputRegion.width,
+            inputRegion.height};
     region = cairo_region_create_rectangle(&rect);
   }
 
@@ -7252,11 +7472,9 @@ already_AddRefed<widget::Screen> nsWindow::GetWidgetScreen() {
     }
   }
 
-  
-  
   ScreenManager& screenManager = ScreenManager::GetSingleton();
-  LayoutDeviceIntRect bounds = mBounds;
-  DesktopIntRect deskBounds = RoundedToInt(bounds / GetDesktopToDeviceScale());
+  DesktopIntRect deskBounds =
+      RoundedToInt(GetScreenBounds() / GetDesktopToDeviceScale());
   return screenManager.ScreenForRect(deskBounds);
 }
 
@@ -8963,10 +9181,8 @@ void nsWindow::SetCustomTitlebar(bool aState) {
     g_object_set_data(G_OBJECT(GetToplevelGdkWindow()), "nsWindow", this);
 
     if (AreBoundsSane()) {
-      GdkRectangle size =
-          DevicePixelsToGdkSizeRoundUp(GetClientBounds().Size());
-      LOG("    resize to %d x %d\n", size.width, size.height);
-      gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
+      gtk_window_resize(GTK_WINDOW(mShell), mClientArea.width,
+                        mClientArea.height);
     }
 
     if (visible) {
@@ -9029,9 +9245,9 @@ double nsWindow::FractionalScaleFactor() {
   return ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor();
 }
 
-gint nsWindow::DevicePixelsToGdkCoordRoundUp(int aPixels) {
+gint nsWindow::DevicePixelsToGdkCoordRound(int aPixels) {
   double scale = FractionalScaleFactor();
-  return ceil(aPixels / scale);
+  return int(round(aPixels / scale));
 }
 
 gint nsWindow::DevicePixelsToGdkCoordRoundDown(int aPixels) {
@@ -9065,18 +9281,6 @@ GdkRectangle nsWindow::DevicePixelsToGdkRectRoundIn(
   return {x, y, std::max(right - x, 0), std::max(bottom - y, 0)};
 }
 
-GdkRectangle nsWindow::DevicePixelsToGdkSizeRoundUp(
-    const LayoutDeviceIntSize& aSize) {
-  double scale = FractionalScaleFactor();
-  gint width = ceil(aSize.width / scale);
-  gint height = ceil(aSize.height / scale);
-  return {0, 0, width, height};
-}
-
-int nsWindow::GdkCoordToDevicePixels(gint aCoord) {
-  return (int)(aCoord * FractionalScaleFactor());
-}
-
 LayoutDeviceIntPoint nsWindow::GdkEventCoordsToDevicePixels(gdouble aX,
                                                             gdouble aY) {
   double scale = FractionalScaleFactor();
@@ -9087,26 +9291,6 @@ LayoutDeviceIntPoint nsWindow::GdkPointToDevicePixels(const GdkPoint& aPoint) {
   double scale = FractionalScaleFactor();
   return LayoutDeviceIntPoint::Floor((float)(aPoint.x * scale),
                                      (float)(aPoint.y * scale));
-}
-
-LayoutDeviceIntMargin nsWindow::GtkBorderToDevicePixels(
-    const GtkBorder& aBorder) {
-  double scale = FractionalScaleFactor();
-  return LayoutDeviceIntMargin{
-      (int)(aBorder.top * scale), (int)(aBorder.right * scale),
-      (int)(aBorder.bottom * scale), (int)(aBorder.left * scale)};
-}
-
-LayoutDeviceIntRect nsWindow::GdkRectToDevicePixels(const GdkRectangle& aRect) {
-  return LayoutDeviceIntRect::Round(GdkRectToFloatDevicePixels(aRect));
-}
-
-LayoutDeviceRect nsWindow::GdkRectToFloatDevicePixels(
-    const GdkRectangle& aRect) {
-  double scale = FractionalScaleFactor();
-  return LayoutDeviceRect((float)(aRect.x * scale), (float)(aRect.y * scale),
-                          (float)(aRect.width * scale),
-                          (float)(aRect.height * scale));
 }
 
 nsresult nsWindow::SynthesizeNativeMouseEvent(
@@ -9746,8 +9930,8 @@ void nsWindow::LockAspectRatio(bool aShouldLock) {
   }
 
   if (aShouldLock) {
-    float width = DevicePixelsToGdkCoordRoundDown(mLastSizeRequest.width);
-    float height = DevicePixelsToGdkCoordRoundDown(mLastSizeRequest.height);
+    float width = mLastSizeRequest.width;
+    float height = mLastSizeRequest.height;
 
     mAspectRatio = width / height;
     LOG("nsWindow::LockAspectRatio() width %.2f height %.2f aspect %.2f", width,
