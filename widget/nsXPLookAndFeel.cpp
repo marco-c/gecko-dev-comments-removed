@@ -803,7 +803,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::MozCellhighlight:
     case ColorID::Selecteditem:  
-                                 
       color = NS_RGB(0, 221, 255);
       break;
     case ColorID::MozSidebar:
@@ -816,7 +815,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::MozCombobox:
     case ColorID::MozCellhighlighttext:
     case ColorID::Selecteditemtext:  
-                                     
       color = NS_RGB(43, 42, 51);
       break;
     case ColorID::Threeddarkshadow:  
