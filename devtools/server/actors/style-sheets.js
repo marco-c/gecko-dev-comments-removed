@@ -19,6 +19,12 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/utils/stylesheets-manager.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "getIndentationFromString",
+  "resource://devtools/shared/indentation.js",
+  true
+);
 
 
 
@@ -47,7 +53,10 @@ class StyleSheetsActor extends Actor {
 
   getTraits() {
     return {
-      traits: {},
+      traits: {
+        
+        hasGetStyleSheetIndentation: true,
+      },
     };
   }
 
@@ -90,6 +99,14 @@ class StyleSheetsActor extends Actor {
     const styleSheetsManager = this._getStyleSheetsManager();
     const text = await styleSheetsManager.getText(resourceId);
     return new LongStringActor(this.conn, text || "");
+  }
+
+  async getStyleSheetIndentation(resourceId) {
+    const styleSheetsManager = this._getStyleSheetsManager();
+    const text = await styleSheetsManager.getText(resourceId);
+
+    const { indentUnit, indentWithTabs } = getIndentationFromString(text);
+    return indentWithTabs ? "\t" : " ".repeat(indentUnit);
   }
 
   update(resourceId, text, transition, cause = "") {
