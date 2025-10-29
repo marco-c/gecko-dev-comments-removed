@@ -166,6 +166,34 @@ __declspec(dllexport) MOZ_NAKED void RexCmpRipRelativeBytePtr() {
       "nop;nop;nop;nop;nop;nop;nop;nop;");
 }
 
+__declspec(dllexport) MOZ_NAKED void JmpInsideEarlyBytes() {
+  asm volatile(
+      "js label9;"
+      "label10:"
+      "jmpq *%%rax;"
+
+      
+      "label9:"
+      "mov %0, %%rax;"
+      "jmp label10;"
+      :
+      : "i"(JumpDestination));
+}
+
+__declspec(dllexport) MOZ_NAKED void CallInsideEarlyBytes() {
+  asm volatile(
+      "call label11;"
+      "label12:"
+      "jmpq *%%rax;"
+
+      
+      "label11:"
+      "mov %0, %%rax;"
+      "jmp label12;"
+      :
+      : "i"(JumpDestination));
+}
+
 
 
 __declspec(dllexport) MOZ_NAKED bool IsEqualToGlobalValue(
@@ -192,11 +220,14 @@ MOZ_NAKED void DetouredCallCode(uintptr_t aCallee) {
       "testq %rcx, %rcx;"
       "jz exit;"
       "callq *%rcx;"
+      
+      
+      "nop;nop;nop;nop;nop;nop;nop;nop;"
       "exit:"
       "addq $0x28, %rsp;"
       "retq;");
 }
-constexpr uint8_t gDetouredCallCodeSize = 16;  
+constexpr uint8_t gDetouredCallCodeSize = 24;  
 alignas(uint32_t) uint8_t gDetouredCallUnwindInfo[] = {
     0x01,  
     0x04,  
