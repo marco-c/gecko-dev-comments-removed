@@ -107,6 +107,11 @@ test_description_schema = Schema(
         ),
         
         
+        Optional("timeoutfactor"): optionally_keyed_by(
+            "test-platform", Any(int, float)
+        ),
+        
+        
         
         Optional("test-manifest-loader"): optionally_keyed_by(
             "test-platform", Any(None, *list(manifest_loaders))
@@ -406,6 +411,7 @@ def resolve_keys(config, tasks):
         "suite",
         "suite.name",
         "test-manifest-loader",
+        "timeoutfactor",
         "use-caches",
     )
     for task in tasks:
