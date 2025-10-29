@@ -2692,6 +2692,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: IsBytecode",
          aRequest));
     aRequest->MarkSkippedAllCaching();
+    MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
     return;
   }
 
@@ -2700,6 +2701,8 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: JSON module",
          aRequest));
     aRequest->MarkSkippedAllCaching();
+    MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
+    MOZ_ASSERT_IF(aRequest->IsSource(), aRequest->SRIAndBytecode().empty());
     return;
   }
 
@@ -2727,6 +2730,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
          "!LoadedScript::HasDiskCacheReference",
          aRequest));
     aRequest->MarkSkippedDiskCaching();
+    MOZ_ASSERT_IF(aRequest->IsSource(), aRequest->SRIAndBytecode().empty());
     return;
   }
 
@@ -2750,6 +2754,8 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
            "pref.",
            aRequest));
       aRequest->MarkSkippedDiskCaching();
+
+      aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
       return;
     }
     case -1: {
@@ -2798,6 +2804,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
            "small.",
            aRequest));
       aRequest->MarkSkippedDiskCaching();
+      aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
       return;
     }
   }
@@ -2818,6 +2825,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
              "fetchCount.",
              aRequest));
         aRequest->MarkSkippedDiskCaching();
+        aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
         return;
       }
     }
@@ -2827,6 +2835,20 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
       LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: fetchCount",
            aRequest));
       aRequest->MarkSkippedDiskCaching();
+
+      if (!mCache) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+      }
       return;
     }
   }
