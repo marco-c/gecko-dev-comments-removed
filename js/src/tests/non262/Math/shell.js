@@ -64,7 +64,7 @@ const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);
         } else if (!Number.isFinite(a)) {
             if (b * Math.sign(a) < Number.MAX_VALUE)
                 fail("got " + a + ", expected a number near " + b);
-        } else {
+        } else if (a !== b) {
             
             
             
