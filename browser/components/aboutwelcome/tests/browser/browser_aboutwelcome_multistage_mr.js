@@ -46,6 +46,14 @@ add_setup(async function () {
   });
 });
 
+add_task(function () {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(
+      "messaging-system-action.showRestoreFromBackup"
+    );
+  });
+});
+
 
 
 
@@ -91,7 +99,11 @@ add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
     )
     .resolves(true)
     .withArgs("isDeviceMigration")
-    .resolves(false);
+    .resolves(false)
+    .withArgs("!isFxASignedIn")
+    .resolves(true)
+    .withArgs("backupRestoreEnabled")
+    .resolves(true);
 
   let impressionSpy = sandbox.spy(
     AboutWelcomeTelemetry.prototype,
@@ -107,7 +119,8 @@ add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
     [
       `main.screen[pos="split"]`,
       "div.secondary-cta.top",
-      "button[value='secondary_button_top']",
+      "button[value='secondary_button_top_0']", 
+      "button[value='secondary_button_top_1']", 
     ]
   );
 
@@ -773,7 +786,7 @@ add_task(async function test_aboutwelcome_multiselect() {
 
 
 
-add_task(async function test_AWMultistage_newtab_urlbar_focus() {
+add_task(async function test_aboutwelcome_newtab_urlbar_focus() {
   const TEST_CONTENT = [
     {
       id: "TEST_SCREEN",
@@ -809,6 +822,7 @@ add_task(async function test_AWMultistage_newtab_urlbar_focus() {
   Assert.ok(gURLBar.focused, "focus should be on url bar");
 
   BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
   sandbox.restore();
 });
 
@@ -880,4 +894,239 @@ add_task(async function test_aboutwelcome_gratitude() {
   
   await SpecialPowers.popPrefEnv();
   await cleanup();
+});
+
+add_task(async function test_aboutwelcome_backup_found() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "backupRestoreEnabled && (backupsInfo.found || backupsInfo.multipleBackupsFound)"
+    )
+    .resolves(true)
+    .withArgs("isDeviceMigration")
+    .resolves(false);
+
+  let { browser, cleanup } = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "Should render backups found screen as first screen when backupRestoreEnabled is true and backup is found",
+    [
+      "main.AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
+      "[data-l10n-id='restore-from-backup-title']",
+      "[data-l10n-id='restore-from-backup-subtitle']",
+    ],
+    
+    ["main.AW_BACKUP_RESTORE_EMBEDDED_NO_BACKUP_FOUND"]
+  );
+
+  await cleanup();
+  sandbox.restore();
+});
+
+add_task(async function test_aboutwelcome_no_backups() {
+  const sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "backupRestoreEnabled && (backupsInfo.found || backupsInfo.multipleBackupsFound)"
+    )
+    .resolves(false)
+    
+    .withArgs(
+      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
+    .resolves(true)
+    
+    .withArgs("backupRestoreEnabled")
+    .resolves(true)
+    
+    .withArgs(
+      "backupRestoreEnabled && 'messaging-system-action.showRestoreFromBackup' |preferenceValue == true"
+    )
+    .resolves(true);
+
+  let { browser, cleanup } = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "Easy setup renders with restore secondary top button",
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN, main.AW_EASY_SETUP_NEEDS_DEFAULT, main.AW_EASY_SETUP_NEEDS_PIN, main.AW_EASY_SETUP_ONLY_IMPORT",
+      "div.secondary-cta.top",
+    ],
+    
+    ["main.AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND"]
+  );
+
+  await clickVisibleButton(
+    browser,
+    "button[data-l10n-id='restore-from-backup-secondary-top-button']"
+  );
+
+  await test_screen_content(
+    browser,
+    "NO_BACKUP_FOUND screen renders afrer clicking restore from backup top cta",
+    [
+      "main.AW_BACKUP_RESTORE_EMBEDDED_NO_BACKUP_FOUND",
+      "[data-l10n-id='restore-from-backup-title']",
+      "[data-l10n-id='restore-from-backup-subtitle']",
+    ]
+  );
+
+  await cleanup();
+  sandbox.restore();
+});
+
+add_task(async function test_aboutwelcome_secondary_top_signin_only() {
+  const sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    
+    .withArgs(
+      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
+    .resolves(true)
+    
+    .withArgs("!isFxASignedIn")
+    .resolves(true);
+
+  let { browser, cleanup } = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "Easy setup renders with secondary top button",
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      ".secondary-buttons-top-container, div.secondary-cta.top",
+    ]
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const count = content.document.querySelectorAll(
+      "button[value^='secondary_button_top_']"
+    ).length;
+    Assert.equal(count, 1, "One top CTA is shown");
+    Assert.ok(
+      content.document.querySelector(
+        "button[data-l10n-id='mr1-onboarding-sign-in-button-label']"
+      ),
+      "'Sign in' top button is present"
+    );
+    Assert.ok(
+      !content.document.querySelector(
+        "button[data-l10n-id='restore-from-backup-secondary-top-button']"
+      ),
+      "'Restore Backup' top button not present"
+    );
+  });
+
+  await cleanup();
+  sandbox.restore();
+});
+
+add_task(async function test_aboutwelcome_secondary_top_backup_restore_only() {
+  const sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    
+    .withArgs(
+      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
+    .resolves(true)
+    
+    .withArgs("backupRestoreEnabled")
+    .resolves(true);
+
+  let { browser, cleanup } = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "Easy setup renders with secondary top button",
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      ".secondary-buttons-top-container, div.secondary-cta.top",
+    ]
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const count = content.document.querySelectorAll(
+      "button[value^='secondary_button_top_']"
+    ).length;
+    Assert.equal(count, 1, "One top CTA is shown");
+    Assert.ok(
+      !content.document.querySelector(
+        "button[data-l10n-id='mr1-onboarding-sign-in-button-label']"
+      ),
+      "'Sign in' top button is present"
+    );
+    Assert.ok(
+      content.document.querySelector(
+        "button[data-l10n-id='restore-from-backup-secondary-top-button']"
+      ),
+      "'Restore Backup' top button present"
+    );
+  });
+
+  await cleanup();
+  sandbox.restore();
+});
+
+add_task(async function test_aboutwelcome_both_secondary_top_buttons() {
+  const sandbox = sinon.createSandbox();
+
+  sandbox
+    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    
+    .withArgs(
+      "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
+    .resolves(true)
+    
+    .withArgs("!isFxASignedIn")
+    .resolves(true)
+    
+    .withArgs("backupRestoreEnabled")
+    .resolves(true);
+
+  let { browser, cleanup } = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "Easy setup renders with secondary top button",
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      ".secondary-buttons-top-container, div.secondary-cta.top",
+    ]
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const buttons = content.document.querySelectorAll(
+      "button[value^='secondary_button_top_']"
+    );
+    Assert.equal(buttons.length, 2, "Two secondary top buttons are present");
+    Assert.ok(
+      content.document.querySelector(
+        "button[data-l10n-id='mr1-onboarding-sign-in-button-label']"
+      ),
+      "'Sign in' top button present"
+    );
+    Assert.ok(
+      content.document.querySelector(
+        "button[data-l10n-id='restore-from-backup-secondary-top-button']"
+      ),
+      "'Restore Backup' top button present"
+    );
+  });
+
+  await cleanup();
+  sandbox.restore();
 });
