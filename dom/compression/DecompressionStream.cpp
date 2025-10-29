@@ -10,103 +10,16 @@
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/dom/BufferSourceBinding.h"
-#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/DecompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/TextDecoderStream.h"
 #include "mozilla/dom/TransformStream.h"
-#include "mozilla/dom/TransformerCallbackHelpers.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WritableStream.h"
 #include "zstd/zstd.h"
 
 namespace mozilla::dom {
 using namespace compression;
-
-class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DecompressionStreamAlgorithms,
-                                           TransformerAlgorithmsBase)
-
-  
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT
-  void TransformCallbackImpl(JS::Handle<JS::Value> aChunk,
-                             TransformStreamDefaultController& aController,
-                             ErrorResult& aRv) override {
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aController.GetParentObject())) {
-      aRv.ThrowUnknownError("Internal error");
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-
-    
-
-    
-    RootedUnion<OwningBufferSource> bufferSource(cx);
-    if (!bufferSource.Init(cx, aChunk)) {
-      aRv.MightThrowJSException();
-      aRv.StealExceptionFromJSContext(cx);
-      return;
-    }
-
-    
-    
-    
-    ProcessTypedArraysFixed(
-        bufferSource,
-        [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-          DecompressAndEnqueue(cx, aData, Flush::No, aController, aRv);
-        });
-  }
-
-  
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT void FlushCallbackImpl(
-      TransformStreamDefaultController& aController,
-      ErrorResult& aRv) override {
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aController.GetParentObject())) {
-      aRv.ThrowUnknownError("Internal error");
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-
-    
-
-    
-    
-    
-    DecompressAndEnqueue(cx, Span<const uint8_t>(), Flush::Yes, aController,
-                         aRv);
-  }
-
- protected:
-  static const uint16_t kBufferSize = 16384;
-
-  ~DecompressionStreamAlgorithms() = default;
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual void DecompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush,
-      TransformStreamDefaultController& aController, ErrorResult& aRv) = 0;
-};
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(DecompressionStreamAlgorithms,
-                                   TransformerAlgorithmsBase)
-NS_IMPL_ADDREF_INHERITED(DecompressionStreamAlgorithms,
-                         TransformerAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(DecompressionStreamAlgorithms,
-                          TransformerAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
 
 
 
