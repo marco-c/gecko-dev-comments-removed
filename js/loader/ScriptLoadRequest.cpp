@@ -12,7 +12,6 @@
 #include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"  
 
 #include "js/SourceText.h"

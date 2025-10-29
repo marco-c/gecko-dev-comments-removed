@@ -10,7 +10,6 @@
 
 #include "common.h"
 #include "EventLog.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla::default_agent {
 
@@ -78,7 +77,7 @@ VoidResult Cache::Init() {
   
   
   
-  mozilla::Unused << MaybeMigrateVersion1();
+  (void)MaybeMigrateVersion1();
 
   return mozilla::Ok();
 }
@@ -237,7 +236,7 @@ VoidResult Cache::MaybeMigrateVersion1() {
       LOG_ERROR_MESSAGE(
           L"Warning: Version 1 cache entry %u dropped due to missing keys",
           index);
-      mozilla::Unused << DeleteVersion1CacheEntry(index);
+      (void)DeleteVersion1CacheEntry(index);
     }
   }
   return mozilla::Ok();
@@ -368,7 +367,7 @@ VoidResult Cache::VersionedEnqueue(const VersionedEntry& entry) {
   result = WriteEntryKeys(index, entry);
   if (result.isErr()) {
     
-    mozilla::Unused << DeleteEntry(index);
+    (void)DeleteEntry(index);
     return result;
   }
 
@@ -376,7 +375,7 @@ VoidResult Cache::VersionedEnqueue(const VersionedEntry& entry) {
   if (result.isErr()) {
     
     
-    mozilla::Unused << DeleteEntry(index);
+    (void)DeleteEntry(index);
     return result;
   }
 
@@ -402,7 +401,7 @@ VoidResult Cache::DiscardFront() {
   
   
   
-  mozilla::Unused << DeleteEntry(mFront);
+  (void)DeleteEntry(mFront);
 
   VoidResult result = SetSize(mSize - 1);
   

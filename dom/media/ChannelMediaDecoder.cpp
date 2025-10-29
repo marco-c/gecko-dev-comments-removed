@@ -323,12 +323,11 @@ void ChannelMediaDecoder::NotifyDownloadEnded(nsresult aStatus) {
         [playbackStats = mPlaybackStatistics,
          res = RefPtr<BaseMediaResource>(mResource),
          duration = mDuration.match(DurationToTimeUnit())]() {
-          Unused << UpdateResourceOfPlaybackByteRate(playbackStats, res,
-                                                     duration);
+          (void)UpdateResourceOfPlaybackByteRate(playbackStats, res, duration);
         });
     nsresult rv = GetStateMachine()->OwnerThread()->Dispatch(r.forget());
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
+    (void)rv;
     owner->DownloadSuspended();
     
     
@@ -382,12 +381,11 @@ void ChannelMediaDecoder::DurationChanged() {
       [playbackStats = mPlaybackStatistics,
        res = RefPtr<BaseMediaResource>(mResource),
        duration = mDuration.match(DurationToTimeUnit())]() {
-        Unused << UpdateResourceOfPlaybackByteRate(playbackStats, res,
-                                                   duration);
+        (void)UpdateResourceOfPlaybackByteRate(playbackStats, res, duration);
       });
   nsresult rv = GetStateMachine()->OwnerThread()->Dispatch(r.forget());
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  (void)rv;
 }
 
 void ChannelMediaDecoder::DownloadProgressed() {

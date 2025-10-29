@@ -244,7 +244,7 @@ std::unique_ptr<Timeout> DataChannelConnectionDcSctp::CreateTimeout(
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   
-  Unused << aPrecision;
+  (void)aPrecision;
   return std::make_unique<DcSctpTimeout>(this);
 }
 
@@ -341,15 +341,15 @@ void DataChannelConnectionDcSctp::OnStreamsResetFailed(
   DC_ERROR(("%s: %p", __func__, this));
   
   
-  Unused << aOutgoingStreams;
-  Unused << aReason;
+  (void)aOutgoingStreams;
+  (void)aReason;
 }
 
 void DataChannelConnectionDcSctp::OnStreamsResetPerformed(
     webrtc::ArrayView<const StreamID> aOutgoingStreams) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
-  Unused << aOutgoingStreams;
+  (void)aOutgoingStreams;
 }
 
 void DataChannelConnectionDcSctp::OnIncomingStreamsReset(

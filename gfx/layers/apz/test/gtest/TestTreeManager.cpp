@@ -390,7 +390,7 @@ TEST_F(APZCTreeManagerTester,
   
   WidgetKeyboardEvent widgetEvent(true, eKeyDown, nullptr);
   KeyboardInput input(widgetEvent);
-  Unused << manager->ReceiveInputEvent(input);
+  (void)manager->ReceiveInputEvent(input);
 
   
   

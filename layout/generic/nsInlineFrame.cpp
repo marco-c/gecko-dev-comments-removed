@@ -372,7 +372,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
   if (mFrames.IsEmpty()) {
     
     
-    Unused << PullOneFrame(aPresContext, irs);
+    (void)PullOneFrame(aPresContext, irs);
   }
 
   ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);

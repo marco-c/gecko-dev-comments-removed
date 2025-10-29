@@ -108,7 +108,7 @@ mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     const mozilla::MarkerCategory& aCategory, mozilla::MarkerOptions&& aOptions,
     MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
   AUTO_PROFILER_LABEL("AddMarkerToBuffer", PROFILER);
-  mozilla::Unused << aMarkerType;  
+  (void)aMarkerType;  
   return mozilla::base_profiler_markers_detail::AddMarkerToBuffer<MarkerType>(
       aBuffer, aName, aCategory, std::move(aOptions),
       profiler_active_without_feature(ProfilerFeature::NoMarkerStacks)

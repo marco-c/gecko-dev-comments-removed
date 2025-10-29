@@ -164,7 +164,7 @@ void ClientManagerService::Shutdown() {
   
   for (auto actor :
        CopyableAutoTArray<ClientManagerParent*, 16>(mManagerList)) {
-    Unused << PClientManagerParent::Send__delete__(actor);
+    (void)PClientManagerParent::Send__delete__(actor);
   }
 
   
@@ -393,7 +393,7 @@ void ClientManagerService::AddManager(ClientManagerParent* aManager) {
 
   
   if (mShutdown) {
-    Unused << PClientManagerParent::Send__delete__(aManager);
+    (void)PClientManagerParent::Send__delete__(aManager);
   }
 }
 
@@ -657,7 +657,7 @@ RefPtr<ClientOpPromise> ClientManagerService::Claim(
     }
 
     if (source->IsFrozen()) {
-      Unused << source->SendEvictFromBFCache();
+      (void)source->SendEvictFromBFCache();
       continue;
     }
 

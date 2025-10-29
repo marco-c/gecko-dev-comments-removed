@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "PLDHashTable.h"
-#include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsIURI.h"
@@ -58,7 +57,7 @@ class nsURIHashKey : public PLDHashEntryHdr {
     nsAutoCString spec;
     
     
-    mozilla::Unused << const_cast<nsIURI*>(aKey)->GetSpec(spec);
+    (void)const_cast<nsIURI*>(aKey)->GetSpec(spec);
     return mozilla::HashString(spec);
   }
 

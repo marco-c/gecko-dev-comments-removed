@@ -1251,8 +1251,8 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
                 domain,
                 [&domain, parent] {
                   NS_ASSERTION(!parent, "Shouldn't have a parent here!");
-                  Unused << parent;  
-                                     
+                  (void)parent;  
+                                 
                   auto wdi = MakeUnique<WorkerDomainInfo>();
                   wdi->mDomain = domain;
                   return wdi;
@@ -1761,7 +1761,7 @@ void RuntimeService::Cleanup() {
           [self](nsITimer*) { self->DumpRunningWorkers(); },
           TimeDuration::FromSeconds(1), nsITimer::TYPE_ONE_SHOT,
           "RuntimeService::WorkerShutdownDump"_ns);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
+      (void)NS_WARN_IF(NS_FAILED(rv));
 
       
       
@@ -2055,8 +2055,7 @@ uint32_t RuntimeService::ClampedHardwareConcurrency(bool aRFPHardcoded,
     if (numberOfProcessors <= 0) {
       numberOfProcessors = 1;  
     }
-    Unused << unclampedHardwareConcurrency.compareExchange(0,
-                                                           numberOfProcessors);
+    (void)unclampedHardwareConcurrency.compareExchange(0, numberOfProcessors);
   }
 
   if (MOZ_UNLIKELY(aRFPTiered)) {

@@ -25,7 +25,6 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/Filters.h"
 #include "mozilla/gfx/Helpers.h"
@@ -374,7 +373,7 @@ WrFiltersStatus FilterInstance::BuildWebRenderFiltersImpl(
       
       
       
-      Unused << aWrFilters.filters.PopLastElement();
+      (void)aWrFilters.filters.PopLastElement();
       srgb = previousSrgb;
     }
 

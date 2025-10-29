@@ -44,7 +44,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 
 
 #if defined(IOV_MAX)

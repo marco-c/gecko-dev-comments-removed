@@ -554,7 +554,7 @@ void DMABufSurface::FenceWait() {
   }
 
   
-  Unused << syncFd.release();
+  (void)syncFd.release();
 
   egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
   egl->fDestroySync(sync);

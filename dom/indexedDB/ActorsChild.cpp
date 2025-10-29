@@ -902,7 +902,7 @@ void BackgroundFactoryRequestChild::HandleResponse(
   IDBDatabase* const database = [this, databaseActor]() -> IDBDatabase* {
     IDBDatabase* database = databaseActor->GetDOMObject();
     if (!database) {
-      Unused << this;
+      (void)this;
 
       if (NS_WARN_IF(!databaseActor->EnsureDOMObject())) {
         return nullptr;
@@ -1193,11 +1193,10 @@ BackgroundDatabaseChild::RecvPBackgroundIDBVersionChangeTransactionConstructor(
     
     
     
-    Unused
-        << mozilla::ipc::BackgroundChildImpl::GetThreadLocalForCurrentThread()
-               ->mIndexedDBThreadLocal->NextTransactionSN(
-                   IDBTransaction::Mode::VersionChange);
-    Unused << IDBRequest::NextSerialNumber();
+    (void)mozilla::ipc::BackgroundChildImpl::GetThreadLocalForCurrentThread()
+        ->mIndexedDBThreadLocal->NextTransactionSN(
+            IDBTransaction::Mode::VersionChange);
+    (void)IDBRequest::NextSerialNumber();
 
     
     return IPC_OK();
@@ -2368,7 +2367,7 @@ void BackgroundCursorChild<CursorType>::SendContinueInternal(
           if constexpr (!CursorTypeTraits<CursorType>::IsObjectStoreCursor) {
             currentObjectStoreKey = currentCachedResponse.mObjectStoreKey;
           } else {
-            Unused << currentObjectStoreKey;
+            (void)currentObjectStoreKey;
           }
         }
         return res;
@@ -2737,9 +2736,9 @@ mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
   MaybeCollectGarbageOnIPCMessage();
 
   const RefPtr<IDBRequest> request = std::move(mStrongRequest);
-  Unused << request;  
+  (void)request;  
   const RefPtr<IDBCursor> cursor = std::move(mStrongCursor);
-  Unused << cursor;  
+  (void)cursor;  
 
   const auto transaction =
       SafeRefPtr{&mTransaction.ref(), AcquireStrongRefFromRawPtr{}};

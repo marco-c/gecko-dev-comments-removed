@@ -212,13 +212,13 @@ bool EventTarget::IsApzAware() const {
 void EventTarget::DispatchEvent(Event& aEvent) {
   
   
-  Unused << DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
+  (void)DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
 }
 
 void EventTarget::DispatchEvent(Event& aEvent, ErrorResult& aRv) {
   
   
-  Unused << DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
+  (void)DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
 }
 
 Nullable<WindowProxyHolder> EventTarget::GetOwnerGlobalForBindings() {

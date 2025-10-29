@@ -56,7 +56,7 @@ DynamicBlocklistWriter::DynamicBlocklistWriter(
   }
 
   mStringBuffer = MakeUnique<uint8_t[]>(mStringBufferSize);
-  Unused << mArray.resize(entriesToWrite + 1);  
+  (void)mArray.resize(entriesToWrite + 1);  
 
   size_t currentStringOffset = 0;
   size_t i = 0;

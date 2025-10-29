@@ -24,10 +24,6 @@ typedef HANDLE HREPORT;
 #    undef WerReportSubmit
 #  endif  
 #  include <stdlib.h>
-
-#  include "mozilla/Unused.h"
-
-using mozilla::Unused;
 #endif
 
 namespace CrashReporter {
@@ -97,7 +93,7 @@ void UnregisterRuntimeExceptionModule() {
 #ifdef XP_WIN
   
   if (*sModulePath) {
-    Unused << ::WerUnregisterRuntimeExceptionModule(
+    (void)::WerUnregisterRuntimeExceptionModule(
         sModulePath, reinterpret_cast<PVOID>(mozilla::GetGeckoProcessType()));
     *sModulePath = L'\0';
   }

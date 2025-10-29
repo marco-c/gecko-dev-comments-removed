@@ -19,7 +19,6 @@
 #include "mozilla/CondVar.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorNames.h"
-#include "mozilla/Unused.h"
 #include "mozilla/dom/quota/QuotaObject.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SpinEventLoopUntil.h"
@@ -462,7 +461,7 @@ class AsyncVacuumEvent final : public Runnable {
     if (IsOnCurrentSerialEventTarget(mConnection->eventTargetOpenedOn)) {
       
       if (mCallback) {
-        mozilla::Unused << mCallback->Complete(mStatus, nullptr);
+        (void)mCallback->Complete(mStatus, nullptr);
       }
       return NS_OK;
     }
@@ -470,8 +469,8 @@ class AsyncVacuumEvent final : public Runnable {
     
     auto guard = MakeScopeExit([&]() {
       mConnection->mIsStatementOnHelperThreadInterruptible = false;
-      mozilla::Unused << mConnection->eventTargetOpenedOn->Dispatch(
-          this, NS_DISPATCH_NORMAL);
+      (void)mConnection->eventTargetOpenedOn->Dispatch(this,
+                                                       NS_DISPATCH_NORMAL);
     });
 
     
@@ -867,7 +866,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void) {
         
         
         
-        Unused << synchronousClose();
+        (void)synchronousClose();
       } else {
         nsCOMPtr<nsIRunnable> event =
             NewRunnableMethod("storage::Connection::synchronousClose", this,
@@ -881,7 +880,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void) {
           
           MOZ_ASSERT(false,
                      "Leaked Connection::synchronousClose(), ownership fail.");
-          Unused << synchronousClose();
+          (void)synchronousClose();
         }
       }
 
@@ -1259,10 +1258,10 @@ nsresult Connection::initializeInternal() {
   
 #if defined(ANDROID)
   
-  Unused << ExecuteSimpleSQL("PRAGMA synchronous = OFF;"_ns);
+  (void)ExecuteSimpleSQL("PRAGMA synchronous = OFF;"_ns);
 #else
   
-  Unused << ExecuteSimpleSQL("PRAGMA synchronous = NORMAL;"_ns);
+  (void)ExecuteSimpleSQL("PRAGMA synchronous = NORMAL;"_ns);
 #endif
 
   
@@ -1282,7 +1281,7 @@ nsresult Connection::initializeOnAsyncThread(nsIFile* aStorageFile) {
     nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod("Connection::shutdownAsyncThread", this,
                           &Connection::shutdownAsyncThread);
-    Unused << NS_DispatchToMainThread(event);
+    (void)NS_DispatchToMainThread(event);
   }
   return rv;
 }
@@ -1423,7 +1422,7 @@ nsresult Connection::ensureOperationSupported(
 #ifdef DEBUG
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
-      Unused << xpc->DebugDumpJSStack(false, false, false);
+      (void)xpc->DebugDumpJSStack(false, false, false);
     }
 #endif
     MOZ_ASSERT(false,
@@ -1738,7 +1737,7 @@ nsresult Connection::synchronousClose() {
 #ifdef DEBUG
     if (NS_IsMainThread()) {
       nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
-      Unused << xpc->DebugDumpJSStack(false, false, false);
+      (void)xpc->DebugDumpJSStack(false, false, false);
     }
 #endif
     MOZ_ASSERT(false,
@@ -1746,7 +1745,7 @@ nsresult Connection::synchronousClose() {
                "statements. "
                "Should have used asyncClose().");
     
-    Unused << SpinningSynchronousClose();
+    (void)SpinningSynchronousClose();
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1868,7 +1867,7 @@ Connection::AsyncClose(mozIStorageCompletionCallback* aCallback) {
       
       
       
-      Unused << NS_DispatchToMainThread(completeEvent.forget());
+      (void)NS_DispatchToMainThread(completeEvent.forget());
     }
     MOZ_ALWAYS_SUCCEEDS(synchronousClose());
     

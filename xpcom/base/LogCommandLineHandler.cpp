@@ -39,7 +39,7 @@ void LoggingHandleCommandLineArgs(
         continue;
       }
       
-      Unused << p.CheckChar('-');
+      (void)p.CheckChar('-');
 
       for (auto const& name : names) {
         if (!p.CheckWord(name)) {
@@ -77,7 +77,7 @@ void LoggingHandleCommandLineArgs(
     
     if (!env.IsEmpty()) {
       nsDependentCSubstring value;
-      Unused << p.ReadUntil(Tokenizer::Token::EndOfFile(), value);
+      (void)p.ReadUntil(Tokenizer::Token::EndOfFile(), value);
       env.Append(value);
 
       consumer(env);

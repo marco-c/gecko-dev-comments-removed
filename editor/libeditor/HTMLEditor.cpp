@@ -3346,7 +3346,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::CreateAndInsertElement(
   
   
   
-  Unused << aPointToInsert.Offset();
+  (void)aPointToInsert.Offset();
 
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
@@ -4270,7 +4270,7 @@ Result<CreateLineBreakResult, nsresult> HTMLEditor::InsertLineBreak(
       }
       insertTextNodeResult.unwrap().IgnoreCaretPointSuggestion();
     } else {
-      Unused << pointToInsert.Offset();
+      (void)pointToInsert.Offset();
       RefPtr<InsertNodeTransaction> transaction =
           InsertNodeTransaction::Create(*this, *newTextNode, pointToInsert);
       nsresult rv = transaction->DoTransaction();
@@ -5213,7 +5213,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitNodeDeepWithTransaction(
 Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
     const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode) {
   
-  Unused << aStartOfRightNode.Offset();
+  (void)aStartOfRightNode.Offset();
 
   
   
@@ -5564,7 +5564,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
   const uint32_t keepingContentLength = aContentToKeep.Length();
   const EditorDOMPoint oldPointAtRightContent(&aContentToRemove);
   if (MOZ_LIKELY(oldPointAtRightContent.IsSet())) {
-    Unused << oldPointAtRightContent.Offset();  
+    (void)oldPointAtRightContent.Offset();  
   }
 
   

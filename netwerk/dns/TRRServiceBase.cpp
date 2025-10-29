@@ -307,7 +307,7 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfoInternal(
   
   
   
-  Unused << NS_WARN_IF(NS_FAILED(rv));
+  (void)NS_WARN_IF(NS_FAILED(rv));
 }
 
 already_AddRefed<nsHttpConnectionInfo> TRRServiceBase::TRRConnectionInfo() {
@@ -391,7 +391,7 @@ void TRRServiceBase::DoReadEtcHostsFile(ParsingCallback aCallback) {
     rust_parse_etc_hosts(&path, aCallback);
   };
 
-  Unused << NS_DispatchBackgroundTask(
+  (void)NS_DispatchBackgroundTask(
       NS_NewRunnableFunction("Read /etc/hosts file", readHostsTask),
       NS_DISPATCH_EVENT_MAY_BLOCK);
 }

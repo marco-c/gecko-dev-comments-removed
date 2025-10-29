@@ -3167,7 +3167,7 @@ nsresult nsExternalHelperAppService::FillMIMEInfoForMimeTypeFromExtras(
       extensions.EndReading(end);
       while (start != end) {
         nsACString::const_iterator cursor = start;
-        mozilla::Unused << FindCharInReadable(',', cursor, end);
+        (void)FindCharInReadable(',', cursor, end);
         aMIMEInfo->AppendExtension(Substring(start, cursor));
         
         start = cursor != end ? ++cursor : cursor;

@@ -777,7 +777,7 @@ bool EditorEventListener::WillHandleMouseButtonEvent(
   if (!mMouseDownOrUpConsumedByIME) {
     
     
-    Unused << EnsureCommitComposition();
+    (void)EnsureCommitComposition();
   }
   return mMouseDownOrUpConsumedByIME;
 }

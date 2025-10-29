@@ -188,7 +188,7 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
   
   
   RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
-  mozilla::Unused << streamKungFuDeathGrip;  
+  (void)streamKungFuDeathGrip;  
   RefPtr<nsHtml5TreeOpExecutor> executor(mExecutor);
 
   MOZ_RELEASE_ASSERT(executor->HasStarted());
