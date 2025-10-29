@@ -83,8 +83,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
     return mRootModule;
   }
 
-  void MarkModuleForCache() { MarkForCache(); }
-
   
 
   void CancelDynamicImport(nsresult aResult) {
