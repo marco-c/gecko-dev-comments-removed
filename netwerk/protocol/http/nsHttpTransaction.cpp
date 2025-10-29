@@ -3751,12 +3751,6 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
 
   
   
-  if (!StaticPrefs::network_lna_websocket_enabled() && IsWebsocketUpgrade()) {
-    return true;  
-  }
-
-  
-  
   {
     mozilla::MutexAutoLock lock(mLock);
     if (mTargetIpAddressSpace == nsILoadInfo::Unknown) {
@@ -3774,13 +3768,6 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   
   
   
-
-  
-  if (StaticPrefs::network_lna_local_network_to_localhost_skip_checks() &&
-      mParentIPAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
-      aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local) {
-    return true;  
-  }
 
   if (mozilla::net::IsLocalOrPrivateNetworkAccess(mParentIPAddressSpace,
                                                   aTargetIpAddressSpace)) {
