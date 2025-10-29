@@ -319,7 +319,7 @@ impl Config {
     
     
     
-    pub fn local_dump_id(&self) -> Cow<str> {
+    pub fn local_dump_id(&self) -> Cow<'_, str> {
         self.dump_file().file_stem().unwrap().to_string_lossy()
     }
 

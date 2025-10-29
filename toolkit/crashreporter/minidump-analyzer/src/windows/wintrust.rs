@@ -91,7 +91,7 @@ impl CATAdmin {
     }
 
     
-    pub fn catalog_from_hash(&self, hash: &mut [u8]) -> Option<CATInfo> {
+    pub fn catalog_from_hash(&self, hash: &mut [u8]) -> Option<CATInfo<'_>> {
         let ptr = unsafe {
             CryptCATAdminEnumCatalogFromHash(
                 self.0,

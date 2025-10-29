@@ -104,7 +104,7 @@ impl<T> Synchronized<T> {
     }
 
     
-    pub fn borrow(&self) -> std::cell::Ref<T> {
+    pub fn borrow(&self) -> std::cell::Ref<'_, T> {
         self.inner.current.borrow()
     }
 
