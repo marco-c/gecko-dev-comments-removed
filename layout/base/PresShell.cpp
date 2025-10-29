@@ -11473,22 +11473,15 @@ bool PresShell::VerifyIncrementalReflow() {
   
   nsView* rootView = mViewManager->GetRootView();
   NS_ENSURE_TRUE(rootView->HasWidget(), false);
-  nsIWidget* parentWidget = rootView->GetWidget();
 
   
-  auto vm = MakeRefPtr<nsViewManager>();
-  rv = vm->Init(dc);
-  NS_ENSURE_SUCCESS(rv, false);
+  auto vm = MakeRefPtr<nsViewManager>(dc);
 
   
   
   nsRect tbounds = mPresContext->GetVisibleArea();
   nsView* view = vm->CreateView(tbounds, nullptr);
   NS_ENSURE_TRUE(view, false);
-
-  
-  rv = view->CreateWidget(parentWidget, true);
-  NS_ENSURE_SUCCESS(rv, false);
 
   
   vm->SetRootView(view);

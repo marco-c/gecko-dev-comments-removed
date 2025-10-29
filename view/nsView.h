@@ -265,16 +265,6 @@ class nsView final : public nsIWidgetListener {
 
 
 
-
-
-  nsresult CreateWidget(nsIWidget* aParent, bool aEnableDragDrop = true,
-                        bool aResetVisibility = true);
-
-  
-
-
-
-
   void DestroyWidget();
 
   
@@ -288,8 +278,8 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsresult AttachToTopLevelWidget(nsIWidget* aWidget);
-  nsresult DetachFromTopLevelWidget();
+  void AttachToTopLevelWidget(nsIWidget* aWidget);
+  void DetachFromTopLevelWidget();
 
   
 

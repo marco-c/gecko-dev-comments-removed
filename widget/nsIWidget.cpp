@@ -552,11 +552,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChild(
   nsCOMPtr<nsIWidget> widget;
   switch (mWidgetType) {
     case WidgetType::Native: {
-      if (aInitData.mWindowType == WindowType::Popup) {
-        widget = AllocateChildPopupWidget();
-      } else {
-        widget = nsIWidget::CreateChildWindow();
-      }
+      widget = nsIWidget::CreateChildWindow();
       break;
     }
     case WidgetType::Headless:
@@ -2296,12 +2292,10 @@ void nsIWidget::NotifyLiveResizeStopped() {
   }
 }
 
-nsresult nsIWidget::AsyncEnableDragDrop(bool aEnable) {
-  RefPtr<nsIWidget> kungFuDeathGrip = this;
-  return NS_DispatchToCurrentThreadQueue(
-      NS_NewRunnableFunction(
-          "AsyncEnableDragDropFn",
-          [this, aEnable, kungFuDeathGrip]() { EnableDragDrop(aEnable); }),
+void nsIWidget::AsyncEnableDragDrop(bool aEnable) {
+  NS_DispatchToCurrentThreadQueue(
+      NewRunnableMethod<bool>("AsyncEnableDragDrop", this,
+                              &nsIWidget::EnableDragDrop, aEnable),
       kAsyncDragDropTimeout, EventQueuePriority::Idle);
 }
 

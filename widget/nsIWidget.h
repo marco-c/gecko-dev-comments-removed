@@ -1566,7 +1566,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
   virtual void EnableDragDrop(bool aEnable) {}
-  nsresult AsyncEnableDragDrop(bool aEnable);
+  void AsyncEnableDragDrop(bool aEnable);
 
   
 
@@ -2140,10 +2140,6 @@ class nsIWidget : public nsSupportsWeakReference {
   static already_AddRefed<nsIWidget> CreateTopLevelWindow();
 
   static already_AddRefed<nsIWidget> CreateChildWindow();
-
-  virtual already_AddRefed<nsIWidget> AllocateChildPopupWidget() {
-    return CreateChildWindow();
-  }
 
   
 
