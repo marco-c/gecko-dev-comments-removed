@@ -93,20 +93,11 @@ static gfxPoint AppUnitsToGfxUnits(const nsPoint& aPoint,
 
 
 
-static gfxRect AppUnitsToFloatCSSPixels(const gfxRect& aRect,
-                                        const nsPresContext* aContext) {
+static gfxRect AppUnitsToFloatCSSPixels(const nsRect& aRect) {
   return gfxRect(nsPresContext::AppUnitsToFloatCSSPixels(aRect.x),
                  nsPresContext::AppUnitsToFloatCSSPixels(aRect.y),
                  nsPresContext::AppUnitsToFloatCSSPixels(aRect.width),
                  nsPresContext::AppUnitsToFloatCSSPixels(aRect.height));
-}
-
-
-
-
-static bool Inside(const gfxRect& aRect, const gfxPoint& aPoint) {
-  return aPoint.x >= aRect.x && aPoint.x < aRect.XMost() &&
-         aPoint.y >= aRect.y && aPoint.y < aRect.YMost();
 }
 
 
@@ -169,9 +160,6 @@ static nsIContent* GetFirstNonAAncestor(nsIContent* aContent) {
   }
   return aContent;
 }
-
-
-
 
 
 
@@ -576,8 +564,7 @@ struct TextRenderedRun {
 
 
 
-
-  SVGBBox GetRunUserSpaceRect(nsPresContext* aContext, uint32_t aFlags) const;
+  SVGBBox GetRunUserSpaceRect(uint32_t aFlags) const;
 
   
 
@@ -816,8 +803,7 @@ gfxMatrix TextRenderedRun::GetTransformFromRunUserSpaceToFrameUserSpace(
   return m.PreTranslate(t);
 }
 
-SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
-                                             uint32_t aFlags) const {
+SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
   SVGBBox r;
   if (!mFrame) {
     return r;
@@ -880,10 +866,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   }
 
   
-  gfxRect fill = AppUnitsToFloatCSSPixels(
-      gfxRect(fillInAppUnits.x, fillInAppUnits.y, fillInAppUnits.width,
-              fillInAppUnits.height),
-      aContext);
+  gfxRect fill = AppUnitsToFloatCSSPixels(fillInAppUnits);
 
   
   fill.Scale(1.0 / mFontSizeScaleFactor);
@@ -905,7 +888,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
 
 SVGBBox TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
                                                uint32_t aFlags) const {
-  SVGBBox r = GetRunUserSpaceRect(aContext, aFlags);
+  SVGBBox r = GetRunUserSpaceRect(aFlags);
   if (r.IsEmpty()) {
     return r;
   }
@@ -916,7 +899,7 @@ SVGBBox TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
 SVGBBox TextRenderedRun::GetUserSpaceRect(
     nsPresContext* aContext, uint32_t aFlags,
     const gfxMatrix* aAdditionalTransform) const {
-  SVGBBox r = GetRunUserSpaceRect(aContext, aFlags);
+  SVGBBox r = GetRunUserSpaceRect(aFlags);
   if (r.IsEmpty()) {
     return r;
   }
@@ -3326,12 +3309,11 @@ nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {
     }
 
     gfxPoint pointInRunUserSpace = m.TransformPoint(aPoint);
-    gfxRect frameRect = run.GetRunUserSpaceRect(
-                               presContext, TextRenderedRun::eIncludeFill |
+    gfxRect frameRect = run.GetRunUserSpaceRect(TextRenderedRun::eIncludeFill |
                                                 TextRenderedRun::eIncludeStroke)
                             .ToThebesRect();
 
-    if (Inside(frameRect, pointInRunUserSpace)) {
+    if (frameRect.Contains(pointInRunUserSpace)) {
       hit = run.mFrame;
     }
   }
@@ -5339,8 +5321,7 @@ Point SVGTextFrame::TransformFramePointToTextChild(
     uint32_t flags = TextRenderedRun::eIncludeFill |
                      TextRenderedRun::eIncludeStroke |
                      TextRenderedRun::eNoHorizontalOverflow;
-    gfxRect runRect =
-        run.GetRunUserSpaceRect(presContext, flags).ToThebesRect();
+    gfxRect runRect = run.GetRunUserSpaceRect(flags).ToThebesRect();
 
     gfxMatrix m = run.GetTransformFromRunUserSpaceToUserSpace(presContext);
     if (!m.Invert()) {
@@ -5349,7 +5330,7 @@ Point SVGTextFrame::TransformFramePointToTextChild(
     gfxPoint pointInRunUserSpace =
         m.TransformPoint(ThebesPoint(pointInUserSpace));
 
-    if (Inside(runRect, pointInRunUserSpace)) {
+    if (runRect.Contains(pointInRunUserSpace)) {
       
       dx = 0;
       dy = 0;
@@ -5405,10 +5386,7 @@ gfxRect SVGTextFrame::TransformFrameRectFromTextChild(
     nsRect rectInTextFrame = aRect + aChildFrame->GetOffsetTo(run.mFrame);
 
     
-    gfxRect rectInFrameUserSpace = AppUnitsToFloatCSSPixels(
-        gfxRect(rectInTextFrame.x, rectInTextFrame.y, rectInTextFrame.width,
-                rectInTextFrame.height),
-        presContext);
+    gfxRect rectInFrameUserSpace = AppUnitsToFloatCSSPixels(rectInTextFrame);
 
     
     uint32_t flags =
