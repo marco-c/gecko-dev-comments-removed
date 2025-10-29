@@ -1016,7 +1016,7 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
         if (!EnqueueMicroTask(cx, runnable.forget())) {
           
           
-          MOZ_CRASH("Failed to enqueue micro task from worker.");
+          NS_ABORT_OOM(0);
         }
       } else {
         MOZ_ASSERT(IsWorkerDebuggerGlobal(global) ||
@@ -1024,7 +1024,7 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
         if (!EnqueueDebugMicroTask(cx, runnable.forget())) {
           
           
-          MOZ_CRASH("Failed to enqueue debugger micro task from worker.");
+          NS_ABORT_OOM(0);
         }
       }
     } else {

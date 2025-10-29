@@ -1215,7 +1215,6 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
         
         
         
-        
         (void)RunMicroTask(cx, &job);
       }
     }
