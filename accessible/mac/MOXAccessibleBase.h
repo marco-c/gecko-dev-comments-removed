@@ -79,6 +79,9 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (id)accessibilityFocusedUIElement;
 
 
+- (NSArray*)accessibilityCustomActions;
+
+
 - (BOOL)isAccessibilityElement;
 
 
@@ -95,6 +98,9 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 
 
 - (id)moxFocusedUIElement;
+
+
+- (NSArray*)moxCustomActions;
 
 
 - (void)moxPostNotification:(NSString*)notification;

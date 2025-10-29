@@ -26,6 +26,9 @@
 - (id _Nullable)moxFocusedUIElement;
 
 
+- (NSArray* _Nullable)moxCustomActions;
+
+
 - (void)moxPostNotification:(NSString* _Nonnull)notification;
 
 - (void)moxPostNotification:(NSString* _Nonnull)notification

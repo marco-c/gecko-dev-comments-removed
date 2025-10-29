@@ -45,6 +45,8 @@
 
 - (id)accessibilityFocusedUIElement;
 
+- (NSArray*)accessibilityCustomActions;
+
 
 
 
