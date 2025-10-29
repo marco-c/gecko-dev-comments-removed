@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/Navigation.h"
 
+#include "NavigationPrecommitController.h"
 #include "fmt/format.h"
 #include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -1661,8 +1662,49 @@ bool Navigation::InnerFireNavigateEvent(
   RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker,
                                                        event, aDestination);
   
-  scope->CommitNavigateEvent(aNavigationType);
-
+  if (event->NavigationPrecommitHandlerList().IsEmpty()) {
+    LOG_FMTD("No precommit handlers, committing directly");
+    scope->CommitNavigateEvent(aNavigationType);
+  } else {
+    LOG_FMTD("Running {} precommit handlers",
+             event->NavigationPrecommitHandlerList().Length());
+    
+    RefPtr precommitController =
+        new NavigationPrecommitController(event, globalObject);
+    
+    nsTArray<RefPtr<Promise>> precommitPromiseList;
+    
+    for (auto& handler : event->NavigationPrecommitHandlerList().Clone()) {
+      
+      RefPtr promise = MOZ_KnownLive(handler)->Call(*precommitController);
+      if (promise) {
+        precommitPromiseList.AppendElement(promise);
+      }
+    }
+    
+    Promise::WaitForAll(
+        globalObject, precommitPromiseList,
+        [weakScope = WeakPtr(scope),
+         aNavigationType](const Span<JS::Heap<JS::Value>>&)
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              if (!weakScope) {
+                return;
+              }
+              RefPtr scope = weakScope.get();
+              scope->CommitNavigateEvent(aNavigationType);
+            },
+        [weakScope = WeakPtr(scope)](JS::Handle<JS::Value> aRejectionReason)
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              if (!weakScope) {
+                return;
+              }
+              RefPtr scope = weakScope.get();
+              scope->ProcessNavigateEventHandlerFailure(aRejectionReason);
+            },
+        scope);
+  }
   
   return event->InterceptionState() == NavigateEvent::InterceptionState::None;
 }
