@@ -10,7 +10,7 @@
 
 #include "blapi.h"
 
-#define FREEBL_VERSION 0x0331
+#define FREEBL_VERSION 0x0332
 
 struct FREEBLVectorStr {
 
@@ -938,6 +938,9 @@ struct FREEBLVectorStr {
     SECStatus (*p_MLDSA_VerifyInit)(MLDSAPublicKey *key, const SECItem *sgnCtx, MLDSAContext **ctx);
     SECStatus (*p_MLDSA_VerifyUpdate)(MLDSAContext *ctx, const SECItem *data);
     SECStatus (*p_MLDSA_VerifyFinal)(MLDSAContext *ctx, const SECItem *signature);
+    
+
+    SECStatus (*p_EC_DecompressPublicKey)(const SECItem *publicCompressed, const ECParams *params, SECItem *publicUncompressed);
     
 
     
