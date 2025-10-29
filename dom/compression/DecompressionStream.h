@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_COMPRESSIONSTREAM_H_
-#define DOM_COMPRESSIONSTREAM_H_
+#ifndef DOM_COMPRESSION_DECOMPRESSIONSTREAM_H_
+#define DOM_COMPRESSION_DECOMPRESSIONSTREAM_H_
 
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
@@ -22,16 +22,16 @@ class TransformStream;
 
 enum class CompressionFormat : uint8_t;
 
-class CompressionStream final : public nsISupports, public nsWrapperCache {
+class DecompressionStream final : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CompressionStream)
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(DecompressionStream)
 
  public:
-  CompressionStream(nsISupports* aGlobal, TransformStream& aStream);
+  DecompressionStream(nsISupports* aGlobal, TransformStream& aStream);
 
  protected:
-  ~CompressionStream();
+  ~DecompressionStream();
 
  public:
   nsISupports* GetParentObject() const { return mGlobal; }
@@ -40,8 +40,8 @@ class CompressionStream final : public nsISupports, public nsWrapperCache {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<CompressionStream>
-  Constructor(const GlobalObject& aGlobal, CompressionFormat aFormat,
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static already_AddRefed<DecompressionStream>
+  Constructor(const GlobalObject& global, CompressionFormat format,
               ErrorResult& aRv);
 
   already_AddRefed<ReadableStream> Readable() const;
