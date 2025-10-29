@@ -3581,6 +3581,34 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       nsIEditor::DirectionIsBackspace(aDirectionAndAmount);
 
   const OwningNonNull<nsRange> rangeToDelete(aRangeToDelete);
+
+  
+  
+  
+  
+  if (HTMLEditUtils::IsBlockElement(
+          *mLeftContent, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+    const WSScanResult lastThingInLeftBlock =
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::All, EditorRawDOMPoint::AtEndOf(*mLeftContent),
+            BlockInlineCheck::UseComputedDisplayOutsideStyle);
+    if (lastThingInLeftBlock.ReachedLineBreak()) {
+      const EditorLineBreak lineBreak =
+          lastThingInLeftBlock.CreateEditorLineBreak<EditorLineBreak>();
+      
+      
+      Result<EditorDOMPoint, nsresult> exLineBreakPointOrError =
+          aHTMLEditor.DeleteLineBreakWithTransaction(
+              lineBreak, nsIEditor::eNoStrip, aEditingHost);
+      if (MOZ_UNLIKELY(exLineBreakPointOrError.isErr())) {
+        NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+        return exLineBreakPointOrError.propagateErr();
+      }
+    }
+  }
+
+  
+  
   Result<EditorDOMRange, nsresult> rangeToDeleteOrError =
       WhiteSpaceVisibilityKeeper::NormalizeSurroundingWhiteSpacesToJoin(
           aHTMLEditor, EditorDOMRange(*rangeToDelete));
@@ -3595,6 +3623,9 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     NS_WARNING("EditorDOMRange::SetToRange() failed");
     return Err(rv);
   }
+
+  
+  
   if (!rangeToDelete->Collapsed()) {
     AutoClonedSelectionRangeArray rangesToDelete(rangeToDelete,
                                                  aLimitersAndCaretData);
