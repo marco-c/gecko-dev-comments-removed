@@ -1656,7 +1656,7 @@ CssRuleView.prototype = {
 
     
     for (const textProp of rule.textProps) {
-      if (!textProp.invisible && this._highlightProperty(textProp.editor)) {
+      if (!textProp.invisible && this._highlightProperty(textProp)) {
         isHighlighted = true;
       }
     }
@@ -1762,18 +1762,18 @@ CssRuleView.prototype = {
 
 
 
-  _highlightProperty(editor) {
-    const isPropertyHighlighted = this._highlightRuleProperty(editor);
-    const isComputedHighlighted = this._highlightComputedProperty(editor);
+  _highlightProperty(textProperty) {
+    const isPropertyHighlighted = this._highlightRuleProperty(textProperty);
+    const isComputedHighlighted = this._highlightComputedProperty(textProperty);
 
     
     
     if (
       !isPropertyHighlighted &&
       isComputedHighlighted &&
-      !editor.computed.hasAttribute("user-open")
+      !textProperty.editor.computed.hasAttribute("user-open")
     ) {
-      editor.expandForFilter();
+      textProperty.editor.expandForFilter();
     }
 
     return isPropertyHighlighted || isComputedHighlighted;
@@ -1793,7 +1793,7 @@ CssRuleView.prototype = {
 
     this._clearHighlight(editor.element);
 
-    if (this._highlightProperty(editor)) {
+    if (this._highlightProperty(editor.prop)) {
       this.searchField.classList.remove("devtools-style-searchbox-no-match");
     }
   },
@@ -1808,16 +1808,17 @@ CssRuleView.prototype = {
 
 
 
-  _highlightRuleProperty(editor) {
+  _highlightRuleProperty(textProperty) {
     
-    const propertyName = editor.prop.name.toLowerCase();
-    const propertyValue = editor.valueSpan.textContent.toLowerCase();
+    const propertyName = textProperty.editor.prop.name.toLowerCase();
+    const propertyValue =
+      textProperty.editor.valueSpan.textContent.toLowerCase();
 
-    return this._highlightMatches(
-      editor.container,
+    return this._highlightMatches({
+      element: textProperty.editor.container,
       propertyName,
-      propertyValue
-    );
+      propertyValue,
+    });
   },
 
   
@@ -1830,22 +1831,22 @@ CssRuleView.prototype = {
 
 
 
-  _highlightComputedProperty(editor) {
+  _highlightComputedProperty(textProperty) {
     let isComputedHighlighted = false;
 
     
-    editor.populateComputed();
-    for (const computed of editor.prop.computed) {
+    textProperty.editor.populateComputed();
+    for (const computed of textProperty.computed) {
       if (computed.element) {
         
         const computedName = computed.name.toLowerCase();
         const computedValue = computed.parsedValue.toLowerCase();
 
-        isComputedHighlighted = this._highlightMatches(
-          computed.element,
-          computedName,
-          computedValue
-        )
+        isComputedHighlighted = this._highlightMatches({
+          element: computed.element,
+          propertyName: computedName,
+          propertyValue: computedValue,
+        })
           ? true
           : isComputedHighlighted;
       }
@@ -1868,7 +1869,8 @@ CssRuleView.prototype = {
 
 
 
-  _highlightMatches(element, propertyName, propertyValue) {
+
+  _highlightMatches({ element, propertyName, propertyValue }) {
     const {
       searchPropertyName,
       searchPropertyValue,
@@ -2241,30 +2243,47 @@ CssRuleView.prototype = {
     }
     
     
-    if (name.startsWith("--")) {
-      
-      const propertyContainer = this.styleDocument.getElementById(
-        REGISTERED_PROPERTIES_CONTAINER_ID
-      );
-      if (propertyContainer) {
-        const propertyEl = propertyContainer.querySelector(
-          `[data-name="${name}"]`
-        );
-        if (propertyEl) {
-          const toggle = this.styleDocument.querySelector(
-            `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
-          );
-          if (toggle.ariaExpanded === "false") {
-            this._toggleContainerVisibility(toggle, propertyContainer);
-          }
-
-          this._highlightElementInRule(null, propertyEl, scrollBehavior);
-        }
-        return true;
-      }
+    if (this._maybeHighlightCssRegisteredProperty(name)) {
+      return true;
     }
 
     return false;
+  },
+
+  
+
+
+
+
+
+
+  _maybeHighlightCssRegisteredProperty(name, scrollBehavior) {
+    if (!name.startsWith("--")) {
+      return false;
+    }
+
+    
+    const propertyContainer = this.styleDocument.getElementById(
+      REGISTERED_PROPERTIES_CONTAINER_ID
+    );
+    if (!propertyContainer) {
+      return false;
+    }
+
+    const propertyEl = propertyContainer.querySelector(`[data-name="${name}"]`);
+    if (!propertyEl) {
+      return false;
+    }
+
+    const toggle = this.styleDocument.querySelector(
+      `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
+    );
+    if (toggle.ariaExpanded === "false") {
+      this._toggleContainerVisibility(toggle, propertyContainer);
+    }
+
+    this._highlightElementInRule(null, propertyEl, scrollBehavior);
+    return true;
   },
 
   
