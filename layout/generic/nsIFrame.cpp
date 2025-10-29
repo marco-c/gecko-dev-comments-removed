@@ -4180,8 +4180,9 @@ static bool ShouldSkipFrame(nsDisplayListBuilder* aBuilder,
       !aFrame->IsSelected()) {
     return true;
   }
-  static const nsFrameState skipFlags =
-      NS_FRAME_TOO_DEEP_IN_FRAME_TREE | NS_FRAME_IS_NONDISPLAY;
+  static const nsFrameState skipFlags = NS_FRAME_TOO_DEEP_IN_FRAME_TREE |
+                                        NS_FRAME_IS_NONDISPLAY |
+                                        NS_FRAME_POSITION_VISIBILITY_HIDDEN;
   if (aFrame->HasAnyStateBits(skipFlags)) {
     return true;
   }
@@ -7125,7 +7126,7 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
   const auto boxSizingAdjust = stylePos->mBoxSizing == StyleBoxSizing::Border
                                    ? aBorderPadding
                                    : LogicalSize(aWM);
-  auto shouldStretch = [](StyleSelfAlignment aAlignment, const nsIFrame* aFrame,
+  auto shouldStretch = [](StyleAlignFlags aAlignment, const nsIFrame* aFrame,
                           bool aStartIsAuto, bool aEndIsAuto) {
     if (aStartIsAuto || aEndIsAuto) {
       
@@ -7139,13 +7140,13 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
       return false;
     }
     
-    aAlignment &= ~StyleSelfAlignment::FLAG_BITS;
+    aAlignment &= ~StyleAlignFlags::FLAG_BITS;
 
-    if (aAlignment == StyleSelfAlignment::STRETCH) {
+    if (aAlignment == StyleAlignFlags::STRETCH) {
       return true;
     }
 
-    if (aAlignment == StyleSelfAlignment::NORMAL) {
+    if (aAlignment == StyleAlignFlags::NORMAL) {
       
       
       return !aFrame->HasReplacedSizing() && !aFrame->IsTableWrapperFrame();
@@ -7160,15 +7161,15 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
   
   
   const auto inlineAlignSelf = parentWM.IsOrthogonalTo(aWM)
-                                   ? stylePos->UsedAlignSelf(nullptr)._0
-                                   : stylePos->UsedJustifySelf(nullptr)._0;
+                                   ? stylePos->UsedAlignSelf(nullptr)
+                                   : stylePos->UsedJustifySelf(nullptr);
   const auto blockAlignSelf = parentWM.IsOrthogonalTo(aWM)
-                                  ? stylePos->UsedJustifySelf(nullptr)._0
-                                  : stylePos->UsedAlignSelf(nullptr)._0;
+                                  ? stylePos->UsedJustifySelf(nullptr)
+                                  : stylePos->UsedAlignSelf(nullptr);
   const auto iShouldStretch = shouldStretch(
-      inlineAlignSelf, this, iStartOffsetIsAuto, iEndOffsetIsAuto);
-  const auto bShouldStretch =
-      shouldStretch(blockAlignSelf, this, bStartOffsetIsAuto, bEndOffsetIsAuto);
+      inlineAlignSelf._0, this, iStartOffsetIsAuto, iEndOffsetIsAuto);
+  const auto bShouldStretch = shouldStretch(
+      blockAlignSelf._0, this, bStartOffsetIsAuto, bEndOffsetIsAuto);
   const auto iSizeIsAuto = styleISize->IsAuto();
   
   
@@ -7902,14 +7903,10 @@ nsRect nsIFrame::GetScreenRectInAppUnits() const {
         parentScreenRectAppUnits.TopLeft() + rootFrameOffsetInParent;
     rootScreenPos.x = NS_round(parentScale * rootPt.x);
     rootScreenPos.y = NS_round(parentScale * rootPt.y);
-  } else {
-    nsCOMPtr<nsIWidget> rootWidget =
-        presContext->PresShell()->GetViewManager()->GetRootWidget();
-    if (rootWidget) {
-      LayoutDeviceIntPoint rootDevPx = rootWidget->WidgetToScreenOffset();
-      rootScreenPos.x = presContext->DevPixelsToAppUnits(rootDevPx.x);
-      rootScreenPos.y = presContext->DevPixelsToAppUnits(rootDevPx.y);
-    }
+  } else if (nsCOMPtr<nsIWidget> rootWidget = presContext->GetRootWidget()) {
+    LayoutDeviceIntPoint rootDevPx = rootWidget->WidgetToScreenOffset();
+    rootScreenPos.x = presContext->DevPixelsToAppUnits(rootDevPx.x);
+    rootScreenPos.y = presContext->DevPixelsToAppUnits(rootDevPx.y);
   }
 
   return nsRect(rootScreenPos + GetOffsetTo(rootFrame), GetSize());
@@ -7938,7 +7935,7 @@ void nsIFrame::GetOffsetFromView(nsPoint& aOffset, nsView** aView) const {
 
 nsIWidget* nsIFrame::GetNearestWidget() const {
   if (!HasAnyStateBits(NS_FRAME_IN_POPUP)) {
-    return PresShell()->GetViewManager()->GetRootWidget();
+    return PresContext()->GetRootWidget();
   }
   nsPoint unused;
   return GetNearestWidget(unused);
@@ -7974,7 +7971,7 @@ nsIWidget* nsIFrame::GetNearestWidget(nsPoint& aOffset) const {
       break;
     }
   } while (true);
-  return PresShell()->GetViewManager()->GetRootWidget();
+  return PresContext()->GetRootWidget();
 }
 
 Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,

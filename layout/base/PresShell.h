@@ -454,6 +454,9 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetRootFrame() const { return mFrameConstructor->GetRootFrame(); }
 
   
+  nsIWidget* GetRootWidget() const;
+
+  
 
 
   ScrollContainerFrame* GetRootScrollContainerFrame() const;

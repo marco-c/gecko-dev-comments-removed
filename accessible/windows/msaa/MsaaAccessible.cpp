@@ -179,17 +179,16 @@ HWND MsaaAccessible::GetHWNDFor(Accessible* aAccessible) {
   
   
   
-  nsIFrame* frame = localAcc->GetFrame();
-  if (frame) {
+  if (nsIFrame* frame = localAcc->GetFrame()) {
     nsIWidget* widget = frame->GetNearestWidget();
     if (widget && widget->IsVisible()) {
-      if (nsViewManager* vm = document->PresShellPtr()->GetViewManager()) {
-        nsCOMPtr<nsIWidget> rootWidget = vm->GetRootWidget();
-        
-        
-        
-        if (rootWidget != widget)
-          return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+      nsCOMPtr<nsIWidget> rootWidget =
+          document->PresShellPtr()->GetRootWidget();
+      
+      
+      
+      if (rootWidget != widget) {
+        return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
       }
     }
   }

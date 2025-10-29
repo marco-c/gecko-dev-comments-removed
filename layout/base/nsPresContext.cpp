@@ -1181,12 +1181,7 @@ nsIWidget* nsPresContext::GetNearestWidget(nsPoint* aOffset) {
 }
 
 nsIWidget* nsPresContext::GetRootWidget() const {
-  NS_ENSURE_TRUE(mPresShell, nullptr);
-  nsViewManager* vm = mPresShell->GetViewManager();
-  if (!vm) {
-    return nullptr;
-  }
-  return vm->GetRootWidget();
+  return mPresShell ? mPresShell->GetRootWidget() : nullptr;
 }
 
 

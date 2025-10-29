@@ -388,12 +388,7 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
     return nullptr;
   }
 
-  nsViewManager* vm = aPresShell->GetViewManager();
-  if (!vm) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIWidget> rootWidget = vm->GetRootWidget();
+  nsCOMPtr<nsIWidget> rootWidget = aPresShell->GetRootWidget();
   
   
   if (RefPtr<nsWindow> window = nsWindow::From(rootWidget)) {
