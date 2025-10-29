@@ -47,9 +47,9 @@ fn ecdh_openssl_raw(client_private: EcKey<Private>, peer_public: EcKey<Public>) 
 
 
 
-
-pub fn ecdhe_p256_raw(peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
-    let peer_public = EcKey::public_key_from_der(peer_spki)?;
+pub fn ecdhe_p256_raw(peer: &super::COSEEC2Key) -> Result<(Vec<u8>, Vec<u8>)> {
+    let peer_spki = peer.der_spki()?;
+    let peer_public = EcKey::public_key_from_der(&peer_spki)?;
 
     
     
@@ -140,12 +140,13 @@ pub fn random_bytes(count: usize) -> Result<Vec<u8>> {
 
 #[cfg(test)]
 pub fn test_ecdh_p256_raw(
-    peer_spki: &[u8],
+    peer: &super::COSEEC2Key,
     client_public_x: &[u8],
     client_public_y: &[u8],
     client_private: &[u8],
 ) -> Result<Vec<u8>> {
-    let peer_public = EcKey::public_key_from_der(peer_spki)?;
+    let peer_spki = peer.der_spki()?;
+    let peer_public = EcKey::public_key_from_der(&peer_spki)?;
     let group = peer_public.group();
 
     let mut client_pub_sec1 = vec![];

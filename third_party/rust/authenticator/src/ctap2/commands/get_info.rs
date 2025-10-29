@@ -311,6 +311,8 @@ pub enum AuthenticatorVersion {
     FIDO_2_0,
     FIDO_2_1_PRE,
     FIDO_2_1,
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
@@ -742,6 +744,40 @@ pub mod tests {
         0x18, 0x18, 
     ];
 
+    pub const AUTHENTICATOR_INFO_FIDO_2_2: &[u8] = &[
+        0xa2, 
+        0x01, 
+        0x83, 
+        0x66, 
+        0x55, 0x32, 0x46, 0x5f, 0x56, 0x32, 
+        0x68, 
+        0x46, 0x49, 0x44, 0x4f, 0x5f, 0x32, 0x5f, 0x30, 
+        0x68, 
+        0x46, 0x49, 0x44, 0x4f, 0x5f, 0x32, 0x5f, 0x32, 
+        0x03, 
+        0x50, 
+        0xf8, 0xa0, 0x11, 0xf3, 0x8c, 0x0a, 0x4d, 0x15, 0x80, 0x06, 0x17, 0x11, 0x1f, 0x9e, 0xdc,
+        0x7d, 
+    ];
+
+    pub const AUTHENTICATOR_INFO_UNKNOWN_VERSIONS: &[u8] = &[
+        0xa2, 
+        0x01, 
+        0x84, 
+        0x63, 
+        0x66, 0x6f, 0x6f, 
+        0x66, 
+        0x55, 0x32, 0x46, 0x5f, 0x56, 0x32, 
+        0x68, 
+        0x46, 0x49, 0x44, 0x4f, 0x5f, 0x32, 0x5f, 0x30, 
+        0x63, 
+        0x62, 0x61, 0x72, 
+        0x03, 
+        0x50, 
+        0xf8, 0xa0, 0x11, 0xf3, 0x8c, 0x0a, 0x4d, 0x15, 0x80, 0x06, 0x17, 0x11, 0x1f, 0x9e, 0xdc,
+        0x7d, 
+    ];
+
     #[test]
     fn parse_authenticator_info() {
         let authenticator_info: AuthenticatorInfo =
@@ -1050,5 +1086,38 @@ pub mod tests {
         expected.pin_protocols = Some(vec![1, 2]);
         let authenticator_info: AuthenticatorInfo = from_slice(&raw_list).unwrap();
         assert_eq!(authenticator_info, expected);
+    }
+
+    #[test]
+    fn parse_authenticator_info_fido_2_2() {
+        assert_eq!(
+            from_slice::<AuthenticatorInfo>(&AUTHENTICATOR_INFO_FIDO_2_2).unwrap(),
+            AuthenticatorInfo {
+                versions: vec![
+                    AuthenticatorVersion::U2F_V2,
+                    AuthenticatorVersion::FIDO_2_0,
+                    AuthenticatorVersion::Unknown,
+                ],
+                aaguid: AAGuid(AAGUID_RAW),
+                ..Default::default()
+            },
+        );
+    }
+
+    #[test]
+    fn parse_authenticator_info_unknown_versions() {
+        assert_eq!(
+            from_slice::<AuthenticatorInfo>(&AUTHENTICATOR_INFO_UNKNOWN_VERSIONS).unwrap(),
+            AuthenticatorInfo {
+                versions: vec![
+                    AuthenticatorVersion::Unknown,
+                    AuthenticatorVersion::U2F_V2,
+                    AuthenticatorVersion::FIDO_2_0,
+                    AuthenticatorVersion::Unknown,
+                ],
+                aaguid: AAGuid(AAGUID_RAW),
+                ..Default::default()
+            },
+        );
     }
 }

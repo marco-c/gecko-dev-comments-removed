@@ -290,7 +290,7 @@ fn get_pin_uv_auth_param<Dev: FidoDevice, T: PinUvAuthCommand + RequestCtap2>(
 
             
             
-            if info.supports_hmac_secret() {
+            if cmd.hmac_requested() && info.supports_hmac_secret() {
                 let _shared_secret = dev.establish_shared_secret(alive)?;
             }
             

@@ -1,7 +1,7 @@
 
 
 
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::cast_lossless))]
+#![allow(clippy::cast_lossless)]
 
 extern crate libc;
 

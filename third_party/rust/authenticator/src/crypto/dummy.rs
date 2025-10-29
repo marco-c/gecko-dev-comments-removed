@@ -6,7 +6,7 @@ use super::CryptoError;
 
 pub type Result<T> = std::result::Result<T, CryptoError>;
 
-pub fn ecdhe_p256_raw(_peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
+pub fn ecdhe_p256_raw(_peer: &super::COSEEC2Key) -> Result<(Vec<u8>, Vec<u8>)> {
     unimplemented!()
 }
 
