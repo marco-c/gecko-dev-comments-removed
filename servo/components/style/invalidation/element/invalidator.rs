@@ -289,7 +289,7 @@ pub struct Invalidation<'a> {
     
     
     
-    always_effective_for_next: bool,
+    always_effective_for_next_descendant: bool,
 }
 
 impl<'a> Invalidation<'a> {
@@ -314,7 +314,7 @@ impl<'a> Invalidation<'a> {
             
             offset: dependency.selector.len() + 1 - dependency.selector_offset,
             matched_by_any_previous: false,
-            always_effective_for_next: false,
+            always_effective_for_next_descendant: false,
         }
     }
 
@@ -342,7 +342,31 @@ impl<'a> Invalidation<'a> {
             scope,
             offset: dependency.selector.len() - compound_offset,
             matched_by_any_previous: false,
-            always_effective_for_next: true,
+            always_effective_for_next_descendant: true,
+        }
+    }
+
+    
+    
+    
+    
+    pub fn new_always_effective_for_next_descendant(
+        dependency: &'a Dependency,
+        host: Option<OpaqueElement>,
+        scope: Option<OpaqueElement>,
+    ) -> Self {
+        if dependency.selector_offset == 0 {
+            return Self::new_subject_invalidation(dependency, host, scope);
+        }
+
+        Self {
+            dependency,
+            host,
+            scope,
+            
+            offset: dependency.selector.len() + 1 - dependency.selector_offset,
+            matched_by_any_previous: false,
+            always_effective_for_next_descendant: true,
         }
     }
 
@@ -359,7 +383,7 @@ impl<'a> Invalidation<'a> {
     
     
     fn effective_for_next(&self) -> bool {
-        if self.offset == 0 || self.always_effective_for_next {
+        if self.offset == 0 || self.always_effective_for_next_descendant {
             return true;
         }
 
@@ -1082,6 +1106,21 @@ where
                 if let DependencyInvalidationKind::Scope(scope_kind) =
                     dependency.invalidation_kind()
                 {
+                    if scope_kind == ScopeDependencyInvalidationKind::ImplicitScope {
+                        if let Some(ref deps) = dependency.next {
+                            for dep in deps.as_ref().slice() {
+                                let invalidation =
+                                    Invalidation::new_always_effective_for_next_descendant(
+                                        dep,
+                                        invalidation.host,
+                                        invalidation.scope,
+                                    );
+                                next_invalidations.push(invalidation);
+                            }
+                        }
+                        continue;
+                    }
+
                     let force_add = any_next_has_scope_in_negation(dependency);
                     if scope_kind == ScopeDependencyInvalidationKind::ScopeEnd || force_add {
                         let invalidations = note_scope_dependency_force_at_subject(
@@ -1221,56 +1260,61 @@ where
                     scope: invalidation.scope,
                     offset: next_combinator_offset + 1,
                     matched_by_any_previous: false,
-                    always_effective_for_next: false,
+                    always_effective_for_next_descendant: invalidation
+                        .always_effective_for_next_descendant,
                 }],
             ),
         };
 
         for next_invalidation in next_invalidations {
-            debug_assert_ne!(
-                next_invalidation.offset, 0,
-                "Rightmost selectors shouldn't generate more invalidations",
-            );
+            let next_invalidation_kind = if next_invalidation.always_effective_for_next_descendant {
+                InvalidationKind::Descendant(DescendantInvalidationKind::Dom)
+            } else {
+                debug_assert_ne!(
+                    next_invalidation.offset, 0,
+                    "Rightmost selectors shouldn't generate more invalidations",
+                );
 
-            let next_combinator = next_invalidation
-                .dependency
-                .selector
-                .combinator_at_parse_order(next_invalidation.offset - 1);
+                let next_combinator = next_invalidation
+                    .dependency
+                    .selector
+                    .combinator_at_parse_order(next_invalidation.offset - 1);
 
-            if matches!(next_combinator, Combinator::PseudoElement)
-                && self.processor.invalidates_on_pseudo_element()
-            {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                result.invalidated_self = true;
-            }
+                if matches!(next_combinator, Combinator::PseudoElement)
+                    && self.processor.invalidates_on_pseudo_element()
+                {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    result.invalidated_self = true;
+                }
 
-            debug!(
-                " > Invalidation matched, next: {:?}, ({:?})",
-                next_invalidation, next_combinator
-            );
+                debug!(
+                    " > Invalidation matched, next: {:?}, ({:?})",
+                    next_invalidation, next_combinator
+                );
 
-            let next_invalidation_kind = next_invalidation.kind();
+                next_invalidation.kind()
+            };
 
             
             
