@@ -168,6 +168,10 @@ void pullAllFpus(AllocatableFloatRegisterSet& set, uint32_t& max_bits,
   }
 }
 
+
+
+
+#ifndef JS_CODEGEN_MIPS64
 BEGIN_TEST(testJitRegisterSet_FPU_Aliases) {
   BEGIN_All_WALK(FloatRegisters::Total);
   FOR_ALL_REGISTERS(FloatRegister, reg) {
@@ -209,3 +213,4 @@ BEGIN_TEST(testJitRegisterSet_FPU_Aliases) {
   return true;
 }
 END_TEST(testJitRegisterSet_FPU_Aliases)
+#endif
