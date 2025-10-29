@@ -9,11 +9,10 @@
 
 #include <stdint.h>  
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/Monitor.h"     
-#include "mozilla/RefPtr.h"      
-#include "mozilla/TimeStamp.h"   
-#include "mozilla/gfx/Point.h"   
+#include "mozilla/Monitor.h"    
+#include "mozilla/RefPtr.h"     
+#include "mozilla/TimeStamp.h"  
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/layers/SampleTime.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/VsyncDispatcher.h"

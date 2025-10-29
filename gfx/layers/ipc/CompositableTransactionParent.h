@@ -7,8 +7,7 @@
 #ifndef MOZILLA_LAYERS_COMPOSITABLETRANSACTIONPARENT_H
 #define MOZILLA_LAYERS_COMPOSITABLETRANSACTIONPARENT_H
 
-#include <vector>                
-#include "mozilla/Attributes.h"  
+#include <vector>  
 #include "mozilla/NotNull.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersMessages.h"     

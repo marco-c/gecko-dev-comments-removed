@@ -16,7 +16,6 @@
 #include "gfxTypes.h"
 #include "mozilla/GfxMessageUtils.h"         
 #include "mozilla/Assertions.h"              
-#include "mozilla/Attributes.h"              
 #include "mozilla/RefPtr.h"                  
 #include "mozilla/gfx/Matrix.h"              
 #include "mozilla/gfx/Point.h"               

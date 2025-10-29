@@ -8,7 +8,6 @@
 #define MOZILLA_GFX_SHAREDSURFACESCHILD_H
 
 #include <stdint.h>                            
-#include "mozilla/Attributes.h"                
 #include "mozilla/Maybe.h"                     
 #include "mozilla/RefPtr.h"                    
 #include "mozilla/StaticPtr.h"                 

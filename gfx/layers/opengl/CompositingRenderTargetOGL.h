@@ -10,7 +10,6 @@
 #include "GLContextTypes.h"             
 #include "GLDefs.h"                     
 #include "mozilla/Assertions.h"         
-#include "mozilla/Attributes.h"         
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          

@@ -17,7 +17,6 @@
 #include "OGLShaderConfig.h"        
 #include "Units.h"                  
 #include "mozilla/Assertions.h"     
-#include "mozilla/Attributes.h"     
 #include "mozilla/RefPtr.h"         
 #include "mozilla/gfx/2D.h"         
 #include "mozilla/gfx/BaseSize.h"   

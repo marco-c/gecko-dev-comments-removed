@@ -12,7 +12,6 @@
 #include <d2d1effecthelpers.h>
 
 #include "2D.h"
-#include "mozilla/Attributes.h"
 
 
 DEFINE_GUID(CLSID_ConicGradientEffect, 0xfa4e3246, 0xbe57, 0x4052, 0x8c, 0x8b,

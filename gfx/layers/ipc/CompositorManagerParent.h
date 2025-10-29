@@ -9,7 +9,6 @@
 
 #include <map>
 #include <stdint.h>                 
-#include "mozilla/Attributes.h"     
 #include "mozilla/StaticPtr.h"      
 #include "mozilla/StaticMonitor.h"  
 #include "mozilla/RefPtr.h"         

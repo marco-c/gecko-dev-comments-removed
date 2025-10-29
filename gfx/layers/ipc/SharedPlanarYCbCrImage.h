@@ -4,14 +4,13 @@
 
 
 
-#include <stdint.h>              
-#include "ImageContainer.h"      
-#include "mozilla/Attributes.h"  
-#include "mozilla/RefPtr.h"      
-#include "mozilla/ipc/Shmem.h"   
-#include "nsCOMPtr.h"            
-#include "nsDebug.h"             
-#include "nsISupportsImpl.h"     
+#include <stdint.h>             
+#include "ImageContainer.h"     
+#include "mozilla/RefPtr.h"     
+#include "mozilla/ipc/Shmem.h"  
+#include "nsCOMPtr.h"           
+#include "nsDebug.h"            
+#include "nsISupportsImpl.h"    
 
 #ifndef MOZILLA_LAYERS_SHAREDPLANARYCBCRIMAGE_H
 #  define MOZILLA_LAYERS_SHAREDPLANARYCBCRIMAGE_H

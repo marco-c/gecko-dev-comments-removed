@@ -12,11 +12,10 @@
 
 #include "ImageContainer.h"  
 #include "gfxTypes.h"
-#include "mozilla/Attributes.h"  
-#include "mozilla/RefPtr.h"      
-#include "mozilla/gfx/Point.h"   
-#include "mozilla/gfx/Types.h"   
-#include "nsCOMPtr.h"            
+#include "mozilla/RefPtr.h"     
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/Types.h"  
+#include "nsCOMPtr.h"           
 
 namespace mozilla {
 namespace layers {

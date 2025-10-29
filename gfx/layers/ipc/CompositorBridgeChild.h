@@ -9,7 +9,6 @@
 
 #include "base/basictypes.h"     
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 #include "mozilla/Monitor.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"

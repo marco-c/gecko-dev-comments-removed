@@ -11,7 +11,6 @@
 #include <stdio.h>               
 #include "gfxRect.h"             
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 #include "mozilla/RefPtr.h"      
 
 #include "mozilla/gfx/Polygon.h"  

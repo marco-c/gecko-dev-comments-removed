@@ -11,7 +11,6 @@
 #include <stdint.h>  
 #include "CompositableTransactionParent.h"
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/CompositorThread.h"

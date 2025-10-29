@@ -8,7 +8,6 @@
 #define MOZILLA_GFX_CANVASCLIENT_H
 
 #include "mozilla/Assertions.h"                 
-#include "mozilla/Attributes.h"                 
 #include "mozilla/RefPtr.h"                     
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"     

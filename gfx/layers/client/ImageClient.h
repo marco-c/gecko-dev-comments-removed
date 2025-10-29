@@ -9,7 +9,6 @@
 
 #include <stdint.h>                             
 #include <sys/types.h>                          
-#include "mozilla/Attributes.h"                 
 #include "mozilla/RefPtr.h"                     
 #include "mozilla/gfx/Types.h"                  
 #include "mozilla/layers/CompositableClient.h"  
