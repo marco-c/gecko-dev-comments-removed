@@ -3541,11 +3541,20 @@ async function toggleJsTracerMenuItem(dbg, selector) {
 
 
 async function assertInlinePreviews(dbg, expectedInlinePreviews, fnName) {
-  await waitForAllElements(
+  
+  let expectedNumberOfInlinePreviews = 0;
+  for (const { previews } of expectedInlinePreviews) {
+    expectedNumberOfInlinePreviews += previews.length;
+  }
+
+  const inlinePreviews = await waitForAllElements(
     dbg,
     "visibleInlinePreviews",
-    expectedInlinePreviews.length
+    expectedNumberOfInlinePreviews,
+    true
   );
+
+  ok(true, `Displayed ${inlinePreviews.length} inline previews`);
 
   for (const expectedInlinePreview of expectedInlinePreviews) {
     const { previews, line } = expectedInlinePreview;
