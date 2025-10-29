@@ -8,14 +8,6 @@
 
 {
   class MozTabSplitViewWrapper extends MozXULElement {
-    static markup = `
-      <vbox class="tab-split-view-container" pack="center">
-      </vbox>
-      `;
-
-    
-    #containerElement;
-
     
     #tabChangeObserver;
 
@@ -52,15 +44,11 @@
       this._initialized = true;
 
       this.textContent = "";
-      this.appendChild(this.constructor.fragment);
-
-      this.#containerElement = this.querySelector(".tab-split-view-container");
 
       this.#observeTabChanges();
 
       
-      this.#containerElement.container = gBrowser.tabContainer;
-      this.container = this.#containerElement;
+      this.container = gBrowser.tabContainer;
     }
 
     disconnectedCallback() {
@@ -89,7 +77,7 @@
           }
         });
       }
-      this.#tabChangeObserver.observe(this.#containerElement, {
+      this.#tabChangeObserver.observe(this, {
         childList: true,
       });
     }
@@ -106,9 +94,7 @@
 
 
     get tabs() {
-      return Array.from(this.#containerElement.children).filter(node =>
-        node.matches("tab")
-      );
+      return Array.from(this.children).filter(node => node.matches("tab"));
     }
 
     
