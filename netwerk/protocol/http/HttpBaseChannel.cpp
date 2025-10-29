@@ -1384,7 +1384,8 @@ HttpBaseChannel::SetApplyConversion(bool value) {
 
 nsresult HttpBaseChannel::DoApplyContentConversions(
     nsIStreamListener* aNextListener, nsIStreamListener** aNewNextListener) {
-  return DoApplyContentConversions(aNextListener, aNewNextListener, nullptr);
+  return DoApplyContentConversionsInternal(aNextListener, aNewNextListener,
+                                           false, nullptr);
 }
 
 
@@ -1465,12 +1466,22 @@ NS_IMETHODIMP
 HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
                                            nsIStreamListener** aNewNextListener,
                                            nsISupports* aCtxt) {
+  return DoApplyContentConversionsInternal(aNextListener, aNewNextListener,
+                                           false, aCtxt);
+}
+
+nsresult HttpBaseChannel::DoApplyContentConversionsInternal(
+    nsIStreamListener* aNextListener, nsIStreamListener** aNewNextListener,
+    bool aRemoveEncodings, nsISupports* aCtxt) {
   *aNewNextListener = nullptr;
   if (!mResponseHead || !aNextListener) {
     return NS_OK;
   }
 
-  LOG(("HttpBaseChannel::DoApplyContentConversions [this=%p]\n", this));
+  LOG(
+      ("HttpBaseChannel::DoApplyContentConversions [this=%p], "
+       "removeEncodings=%d\n",
+       this, aRemoveEncodings));
 
 #ifdef DEBUG
   {
@@ -1521,7 +1532,6 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
 
   char* cePtr = contentEncoding.BeginWriting();
   uint32_t count = 0;
-  bool removeEncodings = false;
   while (char* val = nsCRT::strtok(cePtr, HTTP_LWS ",", &cePtr)) {
     if (++count > 16) {
       
@@ -1561,10 +1571,11 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
         }
         glean::http::content_encoding.AccumulateSingleSample(mode);
       }
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       if (from.EqualsLiteral("dcb") || from.EqualsLiteral("dcz")) {
-        MOZ_ASSERT(XRE_IsParentProcess());
-        removeEncodings = true;
+        MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
       }
+#endif
       nextListener = converter;
     } else {
       if (val) {
@@ -1583,7 +1594,8 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
   
   
   
-  if (removeEncodings) {
+  if (aRemoveEncodings) {
+    
     
     
     
