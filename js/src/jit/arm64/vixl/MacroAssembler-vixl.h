@@ -1184,9 +1184,23 @@ class MacroAssembler : public js::jit::Assembler {
     SingleEmissionCheckScope guard(this);
     mneg(rd, rn, rm);
   }
-  void Mov(const Register& rd, const Register& rn) {
-    SingleEmissionCheckScope guard(this);
-    mov(rd, rn);
+  void Mov(const Register& rd,
+           const Register& rn,
+           DiscardMoveMode discard_mode = kDontDiscardForSameWReg) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!rd.Is(rn) ||
+        (rd.Is32Bits() && (discard_mode == kDontDiscardForSameWReg))) {
+      SingleEmissionCheckScope guard(this);
+      mov(rd, rn);
+    }
   }
   void Movk(const Register& rd, uint64_t imm, int shift = -1) {
     VIXL_ASSERT(!rd.IsZero());

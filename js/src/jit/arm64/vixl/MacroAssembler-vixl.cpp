@@ -480,19 +480,7 @@ void MacroAssembler::Mov(const Register& rd,
     EmitExtendShift(rd, operand.reg(), operand.extend(),
                     operand.shift_amount());
   } else {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!rd.Is(operand.reg()) || (rd.Is32Bits() &&
-                                  (discard_mode == kDontDiscardForSameWReg))) {
-      mov(rd, operand.reg());
-    }
+    Mov(rd, operand.reg(), discard_mode);
   }
 }
 
