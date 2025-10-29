@@ -1171,6 +1171,45 @@ struct NavigationWaitForAllScope final : public nsISupports,
 
  private:
   ~NavigationWaitForAllScope() {}
+
+ public:
+  
+  MOZ_CAN_RUN_SCRIPT void ProcessNavigateEventHandlerFailure(
+      JS::Handle<JS::Value> aRejectionReason) {
+    
+    
+    LogEvent(mEvent, mEvent, "Rejected"_ns);
+
+    
+    
+    if (RefPtr document = mEvent->GetDocument();
+        !document || !document->IsFullyActive()) {
+      return;
+    }
+
+    
+    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
+      return;
+    }
+
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(mEvent == mNavigation->mOngoingNavigateEvent);
+
+    
+    
+    RefPtr event = mEvent;
+    if (mEvent->InterceptionState() !=
+        NavigateEvent::InterceptionState::Intercepted) {
+      event->Finish(false);
+    }
+
+    
+    if (AutoJSAPI jsapi; !NS_WARN_IF(!jsapi.Init(mEvent->GetParentObject()))) {
+      RefPtr navigation = mNavigation;
+      navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
+    }
+  }
 };
 
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(NavigationWaitForAllScope, mNavigation,
@@ -1529,56 +1568,7 @@ bool Navigation::InnerFireNavigateEvent(
               if (!weakScope) {
                 return;
               }
-
-              RefPtr event = weakScope->mEvent;
-              RefPtr self = weakScope->mNavigation;
-              RefPtr apiMethodTracker = weakScope->mAPIMethodTracker;
-
-              LogEvent(event, event, "Rejected"_ns);
-
-              
-              
-              if (RefPtr document = event->GetDocument();
-                  !document || !document->IsFullyActive()) {
-                return;
-              }
-
-              
-              if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
-                return;
-              }
-
-              
-              MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
-
-              
-              self->mOngoingNavigateEvent = nullptr;
-
-              
-              event->Finish(false);
-
-              
-              if (apiMethodTracker) {
-                apiMethodTracker->RejectFinishedPromise(aRejectionReason);
-              }
-
-              if (AutoJSAPI jsapi;
-                  !NS_WARN_IF(!jsapi.Init(event->GetParentObject()))) {
-                
-                RootedDictionary<ErrorEventInit> init(jsapi.cx());
-                ExtractErrorInformation(jsapi.cx(), aRejectionReason, init);
-
-                
-                self->FireErrorEvent(u"navigateerror"_ns, init);
-              }
-
-              
-              if (self->mTransition) {
-                self->mTransition->Finished()->MaybeReject(aRejectionReason);
-              }
-
-              
-              self->mTransition = nullptr;
+              weakScope->ProcessNavigateEventHandlerFailure(aRejectionReason);
             };
 
     
