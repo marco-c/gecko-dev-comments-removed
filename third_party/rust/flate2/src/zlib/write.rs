@@ -210,6 +210,10 @@ impl<W: Read + Write> Read for ZlibEncoder<W> {
 
 
 
+
+
+
+
 #[derive(Debug)]
 pub struct ZlibDecoder<W: Write> {
     inner: zio::Writer<W, Decompress>,
@@ -356,7 +360,7 @@ mod tests {
     fn decode_extra_data() {
         let compressed = {
             let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
-            e.write(STR.as_ref()).unwrap();
+            e.write_all(STR.as_ref()).unwrap();
             let mut b = e.finish().unwrap();
             b.push(b'x');
             b

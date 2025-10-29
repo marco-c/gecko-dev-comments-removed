@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 use std::io;
+use std::mem::MaybeUninit;
 
 use crate::ffi::{self, Backend, Deflate, DeflateBackend, ErrorMessage, Inflate, InflateBackend};
 use crate::Compression;
@@ -43,6 +44,7 @@ pub struct Decompress {
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[non_exhaustive]
+#[allow(clippy::unnecessary_cast)]
 pub enum FlushCompress {
     
     
@@ -56,7 +58,8 @@ pub enum FlushCompress {
     
     
     
-    Sync = ffi::MZ_SYNC_FLUSH as isize,
+    
+    Partial = ffi::MZ_PARTIAL_FLUSH as isize,
 
     
     
@@ -65,8 +68,7 @@ pub enum FlushCompress {
     
     
     
-    
-    Partial = ffi::MZ_PARTIAL_FLUSH as isize,
+    Sync = ffi::MZ_SYNC_FLUSH as isize,
 
     
     
@@ -86,6 +88,7 @@ pub enum FlushCompress {
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[non_exhaustive]
+#[allow(clippy::unnecessary_cast)]
 pub enum FlushDecompress {
     
     
@@ -109,7 +112,7 @@ pub enum FlushDecompress {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum DecompressErrorInner {
     General { msg: ErrorMessage },
     NeedsDictionary(u32),
@@ -117,7 +120,7 @@ pub(crate) enum DecompressErrorInner {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DecompressError(pub(crate) DecompressErrorInner);
 
 impl DecompressError {
@@ -147,7 +150,7 @@ pub(crate) fn decompress_need_dict<T>(adler: u32) -> Result<T, DecompressError> 
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct CompressError {
     pub(crate) msg: ErrorMessage,
 }
@@ -277,6 +280,7 @@ impl Compress {
 
         match rc {
             ffi::MZ_STREAM_ERROR => compress_failed(self.inner.inner.msg()),
+            #[allow(clippy::unnecessary_cast)]
             ffi::MZ_OK => Ok(unsafe { (*stream).adler } as u32),
             c => panic!("unknown return code: {}", c),
         }
@@ -339,6 +343,20 @@ impl Compress {
     
     
     
+    pub fn compress_uninit(
+        &mut self,
+        input: &[u8],
+        output: &mut [MaybeUninit<u8>],
+        flush: FlushCompress,
+    ) -> Result<Status, CompressError> {
+        self.inner.compress_uninit(input, output, flush)
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -348,12 +366,15 @@ impl Compress {
         output: &mut Vec<u8>,
         flush: FlushCompress,
     ) -> Result<Status, CompressError> {
-        write_to_spare_capacity_of_vec(output, |out| {
-            let before = self.total_out();
-            let ret = self.compress(input, out, flush);
-            let bytes_written = self.total_out() - before;
-            (bytes_written as usize, ret)
-        })
+        
+        unsafe {
+            write_to_spare_capacity_of_vec(output, |out| {
+                let before = self.total_out();
+                let ret = self.compress_uninit(input, out, flush);
+                let bytes_written = self.total_out() - before;
+                (bytes_written as usize, ret)
+            })
+        }
     }
 }
 
@@ -457,6 +478,20 @@ impl Decompress {
     
     
     
+    pub fn decompress_uninit(
+        &mut self,
+        input: &[u8],
+        output: &mut [MaybeUninit<u8>],
+        flush: FlushDecompress,
+    ) -> Result<Status, DecompressError> {
+        self.inner.decompress_uninit(input, output, flush)
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -472,12 +507,15 @@ impl Decompress {
         output: &mut Vec<u8>,
         flush: FlushDecompress,
     ) -> Result<Status, DecompressError> {
-        write_to_spare_capacity_of_vec(output, |out| {
-            let before = self.total_out();
-            let ret = self.decompress(input, out, flush);
-            let bytes_written = self.total_out() - before;
-            (bytes_written as usize, ret)
-        })
+        
+        unsafe {
+            write_to_spare_capacity_of_vec(output, |out| {
+                let before = self.total_out();
+                let ret = self.decompress_uninit(input, out, flush);
+                let bytes_written = self.total_out() - before;
+                (bytes_written as usize, ret)
+            })
+        }
     }
 
     
@@ -493,6 +531,7 @@ impl Decompress {
             ffi::inflateSetDictionary(stream, dictionary.as_ptr(), dictionary.len() as ffi::uInt)
         };
 
+        #[allow(clippy::unnecessary_cast)]
         match rc {
             ffi::MZ_STREAM_ERROR => decompress_failed(self.inner.inner.msg()),
             ffi::MZ_DATA_ERROR => decompress_need_dict(unsafe { (*stream).adler } as u32),
@@ -539,7 +578,7 @@ impl fmt::Display for DecompressError {
             DecompressErrorInner::NeedsDictionary { .. } => Some("requires a dictionary"),
         };
         match msg {
-            Some(msg) => write!(f, "deflate decompression error: {}", msg),
+            Some(msg) => write!(f, "deflate decompression error: {msg}"),
             None => write!(f, "deflate decompression error"),
         }
     }
@@ -563,7 +602,7 @@ impl From<CompressError> for io::Error {
 impl fmt::Display for CompressError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.msg.get() {
-            Some(msg) => write!(f, "deflate compression error: {}", msg),
+            Some(msg) => write!(f, "deflate compression error: {msg}"),
             None => write!(f, "deflate compression error"),
         }
     }
@@ -576,18 +615,20 @@ impl fmt::Display for CompressError {
 
 
 
-fn write_to_spare_capacity_of_vec<T>(
+
+
+
+
+
+unsafe fn write_to_spare_capacity_of_vec<T>(
     output: &mut Vec<u8>,
-    writer: impl FnOnce(&mut [u8]) -> (usize, T),
+    writer: impl FnOnce(&mut [MaybeUninit<u8>]) -> (usize, T),
 ) -> T {
     let cap = output.capacity();
     let len = output.len();
 
-    output.resize(output.capacity(), 0);
-    let (bytes_written, ret) = writer(&mut output[len..]);
-
-    let new_len = core::cmp::min(len + bytes_written, cap); 
-    output.resize(new_len, 0 );
+    let (bytes_written, ret) = writer(output.spare_capacity_mut());
+    output.set_len(cap.min(len + bytes_written)); 
 
     ret
 }
@@ -604,7 +645,7 @@ mod tests {
 
     #[test]
     fn issue51() {
-        let data = vec![
+        let data = [
             0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xb3, 0xc9, 0x28, 0xc9,
             0xcd, 0xb1, 0xe3, 0xe5, 0xb2, 0xc9, 0x48, 0x4d, 0x4c, 0xb1, 0xb3, 0x29, 0xc9, 0x2c,
             0xc9, 0x49, 0xb5, 0x33, 0x31, 0x30, 0x51, 0xf0, 0xcb, 0x2f, 0x51, 0x70, 0xcb, 0x2f,

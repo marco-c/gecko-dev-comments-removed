@@ -8,7 +8,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/adler/1.0.2")]
+#![doc(html_root_url = "https://docs.rs/adler2/2.0.0")]
 
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -122,7 +122,7 @@ impl Adler32 {
     
     
     #[inline]
-    pub fn from_checksum(sum: u32) -> Self {
+    pub const fn from_checksum(sum: u32) -> Self {
         Adler32 {
             a: sum as u16,
             b: (sum >> 16) as u16,

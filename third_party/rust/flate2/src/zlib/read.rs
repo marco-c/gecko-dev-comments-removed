@@ -157,6 +157,12 @@ impl<W: Read + Write> Write for ZlibEncoder<W> {
 
 
 
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct ZlibDecoder<R> {
     inner: bufread::ZlibDecoder<BufReader<R>>,

@@ -2,13 +2,14 @@
 
 #[cfg(feature = "with-alloc")]
 use crate::alloc::{boxed::Box, vec, vec::Vec};
-use ::core::usize;
 #[cfg(all(feature = "std", feature = "with-alloc"))]
 use std::error::Error;
 
 pub mod core;
 mod output_buffer;
+#[cfg(not(feature = "rustc-dep-of-std"))]
 pub mod stream;
+#[cfg(not(feature = "rustc-dep-of-std"))]
 use self::core::*;
 
 const TINFL_STATUS_FAILED_CANNOT_MAKE_PROGRESS: i32 = -4;
@@ -18,10 +19,13 @@ const TINFL_STATUS_FAILED: i32 = -1;
 const TINFL_STATUS_DONE: i32 = 0;
 const TINFL_STATUS_NEEDS_MORE_INPUT: i32 = 1;
 const TINFL_STATUS_HAS_MORE_OUTPUT: i32 = 2;
+#[cfg(feature = "block-boundary")]
+const TINFL_STATUS_BLOCK_BOUNDARY: i32 = 3;
 
 
 #[repr(i8)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(not(feature = "rustc-dep-of-std"), derive(Hash, Debug))]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum TINFLStatus {
     
     
@@ -60,6 +64,18 @@ pub enum TINFLStatus {
 
     
     HasMoreOutput = TINFL_STATUS_HAS_MORE_OUTPUT as i8,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "block-boundary")]
+    BlockBoundary = TINFL_STATUS_BLOCK_BOUNDARY as i8,
 }
 
 impl TINFLStatus {
@@ -73,6 +89,8 @@ impl TINFLStatus {
             TINFL_STATUS_DONE => Some(Done),
             TINFL_STATUS_NEEDS_MORE_INPUT => Some(NeedsMoreInput),
             TINFL_STATUS_HAS_MORE_OUTPUT => Some(HasMoreOutput),
+            #[cfg(feature = "block-boundary")]
+            TINFL_STATUS_BLOCK_BOUNDARY => Some(BlockBoundary),
             _ => None,
         }
     }
@@ -90,15 +108,18 @@ pub struct DecompressError {
 
 #[cfg(feature = "with-alloc")]
 impl alloc::fmt::Display for DecompressError {
+    #[cold]
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         f.write_str(match self.status {
             TINFLStatus::FailedCannotMakeProgress => "Truncated input stream",
             TINFLStatus::BadParam => "Invalid output buffer size",
             TINFLStatus::Adler32Mismatch => "Adler32 checksum mismatch",
             TINFLStatus::Failed => "Invalid input data",
-            TINFLStatus::Done => unreachable!(),
+            TINFLStatus::Done => "", 
             TINFLStatus::NeedsMoreInput => "Truncated input stream",
             TINFLStatus::HasMoreOutput => "Output size exceeded the specified limit",
+            #[cfg(feature = "block-boundary")]
+            TINFLStatus::BlockBoundary => "Reached end of a deflate block",
         })
     }
 }
@@ -122,7 +143,7 @@ fn decompress_error(status: TINFLStatus, output: Vec<u8>) -> Result<Vec<u8>, Dec
 #[inline]
 #[cfg(feature = "with-alloc")]
 pub fn decompress_to_vec(input: &[u8]) -> Result<Vec<u8>, DecompressError> {
-    decompress_to_vec_inner(input, 0, usize::max_value())
+    decompress_to_vec_inner(input, 0, usize::MAX)
 }
 
 
@@ -138,7 +159,7 @@ pub fn decompress_to_vec_zlib(input: &[u8]) -> Result<Vec<u8>, DecompressError> 
     decompress_to_vec_inner(
         input,
         inflate_flags::TINFL_FLAG_PARSE_ZLIB_HEADER,
-        usize::max_value(),
+        usize::MAX,
     )
 }
 
@@ -182,7 +203,7 @@ pub fn decompress_to_vec_zlib_with_limit(
 
 #[cfg(feature = "with-alloc")]
 fn decompress_to_vec_inner(
-    input: &[u8],
+    mut input: &[u8],
     flags: u32,
     max_output_size: usize,
 ) -> Result<Vec<u8>, DecompressError> {
@@ -191,14 +212,12 @@ fn decompress_to_vec_inner(
 
     let mut decomp = Box::<DecompressorOxide>::default();
 
-    let mut in_pos = 0;
     let mut out_pos = 0;
     loop {
         
         
         let (status, in_consumed, out_consumed) =
-            decompress(&mut decomp, &input[in_pos..], &mut ret, out_pos, flags);
-        in_pos += in_consumed;
+            decompress(&mut decomp, input, &mut ret, out_pos, flags);
         out_pos += out_consumed;
 
         match status {
@@ -208,6 +227,13 @@ fn decompress_to_vec_inner(
             }
 
             TINFLStatus::HasMoreOutput => {
+                
+                
+                if in_consumed > input.len() {
+                    return decompress_error(TINFLStatus::HasMoreOutput, ret);
+                }
+                input = &input[in_consumed..];
+
                 
                 if ret.len() >= max_output_size {
                     return decompress_error(TINFLStatus::HasMoreOutput, ret);
@@ -235,6 +261,7 @@ fn decompress_to_vec_inner(
 
 
 
+#[cfg(not(feature = "rustc-dep-of-std"))]
 pub fn decompress_slice_iter_to_slice<'out, 'inp>(
     out: &'out mut [u8],
     it: impl Iterator<Item = &'inp [u8]>,
@@ -274,7 +301,7 @@ pub fn decompress_slice_iter_to_slice<'out, 'inp>(
     Err(TINFLStatus::FailedCannotMakeProgress)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "with-alloc"))]
 mod test {
     use super::{
         decompress_slice_iter_to_slice, decompress_to_vec_zlib, decompress_to_vec_zlib_with_limit,

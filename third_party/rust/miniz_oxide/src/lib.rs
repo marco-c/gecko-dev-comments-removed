@@ -3,25 +3,27 @@
 
 
 
+#![cfg_attr(
+    feature = "with-alloc",
+    doc = r##"
+# Usage
+## Simple compression/decompression:
+``` rust
 
+use miniz_oxide::inflate::decompress_to_vec;
+use miniz_oxide::deflate::compress_to_vec;
 
+fn roundtrip(data: &[u8]) {
+    let compressed = compress_to_vec(data, 6);
+    let decompressed = decompress_to_vec(compressed.as_slice()).expect("Failed to decompress!");
+#   let _ = decompressed;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# roundtrip(b"Test_data test data lalalal blabla");
+"##
+)]
 #![forbid(unsafe_code)]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(not(feature = "std"), not(feature = "serde")), no_std)]
 
 #[cfg(feature = "with-alloc")]
 extern crate alloc;
@@ -29,6 +31,8 @@ extern crate alloc;
 #[cfg(feature = "with-alloc")]
 pub mod deflate;
 pub mod inflate;
+#[cfg(feature = "serde")]
+pub mod serde;
 mod shared;
 
 pub use crate::shared::update_adler32 as mz_adler32_oxide;
@@ -38,7 +42,8 @@ pub use crate::shared::{MZ_ADLER32_INIT, MZ_DEFAULT_WINDOW_BITS};
 
 
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(not(feature = "rustc-dep-of-std"), derive(Hash, Debug))]
 pub enum MZFlush {
     
     
@@ -80,7 +85,8 @@ impl MZFlush {
 
 
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(not(feature = "rustc-dep-of-std"), derive(Hash, Debug))]
 pub enum MZStatus {
     
     
@@ -104,7 +110,8 @@ pub enum MZStatus {
 
 
 #[repr(i32)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(not(feature = "rustc-dep-of-std"), derive(Hash, Debug))]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum MZError {
     
     ErrNo = -1,
@@ -142,7 +149,8 @@ pub enum MZError {
 }
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(not(feature = "rustc-dep-of-std"), derive(Hash, Debug))]
 #[non_exhaustive]
 pub enum DataFormat {
     
@@ -154,6 +162,7 @@ pub enum DataFormat {
     Raw,
 }
 
+#[cfg(not(feature = "rustc-dep-of-std"))]
 impl DataFormat {
     pub fn from_window_bits(window_bits: i32) -> DataFormat {
         if window_bits > 0 {
@@ -175,6 +184,7 @@ impl DataFormat {
 pub type MZResult = Result<MZStatus, MZError>;
 
 
+#[cfg(not(feature = "rustc-dep-of-std"))]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct StreamResult {
     
@@ -185,6 +195,7 @@ pub struct StreamResult {
     pub status: MZResult,
 }
 
+#[cfg(not(feature = "rustc-dep-of-std"))]
 impl StreamResult {
     #[inline]
     pub const fn error(error: MZError) -> StreamResult {
@@ -196,12 +207,14 @@ impl StreamResult {
     }
 }
 
+#[cfg(not(feature = "rustc-dep-of-std"))]
 impl core::convert::From<StreamResult> for MZResult {
     fn from(res: StreamResult) -> Self {
         res.status
     }
 }
 
+#[cfg(not(feature = "rustc-dep-of-std"))]
 impl core::convert::From<&StreamResult> for MZResult {
     fn from(res: &StreamResult) -> Self {
         res.status

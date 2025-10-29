@@ -149,6 +149,12 @@ impl<W: Read + Write> Write for DeflateEncoder<W> {
 
 
 
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct DeflateDecoder<R> {
     inner: bufread::DeflateDecoder<BufReader<R>>,
