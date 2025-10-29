@@ -26,7 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   ProtocolProxyService: [
     "@mozilla.org/network/protocol-proxy-service;1",
-    "nsIProtocolProxyService",
+    Ci.nsIProtocolProxyService,
   ],
 });
 
@@ -954,10 +954,13 @@ export var BrowserTestUtils = {
    *        A xul:browser.
    * @param {string} uri
    *        The URI to load.
+   * @param {number} loadFlags [optional]
+   *        Load flags to pass to nsIWebNavigation.loadURI.
    */
-  startLoadingURIString(browser, uri) {
+  startLoadingURIString(browser, uri, loadFlags) {
     browser.fixupAndLoadURIString(uri, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags,
     });
   },
 
@@ -1455,9 +1458,7 @@ export var BrowserTestUtils = {
       let isValidUrl = () => {
         return (
           frame.browsingContext?.currentURI?.spec ==
-            "chrome://global/content/datepicker.xhtml" ||
-          frame.browsingContext?.currentURI?.spec ==
-            "chrome://global/content/timepicker.xhtml"
+          "chrome://global/content/datetimepicker.xhtml"
         );
       };
 

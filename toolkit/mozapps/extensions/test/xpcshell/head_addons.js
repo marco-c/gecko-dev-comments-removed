@@ -16,6 +16,8 @@ const PREF_EM_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
 const PREF_EM_STRICT_COMPATIBILITY = "extensions.strictCompatibility";
 const PREF_GETADDONS_BYIDS = "extensions.getAddons.get.url";
 const PREF_XPI_SIGNATURES_REQUIRED = "xpinstall.signatures.required";
+const PREF_DATA_COLLECTION_PERMISSIONS_ENABLED =
+  "extensions.dataCollectionPermissions.enabled";
 
 
 
@@ -68,7 +70,7 @@ XPCOMUtils.defineLazyServiceGetter(
   this,
   "aomStartup",
   "@mozilla.org/addons/addon-manager-startup;1",
-  "amIAddonManagerStartup"
+  Ci.amIAddonManagerStartup
 );
 
 const {

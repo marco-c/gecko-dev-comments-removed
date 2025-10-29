@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "contentBlockingAllowList",
   "@mozilla.org/content-blocking-allow-list;1",
-  "nsIContentBlockingAllowList"
+  Ci.nsIContentBlockingAllowList
 );
 
 const permissionExceptionsL10n = {
@@ -29,8 +29,8 @@ const permissionExceptionsL10n = {
     description: "permissions-exceptions-cookie-desc",
   },
   popup: {
-    window: "permissions-exceptions-popup-window2",
-    description: "permissions-exceptions-popup-desc",
+    window: "permissions-exceptions-popup-window3",
+    description: "permissions-exceptions-popup-desc2",
   },
   "login-saving": {
     window: "permissions-exceptions-saved-passwords-window",

@@ -185,7 +185,7 @@ XPCOMUtils.defineLazyServiceGetter(
   lazy,
   "idleService",
   "@mozilla.org/widget/useridleservice;1",
-  "nsIUserIdleService"
+  Ci.nsIUserIdleService
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -1936,6 +1936,7 @@ export class BackupService extends EventTarget {
     );
     supportURI.searchParams.set("utm_medium", "firefox-desktop");
     supportURI.searchParams.set("utm_source", "html-backup");
+    supportURI.searchParams.set("utm_campaign", "fx-backup-restore");
 
     let supportLink = templateDOM.querySelector("#support-link");
     supportLink.href = supportURI.href;
