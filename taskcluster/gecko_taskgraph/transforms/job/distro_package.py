@@ -11,6 +11,7 @@ import re
 
 import taskgraph
 from taskgraph.util.schema import Schema
+from taskgraph.util.taskcluster import get_root_url
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph import GECKO
@@ -155,7 +156,7 @@ def common_package(config, job, taskdesc, distro, version):
         "-x",
         "-c",
         
-        "/usr/local/sbin/setup_packages.sh $TASKCLUSTER_ROOT_URL $PACKAGES && "
+        "/usr/local/sbin/setup_packages.sh {root_url} $PACKAGES && "
         "apt-get update && "
         
         "apt-get dist-upgrade && " "cd /tmp && "
@@ -177,6 +178,7 @@ def common_package(config, job, taskdesc, distro, version):
         
         "apt-ftparchive sources apt | gzip -c9 > apt/Sources.gz && "
         "apt-ftparchive packages apt | gzip -c9 > apt/Packages.gz".format(
+            root_url=get_root_url(),
             package=package,
             src_url=src_url,
             src_file=src_file,
