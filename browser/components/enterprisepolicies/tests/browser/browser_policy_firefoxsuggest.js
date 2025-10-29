@@ -30,13 +30,16 @@ add_task(async function test_firefox_suggest_with_policy() {
         true,
         "Sponsored suggestions is enabled"
       );
-      is(
-        browser.contentDocument.getElementById(
-          "firefoxSuggestDataCollectionSearchToggle"
-        ).pressed,
-        true,
-        "Improve suggest is enabled"
-      );
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       is(
         browser.contentDocument.getElementById("firefoxSuggestNonsponsored")
           .disabled,
@@ -47,15 +50,17 @@ add_task(async function test_firefox_suggest_with_policy() {
         browser.contentDocument.getElementById("firefoxSuggestSponsored")
           .disabled,
         true,
-        "Sponsored suggestions is enabled"
+        "Sponsored suggestions is disabled"
       );
-      is(
-        browser.contentDocument.getElementById(
-          "firefoxSuggestDataCollectionSearchToggle"
-        ).disabled,
-        true,
-        "Improve suggest is enabled"
-      );
+      
+      
+      
+      
+      
+      
+      
+      
+      
     }
   );
 });

@@ -162,17 +162,6 @@ Preferences.addAll([
   },
 
   
-  { id: "browser.urlbar.suggest.bookmark", type: "bool" },
-  { id: "browser.urlbar.suggest.clipboard", type: "bool" },
-  { id: "browser.urlbar.suggest.history", type: "bool" },
-  { id: "browser.urlbar.suggest.openpage", type: "bool" },
-  { id: "browser.urlbar.suggest.topsites", type: "bool" },
-  { id: "browser.urlbar.suggest.engines", type: "bool" },
-  { id: "browser.urlbar.suggest.quicksuggest.nonsponsored", type: "bool" },
-  { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
-  { id: "browser.urlbar.quicksuggest.dataCollection.enabled", type: "bool" },
-
-  
   { id: "places.history.enabled", type: "bool" },
   { id: "browser.formfill.enable", type: "bool" },
   { id: "privacy.history.custom", type: "bool" },
@@ -2629,13 +2618,6 @@ var gPrivacyPane = {
       }
     }
 
-    let onNimbus = () => this._updateFirefoxSuggestToggle();
-    NimbusFeatures.urlbar.onUpdate(onNimbus);
-    this._updateFirefoxSuggestToggle();
-    window.addEventListener("unload", () => {
-      NimbusFeatures.urlbar.offUpdate(onNimbus);
-    });
-
     this.initSiteDataControls();
 
     this.initCookieBannerHandling();
@@ -3921,19 +3903,6 @@ var gPrivacyPane = {
     } else {
       groupbox.setAttribute("style", "display: none !important");
     }
-  },
-
-  
-
-
-
-  _updateFirefoxSuggestToggle() {
-    document.getElementById(
-      "firefoxSuggestDataCollectionPrivacyToggle"
-    ).hidden =
-      !UrlbarPrefs.get("quickSuggestEnabled") ||
-      UrlbarPrefs.get("quickSuggestSettingsUi") !=
-        QuickSuggest.SETTINGS_UI.FULL;
   },
 
   
