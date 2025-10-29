@@ -16,6 +16,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   });
 });
 
+const EXTRA_ARGS_TYPES_ALLOWLIST = ["event", "memory_distribution"];
+
 /**
  * Module for managing Glean telemetry metrics and pings in the New Tab page.
  * This object provides functionality to:
@@ -25,6 +27,28 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
  * - Handle metric and ping registration with proper error handling and logging
  */
 export const NewTabGleanUtils = {
+  /**
+   * Internal Promise.withResolvers() object for tracking metrics and pings
+   * registration completion. Contains resolve, reject functions and a promise
+   * that resolves when registerMetricsAndPings completes.
+   *
+   * @type {{promise: Promise<void>, resolve: Function, reject: Function}}
+   * @private
+   */
+  _registrationDone: Promise.withResolvers(),
+
+  /**
+   * Gets the promise that resolves when metrics and pings registration is
+   * complete. This allows external code to wait for registration to finish
+   * before using registered metrics.
+   *
+   * @returns {Promise<void>} A promise that resolves when
+   *   registerMetricsAndPings completes
+   */
+  get registrationDone() {
+    return this._registrationDone.promise;
+  },
+
   /**
    * Fetches and parses a JSON file from a given resource URI.
    *
@@ -82,12 +106,14 @@ export const NewTabGleanUtils = {
       lazy.logConsole.debug(
         "Successfully registered metrics and pings found in the JSON file"
       );
+      this._registrationDone.resolve();
       return true;
     } catch (e) {
       lazy.logConsole.error(
         "Failed to complete registration of metrics and pings found in runtime metrics JSON:",
         e
       );
+      this._registrationDone.resolve();
       return false;
     }
   },
@@ -122,9 +148,13 @@ export const NewTabGleanUtils = {
         return;
       }
 
-      // Convert extraArgs to JSON string for metrics type event
+      // Convert extraArgs to JSON string for metrics types in allowlist
       let extraArgsJson = null;
-      if (type === "event" && extraArgs && Object.keys(extraArgs).length) {
+      if (
+        EXTRA_ARGS_TYPES_ALLOWLIST.includes(type) &&
+        extraArgs &&
+        Object.keys(extraArgs).length
+      ) {
         extraArgsJson = JSON.stringify(extraArgs);
       }
 
