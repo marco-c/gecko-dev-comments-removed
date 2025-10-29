@@ -110,4 +110,11 @@ impl Socket {
     pub fn max_gso_segments(&self) -> usize {
         self.state.max_gso_segments()
     }
+
+    
+    
+    
+    pub fn may_fragment(&self) -> bool {
+        self.state.may_fragment()
+    }
 }

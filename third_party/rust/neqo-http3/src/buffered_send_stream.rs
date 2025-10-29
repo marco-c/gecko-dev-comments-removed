@@ -4,6 +4,8 @@
 
 
 
+use std::time::Instant;
+
 use neqo_common::Encoder;
 use neqo_transport::{Connection, StreamId};
 
@@ -61,7 +63,7 @@ impl BufferedStream {
     
     
     
-    pub fn send_buffer(&mut self, conn: &mut Connection) -> Res<usize> {
+    pub fn send_buffer(&mut self, conn: &mut Connection, now: Instant) -> Res<usize> {
         let Self::Initialized { stream_id, buf } = self else {
             return Ok(0);
         };
@@ -77,16 +79,21 @@ impl BufferedStream {
             let b = buf.split_off(sent);
             *buf = b;
         }
-        qlog::h3_data_moved_down(conn.qlog_mut(), *stream_id, sent);
+        qlog::h3_data_moved_down(conn.qlog_mut(), *stream_id, sent, now);
         Ok(sent)
     }
 
     
     
     
-    pub fn send_atomic(&mut self, conn: &mut Connection, to_send: &[u8]) -> Res<bool> {
+    pub fn send_atomic(
+        &mut self,
+        conn: &mut Connection,
+        to_send: &[u8],
+        now: Instant,
+    ) -> Res<bool> {
         
-        self.send_buffer(conn)?;
+        self.send_buffer(conn, now)?;
         let Self::Initialized { stream_id, buf } = self else {
             return Ok(false);
         };
@@ -95,7 +102,7 @@ impl BufferedStream {
         }
         let res = conn.stream_send_atomic(*stream_id, to_send)?;
         if res {
-            qlog::h3_data_moved_down(conn.qlog_mut(), *stream_id, to_send.len());
+            qlog::h3_data_moved_down(conn.qlog_mut(), *stream_id, to_send.len(), now);
         }
         Ok(res)
     }

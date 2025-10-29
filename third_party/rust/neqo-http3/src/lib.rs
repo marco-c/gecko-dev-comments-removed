@@ -4,6 +4,7 @@
 
 
 
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 
 
@@ -158,7 +159,7 @@ mod server_events;
 mod settings;
 mod stream_type_reader;
 
-use std::{cell::RefCell, fmt::Debug, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, rc::Rc, time::Instant};
 
 use buffered_send_stream::BufferedStream;
 pub use client_events::{ConnectUdpEvent, Http3ClientEvent, WebTransportEvent};
@@ -437,7 +438,7 @@ trait RecvStream: Stream {
     
     
     
-    fn receive(&mut self, conn: &mut Connection) -> Res<(ReceiveOutput, bool)>;
+    fn receive(&mut self, conn: &mut Connection, now: Instant) -> Res<(ReceiveOutput, bool)>;
 
     
     
@@ -451,7 +452,12 @@ trait RecvStream: Stream {
     
     
     
-    fn read_data(&mut self, _conn: &mut Connection, _buf: &mut [u8]) -> Res<(usize, bool)> {
+    fn read_data(
+        &mut self,
+        _conn: &mut Connection,
+        _buf: &mut [u8],
+        _now: Instant,
+    ) -> Res<(usize, bool)> {
         Err(Error::InvalidStreamId)
     }
 
@@ -477,7 +483,11 @@ trait HttpRecvStream: RecvStream {
     
     
     
-    fn header_unblocked(&mut self, conn: &mut Connection) -> Res<(ReceiveOutput, bool)>;
+    fn header_unblocked(
+        &mut self,
+        conn: &mut Connection,
+        now: Instant,
+    ) -> Res<(ReceiveOutput, bool)>;
 
     fn maybe_update_priority(&mut self, priority: Priority) -> Res<bool>;
     fn priority_update_frame(&mut self) -> Option<HFrame>;
@@ -544,7 +554,7 @@ trait SendStream: Stream {
     
     
     
-    fn send(&mut self, conn: &mut Connection) -> Res<()>;
+    fn send(&mut self, conn: &mut Connection, now: Instant) -> Res<()>;
     fn has_data_to_send(&self) -> bool;
     fn stream_writable(&self);
     fn done(&self) -> bool;
@@ -552,12 +562,12 @@ trait SendStream: Stream {
     
     
     
-    fn send_data(&mut self, _conn: &mut Connection, _buf: &[u8]) -> Res<usize>;
+    fn send_data(&mut self, _conn: &mut Connection, _buf: &[u8], now: Instant) -> Res<usize>;
 
     
     
     
-    fn close(&mut self, conn: &mut Connection) -> Res<()>;
+    fn close(&mut self, conn: &mut Connection, now: Instant) -> Res<()>;
 
     
     
@@ -567,6 +577,7 @@ trait SendStream: Stream {
         _conn: &mut Connection,
         _error: u32,
         _message: &str,
+        _now: Instant,
     ) -> Res<()> {
         Err(Error::InvalidStreamId)
     }
@@ -581,7 +592,7 @@ trait SendStream: Stream {
     
     
     
-    fn send_data_atomic(&mut self, _conn: &mut Connection, _buf: &[u8]) -> Res<()> {
+    fn send_data_atomic(&mut self, _conn: &mut Connection, _buf: &[u8], _now: Instant) -> Res<()> {
         Err(Error::InvalidStreamId)
     }
 

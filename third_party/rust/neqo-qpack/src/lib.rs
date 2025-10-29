@@ -4,6 +4,8 @@
 
 
 
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+
 pub mod decoder;
 mod decoder_instructions;
 pub mod encoder;

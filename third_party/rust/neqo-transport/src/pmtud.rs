@@ -315,21 +315,32 @@ impl Pmtud {
 
     
     pub fn start(&mut self, now: Instant, stats: &mut Stats) {
-        if self.probe_index < SEARCH_TABLE_LEN - 1 
-        
-            && self.search_table[self.probe_index + 1] <= self.iface_mtu
-        {
-            self.probe_state = Probe::Needed; 
-            self.probe_count = 0; 
-            self.probe_index += 1; 
+        if self.probe_index == SEARCH_TABLE_LEN - 1 {
             qdebug!(
-                "PMTUD started with probe size {}",
-                self.search_table[self.probe_index],
+                "PMTUD reached end of search table, i.e. {}, stopping upwards search",
+                self.mtu,
             );
-        } else {
-            
             self.stop(self.probe_index, now, stats);
+            return;
         }
+
+        if self.search_table[self.probe_index + 1] > self.iface_mtu {
+            qdebug!(
+                "PMTUD reached interface MTU limit {}, stopping upwards search at {}",
+                self.iface_mtu,
+                self.mtu
+            );
+            self.stop(self.probe_index, now, stats);
+            return;
+        }
+
+        self.probe_state = Probe::Needed; 
+        self.probe_count = 0; 
+        self.probe_index += 1; 
+        qdebug!(
+            "PMTUD started with probe size {}",
+            self.search_table[self.probe_index],
+        );
     }
 
     

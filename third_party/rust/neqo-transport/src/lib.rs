@@ -4,6 +4,8 @@
 
 
 
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+
 use neqo_common::qwarn;
 use neqo_crypto::Error as CryptoError;
 use thiserror::Error;

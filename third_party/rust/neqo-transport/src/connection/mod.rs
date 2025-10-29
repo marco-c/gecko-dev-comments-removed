@@ -43,7 +43,7 @@ use crate::{
     packet::{self},
     path::{Path, PathRef, Paths},
     qlog,
-    quic_datagrams::{DatagramTracking, QuicDatagrams},
+    quic_datagrams::{DatagramTracking, QuicDatagrams, DATAGRAM_FRAME_TYPE_VARINT_LEN},
     recovery::{self, sent, SendProfile},
     recv_stream,
     rtt::{RttEstimate, GRANULARITY},
@@ -70,6 +70,7 @@ mod idle;
 pub mod params;
 mod state;
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 pub mod test_internal;
 
 use idle::IdleTimeout;
@@ -2656,6 +2657,15 @@ impl Connection {
         let version = self.version();
 
         
+        let limit = if path.borrow().pmtud().needs_probe() {
+            needs_padding = true;
+            debug_assert!(path.borrow().pmtud().probe_size() >= profile.limit());
+            path.borrow().pmtud().probe_size()
+        } else {
+            profile.limit()
+        };
+
+        
         
         for space in PacketNumberSpace::iter() {
             
@@ -2663,18 +2673,9 @@ impl Connection {
             else {
                 continue;
             };
-            let aead_expansion = CryptoDxState::expansion();
+            let aead_expansion = tx.expansion();
 
             let header_start = encoder.len();
-
-            
-            let limit = if path.borrow().pmtud().needs_probe() {
-                needs_padding = true;
-                debug_assert!(path.borrow().pmtud().probe_size() >= profile.limit());
-                path.borrow().pmtud().probe_size() - aead_expansion
-            } else {
-                profile.limit() - aead_expansion
-            };
 
             let (pt, mut builder) = Self::build_packet_header(
                 &path.borrow(),
@@ -2684,7 +2685,9 @@ impl Connection {
                 &self.address_validation,
                 version,
                 grease_quic_bit,
-                limit,
+                
+                
+                limit - aead_expansion,
             );
             let pn = Self::add_packet_number(
                 &mut builder,
@@ -3844,8 +3847,9 @@ impl Connection {
                 .largest_acknowledged_pn(PacketNumberSpace::ApplicationData),
         );
 
-        let data_len_possible =
-            u64::try_from(mtu.saturating_sub(CryptoDxState::expansion() + builder.len() + 1))?;
+        let data_len_possible = u64::try_from(
+            mtu.saturating_sub(tx.expansion() + builder.len() + DATAGRAM_FRAME_TYPE_VARINT_LEN),
+        )?;
         Ok(min(data_len_possible, max_dgram_size))
     }
 
@@ -3926,4 +3930,5 @@ impl Display for Connection {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests;

@@ -6,30 +6,37 @@
 
 
 
+use std::time::Instant;
+
 use neqo_common::{hex, qlog::Qlog};
 use qlog::events::{
     qpack::{QPackInstruction, QpackInstructionParsed, QpackInstructionTypeName},
     EventData, RawInfo,
 };
 
+pub fn qpack_read_insert_count_increment_instruction(
+    qlog: &Qlog,
+    increment: u64,
+    data: &[u8],
+    now: Instant,
+) {
+    qlog.add_event_data_with_instant(
+        || {
+            let raw = RawInfo {
+                length: Some(8),
+                payload_length: None,
+                data: Some(hex(data)),
+            };
+            let ev_data = EventData::QpackInstructionParsed(QpackInstructionParsed {
+                instruction: QPackInstruction::InsertCountIncrementInstruction {
+                    instruction_type: QpackInstructionTypeName::InsertCountIncrementInstruction,
+                    increment,
+                },
+                raw: Some(raw),
+            });
 
-
-
-pub fn qpack_read_insert_count_increment_instruction(qlog: &Qlog, increment: u64, data: &[u8]) {
-    qlog.add_event_data_now(|| {
-        let raw = RawInfo {
-            length: Some(8),
-            payload_length: None,
-            data: Some(hex(data)),
-        };
-        let ev_data = EventData::QpackInstructionParsed(QpackInstructionParsed {
-            instruction: QPackInstruction::InsertCountIncrementInstruction {
-                instruction_type: QpackInstructionTypeName::InsertCountIncrementInstruction,
-                increment,
-            },
-            raw: Some(raw),
-        });
-
-        Some(ev_data)
-    });
+            Some(ev_data)
+        },
+        now,
+    );
 }

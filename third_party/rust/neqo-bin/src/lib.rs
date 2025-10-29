@@ -4,6 +4,8 @@
 
 
 
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+
 use std::{
     net::{SocketAddr, ToSocketAddrs as _},
     path::PathBuf,
@@ -274,6 +276,7 @@ pub enum Error {
 
 #[cfg(not(target_os = "netbsd"))] 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use std::{fs, path::PathBuf, str::FromStr as _, time::SystemTime};
 
