@@ -245,9 +245,7 @@ void PointerEvent::GetPointerType(nsAString& aPointerType) {
 }
 
 int32_t PointerEvent::PointerId() {
-  return (ShouldResistFingerprinting(true))
-             ? PointerEventHandler::GetSpoofedPointerIdForRFP()
-             : mEvent->AsPointerEvent()->pointerId;
+  return mEvent->AsPointerEvent()->pointerId;
 }
 
 double PointerEvent::Width() const {
@@ -442,7 +440,7 @@ void PointerEvent::GetPredictedEvents(
   aPointerEvents.AppendElements(mPredictedEvents);
 }
 
-bool PointerEvent::ShouldResistFingerprinting(bool aForPointerId) const {
+bool PointerEvent::ShouldResistFingerprinting() const {
   
   
   
@@ -451,13 +449,11 @@ bool PointerEvent::ShouldResistFingerprinting(bool aForPointerId) const {
   
   
   
-  RFPTarget target =
-      aForPointerId ? RFPTarget::PointerId : RFPTarget::PointerEvents;
+  RFPTarget target = RFPTarget::PointerEvents;
   if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check", target) ||
       !mEvent->IsTrusted() ||
-      (mEvent->AsPointerEvent()->mInputSource ==
-           MouseEvent_Binding::MOZ_SOURCE_MOUSE &&
-       SPOOFED_MAX_TOUCH_POINTS == 0)) {
+      mEvent->AsPointerEvent()->mInputSource ==
+          MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
     return false;
   }
 

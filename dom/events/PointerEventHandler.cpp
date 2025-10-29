@@ -675,32 +675,6 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
 
   PointerCaptureInfo* captureInfo = GetPointerCaptureInfo(aEvent->pointerId);
 
-  
-  
-  
-  
-  
-  
-  if (nsContentUtils::ShouldResistFingerprinting("Efficiency Check",
-                                                 RFPTarget::PointerId) &&
-      aEvent->pointerId != (uint32_t)GetSpoofedPointerIdForRFP() &&
-      !captureInfo) {
-    PointerCaptureInfo* spoofedCaptureInfo =
-        GetPointerCaptureInfo(GetSpoofedPointerIdForRFP());
-
-    
-    
-    
-    
-    if (!spoofedCaptureInfo || !spoofedCaptureInfo->mPendingElement ||
-        !spoofedCaptureInfo->mPendingElement->OwnerDoc()
-             ->ShouldResistFingerprinting(RFPTarget::PointerEvents)) {
-      return;
-    }
-
-    captureInfo = spoofedCaptureInfo;
-  }
-
   if (!captureInfo ||
       captureInfo->mPendingElement == captureInfo->mOverrideElement) {
     return;

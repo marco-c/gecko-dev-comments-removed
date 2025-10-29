@@ -606,23 +606,6 @@ bool WidgetEvent::IsBlockedForFingerprintingResistance() const {
               keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Control ||
               keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_AltGraph);
     }
-    case ePointerEventClass: {
-      if (IsPointerEventMessageOriginallyMouseEventMessage(mMessage)) {
-        return false;
-      }
-
-      if (SPOOFED_MAX_TOUCH_POINTS > 0) {
-        return false;
-      }
-
-      const WidgetPointerEvent* pointerEvent = AsPointerEvent();
-
-      
-      
-      
-      
-      return !pointerEvent->mIsPrimary;
-    }
     default:
       return false;
   }
