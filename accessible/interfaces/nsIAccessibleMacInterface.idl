@@ -61,6 +61,12 @@ interface nsIAccessibleMacInterface : nsISupports
 
 
 
+  AString getActionDescription(in AString actionName);
+
+  
+
+
+
   void performAction(in AString actionName);
 
   
