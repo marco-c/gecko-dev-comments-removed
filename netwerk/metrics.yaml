@@ -317,7 +317,7 @@ networking:
       - necko@mozilla.com
       - edgul@mozilla.com
       - baku@mozilla.com
-    expires: 147
+    expires: 157
     labels:
       - eOK
       - eRejectedEmptyNameAndValue
@@ -1680,7 +1680,7 @@ networking:
       monitor:
         alert: True
         bugzilla_notification_emails:
-          - gmierz2@outlook.com
+          - gmierzwinski@mozilla.com
 
   http_channel_sub_open_to_first_sent:
     type: timing_distribution
