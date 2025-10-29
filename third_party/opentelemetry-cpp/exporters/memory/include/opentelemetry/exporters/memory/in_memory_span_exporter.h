@@ -85,7 +85,8 @@ public:
 
 
 
-  bool Shutdown(std::chrono::microseconds ) noexcept override
+
+  bool Shutdown(std::chrono::microseconds timeout OPENTELEMETRY_MAYBE_UNUSED) noexcept override
   {
     is_shutdown_ = true;
     return true;

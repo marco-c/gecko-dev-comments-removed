@@ -45,62 +45,27 @@ static constexpr const char *kTelemetrySdkVersion = "telemetry.sdk.version";
 namespace TelemetrySdkLanguageValues
 {
 
-
-
 static constexpr const char *kCpp = "cpp";
-
-
-
 
 static constexpr const char *kDotnet = "dotnet";
 
-
-
-
 static constexpr const char *kErlang = "erlang";
-
-
-
 
 static constexpr const char *kGo = "go";
 
-
-
-
 static constexpr const char *kJava = "java";
-
-
-
 
 static constexpr const char *kNodejs = "nodejs";
 
-
-
-
 static constexpr const char *kPhp = "php";
-
-
-
 
 static constexpr const char *kPython = "python";
 
-
-
-
 static constexpr const char *kRuby = "ruby";
-
-
-
 
 static constexpr const char *kRust = "rust";
 
-
-
-
 static constexpr const char *kSwift = "swift";
-
-
-
 
 static constexpr const char *kWebjs = "webjs";
 

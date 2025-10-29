@@ -248,12 +248,7 @@ static constexpr const char *kProcessWorkingDirectory = "process.working_directo
 namespace ProcessContextSwitchTypeValues
 {
 
-
-
 static constexpr const char *kVoluntary = "voluntary";
-
-
-
 
 static constexpr const char *kInvoluntary = "involuntary";
 
@@ -262,17 +257,9 @@ static constexpr const char *kInvoluntary = "involuntary";
 namespace ProcessCpuStateValues
 {
 
-
-
 static constexpr const char *kSystem = "system";
 
-
-
-
 static constexpr const char *kUser = "user";
-
-
-
 
 static constexpr const char *kWait = "wait";
 
@@ -281,12 +268,7 @@ static constexpr const char *kWait = "wait";
 namespace ProcessPagingFaultTypeValues
 {
 
-
-
 static constexpr const char *kMajor = "major";
-
-
-
 
 static constexpr const char *kMinor = "minor";
 

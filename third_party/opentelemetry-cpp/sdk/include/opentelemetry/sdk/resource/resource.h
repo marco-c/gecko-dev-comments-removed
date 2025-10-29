@@ -19,7 +19,14 @@ using ResourceAttributes = opentelemetry::sdk::common::AttributeMap;
 class Resource
 {
 public:
-  Resource(const Resource &) = default;
+  Resource() noexcept;
+
+  Resource(const ResourceAttributes &attributes) noexcept;
+
+  Resource(const ResourceAttributes &attributes, const std::string &schema_url) noexcept;
+
+  Resource(const Resource &)            = default;
+  Resource &operator=(const Resource &) = default;
 
   const ResourceAttributes &GetAttributes() const noexcept;
   const std::string &GetSchemaURL() const noexcept;
@@ -61,21 +68,9 @@ public:
 
   static Resource &GetDefault();
 
-protected:
-  
-
-
-
-
-
-  Resource(const ResourceAttributes &attributes = ResourceAttributes(),
-           const std::string &schema_url        = std::string{}) noexcept;
-
 private:
   ResourceAttributes attributes_;
   std::string schema_url_;
-
-  friend class ResourceDetector;
 };
 
 }  
