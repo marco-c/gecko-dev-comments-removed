@@ -979,6 +979,9 @@
 
 
 
+
+
+
                 set_permission: function (params) {
                     assertBidiIsEnabled();
                     return window.test_driver_internal.bidi.permissions.set_permission(
