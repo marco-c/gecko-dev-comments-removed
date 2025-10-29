@@ -1020,7 +1020,7 @@ inline bool RestyleHint::DefinitelyRecascadesAllSubtree() const {
 }
 
 template <>
-ImageResolution StyleImage::GetResolution(const ComputedStyle&) const;
+ImageResolution StyleImage::GetResolution(const ComputedStyle*) const;
 
 template <>
 inline const StyleImage& StyleImage::FinalImage() const {
@@ -1272,6 +1272,45 @@ inline gfx::Point StyleCoordinatePair<LengthPercentage>::ToGfxPoint(
   MOZ_ASSERT(aBasis);
   return gfx::Point(x.ResolveToCSSPixels(aBasis->Width()),
                     y.ResolveToCSSPixels(aBasis->Height()));
+}
+
+template <>
+inline gfx::Point StyleShapePosition<StyleCSSFloat>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  return gfx::Point(horizontal, vertical);
+}
+
+template <>
+inline gfx::Point StyleShapePosition<LengthPercentage>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  MOZ_ASSERT(aBasis);
+  return gfx::Point(horizontal.ResolveToCSSPixels(aBasis->Width()),
+                    vertical.ResolveToCSSPixels(aBasis->Height()));
+}
+
+template <>
+inline gfx::Point StyleCommandEndPoint<StyleCSSFloat>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  if (IsToPosition()) {
+    auto& pos = AsToPosition();
+    return pos.ToGfxPoint();
+  } else {
+    auto& coord = AsByCoordinate();
+    return coord.ToGfxPoint();
+  }
+}
+
+template <>
+inline gfx::Point StyleCommandEndPoint<LengthPercentage>::ToGfxPoint(
+    const CSSSize* aBasis) const {
+  MOZ_ASSERT(aBasis);
+  if (IsToPosition()) {
+    auto& pos = AsToPosition();
+    return pos.ToGfxPoint(aBasis);
+  } else {
+    auto& coord = AsByCoordinate();
+    return coord.ToGfxPoint(aBasis);
+  }
 }
 
 inline StylePhysicalSide ToStylePhysicalSide(mozilla::Side aSide) {

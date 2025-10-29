@@ -8,12 +8,17 @@
 use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::border::GenericBorderRadius;
-use crate::values::generics::position::GenericPositionOrAuto;
+use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
 use crate::values::generics::rect::Rect;
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
 use crate::Zero;
 use std::fmt::{self, Write};
+use std::ops::AddAssign;
 use style_traits::{CssWriter, ToCss};
+
+
+
+pub type ShapePosition<LengthPercentage> = GenericPosition<LengthPercentage, LengthPercentage>;
 
 
 #[allow(missing_docs)]
@@ -702,11 +707,17 @@ where
             dest.write_char(' ')?;
         }
         dest.write_str("from ")?;
-        match self.commands[0] {
+        match &self.commands[0] {
             ShapeCommand::Move {
-                by_to: _,
-                ref point,
-            } => point.to_css(dest)?,
+                point: CommandEndPoint::ToPosition(pos),
+            } => {
+                pos.horizontal.to_css(dest)?;
+                dest.write_char(' ')?;
+                pos.vertical.to_css(dest)?
+            },
+            ShapeCommand::Move {
+                point: CommandEndPoint::ByCoordinate(coord),
+            } => coord.to_css(dest)?,
             _ => unreachable!("The first command must be move"),
         }
         dest.write_str(", ")?;
@@ -746,13 +757,11 @@ where
 pub enum GenericShapeCommand<Angle, LengthPercentage> {
     
     Move {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
     },
     
     Line {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
     },
     
     HLine { by_to: ByTo, x: LengthPercentage },
@@ -760,32 +769,27 @@ pub enum GenericShapeCommand<Angle, LengthPercentage> {
     VLine { by_to: ByTo, y: LengthPercentage },
     
     CubicCurve {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
         control1: CoordinatePair<LengthPercentage>,
         control2: CoordinatePair<LengthPercentage>,
     },
     
     QuadCurve {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
         control1: CoordinatePair<LengthPercentage>,
     },
     
     SmoothCubic {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
         control2: CoordinatePair<LengthPercentage>,
     },
     
     SmoothQuad {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
     },
     
     Arc {
-        by_to: ByTo,
-        point: CoordinatePair<LengthPercentage>,
+        point: CommandEndPoint<LengthPercentage>,
         radii: CoordinatePair<LengthPercentage>,
         arc_sweep: ArcSweep,
         arc_size: ArcSize,
@@ -808,16 +812,12 @@ where
     {
         use self::ShapeCommand::*;
         match *self {
-            Move { by_to, ref point } => {
+            Move { ref point } => {
                 dest.write_str("move ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)
             },
-            Line { by_to, ref point } => {
+            Line { ref point } => {
                 dest.write_str("line ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)
             },
             HLine { by_to, ref x } => {
@@ -833,52 +833,42 @@ where
                 y.to_css(dest)
             },
             CubicCurve {
-                by_to,
                 ref point,
                 ref control1,
                 ref control2,
             } => {
                 dest.write_str("curve ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
-                dest.write_str(" via ")?;
+                dest.write_str(" with ")?;
                 control1.to_css(dest)?;
+                dest.write_char(' ')?;
+                dest.write_char('/')?;
                 dest.write_char(' ')?;
                 control2.to_css(dest)
             },
             QuadCurve {
-                by_to,
                 ref point,
                 ref control1,
             } => {
                 dest.write_str("curve ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
-                dest.write_str(" via ")?;
+                dest.write_str(" with ")?;
                 control1.to_css(dest)
             },
             SmoothCubic {
-                by_to,
                 ref point,
                 ref control2,
             } => {
                 dest.write_str("smooth ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
-                dest.write_str(" via ")?;
+                dest.write_str(" with ")?;
                 control2.to_css(dest)
             },
-            SmoothQuad { by_to, ref point } => {
+            SmoothQuad { ref point } => {
                 dest.write_str("smooth ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)
             },
             Arc {
-                by_to,
                 ref point,
                 ref radii,
                 arc_sweep,
@@ -886,8 +876,6 @@ where
                 ref rotate,
             } => {
                 dest.write_str("arc ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 point.to_css(dest)?;
                 dest.write_str(" of ")?;
                 radii.x.to_css(dest)?;
@@ -958,6 +946,78 @@ impl ByTo {
             Self::To
         } else {
             Self::By
+        }
+    }
+}
+
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum CommandEndPoint<LengthPercentage> {
+    ToPosition(ShapePosition<LengthPercentage>),
+    ByCoordinate(CoordinatePair<LengthPercentage>),
+}
+
+impl<LengthPercentage> CommandEndPoint<LengthPercentage> {
+    
+    #[inline]
+    pub fn is_abs(&self) -> bool {
+        matches!(self, CommandEndPoint::ToPosition(_))
+    }
+}
+
+impl<LengthPercentage: ToCss> ToCss for CommandEndPoint<LengthPercentage> {
+    
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match self {
+            CommandEndPoint::ToPosition(pos) => {
+                dest.write_str("to ")?;
+                pos.horizontal.to_css(dest)?;
+                dest.write_char(' ')?;
+                pos.vertical.to_css(dest)
+            },
+            CommandEndPoint::ByCoordinate(coord) => {
+                dest.write_str("by ")?;
+                coord.to_css(dest)
+            },
+        }
+    }
+}
+
+impl<LengthPercentage: AddAssign> AddAssign<CoordinatePair<LengthPercentage>>
+    for CommandEndPoint<LengthPercentage>
+{
+    fn add_assign(&mut self, other: CoordinatePair<LengthPercentage>) {
+        match self {
+            CommandEndPoint::ToPosition(ref mut a) => {
+                a.horizontal += other.x;
+                a.vertical += other.y;
+            },
+            CommandEndPoint::ByCoordinate(ref mut a) => {
+                *a += other;
+            },
         }
     }
 }
