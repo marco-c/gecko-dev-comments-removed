@@ -1829,29 +1829,24 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     }
   }
 
-  nsIFrame::SizeComputationResult sizeResult = {
-      LogicalSize(wm), nsIFrame::AspectRatioUsage::None};
   {
     AutoMaybeDisableFontInflation an(mFrame);
 
-    sizeResult = mFrame->ComputeSize(
+    auto size = mFrame->ComputeSize(
         mRenderingContext, wm, aCBSize.ConvertTo(wm, cbwm),
         aCBSize.ConvertTo(wm, cbwm).ISize(wm),  
         ComputedLogicalMargin(wm).Size(wm) +
             ComputedLogicalOffsets(wm).Size(wm),
         ComputedLogicalBorderPadding(wm).Size(wm), {}, mComputeSizeFlags);
-    mComputedSize = sizeResult.mLogicalSize;
+    mComputedSize = size.mLogicalSize;
     NS_ASSERTION(ComputedISize() >= 0, "Bogus inline-size");
     NS_ASSERTION(
         ComputedBSize() == NS_UNCONSTRAINEDSIZE || ComputedBSize() >= 0,
         "Bogus block-size");
+
+    mFlags.mIsBSizeSetByAspectRatio =
+        size.mAspectRatioUsage == nsIFrame::AspectRatioUsage::ToComputeBSize;
   }
-
-  LogicalSize& computedSize = sizeResult.mLogicalSize;
-  computedSize = computedSize.ConvertTo(cbwm, wm);
-
-  mFlags.mIsBSizeSetByAspectRatio = sizeResult.mAspectRatioUsage ==
-                                    nsIFrame::AspectRatioUsage::ToComputeBSize;
 
   
   
@@ -1867,9 +1862,11 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   bool marginBEndIsAuto = false;
   const bool hasIntrinsicKeywordForBSize =
       mFrame->HasIntrinsicKeywordForBSize();
+
   
   
   
+  const LogicalSize computedSize = mComputedSize.ConvertTo(cbwm, wm);
   const bool nonZeroAutoMarginOnUnconstrainedSize =
       isOrthogonal ? computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE &&
                          !(iStartIsAuto || iEndIsAuto)
@@ -1981,7 +1978,6 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     ComputeAbsPosBlockAutoMargin(availMarginSpace, cbwm, marginBStartIsAuto,
                                  marginBEndIsAuto, margin, offsets);
   }
-  mComputedSize = computedSize.ConvertTo(wm, cbwm);
 
   SetComputedLogicalOffsets(cbwm, offsets);
   SetComputedLogicalMargin(cbwm, margin);
