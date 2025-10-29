@@ -297,6 +297,11 @@ void profiler_dump_and_stop();
 
 void profiler_start_from_signal();
 
+#if defined(GP_OS_darwin)
+
+void profiler_register_thermal_state_observer();
+#endif
+
 mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 #if defined(GP_OS_android)
@@ -6159,6 +6164,13 @@ void profiler_init(void* aStackTop) {
   
   
   profiler_mark_thread_awake();
+
+#if defined(GP_OS_darwin)
+  
+  if (XRE_IsParentProcess()) {
+    profiler_register_thermal_state_observer();
+  }
+#endif
 
   invoke_profiler_state_change_callbacks(ProfilingState::Started);
 
