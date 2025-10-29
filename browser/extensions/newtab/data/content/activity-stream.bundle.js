@@ -7969,7 +7969,8 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
       if (action.data) {
         
         
-        if (prevState.spocs.onDemand.loaded) {
+        
+        if (prevState.spocs?.onDemand?.loaded) {
           return prevState;
         }
         return {
