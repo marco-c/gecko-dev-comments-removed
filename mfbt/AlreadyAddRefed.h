@@ -137,19 +137,21 @@ struct
       = default;
 #endif
 
+  
+  
+  
+  
+  friend void operator<<(const mozilla::unused_t& aUnused,
+                         const already_AddRefed<T>& aRhs) {
+    auto mutableAlreadyAddRefed = const_cast<already_AddRefed<T>*>(&aRhs);
+    aUnused << mutableAlreadyAddRefed->take();
+  }
+
   [[nodiscard]] T* take() {
     T* rawPtr = mRawPtr;
     mRawPtr = nullptr;
     return rawPtr;
   }
-
-  
-
-
-
-
-
-  void leak() { mRawPtr = nullptr; }
 
   
 

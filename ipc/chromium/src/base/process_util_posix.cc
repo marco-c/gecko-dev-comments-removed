@@ -31,6 +31,7 @@
 #include "base/dir_reader_posix.h"
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 
 #include "prenv.h"
 #include "prmem.h"

@@ -581,7 +581,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
   
   
   if (!isFileRemoteType && !StaticPrefs::dom_file_createInChild()) {
-    (void)dom::FileCreatorParent::Send__delete__(
+    Unused << dom::FileCreatorParent::Send__delete__(
         actor, dom::FileCreationErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
     return IPC_OK();
   }

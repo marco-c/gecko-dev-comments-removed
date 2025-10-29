@@ -522,7 +522,7 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
 
       
       auto closeGuard =
-          mozilla::MakeScopeExit([&] { (void)inputStream->Close(); });
+          mozilla::MakeScopeExit([&] { Unused << inputStream->Close(); });
 
       char buffer[BUFFERED_IO_SIZE];
       while (true) {

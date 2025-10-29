@@ -878,7 +878,7 @@ void nsContentSink::DropParserAndPerfHint(void) {
   
   
   RefPtr<nsParserBase> kungFuDeathGrip = std::move(mParser);
-  (void)kungFuDeathGrip;
+  mozilla::Unused << kungFuDeathGrip;
 
   
   

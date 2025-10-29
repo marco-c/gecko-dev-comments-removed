@@ -127,7 +127,7 @@ FileSystemSyncAccessHandle::Create(
         if (result->IsOpen()) {
           
           
-          (void)result->BeginClose();
+          Unused << result->BeginClose();
         }
       });
   QM_TRY(MOZ_TO_RESULT(workerRef));
@@ -157,7 +157,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FileSystemSyncAccessHandle)
   if (tmp->IsOpen()) {
     
     
-    (void)tmp->BeginClose();
+    Unused << tmp->BeginClose();
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(FileSystemSyncAccessHandle)

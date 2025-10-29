@@ -1,0 +1,13 @@
+
+
+
+
+
+
+#include "mozilla/Unused.h"
+
+namespace mozilla {
+
+const unused_t Unused = unused_t();
+
+}  

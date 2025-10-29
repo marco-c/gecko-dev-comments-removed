@@ -53,6 +53,7 @@
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ToString.h"
+#include "mozilla/Unused.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -3833,9 +3834,9 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   bool dirtyRectHasBeenOverriden = false;
-  (void)DecideScrollableLayer(aBuilder, &visibleRect, &dirtyRect,
-                               !mIsRoot,
-                              &dirtyRectHasBeenOverriden);
+  Unused << DecideScrollableLayer(aBuilder, &visibleRect, &dirtyRect,
+                                   !mIsRoot,
+                                  &dirtyRectHasBeenOverriden);
 
   if (aBuilder->IsForFrameVisibility()) {
     
@@ -4130,9 +4131,9 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         
         nsRect copyOfDirtyRect = dirtyRect;
         nsRect copyOfVisibleRect = visibleRect;
-        (void)DecideScrollableLayer(aBuilder, &copyOfVisibleRect,
-                                    &copyOfDirtyRect,
-                                     false, nullptr);
+        Unused << DecideScrollableLayer(aBuilder, &copyOfVisibleRect,
+                                        &copyOfDirtyRect,
+                                         false, nullptr);
         if (mWillBuildScrollableLayer) {
 #ifndef MOZ_WIDGET_ANDROID
           gfxCriticalNoteOnce << "inserted scroll frame";

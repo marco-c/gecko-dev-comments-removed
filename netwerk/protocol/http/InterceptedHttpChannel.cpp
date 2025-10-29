@@ -351,7 +351,7 @@ nsresult InterceptedHttpChannel::StartPump() {
   
   
   
-  (void)GetContentLength(&mSynthesizedStreamLength);
+  Unused << GetContentLength(&mSynthesizedStreamLength);
 
   nsresult rv =
       nsInputStreamPump::Create(getter_AddRefs(mPump), mBodyReader, 0, 0, true);
@@ -688,7 +688,7 @@ void InterceptedHttpChannel::DoNotifyListenerCleanup() {
 }
 
 void InterceptedHttpChannel::DoAsyncAbort(nsresult aStatus) {
-  (void)AsyncAbort(aStatus);
+  Unused << AsyncAbort(aStatus);
 }
 
 namespace {
@@ -940,7 +940,7 @@ InterceptedHttpChannel::StartSynthesizedResponse(
   }
 
   bool equal = false;
-  (void)mURI->Equals(responseURI, &equal);
+  Unused << mURI->Equals(responseURI, &equal);
   if (!equal) {
     rv = RedirectForResponseURL(responseURI, aResponseRedirected);
     NS_ENSURE_SUCCESS(rv, rv);

@@ -1492,7 +1492,7 @@ Modifiers LookAndFeel::GetMenuAccessKeyModifiers() {
   }
 }
 
-void LookAndFeel::EnsureInit() { (void)nsXPLookAndFeel::GetInstance(); }
+void LookAndFeel::EnsureInit() { Unused << nsXPLookAndFeel::GetInstance(); }
 
 
 void LookAndFeel::Refresh() {

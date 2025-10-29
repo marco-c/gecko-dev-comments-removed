@@ -165,12 +165,12 @@ void BroadcastChannelService::PostMessage(BroadcastChannelParent* aParent,
       }
     }
 
-    (void)parent->SendNotify(newData);
+    Unused << parent->SendNotify(newData);
   }
 
   
   if (aData.data().type() == MessageDataType::TRefMessageData) {
-    (void)aParent->SendRefMessageDelivered(
+    Unused << aParent->SendRefMessageDelivered(
         aData.data().get_RefMessageData().uuid(), selectedActorsOnSamePid);
   }
 }

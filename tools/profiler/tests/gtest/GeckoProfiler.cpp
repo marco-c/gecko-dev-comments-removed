@@ -2487,7 +2487,7 @@ TEST(GeckoProfiler, Markers)
   };
 
   
-  (void)GtestUnusedMarker{};
+  mozilla::Unused << GtestUnusedMarker{};
 
   
   int testInt = 42;

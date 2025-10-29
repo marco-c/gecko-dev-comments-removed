@@ -637,7 +637,7 @@ class TransportTestPeer : public sigslot::has_slots<> {
                             NrIceMediaStream::GatheringState state) {
     
     
-    (void)aTransportId;
+    Unused << aTransportId;
     if (state == NrIceMediaStream::ICE_STREAM_GATHER_COMPLETE) {
       GatheringComplete();
     }

@@ -125,7 +125,7 @@ bool AsyncExecuteStatements::bindExecuteAndProcessStatement(
 
   sqlite3_stmt* aStatement = nullptr;
   
-  (void)aData.getSqliteStatement(&aStatement);
+  Unused << aData.getSqliteStatement(&aStatement);
   MOZ_DIAGNOSTIC_ASSERT(
       aStatement,
       "bindExecuteAndProcessStatement called without an initialized statement");
@@ -167,7 +167,7 @@ bool AsyncExecuteStatements::executeAndProcessStatement(StatementData& aData,
 
   sqlite3_stmt* aStatement = nullptr;
   
-  (void)aData.getSqliteStatement(&aStatement);
+  Unused << aData.getSqliteStatement(&aStatement);
   MOZ_DIAGNOSTIC_ASSERT(
       aStatement,
       "executeAndProcessStatement called without an initialized statement");
@@ -225,7 +225,7 @@ bool AsyncExecuteStatements::executeStatement(StatementData& aData) {
 
   sqlite3_stmt* aStatement = nullptr;
   
-  (void)aData.getSqliteStatement(&aStatement);
+  Unused << aData.getSqliteStatement(&aStatement);
   MOZ_DIAGNOSTIC_ASSERT(
       aStatement, "executeStatement called without an initialized statement");
 
@@ -235,7 +235,7 @@ bool AsyncExecuteStatements::executeStatement(StatementData& aData) {
       busyRetry = false;
 
       
-      (void)PR_Sleep(PR_INTERVAL_NO_WAIT);
+      Unused << PR_Sleep(PR_INTERVAL_NO_WAIT);
 
       
       {
@@ -366,7 +366,7 @@ nsresult AsyncExecuteStatements::notifyComplete() {
 
   
   
-  (void)mCallingThread->Dispatch(
+  Unused << mCallingThread->Dispatch(
       NewRunnableMethod("AsyncExecuteStatements::notifyCompleteOnCallingThread",
                         this,
                         &AsyncExecuteStatements::notifyCompleteOnCallingThread),
@@ -384,7 +384,7 @@ nsresult AsyncExecuteStatements::notifyCompleteOnCallingThread() {
   
   nsCOMPtr<mozIStorageStatementCallback> callback = std::move(mCallback);
   if (callback) {
-    (void)callback->HandleCompletion(mState);
+    Unused << callback->HandleCompletion(mState);
   }
   return NS_OK;
 }
@@ -408,7 +408,7 @@ nsresult AsyncExecuteStatements::notifyError(mozIStorageError* aError) {
 
   if (!mCallback) return NS_OK;
 
-  (void)mCallingThread->Dispatch(
+  Unused << mCallingThread->Dispatch(
       NewRunnableMethod<nsCOMPtr<mozIStorageError>>(
           "AsyncExecuteStatements::notifyErrorOnCallingThread", this,
           &AsyncExecuteStatements::notifyErrorOnCallingThread, aError),
@@ -426,7 +426,7 @@ nsresult AsyncExecuteStatements::notifyErrorOnCallingThread(
   
   nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
   if (shouldNotify() && callback) {
-    (void)callback->HandleError(aError);
+    Unused << callback->HandleError(aError);
   }
   return NS_OK;
 }
@@ -437,7 +437,7 @@ nsresult AsyncExecuteStatements::notifyResults() {
 
   
   
-  (void)mCallingThread->Dispatch(
+  Unused << mCallingThread->Dispatch(
       NewRunnableMethod<RefPtr<ResultSet>>(
           "AsyncExecuteStatements::notifyResultsOnCallingThread", this,
           &AsyncExecuteStatements::notifyResultsOnCallingThread,
@@ -456,7 +456,7 @@ nsresult AsyncExecuteStatements::notifyResultsOnCallingThread(
   
   nsCOMPtr<mozIStorageStatementCallback> callback = mCallback;
   if (shouldNotify() && callback) {
-    (void)callback->HandleResult(aResultSet);
+    Unused << callback->HandleResult(aResultSet);
   }
   return NS_OK;
 }

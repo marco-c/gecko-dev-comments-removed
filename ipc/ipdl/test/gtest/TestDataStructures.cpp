@@ -17,6 +17,8 @@
 #include "mozilla/_ipdltest/PTestDataStructuresSubChild.h"
 #include "mozilla/_ipdltest/PTestDataStructuresSubParent.h"
 
+#include "mozilla/Unused.h"
+
 using namespace mozilla::ipc;
 
 using RegionArray = nsTArray<nsIntRegion>;
@@ -396,7 +398,7 @@ class TestDataStructuresParent : public PTestDataStructuresParent {
       
       
       for (auto iter = ra[i].RectIter(); !iter.Done(); iter.Next()) {
-        (void)iter.Get();
+        Unused << iter.Get();
       }
     }
     return IPC_OK();

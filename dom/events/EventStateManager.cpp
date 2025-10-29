@@ -2131,8 +2131,8 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
         MOZ_ASSERT(remote->GetBrowserHost());
 
         if (oldRemote && oldRemote != remote) {
-          (void)NS_WARN_IF(nsContentUtils::GetCommonBrowserParentAncestor(
-                               remote, oldRemote) != remote);
+          Unused << NS_WARN_IF(nsContentUtils::GetCommonBrowserParentAncestor(
+                                   remote, oldRemote) != remote);
           remote = oldRemote;
         }
 
@@ -7152,7 +7152,7 @@ nsresult EventStateManager::DoContentCommandReplaceTextEvent(
     
     if (BrowserParent* remote = BrowserParent::GetFocused()) {
       if (!aEvent->mOnlyEnabledCheck) {
-        (void)remote->SendReplaceText(*aEvent);
+        Unused << remote->SendReplaceText(*aEvent);
       }
       
       

@@ -1004,7 +1004,7 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
 
   
   
-  (void)mFontEntry->UnitsPerEm();
+  Unused << mFontEntry->UnitsPerEm();
 }
 
 gfxFont::~gfxFont() {
@@ -2772,7 +2772,7 @@ bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
             
             
             
-            (void)mColorGlyphCache->mCache.add(cached, aGlyphId, snapshot);
+            Unused << mColorGlyphCache->mCache.add(cached, aGlyphId, snapshot);
           }
         }
       }

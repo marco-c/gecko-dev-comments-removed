@@ -10,6 +10,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/Unused.h"
 #include "nsXRemoteClient.h"
 #include "RemoteUtils.h"
 #include "prsystem.h"
@@ -51,6 +52,7 @@
 #endif
 
 using mozilla::LogLevel;
+using mozilla::Unused;
 
 static mozilla::LazyLogModule sRemoteLm("nsXRemoteClient");
 
@@ -416,9 +418,9 @@ Window nsXRemoteClient::FindBestWindow(const char* aProgram,
     if (status != Success || type == None) continue;
 
     
-    (void)XGetWindowProperty(mDisplay, w, mMozProgramAtom, 0,
-                             (65536 / sizeof(long)), False, XA_STRING, &type,
-                             &format, &nitems, &bytesafter, &data_return);
+    Unused << XGetWindowProperty(
+        mDisplay, w, mMozProgramAtom, 0, (65536 / sizeof(long)), False,
+        XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
     
     
@@ -441,9 +443,9 @@ Window nsXRemoteClient::FindBestWindow(const char* aProgram,
     const char* username = PR_GetEnv("LOGNAME");
 
     if (username) {
-      (void)XGetWindowProperty(mDisplay, w, mMozUserAtom, 0,
-                               (65536 / sizeof(long)), False, XA_STRING, &type,
-                               &format, &nitems, &bytesafter, &data_return);
+      Unused << XGetWindowProperty(
+          mDisplay, w, mMozUserAtom, 0, (65536 / sizeof(long)), False,
+          XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
       
       if (data_return) {
@@ -460,9 +462,9 @@ Window nsXRemoteClient::FindBestWindow(const char* aProgram,
     
     
     
-    (void)XGetWindowProperty(mDisplay, w, mMozProfileAtom, 0,
-                             (65536 / sizeof(long)), False, XA_STRING, &type,
-                             &format, &nitems, &bytesafter, &data_return);
+    Unused << XGetWindowProperty(
+        mDisplay, w, mMozProfileAtom, 0, (65536 / sizeof(long)), False,
+        XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
     
     if (data_return) {

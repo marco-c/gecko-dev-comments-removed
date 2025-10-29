@@ -453,7 +453,7 @@ mozilla::ipc::IPCResult WebAuthnTransactionParent::RecvRequestSign(
             }
 
             nsTArray<uint8_t> userHandle;
-            (void)signResult->GetUserHandle(userHandle);  
+            Unused << signResult->GetUserHandle(userHandle);  
 
             Maybe<nsString> authenticatorAttachment;
             nsString maybeAuthenticatorAttachment;

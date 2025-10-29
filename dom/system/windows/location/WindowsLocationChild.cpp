@@ -239,7 +239,8 @@ WindowsLocationChild::~WindowsLocationChild() {
   }
 
   
-  (void)NS_WARN_IF(FAILED(mLocation->UnregisterForReport(IID_ILatLongReport)));
+  Unused << NS_WARN_IF(
+      FAILED(mLocation->UnregisterForReport(IID_ILatLongReport)));
 
   
   

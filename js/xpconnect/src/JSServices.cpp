@@ -117,7 +117,7 @@ static bool GetServiceImpl(JSContext* cx, const xpcom::JSServiceEntry& service,
       
       
       
-      (void)wn->FindTearOff(cx, *iid);
+      Unused << wn->FindTearOff(cx, *iid);
     }
   }
 

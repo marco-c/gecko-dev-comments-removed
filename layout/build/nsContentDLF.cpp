@@ -183,7 +183,7 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
     
     
     nsAutoCString type;
-    (void)viewSourceChannel->GetOriginalContentType(type);
+    mozilla::Unused << viewSourceChannel->GetOriginalContentType(type);
     bool knownType = (!type.EqualsLiteral(VIEWSOURCE_CONTENT_TYPE) &&
                       IsTypeInList(type, gHTMLTypes)) ||
                      nsContentUtils::IsPlainTextType(type) ||
@@ -254,7 +254,8 @@ already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
     nsIPrincipal* aPartitionedPrincipal, nsDocShell* aContainer) {
   
   RefPtr<Document> blankDoc;
-  (void)NS_NewHTMLDocument(getter_AddRefs(blankDoc), nullptr, nullptr);
+  mozilla::Unused << NS_NewHTMLDocument(getter_AddRefs(blankDoc), nullptr,
+                                        nullptr);
 
   if (!blankDoc) {
     return nullptr;

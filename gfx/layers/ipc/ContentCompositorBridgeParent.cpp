@@ -28,6 +28,7 @@
 #include "nsDebug.h"           
 #include "nsTArray.h"          
 #include "nsXULAppAPI.h"       
+#include "mozilla/Unused.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/BaseProfilerMarkerTypes.h"
@@ -443,7 +444,7 @@ void ContentCompositorBridgeParent::ObserveLayersUpdate(LayersId aLayersId,
     return;
   }
 
-  (void)state->mParent->SendObserveLayersUpdate(aLayersId, aActive);
+  Unused << state->mParent->SendObserveLayersUpdate(aLayersId, aActive);
 }
 
 }  

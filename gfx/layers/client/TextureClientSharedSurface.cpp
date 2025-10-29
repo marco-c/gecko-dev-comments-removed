@@ -10,6 +10,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
+#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 #include "SharedSurface.h"
 

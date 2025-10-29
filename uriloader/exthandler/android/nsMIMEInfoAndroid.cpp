@@ -137,7 +137,7 @@ nsMIMEInfoAndroid::SetFileExtensions(const nsACString& aExtensions) {
   aExtensions.EndReading(end);
   while (start != end) {
     nsACString::const_iterator cursor = start;
-    (void)FindCharInReadable(',', cursor, end);
+    mozilla::Unused << FindCharInReadable(',', cursor, end);
     AddUniqueExtension(Substring(start, cursor));
     
     start = cursor != end ? ++cursor : cursor;

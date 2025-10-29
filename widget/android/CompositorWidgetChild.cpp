@@ -4,6 +4,7 @@
 
 
 #include "CompositorWidgetChild.h"
+#include "mozilla/Unused.h"
 #include "gfxPlatform.h"
 
 namespace mozilla {
@@ -34,7 +35,7 @@ mozilla::ipc::IPCResult CompositorWidgetChild::RecvUnobserveVsync() {
 
 void CompositorWidgetChild::NotifyClientSizeChanged(
     const LayoutDeviceIntSize& aClientSize) {
-  (void)SendNotifyClientSizeChanged(aClientSize);
+  Unused << SendNotifyClientSizeChanged(aClientSize);
 }
 
 }  

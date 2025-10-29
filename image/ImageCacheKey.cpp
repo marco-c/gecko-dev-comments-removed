@@ -11,6 +11,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -81,7 +82,7 @@ void ImageCacheKey::EnsureHash() const {
   
   
   nsAutoCString spec;
-  (void)mURI->GetSpec(spec);
+  Unused << mURI->GetSpec(spec);
   mHash.emplace(
       AddToHash(HashString(spec), mControlledDocument, mAppType, mCORSMode));
 }

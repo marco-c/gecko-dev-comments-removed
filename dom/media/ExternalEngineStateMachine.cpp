@@ -294,7 +294,7 @@ void ExternalEngineStateMachine::ReadMetadata() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState.IsReadingMetadata());
   PROFILER_MARKER_UNTYPED("EESM::ReadMetadata", MEDIA_PLAYBACK);
-  (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+  Unused << OwnerThread()->Dispatch(NS_NewRunnableFunction(
       "ExternalEngineStateMachine::ReadMetadata",
       [self = RefPtr<ExternalEngineStateMachine>{this}, this] {
         mReader->ReadMetadata()
@@ -911,7 +911,7 @@ void ExternalEngineStateMachine::StartRunningEngine() {
   
   if (!mPendingTasks.IsEmpty()) {
     for (auto& task : mPendingTasks) {
-      (void)OwnerThread()->Dispatch(task.forget());
+      Unused << OwnerThread()->Dispatch(task.forget());
     }
     mPendingTasks.Clear();
   }

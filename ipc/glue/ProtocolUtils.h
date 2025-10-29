@@ -520,7 +520,7 @@ class IToplevelProtocol : public IRefCountedProtocol {
   void OnIPCChannelOpened() {
     
     
-    ActorConnected().leak();
+    Unused << ActorConnected();
   }
   void OnChannelClose() {
     

@@ -31,6 +31,7 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
+#include "mozilla/Unused.h"
 #include "nsIContentPolicy.h"
 #include "WindowsUIUtils.h"
 #include "nsContentUtils.h"
@@ -907,7 +908,8 @@ AsyncDeleteAllFaviconsFromDisk::AsyncDeleteAllFaviconsFromDisk(
 
   
   
-  (void)NS_GetSpecialDirectory("ProfLDS", getter_AddRefs(mJumpListCacheDir));
+  Unused << NS_GetSpecialDirectory("ProfLDS",
+                                   getter_AddRefs(mJumpListCacheDir));
 }
 
 NS_IMETHODIMP AsyncDeleteAllFaviconsFromDisk::Run() {
@@ -1770,13 +1772,13 @@ bool WinUtils::UnexpandEnvVars(nsAString& aPath) {
 WinUtils::WhitelistVec WinUtils::BuildWhitelist() {
   WhitelistVec result;
 
-  (void)result.emplaceBack(
+  Unused << result.emplaceBack(
       std::make_pair(nsString(u"%ProgramFiles%"_ns), nsDependentString()));
 
   
   result.back().second.SetIsVoid(true);
 
-  (void)result.emplaceBack(
+  Unused << result.emplaceBack(
       std::make_pair(nsString(u"%SystemRoot%"_ns), nsDependentString()));
   result.back().second.SetIsVoid(true);
 
@@ -1791,8 +1793,8 @@ WinUtils::WhitelistVec WinUtils::BuildWhitelist() {
     nsAutoString cleanTmpPath(tmpPath);
     if (UnexpandEnvVars(cleanTmpPath)) {
       constexpr auto tempVar = u"%TEMP%"_ns;
-      (void)result.emplaceBack(std::make_pair(nsString(cleanTmpPath),
-                                              nsDependentString(tempVar, 0)));
+      Unused << result.emplaceBack(std::make_pair(
+          nsString(cleanTmpPath), nsDependentString(tempVar, 0)));
     }
   }
 

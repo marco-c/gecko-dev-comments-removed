@@ -4,6 +4,7 @@
 
 
 #include "CompositorWidgetParent.h"
+#include "mozilla/Unused.h"
 #include "mozilla/java/GeckoServiceGpuProcessWrappers.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 
@@ -24,9 +25,9 @@ nsIWidget* CompositorWidgetParent::RealWidget() { return nullptr; }
 
 void CompositorWidgetParent::ObserveVsync(VsyncObserver* aObserver) {
   if (aObserver) {
-    (void)SendObserveVsync();
+    Unused << SendObserveVsync();
   } else {
-    (void)SendUnobserveVsync();
+    Unused << SendUnobserveVsync();
   }
   mVsyncObserver = aObserver;
 }
