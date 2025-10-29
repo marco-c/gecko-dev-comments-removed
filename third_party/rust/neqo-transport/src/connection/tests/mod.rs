@@ -336,7 +336,7 @@ fn assert_idle(client: &mut Connection, server: &mut Connection, rtt: Duration, 
     
     assert_eq!(
         client.process_output(now),
-        Output::Callback(idle_timeout - rtt / 2)
+        Output::Callback(idle_timeout.checked_sub(rtt / 2).unwrap())
     );
     assert_eq!(server.process_output(now), Output::Callback(idle_timeout));
 }

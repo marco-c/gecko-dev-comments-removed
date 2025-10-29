@@ -190,7 +190,7 @@ fn idle_send_packet1() {
 
     
     
-    now += default_timeout() - DELTA;
+    now += default_timeout().checked_sub(DELTA).unwrap();
     let dgram = client.process_output(now).dgram();
     assert!(dgram.is_some()); 
     assert!(client.state().connected());
@@ -225,7 +225,7 @@ fn idle_send_packet2() {
     assert!((GAP * 2 + DELTA) < default_timeout());
 
     
-    now += default_timeout() - DELTA;
+    now += default_timeout().checked_sub(DELTA).unwrap();
     let dgram = client.process_output(now).dgram();
     assert!(dgram.is_some()); 
     assert!(matches!(client.state(), State::Confirmed));
@@ -268,7 +268,7 @@ fn idle_recv_packet() {
     assert!(matches!(client.state(), State::Confirmed));
 
     
-    now += default_timeout() - FUDGE;
+    now += default_timeout().checked_sub(FUDGE).unwrap();
     drop(client.process_output(now));
     assert!(matches!(client.state(), State::Confirmed));
 
@@ -476,7 +476,11 @@ fn keep_alive_lost() {
     
     
     now += AT_LEAST_PTO;
-    assert_idle(&mut server, now, keep_alive_timeout() - AT_LEAST_PTO);
+    assert_idle(
+        &mut server,
+        now,
+        keep_alive_timeout().checked_sub(AT_LEAST_PTO).unwrap(),
+    );
 }
 
 
@@ -714,11 +718,11 @@ fn keep_alive_with_ack_eliciting_packet_lost() {
     
     assert_eq!(
         client.process_output(now).callback(),
-        IDLE_TIMEOUT / 2 - pto
+        (IDLE_TIMEOUT / 2).checked_sub(pto).unwrap()
     );
 
     
-    now += IDLE_TIMEOUT / 2 - pto;
+    now += (IDLE_TIMEOUT / 2).checked_sub(pto).unwrap();
     let pings_before = client.stats().frame_tx.ping;
     let ping = client.process_output(now).dgram();
     assert!(ping.is_some());
@@ -736,10 +740,10 @@ fn keep_alive_with_ack_eliciting_packet_lost() {
     
     assert_eq!(
         client.process_output(now).callback(),
-        IDLE_TIMEOUT / 2 - 2 * pto
+        (IDLE_TIMEOUT / 2).checked_sub(2 * pto).unwrap()
     );
 
-    now += IDLE_TIMEOUT / 2 - 2 * pto;
+    now += (IDLE_TIMEOUT / 2).checked_sub(2 * pto).unwrap();
     let out = client.process_output(now);
     assert!(matches!(out, Output::None));
     assert!(matches!(client.state(), State::Closed(_)));

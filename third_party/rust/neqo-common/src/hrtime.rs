@@ -384,6 +384,7 @@ impl Drop for Time {
 
 #[cfg(all(target_os = "linux", not(neqo_sanitize)))]
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
     use std::{
         thread::{sleep, spawn},
