@@ -2226,7 +2226,6 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
   
   
   
-  MOZ_ASSERT_IF(!aContainerView, mParentWidget);
   if (!mDocument->IsResourceDoc() && mParentWidget) {
     
     view->AttachToTopLevelWidget(mParentWidget);
