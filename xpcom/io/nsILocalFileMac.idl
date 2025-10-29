@@ -85,21 +85,6 @@ interface nsILocalFileMac : nsIFile
 
 
 
-
-
-
-
-
-
-
-  [noscript] FSSpec getFSSpec();
-
-   
-
-
-
-
-
    [noscript] attribute OSType fileType;
    [noscript] attribute OSType fileCreator;
 
