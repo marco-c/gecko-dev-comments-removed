@@ -2546,6 +2546,12 @@ void Document::AccumulatePageLoadTelemetry() {
       if (timeToRequestStart > zeroDuration) {
         mPageloadEventData.set_timeToRequestStart(
             static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
+      } else {
+        
+        
+        
+        
+        mPageloadEventData.set_timeToRequestStart(0);
       }
     }
 
