@@ -699,8 +699,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
       IsDebuggerScript()) {
-    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
-                                    SRIMetadata(),
+    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, SRIMetadata(),
                                     nullptr,  
                                     loadContext);
   } else {
@@ -729,8 +728,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
 
     
     request = new ModuleLoadRequest(
-        uri, JS::ModuleType::JavaScript, fetchOptions, SRIMetadata(), referrer,
-        loadContext, ModuleLoadRequest::Kind::TopLevel, moduleLoader, nullptr);
+        uri, JS::ModuleType::JavaScript, SRIMetadata(), referrer, loadContext,
+        ModuleLoadRequest::Kind::TopLevel, moduleLoader, nullptr);
   }
 
   
@@ -1261,8 +1260,6 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
       requestBaseURI = aRequest->mBaseURL;
     }
     MOZ_ASSERT(aRequest->mLoadedScript->IsClassicScript());
-    MOZ_ASSERT(aRequest->mLoadedScript->GetFetchOptions() ==
-               aRequest->mFetchOptions);
     aRequest->mLoadedScript->SetBaseURL(requestBaseURI);
     classicScript = aRequest->mLoadedScript->AsClassicScript();
   }
