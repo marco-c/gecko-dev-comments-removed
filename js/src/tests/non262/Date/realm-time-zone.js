@@ -32,7 +32,7 @@ function test(timeZone) {
   
   assertEq(
     d.getTimezoneOffset() * nsPerMinute,
-    -d.toTemporalInstant().toZonedDateTimeISO(initialTimeZone).offsetNanoseconds
+    -d.toTemporalInstant().toZonedDateTimeISO(initialTimeZone).offsetNanoseconds + 0
   );
 
   
@@ -47,7 +47,7 @@ function test(timeZone) {
   
   assertEq(
     d.getTimezoneOffset() * nsPerMinute,
-    -d.toTemporalInstant().toZonedDateTimeISO("Asia/Tokyo").offsetNanoseconds
+    -d.toTemporalInstant().toZonedDateTimeISO("Asia/Tokyo").offsetNanoseconds + 0
   );
 
   
@@ -59,7 +59,7 @@ function test(timeZone) {
   
   assertEq(
     d.getTimezoneOffset() * nsPerMinute,
-    -d.toTemporalInstant().toZonedDateTimeISO(defaultTimeZone).offsetNanoseconds
+    -d.toTemporalInstant().toZonedDateTimeISO(defaultTimeZone).offsetNanoseconds + 0
   );
 }
 
