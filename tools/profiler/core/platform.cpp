@@ -3829,6 +3829,9 @@ locked_profiler_stream_json_for_this_process(
   SLOW_DOWN_FOR_TESTING();
 
   
+  nsTArray<mozilla::JSSourceEntry> jsSourceEntries;
+
+  
   aWriter.StartArrayProperty("threads");
   {
     ActivePS::DiscardExpiredDeadProfiledThreads(aLock);
@@ -3977,7 +3980,8 @@ locked_profiler_stream_json_for_this_process(
   }
 #endif  
 
-  return ProfileGenerationAdditionalInformation{std::move(sharedLibraryInfo)};
+  return ProfileGenerationAdditionalInformation{std::move(sharedLibraryInfo),
+                                                std::move(jsSourceEntries)};
 }
 
 
