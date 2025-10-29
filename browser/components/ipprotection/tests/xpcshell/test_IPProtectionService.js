@@ -15,8 +15,8 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
 );
-const { IPPEnrollHelper } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPEnrollHelper.sys.mjs"
+const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 do_get_profile();
@@ -127,13 +127,14 @@ add_task(async function test_IPProtectionService_stop() {
   let sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
-  IPProtectionService.init();
-
-  await waitForEvent(
+  const waitForReady = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
     () => IPProtectionService.state === IPProtectionStates.READY
   );
+
+  IPProtectionService.init();
+  await waitForReady;
 
   await IPProtectionService.start();
 
@@ -168,7 +169,9 @@ add_task(async function test_IPProtectionService_stop() {
 
 add_task(async function test_IPProtectionService_updateState_signedIn() {
   let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPEnrollHelper, "isEnrolled").get(() => true);
+  sandbox
+    .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
+    .get(() => true);
 
   await IPProtectionService.init();
 
@@ -180,7 +183,7 @@ add_task(async function test_IPProtectionService_updateState_signedIn() {
     () => IPProtectionService.state === IPProtectionStates.READY
   );
 
-  await IPProtectionService.updateState();
+  IPProtectionService.updateState();
 
   await signedInEventPromise;
 
@@ -207,7 +210,7 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
     () => IPProtectionService.state === IPProtectionStates.UNAVAILABLE
   );
 
-  await IPProtectionService.updateState();
+  IPProtectionService.updateState();
 
   await signedOutEventPromise;
 
@@ -223,19 +226,19 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
 
 
 
-
 add_task(
   async function test_IPProtectionService_refetchEntitlement_has_vpn_linked() {
     const sandbox = sinon.createSandbox();
     setupStubs(sandbox);
 
-    IPProtectionService.init();
-
-    await waitForEvent(
+    const waitForReady = waitForEvent(
       IPProtectionService,
       "IPProtectionService:StateChanged",
       () => IPProtectionService.state === IPProtectionStates.READY
     );
+
+    IPProtectionService.init();
+    await waitForReady;
 
     IPProtectionService.guardian.fetchUserInfo.resolves({
       status: 200,
@@ -248,16 +251,19 @@ add_task(
     });
 
     let hasUpgradedEventPromise = waitForEvent(
-      IPProtectionService,
-      "IPProtectionService:StateChanged",
-      () => IPProtectionService.hasUpgraded
+      IPPEnrollAndEntitleManager,
+      "IPPEnrollAndEntitleManager:StateChanged",
+      () => IPPEnrollAndEntitleManager.hasUpgraded
     );
 
-    await IPProtectionService.refetchEntitlement();
+    await IPPEnrollAndEntitleManager.refetchEntitlement();
 
     await hasUpgradedEventPromise;
 
-    Assert.ok(IPProtectionService.hasUpgraded, "hasUpgraded should be true");
+    Assert.ok(
+      IPPEnrollAndEntitleManager.hasUpgraded,
+      "hasUpgraded should be true"
+    );
 
     IPProtectionService.uninit();
     sandbox.restore();
@@ -282,15 +288,18 @@ add_task(
     });
 
     let hasUpgradedEventPromise = waitForEvent(
-      IPProtectionService,
-      "IPProtectionService:StateChanged"
+      IPPEnrollAndEntitleManager,
+      "IPPEnrollAndEntitleManager:StateChanged"
     );
 
-    await IPProtectionService.refetchEntitlement();
+    await IPPEnrollAndEntitleManager.refetchEntitlement();
 
     await hasUpgradedEventPromise;
 
-    Assert.ok(!IPProtectionService.hasUpgraded, "hasUpgraded should be false");
+    Assert.ok(
+      !IPPEnrollAndEntitleManager.hasUpgraded,
+      "hasUpgraded should be false"
+    );
 
     IPProtectionService.uninit();
     sandbox.restore();
@@ -313,12 +322,12 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
     IPProtectionService,
     "IPProtectionService:StateChanged"
   );
-  await IPProtectionService.updateState();
+  IPProtectionService.updateState();
 
   await signedOutEventPromise;
 
   Assert.ok(
-    !IPProtectionService.hasUpgraded,
+    !IPPEnrollAndEntitleManager.hasUpgraded,
     "hasUpgraded should be false in after signing out"
   );
 
