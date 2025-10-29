@@ -28,19 +28,8 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(LoadedScript)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-
-
-
-
-
-
-
-
-
-
-
-
-NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mCacheInfo)
+NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mURI, mBaseURL,
+                         mCacheInfo)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(LoadedScript)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)
@@ -210,22 +199,6 @@ nsresult LoadedScript::GetScriptSource(JSContext* aCx,
   return NS_OK;
 }
 
-static bool IsInternalURIScheme(nsIURI* uri) {
-  return uri->SchemeIs("moz-extension") || uri->SchemeIs("resource") ||
-         uri->SchemeIs("moz-src") || uri->SchemeIs("chrome");
-}
-
-void LoadedScript::SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
-                                                       nsIURI* aOriginalURI) {
-  
-  
-  if (aOriginalURI && IsInternalURIScheme(aOriginalURI)) {
-    mBaseURL = aOriginalURI;
-  } else {
-    aChannel->GetURI(getter_AddRefs(mBaseURL));
-  }
-}
-
 inline void CheckModuleScriptPrivate(LoadedScript* script,
                                      const Value& aPrivate) {
 #ifdef DEBUG
@@ -276,16 +249,6 @@ ClassicScript::ClassicScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                              ScriptFetchOptions* aFetchOptions, nsIURI* aURI)
     : LoadedScript(ScriptKind::eClassic, aReferrerPolicy, aFetchOptions, aURI) {
 }
-
-
-
-
-
-ImportMapScript::ImportMapScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                                 ScriptFetchOptions* aFetchOptions,
-                                 nsIURI* aURI)
-    : LoadedScript(ScriptKind::eImportMap, aReferrerPolicy, aFetchOptions,
-                   aURI) {}
 
 
 

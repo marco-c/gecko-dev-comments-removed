@@ -91,8 +91,11 @@ class ScriptLoadRequest : public nsISupports,
 
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
-  ScriptLoadRequest(ScriptKind aKind, const SRIMetadata& aIntegrity,
-                    nsIURI* aReferrer, LoadContextBase* aContext);
+  ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
+                    mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                    ScriptFetchOptions* aFetchOptions,
+                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
+                    LoadContextBase* aContext);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -150,17 +153,21 @@ class ScriptLoadRequest : public nsISupports,
   }
 
   mozilla::dom::RequestPriority FetchPriority() const {
-    return FetchOptions()->mFetchPriority;
+    return mFetchOptions->mFetchPriority;
+  }
+
+  enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
+    return mReferrerPolicy;
   }
 
   enum ParserMetadata ParserMetadata() const {
-    return FetchOptions()->mParserMetadata;
+    return mFetchOptions->mParserMetadata;
   }
 
-  const nsString& Nonce() const { return FetchOptions()->mNonce; }
+  const nsString& Nonce() const { return mFetchOptions->mNonce; }
 
   nsIPrincipal* TriggeringPrincipal() const {
-    return FetchOptions()->mTriggeringPrincipal;
+    return mFetchOptions->mTriggeringPrincipal;
   }
 
   
@@ -170,8 +177,7 @@ class ScriptLoadRequest : public nsISupports,
   
   
   
-  void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                         ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
+  void NoCacheEntryFound();
 
   bool PassedConditionForDiskCache() const {
     return mDiskCachingPlan == CachingPlan::PassedCondition;
@@ -212,7 +218,8 @@ class ScriptLoadRequest : public nsISupports,
     mMemoryCachingPlan = CachingPlan::PassedCondition;
   }
 
-  mozilla::CORSMode CORSMode() const { return FetchOptions()->mCORSMode; }
+ public:
+  mozilla::CORSMode CORSMode() const { return mFetchOptions->mCORSMode; }
 
   bool HasLoadContext() const { return mLoadContext; }
   bool HasScriptLoadContext() const;
@@ -230,28 +237,18 @@ class ScriptLoadRequest : public nsISupports,
   const LoadedScript* getLoadedScript() const { return mLoadedScript.get(); }
   LoadedScript* getLoadedScript() { return mLoadedScript.get(); }
 
-  bool HasSourceMapURL() const { return mHasSourceMapURL_; }
-  const nsString& GetSourceMapURL() const {
-    MOZ_ASSERT(mHasSourceMapURL_);
-    return mMaybeSourceMapURL_;
-  }
-  void SetSourceMapURL(const nsString& aSourceMapURL) {
-    MOZ_ASSERT(!mHasSourceMapURL_);
-    mMaybeSourceMapURL_ = aSourceMapURL;
-    mHasSourceMapURL_ = true;
-  }
-
- public:
   
 
-  
-  const ScriptKind mKind;
 
-  
-  State mState;
 
-  
-  bool mFetchSourceOnly;
+  void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
+                                           nsIURI* aOriginalURI);
+
+  const ScriptKind mKind;  
+                           
+
+  State mState;           
+  bool mFetchSourceOnly;  
 
   
   
@@ -272,8 +269,13 @@ class ScriptLoadRequest : public nsISupports,
   CachingPlan mDiskCachingPlan = CachingPlan::Uninitialized;
   CachingPlan mMemoryCachingPlan = CachingPlan::Uninitialized;
 
+  
+  
+  enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
+
   CacheExpirationTime mExpirationTime = CacheExpirationTime::Never();
 
+  RefPtr<ScriptFetchOptions> mFetchOptions;
   RefPtr<mozilla::SubResourceNetworkMetadataHolder> mNetworkMetadata;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;
@@ -284,12 +286,27 @@ class ScriptLoadRequest : public nsISupports,
   
   nsString mMaybeSourceMapURL_;
 
+  bool HasSourceMapURL() const { return mHasSourceMapURL_; }
+  const nsString& GetSourceMapURL() const {
+    MOZ_ASSERT(mHasSourceMapURL_);
+    return mMaybeSourceMapURL_;
+  }
+  void SetSourceMapURL(const nsString& aSourceMapURL) {
+    MOZ_ASSERT(!mHasSourceMapURL_);
+    mMaybeSourceMapURL_ = aSourceMapURL;
+    mHasSourceMapURL_ = true;
+  }
+
+  const nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
 
   
   
   
   nsAutoCString mURL;
+
+  
+  nsCOMPtr<nsIURI> mBaseURL;
 
   
   

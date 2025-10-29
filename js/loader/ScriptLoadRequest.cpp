@@ -80,23 +80,29 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(ScriptLoadRequest)
 
 
 
-NS_IMPL_CYCLE_COLLECTION(ScriptLoadRequest, mLoadedScript, mLoadContext)
+NS_IMPL_CYCLE_COLLECTION(ScriptLoadRequest, mFetchOptions, mLoadedScript,
+                         mLoadContext)
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
-                                     const SRIMetadata& aIntegrity,
-                                     nsIURI* aReferrer,
-                                     LoadContextBase* aContext)
+ScriptLoadRequest::ScriptLoadRequest(
+    ScriptKind aKind, nsIURI* aURI,
+    mozilla::dom::ReferrerPolicy aReferrerPolicy,
+    ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
+    nsIURI* aReferrer, LoadContextBase* aContext)
     : mKind(aKind),
       mState(State::CheckingCache),
       mFetchSourceOnly(false),
       mHasSourceMapURL_(false),
+      mReferrerPolicy(aReferrerPolicy),
+      mFetchOptions(aFetchOptions),
       mIntegrity(aIntegrity),
       mReferrer(aReferrer),
+      mURI(aURI),
       mLoadContext(aContext),
       mEarlyHintPreloaderId(0) {
+  MOZ_ASSERT(mFetchOptions);
   if (mLoadContext) {
     mLoadContext->SetRequest(this);
   }
@@ -170,21 +176,18 @@ bool ScriptLoadRequest::IsCacheable() const {
 
 void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
   MOZ_ASSERT(IsCheckingCache());
+  MOZ_ASSERT(mURI);
+
+  MOZ_ASSERT(mFetchOptions->IsCompatible(aLoadedScript->GetFetchOptions()));
 
   switch (mKind) {
     case ScriptKind::eClassic:
+    case ScriptKind::eImportMap:
       MOZ_ASSERT(aLoadedScript->IsClassicScript());
 
       mLoadedScript = aLoadedScript;
 
       
-      mState = State::Ready;
-      break;
-    case ScriptKind::eImportMap:
-      MOZ_ASSERT(aLoadedScript->IsImportMapScript());
-
-      mLoadedScript = aLoadedScript;
-
       mState = State::Ready;
       break;
     case ScriptKind::eModule:
@@ -193,6 +196,16 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
       MOZ_ASSERT(aLoadedScript->IsModuleScript());
 
       mLoadedScript = ModuleScript::FromCache(*aLoadedScript);
+
+#ifdef DEBUG
+      {
+        bool equals = false;
+        mURI->Equals(mLoadedScript->GetURI(), &equals);
+        MOZ_ASSERT(equals);
+      }
+#endif
+
+      mBaseURL = mLoadedScript->BaseURL();
 
       
       
@@ -204,30 +217,41 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
   }
 }
 
-void ScriptLoadRequest::NoCacheEntryFound(
-    mozilla::dom::ReferrerPolicy aReferrerPolicy,
-    ScriptFetchOptions* aFetchOptions, nsIURI* aURI) {
+void ScriptLoadRequest::NoCacheEntryFound() {
   MOZ_ASSERT(IsCheckingCache());
-  
-  
+  MOZ_ASSERT(mURI);
   
   
   
   switch (mKind) {
     case ScriptKind::eClassic:
-      mLoadedScript = new ClassicScript(aReferrerPolicy, aFetchOptions, aURI);
-      break;
     case ScriptKind::eImportMap:
-      mLoadedScript = new ImportMapScript(aReferrerPolicy, aFetchOptions, aURI);
+      mLoadedScript = new ClassicScript(mReferrerPolicy, mFetchOptions, mURI);
       break;
     case ScriptKind::eModule:
-      mLoadedScript = new ModuleScript(aReferrerPolicy, aFetchOptions, aURI);
+      mLoadedScript = new ModuleScript(mReferrerPolicy, mFetchOptions, mURI);
       break;
     case ScriptKind::eEvent:
       MOZ_ASSERT_UNREACHABLE("EventScripts are not using ScriptLoadRequest");
       break;
   }
   mState = State::Fetching;
+}
+
+static bool IsInternalURIScheme(nsIURI* uri) {
+  return uri->SchemeIs("moz-extension") || uri->SchemeIs("resource") ||
+         uri->SchemeIs("moz-src") || uri->SchemeIs("chrome");
+}
+
+void ScriptLoadRequest::SetBaseURLFromChannelAndOriginalURI(
+    nsIChannel* aChannel, nsIURI* aOriginalURI) {
+  
+  
+  if (aOriginalURI && IsInternalURIScheme(aOriginalURI)) {
+    mBaseURL = aOriginalURI;
+  } else {
+    aChannel->GetURI(getter_AddRefs(mBaseURL));
+  }
 }
 
 }  
