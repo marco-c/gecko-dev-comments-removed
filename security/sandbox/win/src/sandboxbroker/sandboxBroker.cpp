@@ -1127,14 +1127,16 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
 #endif
   }
 
-  
-  
-  
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    
+    
+    
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                       "With these static arguments AddRule should never fail, "
+                       "what happened?");
+  }
 
   
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1270,11 +1272,13 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   
   sandboxing::SizeTrackingConfig trackingConfig(config, 13);
 
-  
-  
-  
-  SANDBOX_SUCCEED_OR_CRASH(trackingConfig.AllowFileAccess(
-      sandbox::FileSemantics::kAllowAny, L"\\??\\pipe\\chrome.*"));
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    
+    
+    
+    SANDBOX_SUCCEED_OR_CRASH(trackingConfig.AllowFileAccess(
+        sandbox::FileSemantics::kAllowAny, L"\\??\\pipe\\chrome.*"));
+  }
 
   
   SANDBOX_SUCCEED_OR_CRASH(
@@ -1369,14 +1373,16 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   result = AddCigToConfig(config);
   SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
 
-  
-  
-  
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    
+    
+    
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1451,14 +1457,16 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
   result = AddCigToConfig(config);
   SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
 
-  
-  
-  
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    
+    
+    
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1722,14 +1730,16 @@ bool BuildUtilitySandbox(sandbox::TargetConfig* config,
   }
 #endif
 
-  
-  
-  
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    
+    
+    
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1851,14 +1861,16 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(
   SANDBOX_ENSURE_SUCCESS(result,
                          "Invalid flags for SetDelayedProcessMitigations.");
 
-  
-  
-  
-  result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                   L"\\??\\pipe\\chrome.*");
-  SANDBOX_ENSURE_SUCCESS(
-      result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
+    
+    
+    
+    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\chrome.*");
+    SANDBOX_ENSURE_SUCCESS(result,
+                           "With these static arguments AddRule should never "
+                           "fail, what happened?");
+  }
 
   
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
