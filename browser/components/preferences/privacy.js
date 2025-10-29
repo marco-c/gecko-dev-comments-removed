@@ -212,6 +212,7 @@ Preferences.addAll([
 
   
   { id: "browser.ipProtection.variant", type: "string" },
+  { id: "browser.ipProtection.exceptionsMode", type: "string" },
 
   
   { id: "media.autoplay.default", type: "int" },
@@ -1260,10 +1261,34 @@ Preferences.addSetting({
   pref: "browser.ipProtection.variant",
   get: prefVal => prefVal == "beta",
 });
+
 Preferences.addSetting({
-  id: "ipProtectionPlaceholderMessage",
+  id: "ipProtectionExceptionsMode",
+  pref: "browser.ipProtection.exceptionsMode",
   deps: ["ipProtectionVisible"],
   visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+});
+Preferences.addSetting({
+  id: "ipProtectionExceptionAllListButton",
+  deps: ["ipProtectionVisible", "ipProtectionExceptionsMode"],
+  visible: ({ ipProtectionVisible, ipProtectionExceptionsMode }) =>
+    ipProtectionVisible.value && ipProtectionExceptionsMode.value == "all",
+  onUserClick() {
+    
+    
+    
+  },
+});
+Preferences.addSetting({
+  id: "ipProtectionExceptionSelectListButton",
+  deps: ["ipProtectionVisible", "ipProtectionExceptionsMode"],
+  visible: ({ ipProtectionVisible, ipProtectionExceptionsMode }) =>
+    ipProtectionVisible.value && ipProtectionExceptionsMode.value == "select",
+  onUserClick() {
+    
+    
+    
+  },
 });
 
 
