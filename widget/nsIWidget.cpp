@@ -307,7 +307,6 @@ nsIWidget::nsIWidget(BorderStyle aBorderStyle)
       mPreviouslyAttachedWidgetListener(nullptr),
       mCompositorVsyncDispatcher(nullptr),
       mBorderStyle(aBorderStyle),
-      mBounds(0, 0, 0, 0),
       mIsTiled(false),
       mPopupLevel(PopupLevel::Top),
       mPopupType(PopupType::Any),
@@ -783,11 +782,6 @@ void nsIWidget::InfallibleMakeFullScreen(bool aFullScreen) {
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT(BoundsUseDesktopPixels(),
-                        "non-desktop windows cannot be made fullscreen");
-
-  
-  
   
   
   
@@ -826,20 +820,16 @@ void nsIWidget::InfallibleMakeFullScreen(bool aFullScreen) {
             ("window was not resized within InfallibleMakeFullScreen()"));
 
     
-    auto rect = GetBounds();
+    auto rect = GetBounds() / GetDesktopToDeviceScale();
     adjustOSChrome();
-    Resize(rect.X(), rect.Y(), rect.Width(), rect.Height(), true);
+    Resize(rect, true);
   });
 
   
   
   
   
-  const auto doReposition = [&](auto rect) -> void {
-    static_assert(std::is_base_of_v<DesktopPixel,
-                                    std::remove_reference_t<decltype(rect)>>,
-                  "doReposition requires a rectangle using desktop pixels");
-
+  const auto doReposition = [&](const DesktopRect& rect) -> void {
     if (MOZ_LOG_TEST(sBaseWidgetLog, LogLevel::Debug)) {
       const DesktopRect previousSize =
           GetScreenBounds() / GetDesktopToDeviceScale();
@@ -849,7 +839,7 @@ void nsIWidget::InfallibleMakeFullScreen(bool aFullScreen) {
     }
 
     adjustOSChrome();
-    Resize(rect.X(), rect.Y(), rect.Width(), rect.Height(), true);
+    Resize(rect, true);
 
     if (MOZ_LOG_TEST(sBaseWidgetLog, LogLevel::Warning)) {
       
@@ -903,7 +893,7 @@ void nsIWidget::InfallibleMakeFullScreen(bool aFullScreen) {
     }
 
     
-    doReposition(screen->GetRectDisplayPix());
+    doReposition(DesktopRect(screen->GetRectDisplayPix()));
     
     
     mSavedBounds->screenRect = GetScreenBounds() / GetDesktopToDeviceScale();
@@ -1768,18 +1758,10 @@ DesktopIntPoint nsIWidget::ConstrainPositionToBounds(
 }
 
 void nsIWidget::MoveClient(const DesktopPoint& aOffset) {
-  LayoutDeviceIntPoint clientOffset(GetClientOffset());
-
   
   
-  if (BoundsUseDesktopPixels()) {
-    DesktopPoint desktopOffset = clientOffset / GetDesktopToDeviceScale();
-    Move(aOffset.x - desktopOffset.x, aOffset.y - desktopOffset.y);
-  } else {
-    LayoutDevicePoint layoutOffset = aOffset * GetDesktopToDeviceScale();
-    Move(layoutOffset.x - LayoutDeviceCoord(clientOffset.x),
-         layoutOffset.y - LayoutDeviceCoord(clientOffset.y));
-  }
+  DesktopPoint desktopOffset = GetClientOffset() / GetDesktopToDeviceScale();
+  Move(aOffset - desktopOffset);
 }
 
 void nsIWidget::ResizeClient(const DesktopSize& aSize, bool aRepaint) {
@@ -1790,19 +1772,9 @@ void nsIWidget::ResizeClient(const DesktopSize& aSize, bool aRepaint) {
 
   
   
-  if (BoundsUseDesktopPixels()) {
-    DesktopSize desktopDelta =
-        (LayoutDeviceIntSize(mBounds.Width(), mBounds.Height()) -
-         clientBounds.Size()) /
-        GetDesktopToDeviceScale();
-    Resize(aSize.width + desktopDelta.width, aSize.height + desktopDelta.height,
-           aRepaint);
-  } else {
-    LayoutDeviceSize layoutSize = aSize * GetDesktopToDeviceScale();
-    Resize(mBounds.Width() + (layoutSize.width - clientBounds.Width()),
-           mBounds.Height() + (layoutSize.height - clientBounds.Height()),
-           aRepaint);
-  }
+  DesktopSize desktopDelta =
+      (GetBounds().Size() - clientBounds.Size()) / GetDesktopToDeviceScale();
+  Resize(aSize + desktopDelta, aRepaint);
 }
 
 void nsIWidget::ResizeClient(const DesktopRect& aRect, bool aRepaint) {
@@ -1813,22 +1785,12 @@ void nsIWidget::ResizeClient(const DesktopRect& aRect, bool aRepaint) {
   LayoutDeviceIntPoint clientOffset = GetClientOffset();
   DesktopToLayoutDeviceScale scale = GetDesktopToDeviceScale();
 
-  if (BoundsUseDesktopPixels()) {
-    DesktopPoint desktopOffset = clientOffset / scale;
-    DesktopSize desktopDelta =
-        (LayoutDeviceIntSize(mBounds.Width(), mBounds.Height()) -
-         clientBounds.Size()) /
-        scale;
-    Resize(aRect.X() - desktopOffset.x, aRect.Y() - desktopOffset.y,
-           aRect.Width() + desktopDelta.width,
-           aRect.Height() + desktopDelta.height, aRepaint);
-  } else {
-    LayoutDeviceRect layoutRect = aRect * scale;
-    Resize(layoutRect.X() - clientOffset.x, layoutRect.Y() - clientOffset.y,
-           layoutRect.Width() + mBounds.Width() - clientBounds.Width(),
-           layoutRect.Height() + mBounds.Height() - clientBounds.Height(),
-           aRepaint);
-  }
+  DesktopPoint desktopOffset = clientOffset / scale;
+  DesktopSize desktopDelta = (GetBounds().Size() - clientBounds.Size()) / scale;
+  Resize(DesktopRect(aRect.X() - desktopOffset.x, aRect.Y() - desktopOffset.y,
+                     aRect.Width() + desktopDelta.width,
+                     aRect.Height() + desktopDelta.height),
+         aRepaint);
 }
 
 
@@ -1836,27 +1798,6 @@ void nsIWidget::ResizeClient(const DesktopRect& aRect, bool aRepaint) {
 
 
 
-
-
-
-
-
-
-LayoutDeviceIntRect nsIWidget::GetClientBounds() { return GetBounds(); }
-
-
-
-
-
-
-LayoutDeviceIntRect nsIWidget::GetBounds() { return mBounds; }
-
-
-
-
-
-
-LayoutDeviceIntRect nsIWidget::GetScreenBounds() { return GetBounds(); }
 
 nsresult nsIWidget::GetRestoredBounds(LayoutDeviceIntRect& aRect) {
   if (SizeMode() != nsSizeMode_Normal) {
@@ -1955,18 +1896,12 @@ void nsIWidget::SetSizeConstraints(const SizeConstraints& aConstraints) {
   
   
   
-  LayoutDeviceIntSize curSize = mBounds.Size();
+  LayoutDeviceIntSize curSize = GetBounds().Size();
   LayoutDeviceIntSize clampedSize =
       Max(aConstraints.mMinSize, Min(aConstraints.mMaxSize, curSize));
   if (clampedSize != curSize) {
-    gfx::Size size;
-    if (BoundsUseDesktopPixels()) {
-      DesktopSize desktopSize = clampedSize / GetDesktopToDeviceScale();
-      size = desktopSize.ToUnknownSize();
-    } else {
-      size = gfx::Size(clampedSize.ToUnknownSize());
-    }
-    Resize(size.width, size.height, true);
+    DesktopSize desktopSize = clampedSize / GetDesktopToDeviceScale();
+    Resize(desktopSize, true);
   }
 }
 

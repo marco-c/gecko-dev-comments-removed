@@ -966,15 +966,13 @@ void nsWindow::RecreateDirectManipulationIfNeeded() {
 
   mDmOwner = MakeUnique<DirectManipulationOwner>(this);
 
-  LayoutDeviceIntRect bounds(mBounds.X(), mBounds.Y(), mBounds.Width(),
-                             mBounds.Height());
+  LayoutDeviceIntRect bounds = mBounds;
   mDmOwner->Init(bounds);
 }
 
 void nsWindow::ResizeDirectManipulationViewport() {
   if (mDmOwner) {
-    LayoutDeviceIntRect bounds(mBounds.X(), mBounds.Y(), mBounds.Width(),
-                               mBounds.Height());
+    LayoutDeviceIntRect bounds = mBounds;
     mDmOwner->ResizeViewport(bounds);
   }
 }
@@ -1083,11 +1081,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       mIsCloaked = mozilla::IsCloaked(mWnd);
       mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
-      MOZ_ASSERT(BoundsUseDesktopPixels());
+      
+      
       auto scale = GetDesktopToDeviceScale();
       mBounds = mLastPaintBounds = LayoutDeviceIntRect::FromUnknownRect(
-          DesktopIntRect::Round(LayoutDeviceRect(GetBounds()) / scale)
-              .ToUnknownRect());
+          DesktopIntRect::Round(GetBounds() / scale).ToUnknownRect());
 
       
       
@@ -1966,7 +1964,7 @@ const SizeConstraints nsWindow::GetSizeConstraints() {
 }
 
 
-void nsWindow::Move(double aX, double aY) {
+void nsWindow::Move(const DesktopPoint& aTopLeft) {
   if (mWindowType == WindowType::TopLevel ||
       mWindowType == WindowType::Dialog) {
     SetSizeMode(nsSizeMode_Normal);
@@ -1974,10 +1972,8 @@ void nsWindow::Move(double aX, double aY) {
 
   
   
-  double scale =
-      BoundsUseDesktopPixels() ? GetDesktopToDeviceScale().scale : 1.0;
-  int32_t x = NSToIntRound(aX * scale);
-  int32_t y = NSToIntRound(aY * scale);
+  auto topLeft =
+      LayoutDeviceIntPoint::Round(aTopLeft * GetDesktopToDeviceScale());
 
   
   
@@ -1987,7 +1983,7 @@ void nsWindow::Move(double aX, double aY) {
   
   
   
-  if (mWindowType != WindowType::Popup && mBounds.IsEqualXY(x, y)) {
+  if (mWindowType != WindowType::Popup && mBounds.TopLeft() == topLeft) {
     
     return;
   }
@@ -2012,10 +2008,10 @@ void nsWindow::Move(double aX, double aY) {
     MONITORINFO mi = {sizeof(MONITORINFO)};
     VERIFY(::GetMonitorInfo(monitor, &mi));
 
-    int32_t deltaX =
-        x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
-    int32_t deltaY =
-        y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
+    int32_t deltaX = topLeft.x.value + mi.rcWork.left - mi.rcMonitor.left -
+                     pl.rcNormalPosition.left;
+    int32_t deltaY = topLeft.y.value + mi.rcWork.top - mi.rcMonitor.top -
+                     pl.rcNormalPosition.top;
     pl.rcNormalPosition.left += deltaX;
     pl.rcNormalPosition.right += deltaX;
     pl.rcNormalPosition.top += deltaY;
@@ -2024,7 +2020,7 @@ void nsWindow::Move(double aX, double aY) {
     return;
   }
 
-  mBounds.MoveTo(x, y);
+  mBounds.MoveTo(topLeft);
 
   if (mWnd) {
 #ifdef DEBUG
@@ -2039,7 +2035,8 @@ void nsWindow::Move(double aX, double aY) {
           RECT workArea;
           ::SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
           
-          if (x < 0 || x >= workArea.right || y < 0 || y >= workArea.bottom) {
+          if (topLeft.x < 0 || topLeft.x >= workArea.right || topLeft.y < 0 ||
+              topLeft.y >= workArea.bottom) {
             MOZ_LOG(gWindowsLog, LogLevel::Info,
                     ("window moved to offscreen position\n"));
           }
@@ -2051,7 +2048,7 @@ void nsWindow::Move(double aX, double aY) {
     UINT flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOSIZE;
     double oldScale = mDefaultScale;
     mResizeState = IN_SIZEMOVE;
-    VERIFY(::SetWindowPos(mWnd, nullptr, x, y, 0, 0, flags));
+    VERIFY(::SetWindowPos(mWnd, nullptr, topLeft.x, topLeft.y, 0, 0, flags));
     mResizeState = NOT_RESIZING;
     if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
       ChangedDPI();
@@ -2062,25 +2059,21 @@ void nsWindow::Move(double aX, double aY) {
 }
 
 
-void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
+void nsWindow::Resize(const DesktopSize& aSize, bool aRepaint) {
   
   
-  double scale =
-      BoundsUseDesktopPixels() ? GetDesktopToDeviceScale().scale : 1.0;
-  int32_t width = NSToIntRound(aWidth * scale);
-  int32_t height = NSToIntRound(aHeight * scale);
-
-  NS_ASSERTION((width >= 0), "Negative width passed to nsWindow::Resize");
-  NS_ASSERTION((height >= 0), "Negative height passed to nsWindow::Resize");
-  if (width < 0 || height < 0) {
-    gfxCriticalNoteOnce << "Negative passed to Resize(" << width << ", "
-                        << height << ") repaint: " << aRepaint;
+  auto size = LayoutDeviceIntSize::Round(aSize * GetDesktopToDeviceScale());
+  NS_ASSERTION(size.width >= 0, "Negative width passed to nsWindow::Resize");
+  NS_ASSERTION(size.height >= 0, "Negative height passed to nsWindow::Resize");
+  if (size.width < 0 || size.height < 0) {
+    gfxCriticalNoteOnce << "Negative passed to Resize(" << size.width << ", "
+                        << size.height << ") repaint: " << aRepaint;
   }
 
-  ConstrainSize(&width, &height);
+  ConstrainSize(&size.width, &size.height);
 
   
-  if (mBounds.IsEqualSize(width, height)) {
+  if (mBounds.Size() == size) {
     if (aRepaint) {
       Invalidate();
     }
@@ -2091,8 +2084,8 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
   if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
     WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
     VERIFY(::GetWindowPlacement(mWnd, &pl));
-    pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
-    pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + height;
+    pl.rcNormalPosition.right = pl.rcNormalPosition.left + size.width;
+    pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + size.height;
     mResizeState = RESIZING;
     VERIFY(::SetWindowPlacement(mWnd, &pl));
     mResizeState = NOT_RESIZING;
@@ -2101,7 +2094,7 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
 
   
   bool wasLocking = mAspectRatio != 0.0;
-  mBounds.SizeTo(width, height);
+  mBounds.SizeTo(size);
   if (wasLocking) {
     LockAspectRatio(true);  
   }
@@ -2113,7 +2106,7 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
     }
     double oldScale = mDefaultScale;
     mResizeState = RESIZING;
-    VERIFY(::SetWindowPos(mWnd, nullptr, 0, 0, width, height, flags));
+    VERIFY(::SetWindowPos(mWnd, nullptr, 0, 0, size.width, size.height, flags));
     mResizeState = NOT_RESIZING;
     if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
       ChangedDPI();
@@ -2125,29 +2118,25 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
 }
 
 
-void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
-                      bool aRepaint) {
+void nsWindow::Resize(const DesktopRect& aRect, bool aRepaint) {
   
   
-  double scale =
-      BoundsUseDesktopPixels() ? GetDesktopToDeviceScale().scale : 1.0;
-  int32_t x = NSToIntRound(aX * scale);
-  int32_t y = NSToIntRound(aY * scale);
-  int32_t width = NSToIntRound(aWidth * scale);
-  int32_t height = NSToIntRound(aHeight * scale);
+  auto topLeft =
+      LayoutDeviceIntPoint::Round(aRect.TopLeft() * GetDesktopToDeviceScale());
+  auto size =
+      LayoutDeviceIntSize::Round(aRect.Size() * GetDesktopToDeviceScale());
 
-  NS_ASSERTION((width >= 0), "Negative width passed to nsWindow::Resize");
-  NS_ASSERTION((height >= 0), "Negative height passed to nsWindow::Resize");
-  if (width < 0 || height < 0) {
-    gfxCriticalNoteOnce << "Negative passed to Resize(" << x << " ," << y
-                        << ", " << width << ", " << height
+  NS_ASSERTION(size.width >= 0, "Negative width passed to nsWindow::Resize");
+  NS_ASSERTION(size.height >= 0, "Negative height passed to nsWindow::Resize");
+  if (size.width < 0 || size.height < 0) {
+    gfxCriticalNoteOnce << "Negative passed to Resize(" << size
                         << ") repaint: " << aRepaint;
   }
 
-  ConstrainSize(&width, &height);
+  ConstrainSize(&size.width, &size.height);
 
   
-  if (mBounds.IsEqualRect(x, y, width, height)) {
+  if (mBounds.IsEqualRect(topLeft.x, topLeft.y, size.width, size.height)) {
     if (aRepaint) {
       Invalidate();
     }
@@ -2166,20 +2155,20 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
     MONITORINFO mi = {sizeof(MONITORINFO)};
     VERIFY(::GetMonitorInfo(monitor, &mi));
 
-    int32_t deltaX =
-        x + mi.rcWork.left - mi.rcMonitor.left - pl.rcNormalPosition.left;
-    int32_t deltaY =
-        y + mi.rcWork.top - mi.rcMonitor.top - pl.rcNormalPosition.top;
+    int32_t deltaX = topLeft.x.value + mi.rcWork.left - mi.rcMonitor.left -
+                     pl.rcNormalPosition.left;
+    int32_t deltaY = topLeft.y.value + mi.rcWork.top - mi.rcMonitor.top -
+                     pl.rcNormalPosition.top;
     pl.rcNormalPosition.left += deltaX;
-    pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
+    pl.rcNormalPosition.right = pl.rcNormalPosition.left + size.width;
     pl.rcNormalPosition.top += deltaY;
-    pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + height;
+    pl.rcNormalPosition.bottom = pl.rcNormalPosition.top + size.height;
     VERIFY(::SetWindowPlacement(mWnd, &pl));
     return;
   }
 
   
-  mBounds.SetRect(x, y, width, height);
+  mBounds = LayoutDeviceIntRect(topLeft, size);
 
   if (mWnd) {
     UINT flags = SWP_NOZORDER | SWP_NOACTIVATE;
@@ -2189,7 +2178,8 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
 
     double oldScale = mDefaultScale;
     mResizeState = RESIZING;
-    VERIFY(::SetWindowPos(mWnd, nullptr, x, y, width, height, flags));
+    VERIFY(::SetWindowPos(mWnd, nullptr, topLeft.x, topLeft.y, size.width,
+                          size.height, flags));
     mResizeState = NOT_RESIZING;
     if (WinUtils::LogToPhysFactor(mWnd) != oldScale) {
       ChangedDPI();
@@ -3276,8 +3266,6 @@ bool nsWindow::PrepareForFullscreenTransition(nsISupports** aData) {
   FullscreenTransitionInitData initData;
   nsCOMPtr<nsIScreen> screen = GetWidgetScreen();
   const DesktopIntRect rect = screen->GetRectDisplayPix();
-  MOZ_ASSERT(BoundsUseDesktopPixels(),
-             "Should only be called on top-level window");
   initData.mBounds =
       LayoutDeviceIntRect::Round(rect * GetDesktopToDeviceScale());
 
@@ -6494,7 +6482,8 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "EnforceAspectRatio", [self, this, newWidth]() -> void {
               if (mWnd) {
-                Resize(newWidth, newWidth / mAspectRatio, true);
+                
+                Resize(DesktopSize(newWidth, newWidth / mAspectRatio), true);
               }
             }));
       }
@@ -7057,7 +7046,9 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
       }
     }
 
-    Resize(x, y, width, height, true);
+    
+    
+    Resize(DesktopRect(x, y, width, height), true);
   }
   UpdateNonClientMargins();
   ChangedDPI();

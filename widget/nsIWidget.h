@@ -772,18 +772,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void Move(double aX, double aY) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  bool BoundsUseDesktopPixels() const {
-    return mWindowType <= WindowType::Popup;
-  }
+  virtual void Move(const DesktopPoint&) = 0;
 
   
 
@@ -793,7 +782,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void MoveClient(const DesktopPoint& aOffset);
+  void MoveClient(const DesktopPoint& aOffset);
 
   
 
@@ -804,7 +793,13 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void Resize(double aWidth, double aHeight, bool aRepaint) = 0;
+  virtual void Resize(const DesktopSize&, bool aRepaint) = 0;
+
+  
+
+
+
+  virtual void LockAspectRatio(bool aShouldLock) {}
 
   
 
@@ -812,7 +807,9 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void LockAspectRatio(bool aShouldLock) {};
+
+
+  virtual void Resize(const DesktopRect&, bool aRepaint) = 0;
 
   
 
@@ -820,25 +817,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-
-
-
-
-
-
-
-
-
-  virtual void Resize(double aX, double aY, double aWidth, double aHeight,
-                      bool aRepaint) = 0;
-
-  
-
-
-
-
-
-  virtual void ResizeClient(const DesktopSize& aSize, bool aRepaint);
+  void ResizeClient(const DesktopSize& aSize, bool aRepaint);
 
   
 
@@ -850,7 +829,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void ResizeClient(const DesktopRect& aRect, bool aRepaint);
+  void ResizeClient(const DesktopRect& aRect, bool aRepaint);
 
   
 
@@ -918,7 +897,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual LayoutDeviceIntRect GetBounds();
+  virtual LayoutDeviceIntRect GetBounds() = 0;
 
   
 
@@ -926,7 +905,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual LayoutDeviceIntRect GetScreenBounds();
+  virtual LayoutDeviceIntRect GetScreenBounds() { return GetBounds(); }
 
   
 
@@ -960,7 +939,7 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual LayoutDeviceIntRect GetClientBounds();
+  virtual LayoutDeviceIntRect GetClientBounds() { return GetBounds(); }
 
   
   virtual void SetCustomTitlebar(bool) {}
@@ -2430,7 +2409,6 @@ class nsIWidget : public nsSupportsWeakReference {
   Cursor mCursor;
   bool mCustomCursorAllowed = true;
   BorderStyle mBorderStyle;
-  LayoutDeviceIntRect mBounds;
   bool mIsTiled;
   PopupLevel mPopupLevel;
   PopupType mPopupType;
