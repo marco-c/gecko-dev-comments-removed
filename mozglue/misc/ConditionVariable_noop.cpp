@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/Assertions.h"
-
 #include "mozilla/PlatformConditionVariable.h"
 #include "mozilla/PlatformMutex.h"
 #include "MutexPlatformData_noop.h"

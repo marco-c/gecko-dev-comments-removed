@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/Assertions.h"
-
 #include <errno.h>
 #include <stdio.h>
 

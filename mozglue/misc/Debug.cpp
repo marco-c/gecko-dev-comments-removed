@@ -5,7 +5,6 @@
 
 
 #include "mozilla/glue/Debug.h"
-#include "mozilla/Fuzzing.h"
 #include "mozilla/Sprintf.h"
 
 #include <stdarg.h>

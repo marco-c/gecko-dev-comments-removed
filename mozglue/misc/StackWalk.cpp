@@ -109,7 +109,6 @@ class FrameSkipper {
 #  include <malloc.h>
 #  include "mozilla/Atomics.h"
 #  include "mozilla/StackWalk_windows.h"
-#  include "mozilla/WindowsVersion.h"
 
 #  include <imagehlp.h>
 
