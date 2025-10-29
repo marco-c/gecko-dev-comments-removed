@@ -16,12 +16,12 @@ from .ini import combine_fields
 __all__ = ["read_toml", "alphabetize_toml_str", "add_skip_if", "sort_paths"]
 
 CreateBug = Optional[Callable[[], object]]
-ListStr = List[str]
+ListStr = List[str]  
 OptArray = Optional[Array]
 OptRegex = Optional[re.Pattern]
 OptStr = Optional[str]
-OptConditions = List[Tuple[str, OptStr]]
-TupleStrBool = Tuple[str, bool]
+OptConditions = List[Tuple[str, OptStr]]  
+TupleStrBoolStr = Tuple[str, bool, str]  
 
 FILENAME_REGEX = r"^([A-Za-z0-9_./-]*)([Bb][Uu][Gg])([-_]*)([0-9]+)([A-Za-z0-9_./-]*)$"
 DEFAULT_SECTION = "DEFAULT"
@@ -284,6 +284,16 @@ def _should_ignore_new_condition(existing_condition: str, new_condition: str) ->
     return existing_condition == new_condition or existing_condition in new_condition
 
 
+class Mode:
+    "Skipfails mode of operation"
+
+    NORMAL: int = 0
+    CARRYOVER: int = 1
+    KNOWN_INTERMITTENTS: int = 2
+    NEW_FAILURES: int = 3
+    REPLACE_TBD: int = 4
+
+
 class Carry:
     "Helper class for add_skip_if to call is_carryover()"
 
@@ -408,21 +418,22 @@ def add_skip_if(
     condition: str,
     bug_reference: OptStr = None,
     create_bug_lambda: CreateBug = None,
-    carryover_mode: bool = False,
-) -> TupleStrBool:
+    mode: Mode = Mode.NORMAL,
+) -> TupleStrBoolStr:
     """
     Will take a TOMLkit manifest document (i.e. from a previous invocation
     of read_toml(..., document=True) and accessing the document
     from mp.source_documents[filename]) and mutate it
     in sorted order by section (i.e. test file name, taking bug ids into consideration).
     Determine if this condition is a carryover (see ./test/SKIP-FAILS.txt and Bug 1971610)
-    In carryover_mode only consider carryover edits (do not create bugs)
-    Else when not in carryover_mode and create_bug_lambda is not None
+    In carryover mode only consider carryover edits (do not create bugs)
+    Else when not in carryover mode and create_bug_lambda is not None
       then invoke create_bug_lambda to create new bug
 
     Returns (additional_comment, carryover) where
       additional_comment is the empty string (used in other manifest add_skip_if functions)
       carryover is True if this condition is carried over from an existing condition
+    bug_reference is returned as None if the skip-if was ignored
     """
 
     from tomlkit import array
@@ -453,7 +464,7 @@ def add_skip_if(
                 first_comment += skip_if.trivia.comment
     mp_array: Array = array()
     if skip_if is None:  
-        if not carryover_mode:
+        if mode != Mode.CARRYOVER:
             mp_array.add_line(condition, indent="", add_comma=False, newline=False)
             if create_bug_lambda is not None:
                 bug = create_bug_lambda()
@@ -476,7 +487,7 @@ def add_skip_if(
                 conditions_array.append([first, first_comment])
                 if (
                     not ignore_condition
-                    and carryover_mode
+                    and mode == Mode.CARRYOVER
                     and carry.is_carryover(first, condition)
                 ):
                     carryover = True
@@ -493,7 +504,7 @@ def add_skip_if(
                             conditions_array.append([e_condition, e_comment])
                             if (
                                 not ignore_condition
-                                and carryover_mode
+                                and mode == Mode.CARRYOVER
                                 and carry.is_carryover(e_condition, condition)
                             ):
                                 carryover = True
@@ -513,15 +524,18 @@ def add_skip_if(
                     conditions_array.append([e_condition, e_comment])
                     if (
                         not ignore_condition
-                        and carryover_mode
+                        and mode == Mode.CARRYOVER
                         and carry.is_carryover(e_condition, condition)
                     ):
                         carryover = True
                         bug_reference = e_comment
                 elif bug_reference is None and create_bug_lambda is None:
                     bug_reference = e_comment
-        if not ignore_condition:
-            if not carryover_mode and create_bug_lambda is not None:
+        if ignore_condition:
+            carryover = False
+            bug_reference = None
+        else:
+            if mode == Mode.NORMAL and create_bug_lambda is not None:
                 bug = create_bug_lambda()
                 if bug is not None:
                     bug_reference = f"Bug {bug.id}"
@@ -533,7 +547,7 @@ def add_skip_if(
         skip_if = {"skip-if": mp_array}
         del keyvals["skip-if"]
         keyvals.update(skip_if)
-    return (additional_comment, carryover)
+    return (additional_comment, carryover, bug_reference)
 
 
 def _should_remove_condition(
