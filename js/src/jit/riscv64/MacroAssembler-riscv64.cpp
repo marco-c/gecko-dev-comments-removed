@@ -1083,6 +1083,31 @@ void MacroAssemblerRiscv64Compat::convertInt32ToFloat32(const Address& src,
   fcvt_s_w(dest, scratch);
 }
 
+void MacroAssemblerRiscv64Compat::truncateFloat32ModUint32(FloatRegister src,
+                                                           Register dest) {
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+
+  
+  
+  
+  Trunc_l_s(dest, src);
+
+  
+  ma_li(scratch, Imm64(0x7fff'ffff'ffff'ffff));
+  ma_sub64(scratch, dest, scratch);
+
+  
+  ma_sltu(scratch, scratch, Imm32(2));
+  ma_add32(scratch, scratch, Imm32(-1));
+
+  
+  ma_and(dest, dest, scratch);
+
+  
+  SignExtendWord(dest, dest);
+}
+
 void MacroAssemblerRiscv64Compat::movq(Register rj, Register rd) { mv(rd, rj); }
 
 

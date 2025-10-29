@@ -1242,33 +1242,71 @@ void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
                                                         Register dest,
                                                         Label* fail) {
   UseScratchRegisterScope temps(this);
+
+  
+  
+  
+  Trunc_l_d(dest, src);
+
+  
+  Clear_if_nan_d(dest, src);
+
+  
   Register scratch = temps.Acquire();
-  Trunc_w_d(dest, src, scratch);
-  ma_b(scratch, Imm32(0), fail, Assembler::Equal);
+  ma_li(scratch, Imm64(0x7fff'ffff'ffff'ffff));
+  ma_sub64(scratch, dest, scratch);
+
+  
+  branchPtr(Assembler::BelowOrEqual, scratch, ImmWord(1), fail);
+
+  
+  move32SignExtendToPtr(dest, dest);
 }
 
 void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
                                                  Register dest, Label* fail) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  Trunc_w_d(dest, src, scratch);
-  ma_b(scratch, Imm32(0), fail, Assembler::Equal);
+  
+  
+  
+  Trunc_l_d(dest, src);
+
+  
+  Clear_if_nan_d(dest, src);
+
+  
+  {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
 }
 void MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src,
                                                          Register dest,
                                                          Label* fail) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  Trunc_w_s(dest, src, scratch);
-  ma_b(scratch, Imm32(0), fail, Assembler::Equal);
+  
+  truncateFloat32ModUint32(src, dest);
 }
 
 void MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src,
                                                   Register dest, Label* fail) {
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  Trunc_w_s(dest, src, scratch);
-  ma_b(scratch, Imm32(0), fail, Assembler::Equal);
+  
+  
+  
+  Trunc_l_s(dest, src);
+
+  
+  Clear_if_nan_s(dest, src);
+
+  
+  {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
 }
 
 void MacroAssembler::branchInt64NotInPtrRange(Register64 src, Label* label) {
