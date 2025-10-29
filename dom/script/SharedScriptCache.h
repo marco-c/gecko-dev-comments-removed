@@ -9,6 +9,7 @@
 
 #include "PLDHashTable.h"                    
 #include "js/loader/LoadedScript.h"          
+#include "js/loader/ScriptFetchOptions.h"    
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
 #include "mozilla/CORSMode.h"                
@@ -19,7 +20,6 @@
 #include "mozilla/dom/CacheExpirationTime.h"  
 #include "mozilla/dom/SRIMetadata.h"          
 #include "nsIMemoryReporter.h"  
-#include "nsIObserver.h"        
 #include "nsIPrincipal.h"       
 #include "nsISupports.h"        
 #include "nsStringFwd.h"        
@@ -66,7 +66,12 @@ class ScriptHashKey : public PLDHashEntryHdr {
   }
 
   ScriptHashKey(ScriptLoader* aLoader,
-                const JS::loader::ScriptLoadRequest* aRequest);
+                const JS::loader::ScriptLoadRequest* aRequest,
+                const JS::loader::LoadedScript* aLoadedScript);
+  ScriptHashKey(ScriptLoader* aLoader,
+                const JS::loader::ScriptLoadRequest* aRequest,
+                const JS::loader::ScriptFetchOptions* aFetchOptions,
+                const nsCOMPtr<nsIURI> aURI);
   explicit ScriptHashKey(const ScriptLoadData& aLoadData);
 
   MOZ_COUNTED_DTOR(ScriptHashKey)
@@ -123,8 +128,8 @@ class ScriptLoadData final
   ~ScriptLoadData() {}
 
  public:
-  ScriptLoadData(ScriptLoader* aLoader,
-                 JS::loader::ScriptLoadRequest* aRequest);
+  ScriptLoadData(ScriptLoader* aLoader, JS::loader::ScriptLoadRequest* aRequest,
+                 JS::loader::LoadedScript* aLoadedScript);
 
   NS_DECL_ISUPPORTS
 
@@ -177,15 +182,13 @@ struct SharedScriptCacheTraits {
 
 class SharedScriptCache final
     : public SharedSubResourceCache<SharedScriptCacheTraits, SharedScriptCache>,
-      public nsIMemoryReporter,
-      public nsIObserver {
+      public nsIMemoryReporter {
  public:
   using Base =
       SharedSubResourceCache<SharedScriptCacheTraits, SharedScriptCache>;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
-  NS_DECL_NSIOBSERVER
 
   SharedScriptCache();
   void Init();
