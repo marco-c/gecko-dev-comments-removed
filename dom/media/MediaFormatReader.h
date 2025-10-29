@@ -257,30 +257,6 @@ class MediaFormatReader final
   template <typename T>
   friend struct DDLoggedTypeTraits;  
 
-  class VideoDecodeProperties final {
-   public:
-    void Load(RefPtr<MediaDataDecoder>& aDecoder);
-    void Clear() {
-      mMaxQueueSize.reset();
-      mMinQueueSize.reset();
-      mSendToCompositorSize.reset();
-    }
-
-    Maybe<uint32_t> MaxQueueSize() { return mMaxQueueSize; }
-    Maybe<uint32_t> MinQueueSize() { return mMinQueueSize; }
-    Maybe<uint32_t> SendToCompositorSize() { return mSendToCompositorSize; }
-
-   private:
-    Maybe<uint32_t> mMaxQueueSize;
-    Maybe<uint32_t> mMinQueueSize;
-    Maybe<uint32_t> mSendToCompositorSize;
-  };
-
-  VideoDecodeProperties& GetVideoDecodeProperties() {
-    MutexAutoLock lock(mVideo.mMutex);
-    return mVideo.mVideoDecodeProperties;
-  }
-
  private:
   bool HasVideo() const { return mVideo.mTrackDemuxer; }
   bool HasAudio() const { return mAudio.mTrackDemuxer; }
@@ -442,22 +418,12 @@ class MediaFormatReader final
     
     
     
-    
     Mutex mMutex MOZ_UNANNOTATED;
     
     RefPtr<MediaDataDecoder> mDecoder;
     nsCString mDescription;
     nsCString mProcessName;
     nsCString mCodecName;
-    VideoDecodeProperties mVideoDecodeProperties;
-
-    void LoadDecodeProperties() {
-      MOZ_ASSERT(mOwner->OnTaskQueue());
-      if (mType == MediaData::Type::VIDEO_DATA) {
-        mVideoDecodeProperties.Load(mDecoder);
-      }
-    }
-
     void ShutdownDecoder();
 
     
@@ -633,9 +599,6 @@ class MediaFormatReader final
       mNextStreamSourceID.reset();
       if (!HasFatalError()) {
         mError.reset();
-      }
-      if (mType == MediaData::Type::VIDEO_DATA) {
-        mVideoDecodeProperties.Clear();
       }
     }
 

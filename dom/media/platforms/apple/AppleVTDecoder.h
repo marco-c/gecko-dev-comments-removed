@@ -81,18 +81,6 @@ class AppleVTDecoder final : public MediaDataDecoder,
     return ConversionRequired::kNeedNone;
   }
 
-  Maybe<PropertyValue> GetDecodeProperty(PropertyName aName) const override {
-    
-    
-    static constexpr uint32_t kMinNumOutputBuffers = 10;
-    switch (aName) {
-      case PropertyName::MinNumVideoBuffers:
-        return Some(PropertyValue(kMinNumOutputBuffers));
-      default:
-        return MediaDataDecoder::GetDecodeProperty(aName);
-    }
-  }
-
   
   
   void OutputFrame(CVPixelBufferRef aImage, AppleFrameRef aFrameRef);
