@@ -1962,13 +1962,6 @@ SECStatus MLDSA_VerifyInit(MLDSAPublicKey *key, const SECItem *sgnCtx,
 SECStatus MLDSA_VerifyUpdate(MLDSAContext *ctx, const SECItem *data);
 SECStatus MLDSA_VerifyFinal(MLDSAContext *ctx, const SECItem *signature);
 
-
-
-
-
-
-SECStatus EC_DecompressPublicKey(const SECItem *publicCompressed, const ECParams *params, SECItem *publicUncompressed);
-
 SEC_END_PROTOS
 
 #endif 

@@ -459,9 +459,6 @@ static const struct FREEBLVectorStr vector = {
     MLDSA_VerifyFinal,
     
 
-    EC_DecompressPublicKey,
-    
-
 };
 
 const FREEBLVector*
