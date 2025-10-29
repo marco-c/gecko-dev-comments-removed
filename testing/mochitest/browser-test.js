@@ -344,6 +344,10 @@ Tester.prototype = {
       this._coverageCollector = new CoverageCollector(coveragePath);
     }
 
+    if (gConfig.debugger || gConfig.debuggerInteractive || gConfig.jsdebugger) {
+      gTimeoutSeconds = 24 * 60 * 60 * 1000; 
+    }
+
     this.structuredLogger.info("*** Start BrowserChrome Test Results ***");
     Services.console.registerListener(this);
     this._globalProperties = Object.keys(window);
