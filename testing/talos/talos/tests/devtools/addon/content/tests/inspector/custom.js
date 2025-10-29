@@ -165,6 +165,19 @@ async function selectNodeWithManyVariablesAndLog(toolbox) {
   await selectNodeFront(inspector, testNodeFront);
   test.done();
 
+  
+  
+  
+  testNodeFront = await root.walkerFront.querySelector(
+    root,
+    ".many-unused-css-variables"
+  );
+
+  dump("Selecting .many-unused-css-variables test node front\n");
+  test = runTest("custom.inspector.manyunusedcssvariables.selectnode");
+  await selectNodeFront(inspector, testNodeFront);
+  test.done();
+
   await selectNodeFront(inspector, initialNodeFront);
 }
 
