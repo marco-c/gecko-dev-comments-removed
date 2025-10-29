@@ -69,6 +69,12 @@ ChromeUtils.defineLazyGetter(this, "TrackedObjects", () => {
   );
 });
 
+ChromeUtils.defineLazyGetter(this, "TraceObjects", () => {
+  return ChromeUtils.importESModule(
+    "chrome://mochitests/content/browser/devtools/shared/test-helpers/trace-objects.sys.mjs"
+  );
+});
+
 
 SimpleTest.requestCompleteLog();
 
@@ -160,9 +166,9 @@ async function stopRecordingAllocations(
   const parentProcessData =
     await tracker.stopRecordingAllocations(DEBUG_ALLOCATIONS);
 
-  const objectNodeIds = TrackedObjects.getAllNodeIds();
-  if (objectNodeIds.length) {
-    tracker.traceObjects(objectNodeIds);
+  const leakedObjects = TrackedObjects.getStillAllocatedObjects();
+  if (leakedObjects.length) {
+    await TraceObjects.traceObjects(leakedObjects, tracker.getSnapshotFile());
   }
 
   let contentProcessData = null;
@@ -187,12 +193,23 @@ async function stopRecordingAllocations(
   const trackedObjectsInContent = await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
     [],
-    () => {
+    async () => {
       const TrackedObjects = ChromeUtils.importESModule(
         "resource://devtools/shared/test-helpers/tracked-objects.sys.mjs"
       );
-      const objectNodeIds = TrackedObjects.getAllNodeIds();
-      if (objectNodeIds.length) {
+      const leakedObjects = TrackedObjects.getStillAllocatedObjects();
+      if (leakedObjects.length) {
+        const TraceObjects = ChromeUtils.importESModule(
+          "chrome://mochitests/content/browser/devtools/shared/test-helpers/trace-objects.sys.mjs"
+        );
+        
+        await TraceObjects.traceObjects(
+          leakedObjects.map(e => {
+            return {
+              weakRef: e.weakRef,
+            };
+          })
+        );
         const { DevToolsLoader } = ChromeUtils.importESModule(
           "resource://devtools/shared/loader/Loader.sys.mjs"
         );
@@ -202,14 +219,25 @@ async function stopRecordingAllocations(
         
         
         const snapshotFile = tracker.getSnapshotFile();
-        return { snapshotFile, objectNodeIds };
+        return {
+          snapshotFile,
+          
+          
+          
+          
+          objectUbiNodeIds: leakedObjects.map(e => {
+            return {
+              ubiNodeId: e.ubiNodeId,
+            };
+          }),
+        };
       }
       return null;
     }
   );
   if (trackedObjectsInContent) {
-    tracker.traceObjects(
-      trackedObjectsInContent.objectNodeIds,
+    TraceObjects.traceObjects(
+      trackedObjectsInContent.objectUbiNodeIds,
       trackedObjectsInContent.snapshotFile
     );
   }
