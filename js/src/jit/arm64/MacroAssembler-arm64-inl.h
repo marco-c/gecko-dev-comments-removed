@@ -561,62 +561,55 @@ void MacroAssembler::mulDoublePtr(ImmPtr imm, Register temp,
   fmul(ARMFPRegister(dest, 64), ARMFPRegister(dest, 64), scratchDouble);
 }
 
-void MacroAssembler::quotient32(Register rhs, Register srcDest,
+void MacroAssembler::quotient32(Register lhs, Register rhs, Register dest,
                                 bool isUnsigned) {
   if (isUnsigned) {
-    Udiv(ARMRegister(srcDest, 32), ARMRegister(srcDest, 32),
-         ARMRegister(rhs, 32));
+    Udiv(ARMRegister(dest, 32), ARMRegister(lhs, 32), ARMRegister(rhs, 32));
   } else {
-    Sdiv(ARMRegister(srcDest, 32), ARMRegister(srcDest, 32),
-         ARMRegister(rhs, 32));
+    Sdiv(ARMRegister(dest, 32), ARMRegister(lhs, 32), ARMRegister(rhs, 32));
   }
 }
 
-void MacroAssembler::quotient64(Register rhs, Register srcDest,
+void MacroAssembler::quotient64(Register lhs, Register rhs, Register dest,
                                 bool isUnsigned) {
   if (isUnsigned) {
-    Udiv(ARMRegister(srcDest, 64), ARMRegister(srcDest, 64),
-         ARMRegister(rhs, 64));
+    Udiv(ARMRegister(dest, 64), ARMRegister(lhs, 64), ARMRegister(rhs, 64));
   } else {
-    Sdiv(ARMRegister(srcDest, 64), ARMRegister(srcDest, 64),
-         ARMRegister(rhs, 64));
+    Sdiv(ARMRegister(dest, 64), ARMRegister(lhs, 64), ARMRegister(rhs, 64));
   }
 }
 
 
 
 
-void MacroAssembler::remainder32(Register rhs, Register srcDest,
+void MacroAssembler::remainder32(Register lhs, Register rhs, Register dest,
                                  bool isUnsigned) {
   vixl::UseScratchRegisterScope temps(this);
   ARMRegister scratch = temps.AcquireW();
   if (isUnsigned) {
-    Udiv(scratch, ARMRegister(srcDest, 32), ARMRegister(rhs, 32));
+    Udiv(scratch, ARMRegister(lhs, 32), ARMRegister(rhs, 32));
   } else {
-    Sdiv(scratch, ARMRegister(srcDest, 32), ARMRegister(rhs, 32));
+    Sdiv(scratch, ARMRegister(lhs, 32), ARMRegister(rhs, 32));
   }
 
   
-  Msub( ARMRegister(srcDest, 32), scratch, ARMRegister(rhs, 32),
-       ARMRegister(srcDest, 32));
+  Msub( ARMRegister(dest, 32), scratch, ARMRegister(rhs, 32),
+       ARMRegister(lhs, 32));
 }
 
-void MacroAssembler::remainder64(Register rhs, Register srcDest,
+void MacroAssembler::remainder64(Register lhs, Register rhs, Register dest,
                                  bool isUnsigned) {
-  const ARMRegister dividend64(srcDest, 64);
-  const ARMRegister divisor64(rhs, 64);
-
   vixl::UseScratchRegisterScope temps(this);
   ARMRegister scratch64 = temps.AcquireX();
   if (isUnsigned) {
-    Udiv(scratch64, ARMRegister(srcDest, 64), ARMRegister(rhs, 64));
+    Udiv(scratch64, ARMRegister(lhs, 64), ARMRegister(rhs, 64));
   } else {
-    Sdiv(scratch64, ARMRegister(srcDest, 64), ARMRegister(rhs, 64));
+    Sdiv(scratch64, ARMRegister(lhs, 64), ARMRegister(rhs, 64));
   }
 
   
-  Msub( ARMRegister(srcDest, 64), scratch64, ARMRegister(rhs, 64),
-       ARMRegister(srcDest, 64));
+  Msub( ARMRegister(dest, 64), scratch64, ARMRegister(rhs, 64),
+       ARMRegister(lhs, 64));
 }
 
 void MacroAssembler::divFloat32(FloatRegister src, FloatRegister dest) {
@@ -1224,13 +1217,13 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   cmp32(lhs, rhs);
   B(label, cond);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   if (imm.value == 0 && cond == Assembler::Equal) {
     Cbz(ARMRegister(lhs, 32), label);
   } else if (imm.value == 0 && cond == Assembler::NotEqual) {

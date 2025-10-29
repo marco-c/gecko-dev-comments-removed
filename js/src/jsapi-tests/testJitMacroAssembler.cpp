@@ -5,6 +5,8 @@
 
 
 
+#include "mozilla/Sprintf.h"
+
 #include "jit/IonAnalysis.h"
 #include "jit/Linker.h"
 #include "jit/MacroAssembler.h"
@@ -35,48 +37,80 @@ BEGIN_TEST(testJitMacroAssembler_flexibleDivMod) {
   PrepareJit(masm);
 
   
-  const uintptr_t quotient_result = 4;
-  const uintptr_t remainder_result = 1;
   const uintptr_t dividend = 9;
   const uintptr_t divisor = 2;
+  const uintptr_t quotient_result = 4;
+  const uintptr_t remainder_result = 1;
 
-  AllocatableGeneralRegisterSet leftOutputHandSides(GeneralRegisterSet::All());
-
-  while (!leftOutputHandSides.empty()) {
-    Register lhsOutput = leftOutputHandSides.takeAny();
+  AllocatableGeneralRegisterSet leftHandSides(GeneralRegisterSet::All());
+  while (!leftHandSides.empty()) {
+    Register lhs = leftHandSides.takeAny();
 
     AllocatableGeneralRegisterSet rightHandSides(GeneralRegisterSet::All());
     while (!rightHandSides.empty()) {
       Register rhs = rightHandSides.takeAny();
 
-      AllocatableGeneralRegisterSet remainders(GeneralRegisterSet::All());
-      while (!remainders.empty()) {
-        Register remainderOutput = remainders.takeAny();
-        if (lhsOutput == rhs || lhsOutput == remainderOutput ||
-            rhs == remainderOutput) {
-          continue;
+      AllocatableGeneralRegisterSet quotients(GeneralRegisterSet::All());
+      while (!quotients.empty()) {
+        Register quotientOutput = quotients.takeAny();
+
+        AllocatableGeneralRegisterSet remainders(GeneralRegisterSet::All());
+        while (!remainders.empty()) {
+          Register remainderOutput = remainders.takeAny();
+
+          
+          
+          if (lhs == quotientOutput || lhs == remainderOutput) {
+            continue;
+          }
+          if (rhs == quotientOutput || rhs == remainderOutput) {
+            continue;
+          }
+
+          
+          if (quotientOutput == remainderOutput) {
+            continue;
+          }
+
+          AllocatableRegisterSet regs(RegisterSet::Volatile());
+          LiveRegisterSet save(regs.asLiveSet());
+
+          Label next, fail;
+          masm.mov(ImmWord(dividend), lhs);
+          masm.mov(ImmWord(divisor), rhs);
+          masm.flexibleDivMod32(lhs, rhs, quotientOutput, remainderOutput,
+                                false, save);
+          masm.branchPtr(Assembler::NotEqual, quotientOutput,
+                         ImmWord(lhs != rhs ? quotient_result : 1), &fail);
+          masm.branchPtr(Assembler::NotEqual, remainderOutput,
+                         ImmWord(lhs != rhs ? remainder_result : 0), &fail);
+          
+          masm.branchPtr(Assembler::NotEqual, lhs,
+                         ImmWord(lhs != rhs ? dividend : divisor), &fail);
+          
+          masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(divisor), &fail);
+          masm.jump(&next);
+          masm.bind(&fail);
+          masm.printf("Failed\n");
+
+          char buffer[128];
+          SprintfLiteral(
+              buffer,
+              "\tlhs = %s, rhs = %s, quotientOutput = %s, remainderOutput "
+              "= %s\n",
+              lhs.name(), rhs.name(), quotientOutput.name(),
+              remainderOutput.name());
+
+          masm.printf(buffer);
+          masm.printf("\tlhs = %d\n", lhs);
+          masm.printf("\trhs = %d\n", rhs);
+          masm.printf("\tquotientOutput = %d\n", quotientOutput);
+          masm.printf("\tremainderOutput = %d\n", remainderOutput);
+
+          masm.breakpoint();
+
+          masm.bind(&next);
         }
-
-        AllocatableRegisterSet regs(RegisterSet::Volatile());
-        LiveRegisterSet save(regs.asLiveSet());
-
-        Label next, fail;
-        masm.mov(ImmWord(dividend), lhsOutput);
-        masm.mov(ImmWord(divisor), rhs);
-        masm.flexibleDivMod32(rhs, lhsOutput, remainderOutput, false, save);
-        masm.branch32(Assembler::NotEqual, AbsoluteAddress(&quotient_result),
-                      lhsOutput, &fail);
-        masm.branch32(Assembler::NotEqual, AbsoluteAddress(&remainder_result),
-                      remainderOutput, &fail);
-        
-        masm.branch32(Assembler::NotEqual, AbsoluteAddress(&divisor), rhs,
-                      &fail);
-        masm.jump(&next);
-        masm.bind(&fail);
-        masm.printf("Failed");
-        masm.breakpoint();
-
-        masm.bind(&next);
       }
     }
   }
@@ -98,36 +132,53 @@ BEGIN_TEST(testJitMacroAssembler_flexibleRemainder) {
   const uintptr_t divisor = 2;
   const uintptr_t remainder_result = 1;
 
-  AllocatableGeneralRegisterSet leftOutputHandSides(GeneralRegisterSet::All());
-
-  while (!leftOutputHandSides.empty()) {
-    Register lhsOutput = leftOutputHandSides.takeAny();
+  AllocatableGeneralRegisterSet leftHandSides(GeneralRegisterSet::All());
+  while (!leftHandSides.empty()) {
+    Register lhs = leftHandSides.takeAny();
 
     AllocatableGeneralRegisterSet rightHandSides(GeneralRegisterSet::All());
     while (!rightHandSides.empty()) {
       Register rhs = rightHandSides.takeAny();
 
-      if (lhsOutput == rhs) {
-        continue;
+      AllocatableGeneralRegisterSet outputs(GeneralRegisterSet::All());
+      while (!outputs.empty()) {
+        Register output = outputs.takeAny();
+
+        AllocatableRegisterSet regs(RegisterSet::Volatile());
+        LiveRegisterSet save(regs.asLiveSet());
+
+        Label next, fail;
+        masm.mov(ImmWord(dividend), lhs);
+        masm.mov(ImmWord(divisor), rhs);
+        masm.flexibleRemainder32(lhs, rhs, output, false, save);
+        masm.branchPtr(Assembler::NotEqual, output,
+                       ImmWord(lhs != rhs ? remainder_result : 0), &fail);
+        
+        if (lhs != output) {
+          masm.branchPtr(Assembler::NotEqual, lhs,
+                         ImmWord(lhs != rhs ? dividend : divisor), &fail);
+        }
+        
+        if (rhs != output) {
+          masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(divisor), &fail);
+        }
+        masm.jump(&next);
+        masm.bind(&fail);
+        masm.printf("Failed\n");
+
+        char buffer[128];
+        SprintfLiteral(buffer, "\tlhs = %s, rhs = %s, output = %s\n",
+                       lhs.name(), rhs.name(), output.name());
+
+        masm.printf(buffer);
+        masm.printf("\tlhs = %d\n", lhs);
+        masm.printf("\trhs = %d\n", rhs);
+        masm.printf("\toutput = %d\n", output);
+
+        masm.breakpoint();
+
+        masm.bind(&next);
       }
-
-      AllocatableRegisterSet regs(RegisterSet::Volatile());
-      LiveRegisterSet save(regs.asLiveSet());
-
-      Label next, fail;
-      masm.mov(ImmWord(dividend), lhsOutput);
-      masm.mov(ImmWord(divisor), rhs);
-      masm.flexibleRemainder32(rhs, lhsOutput, false, save);
-      masm.branch32(Assembler::NotEqual, AbsoluteAddress(&remainder_result),
-                    lhsOutput, &fail);
-      
-      masm.branch32(Assembler::NotEqual, AbsoluteAddress(&divisor), rhs, &fail);
-      masm.jump(&next);
-      masm.bind(&fail);
-      masm.printf("Failed\n");
-      masm.breakpoint();
-
-      masm.bind(&next);
     }
   }
 
@@ -148,36 +199,53 @@ BEGIN_TEST(testJitMacroAssembler_flexibleQuotient) {
   const uintptr_t divisor = 2;
   const uintptr_t quotient_result = 4;
 
-  AllocatableGeneralRegisterSet leftOutputHandSides(GeneralRegisterSet::All());
-
-  while (!leftOutputHandSides.empty()) {
-    Register lhsOutput = leftOutputHandSides.takeAny();
+  AllocatableGeneralRegisterSet leftHandSides(GeneralRegisterSet::All());
+  while (!leftHandSides.empty()) {
+    Register lhs = leftHandSides.takeAny();
 
     AllocatableGeneralRegisterSet rightHandSides(GeneralRegisterSet::All());
     while (!rightHandSides.empty()) {
       Register rhs = rightHandSides.takeAny();
 
-      if (lhsOutput == rhs) {
-        continue;
+      AllocatableGeneralRegisterSet outputs(GeneralRegisterSet::All());
+      while (!outputs.empty()) {
+        Register output = outputs.takeAny();
+
+        AllocatableRegisterSet regs(RegisterSet::Volatile());
+        LiveRegisterSet save(regs.asLiveSet());
+
+        Label next, fail;
+        masm.mov(ImmWord(dividend), lhs);
+        masm.mov(ImmWord(divisor), rhs);
+        masm.flexibleQuotient32(lhs, rhs, output, false, save);
+        masm.branchPtr(Assembler::NotEqual, output,
+                       ImmWord(lhs != rhs ? quotient_result : 1), &fail);
+        
+        if (lhs != output) {
+          masm.branchPtr(Assembler::NotEqual, lhs,
+                         ImmWord(lhs != rhs ? dividend : divisor), &fail);
+        }
+        
+        if (rhs != output) {
+          masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(divisor), &fail);
+        }
+        masm.jump(&next);
+        masm.bind(&fail);
+        masm.printf("Failed\n");
+
+        char buffer[128];
+        SprintfLiteral(buffer, "\tlhs = %s, rhs = %s, output = %s\n",
+                       lhs.name(), rhs.name(), output.name());
+
+        masm.printf(buffer);
+        masm.printf("\tlhs = %d\n", lhs);
+        masm.printf("\trhs = %d\n", rhs);
+        masm.printf("\toutput = %d\n", output);
+
+        masm.breakpoint();
+
+        masm.bind(&next);
       }
-
-      AllocatableRegisterSet regs(RegisterSet::Volatile());
-      LiveRegisterSet save(regs.asLiveSet());
-
-      Label next, fail;
-      masm.mov(ImmWord(dividend), lhsOutput);
-      masm.mov(ImmWord(divisor), rhs);
-      masm.flexibleQuotient32(rhs, lhsOutput, false, save);
-      masm.branch32(Assembler::NotEqual, AbsoluteAddress(&quotient_result),
-                    lhsOutput, &fail);
-      
-      masm.branch32(Assembler::NotEqual, AbsoluteAddress(&divisor), rhs, &fail);
-      masm.jump(&next);
-      masm.bind(&fail);
-      masm.printf("Failed\n");
-      masm.breakpoint();
-
-      masm.bind(&next);
     }
   }
 
@@ -185,20 +253,17 @@ BEGIN_TEST(testJitMacroAssembler_flexibleQuotient) {
 }
 END_TEST(testJitMacroAssembler_flexibleQuotient)
 
-
-
-const uintptr_t guardEcx = 0xfeedbad;
-
 bool shiftTest(JSContext* cx, const char* name,
                void (*operation)(StackMacroAssembler& masm, Register, Register),
-               const uintptr_t* lhsInput, const uintptr_t* rhsInput,
-               const uintptr_t* result) {
+               uintptr_t lhsInput, uintptr_t rhsInput, uintptr_t result) {
   TempAllocator tempAlloc(&cx->tempLifoAlloc());
   JitContext jcx(cx);
   StackMacroAssembler masm(cx, tempAlloc);
   AutoCreatedBy acb(masm, __func__);
 
   PrepareJit(masm);
+
+  const uintptr_t guardEcx = 0xfeedbad;
 
   JS::AutoSuppressGCAnalysis suppress;
   AllocatableGeneralRegisterSet leftOutputHandSides(GeneralRegisterSet::All());
@@ -211,33 +276,33 @@ bool shiftTest(JSContext* cx, const char* name,
       Register rhs = rightHandSides.takeAny();
 
       
-      if (lhsOutput == rhs && *lhsInput != *rhsInput) {
+      if (lhsOutput == rhs && lhsInput != rhsInput) {
         continue;
       }
 
       Label next, outputFail, clobberRhs, clobberEcx, dump;
       masm.mov(ImmWord(guardEcx), ecx);
-      masm.mov(ImmWord(*lhsInput), lhsOutput);
-      masm.mov(ImmWord(*rhsInput), rhs);
+      masm.mov(ImmWord(lhsInput), lhsOutput);
+      masm.mov(ImmWord(rhsInput), rhs);
 
       operation(masm, rhs, lhsOutput);
 
       
-      masm.branch32(Assembler::NotEqual, AbsoluteAddress(result), lhsOutput,
-                    &outputFail);
+      masm.branchPtr(Assembler::NotEqual, lhsOutput, ImmWord(result),
+                     &outputFail);
 
       
       if (lhsOutput != rhs) {
-        masm.branch32(Assembler::NotEqual, AbsoluteAddress(rhsInput), rhs,
-                      &clobberRhs);
+        masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(rhsInput),
+                       &clobberRhs);
       }
 
       if (lhsOutput != ecx && rhs != ecx) {
         
         
         
-        masm.branch32(Assembler::NotEqual, AbsoluteAddress(&guardEcx), ecx,
-                      &clobberEcx);
+        masm.branchPtr(Assembler::NotEqual, ecx, ImmWord(guardEcx),
+                       &clobberEcx);
       }
 
       masm.jump(&next);
@@ -282,7 +347,7 @@ BEGIN_TEST(testJitMacroAssembler_flexibleRshift) {
         [](StackMacroAssembler& masm, Register rhs, Register lhsOutput) {
           masm.flexibleRshift32(rhs, lhsOutput);
         },
-        &lhsInput, &rhsInput, &result);
+        lhsInput, rhsInput, result);
     if (!res) {
       return false;
     }
@@ -300,7 +365,7 @@ BEGIN_TEST(testJitMacroAssembler_flexibleRshift) {
         [](StackMacroAssembler& masm, Register rhs, Register lhsOutput) {
           masm.flexibleRshift32(rhs, lhsOutput);
         },
-        &lhsInput, &rhsInput, &result);
+        lhsInput, rhsInput, result);
     if (!res) {
       return false;
     }
@@ -321,7 +386,7 @@ BEGIN_TEST(testJitMacroAssembler_flexibleRshiftArithmetic) {
         [](StackMacroAssembler& masm, Register rhs, Register lhsOutput) {
           masm.flexibleRshift32Arithmetic(rhs, lhsOutput);
         },
-        &lhsInput, &rhsInput, &result);
+        lhsInput, rhsInput, result);
     if (!res) {
       return false;
     }
@@ -339,7 +404,7 @@ BEGIN_TEST(testJitMacroAssembler_flexibleRshiftArithmetic) {
         [](StackMacroAssembler& masm, Register rhs, Register lhsOutput) {
           masm.flexibleRshift32Arithmetic(rhs, lhsOutput);
         },
-        &lhsInput, &rhsInput, &result);
+        lhsInput, rhsInput, result);
     if (!res) {
       return false;
     }
@@ -361,7 +426,7 @@ BEGIN_TEST(testJitMacroAssembler_flexibleLshift) {
         [](StackMacroAssembler& masm, Register rhs, Register lhsOutput) {
           masm.flexibleLshift32(rhs, lhsOutput);
         },
-        &lhsInput, &rhsInput, &result);
+        lhsInput, rhsInput, result);
     if (!res) {
       return false;
     }
@@ -378,7 +443,7 @@ BEGIN_TEST(testJitMacroAssembler_flexibleLshift) {
         [](StackMacroAssembler& masm, Register rhs, Register lhsOutput) {
           masm.flexibleLshift32(rhs, lhsOutput);
         },
-        &lhsInput, &rhsInput, &result);
+        lhsInput, rhsInput, result);
     if (!res) {
       return false;
     }

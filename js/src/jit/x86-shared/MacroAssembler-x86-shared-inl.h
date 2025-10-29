@@ -252,9 +252,9 @@ void MacroAssembler::mulDouble(FloatRegister src, FloatRegister dest) {
   vmulsd(src, dest, dest);
 }
 
-void MacroAssembler::quotient32(Register rhs, Register srcDest,
+void MacroAssembler::quotient32(Register lhs, Register rhs, Register dest,
                                 Register tempEdx, bool isUnsigned) {
-  MOZ_ASSERT(srcDest == eax && tempEdx == edx);
+  MOZ_ASSERT(lhs == eax && dest == eax && tempEdx == edx);
 
   
   if (isUnsigned) {
@@ -266,9 +266,9 @@ void MacroAssembler::quotient32(Register rhs, Register srcDest,
   }
 }
 
-void MacroAssembler::remainder32(Register rhs, Register srcDest,
+void MacroAssembler::remainder32(Register lhs, Register rhs, Register dest,
                                  Register tempEdx, bool isUnsigned) {
-  MOZ_ASSERT(srcDest == eax && tempEdx == edx);
+  MOZ_ASSERT(lhs == eax && dest == eax && tempEdx == edx);
 
   
   if (isUnsigned) {
@@ -551,13 +551,13 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   cmp32(lhs, rhs);
   j(cond, label);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   cmp32(lhs, rhs);
   j(cond, label);
 }
