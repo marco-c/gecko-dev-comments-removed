@@ -740,18 +740,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   MOZ_CAN_RUN_SCRIPT void ReconstructFrames();
 
-  
-
-
-
-
-  static bool GetVerifyReflowEnable();
-
-  
-
-
-  static void SetVerifyReflowEnable(bool aEnabled);
-
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   
@@ -3182,11 +3170,7 @@ class PresShell final : public nsStubDocumentObserver,
   VisibleFrames mApproximatelyVisibleFrames;
 
 #ifdef DEBUG
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool VerifyIncrementalReflow();
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoVerifyReflow();
   void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
-
-  bool mInVerifyReflow = false;
   
   
   nsIFrame* mCurrentReflowRoot = nullptr;
