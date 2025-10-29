@@ -9,6 +9,7 @@
 
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/Likely.h"
@@ -4384,23 +4385,158 @@ static UniqueChars QuoteString(JSContext* cx, char16_t ch) {
 
 
 
+static constexpr uint32_t InvalidNibble = -1;
 
-
-
-template <class Sink>
-static bool FromHex(JSContext* cx, Handle<JSString*> string, Sink& sink,
-                    size_t* readLength) {
-  
-
-  
-  size_t length = string->length();
-
-  
-  if (length % 2 != 0) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_BAD_HEX_STRING_LENGTH);
-    return false;
+template <typename Char>
+static inline uint32_t HexDigitToNibbleOrInvalid(Char ch) {
+  if ('0' <= ch && ch <= '9') {
+    return ch - '0';
   }
+  if ('A' <= ch && ch <= 'F') {
+    return ch - 'A' + 10;
+  }
+  if ('a' <= ch && ch <= 'f') {
+    return ch - 'a' + 10;
+  }
+  return InvalidNibble;
+}
+
+
+
+
+
+
+template <typename Ops, typename CharT>
+static size_t FromHex(const CharT* chars, size_t length,
+                      TypedArrayObject* tarray) {
+  auto data = Ops::extract(tarray).template cast<uint8_t*>();
+
+  
+  size_t index = 0;
+
+  
+  MOZ_ASSERT(length % 2 == 0);
+
+  
+  size_t alignedLength = length & ~7;
+  if (index < alignedLength) {
+    auto data32 = data.template cast<uint32_t*>();
+
+    
+    while (index < alignedLength) {
+      
+      auto c0 = chars[index + 0];
+      auto c1 = chars[index + 1];
+      auto c2 = chars[index + 2];
+      auto c3 = chars[index + 3];
+
+      
+      uint32_t word1 = (HexDigitToNibbleOrInvalid(c2) << 12) |
+                       (HexDigitToNibbleOrInvalid(c3) << 8) |
+                       (HexDigitToNibbleOrInvalid(c0) << 4) |
+                       (HexDigitToNibbleOrInvalid(c1) << 0);
+      
+      if (MOZ_UNLIKELY(int32_t(word1) < 0)) {
+        break;
+      }
+
+      
+      auto c4 = chars[index + 4];
+      auto c5 = chars[index + 5];
+      auto c6 = chars[index + 6];
+      auto c7 = chars[index + 7];
+
+      
+      uint32_t word2 = (HexDigitToNibbleOrInvalid(c6) << 12) |
+                       (HexDigitToNibbleOrInvalid(c7) << 8) |
+                       (HexDigitToNibbleOrInvalid(c4) << 4) |
+                       (HexDigitToNibbleOrInvalid(c5) << 0);
+
+      
+      if (MOZ_UNLIKELY(int32_t(word2) < 0)) {
+        break;
+      }
+
+      
+      index += 4 * 2;
+
+      
+      
+      
+      
+      uint32_t word =
+          mozilla::NativeEndian::swapFromLittleEndian((word2 << 16) | word1);
+      Ops::store(data32++, word);
+    }
+
+    data = data32.template cast<uint8_t*>();
+  }
+
+  
+  while (index < length) {
+    
+    auto c0 = chars[index + 0];
+    auto c1 = chars[index + 1];
+
+    
+    uint32_t byte = (HexDigitToNibbleOrInvalid(c0) << 4) |
+                    (HexDigitToNibbleOrInvalid(c1) << 0);
+
+    
+    if (MOZ_UNLIKELY(int32_t(byte) < 0)) {
+      return index;
+    }
+
+    
+    index += 2;
+
+    
+    Ops::store(data++, uint8_t(byte));
+  }
+
+  
+  return index;
+}
+
+
+
+
+
+
+template <typename Ops>
+static size_t FromHex(JSLinearString* linear, size_t length,
+                      TypedArrayObject* tarray) {
+  JS::AutoCheckCannotGC nogc;
+  if (linear->hasLatin1Chars()) {
+    return FromHex<Ops>(linear->latin1Chars(nogc), length, tarray);
+  }
+  return FromHex<Ops>(linear->twoByteChars(nogc), length, tarray);
+}
+
+
+
+
+
+
+static bool FromHex(JSContext* cx, JSString* string, size_t maxLength,
+                    TypedArrayObject* tarray) {
+  MOZ_ASSERT(tarray->type() == Scalar::Uint8);
+
+  
+  
+  
+  MOZ_ASSERT(!tarray->hasDetachedBuffer());
+  MOZ_ASSERT(tarray->length().valueOr(0) >= maxLength);
+
+  
+
+  
+  
+  
+  size_t readLength = maxLength * 2;
+  MOZ_ASSERT(readLength <= string->length());
+
+  
 
   JSLinearString* linear = string->ensureLinear(cx);
   if (!linear) {
@@ -4408,42 +4544,22 @@ static bool FromHex(JSContext* cx, Handle<JSString*> string, Sink& sink,
   }
 
   
-
-  
-  size_t index = 0;
-
-  
-  while (index < length && sink.canAppend()) {
-    
+  size_t index;
+  if (tarray->isSharedMemory()) {
+    index = FromHex<SharedOps>(linear, readLength, tarray);
+  } else {
+    index = FromHex<UnsharedOps>(linear, readLength, tarray);
+  }
+  if (MOZ_UNLIKELY(index < readLength)) {
     char16_t c0 = linear->latin1OrTwoByteChar(index);
     char16_t c1 = linear->latin1OrTwoByteChar(index + 1);
-
-    
-    if (MOZ_UNLIKELY(!mozilla::IsAsciiHexDigit(c0) ||
-                     !mozilla::IsAsciiHexDigit(c1))) {
-      char16_t ch = !mozilla::IsAsciiHexDigit(c0) ? c0 : c1;
-      if (auto str = QuoteString(cx, ch)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                  JSMSG_TYPED_ARRAY_BAD_HEX_DIGIT, str.get());
-      }
-      return false;
+    char16_t ch = !mozilla::IsAsciiHexDigit(c0) ? c0 : c1;
+    if (auto str = QuoteString(cx, ch)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TYPED_ARRAY_BAD_HEX_DIGIT, str.get());
     }
-
-    
-    index += 2;
-
-    
-    uint8_t byte = (mozilla::AsciiAlphanumericToNumber(c0) << 4) +
-                   mozilla::AsciiAlphanumericToNumber(c1);
-
-    
-    if (!sink.append(byte)) {
-      return false;
-    }
+    return false;
   }
-
-  
-  *readLength = index;
   return true;
 }
 
@@ -4992,27 +5108,29 @@ static bool uint8array_fromHex(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<JSString*> string(cx, args[0].toString());
 
   
-  ByteVector bytes(cx);
-  ByteSink sink{bytes};
-  size_t unusedReadLength;
-  if (!FromHex(cx, string, sink, &unusedReadLength)) {
+  size_t stringLength = string->length();
+
+  
+  if (stringLength % 2 != 0) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_BAD_HEX_STRING_LENGTH);
     return false;
   }
 
   
-  size_t resultLength = bytes.length();
+  size_t resultLength = stringLength / 2;
 
   
-  auto* tarray =
-      TypedArrayObjectTemplate<uint8_t>::fromLength(cx, resultLength);
+  Rooted<TypedArrayObject*> tarray(
+      cx, TypedArrayObjectTemplate<uint8_t>::fromLength(cx, resultLength));
   if (!tarray) {
     return false;
   }
 
   
-  auto target = SharedMem<uint8_t*>::unshared(tarray->dataPointerUnshared());
-  auto source = SharedMem<uint8_t*>::unshared(bytes.begin());
-  UnsharedOps::podCopy(target, source, resultLength);
+  if (!FromHex(cx, string, resultLength, tarray)) {
+    return false;
+  }
 
   
   args.rval().setObject(*tarray);
@@ -5144,21 +5262,30 @@ static bool uint8array_setFromHex(JSContext* cx, const CallArgs& args) {
   Rooted<JSString*> string(cx, args[0].toString());
 
   
-  auto length = tarray->length();
-  if (!length) {
+  auto byteLength = tarray->length();
+  if (!byteLength) {
     ReportOutOfBounds(cx, tarray);
     return false;
   }
 
   
-  TypedArraySink sink{tarray, *length};
-  size_t readLength;
-  if (!FromHex(cx, string, sink, &readLength)) {
+  size_t stringLength = string->length();
+
+  
+  if (stringLength % 2 != 0) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_BAD_HEX_STRING_LENGTH);
     return false;
   }
 
   
-  size_t written = sink.written();
+  
+  size_t maxLength = std::min(*byteLength, stringLength / 2);
+
+  
+  if (!FromHex(cx, string, maxLength, tarray)) {
+    return false;
+  }
 
   
 
@@ -5169,13 +5296,18 @@ static bool uint8array_setFromHex(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<Value> readValue(cx, NumberValue(readLength));
+  
+  
+  
+  Rooted<Value> readValue(cx, NumberValue(maxLength * 2));
   if (!DefineDataProperty(cx, result, cx->names().read, readValue)) {
     return false;
   }
 
   
-  Rooted<Value> writtenValue(cx, NumberValue(written));
+  
+  
+  Rooted<Value> writtenValue(cx, NumberValue(maxLength));
   if (!DefineDataProperty(cx, result, cx->names().written, writtenValue)) {
     return false;
   }
