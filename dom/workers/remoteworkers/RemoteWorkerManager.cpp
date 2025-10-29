@@ -11,7 +11,6 @@
 #include "RemoteWorkerServiceParent.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/dom/ContentChild.h"  
 #include "mozilla/dom/PRemoteWorkerNonLifeCycleOpControllerChild.h"

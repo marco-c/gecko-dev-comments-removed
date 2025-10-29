@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/ResultExtensions.h"
 
 
 #include "blapit.h"

@@ -13,7 +13,6 @@
 #include "js/Array.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobBinding.h"
