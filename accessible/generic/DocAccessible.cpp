@@ -1297,7 +1297,13 @@ void DocAccessible::BindToDocument(LocalAccessible* aAccessible,
     }
   }
 
-  if (mIPCDoc) {
+  if (mIPCDoc && HasLoadState(eTreeConstructed)) {
+    
+    
+    
+    
+    
+    
     mInsertedAccessibles.EnsureInserted(aAccessible);
   }
 
@@ -1771,13 +1777,14 @@ void DocAccessible::DoInitialUpdate() {
     }
   }
 
-  mLoadState |= eTreeConstructed;
-
   
   UpdateRootElIfNeeded();
 
   
   CacheChildrenInSubtree(this);
+
+  mLoadState |= eTreeConstructed;
+
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eVerbose)) {
     logging::Tree("TREE", "Initial subtree", this);
