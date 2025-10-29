@@ -11,9 +11,6 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs",
 });
 
-
-const PREF_DATA_COLLECTION_ENABLED = "quicksuggest.dataCollection.enabled";
-
 const SEARCH_STRING = "frab";
 
 const { DEFAULT_SUGGESTION_SCORE } = UrlbarProviderQuickSuggest;
@@ -62,7 +59,8 @@ add_setup(async () => {
 add_task(async function merinoDisabled() {
   let mockEndpointUrl = UrlbarPrefs.get("merino.endpointURL");
   UrlbarPrefs.set("merino.endpointURL", "");
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   
   
@@ -85,22 +83,29 @@ add_task(async function merinoDisabled() {
 
 
 
-add_task(async function dataCollectionDisabled() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, false);
-
+add_task(async function onlineAvailableAndEnabled() {
   
   
   
   await QuickSuggestTestUtils.setRemoteSettingsRecords([]);
 
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
+  for (let onlineAvailable of [false, true]) {
+    for (let onlineEnabled of [false, true]) {
+      UrlbarPrefs.set("quicksuggest.online.available", onlineAvailable);
+      UrlbarPrefs.set("quicksuggest.online.enabled", onlineEnabled);
+
+      await check_results({
+        context: createContext(SEARCH_STRING, {
+          providers: [UrlbarProviderQuickSuggest.name],
+          isPrivate: false,
+        }),
+        matches:
+          onlineAvailable && onlineEnabled
+            ? [EXPECTED_MERINO_URLBAR_RESULT]
+            : [],
+      });
+    }
+  }
 
   await resetRemoteSettingsData();
 });
@@ -108,7 +113,8 @@ add_task(async function dataCollectionDisabled() {
 
 
 add_task(async function higherScore() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions[0].score =
     2 * DEFAULT_SUGGESTION_SCORE;
@@ -129,7 +135,8 @@ add_task(async function higherScore() {
 
 
 add_task(async function lowerScore() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions[0].score =
     DEFAULT_SUGGESTION_SCORE / 2;
@@ -150,7 +157,8 @@ add_task(async function lowerScore() {
 
 
 add_task(async function noSuggestion_remoteSettings() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   let context = createContext("this doesn't match remote settings", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -168,7 +176,8 @@ add_task(async function noSuggestion_remoteSettings() {
 
 
 add_task(async function noSuggestion_merino() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions = [];
 
@@ -188,7 +197,8 @@ add_task(async function noSuggestion_merino() {
 
 
 add_task(async function multipleMerinoSuggestions() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   MerinoTestUtils.server.response.body.suggestions = [
     {
@@ -266,7 +276,8 @@ add_task(async function multipleMerinoSuggestions() {
 
 
 add_task(async function timestamps() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   
   let suggestion = MerinoTestUtils.server.response.body.suggestions[0];
@@ -312,8 +323,10 @@ add_task(async function timestamps() {
 
 
 
-add_task(async function suggestedDisabled_dataCollectionEnabled() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+add_task(async function suggestedDisabled_onlineEnabled() {
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
+
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
@@ -346,7 +359,8 @@ add_task(async function suggestedDisabled_dataCollectionEnabled() {
 
 
 add_task(async function dismissals_managed() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   
   let url = "https://example.com/merino-amp-url";
@@ -417,7 +431,8 @@ add_task(async function dismissals_managed() {
 
 
 add_task(async function dismissals_unmanaged_1() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   let provider = "some-unknown-merino-provider";
   let tests = [
@@ -563,7 +578,8 @@ add_task(async function dismissals_unmanaged_1() {
 
 
 add_task(async function dismissals_unmanaged_2() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   let provider = "some-unknown-merino-provider";
 
@@ -743,7 +759,8 @@ add_task(async function dismissals_unmanaged_2() {
 
 
 add_task(async function bestMatch() {
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
 
   
   
@@ -827,7 +844,8 @@ async function doUnmanagedTest({ pref, suggestion }) {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
 
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
+  UrlbarPrefs.set("quicksuggest.online.available", true);
+  UrlbarPrefs.set("quicksuggest.online.enabled", true);
   MerinoTestUtils.server.response.body.suggestions = [suggestion];
 
   let expectedResult = {

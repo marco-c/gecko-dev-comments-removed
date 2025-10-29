@@ -113,6 +113,7 @@ async function doMigrateTest({
   let initialDefaultBranch = {
     "suggest.quicksuggest.nonsponsored": false,
     "suggest.quicksuggest.sponsored": false,
+    
     "quicksuggest.dataCollection.enabled": false,
   };
   for (let name of Object.keys(initialDefaultBranch)) {
@@ -626,7 +627,7 @@ async function doOneShowLessFrequentlyTest({
   
   
   
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("quicksuggest.online.enabled", false);
 
   
   let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(nimbus);
@@ -701,7 +702,7 @@ async function doOneShowLessFrequentlyTest({
 
   await cleanUpNimbus();
   UrlbarPrefs.clear(showLessFrequentlyCountPref);
-  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  UrlbarPrefs.clear("quicksuggest.online.enabled");
 }
 
 

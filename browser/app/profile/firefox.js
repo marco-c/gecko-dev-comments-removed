@@ -483,7 +483,23 @@ pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
 
 
 
+
+
+
+
 pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
+
+
+
+
+
+
+pref("browser.urlbar.quicksuggest.online.available", false);
+
+
+
+
+
 
 
 
