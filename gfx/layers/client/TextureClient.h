@@ -16,7 +16,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"  
 #include "mozilla/dom/ipc/IdType.h"

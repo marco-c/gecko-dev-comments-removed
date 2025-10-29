@@ -2,8 +2,6 @@
 
 
 
-#include "mozilla/DebugOnly.h"
-
 #include "jsapi-tests/tests.h"
 
 #include "vm/HelperThreads.h"
