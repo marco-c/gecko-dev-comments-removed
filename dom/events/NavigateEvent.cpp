@@ -27,12 +27,11 @@ extern mozilla::LazyLogModule gNavigationAPILog;
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED_WITH_JS_MEMBERS(NavigateEvent, Event,
-                                                   (mDestination, mSignal,
-                                                    mFormData, mSourceElement,
-                                                    mNavigationHandlerList,
-                                                    mAbortController),
-                                                   (mInfo))
+NS_IMPL_CYCLE_COLLECTION_INHERITED_WITH_JS_MEMBERS(
+    NavigateEvent, Event,
+    (mDestination, mSignal, mFormData, mSourceElement, mNavigationHandlerList,
+     mAbortController, mNavigationPrecommitHandlerList),
+    (mInfo))
 
 NS_IMPL_ADDREF_INHERITED(NavigateEvent, Event)
 NS_IMPL_RELEASE_INHERITED(NavigateEvent, Event)
@@ -160,6 +159,19 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
   if (!IsBeingDispatched()) {
     aRv.ThrowInvalidStateError("Event has never been dispatched");
     return;
+  }
+
+  
+  if (aOptions.mPrecommitHandler.WasPassed()) {
+    
+    if (!Cancelable()) {
+      aRv.ThrowInvalidStateError("Event is not cancelable");
+      return;
+    }
+
+    
+    mNavigationPrecommitHandlerList.AppendElement(
+        aOptions.mPrecommitHandler.InternalValue().get());
   }
 
   
