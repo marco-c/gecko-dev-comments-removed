@@ -85,7 +85,6 @@ const CM_MAPPING = [
   "clearHistory",
   "defaultCharWidth",
   "extendSelection",
-  "focus",
   "getCursor",
   "getLine",
   "getScrollInfo",
@@ -755,26 +754,16 @@ class Editor extends EventEmitter {
       lezerHighlight,
     } = this.#CodeMirror6;
 
-    const tabSizeCompartment = new Compartment();
-    const indentCompartment = new Compartment();
-    const lineWrapCompartment = new Compartment();
-    const lineNumberCompartment = new Compartment();
-    const lineNumberMarkersCompartment = new Compartment();
-    const searchHighlightCompartment = new Compartment();
-    const domEventHandlersCompartment = new Compartment();
-    const foldGutterCompartment = new Compartment();
-    const languageCompartment = new Compartment();
-
     this.#compartments = {
-      tabSizeCompartment,
-      indentCompartment,
-      lineWrapCompartment,
-      lineNumberCompartment,
-      lineNumberMarkersCompartment,
-      searchHighlightCompartment,
-      domEventHandlersCompartment,
-      foldGutterCompartment,
-      languageCompartment,
+      tabSizeCompartment: new Compartment(),
+      indentCompartment: new Compartment(),
+      lineWrapCompartment: new Compartment(),
+      lineNumberCompartment: new Compartment(),
+      lineNumberMarkersCompartment: new Compartment(),
+      searchHighlightCompartment: new Compartment(),
+      domEventHandlersCompartment: new Compartment(),
+      foldGutterCompartment: new Compartment(),
+      languageCompartment: new Compartment(),
     };
 
     const { lineContentMarkerEffect, lineContentMarkerExtension } =
@@ -803,17 +792,21 @@ class Editor extends EventEmitter {
 
     const extensions = [
       bracketMatching(),
-      indentCompartment.of(indentUnit.of(indentStr)),
-      tabSizeCompartment.of(EditorState.tabSize.of(this.config.tabSize)),
-      lineWrapCompartment.of(
+      this.#compartments.indentCompartment.of(indentUnit.of(indentStr)),
+      this.#compartments.tabSizeCompartment.of(
+        EditorState.tabSize.of(this.config.tabSize)
+      ),
+      this.#compartments.lineWrapCompartment.of(
         this.config.lineWrapping ? EditorView.lineWrapping : []
       ),
       EditorState.readOnly.of(this.config.readOnly),
-      lineNumberCompartment.of(this.config.lineNumbers ? lineNumbers() : []),
+      this.#compartments.lineNumberCompartment.of(
+        this.config.lineNumbers ? lineNumbers() : []
+      ),
       codeFolding({
         placeholderText: "↔",
       }),
-      foldGutterCompartment.of([]),
+      this.#compartments.foldGutterCompartment.of([]),
       syntaxHighlighting(lezerHighlight.classHighlighter),
       EditorView.updateListener.of(v => {
         if (!cm.isDocumentLoadComplete) {
@@ -837,14 +830,16 @@ class Editor extends EventEmitter {
           this.#updateListener(v);
         }
       }),
-      domEventHandlersCompartment.of(
+      this.#compartments.domEventHandlersCompartment.of(
         EditorView.domEventHandlers(this.#createEventHandlers())
       ),
-      lineNumberMarkersCompartment.of([]),
+      this.#compartments.lineNumberMarkersCompartment.of([]),
       lineContentMarkerExtension,
       positionContentMarkerExtension,
-      searchHighlightCompartment.of(this.#searchHighlighterExtension([])),
-      languageCompartment.of(languageMode),
+      this.#compartments.searchHighlightCompartment.of(
+        this.#searchHighlighterExtension([])
+      ),
+      this.#compartments.languageCompartment.of(languageMode),
       highlightSelectionMatches(),
       
       codemirror.minimalSetup,
@@ -1016,7 +1011,7 @@ class Editor extends EventEmitter {
       });
     }
 
-
+    
 
 
 
@@ -1053,8 +1048,8 @@ class Editor extends EventEmitter {
       });
     }
 
-    // The effects used to create the transaction when markers are
-    // either added and removed.
+    
+    
     const addEffect = StateEffect.define();
     const removeEffect = StateEffect.define();
 
@@ -1400,7 +1395,7 @@ class Editor extends EventEmitter {
               position.column,
               tokenAtPos.to - line.from
             );
-            // Ignore any empty strings and opening braces
+            
             if (
               tokenString === "" ||
               tokenString === "{" ||
@@ -1420,14 +1415,14 @@ class Editor extends EventEmitter {
       }
     }
 
-    /**
-     * This updates the decorations for the marker specified
-     *
-     * @param {Array} markerDecorations - The current decorations displayed in the document
-     * @param {Array} marker - The current marker whose decoration should be update
-     * @param {Transaction} transaction
-     * @returns
-     */
+    
+
+
+
+
+
+
+
     function updateDecorations(markerDecorations, marker, transaction) {
       const newDecorations = [];
 
@@ -1441,16 +1436,16 @@ class Editor extends EventEmitter {
       });
     }
 
-    /**
-     * This updates all the decorations for all the markers. This
-     * used in scenarios when an update to view (e.g vertically scrolling into a new viewport)
-     * requires all the marker decoraions.
-     *
-     * @param {Array} markerDecorations - The current decorations displayed in the document
-     * @param {Array} markers - All the cached markers
-     * @param {Object} transaction
-     * @returns
-     */
+    
+
+
+
+
+
+
+
+
+
     function updateDecorationsForAllMarkers(
       markerDecorations,
       markers,
@@ -1458,8 +1453,8 @@ class Editor extends EventEmitter {
     ) {
       const allNewDecorations = [];
 
-      // Sort the markers iterator thanks to `displayLast` boolean.
-      // This is typically used by the paused location marker to be shown after the column breakpoints.
+      
+      
       markers = Array.from(markers).sort((a, b) => {
         if (a.displayLast) {
           return 1;
@@ -1500,28 +1495,28 @@ class Editor extends EventEmitter {
         return Decoration.none;
       },
       update(markerDecorations, transaction) {
-        // Map the decorations through the transaction changes, this is important
-        // as it remaps the decorations from positions in the old document to
-        // positions in the new document.
+        
+        
+        
         markerDecorations = markerDecorations.map(transaction.changes);
         for (const effect of transaction.effects) {
           if (effect.is(addEffect)) {
-            // When a new marker is added
+            
             markerDecorations = updateDecorations(
               markerDecorations,
               effect.value,
               transaction
             );
           } else if (effect.is(removeEffect)) {
-            // When a marker is removed
+            
             markerDecorations = removeDecorations(
               markerDecorations,
               effect.value
             );
           } else {
-            // For updates that are not related to this marker decoration,
-            // we want to update the decorations when the editor is scrolled
-            // and a new viewport is loaded.
+            
+            
+            
             markerDecorations = updateDecorationsForAllMarkers(
               markerDecorations,
               cachedPositionContentMarkers.values(),
@@ -1540,22 +1535,22 @@ class Editor extends EventEmitter {
     };
   }
 
-  /**
-   * This adds a marker used to decorate token / content at a specific position .
-   * @param {Object} marker
-   * @param {String} marker.id
-   * @param {Array<Object>} marker.positions - This includes the line / column and any optional positionData which defines each position.
-   * @param {Function} marker.createPositionElementNode - This describes how to render the marker.
-   *                                                      The position data (i.e line, column and positionData) are passed as arguments.
-   * @param {Function} marker.customEq - A custom function to determine the equality of the marker. This allows the user define special conditions
-   *                                     for when position details have changed and an update of the marker should happen.
-   *                                     The positionData defined for the current and the previous instance of the marker are passed as arguments.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   setPositionContentMarker(marker) {
     const cm = editors.get(this);
 
-    // We store the marker an the view state, this is gives access to viewport data
-    // when defining updates to the StateField.
+    
+    
     marker._view = cm;
     this.#posContentMarkers.set(marker.id, marker);
     cm.dispatch({
@@ -1563,10 +1558,10 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * This removes the marker which has the specified id
-   * @param {string} markerId - The unique identifier for this marker
-   */
+  
+
+
+
   removePositionContentMarker(markerId) {
     const cm = editors.get(this);
     this.#posContentMarkers.delete(markerId);
@@ -1576,13 +1571,13 @@ class Editor extends EventEmitter {
     });
   }
 
-  /**
-   * Set event listeners for the line gutter
-   * @param {Object} domEventHandlers
-   *
-   * example usage:
-   *  const domEventHandlers = { click(event) { console.log(event);} }
-   */
+  
+
+
+
+
+
+
   setGutterEventListeners(domEventHandlers) {
     const cm = editors.get(this);
     const {
@@ -1790,12 +1785,12 @@ class Editor extends EventEmitter {
     return [searchHighlightView];
   }
 
-  
-
-
-
-
-
+  /**
+   * This should add the class to the results of a search pattern specified
+   *
+   * @param {RegExp} pattern - The search pattern
+   * @param {String} className - The class used to decorate each result
+   */
   highlightSearchMatches(pattern, className) {
     const cm = editors.get(this);
     cm.dispatch({
@@ -1805,19 +1800,19 @@ class Editor extends EventEmitter {
     });
   }
 
-  
-
-
+  /**
+   * This clear any decoration on all the search results
+   */
   clearSearchMatches() {
     this.highlightSearchMatches(undefined, "");
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieves the cursor for the next selection to be highlighted
+   *
+   * @param {Boolean} reverse - Determines the direction of the cursor movement
+   * @returns {RegExpSearchCursor}
+   */
   getNextSearchCursor(reverse) {
     if (reverse) {
       if (this.searchState.currentCursorIndex == 0) {
@@ -1837,13 +1832,13 @@ class Editor extends EventEmitter {
     return this.searchState.cursors[this.searchState.currentCursorIndex];
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Get the start and end locations of the current viewport
+   *
+   * @param {Number} offsetHorizontalCharacters - Offset of characters offscreen
+   * @param {Number} offsetVerticalLines - Offset of lines offscreen
+   * @returns {Object}  - The location information for the current viewport
+   */
   getLocationsInViewport(
     offsetHorizontalCharacters = 0,
     offsetVerticalLines = 0
@@ -1854,7 +1849,7 @@ class Editor extends EventEmitter {
     const cm = editors.get(this);
     let startLine, endLine, scrollLeft, charWidth, rightPosition;
     if (this.config.cm6) {
-      
+      // Report no viewport until we show an actual source (and not a loading/error message)
       if (!this.#currentDocumentId) {
         return null;
       }
@@ -1894,12 +1889,12 @@ class Editor extends EventEmitter {
     };
   }
 
-  
-
-
-
-
-
+  /**
+   * Gets the position information for the current selection
+   * @returns {Object} cursor      - The location information for the  current selection
+   *                   cursor.from - An object with the starting line / column of the selection
+   *                   cursor.to   - An object with the end line / column of the selection
+   */
   getSelectionCursor() {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -2052,8 +2047,8 @@ class Editor extends EventEmitter {
     }
     this.setOption("mode", mode);
 
-    // If autocomplete was set up and the mode is changing, then
-    // turn it off and back on again so the proper mode can be used.
+    
+    
     if (this.config.autocomplete) {
       this.setOption("autocomplete", false);
       this.setOption("autocomplete", true);
@@ -2061,14 +2056,14 @@ class Editor extends EventEmitter {
     return null;
   }
 
-  /**
-   * The source editor can expose several commands linked from system and context menus.
-   * Kept for backward compatibility with styleeditor.
-   */
+  
+
+
+
   insertCommandsController() {
     const {
       insertCommandsController,
-    } = require("resource:
+    } = require("resource://devtools/client/shared/sourceeditor/editor-commands-controller.js");
     insertCommandsController(this);
   }
 
@@ -2540,7 +2535,11 @@ class Editor extends EventEmitter {
 
 
 
-  async setText(value, documentId) {
+
+
+
+
+  async setText(value, { documentId, saveTransactionToHistory = true } = {}) {
     const cm = editors.get(this);
     const isWasm = typeof value !== "string" && "binary" in value;
 
@@ -2586,11 +2585,13 @@ class Editor extends EventEmitter {
 
       const {
         codemirrorView: { EditorView, lineNumbers },
+        codemirrorState: { Transaction },
       } = this.#CodeMirror6;
 
       await cm.dispatch({
         changes: { from: 0, to: cm.state.doc.length, insert: value },
         selection: { anchor: 0 },
+        annotations: [Transaction.addToHistory.of(saveTransactionToHistory)],
       });
 
       const effects = [];
