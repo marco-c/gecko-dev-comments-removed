@@ -1191,9 +1191,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
     aKidFrame->DidReflow(aPresContext, &kidReflowInput);
 
-    if (usedCb.Contains(aKidFrame->GetRect()) && aStatus.IsComplete()) {
+    const bool fits =
+        aStatus.IsComplete() && usedCb.Contains(aKidFrame->GetRect());
+    if (fallbacks.IsEmpty() || fits) {
       
-      isOverflowingCB = false;
+      
+      
+      isOverflowingCB = !fits;
       break;
     }
 
