@@ -5,6 +5,7 @@
 use nsstring::{nsCString, nsString};
 use thin_vec::ThinVec;
 pub mod fragment_directive_impl;
+mod test;
 
 
 
