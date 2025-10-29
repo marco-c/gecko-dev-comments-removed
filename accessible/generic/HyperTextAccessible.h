@@ -61,6 +61,11 @@ class HyperTextAccessible : public AccessibleWrap,
 
   
 
+
+  bool IsEditable() const;
+
+  
+
   
   nsresult ContentToRenderedOffset(nsIFrame* aFrame, int32_t aContentOffset,
                                    uint32_t* aRenderedOffset) const;

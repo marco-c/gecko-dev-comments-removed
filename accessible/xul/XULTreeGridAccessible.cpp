@@ -455,7 +455,7 @@ nsRect XULTreeGridCellAccessible::BoundsInAppUnits() const {
 bool XULTreeGridCellAccessible::HasPrimaryAction() const {
   return mColumn->Cycler() ||
          (mColumn->Type() == dom::TreeColumn_Binding::TYPE_CHECKBOX &&
-          IsEditableCell());
+          IsEditable());
 }
 
 void XULTreeGridCellAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
@@ -469,7 +469,7 @@ void XULTreeGridCellAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
   }
 
   if (mColumn->Type() == dom::TreeColumn_Binding::TYPE_CHECKBOX &&
-      IsEditableCell()) {
+      IsEditable()) {
     nsAutoString value;
     mTreeView->GetCellValue(mRow, mColumn, value);
     if (value.EqualsLiteral("true")) {
@@ -647,7 +647,7 @@ void XULTreeGridCellAccessible::DispatchClickEvent(
 
 
 
-bool XULTreeGridCellAccessible::IsEditableCell() const {
+bool XULTreeGridCellAccessible::IsEditable() const {
   
   
   bool isEditable = false;

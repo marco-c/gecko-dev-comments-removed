@@ -88,6 +88,11 @@ enum CheckedState {
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;
 
+- (void)handleAccessibleTextChangeEvent:(NSString*)change
+                               inserted:(BOOL)isInserted
+                            inContainer:(mozilla::a11y::Accessible*)container
+                                     at:(int32_t)start;
+
 - (void)maybePostValidationErrorChanged;
 
 

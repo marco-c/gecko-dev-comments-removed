@@ -137,9 +137,6 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (BOOL)moxIsLiveRegion;
 
 
-- (BOOL)moxIsTextField;
-
-
 - (id<MOXAccessible>)moxFindAncestor:(BOOL (^)(id<MOXAccessible> moxAcc,
                                                BOOL* stop))findBlock;
 

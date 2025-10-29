@@ -543,10 +543,6 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   return NO;
 }
 
-- (BOOL)moxIsTextField {
-  return NO;
-}
-
 #pragma mark -
 
 
