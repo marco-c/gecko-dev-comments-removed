@@ -78,6 +78,9 @@ __declspec(dllexport) MOZ_NAKED void NearJump() {
       "jae label3;"
       "je  label3;"
       "jne label3;"
+      
+      
+      
 
       "label4:"
       "mov %0, %%rax;"
@@ -88,6 +91,44 @@ __declspec(dllexport) MOZ_NAKED void NearJump() {
 
       "label3:"
       "jmp label4;"
+      :
+      : "i"(JumpDestination));
+}
+
+__declspec(dllexport) MOZ_NAKED void NearJump2() {
+  asm volatile(
+      "js  label5;"
+      
+      
+
+      "label6:"
+      "mov %0, %%rax;"
+      "jmpq *%%rax;"
+
+      
+      PADDING_256_NOP
+
+      "label5:"
+      "jmp label6;"
+      :
+      : "i"(JumpDestination));
+}
+
+__declspec(dllexport) MOZ_NAKED void JumpWith8BitOffset() {
+  asm volatile(
+      "jae label7;"
+      "je  label7;"
+      "jne label7;"
+      "js  label7;"
+      
+      
+
+      "label8:"
+      "mov %0, %%rax;"
+      "jmpq *%%rax;"
+
+      "label7:"
+      "jmp label8;"
       :
       : "i"(JumpDestination));
 }
