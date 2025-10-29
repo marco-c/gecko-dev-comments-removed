@@ -8,22 +8,19 @@
 
 'use strict';
 
+
 promise_test(async t => {
   
-  
-  const createPromise = LanguageDetector.create();
-  await promise_rejects_dom(t, 'NotAllowedError', createPromise);
+  assert_implements_optional(await LanguageDetector.availability() == 'downloadable');
+  assert_false(navigator.userActivation.isActive);
+  await promise_rejects_dom(t, 'NotAllowedError', LanguageDetector.create());
+  await test_driver.bless('LanguageDetector.create', LanguageDetector.create);
 
   
-  await createLanguageDetector();
-
-  
-  const availability = await LanguageDetector.availability();
-  assert_equals(availability, 'available');
-
-  
+  assert_equals(await LanguageDetector.availability(), 'available');
+  assert_false(navigator.userActivation.isActive);
   await LanguageDetector.create();
-}, 'LanguageDetector.create() requires user activation when availability is "downloadable.');
+}, 'Create requires user activation when availability is "downloadable"');
 
 promise_test(async t => {
   const detector = await createLanguageDetector();
