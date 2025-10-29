@@ -2015,6 +2015,21 @@ bool WinUtils::MicaPopupsEnabled() {
   return !lf->NeedsMicaWorkaround();
 }
 
+static BOOL CALLBACK InvalidateWindowPreviewsProc(HWND aHwnd, LPARAM aLParam) {
+  if (RefPtr<nsWindow> window = WinUtils::GetNSWindowPtr(aHwnd)) {
+    RefPtr<nsITaskbarWindowPreview> taskbarPreview =
+        window->GetTaskbarPreview();
+    if (taskbarPreview) {
+      taskbarPreview->Invalidate();
+    }
+  }
+  return TRUE;
+}
+
+void WinUtils::InvalidateWindowPreviews() {
+  ::EnumWindows(InvalidateWindowPreviewsProc, 0);
+}
+
 
 
 

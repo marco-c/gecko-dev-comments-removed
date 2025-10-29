@@ -353,6 +353,7 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
 
     if (!strcmp(aTopic, "sessionstore-windows-restored")) {
       nsWindow::SetIsRestoringSession(false);
+      WinUtils::InvalidateWindowPreviews();
       
       obsServ->RemoveObserver(this, "sessionstore-windows-restored");
       return NS_OK;
