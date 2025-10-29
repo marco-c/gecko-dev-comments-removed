@@ -176,9 +176,28 @@ void GfxInfo::GetDeviceInfo() {
   }
 #endif
 
-  CFMutableDictionaryRef apv_dev_dict = IOServiceMatching("AppleParavirtGPU");
-  if (IOServiceGetMatchingServices(kIOMasterPortDefault, apv_dev_dict,
-                                   &io_iter) == kIOReturnSuccess) {
+  
+  
+  
+  
+  
+  
+  
+  
+  for (const char* className :
+       {"AppleParavirtGPU", "AppleParavirtGPUControl"}) {
+    CFMutableDictionaryRef apv_dev_dict = IOServiceMatching(className);
+    if (IOServiceGetMatchingServices(kIOMasterPortDefault, apv_dev_dict,
+                                     &io_iter) == kIOReturnSuccess) {
+      if (IOIteratorNext(io_iter) != IO_OBJECT_NULL) {
+        IOIteratorReset(io_iter);
+        break;
+      }
+      IOObjectRelease(io_iter);
+    }
+    io_iter = IO_OBJECT_NULL;
+  }
+  if (io_iter) {
     io_registry_entry_t entry = IO_OBJECT_NULL;
     while ((entry = IOIteratorNext(io_iter)) != IO_OBJECT_NULL) {
       CFTypeRef vendor_id_ref =
