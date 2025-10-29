@@ -272,7 +272,10 @@ void HeadlessWidget::ResizeInternal(int32_t aWidth, int32_t aHeight,
 }
 
 void HeadlessWidget::Resize(const DesktopRect& aRect, bool aRepaint) {
-  Move(aRect.TopLeft());
+  auto tl =
+      LayoutDeviceIntPoint::Round(aRect.TopLeft() * GetDesktopToDeviceScale());
+  
+  MoveInternal(tl.x, tl.y);
   Resize(aRect.Size(), aRepaint);
 }
 
