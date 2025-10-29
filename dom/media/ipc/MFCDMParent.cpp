@@ -662,12 +662,13 @@ static nsString GetRobustnessStringForKeySystem(const nsString& aKeySystem,
 
 
 
-static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
-                            const nsString& aKeySystem,
-                            const nsCString& aVideoCodec,
-                            const nsCString& aAudioCodec = nsCString(""),
-                            const nsString& aAdditionalFeatures = nsString(u""),
-                            bool aIsHWSecure = false) {
+static bool FactorySupports(
+    ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
+    ComPtr<IMFExtendedDRMTypeSupport>& aExtendedDrmTypeSupport,
+    const nsString& aKeySystem, const nsCString& aVideoCodec,
+    const nsCString& aAudioCodec = nsCString(""),
+    const nsString& aAdditionalFeatures = nsString(u""),
+    bool aIsHWSecure = false) {
   
   nsString contentType(u"video/mp4;codecs=\"");
   MOZ_ASSERT(!aVideoCodec.IsEmpty());
@@ -700,24 +701,19 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
   
   
   if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
-    ComPtr<IMFExtendedDRMTypeSupport> spDrmTypeSupport;
-    {
-      auto mediaEngineClassFactory = sMediaEngineClassFactory.Lock();
-      MFCDM_RETURN_BOOL_IF_FAILED(
-          (*mediaEngineClassFactory).As(&spDrmTypeSupport));
-    }
+    MOZ_ASSERT(aExtendedDrmTypeSupport);
     BSTR keySystem = aIsHWSecure
                          ? CreateBSTRFromConstChar(kPlayReadyKeySystemHardware)
                          : CreateBSTRFromConstChar(kPlayReadyKeySystemName);
     MF_MEDIA_ENGINE_CANPLAY canPlay;
-    spDrmTypeSupport->IsTypeSupportedEx(SysAllocString(contentType.get()),
-                                        keySystem, &canPlay);
+    aExtendedDrmTypeSupport->IsTypeSupportedEx(
+        SysAllocString(contentType.get()), keySystem, &canPlay);
     bool support =
         canPlay !=
         MF_MEDIA_ENGINE_CANPLAY::MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
-    MFCDM_PARENT_SLOG("IsTypeSupportedEx=%d (key-system=%ls, content-type=%s)",
-                      support, keySystem,
-                      NS_ConvertUTF16toUTF8(contentType).get());
+    MFCDM_PARENT_SLOG(
+        "IsTypeSupportedEx=%d, canPlay=%d (key-system=%ls, content-type=%s)",
+        support, canPlay, keySystem, NS_ConvertUTF16toUTF8(contentType).get());
     if (aIsHWSecure && support) {
       
       
@@ -792,14 +788,13 @@ static MF_MEDIA_ENGINE_CANPLAY RunHDCPSupportCheck(
                             getHDCPPolicyValue(aMinHdcpVersion));
   MOZ_ASSERT(!contentType.IsEmpty());
   ComPtr<IMFExtendedDRMTypeSupport> spDrmTypeSupport;
-  {
-    auto mediaEngineClassFactory = sMediaEngineClassFactory.Lock();
-    HRESULT rv = (*mediaEngineClassFactory).As(&spDrmTypeSupport);
-    if (FAILED(rv)) {
-      MFCDM_PARENT_SLOG("Failed to get IMFExtendedDRMTypeSupport!");
-      return MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
-    }
+  auto mediaEngineClassFactory = sMediaEngineClassFactory.Lock();
+  if (!*mediaEngineClassFactory ||
+      FAILED((*mediaEngineClassFactory).As(&spDrmTypeSupport))) {
+    MFCDM_PARENT_SLOG("Failed to get IMFExtendedDRMTypeSupport!");
+    return MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
   }
+
   
   nsCString keySystemWithoutPostfix =
       NS_ConvertUTF16toUTF8(MapKeySystem(aKeySystem));
@@ -966,11 +961,6 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
     return;
   }
 
-  ComPtr<IMFContentDecryptionModuleFactory> factory = aFactory;
-  if (!factory) {
-    RETURN_VOID_IF_FAILED(GetOrCreateFactory(aKeySystem, factory));
-  }
-
   auto capabilitiesUnlocked = sCapabilities.Lock();
   for (auto& capabilities : *capabilitiesUnlocked) {
     if (capabilities.keySystem().Equals(aKeySystem) &&
@@ -986,6 +976,19 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   MFCDM_PARENT_SLOG(
       "Query capabilities for %s from the factory (hardwareDecryption=%d)",
       NS_ConvertUTF16toUTF8(aKeySystem).get(), isHardwareDecryption);
+
+  ComPtr<IMFContentDecryptionModuleFactory> factory = aFactory;
+  if (!factory) {
+    RETURN_VOID_IF_FAILED(GetOrCreateFactory(aKeySystem, factory));
+  }
+
+  ComPtr<IMFExtendedDRMTypeSupport> spDrmTypeSupport;
+  auto mediaEngineClassFactory = sMediaEngineClassFactory.Lock();
+  if (!*mediaEngineClassFactory ||
+      FAILED((*mediaEngineClassFactory).As(&spDrmTypeSupport))) {
+    MFCDM_PARENT_SLOG("Failed to get IMFExtendedDRMTypeSupport!");
+    return;
+  }
 
   
   static auto convertCodecToFourCC =
@@ -1058,7 +1061,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         } else {
           additionalFeature.AppendLiteral(u"cbcs-clearlead,");
         }
-        bool rv = FactorySupports(factory, aKeySystem,
+        bool rv = FactorySupports(factory, spDrmTypeSupport, aKeySystem,
                                   convertCodecToFourCC(codec), nsCString(""),
                                   additionalFeature, isHardwareDecryption);
         MFCDM_PARENT_SLOG("clearlead %s IV 8 bytes %s %s",
@@ -1070,9 +1073,9 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         }
         
         additionalFeature.AppendLiteral(u"encryption-iv-size=16,");
-        rv = FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
-                             nsCString(""), additionalFeature,
-                             isHardwareDecryption);
+        rv = FactorySupports(factory, spDrmTypeSupport, aKeySystem,
+                             convertCodecToFourCC(codec), nsCString(""),
+                             additionalFeature, isHardwareDecryption);
         MFCDM_PARENT_SLOG("clearlead %s IV 16 bytes %s %s",
                           EnumValueToString(scheme), codec.get(),
                           rv ? "supported" : "not supported");
@@ -1107,7 +1110,8 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
           !StaticPrefs::media_hevc_enabled()) {
         continue;
       }
-      if (FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+      if (FactorySupports(factory, spDrmTypeSupport, aKeySystem,
+                          convertCodecToFourCC(codec),
                           KeySystemConfig::EMECodecString(""), nsString(u""),
                           isHardwareDecryption)) {
         MFCDMMediaCapability* c =
@@ -1121,7 +1125,8 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         MFCDM_PARENT_SLOG("%s: +video:%s (cenc)", __func__, codec.get());
         
         if (FactorySupports(
-                factory, aKeySystem, convertCodecToFourCC(codec),
+                factory, spDrmTypeSupport, aKeySystem,
+                convertCodecToFourCC(codec),
                 KeySystemConfig::EMECodecString(""),
                 nsString(u"encryption-type=cbcs,encryption-iv-size=16,"),
                 isHardwareDecryption)) {
@@ -1149,7 +1154,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
     
     
     
-    if (FactorySupports(factory, aKeySystem,
+    if (FactorySupports(factory, spDrmTypeSupport, aKeySystem,
                         convertCodecToFourCC(supportedVideoCodecs[0]),
                         convertCodecToFourCC(codec), nsString(u""),
                         false )) {
