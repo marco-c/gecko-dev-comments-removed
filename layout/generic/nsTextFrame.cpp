@@ -5786,7 +5786,7 @@ static gfxFloat ComputeDecorationLineOffset(
 
 
 static bool ComputeDecorationTrim(
-    const nsTextFrame* aFrame, const nsPresContext* aPresCtx,
+    nsTextFrame* aFrame, const nsPresContext* aPresCtx,
     const nsIFrame* aDecFrame, const gfxFont::Metrics& aMetrics,
     nsCSSRendering::DecorationRectParams& aParams) {
   const gfxFloat app = aPresCtx->AppUnitsPerDevPixel();
@@ -5826,34 +5826,59 @@ static bool ComputeDecorationTrim(
   if (wm.IsInlineReversed()) {
     std::swap(trimLeft, trimRight);
   }
-  const nsPoint offset = aFrame->GetOffsetTo(aDecFrame);
-  const nsSize decSize = aDecFrame->GetSize();
+
+  nsPoint offset;
+  nsSize containingSize;
   const nsSize size = aFrame->GetSize();
+  
+  
+  
+  
+  if (aDecFrame->IsInlineFrame()) {
+    offset = aFrame->GetOffsetTo(aDecFrame);
+    containingSize = aDecFrame->GetSize();
+  } else {
+    nsIFrame* const lineContainer = FindLineContainer(aFrame);
+    nsILineIterator* const iter = lineContainer->GetLineIterator();
+    const nsILineIterator::LineInfo lineInfo =
+        iter->GetLine(GetFrameLineNum(aFrame, iter)).unwrap();
+
+    offset = aFrame->GetOffsetTo(lineContainer);
+    offset -= lineInfo.mLineBounds.TopLeft();
+    containingSize = lineInfo.mLineBounds.Size();
+  }
+
   nscoord start, end, max;
   if (verticalDec) {
     start = offset.y;
     max = size.height;
-    end = decSize.height - (size.height + offset.y);
+    end = containingSize.height - (size.height + offset.y);
   } else {
     start = offset.x;
     max = size.width;
-    end = decSize.width - (size.width + offset.x);
+    end = containingSize.width - (size.width + offset.x);
   }
 
   const bool cloneDecBreak = aDecFrame->StyleBorder()->mBoxDecorationBreak ==
                              StyleBoxDecorationBreak::Clone;
   
   
-  bool applyLeft = cloneDecBreak || !aDecFrame->GetPrevContinuation();
-  bool applyRight = cloneDecBreak || !aDecFrame->GetNextContinuation();
+  bool applyLeft = cloneDecBreak || (!aFrame->GetPrevContinuation() &&
+                                     !aDecFrame->GetPrevContinuation());
+  bool applyRight = cloneDecBreak || (!aFrame->GetNextContinuation() &&
+                                      !aDecFrame->GetNextContinuation());
   if (wm.IsInlineReversed()) {
     std::swap(applyLeft, applyRight);
   }
   if (applyLeft) {
     trimLeft -= NSAppUnitsToDoublePixels(start, app);
+  } else {
+    trimLeft = 0;
   }
   if (applyRight) {
     trimRight -= NSAppUnitsToDoublePixels(end, app);
+  } else {
+    trimRight = 0;
   }
 
   if (trimLeft >= NSAppUnitsToDoublePixels(max, app) - trimRight) {
@@ -5871,10 +5896,10 @@ static bool ComputeDecorationTrim(
   
   
   
-  if (applyLeft && (trimLeft > 0.0 || start == 0)) {
+  if (trimLeft > 0.0 || start == 0) {
     aParams.trimLeft = trimLeft;
   }
-  if (applyRight && (trimRight > 0.0 || end == 0)) {
+  if (trimRight > 0.0 || end == 0) {
     aParams.trimRight = trimRight;
   }
   return true;
