@@ -3,8 +3,6 @@
 
 "use strict";
 
-do_get_profile();
-
 add_task(async function test_clear_fingerprinting_protection_state() {
   info("Enabling fingerprinting randomization");
   Services.prefs.setBoolPref("privacy.resistFingerprinting", true);

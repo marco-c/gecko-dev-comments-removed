@@ -13,7 +13,7 @@ const { ForgetAboutSite } = ChromeUtils.importESModule(
   "resource://gre/modules/ForgetAboutSite.sys.mjs"
 );
 
-do_get_profile(); 
+do_get_profile(true); 
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.cert_pinning.enforcement_level");

@@ -66,10 +66,6 @@ async function waitForDBSkipFlush() {
 
 add_setup(async function () {
   
-  
-  do_get_profile();
-
-  
   let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let dbFile = profileDir.clone();
   dbFile.append("bounce-tracking-protection.sqlite");

@@ -38,7 +38,7 @@ const RemoteSettingsUtils = Utils;
 updateAppInfo({ name: "XPCShell", version: "48", platformVersion: "48" });
 
 
-do_get_profile();
+do_get_profile(true);
 
 SearchTestUtils.init(this);
 

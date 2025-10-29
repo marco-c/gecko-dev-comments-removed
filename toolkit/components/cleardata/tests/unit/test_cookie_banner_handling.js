@@ -3,8 +3,6 @@
 
 "use strict";
 
-do_get_profile();
-
 add_setup(_ => {
   
   let cbs = Cc["@mozilla.org/cookie-banner-service;1"].getService(

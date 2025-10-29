@@ -2,7 +2,7 @@
 
 
 
-var profileDir = do_get_profile();
+var profileDir = do_get_profile(true);
 
 
 

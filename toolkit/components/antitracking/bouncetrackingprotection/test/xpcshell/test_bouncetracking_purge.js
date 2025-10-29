@@ -67,9 +67,6 @@ function assertEmpty() {
 }
 
 add_setup(function () {
-  
-  do_get_profile();
-
   Services.prefs.setIntPref(
     "privacy.bounceTrackingProtection.mode",
     Ci.nsIBounceTrackingProtection.MODE_ENABLED

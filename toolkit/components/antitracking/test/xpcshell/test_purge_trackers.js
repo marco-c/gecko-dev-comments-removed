@@ -43,6 +43,9 @@ async function setupTest(aCookieBehavior) {
 
   
   Services.prefs.setBoolPref("dom.storage.client_validation", false);
+
+  
+  do_get_profile(true);
 }
 
 
