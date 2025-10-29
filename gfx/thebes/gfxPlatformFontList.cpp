@@ -665,9 +665,7 @@ bool gfxPlatformFontList::InitFontList() {
   InitializeCodepointsWithNoFonts();
 
   
-  
-  if (StaticPrefs::gfx_e10s_font_list_shared_AtStartup() &&
-      !gfxPlatform::InSafeMode()) {
+  if (StaticPrefs::gfx_e10s_font_list_shared_AtStartup()) {
     for (const auto& entry : mFontEntries.Values()) {
       if (!entry) {
         continue;
