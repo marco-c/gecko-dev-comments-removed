@@ -109,18 +109,17 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   void SetText(const nsAString& aText, ErrorResult& aRv);
 
   int32_t Index();
-
- protected:
-  virtual ~HTMLOptionElement();
-
-  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
   
 
 
 
 
-  HTMLSelectElement* GetSelect();
+  HTMLSelectElement* GetSelect() const;
+
+ protected:
+  virtual ~HTMLOptionElement();
+
+  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged = false;
 

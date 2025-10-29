@@ -205,7 +205,7 @@ static bool SkipNode(const nsIContent* aContent) {
     
     
     if (const auto* option = HTMLOptionElement::FromNode(content)) {
-      auto* select = HTMLSelectElement::FromNodeOrNull(option->GetParent());
+      const auto* select = option->GetSelect();
       if (!select || select->IsCombobox()) {
         DEBUG_FIND_PRINTF("Skipping node: ");
         DumpNode(content);
