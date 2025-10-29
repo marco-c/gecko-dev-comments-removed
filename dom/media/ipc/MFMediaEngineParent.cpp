@@ -305,15 +305,6 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
       if (aResult == MSPR_E_NO_DECRYPTOR_AVAILABLE) {
         NotifyDisableHWDRM();
       }
-      
-      
-      
-      
-      
-      if (aResult == MF_E_POLICY_UNSUPPORTED) {
-        LOG("Ignore MF_E_POLICY_UNSUPPORTED, not a real decode error!");
-        return;
-      }
 #endif
       (void)SendNotifyError(error);
       return;
