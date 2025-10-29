@@ -1063,7 +1063,7 @@ RunMicroTask(JSContext* aCx, JS::MutableHandle<JS::MicroTask> task) {
     }
   }
 
-  if (incumbentGlobal && schedulingState) {
+  if (incumbentGlobal) {
     
     
     
@@ -1087,7 +1087,7 @@ RunMicroTask(JSContext* aCx, JS::MutableHandle<JS::MicroTask> task) {
 
   
   
-  if (incumbentGlobal && schedulingState) {
+  if (incumbentGlobal) {
     incumbentGlobal->SetWebTaskSchedulingState(nullptr);
   }
 
