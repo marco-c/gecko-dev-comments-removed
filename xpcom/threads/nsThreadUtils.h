@@ -35,6 +35,7 @@
 
 class MessageLoop;
 class nsIThread;
+class JSObject;
 
 
 
@@ -1840,6 +1841,7 @@ typedef LogTaskBase<PresShell> LogPresShellObserver;
 typedef LogTaskBase<dom::FrameRequestCallback> LogFrameRequestCallback;
 typedef LogTaskBase<dom::VideoFrameRequestCallback>
     LogVideoFrameRequestCallback;
+typedef LogTaskBase<JSObject> LogJSMicroTask;
 
 
 
