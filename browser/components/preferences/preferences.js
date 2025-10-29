@@ -380,6 +380,10 @@ async function gotoPref(
     
     
     
+
+    
+    
+    
     if (
       !(!document.location.hash && category == kDefaultCategoryInternalName)
     ) {
