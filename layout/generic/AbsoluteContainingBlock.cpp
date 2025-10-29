@@ -935,6 +935,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }
   }
 
+  
+  
+  bool isOverflowingCB = true;
+
   do {
     AutoFallbackStyleSetter fallback(aKidFrame, currentFallbackStyle);
     const nsRect usedCb = [&] {
@@ -1184,6 +1188,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
     if (usedCb.Contains(aKidFrame->GetRect()) && aStatus.IsComplete()) {
       
+      isOverflowingCB = false;
       break;
     }
 
@@ -1196,6 +1201,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     aKidFrame->AddStateBits(NS_FRAME_IS_DIRTY);
     aStatus.Reset();
   } while (true);
+
+  
+  
+  aKidFrame->AddOrRemoveStateBits(
+      NS_FRAME_POSITION_VISIBILITY_HIDDEN,
+      isOverflowingCB && aKidFrame->StylePosition()->mPositionVisibility ==
+                             StylePositionVisibility::NO_OVERFLOW);
 
   if (currentFallbackIndex) {
     aKidFrame->SetProperty(nsIFrame::LastSuccessfulPositionFallback(),
