@@ -667,7 +667,7 @@ void SheetLoadData::OnStartRequest(nsIRequest* aRequest) {
       ReferrerInfo::CreateForExternalCSSResources(
           mSheet, finalURI,
           nsContentUtils::GetReferrerPolicyFromChannel(channel));
-  mSheet->SetURIs(finalURI, originalURI, finalURI, referrerInfo, principal);
+  mSheet->SetURIs(originalURI, finalURI, referrerInfo, principal);
   mSheet->SetOriginClean([&] {
     if (mParentData && !mParentData->mSheet->IsOriginClean()) {
       return false;
@@ -755,7 +755,7 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
     const auto errorMessage = flag == nsIScriptError::errorFlag
                                   ? "MimeNotCss"_ns
                                   : "MimeNotCssWarn"_ns;
-    NS_ConvertUTF8toUTF16 sheetUri(mSheet->GetSheetURI()->GetSpecOrDefault());
+    NS_ConvertUTF8toUTF16 sheetUri(mURI->GetSpecOrDefault());
     NS_ConvertUTF8toUTF16 contentType16(contentType);
 
     nsAutoCString referrerSpec;
@@ -962,7 +962,7 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
       ReferrerInfo::CreateForExternalCSSResources(sheet, aURI);
   
   
-  sheet->SetURIs(aURI, aURI, aURI, referrerInfo, LoaderPrincipal());
+  sheet->SetURIs(aURI, aURI, referrerInfo, LoaderPrincipal());
   
   sheet->SetOriginClean(false);
   LOG(("  Needs parser"));
@@ -1798,9 +1798,6 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   
   
   nsIURI* baseURI = aInfo.mContent->GetBaseURI();
-  nsIURI* sheetURI = aInfo.mContent->OwnerDoc()->GetDocumentURI();
-  nsIURI* originalURI = nullptr;
-
   MOZ_ASSERT(aInfo.mIntegrity.IsEmpty());
   nsIPrincipal* loadingPrincipal = LoaderPrincipal();
   nsIPrincipal* principal = aInfo.mTriggeringPrincipal
@@ -1828,8 +1825,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
                                    SRIMetadata{});
     nsIReferrerInfo* referrerInfo =
         aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-    sheet->SetURIs(sheetURI, originalURI, baseURI, referrerInfo,
-                   sheetPrincipal);
+    sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
     
     
     

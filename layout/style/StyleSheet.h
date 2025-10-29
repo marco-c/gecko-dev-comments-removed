@@ -196,15 +196,13 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   bool IsInline() const { return !GetOriginalURI(); }
-
-  nsIURI* GetSheetURI() const { return mSheetURI; }
   
 
 
   nsIURI* GetOriginalURI() const { return mOriginalSheetURI; }
   nsIURI* GetBaseURI() const;
 
-  void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI, nsIURI* aBaseURI,
+  void SetURIs(nsIURI* aOriginalSheetURI, nsIURI* aBaseURI,
                nsIReferrerInfo* aReferrerInfo, nsIPrincipal* aPrincipal);
 
   void SetOriginClean(bool aValue) { Inner().mOriginClean = aValue; }
@@ -597,7 +595,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   RefPtr<dom::MediaList> mMedia;
 
   RefPtr<URLExtraData> mURLData;
-  RefPtr<nsIURI> mSheetURI;
   RefPtr<nsIURI> mOriginalSheetURI;
 
   

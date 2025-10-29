@@ -644,17 +644,6 @@ nsresult FontFaceSetImpl::LogMessage(gfxUserFontEntry* aUserFontEntry,
     Servo_FontFaceRule_GetSourceLocation(rule, &line, &column);
     
     
-#if 0
-    StyleSheet* sheet = rule->GetStyleSheet();
-    
-    if (sheet) {
-      nsCString spec = sheet->GetSheetURI()->GetSpecOrDefault();
-      CopyUTF8toUTF16(spec, href);
-    } else {
-      NS_WARNING("null parent stylesheet for @font-face rule");
-      href.AssignLiteral("unknown");
-    }
-#endif
     
   }
 
