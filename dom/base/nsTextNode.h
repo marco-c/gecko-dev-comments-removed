@@ -11,7 +11,6 @@
 
 
 
-#include "mozilla/Attributes.h"
 #include "mozilla/dom/Text.h"
 #include "nsDebug.h"
 
