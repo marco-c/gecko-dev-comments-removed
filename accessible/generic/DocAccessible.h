@@ -403,7 +403,9 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-  std::pair<nsPoint, nsRect> ComputeScrollData(const LocalAccessible* aAcc);
+
+  std::pair<nsPoint, nsRect> ComputeScrollData(
+      const LocalAccessible* aAcc, bool aShouldScaleByResolution = true);
 
   
 

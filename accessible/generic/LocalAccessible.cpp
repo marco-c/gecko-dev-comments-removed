@@ -3831,7 +3831,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::ScrollPosition && frame) {
-    const auto [scrollPosition, scrollRange] = mDoc->ComputeScrollData(this);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const auto [scrollPosition, scrollRange] =
+        mDoc->ComputeScrollData(this,  false);
     if (scrollRange.width || scrollRange.height) {
       
       
