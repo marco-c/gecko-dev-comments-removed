@@ -78,12 +78,21 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
                                 workarea.width * geometryScaleFactor,
                                 workarea.height * geometryScaleFactor);
 
+  LayoutDeviceIntRect rect;
   DesktopToLayoutDeviceScale contentsScale(1.0);
   CSSToLayoutDeviceScale defaultCssScale(geometryScaleFactor);
-  contentsScale.scale = geometryScaleFactor;
+  if (GdkIsX11Display()) {
+    GdkRectangle monitor;
+    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
+    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
+                               monitor.y * geometryScaleFactor,
+                               monitor.width * geometryScaleFactor,
+                               monitor.height * geometryScaleFactor);
+  } else {
+    
+    contentsScale.scale = geometryScaleFactor;
 
 #ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
     if (StaticPrefs::widget_wayland_fractional_scale_enabled()) {
       
       
@@ -101,21 +110,10 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
         contentsScale.scale = fractionalScale;
       }
     }
+#endif
     
     availRect.MoveTo(0, 0);
-  }
-#endif
-
-  
-  LayoutDeviceIntRect rect;
-  if (GdkIsX11Display()) {
-    GdkRectangle monitor;
-    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
-    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
-                               monitor.y * geometryScaleFactor,
-                               monitor.width * geometryScaleFactor,
-                               monitor.height * geometryScaleFactor);
-  } else {
+    
     rect = availRect;
   }
 
