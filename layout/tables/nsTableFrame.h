@@ -143,8 +143,9 @@ class nsTableFrame : public nsContainerFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsTableFrame)
 
-  typedef nsTArray<nsIFrame*> FrameTArray;
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PositionedTablePartArray, FrameTArray)
+  using TablePartsArray = nsTArray<nsContainerFrame*>;
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PositionedTablePartsProperty,
+                                      TablePartsArray)
 
   
   friend class nsTableWrapperFrame;
@@ -185,13 +186,11 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-  
-  
   static void PositionedTablePartMaybeChanged(
-      nsIFrame*, mozilla::ComputedStyle* aOldStyle);
+      nsContainerFrame*, mozilla::ComputedStyle* aOldStyle);
 
   
-  static void MaybeUnregisterPositionedTablePart(nsIFrame* aFrame);
+  static void MaybeUnregisterPositionedTablePart(nsContainerFrame* aFrame);
 
   
 
