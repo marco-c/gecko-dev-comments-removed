@@ -20,31 +20,26 @@ using namespace mozilla::psm;
 
 using mozilla::dom::Promise;
 
-class VerifyQWACTask : public mozilla::CryptoTask {
+class Verify1QWACTask : public mozilla::CryptoTask {
  public:
-  VerifyQWACTask(nsIX509CertDB::QWACType aType, nsIX509Cert* aCert,
-                 const nsACString& aHostname,
-                 const nsTArray<RefPtr<nsIX509Cert>>& aCollectedCerts,
-                 RefPtr<Promise>& aPromise)
-      : mType(aType),
-        mCert(aCert),
-        mHostname(aHostname),
+  Verify1QWACTask(nsIX509Cert* aCert,
+                  const nsTArray<RefPtr<nsIX509Cert>>& aCollectedCerts,
+                  RefPtr<Promise>& aPromise)
+      : mCert(aCert),
         mCollectedCerts(aCollectedCerts.Clone()),
-        mPromise(new nsMainThreadPtrHolder<Promise>("VerifyQWACTask::mPromise",
+        mPromise(new nsMainThreadPtrHolder<Promise>("Verify1QWACTask::mPromise",
                                                     aPromise)),
-        mVerified(false) {}
+        mVerifiedAs1QWAC(false) {}
 
  private:
   virtual nsresult CalculateResult() override;
   virtual void CallCallback(nsresult rv) override;
 
-  nsIX509CertDB::QWACType mType;
   RefPtr<nsIX509Cert> mCert;
-  nsCString mHostname;
   nsTArray<RefPtr<nsIX509Cert>> mCollectedCerts;
   nsMainThreadPtrHandle<Promise> mPromise;
 
-  bool mVerified;
+  bool mVerifiedAs1QWAC;
 };
 
 
@@ -56,7 +51,7 @@ class VerifyQWACTask : public mozilla::CryptoTask {
 
 
 
-bool CertHasQWACSQCStatements(Input cert) {
+bool CertHasQWACSQCStatements(const nsTArray<uint8_t>& certDER) {
   using namespace mozilla::pkix::der;
 
   
@@ -71,6 +66,10 @@ bool CertHasQWACSQCStatements(Input cert) {
   static const uint8_t id_etsi_qct_web[] = {0x04, 0x00, 0x8e, 0x46,
                                             0x01, 0x06, 0x03};
 
+  Input cert;
+  if (cert.Init(certDER.Elements(), certDER.Length()) != Success) {
+    return false;
+  }
   BackCert backCert(cert, EndEntityOrCA::MustBeEndEntity, nullptr);
   if (backCert.Init() != Success) {
     return false;
@@ -128,17 +127,30 @@ bool CertHasQWACSQCStatements(Input cert) {
   if (rv != Success) {
     return false;
   }
-  if (!qcStatements.AtEnd()) {
-    return false;
-  }
   return foundQCComplianceStatement && foundQCTypeStatementWithWebType;
 }
 
 
 
-bool CertHasPolicyFrom(Input cert, const nsTArray<Input>& policies) {
+
+
+bool CertHas1QWACPolicy(const nsTArray<uint8_t>& certDER) {
   using namespace mozilla::pkix::der;
 
+  
+  
+  
+  static const uint8_t qevcp_w[] = {0x04, 0x00, 0x8b, 0xec, 0x40, 0x01, 0x04};
+
+  
+  
+  
+  static const uint8_t qncp_w[] = {0x04, 0x00, 0x8b, 0xec, 0x40, 0x01, 0x05};
+
+  Input cert;
+  if (cert.Init(certDER.Elements(), certDER.Length()) != Success) {
+    return false;
+  }
   BackCert backCert(cert, EndEntityOrCA::MustBeEndEntity, nullptr);
   if (backCert.Init() != Success) {
     return false;
@@ -154,7 +166,7 @@ bool CertHasPolicyFrom(Input cert, const nsTArray<Input>& policies) {
   
   
   
-  bool foundPolicy = false;
+  bool found1QWACPolicy = false;
   mozilla::pkix::Result rv =
       NestedOf(certificatePolicies, SEQUENCE, SEQUENCE, EmptyAllowed::No,
                [&](Reader& policyInformationContents) {
@@ -164,178 +176,57 @@ bool CertHasPolicyFrom(Input cert, const nsTArray<Input>& policies) {
                  if (rv != Success) {
                    return rv;
                  }
-                 for (const auto& policy : policies) {
-                   if (policyIdentifier.MatchRest(policy)) {
-                     foundPolicy = true;
-                   }
+                 if (policyIdentifier.MatchRest(qevcp_w) ||
+                     policyIdentifier.MatchRest(qncp_w)) {
+                   found1QWACPolicy = true;
                  }
                  return Success;
                });
   if (rv != Success) {
     return false;
   }
-  if (!certificatePolicies.AtEnd()) {
-    return false;
-  }
-  return foundPolicy;
+  return found1QWACPolicy;
 }
 
-
-
-
-
-bool CertHas1QWACPolicy(Input cert) {
-  
-  
-  
-  static const uint8_t qevcp_w[] = {0x04, 0x00, 0x8b, 0xec, 0x40, 0x01, 0x04};
-
-  
-  
-  
-  static const uint8_t qncp_w[] = {0x04, 0x00, 0x8b, 0xec, 0x40, 0x01, 0x05};
-
-  return CertHasPolicyFrom(cert, {Input(qevcp_w), Input(qncp_w)});
-}
-
-
-
-
-
-bool CertHas2QWACPolicy(Input cert) {
-  
-  
-  
-  
-  static const uint8_t qevcp_w_gen[] = {0x04, 0x00, 0x8b, 0xec,
-                                        0x40, 0x01, 0x06};
-
-  return CertHasPolicyFrom(cert, {Input(qevcp_w_gen)});
-}
-
-
-
-
-
-
-
-
-
-
-
-bool CertOnlyHasTLSBindingEKU(Input cert) {
-  using namespace mozilla::pkix::der;
-
-  
-  
-  
-  
-  
-  
-  static const uint8_t id_kp_tls_binding[] = {0x04, 0x00, 0x8b, 0xec,
-                                              0x43, 0x01, 0x00};
-
-  BackCert backCert(cert, EndEntityOrCA::MustBeEndEntity, nullptr);
-  if (backCert.Init() != Success) {
-    return false;
-  }
-  const Input* ekuInput(backCert.GetExtKeyUsage());
-  if (!ekuInput) {
-    return false;
-  }
-  Reader eku(*ekuInput);
-  
-  
-  
-  
-  
-  
-  mozilla::pkix::Result rv = Nested(eku, SEQUENCE, OIDTag, [&](Reader& r) {
-    if (r.MatchRest(id_kp_tls_binding)) {
-      return Success;
-    }
-    return mozilla::pkix::Result::ERROR_INADEQUATE_CERT_TYPE;
-  });
-  if (rv != Success) {
-    return false;
-  }
-  return eku.AtEnd();
-}
-
-nsresult VerifyQWACTask::CalculateResult() {
+nsresult Verify1QWACTask::CalculateResult() {
   mozilla::psm::QWACTrustDomain trustDomain(mCollectedCerts);
   nsTArray<uint8_t> certDER;
   nsresult rv = mCert->GetRawDER(certDER);
   if (NS_FAILED(rv)) {
     return rv;
   }
+  if (!CertHasQWACSQCStatements(certDER)) {
+    return NS_OK;
+  }
+  if (!CertHas1QWACPolicy(certDER)) {
+    return NS_OK;
+  }
   Input cert;
   if (cert.Init(certDER.Elements(), certDER.Length()) != Success) {
     return NS_ERROR_FAILURE;
   }
-  if (!CertHasQWACSQCStatements(cert)) {
-    return NS_OK;
-  }
-  if (mType == nsIX509CertDB::QWACType::OneQWAC) {
-    if (!CertHas1QWACPolicy(cert)) {
-      return NS_OK;
-    }
-  } else if (mType == nsIX509CertDB::QWACType::TwoQWAC) {
-    if (!CertHas2QWACPolicy(cert)) {
-      return NS_OK;
-    }
-    if (!CertOnlyHasTLSBindingEKU(cert)) {
-      return NS_OK;
-    }
-  } else {
-    MOZ_ASSERT_UNREACHABLE("unhandled QWAC type");
-    return NS_ERROR_FAILURE;
-  }
-
   if (BuildCertChain(trustDomain, cert, Now(), EndEntityOrCA::MustBeEndEntity,
                      KeyUsage::noParticularKeyUsageRequired,
                      KeyPurposeId::anyExtendedKeyUsage, CertPolicyId::anyPolicy,
                      nullptr) != Success) {
     return NS_OK;
   }
-
-  
-  
-  
-  
-  Input hostname;
-  if (hostname.Init(
-          BitwiseCast<const uint8_t*, const char*>(mHostname.BeginReading()),
-          mHostname.Length()) != Success) {
-    return NS_OK;
-  }
-  
-  
-  
-  
-  
-  
-  if (CheckCertHostname(cert, hostname) != Success) {
-    return NS_OK;
-  }
-
-  mVerified = true;
+  mVerifiedAs1QWAC = true;
   return NS_OK;
 }
 
-void VerifyQWACTask::CallCallback(nsresult rv) {
+void Verify1QWACTask::CallCallback(nsresult rv) {
   if (NS_FAILED(rv)) {
     mPromise->MaybeReject(rv);
   } else {
-    mPromise->MaybeResolve(mVerified);
+    mPromise->MaybeResolve(mVerifiedAs1QWAC);
   }
 }
 
 NS_IMETHODIMP
-nsNSSCertificateDB::AsyncVerifyQWAC(
-    QWACType aType, nsIX509Cert* aCert, const nsACString& aHostname,
-    const nsTArray<RefPtr<nsIX509Cert>>& aCollectedCerts, JSContext* aCx,
-    mozilla::dom::Promise** aPromise) {
+nsNSSCertificateDB::AsyncVerify1QWAC(
+    nsIX509Cert* aCert, const nsTArray<RefPtr<nsIX509Cert>>& aCollectedCerts,
+    JSContext* aCx, mozilla::dom::Promise** aPromise) {
   NS_ENSURE_ARG_POINTER(aCx);
 
   nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aCx);
@@ -348,8 +239,8 @@ nsNSSCertificateDB::AsyncVerifyQWAC(
     return result.StealNSResult();
   }
 
-  RefPtr<VerifyQWACTask> task(
-      new VerifyQWACTask(aType, aCert, aHostname, aCollectedCerts, promise));
+  RefPtr<Verify1QWACTask> task(
+      new Verify1QWACTask(aCert, aCollectedCerts, promise));
   nsresult rv = task->Dispatch();
   if (NS_FAILED(rv)) {
     return rv;
