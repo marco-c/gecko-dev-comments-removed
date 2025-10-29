@@ -15,6 +15,7 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TelemetryComms.h"
+#include "mozilla/Unused.h"
 #include "nsBaseHashtable.h"
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h"
@@ -313,12 +314,16 @@ class ScalarBase {
   virtual ~ScalarBase() = default;
 
   
-  virtual void SetValue(uint32_t aValue) { (void)HandleUnsupported(); }
+  virtual void SetValue(uint32_t aValue) {
+    mozilla::Unused << HandleUnsupported();
+  }
   virtual ScalarResult SetValue(const nsAString& aValue) {
     return HandleUnsupported();
   }
-  virtual void SetValue(bool aValue) { (void)HandleUnsupported(); }
-  virtual void AddValue(uint32_t aValue) { (void)HandleUnsupported(); }
+  virtual void SetValue(bool aValue) { mozilla::Unused << HandleUnsupported(); }
+  virtual void AddValue(uint32_t aValue) {
+    mozilla::Unused << HandleUnsupported();
+  }
 
   
   virtual nsresult GetValue(const nsACString& aStoreName, bool aClearStore,
@@ -1316,7 +1321,7 @@ void internal_BroadcastDefinitions(
 
   
   for (auto parent : parents) {
-    (void)parent->SendAddDynamicScalars(scalarDefs);
+    mozilla::Unused << parent->SendAddDynamicScalars(scalarDefs);
   }
 }
 

@@ -1056,7 +1056,7 @@ nsresult PrototypeDocumentContentSink::ExecuteScript(
   
   
   JS::Rooted<JS::Value> rval(cx);
-  (void)JS_ExecuteScript(cx, scriptObject, &rval);
+  Unused << JS_ExecuteScript(cx, scriptObject, &rval);
 
   return NS_OK;
 }

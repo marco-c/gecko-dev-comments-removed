@@ -159,7 +159,7 @@ nsresult CacheIOThread::Init() {
   
   
   
-  self.forget().leak();
+  Unused << self.forget().take();
 
   return NS_OK;
 }

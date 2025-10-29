@@ -1864,7 +1864,7 @@ class MOZ_STACK_CLASS AutoEditorDOMPointChildInvalidator final {
   explicit AutoEditorDOMPointChildInvalidator(EditorDOMPoint& aPoint)
       : mPoint(aPoint), mCanceled(false) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
-    (void)mPoint.Offset();
+    Unused << mPoint.Offset();
   }
 
   ~AutoEditorDOMPointChildInvalidator() {

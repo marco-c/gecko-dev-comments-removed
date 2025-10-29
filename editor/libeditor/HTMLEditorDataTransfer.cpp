@@ -228,7 +228,7 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
   
   
   
-  (void)pointToInsert.Offset();
+  Unused << pointToInsert.Offset();
   EditorDOMPoint pointToPutCaret;
   for (nsCOMPtr<nsIContent> contentToInsert = documentFragment->GetFirstChild();
        contentToInsert; contentToInsert = documentFragment->GetFirstChild()) {
@@ -685,8 +685,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
       streamStartParent ? EditorRawDOMPoint(streamEndParent, streamEndOffset)
                         : EditorRawDOMPoint::AtEndOf(fragmentAsNode);
 
-  (void)streamStartPoint;
-  (void)streamEndPoint;
+  Unused << streamStartPoint;
+  Unused << streamEndPoint;
 
   HTMLWithContextInserter::CollectTopMostChildContentsCompletelyInRange(
       EditorRawDOMPoint(streamStartParent,

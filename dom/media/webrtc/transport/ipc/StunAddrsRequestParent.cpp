@@ -190,7 +190,7 @@ void StunAddrsRequestParent::SendStunAddrs_m(const NrIceStunAddrArray& addrs) {
   }
 
   
-  (void)SendOnStunAddrsAvailable(addrs);
+  Unused << SendOnStunAddrsAvailable(addrs);
 }
 
 void StunAddrsRequestParent::OnQueryComplete_m(
@@ -203,7 +203,7 @@ void StunAddrsRequestParent::OnQueryComplete_m(
   }
 
   
-  (void)SendOnMDNSQueryComplete(hostname, address);
+  Unused << SendOnMDNSQueryComplete(hostname, address);
 }
 
 StaticRefPtr<StunAddrsRequestParent::MDNSServiceWrapper>

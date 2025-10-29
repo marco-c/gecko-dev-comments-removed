@@ -32,8 +32,8 @@ NSSKeyStore::NSSKeyStore() {
     
     return;
   }
-  (void)EnsureNSSInitializedChromeOrContent();
-  (void)InitToken();
+  Unused << EnsureNSSInitializedChromeOrContent();
+  Unused << InitToken();
 }
 NSSKeyStore::~NSSKeyStore() = default;
 

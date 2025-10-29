@@ -41,6 +41,7 @@
 #include "mozilla/ChaosMode.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsThreadSyncDispatch.h"
@@ -618,7 +619,7 @@ nsresult nsThread::Init(const nsACString& aName) {
     }
 
     
-    (void)initData.release();
+    Unused << initData.release();
 
     
     

@@ -12,6 +12,7 @@
 #include "mozilla/EventQueue.h"
 #include "mozilla/MaybeLeakRefPtr.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -251,7 +252,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
     
     LogRunnable::Run log(event);
-    (void)event->Run();
+    Unused << event->Run();
 
     
     event = nullptr;
@@ -292,7 +293,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
     MOZ_ASSERT(!NS_IsMainThread());
 #ifdef DEBUG
     bool onBaseTarget = false;
-    (void)mBaseTarget->IsOnCurrentThread(&onBaseTarget);
+    Unused << mBaseTarget->IsOnCurrentThread(&onBaseTarget);
     MOZ_ASSERT(!onBaseTarget);
 #endif
 

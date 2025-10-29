@@ -13,6 +13,7 @@
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Unused.h"
 #include "nsDNSPrefetch.h"
 #include "nsEscape.h"
 #include "nsHttpTransaction.h"
@@ -222,7 +223,7 @@ TRRServiceChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   rv = MaybeResolveProxyAndBeginConnect();
   if (NS_FAILED(rv)) {
-    (void)AsyncAbort(rv);
+    Unused << AsyncAbort(rv);
   }
 
   return NS_OK;
@@ -246,7 +247,7 @@ nsresult TRRServiceChannel::MaybeResolveProxyAndBeginConnect() {
 
   rv = BeginConnect();
   if (NS_FAILED(rv)) {
-    (void)AsyncAbort(rv);
+    Unused << AsyncAbort(rv);
   }
 
   return NS_OK;
@@ -346,7 +347,7 @@ TRRServiceChannel::OnProxyAvailable(nsICancelable* request, nsIChannel* channel,
   }
 
   if (NS_FAILED(rv)) {
-    (void)AsyncAbort(rv);
+    Unused << AsyncAbort(rv);
   }
   return rv;
 }
@@ -370,7 +371,7 @@ nsresult TRRServiceChannel::BeginConnect() {
   }
 
   
-  (void)NS_WARN_IF(NS_FAILED(mURI->GetUsername(mUsername)));
+  Unused << NS_WARN_IF(NS_FAILED(mURI->GetUsername(mUsername)));
 
   
   if (host.IsEmpty()) {
@@ -455,7 +456,7 @@ nsresult TRRServiceChannel::BeginConnect() {
   }
 
   
-  (void)gHttpHandler->AddConnectionHeader(&mRequestHead, mCaps);
+  Unused << gHttpHandler->AddConnectionHeader(&mRequestHead, mCaps);
 
   
   
@@ -811,7 +812,7 @@ void TRRServiceChannel::AfterApplyContentConversions(
   }
 
   if (NS_FAILED(aResult)) {
-    (void)AsyncAbort(aResult);
+    Unused << AsyncAbort(aResult);
     return;
   }
 
@@ -847,7 +848,7 @@ void TRRServiceChannel::ProcessAltService(
   }
 
   nsCString altSvc;
-  (void)mResponseHead->GetHeader(nsHttp::Alternate_Service, altSvc);
+  Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, altSvc);
   if (altSvc.IsEmpty()) {
     return;
   }
@@ -1379,7 +1380,7 @@ TRRServiceChannel::ResumeAt(uint64_t aStartPos, const nsACString& aEntityID) {
 }
 
 void TRRServiceChannel::DoAsyncAbort(nsresult aStatus) {
-  (void)AsyncAbort(aStatus);
+  Unused << AsyncAbort(aStatus);
 }
 
 NS_IMETHODIMP

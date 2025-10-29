@@ -11,6 +11,7 @@
 #include "js/Utility.h"  
 #include "mozilla/Base64.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileReaderSyncBinding.h"
 #include "mozilla/dom/WorkerPrivate.h"

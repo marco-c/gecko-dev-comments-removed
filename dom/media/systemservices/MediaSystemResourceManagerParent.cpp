@@ -5,6 +5,7 @@
 
 #include "MediaSystemResourceManagerParent.h"
 
+#include "mozilla/Unused.h"
 #include "mozilla/layers/PImageBridgeParent.h"
 
 namespace mozilla::media {
@@ -27,7 +28,7 @@ mozilla::ipc::IPCResult MediaSystemResourceManagerParent::RecvAcquire(
     MOZ_ASSERT(!request);
     if (request) {
       
-      (void)SendResponse(aId, false );
+      mozilla::Unused << SendResponse(aId, false );
       return;
     }
 

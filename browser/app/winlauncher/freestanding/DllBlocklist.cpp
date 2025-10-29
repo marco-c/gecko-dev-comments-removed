@@ -456,7 +456,7 @@ MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
       
       
       
-      (void)SharedSection::AddDependentModule(sectionFileName);
+      Unused << SharedSection::AddDependentModule(sectionFileName);
 
       bool attemptToBlockViaRedirect;
 #if defined(NIGHTLY_BUILD)

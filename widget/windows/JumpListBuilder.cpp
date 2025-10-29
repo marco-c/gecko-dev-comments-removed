@@ -502,7 +502,7 @@ void JumpListBuilder::DoCheckForRemovals(
 
   
   
-  (void)mJumpListBackend->AbortList();
+  Unused << mJumpListBackend->AbortList();
 
   nsTArray<nsString> urisToRemove;
   RefPtr<IObjectArray> objArray;
@@ -520,7 +520,7 @@ void JumpListBuilder::DoCheckForRemovals(
   RemoveIconCacheAndGetJumplistShortcutURIs(objArray, urisToRemove);
 
   
-  (void)mJumpListBackend->AbortList();
+  Unused << mJumpListBackend->AbortList();
 
   errorHandler.release();
 
@@ -556,7 +556,7 @@ void JumpListBuilder::DoPopulateJumpList(
 
   
   
-  (void)mJumpListBackend->AbortList();
+  Unused << mJumpListBackend->AbortList();
 
   nsTArray<nsString> urisToRemove;
   RefPtr<IObjectArray> objArray;

@@ -67,7 +67,7 @@ H265NALU::H265NALU(const uint8_t* aData, uint32_t aByteSize)
     : mNALU(aData, aByteSize) {
   
   BitReader reader(aData, aByteSize * 8);
-  (void)reader.ReadBit();  
+  Unused << reader.ReadBit();  
   mNalUnitType = reader.ReadBits(6);
   mNuhLayerId = reader.ReadBits(6);
   mNuhTemporalIdPlus1 = reader.ReadBits(3);
@@ -125,15 +125,15 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
       ((uint64_t)(flagHigh) << 16) | (uint64_t)(flagLow);
 
   hvcc.general_level_idc = reader.ReadBits(8);
-  (void)reader.ReadBits(4);  
+  Unused << reader.ReadBits(4);  
   hvcc.min_spatial_segmentation_idc = reader.ReadBits(12);
-  (void)reader.ReadBits(6);  
+  Unused << reader.ReadBits(6);  
   hvcc.parallelismType = reader.ReadBits(2);
-  (void)reader.ReadBits(6);  
+  Unused << reader.ReadBits(6);  
   hvcc.chroma_format_idc = reader.ReadBits(2);
-  (void)reader.ReadBits(5);  
+  Unused << reader.ReadBits(5);  
   hvcc.bit_depth_luma_minus8 = reader.ReadBits(3);
-  (void)reader.ReadBits(5);  
+  Unused << reader.ReadBits(5);  
   hvcc.bit_depth_chroma_minus8 = reader.ReadBits(3);
   hvcc.avgFrameRate = reader.ReadBits(16);
   hvcc.constantFrameRate = reader.ReadBits(2);
@@ -142,7 +142,7 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
   hvcc.lengthSizeMinusOne = reader.ReadBits(2);
   const uint8_t numOfArrays = reader.ReadBits(8);
   for (uint8_t idx = 0; idx < numOfArrays; idx++) {
-    (void)reader.ReadBits(2);  
+    Unused << reader.ReadBits(2);  
     const uint8_t nalUnitType = reader.ReadBits(6);
     const uint16_t numNalus = reader.ReadBits(16);
     LOGV("nalu-type=%u, nalu-num=%u", nalUnitType, numNalus);
@@ -160,7 +160,7 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
           aExtraData->Elements() + reader.BitCount() / 8;
       H265NALU nalu(currentPtr, nalUnitLength);
       uint32_t nalBitsLength = nalUnitLength * 8;
-      (void)reader.AdvanceBits(nalBitsLength);
+      Unused << reader.AdvanceBits(nalBitsLength);
       
       
       if (nalu.IsSPS() || nalu.IsPPS() || nalu.IsVPS() || nalu.IsSEI()) {
@@ -370,7 +370,7 @@ Result<H265SPS, nsresult> H265::DecodeSPSFromSPSNALU(const H265NALU& aSPSNALU) {
   }
 
   
-  (void)reader.ReadBits(2);
+  Unused << reader.ReadBits(2);
 
   sps.pcm_enabled_flag = reader.ReadBit();
   if (sps.pcm_enabled_flag) {
@@ -415,9 +415,9 @@ Result<H265SPS, nsresult> H265::DecodeSPSFromSPSNALU(const H265NALU& aSPSNALU) {
     num_long_term_ref_pics_sps = reader.ReadUE();
     IN_RANGE_OR_RETURN(num_long_term_ref_pics_sps, 0, kMaxLongTermRefPicSets);
     for (auto i = 0; i < num_long_term_ref_pics_sps; i++) {
-      (void)reader.ReadBits(sps.log2_max_pic_order_cnt_lsb_minus4 +
-                            4);  
-      (void)reader.ReadBit();    
+      Unused << reader.ReadBits(sps.log2_max_pic_order_cnt_lsb_minus4 +
+                                4);  
+      Unused << reader.ReadBit();    
     }
   }
   sps.sps_temporal_mvp_enabled_flag = reader.ReadBit();
@@ -473,10 +473,10 @@ Result<Ok, nsresult> H265::ParseProfileTierLevel(
     aProfile.general_non_packed_constraint_flag = aReader.ReadBit();
     aProfile.general_frame_only_constraint_flag = aReader.ReadBit();
     
-    (void)aReader.ReadBits(32);
-    (void)aReader.ReadBits(11);
+    Unused << aReader.ReadBits(32);
+    Unused << aReader.ReadBits(11);
     
-    (void)aReader.ReadBit();
+    Unused << aReader.ReadBit();
   }
   aProfile.general_level_idc = aReader.ReadBits(8);
 
@@ -490,27 +490,27 @@ Result<Ok, nsresult> H265::ParseProfileTierLevel(
   if (aMaxNumSubLayersMinus1 > 0) {
     for (auto i = aMaxNumSubLayersMinus1; i < 8; i++) {
       
-      (void)aReader.ReadBits(2);
+      Unused << aReader.ReadBits(2);
     }
   }
   for (auto i = 0; i < aMaxNumSubLayersMinus1; i++) {
     if (sub_layer_profile_present_flag[i]) {
       
-      (void)aReader.ReadBits(8);
+      Unused << aReader.ReadBits(8);
       
-      (void)aReader.ReadBits(32);
+      Unused << aReader.ReadBits(32);
       
       
       
-      (void)aReader.ReadBits(4);
+      Unused << aReader.ReadBits(4);
       
-      (void)aReader.ReadBits(32);
-      (void)aReader.ReadBits(11);
+      Unused << aReader.ReadBits(32);
+      Unused << aReader.ReadBits(11);
       
-      (void)aReader.ReadBit();
+      Unused << aReader.ReadBit();
     }
     if (sub_layer_level_present_flag[i]) {
-      (void)aReader.ReadBits(8);  
+      Unused << aReader.ReadBits(8);  
     }
   }
   return Ok();
@@ -608,14 +608,14 @@ Result<Ok, nsresult> H265::ParseAndIgnoreScalingListData(BitReader& aReader) {
          matrixIdx += (sizeIdx == 3) ? 3 : 1) {
       const auto scaling_list_pred_mode_flag = aReader.ReadBit();
       if (!scaling_list_pred_mode_flag) {
-        (void)aReader.ReadUE();  
+        Unused << aReader.ReadUE();  
       } else {
         int32_t coefNum = std::min(64, (1 << (4 + (sizeIdx << 1))));
         if (sizeIdx > 1) {
-          (void)aReader.ReadSE();  
+          Unused << aReader.ReadSE();  
         }
         for (auto i = 0; i < coefNum; i++) {
-          (void)aReader.ReadSE();  
+          Unused << aReader.ReadSE();  
         }
       }
     }
@@ -791,12 +791,12 @@ Result<Ok, nsresult> H265::ParseVuiParameters(BitReader& aReader,
 
   const auto overscan_info_present_flag = aReader.ReadBit();
   if (overscan_info_present_flag) {
-    (void)aReader.ReadBit();  
+    Unused << aReader.ReadBit();  
   }
 
   const auto video_signal_type_present_flag = aReader.ReadBit();
   if (video_signal_type_present_flag) {
-    (void)aReader.ReadBits(3);  
+    Unused << aReader.ReadBits(3);  
     vui->video_full_range_flag = aReader.ReadBit();
     const auto colour_description_present_flag = aReader.ReadBit();
     if (colour_description_present_flag) {
@@ -808,13 +808,13 @@ Result<Ok, nsresult> H265::ParseVuiParameters(BitReader& aReader,
 
   const auto chroma_loc_info_present_flag = aReader.ReadBit();
   if (chroma_loc_info_present_flag) {
-    (void)aReader.ReadUE();  
-    (void)aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
   }
 
   
   
-  (void)aReader.ReadBits(3);
+  Unused << aReader.ReadBits(3);
 
   const auto default_display_window_flag = aReader.ReadBit();
   if (default_display_window_flag) {
@@ -850,11 +850,11 @@ Result<Ok, nsresult> H265::ParseVuiParameters(BitReader& aReader,
 
   const auto vui_timing_info_present_flag = aReader.ReadBit();
   if (vui_timing_info_present_flag) {
-    (void)aReader.ReadU32();  
-    (void)aReader.ReadU32();  
+    Unused << aReader.ReadU32();  
+    Unused << aReader.ReadU32();  
     const auto vui_poc_proportional_to_timing_flag = aReader.ReadBit();
     if (vui_poc_proportional_to_timing_flag) {
-      (void)aReader.ReadUE();  
+      Unused << aReader.ReadUE();  
     }
     const auto vui_hrd_parameters_present_flag = aReader.ReadBit();
     if (vui_hrd_parameters_present_flag) {
@@ -871,12 +871,12 @@ Result<Ok, nsresult> H265::ParseVuiParameters(BitReader& aReader,
   if (bitstream_restriction_flag) {
     
     
-    (void)aReader.ReadBits(3);
-    (void)aReader.ReadUE();  
-    (void)aReader.ReadUE();  
-    (void)aReader.ReadUE();  
-    (void)aReader.ReadUE();  
-    (void)aReader.ReadUE();  
+    Unused << aReader.ReadBits(3);
+    Unused << aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
   }
   return Ok();
 }
@@ -895,22 +895,22 @@ Result<Ok, nsresult> H265::ParseAndIgnoreHrdParameters(
     if (nal_hrd_parameters_present_flag || vcl_hrd_parameters_present_flag) {
       sub_pic_hrd_params_present_flag = aReader.ReadBit();
       if (sub_pic_hrd_params_present_flag) {
-        (void)aReader.ReadBits(8);  
+        Unused << aReader.ReadBits(8);  
         
-        (void)aReader.ReadBits(5);
+        Unused << aReader.ReadBits(5);
         
-        (void)aReader.ReadBits(1);
-        (void)aReader.ReadBits(5);  
+        Unused << aReader.ReadBits(1);
+        Unused << aReader.ReadBits(5);  
       }
 
-      (void)aReader.ReadBits(4);  
-      (void)aReader.ReadBits(4);  
+      Unused << aReader.ReadBits(4);  
+      Unused << aReader.ReadBits(4);  
       if (sub_pic_hrd_params_present_flag) {
-        (void)aReader.ReadBits(4);  
+        Unused << aReader.ReadBits(4);  
       }
-      (void)aReader.ReadBits(5);  
-      (void)aReader.ReadBits(5);  
-      (void)aReader.ReadBits(5);  
+      Unused << aReader.ReadBits(5);  
+      Unused << aReader.ReadBits(5);  
+      Unused << aReader.ReadBits(5);  
     }
   }
   for (int i = 0; i <= aMaxNumSubLayersMinus1; i++) {
@@ -921,7 +921,7 @@ Result<Ok, nsresult> H265::ParseAndIgnoreHrdParameters(
     }
     bool low_delay_hrd_flag = false;
     if (fixed_pic_rate_within_cvs_flag) {
-      (void)aReader.ReadUE();  
+      Unused << aReader.ReadUE();  
     } else {
       low_delay_hrd_flag = aReader.ReadBit();
     }
@@ -955,13 +955,13 @@ Result<Ok, nsresult> H265::ParseAndIgnoreSubLayerHrdParameters(
     BitReader& aReader, int aCpbCnt, bool aSubPicHrdParamsPresentFlag) {
   
   for (auto i = 0; i < aCpbCnt; i++) {
-    (void)aReader.ReadUE();  
-    (void)aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
+    Unused << aReader.ReadUE();  
     if (aSubPicHrdParamsPresentFlag) {
-      (void)aReader.ReadUE();  
-      (void)aReader.ReadUE();  
+      Unused << aReader.ReadUE();  
+      Unused << aReader.ReadUE();  
     }
-    (void)aReader.ReadBit();  
+    Unused << aReader.ReadBit();  
   }
   return Ok();
 }
@@ -1256,20 +1256,20 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::ExtractHVCCExtraData(
     uint32_t nalLen = 0;
     switch (nalLenSize) {
       case 1:
-        (void)reader.ReadU8().map(
+        Unused << reader.ReadU8().map(
             [&](uint8_t x) mutable { return nalLen = x; });
         break;
       case 2:
-        (void)reader.ReadU16().map(
+        Unused << reader.ReadU16().map(
             [&](uint16_t x) mutable { return nalLen = x; });
         break;
       case 3:
-        (void)reader.ReadU24().map(
+        Unused << reader.ReadU24().map(
             [&](uint32_t x) mutable { return nalLen = x; });
         break;
       default:
         MOZ_DIAGNOSTIC_ASSERT(nalLenSize == 4);
-        (void)reader.ReadU32().map(
+        Unused << reader.ReadU32().map(
             [&](uint32_t x) mutable { return nalLen = x; });
         break;
     }
@@ -1561,20 +1561,20 @@ Result<bool, nsresult> H265::IsKeyFrame(const mozilla::MediaRawData* aSample) {
     uint32_t nalLen = 0;
     switch (nalLenSize) {
       case 1:
-        (void)reader.ReadU8().map(
+        Unused << reader.ReadU8().map(
             [&](uint8_t x) mutable { return nalLen = x; });
         break;
       case 2:
-        (void)reader.ReadU16().map(
+        Unused << reader.ReadU16().map(
             [&](uint16_t x) mutable { return nalLen = x; });
         break;
       case 3:
-        (void)reader.ReadU24().map(
+        Unused << reader.ReadU24().map(
             [&](uint32_t x) mutable { return nalLen = x; });
         break;
       default:
         MOZ_DIAGNOSTIC_ASSERT(nalLenSize == 4);
-        (void)reader.ReadU32().map(
+        Unused << reader.ReadU32().map(
             [&](uint32_t x) mutable { return nalLen = x; });
         break;
     }

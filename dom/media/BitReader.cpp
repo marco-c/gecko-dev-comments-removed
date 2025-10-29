@@ -6,6 +6,7 @@
 
 #include "BitReader.h"
 
+#include "mozilla/Unused.h"
 #include "nsStringFwd.h"
 
 namespace mozilla {
@@ -207,7 +208,7 @@ size_t BitReader::AdvanceBits(size_t aNum) {
   while (temp > 0) {
     uint32_t readBits = temp > 32 ? 32 : temp;
     
-    (void)ReadBits(readBits);
+    Unused << ReadBits(readBits);
     temp -= readBits;
   }
   return advanceBits;

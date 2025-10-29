@@ -1512,7 +1512,7 @@ class CrossExecTransferManager final {
   AutoVirtualProtect Protect(void* aLocalAddress, size_t aLength,
                              DWORD aProtFlags) {
     
-    (void)EnsureRemoteImagebase();
+    Unused << EnsureRemoteImagebase();
     return AutoVirtualProtect(LocalExecToRemoteExec(aLocalAddress), aLength,
                               aProtFlags, mRemoteProcess);
   }

@@ -99,8 +99,8 @@ StorageAccessPermissionRequest::MaybeDelayAutomaticGrants() {
       p->Reject(false, __func__);
     } else {
       
-      timer.forget().leak();
-      promise.forget().leak();
+      Unused << timer.forget();
+      Unused << promise.forget();
     }
   } else {
     p->Resolve(false, __func__);

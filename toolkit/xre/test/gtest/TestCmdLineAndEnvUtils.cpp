@@ -418,7 +418,7 @@ TEST(CmdLineAndEnvUtils, ensureSafe)
     TestCommandLine(result, cl, NoOptionalArgs);
   }
   for (auto const& [_unused, data] : kCommandLinesOpt) {
-    (void)_unused;  
+    MOZ_UNUSED(_unused);  
     CommandLine const cl(data);
     TestCommandLine(FAIL, cl, NoOptionalArgs);
   }

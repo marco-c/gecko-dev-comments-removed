@@ -713,7 +713,7 @@ void ImageDocument::ResetZoomLevel() {
 
   if (RefPtr<BrowsingContext> bc = GetBrowsingContext()) {
     
-    (void)bc->SetFullZoom(mOriginalZoomLevel);
+    Unused << bc->SetFullZoom(mOriginalZoomLevel);
   }
 }
 

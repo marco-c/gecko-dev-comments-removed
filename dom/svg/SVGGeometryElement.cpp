@@ -187,7 +187,7 @@ bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
 bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
   
   
-  (void)GetPrimaryFrame(FlushType::Layout);
+  Unused << GetPrimaryFrame(FlushType::Layout);
 
   RefPtr<Path> path = GetOrBuildPathForHitTest();
   if (!path) {
@@ -298,7 +298,7 @@ float SVGGeometryElement::GetTotalLength() {
 void SVGGeometryElement::FlushIfNeeded() {
   FlushType flushType =
       GeometryDependsOnCoordCtx() ? FlushType::Layout : FlushType::Style;
-  (void)GetPrimaryFrame(flushType);
+  Unused << GetPrimaryFrame(flushType);
 }
 
 }  

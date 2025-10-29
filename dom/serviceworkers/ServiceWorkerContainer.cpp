@@ -288,7 +288,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
   
   
   
-  (void)GetGlobalIfValid(aRv, [&](nsIGlobalObject* aGlobal) {
+  Unused << GetGlobalIfValid(aRv, [&](nsIGlobalObject* aGlobal) {
     AutoTArray<nsString, 1> param;
     CopyUTF8toUTF16(cleanedScopeURL, *param.AppendElement());
     aGlobal->ReportToConsole(nsIScriptError::errorFlag, "Service Workers"_ns,
@@ -510,7 +510,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
             
             
             
-            (void)self->GetGlobalIfValid(rv);
+            Unused << self->GetGlobalIfValid(rv);
             if (!rv.Failed()) {
               outer->MaybeResolveWithUndefined();
               return;

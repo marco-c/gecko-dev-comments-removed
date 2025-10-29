@@ -54,7 +54,7 @@ ipc::IPCResult VerifySSLServerCertChild::RecvOnVerifySSLServerCertFinished(
   if (NS_FAILED(rv)) {
     
     
-    mResultTask.forget().leak();
+    Unused << mResultTask.forget();
   }
   return IPC_OK();
 }
@@ -114,7 +114,7 @@ SECStatus RemoteProcessCertVerification(
            dcInfo = std::move(dcInfo), providerFlags(aProviderFlags),
            certVerifierFlags(aCertVerifierFlags)](
               net::SocketProcessBackgroundChild* aActor) mutable {
-            (void)aActor->SendInitVerifySSLServerCert(
+            Unused << aActor->SendInitVerifySSLServerCert(
                 std::move(endpoint), peerCertBytes, hostName, port,
                 originAttributes, stapledOCSPResponse, sctsFromTLSExtension,
                 dcInfo, providerFlags, certVerifierFlags);

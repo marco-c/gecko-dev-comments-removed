@@ -85,7 +85,7 @@ BounceTrackingProtection::GetSingleton() {
     RunOnShutdown([] {
       if (sBounceTrackingProtection &&
           sBounceTrackingProtection->mRemoteExceptionList) {
-        (void)sBounceTrackingProtection->mRemoteExceptionList->Shutdown();
+        Unused << sBounceTrackingProtection->mRemoteExceptionList->Shutdown();
       }
       sBounceTrackingProtection = nullptr;
     });
@@ -1018,7 +1018,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                   
                   
                   
-                  (void)NimbusFeatures::RecordExposureEvent(
+                  Unused << NimbusFeatures::RecordExposureEvent(
                       "bounceTrackingProtection"_ns, false);
 
                   if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==

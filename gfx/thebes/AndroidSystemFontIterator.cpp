@@ -6,6 +6,7 @@
 #include "AndroidSystemFontIterator.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Unused.h"
 #include "nsDebug.h"
 
 namespace mozilla {
@@ -20,7 +21,7 @@ AndroidSystemFontIterator::AndroidSystemFontIterator()
 void AndroidSystemFontIterator::Preload() {
   
   AndroidSystemFontIterator iterator;
-  (void)iterator;
+  Unused << iterator;
 }
 
 Maybe<AndroidFont> AndroidSystemFontIterator::Next() {

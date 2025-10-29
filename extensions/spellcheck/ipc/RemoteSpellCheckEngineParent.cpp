@@ -4,6 +4,7 @@
 
 
 #include "RemoteSpellCheckEngineParent.h"
+#include "mozilla/Unused.h"
 #include "mozilla/mozSpellChecker.h"
 #include "nsServiceManagerUtils.h"
 

@@ -34,6 +34,7 @@
 #include <sys/sysctl.h>
 
 using mozilla::StaticMutexAutoLock;
+using mozilla::Unused;
 using namespace nsMacUtilsImpl;
 
 static mozilla::LazyLogModule sMacUtilsLog("macutils");
@@ -208,7 +209,7 @@ bool nsMacUtilsImpl::IsTCSMAvailable() {
     
     
     
-    (void)sTCSMStatus.compareExchange(TCSM_Unknown, newStatus);
+    Unused << sTCSMStatus.compareExchange(TCSM_Unknown, newStatus);
   }
   return (sTCSMStatus == TCSM_Available);
 }

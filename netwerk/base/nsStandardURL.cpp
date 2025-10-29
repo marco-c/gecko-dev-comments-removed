@@ -350,7 +350,7 @@ void nsStandardURL::InitGlobalObjects() {
   
   nsCOMPtr<nsIURLParser> parser = net_GetStdURLParser();
   MOZ_DIAGNOSTIC_ASSERT(parser);
-  (void)parser;
+  Unused << parser;
 }
 
 void nsStandardURL::ShutdownGlobalObjects() {
@@ -1717,7 +1717,7 @@ nsresult nsStandardURL::SetPassword(const nsACString& input) {
     if (password.IsEmpty()) {
       MOZ_DIAGNOSTIC_ASSERT(this->Password().IsEmpty());
     }
-    (void)this;  
+    Unused << this;  
   });
 
   auto onExitGuard = MakeScopeExit([&] { SanityCheck(); });
@@ -1873,7 +1873,7 @@ nsresult nsStandardURL::SetHostPort(const nsACString& aValue) {
     return NS_OK;
   }
 
-  (void)SetPort(port);
+  Unused << SetPort(port);
   return NS_OK;
 }
 
@@ -3391,7 +3391,7 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  (void)isMutable;
+  Unused << isMutable;
 
   bool supportsFileURL;
   rv = stream->ReadBoolean(&supportsFileURL);

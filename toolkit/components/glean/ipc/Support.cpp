@@ -11,11 +11,13 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/ipc/ByteBuf.h"
+#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
 
 using mozilla::AppShutdown;
 using mozilla::RunOnShutdown;
 using mozilla::ShutdownPhase;
+using mozilla::Unused;
 using mozilla::glean::FlushFOGData;
 using mozilla::glean::SendFOGData;
 using mozilla::ipc::ByteBuf;
@@ -66,7 +68,7 @@ void FOG_IPCPayloadFull() {
   
   
   
-  (void)NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(
+  Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(
       NS_NewRunnableFunction("FOG IPC Payload getting full", [] {
         FlushFOGData([](ByteBuf&& aBuf) { SendFOGData(std::move(aBuf)); });
       }))));

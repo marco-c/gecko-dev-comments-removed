@@ -31,7 +31,7 @@ nsresult ScriptResponseHeaderProcessor::ProcessCrossOriginEmbedderPolicyHeader(
     
     
     
-    (void)NS_WARN_IF(!aWorkerPrivate->MatchEmbedderPolicy(aPolicy));
+    Unused << NS_WARN_IF(!aWorkerPrivate->MatchEmbedderPolicy(aPolicy));
   }
 
   return NS_OK;

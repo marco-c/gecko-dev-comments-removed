@@ -130,7 +130,7 @@ void VRProcessManager::OnProcessLaunchComplete(VRProcessParent* aParent) {
   
   
   for (const mozilla::dom::Pref& pref : mQueuedPrefs) {
-    (void)NS_WARN_IF(!mVRChild->SendPreferenceUpdate(pref));
+    Unused << NS_WARN_IF(!mVRChild->SendPreferenceUpdate(pref));
   }
   mQueuedPrefs.Clear();
 

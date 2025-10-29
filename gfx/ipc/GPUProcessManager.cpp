@@ -175,7 +175,7 @@ void GPUProcessManager::NotifyObserve(const char* aTopic,
   } else if (!strcmp(aTopic, "application-foreground")) {
     mAppInForeground = true;
     if (!mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-      (void)LaunchGPUProcess();
+      Unused << LaunchGPUProcess();
     }
   } else if (!strcmp(aTopic, "application-background")) {
     mAppInForeground = false;
@@ -646,7 +646,7 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   
   
   for (const mozilla::dom::Pref& pref : mQueuedPrefs) {
-    (void)NS_WARN_IF(!mGPUChild->SendPreferenceUpdate(pref));
+    Unused << NS_WARN_IF(!mGPUChild->SendPreferenceUpdate(pref));
   }
   mQueuedPrefs.Clear();
 
@@ -1089,7 +1089,7 @@ void GPUProcessManager::HandleProcessLost() {
 #else
     {
 #endif
-      (void)LaunchGPUProcess();
+      Unused << LaunchGPUProcess();
     }
   } else {
     

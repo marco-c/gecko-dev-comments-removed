@@ -59,7 +59,7 @@ void FileSystemBackgroundRequestHandler::Shutdown() {
     
     
     
-    (void)mCreateFileSystemManagerChildPromiseHolder.Steal();
+    Unused << mCreateFileSystemManagerChildPromiseHolder.Steal();
   }
 }
 

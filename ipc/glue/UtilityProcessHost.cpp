@@ -212,7 +212,7 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
         std::move(policy), GetActor()->OtherPid(), brokerFd.ref());
     
     
-    (void)NS_WARN_IF(mSandboxBroker == nullptr);
+    Unused << NS_WARN_IF(mSandboxBroker == nullptr);
     MOZ_ASSERT(brokerFd.ref().IsValid());
   }
 #endif  
@@ -223,10 +223,10 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
   isReadyForBackgroundProcessing = dllSvc->IsReadyForBackgroundProcessing();
 #endif
 
-  (void)GetActor()->SendInit(brokerFd, Telemetry::CanRecordReleaseData(),
-                             isReadyForBackgroundProcessing);
+  Unused << GetActor()->SendInit(brokerFd, Telemetry::CanRecordReleaseData(),
+                                 isReadyForBackgroundProcessing);
 
-  (void)GetActor()->SendInitProfiler(
+  Unused << GetActor()->SendInitProfiler(
       ProfilerParent::CreateForProcess(GetActor()->OtherPid()));
 
   LOGD("[%p] UtilityProcessHost::InitAfterConnect succeeded", this);

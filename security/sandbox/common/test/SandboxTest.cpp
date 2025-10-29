@@ -77,7 +77,7 @@ void InitializeSandboxTestingActors(
 
   
   
-  (void)aActor->SendInitSandboxTesting(std::move(sandboxTestingChildEnd));
+  Unused << aActor->SendInitSandboxTesting(std::move(sandboxTestingChildEnd));
   
   
   NS_DispatchToMainThread(NS_NewRunnableFunction(
