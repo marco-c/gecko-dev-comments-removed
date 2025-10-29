@@ -612,6 +612,41 @@ public class ContentBlocking {
 
 
 
+    public @NonNull Boolean getSafeBrowsingV5Enabled() {
+      final SafeBrowsingProvider provider = mSafeBrowsingProviders.get("google5");
+      if (provider == null) {
+        return false;
+      }
+
+      final Boolean enabled = provider.getEnabled();
+      if (enabled == null) {
+        return false;
+      }
+
+      return enabled;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setSafeBrowsingV5Enabled(final boolean enabled) {
+      final SafeBrowsingProvider provider = mSafeBrowsingProviders.get("google5");
+      if (provider == null) {
+        return this;
+      }
+
+      provider.mEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
 
 
     public @NonNull String[] getSafeBrowsingPhishingTable() {
@@ -1489,11 +1524,7 @@ public class ContentBlocking {
       mAdvisoryName = new Pref<>(ROOT + mName + ".advisoryName", null);
       mDataSharingUrl = new Pref<>(ROOT + mName + ".dataSharingURL", null);
       mDataSharingEnabled = new Pref<>(ROOT + mName + ".dataSharing.enabled", false);
-      if (mName.equals("google5")) {
-        mEnabled = new Pref<>(ROOT + mName + ".enabled", BuildConfig.NIGHTLY_BUILD);
-      } else {
-        mEnabled = new Pref<>(ROOT + mName + ".enabled", false);
-      }
+      mEnabled = new Pref<>(ROOT + mName + ".enabled", null);
 
       if (source != null) {
         updatePrefs(source);
