@@ -1956,6 +1956,14 @@ void Navigation::CreateNavigationActivationFrom(
                                                  oldEntry, aNavigationType);
 }
 
+
+void Navigation::SetSerializedStateIntoOngoingAPIMethodTracker(
+    nsIStructuredCloneContainer* aSerializedState) {
+  MOZ_DIAGNOSTIC_ASSERT(mOngoingAPIMethodTracker);
+  
+  mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+}
+
 }  
 
 #undef LOG_FMTV
