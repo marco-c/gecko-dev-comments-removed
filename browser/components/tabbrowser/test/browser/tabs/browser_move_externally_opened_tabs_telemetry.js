@@ -6,16 +6,6 @@
 let resetTelemetry = async () => {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
-  
-  
-  
-  Services.fog.applyServerKnobsConfig(
-    JSON.stringify({
-      metrics_enabled: {
-        "browser.ui.interaction.tab_movement": true,
-      },
-    })
-  );
 };
 
 
