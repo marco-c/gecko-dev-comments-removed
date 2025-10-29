@@ -117,6 +117,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
       uint64_t aInnerWindowId, bool* aRetry);
 
+  
+  
+  
   bool CreateContentBridges(
       mozilla::ipc::EndpointProcInfo aOtherProcess,
       mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutCompositor,

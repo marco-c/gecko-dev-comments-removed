@@ -2785,7 +2785,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   GPUProcessManager* gpm = GPUProcessManager::Get();
-  gpm->EnsureGPUReady();
+  nsresult gpuReadyRv = gpm->EnsureGPUReady();
   
   gfxPlatform::GetPlatform()->BuildContentDeviceData(
       &xpcomInit.contentDeviceData());
@@ -2911,7 +2911,8 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   Endpoint<PRemoteMediaManagerChild> videoManager;
   AutoTArray<uint32_t, 3> namespaces;
 
-  if (!gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
+  if (NS_FAILED(gpuReadyRv) ||
+      !gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
                                  &imageBridge, &vrBridge, &videoManager,
                                  mChildID, &namespaces)) {
     
