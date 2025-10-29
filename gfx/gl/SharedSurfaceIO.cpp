@@ -7,7 +7,6 @@
 
 #include "GLContextCGL.h"
 #include "MozFramebuffer.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"
