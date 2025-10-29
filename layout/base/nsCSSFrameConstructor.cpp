@@ -9708,7 +9708,6 @@ void nsCSSFrameConstructor::ProcessChildren(
         if (markerFrame == childFrame) {
           if (isOutsideMarker) {
             
-            
             aFrameList.RemoveFrame(childFrame);
             auto* grandParent = listItem->GetParent()->GetParent();
             if (listItem->Style()->GetPseudoType() ==
