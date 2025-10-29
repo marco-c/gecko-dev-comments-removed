@@ -85,7 +85,8 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
  private:
   ~nsPlainTextSerializer();
 
-  nsresult GetAttributeValue(const nsAtom* aName, nsString& aValueRet) const;
+  nsresult GetAttributeValue(mozilla::dom::Element* aElement,
+                             const nsAtom* aName, nsString& aValueRet) const;
   void AddToLine(const char16_t* aStringToAdd, int32_t aLength);
 
   void MaybeWrapAndOutputCompleteLines();
@@ -109,7 +110,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   bool IsElementPreformatted() const;
   bool IsInOL() const;
   bool IsInOlOrUl() const;
-  bool IsCurrentNodeConverted() const;
+  bool IsCurrentNodeConverted(mozilla::dom::Element* aElement) const;
   bool MustSuppressLeaf() const;
 
   
@@ -117,15 +118,17 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
 
   static nsAtom* GetIdForContent(nsIContent* aContent);
-  nsresult DoOpenContainer(const nsAtom* aTag);
-  void OpenContainerForOutputFormatted(const nsAtom* aTag);
-  nsresult DoCloseContainer(const nsAtom* aTag);
-  void CloseContainerForOutputFormatted(const nsAtom* aTag);
-  nsresult DoAddLeaf(const nsAtom* aTag);
+  nsresult DoOpenContainer(mozilla::dom::Element* aElement, const nsAtom* aTag);
+  void OpenContainerForOutputFormatted(mozilla::dom::Element* aElement,
+                                       const nsAtom* aTag);
+  nsresult DoCloseContainer(mozilla::dom::Element* aElement,
+                            const nsAtom* aTag);
+  void CloseContainerForOutputFormatted(mozilla::dom::Element* aElement,
+                                        const nsAtom* aTag);
+  nsresult DoAddLeaf(mozilla::dom::Element* aElement, const nsAtom* aTag);
 
-  void DoAddText();
-  
-  void DoAddText(bool aIsLineBreak, const nsAString& aText);
+  void DoAddText(const nsAString& aText);
+  void DoAddLineBreak();
 
   inline bool DoOutput() const { return mHeadLevel == 0; }
 
@@ -150,7 +153,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   static bool IsCssBlockLevelElement(mozilla::dom::Element* aElement);
 
  private:
-  uint32_t mHeadLevel;
+  uint32_t mHeadLevel = 0;
 
   class Settings {
    public:
@@ -323,7 +326,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  bool mHasWrittenCiteBlockquote;
+  bool mHasWrittenCiteBlockquote = false;
 
   int32_t mFloatingLines;  
 
@@ -343,7 +346,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  bool mLineBreakDue;
+  bool mLineBreakDue = false;
 
   bool mPreformattedBlockBoundary;
 
@@ -352,8 +355,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
 
 
 
-
-  RefPtr<mozilla::dom::Element> mElement;
 
   
   AutoTArray<bool, 8> mHasWrittenCellsForRow;
@@ -391,7 +392,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
   
   
   
-  uint32_t mIgnoredChildNodeLevel;
+  uint32_t mIgnoredChildNodeLevel = 0;
 };
 
 nsresult NS_NewPlainTextSerializer(nsIContentSerializer** aSerializer);

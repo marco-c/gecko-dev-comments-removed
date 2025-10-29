@@ -142,7 +142,7 @@ class FragmentOrElement : public nsIContent {
   
 
 
-  static bool IsHTMLVoid(nsAtom* aLocalName);
+  static bool IsHTMLVoid(const nsAtom* aLocalName);
 
  protected:
   virtual ~FragmentOrElement();
