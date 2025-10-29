@@ -1862,8 +1862,10 @@ static AbortReason IonCompile(JSContext* cx, HandleScript script,
 
 static void AssertBaselineFrameCanEnterIon(JSContext* cx,
                                            BaselineFrame* frame) {
-  MOZ_ASSERT(!frame->isDebuggerEvalFrame());
+  MOZ_ASSERT(jit::IsIonEnabled(cx));
   MOZ_ASSERT(!frame->isEvalFrame());
+  MOZ_ASSERT(frame->script()->canIonCompile());
+  MOZ_ASSERT(!frame->script()->isIonCompilingOffThread());
 
   
   
@@ -2094,13 +2096,9 @@ MethodStatus jit::CanEnterIon(JSContext* cx, RunState& state) {
 
 static MethodStatus BaselineCanEnterAtEntry(JSContext* cx, HandleScript script,
                                             BaselineFrame* frame) {
-  MOZ_ASSERT(jit::IsIonEnabled(cx));
-  MOZ_ASSERT(script->canIonCompile());
-  MOZ_ASSERT(!script->isIonCompilingOffThread());
+  AssertBaselineFrameCanEnterIon(cx, frame);
   MOZ_ASSERT(!script->hasIonScript());
   MOZ_ASSERT(frame->isFunctionFrame());
-
-  AssertBaselineFrameCanEnterIon(cx, frame);
 
   if (script->baselineScript()->hasPendingIonCompileTask()) {
     LinkIonScript(cx, script);
@@ -2126,25 +2124,13 @@ static MethodStatus BaselineCanEnterAtEntry(JSContext* cx, HandleScript script,
 static MethodStatus BaselineCanEnterAtBranch(JSContext* cx, HandleScript script,
                                              BaselineFrame* osrFrame,
                                              jsbytecode* pc) {
-  MOZ_ASSERT(jit::IsIonEnabled(cx));
+  AssertBaselineFrameCanEnterIon(cx, osrFrame);
   MOZ_ASSERT((JSOp)*pc == JSOp::LoopHead);
-
-  
-  if (!script->canIonCompile()) {
-    return Method_Skipped;
-  }
-
-  
-  if (script->isIonCompilingOffThread()) {
-    return Method_Skipped;
-  }
 
   
   if (!JitOptions.osr) {
     return Method_Skipped;
   }
-
-  AssertBaselineFrameCanEnterIon(cx, osrFrame);
 
   
   
