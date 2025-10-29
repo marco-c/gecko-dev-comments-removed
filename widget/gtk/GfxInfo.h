@@ -18,7 +18,6 @@ class GfxInfo final : public GfxInfoBase {
  public:
   
   
-  NS_IMETHOD GetD2DEnabled(bool* aD2DEnabled) override;
   NS_IMETHOD GetDWriteEnabled(bool* aDWriteEnabled) override;
   NS_IMETHOD GetDWriteVersion(nsAString& aDwriteVersion) override;
   NS_IMETHOD GetEmbeddedInFirefoxReality(

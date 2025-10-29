@@ -15,6 +15,7 @@
 #include "nsServiceManagerUtils.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 
 namespace mozilla {
@@ -134,11 +135,6 @@ GfxInfo::GfxInfo()
       mSDKVersion(0) {}
 
 GfxInfo::~GfxInfo() {}
-
-
-
-
-nsresult GfxInfo::GetD2DEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
 
 nsresult GfxInfo::GetDWriteEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
 

@@ -48,11 +48,8 @@ async function run_test() {
   await promiseStartupManager();
 
   function checkBlocklist() {
-    var status = gfxInfo.getFeatureStatusStr("DIRECT2D");
-    Assert.equal(status, "BLOCKED_DRIVER_VERSION");
-
     
-    status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS");
+    var status = gfxInfo.getFeatureStatusStr("DIRECT3D_9_LAYERS");
     Assert.equal(status, "STATUS_OK");
 
     do_test_finished();

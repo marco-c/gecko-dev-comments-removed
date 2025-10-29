@@ -46,24 +46,6 @@ static void AssertNotWin32kLockdown() {
                         "Invalid Windows GfxInfo API with Win32k lockdown");
 }
 
-
-
-
-nsresult GfxInfo::GetD2DEnabled(bool* aEnabled) {
-  
-  
-  if (!gfxPlatform::Initialized()) {
-    *aEnabled = false;
-    return NS_OK;
-  }
-
-  
-  
-  
-  *aEnabled = gfx::gfxConfig::IsEnabled(gfx::Feature::DIRECT2D);
-  return NS_OK;
-}
-
 nsresult GfxInfo::GetDWriteEnabled(bool* aEnabled) {
   *aEnabled = gfxWindowsPlatform::GetPlatform()->DWriteEnabled();
   return NS_OK;
@@ -1374,42 +1356,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
                               nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,      \
                               DRIVER_LESS_THAN, driverVer, ruleId)
 
-#define IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(winVer, devFamily, driverVer,     \
-                                             ruleId)                           \
-  APPEND_TO_DRIVER_BLOCKLIST2(winVer, devFamily, nsIGfxInfo::FEATURE_DIRECT2D, \
-                              nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,      \
-                              DRIVER_BUILD_ID_LESS_THAN, driverVer, ruleId)
-
-    IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(OperatingSystem::Windows7,
-                                         DeviceFamily::IntelGMA500, 2026,
-                                         "FEATURE_FAILURE_594877_7");
-    IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(
-        OperatingSystem::Windows7, DeviceFamily::IntelGMA900,
-        GfxDriverInfo::allDriverVersions, "FEATURE_FAILURE_594877_8");
-    IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(OperatingSystem::Windows7,
-                                         DeviceFamily::IntelGMA950, 1930,
-                                         "FEATURE_FAILURE_594877_9");
-    IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(OperatingSystem::Windows7,
-                                         DeviceFamily::IntelGMA3150, 2117,
-                                         "FEATURE_FAILURE_594877_10");
-    IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(OperatingSystem::Windows7,
-                                         DeviceFamily::IntelGMAX3000, 1930,
-                                         "FEATURE_FAILURE_594877_11");
-    IMPLEMENT_INTEL_DRIVER_BLOCKLIST_D2D(
-        OperatingSystem::Windows7, DeviceFamily::IntelHDGraphicsToSandyBridge,
-        2202, "FEATURE_FAILURE_594877_12");
-
-    
-
-
-
-
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::IntelGMAX4500HD,
-        nsIGfxInfo::FEATURE_DIRECT2D, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
-        "FEATURE_FAILURE_1180379");
-
     IMPLEMENT_INTEL_DRIVER_BLOCKLIST(
         OperatingSystem::Windows7, DeviceFamily::IntelGMA500, V(5, 0, 0, 2026),
         "FEATURE_FAILURE_INTEL_16");
@@ -1466,16 +1412,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
 
 
 
-    APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows7,
-                                DeviceFamily::IntelHaswell,
-                                nsIGfxInfo::FEATURE_DIRECT2D,
-                                nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-                                DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL, 4578,
-                                "FEATURE_FAILURE_BUG_1432610");
-    
-
-
-
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows8_1, DeviceFamily::IntelHaswell,
         nsIGfxInfo::FEATURE_VP8_HW_DECODE, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
@@ -1491,33 +1427,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
 
 
     APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows7, DeviceFamily::IntelMobileHDGraphics,
-        nsIGfxInfo::FEATURE_DIRECT2D,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN_OR_EQUAL,
-        V(8, 15, 10, 2302), "FEATURE_FAILURE_BUG_806786");
-
-    
-
-
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows8, DeviceFamily::IntelMobileHDGraphics,
-        nsIGfxInfo::FEATURE_DIRECT2D,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN_OR_EQUAL,
-        V(8, 15, 10, 2302), "FEATURE_FAILURE_BUG_804144");
-
-    
-
-
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows7, DeviceFamily::IntelHDGraphicsToSandyBridge,
-        nsIGfxInfo::FEATURE_DIRECT2D,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_EQUAL,
-        V(8, 15, 10, 2418), "FEATURE_FAILURE_BUG_1433790");
-
-    
-
-
-    APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::Bug1116812,
         nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_LESS_THAN,
@@ -1526,23 +1435,11 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     
 
 
-
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::Bug1207665,
         nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_LESS_THAN,
         GfxDriverInfo::allDriverVersions, "FEATURE_FAILURE_BUG_1207665_1");
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::Bug1207665,
-        nsIGfxInfo::FEATURE_DIRECT2D, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
-        "FEATURE_FAILURE_BUG_1207665_2");
-
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows10or11, DeviceFamily::QualcommAll,
-        nsIGfxInfo::FEATURE_DIRECT2D,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
-        GfxDriverInfo::allDriverVersions, "FEATURE_FAILURE_QUALCOMM");
 
     
     
@@ -1553,16 +1450,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN_OR_EQUAL,
         V(25, 18, 10440, 0), "FEATURE_FAILURE_BUG_1592826");
-
-    
-
-
-    APPEND_TO_DRIVER_BLOCKLIST_RANGE(
-        OperatingSystem::Windows, DeviceFamily::AtiAll,
-        nsIGfxInfo::FEATURE_DIRECT2D,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-        DRIVER_BETWEEN_INCLUSIVE_START, V(14, 1, 0, 0), V(14, 2, 0, 0),
-        "FEATURE_FAILURE_BUG_984488_1", "ATI Catalyst 14.6+");
 
     
 
@@ -1579,13 +1466,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         GfxDriverInfo::optionalFeatures,
         nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
         V(6, 2, 0, 0), "< 6.2.0.0", "FEATURE_FAILURE_REMOTE_FX");
-
-    
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::Nvidia310M,
-        nsIGfxInfo::FEATURE_DIRECT2D, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
-        "FEATURE_FAILURE_BUG_1008759");
 
     
     APPEND_TO_DRIVER_BLOCKLIST2(
@@ -2095,10 +1975,6 @@ void GfxInfo::DescribeFeatures(JSContext* aCx, JS::Handle<JSObject*> aObj) {
     JS_SetProperty(aCx, obj, "blocklisted", val);
   }
 
-  gfx::FeatureState& d2d = gfxConfig::GetFeature(Feature::DIRECT2D);
-  if (!InitFeatureObject(aCx, aObj, "d2d", d2d, &obj)) {
-    return;
-  }
   {
     const char* version = "1.1";
     JS::Rooted<JSString*> str(aCx, JS_NewStringCopyZ(aCx, version));

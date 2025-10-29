@@ -272,15 +272,7 @@ void gfxUtils::ConvertBGRAtoRGBA(uint8_t* aData, uint32_t aLength) {
 
 
 
-static CompositionOp OptimalFillOp() {
-#  ifdef XP_WIN
-  if (gfxWindowsPlatform::GetPlatform()->IsDirect2DBackend()) {
-    
-    return CompositionOp::OP_OVER;
-  }
-#  endif
-  return CompositionOp::OP_SOURCE;
-}
+static CompositionOp OptimalFillOp() { return CompositionOp::OP_SOURCE; }
 
 
 

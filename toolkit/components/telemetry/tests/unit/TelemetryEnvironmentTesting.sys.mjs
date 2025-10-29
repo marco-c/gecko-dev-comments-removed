@@ -862,8 +862,6 @@ export var TelemetryEnvironmentTesting = {
   },
 
   checkGfx(gfxData) {
-    lazy.Assert.ok("D2DEnabled" in gfxData);
-    lazy.Assert.equal(gfxData.D2DEnabled, Glean.gfx.d2dEnabled.testGetValue());
     lazy.Assert.ok("DWriteEnabled" in gfxData);
     lazy.Assert.equal(
       gfxData.DWriteEnabled,
@@ -883,7 +881,6 @@ export var TelemetryEnvironmentTesting = {
       Glean.gfx.textScaleFactor.testGetValue()
     );
     if (gIsWindows) {
-      lazy.Assert.equal(typeof gfxData.D2DEnabled, "boolean");
       lazy.Assert.equal(typeof gfxData.DWriteEnabled, "boolean");
     }
 
@@ -941,14 +938,6 @@ export var TelemetryEnvironmentTesting = {
     lazy.Assert.equal(typeof gfxData.features.gpuProcess, "object");
     lazy.Assert.equal(typeof gfxData.features.gpuProcess.status, "string");
     lazy.Assert.ok(!!Glean.gfxFeatures.gpuProcess.testGetValue().status);
-
-    if (gIsWindows && !!gfxData.features?.d2d?.version) {
-      lazy.Assert.equal(typeof gfxData.features.d2d.version, "string");
-      lazy.Assert.equal(
-        gfxData.features.d2d.version,
-        Glean.gfxFeatures.d2d.testGetValue().version
-      );
-    }
 
     try {
       // If we've not got nsIGfxInfoDebug, then this will throw and stop us doing
@@ -1124,7 +1113,11 @@ export var TelemetryEnvironmentTesting = {
     }
 
     // Check "theme" structure.
-    if (data.addons.theme) {
+    // NOTE: theme is expected to be set to an empty object while the theme is
+    // not installed or enabled yet by the time the telemetry environment is
+    // capturing the active addons and themes early during the first at startup,
+    // see Bug 1994389.
+    if (Object.keys(data.addons.theme).length !== 0) {
       this.checkTheme(data.addons.theme);
     }
 

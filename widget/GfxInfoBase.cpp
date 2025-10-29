@@ -1003,27 +1003,6 @@ int32_t GfxInfoBase::FindBlocklistedDeviceInList(
 #if defined(XP_WIN)
   
   
-  
-  
-  
-  if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN &&
-      (aFeature == nsIGfxInfo::FEATURE_DIRECT2D)) {
-    if (!adapterInfoFailed[1]) {
-      nsAString& nvVendorID =
-          (nsAString&)GfxDriverInfo::GetDeviceVendor(DeviceVendor::NVIDIA);
-      const nsString nv310mDeviceId = u"0x0A70"_ns;
-      if (nvVendorID.Equals(adapterVendorID[1],
-                            nsCaseInsensitiveStringComparator) &&
-          nv310mDeviceId.Equals(adapterDeviceID[1],
-                                nsCaseInsensitiveStringComparator)) {
-        status = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_D2D_NV310M_BLOCK";
-      }
-    }
-  }
-
-  
-  
   if (status == FEATURE_BLOCKED_DRIVER_VERSION) {
     if (info[i]->mSuggestedVersion) {
       aSuggestedVersion.AppendPrintf("%s", info[i]->mSuggestedVersion);
@@ -1930,10 +1909,6 @@ GfxInfoBase::GetContentBackend(nsAString& aContentBackend) {
   nsString outStr;
 
   switch (backend) {
-    case BackendType::DIRECT2D1_1: {
-      outStr.AppendPrintf("Direct2D 1.1");
-      break;
-    }
     case BackendType::SKIA: {
       outStr.AppendPrintf("Skia");
       break;
