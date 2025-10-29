@@ -99,7 +99,7 @@ add_setup(async () => {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     merinoSuggestions: MERINO_SUGGESTIONS,
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
 
       

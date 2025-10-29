@@ -14,11 +14,6 @@ add_setup(async function () {
 });
 
 
-add_task(function nonsponsoredToggled() {
-  doToggleTest("suggest.quicksuggest.nonsponsored");
-});
-
-
 add_task(async function sponsoredToggled() {
   doToggleTest("suggest.quicksuggest.sponsored");
 });
@@ -77,7 +72,7 @@ add_task(async function telemetryEnvironmentOnStartup() {
   
   Assert.deepEqual(
     prefs.sort(),
-    ["suggest.quicksuggest.nonsponsored", "suggest.quicksuggest.sponsored"],
+    ["suggest.quicksuggest.sponsored"],
     "Expected startup prefs"
   );
 

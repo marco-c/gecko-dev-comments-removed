@@ -471,6 +471,13 @@ pref("browser.urlbar.suggest.trending", true);
 
 
 
+
+pref("browser.urlbar.suggest.quicksuggest.all", false, sticky);
+
+
+
+
+
 pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false, sticky);
 
 

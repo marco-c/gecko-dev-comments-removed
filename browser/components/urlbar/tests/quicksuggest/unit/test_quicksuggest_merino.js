@@ -40,7 +40,7 @@ add_setup(async () => {
   
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     prefs: [
-      ["suggest.quicksuggest.nonsponsored", true],
+      ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
     ],
@@ -317,42 +317,6 @@ add_task(async function timestamps() {
   });
 
   MerinoTestUtils.server.reset();
-  merinoClient().resetSession();
-});
-
-
-
-
-add_task(async function suggestedDisabled_onlineEnabled() {
-  UrlbarPrefs.set("quicksuggest.online.available", true);
-  UrlbarPrefs.set("quicksuggest.online.enabled", true);
-
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-
-  let context = createContext("test", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
-
-  
-  MerinoTestUtils.server.checkAndClearRequests([
-    {
-      params: {
-        [MerinoTestUtils.SEARCH_PARAMS.QUERY]: "test",
-        [MerinoTestUtils.SEARCH_PARAMS.SEQUENCE_NUMBER]: 0,
-        [MerinoTestUtils.SEARCH_PARAMS.PROVIDERS]: "",
-      },
-    },
-  ]);
-
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  await QuickSuggestTestUtils.forceSync();
   merinoClient().resetSession();
 });
 
@@ -814,7 +778,23 @@ add_task(async function bestMatch() {
 });
 
 
-add_task(async function unmanaged_sponsored() {
+
+add_task(async function unmanaged_sponsored_allDisabled() {
+  await doUnmanagedTest({
+    pref: "suggest.quicksuggest.all",
+    suggestion: {
+      title: "Sponsored without feature",
+      url: "https://example.com/sponsored-without-feature",
+      provider: "sponsored-unrecognized-provider",
+      is_sponsored: true,
+    },
+    shouldBeAdded: false,
+  });
+});
+
+
+
+add_task(async function unmanaged_sponsored_sponsoredDisabled() {
   await doUnmanagedTest({
     pref: "suggest.quicksuggest.sponsored",
     suggestion: {
@@ -823,24 +803,43 @@ add_task(async function unmanaged_sponsored() {
       provider: "sponsored-unrecognized-provider",
       is_sponsored: true,
     },
+    shouldBeAdded: false,
   });
 });
 
 
-add_task(async function unmanaged_nonsponsored() {
+
+add_task(async function unmanaged_nonsponsored_allDisabled() {
   await doUnmanagedTest({
-    pref: "suggest.quicksuggest.nonsponsored",
+    pref: "suggest.quicksuggest.all",
     suggestion: {
       title: "Nonsponsored without feature",
       url: "https://example.com/nonsponsored-without-feature",
       provider: "nonsponsored-unrecognized-provider",
       
     },
+    shouldBeAdded: false,
   });
 });
 
-async function doUnmanagedTest({ pref, suggestion }) {
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+
+
+
+add_task(async function unmanaged_nonsponsored_sponsoredDisabled() {
+  await doUnmanagedTest({
+    pref: "suggest.quicksuggest.sponsored",
+    suggestion: {
+      title: "Nonsponsored without feature",
+      url: "https://example.com/nonsponsored-without-feature",
+      provider: "nonsponsored-unrecognized-provider",
+      
+    },
+    shouldBeAdded: true,
+  });
+});
+
+async function doUnmanagedTest({ pref, suggestion, shouldBeAdded }) {
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
 
@@ -888,7 +887,7 @@ async function doUnmanagedTest({ pref, suggestion }) {
       providers: [UrlbarProviderQuickSuggest.name],
       isPrivate: false,
     }),
-    matches: [],
+    matches: shouldBeAdded ? [expectedResult] : [],
   });
 
   
