@@ -2195,6 +2195,43 @@
 
         set_global_privacy_control: function(newValue) {
             return window.test_driver_internal.set_global_privacy_control(newValue);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        install_web_extension: function(params) {
+            return window.test_driver_internal.install_web_extension(params);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        uninstall_web_extension: function(extension_id) {
+            return window.test_driver_internal.uninstall_web_extension(extension_id);
         }
     };
 
