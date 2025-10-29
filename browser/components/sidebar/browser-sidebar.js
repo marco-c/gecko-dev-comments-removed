@@ -446,6 +446,7 @@ var SidebarController = {
           { global: "current" }
         );
       }
+      this.revampComponentsLoaded = true;
       this._state.initializeState(this._showLauncherAfterInit);
       
       delete this._showLauncherAfterInit;
@@ -564,7 +565,7 @@ var SidebarController = {
       this._mainResizeObserver = null;
     }
 
-    if (this.sidebarRevampEnabled) {
+    if (this.revampComponentsLoaded) {
       
       
       this.sidebarMain.remove();
@@ -664,7 +665,7 @@ var SidebarController = {
           this.showInitially(this.lastOpenedId);
           break;
         }
-        if (this.sidebarRevampEnabled) {
+        if (this.revampComponentsLoaded) {
           this.sidebarMain.requestUpdate();
         }
         break;
