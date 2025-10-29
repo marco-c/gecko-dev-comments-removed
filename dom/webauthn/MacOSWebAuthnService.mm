@@ -823,6 +823,20 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
               *userVerificationPreference;
         }
 
+        if (__builtin_available(macos 13.5, *)) {
+          
+          
+          bool hasHybridHint = false;
+          nsTArray<nsString> hints;
+          (void)aArgs->GetHints(hints);
+          for (nsString& hint : hints) {
+            if (hint.Equals(u"hybrid"_ns)) {
+              hasHybridHint = true;
+            }
+          }
+          platformRegistrationRequest.shouldShowHybridTransport =
+              hints.Length() == 0 || hasHybridHint;
+        }
         if (__builtin_available(macos 14.0, *)) {
           bool largeBlobSupportRequired;
           nsresult rv =
@@ -1175,9 +1189,17 @@ void MacOSWebAuthnService::DoGetAssertion(
         if (__builtin_available(macos 13.5, *)) {
           
           
+          
           bool shouldShowHybridTransport =
               !transports ||
               (transports & MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID);
+          nsTArray<nsString> hints;
+          (void)aArgs->GetHints(hints);
+          for (nsString& hint : hints) {
+            if (hint.Equals(u"hybrid"_ns)) {
+              shouldShowHybridTransport = true;
+            }
+          }
           platformAssertionRequest.shouldShowHybridTransport =
               shouldShowHybridTransport;
         }

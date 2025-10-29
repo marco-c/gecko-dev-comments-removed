@@ -393,7 +393,7 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
 
   WebAuthnMakeCredentialInfo info(rpId, challenge, adjustedTimeout, excludeList,
                                   rpInfo, userInfo, coseAlgos, extensions,
-                                  authSelection, attestation);
+                                  authSelection, attestation, aOptions.mHints);
 
   
   
@@ -667,7 +667,7 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
 
   WebAuthnGetAssertionInfo info(
       rpId, maybeAppId, challenge, adjustedTimeout, allowList, extensions,
-      aOptions.mUserVerification, aConditionallyMediated);
+      aOptions.mUserVerification, aConditionallyMediated, aOptions.mHints);
 
   
   
