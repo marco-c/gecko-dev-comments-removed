@@ -161,7 +161,8 @@ nsresult nsSyncLoader::LoadDocument(nsIChannel* aChannel, bool aChannelIsSync,
 
   
   nsCOMPtr<Document> document;
-  rv = NS_NewXMLDocument(getter_AddRefs(document), nullptr, nullptr);
+  rv = NS_NewXMLDocument(getter_AddRefs(document), nullptr, nullptr,
+                         LoadedAsData::AsData);
   NS_ENSURE_SUCCESS(rv, rv);
 
   

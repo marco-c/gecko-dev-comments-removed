@@ -1114,7 +1114,7 @@ void SVGMaskObserverList::ResolveImage(uint32_t aIndex) {
   const_cast<StyleImage&>(image).ResolveImage(*doc, nullptr);
   if (imgRequestProxy* req = image.GetImageRequest()) {
     
-    doc->StyleImageLoader()->AssociateRequestToFrame(req, mFrame);
+    doc->EnsureStyleImageLoader().AssociateRequestToFrame(req, mFrame);
   }
 }
 

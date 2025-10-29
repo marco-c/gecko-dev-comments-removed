@@ -261,8 +261,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
 
   
   
-  if (!doc || !doc->CSSLoader() || !doc->CSSLoader()->GetEnabled() ||
-      !mUpdatesEnabled) {
+  if (!doc || !doc->EnsureCSSLoader().GetEnabled() || !mUpdatesEnabled) {
     return Update{};
   }
 
@@ -331,7 +330,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     }
 
     
-    return doc->CSSLoader()->LoadInlineStyle(*info, text, aObserver);
+    return doc->EnsureCSSLoader().LoadInlineStyle(*info, text, aObserver);
   }
   if (thisContent.IsElement()) {
     nsAutoString integrity;
@@ -342,7 +341,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
                NS_ConvertUTF16toUTF8(integrity).get()));
     }
   }
-  auto resultOrError = doc->CSSLoader()->LoadStyleLink(*info, aObserver);
+  auto resultOrError = doc->EnsureCSSLoader().LoadStyleLink(*info, aObserver);
   if (resultOrError.isErr()) {
     
     
@@ -390,7 +389,7 @@ void LinkStyle::MaybeFinishCopyStyleSheet(Document* aDocument) {
   }
   RefPtr<StyleSheet> sheet = mStyleSheet->Clone(nullptr, root);
   SetStyleSheet(sheet.get());
-  aDocument->CSSLoader()->InsertSheetInTree(*sheet);
+  aDocument->EnsureCSSLoader().InsertSheetInTree(*sheet);
 }
 
 }  

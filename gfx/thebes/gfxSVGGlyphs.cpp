@@ -372,8 +372,8 @@ nsresult gfxSVGGlyphsDocument::ParseDocument(const uint8_t* aBuffer,
                          u""_ns,   
                          nullptr,  
                          uri, uri, principal,
-                         false,    
-                         nullptr,  
+                         mozilla::dom::LoadedAsData::No,  
+                         nullptr,                         
                          DocumentFlavor::SVG);
   NS_ENSURE_SUCCESS(rv, rv);
 

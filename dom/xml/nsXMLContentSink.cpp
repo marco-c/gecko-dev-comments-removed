@@ -192,9 +192,7 @@ nsresult nsXMLContentSink::MaybePrettyPrint() {
   mIsDocumentObserver = false;
 
   
-  if (mCSSLoader) {
-    mCSSLoader->SetEnabled(true);
-  }
+  mDocument->EnsureCSSLoader().SetEnabled(true);
 
   RefPtr<nsXMLPrettyPrinter> printer;
   nsresult rv = NS_NewXMLPrettyPrinter(getter_AddRefs(printer));
@@ -305,8 +303,9 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
 
       
       
-      if (mDocument->CSSLoader()->HasPendingLoads()) {
-        mDocument->CSSLoader()->AddObserver(this);
+      css::Loader* cssLoader = mDocument->GetExistingCSSLoader();
+      if (cssLoader && cssLoader->HasPendingLoads()) {
+        cssLoader->AddObserver(this);
         
         startLayout = false;
       }
@@ -445,8 +444,9 @@ nsXMLContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
     return nsContentSink::StyleSheetLoaded(aSheet, aWasDeferred, aStatus);
   }
 
-  if (!mDocument->CSSLoader()->HasPendingLoads()) {
-    mDocument->CSSLoader()->RemoveObserver(this);
+  if (mDocument->GetExistingCSSLoader() &&
+      !mDocument->GetExistingCSSLoader()->HasPendingLoads()) {
+    mDocument->GetExistingCSSLoader()->RemoveObserver(this);
     StartLayout(false);
     ScrollToRef();
   }
@@ -668,7 +668,9 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
       rv = updateOrError.unwrapErr();
     } else if (updateOrError.unwrap().ShouldBlock() && !mRunsToCompletion) {
       ++mPendingSheetCount;
-      mScriptLoader->AddParserBlockingScriptExecutionBlocker();
+      if (mScriptLoader) {
+        mScriptLoader->AddParserBlockingScriptExecutionBlocker();
+      }
     }
   }
 
@@ -944,7 +946,9 @@ bool nsXMLContentSink::SetDocElement(int32_t aNameSpaceID, nsAtom* aTagName,
       
       if (update.ShouldBlock() && !mRunsToCompletion) {
         ++mPendingSheetCount;
-        mScriptLoader->AddParserBlockingScriptExecutionBlocker();
+        if (mScriptLoader) {
+          mScriptLoader->AddParserBlockingScriptExecutionBlocker();
+        }
       }
     }
   }
@@ -957,10 +961,13 @@ bool nsXMLContentSink::SetDocElement(int32_t aNameSpaceID, nsAtom* aTagName,
     if (mPrettyPrintXML) {
       
       
-      mDocument->ScriptLoader()->SetEnabled(false);
-      if (mCSSLoader) {
-        mCSSLoader->SetEnabled(false);
+      if (dom::ScriptLoader* scriptLoader = mDocument->GetScriptLoader()) {
+        scriptLoader->SetEnabled(false);
       }
+      
+      
+      
+      mDocument->EnsureCSSLoader().SetEnabled(false);
     }
   }
 

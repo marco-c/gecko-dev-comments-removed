@@ -20,14 +20,15 @@ static already_AddRefed<Document> SetUpDocument() {
   nsCOMPtr<nsIPrincipal> principal =
       NullPrincipal::CreateWithoutOriginAttributes();
   nsCOMPtr<Document> document;
-  nsresult rv = NS_NewDOMDocument(getter_AddRefs(document),
-                                  u""_ns,   
-                                  u""_ns,   
-                                  nullptr,  
-                                  uri, uri, principal,
-                                  false,    
-                                  nullptr,  
-                                  DocumentFlavor::HTML);
+  nsresult rv =
+      NS_NewDOMDocument(getter_AddRefs(document),
+                        u""_ns,   
+                        u""_ns,   
+                        nullptr,  
+                        uri, uri, principal,
+                        mozilla::dom::LoadedAsData::No,  
+                        nullptr,                         
+                        DocumentFlavor::HTML);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
