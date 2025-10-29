@@ -85,6 +85,8 @@ using GetCurrentThreadStackLimitsFn = void(WINAPI*)(PULONG_PTR LowLimit,
 #  include <mach/mach.h>
 #  include <mach/thread_policy.h>
 #  include <sys/qos.h>
+
+#  include "nsCocoaFeatures.h"
 #endif
 
 #ifdef MOZ_CANARY
@@ -338,8 +340,11 @@ void nsThread::ThreadFunc(void* aArg) {
   self->InitCommon();
 
 #ifdef XP_MACOSX
-  
-  pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
+  if (nsCocoaFeatures::OnTahoeOrLater()) {
+    
+    
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
+  }
 #endif
 
   
