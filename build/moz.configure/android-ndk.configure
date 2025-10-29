@@ -36,7 +36,7 @@ option(
 @dependable
 def min_android_version():
     
-    return "21"
+    return "26"
 
 
 option(

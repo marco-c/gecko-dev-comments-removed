@@ -381,17 +381,6 @@ MOZ_BEGIN_EXTERN_C
 #define MALLOC_FUNCS MALLOC_FUNCS_JEMALLOC
 #include "malloc_decls.h"
 
-#ifdef ANDROID
-
-
-
-
-int pthread_atfork(void (*aPrepare)(void), void (*aParent)(void),
-                   void (*aChild)(void)) {
-  return 0;
-}
-#endif
-
 MOZ_END_EXTERN_C
 
 template <unsigned Base = 10>
