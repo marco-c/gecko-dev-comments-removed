@@ -13,6 +13,15 @@
 
 namespace mozilla::dom::compression {
 
+NS_IMPL_CYCLE_COLLECTION_INHERITED(DecompressionStreamAlgorithms,
+                                   TransformerAlgorithmsBase)
+NS_IMPL_ADDREF_INHERITED(DecompressionStreamAlgorithms,
+                         TransformerAlgorithmsBase)
+NS_IMPL_RELEASE_INHERITED(DecompressionStreamAlgorithms,
+                          TransformerAlgorithmsBase)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DecompressionStreamAlgorithms)
+NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
+
 
 
 
@@ -69,13 +78,51 @@ MOZ_CAN_RUN_SCRIPT void DecompressionStreamAlgorithms::FlushCallbackImpl(
   DecompressAndEnqueue(cx, Span<const uint8_t>(), Flush::Yes, aController, aRv);
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(DecompressionStreamAlgorithms,
-                                   TransformerAlgorithmsBase)
-NS_IMPL_ADDREF_INHERITED(DecompressionStreamAlgorithms,
-                         TransformerAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(DecompressionStreamAlgorithms,
-                          TransformerAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DecompressionStreamAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(TransformerAlgorithmsBase)
+
+
+
+MOZ_CAN_RUN_SCRIPT void DecompressionStreamAlgorithms::DecompressAndEnqueue(
+    JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
+    TransformStreamDefaultController& aController, ErrorResult& aRv) {
+  MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
+
+  JS::RootedVector<JSObject*> array(aCx);
+
+  
+  
+  
+  
+  
+  
+  bool fullyConsumed = Decompress(aCx, aInput, &array, aFlush, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  for (const auto& view : array) {
+    JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
+    aController.Enqueue(aCx, value, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
+  
+  
+  if (mObservedStreamEnd && !fullyConsumed) {
+    aRv.ThrowTypeError("Unexpected input after the end of stream");
+    return;
+  }
+
+  
+  
+  
+  
+  if (aFlush == Flush::Yes && !mObservedStreamEnd) {
+    aRv.ThrowTypeError("The input is ended without reaching the stream end");
+    return;
+  }
+}
 
 }  

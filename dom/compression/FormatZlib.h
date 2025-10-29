@@ -76,20 +76,18 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
 
   [[nodiscard]] nsresult Init(CompressionFormat format);
 
- private:
   
   
   
   
   
-  MOZ_CAN_RUN_SCRIPT void DecompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-      TransformStreamDefaultController& aController, ErrorResult& aRv) override;
+  bool Decompress(JSContext* aCx, Span<const uint8_t> aInput,
+                  JS::MutableHandleVector<JSObject*> aOutput, Flush aFlush,
+                  ErrorResult& aRv) override;
 
   ~ZLibDecompressionStreamAlgorithms() override;
 
   z_stream mZStream = {};
-  bool mObservedStreamEnd = false;
 };
 
 }  

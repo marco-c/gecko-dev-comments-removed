@@ -268,22 +268,19 @@ ZLibDecompressionStreamAlgorithms::Create(CompressionFormat format) {
 
 
 
-MOZ_CAN_RUN_SCRIPT void ZLibDecompressionStreamAlgorithms::DecompressAndEnqueue(
-    JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-    TransformStreamDefaultController& aController, ErrorResult& aRv) {
-  MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
-
+bool ZLibDecompressionStreamAlgorithms::Decompress(
+    JSContext* aCx, Span<const uint8_t> aInput,
+    JS::MutableHandleVector<JSObject*> aOutput, Flush aFlush,
+    ErrorResult& aRv) {
   mZStream.avail_in = aInput.Length();
   mZStream.next_in = const_cast<uint8_t*>(aInput.Elements());
-
-  JS::RootedVector<JSObject*> array(aCx);
 
   do {
     UniquePtr<uint8_t[], JS::FreePolicy> buffer(
         static_cast<uint8_t*>(JS_malloc(aCx, kBufferSize)));
     if (!buffer) {
       aRv.ThrowTypeError("Out of memory");
-      return;
+      return false;
     }
 
     mZStream.avail_out = kBufferSize;
@@ -299,11 +296,11 @@ MOZ_CAN_RUN_SCRIPT void ZLibDecompressionStreamAlgorithms::DecompressAndEnqueue(
         
         aRv.ThrowTypeError("The input data is corrupted: "_ns +
                            nsDependentCString(mZStream.msg));
-        return;
+        return false;
       case Z_MEM_ERROR:
         
         aRv.ThrowTypeError("Out of memory");
-        return;
+        return false;
       case Z_NEED_DICT:
         
         
@@ -316,7 +313,7 @@ MOZ_CAN_RUN_SCRIPT void ZLibDecompressionStreamAlgorithms::DecompressAndEnqueue(
         aRv.ThrowTypeError(
             "The stream needs a preset dictionary but such setup is "
             "unsupported");
-        return;
+        return false;
       case Z_STREAM_END:
         
         
@@ -344,7 +341,7 @@ MOZ_CAN_RUN_SCRIPT void ZLibDecompressionStreamAlgorithms::DecompressAndEnqueue(
         
         MOZ_ASSERT_UNREACHABLE("Unexpected decompression error code");
         aRv.ThrowTypeError("Unexpected decompression error");
-        return;
+        return false;
     }
 
     
@@ -365,10 +362,10 @@ MOZ_CAN_RUN_SCRIPT void ZLibDecompressionStreamAlgorithms::DecompressAndEnqueue(
 
     JS::Rooted<JSObject*> view(aCx, nsJSUtils::MoveBufferAsUint8Array(
                                         aCx, written, std::move(buffer)));
-    if (!view || !array.append(view)) {
+    if (!view || !aOutput.append(view)) {
       JS_ClearPendingException(aCx);
       aRv.ThrowTypeError("Out of memory");
-      return;
+      return false;
     }
   } while (mZStream.avail_out == 0 && !mObservedStreamEnd);
   
@@ -377,30 +374,7 @@ MOZ_CAN_RUN_SCRIPT void ZLibDecompressionStreamAlgorithms::DecompressAndEnqueue(
   
   
 
-  
-  for (const auto& view : array) {
-    JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
-    aController.Enqueue(aCx, value, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  }
-
-  
-  
-  if (mObservedStreamEnd && mZStream.avail_in > 0) {
-    aRv.ThrowTypeError("Unexpected input after the end of stream");
-    return;
-  }
-
-  
-  
-  
-  
-  if (aFlush == Flush::Yes && !mObservedStreamEnd) {
-    aRv.ThrowTypeError("The input is ended without reaching the stream end");
-    return;
-  }
+  return mZStream.avail_in == 0;
 }
 
 ZLibDecompressionStreamAlgorithms::~ZLibDecompressionStreamAlgorithms() {

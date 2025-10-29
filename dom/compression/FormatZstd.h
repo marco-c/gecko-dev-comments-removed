@@ -35,14 +35,13 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
   
   
   
-  MOZ_CAN_RUN_SCRIPT void DecompressAndEnqueue(
-      JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-      TransformStreamDefaultController& aController, ErrorResult& aRv) override;
+  bool Decompress(JSContext* aCx, Span<const uint8_t> aInput,
+                  JS::MutableHandleVector<JSObject*> aOutput, Flush aFlush,
+                  ErrorResult& aRv) override;
 
   ~ZstdDecompressionStreamAlgorithms() override;
 
   ZSTD_DCtx_s* mDStream = nullptr;
-  bool mObservedStreamEnd = false;
 };
 }  
 

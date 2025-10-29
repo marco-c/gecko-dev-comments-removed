@@ -48,28 +48,20 @@ ZstdDecompressionStreamAlgorithms::Create() {
 
 
 
-MOZ_CAN_RUN_SCRIPT void ZstdDecompressionStreamAlgorithms::DecompressAndEnqueue(
-    JSContext* aCx, Span<const uint8_t> aInput, Flush aFlush,
-    TransformStreamDefaultController& aController, ErrorResult& aRv) {
-  MOZ_ASSERT_IF(aFlush == Flush::Yes, !aInput.Length());
-
-  if (mObservedStreamEnd && aInput.Length() > 0) {
-    aRv.ThrowTypeError("Unexpected input after the end of stream");
-    return;
-  }
-
+bool ZstdDecompressionStreamAlgorithms::Decompress(
+    JSContext* aCx, Span<const uint8_t> aInput,
+    JS::MutableHandleVector<JSObject*> aOutput, Flush aFlush,
+    ErrorResult& aRv) {
   ZSTD_inBuffer inBuffer = { const_cast<uint8_t*>(aInput.Elements()),
                              aInput.Length(),
                              0};
-
-  JS::RootedVector<JSObject*> array(aCx);
 
   while (inBuffer.pos < inBuffer.size && !mObservedStreamEnd) {
     UniquePtr<uint8_t[], JS::FreePolicy> buffer(
         static_cast<uint8_t*>(JS_malloc(aCx, kBufferSize)));
     if (!buffer) {
       aRv.ThrowTypeError("Out of memory");
-      return;
+      return false;
     }
 
     ZSTD_outBuffer outBuffer = { buffer.get(),
@@ -80,7 +72,7 @@ MOZ_CAN_RUN_SCRIPT void ZstdDecompressionStreamAlgorithms::DecompressAndEnqueue(
     if (ZSTD_isError(rv)) {
       aRv.ThrowTypeError("zstd decompression error: "_ns +
                          nsDependentCString(ZSTD_getErrorName(rv)));
-      return;
+      return false;
     }
 
     if (rv == 0) {
@@ -98,38 +90,15 @@ MOZ_CAN_RUN_SCRIPT void ZstdDecompressionStreamAlgorithms::DecompressAndEnqueue(
     if (written > 0) {
       JS::Rooted<JSObject*> view(aCx, nsJSUtils::MoveBufferAsUint8Array(
                                           aCx, written, std::move(buffer)));
-      if (!view || !array.append(view)) {
+      if (!view || !aOutput.append(view)) {
         JS_ClearPendingException(aCx);
         aRv.ThrowTypeError("Out of memory");
-        return;
+        return false;
       }
     }
   }
 
-  
-  for (const auto& view : array) {
-    JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*view));
-    aController.Enqueue(aCx, value, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-  }
-
-  
-  
-  if (mObservedStreamEnd && inBuffer.pos < inBuffer.size) {
-    aRv.ThrowTypeError("Unexpected input after the end of stream");
-    return;
-  }
-
-  
-  
-  
-  
-  if (aFlush == Flush::Yes && !mObservedStreamEnd) {
-    aRv.ThrowTypeError("The input is ended without reaching the stream end");
-    return;
-  }
+  return inBuffer.pos == inBuffer.size;
 }
 
 ZstdDecompressionStreamAlgorithms::~ZstdDecompressionStreamAlgorithms() {
