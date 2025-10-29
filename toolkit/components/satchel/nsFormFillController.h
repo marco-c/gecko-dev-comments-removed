@@ -110,7 +110,7 @@ class nsFormFillController final : public nsIFormFillController,
   
 
   nsCOMPtr<nsIAutoCompleteController> mController;
-  mozilla::dom::Element* mFocusedElement;
+  mozilla::dom::Element* mControlledElement;
   RefPtr<mozilla::CancelableRunnable> mRestartAfterAttributeChangeTask;
 
   
