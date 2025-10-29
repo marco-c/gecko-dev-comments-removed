@@ -741,11 +741,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-
-
-
-
-  void RegisterForCache(ScriptLoadRequest* aRequest);
+  void RegisterForDiskCache(ScriptLoadRequest* aRequest);
 
   
 
@@ -865,11 +861,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  JS::loader::ScriptLoadRequestList mCacheableDependencyModules;
+  JS::loader::ScriptLoadRequestList mDiskCacheableDependencyModules;
 
   
   
-  JS::loader::ScriptLoadRequestList mCachingQueue;
+  JS::loader::ScriptLoadRequestList mDiskCacheQueue;
 
   
   struct PreloadInfo {

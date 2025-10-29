@@ -175,7 +175,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ScriptLoader)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(
       mNonAsyncExternalScriptInsertedRequests, mLoadingAsyncRequests,
       mLoadedAsyncRequests, mOffThreadCompilingRequests, mDeferRequests,
-      mXSLTRequests, mParserBlockingRequest, mCachingQueue, mPreloads,
+      mXSLTRequests, mParserBlockingRequest, mDiskCacheQueue, mPreloads,
       mPendingChildLoaders, mModuleLoader, mWebExtModuleLoaders,
       mShadowRealmModuleLoaders)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -184,7 +184,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoader)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
       mNonAsyncExternalScriptInsertedRequests, mLoadingAsyncRequests,
       mLoadedAsyncRequests, mOffThreadCompilingRequests, mDeferRequests,
-      mXSLTRequests, mParserBlockingRequest, mCachingQueue, mPreloads,
+      mXSLTRequests, mParserBlockingRequest, mDiskCacheQueue, mPreloads,
       mPendingChildLoaders, mModuleLoader, mWebExtModuleLoaders,
       mShadowRealmModuleLoaders)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -2710,12 +2710,6 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Mark in-memory: Stencil",
          aRequest));
     aRequest->MarkPassedConditionForMemoryCache();
-
-    if (aRequest->IsModuleRequest() &&
-        aRequest->AsModuleRequest()->IsStaticImport()) {
-      MOZ_ASSERT(!aRequest->isInList());
-      mCacheableDependencyModules.AppendElement(aRequest);
-    }
   } else {
     aRequest->MarkSkippedMemoryCaching();
   }
@@ -2857,11 +2851,10 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
        aRequest));
   aRequest->MarkPassedConditionForDiskCache();
 
-  if (!aRequest->PassedConditionForMemoryCache() &&
-      aRequest->IsModuleRequest() &&
+  if (aRequest->IsModuleRequest() &&
       aRequest->AsModuleRequest()->IsStaticImport()) {
     MOZ_ASSERT(!aRequest->isInList());
-    mCacheableDependencyModules.AppendElement(aRequest);
+    mDiskCacheableDependencyModules.AppendElement(aRequest);
   }
 }
 
@@ -3209,7 +3202,7 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
     if (aRequest->IsModuleRequest() &&
         !aRequest->AsModuleRequest()->IsTopLevel()) {
       MOZ_ASSERT(aRequest->isInList());
-      mCacheableDependencyModules.Remove(aRequest);
+      mDiskCacheableDependencyModules.Remove(aRequest);
     }
 
     aRequest->MarkSkippedMemoryCaching();
@@ -3342,29 +3335,33 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
 
 nsresult ScriptLoader::MaybePrepareForCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
-  if (aRequest->PassedConditionForEitherCache() && aRequest->HasStencil()) {
-    TRACE_FOR_TEST(aRequest, "scriptloader_encode");
+  if (!aRequest->PassedConditionForDiskCache() || !aRequest->HasStencil()) {
+    LOG(("ScriptLoadRequest (%p): Bytecode-cache: disabled (rv = %X)", aRequest,
+         unsigned(aRv)));
+    TRACE_FOR_TEST_NONE(aRequest, "scriptloader_no_encode");
+
     
     
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(
-        !aRequest->IsCachedStencil(),
-        aRequest->GetSRILength() == aRequest->SRIAndBytecode().length());
-    RegisterForCache(aRequest);
+    MOZ_ASSERT_IF(!aRequest->PassedConditionForMemoryCache(),
+                  !aRequest->getLoadedScript()->HasDiskCacheReference());
 
     return aRv;
   }
 
-  LOG(("ScriptLoadRequest (%p): Bytecode-cache: disabled (rv = %X)", aRequest,
-       unsigned(aRv)));
-  TRACE_FOR_TEST_NONE(aRequest, "scriptloader_no_encode");
-  MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
+  TRACE_FOR_TEST(aRequest, "scriptloader_encode");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(
+      !aRequest->IsCachedStencil(),
+      aRequest->GetSRILength() == aRequest->SRIAndBytecode().length());
+  RegisterForDiskCache(aRequest);
 
   return aRv;
 }
@@ -3385,9 +3382,9 @@ nsresult ScriptLoader::MaybePrepareModuleForCacheAfterExecute(
 
   aRv = MaybePrepareForCacheAfterExecute(aRequest, aRv);
 
-  for (auto* r = mCacheableDependencyModules.getFirst(); r;) {
+  for (auto* r = mDiskCacheableDependencyModules.getFirst(); r;) {
     auto* dep = r->AsModuleRequest();
-    MOZ_ASSERT(dep->PassedConditionForEitherCache());
+    MOZ_ASSERT(dep->PassedConditionForDiskCache());
 
     r = r->getNext();
 
@@ -3395,7 +3392,7 @@ nsresult ScriptLoader::MaybePrepareModuleForCacheAfterExecute(
       continue;
     }
 
-    mCacheableDependencyModules.Remove(dep);
+    mDiskCacheableDependencyModules.Remove(dep);
 
     aRv = MaybePrepareForCacheAfterExecute(dep, aRv);
   }
@@ -3497,13 +3494,12 @@ LoadedScript* ScriptLoader::GetActiveScript(JSContext* aCx) {
   return static_cast<LoadedScript*>(value.toPrivate());
 }
 
-void ScriptLoader::RegisterForCache(ScriptLoadRequest* aRequest) {
-  MOZ_ASSERT(aRequest->PassedConditionForEitherCache());
+void ScriptLoader::RegisterForDiskCache(ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(aRequest->PassedConditionForDiskCache());
   MOZ_ASSERT(aRequest->HasStencil());
-  MOZ_ASSERT_IF(aRequest->PassedConditionForDiskCache(),
-                aRequest->getLoadedScript()->HasDiskCacheReference());
+  MOZ_ASSERT(aRequest->getLoadedScript()->HasDiskCacheReference());
   MOZ_DIAGNOSTIC_ASSERT(!aRequest->isInList());
-  mCachingQueue.AppendElement(aRequest);
+  mDiskCacheQueue.AppendElement(aRequest);
 }
 
 void ScriptLoader::LoadEventFired() {
@@ -3540,8 +3536,9 @@ void ScriptLoader::MaybeUpdateCache() {
   }
 
   
-  if (mCachingQueue.isEmpty()) {
-    LOG(("ScriptLoader (%p): No script in queue to be encoded.", this));
+  if (mDiskCacheQueue.isEmpty()) {
+    LOG(("ScriptLoader (%p): No script in queue to be saved to the disk.",
+         this));
     return;
   }
 
@@ -3586,8 +3583,8 @@ void ScriptLoader::UpdateCache() {
   }
 
   RefPtr<ScriptLoadRequest> request;
-  while (!mCachingQueue.isEmpty()) {
-    request = mCachingQueue.StealFirst();
+  while (!mDiskCacheQueue.isEmpty()) {
+    request = mDiskCacheQueue.StealFirst();
     MOZ_ASSERT(!IsWebExtensionRequest(request),
                "Bytecode for web extension content scrips is not cached");
 
@@ -3595,10 +3592,14 @@ void ScriptLoader::UpdateCache() {
     
     
     
-    if (request->PassedConditionForDiskCache() &&
-        request->getLoadedScript()->HasDiskCacheReference()) {
-      EncodeBytecodeAndSave(fc, request->getLoadedScript());
+    
+    
+    
+    if (!request->getLoadedScript()->HasDiskCacheReference()) {
+      continue;
     }
+
+    EncodeBytecodeAndSave(fc, request->getLoadedScript());
 
     request->DropBytecode();
     request->getLoadedScript()->DropDiskCacheReference();
@@ -3689,8 +3690,8 @@ void ScriptLoader::GiveUpCaching() {
   
   mGiveUpCaching = true;
 
-  while (!mCachingQueue.isEmpty()) {
-    RefPtr<ScriptLoadRequest> request = mCachingQueue.StealFirst();
+  while (!mDiskCacheQueue.isEmpty()) {
+    RefPtr<ScriptLoadRequest> request = mDiskCacheQueue.StealFirst();
     LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
     TRACE_FOR_TEST_NONE(request, "scriptloader_bytecode_failed");
     MOZ_ASSERT(!IsWebExtensionRequest(request));
@@ -3699,9 +3700,9 @@ void ScriptLoader::GiveUpCaching() {
     request->getLoadedScript()->DropDiskCacheReference();
   }
 
-  while (!mCacheableDependencyModules.isEmpty()) {
+  while (!mDiskCacheableDependencyModules.isEmpty()) {
     RefPtr<ScriptLoadRequest> request =
-        mCacheableDependencyModules.StealFirst();
+        mDiskCacheableDependencyModules.StealFirst();
   }
 }
 
