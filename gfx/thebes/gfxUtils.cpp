@@ -266,69 +266,6 @@ void gfxUtils::ConvertBGRAtoRGBA(uint8_t* aData, uint32_t aLength) {
               SurfaceFormat::R8G8B8A8, IntSize(aLength / 4, 1));
 }
 
-#if !defined(MOZ_GFX_OPTIMIZE_MOBILE)
-
-
-
-
-
-static CompositionOp OptimalFillOp() { return CompositionOp::OP_SOURCE; }
-
-
-
-static already_AddRefed<gfxDrawable> CreateSamplingRestrictedDrawable(
-    gfxDrawable* aDrawable, gfxContext* aContext, const ImageRegion& aRegion,
-    const SurfaceFormat aFormat, bool aUseOptimalFillOp) {
-  AUTO_PROFILER_LABEL("CreateSamplingRestrictedDrawable", GRAPHICS);
-
-  DrawTarget* destDrawTarget = aContext->GetDrawTarget();
-  
-  
-  
-  if (destDrawTarget->GetBackendType() == BackendType::DIRECT2D1_1 || (true)) {
-    return nullptr;
-  }
-
-  gfxRect clipExtents = aContext->GetClipExtents();
-
-  
-  
-  clipExtents.Inflate(1.0);
-
-  gfxRect needed = aRegion.IntersectAndRestrict(clipExtents);
-  needed.RoundOut();
-
-  
-  
-  
-  
-  if (needed.IsEmpty()) return nullptr;
-
-  IntSize size(int32_t(needed.Width()), int32_t(needed.Height()));
-
-  RefPtr<DrawTarget> target =
-      gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(size,
-                                                                   aFormat);
-  if (!target || !target->IsValid()) {
-    return nullptr;
-  }
-
-  gfxContext tmpCtx(target);
-
-  if (aUseOptimalFillOp) {
-    tmpCtx.SetOp(OptimalFillOp());
-  }
-  aDrawable->Draw(&tmpCtx, needed - needed.TopLeft(), ExtendMode::REPEAT,
-                  SamplingFilter::LINEAR, 1.0,
-                  gfxMatrix::Translation(needed.TopLeft()));
-  RefPtr<SourceSurface> surface = target->Snapshot();
-
-  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(
-      surface, size, gfxMatrix::Translation(-needed.TopLeft()));
-  return drawable.forget();
-}
-#endif  
-
 
 
 
@@ -503,8 +440,7 @@ void gfxUtils::DrawPixelSnapped(gfxContext* aContext, gfxDrawable* aDrawable,
                                 const ImageRegion& aRegion,
                                 const SurfaceFormat aFormat,
                                 SamplingFilter aSamplingFilter,
-                                uint32_t aImageFlags, gfxFloat aOpacity,
-                                bool aUseOptimalFillOp) {
+                                uint32_t aImageFlags, gfxFloat aOpacity) {
   AUTO_PROFILER_LABEL("gfxUtils::DrawPixelSnapped", GRAPHICS);
 
   gfxRect imageRect(gfxPoint(0, 0), aImageSize);
@@ -538,22 +474,6 @@ void gfxUtils::DrawPixelSnapped(gfxContext* aContext, gfxDrawable* aDrawable,
                                   ToRect(imageRect), aSamplingFilter, aFormat,
                                   aOpacity, extendMode)) {
         return;
-      }
-#endif
-
-      
-      
-      
-#if !defined(MOZ_GFX_OPTIMIZE_MOBILE)
-      RefPtr<gfxDrawable> restrictedDrawable = CreateSamplingRestrictedDrawable(
-          aDrawable, aContext, aRegion, aFormat, aUseOptimalFillOp);
-      if (restrictedDrawable) {
-        drawable.swap(restrictedDrawable);
-
-        
-        
-        
-        extendMode = ExtendMode::CLAMP;
       }
 #endif
     }

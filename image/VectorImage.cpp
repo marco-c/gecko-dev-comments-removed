@@ -1330,12 +1330,6 @@ already_AddRefed<SourceSurface> VectorImage::CreateSurface(
       aParams.context ? aParams.context->GetDrawTarget()->GetBackendType()
                       : gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
-  if (backend == BackendType::DIRECT2D1_1) {
-    
-    
-    backend = BackendType::SKIA;
-  }
-
   
   
   auto frame = MakeNotNull<RefPtr<imgFrame>>();
@@ -1426,7 +1420,7 @@ void VectorImage::Show(gfxDrawable* aDrawable,
   gfxUtils::DrawPixelSnapped(aParams.context, aDrawable,
                              SizeDouble(aParams.size), region,
                              SurfaceFormat::OS_RGBA, aParams.samplingFilter,
-                             aParams.flags, aParams.opacity, false);
+                             aParams.flags, aParams.opacity);
 
   AutoProfilerImagePaintMarker PROFILER_RAII(this);
 #ifdef DEBUG

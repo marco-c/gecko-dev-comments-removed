@@ -26,14 +26,11 @@ typedef double Double;
 
 enum class SurfaceType : int8_t {
   DATA,                   
-  D2D1_BITMAP,            
-  D2D1_DRAWTARGET,        
   CAIRO,                  
   CAIRO_IMAGE,            
   COREGRAPHICS_IMAGE,     
   COREGRAPHICS_CGCONTEXT, 
   SKIA,                   
-  D2D1_1_IMAGE,           
   RECORDING,              
   DATA_SHARED,            
   DATA_RECYCLING_SHARED,  
@@ -766,11 +763,9 @@ enum class DrawTargetType : int8_t {
 
 enum class BackendType : int8_t {
   NONE = 0,
-  DIRECT2D,  
   CAIRO,
   SKIA,
   RECORDING,
-  DIRECT2D1_1,
   WEBRENDER_TEXT,
   WEBGL,
 

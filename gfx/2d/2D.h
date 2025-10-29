@@ -63,9 +63,6 @@ typedef _FcPattern FcPattern;
 
 struct ID3D11Texture2D;
 struct ID3D11Device;
-struct ID2D1Device;
-struct ID2D1DeviceContext;
-struct ID2D1Multithread;
 struct IDWriteFactory;
 struct IDWriteRenderingParams;
 struct IDWriteFontFace;
@@ -2358,28 +2355,12 @@ class GFX2D_API Factory {
 #endif
 
 #ifdef WIN32
-  static already_AddRefed<DrawTarget> CreateDrawTargetForD3D11Texture(
-      ID3D11Texture2D* aTexture, SurfaceFormat aFormat);
-
-  
-
-
-
-
   static bool SetDirect3D11Device(ID3D11Device* aDevice);
   static RefPtr<ID3D11Device> GetDirect3D11Device();
-  static RefPtr<ID2D1Device> GetD2D1Device(uint32_t* aOutSeqNo = nullptr);
-  static bool HasD2D1Device();
   static RefPtr<IDWriteFactory> GetDWriteFactory();
   static RefPtr<IDWriteFactory> EnsureDWriteFactory();
-  static bool SupportsD2D1();
   static RefPtr<IDWriteFontCollection> GetDWriteSystemFonts(
       bool aUpdate = false);
-  static RefPtr<ID2D1DeviceContext> GetD2DDeviceContext();
-
-  static uint64_t GetD2DVRAMUsageDrawTarget();
-  static uint64_t GetD2DVRAMUsageSourceSurface();
-  static void D2DCleanup();
 
   static already_AddRefed<ScaledFont> CreateScaledFontForDWriteFont(
       IDWriteFontFace* aFontFace, const gfxFontStyle* aStyle,
@@ -2410,13 +2391,10 @@ class GFX2D_API Factory {
                               gfx::ColorRange aColorRange);
 
  private:
-  static StaticRefPtr<ID2D1Device> mD2D1Device;
   static StaticRefPtr<ID3D11Device> mD3D11Device;
   static StaticRefPtr<IDWriteFactory> mDWriteFactory;
   static bool mDWriteFactoryInitialized;
   static StaticRefPtr<IDWriteFontCollection> mDWriteSystemFonts;
-  static StaticRefPtr<ID2D1DeviceContext> mMTDC;
-  static StaticRefPtr<ID2D1DeviceContext> mOffMTDC;
 
   static bool ReadbackTexture(uint8_t* aDestData, int32_t aDestStride,
                               ID3D11Texture2D* aSrcTexture);
@@ -2432,23 +2410,7 @@ class GFX2D_API Factory {
   
   
   static StaticMutex mDeviceLock;
-  
-  
-  static StaticMutex mDTDependencyLock;
-
-  friend class DrawTargetD2D1;
 #endif  
-};
-
-class MOZ_RAII AutoSerializeWithMoz2D final {
- public:
-  explicit AutoSerializeWithMoz2D(BackendType aBackendType);
-  ~AutoSerializeWithMoz2D();
-
- private:
-#if defined(WIN32)
-  RefPtr<ID2D1Multithread> mMT;
-#endif
 };
 
 }  

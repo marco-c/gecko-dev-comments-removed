@@ -1241,8 +1241,7 @@ bool gfxPlatform::UseRemoteCanvas() {
 
 bool gfxPlatform::IsBackendAccelerated(
     const mozilla::gfx::BackendType aBackendType) {
-  return aBackendType == BackendType::DIRECT2D ||
-         aBackendType == BackendType::DIRECT2D1_1;
+  return false;
 }
 
 
@@ -1955,17 +1954,8 @@ void gfxPlatform::InitBackendPrefs(BackendPrefsData&& aPrefsData) {
     mPreferredCanvasBackend = aPrefsData.mCanvasDefault;
   }
 
-  if (mPreferredCanvasBackend == BackendType::DIRECT2D1_1) {
-    
-    
-    
-    mFallbackCanvasBackend = GetCanvasBackendPref(
-        aPrefsData.mCanvasBitmask & ~(BackendTypeBit(mPreferredCanvasBackend) |
-                                      BackendTypeBit(BackendType::DIRECT2D)));
-  } else {
-    mFallbackCanvasBackend = GetCanvasBackendPref(
-        aPrefsData.mCanvasBitmask & ~BackendTypeBit(mPreferredCanvasBackend));
-  }
+  mFallbackCanvasBackend = GetCanvasBackendPref(
+      aPrefsData.mCanvasBitmask & ~BackendTypeBit(mPreferredCanvasBackend));
 
   mContentBackendBitmask = aPrefsData.mContentBitmask;
   mContentBackend = GetContentBackendPref(mContentBackendBitmask);
@@ -3950,7 +3940,6 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
     return true;
   }
 
-  
   
   if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     gfxConfig::GetFeature(Feature::D3D11_COMPOSITING)
