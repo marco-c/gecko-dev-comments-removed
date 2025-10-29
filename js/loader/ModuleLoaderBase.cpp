@@ -1636,9 +1636,9 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   }
 
   
-  rv = mLoader->MaybePrepareModuleForCacheAfterExecute(aRequest, NS_OK);
+  rv = mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
 
-  mLoader->MaybeUpdateCache();
+  mLoader->MaybeUpdateDiskCache();
 
   return rv;
 }

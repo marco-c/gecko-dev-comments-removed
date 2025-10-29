@@ -717,15 +717,15 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
-  nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
-                                            nsresult aRv);
+  nsresult MaybePrepareForDiskCacheAfterExecute(ScriptLoadRequest* aRequest,
+                                                nsresult aRv);
 
   
   
   
   
-  nsresult MaybePrepareModuleForCacheAfterExecute(ModuleLoadRequest* aRequest,
-                                                  nsresult aRv) override;
+  nsresult MaybePrepareModuleForDiskCacheAfterExecute(
+      ModuleLoadRequest* aRequest, nsresult aRv) override;
 
   
   nsresult EvaluateScript(nsIGlobalObject* aGlobalObject,
@@ -748,17 +748,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-
-
-  void MaybeUpdateCache() override;
+  void MaybeUpdateDiskCache() override;
 
   
 
 
-
-
-
-  void UpdateCache();
+  void UpdateDiskCache();
 
   
 
@@ -772,9 +767,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-
-
-  void GiveUpCaching();
+  void GiveUpDiskCaching();
 
   already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
       ScriptLoadRequest* aRequest);
@@ -905,7 +898,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   bool mDeferCheckpointReached;
   bool mBlockingDOMContentLoaded;
   bool mLoadEventFired;
-  bool mGiveUpCaching;
+  bool mGiveUpDiskCaching;
   bool mContinueParsingDocumentAfterCurrentScript;
 
   TimeDuration mMainThreadParseTime;
