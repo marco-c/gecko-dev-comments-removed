@@ -37,7 +37,7 @@ let zero32 =
 codegenTestX64_adhoc(
     zero32,
     'f',
-    'xor %eax, %eax', {no_prefix:true});
+    'xor %eax, %eax');
 assertEq(wasmEvalText(zero32).exports.f(-37), 0)
 assertEq(wasmEvalText(zero32).exports.f(42), 0)
 
@@ -83,7 +83,7 @@ let double32 =
 codegenTestX64_adhoc(
     double32,
     'f',
-    'add %eax, %eax', {no_prefix:true});
+    'lea \\(%rdi,%rdi,1\\), %eax');
 assertEq(wasmEvalText(double32).exports.f(-37), -74)
 assertEq(wasmEvalText(double32).exports.f(42), 84)
 
@@ -106,7 +106,7 @@ let quad32 =
 codegenTestX64_adhoc(
     quad32,
     'f',
-    'shl \\$0x02, %eax', {no_prefix:true});
+    'lea \\(,%rdi,4\\), %eax');
 assertEq(wasmEvalText(quad32).exports.f(-37), -148)
 assertEq(wasmEvalText(quad32).exports.f(42), 168)
 
@@ -129,7 +129,7 @@ let quint32 =
 codegenTestX64_adhoc(
     quint32,
     'f',
-    'imul \\$0x05, %eax, %eax', {no_prefix:true});
+    'lea \\(%rdi,%rdi,4\\), %eax');
 assertEq(wasmEvalText(quint32).exports.f(-37), -37*5)
 assertEq(wasmEvalText(quint32).exports.f(42), 42*5)
 
