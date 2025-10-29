@@ -553,7 +553,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
 
   if (LOG_ENABLED()) {
     nsAutoCString url;
-    aRequest->mURI->GetAsciiSpec(url);
+    aRequest->URI()->GetAsciiSpec(url);
     LOG(("ScriptLoadRequest (%p): Start module load %s", aRequest, url.get()));
   }
 
@@ -561,7 +561,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   
   MOZ_ASSERT_IF(
       aRestart == RestartRequest::Yes,
-      IsModuleFetching(ModuleMapKey(aRequest->mURI, aRequest->mModuleType)));
+      IsModuleFetching(ModuleMapKey(aRequest->URI(), aRequest->mModuleType)));
 
   
   nsresult rv = NS_OK;
@@ -573,7 +573,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   
   if (aRestart == RestartRequest::No &&
       ModuleMapContainsURL(
-          ModuleMapKey(aRequest->mURI, aRequest->mModuleType))) {
+          ModuleMapKey(aRequest->URI(), aRequest->mModuleType))) {
     LOG(("ScriptLoadRequest (%p): Waiting for module fetch", aRequest));
     WaitForModuleFetch(aRequest);
     return NS_OK;
@@ -584,7 +584,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
 
   if (isCachedStencil) {
     MOZ_ASSERT(
-        IsModuleFetched(ModuleMapKey(aRequest->mURI, aRequest->mModuleType)));
+        IsModuleFetched(ModuleMapKey(aRequest->URI(), aRequest->mModuleType)));
     return NS_OK;
   }
 
@@ -626,7 +626,7 @@ nsresult ModuleLoaderBase::GetFetchedModuleURLs(nsTArray<nsCString>& aURLs) {
 void ModuleLoaderBase::SetModuleFetchStarted(ModuleLoadRequest* aRequest) {
   
 
-  ModuleMapKey moduleMapKey(aRequest->mURI, aRequest->mModuleType);
+  ModuleMapKey moduleMapKey(aRequest->URI(), aRequest->mModuleType);
 
   MOZ_ASSERT(aRequest->IsFetching());
   MOZ_ASSERT(!ModuleMapContainsURL(moduleMapKey));
@@ -651,7 +651,7 @@ ModuleLoaderBase::SetModuleFetchFinishedAndGetWaitingRequests(
        "%u)",
        aRequest, aRequest->mModuleScript.get(), unsigned(aResult)));
 
-  ModuleMapKey moduleMapKey(aRequest->mURI, aRequest->mModuleType);
+  ModuleMapKey moduleMapKey(aRequest->URI(), aRequest->mModuleType);
 
   auto entry = mFetchingModules.Lookup(moduleMapKey);
   if (!entry) {
@@ -707,7 +707,7 @@ void ModuleLoaderBase::ResumeWaitingRequest(ModuleLoadRequest* aRequest,
 }
 
 void ModuleLoaderBase::WaitForModuleFetch(ModuleLoadRequest* aRequest) {
-  ModuleMapKey moduleMapKey(aRequest->mURI, aRequest->mModuleType);
+  ModuleMapKey moduleMapKey(aRequest->URI(), aRequest->mModuleType);
   MOZ_ASSERT(ModuleMapContainsURL(moduleMapKey));
 
   if (auto entry = mFetchingModules.Lookup(moduleMapKey)) {
@@ -866,7 +866,7 @@ void ModuleLoaderBase::OnFetchFailed(ModuleLoadRequest* aRequest) {
     
     if (aRequest->GetRootModule()->IsDynamicImport()) {
       nsAutoCString url;
-      aRequest->mURI->GetSpec(url);
+      aRequest->URI()->GetSpec(url);
       JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                                 JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
       FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
@@ -1002,14 +1002,6 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
     }
 
     MOZ_ASSERT(aRequest->mLoadedScript->IsModuleScript());
-#ifdef DEBUG
-    {
-      bool equals = false;
-      aRequest->mURI->Equals(aRequest->mLoadedScript->GetURI(), &equals);
-      MOZ_ASSERT(equals);
-    }
-#endif
-
     if (!aRequest->mLoadedScript->BaseURL()) {
       
       
@@ -1240,8 +1232,8 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
   
   
   
-  bool isSync = aRequest->mURI->SchemeIs("chrome") ||
-                aRequest->mURI->SchemeIs("resource");
+  bool isSync = aRequest->URI()->SchemeIs("chrome") ||
+                aRequest->URI()->SchemeIs("resource");
 
   
   if (aRequest->HasScriptLoadContext() && !isSync) {
@@ -1363,7 +1355,7 @@ bool ModuleLoaderBase::OnLoadRequestedModulesRejected(
       FinishLoadingImportedModuleFailed(aCx, payload, error);
     } else {
       nsAutoCString url;
-      aRequest->mURI->GetSpec(url);
+      aRequest->URI()->GetSpec(url);
       JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
                                 JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
       FinishLoadingImportedModuleFailedWithPendingException(aCx, payload);
