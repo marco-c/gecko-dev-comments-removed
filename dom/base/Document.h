@@ -1016,22 +1016,37 @@ class Document : public nsINode,
 
   void SetBidiEnabled() { mBidiEnabled = true; }
 
+  enum class InitialStatus : uint8_t {
+    IsInitial,
+    IsInitialButExplicitlyOpened,
+    WasInitial,
+    NeverInitial,
+  };
+
   
 
 
-  bool IsInitialDocument() const { return mIsInitialDocumentInWindow; }
+  bool IsInitialDocument() const {
+    return mInitialStatus == InitialStatus::IsInitial;
+  }
 
   
 
 
 
-  bool IsEverInitialDocument() const { return mIsEverInitialDocumentInWindow; }
+  bool IsEverInitialDocument() const {
+    return mInitialStatus != InitialStatus::NeverInitial;
+  }
 
   
 
 
 
   void SetIsInitialDocument(bool aIsInitialDocument);
+
+  InitialStatus GetInitialStatus() const { return mInitialStatus; }
+
+  void SetInitialStatus(Document::InitialStatus aStatus);
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
 
@@ -4835,6 +4850,13 @@ class Document : public nsINode,
   
   RefPtr<PermissionDelegateHandler> mPermissionDelegateHandler;
 
+  
+  
+  
+  
+  
+  InitialStatus mInitialStatus;
+
   bool mCachedStateObjectValid : 1;
   bool mBlockAllMixedContent : 1;
   bool mBlockAllMixedContentPreloads : 1;
@@ -4853,17 +4875,6 @@ class Document : public nsINode,
   bool mBidiEnabled : 1;
   
   bool mMayNeedFontPrefsUpdate : 1;
-
-  
-  
-  
-  
-  bool mIsInitialDocumentInWindow : 1;
-
-  
-  
-  
-  bool mIsEverInitialDocumentInWindow : 1;
 
   bool mIgnoreDocGroupMismatches : 1;
 

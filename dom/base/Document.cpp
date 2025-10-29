@@ -1371,6 +1371,7 @@ Document::Document(const char* aContentType,
 #ifdef DEBUG
       mStyledLinksCleared(false),
 #endif
+      mInitialStatus(Document::InitialStatus::NeverInitial),
       mCachedStateObjectValid(false),
       mBlockAllMixedContent(false),
       mBlockAllMixedContentPreloads(false),
@@ -1381,8 +1382,6 @@ Document::Document(const char* aContentType,
       mRenderingSuppressedForViewTransitions(false),
       mBidiEnabled(false),
       mMayNeedFontPrefsUpdate(true),
-      mIsInitialDocumentInWindow(false),
-      mIsEverInitialDocumentInWindow(false),
       mIgnoreDocGroupMismatches(false),
       mAddedToMemoryReportingAsDataDocument(false),
       mMayStartLayout(true),
@@ -10479,7 +10478,9 @@ Document* Document::Open(const Optional<nsAString>& ,
     
     
     
-    SetIsInitialDocument(false);
+    if (IsInitialDocument()) {
+      SetInitialStatus(Document::InitialStatus::IsInitialButExplicitlyOpened);
+    }
 
     
     nsDocShell::Cast(shell)->SetDocumentOpenedButNotLoaded();
@@ -20383,16 +20384,26 @@ nsIPrincipal* Document::GetPrincipalForPrefBasedHacks() const {
 }
 
 void Document::SetIsInitialDocument(bool aIsInitialDocument) {
-  mIsInitialDocumentInWindow = aIsInitialDocument;
-
-  if (aIsInitialDocument && !mIsEverInitialDocumentInWindow) {
-    mIsEverInitialDocumentInWindow = aIsInitialDocument;
+  if (aIsInitialDocument) {
+    mInitialStatus = InitialStatus::IsInitial;
+  } else if (mInitialStatus != InitialStatus::NeverInitial) {
+    mInitialStatus = InitialStatus::WasInitial;
   }
 
   
   
   if (auto* wgc = GetWindowGlobalChild()) {
     wgc->SendSetIsInitialDocument(aIsInitialDocument);
+  }
+}
+
+void Document::SetInitialStatus(InitialStatus aStatus) {
+  mInitialStatus = aStatus;
+
+  
+  
+  if (auto* wgc = GetWindowGlobalChild()) {
+    wgc->SendSetIsInitialDocument(aStatus == InitialStatus::IsInitial);
   }
 }
 
