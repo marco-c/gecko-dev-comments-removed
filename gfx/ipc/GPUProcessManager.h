@@ -27,8 +27,6 @@ enum class DeviceResetReason;
 namespace mozilla {
 class MemoryReportingProcess;
 class PRemoteMediaManagerChild;
-class RDDProcessManager;
-class RDDChild;
 namespace layers {
 class IAPZCTreeManager;
 class CompositorOptions;
@@ -52,9 +50,6 @@ class BrowserParent;
 }  
 namespace ipc {
 class GeckoChildProcessHost;
-#ifdef MOZ_WMF_MEDIA_ENGINE
-class UtilityMediaServiceChild;
-#endif
 }  
 namespace gfx {
 
@@ -110,8 +105,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   nsresult EnsureGPUReady();
 
-  bool IsGPUReady() const;
-
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
       nsIWidget* aWidget, WebRenderLayerManager* aLayerManager,
       CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
@@ -126,12 +119,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       mozilla::ipc::Endpoint<PRemoteMediaManagerChild>* aOutVideoManager,
       dom::ContentParentId aChildId, nsTArray<uint32_t>* aNamespaces);
 
-  nsresult CreateRddVideoBridge(RDDProcessManager* aRDD, RDDChild* aChild);
-#ifdef MOZ_WMF_MEDIA_ENGINE
-  nsresult CreateUtilityMFCDMVideoBridge(
-      mozilla::ipc::UtilityMediaServiceChild* aChild,
-      mozilla::ipc::EndpointProcInfo aOtherProcess);
-#endif
+  
+  void InitVideoBridge(
+      mozilla::ipc::Endpoint<PVideoBridgeParent>&& aVideoBridge,
+      layers::VideoBridgeSource aSource);
 
   
   
@@ -244,6 +235,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void OnPreferenceChange(const char16_t* aData);
   void ScreenInformationChanged();
 
+  bool IsGPUReady() const;
+
   bool CreateContentCompositorManager(
       mozilla::ipc::EndpointProcInfo aOtherProcess,
       dom::ContentParentId aChildId, uint32_t aNamespace,
@@ -260,11 +253,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
       mozilla::ipc::EndpointProcInfo aOtherProcess,
       dom::ContentParentId aChildId,
       mozilla::ipc::Endpoint<PRemoteMediaManagerChild>* aOutEndPoint);
-
-  nsresult EnsureVideoBridge(
-      layers::VideoBridgeSource aSource,
-      mozilla::ipc::EndpointProcInfo aOtherProcess,
-      mozilla::ipc::Endpoint<layers::PVideoBridgeChild>* aOutChildPipe);
 
   
   
