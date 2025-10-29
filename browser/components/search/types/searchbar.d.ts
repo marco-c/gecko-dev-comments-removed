@@ -1,10 +1,5 @@
 
 
-
-declare class MozXULElement extends XULElement {}
-
-
-
-declare class MozSearchbar extends MozXULElement {
+interface MozSearchbar extends MozXULElement {
   select(): void;
 }

@@ -193,7 +193,7 @@ declare class TabBase {
 
 
 
-    readonly get browser(): XULBrowserElement;
+    readonly get browser(): MozBrowser;
     
 
 
