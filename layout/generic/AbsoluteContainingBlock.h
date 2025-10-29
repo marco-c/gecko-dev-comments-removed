@@ -122,9 +122,8 @@ class AbsoluteContainingBlock {
 
 
 
-
   void ResolveSizeDependentOffsets(
-      ReflowInput& aKidReflowInput, const LogicalSize& aLogicalCBSize,
+      ReflowInput& aKidReflowInput, const LogicalSize& aCBSize,
       const LogicalSize& aKidSize, const LogicalMargin& aMargin,
       const StylePositionArea& aResolvedPositionArea, LogicalMargin& aOffsets);
 
@@ -140,9 +139,8 @@ class AbsoluteContainingBlock {
 
 
 
-
   void ResolveAutoMarginsAfterLayout(ReflowInput& aKidReflowInput,
-                                     const LogicalSize& aLogicalCBSize,
+                                     const LogicalSize& aCBSize,
                                      const LogicalSize& aKidSize,
                                      LogicalMargin& aMargin,
                                      LogicalMargin& aOffsets);
