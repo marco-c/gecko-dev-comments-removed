@@ -18,8 +18,10 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <type_traits>
 
 namespace mozilla {
 
@@ -39,17 +41,18 @@ static MOZ_ALWAYS_INLINE void PodZero(T* aT) {
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE void PodZero(T* aT, size_t aNElem) {
-  static_assert(std::is_trivially_copyable_v<T>,
-                "PodZero requires trivially copyable types");
+static MOZ_ALWAYS_INLINE void PodZero(T* aT, size_t aNElem) { static_assert(std::is_trivially_copyable_v<T>, "PodZero requires
+      trivially copyable types");
   
 
 
 
 
-  for (T* end = aT + aNElem; aT < end; aT++) {
-    memset(aT, 0, sizeof(T));
-  }
+
+
+
+
+  memset(aT, 0, sizeof(T) * aNElem);
 }
 
 
@@ -151,7 +154,7 @@ template <typename T>
 static MOZ_ALWAYS_INLINE void PodMove(T* aDst, const T* aSrc, size_t aNElem) {
   static_assert(std::is_trivially_copyable_v<T>,
                 "PodMove requires trivially copyable types");
-  MOZ_ASSERT(aNElem <= SIZE_MAX / sizeof(T),
+  MOZ_ASSERT(aNElem <= std::numeric_limits<size_t>::max() / sizeof(T),
              "trying to move an impossible number of elements");
   memmove(aDst, aSrc, aNElem * sizeof(T));
 }
