@@ -836,6 +836,7 @@ function runInParent(aFunctionOrURL) {
 
 
 
+
 function manageLoginsInParent() {
   return runInParent(function addLoginsInParentInner() {
     
@@ -889,11 +890,13 @@ function manageLoginsInParent() {
 
 
 
+
 async function addLoginsInParent(...aLogins) {
   const script = manageLoginsInParent();
   await script.sendQuery("addLogins", aLogins);
   return script;
 }
+
 
 
 
@@ -941,6 +944,7 @@ async function setStoredLoginsDuringTask(...logins) {
     await script.sendQuery("addLogins", loginsBefore);
   });
 }
+
 
 
 

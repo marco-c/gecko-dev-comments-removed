@@ -300,10 +300,6 @@ async function testDraggingClassIsAddedOnValueUpdate(view) {
 
 
 
-
-
-
-
 function runIsDraggableTest(view, tests) {
   for (const test of tests) {
     const property = test;
