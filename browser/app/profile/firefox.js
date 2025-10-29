@@ -753,9 +753,6 @@ pref("browser.urlbar.wikipedia.featureGate", false);
 pref("browser.urlbar.suggest.wikipedia", true);
 
 
-pref("browser.urlbar.update2.engineAliasRefresh", true);
-
-
 pref("browser.urlbar.suggest.realtimeOptIn", true);
 
 

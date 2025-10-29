@@ -7,12 +7,6 @@
 
 
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update2.engineAliasRefresh", true]],
-  });
-});
-
 
 
 
