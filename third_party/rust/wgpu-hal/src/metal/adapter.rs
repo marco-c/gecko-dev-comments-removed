@@ -902,6 +902,12 @@ impl super::PrivateCapabilities {
                 && (device.supports_family(MTLGPUFamily::Apple7)
                     || device.supports_family(MTLGPUFamily::Mac2)),
             supports_shared_event: version.at_least((10, 14), (12, 0), os_is_mac),
+            
+            supports_memoryless_storage: if family_check {
+                device.supports_family(MTLGPUFamily::Apple2)
+            } else {
+                version.at_least((11, 0), (10, 0), os_is_mac)
+            },
         }
     }
 
