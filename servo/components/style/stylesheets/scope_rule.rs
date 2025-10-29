@@ -302,9 +302,6 @@ where
     let mut parent = Some(element);
     let mut proximity = 0usize;
     while let Some(p) = parent {
-        if ceiling == Some(p.opaque()) {
-            break;
-        }
         if target.check(p, ceiling, scope_subject_map, context) {
             result.push(ScopeRootCandidate {
                 root: p.opaque(),
@@ -312,6 +309,9 @@ where
             });
             
             
+        }
+        if ceiling == Some(p.opaque()) {
+            break;
         }
         parent = p.parent_element();
         proximity += 1;
