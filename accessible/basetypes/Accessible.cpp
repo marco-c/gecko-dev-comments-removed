@@ -199,6 +199,35 @@ bool Accessible::IsTextRole() {
   return true;
 }
 
+bool Accessible::IsEditableRoot() const {
+  if (IsTextField()) {
+    
+    return true;
+  }
+
+  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
+  if (roleMapEntry && (roleMapEntry->role == roles::ENTRY ||
+                       roleMapEntry->role == roles::SEARCHBOX)) {
+    
+    return true;
+  }
+
+  if (!IsEditable()) {
+    return false;
+  }
+
+  if (IsDoc()) {
+    return true;
+  }
+
+  Accessible* parent = Parent();
+  if (parent && !parent->IsEditable()) {
+    return true;
+  }
+
+  return false;
+}
+
 uint32_t Accessible::StartOffset() {
   MOZ_ASSERT(IsLink(), "StartOffset is called not on hyper link!");
   Accessible* parent = Parent();
@@ -685,20 +714,15 @@ void Accessible::ApplyImplicitState(uint64_t& aState) const {
        roleMapEntry->Is(nsGkAtoms::tab) ||
        roleMapEntry->Is(nsGkAtoms::treeitem)) &&
       !(aState & states::SELECTED) && ARIASelected().valueOr(true)) {
-    
-    
-    if (roleMapEntry->role == roles::PAGETAB) {
-      if (aState & states::FOCUSED) {
-        aState |= states::SELECTED;
-      } else {
-        
-        Relation rel = RelationByType(RelationType::LABEL_FOR);
-        Accessible* relTarget = nullptr;
-        while ((relTarget = rel.Next())) {
-          if (relTarget->Role() == roles::PROPERTYPAGE &&
-              FocusMgr()->IsFocusWithin(relTarget)) {
-            aState |= states::SELECTED;
-          }
+    if (roleMapEntry->role == roles::PAGETAB && !(aState & states::FOCUSED)) {
+      
+      
+      Relation rel = RelationByType(RelationType::LABEL_FOR);
+      Accessible* relTarget = nullptr;
+      while ((relTarget = rel.Next())) {
+        if (relTarget->Role() == roles::PROPERTYPAGE &&
+            FocusMgr()->IsFocusWithin(relTarget)) {
+          aState |= states::SELECTED;
         }
       }
     } else if (aState & states::FOCUSED) {

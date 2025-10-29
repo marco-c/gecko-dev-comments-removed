@@ -429,6 +429,8 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual bool IsPopover() const override;
 
+  virtual bool IsEditable() const override;
+
   
 
 
