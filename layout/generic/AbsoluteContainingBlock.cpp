@@ -658,26 +658,40 @@ static nscoord OffsetToAlignedStaticPos(
     
     
     
-    
-    const auto unionedStartOffset =
-        std::min(0, aNonAutoAlignParams->mCurrentStartInset);
     const auto cbSize = aAbsPosCBSize.Size(aAbsPosCBAxis, aAbsPosCBWM);
-    const auto unionedEndOffset =
-        std::max(cbSize, cbSize - aNonAutoAlignParams->mCurrentEndInset);
-    const auto kidSizeInAxis =
-        aKidSizeInAbsPosCBWM.Size(aAbsPosCBAxis, aAbsPosCBWM);
-    if (unionedEndOffset - unionedStartOffset < kidSizeInAxis) {
+    
+    const auto imcbStart = aNonAutoAlignParams->mCurrentStartInset;
+    const auto imcbEnd = cbSize - aNonAutoAlignParams->mCurrentEndInset;
+    const auto kidSize = aKidSizeInAbsPosCBWM.Size(aAbsPosCBAxis, aAbsPosCBWM);
+    const auto kidStart = aNonAutoAlignParams->mCurrentStartInset + offset;
+    const auto kidEnd = kidStart + kidSize;
+    
+    
+    
+    const auto overflowLimitRectStart = std::min(0, imcbStart);
+    const auto overflowLimitRectEnd = std::max(cbSize, imcbEnd);
+
+    if (kidStart >= imcbStart && kidEnd <= imcbEnd) {
       
-      offset = -aNonAutoAlignParams->mCurrentStartInset + unionedStartOffset;
-    } else {
-      const auto start = aNonAutoAlignParams->mCurrentStartInset;
-      const auto end = start + kidSizeInAxis;
+    } else if (kidSize <= overflowLimitRectEnd - overflowLimitRectStart) {
       
-      if (start < unionedStartOffset) {
-        offset = unionedStartOffset - start;
-      } else if (end > unionedEndOffset) {
-        offset = unionedEndOffset - end;
+      if (kidEnd < imcbEnd) {
+        offset += imcbEnd - kidEnd;
+      } else if (kidStart > imcbStart) {
+        offset -= kidStart - imcbStart;
+      } else {
+        
+        if (kidStart < overflowLimitRectStart) {
+          offset += overflowLimitRectStart - kidStart;
+        } else if (kidEnd > overflowLimitRectEnd) {
+          offset -= kidEnd - overflowLimitRectEnd;
+        }
       }
+    } else {
+      
+      
+      offset =
+          -aNonAutoAlignParams->mCurrentStartInset + overflowLimitRectStart;
     }
   }
 
