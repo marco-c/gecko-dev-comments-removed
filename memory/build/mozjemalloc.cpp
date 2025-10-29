@@ -406,7 +406,7 @@ struct arena_bin_t {
   uint32_t mRunFirstRegionOffset;
 
   
-  uint32_t mNumRuns;
+  uint32_t mNumRuns = 0;
 
   
   
@@ -435,7 +435,7 @@ struct arena_bin_t {
   
   
   
-  inline void Init(SizeClass aSizeClass);
+  explicit arena_bin_t(SizeClass aSizeClass);
 };
 
 
@@ -2557,20 +2557,15 @@ arena_run_t* arena_t::GetNonFullBinRun(arena_bin_t* aBin) {
   return GetNewEmptyBinRun(aBin);
 }
 
-void arena_bin_t::Init(SizeClass aSizeClass) {
+arena_bin_t::arena_bin_t(SizeClass aSizeClass) : mSizeClass(aSizeClass.Size()) {
   size_t try_run_size;
   unsigned try_nregs, try_mask_nelms, try_reg0_offset;
   
   static const size_t kFixedHeaderSize = offsetof(arena_run_t, mRegionsMask);
 
-  new (&mNonFullRuns) DoublyLinkedList<arena_run_t>();
-
   MOZ_ASSERT(aSizeClass.Size() <= gMaxBinClass);
 
   try_run_size = gPageSize;
-
-  mSizeClass = aSizeClass.Size();
-  mNumRuns = 0;
 
   
   while (true) {
@@ -3553,8 +3548,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate)
 
   unsigned i;
   for (i = 0;; i++) {
-    arena_bin_t& bin = mBins[i];
-    bin.Init(sizeClass);
+    new (&mBins[i]) arena_bin_t(sizeClass);
 
     
     if (sizeClass.Size() == gMaxBinClass) {
