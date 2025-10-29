@@ -457,6 +457,10 @@ class PresShell final : public nsStubDocumentObserver,
   nsIWidget* GetRootWidget() const;
 
   
+  
+  nsIWidget* GetNearestWidget() const;
+
+  
 
 
   ScrollContainerFrame* GetRootScrollContainerFrame() const;
