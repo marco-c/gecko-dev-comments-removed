@@ -64,6 +64,8 @@
 
 - (BOOL)moxIsLiveRegion;
 
+- (BOOL)moxIsTextField;
+
 
 - (id<MOXAccessible> _Nullable)moxFindAncestor:
     (BOOL (^_Nonnull)(id<MOXAccessible> _Nonnull moxAcc,
