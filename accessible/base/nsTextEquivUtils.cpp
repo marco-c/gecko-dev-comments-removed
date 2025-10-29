@@ -59,6 +59,16 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(
   }
   GetReferencedAccs().Insert(aAccessible);
 
+  if (nsIContent* content = aAccessible->GetContent()) {
+    AssociatedElementsIterator iter(aAccessible->Document(), content,
+                                    nsGkAtoms::aria_actions);
+    while (Accessible* actionTarget = iter.Next()) {
+      
+      
+      GetReferencedAccs().Insert(actionTarget);
+    }
+  }
+
   if (GetRoleRule(aAccessible->Role()) == eNameFromSubtreeRule) {
     
     if (aAccessible->IsContent()) {

@@ -823,7 +823,8 @@ static bool sIsAttrElementChanging = false;
 
 void DocAccessible::AttributeWillChange(dom::Element* aElement,
                                         int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, AttrModType) {
+                                        nsAtom* aAttribute,
+                                        AttrModType aModType) {
   if (sIsAttrElementChanging) {
     
     return;
@@ -858,6 +859,19 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
           new AccStateChangeEvent(activeDescendant, states::ACTIVE, false);
       FireDelayedEvent(event);
     }
+  }
+
+  if ((aModType == AttrModType::Modification ||
+       aModType == AttrModType::Removal)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    MaybeHandleChangeToAriaActions(accessible, aAttribute);
   }
 
   
@@ -957,6 +971,19 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
   if (IsAdditionOrModification(aModType)) {
     AddDependentIDsFor(accessible, aAttribute);
     AddDependentElementsFor(accessible, aAttribute);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MaybeHandleChangeToAriaActions(accessible, aAttribute);
   }
 }
 
@@ -3146,6 +3173,34 @@ void DocAccessible::MaybeHandleChangeToHiddenNameOrDescription(
                            ? nsIAccessibleEvent::EVENT_NAME_CHANGE
                            : nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE,
                        dependentAcc);
+    }
+  }
+}
+
+void DocAccessible::MaybeHandleChangeToAriaActions(LocalAccessible* aAcc,
+                                                   const nsAtom* aAttribute) {
+  if (aAttribute == nsGkAtoms::aria_actions &&
+      nsTextEquivUtils::HasNameRule(aAcc, eNameFromSubtreeIfReqRule)) {
+    
+    
+    AssociatedElementsIterator iter(mDoc, aAcc->Elm(), nsGkAtoms::aria_actions);
+    while (LocalAccessible* target = iter.Next()) {
+      if (aAcc->IsAncestorOf(target)) {
+        mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, aAcc);
+        break;
+      }
+    }
+  }
+
+  if (aAttribute == nsGkAtoms::id) {
+    RelatedAccIterator iter(mDoc, aAcc->Elm(), nsGkAtoms::aria_actions);
+    while (LocalAccessible* host = iter.Next()) {
+      
+      
+      if (host->IsAncestorOf(aAcc) &&
+          nsTextEquivUtils::HasNameRule(host, eNameFromSubtreeIfReqRule)) {
+        mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, host);
+      }
     }
   }
 }
