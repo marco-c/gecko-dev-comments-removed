@@ -30,17 +30,7 @@ void MediaDrmRemoteCDMParent::InitializeStatics() {
 
   sCbMap = new DrmCallbackMap();
 
-  
-  
-  
-  
-  void* lib = dlopen("libmediandk.so", RTLD_NOW);
-  sAMediaCodecCryptoInfo_setPattern =
-      (AMediaCodecCryptoInfoFnPtr_setPattern)dlsym(
-          lib, "AMediaCodecCryptoInfo_setPattern");
-  if (__builtin_available(android 24, *)) {
-    MOZ_ASSERT(sAMediaCodecCryptoInfo_setPattern);
-  }
+  MOZ_ASSERT(sAMediaCodecCryptoInfo_setPattern);
 }
 
 
