@@ -6877,7 +6877,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
   nsTArray<RefPtr<Cookie>> cookieList;
   bool stale = false;
   int64_t currentTimeInUsec = PR_Now();
-  int64_t currentTime = currentTimeInUsec / PR_USEC_PER_MSEC;
+  int64_t currentTimeInMSec = currentTimeInUsec / PR_USEC_PER_MSEC;
 
   
   nsCOMPtr<nsICookieService> service =
@@ -6954,7 +6954,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
       }
 
       
-      if (cookie->Expiry() <= currentTime) {
+      if (cookie->ExpiryInMSec() <= currentTimeInMSec) {
         continue;
       }
 

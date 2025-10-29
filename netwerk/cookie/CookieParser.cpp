@@ -501,7 +501,7 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
                              const nsACString& aDateHeader, bool aFromHttp) {
   int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
   int64_t creationTimeInMSec =
-      aCookieData.creationTime() / int64_t(PR_USEC_PER_MSEC);
+      aCookieData.creationTimeInUSec() / int64_t(PR_USEC_PER_MSEC);
 
   
 
@@ -515,12 +515,12 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
   int64_t maxage = 0;
   if (ParseMaxAgeAttribute(aMaxage, &maxage)) {
     if (maxage == INT64_MIN) {
-      aCookieData.expiry() = maxage;
+      aCookieData.expiryInMSec() = maxage;
     } else {
       CheckedInt<int64_t> value(creationTimeInMSec);
       value += (maxageCap ? std::min(maxage, maxageCap) : maxage) * 1000;
 
-      aCookieData.expiry() = value.isValid() ? value.value() : INT64_MAX;
+      aCookieData.expiryInMSec() = value.isValid() ? value.value() : INT64_MAX;
     }
 
     return false;
@@ -561,7 +561,7 @@ bool CookieParser::GetExpiry(CookieStruct& aCookieData,
     
     
 
-    aCookieData.expiry() =
+    aCookieData.expiryInMSec() =
         CookieCommons::MaybeCapExpiry(creationTimeInMSec, expiresInMSec);
     return false;
   }
@@ -661,9 +661,9 @@ void CookieParser::Parse(const nsACString& aBaseDomain, bool aRequireHostMatch,
   MOZ_ASSERT(!mValidation);
 
   
-  mCookieData.expiry() = INT64_MAX;
-  mCookieData.creationTime() =
-      Cookie::GenerateUniqueCreationTime(aCurrentTimeInUSec);
+  mCookieData.expiryInMSec() = INT64_MAX;
+  mCookieData.creationTimeInUSec() =
+      Cookie::GenerateUniqueCreationTimeInUSec(aCurrentTimeInUSec);
 
   mCookieData.schemeMap() = CookieCommons::URIToSchemeType(mHostURI);
 

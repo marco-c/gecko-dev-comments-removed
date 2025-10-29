@@ -59,7 +59,7 @@ class Cookie final : public nsICookie {
  public:
   
   
-  static int64_t GenerateUniqueCreationTime(int64_t aCreationTime);
+  static int64_t GenerateUniqueCreationTimeInUSec(int64_t aCreationTimeInUSec);
 
   
   static already_AddRefed<Cookie> Create(
@@ -83,13 +83,13 @@ class Cookie final : public nsICookie {
     return nsDependentCSubstring(mData.host(), IsDomain() ? 1 : 0);
   }
   inline const nsCString& Path() const { return mData.path(); }
-  inline int64_t Expiry() const { return mData.expiry(); }  
-  inline int64_t LastAccessed() const {
-    return mData.lastAccessed();
-  }  
-  inline int64_t CreationTime() const {
-    return mData.creationTime();
-  }  
+  inline int64_t ExpiryInMSec() const { return mData.expiryInMSec(); }
+  inline int64_t LastAccessedInUSec() const {
+    return mData.lastAccessedInUSec();
+  }
+  inline int64_t CreationTimeInUSec() const {
+    return mData.creationTimeInUSec();
+  }
   inline bool IsSession() const { return mData.isSession(); }
   inline bool IsDomain() const { return *mData.host().get() == '.'; }
   inline bool IsSecure() const { return mData.isSecure(); }
@@ -105,15 +105,21 @@ class Cookie final : public nsICookie {
   inline uint8_t SchemeMap() const { return mData.schemeMap(); }
 
   
-  inline void SetExpiry(int64_t aExpiry) { mData.expiry() = aExpiry; }
-  inline void SetLastAccessed(int64_t aTime) { mData.lastAccessed() = aTime; }
+  inline void SetExpiryInMSec(int64_t aExpiryInMSec) {
+    mData.expiryInMSec() = aExpiryInMSec;
+  }
+  inline void SetLastAccessedInUSec(int64_t aTimeInUSec) {
+    mData.lastAccessedInUSec() = aTimeInUSec;
+  }
   inline void SetIsSession(bool aIsSession) { mData.isSession() = aIsSession; }
   inline bool SetIsHttpOnly(bool aIsHttpOnly) {
     return mData.isHttpOnly() = aIsHttpOnly;
   }
   
   
-  inline void SetCreationTime(int64_t aTime) { mData.creationTime() = aTime; }
+  inline void SetCreationTimeInUSec(int64_t aTimeInUSec) {
+    mData.creationTimeInUSec() = aTimeInUSec;
+  }
   inline void SetSchemeMap(uint8_t aSchemeMap) {
     mData.schemeMap() = aSchemeMap;
   }
@@ -145,8 +151,8 @@ class Cookie final : public nsICookie {
 class CompareCookiesForSending {
  public:
   bool Equals(const nsICookie* aCookie1, const nsICookie* aCookie2) const {
-    return Cookie::Cast(aCookie1)->CreationTime() ==
-               Cookie::Cast(aCookie2)->CreationTime() &&
+    return Cookie::Cast(aCookie1)->CreationTimeInUSec() ==
+               Cookie::Cast(aCookie2)->CreationTimeInUSec() &&
            Cookie::Cast(aCookie2)->Path().Length() ==
                Cookie::Cast(aCookie1)->Path().Length();
   }
@@ -161,8 +167,8 @@ class CompareCookiesForSending {
     
     
     
-    return Cookie::Cast(aCookie1)->CreationTime() <
-           Cookie::Cast(aCookie2)->CreationTime();
+    return Cookie::Cast(aCookie1)->CreationTimeInUSec() <
+           Cookie::Cast(aCookie2)->CreationTimeInUSec();
   }
 };
 

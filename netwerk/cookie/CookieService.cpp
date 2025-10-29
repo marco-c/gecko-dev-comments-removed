@@ -172,7 +172,7 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
   
   if (aLaxByDefault && aCookie->SameSite() == nsICookie::SAMESITE_UNSET &&
       StaticPrefs::network_cookie_sameSite_laxPlusPOST_timeout() > 0 &&
-      currentTimeInUsec - aCookie->CreationTime() <=
+      currentTimeInUsec - aCookie->CreationTimeInUSec() <=
           (StaticPrefs::network_cookie_sameSite_laxPlusPOST_timeout() *
            PR_USEC_PER_SEC) &&
       !NS_IsSafeMethodNav(aChannel)) {
@@ -626,9 +626,9 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   MOZ_ASSERT(cookie);
 
   int64_t currentTimeInUsec = PR_Now();
-  cookie->SetLastAccessed(currentTimeInUsec);
-  cookie->SetCreationTime(
-      Cookie::GenerateUniqueCreationTime(currentTimeInUsec));
+  cookie->SetLastAccessedInUSec(currentTimeInUsec);
+  cookie->SetCreationTimeInUSec(
+      Cookie::GenerateUniqueCreationTimeInUSec(currentTimeInUsec));
 
   
   RefPtr<BrowsingContext> bc = loadInfo->GetTargetBrowsingContext();
@@ -822,11 +822,11 @@ nsresult CookieService::AddInternal(
   NS_ENSURE_SUCCESS(rv, rv);
 
   int64_t currentTimeInUsec = PR_Now();
-  CookieStruct cookieData(nsCString(aName), nsCString(aValue), host,
-                          nsCString(aPath), aExpiry, currentTimeInUsec,
-                          Cookie::GenerateUniqueCreationTime(currentTimeInUsec),
-                          aIsHttpOnly, aIsSession, aIsSecure, aIsPartitioned,
-                          aSameSite, aSchemeMap);
+  CookieStruct cookieData(
+      nsCString(aName), nsCString(aValue), host, nsCString(aPath), aExpiry,
+      currentTimeInUsec,
+      Cookie::GenerateUniqueCreationTimeInUSec(currentTimeInUsec), aIsHttpOnly,
+      aIsSession, aIsSecure, aIsPartitioned, aSameSite, aSchemeMap);
 
   RefPtr<CookieValidation> cv = CookieValidation::Validate(cookieData);
 
@@ -1012,7 +1012,7 @@ void CookieService::GetCookiesForURI(
         nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
     int64_t currentTimeInUsec = PR_Now();
-    int64_t currentTime = currentTimeInUsec / PR_USEC_PER_MSEC;
+    int64_t currentTimeInMSec = currentTimeInUsec / PR_USEC_PER_MSEC;
     bool stale = false;
 
     nsTArray<RefPtr<Cookie>> cookies;
@@ -1054,7 +1054,7 @@ void CookieService::GetCookiesForURI(
       }
 
       
-      if (cookie->Expiry() <= currentTime) {
+      if (cookie->ExpiryInMSec() <= currentTimeInMSec) {
         continue;
       }
 
@@ -1552,7 +1552,7 @@ class RemoveAllSinceRunnable : public Runnable {
     for (CookieArray::size_type iter = 0;
          iter < kYieldPeriod && mIndex < mList.Length(); ++mIndex, ++iter) {
       auto* cookie = static_cast<Cookie*>(mList[mIndex].get());
-      if (cookie->CreationTime() > mSinceWhen &&
+      if (cookie->CreationTimeInUSec() > mSinceWhen &&
           NS_FAILED(mSelf->Remove(cookie->Host(), cookie->OriginAttributesRef(),
                                   cookie->Name(), cookie->Path(),
                                    true, nullptr))) {
@@ -1606,13 +1606,13 @@ namespace {
 class CompareCookiesCreationTime {
  public:
   static bool Equals(const nsICookie* aCookie1, const nsICookie* aCookie2) {
-    return static_cast<const Cookie*>(aCookie1)->CreationTime() ==
-           static_cast<const Cookie*>(aCookie2)->CreationTime();
+    return static_cast<const Cookie*>(aCookie1)->CreationTimeInUSec() ==
+           static_cast<const Cookie*>(aCookie2)->CreationTimeInUSec();
   }
 
   static bool LessThan(const nsICookie* aCookie1, const nsICookie* aCookie2) {
-    return static_cast<const Cookie*>(aCookie1)->CreationTime() <
-           static_cast<const Cookie*>(aCookie2)->CreationTime();
+    return static_cast<const Cookie*>(aCookie1)->CreationTimeInUSec() <
+           static_cast<const Cookie*>(aCookie2)->CreationTimeInUSec();
   }
 };
 
@@ -1632,7 +1632,8 @@ CookieService::GetCookiesSince(int64_t aSinceWhen,
   mPersistentStorage->GetAll(cookieList);
 
   for (RefPtr<nsICookie>& cookie : cookieList) {
-    if (static_cast<Cookie*>(cookie.get())->CreationTime() >= aSinceWhen) {
+    if (static_cast<Cookie*>(cookie.get())->CreationTimeInUSec() >=
+        aSinceWhen) {
       aResult.AppendElement(cookie);
     }
   }
@@ -1727,9 +1728,9 @@ nsICookieValidation::ValidationError CookieService::SetCookiesFromIPC(
       continue;
     }
 
-    cookie->SetLastAccessed(currentTimeInUsec);
-    cookie->SetCreationTime(
-        Cookie::GenerateUniqueCreationTime(currentTimeInUsec));
+    cookie->SetLastAccessedInUSec(currentTimeInUsec);
+    cookie->SetCreationTimeInUSec(
+        Cookie::GenerateUniqueCreationTimeInUSec(currentTimeInUsec));
 
     storage->AddCookie(nullptr, aBaseDomain, aAttrs, cookie, currentTimeInUsec,
                        aHostURI, ""_ns, aFromHttp, aIsThirdParty,
