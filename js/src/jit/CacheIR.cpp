@@ -10901,7 +10901,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetSize() {
   
   ValOperandId thisValId = loadThis(calleeId);
   ObjOperandId objId = writer.guardToObject(thisValId);
-  writer.guardClass(objId, GuardClassKind::Set);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(), GuardClassKind::Set);
 
   writer.setSizeResult(objId);
   writer.returnFromIC();
