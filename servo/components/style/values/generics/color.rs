@@ -24,6 +24,8 @@ pub enum GenericColor<Percentage> {
     CurrentColor,
     
     ColorMix(Box<GenericColorMix<Self, Percentage>>),
+    
+    ContrastColor(Box<Self>),
 }
 
 
