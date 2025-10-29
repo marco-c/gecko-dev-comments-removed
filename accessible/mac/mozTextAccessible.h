@@ -10,15 +10,6 @@
 @interface mozTextAccessible : mozAccessible
 
 
-- (id)moxValue;
-
-
-- (id)moxRequired;
-
-
-- (NSString*)moxInvalid;
-
-
 - (NSNumber*)moxInsertionPointLineNumber;
 
 
