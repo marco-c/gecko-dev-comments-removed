@@ -5518,18 +5518,16 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_MOVING:
       FinishLiveResizing(MOVING);
-      if (WinUtils::IsPerMonitorDPIAware()) {
-        
-        
-        
-        
-        
-        
-        
-        if (WinUtils::LogToPhysFactor(mWnd) != mDefaultScale) {
-          ChangedDPI();
-          ResetLayout();
-        }
+      
+      
+      
+      
+      
+      
+      
+      if (WinUtils::LogToPhysFactor(mWnd) != mDefaultScale) {
+        ChangedDPI();
+        ResetLayout();
       }
       break;
 
