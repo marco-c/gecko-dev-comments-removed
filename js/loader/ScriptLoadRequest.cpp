@@ -218,7 +218,7 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
 
 void ScriptLoadRequest::NoCacheEntryFound(
     mozilla::dom::ReferrerPolicy aReferrerPolicy,
-    ScriptFetchOptions* aFetchOptions) {
+    ScriptFetchOptions* aFetchOptions, nsIURI* aURI) {
   MOZ_ASSERT(IsCheckingCache());
   MOZ_ASSERT(mURI);
   
