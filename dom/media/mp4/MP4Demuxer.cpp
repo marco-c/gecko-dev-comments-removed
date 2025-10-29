@@ -379,11 +379,34 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
 
   mIterator->Seek(seekTime);
 
+#ifdef MOZ_APPLEMEDIA
+  bool hasSeenValidSamples = false, seekingFromFirstSyncSample = false;
+#endif
   
   do {
     auto next = GetNextSample();
     if (next.isErr()) {
-      return SeekPromise::CreateAndReject(next.unwrapErr(), __func__);
+      auto error = next.unwrapErr();
+#ifdef MOZ_APPLEMEDIA
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mType == kH264 && error == NS_ERROR_DOM_MEDIA_END_OF_STREAM &&
+          hasSeenValidSamples && !seekingFromFirstSyncSample) {
+        LOG("Can not find a key frame from the closet sync sample, try again "
+            "from the first sync sample");
+        seekingFromFirstSyncSample = true;
+        mIterator->Seek(seekTime, SampleIterator::SyncSampleMode::First);
+        continue;
+      }
+#endif
+      return SeekPromise::CreateAndReject(error, __func__);
     }
     RefPtr<MediaRawData> sample = next.unwrap();
     if (!sample->Size()) {
@@ -395,6 +418,9 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
       mQueuedSample = sample;
       seekTime = mQueuedSample->mTime;
     }
+#ifdef MOZ_APPLEMEDIA
+    hasSeenValidSamples = true;
+#endif
   } while (!mQueuedSample);
 
   SetNextKeyFrameTime();

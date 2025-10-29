@@ -28,7 +28,14 @@ class SampleIterator {
   bool HasNext();
   already_AddRefed<mozilla::MediaRawData> GetNextHeader();
   Result<already_AddRefed<mozilla::MediaRawData>, MediaResult> GetNext();
-  void Seek(const media::TimeUnit& aTime);
+
+  
+  
+  
+  enum class SyncSampleMode { Closest, First };
+  void Seek(const media::TimeUnit& aTime,
+            SyncSampleMode aMode = SyncSampleMode::Closest);
+
   media::TimeUnit GetNextKeyframeTime();
 
  private:
