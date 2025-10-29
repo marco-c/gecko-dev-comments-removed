@@ -10,7 +10,6 @@
 #include "js/RootingAPI.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
@@ -636,12 +635,6 @@ void WorkerMainThreadRunnable::Dispatch(WorkerPrivate* aWorkerPrivate,
 NS_IMETHODIMP
 WorkerMainThreadRunnable::Run() {
   AssertIsOnMainThread();
-
-  
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
-    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-  }
 
   bool runResult = MainThreadRun();
 
