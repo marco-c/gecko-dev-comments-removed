@@ -34,13 +34,6 @@ LTableSwitchV* LIRGeneratorX86Shared::newLTableSwitchV(
   return new (alloc()) LTableSwitchV(in, temp(), tempDouble(), temp());
 }
 
-void LIRGenerator::visitPowHalf(MPowHalf* ins) {
-  MDefinition* input = ins->input();
-  MOZ_ASSERT(input->type() == MIRType::Double);
-  LPowHalfD* lir = new (alloc()) LPowHalfD(useRegisterAtStart(input));
-  define(lir, ins);
-}
-
 LUse LIRGeneratorX86Shared::useShiftRegister(MDefinition* mir) {
   
   
