@@ -40,13 +40,12 @@ add_setup(async function init() {
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     merinoSuggestions: MERINO_SUGGESTIONS,
-    prefs: [["suggest.quicksuggest.nonsponsored", true]],
+    prefs: [["suggest.quicksuggest.all", true]],
   });
 });
 
 
-
-add_task(async function nonsponsoredDisabled() {
+add_task(async function allDisabled() {
   
   
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
@@ -67,7 +66,7 @@ add_task(async function nonsponsoredDisabled() {
   });
 
   
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+  UrlbarPrefs.set("suggest.quicksuggest.all", false);
   await check_results({
     context: createContext(SUGGESTION_SEARCH_STRING, {
       providers: [UrlbarProviderQuickSuggest.name],
@@ -76,7 +75,7 @@ add_task(async function nonsponsoredDisabled() {
     matches: [],
   });
 
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
 });
 

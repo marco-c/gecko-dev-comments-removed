@@ -57,19 +57,17 @@ add_setup(async () => {
 });
 
 
-add_task(async function disableAndEnable_featureGate() {
-  await doBasicDisableAndEnableTest("weather.featureGate");
-});
-
-
-add_task(async function disableAndEnable_suggestPref() {
-  await doBasicDisableAndEnableTest("suggest.weather");
-});
-
-
-
-add_task(async function disableAndEnable_sponsoredPref() {
-  await doBasicDisableAndEnableTest("suggest.quicksuggest.sponsored");
+add_task(async function disableAndEnable() {
+  let prefs = [
+    "weather.featureGate",
+    "suggest.weather",
+    "suggest.quicksuggest.all",
+    "suggest.quicksuggest.sponsored",
+  ];
+  for (let pref of prefs) {
+    info("Testing pref: " + pref);
+    await doBasicDisableAndEnableTest(pref);
+  }
 });
 
 async function doBasicDisableAndEnableTest(pref) {
