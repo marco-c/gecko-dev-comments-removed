@@ -13,7 +13,6 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkClipOp.h"
 #include "include/core/SkColor.h"
-#include "include/core/SkColorType.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkM44.h"
@@ -205,16 +204,9 @@ public:
         return SkImages::RasterFromBitmap(data);
     }
 
-#if defined(SK_USE_LEGACY_BLUR_RASTER)
-    const SkBlurEngine* getBlurEngine() const override { return nullptr; }
-#else
-    bool useLegacyFilterResultBlur() const override { return false; }
-
     const SkBlurEngine* getBlurEngine() const override {
         return SkBlurEngine::GetRasterBlurEngine();
     }
-#endif
-
 };
 
 } 
@@ -231,11 +223,6 @@ Backend::Backend(sk_sp<SkImageFilterCache> cache,
 Backend::~Backend() = default;
 
 sk_sp<Backend> MakeRasterBackend(const SkSurfaceProps& surfaceProps, SkColorType colorType) {
-    
-    
-    
-    colorType = kN32_SkColorType;
-
     return sk_make_sp<RasterBackend>(surfaceProps, colorType);
 }
 
@@ -362,29 +349,23 @@ SkIRect Mapping::map<SkIRect>(const SkIRect& geom, const SkMatrix& matrix) {
 
 template<>
 SkIPoint Mapping::map<SkIPoint>(const SkIPoint& geom, const SkMatrix& matrix) {
-    SkPoint p = SkPoint::Make(SkIntToScalar(geom.fX), SkIntToScalar(geom.fY));
-    matrix.mapPoints(&p, 1);
+    SkPoint p = matrix.mapPoint({SkIntToScalar(geom.fX), SkIntToScalar(geom.fY)});
     return SkIPoint::Make(SkScalarRoundToInt(p.fX), SkScalarRoundToInt(p.fY));
 }
 
 template<>
 SkPoint Mapping::map<SkPoint>(const SkPoint& geom, const SkMatrix& matrix) {
-    SkPoint p;
-    matrix.mapPoints(&p, &geom, 1);
-    return p;
+    return matrix.mapPoint(geom);
 }
 
 template<>
 Vector Mapping::map<Vector>(const Vector& geom, const SkMatrix& matrix) {
-    SkVector v = SkVector::Make(geom.fX, geom.fY);
-    matrix.mapVectors(&v, 1);
-    return Vector{v};
+    return Vector(matrix.mapVector({geom.fX, geom.fY}));
 }
 
 template<>
 IVector Mapping::map<IVector>(const IVector& geom, const SkMatrix& matrix) {
-    SkVector v = SkVector::Make(SkIntToScalar(geom.fX), SkIntToScalar(geom.fY));
-    matrix.mapVectors(&v, 1);
+    const SkVector v = matrix.mapVector({SkIntToScalar(geom.fX), SkIntToScalar(geom.fY)});
     return IVector(SkScalarRoundToInt(v.fX), SkScalarRoundToInt(v.fY));
 }
 
@@ -417,8 +398,7 @@ SkMatrix Mapping::map<SkMatrix>(const SkMatrix& m, const SkMatrix& matrix) {
     
     
     
-    SkMatrix inv;
-    SkAssertResult(matrix.invert(&inv));
+    SkMatrix inv = matrix.invert().value_or(SkMatrix());
     inv.postConcat(m);
     inv.postConcat(matrix);
     return inv;
@@ -1563,7 +1543,7 @@ void draw_tiled_border(SkCanvas* canvas,
     
     auto drawEdge = [&](const SkRect& src, const SkRect& dst) {
         canvas->save();
-        canvas->concat(SkMatrix::RectToRect(src, dst));
+        canvas->concat(SkMatrix::RectToRectOrIdentity(src, dst));
         canvas->drawRect(src, paint);
         canvas->restore();
     };
@@ -1636,7 +1616,8 @@ void draw_tiled_border(SkCanvas* canvas,
 
 FilterResult FilterResult::rescale(const Context& ctx,
                                    const LayerSpace<SkSize>& scale,
-                                   bool enforceDecal) const {
+                                   bool enforceDecal,
+                                   bool allowOverscaling) const {
     LayerSpace<SkIRect> visibleLayerBounds = fLayerBounds;
     if (!fImage || !visibleLayerBounds.intersect(ctx.desiredOutput()) ||
         scale.width() <= 0.f || scale.height() <= 0.f) {
@@ -1755,36 +1736,36 @@ FilterResult FilterResult::rescale(const Context& ctx,
         }
     }
 
-    
-    
-    
-    
-    float finalScaleX = xSteps > 0 ? scale.width() : 1.f;
-    float finalScaleY = ySteps > 0 ? scale.height() : 1.f;
     if (deferPeriodicTiling) {
-        PixelSpace<SkRect> dstBoundsF = scale_about_center(stepBoundsF, finalScaleX, finalScaleY);
-        
-        
-        
-        PixelSpace<SkIRect> innerDstPixels = dstBoundsF.roundIn();
-        int dstCenterX = sk_float_floor2int(0.5f * dstBoundsF.right()  + 0.5f * dstBoundsF.left());
-        int dstCenterY = sk_float_floor2int(0.5f * dstBoundsF.bottom() + 0.5f * dstBoundsF.top());
-        dstBoundsF = PixelSpace<SkRect>({(float) std::min(dstCenterX,   innerDstPixels.left()),
-                                         (float) std::min(dstCenterY,   innerDstPixels.top()),
-                                         (float) std::max(dstCenterX+1, innerDstPixels.right()),
-                                         (float) std::max(dstCenterY+1, innerDstPixels.bottom())});
-
-        finalScaleX = dstBoundsF.width() / srcRect.width();
-        finalScaleY = dstBoundsF.height() / srcRect.height();
-
-        
-        xSteps = downscale_step_count(finalScaleX);
-        ySteps = downscale_step_count(finalScaleY);
-
         
         
         image.fTileMode = SkTileMode::kClamp;
+    } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        allowOverscaling = false;
     }
+
+    
+    
+    
+    
+    float finalScaleX = xSteps > 0 ? (allowOverscaling ? (1.f / (1 << xSteps))
+                                                       : scale.width())
+                                   : 1.f;
+    float finalScaleY = ySteps > 0 ? (allowOverscaling ? (1.f / (1 << ySteps))
+                                                       : scale.height())
+                                   : 1.f;
 
     do {
         float sx = 1.f;
@@ -1802,6 +1783,16 @@ FilterResult FilterResult::rescale(const Context& ctx,
         
         
         PixelSpace<SkRect> dstBoundsF = scale_about_center(stepBoundsF, sx, sy);
+        const bool finalXStep = xSteps == 0 && sx != 1.f;
+        const bool finalYStep = ySteps == 0 && sy != 1.f;
+        if (deferPeriodicTiling && (finalXStep || finalYStep)) {
+            PixelSpace<SkIRect> dstPixels = dstBoundsF.roundOut();
+            dstBoundsF = PixelSpace<SkRect>({
+                finalXStep ? (float) dstPixels.left()   : dstBoundsF.left(),
+                finalYStep ? (float) dstPixels.top()    : dstBoundsF.top(),
+                finalXStep ? (float) dstPixels.right()  : dstBoundsF.right(),
+                finalYStep ? (float) dstPixels.bottom() : dstBoundsF.bottom()});
+        }
 
         
         
@@ -1963,7 +1954,7 @@ FilterResult FilterResult::MakeFromImage(const Context& ctx,
 
     SkRect imageBounds = SkRect::Make(image->dimensions());
     if (!imageBounds.contains(srcRect)) {
-        SkMatrix srcToDst = SkMatrix::RectToRect(srcRect, SkRect(dstRect));
+        SkMatrix srcToDst = SkMatrix::RectToRectOrIdentity(srcRect, SkRect(dstRect));
         if (!srcRect.intersect(imageBounds)) {
             return {}; 
         }
@@ -2026,7 +2017,7 @@ SkSpan<sk_sp<SkShader>> FilterResult::Builder::createInputShaders(
         
         
         
-        SkAssertResult(fContext.mapping().layerMatrix().asM33().invert(&layerToParam));
+        layerToParam = fContext.mapping().layerMatrix().asM33().invert().value_or(SkMatrix());
         
         
         if (!is_nearly_integer_translation(LayerSpace<SkMatrix>(layerToParam))) {
@@ -2117,8 +2108,6 @@ FilterResult FilterResult::Builder::merge() {
 FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
     SkASSERT(fInputs.size() == 1);
 
-    
-    
     const SkBlurEngine* blurEngine = fContext.backend()->getBlurEngine();
     SkASSERT(blurEngine);
 
@@ -2145,33 +2134,19 @@ FilterResult FilterResult::Builder::blur(const LayerSpace<SkSize>& sigma) {
     auto sampleBounds = outputBounds;
     sampleBounds.outset(radii);
 
-    if (fContext.backend()->useLegacyFilterResultBlur()) {
-        SkASSERT(sigma.width() <= algorithm->maxSigma() && sigma.height() <= algorithm->maxSigma());
-
-        FilterResult resolved = fInputs[0].fImage.resolve(fContext, sampleBounds);
-        if (!resolved) {
-            return {};
-        }
-        auto srcRelativeOutput = outputBounds;
-        srcRelativeOutput.offset(-resolved.layerBounds().topLeft());
-        resolved = {algorithm->blur(SkSize(sigma),
-                                    resolved.fImage,
-                                    SkIRect::MakeSize(resolved.fImage->dimensions()),
-                                    SkTileMode::kDecal,
-                                    SkIRect(srcRelativeOutput)),
-                    outputBounds.topLeft()};
-        return resolved;
-    }
-
     float sx = sigma.width()  > algorithm->maxSigma() ? algorithm->maxSigma()/sigma.width()  : 1.f;
     float sy = sigma.height() > algorithm->maxSigma() ? algorithm->maxSigma()/sigma.height() : 1.f;
+    
+    
+    
     
     
     
     FilterResult lowResImage = fInputs[0].fImage.rescale(
             fContext.withNewDesiredOutput(sampleBounds),
             LayerSpace<SkSize>({sx, sy}),
-            algorithm->supportsOnlyDecalTiling());
+            algorithm->supportsOnlyDecalTiling(),
+            true);
     if (!lowResImage) {
         return {};
     }

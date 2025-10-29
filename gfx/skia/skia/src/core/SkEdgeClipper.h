@@ -9,11 +9,14 @@
 #ifndef SkEdgeClipper_DEFINED
 #define SkEdgeClipper_DEFINED
 
-#include "include/core/SkPath.h"
+#include "include/core/SkPathTypes.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkScalar.h"
 #include "include/private/base/SkDebug.h"
 
+#include <optional>
+
+struct SkPathRaw;
 struct SkRect;
 
 
@@ -27,7 +30,7 @@ public:
     bool clipQuad(const SkPoint pts[3], const SkRect& clip);
     bool clipCubic(const SkPoint pts[4], const SkRect& clip);
 
-    SkPath::Verb next(SkPoint pts[]);
+    std::optional<SkPathVerb> next(SkPoint pts[]);
 
     bool canCullToTheRight() const { return fCanCullToTheRight; }
 
@@ -35,20 +38,20 @@ public:
 
 
 
-    static void ClipPath(const SkPath& path, const SkRect& clip, bool canCullToTheRight,
+    static void ClipPath(const SkPathRaw&, const SkRect& clip, bool canCullToTheRight,
                          void (*consume)(SkEdgeClipper*, bool newCtr, void* ctx), void* ctx);
 
 private:
-    SkPoint*        fCurrPoint;
-    SkPath::Verb*   fCurrVerb;
-    const bool      fCanCullToTheRight;
+    SkPoint*    fCurrPoint;
+    SkPathVerb* fCurrVerb, *fCurrVerbStop;
+    const bool  fCanCullToTheRight;
 
     enum {
         kMaxVerbs = 18,  
         kMaxPoints = 54  
     };
-    SkPoint         fPoints[kMaxPoints];
-    SkPath::Verb    fVerbs[kMaxVerbs];
+    SkPoint     fPoints[kMaxPoints];
+    SkPathVerb  fVerbs[kMaxVerbs];
 
     void clipMonoQuad(const SkPoint srcPts[3], const SkRect& clip);
     void clipMonoCubic(const SkPoint srcPts[4], const SkRect& clip);

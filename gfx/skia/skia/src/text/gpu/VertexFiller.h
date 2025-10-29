@@ -15,19 +15,14 @@
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkTLogic.h"
 #include "src/base/SkVx.h"
+#include "src/core/SkColorData.h"
 
+#include <cstddef>
 #include <optional>
 #include <tuple>
 
 class SkReadBuffer;
 class SkWriteBuffer;
-
-#if defined(SK_GANESH) || defined(SK_USE_LEGACY_GANESH_TEXT_APIS)
-#include "src/gpu/ganesh/GrColor.h"
-#include "src/gpu/ganesh/ops/AtlasTextOp.h"
-
-#include <cstddef>
-#endif  
 
 namespace skgpu {
 enum class MaskFormat : int;
@@ -80,18 +75,14 @@ public:
 
     void flatten(SkWriteBuffer &buffer) const;
 
-#if defined(SK_GANESH) || defined(SK_USE_LEGACY_GANESH_TEXT_APIS)
+    
     size_t vertexStride(const SkMatrix &matrix) const;
-
     void fillVertexData(int offset, int count,
                         SkSpan<const Glyph*> glyphs,
-                        GrColor color,
+                        const SkPMColor4f& color,
                         const SkMatrix& positionMatrix,
                         SkIRect clip,
                         void* vertexBuffer) const;
-
-    skgpu::ganesh::AtlasTextOp::MaskType opMaskType() const;
-#endif  
 
     
     void fillInstanceData(skgpu::graphite::DrawWriter* dw,
@@ -115,6 +106,9 @@ public:
     int count() const { return SkCount(fLeftTop); }
 
 private:
+    static std::tuple<bool, SkVector> CanUseDirect(const SkMatrix& creationMatrix,
+                                                   const SkMatrix& positionMatrix);
+
     SkMatrix viewDifference(const SkMatrix &positionMatrix) const;
 
     const skgpu::MaskFormat fMaskType;

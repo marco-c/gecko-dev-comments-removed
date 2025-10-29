@@ -8,7 +8,11 @@
 #ifndef SkPathTypes_DEFINED
 #define SkPathTypes_DEFINED
 
-enum class SkPathFillType {
+#include "include/core/SkTypes.h"
+
+#include <cstdint>
+
+enum class SkPathFillType : uint8_t {
     
     kWinding,
     
@@ -16,7 +20,9 @@ enum class SkPathFillType {
     
     kInverseWinding,
     
-    kInverseEvenOdd
+    kInverseEvenOdd,
+
+    kDefault = kWinding,
 };
 
 static inline bool SkPathFillType_IsEvenOdd(SkPathFillType ft) {
@@ -31,11 +37,13 @@ static inline SkPathFillType SkPathFillType_ConvertToNonInverse(SkPathFillType f
     return static_cast<SkPathFillType>(static_cast<int>(ft) & 1);
 }
 
-enum class SkPathDirection {
+enum class SkPathDirection : uint8_t {
     
     kCW,
     
     kCCW,
+
+    kDefault = kCW,
 };
 
 enum SkPathSegmentMask {
@@ -45,7 +53,7 @@ enum SkPathSegmentMask {
     kCubic_SkPathSegmentMask  = 1 << 3,
 };
 
-enum class SkPathVerb {
+enum class SkPathVerb : uint8_t {
     kMove,   
     kLine,   
     kQuad,   

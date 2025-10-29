@@ -41,4 +41,15 @@ static inline constexpr size_t SkAlignTo(size_t x, size_t alignment) {
     return (x + alignment - 1) & ~(alignment - 1);
 }
 
+
+
+
+static inline constexpr size_t SkAlignNonPow2(size_t x, size_t alignment) {
+    const size_t misalignment = x % alignment;
+    if (misalignment) {
+        x += alignment - misalignment;
+    }
+    return x;
+}
+
 #endif

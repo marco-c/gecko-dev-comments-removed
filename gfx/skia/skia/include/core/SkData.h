@@ -9,9 +9,10 @@
 #define SkData_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSpan.h"
 #include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 
@@ -27,35 +28,55 @@ public:
     
 
 
-    size_t size() const { return fSize; }
 
-    bool isEmpty() const { return 0 == fSize; }
-
-    
-
-
-    const void* data() const { return fPtr; }
+    bool operator==(const SkData& rhs) const;
+    bool operator!=(const SkData& rhs) const { return !(*this == rhs); }
 
     
 
 
-
-    const uint8_t* bytes() const {
-        return reinterpret_cast<const uint8_t*>(fPtr);
+    bool equals(const SkData* other) const {
+        return (other != nullptr) && *this == *other;
     }
 
     
 
+
+    size_t size() const { return fSpan.size(); }
+
+    
+
+
+    const void* data() const { return fSpan.data(); }
+
+    bool empty() const { return fSpan.empty(); }
+
+    const uint8_t* bytes() const { return reinterpret_cast<const uint8_t*>(this->data()); }
+
+    SkSpan<const uint8_t> byteSpan() const { return {this->bytes(), this->size()}; }
+
+    
 
 
 
     void* writable_data() {
-        if (fSize) {
-            
-            SkASSERT(this->unique());
-        }
-        return const_cast<void*>(fPtr);
+        return fSpan.data();
     }
+
+    
+
+
+
+    sk_sp<SkData> copySubset(size_t offset, size_t length) const;
+
+    
+
+
+
+
+
+    sk_sp<SkData> shareSubset(size_t offset, size_t length);
+    sk_sp<const SkData> shareSubset(size_t offset, size_t length) const;
 
     
 
@@ -64,12 +85,6 @@ public:
 
 
     size_t copyRange(size_t offset, size_t length, void* buffer) const;
-
-    
-
-
-
-    bool equals(const SkData* other) const;
 
     
 
@@ -158,7 +173,14 @@ public:
 
 
 
-    static sk_sp<SkData> MakeSubset(const SkData* src, size_t offset, size_t length);
+
+
+    static sk_sp<SkData> MakeSubset(const SkData* src, size_t offset, size_t length) {
+        if (sk_sp<SkData> dst = const_cast<SkData*>(src)->shareSubset(offset, length)) {
+            return dst;
+        }
+        return SkData::MakeEmpty();
+    }
 
     
 
@@ -166,14 +188,18 @@ public:
 
     static sk_sp<SkData> MakeEmpty();
 
+    
+
+
+    bool isEmpty() const { return fSpan.empty(); }
+
 private:
     friend class SkNVRefCnt<SkData>;
-    ReleaseProc fReleaseProc;
-    void*       fReleaseProcContext;
-    const void* fPtr;
-    size_t      fSize;
+    ReleaseProc         fReleaseProc;
+    void*               fReleaseProcContext;
+    SkSpan<std::byte>   fSpan;
 
-    SkData(const void* ptr, size_t size, ReleaseProc, void* context);
+    SkData(SkSpan<std::byte>, ReleaseProc, void* context);
     explicit SkData(size_t size);   
     ~SkData();
 

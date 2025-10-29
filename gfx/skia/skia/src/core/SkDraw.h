@@ -5,67 +5,236 @@
 
 
 
-
-
-#ifndef SkDraw_DEFINED
-#define SkDraw_DEFINED
+#ifndef skcpu_Draw_DEFINED
+#define skcpu_Draw_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/core/SkColor.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPixmap.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSamplingOptions.h"
+#include "include/core/SkSpan.h"
+#include "include/core/SkStrokeRec.h"
+#include "include/core/SkSurfaceProps.h"
+#include "include/private/base/SkDebug.h"
 #include "src/base/SkZip.h"
-#include "src/core/SkDrawBase.h"
-#include <cstddef>
+#include "src/core/SkDrawTypes.h"
+#include "src/core/SkMask.h"
 
 class SkArenaAlloc;
 class SkBitmap;
 class SkBlender;
+class SkBlitter;
 class SkDevice;
 class SkGlyph;
-class SkGlyphRunListPainterCPU;
+class SkMaskFilter;
 class SkMatrix;
-class SkPaint;
+class SkPath;
+struct SkPathRaw;
+class SkRRect;
+class SkRasterClip;
+class SkShader;
 class SkVertices;
-namespace sktext { class GlyphRunList; }
-struct SkPoint3;
+struct SkIRect;
 struct SkPoint;
+struct SkPoint3;
 struct SkRSXform;
 struct SkRect;
 
+namespace sktext {
+class GlyphRunList;
+}
+
+namespace skcpu {
+
+class GlyphRunListPainter;
+class ContextImpl;
 
 
-class SkDraw : public SkDrawBase {
+
+
+
+
+
+bool DrawToMask(const SkPathRaw& devRaw,
+                const SkIRect& clipBounds,
+                const SkMaskFilter*,
+                const SkMatrix* filterMatrix,
+                SkMaskBuilder* dst,
+                SkMaskBuilder::CreateMode mode,
+                SkStrokeRec::InitStyle style);
+
+
+
+
+
+
+
+
+
+class BitmapDevicePainter {
 public:
-    SkDraw();
+    BitmapDevicePainter() = default;
+    BitmapDevicePainter(const BitmapDevicePainter&) = default;
+    virtual ~BitmapDevicePainter() = default;
+
+    virtual void paintMasks(SkZip<const SkGlyph*, SkPoint> accepted,
+                            const SkPaint& paint) const = 0;
+    virtual void drawBitmap(const SkBitmap&,
+                            const SkMatrix&,
+                            const SkRect* dstOrNull,
+                            const SkSamplingOptions&,
+                            const SkPaint&) const = 0;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Draw : public BitmapDevicePainter {
+public:
+    Draw();
+
+    void drawPaint(const SkPaint&) const;
+    void drawRect(const SkRect& prePaintRect,
+                  const SkPaint&,
+                  const SkMatrix* paintMatrix,
+                  const SkRect* postPaintRect) const;
+    void drawRect(const SkRect& rect, const SkPaint& paint) const {
+        this->drawRect(rect, paint, nullptr, nullptr);
+    }
+    void drawOval(const SkRect&, const SkPaint&) const;
+    void drawRRect(const SkRRect&, const SkPaint&) const;
+    
+    bool drawRRectNinePatch(const SkRRect&, const SkPaint&) const;
+    
+
+
+
+
+
+
+
+
+    void drawPath(const SkPath& path,
+                  const SkPaint& paint,
+                  const SkMatrix* prePathMatrix,
+                  bool pathIsMutable) const {
+        this->drawPath(path, paint, prePathMatrix, pathIsMutable, SkDrawCoverage::kNo);
+    }
 
     
-    void    drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
-                       const SkSamplingOptions&, const SkPaint&) const override;
-    void    drawSprite(const SkBitmap&, int x, int y, const SkPaint&) const;
-    void    drawGlyphRunList(SkCanvas* canvas,
-                             SkGlyphRunListPainterCPU* glyphPainter,
-                             const sktext::GlyphRunList& glyphRunList,
-                             const SkPaint& paint) const;
+
+
+
+
+
+    void drawPathCoverage(const SkPath& src,
+                          const SkPaint& paint,
+                          SkBlitter* customBlitter = nullptr) const {
+        bool isHairline = paint.getStyle() == SkPaint::kStroke_Style && paint.getStrokeWidth() == 0;
+        this->drawPath(src,
+                       paint,
+                       nullptr,
+                       false,
+                       isHairline ? SkDrawCoverage::kNo : SkDrawCoverage::kYes,
+                       customBlitter);
+    }
+
+    void drawDevicePoints(SkCanvas::PointMode,
+                          SkSpan<const SkPoint>,
+                          const SkPaint&,
+                          SkDevice*) const;
+
+    enum class RectType {
+        kHair,
+        kFill,
+        kStroke,
+        kPath,
+    };
+
+    
+
+
+
+
+
+
+
+    static RectType ComputeRectType(const SkRect&,
+                                    const SkPaint&,
+                                    const SkMatrix&,
+                                    SkPoint* strokeSize);
+
+    using BlitterChooser = SkBlitter*(const SkPixmap& dst,
+                                      const SkMatrix& ctm,
+                                      const SkPaint&,
+                                      SkArenaAlloc*,
+                                      SkDrawCoverage drawCoverage,
+                                      sk_sp<SkShader> clipShader,
+                                      const SkSurfaceProps&,
+                                      const SkRect& devBounds);
+
+    
+    void drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
+                    const SkSamplingOptions&, const SkPaint&) const override;
+    void drawSprite(const SkBitmap&, int x, int y, const SkPaint&) const;
+    void drawGlyphRunList(SkCanvas* canvas,
+                          GlyphRunListPainter* glyphPainter,
+                          const sktext::GlyphRunList& glyphRunList,
+                          const SkPaint& paint) const;
 
     void paintMasks(SkZip<const SkGlyph*, SkPoint> accepted, const SkPaint& paint) const override;
 
-    void drawPoints(SkCanvas::PointMode, size_t count, const SkPoint[],
-                    const SkPaint&, SkDevice*) const;
+    void drawPoints(SkCanvas::PointMode, SkSpan<const SkPoint>, const SkPaint&, SkDevice*) const;
     
     void drawVertices(const SkVertices*,
                       sk_sp<SkBlender>,
                       const SkPaint&,
                       bool skipColorXform) const;
-    void drawAtlas(const SkRSXform[], const SkRect[], const SkColor[], int count,
+    void drawAtlas(SkSpan<const SkRSXform>, SkSpan<const SkRect>, SkSpan<const SkColor>,
                    sk_sp<SkBlender>, const SkPaint&);
 
-#if defined(SK_SUPPORT_LEGACY_ALPHA_BITMAP_AS_COVERAGE)
-    void drawDevMask(const SkMask& mask, const SkPaint&) const;
-    void drawBitmapAsMask(const SkBitmap&, const SkSamplingOptions&, const SkPaint&) const;
-#endif
+    void drawDevMask(const SkMask& mask, const SkPaint&, const SkMatrix*) const;
+    void drawBitmapAsMask(const SkBitmap&, const SkSamplingOptions&, const SkPaint&,
+                          const SkMatrix* paintMatrix) const;
 
 private:
+    void drawPath(const SkPath&,
+                  const SkPaint&,
+                  const SkMatrix* preMatrix,
+                  bool pathIsMutable,
+                  SkDrawCoverage drawCoverage,
+                  SkBlitter* customBlitter = nullptr) const;
+
+    void drawLine(const SkPoint[2], const SkPaint&) const;
+
+    void drawDevPath(const SkPathRaw&,
+                     const SkPaint& paint,
+                     SkDrawCoverage drawCoverage,
+                     SkBlitter* customBlitter,
+                     bool doFill) const;
+    
+
+
+
+
+
+
+
+    [[nodiscard]] bool computeConservativeLocalClipBounds(SkRect* bounds) const;
+
     void drawFixedVertices(const SkVertices* vertices,
                            sk_sp<SkBlender> blender,
                            const SkPaint& paint,
@@ -74,6 +243,23 @@ private:
                            const SkPoint3* dev3,
                            SkArenaAlloc* outerAlloc,
                            bool skipColorXform) const;
+
+public:
+    SkPixmap fDst;
+    BlitterChooser* fBlitterChooser{nullptr};  
+    const SkMatrix* fCTM{nullptr};             
+    const SkRasterClip* fRC{nullptr};          
+    const SkSurfaceProps* fProps{nullptr};     
+
+    const ContextImpl* fCtx{nullptr};  
+
+#ifdef SK_DEBUG
+    void validate() const;
+#else
+    void validate() const {}
+#endif
 };
+
+}  
 
 #endif

@@ -170,4 +170,15 @@ private:
     FloatingPointUnion fU;
 };
 
+
+
+
+
+
+
+
+
+
+float SkFloatInterpFunc(float searchKey, const float keys[], const float values[], int length);
+
 #endif

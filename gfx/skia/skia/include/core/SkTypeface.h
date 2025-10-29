@@ -14,6 +14,7 @@
 #include "include/core/SkFourByteTag.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkWeakRefCnt.h"
@@ -76,9 +77,8 @@ public:
 
 
 
-
-    int getVariationDesignPosition(SkFontArguments::VariationPosition::Coordinate coordinates[],
-                                   int coordinateCount) const;
+    int getVariationDesignPosition(
+                       SkSpan<SkFontArguments::VariationPosition::Coordinate> coordinates) const;
 
     
 
@@ -90,9 +90,7 @@ public:
 
 
 
-
-    int getVariationDesignParameters(SkFontParameters::Variation::Axis parameters[],
-                                     int parameterCount) const;
+    int getVariationDesignParameters(SkSpan<SkFontParameters::Variation::Axis> parameters) const;
 
     
 
@@ -152,11 +150,10 @@ public:
 
 
 
+    void unicharsToGlyphs(SkSpan<const SkUnichar> unis, SkSpan<SkGlyphID> glyphs) const;
 
-    void unicharsToGlyphs(const SkUnichar uni[], int count, SkGlyphID glyphs[]) const;
-
-    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
-                     SkGlyphID glyphs[], int maxGlyphCount) const;
+    size_t textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
+                        SkSpan<SkGlyphID> glyphs) const;
 
     
 
@@ -182,7 +179,7 @@ public:
 
 
 
-    int getTableTags(SkFontTableTag tags[]) const;
+    int readTableTags(SkSpan<SkFontTableTag> tags) const;
 
     
 
@@ -246,8 +243,8 @@ public:
 
 
 
-    bool getKerningPairAdjustments(const SkGlyphID glyphs[], int count,
-                                   int32_t adjustments[]) const;
+    bool getKerningPairAdjustments(SkSpan<const SkGlyphID> glyphs,
+                                   SkSpan<int32_t> adjustments) const;
 
     struct LocalizedString {
         SkString fString;
@@ -356,7 +353,37 @@ public:
             FactoryId id,
             sk_sp<SkTypeface> (*make)(std::unique_ptr<SkStreamAsset>, const SkFontArguments&));
 
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+public:
+    int getVariationDesignPosition(SkFontArguments::VariationPosition::Coordinate coordinates[],
+                                   int count) const {
+        return this->getVariationDesignPosition({coordinates, count});
+    }
+    int getVariationDesignParameters(SkFontParameters::Variation::Axis parameters[],
+                                     int count) const {
+        return this->getVariationDesignParameters({parameters, count});
+    }
+    void unicharsToGlyphs(const SkUnichar unis[], int count, SkGlyphID glyphs[]) const {
+        this->unicharsToGlyphs({unis, count}, {glyphs, count});
+    }
+    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
+                     SkGlyphID glyphs[], int maxGlyphCount) const {
+        return (int)this->textToGlyphs(text, byteLength, encoding, {glyphs, maxGlyphCount});
+    }
+    int getTableTags(SkFontTableTag tags[]) const {
+        const size_t count = tags ? MAX_REASONABLE_TABLE_COUNT : 0;
+        return this->readTableTags({tags, count});
+    }
+    bool getKerningPairAdjustments(const SkGlyphID glyphs[], int count,
+                                   int32_t adjustments[]) const {
+        return this->getKerningPairAdjustments({glyphs, count}, {adjustments, count});
+    }
+#endif
+
 protected:
+    
+    enum { MAX_REASONABLE_TABLE_COUNT = (1 << 16) - 1 };
+
     explicit SkTypeface(const SkFontStyle& style, bool isFixedPitch = false);
     ~SkTypeface() override;
 
@@ -389,7 +416,7 @@ protected:
     
     
     
-    virtual void getGlyphToUnicodeMap(SkUnichar* dstArray) const = 0;
+    virtual void getGlyphToUnicodeMap(SkSpan<SkUnichar> dstArray) const = 0;
 
     virtual std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const = 0;
 
@@ -398,20 +425,18 @@ protected:
     virtual bool onGlyphMaskNeedsCurrentColor() const = 0;
 
     virtual int onGetVariationDesignPosition(
-        SkFontArguments::VariationPosition::Coordinate coordinates[],
-        int coordinateCount) const = 0;
+                                 SkSpan<SkFontArguments::VariationPosition::Coordinate>) const = 0;
 
-    virtual int onGetVariationDesignParameters(
-        SkFontParameters::Variation::Axis parameters[], int parameterCount) const = 0;
+    virtual int onGetVariationDesignParameters(SkSpan<SkFontParameters::Variation::Axis>) const = 0;
 
     virtual void onGetFontDescriptor(SkFontDescriptor*, bool* isLocal) const = 0;
 
-    virtual void onCharsToGlyphs(const SkUnichar* chars, int count, SkGlyphID glyphs[]) const = 0;
+    virtual void onCharsToGlyphs(SkSpan<const SkUnichar>, SkSpan<SkGlyphID>) const = 0;
     virtual int onCountGlyphs() const = 0;
 
     virtual int onGetUPEM() const = 0;
-    virtual bool onGetKerningPairAdjustments(const SkGlyphID glyphs[], int count,
-                                             int32_t adjustments[]) const;
+    virtual bool onGetKerningPairAdjustments(SkSpan<const SkGlyphID>,
+                                             SkSpan<int32_t> adjustments) const;
 
     
 
@@ -423,7 +448,7 @@ protected:
     
     virtual LocalizedStrings* onCreateFamilyNameIterator() const = 0;
 
-    virtual int onGetTableTags(SkFontTableTag tags[]) const = 0;
+    virtual int onGetTableTags(SkSpan<SkFontTableTag>) const = 0;
     virtual size_t onGetTableData(SkFontTableTag, size_t offset,
                                   size_t length, void* data) const = 0;
     virtual sk_sp<SkData> onCopyTableData(SkFontTableTag) const;
@@ -447,7 +472,7 @@ private:
     friend class SkPDFFont;          
     friend class SkTypeface_proxy;
     friend class SkFontPriv;         
-    friend void TestSkTypefaceGlyphToUnicodeMap(SkTypeface&, SkUnichar*);
+    friend void TestSkTypefaceGlyphToUnicodeMap(SkTypeface&, SkSpan<SkUnichar>);
 
 private:
     SkTypefaceID        fUniqueID;

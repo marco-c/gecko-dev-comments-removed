@@ -15,6 +15,33 @@ enum class PrettyPrint : bool {
     kYes = true,
 };
 
+namespace spirv {
+
+enum ReservedId {
+    
+    kIdInvalid = 0,
+
+    
+    
+    
+
+    
+    kIdTypeInt,
+    
+    kIdTypePointerInputInt,
+
+    
+    
+    kIdTypeImageSubpassData,
+    
+    kIdVariableImageSubpassData,
+
+    
+    kIdFirstUnreserved,
+};
+
+}  
+
 }  
 
 #endif

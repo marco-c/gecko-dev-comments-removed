@@ -19,6 +19,7 @@
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkPoint.h"
+#include "include/core/SkRSXform.h" 
 #include "include/core/SkRasterHandleAllocator.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
@@ -68,6 +69,7 @@ class SkPicture;
 class SkPixmap;
 class SkRRect;
 class SkRegion;
+class SkRecorder;
 class SkShader;
 class SkSpecialImage;
 class SkSurface;
@@ -75,7 +77,6 @@ class SkSurface_Base;
 class SkTextBlob;
 class SkVertices;
 struct SkDrawShadowRec;
-struct SkRSXform;
 
 template<typename E>
 class SkEnumBitMask;
@@ -327,12 +328,17 @@ public:
 
     virtual GrRecordingContext* recordingContext() const;
 
-
     
 
 
 
     virtual skgpu::graphite::Recorder* recorder() const;
+
+    
+
+
+
+    virtual SkRecorder* baseRecorder() const;
 
     
 
@@ -1321,7 +1327,12 @@ public:
 
 
 
-    void drawPoints(PointMode mode, size_t count, const SkPoint pts[], const SkPaint& paint);
+    void drawPoints(PointMode mode, SkSpan<const SkPoint>, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void drawPoints(PointMode mode, size_t count, const SkPoint pts[], const SkPaint& paint) {
+        this->drawPoints(mode, {pts, count}, paint);
+    }
+#endif
 
     
 
@@ -1901,11 +1912,20 @@ public:
 
 
 
-
-
+    void drawGlyphs(SkSpan<const SkGlyphID> glyphs, SkSpan<const SkPoint> positions,
+                    SkSpan<const uint32_t> clusters, SkSpan<const char> utf8text,
+                    SkPoint origin, const SkFont& font, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
     void drawGlyphs(int count, const SkGlyphID glyphs[], const SkPoint positions[],
                     const uint32_t clusters[], int textByteCount, const char utf8text[],
-                    SkPoint origin, const SkFont& font, const SkPaint& paint);
+                    SkPoint origin, const SkFont& font, const SkPaint& paint) {
+        this->drawGlyphs({glyphs,    count},
+                         {positions, count},
+                         {clusters,  count},
+                         {utf8text,  textByteCount},
+                         origin, font, paint);
+    }
+#endif
 
     
 
@@ -1925,8 +1945,14 @@ public:
 
 
 
+    void drawGlyphs(SkSpan<const SkGlyphID> glyphs, SkSpan<const SkPoint> positions,
+                    SkPoint origin, const SkFont& font, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
     void drawGlyphs(int count, const SkGlyphID glyphs[], const SkPoint positions[],
-                    SkPoint origin, const SkFont& font, const SkPaint& paint);
+                    SkPoint origin, const SkFont& font, const SkPaint& paint) {
+        this->drawGlyphs({glyphs, count}, {positions, count}, origin, font, paint);
+    }
+#endif
 
     
 
@@ -1947,8 +1973,14 @@ public:
 
 
 
+    void drawGlyphsRSXform(SkSpan<const SkGlyphID> glyphs, SkSpan<const SkRSXform> xforms,
+                           SkPoint origin, const SkFont& font, const SkPaint& paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
     void drawGlyphs(int count, const SkGlyphID glyphs[], const SkRSXform xforms[],
-                    SkPoint origin, const SkFont& font, const SkPaint& paint);
+                    SkPoint origin, const SkFont& font, const SkPaint& paint) {
+        this->drawGlyphsRSXform({glyphs, count}, {xforms, count}, origin, font, paint);
+    }
+#endif
 
     
 
@@ -2173,9 +2205,21 @@ public:
 
 
 
+
+    void drawAtlas(const SkImage* atlas, SkSpan<const SkRSXform> xform,
+                   SkSpan<const SkRect> tex, SkSpan<const SkColor> colors, SkBlendMode mode,
+                   const SkSamplingOptions& sampling, const SkRect* cullRect, const SkPaint* paint);
+#ifdef SK_SUPPORT_UNSPANNED_APIS
     void drawAtlas(const SkImage* atlas, const SkRSXform xform[], const SkRect tex[],
                    const SkColor colors[], int count, SkBlendMode mode,
-                   const SkSamplingOptions& sampling, const SkRect* cullRect, const SkPaint* paint);
+                   const SkSamplingOptions& samp, const SkRect* cullRect, const SkPaint* paint) {
+        this->drawAtlas(atlas,
+                        {xform, count},
+                        {tex, tex ? count : 0},
+                        {colors, colors ? count : 0},
+                        mode, samp, cullRect, paint);
+    }
+#endif
 
     
 
@@ -2539,6 +2583,8 @@ private:
     void doSave();
     void checkForDeferredSave();
     void internalSetMatrix(const SkM44&);
+
+    virtual void onSurfaceDelete() {}
 
     friend class SkAndroidFrameworkUtils;
     friend class SkCanvasPriv;      

@@ -28,6 +28,12 @@
 #include <string_view>
 #include <tuple>
 
+
+
+#if __cplusplus >= 202002L
+#include <compare>
+#endif
+
 namespace SkSL {
 
 class Context;

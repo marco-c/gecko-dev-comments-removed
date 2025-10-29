@@ -16,6 +16,6 @@ class SkPath;
 
 
 
-void SkClipStack_AsPath(const SkClipStack& cs, SkPath* path);
+SkPath SkClipStack_AsPath(const SkClipStack&);
 
 #endif

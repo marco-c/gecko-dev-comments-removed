@@ -104,6 +104,13 @@ public:
 
     virtual void dumpBudgetedState(const char* , bool ) {}
 
+    
+
+
+
+
+    virtual bool shouldDumpSizelessObjects() const { return false; }
+
 protected:
     virtual ~SkTraceMemoryDump() = default;
     SkTraceMemoryDump() = default;

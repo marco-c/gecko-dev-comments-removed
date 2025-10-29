@@ -8,7 +8,6 @@
 #include "include/private/SkGainmapShader.h"
 
 #include "include/core/SkColor.h"
-#include "include/core/SkColorFilter.h"
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkMatrix.h"
@@ -17,7 +16,6 @@
 #include "include/effects/SkRuntimeEffect.h"
 #include "include/private/SkGainmapInfo.h"
 #include "include/private/base/SkAssert.h"
-#include "src/core/SkColorFilterPriv.h"
 #include "src/core/SkImageInfoPriv.h"
 
 #include <cmath>
@@ -97,6 +95,19 @@ sk_sp<SkShader> SkGainmapShader::Make(const sk_sp<const SkImage>& baseImage,
                                       const SkRect& dstRect,
                                       float dstHdrRatio,
                                       sk_sp<SkColorSpace> dstColorSpace) {
+    return Make(baseImage, baseRect, baseSamplingOptions, gainmapImage, gainmapRect,
+                gainmapSamplingOptions, gainmapInfo, dstRect, dstHdrRatio);
+}
+
+sk_sp<SkShader> SkGainmapShader::Make(const sk_sp<const SkImage>& baseImage,
+                                      const SkRect& baseRect,
+                                      const SkSamplingOptions& baseSamplingOptions,
+                                      const sk_sp<const SkImage>& gainmapImage,
+                                      const SkRect& gainmapRect,
+                                      const SkSamplingOptions& gainmapSamplingOptions,
+                                      const SkGainmapInfo& gainmapInfo,
+                                      const SkRect& dstRect,
+                                      float dstHdrRatio) {
     sk_sp<SkColorSpace> baseColorSpace =
             baseImage->colorSpace() ? baseImage->refColorSpace() : SkColorSpace::MakeSRGB();
 
@@ -105,13 +116,10 @@ sk_sp<SkShader> SkGainmapShader::Make(const sk_sp<const SkImage>& baseImage,
             gainmapInfo.fGainmapMathColorSpace
                     ? gainmapInfo.fGainmapMathColorSpace->makeLinearGamma()
                     : baseColorSpace->makeLinearGamma();
-    if (!dstColorSpace) {
-        dstColorSpace = SkColorSpace::MakeSRGB();
-    }
 
     
-    const SkMatrix baseRectToDstRect = SkMatrix::RectToRect(baseRect, dstRect);
-    const SkMatrix gainmapRectToDstRect = SkMatrix::RectToRect(gainmapRect, dstRect);
+    const SkMatrix baseRectToDstRect = SkMatrix::RectToRectOrIdentity(baseRect, dstRect);
+    const SkMatrix gainmapRectToDstRect = SkMatrix::RectToRectOrIdentity(gainmapRect, dstRect);
 
     
     float W = 0.f;
@@ -136,18 +144,7 @@ sk_sp<SkShader> SkGainmapShader::Make(const sk_sp<const SkImage>& baseImage,
     }
 
     
-    
-    auto colorXformSdrToGainmap =
-            SkColorFilterPriv::MakeColorSpaceXform(baseColorSpace, gainmapMathColorSpace);
-
-    
-    
-    auto colorXformGainmapToDst =
-            SkColorFilterPriv::MakeColorSpaceXform(gainmapMathColorSpace, dstColorSpace);
-
-    
-    auto baseImageShader = baseImage->makeRawShader(baseSamplingOptions, &baseRectToDstRect)
-                                   ->makeWithColorFilter(colorXformSdrToGainmap);
+    auto baseImageShader = baseImage->makeShader(baseSamplingOptions, &baseRectToDstRect);
 
     
     auto gainmapImageShader =
@@ -208,6 +205,5 @@ sk_sp<SkShader> SkGainmapShader::Make(const sk_sp<const SkImage>& baseImage,
         SkASSERT(gainmapMathShader);
     }
 
-    
-    return gainmapMathShader->makeWithColorFilter(colorXformGainmapToDst);
+    return gainmapMathShader->makeWithWorkingColorSpace(gainmapMathColorSpace);
 }

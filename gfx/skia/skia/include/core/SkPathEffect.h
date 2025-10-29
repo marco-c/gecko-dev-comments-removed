@@ -10,7 +10,7 @@
 
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/base/SkAPI.h"
+#include "include/core/SkTypes.h"
 
 
 #include "include/core/SkPath.h"  
@@ -18,6 +18,7 @@
 #include <cstddef>
 
 class SkMatrix;
+class SkPathBuilder;
 class SkStrokeRec;
 struct SkDeserialProcs;
 struct SkRect;
@@ -68,17 +69,23 @@ public:
 
 
 
-    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR) const;
-
-    
-    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR,
+    bool filterPath(SkPathBuilder* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR,
                     const SkMatrix& ctm) const;
+    bool filterPath(SkPathBuilder* dst, const SkPath& src, SkStrokeRec*) const;
 
     
     bool needsCTM() const;
 
     static sk_sp<SkPathEffect> Deserialize(const void* data, size_t size,
                                            const SkDeserialProcs* procs = nullptr);
+
+#ifdef SK_SUPPORT_MUTABLE_PATHEFFECT
+    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR) const;
+
+    
+    bool filterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect* cullR,
+                    const SkMatrix& ctm) const;
+#endif
 
 private:
     SkPathEffect() = default;

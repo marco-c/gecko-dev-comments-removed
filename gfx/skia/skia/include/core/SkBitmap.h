@@ -1230,7 +1230,7 @@ public:
 
 
 
-    class HeapAllocator : public Allocator {
+    class SK_API HeapAllocator : public Allocator {
     public:
 
         

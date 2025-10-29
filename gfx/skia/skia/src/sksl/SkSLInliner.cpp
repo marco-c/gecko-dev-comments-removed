@@ -77,8 +77,6 @@ using namespace skia_private;
 namespace SkSL {
 namespace {
 
-static constexpr int kInlinedStatementLimit = 2500;
-
 static bool is_scopeless_block(Statement* stmt) {
     return stmt->is<Block>() && !stmt->as<Block>().isScope();
 }
@@ -649,6 +647,14 @@ Inliner::InlinedCall Inliner::inlineCall(const FunctionCall& call,
     return inlinedCall;
 }
 
+bool Inliner::overInlineStatementLimit() const {
+    
+    
+    static constexpr int kInlinedStatementLimit = 2500;
+    return !fContext->fConfig->isBuiltinCode() &&
+           fInlinedStatementCounter >= kInlinedStatementLimit;
+}
+
 bool Inliner::isSafeToInline(const FunctionDefinition* functionDef, const ProgramUsage& usage) {
     
     if (this->settings().fInlineThreshold <= 0) {
@@ -656,7 +662,7 @@ bool Inliner::isSafeToInline(const FunctionDefinition* functionDef, const Progra
     }
 
     
-    if (fInlinedStatementCounter >= kInlinedStatementLimit) {
+    if (this->overInlineStatementLimit()) {
         return false;
     }
 
@@ -1104,7 +1110,7 @@ bool Inliner::analyze(const std::vector<std::unique_ptr<ProgramElement>>& elemen
     }
 
     
-    if (fInlinedStatementCounter >= kInlinedStatementLimit) {
+    if (this->overInlineStatementLimit()) {
         return false;
     }
 
@@ -1167,7 +1173,7 @@ bool Inliner::analyze(const std::vector<std::unique_ptr<ProgramElement>>& elemen
         statementRemappingTable.set(enclosingStmt,&(*enclosingStmt)->as<Block>().children().back());
 
         
-        if (fInlinedStatementCounter >= kInlinedStatementLimit) {
+        if (this->overInlineStatementLimit()) {
             break;
         }
 

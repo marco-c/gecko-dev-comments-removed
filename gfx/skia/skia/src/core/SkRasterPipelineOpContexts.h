@@ -61,10 +61,10 @@ struct MemoryCtxInfo {
 };
 
 struct MemoryCtxPatch {
-    MemoryCtxInfo info;
-
-    void* backup;  
     std::byte scratch[kMaxScratchPerPatch];
+
+    MemoryCtxInfo info;
+    void* backup;  
 };
 
 struct GatherCtx {

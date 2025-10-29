@@ -72,7 +72,8 @@ public:
 
 
 
-    sk_sp<PrecompileShader> makeWithWorkingColorSpace(sk_sp<SkColorSpace>) const;
+    sk_sp<PrecompileShader> makeWithWorkingColorSpace(sk_sp<SkColorSpace> inputCS,
+                                                      sk_sp<SkColorSpace> outputCS=nullptr) const;
 
     
     PrecompileShaderPriv priv();
@@ -106,37 +107,113 @@ namespace PrecompileShaders {
                                          SkSpan<const sk_sp<PrecompileShader>> srcs);
     SK_API sk_sp<PrecompileShader> CoordClamp(SkSpan<const sk_sp<PrecompileShader>>);
 
+    enum class ImageShaderFlags : uint16_t {
+        kNone                 = 0,
+
+        kCubicSampling        = 1 << 1,
+        kIncludeAlphaOnly     = 1 << 2,
+
+        kAll = kCubicSampling | kIncludeAlphaOnly,
+        kExcludeCubic = kIncludeAlphaOnly,
+        kNoAlphaNoCubic = kNone,
+    };
+
+    static constexpr SkTileMode kAllTileModes[] = {
+        SkTileMode::kClamp,
+        SkTileMode::kRepeat,
+        SkTileMode::kMirror,
+        SkTileMode::kDecal,
+    };
+
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    SK_API sk_sp<PrecompileShader> Image(ImageShaderFlags = ImageShaderFlags::kAll,
+                                         SkSpan<const SkColorInfo> = {},
+                                         SkSpan<const SkTileMode> = { kAllTileModes });
+
     
-    
-    
-    
-    SK_API sk_sp<PrecompileShader> Image(SkSpan<const SkColorInfo> = {},
-                                         SkSpan<const SkTileMode> = {});
-    
-    
-    
-    SK_API sk_sp<PrecompileShader> RawImage(SkSpan<const SkColorInfo> = {},
-                                            SkSpan<const SkTileMode> = {});
+
+
+    SK_API sk_sp<PrecompileShader> Image(SkSpan<const SkColorInfo> colorInfos,
+                                         SkSpan<const SkTileMode> = { kAllTileModes });
 
     
     
     
-    SK_API sk_sp<PrecompileShader> YUVImage();
+    SK_API sk_sp<PrecompileShader> RawImage(ImageShaderFlags = ImageShaderFlags::kExcludeCubic,
+                                            SkSpan<const SkColorInfo> = {},
+                                            SkSpan<const SkTileMode> = { kAllTileModes });
+
+    enum class YUVImageShaderFlags : uint16_t {
+        kNone                       = 0,
+
+        kHardwareSamplingNoSwizzle  = 1 << 1,
+        kHardwareSampling           = 1 << 2,
+        kShaderBasedSampling        = 1 << 3,
+        kCubicSampling              = 1 << 4,
+
+        kExcludeCubic = kHardwareSamplingNoSwizzle | kHardwareSampling | kShaderBasedSampling,
+        kNoCubicNoNonSwizzledHW = kHardwareSamplingNoSwizzle | kShaderBasedSampling,
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    SK_API sk_sp<PrecompileShader> YUVImage(
+            YUVImageShaderFlags = YUVImageShaderFlags::kExcludeCubic,
+            SkSpan<const SkColorInfo> = {});
 
     
     
     SK_API sk_sp<PrecompileShader> MakeFractalNoise();
     SK_API sk_sp<PrecompileShader> MakeTurbulence();
 
+    enum class GradientShaderFlags : uint16_t {
+        kNone    = 0,
+
+        kSmall   = 1 << 1,
+        kMedium  = 1 << 2,
+        kLarge   = 1 << 3,
+
+        kAll     = kSmall | kMedium | kLarge,
+        kNoLarge = kSmall | kMedium,
+    };
+
     
     SK_API sk_sp<PrecompileShader> LinearGradient(
+            GradientShaderFlags = GradientShaderFlags::kAll,
             SkGradientShader::Interpolation = SkGradientShader::Interpolation());
     SK_API sk_sp<PrecompileShader> RadialGradient(
+            GradientShaderFlags = GradientShaderFlags::kAll,
             SkGradientShader::Interpolation = SkGradientShader::Interpolation());
     SK_API sk_sp<PrecompileShader> TwoPointConicalGradient(
+            GradientShaderFlags = GradientShaderFlags::kAll,
             SkGradientShader::Interpolation = SkGradientShader::Interpolation());
     SK_API sk_sp<PrecompileShader> SweepGradient(
+            GradientShaderFlags = GradientShaderFlags::kAll,
             SkGradientShader::Interpolation = SkGradientShader::Interpolation());
 
     
@@ -168,8 +245,20 @@ namespace PrecompileShaders {
     
     
     
-    SK_API sk_sp<PrecompileShader> WorkingColorSpace(SkSpan<const sk_sp<PrecompileShader>> shaders,
-                                                     SkSpan<const sk_sp<SkColorSpace>> colorSpaces);
+
+    
+    
+    
+    SK_API sk_sp<PrecompileShader> WorkingColorSpace(
+            SkSpan<const sk_sp<PrecompileShader>> shaders,
+            SkSpan<const sk_sp<SkColorSpace>> inputSpaces,
+            SkSpan<const sk_sp<SkColorSpace>> outputSpaces = {});
+
+    
+    SK_API sk_sp<PrecompileShader> WorkingColorSpaceExplicit(
+            SkSpan<const sk_sp<PrecompileShader>> shaders,
+            SkSpan<const std::pair<sk_sp<SkColorSpace>,
+                                   sk_sp<SkColorSpace>>> inputAndOutputSpaces);
 
 } 
 

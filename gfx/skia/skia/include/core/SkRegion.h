@@ -14,11 +14,13 @@
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkTypeTraits.h"
 
+#include "include/core/SkPath.h"    
+
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
-class SkPath;
+class SkPathBuilder;
 
 
 
@@ -186,7 +188,16 @@ public:
 
 
 
+    bool addBoundaryPath(SkPathBuilder*) const;
+
+    
+
+
+    SkPath getBoundaryPath() const;
+
+#ifndef SK_HIDE_PATH_EDIT_METHODS
     bool getBoundaryPath(SkPath* path) const;
+#endif
 
     
 
@@ -560,7 +571,7 @@ public:
     
 
 
-    class Spanerator {
+    class SK_API Spanerator {
     public:
 
         
@@ -626,7 +637,7 @@ private:
     struct RunHead;
 
     static RunHead* emptyRunHeadPtr() { return (SkRegion::RunHead*) -1; }
-    static constexpr RunHead* kRectRunHeadPtr = nullptr;
+    static constexpr const RunHead* const kRectRunHeadPtr = nullptr;
 
     
     void allocateRuns(int count);

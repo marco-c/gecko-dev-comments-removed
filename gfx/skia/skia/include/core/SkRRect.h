@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <optional>
 
 class SkMatrix;
 class SkString;
@@ -454,14 +455,9 @@ public:
 
 
 
+    std::optional<SkRRect> transform(const SkMatrix&) const;
 
-
-
-
-
-
-
-
+    
     bool transform(const SkMatrix& matrix, SkRRect* dst) const;
 
     

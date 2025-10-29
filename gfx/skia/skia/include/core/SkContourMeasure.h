@@ -8,12 +8,12 @@
 #ifndef SkContourMeasure_DEFINED
 #define SkContourMeasure_DEFINED
 
+#include "include/core/SkPathTypes.h" 
 #include "include/core/SkPoint.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkSpan.h"
-#include "include/private/base/SkAPI.h"
-#include "include/private/base/SkAssert.h"
+#include "include/core/SkTypes.h"
 #include "include/private/base/SkTDArray.h"
 
 #include <cstddef>
@@ -21,7 +21,7 @@
 
 class SkMatrix;
 class SkPath;
-enum class SkPathVerb;
+class SkPathBuilder;
 
 class SK_API SkContourMeasure : public SkRefCnt {
 public:
@@ -54,8 +54,12 @@ public:
 
 
 
+    [[nodiscard]] bool getSegment(SkScalar startD, SkScalar stopD, SkPathBuilder* dst,
+                                  bool startWithMoveTo) const;
+#ifdef SK_SUPPORT_MUTABLE_PATHEFFECT
     [[nodiscard]] bool getSegment(SkScalar startD, SkScalar stopD, SkPath* dst,
                                   bool startWithMoveTo) const;
+#endif
 
     
 
