@@ -463,6 +463,9 @@ class DXGIYCbCrTextureHostD3D11 : public TextureHost {
 
   void SetReadFence(RefPtr<FenceD3D11> aReadFence);
 
+  
+  
+  const RefPtr<gfx::FileHandleWrapper> mHandles[3];
   const gfx::IntSize mSize;
   const gfx::IntSize mSizeY;
   const gfx::IntSize mSizeCbCr;
@@ -472,9 +475,6 @@ class DXGIYCbCrTextureHostD3D11 : public TextureHost {
   const CompositeProcessFencesHolderId mFencesHolderId;
 
  protected:
-  
-  
-  RefPtr<gfx::FileHandleWrapper> mHandles[3];
   bool mIsLocked = false;
   RefPtr<FenceD3D11> mReadFence;
 };
