@@ -973,8 +973,10 @@ add_task(async function merinoCache() {
   );
 
   
-  dateNowStub.returns(startDateMs + 3 * 60 * 1000);
+  
+  dateNowStub.returns(startDateMs + 1.5 * 60 * 60 * 1000);
 
+  
   
   info("Doing search 4");
   callsByProvider = await doSearch({
@@ -988,15 +990,41 @@ add_task(async function merinoCache() {
     },
   });
   info("search 4 callsByProvider: " + JSON.stringify(callsByProvider));
-  Assert.equal(
-    callsByProvider.geolocation.length,
-    1,
-    "geolocation provider should have been called on search 4"
+  Assert.ok(
+    !callsByProvider.geolocation,
+    "geolocation provider should not have been called on search 4"
   );
   Assert.equal(
     callsByProvider.accuweather.length,
     1,
     "accuweather provider should have been called on search 4"
+  );
+
+  
+  dateNowStub.returns(startDateMs + 3 * 60 * 60 * 1000);
+
+  
+  info("Doing search 5");
+  callsByProvider = await doSearch({
+    query,
+    expectedTitleL10n: {
+      id: "urlbar-result-weather-title",
+      args: {
+        city: "Waterloo",
+        region: "IA",
+      },
+    },
+  });
+  info("search 5 callsByProvider: " + JSON.stringify(callsByProvider));
+  Assert.equal(
+    callsByProvider.geolocation.length,
+    1,
+    "geolocation provider should have been called on search 5"
+  );
+  Assert.equal(
+    callsByProvider.accuweather.length,
+    1,
+    "accuweather provider should have been called on search 5"
   );
 
   sandbox.restore();
