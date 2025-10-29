@@ -354,6 +354,7 @@ def repackage_msix(
     if channel not in (
         "official",
         "beta",
+        "esr",
         "aurora",
         "nightly",
         "unofficial",
@@ -412,9 +413,17 @@ def repackage_msix(
     if not displayname:
         displayname = f"Mozilla {first}"
 
+        
         if channel == "beta":
+            suffix = " Beta"
+            if not displayname.endswith(suffix):
+                displayname += suffix
+
+        elif channel == "esr":
             
-            displayname += " Beta"
+            suffix = " ESR"
+            if not displayname.endswith(suffix):
+                displayname += suffix
 
     second = next(values)
     vendor = vendor or second
@@ -472,9 +481,17 @@ def repackage_msix(
     _, _, brandFullName = brandFullName.partition("=")
     brandFullName = brandFullName.strip()
 
+    
     if channel == "beta":
+        suffix = " Beta"
+        if not brandFullName.endswith(suffix):
+            brandFullName += suffix
+
+    elif channel == "esr":
         
-        brandFullName += " Beta"
+        suffix = " ESR"
+        if not brandFullName.endswith(suffix):
+            brandFullName += suffix
 
     branding = get_branding(
         use_official_branding, topsrcdir, build_app, unpack_finder, log
