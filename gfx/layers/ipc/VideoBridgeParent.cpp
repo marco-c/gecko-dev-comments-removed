@@ -92,8 +92,10 @@ already_AddRefed<TextureHost> VideoBridgeParent::LookupTextureAsync(
   MonitorAutoLock lock(mMonitor);
 
   
+  
+  
+  
   if (NS_WARN_IF(!mCompositorThreadHolder)) {
-    MOZ_ASSERT_UNREACHABLE("Called on destroyed VideoBridgeParent actor!");
     return nullptr;
   }
 
