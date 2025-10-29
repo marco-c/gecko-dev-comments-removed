@@ -337,6 +337,11 @@ void nsThread::ThreadFunc(void* aArg) {
 
   self->InitCommon();
 
+#ifdef XP_MACOSX
+  
+  pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0);
+#endif
+
   
   nsThreadManager::get().RegisterCurrentThread(*self);
 
