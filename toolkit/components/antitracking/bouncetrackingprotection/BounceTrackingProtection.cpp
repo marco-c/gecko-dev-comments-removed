@@ -11,6 +11,7 @@
 #include "BounceTrackingMapEntry.h"
 #include "ClearDataCallback.h"
 #include "PromiseNativeWrapper.h"
+#include "ProfileAfterChangeGate.h"
 
 #include "BounceTrackingStateGlobal.h"
 #include "ErrorList.h"
@@ -65,6 +66,13 @@ static const char kBTPModePref[] = "privacy.bounceTrackingProtection.mode";
 already_AddRefed<BounceTrackingProtection>
 BounceTrackingProtection::GetSingleton() {
   MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsresult rv = EnsurePastProfileAfterChange();
+  if (NS_FAILED(rv)) {
+    
+    
+    return nullptr;
+  }
 
   
   if (sInitFailed) {
