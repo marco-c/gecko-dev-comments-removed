@@ -10,15 +10,22 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.AppNotIdleException
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.longClick
+import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
@@ -55,6 +62,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
+import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.waitForObjects
@@ -171,11 +179,23 @@ class NavigationToolbarRobot {
         assertItemTextEquals(homeUrlBar(), expectedText = text)
     }
 
+    fun verifySearchBarPlaceholderWithComposableToolbar(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Trying to verify that the search bar place holder is \"Search or enter address\"")
+        composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).assert(hasContentDescription(" Search or enter address. Search or enter address"))
+        Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Verified that the search bar place holder is \"Search or enter address\"")
+    }
+
     // New unified search UI selector
     fun verifyDefaultSearchEngine(engineName: String) =
         assertUIObjectExists(
             searchSelectorButton().getChild(UiSelector().descriptionStartsWith(engineName)),
         )
+
+    fun verifyDefaultSearchEngineWithComposableToolbar(composeTestRule: ComposeTestRule, engineName: String) {
+        Log.i(TAG, "verifyDefaultSearchEngineWithComposableToolbar: Trying to verify that default search engine is: $engineName is displayed")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.search_engine_selector_content_description, engineName)).assertIsDisplayed()
+        Log.i(TAG, "verifyDefaultSearchEngineWithComposableToolbar: Verified that default search engine is: $engineName is displayed")
+    }
 
     fun verifyTextSelectionOptions(vararg textSelectionOptions: String) {
         for (textSelectionOption in textSelectionOptions) {
@@ -299,7 +319,7 @@ class NavigationToolbarRobot {
             awesomeBar().setText(url.toString())
             Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to press device enter button")
-            mDevice.pressEnter()
+            pressImeActionOnAwesomeBar()
             Log.i(TAG, "enterURLAndEnterToBrowser: Pressed device enter button")
 
             registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
@@ -322,14 +342,13 @@ class NavigationToolbarRobot {
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
             Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to click navigation toolbar")
-            composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).performClick()
+            composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
             Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Clicked navigation toolbar")
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to set toolbar text to: $url")
-            onView(withId(composeToolbarR.id.mozac_addressbar_search_query_input)).perform(replaceText(url.toString()))
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Toolbar text was set to: $url")
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to press device enter button")
-            mDevice.pressEnter()
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Pressed device enter button")
+            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to set toolbar text to: $url and perform IME action")
+            onView(withId(composeToolbarR.id.mozac_addressbar_search_query_input)).perform(
+                replaceText(url.toString()), pressImeActionButton(),
+            )
+            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Toolbar text was set to: $url and IME action performed")
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
@@ -346,7 +365,7 @@ class NavigationToolbarRobot {
             awesomeBar().setText(url.toString())
             Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to press device enter button")
-            mDevice.pressEnter()
+            pressImeActionOnAwesomeBar()
             Log.i(TAG, "enterURLAndEnterToBrowser: Pressed device enter button")
 
             BrowserRobot().interact()
@@ -363,7 +382,7 @@ class NavigationToolbarRobot {
             awesomeBar().setText(crashUrl)
             Log.i(TAG, "openTabCrashReporter: Toolbar text was set to: $crashUrl")
             Log.i(TAG, "openTabCrashReporter: Trying to press device enter button")
-            mDevice.pressEnter()
+            pressImeActionOnAwesomeBar()
             Log.i(TAG, "openTabCrashReporter: Pressed device enter button")
 
             registerAndCleanupIdlingResources(sessionLoadedIdlingResource) {
@@ -566,6 +585,20 @@ class NavigationToolbarRobot {
             return SearchRobot.Transition()
         }
 
+        @OptIn(ExperimentalTestApi::class)
+        fun clickURLBarWithComposableToolbar(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+            Log.i(TAG, "clickURLBarWithComposableToolbar: Waiting for $waitingTime until the URL bar to exist")
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
+            Log.i(TAG, "clickURLBarWithComposableToolbar: Waited for $waitingTime until the URL bar to exist")
+            Log.i(TAG, "clickURLBarWithComposableToolbar: Trying to click navigation toolbar")
+            composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).performClick()
+            Log.i(TAG, "clickURLBarWithComposableToolbar: Clicked navigation toolbar")
+            composeTestRule.waitForIdle()
+
+            SearchRobot().interact()
+            return SearchRobot.Transition()
+        }
+
         fun clickSearchSelectorButton(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
             Log.i(TAG, "clickSearchSelectorButton: Waiting for $waitingTime ms for the search selector button to exist")
             searchSelectorButton().waitForExists(waitingTime)
@@ -636,6 +669,34 @@ private fun urlBar() = mDevice.findObject(UiSelector().resourceId("$packageName:
 private fun homeUrlBar() = mDevice.findObject(UiSelector().resourceId("$packageName:id/toolbar_text"))
 private fun awesomeBar() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
+private fun pressImeActionOnAwesomeBar() {
+    val context = appContext
+    val resId = context.resources.getIdentifier(
+        "mozac_browser_toolbar_edit_url_view",
+        "id",
+        packageName,
+    )
+
+    try {
+        Log.i(TAG, "pressImeActionOnAwesomeBar: Trying pressImeActionButton via Espresso")
+        onView(withId(resId)).perform(pressImeActionButton())
+        Log.i(TAG, "pressImeActionOnAwesomeBar: Espresso IME action completed successfully")
+    } catch (e: AppNotIdleException) {
+        Log.w(TAG, "pressImeActionOnAwesomeBar: IME action failed (AppNotIdleException); falling back to UiAutomator pressEnter()", e)
+        try {
+            val field = awesomeBar()
+            if (field.exists()) {
+                field.click()
+                mDevice.pressEnter()
+                Log.i(TAG, "pressImeActionOnAwesomeBar: Fallback UiAutomator pressEnter() executed successfully")
+            } else {
+                Log.w(TAG, "pressImeActionOnAwesomeBar: Fallback failed: awesomeBar() not found")
+            }
+        } catch (fallbackEx: Exception) {
+            Log.e(TAG, "pressImeActionOnAwesomeBar: Fallback UiAutomator pressEnter() failed", fallbackEx)
+        }
+    }
+}
 private fun threeDotButton() = onView(withId(toolbarR.id.mozac_browser_toolbar_menu))
 private fun tabTrayButton() = onView(withId(R.id.tab_button))
 private fun tabsCounter() = onView(
