@@ -785,6 +785,11 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  void DisplayRestrictedContentError();
+
+  
+  
+  
 
   
   

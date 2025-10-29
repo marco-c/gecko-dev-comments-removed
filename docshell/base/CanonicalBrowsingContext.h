@@ -453,6 +453,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   bool CanOpenModalPicker();
 
+  static bool ShouldEnforceParentalControls();
+
  protected:
   
   void CanonicalDiscard();
@@ -581,6 +583,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   already_AddRefed<nsDocShellLoadState> CreateLoadInfo(
       SessionHistoryEntry* aEntry);
+
+  void GetContiguousEntriesForLoad(LoadingSessionHistoryInfo& aLoadingInfo,
+                                   const RefPtr<SessionHistoryEntry>& aEntry);
 
   
   

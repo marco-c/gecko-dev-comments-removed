@@ -2241,6 +2241,9 @@ class Document : public nsINode,
   }
 
   void ProcessMETATag(HTMLMetaElement* aMetaElement);
+
+  void TerminateParserAndDisableScripts();
+
   
 
 
