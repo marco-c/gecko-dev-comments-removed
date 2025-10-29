@@ -3496,9 +3496,13 @@ pref("browser.contextual-services.contextId.rotation-in-days", 7);
 pref("browser.contextual-services.contextId.rust-component.enabled", true);
 
 
-pref("browser.ipProtection.autoStartEnabled", false);
 pref("browser.ipProtection.enabled", false);
+
+pref("browser.ipProtection.autoStartEnabled", false);
+pref("browser.ipProtection.autoStartPrivateEnabled", false);
+
 pref("browser.ipProtection.userEnabled", false);
+
 pref("browser.ipProtection.variant", "");
 pref("browser.ipProtection.exceptionsMode", "all");
 pref("browser.ipProtection.domainExclusions", "");
