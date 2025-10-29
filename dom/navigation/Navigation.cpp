@@ -1155,19 +1155,36 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
   return rv.StealNSResult();
 }
 
+
+static void ResumeApplyTheHistoryStep(
+    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
+    UserNavigationInvolvement aUserInvolvement) {
+  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
+  auto* childSHistory = aTraversable->GetChildSessionHistory();
+  
+  
+  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
+                          false,
+                          false,
+                          false, [](auto) {});
+}
+
 struct NavigationWaitForAllScope final : public nsISupports,
                                          public SupportsWeakPtr {
   NavigationWaitForAllScope(Navigation* aNavigation,
                             NavigationAPIMethodTracker* aApiMethodTracker,
-                            NavigateEvent* aEvent)
+                            NavigateEvent* aEvent,
+                            NavigationDestination* aDestination)
       : mNavigation(aNavigation),
         mAPIMethodTracker(aApiMethodTracker),
-        mEvent(aEvent) {}
+        mEvent(aEvent),
+        mDestination(aDestination) {}
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(NavigationWaitForAllScope)
   RefPtr<Navigation> mNavigation;
   RefPtr<NavigationAPIMethodTracker> mAPIMethodTracker;
   RefPtr<NavigateEvent> mEvent;
+  RefPtr<NavigationDestination> mDestination;
 
  private:
   ~NavigationWaitForAllScope() {}
@@ -1210,30 +1227,253 @@ struct NavigationWaitForAllScope final : public nsISupports,
       navigation->AbortNavigateEvent(jsapi.cx(), event, aRejectionReason);
     }
   }
+  
+  MOZ_CAN_RUN_SCRIPT void CommitNavigateEvent(NavigationType aNavigationType) {
+    
+    
+
+    
+    
+    RefPtr document = mEvent->GetDocument();
+    if (!document || !document->IsFullyActive()) {
+      return;
+    }
+    
+    nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell());
+    Maybe<BrowsingContext&> navigable =
+        ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
+          return ToMaybeRef(aWindow.GetBrowsingContext());
+        });
+    
+    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
+      return;
+    }
+
+    
+    
+    const bool endResultIsSameDocument =
+        mEvent->InterceptionState() != NavigateEvent::InterceptionState::None ||
+        mDestination->SameDocument();
+
+    
+    
+    nsAutoMicroTask mt;
+
+    
+    if (mEvent->InterceptionState() != NavigateEvent::InterceptionState::None) {
+      
+      
+      mEvent->SetInterceptionState(NavigateEvent::InterceptionState::Committed);
+      
+      switch (aNavigationType) {
+        case NavigationType::Push:
+        case NavigationType::Replace:
+          
+          
+          
+          
+          if (docShell) {
+            docShell->UpdateURLAndHistory(
+                document, mDestination->GetURL(),
+                mEvent->ClassicHistoryAPIState(),
+                *NavigationUtils::NavigationHistoryBehavior(aNavigationType),
+                document->GetDocumentURI(),
+                Equals(mDestination->GetURL(), document->GetDocumentURI()));
+          }
+          break;
+        case NavigationType::Reload:
+          
+          
+          
+          if (docShell) {
+            mNavigation->UpdateEntriesForSameDocumentNavigation(
+                docShell->GetActiveSessionHistoryInfo(), aNavigationType);
+          }
+          break;
+        case NavigationType::Traverse:
+          if (auto* entry = mDestination->GetEntry()) {
+            
+            
+            mNavigation
+                ->mSuppressNormalScrollRestorationDuringOngoingNavigation =
+                true;
+            
+            
+            
+            UserNavigationInvolvement userInvolvement =
+                mEvent->UserInitiated() ? UserNavigationInvolvement::Activation
+                                        : UserNavigationInvolvement::None;
+            
+            
+            
+            
+            
+            ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
+                                      navigable->Top(), userInvolvement);
+
+            
+            
+            MOZ_ASSERT(entry->Index() >= 0);
+            mNavigation->SetCurrentEntryIndex(entry->SessionHistoryInfo());
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    
+    
+    
+    
+    if (mNavigation->mTransition) {
+      mNavigation->mTransition->Committed()->MaybeResolveWithUndefined();
+    }
+
+    
+    if (endResultIsSameDocument) {
+      
+      AutoTArray<RefPtr<Promise>, 16> promiseList;
+      
+      for (auto& handler : mEvent->NavigationHandlerList().Clone()) {
+        
+        
+        RefPtr promise = MOZ_KnownLive(handler)->Call();
+        if (promise) {
+          promiseList.AppendElement(promise);
+        }
+      }
+      
+      
+      nsCOMPtr globalObject = mNavigation->GetOwnerGlobal();
+      if (promiseList.IsEmpty()) {
+        RefPtr promise = Promise::CreateResolvedWithUndefined(
+            globalObject, IgnoredErrorResult());
+        if (promise) {
+          promiseList.AppendElement(promise);
+        }
+      }
+
+      
+
+      
+      
+      
+      
+      
+      auto cancelSteps =
+          [weakScope = WeakPtr(this)](JS::Handle<JS::Value> aRejectionReason)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                
+                if (weakScope) {
+                  RefPtr scope = weakScope.get();
+                  scope->ProcessNavigateEventHandlerFailure(aRejectionReason);
+                }
+              };
+      auto successSteps =
+          [weakScope = WeakPtr(this)](const Span<JS::Heap<JS::Value>>&)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                
+                if (weakScope) {
+                  RefPtr scope = weakScope.get();
+                  scope->CommitNavigateEventSuccessSteps();
+                }
+              };
+      if (mAPIMethodTracker) {
+        LOG_FMTD("Waiting for committed");
+        mAPIMethodTracker->CommittedPromise()
+            ->AddCallbacksWithCycleCollectedArgs(
+                [successSteps, cancelSteps](
+                    JSContext*, JS::Handle<JS::Value>, ErrorResult&,
+                    nsIGlobalObject* aGlobalObject,
+                    const Span<RefPtr<Promise>>& aPromiseList,
+                    NavigationWaitForAllScope* aScope)
+                    MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                      Promise::WaitForAll(aGlobalObject, aPromiseList,
+                                          successSteps, cancelSteps, aScope);
+                    },
+                [](JSContext*, JS::Handle<JS::Value>, ErrorResult&,
+                   nsIGlobalObject*, const Span<RefPtr<Promise>>&,
+                   NavigationWaitForAllScope*) {},
+                nsCOMPtr(globalObject),
+                nsTArray<RefPtr<Promise>>(std::move(promiseList)),
+                RefPtr<NavigationWaitForAllScope>(this));
+      } else {
+        LOG_FMTD("No API method tracker, not waiting for committed");
+        
+        
+        Promise::WaitForAll(globalObject, promiseList, successSteps,
+                            cancelSteps, this);
+      }
+    } else if (mAPIMethodTracker && mNavigation->mOngoingAPIMethodTracker) {
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(mAPIMethodTracker ==
+                            mNavigation->mOngoingAPIMethodTracker);
+      
+      mAPIMethodTracker->CleanUp();
+    } else {
+      
+      
+      
+      
+      mNavigation->mOngoingNavigateEvent = nullptr;
+    }
+  }
+
+  MOZ_CAN_RUN_SCRIPT void CommitNavigateEventSuccessSteps() {
+    LogEvent(mEvent, mEvent, "Success"_ns);
+
+    
+    
+    RefPtr document = mEvent->GetDocument();
+    if (!document || !document->IsFullyActive()) {
+      return;
+    }
+
+    
+    
+    if (AbortSignal* signal = mEvent->Signal(); signal->Aborted()) {
+      return;
+    }
+
+    
+    MOZ_DIAGNOSTIC_ASSERT(mEvent == mNavigation->mOngoingNavigateEvent);
+
+    
+    mNavigation->mOngoingNavigateEvent = nullptr;
+
+    
+    RefPtr event = mEvent;
+    event->Finish(true);
+
+    
+    
+    if (mAPIMethodTracker) {
+      mAPIMethodTracker->ResolveFinishedPromise();
+    }
+
+    
+    RefPtr navigation = mNavigation;
+    navigation->FireEvent(u"navigatesuccess"_ns);
+
+    
+    
+    if (mNavigation->mTransition) {
+      mNavigation->mTransition->Finished()->MaybeResolveWithUndefined();
+    }
+    
+    mNavigation->mTransition = nullptr;
+  }
 };
 
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(NavigationWaitForAllScope, mNavigation,
-                                  mAPIMethodTracker, mEvent)
+                                  mAPIMethodTracker, mEvent, mDestination)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationWaitForAllScope)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
-
-
-static void ResumeApplyTheHistoryStep(
-    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
-    UserNavigationInvolvement aUserInvolvement) {
-  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
-  auto* childSHistory = aTraversable->GetChildSessionHistory();
-  
-  
-  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
-                          false,
-                          false,
-                          false, [](auto) {});
-}
 
 
 bool Navigation::InnerFireNavigateEvent(
@@ -1398,22 +1638,7 @@ bool Navigation::InnerFireNavigateEvent(
   }
 
   
-  
-  
-
-  
-  bool endResultIsSameDocument =
-      event->InterceptionState() != NavigateEvent::InterceptionState::None ||
-      aDestination->SameDocument();
-
-  
-  nsAutoMicroTask mt;
-
-  
   if (event->InterceptionState() != NavigateEvent::InterceptionState::None) {
-    
-    event->SetInterceptionState(NavigateEvent::InterceptionState::Committed);
-
     
     RefPtr<NavigationHistoryEntry> fromNHE = GetCurrentEntry();
 
@@ -1429,190 +1654,14 @@ bool Navigation::InnerFireNavigateEvent(
 
     
     MOZ_ALWAYS_TRUE(committedPromise->SetAnyPromiseIsHandled());
+    
     MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
-
-    switch (aNavigationType) {
-      case NavigationType::Traverse:
-        
-        mSuppressNormalScrollRestorationDuringOngoingNavigation = true;
-        
-        
-        
-        
-        if (auto* entry = aDestination->GetEntry()) {
-          
-          UserNavigationInvolvement userInvolvement =
-              UserNavigationInvolvement::None;
-          
-          if (event->UserInitiated()) {
-            userInvolvement = UserNavigationInvolvement::Activation;
-          }
-          
-          ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
-                                    navigable->Top(), userInvolvement);
-
-          
-          
-          MOZ_ASSERT(entry->Index() >= 0);
-          mCurrentEntryIndex = Some(entry->Index());
-        }
-
-        break;
-      case NavigationType::Push:
-      case NavigationType::Replace:
-        
-        if (nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell())) {
-          docShell->UpdateURLAndHistory(
-              document, aDestination->GetURL(), event->ClassicHistoryAPIState(),
-              *NavigationUtils::NavigationHistoryBehavior(aNavigationType),
-              document->GetDocumentURI(),
-              Equals(aDestination->GetURL(), document->GetDocumentURI()));
-        }
-        break;
-      case NavigationType::Reload:
-        
-        if (nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell())) {
-          UpdateEntriesForSameDocumentNavigation(
-              docShell->GetActiveSessionHistoryInfo(), aNavigationType);
-        }
-        break;
-      default:
-        break;
-    }
   }
 
+  RefPtr scope = MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker,
+                                                       event, aDestination);
   
-  if (endResultIsSameDocument) {
-    
-    AutoTArray<RefPtr<Promise>, 16> promiseList;
-    
-    for (auto& handler : event->NavigationHandlerList().Clone()) {
-      
-      RefPtr promise = MOZ_KnownLive(handler)->Call();
-      if (promise) {
-        promiseList.AppendElement(promise);
-      }
-    }
-
-    
-    if (promiseList.IsEmpty()) {
-      RefPtr promise = Promise::CreateResolvedWithUndefined(
-          globalObject, IgnoredErrorResult());
-      if (promise) {
-        promiseList.AppendElement(promise);
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    RefPtr scope =
-        MakeRefPtr<NavigationWaitForAllScope>(this, apiMethodTracker, event);
-    auto successSteps =
-        [weakScope = WeakPtr(scope)](const Span<JS::Heap<JS::Value>>&)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              
-              if (!weakScope) {
-                return;
-              }
-
-              RefPtr event = weakScope->mEvent;
-              RefPtr self = weakScope->mNavigation;
-              RefPtr apiMethodTracker = weakScope->mAPIMethodTracker;
-              LogEvent(event, event, "Success"_ns);
-
-              
-              
-              if (RefPtr document = event->GetDocument();
-                  !document || !document->IsFullyActive()) {
-                return;
-              }
-
-              
-              if (AbortSignal* signal = event->Signal(); signal->Aborted()) {
-                return;
-              }
-
-              
-              MOZ_DIAGNOSTIC_ASSERT(event == self->mOngoingNavigateEvent);
-
-              
-              self->mOngoingNavigateEvent = nullptr;
-
-              
-              event->Finish(true);
-
-              
-              if (apiMethodTracker) {
-                apiMethodTracker->ResolveFinishedPromise();
-              }
-
-              
-              self->FireEvent(u"navigatesuccess"_ns);
-
-              
-              if (self->mTransition) {
-                self->mTransition->Finished()->MaybeResolveWithUndefined();
-              }
-
-              
-              self->mTransition = nullptr;
-            };
-    auto failureSteps =
-        [weakScope = WeakPtr(scope)](JS::Handle<JS::Value> aRejectionReason)
-            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-              
-              if (!weakScope) {
-                return;
-              }
-              weakScope->ProcessNavigateEventHandlerFailure(aRejectionReason);
-            };
-
-    
-    
-    
-    
-    
-    if (apiMethodTracker) {
-      LOG_FMTD("Waiting for committed");
-      apiMethodTracker->CommittedPromise()->AddCallbacksWithCycleCollectedArgs(
-          [successSteps, failureSteps](
-              JSContext*, JS::Handle<JS::Value>, ErrorResult&,
-              nsIGlobalObject* aGlobalObject,
-              const Span<RefPtr<Promise>>& aPromiseList,
-              const RefPtr<NavigationWaitForAllScope>& aScope)
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                Promise::WaitForAll(aGlobalObject, aPromiseList, successSteps,
-                                    failureSteps, aScope);
-              },
-          [](JSContext*, JS::Handle<JS::Value>, ErrorResult&, nsIGlobalObject*,
-             const Span<RefPtr<Promise>>&,
-             const RefPtr<NavigationWaitForAllScope>&) {},
-          nsCOMPtr(globalObject),
-          nsTArray<RefPtr<Promise>>(std::move(promiseList)), scope);
-    } else {
-      LOG_FMTD("No API method tracker, not waiting for committed");
-      
-      
-      Promise::WaitForAll(globalObject, promiseList, successSteps, failureSteps,
-                          scope);
-    }
-  } else if (apiMethodTracker && mOngoingAPIMethodTracker) {
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(apiMethodTracker == mOngoingAPIMethodTracker);
-    
-    apiMethodTracker->CleanUp();
-  } else {
-    
-    
-    
-    
-    mOngoingNavigateEvent = nullptr;
-  }
+  scope->CommitNavigateEvent(aNavigationType);
 
   
   return event->InterceptionState() == NavigateEvent::InterceptionState::None;
