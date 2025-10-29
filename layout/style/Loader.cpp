@@ -280,8 +280,6 @@ SheetLoadData::SheetLoadData(
       mMediaMatched(aMediaMatches == MediaMatched::Yes),
       mUseSystemPrincipal(false),
       mSheetAlreadyComplete(false),
-      mIsCrossOriginNoCORS(false),
-      mBlockResourceTiming(false),
       mLoadFailed(false),
       mShouldEmulateNotificationsForCachedLoad(false),
       mPreloadKind(aPreloadKind),
@@ -325,8 +323,6 @@ SheetLoadData::SheetLoadData(
       mMediaMatched(true),
       mUseSystemPrincipal(aParentData && aParentData->mUseSystemPrincipal),
       mSheetAlreadyComplete(false),
-      mIsCrossOriginNoCORS(false),
-      mBlockResourceTiming(false),
       mLoadFailed(false),
       mShouldEmulateNotificationsForCachedLoad(false),
       mPreloadKind(StylePreloadKind::None),
@@ -373,8 +369,6 @@ SheetLoadData::SheetLoadData(
       mMediaMatched(true),
       mUseSystemPrincipal(aUseSystemPrincipal == UseSystemPrincipal::Yes),
       mSheetAlreadyComplete(false),
-      mIsCrossOriginNoCORS(false),
-      mBlockResourceTiming(false),
       mLoadFailed(false),
       mShouldEmulateNotificationsForCachedLoad(false),
       mPreloadKind(aPreloadKind),
@@ -660,8 +654,6 @@ void SheetLoadData::OnStartRequest(nsIRequest* aRequest) {
   NS_GetFinalChannelURI(channel, getter_AddRefs(finalURI));
   MOZ_DIAGNOSTIC_ASSERT(finalURI,
                         "Someone just violated the nsIRequest contract");
-  mSheet->SetURIs(finalURI, originalURI, finalURI);
-
   nsCOMPtr<nsIPrincipal> principal;
   nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
   if (mUseSystemPrincipal) {
@@ -670,22 +662,40 @@ void SheetLoadData::OnStartRequest(nsIRequest* aRequest) {
     secMan->GetChannelResultPrincipal(channel, getter_AddRefs(principal));
   }
   MOZ_DIAGNOSTIC_ASSERT(principal);
-  mSheet->SetPrincipal(principal);
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       ReferrerInfo::CreateForExternalCSSResources(
-          mSheet, nsContentUtils::GetReferrerPolicyFromChannel(channel));
-  mSheet->SetReferrerInfo(referrerInfo);
-
+          mSheet, finalURI,
+          nsContentUtils::GetReferrerPolicyFromChannel(channel));
+  mSheet->SetURIs(finalURI, originalURI, finalURI, referrerInfo, principal);
+  mSheet->SetOriginClean([&] {
+    if (mParentData && !mParentData->mSheet->IsOriginClean()) {
+      return false;
+    }
+    if (mSheet->GetCORSMode() != CORS_NONE) {
+      return true;
+    }
+    if (!mLoader->LoaderPrincipal()->Subsumes(mSheet->Principal())) {
+      return false;
+    }
+    if (nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(channel)) {
+      bool allRedirectsSameOrigin = false;
+      bool hadCrossOriginRedirects =
+          NS_SUCCEEDED(timedChannel->GetAllRedirectsSameOrigin(
+              &allRedirectsSameOrigin)) &&
+          !allRedirectsSameOrigin;
+      if (hadCrossOriginRedirects) {
+        return false;
+      }
+    }
+    return true;
+  }());
   if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel)) {
     nsCString sourceMapURL;
     if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
       mSheet->SetSourceMapURL(std::move(sourceMapURL));
     }
   }
-
-  mIsCrossOriginNoCORS = mSheet->GetCORSMode() == CORS_NONE &&
-                         !mTriggeringPrincipal->Subsumes(mSheet->Principal());
 }
 
 
@@ -734,7 +744,11 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
                          contentType.IsEmpty();
 
   if (!validType) {
-    const bool sameOrigin = mTriggeringPrincipal->Subsumes(mSheet->Principal());
+    
+    
+    
+    const bool sameOrigin =
+        mLoader->LoaderPrincipal()->Subsumes(mSheet->Principal());
     const auto flag = sameOrigin && mCompatMode == eCompatibility_NavQuirks
                           ? nsIScriptError::warningFlag
                           : nsIScriptError::errorFlag;
@@ -943,16 +957,14 @@ Loader::CreateSheet(nsIURI* aURI, nsIContent* aLinkingContent,
       return {std::move(sheet), sheetState, std::move(networkMetadata)};
     }
   }
-
-  nsIURI* sheetURI = aURI;
-  nsIURI* baseURI = aURI;
-  nsIURI* originalURI = aURI;
-
   auto sheet = MakeRefPtr<StyleSheet>(aParsingMode, aCORSMode, sriMetadata);
-  sheet->SetURIs(sheetURI, originalURI, baseURI);
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      ReferrerInfo::CreateForExternalCSSResources(sheet);
-  sheet->SetReferrerInfo(referrerInfo);
+      ReferrerInfo::CreateForExternalCSSResources(sheet, aURI);
+  
+  
+  sheet->SetURIs(aURI, aURI, aURI, referrerInfo, LoaderPrincipal());
+  
+  sheet->SetOriginClean(false);
   LOG(("  Needs parser"));
   return {std::move(sheet), SheetState::NeedsParser, nullptr};
 }
@@ -1404,8 +1416,8 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
     if (nsCOMPtr<nsITimedChannel> timedChannel =
             do_QueryInterface(httpChannel)) {
       timedChannel->SetInitiatorType(aLoadData.InitiatorTypeString());
-
-      if (aLoadData.mParentData) {
+      if (aLoadData.mParentData &&
+          !aLoadData.mParentData->mSheet->IsOriginClean()) {
         
         
         
@@ -1420,22 +1432,7 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
         
         
         
-        
-        
-        
-        
-        
-        
-        if (aLoadData.mParentData->mIsCrossOriginNoCORS ||
-            aLoadData.mParentData->mBlockResourceTiming) {
-          
-          
-          aLoadData.mBlockResourceTiming = true;
-
-          
-          
-          timedChannel->SetReportResourceTiming(false);
-        }
+        timedChannel->SetReportResourceTiming(false);
       }
     }
   }
@@ -1829,12 +1826,14 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
   if (!isSheetFromCache) {
     sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
                                    SRIMetadata{});
-    sheet->SetURIs(sheetURI, originalURI, baseURI);
     nsIReferrerInfo* referrerInfo =
         aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-    sheet->SetReferrerInfo(referrerInfo);
+    sheet->SetURIs(sheetURI, originalURI, baseURI, referrerInfo,
+                   sheetPrincipal);
     
-    sheet->SetPrincipal(sheetPrincipal);
+    
+    
+    sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
   }
 
   auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
