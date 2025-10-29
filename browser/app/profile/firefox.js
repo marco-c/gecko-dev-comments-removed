@@ -2637,6 +2637,9 @@ pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
 pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 
+pref("browser.tabs.splitView.enabled", false);
+
+
 
 pref("extensions.experiments.enabled", false);
 
@@ -3415,7 +3418,9 @@ pref("browser.backup.enabled", true);
 
 pref("browser.backup.scheduled.enabled", false);
 
-pref("browser.backup.preferences.ui.enabled", false);
+pref("browser.backup.archive.enabled", false);
+
+pref("browser.backup.restore.enabled", false);
 
 pref("browser.backup.sqlite.pages_per_step", 50);
 
