@@ -223,6 +223,7 @@
             </box>
             <box id="trust-icon-container" align="center" role="button" data-l10n-id="urlbar-identity-button">
               <image id="trust-icon"/>
+              <label id="trust-label" crop="center" flex="1" data-l10n-id="urlbar-trust-icon-notsecure-label" />
             </box>
             <!-- Use onclick instead of normal popup= syntax since the popup
                  code fires onmousedown, and hence eats our favicon drag events. -->
@@ -278,7 +279,7 @@
                   <image data-permission-id="persistent-storage" class="blocked-permission-icon persistent-storage-icon" role="button"
                         data-l10n-id="urlbar-persistent-storage-blocked"/>
                   <image data-permission-id="popup" class="blocked-permission-icon popup-icon" role="button"
-                        data-l10n-id="urlbar-popup-blocked"/>
+                        data-l10n-id="urlbar-popup-blocked2"/>
                   <image data-permission-id="autoplay-media" class="blocked-permission-icon autoplay-media-icon" role="button"
                         data-l10n-id="urlbar-autoplay-media-blocked"/>
                   <image data-permission-id="canvas" class="blocked-permission-icon canvas-icon" role="button"
