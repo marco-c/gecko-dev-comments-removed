@@ -65,7 +65,6 @@
 #include "nsIEditor.h"
 #include "nsIFilePicker.h"
 #include "nsIFormControl.h"
-#include "nsIFormFillController.h"
 #include "nsIFrame.h"
 #include "nsIMutationObserver.h"
 #include "nsIPromptCollection.h"
@@ -5915,8 +5914,6 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
   
   
   
-
-  
   if (mType == FormControlType::InputColor) {
     InitColorPicker();
     return;
@@ -5929,7 +5926,6 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
     return;
   }
 
-  
   if (IsDateTimeTypeSupported(mType)) {
     if (CreatesDateTimeWidget()) {
       if (RefPtr<Element> dateTimeBoxElement = GetDateTimeBoxElement()) {
@@ -5943,18 +5939,6 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
       DateTimeValue value;
       GetDateTimeInputBoxValue(value);
       OpenDateTimePicker(value);
-    }
-    return;
-  }
-
-  
-  
-  
-  if (IsSingleLineTextControl(true) && GetList()) {
-    if (nsCOMPtr<nsIFormFillController> controller =
-            do_GetService("@mozilla.org/satchel/form-fill-controller;1")) {
-      controller->SetControlledElement(this);
-      controller->ShowPopup();
     }
   }
 }
