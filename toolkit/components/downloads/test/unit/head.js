@@ -882,6 +882,7 @@ function isValidDate(aDate) {
 
 
 
+
 function checkEqualReferrerInfos(aActualInfo, aExpectedInfo) {
   Assert.equal(
     !!aExpectedInfo.originalReferrer,

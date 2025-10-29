@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1260664
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1260664</title>
@@ -30,10 +30,12 @@ function runTests() {
       attribute: { content: "referrerpolicy", idl: "referrerPolicy" },
       validValues: [ "no-referrer",
                      "origin",
-                     /** These 2 below values are still invalid, please see
-                       Bug 1178337 - Valid referrer attribute values **/
-                     /** "no-referrer-when-downgrade",
-                     "origin-when-cross-origin", **/
+                     /**
+                      * These 2 below values are still invalid, please see
+                      * Bug 1178337 - Valid referrer attribute values
+                      */
+                     //  "no-referrer-when-downgrade",
+                     //  "origin-when-cross-origin",
                      "unsafe-url" ],
       invalidValues: [
         "", "  orIgin   ", "  unsafe-uRl  ", "  No-RefeRRer  ", " fOoBaR  "

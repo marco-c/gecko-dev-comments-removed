@@ -2425,6 +2425,7 @@ var gSync = {
 
 
 
+
   hasClientForId(clientId) {
     return this._attachedClients?.some(c => !!c.id && c.id === clientId);
   },

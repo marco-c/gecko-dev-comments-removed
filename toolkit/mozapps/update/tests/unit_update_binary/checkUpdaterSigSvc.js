@@ -7,6 +7,7 @@
 
 
 
+
 function run_test() {
   if (!IS_AUTHENTICODE_CHECK_ENABLED) {
     return;

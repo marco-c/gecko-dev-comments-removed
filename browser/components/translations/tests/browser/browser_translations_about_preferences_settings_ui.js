@@ -220,6 +220,7 @@ async function testLanguageList(
 
 
 
+
     let langElem = languageList.firstElementChild;
     const displayName = getIntlDisplayName(menuItem.value);
     is(
@@ -297,6 +298,7 @@ async function testLanguageListWithPref(languageList, pref, sectionName) {
     Services.prefs.setCharPref(pref, langOptions);
 
     
+
 
 
 

@@ -283,6 +283,7 @@ function closeMenus(node) {
 
 
 
+
 function eventMatchesKey(aEvent, aKey) {
   let keyPressed = (aKey.getAttribute("key") || "").toLowerCase();
   let keyModifiers = aKey.getAttribute("modifiers");

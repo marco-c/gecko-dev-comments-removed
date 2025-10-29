@@ -21,6 +21,7 @@ class JsonHubProtocol {
 
 
 
+
   parseMessages(input) {
     
     if (typeof input !== "string") {
@@ -68,6 +69,7 @@ class JsonHubProtocol {
     return hubMessages;
   }
   
+
 
 
 

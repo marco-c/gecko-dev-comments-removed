@@ -42,6 +42,8 @@ const PR_EXCL = 0x80;
 
 
 
+
+
 var MozillaFileLogger = {};
 
 MozillaFileLogger.init = function (path) {

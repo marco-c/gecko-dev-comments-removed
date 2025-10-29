@@ -78,6 +78,7 @@ async function waitSamplingAndStopProfilerAndGetThreads(contentPid) {
 
 
 
+
 function findServiceWorkerThreads(profile) {
   const allThreads = [
     profile.threads,

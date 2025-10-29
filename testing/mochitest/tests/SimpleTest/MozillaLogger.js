@@ -54,6 +54,8 @@ class MozillaLogger {
 
 
 
+
+
 class MozillaFileLogger extends MozillaLogger {
   constructor(aPath) {
     super();

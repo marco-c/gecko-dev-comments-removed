@@ -308,6 +308,7 @@ function test_nsIDOMXULSelectControlElement_States(
 
 
 
+
 function test_nsIDOMXULSelectControlElement_UI(element, testprefix) {
   var testid = testprefix ? testprefix + " " : "";
   testid += element.localName + " nsIDOMXULSelectControlElement UI ";

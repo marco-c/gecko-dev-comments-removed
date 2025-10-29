@@ -355,6 +355,7 @@ export var TabUnloader = {
 
 
 
+
 function determineTabBaseWeight(tab, tabMethods) {
   let totalWeight = 0;
 

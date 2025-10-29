@@ -40,6 +40,7 @@ async function runMainTest(aInput, aDesc, aExpectedScheme) {
 
 
 
+
 async function runCanonizedTest(aInput, aDesc, aExpectedScheme) {
   await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
     const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
@@ -53,6 +54,7 @@ async function runCanonizedTest(aInput, aDesc, aExpectedScheme) {
     is(browser.currentURI.scheme, aExpectedScheme, "Canonized test: " + aDesc);
   });
 }
+
 
 
 
@@ -89,6 +91,7 @@ async function runNewTabTest(aInput, aDesc, aExpectedScheme) {
 
 
 
+
 async function runNewWindowTest(aInput, aDesc, aExpectedScheme) {
   await BrowserTestUtils.withNewTab("about:about", async function () {
     const newWindowPromise = BrowserTestUtils.waitForNewWindow({
@@ -110,6 +113,7 @@ async function runNewWindowTest(aInput, aDesc, aExpectedScheme) {
     await BrowserTestUtils.closeWindow(newWindow);
   });
 }
+
 
 
 

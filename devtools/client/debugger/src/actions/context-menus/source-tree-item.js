@@ -143,6 +143,7 @@ export function showSourceTreeItemContextMenu(
 
 
 
+
 function getItemProjectDirectoryRootName(item) {
   if (item.thread) {
     return item.thread.name;

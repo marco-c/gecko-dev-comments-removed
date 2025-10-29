@@ -23,6 +23,7 @@ var ios;
 
 
 
+
 var localIPv4Literals = [
   
   "10.0.0.1",
@@ -53,6 +54,7 @@ var localIPLiterals = localIPv4Literals.concat(localIPv6Literals);
 
 
 
+
 var testList = [
   test_localhost_http_speculative_connect,
   test_localhost_https_speculative_connect,
@@ -76,6 +78,7 @@ var hostIdx = 0;
 
 
 
+
 function TestServer() {
   this.listener = ServerSocket(-1, true, -1);
   this.listener.asyncListen(this);
@@ -93,6 +96,7 @@ TestServer.prototype = {
 
   onStopListening() {},
 };
+
 
 
 
@@ -154,6 +158,7 @@ TestFailedStreamCallback.prototype = {
 
 
 
+
 function test_localhost_http_speculative_connect() {
   serv = new TestServer();
   var ssm = Services.scriptSecurityManager;
@@ -172,6 +177,7 @@ function test_localhost_http_speculative_connect() {
 
 
 
+
 function test_localhost_https_speculative_connect() {
   serv = new TestServer();
   var ssm = Services.scriptSecurityManager;
@@ -184,6 +190,7 @@ function test_localhost_https_speculative_connect() {
     .QueryInterface(Ci.nsISpeculativeConnect)
     .speculativeConnect(URI, principal, null, false);
 }
+
 
 
 
@@ -268,6 +275,7 @@ function test_hostnames_resolving_to_local_addresses() {
   var next = test_hostnames_resolving_to_local_addresses;
   test_hostnames_resolving_to_addresses(host, next);
 }
+
 
 
 
@@ -403,6 +411,7 @@ function test_speculative_connect_with_proxy_filter() {
 
 
 
+
 function next_test() {
   if (testIdx >= testList.length) {
     
@@ -414,6 +423,7 @@ function next_test() {
   
   testList[testIdx++]();
 }
+
 
 
 

@@ -580,6 +580,7 @@ async function showSummarizeWarning(length) {
 
 
 
+
 window.onNewPrompt = async function (opt = {}) {
   if (opt.show) {
     await showSummarizeWarning(opt.contextLength);

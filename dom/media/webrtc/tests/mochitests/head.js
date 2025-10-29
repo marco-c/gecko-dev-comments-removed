@@ -638,6 +638,8 @@ var timeout = (promise, time, msg) =>
 
 
 
+
+
 var addFinallyToPromise = promise => {
   promise.finally = func => {
     return promise.then(
