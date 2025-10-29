@@ -1005,8 +1005,7 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
     masm.branchDouble(cond, input, scratch, &sqrt);
 
     
-    masm.zeroDouble(output);
-    masm.subDouble(scratch, output);
+    masm.Fneg(ARMFPRegister(output, 64), ARMFPRegister(scratch, 64));
     masm.jump(&done);
 
     masm.bind(&sqrt);
