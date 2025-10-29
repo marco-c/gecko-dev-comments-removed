@@ -1241,7 +1241,8 @@ bool Navigation::InnerFireNavigateEvent(
 
   
   init.mCanIntercept = document &&
-                       document->CanRewriteURL(aDestination->GetURL()) &&
+                       document->CanRewriteURL(aDestination->GetURL(),
+                                                false) &&
                        (aDestination->SameDocument() ||
                         aNavigationType != NavigationType::Traverse);
 

@@ -2766,7 +2766,7 @@ class Document : public nsINode,
 
 
 
-  bool CanRewriteURL(nsIURI* aTargetURL) const;
+  bool CanRewriteURL(nsIURI* aTargetURL, bool aReportErrors = true) const;
 
   
 
