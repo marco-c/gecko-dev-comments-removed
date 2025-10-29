@@ -3793,9 +3793,12 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
 
     if ((StaticPrefs::network_lna_blocking() ||
          StaticPrefs::network_lna_block_trackers()) &&
-        (mLnaPermissionStatus.mLocalHostPermission == LNAPermission::Pending) &&
-        (mLnaPermissionStatus.mLocalNetworkPermission ==
-         LNAPermission::Pending)) {
+        ((aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local &&
+          mLnaPermissionStatus.mLocalHostPermission ==
+              LNAPermission::Pending) ||
+         (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
+          mLnaPermissionStatus.mLocalNetworkPermission ==
+              LNAPermission::Pending))) {
       
       
       return false;
