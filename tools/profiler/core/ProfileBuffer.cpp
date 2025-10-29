@@ -10,6 +10,7 @@
 #include "js/ColumnNumber.h"  
 #include "js/GCAPI.h"
 #include "jsfriendapi.h"
+#include "mozilla/MathAlgorithms.h"
 #include "nsJSPrincipals.h"
 #include "nsScriptSecurityManager.h"
 
