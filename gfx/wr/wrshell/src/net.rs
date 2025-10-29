@@ -111,56 +111,51 @@ pub struct NetworkEventStream;
 
 
 
-
 impl NetworkEventStream {
-    pub fn spawn(
+    pub fn spawn<F>(
         host: &str,
-        event_sender: sdl3::event::EventSender,
-    ) {
+        callback: F,
+    ) where
+        F: Fn(NetworkEvent) + Send + 'static,
+    {
         let host = host.to_string();
         let mut connection: Option<WebSocket<MaybeTlsStream<TcpStream>>> = None;
 
-        thread::spawn(move || {
-            loop {
-                match connection {
-                    Some(ref mut socket) => {
-                        match socket.read() {
-                            Ok(msg) => {
-                                let msg = match msg {
-                                    tungstenite::Message::Text(text) => text,
-                                    _ => todo!(),
-                                };
-                                let msg: DebuggerMessage = serde_json::from_str(msg.as_str()).expect("bug");
-                                event_sender.push_custom_event(
-                                    NetworkEvent::Message(msg)
-                                ).expect("bug");
-                            }
-                            Err(..) => {
-                                
-                                connection = None;
-                                event_sender.push_custom_event(NetworkEvent::Disconnected)
-                                    .expect("bug");
-                            }
+        loop {
+            match connection {
+                Some(ref mut socket) => {
+                    match socket.read() {
+                        Ok(msg) => {
+                            let msg = match msg {
+                                tungstenite::Message::Text(text) => text,
+                                _ => todo!(),
+                            };
+                            let msg: DebuggerMessage = serde_json::from_str(msg.as_str()).expect("bug");
+                            callback(NetworkEvent::Message(msg));
+                        }
+                        Err(..) => {
+                            
+                            connection = None;
+                            callback(NetworkEvent::Disconnected);
                         }
                     }
-                    None => {
-                        
-                        let uri = format!("ws://{}/debugger-socket", host);
-                        match tungstenite::connect(uri) {
-                            Ok((socket, _)) => {
-                                
-                                connection = Some(socket);
-                                event_sender.push_custom_event(NetworkEvent::Connected)
-                                    .expect("bug");
-                            }
-                            Err(..) => {
-                                
-                                thread::sleep(time::Duration::new(1, 0));
-                            }
+                }
+                None => {
+                    
+                    let uri = format!("ws://{}/debugger-socket", host);
+                    match tungstenite::connect(uri) {
+                        Ok((socket, _)) => {
+                            
+                            connection = Some(socket);
+                            callback(NetworkEvent::Connected);
+                        }
+                        Err(..) => {
+                            
+                            thread::sleep(time::Duration::new(1, 0));
                         }
                     }
                 }
             }
-        });
+        }
     }
 }
