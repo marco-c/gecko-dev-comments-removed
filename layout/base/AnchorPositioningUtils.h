@@ -106,9 +106,9 @@ struct AnchorPositioningUtils {
 
 
   static nsRect AdjustAbsoluteContainingBlockRectForPositionArea(
-      nsIFrame* aPositionedFrame, nsIFrame* aContainingBlock,
-      const nsRect& aCBRect, AnchorPosReferenceData* aAnchorPosReferenceData,
-      const StylePositionArea& aPositionArea,
+      const nsRect& aAnchorRect, const nsRect& aCBRect,
+      WritingMode aPositionedWM, WritingMode aCBWM,
+      const StylePositionArea& aPosArea,
       const StylePositionTryFallbacksTryTactic* aFallbackTactic);
 
   
@@ -136,6 +136,26 @@ struct AnchorPositioningUtils {
 
 
   static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
+
+  struct DefaultAnchorInfo {
+    const nsAtom* mName = nullptr;
+    Maybe<nsRect> mRect;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+  static DefaultAnchorInfo GetDefaultAnchor(
+      const nsIFrame* aPositioned, bool aCBRectIsValid,
+      AnchorPosReferenceData* aAnchorPosReferenceData);
 };
 
 }  
