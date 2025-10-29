@@ -1266,6 +1266,34 @@ nsresult CryptoKey::PublicKeyToJwk(SECKEYPublicKey* aPubKey,
   }
 }
 
+bool PublicKeyHasCorrectLengthAndEncoding(const nsString& aNamedCurve,
+                                          const SECItem* key) {
+  uint32_t flen;
+  if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P256)) {
+    flen = 32;  
+  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P384)) {
+    flen = 48;  
+  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P521)) {
+    flen = 66;  
+  } else {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+
+  bool correctUncompressed = (key->len == 2 * flen + 1) &&
+                             (key->data[0] == EC_POINT_FORM_UNCOMPRESSED);
+  bool correctCompressed = (key->len == flen + 1) &&
+                           ((key->data[0] == EC_POINT_FORM_COMPRESSED_Y0) ||
+                            (key->data[0] == EC_POINT_FORM_COMPRESSED_Y1));
+
+  return correctCompressed || correctUncompressed;
+}
+
 UniqueSECKEYPublicKey CryptoKey::PublicECKeyFromRaw(
     CryptoBuffer& aKeyData, const nsString& aNamedCurve) {
   UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
@@ -1278,25 +1306,7 @@ UniqueSECKEYPublicKey CryptoKey::PublicECKeyFromRaw(
     return nullptr;
   }
 
-  uint32_t flen;
-  if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P256)) {
-    flen = 32;  
-  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P384)) {
-    flen = 48;  
-  } else if (aNamedCurve.EqualsLiteral(WEBCRYPTO_NAMED_CURVE_P521)) {
-    flen = 66;  
-  } else {
-    return nullptr;
-  }
-
-  
-  
-  if (rawItem.len != (2 * flen + 1)) {
-    return nullptr;
-  }
-
-  
-  if (rawItem.data[0] != EC_POINT_FORM_UNCOMPRESSED) {
+  if (!PublicKeyHasCorrectLengthAndEncoding(aNamedCurve, &rawItem)) {
     return nullptr;
   }
 
@@ -1339,6 +1349,24 @@ UniqueSECKEYPublicKey CryptoKey::PublicOKPKeyFromRaw(
   return CreateECPublicKey(&rawItem, aNamedCurve);
 }
 
+bool PublicECKeyEncoded(SECKEYPublicKey* aPubKey) {
+  if (!aPubKey) {
+    return false;
+  }
+
+  SECItem* publicValue = &aPubKey->u.ec.publicValue;
+  if (!publicValue || !publicValue->data || publicValue->len == 0) {
+    return false;
+  }
+
+  if (publicValue->data[0] == EC_POINT_FORM_COMPRESSED_Y0 ||
+      publicValue->data[0] == EC_POINT_FORM_COMPRESSED_Y1) {
+    return true;
+  }
+
+  return false;
+}
+
 bool CryptoKey::PublicKeyValid(SECKEYPublicKey* aPubKey) {
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   if (!slot.get()) {
@@ -1349,7 +1377,38 @@ bool CryptoKey::PublicKeyValid(SECKEYPublicKey* aPubKey) {
   
   
   CK_OBJECT_HANDLE id = PK11_ImportPublicKey(slot.get(), aPubKey, PR_FALSE);
-  return id != CK_INVALID_HANDLE;
+  if (id == CK_INVALID_HANDLE) {
+    return false;
+  }
+
+  
+  
+  if (aPubKey->keyType == ecKey && PublicECKeyEncoded(aPubKey)) {
+    ScopedAutoSECItem encodedPublicKey;
+    
+    
+    SECStatus rv = PK11_ReadRawAttribute(PK11_TypePubKey, aPubKey, CKA_EC_POINT,
+                                         &encodedPublicKey);
+    if (NS_WARN_IF(rv != SECSuccess)) {
+      return false;
+    }
+
+    SECItem decoded;
+    rv = SEC_QuickDERDecodeItem(aPubKey->arena, &decoded,
+                                SEC_ASN1_GET(SEC_OctetStringTemplate),
+                                &encodedPublicKey);
+    if (NS_WARN_IF(rv != SECSuccess)) {
+      return false;
+    }
+
+    
+    rv = SECITEM_CopyItem(aPubKey->arena, &aPubKey->u.ec.publicValue, &decoded);
+    if (NS_WARN_IF(rv != SECSuccess)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool CryptoKey::WriteStructuredClone(JSContext* aCX,
