@@ -547,7 +547,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   nsresult CheckContentPolicy(nsIScriptElement* aElement,
                               const nsAString& aNonce,
-                              ScriptLoadRequest* aRequest);
+                              ScriptLoadRequest* aRequest,
+                              ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
   
 
