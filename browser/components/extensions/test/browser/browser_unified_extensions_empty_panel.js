@@ -659,6 +659,13 @@ add_task(async function test_safe_mode_notice() {
   is(bar.getAttribute("type"), "info", "Bar is informational notice");
   ok(!bar.hasAttribute("dismissable"), "Bar is not dismissable");
 
+  const supportLink = bar.querySelector("a");
+  is(
+    supportLink.getAttribute("support-page"),
+    "diagnose-firefox-issues-using-troubleshoot-mode",
+    "expected the correct support page ID"
+  );
+
   
   
   
