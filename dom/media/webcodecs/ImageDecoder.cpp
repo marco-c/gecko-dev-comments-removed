@@ -497,11 +497,11 @@ void ImageDecoder::CheckOutstandingDecodes() {
     return nullptr;
   }
 
-  nsTHashSet<const ArrayBuffer*> transferSet;
+  nsTHashSet<const JSObject*> transferSet;
   for (const auto& buffer : aInit.mTransfer) {
     
     
-    if (transferSet.Contains(&buffer)) {
+    if (transferSet.Contains(buffer.Obj())) {
       MOZ_LOG(
           gWebCodecsLog, LogLevel::Error,
           ("ImageDecoder Constructor -- duplicate transferred ArrayBuffer"));
@@ -509,7 +509,7 @@ void ImageDecoder::CheckOutstandingDecodes() {
           "Transfer contains duplicate ArrayBuffer objects");
       return nullptr;
     }
-    transferSet.Insert(&buffer);
+    transferSet.Insert(buffer.Obj());
     
     
     bool empty = buffer.ProcessData(
