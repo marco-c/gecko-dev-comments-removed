@@ -11,7 +11,8 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 
-const EMBEDDING_SIZE = 16;
+
+const EMBEDDING_SIZE = 32;
 
 function approxEqual(a, b, tolerance = 1e-6) {
   return Math.abs(a - b) < tolerance;
@@ -43,7 +44,7 @@ class MockMLEngine {
   }
 
   async run(request) {
-    const texts = request.args[0];
+    const texts = request.args;
     return texts.map(text => {
       if (typeof text !== "string" || text.trim() === "") {
         throw new Error("Invalid input: text must be a non-empty string");
