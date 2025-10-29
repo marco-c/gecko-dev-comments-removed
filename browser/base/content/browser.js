@@ -1965,9 +1965,12 @@ var XULBrowserWindow = {
       url = Services.textToSubURI.unEscapeURIForUI(url);
 
       
-      
+
+
+
+
       url = url.replace(
-        /[\u200e\u200f\u202a\u202b\u202c\u202d\u202e]/g,
+        /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,
         encodeURIComponent
       );
 
