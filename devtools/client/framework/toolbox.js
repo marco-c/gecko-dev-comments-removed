@@ -248,6 +248,7 @@ const BOOLEAN_CONFIGURATION_PREFS = {
     name: "isTracerFeatureEnabled",
   },
 };
+exports.BOOLEAN_CONFIGURATION_PREFS = BOOLEAN_CONFIGURATION_PREFS;
 
 
 
