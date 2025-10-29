@@ -16746,32 +16746,7 @@ class BaseContent extends (external_React_default()).PureComponent {
     const shouldShowDownloadHighlight = this.state.showDownloadHighlightOverride ?? this.shouldShowOMCHighlight("DownloadMobilePromoHighlight");
     return external_React_default().createElement("div", {
       className: featureClassName
-    }, external_React_default().createElement("menu", {
-      className: "personalizeButtonWrapper"
-    }, external_React_default().createElement(CustomizeMenu, {
-      onClose: this.closeCustomizationMenu,
-      onOpen: this.openCustomizationMenu,
-      openPreferences: this.openPreferences,
-      setPref: this.setPref,
-      enabledSections: enabledSections,
-      enabledWidgets: enabledWidgets,
-      wallpapersEnabled: wallpapersEnabled,
-      activeWallpaper: activeWallpaper,
-      pocketRegion: pocketRegion,
-      mayHaveTopicSections: mayHavePersonalizedTopicSections,
-      mayHaveInferredPersonalization: mayHaveInferredPersonalization,
-      mayHaveWeather: mayHaveWeather,
-      mayHaveTrendingSearch: mayHaveTrendingSearch,
-      mayHaveWidgets: mayHaveWidgets,
-      mayHaveTimerWidget: mayHaveTimerWidget,
-      mayHaveListsWidget: mayHaveListsWidget,
-      showing: customizeMenuVisible
-    }), this.shouldShowOMCHighlight("CustomWallpaperHighlight") && external_React_default().createElement(MessageWrapper, {
-      dispatch: this.props.dispatch
-    }, external_React_default().createElement(WallpaperFeatureHighlight, {
-      position: "inset-block-start inset-inline-start",
-      dispatch: this.props.dispatch
-    }))), external_React_default().createElement("div", {
+    }, external_React_default().createElement("div", {
       className: "weatherWrapper"
     }, shouldDisplayWeather && external_React_default().createElement(ErrorBoundary, null, external_React_default().createElement(Weather_Weather, null))), external_React_default().createElement("div", {
       className: `mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`
@@ -16808,7 +16783,32 @@ class BaseContent extends (external_React_default()).PureComponent {
       dispatch: this.props.dispatch
     }))), mayShowTopicSelection && pocketEnabled && external_React_default().createElement(TopicSelection, {
       supportUrl: supportUrl
-    })));
+    })), external_React_default().createElement("menu", {
+      className: "personalizeButtonWrapper"
+    }, external_React_default().createElement(CustomizeMenu, {
+      onClose: this.closeCustomizationMenu,
+      onOpen: this.openCustomizationMenu,
+      openPreferences: this.openPreferences,
+      setPref: this.setPref,
+      enabledSections: enabledSections,
+      enabledWidgets: enabledWidgets,
+      wallpapersEnabled: wallpapersEnabled,
+      activeWallpaper: activeWallpaper,
+      pocketRegion: pocketRegion,
+      mayHaveTopicSections: mayHavePersonalizedTopicSections,
+      mayHaveInferredPersonalization: mayHaveInferredPersonalization,
+      mayHaveWeather: mayHaveWeather,
+      mayHaveTrendingSearch: mayHaveTrendingSearch,
+      mayHaveWidgets: mayHaveWidgets,
+      mayHaveTimerWidget: mayHaveTimerWidget,
+      mayHaveListsWidget: mayHaveListsWidget,
+      showing: customizeMenuVisible
+    }), this.shouldShowOMCHighlight("CustomWallpaperHighlight") && external_React_default().createElement(MessageWrapper, {
+      dispatch: this.props.dispatch
+    }, external_React_default().createElement(WallpaperFeatureHighlight, {
+      position: "inset-block-start inset-inline-start",
+      dispatch: this.props.dispatch
+    }))));
   }
 }
 BaseContent.defaultProps = {
