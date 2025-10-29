@@ -1081,11 +1081,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       mIsCloaked = mozilla::IsCloaked(mWnd);
       mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
-      
-      
-      auto scale = GetDesktopToDeviceScale();
-      mBounds = mLastPaintBounds = LayoutDeviceIntRect::FromUnknownRect(
-          DesktopIntRect::Round(GetBounds() / scale).ToUnknownRect());
+      mBounds = mLastPaintBounds = GetBounds();
 
       
       
@@ -6482,8 +6478,9 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "EnforceAspectRatio", [self, this, newWidth]() -> void {
               if (mWnd) {
-                
-                Resize(DesktopSize(newWidth, newWidth / mAspectRatio), true);
+                Resize(LayoutDeviceSize(newWidth, newWidth / mAspectRatio) /
+                           GetDesktopToDeviceScale(),
+                       true);
               }
             }));
       }
@@ -7046,9 +7043,8 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
       }
     }
 
-    
-    
-    Resize(DesktopRect(x, y, width, height), true);
+    Resize(LayoutDeviceIntRect(x, y, width, height) / GetDesktopToDeviceScale(),
+           true);
   }
   UpdateNonClientMargins();
   ChangedDPI();
