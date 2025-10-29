@@ -72,91 +72,87 @@ static void InitNavigationResult(NavigationResult& aResult,
   }
 }
 
-struct NavigationAPIMethodTracker final : public nsISupports {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(NavigationAPIMethodTracker)
+NavigationAPIMethodTracker::NavigationAPIMethodTracker(
+    Navigation* aNavigationObject, const Maybe<nsID> aKey,
+    const JS::Value& aInfo, nsIStructuredCloneContainer* aSerializedState,
+    NavigationHistoryEntry* aCommittedToEntry, Promise* aCommittedPromise,
+    Promise* aFinishedPromise, bool aPending)
+    : mNavigationObject(aNavigationObject),
+      mKey(aKey),
+      mInfo(aInfo),
+      mPending(aPending),
+      mSerializedState(aSerializedState),
+      mCommittedToEntry(aCommittedToEntry),
+      mCommittedPromise(aCommittedPromise),
+      mFinishedPromise(aFinishedPromise) {
+  mozilla::HoldJSObjects(this);
+}
 
-  NavigationAPIMethodTracker(Navigation* aNavigationObject,
-                             const Maybe<nsID> aKey, const JS::Value& aInfo,
-                             nsIStructuredCloneContainer* aSerializedState,
-                             NavigationHistoryEntry* aCommittedToEntry,
-                             Promise* aCommittedPromise,
-                             Promise* aFinishedPromise)
-      : mNavigationObject(aNavigationObject),
-        mKey(aKey),
-        mInfo(aInfo),
-        mSerializedState(aSerializedState),
-        mCommittedToEntry(aCommittedToEntry),
-        mCommittedPromise(aCommittedPromise),
-        mFinishedPromise(aFinishedPromise) {
-    mozilla::HoldJSObjects(this);
-  }
+NavigationAPIMethodTracker::~NavigationAPIMethodTracker() {
+  mozilla::DropJSObjects(this);
+}
 
+
+void NavigationAPIMethodTracker::CleanUp() { Navigation::CleanUp(this); }
+
+
+void NavigationAPIMethodTracker::NotifyAboutCommittedToEntry(
+    NavigationHistoryEntry* aNHE) {
+  MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
   
-  void CleanUp() { Navigation::CleanUp(this); }
-
-  
-  void NotifyAboutCommittedToEntry(NavigationHistoryEntry* aNHE) {
-    MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
+  mCommittedToEntry = aNHE;
+  if (mSerializedState) {
     
-    mCommittedToEntry = aNHE;
-    if (mSerializedState) {
-      
-      aNHE->SetNavigationAPIState(mSerializedState);
-      
-      
-      mSerializedState = nullptr;
-    }
-    mCommittedPromise->MaybeResolve(aNHE);
+    aNHE->SetNavigationAPIState(mSerializedState);
+    
+    
+    mSerializedState = nullptr;
   }
+  mCommittedPromise->MaybeResolve(aNHE);
+}
 
+
+void NavigationAPIMethodTracker::ResolveFinishedPromise() {
+  MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
   
-  void ResolveFinishedPromise() {
-    MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
-    
-    MOZ_DIAGNOSTIC_ASSERT(mCommittedToEntry);
-    
-    mFinishedPromise->MaybeResolve(mCommittedToEntry);
-    
-    CleanUp();
-  }
-
+  MOZ_DIAGNOSTIC_ASSERT(mCommittedToEntry);
   
-  void RejectFinishedPromise(JS::Handle<JS::Value> aException) {
-    MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
-    MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
-    
-    mCommittedPromise->MaybeReject(aException);
-    
-    mFinishedPromise->MaybeReject(aException);
-    
-    CleanUp();
-  }
-
+  mFinishedPromise->MaybeResolve(mCommittedToEntry);
   
-  void CreateResult(NavigationResult& aResult) {
-    
-    
-    
-    
-    InitNavigationResult(aResult, mCommittedPromise, mFinishedPromise);
+  CleanUp();
+}
+
+
+void NavigationAPIMethodTracker::RejectFinishedPromise(
+    JS::Handle<JS::Value> aException) {
+  MOZ_DIAGNOSTIC_ASSERT(mFinishedPromise);
+  MOZ_DIAGNOSTIC_ASSERT(mCommittedPromise);
+  
+  mCommittedPromise->MaybeReject(aException);
+  
+  mFinishedPromise->MaybeReject(aException);
+  
+  CleanUp();
+}
+
+
+void NavigationAPIMethodTracker::CreateResult(JSContext* aCx,
+                                              NavigationResult& aResult) {
+  
+  
+  
+  
+  
+  if (mPending) {
+    ErrorResult rv;
+    rv.ThrowAbortError("Navigation aborted");
+    mNavigationObject->SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
   }
-
-  Promise* CommittedPromise() { return mCommittedPromise; }
-  Promise* FinishedPromise() { return mFinishedPromise; }
-
-  RefPtr<Navigation> mNavigationObject;
-  Maybe<nsID> mKey;
-  JS::Heap<JS::Value> mInfo;
-
- private:
-  ~NavigationAPIMethodTracker() { mozilla::DropJSObjects(this); };
-
-  RefPtr<nsIStructuredCloneContainer> mSerializedState;
-  RefPtr<NavigationHistoryEntry> mCommittedToEntry;
-  RefPtr<Promise> mCommittedPromise;
-  RefPtr<Promise> mFinishedPromise;
-};
+  
+  
+  InitNavigationResult(aResult, mCommittedPromise, mFinishedPromise);
+}
 
 NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(NavigationAPIMethodTracker,
                                          (mNavigationObject, mSerializedState,
@@ -174,7 +170,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationAPIMethodTracker)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(Navigation, DOMEventTargetHelper, mEntries,
                                    mOngoingNavigateEvent, mTransition,
                                    mActivation, mOngoingAPIMethodTracker,
-                                   mUpcomingNonTraverseAPIMethodTracker,
                                    mUpcomingTraverseAPIMethodTrackers);
 NS_IMPL_ADDREF_INHERITED(Navigation, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Navigation, DOMEventTargetHelper)
@@ -568,12 +563,12 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   
   
   
-  
   JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
   RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      MaybeSetUpcomingNonTraverseAPIMethodTracker(info, serializedState);
+      SetUpNavigateReloadAPIMethodTracker(info, serializedState);
   MOZ_ASSERT(apiMethodTracker);
 
+  
   
   
   
@@ -583,28 +578,11 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
   bc->Navigate(urlRecord, *document->NodePrincipal(),
                 IgnoreErrors(),
                aOptions.mHistory,  false,
-               serializedState);
+               serializedState, apiMethodTracker);
 
   
   
-  if (mUpcomingNonTraverseAPIMethodTracker == apiMethodTracker) {
-    
-    
-    
-    
-    
-    
-    mUpcomingNonTraverseAPIMethodTracker = nullptr;
-    
-    ErrorResult rv;
-    rv.ThrowAbortError("Navigation aborted.");
-    SetEarlyErrorResult(aCx, aResult, std::move(rv));
-    return;
-  }
-
-  
-  
-  apiMethodTracker->CreateResult(aResult);
+  apiMethodTracker->CreateResult(aCx, aResult);
 }
 
 
@@ -658,7 +636,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
   
   if (auto maybeTracker =
           mUpcomingTraverseAPIMethodTrackers.MaybeGet(aKey).valueOr(nullptr)) {
-    maybeTracker->CreateResult(aResult);
+    maybeTracker->CreateResult(aCx, aResult);
     return;
   }
 
@@ -679,7 +657,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   
   
-  apiMethodTracker->CreateResult(aResult);
+  apiMethodTracker->CreateResult(aCx, aResult);
 
   
   auto* childSHistory = traversable->GetChildSessionHistory();
@@ -781,32 +759,19 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   
   
   RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      MaybeSetUpcomingNonTraverseAPIMethodTracker(info, serializedState);
+      SetUpNavigateReloadAPIMethodTracker(info, serializedState);
   MOZ_ASSERT(apiMethodTracker);
   
   
   RefPtr docShell = nsDocShell::Cast(document->GetDocShell());
   MOZ_ASSERT(docShell);
   docShell->ReloadNavigable(Some(WrapNotNullUnchecked(aCx)),
-                            nsIWebNavigation::LOAD_FLAGS_NONE, serializedState);
-  
-  
-  
-  
-  
-  
-  
-  if (mUpcomingNonTraverseAPIMethodTracker == apiMethodTracker) {
-    mUpcomingNonTraverseAPIMethodTracker = nullptr;
-    ErrorResult rv;
-    rv.ThrowAbortError("Reload aborted.");
-    SetEarlyErrorResult(aCx, aResult, std::move(rv));
-    return;
-  }
+                            nsIWebNavigation::LOAD_FLAGS_NONE, serializedState,
+                            UserNavigationInvolvement::None, apiMethodTracker);
 
   
   
-  apiMethodTracker->CreateResult(aResult);
+  apiMethodTracker->CreateResult(aCx, aResult);
 }
 
 
@@ -976,12 +941,32 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
     bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
     Element* aSourceElement, FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
-    nsIStructuredCloneContainer* aClassicHistoryAPIState) {
+    nsIStructuredCloneContainer* aClassicHistoryAPIState,
+    NavigationAPIMethodTracker* aApiMethodTrackerForNavigateOrReload) {
   
   
-  
+  RefPtr document = GetAssociatedDocument();
 
+  
+  
   InnerInformAboutAbortingNavigation(aCx);
+
+  
+  
+  if (HasEntriesAndEventsDisabled() && aApiMethodTrackerForNavigateOrReload) {
+    
+    aApiMethodTrackerForNavigateOrReload->MarkAsNotPending();
+    aApiMethodTrackerForNavigateOrReload = nullptr;
+  }
+
+  
+  if (!document || !document->IsFullyActive()) {
+    return false;
+  }
+
+  
+  
+  
 
   
   RefPtr<NavigationDestination> destination =
@@ -995,7 +980,8 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
       aCx, aNavigationType, destination,
       aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
       aFormDataEntryList, aClassicHistoryAPIState,
-       VoidString());
+       VoidString(),
+      aApiMethodTrackerForNavigateOrReload);
 }
 
 
@@ -1197,15 +1183,17 @@ bool Navigation::InnerFireNavigateEvent(
     UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
     FormData* aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
-    const nsAString& aDownloadRequestFilename) {
+    const nsAString& aDownloadRequestFilename,
+    NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
   nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
+  RefPtr apiMethodTracker = aNavigationAPIMethodTracker;
 
   
   if (HasEntriesAndEventsDisabled()) {
     
     MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
-    MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
     MOZ_DIAGNOSTIC_ASSERT(mUpcomingTraverseAPIMethodTrackers.IsEmpty());
+    MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
 
     
     return true;
@@ -1214,22 +1202,31 @@ bool Navigation::InnerFireNavigateEvent(
   RootedDictionary<NavigateEventInit> init(RootingCx());
 
   
+  MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
+
+  
   Maybe<nsID> destinationKey;
-
-  
-  if (auto* entry = aDestination->GetEntry()) {
-    destinationKey.emplace(entry->Key());
+  if (auto* destinationEntry = aDestination->GetEntry()) {
+    
+    MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
+    
+    destinationKey.emplace(destinationEntry->Key());
+    
+    MOZ_DIAGNOSTIC_ASSERT(!destinationKey->Equals(nsID{}));
+    
+    if (auto entry =
+            mUpcomingTraverseAPIMethodTrackers.Extract(*destinationKey)) {
+      
+      apiMethodTracker = std::move(*entry);
+    }
   }
-
   
-  MOZ_DIAGNOSTIC_ASSERT(!destinationKey || !destinationKey->Equals(nsID{}));
-
+  if (apiMethodTracker) {
+    apiMethodTracker->MarkAsNotPending();
+  }
   
-  PromoteUpcomingAPIMethodTrackerToOngoing(std::move(destinationKey));
-
   
-  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
-      mOngoingAPIMethodTracker;
+  mOngoingAPIMethodTracker = apiMethodTracker;
 
   
   Maybe<BrowsingContext&> navigable =
@@ -1340,6 +1337,10 @@ bool Navigation::InnerFireNavigateEvent(
     
     return false;
   }
+
+  
+  
+  
 
   
   bool endResultIsSameDocument =
@@ -1616,23 +1617,6 @@ NavigationHistoryEntry* Navigation::FindNavigationHistoryEntry(
 }
 
 
-void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
-    Maybe<nsID>&& aDestinationKey) {
-  MOZ_DIAGNOSTIC_ASSERT(!mOngoingAPIMethodTracker);
-  if (aDestinationKey) {
-    MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
-    Maybe<NavigationAPIMethodTracker&> tracker(NavigationAPIMethodTracker);
-    if (auto entry =
-            mUpcomingTraverseAPIMethodTrackers.Extract(*aDestinationKey)) {
-      mOngoingAPIMethodTracker = std::move(*entry);
-    }
-    return;
-  }
-
-  mOngoingAPIMethodTracker = std::move(mUpcomingNonTraverseAPIMethodTracker);
-}
-
-
  void Navigation::CleanUp(
     NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
   
@@ -1678,19 +1662,9 @@ void Navigation::InnerInformAboutAbortingNavigation(JSContext* aCx) {
   
   
 
-  
-  
-  
-  
-  
-  RefPtr upcomingNonTraverseAPIMethodTracker =
-      std::move(mUpcomingNonTraverseAPIMethodTracker);
   while (HasOngoingNavigateEvent()) {
     AbortOngoingNavigation(aCx);
   }
-  MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
-  mUpcomingNonTraverseAPIMethodTracker =
-      std::move(upcomingNonTraverseAPIMethodTracker);
 }
 
 
@@ -1809,9 +1783,8 @@ void Navigation::UpdateNeedsTraverse() {
   }
 
   
-  bool needsTraverse = mOngoingAPIMethodTracker ||
-                       mUpcomingNonTraverseAPIMethodTracker ||
-                       !mUpcomingTraverseAPIMethodTrackers.IsEmpty();
+  bool needsTraverse =
+      mOngoingAPIMethodTracker || !mUpcomingTraverseAPIMethodTrackers.IsEmpty();
 
   
   if (EventListenerManager* eventListenerManager =
@@ -1844,7 +1817,7 @@ void Navigation::LogHistory() const {
 
 
 RefPtr<NavigationAPIMethodTracker>
-Navigation::MaybeSetUpcomingNonTraverseAPIMethodTracker(
+Navigation::SetUpNavigateReloadAPIMethodTracker(
     JS::Handle<JS::Value> aInfo,
     nsIStructuredCloneContainer* aSerializedState) {
   
@@ -1861,21 +1834,9 @@ Navigation::MaybeSetUpcomingNonTraverseAPIMethodTracker(
   RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
       MakeAndAddRef<NavigationAPIMethodTracker>(
           this,  Nothing{}, aInfo, aSerializedState,
-           nullptr, committedPromise, finishedPromise);
+           nullptr, committedPromise, finishedPromise,
+           !HasEntriesAndEventsDisabled());
 
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
-
-  
-  
-  
-  if (!HasEntriesAndEventsDisabled()) {
-    mUpcomingNonTraverseAPIMethodTracker = apiMethodTracker;
-  }
-
-  UpdateNeedsTraverse();
-
-  
   return apiMethodTracker;
 }
 
@@ -1898,7 +1859,8 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
       MakeAndAddRef<NavigationAPIMethodTracker>(
           this, Some(aKey), aInfo,
            nullptr,
-           nullptr, committedPromise, finishedPromise);
+           nullptr, committedPromise, finishedPromise,
+           false);
 
   
   

@@ -35,6 +35,7 @@ class OriginAttributes;
 namespace dom {
 class FormData;
 class DocShellLoadStateInit;
+struct NavigationAPIMethodTracker;
 }  
 }  
 
@@ -443,6 +444,14 @@ class nsDocShellLoadState final {
   void SetNavigationAPIState(nsIStructuredCloneContainer* aNavigationAPIState);
 
   
+  
+  
+  mozilla::dom::NavigationAPIMethodTracker* GetNavigationAPIMethodTracker()
+      const;
+  void SetNavigationAPIMethodTracker(
+      mozilla::dom::NavigationAPIMethodTracker* aTracker);
+
+  
   mozilla::dom::NavigationType GetNavigationType() const;
 
   
@@ -728,6 +737,8 @@ class nsDocShellLoadState final {
   nsWeakPtr mSourceElement;
 
   RefPtr<nsStructuredCloneContainer> mNavigationAPIState;
+
+  RefPtr<mozilla::dom::NavigationAPIMethodTracker> mNavigationAPIMethodTracker;
 
   RefPtr<mozilla::dom::FormData> mFormDataEntryList;
 
