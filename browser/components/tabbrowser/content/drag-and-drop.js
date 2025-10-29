@@ -118,12 +118,12 @@
         !draggedTab._dragData.fromTabList
       ) {
         ind.hidden = true;
-
         if (this.#isAnimatingMoveTogetherSelectedTabs()) {
           
           return;
         }
         this.finishMoveTogetherSelectedTabs(draggedTab);
+        this._updateTabStylesOnDrag(draggedTab, dropEffect);
 
         if (dropEffect == "move") {
           this.#setMovingTabMode(true);
@@ -491,6 +491,7 @@
             }
           } else {
             moveTabs();
+            this._tabbrowserTabs._notifyBackgroundTab(movingTabs.at(-1));
           }
         }
       } else if (isTabGroupLabel(draggedTab)) {
@@ -1138,8 +1139,6 @@
         tab._dragData.movingTabs.reverse();
       }
 
-      this._updateTabStylesOnDrag(tab, event);
-
       if (isMovingInTabStrip) {
         this.#setMovingTabMode(true);
 
@@ -1167,7 +1166,13 @@
 
 
 
-    _updateTabStylesOnDrag(tab) {
+    _updateTabStylesOnDrag(tab, dropEffect) {
+      let tabStripItemElement = elementToMove(tab);
+      tabStripItemElement.style.pointerEvents =
+        dropEffect == "copy" ? "auto" : "";
+      if (tabStripItemElement.hasAttribute("dragtarget")) {
+        return;
+      }
       let isPinned = tab.pinned;
       let numPinned = gBrowser.pinnedTabCount;
       let allTabs = this._tabbrowserTabs.ariaFocusableItems;
@@ -1224,7 +1229,9 @@
         }
         
         
-        t.style.maxWidth = tabRect.width + "px";
+        if (tabRect.width) {
+          t.style.maxWidth = tabRect.width + "px";
+        }
         
         
         
@@ -1249,7 +1256,6 @@
 
       
       
-      let tabStripItemElement = elementToMove(tab);
       let rect =
         window.windowUtils.getBoundsWithoutFlushing(tabStripItemElement);
       
