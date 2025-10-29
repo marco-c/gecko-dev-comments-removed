@@ -5789,7 +5789,6 @@ static bool ComputeDecorationTrim(
     nsTextFrame* aFrame, const nsPresContext* aPresCtx,
     const nsIFrame* aDecFrame, const gfxFont::Metrics& aMetrics,
     nsCSSRendering::DecorationRectParams& aParams) {
-  const gfxFloat app = aPresCtx->AppUnitsPerDevPixel();
   const WritingMode wm = aDecFrame->GetWritingMode();
   bool verticalDec = wm.IsVertical();
 
@@ -5799,16 +5798,17 @@ static bool ComputeDecorationTrim(
   
   const StyleTextDecorationTrim& cssTrim =
       aDecFrame->StyleTextReset()->mTextDecorationTrim;
-  gfxFloat trimLeft, trimRight;
+  nscoord trimLeft, trimRight;
   if (cssTrim.IsAuto()) {
     
     
     constexpr gfxFloat kAutoTrimFactor = 1.0 / 12.5;
     
     
-    const gfxFloat scale = aPresCtx->CSSToDevPixelScale().scale;
     const nscoord autoDecorationTrim =
-        std::max(aMetrics.emHeight * kAutoTrimFactor, scale);
+        std::max(aPresCtx->DevPixelsToAppUnits(
+                     NS_round(aMetrics.emHeight * kAutoTrimFactor)),
+                 nsPresContext::CSSPixelsToAppUnits(1));
     trimLeft = autoDecorationTrim;
     trimRight = autoDecorationTrim;
   } else {
@@ -5819,8 +5819,8 @@ static bool ComputeDecorationTrim(
       
       return true;
     }
-    trimLeft = NSAppUnitsToDoublePixels(length.start.ToAppUnits(), app);
-    trimRight = NSAppUnitsToDoublePixels(length.end.ToAppUnits(), app);
+    trimLeft = length.start.ToAppUnits();
+    trimRight = length.end.ToAppUnits();
   }
 
   if (wm.IsInlineReversed()) {
@@ -5909,17 +5909,17 @@ static bool ComputeDecorationTrim(
     std::swap(applyLeft, applyRight);
   }
   if (applyLeft) {
-    trimLeft -= NSAppUnitsToDoublePixels(marginLeft, app);
+    trimLeft -= marginLeft;
   } else {
     trimLeft = 0;
   }
   if (applyRight) {
-    trimRight -= NSAppUnitsToDoublePixels(marginRight, app);
+    trimRight -= marginRight;
   } else {
     trimRight = 0;
   }
 
-  if (trimLeft >= NSAppUnitsToDoublePixels(frameSize, app) - trimRight) {
+  if (trimLeft + trimRight >= frameSize) {
     
     return false;
   }
@@ -5934,11 +5934,11 @@ static bool ComputeDecorationTrim(
   
   
   
-  if (trimLeft > 0.0 || marginLeft == 0) {
-    aParams.trimLeft = trimLeft;
+  if (trimLeft > 0 || marginLeft == 0) {
+    aParams.trimLeft = aPresCtx->AppUnitsToFloatDevPixels(trimLeft);
   }
-  if (trimRight > 0.0 || marginRight == 0) {
-    aParams.trimRight = trimRight;
+  if (trimRight > 0 || marginRight == 0) {
+    aParams.trimRight = aPresCtx->AppUnitsToFloatDevPixels(trimRight);
   }
   return true;
 }
