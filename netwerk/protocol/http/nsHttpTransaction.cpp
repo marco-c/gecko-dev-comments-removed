@@ -3751,6 +3751,12 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
 
   
   
+  if (!StaticPrefs::network_lna_websocket_enabled() && IsWebsocketUpgrade()) {
+    return true;  
+  }
+
+  
+  
   {
     mozilla::MutexAutoLock lock(mLock);
     if (mTargetIpAddressSpace == nsILoadInfo::Unknown) {
