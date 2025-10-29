@@ -201,6 +201,18 @@ class SheetLoadData final
 
   
   
+  
+  
+  bool mIsCrossOriginNoCORS : 1;
+
+  
+  
+  
+  
+  bool mBlockResourceTiming : 1;
+
+  
+  
   bool mLoadFailed : 1;
 
   

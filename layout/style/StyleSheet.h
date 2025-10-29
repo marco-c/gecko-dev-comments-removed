@@ -167,7 +167,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   StyleNonLocalUriDependency OriginalContentsUriDependency() const;
 
-  URLExtraData* URLData() const { return mURLData.get(); }
+  URLExtraData* URLData() const { return Inner().mURLData; }
 
   
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
@@ -197,18 +197,24 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   bool IsInline() const { return !GetOriginalURI(); }
 
-  nsIURI* GetSheetURI() const { return mSheetURI; }
+  nsIURI* GetSheetURI() const { return Inner().mSheetURI; }
+
   
 
 
-  nsIURI* GetOriginalURI() const { return mOriginalSheetURI; }
-  nsIURI* GetBaseURI() const;
+  nsIURI* GetOriginalURI() const { return Inner().mOriginalSheetURI; }
 
-  void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI, nsIURI* aBaseURI,
-               nsIReferrerInfo* aReferrerInfo, nsIPrincipal* aPrincipal);
+  nsIURI* GetBaseURI() const { return Inner().mBaseURI; }
 
-  void SetOriginClean(bool aValue) { Inner().mOriginClean = aValue; }
-  bool IsOriginClean() const { return Inner().mOriginClean; }
+  
+
+
+
+
+
+
+  inline void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI,
+                      nsIURI* aBaseURI);
 
   
 
@@ -308,7 +314,27 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   }
 
   
-  nsIPrincipal* Principal() const;
+  nsIPrincipal* Principal() const { return Inner().mPrincipal; }
+
+  
+
+
+
+
+
+
+
+  void SetPrincipal(nsIPrincipal* aPrincipal) {
+    StyleSheetInfo& info = Inner();
+    MOZ_ASSERT_IF(info.mPrincipalSet, info.mPrincipal == aPrincipal);
+    if (aPrincipal) {
+      info.mPrincipal = aPrincipal;
+#ifdef DEBUG
+      info.mPrincipalSet = true;
+#endif
+    }
+  }
+
   void SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
   void SetMedia(already_AddRefed<dom::MediaList> aMedia);
 
@@ -316,7 +342,12 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   CORSMode GetCORSMode() const { return Inner().mCORSMode; }
 
   
-  nsIReferrerInfo* GetReferrerInfo() const;
+  nsIReferrerInfo* GetReferrerInfo() const { return Inner().mReferrerInfo; }
+
+  
+  void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo) {
+    Inner().mReferrerInfo = aReferrerInfo;
+  }
 
   
   void GetIntegrity(dom::SRIMetadata& aResult) const {
@@ -518,6 +549,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   bool AreRulesAvailable(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
 
+  void SetURLExtraData();
+
  protected:
   
   uint32_t InsertRuleInternal(const nsACString& aRule, uint32_t aIndex,
@@ -595,10 +628,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   nsTArray<dom::CSSImportRule*> mReferencingRules;  
 
   RefPtr<dom::MediaList> mMedia;
-
-  RefPtr<URLExtraData> mURLData;
-  RefPtr<nsIURI> mSheetURI;
-  RefPtr<nsIURI> mOriginalSheetURI;
 
   
   

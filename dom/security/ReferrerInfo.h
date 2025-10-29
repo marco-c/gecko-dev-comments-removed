@@ -113,9 +113,8 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-
   static already_AddRefed<nsIReferrerInfo> CreateForExternalCSSResources(
-      StyleSheet* aExternalSheet, nsIURI* aExternalSheetURI,
+      StyleSheet* aExternalSheet,
       ReferrerPolicyEnum aPolicy = ReferrerPolicy::_empty);
 
   
