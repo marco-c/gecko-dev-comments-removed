@@ -254,6 +254,16 @@ ClassicScript::ClassicScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
 
 
 
+ImportMapScript::ImportMapScript(mozilla::dom::ReferrerPolicy aReferrerPolicy,
+                                 ScriptFetchOptions* aFetchOptions,
+                                 nsIURI* aURI)
+    : LoadedScript(ScriptKind::eImportMap, aReferrerPolicy, aFetchOptions,
+                   aURI) {}
+
+
+
+
+
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ModuleScript, LoadedScript)
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(ModuleScript)
