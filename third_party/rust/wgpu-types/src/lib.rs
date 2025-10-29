@@ -1410,6 +1410,13 @@ pub struct AdapterInfo {
     
     pub device_type: DeviceType,
     
+    
+    
+    
+    
+    
+    pub device_pci_bus_id: String,
+    
     pub driver: String,
     
     pub driver_info: String,

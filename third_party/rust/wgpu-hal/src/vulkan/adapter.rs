@@ -4,7 +4,9 @@ use core::{ffi::CStr, marker::PhantomData};
 use ash::{ext, google, khr, vk};
 use parking_lot::Mutex;
 
-use super::conv;
+use crate::vulkan::semaphore_list::SemaphoreList;
+
+use super::semaphore_list::SemaphoreListMode;
 
 fn depth_stencil_required_flags() -> vk::FormatFeatureFlags {
     vk::FormatFeatureFlags::SAMPLED_IMAGE | vk::FormatFeatureFlags::DEPTH_STENCIL_ATTACHMENT
@@ -964,6 +966,10 @@ pub struct PhysicalDeviceProperties {
 
     
     
+    pci_bus_info: Option<vk::PhysicalDevicePCIBusInfoPropertiesEXT<'static>>,
+
+    
+    
     
     
     
@@ -1392,6 +1398,8 @@ impl super::InstanceShared {
                     >= vk::API_VERSION_1_3
                     || capabilities.supports_extension(ext::subgroup_size_control::NAME);
                 let supports_robustness2 = capabilities.supports_extension(ext::robustness2::NAME);
+                let supports_pci_bus_info =
+                    capabilities.supports_extension(ext::pci_bus_info::NAME);
 
                 let supports_acceleration_structure =
                     capabilities.supports_extension(khr::acceleration_structure::NAME);
@@ -1445,6 +1453,13 @@ impl super::InstanceShared {
                     let next = capabilities
                         .robustness2
                         .insert(vk::PhysicalDeviceRobustness2PropertiesEXT::default());
+                    properties2 = properties2.push_next(next);
+                }
+
+                if supports_pci_bus_info {
+                    let next = capabilities
+                        .pci_bus_info
+                        .insert(vk::PhysicalDevicePCIBusInfoPropertiesEXT::default());
                     properties2 = properties2.push_next(next);
                 }
 
@@ -1672,6 +1687,16 @@ impl super::Instance {
                 vk::PhysicalDeviceType::CPU => wgt::DeviceType::Cpu,
                 _ => wgt::DeviceType::Other,
             },
+            device_pci_bus_id: phd_capabilities
+                .pci_bus_info
+                .filter(|info| info.pci_bus != 0 || info.pci_device != 0)
+                .map(|info| {
+                    format!(
+                        "{:04x}:{:02x}:{:02x}.{}",
+                        info.pci_domain, info.pci_bus, info.pci_device, info.pci_function
+                    )
+                })
+                .unwrap_or_default(),
             driver: {
                 phd_capabilities
                     .driver
@@ -1967,8 +1992,6 @@ impl super::Adapter {
             }
         });
 
-        let swapchain_fn = khr::swapchain::Device::new(&self.instance.raw, &raw_device);
-
         
         
         
@@ -2248,11 +2271,10 @@ impl super::Adapter {
 
         let queue = super::Queue {
             raw: raw_queue,
-            swapchain_fn,
             device: Arc::clone(&shared),
             family_index,
             relay_semaphores: Mutex::new(relay_semaphores),
-            signal_semaphores: Default::default(),
+            signal_semaphores: Mutex::new(SemaphoreList::new(SemaphoreListMode::Signal)),
         };
 
         let mem_allocator = {
@@ -2574,113 +2596,7 @@ impl crate::Adapter for super::Adapter {
         &self,
         surface: &super::Surface,
     ) -> Option<crate::SurfaceCapabilities> {
-        if !self.private_caps.can_present {
-            return None;
-        }
-        let queue_family_index = 0; 
-        {
-            profiling::scope!("vkGetPhysicalDeviceSurfaceSupportKHR");
-            match unsafe {
-                surface.functor.get_physical_device_surface_support(
-                    self.raw,
-                    queue_family_index,
-                    surface.raw,
-                )
-            } {
-                Ok(true) => (),
-                Ok(false) => return None,
-                Err(e) => {
-                    log::error!("get_physical_device_surface_support: {e}");
-                    return None;
-                }
-            }
-        }
-
-        let caps = {
-            profiling::scope!("vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
-            match unsafe {
-                surface
-                    .functor
-                    .get_physical_device_surface_capabilities(self.raw, surface.raw)
-            } {
-                Ok(caps) => caps,
-                Err(e) => {
-                    log::error!("get_physical_device_surface_capabilities: {e}");
-                    return None;
-                }
-            }
-        };
-
-        
-        let max_image_count = if caps.max_image_count == 0 {
-            !0
-        } else {
-            caps.max_image_count
-        };
-
-        
-        let current_extent = if caps.current_extent.width != !0 && caps.current_extent.height != !0
-        {
-            Some(wgt::Extent3d {
-                width: caps.current_extent.width,
-                height: caps.current_extent.height,
-                depth_or_array_layers: 1,
-            })
-        } else {
-            None
-        };
-
-        let raw_present_modes = {
-            profiling::scope!("vkGetPhysicalDeviceSurfacePresentModesKHR");
-            match unsafe {
-                surface
-                    .functor
-                    .get_physical_device_surface_present_modes(self.raw, surface.raw)
-            } {
-                Ok(present_modes) => present_modes,
-                Err(e) => {
-                    log::error!("get_physical_device_surface_present_modes: {e}");
-                    
-                    return None;
-                }
-            }
-        };
-
-        let raw_surface_formats = {
-            profiling::scope!("vkGetPhysicalDeviceSurfaceFormatsKHR");
-            match unsafe {
-                surface
-                    .functor
-                    .get_physical_device_surface_formats(self.raw, surface.raw)
-            } {
-                Ok(formats) => formats,
-                Err(e) => {
-                    log::error!("get_physical_device_surface_formats: {e}");
-                    
-                    return None;
-                }
-            }
-        };
-
-        let formats = raw_surface_formats
-            .into_iter()
-            .filter_map(conv::map_vk_surface_formats)
-            .collect();
-        Some(crate::SurfaceCapabilities {
-            formats,
-            
-            
-            
-            
-            maximum_frame_latency: (caps.min_image_count - 1)..=(max_image_count - 1), 
-            current_extent,
-            usage: conv::map_vk_image_usage(caps.supported_usage_flags),
-            present_modes: raw_present_modes
-                .into_iter()
-                .flat_map(conv::map_vk_present_mode)
-                .collect(),
-            composite_alpha_modes: conv::map_vk_composite_alpha(caps.supported_composite_alpha),
-        })
+        surface.inner.surface_capabilities(self)
     }
 
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp {

@@ -2,6 +2,7 @@ use alloc::{borrow::ToOwned as _, boxed::Box, ffi::CString, string::String, sync
 use core::{
     ffi::{c_void, CStr},
     marker::PhantomData,
+    mem::ManuallyDrop,
     slice,
     str::FromStr,
 };
@@ -167,48 +168,6 @@ impl super::DebugUtilsCreateInfo {
             .message_type(self.message_type)
             .user_data(user_data_ptr as *mut _)
             .pfn_user_callback(Some(debug_utils_messenger_callback))
-    }
-}
-
-impl super::Swapchain {
-    
-    
-    
-    unsafe fn release_resources(mut self, device: &ash::Device) -> Self {
-        profiling::scope!("Swapchain::release_resources");
-        {
-            profiling::scope!("vkDeviceWaitIdle");
-            
-            
-            let _ = unsafe {
-                device
-                    .device_wait_idle()
-                    .map_err(super::map_host_device_oom_and_lost_err)
-            };
-        };
-
-        unsafe { device.destroy_fence(self.fence, None) }
-
-        
-        for semaphore in self.acquire_semaphores.drain(..) {
-            let arc_removed = Arc::into_inner(semaphore).expect(
-                "Trying to destroy a SurfaceAcquireSemaphores that is still in use by a SurfaceTexture",
-            );
-            let mutex_removed = arc_removed.into_inner();
-
-            unsafe { mutex_removed.destroy(device) };
-        }
-
-        for semaphore in self.present_semaphores.drain(..) {
-            let arc_removed = Arc::into_inner(semaphore).expect(
-                "Trying to destroy a SurfacePresentSemaphores that is still in use by a SurfaceTexture",
-            );
-            let mutex_removed = arc_removed.into_inner();
-
-            unsafe { mutex_removed.destroy(device) };
-        }
-
-        self
     }
 }
 
@@ -589,11 +548,11 @@ impl super::Instance {
         &self,
         surface: vk::SurfaceKHR,
     ) -> super::Surface {
-        let functor = khr::surface::Instance::new(&self.shared.entry, &self.shared.raw);
+        let native_surface =
+            crate::vulkan::swapchain::NativeSurface::from_vk_surface_khr(self, surface);
+
         super::Surface {
-            raw: surface,
-            functor,
-            instance: Arc::clone(&self.shared),
+            inner: ManuallyDrop::new(Box::new(native_surface)),
             swapchain: RwLock::new(None),
         }
     }
@@ -1027,7 +986,7 @@ impl crate::Instance for super::Instance {
 
 impl Drop for super::Surface {
     fn drop(&mut self) {
-        unsafe { self.functor.destroy_surface(self.raw, None) };
+        unsafe { ManuallyDrop::take(&mut self.inner).delete_surface() };
     }
 }
 
@@ -1041,21 +1000,23 @@ impl crate::Surface for super::Surface {
     ) -> Result<(), crate::SurfaceError> {
         
         let mut swap_chain = self.swapchain.write();
-        let old = swap_chain
-            .take()
-            .map(|sc| unsafe { sc.release_resources(&device.shared.raw) });
 
-        let swapchain = unsafe { device.create_swapchain(self, config, old)? };
+        let mut old = swap_chain.take();
+        if let Some(ref mut old) = old {
+            unsafe { old.release_resources(device) };
+        }
+
+        let swapchain = unsafe { self.inner.create_swapchain(device, config, old)? };
         *swap_chain = Some(swapchain);
 
         Ok(())
     }
 
     unsafe fn unconfigure(&self, device: &super::Device) {
-        if let Some(sc) = self.swapchain.write().take() {
+        if let Some(mut sc) = self.swapchain.write().take() {
             
-            let swapchain = unsafe { sc.release_resources(&device.shared.raw) };
-            unsafe { swapchain.functor.destroy_swapchain(swapchain.raw, None) };
+            unsafe { sc.release_resources(device) };
+            unsafe { sc.delete_swapchain() };
         }
     }
 
@@ -1067,140 +1028,17 @@ impl crate::Surface for super::Surface {
         let mut swapchain = self.swapchain.write();
         let swapchain = swapchain.as_mut().unwrap();
 
-        let mut timeout_ns = match timeout {
-            Some(duration) => duration.as_nanos() as u64,
-            None => u64::MAX,
-        };
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if cfg!(target_os = "android") && self.instance.android_sdk_version < 30 {
-            timeout_ns = u64::MAX;
-        }
-
-        let acquire_semaphore_arc = swapchain.get_acquire_semaphore();
-        
-        let acquire_semaphore_guard = acquire_semaphore_arc
-            .try_lock()
-            .expect("Failed to lock a SwapchainSemaphores.");
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        swapchain.device.wait_for_fence(
-            fence,
-            acquire_semaphore_guard.previously_used_submission_index,
-            timeout_ns,
-        )?;
-
-        
-        let (index, suboptimal) = match unsafe {
-            profiling::scope!("vkAcquireNextImageKHR");
-            swapchain.functor.acquire_next_image(
-                swapchain.raw,
-                timeout_ns,
-                acquire_semaphore_guard.acquire,
-                swapchain.fence,
-            )
-        } {
-            
-            
-            #[cfg(target_os = "android")]
-            Ok((index, _)) => (index, false),
-            #[cfg(not(target_os = "android"))]
-            Ok(pair) => pair,
-            Err(error) => {
-                return match error {
-                    vk::Result::TIMEOUT => Ok(None),
-                    vk::Result::NOT_READY | vk::Result::ERROR_OUT_OF_DATE_KHR => {
-                        Err(crate::SurfaceError::Outdated)
-                    }
-                    vk::Result::ERROR_SURFACE_LOST_KHR => Err(crate::SurfaceError::Lost),
-                    
-                    
-                    other => Err(super::map_host_device_oom_and_lost_err(other).into()),
-                };
-            }
-        };
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        unsafe {
-            swapchain
-                .device
-                .raw
-                .wait_for_fences(&[swapchain.fence], false, timeout_ns)
-                .map_err(super::map_host_device_oom_and_lost_err)?;
-
-            swapchain
-                .device
-                .raw
-                .reset_fences(&[swapchain.fence])
-                .map_err(super::map_host_device_oom_and_lost_err)?;
-        }
-
-        drop(acquire_semaphore_guard);
-        
-        
-        swapchain.advance_acquire_semaphore();
-
-        let present_semaphore_arc = swapchain.get_present_semaphores(index);
-
-        
-        if swapchain.device.vendor_id == crate::auxil::db::intel::VENDOR && index > 0x100 {
-            return Err(crate::SurfaceError::Outdated);
-        }
-
-        let identity = swapchain.device.texture_identity_factory.next();
-
-        let texture = super::SurfaceTexture {
-            index,
-            texture: super::Texture {
-                raw: swapchain.images[index as usize],
-                drop_guard: None,
-                block: None,
-                external_memory: None,
-                format: swapchain.config.format,
-                copy_size: crate::CopyExtent {
-                    width: swapchain.config.extent.width,
-                    height: swapchain.config.extent.height,
-                    depth: 1,
-                },
-                identity,
-            },
-            acquire_semaphores: acquire_semaphore_arc,
-            present_semaphores: present_semaphore_arc,
-        };
-        Ok(Some(crate::AcquiredSurfaceTexture {
-            texture,
-            suboptimal,
-        }))
+        unsafe { swapchain.acquire(timeout, fence) }
     }
 
-    unsafe fn discard_texture(&self, _texture: super::SurfaceTexture) {}
+    unsafe fn discard_texture(&self, texture: super::SurfaceTexture) {
+        unsafe {
+            self.swapchain
+                .write()
+                .as_mut()
+                .unwrap()
+                .discard_texture(texture)
+                .unwrap()
+        };
+    }
 }
