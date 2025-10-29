@@ -93,6 +93,7 @@ function synthesizeKeyElement(el) {
 
 
 
+
 function checkHostType(toolbox, hostType, previousHostType) {
   is(toolbox.hostType, hostType, "host type is " + hostType);
 
