@@ -325,6 +325,10 @@ class SourceBuffer final {
   nsresult AppendFromInputStream(nsIInputStream* aInputStream, uint32_t aCount);
 
   
+  nsresult AdoptData(char* aData, size_t aLength,
+                     void* (*aRealloc)(void*, size_t), void (*aFree)(void*));
+
+  
 
 
 
@@ -382,7 +386,16 @@ class SourceBuffer final {
       mData = static_cast<char*>(malloc(mCapacity));
     }
 
-    ~Chunk() { free(mData); }
+    
+    Chunk(char* aData, size_t aLength, void* (*aRealloc)(void*, size_t),
+          void (*aFree)(void*))
+        : mCapacity(aLength),
+          mLength(aLength),
+          mData(aData),
+          mRealloc(aRealloc),
+          mFree(aFree) {}
+
+    ~Chunk() { mFree(mData); }
 
     Chunk(Chunk&& aOther)
         : mCapacity(aOther.mCapacity),
@@ -418,7 +431,7 @@ class SourceBuffer final {
 
     bool SetCapacity(size_t aCapacity) {
       MOZ_ASSERT(mData, "Allocation failed but nobody checked for it");
-      char* data = static_cast<char*>(realloc(mData, aCapacity));
+      char* data = static_cast<char*>(mRealloc(mData, aCapacity));
       if (!data) {
         return false;
       }
@@ -435,6 +448,8 @@ class SourceBuffer final {
     size_t mCapacity;
     size_t mLength;
     char* mData;
+    void* (*mRealloc)(void*, size_t) = realloc;
+    void (*mFree)(void*) = free;
   };
 
   nsresult AppendChunk(Maybe<Chunk>&& aChunk) MOZ_REQUIRES(mMutex);

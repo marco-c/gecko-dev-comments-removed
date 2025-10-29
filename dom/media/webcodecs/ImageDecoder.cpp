@@ -600,28 +600,43 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
 
   mSourceBuffer = MakeRefPtr<image::SourceBuffer>();
 
+  bool transferOwnership = false;
   const auto fnSourceBufferFromSpan = [&](const Span<uint8_t>& aData) {
-    nsresult rv = mSourceBuffer->ExpectLength(aData.Length());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_LOG(
-          gWebCodecsLog, LogLevel::Error,
-          ("ImageDecoder %p Initialize -- failed to pre-allocate source buffer",
-           this));
-      aRv.ThrowRangeError("Could not allocate for encoded source buffer");
-      return;
-    }
+    if (transferOwnership) {
+      
+      
+      nsresult rv =
+          mSourceBuffer->AdoptData(reinterpret_cast<char*>(aData.Elements()),
+                                   aData.Length(), js_realloc, js_free);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+                ("ImageDecoder %p Initialize -- failed to adopt source buffer",
+                 this));
+        aRv.ThrowRangeError("Could not allocate for encoded source buffer");
+        return;
+      }
+    } else {
+      nsresult rv = mSourceBuffer->ExpectLength(aData.Length());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+                ("ImageDecoder %p Initialize -- failed to pre-allocate source "
+                 "buffer",
+                 this));
+        aRv.ThrowRangeError("Could not allocate for encoded source buffer");
+        return;
+      }
 
-    
-    rv = mSourceBuffer->Append(reinterpret_cast<const char*>(aData.Elements()),
-                               aData.Length());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_LOG(gWebCodecsLog, LogLevel::Error,
-              ("ImageDecoder %p Initialize -- failed to append source buffer",
-               this));
-      aRv.ThrowRangeError("Could not allocate for encoded source buffer");
-      return;
+      
+      rv = mSourceBuffer->Append(
+          reinterpret_cast<const char*>(aData.Elements()), aData.Length());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        MOZ_LOG(gWebCodecsLog, LogLevel::Error,
+                ("ImageDecoder %p Initialize -- failed to append source buffer",
+                 this));
+        aRv.ThrowRangeError("Could not allocate for encoded source buffer");
+        return;
+      }
     }
-
     mSourceBuffer->Complete(NS_OK);
 
     
@@ -650,14 +665,52 @@ void ImageDecoder::Initialize(const GlobalObject& aGlobal,
   } else if (aInit.mData.IsArrayBufferView()) {
     
     const auto& view = aInit.mData.GetAsArrayBufferView();
-    view.ProcessFixedData(fnSourceBufferFromSpan);
+    bool isShared;
+    JS::Rooted<JSObject*> viewObj(aGlobal.Context(), view.Obj());
+    JSObject* arrayBuffer =
+        JS_GetArrayBufferViewBuffer(aGlobal.Context(), viewObj, &isShared);
+    bool inTransferList = false;
+    for (const auto& transferBuffer : aInit.mTransfer) {
+      if (arrayBuffer == transferBuffer.Obj()) {
+        inTransferList = true;
+        break;
+      }
+    }
+    size_t length;
+    if (inTransferList) {
+      length = JS_GetArrayBufferViewByteLength(view.Obj());
+      
+      
+      
+      transferOwnership = JS_GetArrayBufferViewByteOffset(view.Obj()) == 0;
+    }
+    if (transferOwnership) {
+      JS::Rooted<JSObject*> bufferObj(aGlobal.Context(), arrayBuffer);
+      void* data = JS::StealArrayBufferContents(aGlobal.Context(), bufferObj);
+      fnSourceBufferFromSpan(Span(static_cast<uint8_t*>(data), length));
+    } else {
+      view.ProcessFixedData(fnSourceBufferFromSpan);
+    }
     if (aRv.Failed()) {
       return;
     }
   } else if (aInit.mData.IsArrayBuffer()) {
     
     const auto& buffer = aInit.mData.GetAsArrayBuffer();
-    buffer.ProcessFixedData(fnSourceBufferFromSpan);
+    for (const auto& transferBuffer : aInit.mTransfer) {
+      if (buffer.Obj() == transferBuffer.Obj()) {
+        transferOwnership = true;
+        break;
+      }
+    }
+    if (transferOwnership) {
+      JS::Rooted<JSObject*> bufferObj(aGlobal.Context(), buffer.Obj());
+      size_t length = JS::GetArrayBufferByteLength(bufferObj);
+      void* data = JS::StealArrayBufferContents(aGlobal.Context(), bufferObj);
+      fnSourceBufferFromSpan(Span(static_cast<uint8_t*>(data), length));
+    } else {
+      buffer.ProcessFixedData(fnSourceBufferFromSpan);
+    }
     if (aRv.Failed()) {
       return;
     }
