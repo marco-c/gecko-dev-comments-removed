@@ -1880,35 +1880,6 @@ static bool CheckFrame(JSContext* cx, BaselineFrame* frame) {
   return true;
 }
 
-static bool CanIonCompileOrInlineScript(JSScript* script, const char** reason) {
-  if (script->isForEval()) {
-    
-    
-    
-    
-    *reason = "eval script";
-    return false;
-  }
-
-  if (script->isAsync()) {
-    if (script->isModule()) {
-      *reason = "async module";
-      return false;
-    }
-  }
-
-  if (script->hasNonSyntacticScope() && !script->function()) {
-    
-    
-    
-    
-    *reason = "has non-syntactic global scope";
-    return false;
-  }
-
-  return true;
-}  
-
 static bool ScriptIsTooLarge(JSContext* cx, JSScript* script) {
   if (!JitOptions.limitScriptSize) {
     return false;
@@ -1940,9 +1911,27 @@ bool CanIonCompileScript(JSContext* cx, JSScript* script) {
     return false;
   }
 
-  const char* reason = nullptr;
-  if (!CanIonCompileOrInlineScript(script, &reason)) {
-    JitSpew(JitSpew_IonAbort, "%s", reason);
+  if (script->isForEval()) {
+    
+    
+    
+    
+    JitSpew(JitSpew_IonAbort, "eval script");
+    return false;
+  }
+
+  if (script->isAsync() && script->isModule()) {
+    
+    JitSpew(JitSpew_IonAbort, "async module");
+    return false;
+  }
+
+  if (script->hasNonSyntacticScope() && !script->function()) {
+    
+    
+    
+    
+    JitSpew(JitSpew_IonAbort, "has non-syntactic global scope");
     return false;
   }
 
