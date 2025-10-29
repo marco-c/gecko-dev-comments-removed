@@ -546,6 +546,9 @@ prefs = [
         kwargs["testingModulesDir"] = self.testing_modules
         kwargs["utility_path"] = self.utility_path
         kwargs["repeat"] = 0
+        
+        if not expected:
+            kwargs["retry"] = False
 
         startup_profiling = os.environ.pop("MOZ_PROFILER_STARTUP", None)
         try:

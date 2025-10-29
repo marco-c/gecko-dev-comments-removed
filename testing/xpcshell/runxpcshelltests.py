@@ -2186,6 +2186,10 @@ class XPCShellTests:
             "profiler": self.profiler,
         }
 
+        
+        if options.get("retry") is not None:
+            kwargs["retry"] = options.get("retry")
+
         if self.sequential:
             
             
