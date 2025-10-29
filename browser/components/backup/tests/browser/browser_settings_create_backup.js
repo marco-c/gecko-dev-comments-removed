@@ -33,10 +33,10 @@ add_setup(async () => {
 
 
 add_task(async function test_create_new_backup_trigger() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let settings = browser.contentDocument.querySelector("backup-settings");
 
-    let bs = BackupService.get();
+    let bs = getAndMaybeInitBackupService();
 
     Assert.ok(!bs.state.backupInProgress, "There is no backup in progress");
 
@@ -93,7 +93,7 @@ add_task(async function test_create_new_backup_trigger() {
 
 
 add_task(async function test_create_backup_trigger_disabled() {
-  let bs = BackupService.get();
+  let bs = getAndMaybeInitBackupService();
 
   const sandbox = sinon.createSandbox();
 
@@ -115,7 +115,7 @@ add_task(async function test_create_backup_trigger_disabled() {
   
   let backupPromise = bs.createBackup();
 
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let settings = browser.contentDocument.querySelector("backup-settings");
     Assert.ok(
       settings.triggerBackupButtonEl.disabled,

@@ -62,6 +62,19 @@ function createMockValidityPassEventPromise(parentEl, passwordInputsEl, event) {
 
 
 
+function getAndMaybeInitBackupService() {
+  try {
+    return BackupService.get();
+  } catch {
+    return BackupService.init();
+  }
+}
+
+
+
+
+
+
 
 
 

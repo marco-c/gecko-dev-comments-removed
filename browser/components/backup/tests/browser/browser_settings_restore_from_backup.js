@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { ERRORS } = ChromeUtils.importESModule(
+  "chrome://browser/content/backup/backup-constants.mjs"
+);
+
 let TEST_PROFILE_PATH;
 
 add_setup(async () => {
@@ -19,7 +23,7 @@ add_setup(async () => {
   
   
   
-  let bs = BackupService.get();
+  let bs = getAndMaybeInitBackupService();
   bs.resetLastBackupInternalState();
 
   registerCleanupFunction(async () => {
@@ -55,6 +59,15 @@ add_task(async function test_restore_from_backup() {
       };
     });
     MockFilePicker.returnValue = MockFilePicker.returnOK;
+
+    let quitObservedPromise = TestUtils.topicObserved(
+      "quit-application-requested",
+      subject => {
+        let cancelQuit = subject.QueryInterface(Ci.nsISupportsPRBool);
+        cancelQuit.data = true;
+        return true;
+      }
+    );
 
     let settings = browser.contentDocument.querySelector("backup-settings");
 
@@ -145,6 +158,8 @@ add_task(async function test_restore_from_backup() {
       );
     });
 
+    await quitObservedPromise;
+
     Assert.ok(
       recoverFromBackupArchiveStub.calledOnce,
       "BackupService was called to start a recovery from a backup archive."
@@ -160,13 +175,22 @@ add_task(async function test_restore_from_backup() {
 add_task(async function test_restore_in_progress() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
-    let bs = BackupService.get();
+    let bs = getAndMaybeInitBackupService();
 
     let { promise: recoverPromise, resolve: recoverResolve } =
       Promise.withResolvers();
     let recoverFromBackupArchiveStub = sandbox
       .stub(bs, "recoverFromBackupArchive")
       .returns(recoverPromise);
+
+    let quitObservedPromise = TestUtils.topicObserved(
+      "quit-application-requested",
+      subject => {
+        let cancelQuit = subject.QueryInterface(Ci.nsISupportsPRBool);
+        cancelQuit.data = true;
+        return true;
+      }
+    );
 
     let settings = browser.contentDocument.querySelector("backup-settings");
 
@@ -278,6 +302,8 @@ add_task(async function test_restore_in_progress() {
       !settings.restoreFromBackupDialogEl.open,
       "Restore dialog should now be closed."
     );
+
+    await quitObservedPromise;
 
     sandbox.restore();
   });
@@ -436,5 +462,90 @@ add_task(async function test_restore_backup_file_info_display() {
       mockDate.getTime(),
       "l10n args should contain the correct date"
     );
+  });
+});
+
+
+
+
+
+
+
+
+function assertNonEmbeddedSupportLink(link, linkName) {
+  Assert.ok(link, `${linkName} should be present`);
+  Assert.equal(
+    link.getAttribute("is"),
+    "moz-support-link",
+    `${linkName} should use moz-support-link when not embedded`
+  );
+  Assert.equal(
+    link.getAttribute("support-page"),
+    "firefox-backup",
+    `${linkName} should have support-page attribute`
+  );
+  Assert.ok(
+    !link.href.includes("utm_source"),
+    `${linkName} should not have UTM params when not embedded`
+  );
+}
+
+
+
+
+add_task(async function test_support_links_non_embedded() {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let settings = browser.contentDocument.querySelector("backup-settings");
+    await settings.updateComplete;
+
+    settings.restoreFromBackupButtonEl.click();
+    await settings.updateComplete;
+
+    let restoreFromBackup = settings.restoreFromBackupEl;
+    Assert.ok(restoreFromBackup, "restore-from-backup should be found");
+
+    Assert.ok(
+      !restoreFromBackup.aboutWelcomeEmbedded,
+      "aboutWelcomeEmbedded should be falsy"
+    );
+
+    
+    let noBackupFileLink = restoreFromBackup.shadowRoot.querySelector(
+      "#restore-from-backup-no-backup-file-link"
+    );
+    assertNonEmbeddedSupportLink(noBackupFileLink, "'No backup file' link");
+
+    
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      backupFileInfo: {
+        date: new Date(),
+        deviceName: "test-device",
+        isEncrypted: false,
+      },
+    };
+    await restoreFromBackup.updateComplete;
+
+    let descriptionLink = restoreFromBackup.shadowRoot.querySelector(
+      "#restore-from-backup-learn-more-link"
+    );
+    assertNonEmbeddedSupportLink(descriptionLink, "Description link");
+
+    
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      backupFileInfo: {
+        date: new Date(),
+        deviceName: "test-device",
+        isEncrypted: true,
+      },
+      recoveryErrorCode: ERRORS.UNAUTHORIZED,
+    };
+    await restoreFromBackup.updateComplete;
+
+    let passwordErrorLink = restoreFromBackup.shadowRoot.querySelector(
+      "#backup-incorrect-password-support-link"
+    );
+    assertNonEmbeddedSupportLink(passwordErrorLink, "Password error link");
   });
 });
