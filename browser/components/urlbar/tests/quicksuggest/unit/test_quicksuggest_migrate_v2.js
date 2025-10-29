@@ -6,231 +6,77 @@
 
 "use strict";
 
-
-const DEFAULT_PREFS = {
-  "quicksuggest.enabled": true,
-  "quicksuggest.dataCollection.enabled": false,
-  "suggest.quicksuggest.nonsponsored": true,
-  "suggest.quicksuggest.sponsored": true,
-};
-
-
-
-const TEST_OVERRIDES = {
-  migrationVersion: 2,
-};
+const TO_VERSION = 2;
 
 add_setup(async () => {
-  await UrlbarTestUtils.initNimbusFeature();
+  await setUpMigrateTest();
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-    },
+    toVersion: TO_VERSION,
   });
 });
 
 
-
-
-
-
-
-
-
-
-
 add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest": false,
-    },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest.sponsored": false,
-    },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest": false,
-      "suggest.quicksuggest.sponsored": false,
-    },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "quicksuggest.migrationVersion": 1,
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
       "quicksuggest.scenario": "offline",
     },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
+    expectedPostMigrationUserPrefs: {
+      "quicksuggest.scenario": "offline",
     },
   });
 });
 
 
-
-
-
-
-
-
-
-
-
-
 add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "quicksuggest.migrationVersion": 1,
-      "quicksuggest.scenario": "offline",
-      "quicksuggest.dataCollection.enabled": true,
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
+      "quicksuggest.scenario": "online",
     },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": true,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "quicksuggest.migrationVersion": 1,
-      "quicksuggest.scenario": "offline",
-      "suggest.quicksuggest.sponsored": false,
-    },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "quicksuggest.migrationVersion": 1,
-      "quicksuggest.scenario": "offline",
+    expectedPostMigrationUserPrefs: {
+      "quicksuggest.scenario": "online",
       "suggest.quicksuggest.nonsponsored": false,
       "suggest.quicksuggest.sponsored": false,
     },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-      },
+  });
+});
+
+
+add_task(async function () {
+  await doMigrateTest({
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
+      "quicksuggest.scenario": "online",
+      "suggest.quicksuggest.nonsponsored": false,
+      "suggest.quicksuggest.sponsored": false,
+    },
+    expectedPostMigrationUserPrefs: {
+      "quicksuggest.scenario": "online",
+      "suggest.quicksuggest.nonsponsored": false,
+      "suggest.quicksuggest.sponsored": false,
+    },
+  });
+});
+
+
+add_task(async function () {
+  await doMigrateTest({
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
+      "quicksuggest.scenario": "online",
+      "suggest.quicksuggest.nonsponsored": true,
+      "suggest.quicksuggest.sponsored": true,
+    },
+    expectedPostMigrationUserPrefs: {
+      "quicksuggest.scenario": "online",
+      "suggest.quicksuggest.nonsponsored": true,
+      "suggest.quicksuggest.sponsored": true,
     },
   });
 });

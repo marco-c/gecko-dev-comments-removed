@@ -6,63 +6,28 @@
 
 "use strict";
 
-
-
-const DEFAULT_PREFS = {
-  "quicksuggest.enabled": true,
-  "quicksuggest.dataCollection.enabled": false,
-  "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.FULL,
-  "suggest.quicksuggest.nonsponsored": true,
-  "suggest.quicksuggest.sponsored": true,
-};
-
-const TEST_OVERRIDES = {
-  migrationVersion: 4,
-  defaultPrefs: DEFAULT_PREFS,
-};
+const TO_VERSION = 4;
 
 add_setup(async () => {
-  await UrlbarTestUtils.initNimbusFeature();
+  await setUpMigrateTest();
 });
 
 
-
-
-
-
-
-
-
-
-
-add_task(async function test_migrate_with_datacollection_enabled() {
+add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "quicksuggest.dataCollection.enabled": true,
-    },
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "quicksuggest.dataCollection.enabled": true,
-      },
-    },
+    toVersion: TO_VERSION,
   });
 });
 
 
-
-
-
-
-
-
-
-add_task(async function test_migrate_with_datacollection_disabled() {
+add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
+      "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.FULL,
+    },
+    expectedPostMigrationUserPrefs: {
+      "quicksuggest.settingsUi": null,
     },
   });
 });

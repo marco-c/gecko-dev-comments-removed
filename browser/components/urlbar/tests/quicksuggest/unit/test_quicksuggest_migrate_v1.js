@@ -6,250 +6,44 @@
 
 "use strict";
 
-
-const DEFAULT_PREFS = {
-  "quicksuggest.enabled": true,
-  "quicksuggest.dataCollection.enabled": false,
-  "suggest.quicksuggest.nonsponsored": true,
-  "suggest.quicksuggest.sponsored": true,
-};
-
-
-
-const TEST_OVERRIDES = {
-  migrationVersion: 1,
-  defaultPrefs: DEFAULT_PREFS,
-};
+const TO_VERSION = 1;
 
 add_setup(async () => {
-  await UrlbarTestUtils.initNimbusFeature();
+  await setUpMigrateTest();
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-    },
+    toVersion: TO_VERSION,
   });
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
 add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest.sponsored": false,
-    },
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
       "suggest.quicksuggest": false,
     },
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest": false,
+    expectedPostMigrationUserPrefs: {
+      "suggest.quicksuggest": null,
+      "suggest.quicksuggest.nonsponsored": false,
       "suggest.quicksuggest.sponsored": false,
     },
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
-      },
-    },
   });
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 add_task(async function () {
   await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest.sponsored": true,
-    },
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.sponsored": true,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
+    toVersion: TO_VERSION,
+    preMigrationUserPrefs: {
       "suggest.quicksuggest": true,
     },
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": true,
-      },
-    },
-  });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-add_task(async function () {
-  await doMigrateTest({
-    testOverrides: TEST_OVERRIDES,
-    initialUserBranch: {
-      "suggest.quicksuggest": true,
-      "suggest.quicksuggest.sponsored": true,
-    },
-    shouldEnable: true,
-    expectedPrefs: {
-      defaultBranch: DEFAULT_PREFS,
-      userBranch: {
-        "suggest.quicksuggest.nonsponsored": true,
-        "suggest.quicksuggest.sponsored": true,
-      },
+    expectedPostMigrationUserPrefs: {
+      "suggest.quicksuggest": null,
+      "suggest.quicksuggest.nonsponsored": true,
     },
   });
 });

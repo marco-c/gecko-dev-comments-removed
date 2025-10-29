@@ -5,6 +5,7 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
+  Preferences: "resource://gre/modules/Preferences.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
@@ -30,7 +31,13 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
 
 
 
-
+async function setUpMigrateTest() {
+  await UrlbarTestUtils.initNimbusFeature();
+  await QuickSuggestTestUtils.setRegionAndLocale({
+    region: "US",
+    locale: "en-US",
+  });
+}
 
 
 
@@ -53,82 +60,61 @@ add_setup(async function setUpQuickSuggestXpcshellTest() {
 
 
 async function doMigrateTest({
-  testOverrides,
-  expectedPrefs,
-  shouldEnable = true,
-  initialUserBranch = {},
+  toVersion,
+  preMigrationUserPrefs = {},
+  expectedPostMigrationUserPrefs = {},
 }) {
   info(
     "Testing migration: " +
       JSON.stringify({
-        testOverrides,
-        initialUserBranch,
-        shouldEnable,
-        expectedPrefs,
+        toVersion,
+        preMigrationUserPrefs,
+        expectedPostMigrationUserPrefs,
       })
   );
 
-  function setPref(branch, name, value) {
-    switch (typeof value) {
-      case "boolean":
-        branch.setBoolPref(name, value);
-        break;
-      case "number":
-        branch.setIntPref(name, value);
-        break;
-      case "string":
-        branch.setCharPref(name, value);
-        break;
-      default:
-        Assert.ok(
-          false,
-          `Pref type not handled for setPref: ${name} = ${value}`
-        );
-        break;
-    }
+  
+  
+  let userPrefsToAlwaysCheck = [
+    "quicksuggest.dataCollection.enabled",
+    "quicksuggest.enabled",
+    "suggest.quicksuggest",
+    "suggest.quicksuggest.nonsponsored",
+    "suggest.quicksuggest.sponsored",
+  ];
+
+  let userBranch = new Preferences({
+    branch: "browser.urlbar.",
+    defaultBranch: false,
+  });
+
+  
+  if (toVersion == 1) {
+    userBranch.reset("quicksuggest.migrationVersion");
+  } else {
+    userBranch.set("quicksuggest.migrationVersion", toVersion - 1);
   }
 
-  function getPref(branch, name) {
-    let type = typeof UrlbarPrefs.get(name);
-    switch (type) {
-      case "boolean":
-        return branch.getBoolPref(name);
-      case "number":
-        return branch.getIntPref(name);
-      case "string":
-        return branch.getCharPref(name);
-      default:
-        Assert.ok(false, `Pref type not handled for getPref: ${name} ${type}`);
-        break;
-    }
-    return null;
+  
+  for (let [name, value] of Object.entries(preMigrationUserPrefs)) {
+    userBranch.set(name, value);
   }
-
-  let defaultBranch = Services.prefs.getDefaultBranch("browser.urlbar.");
-  let userBranch = Services.prefs.getBranch("browser.urlbar.");
 
   
   
-  UrlbarPrefs.clear("quicksuggest.migrationVersion");
-  let initialDefaultBranch = {
-    "suggest.quicksuggest.nonsponsored": false,
-    "suggest.quicksuggest.sponsored": false,
-    
-    "quicksuggest.dataCollection.enabled": false,
-  };
-  for (let name of Object.keys(initialDefaultBranch)) {
-    userBranch.clearUserPref(name);
-  }
-  for (let [branch, prefs] of [
-    [defaultBranch, initialDefaultBranch],
-    [userBranch, initialUserBranch],
-  ]) {
-    for (let [name, value] of Object.entries(prefs)) {
-      if (value !== undefined) {
-        setPref(branch, name, value);
-      }
+  for (let name of userPrefsToAlwaysCheck) {
+    if (!preMigrationUserPrefs.hasOwnProperty(name)) {
+      preMigrationUserPrefs[name] = userBranch.isSet(name)
+        ? userBranch.get(name)
+        : null;
     }
   }
+
+  
+  let userPrefsToCheckPostMigration = new Set([
+    ...Object.keys(preMigrationUserPrefs),
+    ...Object.keys(expectedPostMigrationUserPrefs),
+  ]);
 
   
   
@@ -138,90 +124,45 @@ async function doMigrateTest({
 
     
     await QuickSuggest._test_reset({
-      ...testOverrides,
-      region: shouldEnable ? "US" : "XX",
-      locale: shouldEnable ? "en-US" : "xx-XX",
+      migrationVersion: toVersion,
     });
 
-    
-    
-    
-    
-    let expectedEffectivePrefs = {};
-    let {
-      defaultBranch: expectedDefaultBranch,
-      userBranch: expectedUserBranch,
-    } = expectedPrefs;
-    expectedDefaultBranch = expectedDefaultBranch || {};
-    expectedUserBranch = expectedUserBranch || {};
-    for (let [branch, prefs, branchType] of [
-      [defaultBranch, expectedDefaultBranch, "default"],
-      [userBranch, expectedUserBranch, "user"],
-    ]) {
-      let entries = Object.entries(prefs);
-      if (!entries.length) {
-        continue;
-      }
-
-      info(
-        `Checking expected prefs on ${branchType} branch after Suggest init`
-      );
-      for (let [name, value] of entries) {
-        expectedEffectivePrefs[name] = value;
-        if (branch == userBranch) {
-          Assert.ok(
-            userBranch.prefHasUserValue(name),
-            `Pref ${name} is on user branch`
-          );
-        }
-        Assert.equal(
-          getPref(branch, name),
-          value,
-          `Pref ${name} value on ${branchType} branch`
-        );
-      }
-    }
-
-    info(
-      `Making sure prefs on the default branch without expected user-branch values are not on the user branch`
-    );
-    for (let name of Object.keys(initialDefaultBranch)) {
-      if (!expectedUserBranch.hasOwnProperty(name)) {
+    for (let name of userPrefsToCheckPostMigration) {
+      
+      
+      let expectedValue = expectedPostMigrationUserPrefs.hasOwnProperty(name)
+        ? expectedPostMigrationUserPrefs[name]
+        : preMigrationUserPrefs[name];
+      if (expectedValue === null) {
         Assert.ok(
-          !userBranch.prefHasUserValue(name),
-          `Pref ${name} is not on user branch`
+          !userBranch.isSet(name),
+          "Pref should not have a user value after migration: " + name
+        );
+      } else {
+        Assert.ok(
+          userBranch.isSet(name),
+          "Pref should have a user value after migration: " + name
+        );
+        Assert.equal(
+          userBranch.get(name),
+          expectedValue,
+          "Pref should have been set to the expected value after migration: " +
+            name
         );
       }
     }
 
-    info(`Checking expected effective prefs`);
-    for (let [name, value] of Object.entries(expectedEffectivePrefs)) {
-      Assert.equal(
-        UrlbarPrefs.get(name),
-        value,
-        `Pref ${name} effective value`
-      );
-    }
-
-    let currentVersion =
-      testOverrides?.migrationVersion === undefined
-        ? QuickSuggest.MIGRATION_VERSION
-        : testOverrides.migrationVersion;
     Assert.equal(
-      UrlbarPrefs.get("quicksuggest.migrationVersion"),
-      currentVersion,
-      "quicksuggest.migrationVersion is correct after migration"
+      userBranch.get("quicksuggest.migrationVersion"),
+      toVersion,
+      "quicksuggest.migrationVersion should be updated after migration"
     );
   }
 
   
-  UrlbarPrefs.clear("quicksuggest.migrationVersion");
-  let userBranchNames = [
-    ...Object.keys(initialUserBranch),
-    ...Object.keys(expectedPrefs.userBranch || {}),
-  ];
-  for (let name of userBranchNames) {
-    userBranch.clearUserPref(name);
+  userBranch.reset("quicksuggest.migrationVersion");
+  for (let name of userPrefsToCheckPostMigration) {
+    userBranch.reset(name);
   }
 }
 
