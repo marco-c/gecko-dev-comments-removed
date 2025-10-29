@@ -160,7 +160,7 @@ class nsTextFrame : public nsIFrame {
 
     void InitializeForMeasure();
 
-    void GetSpacing(Range aRange, Spacing* aSpacing) const final;
+    bool GetSpacing(Range aRange, Spacing* aSpacing) const final;
     gfxFloat GetHyphenWidth() const final;
     void GetHyphenationBreaks(Range aRange,
                               HyphenType* aBreakBefore) const final;
@@ -175,7 +175,7 @@ class nsTextFrame : public nsIFrame {
       return mTextRun->GetAppUnitsPerDevUnit();
     }
 
-    void GetSpacingInternal(Range aRange, Spacing* aSpacing,
+    bool GetSpacingInternal(Range aRange, Spacing* aSpacing,
                             bool aIgnoreTabs) const;
 
     
@@ -259,10 +259,10 @@ class nsTextFrame : public nsIFrame {
     int32_t mLength;
 
     
-    const gfxFloat mWordSpacing;
+    const nscoord mWordSpacing;
 
     
-    const gfxFloat mLetterSpacing;
+    const nscoord mLetterSpacing;
 
     
     Maybe<mozilla::TextAutospace> mTextAutospace;

@@ -1654,11 +1654,9 @@ class gfxFont {
 
 
 
-
-
   struct Spacing {
-    gfxFloat mBefore;
-    gfxFloat mAfter;
+    nscoord mBefore;
+    nscoord mAfter;
   };
   
 

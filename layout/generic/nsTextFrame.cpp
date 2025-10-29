@@ -3816,9 +3816,10 @@ JustificationInfo nsTextFrame::PropertyProvider::ComputeJustification(
 }
 
 
-void nsTextFrame::PropertyProvider::GetSpacing(Range aRange,
+
+bool nsTextFrame::PropertyProvider::GetSpacing(Range aRange,
                                                Spacing* aSpacing) const {
-  GetSpacingInternal(
+  return GetSpacingInternal(
       aRange, aSpacing,
       !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasTab));
 }
@@ -3878,8 +3879,8 @@ static gfxFloat ComputeTabWidthAppUnits(const nsIFrame* aFrame) {
   RefPtr font = fm->GetThebesFontGroup()->GetFirstValidFont(' ');
   auto metrics = font->GetMetrics(vertical ? nsFontMetrics::eVertical
                                            : nsFontMetrics::eHorizontal);
-  nscoord spaceWidth = nscoord(
-      NS_round(metrics.spaceWidth * cb->PresContext()->AppUnitsPerDevPixel()));
+  nscoord spaceWidth = NSToCoordRound(metrics.spaceWidth *
+                                      cb->PresContext()->AppUnitsPerDevPixel());
   return spaces *
          (spaceWidth + styleText->mLetterSpacing.Resolve(fm->EmHeight()) +
           styleText->mWordSpacing.Resolve(spaceWidth));
@@ -4066,7 +4067,7 @@ static bool HasCJKGlyphRun(const gfxTextRun* aTextRun) {
   return false;
 }
 
-void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
+bool nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
                                                        Spacing* aSpacing,
                                                        bool aIgnoreTabs) const {
   MOZ_ASSERT(IsInBounds(mStart, mLength, aRange), "Range out of bounds");
@@ -4074,8 +4075,13 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
   std::memset(aSpacing, 0, aRange.Length() * sizeof(*aSpacing));
 
   if (mFrame->Style()->IsTextCombined()) {
-    return;
+    return false;
   }
+
+  
+  
+  
+  bool spacingPresent = mLetterSpacing;
 
   
   
@@ -4085,24 +4091,24 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
     
     
     
-    gfxFloat before, after;
+    nscoord before, after;
     switch (StaticPrefs::layout_css_letter_spacing_model()) {
       default:  
       case 0:
-        before = 0.0;
+        before = 0;
         after = mLetterSpacing;
         break;
       case 1:
         if (mTextRun->IsRightToLeft()) {
           before = mLetterSpacing;
-          after = 0.0;
+          after = 0;
         } else {
-          before = 0.0;
+          before = 0;
           after = mLetterSpacing;
         }
         break;
       case 2:
-        before = mLetterSpacing / 2.0;
+        before = NSToCoordRound(mLetterSpacing * 0.5);
         after = mLetterSpacing - before;
         break;
     }
@@ -4164,12 +4170,12 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
       uint32_t runOffsetInSubstring = run.GetSkippedOffset() - aRange.start;
       gfxSkipCharsIterator iter = run.GetPos();
       for (int32_t i = 0; i < run.GetRunLength(); ++i) {
-        if (!atStart && before != 0.0 &&
+        if (!atStart && before != 0 &&
             CanAddSpacingBefore(mTextRun, run.GetSkippedOffset() + i,
                                 newlineIsSignificant)) {
           aSpacing[runOffsetInSubstring + i].mBefore += before;
         }
-        if (after != 0.0 &&
+        if (after != 0 &&
             CanAddSpacingAfter(mTextRun, run.GetSkippedOffset() + i,
                                newlineIsSignificant)) {
           
@@ -4185,6 +4191,7 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
                          &iter);
           uint32_t runOffset = iter.GetSkippedOffset() - aRange.start;
           aSpacing[runOffset].mAfter += mWordSpacing;
+          spacingPresent = true;
         }
         
         
@@ -4209,6 +4216,7 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
                     prevClass.valueOrFrom(findPrecedingClass), currClass)) {
               aSpacing[runOffsetInSubstring + i].mBefore +=
                   mTextAutospace->InterScriptSpacing();
+              spacingPresent = true;
             }
             
             
@@ -4230,6 +4238,7 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
         mTabWidths->ApplySpacing(aSpacing,
                                  aRange.start - mStart.GetSkippedOffset(),
                                  aRange.Length());
+        spacingPresent = true;
       }
     }
   }
@@ -4250,7 +4259,10 @@ void nsTextFrame::PropertyProvider::GetSpacingInternal(Range aRange,
       aSpacing[offset].mBefore += spacing.mBefore;
       aSpacing[offset].mAfter += spacing.mAfter;
     }
+    spacingPresent = true;
   }
+
+  return spacingPresent;
 }
 
 
@@ -5792,9 +5804,12 @@ static bool ComputeDecorationTrim(
   if (cssTrim.IsAuto()) {
     
     
+    constexpr gfxFloat kAutoTrimFactor = 1.0 / 12.5;
+    
+    
     const gfxFloat scale = aPresCtx->CSSToDevPixelScale().scale;
     const nscoord autoDecorationTrim =
-        std::max(aMetrics.emHeight * 0.125, scale);
+        std::max(aMetrics.emHeight * kAutoTrimFactor, scale);
     trimLeft = autoDecorationTrim;
     trimRight = autoDecorationTrim;
   } else {
