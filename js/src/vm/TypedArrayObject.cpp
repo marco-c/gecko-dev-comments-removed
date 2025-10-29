@@ -5339,6 +5339,49 @@ static bool uint8array_toBase64(JSContext* cx, unsigned argc, Value* vp) {
                                                                        args);
 }
 
+template <typename Ops>
+static void ToHex(TypedArrayObject* tarray, size_t length,
+                  JSStringBuilder& sb) {
+  
+  static constexpr char HexDigits[] = "0123456789abcdef";
+  static_assert(std::char_traits<char>::length(HexDigits) == 16);
+
+  
+  
+  
+  constexpr size_t BYTES_PER_LOOP = 4;
+
+  size_t alignedLength = length & ~(BYTES_PER_LOOP - 1);
+
+  
+  
+  
+  
+  auto data = Ops::extract(tarray).template cast<uint8_t*>();
+  for (size_t index = 0; index < alignedLength;) {
+    char chars[BYTES_PER_LOOP * 2];
+
+    for (size_t i = 0; i < BYTES_PER_LOOP; ++i) {
+      auto byte = Ops::load(data + index++);
+      chars[i * 2 + 0] = HexDigits[byte >> 4];
+      chars[i * 2 + 1] = HexDigits[byte & 0xf];
+    }
+
+    sb.infallibleAppend(chars, sizeof(chars));
+  }
+
+  
+  for (size_t index = alignedLength; index < length;) {
+    char chars[2];
+
+    auto byte = Ops::load(data + index++);
+    chars[0] = HexDigits[byte >> 4];
+    chars[1] = HexDigits[byte & 0xf];
+
+    sb.infallibleAppend(chars, sizeof(chars));
+  }
+}
+
 
 
 
@@ -5376,19 +5419,10 @@ static bool uint8array_toHex(JSContext* cx, const CallArgs& args) {
   }
 
   
-  static constexpr char HexDigits[] = "0123456789abcdef";
-  static_assert(std::char_traits<char>::length(HexDigits) == 16);
-
-  
-  
-  
-  
-  auto data = tarray->dataPointerEither().cast<uint8_t*>();
-  for (size_t index = 0; index < *length; index++) {
-    auto byte = jit::AtomicOperations::loadSafeWhenRacy(data + index);
-
-    sb.infallibleAppend(HexDigits[byte >> 4]);
-    sb.infallibleAppend(HexDigits[byte & 0xf]);
+  if (tarray->isSharedMemory()) {
+    ToHex<SharedOps>(tarray, *length, sb);
+  } else {
+    ToHex<UnsharedOps>(tarray, *length, sb);
   }
 
   MOZ_ASSERT(sb.length() == outLength, "all characters were written");
