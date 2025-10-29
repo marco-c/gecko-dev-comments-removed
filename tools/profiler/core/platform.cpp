@@ -49,6 +49,9 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Perfetto.h"
+#include "nsID.h"
+#include "nsIDUtils.h"
+#include "nsString.h"
 #include "nsCExternalHandlerService.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -1595,6 +1598,44 @@ class ActivePS {
     
     
     return array;
+  }
+
+  
+  
+  static nsTArray<mozilla::JSSourceEntry> GatherJSSources(PSLockRef aLock) {
+    nsTArray<mozilla::JSSourceEntry> jsSourceEntries;
+    if (!ProfilerFeature::HasJSSources(ActivePS::Features(aLock))) {
+      return jsSourceEntries;
+    }
+
+    ThreadRegistry::LockedRegistry lockedRegistry;
+    ActivePS::ProfiledThreadList threads =
+        ActivePS::ProfiledThreads(lockedRegistry, aLock);
+
+    
+    
+    
+    auto* mainThread =
+        std::find_if(threads.begin(), threads.end(), [](const auto& thread) {
+          return thread.mProfiledThreadData->Info().IsMainThread();
+        });
+
+    if (mainThread == threads.end() || !mainThread->mJSContext) {
+      return jsSourceEntries;
+    }
+    JSContext* jsContext = mainThread->mJSContext;
+
+    js::ProfilerJSSources threadSources =
+        js::GetProfilerScriptSources(JS_GetRuntime(jsContext));
+
+    
+    for (ProfilerJSSourceData& sourceData : threadSources) {
+      
+      jsSourceEntries.AppendElement(JSSourceEntry(
+          NSID_TrimBracketsASCII(nsID::GenerateUUID()), std::move(sourceData)));
+    }
+
+    return jsSourceEntries;
   }
 
   static ProfiledThreadData* AddLiveProfiledThread(
@@ -3829,7 +3870,9 @@ locked_profiler_stream_json_for_this_process(
   SLOW_DOWN_FOR_TESTING();
 
   
-  nsTArray<mozilla::JSSourceEntry> jsSourceEntries;
+  
+  nsTArray<mozilla::JSSourceEntry> jsSourceEntries =
+      ActivePS::GatherJSSources(aLock);
 
   
   aWriter.StartArrayProperty("threads");
