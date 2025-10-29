@@ -21,7 +21,6 @@ class nsOverflowContinuationTracker;
 
 namespace mozilla {
 class PresShell;
-struct StylePositionArea;
 }  
 
 
@@ -493,9 +492,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
   mozilla::StyleAlignFlags CSSAlignmentForAbsPosChildWithinContainingBlock(
-      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis,
-      const mozilla::StylePositionArea& aResolvedPositionArea,
-      const mozilla::LogicalSize& aContainingBlockSize) const;
+      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis) const;
 
 #define NS_DECLARE_FRAME_PROPERTY_FRAMELIST(prop) \
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, nsFrameList)

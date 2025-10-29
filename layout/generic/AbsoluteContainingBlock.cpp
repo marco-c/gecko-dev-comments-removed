@@ -506,8 +506,7 @@ static nscoord OffsetToAlignedStaticPos(
     const ReflowInput& aKidReflowInput, const LogicalSize& aKidSizeInAbsPosCBWM,
     const LogicalSize& aAbsPosCBSize,
     const nsContainerFrame* aPlaceholderContainer, WritingMode aAbsPosCBWM,
-    LogicalAxis aAbsPosCBAxis, Maybe<NonAutoAlignParams> aNonAutoAlignParams,
-    const StylePositionArea& aPositionArea) {
+    LogicalAxis aAbsPosCBAxis, Maybe<NonAutoAlignParams> aNonAutoAlignParams) {
   if (!aPlaceholderContainer) {
     
     
@@ -527,7 +526,6 @@ static nscoord OffsetToAlignedStaticPos(
   
   
   WritingMode pcWM = aPlaceholderContainer->GetWritingMode();
-  LogicalSize absPosCBSizeInPCWM = aAbsPosCBSize.ConvertTo(pcWM, aAbsPosCBWM);
 
   
   
@@ -611,7 +609,7 @@ static nscoord OffsetToAlignedStaticPos(
       aNonAutoAlignParams
           ? aPlaceholderContainer
                 ->CSSAlignmentForAbsPosChildWithinContainingBlock(
-                    aKidReflowInput, pcAxis, aPositionArea, absPosCBSizeInPCWM)
+                    aKidReflowInput, pcAxis)
           : aPlaceholderContainer->CSSAlignmentForAbsPosChild(aKidReflowInput,
                                                               pcAxis);
   
@@ -712,7 +710,7 @@ static nscoord OffsetToAlignedStaticPos(
 void AbsoluteContainingBlock::ResolveSizeDependentOffsets(
     ReflowInput& aKidReflowInput, const LogicalSize& aLogicalCBSize,
     const LogicalSize& aKidSize, const LogicalMargin& aMargin,
-    const StylePositionArea& aResolvedPositionArea, LogicalMargin& aOffsets) {
+    LogicalMargin& aOffsets) {
   WritingMode wm = aKidReflowInput.GetWritingMode();
   WritingMode outerWM = aKidReflowInput.mParentReflowInput->GetWritingMode();
 
@@ -747,7 +745,7 @@ void AbsoluteContainingBlock::ResolveSizeDependentOffsets(
       placeholderContainer = GetPlaceholderContainer(aKidReflowInput.mFrame);
       nscoord offset = OffsetToAlignedStaticPos(
           aKidReflowInput, aKidSize, logicalCBSizeOuterWM, placeholderContainer,
-          outerWM, LogicalAxis::Inline, Nothing{}, aResolvedPositionArea);
+          outerWM, LogicalAxis::Inline, Nothing{});
       
       
       
@@ -767,7 +765,7 @@ void AbsoluteContainingBlock::ResolveSizeDependentOffsets(
       }
       nscoord offset = OffsetToAlignedStaticPos(
           aKidReflowInput, aKidSize, logicalCBSizeOuterWM, placeholderContainer,
-          outerWM, LogicalAxis::Block, Nothing{}, aResolvedPositionArea);
+          outerWM, LogicalAxis::Block, Nothing{});
       
       
       
@@ -957,14 +955,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
   do {
     AutoFallbackStyleSetter fallback(aKidFrame, currentFallbackStyle);
-    auto positionArea = aKidFrame->StylePosition()->mPositionArea;
-    StylePositionArea resolvedPositionArea;
     const nsRect usedCb = [&] {
       if (isGrid) {
         
         return nsGridContainerFrame::GridItemCB(aKidFrame);
       }
 
+      auto positionArea = aKidFrame->StylePosition()->mPositionArea;
       if (currentFallback && currentFallback->IsPositionArea()) {
         MOZ_ASSERT(currentFallback->IsPositionArea());
         positionArea = currentFallback->AsPositionArea();
@@ -978,8 +975,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
               AdjustAbsoluteContainingBlockRectForPositionArea(
                   *defaultAnchorInfo.mRect, aOriginalContainingBlockRect,
                   aKidFrame->GetWritingMode(),
-                  aDelegatingFrame->GetWritingMode(), positionArea,
-                  &resolvedPositionArea);
+                  aDelegatingFrame->GetWritingMode(), positionArea);
         }
       }
 
@@ -1100,7 +1096,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       ResolveSizeDependentOffsets(kidReflowInput, logicalCBSize, kidSize,
-                                  margin, resolvedPositionArea, offsets);
+                                  margin, offsets);
 
       if (kidReflowInput.mFlags.mDeferAutoMarginComputation) {
         ResolveAutoMarginsAfterLayout(kidReflowInput, logicalCBSize, kidSize,
@@ -1112,12 +1108,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       const auto* stylePos = aKidFrame->StylePosition();
-      const LogicalSize logicalCBSizeOuterWM(outerWM, usedCb.Size());
       const auto anchorResolutionParams =
-          AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
+          AnchorPosOffsetResolutionParams::UseCBFrameSize(
               AnchorPosResolutionParams::From(aKidFrame,
-                                              aAnchorPosReferenceData),
-              &logicalCBSizeOuterWM);
+                                              aAnchorPosReferenceData));
       const bool iInsetAuto =
           stylePos
               ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
@@ -1136,6 +1130,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
               ->GetAnchorResolvedInset(LogicalSide::BEnd, outerWM,
                                        anchorResolutionParams)
               ->IsAuto();
+      const LogicalSize logicalCBSizeOuterWM(outerWM, usedCb.Size());
       const LogicalSize kidMarginBox{
           outerWM, margin.IStartEnd(outerWM) + kidSize.ISize(outerWM),
           margin.BStartEnd(outerWM) + kidSize.BSize(outerWM)};
@@ -1153,8 +1148,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             Some(NonAutoAlignParams{
                 offsets.IStart(outerWM),
                 offsets.IEnd(outerWM),
-            }),
-            resolvedPositionArea);
+            }));
 
         offsets.IStart(outerWM) += alignOffset;
         offsets.IEnd(outerWM) =
@@ -1171,8 +1165,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             Some(NonAutoAlignParams{
                 offsets.BStart(outerWM),
                 offsets.BEnd(outerWM),
-            }),
-            resolvedPositionArea);
+            }));
         offsets.BStart(outerWM) += alignOffset;
         offsets.BEnd(outerWM) =
             logicalCBSizeOuterWM.BSize(outerWM) -

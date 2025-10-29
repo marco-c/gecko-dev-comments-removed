@@ -10,7 +10,6 @@
 
 #include <algorithm>
 
-#include "AnchorPositioningUtils.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyle.h"
@@ -2625,9 +2624,7 @@ StyleAlignFlags nsContainerFrame::CSSAlignmentForAbsPosChild(
 
 StyleAlignFlags
 nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
-    const ReflowInput& aChildRI, LogicalAxis aLogicalAxis,
-    const StylePositionArea& aResolvedPositionArea,
-    const LogicalSize& aCBSize) const {
+    const ReflowInput& aChildRI, LogicalAxis aLogicalAxis) const {
   MOZ_ASSERT(aChildRI.mFrame->IsAbsolutelyPositioned(),
              "This method should only be called for abspos children");
   
@@ -2636,51 +2633,6 @@ nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
       (aLogicalAxis == LogicalAxis::Inline)
           ? aChildRI.mStylePosition->UsedJustifySelf(nullptr)._0
           : aChildRI.mStylePosition->UsedAlignSelf(nullptr)._0;
-
-  
-  
-  if (!aResolvedPositionArea.IsNone() && alignment == StyleAlignFlags::NORMAL) {
-    
-    
-    
-    
-    
-    const WritingMode cbWM = GetWritingMode();
-    const auto anchorResolutionParams = AnchorPosResolutionParams::From(
-        &aChildRI,  true);
-    const auto anchorOffsetResolutionParams =
-        AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
-            anchorResolutionParams, &aCBSize);
-
-    const LogicalSide startSide = aLogicalAxis == LogicalAxis::Inline
-                                      ? LogicalSide::IStart
-                                      : LogicalSide::BStart;
-    const LogicalSide endSide = GetOppositeSide(startSide);
-
-    const bool startInsetIsAuto =
-        aChildRI.mStylePosition
-            ->GetAnchorResolvedInset(startSide, cbWM,
-                                     anchorOffsetResolutionParams)
-            ->IsAuto();
-    const bool endInsetIsAuto =
-        aChildRI.mStylePosition
-            ->GetAnchorResolvedInset(endSide, cbWM,
-                                     anchorOffsetResolutionParams)
-            ->IsAuto();
-
-    
-    if (startInsetIsAuto != endInsetIsAuto) {
-      alignment =
-          startInsetIsAuto ? StyleAlignFlags::END : StyleAlignFlags::START;
-      alignment |= StyleAlignFlags::UNSAFE;
-    } else {
-      auto keyword = aLogicalAxis == LogicalAxis::Inline
-                         ? aResolvedPositionArea.first
-                         : aResolvedPositionArea.second;
-      
-      Servo_ResolvePositionAreaSelfAlignment(&keyword, &alignment);
-    }
-  }
 
   return MapCSSAlignment(alignment, aChildRI, aLogicalAxis, GetWritingMode());
 }
