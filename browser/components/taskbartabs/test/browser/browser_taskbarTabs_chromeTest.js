@@ -3,7 +3,7 @@
 "use strict";
 
 XPCOMUtils.defineLazyServiceGetters(this, {
-  Favicons: ["@mozilla.org/browser/favicon-service;1", "nsIFaviconService"],
+  Favicons: ["@mozilla.org/browser/favicon-service;1", Ci.nsIFaviconService],
 });
 
 const gAudioPage =
