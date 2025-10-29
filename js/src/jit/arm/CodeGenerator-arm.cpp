@@ -994,17 +994,18 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
     
     
     
-    masm.as_and(dest, ToRegister(rhs), Imm8(0x1F));
+    ScratchRegisterScope scratch(masm);
+    masm.as_and(scratch, ToRegister(rhs), Imm8(0x1F));
 
     switch (ins->bitop()) {
       case JSOp::Lsh:
-        masm.ma_lsl(dest, lhs, dest);
+        masm.ma_lsl(scratch, lhs, dest);
         break;
       case JSOp::Rsh:
-        masm.ma_asr(dest, lhs, dest);
+        masm.ma_asr(scratch, lhs, dest);
         break;
       case JSOp::Ursh:
-        masm.ma_lsr(dest, lhs, dest);
+        masm.ma_lsr(scratch, lhs, dest);
         if (ins->mir()->toUrsh()->fallible()) {
           
           masm.as_cmp(dest, Imm8(0));
