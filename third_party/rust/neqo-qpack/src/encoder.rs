@@ -8,7 +8,6 @@ use std::{
     cmp::min,
     collections::VecDeque,
     fmt::{self, Display, Formatter},
-    time::Instant,
 };
 
 use neqo_common::{qdebug, qerror, qlog::Qlog, qtrace, Header};
@@ -127,22 +126,17 @@ impl Encoder {
     
     
     
-    pub fn receive(&mut self, conn: &mut Connection, stream_id: StreamId, now: Instant) -> Res<()> {
-        self.read_instructions(conn, stream_id, now)
+    pub fn receive(&mut self, conn: &mut Connection, stream_id: StreamId) -> Res<()> {
+        self.read_instructions(conn, stream_id)
             .map_err(|e| map_error(&e))
     }
 
-    fn read_instructions(
-        &mut self,
-        conn: &mut Connection,
-        stream_id: StreamId,
-        now: Instant,
-    ) -> Res<()> {
+    fn read_instructions(&mut self, conn: &mut Connection, stream_id: StreamId) -> Res<()> {
         qdebug!("[{self}] read a new instruction");
         loop {
             let mut recv = ReceiverConnWrapper::new(conn, stream_id);
             match self.instruction_reader.read_instructions(&mut recv) {
-                Ok(instruction) => self.call_instruction(instruction, conn.qlog_mut(), now)?,
+                Ok(instruction) => self.call_instruction(instruction, conn.qlog_mut())?,
                 Err(Error::NeedMoreData) => break Ok(()),
                 Err(e) => break Err(e),
             }
@@ -222,12 +216,7 @@ impl Encoder {
         }
     }
 
-    fn call_instruction(
-        &mut self,
-        instruction: DecoderInstruction,
-        qlog: &Qlog,
-        now: Instant,
-    ) -> Res<()> {
+    fn call_instruction(&mut self, instruction: DecoderInstruction, qlog: &Qlog) -> Res<()> {
         qdebug!("[{self}] call instruction {instruction:?}");
         match instruction {
             DecoderInstruction::InsertCountIncrement { increment } => {
@@ -235,7 +224,6 @@ impl Encoder {
                     qlog,
                     increment,
                     &increment.to_be_bytes(),
-                    now,
                 );
 
                 self.insert_count_instruction(increment)
@@ -549,10 +537,7 @@ fn map_stream_send_atomic_error(err: &TransportError) -> Error {
 }
 
 #[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use std::time::Instant;
-
     use neqo_transport::{ConnectionParameters, StreamId, StreamType};
     use test_fixture::{
         default_client, default_server, handshake, new_server, now, CountingConnectionIdGenerator,
@@ -658,16 +643,16 @@ mod tests {
         connect_generic(true, Some(max_data))
     }
 
-    fn recv_instruction(encoder: &mut TestEncoder, decoder_instruction: &[u8], now: Instant) {
+    fn recv_instruction(encoder: &mut TestEncoder, decoder_instruction: &[u8]) {
         encoder
             .peer_conn
             .stream_send(encoder.recv_stream_id, decoder_instruction)
             .unwrap();
-        let out = encoder.peer_conn.process_output(now);
-        drop(encoder.conn.process(out.dgram(), now));
+        let out = encoder.peer_conn.process_output(now());
+        drop(encoder.conn.process(out.dgram(), now()));
         assert!(encoder
             .encoder
-            .read_instructions(&mut encoder.conn, encoder.recv_stream_id, now)
+            .read_instructions(&mut encoder.conn, encoder.recv_stream_id)
             .is_ok());
     }
 
@@ -927,7 +912,7 @@ mod tests {
         encoder.send_instructions(&[]);
 
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         let res =
@@ -958,7 +943,7 @@ mod tests {
         encoder.send_instructions(HEADER_CONTENT_LENGTH_VALUE_1_NAME_LITERAL);
 
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         let buf = encoder.encoder.encode_header_block(
@@ -980,10 +965,10 @@ mod tests {
 
         if wait == 0 {
             
-            recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1, now());
+            recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
         } else {
             
-            recv_instruction(&mut encoder, STREAM_CANCELED_ID_1, now());
+            recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
         }
 
         
@@ -1204,7 +1189,7 @@ mod tests {
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
 
         
-        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1, now());
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
 
         
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
@@ -1244,7 +1229,7 @@ mod tests {
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
 
         
-        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1, now());
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
 
         
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
@@ -1284,7 +1269,7 @@ mod tests {
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 2);
 
         
-        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_2, now());
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_2);
 
         
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 0);
@@ -1326,7 +1311,7 @@ mod tests {
         
         
         
-        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1, now());
+        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
 
         
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
@@ -1378,7 +1363,7 @@ mod tests {
         
         
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         assert_eq!(encoder.encoder.blocked_stream_cnt(), 1);
     }
@@ -1415,13 +1400,13 @@ mod tests {
         assert!(encoder.change_capacity(10).is_err());
 
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         assert!(encoder.change_capacity(10).is_err());
 
         
-        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1, now());
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
 
         
         assert!(encoder.change_capacity(10).is_ok());
@@ -1459,13 +1444,13 @@ mod tests {
         assert!(encoder.change_capacity(10).is_err());
 
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         assert!(encoder.change_capacity(10).is_err());
 
         
-        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1, now());
+        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
 
         
         assert!(encoder.change_capacity(10).is_ok());
@@ -1495,7 +1480,7 @@ mod tests {
         assert!(encoder.change_capacity(10).is_err());
 
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         assert!(encoder.change_capacity(10).is_ok());
@@ -1534,7 +1519,7 @@ mod tests {
         assert!(encoder.change_capacity(10).is_err());
 
         
-        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1, now());
+        recv_instruction(&mut encoder, HEADER_ACK_STREAM_ID_1);
 
         
         assert!(encoder.change_capacity(10).is_ok());
@@ -1571,7 +1556,6 @@ mod tests {
         );
 
         
-        assert!(buf1.len() > 3);
         assert_eq!(buf1[2], 0x10);
         
         assert_eq!(buf1[3] & 0xf0, 0x20);
@@ -1606,7 +1590,6 @@ mod tests {
             StreamId::new(3),
         );
         
-        assert!(buf3.len() > 3);
         assert_eq!(buf3[2], 0x10);
         
         assert_eq!(buf3[3] & 0xf0, 0x20);
@@ -1643,7 +1626,7 @@ mod tests {
         let out = encoder.conn.process_output(now());
         drop(encoder.peer_conn.process(out.dgram(), now()));
         
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
 
         
         
@@ -1692,8 +1675,8 @@ mod tests {
         );
 
         
-        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1, now());
+        recv_instruction(&mut encoder, STREAM_CANCELED_ID_1);
 
-        recv_instruction(&mut encoder, &[0x01], now());
+        recv_instruction(&mut encoder, &[0x01]);
     }
 }

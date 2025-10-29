@@ -27,22 +27,7 @@ pub const CUBIC_C: f64 = 0.4;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-pub const CUBIC_ALPHA: f64 = 3.0 * (1.0 - 0.7) / (1.0 + 0.7); 
-
-
-
+pub const CUBIC_ALPHA: f64 = 3.0 * (1.0 - 0.7) / (1.0 + 0.7);
 
 
 
@@ -54,19 +39,6 @@ pub const CUBIC_ALPHA: f64 = 3.0 * (1.0 - 0.7) / (1.0 + 0.7);
 
 
 pub const CUBIC_BETA_USIZE_DIVIDEND: usize = 7;
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub const CUBIC_BETA_USIZE_DIVISOR: usize = 10;
 
 
@@ -75,8 +47,14 @@ pub const CUBIC_BETA_USIZE_DIVISOR: usize = 10;
 
 
 
+pub const CUBIC_FAST_CONVERGENCE: f64 = 0.85; 
 
-pub const CUBIC_FAST_CONVERGENCE_FACTOR: f64 = (1.0 + 0.7) / 2.0;
+
+
+
+
+
+const EXPONENTIAL_GROWTH_REDUCTION: f64 = 2.0;
 
 
 
@@ -100,15 +78,17 @@ pub struct Cubic {
     
     
     
-    
-    
-    w_est: f64,
-    
+    last_max_cwnd: f64,
     
     
     
     
     
+    
+    
+    
+    
+    estimated_tcp_cwnd: f64,
     
     
     
@@ -118,44 +98,28 @@ pub struct Cubic {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     w_max: f64,
     
     
     
     
+    ca_epoch_start: Option<Instant>,
     
-    t_epoch: Option<Instant>,
-    
-    reno_acked_bytes: f64,
+    tcp_acked_bytes: f64,
 }
 
 impl Display for Cubic {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Cubic [w_max: {}, k: {}, t_epoch: {:?}]",
-            self.w_max, self.k, self.t_epoch
+            "Cubic [last_max_cwnd: {}, k: {}, w_max: {}, ca_epoch_start: {:?}]",
+            self.last_max_cwnd, self.k, self.w_max, self.ca_epoch_start
         )?;
         Ok(())
     }
 }
 
+#[expect(clippy::doc_markdown, reason = "Not doc items; names from RFC.")]
 impl Cubic {
     
     
@@ -169,17 +133,10 @@ impl Cubic {
     
     
     
-    
-    fn calc_k(&self, cwnd_epoch: f64, max_datagram_size: f64) -> f64 {
-        ((self.w_max - cwnd_epoch) / max_datagram_size / CUBIC_C).cbrt()
+    fn calc_k(&self, curr_cwnd: f64, max_datagram_size: f64) -> f64 {
+        ((self.w_max - curr_cwnd) / CUBIC_C / max_datagram_size).cbrt()
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -188,49 +145,35 @@ impl Cubic {
         (CUBIC_C * (t - self.k).powi(3)).mul_add(max_datagram_size, self.w_max)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn start_epoch(
         &mut self,
         curr_cwnd: f64,
-        new_acked_bytes: f64,
+        new_acked: f64,
         max_datagram_size: f64,
         now: Instant,
     ) {
-        self.t_epoch = Some(now);
-        self.reno_acked_bytes = new_acked_bytes;
-        self.w_est = curr_cwnd;
+        self.ca_epoch_start = Some(now);
         
-        
-        
-        
-        
-        
-        self.k = if self.w_max <= curr_cwnd {
+        self.tcp_acked_bytes = new_acked;
+        self.estimated_tcp_cwnd = curr_cwnd;
+        if self.last_max_cwnd <= curr_cwnd {
             self.w_max = curr_cwnd;
-            0.0
+            self.k = 0.0;
         } else {
-            self.calc_k(curr_cwnd, max_datagram_size)
-        };
+            self.w_max = self.last_max_cwnd;
+            self.k = self.calc_k(curr_cwnd, max_datagram_size);
+        }
         qtrace!("[{self}] New epoch");
     }
 
     #[cfg(test)]
-    pub const fn w_max(&self) -> f64 {
-        self.w_max
+    pub const fn last_max_cwnd(&self) -> f64 {
+        self.last_max_cwnd
     }
 
     #[cfg(test)]
-    pub fn set_w_max(&mut self, w_max: f64) {
-        self.w_max = w_max;
+    pub fn set_last_max_cwnd(&mut self, last_max_cwnd: f64) {
+        self.last_max_cwnd = last_max_cwnd;
     }
 }
 
@@ -248,68 +191,42 @@ impl WindowAdjustment for Cubic {
         max_datagram_size: usize,
         now: Instant,
     ) -> usize {
-        let curr_cwnd = convert_to_f64(curr_cwnd);
-        let new_acked_bytes = convert_to_f64(new_acked_bytes);
-        let max_datagram_size = convert_to_f64(max_datagram_size);
-
-        let t_epoch = if let Some(t) = self.t_epoch {
-            self.reno_acked_bytes += new_acked_bytes;
-            t
+        let curr_cwnd_f64 = convert_to_f64(curr_cwnd);
+        let new_acked_f64 = convert_to_f64(new_acked_bytes);
+        let max_datagram_size_f64 = convert_to_f64(max_datagram_size);
+        if self.ca_epoch_start.is_none() {
+            
+            self.start_epoch(curr_cwnd_f64, new_acked_f64, max_datagram_size_f64, now);
         } else {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            self.start_epoch(curr_cwnd, new_acked_bytes, max_datagram_size, now);
-            self.t_epoch
-                .expect("unwrapping `None` value -- it should've been set by `start_epoch`")
-        };
+            self.tcp_acked_bytes += new_acked_f64;
+        }
 
         
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        let t = now.saturating_duration_since(t_epoch);
-        
-        let target_cubic = f64::clamp(
-            self.w_cubic((t + min_rtt).as_secs_f64(), max_datagram_size),
-            curr_cwnd,
-            curr_cwnd * 1.5,
-        );
+        let time_ca = self
+            .ca_epoch_start
+            .map_or(min_rtt, |t| {
+                if now + min_rtt < t {
+                    
+                    
+                    min_rtt
+                } else {
+                    now + min_rtt - t
+                }
+            })
+            .as_secs_f64();
+        let target_cubic = self.w_cubic(time_ca, max_datagram_size_f64);
 
         
         
         
-        
-        
-        
-        
-        
-        
-        
-
-        
-        let increase = (CUBIC_ALPHA * self.reno_acked_bytes / curr_cwnd).floor();
-
-        
-        if increase > 0.0 {
-            self.w_est += increase * max_datagram_size;
-            
-            
-            let acked_bytes_used = increase * curr_cwnd / CUBIC_ALPHA;
-            self.reno_acked_bytes -= acked_bytes_used;
+        let tcp_cnt = self.estimated_tcp_cwnd / CUBIC_ALPHA;
+        let incr = (self.tcp_acked_bytes / tcp_cnt).floor();
+        if incr > 0.0 {
+            self.tcp_acked_bytes -= incr * tcp_cnt;
+            self.estimated_tcp_cwnd += incr * max_datagram_size_f64;
         }
 
         
@@ -321,15 +238,7 @@ impl WindowAdjustment for Cubic {
         
         
         
-        
-        
-        
-        
-        
-        
-        let target = target_cubic.max(self.w_est);
-
-        let cwnd_increase = target - curr_cwnd;
+        let target_cwnd = target_cubic.max(self.estimated_tcp_cwnd);
 
         
         
@@ -337,43 +246,16 @@ impl WindowAdjustment for Cubic {
         
         
         
+        let mut acked_to_increase =
+            max_datagram_size_f64 * curr_cwnd_f64 / (target_cwnd - curr_cwnd_f64).max(1.0);
+
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        (max_datagram_size * curr_cwnd / cwnd_increase.max(1.0)) as usize
+        acked_to_increase =
+            acked_to_increase.max(EXPONENTIAL_GROWTH_REDUCTION * max_datagram_size_f64);
+        acked_to_increase as usize
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn reduce_cwnd(
         &mut self,
         curr_cwnd: usize,
@@ -389,22 +271,13 @@ impl WindowAdjustment for Cubic {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        self.w_max = if curr_cwnd_f64 + convert_to_f64(max_datagram_size) < self.w_max {
-            curr_cwnd_f64 * CUBIC_FAST_CONVERGENCE_FACTOR
-        } else {
-            curr_cwnd_f64
-        };
-
-        
-        self.t_epoch = None;
+        self.last_max_cwnd =
+            if curr_cwnd_f64 + convert_to_f64(max_datagram_size) < self.last_max_cwnd {
+                curr_cwnd_f64 * CUBIC_FAST_CONVERGENCE
+            } else {
+                curr_cwnd_f64
+            };
+        self.ca_epoch_start = None;
         (
             curr_cwnd * CUBIC_BETA_USIZE_DIVIDEND / CUBIC_BETA_USIZE_DIVISOR,
             acked_bytes * CUBIC_BETA_USIZE_DIVIDEND / CUBIC_BETA_USIZE_DIVISOR,
@@ -414,6 +287,6 @@ impl WindowAdjustment for Cubic {
     fn on_app_limited(&mut self) {
         
         
-        self.t_epoch = None;
+        self.ca_epoch_start = None;
     }
 }

@@ -139,7 +139,9 @@ impl Key {
     
     
     
-    pub fn mask(&self, sample: &[u8; Self::SAMPLE_SIZE]) -> Res<[u8; Self::SAMPLE_SIZE]> {
+    
+    
+    pub fn mask(&self, sample: &[u8]) -> Res<[u8; Self::SAMPLE_SIZE]> {
         let mut output = [0; Self::SAMPLE_SIZE];
 
         match self {
@@ -151,7 +153,7 @@ impl Key {
                         output.as_mut_ptr(),
                         &mut output_len,
                         c_int::try_from(output.len())?,
-                        sample.as_ptr().cast(),
+                        sample[..Self::SAMPLE_SIZE].as_ptr().cast(),
                         c_int::try_from(Self::SAMPLE_SIZE)?,
                     )
                 })?;
@@ -163,7 +165,7 @@ impl Key {
                 let params: CK_CHACHA20_PARAMS = CK_CHACHA20_PARAMS {
                     pBlockCounter: sample.as_ptr().cast_mut(),
                     blockCounterBits: 32,
-                    pNonce: sample[4..].as_ptr().cast_mut(),
+                    pNonce: sample[4..Self::SAMPLE_SIZE].as_ptr().cast_mut(),
                     ulNonceBits: 96,
                 };
                 let mut output_len: c_uint = 0;

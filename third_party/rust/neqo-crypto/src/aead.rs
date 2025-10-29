@@ -13,72 +13,12 @@ use std::{
 
 use crate::{
     constants::{Cipher, Version},
-    err::{sec::SEC_ERROR_BAD_DATA, Error, Res},
+    err::Res,
     experimental_api,
     p11::{PK11SymKey, SymKey},
     scoped_ptr,
     ssl::{PRUint16, PRUint64, PRUint8, SSLAeadContext},
 };
-
-
-
-
-
-pub trait Aead {
-    
-    
-    
-    
-    
-    fn new(version: Version, cipher: Cipher, secret: &SymKey, prefix: &str) -> Res<Self>
-    where
-        Self: Sized;
-
-    
-    fn expansion(&self) -> usize;
-
-    
-    
-    
-    
-    
-    fn encrypt<'a>(
-        &self,
-        count: u64,
-        aad: &[u8],
-        input: &[u8],
-        output: &'a mut [u8],
-    ) -> Res<&'a [u8]>;
-
-    
-    
-    
-    
-    
-    fn encrypt_in_place<'a>(&self, count: u64, aad: &[u8], data: &'a mut [u8])
-        -> Res<&'a mut [u8]>;
-
-    
-    
-    
-    
-    
-    fn decrypt<'a>(
-        &self,
-        count: u64,
-        aad: &[u8],
-        input: &[u8],
-        output: &'a mut [u8],
-    ) -> Res<&'a [u8]>;
-
-    
-    
-    
-    
-    
-    fn decrypt_in_place<'a>(&self, count: u64, aad: &[u8], data: &'a mut [u8])
-        -> Res<&'a mut [u8]>;
-}
 
 experimental_api!(SSL_MakeAead(
     version: PRUint16,
@@ -118,6 +58,21 @@ pub struct RealAead {
 }
 
 impl RealAead {
+    
+    
+    
+    
+    
+    pub fn new(version: Version, cipher: Cipher, secret: &SymKey, prefix: &str) -> Res<Self> {
+        let s: *mut PK11SymKey = **secret;
+        unsafe { Self::from_raw(version, cipher, s, prefix) }
+    }
+
+    #[must_use]
+    pub const fn expansion() -> usize {
+        16
+    }
+
     unsafe fn from_raw(
         version: Version,
         cipher: Cipher,
@@ -138,19 +93,16 @@ impl RealAead {
             ctx: AeadContext::from_ptr(ctx)?,
         })
     }
-}
 
-impl Aead for RealAead {
-    fn new(version: Version, cipher: Cipher, secret: &SymKey, prefix: &str) -> Res<Self> {
-        let s: *mut PK11SymKey = **secret;
-        unsafe { Self::from_raw(version, cipher, s, prefix) }
-    }
-
-    fn expansion(&self) -> usize {
-        16
-    }
-
-    fn encrypt<'a>(
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn encrypt<'a>(
         &self,
         count: u64,
         aad: &[u8],
@@ -174,16 +126,24 @@ impl Aead for RealAead {
         Ok(&output[..l.try_into()?])
     }
 
-    fn encrypt_in_place<'a>(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn encrypt_in_place<'a>(
         &self,
         count: u64,
         aad: &[u8],
         data: &'a mut [u8],
     ) -> Res<&'a mut [u8]> {
-        if data.len() < self.expansion() {
-            return Err(Error::from(SEC_ERROR_BAD_DATA));
-        }
-
         let mut l: c_uint = 0;
         unsafe {
             SSL_AeadEncrypt(
@@ -192,17 +152,21 @@ impl Aead for RealAead {
                 aad.as_ptr(),
                 c_uint::try_from(aad.len())?,
                 data.as_ptr(),
-                c_uint::try_from(data.len() - self.expansion())?,
-                data.as_mut_ptr(),
+                c_uint::try_from(data.len() - Self::expansion())?,
+                data.as_ptr(),
                 &mut l,
                 c_uint::try_from(data.len())?,
             )
         }?;
-        debug_assert_eq!(usize::try_from(l)?, data.len());
-        Ok(data)
+        Ok(&mut data[..l.try_into()?])
     }
 
-    fn decrypt<'a>(
+    
+    
+    
+    
+    
+    pub fn decrypt<'a>(
         &self,
         count: u64,
         aad: &[u8],
@@ -229,7 +193,14 @@ impl Aead for RealAead {
         Ok(&output[..l.try_into()?])
     }
 
-    fn decrypt_in_place<'a>(
+    
+    
+    
+    
+    
+    
+    
+    pub fn decrypt_in_place<'a>(
         &self,
         count: u64,
         aad: &[u8],
@@ -247,12 +218,12 @@ impl Aead for RealAead {
                 c_uint::try_from(aad.len())?,
                 data.as_ptr(),
                 c_uint::try_from(data.len())?,
-                data.as_mut_ptr(),
+                data.as_ptr(),
                 &mut l,
                 c_uint::try_from(data.len())?,
             )
         }?;
-        debug_assert_eq!(usize::try_from(l)?, data.len() - self.expansion());
+        debug_assert_eq!(usize::try_from(l)?, data.len() - Self::expansion());
         Ok(&mut data[..l.try_into()?])
     }
 }
