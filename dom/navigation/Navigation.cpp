@@ -1004,6 +1004,8 @@ bool Navigation::FireDownloadRequestNavigateEvent(
   
   
 
+  InnerInformAboutAbortingNavigation(aCx);
+
   
   RefPtr<NavigationDestination> destination =
       MakeAndAddRef<NavigationDestination>(GetOwnerGlobal(), aDestinationURL,
@@ -1581,6 +1583,12 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_DIAGNOSTIC_ASSERT(apiMethodTracker == mOngoingAPIMethodTracker);
     
     apiMethodTracker->CleanUp();
+  } else {
+    
+    
+    
+    
+    mOngoingNavigateEvent = nullptr;
   }
 
   
