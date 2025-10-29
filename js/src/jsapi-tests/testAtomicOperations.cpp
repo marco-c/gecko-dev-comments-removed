@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/Assertions.h"
-
 #include "jit/AtomicOperations.h"
 #include "jsapi-tests/tests.h"
 #include "vm/ArrayBufferObject.h"

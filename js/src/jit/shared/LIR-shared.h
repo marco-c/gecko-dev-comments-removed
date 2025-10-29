@@ -7,7 +7,6 @@
 #ifndef jit_shared_LIR_shared_h
 #define jit_shared_LIR_shared_h
 
-#include "mozilla/Maybe.h"
 #include "jit/AtomicOp.h"
 #include "jit/shared/Assembler-shared.h"
 #include "util/Memory.h"
@@ -1069,6 +1068,14 @@ const char* LCompareI64::extraName() const { return CodeName(jsop_); }
 const char* LCompareI64AndBranch::extraName() const { return CodeName(jsop_); }
 
 const char* LCompareAndBranch::extraName() const { return CodeName(jsop_); }
+
+const char* LStrictConstantCompareInt32AndBranch::extraName() const {
+  return CodeName(cmpMir()->jsop());
+}
+
+const char* LStrictConstantCompareBooleanAndBranch::extraName() const {
+  return CodeName(cmpMir()->jsop());
+}
 
 const char* LMathFunctionD::extraName() const {
   return MMathFunction::FunctionName(mir()->function());

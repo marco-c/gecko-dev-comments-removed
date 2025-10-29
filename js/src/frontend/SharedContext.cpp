@@ -6,8 +6,6 @@
 
 #include "frontend/SharedContext.h"
 
-#include "mozilla/RefPtr.h"
-
 #include "frontend/CompilationStencil.h"
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ModuleSharedContext.h"

@@ -5,8 +5,6 @@
 
 
 
-#include "mozilla/Maybe.h"
-
 #include "gc/AllocKind.h"
 #include "gc/Cell.h"
 #include "gc/GCInternals.h"

@@ -6,15 +6,14 @@
 
 #include "debugger/Frame-inl.h"
 
-#include "mozilla/Assertions.h"   
-#include "mozilla/HashTable.h"    
-#include "mozilla/Maybe.h"        
-#include "mozilla/Range.h"        
-#include "mozilla/RangedPtr.h"    
-#include "mozilla/Result.h"       
-#include "mozilla/ScopeExit.h"    
-#include "mozilla/ThreadLocal.h"  
-#include "mozilla/Vector.h"       
+#include "mozilla/Assertions.h"  
+#include "mozilla/HashTable.h"   
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
+#include "mozilla/RangedPtr.h"   
+#include "mozilla/Result.h"      
+#include "mozilla/ScopeExit.h"   
+#include "mozilla/Vector.h"      
 
 #include <stddef.h>  
 #include <stdint.h>  

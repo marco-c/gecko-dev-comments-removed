@@ -18,7 +18,6 @@
 #include "jsfriendapi.h"
 #include "js/friend/WindowProxy.h"  
 #include "js/Object.h"              
-#include "mozilla/Likely.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "nsContentUtils.h"

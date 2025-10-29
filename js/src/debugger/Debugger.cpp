@@ -13,7 +13,6 @@
 #include "mozilla/Maybe.h"             
 #include "mozilla/ScopeExit.h"         
 #include "mozilla/Sprintf.h"           
-#include "mozilla/ThreadLocal.h"       
 #include "mozilla/TimeStamp.h"         
 #include "mozilla/UniquePtr.h"         
 #include "mozilla/Variant.h"           
