@@ -5172,11 +5172,15 @@ class _CardGrid extends (external_React_default()).PureComponent {
       if (!currentCardEl) {
         return;
       }
+
+      
+      const isRTL = document.dir === "rtl";
+      const navigateToPrevious = isRTL ? e.key === "ArrowRight" : e.key === "ArrowLeft";
       let targetCardEl = currentCardEl;
 
       
       while (targetCardEl) {
-        targetCardEl = e.key === "ArrowLeft" ? targetCardEl.previousElementSibling : targetCardEl.nextElementSibling;
+        targetCardEl = navigateToPrevious ? targetCardEl.previousElementSibling : targetCardEl.nextElementSibling;
         if (targetCardEl && targetCardEl.matches("article.ds-card")) {
           const link = targetCardEl.querySelector("a.ds-card-link");
           if (link) {
@@ -12023,6 +12027,10 @@ function CardSection({
       const activeColumn = getActiveColumnLayout(window.innerWidth);
 
       
+      const isRTL = document.dir === "rtl";
+      const navigateToPrevious = isRTL ? e.key === "ArrowRight" : e.key === "ArrowLeft";
+
+      
       let currentPosition = null;
       const positionPrefix = `${activeColumn}-position-`;
       for (let className of currentCardEl.classList) {
@@ -12034,7 +12042,7 @@ function CardSection({
       if (currentPosition === null) {
         return;
       }
-      const targetPosition = e.key === "ArrowLeft" ? currentPosition - 1 : currentPosition + 1;
+      const targetPosition = navigateToPrevious ? currentPosition - 1 : currentPosition + 1;
 
       
       const parentEl = currentCardEl.parentElement;
