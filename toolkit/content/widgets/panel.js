@@ -15,7 +15,6 @@
       super();
 
       this._prevFocus = 0;
-      this._fadeTimer = null;
 
       this.attachShadow({ mode: "open" });
 
@@ -146,23 +145,6 @@
           
           this.setAttribute("animating", "true");
         }
-
-        
-        var fade = this.getAttribute("fade");
-        var fadeDelay = 0;
-        if (fade == "fast") {
-          fadeDelay = 1;
-        } else if (fade == "slow") {
-          fadeDelay = 4000;
-        }
-
-        if (fadeDelay != 0) {
-          this._fadeTimer = setTimeout(
-            () => this.hidePopup(true),
-            fadeDelay,
-            this
-          );
-        }
       }
 
       
@@ -192,14 +174,7 @@
 
     on_popuphiding(event) {
       if (this.isArrowPanel && event.target == this) {
-        let animate = this.getAttribute("animate") != "false";
-
-        if (this._fadeTimer) {
-          clearTimeout(this._fadeTimer);
-          if (animate) {
-            this.setAttribute("animate", "fade");
-          }
-        } else if (animate) {
+        if (this.getAttribute("animate") != "false") {
           this.setAttribute("animate", "cancel");
         }
 
