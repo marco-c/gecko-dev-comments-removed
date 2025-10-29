@@ -11,7 +11,6 @@
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "mozilla/Attributes.h"
 
 
 #define NS_ARRAY_CID \

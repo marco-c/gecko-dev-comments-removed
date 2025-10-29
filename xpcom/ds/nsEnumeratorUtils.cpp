@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/Attributes.h"
-
 #include "nsEnumeratorUtils.h"
 
 #include "nsIStringEnumerator.h"
@@ -18,7 +16,7 @@ class EmptyEnumeratorImpl : public nsSimpleEnumerator,
                             public nsIUTF8StringEnumerator,
                             public nsIStringEnumerator {
  public:
-  EmptyEnumeratorImpl() {}
+  EmptyEnumeratorImpl() = default;
 
   
   NS_DECL_ISUPPORTS_INHERITED

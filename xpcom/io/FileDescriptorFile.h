@@ -7,7 +7,6 @@
 #ifndef _FileDescriptorFile_h
 #define _FileDescriptorFile_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "nsIFile.h"
 #include "private/pprio.h"
@@ -33,7 +32,7 @@ class FileDescriptorFile final : public nsIFile {
   NS_DECL_NSIFILE
 
  private:
-  ~FileDescriptorFile() {}
+  ~FileDescriptorFile() = default;
 
   FileDescriptorFile(const FileDescriptorFile& other);
 

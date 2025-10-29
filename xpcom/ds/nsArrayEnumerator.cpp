@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/Attributes.h"
-
 #include "nsArrayEnumerator.h"
 
 #include "nsIArray.h"

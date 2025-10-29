@@ -11,7 +11,6 @@
 #include "nsObserverList.h"
 #include "nsIMemoryReporter.h"
 #include "nsTHashtable.h"
-#include "mozilla/Attributes.h"
 
 
 #define NS_OBSERVERSERVICE_CID \

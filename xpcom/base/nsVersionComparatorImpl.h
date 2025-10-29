@@ -4,8 +4,6 @@
 
 
 
-#include "mozilla/Attributes.h"
-
 #include "nsIVersionComparator.h"
 
 class nsVersionComparatorImpl final : public nsIVersionComparator {
