@@ -4659,7 +4659,7 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   }
 
   
-  r.x += aParams.sidewaysLeft ? aParams.trimRight : aParams.trimLeft;
+  r.x += aParams.trimLeft;
   r.width -= aParams.trimLeft + aParams.trimRight;
   r.width = std::max(r.width, 0.0);
 
