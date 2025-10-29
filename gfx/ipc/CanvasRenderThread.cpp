@@ -127,7 +127,6 @@ void CanvasRenderThread::Shutdown() {
   
   layers::CanvasTranslator::Shutdown();
 
-
   bool createdThread = sCanvasRenderThread->mCreatedThread;
   nsCOMPtr<nsIThread> oldThread = sCanvasRenderThread->GetCanvasRenderThread();
 
