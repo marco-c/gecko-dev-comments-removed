@@ -26,11 +26,9 @@ async function verifyCookieBehavior(browser, expected) {
 
       
       let ifr = content.document.createElement("iframe");
-      let loading = new content.Promise(resolve => {
-        ifr.onload = resolve;
-      });
-      content.document.body.appendChild(ifr);
+      const loading = ContentTaskUtils.waitForEvent(ifr, "load");
       ifr.src = obj.page;
+      content.document.body.appendChild(ifr);
       await loading;
 
       await SpecialPowers.spawn(

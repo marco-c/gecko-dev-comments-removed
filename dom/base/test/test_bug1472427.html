@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1472427
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1472427</title>
@@ -26,8 +26,8 @@
   function initPage() {
     ifr = document.createElement("iframe");
     ifr.src = "about:blank";
-    document.body.appendChild(ifr);
     ifr.onload = initIframe;
+    document.body.appendChild(ifr);
   }
 
   function initIframe() {

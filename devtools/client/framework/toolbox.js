@@ -2827,12 +2827,6 @@ Toolbox.prototype = {
       gDevTools.emit(id + "-init", this, iframe);
       this.emit(id + "-init", iframe);
 
-      
-      if (!iframe.parentNode) {
-        const vbox = this.doc.getElementById("toolbox-panel-" + id);
-        vbox.appendChild(iframe);
-      }
-
       const onLoad = async () => {
         
         this.setIframeDocumentDir(iframe);
@@ -2892,6 +2886,12 @@ Toolbox.prototype = {
       iframe.setAttribute("src", definition.url);
       if (definition.panelLabel) {
         iframe.setAttribute("aria-label", definition.panelLabel);
+      }
+
+      
+      if (!iframe.parentNode) {
+        const vbox = this.doc.getElementById("toolbox-panel-" + id);
+        vbox.appendChild(iframe);
       }
 
       
