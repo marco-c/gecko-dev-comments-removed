@@ -8,15 +8,6 @@
 #import <Cocoa/Cocoa.h>
 #include "nsIWidget.h"
 
-
-
-
-
-
-
-
-
-
 @interface nsCursorManager : NSObject {
  @private
   NSMutableDictionary* mCursors;
@@ -26,12 +17,7 @@
 
 
 
-
-
-
-
-
-- (nsresult)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
+- (void)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
 
 
 
@@ -39,18 +25,7 @@
           widgetScaleFactor:(CGFloat)aWidgetScaleFactor
                 forceUpdate:(bool)aForceUpdate;
 
-
-
-
-
-
 + (nsCursorManager*)sharedInstance;
-
-
-
-
-
-
 + (void)dispose;
 @end
 
