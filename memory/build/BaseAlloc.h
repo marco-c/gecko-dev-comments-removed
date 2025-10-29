@@ -43,10 +43,10 @@ class BaseAlloc {
   
   
   
-  void* mNextAddr MOZ_GUARDED_BY(mMutex) = nullptr;
-  void* mNextDecommitted MOZ_GUARDED_BY(mMutex) = nullptr;
+  uintptr_t mNextAddr MOZ_GUARDED_BY(mMutex) = 0;
+  uintptr_t mNextDecommitted MOZ_GUARDED_BY(mMutex) = 0;
   
-  void* mPastAddr MOZ_GUARDED_BY(mMutex) = nullptr;
+  uintptr_t mPastAddr MOZ_GUARDED_BY(mMutex) = 0;
 
   Stats mStats MOZ_GUARDED_BY(mMutex);
 };
