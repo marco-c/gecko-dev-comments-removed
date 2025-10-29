@@ -1050,7 +1050,8 @@ void MacroAssemblerMIPS64::ma_bal(Label* label, DelaySlotFill delaySlotFill) {
 }
 
 void MacroAssemblerMIPS64::branchWithCode(InstImm code, Label* label,
-                                          JumpKind jumpKind) {
+                                          JumpKind jumpKind,
+                                          Register branchCodeScratch) {
   
   
   spew("branch .Llabel %p", label);
@@ -1080,7 +1081,12 @@ void MacroAssemblerMIPS64::branchWithCode(InstImm code, Label* label,
       UseScratchRegisterScope temps(*this);
       
       addLongJump(nextOffset(), BufferOffset(label->offset()));
-      Register scratch = temps.Acquire();
+      Register scratch = branchCodeScratch;
+      if (scratch == InvalidReg) {
+        
+        
+        scratch = temps.Acquire();
+      }
       ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
       as_jr(scratch);
       as_nop();
@@ -1098,7 +1104,12 @@ void MacroAssemblerMIPS64::branchWithCode(InstImm code, Label* label,
     UseScratchRegisterScope temps(*this);
     
     addLongJump(nextOffset(), BufferOffset(label->offset()));
-    Register scratch = temps.Acquire();
+    Register scratch = branchCodeScratch;
+    if (scratch == InvalidReg) {
+      
+      
+      scratch = temps.Acquire();
+    }
     ma_liPatchable(scratch, ImmWord(LabelBase::INVALID_OFFSET));
     as_jr(scratch);
     as_nop();
