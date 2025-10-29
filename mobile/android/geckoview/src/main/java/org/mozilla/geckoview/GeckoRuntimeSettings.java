@@ -10,6 +10,7 @@ import static android.os.Build.VERSION;
 
 import android.app.Service;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.LocaleList;
 import android.os.Parcel;
@@ -681,6 +682,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mIsolatedProcess = enabled;
       return this;
     }
+
+    
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder appZygoteProcessEnabled(final boolean enabled) {
+      if (enabled && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        Log.w(LOGTAG, "Cannot set app Zygote preloading to true below SDK 29 (Android 10)!");
+        getSettings().mAppZygoteProcess = false;
+        return this;
+      }
+      getSettings().mAppZygoteProcess = enabled;
+
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -815,6 +837,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    boolean mUseMaxScreenDepth;
    boolean mLowMemoryDetection = true;
    boolean mIsolatedProcess = false;
+   boolean mAppZygoteProcess = false;
    float mDisplayDensityOverride = -1.0f;
    int mDisplayDpiOverride;
    int mScreenWidthOverride;
@@ -867,6 +890,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
     mLowMemoryDetection = settings.mLowMemoryDetection;
     mIsolatedProcess = settings.mIsolatedProcess;
+    mAppZygoteProcess = settings.mAppZygoteProcess;
     mDisplayDensityOverride = settings.mDisplayDensityOverride;
     mDisplayDpiOverride = settings.mDisplayDpiOverride;
     mScreenWidthOverride = settings.mScreenWidthOverride;
@@ -2381,6 +2405,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return mIsolatedProcess;
   }
 
+  
+
+
+
+
+  public boolean getAppZygoteProcessEnabled() {
+    return mAppZygoteProcess;
+  }
+
   @Override 
   public void writeToParcel(final Parcel out, final int flags) {
     super.writeToParcel(out, flags);
@@ -2392,6 +2425,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
     ParcelableUtils.writeBoolean(out, mLowMemoryDetection);
     ParcelableUtils.writeBoolean(out, mIsolatedProcess);
+    ParcelableUtils.writeBoolean(out, mAppZygoteProcess);
     out.writeFloat(mDisplayDensityOverride);
     out.writeInt(mDisplayDpiOverride);
     out.writeInt(mScreenWidthOverride);
@@ -2412,6 +2446,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
     mLowMemoryDetection = ParcelableUtils.readBoolean(source);
     mIsolatedProcess = ParcelableUtils.readBoolean(source);
+    mAppZygoteProcess = ParcelableUtils.readBoolean(source);
     mDisplayDensityOverride = source.readFloat();
     mDisplayDpiOverride = source.readInt();
     mScreenWidthOverride = source.readInt();
