@@ -35,14 +35,12 @@ nsresult CheckInternal(nsIContentSecurityPolicy* aCSP,
   *aAllowed = false;
 
   
-#if !defined(ANDROID)
   JSContext* cx = nsContentUtils::GetCurrentJSContext();
   if (!nsContentSecurityUtils::IsEvalAllowed(
           cx, aSubjectPrincipal->IsSystemPrincipal(), aExpression)) {
     *aAllowed = false;
     return NS_OK;
   }
-#endif
 
   if (!aCSP) {
     *aAllowed = true;
