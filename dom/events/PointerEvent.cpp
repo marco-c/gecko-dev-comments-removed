@@ -227,37 +227,78 @@ NS_INTERFACE_MAP_END_INHERITING(MouseEvent)
 NS_IMPL_ADDREF_INHERITED(PointerEvent, MouseEvent)
 NS_IMPL_RELEASE_INHERITED(PointerEvent, MouseEvent)
 
-void PointerEvent::GetPointerType(nsAString& aPointerType) {
+uint16_t PointerEvent::ResistantInputSource(CallerType aCallerType) const {
+  const uint16_t inputSource = mEvent->AsPointerEvent()->mInputSource;
+  if (!ShouldResistFingerprinting(aCallerType)) {
+    return inputSource;
+  }
+
+  MOZ_ASSERT(IsTrusted());
+
+  
+  
+  
+#if defined(XP_WIN)
+  if (inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH ||
+      inputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
+    return inputSource;
+  }
+  
+  switch (mEvent->mMessage) {
+    case ePointerMove:
+      return mEvent->AsPointerEvent()->mPressure == 0
+                 ? MouseEvent_Binding::MOZ_SOURCE_MOUSE  
+                 : MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    case ePointerUp:
+    case ePointerDown:
+    case ePointerCancel:
+      return MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+    default:
+      return MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+  }
+#elif defined(MOZ_WIDGET_ANDROID)
+  return inputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE
+             ? MouseEvent_Binding::MOZ_SOURCE_MOUSE
+             : MouseEvent_Binding::MOZ_SOURCE_TOUCH;
+#elif defined(MOZ_WIDGET_GTK)
+  return inputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH
+             ? MouseEvent_Binding::MOZ_SOURCE_TOUCH
+             : MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+#elif defined(MOZ_WIDGET_COCOA)
+  return MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+#else
+  return inputSource;
+#endif
+}
+
+void PointerEvent::GetPointerType(nsAString& aPointerType,
+                                  CallerType aCallerType) {
   if (mPointerType.isSome()) {
     aPointerType = mPointerType.value();
     return;
   }
-
-#if SPOOFED_MAX_TOUCH_POINTS <= 0
-  if (ShouldResistFingerprinting()) {
-    aPointerType.AssignLiteral("mouse");
-    return;
-  }
-#endif
-
-  ConvertPointerTypeToString(mEvent->AsPointerEvent()->mInputSource,
-                             aPointerType);
+  ConvertPointerTypeToString(ResistantInputSource(aCallerType), aPointerType);
 }
 
 int32_t PointerEvent::PointerId() {
   return mEvent->AsPointerEvent()->pointerId;
 }
 
-double PointerEvent::Width() const {
-  return ShouldResistFingerprinting() ? 1.0 : mEvent->AsPointerEvent()->mWidth;
+double PointerEvent::Width(CallerType aCallerType) const {
+  return ShouldResistFingerprinting(aCallerType)
+             ? 1.0
+             : mEvent->AsPointerEvent()->mWidth;
 }
 
-double PointerEvent::Height() const {
-  return ShouldResistFingerprinting() ? 1.0 : mEvent->AsPointerEvent()->mHeight;
+double PointerEvent::Height(CallerType aCallerType) const {
+  return ShouldResistFingerprinting(aCallerType)
+             ? 1.0
+             : mEvent->AsPointerEvent()->mHeight;
 }
 
-float PointerEvent::Pressure() {
-  if (mEvent->mMessage == ePointerUp || !ShouldResistFingerprinting()) {
+float PointerEvent::Pressure(CallerType aCallerType) {
+  if (mEvent->mMessage == ePointerUp ||
+      !ShouldResistFingerprinting(aCallerType)) {
     return mEvent->AsPointerEvent()->mPressure;
   }
 
@@ -274,14 +315,14 @@ float PointerEvent::Pressure() {
   return spoofedPressure;
 }
 
-float PointerEvent::TangentialPressure() {
-  return ShouldResistFingerprinting()
+float PointerEvent::TangentialPressure(CallerType aCallerType) {
+  return ShouldResistFingerprinting(aCallerType)
              ? 0
              : mEvent->AsPointerEvent()->tangentialPressure;
 }
 
-int32_t PointerEvent::TiltX() {
-  if (ShouldResistFingerprinting()) {
+int32_t PointerEvent::TiltX(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return 0;
   }
   if (mTiltX.isSome()) {
@@ -292,8 +333,8 @@ int32_t PointerEvent::TiltX() {
   return *mTiltX;
 }
 
-int32_t PointerEvent::TiltY() {
-  if (ShouldResistFingerprinting()) {
+int32_t PointerEvent::TiltY(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return 0;
   }
   if (mTiltY.isSome()) {
@@ -304,12 +345,14 @@ int32_t PointerEvent::TiltY() {
   return *mTiltY;
 }
 
-int32_t PointerEvent::Twist() {
-  return ShouldResistFingerprinting() ? 0 : mEvent->AsPointerEvent()->twist;
+int32_t PointerEvent::Twist(CallerType aCallerType) {
+  return ShouldResistFingerprinting(aCallerType)
+             ? 0
+             : mEvent->AsPointerEvent()->twist;
 }
 
-double PointerEvent::AltitudeAngle() {
-  if (ShouldResistFingerprinting()) {
+double PointerEvent::AltitudeAngle(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return WidgetPointerHelper::GetDefaultAltitudeAngle();
   }
   if (mAltitudeAngle.isSome()) {
@@ -320,8 +363,8 @@ double PointerEvent::AltitudeAngle() {
   return *mAltitudeAngle;
 }
 
-double PointerEvent::AzimuthAngle() {
-  if (ShouldResistFingerprinting()) {
+double PointerEvent::AzimuthAngle(CallerType aCallerType) {
+  if (ShouldResistFingerprinting(aCallerType)) {
     return WidgetPointerHelper::GetDefaultAzimuthAngle();
   }
   if (mAzimuthAngle.isSome()) {
@@ -334,13 +377,22 @@ double PointerEvent::AzimuthAngle() {
 
 bool PointerEvent::IsPrimary() { return mEvent->AsPointerEvent()->mIsPrimary; }
 
-int32_t PointerEvent::PersistentDeviceId() {
+int32_t PointerEvent::PersistentDeviceId(CallerType aCallerType) {
+  const auto MaybeNonZero = [&]() {
+    return mEvent->IsTrusted() && IsPointerEventMessage(mEvent->mMessage) &&
+           !IsPointerEventMessageOriginallyMouseEventMessage(mEvent->mMessage);
+  };
+
+  if (ShouldResistFingerprinting(aCallerType)) {
+    return MaybeNonZero() && ResistantInputSource(aCallerType) ==
+                                 MouseEvent_Binding::MOZ_SOURCE_MOUSE
+               ? 1
+               : 0;
+  }
+
   if (mPersistentDeviceId.isNothing()) {
-    if (mEvent->IsTrusted() &&
-        mEvent->AsPointerEvent()->mInputSource ==
-            MouseEvent_Binding::MOZ_SOURCE_MOUSE &&
-        IsPointerEventMessage(mEvent->mMessage) &&
-        !IsPointerEventMessageOriginallyMouseEventMessage(mEvent->mMessage)) {
+    if (MaybeNonZero() && mEvent->AsPointerEvent()->mInputSource ==
+                              MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
       
       mPersistentDeviceId.emplace(1);
     } else {
@@ -440,7 +492,8 @@ void PointerEvent::GetPredictedEvents(
   aPointerEvents.AppendElements(mPredictedEvents);
 }
 
-bool PointerEvent::ShouldResistFingerprinting() const {
+bool PointerEvent::ShouldResistFingerprinting(CallerType aCallerType) const {
+  
   
   
   
@@ -450,7 +503,8 @@ bool PointerEvent::ShouldResistFingerprinting() const {
   
   
   RFPTarget target = RFPTarget::PointerEvents;
-  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check", target) ||
+  if (aCallerType == CallerType::System ||
+      !nsContentUtils::ShouldResistFingerprinting("Efficiency Check", target) ||
       !mEvent->IsTrusted() ||
       mEvent->AsPointerEvent()->mInputSource ==
           MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
