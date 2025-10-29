@@ -20,9 +20,18 @@ webidl Node;
 #include "nsISupports.idl"
 #include "nsIContentPolicy.idl"
 
+%{C++
+#include "mozilla/Maybe.h"
 
+namespace mozilla::dom {
+class ClientInfo;
+}
+
+using mozilla::Maybe;
+%}
 
 [ref] native OriginAttributes(const mozilla::OriginAttributes);
+[ref] native MaybeClientInfo(const Maybe<mozilla::dom::ClientInfo>);
 
 
 
@@ -103,12 +112,14 @@ interface nsIWebSocketChannel : nsISupports
 
 
 
+
      [notxpcom] nsresult initLoadInfoNative(in Node aLoadingNode,
                                             in nsIPrincipal aLoadingPrincipal,
                                             in nsIPrincipal aTriggeringPrincipal,
                                             in nsICookieJarSettings aCookieJarSettings,
                                             in unsigned long aSecurityFlags,
                                             in nsContentPolicyType aContentPolicyType,
+                                            in MaybeClientInfo aClientInfo,
                                             in unsigned long aSandboxFlags);
 
      
