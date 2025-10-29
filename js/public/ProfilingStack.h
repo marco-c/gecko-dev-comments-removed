@@ -145,6 +145,12 @@ class ProfilingStackFrame {
   
   
   
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> sourceId_;
+
+  
+  
+  
+  
   mozilla::Atomic<int32_t, mozilla::ReleaseAcquire> pcOffsetIfJS_;
 
   
@@ -163,6 +169,8 @@ class ProfilingStackFrame {
     pcOffsetIfJS_ = offsetIfJS;
     uint64_t realmID = other.realmID_;
     realmID_ = realmID;
+    uint32_t sourceId = other.sourceId_;
+    sourceId_ = sourceId;
     uint32_t flagsAndCategory = other.flagsAndCategoryPair_;
     flagsAndCategoryPair_ = flagsAndCategory;
     return *this;
@@ -290,6 +298,7 @@ class ProfilingStackFrame {
     flagsAndCategoryPair_ =
         uint32_t(Flags::IS_LABEL_FRAME) |
         (uint32_t(aCategoryPair) << uint32_t(Flags::FLAGS_BITCOUNT)) | aFlags;
+    sourceId_ = 0;
     MOZ_ASSERT(isLabelFrame());
   }
 
@@ -306,12 +315,14 @@ class ProfilingStackFrame {
 
   template <JS::ProfilingCategoryPair Category, uint32_t ExtraFlags = 0>
   void initJsFrame(const char* aLabel, const char* aDynamicString,
-                   JSScript* aScript, jsbytecode* aPc, uint64_t aRealmID) {
+                   JSScript* aScript, jsbytecode* aPc, uint64_t aRealmID,
+                   uint32_t aSourceId) {
     label_ = aLabel;
     dynamicString_ = aDynamicString;
     spOrScript = aScript;
     pcOffsetIfJS_ = pcToOffset(aScript, aPc);
     realmID_ = aRealmID;
+    sourceId_ = aSourceId;
     flagsAndCategoryPair_ =
         (uint32_t(Category) << uint32_t(Flags::FLAGS_BITCOUNT)) |
         uint32_t(Flags::IS_JS_FRAME) | ExtraFlags;
@@ -350,6 +361,8 @@ class ProfilingStackFrame {
   void setPC(jsbytecode* pc);
 
   void trace(JSTracer* trc);
+
+  JS_PUBLIC_API uint32_t sourceId() const;
 
   
   
@@ -456,7 +469,8 @@ class JS_PUBLIC_API ProfilingStack final {
   }
 
   void pushJsFrame(const char* label, const char* dynamicString,
-                   JSScript* script, jsbytecode* pc, uint64_t aRealmID) {
+                   JSScript* script, jsbytecode* pc, uint64_t aRealmID,
+                   uint32_t aSourceId = 0) {
     
     
     uint32_t oldStackPointer = stackPointer;
@@ -466,7 +480,7 @@ class JS_PUBLIC_API ProfilingStack final {
     }
     frames[oldStackPointer]
         .initJsFrame<JS::ProfilingCategoryPair::JS_Interpreter>(
-            label, dynamicString, script, pc, aRealmID);
+            label, dynamicString, script, pc, aRealmID, aSourceId);
 
     
     stackPointer = stackPointer + 1;
