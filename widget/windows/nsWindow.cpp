@@ -2838,7 +2838,11 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
     mCustomNonClientMetrics = {};
     ResetLayout();
   }
-  WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
+  
+  
+  if (!mPIPWindow) {
+    WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
+  }
 }
 
 void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
