@@ -465,8 +465,6 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
   Register rhs = ToRegister(lir->rhs());
   Register output = ToRegister(lir->output());
 
-  Label done;
-
   
   if (lir->canBeDivideByZero()) {
     Label nonZero;
@@ -480,8 +478,6 @@ void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
   } else {
     masm.ma_divu64(output, lhs, rhs);
   }
-
-  masm.bind(&done);
 }
 
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* lir) {
@@ -1055,7 +1051,6 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
 }
 
 void CodeGenerator::visitDivI(LDivI* ins) {
-  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
@@ -1117,18 +1112,21 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     bailoutCmp32(Assembler::LessThan, rhs, Imm32(0), ins->snapshot());
     masm.bind(&nonzero);
   }
-  
-  
 
   
   if (mir->canTruncateRemainder()) {
     masm.ma_div32(dest, lhs, rhs);
   } else {
     MOZ_ASSERT(mir->fallible());
+    MOZ_ASSERT(lhs != dest && rhs != dest);
 
-    Label remainderNonZero;
-    masm.ma_div_branch_overflow(dest, lhs, rhs, &remainderNonZero);
-    bailoutFrom(&remainderNonZero, ins->snapshot());
+    
+    
+    masm.ma_div32(dest, lhs, rhs);
+    masm.ma_mod32(temp, lhs, rhs);
+
+    
+    bailoutCmp32(Assembler::NonZero, temp, temp, ins->snapshot());
   }
 
   masm.bind(&done);

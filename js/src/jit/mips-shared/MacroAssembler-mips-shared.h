@@ -148,12 +148,6 @@ class MacroAssemblerMIPSShared : public Assembler {
                             Label* overflow);
 
   
-  void ma_div_branch_overflow(Register rd, Register rs, Register rt,
-                              Label* overflow);
-  void ma_div_branch_overflow(Register rd, Register rs, Imm32 imm,
-                              Label* overflow);
-
-  
   
   
   void ma_mod_mask(Register src, Register dest, Register hold, Register remain,

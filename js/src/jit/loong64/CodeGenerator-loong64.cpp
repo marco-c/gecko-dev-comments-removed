@@ -995,7 +995,6 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
 }
 
 void CodeGenerator::visitDivI(LDivI* ins) {
-  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
@@ -1057,8 +1056,6 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     bailoutCmp32(Assembler::LessThan, rhs, Imm32(0), ins->snapshot());
     masm.bind(&nonzero);
   }
-  
-  
 
   
   if (mir->canTruncateRemainder()) {
@@ -1066,9 +1063,10 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   } else {
     MOZ_ASSERT(mir->fallible());
 
-    Label remainderNonZero;
-    masm.ma_div_branch_overflow(dest, lhs, rhs, &remainderNonZero);
-    bailoutFrom(&remainderNonZero, ins->snapshot());
+    masm.as_mod_w(temp, lhs, rhs);
+    bailoutCmp32(Assembler::NonZero, temp, temp, ins->snapshot());
+
+    masm.as_div_w(dest, lhs, rhs);
   }
 
   masm.bind(&done);
@@ -1116,7 +1114,6 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
 }
 
 void CodeGenerator::visitModI(LModI* ins) {
-  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
