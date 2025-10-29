@@ -5,7 +5,6 @@
 #ifndef nsTableRowGroupFrame_h__
 #define nsTableRowGroupFrame_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/WritingModes.h"
 #include "nsAtom.h"
 #include "nsContainerFrame.h"
@@ -189,7 +188,8 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
-  int32_t FindLineContaining(nsIFrame* aFrame, int32_t aStartLine = 0) final;
+  int32_t FindLineContaining(const nsIFrame* aFrame,
+                             int32_t aStartLine = 0) final;
 
   
 

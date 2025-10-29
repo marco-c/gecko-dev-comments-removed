@@ -9,7 +9,6 @@
 
 
 
-#include "mozilla/Attributes.h"
 #include "nsContainerFrame.h"
 
 class nsCSSBorderRenderer;
