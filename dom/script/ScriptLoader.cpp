@@ -3975,6 +3975,9 @@ nsresult ScriptLoader::OnStreamComplete(
   nsresult rv = VerifySRI(aRequest, aLoader, aSRIStatus, aSRIDataVerifier);
 
   if (NS_SUCCEEDED(rv)) {
+    
+    
+    
     if (aRequest->IsSource() &&
         StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
       nsCOMPtr<nsIRequest> channelRequest;
@@ -3984,13 +3987,11 @@ nsresult ScriptLoader::OnStreamComplete(
           do_QueryInterface(channelRequest);
       LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p", aRequest,
            aRequest->getLoadedScript()->mCacheInfo.get()));
-    }
 
-    
-    
-    
-    if (aRequest->IsSource()) {
-      rv = SaveSRIHash(aRequest, aSRIDataVerifier);
+      
+      if (aRequest->getLoadedScript()->mCacheInfo) {
+        rv = SaveSRIHash(aRequest, aSRIDataVerifier);
+      }
     }
 
     if (NS_SUCCEEDED(rv)) {
