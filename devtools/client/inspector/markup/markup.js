@@ -238,168 +238,176 @@ const shortcutHandlers = {
 
 
 
-
-
-
-
-
-
-
-
-function MarkupView(inspector, frame, controllerWindow) {
-  EventEmitter.decorate(this);
-
-  this.controllerWindow = controllerWindow;
-  this.inspector = inspector;
-  this.highlighters = inspector.highlighters;
-  this.walker = this.inspector.walker;
-  this._frame = frame;
-  this.win = this._frame.contentWindow;
-  this.doc = this._frame.contentDocument;
-  this._elt = this.doc.getElementById("root");
-  this.telemetry = this.inspector.telemetry;
-  this._breakpointIDsInLocalState = new Map();
-  this._containersToUpdate = new Map();
-
-  this.maxChildren = Services.prefs.getIntPref(
-    "devtools.markup.pagesize",
-    DEFAULT_MAX_CHILDREN
-  );
-
-  this.collapseAttributes = Services.prefs.getBoolPref(
-    ATTR_COLLAPSE_ENABLED_PREF
-  );
-  this.collapseAttributeLength = Services.prefs.getIntPref(
-    ATTR_COLLAPSE_LENGTH_PREF
-  );
-
+class MarkupView extends EventEmitter {
   
-  
-  this.popup = new AutocompletePopup(inspector.toolbox.doc, {
-    autoSelect: true,
-  });
 
-  this._containers = new Map();
-  
-  
-  this._slottedContainerKeys = new WeakMap();
 
-  
-  this._handleRejectionIfNotDestroyed =
-    this._handleRejectionIfNotDestroyed.bind(this);
-  this._isImagePreviewTarget = this._isImagePreviewTarget.bind(this);
-  this._onWalkerMutations = this._onWalkerMutations.bind(this);
-  this._onBlur = this._onBlur.bind(this);
-  this._onContextMenu = this._onContextMenu.bind(this);
-  this._onCopy = this._onCopy.bind(this);
-  this._onCollapseAttributesPrefChange =
-    this._onCollapseAttributesPrefChange.bind(this);
-  this._onWalkerNodeStatesChanged = this._onWalkerNodeStatesChanged.bind(this);
-  this._onFocus = this._onFocus.bind(this);
-  this._onResourceAvailable = this._onResourceAvailable.bind(this);
-  this._onTargetAvailable = this._onTargetAvailable.bind(this);
-  this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-  this._onMouseClick = this._onMouseClick.bind(this);
-  this._onMouseMove = this._onMouseMove.bind(this);
-  this._onMouseOut = this._onMouseOut.bind(this);
-  this._onMouseUp = this._onMouseUp.bind(this);
-  this._onNewSelection = this._onNewSelection.bind(this);
-  this._onToolboxPickerCanceled = this._onToolboxPickerCanceled.bind(this);
-  this._onToolboxPickerHover = this._onToolboxPickerHover.bind(this);
-  this._onDomMutation = this._onDomMutation.bind(this);
-  this._updateSearchResultsHighlightingInSelectedNode =
-    this._updateSearchResultsHighlightingInSelectedNode.bind(this);
-  this._onToolboxSelect = this._onToolboxSelect.bind(this);
 
-  
-  this._elt.addEventListener("blur", this._onBlur, true);
-  this._elt.addEventListener("click", this._onMouseClick);
-  this._elt.addEventListener("contextmenu", this._onContextMenu);
-  this._elt.addEventListener("mousemove", this._onMouseMove);
-  this._elt.addEventListener("mouseout", this._onMouseOut);
-  this._frame.addEventListener("focus", this._onFocus);
-  this.inspector.selection.on("new-node-front", this._onNewSelection);
-  this.inspector.on(
-    "search-cleared",
-    this._updateSearchResultsHighlightingInSelectedNode
-  );
-  this._unsubscribeFromToolboxStore = this.inspector.toolbox.store.subscribe(
-    this._onDomMutation
-  );
 
-  if (flags.testing) {
+
+
+
+
+  constructor(inspector, frame, controllerWindow) {
+    super();
+
+    this.controllerWindow = controllerWindow;
+    this.inspector = inspector;
+    this.highlighters = inspector.highlighters;
+    this.walker = this.inspector.walker;
+    this._frame = frame;
+    this.win = this._frame.contentWindow;
+    this.doc = this._frame.contentDocument;
+    this._elt = this.doc.getElementById("root");
+    this.telemetry = this.inspector.telemetry;
+    this._breakpointIDsInLocalState = new Map();
+    this._containersToUpdate = new Map();
+
+    this.maxChildren = Services.prefs.getIntPref(
+      "devtools.markup.pagesize",
+      DEFAULT_MAX_CHILDREN
+    );
+
+    this.collapseAttributes = Services.prefs.getBoolPref(
+      ATTR_COLLAPSE_ENABLED_PREF
+    );
+    this.collapseAttributeLength = Services.prefs.getIntPref(
+      ATTR_COLLAPSE_LENGTH_PREF
+    );
+
     
-    this._initTooltips();
+    
+    this.popup = new AutocompletePopup(inspector.toolbox.doc, {
+      autoSelect: true,
+    });
+
+    this._containers = new Map();
+    
+    
+    this._slottedContainerKeys = new WeakMap();
+
+    
+    this._handleRejectionIfNotDestroyed =
+      this._handleRejectionIfNotDestroyed.bind(this);
+    this._isImagePreviewTarget = this._isImagePreviewTarget.bind(this);
+    this._onWalkerMutations = this._onWalkerMutations.bind(this);
+    this._onBlur = this._onBlur.bind(this);
+    this._onContextMenu = this._onContextMenu.bind(this);
+    this._onCopy = this._onCopy.bind(this);
+    this._onCollapseAttributesPrefChange =
+      this._onCollapseAttributesPrefChange.bind(this);
+    this._onWalkerNodeStatesChanged =
+      this._onWalkerNodeStatesChanged.bind(this);
+    this._onFocus = this._onFocus.bind(this);
+    this._onResourceAvailable = this._onResourceAvailable.bind(this);
+    this._onTargetAvailable = this._onTargetAvailable.bind(this);
+    this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+    this._onMouseClick = this._onMouseClick.bind(this);
+    this._onMouseMove = this._onMouseMove.bind(this);
+    this._onMouseOut = this._onMouseOut.bind(this);
+    this._onMouseUp = this._onMouseUp.bind(this);
+    this._onNewSelection = this._onNewSelection.bind(this);
+    this._onToolboxPickerCanceled = this._onToolboxPickerCanceled.bind(this);
+    this._onToolboxPickerHover = this._onToolboxPickerHover.bind(this);
+    this._onDomMutation = this._onDomMutation.bind(this);
+    this._updateSearchResultsHighlightingInSelectedNode =
+      this._updateSearchResultsHighlightingInSelectedNode.bind(this);
+    this._onToolboxSelect = this._onToolboxSelect.bind(this);
+
+    
+    this._elt.addEventListener("blur", this._onBlur, true);
+    this._elt.addEventListener("click", this._onMouseClick);
+    this._elt.addEventListener("contextmenu", this._onContextMenu);
+    this._elt.addEventListener("mousemove", this._onMouseMove);
+    this._elt.addEventListener("mouseout", this._onMouseOut);
+    this._frame.addEventListener("focus", this._onFocus);
+    this.inspector.selection.on("new-node-front", this._onNewSelection);
+    this.inspector.on(
+      "search-cleared",
+      this._updateSearchResultsHighlightingInSelectedNode
+    );
+    this._unsubscribeFromToolboxStore = this.inspector.toolbox.store.subscribe(
+      this._onDomMutation
+    );
+
+    if (flags.testing) {
+      
+      this._initTooltips();
+    }
+
+    this.win.addEventListener("copy", this._onCopy);
+    this.win.addEventListener("mouseup", this._onMouseUp);
+    this.inspector.toolbox.nodePicker.on(
+      "picker-node-canceled",
+      this._onToolboxPickerCanceled
+    );
+    this.inspector.toolbox.nodePicker.on(
+      "picker-node-hovered",
+      this._onToolboxPickerHover
+    );
+
+    
+    this.onHighlighterShown = data =>
+      this.handleHighlighterEvent("highlighter-shown", data);
+    this.onHighlighterHidden = data =>
+      this.handleHighlighterEvent("highlighter-hidden", data);
+    this.inspector.highlighters.on(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.on(
+      "highlighter-hidden",
+      this.onHighlighterHidden
+    );
+    this.inspector.toolbox.once("select", this._onToolboxSelect);
+
+    this._onNewSelection(this.inspector.selection.nodeFront);
+    if (this.inspector.selection.nodeFront) {
+      this.expandNode(this.inspector.selection.nodeFront);
+    }
+
+    this._prefObserver = new PrefObserver("devtools.markup");
+    this._prefObserver.on(
+      ATTR_COLLAPSE_ENABLED_PREF,
+      this._onCollapseAttributesPrefChange
+    );
+    this._prefObserver.on(
+      ATTR_COLLAPSE_LENGTH_PREF,
+      this._onCollapseAttributesPrefChange
+    );
+
+    this._initShortcuts();
+
+    this._walkerEventListener = new WalkerEventListener(this.inspector, {
+      "container-type-change": this._onWalkerNodeStatesChanged,
+      "display-change": this._onWalkerNodeStatesChanged,
+      "scrollable-change": this._onWalkerNodeStatesChanged,
+      "overflow-change": this._onWalkerNodeStatesChanged,
+      mutations: this._onWalkerMutations,
+    });
+
+    this.resourceCommand = this.inspector.toolbox.resourceCommand;
+    this.resourceCommand.watchResources(
+      [this.resourceCommand.TYPES.ROOT_NODE],
+      {
+        onAvailable: this._onResourceAvailable,
+      }
+    );
+
+    this.targetCommand = this.inspector.commands.targetCommand;
+    this.targetCommand.watchTargets({
+      types: [this.targetCommand.TYPES.FRAME],
+      onAvailable: this._onTargetAvailable,
+      onDestroyed: this._onTargetDestroyed,
+    });
   }
 
-  this.win.addEventListener("copy", this._onCopy);
-  this.win.addEventListener("mouseup", this._onMouseUp);
-  this.inspector.toolbox.nodePicker.on(
-    "picker-node-canceled",
-    this._onToolboxPickerCanceled
-  );
-  this.inspector.toolbox.nodePicker.on(
-    "picker-node-hovered",
-    this._onToolboxPickerHover
-  );
-
-  
-  this.onHighlighterShown = data =>
-    this.handleHighlighterEvent("highlighter-shown", data);
-  this.onHighlighterHidden = data =>
-    this.handleHighlighterEvent("highlighter-hidden", data);
-  this.inspector.highlighters.on("highlighter-shown", this.onHighlighterShown);
-  this.inspector.highlighters.on(
-    "highlighter-hidden",
-    this.onHighlighterHidden
-  );
-  this.inspector.toolbox.once("select", this._onToolboxSelect);
-
-  this._onNewSelection(this.inspector.selection.nodeFront);
-  if (this.inspector.selection.nodeFront) {
-    this.expandNode(this.inspector.selection.nodeFront);
-  }
-
-  this._prefObserver = new PrefObserver("devtools.markup");
-  this._prefObserver.on(
-    ATTR_COLLAPSE_ENABLED_PREF,
-    this._onCollapseAttributesPrefChange
-  );
-  this._prefObserver.on(
-    ATTR_COLLAPSE_LENGTH_PREF,
-    this._onCollapseAttributesPrefChange
-  );
-
-  this._initShortcuts();
-
-  this._walkerEventListener = new WalkerEventListener(this.inspector, {
-    "container-type-change": this._onWalkerNodeStatesChanged,
-    "display-change": this._onWalkerNodeStatesChanged,
-    "scrollable-change": this._onWalkerNodeStatesChanged,
-    "overflow-change": this._onWalkerNodeStatesChanged,
-    mutations: this._onWalkerMutations,
-  });
-
-  this.resourceCommand = this.inspector.toolbox.resourceCommand;
-  this.resourceCommand.watchResources([this.resourceCommand.TYPES.ROOT_NODE], {
-    onAvailable: this._onResourceAvailable,
-  });
-
-  this.targetCommand = this.inspector.commands.targetCommand;
-  this.targetCommand.watchTargets({
-    types: [this.targetCommand.TYPES.FRAME],
-    onAvailable: this._onTargetAvailable,
-    onDestroyed: this._onTargetDestroyed,
-  });
-}
-
-MarkupView.prototype = {
   
 
 
-  CONTAINER_FLASHING_DURATION: 500,
+  CONTAINER_FLASHING_DURATION = 500;
 
-  _selectedContainer: null,
+  _selectedContainer = null;
 
   get contextMenu() {
     if (!this._contextMenu) {
@@ -407,11 +415,11 @@ MarkupView.prototype = {
     }
 
     return this._contextMenu;
-  },
+  }
 
   hasEventDetailsTooltip() {
     return !!this._eventDetailsTooltip;
-  },
+  }
 
   get eventDetailsTooltip() {
     if (!this._eventDetailsTooltip) {
@@ -423,11 +431,11 @@ MarkupView.prototype = {
     }
 
     return this._eventDetailsTooltip;
-  },
+  }
 
   get toolbox() {
     return this.inspector.toolbox;
-  },
+  }
 
   get undo() {
     if (!this._undo) {
@@ -436,7 +444,7 @@ MarkupView.prototype = {
     }
 
     return this._undo;
-  },
+  }
 
   _onDomMutation() {
     const domMutationBreakpoints =
@@ -477,7 +485,7 @@ MarkupView.prototype = {
         this._containersToUpdate.delete(nodeFront);
       }
     }
-  },
+  }
 
   
 
@@ -489,7 +497,7 @@ MarkupView.prototype = {
     if (!this._destroyed) {
       console.error(e);
     }
-  },
+  }
 
   _initTooltips() {
     if (this.imagePreviewTooltip) {
@@ -501,7 +509,7 @@ MarkupView.prototype = {
       useXulWrapper: true,
     });
     this._enableImagePreviewTooltip();
-  },
+  }
 
   _enableImagePreviewTooltip() {
     if (!this.imagePreviewTooltip) {
@@ -511,20 +519,20 @@ MarkupView.prototype = {
       this._elt,
       this._isImagePreviewTarget
     );
-  },
+  }
 
   _disableImagePreviewTooltip() {
     if (!this.imagePreviewTooltip) {
       return;
     }
     this.imagePreviewTooltip.stopTogglingOnHover();
-  },
+  }
 
   _onToolboxPickerHover(nodeFront) {
     this.showNode(nodeFront).then(() => {
       this._showNodeAsHovered(nodeFront);
     }, console.error);
-  },
+  }
 
   
 
@@ -534,7 +542,7 @@ MarkupView.prototype = {
     if (this._selectedContainer) {
       scrollIntoViewIfNeeded(this._selectedContainer.editor.elt);
     }
-  },
+  }
 
   _onToolboxSelect(id) {
     if (id !== "inspector") {
@@ -548,10 +556,10 @@ MarkupView.prototype = {
     if (this.inspector.selection?.reason === "browser-context-menu") {
       this.maybeNavigateToNewSelection();
     }
-  },
+  }
 
-  isDragging: false,
-  _draggedContainer: null,
+  isDragging = false;
+  _draggedContainer = null;
 
   _onMouseMove(event) {
     
@@ -587,7 +595,7 @@ MarkupView.prototype = {
     this._showContainerAsHovered(container);
 
     this.emit("node-hover");
-  },
+  }
 
   
 
@@ -606,11 +614,11 @@ MarkupView.prototype = {
     if (this._selectedContainer) {
       this._selectedContainer.clearFocus();
     }
-  },
+  }
 
   _onContextMenu(event) {
     this.contextMenu.show(event);
-  },
+  }
 
   
 
@@ -672,7 +680,7 @@ MarkupView.prototype = {
           heightToSpeedRatio * (speed - DRAG_DROP_MAX_AUTOSCROLL_SPEED);
       });
     }
-  },
+  }
 
   
 
@@ -683,7 +691,7 @@ MarkupView.prototype = {
       this._autoScrollAnimationFrame = this.win.requestAnimationFrame(loop);
     };
     loop();
-  },
+  }
 
   _onMouseClick(event) {
     
@@ -702,7 +710,7 @@ MarkupView.prototype = {
       
       container.onContainerClick(event);
     }
-  },
+  }
 
   _onMouseUp(event) {
     if (this._draggedContainer) {
@@ -714,7 +722,7 @@ MarkupView.prototype = {
     if (this._autoScrollAnimationFrame) {
       this.win.cancelAnimationFrame(this._autoScrollAnimationFrame);
     }
-  },
+  }
 
   _onCollapseAttributesPrefChange() {
     this.collapseAttributes = Services.prefs.getBoolPref(
@@ -724,7 +732,7 @@ MarkupView.prototype = {
       ATTR_COLLAPSE_LENGTH_PREF
     );
     this.update();
-  },
+  }
 
   cancelDragging() {
     if (!this.isDragging) {
@@ -743,9 +751,9 @@ MarkupView.prototype = {
     if (this._autoScrollAnimationFrame) {
       this.win.cancelAnimationFrame(this._autoScrollAnimationFrame);
     }
-  },
+  }
 
-  _hoveredContainer: null,
+  _hoveredContainer = null;
 
   
 
@@ -756,7 +764,7 @@ MarkupView.prototype = {
   _showNodeAsHovered(nodeFront) {
     const container = this.getContainer(nodeFront);
     this._showContainerAsHovered(container);
-  },
+  }
 
   _showContainerAsHovered(container) {
     if (this._hoveredContainer === container) {
@@ -769,7 +777,7 @@ MarkupView.prototype = {
 
     container.hovered = true;
     this._hoveredContainer = container;
-  },
+  }
 
   async _onMouseOut(event) {
     
@@ -791,7 +799,7 @@ MarkupView.prototype = {
     this._hoveredContainer = null;
 
     this.emit("leave");
-  },
+  }
 
   
 
@@ -808,7 +816,7 @@ MarkupView.prototype = {
       nodeFront,
       options
     );
-  },
+  }
 
   
 
@@ -819,7 +827,7 @@ MarkupView.prototype = {
     return this.inspector.highlighters.hideHighlighterType(
       this.inspector.highlighters.TYPES.BOXMODEL
     );
-  },
+  }
 
   
 
@@ -876,14 +884,14 @@ MarkupView.prototype = {
         break;
       }
     }
-  },
+  }
 
   
 
 
   getSelectedContainer() {
     return this._selectedContainer;
-  },
+  }
 
   
 
@@ -898,7 +906,7 @@ MarkupView.prototype = {
   getContainer(node, slotted) {
     const key = this._getContainerKey(node, slotted);
     return this._containers.get(key);
-  },
+  }
 
   
 
@@ -911,7 +919,7 @@ MarkupView.prototype = {
   setContainer(node, container, slotted) {
     const key = this._getContainerKey(node, slotted);
     return this._containers.set(key, container);
-  },
+  }
 
   
 
@@ -925,7 +933,7 @@ MarkupView.prototype = {
   hasContainer(node, slotted) {
     const key = this._getContainerKey(node, slotted);
     return this._containers.has(key);
-  },
+  }
 
   _getContainerKey(node, slotted) {
     if (!slotted) {
@@ -936,7 +944,7 @@ MarkupView.prototype = {
       this._slottedContainerKeys.set(node, { node });
     }
     return this._slottedContainerKeys.get(node);
-  },
+  }
 
   _isContainerSelected(container) {
     if (!container) {
@@ -948,7 +956,7 @@ MarkupView.prototype = {
       container.node == selection.nodeFront &&
       container.isSlotted() == selection.isSlotted()
     );
-  },
+  }
 
   update() {
     const updateChildren = node => {
@@ -969,7 +977,7 @@ MarkupView.prototype = {
 
     
     updateChildren(documentElement);
-  },
+  }
 
   
 
@@ -1003,7 +1011,7 @@ MarkupView.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -1033,7 +1041,7 @@ MarkupView.prototype = {
 
     const isHighlight = this._isContainerSelected(this._hoveredContainer);
     return !isHighlight && reason && !unwantedReasons.includes(reason);
-  },
+  }
 
   
 
@@ -1126,7 +1134,7 @@ MarkupView.prototype = {
       .catch(this._handleRejectionIfNotDestroyed);
 
     Promise.all([onShowBoxModel, onShow]).then(done);
-  },
+  }
 
   _getSearchResultsHighlight() {
     const highlightName = "devtools-search";
@@ -1137,7 +1145,7 @@ MarkupView.prototype = {
     }
 
     return highlights.get(highlightName);
-  },
+  }
 
   
 
@@ -1151,7 +1159,7 @@ MarkupView.prototype = {
         .QueryInterface(Ci.nsISelectionController);
     }
     return this._selectionController;
-  },
+  }
 
   
 
@@ -1237,7 +1245,7 @@ MarkupView.prototype = {
         false
       );
     }
-  },
+  }
 
   
 
@@ -1270,7 +1278,7 @@ MarkupView.prototype = {
       this.getContainer(root).elt.focus();
       this.navigate(this.getContainer(nodeFront));
     }
-  },
+  }
 
   
 
@@ -1293,7 +1301,7 @@ MarkupView.prototype = {
     );
     walker.currentNode = this._selectedContainer.elt;
     return walker;
-  },
+  }
 
   _onCopy(evt) {
     
@@ -1307,7 +1315,7 @@ MarkupView.prototype = {
     }
     evt.stopPropagation();
     evt.preventDefault();
-  },
+  }
 
   
 
@@ -1331,7 +1339,7 @@ MarkupView.prototype = {
         clipboardHelper.copyString(node.doctypeString);
         break;
     }
-  },
+  }
 
   
 
@@ -1343,7 +1351,7 @@ MarkupView.prototype = {
     }
 
     copyLongHTMLString(nodeFront.walkerFront.innerHTML(nodeFront));
-  },
+  }
 
   
 
@@ -1390,7 +1398,7 @@ MarkupView.prototype = {
         })
         .catch(console.error);
     }
-  },
+  }
 
   
 
@@ -1433,7 +1441,7 @@ MarkupView.prototype = {
     ].forEach(key => {
       shortcuts.on(key, event => this._onShortcut(key, event));
     });
-  },
+  }
 
   
 
@@ -1460,7 +1468,7 @@ MarkupView.prototype = {
 
     event.stopPropagation();
     event.preventDefault();
-  },
+  }
 
   
 
@@ -1468,7 +1476,7 @@ MarkupView.prototype = {
   _isInputOrTextarea(element) {
     const name = element.tagName.toLowerCase();
     return name === "input" || name === "textarea";
-  },
+  }
 
   
 
@@ -1489,7 +1497,7 @@ MarkupView.prototype = {
     } else {
       this.deleteNode(this._selectedContainer.node, moveBackward);
     }
-  },
+  }
 
   
 
@@ -1505,7 +1513,7 @@ MarkupView.prototype = {
       nodeFront.nodeType == nodeConstants.DOCUMENT_FRAGMENT_NODE ||
       nodeFront.isAnonymous
     );
-  },
+  }
 
   
 
@@ -1572,7 +1580,7 @@ MarkupView.prototype = {
         );
       })
       .catch(console.error);
-  },
+  }
 
   
 
@@ -1585,7 +1593,7 @@ MarkupView.prototype = {
     this.inspector.selection.nodeFront
       .scrollIntoView()
       .then(() => this.emitForTests("node-scrolled-into-view"));
-  },
+  }
 
   async toggleMutationBreakpoint(name) {
     if (!this.inspector.selection.isElementNode()) {
@@ -1600,7 +1608,7 @@ MarkupView.prototype = {
     } else {
       toolboxStore.dispatch(createDOMMutationBreakpoint(nodeFront, name));
     }
-  },
+  }
 
   
 
@@ -1613,7 +1621,7 @@ MarkupView.prototype = {
     if (parent) {
       this.navigate(parent.container);
     }
-  },
+  }
 
   
 
@@ -1628,7 +1636,7 @@ MarkupView.prototype = {
     }
 
     this._markContainerAsSelected(container, "treepanel");
-  },
+  }
 
   
 
@@ -1681,7 +1689,7 @@ MarkupView.prototype = {
     this.inspector.emit("container-created", container);
 
     return container;
-  },
+  }
 
   async _onResourceAvailable(resources) {
     for (const resource of resources) {
@@ -1711,9 +1719,9 @@ MarkupView.prototype = {
         });
       }
     }
-  },
+  }
 
-  _onTargetAvailable() {},
+  _onTargetAvailable() {}
 
   _onTargetDestroyed({ targetFront, isModeSwitching }) {
     
@@ -1727,7 +1735,7 @@ MarkupView.prototype = {
         });
       }
     }
-  },
+  }
 
   
 
@@ -1782,7 +1790,7 @@ MarkupView.prototype = {
         this.htmlEditor.refresh();
       }
     });
-  },
+  }
 
   
 
@@ -1799,7 +1807,7 @@ MarkupView.prototype = {
         container.update();
       }
     }
-  },
+  }
 
   
 
@@ -1850,7 +1858,7 @@ MarkupView.prototype = {
     for (const container of addedOrEditedContainers) {
       container.flashMutation();
     }
-  },
+  }
 
   
 
@@ -1889,7 +1897,7 @@ MarkupView.prototype = {
         const container = this.getContainer(nodeFront, slotted);
         scrollIntoViewIfNeeded(container.editor.elt, centered, smoothScroll);
       }, this._handleRejectionIfNotDestroyed);
-  },
+  }
 
   _ensureNodeImported(node) {
     let parent = node;
@@ -1900,7 +1908,7 @@ MarkupView.prototype = {
       this.importNode(parent);
       this.expandNode(parent);
     }
-  },
+  }
 
   
 
@@ -1914,7 +1922,7 @@ MarkupView.prototype = {
       }
       container.setExpanded(true);
     });
-  },
+  }
 
   
 
@@ -1922,7 +1930,7 @@ MarkupView.prototype = {
   expandNode(node) {
     const container = this.getContainer(node);
     return this._expandContainer(container);
-  },
+  }
 
   
 
@@ -1942,7 +1950,7 @@ MarkupView.prototype = {
         return Promise.all(promises);
       })
       .catch(console.error);
-  },
+  }
 
   
 
@@ -1954,7 +1962,7 @@ MarkupView.prototype = {
   expandAll(node) {
     node = node || this._rootNode;
     return this._expandAll(this.getContainer(node));
-  },
+  }
 
   
 
@@ -1962,13 +1970,13 @@ MarkupView.prototype = {
   collapseNode(node) {
     const container = this.getContainer(node);
     container.setExpanded(false);
-  },
+  }
 
   _collapseAll(container) {
     container.setExpanded(false);
     const children = container.getChildContainers() || [];
     children.forEach(child => this._collapseAll(child));
-  },
+  }
 
   
 
@@ -1982,7 +1990,7 @@ MarkupView.prototype = {
 
     
     return Promise.resolve();
-  },
+  }
 
   
 
@@ -2004,7 +2012,7 @@ MarkupView.prototype = {
     }
 
     return getLongString(walkerPromise);
-  },
+  }
 
   
 
@@ -2015,7 +2023,7 @@ MarkupView.prototype = {
 
   getNodeOuterHTML(node) {
     return this._getNodeHTML(node, true);
-  },
+  }
 
   
 
@@ -2026,7 +2034,7 @@ MarkupView.prototype = {
 
   getNodeInnerHTML(node) {
     return this._getNodeHTML(node);
-  },
+  }
 
   
 
@@ -2090,7 +2098,7 @@ MarkupView.prototype = {
     
     
     this.inspector.on("markupmutation", onMutations);
-  },
+  }
 
   
 
@@ -2103,7 +2111,7 @@ MarkupView.prototype = {
       this._removedNodeObserver = null;
       this.emit("canceledreselectonremoved");
     }
-  },
+  }
 
   
 
@@ -2129,7 +2137,7 @@ MarkupView.prototype = {
     return node.walkerFront.setOuterHTML(node, newValue).catch(() => {
       this.cancelReselectOnRemoved();
     });
-  },
+  }
 
   
 
@@ -2158,7 +2166,7 @@ MarkupView.prototype = {
         }
       );
     });
-  },
+  }
 
   
 
@@ -2198,7 +2206,7 @@ MarkupView.prototype = {
         }
       );
     });
-  },
+  }
 
   
 
@@ -2246,7 +2254,7 @@ MarkupView.prototype = {
 
       this.emit("begin-editing");
     });
-  },
+  }
 
   
 
@@ -2270,7 +2278,7 @@ MarkupView.prototype = {
     } else {
       this.collapseNode(node);
     }
-  },
+  }
 
   
 
@@ -2284,7 +2292,7 @@ MarkupView.prototype = {
   markNodeAsSelected(node) {
     const container = this.getContainer(node);
     return this._markContainerAsSelected(container);
-  },
+  }
 
   _markContainerAsSelected(container, reason) {
     if (!container || this._selectedContainer === container) {
@@ -2312,7 +2320,7 @@ MarkupView.prototype = {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -2332,7 +2340,7 @@ MarkupView.prototype = {
       node = parent;
     }
     return this._waitForChildren();
-  },
+  }
 
   
 
@@ -2342,7 +2350,7 @@ MarkupView.prototype = {
       this._selectedContainer.selected = false;
       this._selectedContainer = null;
     }
-  },
+  }
 
   
 
@@ -2363,7 +2371,7 @@ MarkupView.prototype = {
     }
 
     return centered;
-  },
+  }
 
   async _forceUpdateChildren(container, options = {}) {
     const { flash, updateLevel, expand } = options;
@@ -2384,7 +2392,7 @@ MarkupView.prototype = {
       
       container.updateLevel();
     }
-  },
+  }
 
   
 
@@ -2544,7 +2552,7 @@ MarkupView.prototype = {
       .catch(this._handleRejectionIfNotDestroyed);
     this._queuedChildUpdates.set(container, updatePromise);
     return updatePromise;
-  },
+  }
 
   buildMoreNodesButtonMarkup(container) {
     const elt = this.doc.createElement("li");
@@ -2572,7 +2580,7 @@ MarkupView.prototype = {
     });
 
     return elt;
-  },
+  }
 
   _waitForChildren() {
     if (!this._queuedChildUpdates) {
@@ -2580,7 +2588,7 @@ MarkupView.prototype = {
     }
 
     return Promise.all([...this._queuedChildUpdates.values()]);
-  },
+  }
 
   
 
@@ -2599,7 +2607,7 @@ MarkupView.prototype = {
       maxNodes: maxChildren,
       center: centered,
     });
-  },
+  }
 
   
 
@@ -2626,7 +2634,7 @@ MarkupView.prototype = {
     }
 
     return parent;
-  },
+  }
 
   
 
@@ -2746,7 +2754,7 @@ MarkupView.prototype = {
 
     this._lastDropTarget = null;
     this._lastDragTarget = null;
-  },
+  }
 
   
 
@@ -2759,7 +2767,7 @@ MarkupView.prototype = {
     return el.classList.contains("tag-line")
       ? el
       : el.querySelector(".tag-line") || el.closest(".tag-line");
-  },
+  }
 
   
 
@@ -2779,7 +2787,7 @@ MarkupView.prototype = {
       target.classList.add("drop-target");
       this._lastDropTarget = target;
     }
-  },
+  }
 
   
 
@@ -2798,7 +2806,7 @@ MarkupView.prototype = {
       target.classList.add("drag-target");
       this._lastDragTarget = target;
     }
-  },
+  }
 
   
 
@@ -2843,8 +2851,8 @@ MarkupView.prototype = {
     }
 
     return { parent, nextSibling };
-  },
-};
+  }
+}
 
 
 
