@@ -15,7 +15,7 @@ use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyw
 use crate::values::{CSSFloat, CSSInteger};
 use crate::Zero;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ToCss};
+use style_traits::{CssString, CssWriter, ToCss, ToTyped, TypedValue};
 
 pub use crate::values::specified::text::{
     HyphenateCharacter, LineBreak, MozControlCharacterVisibility, OverflowWrap, RubyPosition,
@@ -66,7 +66,6 @@ impl HyphenateLimitChars {
     ToAnimatedValue,
     ToAnimatedZero,
     ToResolvedValue,
-    ToTyped,
 )]
 pub struct GenericLetterSpacing<L>(pub L);
 
@@ -93,6 +92,23 @@ impl ToCss for LetterSpacing {
             return dest.write_str("normal");
         }
         self.0.to_css(dest)
+    }
+}
+
+impl ToTyped for LetterSpacing {
+    
+    
+    
+    
+    
+    fn to_typed(&self) -> Option<TypedValue> {
+        if self.0.is_zero() {
+            return Some(TypedValue::Keyword(CssString::from("normal")));
+        }
+        
+        
+        
+        None
     }
 }
 
