@@ -275,7 +275,17 @@ class Trace {
   };
   void Flush(RegExpCompiler* compiler, RegExpNode* successor,
              FlushMode mode = kFlushFull);
+
+  
+  
+  
+  
+  
+  
+  
+  static constexpr int kCPOffsetSlack = 1;
   int cp_offset() const { return cp_offset_; }
+
   
   bool has_any_actions() const { return has_any_actions_; }
   
