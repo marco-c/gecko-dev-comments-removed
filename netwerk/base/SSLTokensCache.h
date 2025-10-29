@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef SSLTokensCache_h_
 #define SSLTokensCache_h_
 
-#include "CertVerifier.h"  
+#include "CertVerifier.h"  // For EVStatus
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -32,7 +32,7 @@ struct SessionCacheInfo {
   Maybe<nsTArray<nsTArray<uint8_t>>> mSucceededCertChainBytes;
   Maybe<bool> mIsBuiltCertChainRootBuiltInRoot;
   nsITransportSecurityInfo::OverridableErrorCategory mOverridableErrorCategory;
-  Maybe<nsTArray<nsTArray<uint8_t>>> mFailedCertChainBytes;
+  Maybe<nsTArray<nsTArray<uint8_t>>> mHandshakeCertificatesBytes;
 };
 
 class SSLTokensCache : public nsIMemoryReporter {
@@ -74,7 +74,7 @@ class SSLTokensCache : public nsIMemoryReporter {
   static StaticMutex sLock MOZ_UNANNOTATED;
   static uint64_t sRecordId;
 
-  uint32_t mCacheSize{0};  
+  uint32_t mCacheSize{0};  // Actual cache size in bytes
 
   class TokenCacheRecord {
    public:
@@ -87,27 +87,27 @@ class SSLTokensCache : public nsIMemoryReporter {
     PRUint32 mExpirationTime = 0;
     nsTArray<uint8_t> mToken;
     SessionCacheInfo mSessionCacheInfo;
-    
-    
+    // An unique id to identify the record. Mostly used when we want to remove a
+    // record from TokenCacheEntry.
     uint64_t mId = 0;
   };
 
   class TokenCacheEntry {
    public:
     uint32_t Size() const;
-    
-    
-    
+    // Add a record into |mRecords|. To make sure |mRecords| is sorted, we
+    // iterate |mRecords| everytime to find a right place to insert the new
+    // record.
     void AddRecord(UniquePtr<TokenCacheRecord>&& aRecord,
                    nsTArray<TokenCacheRecord*>& aExpirationArray);
-    
+    // This function returns the first record in |mRecords|.
     const UniquePtr<TokenCacheRecord>& Get();
     UniquePtr<TokenCacheRecord> RemoveWithId(uint64_t aId);
     uint32_t RecordCount() const { return mRecords.Length(); }
     const nsTArray<UniquePtr<TokenCacheRecord>>& Records() { return mRecords; }
 
    private:
-    
+    // The records in this array are ordered by the expiration time.
     nsTArray<UniquePtr<TokenCacheRecord>> mRecords;
   };
 
@@ -117,7 +117,7 @@ class SSLTokensCache : public nsIMemoryReporter {
   nsTArray<TokenCacheRecord*> mExpirationArray;
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // SSLTokensCache_h_

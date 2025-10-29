@@ -1,13 +1,13 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef TransportSecurityInfo_h
 #define TransportSecurityInfo_h
 
-#include "CertVerifier.h"  
+#include "CertVerifier.h"  // For CertificateTransparencyInfo, EVStatus
 #include "ScopedNSSTypes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
@@ -24,16 +24,16 @@
 namespace mozilla {
 namespace psm {
 
-
-
-
-
-
+// TransportSecurityInfo implements nsITransportSecurityInfo, which is a
+// collection of attributes describing the outcome of a TLS handshake. It is
+// constant - once created, it cannot be modified.  It should probably not be
+// instantiated directly, but rather accessed via
+// nsITLSSocketControl.securityInfo.
 class TransportSecurityInfo : public nsITransportSecurityInfo {
  public:
   TransportSecurityInfo(
       uint32_t aSecurityState, PRErrorCode aErrorCode,
-      nsTArray<RefPtr<nsIX509Cert>>&& aFailedCertChain,
+      nsTArray<RefPtr<nsIX509Cert>>&& aHandshakeCertificates,
       nsCOMPtr<nsIX509Cert>& aServerCert,
       nsTArray<RefPtr<nsIX509Cert>>&& aSucceededCertChain,
       Maybe<uint16_t> aCipherSuite, Maybe<nsCString> aKeaGroupName,
@@ -60,9 +60,11 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
 
   const uint32_t mSecurityState;
   const PRErrorCode mErrorCode;
-  
-  const nsTArray<RefPtr<nsIX509Cert>> mFailedCertChain;
+  // Certificates provided in the TLS handshake by the server.
+  const nsTArray<RefPtr<nsIX509Cert>> mHandshakeCertificates;
+  // The server end-entity certificate.
   const nsCOMPtr<nsIX509Cert> mServerCert;
+  // The chain built during certificate validation, if successful.
   const nsTArray<RefPtr<nsIX509Cert>> mSucceededCertChain;
   const mozilla::Maybe<uint16_t> mCipherSuite;
   const mozilla::Maybe<nsCString> mKeaGroupName;
@@ -92,8 +94,8 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
       Maybe<nsCString>& aKeaGroupName, Maybe<nsCString>& aSignatureSchemeName,
       nsTArray<RefPtr<nsIX509Cert>>& aSucceededCertChain);
 
-  
-  
+  // This function is used to read the binary that are serialized
+  // by using nsIX509CertList
   static nsresult ReadCertList(nsIObjectInputStream* aStream,
                                nsTArray<RefPtr<nsIX509Cert>>& aCertList);
   static nsresult ReadCertificatesFromStream(
@@ -101,7 +103,7 @@ class TransportSecurityInfo : public nsITransportSecurityInfo {
       nsTArray<RefPtr<nsIX509Cert>>& aCertList);
 };
 
-}  
-}  
+}  // namespace psm
+}  // namespace mozilla
 
-#endif  
+#endif  // TransportSecurityInfo_h

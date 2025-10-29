@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CommonSocketControl.h"
 
@@ -83,10 +83,10 @@ void CommonSocketControl::SetSucceededCertChain(
   return CreateCertChain(mSucceededCertChain, std::move(aCertList));
 }
 
-void CommonSocketControl::SetFailedCertChain(
+void CommonSocketControl::SetHandshakeCertificates(
     nsTArray<nsTArray<uint8_t>>&& aCertList) {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-  return CreateCertChain(mFailedCertChain, std::move(aCertList));
+  return CreateCertChain(mHandshakeCertificates, std::move(aCertList));
 }
 
 void CommonSocketControl::SetCanceled(PRErrorCode errorCode) {
@@ -100,12 +100,12 @@ void CommonSocketControl::SetCanceled(PRErrorCode errorCode) {
   mCanceled = true;
 }
 
-
-
+// NB: GetErrorCode may be called before an error code is set (if ever). In that
+// case, this returns 0, which is treated as a successful value.
 int32_t CommonSocketControl::GetErrorCode() {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-  
-  
+  // We're in an inconsistent state if we think we've been canceled but no error
+  // code was set or we haven't been canceled but an error code was set.
   MOZ_ASSERT(
       !((mCanceled && mErrorCode == 0) || (!mCanceled && mErrorCode != 0)));
   if ((mCanceled && mErrorCode == 0) || (!mCanceled && mErrorCode != 0)) {
@@ -153,7 +153,7 @@ CommonSocketControl::JoinConnection(const nsACString& npnProtocol,
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   nsresult rv = TestJoinConnection(npnProtocol, hostname, port, _retval);
   if (NS_SUCCEEDED(rv) && *_retval) {
-    
+    // All tests pass - this is joinable
     mJoined = true;
   }
   return rv;
@@ -166,15 +166,15 @@ CommonSocketControl::TestJoinConnection(const nsACString& npnProtocol,
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
   *_retval = false;
 
-  
+  // Different ports may not be joined together
   if (port != GetPort()) return NS_OK;
 
-  
+  // Make sure NPN has been completed and matches requested npnProtocol
   if (!mNPNCompleted || !mNegotiatedNPN.Equals(npnProtocol)) {
     return NS_OK;
   }
 
-  IsAcceptableForHost(hostname, _retval);  
+  IsAcceptableForHost(hostname, _retval);  // sets _retval
   return NS_OK;
 }
 
@@ -186,20 +186,20 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
 
   *_retval = false;
 
-  
-  
+  // If this is the same hostname then the certicate status does not
+  // need to be considered. They are joinable.
   if (hostname.Equals(GetHostName())) {
     *_retval = true;
     return NS_OK;
   }
 
-  
-  
+  // Before checking the server certificate we need to make sure the
+  // handshake has completed.
   if (!mHandshakeCompleted || !HasServerCert()) {
     return NS_OK;
   }
 
-  
+  // Security checks can only be skipped when running xpcshell tests.
   if (PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
     nsCOMPtr<nsICertOverrideService> overrideService =
         do_GetService(NS_CERTOVERRIDE_CONTRACTID);
@@ -213,18 +213,18 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
     }
   }
 
-  
+  // If the cert has error bits (e.g. it is untrusted) then do not join.
   if (mOverridableErrorCategory.isSome()) {
     return NS_OK;
   }
 
-  
-  
-  
+  // If the connection is using client certificates then do not join
+  // because the user decides on whether to send client certs to hosts on a
+  // per-domain basis.
   if (mSentClientCert) return NS_OK;
 
-  
-  
+  // Ensure that the server certificate covers the hostname that would
+  // like to join this connection
 
   nsCOMPtr<nsIX509Cert> cert(GetServerCert());
   if (!cert) {
@@ -235,16 +235,16 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
     return NS_OK;
   }
 
-  
-  
+  // An empty mSucceededCertChain means the server certificate verification
+  // failed before, so don't join in this case.
   if (mSucceededCertChain.IsEmpty()) {
     return NS_OK;
   }
 
-  
-  
-  
-  
+  // See where CheckCertHostname() is called in
+  // CertVerifier::VerifySSLServerCert. We are doing the same hostname-specific
+  // checks here. If any hostname-specific checks are added to
+  // CertVerifier::VerifySSLServerCert we need to add them here too.
   pkix::Input serverCertInput;
   mozilla::pkix::Result rv =
       serverCertInput.Init(certDER.Elements(), certDER.Length());
@@ -287,7 +287,7 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
     return NS_OK;
   }
 
-  
+  // All tests pass
   *_retval = true;
   return NS_OK;
 }
@@ -319,8 +319,8 @@ void CommonSocketControl::RebuildCertificateInfoFromSSLTokenCache() {
     SetIsBuiltCertChainRootBuiltInRoot(*info.mIsBuiltCertChainRootBuiltInRoot);
   }
 
-  if (info.mFailedCertChainBytes) {
-    SetFailedCertChain(std::move(*info.mFailedCertChainBytes));
+  if (info.mHandshakeCertificatesBytes) {
+    SetHandshakeCertificates(std::move(*info.mHandshakeCertificatesBytes));
   }
 }
 
@@ -419,7 +419,7 @@ CommonSocketControl::GetPeerId(nsACString& aResult) {
   }
 
   if (mProviderFlags &
-      nsISocketProvider::ANONYMOUS_CONNECT) {  
+      nsISocketProvider::ANONYMOUS_CONNECT) {  // See bug 466080
     mPeerId.AppendLiteral("anon:");
   }
   if (mProviderFlags & nsISocketProvider::NO_PERMANENT_STORAGE) {
@@ -443,7 +443,7 @@ CommonSocketControl::GetPeerId(nsACString& aResult) {
 NS_IMETHODIMP
 CommonSocketControl::GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-  
+  // Make sure peerId is set.
   nsAutoCString unused;
   nsresult rv = GetPeerId(unused);
   if (NS_FAILED(rv)) {
@@ -451,8 +451,8 @@ CommonSocketControl::GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) {
   }
   nsCOMPtr<nsITransportSecurityInfo> securityInfo(
       new psm::TransportSecurityInfo(
-          mSecurityState, mErrorCode, mFailedCertChain.Clone(), mServerCert,
-          mSucceededCertChain.Clone(), mCipherSuite, mKeaGroupName,
+          mSecurityState, mErrorCode, mHandshakeCertificates.Clone(),
+          mServerCert, mSucceededCertChain.Clone(), mCipherSuite, mKeaGroupName,
           mSignatureSchemeName, mProtocolVersion,
           mCertificateTransparencyStatus, mIsAcceptedEch,
           mIsDelegatedCredential, mOverridableErrorCategory, mMadeOCSPRequests,

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FuzzySecurityInfo.h"
 
@@ -37,8 +37,8 @@ FuzzySecurityInfo::GetErrorCodeString(nsAString& aErrorString) {
 }
 
 NS_IMETHODIMP
-FuzzySecurityInfo::GetFailedCertChain(
-    nsTArray<RefPtr<nsIX509Cert>>& aFailedCertChain) {
+FuzzySecurityInfo::GetHandshakeCertificates(
+    nsTArray<RefPtr<nsIX509Cert>>& aHandshakeCertificates) {
   MOZ_CRASH("Unused");
   return NS_OK;
 }
@@ -89,7 +89,7 @@ FuzzySecurityInfo::GetSignatureSchemeName(nsACString& aSignatureScheme) {
 NS_IMETHODIMP
 FuzzySecurityInfo::GetProtocolVersion(uint16_t* aProtocolVersion) {
   NS_ENSURE_ARG_POINTER(aProtocolVersion);
-  
+  // Must be >= TLS 1.2 for HTTP2
   *aProtocolVersion = nsITransportSecurityInfo::TLS_VERSION_1_2;
   return NS_OK;
 }
@@ -172,6 +172,6 @@ FuzzySecurityInfo::GetPeerId(nsACString& aResult) {
   return NS_OK;
 }
 
-}  
+}  // namespace net
 
-}  
+}  // namespace mozilla

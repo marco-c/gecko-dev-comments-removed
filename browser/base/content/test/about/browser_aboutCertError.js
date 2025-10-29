@@ -1,9 +1,9 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
+// This is testing the aboutCertError page (Bug 1207107).
 
 const GOOD_PAGE = "https://example.com/";
 const GOOD_PAGE_2 = "https://example.org/";
@@ -33,8 +33,8 @@ add_task(async function checkReturnToAboutHome() {
       "!webNavigation.canGoForward"
     );
 
-    
-    
+    // Populate the shistory entries manually, since it happens asynchronously
+    // and the following tests will be too soon otherwise.
     await TabStateFlusher.flush(browser);
     let { entries } = JSON.parse(SessionStore.getTabState(tab));
     is(entries.length, 1, "there is one shistory entry");
@@ -56,9 +56,9 @@ add_task(async function checkReturnToAboutHome() {
         }
         Assert.ok(true, "returnButton has focus");
       }
-      
-      
-      
+      // Note that going back to about:newtab might cause a process flip, if
+      // the browser is configured to run about:newtab in its own special
+      // content process.
       returnButton.click();
     });
 
@@ -113,8 +113,8 @@ add_task(async function checkReturnToPreviousPage() {
       "!webNavigation.canGoForward"
     );
 
-    
-    
+    // Populate the shistory entries manually, since it happens asynchronously
+    // and the following tests will be too soon otherwise.
     await TabStateFlusher.flush(browser);
     let { entries } = JSON.parse(SessionStore.getTabState(tab));
     is(entries.length, 2, "there are two shistory entries");
@@ -144,8 +144,8 @@ add_task(async function checkReturnToPreviousPage() {
   }
 });
 
-
-
+// This checks that the appinfo.appBuildID starts with a date string,
+// which is required for the misconfigured system time check.
 add_task(async function checkAppBuildIDIsDate() {
   let appBuildID = Services.appinfo.appBuildID;
   let year = parseInt(appBuildID.substr(0, 4), 10);
@@ -195,7 +195,7 @@ add_task(async function checkAdvancedDetails() {
       let advancedButton = doc.getElementById("advancedButton");
       advancedButton.click();
 
-      
+      // Wait until fluent sets the errorCode inner text.
       let errorCode;
       await ContentTaskUtils.waitForCondition(() => {
         errorCode = doc.getElementById("errorCode");
@@ -225,14 +225,14 @@ add_task(async function checkAdvancedDetails() {
         "none",
         "Debug information is visible"
       );
-      let failedCertChain =
-        content.docShell.failedChannel.securityInfo.failedCertChain.map(cert =>
-          cert.getBase64DERString()
+      let handshakeCertificates =
+        content.docShell.failedChannel.securityInfo.handshakeCertificates.map(
+          cert => cert.getBase64DERString()
         );
       return {
         divDisplay: content.getComputedStyle(div).display,
         text: text.textContent,
-        failedCertChain,
+        handshakeCertificates,
       };
     });
     isnot(message.divDisplay, "none", "Debug information is visible");
@@ -249,7 +249,7 @@ add_task(async function checkAdvancedDetails() {
       message.text.includes("HTTP Public Key Pinning: false"),
       "Correct HPKP value found"
     );
-    let certChain = getCertChainAsString(message.failedCertChain);
+    let certChain = getCertChainAsString(message.handshakeCertificates);
     ok(message.text.includes(certChain), "Found certificate chain");
 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -274,7 +274,7 @@ add_task(async function checkAdvancedDetailsForHSTS() {
       let advancedButton = doc.getElementById("advancedButton");
       advancedButton.click();
 
-      
+      // Wait until fluent sets the errorCode inner text.
       let ec;
       await ContentTaskUtils.waitForCondition(() => {
         ec = doc.getElementById("errorCode");
@@ -307,14 +307,14 @@ add_task(async function checkAdvancedDetailsForHSTS() {
       errorCode.click();
       let div = doc.getElementById("certificateErrorDebugInformation");
       let text = doc.getElementById("certificateErrorText");
-      let failedCertChain =
-        content.docShell.failedChannel.securityInfo.failedCertChain.map(cert =>
-          cert.getBase64DERString()
+      let handshakeCertificates =
+        content.docShell.failedChannel.securityInfo.handshakeCertificates.map(
+          cert => cert.getBase64DERString()
         );
       return {
         divDisplay: content.getComputedStyle(div).display,
         text: text.textContent,
-        failedCertChain,
+        handshakeCertificates,
       };
     });
     isnot(message.divDisplay, "none", "Debug information is visible");
@@ -333,7 +333,7 @@ add_task(async function checkAdvancedDetailsForHSTS() {
       message.text.includes("HTTP Public Key Pinning: true"),
       "Correct HPKP value found"
     );
-    let certChain = getCertChainAsString(message.failedCertChain);
+    let certChain = getCertChainAsString(message.handshakeCertificates);
     ok(message.text.includes(certChain), "Found certificate chain");
 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -367,7 +367,7 @@ add_task(async function checkViewCertificate() {
   info("Loading a cert error and checking that the certificate can be shown.");
   for (let useFrame of [true, false]) {
     if (useFrame) {
-      
+      // Bug #1573502
       continue;
     }
     let tab = await openErrorPage(UNKNOWN_ISSUER, useFrame);
@@ -423,7 +423,7 @@ add_task(async function checkViewCertificate() {
         );
       }
     );
-    BrowserTestUtils.removeTab(gBrowser.selectedTab); 
+    BrowserTestUtils.removeTab(gBrowser.selectedTab); // closes about:certificate
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
@@ -564,9 +564,9 @@ add_task(async function testCertificateTransparency() {
   info(
     "Test that when certificate transparency is enforced, the right error page is shown."
   );
-  
-  
-  
+  // Enforce certificate transparency for certificates issued by our test root.
+  // This is only possible in debug builds, hence skipping this test in
+  // non-debug builds (see below).
   await SpecialPowers.pushPrefEnv({
     set: [
       ["security.pki.certificate_transparency.mode", 2],
@@ -600,7 +600,7 @@ add_task(async function testCertificateTransparency() {
       let advancedButton = doc.getElementById("advancedButton");
       advancedButton.click();
 
-      
+      // Wait until fluent sets the errorCode inner text.
       let errorCode;
       await ContentTaskUtils.waitForCondition(() => {
         errorCode = doc.getElementById("errorCode");
@@ -635,6 +635,6 @@ add_task(async function testCertificateTransparency() {
 
   await SpecialPowers.popPrefEnv();
 
-  
-  
+  // Certificate transparency can only be enforced for our test certificates in
+  // debug builds.
 }).skip(!AppConstants.DEBUG);

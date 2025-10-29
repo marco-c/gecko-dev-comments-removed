@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
 
@@ -16,23 +16,23 @@
 using namespace mozilla;
 using namespace mozilla::psm;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// nsITransportSecurityInfo de-serializatin tests
+//
+// These tests verify that we can still deserialize old binary strings
+// generated for security info.  This is necessary because service workers
+// stores these strings on disk.
+//
+// If you make a change and start breaking these tests, you will need to
+// add a compat fix for loading the old versions.  For things that affect
+// the UUID, but do not break the rest of the format you can simply add
+// another hack condition in nsBinaryInputStream::ReadObject().  If you
+// change the overall format of the serialization then we will need more
+// complex handling in the security info concrete classes.
+//
+// We would like to move away from this binary compatibility requirement
+// in service workers.  See bug 1248628.
 void deserializeAndVerify(const nsCString& serializedSecInfo,
-                          Maybe<size_t> failedCertChainLength = Nothing(),
+                          Maybe<size_t> handshakeCertificatesLength = Nothing(),
                           Maybe<size_t> succeededCertChainLength = Nothing()) {
   nsCOMPtr<nsITransportSecurityInfo> securityInfo;
   nsresult rv = TransportSecurityInfo::Read(serializedSecInfo,
@@ -45,18 +45,19 @@ void deserializeAndVerify(const nsCString& serializedSecInfo,
   ASSERT_EQ(NS_OK, rv);
   ASSERT_TRUE(cert);
 
-  nsTArray<RefPtr<nsIX509Cert>> failedCertArray;
-  rv = securityInfo->GetFailedCertChain(failedCertArray);
+  nsTArray<RefPtr<nsIX509Cert>> handshakeCertificatesArray;
+  rv = securityInfo->GetHandshakeCertificates(handshakeCertificatesArray);
   ASSERT_EQ(NS_OK, rv);
 
-  if (failedCertChainLength) {
-    ASSERT_FALSE(failedCertArray.IsEmpty());
-    for (const auto& cert : failedCertArray) {
+  if (handshakeCertificatesLength) {
+    ASSERT_FALSE(handshakeCertificatesArray.IsEmpty());
+    for (const auto& cert : handshakeCertificatesArray) {
       ASSERT_TRUE(cert);
     }
-    ASSERT_EQ(*failedCertChainLength, failedCertArray.Length());
+    ASSERT_EQ(*handshakeCertificatesLength,
+              handshakeCertificatesArray.Length());
   } else {
-    ASSERT_TRUE(failedCertArray.IsEmpty());
+    ASSERT_TRUE(handshakeCertificatesArray.IsEmpty());
   }
 
   nsTArray<RefPtr<nsIX509Cert>> succeededCertArray;
@@ -76,11 +77,11 @@ void deserializeAndVerify(const nsCString& serializedSecInfo,
 
 TEST(psm_DeserializeCert, gecko33)
 {
-  
-  
-  
-  
-  
+  // clang-format off
+  // Gecko 33+ vintage Security info serialized with UUIDs:
+  //  - nsISupports  00000000-0000-0000-c000-000000000046
+  //  - nsISSLStatus fa9ba95b-ca3b-498a-b889-7c79cf28fee8
+  //  - nsIX509Cert  f8ed8364-ced9-4c6e-86ba-48af53c393e6
   nsCString base64Serialization(
   "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAQAAgAAAAAAAAAAAAAAAAAAAAA"
   "B4vFIJp5wRkeyPxAQ9RJGKPqbqVvKO0mKuIl8ec8o/uhmCjImkVxP+7sgiYWmMt8F+O2DZM7ZTG6GukivU8OT5gAAAAIAAAWpMII"
@@ -104,18 +105,18 @@ TEST(psm_DeserializeCert, gecko33)
   "2cqB1GG4esFOalvI52dzn+J4fTIYZvNF+AtGyHSLm2XRXYZCw455laUKf6Sk9RDShDgUvzhOKL4GXfTwKXv12MyMknJybH8UCpjC"
   "HZmFBVHMcUN/87HsQo20PdOekeEvkjrrMIxW+gxw22Yb67yF/qKgwrWr+43bLN709iyw+LWiU7sQcHL2xk9SYiWQDj2tYz2soObV"
   "QYTJm0VUZMEVFhtALq46cx92Zu4vFwC8AAwAAAAABAQAA");
-  
+  // clang-format on
 
   deserializeAndVerify(base64Serialization);
 }
 
 TEST(psm_DeserializeCert, gecko46)
 {
-  
-  
-  
-  
-  
+  // clang-format off
+  // Gecko 46+ vintage Security info serialized with UUIDs:
+  //  - nsISupports  00000000-0000-0000-c000-000000000046
+  //  - nsISSLStatus fa9ba95b-ca3b-498a-b889-7c79cf28fee8
+  //  - nsIX509Cert  bdc3979a-5422-4cd5-8589-696b6e96ea83
   nsCString base64Serialization(
   "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAQAAgAAAAAAAAAAAAAAAAAAAAA"
   "B4vFIJp5wRkeyPxAQ9RJGKPqbqVvKO0mKuIl8ec8o/uhmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAAIAAAWzMII"
@@ -139,16 +140,16 @@ TEST(psm_DeserializeCert, gecko46)
   "Bx3VmDRynTe4CqhsAwOoO1ERmCAmsAJBwY/rNr4mK22p8erBrqMW0nYXYU5NFynI+pNTjojhKD4II8PNV8G2yMWwYOb/u4+WPzUA"
   "HC9DpZdrWTEH/W69Cr/KxRqGsWPwpgMv2Wqav8jaT35JxqTXjOlhQqzo6fNn3eYOeCf4PkCxZKwckWjy10qDaRbjhwAMHAGj2TPr"
   "idlvOj/7QyyX5m8up/1US8z1fRW4yoCSOt6V2bwuH6cAvAAMAAAAAAQEAAA==");
-  
+  // clang-format on
 
   deserializeAndVerify(base64Serialization);
 }
 
 TEST(psm_DeserializeCert, preSSLStatusConsolidation)
 {
-  
-  
-  
+  // clang-format off
+  // Generated using serialized output of test "good.include-subdomains.pinning.example.com"
+  // in security/manager/ssl/tests/unit/test_cert_chains.js
   nsCString base64Serialization(
   "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAgAAgAAAAAAAAAAAAAAAAAAAAAB4vFIJp5w"
   "RkeyPxAQ9RJGKPqbqVvKO0mKuIl8ec8o/uhmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAAAAAAONMIIDiTCCAnGg"
@@ -188,16 +189,16 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidation)
   "9cZFVtzRWYEYkIlicAyTiPw34bXzxU1cK6sCSmBR+UTXbRPGb4OOy3MRaoF1m3jxwnPkQwxezDiqJTydCbYcBu0sKwURAZOd5QK9"
   "22MsOsnrLjNlpRDmuH0VFhb5uN2I5mM3NvMnP2Or19O1Bk//iGD6AyJfiZFcii+FsDrJhbzw6lakEV7O/EnD0kk2l7I0VMtg1xZB"
   "bEw7P6+V9zz5cAzaaq7EB0mCE+jJckSzSETBN+7lyVD8gwmHYxxZfPnUM/yvPbMU9L3xWD/z6HHwO6r+9m7BT+2pHjBCAAA=");
-  
+  // clang-format on
 
   deserializeAndVerify(base64Serialization, Nothing(), Some(2));
 }
 
-TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
+TEST(psm_DeserializeCert, preSSLStatusConsolidationHandshakeCertificates)
 {
-  
-  
-  
+  // clang-format off
+  // Generated using serialized output of test "expired.example.com"
+  // in security/manager/ssl/tests/unit/test_cert_chains.js
   nsCString base64Serialization(
   "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAAABAAAAAAAAAAA///gCwAAAAAB4vFIJp5w"
   "RkeyPxAQ9RJGKPqbqVvKO0mKuIl8ec8o/uhmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAAAAAAMgMIIDHDCCAgSg"
@@ -256,18 +257,18 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
   "4bXzxU1cK6sCSmBR+UTXbRPGb4OOy3MRaoF1m3jxwnPkQwxezDiqJTydCbYcBu0sKwURAZOd5QK922MsOsnrLjNlpRDmuH0VFhb5"
   "uN2I5mM3NvMnP2Or19O1Bk//iGD6AyJfiZFcii+FsDrJhbzw6lakEV7O/EnD0kk2l7I0VMtg1xZBbEw7P6+V9zz5cAzaaq7EB0mC"
   "E+jJckSzSETBN+7lyVD8gwmHYxxZfPnUM/yvPbMU9L3xWD/z6HHwO6r+9m7BT+2pHjBC");
-  
+  // clang-format on
 
   deserializeAndVerify(base64Serialization, Some(2));
 }
 
 TEST(psm_DeserializeCert, preNsIX509CertListReplacement)
 {
-  
-  
-  
-  
-  
+  // This was the serialized output of test
+  // "good.include-subdomains.pinning.example.com" // in
+  // security/manager/ssl/tests/unit/test_cert_chains.js The serialized output
+  // was generated before we replace nsIX509CertList with Array<nsIX509Cert>, so
+  // it had the old version of transportSecurityInfo.
   nsCString base64Serialization(
       "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAAAAgA"
       "AAAAAAAAAAAAAAAAAAAEAMQFmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAA"
@@ -328,8 +329,8 @@ TEST(psm_DeserializeCert, preNsIX509CertListReplacement)
 
 TEST(psm_DeserializeCert, preNsIX509CertListReplacementV2)
 {
-  
-  
+  // Same as the above test, however, this is the v2 version of the
+  // serialization.
   nsCString base64Serialization(
       "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAAAAgA"
       "AAAAAAAAAAAAAAAAAAAEAMgFmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAA"
@@ -390,10 +391,10 @@ TEST(psm_DeserializeCert, preNsIX509CertListReplacementV2)
 
 TEST(psm_DeserializeCert, preNsIX509CertListReplacementWithFailedChain)
 {
-  
-  
-  
-  
+  // This was the serialized output of test "expired.example.com"
+  // in security/manager/ssl/tests/unit/test_cert_chains.js
+  // The serialized output was generated before we replace nsIX509CertList with
+  // Array<nsIX509Cert>, so it had the old version of transportSecurityInfo.
   nsCString base64Serialization(
       "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAAABAA"
       "AAAAAAAAA///gCwAAAAEAMQFmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAA"
@@ -450,8 +451,8 @@ TEST(psm_DeserializeCert, preNsIX509CertListReplacementWithFailedChain)
 
 TEST(psm_DeserializeCert, preNsIX509CertListReplacementWithFailedChainV2)
 {
-  
-  
+  // Same as the above test, however, this is the v2 version of the
+  // serialization.
   nsCString base64Serialization(
       "FnhllAKWRHGAlo+ESXykKAAAAAAAAAAAwAAAAAAAAEaphjojH6pBabDSgSnsfLHeAAAABAA"
       "AAAAAAAAA///gCwAAAAEAMgFmCjImkVxP+7sgiYWmMt8FvcOXmlQiTNWFiWlrbpbqgwAAAA"
