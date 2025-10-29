@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "AncestorIterator.h"
 #include "BrowserChild.h"
 #include "ChildIterator.h"
 #include "ContentParent.h"
@@ -926,22 +927,40 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
     return NS_OK;
   }
 
-  
-  
-  
-  Element* previousFocusedElementPtr = windowPtr->GetFocusedElement();
-  if (!previousFocusedElementPtr) {
+  const Element* focusWithinElement = [&]() -> Element* {
+    if (auto* el = Element::FromNode(aContent)) {
+      return el;
+    }
+    if (auto* shadow = ShadowRoot::FromNode(aContent)) {
+      
+      
+      
+      return shadow->Host();
+    }
+    
+    return nullptr;
+  }();
+  if (!focusWithinElement ||
+      !focusWithinElement->State().HasAtLeastOneOfStates(
+          ElementState::FOCUS | ElementState::FOCUS_WITHIN)) {
     return NS_OK;
   }
 
-  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(
-          previousFocusedElementPtr, aContent)) {
+  
+  
+  
+  RefPtr previousFocusedElement = windowPtr->GetFocusedElement();
+  if (!previousFocusedElement) {
+    
+    
+    for (auto* el :
+         focusWithinElement->InclusiveFlatTreeAncestorsOfType<Element>()) {
+      el->RemoveStates(ElementState::FOCUS_WITHIN, true);
+    }
     return NS_OK;
   }
 
   RefPtr<nsPIDOMWindowOuter> window = windowPtr;
-  RefPtr<Element> previousFocusedElement = previousFocusedElementPtr;
-
   RefPtr<Element> newFocusedElement = [&]() -> Element* {
     if (auto* sr = ShadowRoot::FromNode(aContent)) {
       if (sr->IsUAWidget() && sr->Host()->IsHTMLElement(nsGkAtoms::input)) {
@@ -1014,7 +1033,7 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
-    NotifyFocusStateChange(previousFocusedElement, newFocusedElement, 0,
+    NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
                             false, false);
   } else {
     
