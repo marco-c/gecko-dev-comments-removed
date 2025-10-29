@@ -930,6 +930,26 @@ void MacroAssemblerRiscv64::Ceil_w_s(Register rd, FPURegister fs,
       Inexact);
 }
 
+void MacroAssemblerRiscv64::Ceil_l_d(Register rd, FPURegister fs,
+                                     Register result, bool Inexact) {
+  RoundFloatingPointToInteger(
+      rd, fs, result,
+      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
+        masm->fcvt_l_d(dst, src, RUP);
+      },
+      Inexact);
+}
+
+void MacroAssemblerRiscv64::Ceil_l_s(Register rd, FPURegister fs,
+                                     Register result, bool Inexact) {
+  RoundFloatingPointToInteger(
+      rd, fs, result,
+      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
+        masm->fcvt_l_s(dst, src, RUP);
+      },
+      Inexact);
+}
+
 void MacroAssemblerRiscv64::Ceil_w_d(Register rd, FPURegister fs,
                                      Register result, bool Inexact) {
   RoundFloatingPointToInteger(
@@ -956,6 +976,46 @@ void MacroAssemblerRiscv64::Floor_w_d(Register rd, FPURegister fs,
       rd, fs, result,
       [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
         masm->fcvt_w_d(dst, src, RDN);
+      },
+      Inexact);
+}
+
+void MacroAssemblerRiscv64::Floor_l_s(Register rd, FPURegister fs,
+                                      Register result, bool Inexact) {
+  RoundFloatingPointToInteger(
+      rd, fs, result,
+      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
+        masm->fcvt_l_s(dst, src, RDN);
+      },
+      Inexact);
+}
+
+void MacroAssemblerRiscv64::Floor_l_d(Register rd, FPURegister fs,
+                                      Register result, bool Inexact) {
+  RoundFloatingPointToInteger(
+      rd, fs, result,
+      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
+        masm->fcvt_l_d(dst, src, RDN);
+      },
+      Inexact);
+}
+
+void MacroAssemblerRiscv64::RoundMaxMag_l_s(Register rd, FPURegister fs,
+                                            Register result, bool Inexact) {
+  RoundFloatingPointToInteger(
+      rd, fs, result,
+      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
+        masm->fcvt_l_s(dst, src, RMM);
+      },
+      Inexact);
+}
+
+void MacroAssemblerRiscv64::RoundMaxMag_l_d(Register rd, FPURegister fs,
+                                            Register result, bool Inexact) {
+  RoundFloatingPointToInteger(
+      rd, fs, result,
+      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
+        masm->fcvt_l_d(dst, src, RMM);
       },
       Inexact);
 }
@@ -3324,49 +3384,51 @@ void MacroAssembler::callWithABINoProfiler(const Address& fun, ABIType result) {
 void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
                                        Label* fail) {
   UseScratchRegisterScope temps(this);
-  ScratchDoubleScope fscratch(*this);
-  Label performCeil, done;
-  
-  loadConstantDouble(0, fscratch);
-  branchDouble(Assembler::DoubleGreaterThan, src, fscratch, &performCeil);
-  loadConstantDouble(-1.0, fscratch);
-  branchDouble(Assembler::DoubleLessThanOrEqual, src, fscratch, &performCeil);
-
   Register scratch = temps.Acquire();
+
+  
+  Ceil_l_d(dest, src);
+
   
   {
-    moveFromDoubleHi(src, scratch);
-    branch32(Assembler::NotEqual, scratch, zero, fail);
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
 
-  bind(&performCeil);
-  Ceil_w_d(dest, src, scratch);
-  ma_b(scratch, Imm32(1), fail, NotEqual);
-  bind(&done);
+  
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    fmv_x_d(scratch, src);
+    ma_b(scratch, scratch, fail, Assembler::Signed);
+  }
+  bind(&notZero);
 }
 
 void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
   UseScratchRegisterScope temps(this);
-  ScratchDoubleScope fscratch(*this);
-  Label performCeil, done;
-  
-  loadConstantFloat32(0, fscratch);
-  branchFloat(Assembler::DoubleGreaterThan, src, fscratch, &performCeil);
-  loadConstantFloat32(-1.0, fscratch);
-  branchFloat(Assembler::DoubleLessThanOrEqual, src, fscratch, &performCeil);
-
   Register scratch = temps.Acquire();
+
+  
+  Ceil_l_s(dest, src);
+
   
   {
-    fmv_x_w(scratch, src);
-    branch32(Assembler::NotEqual, scratch, zero, fail);
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
-  bind(&performCeil);
-  Ceil_w_s(dest, src, scratch);
-  ma_b(scratch, Imm32(1), fail, NotEqual);
-  bind(&done);
+
+  
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    fmv_x_w(scratch, src);
+    ma_b(scratch, scratch, fail, Assembler::Signed);
+  }
+  bind(&notZero);
 }
+
 void MacroAssembler::comment(const char* msg) { Assembler::comment(msg); }
 
 template <typename T>
@@ -3525,26 +3587,46 @@ void MacroAssembler::flexibleRemainderPtr(Register rhs, Register srcDest,
 
 void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
-  JitSpew(JitSpew_Codegen, "[ %s", __FUNCTION__);
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  Floor_w_d(dest, src, scratch);
-  ma_b(scratch, Imm32(1), fail, NotEqual);
-  fmv_x_d(scratch, src);
-  ma_branch(fail, Equal, scratch, Operand(0x8000000000000000));
-  JitSpew(JitSpew_Codegen, "]");
+
+  
+  Floor_l_d(dest, src);
+
+  
+  {
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
+
+  
+  {
+    fclass_d(scratch, src);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal);
+  }
 }
+
 void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
-  JitSpew(JitSpew_Codegen, "[ %s", __FUNCTION__);
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  Floor_w_s(dest, src, scratch);
-  ma_b(scratch, Imm32(1), fail, NotEqual);
-  fmv_x_w(scratch, src);
-  ma_branch(fail, Equal, scratch, Operand(int32_t(0x80000000)));
-  JitSpew(JitSpew_Codegen, "]");
+
+  
+  Floor_l_s(dest, src);
+
+  
+  {
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
+  }
+
+  
+  {
+    fclass_s(scratch, src);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal);
+  }
 }
+
 void MacroAssembler::flush() {}
 void MacroAssembler::loadStoreBuffer(Register ptr, Register buffer) {
   ma_and(buffer, ptr, Imm32(int32_t(~gc::ChunkMask)));
@@ -3966,19 +4048,27 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
 void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
   JitSpew(JitSpew_Codegen, "[ %s", __FUNCTION__);
-  ScratchDoubleScope fscratch(*this);
   Label negative, done;
-  
+
   
   {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    fmv_x_w(scratch, src);
-    ma_branch(fail, Equal, scratch, Operand(int32_t(0x80000000)));
+
     fmv_w_x(temp, zero);
-    ma_compareF32(scratch, DoubleLessThan, src, temp);
-    ma_branch(&negative, Equal, scratch, Operand(1));
+    ma_compareF32(scratch, Assembler::DoubleLessThan, src, temp);
+    ma_b(scratch, Imm32(0), &negative, Assembler::NotEqual, ShortJump);
   }
+
+  
+  {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    fclass_s(scratch, src);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Assembler::Equal);
+  }
+
   
   
   
@@ -3986,18 +4076,8 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
   
   {
     
-    
-    
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    RoundFloatingPointToInteger(
-        dest, src, scratch,
-        [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
-          masm->fcvt_w_s(dst, src, RMM);
-        },
-        false);
-    ma_b(scratch, Imm32(1), fail, NotEqual);
-    jump(&done);
+    RoundMaxMag_l_s(dest, src);
+    ma_branch(&done);
   }
 
   
@@ -4008,50 +4088,53 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
   bind(&negative);
   {
     
+    loadConstantFloat32(-0.5f, temp);
+    branchFloat(Assembler::DoubleGreaterThanOrEqual, src, temp, fail);
+
     
-    Label join;
-    loadConstantFloat32(GetBiggestNumberLessThan(0.5), temp);
-    loadConstantFloat32(-0.5, fscratch);
-    branchFloat(Assembler::DoubleLessThan, src, fscratch, &join);
-    loadConstantFloat32(0.5, temp);
-    bind(&join);
-    addFloat32(src, temp);
+    loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
+    fadd_s(temp, src, temp);
+
     
-    
-    
+    Floor_l_s(dest, temp);
+  }
+
+  
+  bind(&done);
+  {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    RoundFloatingPointToInteger(
-        dest, temp, scratch,
-        [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
-          masm->fcvt_w_s(dst, src, RDN);
-        },
-        false);
-    ma_b(scratch, Imm32(1), fail, NotEqual);
-    
-    branchTest32(Assembler::Zero, dest, dest, fail);
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
-  bind(&done);
   JitSpew(JitSpew_Codegen, "]");
 }
 
 void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
                                         FloatRegister temp, Label* fail) {
   JitSpew(JitSpew_Codegen, "[ %s", __FUNCTION__);
-
-  ScratchDoubleScope fscratch(*this);
   Label negative, done;
-  
+
   
   {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    fmv_x_d(scratch, src);
-    ma_branch(fail, Equal, scratch, Operand(0x8000000000000000));
+
     fmv_d_x(temp, zero);
-    ma_compareF64(scratch, DoubleLessThan, src, temp);
-    ma_branch(&negative, Equal, scratch, Operand(1));
+    ma_compareF64(scratch, Assembler::DoubleLessThan, src, temp);
+    ma_b(scratch, Imm32(0), &negative, Assembler::NotEqual, ShortJump);
   }
+
+  
+  {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+
+    fclass_d(scratch, src);
+    ma_b(scratch, Imm32(FClassFlag::kNegativeZero), fail, Equal);
+  }
+
   
   
   
@@ -4059,18 +4142,8 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   
   {
     
-    
-    
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    RoundFloatingPointToInteger(
-        dest, src, scratch,
-        [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
-          masm->fcvt_w_d(dst, src, RMM);
-        },
-        false);
-    ma_b(scratch, Imm32(1), fail, NotEqual);
-    jump(&done);
+    RoundMaxMag_l_d(dest, src);
+    ma_branch(&done);
   }
 
   
@@ -4081,30 +4154,26 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   bind(&negative);
   {
     
+    loadConstantDouble(-0.5, temp);
+    branchDouble(Assembler::DoubleGreaterThanOrEqual, src, temp, fail);
+
     
-    Label join;
     loadConstantDouble(GetBiggestNumberLessThan(0.5), temp);
-    loadConstantDouble(-0.5, fscratch);
-    branchDouble(Assembler::DoubleLessThan, src, fscratch, &join);
-    loadConstantDouble(0.5, temp);
-    bind(&join);
-    addDouble(src, temp);
+    fadd_d(temp, src, temp);
+
     
-    
-    
+    Floor_l_d(dest, temp);
+  }
+
+  
+  bind(&done);
+  {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
-    RoundFloatingPointToInteger(
-        dest, temp, scratch,
-        [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
-          masm->fcvt_w_d(dst, src, RDN);
-        },
-        false);
-    ma_b(scratch, Imm32(1), fail, NotEqual);
-    
-    branchTest32(Assembler::Zero, dest, dest, fail);
+
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
-  bind(&done);
   JitSpew(JitSpew_Codegen, "]");
 }
 
@@ -4171,86 +4240,51 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
 }
 void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
-  UseScratchRegisterScope temps(this);
+  UseScratchRegisterScope temps(*this);
   Register scratch = temps.Acquire();
-  Label zeroCase, done;
+
   
-  
-  
-  RoundFloatingPointToInteger(
-      dest, src, scratch,
-      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
-        masm->fcvt_w_d(dst, src, RTZ);
-      },
-      false);
-  ma_b(scratch, Imm32(1), fail, NotEqual);
-  
-  branch32(Assembler::Equal, dest, Imm32(0), &zeroCase);
-  jump(&done);
-  
-  
-  
+  Trunc_l_d(dest, src);
+
   
   {
-    bind(&zeroCase);
-
-    
-    
-    
-    ScratchDoubleScope fscratch(*this);
-    fmv_d_x(fscratch, zero);
-    ma_compareF64(scratch, DoubleLessThan, src, fscratch);
-    ma_b(scratch, Imm32(1), fail, Equal);
-
-    
-    fmv_x_d(dest, src);
-    branchTestPtr(Assembler::Signed, dest, dest, fail);
-    movePtr(ImmWord(0), dest);
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
 
-  bind(&done);
+  
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    fmv_x_d(scratch, src);
+    ma_b(scratch, scratch, fail, Assembler::Signed);
+  }
+  bind(&notZero);
 }
 void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  Label zeroCase, done;
+
   
-  
-  
-  RoundFloatingPointToInteger(
-      dest, src, scratch,
-      [](MacroAssemblerRiscv64* masm, Register dst, FPURegister src) {
-        masm->fcvt_w_s(dst, src, RTZ);
-      },
-      false);
-  ma_b(scratch, Imm32(1), fail, NotEqual);
-  
-  branch32(Assembler::Equal, dest, Imm32(0), &zeroCase);
-  jump(&done);
-  
-  
-  
+  Trunc_l_s(dest, src);
+
   
   {
-    bind(&zeroCase);
-
-    
-    
-    
-    ScratchDoubleScope fscratch(*this);
-    fmv_w_x(fscratch, zero);
-    ma_compareF32(scratch, DoubleLessThan, src, fscratch);
-    ma_b(scratch, Imm32(1), fail, Equal);
-
-    
-    fmv_x_w(dest, src);
-    branchTestPtr(Assembler::Signed, dest, dest, fail);
-    movePtr(ImmWord(0), dest);
+    move32SignExtendToPtr(dest, scratch);
+    branchPtr(Assembler::NotEqual, dest, scratch, fail);
   }
 
-  bind(&done);
+  
+  Label notZero;
+  ma_b(dest, zero, &notZero, Assembler::NotEqual, ShortJump);
+  {
+    fmv_x_w(scratch, src);
+    ma_b(scratch, scratch, fail, Assembler::Signed);
+  }
+  bind(&notZero);
 }
+
 void MacroAssembler::wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access,
                                         AtomicOp op, Register value,
                                         const Address& mem, Register valueTemp,

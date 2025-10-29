@@ -451,6 +451,7 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   void Clear_if_nan_d(Register rd, FPURegister fs);
   void Clear_if_nan_s(Register rd, FPURegister fs);
+
   
   void Trunc_uw_d(Register rd, FPURegister fs, Register result = InvalidReg,
                   bool Inexact = false);
@@ -512,12 +513,36 @@ class MacroAssemblerRiscv64 : public Assembler {
                 bool Inexact = false);
 
   
+  void Ceil_l_s(Register rd, FPURegister fs, Register result = InvalidReg,
+                bool Inexact = false);
+
+  
+  void Ceil_l_d(Register rd, FPURegister fs, Register result = InvalidReg,
+                bool Inexact = false);
+
+  
   void Floor_w_s(Register rd, FPURegister fs, Register result = InvalidReg,
                  bool Inexact = false);
 
   
   void Floor_w_d(Register rd, FPURegister fs, Register result = InvalidReg,
                  bool Inexact = false);
+
+  
+  void Floor_l_s(Register rd, FPURegister fs, Register result = InvalidReg,
+                 bool Inexact = false);
+
+  
+  void Floor_l_d(Register rd, FPURegister fs, Register result = InvalidReg,
+                 bool Inexact = false);
+
+  
+  void RoundMaxMag_l_s(Register rd, FPURegister fs,
+                       Register result = InvalidReg, bool Inexact = false);
+
+  
+  void RoundMaxMag_l_d(Register rd, FPURegister fs,
+                       Register result = InvalidReg, bool Inexact = false);
 
   void Clz32(Register rd, Register rs);
   void Ctz32(Register rd, Register rs);
