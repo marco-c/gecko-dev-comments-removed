@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(JSON.isRawJSON, 'length', {
   value: 1,
   writable: false,

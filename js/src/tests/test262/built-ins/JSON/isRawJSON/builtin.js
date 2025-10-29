@@ -29,7 +29,6 @@
 
 
 
-
 assert(Object.isExtensible(JSON.isRawJSON), "JSON.isRawJSON is extensible");
 assert.sameValue(
   typeof JSON.isRawJSON,

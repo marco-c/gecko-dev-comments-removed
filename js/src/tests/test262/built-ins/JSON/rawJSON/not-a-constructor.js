@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(isConstructor(JSON.rawJSON), false, 'isConstructor(JSON.rawJSON) must return false');
 
 assert.throws(TypeError, () => {

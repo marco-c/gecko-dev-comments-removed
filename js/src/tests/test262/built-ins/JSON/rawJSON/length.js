@@ -20,7 +20,6 @@
 
 
 
-
 verifyProperty(JSON.rawJSON, 'length', {
   value: 1,
   writable: false,

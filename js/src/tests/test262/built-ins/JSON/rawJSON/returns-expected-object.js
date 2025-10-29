@@ -16,7 +16,6 @@
 
 
 
-
 function assertIsRawJSON(rawJSON, expectedRawJSONValue) {
   assert.sameValue(Object.getPrototypeOf(rawJSON), null, "RawJSON object should have null prototype");
   assert(Object.hasOwn(rawJSON, "rawJSON"), "RawJSON object should have rawJSON own property");

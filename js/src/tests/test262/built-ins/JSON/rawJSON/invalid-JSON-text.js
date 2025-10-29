@@ -18,7 +18,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   JSON.rawJSON(Symbol('123'));
 });

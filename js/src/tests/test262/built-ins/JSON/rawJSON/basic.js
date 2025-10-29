@@ -18,7 +18,6 @@
 
 
 
-
 assert.sameValue(JSON.stringify(JSON.rawJSON(1)), '1');
 assert.sameValue(JSON.stringify(JSON.rawJSON(1.1)), '1.1');
 assert.sameValue(JSON.stringify(JSON.rawJSON(-1)), '-1');

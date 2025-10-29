@@ -9,7 +9,6 @@
 
 
 
-
 function assertOnlyOwnProperties(object, props, message) {
   assert.compareArray(Object.getOwnPropertyNames(object), props, `${message}: object should have no other properties than expected`);
   assert.compareArray(Object.getOwnPropertySymbols(object), [], `${message}: object should have no own symbol properties`);

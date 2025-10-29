@@ -18,7 +18,6 @@
 
 
 
-
 verifyProperty(JSON, 'rawJSON', {
   enumerable: false,
   writable: true,
