@@ -271,6 +271,27 @@ nsFormFillController::MarkAsAutoCompletableField(Element* aElement) {
 }
 
 NS_IMETHODIMP
+nsFormFillController::SetControlledElement(Element* aElement) {
+  if (!aElement ||
+      !aElement->IsAnyOfHTMLElements(nsGkAtoms::input, nsGkAtoms::textarea)) {
+    return NS_OK;
+  }
+
+  MaybeStartControllingInput(aElement);
+
+  
+  if (!mControlledElement) {
+    return NS_OK;
+  }
+
+  
+  
+  MaybeCancelAttributeChangeTask();
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsFormFillController::GetControlledElement(Element** aElement) {
   *aElement = mControlledElement;
   NS_IF_ADDREF(*aElement);
@@ -864,21 +885,7 @@ void nsFormFillController::MaybeStartControllingInput(Element* aElement) {
 }
 
 nsresult nsFormFillController::HandleFocus(Element* aElement) {
-  if (!aElement ||
-      !aElement->IsAnyOfHTMLElements(nsGkAtoms::input, nsGkAtoms::textarea)) {
-    return NS_OK;
-  }
-
-  MaybeStartControllingInput(aElement);
-
-  
-  if (!mControlledElement) {
-    return NS_OK;
-  }
-
-  
-  
-  MaybeCancelAttributeChangeTask();
+  MOZ_TRY(SetControlledElement(aElement));
 
   
   
@@ -1135,7 +1142,8 @@ void nsFormFillController::StartControllingInput(Element* aElement) {
 }
 
 bool nsFormFillController::IsFocusedInputControlled() const {
-  return mControlledElement && mController && !ReadOnly(mControlledElement);
+  return mControlledElement && mController && !ReadOnly(mControlledElement) &&
+         nsFocusManager::GetFocusedElementStatic() == mControlledElement;
 }
 
 void nsFormFillController::StopControllingInput() {
