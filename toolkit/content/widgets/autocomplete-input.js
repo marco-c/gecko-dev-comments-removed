@@ -457,8 +457,7 @@
     }
 
     handleKeyDown(aEvent) {
-      
-      if (aEvent.defaultPrevented && !aEvent.urlbarDeferred) {
+      if (aEvent.defaultPrevented) {
         return false;
       }
 
