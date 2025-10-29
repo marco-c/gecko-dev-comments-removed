@@ -10,36 +10,52 @@
 
 #include "include/core/SkImage.h"
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkShader.h"
-#include "include/gpu/graphite/ContextOptions.h"
+#include "include/core/SkSize.h"
+#include "include/core/SkSpan.h"
+#include "include/core/SkTypes.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
-#include "include/gpu/graphite/Recorder.h"
+#include "include/gpu/graphite/Recorder.h"  
 #include "include/private/base/SingleOwner.h"
+#include "include/private/base/SkThreadAnnotations.h"
 
 #if defined(GPU_TEST_UTILS)
 #include "include/private/base/SkMutex.h"
 #endif
 
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <vector>
 
+class SkColorInfo;
+class SkSurface;
+enum SkYUVColorSpace : int;
 class SkColorSpace;
-class SkRuntimeEffect;
 class SkTraceMemoryDump;
+struct SkIRect;
+struct SkImageInfo;
+
+namespace skcpu {
+class ContextImpl;
+class Recorder;
+}  
+
+namespace skgpu {
+enum class BackendApi : unsigned int;
+enum class GpuStatsFlags : uint32_t;
+}
 
 namespace skgpu::graphite {
 
 class BackendTexture;
 class Buffer;
 class ClientMappedBufferManager;
-class Context;
 class ContextPriv;
-class GlobalCache;
-class PaintOptions;
+struct ContextOptions;
 class PrecompileContext;
 class QueueManager;
-class Recording;
 class ResourceProvider;
 class SharedContext;
 class TextureProxy;
@@ -56,14 +72,15 @@ public:
     BackendApi backend() const;
 
     std::unique_ptr<Recorder> makeRecorder(const RecorderOptions& = {});
+    std::unique_ptr<skcpu::Recorder> makeCPURecorder();
 
     
 
 
     std::unique_ptr<PrecompileContext> makePrecompileContext();
 
-    bool insertRecording(const InsertRecordingInfo&);
-    bool submit(SyncToCpu = SyncToCpu::kNo);
+    InsertStatus insertRecording(const InsertRecordingInfo&);
+    bool submit(SubmitInfo submitInfo = {});
 
     
     bool hasUnfinishedGpuWork() const;
@@ -261,6 +278,19 @@ public:
     GpuStatsFlags supportedGpuStats() const;
 
     
+
+
+
+
+
+    void startCapture();
+
+    
+
+
+    void endCapture();
+
+    
     ContextPriv priv();
     const ContextPriv priv() const;  
 
@@ -291,6 +321,12 @@ private:
     friend class ContextCtorAccessor;
 
     struct PixelTransferResult {
+        PixelTransferResult();
+        PixelTransferResult(const PixelTransferResult&);
+        PixelTransferResult(PixelTransferResult&&);
+        PixelTransferResult& operator=(const PixelTransferResult&);
+        ~PixelTransferResult();
+
         using ConversionFn = void(void* dst, const void* mappedBuffer);
         
         
@@ -357,6 +393,7 @@ private:
     std::unique_ptr<ResourceProvider> fResourceProvider;
     std::unique_ptr<QueueManager> fQueueManager;
     std::unique_ptr<ClientMappedBufferManager> fMappedBufferManager;
+    std::unique_ptr<const skcpu::ContextImpl> fCPUContext;
 
     
     

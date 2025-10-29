@@ -57,6 +57,8 @@ typedef enum skcms_TFType {
     skcms_TFType_PQish,
     skcms_TFType_HLGish,
     skcms_TFType_HLGinvish,
+    skcms_TFType_PQ,
+    skcms_TFType_HLG,
 } skcms_TFType;
 
 
@@ -87,20 +89,47 @@ static inline bool skcms_TransferFunction_makeHLGish(skcms_TransferFunction* fn,
 }
 
 
-static inline bool skcms_TransferFunction_makePQ(skcms_TransferFunction* tf) {
-    return skcms_TransferFunction_makePQish(tf, -107/128.0f,         1.0f,   32/2523.0f
-                                              , 2413/128.0f, -2392/128.0f, 8192/1305.0f);
-}
 
-static inline bool skcms_TransferFunction_makeHLG(skcms_TransferFunction* tf) {
-    return skcms_TransferFunction_makeHLGish(tf, 2.0f, 2.0f
-                                               , 1/0.17883277f, 0.28466892f, 0.55991073f);
-}
+
+
+
+
+
+
+
+
+
+SKCMS_API void skcms_TransferFunction_makePQ(
+    skcms_TransferFunction*,
+    float hdr_reference_white_luminance);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SKCMS_API void skcms_TransferFunction_makeHLG(
+    skcms_TransferFunction*,
+    float hdr_reference_white_luminance,
+    float peak_luminance,
+    float system_gamma);
 
 
 SKCMS_API bool skcms_TransferFunction_isSRGBish(const skcms_TransferFunction*);
 SKCMS_API bool skcms_TransferFunction_isPQish  (const skcms_TransferFunction*);
 SKCMS_API bool skcms_TransferFunction_isHLGish (const skcms_TransferFunction*);
+SKCMS_API bool skcms_TransferFunction_isPQ     (const skcms_TransferFunction*);
+SKCMS_API bool skcms_TransferFunction_isHLG    (const skcms_TransferFunction*);
 
 
 typedef union skcms_Curve {

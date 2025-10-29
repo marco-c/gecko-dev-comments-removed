@@ -21,14 +21,18 @@ struct SkColorSpaceXformSteps {
     struct Flags {
         bool unpremul         = false;
         bool linearize        = false;
+        bool src_ootf         = false;
         bool gamut_transform  = false;
+        bool dst_ootf         = false;
         bool encode           = false;
         bool premul           = false;
 
         constexpr uint32_t mask() const {
             return (unpremul        ?  1 : 0)
                  | (linearize       ?  2 : 0)
+                 | (src_ootf        ? 32 : 0)
                  | (gamut_transform ?  4 : 0)
+                 | (dst_ootf        ? 64 : 0)
                  | (encode          ?  8 : 0)
                  | (premul          ? 16 : 0);
         }
@@ -51,6 +55,10 @@ struct SkColorSpaceXformSteps {
     skcms_TransferFunction fSrcTF,     
                            fDstTFInv;  
     float fSrcToDstMatrix[9];          
+    float fSrcOotf[4];                 
+                                       
+    float fDstOotf[4];                 
+                                       
 };
 
 #endif

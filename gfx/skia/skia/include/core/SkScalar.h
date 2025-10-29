@@ -136,18 +136,6 @@ static inline SkScalar SkScalarInterp(SkScalar A, SkScalar B, SkScalar t) {
 
 
 
-
-
-
-
-
-
-SkScalar SkScalarInterpFunc(SkScalar searchKey, const SkScalar keys[],
-                            const SkScalar values[], int length);
-
-
-
-
 static inline bool SkScalarsEqual(const SkScalar a[], const SkScalar b[], int n) {
     SkASSERT(n >= 0);
     for (int i = 0; i < n; ++i) {

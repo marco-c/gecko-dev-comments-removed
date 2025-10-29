@@ -16,14 +16,18 @@
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkIDChangeListener.h"
 #include "include/private/SkPathRef.h"
 #include "include/private/base/SkDebug.h"
 #include "src/core/SkPathEnums.h"
+#include "src/core/SkPathRaw.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <optional>
 #include <utility>
 
 class SkMatrix;
@@ -36,14 +40,20 @@ static_assert(3 == static_cast<int>(SkPathFillType::kInverseEvenOdd), "fill_type
 
 
 struct SkPathVerbAnalysis {
-    int      points, weights;
+    size_t   points, weights;
     unsigned segmentMask;
     bool     valid;
 };
 
 class SkPathPriv {
 public:
-    static SkPathVerbAnalysis AnalyzeVerbs(const uint8_t verbs[], int count);
+    static SkPathConvexity ComputeConvexity(SkSpan<const SkPoint> pts,
+                                            SkSpan<const SkPathVerb> points,
+                                            SkSpan<const float> conicWeights);
+
+    static uint8_t ComputeSegmentMask(SkSpan<const SkPathVerb>);
+
+    static SkPathVerbAnalysis AnalyzeVerbs(SkSpan<const SkPathVerb> verbs);
 
     
     
@@ -71,46 +81,42 @@ public:
 
 
 
+    static SkPathFirstDirection ComputeFirstDirection(const SkPathRaw&);
     static SkPathFirstDirection ComputeFirstDirection(const SkPath&);
 
-    static bool IsClosedSingleContour(const SkPath& path) {
-        int verbCount = path.countVerbs();
-        if (verbCount == 0)
+    static bool IsClosedSingleContour(SkSpan<const SkPathVerb> verbs) {
+        if (verbs.empty()) {
             return false;
+        }
+
         int moveCount = 0;
-        auto verbs = path.fPathRef->verbsBegin();
-        for (int i = 0; i < verbCount; i++) {
-            switch (verbs[i]) {
-                case SkPath::Verb::kMove_Verb:
-                    moveCount += 1;
-                    if (moveCount > 1) {
+        for (const auto& verb : verbs) {
+            switch (verb) {
+                case SkPathVerb::kMove:
+                    if (++moveCount > 1) {
                         return false;
                     }
                     break;
-                case SkPath::Verb::kClose_Verb:
-                    if (i == verbCount - 1) {
-                        return true;
-                    }
-                    return false;
-                default: break;
+                case SkPathVerb::kClose:
+                    return &verb == &verbs.back();
+                default:
+                    break;
             }
         }
         return false;
     }
 
-    
-    
-    
-    static int LeadingMoveToCount(const SkPath& path) {
-        int verbCount = path.countVerbs();
-        auto verbs = path.fPathRef->verbsBegin();
-        for (int i = 0; i < verbCount; i++) {
-            if (verbs[i] != SkPath::Verb::kMove_Verb) {
-                return i;
-            }
-        }
-        return verbCount; 
+    static bool IsClosedSingleContour(const SkPath& path) {
+        return IsClosedSingleContour(path.fPathRef->verbs());
     }
+
+    
+
+
+
+
+    static std::pair<SkPathDirection, unsigned>
+    TransformDirAndStart(const SkMatrix&, bool isRRect, SkPathDirection dir, unsigned start);
 
     static void AddGenIDChangeListener(const SkPath& path, sk_sp<SkIDChangeListener> listener) {
         path.fPathRef->addGenIDChangeListener(std::move(listener));
@@ -121,14 +127,21 @@ public:
 
 
 
-    static bool IsSimpleRect(const SkPath& path, bool isSimpleFill, SkRect* rect,
-                             SkPathDirection* direction, unsigned* start);
+    static std::optional<SkPathRectInfo> IsSimpleRect(const SkPath& path, bool isSimpleFill);
+
+    
+    
+    
+    
+    
+    static SkRRect DeduceRRectFromContour(const SkRect& bounds,
+                                          SkSpan<const SkPoint>, SkSpan<const SkPathVerb>);
 
     
 
 
 
-    static void CreateDrawArcPath(SkPath* path, const SkArc& arc, bool isFillNoPathEffect);
+    static SkPath CreateDrawArcPath(const SkArc& arc, bool isFillNoPathEffect);
 
     
 
@@ -139,30 +152,6 @@ public:
     static void ShrinkToFit(SkPath* path) {
         path->shrinkToFit();
     }
-
-    
-
-
-
-
-
-
-    struct Verbs {
-    public:
-        Verbs(const SkPath& path) : fPathRef(path.fPathRef.get()) {}
-        struct Iter {
-            void operator++() { fVerb++; }
-            bool operator!=(const Iter& b) const { return fVerb != b.fVerb; }
-            SkPath::Verb operator*() { return static_cast<SkPath::Verb>(*fVerb); }
-            const uint8_t* fVerb;
-        };
-        Iter begin() { return Iter{fPathRef->verbsBegin()}; }
-        Iter end() { return Iter{fPathRef->verbsEnd()}; }
-    private:
-        Verbs(const Verbs&) = delete;
-        Verbs& operator=(const Verbs&) = delete;
-        SkPathRef* fPathRef;
-    };
 
     
 
@@ -188,15 +177,15 @@ public:
                                              : path.fPathRef->verbsEnd(),
                           path.fPathRef->points(), path.fPathRef->conicWeights()) {
         }
-        Iterate(const uint8_t* verbsBegin, const uint8_t* verbsEnd, const SkPoint* points,
+        Iterate(const SkPathVerb* verbsBegin, const SkPathVerb* verbsEnd, const SkPoint* points,
                 const SkScalar* weights)
                 : fVerbsBegin(verbsBegin), fVerbsEnd(verbsEnd), fPoints(points), fWeights(weights) {
         }
         SkPath::RangeIter begin() { return {fVerbsBegin, fPoints, fWeights}; }
         SkPath::RangeIter end() { return {fVerbsEnd, nullptr, nullptr}; }
     private:
-        const uint8_t* fVerbsBegin;
-        const uint8_t* fVerbsEnd;
+        const SkPathVerb* fVerbsBegin;
+        const SkPathVerb* fVerbsEnd;
         const SkPoint* fPoints;
         const SkScalar* fWeights;
     };
@@ -204,7 +193,7 @@ public:
     
 
 
-    static const uint8_t* VerbData(const SkPath& path) {
+    static const SkPathVerb* VerbData(const SkPath& path) {
         return path.fPathRef->verbsBegin();
     }
 
@@ -235,57 +224,14 @@ public:
 
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static bool IsOval(const SkPath& path, SkRect* rect, SkPathDirection* dir, unsigned* start) {
-        bool isCCW = false;
-        bool result = path.fPathRef->isOval(rect, &isCCW, start);
-        if (dir && result) {
-            *dir = isCCW ? SkPathDirection::kCCW : SkPathDirection::kCW;
-        }
-        return result;
+    static std::optional<SkPathOvalInfo> IsOval(const SkPath& path) {
+        return path.fPathRef->isOval();
     }
 
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static bool IsRRect(const SkPath& path, SkRRect* rrect, SkPathDirection* dir,
-                        unsigned* start) {
-        bool isCCW = false;
-        bool result = path.fPathRef->isRRect(rrect, &isCCW, start);
-        if (dir && result) {
-            *dir = isCCW ? SkPathDirection::kCCW : SkPathDirection::kCW;
-        }
-        return result;
+    static std::optional<SkPathRRectInfo> IsRRect(const SkPath& path) {
+        return path.fPathRef->isRRect();
     }
 
     
@@ -306,9 +252,6 @@ public:
         return !(bounds.fLeft >= -max && bounds.fTop >= -max &&
                  bounds.fRight <= max && bounds.fBottom <= max);
     }
-    static bool TooBigForMath(const SkPath& path) {
-        return TooBigForMath(path.getBounds());
-    }
 
     
     static int PtsInIter(unsigned verb) {
@@ -325,6 +268,8 @@ public:
         SkASSERT(verb < std::size(gPtsInVerb));
         return gPtsInVerb[verb];
     }
+
+    static int PtsInIter(SkPathVerb verb) { return PtsInIter((unsigned)verb); }
 
     
     
@@ -343,10 +288,13 @@ public:
         return gPtsInVerb[verb];
     }
 
+    static int PtsInVerb(SkPathVerb verb) { return PtsInVerb((unsigned)verb); }
+
+    static bool IsAxisAligned(SkSpan<const SkPoint>);
     static bool IsAxisAligned(const SkPath& path);
 
-    static bool AllPointsEq(const SkPoint pts[], int count) {
-        for (int i = 1; i < count; ++i) {
+    static bool AllPointsEq(SkSpan<const SkPoint> pts) {
+        for (size_t i = 1; i < pts.size(); ++i) {
             if (pts[0] != pts[i]) {
                 return false;
             }
@@ -356,9 +304,16 @@ public:
 
     static int LastMoveToIndex(const SkPath& path) { return path.fLastMoveToIndex; }
 
-    static bool IsRectContour(const SkPath&, bool allowPartial, int* currVerb,
-                              const SkPoint** ptsPtr, bool* isClosed, SkPathDirection* direction,
-                              SkRect* rect);
+    struct RectContour {
+        SkRect          fRect;
+        bool            fIsClosed;
+        SkPathDirection fDirection;
+        size_t          fPointsConsumed,
+                        fVerbsConsumed;
+    };
+    static std::optional<RectContour> IsRectContour(SkSpan<const SkPoint> ptSpan,
+                                                    SkSpan<const SkPathVerb> vbSpan,
+                                                    bool allowPartial);
 
     
 
@@ -371,11 +326,30 @@ public:
 
 
 
-    static bool IsNestedFillRects(const SkPath&, SkRect rect[2],
+    static bool IsNestedFillRects(const SkPathRaw&, SkRect rect[2],
                                   SkPathDirection dirs[2] = nullptr);
+
+    static bool IsNestedFillRects(const SkPath& path, SkRect rect[2],
+                                  SkPathDirection dirs[2] = nullptr) {
+        return IsNestedFillRects(Raw(path), rect, dirs);
+    }
+
 
     static bool IsInverseFillType(SkPathFillType fill) {
         return (static_cast<int>(fill) & 2) != 0;
+    }
+
+    
+
+
+
+
+
+    static bool IsEffectivelyEmpty(const SkPath& path) {
+        return path.countVerbs() <= 1;
+    }
+    static bool IsEffectivelyEmpty(const SkPathBuilder& builder) {
+        return builder.verbs().size() <= 1;
     }
 
     
@@ -431,15 +405,75 @@ public:
         builder->privateReverseAddPath(reverseMe);
     }
 
+    static void ReversePathTo(SkPathBuilder* builder, const SkPath& reverseMe) {
+        builder->privateReversePathTo(reverseMe);
+    }
+
+    static SkPath ReversePath(const SkPath& reverseMe) {
+        SkPathBuilder bu;
+        bu.privateReverseAddPath(reverseMe);
+        return bu.detach();
+    }
+
+    static std::optional<SkPoint> GetPoint(const SkPathBuilder& builder, int index) {
+        if ((unsigned)index < (unsigned)builder.fPts.size()) {
+            return builder.fPts.at(index);
+        }
+        return std::nullopt;
+    }
+
+    static SkSpan<const SkPathVerb> GetVerbs(const SkPathBuilder& builder) {
+        return builder.fVerbs;
+    }
+
+    static int CountVerbs(const SkPathBuilder& builder) {
+        return builder.fVerbs.size();
+    }
+
     static SkPath MakePath(const SkPathVerbAnalysis& analysis,
                            const SkPoint points[],
-                           const uint8_t verbs[],
-                           int verbCount,
+                           SkSpan<const SkPathVerb> verbs,
                            const SkScalar conics[],
                            SkPathFillType fillType,
                            bool isVolatile) {
-        return SkPath::MakeInternal(analysis, points, verbs, verbCount, conics, fillType,
-                                    isVolatile);
+        return SkPath::MakeInternal(analysis, points, verbs, conics, fillType, isVolatile);
+    }
+
+    static SkPathRaw Raw(const SkPath& path) {
+        const SkPathRef* ref = path.fPathRef.get();
+        SkASSERT(ref);
+        const SkRect bounds = ref->isFinite()
+                                      ? ref->getBounds()
+                                      : SkRect{SK_FloatNaN, SK_FloatNaN, SK_FloatNaN, SK_FloatNaN};
+        return {
+                ref->pointSpan(),
+                ref->verbs(),
+                ref->conicSpan(),
+                bounds,
+                path.getFillType(),
+                path.isConvex(),
+                SkTo<uint8_t>(ref->getSegmentMasks()),
+        };
+    }
+
+    static SkPathRaw Raw(const SkPathBuilder& builder) {
+        const SkRect bounds = builder.isFinite()
+                                      ? builder.computeBounds()
+                                      : SkRect{SK_FloatNaN, SK_FloatNaN, SK_FloatNaN, SK_FloatNaN};
+        SkPathConvexity convexity = builder.fConvexity;
+        if (convexity == SkPathConvexity::kUnknown) {
+            convexity = SkPathPriv::ComputeConvexity(
+                    builder.fPts, builder.fVerbs, builder.fConicWeights);
+        }
+        return {
+                builder.points(),
+                builder.verbs(),
+                builder.conicWeights(),
+                bounds,
+                builder.fillType(),
+                SkPathConvexity_IsConvex(convexity),
+                SkTo<uint8_t>(builder.fSegmentMask),
+        };
     }
 };
 
@@ -449,8 +483,8 @@ public:
 
 
 class SkPathEdgeIter {
-    const uint8_t*  fVerbs;
-    const uint8_t*  fVerbsStop;
+    const SkPathVerb* fVerbs;
+    const SkPathVerb* fVerbsStop;
     const SkPoint*  fPts;
     const SkPoint*  fMoveToPtr;
     const SkScalar* fConicWeights;
@@ -459,12 +493,9 @@ class SkPathEdgeIter {
     bool            fNextIsNewContour;
     SkDEBUGCODE(bool fIsConic;)
 
-    enum {
-        kIllegalEdgeValue = 99
-    };
-
 public:
     SkPathEdgeIter(const SkPath& path);
+    SkPathEdgeIter(const SkPathRaw&);
 
     SkScalar conicWeight() const {
         SkASSERT(fIsConic);
@@ -472,16 +503,18 @@ public:
     }
 
     enum class Edge {
-        kLine  = SkPath::kLine_Verb,
-        kQuad  = SkPath::kQuad_Verb,
-        kConic = SkPath::kConic_Verb,
-        kCubic = SkPath::kCubic_Verb,
+        kLine = (int)SkPathVerb::kLine,
+        kQuad = (int)SkPathVerb::kQuad,
+        kConic = (int)SkPathVerb::kConic,
+        kCubic = (int)SkPathVerb::kCubic,
+        kInvalid = 99,
     };
 
-    static SkPath::Verb EdgeToVerb(Edge e) {
-        return SkPath::Verb(e);
+    static SkPathVerb EdgeToVerb(Edge e) {
+        return SkPathVerb(e);
     }
 
+    
     struct Result {
         const SkPoint*  fPts;   
         Edge            fEdge;
@@ -503,16 +536,14 @@ public:
         for (;;) {
             SkASSERT(fVerbs <= fVerbsStop);
             if (fVerbs == fVerbsStop) {
-                return fNeedsCloseLine
-                    ? closeline()
-                    : Result{ nullptr, Edge(kIllegalEdgeValue), false };
+                return fNeedsCloseLine ? closeline() : Result{nullptr, Edge::kInvalid, false};
             }
 
             SkDEBUGCODE(fIsConic = false;)
 
-            const auto v = *fVerbs++;
-            switch (v) {
-                case SkPath::kMove_Verb: {
+            const auto verb = *fVerbs++;
+            switch (verb) {
+                case SkPathVerb::kMove: {
                     if (fNeedsCloseLine) {
                         auto res = closeline();
                         fMoveToPtr = fPts++;
@@ -521,10 +552,11 @@ public:
                     fMoveToPtr = fPts++;
                     fNextIsNewContour = true;
                 } break;
-                case SkPath::kClose_Verb:
+                case SkPathVerb::kClose:
                     if (fNeedsCloseLine) return closeline();
                     break;
                 default: {
+                    unsigned v = static_cast<unsigned>(verb);
                     
                     const int pts_count = (v+2) / 2,
                               cws_count = (v & (v-1)) / 2;
@@ -534,7 +566,7 @@ public:
                     fPts           += pts_count;
                     fConicWeights  += cws_count;
 
-                    SkDEBUGCODE(fIsConic = (v == SkPath::kConic_Verb);)
+                    SkDEBUGCODE(fIsConic = (verb == SkPathVerb::kConic);)
                     SkASSERT(fIsConic == (cws_count > 0));
 
                     bool isNewContour = fNextIsNewContour;

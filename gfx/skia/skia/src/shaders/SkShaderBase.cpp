@@ -16,7 +16,25 @@
 #include "src/core/SkRasterPipelineOpList.h"
 #include "src/shaders/SkLocalMatrixShader.h"
 
+#include <atomic>
+
 class SkWriteBuffer;
+
+namespace {
+
+
+
+
+uint32_t next_unique_id() {
+    static std::atomic<uint32_t> gNextUniqueID{SK_InvalidUniqueID + 1};
+    uint32_t id = SK_InvalidUniqueID;
+    do {
+        id = gNextUniqueID.fetch_add(1, std::memory_order_relaxed);
+    } while (id == SK_InvalidUniqueID);
+    return id;
+}
+
+} 
 
 namespace SkShaders {
 MatrixRec::MatrixRec(const SkMatrix& ctm) : fCTM(ctm) {}
@@ -26,10 +44,11 @@ std::optional<MatrixRec> MatrixRec::apply(const SkStageRec& rec, const SkMatrix&
     if (!fCTMApplied) {
         total = SkMatrix::Concat(fCTM, total);
     }
-    if (!total.invert(&total)) {
+    if (auto inv = total.invert()) {
+        total = SkMatrix::Concat(postInv, *inv);
+    } else {
         return {};
     }
-    total = SkMatrix::Concat(postInv, total);
     if (!fCTMApplied) {
         rec.fPipeline->append(SkRasterPipelineOp::seed_shader);
     }
@@ -44,11 +63,11 @@ std::optional<MatrixRec> MatrixRec::apply(const SkStageRec& rec, const SkMatrix&
 
 std::tuple<SkMatrix, bool> MatrixRec::applyForFragmentProcessor(const SkMatrix& postInv) const {
     SkASSERT(!fCTMApplied);
-    SkMatrix total;
-    if (!fPendingLocalMatrix.invert(&total)) {
+    if (auto total = fPendingLocalMatrix.invert()) {
+        return {SkMatrix::Concat(postInv, *total), true};
+    } else {
         return {SkMatrix::I(), false};
     }
-    return {SkMatrix::Concat(postInv, total), true};
 }
 
 MatrixRec MatrixRec::applied() const {
@@ -73,7 +92,7 @@ MatrixRec MatrixRec::concat(const SkMatrix& m) const {
 
 
 
-SkShaderBase::SkShaderBase() = default;
+SkShaderBase::SkShaderBase() : fUniqueID(next_unique_id()) {}
 
 SkShaderBase::~SkShaderBase() = default;
 
@@ -95,7 +114,7 @@ SkShaderBase::Context* SkShaderBase::makeContext(const ContextRec& rec, SkArenaA
 #ifdef SK_ENABLE_LEGACY_SHADERCONTEXT
     
     auto totalMatrix = rec.fMatrixRec.totalMatrix();
-    if (totalMatrix.hasPerspective() || !totalMatrix.invert(nullptr)) {
+    if (totalMatrix.hasPerspective() || !totalMatrix.invert()) {
         return nullptr;
     }
 
@@ -109,10 +128,6 @@ SkShaderBase::Context::Context(const SkShaderBase& shader, const ContextRec& rec
         : fShader(shader) {
     
     SkASSERT(!rec.fMatrixRec.totalMatrix().hasPerspective());
-
-    
-    
-    SkAssertResult(rec.fMatrixRec.totalInverse(&fTotalInverse));
 
     fPaintAlpha = rec.fPaintAlpha;
 }

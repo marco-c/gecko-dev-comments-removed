@@ -4,10 +4,12 @@
 
 
 
+#include "include/ports/SkFontMgr_fontconfig.h"
 
 #include "include/core/SkDataTable.h"
 #include "include/core/SkFontArguments.h"
 #include "include/core/SkFontMgr.h"
+#include "include/core/SkFontScanner.h"
 #include "include/core/SkFontStyle.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRefCnt.h"
@@ -16,8 +18,6 @@
 #include "include/core/SkString.h"
 #include "include/core/SkTypeface.h"
 #include "include/core/SkTypes.h"
-#include "include/ports/SkFontMgr_fontconfig.h"
-#include "include/ports/SkFontScanner_FreeType.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkMutex.h"
 #include "include/private/base/SkTArray.h"
@@ -480,9 +480,7 @@ protected:
                      -fcMatrix->yx, fcMatrix->yy, 0,
                       0           , 0           , 1);
 
-            SkMatrix sm;
-            rec->getMatrixFrom2x2(&sm);
-
+            SkMatrix sm = rec->getMatrixFrom2x2();
             sm.preConcat(fm);
             rec->fPost2x2[0][0] = sm.getScaleX();
             rec->fPost2x2[0][1] = sm.getSkewX();
@@ -993,8 +991,4 @@ protected:
 
 sk_sp<SkFontMgr> SkFontMgr_New_FontConfig(FcConfig* fc, std::unique_ptr<SkFontScanner> scanner) {
     return sk_make_sp<SkFontMgr_fontconfig>(fc, std::move(scanner));
-}
-
-sk_sp<SkFontMgr> SkFontMgr_New_FontConfig(FcConfig* fc) {
-    return sk_make_sp<SkFontMgr_fontconfig>(fc, SkFontScanner_Make_FreeType());
 }

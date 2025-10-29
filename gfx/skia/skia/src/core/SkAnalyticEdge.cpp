@@ -10,13 +10,14 @@
 #include "include/core/SkPoint.h"
 #include "include/private/base/SkMath.h"
 #include "include/private/base/SkTo.h"
+#include "src/base/SkMathPriv.h"
 #include "src/core/SkFDot6.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <iterator>
 
-static const int kInverseTableSize = 1024; 
+static constexpr int kInverseTableSize = 1024; 
 
 static inline SkFixed quick_inverse(SkFDot6 x) {
     static const int32_t table[] = {
@@ -255,38 +256,191 @@ bool SkAnalyticEdge::updateLine(SkFixed x0, SkFixed y0, SkFixed x1, SkFixed y1, 
     return true;
 }
 
-bool SkAnalyticEdge::update(SkFixed last_y, bool sortY) {
+bool SkAnalyticEdge::update(SkFixed last_y) {
     SkASSERT(last_y >= fLowerY); 
     if (fCurveCount < 0) {
-        return static_cast<SkAnalyticCubicEdge*>(this)->updateCubic(sortY);
+        return static_cast<SkAnalyticCubicEdge*>(this)->updateCubic();
     } else if (fCurveCount > 0) {
         return static_cast<SkAnalyticQuadraticEdge*>(this)->updateQuadratic();
     }
     return false;
 }
 
+
+
+
+
+
+#define MAX_COEFF_SHIFT     6
+
+static inline SkFDot6 cheap_distance(SkFDot6 dx, SkFDot6 dy)
+{
+    dx = SkAbs32(dx);
+    dy = SkAbs32(dy);
+    
+    if (dx > dy){
+        dx += dy >> 1;
+    } else {
+        dx = dy + (dx >> 1);
+    }
+    return dx;
+}
+
+static inline int diff_to_shift(SkFDot6 dx, SkFDot6 dy, int shiftAA) {
+    
+    SkFDot6 dist = cheap_distance(dx, dy);
+
+    
+    
+    
+    
+    
+    
+    dist = (dist + (1 << (2 + shiftAA))) >> (3 + shiftAA);
+
+    
+    return (32 - SkCLZ(dist)) >> 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline SkFixed SkFDot6ToFixedDiv2(SkFDot6 value) {
+    
+    
+    return SkLeftShift(value, 16 - 6 - 1);
+}
+
+bool SkAnalyticQuadraticEdge::setQuadraticWithoutUpdate(const SkPoint pts[3], int shift) {
+    SkFDot6 x0, y0, x1, y1, x2, y2;
+
+    {
+#ifdef SK_RASTERIZE_EVEN_ROUNDING
+        x0 = SkScalarRoundToFDot6(pts[0].fX, shift);
+        y0 = SkScalarRoundToFDot6(pts[0].fY, shift);
+        x1 = SkScalarRoundToFDot6(pts[1].fX, shift);
+        y1 = SkScalarRoundToFDot6(pts[1].fY, shift);
+        x2 = SkScalarRoundToFDot6(pts[2].fX, shift);
+        y2 = SkScalarRoundToFDot6(pts[2].fY, shift);
+#else
+        float scale = float(1 << (shift + 6));
+        x0 = int(pts[0].fX * scale);
+        y0 = int(pts[0].fY * scale);
+        x1 = int(pts[1].fX * scale);
+        y1 = int(pts[1].fY * scale);
+        x2 = int(pts[2].fX * scale);
+        y2 = int(pts[2].fY * scale);
+#endif
+    }
+
+    Winding winding = Winding::kCW;
+    if (y0 > y2)
+    {
+        using std::swap;
+        swap(x0, x2);
+        swap(y0, y2);
+        winding = Winding::kCCW;
+    }
+    SkASSERT(y0 <= y1 && y1 <= y2);
+
+    int top = SkFDot6Round(y0);
+    int bot = SkFDot6Round(y2);
+
+    
+    if (top == bot) {
+        return 0;
+    }
+
+    
+    {
+        SkFDot6 dx = (SkLeftShift(x1, 1) - x0 - x2) >> 2;
+        SkFDot6 dy = (SkLeftShift(y1, 1) - y0 - y2) >> 2;
+        
+        
+        
+        shift = diff_to_shift(dx, dy, shift);
+        SkASSERT(shift >= 0);
+    }
+    
+    if (shift == 0) {
+        shift = 1;
+    } else if (shift > MAX_COEFF_SHIFT) {
+        shift = MAX_COEFF_SHIFT;
+    }
+
+    fWinding = winding;
+    
+    fEdgeType = Type::kQuad;
+    fCurveCount = SkToS8(1 << shift);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    fCurveShift = SkToU8(shift - 1);
+
+    SkFixed A = SkFDot6ToFixedDiv2(x0 - x1 - x1 + x2);  
+    SkFixed B = SkFDot6ToFixed(x1 - x0);                
+
+    fQx     = SkFDot6ToFixed(x0);
+    fQDx    = B + (A >> shift);     
+    fQDDx   = A >> (shift - 1);     
+
+    A = SkFDot6ToFixedDiv2(y0 - y1 - y1 + y2);  
+    B = SkFDot6ToFixed(y1 - y0);                
+
+    fQy     = SkFDot6ToFixed(y0);
+    fQDy    = B + (A >> shift);     
+    fQDDy   = A >> (shift - 1);     
+
+    fQLastX = SkFDot6ToFixed(x2);
+    fQLastY = SkFDot6ToFixed(y2);
+
+    return true;
+}
+
 bool SkAnalyticQuadraticEdge::setQuadratic(const SkPoint pts[3]) {
-    if (!fQEdge.setQuadraticWithoutUpdate(pts, kDefaultAccuracy)) {
+    if (!setQuadraticWithoutUpdate(pts, kDefaultAccuracy)) {
         return false;
     }
-    fQEdge.fQx >>= kDefaultAccuracy;
-    fQEdge.fQy >>= kDefaultAccuracy;
-    fQEdge.fQDx >>= kDefaultAccuracy;
-    fQEdge.fQDy >>= kDefaultAccuracy;
-    fQEdge.fQDDx >>= kDefaultAccuracy;
-    fQEdge.fQDDy >>= kDefaultAccuracy;
-    fQEdge.fQLastX >>= kDefaultAccuracy;
-    fQEdge.fQLastY >>= kDefaultAccuracy;
-    fQEdge.fQy = SnapY(fQEdge.fQy);
-    fQEdge.fQLastY = SnapY(fQEdge.fQLastY);
+    fQx >>= kDefaultAccuracy;
+    fQy >>= kDefaultAccuracy;
+    fQDx >>= kDefaultAccuracy;
+    fQDy >>= kDefaultAccuracy;
+    fQDDx >>= kDefaultAccuracy;
+    fQDDy >>= kDefaultAccuracy;
+    fQLastX >>= kDefaultAccuracy;
+    fQLastY >>= kDefaultAccuracy;
+    fQy = SnapY(fQy);
+    fQLastY = SnapY(fQLastY);
 
-    fWinding = fQEdge.fWinding;
     fEdgeType = Type::kQuad;
-    fCurveCount = fQEdge.fCurveCount;
-    fCurveShift = fQEdge.fCurveShift;
 
-    fSnappedX = fQEdge.fQx;
-    fSnappedY = fQEdge.fQy;
+    fSnappedX = fQx;
+    fSnappedY = fQy;
 
     return this->updateQuadratic();
 }
@@ -294,10 +448,10 @@ bool SkAnalyticQuadraticEdge::setQuadratic(const SkPoint pts[3]) {
 bool SkAnalyticQuadraticEdge::updateQuadratic() {
     int     success = 0; 
     int     count = fCurveCount;
-    SkFixed oldx = fQEdge.fQx;
-    SkFixed oldy = fQEdge.fQy;
-    SkFixed dx = fQEdge.fQDx;
-    SkFixed dy = fQEdge.fQDy;
+    SkFixed oldx = fQx;
+    SkFixed oldy = fQy;
+    SkFixed dx = fQDx;
+    SkFixed dy = fQDy;
     SkFixed newx, newy, newSnappedX, newSnappedY;
     int     shift = fCurveShift;
 
@@ -315,22 +469,22 @@ bool SkAnalyticQuadraticEdge::updateQuadratic() {
                 SkFDot6 diffY = SkFixedToFDot6(newy - fSnappedY);
                 slope = diffY ? quick_div(SkFixedToFDot6(newx - fSnappedX), diffY)
                               : SK_MaxS32;
-                newSnappedY = std::min<SkFixed>(fQEdge.fQLastY, SkFixedRoundToFixed(newy));
+                newSnappedY = std::min<SkFixed>(fQLastY, SkFixedRoundToFixed(newy));
                 newSnappedX = newx - SkFixedMul(slope, newy - newSnappedY);
             } else {
-                newSnappedY = std::min(fQEdge.fQLastY, SnapY(newy));
+                newSnappedY = std::min(fQLastY, SnapY(newy));
                 newSnappedX = newx;
                 SkFDot6 diffY = SkFixedToFDot6(newSnappedY - fSnappedY);
                 slope = diffY ? quick_div(SkFixedToFDot6(newx - fSnappedX), diffY)
                               : SK_MaxS32;
             }
-            dx += fQEdge.fQDDx;
-            dy += fQEdge.fQDDy;
+            dx += fQDDx;
+            dy += fQDDy;
         }
         else    
         {
-            newx    = fQEdge.fQLastX;
-            newy    = fQEdge.fQLastY;
+            newx    = fQLastX;
+            newy    = fQLastY;
             newSnappedY = newy;
             newSnappedX = newx;
             SkFDot6 diffY = SkFixedToFDot6(newy - fSnappedY);
@@ -343,52 +497,170 @@ bool SkAnalyticQuadraticEdge::updateQuadratic() {
         oldy = newy;
     } while (count > 0 && !success);
 
-    SkASSERT(newSnappedY <= fQEdge.fQLastY);
+    SkASSERT(newSnappedY <= fQLastY);
 
-    fQEdge.fQx  = newx;
-    fQEdge.fQy  = newy;
-    fQEdge.fQDx = dx;
-    fQEdge.fQDy = dy;
+    fQx  = newx;
+    fQy  = newy;
+    fQDx = dx;
+    fQDy = dy;
     fSnappedX   = newSnappedX;
     fSnappedY   = newSnappedY;
     fCurveCount = SkToS8(count);
     return success;
 }
 
-bool SkAnalyticCubicEdge::setCubic(const SkPoint pts[4], bool sortY) {
-    if (!fCEdge.setCubicWithoutUpdate(pts, kDefaultAccuracy, sortY)) {
+bool SkAnalyticCubicEdge::setCubic(const SkPoint pts[4]) {
+    if (!setCubicWithoutUpdate(pts, kDefaultAccuracy)) {
         return false;
     }
 
-    fCEdge.fCx >>= kDefaultAccuracy;
-    fCEdge.fCy >>= kDefaultAccuracy;
-    fCEdge.fCDx >>= kDefaultAccuracy;
-    fCEdge.fCDy >>= kDefaultAccuracy;
-    fCEdge.fCDDx >>= kDefaultAccuracy;
-    fCEdge.fCDDy >>= kDefaultAccuracy;
-    fCEdge.fCDDDx >>= kDefaultAccuracy;
-    fCEdge.fCDDDy >>= kDefaultAccuracy;
-    fCEdge.fCLastX >>= kDefaultAccuracy;
-    fCEdge.fCLastY >>= kDefaultAccuracy;
-    fCEdge.fCy = SnapY(fCEdge.fCy);
-    fCEdge.fCLastY = SnapY(fCEdge.fCLastY);
+    fCx >>= kDefaultAccuracy;
+    fCy >>= kDefaultAccuracy;
+    fCDx >>= kDefaultAccuracy;
+    fCDy >>= kDefaultAccuracy;
+    fCDDx >>= kDefaultAccuracy;
+    fCDDy >>= kDefaultAccuracy;
+    fCDDDx >>= kDefaultAccuracy;
+    fCDDDy >>= kDefaultAccuracy;
+    fCLastX >>= kDefaultAccuracy;
+    fCLastY >>= kDefaultAccuracy;
+    fCy = SnapY(fCy);
+    fSnappedY = fCy;
+    fCLastY = SnapY(fCLastY);
 
-    fWinding = fCEdge.fWinding;
     fEdgeType = Type::kCubic;
-    fCurveCount = fCEdge.fCurveCount;
-    fCurveShift = fCEdge.fCurveShift;
-    fCubicDShift = fCEdge.fCubicDShift;
 
-    fSnappedY = fCEdge.fCy;
-
-    return this->updateCubic(sortY);
+    return this->updateCubic();
 }
 
-bool SkAnalyticCubicEdge::updateCubic(bool sortY) {
+static inline int SkFDot6UpShift(SkFDot6 x, int upShift) {
+    SkASSERT((SkLeftShift(x, upShift) >> upShift) == x);
+    return SkLeftShift(x, upShift);
+}
+
+
+
+
+
+
+
+
+
+static SkFDot6 cubic_delta_from_line(SkFDot6 a, SkFDot6 b, SkFDot6 c, SkFDot6 d)
+{
+    
+    SkFDot6 oneThird = (a*8 - b*15 + 6*c + d) * 19 >> 9;
+    SkFDot6 twoThird = (a + 6*b - c*15 + d*8) * 19 >> 9;
+
+    return std::max(SkAbs32(oneThird), SkAbs32(twoThird));
+}
+
+bool SkAnalyticCubicEdge::setCubicWithoutUpdate(const SkPoint pts[4], int shift) {
+    SkFDot6 x0, y0, x1, y1, x2, y2, x3, y3;
+
+    {
+#ifdef SK_RASTERIZE_EVEN_ROUNDING
+        x0 = SkScalarRoundToFDot6(pts[0].fX, shift);
+        y0 = SkScalarRoundToFDot6(pts[0].fY, shift);
+        x1 = SkScalarRoundToFDot6(pts[1].fX, shift);
+        y1 = SkScalarRoundToFDot6(pts[1].fY, shift);
+        x2 = SkScalarRoundToFDot6(pts[2].fX, shift);
+        y2 = SkScalarRoundToFDot6(pts[2].fY, shift);
+        x3 = SkScalarRoundToFDot6(pts[3].fX, shift);
+        y3 = SkScalarRoundToFDot6(pts[3].fY, shift);
+#else
+        float scale = float(1 << (shift + 6));
+        x0 = int(pts[0].fX * scale);
+        y0 = int(pts[0].fY * scale);
+        x1 = int(pts[1].fX * scale);
+        y1 = int(pts[1].fY * scale);
+        x2 = int(pts[2].fX * scale);
+        y2 = int(pts[2].fY * scale);
+        x3 = int(pts[3].fX * scale);
+        y3 = int(pts[3].fY * scale);
+#endif
+    }
+
+    Winding winding = Winding::kCW;
+    if (y0 > y3)
+    {
+        using std::swap;
+        swap(x0, x3);
+        swap(x1, x2);
+        swap(y0, y3);
+        swap(y1, y2);
+        winding = Winding::kCCW;
+    }
+
+    int top = SkFDot6Round(y0);
+    int bot = SkFDot6Round(y3);
+
+    
+    if (top == bot)
+        return 0;
+
+    
+    {
+        
+        
+        
+        SkFDot6 dx = cubic_delta_from_line(x0, x1, x2, x3);
+        SkFDot6 dy = cubic_delta_from_line(y0, y1, y2, y3);
+        
+        shift = diff_to_shift(dx, dy, 2) + 1;
+    }
+    
+    SkASSERT(shift > 0);
+    if (shift > MAX_COEFF_SHIFT) {
+        shift = MAX_COEFF_SHIFT;
+    }
+
+    
+
+
+
+    int upShift = 6;    
+    int downShift = shift + upShift - 10;
+    if (downShift < 0) {
+        downShift = 0;
+        upShift = 10 - shift;
+    }
+
+    fWinding = winding;
+    fEdgeType = Type::kCubic;
+    fCurveCount = SkToS8(SkLeftShift(-1, shift));
+    fCurveShift = SkToU8(shift);
+    fCubicDShift = SkToU8(downShift);
+
+    SkFixed B = SkFDot6UpShift(3 * (x1 - x0), upShift);
+    SkFixed C = SkFDot6UpShift(3 * (x0 - x1 - x1 + x2), upShift);
+    SkFixed D = SkFDot6UpShift(x3 + 3 * (x1 - x2) - x0, upShift);
+
+    fCx     = SkFDot6ToFixed(x0);
+    fCDx    = B + (C >> shift) + (D >> 2*shift);    
+    fCDDx   = 2*C + (3*D >> (shift - 1));           
+    fCDDDx  = 3*D >> (shift - 1);                   
+
+    B = SkFDot6UpShift(3 * (y1 - y0), upShift);
+    C = SkFDot6UpShift(3 * (y0 - y1 - y1 + y2), upShift);
+    D = SkFDot6UpShift(y3 + 3 * (y1 - y2) - y0, upShift);
+
+    fCy     = SkFDot6ToFixed(y0);
+    fCDy    = B + (C >> shift) + (D >> 2*shift);    
+    fCDDy   = 2*C + (3*D >> (shift - 1));           
+    fCDDDy  = 3*D >> (shift - 1);                   
+
+    fCLastX = SkFDot6ToFixed(x3);
+    fCLastY = SkFDot6ToFixed(y3);
+
+    return true;
+}
+
+bool SkAnalyticCubicEdge::updateCubic() {
     int     success;
     int     count = fCurveCount;
-    SkFixed oldx = fCEdge.fCx;
-    SkFixed oldy = fCEdge.fCy;
+    SkFixed oldx = fCx;
+    SkFixed oldy = fCy;
     SkFixed newx, newy;
     const int ddshift = fCurveShift;
     const int dshift = fCubicDShift;
@@ -397,30 +669,30 @@ bool SkAnalyticCubicEdge::updateCubic(bool sortY) {
 
     do {
         if (++count < 0) {
-            newx    = oldx + (fCEdge.fCDx >> dshift);
-            fCEdge.fCDx    += fCEdge.fCDDx >> ddshift;
-            fCEdge.fCDDx   += fCEdge.fCDDDx;
+            newx    = oldx + (fCDx >> dshift);
+            fCDx    += fCDDx >> ddshift;
+            fCDDx   += fCDDDx;
 
-            newy    = oldy + (fCEdge.fCDy >> dshift);
-            fCEdge.fCDy    += fCEdge.fCDDy >> ddshift;
-            fCEdge.fCDDy   += fCEdge.fCDDDy;
+            newy    = oldy + (fCDy >> dshift);
+            fCDy    += fCDDy >> ddshift;
+            fCDDy   += fCDDDy;
         }
         else {    
-            newx    = fCEdge.fCLastX;
-            newy    = fCEdge.fCLastY;
+            newx    = fCLastX;
+            newy    = fCLastY;
         }
 
         
         
-        if (sortY && newy < oldy) {
+        if (newy < oldy) {
             newy = oldy;
         }
 
         SkFixed newSnappedY = SnapY(newy);
         
         
-        if (sortY && fCEdge.fCLastY < newSnappedY) {
-            newSnappedY = fCEdge.fCLastY;
+        if (fCLastY < newSnappedY) {
+            newSnappedY = fCLastY;
             count = 0;
         }
 
@@ -436,8 +708,8 @@ bool SkAnalyticCubicEdge::updateCubic(bool sortY) {
         fSnappedY = newSnappedY;
     } while (count < 0 && !success);
 
-    fCEdge.fCx  = newx;
-    fCEdge.fCy  = newy;
+    fCx  = newx;
+    fCy  = newy;
     fCurveCount = SkToS8(count);
     return success;
 }

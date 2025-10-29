@@ -9,7 +9,10 @@
 #define SkPathRef_DEFINED
 
 #include "include/core/SkArc.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPathTypes.h" 
 #include "include/core/SkPoint.h"
+#include "include/core/SkRRect.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
@@ -26,7 +29,63 @@
 #include <tuple>
 
 class SkMatrix;
-class SkRRect;
+
+
+
+
+
+
+struct SkPathRectInfo {
+    SkRect          fRect;
+    SkPathDirection fDirection;
+    uint8_t         fStartIndex;
+};
+
+struct SkPathOvalInfo {
+    SkRect          fBounds;
+    SkPathDirection fDirection;
+    uint8_t         fStartIndex;
+};
+
+struct SkPathRRectInfo {
+    SkRRect         fRRect;
+    SkPathDirection fDirection;
+    uint8_t         fStartIndex;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class SkPathIsAType : uint8_t {
+    kGeneral,
+    kOval,
+    kRRect,
+};
+
+struct SkPathIsAData {
+    uint8_t         fStartIndex;
+    SkPathDirection fDirection;
+};
 
 
 
@@ -48,18 +107,11 @@ public:
     
     
     using PointsArray = skia_private::STArray<4, SkPoint>;
-    using VerbsArray = skia_private::STArray<4, uint8_t>;
-    using ConicWeightsArray = skia_private::STArray<2, SkScalar>;
+    using VerbsArray = skia_private::STArray<4, SkPathVerb>;
+    using ConicWeightsArray = skia_private::STArray<2, float>;
 
-    enum class PathType : uint8_t {
-        kGeneral,
-        kOval,
-        kRRect,
-        kArc,
-    };
-
-    SkPathRef(SkSpan<const SkPoint> points, SkSpan<const uint8_t> verbs,
-              SkSpan<const SkScalar> weights, unsigned segmentMask)
+    SkPathRef(SkSpan<const SkPoint> points, SkSpan<const SkPathVerb> verbs,
+              SkSpan<const SkScalar> weights, unsigned segmentMask, const SkMatrix* mx)
         : fPoints(points)
         , fVerbs(verbs)
         , fConicWeights(weights)
@@ -67,15 +119,11 @@ public:
         fBoundsIsDirty = true;    
         fGenerationID = 0;        
         fSegmentMask = segmentMask;
-        fType = PathType::kGeneral;
-        
-        fRRectOrOvalIsCCW = false;
-        fRRectOrOvalStartIdx = 0xAC;
-        fArcOval.setEmpty();
-        fArcStartAngle = fArcSweepAngle = 0.0f;
-        fArcType = SkArc::Type::kArc;
+        fType = SkPathIsAType::kGeneral;
         SkDEBUGCODE(fEditorsAttached.store(0);)
-
+        if (mx && !mx->isIdentity()) {
+            mx->mapPoints(fPoints);
+        }
         this->computeBounds();  
         SkDEBUGCODE(this->validate();)
     }
@@ -106,7 +154,7 @@ public:
 
 
 
-        SkPoint* growForVerb(int  verb, SkScalar weight = 0) {
+        SkPoint* growForVerb(SkPathVerb verb, SkScalar weight = 0) {
             SkDEBUGCODE(fPathRef->validate();)
             return fPathRef->growForVerb(verb, weight);
         }
@@ -118,7 +166,7 @@ public:
 
 
 
-        SkPoint* growForRepeatedVerb(int  verb,
+        SkPoint* growForRepeatedVerb(SkPathVerb verb,
                                      int numVbs,
                                      SkScalar** weights = nullptr) {
             return fPathRef->growForRepeatedVerb(verb, numVbs, weights);
@@ -148,50 +196,18 @@ public:
 
         SkPathRef* pathRef() { return fPathRef; }
 
-        void setIsOval(bool isCCW, unsigned start) {
-            fPathRef->setIsOval(isCCW, start);
+        void setIsOval(SkPathDirection dir, unsigned start) {
+            fPathRef->setIsOval(dir, start);
         }
 
-        void setIsRRect(bool isCCW, unsigned start) {
-            fPathRef->setIsRRect(isCCW, start);
-        }
-
-        void setIsArc(const SkArc& arc) {
-            fPathRef->setIsArc(arc);
+        void setIsRRect(SkPathDirection dir, unsigned start) {
+            fPathRef->setIsRRect(dir, start);
         }
 
         void setBounds(const SkRect& rect) { fPathRef->setBounds(rect); }
 
     private:
         SkPathRef* fPathRef;
-    };
-
-    class SK_API Iter {
-    public:
-        Iter();
-        Iter(const SkPathRef&);
-
-        void setPathRef(const SkPathRef&);
-
-        
-
-
-
-
-
-
-
-
-        uint8_t next(SkPoint pts[4]);
-        uint8_t peek() const;
-
-        SkScalar conicWeight() const { return *fConicWeights; }
-
-    private:
-        const SkPoint*  fPts;
-        const uint8_t*  fVerbs;
-        const uint8_t*  fVerbStop;
-        const SkScalar* fConicWeights;
     };
 
 public:
@@ -223,41 +239,18 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-    bool isOval(SkRect* rect, bool* isCCW, unsigned* start) const {
-        if (fType == PathType::kOval) {
-            if (rect) {
-                *rect = this->getBounds();
-            }
-            if (isCCW) {
-                *isCCW = SkToBool(fRRectOrOvalIsCCW);
-            }
-            if (start) {
-                *start = fRRectOrOvalStartIdx;
-            }
+    std::optional<SkPathOvalInfo> isOval() const {
+        if (fType == SkPathIsAType::kOval) {
+            return {{
+                this->getBounds(),
+                fIsA.fDirection,
+                fIsA.fStartIndex,
+            }};
         }
-
-        return fType == PathType::kOval;
+        return {};
     }
 
-    bool isRRect(SkRRect* rrect, bool* isCCW, unsigned* start) const;
-
-    bool isArc(SkArc* arc) const {
-        if (fType == PathType::kArc) {
-            if (arc) {
-                *arc = SkArc::Make(fArcOval, fArcStartAngle, fArcSweepAngle, fArcType);
-            }
-        }
-
-        return fType == PathType::kArc;
-    }
+    std::optional<SkPathRRectInfo> isRRect() const;
 
     bool hasComputedBounds() const {
         return !fBoundsIsDirty;
@@ -303,12 +296,14 @@ public:
     
 
 
-    const uint8_t* verbsBegin() const { return fVerbs.begin(); }
+    const SkPathVerb* verbsBegin() const { return fVerbs.begin(); }
 
     
 
 
-    const uint8_t* verbsEnd() const { return fVerbs.end(); }
+    const SkPathVerb* verbsEnd() const { return fVerbs.end(); }
+
+    SkSpan<const SkPathVerb> verbs() const { return fVerbs; }
 
     
 
@@ -320,14 +315,18 @@ public:
 
     const SkPoint* pointsEnd() const { return this->points() + this->countPoints(); }
 
+    SkSpan<const SkPoint> pointSpan() const { return fPoints; }
+    SkSpan<const float> conicSpan() const { return fConicWeights; }
+
     const SkScalar* conicWeights() const { return fConicWeights.begin(); }
     const SkScalar* conicWeightsEnd() const { return fConicWeights.end(); }
+
 
     
 
 
-    uint8_t atVerb(int index) const { return fVerbs[index]; }
-    const SkPoint& atPoint(int index) const { return fPoints[index]; }
+    SkPathVerb atVerb(int index) const { return fVerbs[index]; }
+    SkPoint atPoint(int index) const { return fPoints[index]; }
 
     bool operator== (const SkPathRef& ref) const;
 
@@ -371,13 +370,8 @@ private:
         fBoundsIsDirty = true;    
         fGenerationID = kEmptyGenID;
         fSegmentMask = 0;
-        fType = PathType::kGeneral;
-        
-        fRRectOrOvalIsCCW = false;
-        fRRectOrOvalStartIdx = 0xAC;
-        fArcOval.setEmpty();
-        fArcStartAngle = fArcSweepAngle = 0.0f;
-        fArcType = SkArc::Type::kArc;
+        fType = SkPathIsAType::kGeneral;
+
         if (numPoints > 0) {
             fPoints.reserve_exact(numPoints);
         }
@@ -395,7 +389,7 @@ private:
 
     
     static bool ComputePtBounds(SkRect* bounds, const SkPathRef& ref) {
-        return bounds->setBoundsCheck(ref.points(), ref.countPoints());
+        return bounds->setBoundsCheck({ref.points(), ref.countPoints()});
     }
 
     
@@ -444,7 +438,7 @@ private:
         fGenerationID = 0;
 
         fSegmentMask = 0;
-        fType = PathType::kGeneral;
+        fType = SkPathIsAType::kGeneral;
     }
 
     
@@ -471,14 +465,14 @@ private:
 
 
 
-    SkPoint* growForRepeatedVerb(int  verb, int numVbs, SkScalar** weights);
+    SkPoint* growForRepeatedVerb(SkPathVerb, int numVbs, SkScalar** weights);
 
     
 
 
 
 
-    SkPoint* growForVerb(int  verb, SkScalar weight);
+    SkPoint* growForVerb(SkPathVerb, SkScalar weight);
 
     
 
@@ -491,37 +485,29 @@ private:
     
 
 
-    uint8_t* verbsBeginWritable() { return fVerbs.begin(); }
+    uint8_t* verbsBeginWritable() { return (uint8_t*)fVerbs.begin(); }
 
     
 
 
     friend SkPathRef* sk_create_empty_pathref();
 
-    void setIsOval(bool isCCW, unsigned start) {
-        fType = PathType::kOval;
-        fRRectOrOvalIsCCW = isCCW;
-        fRRectOrOvalStartIdx = SkToU8(start);
+    void setIsOval(SkPathDirection dir, unsigned start) {
+        fType = SkPathIsAType::kOval;
+        fIsA.fDirection  = dir;
+        fIsA.fStartIndex = SkToU8(start);
     }
 
-    void setIsRRect(bool isCCW, unsigned start) {
-        fType = PathType::kRRect;
-        fRRectOrOvalIsCCW = isCCW;
-        fRRectOrOvalStartIdx = SkToU8(start);
-    }
-
-    void setIsArc(const SkArc& arc) {
-        fType = PathType::kArc;
-        fArcOval = arc.fOval;
-        fArcStartAngle = arc.fStartAngle;
-        fArcSweepAngle = arc.fSweepAngle;
-        fArcType = arc.fType;
+    void setIsRRect(SkPathDirection dir, unsigned start) {
+        fType = SkPathIsAType::kRRect;
+        fIsA.fDirection  = dir;
+        fIsA.fStartIndex = SkToU8(start);
     }
 
     
     SkPoint* getWritablePoints() {
         SkDEBUGCODE(this->validate();)
-        fType = PathType::kGeneral;
+        fType = SkPathIsAType::kGeneral;
         return fPoints.begin();
     }
 
@@ -537,7 +523,6 @@ private:
     ConicWeightsArray fConicWeights;
 
     mutable SkRect   fBounds;
-    SkRect           fArcOval;
 
     enum {
         kEmptyGenID = 1, 
@@ -547,23 +532,13 @@ private:
 
     SkDEBUGCODE(std::atomic<int> fEditorsAttached;) 
 
-    SkScalar    fArcStartAngle;
-    SkScalar    fArcSweepAngle;
-
-    PathType fType;
-
-    mutable uint8_t  fBoundsIsDirty;
-
-    uint8_t  fRRectOrOvalStartIdx;
-    uint8_t  fSegmentMask;
     
-    
-    SkArc::Type fArcType;
+    SkPathIsAData fIsA {};
 
-    mutable bool     fIsFinite;    
-    
-    
-    bool     fRRectOrOvalIsCCW;
+    SkPathIsAType   fType;
+    uint8_t         fSegmentMask;
+    mutable bool    fBoundsIsDirty;
+    mutable bool    fIsFinite;    
 
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; 

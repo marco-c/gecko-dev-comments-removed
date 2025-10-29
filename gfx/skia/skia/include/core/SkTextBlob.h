@@ -10,9 +10,12 @@
 
 #include "include/core/SkFont.h"
 #include "include/core/SkFontTypes.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRSXform.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkTemplates.h"
@@ -25,8 +28,6 @@ class SkData;
 class SkPaint;
 class SkTypeface;
 struct SkDeserialProcs;
-struct SkPoint;
-struct SkRSXform;
 struct SkSerialProcs;
 
 namespace sktext {
@@ -133,8 +134,9 @@ public:
 
 
     static sk_sp<SkTextBlob> MakeFromPosTextH(const void* text, size_t byteLength,
-                                      const SkScalar xpos[], SkScalar constY, const SkFont& font,
-                                      SkTextEncoding encoding = SkTextEncoding::kUTF8);
+                                              SkSpan<const SkScalar> xpos, SkScalar constY,
+                                              const SkFont& font,
+                                              SkTextEncoding encoding = SkTextEncoding::kUTF8);
 
     
 
@@ -148,12 +150,32 @@ public:
 
 
     static sk_sp<SkTextBlob> MakeFromPosText(const void* text, size_t byteLength,
-                                             const SkPoint pos[], const SkFont& font,
+                                             SkSpan<const SkPoint> pos, const SkFont& font,
                                              SkTextEncoding encoding = SkTextEncoding::kUTF8);
 
     static sk_sp<SkTextBlob> MakeFromRSXform(const void* text, size_t byteLength,
-                                             const SkRSXform xform[], const SkFont& font,
+                                             SkSpan<const SkRSXform> xform, const SkFont& font,
                                              SkTextEncoding encoding = SkTextEncoding::kUTF8);
+
+    
+
+    static sk_sp<SkTextBlob> MakeFromPosHGlyphs(SkSpan<const SkGlyphID> glyphs,
+                                                SkSpan<const SkScalar> xpos, SkScalar constY,
+                                                const SkFont& font) {
+        return MakeFromPosTextH(glyphs.data(), glyphs.size() * sizeof(SkGlyphID), xpos, constY,
+                                font, SkTextEncoding::kGlyphID);
+    }
+    static sk_sp<SkTextBlob> MakeFromPosGlyphs(SkSpan<const SkGlyphID> glyphs,
+                                               SkSpan<const SkPoint> pos, const SkFont& font) {
+        return MakeFromPosText(glyphs.data(), glyphs.size() * sizeof(SkGlyphID), pos, font,
+                               SkTextEncoding::kGlyphID);
+    }
+    static sk_sp<SkTextBlob> MakeFromRSXformGlyphs(SkSpan<const SkGlyphID> glyphs,
+                                                   SkSpan<const SkRSXform> xform,
+                                                   const SkFont& font) {
+        return MakeFromRSXform(glyphs.data(), glyphs.size() * sizeof(SkGlyphID), xform, font,
+                               SkTextEncoding::kGlyphID);
+    }
 
     
 
@@ -239,6 +261,28 @@ public:
     private:
         const RunRecord* fRunRecord;
     };
+
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    static sk_sp<SkTextBlob> MakeFromPosTextH(const void* text, size_t byteLength,
+                                              const SkScalar xpos[], SkScalar constY,
+                                              const SkFont& font,
+                                              SkTextEncoding encoding = SkTextEncoding::kUTF8) {
+        const size_t worstCaseCount = byteLength;
+        return MakeFromPosTextH(text, byteLength, {xpos, worstCaseCount}, constY, font, encoding);
+    }
+    static sk_sp<SkTextBlob> MakeFromPosText(const void* text, size_t byteLength,
+                                             const SkPoint pos[], const SkFont& font,
+                                             SkTextEncoding encoding = SkTextEncoding::kUTF8) {
+        const size_t worstCaseCount = byteLength;
+        return MakeFromPosText(text, byteLength, {pos, worstCaseCount}, font, encoding);
+    }
+    static sk_sp<SkTextBlob> MakeFromRSXform(const void* text, size_t byteLength,
+                                              const SkRSXform xform[], const SkFont& font,
+                                              SkTextEncoding encoding = SkTextEncoding::kUTF8) {
+        const size_t worstCaseCount = byteLength;
+        return MakeFromRSXform(text, byteLength, {xform, worstCaseCount}, font, encoding);
+    }
+#endif
 
 private:
     friend class SkNVRefCnt<SkTextBlob>;

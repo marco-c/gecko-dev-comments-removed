@@ -185,8 +185,7 @@ bool SkRasterClip::op(const SkRRect& rrect, const SkMatrix& matrix, SkClipOp op,
 bool SkRasterClip::op(const SkPath& path, const SkMatrix& matrix, SkClipOp op, bool doAA) {
     AUTO_RASTERCLIP_VALIDATE(*this);
 
-    SkPath devPath;
-    path.transform(matrix, &devPath);
+    SkPath devPath = path.makeTransform(matrix);
 
     
     

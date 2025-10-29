@@ -515,7 +515,30 @@ public:
 
     bool supportsDistanceFieldText() const;
 
+    
+
+
+
+
+
+
+    bool canDetectNewVkPipelineCacheData() const;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    bool hasNewVkPipelineCacheData() const;
     void storeVkPipelineCacheData();
+    void storeVkPipelineCacheData(size_t maxSize);
 
     
 

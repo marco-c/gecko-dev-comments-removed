@@ -7,6 +7,7 @@
 
 #include "src/core/SkEdge.h"
 
+#include "include/core/SkRect.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkSafe32.h"
 #include "include/private/base/SkTo.h"
@@ -36,48 +37,84 @@ static inline SkFixed SkFDot6ToFixedDiv2(SkFDot6 value) {
 
 
 
-#ifdef SK_DEBUG
+#if defined(SK_DEBUG)
 void SkEdge::dump() const {
-    int realLastY = SkScalarToFixed(fLastY);
-    if (fCurveCount > 0) {
-        realLastY = static_cast<const SkQuadraticEdge*>(this)->fQLastY;
-    } else if (fCurveCount < 0) {
-        realLastY = static_cast<const SkCubicEdge*>(this)->fCLastY;
-    }
-    SkDebugf("edge (%c): firstY:%d lastY:%d (%g) x:%g dx:%g w:%d\n",
-             fCurveCount > 0 ? 'Q' : (fCurveCount < 0 ? 'C' : 'L'),
+    SkASSERT(fSegmentCount == 0);
+    SkDebugf("line edge: firstY:%d lastY:%d x:%g dx/dy:%g\n"
+             "\twinding:%d curveShift:%u\n",
              fFirstY,
              fLastY,
-             SkFixedToFloat(realLastY),
              SkFixedToFloat(fX),
-             SkFixedToFloat(fDX),
-             static_cast<int8_t>(fWinding));
+             SkFixedToFloat(fDxDy),
+             static_cast<int8_t>(fWinding),
+             fCurveShift);
+}
+
+void SkQuadraticEdge::dump() const {
+    SkDebugf("quad edge; %u segment(s) left: firstY:%d lastY:%d x:%g dx/dy:%g\n"
+             "\tqx:%g qy:%g dqx:%g dqy:%g ddqx:%g ddqy:%g qLastX:%g qLastY:%g\n"
+             "\twinding:%d curveShift:%u\n",
+             fSegmentCount,
+             fFirstY,
+             fLastY,
+             SkFixedToFloat(fX),
+             SkFixedToFloat(fDxDy),
+             SkFixedToFloat(fQx),
+             SkFixedToFloat(fQy),
+             SkFixedToFloat(fQDxDt),
+             SkFixedToFloat(fQDyDt),
+             SkFixedToFloat(fQD2xDt2),
+             SkFixedToFloat(fQD2yDt2),
+             SkFixedToFloat(fQLastX),
+             SkFixedToFloat(fQLastY),
+             static_cast<int8_t>(fWinding),
+             fCurveShift);
+}
+
+void SkCubicEdge::dump() const {
+    SkDebugf("cube edge; %u segment(s) left: firstY:%d lastY:%d x:%g dx/dy:%g\n"
+             "qx:%g qy:%g dcx:%g dcy:%g ddcx:%g ddcy:%g dddcx:%g dddcy:%g cLastX:%g cLastY:%g\n"
+             "\twinding:%d curveShift:%u dShift:%u\n",
+             fSegmentCount,
+             fFirstY,
+             fLastY,
+             SkFixedToFloat(fX),
+             SkFixedToFloat(fDxDy),
+             SkFixedToFloat(fCx),
+             SkFixedToFloat(fCy),
+             SkFixedToFloat(fCDxDt),
+             SkFixedToFloat(fCDyDt),
+             SkFixedToFloat(fCD2xDt2),
+             SkFixedToFloat(fCD2yDt2),
+             SkFixedToFloat(fCD3xDt3),
+             SkFixedToFloat(fCD3yDt3),
+             SkFixedToFloat(fCLastX),
+             SkFixedToFloat(fCLastY),
+             static_cast<int8_t>(fWinding),
+             fCurveShift,
+             fCubicDShift);
 }
 #endif
 
-int SkEdge::setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip, int shift) {
+bool SkEdge::setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip) {
     SkFDot6 x0, y0, x1, y1;
 
-    {
 #ifdef SK_RASTERIZE_EVEN_ROUNDING
-        x0 = SkScalarRoundToFDot6(p0.fX, shift);
-        y0 = SkScalarRoundToFDot6(p0.fY, shift);
-        x1 = SkScalarRoundToFDot6(p1.fX, shift);
-        y1 = SkScalarRoundToFDot6(p1.fY, shift);
+    x0 = SkScalarRoundToFDot6(p0.fX, 0);
+    y0 = SkScalarRoundToFDot6(p0.fY, 0);
+    x1 = SkScalarRoundToFDot6(p1.fX, 0);
+    y1 = SkScalarRoundToFDot6(p1.fY, 0);
 #else
-        float scale = float(1 << (shift + 6));
-        x0 = int(p0.fX * scale);
-        y0 = int(p0.fY * scale);
-        x1 = int(p1.fX * scale);
-        y1 = int(p1.fY * scale);
+    x0 = SkFloatToFDot6(p0.fX);
+    y0 = SkFloatToFDot6(p0.fY);
+    x1 = SkFloatToFDot6(p1.fX);
+    y1 = SkFloatToFDot6(p1.fY);
 #endif
-    }
 
     Winding winding = Winding::kCW;
     if (y0 > y1) {
-        using std::swap;
-        swap(x0, x1);
-        swap(y0, y1);
+        std::swap(x0, x1);
+        std::swap(y0, y1);
         winding = Winding::kCCW;
     }
 
@@ -86,64 +123,73 @@ int SkEdge::setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip, i
 
     
     if (top == bot) {
-        return 0;
+        return false;
     }
     
     if (clip && (top >= clip->fBottom || bot <= clip->fTop)) {
-        return 0;
+        return false;
     }
 
     SkFixed slope = SkFDot6Div(x1 - x0, y1 - y0);
     const SkFDot6 dy  = SkEdge_Compute_DY(top, y0);
 
-    fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));   
-    fDX         = slope;
+    
+    fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));
+    fDxDy       = slope;
     fFirstY     = top;
     fLastY      = bot - 1;
     fEdgeType   = Type::kLine;
-    fCurveCount = 0;
+    fSegmentCount = 0;
     fWinding    = winding;
     fCurveShift = 0;
 
     if (clip) {
         this->chopLineWithClip(*clip);
     }
-    return 1;
+    return true;
+}
+
+bool SkEdge::nextSegment() {
+    SkDEBUGFAILF("Shouldn't be asking a linear edge to go to the next curve.");
+    return false;
 }
 
 
-int SkEdge::updateLine(SkFixed x0, SkFixed y0, SkFixed x1, SkFixed y1)
-{
+
+
+
+bool SkEdge::updateLine(SkFixed xStart, SkFixed yStart, SkFixed xEnd, SkFixed yEnd) {
     SkASSERT(fWinding == Winding::kCW || fWinding == Winding::kCCW);
-    SkASSERT(fCurveCount != 0);
+    SkASSERT(fSegmentCount != 0);
 
-
-    y0 >>= 10;
-    y1 >>= 10;
+    const SkFDot6 y0 = SkFixedToFDot6(yStart);
+    const SkFDot6 y1 = SkFixedToFDot6(yEnd);
 
     SkASSERT(y0 <= y1);
 
-    int top = SkFDot6Round(y0);
-    int bot = SkFDot6Round(y1);
-
-
+    const int top = SkFDot6Round(y0);
+    const int bot = SkFDot6Round(y1);
 
     
-    if (top == bot)
-        return 0;
+    if (top == bot) {
+        return false;
+    }
 
-    x0 >>= 10;
-    x1 >>= 10;
+    const SkFDot6 x0 = SkFixedToFDot6(xStart);
+    const SkFDot6 x1 = SkFixedToFDot6(xEnd);
 
     SkFixed slope = SkFDot6Div(x1 - x0, y1 - y0);
-    const SkFDot6 dy  = SkEdge_Compute_DY(top, y0);
+    const SkFDot6 dy = SkEdge_Compute_DY(top, y0);
 
-    fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));   
-    fDX         = slope;
+    
+    
+    
+    fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));
+    fDxDy       = slope;
     fFirstY     = top;
     fLastY      = bot - 1;
 
-    return 1;
+    return true;
 }
 
 void SkEdge::chopLineWithClip(const SkIRect& clip)
@@ -156,7 +202,7 @@ void SkEdge::chopLineWithClip(const SkIRect& clip)
     if (top < clip.fTop)
     {
         SkASSERT(fLastY >= clip.fTop);
-        fX += fDX * (clip.fTop - top);
+        fX += fDxDy * (clip.fTop - top);
         fFirstY = clip.fTop;
     }
 }
@@ -167,23 +213,25 @@ void SkEdge::chopLineWithClip(const SkIRect& clip)
 
 
 
-
 #define MAX_COEFF_SHIFT     6
 
-static inline SkFDot6 cheap_distance(SkFDot6 dx, SkFDot6 dy)
-{
+
+
+
+
+
+
+static inline SkFDot6 cheap_distance(SkFDot6 dx, SkFDot6 dy) {
     dx = SkAbs32(dx);
     dy = SkAbs32(dy);
     
-    if (dx > dy)
-        dx += dy >> 1;
-    else
-        dx = dy + (dx >> 1);
-    return dx;
+    if (dx > dy) {
+        return dx + (dy / 2);
+    }
+    return dy + (dx / 2);
 }
 
-static inline int diff_to_shift(SkFDot6 dx, SkFDot6 dy, int shiftAA = 2)
-{
+static inline int diff_to_shift(SkFDot6 dx, SkFDot6 dy, int accuracy) {
     
     SkFDot6 dist = cheap_distance(dx, dy);
 
@@ -193,61 +241,68 @@ static inline int diff_to_shift(SkFDot6 dx, SkFDot6 dy, int shiftAA = 2)
     
     
     
-    dist = (dist + (1 << (2 + shiftAA))) >> (3 + shiftAA);
+    
+    dist = (dist + (1 << (2 + accuracy))) >> (3 + accuracy);
 
     
     return (32 - SkCLZ(dist)) >> 1;
 }
 
-bool SkQuadraticEdge::setQuadraticWithoutUpdate(const SkPoint pts[3], int shift) {
+bool SkQuadraticEdge::setQuadratic(const SkPoint pts[3]) {
     SkFDot6 x0, y0, x1, y1, x2, y2;
 
-    {
-#ifdef SK_RASTERIZE_EVEN_ROUNDING
-        x0 = SkScalarRoundToFDot6(pts[0].fX, shift);
-        y0 = SkScalarRoundToFDot6(pts[0].fY, shift);
-        x1 = SkScalarRoundToFDot6(pts[1].fX, shift);
-        y1 = SkScalarRoundToFDot6(pts[1].fY, shift);
-        x2 = SkScalarRoundToFDot6(pts[2].fX, shift);
-        y2 = SkScalarRoundToFDot6(pts[2].fY, shift);
+#if defined(SK_RASTERIZE_EVEN_ROUNDING)
+    x0 = SkScalarRoundToFDot6(pts[0].fX, 0);
+    y0 = SkScalarRoundToFDot6(pts[0].fY, 0);
+    x1 = SkScalarRoundToFDot6(pts[1].fX, 0);
+    y1 = SkScalarRoundToFDot6(pts[1].fY, 0);
+    x2 = SkScalarRoundToFDot6(pts[2].fX, 0);
+    y2 = SkScalarRoundToFDot6(pts[2].fY, 0);
 #else
-        float scale = float(1 << (shift + 6));
-        x0 = int(pts[0].fX * scale);
-        y0 = int(pts[0].fY * scale);
-        x1 = int(pts[1].fX * scale);
-        y1 = int(pts[1].fY * scale);
-        x2 = int(pts[2].fX * scale);
-        y2 = int(pts[2].fY * scale);
+    x0 = SkFloatToFDot6(pts[0].fX);
+    y0 = SkFloatToFDot6(pts[0].fY);
+    x1 = SkFloatToFDot6(pts[1].fX);
+    y1 = SkFloatToFDot6(pts[1].fY);
+    x2 = SkFloatToFDot6(pts[2].fX);
+    y2 = SkFloatToFDot6(pts[2].fY);
 #endif
-    }
 
     Winding winding = Winding::kCW;
-    if (y0 > y2)
-    {
-        using std::swap;
-        swap(x0, x2);
-        swap(y0, y2);
+    if (y0 > y2) {
+        std::swap(x0, x2);
+        std::swap(y0, y2);
         winding = Winding::kCCW;
     }
-    SkASSERT(y0 <= y1 && y1 <= y2);
+    SkASSERTF(y0 <= y1 && y1 <= y2, "curve must be monotonic");
 
-    int top = SkFDot6Round(y0);
-    int bot = SkFDot6Round(y2);
-
-    
-    if (top == bot)
-        return 0;
+    const int top = SkFDot6Round(y0);
+    const int bot = SkFDot6Round(y2);
 
     
-    {
-        SkFDot6 dx = (SkLeftShift(x1, 1) - x0 - x2) >> 2;
-        SkFDot6 dy = (SkLeftShift(y1, 1) - y0 - y2) >> 2;
-        
-        
-        
-        shift = diff_to_shift(dx, dy, shift);
-        SkASSERT(shift >= 0);
+    if (top == bot) {
+        return false;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SkFDot6 deltaX = (2*x1 - x0 - x2) >> 2;
+    SkFDot6 deltaY = (2*y1 - y0 - y2) >> 2;
+    
+    
+    int shift = diff_to_shift(deltaX, deltaY, 0);
+    SkASSERT(shift >= 0);
+
+    
     
     if (shift == 0) {
         shift = 1;
@@ -256,9 +311,8 @@ bool SkQuadraticEdge::setQuadraticWithoutUpdate(const SkPoint pts[3], int shift)
     }
 
     fWinding = winding;
-    
     fEdgeType = Type::kQuad;
-    fCurveCount = SkToS8(1 << shift);
+    fSegmentCount = SkToU8(1 << shift);
 
     
 
@@ -279,70 +333,72 @@ bool SkQuadraticEdge::setQuadraticWithoutUpdate(const SkPoint pts[3], int shift)
 
 
     fCurveShift = SkToU8(shift - 1);
+    
 
-    SkFixed A = SkFDot6ToFixedDiv2(x0 - x1 - x1 + x2);  
-    SkFixed B = SkFDot6ToFixed(x1 - x0);                
+    
+    SkFixed A_half = SkFDot6ToFixedDiv2(x0 - x1 - x1 + x2);
+    SkFixed B_half = SkFDot6ToFixed(x1 - x0);
+
+    
+    
+    
+    
+    
+    
+    fQDxDt = B_half + (A_half >> shift);
+    
+    
+    
+    fQD2xDt2 = A_half >> (shift - 1);
+
+    A_half = SkFDot6ToFixedDiv2(y0 - y1 - y1 + y2);
+    B_half = SkFDot6ToFixed(y1 - y0);
+
+    fQDyDt = B_half + (A_half >> shift);
+    fQD2yDt2 = A_half >> (shift - 1);
 
     fQx     = SkFDot6ToFixed(x0);
-    fQDx    = B + (A >> shift);     
-    fQDDx   = A >> (shift - 1);     
-
-    A = SkFDot6ToFixedDiv2(y0 - y1 - y1 + y2);  
-    B = SkFDot6ToFixed(y1 - y0);                
-
     fQy     = SkFDot6ToFixed(y0);
-    fQDy    = B + (A >> shift);     
-    fQDDy   = A >> (shift - 1);     
-
     fQLastX = SkFDot6ToFixed(x2);
     fQLastY = SkFDot6ToFixed(y2);
 
-    return true;
+    return this->nextSegment();
 }
 
-int SkQuadraticEdge::setQuadratic(const SkPoint pts[3], int shift) {
-    if (!setQuadraticWithoutUpdate(pts, shift)) {
-        return 0;
-    }
-    return this->updateQuadratic();
-}
-
-int SkQuadraticEdge::updateQuadratic()
-{
-    int     success;
-    int     count = fCurveCount;
+bool SkQuadraticEdge::nextSegment() {
+    bool    success;
+    int     count = fSegmentCount;
     SkFixed oldx = fQx;
     SkFixed oldy = fQy;
-    SkFixed dx = fQDx;
-    SkFixed dy = fQDy;
+    SkFixed dx = fQDxDt;
+    SkFixed dy = fQDyDt;
     SkFixed newx, newy;
     int     shift = fCurveShift;
 
     SkASSERT(count > 0);
 
     do {
-        if (--count > 0)
-        {
-            newx    = oldx + (dx >> shift);
-            dx    += fQDDx;
-            newy    = oldy + (dy >> shift);
-            dy    += fQDDy;
+        if (--count > 0) {
+            newx = oldx + (dx >> shift);
+            dx += fQD2xDt2;
+            newy = oldy + (dy >> shift);
+            dy += fQD2yDt2;
         }
         else    
         {
-            newx    = fQLastX;
-            newy    = fQLastY;
+            newx = fQLastX;
+            newy = fQLastY;
         }
         success = this->updateLine(oldx, oldy, newx, newy);
         oldx = newx;
         oldy = newy;
     } while (count > 0 && !success);
 
-    fQx         = newx;
-    fQy         = newy;
-    fQDx        = dx;
-    fQDy        = dy;
-    fCurveCount = SkToS8(count);
+    fQx = newx;
+    fQy = newy;
+    fQDxDt = dx;
+    fQDyDt = dy;
+    fSegmentCount = SkToU8(count);
     return success;
 }
 
@@ -370,40 +426,35 @@ static SkFDot6 cubic_delta_from_line(SkFDot6 a, SkFDot6 b, SkFDot6 c, SkFDot6 d)
     return std::max(SkAbs32(oneThird), SkAbs32(twoThird));
 }
 
-bool SkCubicEdge::setCubicWithoutUpdate(const SkPoint pts[4], int shift, bool sortY) {
+bool SkCubicEdge::setCubic(const SkPoint pts[4]) {
     SkFDot6 x0, y0, x1, y1, x2, y2, x3, y3;
 
-    {
-#ifdef SK_RASTERIZE_EVEN_ROUNDING
-        x0 = SkScalarRoundToFDot6(pts[0].fX, shift);
-        y0 = SkScalarRoundToFDot6(pts[0].fY, shift);
-        x1 = SkScalarRoundToFDot6(pts[1].fX, shift);
-        y1 = SkScalarRoundToFDot6(pts[1].fY, shift);
-        x2 = SkScalarRoundToFDot6(pts[2].fX, shift);
-        y2 = SkScalarRoundToFDot6(pts[2].fY, shift);
-        x3 = SkScalarRoundToFDot6(pts[3].fX, shift);
-        y3 = SkScalarRoundToFDot6(pts[3].fY, shift);
+#if defined(SK_RASTERIZE_EVEN_ROUNDING)
+    x0 = SkScalarRoundToFDot6(pts[0].fX, 0);
+    y0 = SkScalarRoundToFDot6(pts[0].fY, 0);
+    x1 = SkScalarRoundToFDot6(pts[1].fX, 0);
+    y1 = SkScalarRoundToFDot6(pts[1].fY, 0);
+    x2 = SkScalarRoundToFDot6(pts[2].fX, 0);
+    y2 = SkScalarRoundToFDot6(pts[2].fY, 0);
+    x3 = SkScalarRoundToFDot6(pts[3].fX, 0);
+    y3 = SkScalarRoundToFDot6(pts[3].fY, 0);
 #else
-        float scale = float(1 << (shift + 6));
-        x0 = int(pts[0].fX * scale);
-        y0 = int(pts[0].fY * scale);
-        x1 = int(pts[1].fX * scale);
-        y1 = int(pts[1].fY * scale);
-        x2 = int(pts[2].fX * scale);
-        y2 = int(pts[2].fY * scale);
-        x3 = int(pts[3].fX * scale);
-        y3 = int(pts[3].fY * scale);
+    x0 = SkFloatToFDot6(pts[0].fX);
+    y0 = SkFloatToFDot6(pts[0].fY);
+    x1 = SkFloatToFDot6(pts[1].fX);
+    y1 = SkFloatToFDot6(pts[1].fY);
+    x2 = SkFloatToFDot6(pts[2].fX);
+    y2 = SkFloatToFDot6(pts[2].fY);
+    x3 = SkFloatToFDot6(pts[3].fX);
+    y3 = SkFloatToFDot6(pts[3].fY);
 #endif
-    }
 
     Winding winding = Winding::kCW;
-    if (sortY && y0 > y3)
-    {
-        using std::swap;
-        swap(x0, x3);
-        swap(x1, x2);
-        swap(y0, y3);
-        swap(y1, y2);
+    if (y0 > y3) {
+        std::swap(x0, x3);
+        std::swap(x1, x2);
+        std::swap(y0, y3);
+        std::swap(y1, y2);
         winding = Winding::kCCW;
     }
 
@@ -411,19 +462,18 @@ bool SkCubicEdge::setCubicWithoutUpdate(const SkPoint pts[4], int shift, bool so
     int bot = SkFDot6Round(y3);
 
     
-    if (sortY && top == bot)
-        return 0;
+    if (top == bot) {
+        return false;
+    }
 
     
-    {
-        
-        
-        
-        SkFDot6 dx = cubic_delta_from_line(x0, x1, x2, x3);
-        SkFDot6 dy = cubic_delta_from_line(y0, y1, y2, y3);
-        
-        shift = diff_to_shift(dx, dy) + 1;
-    }
+    
+    
+    
+    SkFDot6 dx = cubic_delta_from_line(x0, x1, x2, x3);
+    SkFDot6 dy = cubic_delta_from_line(y0, y1, y2, y3);
+    
+    int shift = diff_to_shift(dx, dy, 2) + 1;
     
     SkASSERT(shift > 0);
     if (shift > MAX_COEFF_SHIFT) {
@@ -443,69 +493,83 @@ bool SkCubicEdge::setCubicWithoutUpdate(const SkPoint pts[4], int shift, bool so
 
     fWinding = winding;
     fEdgeType = Type::kCubic;
-    fCurveCount = SkToS8(SkLeftShift(-1, shift));
+    fSegmentCount = SkToU8(SkLeftShift(1, shift));
     fCurveShift = SkToU8(shift);
     fCubicDShift = SkToU8(downShift);
 
-    SkFixed B = SkFDot6UpShift(3 * (x1 - x0), upShift);
-    SkFixed C = SkFDot6UpShift(3 * (x0 - x1 - x1 + x2), upShift);
-    SkFixed D = SkFDot6UpShift(x3 + 3 * (x1 - x2) - x0, upShift);
+    
 
-    fCx     = SkFDot6ToFixed(x0);
-    fCDx    = B + (C >> shift) + (D >> 2*shift);    
-    fCDDx   = 2*C + (3*D >> (shift - 1));           
-    fCDDDx  = 3*D >> (shift - 1);                   
 
-    B = SkFDot6UpShift(3 * (y1 - y0), upShift);
-    C = SkFDot6UpShift(3 * (y0 - y1 - y1 + y2), upShift);
-    D = SkFDot6UpShift(y3 + 3 * (y1 - y2) - y0, upShift);
 
-    fCy     = SkFDot6ToFixed(y0);
-    fCDy    = B + (C >> shift) + (D >> 2*shift);    
-    fCDDy   = 2*C + (3*D >> (shift - 1));           
-    fCDDDy  = 3*D >> (shift - 1);                   
 
+
+
+
+
+
+    
+
+    SkFixed A = SkFDot6UpShift(x3 + 3 * (x1 - x2) - x0, upShift);
+    SkFixed B = SkFDot6UpShift(3 * (x0 - 2*x1 + x2), upShift);
+    SkFixed C = SkFDot6UpShift(3 * (x1 - x0), upShift);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fCDxDt = (A >> 2*shift) + (B >> shift) + C;
+    fCD2xDt2 = (3*A >> (shift - 1)) + 2*B;
+
+    
+    
+    fCD3xDt3 = 3*A >> (shift - 1);
+
+    A = SkFDot6UpShift(y3 + 3 * (y1 - y2) - y0, upShift);
+    B = SkFDot6UpShift(3 * (y0 - 2*y1 + y2), upShift);
+    C = SkFDot6UpShift(3 * (y1 - y0), upShift);
+
+    fCDyDt = (A >> 2*shift) + (B >> shift) + C;
+    fCD2yDt2 = (3*A >> (shift - 1)) + 2*B;
+    fCD3yDt3 = 3*A >> (shift - 1);
+
+    fCx = SkFDot6ToFixed(x0);
+    fCy = SkFDot6ToFixed(y0);
     fCLastX = SkFDot6ToFixed(x3);
     fCLastY = SkFDot6ToFixed(y3);
 
-    return true;
+    return this->nextSegment();
 }
 
-int SkCubicEdge::setCubic(const SkPoint pts[4], int shift) {
-    if (!this->setCubicWithoutUpdate(pts, shift)) {
-        return 0;
-    }
-    return this->updateCubic();
-}
-
-int SkCubicEdge::updateCubic()
-{
-    int     success;
-    int     count = fCurveCount;
+bool SkCubicEdge::nextSegment() {
+    bool    success;
+    int     count = fSegmentCount;
     SkFixed oldx = fCx;
     SkFixed oldy = fCy;
     SkFixed newx, newy;
     const int ddshift = fCurveShift;
     const int dshift = fCubicDShift;
 
-    SkASSERT(count < 0);
+    SkASSERT(count > 0);
 
     do {
-        if (++count < 0)
+        if (--count > 0)
         {
-            newx    = oldx + (fCDx >> dshift);
-            fCDx    += fCDDx >> ddshift;
-            fCDDx   += fCDDDx;
+            newx = oldx + (fCDxDt >> dshift);
+            fCDxDt += fCD2xDt2 >> ddshift;
+            fCD2xDt2 += fCD3xDt3;
 
-            newy    = oldy + (fCDy >> dshift);
-            fCDy    += fCDDy >> ddshift;
-            fCDDy   += fCDDDy;
+            newy = oldy + (fCDyDt >> dshift);
+            fCDyDt += fCD2yDt2 >> ddshift;
+            fCD2yDt2 += fCD3yDt3;
         }
         else    
         {
-        
-            newx    = fCLastX;
-            newy    = fCLastY;
+            newx = fCLastX;
+            newy = fCLastY;
         }
 
         
@@ -517,10 +581,10 @@ int SkCubicEdge::updateCubic()
         success = this->updateLine(oldx, oldy, newx, newy);
         oldx = newx;
         oldy = newy;
-    } while (count < 0 && !success);
+    } while (count > 0 && !success);
 
-    fCx         = newx;
-    fCy         = newy;
-    fCurveCount = SkToS8(count);
+    fCx = newx;
+    fCy = newy;
+    fSegmentCount = SkToU8(count);
     return success;
 }

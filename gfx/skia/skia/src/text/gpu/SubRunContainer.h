@@ -9,9 +9,15 @@
 #define sktext_gpu_SubRunContainer_DEFINED
 
 #include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSpan.h"
+#include "include/private/base/SkPoint_impl.h"
+#include "include/private/base/SkTLogic.h"
+#include "src/core/SkColorData.h"  
+#include "src/text/gpu/GlyphVector.h"
 #include "src/text/gpu/SubRunAllocator.h"
+#include "src/text/gpu/VertexFiller.h"
 
 #include <cstddef>
 #include <functional>
@@ -25,7 +31,6 @@ class SkPaint;
 class SkReadBuffer;
 class SkStrikeClient;
 class SkWriteBuffer;
-struct SkPoint;
 struct SkStrikeDeviceInfo;
 
 namespace sktext {
@@ -37,22 +42,9 @@ namespace skgpu {
 enum class MaskFormat : int;
 }
 
-#if defined(SK_GANESH) || defined(SK_USE_LEGACY_GANESH_TEXT_APIS)
-#include "src/gpu/ganesh/GrColor.h"
-#include "src/gpu/ganesh/ops/GrOp.h"
-
-class GrClip;
-struct SkIRect;
-namespace skgpu::ganesh {
-class SurfaceDrawContext;
-}
-#endif
-
 namespace sktext::gpu {
-class GlyphVector;
 class Glyph;
 class StrikeCache;
-class VertexFiller;
 
 using RegenerateAtlasDelegate = std::function<std::tuple<bool, int>(GlyphVector*,
                                                                     int begin,
@@ -66,57 +58,7 @@ struct RendererData {
     skgpu::MaskFormat maskFormat;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class AtlasSubRun {
-public:
-    virtual ~AtlasSubRun() = default;
-
-    virtual SkSpan<const Glyph*> glyphs() const = 0;
-    virtual int glyphCount() const = 0;
-    virtual skgpu::MaskFormat maskFormat() const = 0;
-    virtual int glyphSrcPadding() const = 0;
-    virtual unsigned short instanceFlags() const = 0;
-
-#if defined(SK_GANESH) || defined(SK_USE_LEGACY_GANESH_TEXT_APIS)
-    virtual size_t vertexStride(const SkMatrix& drawMatrix) const = 0;
-
-    virtual std::tuple<const GrClip*, GrOp::Owner> makeAtlasTextOp(
-            const GrClip*,
-            const SkMatrix& viewMatrix,
-            SkPoint drawOrigin,
-            const SkPaint&,
-            sk_sp<SkRefCnt>&& subRunStorage,
-            skgpu::ganesh::SurfaceDrawContext*) const = 0;
-
-    virtual void fillVertexData(
-            void* vertexDst, int offset, int count,
-            GrColor color,
-            const SkMatrix& drawMatrix,
-            SkPoint drawOrigin,
-            SkIRect clip) const = 0;
-#endif
-    
-    virtual std::tuple<bool, int> regenerateAtlas(
-            int begin, int end, RegenerateAtlasDelegate) const = 0;
-
-    virtual const VertexFiller& vertexFiller() const = 0;
-
-    virtual void testingOnly_packedGlyphIDToGlyph(StrikeCache* cache) const = 0;
-};
-
+class AtlasSubRun;
 using AtlasDrawDelegate = std::function<void(const sktext::gpu::AtlasSubRun* subRun,
                                              SkPoint drawOrigin,
                                              const SkPaint& paint,
@@ -160,6 +102,79 @@ protected:
 private:
     friend class SubRunList;
     SubRunOwner fNext;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AtlasSubRun : public SubRun {
+public:
+    AtlasSubRun(VertexFiller&& vertexFiller, GlyphVector&& glyphs)
+            : fVertexFiller{std::move(vertexFiller)}
+            , fGlyphs{std::move(glyphs)} {}
+    ~AtlasSubRun() override = default;
+
+    SkSpan<const Glyph*> glyphs() const { return fGlyphs.glyphs(); }
+    int glyphCount() const { return SkCount(fGlyphs.glyphs()); }
+    skgpu::MaskFormat maskFormat() const { return fVertexFiller.grMaskType(); }
+    virtual int glyphSrcPadding() const = 0;
+    unsigned short instanceFlags() const { return (unsigned short)this->maskFormat(); }
+
+    virtual std::tuple<bool, SkRect> deviceRectAndNeedsTransform(
+            const SkMatrix &positionMatrix) const = 0;
+
+    struct GlyphParams {
+        bool isSDF;
+        bool isLCD;
+        bool isAA;
+    };
+    virtual GlyphParams glyphParams() const = 0;
+
+    size_t vertexStride(const SkMatrix& drawMatrix) const {
+        return fVertexFiller.vertexStride(drawMatrix);
+    }
+
+    void fillVertexData(
+            void* vertexDst, int offset, int count,
+            const SkPMColor4f& color,
+            const SkMatrix& drawMatrix,
+            SkPoint drawOrigin,
+            SkIRect clip) const {
+        SkMatrix positionMatrix = drawMatrix;
+        positionMatrix.preTranslate(drawOrigin.x(), drawOrigin.y());
+        fVertexFiller.fillVertexData(offset, count,
+                                     fGlyphs.glyphs(),
+                                     color,
+                                     positionMatrix,
+                                     clip,
+                                     vertexDst);
+    }
+
+    
+    virtual std::tuple<bool, int> regenerateAtlas(
+            int begin, int end, RegenerateAtlasDelegate) const = 0;
+
+    const VertexFiller& vertexFiller() const { return fVertexFiller; }
+
+    virtual void testingOnly_packedGlyphIDToGlyph(StrikeCache* cache) const = 0;
+
+protected:
+    const VertexFiller fVertexFiller;
+
+    
+    
+    mutable GlyphVector fGlyphs;
 };
 
 

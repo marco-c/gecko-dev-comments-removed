@@ -12,8 +12,11 @@
 #include "include/core/SkPathEffect.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "include/core/SkSpan.h"
 
-class SkPath;
+#include <optional>
+
+class SkPathBuilder;
 class SkStrokeRec;
 
 class SkPathEffectBase : public SkPathEffect {
@@ -59,6 +62,8 @@ public:
 
         SkPath             fFirst;      
         SkPath             fLast;       
+
+        SkSpan<SkPoint> points() { return {fPoints, fNumPoints}; }
     };
 
     
@@ -97,7 +102,7 @@ public:
 
 
 
-    virtual bool onFilterPath(SkPath*, const SkPath&, SkStrokeRec*, const SkRect*,
+    virtual bool onFilterPath(SkPathBuilder*, const SkPath&, SkStrokeRec*, const SkRect*,
                               const SkMatrix& ) const = 0;
 
     
@@ -108,25 +113,13 @@ public:
         return false;
     }
 
-    enum class DashType {
-        kNone, 
-        kDash, 
-    };
-
     struct DashInfo {
-        DashInfo() : fIntervals(nullptr), fCount(0), fPhase(0) {}
-        DashInfo(SkScalar* intervals, int32_t count, SkScalar phase)
-            : fIntervals(intervals), fCount(count), fPhase(phase) {}
-
-        SkScalar*   fIntervals;         
-                                        
-        int32_t     fCount;             
-        SkScalar    fPhase;             
-                                        
+        SkSpan<const SkScalar> fIntervals;
+        SkScalar               fPhase;
     };
 
-    virtual DashType asADash(DashInfo*) const {
-        return DashType::kNone;
+    virtual std::optional<DashInfo> asADash() const {
+        return {};
     }
 
 

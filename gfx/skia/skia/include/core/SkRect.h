@@ -8,17 +8,21 @@
 #ifndef SkRect_DEFINED
 #define SkRect_DEFINED
 
+#include "include/core/SkPathTypes.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkSize.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkSafe32.h"
 #include "include/private/base/SkTFitsIn.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 
 struct SkRect;
 class SkString;
@@ -571,6 +575,13 @@ struct SK_API SkIRect {
         return MakeLTRB(std::min(fLeft, fRight), std::min(fTop, fBottom),
                         std::max(fLeft, fRight), std::max(fTop, fBottom));
     }
+
+    
+
+
+
+
+    const int32_t* asInt32s() const { return &fLeft; }
 };
 
 
@@ -823,16 +834,39 @@ struct SK_API SkRect {
         return !(a == b);
     }
 
+    SkPoint TL() const { return {fLeft,  fTop}; }
+    SkPoint TR() const { return {fRight, fTop}; }
+    SkPoint BL() const { return {fLeft,  fBottom}; }
+    SkPoint BR() const { return {fRight, fBottom}; }
+
     
 
 
+    std::array<SkPoint, 4> toQuad(SkPathDirection dir = SkPathDirection::kCW) const {
+        std::array<SkPoint, 4> storage;
+        this->copyToQuad(storage, dir);
+        return storage;
+    }
 
+    
+    
+    void copyToQuad(SkSpan<SkPoint> pts, SkPathDirection dir = SkPathDirection::kCW) const {
+        SkASSERT(pts.size() >= 4);
+        pts[0] = this->TL();
+        pts[2] = this->BR();
+        if (dir == SkPathDirection::kCW) {
+            pts[1] = this->TR();
+            pts[3] = this->BL();
+        } else {
+            pts[1] = this->BL();
+            pts[3] = this->TR();
+        }
+    }
 
-
-
-
-
-    void toQuad(SkPoint quad[4]) const;
+    
+    void toQuad(SkPoint quad[4]) const {
+        this->copyToQuad({quad, 4});
+    }
 
     
 
@@ -875,12 +909,14 @@ struct SK_API SkRect {
 
 
 
+    static std::optional<SkRect> Bounds(SkSpan<const SkPoint> pts);
 
-
-
-
-    void setBounds(const SkPoint pts[], int count) {
-        (void)this->setBoundsCheck(pts, count);
+    static SkRect BoundsOrEmpty(SkSpan<const SkPoint> pts) {
+        if (auto bounds = Bounds(pts)) {
+            return bounds.value();
+        } else {
+            return MakeEmpty();
+        }
     }
 
     
@@ -891,12 +927,9 @@ struct SK_API SkRect {
 
 
 
-
-
-
-
-
-    bool setBoundsCheck(const SkPoint pts[], int count);
+    void setBounds(SkSpan<const SkPoint> pts) {
+        (void)this->setBoundsCheck(pts);
+    }
 
     
 
@@ -906,7 +939,29 @@ struct SK_API SkRect {
 
 
 
-    void setBoundsNoCheck(const SkPoint pts[], int count);
+    bool setBoundsCheck(SkSpan<const SkPoint> pts);
+
+    
+
+
+
+
+
+
+
+    void setBoundsNoCheck(SkSpan<const SkPoint> pts);
+
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    void setBounds(const SkPoint pts[], int count) {
+        this->setBounds({pts, count});
+    }
+    void setBoundsNoCheck(const SkPoint pts[], int count) {
+        this->setBoundsNoCheck({pts, count});
+    }
+    bool setBoundsCheck(const SkPoint pts[], int count) {
+        return this->setBoundsCheck({pts, count});
+    }
+#endif
 
     
 

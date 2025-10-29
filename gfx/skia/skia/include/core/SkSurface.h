@@ -25,13 +25,14 @@ class GrBackendSemaphore;
 class GrBackendTexture;
 class GrRecordingContext;
 class GrSurfaceCharacterization;
-enum GrSurfaceOrigin : int;
 class SkBitmap;
 class SkCanvas;
 class SkCapabilities;
 class SkColorSpace;
 class SkPaint;
+class SkRecorder;
 class SkSurface;
+enum GrSurfaceOrigin : int;
 struct SkIRect;
 struct SkISize;
 
@@ -225,6 +226,12 @@ public:
 
 
     skgpu::graphite::Recorder* recorder() const;
+
+    
+
+
+
+    SkRecorder* baseRecorder() const;
 
     enum class BackendHandleAccess {
         kFlushRead,     

@@ -9,8 +9,10 @@
 #define SkMatrix_DEFINED
 
 #include "include/core/SkPoint.h"
+#include "include/core/SkPoint3.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkScalar.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "include/private/base/SkMacros.h"
@@ -18,24 +20,24 @@
 
 #include <cstdint>
 #include <cstring>
+#include <optional>
 
-struct SkPoint3;
 struct SkRSXform;
 struct SkSize;
 
 
 #define SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
 
+#ifndef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
+    #define SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
+#endif
 
-
-
-
-
-
+#ifdef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
 enum class SkApplyPerspectiveClip {
     kNo,    
     kYes,   
 };
+#endif
 
 
 
@@ -96,6 +98,8 @@ public:
     [[nodiscard]] static SkMatrix Translate(SkVector t) { return Translate(t.x(), t.y()); }
     [[nodiscard]] static SkMatrix Translate(SkIVector t) { return Translate(t.x(), t.y()); }
 
+    [[nodiscard]] static SkMatrix ScaleTranslate(float sx, float sy, float tx, float ty);
+
     
 
 
@@ -139,25 +143,6 @@ public:
         kCenter_ScaleToFit, 
         kEnd_ScaleToFit,    
     };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    [[nodiscard]] static SkMatrix RectToRect(const SkRect& src, const SkRect& dst,
-                                             ScaleToFit mode = kFill_ScaleToFit) {
-        return MakeRectToRect(src, dst, mode);
-    }
 
     
 
@@ -1136,46 +1121,39 @@ public:
 
     SkMatrix& postConcat(const SkMatrix& other);
 
-#ifndef SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
-private:
-#endif
     
 
 
 
+    static std::optional<SkMatrix> Rect2Rect(const SkRect& src, const SkRect& dst,
+                                             ScaleToFit = kFill_ScaleToFit);
 
+    static SkMatrix RectToRectOrIdentity(const SkRect& src, const SkRect& dst,
+                                         ScaleToFit stf = kFill_ScaleToFit) {
+        return Rect2Rect(src, dst, stf).value_or(SkMatrix::I());
+    }
 
-
-
-
-
-
-
-
-
-
-    bool setRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit stf);
-
-    
-
-
-
-
-
-
-
-
-
-
-
+#ifdef SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
+    bool setRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit stf) {
+        if (auto mx = Rect2Rect(src, dst, stf)) {
+            *this = *mx;
+            return true;
+        }
+        this->reset();
+        return false;
+    }
 
     static SkMatrix MakeRectToRect(const SkRect& src, const SkRect& dst, ScaleToFit stf) {
-        SkMatrix m;
-        m.setRectToRect(src, dst, stf);
-        return m;
+        if (auto mx = Rect2Rect(src, dst, stf)) {
+            return *mx;
+        }
+        return SkMatrix::I();
     }
-#ifndef SK_SUPPORT_LEGACY_MATRIX_RECTTORECT
-public:
+
+    [[nodiscard]] static SkMatrix RectToRect(const SkRect& src, const SkRect& dst,
+                                             ScaleToFit mode = kFill_ScaleToFit) {
+        return MakeRectToRect(src, dst, mode);
+    }
 #endif
 
     
@@ -1186,32 +1164,30 @@ public:
 
 
 
+    static std::optional<SkMatrix> PolyToPoly(SkSpan<const SkPoint> src, SkSpan<const SkPoint> dst);
 
-
-
-
-
-
-
-    bool setPolyToPoly(const SkPoint src[], const SkPoint dst[], int count);
+    bool setPolyToPoly(SkSpan<const SkPoint> src, SkSpan<const SkPoint> dst) {
+        if (auto mx = PolyToPoly(src, dst)) {
+            *this = *mx;
+            return true;
+        }
+        return false;
+    }
 
     
 
 
+    std::optional<SkMatrix> invert() const;
 
-
-
-
-
+    
     [[nodiscard]] bool invert(SkMatrix* inverse) const {
-        
-        if (this->isIdentity()) {
+        if (auto inv = this->invert()) {
             if (inverse) {
-                inverse->reset();
+                *inverse = *inv;
             }
             return true;
         }
-        return this->invertNonIdentity(inverse);
+        return false;
     }
 
     
@@ -1301,7 +1277,8 @@ public:
 
 
 
-    void mapPoints(SkPoint dst[], const SkPoint src[], int count) const;
+
+    void mapPoints(SkSpan<SkPoint> dst, SkSpan<const SkPoint> src) const;
 
     
 
@@ -1325,9 +1302,8 @@ public:
 
 
 
-
-    void mapPoints(SkPoint pts[], int count) const {
-        this->mapPoints(pts, pts, count);
+    void mapPoints(SkSpan<SkPoint> pts) const {
+        this->mapPoints(pts, pts);
     }
 
     
@@ -1349,32 +1325,27 @@ public:
 
 
 
-    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint3 src[], int count) const;
+
+    void mapHomogeneousPoints(SkSpan<SkPoint3> dst, SkSpan<const SkPoint3> src) const;
+
+    SkPoint3 mapHomogeneousPoint(SkPoint3 src) const {
+        SkPoint3 dst;
+        this->mapHomogeneousPoints({&dst, 1}, {&src, 1});
+        return dst;
+    }
 
     
 
 
-    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint src[], int count) const;
-
-    
 
 
 
+    void mapPointsToHomogeneous(SkSpan<SkPoint3> dst, SkSpan<const SkPoint> src) const;
 
-
-
-
-
-
-
-
-
-
-
-    SkPoint mapPoint(SkPoint pt) const {
-        SkPoint result;
-        this->mapXY(pt.x(), pt.y(), &result);
-        return result;
+    SkPoint3 mapPointToHomogeneous(SkPoint src) const {
+        SkPoint3 dst;
+        this->mapPointsToHomogeneous({&dst, 1}, {&src, 1});
+        return dst;
     }
 
     
@@ -1392,33 +1363,25 @@ public:
 
 
 
-
-
-
-    void mapXY(SkScalar x, SkScalar y, SkPoint* result) const;
+    SkPoint mapPoint(SkPoint p) const {
+        if (this->hasPerspective()) {
+            return this->mapPointPerspective(p);
+        } else {
+            return this->mapPointAffine(p);
+        }
+    }
 
     
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    SkPoint mapXY(SkScalar x, SkScalar y) const {
-        SkPoint result;
-        this->mapXY(x,y, &result);
-        return result;
+    SkPoint mapPointAffine(SkPoint p) const {
+        SkASSERT(!this->hasPerspective());
+        return {
+            (p.fX * fMat[0] + p.fY * fMat[1]) + fMat[2],
+            (p.fX * fMat[3] + p.fY * fMat[4]) + fMat[5],
+        };
     }
-
 
     
 
@@ -1439,7 +1402,7 @@ public:
                  y = this->getTranslateY();
         if (this->hasPerspective()) {
             SkScalar w = fMat[kMPersp2];
-            if (w) { w = 1 / w; }
+            if ((bool)w) { w = 1 / w; }
             x *= w;
             y *= w;
         }
@@ -1475,7 +1438,8 @@ public:
 
 
 
-    void mapVectors(SkVector dst[], const SkVector src[], int count) const;
+
+    void mapVectors(SkSpan<SkVector> dst, SkSpan<const SkVector> src) const;
 
     
 
@@ -1499,9 +1463,8 @@ public:
 
 
 
-
-    void mapVectors(SkVector vecs[], int count) const {
-        this->mapVectors(vecs, vecs, count);
+    void mapVectors(SkSpan<SkVector> vecs) const {
+        this->mapVectors(vecs, vecs);
     }
 
     
@@ -1521,60 +1484,12 @@ public:
 
 
 
-    void mapVector(SkScalar dx, SkScalar dy, SkVector* result) const {
-        SkVector vec = { dx, dy };
-        this->mapVectors(result, &vec, 1);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkVector mapVector(SkScalar dx, SkScalar dy) const {
-        SkVector vec = { dx, dy };
-        this->mapVectors(&vec, &vec, 1);
+    SkVector mapVector(SkVector vec) const {
+        this->mapVectors({&vec, 1});
         return vec;
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool mapRect(SkRect* dst, const SkRect& src,
-                 SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const;
-
-    
-
-
-
-
-
-
-
-
-    bool mapRect(SkRect* rect, SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const {
-        return this->mapRect(rect, *rect, pc);
+    SkVector mapVector(SkScalar dx, SkScalar dy) const {
+        return this->mapVector({dx, dy});
     }
 
     
@@ -1582,10 +1497,48 @@ public:
 
 
 
-    SkRect mapRect(const SkRect& src,
-                   SkApplyPerspectiveClip pc = SkApplyPerspectiveClip::kYes) const {
+
+
+
+
+
+
+
+    bool mapRect(SkRect* dst, const SkRect& src) const;
+
+#ifdef SK_SUPPORT_LEGACY_APPLYPERSPECTIVECLIP
+    bool mapRect(SkRect* dst, const SkRect& src, SkApplyPerspectiveClip) const {
+        return this->mapRect(dst, src);
+    }
+    bool mapRect(SkRect* rect, SkApplyPerspectiveClip) const {
+        return this->mapRect(rect, *rect);
+    }
+    SkRect mapRect(const SkRect& src, SkApplyPerspectiveClip) const {
+        return this->mapRect(src);
+    }
+#endif
+
+    
+
+
+
+
+
+
+
+
+    bool mapRect(SkRect* rect) const {
+        return this->mapRect(rect, *rect);
+    }
+
+    
+
+
+
+
+    SkRect mapRect(const SkRect& src) const {
         SkRect dst;
-        (void)this->mapRect(&dst, src, pc);
+        (void)this->mapRect(&dst, src);
         return dst;
     }
 
@@ -1619,8 +1572,7 @@ public:
 
     void mapRectToQuad(SkPoint dst[4], const SkRect& rect) const {
         
-        rect.toQuad(dst);
-        this->mapPoints(dst, 4);
+        this->mapPoints({dst, 4}, rect.toQuad());
     }
 
     
@@ -1801,29 +1753,7 @@ public:
 
 
     void setScaleTranslate(SkScalar sx, SkScalar sy, SkScalar tx, SkScalar ty) {
-        fMat[kMScaleX] = sx;
-        fMat[kMSkewX]  = 0;
-        fMat[kMTransX] = tx;
-
-        fMat[kMSkewY]  = 0;
-        fMat[kMScaleY] = sy;
-        fMat[kMTransY] = ty;
-
-        fMat[kMPersp0] = 0;
-        fMat[kMPersp1] = 0;
-        fMat[kMPersp2] = 1;
-
-        int mask = 0;
-        if (sx != 1 || sy != 1) {
-            mask |= kScale_Mask;
-        }
-        if (tx != 0.0f || ty != 0.0f) {
-            mask |= kTranslate_Mask;
-        }
-        if (sx != 0 && sy != 0) {
-            mask |= kRectStaysRect_Mask;
-        }
-        this->setTypeMask(mask);
+        *this = SkMatrix::ScaleTranslate(sx, sy, tx, ty);
     }
 
     
@@ -1832,6 +1762,43 @@ public:
 
 
     bool isFinite() const { return SkIsFinite(fMat, 9); }
+
+#ifdef SK_SUPPORT_UNSPANNED_APIS
+    bool setPolyToPoly(const SkPoint src[], const SkPoint dst[], int count) {
+        return this->setPolyToPoly({src, count}, {dst, count});
+    }
+
+    void mapPoints(SkPoint dst[], const SkPoint src[], int count) const {
+        this->mapPoints({dst, count}, {src, count});
+    }
+    void mapPoints(SkPoint pts[], int count) const {
+        this->mapPoints(pts, pts, count);
+    }
+
+    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint3 src[], int count) const {
+        this->mapHomogeneousPoints({dst, count}, {src, count});
+    }
+    void mapHomogeneousPoints(SkPoint3 dst[], const SkPoint src[], int count) const {
+        this->mapPointsToHomogeneous({dst, count}, {src, count});
+    }
+
+    void mapVectors(SkVector dst[], const SkVector src[], int count) const {
+        this->mapVectors({dst, count}, {src, count});
+    }
+    void mapVectors(SkVector vecs[], int count) const {
+        this->mapVectors({vecs, count});
+    }
+    void mapXY(SkScalar x, SkScalar y, SkPoint* result) const {
+        *result = this->mapPoint({x, y});
+    }
+    SkPoint mapXY(SkScalar x, SkScalar y) const {
+        return this->mapPoint({x, y});
+    }
+    void mapVector(SkScalar dx, SkScalar dy, SkVector* result) const {
+        SkVector vec = { dx, dy };
+        this->mapVectors({result, 1}, {&vec, 1});
+    }
+#endif
 
 private:
     
@@ -1921,17 +1888,12 @@ private:
         }
     }
 
-    typedef void (*MapXYProc)(const SkMatrix& mat, SkScalar x, SkScalar y,
-                                 SkPoint* result);
+    
 
-    static MapXYProc GetMapXYProc(TypeMask mask) {
-        SkASSERT((mask & ~kAllMasks) == 0);
-        return gMapXYProcs[mask & kAllMasks];
-    }
 
-    MapXYProc getMapXYProc() const {
-        return GetMapXYProc(this->getType());
-    }
+
+
+    SkPoint mapPointPerspective(SkPoint pt) const;
 
     typedef void (*MapPtsProc)(const SkMatrix& mat, SkPoint dst[],
                                   const SkPoint src[], int count);
@@ -1945,21 +1907,9 @@ private:
         return GetMapPtsProc(this->getType());
     }
 
-    [[nodiscard]] bool invertNonIdentity(SkMatrix* inverse) const;
-
     static bool Poly2Proc(const SkPoint[], SkMatrix*);
     static bool Poly3Proc(const SkPoint[], SkMatrix*);
     static bool Poly4Proc(const SkPoint[], SkMatrix*);
-
-    static void Identity_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-    static void Trans_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-    static void Scale_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-    static void ScaleTrans_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-    static void Rot_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-    static void RotTrans_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-    static void Persp_xy(const SkMatrix&, SkScalar, SkScalar, SkPoint*);
-
-    static const MapXYProc gMapXYProcs[];
 
     static void Identity_pts(const SkMatrix&, SkPoint[], const SkPoint[], int);
     static void Trans_pts(const SkMatrix&, SkPoint dst[], const SkPoint[], int);

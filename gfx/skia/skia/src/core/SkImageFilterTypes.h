@@ -497,7 +497,7 @@ public:
 
     static LayerSpace<SkMatrix> RectToRect(const LayerSpace<SkRect>& from,
                                            const LayerSpace<SkRect>& to) {
-        return LayerSpace<SkMatrix>(SkMatrix::RectToRect(SkRect(from), SkRect(to)));
+        return LayerSpace<SkMatrix>(SkMatrix::RectToRectOrIdentity(SkRect(from), SkRect(to)));
     }
 
     
@@ -524,7 +524,13 @@ public:
     }
 
     bool invert(LayerSpace<SkMatrix>* inverse) const {
-        return fData.invert(inverse ? &inverse->fData : nullptr);
+        if (auto inv = fData.invert()) {
+            if (inverse) {
+                inverse->fData = *inv;
+            }
+            return true;
+        }
+        return false;
     }
 
     
@@ -623,11 +629,10 @@ public:
         
         
         
-        SkMatrix devToLayer33;
-        if (!fLayerToDevMatrix.asM33().invert(&devToLayer33)) {
-            return LayerSpace<T>::Empty();
+        if (auto devToLayer33 = fLayerToDevMatrix.asM33().invert()) {
+            return LayerSpace<T>(map(static_cast<const T&>(devGeometry), *devToLayer33));
         }
-        return LayerSpace<T>(map(static_cast<const T&>(devGeometry), devToLayer33));
+        return LayerSpace<T>::Empty();
     }
 
     template<typename T>
@@ -929,9 +934,13 @@ private:
     
     
     
+    
+    
+    
     FilterResult rescale(const Context& ctx,
                          const LayerSpace<SkSize>& scale,
-                         bool enforceDecal) const;
+                         bool enforceDecal,
+                         bool allowOverscaling) const;
     
     
     
@@ -1107,10 +1116,6 @@ public:
 
     
     virtual const SkBlurEngine* getBlurEngine() const = 0;
-
-    
-    
-    virtual bool useLegacyFilterResultBlur() const { return true; }
 
     
     const SkSurfaceProps& surfaceProps() const { return fSurfaceProps; }

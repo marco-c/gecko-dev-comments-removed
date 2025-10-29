@@ -52,20 +52,15 @@ private:
     
     
     
-    void addToKey(const KeyContext& ,
-                  PaintParamsKeyBuilder* ,
-                  PipelineDataGatherer* ,
-                  int ) const final {
+    void addToKey(const KeyContext& , int ) const final {
         SkASSERT(false);
     }
 
     virtual void onCreatePipelines(const KeyContext&,
-                                   PipelineDataGatherer*,
                                    const RenderPassDesc&,
                                    const PaintOptions::ProcessCombination&) const = 0;
 
     void createPipelines(const KeyContext&,
-                         PipelineDataGatherer*,
                          const RenderPassDesc&,
                          const PaintOptions::ProcessCombination&);
 

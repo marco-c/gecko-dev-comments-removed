@@ -21,7 +21,6 @@
 #include <optional>
 
 class GrDirectContext;
-class GrRecordingContext;
 class SkBitmap;
 class SkColorSpace;
 class SkData;
@@ -33,6 +32,7 @@ class SkMipmap;
 class SkPaint;
 class SkPicture;
 class SkPixmap;
+class SkRecorder;
 class SkShader;
 class SkSurfaceProps;
 enum SkColorType : int;
@@ -41,8 +41,6 @@ enum class SkTileMode;
 
 struct SkIPoint;
 struct SkSamplingOptions;
-
-namespace skgpu::graphite { class Recorder; }
 
 namespace SkImages {
 
@@ -446,7 +444,7 @@ public:
 
 
 
-    virtual bool isValid(GrRecordingContext* context) const = 0;
+    virtual bool isValid(SkRecorder*) const = 0;
 
     
 
@@ -723,14 +721,13 @@ public:
 
 
 
-    sk_sp<SkImage> makeScaled(skgpu::graphite::Recorder*,
+    sk_sp<SkImage> makeScaled(SkRecorder*, const SkImageInfo&, const SkSamplingOptions&) const;
+    sk_sp<SkImage> makeScaled(SkRecorder*,
                               const SkImageInfo&,
-                              const SkSamplingOptions&) const;
+                              const SkSamplingOptions&,
+                              const SkSurfaceProps&) const;
 
-    sk_sp<SkImage> makeScaled(const SkImageInfo& info,
-                              const SkSamplingOptions& sampling) const {
-        return this->makeScaled(nullptr, info, sampling);
-    }
+    sk_sp<SkImage> makeScaled(const SkImageInfo& info, const SkSamplingOptions& sampling) const;
 
     
 
@@ -744,29 +741,8 @@ public:
 
     sk_sp<SkData> refEncodedData() const;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual sk_sp<SkImage> makeSubset(GrDirectContext* direct, const SkIRect& subset) const = 0;
-
     struct RequiredProperties {
-        bool fMipmapped;
+        bool fMipmapped = false;
 
         bool operator==(const RequiredProperties& other) const {
             return fMipmapped == other.fMipmapped;
@@ -797,7 +773,7 @@ public:
 
 
 
-    virtual sk_sp<SkImage> makeSubset(skgpu::graphite::Recorder*,
+    virtual sk_sp<SkImage> makeSubset(SkRecorder*,
                                       const SkIRect& subset,
                                       RequiredProperties) const = 0;
 
@@ -894,26 +870,7 @@ public:
 
 
 
-
-
-    virtual sk_sp<SkImage> makeColorSpace(GrDirectContext* direct,
-                                          sk_sp<SkColorSpace> target) const = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual sk_sp<SkImage> makeColorSpace(skgpu::graphite::Recorder*,
+    virtual sk_sp<SkImage> makeColorSpace(SkRecorder*,
                                           sk_sp<SkColorSpace> targetColorSpace,
                                           RequiredProperties) const = 0;
 
@@ -931,25 +888,7 @@ public:
 
 
 
-    virtual sk_sp<SkImage> makeColorTypeAndColorSpace(GrDirectContext* direct,
-                                                      SkColorType targetColorType,
-                                                      sk_sp<SkColorSpace> targetCS) const = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual sk_sp<SkImage> makeColorTypeAndColorSpace(skgpu::graphite::Recorder*,
+    virtual sk_sp<SkImage> makeColorTypeAndColorSpace(SkRecorder*,
                                                       SkColorType targetColorType,
                                                       sk_sp<SkColorSpace> targetColorSpace,
                                                       RequiredProperties) const = 0;
