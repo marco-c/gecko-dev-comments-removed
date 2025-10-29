@@ -6,12 +6,14 @@
 
 #include "GeckoEditableSupport.h"
 
+#include "AndroidBridgeUtilities.h"
 #include "AndroidRect.h"
 #include "KeyEvent.h"
 #include "PuppetWidget.h"
 #include "nsIContent.h"
 #include "nsITransferable.h"
 #include "nsStringStream.h"
+#include "nsWindow.h"
 
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/IMEStateManager.h"
@@ -34,7 +36,7 @@
 #include <android/log.h>
 
 #ifdef NIGHTLY_BUILD
-static mozilla::LazyLogModule sGeckoEditableSupportLog("GeckoEditableSupport");
+static mozilla::LazyLogModule sGeckoEditableSupportLog("IMEHandler");
 #  define ALOGIME(...) \
     MOZ_LOG(sGeckoEditableSupportLog, LogLevel::Debug, (__VA_ARGS__))
 #else
@@ -42,6 +44,9 @@ static mozilla::LazyLogModule sGeckoEditableSupportLog("GeckoEditableSupport");
     do {                   \
     } while (0)
 #endif
+
+namespace mozilla {
+namespace widget {
 
 static uint32_t ConvertAndroidKeyCodeToDOMKeyCode(int32_t androidKeyCode) {
   
@@ -424,9 +429,6 @@ static jni::ObjectArray::LocalRef ConvertRectArrayToJavaRectFArray(
   }
   return rects;
 }
-
-namespace mozilla {
-namespace widget {
 
 uint32_t GeckoEditableSupport::sUniqueKeyEventId = 0;
 
