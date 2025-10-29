@@ -3342,8 +3342,13 @@ nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
 
     
     
-    MOZ_ASSERT_IF(!aRequest->PassedConditionForMemoryCache(),
-                  !aRequest->getLoadedScript()->HasDiskCacheReference());
+    if (aRequest->HasStencil()) {
+      MOZ_ASSERT_IF(!aRequest->PassedConditionForMemoryCache(),
+                    !aRequest->getLoadedScript()->HasDiskCacheReference());
+    } else {
+      
+      aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+    }
 
     return aRv;
   }
