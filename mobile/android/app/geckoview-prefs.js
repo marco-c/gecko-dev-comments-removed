@@ -269,8 +269,6 @@ pref("image.cache.size", 1048576);
 
 pref("intl.locale.requested", "");
 
-pref("keyword.enabled", true);
-
 
 pref("layout.accessiblecaret.always_tilt", true);
 

@@ -244,26 +244,6 @@ pref("browser.uitour.url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/t
 
 pref("browser.uitour.surveyDuration", 7200);
 
-pref("keyword.enabled", true);
-
-
-
-
-pref("browser.fixup.domainwhitelist.localhost", true);
-
-pref("browser.fixup.domainsuffixwhitelist.test", true);
-pref("browser.fixup.domainsuffixwhitelist.example", true);
-pref("browser.fixup.domainsuffixwhitelist.invalid", true);
-pref("browser.fixup.domainsuffixwhitelist.localhost", true);
-
-pref("browser.fixup.domainsuffixwhitelist.internal", true);
-
-pref("browser.fixup.domainsuffixwhitelist.local", true);
-
-
-
-pref("browser.fixup.dns_first_for_single_words", false);
-
 #ifdef UNIX_BUT_NOT_MAC
   pref("general.autoScroll", false);
 #else

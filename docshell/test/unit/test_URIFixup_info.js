@@ -990,6 +990,8 @@ function sanitize(input) {
 }
 
 add_task(async function setup() {
+  
+  Services.prefs.setBoolPref("browser.fixup.domainwhitelist.localhost", false);
   var prefList = [
     "browser.fixup.typo.scheme",
     "keyword.enabled",

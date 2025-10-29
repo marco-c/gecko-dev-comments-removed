@@ -1025,6 +1025,26 @@ pref("javascript.options.dump_stack_on_debuggee_would_run", false);
 
 pref("image.animation_mode",                "normal");
 
+pref("keyword.enabled", true);
+
+
+
+
+pref("browser.fixup.domainwhitelist.localhost", true);
+
+pref("browser.fixup.domainsuffixwhitelist.test", true);
+pref("browser.fixup.domainsuffixwhitelist.example", true);
+pref("browser.fixup.domainsuffixwhitelist.invalid", true);
+pref("browser.fixup.domainsuffixwhitelist.localhost", true);
+
+pref("browser.fixup.domainsuffixwhitelist.internal", true);
+
+pref("browser.fixup.domainsuffixwhitelist.local", true);
+
+
+
+pref("browser.fixup.dns_first_for_single_words", false);
+
 
 
 
