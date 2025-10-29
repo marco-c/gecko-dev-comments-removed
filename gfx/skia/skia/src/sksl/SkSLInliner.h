@@ -112,8 +112,6 @@ private:
     
     bool isSafeToInline(const FunctionDefinition* functionDef, const ProgramUsage& usage);
 
-    bool overInlineStatementLimit() const;
-
     const Context* fContext = nullptr;
     Mangler fMangler;
     int fInlinedStatementCounter = 0;

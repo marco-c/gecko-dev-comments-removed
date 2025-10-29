@@ -12,9 +12,8 @@
 #include "include/private/base/SkTArray.h"
 #include "include/private/base/SkTDArray.h"
 
-#include <optional>
-
 struct SkRect;
+
 
 
 
@@ -44,16 +43,7 @@ enum SkPathOp {
 
 
 
-std::optional<SkPath> SK_API Op(const SkPath& one, const SkPath& two, SkPathOp op);
-
-
-static inline bool Op(const SkPath& one, const SkPath& two, SkPathOp op, SkPath* result) {
-    if (auto res = Op(one, two, op)) {
-        *result = *res;
-        return true;
-    }
-    return false;
-}
+bool SK_API Op(const SkPath& one, const SkPath& two, SkPathOp op, SkPath* result);
 
 
 
@@ -63,16 +53,11 @@ static inline bool Op(const SkPath& one, const SkPath& two, SkPathOp op, SkPath*
 
 
 
-std::optional<SkPath> SK_API Simplify(const SkPath& path);
 
 
-static inline bool Simplify(const SkPath& path, SkPath* result) {
-    if (auto res = Simplify(path)) {
-        *result = *res;
-        return true;
-    }
-    return false;
-}
+
+
+bool SK_API Simplify(const SkPath& path, SkPath* result);
 
 
 
@@ -99,16 +84,10 @@ static inline bool TightBounds(const SkPath& path, SkRect* result) {
 
 
 
-std::optional<SkPath> SK_API AsWinding(const SkPath& path);
 
 
-static inline bool AsWinding(const SkPath& path, SkPath* result) {
-    if (auto res = AsWinding(path)) {
-        *result = *res;
-        return true;
-    }
-    return false;
-}
+
+bool SK_API AsWinding(const SkPath& path, SkPath* result);
 
 
 
@@ -127,16 +106,8 @@ public:
 
 
 
-    std::optional<SkPath> resolve();
 
-    
-    bool resolve(SkPath* result) {
-        if (auto res = this->resolve()) {
-            *result = *res;
-            return true;
-        }
-        return false;
-    }
+    bool resolve(SkPath* result);
 
 private:
     skia_private::TArray<SkPath> fPathRefs;

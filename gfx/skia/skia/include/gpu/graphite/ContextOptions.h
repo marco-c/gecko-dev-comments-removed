@@ -9,7 +9,6 @@
 #define skgpu_graphite_ContextOptions_DEFINED
 
 #include "include/core/SkRefCnt.h"
-#include "include/core/SkSize.h"
 #include "include/core/SkSpan.h"
 #include "include/private/base/SkAPI.h"
 #include "include/private/base/SkMath.h"
@@ -17,7 +16,6 @@
 #include <optional>
 
 class SkData;
-class SkExecutor;
 class SkRuntimeEffect;
 namespace skgpu { class ShaderErrorHandler; }
 
@@ -47,24 +45,7 @@ struct SK_API ContextOptions {
 
 
 
-    uint8_t fInternalMultisampleCount = 4;
-
-    
-
-
-
-
-
-
-    std::optional<SkISize> fInternalMSAATileSize = std::nullopt;
-
-    
-
-
-
-
-
-    float fMinimumPathSizeForMSAA = 0;
+    int fInternalMultisampleCount = 4;
 
     
 
@@ -108,14 +89,6 @@ struct SK_API ContextOptions {
     bool fSupportBilerpFromGlyphAtlas = false;
 
     
-
-
-
-
-
-
-
-
 
 
 
@@ -179,23 +152,6 @@ struct SK_API ContextOptions {
 
 
     SkSpan<sk_sp<SkRuntimeEffect>> fUserDefinedKnownRuntimeEffects;
-
-    
-
-
-
-
-
-
-    SkExecutor* fExecutor = nullptr;
-
-    
-
-
-
-
-
-     bool fEnableCapture = false;
 
     
 

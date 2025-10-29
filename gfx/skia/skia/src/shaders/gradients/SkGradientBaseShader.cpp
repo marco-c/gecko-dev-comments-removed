@@ -109,12 +109,12 @@ void SkGradientBaseShader::flatten(SkWriteBuffer& buffer) const {
         colorCount--;
     }
 
-    buffer.writeColor4fArray({colors, colorCount});
+    buffer.writeColor4fArray(colors, colorCount);
     if (colorSpaceData) {
         buffer.writeDataAsByteArray(colorSpaceData.get());
     }
     if (positions) {
-        buffer.writeScalarArray({positions, colorCount});
+        buffer.writeScalarArray(positions, colorCount);
     }
 }
 
@@ -145,7 +145,7 @@ bool SkGradientBaseShader::DescriptorScope::unflatten(SkReadBuffer& buffer,
     fColorCount = buffer.getArrayCount();
 
     if (!(validate_array(buffer, fColorCount, &fColorStorage) &&
-          buffer.readColor4fArray({fColorStorage.begin(), fColorCount}))) {
+          buffer.readColor4fArray(fColorStorage.begin(), fColorCount))) {
         return false;
     }
     fColors = fColorStorage.begin();
@@ -158,7 +158,7 @@ bool SkGradientBaseShader::DescriptorScope::unflatten(SkReadBuffer& buffer,
     }
     if (SkToBool(flags & kHasPosition_GSF)) {
         if (!(validate_array(buffer, fColorCount, &fPositionStorage) &&
-              buffer.readScalarArray({fPositionStorage.begin(), fColorCount}))) {
+              buffer.readScalarArray(fPositionStorage.begin(), fColorCount))) {
             return false;
         }
         fPositions = fPositionStorage.begin();
@@ -681,12 +681,10 @@ static sk_sp<SkColorSpace> intermediate_color_space(SkGradientShader::Interpolat
         case ColorSpace::kRec2020:
             return SkColorSpace::MakeRGB(SkNamedTransferFn::kRec2020, SkNamedGamut::kRec2020);
 
-        case ColorSpace::kProphotoRGB: {
-            static SkOnce once;
+        case ColorSpace::kProphotoRGB:
             static skcms_Matrix3x3 lin_proPhoto_to_XYZ_D50;
-            once([] { SkNamedPrimaries::kProPhotoRGB.toXYZD50(&lin_proPhoto_to_XYZ_D50); });
+            SkNamedPrimaries::kProPhotoRGB.toXYZD50(&lin_proPhoto_to_XYZ_D50);
             return SkColorSpace::MakeRGB(SkNamedTransferFn::kProPhotoRGB, lin_proPhoto_to_XYZ_D50);
-        }
 
         case ColorSpace::kA98RGB:
             return SkColorSpace::MakeRGB(SkNamedTransferFn::kA98RGB, SkNamedGamut::kAdobeRGB);
@@ -1023,7 +1021,7 @@ void SkGradientBaseShader::commonAsAGradient(GradientInfo* info) const {
         if (info->fColorCount >= fColorCount) {
             if (info->fColors) {
                 for (int i = 0; i < fColorCount; ++i) {
-                    info->fColors[i] = fColors[i];
+                    info->fColors[i] = this->getLegacyColor(i);
                 }
             }
             if (info->fColorOffsets) {

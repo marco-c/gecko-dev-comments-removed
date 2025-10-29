@@ -36,47 +36,6 @@ using GpuFinishedWithStatsProc = void (*)(GpuFinishedContext finishedContext,
 
 
 
-class InsertStatus {
-public:
-    
-    
-    enum V {
-        
-        kSuccess,
-        
-        kInvalidRecording,
-        
-        kPromiseImageInstantiationFailed,
-        
-        
-        kAddCommandsFailed,
-        
-        
-        kAsyncShaderCompilesFailed
-    };
-
-    constexpr InsertStatus() : fValue(kSuccess) {}
-     constexpr InsertStatus(V v) : fValue(v) {}
-
-    operator InsertStatus::V() const {
-        return fValue;
-    }
-
-    
-    
-    
-    
-    
-    operator bool() const {
-        return fValue == kSuccess;
-    }
-
-private:
-    V fValue;
-};
-
-
-
 
 
 
@@ -129,17 +88,6 @@ struct InsertRecordingInfo {
     GpuFinishedContext fFinishedContext = nullptr;
     GpuFinishedProc fFinishedProc = nullptr;
     GpuFinishedWithStatsProc fFinishedWithStatsProc = nullptr;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    InsertStatus fSimulatedStatus = InsertStatus::kSuccess;
 };
 
 
@@ -168,29 +116,6 @@ struct InsertFinishInfo {
 enum class SyncToCpu : bool {
     kYes = true,
     kNo = false
-};
-
-enum class MarkFrameBoundary : bool {
-    kYes = true,
-    kNo = false
-};
-
-struct SubmitInfo {
-    SyncToCpu fSync = SyncToCpu::kNo;
-    MarkFrameBoundary fMarkBoundary = MarkFrameBoundary::kNo;
-    uint64_t fFrameID = 0;
-
-    constexpr SubmitInfo() = default;
-
-    constexpr SubmitInfo(SyncToCpu sync)
-        : fSync(sync)
-        , fMarkBoundary(MarkFrameBoundary::kNo)
-        , fFrameID(0) {}
-
-    constexpr SubmitInfo(SyncToCpu sync, uint64_t frameID)
-        : fSync(sync)
-        , fMarkBoundary(MarkFrameBoundary::kYes)
-        , fFrameID(frameID) {}
 };
 
 
@@ -243,11 +168,7 @@ enum DrawTypeFlags : uint16_t {
     
     
     
-    kAnalyticRRect    = 1 << 7,
-    kPerEdgeAAQuad    = 1 << 8,
-    kNonAAFillRect    = 1 << 9,
-
-    kSimpleShape      = kAnalyticRRect | kPerEdgeAAQuad | kNonAAFillRect,
+    kSimpleShape      = 1 << 7,
 
     
     
@@ -256,22 +177,9 @@ enum DrawTypeFlags : uint16_t {
     
     
     
-    kNonSimpleShape   = 1 << 10,
+    kNonSimpleShape   = 1 << 8,
 
-    
-    
-    
-    
-    
-    kDropShadows      = 1 << 11,
-
-    
-    
-    
-    
-    kAnalyticClip     = 1 << 12,
-
-    kLast = kAnalyticClip,
+    kLast = kNonSimpleShape,
 };
 
 } 

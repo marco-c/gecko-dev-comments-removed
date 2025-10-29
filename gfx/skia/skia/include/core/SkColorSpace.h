@@ -135,12 +135,13 @@ static constexpr skcms_TransferFunction kRec2020 = {
 
 
 
-
-
-
-
-
-static constexpr skcms_TransferFunction kRec709 = {2.4f, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+static constexpr skcms_TransferFunction kRec709 = {2.222222222222f,
+                                                   0.909672415686f,
+                                                   0.090327584314f,
+                                                   0.222222222222f,
+                                                   0.081242858299f,
+                                                   0.f,
+                                                   0.f};
 
 
 static constexpr skcms_TransferFunction kRec470SystemM = {2.2f, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f};
@@ -174,7 +175,7 @@ static constexpr skcms_TransferFunction kRec2020_12bit = kRec709;
 
 
 static constexpr skcms_TransferFunction kPQ =
-    {-5.0f, 203.f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    {-2.0f, -107/128.0f, 1.0f, 32/2523.0f, 2413/128.0f, -2392/128.0f, 8192/1305.0f };
 
 
 static constexpr skcms_TransferFunction kSMPTE_ST_428_1 = {
@@ -182,7 +183,7 @@ static constexpr skcms_TransferFunction kSMPTE_ST_428_1 = {
 
 
 static constexpr skcms_TransferFunction kHLG =
-    {-6.0f, 203.f, 1000.0f, 1.2f, 0.0f, 0.0f, 0.0f };
+    {-3.0f, 2.0f, 2.0f, 1/0.17883277f, 0.28466892f, 0.55991073f, 0.0f };
 
 
 

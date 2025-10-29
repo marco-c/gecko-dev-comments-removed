@@ -149,7 +149,6 @@ public:
 
     std::unique_ptr<SkPDFArray> getAnnotations();
 
-    
     SkPDFIndirectReference reserveRef() { return SkPDFIndirectReference{fNextObjectNumber++}; }
 
     

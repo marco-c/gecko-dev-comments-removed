@@ -941,16 +941,6 @@ void SkScan::AntiFrameRect(const SkRect& r, const SkPoint& strokeSize,
     SkScalar ry = SkScalarHalf(strokeSize.fY);
 
     
-    
-    
-    if (r.width() == 0) {
-        ry = 0;
-    }
-    if (r.height() == 0) {
-        rx = 0;
-    }
-
-    
     FDot8 outerL = SkScalarToFDot8(r.fLeft - rx);
     FDot8 outerT = SkScalarToFDot8(r.fTop - ry);
     FDot8 outerR = SkScalarToFDot8(r.fRight + rx);
@@ -959,7 +949,6 @@ void SkScan::AntiFrameRect(const SkRect& r, const SkPoint& strokeSize,
     SkIRect outer;
     
     outer.setLTRB(FDot8Floor(outerL), FDot8Floor(outerT), FDot8Ceil(outerR), FDot8Ceil(outerB));
-
 
     SkBlitterClipper clipper;
     if (clip) {

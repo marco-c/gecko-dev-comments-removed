@@ -211,7 +211,7 @@ constexpr uint32_t kCICPTrfnHLG = 18;
 
 uint32_t get_cicp_trfn(const skcms_TransferFunction& fn) {
     switch (skcms_TransferFunction_getType(&fn)) {
-        default:
+        case skcms_TFType_Invalid:
             return 0;
         case skcms_TFType_sRGBish:
             if (nearly_equal(fn, SkNamedTransferFn::kSRGB)) {
@@ -222,12 +222,10 @@ uint32_t get_cicp_trfn(const skcms_TransferFunction& fn) {
                 return kCICPTrfnLinear;
             }
             break;
-        case skcms_TFType_PQ:
         case skcms_TFType_PQish:
             
             
             return kCICPTrfnPQ;
-        case skcms_TFType_HLG:
         case skcms_TFType_HLGish:
             
             return kCICPTrfnHLG;
@@ -363,11 +361,11 @@ float tone_map_inverse(float y) {
 
 
 float hdr_trfn_eval(const skcms_TransferFunction& fn, float x) {
-    if (skcms_TransferFunction_isHLGish(&fn) || skcms_TransferFunction_isHLG(&fn)) {
+    if (skcms_TransferFunction_isHLGish(&fn)) {
         
-        x = skcms_TransferFunction_eval(&SkNamedTransferFn::kHLG, x);
+        x = skcms_TransferFunction_eval(&SkNamedTransferFn::kHLG, x) / 12.f;
         x *= std::pow(x, 0.2);
-    } else if (skcms_TransferFunction_isPQish(&fn) || skcms_TransferFunction_isPQ(&fn)) {
+    } else if (skcms_TransferFunction_isPQish(&fn)) {
         
         x = 10.f * skcms_TransferFunction_eval(&SkNamedTransferFn::kPQ, x);
         x = std::min(x, 1.f);
@@ -658,7 +656,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_ICCProfile* profile, const char* des
     size_t last_tag_offset = sizeof(header) + tag_table_size;
     size_t last_tag_size = 0;
     for (const auto& tag : tags) {
-        if (!tag.second->empty()) {
+        if (!tag.second->isEmpty()) {
             last_tag_offset = last_tag_offset + last_tag_size;
             last_tag_size = tag.second->size();
         }
@@ -673,7 +671,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_ICCProfile* profile, const char* des
 
     
     for (const auto& tag : tags) {
-        if (tag.second->empty()) continue;
+        if (tag.second->isEmpty()) continue;
         memcpy(ptr, tag.second->data(), tag.second->size());
         ptr += tag.second->size();
     }
@@ -707,8 +705,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_TransferFunction& fn, const skcms_Ma
     }
 
     
-    if (skcms_TransferFunction_isPQish(&fn) || skcms_TransferFunction_isHLGish(&fn) ||
-        skcms_TransferFunction_isPQ(&fn) || skcms_TransferFunction_isHLG(&fn)) {
+    if (skcms_TransferFunction_isPQish(&fn) || skcms_TransferFunction_isHLGish(&fn)) {
         
         constexpr uint32_t kTrcTableSize = 65;
         trc_table.resize(kTrcTableSize);
@@ -738,7 +735,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_TransferFunction& fn, const skcms_Ma
                     }
 
                     
-                    if (skcms_TransferFunction_isHLGish(&fn) || skcms_TransferFunction_isHLG(&fn)) {
+                    if (skcms_TransferFunction_isHLGish(&fn)) {
                         
                         for (auto& c : rgb) {
                             c /= kToneMapInputMax;
@@ -809,8 +806,7 @@ sk_sp<SkData> SkWriteICCProfile(const skcms_TransferFunction& fn, const skcms_Ma
     }
 
     
-    if (skcms_TransferFunction_isHLGish(&fn) || skcms_TransferFunction_isPQish(&fn) ||
-        skcms_TransferFunction_isHLG(&fn) || skcms_TransferFunction_isPQ(&fn)) {
+    if (skcms_TransferFunction_isHLGish(&fn) || skcms_TransferFunction_isPQish(&fn)) {
         profile.has_CICP = true;
         profile.CICP.color_primaries = get_cicp_primaries(toXYZD50);
         profile.CICP.transfer_characteristics = get_cicp_trfn(fn);

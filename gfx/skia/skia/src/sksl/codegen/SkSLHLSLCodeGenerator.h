@@ -8,11 +8,8 @@
 #ifndef SKSL_HLSLCODEGENERATOR
 #define SKSL_HLSLCODEGENERATOR
 
-#include "include/core/SkSpan.h"
-#include "src/sksl/codegen/SkSLNativeShader.h"
-
-#include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace SkSL {
 
@@ -21,7 +18,7 @@ class OutputStream;
 struct Program;
 struct ShaderCaps;
 
-using ValidateSPIRVProc = bool (*)(ErrorReporter&, SkSpan<const uint32_t>);
+using ValidateSPIRVProc = bool (*)(ErrorReporter&, std::string_view);
 
 
 bool ToHLSL(Program& program,
@@ -31,8 +28,8 @@ bool ToHLSL(Program& program,
 bool ToHLSL(Program& program, const ShaderCaps* caps, std::string* out, ValidateSPIRVProc);
 
 
-inline bool ToHLSL(Program& program, const ShaderCaps* caps, NativeShader* out) {
-    return ToHLSL(program, caps, &out->fText, (ValidateSPIRVProc) nullptr);
+inline bool ToHLSL(Program& program, const ShaderCaps* caps, std::string* out) {
+    return ToHLSL(program, caps, out, nullptr);
 }
 
 }  

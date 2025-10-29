@@ -9,6 +9,7 @@
 
 #include "include/core/SkBitmap.h"
 #include "include/core/SkCanvas.h"
+#include "include/core/SkColorType.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
@@ -17,6 +18,13 @@
 #include "src/core/SkNextID.h"
 #include "src/image/SkImage_Base.h"
 #include "src/shaders/SkImageShader.h"
+
+
+
+static bool valid_for_imagefilters(const SkImageInfo& info) {
+    
+    return info.colorType() == kN32_SkColorType;
+}
 
 SkSpecialImage::SkSpecialImage(const SkIRect& subset,
                                uint32_t uniqueID,
@@ -125,7 +133,19 @@ sk_sp<SkSpecialImage> MakeFromRaster(const SkIRect& subset,
     if (!bm.pixelRef()) {
         return nullptr;
     }
-    return sk_make_sp<SkSpecialImage_Raster>(subset, bm, props);
+
+    const SkBitmap* srcBM = &bm;
+    SkBitmap tmp;
+    
+    if (!valid_for_imagefilters(bm.info())) {
+        if (!tmp.tryAllocPixels(bm.info().makeColorType(kN32_SkColorType)) ||
+            !bm.readPixels(tmp.info(), tmp.getPixels(), tmp.rowBytes(), 0, 0))
+        {
+            return nullptr;
+        }
+        srcBM = &tmp;
+    }
+    return sk_make_sp<SkSpecialImage_Raster>(subset, *srcBM, props);
 }
 
 sk_sp<SkSpecialImage> CopyFromRaster(const SkIRect& subset,
@@ -136,14 +156,20 @@ sk_sp<SkSpecialImage> CopyFromRaster(const SkIRect& subset,
     if (!bm.pixelRef()) {
         return nullptr;
     }
+
     SkBitmap tmp;
     SkImageInfo info = bm.info().makeDimensions(subset.size());
+    
+    if (!valid_for_imagefilters(bm.info())) {
+        info = info.makeColorType(kN32_SkColorType);
+    }
     if (!tmp.tryAllocPixels(info)) {
         return nullptr;
     }
     if (!bm.readPixels(tmp.info(), tmp.getPixels(), tmp.rowBytes(), subset.x(), subset.y())) {
         return nullptr;
     }
+
     
     
     

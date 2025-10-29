@@ -8,12 +8,9 @@
 #ifndef SkFont_DEFINED
 #define SkFont_DEFINED
 
-#include "include/core/SkPath.h"  
-#include "include/core/SkPoint.h" 
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
-#include "include/core/SkSpan.h"
 #include "include/core/SkTypeface.h"
 #include "include/core/SkTypes.h"
 #include "include/private/base/SkTo.h"
@@ -21,16 +18,16 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
+#include <type_traits>
 #include <vector>
 
 class SkMatrix;
 class SkPaint;
+class SkPath;
 enum class SkFontHinting;
 enum class SkTextEncoding;
 struct SkFontMetrics;
-
-namespace skcpu { class GlyphRunListPainter; }
+struct SkPoint;
 
 
 
@@ -217,7 +214,6 @@ public:
 
 
 
-
     SkScalar    getSize() const { return fSize; }
 
     
@@ -252,7 +248,6 @@ public:
     void setTypeface(sk_sp<SkTypeface> tf);
 
     
-
 
 
 
@@ -300,8 +295,9 @@ public:
 
 
 
-    size_t textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
-                        SkSpan<SkGlyphID> glyphs) const;
+
+    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
+                     SkGlyphID glyphs[], int maxGlyphCount) const;
 
     
 
@@ -312,7 +308,7 @@ public:
 
     SkGlyphID unicharToGlyph(SkUnichar uni) const;
 
-    void unicharsToGlyphs(SkSpan<const SkUnichar> src, SkSpan<SkGlyphID> dst) const;
+    void unicharsToGlyphs(const SkUnichar uni[], int count, SkGlyphID glyphs[]) const;
 
     
 
@@ -324,8 +320,8 @@ public:
 
 
 
-    size_t countText(const void* text, size_t byteLength, SkTextEncoding encoding) const {
-        return this->textToGlyphs(text, byteLength, encoding, {});
+    int countText(const void* text, size_t byteLength, SkTextEncoding encoding) const {
+        return this->textToGlyphs(text, byteLength, encoding, nullptr, 0);
     }
 
     
@@ -365,23 +361,44 @@ public:
 
 
 
-    void getWidthsBounds(SkSpan<const SkGlyphID> glyphs, SkSpan<SkScalar> widths, SkSpan<SkRect> bounds,
+
+
+    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[], SkRect bounds[]) const {
+        this->getWidthsBounds(glyphs, count, widths, bounds, nullptr);
+    }
+
+    
+    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[], std::nullptr_t) const {
+        this->getWidths(glyphs, count, widths);
+    }
+
+    
+
+
+
+
+
+
+
+
+    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[]) const {
+        this->getWidthsBounds(glyphs, count, widths, nullptr, nullptr);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    void getWidthsBounds(const SkGlyphID glyphs[], int count, SkScalar widths[], SkRect bounds[],
                          const SkPaint* paint) const;
 
-    
-
-
-
-
-
-    void getWidths(SkSpan<const SkGlyphID> glyphs, SkSpan<SkScalar> widths) const {
-        this->getWidthsBounds(glyphs, widths, {}, nullptr);
-    }
-    SkScalar getWidth(SkGlyphID glyph) const {
-        SkScalar width;
-        this->getWidthsBounds({&glyph, 1}, {&width, 1}, {}, nullptr);
-        return width;
-    }
 
     
 
@@ -391,14 +408,10 @@ public:
 
 
 
-    void getBounds(SkSpan<const SkGlyphID> glyphs, SkSpan<SkRect> bounds,
+
+    void getBounds(const SkGlyphID glyphs[], int count, SkRect bounds[],
                    const SkPaint* paint) const {
-        this->getWidthsBounds(glyphs, {}, bounds, paint);
-    }
-    SkRect getBounds(SkGlyphID glyph, const SkPaint* paint) const {
-        SkRect bounds;
-        this->getBounds({&glyph, 1}, {&bounds, 1}, paint);
-        return bounds;
+        this->getWidthsBounds(glyphs, count, nullptr, bounds, paint);
     }
 
     
@@ -408,7 +421,8 @@ public:
 
 
 
-    void getPos(SkSpan<const SkGlyphID> glyphs, SkSpan<SkPoint> pos, SkPoint origin = {0, 0}) const;
+
+    void getPos(const SkGlyphID glyphs[], int count, SkPoint pos[], SkPoint origin = {0, 0}) const;
 
     
 
@@ -417,7 +431,8 @@ public:
 
 
 
-    void getXPos(SkSpan<const SkGlyphID> glyphs, SkSpan<SkScalar> xpos, SkScalar origin = 0) const;
+
+    void getXPos(const SkGlyphID glyphs[], int count, SkScalar xpos[], SkScalar origin = 0) const;
 
     
 
@@ -428,8 +443,8 @@ public:
 
 
 
-    std::vector<SkScalar> getIntercepts(SkSpan<const SkGlyphID> glyphs,
-                                        SkSpan<const SkPoint> pos,
+
+    std::vector<SkScalar> getIntercepts(const SkGlyphID glyphs[], int count, const SkPoint pos[],
                                         SkScalar top, SkScalar bottom,
                                         const SkPaint* = nullptr) const;
 
@@ -440,11 +455,9 @@ public:
 
 
 
-    std::optional<SkPath> getPath(SkGlyphID glyphID) const;
 
-#ifndef SK_HIDE_PATH_EDIT_METHODS
+
     bool getPath(SkGlyphID glyphID, SkPath* path) const;
-#endif
 
     
 
@@ -452,7 +465,8 @@ public:
 
 
 
-    void getPaths(SkSpan<const SkGlyphID> glyphIDs,
+
+    void getPaths(const SkGlyphID glyphIDs[], int count,
                   void (*glyphPathProc)(const SkPath* pathOrNull, const SkMatrix& mx, void* ctx),
                   void* ctx) const;
 
@@ -486,56 +500,6 @@ public:
 
     using sk_is_trivially_relocatable = std::true_type;
 
-#ifdef SK_SUPPORT_UNSPANNED_APIS
-    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
-                     SkGlyphID glyphs[], int maxGlyphCount) const {
-        return (int)this->textToGlyphs(text, byteLength, encoding, {glyphs, maxGlyphCount});
-    }
-    void unicharsToGlyphs(const SkUnichar uni[], int count, SkGlyphID glyphs[]) const {
-        this->unicharsToGlyphs({uni, count}, {glyphs, count});
-    }
-
-    void getPos(const SkGlyphID glyphs[], int count, SkPoint pos[], SkPoint origin = {0, 0}) const {
-        this->getPos({glyphs, count}, {pos, count}, origin);
-    }
-    void getXPos(const SkGlyphID glyphs[], int count, SkScalar xpos[], SkScalar origin = 0) const {
-        this->getXPos({glyphs, count}, {xpos, count}, origin);
-    }
-    void getPaths(const SkGlyphID glyphIDs[], int count,
-                  void (*glyphPathProc)(const SkPath* pathOrNull, const SkMatrix& mx, void* ctx),
-                  void* ctx) const {
-        this->getPaths({glyphIDs, count}, glyphPathProc, ctx);
-    }
-    void getWidthsBounds(const SkGlyphID glyphs[], int count, SkScalar widths[], SkRect bounds[],
-                         const SkPaint* paint) const {
-        const auto nw = widths ? count : 0;
-        const auto nb = bounds ? count : 0;
-        this->getWidthsBounds({glyphs, count}, {widths, nw}, {bounds, nb}, paint);
-    }
-    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[], SkRect bounds[]) const {
-        const auto nw = widths ? count : 0;
-        const auto nb = bounds ? count : 0;
-        this->getWidthsBounds({glyphs, count}, {widths, nw}, {bounds, nb}, nullptr);
-    }
-    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[], std::nullptr_t) const {
-        this->getWidthsBounds({glyphs, count}, {widths, count}, {}, nullptr);
-    }
-    void getWidths(const SkGlyphID glyphs[], int count, SkScalar widths[]) const {
-        this->getWidthsBounds({glyphs, count}, {widths, count}, {}, nullptr);
-    }
-    void getBounds(const SkGlyphID glyphs[], int count, SkRect bounds[],
-                   const SkPaint* paint) const {
-        this->getWidthsBounds({glyphs, count}, {}, {bounds, count}, paint);
-    }
-
-    std::vector<SkScalar> getIntercepts(const SkGlyphID glyphs[], int count, const SkPoint pos[],
-                                        SkScalar top, SkScalar bottom,
-                                        const SkPaint* paint = nullptr) const {
-        return this->getIntercepts({glyphs, count}, {pos, count}, top, bottom, paint);
-    }
-#endif
-
-
 private:
     enum PrivFlags {
         kForceAutoHinting_PrivFlag      = 1 << 0,
@@ -567,7 +531,7 @@ private:
     bool hasSomeAntiAliasing() const;
 
     friend class SkFontPriv;
-    friend class skcpu::GlyphRunListPainter;
+    friend class SkGlyphRunListPainterCPU;
     friend class SkStrikeSpec;
     friend class SkRemoteGlyphCacheTest;
 };

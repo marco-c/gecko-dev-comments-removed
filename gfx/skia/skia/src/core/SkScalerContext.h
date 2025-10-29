@@ -12,7 +12,6 @@
 #include "include/core/SkFourByteTag.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
-#include "include/core/SkPath.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
@@ -31,7 +30,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <optional>
 
 class SkArenaAlloc;
 class SkAutoDescriptor;
@@ -39,6 +37,7 @@ class SkDescriptor;
 class SkDrawable;
 class SkFont;
 class SkMaskFilter;
+class SkPath;
 class SkPathEffect;
 enum class SkFontHinting;
 struct SkFontMetrics;
@@ -168,9 +167,9 @@ public:
         return msg;
     }
 
-    SkMatrix getMatrixFrom2x2() const;
-    SkMatrix getLocalMatrix() const;
-    SkMatrix getSingleMatrix() const;
+    void    getMatrixFrom2x2(SkMatrix*) const;
+    void    getLocalMatrix(SkMatrix*) const;
+    void    getSingleMatrix(SkMatrix*) const;
 
     
     enum class PreMatrixScale {
@@ -215,7 +214,7 @@ public:
                          SkVector* scale, SkMatrix* remaining,
                          SkMatrix* remainingWithoutRotation = nullptr,
                          SkMatrix* remainingRotation = nullptr,
-                         SkMatrix* total = nullptr) const;
+                         SkMatrix* total = nullptr);
 
     SkAxisAlignment computeAxisAlignmentForHText() const;
 
@@ -382,12 +381,8 @@ public:
         SkScalerContextEffects* effects);
 
 protected:
-    const SkScalerContextRec fRec;
+    SkScalerContextRec fRec;
 
-    struct GeneratedPath {
-        SkPath path;
-        bool modified;
-    };
     struct GlyphMetrics {
         SkVector       advance;
         SkRect         bounds;
@@ -395,7 +390,7 @@ protected:
         uint16_t       extraBits;
         bool           neverRequestPath;
         bool           computeFromPath;
-        std::optional<GeneratedPath> generatedPath;
+
         GlyphMetrics(SkMask::Format format)
             : advance{0, 0}
             , bounds{0, 0, 0, 0}
@@ -403,7 +398,6 @@ protected:
             , extraBits(0)
             , neverRequestPath(false)
             , computeFromPath(false)
-            , generatedPath{std::nullopt}
         {}
     };
 
@@ -428,12 +422,13 @@ protected:
     static void GenerateImageFromPath(
         SkMaskBuilder& dst, const SkPath& path, const SkMaskGamma::PreBlend& maskPreBlend,
         bool doBGR, bool verticalLCD, bool a8FromLCD, bool hairline);
-    void generateImageFromPath(const SkGlyph& glyph, void* imageBuffer);
 
     
 
 
-    [[nodiscard]] virtual std::optional<GeneratedPath> generatePath(const SkGlyph&) = 0;
+
+
+    [[nodiscard]] virtual bool generatePath(const SkGlyph&, SkPath*, bool* modified) = 0;
 
     
 
@@ -447,6 +442,9 @@ protected:
 
     
     virtual void generateFontMetrics(SkFontMetrics*) = 0;
+
+    void forceGenerateImageFromPath() { fGenerateImageFromPath = true; }
+    void forceOffGenerateImageFromPath() { fGenerateImageFromPath = false; }
 
 private:
     friend class PathText;  
@@ -469,9 +467,9 @@ private:
 
     
     
-    const bool fGenerateImageFromPath;
+    bool fGenerateImageFromPath;
 
-    void internalGetPath(SkGlyph&, SkArenaAlloc*, std::optional<GeneratedPath>&&);
+    void internalGetPath(SkGlyph&, SkArenaAlloc*);
     SkGlyph internalMakeGlyph(SkPackedGlyphID, SkMask::Format, SkArenaAlloc*);
 
 protected:

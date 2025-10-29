@@ -21,6 +21,8 @@ enum class ProgramKind : int8_t {
     kCompute,
     kGraphiteFragment,
     kGraphiteVertex,
+    kGraphiteFragmentES2,
+    kGraphiteVertexES2,
     kRuntimeColorFilter,        
     kRuntimeShader,             
     kRuntimeBlender,            

@@ -12,7 +12,6 @@
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkImageFilter.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkM44.h"
 #include "include/core/SkMaskFilter.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
@@ -34,7 +33,7 @@
 #include "src/core/SkBlitter_A8.h"
 #include "src/core/SkBlurMask.h"
 #include "src/core/SkCachedData.h"
-#include "src/core/SkDraw.h"
+#include "src/core/SkDrawBase.h"
 #include "src/core/SkMask.h"
 #include "src/core/SkMaskCache.h"
 #include "src/core/SkMaskFilterBase.h"
@@ -72,38 +71,31 @@ bool SkBlurMaskFilterImpl::asABlur(BlurRec* rec) const {
     return true;
 }
 
-std::pair<sk_sp<SkImageFilter>, bool> SkBlurMaskFilterImpl::asImageFilter(const SkMatrix& ctm,
-                                                                          const SkPaint&) const {
-    
-    
-    SkV2 sigma = {fSigma, fSigma};
+sk_sp<SkImageFilter> SkBlurMaskFilterImpl::asImageFilter(const SkMatrix& ctm) const {
+    float sigma = fSigma;
     if (this->ignoreXform()) {
         
         
         
-        
-        
-        
-        const float xScaleFactor = fSigma / ctm.mapVector(fSigma, 0.f).length();
-        const float yScaleFactor = fSigma / ctm.mapVector(0.f, fSigma).length();
-        sigma = {fSigma * xScaleFactor, fSigma * yScaleFactor};
+        const float ctmScaleFactor = fSigma / ctm.mapRadius(fSigma);
+        sigma *= ctmScaleFactor;
     }
 
     
-    sk_sp<SkImageFilter> filter = SkImageFilters::Blur(sigma.x, sigma.y, nullptr);
+    sk_sp<SkImageFilter> filter = SkImageFilters::Blur(sigma, sigma, nullptr);
     
     switch(fBlurStyle) {
         case kInner_SkBlurStyle: 
                                  
-            return {SkImageFilters::Blend(SkBlendMode::kDstIn, std::move(filter), nullptr), false};
+            return SkImageFilters::Blend(SkBlendMode::kDstIn, std::move(filter), nullptr);
         case kSolid_SkBlurStyle: 
                                  
-            return {SkImageFilters::Blend(SkBlendMode::kSrcOver, std::move(filter), nullptr), false};
+            return SkImageFilters::Blend(SkBlendMode::kSrcOver, std::move(filter), nullptr);
         case kOuter_SkBlurStyle: 
                                  
-            return {SkImageFilters::Blend(SkBlendMode::kDstOut, std::move(filter), nullptr), false};
+            return SkImageFilters::Blend(SkBlendMode::kDstOut, std::move(filter), nullptr);
         case kNormal_SkBlurStyle:
-            return {filter, false};
+            return filter;
     }
     SkUNREACHABLE;
 }
@@ -163,7 +155,7 @@ template <typename Proc> bool draw_into_mask(SkMaskBuilder* mask, const SkRect& 
 
     SkMatrix ctm = SkMatrix::Translate(-SkIntToScalar(dx), -SkIntToScalar(dy));
 
-    skcpu::Draw draw;
+    SkDrawBase draw;
     draw.fBlitterChooser = SkA8Blitter_Choose;
     draw.fCTM = &ctm;
     draw.fDst = pm;
@@ -178,7 +170,7 @@ template <typename Proc> bool draw_into_mask(SkMaskBuilder* mask, const SkRect& 
 
 static bool draw_rects_into_mask(SkSpan<const SkRect> rects, SkMaskBuilder* mask) {
     SkASSERT(rects.size() == 1 || rects.size() == 2);
-    return draw_into_mask(mask, rects[0], [&](skcpu::Draw& draw, const SkPaint& paint) {
+    return draw_into_mask(mask, rects[0], [&](SkDrawBase& draw, const SkPaint& paint) {
         if (rects.size() == 1) {
             draw.drawRect(rects[0], paint);
         } else {
@@ -193,7 +185,7 @@ static bool draw_rects_into_mask(SkSpan<const SkRect> rects, SkMaskBuilder* mask
 }
 
 static bool draw_rrect_into_mask(const SkRRect& rrect, SkMaskBuilder* mask) {
-    return draw_into_mask(mask, rrect.rect(), [&](skcpu::Draw& draw, const SkPaint& paint) {
+    return draw_into_mask(mask, rrect.rect(), [&](SkDrawBase& draw, const SkPaint& paint) {
         draw.drawRRect(rrect, paint);
     });
 }
@@ -203,14 +195,9 @@ static bool rect_exceeds(const SkRect& r, SkScalar v) {
            r.width() > v || r.height() > v;
 }
 
-static SkCachedData* copy_mask_to_cacheddata(SkMaskBuilder* mask, SkResourceCache* cache) {
+static SkCachedData* copy_mask_to_cacheddata(SkMaskBuilder* mask) {
     const size_t size = mask->computeTotalImageSize();
-    SkCachedData* data;
-    if (cache) {
-        data = cache->newCachedData(size);
-    } else {
-        data = SkResourceCache::NewCachedData(size);
-    }
+    SkCachedData* data = SkResourceCache::NewCachedData(size);
     if (data) {
         memcpy(data->writable_data(), mask->fImage, size);
         SkMaskBuilder::FreeImage(mask->image());
@@ -219,51 +206,41 @@ static SkCachedData* copy_mask_to_cacheddata(SkMaskBuilder* mask, SkResourceCach
     return data;
 }
 
-static SkCachedData* find_cached_rrect(SkTLazy<SkMask>* mask,
-                                       SkScalar sigma,
-                                       SkBlurStyle style,
-                                       const SkRRect& rrect,
-                                       SkResourceCache* cache) {
-    return SkMaskCache::FindAndRef(sigma, style, rrect, mask, cache);
+static SkCachedData* find_cached_rrect(SkTLazy<SkMask>* mask, SkScalar sigma, SkBlurStyle style,
+                                       const SkRRect& rrect) {
+    return SkMaskCache::FindAndRef(sigma, style, rrect, mask);
 }
 
-static SkCachedData* add_cached_rrect(SkMaskBuilder* mask,
-                                      SkScalar sigma,
-                                      SkBlurStyle style,
-                                      const SkRRect& rrect,
-                                      SkResourceCache* cache) {
-    SkCachedData* cached = copy_mask_to_cacheddata(mask, cache);
-    if (cached) {
-        SkMaskCache::Add(sigma, style, rrect, *mask, cached, cache);
+static SkCachedData* add_cached_rrect(SkMaskBuilder* mask, SkScalar sigma, SkBlurStyle style,
+                                      const SkRRect& rrect) {
+    SkCachedData* cache = copy_mask_to_cacheddata(mask);
+    if (cache) {
+        SkMaskCache::Add(sigma, style, rrect, *mask, cache);
     }
-    return cached;
+    return cache;
 }
 
 static SkCachedData* find_cached_rects(SkTLazy<SkMask>* mask,
                                        SkScalar sigma,
                                        SkBlurStyle style,
-                                       SkSpan<const SkRect> rects,
-                                       SkResourceCache* cache) {
-    return SkMaskCache::FindAndRef(sigma, style, rects, mask, cache);
+                                       SkSpan<const SkRect> rects) {
+    return SkMaskCache::FindAndRef(sigma, style, rects, mask);
 }
 
 static SkCachedData* add_cached_rects(SkMaskBuilder* mask,
                                       SkScalar sigma,
                                       SkBlurStyle style,
-                                      SkSpan<const SkRect> rects,
-                                      SkResourceCache* cache) {
-    SkCachedData* cached = copy_mask_to_cacheddata(mask, cache);
-    if (cached) {
-        SkMaskCache::Add(sigma, style, rects, *mask, cached, cache);
+                                      SkSpan<const SkRect> rects) {
+    SkCachedData* cache = copy_mask_to_cacheddata(mask);
+    if (cache) {
+        SkMaskCache::Add(sigma, style, rects, *mask, cache);
     }
-    return cached;
+    return cache;
 }
 
-std::optional<SkMaskFilterBase::NinePatch> SkBlurMaskFilterImpl::filterRRectToNine(
-        const SkRRect& rrect,
-        const SkMatrix& matrix,
-        const SkIRect& clipBounds,
-        SkResourceCache* cache) const {
+std::optional<SkMaskFilterBase::NinePatch>
+SkBlurMaskFilterImpl::filterRRectToNine(const SkRRect& rrect, const SkMatrix& matrix,
+                                        const SkIRect& clipBounds) const {
     switch (rrect.getType()) {
         case SkRRect::kEmpty_Type:
             
@@ -381,8 +358,8 @@ std::optional<SkMaskFilterBase::NinePatch> SkBlurMaskFilterImpl::filterRRectToNi
     const float sigma = this->computeXformedSigma(matrix);
     
     SkTLazy<SkMask> cachedMask;
-    SkCachedData* cached = find_cached_rrect(&cachedMask, sigma, fBlurStyle, smallRR, cache);
-    if (!cached) {
+    SkCachedData* cache = find_cached_rrect(&cachedMask, sigma, fBlurStyle, smallRR);
+    if (!cache) {
         
         
         
@@ -414,7 +391,7 @@ std::optional<SkMaskFilterBase::NinePatch> SkBlurMaskFilterImpl::filterRRectToNi
         SkASSERT(filterM.fBounds.width() == (srcM.fBounds.width() + 2*margin.fX));
         SkASSERT(filterM.fBounds.height() == (srcM.fBounds.height() + 2*margin.fY));
 
-        cached = add_cached_rrect(&filterM, sigma, fBlurStyle, smallRR, cache);
+        cache = add_cached_rrect(&filterM, sigma, fBlurStyle, smallRR);
         cachedMask.init(filterM);
     }
 
@@ -432,15 +409,14 @@ std::optional<SkMaskFilterBase::NinePatch> SkBlurMaskFilterImpl::filterRRectToNi
             SkMask{cachedMask->fImage, bounds, cachedMask->fRowBytes, cachedMask->fFormat},
             dstM.fBounds,
             center,
-            cached);  
+            cache);  
 }
 
-SkMaskFilterBase::FilterReturn SkBlurMaskFilterImpl::filterRectsToNine(
-        SkSpan<const SkRect> rects,
-        const SkMatrix& matrix,
-        const SkIRect& clipBounds,
-        std::optional<NinePatch>* patch,
-        SkResourceCache* cache) const {
+SkMaskFilterBase::FilterReturn
+SkBlurMaskFilterImpl::filterRectsToNine(SkSpan<const SkRect> rects,
+                                        const SkMatrix& matrix,
+                                        const SkIRect& clipBounds,
+                                        std::optional<NinePatch>* patch) const {
     SkASSERT(patch != nullptr);
     SkASSERT(rects.size() == 1 || rects.size() == 2);
 
@@ -535,8 +511,8 @@ SkMaskFilterBase::FilterReturn SkBlurMaskFilterImpl::filterRectsToNine(
     const SkScalar sigma = this->computeXformedSigma(matrix);
     SkTLazy<SkMask> cachedMask;
     SkSpan<const SkRect> smallRects = SkSpan(smallR, rectCount);
-    SkCachedData* cached = find_cached_rects(&cachedMask, sigma, fBlurStyle, smallRects, cache);
-    if (!cached) {
+    SkCachedData* cache = find_cached_rects(&cachedMask, sigma, fBlurStyle, smallRects);
+    if (!cache) {
         SkMaskBuilder filterM;
         if (rectCount == 2) {
             if (!draw_rects_into_mask(smallRects, &srcM)) {
@@ -554,7 +530,7 @@ SkMaskFilterBase::FilterReturn SkBlurMaskFilterImpl::filterRectsToNine(
                 return FilterReturn::kFalse;
             }
         }
-        cached = add_cached_rects(&filterM, sigma, fBlurStyle, smallRects, cache);
+        cache = add_cached_rects(&filterM, sigma, fBlurStyle, smallRects);
         cachedMask.init(filterM);
     }
     SkIRect bounds = cachedMask->fBounds;
@@ -562,7 +538,7 @@ SkMaskFilterBase::FilterReturn SkBlurMaskFilterImpl::filterRectsToNine(
     patch->emplace(SkMask{cachedMask->fImage, bounds, cachedMask->fRowBytes, cachedMask->fFormat},
                    dstM.fBounds,
                    center,
-                   cached);  
+                   cache);  
     return FilterReturn::kTrue;
 }
 

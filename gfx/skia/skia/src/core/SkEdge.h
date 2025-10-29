@@ -9,6 +9,7 @@
 #define SkEdge_DEFINED
 
 #include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 #include "include/private/base/SkAssert.h"
 #include "include/private/base/SkDebug.h"
 #include "include/private/base/SkFixed.h"
@@ -18,27 +19,10 @@
 #include <cstdint>
 #include <utility>
 
-struct SkIRect;
-
 
 #define SkEdge_Compute_DY(top, y0)  (SkLeftShift(top, 6) + 32 - (y0))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SkEdge {
-public:
-    virtual ~SkEdge() = default;
+struct SkEdge {
     enum class Type : int8_t {
         kLine,
         kQuad,
@@ -49,57 +33,32 @@ public:
         kCCW = -1,  
     };
 
-    
     SkEdge* fNext;
     SkEdge* fPrev;
 
-    
-    
-    
     SkFixed fX;
-    SkFixed fDxDy;
-
-    
-    
+    SkFixed fDX;
     int32_t fFirstY;
     int32_t fLastY;
-
     Type    fEdgeType;      
+    int8_t  fCurveCount;    
+    uint8_t fCurveShift;    
+    uint8_t fCubicDShift;   
     Winding fWinding;
 
+    int setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip, int shiftUp);
     
-    
-    bool setLine(const SkPoint& p0, const SkPoint& p1, const SkIRect* clip);
-    
-    inline bool setLine(const SkPoint& p0, const SkPoint& p1);
-
-    bool hasNextSegment() const {
-        return fSegmentCount != 0;
-    }
-    
-    
-    
-    
-    virtual bool nextSegment();
-
-    uint8_t segmentsLeft() const {
-        return fSegmentCount;
-    }
-
-protected:
-    inline bool updateLine(SkFixed ax, SkFixed ay, SkFixed bx, SkFixed by);
-
-    uint8_t fSegmentCount; 
-    
-    
-    uint8_t fCurveShift;
-
-private:
+    inline int setLine(const SkPoint& p0, const SkPoint& p1, int shiftUp);
+    inline int updateLine(SkFixed ax, SkFixed ay, SkFixed bx, SkFixed by);
     void chopLineWithClip(const SkIRect& clip);
 
-#if defined(SK_DEBUG)
-public:
-    virtual void dump() const;
+    inline bool intersectsClip(const SkIRect& clip) const {
+        SkASSERT(fFirstY < clip.fBottom);
+        return fLastY >= clip.fTop;
+    }
+
+#ifdef SK_DEBUG
+    void dump() const;
     void validate() const {
         SkASSERT(fPrev && fNext);
         SkASSERT(fPrev->fNext == this);
@@ -111,74 +70,46 @@ public:
 #endif
 };
 
-class SkQuadraticEdge final : public SkEdge {
-public:
-    
-    bool setQuadratic(const SkPoint pts[3]);
-    bool nextSegment() override;
-
-private:
-    
+struct SkQuadraticEdge : public SkEdge {
     SkFixed fQx, fQy;
-    
-    
-    
-    
-    SkFixed fQDxDt, fQDyDt;
-    
-    SkFixed fQD2xDt2, fQD2yDt2;
-
-    
-    
-    
+    SkFixed fQDx, fQDy;
+    SkFixed fQDDx, fQDDy;
     SkFixed fQLastX, fQLastY;
 
-#if defined(SK_DEBUG)
-public:
-    void dump() const override;
-#endif
+    bool setQuadraticWithoutUpdate(const SkPoint pts[3], int shiftUp);
+    int setQuadratic(const SkPoint pts[3], int shiftUp);
+    int updateQuadratic();
 };
 
-class SkCubicEdge final : public SkEdge {
-public:
-    
-    bool setCubic(const SkPoint pts[4]);
-    bool nextSegment() override;
-
-private:
-    
+struct SkCubicEdge : public SkEdge {
     SkFixed fCx, fCy;
-    SkFixed fCDxDt, fCDyDt;
-    SkFixed fCD2xDt2, fCD2yDt2;
-    SkFixed fCD3xDt3, fCD3yDt3;
-
-    
-    
-    
+    SkFixed fCDx, fCDy;
+    SkFixed fCDDx, fCDDy;
+    SkFixed fCDDDx, fCDDDy;
     SkFixed fCLastX, fCLastY;
 
-    uint8_t fCubicDShift;   
-
-#if defined(SK_DEBUG)
-public:
-    void dump() const override;
-#endif
+    bool setCubicWithoutUpdate(const SkPoint pts[4], int shiftUp, bool sortY = true);
+    int setCubic(const SkPoint pts[4], int shiftUp);
+    int updateCubic();
 };
 
-bool SkEdge::setLine(const SkPoint& p0, const SkPoint& p1) {
+int SkEdge::setLine(const SkPoint& p0, const SkPoint& p1, int shift) {
     SkFDot6 x0, y0, x1, y1;
 
-#if defined(SK_RASTERIZE_EVEN_ROUNDING)
-    x0 = SkScalarRoundToFDot6(p0.fX, 0);
-    y0 = SkScalarRoundToFDot6(p0.fY, 0);
-    x1 = SkScalarRoundToFDot6(p1.fX, 0);
-    y1 = SkScalarRoundToFDot6(p1.fY, 0);
+    {
+#ifdef SK_RASTERIZE_EVEN_ROUNDING
+        x0 = SkScalarRoundToFDot6(p0.fX, shift);
+        y0 = SkScalarRoundToFDot6(p0.fY, shift);
+        x1 = SkScalarRoundToFDot6(p1.fX, shift);
+        y1 = SkScalarRoundToFDot6(p1.fY, shift);
 #else
-    x0 = SkFloatToFDot6(p0.fX);
-    y0 = SkFloatToFDot6(p0.fY);
-    x1 = SkFloatToFDot6(p1.fX);
-    y1 = SkFloatToFDot6(p1.fY);
+        float scale = float(1 << (shift + 6));
+        x0 = int(p0.fX * scale);
+        y0 = int(p0.fY * scale);
+        x1 = int(p1.fX * scale);
+        y1 = int(p1.fY * scale);
 #endif
+    }
 
     Winding winding = Winding::kCW;
 
@@ -194,22 +125,21 @@ bool SkEdge::setLine(const SkPoint& p0, const SkPoint& p1) {
 
     
     if (top == bot) {
-        return false;
+        return 0;
     }
 
     SkFixed slope = SkFDot6Div(x1 - x0, y1 - y0);
     const SkFDot6 dy  = SkEdge_Compute_DY(top, y0);
 
-    
-    fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));
-    fDxDy       = slope;
+    fX          = SkFDot6ToFixed(x0 + SkFixedMul(slope, dy));   
+    fDX         = slope;
     fFirstY     = top;
     fLastY      = bot - 1;
     fEdgeType   = Type::kLine;
-    fSegmentCount = 0;
+    fCurveCount = 0;
     fWinding    = winding;
     fCurveShift = 0;
-    return true;
+    return 1;
 }
 
 #endif

@@ -79,6 +79,16 @@ struct Options {
 
     const SkData* xmpMetadata = nullptr;
 
+    
+
+
+
+
+
+
+    const skcms_ICCProfile* fICCProfile = nullptr;
+    const char* fICCProfileDescription = nullptr;
+
     std::optional<SkEncodedOrigin> fOrigin;
 };
 
@@ -93,11 +103,6 @@ SK_API bool Encode(SkWStream* dst,
                    const SkYUVAPixmaps& src,
                    const SkColorSpace* srcColorSpace,
                    const Options& options);
-
-
-
-
-SK_API sk_sp<SkData> Encode(const SkPixmap& src, const Options& options);
 
 
 

@@ -20,9 +20,9 @@
 #include "src/core/SkAlphaRuns.h"
 #include "src/core/SkAnalyticEdge.h"
 #include "src/core/SkBlitter.h"
+#include "src/core/SkEdge.h"
 #include "src/core/SkEdgeBuilder.h"
 #include "src/core/SkMask.h"
-#include "src/core/SkPathRaw.h"
 #include "src/core/SkScan.h"
 #include "src/core/SkScanPriv.h"
 
@@ -990,18 +990,18 @@ static void validate_sort(const SkAnalyticEdge* edge) {
 
 static bool is_smooth_enough(SkAnalyticEdge* thisEdge, SkAnalyticEdge* nextEdge, int stop_y) {
     if (thisEdge->fCurveCount < 0) {
-        const auto cEdge = static_cast<SkAnalyticCubicEdge*>(thisEdge);
-        int      ddshift = cEdge->fCurveShift;
-        return SkAbs32(cEdge->fCDx) >> 1 >= SkAbs32(cEdge->fCDDx) >> ddshift &&
-               SkAbs32(cEdge->fCDy) >> 1 >= SkAbs32(cEdge->fCDDy) >> ddshift &&
+        const SkCubicEdge& cEdge   = static_cast<SkAnalyticCubicEdge*>(thisEdge)->fCEdge;
+        int                ddshift = cEdge.fCurveShift;
+        return SkAbs32(cEdge.fCDx) >> 1 >= SkAbs32(cEdge.fCDDx) >> ddshift &&
+               SkAbs32(cEdge.fCDy) >> 1 >= SkAbs32(cEdge.fCDDy) >> ddshift &&
                
-               (cEdge->fCDy - (cEdge->fCDDy >> ddshift)) >> cEdge->fCubicDShift >= SK_Fixed1;
+               (cEdge.fCDy - (cEdge.fCDDy >> ddshift)) >> cEdge.fCubicDShift >= SK_Fixed1;
     } else if (thisEdge->fCurveCount > 0) {
-        const auto qEdge = static_cast<SkAnalyticQuadraticEdge*>(thisEdge);
-        return SkAbs32(qEdge->fQDx) >> 1 >= SkAbs32(qEdge->fQDDx) &&
-               SkAbs32(qEdge->fQDy) >> 1 >= SkAbs32(qEdge->fQDDy) &&
+        const SkQuadraticEdge& qEdge = static_cast<SkAnalyticQuadraticEdge*>(thisEdge)->fQEdge;
+        return SkAbs32(qEdge.fQDx) >> 1 >= SkAbs32(qEdge.fQDDx) &&
+               SkAbs32(qEdge.fQDy) >> 1 >= SkAbs32(qEdge.fQDDy) &&
                
-               (qEdge->fQDy - qEdge->fQDDy) >> qEdge->fCurveShift >= SK_Fixed1;
+               (qEdge.fQDy - qEdge.fQDDy) >> qEdge.fCurveShift >= SK_Fixed1;
     }
     
     return SkAbs32(Sk32_sat_sub(nextEdge->fDX, thisEdge->fDX)) <= SK_Fixed1 &&
@@ -1601,7 +1601,7 @@ static void aaa_walk_edges(SkAnalyticEdge*  prevHead,
     }
 }
 
-static void aaa_fill_path(const SkPathRaw& path,
+static void aaa_fill_path(const SkPath& path,
                           const SkIRect& clipRect,
                           AdditiveBlitter* blitter,
                           int start_y,
@@ -1675,7 +1675,7 @@ static void aaa_fill_path(const SkPathRaw& path,
         
         
         SkIRect ir;
-        path.bounds().roundOut(&ir);
+        path.getBounds().roundOut(&ir);
         leftBound  = std::max(leftBound, SkIntToFixed(ir.fLeft));
         rightBound = std::min(rightBound, SkIntToFixed(ir.fRight));
     }
@@ -1686,11 +1686,11 @@ static void aaa_fill_path(const SkPathRaw& path,
     } else {
         
         
-        bool skipIntersect = path.points().size() > SkToSizeT((stop_y - start_y) * 2);
+        bool skipIntersect = path.countPoints() > (stop_y - start_y) * 2;
 
         aaa_walk_edges(&headEdge,
                        &tailEdge,
-                       path.fillType(),
+                       path.getFillType(),
                        blitter,
                        start_y,
                        stop_y,
@@ -1704,24 +1704,24 @@ static void aaa_fill_path(const SkPathRaw& path,
 
 
 static inline bool try_blit_fat_anti_rect(SkBlitter* blitter,
-                                          const SkPathRaw& raw,
+                                          const SkPath& path,
                                           const SkIRect& clip) {
-    std::optional<SkRect> rect = raw.isRect();
-    if (!rect) {
-        return false;
+    SkRect rect;
+    if (!path.isRect(&rect)) {
+        return false; 
     }
-    if (!rect->intersect(SkRect::Make(clip))) {
+    if (!rect.intersect(SkRect::Make(clip))) {
         return true; 
     }
-    SkIRect bounds = rect->roundOut();
+    SkIRect bounds = rect.roundOut();
     if (bounds.width() < 3) {
         return false; 
     }
-    blitter->blitFatAntiRect(*rect);
+    blitter->blitFatAntiRect(rect);
     return true;
 }
 
-void SkScan::AAAFillPath(const SkPathRaw&  path,
+void SkScan::AAAFillPath(const SkPath&  path,
                          SkBlitter*     blitter,
                          const SkIRect& ir,
                          const SkIRect& clipBounds,

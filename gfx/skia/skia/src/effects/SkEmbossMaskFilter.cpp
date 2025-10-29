@@ -7,17 +7,11 @@
 
 #include "src/effects/SkEmbossMaskFilter.h"
 
-#include "include/core/SkBlendMode.h"
 #include "include/core/SkBlurTypes.h"
-#include "include/core/SkColorSpace.h"
-#include "include/core/SkImageFilter.h"
 #include "include/core/SkMatrix.h"
-#include "include/core/SkPaint.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkPoint3.h"
-#include "include/core/SkShader.h"
 #include "include/core/SkTypes.h"
-#include "include/effects/SkImageFilters.h"
 #include "include/private/base/SkFloatingPoint.h"
 #include "src/core/SkBlurMask.h"
 #include "src/core/SkReadBuffer.h"
@@ -118,8 +112,8 @@ bool SkEmbossMaskFilter::filterMask(SkMaskBuilder* dst, const SkMask& src,
 
     
     Light   light = fLight;
-    matrix.mapVectors({(SkVector*)(void*)light.fDirection, 1},
-                      {(SkVector*)(void*)fLight.fDirection, 1});
+    matrix.mapVectors((SkVector*)(void*)light.fDirection,
+                      (SkVector*)(void*)fLight.fDirection, 1);
 
     
     
@@ -151,78 +145,4 @@ void SkEmbossMaskFilter::flatten(SkWriteBuffer& buffer) const {
     tmpLight.fPad = 0;    
     buffer.writeByteArray(&tmpLight, sizeof(tmpLight));
     buffer.writeScalar(fBlurSigma);
-}
-
-
-
-std::pair<sk_sp<SkImageFilter>, bool> SkEmbossMaskFilter::asImageFilter(
-        const SkMatrix& ctm, const SkPaint& paint) const {
-    
-    
-    sk_sp<SkImageFilter> coverageBlurred = SkImageFilters::Blur(fBlurSigma, fBlurSigma, nullptr);
-
-    
-    sk_sp<SkShader> srcShader = SkShaders::Color(paint.getColor4f(), nullptr);
-    if (paint.getShader()) {
-        srcShader = SkShaders::Blend(SkBlendMode::kDstIn, paint.refShader(), std::move(srcShader));
-    }
-    srcShader = srcShader->makeWithColorFilter(paint.refColorFilter());
-    sk_sp<SkImageFilter> srcColor = SkImageFilters::Shader(
-        std::move(srcShader), paint.isDither() ? SkImageFilters::Dither::kYes
-                                               : SkImageFilters::Dither::kNo);
-
-    
-    float ambientf = fLight.fAmbient / 255.f;
-    SkColor4f ambientColor = {ambientf, ambientf, ambientf, 1};
-    sk_sp<SkImageFilter> ambient = SkImageFilters::Shader(SkShaders::Color(ambientColor, nullptr));
-
-    
-    SkPoint3 lightDirection = SkPoint3::Make(fLight.fDirection[0],
-                                             fLight.fDirection[1],
-                                             fLight.fDirection[2]);
-
-
-    
-    
-    
-    
-    
-    const float surfaceScale = -255.f/ 32.f;
-
-    
-    sk_sp<SkImageFilter> diffuseCF = SkImageFilters::DistantLitDiffuse(lightDirection,
-                                                                       SK_ColorWHITE,
-                                                                       surfaceScale,
-                                                                       1,
-                                                                       coverageBlurred);
-    
-    sk_sp<SkImageFilter> ambientdiffuse = SkImageFilters::Blend(SkBlendMode::kPlus,
-                                                                diffuseCF,
-                                                                ambient);
-    
-    sk_sp<SkImageFilter> ambientdiffuseBlend = SkImageFilters::Blend(
-        SkBlendMode::kModulate, srcColor, ambientdiffuse);
-
-    
-    
-    
-    
-    
-    float shininess = ((fLight.fSpecular >> 4) + 1);
-
-    sk_sp<SkImageFilter> specular = LegacySpecular(lightDirection,
-                                                   SK_ColorWHITE,
-                                                   surfaceScale,
-                                                   1,
-                                                   shininess,
-                                                   coverageBlurred);
-
-    
-    
-    sk_sp<SkImageFilter> finalFilter = SkImageFilters::Blend(SkBlendMode::kPlus,
-                                                             ambientdiffuseBlend,
-                                                             specular);
-    
-    
-    return {SkImageFilters::Blend(SkBlendMode::kDstIn, finalFilter, nullptr), true};
 }

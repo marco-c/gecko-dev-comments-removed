@@ -12,11 +12,13 @@
 #include "include/core/SkTypeface.h"
 #include "include/ports/SkFontConfigInterface.h"
 #include "include/ports/SkFontMgr_FontConfigInterface.h"
+#include "include/ports/SkFontScanner_FreeType.h"
 #include "include/private/base/SkMutex.h"
 #include "src/core/SkFontDescriptor.h"
 #include "src/core/SkResourceCache.h"
 #include "src/core/SkTypefaceCache.h"
 #include "src/ports/SkFontConfigTypeface.h"
+#include "src/ports/SkTypeface_FreeType.h"
 
 #include <new>
 
@@ -205,10 +207,8 @@ protected:
                     SkFontArguments().setCollectionIndex(identity.fTTCIndex));
             face.reset(SkTypeface_FCI::Create(std::move(realTypeface), fFCI, identity,
                                               std::move(outFamilyName), outStyle, false));
-            if (face) {
-                
-                fTFCache.add(face);
-            }
+            
+            fTFCache.add(face);
         }
         
         fCache.add(face, request.release());
@@ -242,7 +242,7 @@ protected:
             return nullptr;  
         }
 
-        return fScanner->MakeFromStream(std::move(stream), args);
+        return SkTypeface_FreeType::MakeFromStream(std::move(stream), args);
     }
 
     sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const override {
@@ -260,4 +260,9 @@ SK_API sk_sp<SkFontMgr> SkFontMgr_New_FCI(sk_sp<SkFontConfigInterface> fci,
                                           std::unique_ptr<SkFontScanner> scanner) {
     SkASSERT(fci);
     return sk_make_sp<SkFontMgr_FCI>(std::move(fci), std::move(scanner));
+}
+
+SK_API sk_sp<SkFontMgr> SkFontMgr_New_FCI(sk_sp<SkFontConfigInterface> fci) {
+    SkASSERT(fci);
+    return sk_make_sp<SkFontMgr_FCI>(std::move(fci), SkFontScanner_Make_FreeType());
 }

@@ -267,6 +267,8 @@ void SkBlitter::blitMask(const SkMask& mask, const SkIRect& clip) {
 }
 
 
+
+#if defined(SK_SUPPORT_LEGACY_ALPHA_BITMAP_AS_COVERAGE)
 void SkBlitter::blitMaskRegion(const SkMask& mask, const SkRegion& clip) {
     if (clip.quickReject(mask.fBounds)) {
         return;
@@ -280,6 +282,7 @@ void SkBlitter::blitMaskRegion(const SkMask& mask, const SkRegion& clip) {
         clipper.next();
     }
 }
+#endif
 
 void SkBlitter::blitRectRegion(const SkIRect& rect, const SkRegion& clip) {
     SkRegion::Cliperator clipper(clip, rect);
@@ -657,8 +660,7 @@ SkBlitter* SkBlitter::Choose(const SkPixmap& device,
                              SkArenaAlloc* alloc,
                              SkDrawCoverage drawCoverage,
                              sk_sp<SkShader> clipShader,
-                             const SkSurfaceProps& props,
-                             const SkRect& devBounds) {
+                             const SkSurfaceProps& props) {
     SkASSERT(alloc);
 
     if (kUnknown_SkColorType == device.colorType()) {
@@ -711,8 +713,7 @@ SkBlitter* SkBlitter::Choose(const SkPixmap& device,
     }
 
     auto CreateSkRPBlitter = [&]() -> SkBlitter* {
-        auto blitter = SkCreateRasterPipelineBlitter(
-                device, *paint, ctm, alloc, clipShader, props, devBounds);
+        auto blitter = SkCreateRasterPipelineBlitter(device, *paint, ctm, alloc, clipShader, props);
         return blitter ? blitter
                        : alloc->make<SkNullBlitter>();
     };

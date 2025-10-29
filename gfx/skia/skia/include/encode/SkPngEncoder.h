@@ -10,7 +10,6 @@
 
 #include "include/core/SkDataTable.h"
 #include "include/core/SkRefCnt.h"
-#include "include/private/SkHdrMetadata.h"
 #include "include/private/base/SkAPI.h"
 
 
@@ -76,7 +75,12 @@ struct Options {
     
 
 
-    skhdr::Metadata fHdrMetadata;
+
+
+
+
+    const skcms_ICCProfile* fICCProfile = nullptr;
+    const char* fICCProfileDescription = nullptr;
 
     
 
@@ -99,11 +103,6 @@ struct Options {
 
 
 SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-
-
-
-
-SK_API sk_sp<SkData> Encode(const SkPixmap& src, const Options& options);
 
 
 

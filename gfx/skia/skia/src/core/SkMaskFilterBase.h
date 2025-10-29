@@ -20,22 +20,15 @@
 #include "src/core/SkMask.h"
 
 #include <optional>
-#include <utility>
 
-class SkPaint;
 class SkBlitter;
 class SkImageFilter;
 class SkCachedData;
 class SkMatrix;
-class SkResourceCache;
-struct SkPathRaw;
+class SkPath;
 class SkRRect;
 class SkRasterClip;
 enum SkBlurStyle : int;
-
-namespace skcpu {
-class Draw;
-}
 
 class SkMaskFilterBase : public SkMaskFilter {
 public:
@@ -98,17 +91,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-    virtual std::pair<sk_sp<SkImageFilter>, bool> asImageFilter(const SkMatrix& ctm,
-                                                                const SkPaint& paint) const;
+    virtual sk_sp<SkImageFilter> asImageFilter(const SkMatrix& ctm) const;
 
     static SkFlattenable::Type GetFlattenableType() {
         return kSkMaskFilter_Type;
@@ -163,30 +146,25 @@ protected:
     virtual FilterReturn filterRectsToNine(SkSpan<const SkRect>,
                                            const SkMatrix&,
                                            const SkIRect& clipBounds,
-                                           std::optional<NinePatch>*,
-                                           SkResourceCache*) const;
+                                           std::optional<NinePatch>*) const;
     
 
 
     virtual std::optional<NinePatch> filterRRectToNine(const SkRRect&,
                                                        const SkMatrix&,
-                                                       const SkIRect& clipBounds,
-                                                       SkResourceCache*) const;
+                                                       const SkIRect& clipBounds) const;
 
 private:
-    friend class skcpu::Draw;
+    friend class SkDraw;
+    friend class SkDrawBase;
 
     
 
 
 
 
-    bool filterPath(const SkPathRaw& devRaw,
-                    const SkMatrix& ctm,
-                    const SkRasterClip&,
-                    SkBlitter*,
-                    SkStrokeRec::InitStyle,
-                    SkResourceCache*) const;
+    bool filterPath(const SkPath& devPath, const SkMatrix& ctm, const SkRasterClip&, SkBlitter*,
+                    SkStrokeRec::InitStyle) const;
 
     
 
@@ -195,14 +173,7 @@ private:
     bool filterRRect(const SkRRect& devRRect,
                      const SkMatrix& ctm,
                      const SkRasterClip&,
-                     SkBlitter*,
-                     SkResourceCache*) const;
-
-    FilterReturn filterRects(SkSpan<const SkRect> devRects,
-                     const SkMatrix& ctm,
-                     const SkRasterClip& clip,
-                     SkBlitter* blitter,
-                     SkResourceCache* cache) const;
+                     SkBlitter*) const;
 };
 
 inline SkMaskFilterBase* as_MFB(SkMaskFilter* mf) {

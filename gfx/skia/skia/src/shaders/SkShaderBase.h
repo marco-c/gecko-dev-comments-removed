@@ -117,8 +117,8 @@ public:
     SkMatrix totalMatrix() const { return SkMatrix::Concat(fCTM, fTotalLocalMatrix); }
 
     
-    std::optional<SkMatrix> totalInverse() const {
-        return this->totalMatrix().invert();
+    [[nodiscard]] bool totalInverse(SkMatrix* out) const {
+        return this->totalMatrix().invert(out);
     }
 
     
@@ -186,8 +186,6 @@ class SkShaderBase : public SkShader {
 public:
     ~SkShaderBase() override;
 
-    uint32_t uniqueID() const { return fUniqueID; }
-
     sk_sp<SkShader> makeInvertAlpha() const;
     sk_sp<SkShader> makeWithCTM(const SkMatrix&) const;  
 
@@ -195,8 +193,7 @@ public:
 
 
 
-
-    virtual bool isConstant(SkColor4f* color = nullptr) const { return false; }
+    virtual bool isConstant() const { return false; }
 
     enum class ShaderType {
 #define M(type) k##type,
@@ -247,7 +244,7 @@ public:
                                                
                                                
                                                
-        SkColor4f*  fColors        = nullptr;  
+        SkColor*    fColors        = nullptr;  
         SkScalar*   fColorOffsets  = nullptr;  
         SkPoint     fPoint[2];                 
         SkScalar    fRadius[2];                
@@ -323,10 +320,12 @@ public:
         
         const SkShaderBase& fShader;
 
-        uint8_t getPaintAlpha() const { return fPaintAlpha; }
+        uint8_t         getPaintAlpha() const { return fPaintAlpha; }
+        const SkMatrix& getTotalInverse() const { return fTotalInverse; }
 
     private:
-        uint8_t fPaintAlpha;
+        SkMatrix    fTotalInverse;
+        uint8_t     fPaintAlpha;
     };
 
     
@@ -407,9 +406,6 @@ protected:
     virtual bool onAsLuminanceColor(SkColor4f*) const {
         return false;
     }
-
-private:
-    const uint32_t fUniqueID;
 
     friend class SkShaders::MatrixRec;
 };

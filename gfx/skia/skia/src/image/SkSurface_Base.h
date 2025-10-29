@@ -10,7 +10,6 @@
 
 #include "include/core/SkCanvas.h"
 #include "include/core/SkImage.h"
-#include "include/core/SkRecorder.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSamplingOptions.h"
 #include "include/core/SkScalar.h"
@@ -72,7 +71,6 @@ public:
 
     virtual GrRecordingContext* onGetRecordingContext() const;
     virtual skgpu::graphite::Recorder* onGetRecorder() const;
-    virtual SkRecorder* onGetBaseRecorder() const;
 
     
 
@@ -179,12 +177,7 @@ public:
     uint32_t newGenerationID();
 
 private:
-    
-    
-    SkCanvas* fCachedCanvas = nullptr;
-    
-    
-    std::unique_ptr<SkCanvas> fOwnedBaseCanvas = nullptr;
+    std::unique_ptr<SkCanvas> fCachedCanvas = nullptr;
     sk_sp<SkImage>            fCachedImage  = nullptr;
 
     
@@ -200,19 +193,12 @@ private:
 
 SkCanvas* SkSurface_Base::getCachedCanvas() {
     if (nullptr == fCachedCanvas) {
-        fOwnedBaseCanvas = std::unique_ptr<SkCanvas>(this->onNewCanvas());
-
-        if (this->baseRecorder()) {
-            fCachedCanvas = this->baseRecorder()->makeCaptureCanvas(fOwnedBaseCanvas.get());
-        }
-        if (!fCachedCanvas) {
-            fCachedCanvas = fOwnedBaseCanvas.get();
-        }
+        fCachedCanvas = std::unique_ptr<SkCanvas>(this->onNewCanvas());
         if (fCachedCanvas) {
             fCachedCanvas->setSurfaceBase(this);
         }
     }
-    return fCachedCanvas;
+    return fCachedCanvas.get();
 }
 
 sk_sp<SkImage> SkSurface_Base::refCachedImage() {

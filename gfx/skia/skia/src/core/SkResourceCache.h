@@ -208,7 +208,7 @@ public:
 
 
     explicit SkResourceCache(size_t byteLimit);
-    virtual ~SkResourceCache();
+    ~SkResourceCache();
 
     
 
@@ -219,45 +219,45 @@ public:
 
 
 
-    virtual bool find(const Key&, FindVisitor, void* context) ;
-    virtual void add(Rec*, void* payload = nullptr);
-    virtual void visitAll(Visitor, void* context);
+    bool find(const Key&, FindVisitor, void* context);
+    void add(Rec*, void* payload = nullptr);
+    void visitAll(Visitor, void* context);
 
-    virtual size_t getTotalBytesUsed() const { return fTotalBytesUsed; }
-    virtual size_t getTotalByteLimit() const { return fTotalByteLimit; }
-
-    
-
-
-
-
-    virtual size_t setSingleAllocationByteLimit(size_t maximumAllocationSize);
-    virtual size_t getSingleAllocationByteLimit() const;
-    
-    
-    virtual size_t getEffectiveSingleAllocationByteLimit() const;
+    size_t getTotalBytesUsed() const { return fTotalBytesUsed; }
+    size_t getTotalByteLimit() const { return fTotalByteLimit; }
 
     
 
 
 
 
-    virtual size_t setTotalByteLimit(size_t newLimit);
+    size_t setSingleAllocationByteLimit(size_t maximumAllocationSize);
+    size_t getSingleAllocationByteLimit() const;
+    
+    
+    size_t getEffectiveSingleAllocationByteLimit() const;
 
-    virtual void purgeSharedID(uint64_t sharedID);
+    
 
-    virtual void purgeAll() {
+
+
+
+    size_t setTotalByteLimit(size_t newLimit);
+
+    void purgeSharedID(uint64_t sharedID);
+
+    void purgeAll() {
         this->purgeAsNeeded(true);
     }
 
-    virtual DiscardableFactory discardableFactory() const { return fDiscardableFactory; }
+    DiscardableFactory discardableFactory() const { return fDiscardableFactory; }
 
-    virtual SkCachedData* newCachedData(size_t bytes);
+    SkCachedData* newCachedData(size_t bytes);
 
     
 
 
-    virtual void dump() const;
+    void dump() const;
 
 private:
     Rec*    fHead;

@@ -225,9 +225,7 @@ void SkPDFAppendCmapSections(const SkUnichar* glyphToUnicode,
 
     for (int i = firstGlyphID - glyphOffset; i < limit + 1; ++i) {
         SkGlyphID gid = i + glyphOffset;
-        bool inSubset = i < limit &&
-                        (subset == nullptr || subset->has(gid)) &&
-                        !glyphToUnicodeEx.find(gid);
+        bool inSubset = i < limit && (subset == nullptr || subset->has(gid));
         if (!rangeEmpty) {
             
             
@@ -257,6 +255,7 @@ void SkPDFAppendCmapSections(const SkUnichar* glyphToUnicode,
         }
     }
 
+    
     
     append_bfchar_section(bfcharEntries, multiByteGlyphs, cmap);
     append_bfchar_section_ex(glyphToUnicodeEx, multiByteGlyphs, firstGlyphID, lastGlyphID, cmap);

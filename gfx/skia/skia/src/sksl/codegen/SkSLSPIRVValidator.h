@@ -8,9 +8,7 @@
 #ifndef SKSL_SPIRVVALIDATOR
 #define SKSL_SPIRVVALIDATOR
 
-#include "include/core/SkSpan.h"
-
-#include <cstdint>
+#include <string_view>
 
 namespace SkSL {
 
@@ -18,11 +16,11 @@ class ErrorReporter;
 
 
 
-bool ValidateSPIRV(ErrorReporter&, SkSpan<const uint32_t>);
+bool ValidateSPIRV(ErrorReporter&, std::string_view);
 
 
 
-bool ValidateSPIRVAndDissassemble(ErrorReporter&, SkSpan<const uint32_t>);
+bool ValidateSPIRVAndDissassemble(ErrorReporter&, std::string_view);
 
 }  
 

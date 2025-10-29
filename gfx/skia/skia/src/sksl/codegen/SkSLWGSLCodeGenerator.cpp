@@ -35,7 +35,6 @@
 #include "src/sksl/analysis/SkSLProgramVisitor.h"
 #include "src/sksl/codegen/SkSLCodeGenTypes.h"
 #include "src/sksl/codegen/SkSLCodeGenerator.h"
-#include "src/sksl/codegen/SkSLNativeShader.h"
 #include "src/sksl/ir/SkSLBinaryExpression.h"
 #include "src/sksl/ir/SkSLBlock.h"
 #include "src/sksl/ir/SkSLConstructor.h"
@@ -159,7 +158,6 @@ public:
 
         
         bool fPixelLocalExtension = false;
-        bool fPushConstantExtension = false;
     };
 
     WGSLCodeGenerator(const Context* context,
@@ -1072,14 +1070,6 @@ WGSLCodeGenerator::ProgramRequirements resolve_program_requirements(const Progra
                 const GlobalVarDeclaration& decl = e->as<GlobalVarDeclaration>();
                 if (decl.varDeclaration().var()->modifierFlags().isPixelLocal()) {
                     requirements.fPixelLocalExtension = true;
-                }
-                break;
-            }
-            case ProgramElement::Kind::kInterfaceBlock: {
-                const InterfaceBlock& ib = e->as<InterfaceBlock>();
-                const Layout& layout = ib.var()->layout();
-                if (layout.fFlags & LayoutFlag::kPushConstant) {
-                    requirements.fPushConstantExtension = true;
                 }
                 break;
             }
@@ -4300,9 +4290,6 @@ void WGSLCodeGenerator::writeEnables() {
     if (fRequirements.fPixelLocalExtension) {
         this->writeLine("enable chromium_experimental_pixel_local;");
     }
-    if (fRequirements.fPushConstantExtension) {
-        this->writeLine("enable chromium_experimental_immediate;");
-    }
     if (fProgram.fInterface.fUseLastFragColor) {
         this->writeLine("enable chromium_experimental_framebuffer_fetch;");
     }
@@ -4468,14 +4455,8 @@ void WGSLCodeGenerator::writeUniformsAndBuffers() {
         std::string_view addressSpace;
         std::string_view accessMode;
         MemoryLayout::Standard nativeLayout;
-        const bool isPushConstant =
-                static_cast<bool>(ib.var()->layout().fFlags & LayoutFlag::kPushConstant);
         if (ib.var()->modifierFlags().isUniform()) {
-            if (isPushConstant) {
-                addressSpace = "immediate";
-            } else {
-                addressSpace = "uniform";
-            }
+            addressSpace = "uniform";
             nativeLayout = MemoryLayout::Standard::kWGSLUniform_Base;
         } else if (ib.var()->modifierFlags().isBuffer()) {
             addressSpace = "storage";
@@ -4512,14 +4493,11 @@ void WGSLCodeGenerator::writeUniformsAndBuffers() {
         MemoryLayout layout(MemoryLayout::Standard::k140);
         this->writeFields(ibFields, &layout);
         this->writeLine("};");
-        if (!isPushConstant) {
-            this->write("@group(");
-            this->write(std::to_string(std::max(0, ib.var()->layout().fSet)));
-            this->write(") @binding(");
-            this->write(std::to_string(std::max(0, ib.var()->layout().fBinding)));
-            this->write(") ");
-        }
-        this->write("var<");
+        this->write("@group(");
+        this->write(std::to_string(std::max(0, ib.var()->layout().fSet)));
+        this->write(") @binding(");
+        this->write(std::to_string(std::max(0, ib.var()->layout().fBinding)));
+        this->write(") var<");
         this->write(addressSpace);
         this->write(accessMode);
         this->write("> ");
@@ -4643,12 +4621,12 @@ bool ToWGSL(Program& program, const ShaderCaps* caps, OutputStream& out) {
     return ToWGSL(program, caps, out, defaultPrintOpts, IncludeSyntheticCode::kNo, nullptr);
 }
 
-bool ToWGSL(Program& program, const ShaderCaps* caps, NativeShader* out) {
+bool ToWGSL(Program& program, const ShaderCaps* caps, std::string* out) {
     StringStream buffer;
     if (!ToWGSL(program, caps, buffer)) {
         return false;
     }
-    out->fText = buffer.str();
+    *out = buffer.str();
     return true;
 }
 

@@ -42,6 +42,16 @@ struct SK_API Options {
 
     Compression fCompression = Compression::kLossy;
     float fQuality = 100.0f;
+
+    
+
+
+
+
+
+
+    const skcms_ICCProfile* fICCProfile = nullptr;
+    const char* fICCProfileDescription = nullptr;
 };
 
 
@@ -51,11 +61,6 @@ struct SK_API Options {
 
 
 SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-
-
-
-
-SK_API sk_sp<SkData> Encode(const SkPixmap& src, const Options& options);
 
 
 

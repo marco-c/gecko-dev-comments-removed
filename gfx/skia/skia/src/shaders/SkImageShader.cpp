@@ -266,8 +266,8 @@ SkShaderBase::Context* SkImageShader::onMakeContext(const ContextRec& rec,
         return nullptr;
     }
 
-    auto inv = rec.fMatrixRec.totalInverse();
-    if (!inv || !legacy_shader_can_handle(*inv)) {
+    SkMatrix inv;
+    if (!rec.fMatrixRec.totalInverse(&inv) || !legacy_shader_can_handle(inv)) {
         return nullptr;
     }
 
@@ -388,7 +388,7 @@ SkRect SkModifyPaintAndDstForDrawImageRect(const SkImage* image,
     SkRect imgBounds = SkRect::Make(image->bounds());
 
     SkASSERT(src.isFinite() && dst.isFinite() && dst.isSorted());
-    SkMatrix localMatrix = SkMatrix::RectToRectOrIdentity(src, dst);
+    SkMatrix localMatrix = SkMatrix::RectToRect(src, dst);
     if (!imgBounds.contains(src)) {
         if (!src.intersect(imgBounds)) {
             return SkRect::MakeEmpty(); 
@@ -521,11 +521,9 @@ bool SkImageShader::appendStages(const SkStageRec& rec, const SkShaders::MatrixR
     SkMatrix baseInv;
     
     if (mRec.totalMatrixIsValid()) {
-        auto inv = mRec.totalInverse();
-        if (!inv) {
+        if (!mRec.totalInverse(&baseInv)) {
             return false;
         }
-        baseInv = *inv;
         baseInv.normalizePerspective();
     }
 
@@ -717,28 +715,8 @@ bool SkImageShader::appendStages(const SkStageRec& rec, const SkShaders::MatrixR
         && !sampling.useCubic && sampling.filter == SkFilterMode::kLinear
         && sampling.mipmap != SkMipmapMode::kLinear
         && fTileModeX == SkTileMode::kClamp && fTileModeY == SkTileMode::kClamp) {
-        
-        
-        bool shouldUseHighPBilerp = false;
-        if (!rec.fDstBounds.isEmpty()) {
-            std::array<SkPoint, 4> quad = rec.fDstBounds.toQuad();
-            baseInv.mapPoints(quad);
-            SkRect deviceImageSpace;
-            deviceImageSpace.setBounds(quad);
-            for (float val : SkSpan<const float>(deviceImageSpace.asScalars(), 4)) {
-                if (val > INT16_MAX || val < INT16_MIN || !std::isfinite(val)) {
-                    shouldUseHighPBilerp = true;
-                    break;
-                }
-            }
-        }
 
-        if (shouldUseHighPBilerp) {
-            p->append(SkRasterPipelineOp::bilerp_clamp_8888_force_highp, upper.gather);
-        } else {
-            p->append(SkRasterPipelineOp::bilerp_clamp_8888, upper.gather);
-        }
-
+        p->append(SkRasterPipelineOp::bilerp_clamp_8888, upper.gather);
         if (ct == kBGRA_8888_SkColorType) {
             p->append(SkRasterPipelineOp::swap_rb);
         }

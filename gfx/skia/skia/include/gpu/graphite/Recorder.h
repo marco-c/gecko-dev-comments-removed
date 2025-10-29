@@ -8,34 +8,22 @@
 #ifndef skgpu_graphite_Recorder_DEFINED
 #define skgpu_graphite_Recorder_DEFINED
 
-#include "include/core/SkCPURecorder.h"
-#include "include/core/SkRecorder.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
 #include "include/gpu/graphite/GraphiteTypes.h"
 #include "include/gpu/graphite/Recording.h"
 #include "include/private/base/SingleOwner.h"
-#include "include/private/base/SkAPI.h"
 #include "include/private/base/SkTArray.h"
-#include "include/private/base/SkTDArray.h"
 
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <optional>
 
+struct AHardwareBuffer;
 class SkCanvas;
+struct SkImageInfo;
 class SkPixmap;
 class SkTraceMemoryDump;
-struct SkISize;
-struct SkImageInfo;
-
-#if defined(SK_BUILD_FOR_ANDROID)
-struct AHardwareBuffer;
-#endif
 
 namespace skgpu {
-enum class BackendApi : unsigned int;
 class RefCntedCallback;
 class TokenTracker;
 }
@@ -49,22 +37,28 @@ namespace skgpu::graphite {
 
 class AtlasProvider;
 class BackendTexture;
+class Caps;
 class Context;
 class Device;
 class DrawBufferManager;
-class FloatStorageManager;
+class GlobalCache;
 class ImageProvider;
+class ProxyCache;
 class ProxyReadCountMap;
 class RecorderPriv;
 class ResourceProvider;
 class RuntimeEffectDictionary;
 class SharedContext;
+class Task;
 class TaskList;
+class TextureDataBlock;
 class TextureInfo;
+class UniformDataBlock;
 class UploadBufferManager;
 class UploadList;
 
-struct RecorderOptionsPriv;
+template<typename T> class PipelineDataCache;
+using TextureDataCache = PipelineDataCache<TextureDataBlock>;
 
 struct SK_API RecorderOptions final {
     RecorderOptions();
@@ -76,28 +70,18 @@ struct SK_API RecorderOptions final {
     static constexpr size_t kDefaultRecorderBudget = 256 * (1 << 20);
     
     size_t fGpuBudgetInBytes = kDefaultRecorderBudget;
-    
-    
-    
-    std::optional<bool> fRequireOrderedRecordings;
-
-    
-    RecorderOptionsPriv* fRecorderOptionsPriv = nullptr;
 };
 
-class SK_API Recorder final : public SkRecorder {
+class SK_API Recorder final {
 public:
     Recorder(const Recorder&) = delete;
     Recorder(Recorder&&) = delete;
     Recorder& operator=(const Recorder&) = delete;
     Recorder& operator=(Recorder&&) = delete;
 
-    ~Recorder() override;
+    ~Recorder();
 
     BackendApi backend() const;
-
-    Type type() const override { return SkRecorder::Type::kGraphite; }
-    skcpu::Recorder* cpuRecorder() override;
 
     std::unique_ptr<Recording> snap();
 
@@ -273,22 +257,19 @@ private:
     void registerDevice(sk_sp<Device>);
     void deregisterDevice(const Device*);
 
-    SkCanvas* makeCaptureCanvas(SkCanvas*) override;
-
     sk_sp<SharedContext> fSharedContext;
     ResourceProvider* fResourceProvider; 
     std::unique_ptr<ResourceProvider> fOwnedResourceProvider; 
-
-    sk_sp<RuntimeEffectDictionary> fRuntimeEffectDict;
+    std::unique_ptr<RuntimeEffectDictionary> fRuntimeEffectDict;
 
     
     std::unique_ptr<TaskList> fRootTaskList;
     
     std::unique_ptr<UploadList> fRootUploads;
 
+    std::unique_ptr<TextureDataCache> fTextureDataCache;
     std::unique_ptr<DrawBufferManager> fDrawBufferManager;
     std::unique_ptr<UploadBufferManager> fUploadBufferManager;
-    sk_sp<FloatStorageManager> fFloatStorageManager;
     std::unique_ptr<ProxyReadCountMap> fProxyReadCounts;
 
     
@@ -300,8 +281,6 @@ private:
 
     uint32_t fUniqueID;  
     uint32_t fNextRecordingID = 1;
-    const bool fRequireOrderedRecordings;
-
     std::unique_ptr<AtlasProvider> fAtlasProvider;
     std::unique_ptr<TokenTracker> fTokenTracker;
     std::unique_ptr<sktext::gpu::StrikeCache> fStrikeCache;
@@ -322,14 +301,6 @@ private:
 #if defined(GPU_TEST_UTILS)
     
     Context* fContext = nullptr;
-#endif
-
-#if defined(SK_DUMP_TASKS)
-    
-    void dumpTasks(TaskList*) const;
-
-    
-    SkTDArray<const char*> fFlushSources;
 #endif
 };
 

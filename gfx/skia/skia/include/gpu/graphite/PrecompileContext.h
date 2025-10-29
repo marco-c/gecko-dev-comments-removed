@@ -10,11 +10,9 @@
 
 #include "include/core/SkRefCnt.h"
 #include "include/private/base/SingleOwner.h"
-#include "include/private/base/SkAPI.h"
 
 #include <chrono>
 #include <memory>
-#include <string>
 
 class SkData;
 
@@ -36,22 +34,10 @@ public:
 
     void purgePipelinesNotUsedInMs(std::chrono::milliseconds msNotUsed);
 
-    enum class StatOptions {
-        
-        
-        
-        
-        
-        kPrecompile,
-        
-        
-        kPipelineCache,
-    };
-
     
 
 
-    void reportPipelineStats(StatOptions option = StatOptions::kPrecompile);
+    void reportPipelineStats();
 
     
 

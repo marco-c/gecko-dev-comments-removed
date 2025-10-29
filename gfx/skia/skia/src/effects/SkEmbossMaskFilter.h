@@ -8,7 +8,6 @@
 #ifndef SkEmbossMaskFilter_DEFINED
 #define SkEmbossMaskFilter_DEFINED
 
-#include "include/core/SkColor.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkMaskFilter.h"
 #include "include/core/SkRefCnt.h"
@@ -17,15 +16,11 @@
 #include "src/core/SkMaskFilterBase.h"
 
 #include <cstdint>
-#include <utility>
 
-class SkImageFilter;
 class SkMatrix;
-class SkPaint;
 class SkReadBuffer;
 class SkWriteBuffer;
 struct SkIPoint;
-struct SkPoint3;
 
 
 
@@ -49,8 +44,6 @@ public:
     bool filterMask(SkMaskBuilder* dst, const SkMask& src, const SkMatrix&,
                     SkIPoint* margin) const override;
     SkMaskFilterBase::Type type() const override { return SkMaskFilterBase::Type::kEmboss; }
-    std::pair<sk_sp<SkImageFilter>, bool> asImageFilter(const SkMatrix& ctm,
-                                                        const SkPaint& paint) const override;
 
 protected:
     SkEmbossMaskFilter(SkScalar blurSigma, const Light& light);
@@ -59,28 +52,7 @@ protected:
 private:
     SK_FLATTENABLE_HOOKS(SkEmbossMaskFilter)
 
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkImageFilter> LegacySpecular(const SkPoint3& direction, SkColor lightColor,
-                                               SkScalar surfaceScale, SkScalar ks,
-                                               SkScalar shininess, sk_sp<SkImageFilter> input);
-
-    Light fLight;
+    Light       fLight;
     SkScalar    fBlurSigma;
 
     using INHERITED = SkMaskFilter;

@@ -18,16 +18,12 @@ template <typename T,
           typename HashTraits=T>
 class SkTMultiMap {
     struct ValueList {
-        explicit ValueList(T* value) : fValue(value), fNext(nullptr), fCount(1) {}
+        explicit ValueList(T* value) : fValue(value), fNext(nullptr) {}
 
         static const Key& GetKey(const ValueList& e) { return HashTraits::GetKey(*e.fValue); }
         static uint32_t Hash(const Key& key) { return HashTraits::Hash(key); }
         T* fValue;
         ValueList* fNext;
-
-        
-        
-        uint32_t fCount;
     };
 public:
     SkTMultiMap() : fCount(0) {}
@@ -60,7 +56,6 @@ public:
             
             list->fNext = newEntry;
             list->fValue = value;
-            list->fCount++;
         } else {
             fHash.add(new ValueList(value));
         }
@@ -69,8 +64,7 @@ public:
     }
 
     void remove(const Key& key, const T* value) {
-        ValueList* root = fHash.find(key);
-        ValueList* list = root;
+        ValueList* list = fHash.find(key);
         
         
 #if 0
@@ -82,7 +76,7 @@ public:
             prev = list;
             list = list->fNext;
         }
-        this->internalRemove(root, prev, list, key);
+        this->internalRemove(prev, list, key);
 #else
         ValueList* prev = nullptr;
         while (list && list->fValue != value) {
@@ -92,7 +86,7 @@ public:
         
         SkASSERT(list);
         if (list) {
-            this->internalRemove(root, prev, list, key);
+            this->internalRemove(prev, list, key);
         }
 #endif
     }
@@ -119,14 +113,13 @@ public:
 
     template<class FindPredicate>
     T* findAndRemove(const Key& key, const FindPredicate f) {
-        ValueList* root = fHash.find(key);
+        ValueList* list = fHash.find(key);
 
-        ValueList* list = root;
         ValueList* prev = nullptr;
         while (list) {
             if (f(list->fValue)){
                 T* value = list->fValue;
-                this->internalRemove(root, prev, list, key);
+                this->internalRemove(prev, list, key);
                 return value;
             }
             prev = list;
@@ -172,8 +165,7 @@ private:
     SkTDynamicHash<ValueList, Key> fHash;
     int fCount;
 
-    void internalRemove(ValueList* root, ValueList* prev, ValueList* elem, const Key& key) {
-        root->fCount--;
+    void internalRemove(ValueList* prev, ValueList* elem, const Key& key) {
         if (elem->fNext) {
             ValueList* next = elem->fNext;
             elem->fValue = next->fValue;

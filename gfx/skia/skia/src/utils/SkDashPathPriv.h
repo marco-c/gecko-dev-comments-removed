@@ -9,10 +9,10 @@
 #define SkDashPathPriv_DEFINED
 
 #include "include/core/SkPathEffect.h"
-#include "include/core/SkSpan.h"
 #include "src/core/SkPathEffectBase.h"
 
 namespace SkDashPath {
+    
 
 
 
@@ -20,18 +20,17 @@ namespace SkDashPath {
 
 
 
+    void CalcDashParameters(SkScalar phase, const SkScalar intervals[], int32_t count,
+                            SkScalar* initialDashLength, int32_t* initialDashIndex,
+                            SkScalar* intervalLength, SkScalar* adjustedPhase = nullptr);
 
-void CalcDashParameters(SkScalar phase, SkSpan<const SkScalar> intervals,
-                        SkScalar* initialDashLength, size_t* initialDashIndex,
-                        SkScalar* intervalLength, SkScalar* adjustedPhase = nullptr);
-
-bool FilterDashPath(SkPathBuilder* dst, const SkPath& src, SkStrokeRec*, const SkRect*,
-                    const SkPathEffectBase::DashInfo& info);
+    bool FilterDashPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect*,
+                        const SkPathEffectBase::DashInfo& info);
 
 #ifdef SK_BUILD_FOR_FUZZER
-const SkScalar kMaxDashCount = 10000;
+    const SkScalar kMaxDashCount = 10000;
 #else
-const SkScalar kMaxDashCount = 1000000;
+    const SkScalar kMaxDashCount = 1000000;
 #endif
 
     
@@ -46,14 +45,13 @@ const SkScalar kMaxDashCount = 1000000;
 
 
 
-    bool InternalFilter(SkPathBuilder* dst, const SkPath& src, SkStrokeRec* rec,
-                        const SkRect* cullRect, SkSpan<const SkScalar> aIntervals,
-                        SkScalar initialDashLength, int32_t initialDashIndex,
+    bool InternalFilter(SkPath* dst, const SkPath& src, SkStrokeRec* rec,
+                        const SkRect* cullRect, const SkScalar aIntervals[],
+                        int32_t count, SkScalar initialDashLength, int32_t initialDashIndex,
                         SkScalar intervalLength, SkScalar startPhase,
                         StrokeRecApplication = StrokeRecApplication::kAllow);
 
-    bool ValidDashPath(SkScalar phase, SkSpan<const SkScalar> intervals);
-
+    bool ValidDashPath(SkScalar phase, const SkScalar intervals[], int32_t count);
 }  
 
 #endif

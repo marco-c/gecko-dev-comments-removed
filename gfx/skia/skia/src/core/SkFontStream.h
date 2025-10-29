@@ -8,7 +8,6 @@
 #ifndef SkFontStream_DEFINED
 #define SkFontStream_DEFINED
 
-#include "include/core/SkSpan.h"
 #include "include/core/SkTypeface.h"
 
 #include <cstddef>
@@ -33,7 +32,7 @@ public:
 
 
 
-    static int GetTableTags(SkStream*, int ttcIndex, SkSpan<SkFontTableTag> tags);
+    static int GetTableTags(SkStream*, int ttcIndex, SkFontTableTag tags[]);
 
     
 

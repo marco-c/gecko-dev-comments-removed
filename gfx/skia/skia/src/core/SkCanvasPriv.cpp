@@ -247,8 +247,8 @@ void AutoLayerForImageFilter::addMaskFilterLayer(const SkRect* drawBounds) {
     SkASSERT(!fPaint.getImageFilter());
 
     
-    auto [maskFilterAsImageFilter, appliesShading] = as_MFB(
-        fPaint.getMaskFilter())->asImageFilter(fCanvas->getTotalMatrix(), fPaint);
+    sk_sp<SkImageFilter> maskFilterAsImageFilter =
+            as_MFB(fPaint.getMaskFilter())->asImageFilter(fCanvas->getTotalMatrix());
     if (!maskFilterAsImageFilter) {
         
         
@@ -259,16 +259,12 @@ void AutoLayerForImageFilter::addMaskFilterLayer(const SkRect* drawBounds) {
     
     
     
-    
-    
     SkPaint restorePaint;
-    if (!appliesShading) {
-        restorePaint.setColor4f(fPaint.getColor4f());
-        restorePaint.setShader(fPaint.refShader());
-        restorePaint.setColorFilter(fPaint.refColorFilter());
-        restorePaint.setDither(fPaint.isDither());
-    }
+    restorePaint.setColor4f(fPaint.getColor4f());
+    restorePaint.setShader(fPaint.refShader());
+    restorePaint.setColorFilter(fPaint.refColorFilter());
     restorePaint.setBlender(fPaint.refBlender());
+    restorePaint.setDither(fPaint.isDither());
     restorePaint.setImageFilter(maskFilterAsImageFilter);
 
     
@@ -281,7 +277,7 @@ void AutoLayerForImageFilter::addMaskFilterLayer(const SkRect* drawBounds) {
     fPaint.setDither(false);
     fPaint.setBlendMode(SkBlendMode::kSrcOver);
 
-    this->addLayer(restorePaint, drawBounds, !appliesShading);
+    this->addLayer(restorePaint, drawBounds, true);
 }
 
 void AutoLayerForImageFilter::addLayer(const SkPaint& restorePaint,

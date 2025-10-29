@@ -10,7 +10,6 @@
 
 #include "include/core/SkColor.h"
 #include "include/core/SkColorType.h"
-#include "include/core/SkRect.h"
 
 class SkArenaAlloc;
 class SkColorSpace;
@@ -25,10 +24,6 @@ struct SkStageRec {
     SkColorSpace*           fDstCS;         
     SkColor4f               fPaintColor;
     const SkSurfaceProps&   fSurfaceProps;
-    
-    
-    
-    SkRect fDstBounds;
 };
 
 #endif 

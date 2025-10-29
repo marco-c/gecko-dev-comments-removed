@@ -18,7 +18,6 @@
 #include "include/core/SkTypes.h"
 #include "include/core/SkYUVAPixmaps.h"
 #include "include/private/SkEncodedInfo.h"
-#include "include/private/SkHdrMetadata.h"
 #include "include/private/base/SkNoncopyable.h"
 #include "modules/skcms/skcms.h"
 
@@ -239,12 +238,6 @@ public:
     const skcms_ICCProfile* getICCProfile() const {
         return this->getEncodedInfo().profile();
     }
-
-    
-
-
-
-    const skhdr::Metadata& getHdrMetadata() const { return fEncodedInfo.getHdrMetadata(); }
 
     
 
@@ -913,18 +906,9 @@ protected:
     
 
 
-    bool rewindStream();
-
-    
-
-
-
 
 
     virtual bool onRewind() {
-        if (!this->rewindStream()) {
-            return false;
-        }
         return true;
     }
 
@@ -1008,12 +992,7 @@ private:
     };
     XformTime                          fXformTime;
     XformFormat                        fDstXformFormat; 
-    skcms_ICCProfile                   fDstProfileStorage;
-    
-    
-    
-    
-    const skcms_ICCProfile*            fDstProfile = &fDstProfileStorage;
+    skcms_ICCProfile                   fDstProfile;
     skcms_AlphaFormat                  fDstXformAlphaFormat;
 
     

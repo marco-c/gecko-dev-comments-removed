@@ -23,29 +23,11 @@ public:
                                                           bool allowBorrowing = true);
 
     
-    
-    
-    
-    
-    static std::unique_ptr<SkExecutor> MakeMultiListFIFOThreadPool(int numWorkLists,
-                                                                   int threads = 0,
-                                                                   bool allowBorrowing = true);
-    static std::unique_ptr<SkExecutor> MakeMultiListLIFOThreadPool(int numWorkLists,
-                                                                   int threads = 0,
-                                                                   bool allowBorrowing = true);
-
-    
     static SkExecutor& GetDefault();
     static void SetDefault(SkExecutor*);  
 
     
-    virtual void add(std::function<void(void)> fn, int ) { this->add(std::move(fn)); }
-
-    
     virtual void add(std::function<void(void)>) = 0;
-
-    
-    virtual int discardAllPendingWork() { return 0; }
 
     
     virtual void borrow() {}

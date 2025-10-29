@@ -80,20 +80,18 @@ static void decal_nofilter_scale(uint32_t dst[], SkFixed fx, SkFixed dx, int cou
     }
 }
 
-using TileProc = unsigned (*)(SkFixed, int);
 
-
-template <TileProc tilex, TileProc tiley, bool tryDecal>
+template <unsigned (*tilex)(SkFixed, int), unsigned (*tiley)(SkFixed, int), bool tryDecal>
 static void nofilter_scale(const SkBitmapProcState& s,
                            uint32_t xy[], int count, int x, int y) {
     SkASSERT(s.fInvMatrix.isScaleTranslate());
 
     
-    SkFixed3232 fx;
+    SkFractionalInt fx;
     {
         const SkBitmapProcStateAutoMapper mapper(s, x, y);
         *xy++ = tiley(mapper.fixedY(), s.fPixmap.height() - 1);
-        fx = mapper.fixed3232X();
+        fx = mapper.fractionalIntX();
     }
 
     const unsigned maxX = s.fPixmap.width() - 1;
@@ -103,11 +101,11 @@ static void nofilter_scale(const SkBitmapProcState& s,
         return;
     }
 
-    const SkFixed3232 dx = s.fInvSx;
+    const SkFractionalInt dx = s.fInvSxFractionalInt;
 
     if (tryDecal) {
-        const SkFixed fixedFx = SkFixed3232ToFixed(fx);
-        const SkFixed fixedDx = SkFixed3232ToFixed(dx);
+        const SkFixed fixedFx = SkFractionalIntToFixed(fx);
+        const SkFixed fixedDx = SkFractionalIntToFixed(dx);
 
         if (can_truncate_to_fixed_for_decal(fixedFx, fixedDx, count, maxX)) {
             decal_nofilter_scale(xy, fixedFx, fixedDx, count);
@@ -117,35 +115,35 @@ static void nofilter_scale(const SkBitmapProcState& s,
 
     
     for (; count >= 2; count -= 2) {
-        *xy++ = pack_two_shorts(tilex(SkFixed3232ToFixed(fx     ), maxX),
-                                tilex(SkFixed3232ToFixed(fx + dx), maxX));
+        *xy++ = pack_two_shorts(tilex(SkFractionalIntToFixed(fx     ), maxX),
+                                tilex(SkFractionalIntToFixed(fx + dx), maxX));
         fx += dx+dx;
     }
 
     auto xx = (uint16_t*)xy;
     while (count --> 0) {
-        *xx++ = tilex(SkFixed3232ToFixed(fx), maxX);
+        *xx++ = tilex(SkFractionalIntToFixed(fx), maxX);
         fx += dx;
     }
 }
 
-template <TileProc tilex, TileProc tiley>
+template <unsigned (*tilex)(SkFixed, int), unsigned (*tiley)(SkFixed, int)>
 static void nofilter_affine(const SkBitmapProcState& s,
                             uint32_t xy[], int count, int x, int y) {
     SkASSERT(!s.fInvMatrix.hasPerspective());
 
     const SkBitmapProcStateAutoMapper mapper(s, x, y);
 
-    SkFixed3232 fx = mapper.fixed3232X(),
-                    fy = mapper.fixed3232Y(),
-                    dx = s.fInvSx,
-                    dy = s.fInvKy;
+    SkFractionalInt fx = mapper.fractionalIntX(),
+                    fy = mapper.fractionalIntY(),
+                    dx = s.fInvSxFractionalInt,
+                    dy = s.fInvKyFractionalInt;
     int maxX = s.fPixmap.width () - 1,
         maxY = s.fPixmap.height() - 1;
 
     while (count --> 0) {
-        *xy++ = (tiley(SkFixed3232ToFixed(fy), maxY) << 16)
-              | (tilex(SkFixed3232ToFixed(fx), maxX)      );
+        *xy++ = (tiley(SkFractionalIntToFixed(fy), maxY) << 16)
+              | (tilex(SkFractionalIntToFixed(fx), maxX)      );
         fx += dx;
         fy += dy;
     }
@@ -180,7 +178,7 @@ static unsigned extract_low_bits_general(SkFixed fx, int max) {
 
 
 
-template <TileProc tile, TileProc extract_low_bits>
+template <unsigned (*tile)(SkFixed, int), unsigned (*extract_low_bits)(SkFixed, int)>
 SK_NO_SANITIZE("signed-integer-overflow")
 static uint32_t pack(SkFixed f, unsigned max, SkFixed one) {
     uint32_t packed = tile(f, max);                      
@@ -189,42 +187,30 @@ static uint32_t pack(SkFixed f, unsigned max, SkFixed one) {
     return packed;
 }
 
-static constexpr int32_t max_hi = INT16_MAX;
-static constexpr int32_t min_hi = INT16_MIN;
-static constexpr SkFixed3232 max_fx = SkIntToFixed3232(INT16_MAX);
-static constexpr SkFixed3232 min_fx = SkIntToFixed3232(0xFFFF8000ULL);
-
-static constexpr SkFixed sk_fixed3232_saturate2fixed(SkFixed3232 x) {
-    x = (x >> 32) < max_hi ? x : max_fx;
-    x = (x >> 32) > min_hi ? x : min_fx;
-    return SkFixed3232ToFixed(x);
-}
-
-template <TileProc tilex, TileProc tiley, TileProc extract_low_bits, bool tryDecal>
+template <unsigned (*tilex)(SkFixed, int), unsigned (*tiley)(SkFixed, int), unsigned (*extract_low_bits)(SkFixed, int), bool tryDecal>
 static void filter_scale(const SkBitmapProcState& s,
                          uint32_t xy[], int count, int x, int y) {
     SkASSERT(s.fInvMatrix.isScaleTranslate());
 
     const unsigned maxX = s.fPixmap.width() - 1;
-    const SkFixed3232 dx = s.fInvSx;
-    SkFixed3232 fx;
+    const SkFractionalInt dx = s.fInvSxFractionalInt;
+    SkFractionalInt fx;
     {
         const SkBitmapProcStateAutoMapper mapper(s, x, y);
         const unsigned maxY = s.fPixmap.height() - 1;
         
-        *xy++ = pack<tiley, extract_low_bits>(
-            sk_fixed3232_saturate2fixed(mapper.fixed3232Y()), maxY, s.fFilterOneY);
+        *xy++ = pack<tiley, extract_low_bits>(mapper.fixedY(), maxY, s.fFilterOneY);
         
-        fx = mapper.fixed3232X();
+        fx = mapper.fractionalIntX();
     }
 
     
     
     if (tryDecal &&
-        (unsigned)SkFixed3232ToInt(fx               ) < maxX &&
-        (unsigned)SkFixed3232ToInt(fx + dx*(count-1)) < maxX) {
+        (unsigned)SkFractionalIntToInt(fx               ) < maxX &&
+        (unsigned)SkFractionalIntToInt(fx + dx*(count-1)) < maxX) {
         while (count --> 0) {
-            SkFixed fixedFx = sk_fixed3232_saturate2fixed(fx);
+            SkFixed fixedFx = SkFractionalIntToFixed(fx);
             SkASSERT((fixedFx >> (16 + 14)) == 0);
             *xy++ = (fixedFx >> 12 << 14) | ((fixedFx >> 16) + 1);
             fx += dx;
@@ -233,13 +219,12 @@ static void filter_scale(const SkBitmapProcState& s,
     }
 
     while (count --> 0) {
-        *xy++ = pack<tilex, extract_low_bits>(
-            sk_fixed3232_saturate2fixed(fx), maxX, s.fFilterOneX);
+        *xy++ = pack<tilex, extract_low_bits>(SkFractionalIntToFixed(fx), maxX, s.fFilterOneX);
         fx += dx;
     }
 }
 
-template <TileProc tilex, TileProc tiley, TileProc extract_low_bits>
+template <unsigned (*tilex)(SkFixed, int), unsigned (*tiley)(SkFixed, int), unsigned (*extract_low_bits)(SkFixed, int)>
 static void filter_affine(const SkBitmapProcState& s,
                           uint32_t xy[], int count, int x, int y) {
     SkASSERT(!s.fInvMatrix.hasPerspective());
@@ -249,15 +234,15 @@ static void filter_affine(const SkBitmapProcState& s,
     SkFixed oneX = s.fFilterOneX,
             oneY = s.fFilterOneY;
 
-    SkFixed3232 fx = mapper.fixed3232X(),
-                    fy = mapper.fixed3232Y(),
-                    dx = s.fInvSx,
-                    dy = s.fInvKy;
+    SkFractionalInt fx = mapper.fractionalIntX(),
+                    fy = mapper.fractionalIntY(),
+                    dx = s.fInvSxFractionalInt,
+                    dy = s.fInvKyFractionalInt;
     unsigned maxX = s.fPixmap.width () - 1,
              maxY = s.fPixmap.height() - 1;
     while (count --> 0) {
-        *xy++ = pack<tiley, extract_low_bits>(SkFixed3232ToFixed(fy), maxY, oneY);
-        *xy++ = pack<tilex, extract_low_bits>(SkFixed3232ToFixed(fx), maxX, oneX);
+        *xy++ = pack<tiley, extract_low_bits>(SkFractionalIntToFixed(fy), maxY, oneY);
+        *xy++ = pack<tilex, extract_low_bits>(SkFractionalIntToFixed(fx), maxX, oneX);
 
         fy += dy;
         fx += dx;

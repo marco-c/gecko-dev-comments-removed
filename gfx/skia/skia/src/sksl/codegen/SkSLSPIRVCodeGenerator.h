@@ -8,11 +8,8 @@
 #ifndef SKSL_SPIRVCODEGENERATOR
 #define SKSL_SPIRVCODEGENERATOR
 
-#include "include/core/SkSpan.h"
-#include "src/sksl/codegen/SkSLNativeShader.h"
-
-#include <cstdint>
-#include <vector>
+#include <string>
+#include <string_view>
 
 namespace SkSL {
 
@@ -21,21 +18,17 @@ class OutputStream;
 struct Program;
 struct ShaderCaps;
 
-using ValidateSPIRVProc = bool (*)(ErrorReporter&, SkSpan<const uint32_t>);
-
+using ValidateSPIRVProc = bool (*)(ErrorReporter&, std::string_view);
 
 
 
 
 bool ToSPIRV(Program& program, const ShaderCaps* caps, OutputStream& out, ValidateSPIRVProc = nullptr);
-bool ToSPIRV(Program& program,
-             const ShaderCaps* caps,
-             std::vector<uint32_t>* out,
-             ValidateSPIRVProc = nullptr);
+bool ToSPIRV(Program& program, const ShaderCaps* caps, std::string* out, ValidateSPIRVProc);
 
 
-inline bool ToSPIRV(Program& program, const ShaderCaps* caps, NativeShader* out) {
-    return ToSPIRV(program, caps, &out->fBinary, nullptr);
+inline bool ToSPIRV(Program& program, const ShaderCaps* caps, std::string* out) {
+    return ToSPIRV(program, caps, out, nullptr);
 }
 }  
 

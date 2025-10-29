@@ -11,10 +11,12 @@
 #include <cstdint>
 
 #include <optional>
-#include "include/core/SkImageInfo.h"
+
 #include "include/encode/SkEncoder.h"
 #include "include/private/SkEncodedInfo.h"
+#include "src/encode/SkImageEncoderFns.h"
 
+struct SkImageInfo;
 class SkPixmap;
 template <typename T> class SkSpan;
 
@@ -23,9 +25,8 @@ template <typename T> class SkSpan;
 class SkPngEncoderBase : public SkEncoder {
 public:
     struct TargetInfo {
-        std::optional<SkImageInfo> fSrcRowInfo;
-        std::optional<SkImageInfo> fDstRowInfo;
         SkEncodedInfo fDstInfo;
+        transform_scanline_proc fTransformProc;
         size_t fDstRowSize;
     };
 
@@ -54,8 +55,6 @@ protected:
     
     
     virtual bool onFinishEncoding() = 0;
-
-    const TargetInfo& targetInfo() const { return fTargetInfo; }
 
 private:
     TargetInfo fTargetInfo;

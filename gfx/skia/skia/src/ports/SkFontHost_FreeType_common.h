@@ -16,7 +16,6 @@
 #include "src/core/SkScalerContext.h"
 
 class SkCanvas;
-class SkPathBuilder;
 
 
 typedef struct FT_FaceRec_* FT_Face;
@@ -56,7 +55,7 @@ struct SkScalerContextFTUtils {
                       SkSpan<SkColor> palette, SkCanvas*) const;
     void generateGlyphImage(FT_Face, const SkGlyph&, void*, const SkMatrix& bitmapTransform,
                             const SkMaskGamma::PreBlend&) const;
-    bool generateGlyphPath(FT_Face, SkPathBuilder*) const;
+    bool generateGlyphPath(FT_Face, SkPath*) const;
 
     
 
@@ -67,7 +66,7 @@ struct SkScalerContextFTUtils {
     static bool computeColrV1GlyphBoundingBox(FT_Face, SkGlyphID, SkRect* bounds);
 
 private:
-    bool generateFacePath(FT_Face, SkGlyphID, LoadGlyphFlags, SkPathBuilder*) const;
+    bool generateFacePath(FT_Face, SkGlyphID, LoadGlyphFlags, SkPath*) const;
 };
 
 #endif 

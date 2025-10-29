@@ -22,7 +22,7 @@ class SkPatchUtils {
 public:
     
     enum {
-    kNumCtrlPts = 12,
+        kNumCtrlPts = 12,
         kNumCorners = 4,
         kNumPtsCubic = 4
     };

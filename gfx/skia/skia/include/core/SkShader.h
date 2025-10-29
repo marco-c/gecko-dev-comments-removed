@@ -9,13 +9,13 @@
 #define SkShader_DEFINED
 
 #include "include/core/SkColor.h"
-#include "include/core/SkColorSpace.h"
 #include "include/core/SkFlattenable.h"
 #include "include/core/SkRefCnt.h"
 #include "include/private/base/SkAPI.h"
 
 class SkBlender;
 class SkColorFilter;
+class SkColorSpace;
 class SkImage;
 class SkMatrix;
 enum class SkBlendMode;
@@ -75,20 +75,7 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkShader> makeWithWorkingColorSpace(sk_sp<SkColorSpace> inputCS,
-                                              sk_sp<SkColorSpace> outputCS=nullptr) const;
+    sk_sp<SkShader> makeWithWorkingColorSpace(sk_sp<SkColorSpace>) const;
 
 private:
     SkShader() = default;
