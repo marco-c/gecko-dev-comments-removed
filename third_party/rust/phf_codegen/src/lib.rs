@@ -136,12 +136,11 @@
 
 
 
-
-
-#![doc(html_root_url = "https://docs.rs/phf_codegen/0.11")]
+#![doc(html_root_url = "https://docs.rs/phf_codegen/0.13.1")]
 #![allow(clippy::new_without_default)]
 
 use phf_shared::{FmtConst, PhfHash};
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::fmt;
 use std::hash::Hash;
@@ -157,15 +156,15 @@ impl<T: FmtConst> fmt::Display for Delegate<T> {
 }
 
 
-pub struct Map<K> {
+pub struct Map<'a, K> {
     keys: Vec<K>,
-    values: Vec<String>,
-    path: String,
+    values: Vec<Cow<'a, str>>,
+    path: Cow<'a, str>,
 }
 
-impl<K: Hash + PhfHash + Eq + FmtConst> Map<K> {
+impl<'a, K: Hash + PhfHash + Eq + FmtConst> Map<'a, K> {
     
-    pub fn new() -> Map<K> {
+    pub fn new() -> Self {
         
         
         
@@ -179,22 +178,22 @@ impl<K: Hash + PhfHash + Eq + FmtConst> Map<K> {
         Map {
             keys: vec![],
             values: vec![],
-            path: String::from("::phf"),
+            path: Cow::Borrowed("::phf"),
         }
     }
 
     
-    pub fn phf_path(&mut self, path: &str) -> &mut Map<K> {
-        self.path = path.to_owned();
+    pub fn phf_path(&mut self, path: impl Into<Cow<'a, str>>) -> &mut Self {
+        self.path = path.into();
         self
     }
 
     
     
     
-    pub fn entry(&mut self, key: K, value: &str) -> &mut Map<K> {
+    pub fn entry(&mut self, key: K, value: impl Into<Cow<'a, str>>) -> &mut Self {
         self.keys.push(key);
-        self.values.push(value.to_owned());
+        self.values.push(value.into());
         self
     }
 
@@ -215,10 +214,10 @@ impl<K: Hash + PhfHash + Eq + FmtConst> Map<K> {
         let state = phf_generator::generate_hash(&self.keys);
 
         DisplayMap {
+            state,
             path: &self.path,
             keys: &self.keys,
             values: &self.values,
-            state,
         }
     }
 }
@@ -228,7 +227,7 @@ pub struct DisplayMap<'a, K> {
     path: &'a str,
     state: HashState,
     keys: &'a [K],
-    values: &'a [String],
+    values: &'a [Cow<'a, str>],
 }
 
 impl<'a, K: FmtConst + 'a> fmt::Display for DisplayMap<'a, K> {
@@ -279,25 +278,39 @@ impl<'a, K: FmtConst + 'a> fmt::Display for DisplayMap<'a, K> {
     }
 }
 
-
-pub struct Set<T> {
-    map: Map<T>,
+impl<'a, K, V> FromIterator<(K, V)> for Map<'a, K>
+where
+    K: Hash + PhfHash + Eq + FmtConst,
+    V: Into<Cow<'a, str>>,
+{
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
+        let mut map = Map::new();
+        for (key, value) in iter {
+            map.entry(key, value);
+        }
+        map
+    }
 }
 
-impl<T: Hash + PhfHash + Eq + FmtConst> Set<T> {
+
+pub struct Set<'a, T> {
+    map: Map<'a, T>,
+}
+
+impl<'a, T: Hash + PhfHash + Eq + FmtConst> Set<'a, T> {
     
-    pub fn new() -> Set<T> {
+    pub fn new() -> Self {
         Set { map: Map::new() }
     }
 
     
-    pub fn phf_path(&mut self, path: &str) -> &mut Set<T> {
+    pub fn phf_path(&mut self, path: impl Into<Cow<'a, str>>) -> &mut Self {
         self.map.phf_path(path);
         self
     }
 
     
-    pub fn entry(&mut self, entry: T) -> &mut Set<T> {
+    pub fn entry(&mut self, entry: T) -> &mut Self {
         self.map.entry(entry, "()");
         self
     }
@@ -327,34 +340,34 @@ impl<'a, T: FmtConst + 'a> fmt::Display for DisplaySet<'a, T> {
 }
 
 
-pub struct OrderedMap<K> {
+pub struct OrderedMap<'a, K> {
     keys: Vec<K>,
-    values: Vec<String>,
-    path: String,
+    values: Vec<Cow<'a, str>>,
+    path: Cow<'a, str>,
 }
 
-impl<K: Hash + PhfHash + Eq + FmtConst> OrderedMap<K> {
+impl<'a, K: Hash + PhfHash + Eq + FmtConst> OrderedMap<'a, K> {
     
-    pub fn new() -> OrderedMap<K> {
+    pub fn new() -> Self {
         OrderedMap {
             keys: vec![],
             values: vec![],
-            path: String::from("::phf"),
+            path: Cow::Borrowed("::phf"),
         }
     }
 
     
-    pub fn phf_path(&mut self, path: &str) -> &mut OrderedMap<K> {
-        self.path = path.to_owned();
+    pub fn phf_path(&mut self, path: impl Into<Cow<'a, str>>) -> &mut Self {
+        self.path = path.into();
         self
     }
 
     
     
     
-    pub fn entry(&mut self, key: K, value: &str) -> &mut OrderedMap<K> {
+    pub fn entry(&mut self, key: K, value: impl Into<Cow<'a, str>>) -> &mut Self {
         self.keys.push(key);
-        self.values.push(value.to_owned());
+        self.values.push(value.into());
         self
     }
 
@@ -376,8 +389,8 @@ impl<K: Hash + PhfHash + Eq + FmtConst> OrderedMap<K> {
         let state = phf_generator::generate_hash(&self.keys);
 
         DisplayOrderedMap {
-            path: &self.path,
             state,
+            path: &self.path,
             keys: &self.keys,
             values: &self.values,
         }
@@ -389,7 +402,7 @@ pub struct DisplayOrderedMap<'a, K> {
     path: &'a str,
     state: HashState,
     keys: &'a [K],
-    values: &'a [String],
+    values: &'a [Cow<'a, str>],
 }
 
 impl<'a, K: FmtConst + 'a> fmt::Display for DisplayOrderedMap<'a, K> {
@@ -448,26 +461,26 @@ impl<'a, K: FmtConst + 'a> fmt::Display for DisplayOrderedMap<'a, K> {
 }
 
 
-pub struct OrderedSet<T> {
-    map: OrderedMap<T>,
+pub struct OrderedSet<'a, T> {
+    map: OrderedMap<'a, T>,
 }
 
-impl<T: Hash + PhfHash + Eq + FmtConst> OrderedSet<T> {
+impl<'a, T: Hash + PhfHash + Eq + FmtConst> OrderedSet<'a, T> {
     
-    pub fn new() -> OrderedSet<T> {
+    pub fn new() -> Self {
         OrderedSet {
             map: OrderedMap::new(),
         }
     }
 
     
-    pub fn phf_path(&mut self, path: &str) -> &mut OrderedSet<T> {
+    pub fn phf_path(&mut self, path: impl Into<Cow<'a, str>>) -> &mut Self {
         self.map.phf_path(path);
         self
     }
 
     
-    pub fn entry(&mut self, entry: T) -> &mut OrderedSet<T> {
+    pub fn entry(&mut self, entry: T) -> &mut Self {
         self.map.entry(entry, "()");
         self
     }

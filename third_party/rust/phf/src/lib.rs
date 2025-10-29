@@ -69,7 +69,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/phf/0.11")]
+#![doc(html_root_url = "https://docs.rs/phf/0.13.1")]
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -77,6 +77,29 @@
 extern crate std as core;
 
 #[cfg(feature = "macros")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -110,6 +133,27 @@ pub use phf_macros::phf_map;
 pub use phf_macros::phf_ordered_map;
 
 #[cfg(feature = "macros")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
