@@ -157,6 +157,7 @@ export class TelemetryFeed {
     this._privateRandomContentTelemetryProbablityValues = {};
 
     this.newtabContentPing = new lazy.NewTabContentPing();
+    this._initialized = false;
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -244,11 +245,20 @@ export class TelemetryFeed {
   }
 
   init() {
+    // TODO: It looks like (at least) browser_newtab_glean.js and
+    // browser_newtab_ping.js depend on most of the following to be executed
+    // even if init() is called more than once. That feels fragile.
+
     this._beginObservingNewtabPingPrefs();
-    Services.obs.addObserver(
-      this.browserOpenNewtabStart,
-      "browser-open-newtab-start"
-    );
+
+    if (!this._initialized) {
+      this._initialized = true;
+      Services.obs.addObserver(
+        this.browserOpenNewtabStart,
+        "browser-open-newtab-start"
+      );
+    }
+
     // Set two scalars for the "deletion-request" ping (See bug 1602064 and 1729474)
     Glean.deletionRequest.impressionId.set(this._impressionId);
     if (!lazy.ContextId.rotationEnabled) {
@@ -272,9 +282,7 @@ export class TelemetryFeed {
   }
 
   browserOpenNewtabStart() {
-    // This shim can be removed once Firefox 144 makes it to the release
-    // channel.
-    let now = ChromeUtils.now?.() || Cu.now();
+    let now = ChromeUtils.now();
     this._browserOpenNewtabStart = Math.round(this.processStartTs + now);
 
     ChromeUtils.addProfilerMarker(
@@ -514,9 +522,7 @@ export class TelemetryFeed {
     }
 
     if (session.perf.visibility_event_rcvd_ts) {
-      // @backward-compat { version 144 } This newtab train-hop compatibility
-      // shim can be removed once Firefox 144 makes it to the release channel.
-      let absNow = this.processStartTs + (ChromeUtils.now?.() || Cu.now());
+      let absNow = this.processStartTs + ChromeUtils.now();
       session.session_duration = Math.round(
         absNow - session.perf.visibility_event_rcvd_ts
       );
@@ -2202,15 +2208,12 @@ export class TelemetryFeed {
   uninit() {
     this._stopObservingNewtabPingPrefs();
     this.newtabContentPing.uninit();
-
-    try {
+    if (this._initialized) {
       Services.obs.removeObserver(
         this.browserOpenNewtabStart,
         "browser-open-newtab-start"
       );
-    } catch (e) {
-      // Operation can fail when uninit is called before
-      // init has finished setting up the observer
+      this._initialized = false;
     }
 
     // TODO: Send any unfinished sessions

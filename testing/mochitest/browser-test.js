@@ -1241,9 +1241,7 @@ Tester.prototype = {
     let currentScope = currentTest.scope;
     let desc = isSetup ? "setup" : "test";
     currentScope.SimpleTest.info(`Entering ${desc} ${task.name}`);
-    
-    
-    let startTimestamp = ChromeUtils.now?.() || performance.now();
+    let startTimestamp = ChromeUtils.now();
     let controller = new AbortController();
     currentScope.__signal = controller.signal;
     if (isSetup) {
@@ -1472,9 +1470,7 @@ Tester.prototype = {
 
     
     try {
-      
-      
-      this.lastStartTimestamp = ChromeUtils.now?.() || performance.now();
+      this.lastStartTimestamp = ChromeUtils.now();
       this.TestUtils.promiseTestFinished = new Promise(resolve => {
         this.resolveFinishTestPromise = resolve;
       });
