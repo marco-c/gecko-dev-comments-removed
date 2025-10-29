@@ -2118,9 +2118,6 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   for (const RequestedModule& request : module->requestedModules()) {
     
     
-    
-    
-    
     required = request.moduleRequest();
     requiredModule = GetImportedModule(cx, module, required);
     if (!requiredModule) {
@@ -2174,8 +2171,8 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
       }
 
       
-      if (requiredModule->isAsyncEvaluating() &&
-          requiredModule->status() != ModuleStatus::Evaluated) {
+      
+      if (requiredModule->asyncEvaluationOrder().isInteger()) {
         
         
         if (!ModuleObject::appendAsyncParentModule(cx, requiredModule,
@@ -2195,14 +2192,11 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
   
   if (module->pendingAsyncDependencies() > 0 || module->hasTopLevelAwait()) {
     
-    
-    MOZ_ASSERT(!module->isAsyncEvaluating());
+    MOZ_ASSERT(module->asyncEvaluationOrder().isUnset());
 
     
     
-    
-    
-    module->setAsyncEvaluating();
+    module->asyncEvaluationOrder().set(cx->runtime());
 
     
     
@@ -2237,7 +2231,12 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 
       
       
-      if (!requiredModule->isAsyncEvaluating()) {
+      MOZ_ASSERT(requiredModule->asyncEvaluationOrder().isInteger() ||
+                 requiredModule->asyncEvaluationOrder().isUnset());
+
+      
+      
+      if (requiredModule->asyncEvaluationOrder().isUnset()) {
         requiredModule->setStatus(ModuleStatus::Evaluated);
       } else {
         
@@ -2304,7 +2303,7 @@ static bool GatherAvailableModuleAncestors(
       MOZ_ASSERT(!m->hadEvaluationError());
 
       
-      MOZ_ASSERT(m->isAsyncEvaluating());
+      MOZ_ASSERT(m->asyncEvaluationOrder().isInteger());
 
       
       MOZ_ASSERT(m->pendingAsyncDependencies() > 0);
@@ -2336,8 +2335,8 @@ static bool GatherAvailableModuleAncestors(
 
 struct EvalOrderComparator {
   bool operator()(ModuleObject* a, ModuleObject* b, bool* lessOrEqualp) {
-    int32_t result = int32_t(a->getAsyncEvaluatingPostOrder()) -
-                     int32_t(b->getAsyncEvaluatingPostOrder());
+    int32_t result = int32_t(a->asyncEvaluationOrder().get()) -
+                     int32_t(b->asyncEvaluationOrder().get());
     *lessOrEqualp = (result <= 0);
     return true;
   }
@@ -2373,7 +2372,7 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
 
   
-  MOZ_ASSERT(module->isAsyncEvaluating());
+  MOZ_ASSERT(module->asyncEvaluationOrder().isInteger());
 
   
   MOZ_ASSERT(!module->hadEvaluationError());
@@ -2411,7 +2410,7 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   
 #ifdef DEBUG
   for (ModuleObject* m : execList) {
-    MOZ_ASSERT(m->isAsyncEvaluating());
+    MOZ_ASSERT(m->asyncEvaluationOrder().isInteger());
     MOZ_ASSERT(m->pendingAsyncDependencies() == 0);
     MOZ_ASSERT(!m->hadEvaluationError());
   }
@@ -2422,8 +2421,10 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   ModuleObject::onTopLevelEvaluationFinished(module);
 
   
+  module->asyncEvaluationOrder().setDone(cx->runtime());
+
+  
   module->setStatus(ModuleStatus::Evaluated);
-  module->clearAsyncEvaluatingPostOrder();
 
   
   if (module->hasTopLevelCapability()) {
@@ -2467,8 +2468,9 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
       } else {
         
         
+        m->asyncEvaluationOrder().setDone(m->zone()->runtimeFromMainThread());
+        
         m->setStatus(ModuleStatus::Evaluated);
-        m->clearAsyncEvaluatingPostOrder();
 
         
         if (m->hasTopLevelCapability()) {
@@ -2508,7 +2510,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
   MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
 
   
-  MOZ_ASSERT(module->isAsyncEvaluating());
+  MOZ_ASSERT(module->asyncEvaluationOrder().isInteger());
 
   
   MOZ_ASSERT(!module->hadEvaluationError());
@@ -2522,7 +2524,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx,
   MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
 
   
-  module->clearAsyncEvaluatingPostOrder();
+  module->asyncEvaluationOrder().setDone(cx->runtime());
 
   
   if (module->hasTopLevelCapability()) {

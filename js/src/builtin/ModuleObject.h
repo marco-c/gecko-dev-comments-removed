@@ -11,13 +11,14 @@
 #include "mozilla/Maybe.h"      
 #include "mozilla/Span.h"
 
+#include <cstdint>   
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "gc/Barrier.h"        
-#include "gc/ZoneAllocator.h"  
-#include "js/Class.h"          
-#include "js/ColumnNumber.h"   
+#include "gc/Barrier.h"                  
+#include "gc/ZoneAllocator.h"            
+#include "js/Class.h"                    
+#include "js/ColumnNumber.h"             
 #include "js/GCVector.h"
 #include "js/Id.h"  
 #include "js/Modules.h"
@@ -336,11 +337,27 @@ enum class ModuleStatus : int8_t {
 
 
 
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_UNSET = UINT32_MAX;
 
-constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
 
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_DONE = UINT32_MAX - 1;
 
-constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_MAX_VALUE = UINT32_MAX - 2;
+
+class AsyncEvaluationOrder {
+ private:
+  uint32_t value = ASYNC_EVALUATING_POST_ORDER_UNSET;
+
+ public:
+  bool isUnset() const;
+  bool isInteger() const;
+  bool isDone() const;
+
+  uint32_t get() const;
+
+  void set(JSRuntime* rt);
+  void setDone(JSRuntime* rt);
+};
 
 
 
@@ -435,8 +452,6 @@ class ModuleObject : public NativeObject {
   static PromiseObject* createTopLevelCapability(JSContext* cx,
                                                  Handle<ModuleObject*> module);
   bool hasTopLevelAwait() const;
-  bool isAsyncEvaluating() const;
-  void setAsyncEvaluating();
   void setEvaluationError(HandleValue newValue);
   void setPendingAsyncDependencies(uint32_t newValue);
   void setInitialTopLevelCapability(Handle<PromiseObject*> capability);
@@ -446,9 +461,8 @@ class ModuleObject : public NativeObject {
   ListObject* asyncParentModules() const;
   mozilla::Maybe<uint32_t> maybePendingAsyncDependencies() const;
   uint32_t pendingAsyncDependencies() const;
-  mozilla::Maybe<uint32_t> maybeAsyncEvaluatingPostOrder() const;
-  uint32_t getAsyncEvaluatingPostOrder() const;
-  void clearAsyncEvaluatingPostOrder();
+  AsyncEvaluationOrder& asyncEvaluationOrder();
+  AsyncEvaluationOrder const& asyncEvaluationOrder() const;
   void setCycleRoot(ModuleObject* cycleRoot);
   ModuleObject* getCycleRoot() const;
   bool hasCyclicModuleFields() const;
