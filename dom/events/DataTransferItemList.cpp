@@ -450,13 +450,9 @@ void DataTransferItemList::GetTypes(nsTArray<nsString>& aTypes,
       continue;
     }
 
-    
-    
-    
-    nsAutoString type;
-    item->GetInternalType(type);
-    if (item->Kind() != DataTransferItem::KIND_FILE ||
-        type.EqualsASCII(kFileMime)) {
+    if (item->Kind() != DataTransferItem::KIND_FILE) {
+      nsAutoString type;
+      item->GetType(type);
       aTypes.AppendElement(type);
     }
   }
