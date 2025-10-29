@@ -9825,7 +9825,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
               jsapi.cx(), aLoadState->GetNavigationType(), destinationURL,
                false,
               Some(aLoadState->UserNavigationInvolvement()), sourceElement,
-              formData.forget(), navigationAPIStateForFiring,
+              formData, navigationAPIStateForFiring,
                nullptr);
 
           
