@@ -80,7 +80,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsresult Prefetch(nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
                     const std::function<void()>& aFunc);
 
-  const nsACString& GetHash() const { return mHash; }
+  const nsCString& GetHash() const { return mHash; }
 
   bool HasHash() {
     
@@ -160,11 +160,14 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
     mURI = aOther->mURI;
     mPattern = aOther->mPattern;
     mId = aOther->mId;
-    
+    mMatchDest = aOther->mMatchDest;
     
   }
 
   void UnblockAddEntry(DictionaryOrigin* aOrigin);
+
+  const nsCString& GetPattern() const { return mPattern; }
+  void AppendMatchDest(nsACString& aDest) const;
 
  private:
   
@@ -174,7 +177,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   nsCString mPattern;
   nsCString mId;  
-  nsTArray<dom::RequestDestination> mMatchDest;
+  CopyableTArray<dom::RequestDestination> mMatchDest;
   
   
   
