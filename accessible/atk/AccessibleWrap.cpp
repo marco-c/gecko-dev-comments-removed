@@ -305,16 +305,9 @@ static uint16_t CreateMaiInterfaces(Accessible* aAccessible) {
     interfaces |= 1 << MAI_INTERFACE_SELECTION;
   }
 
-  if (aAccessible->IsRemote()) {
-    if (aAccessible->IsActionable()) {
-      interfaces |= 1 << MAI_INTERFACE_ACTION;
-    }
-  } else {
-    
-    if (aAccessible->ActionCount()) {
-      interfaces |= 1 << MAI_INTERFACE_ACTION;
-    }
-  }
+  
+  
+  interfaces |= 1 << MAI_INTERFACE_ACTION;
 
   return interfaces;
 }

@@ -780,6 +780,15 @@ class Accessible {
 
   virtual int32_t GetLevel(bool aFast) const;
 
+  
+
+
+
+
+
+
+  virtual bool HasPrimaryAction() const = 0;
+
  protected:
   
 
@@ -812,15 +821,6 @@ class Accessible {
 
 
   const Accessible* ActionAncestor() const;
-
-  
-
-
-
-
-
-
-  virtual bool HasPrimaryAction() const = 0;
 
   
 
