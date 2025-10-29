@@ -1243,12 +1243,16 @@ void MFTEncoder::EventHandler(MediaEventType aEventType, HRESULT aStatus) {
     return;
   }
 
+  const bool waitForOutput =
+      StaticPrefs::media_wmf_encoder_realtime_wait_for_output();
+
   ProcessedResult result = processed.unwrap();
   MFT_ENC_LOGV(
       "%s processed: %s\n\tpending inputs: %zu\n\tinput needed: %zu\n\tpending "
-      "outputs: %zu",
+      "outputs: %zu (waitForOutput=%s)",
       MediaEventTypeStr(aEventType), MFTEncoder::EnumValueToString(result),
-      mPendingInputs.size(), mNumNeedInput, mOutputs.Length());
+      mPendingInputs.size(), mNumNeedInput, mOutputs.Length(),
+      waitForOutput ? "yes" : "no");
   switch (result) {
     case ProcessedResult::AllAvailableInputsProcessed:
       
@@ -1268,7 +1272,10 @@ void MFTEncoder::EventHandler(MediaEventType aEventType, HRESULT aStatus) {
         
         
         
-        MaybeResolveOrRejectEncodePromise();
+        
+        if (!waitForOutput) {
+          MaybeResolveOrRejectEncodePromise();
+        }
       } else if (mState == State::PreDraining) {
         if (mPendingInputs.empty()) {
           MaybeResolveOrRejectPreDrainPromise();
