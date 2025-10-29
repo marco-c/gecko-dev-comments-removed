@@ -73,8 +73,8 @@ function Spinner(props, context) {
       this.elements = {
         container: spinnerElement.querySelector(".spinner-container"),
         spinner: spinnerElement.querySelector(".spinner"),
-        up: spinnerElement.querySelector(".up"),
-        down: spinnerElement.querySelector(".down"),
+        prev: spinnerElement.querySelector(".prev"),
+        next: spinnerElement.querySelector(".next"),
         itemsViewElements: [],
       };
 
@@ -87,8 +87,8 @@ function Spinner(props, context) {
       
       
       
-      this.elements.up.setAttribute("tabindex", "-1");
-      this.elements.down.setAttribute("tabindex", "-1");
+      this.elements.prev.setAttribute("tabindex", "-1");
+      this.elements.next.setAttribute("tabindex", "-1");
 
       if (id) {
         this.elements.container.id = id;
@@ -326,7 +326,7 @@ function Spinner(props, context) {
     handleEvent(event) {
       const { mouseState = {}, index, itemsView } = this.state;
       const { viewportTopOffset, setValue } = this.props;
-      const { spinner, up, down } = this.elements;
+      const { spinner, prev, next } = this.elements;
 
       switch (event.type) {
         case "scroll": {
@@ -343,13 +343,13 @@ function Spinner(props, context) {
             layerX: event.layerX,
             layerY: event.layerY,
           };
-          if (event.target == up) {
+          if (event.target == prev) {
             
             
             event.target.classList.add("active");
             this._smoothScrollToIndex(index - 1);
           }
-          if (event.target == down) {
+          if (event.target == next) {
             event.target.classList.add("active");
             this._smoothScrollToIndex(index + 1);
           }
@@ -362,7 +362,7 @@ function Spinner(props, context) {
         }
         case "mouseup": {
           this.state.mouseState.down = false;
-          if (event.target == up || event.target == down) {
+          if (event.target == prev || event.target == next) {
             event.target.classList.remove("active");
           }
           if (event.target.parentNode == spinner) {

@@ -31,6 +31,29 @@ function TimePicker(context) {
 
 
     init(props) {
+      if (props.type == "date") {
+        return;
+      }
+      if (props.type == "datetime-local") {
+        
+        
+        
+        
+        
+        const timepicker = this.context;
+        const datetimepicker = timepicker.parentNode;
+        const datepicker = datetimepicker.children.namedItem("date-picker");
+        
+        timepicker.setAttribute("role", "group");
+        timepicker.removeAttribute("aria-modal");
+        datepicker.setAttribute("role", "group");
+        datepicker.removeAttribute("aria-modal");
+        
+        datetimepicker.setAttribute("role", "dialog");
+        datetimepicker.setAttribute("aria-modal", "true");
+        datetimepicker.setAttribute("data-l10n-id", "datetime-picker-label");
+      }
+      this.context.hidden = false;
       this.props = props || {};
       this._setDefaultState();
       this._createComponents();
@@ -38,6 +61,10 @@ function TimePicker(context) {
       
       window.PICKER_READY = true;
       document.dispatchEvent(new CustomEvent("PickerReady"));
+      
+      if (props.type == "time") {
+        this.components.hour.elements.spinner.focus();
+      }
     },
 
     
@@ -137,6 +164,7 @@ function TimePicker(context) {
           insertBefore: this.components.dayPeriod.elements.container,
         });
       }
+      this._updateButtonIds();
     },
 
     
@@ -223,9 +251,43 @@ function TimePicker(context) {
         "*"
       );
     },
+
+    
+
+
+    _closePopup() {
+      
+      
+      window.postMessage(
+        {
+          name: "ClosePopup",
+        },
+        "*"
+      );
+    },
     _attachEventListeners() {
       window.addEventListener("message", this);
       document.addEventListener("mousedown", this);
+      document.addEventListener("keydown", this);
+    },
+
+    
+
+
+
+
+
+    focusNextSpinner(isReverse) {
+      let focusedSpinner = document.activeElement;
+      let spinners =
+        focusedSpinner.parentNode.parentNode.querySelectorAll(".spinner");
+      spinners = [...spinners];
+
+      let next = isReverse
+        ? spinners[spinners.indexOf(focusedSpinner) - 1]
+        : spinners[spinners.indexOf(focusedSpinner) + 1];
+
+      next?.focus();
     },
 
     
@@ -242,7 +304,42 @@ function TimePicker(context) {
         case "mousedown": {
           
           event.preventDefault();
-          event.target.setCapture();
+          event.target.setPointerCapture(event.pointerId);
+          break;
+        }
+        case "keydown": {
+          if (
+            this.context.parentNode.id == "datetime-picker" &&
+            !event.target.closest("#time-picker")
+          ) {
+            
+            break;
+          }
+          switch (event.key) {
+            case "Enter":
+            case " ": {
+              
+              event.stopPropagation();
+              event.preventDefault();
+              this._dispatchState();
+              this._closePopup();
+              break;
+            }
+            case "Escape": {
+              
+              event.stopPropagation();
+              event.preventDefault();
+              
+              this._closePopup();
+              break;
+            }
+            case "ArrowLeft":
+            case "ArrowRight": {
+              const isReverse = event.key == "ArrowLeft";
+              this.focusNextSpinner(isReverse);
+              break;
+            }
+          }
           break;
         }
       }
@@ -256,13 +353,73 @@ function TimePicker(context) {
     handleMessage(event) {
       switch (event.data.name) {
         case "PickerSetValue": {
-          this.set(event.data.detail);
+          if (!this.context.hidden) {
+            this.set(event.data.detail);
+          }
           break;
         }
         case "PickerInit": {
           this.init(event.data.detail);
           break;
         }
+      }
+    },
+
+    
+
+
+    _updateButtonIds() {
+      const buttons = [
+        [
+          this.components.hour.elements.prev,
+          "spinner-hour-previous",
+          "time-spinner-hour-previous",
+        ],
+        [
+          this.components.hour.elements.spinner,
+          "spinner-hour",
+          "time-spinner-hour-label",
+        ],
+        [
+          this.components.hour.elements.next,
+          "spinner-hour-next",
+          "time-spinner-hour-next",
+        ],
+        [
+          this.components.minute.elements.prev,
+          "spinner-minute-previous",
+          "time-spinner-minute-previous",
+        ],
+        [
+          this.components.minute.elements.spinner,
+          "spinner-minute",
+          "time-spinner-minute-label",
+        ],
+        [
+          this.components.minute.elements.next,
+          "spinner-minute-next",
+          "time-spinner-minute-next",
+        ],
+        [
+          this.components.dayPeriod.elements.prev,
+          "spinner-time-previous",
+          "time-spinner-day-period-previous",
+        ],
+        [
+          this.components.dayPeriod.elements.spinner,
+          "spinner-time",
+          "time-spinner-day-period-label",
+        ],
+        [
+          this.components.dayPeriod.elements.next,
+          "spinner-time-next",
+          "time-spinner-day-period-next",
+        ],
+      ];
+
+      for (const [btn, id, l10nId] of buttons) {
+        btn.setAttribute("id", id);
+        document.l10n.setAttributes(btn, l10nId);
       }
     },
 

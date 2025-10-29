@@ -36,6 +36,10 @@ function DatePicker(context) {
 
 
     init(props = {}) {
+      if (props.type == "time") {
+        return;
+      }
+      this.context.root.hidden = false;
       this.props = props;
       this._setDefaultState();
       this._createComponents();
@@ -99,7 +103,9 @@ function DatePicker(context) {
           });
           this._update();
           this._dispatchState();
-          this._closePopup();
+          if (this.props.type !== "datetime-local") {
+            this._closePopup();
+          }
         },
         setMonthByOffset: offset => {
           dateKeeper.setMonthByOffset(offset);
@@ -260,7 +266,8 @@ function DatePicker(context) {
       document.addEventListener("mouseup", this, { passive: true });
       document.addEventListener("pointerdown", this, { passive: true });
       document.addEventListener("mousedown", this);
-      document.addEventListener("keydown", this);
+      
+      this.context.root.addEventListener("keydown", this);
     },
 
     
@@ -373,7 +380,9 @@ function DatePicker(context) {
     handleMessage(event) {
       switch (event.data.name) {
         case "PickerSetValue": {
-          this.set(event.data.detail);
+          if (!this.context.root.hidden) {
+            this.set(event.data.detail);
+          }
           break;
         }
         case "PickerInit": {
@@ -574,19 +583,19 @@ function DatePicker(context) {
         "date-spinner-year"
       );
       document.l10n.setAttributes(
-        this.components.month.elements.up,
+        this.components.month.elements.prev,
         "date-spinner-month-previous"
       );
       document.l10n.setAttributes(
-        this.components.month.elements.down,
+        this.components.month.elements.next,
         "date-spinner-month-next"
       );
       document.l10n.setAttributes(
-        this.components.year.elements.up,
+        this.components.year.elements.prev,
         "date-spinner-year-previous"
       );
       document.l10n.setAttributes(
-        this.components.year.elements.down,
+        this.components.year.elements.next,
         "date-spinner-year-next"
       );
       document.l10n.translateRoots();
@@ -607,6 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const root = document.getElementById("date-picker");
   new DatePicker({
+    root,
     monthYearNav: root.querySelector(".month-year-nav"),
     monthYear: root.querySelector(".month-year"),
     monthYearView: root.querySelector(".month-year-view"),

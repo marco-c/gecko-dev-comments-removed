@@ -215,7 +215,7 @@ this.DateTimeBoxWidget = class {
     
     
     this.isAndroid = this.window.navigator.appVersion.includes("Android");
-    if (this.isAndroid || this.type == "time") {
+    if (this.showPickerOnClick) {
       this.mInputElement.addEventListener(
         "click",
         this,
