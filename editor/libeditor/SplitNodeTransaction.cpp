@@ -13,7 +13,6 @@
 #include "SelectionState.h"  
 
 #include "mozilla/Logging.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ToString.h"
 #include "nsAString.h"
 #include "nsDebug.h"     
