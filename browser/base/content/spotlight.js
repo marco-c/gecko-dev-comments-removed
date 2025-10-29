@@ -89,6 +89,7 @@ function renderMultistage(ready) {
   dialog?.classList.add("spotlight");
   
   box.setAttribute("sizeto", "available");
+  box.setAttribute("fixedsize", "false");
   addEventListener("pagehide", () => {
     box.classList.remove("spotlightBox");
     dialog?.classList.remove("spotlight");
