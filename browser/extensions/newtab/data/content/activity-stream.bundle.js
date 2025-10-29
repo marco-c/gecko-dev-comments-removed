@@ -14092,6 +14092,7 @@ const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(stat
   App: state.App
 }))(_DiscoveryStreamBase);
 ;
+function SectionsMgmtPanel_extends() { return SectionsMgmtPanel_extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, SectionsMgmtPanel_extends.apply(null, arguments); }
 
 
 
@@ -14102,7 +14103,8 @@ const DiscoveryStreamBase = (0,external_ReactRedux_namespaceObject.connect)(stat
 
 
 function SectionsMgmtPanel({
-  exitEventFired
+  exitEventFired,
+  pocketEnabled
 }) {
   const [showPanel, setShowPanel] = (0,external_React_namespaceObject.useState)(false); 
   const {
@@ -14287,10 +14289,12 @@ function SectionsMgmtPanel({
       "data-l10n-id": "newtab-section-unblock-button"
     }))));
   });
-  return external_React_default().createElement("div", null, external_React_default().createElement("moz-box-button", {
+  return external_React_default().createElement("div", null, external_React_default().createElement("moz-box-button", SectionsMgmtPanel_extends({
     onClick: togglePanel,
     "data-l10n-id": "newtab-section-manage-topics-button-v2"
-  }), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
+  }, !pocketEnabled ? {
+    disabled: true
+  } : {})), external_React_default().createElement(external_ReactTransitionGroup_namespaceObject.CSSTransition, {
     in: showPanel,
     timeout: 300,
     classNames: "sections-mgmt-panel",
@@ -14981,7 +14985,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       return;
     }
     if (drawerRef) {
-      let drawerHeight = parseFloat(window.getComputedStyle(drawerRef)?.height) || 0;
+      
+      
+      let drawerHeight = parseFloat(window.getComputedStyle(drawerRef)?.height) || 100;
       if (isOpen) {
         drawerRef.style.marginTop = "var(--space-small)";
       } else {
@@ -15183,7 +15189,8 @@ class ContentSection extends (external_React_default()).PureComponent {
       htmlFor: "inferred-personalization",
       "data-l10n-id": "newtab-custom-stories-personalized-checkbox-label"
     })), mayHaveTopicSections && external_React_default().createElement(SectionsMgmtPanel, {
-      exitEventFired: exitEventFired
+      exitEventFired: exitEventFired,
+      pocketEnabled: pocketEnabled
     }))))))), external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
