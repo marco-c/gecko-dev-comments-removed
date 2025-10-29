@@ -11,6 +11,7 @@ from concurrent import futures
 from functools import reduce
 
 from requests.exceptions import HTTPError
+from taskcluster.exceptions import TaskclusterRestFailure
 
 from taskgraph import create
 from taskgraph.decision import read_artifact, rename_artifact, write_artifact
@@ -36,7 +37,7 @@ def fetch_graph_and_labels(parameters, graph_config, task_group_id=None):
     try:
         
         decision_task_id = find_decision_task(parameters, graph_config)
-    except KeyError:
+    except (KeyError, TaskclusterRestFailure):
         if not task_group_id:
             raise
         
@@ -56,12 +57,10 @@ def fetch_graph_and_labels(parameters, graph_config, task_group_id=None):
         
         def fetch_action(task_id):
             logger.info(f"fetching label-to-taskid.json for action task {task_id}")
-            try:
-                run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
+            run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
+            if label_to_taskid and run_label_to_id:
                 label_to_taskid.update(run_label_to_id)
-            except HTTPError as e:
-                if e.response.status_code != 404:
-                    raise
+            else:
                 logger.debug(f"No label-to-taskid.json found for {task_id}: {e}")
 
         
@@ -84,7 +83,7 @@ def fetch_graph_and_labels(parameters, graph_config, task_group_id=None):
             logger.info(f"fetching label-to-taskid.json for cron task {task_id}")
             try:
                 run_label_to_id = get_artifact(task_id, "public/label-to-taskid.json")
-                label_to_taskid.update(run_label_to_id)
+                label_to_taskid.update(run_label_to_id)  
             except HTTPError as e:
                 if e.response.status_code != 404:
                     raise
