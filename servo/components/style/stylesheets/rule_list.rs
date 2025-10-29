@@ -120,10 +120,7 @@ impl CssRules {
         }
         dest.write_str("\n}")
     }
-}
 
-
-pub trait CssRulesHelpers {
     
     
     
@@ -132,21 +129,8 @@ pub trait CssRulesHelpers {
     
     
     
-    fn insert_rule(
-        &self,
-        lock: &SharedRwLock,
-        rule: &str,
-        parent_stylesheet_contents: &StylesheetContents,
-        index: usize,
-        nested: CssRuleTypes,
-        parse_relative_rule_type: Option<CssRuleType>,
-        loader: Option<&dyn StylesheetLoader>,
-        allow_import_rules: AllowImportRules,
-    ) -> Result<CssRule, RulesMutateError>;
-}
-
-impl CssRulesHelpers for Locked<CssRules> {
-    fn insert_rule(
+    
+    pub fn parse_rule_for_insert(
         &self,
         lock: &SharedRwLock,
         rule: &str,
@@ -157,39 +141,26 @@ impl CssRulesHelpers for Locked<CssRules> {
         loader: Option<&dyn StylesheetLoader>,
         allow_import_rules: AllowImportRules,
     ) -> Result<CssRule, RulesMutateError> {
-        let new_rule = {
-            let read_guard = lock.read();
-            let rules = self.read_with(&read_guard);
-
-            
-            if index > rules.0.len() {
-                return Err(RulesMutateError::IndexSize);
-            }
-
-            let insert_rule_context = InsertRuleContext {
-                rule_list: &rules.0,
-                index,
-                containing_rule_types,
-                parse_relative_rule_type,
-            };
-
-            
-            CssRule::parse(
-                &rule,
-                insert_rule_context,
-                parent_stylesheet_contents,
-                lock,
-                loader,
-                allow_import_rules,
-            )?
-        };
-
-        {
-            let mut write_guard = lock.write();
-            let rules = self.write_with(&mut write_guard);
-            rules.0.insert(index, new_rule.clone());
+        
+        if index > self.0.len() {
+            return Err(RulesMutateError::IndexSize);
         }
 
-        Ok(new_rule)
+        let insert_rule_context = InsertRuleContext {
+            rule_list: &self.0,
+            index,
+            containing_rule_types,
+            parse_relative_rule_type,
+        };
+
+        
+        CssRule::parse(
+            &rule,
+            insert_rule_context,
+            parent_stylesheet_contents,
+            lock,
+            loader,
+            allow_import_rules,
+        )
     }
 }

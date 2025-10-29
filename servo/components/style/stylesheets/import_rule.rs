@@ -79,7 +79,7 @@ impl ImportSheet {
     
     pub fn rules<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> &'a [CssRule] {
         match self.as_sheet() {
-            Some(s) => s.rules(guard),
+            Some(s) => s.contents(guard).rules(guard),
             None => &[],
         }
     }
