@@ -61,6 +61,18 @@ function getSkipProtoDialogPermissionKey(aProtocolScheme) {
   );
 }
 
+function getSystemProtocol() {
+  
+  if (AppConstants.platform == "macosx") {
+    return "itunes";
+  }
+
+  info(
+    "Skipping this test since there isn't a suitable default protocol on this platform"
+  );
+  return null;
+}
+
 
 
 
