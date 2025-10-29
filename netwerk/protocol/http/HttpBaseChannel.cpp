@@ -2969,7 +2969,8 @@ nsresult ProcessXCTO(HttpBaseChannel* aChannel, nsIURI* aURI,
 
   auto policyType = aLoadInfo->GetExternalContentPolicyType();
   if (policyType == ExtContentPolicy::TYPE_DOCUMENT ||
-      policyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+      policyType == ExtContentPolicy::TYPE_SUBDOCUMENT ||
+      policyType == ExtContentPolicy::TYPE_OBJECT) {
     
     
     
