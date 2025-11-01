@@ -16,7 +16,11 @@ namespace mozilla::htmlaccel {
 
 
 inline bool htmlaccelEnabled() {
-#if defined(__aarch64__) && defined(__LITTLE_ENDIAN__)
+#if !defined(__clang__) && defined(__GNUC__) && __GNUC__ < 12
+  
+  
+  return false;
+#elif defined(__aarch64__) && defined(__LITTLE_ENDIAN__)
   return true;
 #elif defined(__x86_64__)
   return mozilla::supports_bmi() && mozilla::supports_avx();
