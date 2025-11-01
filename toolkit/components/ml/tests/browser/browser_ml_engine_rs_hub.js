@@ -3,6 +3,9 @@
 
 "use strict";
 
+
+
+
 add_task(async function test_hub_by_default() {
   const { cleanup, remoteClients } = await setup();
 
