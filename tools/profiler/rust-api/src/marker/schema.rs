@@ -111,6 +111,14 @@ impl MarkerSchema {
     }
 
     
+    pub fn set_stack_based(&mut self) -> &mut Self {
+        unsafe {
+            bindings::gecko_profiler_marker_schema_set_stack_based(self.ptr);
+        }
+        self
+    }
+
+    
     
     
     
