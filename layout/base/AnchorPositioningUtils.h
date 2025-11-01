@@ -54,6 +54,10 @@ class AnchorPosReferenceData {
       nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
 
  public:
+  struct Empty {};
+  
+  
+  using PositionTryBackup = Empty;
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
   AnchorPosReferenceData() = default;
@@ -76,6 +80,12 @@ class AnchorPosReferenceData {
   Map::const_iterator begin() const { return mMap.cbegin(); }
   Map::const_iterator end() const { return mMap.cend(); }
 
+  PositionTryBackup TryPositionWithSameDefaultAnchor() {
+    return PositionTryBackup{};
+  }
+
+  void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&&) {}
+
  private:
   Map mMap;
 };
@@ -88,6 +98,9 @@ struct AnchorPosDefaultAnchorCache {
   const nsIFrame* mAnchor = nullptr;
   
   const nsIFrame* mScrollContainer = nullptr;
+
+  AnchorPosDefaultAnchorCache() = default;
+  explicit AnchorPosDefaultAnchorCache(const nsIFrame* aAnchor);
 };
 
 
@@ -99,6 +112,33 @@ struct AnchorPosResolutionCache {
   
   
   AnchorPosDefaultAnchorCache mDefaultAnchorCache;
+
+  
+  
+  using PositionTryBackup = AnchorPosReferenceData::PositionTryBackup;
+  PositionTryBackup TryPositionWithSameDefaultAnchor() {
+    return mReferenceData->TryPositionWithSameDefaultAnchor();
+  }
+  void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
+    mReferenceData->UndoTryPositionWithSameDefaultAnchor(std::move(aBackup));
+  }
+
+  
+  
+  using PositionTryFullBackup =
+      std::pair<AnchorPosReferenceData, AnchorPosDefaultAnchorCache>;
+  PositionTryFullBackup TryPositionWithDifferentDefaultAnchor() {
+    auto referenceData = std::move(*mReferenceData);
+    *mReferenceData = {};
+    return std::make_pair(
+        std::move(referenceData),
+        std::exchange(mDefaultAnchorCache, AnchorPosDefaultAnchorCache{}));
+  }
+  void UndoTryPositionWithDifferentDefaultAnchor(
+      PositionTryFullBackup&& aBackup) {
+    *mReferenceData = std::move(aBackup.first);
+    std::exchange(mDefaultAnchorCache, aBackup.second);
+  }
 };
 
 enum class StylePositionTryFallbacksTryTacticKeyword : uint8_t;
@@ -179,6 +219,8 @@ struct AnchorPositioningUtils {
   static DefaultAnchorInfo GetDefaultAnchor(
       const nsIFrame* aPositioned, bool aCBRectIsValid,
       AnchorPosReferenceData* aAnchorPosReferenceData);
+
+  static const nsIFrame* GetNearestScrollFrame(const nsIFrame* aFrame);
 };
 
 }  
