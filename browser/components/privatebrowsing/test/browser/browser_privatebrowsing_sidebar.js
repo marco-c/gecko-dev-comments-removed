@@ -8,6 +8,15 @@
 
 
 function test() {
+  let isRevampEnabled = Services.prefs.getBoolPref("sidebar.revamp", false);
+  if (isRevampEnabled) {
+    ok(isRevampEnabled, "Sidebar revamp is enabled.");
+    info(
+      "Expected behaviour for the revamped sidebar in a private window is to adopt the state of the opener window"
+    );
+    return;
+  }
+
   waitForExplicitFinish();
 
   
