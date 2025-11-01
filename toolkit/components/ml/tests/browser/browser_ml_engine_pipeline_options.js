@@ -3,6 +3,9 @@
 
 "use strict";
 
+
+
+
 add_task(async function test_ml_engine_override_options() {
   const { cleanup, remoteClients } = await setup();
 
@@ -41,6 +44,9 @@ add_task(async function test_ml_engine_override_options() {
   await EngineProcess.destroyMLEngine();
   await cleanup();
 });
+
+
+
 
 add_task(async function test_ml_engine_pick_feature_id() {
   
@@ -148,6 +154,9 @@ add_task(async function test_ml_generic_pipeline() {
   await cleanup();
 });
 
+
+
+
 add_task(async function test_q8_by_default() {
   const { cleanup, remoteClients } = await setup();
 
@@ -191,6 +200,10 @@ add_task(async function test_q8_by_default() {
   await EngineProcess.destroyMLEngine();
   await cleanup();
 });
+
+
+
+
 
 add_task(
   async function test_override_ml_engine_pipeline_options_in_allow_list() {
@@ -287,6 +300,9 @@ add_task(async function test_override_ml_pipeline_options_not_in_allow_list() {
   await cleanup();
 });
 
+
+
+
 add_task(async function test_override_ml_pipeline_options_unsafe_options() {
   const { cleanup, remoteClients } = await setup();
   await SpecialPowers.pushPrefEnv({
@@ -339,6 +355,9 @@ add_task(async function test_override_ml_pipeline_options_unsafe_options() {
   await EngineProcess.destroyMLEngine();
   await cleanup();
 });
+
+
+
 
 add_task(async function test_ml_engine_blessed_model() {
   const { cleanup, remoteClients } = await setup();
@@ -441,6 +460,9 @@ add_task(async function test_ml_engine_two_tasknames_in_rs() {
 
   await cleanup();
 });
+
+
+
 
 add_task(async function test_ml_engine_model_hub_applied() {
   const options = {
@@ -741,6 +763,9 @@ add_task(async function test_pipeline_options_validation() {
   });
 });
 
+
+
+
 add_task(async function test_ml_engine_not_enough_memory() {
   const { cleanup } = await setup({
     prefs: [
@@ -766,6 +791,7 @@ add_task(async function test_ml_engine_not_enough_memory() {
   await EngineProcess.destroyMLEngine();
   await cleanup();
 });
+
 
 
 
