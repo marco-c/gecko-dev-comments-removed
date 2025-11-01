@@ -107,7 +107,14 @@ class ScriptLoadRequest : public nsISupports,
   ModuleLoadRequest* AsModuleRequest();
   const ModuleLoadRequest* AsModuleRequest() const;
 
-  CacheExpirationTime ExpirationTime() const { return mExpirationTime; }
+  CacheExpirationTime ExpirationTime() const {
+    
+    
+    
+    
+    MOZ_ASSERT(!IsCachedStencil());
+    return mExpirationTime;
+  }
 
   void SetMinimumExpirationTime(const CacheExpirationTime& aExpirationTime) {
     mExpirationTime.SetMinimum(aExpirationTime);
