@@ -193,6 +193,7 @@ class SharedScriptCache final
   SharedScriptCache();
   void Init();
 
+  bool MaybeScheduleUpdateDiskCache();
   void UpdateDiskCache();
 
   

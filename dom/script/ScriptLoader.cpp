@@ -2778,9 +2778,12 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Mark in-memory: Stencil",
          aRequest));
     aRequest->MarkPassedConditionForMemoryCache();
-  } else {
-    aRequest->MarkSkippedMemoryCaching();
+
+    
+    return;
   }
+
+  aRequest->MarkSkippedMemoryCaching();
 
   
 
@@ -3360,6 +3363,11 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
 
 nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
+  if (mCache) {
+    
+    return NS_OK;
+  }
+
   if (!aRequest->PassedConditionForDiskCache() || !aRequest->HasStencil()) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: disabled (rv = %X)", aRequest,
          unsigned(aRv)));
@@ -3399,6 +3407,11 @@ nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
 nsresult ScriptLoader::MaybePrepareModuleForDiskCacheAfterExecute(
     ModuleLoadRequest* aRequest, nsresult aRv) {
   MOZ_ASSERT(aRequest->IsTopLevel());
+
+  if (mCache) {
+    
+    return NS_OK;
+  }
 
   
   
@@ -3520,6 +3533,7 @@ LoadedScript* ScriptLoader::GetActiveScript(JSContext* aCx) {
 }
 
 void ScriptLoader::RegisterForDiskCache(ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(!mCache);
   MOZ_ASSERT(aRequest->PassedConditionForDiskCache());
   MOZ_ASSERT(aRequest->HasStencil());
   MOZ_ASSERT(aRequest->getLoadedScript()->HasDiskCacheReference());
@@ -3547,14 +3561,6 @@ void ScriptLoader::Destroy() {
 void ScriptLoader::MaybeUpdateDiskCache() {
   
   
-  if (mGiveUpDiskCaching) {
-    LOG(("ScriptLoader (%p): Keep giving-up bytecode encoding.", this));
-    GiveUpDiskCaching();
-    return;
-  }
-
-  
-  
   
   
   if (!mLoadEventFired) {
@@ -3563,16 +3569,31 @@ void ScriptLoader::MaybeUpdateDiskCache() {
   }
 
   
-  if (mDiskCacheQueue.IsEmpty()) {
-    LOG(("ScriptLoader (%p): No script in queue to be saved to the disk.",
-         this));
+  
+  if (HasPendingRequests()) {
+    LOG(("ScriptLoader (%p): Wait for other pending request to finish.", this));
+    return;
+  }
+
+  if (mCache) {
+    if (!mCache->MaybeScheduleUpdateDiskCache()) {
+      TRACE_FOR_TEST_0("diskcache:noschedule");
+    }
     return;
   }
 
   
   
-  if (HasPendingRequests()) {
-    LOG(("ScriptLoader (%p): Wait for other pending request to finish.", this));
+  if (mGiveUpDiskCaching) {
+    LOG(("ScriptLoader (%p): Keep giving-up bytecode encoding.", this));
+    GiveUpDiskCaching();
+    return;
+  }
+
+  
+  if (mDiskCacheQueue.IsEmpty()) {
+    LOG(("ScriptLoader (%p): No script in queue to be saved to the disk.",
+         this));
     return;
   }
 
@@ -3717,6 +3738,13 @@ void ScriptLoader::EncodeBytecodeAndSave(
 }
 
 void ScriptLoader::GiveUpDiskCaching() {
+  if (mCache) {
+    
+    MOZ_ASSERT(mDiskCacheQueue.IsEmpty());
+    MOZ_ASSERT(mDiskCacheableDependencyModules.isEmpty());
+    return;
+  }
+
   
   
   mGiveUpDiskCaching = true;
