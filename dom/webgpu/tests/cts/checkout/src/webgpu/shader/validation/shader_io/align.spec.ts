@@ -204,6 +204,10 @@ g.test('required_alignment')
   .fn(t => {
     
     
+    const has_ubo_std_layout = t.hasLanguageFeature('uniform_buffer_standard_layout');
+
+    
+    
     if (t.params.address_space === 'uniform' && t.params.type.name.startsWith('atomic')) {
       t.skip('No atomics in uniform address space');
     }
@@ -218,7 +222,7 @@ g.test('required_alignment')
       code += `struct S {
         a: mat4x2<f32>,          // Align 8
         b: array<vec${
-          t.params.address_space === 'storage' ? 2 : 4
+          t.params.address_space === 'storage' || has_ubo_std_layout ? 2 : 4
         }<i32>, 2>,  // Storage align 8, uniform 16
       }
       `;
@@ -226,7 +230,7 @@ g.test('required_alignment')
 
     
     const min_align =
-      t.params.address_space === 'storage'
+      t.params.address_space === 'storage' || has_ubo_std_layout
         ? `${t.params.type.storage}`
         : `${t.params.type.uniform}`;
     const align = t.params.align === 'alignment' ? min_align : t.params.align;
@@ -250,13 +254,14 @@ g.test('required_alignment')
       return vec4<f32>(.4, .2, .3, .1);
     }`;
 
-    
-    
-    
-    
-    const fails =
-      (t.params.address_space === 'uniform' && t.params.type.name.startsWith('array<vec2')) ||
-      align < min_align;
+    let fails = align < min_align;
+    if (!has_ubo_std_layout) {
+      
+      
+      
+      
+      fails ||= t.params.address_space === 'uniform' && t.params.type.name.startsWith('array<vec2');
+    }
 
     t.expectCompileResult(!fails, code);
   });

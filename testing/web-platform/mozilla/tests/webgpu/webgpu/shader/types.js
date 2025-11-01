@@ -298,6 +298,7 @@ export function* generateTypes({
     if (scalarInfo.layout) {
       
       
+      
       if (addressSpace === 'uniform') {
         
         

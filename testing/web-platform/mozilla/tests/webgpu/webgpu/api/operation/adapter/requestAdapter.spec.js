@@ -124,7 +124,10 @@ fn(async (t) => {
     return;
   }
 
-  t.expect(adapter.info.isFallbackAdapter === Boolean(forceFallbackAdapter));
+  
+  if (forceFallbackAdapter === true) {
+    t.expect(adapter.info.isFallbackAdapter === true);
+  }
   await testAdapter(t, adapter);
 });
 
