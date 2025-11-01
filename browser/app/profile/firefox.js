@@ -1798,10 +1798,6 @@ pref("services.sync.syncedTabs.syncDelayAfterTabChange", 5000);
 
 
 
-pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.properties");
-
-
-
 pref("prompts.defaultModalType", 3);
 
 

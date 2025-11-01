@@ -100,18 +100,31 @@ class TestPreferences(MarionetteTestCase):
         self.assertEqual(self.marionette.get_pref(pref_default), "default_value")
 
     def test_get_pref_value_type(self):
+        pref_complex = "marionette.test.complex"
+
         
-        pref_complex = "browser.menu.showCharacterEncoding"
-        properties_file = "chrome://browser/locale/browser.properties"
+        with self.marionette.using_context(self.marionette.CONTEXT_CHROME):
+            expected_path = self.marionette.execute_script(
+                """
+                let pref = arguments[0];
+                let tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
+                Services.prefs.setComplexValue(pref, Ci.nsIFile, tempDir);
+                return tempDir.path;
+                """,
+                script_args=(pref_complex,),
+            )
+
+        
+        
         self.assertEqual(
-            self.marionette.get_pref(pref_complex, default_branch=True), properties_file
+            self.marionette.get_pref(pref_complex, default_branch=False), expected_path
         )
 
         
         value = self.marionette.get_pref(
-            pref_complex, default_branch=True, value_type="nsIPrefLocalizedString"
+            pref_complex, default_branch=False, value_type="nsIFile"
         )
-        self.assertNotEqual(value, properties_file)
+        self.assertNotEqual(value, expected_path)
 
     def test_set_prefs(self):
         
