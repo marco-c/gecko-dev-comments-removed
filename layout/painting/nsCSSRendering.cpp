@@ -4000,22 +4000,22 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
   const Float absoluteLineStart = relativeTextStart - aParams.icoordInFrame;
 
   
-  const Float trimLineDrawAreaStart =
-      relativeTextStart + (aParams.trimLeft - aPadding);
-  const Float trimLineDrawAreaEnd =
-      relativeTextEnd - (aParams.trimRight - aPadding);
+  const Float insetLineDrawAreaStart =
+      relativeTextStart + (aParams.insetLeft - aPadding);
+  const Float insetLineDrawAreaEnd =
+      relativeTextEnd - (aParams.insetRight - aPadding);
 
   for (unsigned i = 0; i <= length; i += 2) {
     
     
     
     
-    SkScalar startIntercept = trimLineDrawAreaStart;
+    SkScalar startIntercept = insetLineDrawAreaStart;
     if (i > 0) {
       startIntercept =
           std::max(aIntercepts[i - 1] + absoluteLineStart, startIntercept);
     }
-    SkScalar endIntercept = trimLineDrawAreaEnd;
+    SkScalar endIntercept = insetLineDrawAreaEnd;
     if (i < length) {
       endIntercept = std::min(aIntercepts[i] + absoluteLineStart, endIntercept);
     }
@@ -4666,8 +4666,8 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   }
 
   
-  r.x += aParams.trimLeft;
-  r.width -= aParams.trimLeft + aParams.trimRight;
+  r.x += aParams.insetLeft;
+  r.width -= aParams.insetLeft + aParams.insetRight;
   r.width = std::max(r.width, 0.0);
 
   

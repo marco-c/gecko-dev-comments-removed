@@ -560,7 +560,9 @@ struct nsCSSRendering {
     
     
     
-    bool HasNegativeTrim() const { return trimLeft < 0.0 || trimRight < 0.0; }
+    bool HasNegativeInset() const {
+      return insetLeft < 0.0 || insetRight < 0.0;
+    }
 
     
     
@@ -597,8 +599,8 @@ struct nsCSSRendering {
     
     
     
-    Float trimLeft = 0.0f;
-    Float trimRight = 0.0f;
+    Float insetLeft = 0.0f;
+    Float insetRight = 0.0f;
     bool vertical = false;
     bool sidewaysLeft = false;
     gfxTextRun::Range glyphRange;

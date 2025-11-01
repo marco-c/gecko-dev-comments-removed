@@ -184,7 +184,7 @@ pub enum GenericTextDecorationLength<L> {
     ToShmem,
     ToTyped,
 )]
-pub enum GenericTextDecorationTrim<L> {
+pub enum GenericTextDecorationInset<L> {
     
     Auto,
     
@@ -192,25 +192,25 @@ pub enum GenericTextDecorationTrim<L> {
     Length { start: L, end: L },
 }
 
-impl<L: Zero> GenericTextDecorationTrim<L> {
+impl<L: Zero> GenericTextDecorationInset<L> {
     
     #[inline]
     pub fn get_initial_value() -> Self {
-        GenericTextDecorationTrim::Length {
+        GenericTextDecorationInset::Length {
             start: L::zero(),
             end: L::zero(),
         }
     }
 }
 
-impl<L: ToCss + PartialEq> ToCss for GenericTextDecorationTrim<L> {
+impl<L: ToCss + PartialEq> ToCss for GenericTextDecorationInset<L> {
     fn to_css<W>(&self, dst: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
     {
         match self {
-            GenericTextDecorationTrim::Auto => dst.write_str("auto"),
-            GenericTextDecorationTrim::Length { start, end } => {
+            GenericTextDecorationInset::Auto => dst.write_str("auto"),
+            GenericTextDecorationInset::Length { start, end } => {
                 start.to_css(dst)?;
                 if start != end {
                     dst.write_char(' ')?;

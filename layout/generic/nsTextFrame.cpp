@@ -5785,46 +5785,46 @@ static gfxFloat ComputeDecorationLineOffset(
 
 
 
-static bool ComputeDecorationTrim(
+static bool ComputeDecorationInset(
     nsTextFrame* aFrame, const nsPresContext* aPresCtx,
     const nsIFrame* aDecFrame, const gfxFont::Metrics& aMetrics,
     nsCSSRendering::DecorationRectParams& aParams) {
   const WritingMode wm = aDecFrame->GetWritingMode();
   bool verticalDec = wm.IsVertical();
 
-  aParams.trimLeft = 0.0;
-  aParams.trimRight = 0.0;
+  aParams.insetLeft = 0.0;
+  aParams.insetRight = 0.0;
 
   
-  const StyleTextDecorationTrim& cssTrim =
-      aDecFrame->StyleTextReset()->mTextDecorationTrim;
-  nscoord trimLeft, trimRight;
-  if (cssTrim.IsAuto()) {
+  const StyleTextDecorationInset& cssInset =
+      aDecFrame->StyleTextReset()->mTextDecorationInset;
+  nscoord insetLeft, insetRight;
+  if (cssInset.IsAuto()) {
     
     
-    constexpr gfxFloat kAutoTrimFactor = 1.0 / 12.5;
+    constexpr gfxFloat kAutoInsetFactor = 1.0 / 12.5;
     
     
-    const nscoord autoDecorationTrim =
+    const nscoord autoDecorationInset =
         std::max(aPresCtx->DevPixelsToAppUnits(
-                     NS_round(aMetrics.emHeight * kAutoTrimFactor)),
+                     NS_round(aMetrics.emHeight * kAutoInsetFactor)),
                  nsPresContext::CSSPixelsToAppUnits(1));
-    trimLeft = autoDecorationTrim;
-    trimRight = autoDecorationTrim;
+    insetLeft = autoDecorationInset;
+    insetRight = autoDecorationInset;
   } else {
-    MOZ_ASSERT(cssTrim.IsLength(), "Impossible text-decoration-trim");
-    const auto& length = cssTrim.AsLength();
+    MOZ_ASSERT(cssInset.IsLength(), "Impossible text-decoration-inset");
+    const auto& length = cssInset.AsLength();
     if (length.start.IsZero() && length.end.IsZero()) {
       
       
       return true;
     }
-    trimLeft = length.start.ToAppUnits();
-    trimRight = length.end.ToAppUnits();
+    insetLeft = length.start.ToAppUnits();
+    insetRight = length.end.ToAppUnits();
   }
 
   if (wm.IsInlineReversed()) {
-    std::swap(trimLeft, trimRight);
+    std::swap(insetLeft, insetRight);
   }
 
   
@@ -5909,17 +5909,17 @@ static bool ComputeDecorationTrim(
     std::swap(applyLeft, applyRight);
   }
   if (applyLeft) {
-    trimLeft -= marginLeft;
+    insetLeft -= marginLeft;
   } else {
-    trimLeft = 0;
+    insetLeft = 0;
   }
   if (applyRight) {
-    trimRight -= marginRight;
+    insetRight -= marginRight;
   } else {
-    trimRight = 0;
+    insetRight = 0;
   }
 
-  if (trimLeft + trimRight >= frameSize) {
+  if (insetLeft + insetRight >= frameSize) {
     
     return false;
   }
@@ -5934,11 +5934,11 @@ static bool ComputeDecorationTrim(
   
   
   
-  if (trimLeft > 0 || marginLeft == 0) {
-    aParams.trimLeft = aPresCtx->AppUnitsToFloatDevPixels(trimLeft);
+  if (insetLeft > 0 || marginLeft == 0) {
+    aParams.insetLeft = aPresCtx->AppUnitsToFloatDevPixels(insetLeft);
   }
-  if (trimRight > 0 || marginRight == 0) {
-    aParams.trimRight = aPresCtx->AppUnitsToFloatDevPixels(trimRight);
+  if (insetRight > 0 || marginRight == 0) {
+    aParams.insetRight = aPresCtx->AppUnitsToFloatDevPixels(insetRight);
   }
   return true;
 }
@@ -6084,8 +6084,8 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
                 metrics, appUnitsPerDevUnit, this, parentWM.IsCentralBaseline(),
                 swapUnderline);
 
-            if (!ComputeDecorationTrim(this, aPresContext, dec.mFrame, metrics,
-                                       params)) {
+            if (!ComputeDecorationInset(this, aPresContext, dec.mFrame, metrics,
+                                        params)) {
               return;
             }
 
@@ -7916,8 +7916,8 @@ void nsTextFrame::DrawTextRunAndDecorations(
         GetInflationForTextDecorations(dec.mFrame, inflationMinFontSize);
     const Metrics metrics = GetFirstFontMetrics(
         GetFontGroupForFrame(dec.mFrame, inflation), useVerticalMetrics);
-    if (!ComputeDecorationTrim(this, aParams.textStyle->PresContext(),
-                               dec.mFrame, metrics, params)) {
+    if (!ComputeDecorationInset(this, aParams.textStyle->PresContext(),
+                                dec.mFrame, metrics, params)) {
       return;
     }
     bCoord = (frameBStart - dec.mBaselineOffset) / app;
@@ -7942,7 +7942,7 @@ void nsTextFrame::DrawTextRunAndDecorations(
     
     
     
-    if (clipRect && !params.HasNegativeTrim()) {
+    if (clipRect && !params.HasNegativeInset()) {
       clipRestore.Clip(*clipRect);
     }
     PaintDecorationLine(params);

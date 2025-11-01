@@ -6,8 +6,8 @@
 
 use crate::values::computed::length::{Length, LengthPercentage};
 use crate::values::generics::text::{
-    GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationLength,
-    GenericTextDecorationTrim, GenericTextIndent,
+    GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationInset,
+    GenericTextDecorationLength, GenericTextIndent,
 };
 use crate::values::generics::NumberOrAuto;
 use crate::values::specified::text as specified;
@@ -30,7 +30,7 @@ pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
 
 
-pub type TextDecorationTrim = GenericTextDecorationTrim<Length>;
+pub type TextDecorationInset = GenericTextDecorationInset<Length>;
 
 
 pub type TextAlign = specified::TextAlignKeyword;
