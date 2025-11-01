@@ -129,6 +129,49 @@ const AboutWelcomeUtils = {
       true
     );
   },
+
+  
+
+
+
+
+
+
+
+  normalizeContentTiles(content) {
+    const { tiles } = content;
+    const legacyContainer = content?.contentTilesContainer;
+    const legacyHeader = content?.tiles_header;
+
+    
+    const style = tiles?.container?.style ?? legacyContainer?.style ?? {};
+
+    
+    const header = tiles?.container?.header ?? legacyHeader;
+
+    let items;
+    
+    if (tiles?.tile_items !== undefined) {
+      items = Array.isArray(tiles.tile_items)
+        ? tiles.tile_items
+        : [tiles.tile_items];
+    }
+    
+    else if (Array.isArray(tiles)) {
+      items = tiles;
+    }
+    
+    else if (tiles && typeof tiles === "object" && tiles.type) {
+      items = [tiles];
+    } else {
+      items = [];
+    }
+
+    
+    const container = header ? { style, header } : { style };
+
+    return { tile_items: items, container };
+  },
 };
 
 
@@ -1516,6 +1559,30 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       justifyContent: content.split_content_justify_content
     };
   }
+  getActionButtonsPosition(content) {
+    const VALID_POSITIONS = ["after_subtitle", "after_supporting_content", "end"];
+    if (VALID_POSITIONS.includes(content.action_buttons_position)) {
+      return content.action_buttons_position;
+    }
+    
+    if (content.action_buttons_above_content) {
+      return "after_subtitle";
+    }
+    
+    return "end";
+  }
+  renderActionButtons(position, content) {
+    return this.getActionButtonsPosition(content) === position ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
+      content: content,
+      isRtamo: this.props.isRtamo,
+      installedAddons: this.props.installedAddons,
+      addonId: this.props.addonId,
+      addonName: this.props.addonName,
+      addonType: this.props.addonType,
+      handleAction: this.props.handleAction,
+      activeMultiSelect: this.props.activeMultiSelect
+    }) : null;
+  }
 
   
   render() {
@@ -1588,31 +1655,13 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       }),
       "aria-flowto": this.props.messageId?.includes("FEATURE_TOUR") ? "steps" : "",
       id: "mainContentSubheader"
-    })) : null, content.action_buttons_above_content && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
-      content: content,
-      isRtamo: this.props.isRtamo,
-      installedAddons: this.props.installedAddons,
-      addonId: this.props.addonId,
-      addonName: this.props.addonName,
-      addonType: this.props.addonType,
-      handleAction: this.props.handleAction,
-      activeMultiSelect: this.props.activeMultiSelect
-    }), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CTAParagraph__WEBPACK_IMPORTED_MODULE_5__.CTAParagraph, {
+    })) : null, this.renderActionButtons("after_subtitle", content), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CTAParagraph__WEBPACK_IMPORTED_MODULE_5__.CTAParagraph, {
       content: content.cta_paragraph,
       handleAction: this.props.handleAction
     }) : null) : null, content.video_container ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_OnboardingVideo__WEBPACK_IMPORTED_MODULE_7__.OnboardingVideo, {
       content: content.video_container,
       handleAction: this.props.handleAction
-    }) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ContentTiles__WEBPACK_IMPORTED_MODULE_10__.ContentTiles, this.props), this.renderLanguageSwitcher(), content.above_button_content ? this.renderOrderedContent(content.above_button_content) : null, !hideStepsIndicator && aboveButtonStepsIndicator ? this.renderStepsIndicator() : null, !content.action_buttons_above_content && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
-      content: content,
-      isRtamo: this.props.isRtamo,
-      installedAddons: this.props.installedAddons,
-      addonId: this.props.addonId,
-      addonName: this.props.addonName,
-      addonType: this.props.addonType,
-      handleAction: this.props.handleAction,
-      activeMultiSelect: this.props.activeMultiSelect
-    }),
+    }) : null, this.renderLanguageSwitcher(), content.above_button_content ? this.renderOrderedContent(content.above_button_content) : null, this.renderActionButtons("after_supporting_content", content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ContentTiles__WEBPACK_IMPORTED_MODULE_10__.ContentTiles, this.props), !hideStepsIndicator && aboveButtonStepsIndicator ? this.renderStepsIndicator() : null, this.renderActionButtons("end", content),
     
 
 
@@ -2337,12 +2386,19 @@ const ContentTiles = props => {
   if (!tiles) {
     return null;
   }
+  const {
+    tile_items,
+    container
+  } = _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.normalizeContentTiles(content);
+  if (!tile_items.length) {
+    return null;
+  }
 
   
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     
     if (!props.activeMultiSelect) {
-      const tilesArray = Array.isArray(tiles) ? tiles : [tiles];
+      const tilesArray = Array.isArray(tile_items) ? tile_items : [tile_items];
       tilesArray.forEach((tile, index) => {
         if (tile.type !== "multiselect" || !tile.data) {
           return;
@@ -2362,7 +2418,7 @@ const ContentTiles = props => {
         }
       });
     }
-  }, [tiles]); 
+  }, [tile_items]); 
 
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     
@@ -2555,30 +2611,36 @@ const ContentTiles = props => {
     })) : null);
   };
   const renderContentTiles = () => {
-    if (Array.isArray(tiles)) {
-      return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-        id: "content-tiles-container",
-        style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getValidStyle(content?.contentTilesContainer?.style, CONTAINER_STYLES)
-      }, tiles.map((tile, index) => renderContentTile(tile, index)));
-    }
+    const hasHeader = !!container?.header;
+    const hasContainerStyle = !!Object.keys(container?.style || {}).length;
+
     
-    return renderContentTile(tiles, 0);
+    
+    
+    const isArrayInput = Array.isArray(content.tiles);
+    if (!isArrayInput && tile_items.length === 1 && !hasHeader && !hasContainerStyle) {
+      return renderContentTile(tile_items[0], 0);
+    }
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      id: "content-tiles-container",
+      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getValidStyle(container?.style, CONTAINER_STYLES)
+    }, tile_items.map((tile, index) => renderContentTile(tile, index)));
   };
-  if (content.tiles_header) {
+  if (container?.header) {
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
       className: "content-tiles-header secondary",
       onClick: toggleTiles,
       "aria-expanded": tilesHeaderExpanded,
       "aria-controls": `content-tiles-container`
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: content.tiles_header.title
+      text: container.header?.title
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "header-title"
     })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "arrow-icon"
     })), tilesHeaderExpanded && renderContentTiles());
   }
-  return renderContentTiles(tiles);
+  return renderContentTiles(tile_items);
 };
 
  }),
