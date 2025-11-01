@@ -223,19 +223,10 @@ void Zone::setNeedsIncrementalBarrier(bool needs) {
 void Zone::changeGCState(GCState prev, GCState next) {
   MOZ_ASSERT(RuntimeHeapIsBusy());
   MOZ_ASSERT(gcState() == prev);
-
-  
-  
-  
-  bool barriersDisabled = isGCMarking() && !needsIncrementalBarrier();
+  MOZ_ASSERT_IF(isGCMarkingOrVerifyingPreBarriers(), needsIncrementalBarrier_);
 
   gcState_ = next;
-
-  
-  
-  if (!barriersDisabled) {
-    needsIncrementalBarrier_ = isGCMarking();
-  }
+  needsIncrementalBarrier_ = isGCMarkingOrVerifyingPreBarriers();
 }
 
 template <class Pred>

@@ -108,18 +108,6 @@ class MOZ_RAII AutoEmptyNurseryAndPrepareForTracing : private AutoFinishGC,
 
 
 
-
-class AutoDisableBarriers {
- public:
-  explicit AutoDisableBarriers(GCRuntime* gc);
-  ~AutoDisableBarriers();
-
- private:
-  GCRuntime* gc;
-};
-
-
-
 class AutoUpdateLiveCompartments {
   GCRuntime* gc;
 

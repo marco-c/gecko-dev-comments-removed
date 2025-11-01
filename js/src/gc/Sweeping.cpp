@@ -1677,6 +1677,13 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
   AutoSetThreadIsSweeping threadIsSweeping;
 
   
+  
+  
+  MOZ_ASSERT(!disableBarriersForSweeping);
+  disableBarriersForSweeping = true;
+  disableIncrementalBarriers();
+
+  
   sweepDebuggerOnMainThread(gcx);
 
   
@@ -1834,6 +1841,12 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JS::GCContext* gcx,
     }
   }
   queueZonesAndStartBackgroundSweep(std::move(zones));
+
+  
+  
+  MOZ_ASSERT(disableBarriersForSweeping);
+  disableBarriersForSweeping = false;
+  enableIncrementalBarriers();
 
   return Finished;
 }
@@ -2483,6 +2496,29 @@ void GCRuntime::prepareForSweepSlice(JS::GCReason reason) {
   rt->mainContextFromOwnThread()->traceWrapperGCRooters(marker().tracer());
 }
 
+
+
+
+class js::gc::AutoUpdateBarriersForSweeping {
+ public:
+  explicit AutoUpdateBarriersForSweeping(GCRuntime* gc) : gc(gc) {
+    MOZ_ASSERT(gc->state() == State::Sweep);
+    if (gc->disableBarriersForSweeping) {
+      gc->disableIncrementalBarriers();
+    }
+  }
+
+  ~AutoUpdateBarriersForSweeping() {
+    MOZ_ASSERT(gc->state() == State::Sweep);
+    if (gc->disableBarriersForSweeping) {
+      gc->enableIncrementalBarriers();
+    }
+  }
+
+ private:
+  GCRuntime* gc;
+};
+
 IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   MOZ_ASSERT_IF(storeBuffer().isEnabled(),
                 !storeBuffer().mayHavePointersToDeadCells());
@@ -2493,9 +2529,6 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   JS::GCContext* gcx = rt->gcContext();
   AutoSetThreadIsSweeping threadIsSweeping(gcx);
   AutoPoisonFreedJitCode pjc(gcx);
-
-  
-  AutoDisableBarriers disableBarriers(this);
 
   
   
@@ -2514,6 +2547,9 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
       return NotFinished;
     }
   }
+
+  
+  AutoUpdateBarriersForSweeping updateBarriers(this);
 
   
 
