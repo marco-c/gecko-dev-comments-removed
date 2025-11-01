@@ -1601,7 +1601,7 @@ void NativeKey::InitWithKeyOrChar() {
                this, ToString(charMsg).get()));
       NS_WARNING_ASSERTION(
           charMsg.hwnd == mMsg.hwnd,
-          "The retrieved char message was targeted to differnet window");
+          "The retrieved char message was targeted to different window");
       mFollowingCharMsgs.AppendElement(charMsg);
     }
     if (mFollowingCharMsgs.Length() == 1) {
@@ -3482,8 +3482,8 @@ void NativeKey::ComputeInputtingStringWithKeyboardLayout() {
   mUnshiftedString.Clear();
   mShiftedLatinChar = mUnshiftedLatinChar = 0;
 
-  
-  if (!mModKeyState.IsControl() && !mModKeyState.IsAlt()) {
+  if (!mModKeyState.IsControl() && !mModKeyState.IsAlt() &&
+      !mModKeyState.IsWin()) {
     return;
   }
 
@@ -3593,7 +3593,7 @@ bool NativeKey::DispatchKeyPressEventsWithRetrievedCharMessages() const {
   if (mCanIgnoreModifierStateAtKeyPress && IsFollowedByPrintableCharMessage()) {
     
     
-    modKeyState.Unset(MODIFIER_ALT | MODIFIER_CONTROL);
+    modKeyState.Unset(MODIFIER_ALT | MODIFIER_CONTROL | MODIFIER_META);
   }
   
   
