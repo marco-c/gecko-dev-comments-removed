@@ -36,7 +36,6 @@ add_task(async function test_load_settings() {
     
     
     Assert.equal(this.getRow("font.language.group").value, "x-western");
-    Assert.equal(this.getRow("intl.ellipsis").value, "\u2026");
 
     
     

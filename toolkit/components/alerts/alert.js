@@ -137,14 +137,6 @@ function prefillAlertInfo() {
         if (bodyText.length > BODY_TEXT_LIMIT) {
           bodyTextLabel.setAttribute("tooltiptext", bodyText);
 
-          let ellipsis = "\u2026";
-          try {
-            ellipsis = Services.prefs.getComplexValue(
-              "intl.ellipsis",
-              Ci.nsIPrefLocalizedString
-            ).data;
-          } catch (e) {}
-
           
           
           
@@ -154,7 +146,8 @@ function prefillAlertInfo() {
             truncLength++;
           }
 
-          bodyText = bodyText.substring(0, truncLength) + ellipsis;
+          bodyText =
+            bodyText.substring(0, truncLength) + Services.locale.ellipsis;
         }
         bodyTextLabel.textContent = bodyText;
       }
