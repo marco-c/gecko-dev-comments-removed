@@ -259,6 +259,13 @@ class OffThreadPromiseRuntimeState {
   JS::DelayedDispatchToEventLoopCallback delayedDispatchToEventLoopCallback_;
   void* dispatchToEventLoopClosure_;
 
+#ifdef DEBUG
+  
+  
+  
+  HelperThreadLockData<bool> forceQuitting_;
+#endif
+
   
   
   
@@ -357,6 +364,10 @@ class OffThreadPromiseRuntimeState {
 
   
   void shutdown(JSContext* cx);
+
+#ifdef DEBUG
+  void setForceQuitting() { forceQuitting_ = true; }
+#endif
 };
 
 }  
