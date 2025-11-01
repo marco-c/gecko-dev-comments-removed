@@ -4147,27 +4147,68 @@ static void GetAnimationsUnsorted(const Element* aElement,
   }
 }
 
+static inline bool IsSupportedForGetAnimationsSubtree(PseudoStyleType aType) {
+  return aType == PseudoStyleType::NotPseudo ||
+         aType == PseudoStyleType::mozSnapshotContainingBlock ||
+         PseudoStyle::IsViewTransitionPseudoElement(aType);
+}
 
 
-static void GetAnimationsOfViewTransitionTree(
-    const Element* aOriginatingElement,
-    nsTArray<RefPtr<Animation>>& aAnimations) {
-  if (!aOriginatingElement->IsRootElement()) {
+
+static void GetAnimationsUnsortedForSubtree(
+    const Element* aRootElement, nsTArray<RefPtr<Animation>>& aAnimations) {
+  const PseudoStyleType type = aRootElement->GetPseudoElementType();
+  
+  
+  if (MOZ_UNLIKELY(!IsSupportedForGetAnimationsSubtree(type))) {
     return;
   }
 
-  const Document* doc = aOriginatingElement->OwnerDoc();
-  const ViewTransition* vt = doc->GetActiveViewTransition();
-  if (!vt) {
+  
+  
+  if (type == PseudoStyleType::NotPseudo) {
+    for (const nsIContent* node = aRootElement; node;
+         node = node->GetNextNode(aRootElement)) {
+      if (!node->IsElement()) {
+        continue;
+      }
+      const Element* element = node->AsElement();
+      GetAnimationsUnsorted(element, PseudoStyleRequest::NotPseudo(),
+                            aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::Before(), aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::After(), aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::Marker(), aAnimations);
+    }
+  }
+
+  
+  
+  
+  if (!aRootElement->IsRootElement() && type == PseudoStyleType::NotPseudo) {
     return;
   }
 
-  Element* root = vt->GetViewTransitionTreeRoot();
-  if (!root) {
+  const Document* doc = aRootElement->OwnerDoc();
+  const Element* originatingElement = doc->GetRootElement();
+  if (!originatingElement) {
     return;
   }
 
-  for (const nsIContent* node = root; node; node = node->GetNextNode(root)) {
+  const Element* rootForTraversal = [&]() -> const Element* {
+    if (!aRootElement->IsRootElement()) {
+      
+      
+      return aRootElement;
+    }
+    
+    
+    
+    const ViewTransition* vt = doc->GetActiveViewTransition();
+    return vt ? vt->GetViewTransitionTreeRoot() : nullptr;
+  }();
+
+  for (const nsIContent* node = rootForTraversal; node;
+       node = node->GetNextNode(rootForTraversal)) {
     if (!node->IsElement()) {
       continue;
     }
@@ -4177,7 +4218,7 @@ static void GetAnimationsOfViewTransitionTree(
         pseudo->HasName()
             ? pseudo->GetParsedAttr(nsGkAtoms::name)->GetAtomValue()
             : nullptr);
-    GetAnimationsUnsorted(aOriginatingElement, request, aAnimations);
+    GetAnimationsUnsorted(originatingElement, request, aAnimations);
   }
 }
 
@@ -4207,20 +4248,16 @@ void Element::GetAnimationsWithoutFlush(
   if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::before ||
                              pseudoRequest.mType == PseudoStyleType::after ||
                              pseudoRequest.mType == PseudoStyleType::marker)) {
+    
+    
+    
+    
+    
     GetAnimationsUnsorted(elem, pseudoRequest, aAnimations);
   } else {
-    for (nsIContent* node = this; node; node = node->GetNextNode(this)) {
-      if (!node->IsElement()) {
-        continue;
-      }
-      Element* element = node->AsElement();
-      GetAnimationsUnsorted(element, PseudoStyleRequest::NotPseudo(),
-                            aAnimations);
-      GetAnimationsUnsorted(element, PseudoStyleRequest::Before(), aAnimations);
-      GetAnimationsUnsorted(element, PseudoStyleRequest::After(), aAnimations);
-      GetAnimationsUnsorted(element, PseudoStyleRequest::Marker(), aAnimations);
-    }
-    GetAnimationsOfViewTransitionTree(this, aAnimations);
+    
+    
+    GetAnimationsUnsortedForSubtree(elem, aAnimations);
   }
   aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }
