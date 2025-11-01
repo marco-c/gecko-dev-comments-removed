@@ -4380,6 +4380,10 @@ static size_t FromHex(const CharT* chars, size_t length,
     }
   };
 
+  auto decode2Chars = [&](const CharT* chars) {
+    return (decodeChar(chars[0]) << 4) | (decodeChar(chars[1]) << 0);
+  };
+
   auto decode4Chars = [&](const CharT* chars) {
     return (decodeChar(chars[2]) << 12) | (decodeChar(chars[3]) << 8) |
            (decodeChar(chars[0]) << 4) | (decodeChar(chars[1]) << 0);
@@ -4392,12 +4396,34 @@ static size_t FromHex(const CharT* chars, size_t length,
   MOZ_ASSERT(length % 2 == 0);
 
   
-  size_t alignedLength = length & ~7;
-  if (index < alignedLength) {
+  if (length >= 8) {
+    
+    if (MOZ_UNLIKELY(data.unwrapValue() & 3)) {
+      
+      
+      while (data.unwrapValue() & 3) {
+        
+        uint32_t byte = decode2Chars(chars + index);
+
+        
+        if (MOZ_UNLIKELY(int32_t(byte) < 0)) {
+          return index;
+        }
+        MOZ_ASSERT(byte <= 0xff);
+
+        
+        index += 2;
+
+        
+        Ops::store(data++, uint8_t(byte));
+      }
+    }
+
     auto data32 = data.template cast<uint32_t*>();
 
     
-    while (index < alignedLength) {
+    size_t lastValidIndex = length - 8;
+    while (index <= lastValidIndex) {
       
       uint32_t word1 = decode4Chars(chars + index);
 
@@ -4434,11 +4460,7 @@ static size_t FromHex(const CharT* chars, size_t length,
   
   while (index < length) {
     
-    auto c0 = chars[index + 0];
-    auto c1 = chars[index + 1];
-
-    
-    uint32_t byte = (decodeChar(c0) << 4) | (decodeChar(c1) << 0);
+    uint32_t byte = decode2Chars(chars + index);
 
     
     if (MOZ_UNLIKELY(int32_t(byte) < 0)) {
@@ -5506,6 +5528,31 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
   auto toRead = length;
 
   if (toRead >= 12) {
+    
+    if (MOZ_UNLIKELY(data.unwrapValue() & 3)) {
+      
+      
+      while (data.unwrapValue() & 3) {
+        
+        auto byte0 = Ops::load(data++);
+        auto byte1 = Ops::load(data++);
+        auto byte2 = Ops::load(data++);
+        auto u24 = (uint32_t(byte0) << 16) | (uint32_t(byte1) << 8) | byte2;
+
+        
+        char chars[] = {
+            encode(u24 >> 18),
+            encode(u24 >> 12),
+            encode(u24 >> 6),
+            encode(u24 >> 0),
+        };
+        sb.infallibleAppend(chars, sizeof(chars));
+
+        MOZ_ASSERT(toRead >= 3);
+        toRead -= 3;
+      }
+    }
+
     auto data32 = data.template cast<uint32_t*>();
     for (; toRead >= 12; toRead -= 12) {
       
