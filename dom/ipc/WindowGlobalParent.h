@@ -102,7 +102,7 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
-  BrowserParent* GetBrowserParent();
+  BrowserParent* GetBrowserParent() const;
 
   ContentParent* GetContentParent();
 
@@ -227,7 +227,7 @@ class WindowGlobalParent final : public WindowContext,
 
   nsITransportSecurityInfo* GetSecurityInfo() { return mSecurityInfo; }
 
-  const nsACString& GetRemoteType() override;
+  const nsACString& GetRemoteType() const override;
 
   void NotifySessionStoreUpdatesComplete(Element* aEmbedder);
 

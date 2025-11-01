@@ -47,6 +47,8 @@ class JSActorManager : public nsISupports {
                          UniquePtr<ipc::StructuredCloneData> aData,
                          UniquePtr<ipc::StructuredCloneData> aStack);
 
+  virtual const nsACString& GetRemoteType() const = 0;
+
  protected:
   
 
