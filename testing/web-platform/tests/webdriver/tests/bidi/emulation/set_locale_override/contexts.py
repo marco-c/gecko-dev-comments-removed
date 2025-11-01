@@ -1,64 +1,73 @@
 import pytest
-from webdriver.bidi.modules.script import ContextTarget
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_contexts(bidi_session, new_tab, top_context, get_current_locale,
-        default_locale, some_locale):
-    
-    await bidi_session.emulation.set_locale_override(
-        contexts=[new_tab["context"]],
-        locale=some_locale
-    )
-
-    
-    assert await get_current_locale(new_tab) == some_locale
-    assert await get_current_locale(top_context) == default_locale
-
-    
-    await bidi_session.emulation.set_locale_override(
-        contexts=[new_tab["context"]],
-        locale=None)
-
-    
-    assert await get_current_locale(new_tab) == default_locale
-    assert await get_current_locale(top_context) == default_locale
-
-
-async def test_multiple_contexts(bidi_session, new_tab, get_current_locale,
-        default_locale, some_locale):
+async def test_contexts(
+    bidi_session,
+    new_tab,
+    some_locale,
+    assert_locale_against_default,
+    assert_locale_against_value,
+):
     new_context = await bidi_session.browsing_context.create(type_hint="tab")
 
     
     await bidi_session.emulation.set_locale_override(
-        contexts=[new_tab["context"], new_context["context"]],
-        locale=some_locale
+        contexts=[new_tab["context"]], locale=some_locale
     )
 
     
-    assert await get_current_locale(new_tab) == some_locale
-    assert await get_current_locale(new_context) == some_locale
+    await assert_locale_against_value(some_locale, new_tab)
+    await assert_locale_against_default(new_context)
 
     
     await bidi_session.emulation.set_locale_override(
-        contexts=[new_tab["context"], new_context["context"]],
-        locale=None)
+        contexts=[new_tab["context"]], locale=None
+    )
 
     
-    assert await get_current_locale(new_tab) == default_locale
-    assert await get_current_locale(new_context) == default_locale
+    await assert_locale_against_default(new_tab)
+    await assert_locale_against_default(new_context)
+
+
+async def test_multiple_contexts(
+    bidi_session,
+    new_tab,
+    assert_locale_against_value,
+    assert_locale_against_default,
+    some_locale,
+):
+    new_context = await bidi_session.browsing_context.create(type_hint="tab")
+
+    
+    await bidi_session.emulation.set_locale_override(
+        contexts=[new_tab["context"], new_context["context"]], locale=some_locale
+    )
+
+    
+    await assert_locale_against_value(some_locale, new_tab)
+    await assert_locale_against_value(some_locale, new_context)
+
+    
+    await bidi_session.emulation.set_locale_override(
+        contexts=[new_tab["context"], new_context["context"]], locale=None
+    )
+
+    
+    await assert_locale_against_default(new_tab)
+    await assert_locale_against_default(new_context)
 
 
 @pytest.mark.parametrize("domain", ["", "alt"], ids=["same_origin", "cross_origin"])
 async def test_iframe(
     bidi_session,
     new_tab,
-    get_current_locale,
     some_locale,
     domain,
     inline,
     another_locale,
+    assert_locale_against_value,
 ):
     
     await bidi_session.emulation.set_locale_override(
@@ -66,7 +75,7 @@ async def test_iframe(
     )
 
     
-    assert await get_current_locale(new_tab) == some_locale
+    await assert_locale_against_value(some_locale, new_tab)
 
     iframe_url = inline("<div id='in-iframe'>foo</div>", domain=domain)
     page_url = inline(f"<iframe src='{iframe_url}'></iframe>")
@@ -82,11 +91,11 @@ async def test_iframe(
     iframe = contexts[0]["children"][0]
 
     
-    assert await get_current_locale(iframe) == some_locale
+    await assert_locale_against_value(some_locale, iframe)
 
     sandbox_name = "test"
     
-    assert await get_current_locale(iframe, sandbox_name) == some_locale
+    await assert_locale_against_value(some_locale, iframe, sandbox_name)
 
     
     await bidi_session.emulation.set_locale_override(
@@ -94,33 +103,37 @@ async def test_iframe(
     )
 
     
-    assert await get_current_locale(iframe) == another_locale
+    await assert_locale_against_value(another_locale, iframe)
     
-    assert await get_current_locale(iframe, sandbox_name) == another_locale
+    await assert_locale_against_value(another_locale, iframe, sandbox_name)
 
 
 async def test_locale_override_applies_to_new_sandbox(
-    bidi_session, new_tab, some_locale, get_current_locale
+    bidi_session, new_tab, some_locale, assert_locale_against_value
 ):
     await bidi_session.emulation.set_locale_override(
         contexts=[new_tab["context"]], locale=some_locale
     )
 
     
-    assert await get_current_locale(new_tab, "test") == some_locale
+    await assert_locale_against_value(some_locale, new_tab, "test")
 
 
 async def test_locale_override_applies_to_existing_sandbox(
-    bidi_session, new_tab, default_locale, another_locale, get_current_locale
+    bidi_session,
+    new_tab,
+    another_locale,
+    assert_locale_against_value,
+    assert_locale_against_default,
 ):
     sandbox_name = "test"
 
     
-    assert await get_current_locale(new_tab, sandbox_name) == default_locale
+    await assert_locale_against_default(new_tab, sandbox_name)
 
     await bidi_session.emulation.set_locale_override(
         contexts=[new_tab["context"]], locale=another_locale
     )
 
     
-    assert await get_current_locale(new_tab, sandbox_name) == another_locale
+    await assert_locale_against_value(another_locale, new_tab, sandbox_name)
