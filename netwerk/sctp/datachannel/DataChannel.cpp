@@ -1202,6 +1202,10 @@ void DataChannelConnection::EndOfStream(const RefPtr<DataChannel>& aChannel) {
           [this, self = RefPtr<DataChannelConnection>(this), channel = aChannel,
            stream = aChannel->mStream]() {
             if (channel->mSendStreamNeedsReset) {
+              if (channel->mEndOfStreamCalled) {
+                return;
+              }
+              channel->mEndOfStreamCalled = true;
               DC_INFO((
                   "%p: Need to send a reset for channel %p, closing gracefully",
                   this, channel.get()));
@@ -1543,6 +1547,10 @@ void DataChannel::AnnounceClosed() {
       NS_NewCancelableRunnableFunction(
           "DataChannel::AnnounceClosed",
           [this, self = RefPtr<DataChannel>(this), connection = mConnection]() {
+            if (mAnnouncedClosed) {
+              return;
+            }
+            mAnnouncedClosed = true;
             
             
             if (mStream != INVALID_STREAM) {
