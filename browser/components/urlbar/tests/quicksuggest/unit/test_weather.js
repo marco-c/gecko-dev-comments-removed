@@ -71,9 +71,7 @@ add_task(async function disableAndEnable() {
 });
 
 async function doBasicDisableAndEnableTest(pref) {
-  let cleanup = GeolocationTestUtils.stubGeolocation(
-    GeolocationTestUtils.SAN_FRANCISCO
-  );
+  let cleanup = GeolocationTestUtils.stubGeolocation();
 
   
   UrlbarPrefs.set(pref, false);
@@ -128,9 +126,7 @@ add_task(async function noSuggestion() {
 
 
 add_task(async function geolocationSuggestionNoRegion() {
-  let cleanup = GeolocationTestUtils.stubGeolocation(
-    GeolocationTestUtils.SAN_FRANCISCO
-  );
+  let cleanup = GeolocationTestUtils.stubGeolocation();
 
   let { suggestions } = MerinoTestUtils.server.response.body;
   let s = { ...MerinoTestUtils.WEATHER_SUGGESTION };
@@ -163,9 +159,7 @@ add_task(async function geolocationSuggestionNoRegion() {
 
 
 add_task(async function urlAlreadyInHistory() {
-  let cleanup = GeolocationTestUtils.stubGeolocation(
-    GeolocationTestUtils.SAN_FRANCISCO
-  );
+  let cleanup = GeolocationTestUtils.stubGeolocation();
 
   
   let suggestionVisit = {
@@ -319,9 +313,7 @@ async function doLocaleTest({ shouldRunTask, osUnit, unitsByLocale }) {
       
       skipSuggestReset: true,
       callback: async () => {
-        let cleanup = GeolocationTestUtils.stubGeolocation(
-          GeolocationTestUtils.SAN_FRANCISCO
-        );
+        let cleanup = GeolocationTestUtils.stubGeolocation();
 
         info("Checking locale: " + locale);
         await check_results({
@@ -497,9 +489,7 @@ async function doRegionTest({ homeRegion, locale, query, expectedTitleL10n }) {
 
 
 add_task(async function dismissal() {
-  let cleanup = GeolocationTestUtils.stubGeolocation(
-    GeolocationTestUtils.SAN_FRANCISCO
-  );
+  let cleanup = GeolocationTestUtils.stubGeolocation();
 
   await doDismissAllTest({
     result: QuickSuggestTestUtils.weatherResult(),
@@ -519,9 +509,7 @@ add_task(async function dismissal() {
 
 
 add_task(async function nimbusOverride() {
-  let cleanup = GeolocationTestUtils.stubGeolocation(
-    GeolocationTestUtils.SAN_FRANCISCO
-  );
+  let cleanup = GeolocationTestUtils.stubGeolocation();
   let defaultResult = QuickSuggestTestUtils.weatherResult();
 
   
@@ -840,9 +828,7 @@ add_task(async function cityRegionQueries() {
 
 
 add_task(async function noCityQuery() {
-  let cleanup = GeolocationTestUtils.stubGeolocation(
-    GeolocationTestUtils.SAN_FRANCISCO
-  );
+  let cleanup = GeolocationTestUtils.stubGeolocation();
 
   await doCityTest({
     desc: "No city in query, so only one call to Merino should be made and Merino does the geolocation internally",

@@ -23,7 +23,7 @@ add_setup(async function () {
     ],
   });
   await MerinoTestUtils.initWeather();
-  GeolocationTestUtils.stubGeolocation(GeolocationTestUtils.SAN_FRANCISCO);
+  GeolocationTestUtils.stubGeolocation();
 });
 
 
