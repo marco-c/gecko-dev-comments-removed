@@ -1,8 +1,8 @@
-
+<!-- Testing quirks mode. -->
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=93077
+-->
 <head>
   <title>Test for Bug 93077</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,7 +18,7 @@
 <p id=below></p>
 <pre id="test">
 <script type="application/javascript">
-/** Test for Bug 93077 **/
+/** Test for Bug 93077 */
 ["#top", "#TOP", "#Top"].forEach(function(fragid) {
   document.getElementById("below").scrollIntoView()
   isnot(window.scrollY, 0)

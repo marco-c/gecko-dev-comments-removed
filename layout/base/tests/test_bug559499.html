@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html style="background:yellow">
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=559499
+-->
 <head>
   <title>Test for Bug 559499</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -14,7 +14,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 559499 **/
+/** Test for Bug 559499 */
 
 is(document.elementFromPoint(50, 50), document.body, "Able to hit body");
 document.documentElement.style.display = "table";

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=379741
+-->
 <head>
   <title>Test for Bug 379741</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -16,7 +16,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 379741 **/
+/** Test for Bug 379741 */
 
 var cs = getComputedStyle(document.getElementById("noframe"), "");
 ok(cs.marginTop == "0" || cs.marginTop == "0px",

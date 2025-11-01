@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=716226
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 716226</title>
@@ -21,7 +21,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 716226 **/
+/** Test for Bug 716226 */
 var sheet = $("s").sheet;
 var rules = sheet.cssRules;
 is(rules.length, 1, "Should have one keyframes rule");

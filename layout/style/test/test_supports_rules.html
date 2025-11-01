@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=649740
+-->
 <head>
   <title>Test for Bug 649740</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -17,7 +17,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 649740 **/
+/** Test for Bug 649740 */
 
 function condition(s) {
   return s.replace(/^@supports\s*/, '').replace(/ \s*{\s*}\s*$/, '');

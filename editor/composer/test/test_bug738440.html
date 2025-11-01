@@ -1,7 +1,7 @@
 <!doctype html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=738440
+-->
 <title>Test for Bug 738440</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 <link rel="stylesheet" href="/tests/SimpleTest/test.css" />
@@ -9,7 +9,7 @@
 <div contenteditable></div>
 <script>
 
-/** Test for Bug 738440 **/
+/** Test for Bug 738440 */
 document.execCommand("stylewithcss", false, "true");
 is(document.queryCommandState("stylewithcss"), true,
    "setting stylewithcss to true should cause its state to be true");

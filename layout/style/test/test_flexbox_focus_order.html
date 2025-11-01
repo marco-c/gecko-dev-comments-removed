@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=812687
+-->
 <head>
   <title>Test for Bug 812687: focus order of reordered flex items</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,12 +22,12 @@
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=812687">Mozilla Bug 812687</a>
 <p id="display">
   <a href="#" id="beforeContainer">Link before container</a>
-  
-
-
-
-
-
+  <!-- This flex container's children are reordered visually with the "order"
+       CSS property, but their focus order (when tabbing through them) should
+       match their DOM order. So, #focus1 should receive focus before the other
+       flex items, even though it isn't visually the first flex item.  And so
+       on, up to #focus5, which is visually first (due to its negative "order"
+       value) but should be focused last (due to being last in the DOM). -->
   <div class="container">
     <a href="#" id="focus1">1</a>
     <div><a href="#" id="focus2">2</a></div>
@@ -41,7 +41,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 812687 **/
+/** Test for Bug 812687 */
 
 const gExpectedFocusedIds = [
   "focus1",

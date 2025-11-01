@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=332636
+-->
 <head>
   <title>Test for Bug 332636</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -13,20 +13,20 @@
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=332636">Mozilla Bug 332636</a>
 <p id="display"></p>
 <div id="content">
-  <div id="edit0" contenteditable="true">axb</div>
-  <div id="edit1" contenteditable="true">a&#x0308;b</div>
-  <div id="edit2" contenteditable="true">a&#x10400;b</div>
-  <div id="edit3" contenteditable="true">a&#x10a0f;b</div>
+  <div id="edit0" contenteditable="true">axb</div><!-- reference: plane 0 base character -->
+  <div id="edit1" contenteditable="true">a&#x0308;b</div><!-- reference: plane 0 diacritic -->
+  <div id="edit2" contenteditable="true">a&#x10400;b</div><!-- plane 1 base character -->
+  <div id="edit3" contenteditable="true">a&#x10a0f;b</div><!-- plane 1 diacritic -->
 
-  <div id="edit0b" contenteditable="true">axb</div>
-  <div id="edit1b" contenteditable="true">a&#x0308;b</div>
-  <div id="edit2b" contenteditable="true">a&#x10400;b</div>
-  <div id="edit3b" contenteditable="true">a&#x10a0f;b</div>
+  <div id="edit0b" contenteditable="true">axb</div><!-- reference: plane 0 base character -->
+  <div id="edit1b" contenteditable="true">a&#x0308;b</div><!-- reference: plane 0 diacritic -->
+  <div id="edit2b" contenteditable="true">a&#x10400;b</div><!-- plane 1 base character -->
+  <div id="edit3b" contenteditable="true">a&#x10a0f;b</div><!-- plane 1 diacritic -->
 </div>
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 332636 **/
+/** Test for Bug 332636 */
 
 SimpleTest.waitForExplicitFinish();
 addLoadEvent(runTest);

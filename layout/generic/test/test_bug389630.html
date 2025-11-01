@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=389630
+-->
 <head>
   <title>Test for Bug 389630</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -17,7 +17,7 @@
 <script class="testbody" type="text/javascript">
  function boom()
 {
-/** Test for Bug 389630 **/
+/** Test for Bug 389630 */
   document.getElementById("div").className = "";
   ok(true, "Should not crash");
   SimpleTest.finish();

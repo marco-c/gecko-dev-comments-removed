@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=666446
+-->
 <head>
   <title>Test for Bug 666446 - Animated Raster Images inside of SVG Frames</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -12,7 +12,7 @@
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
 </head>
 
-
+<!--  Make sure embed element is snapped to an exact pixel. -->
 <div class="bug-header" style="height: 100px;">
   <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=666446">
   Mozilla Bug 666446: lots of animated gifs swamp us with paint events
@@ -23,11 +23,11 @@
 <div id="content">
   <div id="referenceDiv" style="height: 40px; width: 40px;
                                 display: none; background: #2aff00"></div>
-    
-
-
-
-
+    <!--
+        We use <embed> here instead of <img> because the <img> tag utilizes
+        the VectorImage class for SVG, whereas in this test, we are testing
+        RasterImage.
+     -->
   <embed id="embeddedSVG" src="animation.svg" type="image/svg+xml"
          style="height: 40px; width: 40px; display: none;"/>
 </div>
@@ -35,7 +35,7 @@
 <pre id="test">
 <script type="text/javascript">
 
-/** Test for Bug 666446 SVGImageFrame/RasterImage**/
+/** Test for Bug 666446 SVGImageFrame/RasterImage*/
 
 const FAILURE_TIMEOUT = 120000; // Fail early after 120 seconds (2 minutes)
 

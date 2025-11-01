@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1320229
 
-
-
-
-
-
+Checks if a user can paste a password longer than `maxlength` and if the field
+is then marked as `tooLong`.
+-->
 <head>
   <title>Test pasting text longer than maxlength</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,7 +22,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 1320229 **/
+/** Test for Bug 1320229 */
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(async function() {
   await SpecialPowers.pushPrefEnv({"set": [["editor.truncate_user_pastes", false]]});

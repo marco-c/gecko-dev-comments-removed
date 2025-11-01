@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1490890
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1490890</title>
@@ -29,7 +29,7 @@
   <div id="content">
     <div id="flex">
       <div id="overflowAuto">
-        
+        <!-- Populated by test JS below: -->
         <div id="tall"></div>
       </div>
       <div id="testNode">abc</div>
@@ -40,7 +40,7 @@
 <script type="application/javascript">
 "use strict";
 
-/** Test for Bug 1490890 **/
+/** Test for Bug 1490890 */
 
 /**
  * This test checks how many reflows are required, when we make a change inside

@@ -1,12 +1,12 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!DOCTYPE html>
 <html>
-  
-
-
+  <!--
+       https://bugzilla.mozilla.org/show_bug.cgi?id=644768
+     -->
   <head>
     <title>Test for Bug 644768</title>
     <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,10 +18,10 @@
     <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=644768">Mozilla Bug 644768</a>
     <p id="display"></p>
     <div id="content">
-      
-
-
-
+      <!-- test text is
+           == زادروزها ==
+           * [[۱۳۰۷]]
+         -->
       <textarea id="testInput" dir="rtl" cols="80" rows="25" style="-moz-appearance:none">
 
 == &#x0632;&#x0627;&#x062F;&#x0631;&#x0648;&#x0632;&#x0647;&#x0627; ==
@@ -30,7 +30,7 @@
     <pre id="test">
       <script class="testbody" type="text/javascript">
 
-      /** Test for Bug 644768 **/
+      /** Test for Bug 644768 */
 
       SimpleTest.waitForExplicitFinish();
 

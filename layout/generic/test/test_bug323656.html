@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=323656
+-->
 <head>
   <title>Test for Bug 323656</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -39,7 +39,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 323656 **/
+/** Test for Bug 323656 */
 var s = document.defaultView.getComputedStyle($("testOption"));
 is(s.borderRightColor, "rgb(0, 128, 0)", "Inheritance broken");
 

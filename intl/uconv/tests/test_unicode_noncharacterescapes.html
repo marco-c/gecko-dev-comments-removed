@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=445886
+-->
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
   <title>Test for Unicode non-characters</title>
@@ -15,7 +15,7 @@
 
 /* eslint-disable no-eval */
 
-/** Test that unicode non-characters are not discarded **/
+/** Test that unicode non-characters are not discarded */
 function test()
 {
     is($("display").innerHTML,"All good.", "Noncharacters not stripped");

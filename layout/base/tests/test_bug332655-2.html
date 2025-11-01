@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=332655
+-->
 <head>
   <title>Test for Bug 332655</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -15,12 +15,12 @@
 <p id="display"></p>
 <div id="content">
 <input type="text" id="testInput"
-       style="-moz-appearance: none"> 
+       style="-moz-appearance: none"> <!-- bug 1234659 workaround -->
 </div>
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 332655 **/
+/** Test for Bug 332655 */
 
 SimpleTest.waitForExplicitFinish();
 

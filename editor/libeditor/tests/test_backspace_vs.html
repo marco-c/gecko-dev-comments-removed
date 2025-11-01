@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1216427
+-->
 <head>
   <title>Test for Bug 1216427</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -13,36 +13,36 @@
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1216427">Mozilla Bug 1216427</a>
 <p id="display"></p>
 <div id="content">
-  <div id="edit1" contenteditable="true">a&#x263a;&#xfe0f;b</div>
-  <div id="edit2" contenteditable="true">a&#x1f310;&#xfe0e;b</div>
-  <div id="edit3" contenteditable="true">a&#x3402;&#xE0100;b</div>
-  <div id="edit4" contenteditable="true">a&#x20000;&#xE0101;b</div>
-  <div id="edit5" contenteditable="true">a&#x263a;&#xfe01;&#xfe02;&#xfe03;b</div>
-  <div id="edit6" contenteditable="true">a&#x20000;&#xE0100;&#xE0101;&#xE0102;b</div>
-  
+  <div id="edit1" contenteditable="true">a&#x263a;&#xfe0f;b</div><!-- BMP symbol with VS16 -->
+  <div id="edit2" contenteditable="true">a&#x1f310;&#xfe0e;b</div><!-- plane 1 symbol with VS15 -->
+  <div id="edit3" contenteditable="true">a&#x3402;&#xE0100;b</div><!-- BMP ideograph with VS17 -->
+  <div id="edit4" contenteditable="true">a&#x20000;&#xE0101;b</div><!-- SMP ideograph with VS18 -->
+  <div id="edit5" contenteditable="true">a&#x263a;&#xfe01;&#xfe02;&#xfe03;b</div><!-- BMP symbol with extra VSes -->
+  <div id="edit6" contenteditable="true">a&#x20000;&#xE0100;&#xE0101;&#xE0102;b</div><!-- SMP symbol with extra VSes -->
+  <!-- The Regional Indicator combinations here were supported by Apple Color Emoji
+       even prior to the major extension of coverage in the 10.10.5 timeframe. -->
+  <div id="edit7" contenteditable="true">a&#x1F1E8;&#x1F1F3;b</div><!-- Regional Indicator flag: CN -->
+  <div id="edit8" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;b</div><!-- two RI flags: CN, DE -->
+  <div id="edit9" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;b</div><!-- three RI flags: CN, DE, ES -->
+  <div id="edit10" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;b</div><!-- four RI flags: CN, DE, ES, FR -->
+  <div id="edit11" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;&#x1F1EC;&#x1F1E7;b</div><!-- five RI flags: CN, DE, ES, FR, GB -->
 
-  <div id="edit7" contenteditable="true">a&#x1F1E8;&#x1F1F3;b</div>
-  <div id="edit8" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;b</div>
-  <div id="edit9" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;b</div>
-  <div id="edit10" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;b</div>
-  <div id="edit11" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;&#x1F1EC;&#x1F1E7;b</div>
-
-  <div id="edit1b" contenteditable="true">a&#x263a;&#xfe0f;b</div>
-  <div id="edit2b" contenteditable="true">a&#x1f310;&#xfe0e;b</div>
-  <div id="edit3b" contenteditable="true">a&#x3402;&#xE0100;b</div>
-  <div id="edit4b" contenteditable="true">a&#x20000;&#xE0101;b</div>
-  <div id="edit5b" contenteditable="true">a&#x263a;&#xfe01;&#xfe02;&#xfe03;b</div>
-  <div id="edit6b" contenteditable="true">a&#x20000;&#xE0100;&#xE0101;&#xE0102;b</div>
-  <div id="edit7b" contenteditable="true">a&#x1F1E8;&#x1F1F3;b</div>
-  <div id="edit8b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;b</div>
-  <div id="edit9b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;b</div>
-  <div id="edit10b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;b</div>
-  <div id="edit11b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;&#x1F1EC;&#x1F1E7;b</div>
+  <div id="edit1b" contenteditable="true">a&#x263a;&#xfe0f;b</div><!-- BMP symbol with VS16 -->
+  <div id="edit2b" contenteditable="true">a&#x1f310;&#xfe0e;b</div><!-- plane 1 symbol with VS15 -->
+  <div id="edit3b" contenteditable="true">a&#x3402;&#xE0100;b</div><!-- BMP ideograph with VS17 -->
+  <div id="edit4b" contenteditable="true">a&#x20000;&#xE0101;b</div><!-- SMP ideograph with VS18 -->
+  <div id="edit5b" contenteditable="true">a&#x263a;&#xfe01;&#xfe02;&#xfe03;b</div><!-- BMP symbol with extra VSes -->
+  <div id="edit6b" contenteditable="true">a&#x20000;&#xE0100;&#xE0101;&#xE0102;b</div><!-- SMP symbol with extra VSes -->
+  <div id="edit7b" contenteditable="true">a&#x1F1E8;&#x1F1F3;b</div><!-- Regional Indicator flag: CN -->
+  <div id="edit8b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;b</div><!-- two RI flags: CN, DE -->
+  <div id="edit9b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;b</div><!-- three RI flags: CN, DE, ES -->
+  <div id="edit10b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;b</div><!-- four RI flags: CN, DE, ES, FR -->
+  <div id="edit11b" contenteditable="true">a&#x1F1E8;&#x1F1F3;&#x1F1E9;&#x1F1EA;&#x1F1EA;&#x1F1F8;&#x1F1EB;&#x1F1F7;&#x1F1EC;&#x1F1E7;b</div><!-- five RI flags: CN, DE, ES, FR, GB -->
 </div>
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 1216427 **/
+/** Test for Bug 1216427 */
 
 SimpleTest.waitForExplicitFinish();
 addLoadEvent(runTest);

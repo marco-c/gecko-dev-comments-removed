@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=978833
+-->
 <head>
   <title>Test for Bug 978833</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -29,7 +29,7 @@ var p = document.getElementById("display");
 var cs = getComputedStyle(p, "");
 var style = document.getElementById("style").sheet;
 
-/** Test for Bug 978833 **/
+/** Test for Bug 978833 */
 function test_bug978833() {
   var kfs = style.cssRules[0];
   var kf = kfs.cssRules[0];
