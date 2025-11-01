@@ -76,7 +76,7 @@ TEST(UriTemplate, UnicodeIsUTF8PercentEncoded)
   ASSERT_TRUE(builder);
 
   
-  ASSERT_EQ(builder->Set("name"_ns, u8"München"_ns), NS_OK);
+  ASSERT_EQ(builder->Set("name"_ns, "München"_ns), NS_OK);
 
   nsCString result;
   builder->Build(&result);
