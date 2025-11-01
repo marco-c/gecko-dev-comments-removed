@@ -11,7 +11,6 @@
 
 #include "TextDrawTarget.h"
 #include "gfxContext.h"
-#include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/Selection.h"

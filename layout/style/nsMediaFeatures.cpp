@@ -30,9 +30,6 @@
 #include "nsIWidget.h"
 #include "nsPresContext.h"
 #include "nsStyleConsts.h"
-#ifdef XP_WIN
-#  include "mozilla/WindowsVersion.h"
-#endif
 
 using namespace mozilla;
 using mozilla::dom::DisplayMode;
@@ -289,6 +286,11 @@ StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(
                             : aDocument->PreferredColorScheme();
   return scheme == ColorScheme::Dark ? StylePrefersColorScheme::Dark
                                      : StylePrefersColorScheme::Light;
+}
+
+bool Gecko_MediaFeatures_MacRTL(const Document* aDocument) {
+  auto* widget = nsContentUtils::WidgetForDocument(aDocument);
+  return widget && widget->IsMacTitlebarDirectionRTL();
 }
 
 

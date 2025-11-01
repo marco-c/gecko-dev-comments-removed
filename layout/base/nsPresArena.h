@@ -14,7 +14,6 @@
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/MemoryChecking.h"  
 #include "mozilla/MemoryReporting.h"
 #include "nsHashKeys.h"
