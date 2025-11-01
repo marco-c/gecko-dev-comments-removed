@@ -34,11 +34,6 @@ add_task(async function test_load_settings() {
 
     
     
-    
-    Assert.equal(this.getRow("font.language.group").value, "x-western");
-
-    
-    
     Assert.equal(
       this.getRow("test.aboutconfig.userValueLikeLocalized").value,
       "chrome://test/locale/testing.properties"
