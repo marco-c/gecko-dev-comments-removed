@@ -1772,15 +1772,6 @@ void CacheEntry::DoomAlreadyRemoved() {
 
   
   
-  LOG(("DoomAlreadyRemoved [entry=%p removed]", this));
-  if (mEnhanceID.EqualsLiteral("dict:")) {
-    DictionaryCache::RemoveOriginFor(mURI);
-  } else {
-    DictionaryCache::RemoveDictionaryFor(mURI);
-  }
-
-  
-  
   mPinningKnown = true;
 
   

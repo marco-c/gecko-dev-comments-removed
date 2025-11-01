@@ -644,7 +644,7 @@ DictionaryCacheEntry::OnCacheEntryAvailable(nsICacheEntry* entry, bool isNew,
 
 
 void DictionaryOriginReader::Start(
-    bool aCreate, DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
+    DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
     ExtContentPolicyType aType, DictionaryCache* aCache,
     const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback) {
   mOrigin = aOrigin;
@@ -668,7 +668,7 @@ void DictionaryOriginReader::Start(
                     PromiseFlatCString(aKey).get(), this));
     DictionaryCache::sCacheStorage->AsyncOpenURIString(
         aKey, META_DICTIONARY_PREFIX,
-        aCreate
+        aOrigin
             ? nsICacheStorage::OPEN_NORMALLY |
                   nsICacheStorage::CHECK_MULTITHREADED
             : nsICacheStorage::OPEN_READONLY | nsICacheStorage::OPEN_SECRETLY |
@@ -858,13 +858,12 @@ already_AddRefed<DictionaryCacheEntry> DictionaryCache::AddEntry(
 
       
       aDictEntry->SetOrigin(origin);
-      DICTIONARY_LOG(("Creating cache entry for origin %s", prepath.get()));
 
       
       RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
       
       reader->Start(
-          true, origin, prepath, aURI, ExtContentPolicy::TYPE_OTHER, this,
+          origin, prepath, aURI, ExtContentPolicy::TYPE_OTHER, this,
           [entry = RefPtr(aDictEntry)](
               bool, DictionaryCacheEntry* aDict) {  
                                                     
@@ -918,7 +917,7 @@ void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
 
 void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
   DICTIONARY_LOG(
-      ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
+      ("Removing dictionary for %80s", PromiseFlatCString(aKey).get()));
 
   nsCOMPtr<nsIURI> uri;
   if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), aKey))) {
@@ -929,34 +928,6 @@ void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
     if (auto origin = mDictionaryCache.Lookup(prepath)) {
       origin.Data()->RemoveEntry(aKey);
     }
-  }
-}
-
-
-void DictionaryCache::RemoveOriginFor(const nsACString& aKey) {
-  RefPtr<DictionaryCache> cache = GetInstance();
-  DICTIONARY_LOG(
-      ("Removing dictionary origin %s", PromiseFlatCString(aKey).get()));
-  NS_DispatchToMainThread(NewRunnableMethod<const nsCString>(
-      "DictionaryCache::RemoveOriginFor", cache, &DictionaryCache::RemoveOrigin,
-      aKey));
-}
-
-
-void DictionaryCache::RemoveOrigin(const nsACString& aKey) {
-  DICTIONARY_LOG(("Removing origin for %80s", PromiseFlatCString(aKey).get()));
-
-  nsCOMPtr<nsIURI> uri;
-  if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), aKey))) {
-    return;
-  }
-  nsAutoCString prepath;
-  if (NS_SUCCEEDED(GetDictPath(uri, prepath))) {
-    if (auto origin = mDictionaryCache.Lookup(prepath)) {
-      origin.Data()->AssertEmpty();
-    }
-
-    mDictionaryCache.Remove(prepath);
   }
 }
 
@@ -1031,9 +1002,10 @@ void DictionaryCache::RemoveAllDictionaries() {
 
 
 void DictionaryCache::GetDictionaryFor(
-    nsIURI* aURI, ExtContentPolicyType aType, nsHttpChannel* aChan,
-    void (*aSuspend)(nsHttpChannel*),
+    nsIURI* aURI, ExtContentPolicyType aType, bool& aAsync,
+    nsHttpChannel* aChan, void (*aSuspend)(nsHttpChannel*),
     const std::function<nsresult(bool, DictionaryCacheEntry*)>& aCallback) {
+  aAsync = false;
   
   
   
@@ -1063,10 +1035,9 @@ void DictionaryCache::GetDictionaryFor(
       RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
       
       
-      DICTIONARY_LOG(("Suspending to get Dictionary headers"));
+      aAsync = true;
       aSuspend(aChan);
-      reader->Start(false, existing.Data(), prepath, aURI, aType, this,
-                    aCallback);
+      reader->Start(existing.Data(), prepath, aURI, aType, this, aCallback);
     }
     return;
   }
@@ -1102,9 +1073,8 @@ void DictionaryCache::GetDictionaryFor(
     RefPtr<DictionaryOriginReader> reader = new DictionaryOriginReader();
     
     
-    DICTIONARY_LOG(("Suspending to get Dictionary headers"));
-    aSuspend(aChan);
-    reader->Start(false, origin, prepath, aURI, aType, this, aCallback);
+    reader->Start(origin, prepath, aURI, aType, this, aCallback);
+    aAsync = true;
     return;
   }
   
@@ -1331,16 +1301,10 @@ void DictionaryOrigin::DumpEntries() {
 void DictionaryOrigin::Clear() {
   mEntries.Clear();
   mPendingEntries.Clear();
-  mPendingRemove.Clear();
   
-  if (mEntry) {
-    
-    
-    NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-        "DictionaryOrigin::Clear",
-        [entry = mEntry]() { entry->AsyncDoom(nullptr); }));
-  }
-  DictionaryCache::RemoveOriginFor(mOrigin);  
+  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "DictionaryOrigin::Clear",
+      [entry = mEntry]() { entry->AsyncDoom(nullptr); }));
 }
 
 
