@@ -344,13 +344,15 @@ class SingleTestMixin:
         if mozinfo.info["buildapp"] == "mobile/android":
             
             
+            from mozinfo.platforminfo import android_api_to_os_version
+
             mozinfo.update(
-                {"android_version": str(self.config.get("android_version", 24))}
+                {"android_version": str(self.config.get("android_version", 34))}
             )
             mozinfo.update(
                 {
-                    "os_version": mozinfo.platforminfo.android_api_to_os_version(
-                        self.config.get("android_version", 24)
+                    "os_version": android_api_to_os_version(
+                        self.config.get("android_version", 34)
                     )
                 }
             )
