@@ -2929,6 +2929,10 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
 void UnmarkGrayTracer::unmark(JS::GCCellPtr cell) {
   MOZ_ASSERT(stack.empty());
 
+  
+  
+  
+
   onChild(cell, "unmarking root");
 
   while (!stack.empty() && !oom) {
@@ -2940,7 +2944,6 @@ void UnmarkGrayTracer::unmark(JS::GCCellPtr cell) {
     
     stack.clear();
     runtime()->gc.setGrayBitsInvalid();
-    return;
   }
 }
 
