@@ -260,13 +260,13 @@ bool GPUProcessManager::IsProcessStable(const TimeStamp& aNow) {
   return mProcessStable;
 }
 
-bool GPUProcessManager::LaunchGPUProcess() {
+nsresult GPUProcessManager::LaunchGPUProcess() {
   if (mProcess) {
-    return true;
+    return NS_OK;
   }
 
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
-    return false;
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
   
@@ -291,9 +291,10 @@ bool GPUProcessManager::LaunchGPUProcess() {
   mProcess = new GPUProcessHost(this);
   if (!mProcess->Launch(std::move(extraArgs))) {
     DisableGPUProcess("Failed to launch GPU process");
+    return NS_ERROR_FAILURE;
   }
 
-  return true;
+  return NS_OK;
 }
 
 bool GPUProcessManager::IsGPUProcessLaunching() {
@@ -403,73 +404,41 @@ nsresult GPUProcessManager::EnsureGPUReady() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
+  if (mProcess && mProcess->IsConnected() && mGPUChild) {
+    MOZ_DIAGNOSTIC_ASSERT(mGPUChild->IsGPUReady());
+    return NS_OK;
+  }
+
   
+  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+    MOZ_DIAGNOSTIC_ASSERT(!mProcess);
+    MOZ_DIAGNOSTIC_ASSERT(!mGPUChild);
+    return NS_OK;
+  }
+
   
-  bool inShutdown = AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown);
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
 
-  while (true) {
-    
-    
-    if (!mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-      if (NS_WARN_IF(inShutdown)) {
-        return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-      }
-
-      if (!LaunchGPUProcess()) {
-        MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
-        return NS_OK;
-      }
-    }
-
-    if (mProcess && !mProcess->IsConnected()) {
-      if (NS_WARN_IF(inShutdown)) {
-        return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-      }
-
-      if (!mProcess->WaitForLaunch()) {
-        
-        
-        
-        MOZ_ASSERT(!mProcess);
-        MOZ_ASSERT(!mGPUChild);
-        continue;
-      }
-    }
-
-    
-    
-    if (!mGPUChild) {
-      break;
-    }
-
+  do {
     
     
     
     
     
-    if (mGPUChild->EnsureGPUReady()) {
+    
+    nsresult rv = LaunchGPUProcess();
+    if (NS_SUCCEEDED(rv) && mProcess->WaitForLaunch() && mGPUChild) {
+      MOZ_DIAGNOSTIC_ASSERT(mGPUChild->IsGPUReady());
       return NS_OK;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    OnProcessUnexpectedShutdown(mProcess);
-  }
+    MOZ_RELEASE_ASSERT(rv != NS_ERROR_ILLEGAL_DURING_SHUTDOWN);
+    MOZ_RELEASE_ASSERT(!mProcess);
+    MOZ_RELEASE_ASSERT(!mGPUChild);
+  } while (gfxConfig::IsEnabled(Feature::GPU_PROCESS));
 
-  MOZ_DIAGNOSTIC_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
-
-  
-  if (mTotalProcessAttempts == 0) {
-    if (NS_WARN_IF(inShutdown)) {
-      return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-    }
-    ResetProcessStable();
-  }
   return NS_OK;
 }
 
@@ -784,7 +753,7 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
   
   if (wantRestart && mProcess && mGPUChild) {
     mUnstableProcessAttempts = 1;
-    mGPUChild->MarkWaitForVarUpdate();
+    mGPUChild->EnsureGPUReady( true);
   }
 
   return true;

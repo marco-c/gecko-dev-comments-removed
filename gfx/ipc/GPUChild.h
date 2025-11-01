@@ -35,10 +35,9 @@ class GPUChild final : public mozilla::ipc::CrashReporterHelper<GPUChild>,
 
   void Init();
 
-  bool IsGPUReady() const { return mGPUReady && !mWaitForVarUpdate; }
+  bool IsGPUReady() const { return mGPUReady; }
 
-  bool EnsureGPUReady();
-  void MarkWaitForVarUpdate() { mWaitForVarUpdate = true; }
+  bool EnsureGPUReady(bool aForceSync = false);
 
   
   
@@ -112,7 +111,6 @@ class GPUChild final : public mozilla::ipc::CrashReporterHelper<GPUChild>,
   GPUProcessHost* mHost;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
   bool mGPUReady;
-  bool mWaitForVarUpdate = false;
   bool mUnexpectedShutdown = false;
   
   

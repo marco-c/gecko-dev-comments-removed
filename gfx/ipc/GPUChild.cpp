@@ -85,12 +85,12 @@ void GPUChild::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
   SendUpdateVar(aVar);
 }
 
-bool GPUChild::EnsureGPUReady() {
+bool GPUChild::EnsureGPUReady(bool aForceSync ) {
   
   
   
   
-  if (mGPUReady && !mWaitForVarUpdate) {
+  if (mGPUReady && !aForceSync) {
     return true;
   }
 
@@ -107,7 +107,6 @@ bool GPUChild::EnsureGPUReady() {
     mGPUReady = true;
   }
 
-  mWaitForVarUpdate = false;
   return true;
 }
 
