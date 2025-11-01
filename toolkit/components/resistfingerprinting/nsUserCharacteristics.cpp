@@ -589,7 +589,7 @@ void PopulateLanguages() {
   
   
   nsTArray<nsString> languages;
-  dom::Navigator::GetAcceptLanguages(languages);
+  dom::Navigator::GetAcceptLanguages(languages, nullptr);
   nsCString output = "["_ns;
 
   for (const auto& language : languages) {

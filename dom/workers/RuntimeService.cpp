@@ -1117,7 +1117,7 @@ void PrefLanguagesChanged(const char* , void* ) {
   AssertIsOnMainThread();
 
   nsTArray<nsString> languages;
-  Navigator::GetAcceptLanguages(languages);
+  Navigator::GetAcceptLanguages(languages, nullptr);
 
   RuntimeService* runtime = RuntimeService::GetService();
   if (runtime) {
@@ -1308,7 +1308,7 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
 
       
 
-      Navigator::GetAcceptLanguages(mNavigatorProperties.mLanguages);
+      Navigator::GetAcceptLanguages(mNavigatorProperties.mLanguages, nullptr);
       mNavigatorPropertiesLoaded = true;
     }
 

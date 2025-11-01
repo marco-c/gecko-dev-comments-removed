@@ -149,6 +149,11 @@ class Navigator final : public nsISupports, public nsWrapperCache {
 
   
   
+  
+  void ClearLanguageCache();
+
+  
+  
   void ClearPlatformCache();
 
   
@@ -220,7 +225,8 @@ class Navigator final : public nsISupports, public nsWrapperCache {
 
   StorageManager* Storage();
 
-  static void GetAcceptLanguages(nsTArray<nsString>& aLanguages);
+  static void GetAcceptLanguages(nsTArray<nsString>& aLanguages,
+                                 const nsCString* aLanguageOverride);
 
   dom::MediaCapabilities* MediaCapabilities();
   dom::MediaSession* MediaSession();

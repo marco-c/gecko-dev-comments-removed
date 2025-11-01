@@ -338,14 +338,19 @@ void Navigator::GetAppName(nsAString& aAppName) const {
 
 
 
-void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
+void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages,
+                                   const nsCString* aLanguageOverride) {
   MOZ_ASSERT(NS_IsMainThread());
 
   aLanguages.Clear();
 
   
   nsAutoCString acceptLang;
-  intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
+  if (aLanguageOverride) {
+    acceptLang.Assign(aLanguageOverride->get());
+  } else {
+    intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
+  }
 
   
   for (nsDependentCSubstring lang :
@@ -397,7 +402,18 @@ void Navigator::GetLanguage(nsAString& aLanguage) {
 }
 
 void Navigator::GetLanguages(nsTArray<nsString>& aLanguages) {
-  GetAcceptLanguages(aLanguages);
+  BrowsingContext* bc = mWindow ? mWindow->GetBrowsingContext() : nullptr;
+  if (bc) {
+    const nsCString& languageOverride = bc->Top()->GetLanguageOverride();
+
+    if (!languageOverride.IsEmpty()) {
+      GetAcceptLanguages(aLanguages, &languageOverride);
+
+      return;
+    }
+  }
+
+  GetAcceptLanguages(aLanguages, nullptr);
 
   
   
@@ -1978,6 +1994,11 @@ already_AddRefed<nsPIDOMWindowInner> Navigator::GetWindowFromGlobal(
 
 void Navigator::ClearPlatformCache() {
   Navigator_Binding::ClearCachedPlatformValue(this);
+}
+
+void Navigator::ClearLanguageCache() {
+  Navigator_Binding::ClearCachedLanguageValue(this);
+  Navigator_Binding::ClearCachedLanguagesValue(this);
 }
 
 nsresult Navigator::GetPlatform(nsAString& aPlatform, Document* aCallerDoc,
