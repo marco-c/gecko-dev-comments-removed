@@ -42,6 +42,11 @@ add_setup(() => {
       MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME
     );
   });
+
+  
+  
+  
+  sinon.stub(BackupService.prototype, "_startupTimeUnixSeconds").get(() => 0);
 });
 
 
@@ -183,6 +188,11 @@ add_task(async function test_BackupService_idle_no_backup_exists() {
     bs.createBackupOnIdleDispatch.calledOnce,
     "BackupService.createBackupOnIdleDispatch was called."
   );
+  Assert.equal(
+    bs.createBackupOnIdleDispatch.firstCall.args[0].reason,
+    "idle",
+    "Recorded that the backup was caused by being idle."
+  );
 
   sandbox.restore();
 });
@@ -251,6 +261,11 @@ add_task(async function test_BackupService_idle_expired_backup() {
     bs.createBackupOnIdleDispatch.calledOnce,
     "BackupService.createBackupOnIdleDispatch was called."
   );
+  Assert.equal(
+    bs.createBackupOnIdleDispatch.firstCall.args[0].reason,
+    "idle",
+    "Recorded that the backup was caused by being idle."
+  );
 
   sandbox.restore();
 });
@@ -287,9 +302,61 @@ add_task(async function test_BackupService_idle_time_travel() {
     "BackupService.createBackupOnIdleDispatch was called."
   );
   Assert.equal(
+    bs.createBackupOnIdleDispatch.firstCall.args[0].reason,
+    "idle",
+    "Recorded that the backup was caused by being idle."
+  );
+  Assert.equal(
     bs.state.lastBackupDate,
     null,
     "Should have cleared the last backup date."
+  );
+
+  sandbox.restore();
+});
+
+
+
+
+
+
+add_task(async function test_BackupService_idle_expired_backup() {
+  
+  let twentyFiveSecondsAgo = Date.now() - 25000;
+  let lastBackupPrefValue = Math.floor(twentyFiveSecondsAgo / 1000);
+
+  Services.prefs.setIntPref(
+    LAST_BACKUP_TIMESTAMP_PREF_NAME,
+    lastBackupPrefValue
+  );
+
+  let bs = new BackupService();
+  let sandbox = sinon.createSandbox();
+
+  
+  
+  
+  let twentySecondsAgo = Math.floor(twentyFiveSecondsAgo + 21);
+  sandbox.stub(bs, "_startupTimeUnixSeconds").get(() => twentySecondsAgo);
+
+  bs.initBackupScheduler();
+  Assert.equal(
+    bs.state.lastBackupDate,
+    lastBackupPrefValue,
+    "State should have cached lastBackupDate"
+  );
+
+  sandbox.stub(bs, "createBackupOnIdleDispatch");
+
+  bs.onIdle();
+  Assert.ok(
+    bs.createBackupOnIdleDispatch.calledOnce,
+    "BackupService.createBackupOnIdleDispatch was called."
+  );
+  Assert.equal(
+    bs.createBackupOnIdleDispatch.firstCall.args[0].reason,
+    "missed",
+    "Recorded that the backup was caused by missing the deadline."
   );
 
   sandbox.restore();
