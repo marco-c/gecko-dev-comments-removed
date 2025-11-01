@@ -168,6 +168,16 @@ class LocaleService final : public mozILocaleService,
 
   bool IsAppLocaleRTL();
 
+  
+
+
+  bool AlwaysAppendAccesskeys();
+
+  
+
+
+  bool InsertSeparatorBeforeAccesskeys();
+
   static bool LanguagesMatch(const nsACString& aRequested,
                              const nsACString& aAvailable);
 
