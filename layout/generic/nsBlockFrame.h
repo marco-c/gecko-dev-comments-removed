@@ -770,7 +770,7 @@ class nsBlockFrame : public nsContainerFrame {
                        bool aCollectFromSiblings);
 
   
-  static void DoRemoveOutOfFlowFrame(DestroyContext&, nsIFrame*);
+  static void DoRemoveFloats(DestroyContext&, nsIFrame*);
 
   
 
