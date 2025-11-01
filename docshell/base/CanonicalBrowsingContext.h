@@ -455,6 +455,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   static bool ShouldEnforceParentalControls();
 
+  void MaybeReconstructActiveEntryList();
+
  protected:
   
   void CanonicalDiscard();
