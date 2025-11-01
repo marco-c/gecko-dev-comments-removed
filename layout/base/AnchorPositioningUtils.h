@@ -83,6 +83,24 @@ class AnchorPosReferenceData {
 struct StylePositionArea;
 class WritingMode;
 
+struct AnchorPosDefaultAnchorCache {
+  
+  const nsIFrame* mAnchor = nullptr;
+  
+  const nsIFrame* mScrollContainer = nullptr;
+};
+
+
+
+struct AnchorPosResolutionCache {
+  
+  
+  AnchorPosReferenceData* mReferenceData = nullptr;
+  
+  
+  AnchorPosDefaultAnchorCache mDefaultAnchorCache;
+};
+
 enum class StylePositionTryFallbacksTryTacticKeyword : uint8_t;
 using StylePositionTryFallbacksTryTactic =
     CopyableTArray<StylePositionTryFallbacksTryTacticKeyword>;
