@@ -193,6 +193,8 @@ class SharedScriptCache final
   SharedScriptCache();
   void Init();
 
+  void UpdateDiskCache();
+
   
   
   static void LoadCompleted(SharedScriptCache*, ScriptLoadData&);
