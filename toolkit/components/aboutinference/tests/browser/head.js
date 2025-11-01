@@ -50,27 +50,16 @@ async function runInferenceProcess(remoteClients) {
 
 
 
-
 async function openAboutInference({
-  disabled,
   runInPage,
-  prefs,
+  prefs = [],
   runInference = false,
 }) {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      
-      ["browser.ml.enable", !disabled],
-      ["browser.ml.logLevel", "Debug"],
-      ["dom.webgpu.enabled", !disabled],
-      ["dom.webgpu.service-workers.enabled", !disabled],
-      ...(prefs ?? []),
-    ],
-  });
+  await SpecialPowers.pushPrefEnv({ set: prefs });
 
   let cleanup;
   let remoteClients;
-  
+
   if (runInference) {
     let set = await setupRemoteClient();
     cleanup = set.cleanup;
@@ -95,6 +84,14 @@ async function openAboutInference({
   );
 
   
+  if (prefs) {
+    info("Loading about:inference with prefs:");
+    for (const [key, value] of prefs) {
+      info(`  "${key}": ${value}`);
+    }
+  } else {
+    info("Loading about:inference with default prefs.");
+  }
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:inference");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 

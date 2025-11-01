@@ -8,6 +8,11 @@
 
 
 
+
+
+
+
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -74,6 +79,7 @@ function getNumThreadsArray() {
     (_, i) => i
   );
 }
+
 
 let engineParent = null;
 
@@ -460,25 +466,30 @@ function ts2str(ts) {
 
 
 async function updateStatus() {
+  const engineParent = await getEngineParent();
   if (!engineParent) {
+    
     return;
   }
 
-  let info;
+  
+
+
+  let statusByEngineId;
 
   
   try {
-    info = await engineParent.getStatus();
-  } catch (e) {
-    engineParent = null; 
-    info = new Map();
+    statusByEngineId = await engineParent.getStatusByEngineId();
+  } catch (error) {
+    console.error("Failed to get the engine status", error);
+    statusByEngineId = new Map();
   }
 
   
   let tableContainer = document.getElementById("statusTableContainer");
 
   
-  if (info.size === 0) {
+  if (statusByEngineId.size === 0) {
     tableContainer.innerHTML = ""; 
     if (updateStatusInterval) {
       clearInterval(updateStatusInterval); 
@@ -520,7 +531,7 @@ async function updateStatus() {
   let tbody = document.createElement("tbody");
 
   
-  for (let [engineId, engineInfo] of info.entries()) {
+  for (let [engineId, { status, options }] of statusByEngineId.entries()) {
     let row = document.createElement("tr");
 
     
@@ -529,23 +540,23 @@ async function updateStatus() {
     row.appendChild(engineIdCell);
 
     let statusCell = document.createElement("td");
-    statusCell.textContent = engineInfo.status;
+    statusCell.textContent = status;
     row.appendChild(statusCell);
 
     let modelIdCell = document.createElement("td");
-    modelIdCell.textContent = engineInfo.options?.modelId || "N/A";
+    modelIdCell.textContent = options?.modelId || "N/A";
     row.appendChild(modelIdCell);
 
     let dtypeCell = document.createElement("td");
-    dtypeCell.textContent = engineInfo.options?.dtype || "N/A";
+    dtypeCell.textContent = options?.dtype || "N/A";
     row.appendChild(dtypeCell);
 
     let deviceCell = document.createElement("td");
-    deviceCell.textContent = engineInfo.options?.device || "N/A";
+    deviceCell.textContent = options?.device || "N/A";
     row.appendChild(deviceCell);
 
     let timeoutCell = document.createElement("td");
-    timeoutCell.textContent = engineInfo.options?.timeoutMS || "N/A";
+    timeoutCell.textContent = options?.timeoutMS || "N/A";
     row.appendChild(timeoutCell);
 
     
@@ -1133,9 +1144,16 @@ function showTab(button) {
   button.setAttribute("selected", "true");
 }
 
+
+
+
 async function getEngineParent() {
   if (!engineParent) {
-    engineParent = await EngineProcess.getMLEngineParent();
+    try {
+      engineParent = await EngineProcess.getMLEngineParent();
+    } catch (error) {
+      return null;
+    }
   }
   return engineParent;
 }
