@@ -26,11 +26,13 @@
 using namespace mozilla;
 using namespace mozilla::interceptor::arm64;
 
+constexpr uintptr_t kExamplePCValue = 0x7ff959a7ea80;
+
 bool TestCheckForPCRelAdrp() {
   
   
   Result<LoadOrBranch, PCRelCheckError> result =
-      CheckForPCRel(0x7ff959a7ea80, 0xd0dfff11);
+      CheckForPCRel(kExamplePCValue, 0xd0dfff11);
   if (result.isErr()) {
     auto error = result.unwrapErr();
     TEST_FAILED(
@@ -65,7 +67,7 @@ bool TestCheckForPCRelAdr() {
   
   
   Result<LoadOrBranch, PCRelCheckError> result =
-      CheckForPCRel(0x7ff959a7ea80, 0x50dfff11);
+      CheckForPCRel(kExamplePCValue, 0x50dfff11);
 
   
   
@@ -90,8 +92,56 @@ bool TestCheckForPCRelAdr() {
   return true;
 }
 
+bool TestCheckForPCRelBlr() {
+  
+  Result<LoadOrBranch, PCRelCheckError> result =
+      CheckForPCRel(kExamplePCValue, 0xd63f0200);
+
+  if (!result.isErr()) {
+    TEST_FAILED(
+        "Unexpectedly recognized blr as a PC-relative instruction with a "
+        "decoder. If you have implemented a decoder for this instruction, "
+        "please update TestArm64Disassembler.cpp.\n");
+  }
+
+  auto error = result.unwrapErr();
+  if (error != PCRelCheckError::NoDecoderAvailable) {
+    TEST_FAILED(
+        "Failed to recognize blr as a PC-relative instruction, got "
+        "PCRelCheckError %d.\n",
+        error);
+  }
+
+  TEST_PASS(
+      "Properly recognized blr as a PC-relative instruction without a "
+      "decoder.\n");
+  return true;
+}
+
+bool TestCheckForPCRelBr() {
+  
+  Result<LoadOrBranch, PCRelCheckError> result =
+      CheckForPCRel(kExamplePCValue, 0xd61f0200);
+
+  if (result.isErr()) {
+    auto error = result.unwrapErr();
+    if (error != PCRelCheckError::InstructionNotPCRel) {
+      TEST_FAILED(
+          "Failed to recognize br as a non-PC-relative instruction, got "
+          "PCRelCheckError %d.\n",
+          error);
+    }
+  } else {
+    TEST_FAILED("Incorrectly recognized br as a PC-relative instruction.\n");
+  }
+
+  TEST_PASS("Properly recognized br as a non-PC-relative instruction.\n");
+  return true;
+}
+
 int wmain(int argc, wchar_t* argv[]) {
-  if (!TestCheckForPCRelAdrp() || !TestCheckForPCRelAdr()) {
+  if (!TestCheckForPCRelAdrp() || !TestCheckForPCRelAdr() ||
+      !TestCheckForPCRelBlr() || !TestCheckForPCRelBr()) {
     return -1;
   }
   return 0;
