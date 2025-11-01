@@ -40,6 +40,7 @@ enum class SurfaceType : int8_t {
   BLOB_IMAGE,             
   DATA_MAPPED,            
   WEBGL,                  
+  D3D11_TEXTURE,          
 };
 
 enum class SurfaceFormat : int8_t {
