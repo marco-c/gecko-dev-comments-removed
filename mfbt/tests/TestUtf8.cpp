@@ -241,10 +241,10 @@ static void ExpectBadCodePoint(const Char (&aCharN)[N],
 
 static void TestIsUtf8() {
   
-  static const char asciiBytes[] = u8"How about a nice game of chess?";
+  static const char asciiBytes[] = "How about a nice game of chess?";
   MOZ_RELEASE_ASSERT(IsUtf8(Span(asciiBytes, std::size(asciiBytes))));
 
-  static const char endNonAsciiBytes[] = u8"Life is like a 🌯";
+  static const char endNonAsciiBytes[] = "Life is like a 🌯";
   MOZ_RELEASE_ASSERT(
       IsUtf8(Span(endNonAsciiBytes, std::size(endNonAsciiBytes) - 1)));
 
@@ -254,13 +254,13 @@ static void TestIsUtf8() {
   
 
   
-  static const char oneBytes[] = u8"A";  
+  static const char oneBytes[] = "A";  
   constexpr size_t oneBytesLen = std::size(oneBytes);
   static_assert(oneBytesLen == 2, "U+0041 plus nul");
   MOZ_RELEASE_ASSERT(IsUtf8(Span(oneBytes, oneBytesLen)));
 
   
-  static const char twoBytes[] = u8"؆";  
+  static const char twoBytes[] = "؆";  
   constexpr size_t twoBytesLen = std::size(twoBytes);
   static_assert(twoBytesLen == 3, "U+0606 in two bytes plus nul");
   MOZ_RELEASE_ASSERT(IsUtf8(Span(twoBytes, twoBytesLen)));
@@ -268,7 +268,7 @@ static void TestIsUtf8() {
   ExpectValidCodePoint(twoBytes, 0x0606);
 
   
-  static const char threeBytes[] = u8"᨞";  
+  static const char threeBytes[] = "᨞";  
   constexpr size_t threeBytesLen = std::size(threeBytes);
   static_assert(threeBytesLen == 4, "U+1A1E in three bytes plus nul");
   MOZ_RELEASE_ASSERT(IsUtf8(Span(threeBytes, threeBytesLen)));
@@ -276,8 +276,7 @@ static void TestIsUtf8() {
   ExpectValidCodePoint(threeBytes, 0x1A1E);
 
   
-  static const char fourBytes[] =
-      u8"🁡";  
+  static const char fourBytes[] = "🁡";  
   constexpr size_t fourBytesLen = std::size(fourBytes);
   static_assert(fourBytesLen == 5, "U+1F061 in four bytes plus nul");
   MOZ_RELEASE_ASSERT(IsUtf8(Span(fourBytes, fourBytesLen)));
@@ -285,7 +284,7 @@ static void TestIsUtf8() {
   ExpectValidCodePoint(fourBytes, 0x1F061);
 
   
-  static const char maxCodePoint[] = u8"􏿿";  
+  static const char maxCodePoint[] = "􏿿";  
   constexpr size_t maxCodePointLen = std::size(maxCodePoint);
   static_assert(maxCodePointLen == 5, "U+10FFFF in four bytes plus nul");
   MOZ_RELEASE_ASSERT(IsUtf8(Span(maxCodePoint, maxCodePointLen)));
@@ -357,63 +356,63 @@ static void TestDecodeOneValidUtf8CodePoint() {
 
   
 
-  ExpectValidCodePoint(u8"", 0x80);  
-  ExpectValidCodePoint(u8"©", 0xA9);   
-  ExpectValidCodePoint(u8"¶", 0xB6);   
-  ExpectValidCodePoint(u8"¾", 0xBE);   
-  ExpectValidCodePoint(u8"÷", 0xF7);   
-  ExpectValidCodePoint(u8"ÿ", 0xFF);   
-  ExpectValidCodePoint(u8"Ā", 0x100);  
-  ExpectValidCodePoint(u8"Ĳ", 0x132);  
-  ExpectValidCodePoint(u8"ͼ", 0x37C);  
-  ExpectValidCodePoint(u8"Ӝ",
+  ExpectValidCodePoint("", 0x80);  
+  ExpectValidCodePoint("©", 0xA9);   
+  ExpectValidCodePoint("¶", 0xB6);   
+  ExpectValidCodePoint("¾", 0xBE);   
+  ExpectValidCodePoint("÷", 0xF7);   
+  ExpectValidCodePoint("ÿ", 0xFF);   
+  ExpectValidCodePoint("Ā", 0x100);  
+  ExpectValidCodePoint("Ĳ", 0x132);  
+  ExpectValidCodePoint("ͼ", 0x37C);  
+  ExpectValidCodePoint("Ӝ",
                        0x4DC);  
-  ExpectValidCodePoint(u8"۩", 0x6E9);  
-  ExpectValidCodePoint(u8"߿", 0x7FF);  
+  ExpectValidCodePoint("۩", 0x6E9);  
+  ExpectValidCodePoint("߿", 0x7FF);  
 
   
 
-  ExpectValidCodePoint(u8"ࠀ", 0x800);  
-  ExpectValidCodePoint(u8"ࡁ", 0x841);  
-  ExpectValidCodePoint(u8"ࣿ", 0x8FF);   
-  ExpectValidCodePoint(u8"ஆ", 0xB86);  
-  ExpectValidCodePoint(u8"༃",
+  ExpectValidCodePoint("ࠀ", 0x800);  
+  ExpectValidCodePoint("ࡁ", 0x841);  
+  ExpectValidCodePoint("ࣿ", 0x8FF);   
+  ExpectValidCodePoint("ஆ", 0xB86);  
+  ExpectValidCodePoint("༃",
                        0xF03);  
   ExpectValidCodePoint(
-      u8"࿉",
+      "࿉",
       0xFC9);  
                
-  ExpectValidCodePoint(u8"ဪ", 0x102A);           
-  ExpectValidCodePoint(u8"ᚏ", 0x168F);           
+  ExpectValidCodePoint("ဪ", 0x102A);             
+  ExpectValidCodePoint("ᚏ", 0x168F);             
   ExpectValidCodePoint("\xE2\x80\xA8", 0x2028);  
   ExpectValidCodePoint("\xE2\x80\xA9",
-                       0x2029);           
-  ExpectValidCodePoint(u8"☬", 0x262C);    
-  ExpectValidCodePoint(u8"㊮", 0x32AE);   
-  ExpectValidCodePoint(u8"㏖", 0x33D6);   
-  ExpectValidCodePoint(u8"ꔄ", 0xA504);    
-  ExpectValidCodePoint(u8"ퟕ", 0xD7D5);    
-  ExpectValidCodePoint(u8"퟿", 0xD7FF);  
-  ExpectValidCodePoint(u8"", 0xE000);  
-  ExpectValidCodePoint(u8"鱗", 0xF9F2);   
+                       0x2029);         
+  ExpectValidCodePoint("☬", 0x262C);    
+  ExpectValidCodePoint("㊮", 0x32AE);   
+  ExpectValidCodePoint("㏖", 0x33D6);   
+  ExpectValidCodePoint("ꔄ", 0xA504);    
+  ExpectValidCodePoint("ퟕ", 0xD7D5);    
+  ExpectValidCodePoint("퟿", 0xD7FF);  
+  ExpectValidCodePoint("", 0xE000);  
+  ExpectValidCodePoint("鱗", 0xF9F2);   
   ExpectValidCodePoint(
-      u8"﷽", 0xFDFD);  
-  ExpectValidCodePoint(u8"￿", 0xFFFF);  
+      "﷽", 0xFDFD);  
+  ExpectValidCodePoint("￿", 0xFFFF);  
 
   
-  ExpectValidCodePoint(u8"𐀀", 0x10000);      
-  ExpectValidCodePoint(u8"𔑀", 0x14440);      
-  ExpectValidCodePoint(u8"𝛗", 0x1D6D7);      
-  ExpectValidCodePoint(u8"💩", 0x1F4A9);     
-  ExpectValidCodePoint(u8"🔫", 0x1F52B);     
-  ExpectValidCodePoint(u8"🥌", 0x1F94C);     
-  ExpectValidCodePoint(u8"🥏", 0x1F94F);     
-  ExpectValidCodePoint(u8"𠍆", 0x20346);     
-  ExpectValidCodePoint(u8"𡠺", 0x2183A);     
-  ExpectValidCodePoint(u8"񁟶", 0x417F6);   
-  ExpectValidCodePoint(u8"񾠶", 0x7E836);   
-  ExpectValidCodePoint(u8"󾽧", 0xFEF67);   
-  ExpectValidCodePoint(u8"􏿿", 0x10FFFF);  
+  ExpectValidCodePoint("𐀀", 0x10000);      
+  ExpectValidCodePoint("𔑀", 0x14440);      
+  ExpectValidCodePoint("𝛗", 0x1D6D7);      
+  ExpectValidCodePoint("💩", 0x1F4A9);     
+  ExpectValidCodePoint("🔫", 0x1F52B);     
+  ExpectValidCodePoint("🥌", 0x1F94C);     
+  ExpectValidCodePoint("🥏", 0x1F94F);     
+  ExpectValidCodePoint("𠍆", 0x20346);     
+  ExpectValidCodePoint("𡠺", 0x2183A);     
+  ExpectValidCodePoint("񁟶", 0x417F6);   
+  ExpectValidCodePoint("񾠶", 0x7E836);   
+  ExpectValidCodePoint("󾽧", 0xFEF67);   
+  ExpectValidCodePoint("􏿿", 0x10FFFF);  
 }
 
 static void TestDecodeBadLeadUnit() {
