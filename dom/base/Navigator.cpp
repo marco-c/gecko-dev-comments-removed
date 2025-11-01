@@ -344,16 +344,16 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
   aLanguages.Clear();
 
   
-  nsAutoString acceptLang;
-  Preferences::GetLocalizedString("intl.accept_languages", acceptLang);
+  nsAutoCString acceptLang;
+  intl::LocaleService::GetInstance()->GetAcceptLanguages(acceptLang);
 
   
-  for (nsDependentSubstring lang :
-       nsCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
+  for (nsDependentCSubstring lang :
+       nsCCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
     
     
-    if (lang.Length() > 2 && lang[2] == char16_t('_')) {
-      lang.Replace(2, 1, char16_t('-'));
+    if (lang.Length() > 2 && lang[2] == '_') {
+      lang.Replace(2, 1, '-');
     }
 
     
@@ -362,10 +362,10 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
     if (lang.Length() > 2) {
       int32_t pos = 0;
       bool first = true;
-      for (const nsAString& code :
-           nsCharSeparatedTokenizer(lang, '-').ToRange()) {
+      for (const nsACString& code :
+           nsCCharSeparatedTokenizer(lang, '-').ToRange()) {
         if (code.Length() == 2 && !first) {
-          nsAutoString upper(code);
+          nsAutoCString upper(code);
           ToUpperCase(upper);
           lang.Replace(pos, code.Length(), upper);
         }
@@ -375,7 +375,7 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
       }
     }
 
-    aLanguages.AppendElement(lang);
+    aLanguages.AppendElement(NS_ConvertUTF8toUTF16(lang));
   }
   if (aLanguages.Length() == 0) {
     nsTArray<nsCString> locales;

@@ -2498,13 +2498,21 @@ void gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[],
     
     eFontPrefLang tempPrefLangs[kMaxLenPrefLangList];
     uint32_t tempLen = 0;
+    auto* localeService = LocaleService::GetInstance();
+
+    
+    
+    nsAutoCString acceptLang;
+    nsresult rv = localeService->GetAcceptLanguages(acceptLang);
 
     
     
     
-    
     AutoTArray<nsCString, 5> list;
-    gfxFontUtils::GetPrefsFontList("intl.accept_languages", list, true);
+    if (NS_SUCCEEDED(rv)) {
+      gfxFontUtils::ParseFontList(acceptLang, list);
+    }
+
     for (const auto& lang : list) {
       eFontPrefLang fpl = GetFontPrefLangFor(lang.get());
       switch (fpl) {
@@ -2522,7 +2530,7 @@ void gfxPlatformFontList::AppendCJKPrefLangs(eFontPrefLang aPrefLangs[],
 
     
     nsAutoCString localeStr;
-    LocaleService::GetInstance()->GetAppLocaleAsBCP47(localeStr);
+    localeService->GetAppLocaleAsBCP47(localeStr);
 
     {
       Locale locale;

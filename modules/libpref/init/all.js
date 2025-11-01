@@ -1485,7 +1485,10 @@ pref("network.proxy.enable_wpad_over_dhcp", true);
 pref("converter.html2txt.structs",          true); 
 pref("converter.html2txt.header_strategy",  1); 
 
-pref("intl.accept_languages",               "chrome://global/locale/intl.properties");
+
+
+pref("intl.accept_languages",               "und");
+
 
 
 
