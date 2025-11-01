@@ -6618,7 +6618,10 @@ bool WarpCacheIRTranspiler::emitBindFunctionResult(
   MDefinition* target = getOperand(targetId);
   JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
 
-  MOZ_ASSERT(callInfo_->argc() == argc);
+  
+  
+  MOZ_ASSERT_IF(callInfo_, callInfo_->argc() == argc);
+  MOZ_ASSERT_IF(!callInfo_, argc == 0);
 
   auto* bound = MBindFunction::New(alloc(), target, argc, templateObj);
   if (!bound) {
@@ -6639,7 +6642,10 @@ bool WarpCacheIRTranspiler::emitSpecializedBindFunctionResult(
   MDefinition* target = getOperand(targetId);
   JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
 
-  MOZ_ASSERT(callInfo_->argc() == argc);
+  
+  
+  MOZ_ASSERT_IF(callInfo_, callInfo_->argc() == argc);
+  MOZ_ASSERT_IF(!callInfo_, argc == 0);
 
   auto* bound = MNewBoundFunction::New(alloc(), templateObj);
   add(bound);
