@@ -1628,8 +1628,24 @@ pub enum PhysicalSide {
 }
 
 impl PhysicalSide {
-    fn orthogonal_to(self, other: Self) -> bool {
+    
+    pub fn parallel_to(self, other: Self) -> bool {
+        !self.orthogonal_to(other)
+    }
+
+    
+    pub fn orthogonal_to(self, other: Self) -> bool {
         matches!(self, Self::Top | Self::Bottom) != matches!(other, Self::Top | Self::Bottom)
+    }
+
+    
+    pub fn opposite_side(self) -> Self {
+        match self {
+            Self::Top => Self::Bottom,
+            Self::Right => Self::Left,
+            Self::Bottom => Self::Top,
+            Self::Left => Self::Right,
+        }
     }
 }
 
