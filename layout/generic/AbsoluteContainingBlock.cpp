@@ -934,6 +934,89 @@ struct MOZ_STACK_CLASS MOZ_RAII AutoFallbackStyleSetter {
   OldCacheState mOldCacheState;
 };
 
+struct AnchorShiftInfo {
+  nsPoint mOffset;
+  StylePositionArea mResolvedArea;
+};
+
+struct ContainingBlockRect {
+  Maybe<AnchorShiftInfo> mAnchorShiftInfo = Nothing{};
+  nsRect mRect;
+
+  explicit ContainingBlockRect(const nsRect& aRect) : mRect{aRect} {}
+  ContainingBlockRect(const nsPoint& aOffset,
+                      const StylePositionArea& aResolvedArea,
+                      const nsRect& aRect)
+      : mAnchorShiftInfo{Some(AnchorShiftInfo{aOffset, aResolvedArea})},
+        mRect{aRect} {}
+
+  StylePositionArea ResolvedPositionArea() const {
+    return mAnchorShiftInfo
+        .map([](const AnchorShiftInfo& aInfo) { return aInfo.mResolvedArea; })
+        .valueOr(StylePositionArea{});
+  }
+};
+
+static nsRect GrowOverflowCheckRect(const nsRect& aOverflowCheckRect,
+                                    const nsRect& aKidRect,
+                                    const StylePositionArea& aPosArea) {
+  
+  
+  
+  
+  
+  
+  
+  auto result = aOverflowCheckRect;
+  if (aPosArea.first == StylePositionAreaKeyword::Left ||
+      aPosArea.first == StylePositionAreaKeyword::SpanLeft) {
+    
+    if (aKidRect.x < result.x) {
+      result.SetLeftEdge(aKidRect.x);
+    }
+  } else if (aPosArea.first == StylePositionAreaKeyword::Center) {
+    
+  } else if (aPosArea.first == StylePositionAreaKeyword::Right ||
+             aPosArea.first == StylePositionAreaKeyword::SpanRight) {
+    
+    if (aKidRect.XMost() > aOverflowCheckRect.XMost()) {
+      result.SetRightEdge(aKidRect.XMost());
+    }
+  } else if (aPosArea.first == StylePositionAreaKeyword::SpanAll) {
+    
+    if (aKidRect.x < aOverflowCheckRect.x) {
+      result.SetLeftEdge(aKidRect.x);
+    }
+    if (aKidRect.XMost() > aOverflowCheckRect.XMost()) {
+      result.SetRightEdge(aKidRect.XMost());
+    }
+  }
+  if (aPosArea.first == StylePositionAreaKeyword::Top ||
+      aPosArea.first == StylePositionAreaKeyword::SpanTop) {
+    
+    if (aKidRect.y < aOverflowCheckRect.y) {
+      result.SetTopEdge(aKidRect.y);
+    }
+  } else if (aPosArea.first == StylePositionAreaKeyword::Center) {
+    
+  } else if (aPosArea.first == StylePositionAreaKeyword::Bottom ||
+             aPosArea.first == StylePositionAreaKeyword::SpanBottom) {
+    
+    if (aKidRect.YMost() > aOverflowCheckRect.YMost()) {
+      result.SetBottomEdge(aKidRect.YMost());
+    }
+  } else if (aPosArea.first == StylePositionAreaKeyword::SpanAll) {
+    
+    if (aKidRect.y < aOverflowCheckRect.y) {
+      result.SetTopEdge(aKidRect.y);
+    }
+    if (aKidRect.YMost() > aOverflowCheckRect.YMost()) {
+      result.SetBottomEdge(aKidRect.YMost());
+    }
+  }
+  return result;
+}
+
 
 
 
@@ -1035,14 +1118,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     AutoFallbackStyleSetter fallback(aKidFrame, currentFallbackStyle,
                                      aAnchorPosResolutionCache,
                                      firstTryIndex == currentFallbackIndex);
-    auto positionArea = aKidFrame->StylePosition()->mPositionArea;
-    StylePositionArea resolvedPositionArea;
-    const nsRect usedCb = [&] {
+    const auto cb = [&]() {
       if (isGrid) {
         
-        return nsGridContainerFrame::GridItemCB(aKidFrame);
+        return ContainingBlockRect{nsGridContainerFrame::GridItemCB(aKidFrame)};
       }
 
+      auto positionArea = aKidFrame->StylePosition()->mPositionArea;
       if (currentFallback && currentFallback->IsPositionArea()) {
         MOZ_ASSERT(currentFallback->IsPositionArea());
         positionArea = currentFallback->AsPositionArea();
@@ -1054,29 +1136,45 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                 aKidFrame, aDelegatingFrame, nullptr, false,
                 aAnchorPosResolutionCache);
         if (defaultAnchorInfo) {
-          return AnchorPositioningUtils::
+          
+          
+          const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
+              aAnchorPosResolutionCache->mReferenceData
+                  ->CompensatingForScrollAxes(),
+              aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
+          
+          
+          
+          
+          
+          
+          const auto scrolledAnchorRect = defaultAnchorInfo->mRect - offset;
+          StylePositionArea resolvedPositionArea{};
+          const auto scrolledAnchorCb = AnchorPositioningUtils::
               AdjustAbsoluteContainingBlockRectForPositionArea(
-                  defaultAnchorInfo->mRect, aOriginalContainingBlockRect,
+                  scrolledAnchorRect, aOriginalContainingBlockRect,
                   aKidFrame->GetWritingMode(),
                   aDelegatingFrame->GetWritingMode(), positionArea,
                   &resolvedPositionArea);
+          return ContainingBlockRect{offset, resolvedPositionArea,
+                                     scrolledAnchorCb};
         }
       }
 
       if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
         if (!IsSnapshotContainingBlock(aKidFrame)) {
-          return viewport->GetContainingBlockAdjustedForScrollbars(
-              aReflowInput);
+          return ContainingBlockRect{
+              viewport->GetContainingBlockAdjustedForScrollbars(aReflowInput)};
         }
-        return dom::ViewTransition::SnapshotContainingBlockRect(
-            viewport->PresContext());
+        return ContainingBlockRect{
+            dom::ViewTransition::SnapshotContainingBlockRect(
+                viewport->PresContext())};
       }
-      return aOriginalContainingBlockRect;
+      return ContainingBlockRect{aOriginalContainingBlockRect};
     }();
-
     const WritingMode outerWM = aReflowInput.GetWritingMode();
     const WritingMode wm = aKidFrame->GetWritingMode();
-    const LogicalSize cbSize(outerWM, usedCb.Size());
+    const LogicalSize cbSize(outerWM, cb.mRect.Size());
 
     ReflowInput::InitFlags initFlags;
     const bool staticPosIsCBOrigin = [&] {
@@ -1124,7 +1222,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         
-        (aKidFrame->GetLogicalRect(usedCb.Size()).BStart(wm) <=
+        (aKidFrame->GetLogicalRect(cb.mRect.Size()).BStart(wm) <=
          aReflowInput.AvailableBSize());
 
     
@@ -1179,7 +1277,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       ResolveSizeDependentOffsets(kidReflowInput, cbSize, kidSize, margin,
-                                  resolvedPositionArea, offsets);
+                                  cb.ResolvedPositionArea(), offsets);
 
       if (kidReflowInput.mFlags.mDeferAutoMarginComputation) {
         ResolveAutoMarginsAfterLayout(kidReflowInput, cbSize, kidSize, margin,
@@ -1232,7 +1330,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                 offsets.IStart(outerWM),
                 offsets.IEnd(outerWM),
             }),
-            resolvedPositionArea);
+            cb.ResolvedPositionArea());
 
         offsets.IStart(outerWM) += alignOffset;
         offsets.IEnd(outerWM) =
@@ -1250,7 +1348,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                 offsets.BStart(outerWM),
                 offsets.BEnd(outerWM),
             }),
-            resolvedPositionArea);
+            cb.ResolvedPositionArea());
         offsets.BStart(outerWM) += alignOffset;
         offsets.BEnd(outerWM) =
             cbSize.BSize(outerWM) -
@@ -1267,7 +1365,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                        border.Size(outerWM).GetPhysicalSize(outerWM));
 
       
-      r += usedCb.TopLeft();
+      r += cb.mRect.TopLeft();
+      if (cb.mAnchorShiftInfo) {
+        
+        r += cb.mAnchorShiftInfo->mOffset;
+      }
 
       aKidFrame->SetRect(r);
 
@@ -1284,8 +1386,60 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
     aKidFrame->DidReflow(aPresContext, &kidReflowInput);
 
-    const bool fits =
-        aStatus.IsComplete() && usedCb.Contains(aKidFrame->GetRect());
+    [&]() {
+      if (!aAnchorPosResolutionCache) {
+        return;
+      }
+      auto* referenceData = aAnchorPosResolutionCache->mReferenceData;
+      if (referenceData->CompensatingForScrollAxes().isEmpty()) {
+        return;
+      }
+      
+      
+      const auto offset = [&]() {
+        if (cb.mAnchorShiftInfo) {
+          
+          return cb.mAnchorShiftInfo->mOffset;
+        }
+        return AnchorPositioningUtils::GetScrollOffsetFor(
+            referenceData->CompensatingForScrollAxes(), aKidFrame,
+            aAnchorPosResolutionCache->mDefaultAnchorCache);
+      }();
+      
+      const auto position = aKidFrame->GetPosition();
+      
+      
+      aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(), position);
+      if (offset != nsPoint{}) {
+        aKidFrame->SetPosition(position - offset);
+        
+        
+        aKidFrame->UpdateOverflow();
+        nsContainerFrame::PlaceFrameView(aKidFrame);
+      }
+      aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift = offset;
+    }();
+
+    const auto fits = aStatus.IsComplete() && [&]() {
+      
+      
+      const auto paddingEdgeShift = [&]() {
+        const auto border = aDelegatingFrame->GetUsedBorder();
+        return nsPoint{border.left, border.top};
+      }();
+      auto overflowCheckRect = cb.mRect + paddingEdgeShift;
+      if (aAnchorPosResolutionCache && cb.mAnchorShiftInfo) {
+        overflowCheckRect =
+            GrowOverflowCheckRect(overflowCheckRect, aKidFrame->GetNormalRect(),
+                                  cb.mAnchorShiftInfo->mResolvedArea);
+        const auto originalContainingBlockRect =
+            aOriginalContainingBlockRect + paddingEdgeShift;
+        return AnchorPositioningUtils::FitsInContainingBlock(
+            overflowCheckRect, originalContainingBlockRect,
+            aKidFrame->GetRect());
+      }
+      return overflowCheckRect.Contains(aKidFrame->GetRect());
+    }();
     if (fallbacks.IsEmpty() || fits) {
       
       
