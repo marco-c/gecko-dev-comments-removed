@@ -67,6 +67,7 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "repeating-conic-gradient",
   "drop-shadow",
   "color-mix",
+  "contrast-color",
   "light-dark",
 ]);
 
