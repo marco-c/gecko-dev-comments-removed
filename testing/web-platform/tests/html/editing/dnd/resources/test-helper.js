@@ -129,6 +129,31 @@ function dragDropTest(dragElement, dropElement, onDropCallBack, testDescription,
 
 
 
+function dragEndTest(dragElement, dropElement, onDropCallBack, testDescription,
+  dragIframe = undefined, dropIframe = undefined) {
+  promise_test((t) => new Promise(async (resolve, reject) => {
+    dragElement.addEventListener('dragend', t.step_func((event) => {
+      if (onDropCallBack(event) == true) {
+        resolve();
+      } else {
+        reject();
+      }
+    }));
+    try {
+      var actions = new test_driver.Actions();
+      actions = movePointerToCenter(dragElement, dragIframe, actions)
+        .pointerDown();
+      actions = movePointerToCenter(dropElement, dropIframe, actions)
+        .pointerUp();
+      await actions.send();
+    } catch (e) {
+      reject(e);
+    }
+  }, testDescription));
+}
+
+
+
 
 
 
@@ -186,15 +211,4 @@ const calculateScrollbarThickness = () => {
   container.remove();
 
   return widthBefore - widthAfter;
-}
-
-
-
-
-
-
-function dropEffectOnDropCallBack(event) {
-  assert_equals(event.target.textContent, event.dataTransfer.dropEffect);
-  assert_equals(event.target.textContent, event.dataTransfer.effectAllowed);
-  return true;
 }
