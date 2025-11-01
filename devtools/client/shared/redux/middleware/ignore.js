@@ -23,8 +23,9 @@ function ignore({ getState }) {
     if (getState()[IGNORING]) {
       
       throw new Error(
-        "[REDUX_MIDDLEWARE_IGNORED_REDUX_ACTION] Dispatching '" + action.type ||
-          action + "' action after panel's closing"
+        "[REDUX_MIDDLEWARE_IGNORED_REDUX_ACTION] Dispatching '" +
+          (action.type || action) +
+          "' action after panel's closing"
       );
     }
 
