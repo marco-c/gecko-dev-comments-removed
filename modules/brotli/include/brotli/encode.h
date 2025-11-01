@@ -14,7 +14,7 @@
 
 #include <brotli/port.h>
 #include <brotli/shared_dictionary.h>
-#include <brotli/types.h>
+#include <brotli/types.h>  
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -274,6 +274,10 @@ BROTLI_ENC_API void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
 
 typedef struct BrotliEncoderPreparedDictionaryStruct
     BrotliEncoderPreparedDictionary;
+
+
+
+
 
 
 

@@ -4,10 +4,6 @@
 
 
 
-#include <stdlib.h>
-
-#include <brotli/types.h>
-
 #include "platform.h"
 
 
