@@ -3,7 +3,6 @@
 
 
 #include "gtest/gtest.h"
-#include "mozilla/Vector.h"
 #include "mozilla/intl/PluralRules.h"
 
 #define TEST_SELECT(actual, expected)     \
