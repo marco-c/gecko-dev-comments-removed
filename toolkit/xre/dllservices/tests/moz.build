@@ -8,6 +8,7 @@ GeckoCppUnitTests(
     [
         "TestDllBlocklistAssumptions",
         "TestDllInterceptor",
+        "TestIATPatcher",
         "TestMMPolicy",
         "TestOleAut32Initialization",
     ],
@@ -15,12 +16,10 @@ GeckoCppUnitTests(
 )
 
 if CONFIG["TARGET_CPU"] in ("x86", "x86_64"):
+    
     GeckoCppUnitTests(
         [
-            
             "TestDllInterceptorCrossProcess",
-            
-            "TestIATPatcher",
         ],
         linkage=None,
     )
