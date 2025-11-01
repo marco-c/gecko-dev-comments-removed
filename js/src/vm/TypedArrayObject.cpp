@@ -4773,52 +4773,17 @@ static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
   
   
   
-
-  size_t alignedLength = length & ~0x3;
-  while (canAppend(3) && index < alignedLength) {
-    
-
-    
-
-    
-
-    
-    uint32_t chunk = decode4Chars(chars + index);
-
-    
-
-    
-    if (MOZ_LIKELY(int32_t(chunk) >= 0)) {
+  if (length >= 4) {
+    size_t lastValidIndex = length - 4;
+    while (canAppend(3) && index <= lastValidIndex) {
       
-      decodeChunk(chunk);
 
       
-      index += 4;
-      continue;
-    }
-
-    
-
-    
-    CharT part[4];
-    size_t i = index;
-    size_t j = 0;
-    while (i < length && j < 4) {
-      auto ch = chars[i++];
 
       
-      if (mozilla::IsAsciiWhitespace(ch)) {
-        continue;
-      }
 
       
-      part[j++] = ch;
-    }
-
-    
-    if (MOZ_LIKELY(j == 4)) {
-      
-      uint32_t chunk = decode4Chars(part);
+      uint32_t chunk = decode4Chars(chars + index);
 
       
 
@@ -4828,31 +4793,67 @@ static auto FromBase64(const CharT* chars, size_t length, Alphabet alphabet,
         decodeChunk(chunk);
 
         
-        index = i;
+        index += 4;
         continue;
       }
+
+      
+
+      
+      CharT part[4];
+      size_t i = index;
+      size_t j = 0;
+      while (i < length && j < 4) {
+        auto ch = chars[i++];
+
+        
+        if (mozilla::IsAsciiWhitespace(ch)) {
+          continue;
+        }
+
+        
+        part[j++] = ch;
+      }
+
+      
+      if (MOZ_LIKELY(j == 4)) {
+        
+        uint32_t chunk = decode4Chars(part);
+
+        
+
+        
+        if (MOZ_LIKELY(int32_t(chunk) >= 0)) {
+          
+          decodeChunk(chunk);
+
+          
+          index = i;
+          continue;
+        }
+      }
+
+      
+      
+      break;
     }
 
     
-    
-    break;
-  }
+    if (index == length) {
+      return Base64Result::Ok(length, written());
+    }
 
-  
-  if (index == length) {
-    return Base64Result::Ok(length, written());
+    
+    if (!canAppend(1)) {
+      MOZ_ASSERT(written() > 0);
+      return Base64Result::Ok(index, written());
+    }
   }
 
   
   
   
   size_t read = index;
-
-  
-  if (!canAppend(1)) {
-    MOZ_ASSERT(written() > 0);
-    return Base64Result::Ok(read, written());
-  }
 
   
 
