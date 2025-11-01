@@ -863,7 +863,6 @@ nsresult nsLocalFile::GetNativeTargetPathName(nsIFile* aNewParent,
     }
 
     if (!targetExists) {
-      
       rv = aNewParent->Create(DIRECTORY_TYPE, 0755);
       if (NS_FAILED(rv)) {
         return rv;
@@ -899,11 +898,8 @@ nsresult nsLocalFile::GetNativeTargetPathName(nsIFile* aNewParent,
 
 nsresult nsLocalFile::CopyDirectoryTo(nsIFile* aNewParent) {
   nsresult rv;
-  
-
-
-
-  bool dirCheck, isSymlink;
+  bool dirCheck;  
+  bool isSymlink;
   uint32_t oldPerms;
 
   if (NS_FAILED(rv = IsDirectory(&dirCheck))) {
@@ -1845,7 +1841,6 @@ nsLocalFile::GetParent(nsIFile** aParent) {
     return NS_OK;
   }
 
-  
   char* buffer = mPath.BeginWriting();
   
   char* slashp = strrchr(buffer, '/');
@@ -1877,10 +1872,6 @@ nsLocalFile::GetParent(nsIFile** aParent) {
   localFile.forget(aParent);
   return NS_OK;
 }
-
-
-
-
 
 NS_IMETHODIMP
 nsLocalFile::Exists(bool* aResult) {

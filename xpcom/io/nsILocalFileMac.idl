@@ -29,12 +29,9 @@ interface nsILocalFileMac : nsIFile
 
 
 
-
   [noscript] void initWithCFURL(in CFURLRef aCFURL);
 
    
-
-
 
 
 
@@ -58,13 +55,9 @@ interface nsILocalFileMac : nsIFile
 
 
 
-
-
   [noscript] CFURLRef getCFURL();
 
     
-
-
 
 
 
