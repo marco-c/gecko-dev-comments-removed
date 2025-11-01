@@ -16,7 +16,6 @@
 
 #include "json/json.h"
 #include "mozilla/HelperMacros.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
 
