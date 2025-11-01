@@ -9,13 +9,13 @@
 
 #include <set>
 
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/HangTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Vector.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 
 namespace mozilla {
 
@@ -56,15 +56,15 @@ class BackgroundHangAnnotators {
   std::set<BackgroundHangAnnotator*> mAnnotators;
 };
 
-namespace ipc {
+}  
+
+namespace IPC {
 
 template <>
-struct IPDLParamTraits<mozilla::BackgroundHangAnnotations>
-    : public IPDLParamTraits<nsTArray<mozilla::HangAnnotation>> {
+struct ParamTraits<mozilla::BackgroundHangAnnotations>
+    : public ParamTraits<nsTArray<mozilla::HangAnnotation>> {
   typedef mozilla::BackgroundHangAnnotations paramType;
 };
-
-}  
 
 }  
 

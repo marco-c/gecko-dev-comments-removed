@@ -32,8 +32,6 @@ class nsCOMPtr;
 
 namespace mozilla::ipc {
 class IProtocol;
-template <typename P>
-struct IPDLParamTraits;
 namespace shared_memory {
 class Cursor;
 }
@@ -706,32 +704,8 @@ template <typename P, typename F>
 
 
 
-
-
 template <class P>
-struct ParamTraitsIPDLFallback {
-  template <class R>
-  static auto Write(MessageWriter* writer, R&& p)
-      -> decltype(mozilla::ipc::IPDLParamTraits<P>::Write(writer,
-                                                          writer->GetActor(),
-                                                          std::forward<R>(p))) {
-    mozilla::ipc::IPDLParamTraits<P>::Write(writer, writer->GetActor(),
-                                            std::forward<R>(p));
-  }
-  template <class R>
-  static auto Read(MessageReader* reader, R* r)
-      -> decltype(mozilla::ipc::IPDLParamTraits<P>::Read(reader,
-                                                         reader->GetActor(),
-                                                         r)) {
-    return mozilla::ipc::IPDLParamTraits<P>::Read(reader, reader->GetActor(),
-                                                  r);
-  }
-};
-
-
-
-template <class P>
-struct ParamTraitsFundamental : ParamTraitsIPDLFallback<P> {};
+struct ParamTraitsFundamental;
 
 template <>
 struct ParamTraitsFundamental<bool> {
@@ -1186,6 +1160,11 @@ struct ParamTraitsMozilla<nsresult> {
     return reader->ReadUInt32(reinterpret_cast<uint32_t*>(r));
   }
 };
+
+
+
+
+
 
 
 

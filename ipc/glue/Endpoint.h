@@ -219,7 +219,7 @@ class UntypedManagedEndpoint {
   bool BindCommon(IProtocol* aActor, IRefCountedProtocol* aManager);
 
  private:
-  friend struct IPDLParamTraits<UntypedManagedEndpoint>;
+  friend struct IPC::ParamTraits<UntypedManagedEndpoint>;
 
   struct Inner {
     

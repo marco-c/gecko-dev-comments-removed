@@ -25,9 +25,9 @@ class nsIReferrerInfo;
 class nsISHistory;
 class nsIURI;
 
-namespace mozilla::ipc {
+namespace IPC {
 template <typename P>
-struct IPDLParamTraits;
+struct ParamTraits;
 }
 
 namespace mozilla {
@@ -176,7 +176,7 @@ class SessionHistoryInfo {
 
  private:
   friend class SessionHistoryEntry;
-  friend struct mozilla::ipc::IPDLParamTraits<SessionHistoryInfo>;
+  friend struct IPC::ParamTraits<SessionHistoryInfo>;
 
   void MaybeUpdateTitleFromURI();
 
@@ -487,48 +487,44 @@ class SessionHistoryEntry : public nsISHEntry,
 };
 
 }  
+}  
 
-namespace ipc {
-
-class IProtocol;
+namespace IPC {
 
 
 template <>
-struct IPDLParamTraits<dom::SessionHistoryInfo> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    const dom::SessionHistoryInfo& aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
-                   dom::SessionHistoryInfo* aResult);
+struct ParamTraits<mozilla::dom::SessionHistoryInfo> {
+  static void Write(IPC::MessageWriter* aWriter,
+                    const mozilla::dom::SessionHistoryInfo& aParam);
+  static bool Read(IPC::MessageReader* aReader,
+                   mozilla::dom::SessionHistoryInfo* aResult);
 };
 
 
 template <>
-struct IPDLParamTraits<dom::LoadingSessionHistoryInfo> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    const dom::LoadingSessionHistoryInfo& aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
-                   dom::LoadingSessionHistoryInfo* aResult);
+struct ParamTraits<mozilla::dom::LoadingSessionHistoryInfo> {
+  static void Write(IPC::MessageWriter* aWriter,
+                    const mozilla::dom::LoadingSessionHistoryInfo& aParam);
+  static bool Read(IPC::MessageReader* aReader,
+                   mozilla::dom::LoadingSessionHistoryInfo* aResult);
 };
 
 
 template <>
-struct IPDLParamTraits<nsILayoutHistoryState*> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    nsILayoutHistoryState* aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+struct ParamTraits<nsILayoutHistoryState*> {
+  static void Write(IPC::MessageWriter* aWriter, nsILayoutHistoryState* aParam);
+  static bool Read(IPC::MessageReader* aReader,
                    RefPtr<nsILayoutHistoryState>* aResult);
 };
 
 
 template <>
-struct IPDLParamTraits<mozilla::dom::Wireframe> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
+struct ParamTraits<mozilla::dom::Wireframe> {
+  static void Write(IPC::MessageWriter* aWriter,
                     const mozilla::dom::Wireframe& aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+  static bool Read(IPC::MessageReader* aReader,
                    mozilla::dom::Wireframe* aResult);
 };
-
-}  
 
 }  
 

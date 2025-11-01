@@ -69,23 +69,21 @@ class FeaturePolicyUtils final {
 };
 
 }  
+}  
 
-namespace ipc {
-
-class IProtocol;
+namespace IPC {
 
 template <typename T>
-struct IPDLParamTraits;
+struct ParamTraits;
 
 template <>
-struct IPDLParamTraits<dom::FeaturePolicyInfo> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
+struct ParamTraits<mozilla::dom::FeaturePolicyInfo> {
+  static void Write(MessageWriter* aWriter,
                     const mozilla::dom::FeaturePolicyInfo& aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
-                   dom::FeaturePolicyInfo* aResult);
+  static bool Read(MessageReader* aReader,
+                   mozilla::dom::FeaturePolicyInfo* aResult);
 };
 
-}  
 }  
 
 #endif  

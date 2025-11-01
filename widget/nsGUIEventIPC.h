@@ -11,8 +11,7 @@
 #include "mozilla/ContentCache.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/dom/Touch.h"
-#include "mozilla/ipc/IPDLParamTraits.h"  
-#include "mozilla/ipc/URIUtils.h"         
+#include "mozilla/ipc/URIUtils.h"  
 #include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
@@ -251,6 +250,10 @@ struct ParamTraits<mozilla::WidgetMouseEvent> {
                               aParam.mExitFrom.value()));
     }
     WriteParam(aWriter, aParam.mClickCount);
+    WriteParam(aWriter, aParam.mCallbackId);
+
+    
+    const_cast<mozilla::WidgetMouseEvent&>(aParam).mCallbackId.reset();
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -274,7 +277,8 @@ struct ParamTraits<mozilla::WidgetMouseEvent> {
       rv = rv && ReadParam(aReader, &exitFrom);
       aResult->mExitFrom = Some(static_cast<paramType::ExitFrom>(exitFrom));
     }
-    rv = rv && ReadParam(aReader, &aResult->mClickCount);
+    rv = rv && ReadParam(aReader, &aResult->mClickCount) &&
+         ReadParam(aReader, &aResult->mCallbackId);
     return rv;
   }
 };
@@ -857,7 +861,7 @@ struct ParamTraits<mozilla::widget::InputContext> {
     WriteParam(aWriter, aParam.mOrigin);
     WriteParam(aWriter, aParam.mHasHandledUserInput);
     WriteParam(aWriter, aParam.mInPrivateBrowsing);
-    mozilla::ipc::WriteIPDLParam(aWriter, aWriter->GetActor(), aParam.mURI);
+    WriteParam(aWriter, aParam.mURI);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -870,8 +874,7 @@ struct ParamTraits<mozilla::widget::InputContext> {
            ReadParam(aReader, &aResult->mOrigin) &&
            ReadParam(aReader, &aResult->mHasHandledUserInput) &&
            ReadParam(aReader, &aResult->mInPrivateBrowsing) &&
-           mozilla::ipc::ReadIPDLParam(aReader, aReader->GetActor(),
-                                       address_of(aResult->mURI));
+           ReadParam(aReader, address_of(aResult->mURI));
   }
 };
 

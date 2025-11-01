@@ -21,7 +21,7 @@ class IGPUVideoSurfaceManager;
 class SurfaceDescriptor;
 }  
 class RemoteImageHolder final {
-  friend struct ipc::IPDLParamTraits<RemoteImageHolder>;
+  friend struct IPC::ParamTraits<RemoteImageHolder>;
 
  public:
   RemoteImageHolder();
@@ -59,14 +59,13 @@ class RemoteImageHolder final {
   gfx::ColorRange mColorRange = {};
 };
 
-template <>
-struct ipc::IPDLParamTraits<RemoteImageHolder> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    RemoteImageHolder&& aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
-                   RemoteImageHolder* aResult);
-};
-
 }  
+
+template <>
+struct IPC::ParamTraits<mozilla::RemoteImageHolder> {
+  static void Write(MessageWriter* aWriter,
+                    mozilla::RemoteImageHolder&& aParam);
+  static bool Read(MessageReader* aReader, mozilla::RemoteImageHolder* aResult);
+};
 
 #endif  

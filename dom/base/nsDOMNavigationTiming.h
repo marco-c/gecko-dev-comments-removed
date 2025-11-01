@@ -26,11 +26,8 @@ namespace IPC {
 class Message;
 class MessageReader;
 class MessageWriter;
-}  
-namespace mozilla::ipc {
-class IProtocol;
 template <typename>
-struct IPDLParamTraits;
+struct ParamTraits;
 }  
 
 class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
@@ -256,19 +253,19 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
   bool mDocShellHasBeenActiveSinceNavigationStart;
 
-  friend struct mozilla::ipc::IPDLParamTraits<nsDOMNavigationTiming*>;
+  friend struct IPC::ParamTraits<nsDOMNavigationTiming*>;
 };
 
 
 
 
 
-namespace mozilla::ipc {
+namespace IPC {
+
 template <>
-struct IPDLParamTraits<nsDOMNavigationTiming*> {
-  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
-                    nsDOMNavigationTiming* aParam);
-  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+struct ParamTraits<nsDOMNavigationTiming*> {
+  static void Write(MessageWriter* aWriter, nsDOMNavigationTiming* aParam);
+  static bool Read(MessageReader* aReader,
                    RefPtr<nsDOMNavigationTiming>* aResult);
 };
 
