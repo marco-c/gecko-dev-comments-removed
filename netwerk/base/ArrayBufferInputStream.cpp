@@ -9,7 +9,6 @@
 #include "js/ArrayBuffer.h"  
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
-#include "mozilla/Span.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/ScriptSettings.h"
 
