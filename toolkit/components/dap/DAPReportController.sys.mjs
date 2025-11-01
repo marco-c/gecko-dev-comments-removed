@@ -31,7 +31,21 @@ const DB_VERSION = 1;
 const FREQ_CAP_STORE = "freq_caps";
 const REPORT_STORE = "reports";
 
+/**
+ * Represents a DAP task configuration.
+ */
 export class Task {
+  /**
+   * Constructs a Task object representing a DAP task configuration.
+   *
+   * @param {object} params
+   * @param {string} params.taskId - The unique identifier for the task.
+   * @param {string} params.vdaf - The VDAF algorithm type (e.g., "sum", "sumvec", "histogram").
+   * @param {number} params.bits - The number of bits for the measurement.
+   * @param {number} params.length - The length of the measurement sumvec or histogram.
+   * @param {number} params.timePrecision - The time precision for the task.
+   * @param {number|Array<number>} params.defaultMeasurement - The default measurement value to use.
+   */
   constructor({
     taskId,
     vdaf,
@@ -49,7 +63,24 @@ export class Task {
   }
 }
 
+/**
+ * @typedef {object} DAPReportControllerOptions
+ * @property {number} windowDays - The number of days before resetting the frequency cap.
+ * @property {number} submissionIntervalMins - The interval in minutes between automatic submissions.
+ */
+
+/**
+ * Manages DAP report submission with frequency capping.
+ */
 export class DAPReportController {
+  /**
+   * Constructs a DAPReportController to manage DAP report submission with frequency capping.
+   *
+   * @param {object} params
+   * @param {object} params.tasks - Map of task IDs to Task objects.
+   * @param {DAPReportControllerOptions} params.options - Configuration options for the controller.
+   * @param {Function} params.DateNowFn - Function to get the current time in milliseconds (defaults to Date.now).
+   */
   constructor({ tasks, options, DateNowFn = Date.now } = {}) {
     this._tasks = tasks;
     this._windowDays = options.windowDays;
@@ -66,7 +97,7 @@ export class DAPReportController {
     try {
       return await this.#openDatabase();
     } catch {
-      throw new Error("DAPVisitCounter unable to load database.");
+      throw new Error("DAPReportController unable to load database.");
     }
   }
 
@@ -84,20 +115,19 @@ export class DAPReportController {
   /* Clears a pending report and updates the freq cap data
    */
   async #releasePendingReport(report) {
+    let cap = {
+      taskId: report.taskId,
+      nextReset: this._now() + this._windowDays * DAY_IN_MILLI,
+    };
+
     const tx = (await this.db).transaction(
       [REPORT_STORE, FREQ_CAP_STORE],
       "readwrite"
     );
 
     const reportStore = tx.objectStore(REPORT_STORE);
-    const capStore = tx.objectStore(FREQ_CAP_STORE);
-
     await reportStore.delete(report.taskId);
-
-    let cap = {
-      taskId: report.taskId,
-      nextReset: this._now() + this._windowDays * DAY_IN_MILLI,
-    };
+    const capStore = tx.objectStore(FREQ_CAP_STORE);
     await capStore.put(cap);
     await tx.done;
   }
@@ -125,9 +155,9 @@ export class DAPReportController {
         const tx = (await this.db).transaction(REPORT_STORE, "readwrite");
         await tx.objectStore(REPORT_STORE).put(report);
         await tx.done;
-      } else {
-        lazy.logConsole.debug(`reached cap, nextReset: ${cap.nextReset}`);
+        return true;
       }
+      lazy.logConsole.debug(`reached cap, nextReset: ${cap.nextReset}`);
     } catch (err) {
       if (err.name === "NotFoundError") {
         console.error(
@@ -137,6 +167,7 @@ export class DAPReportController {
         console.error("IndexedDB access error:", err);
       }
     }
+    return false;
   }
 
   /* Deletes any pending report or freq cap data from DB
@@ -148,12 +179,11 @@ export class DAPReportController {
       "readwrite"
     );
     const reportStore = tx.objectStore(REPORT_STORE);
-    const capStore = tx.objectStore(FREQ_CAP_STORE);
-
     for (const taskId of taskIds) {
       reportStore.delete(taskId);
     }
 
+    const capStore = tx.objectStore(FREQ_CAP_STORE);
     for (const taskId of taskIds) {
       capStore.delete(taskId);
     }
@@ -202,6 +232,7 @@ export class DAPReportController {
       let report = await this.getReportToSubmit(taskId);
       if (report) {
         measurement = report.measurement;
+        await this.#releasePendingReport(report);
       }
 
       sendPromises.push(
@@ -210,10 +241,6 @@ export class DAPReportController {
           reason,
         })
       );
-
-      if (report) {
-        this.#releasePendingReport(report);
-      }
     }
     try {
       await Promise.all(sendPromises);
