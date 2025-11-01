@@ -213,17 +213,7 @@ typedef unsigned char PRUint8;
 
 
 
-
-
-
-
-
-
-
-
-#if (defined(HPUX) && defined(__cplusplus)  \
-        && !defined(__GNUC__) && __cplusplus < 199707L) \
-    || (defined(__sun) && defined(__cplusplus)) 
+#if defined(__sun) && defined(__cplusplus)
 typedef char PRInt8;
 #else
 typedef signed char PRInt8;

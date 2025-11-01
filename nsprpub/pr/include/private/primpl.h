@@ -1589,10 +1589,6 @@ struct PRThread {
     PRUint32 interrupt_blocked;     
     struct pollfd *syspoll_list;    
     PRUint32 syspoll_count;         
-#if defined(_PR_POLL_WITH_SELECT)
-    int *selectfd_list;             
-    PRUint32 selectfd_count;        
-#endif
 #elif defined(_PR_BTHREADS)
     PRUint32 flags;
     _MDThread md;

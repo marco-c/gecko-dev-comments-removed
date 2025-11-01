@@ -820,11 +820,6 @@ static void _pt_thread_death_internal(void* arg, PRBool callDestructors) {
   if (NULL != thred->syspoll_list) {
     PR_Free(thred->syspoll_list);
   }
-#  if defined(_PR_POLL_WITH_SELECT)
-  if (NULL != thred->selectfd_list) {
-    PR_Free(thred->selectfd_list);
-  }
-#  endif
 #  if defined(DEBUG)
   memset(thred, 0xaf, sizeof(PRThread));
 #  endif 
@@ -957,41 +952,6 @@ static void _PR_Fini(void) __attribute__((destructor));
 
 #    pragma fini(_PR_Fini)
 static void _PR_Fini(void);
-#  elif defined(HPUX)
-
-
-
-
-#    if defined(__ia64) || defined(_LP64)
-#      pragma FINI "_PR_Fini"
-static void _PR_Fini(void);
-#    else
-
-
-
-
-#      include <dl.h>
-
-static void _PR_Fini(void);
-
-void PR_HPUX10xInit(shl_t handle, int loading) {
-  
-
-
-
-
-
-
-
-
-
-  if (loading) {
-    
-  } else {
-    _PR_Fini();
-  }
-}
-#    endif
 #  elif defined(AIX)
 
 #  endif

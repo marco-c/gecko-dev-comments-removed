@@ -792,12 +792,7 @@ PR_OpenSemaphore(const char* name, PRIntn flags, PRIntn mode, PRUintn value) {
     }
     sem->sem = sem_open(osname, oflag, mode, value);
   } else {
-#    ifdef HPUX
-    
-    sem->sem = sem_open(osname, 0, 0, 0);
-#    else
     sem->sem = sem_open(osname, 0);
-#    endif
   }
   if ((sem_t*)-1 == sem->sem) {
     _PR_MD_MAP_DEFAULT_ERROR(errno);
