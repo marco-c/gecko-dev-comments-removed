@@ -32,6 +32,29 @@ struct AnchorPosInfo {
   bool mCompensatesForScroll;
 };
 
+class DistanceToNearestScrollContainer {
+ public:
+  DistanceToNearestScrollContainer() : mDistance{kInvalid} {}
+  explicit DistanceToNearestScrollContainer(uint32_t aDistance)
+      : mDistance{aDistance} {}
+  bool Valid() const { return mDistance != kInvalid; }
+  bool operator==(const DistanceToNearestScrollContainer& aOther) const {
+    return mDistance == aOther.mDistance;
+  }
+  bool operator!=(const DistanceToNearestScrollContainer& aOther) const {
+    return !(*this == aOther);
+  }
+
+ private:
+  
+  static constexpr uint32_t kInvalid = 0;
+  
+  
+  
+  
+  uint32_t mDistance;
+};
+
 struct AnchorPosOffsetData {
   
   
@@ -39,6 +62,8 @@ struct AnchorPosOffsetData {
   
   
   bool mCompensatesForScroll = false;
+  
+  DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
 };
 
 
@@ -66,7 +91,13 @@ class AnchorPosReferenceData {
  public:
   
   
-  using PositionTryBackup = std::pair<mozilla::PhysicalAxes, nsPoint>;
+  
+  struct PositionTryBackup {
+    mozilla::PhysicalAxes mCompensatingForScroll;
+    nsPoint mDefaultScrollShift;
+    nsRect mContainingBlockRect;
+    bool mUseScrollableContainingBlock = false;
+  };
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
   AnchorPosReferenceData() = default;
@@ -98,20 +129,31 @@ class AnchorPosReferenceData {
   }
 
   PositionTryBackup TryPositionWithSameDefaultAnchor() {
-    mozilla::PhysicalAxes compensatingForScroll =
-        std::exchange(mCompensatingForScroll, {});
-    nsPoint defaultScrollShift = std::exchange(mDefaultScrollShift, {});
-    return std::make_pair(compensatingForScroll, defaultScrollShift);
+    auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
+    auto defaultScrollShift = std::exchange(mDefaultScrollShift, {});
+    auto insetModifiedContainingBlock = std::exchange(mContainingBlockRect, {});
+    return {compensatingForScroll, defaultScrollShift,
+            insetModifiedContainingBlock};
   }
 
   void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
-    std::tie(mCompensatingForScroll, mDefaultScrollShift) = aBackup;
+    mCompensatingForScroll = aBackup.mCompensatingForScroll;
+    mDefaultScrollShift = aBackup.mDefaultScrollShift;
+    mContainingBlockRect = aBackup.mContainingBlockRect;
   }
 
+  
+  DistanceToNearestScrollContainer mDistanceToDefaultScrollContainer;
   
   nsPoint mDefaultScrollShift;
   
   
+  nsRect mContainingBlockRect;
+  
+  
+  
+  
+  RefPtr<const nsAtom> mDefaultAnchorName;
 
  private:
   ResolutionMap mMap;
@@ -130,7 +172,6 @@ struct AnchorPosDefaultAnchorCache {
   const nsIFrame* mScrollContainer = nullptr;
 
   AnchorPosDefaultAnchorCache() = default;
-  explicit AnchorPosDefaultAnchorCache(const nsIFrame* aAnchor);
   AnchorPosDefaultAnchorCache(const nsIFrame* aAnchor,
                               const nsIFrame* aScrollContainer);
 };
@@ -240,7 +281,11 @@ struct AnchorPositioningUtils {
 
   static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
 
-  static const nsIFrame* GetNearestScrollFrame(const nsIFrame* aFrame);
+  struct NearestScrollFrameInfo {
+    const nsIFrame* mScrollContainer = nullptr;
+    DistanceToNearestScrollContainer mDistance;
+  };
+  static NearestScrollFrameInfo GetNearestScrollFrame(const nsIFrame* aFrame);
 
   static nsPoint GetScrollOffsetFor(
       PhysicalAxes aAxes, const nsIFrame* aPositioned,
