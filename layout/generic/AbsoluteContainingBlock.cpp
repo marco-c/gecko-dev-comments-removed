@@ -1095,6 +1095,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   };
 
   Maybe<uint32_t> firstTryIndex;
+  Maybe<nsPoint> firstTryNormalPosition;
   
   
   if (aAnchorPosResolutionCache) {
@@ -1413,6 +1414,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       const auto position = aKidFrame->GetPosition();
       
       
+      if (!firstTryNormalPosition) {
+        firstTryNormalPosition = Some(position);
+      }
       aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(), position);
       if (offset != nsPoint{}) {
         aKidFrame->SetPosition(position - offset);
@@ -1463,6 +1467,31 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     aKidFrame->AddStateBits(NS_FRAME_IS_DIRTY);
     aStatus.Reset();
   } while (true);
+
+  [&]() {
+    if (!isOverflowingCB || !aAnchorPosResolutionCache ||
+        !firstTryNormalPosition) {
+      return;
+    }
+    
+    
+    const auto normalPosition = *firstTryNormalPosition;
+    const auto oldNormalPosition = aKidFrame->GetNormalPosition();
+    if (normalPosition != oldNormalPosition) {
+      aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(),
+                             normalPosition);
+    }
+    const auto position =
+        normalPosition -
+        aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift;
+    const auto oldPosition = aKidFrame->GetPosition();
+    if (position == oldPosition) {
+      return;
+    }
+    aKidFrame->SetPosition(position);
+    aKidFrame->UpdateOverflow();
+    nsContainerFrame::PlaceFrameView(aKidFrame);
+  }();
 
   
   
