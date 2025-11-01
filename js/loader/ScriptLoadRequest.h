@@ -181,6 +181,19 @@ class ScriptLoadRequest : public nsISupports,
     return PassedConditionForDiskCache() || PassedConditionForMemoryCache();
   }
 
+  void MarkNotCacheable() {
+    mDiskCachingPlan = CachingPlan::NotCacheable;
+    mMemoryCachingPlan = CachingPlan::NotCacheable;
+  }
+
+  bool IsMarkedNotCacheable() const {
+    MOZ_ASSERT_IF(mDiskCachingPlan == CachingPlan::NotCacheable,
+                  mMemoryCachingPlan == CachingPlan::NotCacheable);
+    MOZ_ASSERT_IF(mDiskCachingPlan != CachingPlan::NotCacheable,
+                  mMemoryCachingPlan != CachingPlan::NotCacheable);
+    return mDiskCachingPlan == CachingPlan::NotCacheable;
+  }
+
   void MarkSkippedDiskCaching() {
     MOZ_ASSERT(mDiskCachingPlan == CachingPlan::Uninitialized ||
                mDiskCachingPlan == CachingPlan::PassedCondition);
@@ -259,6 +272,10 @@ class ScriptLoadRequest : public nsISupports,
     
     Uninitialized,
 
+    
+    NotCacheable,
+
+    
     
     Skipped,
 
