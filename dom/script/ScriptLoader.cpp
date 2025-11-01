@@ -3053,8 +3053,8 @@ static void InstantiateStencil(
     JS::Handle<JS::Value> aDebuggerPrivateValue,
     JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv,
     JS::InstantiationStorage* aStorage = nullptr,
-    CollectDelazifications aCollectDelazifications = CollectDelazifications::No,
-    IsAlreadyCollecting* aIsAlreadyCollecting = nullptr) {
+    CollectDelazifications aCollectDelazifications =
+        CollectDelazifications::No) {
   JS::InstantiateOptions instantiateOptions(aCompileOptions);
   JS::Rooted<JSScript*> script(
       aCx, JS::InstantiateGlobalStencil(aCx, instantiateOptions, aStencil,
@@ -3065,19 +3065,10 @@ static void InstantiateStencil(
   }
 
   if (aCollectDelazifications == CollectDelazifications::Yes) {
-    bool alreadyStarted;
-    if (!JS::StartCollectingDelazifications(aCx, script, aStencil,
-                                            alreadyStarted)) {
+    bool ignored;
+    if (!JS::StartCollectingDelazifications(aCx, script, aStencil, ignored)) {
       aRv.NoteJSContextException(aCx);
       return;
-    }
-    if (aIsAlreadyCollecting) {
-      *aIsAlreadyCollecting =
-          alreadyStarted ? IsAlreadyCollecting::Yes : IsAlreadyCollecting::No;
-    } else {
-      
-      
-      MOZ_ASSERT(!alreadyStarted);
     }
   }
 
@@ -3220,26 +3211,18 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
 
   MOZ_ASSERT(aRequest->PassedConditionForMemoryCache());
 
-  IsAlreadyCollecting isAlreadyCollecting = IsAlreadyCollecting::No;
+  
+  
+  
+  
+  
+  
+  
+  
+  
   InstantiateStencil(aCx, aCompileOptions, aStencil, aScript,
                      aDebuggerPrivateValue, aDebuggerIntroductionScript, aRv,
-                      nullptr, CollectDelazifications::Yes,
-                     &isAlreadyCollecting);
-  if (isAlreadyCollecting == IsAlreadyCollecting::Yes) {
-    LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip: IsAlreadyCollecting",
-         aRequest));
-
-    
-    
-    
-    if (aRequest->IsModuleRequest() &&
-        !aRequest->AsModuleRequest()->IsTopLevel()) {
-      MOZ_ASSERT(aRequest->isInList());
-      mDiskCacheableDependencyModules.Remove(aRequest);
-    }
-
-    aRequest->MarkSkippedMemoryCaching();
-  }
+                      nullptr, CollectDelazifications::Yes);
 }
 
 void ScriptLoader::InstantiateClassicScriptFromAny(
@@ -3613,6 +3596,7 @@ void ScriptLoader::UpdateDiskCache() {
   }
 
   for (auto& loadedScript : mDiskCacheQueue) {
+    
     
     
     
