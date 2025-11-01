@@ -21,9 +21,7 @@ using mozilla::TimeDuration;
 static const long NanoSecPerSec = 1000000000;
 
 
-
-#if defined(HAVE_CLOCK_MONOTONIC) && \
-    !(defined(__ANDROID__) && __ANDROID_API__ < 21) && !defined(__APPLE__)
+#if defined(HAVE_CLOCK_MONOTONIC) && !defined(__APPLE__)
 #  define CV_USE_CLOCK_API
 #endif
 
