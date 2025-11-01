@@ -524,7 +524,6 @@ class CycleCollectedJSContext::SavedMicroTaskQueue
       }
 
       MOZ_RELEASE_ASSERT(ccjs->mPendingMicroTaskRunnables.empty());
-      ccjs->mDebuggerRecursionDepth--;
       ccjs->mPendingMicroTaskRunnables.swap(mQueue);
 
       
@@ -533,6 +532,8 @@ class CycleCollectedJSContext::SavedMicroTaskQueue
         ccjs->mPendingMicroTaskRunnables.push_back(maybeSuppressedTasks);
       }
     }
+
+    ccjs->mDebuggerRecursionDepth--;
   }
 
  private:
