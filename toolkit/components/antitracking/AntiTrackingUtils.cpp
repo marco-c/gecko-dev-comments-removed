@@ -699,17 +699,6 @@ nsresult AntiTrackingUtils::ActivateStoragePermissionStateInParent(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<BrowsingContext> bc;
-  nsresult rv = loadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
-  if (NS_WARN_IF(NS_FAILED(rv)) || !bc) {
-    return NS_ERROR_FAILURE;
-  }
-
-  WindowContext* wc = bc->GetCurrentWindowContext();
-  if (NS_WARN_IF(!wc)) {
-    return NS_ERROR_FAILURE;
-  }
-
 #ifdef DEBUG
   
   
@@ -720,8 +709,6 @@ nsresult AntiTrackingUtils::ActivateStoragePermissionStateInParent(
 
   
   MOZ_TRY(loadInfo->SetStoragePermission(nsILoadInfo::HasStoragePermission));
-  MOZ_TRY(wc->SetUsingStorageAccess(true));
-
   return NS_OK;
 }
 
