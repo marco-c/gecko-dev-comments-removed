@@ -12,7 +12,6 @@
 
 
 #include "mozilla/Assertions.h"
-#include "mozilla/HelperMacros.h"
 #include "mozilla/Literals.h"
 #include "mozilla/MathAlgorithms.h"
 
@@ -124,9 +123,8 @@ void DefineGlobals();
 #define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
 
 
-#define NUM_SMALL_CLASSES                                          \
-  (kNumTinyClasses + kNumQuantumClasses + kNumQuantumWideClasses + \
-   gNumSubPageClasses)
+#define NUM_SMALL_CLASSES \
+  (kNumQuantumClasses + kNumQuantumWideClasses + gNumSubPageClasses)
 
 
 static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {
