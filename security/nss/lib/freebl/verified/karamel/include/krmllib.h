@@ -1,5 +1,5 @@
-#ifndef __KRMLLIB_H
-#define __KRMLLIB_H
+#ifndef KRML_HEADER_KRMLLIB_H
+#define KRML_HEADER_KRMLLIB_H
 
 
 

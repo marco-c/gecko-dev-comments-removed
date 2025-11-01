@@ -11,19 +11,32 @@
 
 
 
-#ifndef __internal_libcrux_core_H
-#define __internal_libcrux_core_H
+#ifndef internal_libcrux_core_H
+#define internal_libcrux_core_H
+
+#include "eurydice_glue.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include "../libcrux_core.h"
-#include "eurydice_glue.h"
 
-#define CORE_NUM__U32_8__BITS (32U)
 
-static inline uint32_t core_num__u8_6__count_ones(uint8_t x0);
+
+
+
+
+typedef struct core_ops_range_Range_08_s {
+    size_t start;
+    size_t end;
+} core_ops_range_Range_08;
+
+static inline uint64_t core_num__u64__from_le_bytes(uint8_t x0[8U]);
+
+static inline uint64_t core_num__u64__rotate_left(uint64_t x0, uint32_t x1);
+
+static inline void core_num__u64__to_le_bytes(uint64_t x0, uint8_t x1[8U]);
 
 #define LIBCRUX_ML_KEM_CONSTANTS_SHARED_SECRET_SIZE ((size_t)32U)
 
@@ -45,15 +58,105 @@ void libcrux_ml_kem_constant_time_ops_compare_ciphertexts_select_shared_secret_i
 
 #define LIBCRUX_ML_KEM_CONSTANTS_H_DIGEST_SIZE ((size_t)32U)
 
+
+
+
+
+
+
+size_t libcrux_ml_kem_constants_ranked_bytes_per_ring_element(size_t rank);
+
+int16_t libcrux_secrets_int_I16(int16_t v);
+
+
+
+
+
+
+
+
+
+int16_t libcrux_secrets_int_public_integers_classify_27_39(int16_t self);
+
+
+
+
+int16_t libcrux_secrets_int_as_i16_59(uint8_t self);
+
+
+
+
+
+
+
+
+
+int16_t libcrux_secrets_int_public_integers_declassify_d8_39(int16_t self);
+
+
+
+
+uint8_t libcrux_secrets_int_as_u8_f5(int16_t self);
+
+
+
+
+int32_t libcrux_secrets_int_as_i32_f5(int16_t self);
+
+
+
+
+int16_t libcrux_secrets_int_as_i16_36(int32_t self);
+
+
+
+
+int32_t libcrux_secrets_int_as_i32_b8(uint32_t self);
+
+
+
+
+uint16_t libcrux_secrets_int_as_u16_f5(int16_t self);
+
+
+
+
+int16_t libcrux_secrets_int_as_i16_ca(uint16_t self);
+
+
+
+
+uint64_t libcrux_secrets_int_as_u64_ca(uint16_t self);
+
+
+
+
+
+
+
+
+
+uint32_t libcrux_secrets_int_public_integers_classify_27_df(uint32_t self);
+
+
+
+
+uint32_t libcrux_secrets_int_as_u32_a3(uint64_t self);
+
+
+
+
+int16_t libcrux_secrets_int_as_i16_b8(uint32_t self);
+
+
+
+
+int16_t libcrux_secrets_int_as_i16_f5(int16_t self);
+
 typedef struct libcrux_ml_kem_utils_extraction_helper_Keypair1024_s {
     uint8_t fst[1536U];
     uint8_t snd[1568U];
 } libcrux_ml_kem_utils_extraction_helper_Keypair1024;
-
-typedef struct libcrux_ml_kem_utils_extraction_helper_Keypair512_s {
-    uint8_t fst[768U];
-    uint8_t snd[800U];
-} libcrux_ml_kem_utils_extraction_helper_Keypair512;
 
 typedef struct libcrux_ml_kem_utils_extraction_helper_Keypair768_s {
     uint8_t fst[1152U];
@@ -69,8 +172,10 @@ typedef struct libcrux_ml_kem_utils_extraction_helper_Keypair768_s {
 
 
 
-libcrux_ml_kem_types_MlKemPublicKey_1f libcrux_ml_kem_types_from_b6_961(
-    uint8_t value[1568U]);
+
+libcrux_ml_kem_mlkem1024_MlKem1024KeyPair libcrux_ml_kem_types_from_17_94(
+    libcrux_ml_kem_types_MlKemPrivateKey_83 sk,
+    libcrux_ml_kem_types_MlKemPublicKey_64 pk);
 
 
 
@@ -81,24 +186,7 @@ libcrux_ml_kem_types_MlKemPublicKey_1f libcrux_ml_kem_types_from_b6_961(
 
 
 
-
-
-
-
-libcrux_ml_kem_mlkem1024_MlKem1024KeyPair libcrux_ml_kem_types_from_17_821(
-    libcrux_ml_kem_types_MlKemPrivateKey_95 sk,
-    libcrux_ml_kem_types_MlKemPublicKey_1f pk);
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemPrivateKey_95 libcrux_ml_kem_types_from_05_891(
+libcrux_ml_kem_types_MlKemPrivateKey_83 libcrux_ml_kem_types_from_77_39(
     uint8_t value[3168U]);
 
 
@@ -109,8 +197,159 @@ libcrux_ml_kem_types_MlKemPrivateKey_95 libcrux_ml_kem_types_from_05_891(
 
 
 
+uint8_t *libcrux_ml_kem_types_as_slice_a9_af(
+    libcrux_ml_kem_types_MlKemCiphertext_64 *self);
 
-libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext libcrux_ml_kem_types_from_01_331(
+
+
+
+
+
+
+
+
+
+
+libcrux_ml_kem_mlkem768_MlKem768KeyPair libcrux_ml_kem_types_from_17_74(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 sk,
+    libcrux_ml_kem_types_MlKemPublicKey_30 pk);
+
+
+
+
+
+
+
+
+
+
+libcrux_ml_kem_types_MlKemPrivateKey_d9 libcrux_ml_kem_types_from_77_28(
+    uint8_t value[2400U]);
+
+
+
+
+
+
+
+
+
+uint8_t *libcrux_ml_kem_types_as_slice_a9_80(
+    libcrux_ml_kem_mlkem768_MlKem768Ciphertext *self);
+
+
+
+
+
+
+
+
+
+uint8_t *libcrux_ml_kem_types_as_slice_e6_d0(
+    libcrux_ml_kem_types_MlKemPublicKey_30 *self);
+
+
+
+
+
+
+
+
+
+
+libcrux_ml_kem_types_MlKemPublicKey_30 libcrux_ml_kem_types_from_fd_d0(
+    uint8_t value[1184U]);
+
+typedef struct Eurydice_slice_uint8_t_x4_s {
+    Eurydice_slice fst;
+    Eurydice_slice snd;
+    Eurydice_slice thd;
+    Eurydice_slice f3;
+} Eurydice_slice_uint8_t_x4;
+
+typedef struct Eurydice_slice_uint8_t_x2_s {
+    Eurydice_slice fst;
+    Eurydice_slice snd;
+} Eurydice_slice_uint8_t_x2;
+
+
+
+
+
+
+
+
+
+
+
+
+Eurydice_slice_uint8_t_x4 libcrux_ml_kem_types_unpack_private_key_b4(
+    Eurydice_slice private_key);
+
+
+
+
+
+
+
+
+
+
+libcrux_ml_kem_mlkem768_MlKem768Ciphertext libcrux_ml_kem_types_from_e0_80(
+    uint8_t value[1088U]);
+
+
+
+
+
+
+uint8_t libcrux_ml_kem_utils_prf_input_inc_e0(uint8_t (*prf_inputs)[33U],
+                                              uint8_t domain_separator);
+
+
+
+
+
+
+
+
+
+
+Eurydice_slice libcrux_ml_kem_types_as_ref_d3_80(
+    libcrux_ml_kem_mlkem768_MlKem768Ciphertext *self);
+
+
+
+
+
+
+
+
+
+void libcrux_ml_kem_utils_into_padded_array_15(Eurydice_slice slice,
+                                               uint8_t ret[1120U]);
+
+
+
+
+
+
+
+
+
+uint8_t *libcrux_ml_kem_types_as_slice_e6_af(
+    libcrux_ml_kem_types_MlKemPublicKey_64 *self);
+
+
+
+
+
+
+
+
+
+
+libcrux_ml_kem_types_MlKemPublicKey_64 libcrux_ml_kem_types_from_fd_af(
     uint8_t value[1568U]);
 
 
@@ -124,175 +363,26 @@ libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext libcrux_ml_kem_types_from_01_331(
 
 
 
-uint8_t *libcrux_ml_kem_types_as_slice_cb_3d1(
-    libcrux_ml_kem_types_MlKemPublicKey_1f *self);
+Eurydice_slice_uint8_t_x4 libcrux_ml_kem_types_unpack_private_key_1f(
+    Eurydice_slice private_key);
 
+#define core_result_Ok 0
+#define core_result_Err 1
 
+typedef uint8_t core_result_Result_fb_tags;
 
 
 
 
 
 
-
-
-Eurydice_slice libcrux_ml_kem_types_as_ref_00_d81(
-    libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext *self);
-
-
-
-
-
-
-
-
-
-void libcrux_ml_kem_utils_into_padded_array_6d4(Eurydice_slice slice,
-                                                uint8_t ret[1600U]);
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemPublicKey_15 libcrux_ml_kem_types_from_b6_960(
-    uint8_t value[1184U]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_mlkem768_MlKem768KeyPair libcrux_ml_kem_types_from_17_820(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 sk,
-    libcrux_ml_kem_types_MlKemPublicKey_15 pk);
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemPrivateKey_55 libcrux_ml_kem_types_from_05_890(
-    uint8_t value[2400U]);
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_mlkem768_MlKem768Ciphertext libcrux_ml_kem_types_from_01_330(
-    uint8_t value[1088U]);
-
-
-
-
-
-
-
-
-
-
-
-
-uint8_t *libcrux_ml_kem_types_as_slice_cb_3d0(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *self);
-
-
-
-
-
-
-
-
-
-
-Eurydice_slice libcrux_ml_kem_types_as_ref_00_d80(
-    libcrux_ml_kem_mlkem768_MlKem768Ciphertext *self);
-
-
-
-
-
-
-
-
-
-void libcrux_ml_kem_utils_into_padded_array_6d3(Eurydice_slice slice,
-                                                uint8_t ret[1120U]);
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemPublicKey_be libcrux_ml_kem_types_from_b6_96(
-    uint8_t value[800U]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemKeyPair_cb libcrux_ml_kem_types_from_17_82(
-    libcrux_ml_kem_types_MlKemPrivateKey_5e sk,
-    libcrux_ml_kem_types_MlKemPublicKey_be pk);
-
-
-
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemPrivateKey_5e libcrux_ml_kem_types_from_05_89(
-    uint8_t value[1632U]);
-
-
-
-
-
-
-typedef struct core_result_Result_00_s {
-    core_result_Result_86_tags tag;
+typedef struct core_result_Result_fb_s {
+    core_result_Result_fb_tags tag;
     union {
         uint8_t case_Ok[32U];
         core_array_TryFromSliceError case_Err;
     } val;
-} core_result_Result_00;
+} core_result_Result_fb;
 
 
 
@@ -302,8 +392,8 @@ typedef struct core_result_Result_00_s {
 
 
 
-void core_result_unwrap_41_33(core_result_Result_00 self, uint8_t ret[32U]);
 
+void core_result_unwrap_26_b3(core_result_Result_fb self, uint8_t ret[32U]);
 
 
 
@@ -313,8 +403,8 @@ void core_result_unwrap_41_33(core_result_Result_00 self, uint8_t ret[32U]);
 
 
 
-libcrux_ml_kem_types_MlKemCiphertext_e8 libcrux_ml_kem_types_from_01_33(
-    uint8_t value[768U]);
+void libcrux_ml_kem_utils_into_padded_array_b6(Eurydice_slice slice,
+                                               uint8_t ret[34U]);
 
 
 
@@ -325,65 +415,60 @@ libcrux_ml_kem_types_MlKemCiphertext_e8 libcrux_ml_kem_types_from_01_33(
 
 
 
+libcrux_ml_kem_types_MlKemCiphertext_64 libcrux_ml_kem_types_from_e0_af(
+    uint8_t value[1568U]);
 
 
-uint8_t *libcrux_ml_kem_types_as_slice_cb_3d(
-    libcrux_ml_kem_types_MlKemPublicKey_be *self);
 
 
 
 
+uint8_t libcrux_ml_kem_utils_prf_input_inc_ac(uint8_t (*prf_inputs)[33U],
+                                              uint8_t domain_separator);
 
 
 
 
 
-void libcrux_ml_kem_utils_into_padded_array_6d2(Eurydice_slice slice,
-                                                uint8_t ret[33U]);
 
 
 
 
+void libcrux_ml_kem_utils_into_padded_array_c8(Eurydice_slice slice,
+                                               uint8_t ret[33U]);
 
 
 
 
 
-void libcrux_ml_kem_utils_into_padded_array_6d1(Eurydice_slice slice,
-                                                uint8_t ret[34U]);
 
 
 
 
 
+Eurydice_slice libcrux_ml_kem_types_as_ref_d3_af(
+    libcrux_ml_kem_types_MlKemCiphertext_64 *self);
 
 
 
 
 
-Eurydice_slice libcrux_ml_kem_types_as_ref_00_d8(
-    libcrux_ml_kem_types_MlKemCiphertext_e8 *self);
 
 
 
 
+void libcrux_ml_kem_utils_into_padded_array_7f(Eurydice_slice slice,
+                                               uint8_t ret[1600U]);
 
 
 
 
 
-void libcrux_ml_kem_utils_into_padded_array_6d0(Eurydice_slice slice,
-                                                uint8_t ret[800U]);
 
 
 
 
-
-
-
-
-
-void libcrux_ml_kem_utils_into_padded_array_6d(Eurydice_slice slice,
+void libcrux_ml_kem_utils_into_padded_array_24(Eurydice_slice slice,
                                                uint8_t ret[64U]);
 
 
@@ -391,13 +476,11 @@ void libcrux_ml_kem_utils_into_padded_array_6d(Eurydice_slice slice,
 
 
 
-typedef struct core_result_Result_6f_s {
-    core_result_Result_86_tags tag;
-    union {
-        uint8_t case_Ok[24U];
-        core_array_TryFromSliceError case_Err;
-    } val;
-} core_result_Result_6f;
+
+
+
+void libcrux_secrets_int_public_integers_declassify_d8_d2(uint8_t self[24U],
+                                                          uint8_t ret[24U]);
 
 
 
@@ -407,20 +490,8 @@ typedef struct core_result_Result_6f_s {
 
 
 
-void core_result_unwrap_41_76(core_result_Result_6f self, uint8_t ret[24U]);
-
-
-
-
-
-
-typedef struct core_result_Result_7a_s {
-    core_result_Result_86_tags tag;
-    union {
-        uint8_t case_Ok[20U];
-        core_array_TryFromSliceError case_Err;
-    } val;
-} core_result_Result_7a;
+void libcrux_secrets_int_public_integers_declassify_d8_fa(uint8_t self[22U],
+                                                          uint8_t ret[22U]);
 
 
 
@@ -430,20 +501,8 @@ typedef struct core_result_Result_7a_s {
 
 
 
-void core_result_unwrap_41_ea(core_result_Result_7a self, uint8_t ret[20U]);
-
-
-
-
-
-
-typedef struct core_result_Result_cd_s {
-    core_result_Result_86_tags tag;
-    union {
-        uint8_t case_Ok[10U];
-        core_array_TryFromSliceError case_Err;
-    } val;
-} core_result_Result_cd;
+void libcrux_secrets_int_public_integers_declassify_d8_57(uint8_t self[20U],
+                                                          uint8_t ret[20U]);
 
 
 
@@ -453,20 +512,91 @@ typedef struct core_result_Result_cd_s {
 
 
 
-void core_result_unwrap_41_07(core_result_Result_cd self, uint8_t ret[10U]);
+void libcrux_secrets_int_public_integers_declassify_d8_cc(uint8_t self[10U],
+                                                          uint8_t ret[10U]);
 
 
 
 
 
 
-typedef struct core_result_Result_c0_s {
-    core_result_Result_86_tags tag;
+
+
+
+void libcrux_secrets_int_public_integers_declassify_d8_76(uint8_t self[8U],
+                                                          uint8_t ret[8U]);
+
+
+
+
+
+
+
+
+
+void libcrux_secrets_int_public_integers_declassify_d8_d4(uint8_t self[2U],
+                                                          uint8_t ret[2U]);
+
+
+
+
+
+
+
+
+
+
+
+Eurydice_slice libcrux_secrets_int_public_integers_classify_mut_slice_ba(
+    Eurydice_slice x);
+
+
+
+
+
+
+
+
+
+
+Eurydice_slice libcrux_secrets_int_classify_public_classify_ref_9b_90(
+    Eurydice_slice self);
+
+
+
+
+
+
+
+
+
+void libcrux_secrets_int_public_integers_declassify_d8_46(int16_t self[16U],
+                                                          int16_t ret[16U]);
+
+
+
+
+
+
+
+
+
+
+Eurydice_slice libcrux_secrets_int_classify_public_classify_ref_9b_39(
+    Eurydice_slice self);
+
+
+
+
+
+
+typedef struct core_result_Result_0a_s {
+    core_result_Result_fb_tags tag;
     union {
         int16_t case_Ok[16U];
         core_array_TryFromSliceError case_Err;
     } val;
-} core_result_Result_c0;
+} core_result_Result_0a;
 
 
 
@@ -476,16 +606,47 @@ typedef struct core_result_Result_c0_s {
 
 
 
-void core_result_unwrap_41_30(core_result_Result_c0 self, int16_t ret[16U]);
 
-typedef struct Eurydice_slice_uint8_t_4size_t__x2_s {
-    Eurydice_slice fst[4U];
-    Eurydice_slice snd[4U];
-} Eurydice_slice_uint8_t_4size_t__x2;
+void core_result_unwrap_26_00(core_result_Result_0a self, int16_t ret[16U]);
+
+
+
+
+
+
+
+
+
+void libcrux_secrets_int_public_integers_classify_27_46(int16_t self[16U],
+                                                        int16_t ret[16U]);
+
+
+
+
+
+
+typedef struct core_result_Result_15_s {
+    core_result_Result_fb_tags tag;
+    union {
+        uint8_t case_Ok[8U];
+        core_array_TryFromSliceError case_Err;
+    } val;
+} core_result_Result_15;
+
+
+
+
+
+
+
+
+
+
+void core_result_unwrap_26_68(core_result_Result_15 self, uint8_t ret[8U]);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __internal_libcrux_core_H_DEFINED
-#endif
+#define internal_libcrux_core_H_DEFINED
+#endif 

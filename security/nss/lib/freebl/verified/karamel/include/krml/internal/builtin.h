@@ -1,8 +1,8 @@
 
 
 
-#ifndef __KRML_BUILTIN_H
-#define __KRML_BUILTIN_H
+#ifndef KRML_HEADER_BUILTIN_H
+#define KRML_HEADER_BUILTIN_H
 
 
 #if (defined(_WIN32) || defined(_WIN64))
@@ -15,4 +15,4 @@
 
 void krmlinit_globals(void);
 
-#endif
+#endif 

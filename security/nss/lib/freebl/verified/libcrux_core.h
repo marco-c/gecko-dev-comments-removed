@@ -11,108 +11,68 @@
 
 
 
-#ifndef __libcrux_core_H
-#define __libcrux_core_H
+#ifndef libcrux_core_H
+#define libcrux_core_H
+
+#include "eurydice_glue.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#include "eurydice_glue.h"
 
 
 
 
 
-
-typedef struct core_ops_range_Range_b3_s {
-    size_t start;
-    size_t end;
-} core_ops_range_Range_b3;
-
-#define core_result_Ok 0
-#define core_result_Err 1
-
-typedef uint8_t core_result_Result_86_tags;
-
-#define core_option_None 0
-#define core_option_Some 1
-
-typedef uint8_t core_option_Option_ef_tags;
-
-
-
-
-
-
-typedef struct core_option_Option_b3_s {
-    core_option_Option_ef_tags tag;
-    size_t f0;
-} core_option_Option_b3;
-
-static inline uint64_t core_num__u64_9__from_le_bytes(uint8_t x0[8U]);
-
-static inline void core_num__u64_9__to_le_bytes(uint64_t x0, uint8_t x1[8U]);
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemPublicKey_1f_s {
-    uint8_t value[1568U];
-} libcrux_ml_kem_types_MlKemPublicKey_1f;
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemPrivateKey_95_s {
+typedef struct libcrux_ml_kem_types_MlKemPrivateKey_83_s {
     uint8_t value[3168U];
-} libcrux_ml_kem_types_MlKemPrivateKey_95;
+} libcrux_ml_kem_types_MlKemPrivateKey_83;
+
+
+
+
+
+
+typedef struct libcrux_ml_kem_types_MlKemPublicKey_64_s {
+    uint8_t value[1568U];
+} libcrux_ml_kem_types_MlKemPublicKey_64;
 
 typedef struct libcrux_ml_kem_mlkem1024_MlKem1024KeyPair_s {
-    libcrux_ml_kem_types_MlKemPrivateKey_95 sk;
-    libcrux_ml_kem_types_MlKemPublicKey_1f pk;
+    libcrux_ml_kem_types_MlKemPrivateKey_83 sk;
+    libcrux_ml_kem_types_MlKemPublicKey_64 pk;
 } libcrux_ml_kem_mlkem1024_MlKem1024KeyPair;
 
-typedef struct libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext_s {
+
+
+
+
+
+typedef struct libcrux_ml_kem_types_MlKemCiphertext_64_s {
     uint8_t value[1568U];
-} libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext;
+} libcrux_ml_kem_types_MlKemCiphertext_64;
 
 
 
 
 
 
-
-typedef struct tuple_21_s {
-    libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext fst;
-    uint8_t snd[32U];
-} tuple_21;
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemPublicKey_15_s {
-    uint8_t value[1184U];
-} libcrux_ml_kem_types_MlKemPublicKey_15;
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemPrivateKey_55_s {
+typedef struct libcrux_ml_kem_types_MlKemPrivateKey_d9_s {
     uint8_t value[2400U];
-} libcrux_ml_kem_types_MlKemPrivateKey_55;
+} libcrux_ml_kem_types_MlKemPrivateKey_d9;
+
+
+
+
+
+
+typedef struct libcrux_ml_kem_types_MlKemPublicKey_30_s {
+    uint8_t value[1184U];
+} libcrux_ml_kem_types_MlKemPublicKey_30;
 
 typedef struct libcrux_ml_kem_mlkem768_MlKem768KeyPair_s {
-    libcrux_ml_kem_types_MlKemPrivateKey_55 sk;
-    libcrux_ml_kem_types_MlKemPublicKey_15 pk;
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 sk;
+    libcrux_ml_kem_types_MlKemPublicKey_30 pk;
 } libcrux_ml_kem_mlkem768_MlKem768KeyPair;
 
 typedef struct libcrux_ml_kem_mlkem768_MlKem768Ciphertext_s {
@@ -125,28 +85,10 @@ typedef struct libcrux_ml_kem_mlkem768_MlKem768Ciphertext_s {
 
 
 
-typedef struct tuple_3c_s {
+typedef struct tuple_c2_s {
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext fst;
     uint8_t snd[32U];
-} tuple_3c;
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemPublicKey_be_s {
-    uint8_t value[800U];
-} libcrux_ml_kem_types_MlKemPublicKey_be;
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemPrivateKey_5e_s {
-    uint8_t value[1632U];
-} libcrux_ml_kem_types_MlKemPrivateKey_5e;
+} tuple_c2;
 
 
 
@@ -154,66 +96,14 @@ typedef struct libcrux_ml_kem_types_MlKemPrivateKey_5e_s {
 
 
 
-typedef struct libcrux_ml_kem_types_MlKemKeyPair_cb_s {
-    libcrux_ml_kem_types_MlKemPrivateKey_5e sk;
-    libcrux_ml_kem_types_MlKemPublicKey_be pk;
-} libcrux_ml_kem_types_MlKemKeyPair_cb;
-
-
-
-
-
-
-typedef struct libcrux_ml_kem_types_MlKemCiphertext_e8_s {
-    uint8_t value[768U];
-} libcrux_ml_kem_types_MlKemCiphertext_e8;
-
-
-
-
-
-
-typedef struct tuple_ec_s {
-    libcrux_ml_kem_types_MlKemCiphertext_e8 fst;
+typedef struct tuple_fa_s {
+    libcrux_ml_kem_types_MlKemCiphertext_64 fst;
     uint8_t snd[32U];
-} tuple_ec;
-
-
-
-
-
-
-typedef struct core_result_Result_56_s {
-    core_result_Result_86_tags tag;
-    union {
-        uint8_t case_Ok[8U];
-        core_array_TryFromSliceError case_Err;
-    } val;
-} core_result_Result_56;
-
-
-
-
-
-
-
-
-
-void core_result_unwrap_41_0e(core_result_Result_56 self, uint8_t ret[8U]);
-
-typedef struct Eurydice_slice_uint8_t_x2_s {
-    Eurydice_slice fst;
-    Eurydice_slice snd;
-} Eurydice_slice_uint8_t_x2;
-
-typedef struct Eurydice_slice_uint8_t_1size_t__x2_s {
-    Eurydice_slice fst[1U];
-    Eurydice_slice snd[1U];
-} Eurydice_slice_uint8_t_1size_t__x2;
+} tuple_fa;
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __libcrux_core_H_DEFINED
-#endif
+#define libcrux_core_H_DEFINED
+#endif 

@@ -14,6 +14,7 @@
 #include "libcrux_mlkem768_portable.h"
 
 #include "internal/libcrux_mlkem_portable.h"
+#include "libcrux_core.h"
 
 
 
@@ -39,11 +40,11 @@
 
 
 static void
-decapsulate_67(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+decapsulate_35(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext, uint8_t ret[32U])
 {
-    libcrux_ml_kem_ind_cca_decapsulate_1f(private_key, ciphertext, ret);
+    libcrux_ml_kem_ind_cca_decapsulate_62(private_key, ciphertext, ret);
 }
 
 
@@ -55,10 +56,10 @@ decapsulate_67(
 
 void
 libcrux_ml_kem_mlkem768_portable_decapsulate(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext, uint8_t ret[32U])
 {
-    decapsulate_67(private_key, ciphertext, ret);
+    decapsulate_35(private_key, ciphertext, ret);
 }
 
 
@@ -78,16 +79,11 @@ libcrux_ml_kem_mlkem768_portable_decapsulate(
 
 
 
-static tuple_3c
-encapsulate_02(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *public_key,
-    uint8_t randomness[32U])
+static tuple_c2
+encapsulate_cd(
+    libcrux_ml_kem_types_MlKemPublicKey_30 *public_key, uint8_t *randomness)
 {
-    libcrux_ml_kem_types_MlKemPublicKey_15 *uu____0 = public_key;
-    
-    uint8_t copy_of_randomness[32U];
-    memcpy(copy_of_randomness, randomness, (size_t)32U * sizeof(uint8_t));
-    return libcrux_ml_kem_ind_cca_encapsulate_eb(uu____0, copy_of_randomness);
+    return libcrux_ml_kem_ind_cca_encapsulate_ca(public_key, randomness);
 }
 
 
@@ -97,18 +93,13 @@ encapsulate_02(
 
 
 
-tuple_3c
+tuple_c2
 libcrux_ml_kem_mlkem768_portable_encapsulate(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *public_key,
+    libcrux_ml_kem_types_MlKemPublicKey_30 *public_key,
     uint8_t randomness[32U])
 {
-    libcrux_ml_kem_types_MlKemPublicKey_15 *uu____0 = public_key;
-    
-    uint8_t copy_of_randomness[32U];
-    memcpy(copy_of_randomness, randomness, (size_t)32U * sizeof(uint8_t));
-    return encapsulate_02(uu____0, copy_of_randomness);
+    return encapsulate_cd(public_key, randomness);
 }
-
 
 
 
@@ -125,13 +116,10 @@ libcrux_ml_kem_mlkem768_portable_encapsulate(
 
 
 static libcrux_ml_kem_mlkem768_MlKem768KeyPair
-generate_keypair_87(
-    uint8_t randomness[64U])
+generate_keypair_ce(
+    uint8_t *randomness)
 {
-    
-    uint8_t copy_of_randomness[64U];
-    memcpy(copy_of_randomness, randomness, (size_t)64U * sizeof(uint8_t));
-    return libcrux_ml_kem_ind_cca_generate_keypair_f6(copy_of_randomness);
+    return libcrux_ml_kem_ind_cca_generate_keypair_15(randomness);
 }
 
 
@@ -140,10 +128,7 @@ generate_keypair_87(
 libcrux_ml_kem_mlkem768_MlKem768KeyPair
 libcrux_ml_kem_mlkem768_portable_generate_key_pair(uint8_t randomness[64U])
 {
-    
-    uint8_t copy_of_randomness[64U];
-    memcpy(copy_of_randomness, randomness, (size_t)64U * sizeof(uint8_t));
-    return generate_keypair_87(copy_of_randomness);
+    return generate_keypair_ce(randomness);
 }
 
 
@@ -158,11 +143,11 @@ libcrux_ml_kem_mlkem768_portable_generate_key_pair(uint8_t randomness[64U])
 
 
 static KRML_MUSTINLINE bool
-validate_private_key_e8(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+validate_private_key_31(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext)
 {
-    return libcrux_ml_kem_ind_cca_validate_private_key_05(private_key,
+    return libcrux_ml_kem_ind_cca_validate_private_key_37(private_key,
                                                           ciphertext);
 }
 
@@ -173,12 +158,11 @@ validate_private_key_e8(
 
 bool
 libcrux_ml_kem_mlkem768_portable_validate_private_key(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext)
 {
-    return validate_private_key_e8(private_key, ciphertext);
+    return validate_private_key_31(private_key, ciphertext);
 }
-
 
 
 
@@ -191,9 +175,38 @@ libcrux_ml_kem_mlkem768_portable_validate_private_key(
 
 
 static KRML_MUSTINLINE bool
-validate_public_key_7d(uint8_t *public_key)
+validate_private_key_only_41(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key)
 {
-    return libcrux_ml_kem_ind_cca_validate_public_key_b7(public_key);
+    return libcrux_ml_kem_ind_cca_validate_private_key_only_d6(private_key);
+}
+
+
+
+
+
+
+bool
+libcrux_ml_kem_mlkem768_portable_validate_private_key_only(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key)
+{
+    return validate_private_key_only_41(private_key);
+}
+
+
+
+
+
+
+
+
+
+
+
+static KRML_MUSTINLINE bool
+validate_public_key_41(uint8_t *public_key)
+{
+    return libcrux_ml_kem_ind_cca_validate_public_key_89(public_key);
 }
 
 
@@ -203,7 +216,7 @@ validate_public_key_7d(uint8_t *public_key)
 
 bool
 libcrux_ml_kem_mlkem768_portable_validate_public_key(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *public_key)
+    libcrux_ml_kem_types_MlKemPublicKey_30 *public_key)
 {
-    return validate_public_key_7d(public_key->value);
+    return validate_public_key_41(public_key->value);
 }

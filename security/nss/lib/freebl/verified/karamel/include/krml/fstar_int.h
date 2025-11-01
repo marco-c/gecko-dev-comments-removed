@@ -1,5 +1,5 @@
-#ifndef __FSTAR_INT_H
-#define __FSTAR_INT_H
+#ifndef KRML_HEADER_FSTAR_INT_H
+#define KRML_HEADER_FSTAR_INT_H
 
 #include "internal/types.h"
 

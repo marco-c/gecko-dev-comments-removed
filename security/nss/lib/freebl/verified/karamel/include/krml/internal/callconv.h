@@ -1,8 +1,8 @@
 
 
 
-#ifndef __KRML_CALLCONV_H
-#define __KRML_CALLCONV_H
+#ifndef KRML_HEADER_CALLCONV_H
+#define KRML_HEADER_CALLCONV_H
 
 
 
@@ -24,4 +24,4 @@
 #endif
 #endif
 
-#endif
+#endif 

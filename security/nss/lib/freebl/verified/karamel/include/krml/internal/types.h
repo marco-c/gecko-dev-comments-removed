@@ -91,7 +91,7 @@ typedef FStar_UInt128_uint128 FStar_UInt128_t, uint128_t;
 
 
 
-#ifndef __FStar_UInt_8_16_32_64_H
+#ifndef FStar_UInt_8_16_32_64_H
 
 #if !defined(KRML_VERIFIED_UINT128) && defined(IS_MSVC64)
 #include "fstar_uint128_msvc.h"

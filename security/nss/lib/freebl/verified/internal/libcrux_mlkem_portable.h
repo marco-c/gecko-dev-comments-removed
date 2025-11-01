@@ -11,32 +11,57 @@
 
 
 
-#ifndef __internal_libcrux_mlkem_portable_H
-#define __internal_libcrux_mlkem_portable_H
+#ifndef internal_libcrux_mlkem_portable_H
+#define internal_libcrux_mlkem_portable_H
+
+#include "eurydice_glue.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include "../libcrux_mlkem_portable.h"
-#include "eurydice_glue.h"
-#include "internal/libcrux_core.h"
-#include "internal/libcrux_sha3_internal.h"
-
-extern const int16_t libcrux_ml_kem_polynomial_ZETAS_TIMES_MONTGOMERY_R[128U];
-
-#define LIBCRUX_ML_KEM_POLYNOMIAL_VECTORS_IN_RING_ELEMENT    \
-    (LIBCRUX_ML_KEM_CONSTANTS_COEFFICIENTS_IN_RING_ELEMENT / \
-     LIBCRUX_ML_KEM_VECTOR_TRAITS_FIELD_ELEMENTS_IN_VECTOR)
+#include "libcrux_core.h"
 
 
 
 
 
 
-typedef struct libcrux_ml_kem_polynomial_PolynomialRingElement_f0_s {
+typedef struct libcrux_ml_kem_polynomial_PolynomialRingElement_1d_s {
     libcrux_ml_kem_vector_portable_vector_type_PortableVector coefficients[16U];
-} libcrux_ml_kem_polynomial_PolynomialRingElement_f0;
+} libcrux_ml_kem_polynomial_PolynomialRingElement_1d;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool libcrux_ml_kem_ind_cca_validate_public_key_ff(uint8_t *public_key);
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool libcrux_ml_kem_ind_cca_validate_private_key_only_60(
+    libcrux_ml_kem_types_MlKemPrivateKey_83 *private_key);
 
 
 
@@ -53,27 +78,9 @@ typedef struct libcrux_ml_kem_polynomial_PolynomialRingElement_f0_s {
 
 
 
-bool libcrux_ml_kem_ind_cca_validate_public_key_b71(uint8_t *public_key);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool libcrux_ml_kem_ind_cca_validate_private_key_dc(
-    libcrux_ml_kem_types_MlKemPrivateKey_95 *private_key,
-    libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext *_ciphertext);
-
+bool libcrux_ml_kem_ind_cca_validate_private_key_b5(
+    libcrux_ml_kem_types_MlKemPrivateKey_83 *private_key,
+    libcrux_ml_kem_types_MlKemCiphertext_64 *_ciphertext);
 
 
 
@@ -96,7 +103,7 @@ bool libcrux_ml_kem_ind_cca_validate_private_key_dc(
 
 
 libcrux_ml_kem_mlkem1024_MlKem1024KeyPair
-libcrux_ml_kem_ind_cca_generate_keypair_f61(uint8_t randomness[64U]);
+libcrux_ml_kem_ind_cca_generate_keypair_150(uint8_t *randomness);
 
 
 
@@ -117,9 +124,8 @@ libcrux_ml_kem_ind_cca_generate_keypair_f61(uint8_t randomness[64U]);
 
 
 
-tuple_21 libcrux_ml_kem_ind_cca_encapsulate_eb1(
-    libcrux_ml_kem_types_MlKemPublicKey_1f *public_key,
-    uint8_t randomness[32U]);
+tuple_fa libcrux_ml_kem_ind_cca_encapsulate_ca0(
+    libcrux_ml_kem_types_MlKemPublicKey_64 *public_key, uint8_t *randomness);
 
 
 
@@ -143,12 +149,12 @@ tuple_21 libcrux_ml_kem_ind_cca_encapsulate_eb1(
 
 
 
-void libcrux_ml_kem_ind_cca_decapsulate_1f1(
-    libcrux_ml_kem_types_MlKemPrivateKey_95 *private_key,
-    libcrux_ml_kem_mlkem1024_MlKem1024Ciphertext *ciphertext, uint8_t ret[32U]);
 
 
 
+void libcrux_ml_kem_ind_cca_decapsulate_620(
+    libcrux_ml_kem_types_MlKemPrivateKey_83 *private_key,
+    libcrux_ml_kem_types_MlKemCiphertext_64 *ciphertext, uint8_t ret[32U]);
 
 
 
@@ -162,9 +168,9 @@ void libcrux_ml_kem_ind_cca_decapsulate_1f1(
 
 
 
-bool libcrux_ml_kem_ind_cca_validate_public_key_b70(uint8_t *public_key);
 
 
+bool libcrux_ml_kem_ind_cca_validate_public_key_89(uint8_t *public_key);
 
 
 
@@ -178,10 +184,9 @@ bool libcrux_ml_kem_ind_cca_validate_public_key_b70(uint8_t *public_key);
 
 
 
+bool libcrux_ml_kem_ind_cca_validate_private_key_only_d6(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key);
 
-bool libcrux_ml_kem_ind_cca_validate_private_key_03(
-    libcrux_ml_kem_types_MlKemPrivateKey_5e *private_key,
-    libcrux_ml_kem_types_MlKemCiphertext_e8 *_ciphertext);
 
 
 
@@ -197,99 +202,8 @@ bool libcrux_ml_kem_ind_cca_validate_private_key_03(
 
 
 
-
-
-
-
-
-
-
-libcrux_ml_kem_types_MlKemKeyPair_cb
-libcrux_ml_kem_ind_cca_generate_keypair_f60(uint8_t randomness[64U]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-tuple_ec libcrux_ml_kem_ind_cca_encapsulate_eb0(
-    libcrux_ml_kem_types_MlKemPublicKey_be *public_key,
-    uint8_t randomness[32U]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void libcrux_ml_kem_ind_cca_decapsulate_1f0(
-    libcrux_ml_kem_types_MlKemPrivateKey_5e *private_key,
-    libcrux_ml_kem_types_MlKemCiphertext_e8 *ciphertext, uint8_t ret[32U]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool libcrux_ml_kem_ind_cca_validate_public_key_b7(uint8_t *public_key);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool libcrux_ml_kem_ind_cca_validate_private_key_05(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+bool libcrux_ml_kem_ind_cca_validate_private_key_37(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *_ciphertext);
 
 
@@ -312,9 +226,8 @@ bool libcrux_ml_kem_ind_cca_validate_private_key_05(
 
 
 
-
 libcrux_ml_kem_mlkem768_MlKem768KeyPair
-libcrux_ml_kem_ind_cca_generate_keypair_f6(uint8_t randomness[64U]);
+libcrux_ml_kem_ind_cca_generate_keypair_15(uint8_t *randomness);
 
 
 
@@ -335,9 +248,8 @@ libcrux_ml_kem_ind_cca_generate_keypair_f6(uint8_t randomness[64U]);
 
 
 
-tuple_3c libcrux_ml_kem_ind_cca_encapsulate_eb(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *public_key,
-    uint8_t randomness[32U]);
+tuple_c2 libcrux_ml_kem_ind_cca_encapsulate_ca(
+    libcrux_ml_kem_types_MlKemPublicKey_30 *public_key, uint8_t *randomness);
 
 
 
@@ -361,13 +273,16 @@ tuple_3c libcrux_ml_kem_ind_cca_encapsulate_eb(
 
 
 
-void libcrux_ml_kem_ind_cca_decapsulate_1f(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+
+
+
+void libcrux_ml_kem_ind_cca_decapsulate_62(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext, uint8_t ret[32U]);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __internal_libcrux_mlkem_portable_H_DEFINED
-#endif
+#define internal_libcrux_mlkem_portable_H_DEFINED
+#endif 

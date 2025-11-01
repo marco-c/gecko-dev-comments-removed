@@ -11,14 +11,15 @@
 
 
 
-#ifndef __libcrux_mlkem768_portable_H
-#define __libcrux_mlkem768_portable_H
+#ifndef libcrux_mlkem768_portable_H
+#define libcrux_mlkem768_portable_H
+
+#include "eurydice_glue.h"
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#include "eurydice_glue.h"
 #include "libcrux_core.h"
 
 
@@ -29,7 +30,7 @@ extern "C" {
 
 
 void libcrux_ml_kem_mlkem768_portable_decapsulate(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext, uint8_t ret[32U]);
 
 
@@ -39,8 +40,8 @@ void libcrux_ml_kem_mlkem768_portable_decapsulate(
 
 
 
-tuple_3c libcrux_ml_kem_mlkem768_portable_encapsulate(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *public_key,
+tuple_c2 libcrux_ml_kem_mlkem768_portable_encapsulate(
+    libcrux_ml_kem_types_MlKemPublicKey_30 *public_key,
     uint8_t randomness[32U]);
 
 
@@ -55,7 +56,7 @@ libcrux_ml_kem_mlkem768_portable_generate_key_pair(uint8_t randomness[64U]);
 
 
 bool libcrux_ml_kem_mlkem768_portable_validate_private_key(
-    libcrux_ml_kem_types_MlKemPrivateKey_55 *private_key,
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key,
     libcrux_ml_kem_mlkem768_MlKem768Ciphertext *ciphertext);
 
 
@@ -63,12 +64,20 @@ bool libcrux_ml_kem_mlkem768_portable_validate_private_key(
 
 
 
+bool libcrux_ml_kem_mlkem768_portable_validate_private_key_only(
+    libcrux_ml_kem_types_MlKemPrivateKey_d9 *private_key);
+
+
+
+
+
+
 bool libcrux_ml_kem_mlkem768_portable_validate_public_key(
-    libcrux_ml_kem_types_MlKemPublicKey_15 *public_key);
+    libcrux_ml_kem_types_MlKemPublicKey_30 *public_key);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __libcrux_mlkem768_portable_H_DEFINED
-#endif
+#define libcrux_mlkem768_portable_H_DEFINED
+#endif 
