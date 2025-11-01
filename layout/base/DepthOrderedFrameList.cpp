@@ -13,19 +13,16 @@ namespace mozilla {
 
 void DepthOrderedFrameList::Add(nsIFrame* aFrame) {
   
-  
-  
-  
-  if (Contains(aFrame)) {
+  FrameAndDepth entry{aFrame, aFrame->GetDepthInFrameTree()};
+  auto index = mList.IndexOfFirstElementGt(
+      entry, FrameAndDepth::CompareByReverseDepth{});
+  if (MOZ_UNLIKELY(index > 0 && mList[index - 1].mFrame == aFrame)) {
     
-    MOZ_ASSERT(aFrame->GetDepthInFrameTree() ==
-               mList[mList.IndexOf(aFrame)].mDepth);
+    
+    MOZ_ASSERT(mList[index - 1].mDepth == entry.mDepth);
     return;
   }
-
-  mList.InsertElementSorted(
-      FrameAndDepth{aFrame, aFrame->GetDepthInFrameTree()},
-      FrameAndDepth::CompareByReverseDepth{});
+  mList.InsertElementAt(index, std::move(entry));
 }
 
 void DepthOrderedFrameList::Remove(nsIFrame* aFrame) {
