@@ -8,11 +8,6 @@
 
 
 
-
-
-
-
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -79,7 +74,6 @@ function getNumThreadsArray() {
     (_, i) => i
   );
 }
-
 
 let engineParent = null;
 
@@ -466,26 +460,25 @@ function ts2str(ts) {
 
 
 async function updateStatus() {
-  const engineParent = await getEngineParent();
+  if (!engineParent) {
+    return;
+  }
 
-  
-
-
-  let statusByEngineId;
+  let info;
 
   
   try {
-    statusByEngineId = await engineParent.getStatusByEngineId();
-  } catch (error) {
-    console.error("Failed to get the engine status", error);
-    statusByEngineId = new Map();
+    info = await engineParent.getStatus();
+  } catch (e) {
+    engineParent = null; 
+    info = new Map();
   }
 
   
   let tableContainer = document.getElementById("statusTableContainer");
 
   
-  if (statusByEngineId.size === 0) {
+  if (info.size === 0) {
     tableContainer.innerHTML = ""; 
     if (updateStatusInterval) {
       clearInterval(updateStatusInterval); 
@@ -527,7 +520,7 @@ async function updateStatus() {
   let tbody = document.createElement("tbody");
 
   
-  for (let [engineId, { status, options }] of statusByEngineId.entries()) {
+  for (let [engineId, engineInfo] of info.entries()) {
     let row = document.createElement("tr");
 
     
@@ -536,23 +529,23 @@ async function updateStatus() {
     row.appendChild(engineIdCell);
 
     let statusCell = document.createElement("td");
-    statusCell.textContent = status;
+    statusCell.textContent = engineInfo.status;
     row.appendChild(statusCell);
 
     let modelIdCell = document.createElement("td");
-    modelIdCell.textContent = options?.modelId || "N/A";
+    modelIdCell.textContent = engineInfo.options?.modelId || "N/A";
     row.appendChild(modelIdCell);
 
     let dtypeCell = document.createElement("td");
-    dtypeCell.textContent = options?.dtype || "N/A";
+    dtypeCell.textContent = engineInfo.options?.dtype || "N/A";
     row.appendChild(dtypeCell);
 
     let deviceCell = document.createElement("td");
-    deviceCell.textContent = options?.device || "N/A";
+    deviceCell.textContent = engineInfo.options?.device || "N/A";
     row.appendChild(deviceCell);
 
     let timeoutCell = document.createElement("td");
-    timeoutCell.textContent = options?.timeoutMS || "N/A";
+    timeoutCell.textContent = engineInfo.options?.timeoutMS || "N/A";
     row.appendChild(timeoutCell);
 
     
@@ -1139,9 +1132,6 @@ function showTab(button) {
   current_button.removeAttribute("selected");
   button.setAttribute("selected", "true");
 }
-
-
-
 
 async function getEngineParent() {
   if (!engineParent) {
