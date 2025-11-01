@@ -166,7 +166,7 @@ function setAttributes(el, attrs) {
   attrs = attrs || {}
   for (var attr in attrs) {
     if (attr !== 'src')
-      el.setAttribute(attr, attrs[attr]);
+      el.setAttribute(attr.toLowerCase(), attrs[attr]);
   }
   
   
@@ -832,6 +832,54 @@ function requestViaWebSocket(url) {
 
 
 
+function requestViaSVGAnchor(url, additionalAttributes) {
+  const name = guid();
+
+  const iframe =
+    createElement("iframe", { "name": name, "id": name }, document.body, false);
+
+  
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+  
+  const svgAnchor = document.createElementNS("http://www.w3.org/2000/svg", "a");
+  const link_attributes = Object.assign({ "href": url, "target": name }, additionalAttributes);
+  setAttributes(svgAnchor, link_attributes);
+
+  
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.setAttribute("y", "50");
+  text.textContent = "SVG Link to resource";
+
+  svgAnchor.appendChild(text);
+  svg.appendChild(svgAnchor);
+  document.body.appendChild(svg);
+
+  const promise =
+    bindEvents2(window, "message", iframe, "error", window, "error")
+      .then(event => {
+        if (event.source !== iframe.contentWindow)
+          return Promise.reject(new Error('Unexpected event.source'));
+        return event.data;
+      });
+
+  
+  const event = new MouseEvent('click', {
+    view: window,
+    bubbles: true,
+    cancelable: true
+  });
+  svgAnchor.dispatchEvent(event);
+
+  return promise;
+}
+
+
+
+
+
+
+
 
 
 
@@ -891,6 +939,10 @@ const subresourceMap = {
   "script-tag-dynamic-import": {
     path: "/common/security-features/subresource/script.py",
     invoker: requestViaDynamicImport,
+  },
+  "svg-a-tag": {
+    path: "/common/security-features/subresource/document.py",
+    invoker: requestViaSVGAnchor,
   },
   "video-tag": {
     path: "/common/security-features/subresource/video.py",
