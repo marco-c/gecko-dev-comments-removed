@@ -9,7 +9,6 @@
 
 #include <stdint.h>                         
 #include "mozilla/Attributes.h"             
-#include "mozilla/RefPtr.h"                 
 #include "mozilla/gfx/Point.h"              
 #include "mozilla/gfx/Rect.h"               
 #include "mozilla/gfx/Types.h"              

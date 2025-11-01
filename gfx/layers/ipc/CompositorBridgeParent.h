@@ -9,7 +9,6 @@
 
 #include <stdint.h>  
 #include <unordered_map>
-#include "mozilla/Assertions.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"        
 #include "mozilla/RefPtr.h"         

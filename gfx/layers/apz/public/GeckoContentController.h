@@ -11,7 +11,6 @@
 #include "InputData.h"              
 #include "LayersTypes.h"            
 #include "Units.h"                  
-#include "mozilla/Assertions.h"     
 #include "mozilla/Attributes.h"     
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/EventForwards.h"  

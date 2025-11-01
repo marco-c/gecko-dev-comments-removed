@@ -9,7 +9,6 @@
 
 #include <stddef.h>                                
 #include <stdint.h>                                
-#include "mozilla/RefPtr.h"                        
 #include "mozilla/StaticPtr.h"                     
 #include "mozilla/layers/CompositableForwarder.h"  
 #include "mozilla/layers/PCompositorManagerChild.h"

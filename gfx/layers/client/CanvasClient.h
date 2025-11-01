@@ -15,8 +15,6 @@
 #include "mozilla/layers/TextureClient.h"       
 #include "mozilla/layers/PersistentBufferProvider.h"
 
-#include "mozilla/MaybeOneOf.h"
-
 #include "mozilla/mozalloc.h"  
 
 #include "mozilla/gfx/Point.h"  

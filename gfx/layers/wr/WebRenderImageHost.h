@@ -12,7 +12,6 @@
 
 #include "CompositableHost.h"               
 #include "mozilla/layers/ImageComposite.h"  
-#include "mozilla/WeakPtr.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 
 namespace mozilla {

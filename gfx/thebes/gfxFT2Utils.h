@@ -8,7 +8,6 @@
 
 #include "cairo-ft.h"
 #include "gfxFT2FontBase.h"
-#include "mozilla/Likely.h"
 
 
 

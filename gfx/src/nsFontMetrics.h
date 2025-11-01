@@ -6,15 +6,14 @@
 #ifndef NSFONTMETRICS__H__
 #define NSFONTMETRICS__H__
 
-#include <stdint.h>              
-#include <sys/types.h>           
-#include "mozilla/Assertions.h"  
-#include "mozilla/RefPtr.h"      
-#include "nsCOMPtr.h"            
-#include "nsCoord.h"             
-#include "nsError.h"             
-#include "nsFont.h"              
-#include "nsISupports.h"         
+#include <stdint.h>          
+#include <sys/types.h>       
+#include "mozilla/RefPtr.h"  
+#include "nsCOMPtr.h"        
+#include "nsCoord.h"         
+#include "nsError.h"         
+#include "nsFont.h"          
+#include "nsISupports.h"     
 #include "nsStyleConsts.h"
 #include "nscore.h"  
 

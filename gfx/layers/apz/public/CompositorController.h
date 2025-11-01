@@ -8,7 +8,6 @@
 #define mozilla_layers_CompositorController_h
 
 #include "nsISupportsImpl.h"  
-#include "mozilla/Maybe.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {

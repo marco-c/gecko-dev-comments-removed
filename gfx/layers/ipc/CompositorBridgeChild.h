@@ -7,8 +7,7 @@
 #ifndef mozilla_layers_CompositorBridgeChild_h
 #define mozilla_layers_CompositorBridgeChild_h
 
-#include "base/basictypes.h"     
-#include "mozilla/Assertions.h"  
+#include "base/basictypes.h"  
 #include "mozilla/Monitor.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"

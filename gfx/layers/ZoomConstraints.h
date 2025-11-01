@@ -9,8 +9,7 @@
 
 #include <iosfwd>
 
-#include "Units.h"  
-#include "mozilla/Maybe.h"
+#include "Units.h"                               
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 
 namespace mozilla {

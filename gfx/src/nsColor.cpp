@@ -5,7 +5,6 @@
 
 
 #include "mozilla/mozalloc.h"  
-#include "mozilla/MathAlgorithms.h"
 
 #include "nsColor.h"
 #include <sys/types.h>  
