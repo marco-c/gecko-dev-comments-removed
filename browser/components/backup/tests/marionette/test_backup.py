@@ -167,7 +167,7 @@ class BackupTest(MarionetteTestCase):
         [
             newProfileName,
             newProfilePath,
-            intermediateClientID,
+            expectedClientID,
             osKeyStoreLabel,
         ] = self.marionette.execute_async_script(
             """
@@ -201,9 +201,9 @@ class BackupTest(MarionetteTestCase):
               throw new Error("Could not create recovery profile.");
             }
 
-            let intermediateClientID = await ClientID.getClientID();
+            let expectedClientID = await ClientID.getClientID();
 
-            return [newProfile.name, newProfile.rootDir.path, intermediateClientID, OSKeyStore.STORE_LABEL];
+            return [newProfile.name, newProfile.rootDir.path, expectedClientID, OSKeyStore.STORE_LABEL];
           })().then(outerResolve);
         """,
             script_args=[archivePath, recoveryCode, recoveryPath],
@@ -211,7 +211,7 @@ class BackupTest(MarionetteTestCase):
 
         print(f"Recovery name: {newProfileName}")
         print(f"Recovery path: {newProfilePath}")
-        print(f"Intermediate clientID: {intermediateClientID}")
+        print(f"Expected clientID: {expectedClientID}")
         print(f"Persisting fake OSKeyStore label: {osKeyStoreLabel}")
 
         self.marionette.quit()
@@ -281,7 +281,7 @@ class BackupTest(MarionetteTestCase):
           })().then(outerResolve);
         """
         )
-        self.assertNotEqual(recoveredClientID, intermediateClientID)
+        self.assertEqual(recoveredClientID, expectedClientID)
 
         self.marionette.quit()
         self.marionette.instance.profile = originalProfile
