@@ -109,10 +109,10 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
 
 SizeComputationInput::SizeComputationInput(
     nsIFrame* aFrame, gfxContext* aRenderingContext,
-    AnchorPosResolutionCache* aAnchorPosResolutionCache)
+    AnchorPosReferenceData* aAnchorPosReferenceData)
     : mFrame(aFrame),
       mRenderingContext(aRenderingContext),
-      mAnchorPosResolutionCache(aAnchorPosResolutionCache),
+      mAnchorPosReferenceData(aAnchorPosReferenceData),
       mWritingMode(aFrame->GetWritingMode()),
       mIsThemed(aFrame->IsThemed()),
       mComputedMargin(mWritingMode),
@@ -180,9 +180,9 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
                          InitFlags aFlags,
                          const StyleSizeOverrides& aSizeOverrides,
                          ComputeSizeFlags aComputeSizeFlags,
-                         AnchorPosResolutionCache* aAnchorPosResolutionCache)
+                         AnchorPosReferenceData* aAnchorPosReferenceData)
     : SizeComputationInput(aFrame, aParentReflowInput.mRenderingContext,
-                           aAnchorPosResolutionCache),
+                           aAnchorPosReferenceData),
       mParentReflowInput(&aParentReflowInput),
       mFloatManager(aParentReflowInput.mFloatManager),
       mLineLayout(mFrame->IsLineParticipant() ? aParentReflowInput.mLineLayout
@@ -365,13 +365,13 @@ nscoord SizeComputationInput::ComputeISizeValue(
       contentEdgeToBoxSizing.ISize(wm);
 
   return mFrame
-      ->ComputeISizeValue(mRenderingContext, wm, aContainingBlockSize,
-                          contentEdgeToBoxSizing, boxSizingToMarginEdgeISize,
-                          aSize,
-                          *mFrame->StylePosition()->BSize(
-                              wm, AnchorPosResolutionParams::From(
-                                      mFrame, mAnchorPosResolutionCache)),
-                          mFrame->GetAspectRatio())
+      ->ComputeISizeValue(
+          mRenderingContext, wm, aContainingBlockSize, contentEdgeToBoxSizing,
+          boxSizingToMarginEdgeISize, aSize,
+          *mFrame->StylePosition()->BSize(
+              wm,
+              AnchorPosResolutionParams::From(mFrame, mAnchorPosReferenceData)),
+          mFrame->GetAspectRatio())
       .mISize;
 }
 
@@ -2945,7 +2945,7 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
     }
     LogicalMargin m(aCBWM);
     const auto anchorResolutionParams =
-        AnchorPosResolutionParams::From(mFrame, mAnchorPosResolutionCache);
+        AnchorPosResolutionParams::From(mFrame, mAnchorPosReferenceData);
     for (const LogicalSide side : LogicalSides::All) {
       m.Side(side, aCBWM) = nsLayoutUtils::ComputeCBDependentValue(
           aPercentBasis,

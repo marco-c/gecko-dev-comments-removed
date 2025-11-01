@@ -7,8 +7,6 @@
 #ifndef AnchorPositioningUtils_h__
 #define AnchorPositioningUtils_h__
 
-#include "WritingModes.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "nsRect.h"
 #include "nsTHashMap.h"
@@ -28,42 +26,7 @@ struct AnchorPosInfo {
   
   
   nsRect mRect;
-  
-  bool mCompensatesForScroll;
-};
-
-class DistanceToNearestScrollContainer {
- public:
-  DistanceToNearestScrollContainer() : mDistance{kInvalid} {}
-  explicit DistanceToNearestScrollContainer(uint32_t aDistance)
-      : mDistance{aDistance} {}
-  bool Valid() const { return mDistance != kInvalid; }
-  bool operator==(const DistanceToNearestScrollContainer& aOther) const {
-    return mDistance == aOther.mDistance;
-  }
-  bool operator!=(const DistanceToNearestScrollContainer& aOther) const {
-    return !(*this == aOther);
-  }
-
- private:
-  
-  static constexpr uint32_t kInvalid = 0;
-  
-  
-  
-  
-  uint32_t mDistance;
-};
-
-struct AnchorPosOffsetData {
-  
-  
-  nsPoint mOrigin;
-  
-  
-  bool mCompensatesForScroll = false;
-  
-  DistanceToNearestScrollContainer mDistanceToNearestScrollContainer;
+  const nsIFrame* mContainingBlock;
 };
 
 
@@ -72,7 +35,9 @@ struct AnchorPosResolutionData {
   nsSize mSize;
   
   
-  Maybe<AnchorPosOffsetData> mOffsetData;
+  
+  
+  mozilla::Maybe<nsPoint> mOrigin;
 };
 
 
@@ -85,19 +50,10 @@ struct AnchorPosResolutionData {
 
 class AnchorPosReferenceData {
  private:
-  using ResolutionMap =
+  using Map =
       nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
 
  public:
-  
-  
-  
-  struct PositionTryBackup {
-    mozilla::PhysicalAxes mCompensatingForScroll;
-    nsPoint mDefaultScrollShift;
-    nsRect mContainingBlockRect;
-    bool mUseScrollableContainingBlock = false;
-  };
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
   AnchorPosReferenceData() = default;
@@ -117,102 +73,15 @@ class AnchorPosReferenceData {
 
   bool IsEmpty() const { return mMap.IsEmpty(); }
 
-  ResolutionMap::const_iterator begin() const { return mMap.cbegin(); }
-  ResolutionMap::const_iterator end() const { return mMap.cend(); }
-
-  void AdjustCompensatingForScroll(const mozilla::PhysicalAxes& aAxes) {
-    mCompensatingForScroll += aAxes;
-  }
-
-  mozilla::PhysicalAxes CompensatingForScrollAxes() const {
-    return mCompensatingForScroll;
-  }
-
-  PositionTryBackup TryPositionWithSameDefaultAnchor() {
-    auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
-    auto defaultScrollShift = std::exchange(mDefaultScrollShift, {});
-    auto insetModifiedContainingBlock = std::exchange(mContainingBlockRect, {});
-    return {compensatingForScroll, defaultScrollShift,
-            insetModifiedContainingBlock};
-  }
-
-  void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
-    mCompensatingForScroll = aBackup.mCompensatingForScroll;
-    mDefaultScrollShift = aBackup.mDefaultScrollShift;
-    mContainingBlockRect = aBackup.mContainingBlockRect;
-  }
-
-  
-  DistanceToNearestScrollContainer mDistanceToDefaultScrollContainer;
-  
-  nsPoint mDefaultScrollShift;
-  
-  
-  nsRect mContainingBlockRect;
-  
-  
-  
-  
-  RefPtr<const nsAtom> mDefaultAnchorName;
+  Map::const_iterator begin() const { return mMap.cbegin(); }
+  Map::const_iterator end() const { return mMap.cend(); }
 
  private:
-  ResolutionMap mMap;
-  
-  
-  mozilla::PhysicalAxes mCompensatingForScroll;
+  Map mMap;
 };
 
 struct StylePositionArea;
 class WritingMode;
-
-struct AnchorPosDefaultAnchorCache {
-  
-  const nsIFrame* mAnchor = nullptr;
-  
-  const nsIFrame* mScrollContainer = nullptr;
-
-  AnchorPosDefaultAnchorCache() = default;
-  AnchorPosDefaultAnchorCache(const nsIFrame* aAnchor,
-                              const nsIFrame* aScrollContainer);
-};
-
-
-
-struct AnchorPosResolutionCache {
-  
-  
-  AnchorPosReferenceData* mReferenceData = nullptr;
-  
-  
-  AnchorPosDefaultAnchorCache mDefaultAnchorCache;
-
-  
-  
-  using PositionTryBackup = AnchorPosReferenceData::PositionTryBackup;
-  PositionTryBackup TryPositionWithSameDefaultAnchor() {
-    return mReferenceData->TryPositionWithSameDefaultAnchor();
-  }
-  void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
-    mReferenceData->UndoTryPositionWithSameDefaultAnchor(std::move(aBackup));
-  }
-
-  
-  
-  using PositionTryFullBackup =
-      std::pair<AnchorPosReferenceData, AnchorPosDefaultAnchorCache>;
-  PositionTryFullBackup TryPositionWithDifferentDefaultAnchor() {
-    auto referenceData = std::move(*mReferenceData);
-    *mReferenceData = {};
-    return std::make_pair(
-        std::move(referenceData),
-        std::exchange(mDefaultAnchorCache, AnchorPosDefaultAnchorCache{}));
-  }
-  void UndoTryPositionWithDifferentDefaultAnchor(
-      PositionTryFullBackup&& aBackup) {
-    *mReferenceData = std::move(aBackup.first);
-    std::exchange(mDefaultAnchorCache, aBackup.second);
-  }
-};
 
 enum class StylePositionTryFallbacksTryTacticKeyword : uint8_t;
 using StylePositionTryFallbacksTryTactic =
@@ -233,18 +102,10 @@ struct AnchorPositioningUtils {
       const nsAtom* aName, const nsIFrame* aPositionedFrame,
       const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
 
-  static Maybe<nsRect> GetAnchorPosRect(
+  static Maybe<AnchorPosInfo> GetAnchorPosRect(
       const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
-      bool aCBRectIsvalid);
-
-  static Maybe<AnchorPosInfo> ResolveAnchorPosRect(
-      const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-      const nsAtom* aAnchorName, bool aCBRectIsvalid,
-      AnchorPosResolutionCache* aResolutionCache);
-
-  static Maybe<nsSize> ResolveAnchorPosSize(
-      const nsIFrame* aPositioned, const nsAtom* aAnchorName,
-      AnchorPosResolutionCache* aResolutionCache);
+      bool aCBRectIsvalid,
+      Maybe<AnchorPosResolutionData>* aReferencedAnchorsEntry);
 
   
 
@@ -281,19 +142,25 @@ struct AnchorPositioningUtils {
 
   static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
 
-  struct NearestScrollFrameInfo {
-    const nsIFrame* mScrollContainer = nullptr;
-    DistanceToNearestScrollContainer mDistance;
+  struct DefaultAnchorInfo {
+    const nsAtom* mName = nullptr;
+    Maybe<nsRect> mRect;
   };
-  static NearestScrollFrameInfo GetNearestScrollFrame(const nsIFrame* aFrame);
 
-  static nsPoint GetScrollOffsetFor(
-      PhysicalAxes aAxes, const nsIFrame* aPositioned,
-      const AnchorPosDefaultAnchorCache& aDefaultAnchorCache);
+  
 
-  static bool FitsInContainingBlock(const nsRect& aOverflowCheckRect,
-                                    const nsRect& aOriginalContainingBlockSize,
-                                    const nsRect& aRect);
+
+
+
+
+
+
+
+
+
+  static DefaultAnchorInfo GetDefaultAnchor(
+      const nsIFrame* aPositioned, bool aCBRectIsValid,
+      AnchorPosReferenceData* aAnchorPosReferenceData);
 };
 
 }  
