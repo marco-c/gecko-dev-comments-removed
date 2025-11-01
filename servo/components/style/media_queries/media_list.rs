@@ -10,6 +10,7 @@ use super::{Device, MediaQuery, Qualifier};
 use crate::context::QuirksMode;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::ParserContext;
+use crate::stylesheets::CustomMediaEvaluator;
 use crate::values::computed;
 use cssparser::{Delimiter, Parser};
 use cssparser::{ParserInput, Token};
@@ -73,29 +74,41 @@ impl MediaList {
     }
 
     
-    pub fn evaluate(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
+    pub fn evaluate(
+        &self,
+        device: &Device,
+        quirks_mode: QuirksMode,
+        custom: &mut CustomMediaEvaluator,
+    ) -> bool {
+        computed::Context::for_media_query_evaluation(device, quirks_mode, |context| {
+            self.matches(context, custom).to_bool( false)
+        })
+    }
+
+    
+    pub fn matches(
+        &self,
+        context: &computed::Context,
+        custom: &mut CustomMediaEvaluator,
+    ) -> KleeneValue {
         
         
         if self.media_queries.is_empty() {
-            return true;
+            return KleeneValue::True;
         }
-
-        computed::Context::for_media_query_evaluation(device, quirks_mode, |context| {
-            self.media_queries.iter().any(|mq| {
-                let mut query_match = if mq.media_type.matches(device.media_type()) {
-                    mq.condition
-                        .as_ref()
-                        .map_or(KleeneValue::True, |c| c.matches(context))
-                } else {
-                    KleeneValue::False
-                };
-
-                
-                if matches!(mq.qualifier, Some(Qualifier::Not)) {
-                    query_match = !query_match;
-                }
-                query_match.to_bool( false)
-            })
+        KleeneValue::any(self.media_queries.iter(), |mq| {
+            let mut query_match = if mq.media_type.matches(context.device().media_type()) {
+                mq.condition
+                    .as_ref()
+                    .map_or(KleeneValue::True, |c| c.matches(context, custom))
+            } else {
+                KleeneValue::False
+            };
+            
+            if matches!(mq.qualifier, Some(Qualifier::Not)) {
+                query_match = !query_match;
+            }
+            query_match
         })
     }
 

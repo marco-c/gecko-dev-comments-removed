@@ -7,15 +7,20 @@
 
 
 use crate::media_queries::MediaList;
+use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
 use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::CssRules;
+use crate::values::{computed, DashedIdent};
+use crate::Atom;
+use cssparser::Parser;
 use cssparser::SourceLocation;
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
+use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
-use style_traits::{CssStringWriter, CssWriter, ToCss};
+use style_traits::{CssStringWriter, CssWriter, ParseError, ToCss};
 
 
 
@@ -61,5 +66,127 @@ impl DeepCloneWithLock for MediaRule {
             rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock, guard))),
             source_location: self.source_location.clone(),
         }
+    }
+}
+
+
+#[derive(Debug, ToShmem, Clone, MallocSizeOf)]
+pub enum CustomMediaCondition {
+    
+    True,
+    
+    False,
+    
+    MediaList(#[ignore_malloc_size_of = "Arc"] Arc<Locked<MediaList>>),
+}
+
+impl CustomMediaCondition {
+    
+    pub(crate) fn parse_keyword<'i>(input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
+        Ok(try_match_ident_ignore_ascii_case! { input,
+            "true" => Self::True,
+            "false" => Self::False,
+        })
+    }
+}
+
+impl DeepCloneWithLock for CustomMediaCondition {
+    fn deep_clone_with_lock(&self, lock: &SharedRwLock, guard: &SharedRwLockReadGuard) -> Self {
+        match self {
+            Self::True => Self::True,
+            Self::False => Self::False,
+            Self::MediaList(ref m) => {
+                Self::MediaList(Arc::new(lock.wrap(m.read_with(guard).clone())))
+            },
+        }
+    }
+}
+
+
+
+#[derive(Debug, ToShmem)]
+pub struct CustomMediaRule {
+    
+    pub name: DashedIdent,
+    
+    pub condition: CustomMediaCondition,
+    
+    pub source_location: SourceLocation,
+}
+
+impl DeepCloneWithLock for CustomMediaRule {
+    fn deep_clone_with_lock(&self, lock: &SharedRwLock, guard: &SharedRwLockReadGuard) -> Self {
+        Self {
+            name: self.name.clone(),
+            condition: self.condition.deep_clone_with_lock(lock, guard),
+            source_location: self.source_location.clone(),
+        }
+    }
+}
+
+impl ToCssWithGuard for CustomMediaRule {
+    
+    
+    fn to_css(&self, guard: &SharedRwLockReadGuard, dest: &mut CssStringWriter) -> fmt::Result {
+        dest.write_str("@custom-media ")?;
+        self.name.to_css(&mut CssWriter::new(dest))?;
+        dest.write_char(' ')?;
+        match self.condition {
+            CustomMediaCondition::True => dest.write_str("true"),
+            CustomMediaCondition::False => dest.write_str("false"),
+            CustomMediaCondition::MediaList(ref m) => {
+                m.read_with(guard).to_css(&mut CssWriter::new(dest))
+            },
+        }
+    }
+}
+
+
+pub type CustomMediaMap = PrecomputedHashMap<Atom, CustomMediaCondition>;
+
+
+pub struct CustomMediaEvaluator<'a> {
+    map: Option<(&'a CustomMediaMap, &'a SharedRwLockReadGuard<'a>)>,
+    
+    currently_evaluating: PrecomputedHashSet<Atom>,
+}
+
+impl<'a> CustomMediaEvaluator<'a> {
+    
+    pub fn new(map: &'a CustomMediaMap, guard: &'a SharedRwLockReadGuard<'a>) -> Self {
+        Self {
+            map: Some((map, guard)),
+            currently_evaluating: Default::default(),
+        }
+    }
+
+    
+    pub fn none() -> Self {
+        Self {
+            map: None,
+            currently_evaluating: Default::default(),
+        }
+    }
+
+    
+    pub fn matches(&mut self, ident: &DashedIdent, context: &computed::Context) -> KleeneValue {
+        let Some((map, guard)) = self.map else {
+            return KleeneValue::Unknown;
+        };
+        let Some(condition) = map.get(&ident.0) else {
+            return KleeneValue::Unknown;
+        };
+        let media = match condition {
+            CustomMediaCondition::True => return KleeneValue::True,
+            CustomMediaCondition::False => return KleeneValue::False,
+            CustomMediaCondition::MediaList(ref m) => m,
+        };
+        if !self.currently_evaluating.insert(ident.0.clone()) {
+            
+            return KleeneValue::False;
+        }
+        let result = media.read_with(guard).matches(context, self);
+        self.currently_evaluating.remove(&ident.0);
+        result.into()
     }
 }

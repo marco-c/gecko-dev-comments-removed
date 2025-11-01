@@ -52,8 +52,10 @@ use crate::stylesheets::{
     PagePseudoClassFlags, PositionTryRule,
 };
 use crate::stylesheets::{
-    CssRule, CssRuleRef, EffectiveRulesIterator, Origin, OriginSet, PageRule, PerOrigin, PerOriginIter, StylesheetContents, StylesheetInDocument
+    CssRule, CssRuleRef, EffectiveRulesIterator, Origin, OriginSet, PageRule, PerOrigin,
+    PerOriginIter, StylesheetContents, StylesheetInDocument,
 };
+use crate::stylesheets::{CustomMediaEvaluator, CustomMediaMap};
 use crate::values::computed::DashedIdentAndOrTryTactic;
 use crate::values::specified::position::PositionTryFallbacksTryTactic;
 use crate::values::{computed, AtomIdent};
@@ -180,6 +182,7 @@ where
         }
 
         let mut key = CascadeDataCacheKey::default();
+        let mut custom_media_map = CustomMediaMap::default();
         for sheet in collection.sheets() {
             CascadeData::collect_applicable_media_query_results_into(
                 device,
@@ -187,6 +190,7 @@ where
                 guard,
                 &mut key.media_query_results,
                 &mut key.contents,
+                &mut custom_media_map,
             )
         }
 
@@ -405,6 +409,15 @@ impl DocumentCascadeData {
             iter: self.per_origin.iter_origins_rev(),
             cascade_data: self,
         }
+    }
+
+    fn custom_media_for_sheet(
+        &self,
+        s: &StylistSheet,
+        guard: &SharedRwLockReadGuard,
+    ) -> &CustomMediaMap {
+        let origin = s.contents(guard).origin;
+        &self.borrow_for_origin(origin).custom_media
     }
 
     
@@ -928,17 +941,6 @@ impl Stylist {
     }
 
     
-    pub fn insert_stylesheet_before(
-        &mut self,
-        sheet: StylistSheet,
-        before_sheet: StylistSheet,
-        guard: &SharedRwLockReadGuard,
-    ) {
-        self.stylesheets
-            .insert_stylesheet_before(Some(&self.device), sheet, before_sheet, guard)
-    }
-
-    
     
     
     
@@ -958,15 +960,34 @@ impl Stylist {
     }
 
     
+    pub fn insert_stylesheet_before(
+        &mut self,
+        sheet: StylistSheet,
+        before_sheet: StylistSheet,
+        guard: &SharedRwLockReadGuard,
+    ) {
+        let custom_media = self.cascade_data.custom_media_for_sheet(&sheet, guard);
+        self.stylesheets.insert_stylesheet_before(
+            Some(&self.device),
+            custom_media,
+            sheet,
+            before_sheet,
+            guard,
+        )
+    }
+
+    
     pub fn append_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
+        let custom_media = self.cascade_data.custom_media_for_sheet(&sheet, guard);
         self.stylesheets
-            .append_stylesheet(Some(&self.device), sheet, guard)
+            .append_stylesheet(Some(&self.device), custom_media, sheet, guard)
     }
 
     
     pub fn remove_stylesheet(&mut self, sheet: StylistSheet, guard: &SharedRwLockReadGuard) {
+        let custom_media = self.cascade_data.custom_media_for_sheet(&sheet, guard);
         self.stylesheets
-            .remove_stylesheet(Some(&self.device), sheet, guard)
+            .remove_stylesheet(Some(&self.device), custom_media, sheet, guard)
     }
 
     
@@ -978,8 +999,10 @@ impl Stylist {
         change_kind: RuleChangeKind,
         ancestors: &[CssRuleRef],
     ) {
+        let custom_media = self.cascade_data.custom_media_for_sheet(&sheet, guard);
         self.stylesheets.rule_changed(
             Some(&self.device),
+            custom_media,
             sheet,
             rule,
             guard,
@@ -3047,6 +3070,9 @@ pub struct CascadeData {
     custom_property_registrations: LayerOrderedMap<Arc<PropertyRegistration>>,
 
     
+    custom_media: CustomMediaMap,
+
+    
     layer_id: FxHashMap<LayerName, LayerId>,
 
     
@@ -3129,6 +3155,7 @@ impl CascadeData {
             selectors_for_cache_revalidation: SelectorMap::new(),
             animations: Default::default(),
             custom_property_registrations: Default::default(),
+            custom_media: Default::default(),
             layer_id: Default::default(),
             layers: smallvec::smallvec![CascadeLayer::root()],
             container_conditions: smallvec::smallvec![ContainerConditionReference::none()],
@@ -3184,6 +3211,11 @@ impl CascadeData {
         self.did_finish_rebuild();
 
         result
+    }
+
+    
+    pub fn custom_media_map(&self) -> &CustomMediaMap {
+        &self.custom_media
     }
 
     
@@ -3456,10 +3488,14 @@ impl CascadeData {
         guard: &SharedRwLockReadGuard,
         results: &mut Vec<MediaListKey>,
         contents_list: &mut StyleSheetContentList,
+        custom_media_map: &mut CustomMediaMap,
     ) where
         S: StylesheetInDocument + 'static,
     {
-        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, guard) {
+        if !stylesheet.enabled() {
+            return;
+        }
+        if !stylesheet.is_effective_for_device(device, &custom_media_map, guard) {
             return;
         }
 
@@ -3472,8 +3508,15 @@ impl CascadeData {
             Arc::from_raw_addrefed(&*contents)
         }));
 
-        for rule in stylesheet.contents(guard).effective_rules(device, guard) {
+        let mut iter = stylesheet
+            .contents(guard)
+            .effective_rules(device, custom_media_map, guard);
+        while let Some(rule) = iter.next() {
             match *rule {
+                CssRule::CustomMedia(ref custom_media) => {
+                    iter.custom_media()
+                        .insert(custom_media.name.0.clone(), custom_media.condition.clone());
+                },
                 CssRule::Import(ref lock) => {
                     let import_rule = lock.read_with(guard);
                     debug!(" + {:?}", import_rule.stylesheet.media(guard));
@@ -3908,10 +3951,11 @@ impl CascadeData {
                 
                 if cfg!(debug_assertions) {
                     let mut effective = false;
-                    let children = EffectiveRulesIterator::children(
+                    let children = EffectiveRulesIterator::<&CustomMediaMap>::children(
                         rule,
                         device,
                         quirks_mode,
+                        &self.custom_media,
                         guard,
                         &mut effective,
                     );
@@ -3922,9 +3966,14 @@ impl CascadeData {
             }
 
             let mut effective = false;
-            let children =
-                EffectiveRulesIterator::children(rule, device, quirks_mode, guard, &mut effective);
-
+            let children = EffectiveRulesIterator::<&CustomMediaMap>::children(
+                rule,
+                device,
+                quirks_mode,
+                &self.custom_media,
+                guard,
+                &mut effective,
+            );
             if !effective {
                 continue;
             }
@@ -4011,6 +4060,10 @@ impl CascadeData {
                 },
                 CssRule::LayerBlock(ref rule) => {
                     maybe_register_layers(self, rule.name.as_ref(), containing_rule_state);
+                },
+                CssRule::CustomMedia(ref custom_media) => {
+                    self.custom_media
+                        .insert(custom_media.name.0.clone(), custom_media.condition.clone());
                 },
                 CssRule::LayerStatement(ref rule) => {
                     for name in &*rule.names {
@@ -4147,7 +4200,11 @@ impl CascadeData {
     where
         S: StylesheetInDocument + 'static,
     {
-        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, guard) {
+        if !stylesheet.enabled() {
+            return Ok(());
+        }
+
+        if !stylesheet.is_effective_for_device(device, &self.custom_media, guard) {
             return Ok(());
         }
 
@@ -4186,7 +4243,7 @@ impl CascadeData {
     {
         use crate::invalidation::media_queries::PotentiallyEffectiveMediaRules;
 
-        let effective_now = stylesheet.is_effective_for_device(device, guard);
+        let effective_now = stylesheet.is_effective_for_device(device, &self.custom_media, guard);
 
         let contents = stylesheet.contents(guard);
         let effective_then = self.effective_media_query_results.was_effective(contents);
@@ -4205,7 +4262,10 @@ impl CascadeData {
             return true;
         }
 
-        let mut iter = contents.iter_rules::<PotentiallyEffectiveMediaRules>(device, guard);
+        
+        let custom_media = CustomMediaMap::default();
+        let mut iter =
+            contents.iter_rules::<PotentiallyEffectiveMediaRules, _>(device, &custom_media, guard);
         while let Some(rule) = iter.next() {
             match *rule {
                 CssRule::Style(..)
@@ -4226,14 +4286,20 @@ impl CascadeData {
                 | CssRule::FontFeatureValues(..)
                 | CssRule::Scope(..)
                 | CssRule::StartingStyle(..)
+                | CssRule::CustomMedia(..)
                 | CssRule::PositionTry(..) => {
+                    
                     
                     continue;
                 },
                 CssRule::Import(ref lock) => {
                     let import_rule = lock.read_with(guard);
                     let effective_now = match import_rule.stylesheet.media(guard) {
-                        Some(m) => m.evaluate(device, quirks_mode),
+                        Some(m) => m.evaluate(
+                            device,
+                            quirks_mode,
+                            &mut CustomMediaEvaluator::new(&self.custom_media, guard),
+                        ),
                         None => true,
                     };
                     let effective_then = self
@@ -4255,7 +4321,11 @@ impl CascadeData {
                 },
                 CssRule::Media(ref media_rule) => {
                     let mq = media_rule.media_queries.read_with(guard);
-                    let effective_now = mq.evaluate(device, quirks_mode);
+                    let effective_now = mq.evaluate(
+                        device,
+                        quirks_mode,
+                        &mut CustomMediaEvaluator::new(&self.custom_media, guard),
+                    );
                     let effective_then = self
                         .effective_media_query_results
                         .was_effective(&**media_rule);
@@ -4334,6 +4404,7 @@ impl CascadeData {
         self.layer_id.clear();
         self.layers.clear();
         self.layers.push(CascadeLayer::root());
+        self.custom_media.clear();
         self.container_conditions.clear();
         self.container_conditions
             .push(ContainerConditionReference::none());

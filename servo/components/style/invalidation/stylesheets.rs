@@ -15,7 +15,7 @@ use crate::media_queries::Device;
 use crate::selector_parser::{SelectorImpl, Snapshot, SnapshotMap};
 use crate::shared_lock::SharedRwLockReadGuard;
 use crate::simple_buckets_map::SimpleBucketsMap;
-use crate::stylesheets::{CssRule, CssRuleRef, StylesheetInDocument};
+use crate::stylesheets::{CssRule, CssRuleRef, CustomMediaMap, StylesheetInDocument};
 use crate::stylesheets::{EffectiveRules, EffectiveRulesIterator};
 use crate::values::AtomIdent;
 use crate::LocalName as SelectorLocalName;
@@ -129,6 +129,7 @@ impl StylesheetInvalidationSet {
     pub fn collect_invalidations_for<S>(
         &mut self,
         device: &Device,
+        custom_media: &CustomMediaMap,
         stylesheet: &S,
         guard: &SharedRwLockReadGuard,
     ) where
@@ -140,19 +141,24 @@ impl StylesheetInvalidationSet {
             return;
         }
 
-        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, guard) {
+        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, custom_media, guard)
+        {
             debug!(" > Stylesheet was not effective");
             return; 
         }
 
         let quirks_mode = device.quirks_mode();
-        for rule in stylesheet.contents(guard).effective_rules(device, guard) {
+        for rule in stylesheet
+            .contents(guard)
+            .effective_rules(device, custom_media, guard)
+        {
             self.collect_invalidations_for_rule(
                 rule,
                 guard,
                 device,
                 quirks_mode,
                  false,
+                
                 
                 &[],
             );
@@ -515,10 +521,6 @@ impl StylesheetInvalidationSet {
     }
 
     
-    
-    
-    
-    
     pub fn rule_changed<S>(
         &mut self,
         stylesheet: &S,
@@ -526,6 +528,7 @@ impl StylesheetInvalidationSet {
         guard: &SharedRwLockReadGuard,
         device: &Device,
         quirks_mode: QuirksMode,
+        custom_media: &CustomMediaMap,
         change_kind: RuleChangeKind,
         ancestors: &[CssRuleRef],
     ) where
@@ -536,14 +539,15 @@ impl StylesheetInvalidationSet {
             return;
         }
 
-        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, guard) {
+        if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, custom_media, guard)
+        {
             debug!(" > Stylesheet was not effective");
             return; 
         }
 
         if ancestors
             .iter()
-            .any(|r| !EffectiveRules::is_effective(guard, device, quirks_mode, r))
+            .any(|r| !EffectiveRules::is_effective(guard, device, quirks_mode, custom_media, r))
         {
             debug!(" > Ancestor rules not effective");
             return;
@@ -567,12 +571,18 @@ impl StylesheetInvalidationSet {
         }
 
         if !is_generic_change
-            && !EffectiveRules::is_effective(guard, device, quirks_mode, &rule.into())
+            && !EffectiveRules::is_effective(guard, device, quirks_mode, custom_media, &rule.into())
         {
             return;
         }
 
-        let rules = EffectiveRulesIterator::effective_children(device, quirks_mode, guard, rule);
+        let rules = EffectiveRulesIterator::effective_children(
+            device,
+            quirks_mode,
+            custom_media,
+            guard,
+            rule,
+        );
         for rule in rules {
             self.collect_invalidations_for_rule(
                 rule,
@@ -624,7 +634,7 @@ impl StylesheetInvalidationSet {
             },
             NestedDeclarations(..) => {
                 if ancestors.iter().any(|r| matches!(r, CssRuleRef::Scope(_))) {
-                    self.fully_invalid = true;
+                    self.invalidate_fully();
                 }
             },
             Namespace(..) => {
@@ -673,6 +683,13 @@ impl StylesheetInvalidationSet {
                 self.invalidate_fully();
             },
             PositionTry(..) => {
+                
+                
+                self.invalidate_fully();
+            },
+            CustomMedia(..) => {
+                
+                
                 
                 
                 self.invalidate_fully();
