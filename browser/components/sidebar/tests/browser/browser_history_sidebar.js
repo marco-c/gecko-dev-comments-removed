@@ -383,10 +383,10 @@ add_task(async function test_history_hover_buttons() {
   
   
   AccessibilityUtils.setEnv({ focusableRule: false });
-  await waitForPageLoadTask(
-    () => EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow),
-    URLs[0]
-  );
+  const browser = gBrowser.selectedBrowser;
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, URLs[0]);
+  EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow);
+  await loaded;
   AccessibilityUtils.resetEnv();
 
   info("Remove the first entry.");
