@@ -291,20 +291,6 @@ public final class SessionTextInput {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   @AnyThread
   public synchronized @NonNull Handler getHandler(final @NonNull Handler defHandler) {
     

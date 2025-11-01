@@ -7,7 +7,6 @@
 package org.mozilla.gecko;
 
 import android.content.Context;
-import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
@@ -89,14 +88,11 @@ public class SpeechSynthesisService {
   }
 
   private static Set<Locale> getAvailableLanguages() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      
-      
-      final Set<Locale> availableLanguages = getTTS().getAvailableLanguages();
-      if (availableLanguages != null) {
-        return availableLanguages;
-      }
+    final Set<Locale> availableLanguages = getTTS().getAvailableLanguages();
+    if (availableLanguages != null) {
+      return availableLanguages;
     }
+
     final Set<Locale> locales = new HashSet<Locale>();
     for (final Locale locale : Locale.getAvailableLocales()) {
       if (locale.getVariant().isEmpty() && getTTS().isLanguageAvailable(locale) > 0) {
@@ -218,10 +214,5 @@ public class SpeechSynthesisService {
     }
 
     getTTS().stop();
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      
-      
-      dispatchEnd(null);
-    }
   }
 }

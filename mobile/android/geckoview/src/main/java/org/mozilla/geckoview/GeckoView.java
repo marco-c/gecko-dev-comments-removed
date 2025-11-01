@@ -9,7 +9,6 @@ package org.mozilla.geckoview;
 import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_ACTIVITY_CONTEXT;
 import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_ACTIVITY_CONTEXT_DELEGATE;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -329,12 +328,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       mSelectionActionDelegate = new BasicSelectionActionDelegate(activity);
     }
 
-    if (Build.VERSION.SDK_INT >= 26) {
-      mAutofillDelegate = new AndroidAutofillDelegate();
-    } else {
-      
-      mAutofillDelegate = new Autofill.Delegate() {};
-    }
+    mAutofillDelegate = new AndroidAutofillDelegate();
     mPrintDelegate = new GeckoViewPrintDelegate();
   }
 
@@ -767,14 +761,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     if (mSession != null) {
       final GeckoRuntime runtime = mSession.getRuntime();
       if (runtime != null) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-          
-          
-          
-          
-          runtime.orientationChanged();
-        }
-
         runtime.configurationChanged(newConfig);
       }
     }
@@ -867,10 +853,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
   @Override
   public Handler getHandler() {
-    if (Build.VERSION.SDK_INT >= 24 || mSession == null) {
-      return super.getHandler();
-    }
-    return mSession.getTextInput().getHandler(super.getHandler());
+    return super.getHandler();
   }
 
   @Override
@@ -1013,7 +996,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   }
 
   @Override
-  @TargetApi(26)
   public void autofill(@NonNull final SparseArray<AutofillValue> values) {
     
     
@@ -1062,7 +1044,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
 
 
-  @TargetApi(26)
   public void setAutofillEnabled(final boolean enabled) {
     mAutofillEnabled = enabled;
 
@@ -1078,12 +1059,10 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   
 
 
-  @TargetApi(26)
   public boolean getAutofillEnabled() {
     return mAutofillEnabled;
   }
 
-  @TargetApi(26)
   private class AndroidAutofillDelegate implements Autofill.Delegate {
     AutofillManager mAutofillManager;
     boolean mDisabled = false;

@@ -6,13 +6,11 @@
 package org.mozilla.gecko;
 
 import android.content.Context;
-import android.os.Build;
 import android.provider.Settings.Secure;
 import android.view.View;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import java.util.Collection;
-import java.util.Locale;
 
 public final class InputMethods {
   public static final String METHOD_ANDROID_LATINIME = "com.android.inputmethod.latin/.LatinIME";
@@ -99,13 +97,6 @@ public final class InputMethods {
   public static boolean needsRestartOnReplaceRemove(final Context context) {
     final String inputMethod = getCurrentInputMethod(context);
     return METHOD_SONY.equals(inputMethod);
-  }
-
-  
-  public static boolean dontOverrideCommitText() {
-    return Build.VERSION.SDK_INT == 23
-        && Build.MANUFACTURER.toLowerCase(Locale.ROOT).equals("samsung")
-        && Build.MODEL.startsWith("SM-J700F");
   }
 
   

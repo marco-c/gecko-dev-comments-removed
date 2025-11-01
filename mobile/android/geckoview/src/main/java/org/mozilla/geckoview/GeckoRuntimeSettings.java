@@ -6,8 +6,6 @@
 
 package org.mozilla.geckoview;
 
-import static android.os.Build.VERSION;
-
 import android.app.Service;
 import android.graphics.Rect;
 import android.os.Build;
@@ -75,9 +73,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     
-
-
-
 
 
 
@@ -932,8 +927,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
-
   public @Nullable String getConfigFilePath() {
     return mConfigFilePath;
   }
@@ -1508,18 +1501,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   private static String[] getSystemLocalesForAcceptLanguage() {
-    if (VERSION.SDK_INT >= 24) {
-      final LocaleList localeList = LocaleList.getDefault();
-      final String[] locales = new String[localeList.size()];
-      for (int i = 0; i < localeList.size(); i++) {
-        
-        locales[i] = LocaleUtils.getLanguageTagForAcceptLanguage(localeList.get(i));
-      }
-      return locales;
+    final LocaleList localeList = LocaleList.getDefault();
+    final String[] locales = new String[localeList.size()];
+    for (int i = 0; i < localeList.size(); i++) {
+      
+      locales[i] = LocaleUtils.getLanguageTagForAcceptLanguage(localeList.get(i));
     }
-    final String[] locales = new String[1];
-    final Locale locale = Locale.getDefault();
-    locales[0] = LocaleUtils.getLanguageTagForAcceptLanguage(locale);
     return locales;
   }
 

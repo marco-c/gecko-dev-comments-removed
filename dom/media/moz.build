@@ -274,6 +274,8 @@ UNIFIED_SOURCES += [
     "CloneableWithRangeMediaResource.cpp",
     "CrossGraphPort.cpp",
     "CubebInputStream.cpp",
+    "CubebUtils.cpp",
+    "DecoderTraits.cpp",
     "DeviceInputTrack.cpp",
     "DOMMediaStream.cpp",
     "ExternalEngineStateMachine.cpp",
@@ -333,18 +335,9 @@ if CONFIG["ENABLE_TESTS"] or CONFIG["FUZZING"]:
     UNIFIED_SOURCES += ["MockCubeb.cpp"]
 
 
-
-
-
 SOURCES += [
-    "CubebUtils.cpp",
-    "DecoderTraits.cpp",
     "MediaData.cpp",
 ]
-
-
-
-SOURCES["DecoderTraits.cpp"].flags += ["-Wno-error=multichar"]
 
 if CONFIG["MOZ_WEBRTC"]:
     XPCOM_MANIFESTS += [

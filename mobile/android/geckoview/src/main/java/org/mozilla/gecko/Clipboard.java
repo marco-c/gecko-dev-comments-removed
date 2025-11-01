@@ -170,17 +170,10 @@ public final class Clipboard {
     
     final ClipboardManager cm =
         (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      if (isPrivateData || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-        final PersistableBundle extras = new PersistableBundle();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-          extras.putLong("org.mozilla.gecko.clipboard", System.currentTimeMillis());
-        }
-        if (isPrivateData) {
-          extras.putBoolean("android.content.extra.IS_SENSITIVE", true);
-        }
-        clipData.getDescription().setExtras(extras);
-      }
+    if (isPrivateData) {
+      final PersistableBundle extras = new PersistableBundle();
+      extras.putBoolean("android.content.extra.IS_SENSITIVE", true);
+      clipData.getDescription().setExtras(extras);
     }
     try {
       cm.setPrimaryClip(clipData);
@@ -297,29 +290,13 @@ public final class Clipboard {
   }
 
   private static long getClipboardTimestamp(final Context context) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return 0;
-    }
-
     final ClipboardManager cm =
         (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
     final ClipDescription description = cm.getPrimaryClipDescription();
     if (description == null) {
       return 0;
     }
-
-    
-    
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      return description.getTimestamp();
-    }
-
-    final PersistableBundle extras = description.getExtras();
-    if (extras == null) {
-      return 0;
-    }
-
-    return extras.getLong("org.mozilla.gecko.clipboard", 0);
+    return description.getTimestamp();
   }
 
   public static void updateSequenceNumber(final Context context) {
@@ -332,17 +309,6 @@ public final class Clipboard {
     }
 
     sClipboardSequenceNumber.incrementAndGet();
-  }
-
-  public static void onPause() {
-    
-    
-    
-    
-    
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-      sClipboardTimestamp.set(0);
-    }
   }
 
   

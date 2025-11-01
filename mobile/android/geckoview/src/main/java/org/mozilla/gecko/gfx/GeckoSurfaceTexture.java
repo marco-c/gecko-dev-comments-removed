@@ -6,12 +6,10 @@
 package org.mozilla.gecko.gfx;
 
 import android.graphics.SurfaceTexture;
-import android.os.Build;
 import android.util.Log;
 import android.util.LongSparseArray;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 
@@ -226,12 +224,6 @@ import org.mozilla.gecko.mozglue.JNIObject;
   }
 
   public static GeckoSurfaceTexture acquire(final boolean singleBufferMode, final long handle) {
-    
-    
-    if (GeckoAppShell.isIsolatedProcess() && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-      return null;
-    }
-
     synchronized (sSurfaceTextures) {
       
       

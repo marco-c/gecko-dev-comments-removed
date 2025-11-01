@@ -5,13 +5,11 @@
 
 package org.mozilla.geckoview;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -538,7 +536,7 @@ import org.mozilla.gecko.util.ThreadUtils;
       if ("startInputInner".equals(frame.getMethodName())
           && "android.view.inputmethod.InputMethodManager".equals(frame.getClassName())) {
         
-        return Build.VERSION.SDK_INT < 24;
+        return false;
       }
       if (CUSTOM_HANDLER_TEST_METHOD.equals(frame.getMethodName())
           && CUSTOM_HANDLER_TEST_CLASS.equals(frame.getClassName())) {
@@ -693,11 +691,6 @@ import org.mozilla.gecko.util.ThreadUtils;
     }
 
     
-    if (InputMethods.dontOverrideCommitText()) {
-      return super.commitText(text, newCursorPosition);
-    }
-
-    
     
     
     
@@ -814,7 +807,6 @@ import org.mozilla.gecko.util.ThreadUtils;
     am.dispatchMediaKeyEvent(event);
   }
 
-  @TargetApi(Build.VERSION_CODES.N_MR1)
   @Override
   public boolean commitContent(
       final InputContentInfo inputContentInfo, final int flags, final Bundle opts) {

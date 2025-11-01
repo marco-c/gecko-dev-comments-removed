@@ -6,7 +6,6 @@
 
 package org.mozilla.geckoview;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -17,7 +16,6 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.os.Build;
 import android.os.TransactionTooLargeException;
 import android.text.TextUtils;
 import android.util.Log;
@@ -93,7 +91,6 @@ public class BasicSelectionActionDelegate
 
   private @Nullable ActionMode mActionModeForClipboardPermission;
 
-  @TargetApi(Build.VERSION_CODES.M)
   private class Callback2Wrapper extends ActionMode.Callback2 {
     @Override
     public boolean onCreateActionMode(final ActionMode actionMode, final Menu menu) {
@@ -128,7 +125,7 @@ public class BasicSelectionActionDelegate
 
 
   public BasicSelectionActionDelegate(final @NonNull Activity activity) {
-    this(activity, Build.VERSION.SDK_INT >= 23);
+    this(activity, true);
   }
 
   
@@ -186,10 +183,6 @@ public class BasicSelectionActionDelegate
 
   protected boolean isActionAvailable(final @NonNull String id) {
     if (mSelection == null) {
-      return false;
-    }
-
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O && ACTION_PASTE_AS_PLAIN_TEXT.equals(id)) {
       return false;
     }
 
@@ -254,9 +247,6 @@ public class BasicSelectionActionDelegate
         item.setTitle(android.R.string.paste);
         break;
       case ACTION_PASTE_AS_PLAIN_TEXT:
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-          throw new IllegalStateException("Unexpected version for action");
-        }
         item.setTitle(android.R.string.paste_as_plain_text);
         break;
       case ACTION_SELECT_ALL:
@@ -360,7 +350,7 @@ public class BasicSelectionActionDelegate
     final String[] allActions = getAllActions();
     for (final String actionId : allActions) {
       if (isActionAvailable(actionId)) {
-        if (!mUseFloatingToolbar && (Build.VERSION.SDK_INT == 22 || Build.VERSION.SDK_INT == 23)) {
+        if (!mUseFloatingToolbar) {
           
           onPrepareActionMode(actionMode, menu);
         }
@@ -498,7 +488,6 @@ public class BasicSelectionActionDelegate
     transformedRect.roundOut(outRect);
   }
 
-  @TargetApi(Build.VERSION_CODES.M)
   @Override
   public void onShowActionRequest(final GeckoSession session, final Selection selection) {
     ThreadUtils.assertOnUiThread();
@@ -586,7 +575,6 @@ public class BasicSelectionActionDelegate
   }
 
   
-  @TargetApi(Build.VERSION_CODES.M)
   private class ClipboardPermissionCallbackM extends ActionMode.Callback2 {
     private @Nullable GeckoResult<AllowOrDeny> mResult;
     private final @NonNull GeckoSession mSession;
@@ -648,7 +636,6 @@ public class BasicSelectionActionDelegate
 
 
 
-  @TargetApi(Build.VERSION_CODES.M)
   @Override
   public GeckoResult<AllowOrDeny> onShowClipboardPermissionRequest(
       final GeckoSession session, final ClipboardPermission permission) {
