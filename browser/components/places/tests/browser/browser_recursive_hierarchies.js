@@ -12,13 +12,7 @@
 async function openMenuAndWaitForPopup(menu) {
   let popup = menu.menupopup;
   let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
-  
-  EventUtils.synthesizeNativeMouseEvent({
-    type: "mousemove",
-    target: menu,
-    atCenter: true,
-  });
-  menu.open = true;
+  EventUtils.synthesizeMouseAtCenter(menu, {});
   await popupShown;
   return popup;
 }
