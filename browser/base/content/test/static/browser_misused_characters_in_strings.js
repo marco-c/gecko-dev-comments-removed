@@ -57,6 +57,39 @@ let gExceptionsList = [
     key: "MathML_DeprecatedMathVariantWarning",
     type: "single-quote",
   },
+  {
+    file: "dom.properties",
+    key: "MathML_DeprecatedMoExplicitAccentWarning",
+    type: "single-quote",
+  },
+  
+  {
+    file: "dom.properties",
+    key: "MathML_DeprecatedMoExplicitAccentWarning",
+    type: "single-quote",
+  },
+  {
+    file: "dom.properties",
+    key: "MathML_DeprecatedMoverNonExplicitAccentWarning",
+    type: "single-quote",
+  },
+  
+  {
+    file: "dom.properties",
+    key: "MathML_DeprecatedMoverNonExplicitAccentWarning",
+    type: "single-quote",
+  },
+  {
+    file: "dom.properties",
+    key: "MathML_DeprecatedMunderNonExplicitAccentunderWarning",
+    type: "single-quote",
+  },
+  
+  {
+    file: "dom.properties",
+    key: "MathML_DeprecatedMunderNonExplicitAccentunderWarning",
+    type: "single-quote",
+  },
   
   
   {
