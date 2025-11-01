@@ -10,11 +10,15 @@ import android.media.MediaCrypto;
 import android.media.MediaFormat;
 import android.os.Handler;
 import android.view.Surface;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 
-
 public interface AsyncCodec {
+  static AsyncCodec create(final String name) throws IOException {
+    return new LollipopAsyncCodec(name);
+  }
+
   interface Callbacks {
     void onInputBufferAvailable(AsyncCodec codec, int index);
 
