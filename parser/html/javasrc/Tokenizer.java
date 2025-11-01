@@ -1001,19 +1001,6 @@ public class Tokenizer implements Locator, Locator2 {
 
 
     @Inline protected String strBufToString() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         String str = Portability.newStringFromBuffer(strBuf, 0, strBufLen
             
         );
