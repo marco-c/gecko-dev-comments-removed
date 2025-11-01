@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=566160
+-->
 <head>
   <title>Test for Bug 566160</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -26,7 +26,7 @@
 <iframe name='frame8' id='frame8'></iframe>
 <iframe name='frame9' id='frame9'></iframe>
 <div id="content">
-  
+  <!-- submit controls with formaction that are validated with a CLICK -->
   <form target="frame1" action="dummy_page.html" method="POST">
     <input name='foo' value='foo'>
     <input type='submit' id='is' formmethod="GET">
@@ -44,7 +44,7 @@
     <button type='submit' id='bsbis' formmethod="GET">submit</button>
   </form>
 
-  
+  <!-- submit controls with formaction that are validated with ENTER -->
   <form target="frame4" action="dummy_page.html" method="POST">
     <input name='footulip' value='footulip'>
     <input type='submit' id='is2' formmethod="GET">
@@ -58,20 +58,20 @@
     <button type='submit' id='bs2' formmethod="GET">submit</button>
   </form>
 
-  
-
+  <!-- check that when submitting a from from an element
+       which is not a submit control, @formaction isn't used -->
   <form target='frame7' action="dummy_page.html" method="GET">
     <input id='enter' name='input' value='enter' formmethod="POST">
   </form>
 
-  
+  <!-- If formmethod isn't set, it's default value shouldn't be used -->
   <form target="frame8" action="dummy_page.html" method="POST">
     <input name='tulip8' value='tulip8'>
     <input type='submit' id='i8'>
   </form>
 
-  
-
+  <!-- If formmethod is set but has an invalid value, the default value should
+       be used. -->
   <form target="frame9" action="dummy_page.html" method="POST">
     <input name='tulip9' value='tulip9'>
     <input type='submit' id='i9' formmethod="">
@@ -80,7 +80,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 566160 **/
+/** Test for Bug 566160 */
 
 SimpleTest.waitForExplicitFinish();
 addLoadEvent(function() {

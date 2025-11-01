@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=322317
+-->
 <head>
   <title>Test for Bug 322317</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -17,7 +17,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 322317 **/
+/** Test for Bug 322317 */
 /* Test that this does not throw exceptions */
 var http =new XMLHttpRequest();
 http.open("GET", window.location.href);

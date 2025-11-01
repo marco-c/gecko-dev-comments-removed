@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=783607
+-->
 <head>
   <title>Test rounding behaviour for &lt;input type='number'&gt;</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -24,7 +24,7 @@
  * This test checks that when <input type=number> has fractional step values,
  * the values that a content author will see in their script will not have
  * ugly rounding errors.
- **/
+ */
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(function() {
   test();

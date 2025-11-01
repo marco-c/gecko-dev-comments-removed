@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=567663
+-->
 <head>
   <title>Test for Bug 567663</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -17,7 +17,7 @@
 </div>
 <pre id="test">
 <script>
-/** Test for Bug 567663 **/
+/** Test for Bug 567663 */
 var ps = document.getElementById("content").getElementsByTagName("p");
 is(ps[0].hidden, false, "First p's IDL attribute was wrong.");
 is(ps[0].hasAttribute("hidden"), false, "First p had a content attribute.");

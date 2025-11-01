@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=566160
+-->
 <head>
   <title>Test for Bug 566160</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -24,7 +24,7 @@
 <iframe name='frame6' id='frame6'></iframe>
 <iframe name='frame7' id='frame7'></iframe>
 <div id="content">
-  
+  <!-- submit controls with formaction that are validated with a CLICK -->
   <form target="frame1" action="FAIL.html" method="GET">
     <input name='foo' value='foo'>
     <input type='submit' id='is' formaction="PASS.html">
@@ -42,7 +42,7 @@
     <button type='submit' id='bsbis' formaction="PASS.html">submit</button>
   </form>
 
-  
+  <!-- submit controls with formaction that are validated with ENTER -->
   <form target="frame4" action="FAIL.html" method="GET">
     <input name='footulip' value='footulip'>
     <input type='submit' id='is2' formaction="PASS.html">
@@ -56,8 +56,8 @@
     <button type='submit' id='bs2' formaction="PASS.html">submit</button>
   </form>
 
-  
-
+  <!-- check that when submitting a from from an element
+       which is not a submit control, @formaction isn't used -->
   <form target='frame7' action="PASS.html" method="GET">
     <input id='enter' name='input' value='enter' formaction="FAIL.html">
   </form>
@@ -65,7 +65,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 566160 **/
+/** Test for Bug 566160 */
 
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(runTests);

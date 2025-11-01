@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=382871
+-->
 <head>
   <title>Test for Bug 382871</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -17,7 +17,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 382871 **/
+/** Test for Bug 382871 */
 
 function loadHandler(evt) {
   ok("randomProperty" in evt.target);

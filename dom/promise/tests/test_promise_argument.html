@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1323324
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1323324</title>
@@ -10,7 +10,7 @@
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
   <script src="file_promise_argument_tests.js"></script>
   <script type="application/javascript">
-  /** Test for Bug 1323324 **/
+  /** Test for Bug 1323324 */
   SimpleTest.waitForExplicitFinish();
 
   var globalWrapper;
@@ -40,7 +40,7 @@
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1323324">Mozilla Bug 1323324</a>
 <p id="display"></p>
 <div id="content" style="display: none">
-  
+  <!-- A subframe so we have another global to work with -->
   <iframe></iframe>
 </div>
 <pre id="test">

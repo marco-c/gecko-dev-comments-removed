@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=664916
+-->
 <head>
   <title>Test for Bug 664916</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,7 +18,7 @@
 <script type="application/javascript">
 
 
-/** Test for Bug 664916 **/
+/** Test for Bug 664916 */
 var div = document.createElement("div");
 var textNode = document.createTextNode("x")
 var tagNameGetter = div.__lookupGetter__("tagName");

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=927796
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 927796</title>
@@ -28,7 +28,7 @@
 </pre>
   <script type="application/javascript">
 
-  /** Test for Bug 927796 **/
+  /** Test for Bug 927796 */
   var s1 = $("s1");
   s1.options[0].defaultSelected = false;
   is(s1.options[0].selected, true,

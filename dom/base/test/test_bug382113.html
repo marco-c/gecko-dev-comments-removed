@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=382113
+-->
 <head>
   <title>Test for Bug 382113</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>        
@@ -13,7 +13,7 @@
     var childGotOnload = false;
     var objectGotOnload = false;
 
-    /** Test for Bug 100533 **/
+    /** Test for Bug 100533 */
     function checkEvents() {
       is(childGotOnload, true, "Child got load event");
       is(objectGotOnload, true, "Object got load event");

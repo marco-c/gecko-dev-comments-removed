@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=581072
+-->
 <head>
   <title>Test for Bug 581072</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -20,7 +20,7 @@
 SimpleTest.waitForExplicitFinish();
 SimpleTest.requestFlakyTimeout("untriaged");
 
-/** Test for Bug 581072 **/
+/** Test for Bug 581072 */
 var longTimerFired = false;
 
 // Set up a one-hour timeout

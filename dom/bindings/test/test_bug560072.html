@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=560072
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 560072</title>
@@ -18,7 +18,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 560072 **/
+/** Test for Bug 560072 */
 is(document.body,
    Object.getOwnPropertyDescriptor(Document.prototype, "body").get.call(document),
    "Should get body out of property descriptor");

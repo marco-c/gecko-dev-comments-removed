@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=649134
+-->
 <head>
   <title>Test for Bug 649134</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -15,7 +15,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 649134 **/
+/** Test for Bug 649134 */
 SimpleTest.waitForExplicitFinish();
 
 var calls = 0;
@@ -44,10 +44,10 @@ function indexLoad(iframe) {
 </script>
 </pre>
 <p id="display">
-
+<!-- Note: the extra sub-directory is needed for the test, see bug 649134 comment 14 -->
 <iframe onload="verifyNoLoad(this);" src="bug649134/file_bug649134-1.sjs"></iframe>
 <iframe onload="verifyNoLoad(this);" src="bug649134/file_bug649134-2.sjs"></iframe>
-<iframe onload="verifyLoad(this);" src="bug649134/"></iframe> 
+<iframe onload="verifyLoad(this);" src="bug649134/"></iframe> <!-- verify that mochitest server loads index.html -->
 <iframe onload="indexLoad(this);" src="bug649134/index.html"></iframe>
 </p>
 </body>

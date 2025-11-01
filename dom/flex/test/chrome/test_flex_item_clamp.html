@@ -77,7 +77,7 @@ function runTests() {
    * of the body. The values in this object are compared against the returned flex
    * API values of the first flex item in the first line of the corresponding flex
    * container. The "cs" value is compared against the flex item's clampState.
-   **/
+   */
   const expectedValues = [
     { cs: "unclamped" },
     { cs: "unclamped" },
@@ -116,54 +116,54 @@ function runTests() {
 </head>
 
 <body onLoad="runTests();">
-  
-  
+  <!-- unclamped cases -->
+  <!-- a flex:none item -->
   <f><d></d></f>
 
-  
+  <!-- a flex-grow item with room to grow -->
   <f><b class="min370"></b></f>
 
-  
+  <!-- a flex-shrink item with room to shrink -->
   <f><b class="max50"></b><c class="min370"></c></f>
 
-  
-
+  <!-- a flex-grow basis 100px item paired with a basis 200px item, where the second item is clamped,
+       and the first item then can grow past its minimum -->
   <f><b style="min-width: 170px"></b><c class="max50" style="flex-basis:200px"></c></f>
 
 
-  
-  
+  <!-- clamped_to_min cases -->
+  <!-- a flex-grow item with a min smaller than the container -->
   <f><b class="min370"></b><c></c></f>
 
-  
+  <!-- a flex-shrink item with a min, paired with another that in total exceeds the container -->
   <f><b class="min50"></b><c class="min370"></c></f>
 
-  
+  <!-- a flex-shrink item shrunk to its (content-based) automatic minimum size -->
   <f><b></b><c class="min400"></c></f>
 
-  
+  <!-- a flex:none item with a min that is larger than its flex base size -->
   <f><d class="min50"></d><c></c></f>
 
-  
-
+  <!-- a flex-grow item paired with another flex-grow item that have equal-sized violations of
+       the first item's min with the second item's max -->
   <f><b style="min-width: 200px"></b><c style="flex-basis:150px; max-width:200px"></c></f>
 
 
-  
-  
+  <!-- clamped_to_max cases -->
+  <!-- a flexible item with a max -->
   <f><b class="max50"></b></f>
 
-  
+  <!-- a flexible item with a max, paired with another flex-grow item -->
   <f><b class="max50"></b><c></c></f>
 
-  
+  <!-- a flexible item with a max smaller than its content size -->
   <f><b class="max5"></b><c></c></f>
 
-  
+  <!-- a flex:none item with a max smaller than its content size -->
   <f><d class="max5"></d><c></c></f>
 
-  
-
+  <!-- a flex-grow item paired with another flex-grow item that have equal-sized violations of
+       the first item's max with the second item's min -->
   <f><b style="flex-basis:150px; max-width:200px"></b><c style="min-width: 200px"></c></f>
 </body>
 </html>

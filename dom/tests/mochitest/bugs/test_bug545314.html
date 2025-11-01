@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=545314
+-->
 <head>
   <title>Test for Bug 545314</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -18,7 +18,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 545314 **/
+/** Test for Bug 545314 */
 var frame = window.frames[0];
 frame.location.assign("http://localhost:8888/");
 ok(true, "location.assign didn't throw");

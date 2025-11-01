@@ -1,8 +1,8 @@
-
+<!-- This test must be in quirks mode so it has a document.all -->
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=620947
+-->
 <head>
   <title>Test for Bug 620947</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -17,7 +17,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 620947 **/
+/** Test for Bug 620947 */
 is(-1 in document.all, false, "shouldn't be there");
 is(document.all[-1], undefined, "shouldn't be able to get it");
 

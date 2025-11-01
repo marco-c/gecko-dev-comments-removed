@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1404385
+-->
 <head>
   <title>Test for Bug 1404385</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -16,7 +16,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 1404385 **/
+/** Test for Bug 1404385 */
 is(atob("T0s="), "OK", "atob");
 is(atob(" T0s="), "OK", "atob initial space removal");
 is(atob("T0s= "), "OK", "atob final space removal");

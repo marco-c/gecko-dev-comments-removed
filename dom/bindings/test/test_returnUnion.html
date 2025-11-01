@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1048659
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1048659</title>
@@ -10,7 +10,7 @@
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
   <script type="application/javascript">
   /* global TestInterfaceJS */
-  /** Test for returning unions from JS-implemented WebIDL. **/
+  /** Test for returning unions from JS-implemented WebIDL. */
   SimpleTest.waitForExplicitFinish();
   SpecialPowers.pushPrefEnv({set: [["dom.expose_test_interfaces", true]]}, go);
 

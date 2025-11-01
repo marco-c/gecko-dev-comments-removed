@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=566046
+-->
 <head>
   <title>Test for Bug 566046</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -38,7 +38,7 @@
   <form target="">
   </form>
 
-  
+  <!-- submit controls with formtarget that are validated with a CLICK -->
   <form target="tulip" action="dummy_page.html" method="GET">
     <input name='tulip' value='tulip'>
     <input type='submit' id='is' formtarget='frame3'>
@@ -56,7 +56,7 @@
     <button type='submit' id='bsbis' formtarget='frame5bis'>submit</button>
   </form>
 
-  
+  <!-- submit controls with formtarget that are validated with ENTER -->
   <form target="tulip" action="dummy_page.html" method="GET">
     <input name='footulip' value='footulip'>
     <input type='submit' id='is2' formtarget='frame6'>
@@ -70,7 +70,7 @@
     <button type='submit' id='bs2' formtarget='frame8'>submit</button>
   </form>
 
-  
+  <!-- check that a which is not a submit control do not use @formtarget -->
   <form target='frame9' action="dummy_page.html" method="GET">
     <input id='enter' name='input' value='enter' formtarget='frame6'>
   </form>
@@ -78,7 +78,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 566046 **/
+/** Test for Bug 566046 */
 
 SimpleTest.waitForExplicitFinish();
 addLoadEvent(function() {

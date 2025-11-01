@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=359657
+-->
 <head>
   <title>Test for Bug 359657</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -19,7 +19,7 @@
 
 SimpleTest.waitForExplicitFinish();
 
-/** Test for Bug 359657 **/
+/** Test for Bug 359657 */
 function runTest() {
   var span = document.createElement("span");
   $("test").insertBefore(span, $("test").firstChild);
@@ -30,8 +30,8 @@ function runTest() {
 </script>
 <div>
   <iframe src=""></iframe>
-  
-
+  <!-- Important: This test needs to run async at this point.  The actual test
+       is not crashing while running this test! -->
   <script type="text/javascript" src="data:text/javascript,runTest()"></script>
 </div>
 </pre>

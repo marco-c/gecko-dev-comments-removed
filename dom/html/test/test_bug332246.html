@@ -1,7 +1,7 @@
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=332246
+-->
 <head>
   <title>Test for Bug 332246 - scrollIntoView(false) doesn't work correctly for inline elements that wrap at multiple lines</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -35,7 +35,7 @@
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-/** Test for Bug 332246 **/
+/** Test for Bug 332246 */
 
 function isWithFuzz(itIs, itShouldBe, fuzz, description) {
   ok(Math.abs(itIs - itShouldBe) <= fuzz, `${description} - expected a value between ${itShouldBe - fuzz} and ${itShouldBe + fuzz}, got ${itIs}`);

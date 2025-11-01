@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=564047
+-->
 <head>
   <title>Test for Bug 564047</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -16,7 +16,7 @@
 </div>
 <pre id="test">
 <script type="application/javascript">
-/** Test for Bug 564047 **/
+/** Test for Bug 564047 */
 try {
   document.doctype.appendChild(document.createTextNode("test"));
   ok(false, "Should have thrown an exception");

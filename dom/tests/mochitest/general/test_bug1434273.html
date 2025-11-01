@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1434273
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1434273</title>
@@ -15,7 +15,7 @@
   <script type="application/javascript">
   SimpleTest.waitForExplicitFinish();
 
-  /** Test for Bug 1434273 **/
+  /** Test for Bug 1434273 */
   addLoadEvent(function() {
     synthesizeMouse($("test"), 100, 100, {});
     ok(true, "We did not crash!");

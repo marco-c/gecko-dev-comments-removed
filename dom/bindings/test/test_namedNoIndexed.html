@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=808991
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 808991</title>
@@ -18,7 +18,7 @@
 <pre id="test">
 <script type="application/javascript">
 
-/** Test for Bug 808991 **/
+/** Test for Bug 808991 */
 is($("content").dataset[1], "foo",
    "Indexed props should work like named on dataset");
 is($("content").dataset["1"], "foo",
