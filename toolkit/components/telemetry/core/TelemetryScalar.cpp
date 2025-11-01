@@ -10,6 +10,7 @@
 #include "js/Array.h"               
 #include "js/PropertyAndElement.h"  
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/JSONWriter.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"

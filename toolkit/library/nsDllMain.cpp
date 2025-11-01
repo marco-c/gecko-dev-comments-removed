@@ -6,6 +6,7 @@
 #include <windows.h>
 #include "nsToolkit.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/WindowsVersion.h"
 
 #if defined(__GNUC__)
 
