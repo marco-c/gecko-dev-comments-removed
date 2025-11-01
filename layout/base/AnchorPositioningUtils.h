@@ -66,7 +66,7 @@ class AnchorPosReferenceData {
  public:
   
   
-  using PositionTryBackup = mozilla::PhysicalAxes;
+  using PositionTryBackup = std::pair<mozilla::PhysicalAxes, nsPoint>;
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
   AnchorPosReferenceData() = default;
@@ -98,14 +98,20 @@ class AnchorPosReferenceData {
   }
 
   PositionTryBackup TryPositionWithSameDefaultAnchor() {
-    const auto compensatingForScroll =
+    mozilla::PhysicalAxes compensatingForScroll =
         std::exchange(mCompensatingForScroll, {});
-    return compensatingForScroll;
+    nsPoint defaultScrollShift = std::exchange(mDefaultScrollShift, {});
+    return std::make_pair(compensatingForScroll, defaultScrollShift);
   }
 
   void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
-    mCompensatingForScroll = aBackup;
+    std::tie(mCompensatingForScroll, mDefaultScrollShift) = aBackup;
   }
+
+  
+  nsPoint mDefaultScrollShift;
+  
+  
 
  private:
   ResolutionMap mMap;
@@ -125,6 +131,8 @@ struct AnchorPosDefaultAnchorCache {
 
   AnchorPosDefaultAnchorCache() = default;
   explicit AnchorPosDefaultAnchorCache(const nsIFrame* aAnchor);
+  AnchorPosDefaultAnchorCache(const nsIFrame* aAnchor,
+                              const nsIFrame* aScrollContainer);
 };
 
 
@@ -233,6 +241,14 @@ struct AnchorPositioningUtils {
   static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
 
   static const nsIFrame* GetNearestScrollFrame(const nsIFrame* aFrame);
+
+  static nsPoint GetScrollOffsetFor(
+      PhysicalAxes aAxes, const nsIFrame* aPositioned,
+      const AnchorPosDefaultAnchorCache& aDefaultAnchorCache);
+
+  static bool FitsInContainingBlock(const nsRect& aOverflowCheckRect,
+                                    const nsRect& aOriginalContainingBlockSize,
+                                    const nsRect& aRect);
 };
 
 }  
