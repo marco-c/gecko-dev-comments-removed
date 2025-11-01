@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/ResultExtensions.h"
 #include "nsAutoConfig.h"
 #include "nsJSConfigTriggers.h"
 
