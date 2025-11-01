@@ -633,26 +633,29 @@ void Theme::PaintRadioControl(PaintBackendData& aPaintData,
                               DPIRatio aDpiRatio) {
   auto [backgroundColor, borderColor, checkColor] =
       ComputeCheckboxColors(aState, StyleAppearance::Radio, aColors);
+  const bool isChecked = aState.HasState(ElementState::CHECKED);
   {
-    CSSCoord borderWidth = kCheckboxRadioBorderWidth;
-    if (backgroundColor == borderColor) {
-      borderWidth = 0.0f;
+    CSSCoord outerBorderWidth = kCheckboxRadioBorderWidth;
+    auto effectiveBackground = isChecked ? checkColor : backgroundColor;
+    if (effectiveBackground == borderColor) {
+      outerBorderWidth = 0.0f;
     }
-    PaintStrokedCircle(aPaintData, aRect, backgroundColor, borderColor,
-                       borderWidth, aDpiRatio);
+    PaintStrokedCircle(aPaintData, aRect, effectiveBackground, borderColor,
+                       outerBorderWidth, aDpiRatio);
   }
 
-  if (aState.HasState(ElementState::CHECKED)) {
+  if (isChecked) {
+    
+    constexpr CSSCoord kInnerBorderWidth = 2.0f;
+    LayoutDeviceRect innerCircleBounds(aRect);
     
     
-    const CSSCoord kOuterBorderWidth = 1.0f;
-    const CSSCoord kInnerBorderWidth = 2.0f;
-    LayoutDeviceRect rect(aRect);
-    auto width = LayoutDeviceCoord(
-        ThemeDrawing::SnapBorderWidth(kOuterBorderWidth, aDpiRatio));
-    rect.Deflate(width);
-    PaintStrokedCircle(aPaintData, rect, backgroundColor, checkColor,
-                       kInnerBorderWidth, aDpiRatio);
+    innerCircleBounds.Deflate(
+        ThemeDrawing::SnapBorderWidth(kCheckboxRadioBorderWidth, aDpiRatio));
+    innerCircleBounds.Deflate(
+        ThemeDrawing::SnapBorderWidth(kInnerBorderWidth, aDpiRatio));
+    PaintStrokedCircle(aPaintData, innerCircleBounds, backgroundColor,
+                       sTransparent, 0.0f, aDpiRatio);
   }
 
   if (aState.HasState(ElementState::FOCUSRING)) {
