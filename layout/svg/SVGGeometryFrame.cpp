@@ -267,8 +267,9 @@ void SVGGeometryFrame::ReflowSVG() {
     return;
   }
 
-  uint32_t flags = SVGUtils::eBBoxIncludeFill | SVGUtils::eBBoxIncludeStroke |
-                   SVGUtils::eBBoxIncludeMarkers;
+  uint32_t flags = SVGUtils::eBBoxIncludeFillGeometry |
+                   SVGUtils::eBBoxIncludeStroke | SVGUtils::eBBoxIncludeMarkers;
+
   
   
   
