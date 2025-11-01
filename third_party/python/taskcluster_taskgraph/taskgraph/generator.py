@@ -250,6 +250,15 @@ class TaskGraphGenerator:
         """
         return self._run_until("graph_config")
 
+    @property
+    def kind_graph(self):
+        """
+        The dependency graph of kinds.
+
+        @type: Graph
+        """
+        return self._run_until("kind_graph")
+
     def _load_kinds(self, graph_config, target_kinds=None):
         if target_kinds:
             
@@ -422,7 +431,21 @@ class TaskGraphGenerator:
                 set(target_kinds) | {"docker-image"}
             )
 
+        yield "kind_graph", kind_graph
+
         logger.info("Generating full task set")
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
