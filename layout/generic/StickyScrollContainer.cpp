@@ -339,12 +339,12 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
   
   
   
-  for (size_t i = mFrames.Length(); i--;) {
-    nsIFrame* f = mFrames.ElementAt(i);
+  AutoTArray<nsIFrame*, 8> framesToRemove;
+  for (nsIFrame* f : mFrames.IterFromShallowest()) {
     if (!nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(f)) {
       
       
-      mFrames.RemoveElementAt(i);
+      framesToRemove.AppendElement(f);
       continue;
     }
     if (aSubtreeRoot) {
@@ -362,6 +362,9 @@ void StickyScrollContainer::UpdatePositions(nsPoint aScrollPosition,
         oct.AddFrame(cont, OverflowChangedTracker::CHILDREN_CHANGED);
       }
     }
+  }
+  for (nsIFrame* f : framesToRemove) {
+    mFrames.Remove(f);
   }
   oct.Flush();
 }

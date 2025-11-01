@@ -7,6 +7,7 @@
 #ifndef mozilla_DepthOrderedFrameList_h
 #define mozilla_DepthOrderedFrameList_h
 
+#include "mozilla/HashTable.h"
 #include "mozilla/ReverseIterator.h"
 #include "nsTArray.h"
 
@@ -18,55 +19,68 @@ class DepthOrderedFrameList {
  public:
   
   void Add(nsIFrame* aFrame);
+
   
-  void Remove(nsIFrame* aFrame);
+  void Remove(nsIFrame* aFrame) {
+    mFrames.remove(aFrame);
+    mSortedFrames.ClearAndRetainStorage();
+  }
+
   
   
   nsIFrame* PopShallowestRoot();
+
   
-  void Clear() { mList.Clear(); }
+  void Clear() {
+    mFrames.clear();
+    mSortedFrames.Clear();
+  }
+
   
-  bool Contains(nsIFrame* aFrame) const { return mList.Contains(aFrame); }
+  bool Contains(nsIFrame* aFrame) const { return mFrames.has(aFrame); }
+
   
-  bool IsEmpty() const { return mList.IsEmpty(); }
+  bool IsEmpty() const { return mFrames.empty(); }
 
   
   bool FrameIsAncestorOfAnyElement(nsIFrame* aFrame) const;
 
-  auto IterFromShallowest() const { return Reversed(mList); }
-
-  
-  size_t Length() const { return mList.Length(); }
-  nsIFrame* ElementAt(size_t i) const { return mList.ElementAt(i); }
-  void RemoveElementAt(size_t i) { mList.RemoveElementAt(i); }
+  auto IterFromShallowest() const {
+    EnsureSortedList();
+    return Reversed(mSortedFrames);
+  }
 
  private:
+  
+  
+  
+  
+  HashMap<nsIFrame*, uint32_t> mFrames;
+
   struct FrameAndDepth {
     nsIFrame* mFrame;
-    const uint32_t mDepth;
+    uint32_t mDepth;
 
     
     operator nsIFrame*() const { return mFrame; }
 
     
-    class CompareByReverseDepth {
-     public:
-      bool Equals(const FrameAndDepth& aA, const FrameAndDepth& aB) const {
-        return aA.mFrame == aB.mFrame;
-      }
-      bool LessThan(const FrameAndDepth& aA, const FrameAndDepth& aB) const {
-        
-        if (aA.mDepth != aB.mDepth) {
-          return aA.mDepth > aB.mDepth;
-        }
-        
-        
-        return uintptr_t(aA.mFrame) < uintptr_t(aB.mFrame);
-      }
-    };
+    bool operator<(const FrameAndDepth& aOther) const {
+      
+      return mDepth > aOther.mDepth;
+    }
   };
+
   
-  nsTArray<FrameAndDepth> mList;
+  mutable nsTArray<FrameAndDepth> mSortedFrames;
+
+  void EnsureSortedList() const {
+    if (mSortedFrames.IsEmpty() && !mFrames.empty()) {
+      BuildSortedList();
+    }
+  }
+
+  void BuildSortedList() const;
 };
 
 }  

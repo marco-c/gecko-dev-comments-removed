@@ -12,30 +12,40 @@
 namespace mozilla {
 
 void DepthOrderedFrameList::Add(nsIFrame* aFrame) {
-  
-  FrameAndDepth entry{aFrame, aFrame->GetDepthInFrameTree()};
-  auto index = mList.IndexOfFirstElementGt(
-      entry, FrameAndDepth::CompareByReverseDepth{});
-  if (MOZ_UNLIKELY(index > 0 && mList[index - 1].mFrame == aFrame)) {
-    
-    
-    MOZ_ASSERT(mList[index - 1].mDepth == entry.mDepth);
-    return;
-  }
-  mList.InsertElementAt(index, std::move(entry));
-}
+  MOZ_ASSERT(aFrame);
 
-void DepthOrderedFrameList::Remove(nsIFrame* aFrame) {
-  mList.RemoveElement(aFrame);
+  if (auto p = mFrames.lookupForAdd(aFrame)) {
+    
+    MOZ_ASSERT(p->value() == aFrame->GetDepthInFrameTree());
+  } else {
+    if (!mFrames.add(p, aFrame, aFrame->GetDepthInFrameTree())) {
+      NS_WARNING("failed to add frame to DepthOrderedFrameList");
+    }
+    if (mFrames.count() == 1) {
+      
+      
+      MOZ_ASSERT(mSortedFrames.IsEmpty());
+      mSortedFrames.AppendElement(FrameAndDepth{aFrame, p->value()});
+    } else {
+      
+      mSortedFrames.ClearAndRetainStorage();
+    }
+  }
 }
 
 nsIFrame* DepthOrderedFrameList::PopShallowestRoot() {
+  MOZ_ASSERT(!mFrames.empty(), "no frames in list!");
+
+  EnsureSortedList();
+
   
   
-  const FrameAndDepth& lastFAD = mList.PopLastElement();
+  const FrameAndDepth& lastFAD = mSortedFrames.PopLastElement();
   nsIFrame* frame = lastFAD.mFrame;
   
   MOZ_ASSERT(frame->GetDepthInFrameTree() == lastFAD.mDepth);
+  
+  mFrames.remove(frame);
   return frame;
 }
 
@@ -46,7 +56,8 @@ bool DepthOrderedFrameList::FrameIsAncestorOfAnyElement(
   
   
   
-  for (nsIFrame* f : mList) {
+  for (auto iter = mFrames.iter(); !iter.done(); iter.next()) {
+    nsIFrame* f = iter.get().key();
     do {
       if (f == aFrame) {
         return true;
@@ -56,6 +67,17 @@ bool DepthOrderedFrameList::FrameIsAncestorOfAnyElement(
   }
 
   return false;
+}
+
+void DepthOrderedFrameList::BuildSortedList() const {
+  MOZ_ASSERT(mSortedFrames.IsEmpty());
+
+  mSortedFrames.SetCapacity(mFrames.count());
+  for (auto iter = mFrames.iter(); !iter.done(); iter.next()) {
+    mSortedFrames.AppendElement(
+        FrameAndDepth{iter.get().key(), iter.get().value()});
+  }
+  mSortedFrames.Sort();
 }
 
 }  
