@@ -157,6 +157,26 @@ function unescapeCSSComment(inputString) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function parseCommentDeclarations(
   isCssPropertyKnown,
   commentText,
@@ -241,7 +261,6 @@ function parseCommentDeclarations(
 
 
 
-
 function getEmptyDeclaration() {
   return {
     name: "",
@@ -256,6 +275,8 @@ function getEmptyDeclaration() {
 
 
 
+
+
 function cssTrim(str) {
   const match = /^[ \t\r\n\f]*(.*?)[ \t\r\n\f]*$/.exec(str);
   if (match) {
@@ -263,6 +284,13 @@ function cssTrim(str) {
   }
   return str;
 }
+
+
+
+
+
+
+
 
 
 
@@ -608,6 +636,13 @@ function parseDeclarationsInternal(
 
 
 
+
+
+
+
+
+
+
 function parseDeclarations(
   isCssPropertyKnown,
   inputString,
@@ -621,6 +656,17 @@ function parseDeclarations(
     false
   );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
