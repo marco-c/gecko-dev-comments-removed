@@ -1451,8 +1451,6 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(LastSuccessfulPositionFallback,
                                         uint32_t);
 
-  mozilla::PhysicalAxes GetAnchorPosCompensatingForScroll() const;
-
   
   
   
@@ -5923,9 +5921,9 @@ inline nsIFrame* nsFrameList::BackwardFrameTraversal::Prev(nsIFrame* aFrame) {
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const nsIFrame* aFrame,
-    mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache) {
+    mozilla::AnchorPosReferenceData* aAnchorPosReferenceData) {
   return {aFrame, aFrame->StyleDisplay()->mPosition,
-          aFrame->StylePosition()->mPositionArea, aAnchorPosResolutionCache};
+          aFrame->StylePosition()->mPositionArea, aAnchorPosReferenceData};
 }
 
 #endif 
