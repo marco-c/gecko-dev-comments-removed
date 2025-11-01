@@ -13,7 +13,7 @@ function canRunHugeMemoryTests() {
     
     
     let blocked = ['rooting-analysis','simulator',
-                   'android','wasi','asan','tsan','ubsan','dtrace','valgrind'];
+                   'android','wasi','asan','tsan','ubsan','valgrind'];
     for ( let b of blocked ) {
         if (getBuildConfiguration(b)) {
             print("Failing canRunHugeMemoryTests() because '" + b + "' is true");

@@ -60,7 +60,6 @@ included_inclnames_to_ignore = set(
         "devtools/Instruments.h",  
         "diplomat_runtime.hpp",  
         "double-conversion/double-conversion.h",  
-        "javascript-trace.h",  
         "frontend/ReservedWordsGenerated.h",  
         "gc/StatsPhasesGenerated.h",  
         "gc/StatsPhasesGenerated.inc",  
