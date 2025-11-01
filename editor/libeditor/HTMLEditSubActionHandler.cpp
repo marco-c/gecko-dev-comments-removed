@@ -1534,8 +1534,7 @@ HTMLEditor::GetPreviousCharPointDataForNormalizingWhiteSpaces(
   }
   const auto previousCharPoint =
       WSRunScanner::GetPreviousCharPoint<EditorRawDOMPointInText>(
-          WSRunScanner::Scan::EditableNodes, aPoint,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, aPoint);
   if (!previousCharPoint.IsSet()) {
     return CharPointData::InDifferentTextNode(CharPointType::TextEnd);
   }
@@ -1553,8 +1552,7 @@ HTMLEditor::GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
   }
   const auto nextCharPoint =
       WSRunScanner::GetInclusiveNextCharPoint<EditorRawDOMPointInText>(
-          WSRunScanner::Scan::EditableNodes, aPoint,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, aPoint);
   if (!nextCharPoint.IsSet()) {
     return CharPointData::InDifferentTextNode(CharPointType::TextEnd);
   }
@@ -2269,12 +2267,10 @@ void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
   
   const auto precedingCharPoint =
       WSRunScanner::GetPreviousCharPoint<EditorDOMPointInText>(
-          WSRunScanner::Scan::EditableNodes, aStartToDelete,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, aStartToDelete);
   const auto followingCharPoint =
       WSRunScanner::GetInclusiveNextCharPoint<EditorDOMPointInText>(
-          WSRunScanner::Scan::EditableNodes, aEndToDelete,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, aEndToDelete);
   
   
   
@@ -2794,8 +2790,7 @@ HTMLEditor::InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
   
   const WSScanResult previousThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, aPointToInsert,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, aPointToInsert);
   if (!previousThing.ReachedLineBoundary()) {
     return CreateLineBreakResult::NotHandled();
   }
@@ -2804,8 +2799,7 @@ HTMLEditor::InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
   
   const WSScanResult nextThing =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-          WSRunScanner::Scan::EditableNodes, aPointToInsert,
-          BlockInlineCheck::UseComputedDisplayStyle);
+          {WSRunScanner::Option::OnlyEditableNodes}, aPointToInsert);
   if (!nextThing.ReachedBlockBoundary()) {
     return CreateLineBreakResult::NotHandled();
   }
@@ -7212,13 +7206,15 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
     
     const WSScanResult prevVisibleThingOfEndPoint =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All, endPoint,
-            
-            
-            
-            
-            
-            BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+            {
+                
+                
+                
+                
+                
+                WSRunScanner::Option::ReferHTMLDefaultStyle,
+            },
+            endPoint, &aEditingHost);
     if (MOZ_UNLIKELY(prevVisibleThingOfEndPoint.Failed())) {
       NS_WARNING(
           "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() failed");
@@ -7258,8 +7254,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
     
     const WSScanResult nextVisibleThingOfStartPoint =
         WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-            WSRunScanner::Scan::All, startPoint,
-            BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+            {WSRunScanner::Option::ReferHTMLDefaultStyle}, startPoint,
+            &aEditingHost);
     if (MOZ_UNLIKELY(nextVisibleThingOfStartPoint.Failed())) {
       NS_WARNING(
           "WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary() failed");
@@ -9685,8 +9681,7 @@ HTMLEditor::InsertPaddingBRElementIfNeeded(
     if (IsPlaintextMailComposer()) {
       const WSScanResult nextVisibleThing =
           WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-              WSRunScanner::Scan::EditableNodes, aPoint,
-              BlockInlineCheck::UseComputedDisplayOutsideStyle);
+              {WSRunScanner::Option::OnlyEditableNodes}, aPoint);
       if (nextVisibleThing.ReachedBlockBoundary() &&
           HTMLEditUtils::IsMailCiteElement(*nextVisibleThing.ElementPtr()) &&
           HTMLEditUtils::IsInlineContent(
