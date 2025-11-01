@@ -46,16 +46,9 @@ def search_path(paths, path):
 
 
 def filter_preprocessor(cmd):
-    prev = None
     for arg in cmd:
-        if arg == "-Xclang":
-            prev = arg
-            continue
-        if not arg.startswith("-std="):
-            if prev:
-                yield prev
+        if not arg.startswith(("-std=", "-std:")):
             yield arg
-        prev = None
 
 
 
