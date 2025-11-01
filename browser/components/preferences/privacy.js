@@ -1265,9 +1265,19 @@ Preferences.addSetting({
   visible: ({ ipProtectionVisible, ipProtectionExceptionsMode }) =>
     ipProtectionVisible.value && ipProtectionExceptionsMode.value == "all",
   onUserClick() {
-    
-    
-    
+    let params = {
+      blockVisible: true,
+      hideStatusColumn: true,
+      prefilledHost: "",
+      permissionType: "ipp-vpn",
+      capabilityFilter: Ci.nsIPermissionManager.DENY_ACTION,
+    };
+
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+      { features: "resizable=yes" },
+      params
+    );
   },
 });
 Preferences.addSetting({
@@ -1276,9 +1286,19 @@ Preferences.addSetting({
   visible: ({ ipProtectionVisible, ipProtectionExceptionsMode }) =>
     ipProtectionVisible.value && ipProtectionExceptionsMode.value == "select",
   onUserClick() {
-    
-    
-    
+    let params = {
+      allowVisible: true,
+      hideStatusColumn: true,
+      prefilledHost: "",
+      permissionType: "ipp-vpn",
+      capabilityFilter: Ci.nsIPermissionManager.ALLOW_ACTION,
+    };
+
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+      { features: "resizable=yes" },
+      params
+    );
   },
 });
 Preferences.addSetting({

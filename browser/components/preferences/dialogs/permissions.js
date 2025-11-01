@@ -44,6 +44,10 @@ const permissionExceptionsL10n = {
     window: "permissions-exceptions-addons-window2",
     description: "permissions-exceptions-addons-desc",
   },
+  "ipp-vpn": {
+    window: "ip-protection-exceptions-dialog-window",
+    description: "ip-protection-exclusions-desc",
+  },
 };
 
 function Permission(principal, type, capability) {
@@ -64,6 +68,7 @@ var gPermissionManager = {
   _removeButton: null,
   _removeAllButton: null,
   _forcedHTTP: null,
+  _capabilityFilter: null,
 
   onLoad() {
     let params = window.arguments[0];
@@ -71,6 +76,7 @@ var gPermissionManager = {
   },
 
   
+
 
 
 
@@ -101,9 +107,30 @@ var gPermissionManager = {
     this._btnHttpsOnlyOff = document.getElementById("btnHttpsOnlyOff");
     this._btnHttpsOnlyOffTmp = document.getElementById("btnHttpsOnlyOffTmp");
 
+    this._capabilityFilter = params.capabilityFilter;
+
     let permissionsText = document.getElementById("permissionsText");
 
-    let l10n = permissionExceptionsL10n[this._type];
+    let l10n;
+
+    
+    
+    if (this._type === "ipp-vpn") {
+      if (params.capabilityFilter === Ci.nsIPermissionManager.ALLOW_ACTION) {
+        l10n = {
+          window: "ip-protection-exceptions-dialog-window",
+          description: "ip-protection-exclusions-desc",
+        };
+      } else {
+        l10n = {
+          window: "ip-protection-exceptions-dialog-window",
+          description: "ip-protection-inclusions-desc",
+        };
+      }
+    } else {
+      l10n = permissionExceptionsL10n[this._type];
+    }
+
     document.l10n.setAttributes(permissionsText, l10n.description);
     document.l10n.setAttributes(document.documentElement, l10n.window);
 
@@ -327,6 +354,12 @@ var gPermissionManager = {
       return;
     }
     if (!this._isCapabilitySupported(perm.capability)) {
+      return;
+    }
+
+    
+    
+    if (this._capabilityFilter && perm.capability !== this._capabilityFilter) {
       return;
     }
 
