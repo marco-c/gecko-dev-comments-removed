@@ -434,7 +434,8 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::GetAnchorPosRect(
     if (aCBRectIsvalid) {
       const nsRect result =
           nsLayoutUtils::GetCombinedFragmentRects(aAnchor, true);
-      const auto offset = aAnchor->GetOffsetTo(aAbsoluteContainingBlock);
+      const auto offset =
+          aAnchor->GetOffsetToIgnoringScrolling(aAbsoluteContainingBlock);
       
       return Some(result + offset);
     }
@@ -458,7 +459,7 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::GetAnchorPosRect(
     
     const nsRect rectToContainerChild =
         nsLayoutUtils::GetCombinedFragmentRects(aAnchor, true);
-    const auto offset = aAnchor->GetOffsetTo(containerChild);
+    const auto offset = aAnchor->GetOffsetToIgnoringScrolling(containerChild);
     return Some(rectToContainerChild + offset + containerChild->GetPosition());
   }();
   return rect.map([&](const nsRect& aRect) {
