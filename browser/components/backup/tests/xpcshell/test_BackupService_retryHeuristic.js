@@ -63,6 +63,8 @@ add_setup(async () => {
 });
 
 add_task(async function test_retry_limit() {
+  Services.fog.testResetFOG();
+
   let bs = new BackupService();
   let sandbox = sinon.createSandbox();
   
@@ -101,6 +103,22 @@ add_task(async function test_retry_limit() {
       ERRORS.UNKNOWN,
       "Error code has been set"
     );
+
+    if (i < n) {
+      Assert.equal(
+        Glean.browserBackup.backupThrottled.testGetValue(),
+        null,
+        "backupThrottled telemetry was not sent yet"
+      );
+    } else {
+      
+      
+      Assert.equal(
+        Glean.browserBackup.backupThrottled.testGetValue().length,
+        1,
+        "backupThrottled telemetry was sent"
+      );
+    }
   }
   
   const previousCalls = bs.createBackup.callCount;
@@ -120,6 +138,7 @@ add_task(async function test_retry_limit() {
     "Disable on idle has been enabled"
   );
 
+  Services.fog.testResetFOG();
   Services.prefs.setIntPref(MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME, 0);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(
@@ -140,6 +159,12 @@ add_task(async function test_retry_limit() {
     bs.createBackup.callCount,
     previousCalls + 1,
     "createBackup was called again"
+  );
+
+  Assert.equal(
+    Glean.browserBackup.backupThrottled.testGetValue(),
+    null,
+    "backupThrottled telemetry was not sent after resuming backups"
   );
 
   
