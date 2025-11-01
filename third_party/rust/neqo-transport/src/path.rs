@@ -8,6 +8,7 @@ use std::{
     cell::RefCell,
     fmt::{self, Display},
     net::SocketAddr,
+    num::NonZeroUsize,
     rc::Rc,
     time::{Duration, Instant},
 };
@@ -707,7 +708,13 @@ impl Path {
         
         
         self.ecn_info.on_packet_sent(num_datagrams, stats);
-        DatagramBatch::new(self.local, self.remote, tos, datagram_size, payload)
+        DatagramBatch::new(
+            self.local,
+            self.remote,
+            tos,
+            NonZeroUsize::new(datagram_size).expect("datagram size cannot be zero"),
+            payload,
+        )
     }
 
     

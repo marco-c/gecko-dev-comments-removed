@@ -43,6 +43,8 @@ const SAMPLE_SIZE: usize = 16;
 const SAMPLE_OFFSET: usize = 4;
 const MAX_PACKET_NUMBER_LEN: usize = 4;
 
+const LONG_PACKET_LENGTH_LEN: usize = 2;
+
 pub mod metadata;
 mod retry;
 
@@ -383,15 +385,20 @@ impl<B: Buffer> Builder<B> {
     
     
     pub fn pn(&mut self, pn: Number, pn_len: usize) {
-        if self.remaining() < 4 {
+        if self.remaining() < MAX_PACKET_NUMBER_LEN {
             self.limit = 0;
             return;
         }
 
         
         if self.is_long() {
+            if self.remaining() < LONG_PACKET_LENGTH_LEN + MAX_PACKET_NUMBER_LEN {
+                self.limit = 0;
+                return;
+            }
+
             self.offsets.len = self.encoder.len();
-            self.encoder.encode(&[0; 2]);
+            self.encoder.encode(&[0; LONG_PACKET_LENGTH_LEN]);
         }
 
         
@@ -411,7 +418,7 @@ impl<B: Buffer> Builder<B> {
 
     #[expect(clippy::cast_possible_truncation, reason = "AND'ing makes this safe.")]
     fn write_len(&mut self, expansion: usize) {
-        let len = self.encoder.len() - (self.offsets.len + 2) + expansion;
+        let len = self.encoder.len() - (self.offsets.len + LONG_PACKET_LENGTH_LEN) + expansion;
         self.encoder.as_mut()[self.offsets.len] = 0x40 | ((len >> 8) & 0x3f) as u8;
         self.encoder.as_mut()[self.offsets.len + 1] = (len & 0xff) as u8;
     }
@@ -421,6 +428,14 @@ impl<B: Buffer> Builder<B> {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+
         let crypto_pad = crypto.extra_padding();
         self.encoder.pad_to(
             self.offsets.pn.start + MAX_PACKET_NUMBER_LEN + crypto_pad,
@@ -454,7 +469,12 @@ impl<B: Buffer> Builder<B> {
     pub fn build(mut self, crypto: &mut CryptoDxState) -> Res<Encoder<B>> {
         if self.len() > self.limit {
             qwarn!("Packet contents are more than the limit");
-            debug_assert!(false);
+            debug_assert!(
+                false,
+                "Builder length ({}) is larger than limit ({}).",
+                self.len(),
+                self.limit
+            );
             return Err(Error::Internal);
         }
 
@@ -966,7 +986,7 @@ mod tests {
             Builder, Public, Type, PACKET_BIT_FIXED_QUIC, PACKET_BIT_LONG, PACKET_BIT_SPIN,
             PACKET_LIMIT,
         },
-        ConnectionId, EmptyConnectionIdGenerator, RandomConnectionIdGenerator, Version,
+        ConnectionId, EmptyConnectionIdGenerator, Error, RandomConnectionIdGenerator, Version,
     };
 
     const CLIENT_CID: &[u8] = &[0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57, 0x08];
@@ -1295,6 +1315,78 @@ mod tests {
         );
         assert_eq!(builder.remaining(), 0);
         assert_eq!(builder.abort(), encoder_copy);
+    }
+
+    
+    
+    
+    
+    
+    #[test]
+    fn build_insufficient_space_for_dummy_length_and_pn() {
+        const MTU: usize = 1280;
+        const FIRST_QUIC_PACKET: usize = 1236;
+        fixture_init();
+        let crypto = CryptoDxState::test_default();
+
+        let mut encoder = Encoder::new();
+        encoder.pad_to(FIRST_QUIC_PACKET, 0);
+
+        
+        
+        let mut builder = Builder::long(
+            encoder,
+            Type::Initial,
+            Version::default(),
+            Some(SERVER_CID),
+            Some(CLIENT_CID),
+            MTU - crypto.expansion(),
+        );
+        assert_eq!(builder.len() - FIRST_QUIC_PACKET, 23);
+
+        
+        
+        assert_eq!(builder.remaining(), 5);
+
+        
+        
+        
+        builder.pn(0, 1);
+        assert!(builder.is_full());
+    }
+
+    #[test]
+    #[cfg_attr(
+        debug_assertions,
+        should_panic(expected = "Builder length (30) is larger than limit (20)")
+    )]
+    fn build_insufficient_space_error() {
+        const SMALL_LIMIT: usize = 20;
+        fixture_init();
+
+        
+        let mut builder = Builder::short(
+            Encoder::new(),
+            false,
+            Some(ConnectionId::from(SERVER_CID)),
+            SMALL_LIMIT,
+        );
+        builder.pn(0, 1);
+
+        
+        
+        let large_payload = vec![0u8; SMALL_LIMIT];
+        builder.encode(&large_payload);
+
+        
+        assert!(builder.is_full());
+
+        
+        
+        assert_eq!(
+            builder.build(&mut CryptoDxState::test_default()),
+            Err(Error::Internal)
+        );
     }
 
     const SAMPLE_RETRY_V2: &[u8] = &[
