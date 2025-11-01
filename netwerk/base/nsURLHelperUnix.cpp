@@ -51,9 +51,6 @@ nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
 }
 
 nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
-  
-  
-
   nsresult rv;
 
   nsAutoCString directory, fileBaseName, fileExtension, path;
