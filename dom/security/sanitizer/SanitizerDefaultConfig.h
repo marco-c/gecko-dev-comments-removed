@@ -7,7 +7,6 @@
 
 
 
-#include "SanitizerDefaultConfig.h"
 #include "mozilla/dom/SanitizerTypes.h"
 #include "nsGkAtoms.h"
 
@@ -217,7 +216,6 @@ constexpr nsStaticAtom* kHTMLElementWithAttributes[] = {
      nsGkAtoms::a,
     nsGkAtoms::href,
     nsGkAtoms::hreflang,
-    nsGkAtoms::rel,
     nsGkAtoms::type,
     nullptr,
      nsGkAtoms::blockquote,
