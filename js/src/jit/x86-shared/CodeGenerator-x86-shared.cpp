@@ -1815,22 +1815,16 @@ void CodeGenerator::visitNegD(LNegD* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
   FloatRegister output = ToFloatRegister(ins->output());
 
-  ScratchDoubleScope scratch(masm);
-  masm.loadConstantDouble(-0.0, scratch);
-
   
-  masm.vxorpd(scratch, input, output);  
+  masm.vxorpdSimd128(SimdConstant::SplatX2(-0.0), input, output);
 }
 
 void CodeGenerator::visitNegF(LNegF* ins) {
   FloatRegister input = ToFloatRegister(ins->input());
   FloatRegister output = ToFloatRegister(ins->output());
 
-  ScratchDoubleScope scratch(masm);
-  masm.loadConstantFloat32(-0.0f, scratch);
-
   
-  masm.vxorpd(scratch, input, output);  
+  masm.vxorpsSimd128(SimdConstant::SplatX4(-0.0f), input, output);
 }
 
 void CodeGenerator::visitCompareExchangeTypedArrayElement(
