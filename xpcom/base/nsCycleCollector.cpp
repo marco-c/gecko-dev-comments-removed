@@ -3478,6 +3478,7 @@ static void SendNeedGCTelemetry(bool needGC) {
 
 
 
+
 void nsCycleCollector::FixGrayBits(bool aIsShutdown, TimeLog& aTimeLog) {
   CheckThreadSafety();
 
