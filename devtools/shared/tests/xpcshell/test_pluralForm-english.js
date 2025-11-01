@@ -8,8 +8,6 @@
 
 
 
-
-
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
 
 function run_test() {

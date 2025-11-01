@@ -8,23 +8,27 @@
 
 
 
-
-
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
 
 function run_test() {
-  
-  const [get, numForms] = PluralForm.makeGetter(11);
+  const origAvLocales = Services.locale.availableLocales;
+  registerCleanupFunction(() => {
+    Services.locale.availableLocales = origAvLocales;
+  });
+
+  Services.locale.availableLocales = ["ga-IE", "en-US"];
+  Services.locale.requestedLocales = ["ga-IE"];
+  PluralForm.init();
 
   
-  Assert.equal(5, numForms());
+  Assert.equal(5, PluralForm.numForms());
 
   
   const words = "is 1;is 2;is 3-6;is 7-10;everything else";
 
   const test = function (text, low, high) {
     for (let num = low; num <= high; num++) {
-      Assert.equal(text, get(num, words));
+      Assert.equal(text, PluralForm.get(num, words));
     }
   };
 
