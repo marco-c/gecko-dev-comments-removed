@@ -113,12 +113,6 @@ class JSONWriteFunc {
   virtual ~JSONWriteFunc() = default;
 };
 
-
-
-namespace detail {
-extern MFBT_DATA const char gTwoCharEscapes[256];
-}  
-
 class JSONWriter {
   
   
@@ -154,6 +148,42 @@ class JSONWriter {
    public:
     explicit EscapedString(const Span<const char>& aStr) : mStringSpan(aStr) {
       
+      
+      
+      
+      #define ___ 0
+      static constexpr char TwoCharEscapes[256] = {
+          
+           ___, ___, ___,  ___, ___, ___, ___, ___, 'b', 't',
+           'n', ___, 'f',  'r', ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, '"', ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, '\\', ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___, ___, ___, ___, ___,
+           ___, ___, ___,  ___, ___, ___};
+      #undef ___
+      
+
+      
       size_t nExtra = 0;
       for (const char& c : aStr) {
         
@@ -167,7 +197,7 @@ class JSONWriter {
           mStringSpan = mStringSpan.First(&c - mStringSpan.data());
           break;
         }
-        if (detail::gTwoCharEscapes[u]) {
+        if (TwoCharEscapes[u]) {
           nExtra += 1;
         } else if (u <= 0x1f) {
           nExtra += 5;
@@ -191,9 +221,9 @@ class JSONWriter {
         
         uint8_t u = static_cast<uint8_t>(c);
         MOZ_ASSERT(u != 0, "Null terminator should have been handled above");
-        if (detail::gTwoCharEscapes[u]) {
+        if (TwoCharEscapes[u]) {
           mOwnedStr[i++] = '\\';
-          mOwnedStr[i++] = detail::gTwoCharEscapes[u];
+          mOwnedStr[i++] = TwoCharEscapes[u];
         } else if (u <= 0x1f) {
           mOwnedStr[i++] = '\\';
           mOwnedStr[i++] = 'u';

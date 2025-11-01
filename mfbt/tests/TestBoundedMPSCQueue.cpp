@@ -5,7 +5,6 @@
 
 
 #include "mozilla/BoundedMPSCQueue.h"
-#include "mozilla/PodOperations.h"
 #include <vector>
 #include <iostream>
 #include <thread>

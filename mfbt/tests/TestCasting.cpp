@@ -5,7 +5,6 @@
 
 
 #include "mozilla/Casting.h"
-#include "mozilla/ThreadSafety.h"
 
 #include <stdint.h>
 #include <cstdint>
