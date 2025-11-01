@@ -224,10 +224,6 @@ function localizeMarkup(root) {
   }
 }
 
-const sharedL10N = new LocalizationHelper(
-  "devtools/shared/locales/shared.properties"
-);
-
 
 
 
@@ -269,5 +265,6 @@ exports.LocalizationHelper = LocalizationHelper;
 exports.localizeMarkup = localizeMarkup;
 exports.MultiLocalizationHelper = MultiLocalizationHelper;
 Object.defineProperty(exports, "ELLIPSIS", {
-  get: () => sharedL10N.getStr("ellipsis"),
+  get: () =>
+    typeof Services == "undefined" ? "\u2026" : Services.locale.ellipsis,
 });
