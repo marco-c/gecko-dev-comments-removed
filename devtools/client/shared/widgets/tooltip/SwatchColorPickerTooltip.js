@@ -100,6 +100,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     this.tooltip.container.addEventListener("keydown", this._onTooltipKeydown);
   }
 
+  static COLOR_MODIFYING_FUNCTIONS = new Set(["color-mix", "contrast-color"]);
+
   
 
 
@@ -143,7 +145,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     
     
     this.spectrum.contrastEnabled =
-      name === "color" && colorFunction !== "color-mix";
+      name === "color" &&
+      !SwatchColorPickerTooltip.COLOR_MODIFYING_FUNCTIONS.has(colorFunction);
     if (this.spectrum.contrastEnabled) {
       const { nodeFront } = this.inspector.selection;
       const { pageStyle } = nodeFront.inspectorFront;
