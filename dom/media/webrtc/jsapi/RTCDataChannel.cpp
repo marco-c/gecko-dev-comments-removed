@@ -529,7 +529,7 @@ void RTCDataChannel::GracefulClose() {
         
         if (!mBufferedAmount && mReadyState != RTCDataChannelState::Closed &&
             mDataChannel) {
-          mDataChannel->FinishClose();
+          mDataChannel->EndOfStream();
         }
       }));
 }
@@ -643,7 +643,7 @@ void RTCDataChannel::DecrementBufferedAmount(size_t aSize) {
     if (mReadyState == RTCDataChannelState::Closing) {
       if (mDataChannel) {
         
-        mDataChannel->FinishClose();
+        mDataChannel->EndOfStream();
       }
     }
   }
