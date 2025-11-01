@@ -3804,11 +3804,6 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       }
 
       
-      
-      
-      setGrayBitsInvalid();
-
-      
       nursery().joinSweepTask();
 
       {
