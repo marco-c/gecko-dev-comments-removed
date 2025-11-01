@@ -2685,6 +2685,48 @@ nsresult ScriptLoader::FillCompileOptionsForRequest(
   return NS_OK;
 }
 
+
+ScriptLoader::DiskCacheStrategy ScriptLoader::GetDiskCacheStrategy() {
+  int32_t strategyPref =
+      StaticPrefs::dom_script_loader_bytecode_cache_strategy();
+  LOG(("Bytecode-cache: disk cache strategy = %d.", strategyPref));
+
+  DiskCacheStrategy strategy;
+  switch (strategyPref) {
+    case -2: {
+      strategy.mIsDisabled = true;
+      break;
+    }
+    case -1: {
+      
+      strategy.mHasSourceLengthMin = false;
+      strategy.mHasFetchCountMin = false;
+      break;
+    }
+    case 1: {
+      strategy.mHasSourceLengthMin = true;
+      strategy.mHasFetchCountMin = true;
+      strategy.mSourceLengthMin = 1024;
+      
+      
+      strategy.mFetchCountMin = 2;
+      break;
+    }
+    default:
+    case 0: {
+      strategy.mHasSourceLengthMin = true;
+      strategy.mHasFetchCountMin = true;
+      strategy.mSourceLengthMin = 1024;
+      
+      
+      strategy.mFetchCountMin = 4;
+      break;
+    }
+  }
+
+  return strategy;
+}
+
 void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   using mozilla::TimeDuration;
   using mozilla::TimeStamp;
@@ -2762,71 +2804,32 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     return;
   }
 
-  
-  
-  int32_t strategy = StaticPrefs::dom_script_loader_bytecode_cache_strategy();
+  auto strategy = GetDiskCacheStrategy();
 
-  
-  bool hasSourceLengthMin = false;
-  bool hasFetchCountMin = false;
-  size_t sourceLengthMin = 100;
-  uint32_t fetchCountMin = 4;
+  if (strategy.mIsDisabled) {
+    
+    LOG(
+        ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: Disabled by "
+         "pref.",
+         aRequest));
+    aRequest->MarkSkippedDiskCaching();
 
-  LOG(("ScriptLoadRequest (%p): Bytecode-cache: strategy = %d.", aRequest,
-       strategy));
-  switch (strategy) {
-    case -2: {
-      
-      LOG(
-          ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: Disabled by "
-           "pref.",
-           aRequest));
-      aRequest->MarkSkippedDiskCaching();
-
-      aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
-      return;
-    }
-    case -1: {
-      
-      hasSourceLengthMin = false;
-      hasFetchCountMin = false;
-      break;
-    }
-    case 1: {
-      hasSourceLengthMin = true;
-      hasFetchCountMin = true;
-      sourceLengthMin = 1024;
-      
-      
-      fetchCountMin = 2;
-      break;
-    }
-    default:
-    case 0: {
-      hasSourceLengthMin = true;
-      hasFetchCountMin = true;
-      sourceLengthMin = 1024;
-      
-      
-      fetchCountMin = 4;
-      break;
-    }
+    aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+    return;
   }
 
   
   
   
-  if (hasSourceLengthMin) {
+  if (strategy.mHasSourceLengthMin) {
     size_t sourceLength;
-    size_t minLength;
     if (aRequest->IsCachedStencil()) {
       sourceLength = JS::GetScriptSourceLength(aRequest->GetStencil());
     } else {
       MOZ_ASSERT(aRequest->IsTextSource());
       sourceLength = aRequest->ReceivedScriptTextLength();
     }
-    minLength = sourceLengthMin;
-    if (sourceLength < minLength) {
+    if (sourceLength < strategy.mSourceLengthMin) {
       LOG(
           ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: Script is too "
            "small.",
@@ -2840,7 +2843,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   
   
   
-  if (hasFetchCountMin) {
+  if (strategy.mHasFetchCountMin) {
     uint32_t fetchCount = 0;
     if (aRequest->IsCachedStencil()) {
       fetchCount = aRequest->mLoadedScript->mFetchCount;
@@ -2864,7 +2867,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     }
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: fetchCount = %d.", aRequest,
          fetchCount));
-    if (fetchCount < fetchCountMin) {
+    if (fetchCount < strategy.mFetchCountMin) {
       LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: fetchCount",
            aRequest));
       aRequest->MarkSkippedDiskCaching();
