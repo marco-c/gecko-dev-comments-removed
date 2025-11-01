@@ -88,7 +88,8 @@ static const gchar* getActionDescriptionCB(AtkAction* aAction,
       if (target->HasPrimaryAction()) {
         MOZ_ASSERT(target->ActionCount() > 0);
         if (actionIndex == aActionIndex) {
-          target->ActionDescriptionAt(0, description);
+          
+          target->Name(description);
           break;
         }
         actionIndex++;
@@ -144,35 +145,8 @@ static const gchar* getActionNameCB(AtkAction* aAction, gint aActionIndex) {
 
 static const gchar* getActionLocalizedNameCB(AtkAction* aAction,
                                              gint aActionIndex) {
-  AtkObject* atkObject = ATK_OBJECT(aAction);
-  nsAutoString name;
-  Accessible* acc = GetInternalObj(atkObject);
-  if (!acc) {
-    
-    return 0;
-  }
-
-  if (aActionIndex >= acc->ActionCount()) {
-    
-    Relation customActions(acc->RelationByType(RelationType::ACTION));
-    gint actionIndex = acc->ActionCount();
-    while (Accessible* target = customActions.Next()) {
-      if (target->HasPrimaryAction()) {
-        MOZ_ASSERT(target->ActionCount() > 0);
-        if (actionIndex == aActionIndex) {
-          target->Name(name);
-          break;
-        }
-        actionIndex++;
-      }
-    }
-  }
-
-  if (!name.IsEmpty()) {
-    return AccessibleWrap::ReturnString(name);
-  }
-
-  return nullptr;
+  
+  return getActionDescriptionCB(aAction, aActionIndex);
 }
 
 static const gchar* getKeyBindingCB(AtkAction* aAction, gint aActionIndex) {
