@@ -52,30 +52,39 @@ enum class BlockInlineCheck : uint8_t {
   
   
   UseComputedDisplayStyle,
+  
+  
+  Auto,
 };
 
-
-
-
-
-
-
-[[nodiscard]] inline BlockInlineCheck IgnoreInsideBlockBoundary(
+[[nodiscard]] inline BlockInlineCheck PreferDisplayOutsideIfUsingDisplay(
     BlockInlineCheck aBlockInlineCheck) {
   return aBlockInlineCheck == BlockInlineCheck::UseComputedDisplayStyle
              ? BlockInlineCheck::UseComputedDisplayOutsideStyle
              : aBlockInlineCheck;
 }
 
-[[nodiscard]] inline BlockInlineCheck RespectChildBlockBoundary(
-    BlockInlineCheck aBlockInlineCheck) {
-  return IgnoreInsideBlockBoundary(aBlockInlineCheck);
-}
-
-[[nodiscard]] inline BlockInlineCheck RespectParentBlockBoundary(
+[[nodiscard]] inline BlockInlineCheck PreferDisplayIfUsingDisplayOutside(
     BlockInlineCheck aBlockInlineCheck) {
   return aBlockInlineCheck == BlockInlineCheck::UseComputedDisplayOutsideStyle
              ? BlockInlineCheck::UseComputedDisplayStyle
+             : aBlockInlineCheck;
+}
+
+[[nodiscard]] inline BlockInlineCheck UseComputedDisplayStyleIfAuto(
+    BlockInlineCheck aBlockInlineCheck) {
+  return aBlockInlineCheck == BlockInlineCheck::Auto
+             
+             ? BlockInlineCheck::UseComputedDisplayStyle
+             : aBlockInlineCheck;
+}
+
+[[nodiscard]] inline BlockInlineCheck UseComputedDisplayOutsideStyleIfAuto(
+    BlockInlineCheck aBlockInlineCheck) {
+  return aBlockInlineCheck == BlockInlineCheck::Auto
+             
+             
+             ? BlockInlineCheck::UseComputedDisplayOutsideStyle
              : aBlockInlineCheck;
 }
 
