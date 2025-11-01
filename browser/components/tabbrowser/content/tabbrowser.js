@@ -3255,6 +3255,7 @@
       const panels = [];
       for (const tab of tabs) {
         this._insertBrowser(tab);
+        this.#insertSplitViewFooter(tab);
         tab.linkedBrowser.docShellIsActive = true;
         panels.push(tab.linkedPanel);
       }
@@ -3270,6 +3271,21 @@
       for (const tab of tabs) {
         this.tabpanels.removePanelFromSplitView(tab.linkedPanel);
       }
+    }
+
+    
+
+
+
+
+    #insertSplitViewFooter(tab) {
+      const panelEl = document.getElementById(tab.linkedPanel);
+      if (panelEl.querySelector("split-view-footer")) {
+        return;
+      }
+      const footer = document.createXULElement("split-view-footer");
+      footer.setTab(tab);
+      panelEl.appendChild(footer);
     }
 
     
@@ -8586,10 +8602,6 @@
           modifiedAttrs.push("progress");
         }
 
-        if (modifiedAttrs.length) {
-          gBrowser._tabAttrModified(this.mTab, modifiedAttrs);
-        }
-
         if (aWebProgress.isTopLevel) {
           let isSuccessful = Components.isSuccessCode(aStatus);
           if (!isSuccessful && !this.mTab.isEmpty) {
@@ -8628,13 +8640,14 @@
         
         
         
-        if (
+        const shouldRemoveFavicon =
           !this.mBrowser.mIconURL &&
           !ignoreBlank &&
-          !(originalLocation.spec in FAVICON_DEFAULTS)
-        ) {
+          !(originalLocation.spec in FAVICON_DEFAULTS);
+        if (shouldRemoveFavicon && this.mTab.hasAttribute("image")) {
           this.mTab.removeAttribute("image");
-        } else {
+          modifiedAttrs.push("image");
+        } else if (!shouldRemoveFavicon) {
           
           
           
@@ -8649,6 +8662,10 @@
 
         if (this.mTab.selected) {
           gBrowser._isBusy = false;
+        }
+
+        if (modifiedAttrs.length) {
+          gBrowser._tabAttrModified(this.mTab, modifiedAttrs);
         }
       }
 
