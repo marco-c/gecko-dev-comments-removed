@@ -45,16 +45,26 @@ def generic_worker_add_artifacts(config, job, taskdesc):
 def get_cache_name(config, job):
     cache_name = "checkouts"
 
-    
-    
-    if job["run"]["sparse-profile"]:
-        cache_name += "-sparse"
+    if config.params["repository_type"] == "git":
+        
+        cache_name += "-git"
 
-    
-    
-    
-    if job["worker"]["implementation"] == "docker-worker":
-        cache_name += "-hg58"
+        
+        
+        if job["run"].get("shallow-clone", True):
+            cache_name += "-shallow"
+
+    else:
+        
+        
+        if job["run"]["sparse-profile"]:
+            cache_name += "-sparse"
+
+        
+        
+        
+        if job["worker"]["implementation"] == "docker-worker":
+            cache_name += "-hg58"
 
     return cache_name
 
