@@ -354,13 +354,6 @@ bool gfxAndroidPlatform::RequiresLinearZoom() {
   return gfxPlatform::RequiresLinearZoom();
 }
 
-bool gfxAndroidPlatform::CheckVariationFontSupport() {
-  
-  
-  
-  return jni::GetAPIVersion() > 23;
-}
-
 class AndroidVsyncSource final : public VsyncSource,
                                  public widget::AndroidVsync::Observer {
  public:

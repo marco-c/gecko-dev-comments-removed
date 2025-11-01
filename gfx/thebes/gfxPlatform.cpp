@@ -3129,7 +3129,7 @@ void gfxPlatform::InitWebGLConfig() {
     
     
 #ifdef MOZ_WIDGET_ANDROID
-    if (gfxVars::AllowWebglOop() && jni::GetAPIVersion() >= 26 &&
+    if (gfxVars::AllowWebglOop() &&
         StaticPrefs::webgl_out_of_process_enable_ahardwarebuffer_AtStartup()) {
       gfxVars::SetUseAHardwareBufferSharedSurfaceWebglOop(true);
     }

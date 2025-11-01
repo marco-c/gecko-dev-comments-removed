@@ -4,7 +4,6 @@
 
 package org.mozilla.gecko.process;
 
-import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -540,7 +539,6 @@ import org.mozilla.gecko.util.XPCOMEventTarget;
 
 
 
-  @SuppressLint("NewApi") 
   private String allocate(@NonNull final GeckoProcessType type) {
     XPCOMEventTarget.assertOnLauncherThread();
     if (!GeckoProcessManager.isContent(type)) {
