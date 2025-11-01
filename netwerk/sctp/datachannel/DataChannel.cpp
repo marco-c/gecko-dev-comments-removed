@@ -1177,11 +1177,27 @@ void DataChannelConnection::EndOfStream(DataChannel* aChannel) {
         if (channel->mSendStreamNeedsReset) {
           DC_INFO(("%p: Need to send a reset, closing gracefully", this));
           nsTArray<uint16_t> temp({stream});
-          ResetStreams(temp);
-        } else if (!channel->mRecvStreamNeedsReset) {
+          bool success = ResetStreams(temp);
+          if (success) {
+            return;
+          }
           
           
-          DC_INFO(("%p: Stream does not need reset in either direction", this));
+          
+          DC_INFO(
+              ("%p: Failed to send a reset for channel %p, closing "
+               "immediately",
+               this, channel.get()));
+          channel->mRecvStreamNeedsReset = false;
+        }
+
+        if (!channel->mRecvStreamNeedsReset) {
+          
+          
+          DC_INFO(
+              ("%p: Stream does not need reset in either direction for "
+               "channel %p",
+               this, channel.get()));
           FinishClose_s(channel);
         }
       }));

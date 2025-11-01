@@ -198,7 +198,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   
   virtual void OnSctpPacketReceived(const MediaPacket& packet) = 0;
   
-  virtual void ResetStreams(nsTArray<uint16_t>& aStreams) = 0;
+  virtual bool ResetStreams(nsTArray<uint16_t>& aStreams) = 0;
   
   virtual void Destroy();
 

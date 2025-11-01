@@ -52,7 +52,7 @@ class DataChannelConnectionUsrsctp : public DataChannelConnection {
   bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams) override;
   int SendMessage(DataChannel& aChannel, OutgoingMsg&& aMsg) override;
   void OnSctpPacketReceived(const MediaPacket& packet) override;
-  void ResetStreams(nsTArray<uint16_t>& aStreams) override;
+  bool ResetStreams(nsTArray<uint16_t>& aStreams) override;
   void OnStreamOpen(uint16_t stream) override;
 
   
@@ -99,6 +99,8 @@ class DataChannelConnectionUsrsctp : public DataChannelConnection {
   PendingType mPendingType = PendingType::None;
   
   nsTArray<OutgoingMsg> mBufferedControl;
+  
+  Maybe<IncomingMsg> mRecvBuffer;
   
   nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData;
   
