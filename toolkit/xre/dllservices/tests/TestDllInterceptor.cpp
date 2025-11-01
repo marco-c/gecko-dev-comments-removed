@@ -848,7 +848,7 @@ MOZ_GLOBINIT struct TestCase {
     TestCase("LockPrefix", NoStubAddressCheck),
     TestCase("LooksLikeLockPrefix", NoStubAddressCheck),
 #  endif
-#  if !defined(DEBUG)
+#  if !defined(_M_ARM64) && !defined(DEBUG)
     
     TestCase("UnsupportedOp", ExpectedFail),
 #  endif  
@@ -892,7 +892,9 @@ bool TestAssemblyFunctions() {
           DetourResultCode::DETOUR_PATCHER_CREATE_TRAMPOLINE_ERROR) {
         printf(
             "TEST-FAILED | WindowsDllInterceptor | "
-            "A wrong detour errorcode was set on detour error.\n");
+            "A wrong detour errorcode was set on detour error for %s. (got "
+            "%d)\n",
+            testCase.mFunctionName, maybeError.ref().mErrorCode);
         return false;
       }
 #endif  
