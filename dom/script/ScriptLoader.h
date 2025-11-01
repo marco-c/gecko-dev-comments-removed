@@ -755,12 +755,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void UpdateDiskCache();
 
+ public:
   
 
 
-  void EncodeBytecodeAndSave(JS::FrontendContext* aFc,
-                             JS::loader::LoadedScript* aLoadedScript);
+  static void EncodeBytecodeAndSave(JS::FrontendContext* aFc,
+                                    JS::loader::LoadedScript* aLoadedScript);
 
+ private:
   
 
 
