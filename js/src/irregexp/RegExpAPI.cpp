@@ -493,7 +493,7 @@ class RegExpDepthCheck final : public v8::internal::RegExpVisitor {
 
   
   
-#ifndef DEBUG
+#if !defined(DEBUG) && !defined(MOZ_CODE_COVERAGE)
   static const size_t FRAME_PADDING = 256;
 #else
   
