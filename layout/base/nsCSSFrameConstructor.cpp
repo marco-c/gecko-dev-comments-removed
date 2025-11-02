@@ -7390,208 +7390,208 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
                                      IsDisplayContents(aContent->AsElement()));
   };
 
-  if (!childFrame && CouldHaveBeenDisplayContents(aChild)) {
-    
-    
-    
-    StyleChildrenIterator iter(aChild);
-    for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
-      if (c->GetPrimaryFrame() || CouldHaveBeenDisplayContents(c)) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        bool didReconstruct = ContentWillBeRemoved(c, aFlags);
-        LAYOUT_PHASE_TEMP_REENTER();
-        if (didReconstruct) {
-          return true;
+  if (!childFrame) {
+    if (CouldHaveBeenDisplayContents(aChild)) {
+      
+      
+      
+      StyleChildrenIterator iter(aChild);
+      for (nsIContent* c = iter.GetNextChild(); c; c = iter.GetNextChild()) {
+        if (c->GetPrimaryFrame() || CouldHaveBeenDisplayContents(c)) {
+          LAYOUT_PHASE_TEMP_EXIT();
+          bool didReconstruct = ContentWillBeRemoved(c, aKind);
+          LAYOUT_PHASE_TEMP_REENTER();
+          if (didReconstruct) {
+            return true;
+          }
         }
       }
     }
     return false;
   }
 
-  if (childFrame) {
-    if (aKind == RemovalKind::ForReconstruction) {
-      
-      
-      CaptureStateForFramesOf(aChild, mFrameTreeState);
-    }
+  if (aKind == RemovalKind::ForReconstruction) {
+    
+    
+    CaptureStateForFramesOf(aChild, mFrameTreeState);
+  }
 
-    InvalidateCanvasIfNeeded(mPresShell, aChild);
+  InvalidateCanvasIfNeeded(mPresShell, aChild);
 
+  
+  LAYOUT_PHASE_TEMP_EXIT();
+  if (MaybeRecreateContainerForFrameRemoval(childFrame)) {
+    LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
+  LAYOUT_PHASE_TEMP_REENTER();
+
+  
+  nsIFrame* parentFrame = childFrame->GetParent();
+  LayoutFrameType parentType = parentFrame->Type();
+
+  if (parentType == LayoutFrameType::FrameSet &&
+      IsSpecialFramesetChild(aChild)) {
     
     LAYOUT_PHASE_TEMP_EXIT();
-    if (MaybeRecreateContainerForFrameRemoval(childFrame)) {
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
+    RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
     LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
 
-    
-    nsIFrame* parentFrame = childFrame->GetParent();
-    LayoutFrameType parentType = parentFrame->Type();
-
-    if (parentType == LayoutFrameType::FrameSet &&
-        IsSpecialFramesetChild(aChild)) {
-      
-      LAYOUT_PHASE_TEMP_EXIT();
-      RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
-
-    
-    
-    
-    nsIFrame* possibleMathMLAncestor = parentType == LayoutFrameType::Block
-                                           ? parentFrame->GetParent()
-                                           : parentFrame;
-    if (possibleMathMLAncestor->IsMathMLFrame()) {
-      LAYOUT_PHASE_TEMP_EXIT();
-      RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
-      LAYOUT_PHASE_TEMP_REENTER();
-      return true;
-    }
+  
+  
+  
+  nsIFrame* possibleMathMLAncestor = parentType == LayoutFrameType::Block
+                                         ? parentFrame->GetParent()
+                                         : parentFrame;
+  if (possibleMathMLAncestor->IsMathMLFrame()) {
+    LAYOUT_PHASE_TEMP_EXIT();
+    RecreateFramesForContent(parentFrame->GetContent(), InsertionKind::Async);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
 
 #ifdef ACCESSIBILITY
-    if (aKind != RemovalKind::ForReconstruction) {
-      if (nsAccessibilityService* accService = GetAccService()) {
-        accService->ContentRemoved(mPresShell, aChild);
-      }
+  if (aKind != RemovalKind::ForReconstruction) {
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->ContentRemoved(mPresShell, aChild);
     }
+  }
 #endif
 
+  
+  
+  nsIFrame* inflowChild = childFrame;
+  if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    inflowChild = childFrame->GetPlaceholderFrame();
+    NS_ASSERTION(inflowChild, "No placeholder for out-of-flow?");
+  }
+  nsContainerFrame* containingBlock =
+      GetFloatContainingBlock(inflowChild->GetParent());
+  bool haveFLS = containingBlock && HasFirstLetterStyle(containingBlock);
+  if (haveFLS) {
     
     
-    nsIFrame* inflowChild = childFrame;
-    if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      inflowChild = childFrame->GetPlaceholderFrame();
-      NS_ASSERTION(inflowChild, "No placeholder for out-of-flow?");
-    }
-    nsContainerFrame* containingBlock =
-        GetFloatContainingBlock(inflowChild->GetParent());
-    bool haveFLS = containingBlock && HasFirstLetterStyle(containingBlock);
-    if (haveFLS) {
-      
-      
 #ifdef NOISY_FIRST_LETTER
-      printf("ContentWillBeRemoved: containingBlock=");
-      containingBlock->ListTag(stdout);
-      printf(" parentFrame=");
-      parentFrame->ListTag(stdout);
-      printf(" childFrame=");
-      childFrame->ListTag(stdout);
-      printf("\n");
+    printf("ContentWillBeRemoved: containingBlock=");
+    containingBlock->ListTag(stdout);
+    printf(" parentFrame=");
+    parentFrame->ListTag(stdout);
+    printf(" childFrame=");
+    childFrame->ListTag(stdout);
+    printf("\n");
 #endif
 
-      
-      
-      
-      RemoveLetterFrames(mPresShell, containingBlock);
+    
+    
+    
+    RemoveLetterFrames(mPresShell, containingBlock);
 
+    
+    childFrame = aChild->GetPrimaryFrame();
+    if (!childFrame || childFrame->GetContent() != aChild) {
       
-      childFrame = aChild->GetPrimaryFrame();
-      if (!childFrame || childFrame->GetContent() != aChild) {
-        
-        
-        return false;
-      }
-      parentFrame = childFrame->GetParent();
-      parentType = parentFrame->Type();
+      
+      return false;
+    }
+    parentFrame = childFrame->GetParent();
+    parentType = parentFrame->Type();
 
 #ifdef NOISY_FIRST_LETTER
-      printf("  ==> revised parentFrame=");
-      parentFrame->ListTag(stdout);
-      printf(" childFrame=");
-      childFrame->ListTag(stdout);
-      printf("\n");
-#endif
-    }
-
-#ifdef DEBUG
-    if (gReallyNoisyContentUpdates) {
-      printf("nsCSSFrameConstructor::ContentWillBeRemoved: childFrame=");
-      childFrame->ListTag(stdout);
-      putchar('\n');
-      parentFrame->List(stdout);
-    }
-#endif
-
-    
-    if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      childFrame = childFrame->GetPlaceholderFrame();
-      NS_ASSERTION(childFrame, "Missing placeholder frame for out of flow.");
-      parentFrame = childFrame->GetParent();
-    }
-
-    
-    
-    
-    while (IsWrapperPseudo(parentFrame) &&
-           CanRemoveWrapperPseudoForChildRemoval(childFrame, parentFrame)) {
-      childFrame = parentFrame;
-      parentFrame = childFrame->GetParent();
-    }
-
-    DestroyContext context(mPresShell);
-    RemoveFrame(context, nsLayoutUtils::GetChildListNameFor(childFrame),
-                childFrame);
-
-    
-    
-    
-
-    if (isRoot) {
-      mRootElementFrame = nullptr;
-      mRootElementStyleFrame = nullptr;
-      mDocElementContainingBlock = nullptr;
-      mCanvasFrame = nullptr;
-      mPageSequenceFrame = nullptr;
-    }
-
-    if (haveFLS && mRootElementFrame) {
-      RecoverLetterFrames(containingBlock);
-    }
-
-    
-    
-    
-    if (aKind == RemovalKind::Dom) {
-      MOZ_ASSERT(aChild->GetParentNode(),
-                 "How did we have a sibling without a parent?");
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nsIContent* prevSibling = aChild->GetPreviousSibling();
-      if (prevSibling && prevSibling->GetPreviousSibling()) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        ReframeTextIfNeeded(prevSibling);
-        LAYOUT_PHASE_TEMP_REENTER();
-      }
-      
-      
-      nsIContent* nextSibling = aChild->GetNextSibling();
-      if (nextSibling && prevSibling && nextSibling->GetNextSibling()) {
-        LAYOUT_PHASE_TEMP_EXIT();
-        ReframeTextIfNeeded(nextSibling);
-        LAYOUT_PHASE_TEMP_REENTER();
-      }
-    }
-
-#ifdef DEBUG
-    if (gReallyNoisyContentUpdates && parentFrame) {
-      printf(
-          "nsCSSFrameConstructor::ContentWillBeRemoved: resulting frame "
-          "model:\n");
-      parentFrame->List(stdout);
-    }
+    printf("  ==> revised parentFrame=");
+    parentFrame->ListTag(stdout);
+    printf(" childFrame=");
+    childFrame->ListTag(stdout);
+    printf("\n");
 #endif
   }
+
+#ifdef DEBUG
+  if (gReallyNoisyContentUpdates) {
+    printf("nsCSSFrameConstructor::ContentWillBeRemoved: childFrame=");
+    childFrame->ListTag(stdout);
+    putchar('\n');
+    parentFrame->List(stdout);
+  }
+#endif
+
+  
+  if (childFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    childFrame = childFrame->GetPlaceholderFrame();
+    NS_ASSERTION(childFrame, "Missing placeholder frame for out of flow.");
+    parentFrame = childFrame->GetParent();
+  }
+
+  
+  
+  
+  while (IsWrapperPseudo(parentFrame) &&
+         CanRemoveWrapperPseudoForChildRemoval(childFrame, parentFrame)) {
+    childFrame = parentFrame;
+    parentFrame = childFrame->GetParent();
+  }
+
+  DestroyContext context(mPresShell);
+  RemoveFrame(context, nsLayoutUtils::GetChildListNameFor(childFrame),
+              childFrame);
+
+  
+  
+  
+
+  if (isRoot) {
+    mRootElementFrame = nullptr;
+    mRootElementStyleFrame = nullptr;
+    mDocElementContainingBlock = nullptr;
+    mCanvasFrame = nullptr;
+    mPageSequenceFrame = nullptr;
+  }
+
+  if (haveFLS && mRootElementFrame) {
+    RecoverLetterFrames(containingBlock);
+  }
+
+  
+  
+  
+  if (aKind == RemovalKind::Dom) {
+    MOZ_ASSERT(aChild->GetParentNode(),
+               "How did we have a sibling without a parent?");
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsIContent* prevSibling = aChild->GetPreviousSibling();
+    if (prevSibling && prevSibling->GetPreviousSibling()) {
+      LAYOUT_PHASE_TEMP_EXIT();
+      ReframeTextIfNeeded(prevSibling);
+      LAYOUT_PHASE_TEMP_REENTER();
+    }
+    
+    
+    nsIContent* nextSibling = aChild->GetNextSibling();
+    if (nextSibling && prevSibling && nextSibling->GetNextSibling()) {
+      LAYOUT_PHASE_TEMP_EXIT();
+      ReframeTextIfNeeded(nextSibling);
+      LAYOUT_PHASE_TEMP_REENTER();
+    }
+  }
+
+#ifdef DEBUG
+  if (gReallyNoisyContentUpdates && parentFrame) {
+    printf(
+        "nsCSSFrameConstructor::ContentWillBeRemoved: resulting frame "
+        "model:\n");
+    parentFrame->List(stdout);
+  }
+#endif
 
   return false;
 }
