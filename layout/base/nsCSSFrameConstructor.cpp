@@ -7386,8 +7386,8 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   
   
   auto CouldHaveBeenDisplayContents = [aKind](nsIContent* aContent) -> bool {
-    return aKind == RemovalKind::ForReconstruction ||
-           IsDisplayContents(aContent);
+    return aContent->IsElement() && (aKind == RemovalKind::ForReconstruction ||
+                                     IsDisplayContents(aContent->AsElement()));
   };
 
   if (!childFrame && CouldHaveBeenDisplayContents(aChild)) {
