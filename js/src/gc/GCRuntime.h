@@ -687,7 +687,9 @@ class GCRuntime {
   static void* refillFreeList(JS::Zone* zone, AllocKind thingKind);
   void attemptLastDitchGC();
 
-  bool isSymbolReferencedByUncollectedZone(JS::Symbol* sym);
+  
+  
+  bool isSymbolReferencedByUncollectedZone(JS::Symbol* sym, MarkColor color);
 
   
 #ifdef DEBUG

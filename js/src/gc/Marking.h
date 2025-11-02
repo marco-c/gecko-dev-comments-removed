@@ -94,9 +94,6 @@ bool UnmarkGrayGCThingUnchecked(GCMarker* marker, JS::GCCellPtr thing);
 
 } 
 
-
-bool UnmarkGrayShapeRecursively(Shape* shape);
-
 namespace gc {
 
 

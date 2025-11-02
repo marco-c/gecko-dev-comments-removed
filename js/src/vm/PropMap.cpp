@@ -135,13 +135,6 @@ DictionaryPropMap* SharedPropMap::toDictionaryMap(JSContext* cx,
 static MOZ_ALWAYS_INLINE SharedPropMap* PropMapChildReadBarrier(
     SharedPropMap* parent, SharedPropMap* child) {
   JS::Zone* zone = child->zone();
-  if (zone->needsIncrementalBarrier()) {
-    
-    
-    ReadBarrier(child);
-    return child;
-  }
-
   if (MOZ_UNLIKELY(zone->isGCSweeping() &&
                    IsAboutToBeFinalizedUnbarriered(child))) {
     
@@ -153,7 +146,7 @@ static MOZ_ALWAYS_INLINE SharedPropMap* PropMapChildReadBarrier(
 
   
   
-  MOZ_ASSERT(!zone->isGCCompacting());
+  ReadBarrier(child);
 
   return child;
 }

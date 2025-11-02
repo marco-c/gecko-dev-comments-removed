@@ -2575,10 +2575,8 @@ bool GCRuntime::allCCVisibleZonesWereCollected() {
   
   
   
-  
-  
 
-  for (ZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
+  for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
     if (!zone->isCollecting() && !zone->arenas.arenaListsAreEmpty()) {
       return false;
     }

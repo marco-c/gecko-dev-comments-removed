@@ -10,6 +10,7 @@
 #include "mozilla/Atomics.h"
 
 #include "NamespaceImports.h"
+#include "gc/Cell.h"
 #include "js/Vector.h"
 #include "threading/ProtectedData.h"
 
@@ -33,8 +34,8 @@ class AtomMarkingRuntime {
   js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> pendingFreeArenaIndexes;
   mozilla::Atomic<bool, mozilla::Relaxed> hasPendingFreeArenaIndexes;
 
-  inline void markChildren(JSContext* cx, JSAtom*);
-  inline void markChildren(JSContext* cx, JS::Symbol* symbol);
+  inline void markChildren(Zone* zone, JSAtom*);
+  inline void markChildren(Zone* zone, JS::Symbol* symbol);
 
  public:
   
@@ -64,6 +65,11 @@ class AtomMarkingRuntime {
   void markAtomsUsedByUncollectedZones(GCRuntime* gc,
                                        UniquePtr<DenseBitmap> markedUnion);
 
+  
+  
+  
+  static size_t getAtomBit(TenuredCell* thing);
+
  private:
   
   
@@ -74,6 +80,9 @@ class AtomMarkingRuntime {
   
   void refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap);
 
+  
+  void refineZoneBitmapForCollectedZone(Zone* zone, Arena* arena);
+
  public:
   
   template <typename T>
@@ -82,18 +91,32 @@ class AtomMarkingRuntime {
   
   
   template <typename T, bool Fallible>
-  MOZ_ALWAYS_INLINE bool inlinedMarkAtomInternal(JSContext* cx, T* thing);
+  MOZ_ALWAYS_INLINE bool inlinedMarkAtomInternal(Zone* zone, T* thing);
   template <typename T>
-  MOZ_ALWAYS_INLINE void inlinedMarkAtom(JSContext* cx, T* thing);
+  MOZ_ALWAYS_INLINE void inlinedMarkAtom(Zone* zone, T* thing);
   template <typename T>
-  MOZ_ALWAYS_INLINE bool inlinedMarkAtomFallible(JSContext* cx, T* thing);
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool inlinedMarkAtomFallible(Zone* zone,
+                                                               T* thing);
 
   void markId(JSContext* cx, jsid id);
   void markAtomValue(JSContext* cx, const Value& value);
 
   
   template <typename T>
-  bool atomIsMarked(Zone* zone, T* thing);
+  CellColor getAtomMarkColor(Zone* zone, T* thing);
+
+  
+  template <typename T>
+  bool atomIsMarked(Zone* zone, T* thing) {
+    return getAtomMarkColor(zone, thing) != CellColor::White;
+  }
+
+  
+  
+  CellColor getAtomMarkColorForIndex(Zone* zone, size_t bitIndex);
+
+  
+  void maybeUnmarkGrayAtomically(Zone* zone, JS::Symbol* symbol);
 
 #ifdef DEBUG
   bool idIsMarked(Zone* zone, jsid id);
