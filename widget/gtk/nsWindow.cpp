@@ -925,7 +925,7 @@ bool nsWindow::ConstrainSizeWithScale(int* aWidth, int* aHeight,
     *aWidth = mClientMargin.LeftRight() + 1;
   }
   if (*aHeight <= mClientMargin.TopBottom()) {
-    *aHeight <= mClientMargin.TopBottom() + 1;
+    *aHeight = mClientMargin.TopBottom() + 1;
   }
 
   
