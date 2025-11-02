@@ -246,36 +246,8 @@ export var BrowserUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   formatURIForDisplay(uri, options = {}) {
-    let {
-      showInsecureHTTP = false,
-      showWWW = false,
-      onlyBaseDomain = false,
-      showFilenameForLocalURIs = false,
-    } = options;
-    
-    
-    if (uri && uri instanceof Ci.nsINestedURI && showFilenameForLocalURIs) {
-      return this.formatURIForDisplay(uri.innermostURI, options);
-    }
+    let { showInsecureHTTP = false } = options;
     switch (uri.scheme) {
       case "view-source": {
         let innerURI = uri.spec.substring("view-source:".length);
@@ -285,14 +257,8 @@ export var BrowserUtils = {
       
       case "https": {
         let host = uri.displayHostPort;
-        let removeSubdomains =
-          !showInsecureHTTP &&
-          (onlyBaseDomain || (!showWWW && host.startsWith("www.")));
-        if (removeSubdomains) {
+        if (!showInsecureHTTP && host.startsWith("www.")) {
           host = Services.eTLD.getSchemelessSite(uri);
-          if (uri.port != -1) {
-            host += ":" + uri.port;
-          }
         }
         if (showInsecureHTTP && uri.scheme == "http") {
           return "http://" + host;
@@ -303,7 +269,7 @@ export var BrowserUtils = {
         return "about:" + uri.filePath;
       case "blob":
         try {
-          let url = URL.fromURI(uri);
+          let url = new URL(uri.specIgnoringRef);
           
           if (url.origin && url.origin != "null") {
             return this.formatURIStringForDisplay(url.origin, options);
@@ -325,22 +291,8 @@ export var BrowserUtils = {
       }
       case "chrome":
       case "resource":
-      case "moz-icon":
-      case "moz-src":
       case "jar":
       case "file":
-        if (!showFilenameForLocalURIs) {
-          if (uri.scheme == "file") {
-            return lazy.gLocalization.formatValueSync(
-              "browser-utils-file-scheme"
-            );
-          }
-          return lazy.gLocalization.formatValueSync(
-            "browser-utils-url-scheme",
-            { scheme: uri.scheme }
-          );
-        }
-      
       default:
         try {
           let url = uri.QueryInterface(Ci.nsIURL);
@@ -366,7 +318,7 @@ export var BrowserUtils = {
           console.error(ex);
         }
     }
-    return uri.spec;
+    return uri.asciiHost || uri.spec;
   },
 
   
