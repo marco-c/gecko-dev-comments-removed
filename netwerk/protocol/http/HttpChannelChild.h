@@ -143,6 +143,11 @@ class HttpChannelChild final : public PHttpChannelChild,
   void RegisterStreamFilter(
       RefPtr<extensions::StreamFilterParent>& aStreamFilter);
 
+  
+  const char* GetCallStack() const {
+    return mCallStack ? mCallStack.get() : nullptr;
+  }
+
  protected:
   mozilla::ipc::IPCResult RecvOnStartRequestSent() override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(const nsresult& status) override;
@@ -159,6 +164,11 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   mozilla::ipc::IPCResult RecvReportSecurityMessage(
       const nsAString& messageTag, const nsAString& messageCategory) override;
+
+  mozilla::ipc::IPCResult RecvReportLNAToConsole(
+      const NetAddr& aPeerAddr, const nsACString& aMessageType,
+      const nsACString& aPromptAction,
+      const nsACString& aTopLevelSite) override;
 
   mozilla::ipc::IPCResult RecvSetPriority(const int16_t& aPriority) override;
 
@@ -419,6 +429,9 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   
   uint8_t mAlreadyReleased : 1;
+
+  
+  mozilla::UniquePtr<char[]> mCallStack;
 
   void CleanupRedirectingChannel(nsresult rv);
 

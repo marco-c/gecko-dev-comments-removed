@@ -137,6 +137,7 @@
 #include "HttpTrafficAnalyzer.h"
 #include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/dom/SecFetch.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/TRRService.h"
 #include "LNAPermissionRequest.h"
 #include "nsUnknownDecoder.h"
@@ -8616,6 +8617,48 @@ nsHttpChannel::GetEssentialDomainCategory(nsCString& domain) {
   return EssentialDomainCategory::Other;
 }
 
+
+
+
+static void ReportLNAAccessToConsole(nsHttpChannel* aChannel,
+                                     const char* aMessageName,
+                                     const nsACString& aPromptAction = ""_ns) {
+  
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(aChannel, parentChannel);
+  if (RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel)) {
+    NetAddr peerAddr = aChannel->GetPeerAddr();
+
+    
+    
+    
+    
+    nsAutoCString topLevelSite;
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    if (loadInfo) {
+      RefPtr<mozilla::dom::BrowsingContext> bc;
+      loadInfo->GetBrowsingContext(getter_AddRefs(bc));
+      if (bc && bc->Top() && bc->Top()->Canonical()) {
+        RefPtr<mozilla::dom::WindowGlobalParent> topWindowGlobal =
+            bc->Top()->Canonical()->GetCurrentWindowGlobal();
+        if (topWindowGlobal) {
+          nsIPrincipal* topPrincipal = topWindowGlobal->DocumentPrincipal();
+          if (topPrincipal) {
+            nsCOMPtr<nsIURI> topURI = topPrincipal->GetURI();
+            if (topURI) {
+              (void)topURI->GetSpec(topLevelSite);
+            }
+          }
+        }
+      }
+    }
+
+    httpParent->DoSendReportLNAToConsole(peerAddr, nsCString(aMessageName),
+                                         nsCString(aPromptAction),
+                                         topLevelSite);
+  }
+}
+
 nsresult nsHttpChannel::ProcessLNAActions() {
   if (!mTransaction) {
     
@@ -8626,6 +8669,7 @@ nsresult nsHttpChannel::ProcessLNAActions() {
   
   
   
+  UpdateCurrentIpAddressSpace();
   mWaitingForLNAPermission = true;
   Suspend();
   auto permissionKey = mTransaction->GetTargetIPAddressSpace() ==
@@ -8657,11 +8701,53 @@ nsresult nsHttpChannel::ProcessLNAActions() {
       std::move(permissionPromptCallback), mLoadInfo, permissionKey);
 
   
+  ReportLNAAccessToConsole(this, "LocalNetworkAccessPermissionRequired");
+
+  
   
   
   
   
   return request->RequestPermission();
+}
+
+void nsHttpChannel::UpdateCurrentIpAddressSpace() {
+  if (!mTransaction) {
+    return;
+  }
+
+  if (mPeerAddr.GetIpAddressSpace() == nsILoadInfo::IPAddressSpace::Unknown) {
+    
+    bool isTrr;
+    bool echConfigUsed;
+    mTransaction->GetNetworkAddresses(mSelfAddr, mPeerAddr, isTrr,
+                                      mEffectiveTRRMode, mTRRSkipReason,
+                                      echConfigUsed);
+  }
+
+  nsILoadInfo::IPAddressSpace docAddressSpace = mPeerAddr.GetIpAddressSpace();
+  mLoadInfo->SetIpAddressSpace(docAddressSpace);
+  ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
+  if (type == ExtContentPolicy::TYPE_DOCUMENT ||
+      type == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    RefPtr<mozilla::dom::BrowsingContext> bc;
+    mLoadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
+    if (bc) {
+      bc->SetCurrentIPAddressSpace(docAddressSpace);
+    }
+
+    if (mCacheEntry) {
+      
+      if (mPeerAddr.GetIpAddressSpace() !=
+          nsILoadInfo::IPAddressSpace::Unknown) {
+        uint16_t port;
+        mPeerAddr.GetPort(&port);
+        mCacheEntry->SetMetaDataElement("peer-ip-address",
+                                        mPeerAddr.ToString().get());
+        mCacheEntry->SetMetaDataElement("peer-port", ToString(port).c_str());
+      }
+    }
+  }
 }
 
 NS_IMETHODIMP
@@ -8825,33 +8911,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     if (!mProxyInfo || xpc::IsInAutomation()) {
       
       
-      nsAutoCString addrPort;
-      mPeerAddr.ToAddrPortString(addrPort);
-      nsILoadInfo::IPAddressSpace docAddressSpace =
-          mPeerAddr.GetIpAddressSpace();
-      mLoadInfo->SetIpAddressSpace(docAddressSpace);
-      ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
-      if (type == ExtContentPolicy::TYPE_DOCUMENT ||
-          type == ExtContentPolicy::TYPE_SUBDOCUMENT) {
-        RefPtr<mozilla::dom::BrowsingContext> bc;
-        mLoadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
-        if (bc) {
-          bc->SetCurrentIPAddressSpace(docAddressSpace);
-        }
-
-        if (mCacheEntry) {
-          
-          if (mPeerAddr.GetIpAddressSpace() !=
-              nsILoadInfo::IPAddressSpace::Unknown) {
-            uint16_t port;
-            mPeerAddr.GetPort(&port);
-            mCacheEntry->SetMetaDataElement("peer-ip-address",
-                                            mPeerAddr.ToString().get());
-            mCacheEntry->SetMetaDataElement("peer-port",
-                                            ToString(port).c_str());
-          }
-        }
-      }
+      UpdateCurrentIpAddressSpace();
     }
 
     StoreResolvedByTRR(isTrr);

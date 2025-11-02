@@ -221,6 +221,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
  public: 
   uint32_t GetRequestTime() const { return mRequestTime; }
+  const nsACString& GetLNAPromptAction() const { return mLNAPromptAction; }
 
   void AsyncOpenFinal(TimeStamp aTimeStamp);
 
@@ -357,6 +358,7 @@ class nsHttpChannel final : public HttpBaseChannel,
       const nsACString& aPermissionType);
   void MaybeUpdateDocumentIPAddressSpaceFromCache();
   nsresult ProcessLNAActions();
+  void UpdateCurrentIpAddressSpace();
 
  public:
   void UpdateCacheDisposition(bool aSuccessfulReval, bool aPartialContentUsed);
@@ -936,6 +938,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   Maybe<nsCString> mOpenerCallingScriptLocation;
   RefPtr<WebTransportSessionEventListener> mWebTransportSessionEventListener;
   nsMainThreadPtrHandle<nsIReplacedHttpResponse> mOverrideResponse;
+  
+  
+  nsCString mLNAPromptAction;
 };
 
 }  

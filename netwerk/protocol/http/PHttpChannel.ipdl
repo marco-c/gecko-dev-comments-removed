@@ -122,6 +122,12 @@ child:
 
   
   
+  
+  
+  async ReportLNAToConsole(NetAddr peerAddr, nsCString messageType, nsCString promptAction, nsCString topLevelSite);
+
+  
+  
   async DeleteSelf();
 
   

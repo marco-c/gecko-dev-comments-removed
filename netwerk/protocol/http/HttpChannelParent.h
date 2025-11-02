@@ -97,6 +97,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   void DoSendSetPriority(int16_t aValue);
 
   
+  void DoSendReportLNAToConsole(const NetAddr& aPeerAddr,
+                                const nsACString& aMessageType,
+                                const nsACString& aPromptAction,
+                                const nsACString& aTopLevelSite);
+
+  
   void OnBackgroundParentReady(HttpBackgroundChannelParent* aBgParent);
   
   void OnBackgroundParentDestroyed();

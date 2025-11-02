@@ -3740,6 +3740,11 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
     return true;
   }
 
+  if (mConnection) {
+    
+    MutexAutoLock lock(mLock);
+    mConnection->GetPeerAddr(&mPeerAddr);
+  }
   
   if (mConnInfo && gIOService &&
       gIOService->ShouldSkipDomainForLNA(mConnInfo->GetOrigin())) {
