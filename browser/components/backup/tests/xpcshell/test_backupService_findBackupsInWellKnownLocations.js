@@ -21,13 +21,11 @@ add_task(
       });
       return p;
     }
+    Services.prefs.setStringPref("browser.backup.location", BACKUP_DIR);
 
     
     let bs = new BackupService();
     let sandbox = sinon.createSandbox();
-    sandbox
-      .stub(bs, "resolveExistingArchiveDestFolderPath")
-      .callsFake(async _configured => BACKUP_DIR);
 
     
     
