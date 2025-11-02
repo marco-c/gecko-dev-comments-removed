@@ -402,7 +402,7 @@ struct TraversalTracer : public JS::CallbackTracer {
 void TraversalTracer::onChild(JS::GCCellPtr aThing, const char* name) {
   
   
-  if (aThing.is<JSString>() || aThing.is<JS::Symbol>()) {
+  if (aThing.is<JSString>()) {
     return;
   }
 
