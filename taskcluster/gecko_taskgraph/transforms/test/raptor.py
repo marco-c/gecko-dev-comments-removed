@@ -310,6 +310,16 @@ def modify_extra_options(config, tests):
                         extra_options.pop(i)
                     break
 
+        if "jetstream" in test_name and test.get("app", "") in ("chrome", "custom-car"):
+            
+            extra_options = test.setdefault("mozharness", {}).setdefault(
+                "extra-options", []
+            )
+            for i, opt in enumerate(extra_options):
+                if "extra-profiler-run" in opt:
+                    extra_options.pop(i)
+                    break
+
         yield test
 
 
