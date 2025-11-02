@@ -61,7 +61,7 @@ function testHtmlClipboardValue(suppressHTMLCheck, mime, expected) {
   var expectedValue = expected;
   if (navigator.platform.includes("Win")) {
     
-    var expectedValue =
+    expectedValue =
       kTextHtmlPrefixClipboardDataWindows +
       expected.replace(/\n/g, "\n") +
       kTextHtmlSuffixClipboardDataWindows;

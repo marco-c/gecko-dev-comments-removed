@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
-
-
+<!--
+-->
 <head>
   <title>Test for HTML serializer</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -27,8 +27,7 @@ function loadFileContent(aFile, aCharset) {
                                   .setSpec(window.location.href)
                                   .finalize();
 
-    var ios = SpecialPowers.Cc['@mozilla.org/network/io-service;1']
-            .getService(SpecialPowers.Ci.nsIIOService);
+    var ios = SpecialPowers.Services.io;
     var chann = ios.newChannel(aFile,
                                aCharset,
                                baseUri,

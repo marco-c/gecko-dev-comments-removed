@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
-
-
+<!--
+-->
 <head>
   <title>Test on the html copy encoder</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -65,7 +65,7 @@ function testHtmlCopyEncoder () {
 
   node = document.getElementById('aList');
 
-  var select = window.getSelection();
+  select = window.getSelection();
   select.selectAllChildren(node);
 
   encoder.init(document, "text/html", de.OutputLFLineBreak | de.OutputSelectionOnly);

@@ -58,7 +58,7 @@ async function testCopyPaste(isXHTML) {
       ok(clipboard.hasDataMatchingFlavors(["text/html"], 1), "check text/html");
     }
   }
-  function clear(node, suppressUnicodeCheck) {
+  function clear() {
     textarea.blur();
     var sel = window.getSelection();
     sel.removeAllRanges();
@@ -113,7 +113,7 @@ async function testCopyPaste(isXHTML) {
     var expectedValue = expected;
     if (navigator.platform.includes("Win")) {
       
-      var expectedValue =
+      expectedValue =
         kTextHtmlPrefixClipboardDataWindows +
         expected.replace(/\n/g, "\n") +
         kTextHtmlSuffixClipboardDataWindows;
@@ -248,10 +248,7 @@ async function testCopyPaste(isXHTML) {
   );
   testSelectionToString("");
   
-  if (false) {
-    testClipboardValue("text/plain", "");
-    testClipboardValue("text/html", "");
-  }
+  
   
   testInnerHTML("div6", "div6");
 
@@ -264,10 +261,7 @@ async function testCopyPaste(isXHTML) {
   );
   testSelectionToString("");
   
-  if (false) {
-    testClipboardValue("text/plain", "");
-    testClipboardValue("text/html", "");
-  }
+  
   
   testInnerHTML("div7", "div7");
 
@@ -280,10 +274,7 @@ async function testCopyPaste(isXHTML) {
   );
   testSelectionToString("");
   
-  if (false) {
-    testClipboardValue("text/plain", "");
-    testClipboardValue("text/html", "");
-  }
+  
   
   testInnerHTML("div8", "div8");
 
@@ -344,11 +335,11 @@ async function testCopyPaste(isXHTML) {
     testPasteHTML("contentEditable1", "Copy1then Paste"); 
 
     
-    var sel = window.getSelection();
+    sel = window.getSelection();
     sel.removeAllRanges();
-    var r = document.createRange();
-    var ul = $("ul2");
-    var parent = ul.parentNode;
+    r = document.createRange();
+    ul = $("ul2");
+    parent = ul.parentNode;
     r.setStart(parent, 0);
     r.setEnd(ul, 1);
     sel.addRange(r); 
@@ -361,11 +352,11 @@ async function testCopyPaste(isXHTML) {
     testPasteHTML("contentEditable2", "Copy2then Paste"); 
 
     
-    var sel = window.getSelection();
+    sel = window.getSelection();
     sel.removeAllRanges();
-    var r = document.createRange();
-    var ul = $("ul3");
-    var parent = ul.parentNode;
+    r = document.createRange();
+    ul = $("ul3");
+    parent = ul.parentNode;
     r.setStart(parent, 0);
     r.setEnd(ul, 1);
     sel.addRange(r); 
@@ -384,11 +375,11 @@ async function testCopyPaste(isXHTML) {
     );
 
     
-    var sel = window.getSelection();
+    sel = window.getSelection();
     sel.removeAllRanges();
-    var r = document.createRange();
+    r = document.createRange();
     var div1 = $("div1s");
-    var parent = div1.parentNode;
+    parent = div1.parentNode;
     r.setStart(parent, 0);
     r.setEnd(document.getElementById("div1se1"), 1); 
     sel.addRange(r);
@@ -404,11 +395,11 @@ async function testCopyPaste(isXHTML) {
     );
 
     
-    var sel = window.getSelection();
+    sel = window.getSelection();
     sel.removeAllRanges();
-    var r = document.createRange();
-    var div1 = $("div2s");
-    var parent = div1.parentNode;
+    r = document.createRange();
+    div1 = $("div2s");
+    parent = div1.parentNode;
     r.setStart(parent, 0);
     r.setEnd(document.getElementById("div2se1"), 1); 
     sel.addRange(r);
@@ -430,10 +421,10 @@ async function testCopyPaste(isXHTML) {
     var t1 = e1.childNodes[0];
     var t3 = e3.childNodes[0];
 
-    var sel = window.getSelection();
+    sel = window.getSelection();
     sel.removeAllRanges();
 
-    var r = document.createRange();
+    r = document.createRange();
     r.setStart(t1, 1);
     r.setEnd(e2, 0);
     sel.addRange(r); 
