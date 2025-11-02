@@ -2919,6 +2919,7 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
     
     
     
+    
     TraceEdgeForBarrier(marker, &tenured, thing.kind());
   } else if (tenured.isMarkedGray()) {
     
@@ -2929,10 +2930,13 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
     }
   }
 
+  
+  
   if (zone->isAtomsZone() && sourceZone) {
     MOZ_ASSERT(tenured.is<JS::Symbol>());
-    runtime()->gc.atomMarking.maybeUnmarkGrayAtomically(
-        sourceZone, tenured.as<JS::Symbol>());
+    GCRuntime* gc = &runtime()->gc;
+    JS::Symbol* symbol = tenured.as<JS::Symbol>();
+    gc->atomMarking.maybeUnmarkGrayAtomically(sourceZone, symbol);
   }
 
   unmarkedAny = true;

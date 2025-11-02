@@ -3882,6 +3882,11 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
   return IncrementalResult::Reset;
 }
 
+void GCRuntime::setGrayBitsInvalid() {
+  grayBitsValid = false;
+  atomMarking.unmarkAllGrayReferences(this);
+}
+
 void GCRuntime::disableIncrementalBarriers() {
   
   

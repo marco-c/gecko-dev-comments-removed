@@ -68,6 +68,13 @@ class AtomMarkingRuntime {
   
   
   
+  
+  
+  void unmarkAllGrayReferences(GCRuntime* gc);
+
+  
+  
+  
   static size_t getAtomBit(TenuredCell* thing);
 
  private:
