@@ -5831,15 +5831,18 @@ static bool ComputeDecorationInset(
   
   
   
-  nsRect inlineRect, frameRect;
+  nsRect decRect;
+
+  
+  const nsIFrame* decContainer;
 
   
   
   
   
   if (aDecFrame->IsInlineFrame()) {
-    frameRect = nsRect{aFrame->GetOffsetTo(aDecFrame), aFrame->GetSize()};
-    inlineRect = aDecFrame->GetContentRectRelativeToSelf();
+    decRect = aDecFrame->GetContentRectRelativeToSelf();
+    decContainer = aDecFrame;
   } else {
     nsIFrame* const lineContainer = FindLineContainer(aFrame);
     nsILineIterator* const iter = lineContainer->GetLineIterator();
@@ -5854,8 +5857,8 @@ static bool ComputeDecorationInset(
     const nsILineIterator::LineInfo lineInfo = iter->GetLine(lineNum).unwrap();
 
     
-    frameRect = nsRect{aFrame->GetOffsetTo(lineContainer), aFrame->GetSize()};
-    inlineRect = lineInfo.mLineBounds;
+    decRect = lineInfo.mLineBounds;
+    decContainer = lineContainer;
 
     
     const StyleTextIndent& textIndent = aFrame->StyleText()->mTextIndent;
@@ -5879,14 +5882,28 @@ static bool ComputeDecorationInset(
         const nscoord basis = lineContainer->GetLogicalSize(wm).ISize(wm);
         nsMargin indentMargin;
         indentMargin.Side(side) = textIndent.length.Resolve(basis);
-        inlineRect.Deflate(indentMargin);
+        decRect.Deflate(indentMargin);
       }
     }
   }
 
   
+  
+  const nsRect frameRect =
+      aFrame->GetRectRelativeToSelf() + aFrame->GetOffsetTo(decContainer);
+
+  
+  
+  
+  for (const nsIFrame* parent = aFrame->GetParent(); parent != decContainer;
+       parent = parent->GetParent()) {
+    decRect.Deflate(parent->GetUsedMargin());
+    decRect.Deflate(parent->GetUsedBorderAndPadding());
+  }
+
+  
   nscoord marginLeft, marginRight, frameSize;
-  const nsMargin difference = inlineRect - frameRect;
+  const nsMargin difference = decRect - frameRect;
   if (verticalDec) {
     marginLeft = difference.top;
     marginRight = difference.bottom;
