@@ -28,7 +28,7 @@ BEGIN_TEST(testSparseBitmapBasics) {
 
   
   for (size_t i = 0; i < 100; i += 2) {
-    bitmap.setBit(i);
+    CHECK(bitmap.setBit(i));
   }
   for (size_t i = 0; i < 100; i++) {
     CHECK(bitmap.getBit(i) == ((i % 2) == 0));
@@ -36,7 +36,7 @@ BEGIN_TEST(testSparseBitmapBasics) {
 
   
   for (size_t i = 0; i < 100; i += 2) {
-    bitmap.setBit(i * 1000);
+    CHECK(bitmap.setBit(i * 1000));
   }
   for (size_t i = 0; i < 100; i++) {
     CHECK(bitmap.getBit(i * 1000) == ((i % 2) == 0));
@@ -45,14 +45,14 @@ BEGIN_TEST(testSparseBitmapBasics) {
   
   SparseBitmap other;
   for (size_t i = 1; i < 100; i += 2) {
-    other.setBit(i * 1000);
+    CHECK(other.setBit(i * 1000));
   }
   for (size_t i = 0; i < 100; i++) {
     CHECK(other.getBit(i * 1000) == ((i % 2) != 0));
   }
 
   
-  bitmap.bitwiseOrWith(other);
+  CHECK(bitmap.bitwiseOrWith(other));
   for (size_t i = 0; i < 100; i++) {
     CHECK(bitmap.getBit(i * 1000));
   }
@@ -79,7 +79,7 @@ BEGIN_TEST(testSparseBitmapExternalOR) {
   
   SparseBitmap bitmap;
   for (size_t i = 0; i < wordCount; i++) {
-    bitmap.setBit(i * JS_BITS_PER_WORD + i);
+    CHECK(bitmap.setBit(i * JS_BITS_PER_WORD + i));
   }
 
   
@@ -121,8 +121,8 @@ BEGIN_TEST(testSparseBitmapExternalAND) {
   
   SparseBitmap bitmap;
   for (size_t i = 0; i < wordCount; i++) {
-    bitmap.setBit(i * JS_BITS_PER_WORD + i);
-    bitmap.setBit(i * JS_BITS_PER_WORD + i + 1);
+    CHECK(bitmap.setBit(i * JS_BITS_PER_WORD + i));
+    CHECK(bitmap.setBit(i * JS_BITS_PER_WORD + i + 1));
   }
 
   
