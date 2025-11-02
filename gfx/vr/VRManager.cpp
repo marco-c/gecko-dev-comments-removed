@@ -517,7 +517,7 @@ void VRManager::StartFrame() {
   if (mState != VRManagerState::Active) {
     return;
   }
-  AUTO_PROFILER_TRACING_MARKER("VR", "GetSensorState", OTHER);
+  AUTO_PROFILER_MARKER("GetSensorState", OTHER);
 
   
 
@@ -1438,7 +1438,7 @@ void VRManager::SubmitFrameInternal(const layers::SurfaceDescriptor& aTexture,
 #if !defined(MOZ_WIDGET_ANDROID)
   MOZ_ASSERT(mSubmitThread->GetThread() == NS_GetCurrentThread());
 #endif  
-  AUTO_PROFILER_TRACING_MARKER("VR", "SubmitFrameAtVRDisplayExternal", OTHER);
+  AUTO_PROFILER_MARKER("SubmitFrameAtVRDisplayExternal", OTHER);
 
   {  
     MonitorAutoLock lock(mCurrentSubmitTaskMonitor);
