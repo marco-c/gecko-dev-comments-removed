@@ -1,14 +1,15 @@
 import pytest
 
-URL = "https://casinobrango.com/instant-play?play=hyper-wins"
-IFRAME_CSS = "iframe.gameiframe"
+URL = "https://bonusblitz.com/game/caesars-empire"
+PRACTICE_FIRST_GAME_CSS = "button.cta.practice"
+GAME_IFRAME_CSS = "iframe#game"
 UNSUPPORTED_CSS = ".unsupported-device-box"
 SUPPORTED_CSS = "#game_main"
 
 
 async def get_to_page(client):
     await client.navigate(URL)
-    client.switch_to_frame(client.await_css(IFRAME_CSS, timeout=45))
+    client.switch_to_frame(client.await_css(GAME_IFRAME_CSS))
 
 
 @pytest.mark.only_platforms("android")
