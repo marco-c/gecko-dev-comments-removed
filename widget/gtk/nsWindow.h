@@ -203,25 +203,30 @@ class nsWindow final : public nsIWidget {
   void MoveToWorkspace(const nsAString& workspaceID) override;
   void Enable(bool aState) override;
   void SetFocus(Raise, mozilla::dom::CallerType aCallerType) override;
+  LayoutDeviceIntRect GetBounds() override;
   LayoutDeviceIntRect GetScreenBounds() override;
+  DesktopIntRect GetScreenBoundsUnscaled();
   LayoutDeviceIntRect GetClientBounds() override;
-  LayoutDeviceIntRect GetBounds() override { return mBounds; }
   LayoutDeviceIntSize GetClientSize() override;
-  LayoutDeviceIntPoint GetClientOffset() override {
-    return LayoutDeviceIntPoint(mClientMargin.left, mClientMargin.top);
-  }
+  LayoutDeviceIntPoint GetClientOffset() override;
   GdkPoint GetCsdOffsetInGdkCoords();
   LayoutDeviceIntPoint GetScreenEdgeSlop() override;
   nsresult GetRestoredBounds(LayoutDeviceIntRect&) override;
   bool PersistClientBounds() const override { return true; }
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
 
-  void ConstrainSize(int* aWidth, int* aHeight) override;
+  bool ConstrainSizeWithScale(int* aWidth, int* aHeight, double aScale);
 
   
   
+  void RecomputeBounds(bool aMayChangeCsdMargin, bool aScaleChange = false);
+#ifdef MOZ_X11
+  void RecomputeBoundsX11(bool aMayChangeCsdMargin);
+#endif
+#ifdef MOZ_WAYLAND
+  void RecomputeBoundsWayland(bool aMayChangeCsdMargin);
+#endif
   enum class MayChangeCsdMargin : bool { No = false, Yes };
-  void RecomputeBounds(MayChangeCsdMargin);
   void SchedulePendingBounds(MayChangeCsdMargin);
   void MaybeRecomputeBounds();
 
@@ -233,6 +238,7 @@ class nsWindow final : public nsIWidget {
   void SetWindowClass(const nsAString& xulWinType, const nsAString& xulWinClass,
                       const nsAString& xulWinName) override;
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
+  DesktopIntPoint WidgetToScreenOffsetUnscaled();
   void CaptureRollupEvents(bool aDoCapture) override;
   [[nodiscard]] nsresult GetAttention(int32_t aCycleCount) override;
   bool HasPendingInputEvent() override;
@@ -423,21 +429,25 @@ class nsWindow final : public nsIWidget {
   gint GdkCeiledScaleFactor();
   double FractionalScaleFactor();
 
+  LayoutDeviceIntPoint ToLayoutDevicePixels(const DesktopIntPoint&);
+  LayoutDeviceIntSize ToLayoutDevicePixels(const DesktopIntSize&);
+  LayoutDeviceIntRect ToLayoutDevicePixels(const DesktopIntRect&);
+  LayoutDeviceIntMargin ToLayoutDevicePixels(const DesktopIntMargin&);
+  DesktopIntSize ToDesktopPixels(const LayoutDeviceIntSize&);
+  DesktopIntRect ToDesktopPixels(const LayoutDeviceIntRect&);
+  DesktopIntPoint ToDesktopPixels(const LayoutDeviceIntPoint&);
+
   
-  gint DevicePixelsToGdkCoordRoundUp(int);
+  gint DevicePixelsToGdkCoordRound(int);
+
   gint DevicePixelsToGdkCoordRoundDown(int);
   GdkPoint DevicePixelsToGdkPointRoundDown(const LayoutDeviceIntPoint&);
-  GdkRectangle DevicePixelsToGdkSizeRoundUp(const LayoutDeviceIntSize&);
   GdkRectangle DevicePixelsToGdkRectRoundOut(const LayoutDeviceIntRect&);
   GdkRectangle DevicePixelsToGdkRectRoundIn(const LayoutDeviceIntRect&);
 
   
-  int GdkCoordToDevicePixels(gint);
   LayoutDeviceIntPoint GdkPointToDevicePixels(const GdkPoint&);
   LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble aX, gdouble aY);
-  LayoutDeviceIntRect GdkRectToDevicePixels(const GdkRectangle&);
-  LayoutDeviceIntMargin GtkBorderToDevicePixels(const GtkBorder&);
-  LayoutDeviceRect GdkRectToFloatDevicePixels(const GdkRectangle&);
 
   bool WidgetTypeSupportsAcceleration() override;
   bool WidgetTypeSupportsNativeCompositing() override;
@@ -486,9 +496,7 @@ class nsWindow final : public nsIWidget {
       const LayoutDeviceIntPoint& aLockCenter) override;
   void LockNativePointer() override;
   void UnlockNativePointer() override;
-  LayoutDeviceIntSize GetMoveToRectPopupSize() const override {
-    return mMoveToRectPopupSize;
-  };
+  LayoutDeviceIntSize GetMoveToRectPopupSize() override;
 #endif
 
   void ResumeCompositorImpl();
@@ -528,7 +536,9 @@ class nsWindow final : public nsIWidget {
 
   void NativeShow(bool aAction);
   void SetHasMappedToplevel(bool aState);
-  LayoutDeviceIntSize GetSafeWindowSize(LayoutDeviceIntSize aSize);
+
+  bool SetSafeWindowSize(LayoutDeviceIntSize& aSize);
+  bool SetSafeWindowSize(DesktopIntSize& aSize);
 
   void DispatchContextMenuEventFromMouseEvent(
       uint16_t domButton, GdkEventButton* aEvent,
@@ -565,8 +575,8 @@ class nsWindow final : public nsIWidget {
   nsWindow* GetTransientForWindowIfPopup();
   bool IsHandlingTouchSequence(GdkEventSequence* aSequence);
 
-  void ResizeInt(const mozilla::Maybe<LayoutDeviceIntPoint>& aMove,
-                 LayoutDeviceIntSize aSize);
+  void ResizeInt(const mozilla::Maybe<DesktopIntPoint>& aMove,
+                 DesktopIntSize aSize);
   void NativeMoveResizeWaylandPopup(bool aMove, bool aResize);
 
   
@@ -616,16 +626,39 @@ class nsWindow final : public nsIWidget {
 
   
   
+  DesktopIntRect mReceivedClientArea{};
+
   
   
   
-  LayoutDeviceIntSize mLastSizeRequest;
   
-  LayoutDeviceIntPoint mLastMoveRequest;
   
-  LayoutDeviceIntMargin mClientMargin;
   
-  LayoutDeviceIntRect mBounds;
+  DesktopIntSize mLastSizeRequest;
+  
+  DesktopIntPoint mLastMoveRequest;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  DesktopIntMargin mClientMargin{};
+
+  
+  
+  DesktopIntRect mClientArea{};
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
@@ -935,7 +968,7 @@ class nsWindow final : public nsIWidget {
   
   
   
-  LayoutDeviceIntSize mMoveToRectPopupSize;
+  DesktopIntSize mMoveToRectPopupSize;
 
 #ifdef MOZ_ENABLE_DBUS
   RefPtr<mozilla::widget::DBusMenuBar> mDBusMenuBar;
