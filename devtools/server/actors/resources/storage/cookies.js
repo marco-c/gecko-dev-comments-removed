@@ -230,6 +230,9 @@ class CookiesStorageActor extends BaseStorageActor {
       
       creationTime: cookie.creationTime / 1000,
 
+      
+      updateTime: cookie.updateTime / 1000,
+
       size: cookie.name.length + (cookie.value || "").length,
 
       
@@ -362,6 +365,7 @@ class CookiesStorageActor extends BaseStorageActor {
       { name: "sameSite", editable: false, hidden: false },
       { name: "lastAccessed", editable: false, hidden: false },
       { name: "creationTime", editable: false, hidden: true },
+      { name: "updateTime", editable: false, hidden: true },
       { name: "hostOnly", editable: false, hidden: true },
     ];
 
@@ -458,6 +462,7 @@ class CookiesStorageActor extends BaseStorageActor {
   }
 
   
+
 
 
 
