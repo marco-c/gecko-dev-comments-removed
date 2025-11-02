@@ -458,48 +458,21 @@ impl ProfilerMarker for Tracing {
 
 
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct StackMarker();
 
-impl ProfilerMarker for StackMarker {
-    fn marker_type_name() -> &'static str {
-        "StackMarker"
-    }
-
-    fn stream_json_marker_data(&self, _json_writer: &mut JSONWriter) {}
-
-    
-    
-    
-    
-    fn marker_type_display() -> MarkerSchema {
-        use crate::marker::schema::*;
-        let mut schema = MarkerSchema::new(&[
-            Location::MarkerChart,
-            Location::MarkerTable,
-            Location::TimelineOverview,
-        ]);
-        schema.set_stack_based();
-        schema
-    }
-}
-
-
-
-
-
-pub struct AutoProfilerMarker<'a> {
+pub struct AutoProfilerTracingMarker<'a> {
     name: &'a str,
     category: ProfilingCategoryPair,
     options: MarkerOptions,
+    payload: CowString,
 }
 
-impl<'a> AutoProfilerMarker<'a> {
+impl<'a> AutoProfilerTracingMarker<'a> {
     pub fn new(
         name: &'a str,
         category: ProfilingCategoryPair,
         options: MarkerOptions,
-    ) -> Option<AutoProfilerMarker<'a>> {
+        payload: CowString,
+    ) -> Option<AutoProfilerTracingMarker<'a>> {
         if !crate::profiler_state::can_accept_markers() {
             return None;
         }
@@ -508,17 +481,18 @@ impl<'a> AutoProfilerMarker<'a> {
             name,
             category,
             options.with_timing(MarkerTiming::interval_start(ProfilerTime::now())),
-            StackMarker(),
+            Tracing(payload.clone()),
         );
-        Some(AutoProfilerMarker {
+        Some(AutoProfilerTracingMarker {
             name,
             category,
             options,
+            payload,
         })
     }
 }
 
-impl<'a> Drop for AutoProfilerMarker<'a> {
+impl<'a> Drop for AutoProfilerTracingMarker<'a> {
     fn drop(&mut self) {
         
         
@@ -534,10 +508,11 @@ impl<'a> Drop for AutoProfilerMarker<'a> {
             self.category,
             self.options
                 .with_timing(MarkerTiming::interval_end(ProfilerTime::now())),
-            StackMarker(),
+            Tracing(self.payload.clone()),
         );
     }
 }
+
 
 
 
@@ -556,17 +531,17 @@ impl<'a> Drop for AutoProfilerMarker<'a> {
 
 #[cfg(feature = "enabled")]
 #[macro_export]
-macro_rules! auto_profiler_marker {
-    ($name:expr, $category:expr,$options:expr) => {
+macro_rules! auto_profiler_marker_tracing {
+    ($name:expr, $category:expr,$options:expr, $payload:expr) => {
         let _macro_created_rust_tracing_marker =
-            $crate::AutoProfilerMarker::new($name, $category, $options);
+            $crate::AutoProfilerTracingMarker::new($name, $category, $options, $payload);
     };
 }
 
 #[cfg(not(feature = "enabled"))]
 #[macro_export]
-macro_rules! auto_profiler_marker {
-    ($name:expr, $category:expr,$options:expr) => {
+macro_rules! auto_profiler_marker_tracing {
+    ($name:expr, $category:expr,$options:expr, $payload:expr) => {
         // Do nothing if the profiler is not enabled
     };
 }
