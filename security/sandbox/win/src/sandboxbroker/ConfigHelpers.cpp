@@ -13,6 +13,7 @@
 #include "nsExceptionHandler.h"
 #include "nsStringFwd.h"
 #include "nsUnicharUtils.h"
+#include "nsWindowsHelpers.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
 
 namespace mozilla {
@@ -84,8 +85,9 @@ UserFontConfigHelper::UserFontConfigHelper(const wchar_t* aUserFontKeyPath,
                                            const nsString& aWinUserProfile,
                                            const nsString& aLocalAppData)
     : mWinUserProfile(aWinUserProfile), mLocalAppData(aLocalAppData) {
-  LSTATUS lStatus = ::RegOpenKeyExW(HKEY_CURRENT_USER, aUserFontKeyPath, 0,
-                                    KEY_QUERY_VALUE, &mUserFontKey);
+  LSTATUS lStatus =
+      ::RegOpenKeyExW(HKEY_CURRENT_USER, aUserFontKeyPath, 0,
+                      KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS, &mUserFontKey);
   if (lStatus != ERROR_SUCCESS) {
     
     mUserFontKey = nullptr;
@@ -98,34 +100,10 @@ UserFontConfigHelper::~UserFontConfigHelper() {
   }
 }
 
-void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
-  
-  nsAutoString windowsUserFontDir(mLocalAppData);
-  windowsUserFontDir += uR"(\Microsoft\Windows\Fonts\*)"_ns;
-  auto result = aConfig.AllowFileAccess(sandbox::FileSemantics::kAllowReadonly,
-                                        windowsUserFontDir.getW());
-  if (result != sandbox::SBOX_ALL_OK) {
-    NS_ERROR("Failed to add Windows user font dir policy rule.");
-    LOG_E("Failed (ResultCode %d) to add read access to: %S", result,
-          windowsUserFontDir.getW());
-  }
-
-  
-  if (!mUserFontKey) {
-    return;
-  }
-
-  
-  windowsUserFontDir.SetLength(windowsUserFontDir.Length() - 1);
-
-  
-  nsAutoString winUserProfile(mWinUserProfile);
-  winUserProfile += L'\\';
-
-  
-  
-  Vector<nsString> nonUserDirFonts;
-
+static auto AddRulesForKey(HKEY aFontKey, const nsAString& aWindowsUserFontDir,
+                           const nsAString& aWinUserProfile,
+                           SizeTrackingConfig& aConfig,
+                           Vector<nsString>& aNonUserDirFonts) {
   for (DWORD valueIndex = 0; ; ++valueIndex) {
     DWORD keyType;
     wchar_t name[1024];
@@ -135,8 +113,8 @@ void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
     
     DWORD dataSizeInBytes = sizeof(data) - sizeof(wchar_t);
     LSTATUS lStatus =
-        ::RegEnumValueW(mUserFontKey, valueIndex, name, &nameLength, NULL,
-                        &keyType, dataAsBytes, &dataSizeInBytes);
+        ::RegEnumValueW(aFontKey, valueIndex, name, &nameLength, NULL, &keyType,
+                        dataAsBytes, &dataSizeInBytes);
     if (lStatus == ERROR_NO_MORE_ITEMS) {
       break;
     }
@@ -174,33 +152,100 @@ void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
     }
 
     
-    if (dataSizeInWChars < winUserProfile.Length() ||
-        !winUserProfile.Equals(
-            nsDependentSubstring(data, winUserProfile.Length()),
+    if (dataSizeInWChars < aWinUserProfile.Length() ||
+        !aWinUserProfile.Equals(
+            nsDependentSubstring(data, aWinUserProfile.Length()),
             nsCaseInsensitiveStringComparator)) {
-      (void)nonUserDirFonts.emplaceBack(data, dataSizeInWChars);
+      (void)aNonUserDirFonts.emplaceBack(data, dataSizeInWChars);
       continue;
     }
 
     
-    if (dataSizeInWChars > windowsUserFontDir.Length() &&
-        windowsUserFontDir.Equals(
-            nsDependentSubstring(data, windowsUserFontDir.Length()),
+    if (dataSizeInWChars > aWindowsUserFontDir.Length() &&
+        aWindowsUserFontDir.Equals(
+            nsDependentSubstring(data, aWindowsUserFontDir.Length()),
             nsCaseInsensitiveStringComparator)) {
       continue;
     }
 
-    result =
+    auto result =
         aConfig.AllowFileAccess(sandbox::FileSemantics::kAllowReadonly, data);
     if (result != sandbox::SBOX_ALL_OK) {
       NS_WARNING("Failed to add specific user font policy rule.");
       LOG_W("Failed (ResultCode %d) to add read access to: %S", result, data);
       if (result == sandbox::SBOX_ERROR_NO_SPACE) {
-        CrashReporter::RecordAnnotationCString(
-            CrashReporter::Annotation::UserFontRulesExhausted, "inside");
-        return;
+        return result;
       }
     }
+  }
+
+  for (DWORD keyIndex = 0; ; ++keyIndex) {
+    wchar_t name[1024];
+    DWORD nameLength = std::size(name);
+    LSTATUS lStatus = ::RegEnumKeyExW(aFontKey, keyIndex, name, &nameLength,
+                                      nullptr, nullptr, nullptr, nullptr);
+    if (lStatus == ERROR_NO_MORE_ITEMS) {
+      break;
+    }
+
+    
+    if (lStatus != ERROR_SUCCESS) {
+      continue;
+    }
+
+    std::unique_ptr<HKEY, RegCloseKeyDeleter> subKey;
+    lStatus = ::RegOpenKeyExW(aFontKey, name, 0,
+                              KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS,
+                              getter_Transfers(subKey));
+    
+    if (lStatus != ERROR_SUCCESS) {
+      continue;
+    }
+
+    auto result = AddRulesForKey(subKey.get(), aWindowsUserFontDir,
+                                 aWinUserProfile, aConfig, aNonUserDirFonts);
+    if (result == sandbox::SBOX_ERROR_NO_SPACE) {
+      return result;
+    }
+  }
+
+  return sandbox::SBOX_ALL_OK;
+}
+
+void UserFontConfigHelper::AddRules(SizeTrackingConfig& aConfig) const {
+  
+  nsAutoString windowsUserFontDir(mLocalAppData);
+  windowsUserFontDir += uR"(\Microsoft\Windows\Fonts\*)"_ns;
+  auto result = aConfig.AllowFileAccess(sandbox::FileSemantics::kAllowReadonly,
+                                        windowsUserFontDir.getW());
+  if (result != sandbox::SBOX_ALL_OK) {
+    NS_ERROR("Failed to add Windows user font dir policy rule.");
+    LOG_E("Failed (ResultCode %d) to add read access to: %S", result,
+          windowsUserFontDir.getW());
+  }
+
+  
+  if (!mUserFontKey) {
+    return;
+  }
+
+  
+  windowsUserFontDir.SetLength(windowsUserFontDir.Length() - 1);
+
+  
+  nsAutoString winUserProfile(mWinUserProfile);
+  winUserProfile += L'\\';
+
+  
+  
+  Vector<nsString> nonUserDirFonts;
+
+  result = AddRulesForKey(mUserFontKey, windowsUserFontDir, winUserProfile,
+                          aConfig, nonUserDirFonts);
+  if (result == sandbox::SBOX_ERROR_NO_SPACE) {
+    CrashReporter::RecordAnnotationCString(
+        CrashReporter::Annotation::UserFontRulesExhausted, "inside");
+    return;
   }
 
   

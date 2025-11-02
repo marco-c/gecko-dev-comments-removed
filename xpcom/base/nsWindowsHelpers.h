@@ -341,6 +341,11 @@ using AutoDestroySecurityDescriptor =
     mozilla::UniquePtr<SECURITY_DESCRIPTOR,
                        DestroyPrivateObjectSecurityDeleter>;
 
+struct RegCloseKeyDeleter {
+  using pointer = HKEY;
+  void operator()(HKEY aRegKey) { ::RegCloseKey(aRegKey); }
+};
+
 
 
 
