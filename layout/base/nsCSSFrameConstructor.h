@@ -237,6 +237,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     Dom,
     
     ForReconstruction,
+    
+    
+    ForDisplayNoneChange,
   };
 
   

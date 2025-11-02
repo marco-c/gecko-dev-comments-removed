@@ -6334,9 +6334,6 @@ static bool ParentIsWrapperAnonBox(nsIFrame* aParent) {
 
 void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
                                             InsertionKind aInsertionKind) {
-  MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
-             !RestyleManager()->IsInStyleRefresh());
-
   AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentAppended",
                           LAYOUT_FrameConstruction);
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
@@ -6648,9 +6645,6 @@ void nsCSSFrameConstructor::ContentInserted(nsIContent* aChild,
 void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
                                                  nsIContent* aEndChild,
                                                  InsertionKind aInsertionKind) {
-  MOZ_ASSERT(aInsertionKind == InsertionKind::Sync ||
-             !RestyleManager()->IsInStyleRefresh());
-
   AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentRangeInserted",
                           LAYOUT_FrameConstruction);
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
@@ -7386,7 +7380,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   
   
   auto CouldHaveBeenDisplayContents = [aKind](nsIContent* aContent) -> bool {
-    return aContent->IsElement() && (aKind == RemovalKind::ForReconstruction ||
+    return aContent->IsElement() && (aKind != RemovalKind::Dom ||
                                      IsDisplayContents(aContent->AsElement()));
   };
 
@@ -7410,7 +7404,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     return false;
   }
 
-  if (aKind == RemovalKind::ForReconstruction) {
+  if (aKind != RemovalKind::Dom) {
     
     
     CaptureStateForFramesOf(aChild, mFrameTreeState);
@@ -7555,7 +7549,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   
   
   
-  if (aKind == RemovalKind::Dom) {
+  if (aKind != RemovalKind::ForReconstruction) {
     MOZ_ASSERT(aChild->GetParentNode(),
                "How did we have a sibling without a parent?");
     
@@ -8455,28 +8449,38 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
   }
 
   MOZ_ASSERT(aContent->GetParentNode());
-  const bool didReconstruct =
-      ContentWillBeRemoved(aContent, RemovalKind::ForReconstruction);
-
-  if (!didReconstruct) {
-    if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
+  const auto removalKind = [&] {
+    if (aInsertionKind == InsertionKind::Sync && aContent->IsElement() &&
+        Servo_Element_IsDisplayNone(aContent->AsElement())) {
       
       
       
-      
-      
-      
-      
-      RestyleManager()->PostRestyleEvent(aContent->AsElement(), RestyleHint{0},
-                                         nsChangeHint_ReconstructFrame);
-    } else {
-      
-      
-      
-      ContentRangeInserted(aContent, aContent->GetNextSibling(),
-                           aInsertionKind);
+      return RemovalKind::ForDisplayNoneChange;
     }
+    return RemovalKind::ForReconstruction;
+  }();
+  const bool didReconstruct = ContentWillBeRemoved(aContent, removalKind);
+  if (didReconstruct || removalKind == RemovalKind::ForDisplayNoneChange) {
+    
+    
+    return;
   }
+  if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RestyleManager()->PostRestyleEvent(aContent->AsElement(), RestyleHint{0},
+                                       nsChangeHint_ReconstructFrame);
+    return;
+  }
+  
+  ContentRangeInserted(aContent, aContent->GetNextSibling(), aInsertionKind);
 }
 
 bool nsCSSFrameConstructor::DestroyFramesFor(nsIContent* aContent) {
