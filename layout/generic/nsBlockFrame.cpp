@@ -1110,81 +1110,6 @@ static bool AvailableSpaceShrunk(WritingMode aWM,
          aNewAvailableSpace.IEnd(aWM) < aOldAvailableSpace.IEnd(aWM);
 }
 
-static LogicalSize CalculateContainingBlockSizeForAbsolutes(
-    WritingMode aWM, const ReflowInput& aReflowInput,
-    const LogicalSize& aFrameSize) {
-  
-  
-  
-  
-  nsIFrame* frame = aReflowInput.mFrame;
-
-  LogicalSize cbSize(aFrameSize);
-  
-  const LogicalMargin border = aReflowInput.ComputedLogicalBorder(aWM);
-  cbSize.ISize(aWM) -= border.IStartEnd(aWM);
-  cbSize.BSize(aWM) -= border.BStartEnd(aWM);
-
-  if (frame->GetParent()->GetContent() != frame->GetContent() ||
-      frame->GetParent()->IsCanvasFrame()) {
-    return cbSize;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  const ReflowInput* lastRI = &aReflowInput;
-  DebugOnly<const ReflowInput*> lastButOneRI = &aReflowInput;
-  while (lastRI->mParentReflowInput &&
-         lastRI->mParentReflowInput->mFrame->GetContent() ==
-             frame->GetContent()) {
-    lastButOneRI = lastRI;
-    lastRI = lastRI->mParentReflowInput;
-  }
-
-  if (lastRI == &aReflowInput) {
-    return cbSize;
-  }
-
-  
-  
-  if (lastRI->mFrame->IsScrollContainerOrSubclass()) {
-    
-    
-    
-    MOZ_ASSERT(lastButOneRI == &aReflowInput);
-    return cbSize;
-  }
-
-  
-  
-  if (lastRI->mFrame->IsFieldSetFrame()) {
-    return cbSize;
-  }
-
-  
-  
-  const LogicalSize lastRISize = lastRI->ComputedSize(aWM);
-  const LogicalMargin lastRIPadding = lastRI->ComputedLogicalPadding(aWM);
-  if (lastRISize.ISize(aWM) != NS_UNCONSTRAINEDSIZE) {
-    cbSize.ISize(aWM) =
-        std::max(0, lastRISize.ISize(aWM) + lastRIPadding.IStartEnd(aWM));
-  }
-  if (lastRISize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
-    cbSize.BSize(aWM) =
-        std::max(0, lastRISize.BSize(aWM) + lastRIPadding.BStartEnd(aWM));
-  }
-
-  return cbSize;
-}
-
 
 
 
@@ -1776,10 +1701,6 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         }
       }
     } else {
-      LogicalSize containingBlockSize =
-          CalculateContainingBlockSizeForAbsolutes(parentWM, aReflowInput,
-                                                   aMetrics.Size(parentWM));
-
       
       
       
@@ -1799,6 +1720,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
           !(isRoot && NS_UNCONSTRAINEDSIZE == aReflowInput.ComputedHeight()) &&
           aMetrics.Height() != oldSize.height;
 
+      const LogicalSize containingBlockSize =
+          aMetrics.Size(parentWM) -
+          aReflowInput.ComputedLogicalBorder(parentWM).Size(parentWM);
       nsRect containingBlock(nsPoint(0, 0),
                              containingBlockSize.GetPhysicalSize(parentWM));
       AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation};
