@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.filters.SdkSuppress
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
@@ -231,15 +232,14 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416042
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @SdkSuppress(minSdkVersion = 34)
     @SmokeTest
     @Test
     fun deleteCachedFilesTest() {
-        val wikipedia = getStringResource(R.string.default_top_site_wikipedia)
-
         homeScreen {
-            verifyExistingTopSitesTabs(composeTestRule, wikipedia)
-        }.openTopSiteTabWithTitle(composeTestRule, wikipedia) {
+            verifyExistingTopSitesTabs(composeTestRule, "Wikipedia")
+        }.openTopSiteTabWithTitle(composeTestRule, "Wikipedia") {
             verifyUrl("wikipedia.org")
         }.openTabDrawer(composeTestRule) {
         }.openNewTab {

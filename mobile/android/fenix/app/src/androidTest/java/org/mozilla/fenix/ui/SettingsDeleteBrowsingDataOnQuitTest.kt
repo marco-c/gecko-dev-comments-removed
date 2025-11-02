@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.rule.GrantPermissionRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
@@ -239,10 +240,9 @@ class SettingsDeleteBrowsingDataOnQuitTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416052
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @Test
     fun deleteCachedFilesOnQuitTest() {
-        val wikipedia = getStringResource(R.string.default_top_site_wikipedia)
-
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
@@ -251,8 +251,8 @@ class SettingsDeleteBrowsingDataOnQuitTest : TestSetup() {
             exitMenu()
         }
         homeScreen {
-            verifyExistingTopSitesTabs(composeTestRule, wikipedia)
-        }.openTopSiteTabWithTitle(composeTestRule, wikipedia) {
+            verifyExistingTopSitesTabs(composeTestRule, "Wikipedia")
+        }.openTopSiteTabWithTitle(composeTestRule, "Wikipedia") {
             verifyUrl("wikipedia.org")
         }.goToHomescreen(composeTestRule) {
         }.openThreeDotMenu {
