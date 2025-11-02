@@ -5785,10 +5785,12 @@ static gfxFloat ComputeDecorationLineOffset(
 
 
 
+
+
 static bool ComputeDecorationInset(
     nsTextFrame* aFrame, const nsPresContext* aPresCtx,
     const nsIFrame* aDecFrame, const gfxFont::Metrics& aMetrics,
-    nsCSSRendering::DecorationRectParams& aParams) {
+    nsCSSRendering::DecorationRectParams& aParams, bool aOnlyExtend = false) {
   const WritingMode wm = aDecFrame->GetWritingMode();
   bool verticalDec = wm.IsVertical();
 
@@ -5821,6 +5823,12 @@ static bool ComputeDecorationInset(
     }
     insetLeft = length.start.ToAppUnits();
     insetRight = length.end.ToAppUnits();
+  }
+
+  
+  
+  if (aOnlyExtend && insetLeft >= 0 && insetRight >= 0) {
+    return true;
   }
 
   if (wm.IsInlineReversed()) {
@@ -6102,7 +6110,7 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
                 swapUnderline);
 
             if (!ComputeDecorationInset(this, aPresContext, dec.mFrame, metrics,
-                                        params)) {
+                                        params,  true)) {
               return;
             }
 
