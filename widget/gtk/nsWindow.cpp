@@ -3584,11 +3584,6 @@ void nsWindow::RecomputeBounds(bool aMayChangeCsdMargin, bool aScaleChange) {
                        oldClientArea.Size() != mClientArea.Size();
 
   if (moved) {
-    if (IsTopLevelWidget()) {
-      
-      
-      RollupAllMenus();
-    }
     auto pos = ToLayoutDevicePixels(mClientArea.TopLeft());
     NotifyWindowMoved(pos.x, pos.y);
   }
