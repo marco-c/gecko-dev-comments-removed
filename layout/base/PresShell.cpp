@@ -4713,7 +4713,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
   }
 
   mFrameConstructor->ContentWillBeRemoved(
-      aChild, nsCSSFrameConstructor::REMOVE_CONTENT);
+      aChild, nsCSSFrameConstructor::RemovalKind::Dom);
 
   
   

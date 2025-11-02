@@ -231,9 +231,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void ContentRangeInserted(nsIContent* aStartChild, nsIContent* aEndChild,
                             InsertionKind aInsertionKind);
 
-  enum RemoveFlags {
-    REMOVE_CONTENT,
-    REMOVE_FOR_RECONSTRUCTION,
+  
+  enum class RemovalKind : uint8_t {
+    
+    Dom,
+    
+    ForReconstruction,
   };
 
   
@@ -247,12 +250,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-
-
-
-
-
-  bool ContentWillBeRemoved(nsIContent* aChild, RemoveFlags aFlags);
+  bool ContentWillBeRemoved(nsIContent* aChild, RemovalKind);
 
   void CharacterDataChanged(nsIContent* aContent,
                             const CharacterDataChangeInfo& aInfo);
@@ -1704,10 +1702,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
 
 
-
-
-  void RecreateFramesForContent(nsIContent* aContent,
-                                InsertionKind aInsertionKind);
+  void RecreateFramesForContent(nsIContent* aContent, InsertionKind);
 
   
 

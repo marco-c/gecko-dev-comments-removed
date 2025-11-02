@@ -7264,7 +7264,7 @@ static bool CanRemoveWrapperPseudoForChildRemoval(nsIFrame* aFrame,
 }
 
 bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
-                                                 RemoveFlags aFlags) {
+                                                 RemovalKind aKind) {
   MOZ_ASSERT(aChild);
   MOZ_ASSERT(
       !aChild->IsRootOfNativeAnonymousSubtree() || !aChild->GetNextSibling(),
@@ -7304,7 +7304,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     
     
     const Element* removingElement =
-        aFlags == REMOVE_CONTENT ? aChild->AsElement() : nullptr;
+        aKind == RemovalKind::Dom ? aChild->AsElement() : nullptr;
     Element* newOverrideElement =
         presContext->UpdateViewportScrollStylesOverride(removingElement);
 
@@ -7385,8 +7385,9 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   
   
   
-  auto CouldHaveBeenDisplayContents = [aFlags](nsIContent* aContent) -> bool {
-    return aFlags == REMOVE_FOR_RECONSTRUCTION || IsDisplayContents(aContent);
+  auto CouldHaveBeenDisplayContents = [aKind](nsIContent* aContent) -> bool {
+    return aKind == RemovalKind::ForReconstruction ||
+           IsDisplayContents(aContent);
   };
 
   if (!childFrame && CouldHaveBeenDisplayContents(aChild)) {
@@ -7408,7 +7409,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   }
 
   if (childFrame) {
-    if (aFlags == REMOVE_FOR_RECONSTRUCTION) {
+    if (aKind == RemovalKind::ForReconstruction) {
       
       
       CaptureStateForFramesOf(aChild, mFrameTreeState);
@@ -7451,7 +7452,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     }
 
 #ifdef ACCESSIBILITY
-    if (aFlags != REMOVE_FOR_RECONSTRUCTION) {
+    if (aKind != RemovalKind::ForReconstruction) {
       if (nsAccessibilityService* accService = GetAccService()) {
         accService->ContentRemoved(mPresShell, aChild);
       }
@@ -7553,7 +7554,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     
     
     
-    if (aFlags == REMOVE_CONTENT) {
+    if (aKind == RemovalKind::Dom) {
       MOZ_ASSERT(aChild->GetParentNode(),
                  "How did we have a sibling without a parent?");
       
@@ -8455,7 +8456,7 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
 
   MOZ_ASSERT(aContent->GetParentNode());
   const bool didReconstruct =
-      ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
+      ContentWillBeRemoved(aContent, RemovalKind::ForReconstruction);
 
   if (!didReconstruct) {
     if (aInsertionKind == InsertionKind::Async && aContent->IsElement()) {
@@ -8480,7 +8481,7 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
 
 bool nsCSSFrameConstructor::DestroyFramesFor(nsIContent* aContent) {
   MOZ_ASSERT(aContent && aContent->GetParentNode());
-  return ContentWillBeRemoved(aContent, REMOVE_FOR_RECONSTRUCTION);
+  return ContentWillBeRemoved(aContent, RemovalKind::ForReconstruction);
 }
 
 
