@@ -996,31 +996,58 @@ let interfaceNamesInGlobalScope = [
   
   { name: "NamedNodeMap", insecureContext: true },
   
-  { name: "NavigateEvent", insecureContext: true, disabled: true },
+  {
+    name: "NavigateEvent",
+    insecureContext: true,
+    nightly: true,
+    sessionHistoryInParent: true,
+  },
   
-  { name: "Navigation", insecureContext: true, disabled: true },
+  { name: "Navigation", insecureContext: true, nightly: true },
   
-  { name: "NavigationActivation", insecureContext: true, disabled: true },
+  {
+    name: "NavigationActivation",
+    insecureContext: true,
+    nightly: true,
+    sessionHistoryInParent: true,
+  },
   
   {
     name: "NavigationCurrentEntryChangeEvent",
     insecureContext: true,
-    disabled: true,
+    nightly: true,
+    sessionHistoryInParent: true,
   },
   
-  { name: "NavigationDestination", insecureContext: true, disabled: true },
+  {
+    name: "NavigationDestination",
+    insecureContext: true,
+    nightly: true,
+    sessionHistoryInParent: true,
+  },
   
-  { name: "NavigationHistoryEntry", insecureContext: true, disabled: true },
+  {
+    name: "NavigationHistoryEntry",
+    insecureContext: true,
+    nightly: true,
+    sessionHistoryInParent: true,
+  },
   
   {
     name: "NavigationPrecommitController",
     insecureContext: true,
-    disabled: true,
+    nightly: true,
+    sessionHistoryInParent: true,
   },
   
   "NavigationPreloadManager",
   
-  { name: "NavigationTransition", insecureContext: true, disabled: true },
+  {
+    name: "NavigationTransition",
+    insecureContext: true,
+    nightly: true,
+    sessionHistoryInParent: true,
+  },
   
   { name: "Navigator", insecureContext: true },
   
@@ -1784,6 +1811,13 @@ let interfaceNamesInGlobalScope = [
   { name: "mozInnerScreenY", insecureContext: true },
   
   { name: "name", insecureContext: true },
+  
+  {
+    name: "navigation",
+    insecureContext: true,
+    nightly: true,
+    sessionHistoryInParent: true,
+  },
   
   { name: "navigator", insecureContext: true },
   
