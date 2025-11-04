@@ -838,18 +838,19 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
   gfxTextRun::Metrics metrics = textRun->MeasureText(
       range, gfxFont::LOOSE_INK_EXTENTS, nullptr, &provider);
   
-  nsRect fontBox(0, -metrics.mAscent, metrics.mAdvanceWidth,
-                 metrics.mAscent + metrics.mDescent);
+  gfxRect fontBox(0, -metrics.mAscent, metrics.mAdvanceWidth,
+                  metrics.mAscent + metrics.mDescent);
   metrics.mBoundingBox.UnionRect(metrics.mBoundingBox, fontBox);
 
   
   
-  nscoord baseline = metrics.mBoundingBox.y + metrics.mAscent;
-  nscoord x, width;
+  nscoord baseline =
+      NSToCoordRoundWithClamp(metrics.mBoundingBox.y + metrics.mAscent);
+  gfxFloat x, width;
   if (aFlags & eNoHorizontalOverflow) {
-    x = 0;
+    x = 0.0;
     width = textRun->GetAdvanceWidth(range, &provider);
-    if (width < 0) {
+    if (width < 0.0) {
       x = width;
       width = -width;
     }
@@ -857,7 +858,9 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
     x = metrics.mBoundingBox.x;
     width = metrics.mBoundingBox.width;
   }
-  nsRect fillInAppUnits(x, baseline, width, metrics.mBoundingBox.height);
+  nsRect fillInAppUnits(NSToCoordRoundWithClamp(x), baseline,
+                        NSToCoordRoundWithClamp(width),
+                        NSToCoordRoundWithClamp(metrics.mBoundingBox.height));
   fillInAppUnits.Inflate(inkOverflow);
   if (textRun->IsVertical()) {
     

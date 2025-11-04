@@ -230,7 +230,7 @@ class gfxTextRun : public gfxShapedText {
 
     
     
-    virtual nscoord GetHyphenWidth() const = 0;
+    virtual gfxFloat GetHyphenWidth() const = 0;
 
     
     virtual mozilla::gfx::ShapedTextFlags GetShapedTextFlags() const = 0;
@@ -338,10 +338,10 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  nscoord GetAdvanceWidth(Range aRange, const PropertyProvider* aProvider,
-                          PropertyProvider::Spacing* aSpacing = nullptr) const;
+  gfxFloat GetAdvanceWidth(Range aRange, const PropertyProvider* aProvider,
+                           PropertyProvider::Spacing* aSpacing = nullptr) const;
 
-  nscoord GetAdvanceWidth() const {
+  gfxFloat GetAdvanceWidth() const {
     return GetAdvanceWidth(Range(this), nullptr);
   }
 
@@ -349,7 +349,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  nscoord GetMinAdvanceWidth(Range aRange);
+  gfxFloat GetMinAdvanceWidth(Range aRange);
 
   
 
@@ -724,11 +724,11 @@ class gfxTextRun : public gfxShapedText {
     Range mRange;
     
     
-    nscoord mPartAdvance;
+    gfxFloat mPartAdvance;
     
     
     
-    nscoord mPartWidth;
+    gfxFloat mPartWidth;
 
     bool mClipBeforePart;
     bool mClipAfterPart;
@@ -822,7 +822,7 @@ class gfxTextRun : public gfxShapedText {
   
 
   
-  nscoord GetAdvanceForGlyphs(Range aRange) const;
+  int32_t GetAdvanceForGlyphs(Range aRange) const;
 
   
   
@@ -844,8 +844,8 @@ class gfxTextRun : public gfxShapedText {
   
   LigatureData ComputeLigatureData(Range aPartRange,
                                    const PropertyProvider* aProvider) const;
-  nscoord ComputePartialLigatureWidth(Range aPartRange,
-                                      const PropertyProvider* aProvider) const;
+  gfxFloat ComputePartialLigatureWidth(Range aPartRange,
+                                       const PropertyProvider* aProvider) const;
   void DrawPartialLigature(gfxFont* aFont, Range aRange,
                            mozilla::gfx::Point* aPt,
                            const PropertyProvider* aProvider,
@@ -856,6 +856,9 @@ class gfxTextRun : public gfxShapedText {
   
   
   bool ShrinkToLigatureBoundaries(Range* aRange) const;
+  
+  gfxFloat GetPartialLigatureWidth(Range aRange,
+                                   const PropertyProvider* aProvider) const;
   void AccumulatePartialLigatureMetrics(
       gfxFont* aFont, Range aRange, gfxFont::BoundingBoxType aBoundingBoxType,
       DrawTarget* aRefDrawTarget, const PropertyProvider* aProvider,
