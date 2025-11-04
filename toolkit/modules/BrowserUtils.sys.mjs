@@ -91,7 +91,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 ChromeUtils.defineLazyGetter(lazy, "gLocalization", () => {
-  return new Localization(["toolkit/global/browser-utils.ftl"], true);
+  return new Localization(
+    ["toolkit/global/browser-utils.ftl", "toolkit/downloads/downloadUtils.ftl"],
+    true
+  );
 });
 
 function stringPrefToSet(prefVal) {
@@ -246,8 +249,36 @@ export var BrowserUtils = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   formatURIForDisplay(uri, options = {}) {
-    let { showInsecureHTTP = false } = options;
+    let {
+      showInsecureHTTP = false,
+      showWWW = false,
+      onlyBaseDomain = false,
+      showFilenameForLocalURIs = false,
+    } = options;
+    
+    
+    if (uri && uri instanceof Ci.nsINestedURI && showFilenameForLocalURIs) {
+      return this.formatURIForDisplay(uri.innermostURI, options);
+    }
     switch (uri.scheme) {
       case "view-source": {
         let innerURI = uri.spec.substring("view-source:".length);
@@ -257,8 +288,14 @@ export var BrowserUtils = {
       
       case "https": {
         let host = uri.displayHostPort;
-        if (!showInsecureHTTP && host.startsWith("www.")) {
+        let removeSubdomains =
+          !showInsecureHTTP &&
+          (onlyBaseDomain || (!showWWW && host.startsWith("www.")));
+        if (removeSubdomains) {
           host = Services.eTLD.getSchemelessSite(uri);
+          if (uri.port != -1) {
+            host += ":" + uri.port;
+          }
         }
         if (showInsecureHTTP && uri.scheme == "http") {
           return "http://" + host;
@@ -269,7 +306,7 @@ export var BrowserUtils = {
         return "about:" + uri.filePath;
       case "blob":
         try {
-          let url = new URL(uri.specIgnoringRef);
+          let url = URL.fromURI(uri);
           
           if (url.origin && url.origin != "null") {
             return this.formatURIStringForDisplay(url.origin, options);
@@ -291,8 +328,22 @@ export var BrowserUtils = {
       }
       case "chrome":
       case "resource":
+      case "moz-icon":
+      case "moz-src":
       case "jar":
       case "file":
+        if (!showFilenameForLocalURIs) {
+          if (uri.scheme == "file") {
+            return lazy.gLocalization.formatValueSync(
+              "download-utils-done-file-scheme"
+            );
+          }
+          return lazy.gLocalization.formatValueSync(
+            "download-utils-done-scheme",
+            { scheme: uri.scheme }
+          );
+        }
+      
       default:
         try {
           let url = uri.QueryInterface(Ci.nsIURL);
@@ -318,7 +369,7 @@ export var BrowserUtils = {
           console.error(ex);
         }
     }
-    return uri.asciiHost || uri.spec;
+    return uri.spec;
   },
 
   
