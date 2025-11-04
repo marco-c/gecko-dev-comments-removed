@@ -80,8 +80,11 @@ enum IntegrityLevel {
 
 
 
+
+
 enum TokenLevel {
   USER_LOCKDOWN = 0,
+  USER_LOCKDOWN_WITH_TRAVERSE,
   USER_RESTRICTED,
   USER_LIMITED,
   USER_INTERACTIVE,
