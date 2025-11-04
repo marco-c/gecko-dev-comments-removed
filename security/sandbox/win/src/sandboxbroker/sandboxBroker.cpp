@@ -9,6 +9,7 @@
 #include "sandboxBroker.h"
 
 #include <aclapi.h>
+#include <sddl.h>
 #include <shlobj.h>
 #include <string>
 
@@ -717,6 +718,30 @@ static sandbox::MitigationFlags DynamicCodeFlagForSystemMediaLibraries() {
   return dynamicCodeFlag;
 }
 
+static auto GetProcessUserSidString() {
+  std::unique_ptr<wchar_t, LocalFreeDeleter> userSidString;
+  std::unique_ptr<HANDLE, CloseHandleDeleter> tokenHandle;
+  if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY,
+                          getter_Transfers(tokenHandle))) {
+    return userSidString;
+  }
+
+  BYTE tokenUserBuffer[sizeof(TOKEN_USER) + SECURITY_MAX_SID_SIZE];
+  DWORD len = sizeof(tokenUserBuffer);
+  if (!::GetTokenInformation(tokenHandle.get(), TokenUser, &tokenUserBuffer,
+                             len, &len)) {
+    return userSidString;
+  }
+
+  auto* tokenUser = reinterpret_cast<TOKEN_USER*>(tokenUserBuffer);
+  if (!::ConvertSidToStringSidW(tokenUser->User.Sid,
+                                getter_Transfers(userSidString))) {
+    userSidString.reset();
+  }
+
+  return userSidString;
+}
+
 
 #if !defined(MOZ_ASAN)
 static void HexEncode(const Span<const uint8_t>& aBytes, nsACString& aEncoded) {
@@ -1174,6 +1199,9 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     config->SetForceKnownDllLoadingFallback();
 
     
+    
+
+    
     result = config->AllowRegistryRead(
         L"HKEY_LOCAL_MACHINE\\Software\\Classes\\CLSID"
         L"\\{e79167d7-1b85-4d78-b603-798e0e1a4c67}*");
@@ -1225,6 +1253,28 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       }
     }
 #endif
+  }
+
+  if (aSandboxLevel >= 9) {
+    
+    
+    
+    
+    
+    auto userSidString = GetProcessUserSidString();
+    if (userSidString) {
+      std::wstring userClassKeyName(L"HKEY_USERS\\");
+      userClassKeyName += userSidString.get();
+      userClassKeyName += L"_Classes";
+      result = config->AllowRegistryRead(userClassKeyName.c_str());
+      if (sandbox::SBOX_ALL_OK != result) {
+        NS_ERROR("Failed to add rule for user's Classes.");
+        LOG_E("Failed (ResultCode %d) to add rule for user's Classes.", result);
+      }
+    } else {
+      NS_ERROR("Failed to get user's SID.");
+      LOG_E("Failed to get user's SID. %lx", ::GetLastError());
+    }
   }
 }
 
