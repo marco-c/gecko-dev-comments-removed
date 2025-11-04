@@ -240,10 +240,8 @@ function _getTargetRect(aTarget) {
   
   
   
-  aTarget = SpecialPowers.wrap(aTarget);
-  while (aTarget.ownerDocument.defaultView.browsingContext.embedderElement) {
-    const iframe =
-      aTarget.ownerDocument.defaultView.browsingContext.embedderElement;
+  while (aTarget.ownerDocument.defaultView.frameElement) {
+    const iframe = aTarget.ownerDocument.defaultView.frameElement;
     
     
     
@@ -285,9 +283,9 @@ function _getTargetRect(aTarget) {
 
 
 function getInProcessRootWindow(aWindow) {
-  let window = SpecialPowers.wrap(aWindow);
-  while (window.browsingContext.embedderElement) {
-    window = window.browsingContext.embedderElement.ownerDocument.defaultView;
+  let window = aWindow;
+  while (window.frameElement) {
+    window = window.frameElement.ownerDocument.defaultView;
   }
   return window;
 }
