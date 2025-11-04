@@ -13514,6 +13514,34 @@ const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
 const PREF_FEEDS_SECTION_TOPSTORIES = "feeds.section.topstories";
+
+
+
+
+
+
+
+function resetTimerToDefaults(dispatch, timerType) {
+  const originalTime = timerType === "focus" ? 1500 : 300;
+
+  
+  dispatch(actionCreators.AlsoToMain({
+    type: actionTypes.WIDGETS_TIMER_RESET,
+    data: {
+      timerType,
+      duration: originalTime,
+      initialDuration: originalTime
+    }
+  }));
+
+  
+  dispatch(actionCreators.AlsoToMain({
+    type: actionTypes.WIDGETS_TIMER_SET_TYPE,
+    data: {
+      timerType: "focus"
+    }
+  }));
+}
 function Widgets() {
   const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
   const {
@@ -13537,27 +13565,10 @@ function Widgets() {
   (0,external_React_namespaceObject.useEffect)(() => {
     const wasTimerEnabled = prevTimerEnabledRef.current;
     const isTimerEnabled = timerEnabled;
-    const originalTime = timerType === "focus" ? 1500 : 300;
 
     
     if (wasTimerEnabled && !isTimerEnabled && timerData) {
-      
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_RESET,
-        data: {
-          timerType,
-          duration: originalTime,
-          initialDuration: originalTime
-        }
-      }));
-
-      
-      dispatch(actionCreators.AlsoToMain({
-        type: actionTypes.WIDGETS_TIMER_SET_TYPE,
-        data: {
-          timerType: "focus"
-        }
-      }));
+      resetTimerToDefaults(dispatch, timerType);
     }
 
     
