@@ -19,7 +19,7 @@ namespace mozilla::dom {
 
 class PermissionObserver;
 class PermissionStatus;
-class WeakWorkerRef;
+class ThreadSafeWorkerRef;
 
 class PermissionStatusSink {
  public:
@@ -70,7 +70,7 @@ class PermissionStatusSink {
 
   
   
-  RefPtr<WeakWorkerRef> mWorkerRef MOZ_GUARDED_BY(mMutex);
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef MOZ_GUARDED_BY(mMutex);
 
   PermissionName mPermissionName;
   nsCString mPermissionType;

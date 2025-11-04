@@ -51,10 +51,26 @@ PermissionStatusSink::Init() {
 
     MutexAutoLock lock(mMutex);
 
-    mWorkerRef = WeakWorkerRef::Create(
-        workerPrivate, [self = RefPtr(this)] { self->Disentangle(); });
+    RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
+        workerPrivate, "PermissionStatusSink",
+        [self = RefPtr(this)]() { self->Disentangle(); });
+    if (NS_WARN_IF(!workerRef)) {
+      
+      
+      
+      
+      return PermissionStatePromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                     __func__);
+      ;
+    }
+
+    mWorkerRef = new ThreadSafeWorkerRef(workerRef);
   }
 
+  
+  
+  
+  
   return InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
                      [self = RefPtr(this)] {
                        MOZ_ASSERT(!self->mObserver);
@@ -102,6 +118,17 @@ bool PermissionStatusSink::MaybeUpdatedByNotifyOnlyOnMainThread(
 void PermissionStatusSink::PermissionChangedOnMainThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
+  
+  if (!mSerialEventTarget->IsOnCurrentThread()) {
+    MutexAutoLock lock(mMutex);
+    if (!mWorkerRef) {
+      return;
+    }
+  }
+
+  
+  
+  
   ComputeStateOnMainThread()->Then(
       mSerialEventTarget, __func__,
       [self = RefPtr(this)](
@@ -117,16 +144,15 @@ void PermissionStatusSink::Disentangle() {
 
   mPermissionStatus = nullptr;
 
-  {
-    MutexAutoLock lock(mMutex);
-    mWorkerRef = nullptr;
-  }
-
   NS_DispatchToMainThread(
       NS_NewRunnableFunction(__func__, [self = RefPtr(this)] {
         if (self->mObserver) {
           self->mObserver->RemoveSink(self);
           self->mObserver = nullptr;
+        }
+        {
+          MutexAutoLock lock(self->mMutex);
+          self->mWorkerRef = nullptr;
         }
       }));
 }
@@ -167,7 +193,7 @@ PermissionStatusSink::ComputeStateOnMainThread() {
 
     
     
-    WorkerPrivate* workerPrivate = mWorkerRef->GetUnsafePrivate();
+    WorkerPrivate* workerPrivate = mWorkerRef->Private();
     MOZ_ASSERT(workerPrivate);
 
     ancestorWindow = workerPrivate->GetAncestorWindow();
