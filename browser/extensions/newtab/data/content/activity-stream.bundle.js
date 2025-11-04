@@ -12963,27 +12963,6 @@ const formatTime = seconds => {
 
 
 
-const isNumericValue = input => {
-  
-  return input && /^\d+$/.test(input);
-};
-
-
-
-
-
-
-
-const isAtMaxLength = currentValue => {
-  return currentValue.length >= 2;
-};
-
-
-
-
-
-
-
 
 
 
@@ -13285,9 +13264,13 @@ const FocusTimer = ({
     const values = e.target.innerText.trim();
 
     
-    if (!isNumericValue(input)) {
+    if (!/^\d+$/.test(input)) {
       e.preventDefault();
-      return;
+    }
+
+    
+    if (values.length >= 2) {
+      e.preventDefault();
     }
     const selection = window.getSelection();
     const selectedText = selection.toString();
@@ -13305,12 +13288,6 @@ const FocusTimer = ({
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
-      return;
-    }
-
-    
-    if (isAtMaxLength(values)) {
-      e.preventDefault();
     }
   };
   const handleFocus = e => {
