@@ -1986,7 +1986,12 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
     if (NS_FAILED(rv)) {
       
       
-      MOZ_ASSERT(false, "Dispatch SPDY Transaction");
+      
+      
+      
+      MOZ_ASSERT(rv == NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+                 "Dispatch H2 transaction should only fail with Local Network "
+                 "Access denied");
       LOG(("ProcessSpdyPendingQ Dispatch Transaction failed trans=%p\n",
            pendingTransInfo->Transaction()));
       pendingTransInfo->Transaction()->Close(rv);
