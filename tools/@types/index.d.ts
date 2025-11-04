@@ -21,6 +21,7 @@
 
 
 
+
 import type {} from "./lib.gecko.augmentations.d.ts";
 
 declare global {
