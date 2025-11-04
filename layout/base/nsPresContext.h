@@ -228,12 +228,7 @@ class nsPresContext : public nsISupports,
   
 
 
-
-
-
-
-
-  nsIWidget* GetNearestWidget(nsPoint* aOffset = nullptr);
+  nsIWidget* GetNearestWidget() const;
 
   
 
