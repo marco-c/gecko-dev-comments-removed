@@ -431,8 +431,9 @@ class TaskController {
   std::stack<RefPtr<Task>> mCurrentTasksMT;
 
   
-  std::set<RefPtr<Task>, Task::PriorityCompare> mThreadableTasks;
-  std::set<RefPtr<Task>, Task::PriorityCompare> mMainThreadTasks;
+  using PrioritySortedTasks = std::set<RefPtr<Task>, Task::PriorityCompare>;
+  PrioritySortedTasks mThreadableTasks;
+  PrioritySortedTasks mMainThreadTasks;
 
   
   

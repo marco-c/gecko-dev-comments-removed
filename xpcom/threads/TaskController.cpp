@@ -1494,26 +1494,22 @@ void TaskController::ProcessUpdatedPriorityModifier(TaskManager* aManager) {
 
   int32_t modifier = aManager->mCurrentPriorityModifier;
 
-  std::vector<RefPtr<Task>> storedTasks;
   
-  for (auto iter = mMainThreadTasks.begin(); iter != mMainThreadTasks.end();) {
-    if ((*iter)->mTaskManager == aManager) {
-      storedTasks.push_back(*iter);
-      iter = mMainThreadTasks.erase(iter);
-    } else {
-      iter++;
-    }
-  }
-
   
-  for (RefPtr<Task>& ref : storedTasks) {
+  PrioritySortedTasks managerTasks;
+  auto cur = mMainThreadTasks.begin();
+  while (cur != mMainThreadTasks.end()) {
     
-    Task* task = ref;
-    task->mPriorityModifier = modifier;
-    auto insertion = mMainThreadTasks.insert(std::move(ref));
-    MOZ_ASSERT(insertion.second);
-    task->mIterator = insertion.first;
+    auto next = std::next(cur);
+    if (cur->get()->mTaskManager == aManager) {
+      auto task = mMainThreadTasks.extract(cur);
+      task.value()->mPriorityModifier = modifier;
+      managerTasks.insert(std::move(task));
+    }
+    cur = std::move(next);
   }
+  
+  mMainThreadTasks.merge(std::move(managerTasks));
 }
 
 }  
