@@ -1474,14 +1474,7 @@ nsresult ModuleLoaderBase::EvaluateModule(ModuleLoadRequest* aRequest) {
   mozilla::dom::AutoEntryScript aes(mGlobalObject, "EvaluateModule",
                                     NS_IsMainThread());
 
-  
-  
-  
-  
-  
-  return EvaluateModuleInContext(
-      aes.cx(), aRequest,
-      IsForServiceWorker() ? ThrowModuleErrorsSync : ReportModuleErrorsAsync);
+  return EvaluateModuleInContext(aes.cx(), aRequest, ReportModuleErrorsAsync);
 }
 
 nsresult ModuleLoaderBase::EvaluateModuleInContext(
@@ -1557,13 +1550,6 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   
   if (!ThrowOnModuleEvaluationFailure(aCx, evaluationPromise, errorBehaviour)) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
-
-    if (IsForServiceWorker()) {
-      
-      
-      
-      return NS_ERROR_ABORT;
-    }
   }
 
   
