@@ -1227,7 +1227,9 @@ already_AddRefed<DictionaryCacheEntry> DictionaryOrigin::AddEntry(
           
           
           
-          mEntries[i]->RemoveEntry(mEntry);
+          if (mEntry) {
+            mEntries[i]->RemoveEntry(mEntry);
+          }
           mEntries.RemoveElementAt(i);
         }
       } else {
