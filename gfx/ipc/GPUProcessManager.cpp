@@ -106,7 +106,6 @@ GPUProcessManager::GPUProcessManager()
       mAppInForeground(true),
       mProcess(nullptr),
       mProcessToken(0),
-      mProcessStable(true),
       mGPUChild(nullptr) {
   MOZ_COUNT_CTOR(GPUProcessManager);
 
@@ -714,24 +713,9 @@ bool GPUProcessManager::FallbackFromAcceleration(wr::WebRenderError aError,
   }
 }
 
-bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
+void GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
                                                const nsCString& aMsg) {
   
-  
-  
-  
-  if (IsProcessStable(TimeStamp::Now()) || (kIsAndroid && !mAppInForeground)) {
-    if (mProcess) {
-      mProcess->KillProcess( false);
-    } else {
-      SimulateDeviceReset();
-    }
-
-    mLastError = Some(aError);
-    mLastErrorMsg = Some(aMsg);
-    return false;
-  }
-
   mLastError.reset();
   mLastErrorMsg.reset();
 
@@ -755,20 +739,17 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
     mUnstableProcessAttempts = 1;
     mGPUChild->EnsureGPUReady( true);
   }
-
-  return true;
 }
 
 void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
                                          const nsCString& aMsg) {
-  if (DisableWebRenderConfig(aError, aMsg)) {
-    if (mProcess) {
-      DestroyRemoteCompositorSessions();
-    } else {
-      DestroyInProcessCompositorSessions();
-    }
-    NotifyListenersOnCompositeDeviceReset();
+  DisableWebRenderConfig(aError, aMsg);
+  if (mProcess) {
+    DestroyRemoteCompositorSessions();
+  } else {
+    DestroyInProcessCompositorSessions();
   }
+  NotifyListenersOnCompositeDeviceReset();
 }
 
 void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
@@ -797,7 +778,18 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
   }
 #endif
 
-  DisableWebRender(aError, nsCString());
+  
+  
+  
+  if (mProcess && (IsProcessStable(TimeStamp::Now()) ||
+                   (kIsAndroid && !mAppInForeground))) {
+    mProcess->KillProcess( false);
+    mLastError = Some(aError);
+    mLastErrorMsg = Some(""_ns);
+    return;
+  }
+
+  DisableWebRender(aError, ""_ns);
 }
 
 
@@ -897,10 +889,19 @@ void GPUProcessManager::OnRemoteProcessDeviceReset(
   gfxCriticalNote << "Detect DeviceReset " << aReason << " " << aPlace
                   << " in GPU process";
 
-  if (OnDeviceReset( true) &&
-      !DisableWebRenderConfig(wr::WebRenderError::EXCESSIVE_RESETS,
-                              nsCString())) {
-    return;
+  if (OnDeviceReset( true)) {
+    
+    
+    
+    if (mProcess && (IsProcessStable(TimeStamp::Now()) ||
+                     (kIsAndroid && !mAppInForeground))) {
+      mProcess->KillProcess( false);
+      mLastError = Some(wr::WebRenderError::EXCESSIVE_RESETS);
+      mLastErrorMsg = Some(""_ns);
+      return;
+    }
+
+    DisableWebRenderConfig(wr::WebRenderError::EXCESSIVE_RESETS, ""_ns);
   }
 
   DestroyRemoteCompositorSessions();

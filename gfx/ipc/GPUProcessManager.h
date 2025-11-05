@@ -284,8 +284,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   bool OnDeviceReset(bool aTrackThreshold);
 
-  
-  bool DisableWebRenderConfig(wr::WebRenderError aError, const nsCString& aMsg);
+  void DisableWebRenderConfig(wr::WebRenderError aError, const nsCString& aMsg);
 
   void FallbackToSoftware(const char* aMessage);
 
@@ -407,7 +406,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   GPUProcessHost* mProcess;
   uint64_t mProcessToken;
-  bool mProcessStable;
+  bool mProcessStable = false;
   bool mProcessStableOnce = false;
   Maybe<wr::WebRenderError> mLastError;
   Maybe<nsCString> mLastErrorMsg;
