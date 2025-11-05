@@ -67,9 +67,8 @@ TBPL_RETRY = 4
 
 
 
-NUM_THREADS = int(cpu_count() * 4)
-if sys.platform == "win32":
-    NUM_THREADS = int(cpu_count() * 2)
+
+NUM_THREADS = int(cpu_count() * 2.5)
 
 EXPECTED_LOG_ACTIONS = set(
     [
