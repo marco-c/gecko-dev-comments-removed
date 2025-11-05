@@ -1509,7 +1509,8 @@ static bool MaybeCheckUnloadingIsCanceled(
   }
 
   nsCOMPtr<nsIPrincipal> targetPrincipal =
-      BasePrincipal::CreateContentPrincipal(targetURI, OriginAttributes{});
+      BasePrincipal::CreateContentPrincipal(targetURI,
+                                            traversable->OriginAttributesRef());
 
   
   if (!windowGlobalParent->DocumentPrincipal()->Equals(targetPrincipal)) {
