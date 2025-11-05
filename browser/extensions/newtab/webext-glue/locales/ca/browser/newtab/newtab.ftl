@@ -397,7 +397,7 @@ newtab-wallpaper-abstract-orange = Formes taronges
 newtab-wallpaper-gradient-orange = Degradat taronja i rosa
 newtab-wallpaper-abstract-blue-purple = Formes blaves i porpres
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografies
 newtab-wallpaper-beach-at-sunrise = Platja a l'alba
@@ -503,3 +503,7 @@ newtab-section-manage-topics-button-v2 =
     .label = Gestiona els temes
 newtab-section-mangage-topics-followed-topics-empty-state = Encara no seguiu cap tema.
 newtab-section-mangage-topics-blocked-topics-empty-state = Encara no heu blocat cap tema.
+
+## Strings for reporting ads and content
+
+newtab-report-cancel = Cancel·la
