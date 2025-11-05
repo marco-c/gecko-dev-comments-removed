@@ -1389,6 +1389,8 @@ function getSmallIncrementKey() {
 
 
 
+
+
 function checkRuleViewContent(view, expectedElements) {
   const rulesInView = Array.from(view.element.children);
   is(
@@ -1438,6 +1440,15 @@ function checkRuleViewContent(view, expectedElements) {
         `Expected ancestor rules data displayed for ${selector}`
       );
     }
+
+    const isInherited = elementInView.matches(
+      ".ruleview-header-inherited ~ .ruleview-rule"
+    );
+    is(
+      isInherited,
+      expectedElement.inherited ?? false,
+      `Element #${i} (${selector}) is ${expectedElement.inherited ? "inherited" : "not inherited"}`
+    );
 
     const declarations = elementInView.querySelectorAll(".ruleview-property");
     is(
