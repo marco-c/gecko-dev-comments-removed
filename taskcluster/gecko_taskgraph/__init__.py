@@ -29,8 +29,6 @@ taskgraph_morph.registered_morphs = []
 
 tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
 
-os.environ.setdefault("TASKCLUSTER_ROOT_URL", tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL)
-
 
 
 
