@@ -49,7 +49,7 @@ namespace {
 constexpr size_t kOneMemPage = 4096;
 
 constexpr size_t kIPCMemSize = kOneMemPage * 2;
-constexpr size_t kPolMemSize = kOneMemPage * 6;
+constexpr size_t kPolMemSize = kOneMemPage * kPolMemPageCount;
 
 
 #if defined(_WIN64)

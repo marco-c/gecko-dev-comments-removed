@@ -15,6 +15,9 @@
 
 namespace sandbox {
 
+
+constexpr size_t kPolMemPageCount = 14;
+
 class AppContainer;
 
 
