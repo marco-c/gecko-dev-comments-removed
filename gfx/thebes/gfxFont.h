@@ -1657,22 +1657,23 @@ class gfxFont {
     nscoord mBefore;
     nscoord mAfter;
   };
-
   
 
 
   struct RunMetrics {
+    RunMetrics() { mAdvanceWidth = mAscent = mDescent = 0.0; }
+
     void CombineWith(const RunMetrics& aOther, bool aOtherIsOnLeft);
 
     
     
     
     
-    nscoord mAdvanceWidth = 0;
+    gfxFloat mAdvanceWidth;
 
     
-    nscoord mAscent = 0;   
-    nscoord mDescent = 0;  
+    gfxFloat mAscent;   
+    gfxFloat mDescent;  
 
     
     
@@ -1680,7 +1681,7 @@ class gfxFont {
     
     
     
-    nsRect mBoundingBox;
+    gfxRect mBoundingBox;
   };
 
   
@@ -1956,7 +1957,7 @@ class gfxFont {
                      DrawTarget* aRefDrawTarget, Spacing* aSpacing,
                      gfxGlyphExtents* aExtents, bool aIsRTL,
                      bool aNeedsGlyphExtents, RunMetrics& aMetrics,
-                     nscoord* aAdvanceMin, nscoord* aAdvanceMax);
+                     gfxFloat* aAdvanceMin, gfxFloat* aAdvanceMax);
 
   bool MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
