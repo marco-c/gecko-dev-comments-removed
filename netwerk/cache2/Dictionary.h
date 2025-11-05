@@ -340,7 +340,7 @@ class DictionaryCache final {
   
   void RemoveDictionary(const nsACString& aKey);
   
-  void RemoveOrigin(const nsACString& aKey);
+  void RemoveOrigin(const nsACString& aOrigin);
 
   nsresult RemoveEntry(nsIURI* aURI, const nsACString& aKey);
 
@@ -362,6 +362,8 @@ class DictionaryCache final {
   }
 
  private:
+  void RemoveOriginForInternal(const nsACString& aKey);
+
   static StaticRefPtr<nsICacheStorage> sCacheStorage;
 
   
