@@ -687,7 +687,10 @@ impl SpatialNode {
                                          info.previously_applied_offset.x,
                                          &info.horizontal_offset_bounds);
 
-        sticky_offset
+        
+        
+        
+        sticky_offset + info.previously_applied_offset
     }
 
     pub fn prepare_state_for_children(&self, state: &mut TransformUpdateState) {
