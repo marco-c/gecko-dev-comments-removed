@@ -654,10 +654,10 @@ impl MidiOutputConnection {
             }
 
             
-            let packet: u32 = 0;
-            let ptr = &packet as *const u32 as *mut u8;
-            for i in 0..nbytes {
-                unsafe { *ptr.offset(i as isize) = message[i] };
+            let mut packet: u32 = 0;
+            let ptr = std::ptr::addr_of_mut!(packet).cast::<u8>();
+            for (i, item) in message.iter().enumerate().take(nbytes) {
+                unsafe { *ptr.add(i) = *item };
             }
 
             
