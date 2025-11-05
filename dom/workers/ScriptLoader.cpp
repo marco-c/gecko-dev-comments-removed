@@ -1146,6 +1146,11 @@ nsresult WorkerScriptLoader::FillCompileOptionsForRequest(
     aOptions->setSourceMapURL(aRequest->GetSourceMapURL().get());
   }
 
+  
+  if (mWorkerRef->Private()->IsServiceWorker() && aRequest->IsModuleRequest()) {
+    aOptions->topLevelAwait = false;
+  }
+
   return NS_OK;
 }
 
