@@ -53,7 +53,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsTextControlFrame.h"
 #include "nsTextNode.h"
-#include "nsView.h"
 
 namespace mozilla {
 
@@ -2441,6 +2440,12 @@ void TextControlState::UnbindFromFrame(nsTextControlFrame* aFrame) {
     DebugOnly<bool> ok = SetValue(value, ValueSetterOption::ByInternalAPI);
     
     NS_WARNING_ASSERTION(ok, "SetValue() couldn't allocate memory");
+    
+    
+    if (IsSelectionCached()) {
+      SelectionProperties& props = GetSelectionProperties();
+      props.SetIsDirty();
+    }
   }
 }
 

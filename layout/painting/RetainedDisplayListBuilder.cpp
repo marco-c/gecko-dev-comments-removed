@@ -19,7 +19,6 @@
 #include "nsIFrameInlines.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
-#include "nsViewManager.h"
 
 
 
@@ -305,8 +304,14 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
         !item->GetActiveScrolledRoot()) {
       agrFrame = aAsyncAncestor;
     } else {
-      agrFrame = item->GetActiveScrolledRoot()
-                     ->mScrollContainerFrame->GetScrolledFrame();
+      auto* scrollContainerFrame =
+          item->GetActiveScrolledRoot()->mScrollContainerFrame;
+      if (MOZ_UNLIKELY(!scrollContainerFrame)) {
+        MOZ_DIAGNOSTIC_ASSERT(false);
+        gfxCriticalNoteOnce << "Found null mScrollContainerFrame in asr";
+        return false;
+      }
+      agrFrame = scrollContainerFrame->GetScrolledFrame();
     }
 
     if (aAGR && agrFrame != aAGR) {
