@@ -1458,6 +1458,9 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
     
     
+    
+    
+    
     void remove() {
       mTable.remove(this->mCur);
       mRemoved = true;
@@ -1492,6 +1495,11 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     void rekey(const Key& k) { rekey(k, k); }
 
     
+    
+    
+    
+    
+    
     ~ModIterator() {
       if (mRekeyed) {
         mTable.mGen++;
@@ -1499,7 +1507,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
       }
 
       if (mRemoved) {
-        mTable.compact();
+        mTable.shrinkToBestCapacity();
       }
     }
   };
@@ -1541,6 +1549,8 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
     void popFront() { return mIter.next(); }
 
+    
+    
     void removeFront() { mIter.remove(); }
 
     NonConstT& mutableFront() { return mIter.getMutable(); }
@@ -2046,6 +2056,9 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   
   
   
+  
+  
+  
   void compact() {
     if (empty()) {
       
@@ -2057,9 +2070,11 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
       return;
     }
 
-    uint32_t bestCapacity = this->bestCapacity(mEntryCount);
-    MOZ_ASSERT(bestCapacity <= capacity());
+    shrinkToBestCapacity();
+  }
 
+  void shrinkToBestCapacity() {
+    uint32_t bestCapacity = this->bestCapacity(mEntryCount);
     if (bestCapacity < capacity()) {
       (void)changeTableSize(bestCapacity, DontReportFailure);
     }
