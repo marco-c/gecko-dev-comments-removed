@@ -236,7 +236,10 @@ class MozlintParser(ArgumentParser):
         args.extra_args = extra
 
         self.validate(args)
-        return args, extra
+        
+        
+        
+        return args, []
 
     def validate(self, args):
         if args.edit and not os.environ.get("EDITOR"):
