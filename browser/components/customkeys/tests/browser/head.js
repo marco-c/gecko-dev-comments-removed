@@ -13,6 +13,10 @@ const consts = {
   historyDisplay: isMac ? "⇧⌘H" : "Ctrl+H",
   historyModifiers: isMac ? "accel,shift" : "accel",
   historyOptions: { accelKey: true, shiftKey: isMac },
+  
+  downloadsDisplay: (isMac && "⌘J") || (isLinux && "Ctrl+Shift+Y") || "Ctrl+J",
+  
+  newWindowDisplay: isMac ? "⌘N" : "Ctrl+N",
 
   
   
@@ -21,5 +25,6 @@ const consts = {
   unusedOptions: { accelKey: true, shiftKey: true },
   unusedKey: isLinux ? "Q" : "Y",
   unusedModifiersDisplay: isMac ? "⇧⌘" : "Ctrl+Shift+",
+  unusedModifiersArgs: ["KEY_Shift", { accelKey: true }],
 };
 consts.unusedDisplay = `${consts.unusedModifiersDisplay}${consts.unusedKey}`;
