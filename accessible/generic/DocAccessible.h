@@ -129,8 +129,7 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-  void QueueCacheUpdateForDependentRelations(
-      LocalAccessible* aAcc, const nsAttrValue* aOldId = nullptr);
+  void QueueCacheUpdateForDependentRelations(LocalAccessible* aAcc);
 
   
 
