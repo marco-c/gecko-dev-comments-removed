@@ -3,28 +3,29 @@
 
 
 
-function observeTopic(aTopic) {
+const TEST_PATH =
+  getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    
+    "http://example.com"
+  ) + "dummy_page.html";
+
+const TOPIC = "browsing-context-active-change";
+
+async function waitForActiveChange() {
   return new Promise(resolve => {
     function observer(subject, topic) {
-      is(topic, aTopic, "observing correct topic");
+      is(topic, TOPIC, "observing correct topic");
       ok(
         BrowsingContext.isInstance(subject),
         "subject to be a BrowsingContext"
       );
-      Services.obs.removeObserver(observer, aTopic);
+      Services.obs.removeObserver(observer, TOPIC);
       resolve();
     }
 
-    Services.obs.addObserver(observer, aTopic);
+    Services.obs.addObserver(observer, TOPIC);
   });
-}
-
-function waitForActiveChange() {
-  return observeTopic("browsing-context-active-change");
-}
-
-function waitForAttached() {
-  return observeTopic("browsing-context-attached");
 }
 
 add_task(async function () {
@@ -48,61 +49,6 @@ add_task(async function () {
     true,
     "The browsing context is active again"
   );
-
-  BrowserTestUtils.removeTab(tab);
-});
-
-
-add_task(async function () {
-  const TEST_PATH1 =
-    getRootDirectory(gTestPath).replace(
-      "chrome://mochitests/content",
-      
-      "http://example.com"
-    ) + "dummy_page.html";
-  const TEST_PATH2 =
-    getRootDirectory(gTestPath).replace(
-      "chrome://mochitests/content",
-      
-      "http://example.com"
-    ) + "dummy_iframe_page.html";
-
-  let attached = waitForActiveChange();
-  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH1);
-  await attached;
-
-  const firstBC = tab.linkedBrowser.browsingContext;
-  is(firstBC.isActive, true, "The first browsing context is now active");
-  is(firstBC.currentURI.spec, TEST_PATH1);
-
-  
-  attached = waitForActiveChange();
-  await loadURI(TEST_PATH2);
-  await attached;
-
-  const secondBC = tab.linkedBrowser.browsingContext;
-  isnot(firstBC, secondBC);
-
-  is(secondBC.isActive, true, "The second browsing context is now active");
-  is(secondBC.currentURI.spec, TEST_PATH2);
-  is(firstBC.isActive, false, "The first browsing context is no longer active");
-  is(firstBC.currentURI.spec, TEST_PATH1);
-
-  
-  
-  const stoppedLoadingPromise = BrowserTestUtils.browserStopped(
-    tab.linkedBrowser,
-    TEST_PATH1
-  );
-  gBrowser.goBack();
-  await stoppedLoadingPromise;
-
-  is(
-    secondBC.isActive,
-    false,
-    "The second browsing context is no longer active"
-  );
-  is(firstBC.isActive, true, "The first browsing context is active again");
 
   BrowserTestUtils.removeTab(tab);
 });

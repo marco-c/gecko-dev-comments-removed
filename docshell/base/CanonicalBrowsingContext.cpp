@@ -323,10 +323,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   }
 
   aNewContext->mRestoreState = mRestoreState.forget();
-  Transaction selfTxn;
-  selfTxn.SetHasRestoreData(false);
-  selfTxn.SetExplicitActive(ExplicitActiveStatus::Inactive);
-  MOZ_ALWAYS_SUCCEEDS(selfTxn.Commit(this));
+  MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(false));
 
   
   
