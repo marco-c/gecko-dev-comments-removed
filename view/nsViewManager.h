@@ -202,44 +202,6 @@ class nsViewManager final {
 
   nsDeviceContext* GetDeviceContext() const { return mContext; }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  class MOZ_STACK_CLASS AutoDisableRefresh {
-   public:
-    explicit AutoDisableRefresh(nsViewManager* aVM) {
-      if (aVM) {
-        mRootVM = aVM->IncrementDisableRefreshCount();
-      }
-    }
-    ~AutoDisableRefresh() {
-      if (mRootVM) {
-        mRootVM->DecrementDisableRefreshCount();
-      }
-    }
-
-   private:
-    AutoDisableRefresh(const AutoDisableRefresh& aOther);
-    const AutoDisableRefresh& operator=(const AutoDisableRefresh& aOther);
-
-    RefPtr<nsViewManager> mRootVM;
-  };
-
- private:
-  friend class AutoDisableRefresh;
-
-  nsViewManager* IncrementDisableRefreshCount();
-  void DecrementDisableRefreshCount();
-
  public:
   
 
@@ -340,13 +302,6 @@ class nsViewManager final {
   }
   bool IsRootVM() const { return !mRootViewManager; }
 
-  
-  
-  
-  bool IsPaintingAllowed() {
-    return RootViewManager()->mRefreshDisableCount == 0;
-  }
-
   MOZ_CAN_RUN_SCRIPT void WillPaintWindow(nsIWidget* aWidget);
   MOZ_CAN_RUN_SCRIPT
   bool PaintWindow(nsIWidget* aWidget, const LayoutDeviceIntRegion& aRegion);
@@ -374,8 +329,6 @@ class nsViewManager final {
   
   
   
-
-  int32_t mRefreshDisableCount;
   
   bool mPainting;
   bool mRecursiveRefreshPending;
