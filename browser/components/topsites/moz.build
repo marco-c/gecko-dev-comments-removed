@@ -4,7 +4,7 @@
 
 
 
-EXTRA_JS_MODULES.topsites += [
+MOZ_SRC_FILES += [
     "constants.mjs",
     "TippyTopProvider.sys.mjs",
     "TopSites.sys.mjs",
