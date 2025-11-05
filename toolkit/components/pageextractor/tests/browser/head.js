@@ -1,6 +1,9 @@
 
 
 
+const BLANK_PAGE =
+  "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
+
 
 
 
@@ -128,4 +131,52 @@ function click(button, message) {
     throw new Error("The button was hidden when trying to click it.");
   }
   button.click();
+}
+
+
+
+
+async function openSupportFile(file) {
+  
+  const url_prefix = "https://example.com/browser/";
+  const path_prefix = "toolkit/components/pageextractor/tests/browser/";
+  const url = url_prefix + path_prefix + file;
+
+  
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    BLANK_PAGE,
+    true 
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+     false,
+    url
+  );
+
+  async function cleanup() {
+    if (url.endsWith(".pdf")) {
+      
+      
+      await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+        const viewer = content.wrappedJSObject.PDFViewerApplication;
+        await viewer.testingClose();
+      });
+    }
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  return {
+    cleanup,
+    
+
+
+    getPageExtractor() {
+      return tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
+        "PageExtractor"
+      );
+    },
+  };
 }
