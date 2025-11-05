@@ -16,6 +16,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -244,5 +245,89 @@ class InteractiveWidgetTest : BaseSessionTest() {
 
         
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun bug1994311() {
+        mainSession.setActive(true)
+        sessionRule.display?.run { setDynamicToolbarMaxHeight(0) }
+
+        mainSession.loadTestPath(BaseSessionTest.BUG1994311_HTML_PATH)
+        mainSession.waitForPageStop()
+        mainSession.promiseAllPaintsDone()
+        mainSession.flushApzRepaints()
+
+        val viewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
+
+        
+        ensureKeyboardOpen()
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        
+        mainSession.panZoomController.scrollBy(
+            ScreenLength.zero(),
+            ScreenLength.fromPixels(viewportHeight),
+            PanZoomController.SCROLL_BEHAVIOR_AUTO,
+        )
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        var scrollY = mainSession.evaluateJS("window.scrollY") as Double
+
+        
+        assertThat(
+              "The layout scroll offset hasn't reached the destination",
+              scrollY,
+              not(equalTo(viewportHeight)),
+            )
+
+        var resizeEventPromise = mainSession.evaluatePromiseJS(
+            """
+              new Promise(resolve => {
+                visualViewport.addEventListener('resize', () => {
+                  resolve(true);
+                }, { once: true });
+              });
+            """.trimIndent(),
+        )
+        
+        
+        mainSession.waitForRoundTrip()
+
+        
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
+
+        assertThat(
+            "The visual viewport height should be changed",
+            resizeEventPromise.value as Boolean,
+            equalTo(true),
+        )
+
+        val currentViewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
+        assertThat(
+            "The visual viewport height is restored to the original one",
+            currentViewportHeight,
+            equalTo(viewportHeight),
+        )
+
+        
+        
+        
+        
+        
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        scrollY = mainSession.evaluateJS("window.scrollY") as Double
+
+        assertThat(
+              "Now the layout scroll offset is equal to the visual scroll destination",
+              scrollY,
+              equalTo(viewportHeight),
+            )
     }
 }
