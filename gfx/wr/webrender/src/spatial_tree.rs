@@ -1379,11 +1379,8 @@ pub fn get_external_scroll_offset<S: SpatialNodeContainer>(
             SpatialNodeType::ScrollFrame(ref scrolling) => {
                 offset += scrolling.external_scroll_offset;
             }
-            SpatialNodeType::StickyFrame(ref sticky) => {
+            SpatialNodeType::StickyFrame(..) => {
                 
-                
-                
-                offset -= sticky.previously_applied_offset;
             }
             SpatialNodeType::ReferenceFrame(..) => {
                 
