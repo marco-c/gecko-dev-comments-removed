@@ -95,8 +95,8 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
     
     
     
-    return aModuleType != JS::ModuleType::Unknown &&
-           aModuleType != JS::ModuleType::CSS;
+    return aModuleType == JS::ModuleType::JavaScript ||
+           aModuleType == JS::ModuleType::JSON;
   }
 };
 
