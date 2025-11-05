@@ -25,7 +25,6 @@ pub trait CustomDistribution: TestGetValue<Output = DistributionData> {
     
     
     
-    
     fn accumulate_samples_signed(&self, samples: Vec<i64>);
 
     

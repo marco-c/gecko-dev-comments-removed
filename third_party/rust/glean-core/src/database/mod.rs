@@ -147,7 +147,7 @@ pub struct Database {
     pub(crate) write_timings: RefCell<Vec<i64>>,
 
     
-    load_sizes: Option<LoadSizesObject>,
+    pub(crate) load_sizes: Option<LoadSizesObject>,
 }
 
 impl MallocSizeOf for Database {

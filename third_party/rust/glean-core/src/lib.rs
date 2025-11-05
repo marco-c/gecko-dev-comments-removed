@@ -587,6 +587,11 @@ fn initialize_inner(
             
             
             record_dir_info_and_submit_health_ping(collect_directory_info(data_path), "post_init");
+
+            let state = global_state().lock().unwrap();
+            if let Err(e) = state.callbacks.trigger_upload() {
+                log::error!("Triggering upload failed. Error: {}", e);
+            }
         }
         let state = global_state().lock().unwrap();
         state.callbacks.initialize_finished();

@@ -86,6 +86,12 @@ fn signaling_done() {
     barrier.wait();
 
     
+    
+    
+    std::thread::yield_now();
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
+    
     pings::custom_ping.submit(None);
 
     

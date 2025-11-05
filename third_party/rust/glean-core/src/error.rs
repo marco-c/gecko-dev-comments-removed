@@ -62,6 +62,9 @@ pub enum ErrorKind {
 
     
     PingBodyOverflow(usize),
+
+    
+    UuidError(uuid::Error),
 }
 
 
@@ -117,6 +120,7 @@ impl Display for Error {
                 "Ping request body size exceeded maximum size allowed: {}kB.",
                 s / 1024
             ),
+            UuidError(e) => write!(f, "Failed to parse UUID: {}", e),
         }
     }
 }
@@ -165,5 +169,56 @@ impl From<OsString> for Error {
 impl From<std::convert::Infallible> for Error {
     fn from(_: std::convert::Infallible) -> Error {
         unreachable!()
+    }
+}
+
+impl From<uuid::Error> for Error {
+    fn from(error: uuid::Error) -> Self {
+        Error {
+            kind: ErrorKind::UuidError(error),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum ClientIdFileError {
+    
+    NotFound,
+    
+    PermissionDenied,
+    
+    IoError(io::Error),
+    
+    ParseError(uuid::Error),
+}
+
+impl Display for ClientIdFileError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use ClientIdFileError::*;
+        match self {
+            NotFound => write!(f, "File not found"),
+            PermissionDenied => write!(
+                f,
+                "The operation lacked the necessary privileges to complete."
+            ),
+            IoError(e) => write!(f, "IO error occured: {e}"),
+            ParseError(e) => write!(f, "Parse error occured: {e}"),
+        }
+    }
+}
+
+impl From<io::Error> for ClientIdFileError {
+    fn from(error: io::Error) -> Self {
+        match error.kind() {
+            io::ErrorKind::NotFound => ClientIdFileError::NotFound,
+            io::ErrorKind::PermissionDenied => ClientIdFileError::PermissionDenied,
+            _ => ClientIdFileError::IoError(error),
+        }
+    }
+}
+
+impl From<uuid::Error> for ClientIdFileError {
+    fn from(error: uuid::Error) -> Self {
+        ClientIdFileError::ParseError(error)
     }
 }
