@@ -1865,6 +1865,9 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
     browserParent->RemoveWindowListeners();
   }
 
+  
+  Hide();
+
   nsCOMPtr<Document> doc;
   bool dynamicSubframeRemoval = false;
   if (mOwnerContent) {
