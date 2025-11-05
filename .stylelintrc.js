@@ -29,6 +29,7 @@ module.exports = {
   plugins: [
     "./tools/lint/stylelint/stylelint-plugin-mozilla/index.mjs",
     "@stylistic/stylelint-plugin",
+    "stylelint-use-logical",
   ],
   ignoreFiles,
   rules: {
@@ -269,6 +270,9 @@ module.exports = {
         ignorePseudoElements: ["slider-track", "slider-fill", "slider-thumb"],
       },
     ],
+    
+    
+    "csstools/use-logical": null,
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
     "stylelint-plugin-mozilla/use-background-color-tokens": true,
     "stylelint-plugin-mozilla/use-border-color-tokens": true,
@@ -448,6 +452,14 @@ module.exports = {
       files: ["toolkit/**/*.css", "toolkit/**/*.scss"],
       rules: {
         "stylelint-plugin-mozilla/no-browser-refs-in-toolkit": true,
+      },
+    },
+    {
+      
+      name: "logical-properties-rule-off",
+      files: ["devtools/**"],
+      rules: {
+        "csstools/use-logical": null,
       },
     },
     
