@@ -2911,19 +2911,24 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   Endpoint<PRemoteMediaManagerChild> videoManager;
   AutoTArray<uint32_t, 3> namespaces;
 
-  if (NS_FAILED(gpuReadyRv) ||
-      !gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
-                                 &imageBridge, &vrBridge, &videoManager,
-                                 mChildID, &namespaces)) {
+  if (NS_SUCCEEDED(gpuReadyRv) &&
+      gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
+                                &imageBridge, &vrBridge, &videoManager,
+                                mChildID, &namespaces)) {
+    (void)SendInitRendering(std::move(compositor), std::move(imageBridge),
+                            std::move(vrBridge), std::move(videoManager),
+                            namespaces);
+  } else {
     
     
-    MOZ_ASSERT(AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown));
-    return false;
+    
+    
+    
+    
+    if (gpuReadyRv == NS_ERROR_ILLEGAL_DURING_SHUTDOWN) {
+      return false;
+    }
   }
-
-  (void)SendInitRendering(std::move(compositor), std::move(imageBridge),
-                          std::move(vrBridge), std::move(videoManager),
-                          namespaces);
 
   gpm->AddListener(this);
 
@@ -3101,7 +3106,6 @@ void ContentParent::OnCompositorUnexpectedShutdown() {
   if (!gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
                                  &imageBridge, &vrBridge, &videoManager,
                                  mChildID, &namespaces)) {
-    MOZ_ASSERT(AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdown));
     return;
   }
 

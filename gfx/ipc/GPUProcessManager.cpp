@@ -172,12 +172,9 @@ void GPUProcessManager::NotifyObserve(const char* aTopic,
   } else if (!strcmp(aTopic, "nsPref:changed")) {
     OnPreferenceChange(aData);
   } else if (!strcmp(aTopic, "application-foreground")) {
-    mAppInForeground = true;
-    if (!mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-      (void)LaunchGPUProcess();
-    }
+    SetAppInForeground(true);
   } else if (!strcmp(aTopic, "application-background")) {
-    mAppInForeground = false;
+    SetAppInForeground(false);
   } else if (!strcmp(aTopic, "screen-information-changed")) {
     ScreenInformationChanged();
   }
@@ -420,7 +417,24 @@ nsresult GPUProcessManager::EnsureGPUReady() {
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
-  do {
+  while (true) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mAppInForeground && mLaunchProcessAttempts > 0 &&
+        !StaticPrefs::layers_gpu_process_launch_in_background()) {
+      return NS_ERROR_ABORT;
+    }
+
     
     
     
@@ -430,13 +444,18 @@ nsresult GPUProcessManager::EnsureGPUReady() {
     nsresult rv = LaunchGPUProcess();
     if (NS_SUCCEEDED(rv) && mProcess->WaitForLaunch() && mGPUChild) {
       MOZ_DIAGNOSTIC_ASSERT(mGPUChild->IsGPUReady());
-      return NS_OK;
+      break;
     }
 
     MOZ_RELEASE_ASSERT(rv != NS_ERROR_ILLEGAL_DURING_SHUTDOWN);
     MOZ_RELEASE_ASSERT(!mProcess);
     MOZ_RELEASE_ASSERT(!mGPUChild);
-  } while (gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+    MOZ_DIAGNOSTIC_ASSERT(mLaunchProcessAttempts > 0);
+
+    if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+      break;
+    }
+  }
 
   return NS_OK;
 }
@@ -570,7 +589,8 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   
   
   auto* gpuChild = mProcess->GetActor();
-  if (!mProcess->IsConnected() || !gpuChild || !gpuChild->EnsureGPUReady()) {
+  if (NS_WARN_IF(!mProcess->IsConnected()) || NS_WARN_IF(!gpuChild) ||
+      NS_WARN_IF(!gpuChild->EnsureGPUReady())) {
     ++mLaunchProcessAttempts;
     if (mLaunchProcessAttempts >
         uint32_t(StaticPrefs::layers_gpu_process_max_launch_attempts())) {
@@ -909,7 +929,9 @@ void GPUProcessManager::OnRemoteProcessDeviceReset(
 }
 
 void GPUProcessManager::NotifyListenersOnCompositeDeviceReset() {
-  for (const auto& listener : mListeners) {
+  nsTArray<RefPtr<GPUProcessListener>> listeners;
+  listeners.AppendElements(mListeners);
+  for (const auto& listener : listeners) {
     listener->OnCompositorDeviceReset();
   }
 }
@@ -1073,7 +1095,14 @@ void GPUProcessManager::ReinitializeRendering() {
   
   
   
-  for (const auto& listener : mListeners) {
+  nsTArray<RefPtr<GPUProcessListener>> listeners;
+  listeners.AppendElements(mListeners);
+  
+  for (const auto& listener : listeners) {
+    listener->OnCompositorDestroyBackgrounded();
+  }
+  
+  for (const auto& listener : listeners) {
     listener->OnCompositorUnexpectedShutdown();
   }
 
@@ -1784,6 +1813,13 @@ void GPUProcessManager::SetAppInForeground(bool aInForeground) {
 #if defined(XP_WIN)
   SetProcessIsForeground();
 #endif
+
+  
+  
+  
+  if (aInForeground && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+    (void)LaunchGPUProcess();
+  }
 }
 
 #if defined(XP_WIN)

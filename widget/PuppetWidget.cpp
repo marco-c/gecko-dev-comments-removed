@@ -531,7 +531,7 @@ WindowRenderer* PuppetWidget::GetWindowRenderer() {
     if (XRE_IsParentProcess()) {
       
       
-      mWindowRenderer = new FallbackRenderer;
+      mWindowRenderer = CreateFallbackRenderer();
       return mWindowRenderer;
     }
 

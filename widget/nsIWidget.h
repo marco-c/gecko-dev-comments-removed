@@ -1913,6 +1913,13 @@ class nsIWidget : public nsSupportsWeakReference {
   
 
 
+
+
+  WindowRenderer* CreateBackgroundedFallbackRenderer();
+
+  
+
+
   virtual nsresult SetSystemFont(const nsCString& aFontName) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }

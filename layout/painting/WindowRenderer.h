@@ -10,6 +10,7 @@
 #include "gfxContext.h"
 #include "mozilla/ScrollPositionUpdate.h"  
 #include "mozilla/dom/Animation.h"         
+#include "mozilla/gfx/GPUProcessListener.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/webrender/webrender_ffi.h"
@@ -97,7 +98,7 @@ class FrameRecorder {
 
 
 class WindowRenderer : public FrameRecorder {
-  NS_INLINE_DECL_REFCOUNTING(WindowRenderer)
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
  public:
   
@@ -241,23 +242,21 @@ class WindowRenderer : public FrameRecorder {
 
 class FallbackRenderer : public WindowRenderer {
  public:
-  FallbackRenderer* AsFallback() override { return this; }
+  FallbackRenderer* AsFallback() final { return this; }
 
   void SetTarget(gfxContext* aContext);
 
-  bool BeginTransaction(const nsCString& aURL = nsCString()) override;
+  bool BeginTransaction(const nsCString& aURL = nsCString()) final;
 
-  bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override {
+  bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) final {
     return false;
   }
 
-  layers::LayersBackend GetBackendType() override {
+  layers::LayersBackend GetBackendType() final {
     return layers::LayersBackend::LAYERS_NONE;
   }
 
-  void GetBackendName(nsAString& name) override {
-    name.AssignLiteral("Fallback");
-  }
+  void GetBackendName(nsAString& name) final { name.AssignLiteral("Fallback"); }
 
   void EndTransactionWithColor(const nsIntRect& aRect,
                                const gfx::DeviceColor& aColor);
@@ -267,6 +266,45 @@ class FallbackRenderer : public WindowRenderer {
                               EndTransactionFlags aFlags);
 
   gfxContext* mTarget = nullptr;
+
+ protected:
+  FallbackRenderer() = default;
+};
+
+
+
+
+
+class DefaultFallbackRenderer final : public FallbackRenderer {
+  NS_INLINE_DECL_REFCOUNTING(DefaultFallbackRenderer, final)
+
+ public:
+  DefaultFallbackRenderer() = default;
+
+ private:
+  ~DefaultFallbackRenderer() final = default;
+};
+
+
+
+
+
+class BackgroundedFallbackRenderer final : public FallbackRenderer,
+                                           public gfx::GPUProcessListener {
+  NS_INLINE_DECL_REFCOUNTING(BackgroundedFallbackRenderer, final)
+
+ public:
+  explicit BackgroundedFallbackRenderer(nsIWidget* aWidget);
+
+  void Destroy() final;
+
+  void OnCompositorDestroyBackgrounded() final;
+
+ private:
+  ~BackgroundedFallbackRenderer() final;
+
+  
+  nsIWidget* mWidget;
 };
 
 }  

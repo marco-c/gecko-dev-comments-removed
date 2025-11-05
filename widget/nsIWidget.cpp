@@ -1483,7 +1483,7 @@ already_AddRefed<WebRenderLayerManager> nsIWidget::CreateCompositorSession(
     
     
     gfx::GPUProcessManager* gpm = gfx::GPUProcessManager::Get();
-    if (NS_WARN_IF(!gpm || NS_FAILED(gpm->EnsureGPUReady()))) {
+    if (NS_WARN_IF(!gpm) || NS_WARN_IF(NS_FAILED(gpm->EnsureGPUReady()))) {
       return nullptr;
     }
 
@@ -1671,7 +1671,15 @@ WindowRenderer* nsIWidget::GetWindowRenderer() {
 }
 
 WindowRenderer* nsIWidget::CreateFallbackRenderer() {
-  return new FallbackRenderer;
+  
+  
+  return new DefaultFallbackRenderer();
+}
+
+WindowRenderer* nsIWidget::CreateBackgroundedFallbackRenderer() {
+  
+  
+  return new BackgroundedFallbackRenderer(this);
 }
 
 CompositorBridgeChild* nsIWidget::GetRemoteRenderer() {

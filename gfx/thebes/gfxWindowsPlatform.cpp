@@ -78,6 +78,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/DeviceAttachmentsD3D11.h"
 #include "mozilla/WindowsProcessMitigations.h"
 #include "D3D11Checks.h"
@@ -1798,6 +1799,13 @@ void gfxWindowsPlatform::ImportContentDeviceData(
 }
 
 void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
+  if (auto* gpm = GPUProcessManager::Get()) {
+    MOZ_DIAGNOSTIC_ASSERT(gpm->IsGPUReady());
+  }
+#endif
+
   
   UpdateRenderMode();
 

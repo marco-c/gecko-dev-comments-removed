@@ -107,6 +107,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
+  
+  
   nsresult EnsureGPUReady();
 
   bool IsGPUReady() const;
@@ -395,7 +397,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   nsTArray<RefPtr<RemoteCompositorSession>> mRemoteSessions;
   nsTArray<RefPtr<InProcessCompositorSession>> mInProcessSessions;
-  nsTArray<GPUProcessListener*> mListeners;
+  nsTArray<RefPtr<GPUProcessListener>> mListeners;
 
   uint32_t mDeviceResetCount;
   TimeStamp mDeviceResetLastTime;
