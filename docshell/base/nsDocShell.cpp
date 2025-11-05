@@ -4791,56 +4791,10 @@ nsDocShell::GetVisibility(bool* aVisibility) {
   }
 
   PresShell* presShell = GetPresShell();
-  if (!presShell) {
-    return NS_OK;
-  }
-
-  
-  nsViewManager* vm = presShell->GetViewManager();
-  NS_ENSURE_TRUE(vm, NS_ERROR_FAILURE);
-
-  
-  nsView* view = vm->GetRootView();  
-  NS_ENSURE_TRUE(view, NS_ERROR_FAILURE);
-
-  
-  if (view->GetVisibility() == ViewVisibility::Hide) {
-    return NS_OK;
-  }
-
-  
-  
-  
-
-  RefPtr<nsDocShell> docShell = this;
-  RefPtr<nsDocShell> parentItem = docShell->GetInProcessParentDocshell();
-  while (parentItem) {
+  if (!presShell || presShell->IsUnderHiddenEmbedderElement()) {
     
-    if (!parentItem->GetPresShell()) {
-      MOZ_ASSERT_UNREACHABLE("parent docshell has null pres shell");
-      return NS_OK;
-    }
-
-    vm = docShell->GetPresShell()->GetViewManager();
-    if (vm) {
-      view = vm->GetRootView();
-    }
-
-    if (view) {
-      view = view->GetParent();  
-      if (view) {
-        view = view->GetParent();  
-      }
-    }
-
-    nsIFrame* frame = view ? view->GetFrame() : nullptr;
-    if (frame && !frame->IsVisibleConsideringAncestors(
-                     nsIFrame::VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY)) {
-      return NS_OK;
-    }
-
-    docShell = parentItem;
-    parentItem = docShell->GetInProcessParentDocshell();
+    
+    return NS_OK;
   }
 
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin(do_QueryInterface(mTreeOwner));
