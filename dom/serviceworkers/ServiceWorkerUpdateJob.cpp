@@ -418,9 +418,8 @@ void ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
   }
 
   RefPtr<ServiceWorkerInfo> sw = new ServiceWorkerInfo(
-      mRegistration->Principal(), mRegistration->Scope(), mRegistration->Type(),
-      mRegistration->Id(), mRegistration->Version(), mScriptSpec, aNewCacheName,
-      flags);
+      mRegistration->Principal(), mRegistration->Scope(), mRegistration->Id(),
+      mRegistration->Version(), mScriptSpec, aNewCacheName, flags);
 
   
   
