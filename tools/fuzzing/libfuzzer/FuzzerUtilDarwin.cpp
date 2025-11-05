@@ -165,6 +165,11 @@ void DiscardOutput(int Fd) {
   fclose(Temp);
 }
 
+void SetThreadName(std::thread &thread, const std::string &name) {
+  
+  
+}
+
 } 
 
 #endif 

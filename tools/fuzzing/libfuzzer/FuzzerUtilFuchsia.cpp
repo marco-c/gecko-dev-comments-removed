@@ -53,6 +53,12 @@ void CrashTrampolineAsm() __asm__("CrashTrampolineAsm");
 namespace {
 
 
+
+
+std::thread SignalHandler;
+zx_handle_t SignalHandlerEvent = ZX_HANDLE_INVALID;
+
+
 void ExitOnErr(zx_status_t Status, const char *Syscall) {
   if (Status != ZX_OK) {
     Printf("libFuzzer: %s failed: %s\n", Syscall,
@@ -62,40 +68,15 @@ void ExitOnErr(zx_status_t Status, const char *Syscall) {
 }
 
 void AlarmHandler(int Seconds) {
+  
+  ExitOnErr(_zx_object_signal(SignalHandlerEvent, 0, ZX_USER_SIGNAL_0),
+            "_zx_object_signal alarm");
   while (true) {
     SleepSeconds(Seconds);
     Fuzzer::StaticAlarmCallback();
   }
 }
 
-void InterruptHandler() {
-  fd_set readfds;
-  
-  do {
-    FD_ZERO(&readfds);
-    FD_SET(STDIN_FILENO, &readfds);
-    select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, nullptr);
-  } while(!FD_ISSET(STDIN_FILENO, &readfds) || getchar() != 0x03);
-  Fuzzer::StaticInterruptCallback();
-}
-
-
-
-
-
-
-
-
-#if defined(__x86_64__)
-
-
-constexpr size_t CFAOffset = 128 + sizeof(zx_thread_state_general_regs_t);
-#elif defined(__aarch64__)
-
-
-constexpr size_t CFAOffset = (sizeof(zx_thread_state_general_regs_t) + 15) & -(uintptr_t)16;
-#endif
-
 
 
 
@@ -109,6 +90,7 @@ constexpr size_t CFAOffset = (sizeof(zx_thread_state_general_regs_t) + 15) & -(u
 
 
 #if defined(__x86_64__)
+
 #define FOREACH_REGISTER(OP_REG, OP_NUM) \
   OP_REG(rax)                            \
   OP_REG(rbx)                            \
@@ -129,6 +111,7 @@ constexpr size_t CFAOffset = (sizeof(zx_thread_state_general_regs_t) + 15) & -(u
   OP_REG(rip)
 
 #elif defined(__aarch64__)
+
 #define FOREACH_REGISTER(OP_REG, OP_NUM) \
   OP_NUM(0)                              \
   OP_NUM(1)                              \
@@ -162,6 +145,41 @@ constexpr size_t CFAOffset = (sizeof(zx_thread_state_general_regs_t) + 15) & -(u
   OP_NUM(29)                             \
   OP_REG(sp)
 
+#elif defined(__riscv)
+
+#define FOREACH_REGISTER(OP_REG, OP_NUM)                                      \
+  OP_REG(ra)                                                                  \
+  OP_REG(sp)                                                                  \
+  OP_REG(gp)                                                                  \
+  OP_REG(tp)                                                                  \
+  OP_REG(t0)                                                                  \
+  OP_REG(t1)                                                                  \
+  OP_REG(t2)                                                                  \
+  OP_REG(s0)                                                                  \
+  OP_REG(s1)                                                                  \
+  OP_REG(a0)                                                                  \
+  OP_REG(a1)                                                                  \
+  OP_REG(a2)                                                                  \
+  OP_REG(a3)                                                                  \
+  OP_REG(a4)                                                                  \
+  OP_REG(a5)                                                                  \
+  OP_REG(a6)                                                                  \
+  OP_REG(a7)                                                                  \
+  OP_REG(s2)                                                                  \
+  OP_REG(s3)                                                                  \
+  OP_REG(s4)                                                                  \
+  OP_REG(s5)                                                                  \
+  OP_REG(s6)                                                                  \
+  OP_REG(s7)                                                                  \
+  OP_REG(s8)                                                                  \
+  OP_REG(s9)                                                                  \
+  OP_REG(s10)                                                                 \
+  OP_REG(s11)                                                                 \
+  OP_REG(t3)                                                                  \
+  OP_REG(t4)                                                                  \
+  OP_REG(t5)                                                                  \
+  OP_REG(t6)                                                                  \
+
 #else
 #error "Unsupported architecture for fuzzing on Fuchsia"
 #endif
@@ -174,10 +192,10 @@ constexpr size_t CFAOffset = (sizeof(zx_thread_state_general_regs_t) + 15) & -(u
 
 
 
-#define ASM_OPERAND_REG(reg) \
-  [reg] "i"(offsetof(zx_thread_state_general_regs_t, reg) - CFAOffset),
-#define ASM_OPERAND_NUM(num)                                 \
-  [x##num] "i"(offsetof(zx_thread_state_general_regs_t, r[num]) - CFAOffset),
+#define ASM_OPERAND_REG(reg)                                                   \
+  [reg] "i"(offsetof(zx_thread_state_general_regs_t, reg)),
+#define ASM_OPERAND_NUM(num)                                                   \
+  [x##num] "i"(offsetof(zx_thread_state_general_regs_t, r[num])),
 
 
 
@@ -199,52 +217,57 @@ static void StaticCrashHandler() {
 
 
 
-
-
-
 __attribute__((used))
 void MakeTrampoline() {
-  __asm__(".cfi_endproc\n"
-    ".pushsection .text.CrashTrampolineAsm\n"
-    ".type CrashTrampolineAsm,STT_FUNC\n"
-"CrashTrampolineAsm:\n"
-    ".cfi_startproc simple\n"
-    ".cfi_signal_frame\n"
+  __asm__(
+      ".cfi_endproc\n"
+      ".pushsection .text.CrashTrampolineAsm\n"
+      ".type CrashTrampolineAsm,STT_FUNC\n"
+      "CrashTrampolineAsm:\n"
+      ".cfi_startproc simple\n"
+      ".cfi_signal_frame\n"
 #if defined(__x86_64__)
-    ".cfi_return_column rip\n"
-    ".cfi_def_cfa rsp, %c[CFAOffset]\n"
-    FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
-    "mov %%rsp, %%rbp\n"
-    ".cfi_def_cfa_register rbp\n"
-    "andq $-16, %%rsp\n"
-    "call %c[StaticCrashHandler]\n"
-    "ud2\n"
+      ".cfi_return_column rip\n"
+      ".cfi_def_cfa rsp, 0\n"
+      FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
+      "call %c[StaticCrashHandler]\n"
+      "ud2\n"
 #elif defined(__aarch64__)
-    ".cfi_return_column 33\n"
-    ".cfi_def_cfa sp, %c[CFAOffset]\n"
-    FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
-    ".cfi_offset 33, %c[pc]\n"
-    ".cfi_offset 30, %c[lr]\n"
-    "bl %c[StaticCrashHandler]\n"
-    "brk 1\n"
+      ".cfi_return_column 33\n"
+      ".cfi_def_cfa sp, 0\n"
+      FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
+      ".cfi_offset 33, %c[pc]\n"
+      ".cfi_offset 30, %c[lr]\n"
+      "bl %c[StaticCrashHandler]\n"
+      "brk 1\n"
+#elif defined(__riscv)
+      ".cfi_return_column 64\n"
+      ".cfi_def_cfa sp, 0\n"
+      ".cfi_offset 64, %[pc]\n"
+      FOREACH_REGISTER(CFI_OFFSET_REG, CFI_OFFSET_NUM)
+      "call %c[StaticCrashHandler]\n"
+      "unimp\n"
 #else
 #error "Unsupported architecture for fuzzing on Fuchsia"
 #endif
-    ".cfi_endproc\n"
-    ".size CrashTrampolineAsm, . - CrashTrampolineAsm\n"
-    ".popsection\n"
-    ".cfi_startproc\n"
-    : 
-    : FOREACH_REGISTER(ASM_OPERAND_REG, ASM_OPERAND_NUM)
-#if defined(__aarch64__)
-      ASM_OPERAND_REG(pc)
-      ASM_OPERAND_REG(lr)
+     ".cfi_endproc\n"
+     ".size CrashTrampolineAsm, . - CrashTrampolineAsm\n"
+     ".popsection\n"
+     ".cfi_startproc\n"
+      : 
+      : FOREACH_REGISTER(ASM_OPERAND_REG, ASM_OPERAND_NUM)
+#if defined(__aarch64__) || defined(__riscv)
+        ASM_OPERAND_REG(pc)
 #endif
-      [StaticCrashHandler] "i" (StaticCrashHandler),
-      [CFAOffset] "i" (CFAOffset));
+#if defined(__aarch64__)
+        ASM_OPERAND_REG(lr)
+#endif
+        [StaticCrashHandler] "i"(StaticCrashHandler));
 }
 
-void CrashHandler(zx_handle_t *Event) {
+void CrashHandler() {
+  assert(SignalHandlerEvent != ZX_HANDLE_INVALID);
+
   
   
   struct ScopedHandle {
@@ -262,16 +285,31 @@ void CrashHandler(zx_handle_t *Event) {
                 Self, ZX_EXCEPTION_CHANNEL_DEBUGGER, &Channel.Handle),
             "_zx_task_create_exception_channel");
 
-  ExitOnErr(_zx_object_signal(*Event, 0, ZX_USER_SIGNAL_0),
+  
+  ExitOnErr(_zx_object_signal(SignalHandlerEvent, 0, ZX_USER_SIGNAL_0),
             "_zx_object_signal");
 
   
   
   
   while (true) {
-    ExitOnErr(_zx_object_wait_one(Channel.Handle, ZX_CHANNEL_READABLE,
-                                  ZX_TIME_INFINITE, nullptr),
-              "_zx_object_wait_one");
+    zx_wait_item_t WaitItems[] = {
+        {
+            .handle = SignalHandlerEvent,
+            .waitfor = ZX_USER_SIGNAL_1,
+            .pending = 0,
+        },
+        {
+            .handle = Channel.Handle,
+            .waitfor = ZX_CHANNEL_READABLE | ZX_CHANNEL_PEER_CLOSED,
+            .pending = 0,
+        },
+    };
+    auto Status = _zx_object_wait_many(
+        WaitItems, sizeof(WaitItems) / sizeof(WaitItems[0]), ZX_TIME_INFINITE);
+    if (Status != ZX_OK || (WaitItems[1].pending & ZX_CHANNEL_READABLE) == 0) {
+      break;
+    }
 
     zx_exception_info_t ExceptionInfo;
     ScopedHandle Exception;
@@ -307,14 +345,19 @@ void CrashHandler(zx_handle_t *Event) {
     
     
 #if defined(__x86_64__)
-    uintptr_t StackPtr = GeneralRegisters.rsp - CFAOffset;
+
+    uintptr_t StackPtr =
+        (GeneralRegisters.rsp - (128 + sizeof(GeneralRegisters))) &
+        -(uintptr_t)16;
     __unsanitized_memcpy(reinterpret_cast<void *>(StackPtr), &GeneralRegisters,
                          sizeof(GeneralRegisters));
     GeneralRegisters.rsp = StackPtr;
     GeneralRegisters.rip = reinterpret_cast<zx_vaddr_t>(CrashTrampolineAsm);
 
-#elif defined(__aarch64__)
-    uintptr_t StackPtr = GeneralRegisters.sp - CFAOffset;
+#elif defined(__aarch64__) || defined(__riscv)
+
+    uintptr_t StackPtr =
+        (GeneralRegisters.sp - sizeof(GeneralRegisters)) & -(uintptr_t)16;
     __unsanitized_memcpy(reinterpret_cast<void *>(StackPtr), &GeneralRegisters,
                          sizeof(GeneralRegisters));
     GeneralRegisters.sp = StackPtr;
@@ -338,10 +381,57 @@ void CrashHandler(zx_handle_t *Event) {
   }
 }
 
+void StopSignalHandler() {
+  _zx_object_signal(SignalHandlerEvent, 0, ZX_USER_SIGNAL_1);
+  if (SignalHandler.joinable()) {
+    SignalHandler.join();
+  }
+  _zx_handle_close(SignalHandlerEvent);
+}
+
+void RssThread(Fuzzer *F, size_t RssLimitMb) {
+  
+  
+  
+  
+  
+  
+  
+  ExitOnErr(_zx_object_signal(SignalHandlerEvent, 0, ZX_USER_SIGNAL_0),
+            "_zx_object_signal rss");
+  while (true) {
+    SleepSeconds(1);
+    size_t Peak = GetPeakRSSMb();
+    if (Peak > RssLimitMb)
+      F->RssLimitCallback();
+  }
+}
+
 } 
+
+void StartRssThread(Fuzzer *F, size_t RssLimitMb) {
+  
+  assert(SignalHandlerEvent == ZX_HANDLE_INVALID);
+  ExitOnErr(_zx_event_create(0, &SignalHandlerEvent), "_zx_event_create");
+
+  if (!RssLimitMb)
+    return;
+  std::thread T(RssThread, F, RssLimitMb);
+  T.detach();
+
+  
+  ExitOnErr(_zx_object_wait_one(SignalHandlerEvent, ZX_USER_SIGNAL_0,
+                                ZX_TIME_INFINITE, nullptr),
+            "_zx_object_wait_one rss");
+  ExitOnErr(_zx_object_signal(SignalHandlerEvent, ZX_USER_SIGNAL_0, 0),
+            "_zx_object_signal rss clear");
+}
 
 
 void SetSignalHandler(const FuzzingOptions &Options) {
+  assert(SignalHandlerEvent != ZX_HANDLE_INVALID &&
+         "This should've been setup by StartRssThread.");
+
   
   
   
@@ -354,33 +444,38 @@ void SetSignalHandler(const FuzzingOptions &Options) {
   Printf("%s", Buf);
 
   
-  if (Options.UnitTimeoutSec > 0) {
+  if (Options.HandleAlrm && Options.UnitTimeoutSec > 0) {
     std::thread T(AlarmHandler, Options.UnitTimeoutSec / 2 + 1);
     T.detach();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    ExitOnErr(_zx_object_wait_one(SignalHandlerEvent, ZX_USER_SIGNAL_0,
+                                  ZX_TIME_INFINITE, nullptr),
+              "_zx_object_wait_one alarm");
+    ExitOnErr(_zx_object_signal(SignalHandlerEvent, ZX_USER_SIGNAL_0, 0),
+              "_zx_object_signal alarm clear");
   }
 
   
-  if (Options.HandleInt || Options.HandleTerm) {
-    std::thread T(InterruptHandler);
-    T.detach();
-  }
 
   
   if (!Options.HandleSegv && !Options.HandleBus && !Options.HandleIll &&
-      !Options.HandleFpe && !Options.HandleAbrt)
+      !Options.HandleFpe && !Options.HandleAbrt && !Options.HandleTrap)
     return;
 
-  
-  zx_handle_t Event;
-  ExitOnErr(_zx_event_create(0, &Event), "_zx_event_create");
-
-  std::thread T(CrashHandler, &Event);
-  zx_status_t Status =
-      _zx_object_wait_one(Event, ZX_USER_SIGNAL_0, ZX_TIME_INFINITE, nullptr);
-  _zx_handle_close(Event);
+  SignalHandler = std::thread(CrashHandler);
+  zx_status_t Status = _zx_object_wait_one(SignalHandlerEvent, ZX_USER_SIGNAL_0,
+                                           ZX_TIME_INFINITE, nullptr);
   ExitOnErr(Status, "_zx_object_wait_one");
 
-  T.detach();
+  std::atexit(StopSignalHandler);
 }
 
 void SleepSeconds(int Seconds) {
@@ -530,7 +625,7 @@ int ExecuteCommand(const Command &Cmd) {
     return rc;
   }
 
-  return Info.return_code;
+  return static_cast<int>(Info.return_code);
 }
 
 bool ExecuteCommand(const Command &BaseCmd, std::string *CmdOutput) {
@@ -558,6 +653,19 @@ void DiscardOutput(int Fd) {
   int nullfd = fdio_bind_to_fd(fdio_null, -1, 0);
   if (nullfd < 0) return;
   dup2(nullfd, Fd);
+}
+
+size_t PageSize() {
+  static size_t PageSizeCached = _zx_system_get_page_size();
+  return PageSizeCached;
+}
+
+void SetThreadName(std::thread &thread, const std::string &name) {
+  if (zx_status_t s = zx_object_set_property(
+          thread.native_handle(), ZX_PROP_NAME, name.data(), name.size());
+      s != ZX_OK)
+    Printf("SetThreadName for name %s failed: %s", name.c_str(),
+           zx_status_get_string(s));
 }
 
 } 

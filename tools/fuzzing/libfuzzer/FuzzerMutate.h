@@ -25,7 +25,10 @@ public:
   
   void StartMutationSequence();
   
-  void PrintMutationSequence();
+  
+  void PrintMutationSequence(bool Verbose = true);
+  
+  std::string MutationSequence();
   
   void RecordSuccessfulMutationSequence();
   
@@ -74,7 +77,7 @@ public:
   
   
   size_t MutateWithMask(uint8_t *Data, size_t Size, size_t MaxSize,
-                        const Vector<uint8_t> &Mask);
+                        const std::vector<uint8_t> &Mask);
 
   
   
@@ -101,7 +104,7 @@ public:
   size_t AddWordFromDictionary(Dictionary &D, uint8_t *Data, size_t Size,
                                size_t MaxSize);
   size_t MutateImpl(uint8_t *Data, size_t Size, size_t MaxSize,
-                    Vector<Mutator> &Mutators);
+                    std::vector<Mutator> &Mutators);
 
   size_t InsertPartOf(const uint8_t *From, size_t FromSize, uint8_t *To,
                       size_t ToSize, size_t MaxToSize);
@@ -128,27 +131,24 @@ public:
   Dictionary ManualDictionary;
   
   
-  Dictionary TempAutoDictionary;
-  
-  
   Dictionary PersistentAutoDictionary;
 
-  Vector<DictionaryEntry *> CurrentDictionaryEntrySequence;
+  std::vector<DictionaryEntry *> CurrentDictionaryEntrySequence;
 
   static const size_t kCmpDictionaryEntriesDequeSize = 16;
   DictionaryEntry CmpDictionaryEntriesDeque[kCmpDictionaryEntriesDequeSize];
   size_t CmpDictionaryEntriesDequeIdx = 0;
 
   const Unit *CrossOverWith = nullptr;
-  Vector<uint8_t> MutateInPlaceHere;
-  Vector<uint8_t> MutateWithMaskTemp;
+  std::vector<uint8_t> MutateInPlaceHere;
+  std::vector<uint8_t> MutateWithMaskTemp;
   
   
-  Vector<uint8_t> CustomCrossOverInPlaceHere;
+  std::vector<uint8_t> CustomCrossOverInPlaceHere;
 
-  Vector<Mutator> Mutators;
-  Vector<Mutator> DefaultMutators;
-  Vector<Mutator> CurrentMutatorSequence;
+  std::vector<Mutator> Mutators;
+  std::vector<Mutator> DefaultMutators;
+  std::vector<Mutator> CurrentMutatorSequence;
 };
 
 }  
