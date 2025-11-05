@@ -120,7 +120,10 @@ void ClosePlatformFile(cdm::PlatformFile aFile) {
 
 static uint32_t NumExpectedHostFiles(const cdm::HostFile* aHostFiles,
                                      uint32_t aNumFiles) {
-#if !defined(XP_WIN)
+#if defined(ANDROID)
+  
+  return 1;
+#elif !defined(XP_WIN)
   
   return 4;
 #else
