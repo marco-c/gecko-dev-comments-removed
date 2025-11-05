@@ -3,10 +3,6 @@
 
 
 
-const { CustomKeys } = ChromeUtils.importESModule(
-  "resource:///modules/CustomKeys.sys.mjs"
-);
-
 let _resolveDelayedStartup;
 var delayedStartupPromise = new Promise(resolve => {
   _resolveDelayedStartup = resolve;
@@ -272,7 +268,6 @@ var gBrowserInit = {
     if (gToolbarKeyNavEnabled) {
       ToolbarKeyboardNavigator.init();
     }
-    CustomKeys.initWindow(window);
 
     
     gRemoteControl.updateVisualCue();
@@ -1088,7 +1083,6 @@ var gBrowserInit = {
     if (gToolbarKeyNavEnabled) {
       ToolbarKeyboardNavigator.uninit();
     }
-    CustomKeys.uninitWindow(window);
 
     
     ChromeUtils.importESModule(
