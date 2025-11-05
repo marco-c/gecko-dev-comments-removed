@@ -7,14 +7,18 @@ add_task(async function () {
   info("Test 1 JSON row selection started");
 
   
-  const numRows = 1e3;
+  
+  const numElements = 1e4;
   const json = JSON.stringify(
-    Array(numRows)
+    Array(numElements)
       .fill()
       .map((_, i) => i)
   );
   const tab = await addJsonViewTab("data:application/json," + json);
 
+  
+  
+  const numRows = 100;
   is(
     await getElementCount(".treeRow"),
     numRows,
