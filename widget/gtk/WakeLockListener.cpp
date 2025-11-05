@@ -1063,6 +1063,24 @@ WakeLockListener::~WakeLockListener() {
   }
 }
 
+void WakeLockListener::SetState(const nsAString& topic, bool aBackground,
+                                bool aInhibit) {
+  WAKE_LOCK_LOG(
+      "WakeLockListener::SetState() topic %s background %d inhibit %d",
+      NS_ConvertUTF16toUTF8(topic).get(), aBackground, aInhibit);
+
+  nsRefPtrHashtable<nsStringHashKey, WakeLockTopic>* topicTable =
+      aBackground ? &mBackgroundTopics : &mForegroundTopics;
+  RefPtr<WakeLockTopic> topicLock = topicTable->LookupOrInsertWith(
+      topic, [&] { return MakeRefPtr<WakeLockTopic>(topic, aBackground); });
+
+  if (aInhibit) {
+    topicLock->InhibitScreensaver();
+  } else {
+    topicLock->UninhibitScreensaver();
+  }
+}
+
 nsresult WakeLockListener::Callback(const nsAString& topic,
                                     const nsAString& state) {
   WAKE_LOCK_LOG("WakeLockListener::Callback() topic %s state %s",
@@ -1073,18 +1091,17 @@ nsresult WakeLockListener::Callback(const nsAString& topic,
     return NS_OK;
   }
 
-  bool backgroundLock = !(topic.Equals(u"video-playing"_ns) &&
-                          state.EqualsLiteral("locked-foreground"));
+  bool backgroundLock = state.EqualsLiteral("locked-background");
   bool shouldLock = state.EqualsLiteral("locked-background") ||
                     state.EqualsLiteral("locked-foreground");
 
-  nsRefPtrHashtable<nsStringHashKey, WakeLockTopic>* topicTable =
-      backgroundLock ? &mBackgroundTopics : &mForegroundTopics;
-  RefPtr<WakeLockTopic> topicLock = topicTable->LookupOrInsertWith(
-      topic, [&] { return MakeRefPtr<WakeLockTopic>(topic, backgroundLock); });
-  WAKE_LOCK_LOG("Adding WakeLockListener lock %d background %d", shouldLock,
-                backgroundLock);
+  
+  
+  SetState(topic, !backgroundLock,  false);
 
-  return shouldLock ? topicLock->InhibitScreensaver()
-                    : topicLock->UninhibitScreensaver();
+  
+  
+  SetState(topic, backgroundLock,  shouldLock);
+
+  return NS_OK;
 }
