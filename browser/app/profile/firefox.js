@@ -3465,9 +3465,6 @@ pref("browser.backup.disabled-on-idle-backup-retry", false);
 pref("browser.backup.max-num-unremovable-staging-items", 5);
 pref("browser.backup.scheduled.user-disabled", false);
 
-
-pref("browser.backup.tab-flush-timeout", 5000)
-
 #ifdef NIGHTLY_BUILD
   
   pref("browser.profiles.enabled", true);
