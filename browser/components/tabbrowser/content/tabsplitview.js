@@ -37,6 +37,8 @@
       
       this.ownerGlobal.addEventListener("TabSelect", this);
 
+      this.#observeTabChanges();
+
       if (this._initialized) {
         return;
       }
@@ -44,8 +46,6 @@
       this._initialized = true;
 
       this.textContent = "";
-
-      this.#observeTabChanges();
 
       
       this.container = gBrowser.tabContainer;
