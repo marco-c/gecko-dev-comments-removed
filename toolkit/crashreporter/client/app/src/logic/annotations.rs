@@ -16,5 +16,5 @@ pub fn send_in_ping(annotation: &str) -> bool {
 
 
 pub fn send_in_report(annotation: &str) -> bool {
-    REPORT_ANNOTATIONS.contains(annotation) || PING_ANNOTATIONS.contains(annotation)
+    ALL_REPORT_ANNOTATIONS.contains(annotation)
 }
