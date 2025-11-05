@@ -37,11 +37,6 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
           NS_ConvertUTF16toUTF8(aKeySystem))) {
     return true;
   }
-  
-  if (IsClearkeyKeySystem(aKeySystem)) {
-    return HaveGMPFor(nsCString(CHROMIUM_CDM_API),
-                      {NS_ConvertUTF16toUTF8(aKeySystem)});
-  }
 #else
 #  ifdef MOZ_WMF_CDM
   

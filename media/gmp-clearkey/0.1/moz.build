@@ -9,13 +9,7 @@ with Files("**"):
 
 GeckoSharedLibrary("clearkey")
 
-
-
-
-if CONFIG["OS_TARGET"] == "Android":
-    FINAL_TARGET = "dist/bin"
-else:
-    FINAL_TARGET = "dist/bin/gmp-clearkey/0.1"
+FINAL_TARGET = "dist/bin/gmp-clearkey/0.1"
 
 FINAL_TARGET_PP_FILES += ["manifest.json.in"]
 
