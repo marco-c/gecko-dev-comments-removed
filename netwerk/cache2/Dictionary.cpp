@@ -731,10 +731,16 @@ NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryAvailable(
 
   AUTO_PROFILER_FLOW_MARKER("DictionaryOriginReader::VisitMetaData", NETWORK,
                             Flow::FromPointer(this));
-  mOrigin->SetCacheEntry(aCacheEntry);
-  
-  nsCOMPtr<nsICacheEntryMetaDataVisitor> metadata(mOrigin);
-  aCacheEntry->VisitMetaData(metadata);
+  bool empty = false;
+  aCacheEntry->GetIsEmpty(&empty);
+  if (empty) {
+    
+    mOrigin->SetCacheEntry(aCacheEntry);
+  } else {
+    
+    nsCOMPtr<nsICacheEntryMetaDataVisitor> metadata(mOrigin);
+    aCacheEntry->VisitMetaData(metadata);
+  }
 
   
   RefPtr<DictionaryOriginReader> safety(this);
@@ -910,6 +916,8 @@ void DictionaryCache::Clear() {
 
 void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
   RefPtr<DictionaryCache> cache = GetInstance();
+  DICTIONARY_LOG(
+      ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
   NS_DispatchToMainThread(NewRunnableMethod<const nsCString>(
       "DictionaryCache::RemoveDictionaryFor", cache,
       &DictionaryCache::RemoveDictionary, aKey));
@@ -918,7 +926,7 @@ void DictionaryCache::RemoveDictionaryFor(const nsACString& aKey) {
 
 void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
   DICTIONARY_LOG(
-      ("Removing dictionary for %80s", PromiseFlatCString(aKey).get()));
+      ("Removing dictionary for %s", PromiseFlatCString(aKey).get()));
 
   nsCOMPtr<nsIURI> uri;
   if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), aKey))) {
@@ -936,16 +944,14 @@ void DictionaryCache::RemoveDictionary(const nsACString& aKey) {
 void DictionaryCache::RemoveOriginFor(const nsACString& aKey) {
   RefPtr<DictionaryCache> cache = GetInstance();
   DICTIONARY_LOG(
-      ("Removing dictionary for %80s", PromiseFlatCString(aKey).get()));
+      ("Removing dictionary origin %s", PromiseFlatCString(aKey).get()));
   NS_DispatchToMainThread(NewRunnableMethod<const nsCString>(
-      "DictionaryCache::RemoveDictionaryFor", cache,
-      &DictionaryCache::RemoveDictionary, aKey));
+      "DictionaryCache::RemoveOriginFor", cache, &DictionaryCache::RemoveOrigin,
+      aKey));
 }
 
 
 void DictionaryCache::RemoveOrigin(const nsACString& aKey) {
-  DICTIONARY_LOG(("Removing origin for %80s", PromiseFlatCString(aKey).get()));
-
   nsCOMPtr<nsIURI> uri;
   if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), aKey))) {
     return;
@@ -953,10 +959,15 @@ void DictionaryCache::RemoveOrigin(const nsACString& aKey) {
   nsAutoCString prepath;
   if (NS_SUCCEEDED(GetDictPath(uri, prepath))) {
     if (auto origin = mDictionaryCache.Lookup(prepath)) {
-      origin.Data()->AssertEmpty();
+      if (MOZ_UNLIKELY(origin.Data()->IsEmpty())) {
+        DICTIONARY_LOG(
+            ("Removing origin for %s", PromiseFlatCString(aKey).get()));
+        mDictionaryCache.Remove(prepath);
+      } else {
+        DICTIONARY_LOG(
+            ("Origin not empty: %s", PromiseFlatCString(aKey).get()));
+      }
     }
-
-    mDictionaryCache.Remove(prepath);
   }
 }
 
@@ -1128,6 +1139,7 @@ nsresult DictionaryOrigin::Write(DictionaryCacheEntry* aDictEntry) {
 
 void DictionaryOrigin::SetCacheEntry(nsICacheEntry* aEntry) {
   mEntry = aEntry;
+  mEntry->SetContentType(nsICacheEntry::CONTENT_TYPE_DICTIONARY);
   if (mDeferredWrites) {
     for (auto& entry : mEntries) {
       if (NS_FAILED(Write(entry))) {
@@ -1245,12 +1257,13 @@ already_AddRefed<DictionaryCacheEntry> DictionaryOrigin::AddEntry(
 nsresult DictionaryOrigin::RemoveEntry(const nsACString& aKey) {
   DICTIONARY_LOG(
       ("DictionaryOrigin::RemoveEntry for %s", PromiseFlatCString(aKey).get()));
+  RefPtr<DictionaryCacheEntry> hold;
   for (const auto& dict : mEntries) {
     DICTIONARY_LOG(
         ("       Comparing to %s", PromiseFlatCString(dict->GetURI()).get()));
     if (dict->GetURI().Equals(aKey)) {
       
-      RefPtr<DictionaryCacheEntry> hold(dict);
+      hold = dict;
       DICTIONARY_LOG(("Removing %p", dict.get()));
       mEntries.RemoveElement(dict);
       if (mEntry) {
@@ -1259,25 +1272,34 @@ nsresult DictionaryOrigin::RemoveEntry(const nsACString& aKey) {
         
         
         mPendingRemove.AppendElement(hold);
+        return NS_OK;
       }
-      return NS_OK;
+      break;
     }
   }
-  DICTIONARY_LOG(("DictionaryOrigin::RemoveEntry (pending) for %s",
-                  PromiseFlatCString(aKey).get()));
-  for (const auto& dict : mPendingEntries) {
-    DICTIONARY_LOG(
-        ("       Comparing to %s", PromiseFlatCString(dict->GetURI()).get()));
-    if (dict->GetURI().Equals(aKey)) {
-      
-      RefPtr<DictionaryCacheEntry> hold(dict);
-      DICTIONARY_LOG(("Removing %p", dict.get()));
-      mPendingEntries.RemoveElement(dict);
-      hold->RemoveEntry(mEntry);
-      return NS_OK;
+  if (!hold) {
+    DICTIONARY_LOG(("DictionaryOrigin::RemoveEntry (pending) for %s",
+                    PromiseFlatCString(aKey).get()));
+    for (const auto& dict : mPendingEntries) {
+      DICTIONARY_LOG(
+          ("       Comparing to %s", PromiseFlatCString(dict->GetURI()).get()));
+      if (dict->GetURI().Equals(aKey)) {
+        
+        RefPtr<DictionaryCacheEntry> hold(dict);
+        DICTIONARY_LOG(("Removing %p", dict.get()));
+        mPendingEntries.RemoveElement(dict);
+        break;
+      }
     }
   }
-  return NS_ERROR_FAILURE;
+  
+  if (IsEmpty()) {
+    if (mEntry) {
+      mEntry->AsyncDoom(nullptr);
+    }
+    gDictionaryCache->RemoveOrigin(mOrigin);
+  }
+  return hold ? NS_OK : NS_ERROR_FAILURE;
 }
 
 void DictionaryOrigin::FinishAddEntry(DictionaryCacheEntry* aEntry) {
@@ -1373,6 +1395,12 @@ nsresult DictionaryOrigin::OnMetaDataElement(const char* asciiKey,
   DICTIONARY_LOG(("DictionaryOrigin::OnMetaDataElement %s %s",
                   asciiKey ? asciiKey : "", asciiValue));
 
+  
+  if (strcmp(asciiKey, "ctid") == 0) {
+    MOZ_ASSERT(strcmp(asciiValue, "7") == 0);
+    return NS_OK;
+  }
+  
   
   
   for (auto& entry : mEntries) {

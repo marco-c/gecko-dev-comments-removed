@@ -744,15 +744,6 @@ static bool RemoveExactEntry(CacheEntryTable* aEntries, nsACString const& aKey,
     return false;  
   }
 
-  
-  
-
-  if (aEntry->GetEnhanceID().EqualsLiteral("dict:")) {
-    DictionaryCache::RemoveOriginFor(aEntry->GetURI());
-  } else {
-    DictionaryCache::RemoveDictionaryFor(aEntry->GetURI());
-  }
-
   LOG(("RemoveExactEntry [entry=%p removed]", aEntry));
   aEntries->Remove(aKey);
   return true;

@@ -1487,6 +1487,11 @@ nsresult CacheEntry::SetMetaDataElement(const char* aKey, const char* aValue) {
   return mFile->SetElement(aKey, aValue);
 }
 
+nsresult CacheEntry::GetIsEmpty(bool* aEmpty) {
+  *aEmpty = GetMetadataMemoryConsumption() == 0;
+  return NS_OK;
+}
+
 nsresult CacheEntry::VisitMetaData(nsICacheEntryMetaDataVisitor* aVisitor) {
   NS_ENSURE_SUCCESS(mFileStatus, NS_ERROR_NOT_AVAILABLE);
 
@@ -1769,6 +1774,15 @@ void CacheEntry::DoomAlreadyRemoved() {
   RemoveForcedValidity();
 
   mIsDoomed = true;
+
+  
+  
+  LOG(("DoomAlreadyRemoved [entry=%p removed]", this));
+  if (mEnhanceID.EqualsLiteral("dict:")) {
+    DictionaryCache::RemoveOriginFor(mURI);
+  } else {
+    DictionaryCache::RemoveDictionaryFor(mURI);
+  }
 
   
   
