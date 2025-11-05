@@ -324,28 +324,6 @@ class JS_PUBLIC_API JSSprinter : public StringPrinter {
 };
 
 
-
-class FixedBufferPrinter final : public GenericPrinter {
- private:
-  
-  char* buffer_;
-  
-  size_t size_;
-
- public:
-  constexpr FixedBufferPrinter(char* buf, size_t size)
-      : buffer_(buf), size_(size) {
-    MOZ_ASSERT(buffer_);
-    memset(buffer_, 0, size_);
-  }
-
-  
-  
-  void put(const char* s, size_t len) override;
-  using GenericPrinter::put;  
-};
-
-
 class JS_PUBLIC_API Fprinter final : public GenericPrinter {
  private:
   FILE* file_;
