@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * JS execution context.
+ */
 
 #include "vm/JSContext-inl.h"
 
@@ -14,61 +14,61 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/Utf8.h"  
+#include "mozilla/Utf8.h"  // mozilla::ConvertUtf16ToUtf8
 
 #include <string.h>
 #ifdef ANDROID
 #  include <android/log.h>
 #  include <fstream>
 #  include <string>
-#endif  
+#endif  // ANDROID
 #ifdef XP_WIN
 #  include <processthreadsapi.h>
-#endif  
+#endif  // XP_WIN
 
-#include "jsapi.h"  
+#include "jsapi.h"  // JS_SetNativeStackQuota
 #include "jsexn.h"
 #include "jstypes.h"
 
-#include "builtin/RegExp.h"  
+#include "builtin/RegExp.h"  // js::RegExpSearcherLastLimitSentinel
 #ifdef MOZ_EXECUTION_TRACING
 #  include "debugger/ExecutionTracer.h"
 #endif
 #include "frontend/FrontendContext.h"
 #include "gc/GC.h"
-#include "gc/PublicIterators.h"  
+#include "gc/PublicIterators.h"  // js::RealmsIter
 #include "irregexp/RegExpAPI.h"
 #include "jit/Simulator.h"
-#include "js/CallAndConstruct.h"  
+#include "js/CallAndConstruct.h"  // JS::Call
 #include "js/CharacterEncoding.h"
-#include "js/ContextOptions.h"        
-#include "js/ErrorInterceptor.h"      
-#include "js/friend/ErrorMessages.h"  
+#include "js/ContextOptions.h"        // JS::ContextOptions
+#include "js/ErrorInterceptor.h"      // JSErrorInterceptor
+#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/friend/MicroTask.h"
-#include "js/friend/StackLimits.h"  
+#include "js/friend/StackLimits.h"  // js::ReportOverRecursed
 #include "js/MemoryCallbacks.h"
 #include "js/Prefs.h"
 #include "js/Printf.h"
-#include "js/PropertyAndElement.h"  
-#include "js/Stack.h"  
+#include "js/PropertyAndElement.h"  // JS_GetProperty
+#include "js/Stack.h"  // JS::NativeStackSize, JS::NativeStackLimit, JS::NativeStackLimitMin
 #include "util/DiagnosticAssertions.h"
 #include "util/DifferentialTesting.h"
 #include "util/DoubleToString.h"
 #include "util/NativeStack.h"
 #include "util/Text.h"
 #include "util/WindowsWrapper.h"
-#include "js/friend/DumpFunctions.h"  
-#include "js/Printer.h"               
-#include "vm/BytecodeUtil.h"          
+#include "js/friend/DumpFunctions.h"  // for stack trace utilities
+#include "js/Printer.h"               // for FixedBufferPrinter
+#include "vm/BytecodeUtil.h"          // JSDVG_IGNORE_STACK
 #include "vm/ErrorObject.h"
 #include "vm/ErrorReporting.h"
 #include "vm/FrameIter.h"
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
-#include "vm/PlainObject.h"  
+#include "vm/PlainObject.h"  // js::PlainObject
 #include "vm/Realm.h"
-#include "vm/StringType.h"  
-#include "vm/ToSource.h"    
+#include "vm/StringType.h"  // StringToNewUTF8CharsZ
+#include "vm/ToSource.h"    // js::ValueToSource
 
 #include "vm/Compartment-inl.h"
 #include "vm/Stack-inl.h"
@@ -110,7 +110,7 @@ js::AutoCycleDetector::~AutoCycleDetector() {
     if (vec.length() > 1) {
       vec.popBack();
     } else {
-      
+      // Avoid holding on to unused heap allocations.
       vec.clearAndFree();
     }
   }
@@ -142,8 +142,8 @@ bool JSContext::init() {
   }
 
 #ifdef DEBUG
-  
-  
+  // Set the initialized_ last, so that ProtectedData checks will allow us to
+  // initialize this context before it becomes the runtime's active context.
   initialized_ = true;
 #endif
 
@@ -151,11 +151,11 @@ bool JSContext::init() {
 }
 
 static void InitDefaultStackQuota(JSContext* cx) {
-  
-  
-  
-  
-  
+  // Initialize stack quota to a reasonable default. Embedders can override this
+  // by calling JS_SetNativeStackQuota.
+  //
+  // NOTE: Firefox overrides these values. For the main thread this happens in
+  // XPCJSContext::Initialize.
 
 #if defined(MOZ_ASAN) || (defined(DEBUG) && !defined(XP_WIN))
   static constexpr JS::NativeStackSize MaxStackSize =
@@ -201,8 +201,8 @@ JSContext* js::NewContext(uint32_t maxBytes, JSRuntime* parentRuntime) {
     return nullptr;
   }
 
-  
-  
+  // Initialize stack quota last because simulators rely on the JSRuntime having
+  // been initialized.
   InitDefaultStackQuota(cx);
 
   return cx;
@@ -216,8 +216,8 @@ void js::DestroyContext(JSContext* cx) {
 
   cx->checkNoGCRooters();
 
-  
-  
+  // Cancel all off thread compiles. Completed compiles may try to
+  // interrupt this context. See HelperThread::handleIonWorkload.
   CancelOffThreadCompile(cx->runtime());
 
   cx->jobQueue = nullptr;
@@ -227,11 +227,11 @@ void js::DestroyContext(JSContext* cx) {
 
   JSRuntime* rt = cx->runtime();
 
-  
-  
+  // Flush promise tasks executing in helper threads early, before any parts
+  // of the JSRuntime that might be visible to helper threads are torn down.
   rt->offThreadPromiseState.ref().shutdown(cx);
 
-  
+  // Destroy the runtime along with its last context.
   js::AutoNoteSingleThreadedRegion nochecks;
   rt->destroyRuntime();
   js_delete_poison(cx);
@@ -259,42 +259,42 @@ bool AutoResolving::alreadyStartedSlow() const {
 }
 
 static void MaybeReportOutOfMemoryForDifferentialTesting() {
-  
-
-
-
-
+  /*
+   * OOMs are non-deterministic, especially across different execution modes
+   * (e.g. interpreter vs JIT). When doing differential testing, print to stderr
+   * so that the fuzzers can detect this.
+   */
   if (js::SupportDifferentialTesting()) {
     fprintf(stderr, "ReportOutOfMemory called\n");
   }
 }
 
-
-
-
-
-
-
-
-
+/*
+ * Since memory has been exhausted, avoid the normal error-handling path which
+ * allocates an error object, report and callstack. Instead simply throw the
+ * static atom "out of memory".
+ *
+ * Furthermore, callers of ReportOutOfMemory (viz., malloc) assume a GC does
+ * not occur, so GC must be avoided or suppressed.
+ */
 void JSContext::onOutOfMemory() {
   runtime()->hadOutOfMemory = true;
   gc::AutoSuppressGC suppressGC(this);
 
-  
-  
-  
+  // Capture stack trace before doing anything else that might use memory.
+  // If we're in an unsafe ABI context, we don't need to capture a stack trace
+  // because the function will explicitly recover from OOM.
   if (!inUnsafeCallWithABI) {
     captureOOMStackTrace();
   }
 
-  
+  /* Report the oom. */
   if (JS::OutOfMemoryCallback oomCallback = runtime()->oomCallback) {
     oomCallback(this, runtime()->oomCallbackData);
   }
 
-  
-  
+  // If we OOM early in process startup, this may be unavailable so just return
+  // instead of crashing unexpectedly.
   if (MOZ_UNLIKELY(!runtime()->hasInitializedSelfHosting())) {
     return;
   }
@@ -324,23 +324,23 @@ JS_PUBLIC_API void js::ReportOutOfMemory(FrontendContext* fc) {
 }
 
 static void MaybeReportOverRecursedForDifferentialTesting() {
-  
-
-
-
-
-
-
-
+  /*
+   * We cannot make stack depth deterministic across different
+   * implementations (e.g. JIT vs. interpreter will differ in
+   * their maximum stack depth).
+   * However, we can detect externally when we hit the maximum
+   * stack depth which is useful for external testing programs
+   * like fuzzers.
+   */
   if (js::SupportDifferentialTesting()) {
     fprintf(stderr, "ReportOverRecursed called\n");
   }
 }
 
 void JSContext::onOverRecursed() {
-  
-  
-  
+  // Try to construct an over-recursed error and then update the exception
+  // status to `OverRecursed`. Creating the error can fail, so check there
+  // is a reasonable looking exception pending before updating status.
   JS_ReportErrorNumberASCII(this, GetErrorMessage, nullptr,
                             JSMSG_OVER_RECURSED);
   if (isExceptionPending() && !isThrowingOutOfMemory()) {
@@ -369,12 +369,12 @@ JS_PUBLIC_API void js::ReportOverRecursed(FrontendContext* fc) {
 }
 
 void js::ReportOversizedAllocation(JSContext* cx, const unsigned errorNumber) {
-  
-  
-  
-  
-  
-  
+  // The JIT may optimize away allocations if it determines that they aren't
+  // used. This can affect whether we throw an exception when the size of an
+  // allocation exceeds implementation-defined limits (eg JSString::MAX_LENGTH).
+  // These errors aren't interesting for the purposes of differential fuzzing.
+  // We print a message so that fuzzers can detect this case. To simplify
+  // tooling updates, we use the same message as ReportOutOfMemory.
   if (js::SupportDifferentialTesting()) {
     fprintf(stderr, "ReportOutOfMemory called\n");
   }
@@ -401,7 +401,7 @@ void js::ReportAllocationOverflow(FrontendContext* fc) {
   fc->onAllocationOverflow();
 }
 
-
+/* |callee| requires a usage string provided by JS_DefineFunctionsWithHelp. */
 void js::ReportUsageErrorASCII(JSContext* cx, HandleObject callee,
                                const char* msg) {
   RootedValue usage(cx);
@@ -431,9 +431,9 @@ static void PrintErrorLine(FILE* file, const char* prefix,
     {
       size_t linebufLen = report->linebufLength();
 
-      
-      
-      
+      // This function is only used for shell command-line sorts of stuff where
+      // performance doesn't really matter, so just encode into max-sized
+      // memory.
       mozilla::CheckedInt<size_t> utf8Len(linebufLen);
       utf8Len *= 3;
       if (utf8Len.isValid()) {
@@ -463,7 +463,7 @@ static void PrintErrorLine(FILE* file, const char* prefix,
       fputc(utf8buf[i], file);
     }
 
-    
+    // linebuf/utf8buf usually ends with a newline. If not, add one here.
     if (n == 0 || utf8buf[n - 1] != '\n') {
       fputc('\n', file);
     }
@@ -522,7 +522,7 @@ static void PrintSingleError(FILE* file, JS::ConstUTF8CharsZ toStringResult,
   const char* message =
       toStringResult ? toStringResult.c_str() : report->message().c_str();
 
-  
+  /* embedded newlines -- argh! */
   const char* ctmp;
   while ((ctmp = strchr(message, '\n')) != 0) {
     ctmp++;
@@ -533,7 +533,7 @@ static void PrintSingleError(FILE* file, JS::ConstUTF8CharsZ toStringResult,
     message = ctmp;
   }
 
-  
+  /* If there were no filename or lineno, the prefix might be empty */
   if (prefix) {
     fputs(prefix.get(), file);
   }
@@ -549,7 +549,7 @@ static void PrintErrorImpl(FILE* file, JS::ConstUTF8CharsZ toStringResult,
                            JSErrorReport* report, bool reportWarnings) {
   MOZ_ASSERT(report);
 
-  
+  /* Conditionally ignore reported warnings. */
   if (report->isWarning() && !reportWarnings) {
     return;
   }
@@ -761,8 +761,8 @@ JS::NativeStackLimit JSContext::stackLimitForCurrentPrincipal() {
 }
 
 JS_PUBLIC_API bool js::UseInternalJobQueues(JSContext* cx) {
-  
-  
+  // Internal job queue handling must be set up very early. Self-hosting
+  // initialization is as good a marker for that as any.
   MOZ_RELEASE_ASSERT(
       !cx->runtime()->hasInitializedSelfHosting(),
       "js::UseInternalJobQueues must be called early during runtime startup.");
@@ -793,7 +793,7 @@ JSObject* InternalJobQueue::copyJobs(JSContext* cx) {
     auto addToArray = [&](auto& queue) -> bool {
       for (const auto& e : queue) {
         if (JS::GetExecutionGlobalFromJSMicroTask(e)) {
-          
+          // All any test cares about is the global of the job so let's do it.
           RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(e));
           if (!cx->compartment()->wrap(cx, &global)) {
             return false;
@@ -891,19 +891,19 @@ void InternalJobQueue::runJobs(JSContext* cx) {
   while (true) {
     cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
 
-    
-    
-    
-    
+    // It doesn't make sense for job queue draining to be reentrant. At the
+    // same time we don't want to assert against it, because that'd make
+    // drainJobQueue unsafe for fuzzers. We do want fuzzers to test this,
+    // so we simply ignore nested calls of drainJobQueue.
     draining_ = true;
 
     if (JS::Prefs::use_js_microtask_queue()) {
-      
+      // Execute jobs in a loop until we've reached the end of the queue.
       JS::Rooted<JS::MicroTask> job(cx);
       while (JS::HasAnyMicroTasks(cx)) {
         MOZ_ASSERT(queue.empty());
-        
-        
+        // A previous job might have set this flag. E.g., the js shell
+        // sets it if the `quit` builtin function is called.
         if (interrupted_) {
           break;
         }
@@ -913,8 +913,8 @@ void InternalJobQueue::runJobs(JSContext* cx) {
         job = JS::DequeueNextMicroTask(cx);
         MOZ_ASSERT(!job.isNull());
 
-        
-        
+        // If the next job is the last job in the job queue, allow
+        // skipping the standard job queuing behavior.
         if (!JS::HasAnyMicroTasks(cx)) {
           JS::JobQueueIsEmpty(cx);
         }
@@ -923,14 +923,14 @@ void InternalJobQueue::runJobs(JSContext* cx) {
         AutoRealm ar(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
         {
           if (!JS::RunJSMicroTask(cx, job)) {
-            
+            // Nothing we can do about uncatchable exceptions.
             if (!cx->isExceptionPending()) {
               continue;
             }
 
-            
-            
-            
+            // Always clear the exception, because
+            // PrepareScriptEnvironmentAndInvoke will assert that we don't have
+            // one.
             RootedValue exn(cx);
             bool success = cx->getPendingException(&exn);
             cx->clearPendingException();
@@ -945,10 +945,10 @@ void InternalJobQueue::runJobs(JSContext* cx) {
       RootedObject job(cx);
       JS::HandleValueArray args(JS::HandleValueArray::empty());
       RootedValue rval(cx);
-      
+      // Execute jobs in a loop until we've reached the end of the queue.
       while (!queue.empty()) {
-        
-        
+        // A previous job might have set this flag. E.g., the js shell
+        // sets it if the `quit` builtin function is called.
         if (interrupted_) {
           break;
         }
@@ -958,8 +958,8 @@ void InternalJobQueue::runJobs(JSContext* cx) {
         job = queue.front();
         queue.popFront();
 
-        
-        
+        // If the next job is the last job in the job queue, allow
+        // skipping the standard job queuing behavior.
         if (queue.empty()) {
           JS::JobQueueIsEmpty(cx);
         }
@@ -967,14 +967,14 @@ void InternalJobQueue::runJobs(JSContext* cx) {
         AutoRealm ar(cx, &job->as<JSFunction>());
         {
           if (!JS::Call(cx, UndefinedHandleValue, job, args, &rval)) {
-            
+            // Nothing we can do about uncatchable exceptions.
             if (!cx->isExceptionPending()) {
               continue;
             }
 
-            
-            
-            
+            // Always clear the exception, because
+            // PrepareScriptEnvironmentAndInvoke will assert that we don't have
+            // one.
             RootedValue exn(cx);
             bool success = cx->getPendingException(&exn);
             cx->clearPendingException();
@@ -994,13 +994,13 @@ void InternalJobQueue::runJobs(JSContext* cx) {
     }
 
     if (JS::Prefs::use_js_microtask_queue()) {
-      
+      // MG:XXX: Should use public API here.
       cx->microTaskQueues->clear();
     } else {
       queue.clear();
     }
 
-    
+    // It's possible a job added a new off-thread promise task.
     if (!cx->runtime()->offThreadPromiseState.ref().internalHasPending()) {
       break;
     }
@@ -1052,9 +1052,9 @@ js::UniquePtr<JS::JobQueue::SavedJobQueue> InternalJobQueue::saveJobQueue(
   auto saved = js::MakeUnique<SavedQueue>(
       cx, std::move(queue.get()), std::move(*cx->microTaskQueues), draining_);
   if (!saved) {
-    
-    
-    
+    // When MakeUnique's allocation fails, the SavedQueue constructor is never
+    // called, so this->queue is still initialized. (The move doesn't occur
+    // until the constructor gets called.)
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -1145,7 +1145,7 @@ JS_PUBLIC_API bool JS::HasDebuggerMicroTasks(JSContext* cx) {
   return !cx->microTaskQueues->debugMicroTaskQueue.empty();
 }
 
-
+// Concrete implementation of the saved queue.
 struct SavedMicroTaskQueueImpl : public JS::SavedMicroTaskQueue {
   explicit SavedMicroTaskQueueImpl(JSContext* cx) : savedQueues(cx) {
     savedQueues = js::MakeUnique<js::MicroTaskQueueSet>(cx);
@@ -1169,7 +1169,7 @@ JS_PUBLIC_API void JS::RestoreMicroTaskQueue(
     JSContext* cx, js::UniquePtr<JS::SavedMicroTaskQueue> savedQueue) {
   MOZ_ASSERT(cx->microTaskQueues->empty(), "Don't drop jobs on the floor");
 
-  
+  // There's only one impl, so we know this is safe.
   SavedMicroTaskQueueImpl* savedQueueImpl =
       static_cast<SavedMicroTaskQueueImpl*>(savedQueue.get());
   std::swap(savedQueueImpl->savedQueues.get(), cx->microTaskQueues.get());
@@ -1283,7 +1283,7 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
              JS::RootingContext::get(this));
 
   if (JS::Prefs::experimental_capture_oom_stack_trace()) {
-    
+    // Allocate pre-allocated buffer for OOM stack traces
     oomStackTraceBuffer_ =
         static_cast<char*>(js_calloc(OOMStackTraceBufferSize));
   }
@@ -1301,15 +1301,15 @@ JS::NativeStackLimit js::GetSuspendableStackLimit(JSContext* cx) {
 
 JSContext::~JSContext() {
 #ifdef DEBUG
-  
-  
+  // Clear the initialized_ first, so that ProtectedData checks will allow us to
+  // destroy this context even if the runtime is already gone.
   initialized_ = false;
 #endif
 
-  
+  /* Free the stuff hanging off of cx. */
   MOZ_ASSERT(!resolvingList);
 
-  
+  // Ensure we didn't leak memory for the ArraySortData vector.
   MOZ_ASSERT(liveArraySortDataInstances == 0);
 
   if (dtoaState) {
@@ -1326,7 +1326,7 @@ JSContext::~JSContext() {
     irregexp::DestroyIsolate(isolate.ref());
   }
 
-  
+  // Free the pre-allocated OOM stack trace buffer
   if (oomStackTraceBuffer_) {
     js_free(oomStackTraceBuffer_);
   }
@@ -1346,14 +1346,14 @@ const char* JSContext::getOOMStackTrace() const {
 bool JSContext::hasOOMStackTrace() const { return oomStackTraceBufferValid_; }
 
 void JSContext::captureOOMStackTrace() {
-  
+  // Clear any existing stack trace
   oomStackTraceBufferValid_ = false;
 
   if (!oomStackTraceBuffer_) {
-    return;  
+    return;  // Buffer not available
   }
 
-  
+  // Write directly to pre-allocated buffer to avoid any memory allocation
   FixedBufferPrinter fbp(oomStackTraceBuffer_, OOMStackTraceBufferSize);
   js::DumpBacktrace(this, fbp);
   MOZ_ASSERT(strlen(oomStackTraceBuffer_) < OOMStackTraceBufferSize);
@@ -1381,30 +1381,30 @@ static bool IsOutOfMemoryException(JSContext* cx, const Value& v) {
 void JSContext::setPendingException(HandleValue v, Handle<SavedFrame*> stack) {
 #if defined(NIGHTLY_BUILD)
   do {
-    
-    
-    
+    // Do not intercept exceptions if we are already
+    // in the exception interceptor. That would lead
+    // to infinite recursion.
     if (this->runtime()->errorInterception.isExecuting) {
       break;
     }
 
-    
+    // Check whether we have an interceptor at all.
     if (!this->runtime()->errorInterception.interceptor) {
       break;
     }
 
-    
-    
-    
+    // Don't report OOM exceptions. The interceptor isn't interested in those
+    // and they can confuse the interceptor because OOM can be thrown when we
+    // are not in a realm (atom allocation, for example).
     if (IsOutOfMemoryException(this, v)) {
       break;
     }
 
-    
-    
+    // Make sure that we do not call the interceptor from within
+    // the interceptor.
     this->runtime()->errorInterception.isExecuting = true;
 
-    
+    // The interceptor must be infallible.
     const mozilla::DebugOnly<bool> wasExceptionPending =
         this->isExceptionPending();
     this->runtime()->errorInterception.interceptor->interceptError(this, v);
@@ -1412,9 +1412,9 @@ void JSContext::setPendingException(HandleValue v, Handle<SavedFrame*> stack) {
 
     this->runtime()->errorInterception.isExecuting = false;
   } while (false);
-#endif  
+#endif  // defined(NIGHTLY_BUILD)
 
-  
+  // overRecursed_ is set after the fact by ReportOverRecursed.
   this->status = JS::ExceptionStatus::Throwing;
   this->unwrappedException() = v;
   this->unwrappedExceptionStack() = stack;
@@ -1518,16 +1518,16 @@ bool JSContext::isRuntimeCodeGenEnabled(
     JS::Handle<JSString*> bodyString,
     JS::Handle<JS::StackGCVector<JS::Value>> parameterArgs,
     JS::Handle<JS::Value> bodyArg, bool* outCanCompileStrings) {
-  
-  
+  // Make sure that the CSP callback is installed and that it permits runtime
+  // code generation.
   if (JSCSPEvalChecker allows =
           runtime()->securityCallbacks->contentSecurityPolicyAllows) {
     return allows(this, kind, codeString, compilationType, parameterStrings,
                   bodyString, parameterArgs, bodyArg, outCanCompileStrings);
   }
 
-  
-  
+  // Default implementation from the "Dynamic Code Brand Checks" spec.
+  // https://tc39.es/proposal-dynamic-code-brand-checks/#sec-hostensurecancompilestrings
   *outCanCompileStrings = true;
   return true;
 }
@@ -1537,19 +1537,19 @@ bool JSContext::getCodeForEval(HandleObject code,
   if (JSCodeForEvalOp gets = runtime()->securityCallbacks->codeForEvalGets) {
     return gets(this, code, outCode);
   }
-  
-  
+  // Default implementation from the "Dynamic Code Brand Checks" spec.
+  // https://tc39.es/proposal-dynamic-code-brand-checks/#sec-hostgetcodeforeval
   outCode.set(nullptr);
   return true;
 }
 
 size_t JSContext::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
-  
-
-
-
-
+  /*
+   * There are other JSContext members that could be measured; the following
+   * ones have been found by DMD to be worth measuring.  More stuff may be
+   * added later.
+   */
   return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf) +
          irregexp::IsolateSizeOfIncludingThis(isolate, mallocSizeOf);
 }
@@ -1583,9 +1583,9 @@ JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {
 }
 
 void JSContext::resetJitStackLimit() {
-  
-  
-  
+  // Note that, for now, we use the untrusted limit for ion. This is fine,
+  // because it's the most conservative limit, and if we hit it, we'll bail
+  // out of ion into the interpreter, which will do a proper recursion check.
 #ifdef JS_SIMULATOR
   jitStackLimit = jit::Simulator::StackLimit();
 #else
@@ -1602,7 +1602,7 @@ JSScript* JSContext::currentScript(jsbytecode** ppc,
     *ppc = nullptr;
   }
 
-  
+  // Fast path: there are no JS frames on the stack if there's no activation.
   if (!activation()) {
     return nullptr;
   }
@@ -1637,9 +1637,9 @@ void AutoEnterOOMUnsafeRegion::crash_impl(const char* reason) {
   js::NoteIntentionalCrash();
   SprintfLiteral(msgbuf, "[unhandlable oom] %s", reason);
 #ifndef DEBUG
-  
-  
-  
+  // In non-DEBUG builds MOZ_CRASH normally doesn't print to stderr so we have
+  // to do this explicitly (the jit-test allow-unhandlable-oom annotation and
+  // fuzzers depend on it).
   fprintf(stderr, "Hit MOZ_CRASH(%s) at %s:%d\n", msgbuf, __FILE__, __LINE__);
 #endif
   MOZ_CRASH_UNSAFE(msgbuf);
@@ -1735,7 +1735,7 @@ AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
       nested_(cx_ ? cx_->hasAutoUnsafeCallWithABI : false),
       nogc(cx_) {
   if (!cx_) {
-    
+    // This is a helper thread doing Ion or Wasm compilation - nothing to do.
     return;
   }
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
@@ -1746,9 +1746,6 @@ AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
       break;
     case UnsafeABIStrictness::AllowPendingExceptions:
       checkForPendingException_ = !JS_IsExceptionPending(cx_);
-      break;
-    case UnsafeABIStrictness::AllowThrownExceptions:
-      checkForPendingException_ = false;
       break;
   }
 #endif
@@ -1781,15 +1778,15 @@ JS_PUBLIC_API void js::DecWasiRecursionDepth(JSContext* cx) {
 }
 
 JS_PUBLIC_API bool js::CheckWasiRecursionLimit(JSContext* cx) {
-  
-  
-  
-  
-  
+  // WASI has two limits:
+  // 1) The stack pointer in linear memory that grows to zero. See
+  //    --stack-first in js/src/shell/moz.build.
+  // 2) The JS::RootingContext::wasiRecursionDepth that counts recursion depth.
+  //    Here we should check both.
   if (JS::RootingContext::get(cx)->wasiRecursionDepth >=
       JS::RootingContext::wasiRecursionDepthLimit) {
     return false;
   }
   return true;
 }
-#endif  
+#endif  // __wasi__
