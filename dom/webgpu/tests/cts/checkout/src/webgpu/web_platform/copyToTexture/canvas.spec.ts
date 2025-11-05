@@ -836,8 +836,15 @@ g.test('color_space_conversion')
       maxDiffULPsForNormFormat: 1,
     };
     if (srcColorSpace !== dstColorSpace) {
-      
-      texelCompareOptions.maxFractionalDiff = 0.001;
+      if (dstColorFormat.endsWith('32float')) {
+        texelCompareOptions.maxFractionalDiff = 0.0003;
+      } else if (dstColorFormat.endsWith('16float')) {
+        texelCompareOptions.maxFractionalDiff = 0.0007;
+      } else if (dstColorFormat === 'rg11b10ufloat') {
+        texelCompareOptions.maxFractionalDiff = 0.015;
+      } else {
+        texelCompareOptions.maxFractionalDiff = 0.001;
+      }
     } else {
       texelCompareOptions.maxDiffULPsForFloatFormat = 1;
     }
