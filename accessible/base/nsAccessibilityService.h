@@ -287,6 +287,14 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
 
+
+  void NotifyAnchorPositionedScrollUpdate(mozilla::PresShell* aPresShell,
+                                          nsIFrame* aFrame);
+
+  
+
+
+
   void NotifyAttrElementWillChange(mozilla::dom::Element* aElement,
                                    nsAtom* aAttr);
 
