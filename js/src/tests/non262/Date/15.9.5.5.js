@@ -50,11 +50,27 @@ expect =  0;
 addTestCase();
 
 
-status = "Math.abs(Date.parse(now.toLocaleString('en-US')) - now.valueOf()) < 1000";
-actual =   Math.abs(Date.parse(now.toLocaleString('en-US')) -  now.valueOf()) < 1000;
+status = "Math.abs(Date.parse(now.toLocaleString('en-US')) - now.valueOf()) < 1000 + (!isRepeatedTime(now) ? 0 : msPerHour)";
+actual =  Math.abs(Date.parse(now.toLocaleString('en-US')) - now.valueOf()) < 1000 + (!isRepeatedTime(now) ? 0 : msPerHour);
 expect = true;
 addTestCase();
 
+
+
+for (var date of [
+   
+   new Date(Date.parse("2025-11-02T08:00:00Z")),
+   new Date(Date.parse("2025-11-02T09:00:00Z")),
+
+   
+   new Date(Date.parse("2025-03-09T09:00:00Z")),
+   new Date(Date.parse("2025-03-09T10:00:00Z")),
+]) {
+   status = "Math.abs(Date.parse(date.toLocaleString('en-US')) - date.valueOf()) < 1000 + (!isRepeatedTime(date) ? 0 : msPerHour)";
+   actual =  Math.abs(Date.parse(date.toLocaleString('en-US')) - date.valueOf()) < 1000 + (!isRepeatedTime(date) ? 0 : msPerHour);
+   expect = true;
+   addTestCase();
+}
 
 
 
@@ -109,3 +125,11 @@ function addDateTestCase(date_given_in_milliseconds)
   addTestCase();
 }
 
+
+
+function isRepeatedTime(date)
+{
+   var offset1 = date.getTimezoneOffset();
+   var offset2 = new Date(date.valueOf() - msPerHour).getTimezoneOffset();
+   return offset1 > offset2;
+}
