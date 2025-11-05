@@ -793,7 +793,7 @@ class nsWindow final : public nsIWidget {
 
 
 
-  bool mHiddenPopupPositioned : 1;
+  bool mX11HiddenPopupPositioned : 1;
 
   
   
