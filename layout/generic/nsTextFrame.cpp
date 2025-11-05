@@ -5893,6 +5893,14 @@ static bool ComputeDecorationInset(
         decRect.Deflate(indentMargin);
       }
     }
+
+    
+    
+    
+    if (lineContainer->HasAnyStateBits(NS_FRAME_IN_REFLOW) &&
+        lineContainer->IsBlockFrameOrSubclass()) {
+      static_cast<nsBlockFrame*>(lineContainer)->ClearLineIterator();
+    }
   }
 
   
