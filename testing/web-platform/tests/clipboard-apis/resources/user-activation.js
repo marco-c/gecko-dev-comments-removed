@@ -42,14 +42,3 @@ async function tryGrantWritePermission() {
   await trySetPermission("clipboard-write", "granted");
 }
 
-async function sendPasteShortcutKey() {
-  const modifier = navigator.platform.includes("Mac") ? "\uE03d" 
-                                                      : "\uE009"; 
-  await new test_driver.Actions()
-    .keyDown(modifier)
-    .keyDown("v")
-    .keyUp("v")
-    .keyUp(modifier)
-    .send();
-}
-

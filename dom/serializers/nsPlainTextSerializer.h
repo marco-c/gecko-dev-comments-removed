@@ -283,12 +283,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     void Append(const CurrentLine& aCurrentLine,
                 StripTrailingWhitespaces aStripTrailingWhitespaces);
 
-    
-
-
-    void Append(const nsAString& aString);
-
-    void AppendLineBreak(bool aForceCRLF = false);
+    void AppendLineBreak();
 
     
 
@@ -305,6 +300,11 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     uint32_t GetOutputLength() const;
 
    private:
+    
+
+
+    void Append(const nsAString& aString);
+
     
     const int32_t mFlags;
 

@@ -132,7 +132,6 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
   } else {
     
     flags = nsIDocumentEncoder::OutputSelectionOnly |
-            nsIDocumentEncoder::OutputForPlainTextClipboardCopy |
             nsIDocumentEncoder::OutputAbsoluteLinks |
             nsIDocumentEncoder::SkipInvisibleContent |
             nsIDocumentEncoder::OutputDropInvisibleBreak |
