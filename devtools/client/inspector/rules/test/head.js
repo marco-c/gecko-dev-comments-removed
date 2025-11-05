@@ -1392,11 +1392,7 @@ function getSmallIncrementKey() {
 
 
 function checkRuleViewContent(view, expectedElements) {
-  const elementsInView = Array.from(view.element.children).filter(
-    
-    el => !el.classList.contains("registered-properties")
-  );
-
+  const elementsInView = _getRuleViewElements(view);
   is(
     elementsInView.length,
     expectedElements.length,
@@ -1508,6 +1504,29 @@ function checkRuleViewContent(view, expectedElements) {
       );
     }
   }
+}
+
+
+
+
+
+
+
+function _getRuleViewElements(view) {
+  const elementsInView = [];
+  for (const el of view.element.children) {
+    if (el.classList.contains("registered-properties")) {
+      
+      continue;
+    }
+    
+    if (el.classList.contains("ruleview-expandable-container")) {
+      elementsInView.push(...el.children);
+    } else {
+      elementsInView.push(el);
+    }
+  }
+  return elementsInView;
 }
 
 function getUnusedVariableButton(view, elementIndexInView) {
