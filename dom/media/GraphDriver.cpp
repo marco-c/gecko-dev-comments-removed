@@ -245,8 +245,8 @@ TimeDuration SystemClockDriver::NextIterationWaitDuration() {
     mTargetIterationTimeStamp += IterationDuration();
   }
   TimeDuration timeout = mTargetIterationTimeStamp - now;
-  if (timeout < TimeDuration::FromMilliseconds(-MEDIA_GRAPH_TARGET_PERIOD_MS)) {
-    
+  if (timeout <
+      TimeDuration::FromMilliseconds(-SYSTEM_CLOCK_BANKRUPTCY_THRESHOLD_MS)) {
     
     
     LOG(LogLevel::Warning, ("%p: Global underrun detected", Graph()));

@@ -41,6 +41,18 @@ static const int MEDIA_GRAPH_TARGET_PERIOD_MS = 10;
 
 
 
+
+
+
+
+
+
+
+static const int SYSTEM_CLOCK_BANKRUPTCY_THRESHOLD_MS = 30;
+
+
+
+
 static const int AUDIO_INITIAL_FALLBACK_BACKOFF_STEP_MS = 10;
 
 
