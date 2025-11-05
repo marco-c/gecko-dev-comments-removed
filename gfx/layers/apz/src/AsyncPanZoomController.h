@@ -582,7 +582,8 @@ class AsyncPanZoomController {
   bool CanScrollDownwards() const;
 
   
-  bool CanOverscrollUpwards() const;
+  bool CanOverscrollUpwards(
+      HandoffConsumer aConsumer = HandoffConsumer::Scrolling) const;
 
   
 
@@ -891,6 +892,9 @@ class AsyncPanZoomController {
   
   
   ParentLayerPoint GetOverscrollAmountInternal() const;
+
+  
+  bool BlocksPullToRefreshForOverflowHidden() const;
 
  protected:
   
@@ -1499,6 +1503,12 @@ class AsyncPanZoomController {
 
 
 
+  bool InScrollAnimationTriggeredByScript() const;
+
+  
+
+
+
   static bool CanHandleScrollOffsetUpdate(PanZoomState aState);
 
   
@@ -1678,7 +1688,8 @@ class AsyncPanZoomController {
   void SmoothScrollTo(CSSSnapDestination&& aDestination,
                       ScrollTriggeredByScript aTriggeredByScript,
                       ScrollAnimationKind aAnimationKind,
-                      ViewportType aViewportToScroll, ScrollOrigin aOrigin);
+                      ViewportType aViewportToScroll, ScrollOrigin aOrigin,
+                      TimeStamp aStartTime);
 
   ParentLayerPoint ConvertDestinationToDelta(CSSPoint& aDestination) const;
 
