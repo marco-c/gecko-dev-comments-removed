@@ -437,6 +437,7 @@ nsWindow::nsWindow()
       mPopupTrackInHierarchy(false),
       mPopupTrackInHierarchyConfigured(false),
       mX11HiddenPopupPositioned(false),
+      mWaylandApplyPopupPositionBeforeShow(true),
       mHasAlphaVisual(false),
       mPopupAnchored(false),
       mPopupContextMenu(false),
@@ -2325,6 +2326,9 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
         mLastSizeRequest.width, mLastSizeRequest.height);
     return;
   }
+
+  
+  mWaylandApplyPopupPositionBeforeShow = false;
 
   
   
@@ -6455,8 +6459,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     
     if (GdkIsX11Display()) {
       NativeMoveResize( true,  false);
-    } else if (AreBoundsSane()) {
-      mPopupPosition = {mClientArea.x, mClientArea.y};
     }
   } else {  
     mGtkWindowRoleName = "Toplevel";
@@ -6824,6 +6826,7 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
     auto cr = frameRect;
     
     
+    
     cr.Deflate(mClientMargin);
     
     
@@ -6984,6 +6987,9 @@ void nsWindow::NativeShow(bool aAction) {
         if (mPopupClosed) {
           return;
         }
+      }
+      if (mWaylandApplyPopupPositionBeforeShow) {
+        NativeMoveResize( true,  false);
       }
     }
     
