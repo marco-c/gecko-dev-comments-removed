@@ -76,6 +76,7 @@ class nsRange;
 class nsRefreshDriver;
 class nsRegion;
 class nsTextFrame;
+class nsSubDocumentFrame;
 class nsView;
 class nsViewManager;
 class nsWindowSizes;
@@ -459,6 +460,9 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   nsIWidget* GetNearestWidget() const;
+
+  
+  nsSubDocumentFrame* GetInProcessEmbedderFrame() const;
 
   
 
