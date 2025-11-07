@@ -40,7 +40,7 @@ struct CoverageFormat2_4
 {
   friend struct Coverage;
 
-  protected:
+  public:
   HBUINT16      coverageFormat; 
   SortedArray16Of<RangeRecord<Types>>
                 rangeRecord;    

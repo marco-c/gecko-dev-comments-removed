@@ -446,8 +446,6 @@ struct hb_font_t
     if (synthetic && ret)
     {
       
-      if (slant_xy)
-	*x += roundf (*y * slant_xy);
 
       
       if (!embolden_in_place)
@@ -472,8 +470,6 @@ struct hb_font_t
     if (synthetic && ret)
     {
       
-      if (slant_xy)
-	*x += roundf (*y * slant_xy);
 
       
       if (!embolden_in_place)
@@ -509,8 +505,6 @@ struct hb_font_t
       for (unsigned i = 0; i < count; i++)
       {
 	
-	if (slant_xy)
-	  *first_x += roundf (*first_y * slant_xy);
 
 	
 	if (!embolden_in_place)
@@ -518,9 +512,9 @@ struct hb_font_t
 	  *first_x += x_shift;
 	  *first_y += y_shift;
 	}
+	first_x = &StructAtOffsetUnaligned<hb_position_t> (first_x, x_stride);
+	first_y = &StructAtOffsetUnaligned<hb_position_t> (first_y, y_stride);
       }
-      first_x = &StructAtOffsetUnaligned<hb_position_t> (first_x, x_stride);
-      first_y = &StructAtOffsetUnaligned<hb_position_t> (first_y, y_stride);
     }
 
     return ret;
@@ -549,8 +543,6 @@ struct hb_font_t
       for (unsigned i = 0; i < count; i++)
       {
 	
-	if (slant_xy)
-	  *first_x += roundf (*first_y * slant_xy);
 
 	
 	if (!embolden_in_place)
@@ -558,9 +550,9 @@ struct hb_font_t
 	  *first_x += x_shift;
 	  *first_y += y_shift;
 	}
+	first_x = &StructAtOffsetUnaligned<hb_position_t> (first_x, x_stride);
+	first_y = &StructAtOffsetUnaligned<hb_position_t> (first_y, y_stride);
       }
-      first_x = &StructAtOffsetUnaligned<hb_position_t> (first_x, x_stride);
-      first_y = &StructAtOffsetUnaligned<hb_position_t> (first_y, y_stride);
     }
 
     return ret;

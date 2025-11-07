@@ -41,11 +41,11 @@ struct CoverageFormat1_3
 {
   friend struct Coverage;
 
-  protected:
+  public:
   HBUINT16      coverageFormat; 
   SortedArray16Of<typename Types::HBGlyphID>
                 glyphArray;     
-  public:
+
   DEFINE_SIZE_ARRAY (4, glyphArray);
 
   private:
