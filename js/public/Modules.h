@@ -201,9 +201,11 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
 
 
 
-extern JS_PUBLIC_API JSObject* CreateCssModule(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    const Value& cssValue);
+
+
+
+extern JS_PUBLIC_API JSObject* CreateDefaultExportSyntheticModule(
+    JSContext* cx, const Value& defaultExport);
 
 
 

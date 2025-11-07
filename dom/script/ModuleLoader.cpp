@@ -432,7 +432,7 @@ nsresult ModuleLoader::CompileCssModule(
     }
 
     
-    cssModule.set(JS::CreateCssModule(aCx, aOptions, val));
+    cssModule.set(JS::CreateDefaultExportSyntheticModule(aCx, val));
   };
 
   maybeSource.mapNonEmpty(compile);
