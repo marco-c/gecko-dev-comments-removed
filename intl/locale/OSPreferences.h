@@ -98,6 +98,13 @@ class OSPreferences : public mozIOSPreferences {
 
   void Refresh();
 
+  
+
+
+  void AssignSysLocales(const nsTArray<nsCString>& aLocales) {
+    mSystemLocales = aLocales.Clone();
+  }
+
  protected:
   nsTArray<nsCString> mSystemLocales;
   nsTArray<nsCString> mRegionalPrefsLocales;

@@ -59,6 +59,12 @@ OSPreferences* OSPreferences::GetInstance() {
 }
 
 void OSPreferences::Refresh() {
+  
+  
+  
+  
+  
+
   nsTArray<nsCString> newLocales;
   ReadSystemLocales(newLocales);
 
