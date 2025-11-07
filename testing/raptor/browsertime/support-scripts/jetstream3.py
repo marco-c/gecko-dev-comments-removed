@@ -46,12 +46,18 @@ class JetStreamSupport(BasePythonSupport):
 
         subtest = {
             "unit": unit,
-            "alertThreshold": float(test.get("alert_threshold", 2.0)),
+            
+            "alertThreshold": float(test.get("subtest_alert_threshold", 5.0)),
             "lowerIsBetter": lower_is_better,
             "name": measurement_name,
             "replicates": replicates,
+            "shouldAlert": True,
             "value": round(filters.mean(replicates), 3),
         }
+
+        
+        if measurement_name == "score":
+            subtest["alertThreshold"] = float(test.get("alert_threshold", 2.0))
 
         return subtest
 
