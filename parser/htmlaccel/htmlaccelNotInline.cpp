@@ -8,6 +8,56 @@
 namespace mozilla::htmlaccel {
 
 
+
+
+
+MOZ_NEVER_INLINE bool ContainsMarkup(const char16_t* aPtr,
+                                     const char16_t* aEnd) {
+  return detail::ContainsMarkup(aPtr, aEnd);
+}
+
+
+
+MOZ_NEVER_INLINE size_t SkipNonEscapedInTextNode(const char16_t* aPtr,
+                                                 const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::LT_GT_AMP_NBSP, true);
+}
+
+
+
+MOZ_NEVER_INLINE size_t SkipNonEscapedInTextNode(const char* aPtr,
+                                                 const char* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::LT_GT_AMP_NBSP, true);
+}
+
+
+
+MOZ_NEVER_INLINE size_t SkipNonEscapedInAttributeValue(const char16_t* aPtr,
+                                                       const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::LT_GT_AMP_NBSP_QUOT,
+                                    true);
+}
+
+
+MOZ_NEVER_INLINE uint32_t CountEscapedInTextNode(const char16_t* aPtr,
+                                                 const char16_t* aEnd) {
+  return detail::CountEscaped(aPtr, aEnd, false);
+}
+
+
+MOZ_NEVER_INLINE uint32_t CountEscapedInTextNode(const char* aPtr,
+                                                 const char* aEnd) {
+  return detail::CountEscaped(aPtr, aEnd, false);
+}
+
+
+
+MOZ_NEVER_INLINE uint32_t CountEscapedInAttributeValue(const char16_t* aPtr,
+                                                       const char16_t* aEnd) {
+  return detail::CountEscaped(aPtr, aEnd, true);
+}
+
+
 MOZ_NEVER_INLINE int32_t AccelerateDataFastest(const char16_t* aPtr,
                                                const char16_t* aEnd) {
   return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_AMP_CR, true);
