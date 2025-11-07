@@ -158,7 +158,8 @@ enum class ShouldCaptureStack { Maybe, Always };
 
 
 
-using MicroTaskQueue = js::TraceableFifo<JS::Value, 0, TempAllocPolicy>;
+using MicroTaskQueue =
+    js::TraceableFifo<js::HeapPtr<JS::Value>, 0, TempAllocPolicy>;
 
 
 struct MicroTaskQueueSet {
@@ -1053,7 +1054,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   bool hasExecutionTracer() { return false; }
 #endif
 
-  JS::PersistentRooted<js::UniquePtr<js::MicroTaskQueueSet>> microTaskQueues;
+  js::UniquePtr<js::MicroTaskQueueSet> microTaskQueues;
 }; 
 
 inline JSContext* JSRuntime::mainContextFromOwnThread() {
