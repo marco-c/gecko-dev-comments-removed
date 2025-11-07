@@ -2,12 +2,15 @@ function waitForRender() {
   return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 }
 
-async function clickOn(element) {
+async function clickOn(element, useTouch) {
   await waitForRender();
   let rect = element.getBoundingClientRect();
   let actions = new test_driver.Actions();
   
   
+  if (useTouch) {
+    actions.addPointer('touch1', 'touch');
+  }
   await actions
       .pointerMove(Math.round(rect.x + rect.width / 2), Math.round(rect.y + rect.height / 2), {})
       .pointerDown({button: actions.ButtonType.LEFT})
