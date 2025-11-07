@@ -320,59 +320,53 @@ void CodeGenerator::visitMulI(LMulI* ins) {
 }
 
 void CodeGenerator::visitDivI(LDivI* ins) {
-  const Register lhs = ToRegister(ins->lhs());
-  const Register rhs = ToRegister(ins->rhs());
-  const Register output = ToRegister(ins->output());
+  Register lhs = ToRegister(ins->lhs());
+  Register rhs = ToRegister(ins->rhs());
 
-  const ARMRegister lhs32 = toWRegister(ins->lhs());
-  const ARMRegister rhs32 = toWRegister(ins->rhs());
-  const ARMRegister temp32 = toWRegister(ins->temp0());
-  const ARMRegister output32 = toWRegister(ins->output());
+  ARMRegister lhs32 = toWRegister(ins->lhs());
+  ARMRegister rhs32 = toWRegister(ins->rhs());
+  ARMRegister output32 = toWRegister(ins->output());
 
   MDiv* mir = ins->mir();
 
-  Label done;
-
   
   if (mir->canBeDivideByZero()) {
-    masm.test32(rhs, rhs);
     if (mir->trapOnError()) {
       Label nonZero;
-      masm.j(Assembler::NonZero, &nonZero);
+      masm.Cbnz(rhs32, &nonZero);
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
       masm.bind(&nonZero);
     } else if (mir->canTruncateInfinities()) {
       
-      Label nonZero;
-      masm.j(Assembler::NonZero, &nonZero);
-      masm.Mov(output32, wzr);
-      masm.jump(&done);
-      masm.bind(&nonZero);
+      
+      
+      MOZ_ASSERT(mir->canTruncateRemainder(),
+                 "remainder computation expects a non-zero divisor");
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutIf(Assembler::Zero, ins->snapshot());
+      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
   }
 
   
   
-  if (mir->canBeNegativeOverflow()) {
+  
+  
+  
+  if (mir->canBeNegativeOverflow() &&
+      (mir->trapOnError() || !mir->canTruncateOverflow())) {
     Label notOverflow;
 
     
     masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &notOverflow);
-    masm.branch32(Assembler::NotEqual, rhs, Imm32(-1), &notOverflow);
 
     
     if (mir->trapOnError()) {
+      masm.branch32(Assembler::NotEqual, rhs, Imm32(-1), &notOverflow);
       masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
-    } else if (mir->canTruncateOverflow()) {
-      
-      masm.move32(lhs, output);
-      masm.jump(&done);
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailout(ins->snapshot());
+      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
     }
     masm.bind(&notOverflow);
   }
@@ -381,28 +375,23 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   if (!mir->canTruncateNegativeZero() && mir->canBeNegativeZero()) {
     Label nonZero;
     masm.branch32(Assembler::NotEqual, lhs, Imm32(0), &nonZero);
-    masm.cmp32(rhs, Imm32(0));
-    bailoutIf(Assembler::LessThan, ins->snapshot());
+    bailoutCmp32(Assembler::LessThan, rhs, Imm32(0), ins->snapshot());
     masm.bind(&nonZero);
   }
 
   
-  if (mir->canTruncateRemainder()) {
-    masm.Sdiv(output32, lhs32, rhs32);
-  } else {
+  masm.Sdiv(output32, lhs32, rhs32);
+
+  if (!mir->canTruncateRemainder()) {
     vixl::UseScratchRegisterScope temps(&masm.asVIXL());
-    ARMRegister scratch32 = temps.AcquireW();
+    ARMRegister remainder32 = temps.AcquireW();
+    Register remainder = remainder32.asUnsized();
 
     
-    
-    masm.Sdiv(scratch32, lhs32, rhs32);
-    masm.Mul(temp32, scratch32, rhs32);
-    masm.Cmp(lhs32, temp32);
-    bailoutIf(Assembler::NotEqual, ins->snapshot());
-    masm.Mov(output32, scratch32);
+    masm.Msub(remainder32, output32, rhs32, lhs32);
+
+    bailoutTest32(Assembler::NonZero, remainder, remainder, ins->snapshot());
   }
-
-  masm.bind(&done);
 }
 
 void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
@@ -496,9 +485,23 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
   const ARMRegister output64 = toXRegister(ins->output());
   int32_t d = ins->denominator();
 
+  MDiv* mir = ins->mir();
+
   
   using mozilla::Abs;
-  MOZ_ASSERT((Abs(d) & (Abs(d) - 1)) != 0);
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(Abs(d)));
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->canTruncateInfinities()) {
+      masm.Mov(output32, wzr);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
 
   
   
@@ -530,7 +533,7 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
 
   
   
-  if (ins->mir()->canBeNegativeDividend()) {
+  if (mir->canBeNegativeDividend()) {
     masm.Asr(const32, lhs32, 31);
     masm.Sub(output32, output32, const32);
   }
@@ -540,28 +543,33 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
     masm.Neg(output32, output32);
   }
 
-  if (!ins->mir()->isTruncated()) {
+  if (!mir->isTruncated()) {
     
     
     masm.Mov(const32, d);
     masm.Msub(const32, output32, const32, lhs32);
-    
-    masm.Cmp(const32, wzr);
-    auto bailoutCond = Assembler::NonZero;
 
-    
-    
-    if (d < 0) {
+    if (d > 0) {
+      
+      bailoutTest32(Assembler::NonZero, const32, const32, ins->snapshot());
+    } else {
+      MOZ_ASSERT(d < 0);
+
+      
+      masm.Cmp(const32, wzr);
+
+      
+      
+      
       
       
       
       
       masm.Ccmp(lhs32, wzr, vixl::ZFlag, Assembler::Zero);
-      bailoutCond = Assembler::Zero;
-    }
 
-    
-    bailoutIf(bailoutCond, ins->snapshot());
+      
+      bailoutIf(Assembler::Zero, ins->snapshot());
+    }
   }
 }
 
@@ -573,22 +581,23 @@ void CodeGenerator::visitUDivConstantI(LUDivConstantI* ins) {
   const ARMRegister output64 = toXRegister(ins->output());
   uint32_t d = ins->denominator();
 
+  MDiv* mir = ins->mir();
+
+  
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
+
   if (d == 0) {
-    if (ins->mir()->isTruncated()) {
-      if (ins->mir()->trapOnError()) {
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero,
-                      ins->mir()->trapSiteDesc());
-      } else {
-        masm.Mov(output32, wzr);
-      }
+    if (ins->mir()->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero,
+                    ins->mir()->trapSiteDesc());
+    } else if (mir->canTruncateInfinities()) {
+      masm.Mov(output32, wzr);
     } else {
+      MOZ_ASSERT(mir->fallible());
       bailout(ins->snapshot());
     }
     return;
   }
-
-  
-  MOZ_ASSERT((d & (d - 1)) != 0);
 
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
@@ -622,12 +631,12 @@ void CodeGenerator::visitUDivConstantI(LUDivConstantI* ins) {
   
   
   
-  if (!ins->mir()->isTruncated()) {
+  if (!mir->isTruncated()) {
     masm.Mov(const32, d);
     masm.Msub(const32, output32, const32, lhs32);
     
-    masm.Cmp(const32, const32);
-    bailoutIf(Assembler::NonZero, ins->snapshot());
+    bailoutTest32(Assembler::NonZero, const32.asUnsized(), const32.asUnsized(),
+                  ins->snapshot());
   }
 }
 
@@ -1662,17 +1671,19 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
 
   
   if (mir->canBeDivideByZero()) {
-    if (mir->isTruncated()) {
-      if (mir->trapOnError()) {
-        Label nonZero;
-        masm.branchTest32(Assembler::NonZero, rhs, rhs, &nonZero);
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-        masm.bind(&nonZero);
-      } else {
-        
-        
-      }
+    if (mir->trapOnError()) {
+      Label nonZero;
+      masm.Cbnz(rhs32, &nonZero);
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+      masm.bind(&nonZero);
+    } else if (mir->canTruncateInfinities()) {
+      
+      
+      
+      MOZ_ASSERT(mir->canTruncateRemainder(),
+                 "remainder computation expects a non-zero divisor");
     } else {
+      MOZ_ASSERT(mir->fallible());
       bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
   }
@@ -1682,8 +1693,9 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
 
   
   if (!mir->canTruncateRemainder()) {
-    Register remainder = ToRegister(ins->temp0());
-    ARMRegister remainder32 = ARMRegister(remainder, 32);
+    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+    ARMRegister remainder32 = temps.AcquireW();
+    Register remainder = remainder32.asUnsized();
 
     
     masm.Msub(remainder32, output32, rhs32, lhs32);
