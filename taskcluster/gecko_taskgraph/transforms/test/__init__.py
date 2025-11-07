@@ -92,6 +92,8 @@ test_description_schema = Schema(
             Any([str], "built-projects"),
         ),
         
+        Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
+        
         
         
         Optional("built-projects-only"): bool,
@@ -545,6 +547,7 @@ def make_job_description(config, tasks):
             jobdesc["expires-after"] = task["expires-after"]
 
         jobdesc["routes"] = task.get("routes", [])
+        jobdesc["run-on-repo-type"] = sorted(task["run-on-repo-type"])
         jobdesc["run-on-projects"] = sorted(task["run-on-projects"])
         jobdesc["scopes"] = []
         jobdesc["tags"] = task.get("tags", {})
