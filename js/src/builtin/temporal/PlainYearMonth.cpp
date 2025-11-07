@@ -442,16 +442,22 @@ static bool DifferenceTemporalPlainYearMonth(JSContext* cx,
   if (settings.smallestUnit != TemporalUnit::Month ||
       settings.roundingIncrement != Increment{1}) {
     
-    auto destEpochNs = GetUTCEpochNanoseconds(ISODateTime{otherDate, {}});
+    auto isoDateTime = ISODateTime{thisDate, {}};
 
     
-    auto dateTime = ISODateTime{thisDate, {}};
+    auto originEpochNs = GetUTCEpochNanoseconds(isoDateTime);
+
+    
+    auto isoDateTimeOther = ISODateTime{otherDate, {}};
+
+    
+    auto destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
 
     
     Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
     if (!RoundRelativeDuration(
-            cx, duration, destEpochNs, dateTime, timeZone, calendar,
-            settings.largestUnit, settings.roundingIncrement,
+            cx, duration, originEpochNs, destEpochNs, isoDateTime, timeZone,
+            calendar, settings.largestUnit, settings.roundingIncrement,
             settings.smallestUnit, settings.roundingMode, &duration)) {
       return false;
     }
