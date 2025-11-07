@@ -73,12 +73,9 @@ class WaylandSurface final {
       const std::function<void(bool)>& aFrameCallbackStateHandler);
 
   
+  wl_egl_window* GetEGLWindow(DesktopIntSize aSize);
   
-  
-  wl_egl_window* GetEGLWindow(nsIntSize aUnscaledSize);
-  
-  
-  bool SetEGLWindowSize(nsIntSize aScaledSize);
+  bool SetEGLWindowSize(LayoutDeviceIntSize aSize);
   bool HasEGLWindow() const { return !!mEGLWindow; }
 
   
