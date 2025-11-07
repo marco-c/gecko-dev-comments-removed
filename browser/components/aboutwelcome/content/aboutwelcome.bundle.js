@@ -129,49 +129,6 @@ const AboutWelcomeUtils = {
       true
     );
   },
-
-  
-
-
-
-
-
-
-
-  normalizeContentTiles(content) {
-    const { tiles } = content;
-    const legacyContainer = content?.contentTilesContainer;
-    const legacyHeader = content?.tiles_header;
-
-    
-    const style = tiles?.container?.style ?? legacyContainer?.style ?? {};
-
-    
-    const header = tiles?.container?.header ?? legacyHeader;
-
-    let items;
-    
-    if (tiles?.tile_items !== undefined) {
-      items = Array.isArray(tiles.tile_items)
-        ? tiles.tile_items
-        : [tiles.tile_items];
-    }
-    
-    else if (Array.isArray(tiles)) {
-      items = tiles;
-    }
-    
-    else if (tiles && typeof tiles === "object" && tiles.type) {
-      items = [tiles];
-    } else {
-      items = [];
-    }
-
-    
-    const container = header ? { style, header } : { style };
-
-    return { tile_items: items, container };
-  },
 };
 
 
@@ -2386,19 +2343,12 @@ const ContentTiles = props => {
   if (!tiles) {
     return null;
   }
-  const {
-    tile_items,
-    container
-  } = _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.normalizeContentTiles(content);
-  if (!tile_items.length) {
-    return null;
-  }
 
   
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     
     if (!props.activeMultiSelect) {
-      const tilesArray = Array.isArray(tile_items) ? tile_items : [tile_items];
+      const tilesArray = Array.isArray(tiles) ? tiles : [tiles];
       tilesArray.forEach((tile, index) => {
         if (tile.type !== "multiselect" || !tile.data) {
           return;
@@ -2418,7 +2368,7 @@ const ContentTiles = props => {
         }
       });
     }
-  }, [tile_items]); 
+  }, [tiles]); 
 
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     
@@ -2611,36 +2561,30 @@ const ContentTiles = props => {
     })) : null);
   };
   const renderContentTiles = () => {
-    const hasHeader = !!container?.header;
-    const hasContainerStyle = !!Object.keys(container?.style || {}).length;
-
-    
-    
-    
-    const isArrayInput = Array.isArray(content.tiles);
-    if (!isArrayInput && tile_items.length === 1 && !hasHeader && !hasContainerStyle) {
-      return renderContentTile(tile_items[0], 0);
+    if (Array.isArray(tiles)) {
+      return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+        id: "content-tiles-container",
+        style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getValidStyle(content?.contentTilesContainer?.style, CONTAINER_STYLES)
+      }, tiles.map((tile, index) => renderContentTile(tile, index)));
     }
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      id: "content-tiles-container",
-      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getValidStyle(container?.style, CONTAINER_STYLES)
-    }, tile_items.map((tile, index) => renderContentTile(tile, index)));
+    
+    return renderContentTile(tiles, 0);
   };
-  if (container?.header) {
+  if (content.tiles_header) {
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
       className: "content-tiles-header secondary",
       onClick: toggleTiles,
       "aria-expanded": tilesHeaderExpanded,
       "aria-controls": `content-tiles-container`
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: container.header?.title
+      text: content.tiles_header.title
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "header-title"
     })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "arrow-icon"
     })), tilesHeaderExpanded && renderContentTiles());
   }
-  return renderContentTiles(tile_items);
+  return renderContentTiles(tiles);
 };
 
  }),
