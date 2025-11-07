@@ -13,6 +13,7 @@ use crate::values::generics::rect::Rect;
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
 use crate::Zero;
 use std::fmt::{self, Write};
+use std::ops::AddAssign;
 use style_traits::{CssWriter, ToCss};
 
 
@@ -690,7 +691,6 @@ impl<Angle, LengthPercentage> ToCss for Shape<Angle, LengthPercentage>
 where
     Angle: ToCss + Zero,
     LengthPercentage: PartialEq + ToCss,
-    ShapePosition<LengthPercentage>: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -770,18 +770,18 @@ pub enum GenericShapeCommand<Angle, LengthPercentage> {
     
     CubicCurve {
         point: CommandEndPoint<LengthPercentage>,
-        control1: ControlPoint<LengthPercentage>,
-        control2: ControlPoint<LengthPercentage>,
+        control1: CoordinatePair<LengthPercentage>,
+        control2: CoordinatePair<LengthPercentage>,
     },
     
     QuadCurve {
         point: CommandEndPoint<LengthPercentage>,
-        control1: ControlPoint<LengthPercentage>,
+        control1: CoordinatePair<LengthPercentage>,
     },
     
     SmoothCubic {
         point: CommandEndPoint<LengthPercentage>,
-        control2: ControlPoint<LengthPercentage>,
+        control2: CoordinatePair<LengthPercentage>,
     },
     
     SmoothQuad {
@@ -805,7 +805,6 @@ impl<Angle, LengthPercentage> ToCss for ShapeCommand<Angle, LengthPercentage>
 where
     Angle: ToCss + Zero,
     LengthPercentage: PartialEq + ToCss,
-    ShapePosition<LengthPercentage>: ToCss,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -841,11 +840,11 @@ where
                 dest.write_str("curve ")?;
                 point.to_css(dest)?;
                 dest.write_str(" with ")?;
-                control1.to_css(dest, point.is_abs())?;
+                control1.to_css(dest)?;
                 dest.write_char(' ')?;
                 dest.write_char('/')?;
                 dest.write_char(' ')?;
-                control2.to_css(dest, point.is_abs())
+                control2.to_css(dest)
             },
             QuadCurve {
                 ref point,
@@ -854,7 +853,7 @@ where
                 dest.write_str("curve ")?;
                 point.to_css(dest)?;
                 dest.write_str(" with ")?;
-                control1.to_css(dest, point.is_abs())
+                control1.to_css(dest)
             },
             SmoothCubic {
                 ref point,
@@ -863,7 +862,7 @@ where
                 dest.write_str("smooth ")?;
                 point.to_css(dest)?;
                 dest.write_str(" with ")?;
-                control2.to_css(dest, point.is_abs())
+                control2.to_css(dest)
             },
             SmoothQuad { ref point } => {
                 dest.write_str("smooth ")?;
@@ -1007,6 +1006,22 @@ impl<LengthPercentage: ToCss> ToCss for CommandEndPoint<LengthPercentage> {
     }
 }
 
+impl<LengthPercentage: AddAssign> AddAssign<CoordinatePair<LengthPercentage>>
+    for CommandEndPoint<LengthPercentage>
+{
+    fn add_assign(&mut self, other: CoordinatePair<LengthPercentage>) {
+        match self {
+            CommandEndPoint::ToPosition(ref mut a) => {
+                a.horizontal += other.x;
+                a.vertical += other.y;
+            },
+            CommandEndPoint::ByCoordinate(ref mut a) => {
+                *a += other;
+            },
+        }
+    }
+}
+
 
 
 
@@ -1043,137 +1058,6 @@ impl<LengthPercentage> CoordinatePair<LengthPercentage> {
     pub fn new(x: LengthPercentage, y: LengthPercentage) -> Self {
         Self { x, y }
     }
-}
-
-
-
-
-#[allow(missing_docs)]
-#[derive(
-    Animate,
-    Clone,
-    Copy,
-    ComputeSquaredDistance,
-    Debug,
-    Deserialize,
-    MallocSizeOf,
-    PartialEq,
-    Serialize,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C, u8)]
-pub enum ControlPoint<LengthPercentage> {
-    Position(ShapePosition<LengthPercentage>),
-    Relative(RelativeControlPoint<LengthPercentage>),
-}
-
-impl<LengthPercentage> ControlPoint<LengthPercentage> {
-    
-    pub fn to_css<W>(&self, dest: &mut CssWriter<W>, is_endpoint_abs: bool) -> fmt::Result
-    where
-        W: Write,
-        LengthPercentage: ToCss,
-        ShapePosition<LengthPercentage>: ToCss,
-    {
-        match self {
-            ControlPoint::Position(pos) => pos.to_css(dest),
-            ControlPoint::Relative(point) => point.to_css(dest, is_endpoint_abs),
-        }
-    }
-}
-
-
-
-
-#[allow(missing_docs)]
-#[derive(
-    Animate,
-    Clone,
-    Copy,
-    Debug,
-    Deserialize,
-    MallocSizeOf,
-    PartialEq,
-    Serialize,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C)]
-pub struct RelativeControlPoint<LengthPercentage> {
-    pub coord: CoordinatePair<LengthPercentage>,
-    pub reference: ControlReference,
-}
-
-impl<LengthPercentage: ToCss> RelativeControlPoint<LengthPercentage> {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>, is_endpoint_abs: bool) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.coord.to_css(dest)?;
-        let should_omit_reference = match self.reference {
-            ControlReference::None => true,
-            ControlReference::Start => !is_endpoint_abs,
-            ControlReference::Origin => is_endpoint_abs,
-            ControlReference::End => false,
-        };
-        if !should_omit_reference {
-            dest.write_str(" from ")?;
-            self.reference.to_css(dest)?;
-        }
-        Ok(())
-    }
-}
-
-impl<LengthPercentage: ComputeSquaredDistance> ComputeSquaredDistance
-    for RelativeControlPoint<LengthPercentage>
-{
-    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
-        self.coord.compute_squared_distance(&other.coord)
-    }
-}
-
-
-
-
-
-
-
-#[allow(missing_docs)]
-#[derive(
-    Animate,
-    Clone,
-    Copy,
-    Debug,
-    Deserialize,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    Parse,
-    Serialize,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C)]
-pub enum ControlReference {
-    #[css(skip)]
-    None,
-    Start,
-    End,
-    Origin,
 }
 
 
