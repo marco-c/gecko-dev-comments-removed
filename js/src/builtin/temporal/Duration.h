@@ -244,10 +244,9 @@ TimeDuration RoundTimeDuration(const TimeDuration& duration,
 
 bool RoundRelativeDuration(
     JSContext* cx, const InternalDuration& duration,
-    const EpochNanoseconds& originEpochNs, const EpochNanoseconds& destEpochNs,
-    const ISODateTime& isoDateTime, JS::Handle<TimeZoneValue> timeZone,
-    JS::Handle<CalendarValue> calendar, TemporalUnit largestUnit,
-    Increment increment, TemporalUnit smallestUnit,
+    const EpochNanoseconds& destEpochNs, const ISODateTime& isoDateTime,
+    JS::Handle<TimeZoneValue> timeZone, JS::Handle<CalendarValue> calendar,
+    TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
     TemporalRoundingMode roundingMode, InternalDuration* result);
 
 
@@ -255,7 +254,6 @@ bool RoundRelativeDuration(
 
 
 bool TotalRelativeDuration(JSContext* cx, const InternalDuration& duration,
-                           const EpochNanoseconds& originEpochNs,
                            const EpochNanoseconds& destEpochNs,
                            const ISODateTime& isoDateTime,
                            JS::Handle<TimeZoneValue> timeZone,

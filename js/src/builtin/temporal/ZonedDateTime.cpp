@@ -688,16 +688,6 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
   }
 
   
-  if (CompareISODate(startDateTime.date, endDateTime.date) == 0) {
-    
-    auto timeDuration = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
-
-    
-    *result = {{}, timeDuration};
-    return true;
-  }
-
-  
   int32_t sign = (ns2 - ns1 < EpochDuration{}) ? -1 : 1;
 
   
@@ -823,9 +813,9 @@ bool js::temporal::DifferenceZonedDateTimeWithRounding(
 
   
   return RoundRelativeDuration(
-      cx, difference, ns1, ns2, dateTime, timeZone, calendar,
-      settings.largestUnit, settings.roundingIncrement, settings.smallestUnit,
-      settings.roundingMode, result);
+      cx, difference, ns2, dateTime, timeZone, calendar, settings.largestUnit,
+      settings.roundingIncrement, settings.smallestUnit, settings.roundingMode,
+      result);
 }
 
 
@@ -865,7 +855,7 @@ bool js::temporal::DifferenceZonedDateTimeWithTotal(
   }
 
   
-  return TotalRelativeDuration(cx, difference, ns1, ns2, dateTime, timeZone,
+  return TotalRelativeDuration(cx, difference, ns2, dateTime, timeZone,
                                calendar, unit, result);
 }
 
