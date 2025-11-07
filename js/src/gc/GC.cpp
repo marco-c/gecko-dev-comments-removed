@@ -3788,6 +3788,10 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
         zone->arenas.mergeArenasFromCollectingLists();
       }
 
+      
+      
+      setGrayBitsInvalid();
+
       incrementalState = State::NotActive;
       checkGCStateNotInUse();
       break;
