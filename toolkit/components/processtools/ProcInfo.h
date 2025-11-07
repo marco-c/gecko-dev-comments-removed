@@ -25,6 +25,15 @@ class GeckoChildProcessHost;
 
 
 
+
+
+nsresult GetCurrentProcessMemoryUsage(uint64_t* aResult);
+
+
+
+
+
+
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult);
 
 
