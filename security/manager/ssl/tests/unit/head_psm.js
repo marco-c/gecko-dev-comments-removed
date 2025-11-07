@@ -165,8 +165,8 @@ function arrayToString(a) {
 
 function pemToBase64(pem) {
   return pem
-    .replace(/-----BEGIN (CERTIFICATE|(EC )?PRIVATE KEY)-----/, "")
-    .replace(/-----END (CERTIFICATE|(EC )?PRIVATE KEY)-----/, "")
+    .replace(/-----BEGIN CERTIFICATE-----/, "")
+    .replace(/-----END CERTIFICATE-----/, "")
     .replace(/[\r\n]/g, "");
 }
 
