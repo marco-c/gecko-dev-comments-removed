@@ -5949,7 +5949,8 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
   
   
   
-  if (IsSingleLineTextControl(true) && GetList()) {
+  if (StaticPrefs::dom_input_showPicker_datalist_enabled() &&
+      IsSingleLineTextControl(true) && GetList()) {
     if (nsCOMPtr<nsIFormFillController> controller =
             do_GetService("@mozilla.org/satchel/form-fill-controller;1")) {
       controller->SetControlledElement(this);
