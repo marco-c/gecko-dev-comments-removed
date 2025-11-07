@@ -93,6 +93,8 @@ nsOSHelperAppService::~nsOSHelperAppService() {}
 
 nsresult nsOSHelperAppService::OSProtocolHandlerExists(
     const char* aProtocolScheme, bool* aHandlerExists) {
+  *aHandlerExists = false;
+
   
   
   
@@ -100,24 +102,27 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(
   CFStringRef schemeString = ::CFStringCreateWithBytes(
       kCFAllocatorDefault, (const UInt8*)aProtocolScheme,
       strlen(aProtocolScheme), kCFStringEncodingUTF8, false);
-  if (schemeString) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    CFArrayRef handlerArray = ::LSCopyAllHandlersForURLScheme(schemeString);
-    *aHandlerExists = !!handlerArray;
-    if (handlerArray) ::CFRelease(handlerArray);
-    ::CFRelease(schemeString);
-  } else {
-    *aHandlerExists = false;
+  if (!schemeString) {
+    return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CFArrayRef handlerArray = ::LSCopyAllHandlersForURLScheme(schemeString);
+  ::CFRelease(schemeString);
+  if (handlerArray) {
+    *aHandlerExists = true;
+    ::CFRelease(handlerArray);
+  }
+
   return NS_OK;
 }
 
@@ -125,38 +130,51 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
     const nsACString& aScheme, nsAString& _retval) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  nsresult rv = NS_ERROR_NOT_AVAILABLE;
-
   CFURLRef handlerBundleURL;
-  rv = GetDefaultBundleURL(aScheme, &handlerBundleURL);
-
-  if (NS_SUCCEEDED(rv) && handlerBundleURL) {
-    CFBundleRef handlerBundle = CFBundleCreate(NULL, handlerBundleURL);
-    if (!handlerBundle) {
+  nsresult rv = GetDefaultBundleURL(aScheme, &handlerBundleURL);
+  if (NS_FAILED(rv)) {
+    if (handlerBundleURL) {
       ::CFRelease(handlerBundleURL);
-      return NS_ERROR_OUT_OF_MEMORY;
     }
-
-    
-    CFStringRef bundleName =
-        (CFStringRef)::CFBundleGetValueForInfoDictionaryKey(handlerBundle,
-                                                            kCFBundleNameKey);
-
-    if (bundleName) {
-      AutoTArray<UniChar, 255> buffer;
-      CFIndex bundleNameLength = ::CFStringGetLength(bundleName);
-      buffer.SetLength(bundleNameLength);
-      ::CFStringGetCharacters(bundleName, CFRangeMake(0, bundleNameLength),
-                              buffer.Elements());
-      _retval.Assign(reinterpret_cast<char16_t*>(buffer.Elements()),
-                     bundleNameLength);
-      rv = NS_OK;
-    }
-    ::CFRelease(handlerBundle);
-    ::CFRelease(handlerBundleURL);
+    return rv;
   }
 
-  return rv;
+  
+  CFStringRef bundleName = ::CFURLCopyLastPathComponent(handlerBundleURL);
+  if (!bundleName) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  CFBundleRef handlerBundle =
+      ::CFBundleCreate(kCFAllocatorDefault, handlerBundleURL);
+  ::CFRelease(handlerBundleURL);
+  if (handlerBundle) {
+    
+    
+    
+    
+    CFStringRef tmpBundleName =
+        (CFStringRef)::CFBundleGetValueForInfoDictionaryKey(handlerBundle,
+                                                            kCFBundleNameKey);
+    if (tmpBundleName && (::CFStringGetLength(tmpBundleName) > 0)) {
+      ::CFRelease(bundleName);
+      bundleName = ::CFStringCreateCopy(kCFAllocatorDefault, tmpBundleName);
+    }
+    ::CFRelease(handlerBundle);
+  }
+
+  AutoTArray<UniChar, 255> buffer;
+  CFIndex bundleNameLength = ::CFStringGetLength(bundleName);
+  buffer.SetLength(bundleNameLength);
+  ::CFStringGetCharacters(bundleName, CFRangeMake(0, bundleNameLength),
+                          buffer.Elements());
+  _retval.Assign(reinterpret_cast<char16_t*>(buffer.Elements()),
+                 bundleNameLength);
+
+  ::CFRelease(bundleName);
+
+  return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
