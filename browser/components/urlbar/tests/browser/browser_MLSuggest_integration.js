@@ -249,7 +249,7 @@ add_setup(async function () {
   
   sinon
     .stub(MLSuggest, "_findIntent")
-    .returns({ label: "yelp_intent", score: 0.9 });
+    .returns([{ label: "yelp_intent", score: 0.9 }]);
   sinon.stub(MLSuggest, "_findNER").callsFake(query => {
     return nerResultsMap[query] || [];
   });
