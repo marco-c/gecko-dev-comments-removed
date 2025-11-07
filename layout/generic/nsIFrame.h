@@ -5201,6 +5201,15 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+
+
+
+  mozilla::gfx::CompositorHitTestInfo
+  GetCompositorHitTestInfoWithoutPointerEvents(nsDisplayListBuilder* aBuilder);
+
+  
+
+
   inline void PropagateWritingModeToSelfAndAncestors(mozilla::WritingMode aWM);
 
   
