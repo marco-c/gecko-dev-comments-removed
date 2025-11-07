@@ -577,8 +577,7 @@
         () => {
           this.#handleMLOptinTelemetry("step0-optin-link-click");
           openTrustedLinkIn(
-            
-            "https://support.mozilla.org",
+            "https://support.mozilla.org/kb/how-use-ai-enhanced-tab-groups",
             "tab"
           );
         }
