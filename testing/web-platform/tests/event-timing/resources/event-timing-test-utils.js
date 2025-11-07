@@ -381,6 +381,20 @@ async function auxPointerdown(target) {
     .send();
 }
 
+async function orphanAuxPointerup(target) {
+  const actions = new test_driver.Actions();
+  await actions.addPointer("mousePointer", "mouse")
+    .pointerMove(0, 0, { origin: target })
+    .pointerUp({ button: actions.ButtonType.RIGHT })
+    .send();
+
+  
+  
+  
+  
+  await pressKey(target, 'a');
+}
+
 
 
 async function pressKey(target, key) {
