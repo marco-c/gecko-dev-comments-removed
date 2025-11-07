@@ -617,7 +617,8 @@ void GMPChild::ActorDestroy(ActorDestroyReason aWhy) {
 void GMPChild::ProcessingError(Result aCode, const char* aReason) {
   switch (aCode) {
     case MsgDropped:
-      _exit(0);  
+      NS_WARNING("MsgDropped in GMPChild");
+      return;
     case MsgNotKnown:
       MOZ_CRASH("aborting because of MsgNotKnown");
     case MsgNotAllowed:
