@@ -6,7 +6,7 @@
 
 
 add_task(async function () {
-  const { tab } = await openInspectorForURL("about:blank");
+  const { tab, toolbox } = await openInspectorForURL("about:blank");
   const browser = tab.linkedBrowser;
 
   
@@ -18,4 +18,7 @@ add_task(async function () {
       iframe.remove();
     });
   }
+
+  
+  await toolbox.commands.waitForRequestsToSettle();
 });
