@@ -7,9 +7,6 @@
 
 
 
-const CAUSE_FILE_NAME = "html_maps-test-page.html";
-const CAUSE_URL = HTTPS_EXAMPLE_URL + CAUSE_FILE_NAME;
-
 const N_EXPECTED_REQUESTS = 4;
 
 add_task(async function () {
@@ -26,7 +23,7 @@ add_task(async function () {
 
   store.dispatch(Actions.batchEnable(false));
   let waitPromise = waitForNetworkEvents(monitor, N_EXPECTED_REQUESTS);
-  await navigateTo(CAUSE_URL);
+  await navigateTo(SOURCEMAP_URL);
   await waitPromise;
 
   info("Clicking item and waiting for details panel to open");
