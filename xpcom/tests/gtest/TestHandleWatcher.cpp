@@ -113,8 +113,7 @@ class TestHandleWatcher : public testing::Test {
 
 bool TestHandleWatcher::sIsLive = false;
 
-MOZ_RUNINIT RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool =
-    nullptr;
+MOZ_CONSTINIT RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool;
 
 
 
