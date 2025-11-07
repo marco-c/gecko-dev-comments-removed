@@ -1837,6 +1837,9 @@ pref("termsofuse.acceptedVersion", 0);
 pref("termsofuse.acceptedDate", "0");
 
 
+pref("termsofuse.firstAcceptedDate", "0");
+
+
 
 pref("termsofuse.currentVersion", 4);
 
