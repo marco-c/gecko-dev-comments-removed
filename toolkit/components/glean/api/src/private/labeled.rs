@@ -2,6 +2,7 @@
 
 
 
+use glean::TestGetValue;
 use inherent::inherent;
 
 use super::{
@@ -12,6 +13,7 @@ use super::{
 use crate::ipc::need_ipc;
 use crate::metrics::__glean_metric_maps::submetric_maps;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -36,7 +38,11 @@ mod private {
     
     
     pub trait Sealed {
-        type GleanMetric: glean::private::AllowLabeled + Clone;
+        type Output;
+        type GleanMetric: glean::private::AllowLabeled
+            + Clone
+            + glean::TestGetValue<Output = Self::Output>;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -64,7 +70,9 @@ mod private {
     
     
     impl Sealed for LabeledBooleanMetric {
+        type Output = bool;
         type GleanMetric = glean::private::BooleanMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -102,7 +110,9 @@ mod private {
     
     
     impl Sealed for LabeledStringMetric {
+        type Output = String;
         type GleanMetric = glean::private::StringMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -133,7 +143,9 @@ mod private {
     
     
     impl Sealed for LabeledCounterMetric {
+        type Output = i32;
         type GleanMetric = glean::private::CounterMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -166,7 +178,9 @@ mod private {
     
     
     impl Sealed for LabeledCustomDistributionMetric {
+        type Output = glean::DistributionData;
         type GleanMetric = glean::private::CustomDistributionMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -199,7 +213,9 @@ mod private {
     
     
     impl Sealed for LabeledMemoryDistributionMetric {
+        type Output = glean::DistributionData;
         type GleanMetric = glean::private::MemoryDistributionMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -232,7 +248,9 @@ mod private {
     
     
     impl Sealed for LabeledTimingDistributionMetric {
+        type Output = glean::DistributionData;
         type GleanMetric = glean::private::TimingDistributionMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -281,7 +299,9 @@ mod private {
     
     
     impl Sealed for LabeledQuantityMetric {
+        type Output = i64;
         type GleanMetric = glean::private::QuantityMetric;
+
         fn from_glean_metric(
             id: BaseMetricId,
             metric: &glean::private::LabeledMetric<Self::GleanMetric>,
@@ -453,6 +473,22 @@ where
         } else {
             self.core.test_get_num_recorded_errors(error)
         }
+    }
+}
+
+#[inherent]
+impl<U, E> glean::TestGetValue for LabeledMetric<U, E>
+where
+    U: AllowLabeled + Clone,
+    <U as private::Sealed>::Output: 'static,
+{
+    type Output = HashMap<String, <U as private::Sealed>::Output>;
+
+    pub fn test_get_value(
+        &self,
+        ping_name: Option<String>,
+    ) -> Option<<LabeledMetric<U, E> as TestGetValue>::Output> {
+        self.core.test_get_value(ping_name)
     }
 }
 
