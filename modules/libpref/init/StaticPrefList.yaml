@@ -11107,6 +11107,12 @@
   value: true
   mirror: always
 
+# Whether to remove the accent property from the operator dictionary.
+- name: mathml.operator_dictionary_accent.disabled
+  type: bool
+  value: false
+  mirror: always
+
 # Whether to disable the MathML3 support for the mathvariant attribute. For
 # MathML Core, support is restricted to the <mi> element and to value "normal".
 # Corresponding automatic italicization on single-char <mi> element is also
@@ -14248,7 +14254,7 @@
 # Max time to shutdown the resolver threads
 - name: network.dns.resolver_shutdown_timeout_ms
   type: uint32_t
-  value: 2000
+  value: 5000
   mirror: always
 
 # When true on Windows DNS resolutions for single label domains
