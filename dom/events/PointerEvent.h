@@ -63,7 +63,7 @@ class PointerEvent : public MouseEvent {
  private:
   
   
-  bool ShouldResistFingerprinting(bool aForPointerId = false) const;
+  bool ShouldResistFingerprinting() const;
 
   
   
