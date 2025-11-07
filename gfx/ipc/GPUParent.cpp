@@ -233,23 +233,6 @@ bool GPUParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
 
 void GPUParent::NotifyDeviceReset(DeviceResetReason aReason,
                                   DeviceResetDetectPlace aPlace) {
-  if (!NS_IsMainThread()) {
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "gfx::GPUParent::NotifyDeviceReset", [aReason, aPlace]() -> void {
-          GPUParent::GetSingleton()->NotifyDeviceReset(aReason, aPlace);
-        }));
-    return;
-  }
-
-  
-#ifdef XP_WIN
-  if (!DeviceManagerDx::Get()->MaybeResetAndReacquireDevices()) {
-    
-    
-    return;
-  }
-#endif
-
   
   
   GPUDeviceData data;

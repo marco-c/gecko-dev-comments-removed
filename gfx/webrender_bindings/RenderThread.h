@@ -183,6 +183,10 @@ class RenderThread final {
       MemoryReport aInitial);
 
   
+  static void PostHandleDeviceReset(gfx::DeviceResetDetectPlace aPlace,
+                                    gfx::DeviceResetReason aReason);
+
+  
   void AddRenderer(wr::WindowId aWindowId, UniquePtr<RendererOGL> aRenderer);
 
   

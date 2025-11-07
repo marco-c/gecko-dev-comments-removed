@@ -1315,40 +1315,30 @@ void RenderThread::PostRunnable(already_AddRefed<nsIRunnable> aRunnable) {
   mThread->Dispatch(runnable.forget());
 }
 
+ void RenderThread::PostHandleDeviceReset(
+    gfx::DeviceResetDetectPlace aPlace, gfx::DeviceResetReason aReason) {
+  MOZ_ASSERT(!IsInRenderThread());
+  auto* renderThread = Get();
+  if (!renderThread) {
+    gfx::GPUProcessManager::NotifyDeviceReset(aReason, aPlace);
+    return;
+  }
+
+  renderThread->PostRunnable(
+      NewRunnableMethod<gfx::DeviceResetDetectPlace, gfx::DeviceResetReason>(
+          "wr::RenderThread::HandleDeviceReset", renderThread,
+          &RenderThread::HandleDeviceReset, aPlace, aReason));
+}
+
 void RenderThread::HandleDeviceReset(gfx::DeviceResetDetectPlace aPlace,
                                      gfx::DeviceResetReason aReason) {
   MOZ_ASSERT(IsInRenderThread());
-
-  
-  if (aReason == gfx::DeviceResetReason::FORCED_RESET) {
-    if (!mHandlingDeviceReset) {
-      mHandlingDeviceReset = true;
-
-      MutexAutoLock lock(mRenderTextureMapLock);
-      mRenderTexturesDeferred.clear();
-      for (const auto& entry : mRenderTextures) {
-        entry.second->ClearCachedResources();
-      }
-
-      
-      
-      
-      gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(
-          gfx::DeviceResetReason::FORCED_RESET, aPlace);
-    }
-    return;
-  }
 
   if (mHandlingDeviceReset) {
     return;
   }
 
   mHandlingDeviceReset = true;
-
-#ifndef XP_WIN
-  
-  gfx::GPUProcessManager::RecordDeviceReset(aReason);
-#endif
 
   {
     MutexAutoLock lock(mRenderTextureMapLock);
@@ -1358,21 +1348,7 @@ void RenderThread::HandleDeviceReset(gfx::DeviceResetDetectPlace aPlace,
     }
   }
 
-  
-  
-  
-  
-  if (XRE_IsGPUProcess()) {
-    gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(aReason,
-                                                                 aPlace);
-  } else {
-#ifndef XP_WIN
-    
-    
-    gfx::GPUProcessManager::GPUProcessManager::NotifyDeviceReset(aReason,
-                                                                 aPlace);
-#endif
-  }
+  gfx::GPUProcessManager::NotifyDeviceReset(aReason, aPlace);
 }
 
 bool RenderThread::IsHandlingDeviceReset() {
