@@ -907,6 +907,10 @@ pref("browser.theme.dark-private-windows", true);
 
 
 
+pref("browser.theme.forced-colors-override.enabled", true);
+
+
+
 pref("browser.privateWindowSeparation.enabled", true);
 
 
