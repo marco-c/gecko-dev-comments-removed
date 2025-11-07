@@ -1,8 +1,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 promise_test(async t => {
   const db = await createDatabase(t, db => {

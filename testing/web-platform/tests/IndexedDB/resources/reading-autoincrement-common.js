@@ -1,4 +1,5 @@
 
+'use strict';
 function nameForId(id) {
   return `Object ${id}`;
 }

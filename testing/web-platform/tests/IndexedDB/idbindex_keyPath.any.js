@@ -1,5 +1,6 @@
 
 
+'use strict';
 
 indexeddb_test(
   (t, db) => {

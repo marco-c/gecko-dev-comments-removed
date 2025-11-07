@@ -1,6 +1,7 @@
 
 
 
+'use strict';
 
 indexeddb_test(
     function upgrade(t, db) {

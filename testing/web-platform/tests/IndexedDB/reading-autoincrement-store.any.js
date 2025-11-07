@@ -1,6 +1,7 @@
 
 
 
+'use strict';
 
 promise_test(async testCase => {
   const database = await setupAutoincrementDatabase(testCase);

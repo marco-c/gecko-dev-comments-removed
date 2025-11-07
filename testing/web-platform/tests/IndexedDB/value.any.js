@@ -2,8 +2,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 function setOnUpgradeNeeded(t, predicate, _instanceof, value) {
   createdb(t).onupgradeneeded = t.step_func(e => {

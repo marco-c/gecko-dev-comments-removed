@@ -2,8 +2,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 indexeddb_test(
   (t, db, tx) => {

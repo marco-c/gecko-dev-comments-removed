@@ -1,5 +1,6 @@
 
 
+'use strict';
 
 
 
@@ -42,7 +43,7 @@ async function run_test(testCase, transactionMode, direction) {
   await createTombstones(testCase, db);
 
   const txn = db.transaction(['objectStore'], transactionMode);
-  cursor = txn.objectStore('objectStore').index('index').openCursor(
+  const cursor = txn.objectStore('objectStore').index('index').openCursor(
       IDBKeyRange.bound(-11, 11), direction);
   let results = await iterateAndReturnAllCursorResult(testCase, cursor);
   assert_equals(results.length, 3);

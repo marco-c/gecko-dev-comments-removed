@@ -4,21 +4,6 @@
 
 'use strict';
 
-
-
-
-
-function expect(t, expected) {
-  let results = [];
-  return result => {
-    results.push(result);
-    if (results.length === expected.length) {
-      assert_array_equals(results, expected);
-      t.done();
-    }
-  };
-}
-
 indexeddb_test(
     (t, db) => {
       db.createObjectStore('store');

@@ -3,8 +3,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 async_test(t => {
   let db;

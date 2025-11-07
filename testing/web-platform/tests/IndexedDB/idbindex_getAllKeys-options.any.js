@@ -5,8 +5,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 index_get_all_keys_with_options_test(
      'out-of-line',  {query: 'C'}, 'Single item get');

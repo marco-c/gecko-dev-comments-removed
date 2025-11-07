@@ -1,8 +1,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 async_test(t => {
   const open_rq = createdb(t);

@@ -1,4 +1,5 @@
 
+'use strict';
 
 setup({allow_uncaught_exception:true});
 

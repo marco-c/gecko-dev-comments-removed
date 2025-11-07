@@ -5,8 +5,8 @@
 
 
 
+'use strict';
 
-'use_strict';
 
 index_get_all_records_test(
      'out-of-line',  {query:  'C'},

@@ -2,6 +2,7 @@
 
 
 
+'use strict';
 
 promise_test(async testCase => {
   await prepareForBucketTest(testCase);
