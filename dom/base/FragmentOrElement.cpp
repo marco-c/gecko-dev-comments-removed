@@ -73,6 +73,10 @@
 #include "mozilla/dom/NodeListBinding.h"
 #include "mozilla/dom/SVGUseElement.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/htmlaccel/htmlaccelEnabled.h"
+#ifdef MOZ_MAY_HAVE_HTMLACCEL
+#  include "mozilla/htmlaccel/htmlaccelNotInline.h"
+#endif
 #include "nsCCUncollectableMarker.h"
 #include "nsChildContentList.h"
 #include "nsContentCreatorFunctions.h"
@@ -1916,6 +1920,23 @@ static bool ContainsMarkup(const nsAString& aStr) {
   
   const char16_t* start = aStr.BeginReading();
   const char16_t* end = aStr.EndReading();
+
+#ifdef MOZ_MAY_HAVE_HTMLACCEL
+  if (mozilla::htmlaccel::htmlaccelEnabled()) {
+    
+    
+    
+    if (end - start >= 16) {
+      
+      if (*start == u'<') {
+        return true;
+      }
+      
+      
+      return mozilla::htmlaccel::ContainsMarkup(start, end);
+    }
+  }
+#endif
 
   while (start != end) {
     char16_t c = *start;

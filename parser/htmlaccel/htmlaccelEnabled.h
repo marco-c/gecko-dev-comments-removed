@@ -16,14 +16,23 @@ namespace mozilla::htmlaccel {
 
 
 
+
+
+
+
+
+
+
 inline bool htmlaccelEnabled() {
 #if !defined(__clang__) && defined(__GNUC__) && __GNUC__ < 12
   
   
   return false;
 #elif defined(__aarch64__) && defined(__LITTLE_ENDIAN__)
+#  define MOZ_MAY_HAVE_HTMLACCEL 1
   return true;
 #elif defined(__x86_64__)
+#  define MOZ_MAY_HAVE_HTMLACCEL 1
   bool ret = mozilla::supports_bmi();
   if (ret) {
     
