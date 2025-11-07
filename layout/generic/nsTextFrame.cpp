@@ -5853,54 +5853,56 @@ static bool ComputeDecorationInset(
     decContainer = aDecFrame;
   } else {
     nsIFrame* const lineContainer = FindLineContainer(aFrame);
-    nsILineIterator* const iter = lineContainer->GetLineIterator();
-    MOZ_ASSERT(iter,
-               "Line container of a text frame must be able to produce a "
-               "line iterator");
     MOZ_ASSERT(
         lineContainer->GetWritingMode().IsVertical() == wm.IsVertical(),
         "Decorating frame and line container must have writing modes in the "
         "same axis");
-    const int32_t lineNum = GetFrameLineNum(aFrame, iter);
-    const nsILineIterator::LineInfo lineInfo = iter->GetLine(lineNum).unwrap();
+    if (nsILineIterator* const iter = lineContainer->GetLineIterator()) {
+      const int32_t lineNum = GetFrameLineNum(aFrame, iter);
+      const nsILineIterator::LineInfo lineInfo =
+          iter->GetLine(lineNum).unwrap();
+      decRect = lineInfo.mLineBounds;
 
-    
-    decRect = lineInfo.mLineBounds;
-    decContainer = lineContainer;
-
-    
-    const StyleTextIndent& textIndent = aFrame->StyleText()->mTextIndent;
-    if (!textIndent.length.IsDefinitelyZero()) {
-      bool isFirstLineOrAfterHardBreak = true;
-      if (lineNum > 0 && !textIndent.each_line) {
-        isFirstLineOrAfterHardBreak = false;
-      } else if (nsBlockFrame* prevBlock =
-                     do_QueryFrame(lineContainer->GetPrevInFlow())) {
-        if (!(textIndent.each_line &&
-              (prevBlock->Lines().empty() ||
-               !prevBlock->LinesEnd().prev()->IsLineWrapped()))) {
+      
+      const StyleTextIndent& textIndent = aFrame->StyleText()->mTextIndent;
+      if (!textIndent.length.IsDefinitelyZero()) {
+        bool isFirstLineOrAfterHardBreak = true;
+        if (lineNum > 0 && !textIndent.each_line) {
           isFirstLineOrAfterHardBreak = false;
+        } else if (nsBlockFrame* prevBlock =
+                       do_QueryFrame(lineContainer->GetPrevInFlow())) {
+          if (!(textIndent.each_line &&
+                (prevBlock->Lines().empty() ||
+                 !prevBlock->LinesEnd().prev()->IsLineWrapped()))) {
+            isFirstLineOrAfterHardBreak = false;
+          }
+        }
+        if (isFirstLineOrAfterHardBreak != textIndent.hanging) {
+          
+          const Side side = wm.PhysicalSide(LogicalSide::IStart);
+          
+          
+          const nscoord basis = lineContainer->GetLogicalSize(wm).ISize(wm);
+          nsMargin indentMargin;
+          indentMargin.Side(side) = textIndent.length.Resolve(basis);
+          decRect.Deflate(indentMargin);
         }
       }
-      if (isFirstLineOrAfterHardBreak != textIndent.hanging) {
-        
-        const Side side = wm.PhysicalSide(LogicalSide::IStart);
-        
-        
-        const nscoord basis = lineContainer->GetLogicalSize(wm).ISize(wm);
-        nsMargin indentMargin;
-        indentMargin.Side(side) = textIndent.length.Resolve(basis);
-        decRect.Deflate(indentMargin);
+
+      
+      
+      
+      if (lineContainer->HasAnyStateBits(NS_FRAME_IN_REFLOW) &&
+          lineContainer->IsBlockFrameOrSubclass()) {
+        static_cast<nsBlockFrame*>(lineContainer)->ClearLineIterator();
       }
+    } else {
+      
+      
+      decRect = lineContainer->GetContentRectRelativeToSelf();
     }
 
-    
-    
-    
-    if (lineContainer->HasAnyStateBits(NS_FRAME_IN_REFLOW) &&
-        lineContainer->IsBlockFrameOrSubclass()) {
-      static_cast<nsBlockFrame*>(lineContainer)->ClearLineIterator();
-    }
+    decContainer = lineContainer;
   }
 
   
