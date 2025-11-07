@@ -879,6 +879,8 @@ pref("browser.search.serpMetricsRecordedCounter", 0);
 
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
+pref("browser.search.widget.new", false);
+
 
 
 pref("browser.search.totalSearches", 0);
