@@ -67,7 +67,7 @@ using WeakNativeListeners =
 
 
 
-MOZ_RUNINIT static nsTArray<Sequence<OwningNonNull<PlacesEvent>>>
+MOZ_CONSTINIT static nsTArray<Sequence<OwningNonNull<PlacesEvent>>>
     gNotificationQueue;
 
 uint32_t GetEventTypeFlag(PlacesEventType aEventType) {
