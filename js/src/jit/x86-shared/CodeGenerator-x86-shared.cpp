@@ -1103,11 +1103,11 @@ void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
 
   
   
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
+  MOZ_ASSERT((Abs(d) & (Abs(d) - 1)) != 0);
 
   
   
-  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(Abs(d));
 
   
   masm.movl(Imm32(rmc.multiplier), eax);
