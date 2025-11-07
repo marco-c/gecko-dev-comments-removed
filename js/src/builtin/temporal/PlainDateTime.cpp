@@ -602,12 +602,15 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
   }
 
   
+  auto originEpochNs = GetUTCEpochNanoseconds(isoDateTime1);
+
+  
   auto destEpochNs = GetUTCEpochNanoseconds(isoDateTime2);
 
   
   Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
   return RoundRelativeDuration(
-      cx, diff, destEpochNs, isoDateTime1, timeZone, calendar,
+      cx, diff, originEpochNs, destEpochNs, isoDateTime1, timeZone, calendar,
       settings.largestUnit, settings.roundingIncrement, settings.smallestUnit,
       settings.roundingMode, result);
 }
@@ -661,12 +664,15 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
   }
 
   
+  auto originEpochNs = GetUTCEpochNanoseconds(isoDateTime1);
+
+  
   auto destEpochNs = GetUTCEpochNanoseconds(isoDateTime2);
 
   
   Rooted<TimeZoneValue> timeZone(cx, TimeZoneValue{});
-  return TotalRelativeDuration(cx, diff, destEpochNs, isoDateTime1, timeZone,
-                               calendar, unit, result);
+  return TotalRelativeDuration(cx, diff, originEpochNs, destEpochNs,
+                               isoDateTime1, timeZone, calendar, unit, result);
 }
 
 

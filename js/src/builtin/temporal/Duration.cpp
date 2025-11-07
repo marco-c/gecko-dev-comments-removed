@@ -2034,15 +2034,15 @@ struct DurationNudge {
 
 
 
-static bool NudgeToCalendarUnit(JSContext* cx, const InternalDuration& duration,
-                                const EpochNanoseconds& destEpochNs,
-                                const ISODateTime& isoDateTime,
-                                Handle<TimeZoneValue> timeZone,
-                                Handle<CalendarValue> calendar,
-                                Increment increment, TemporalUnit unit,
-                                TemporalRoundingMode roundingMode,
-                                DurationNudge* result) {
+static bool NudgeToCalendarUnit(
+    JSContext* cx, const InternalDuration& duration,
+    const EpochNanoseconds& originEpochNs, const EpochNanoseconds& destEpochNs,
+    const ISODateTime& isoDateTime, Handle<TimeZoneValue> timeZone,
+    Handle<CalendarValue> calendar, Increment increment, TemporalUnit unit,
+    TemporalRoundingMode roundingMode, DurationNudge* result) {
   MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(originEpochNs));
+  MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(originEpochNs));
   MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(destEpochNs));
   MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(destEpochNs));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
@@ -2161,10 +2161,35 @@ static bool NudgeToCalendarUnit(JSContext* cx, const InternalDuration& duration,
   MOZ_ASSERT_IF(sign < 0, r1 <= 0 && r1 > r2);
 
   
-  ISODate start;
-  if (!CalendarDateAdd(cx, calendar, isoDateTime.date, startDuration,
-                       TemporalOverflow::Constrain, &start)) {
-    return false;
+  EpochNanoseconds startEpochNs;
+  if (r1 == 0) {
+    
+    startEpochNs = originEpochNs;
+  } else {
+    
+    ISODate start;
+    if (!CalendarDateAdd(cx, calendar, isoDateTime.date, startDuration,
+                         TemporalOverflow::Constrain, &start)) {
+      return false;
+    }
+
+    
+    auto startDateTime = ISODateTime{start, isoDateTime.time};
+    MOZ_ASSERT(ISODateTimeWithinLimits(startDateTime));
+
+    
+    EpochNanoseconds startEpochNs;
+    if (!timeZone) {
+      
+      startEpochNs = GetUTCEpochNanoseconds(startDateTime);
+    } else {
+      
+      if (!GetEpochNanosecondsFor(cx, timeZone, startDateTime,
+                                  TemporalDisambiguation::Compatible,
+                                  &startEpochNs)) {
+        return false;
+      }
+    }
   }
 
   
@@ -2175,30 +2200,15 @@ static bool NudgeToCalendarUnit(JSContext* cx, const InternalDuration& duration,
   }
 
   
-  auto startDateTime = ISODateTime{start, isoDateTime.time};
-  MOZ_ASSERT(ISODateTimeWithinLimits(startDateTime));
-
-  
   auto endDateTime = ISODateTime{end, isoDateTime.time};
   MOZ_ASSERT(ISODateTimeWithinLimits(endDateTime));
 
   
-  EpochNanoseconds startEpochNs;
   EpochNanoseconds endEpochNs;
   if (!timeZone) {
     
-    startEpochNs = GetUTCEpochNanoseconds(startDateTime);
-
-    
     endEpochNs = GetUTCEpochNanoseconds(endDateTime);
   } else {
-    
-    if (!GetEpochNanosecondsFor(cx, timeZone, startDateTime,
-                                TemporalDisambiguation::Compatible,
-                                &startEpochNs)) {
-      return false;
-    }
-
     
     if (!GetEpochNanosecondsFor(cx, timeZone, endDateTime,
                                 TemporalDisambiguation::Compatible,
@@ -2672,11 +2682,14 @@ static bool BubbleRelativeDuration(
 
 bool js::temporal::RoundRelativeDuration(
     JSContext* cx, const InternalDuration& duration,
-    const EpochNanoseconds& destEpochNs, const ISODateTime& isoDateTime,
-    Handle<TimeZoneValue> timeZone, Handle<CalendarValue> calendar,
-    TemporalUnit largestUnit, Increment increment, TemporalUnit smallestUnit,
+    const EpochNanoseconds& originEpochNs, const EpochNanoseconds& destEpochNs,
+    const ISODateTime& isoDateTime, Handle<TimeZoneValue> timeZone,
+    Handle<CalendarValue> calendar, TemporalUnit largestUnit,
+    Increment increment, TemporalUnit smallestUnit,
     TemporalRoundingMode roundingMode, InternalDuration* result) {
   MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(originEpochNs));
+  MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(originEpochNs));
   MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(destEpochNs));
   MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(destEpochNs));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
@@ -2692,9 +2705,9 @@ bool js::temporal::RoundRelativeDuration(
   DurationNudge nudge;
   if (irregularLengthUnit) {
     
-    if (!NudgeToCalendarUnit(cx, duration, destEpochNs, isoDateTime, timeZone,
-                             calendar, increment, smallestUnit, roundingMode,
-                             &nudge)) {
+    if (!NudgeToCalendarUnit(cx, duration, originEpochNs, destEpochNs,
+                             isoDateTime, timeZone, calendar, increment,
+                             smallestUnit, roundingMode, &nudge)) {
       return false;
     }
   } else if (timeZone) {
@@ -2734,14 +2747,14 @@ bool js::temporal::RoundRelativeDuration(
 
 
 
-bool js::temporal::TotalRelativeDuration(JSContext* cx,
-                                         const InternalDuration& duration,
-                                         const EpochNanoseconds& destEpochNs,
-                                         const ISODateTime& isoDateTime,
-                                         JS::Handle<TimeZoneValue> timeZone,
-                                         JS::Handle<CalendarValue> calendar,
-                                         TemporalUnit unit, double* result) {
+bool js::temporal::TotalRelativeDuration(
+    JSContext* cx, const InternalDuration& duration,
+    const EpochNanoseconds& originEpochNs, const EpochNanoseconds& destEpochNs,
+    const ISODateTime& isoDateTime, JS::Handle<TimeZoneValue> timeZone,
+    JS::Handle<CalendarValue> calendar, TemporalUnit unit, double* result) {
   MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(originEpochNs));
+  MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(originEpochNs));
   MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(destEpochNs));
   MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(destEpochNs));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
@@ -2750,8 +2763,8 @@ bool js::temporal::TotalRelativeDuration(JSContext* cx,
 
   
   DurationNudge nudge;
-  if (!NudgeToCalendarUnit(cx, duration, destEpochNs, isoDateTime, timeZone,
-                           calendar, Increment{1}, unit,
+  if (!NudgeToCalendarUnit(cx, duration, originEpochNs, destEpochNs,
+                           isoDateTime, timeZone, calendar, Increment{1}, unit,
                            TemporalRoundingMode::Trunc, &nudge)) {
     return false;
   }
