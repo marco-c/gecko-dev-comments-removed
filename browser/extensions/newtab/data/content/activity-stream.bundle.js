@@ -12944,6 +12944,27 @@ const formatTime = seconds => {
 
 
 
+const isNumericValue = input => {
+  
+  return input && /^\d+$/.test(input);
+};
+
+
+
+
+
+
+
+const isAtMaxLength = currentValue => {
+  return currentValue.length >= 2;
+};
+
+
+
+
+
+
+
 
 
 
@@ -13245,13 +13266,9 @@ const FocusTimer = ({
     const values = e.target.innerText.trim();
 
     
-    if (!/^\d+$/.test(input)) {
+    if (!isNumericValue(input)) {
       e.preventDefault();
-    }
-
-    
-    if (values.length >= 2) {
-      e.preventDefault();
+      return;
     }
     const selection = window.getSelection();
     const selectedText = selection.toString();
@@ -13269,6 +13286,12 @@ const FocusTimer = ({
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
+      return;
+    }
+
+    
+    if (isAtMaxLength(values)) {
+      e.preventDefault();
     }
   };
   const handleFocus = e => {
@@ -14375,6 +14398,10 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         break;
       case "solid-colors":
         fluent_id = "newtab-wallpaper-category-title-colors";
+        break;
+      case "firefox":
+        fluent_id = "newtab-wallpaper-category-title-firefox";
+        break;
     }
     this.setState({
       activeCategoryFluentID: fluent_id
@@ -14606,6 +14633,10 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
           break;
         case "solid-colors":
           fluent_id = "newtab-wallpaper-category-title-colors";
+          break;
+        case "firefox":
+          fluent_id = "newtab-wallpaper-category-title-firefox";
+          break;
       }
       let style = {};
       if (thumbnail?.wallpaperUrl) {
