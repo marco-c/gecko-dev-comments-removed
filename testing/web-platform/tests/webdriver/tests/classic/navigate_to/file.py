@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from tests.support.asserts import assert_success
 
 
@@ -10,15 +12,17 @@ def navigate_to(session, url):
 def test_file_protocol(session, target_platform, server_config):
     
     
-    path = server_config["doc_root"]
-    if target_platform == "windows":
-        
-        path = "/{}".format(path.replace("\\", "/"))
-    url = u"file://{}".format(path)
+    path = Path(server_config["doc_root"]) / "common" / "blank.html"
+
+    
+    
+    assert path.is_file()
+
+    
+    url = path.as_uri()
+    assert url.startswith("file://")
 
     response = navigate_to(session, url)
     assert_success(response)
 
-    if session.url.endswith('/'):
-        url += '/'
     assert session.url == url
