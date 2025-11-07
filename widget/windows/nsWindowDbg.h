@@ -107,7 +107,7 @@ struct EnumValueAndName {
 
 
 bool AppendFlagsInfo(nsCString& str, uint64_t flags,
-                     const nsTArray<EnumValueAndName>& flagsAndNames,
+                     Span<const EnumValueAndName> flagsAndNames,
                      const char* name);
 
 nsAutoCString WmSizeParamInfo(uint64_t wParam, uint64_t lParam, bool isPreCall);
