@@ -12,7 +12,8 @@ use crate::spatial_tree::{CoordinateSystem, SpatialNodeIndex, TransformUpdateSta
 use crate::spatial_tree::CoordinateSystemId;
 use euclid::{Vector2D, SideOffsets2D};
 use crate::scene::SceneProperties;
-use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind, PointHelpers};
+use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind};
+use crate::util::{PointHelpers, VectorHelpers};
 
 
 
@@ -338,6 +339,13 @@ impl SpatialNode {
 
         for element in offsets.iter_mut() {
             element.offset = -element.offset - scrolling.external_scroll_offset;
+
+            
+            
+            
+            
+            
+            element.offset = element.offset.snap();
         }
 
         if scrolling.offsets == offsets {
