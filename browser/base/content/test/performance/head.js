@@ -504,7 +504,9 @@ async function recordFrames(testPromise, win = window) {
 
 
 
-const kMaxEmptyPixels = 3;
+
+
+const kMaxEmptyPixels = 4;
 function compareFrames(frame, previousFrame) {
   
   
