@@ -10,7 +10,7 @@ const SCHEDULED_BACKUPS_ENABLED_PREF = "browser.backup.scheduled.enabled";
 
 
 add_task(async function password_validation() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let settings = browser.contentDocument.querySelector("backup-settings");
 
@@ -87,6 +87,15 @@ add_task(async function password_validation() {
     validityStub.restore();
 
     
+
+
+
+
+    let hiddenPromise = BrowserTestUtils.waitForCondition(() => {
+      return !passwordInputs.passwordRulesEl.open;
+    });
+
+    
     const mockEmail = "email@example.com";
     await createMockPassInputEventPromise(newPasswordInput, mockEmail);
     await passwordInputs.updateComplete;
@@ -108,6 +117,9 @@ add_task(async function password_validation() {
     await createMockPassInputEventPromise(repeatPasswordInput, noMatchPass);
     await passwordInputs.updateComplete;
 
+    
+    await hiddenPromise;
+
     Assert.ok(
       !passwordInputs._hasEmail,
       "Has email rule is no longer detected"
@@ -127,26 +139,6 @@ add_task(async function password_validation() {
       passwordInputs._passwordsValid,
       "Passwords are now considered valid"
     );
-
-    let classChangePromise = BrowserTestUtils.waitForMutationCondition(
-      passwordRules,
-      { attributes: true, attributesFilter: ["class"] },
-      () => passwordRules.classList.contains("hidden")
-    );
-
-    
-
-
-
-
-    let hiddenPromise = BrowserTestUtils.waitForCondition(() => {
-      return BrowserTestUtils.isHidden(passwordRules);
-    });
-
-    newPasswordInput.blur();
-    await passwordInputs.updateComplete;
-    await classChangePromise;
-    await hiddenPromise;
 
     Assert.ok(true, "Password rules tooltip should be hidden");
     await SpecialPowers.popPrefEnv();
