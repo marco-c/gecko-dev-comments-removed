@@ -2747,7 +2747,7 @@ class nsContentUtils {
 
 
 
-  static bool IsCssMimeType(const nsAString& aMimeType);
+  static bool HasCssMimeTypeEssence(const nsAString& aMimeType);
 
   static void SplitMimeType(const nsAString& aValue, nsString& aType,
                             nsString& aParams);

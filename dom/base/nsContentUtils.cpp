@@ -8658,8 +8658,12 @@ bool nsContentUtils::IsJsonMimeType(const nsAString& aMimeType) {
 }
 
 
-bool nsContentUtils::IsCssMimeType(const nsAString& aMimeType) {
-  return aMimeType.LowerCaseEqualsLiteral("text/css");
+bool nsContentUtils::HasCssMimeTypeEssence(const nsAString& aMimeType) {
+  nsString contentType, contentCharset;
+  if (MimeType::Parse(aMimeType, contentType, contentCharset)) {
+    return contentType.LowerCaseEqualsLiteral("text/css");
+  }
+  return false;
 }
 
 bool nsContentUtils::PrefetchPreloadEnabled(nsIDocShell* aDocShell) {
