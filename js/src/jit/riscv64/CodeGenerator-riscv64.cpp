@@ -409,62 +409,82 @@ void CodeGeneratorRiscv64::emitBigIntPtrMod(LBigIntPtrMod* ins,
   masm.ma_mod64(output, dividend, divisor);
 }
 
-void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
+template <class LIR>
+static void TrapIfDivideByZero(MacroAssembler& masm, LIR* lir, Register rhs) {
+  auto* mir = lir->mir();
+  MOZ_ASSERT(mir->trapOnError());
+
+  if (mir->canBeDivideByZero()) {
+    Label nonZero;
+    masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero, ShortJump);
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    masm.bind(&nonZero);
+  }
+}
+
+void CodeGenerator::visitDivI64(LDivI64* lir) {
   Register lhs = ToRegister(lir->lhs());
   Register rhs = ToRegister(lir->rhs());
   Register output = ToRegister(lir->output());
 
-  Label done;
+  MDiv* div = lir->mir();
 
   
-  if (lir->canBeDivideByZero()) {
-    Label nonZero;
-    masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero);
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->trapSiteDesc());
-    masm.bind(&nonZero);
-  }
+  TrapIfDivideByZero(masm, lir, rhs);
 
   
-  if (lir->canBeNegativeOverflow()) {
+  if (div->canBeNegativeOverflow()) {
     Label notOverflow;
     masm.branchPtr(Assembler::NotEqual, lhs, ImmWord(INT64_MIN), &notOverflow);
     masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(-1), &notOverflow);
-    if (lir->mir()->isMod()) {
-      masm.ma_xor(output, output, Operand(output));
-    } else {
-      masm.wasmTrap(wasm::Trap::IntegerOverflow, lir->trapSiteDesc());
-    }
-    masm.jump(&done);
+    masm.wasmTrap(wasm::Trap::IntegerOverflow, div->trapSiteDesc());
     masm.bind(&notOverflow);
   }
 
-  if (lir->mir()->isMod()) {
-    masm.ma_mod64(output, lhs, rhs);
-  } else {
-    masm.ma_div64(output, lhs, rhs);
-  }
-
-  masm.bind(&done);
+  masm.ma_div64(output, lhs, rhs);
 }
 
-void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
+void CodeGenerator::visitModI64(LModI64* lir) {
   Register lhs = ToRegister(lir->lhs());
   Register rhs = ToRegister(lir->rhs());
   Register output = ToRegister(lir->output());
 
   
-  if (lir->canBeDivideByZero()) {
-    Label nonZero;
-    masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero);
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->trapSiteDesc());
-    masm.bind(&nonZero);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
 
-  if (lir->mir()->isMod()) {
-    masm.ma_modu64(output, lhs, rhs);
-  } else {
-    masm.ma_divu64(output, lhs, rhs);
-  }
+  
+  TrapIfDivideByZero(masm, lir, rhs);
+
+  masm.ma_mod64(output, lhs, rhs);
+}
+
+void CodeGenerator::visitUDivI64(LUDivI64* lir) {
+  Register lhs = ToRegister(lir->lhs());
+  Register rhs = ToRegister(lir->rhs());
+  Register output = ToRegister(lir->output());
+
+  
+  TrapIfDivideByZero(masm, lir, rhs);
+
+  masm.ma_divu64(output, lhs, rhs);
+}
+
+void CodeGenerator::visitUModI64(LUModI64* lir) {
+  Register lhs = ToRegister(lir->lhs());
+  Register rhs = ToRegister(lir->rhs());
+  Register output = ToRegister(lir->output());
+
+  
+  TrapIfDivideByZero(masm, lir, rhs);
+
+  masm.ma_modu64(output, lhs, rhs);
 }
 
 void CodeGenerator::visitWasmLoadI64(LWasmLoadI64* lir) {
@@ -996,18 +1016,26 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
-  Register temp = ToRegister(ins->temp0());
   MDiv* mir = ins->mir();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   Label done;
 
   
   if (mir->canBeDivideByZero()) {
     if (mir->trapOnError()) {
-      Label nonZero;
-      masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero);
-      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-      masm.bind(&nonZero);
+      TrapIfDivideByZero(masm, ins, rhs);
     } else if (mir->canTruncateInfinities()) {
       
       Label notzero;
@@ -1022,27 +1050,21 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   }
 
   
-  if (mir->canBeNegativeOverflow()) {
+  
+  if (mir->canBeNegativeOverflow() &&
+      (mir->trapOnError() || !mir->canTruncateOverflow())) {
     Label notMinInt;
-    masm.move32(Imm32(INT32_MIN), temp);
-    masm.ma_b(lhs, temp, &notMinInt, Assembler::NotEqual, ShortJump);
+    masm.ma_b(lhs, Imm32(INT32_MIN), &notMinInt, Assembler::NotEqual,
+              ShortJump);
 
-    masm.move32(Imm32(-1), temp);
     if (mir->trapOnError()) {
       Label ok;
-      masm.ma_b(rhs, temp, &ok, Assembler::NotEqual);
+      masm.ma_b(rhs, Imm32(-1), &ok, Assembler::NotEqual, ShortJump);
       masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
       masm.bind(&ok);
-    } else if (mir->canTruncateOverflow()) {
-      
-      Label skip;
-      masm.ma_b(rhs, temp, &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(INT32_MIN), dest);
-      masm.ma_branch(&done, ShortJump);
-      masm.bind(&skip);
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, rhs, temp, ins->snapshot());
+      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
     }
     masm.bind(&notMinInt);
   }
@@ -1062,6 +1084,9 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     MOZ_ASSERT(mir->fallible());
     MOZ_ASSERT(lhs != dest && rhs != dest);
 
+    UseScratchRegisterScope temps(masm);
+    Register temp = temps.Acquire();
+
     
     
     masm.ma_div32(dest, lhs, rhs);
@@ -1077,11 +1102,13 @@ void CodeGenerator::visitDivI(LDivI* ins) {
 void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   Register lhs = ToRegister(ins->numerator());
   Register dest = ToRegister(ins->output());
-  Register tmp = ToRegister(ins->temp0());
   int32_t shift = ins->shift();
   MOZ_ASSERT(0 <= shift && shift <= 31);
 
   if (shift != 0) {
+    UseScratchRegisterScope temps(masm);
+    Register tmp = temps.Acquire();
+
     MDiv* mir = ins->mir();
     if (!mir->isTruncated()) {
       
@@ -1124,41 +1151,27 @@ void CodeGenerator::visitModI(LModI* ins) {
 
   
   
-  if (mir->canBeNegativeDividend()) {
-    Label skip;
-    masm.ma_b(lhs, Imm32(INT_MIN), &skip, Assembler::NotEqual, ShortJump);
-    if (mir->isTruncated()) {
-      
-      masm.ma_b(rhs, Imm32(-1), &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(0), dest);
-      masm.ma_branch(&done, ShortJump);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
-    }
-    masm.bind(&skip);
-  }
-
+  
+  
   
   
   
   
   
 
-  
   
   if (mir->canBeDivideByZero()) {
-    if (mir->isTruncated()) {
+    if (mir->trapOnError()) {
+      TrapIfDivideByZero(masm, ins, rhs);
+    } else if (mir->isTruncated()) {
+      
       Label yNonZero;
       masm.ma_b(rhs, Imm32(0), &yNonZero, Assembler::NotEqual, ShortJump);
-      if (mir->trapOnError()) {
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-      } else {
-        masm.move32(Imm32(0), dest);
-        masm.ma_branch(&done, ShortJump);
-      }
+      masm.move32(Imm32(0), dest);
+      masm.ma_branch(&done, ShortJump);
       masm.bind(&yNonZero);
     } else {
+      
       MOZ_ASSERT(mir->fallible());
       bailoutCmp32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
@@ -1166,11 +1179,12 @@ void CodeGenerator::visitModI(LModI* ins) {
 
   masm.ma_mod32(dest, lhs, rhs);
 
-  
-  
   if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
     MOZ_ASSERT(mir->fallible());
     MOZ_ASSERT(lhs != dest);
+
+    
+    
 
     masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
     bailoutCmp32(Assembler::Signed, lhs, lhs, ins->snapshot());
@@ -2049,55 +2063,87 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
                    trueExprAndDest);
 }
 
-void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
+void CodeGenerator::visitUDiv(LUDiv* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
   Label done;
 
+  MDiv* mir = ins->mir();
+
   
-  if (ins->canBeDivideByZero()) {
-    if (ins->mir()->isTruncated()) {
-      if (ins->trapOnError()) {
-        Label nonZero;
-        masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero);
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->trapSiteDesc());
-        masm.bind(&nonZero);
-      } else {
-        
-        Label notzero;
-        masm.ma_b(rhs, rhs, &notzero, Assembler::NonZero, ShortJump);
-        masm.move32(Imm32(0), output);
-        masm.ma_branch(&done, ShortJump);
-        masm.bind(&notzero);
-      }
+  if (mir->canBeDivideByZero()) {
+    if (mir->trapOnError()) {
+      TrapIfDivideByZero(masm, ins, rhs);
+    } else if (mir->isTruncated()) {
+      
+      Label nonZero;
+      masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero, ShortJump);
+      masm.move32(Imm32(0), output);
+      masm.ma_branch(&done, ShortJump);
+      masm.bind(&nonZero);
     } else {
       bailoutCmp32(Assembler::Equal, rhs, Imm32(0), ins->snapshot());
     }
   }
 
   
-  if (ins->mir()->isDiv()) {
-    if (ins->mir()->toDiv()->canTruncateRemainder()) {
-      masm.ma_divu32(output, lhs, rhs);
-    } else {
-      MOZ_ASSERT(lhs != output && rhs != output);
-
-      UseScratchRegisterScope temps(&masm);
-      Register scratch = temps.Acquire();
-
-      
-      
-      masm.ma_divu32(output, lhs, rhs);
-      masm.ma_modu32(scratch, lhs, rhs);
-
-      bailoutCmp32(Assembler::NonZero, scratch, scratch, ins->snapshot());
-    }
+  if (mir->canTruncateRemainder()) {
+    masm.ma_divu32(output, lhs, rhs);
   } else {
-    masm.ma_modu32(output, lhs, rhs);
+    MOZ_ASSERT(lhs != output && rhs != output);
+
+    UseScratchRegisterScope temps(&masm);
+    Register scratch = temps.Acquire();
+
+    
+    
+    masm.ma_divu32(output, lhs, rhs);
+    masm.ma_modu32(scratch, lhs, rhs);
+
+    bailoutCmp32(Assembler::NonZero, scratch, scratch, ins->snapshot());
   }
 
-  if (!ins->mir()->isTruncated()) {
+  
+  
+  if (!mir->isTruncated()) {
+    bailoutCmp32(Assembler::LessThan, output, Imm32(0), ins->snapshot());
+  }
+
+  masm.bind(&done);
+}
+
+void CodeGenerator::visitUMod(LUMod* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  Register rhs = ToRegister(ins->rhs());
+  Register output = ToRegister(ins->output());
+  Label done;
+
+  MMod* mir = ins->mir();
+
+  
+  if (mir->canBeDivideByZero()) {
+    if (mir->trapOnError()) {
+      TrapIfDivideByZero(masm, ins, rhs);
+    } else if (mir->isTruncated()) {
+      
+      Label nonZero;
+      masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero, ShortJump);
+      masm.move32(Imm32(0), output);
+      masm.ma_branch(&done, ShortJump);
+      masm.bind(&nonZero);
+    } else {
+      bailoutCmp32(Assembler::Equal, rhs, Imm32(0), ins->snapshot());
+    }
+  }
+
+  masm.ma_modu32(output, lhs, rhs);
+
+  
+  
+  
+  
+  if (!mir->isTruncated()) {
     bailoutCmp32(Assembler::LessThan, output, Imm32(0), ins->snapshot());
   }
 
