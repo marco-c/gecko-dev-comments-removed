@@ -132,7 +132,6 @@ const NO_FLAGS = 0;
 const CRLiteModeDisabledPrefValue = 0;
 const CRLiteModeTelemetryOnlyPrefValue = 1;
 const CRLiteModeEnforcePrefValue = 2;
-const CRLiteModeConfirmRevocationsValue = 3;
 
 
 
@@ -166,8 +165,8 @@ function arrayToString(a) {
 
 function pemToBase64(pem) {
   return pem
-    .replace(/-----BEGIN CERTIFICATE-----/, "")
-    .replace(/-----END CERTIFICATE-----/, "")
+    .replace(/-----BEGIN (CERTIFICATE|(EC )?PRIVATE KEY)-----/, "")
+    .replace(/-----END (CERTIFICATE|(EC )?PRIVATE KEY)-----/, "")
     .replace(/[\r\n]/g, "");
 }
 
