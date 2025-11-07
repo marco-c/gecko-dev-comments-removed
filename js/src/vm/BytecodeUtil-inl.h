@@ -123,44 +123,25 @@ class BytecodeRangeWithPosition : private BytecodeRange {
         sn(script->notes()),
         snEnd(script->notesEnd()),
         snpc(script->code()),
-        isEntryPoint(false),
+        mainPC(script->main()),
         isBreakpoint(false),
-        seenStepSeparator(false),
-        wasArtifactEntryPoint(false) {
+        seenStepSeparator(false) {
     if (sn < snEnd) {
       snpc += sn->delta();
     }
     updatePosition();
-    while (frontPC() != script->main()) {
+    while (frontPC() != mainPC) {
       popFront();
     }
-
-    if (frontOpcode() != JSOp::JumpTarget) {
-      isEntryPoint = true;
-    } else {
-      wasArtifactEntryPoint = true;
-    }
+    MOZ_ASSERT(entryPointState != EntryPointState::NotEntryPoint);
   }
 
   void popFront() {
     BytecodeRange::popFront();
     if (empty()) {
-      isEntryPoint = false;
+      entryPointState = EntryPointState::NotEntryPoint;
     } else {
       updatePosition();
-    }
-
-    
-    
-    
-    if (wasArtifactEntryPoint) {
-      wasArtifactEntryPoint = false;
-      isEntryPoint = true;
-    }
-
-    if (isEntryPoint && frontOpcode() == JSOp::JumpTarget) {
-      wasArtifactEntryPoint = isEntryPoint;
-      isEntryPoint = false;
     }
   }
 
@@ -174,7 +155,9 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   
   
   
-  bool frontIsEntryPoint() const { return isEntryPoint; }
+  bool frontIsEntryPoint() const {
+    return entryPointState == EntryPointState::EntryPoint;
+  }
 
   
   
@@ -229,7 +212,30 @@ class BytecodeRangeWithPosition : private BytecodeRange {
     }
 
     sn = *iter;
-    isEntryPoint = lastLinePC == frontPC();
+
+    
+    
+    
+    
+    
+    
+    if (frontPC() == mainPC || frontPC() == lastLinePC ||
+        entryPointState == EntryPointState::ArtifactEntryPoint) {
+      if (frontOpcode() == JSOp::JumpTarget) {
+        entryPointState = EntryPointState::ArtifactEntryPoint;
+      } else {
+        entryPointState = EntryPointState::EntryPoint;
+      }
+    } else {
+      entryPointState = EntryPointState::NotEntryPoint;
+    }
+
+    
+    if (frontPC() < mainPC) {
+      MOZ_ASSERT(!frontIsEntryPoint());
+      MOZ_ASSERT(!frontIsBreakablePoint());
+      MOZ_ASSERT(!frontIsBreakableStepPoint());
+    }
   }
 
   uint32_t initialLine;
@@ -243,10 +249,16 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   const SrcNote* sn;
   const SrcNote* snEnd;
   jsbytecode* snpc;
-  bool isEntryPoint;
+  jsbytecode* mainPC;
   bool isBreakpoint;
   bool seenStepSeparator;
-  bool wasArtifactEntryPoint;
+
+  enum class EntryPointState : uint8_t {
+    NotEntryPoint,
+    EntryPoint,
+    ArtifactEntryPoint
+  };
+  EntryPointState entryPointState = EntryPointState::NotEntryPoint;
 };
 
 }  
