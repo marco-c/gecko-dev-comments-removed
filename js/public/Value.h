@@ -1227,7 +1227,7 @@ JS_PUBLIC_API void HeapValueWriteBarriers(Value* valuep, const Value& prev,
                                           const Value& next);
 
 template <>
-struct GCPolicy<JS::Value> {
+struct GCPolicy<JS::Value> : public GCPolicyBase<JS::Value> {
   static void trace(JSTracer* trc, Value* v, const char* name) {
     
     
