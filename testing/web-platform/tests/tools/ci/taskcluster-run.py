@@ -83,7 +83,7 @@ def main(product, channel, commit_range, artifact_path, wpt_args):
         "--verify-log-full"
     ]
     
-    wpt_args.append("--headless" if product == "wpewebkit_minibrowser" else "--no-headless")
+    wpt_args.append("--headless" if product in ("wpewebkit_minibrowser", "servo") else "--no-headless")
 
     wpt_args += get_browser_args(product, channel, artifact_path)
 
