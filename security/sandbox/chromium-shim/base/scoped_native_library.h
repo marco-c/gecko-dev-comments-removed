@@ -8,24 +8,23 @@
 
 
 
+
 #ifndef BASE_SCOPED_NATIVE_LIBRARY_H_
 #define BASE_SCOPED_NATIVE_LIBRARY_H_
+
+#include <windows.h>
 
 #include "mozilla/UniquePtr.h"
 
 namespace base {
 
-struct HModuleFreePolicy
-{
+struct HModuleFreePolicy {
   typedef HMODULE pointer;
-  void operator()(pointer hModule)
-  {
-    ::FreeLibrary(hModule);
-  }
+  void operator()(pointer hModule) { ::FreeLibrary(hModule); }
 };
 
 typedef mozilla::UniquePtr<HMODULE, HModuleFreePolicy> ScopedNativeLibrary;
 
-} 
+}  
 
 #endif  
