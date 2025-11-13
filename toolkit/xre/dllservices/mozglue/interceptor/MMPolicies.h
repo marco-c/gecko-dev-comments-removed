@@ -977,16 +977,11 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
       return false;
     }
 
+    
+    
     PVOID local = ::VirtualAlloc(mLocalView + mCommitOffset, GetPageSize(),
                                  MEM_COMMIT, PAGE_READWRITE);
     if (!local) {
-      return false;
-    }
-
-    PVOID remote = ::VirtualAllocEx(
-        mProcess, static_cast<uint8_t*>(mRemoteView) + mCommitOffset,
-        GetPageSize(), MEM_COMMIT, PAGE_EXECUTE_READ);
-    if (!remote) {
       return false;
     }
 

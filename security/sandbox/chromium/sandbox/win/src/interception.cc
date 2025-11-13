@@ -408,12 +408,11 @@ ResultCode InterceptionManager::PatchNtdll(bool hot_patch_needed) {
 
   
   size_t thunk_bytes_padded = base::bits::AlignUp(thunk_bytes, kPageSize);
+  
+  
   local_thunk_base = reinterpret_cast<BYTE*>(::VirtualAlloc(
       local_thunk_base, thunk_bytes_padded, MEM_COMMIT, PAGE_READWRITE));
   CHECK(local_thunk_base);
-  thunk_base = reinterpret_cast<BYTE*>(::VirtualAllocEx(
-      child, thunk_base, thunk_bytes_padded, MEM_COMMIT, PAGE_EXECUTE_READ));
-  CHECK(thunk_base);
 
   DllInterceptionData* thunks =
       reinterpret_cast<DllInterceptionData*>(thunk_base + thunk_offset);
