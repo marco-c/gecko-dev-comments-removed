@@ -607,8 +607,6 @@ static OPUS_INLINE opus_int64 silk_max_64(opus_int64 a, opus_int64 b)
 
 
 
-
-
 #define silk_SMMUL(a32, b32)                (opus_int32)silk_RSHIFT64(silk_SMULL((a32), (b32)), 32)
 
 #if !defined(OVERRIDE_silk_burg_modified)

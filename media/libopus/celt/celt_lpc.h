@@ -25,8 +25,8 @@
 
 
 
-#ifndef CELT_LPC_H
-#define CELT_LPC_H
+#ifndef PLC_H
+#define PLC_H
 
 #include "arch.h"
 #include "cpu_support.h"

@@ -123,20 +123,6 @@ opus_val16 celt_rsqrt_norm(opus_val32 x)
 }
 
 
-opus_val32 celt_rsqrt_norm32(opus_val32 x)
-{
-   opus_int32 tmp;
-   
-
-   opus_int32 r_q29 = SHL32(celt_rsqrt_norm(SHR32(x, 31-16)), 15);
-   
-   tmp = MULT32_32_Q31(r_q29, r_q29);
-   tmp = MULT32_32_Q31(1073741824 , tmp);
-   tmp = MULT32_32_Q31(x, tmp);
-   return SHL32(MULT32_32_Q31(r_q29, SUB32(201326592 , tmp)), 4);
-}
-
-
 opus_val32 celt_sqrt(opus_val32 x)
 {
    int k;
@@ -157,23 +143,6 @@ opus_val32 celt_sqrt(opus_val32 x)
               MULT16_16_Q15(n, ADD16(C[3], MULT16_16_Q15(n, ADD16(C[4], MULT16_16_Q15(n, (C[5])))))))))));
    rt = VSHR32(rt,7-k);
    return rt;
-}
-
-
-
-opus_val32 celt_sqrt32(opus_val32 x)
-{
-   int k;
-   opus_int32 x_frac;
-   if (x==0)
-      return 0;
-   else if (x>=1073741824)
-      return 2147483647; 
-   k = (celt_ilog2(x)>>1);
-   x_frac = VSHR32(x, 2*(k-14)-1);
-   x_frac = MULT32_32_Q31(celt_rsqrt_norm32(x_frac), x_frac);
-   if (k < 12) return PSHR32(x_frac, 12-k);
-   else return SHL32(x_frac, k-12);
 }
 
 #define L1 32767
@@ -219,81 +188,28 @@ opus_val16 celt_cos_norm(opus_val32 x)
 }
 
 
-
-opus_val32 celt_cos_norm32(opus_val32 x)
+opus_val32 celt_rcp(opus_val32 x)
 {
-   static const opus_val32 COS_NORM_COEFF_A0 = 134217720;   
-   static const opus_val32 COS_NORM_COEFF_A1 = -662336704;  
-   static const opus_val32 COS_NORM_COEFF_A2 = 544710848;   
-   static const opus_val32 COS_NORM_COEFF_A3 = -178761936;  
-   static const opus_val32 COS_NORM_COEFF_A4 = 29487206;    
-   opus_int32 x_sq_q29, tmp;
-   
-   celt_sig_assert((x >= -1073741824) && (x <= 1073741824));
-   
-   if (ABS32(x) == 1<<30) return 0;
-   x_sq_q29 = MULT32_32_Q31(x, x);
-   
-   tmp = ADD32(COS_NORM_COEFF_A3, MULT32_32_Q31(x_sq_q29, COS_NORM_COEFF_A4));
-   tmp = ADD32(COS_NORM_COEFF_A2, MULT32_32_Q31(x_sq_q29, tmp));
-   tmp = ADD32(COS_NORM_COEFF_A1, MULT32_32_Q31(x_sq_q29, tmp));
-   return SHL32(ADD32(COS_NORM_COEFF_A0, MULT32_32_Q31(x_sq_q29, tmp)), 4);
-}
-
-
-
-opus_val16 celt_rcp_norm16(opus_val16 x)
-{
+   int i;
+   opus_val16 n;
    opus_val16 r;
+   celt_sig_assert(x>0);
+   i = celt_ilog2(x);
+   
+   n = VSHR32(x,i-15)-32768;
    
 
 
-   r = ADD16(30840, MULT16_16_Q15(-15420, x));
+   r = ADD16(30840, MULT16_16_Q15(-15420, n));
    
 
 
    r = SUB16(r, MULT16_16_Q15(r,
-             ADD16(MULT16_16_Q15(r, x), ADD16(r, -32768))));
+             ADD16(MULT16_16_Q15(r, n), ADD16(r, -32768))));
    
 
-   return SUB16(r, ADD16(1, MULT16_16_Q15(r,
-                ADD16(MULT16_16_Q15(r, x), ADD16(r, -32768)))));
-}
-
-
-
-
-opus_val32 celt_rcp_norm32(opus_val32 x)
-{
-   opus_val32 r_q30;
-   celt_sig_assert(x >= 1073741824);
-   r_q30 = SHL32(EXTEND32(celt_rcp_norm16(SHR32(x, 15)-32768)), 16);
-   
-
-
-
-
-
-
-
-
-
-   return SUB32(r_q30, ADD32(SHL32(
-                MULT32_32_Q31(ADD32(MULT32_32_Q31(r_q30, x), -1073741824),
-                              r_q30), 1), 1));
-}
-
-
-opus_val32 celt_rcp(opus_val32 x)
-{
-   int i;
-   opus_val16 r;
-   celt_sig_assert(x>0);
-   i = celt_ilog2(x);
-
-   
-   r = celt_rcp_norm16(VSHR32(x,i-15)-32768);
-
+   r = SUB16(r, ADD16(1, MULT16_16_Q15(r,
+             ADD16(MULT16_16_Q15(r, n), ADD16(r, -32768)))));
    
 
 

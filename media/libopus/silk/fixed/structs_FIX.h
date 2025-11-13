@@ -96,6 +96,7 @@ typedef struct {
 
 
 typedef struct {
+    silk_encoder_state_FIX      state_Fxx[ ENCODER_NUM_CHANNELS ];
     stereo_enc_state            sStereo;
     opus_int32                  nBitsUsedLBRR;
     opus_int32                  nBitsExceeded;
@@ -105,8 +106,6 @@ typedef struct {
     opus_int                    timeSinceSwitchAllowed_ms;
     opus_int                    allowBandwidthSwitch;
     opus_int                    prev_decode_only_middle;
-    
-    silk_encoder_state_FIX      state_Fxx[ ENCODER_NUM_CHANNELS ];
 } silk_encoder;
 
 
