@@ -864,23 +864,18 @@ nsIFrame* FindFrameTargetedByInputEvent(
   }
   
   
-  nsRootPresContext* rootPresContext =
-      aRootFrame.mFrame->PresContext()->GetRootPresContext();
-  nsView* view = rootPresContext->PresShell()->GetRootFrame()->GetView();
-  if (!view) {
-    return target;
-  }
+  nsPresContext* pc = aRootFrame.mFrame->PresContext();
   
   
   
   
   point = nsLayoutUtils::TransformFramePointToRoot(ViewportType::Visual,
                                                    aRootFrame, point);
-  LayoutDeviceIntPoint widgetPoint = nsLayoutUtils::TranslateViewToWidget(
-      rootPresContext, view, point, ViewportType::Visual, aEvent->mWidget);
-  if (widgetPoint.x != NS_UNCONSTRAINEDSIZE) {
+  if (auto widgetPoint = nsLayoutUtils::FrameToWidgetOffset(aRootFrame.mFrame,
+                                                            aEvent->mWidget)) {
     
-    aEvent->mRefPoint = widgetPoint;
+    aEvent->mRefPoint = LayoutDeviceIntPoint::FromAppUnitsRounded(
+        *widgetPoint + point, pc->AppUnitsPerDevPixel());
   }
   return target;
 }

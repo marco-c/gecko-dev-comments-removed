@@ -1485,28 +1485,18 @@ nsPoint GetEventCoordinatesRelativeTo(nsIWidget* aWidget,
     rootFrame = f;
   }
 
-  nsPoint widgetToRoot = [&] {
-    nsPresContext* pc = rootFrame->PresContext();
-    nsPoint widgetOffset;
-    nsIWidget* widget = rootFrame->GetNearestWidget(widgetOffset);
-    if (NS_WARN_IF(!widget)) {
-      return nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-    }
-    LayoutDeviceIntPoint widgetPoint =
-        aPoint + nsLayoutUtils::WidgetToWidgetOffset(aWidget, widget);
-    nsPoint widgetAppUnits(pc->DevPixelsToAppUnits(widgetPoint.x),
-                           pc->DevPixelsToAppUnits(widgetPoint.y));
-    return widgetAppUnits - widgetOffset;
-  }();
-
-  if (widgetToRoot == nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE)) {
+  auto rootToWidget = nsLayoutUtils::FrameToWidgetOffset(rootFrame, aWidget);
+  if (!rootToWidget) {
     return nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   }
 
+  const int32_t rootAPD = rootFrame->PresContext()->AppUnitsPerDevPixel();
+  nsPoint widgetToRoot =
+      LayoutDeviceIntPoint::ToAppUnits(aPoint, rootAPD) - *rootToWidget;
+
   
   
-  int32_t rootAPD = rootFrame->PresContext()->AppUnitsPerDevPixel();
-  int32_t localAPD = frame->PresContext()->AppUnitsPerDevPixel();
+  const int32_t localAPD = frame->PresContext()->AppUnitsPerDevPixel();
   widgetToRoot = widgetToRoot.ScaleToOtherAppUnits(rootAPD, localAPD);
 
   
@@ -2380,27 +2370,6 @@ LayoutDeviceIntPoint nsLayoutUtils::WidgetToWidgetOffset(nsIWidget* aFrom,
   auto fromOffset = aFrom->WidgetToScreenOffset();
   auto toOffset = aTo->WidgetToScreenOffset();
   return fromOffset - toOffset;
-}
-
-LayoutDeviceIntPoint nsLayoutUtils::TranslateViewToWidget(
-    nsPresContext* aPresContext, nsView* aView, nsPoint aPt,
-    ViewportType aViewportType, nsIWidget* aWidget) {
-  nsPoint viewOffset;
-  nsIWidget* viewWidget = aView->GetNearestWidget(&viewOffset);
-  if (!viewWidget) {
-    return LayoutDeviceIntPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-  }
-
-  nsPoint pt = (aPt + viewOffset);
-  
-  
-  if (aViewportType == ViewportType::Layout && aPresContext->GetPresShell()) {
-    pt = ViewportUtils::LayoutToVisual(pt, aPresContext->GetPresShell());
-  }
-  LayoutDeviceIntPoint relativeToViewWidget(
-      aPresContext->AppUnitsToDevPixels(pt.x),
-      aPresContext->AppUnitsToDevPixels(pt.y));
-  return relativeToViewWidget + WidgetToWidgetOffset(viewWidget, aWidget);
 }
 
 UsedClear nsLayoutUtils::CombineClearType(UsedClear aOrigClearType,

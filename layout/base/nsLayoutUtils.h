@@ -739,19 +739,6 @@ class nsLayoutUtils {
                                            nsIContent** aContainer,
                                            int32_t* aOffset);
 
-  
-
-
-
-
-
-
-
-
-  static mozilla::LayoutDeviceIntPoint TranslateViewToWidget(
-      nsPresContext* aPresContext, nsView* aView, nsPoint aPt,
-      ViewportType aViewportType, nsIWidget* aWidget);
-
   static mozilla::LayoutDeviceIntPoint WidgetToWidgetOffset(
       nsIWidget* aFromWidget, nsIWidget* aToWidget);
 

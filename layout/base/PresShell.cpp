@@ -10005,16 +10005,14 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
     aMouseEvent->mWidget = rootPC->PresShell()->GetRootWidget();
     if (aMouseEvent->mWidget) {
       
-      nsPoint frameToWidgetOffset;
       if (nsIFrame* rootFrame = FrameConstructor()->GetRootFrame()) {
-        nsIWidget* widget = rootFrame->GetNearestWidget(frameToWidgetOffset);
-        MOZ_ASSERT(widget, "If rootPC has a widget, so should we");
-        auto widgetToWidgetOffset =
-            nsLayoutUtils::WidgetToWidgetOffset(widget, aMouseEvent->mWidget);
-        aMouseEvent->mRefPoint =
-            widgetToWidgetOffset +
-            LayoutDeviceIntPoint::FromAppUnitsToNearest(
-                frameToWidgetOffset, GetPresContext()->AppUnitsPerDevPixel());
+        auto frameToWidgetOffset =
+            nsLayoutUtils::FrameToWidgetOffset(rootFrame, aMouseEvent->mWidget);
+        MOZ_ASSERT(frameToWidgetOffset, "If rootPC has a widget, so should we");
+        if (frameToWidgetOffset) {
+          aMouseEvent->mRefPoint = LayoutDeviceIntPoint::FromAppUnitsToNearest(
+              *frameToWidgetOffset, GetPresContext()->AppUnitsPerDevPixel());
+        }
       }
     }
   } else {
@@ -10147,24 +10145,22 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
 
   nsPresContext* presContext = GetPresContext();
 
+  if (!aEventWidget) {
+    return false;
+  }
   
   nsRect caretCoords;
   nsIFrame* caretFrame = caret->GetGeometry(&caretCoords);
   if (!caretFrame) {
     return false;
   }
-  nsPoint widgetOffset;
-  nsIWidget* widget = caretFrame->GetNearestWidget(widgetOffset);
-  if (!widget) {
-    return false;
-  }
-  
+
   if (aEventWidget) {
-    widgetOffset += LayoutDeviceIntPoint::ToAppUnits(
-        nsLayoutUtils::WidgetToWidgetOffset(widget, aEventWidget),
-        presContext->AppUnitsPerDevPixel());
+    if (auto offset =
+            nsLayoutUtils::FrameToWidgetOffset(caretFrame, aEventWidget)) {
+      caretCoords.MoveBy(*offset);
+    }
   }
-  caretCoords.MoveBy(widgetOffset);
 
   
   aTargetPt.x =
@@ -10259,16 +10255,12 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
         frame->PresContext() == GetPresContext(),
         "handling event for focused content that is not in our document?");
 
-    nsPoint widgetOffset(0, 0);
-
-    
-    nsIWidget* widget = frame->GetNearestWidget(widgetOffset);
-
-    
+    nsPoint widgetOffset;
     if (aRootWidget) {
-      widgetOffset += LayoutDeviceIntPoint::ToAppUnits(
-          nsLayoutUtils::WidgetToWidgetOffset(widget, aRootWidget),
-          frame->PresContext()->AppUnitsPerDevPixel());
+      if (auto offset =
+              nsLayoutUtils::FrameToWidgetOffset(frame, aRootWidget)) {
+        widgetOffset = *offset;
+      }
     }
 
     
