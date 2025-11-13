@@ -49,19 +49,7 @@ class ListObject : public NativeObject {
   
 
 
-  [[nodiscard]] inline bool append(JSContext* cx, HandleValue value);
-
-  
-
-
-
-
-
-
-
-
-  [[nodiscard]] inline bool appendValueAndSize(JSContext* cx, HandleValue value,
-                                               double size);
+  [[nodiscard]] inline bool append(JSContext* cx, Value value);
 
   
 
@@ -69,12 +57,6 @@ class ListObject : public NativeObject {
 
 
   inline JS::Value popFirst(JSContext* cx);
-
-  
-
-
-
-  inline void popFirstPair(JSContext* cx);
 
   
 
