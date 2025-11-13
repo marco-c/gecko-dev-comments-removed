@@ -148,6 +148,41 @@ class ObserverList {
 };
 
 
+
+
+struct WeakTargetHasher {
+  using Key = HeapPtr<Value>;
+  using Lookup = Value;
+
+  static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
+    if (l.isSymbol()) {
+      *hashOut = GetSymbolHash(l.toSymbol());
+      return true;
+    }
+    return StableCellHasher<Cell*>::maybeGetHash(l.toGCThing(), hashOut);
+  }
+  static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
+    if (l.isSymbol()) {
+      *hashOut = GetSymbolHash(l.toSymbol());
+      return true;
+    }
+    return StableCellHasher<Cell*>::ensureHash(l.toGCThing(), hashOut);
+  }
+  static HashNumber hash(const Lookup& l) {
+    if (l.isSymbol()) {
+      return GetSymbolHash(l.toSymbol());
+    }
+    return StableCellHasher<Cell*>::hash(l.toGCThing());
+  }
+  static bool match(const Key& k, const Lookup& l) {
+    if (l.isSymbol()) {
+      return k.toSymbol() == l.toSymbol();
+    }
+    return StableCellHasher<Cell*>::match(k.toGCThing(), l.toGCThing());
+  }
+};
+
+
 class FinalizationObservers {
   
   using RegistrySet =
@@ -193,6 +228,12 @@ class FinalizationObservers {
 };
 
 }  
+}  
+
+namespace mozilla {
+template <>
+struct FallibleHashMethods<js::gc::WeakTargetHasher>
+    : public js::gc::WeakTargetHasher {};
 }  
 
 #endif  

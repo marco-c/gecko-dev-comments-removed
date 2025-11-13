@@ -541,9 +541,7 @@ void JS::Zone::beforeClearDelegateInternal(JSObject* wrapper,
 
   
   
-  if (HasUniqueId(wrapper)) {
-    PreWriteBarrier(wrapper);
-  }
+  PreWriteBarrier(wrapper);
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
