@@ -1055,6 +1055,21 @@ js::UniquePtr<JS::JobQueue::SavedJobQueue> InternalJobQueue::saveJobQueue(
   return saved;
 }
 
+void js::MicroTaskQueueElement::trace(JSTracer* trc) {
+  
+  JSContext* cx = trc->runtime()->mainContextFromOwnThread();
+  MOZ_ASSERT(cx);
+  auto* queue = cx->jobQueue.ref();
+
+  if (!queue || value.isGCThing()) {
+    TraceEdge(trc, &value, "microtask-queue-entry");
+  } else {
+    
+    
+    queue->traceNonGCThingMicroTask(trc, value.unbarrieredAddress());
+  }
+}
+
 JS::MicroTask js::MicroTaskQueueSet::popDebugFront() {
   JS_LOG(mtq, Info, "JS Drain Queue: popDebugFront");
   if (!debugMicroTaskQueue.empty()) {

@@ -327,6 +327,25 @@ bool CycleCollectedJSContext::getHostDefinedGlobal(
   return true;
 }
 
+void CycleCollectedJSContext::traceNonGCThingMicroTask(JSTracer* trc,
+                                                       JS::Value* valuePtr) {
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(!valuePtr->isObject(),
+             "This hook should only be called for non-objects");
+  if (void* ptr = valuePtr->toPrivate()) {
+    
+    auto* runnable = static_cast<MicroTaskRunnable*>(ptr);
+    runnable->TraceMicroTask(trc);
+  }
+}
+
 bool CycleCollectedJSContext::getHostDefinedData(
     JSContext* aCx, JS::MutableHandle<JSObject*> aData) const {
   nsIGlobalObject* global = mozilla::dom::GetIncumbentGlobal();

@@ -121,6 +121,21 @@ class JS_PUBLIC_API JobQueue {
     return false;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void traceNonGCThingMicroTask(JSTracer* trc, JS::Value* valuePtr) {}
+
  protected:
   friend class AutoDebuggerJobQueueInterruption;
 
