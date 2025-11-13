@@ -550,6 +550,14 @@ void js::TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone,
   
   
   
+  
+#ifdef DEBUG
+  auto thing = *thingp;
+  if (trc->isMarkingTracer()) {
+    MOZ_ASSERT(weakMapZone->isGCMarking());
+    MOZ_ASSERT(weakMapZone->gcState() == thing->zone()->gcState());
+  }
+#endif
 
   
   AutoClearTracingSource acts(trc);

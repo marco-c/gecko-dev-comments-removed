@@ -163,16 +163,14 @@ WeakMap<K, V, AP>::~WeakMap() {
 
 template <class K, class V, class AP>
 bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
-                                  Enum& iter, bool populateWeakKeysTable) {
+                                  BarrieredKey& key, BarrieredValue& value,
+                                  bool populateWeakKeysTable) {
 #ifdef DEBUG
   MOZ_ASSERT(IsMarked(mapColor));
   if (marker->isParallelMarking()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
 #endif
-
-  BarrieredKey& key = iter.front().mutableKey();
-  BarrieredValue& value = iter.front().value();
 
   JSTracer* trc = marker->tracer();
   gc::Cell* keyCell = gc::ToMarkable(key);
@@ -203,7 +201,8 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
     if (keyColor < proxyPreserveColor) {
       MOZ_ASSERT(markColor >= proxyPreserveColor);
       if (markColor == proxyPreserveColor) {
-        traceKey(trc, iter);
+        TraceWeakMapKeyEdge(trc, zone(), &key,
+                            "proxy-preserved WeakMap entry key");
         MOZ_ASSERT(keyCell->color() >= proxyPreserveColor);
         marked = true;
         keyColor = proxyPreserveColor;
@@ -273,31 +272,18 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
     return;
   }
 
-  for (Enum e(*this); !e.empty(); e.popFront()) {
-    
-    TraceEdge(trc, &e.front().value(), "WeakMap entry value");
-
-    
-    if (trc->weakMapAction() == JS::WeakMapTraceAction::TraceKeysAndValues) {
-      traceKey(trc, e);
+  
+  if (trc->weakMapAction() == JS::WeakMapTraceAction::TraceKeysAndValues) {
+    for (Enum e(*this); !e.empty(); e.popFront()) {
+      TraceWeakMapKeyEdge(trc, zone(), &e.front().mutableKey(),
+                          "WeakMap entry key");
     }
   }
-}
 
-template <class K, class V, class AP>
-void WeakMap<K, V, AP>::traceKey(JSTracer* trc, Enum& iter) {
-  PreBarriered<K> key = iter.front().key();
-  TraceWeakMapKeyEdge(trc, zone(), &key, "WeakMap entry key");
-  if (key != iter.front().key()) {
-    iter.rekeyFront(key);
+  
+  for (Range r = all(); !r.empty(); r.popFront()) {
+    TraceEdge(trc, &r.front().value(), "WeakMap entry value");
   }
-
-  
-  
-  
-  
-  
-  key.unbarrieredSet(JS::SafelyInitialized<K>::create());
 }
 
 template <class K, class V, class AP>
@@ -326,7 +312,8 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
   gc::CellColor mapColor = this->mapColor();
 
   for (Enum e(*this); !e.empty(); e.popFront()) {
-    if (markEntry(marker, mapColor, e, populateWeakKeysTable)) {
+    if (markEntry(marker, mapColor, e.front().mutableKey(), e.front().value(),
+                  populateWeakKeysTable)) {
       markedAny = true;
     }
   }
@@ -336,110 +323,25 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
 
 template <class K, class V, class AP>
 void WeakMap<K, V, AP>::traceWeakEdges(JSTracer* trc) {
-  
-  MOZ_ASSERT(!trc->isTenuringTracer() && trc->kind() != JS::TracerKind::Moving);
+  MOZ_ASSERT(zone()->isGCSweeping());
 
   
   
   mayHaveSymbolKeys = false;
   mayHaveKeyDelegates = false;
   for (Enum e(*this); !e.empty(); e.popFront()) {
-#ifdef DEBUG
-    K prior = e.front().key();
-#endif
     if (TraceWeakEdge(trc, &e.front().mutableKey(), "WeakMap key")) {
-      MOZ_ASSERT(e.front().key() == prior);
-      keyKindBarrier(e.front().key());
+      keyWriteBarrier(e.front().key());
     } else {
       e.removeFront();
     }
   }
-
-  
 
 #if DEBUG
   
   
   assertEntriesNotAboutToBeFinalized();
 #endif
-}
-
-template <class K, class V, class AP>
-void WeakMap<K, V, AP>::addNurseryKey(const K& key) {
-  MOZ_ASSERT(hasNurseryEntries);  
-
-  if (!nurseryKeysValid) {
-    return;
-  }
-
-  if (nurseryKeys.length() >= map().count() / 2) {
-    
-    
-    nurseryKeysValid = false;
-    return;
-  }
-
-  if (!nurseryKeys.append(key)) {
-    nurseryKeysValid = false;
-  }
-}
-
-template <class K, class V, class AP>
-bool WeakMap<K, V, AP>::traceNurseryEntriesOnMinorGC(JSTracer* trc) {
-  MOZ_ASSERT(hasNurseryEntries);
-
-  using Entry = typename Map::Entry;
-  auto traceEntry = [trc](K& key,
-                          const Entry& entry) -> std::tuple<bool, bool> {
-    TraceEdge(trc, &entry.value(), "WeakMap nursery value");
-    bool hasNurseryValue = !JS::GCPolicy<V>::isTenured(entry.value());
-
-    MOZ_ASSERT(key == entry.key());
-    TraceManuallyBarrieredEdge(trc, &key, "WeakMap nursery key");
-    bool hasNurseryKey = !JS::GCPolicy<K>::isTenured(key);
-    bool keyUpdated = key != entry.key();
-
-    return {keyUpdated, hasNurseryKey || hasNurseryValue};
-  };
-
-  if (nurseryKeysValid) {
-    nurseryKeys.mutableEraseIf([&](K& key) {
-      auto ptr = lookupUnbarriered(key);
-      if (!ptr) {
-        return true;
-      }
-
-      auto [keyUpdated, hasNurseryKeyOrValue] = traceEntry(key, *ptr);
-
-      if (keyUpdated) {
-        map().rekeyAs(ptr->key(), key, key);
-      }
-
-      return !hasNurseryKeyOrValue;
-    });
-  } else {
-    nurseryKeys.clear();
-    nurseryKeysValid = true;
-
-    for (Enum e(*this); !e.empty(); e.popFront()) {
-      Entry& entry = e.front();
-
-      K key = entry.key();
-      auto [keyUpdated, hasNurseryKeyOrValue] = traceEntry(key, entry);
-
-      if (keyUpdated) {
-        entry.mutableKey() = key;
-        e.rekeyFront(key);
-      }
-
-      if (hasNurseryKeyOrValue) {
-        addNurseryKey(key);
-      }
-    }
-  }
-
-  hasNurseryEntries = !nurseryKeysValid || !nurseryKeys.empty();
-  return !hasNurseryEntries;
 }
 
 
@@ -545,10 +447,6 @@ bool WeakMap<K, V, AP>::checkMarking() const {
 #ifdef JSGC_HASH_TABLE_CHECKS
 template <class K, class V, class AP>
 void WeakMap<K, V, AP>::checkAfterMovingGC() const {
-  MOZ_RELEASE_ASSERT(!hasNurseryEntries);
-  MOZ_RELEASE_ASSERT(nurseryKeysValid);
-  MOZ_RELEASE_ASSERT(nurseryKeys.empty());
-
   for (Range r = all(); !r.empty(); r.popFront()) {
     gc::Cell* key = gc::ToMarkable(r.front().key());
     gc::Cell* value = gc::ToMarkable(r.front().value());
@@ -585,11 +483,6 @@ static MOZ_ALWAYS_INLINE bool CanBeHeldWeakly(Value value) {
 }
 
 inline HashNumber GetSymbolHash(JS::Symbol* sym) { return sym->hash(); }
-
-
-inline void WeakMapKeyHasher<JS::Value>::checkValueType(const Value& value) {
-  MOZ_ASSERT(CanBeHeldWeakly(value));
-}
 
 }  
 
