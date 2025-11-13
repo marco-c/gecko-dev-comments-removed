@@ -2830,6 +2830,9 @@ pref("browser.screenshots.dir", "");
 pref("doh-rollout.clearModeOnShutdown", false);
 
 
+pref("network.trr_ui.fallback_was_checked", true);
+
+
 pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
 pref("app.normandy.dev_mode", false);
 pref("app.normandy.enabled", true);
