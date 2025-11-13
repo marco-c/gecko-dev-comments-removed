@@ -11,6 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/ScopeExit.h"
 #include "nsGlobalWindowInner.h"
+#include "nsDeviceContext.h"
 
 
 #include "Navigator.h"

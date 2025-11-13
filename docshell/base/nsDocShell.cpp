@@ -16,6 +16,7 @@
 #  include <unistd.h>  
 #endif
 
+#include "nsDeviceContext.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"

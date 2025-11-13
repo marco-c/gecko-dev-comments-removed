@@ -11,7 +11,6 @@
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsTArray.h"
-#include "nsDeviceContext.h"
 #include "nsTArray.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
@@ -19,7 +18,6 @@
 class nsIWidget;
 struct nsRect;
 class nsRegion;
-class nsDeviceContext;
 
 namespace mozilla {
 class PresShell;
@@ -36,7 +34,7 @@ class nsViewManager final {
 
   NS_INLINE_DECL_REFCOUNTING(nsViewManager)
 
-  explicit nsViewManager(nsDeviceContext* aContext);
+  nsViewManager();
 
   
 
@@ -44,7 +42,7 @@ class nsViewManager final {
 
 
 
-  nsresult Init(nsDeviceContext* aContext);
+  nsresult Init();
 
   
 
@@ -126,11 +124,6 @@ class nsViewManager final {
 
   mozilla::PresShell* GetPresShell() const { return mPresShell; }
 
-  
-
-
-  nsDeviceContext* GetDeviceContext() const { return mContext; }
-
  public:
   
 
@@ -157,10 +150,6 @@ class nsViewManager final {
 
 
   MOZ_CAN_RUN_SCRIPT void UpdateWidgetGeometry();
-
-  int32_t AppUnitsPerDevPixel() const {
-    return mContext->AppUnitsPerDevPixel();
-  }
 
  private:
   static uint32_t gLastUserEventTime;
@@ -207,7 +196,6 @@ class nsViewManager final {
   
   void PostPendingUpdate();
 
-  RefPtr<nsDeviceContext> mContext;
   mozilla::PresShell* mPresShell;
 
   
