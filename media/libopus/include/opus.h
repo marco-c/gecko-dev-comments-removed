@@ -168,6 +168,9 @@ typedef struct OpusEncoder OpusEncoder;
 
 
 
+
+
+
 OPUS_EXPORT OPUS_WARN_UNUSED_RESULT int opus_encoder_get_size(int channels);
 
 
