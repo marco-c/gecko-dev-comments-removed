@@ -219,12 +219,12 @@ function _getTargetRect(aTarget) {
   
   
   if (aTarget instanceof Window) {
-    return rect;
+    return { rect, window: aTarget };
   }
   if (aTarget.Window && aTarget instanceof aTarget.Window) {
     
     
-    return rect;
+    return { rect, window: aTarget };
   }
 
   
@@ -280,7 +280,7 @@ function _getTargetRect(aTarget) {
     aTarget = iframe;
   }
 
-  return rect;
+  return { rect, window: aTarget.ownerDocument.defaultView };
 }
 
 
@@ -338,14 +338,34 @@ async function coordinatesRelativeToScreen(aParams) {
     };
   }
 
-  const rect = _getTargetRect(target);
+  const rectAndWindow = _getTargetRect(target);
+
+  const inProcessRootWindow = getInProcessRootWindow(window);
+
+  if (
+    !(inProcessRootWindow.location.href === rectAndWindow.window.location.href)
+  ) {
+    info(
+      "warning: coordinatesRelativeToScreen using coords based on one window in another, this will likely produce incorrect results"
+    );
+    info(
+      "inProcessRootWindow.location.href " + inProcessRootWindow.location.href
+    );
+    info(
+      "rectAndWindow.window.location.href " + rectAndWindow.window.location.href
+    );
+  }
+  
+  
 
   const utils = SpecialPowers.wrap(
-    SpecialPowers.getDOMWindowUtils(getInProcessRootWindow(window))
+    SpecialPowers.getDOMWindowUtils(inProcessRootWindow)
   );
   const positionInScreenCoords = utils.toScreenRect(
-    rect.left + (atCenter ? rect.width / 2 : offsetX),
-    rect.top + (atCenter ? rect.height / 2 : offsetY),
+    rectAndWindow.rect.left +
+      (atCenter ? rectAndWindow.rect.width / 2 : offsetX),
+    rectAndWindow.rect.top +
+      (atCenter ? rectAndWindow.rect.height / 2 : offsetY),
     0,
     0
   );
