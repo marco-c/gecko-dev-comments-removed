@@ -508,6 +508,25 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
     RootedValue newTarget(cx, argvWithoutThis[argc]);
 
     
+    
+    
+    
+    
+    
+    if (newTarget.isUndefined()) {
+      MOZ_RELEASE_ASSERT(obj->is<JSFunction>());
+      JSFunction* callee = &obj->as<JSFunction>();
+#ifdef DEBUG
+      MOZ_ASSERT(callee->nargs() > argc);
+      for (uint32_t i = argc; i < callee->nargs(); i++) {
+        MOZ_ASSERT(argvWithoutThis[i].isUndefined());
+      }
+#endif
+      newTarget = argvWithoutThis[callee->nargs()];
+      MOZ_ASSERT(newTarget.isObject());
+    }
+
+    
     if (thisv.isNull()) {
       thisv.setMagic(JS_IS_CONSTRUCTING);
     }
@@ -1471,6 +1490,27 @@ JSObject* ObjectKeys(JSContext* cx, HandleObject obj) {
     return nullptr;
   }
   return argv[0].toObjectOrNull();
+}
+
+JSObject* ObjectKeysFromIterator(JSContext* cx, HandleObject iterObj) {
+  MOZ_RELEASE_ASSERT(iterObj->is<PropertyIteratorObject>());
+  NativeIterator* iter =
+      iterObj->as<PropertyIteratorObject>().getNativeIterator();
+
+  size_t length = iter->ownPropertyCount();
+  Rooted<ArrayObject*> array(cx, NewDenseFullyAllocatedArray(cx, length));
+  if (!array) {
+    return nullptr;
+  }
+
+  array->ensureDenseInitializedLength(0, length);
+
+  for (size_t i = 0; i < length; ++i) {
+    array->initDenseElement(
+        i, StringValue((iter->propertiesBegin() + i)->asString()));
+  }
+
+  return array;
 }
 
 bool ObjectKeysLength(JSContext* cx, HandleObject obj, int32_t* length) {
