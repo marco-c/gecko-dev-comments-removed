@@ -22,6 +22,7 @@
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "nsFmtString.h"
 #include "nsStringFwd.h"
+#include "nsTHashSet.h"
 
 extern mozilla::LazyLogModule gWebCodecsLog;
 
@@ -214,15 +215,82 @@ already_AddRefed<AudioData> AudioData::Constructor(const GlobalObject& aGlobal,
     aRv.ThrowTypeError(rv.inspectErr());
     return nullptr;
   }
-  auto resource = AudioDataResource::Construct(aInit.mData);
+
+  nsTHashSet<const JSObject*> transferSet;
+  for (const auto& buffer : aInit.mTransfer) {
+    if (transferSet.Contains(buffer.Obj())) {
+      
+      
+      LOGE("AudioData Constructor -- duplicate transferred ArrayBuffer");
+      aRv.ThrowDataCloneError(
+          "Transfer contains duplicate ArrayBuffer objects");
+      return nullptr;
+    }
+    transferSet.Insert(buffer.Obj());
+  }
+
+  for (const auto& buffer : aInit.mTransfer) {
+    if (JS::IsDetachedArrayBufferObject(buffer.Obj())) {
+      
+      
+      LOGE("AudioData Constructor -- detached transferred ArrayBuffer");
+      aRv.ThrowDataCloneError("Transfer contains detached ArrayBuffer objects");
+      return nullptr;
+    }
+  }
+
+  
+  
+  
+  
+  size_t transferLen = 0;
+  size_t transferOffset = 0;
+  Maybe<JS::Rooted<JSObject*>> transferView;
+  Maybe<JS::Rooted<JSObject*>> transferBuffer;
+  const auto& data = aInit.mData;
+  if (data.IsArrayBuffer()) {
+    transferBuffer.emplace(aGlobal.Context(), data.GetAsArrayBuffer().Obj());
+    if (transferSet.Contains(*transferBuffer)) {
+      transferLen = JS::GetArrayBufferByteLength(*transferBuffer);
+    }
+  } else if (data.IsArrayBufferView()) {
+    
+    
+    transferView.emplace(aGlobal.Context(), data.GetAsArrayBufferView().Obj());
+    bool isShared;
+    transferBuffer.emplace(aGlobal.Context(),
+                           JS_GetArrayBufferViewBuffer(
+                               aGlobal.Context(), *transferView, &isShared));
+    if (transferSet.Contains(*transferBuffer)) {
+      transferOffset = JS_GetArrayBufferViewByteOffset(*transferView);
+      transferLen = JS_GetArrayBufferViewByteLength(*transferView);
+    }
+  }
+  UniquePtr<uint8_t[], JS::FreePolicy> transferData;
+  if (transferLen) {
+    void* bufferContents =
+        JS::StealArrayBufferContents(aGlobal.Context(), *transferBuffer);
+    transferData = UniquePtr<uint8_t[], JS::FreePolicy>(
+        static_cast<uint8_t*>(bufferContents));
+  }
+
+  auto resource =
+      transferData ? MakeAndAddRef<AudioDataResource>(
+                         std::move(transferData), transferOffset, transferLen)
+                   : AudioDataResource::Construct(data);
   if (resource.isErr()) {
     LOGD("AudioData::Constructor failure (OOM)");
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return nullptr;
   }
 
-  return MakeAndAddRef<mozilla::dom::AudioData>(global, resource.unwrap(),
-                                                aInit);
+  
+  
+  for (const auto& buffer : aInit.mTransfer) {
+    JS::Rooted<JSObject*> obj(aGlobal.Context(), buffer.Obj());
+    JS::DetachArrayBuffer(aGlobal.Context(), obj);
+  }
+  return MakeAndAddRef<AudioData>(global, resource.unwrap(), aInit);
 }
 
 
