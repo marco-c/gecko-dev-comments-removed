@@ -1268,140 +1268,16 @@ static bool IsArrayEscaped(MInstruction* ins, MInstruction* newArray) {
 
 
 
-
-class GenericArrayReplacer : public MDefinitionVisitorDefaultNoop {
- protected:
-  TempAllocator& alloc_;
-  MInstruction* arr_;
-
-  bool isTargetElements(MDefinition* elements);
-  void discardInstruction(MInstruction* ins, MDefinition* elements);
-  void visitLength(MInstruction* ins, MDefinition* elements);
-
-  GenericArrayReplacer(TempAllocator& alloc, MInstruction* arr)
-      : alloc_(alloc), arr_(arr) {}
-
- public:
-  void visitGuardToClass(MGuardToClass* ins);
-  void visitGuardShape(MGuardShape* ins);
-  void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
-  void visitUnbox(MUnbox* ins);
-  void visitCompare(MCompare* ins);
-  void visitGuardElementsArePacked(MGuardElementsArePacked* ins);
-};
-
-bool GenericArrayReplacer::isTargetElements(MDefinition* elements) {
-  return elements->isElements() && elements->toElements()->object() == arr_;
-}
-
-void GenericArrayReplacer::discardInstruction(MInstruction* ins,
-                                              MDefinition* elements) {
-  MOZ_ASSERT(elements->isElements());
-  ins->block()->discard(ins);
-  if (!elements->hasLiveDefUses()) {
-    elements->block()->discard(elements->toInstruction());
-  }
-}
-
-void GenericArrayReplacer::visitGuardToClass(MGuardToClass* ins) {
-  
-  if (ins->object() != arr_) {
-    return;
-  }
-  MOZ_ASSERT(ins->getClass() == &ArrayObject::class_);
-
-  
-  ins->replaceAllUsesWith(arr_);
-
-  
-  ins->block()->discard(ins);
-}
-
-void GenericArrayReplacer::visitGuardShape(MGuardShape* ins) {
-  
-  if (ins->object() != arr_) {
-    return;
-  }
-
-  
-  ins->replaceAllUsesWith(arr_);
-
-  
-  ins->block()->discard(ins);
-}
-
-void GenericArrayReplacer::visitGuardArrayIsPacked(MGuardArrayIsPacked* ins) {
-  
-  if (ins->array() != arr_) {
-    return;
-  }
-
-  
-  ins->replaceAllUsesWith(arr_);
-
-  
-  ins->block()->discard(ins);
-}
-
-void GenericArrayReplacer::visitUnbox(MUnbox* ins) {
-  
-  if (ins->input() != arr_) {
-    return;
-  }
-  MOZ_ASSERT(ins->type() == MIRType::Object);
-
-  
-  ins->replaceAllUsesWith(arr_);
-
-  
-  ins->block()->discard(ins);
-}
-
-void GenericArrayReplacer::visitCompare(MCompare* ins) {
-  
-  if (ins->lhs() != arr_ && ins->rhs() != arr_) {
-    return;
-  }
-
-  bool folded;
-  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
-
-  auto* cst = MConstant::NewBoolean(alloc_, folded);
-  ins->block()->insertBefore(ins, cst);
-
-  
-  ins->replaceAllUsesWith(cst);
-
-  
-  ins->block()->discard(ins);
-}
-
-void GenericArrayReplacer::visitGuardElementsArePacked(
-    MGuardElementsArePacked* ins) {
-  
-  MDefinition* elements = ins->elements();
-  if (!isTargetElements(elements)) {
-    return;
-  }
-
-  
-  discardInstruction(ins, elements);
-}
-
-
-
-
-
-
-
-class ArrayMemoryView : public GenericArrayReplacer {
+class ArrayMemoryView : public MDefinitionVisitorDefaultNoop {
  public:
   using BlockState = MArrayState;
   static const char* phaseName;
 
  private:
+  TempAllocator& alloc_;
   MConstant* undefinedVal_;
   MConstant* length_;
+  MInstruction* arr_;
   MBasicBlock* startBlock_;
   BlockState* state_;
 
@@ -1439,9 +1315,15 @@ class ArrayMemoryView : public GenericArrayReplacer {
   void visitLoadElement(MLoadElement* ins);
   void visitSetInitializedLength(MSetInitializedLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
+  void visitGuardElementsArePacked(MGuardElementsArePacked* ins);
   void visitArrayLength(MArrayLength* ins);
   void visitPostWriteBarrier(MPostWriteBarrier* ins);
   void visitPostWriteElementBarrier(MPostWriteElementBarrier* ins);
+  void visitGuardShape(MGuardShape* ins);
+  void visitGuardToClass(MGuardToClass* ins);
+  void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
+  void visitUnbox(MUnbox* ins);
+  void visitCompare(MCompare* ins);
   void visitApplyArray(MApplyArray* ins);
   void visitConstructArray(MConstructArray* ins);
 };
@@ -1449,9 +1331,10 @@ class ArrayMemoryView : public GenericArrayReplacer {
 const char* ArrayMemoryView::phaseName = "Scalar Replacement of Array";
 
 ArrayMemoryView::ArrayMemoryView(TempAllocator& alloc, MInstruction* arr)
-    : GenericArrayReplacer(alloc, arr),
+    : alloc_(alloc),
       undefinedVal_(nullptr),
       length_(nullptr),
+      arr_(arr),
       startBlock_(arr->block()),
       state_(nullptr),
       lastResumePoint_(nullptr),
@@ -1701,6 +1584,18 @@ void ArrayMemoryView::visitInitializedLength(MInitializedLength* ins) {
   discardInstruction(ins, elements);
 }
 
+void ArrayMemoryView::visitGuardElementsArePacked(
+    MGuardElementsArePacked* ins) {
+  
+  MDefinition* elements = ins->elements();
+  if (!isArrayStateElements(elements)) {
+    return;
+  }
+
+  
+  discardInstruction(ins, elements);
+}
+
 void ArrayMemoryView::visitArrayLength(MArrayLength* ins) {
   
   MDefinition* elements = ins->elements();
@@ -1735,6 +1630,78 @@ void ArrayMemoryView::visitPostWriteElementBarrier(
   if (ins->object() != arr_) {
     return;
   }
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArrayMemoryView::visitGuardShape(MGuardShape* ins) {
+  
+  if (ins->object() != arr_) {
+    return;
+  }
+
+  
+  ins->replaceAllUsesWith(arr_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArrayMemoryView::visitGuardToClass(MGuardToClass* ins) {
+  
+  if (ins->object() != arr_) {
+    return;
+  }
+
+  
+  ins->replaceAllUsesWith(arr_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArrayMemoryView::visitGuardArrayIsPacked(MGuardArrayIsPacked* ins) {
+  
+  if (ins->array() != arr_) {
+    return;
+  }
+
+  
+  ins->replaceAllUsesWith(arr_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArrayMemoryView::visitUnbox(MUnbox* ins) {
+  
+  if (ins->getOperand(0) != arr_) {
+    return;
+  }
+  MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  
+  ins->replaceAllUsesWith(arr_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArrayMemoryView::visitCompare(MCompare* ins) {
+  
+  if (ins->lhs() != arr_ && ins->rhs() != arr_) {
+    return;
+  }
+
+  bool folded;
+  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
+
+  auto* cst = MConstant::NewBoolean(alloc_, folded);
+  ins->block()->insertBefore(ins, cst);
+
+  
+  ins->replaceAllUsesWith(cst);
 
   
   ins->block()->discard(ins);
@@ -2604,18 +2571,29 @@ static inline bool IsOptimizableRestInstruction(MInstruction* ins) {
   return ins->isRest();
 }
 
-class RestReplacer : public GenericArrayReplacer {
+class RestReplacer : public MDefinitionVisitorDefaultNoop {
  private:
   const MIRGenerator* mir_;
   MIRGraph& graph_;
+  MInstruction* rest_;
 
-  MRest* rest() const { return arr_->toRest(); }
+  TempAllocator& alloc() { return graph_.alloc(); }
+  MRest* rest() const { return rest_->toRest(); }
+
+  bool isRestElements(MDefinition* elements);
+  void discardInstruction(MInstruction* ins, MDefinition* elements);
   MDefinition* restLength(MInstruction* ins);
-
   void visitLength(MInstruction* ins, MDefinition* elements);
+
+  void visitGuardToClass(MGuardToClass* ins);
+  void visitGuardShape(MGuardShape* ins);
+  void visitGuardArrayIsPacked(MGuardArrayIsPacked* ins);
+  void visitUnbox(MUnbox* ins);
+  void visitCompare(MCompare* ins);
   void visitLoadElement(MLoadElement* ins);
   void visitArrayLength(MArrayLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
+  void visitGuardElementsArePacked(MGuardElementsArePacked* ins);
   void visitApplyArray(MApplyArray* ins);
   void visitConstructArray(MConstructArray* ins);
 
@@ -2623,19 +2601,14 @@ class RestReplacer : public GenericArrayReplacer {
 
  public:
   RestReplacer(const MIRGenerator* mir, MIRGraph& graph, MInstruction* rest)
-      : GenericArrayReplacer(graph.alloc(), rest), mir_(mir), graph_(graph) {
-    MOZ_ASSERT(IsOptimizableRestInstruction(arr_));
+      : mir_(mir), graph_(graph), rest_(rest) {
+    MOZ_ASSERT(IsOptimizableRestInstruction(rest_));
   }
 
   bool escapes(MInstruction* ins);
   bool run();
   void assertSuccess();
 };
-
-void RestReplacer::assertSuccess() {
-  MOZ_ASSERT(arr_->canRecoverOnBailout());
-  MOZ_ASSERT(!arr_->hasLiveDefUses());
-}
 
 
 bool RestReplacer::escapes(MInstruction* ins) {
@@ -2806,7 +2779,7 @@ bool RestReplacer::escapes(MElements* ins) {
 
 
 bool RestReplacer::run() {
-  MBasicBlock* startBlock = arr_->block();
+  MBasicBlock* startBlock = rest_->block();
 
   
   for (ReversePostorderIterator block = graph_.rpoBegin(startBlock);
@@ -2830,7 +2803,7 @@ bool RestReplacer::run() {
         MIR_OPCODE_LIST(MIR_OP)
 #undef MIR_OP
       }
-      if (!alloc_.ensureBallast()) {
+      if (!graph_.alloc().ensureBallast()) {
         return false;
       }
     }
@@ -2840,10 +2813,101 @@ bool RestReplacer::run() {
   return true;
 }
 
+void RestReplacer::assertSuccess() {
+  MOZ_ASSERT(rest_->canRecoverOnBailout());
+  MOZ_ASSERT(!rest_->hasLiveDefUses());
+}
+
+bool RestReplacer::isRestElements(MDefinition* elements) {
+  return elements->isElements() && elements->toElements()->object() == rest_;
+}
+
+void RestReplacer::discardInstruction(MInstruction* ins,
+                                      MDefinition* elements) {
+  MOZ_ASSERT(elements->isElements());
+  ins->block()->discard(ins);
+  if (!elements->hasLiveDefUses()) {
+    elements->block()->discard(elements->toInstruction());
+  }
+}
+
+void RestReplacer::visitGuardToClass(MGuardToClass* ins) {
+  
+  if (ins->object() != rest_) {
+    return;
+  }
+  MOZ_ASSERT(ins->getClass() == &ArrayObject::class_);
+
+  
+  ins->replaceAllUsesWith(rest_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void RestReplacer::visitGuardShape(MGuardShape* ins) {
+  
+  if (ins->object() != rest_) {
+    return;
+  }
+
+  
+  ins->replaceAllUsesWith(rest_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void RestReplacer::visitGuardArrayIsPacked(MGuardArrayIsPacked* ins) {
+  
+  if (ins->array() != rest_) {
+    return;
+  }
+
+  
+  ins->replaceAllUsesWith(rest_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void RestReplacer::visitUnbox(MUnbox* ins) {
+  
+  if (ins->input() != rest_) {
+    return;
+  }
+  MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  
+  ins->replaceAllUsesWith(rest_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void RestReplacer::visitCompare(MCompare* ins) {
+  
+  if (ins->lhs() != rest_ && ins->rhs() != rest_) {
+    return;
+  }
+
+  bool folded;
+  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
+
+  auto* cst = MConstant::NewBoolean(alloc(), folded);
+  ins->block()->insertBefore(ins, cst);
+
+  
+  ins->replaceAllUsesWith(cst);
+
+  
+  ins->block()->discard(ins);
+}
+
 void RestReplacer::visitLoadElement(MLoadElement* ins) {
   
   MDefinition* elements = ins->elements();
-  if (!isTargetElements(elements)) {
+  if (!isRestElements(elements)) {
     return;
   }
 
@@ -2851,16 +2915,16 @@ void RestReplacer::visitLoadElement(MLoadElement* ins) {
 
   
   if (uint32_t formals = rest()->numFormals()) {
-    auto* numFormals = MConstant::NewInt32(alloc_, formals);
+    auto* numFormals = MConstant::NewInt32(alloc(), formals);
     ins->block()->insertBefore(ins, numFormals);
 
-    auto* add = MAdd::New(alloc_, index, numFormals, TruncateKind::Truncate);
+    auto* add = MAdd::New(alloc(), index, numFormals, TruncateKind::Truncate);
     ins->block()->insertBefore(ins, add);
 
     index = add;
   }
 
-  auto* loadArg = MGetFrameArgument::New(alloc_, index);
+  auto* loadArg = MGetFrameArgument::New(alloc(), index);
 
   ins->block()->insertBefore(ins, loadArg);
   ins->replaceAllUsesWith(loadArg);
@@ -2875,17 +2939,17 @@ MDefinition* RestReplacer::restLength(MInstruction* ins) {
   auto* numActuals = rest()->numActuals();
 
   if (uint32_t formals = rest()->numFormals()) {
-    auto* numFormals = MConstant::NewInt32(alloc_, formals);
+    auto* numFormals = MConstant::NewInt32(alloc(), formals);
     ins->block()->insertBefore(ins, numFormals);
 
-    auto* length = MSub::New(alloc_, numActuals, numFormals, MIRType::Int32);
+    auto* length = MSub::New(alloc(), numActuals, numFormals, MIRType::Int32);
     length->setTruncateKind(TruncateKind::Truncate);
     ins->block()->insertBefore(ins, length);
 
-    auto* zero = MConstant::NewInt32(alloc_, 0);
+    auto* zero = MConstant::NewInt32(alloc(), 0);
     ins->block()->insertBefore(ins, zero);
 
-    auto* minmax = MMinMax::NewMax(alloc_, length, zero, MIRType::Int32);
+    auto* minmax = MMinMax::NewMax(alloc(), length, zero, MIRType::Int32);
     ins->block()->insertBefore(ins, minmax);
 
     return minmax;
@@ -2898,7 +2962,7 @@ void RestReplacer::visitLength(MInstruction* ins, MDefinition* elements) {
   MOZ_ASSERT(ins->isArrayLength() || ins->isInitializedLength());
 
   
-  if (!isTargetElements(elements)) {
+  if (!isRestElements(elements)) {
     return;
   }
 
@@ -2919,17 +2983,28 @@ void RestReplacer::visitInitializedLength(MInitializedLength* ins) {
   visitLength(ins, ins->elements());
 }
 
+void RestReplacer::visitGuardElementsArePacked(MGuardElementsArePacked* ins) {
+  
+  MDefinition* elements = ins->elements();
+  if (!isRestElements(elements)) {
+    return;
+  }
+
+  
+  discardInstruction(ins, elements);
+}
+
 void RestReplacer::visitApplyArray(MApplyArray* ins) {
   
   MDefinition* elements = ins->getElements();
-  if (!isTargetElements(elements)) {
+  if (!isRestElements(elements)) {
     return;
   }
 
   auto* numActuals = restLength(ins);
 
   auto* apply =
-      MApplyArgs::New(alloc_, ins->getSingleTarget(), ins->getFunction(),
+      MApplyArgs::New(alloc(), ins->getSingleTarget(), ins->getFunction(),
                       numActuals, ins->getThis(), rest()->numFormals());
   apply->setBailoutKind(ins->bailoutKind());
   if (!ins->maybeCrossRealm()) {
@@ -2951,14 +3026,14 @@ void RestReplacer::visitApplyArray(MApplyArray* ins) {
 void RestReplacer::visitConstructArray(MConstructArray* ins) {
   
   MDefinition* elements = ins->getElements();
-  if (!isTargetElements(elements)) {
+  if (!isRestElements(elements)) {
     return;
   }
 
   auto* numActuals = restLength(ins);
 
   auto* construct = MConstructArgs::New(
-      alloc_, ins->getSingleTarget(), ins->getFunction(), numActuals,
+      alloc(), ins->getSingleTarget(), ins->getFunction(), numActuals,
       ins->getThis(), ins->getNewTarget(), rest()->numFormals());
   construct->setBailoutKind(ins->bailoutKind());
   if (!ins->maybeCrossRealm()) {
@@ -3823,282 +3898,6 @@ WasmStructMemoryView::WasmStructMemoryView(TempAllocator& alloc,
       state_(nullptr),
       oom_(false) {}
 
-static inline bool IsOptimizableObjectKeysInstruction(MInstruction* ins) {
-  return ins->isObjectKeys();
-}
-
-class ObjectKeysReplacer : public GenericArrayReplacer {
- private:
-  const MIRGenerator* mir_;
-  MIRGraph& graph_;
-  MObjectToIterator* objToIter_ = nullptr;
-
-  MObjectKeys* objectKeys() const { return arr_->toObjectKeys(); }
-
-  MDefinition* objectKeysLength(MInstruction* ins);
-  void visitLength(MInstruction* ins, MDefinition* elements);
-
-  void visitLoadElement(MLoadElement* ins);
-  void visitArrayLength(MArrayLength* ins);
-  void visitInitializedLength(MInitializedLength* ins);
-
-  bool escapes(MElements* ins);
-
- public:
-  ObjectKeysReplacer(const MIRGenerator* mir, MIRGraph& graph,
-                     MInstruction* arr)
-      : GenericArrayReplacer(graph.alloc(), arr), mir_(mir), graph_(graph) {
-    MOZ_ASSERT(IsOptimizableObjectKeysInstruction(arr_));
-  }
-
-  bool escapes(MInstruction* ins);
-  bool run(MInstructionIterator& outerIterator);
-  void assertSuccess();
-};
-
-
-bool ObjectKeysReplacer::escapes(MInstruction* ins) {
-  MOZ_ASSERT(ins->type() == MIRType::Object);
-
-  JitSpewDef(JitSpew_Escape, "Check Object.keys array\n", ins);
-  JitSpewIndent spewIndent(JitSpew_Escape);
-
-  
-  
-  for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
-    MNode* consumer = (*i)->consumer();
-
-    
-    
-    if (consumer->isResumePoint()) {
-      if (!consumer->toResumePoint()->isRecoverableOperand(*i)) {
-        JitSpew(JitSpew_Escape,
-                "Observable Object.keys array cannot be recovered");
-        return true;
-      }
-      continue;
-    }
-
-    MDefinition* def = consumer->toDefinition();
-    switch (def->op()) {
-      case MDefinition::Opcode::Elements: {
-        auto* elem = def->toElements();
-        MOZ_ASSERT(elem->object() == ins);
-        if (escapes(elem)) {
-          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
-          return true;
-        }
-        break;
-      }
-
-      case MDefinition::Opcode::GuardShape: {
-        const Shape* shape = objectKeys()->resultShape();
-        MOZ_DIAGNOSTIC_ASSERT(shape);
-        auto* guard = def->toGuardShape();
-        MOZ_DIAGNOSTIC_ASSERT(shape == guard->shape());
-        if (shape != guard->shape()) {
-          JitSpewDef(JitSpew_Escape, "has a non-matching guard shape\n", def);
-          return true;
-        }
-        if (escapes(guard)) {
-          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
-          return true;
-        }
-        break;
-      }
-
-      case MDefinition::Opcode::GuardToClass: {
-        auto* guard = def->toGuardToClass();
-        if (guard->getClass() != &ArrayObject::class_) {
-          JitSpewDef(JitSpew_Escape, "has a non-matching class guard\n", def);
-          return true;
-        }
-        if (escapes(guard)) {
-          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
-          return true;
-        }
-        break;
-      }
-
-      case MDefinition::Opcode::GuardArrayIsPacked: {
-        
-        auto* guard = def->toGuardArrayIsPacked();
-        if (escapes(guard)) {
-          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
-          return true;
-        }
-        break;
-      }
-
-      case MDefinition::Opcode::Unbox: {
-        if (def->type() != MIRType::Object) {
-          JitSpewDef(JitSpew_Escape, "has an invalid unbox\n", def);
-          return true;
-        }
-        if (escapes(def->toInstruction())) {
-          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
-          return true;
-        }
-        break;
-      }
-
-      
-      case MDefinition::Opcode::Compare: {
-        bool canFold;
-        if (!def->toCompare()->tryFold(&canFold)) {
-          JitSpewDef(JitSpew_Escape, "has an unsupported compare\n", def);
-          return true;
-        }
-        break;
-      }
-
-      
-      
-      case MDefinition::Opcode::AssertRecoveredOnBailout:
-        break;
-
-      default:
-        JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
-        return true;
-    }
-  }
-
-  JitSpew(JitSpew_Escape, "Object.keys array object is not escaped");
-  return false;
-}
-
-bool ObjectKeysReplacer::escapes(MElements* ins) {
-  JitSpewDef(JitSpew_Escape, "Check Object.keys array elements\n", ins);
-  JitSpewIndent spewIndent(JitSpew_Escape);
-
-  for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
-    
-    
-    MDefinition* def = (*i)->consumer()->toDefinition();
-
-    switch (def->op()) {
-      case MDefinition::Opcode::LoadElement: {
-        MOZ_ASSERT(def->toLoadElement()->elements() == ins);
-        break;
-      }
-
-      case MDefinition::Opcode::ArrayLength:
-        MOZ_ASSERT(def->toArrayLength()->elements() == ins);
-        break;
-
-      case MDefinition::Opcode::InitializedLength:
-        MOZ_ASSERT(def->toInitializedLength()->elements() == ins);
-        break;
-
-      case MDefinition::Opcode::GuardElementsArePacked:
-        MOZ_ASSERT(def->toGuardElementsArePacked()->elements() == ins);
-        break;
-
-      default:
-        JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
-        return true;
-    }
-  }
-
-  JitSpew(JitSpew_Escape, "Object.keys array object is not escaped");
-  return false;
-}
-
-bool ObjectKeysReplacer::run(MInstructionIterator& outerIterator) {
-  MBasicBlock* startBlock = arr_->block();
-
-  objToIter_ = MObjectToIterator::New(alloc_, objectKeys()->object(), nullptr);
-  objToIter_->setSkipRegistration(true);
-  arr_->block()->insertBefore(arr_, objToIter_);
-
-  
-  for (ReversePostorderIterator block = graph_.rpoBegin(startBlock);
-       block != graph_.rpoEnd(); block++) {
-    if (mir_->shouldCancel("Scalar replacement of Object.keys array object")) {
-      return false;
-    }
-
-    
-    
-    
-    for (MDefinitionIterator iter(*block); iter;) {
-      
-      
-      MDefinition* def = *iter++;
-      switch (def->op()) {
-#define MIR_OP(op)              \
-  case MDefinition::Opcode::op: \
-    visit##op(def->to##op());   \
-    break;
-        MIR_OPCODE_LIST(MIR_OP)
-#undef MIR_OP
-      }
-      if (!graph_.alloc().ensureBallast()) {
-        return false;
-      }
-    }
-  }
-
-  assertSuccess();
-
-  auto* forRecovery = MObjectKeysFromIterator::New(alloc_, objToIter_);
-  arr_->block()->insertBefore(arr_, forRecovery);
-  forRecovery->stealResumePoint(arr_);
-  arr_->replaceAllUsesWith(forRecovery);
-
-  
-  
-  
-  
-  
-  
-  outerIterator--;
-  arr_->block()->discard(arr_);
-
-  if (!graph_.alloc().ensureBallast()) {
-    return false;
-  }
-
-  return true;
-}
-
-void ObjectKeysReplacer::assertSuccess() {
-  MOZ_ASSERT(!arr_->hasLiveDefUses());
-}
-
-void ObjectKeysReplacer::visitLoadElement(MLoadElement* ins) {
-  if (!isTargetElements(ins->elements())) {
-    return;
-  }
-
-  auto* load = MLoadIteratorElement::New(alloc_, objToIter_, ins->index());
-  ins->block()->insertBefore(ins, load);
-
-  ins->replaceAllUsesWith(load);
-  discardInstruction(ins, ins->elements());
-}
-
-void ObjectKeysReplacer::visitLength(MInstruction* ins, MDefinition* elements) {
-  if (!isTargetElements(elements)) {
-    return;
-  }
-
-  auto* newLen = MIteratorLength::New(alloc_, objToIter_);
-  ins->block()->insertBefore(ins, newLen);
-
-  ins->replaceAllUsesWith(newLen);
-  discardInstruction(ins, elements);
-}
-
-void ObjectKeysReplacer::visitArrayLength(MArrayLength* ins) {
-  visitLength(ins, ins->elements());
-}
-
-void ObjectKeysReplacer::visitInitializedLength(MInitializedLength* ins) {
-  
-  visitLength(ins, ins->elements());
-}
-
 bool ScalarReplacement(const MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_Escape, "Begin (ScalarReplacement)");
 
@@ -4177,18 +3976,6 @@ bool ScalarReplacement(const MIRGenerator* mir, MIRGraph& graph) {
         }
         view.assertSuccess();
         addedPhi = true;
-        continue;
-      }
-
-      if (!JitOptions.disableObjectKeysScalarReplacement &&
-          IsOptimizableObjectKeysInstruction(*ins)) {
-        ObjectKeysReplacer replacer(mir, graph, *ins);
-        if (replacer.escapes(*ins)) {
-          continue;
-        }
-        if (!replacer.run(ins)) {
-          return false;
-        }
         continue;
       }
     }
