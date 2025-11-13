@@ -78,8 +78,10 @@ namespace snappy {
 
   
   
+  
+  size_t Compress(Source* reader, Sink* writer);
   size_t Compress(Source* reader, Sink* writer,
-                  CompressionOptions options = {});
+                  CompressionOptions options);
 
   
   
@@ -98,16 +100,22 @@ namespace snappy {
   
   
   
+  
   size_t Compress(const char* input, size_t input_length,
-                  std::string* compressed, CompressionOptions options = {});
+                  std::string* compressed);
+  size_t Compress(const char* input, size_t input_length,
+                  std::string* compressed, CompressionOptions options);
 
   
   
   
   
+  
+  size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
+                           std::string* compressed);
   size_t CompressFromIOVec(const struct iovec* iov, size_t iov_cnt,
                            std::string* compressed,
-                           CompressionOptions options = {});
+                           CompressionOptions options);
 
   
   
@@ -151,14 +159,18 @@ namespace snappy {
   
   
   void RawCompress(const char* input, size_t input_length, char* compressed,
-                   size_t* compressed_length, CompressionOptions options = {});
+                   size_t* compressed_length);
+  void RawCompress(const char* input, size_t input_length, char* compressed,
+                   size_t* compressed_length, CompressionOptions options);
 
   
   
   
   void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
+                            char* compressed, size_t* compressed_length);
+  void RawCompressFromIOVec(const struct iovec* iov, size_t uncompressed_length,
                             char* compressed, size_t* compressed_length,
-                            CompressionOptions options = {});
+                            CompressionOptions options);
 
   
   
