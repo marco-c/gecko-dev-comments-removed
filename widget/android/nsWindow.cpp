@@ -103,6 +103,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/UiCompositorControllerChild.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
+#include "mozilla/net/AsyncUrlChannelClassifier.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/widget/AndroidVsync.h"
 #include "mozilla/widget/Screen.h"
@@ -1808,6 +1809,8 @@ void GeckoViewSupport::Open(
   
   
   gfxPlatform::GetPlatform();
+
+  mozilla::net::AsyncUrlChannelClassifier::WarmUp();
 
   nsCOMPtr<nsIWindowWatcher> ww = do_GetService(NS_WINDOWWATCHER_CONTRACTID);
   MOZ_RELEASE_ASSERT(ww);

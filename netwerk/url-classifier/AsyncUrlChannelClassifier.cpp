@@ -858,6 +858,14 @@ nsresult FeatureData::InitializeList(
 }  
 
 
+void AsyncUrlChannelClassifier::WarmUp() {
+  
+  nsresult rv;
+  RefPtr<nsUrlClassifierDBService> service =
+      nsUrlClassifierDBService::GetInstance(&rv);
+}
+
+
 nsresult AsyncUrlChannelClassifier::CheckChannel(
     nsIChannel* aChannel, std::function<void()>&& aCallback) {
   MOZ_ASSERT(XRE_IsParentProcess());
