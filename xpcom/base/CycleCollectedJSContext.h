@@ -196,7 +196,7 @@ class MustConsumeMicroTask {
   
   JSObject* GetExecutionGlobalFromJSMicroTask(JSContext* aCx) const {
     MOZ_ASSERT(IsJSMicroTask());
-    JS::Rooted<JS::MicroTask> task(aCx, mMicroTask);
+    JS::Rooted<JS::GenericMicroTask> task(aCx, mMicroTask);
     return JS::GetExecutionGlobalFromJSMicroTask(task);
   }
 
@@ -239,10 +239,10 @@ class MustConsumeMicroTask {
   }
 
  private:
-  explicit MustConsumeMicroTask(JS::MicroTask&& aMicroTask)
+  explicit MustConsumeMicroTask(JS::GenericMicroTask&& aMicroTask)
       : mMicroTask(aMicroTask) {}
 
-  JS::Heap<JS::MicroTask> mMicroTask;
+  JS::Heap<JS::GenericMicroTask> mMicroTask;
 };
 
 class SuppressedMicroTaskList final : public MicroTaskRunnable {
