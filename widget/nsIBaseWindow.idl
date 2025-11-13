@@ -185,13 +185,6 @@ interface nsIBaseWindow : nsISupports
 
 
 
-  void repaint(in boolean force);
-
-  
-
-
-
-
 
 
 
