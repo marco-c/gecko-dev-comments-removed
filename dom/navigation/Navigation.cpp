@@ -1139,13 +1139,27 @@ nsresult Navigation::FireEvent(const nsAString& aName) {
 
 static void ExtractErrorInformation(JSContext* aCx,
                                     JS::Handle<JS::Value> aError,
-                                    ErrorEventInit& aErrorEventInitDict) {
+                                    ErrorEventInit& aErrorEventInitDict,
+                                    NavigateEvent* aEvent) {
   nsContentUtils::ExtractErrorValues(
       aCx, aError, aErrorEventInitDict.mFilename, &aErrorEventInitDict.mLineno,
       &aErrorEventInitDict.mColno, aErrorEventInitDict.mMessage);
   aErrorEventInitDict.mError = aError;
   aErrorEventInitDict.mBubbles = false;
   aErrorEventInitDict.mCancelable = false;
+
+  if (!aErrorEventInitDict.mFilename.IsEmpty()) {
+    return;
+  }
+
+  RefPtr document = aEvent->GetAssociatedDocument();
+  if (!document) {
+    return;
+  }
+
+  if (auto* uri = document->GetDocumentURI()) {
+    uri->GetSpec(aErrorEventInitDict.mFilename);
+  }
 }
 
 nsresult Navigation::FireErrorEvent(const nsAString& aName,
@@ -1832,7 +1846,7 @@ void Navigation::AbortNavigateEvent(
 
   
   RootedDictionary<ErrorEventInit> init(aCx);
-  ExtractErrorInformation(aCx, aReason, init);
+  ExtractErrorInformation(aCx, aReason, init, aEvent);
 
   
   mOngoingNavigateEvent = nullptr;
