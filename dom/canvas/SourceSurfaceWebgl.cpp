@@ -187,17 +187,17 @@ void SourceSurfaceWebgl::SetHandle(TextureHandle* aHandle) {
 
 
 
+
 void SourceSurfaceWebgl::OnUnlinkTexture(SharedContextWebgl* aContext,
-                                         bool aForce) {
-  
-  
-  MOZ_ASSERT(!mDT);
+                                         TextureHandle* aHandle, bool aForce) {
   
   
   
   
   
-  MOZ_ASSERT(mHandle || mData || mReadBuffer);
+  if (mHandle != aHandle) {
+    return;
+  }
   if (!mData && !mReadBuffer) {
     if (!aForce) {
       mReadBuffer = aContext->ReadSnapshotIntoPBO(this, mHandle);
