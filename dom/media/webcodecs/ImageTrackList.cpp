@@ -75,6 +75,14 @@ void ImageTrackList::OnMetadataSuccess(
   MOZ_ASSERT(mTracks.IsEmpty());
 
   
+  nsTArray<ImageSize> imageSizes;
+  for (const OrientedIntSize& nativeSize : aMetadata.mNativeSizes) {
+    ImageSize* imageSize = imageSizes.AppendElement();
+    imageSize->mWidth = nativeSize.width;
+    imageSize->mHeight = nativeSize.height;
+  }
+
+  
   
   
   
@@ -97,8 +105,9 @@ void ImageTrackList::OnMetadataSuccess(
                                 ? std::numeric_limits<float>::infinity()
                                 : static_cast<float>(aMetadata.mRepetitions);
   auto track = MakeRefPtr<ImageTrack>(
-      this,  0,  true, aMetadata.mAnimated,
-      aMetadata.mFrameCount, aMetadata.mFrameCountComplete, repetitions);
+      this,  0, std::move(imageSizes),  true,
+      aMetadata.mAnimated, aMetadata.mFrameCount, aMetadata.mFrameCountComplete,
+      repetitions);
 
   
   
