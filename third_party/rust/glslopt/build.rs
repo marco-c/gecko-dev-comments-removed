@@ -19,6 +19,8 @@ fn configure(build: &mut cc::Build) -> &mut cc::Build {
     }
 
     
+    build.define("MOZILLA_CONFIG_H", None);
+    
     build.define("MOZ_INCLUDE_MOZALLOC_H", None);
     
     build.define("mozilla_throw_gcc_h", None);
