@@ -3614,6 +3614,7 @@ void ScriptLoader::MaybeUpdateDiskCache() {
 }
 
 void ScriptLoader::UpdateDiskCache() {
+  MOZ_ASSERT(!mCache);
   LOG(("ScriptLoader (%p): Start bytecode encoding.", this));
 
   
@@ -3633,12 +3634,6 @@ void ScriptLoader::UpdateDiskCache() {
   }
 
   for (auto& loadedScript : mDiskCacheQueue) {
-    
-    
-    
-    
-    
-    
     
     
     if (!loadedScript->HasDiskCacheReference()) {
