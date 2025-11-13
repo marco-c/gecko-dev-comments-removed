@@ -51,7 +51,7 @@ add_task(async function test_session_store_security_state() {
   info("Switch to second tab which has not been loaded yet.");
   BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[1]);
   is(
-    gURLBar.textbox.getAttribute("pageproxystate"),
+    gURLBar.getAttribute("pageproxystate"),
     "invalid",
     "Page proxy state is invalid after tab switch"
   );
@@ -59,11 +59,11 @@ add_task(async function test_session_store_security_state() {
   
   
   await BrowserTestUtils.waitForMutationCondition(
-    gURLBar.textbox,
+    gURLBar,
     {
       attributeFilter: ["pageproxystate"],
     },
-    () => gURLBar.textbox.getAttribute("pageproxystate") == "valid"
+    () => gURLBar.getAttribute("pageproxystate") == "valid"
   );
 
   

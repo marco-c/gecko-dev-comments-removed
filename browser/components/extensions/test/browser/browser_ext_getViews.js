@@ -314,7 +314,7 @@ add_task(async function test_getViews_excludes_blocked_parsing_documents() {
 
   
   EventUtils.synthesizeMouseAtCenter(
-    window.gURLBar.textbox,
+    window.gURLBar,
     { type: "mouseover" },
     window
   );
@@ -394,7 +394,7 @@ add_task(async function test_getViews_excludes_blocked_parsing_documents() {
 
   
   EventUtils.synthesizeMouseAtCenter(
-    window.gURLBar.textbox,
+    window.gURLBar,
     { type: "mouseover", button: 0 },
     window
   );

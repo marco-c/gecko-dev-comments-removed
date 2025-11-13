@@ -48,7 +48,7 @@ async function mouseMoveAndWait(elem) {
 
 add_task(async function testToolbarVisibility() {
   
-  await mouseMoveAndWait(gURLBar.textbox);
+  await mouseMoveAndWait(gURLBar);
 
   await PrintHelper.withTestPage(async helper => {
     await helper.startPrint();
@@ -86,7 +86,7 @@ add_task(async function testToolbarVisibility() {
     is(getComputedStyle(helper.paginationElem).opacity, "1", "Opaque toolbar");
 
     
-    await mouseMoveAndWait(gURLBar.textbox);
+    await mouseMoveAndWait(gURLBar);
     await helper.closeDialog();
   });
 });

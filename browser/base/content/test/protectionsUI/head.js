@@ -62,7 +62,7 @@ async function openProtectionsPanel(toast, win = window) {
   
   
   EventUtils.synthesizeMouseAtCenter(
-    win.gURLBar.textbox,
+    win.gURLBar,
     {
       type: "mousemove",
     },

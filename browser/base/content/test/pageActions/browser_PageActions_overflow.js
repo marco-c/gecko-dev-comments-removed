@@ -175,9 +175,9 @@ add_task(async function bookmark() {
 add_task(async function test_disabledPageAction_hidden_in_protonOverflowMenu() {
   
   
-  BrowserPageActions.mainButtonNode.style.visibility = "visible";
+  BrowserPageActions.mainButtonNode.style.display = "flex";
   registerCleanupFunction(() => {
-    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+    BrowserPageActions.mainButtonNode.style.removeProperty("display");
   });
 
   const extension = ExtensionTestUtils.loadExtension({

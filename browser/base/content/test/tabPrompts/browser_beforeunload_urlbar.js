@@ -39,7 +39,7 @@ add_task(async function test_beforeunload_stay_clears_urlbar() {
     );
     
     is(
-      gURLBar.textbox.getAttribute("pageproxystate"),
+      gURLBar.getAttribute("pageproxystate"),
       "valid",
       "Should be in valid pageproxy state."
     );

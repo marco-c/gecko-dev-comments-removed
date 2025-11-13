@@ -8,7 +8,7 @@
 
 
 type UrlbarController = import("../UrlbarController.sys.mjs").UrlbarController;
-type UrlbarInput = import("../UrlbarInput.sys.mjs").UrlbarInput;
+type UrlbarInput = import("../content/UrlbarInput.mjs").UrlbarInput;
 type UrlbarQueryContext = import("../UrlbarUtils.sys.mjs").UrlbarQueryContext;
 type UrlbarResult = import("../UrlbarResult.sys.mjs").UrlbarResult;
 

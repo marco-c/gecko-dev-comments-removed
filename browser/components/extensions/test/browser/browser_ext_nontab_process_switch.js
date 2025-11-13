@@ -116,11 +116,7 @@ add_task(
     });
 
     
-    EventUtils.synthesizeMouseAtCenter(
-      gURLBar.textbox,
-      { type: "mouseover" },
-      window
-    );
+    EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mouseover" }, window);
 
     await extension.startup();
 

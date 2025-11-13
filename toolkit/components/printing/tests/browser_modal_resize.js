@@ -77,7 +77,7 @@ async function checkPreviewNavigationVisibility(expected) {
   let previewStack = document.querySelector(".previewStack");
   let paginationElem = document.querySelector(".printPreviewNavigation");
   
-  await mouseMoveAndWait(gURLBar.textbox);
+  await mouseMoveAndWait(gURLBar);
   await mouseMoveAndWait(previewStack);
 
   ok(

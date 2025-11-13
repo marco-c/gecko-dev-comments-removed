@@ -301,7 +301,7 @@ add_task(async function context_after_customize() {
     
     
     await TestUtils.waitForCondition(() => {
-      return window.gURLBar.textbox.hasAttribute("breakout");
+      return window.gURLBar.hasAttribute("breakout");
     });
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {

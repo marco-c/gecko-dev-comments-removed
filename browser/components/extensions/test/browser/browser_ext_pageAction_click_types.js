@@ -11,9 +11,9 @@ add_setup(async function () {
   
   
   
-  BrowserPageActions.mainButtonNode.style.visibility = "visible";
+  BrowserPageActions.mainButtonNode.style.display = "flex";
   registerCleanupFunction(() => {
-    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+    BrowserPageActions.mainButtonNode.style.removeProperty("display");
   });
 });
 

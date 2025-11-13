@@ -820,7 +820,7 @@ async function runUrlbarTest(
     await UrlbarTestUtils.promisePopupClose(win);
   };
 
-  let urlbarRect = URLBar.textbox.getBoundingClientRect();
+  let urlbarRect = URLBar.getBoundingClientRect();
   
   
   const SHADOW_SIZE = 17; 

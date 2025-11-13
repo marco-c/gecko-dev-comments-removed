@@ -13,11 +13,7 @@ add_task(async function testBrowserActionClickCanceled() {
   );
 
   
-  EventUtils.synthesizeMouseAtCenter(
-    gURLBar.textbox,
-    { type: "mousemove" },
-    window
-  );
+  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mousemove" }, window);
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -172,11 +168,7 @@ add_task(async function testBrowserActionClickCanceled() {
 
 add_task(async function testBrowserActionDisabled() {
   
-  EventUtils.synthesizeMouseAtCenter(
-    gURLBar.textbox,
-    { type: "mousemove" },
-    window
-  );
+  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mousemove" }, window);
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -352,11 +344,7 @@ add_task(async function testBrowserActionTabPopulation() {
   await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
 
   
-  EventUtils.synthesizeMouseAtCenter(
-    win.gURLBar.textbox,
-    { type: "mousemove" },
-    win
-  );
+  EventUtils.synthesizeMouseAtCenter(win.gURLBar, { type: "mousemove" }, win);
 
   await extension.startup();
 
@@ -402,11 +390,7 @@ add_task(async function testClosePopupDuringPreload() {
   });
 
   
-  EventUtils.synthesizeMouseAtCenter(
-    gURLBar.textbox,
-    { type: "mousemove" },
-    window
-  );
+  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mousemove" }, window);
 
   await extension.startup();
 

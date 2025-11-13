@@ -165,7 +165,7 @@ add_task(async function clickInInput_onboard() {
 
   
   await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeMouseAtCenter(gURLBar.textbox.parentNode, {});
+    EventUtils.synthesizeMouseAtCenter(gURLBar.parentNode, {});
   });
   gURLBar.blur();
 
@@ -224,7 +224,7 @@ add_task(async function clickInInput_redirect() {
 
       
       await UrlbarTestUtils.promisePopupClose(window, () => {
-        EventUtils.synthesizeMouseAtCenter(gURLBar.textbox.parentNode, {});
+        EventUtils.synthesizeMouseAtCenter(gURLBar.parentNode, {});
       });
       gURLBar.blur();
     });

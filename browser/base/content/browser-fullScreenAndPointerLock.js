@@ -426,9 +426,7 @@ var FullScreen = {
 
     let transform = shiftSize > 0 ? `translateY(${shiftSize}px)` : "";
     gNavToolbox.style.transform = transform;
-    gURLBar.textbox.style.transform = gURLBar.textbox.hasAttribute("breakout")
-      ? transform
-      : "";
+    gURLBar.style.transform = gURLBar.hasAttribute("breakout") ? transform : "";
     if (shiftSize > 0) {
       
       
