@@ -1020,7 +1020,9 @@ static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins,
     masm.movl(Imm32(rmc.multiplier), temp);
     masm.imulq(temp, result);
   }
-  masm.shrq(Imm32(32), result);
+  if (rmc.multiplier > UINT32_MAX || rmc.shiftAmount == 0) {
+    masm.shrq(Imm32(32), result);
+  }
 #endif
   if (rmc.multiplier > UINT32_MAX) {
     
@@ -1044,9 +1046,17 @@ static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins,
 
     
     masm.addl(temp, result);
-    masm.shrl(Imm32(rmc.shiftAmount - 1), result);
+    if (rmc.shiftAmount > 1) {
+      masm.shrl(Imm32(rmc.shiftAmount - 1), result);
+    }
   } else {
-    masm.shrl(Imm32(rmc.shiftAmount), result);
+    if (rmc.shiftAmount > 0) {
+#ifdef JS_CODEGEN_X86
+      masm.shrl(Imm32(rmc.shiftAmount), result);
+#else
+      masm.shrq(Imm32(32 + rmc.shiftAmount), result);
+#endif
+    }
   }
 }
 
@@ -1236,7 +1246,9 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins,
   
   masm.movslq(lhs, result);
   masm.imulq(Imm32(rmc.multiplier), result, result);
-  masm.shrq(Imm32(32), result);
+  if (rmc.multiplier > INT32_MAX || rmc.shiftAmount == 0) {
+    masm.shrq(Imm32(32), result);
+  }
 #endif
   if (rmc.multiplier > INT32_MAX) {
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
@@ -1250,7 +1262,17 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins,
   
   
   
-  masm.sarl(Imm32(rmc.shiftAmount), result);
+  if (rmc.shiftAmount > 0) {
+#ifdef JS_CODEGEN_X86
+    masm.sarl(Imm32(rmc.shiftAmount), result);
+#else
+    if (rmc.multiplier > INT32_MAX) {
+      masm.sarl(Imm32(rmc.shiftAmount), result);
+    } else {
+      masm.sarq(Imm32(32 + rmc.shiftAmount), result);
+    }
+#endif
+  }
 
   
   
