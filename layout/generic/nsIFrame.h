@@ -3334,12 +3334,6 @@ class nsIFrame : public nsQueryFrame {
   }
   void SetView(nsView* aView);
 
-  
-
-
-
-
-  nsView* GetClosestView(nsPoint* aOffset = nullptr) const;
 
   
 
