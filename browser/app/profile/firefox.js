@@ -793,6 +793,13 @@ pref("browser.urlbar.yelpRealtime.minKeywordLength", 0);
 pref("browser.urlbar.flightStatus.featureGate", false);
 
 
+pref("browser.urlbar.sports.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.sports", true);
+
+
 
 
 pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
