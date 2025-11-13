@@ -139,25 +139,34 @@ class WebAuthnRegisterResult final : public nsIWebAuthnRegisterResult {
       }
     }
 
-    if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_3) {
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_USB) {
-        mTransports.AppendElement(u"usb"_ns);
-      }
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_NFC) {
-        mTransports.AppendElement(u"nfc"_ns);
-      }
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_BLE) {
-        mTransports.AppendElement(u"ble"_ns);
-      }
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_INTERNAL) {
-        mTransports.AppendElement(u"internal"_ns);
-      }
+    DWORD transports = 0;
+    if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_8) {
+      
+      
+      
+      transports = aResponse->dwTransports;
+    } else if (aResponse->dwVersion >=
+               WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_3) {
+      transports = aResponse->dwUsedTransport;
+    }
+
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_USB) {
+      mTransports.AppendElement(u"usb"_ns);
+    }
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_NFC) {
+      mTransports.AppendElement(u"nfc"_ns);
+    }
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_BLE) {
+      mTransports.AppendElement(u"ble"_ns);
+    }
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_INTERNAL) {
+      mTransports.AppendElement(u"internal"_ns);
     }
     
     
     
     if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_5) {
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_HYBRID) {
+      if (transports & WEBAUTHN_CTAP_TRANSPORT_HYBRID) {
         mTransports.AppendElement(u"hybrid"_ns);
       }
     }
