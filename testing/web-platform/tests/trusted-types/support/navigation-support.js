@@ -60,6 +60,8 @@ async function setLocationToJavaScriptURL(defaultpolicy) {
         
         if (window.requestIdleCallback) {
           await new Promise(resolve => requestIdleCallback(resolve));
+        } else {
+          await new Promise(resolve => requestAnimationFrame(_ => requestAnimationFrame(resolve)));
         }
       });
 
@@ -188,6 +190,11 @@ function navigateToJavascriptURL(reportOnly) {
               requestIdleCallback(resolve);
               window.addEventListener("beforeunload", resolve);
             });
+          } else {
+            await new Promise(resolve => requestAnimationFrame(() => {
+              requestAnimationFrame(resolve);
+              window.addEventListener("beforeunload", resolve);
+            }));
           }
         });
       if (exception) {
