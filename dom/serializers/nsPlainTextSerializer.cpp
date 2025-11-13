@@ -219,8 +219,8 @@ void nsPlainTextSerializer::OutputManager::Append(const nsAString& aString) {
   }
 }
 
-void nsPlainTextSerializer::OutputManager::AppendLineBreak() {
-  mOutput.Append(mLineBreak);
+void nsPlainTextSerializer::OutputManager::AppendLineBreak(bool aForceCRLF) {
+  mOutput.Append(aForceCRLF ? u"\r\n"_ns : mLineBreak);
   mAtFirstColumn = true;
 }
 
@@ -480,6 +480,13 @@ nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
   
   if (aText->HasFlag(NS_MAYBE_MASKED)) {
     TextEditor::MaskString(textstr, *aText, 0, aStartOffset);
+  }
+
+  if (mSettings.HasFlag(nsIDocumentEncoder::OutputForPlainTextClipboardCopy)) {
+    
+    
+    Write(textstr);
+    return rv;
   }
 
   
@@ -1524,6 +1531,7 @@ void nsPlainTextSerializer::ConvertToLinesAndOutput(const nsAString& aString) {
     
     nsAutoString stringpart;
     bool outputLineBreak = false;
+    bool isNewLineCRLF = false;
     if (newline == done_searching) {
       
       stringpart.Assign(Substring(bol, newline));
@@ -1537,12 +1545,12 @@ void nsPlainTextSerializer::ConvertToLinesAndOutput(const nsAString& aString) {
       stringpart.Assign(Substring(bol, newline));
       mInWhitespace = true;
       outputLineBreak = true;
-      mEmptyLines = 0;
       if ('\r' == *iter++ && '\n' == *iter) {
         
         
         
-        ++iter;
+        newline = iter++;
+        isNewLineCRLF = true;
       }
     }
 
@@ -1561,7 +1569,26 @@ void nsPlainTextSerializer::ConvertToLinesAndOutput(const nsAString& aString) {
     mOutputManager->Append(mCurrentLine,
                            OutputManager::StripTrailingWhitespaces::kNo);
     if (outputLineBreak) {
-      mOutputManager->AppendLineBreak();
+      if (mSettings.HasFlag(
+              nsIDocumentEncoder::OutputForPlainTextClipboardCopy)) {
+        
+        
+        if ('\n' == *newline) {
+          mOutputManager->AppendLineBreak(isNewLineCRLF);
+          
+          
+          
+          mEmptyLines = stringpart.IsEmpty() ? mEmptyLines + 1 : 0;
+        } else {
+          mOutputManager->Append(u"\r"_ns);
+          
+          
+          mEmptyLines = -1;
+        }
+      } else {
+        mOutputManager->AppendLineBreak();
+        mEmptyLines = 0;
+      }
     }
 
     mCurrentLine.ResetContentAndIndentationHeader();
@@ -1664,10 +1691,14 @@ void nsPlainTextSerializer::Write(const nsAString& aStr) {
         continue;
       }
 
-      if (nextpos == bol) {
+      if (nextpos == bol &&
+          !mSettings.HasFlag(
+              nsIDocumentEncoder::OutputForPlainTextClipboardCopy)) {
         
         mInWhitespace = true;
         offsetIntoBuffer = str.get() + nextpos;
+        
+        
         AddToLine(offsetIntoBuffer, 1);
         bol++;
         continue;
