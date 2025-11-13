@@ -44,6 +44,7 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
 #if defined(ANDROID)
   static int SetAndroidObjects();
 #endif
+  int32_t GenerateId();
   
 
   int32_t CreateVideoCapture(const char* aDeviceUniqueIdUTF8,
@@ -115,7 +116,6 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
   MediaEventProducer<void> mDeviceChangeEvent;
   
   webrtc::Timestamp mExpiryTime = webrtc::Timestamp::Micros(0);
-  int32_t GenerateId();
 };
 }  
 #endif
