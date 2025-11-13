@@ -583,6 +583,8 @@ class Accessible {
 
   
 
+  bool IsAbbreviation() const { return mType == eHTMLAbbrevType; }
+
   bool IsDoc() const { return HasGenericType(eDocument); }
 
   bool IsTableRow() const { return HasGenericType(eTableRow); }

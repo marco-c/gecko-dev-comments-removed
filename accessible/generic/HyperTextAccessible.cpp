@@ -853,18 +853,7 @@ ENameValueFlag HyperTextAccessible::NativeName(nsString& aName) const {
     if (!aName.IsEmpty()) return eNameOK;
   }
 
-  ENameValueFlag nameFlag = AccessibleWrap::NativeName(aName);
-  if (!aName.IsEmpty()) return nameFlag;
-
-  
-  
-  
-  if (IsAbbreviation() && mContent->AsElement()->GetAttr(
-                              kNameSpaceID_None, nsGkAtoms::title, aName)) {
-    aName.CompressWhitespace();
-  }
-
-  return eNameOK;
+  return AccessibleWrap::NativeName(aName);
 }
 
 void HyperTextAccessible::Shutdown() {
