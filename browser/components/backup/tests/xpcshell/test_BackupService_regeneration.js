@@ -131,6 +131,14 @@ async function expectRegeneration(taskFn, msg) {
 
   
   
+  
+  let deleteDeferred = Promise.withResolvers();
+  sandbox.stub(bs, "deleteLastBackup").callsFake(() => {
+    Assert.ok(true, "Saw deleteLastBackup call");
+    deleteDeferred.resolve();
+    return Promise.resolve();
+  });
+
   let createBackupDeferred = Promise.withResolvers();
   sandbox.stub(bs, "createBackupOnIdleDispatch").callsFake(options => {
     Assert.ok(true, "Saw createBackupOnIdleDispatch call");
@@ -154,6 +162,11 @@ async function expectRegeneration(taskFn, msg) {
 
   await taskFn();
 
+  let regenerationPromises = [
+    deleteDeferred.promise,
+    createBackupDeferred.promise,
+  ];
+
   
   let timeoutPromise = new Promise((resolve, reject) =>
     
@@ -163,7 +176,7 @@ async function expectRegeneration(taskFn, msg) {
   );
 
   try {
-    await Promise.race([createBackupDeferred.promise, timeoutPromise]);
+    await Promise.race([Promise.all(regenerationPromises), timeoutPromise]);
     Assert.ok(true, msg);
   } catch (e) {
     Assert.ok(false, "Timed out waiting for regeneration.");
