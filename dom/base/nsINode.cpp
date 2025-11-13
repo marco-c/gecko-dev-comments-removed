@@ -2558,7 +2558,8 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
   
   
   if (aNewChild == aParent ||
-      ((aNewChild->GetFirstChild() ||
+      (((aNewChild->HasFlag(NODE_MAY_HAVE_ELEMENT_CHILDREN) &&
+         aNewChild->GetFirstChild()) ||
         
         
         
