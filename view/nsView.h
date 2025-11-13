@@ -252,6 +252,14 @@ class nsView final : public nsIWidgetListener {
   LayoutDeviceIntRect CalcWidgetBounds(mozilla::widget::WindowType,
                                        mozilla::widget::TransparencyMode);
 
+  LayoutDeviceIntRect RecalcWidgetBounds();
+
+  
+  
+  
+  
+  nsPoint ViewToWidgetOffset() const { return mViewToWidgetOffset; }
+
   
   mozilla::PresShell* GetPresShell() override;
   nsView* GetView() override { return this; }
@@ -313,6 +321,8 @@ class nsView final : public nsIWidgetListener {
   nsIFrame* mFrame;
   
   nsRect mDimBounds;
+  
+  nsPoint mViewToWidgetOffset;
   bool mWidgetIsTopLevel;
   bool mForcedRepaint;
   bool mNeedsWindowPropertiesSync;

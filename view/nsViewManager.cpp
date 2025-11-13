@@ -531,6 +531,18 @@ void nsViewManager::ResizeView(nsView* aView, const nsRect& aRect) {
   
 }
 
+LayoutDeviceIntRect nsViewManager::ViewToWidget(nsView* aView,
+                                                const nsRect& aRect) const {
+  NS_ASSERTION(aView->GetViewManager() == this, "wrong view manager");
+
+  
+  nsRect rect = aRect + aView->ViewToWidgetOffset();
+
+  
+  return LayoutDeviceIntRect::FromUnknownRect(
+      rect.ToOutsidePixels(AppUnitsPerDevPixel()));
+}
+
 void nsViewManager::IsPainting(bool& aIsPainting) {
   aIsPainting = IsPainting();
 }
