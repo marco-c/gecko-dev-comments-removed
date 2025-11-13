@@ -5479,11 +5479,12 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
     }
   } else {
     
+    
     PropertyResult prop;
     if (!LookupOwnPropertyPure(cx_, nobj, id, &prop)) {
       return false;
     }
-    if (prop.isFound()) {
+    if (prop.isFound() || prop.isTypedArrayOutOfRange()) {
       return false;
     }
   }
@@ -5587,6 +5588,10 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   }
 
   JSObject* obj = &lhsVal_.toObject();
+  if (!obj->is<NativeObject>()) {
+    return AttachDecision::NoAction;
+  }
+  NativeObject* nobj = &obj->as<NativeObject>();
 
   PropertyResult prop;
   if (!LookupOwnPropertyPure(cx_, obj, id, &prop)) {
@@ -5596,11 +5601,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
     return AttachDecision::NoAction;
   }
 
-  if (!obj->is<NativeObject>()) {
-    return AttachDecision::NoAction;
-  }
-  auto* nobj = &obj->as<NativeObject>();
-
+  MOZ_RELEASE_ASSERT(prop.isNativeProperty());
   PropertyInfo propInfo = prop.propertyInfo();
   NativeObject* holder = nobj;
 
@@ -5612,6 +5613,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
 
   
   SharedShape* newShape = holder->sharedShape();
+  MOZ_RELEASE_ASSERT(oldShape != newShape);
   MOZ_RELEASE_ASSERT(newShape->lastProperty() == propInfo);
 
 #ifdef DEBUG
