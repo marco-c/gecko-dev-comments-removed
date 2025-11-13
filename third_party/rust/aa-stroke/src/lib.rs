@@ -733,9 +733,21 @@ impl<'z> Stroker<'z> {
             
             
             self.line_to(if self.stroked_path.aa && self.style.cap == LineCap::Butt { pt + perp(normal) * 0.5} else { pt });
-            if let (Some(cur_pt), Some((_point, _normal))) = (self.cur_pt, self.start_point) {
-                
-                cap_line(&mut self.stroked_path, &self.style, cur_pt, self.last_normal);
+            if let Some(cur_pt) = self.cur_pt {
+                if let Some((_point, _normal)) = self.start_point {
+                    
+                    cap_line(&mut self.stroked_path, &self.style, cur_pt, self.last_normal);
+                } else {
+                    
+                    
+                    match self.style.cap {
+                        LineCap::Round | LineCap::Square => {
+                            cap_line(&mut self.stroked_path, &self.style, cur_pt, Vector::new(1., 0.));
+                            cap_line(&mut self.stroked_path, &self.style, cur_pt, Vector::new(-1., 0.));
+                        }
+                        LineCap::Butt => {}
+                    }
+                }
             }
         }
         self.start_point = None;
@@ -1279,4 +1291,23 @@ fn joins_between_curves() {
     let result = rasterize_to_mask(&vertices, 1, 1);
     assert_eq!(result[0], 255);
 
+}
+
+#[test]
+fn round_cap_points() {
+    
+    let mut stroker = Stroker::new(&StrokeStyle{
+        cap: LineCap::Round,
+        join: LineJoin::Miter,
+        width: 11.5,
+        ..Default::default()});
+    stroker.move_to(Point::new(23., 34.5), false);
+    stroker.line_to_capped(Point::new(23., 34.5));
+    stroker.move_to(Point::new(92.0625, 46.), false);
+    stroker.line_to_capped(Point::new(92.0625, 46.));
+    stroker.move_to(Point::new(23., 57.5), false);
+    stroker.line_to_capped(Point::new(23., 57.5));
+    stroker.move_to(Point::new(92.0625, 57.5), false);
+    stroker.line_to_capped(Point::new(92.0625, 57.5));
+    assert_eq!(stroker.finish().len(), 576);
 }
