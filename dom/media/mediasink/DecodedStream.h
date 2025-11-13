@@ -10,6 +10,7 @@
 #include "AudibilityMonitor.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
+#include "MediaSegment.h"
 #include "MediaSink.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AwakeTimeStamp.h"
@@ -35,13 +36,13 @@ class MediaQueue;
 
 class DecodedStream : public MediaSink {
  public:
-  DecodedStream(AbstractThread* aOwnerThread,
+  DecodedStream(MediaDecoderStateMachine* aStateMachine,
                 nsMainThreadPtrHandle<SharedDummyTrack> aDummyTrack,
                 CopyableTArray<RefPtr<ProcessedMediaTrack>> aOutputTracks,
-                AbstractCanonical<PrincipalHandle>* aCanonicalOutputPrincipal,
                 double aVolume, double aPlaybackRate, bool aPreservesPitch,
                 MediaQueue<AudioData>& aAudioQueue,
-                MediaQueue<VideoData>& aVideoQueue);
+                MediaQueue<VideoData>& aVideoQueue,
+                RefPtr<AudioDeviceInfo> aAudioDevice);
 
   RefPtr<EndedPromise> OnEnded(TrackType aType) override;
   media::TimeUnit GetEndTime(TrackType aType) const override;
@@ -78,12 +79,6 @@ class DecodedStream : public MediaSink {
  protected:
   virtual ~DecodedStream();
 
-  
-  media::TimeUnit GetPositionImpl(TimeStamp aNow, AwakeTimeStamp aAwakeNow,
-                                  TimeStamp* aTimeStamp = nullptr);
-  AwakeTimeStamp LastOutputSystemTime() const;
-  TimeStamp LastVideoTimeStamp() const;
-
  private:
   void DestroyData(UniquePtr<DecodedStreamData>&& aData);
   void SendAudio(const PrincipalHandle& aPrincipalHandle);
@@ -91,8 +86,7 @@ class DecodedStream : public MediaSink {
   void ResetAudio();
   void ResetVideo(const PrincipalHandle& aPrincipalHandle);
   void SendData();
-  void NotifyOutput(int64_t aTime, TimeStamp aSystemTime,
-                    AwakeTimeStamp aAwakeSystemTime);
+  void NotifyOutput(int64_t aTime, AwakeTimeStamp aSystemTime);
   void CheckIsDataAudible(const AudioData* aData);
 
   void AssertOwnerThread() const {
