@@ -87,5 +87,14 @@ exports.fixed = {
     "services/sync/modules-testing/utils.sys.mjs",
   ],
   
+  "chrome://global/content/vendor/lit.all.mjs": [
+    "toolkit/content/widgets/vendor/lit.all.d.ts",
+  ],
+  "@lit/reactive-element": [
+    "node_modules/@lit/reactive-element/reactive-element",
+  ],
+  "lit/*": ["node_modules/lit/*"],
+  "lit-html": ["node_modules/lit-html/lit-html"],
+  
   "moz-src:///*": ["./*"],
 };
