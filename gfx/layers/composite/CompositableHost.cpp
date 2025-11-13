@@ -5,8 +5,6 @@
 
 
 #include "CompositableHost.h"
-#include <map>        
-#include <utility>    
 #include "Effects.h"  
 #include "gfxUtils.h"
 #include "mozilla/gfx/gfxVars.h"

@@ -13,7 +13,6 @@
 
 
 #include <stdint.h>  
-#include <type_traits>
 #include "gfxTypes.h"
 #include "FrameMetrics.h"
 #include "LayersTypes.h"

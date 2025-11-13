@@ -11,7 +11,6 @@
 #include "mozilla/gfx/GPUProcessManager.h"  
 
 #include <functional>
-#include <utility>  
 
 namespace mozilla {
 namespace layers {

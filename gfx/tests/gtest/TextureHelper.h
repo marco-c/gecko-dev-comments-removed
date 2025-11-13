@@ -4,8 +4,6 @@
 
 
 
-#include <vector>
-
 #include "Types.h"
 #include "gfxImageSurface.h"
 #include "gfxPlatform.h"

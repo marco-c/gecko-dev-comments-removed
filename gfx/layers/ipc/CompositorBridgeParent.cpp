@@ -8,7 +8,6 @@
 
 #include <stdio.h>   
 #include <stdint.h>  
-#include <map>       
 #include <utility>   
 
 #include "apz/src/APZCTreeManager.h"  

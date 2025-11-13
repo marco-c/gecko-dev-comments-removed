@@ -9,9 +9,6 @@
 
 #include <stdint.h>  
 
-#include <map>     
-#include <vector>  
-
 #include "mozilla/Assertions.h"  
 #include "mozilla/DataMutex.h"
 #include "mozilla/RefPtr.h"     

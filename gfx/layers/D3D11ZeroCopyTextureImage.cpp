@@ -5,7 +5,6 @@
 
 
 #include <d3d11.h>
-#include <memory>
 #include <mfobjects.h>
 
 #include "D3D11ZeroCopyTextureImage.h"

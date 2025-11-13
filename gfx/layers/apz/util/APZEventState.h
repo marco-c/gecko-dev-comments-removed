@@ -23,7 +23,6 @@
 #include "nsIWeakReferenceUtils.h"  
 
 #include <functional>
-#include <unordered_map>
 
 template <class>
 class nsCOMPtr;
