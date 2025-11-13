@@ -912,6 +912,14 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
   nsCOMPtr<nsIFilePickerShownCallback> callback =
       new HTMLInputElement::nsFilePickerShownCallback(this, filePicker);
 
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (obs) {
+    
+    
+    obs->NotifyObservers(ToSupports(this), "file-input-picker-opening",
+                         nullptr);
+  }
+
   if (!oldFiles.IsEmpty() && aType != FILE_PICKER_DIRECTORY) {
     nsAutoString path;
 
