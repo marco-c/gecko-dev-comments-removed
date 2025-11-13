@@ -88,6 +88,10 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
  public:
   explicit MediaEngineRemoteVideoSource(const MediaDevice* aMediaDevice);
 
+  static already_AddRefed<MediaEngineRemoteVideoSource> CreateFrom(
+      const MediaEngineRemoteVideoSource* aSource,
+      const MediaDevice* aMediaDevice);
+
   
   
 
@@ -161,7 +165,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  mutable Mutex mMutex MOZ_UNANNOTATED;
 
   
   
