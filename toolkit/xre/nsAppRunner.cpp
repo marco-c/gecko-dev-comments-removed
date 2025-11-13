@@ -4458,6 +4458,12 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   CheckArg("new-instance");
 #endif
 
+#ifndef XP_WIN
+  
+  
+  CheckArg("wait-for-browser");
+#endif
+
   ar = CheckArg("offline");
   if (ar || EnvHasValue("XRE_START_OFFLINE")) {
     mStartOffline = true;
