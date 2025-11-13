@@ -81,7 +81,7 @@ add_task(async function test_retry_limit() {
     
     Services.prefs.setIntPref(BACKUP_ERROR_CODE_PREF_NAME, ERRORS.NONE);
 
-    bs.createBackupOnIdleDispatch();
+    bs.createBackupOnIdleDispatch({});
 
     
     await bsInProgressStateUpdate(bs, true);
@@ -121,7 +121,7 @@ add_task(async function test_retry_limit() {
   
   const previousCalls = bs.createBackup.callCount;
 
-  bs.createBackupOnIdleDispatch();
+  bs.createBackupOnIdleDispatch({});
 
   
   await new Promise(executeSoon);
@@ -148,7 +148,7 @@ add_task(async function test_retry_limit() {
   
   await new Promise(resolve => setTimeout(resolve, 10));
 
-  bs.createBackupOnIdleDispatch();
+  bs.createBackupOnIdleDispatch({});
 
   
   await bsInProgressStateUpdate(bs, true);
