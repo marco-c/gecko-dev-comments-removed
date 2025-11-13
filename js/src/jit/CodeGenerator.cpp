@@ -18358,18 +18358,18 @@ void CodeGenerator::visitObjectToIterator(LObjectToIterator* lir) {
       Address(iterObj, PropertyIteratorObject::offsetOfIteratorSlot()),
       nativeIter);
 
+  Address iterFlagsAddr(nativeIter, NativeIterator::offsetOfFlags());
   if (lir->mir()->wantsIndices()) {
     
     
     
     
     
-    masm.branchNativeIteratorIndices(Assembler::Equal, nativeIter, temp2,
-                                     NativeIteratorIndices::AvailableOnRequest,
-                                     ool->entry());
+    masm.branchTest32(Assembler::NonZero, iterFlagsAddr,
+                      Imm32(NativeIterator::Flags::IndicesSupported),
+                      ool->entry());
   }
 
-  Address iterFlagsAddr(nativeIter, NativeIterator::offsetOfFlagsAndCount());
   masm.storePtr(
       obj, Address(nativeIter, NativeIterator::offsetOfObjectBeingIterated()));
   masm.or32(Imm32(NativeIterator::Flags::Active), iterFlagsAddr);
@@ -18420,13 +18420,14 @@ void CodeGenerator::visitIteratorHasIndicesAndBranch(
   Address nativeIterAddr(iterator,
                          PropertyIteratorObject::offsetOfIteratorSlot());
   masm.loadPrivate(nativeIterAddr, temp);
-  masm.branchNativeIteratorIndices(Assembler::NotEqual, temp, temp2,
-                                   NativeIteratorIndices::Valid, ifFalse);
+  masm.branchTest32(Assembler::Zero,
+                    Address(temp, NativeIterator::offsetOfFlags()),
+                    Imm32(NativeIterator::Flags::IndicesAvailable), ifFalse);
 
   
   
-  Address firstShapeAddr(temp, NativeIterator::offsetOfFirstShape());
-  masm.loadPtr(firstShapeAddr, temp);
+  Address objShapeAddr(temp, NativeIterator::offsetOfObjectShape());
+  masm.loadPtr(objShapeAddr, temp);
   masm.branchTestObjShape(Assembler::NotEqual, object, temp, temp2, object,
                           ifFalse);
 
