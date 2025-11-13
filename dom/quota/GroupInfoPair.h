@@ -73,8 +73,12 @@ class GroupInfoPair {
 
   
   
+  
+  
+  
   template <typename Iterator>
-  void MaybeInsertNonPersistedZeroUsageOriginInfos(Iterator aDest) const;
+  void MaybeInsertNonPersistedZeroUsageOriginInfos(
+      Iterator aDest, const Maybe<int64_t>& aCutoffAccessTime) const;
 
  private:
   RefPtr<GroupInfo>& GetGroupInfoForPersistenceType(
