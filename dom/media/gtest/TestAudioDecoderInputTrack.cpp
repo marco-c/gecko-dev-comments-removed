@@ -394,30 +394,21 @@ TEST_F(TestAudioDecoderInputTrack, OutputAndEndEvent) {
   
   
   RefPtr<AudioData> audio = CreateAudioData(10);
-  MozPromiseHolder<GenericPromise> holder;
-  RefPtr<GenericPromise> p = holder.Ensure(__func__);
-  MediaEventListener outputListener =
-      mTrack->OnOutput().Connect(NS_GetCurrentThread(), [&](TrackTime aFrame) {
-        EXPECT_EQ(aFrame, audio->Frames());
-        holder.Resolve(true, __func__);
-      });
+  auto outputPromise = TakeN(mTrack->OnOutput(), 1);
   mTrack->AppendData(audio, nullptr);
   mTrack->NotifyEndOfStream();
   TrackTime start = 0;
   TrackTime end = 10;
   mTrack->ProcessInput(start, end, ProcessedMediaTrack::ALLOW_END);
-  (void)WaitFor(p);
+  auto output = WaitFor(outputPromise).unwrap()[0];
+  EXPECT_EQ(std::get<int64_t>(output), audio->Frames());
 
   
-  p = holder.Ensure(__func__);
-  MediaEventListener endListener = mTrack->OnEnd().Connect(
-      NS_GetCurrentThread(), [&]() { holder.Resolve(true, __func__); });
+  auto endPromise = TakeN(mTrack->OnEnd(), 1);
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, ProcessedMediaTrack::ALLOW_END);
-  (void)WaitFor(p);
-  outputListener.Disconnect();
-  endListener.Disconnect();
+  (void)WaitFor(endPromise);
 }
 
 TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
@@ -446,9 +437,12 @@ TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
 
   
   
+  auto outputPromise = TakeN(mTrack->OnOutput(), 1);
   TrackTime start = 0;
   TrackTime end = audio->Frames();
   mTrack->ProcessInput(start, end, kNoFlags);
+  auto output = WaitFor(outputPromise).unwrap()[0];
+  EXPECT_EQ(std::get<int64_t>(output), audio->Frames());
   EXPECT_PRED_FORMAT2(ExpectSegmentNonSilence, start, audio->Frames() / 2);
   EXPECT_PRED_FORMAT2(ExpectSegmentSilence, start + audio->Frames() / 2, end);
 }
