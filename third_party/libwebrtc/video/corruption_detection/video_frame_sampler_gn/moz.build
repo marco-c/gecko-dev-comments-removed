@@ -34,7 +34,7 @@ LOCAL_INCLUDES += [
 ]
 
 UNIFIED_SOURCES += [
-    "/third_party/libwebrtc/video/frame_decode_timing.cc"
+    "/third_party/libwebrtc/video/corruption_detection/video_frame_sampler.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:
@@ -219,4 +219,4 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
     DEFINES["_GNU_SOURCE"] = True
 
-Library("frame_decode_timing_gn")
+Library("video_frame_sampler_gn")

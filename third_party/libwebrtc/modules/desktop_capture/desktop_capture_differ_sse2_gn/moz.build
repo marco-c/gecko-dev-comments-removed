@@ -13,7 +13,6 @@ DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
 DEFINES["PROTOBUF_ENABLE_DEBUG_LOGGING_MAY_LEAK_PII"] = "0"
 DEFINES["RTC_DAV1D_IN_INTERNAL_DECODER_FACTORY"] = True
 DEFINES["RTC_ENABLE_VP9"] = True
-DEFINES["WEBRTC_ALLOW_DEPRECATED_NAMESPACES"] = True
 DEFINES["WEBRTC_ENABLE_AVX2"] = True
 DEFINES["WEBRTC_ENABLE_PROTOBUF"] = "0"
 DEFINES["WEBRTC_LIBRARY_IMPL"] = True
@@ -52,8 +51,7 @@ if CONFIG["MOZ_DEBUG"] == "1":
 if CONFIG["OS_TARGET"] == "Darwin":
 
     CXXFLAGS += [
-        "-msse2",
-        "-std=gnu++20"
+        "-msse2"
     ]
 
     DEFINES["WEBRTC_MAC"] = True
@@ -62,10 +60,6 @@ if CONFIG["OS_TARGET"] == "Darwin":
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
 if CONFIG["OS_TARGET"] == "Linux":
-
-    CXXFLAGS += [
-        "-std=gnu++20"
-    ]
 
     DEFINES["USE_AURA"] = "1"
     DEFINES["USE_GLIB"] = "1"
@@ -84,8 +78,7 @@ if CONFIG["OS_TARGET"] == "Linux":
 if CONFIG["OS_TARGET"] == "OpenBSD":
 
     CXXFLAGS += [
-        "-msse2",
-        "-std=gnu++20"
+        "-msse2"
     ]
 
     DEFINES["USE_GLIB"] = "1"
@@ -99,10 +92,6 @@ if CONFIG["OS_TARGET"] == "OpenBSD":
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
 if CONFIG["OS_TARGET"] == "WINNT":
-
-    CXXFLAGS += [
-        "-std:c++20"
-    ]
 
     DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
     DEFINES["NOMINMAX"] = True
