@@ -531,38 +531,38 @@ GVariant* MPRISServiceHandler::GetPlaybackStatus() const {
 
 void MPRISServiceHandler::SetMediaMetadata(
     const dom::MediaMetadataBase& aMetadata) {
-  SetMediaMetadataInternal(aMetadata);
+  
+  
+  
+  
+  
+  mNextImageIndex = 0;
 
-  for (const dom::MediaImageData& image : aMetadata.mArtwork) {
-    if (!image.mDataSurface) {
-      continue;
+  
+  
+  
+  if (!mFetchingUrl.IsEmpty()) {
+    if (dom::IsImageIn(aMetadata.mArtwork, mFetchingUrl)) {
+      LOGMPRIS(
+          "No need to load MPRIS image. The one being processed is in the "
+          "artwork");
+      
+      
+      SetMediaMetadataInternal(aMetadata);
+      return;
     }
-
-    if (mCurrentImageUrl == image.mSrc) {
-      LOGMPRIS("Artwork image URL did not change");
-      break;
-    }
-
-    uint32_t size = 0;
-    char* data = nullptr;
-    
-    nsCOMPtr<nsIInputStream> inputStream;
-
-    nsresult rv =
-        dom::GetEncodedImageBuffer(image.mDataSurface, mMimeType,
-                                   getter_AddRefs(inputStream), &size, &data);
-    if (NS_FAILED(rv) || !inputStream || size == 0 || !data) {
-      LOGMPRIS("Failed to get the image buffer info. Try next image");
-      continue;
-    }
-
-    if (SetImageToDisplay(data, size)) {
-      mCurrentImageUrl = image.mSrc;
-      LOGMPRIS("The MPRIS image is updated to the image from: %s",
-               NS_ConvertUTF16toUTF8(mCurrentImageUrl).get());
-      break;
+  } else if (!mCurrentImageUrl.IsEmpty()) {
+    if (dom::IsImageIn(aMetadata.mArtwork, mCurrentImageUrl)) {
+      LOGMPRIS("No need to load MPRIS image. The one in use is in the artwork");
+      SetMediaMetadataInternal(aMetadata, false);
+      return;
     }
   }
+
+  
+  
+  SetMediaMetadataInternal(aMetadata);
+  LoadImageAtIndex(mNextImageIndex++);
 }
 
 bool MPRISServiceHandler::EmitMetadataChanged() const {
@@ -588,10 +588,74 @@ void MPRISServiceHandler::SetMediaMetadataInternal(
 
 void MPRISServiceHandler::ClearMetadata() {
   mMPRISMetadata.Clear();
+  mImageFetchRequest.DisconnectIfExists();
   RemoveAllLocalImages();
   mCurrentImageUrl.Truncate();
+  mFetchingUrl.Truncate();
+  mNextImageIndex = 0;
   mSupportedKeys = 0;
   EmitMetadataChanged();
+}
+
+void MPRISServiceHandler::LoadImageAtIndex(const size_t aIndex) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (aIndex >= mMPRISMetadata.mArtwork.Length()) {
+    LOGMPRIS("Stop loading image to MPRIS. No available image");
+    mImageFetchRequest.DisconnectIfExists();
+    return;
+  }
+
+  const dom::MediaImage& image = mMPRISMetadata.mArtwork[aIndex];
+
+  if (!dom::IsValidImageUrl(image.mSrc)) {
+    LOGMPRIS("Skip the image with invalid URL. Try next image");
+    LoadImageAtIndex(mNextImageIndex++);
+    return;
+  }
+
+  mImageFetchRequest.DisconnectIfExists();
+  mFetchingUrl = image.mSrc;
+
+  mImageFetcher = MakeUnique<dom::FetchImageHelper>(image);
+  RefPtr<MPRISServiceHandler> self = this;
+  mImageFetcher->FetchImage()
+      ->Then(
+          AbstractThread::MainThread(), __func__,
+          [this, self](const nsCOMPtr<imgIContainer>& aImage) {
+            LOGMPRIS("The image is fetched successfully");
+            mImageFetchRequest.Complete();
+
+            uint32_t size = 0;
+            char* data = nullptr;
+            
+            nsCOMPtr<nsIInputStream> inputStream;
+            nsresult rv = dom::GetEncodedImageBuffer(
+                aImage, mMimeType, getter_AddRefs(inputStream), &size, &data);
+            if (NS_FAILED(rv) || !inputStream || size == 0 || !data) {
+              LOGMPRIS("Failed to get the image buffer info. Try next image");
+              LoadImageAtIndex(mNextImageIndex++);
+              return;
+            }
+
+            if (SetImageToDisplay(data, size)) {
+              mCurrentImageUrl = mFetchingUrl;
+              LOGMPRIS("The MPRIS image is updated to the image from: %s",
+                       NS_ConvertUTF16toUTF8(mCurrentImageUrl).get());
+            } else {
+              LOGMPRIS("Failed to set image to MPRIS");
+              mCurrentImageUrl.Truncate();
+            }
+
+            mFetchingUrl.Truncate();
+          },
+          [this, self](bool) {
+            LOGMPRIS("Failed to fetch image. Try next image");
+            mImageFetchRequest.Complete();
+            mFetchingUrl.Truncate();
+            LoadImageAtIndex(mNextImageIndex++);
+          })
+      ->Track(mImageFetchRequest);
 }
 
 bool MPRISServiceHandler::SetImageToDisplay(const char* aImageData,
