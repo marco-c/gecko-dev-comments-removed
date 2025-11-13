@@ -274,11 +274,10 @@ impl ImageData {
                         }),
                         descriptor.is_opaque(),
                         RenderTaskParent::Surface,
-                        frame_state.gpu_cache,
                         &mut frame_state.frame_gpu_data.f32,
                         frame_state.rg_builder,
                         &mut frame_state.surface_builder,
-                        &mut |rg_builder, _, _| {
+                        &mut |rg_builder, _| {
                             
                             
                             
