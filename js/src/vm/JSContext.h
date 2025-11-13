@@ -9,6 +9,7 @@
 #ifndef vm_JSContext_h
 #define vm_JSContext_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerUtils.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -156,10 +157,24 @@ enum class ShouldCaptureStack { Maybe, Always };
 
 
 
+struct MicroTaskQueueElement {
+  MOZ_IMPLICIT
+  MicroTaskQueueElement(const JS::Value& val) : value(val) {}
+
+  operator JS::Value() const { return value; }
+
+  void trace(JSTracer* trc) { TraceEdge(trc, &value, "MicroTaskQueueElement"); }
+
+ private:
+  js::HeapPtr<JS::Value> value;
+};
+
+
+
 
 
 using MicroTaskQueue =
-    js::TraceableFifo<js::HeapPtr<JS::Value>, 0, TempAllocPolicy>;
+    js::TraceableFifo<MicroTaskQueueElement, 0, TempAllocPolicy>;
 
 
 struct MicroTaskQueueSet {
