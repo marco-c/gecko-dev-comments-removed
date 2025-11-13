@@ -759,8 +759,19 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  static void EncodeBytecodeAndSave(JS::FrontendContext* aFc,
-                                    JS::loader::LoadedScript* aLoadedScript);
+
+
+  static bool EncodeAndCompress(JS::FrontendContext* aFc,
+                                const JS::loader::LoadedScript* aLoadedScript,
+                                JS::Stencil* aStencil,
+                                const JS::TranscodeBuffer& aSRI,
+                                Vector<uint8_t>& aCompressed);
+
+  
+
+
+  static bool SaveToDiskCache(const JS::loader::LoadedScript* aLoadedScript,
+                              const Vector<uint8_t>& aCompressed);
 
  private:
   
