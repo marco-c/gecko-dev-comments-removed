@@ -11,7 +11,10 @@ def test_context_manager(repo):
     cmd = {
         "git": ["show", "--no-patch"],
         "hg": ["tip"],
-        "jj": ["show", "@-"],
+        
+        
+        
+        "jj": ["show", "@-", "--template", "description ++ '\\n'"],
         "src": ["echo", "src"],
     }[repo.vcs]
 
