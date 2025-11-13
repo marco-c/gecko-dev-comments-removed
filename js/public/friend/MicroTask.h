@@ -59,15 +59,20 @@ namespace JS {
 
 
 using GenericMicroTask = JS::Value;
+using JSMicroTask = JSObject;
 
 JS_PUBLIC_API bool IsJSMicroTask(const JS::GenericMicroTask& hv);
+JS_PUBLIC_API JSMicroTask* ToUnwrappedJSMicroTask(
+    const JS::GenericMicroTask& genericMicroTask);
+JS_PUBLIC_API JSMicroTask* ToMaybeWrappedJSMicroTask(
+    const JS::GenericMicroTask& genericMicroTask);
 
 
 
 
 
 JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx,
-                                  Handle<GenericMicroTask> entry);
+                                  Handle<JS::JSMicroTask*> entry);
 
 
 
@@ -122,8 +127,7 @@ JS_PUBLIC_API bool HasRegularMicroTasks(JSContext* cx);
 JS_PUBLIC_API size_t GetRegularMicroTaskCount(JSContext* cx);
 
 
-JS_PUBLIC_API JSObject* GetExecutionGlobalFromJSMicroTask(
-    const GenericMicroTask& entry);
+JS_PUBLIC_API JSObject* GetExecutionGlobalFromJSMicroTask(JSMicroTask* entry);
 
 
 
@@ -152,23 +156,21 @@ JS_PUBLIC_API void RestoreMicroTaskQueue(
 
 
 JS_PUBLIC_API JSObject* MaybeGetHostDefinedDataFromJSMicroTask(
-    const GenericMicroTask& entry);
+    JSMicroTask* entry);
 JS_PUBLIC_API JSObject* MaybeGetAllocationSiteFromJSMicroTask(
-    const GenericMicroTask& entry);
+    JSMicroTask* entry);
 
 
 
 JS_PUBLIC_API JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask(
-    const GenericMicroTask& entry);
+    JSMicroTask* entry);
 
-JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(
-    const GenericMicroTask& entry);
-
+JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(JSMicroTask* entry);
 
 
 
-JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(const GenericMicroTask& entry,
-                                            uint64_t* uid);
+
+JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(JSMicroTask* entry, uint64_t* uid);
 
 }  
 

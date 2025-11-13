@@ -783,9 +783,10 @@ JSObject* InternalJobQueue::copyJobs(JSContext* cx) {
     auto& queues = cx->microTaskQueues;
     auto addToArray = [&](auto& queue) -> bool {
       for (const auto& e : queue) {
-        if (JS::GetExecutionGlobalFromJSMicroTask(e)) {
+        JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(e);
+        if (task) {
           
-          RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(e));
+          RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(task));
           if (!cx->compartment()->wrap(cx, &global)) {
             return false;
           }
@@ -890,7 +891,8 @@ void InternalJobQueue::runJobs(JSContext* cx) {
 
     if (JS::Prefs::use_js_microtask_queue()) {
       
-      JS::Rooted<JS::GenericMicroTask> job(cx);
+      JS::Rooted<JS::JSMicroTask*> job(cx);
+      JS::Rooted<JS::GenericMicroTask> dequeueJob(cx);
       while (JS::HasAnyMicroTasks(cx)) {
         MOZ_ASSERT(queue.empty());
         
@@ -901,8 +903,10 @@ void InternalJobQueue::runJobs(JSContext* cx) {
 
         cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
 
-        job = JS::DequeueNextMicroTask(cx);
-        MOZ_ASSERT(!job.isNull());
+        dequeueJob = JS::DequeueNextMicroTask(cx);
+        MOZ_ASSERT(!dequeueJob.isNull());
+        job = JS::ToMaybeWrappedJSMicroTask(dequeueJob);
+        MOZ_ASSERT(job);
 
         
         
