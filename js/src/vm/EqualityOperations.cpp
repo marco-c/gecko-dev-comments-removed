@@ -79,13 +79,18 @@ static bool LooselyEqualBooleanAndOther(JSContext* cx,
 }
 
 
+
+
+
 bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
                       JS::Handle<JS::Value> rval, bool* result) {
   
   if (JS::SameType(lval, rval)) {
+    
     return EqualGivenSameType(cx, lval, rval, result);
   }
 
+  
   
   if (lval.isNumber() && rval.isNumber()) {
     *result = (lval.toNumber() == rval.toNumber());
@@ -93,21 +98,26 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
   if (lval.isNullOrUndefined()) {
-    
-    
     *result = rval.isNullOrUndefined() ||
               (rval.isObject() && EmulatesUndefined(&rval.toObject()));
     return true;
   }
-
-  
   if (rval.isNullOrUndefined()) {
     MOZ_ASSERT(!lval.isNullOrUndefined());
     *result = lval.isObject() && EmulatesUndefined(&lval.toObject());
     return true;
   }
 
+  
   
   if (lval.isNumber() && rval.isString()) {
     double num;
@@ -119,6 +129,7 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
   }
 
   
+  
   if (lval.isString() && rval.isNumber()) {
     double num;
     if (!StringToNumber(cx, lval.toString(), &num)) {
@@ -127,6 +138,16 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
     *result = (num == rval.toNumber());
     return true;
   }
+
+  
+  
+  
+  
+  
+
+  
+  
+  
 
   
   if (lval.isBoolean()) {
@@ -139,6 +160,8 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
   }
 
   
+  
+  
   if ((lval.isString() || lval.isNumber() || lval.isSymbol()) &&
       rval.isObject()) {
     JS::Rooted<JS::Value> rvalue(cx, rval);
@@ -149,6 +172,8 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
   }
 
   
+  
+  
   if (lval.isObject() &&
       (rval.isString() || rval.isNumber() || rval.isSymbol())) {
     JS::Rooted<JS::Value> lvalue(cx, lval);
@@ -157,6 +182,12 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
     }
     return js::LooselyEqual(cx, lvalue, rval, result);
   }
+
+  
+  
+  
+  
+  
 
   if (lval.isBigInt()) {
     JS::Rooted<JS::BigInt*> lbi(cx, lval.toBigInt());
@@ -196,9 +227,9 @@ bool js::ConstantStrictEqual(const JS::Value& val, uint16_t operand) {
 
   switch (constant.type()) {
     case ConstantCompareOperand::EncodedType::Int32:
-      return val.isNumber() && val.toNumber() == constant.toNumber();
+      return val.isNumber() && val.toNumber() == double(constant.toInt32());
     case ConstantCompareOperand::EncodedType::Boolean:
-      return val.isBoolean() && val.toBoolean() == constant.toBoolean();
+      return val == BooleanValue(constant.toBoolean());
     case ConstantCompareOperand::EncodedType::Undefined:
       return val.isUndefined();
     case ConstantCompareOperand::EncodedType::Null:
