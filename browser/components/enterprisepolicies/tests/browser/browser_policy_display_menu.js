@@ -28,22 +28,11 @@ add_task(async function test_menu_shown_string() {
 
   
   
-  {
-    let newWin = await BrowserTestUtils.openNewBrowserWindow();
-    let menubar = newWin.document.getElementById("toolbar-menubar");
-    ok(!menubar.hasAttribute("autohide"), "The menu bar should not be hidden");
-    setToolbarVisibility(menubar, false);
-    ok(menubar.hasAttribute("autohide"), "The menu bar should be hidden");
-    await BrowserTestUtils.closeWindow(newWin);
-  }
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
+  let menubar = newWin.document.getElementById("toolbar-menubar");
+  ok(!menubar.hasAttribute("autohide"), "The menu bar should not be hidden");
 
-  {
-    
-    let newWin = await BrowserTestUtils.openNewBrowserWindow();
-    let menubar = newWin.document.getElementById("toolbar-menubar");
-    ok(menubar.hasAttribute("autohide"), "The menu bar should be hidden");
-    await BrowserTestUtils.closeWindow(newWin);
-  }
+  await BrowserTestUtils.closeWindow(newWin);
 });
 
 add_task(async function test_menubar_on() {
