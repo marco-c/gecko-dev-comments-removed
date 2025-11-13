@@ -649,6 +649,11 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWDecoderIfAllowed() {
 }
 #endif  
 
+static bool ShouldEnable8BitConversion(const struct AVCodec* aCodec) {
+  return 0 == strncmp(aCodec->name, "libdav1d", 8) ||
+         0 == strncmp(aCodec->name, "vp9", 3);
+}
+
 RefPtr<MediaDataDecoder::InitPromise> FFmpegVideoDecoder<LIBAV_VER>::Init() {
   AUTO_PROFILER_LABEL("FFmpegVideoDecoder::Init", MEDIA_PLAYBACK);
   FFMPEG_LOG("FFmpegVideoDecoder, init, IsHardwareAccelerated=%d\n",
@@ -661,11 +666,9 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegVideoDecoder<LIBAV_VER>::Init() {
   if (NS_FAILED(rv)) {
     return InitPromise::CreateAndReject(rv, __func__);
   }
-  
-  m8BitOutput =
-      m8BitOutput && 0 == strncmp(mCodecContext->codec->name, "libdav1d", 8);
+  m8BitOutput = m8BitOutput && ShouldEnable8BitConversion(mCodecContext->codec);
   if (m8BitOutput) {
-    FFMPEG_LOG("Enable 8-bit output for dav1d");
+    FFMPEG_LOG("Enable 8-bit output for %s", mCodecContext->codec->name);
     m8BitRecycleBin = MakeRefPtr<BufferRecycleBin>();
   }
   return InitPromise::CreateAndResolve(TrackInfo::kVideoTrack, __func__);
@@ -1686,6 +1689,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
   
   
   requiresCopy = (b.mColorDepth != gfx::ColorDepth::COLOR_8);
+#  endif
+#  ifdef MOZ_WIDGET_ANDROID
+  
+  
+  requiresCopy = m8BitOutput && b.mColorDepth != gfx::ColorDepth::COLOR_8;
 #  endif
   if (mIsUsingShmemBufferForDecode && *mIsUsingShmemBufferForDecode &&
       !requiresCopy) {
