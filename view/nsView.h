@@ -208,15 +208,6 @@ class nsView final : public nsIWidgetListener {
 
 
 
-
-
-
-  nsPoint GetOffsetToWidget(nsIWidget* aWidget) const;
-
-  
-
-
-
   ViewVisibility GetVisibility() const { return mVis; }
 
   
@@ -340,9 +331,9 @@ class nsView final : public nsIWidgetListener {
   bool IsRoot() const;
 
   static LayoutDeviceIntRect CalcWidgetBounds(
-      const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
-      nsIWidget* aThisWidget, mozilla::widget::WindowType,
-      mozilla::widget::TransparencyMode);
+      const nsRect& aBounds, int32_t aAppUnitsPerDevPixel,
+      nsIFrame* aParentFrame, nsIWidget* aThisWidget,
+      mozilla::widget::WindowType, mozilla::widget::TransparencyMode);
 
   LayoutDeviceIntRect CalcWidgetBounds(mozilla::widget::WindowType,
                                        mozilla::widget::TransparencyMode);
@@ -439,9 +430,6 @@ class nsView final : public nsIWidgetListener {
   void AssertNoWindow();
 
   void NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible);
-
-  
-  void InvalidateHierarchy();
 
   void CallOnAllRemoteChildren(
       const std::function<mozilla::CallState(mozilla::dom::BrowserParent*)>&

@@ -1245,6 +1245,13 @@ void PresShell::Destroy() {
 
   
   
+  if (nsSubDocumentFrame* f = GetInProcessEmbedderFrame()) {
+    f->RemoveEmbeddingPresShell(this);
+  }
+  mEmbedderFrame = nullptr;
+
+  
+  
   
   if (mAccessibleCaretEventHub) {
     mAccessibleCaretEventHub->Terminate();
@@ -1282,6 +1289,15 @@ void PresShell::StartObservingRefreshDriver() {
 
 nsRefreshDriver* PresShell::GetRefreshDriver() const {
   return mPresContext ? mPresContext->RefreshDriver() : nullptr;
+}
+
+
+
+
+
+
+void PresShell::SetInProcessEmbedderFrame(nsSubDocumentFrame* aFrame) {
+  mEmbedderFrame = aFrame;
 }
 
 void PresShell::SetAuthorStyleDisabled(bool aStyleDisabled) {
@@ -6162,20 +6178,17 @@ void PresShell::RebuildApproximateFrameVisibilityDisplayList(
   DecApproximateVisibleCount(oldApproximatelyVisibleFrames);
 }
 
-
-void PresShell::ClearApproximateFrameVisibilityVisited(nsView* aView,
-                                                       bool aClear) {
-  nsViewManager* vm = aView->GetViewManager();
-  if (aClear) {
-    PresShell* presShell = vm->GetPresShell();
-    if (!presShell->mApproximateFrameVisibilityVisited) {
-      presShell->ClearApproximatelyVisibleFramesList();
+void PresShell::ClearApproximateFrameVisibilityVisited() {
+  if (!mApproximateFrameVisibilityVisited) {
+    ClearApproximatelyVisibleFramesList();
+  }
+  mApproximateFrameVisibilityVisited = false;
+  mDocument->EnumerateSubDocuments([](Document& aSubdoc) {
+    if (auto* ps = aSubdoc.GetPresShell()) {
+      ps->ClearApproximateFrameVisibilityVisited();
     }
-    presShell->mApproximateFrameVisibilityVisited = false;
-  }
-  for (nsView* v = aView->GetFirstChild(); v; v = v->GetNextSibling()) {
-    ClearApproximateFrameVisibilityVisited(v, v->GetViewManager() != vm);
-  }
+    return CallState::Continue;
+  });
 }
 
 void PresShell::ClearApproximatelyVisibleFramesList(
@@ -6383,7 +6396,7 @@ void PresShell::DoUpdateApproximateFrameVisibility(bool aRemoveOnly) {
   }
 
   RebuildApproximateFrameVisibility( nullptr, aRemoveOnly);
-  ClearApproximateFrameVisibilityVisited(rootFrame->GetView(), true);
+  ClearApproximateFrameVisibilityVisited();
 
 #ifdef DEBUG_FRAME_VISIBILITY_DISPLAY_LIST
   
@@ -6414,7 +6427,7 @@ void PresShell::DoUpdateApproximateFrameVisibility(bool aRemoveOnly) {
 
   RebuildApproximateFrameVisibilityDisplayList(list);
 
-  ClearApproximateFrameVisibilityVisited(rootFrame->GetView(), true);
+  ClearApproximateFrameVisibilityVisited();
 
   list.DeleteAll(&builder);
 #endif
@@ -6971,17 +6984,16 @@ void PresShell::DisableNonTestMouseEvents(bool aDisable) {
 
 nsPoint PresShell::GetEventLocation(const WidgetMouseEvent& aEvent) const {
   nsIFrame* rootFrame = GetRootFrame();
-  if (rootFrame) {
-    RelativeTo relativeTo{rootFrame};
-    if (rootFrame->PresContext()->IsRootContentDocumentCrossProcess()) {
-      relativeTo.mViewportType = ViewportType::Visual;
-    }
-    return nsLayoutUtils::GetEventCoordinatesRelativeTo(&aEvent, relativeTo);
+  if (!rootFrame) {
+    
+    return nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   }
 
-  nsView* rootView = mViewManager->GetRootView();
-  return nsLayoutUtils::TranslateWidgetToView(mPresContext, aEvent.mWidget,
-                                              aEvent.mRefPoint, rootView);
+  RelativeTo relativeTo{rootFrame};
+  if (rootFrame->PresContext()->IsRootContentDocumentCrossProcess()) {
+    relativeTo.mViewportType = ViewportType::Visual;
+  }
+  return nsLayoutUtils::GetEventCoordinatesRelativeTo(&aEvent, relativeTo);
 }
 
 void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
@@ -9987,20 +9999,22 @@ bool PresShell::EventHandler::AdjustContextMenuKeyEvent(
   
   
   
-  
   nsRootPresContext* rootPC = GetPresContext()->GetRootPresContext();
-  aMouseEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);
+  aMouseEvent->mRefPoint = LayoutDeviceIntPoint();
   if (rootPC) {
     aMouseEvent->mWidget = rootPC->PresShell()->GetRootWidget();
     if (aMouseEvent->mWidget) {
       
-      nsPoint offset(0, 0);
-      nsIFrame* rootFrame = FrameConstructor()->GetRootFrame();
-      if (rootFrame) {
-        nsView* view = rootFrame->GetClosestView(&offset);
-        offset += view->GetOffsetToWidget(aMouseEvent->mWidget);
-        aMouseEvent->mRefPoint = LayoutDeviceIntPoint::FromAppUnitsToNearest(
-            offset, GetPresContext()->AppUnitsPerDevPixel());
+      nsPoint frameToWidgetOffset;
+      if (nsIFrame* rootFrame = FrameConstructor()->GetRootFrame()) {
+        nsIWidget* widget = rootFrame->GetNearestWidget(frameToWidgetOffset);
+        MOZ_ASSERT(widget, "If rootPC has a widget, so should we");
+        auto widgetToWidgetOffset =
+            nsLayoutUtils::WidgetToWidgetOffset(widget, aMouseEvent->mWidget);
+        aMouseEvent->mRefPoint =
+            widgetToWidgetOffset +
+            LayoutDeviceIntPoint::FromAppUnitsToNearest(
+                frameToWidgetOffset, GetPresContext()->AppUnitsPerDevPixel());
       }
     }
   } else {
@@ -10139,16 +10153,18 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   if (!caretFrame) {
     return false;
   }
-  nsPoint viewOffset;
-  nsView* view = caretFrame->GetClosestView(&viewOffset);
-  if (!view) {
+  nsPoint widgetOffset;
+  nsIWidget* widget = caretFrame->GetNearestWidget(widgetOffset);
+  if (!widget) {
     return false;
   }
   
   if (aEventWidget) {
-    viewOffset += view->GetOffsetToWidget(aEventWidget);
+    widgetOffset += LayoutDeviceIntPoint::ToAppUnits(
+        nsLayoutUtils::WidgetToWidgetOffset(widget, aEventWidget),
+        presContext->AppUnitsPerDevPixel());
   }
-  caretCoords.MoveBy(viewOffset);
+  caretCoords.MoveBy(widgetOffset);
 
   
   aTargetPt.x =
@@ -10238,21 +10254,21 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
     focusedContent = item;
   }
 
-  nsIFrame* frame = focusedContent->GetPrimaryFrame();
-  if (frame) {
+  if (nsIFrame* frame = focusedContent->GetPrimaryFrame()) {
     NS_ASSERTION(
         frame->PresContext() == GetPresContext(),
         "handling event for focused content that is not in our document?");
 
-    nsPoint frameOrigin(0, 0);
+    nsPoint widgetOffset(0, 0);
 
     
-    nsView* view = frame->GetClosestView(&frameOrigin);
-    NS_ASSERTION(view, "No view for frame");
+    nsIWidget* widget = frame->GetNearestWidget(widgetOffset);
 
     
     if (aRootWidget) {
-      frameOrigin += view->GetOffsetToWidget(aRootWidget);
+      widgetOffset += LayoutDeviceIntPoint::ToAppUnits(
+          nsLayoutUtils::WidgetToWidgetOffset(widget, aRootWidget),
+          frame->PresContext()->AppUnitsPerDevPixel());
     }
 
     
@@ -10284,9 +10300,9 @@ void PresShell::EventHandler::GetCurrentItemAndPositionForElement(
       }
     }
 
-    aTargetPt.x = presContext->AppUnitsToDevPixels(frameOrigin.x);
+    aTargetPt.x = presContext->AppUnitsToDevPixels(widgetOffset.x);
     aTargetPt.y =
-        presContext->AppUnitsToDevPixels(frameOrigin.y + extra + extraTreeY);
+        presContext->AppUnitsToDevPixels(widgetOffset.y + extra + extraTreeY);
   }
 
   NS_IF_ADDREF(*aTargetToUse = focusedContent);
@@ -10327,6 +10343,18 @@ void PresShell::WillPaint() {
   FlushPendingNotifications(ChangesToFlush(FlushType::InterruptibleLayout,
                                             false,
                                             false));
+  if (mIsDestroying) {
+    return;
+  }
+  mDocument->EnumerateSubDocuments(
+      [](Document& aSubdoc) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        if (RefPtr ps = aSubdoc.GetPresShell()) {
+          if (!ps->IsUnderHiddenEmbedderElement()) {
+            ps->WillPaint();
+          }
+        }
+        return CallState::Continue;
+      });
 }
 
 void PresShell::DidPaintWindow() {
@@ -10351,26 +10379,9 @@ void PresShell::DidPaintWindow() {
 }
 
 nsSubDocumentFrame* PresShell::GetInProcessEmbedderFrame() const {
-  if (!mViewManager) {
-    return nullptr;
-  }
-  
-  nsView* view = mViewManager->GetRootView();
-  if (!view) {
-    return nullptr;
-  }
-  view = view->GetParent();  
-  if (!view) {
-    return nullptr;
-  }
-  view = view->GetParent();  
-  if (!view) {
-    return nullptr;
-  }
-
-  nsIFrame* f = view->GetFrame();
+  nsIFrame* f = mEmbedderFrame.GetFrame();
   MOZ_ASSERT_IF(f, f->IsSubDocumentFrame());
-  return do_QueryFrame(f);
+  return static_cast<nsSubDocumentFrame*>(f);
 }
 
 bool PresShell::IsVisible() const {
@@ -12231,7 +12242,19 @@ void PresShell::UpdateImageLockingState() {
 }
 
 nsIWidget* PresShell::GetRootWidget() const {
-  return mViewManager ? mViewManager->GetRootWidget() : nullptr;
+  if (!mPresContext) {
+    return nullptr;
+  }
+  for (nsPresContext* pc = mPresContext; pc; pc = pc->GetParentPresContext()) {
+    if (auto* vm = pc->PresShell()->GetViewManager()) {
+      if (auto* view = vm->GetRootView()) {
+        if (auto* widget = view->GetWidget()) {
+          return widget;
+        }
+      }
+    }
+  }
+  return nullptr;
 }
 
 PresShell* PresShell::GetRootPresShell() const {

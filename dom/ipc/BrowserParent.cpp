@@ -1126,7 +1126,7 @@ void BrowserParent::UpdateDimensions(const LayoutDeviceIntRect& rect,
 
   LayoutDeviceIntPoint clientOffset = GetClientOffset();
   LayoutDeviceIntPoint chromeOffset = !GetBrowserBridgeParent()
-                                          ? -GetChildProcessOffset()
+                                          ? GetChildProcessOffset()
                                           : LayoutDeviceIntPoint();
 
   if (!mUpdatedDimensions || mDimensions != size || !mRect.IsEqualEdges(rect) ||
@@ -2717,7 +2717,7 @@ BrowserParent::GetChildToParentConversionMatrix() {
   if (mChildToParentConversionMatrix) {
     return *mChildToParentConversionMatrix;
   }
-  LayoutDevicePoint offset(-GetChildProcessOffset());
+  LayoutDevicePoint offset(GetChildProcessOffset());
   return LayoutDeviceToLayoutDeviceMatrix4x4::Translation(offset);
 }
 
@@ -2741,34 +2741,21 @@ void BrowserParent::SetChildToParentConversionMatrix(
 LayoutDeviceIntPoint BrowserParent::GetChildProcessOffset() {
   
   
-
-  LayoutDeviceIntPoint offset(0, 0);
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
   if (!frameLoader) {
-    return offset;
+    return {};
   }
   nsIFrame* targetFrame = frameLoader->GetPrimaryFrameOfOwningContent();
   if (!targetFrame) {
-    return offset;
+    return {};
   }
 
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
-    return offset;
-  }
-
-  nsPresContext* presContext = targetFrame->PresContext();
-  nsIFrame* rootFrame = presContext->PresShell()->GetRootFrame();
-  nsView* rootView = rootFrame ? rootFrame->GetView() : nullptr;
-  if (!rootView) {
-    return offset;
+    return {};
   }
 
   
-#if 0
-  nsPoint pt(0, 0);
-  nsLayoutUtils::TransformPoint(targetFrame, rootFrame, pt);
-#endif
   
   
   
@@ -2779,16 +2766,13 @@ LayoutDeviceIntPoint BrowserParent::GetChildProcessOffset() {
   
   
   
-  
-
-  
-  
-  
-  ViewportType viewportType = ViewportType::Visual;
-
-  nsPoint pt = targetFrame->GetOffsetTo(rootFrame);
-  return -nsLayoutUtils::TranslateViewToWidget(presContext, rootView, pt,
-                                               viewportType, widget);
+  auto point = nsLayoutUtils::FrameToWidgetOffset(targetFrame, widget);
+  if (!point) {
+    return {};
+  }
+  nsPresContext* pc = targetFrame->PresContext();
+  return LayoutDeviceIntPoint::FromAppUnitsRounded(*point,
+                                                   pc->AppUnitsPerDevPixel());
 }
 
 LayoutDeviceIntPoint BrowserParent::GetClientOffset() {

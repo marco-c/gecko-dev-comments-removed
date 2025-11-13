@@ -187,14 +187,16 @@ struct WidgetViewBounds {
   int32_t mRoundTo = 1;
 };
 
-static WidgetViewBounds CalcWidgetViewBounds(
-    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
-    nsIWidget* aThisWidget, WindowType aType, TransparencyMode aTransparency) {
+static WidgetViewBounds CalcWidgetViewBounds(const nsRect& aBounds,
+                                             int32_t aAppUnitsPerDevPixel,
+                                             nsIFrame* aParentFrame,
+                                             nsIWidget* aThisWidget,
+                                             WindowType aType) {
   nsRect viewBounds(aBounds);
   nsIWidget* parentWidget = nullptr;
-  if (aParentView) {
+  if (aParentFrame) {
     nsPoint offset;
-    parentWidget = aParentView->GetNearestWidget(&offset, aAppUnitsPerDevPixel);
+    parentWidget = aParentFrame->GetNearestWidget(offset);
     
     viewBounds += offset;
 
@@ -237,8 +239,9 @@ static LayoutDeviceIntRect WidgetViewBoundsToDevicePixels(
 LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
                                              TransparencyMode aTransparency) {
   int32_t p2a = mViewManager->AppUnitsPerDevPixel();
-  auto viewBounds = CalcWidgetViewBounds(mDimBounds, p2a, GetParent(),
-                                         mWindow.get(), aType, aTransparency);
+  auto viewBounds = CalcWidgetViewBounds(
+      mDimBounds, p2a, GetParent() ? GetParent()->GetFrame() : nullptr,
+      mWindow.get(), aType);
   auto newBounds =
       WidgetViewBoundsToDevicePixels(viewBounds, p2a, aType, aTransparency);
 
@@ -258,11 +261,10 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
 }
 
 LayoutDeviceIntRect nsView::CalcWidgetBounds(
-    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsView* aParentView,
+    const nsRect& aBounds, int32_t aAppUnitsPerDevPixel, nsIFrame* aParentFrame,
     nsIWidget* aThisWidget, WindowType aType, TransparencyMode aTransparency) {
-  auto viewBounds =
-      CalcWidgetViewBounds(aBounds, aAppUnitsPerDevPixel, aParentView,
-                           aThisWidget, aType, aTransparency);
+  auto viewBounds = CalcWidgetViewBounds(aBounds, aAppUnitsPerDevPixel,
+                                         aParentFrame, aThisWidget, aType);
   return WidgetViewBoundsToDevicePixels(viewBounds, aAppUnitsPerDevPixel, aType,
                                         aTransparency);
 }
@@ -310,16 +312,6 @@ void nsView::SetVisibility(ViewVisibility aVisibility) {
   NotifyEffectiveVisibilityChanged(IsEffectivelyVisible());
 }
 
-void nsView::InvalidateHierarchy() {
-  if (mViewManager->GetRootView() == this) {
-    mViewManager->InvalidateHierarchy();
-  }
-
-  for (nsView* child = mFirstChild; child; child = child->GetNextSibling()) {
-    child->InvalidateHierarchy();
-  }
-}
-
 void nsView::InsertChild(nsView* aChild, nsView* aSibling) {
   MOZ_ASSERT(nullptr != aChild, "null ptr");
 
@@ -337,14 +329,6 @@ void nsView::InsertChild(nsView* aChild, nsView* aSibling) {
       mFirstChild = aChild;
     }
     aChild->SetParent(this);
-
-    
-    
-
-    nsViewManager* vm = aChild->GetViewManager();
-    if (vm->GetRootView() == aChild) {
-      aChild->InvalidateHierarchy();
-    }
   }
 }
 
@@ -370,14 +354,6 @@ void nsView::RemoveChild(nsView* child) {
       kid = kid->GetNextSibling();
     }
     NS_ASSERTION(found, "tried to remove non child");
-
-    
-    
-
-    nsViewManager* vm = child->GetViewManager();
-    if (vm->GetRootView() == child) {
-      child->InvalidateHierarchy();
-    }
   }
 }
 
@@ -544,32 +520,6 @@ nsPoint nsView::GetOffsetTo(const nsView* aOther, const int32_t aAPD) const {
   }
 
   return offset;
-}
-
-nsPoint nsView::GetOffsetToWidget(nsIWidget* aWidget) const {
-  nsPoint pt;
-  
-  nsView* widgetView = GetViewFor(aWidget);
-  if (!widgetView) {
-    return pt;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  pt = -widgetView->GetOffsetTo(this);
-  
-  pt += widgetView->ViewToWidgetOffset();
-
-  
-  int32_t widgetAPD = widgetView->GetViewManager()->AppUnitsPerDevPixel();
-  int32_t ourAPD = GetViewManager()->AppUnitsPerDevPixel();
-  pt = pt.ScaleToOtherAppUnits(widgetAPD, ourAPD);
-  return pt;
 }
 
 nsIWidget* nsView::GetNearestWidget(nsPoint* aOffset) const {
