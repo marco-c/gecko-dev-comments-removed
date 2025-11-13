@@ -84,6 +84,11 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
   void emitTableSwitchDispatch(MTableSwitch* mir, Register index,
                                Register base);
 
+  
+  
+  OutOfLineCode* emitOutOfLineZeroForDivideByZero(Register rhs,
+                                                  Register output);
+
   void generateInvalidateEpilogue();
 
   template <typename T>
