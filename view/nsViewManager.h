@@ -204,13 +204,6 @@ class nsViewManager final {
   MOZ_CAN_RUN_SCRIPT
   void Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion);
 
-  
-
-
-
-
-  LayoutDeviceIntRect ViewToWidget(nsView* aView, const nsRect& aRect) const;
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void DoSetWindowDimensions(nscoord aWidth, nscoord aHeight);
   bool ShouldDelayResize() const;
