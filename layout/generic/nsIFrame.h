@@ -664,8 +664,6 @@ enum class LayoutFrameClassFlags : uint32_t {
   BlockFormattingContext = 1 << 14,
   
   SVGRenderingObserverContainer = 1 << 15,
-  
-  MayHaveView = 1 << 16,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LayoutFrameClassFlags)
@@ -2289,7 +2287,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
@@ -3317,22 +3314,18 @@ class nsIFrame : public nsQueryFrame {
   }
 
  protected:
-  virtual nsView* GetViewInternal() const {
-    MOZ_ASSERT_UNREACHABLE("method should have been overridden by subclass");
-    return nullptr;
-  }
-  virtual void SetViewInternal(nsView* aView) {
-    MOZ_ASSERT_UNREACHABLE("method should have been overridden by subclass");
-  }
+  nsView* DoGetView() const;
 
  public:
+  
+  nsIWidget* GetOwnWidget() const;
+
   nsView* GetView() const {
-    if (MOZ_LIKELY(!MayHaveView())) {
+    if (MOZ_LIKELY(!IsViewportFrame())) {
       return nullptr;
     }
-    return GetViewInternal();
+    return DoGetView();
   }
-  void SetView(nsView* aView);
 
   
 
@@ -3567,7 +3560,6 @@ class nsIFrame : public nsQueryFrame {
   CLASS_FLAG_METHOD(IsBidiInlineContainer, BidiInlineContainer);
   CLASS_FLAG_METHOD(IsLineParticipant, LineParticipant);
   CLASS_FLAG_METHOD(HasReplacedSizing, ReplacedSizing);
-  CLASS_FLAG_METHOD(MayHaveView, MayHaveView);
   CLASS_FLAG_METHOD(IsTablePart, TablePart);
   CLASS_FLAG_METHOD0(CanContainOverflowContainers)
   CLASS_FLAG_METHOD0(SupportsCSSTransforms);

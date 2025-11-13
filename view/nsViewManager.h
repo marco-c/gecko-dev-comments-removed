@@ -97,18 +97,6 @@ class nsViewManager final {
 
 
 
-  void InvalidateView(nsView* aView);
-
-  
-
-
-  void InvalidateAllViews();
-
-  
-
-
-
-
 
 
 
@@ -187,18 +175,12 @@ class nsViewManager final {
   MOZ_CAN_RUN_SCRIPT
   void ProcessPendingUpdatesPaint(nsIWidget* aWidget);
 
-  void FlushDirtyRegionToWidget(nsView* aView);
   
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void CallWillPaintOnObservers();
   static void CollectVMsForWillPaint(nsView* aView, nsViewManager* aParentVM,
                                      nsTArray<RefPtr<nsViewManager>>& aVMs);
-
-  void InvalidateWidgetArea(nsView* aWidgetView,
-                            const nsRegion& aDamagedRegion);
-
-  void InvalidateViews(nsView* aView);
 
   
   MOZ_CAN_RUN_SCRIPT
@@ -246,7 +228,6 @@ class nsViewManager final {
   
   
   bool mPainting;
-  bool mRecursiveRefreshPending;
   bool mHasPendingWidgetGeometryChanges;
 
   
