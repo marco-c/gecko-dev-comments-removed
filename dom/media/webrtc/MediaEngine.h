@@ -49,6 +49,13 @@ class MediaEngine {
   virtual RefPtr<MediaEngineSource> CreateSource(
       const MediaDevice* aDevice) = 0;
 
+  
+
+
+
+  virtual RefPtr<MediaEngineSource> CreateSourceFrom(
+      const MediaEngineSource* aSource, const MediaDevice* aDevice) = 0;
+
   virtual MediaEventSource<void>& DeviceListChangeEvent() = 0;
   
 
