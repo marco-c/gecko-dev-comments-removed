@@ -1922,4 +1922,22 @@ function IteratorRange(start, end, optionOrStep) {
   ThrowTypeError(JSMSG_ITERATOR_RANGE_INVALID_START);
 
 }
+
+
+
+
+
+
+function IteratorChunks(chunkSize) {
+  return false;
+}
+
+
+
+
+
+
+function IteratorWindows(windowSize, undersized) {
+  return false;
+}
 #endif
