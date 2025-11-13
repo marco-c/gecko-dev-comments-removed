@@ -667,6 +667,8 @@ ClearHistoryDialogHelper.prototype = {
         clearDialogOpenButtonId = "clearDataSettings";
       }
       
+      
+      await new Promise(resolve => requestAnimationFrame(resolve));
       tabWindow.document.getElementById(clearDialogOpenButtonId).click();
     }
     
