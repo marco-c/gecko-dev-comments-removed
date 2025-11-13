@@ -439,7 +439,6 @@ impl NeqoHttp3Conn {
             .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
             
             .mlkem(false)
-            .datagram_size(1500)
             .pmtud(pmtud_enabled);
 
         
