@@ -10,19 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 894653;
-var summary =
-  "Error.prototype.toString called on function objects should work as on any " +
-  "object";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function ErrorToString(v)
 {
   return Error.prototype.toString.call(v);
@@ -46,9 +33,5 @@ assert.sameValue(ErrorToString(fn2), "blerch: fnord");
 var fn3 = function() {};
 fn3.message = "";
 assert.sameValue(ErrorToString(fn3), "fn3");
-
-
-
-print("Tests complete!");
 
 reportCompare(0, 0);

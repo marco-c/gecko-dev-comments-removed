@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 469625;
 var summary = 'group assignment with rhs containing holes';
 var actual = '';

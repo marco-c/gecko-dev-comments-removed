@@ -9,16 +9,14 @@
 
 
 
-
-
 var a = [];
 
 
 for (var i = 0; i < 200; i++) {
     a.push("b" + i);
-    assertThrowsInstanceOfWithMessage(
-        () => eval("(function ([" + a.join("],[") + "],a,a){})"),
+    assert.throws(
         SyntaxError,
+        () => eval("(function ([" + a.join("],[") + "],a,a){})"),
         'duplicate argument names not allowed in this context');
 }
 

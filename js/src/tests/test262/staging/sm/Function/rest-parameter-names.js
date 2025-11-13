@@ -12,17 +12,6 @@
 
 
 
-var BUGNUMBER = 1288460;
-var summary =
-  "Rest parameters to functions can be named |yield| or |eval| or |let| in "
-  "non-strict code";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var f1 = (...yield) => yield + 42;
 assert.sameValue(f1(), "42");
 assert.sameValue(f1(1), "142");
@@ -61,17 +50,11 @@ function h()
 
   for (var badName of ["yield", "eval", "let"])
   {
-    assertThrowsInstanceOf(() => eval(`var q = (...${badName}) => ${badName} + 42;`),
-                           SyntaxError);
+    assert.throws(SyntaxError, () => eval(`var q = (...${badName}) => ${badName} + 42;`));
 
-    assertThrowsInstanceOf(() => eval(`function r(x, ...${badName}) { return x + ${badName}; }`),
-                           SyntaxError);
+    assert.throws(SyntaxError, () => eval(`function r(x, ...${badName}) { return x + ${badName}; }`));
   }
 }
 h();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

@@ -7,7 +7,6 @@
 
 
 
-
 const options = new Intl.Segmenter([], {
   "granularity": "word",
 }).resolvedOptions();

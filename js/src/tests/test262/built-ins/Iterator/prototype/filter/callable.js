@@ -6,7 +6,6 @@
 
 
 
-
 function* g() {}
 Iterator.prototype.filter.call(g(), () => false);
 

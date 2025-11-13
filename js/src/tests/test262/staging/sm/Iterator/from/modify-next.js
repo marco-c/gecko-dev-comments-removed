@@ -10,10 +10,6 @@
 
 
 
-
-
-
-
 const iter = {
   next: () => ({ done: false, value: 0 }),
 };

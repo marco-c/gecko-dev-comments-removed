@@ -8,7 +8,6 @@
 
 
 
-
 function makeProxyPrototype(target) {
     return Object.setPrototypeOf(target, new Proxy({}, new Proxy({
         getPrototypeOf() {

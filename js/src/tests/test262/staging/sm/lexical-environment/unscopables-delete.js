@@ -10,7 +10,6 @@
 
 
 
-
 this.niche = 7;
 let obj = { niche: 8, [Symbol.unscopables]: { niche: true } };
 with (obj) {

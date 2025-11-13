@@ -10,21 +10,6 @@
 
 
 
-
-var gTestfile = "for-loop-with-bindings-added-at-runtime.js";
-
-var BUGNUMBER = 1149797;
-var summary =
-  "Don't assert when freshening the scope chain for a for-loop whose head " +
-  "contains a lexical declaration, where the loop body might add more " +
-  "bindings at runtime";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 for (let x = 0; x < 9; ++x)
   eval("var y");
 
@@ -124,9 +109,5 @@ function h2()
   }
 }
 h2();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

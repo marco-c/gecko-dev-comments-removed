@@ -9,8 +9,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict('var r = /foo/; r.lastIndex = 42; r.lastIndex',
                               returns(42), returns(42)),
          true);

@@ -8,9 +8,6 @@
 
 
 
-
-
-
 for (let primitive of [true, 3.14, "hello", Symbol()]) {
     let prototype = Object.getPrototypeOf(primitive);
 

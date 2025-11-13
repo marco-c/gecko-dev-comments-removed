@@ -7,8 +7,6 @@
 
 
 
-
-
 for (var constructor of anyTypedArrayConstructors) {
     
     assert.sameValue(anyTypedArrayConstructors[0].from === constructor.from, true);

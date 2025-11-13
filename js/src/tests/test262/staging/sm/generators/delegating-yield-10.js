@@ -10,8 +10,6 @@
 
 
 
-
-
 function* g(n) { for (var i=0; i<n; i++) yield i; }
 function* delegate(iter) { return yield* iter; }
 

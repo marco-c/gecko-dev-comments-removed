@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function f(x) { return eval('"mumble"; x + 42'); }
 
 var expect = true;

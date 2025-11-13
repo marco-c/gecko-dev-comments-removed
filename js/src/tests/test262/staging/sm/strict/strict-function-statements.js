@@ -10,8 +10,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict("function f() { }",
                               parsesSuccessfully,
                               parsesSuccessfully),

@@ -8,11 +8,8 @@
 
 
 
-
-
-
 assert.sameValue(Object.hasOwn({}, "any"), false);
-assertThrowsInstanceOf(() => Object.hasOwn(null, "any"), TypeError);
+assert.throws(TypeError, () => Object.hasOwn(null, "any"));
 
 var x = { test: 'test value'}
 var y = {}

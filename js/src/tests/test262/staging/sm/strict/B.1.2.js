@@ -9,8 +9,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict('"\\010"',
                               parsesSuccessfully,
                               parseRaisesException(SyntaxError)),

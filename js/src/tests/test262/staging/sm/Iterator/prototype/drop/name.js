@@ -10,10 +10,6 @@
 
 
 
-
-
-
-
 assert.sameValue(Iterator.prototype.drop.name, 'drop');
 
 const propertyDescriptor = Reflect.getOwnPropertyDescriptor(Iterator.prototype.drop, 'name');

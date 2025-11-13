@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function sortTypedArray(comparator) {
     
     

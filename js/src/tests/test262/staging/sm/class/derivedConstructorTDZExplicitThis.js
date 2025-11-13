@@ -7,17 +7,15 @@
 
 
 
-
-
 class foo extends null {
     constructor() {
         this;
-        assert.sameValue(false, true);
+        throw new Test262Error("not reached");
     }
 }
 
 for (let i = 0; i < 1100; i++)
-    assertThrownErrorContains(() => new foo(), "this");
+    assert.throws(ReferenceError, () => new foo());
 
 
 reportCompare(0, 0);

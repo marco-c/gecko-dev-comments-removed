@@ -7,13 +7,11 @@
 
 
 
-
-
 function assertSyntaxError(code) {
-    assertThrowsInstanceOf(() => { Function(code); }, SyntaxError, "Function:" + code);
-    assertThrowsInstanceOf(() => { eval(code); }, SyntaxError, "eval:" + code);
+    assert.throws(SyntaxError, () => { Function(code); }, "Function:" + code);
+    assert.throws(SyntaxError, () => { eval(code); }, "eval:" + code);
     var ieval = eval;
-    assertThrowsInstanceOf(() => { ieval(code); }, SyntaxError, "indirect eval:" + code);
+    assert.throws(SyntaxError, () => { ieval(code); }, "indirect eval:" + code);
 }
 
 assertSyntaxError(`({async async: 0})`);
@@ -27,6 +25,5 @@ for (let decl of ["var", "let", "const"]) {
     assertSyntaxError(`${decl} {async async, } = {}`);
     assertSyntaxError(`${decl} {async async = 0} = {}`);
 }
-
 
 reportCompare(0, 0);

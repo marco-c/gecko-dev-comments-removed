@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function check(expected, actual = new.target) { assert.sameValue(actual, expected); }
 new check(check);
 check(undefined);

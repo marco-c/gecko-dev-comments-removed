@@ -9,18 +9,17 @@
 
 
 
-
 assert.sameValue("arguments" in this, false);
 
 
 function f1(p = eval("var arguments")) {}
-assertThrowsInstanceOf(f1, SyntaxError);
+assert.throws(SyntaxError, f1);
 
 
 function f2(p = eval("var arguments")) {
   var arguments;
 }
-assertThrowsInstanceOf(f2, SyntaxError);
+assert.throws(SyntaxError, f2);
 
 
 
@@ -30,7 +29,7 @@ assertThrowsInstanceOf(f2, SyntaxError);
 function f3(p = eval("var arguments")) {
   function arguments() {}
 }
-assertThrowsInstanceOf(f3, SyntaxError);
+assert.throws(SyntaxError, f3);
 
 
 
@@ -40,15 +39,15 @@ assertThrowsInstanceOf(f3, SyntaxError);
 function f4(p = eval("var arguments")) {
   let arguments;
 }
-assertThrowsInstanceOf(f4, SyntaxError);
+assert.throws(SyntaxError, f4);
 
 
 function f5(p = eval("var arguments"), arguments) {}
-assertThrowsInstanceOf(f5, SyntaxError);
+assert.throws(SyntaxError, f5);
 
 
 function f6(arguments, p = eval("var arguments")) {}
-assertThrowsInstanceOf(f6, SyntaxError);
+assert.throws(SyntaxError, f6);
 
 
 
@@ -85,11 +84,11 @@ a4();
 
 
 var a5 = (p = eval("var arguments"), arguments) => {};
-assertThrowsInstanceOf(a5, SyntaxError);
+assert.throws(SyntaxError, a5);
 
 
 var a6 = (arguments, p = eval("var arguments")) => {};
-assertThrowsInstanceOf(a6, SyntaxError);
+assert.throws(SyntaxError, a6);
 
 
 assert.sameValue("arguments" in this, false);

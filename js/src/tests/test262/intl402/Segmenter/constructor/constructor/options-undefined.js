@@ -12,7 +12,6 @@
 
 
 
-
 Object.defineProperties(Object.prototype, {
   "localeMatcher": {
     "get": function() {

@@ -11,56 +11,58 @@
 
 let Array_unscopables = Array.prototype[Symbol.unscopables];
 
-let desc = Reflect.getOwnPropertyDescriptor(Array.prototype, Symbol.unscopables);
-assert.deepEqual(desc, {
+verifyProperty(Array.prototype, Symbol.unscopables, {
     value: Array_unscopables,
     writable: false,
     enumerable: false,
     configurable: true
+}, {
+    restore: true
 });
 
 assert.sameValue(Reflect.getPrototypeOf(Array_unscopables), null);
 
-let desc2 = Object.getOwnPropertyDescriptor(Array_unscopables, "values");
-assert.deepEqual(desc2, {
+verifyProperty(Array_unscopables, "values", {
     value: true,
     writable: true,
     enumerable: true,
     configurable: true
+}, {
+    restore: true
 });
 
 let keys = Reflect.ownKeys(Array_unscopables);
 
+let expectedKeys = [
+    "at",
+    "copyWithin",
+    "entries",
+    "fill",
+    "find",
+    "findIndex",
+    "findLast",
+    "findLastIndex",
+    "flat",
+    "flatMap",
+    "includes",
+    "keys",
+    "toReversed",
+    "toSorted",
+    "toSpliced",
+    "values"
+];
 
-
-let expectedKeys = ["at",
-		    "copyWithin",
-		    "entries",
-		    "fill",
-		    "find",
-		    "findIndex",
-		    "findLast",
-		    "findLastIndex",
-		    "flat",
-		    "flatMap",
-		    "includes",
-		    "keys",
-            "toReversed",
-            "toSorted",
-            "toSpliced",
-		    "values"];
-
-assert.deepEqual(keys, expectedKeys);
+assert.compareArray(keys, expectedKeys);
 
 for (let key of keys)
     assert.sameValue(Array_unscopables[key], true);
 
 
-assertThrowsInstanceOf(() => {
+assert.throws(ReferenceError, () => {
     with ([]) {
         return entries;
     }
-}, ReferenceError);
+});
 
 {
     let fill = 33;

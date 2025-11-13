@@ -7,14 +7,11 @@
 
 
 
-
-
-
 var ta = new Int32Array([3, 2, 1]);
 
 $262.detachArrayBuffer(ta.buffer);
 
-assertThrowsInstanceOf(() => ta.toSorted(), TypeError);
+assert.throws(TypeError, () => ta.toSorted());
 
 
 reportCompare(0, 0);

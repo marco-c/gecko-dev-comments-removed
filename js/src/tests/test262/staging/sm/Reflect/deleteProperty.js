@@ -10,8 +10,6 @@
 
 
 
-
-
 var obj = {x: 1, y: 2};
 assert.sameValue(Reflect.deleteProperty(obj, "x"), true);
 assert.deepEqual(obj, {y: 2});
@@ -62,7 +60,7 @@ assertThrowsValue(() => Reflect.deleteProperty(proxy, "prop"), "vase");
 proxy = new Proxy(Object.freeze({prop: 1}), {
     deleteProperty(t, k) { return true; }
 });
-assertThrowsInstanceOf(() => Reflect.deleteProperty(proxy, "prop"), TypeError);
+assert.throws(TypeError, () => Reflect.deleteProperty(proxy, "prop"));
 
 
 

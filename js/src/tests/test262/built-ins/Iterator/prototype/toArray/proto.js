@@ -8,7 +8,6 @@
 
 
 
-
 assert.sameValue(Object.getPrototypeOf(Iterator.prototype.toArray), Function.prototype);
 
 reportCompare(0, 0);

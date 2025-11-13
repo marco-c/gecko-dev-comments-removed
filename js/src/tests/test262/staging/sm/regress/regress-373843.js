@@ -8,9 +8,6 @@
 
 
 
-
-
-
 if (typeof disassemble != 'undefined')
 {
     var func = disassemble(function() { return "c\\d"; })

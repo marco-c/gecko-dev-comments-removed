@@ -21,7 +21,6 @@
 
 
 
-
 verifyProperty(Iterator.prototype.forEach, 'name', {
   value: 'forEach',
   writable: false,

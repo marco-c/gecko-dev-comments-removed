@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class base {
     constructor() { }
     method() { this.methodCalled++; }
@@ -80,7 +77,7 @@ function reset() {
 }
 
 let instance = new derived();
-assertThrowsInstanceOf(() => instance.testElem(), TypeError);
+assert.throws(TypeError, () => instance.testElem());
 reset();
 
 instance.testProp();

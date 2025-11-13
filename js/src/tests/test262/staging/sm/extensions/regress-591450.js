@@ -11,9 +11,6 @@
 
 
 
-
-
-
 function f(a,[x,y],b,[w,z],c) { function b() { } }
 
 assert.sameValue(0, 0, "don't crash");

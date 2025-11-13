@@ -10,9 +10,8 @@
 
 
 
-
 with ({x: 1, [Symbol.unscopables]: {x: true}})
-    assertThrowsInstanceOf(() => x, ReferenceError);
+    assert.throws(ReferenceError, () => x);
 
 let x;
 

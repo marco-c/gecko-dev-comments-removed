@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1287525;
-var summary = 'String.prototype.split should call ToUint32(limit) before ToString(separator).';
-
-print(BUGNUMBER + ": " + summary);
-
 var accessed = false;
 
 var rx = /a/;
@@ -25,6 +19,5 @@ Object.defineProperty(rx, Symbol.match, {
 rx[Symbol.split]("abba");
 
 assert.sameValue(accessed, true);
-
 
 reportCompare(0, 0);

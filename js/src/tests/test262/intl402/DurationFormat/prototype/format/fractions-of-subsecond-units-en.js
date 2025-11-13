@@ -34,7 +34,6 @@
 
 
 
-
 const locale = "en";
 const decimalSeparator = ".";
 

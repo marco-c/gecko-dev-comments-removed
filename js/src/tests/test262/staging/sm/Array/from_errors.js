@@ -11,10 +11,9 @@
 
 
 
-
-assertThrowsInstanceOf(() => Array.from(), TypeError);
-assertThrowsInstanceOf(() => Array.from(undefined), TypeError);
-assertThrowsInstanceOf(() => Array.from(null), TypeError);
+assert.throws(TypeError, () => Array.from());
+assert.throws(TypeError, () => Array.from(undefined));
+assert.throws(TypeError, () => Array.from(null));
 
 
 function ObjectWithReadOnlyElement() {
@@ -23,14 +22,14 @@ function ObjectWithReadOnlyElement() {
 }
 ObjectWithReadOnlyElement.from = Array.from;
 assert.deepEqual(ObjectWithReadOnlyElement.from([]), new ObjectWithReadOnlyElement);
-assertThrowsInstanceOf(() => ObjectWithReadOnlyElement.from([1]), TypeError);
+assert.throws(TypeError, () => ObjectWithReadOnlyElement.from([1]));
 
 
 function InextensibleObject() {
     Object.preventExtensions(this);
 }
 InextensibleObject.from = Array.from;
-assertThrowsInstanceOf(() => InextensibleObject.from([1]), TypeError);
+assert.throws(TypeError, () => InextensibleObject.from([1]));
 
 
 
@@ -46,13 +45,13 @@ function testUnsettableLength(C, Exc) {
     C.from = Array.from;
 
     obj = null;
-    assertThrowsInstanceOf(() => C.from([]), Exc);
+    assert.throws(Exc, () => C.from([]));
     assert.sameValue(obj instanceof C, true);
     for (var i = 0; i < 4; i++)
         assert.sameValue(obj[0], 0);
 
     obj = null;
-    assertThrowsInstanceOf(() => C.from([0, 10, 20, 30]), Exc);
+    assert.throws(Exc, () => C.from([0, 10, 20, 30]));
     assert.sameValue(obj instanceof C, true);
     for (var i = 0; i < 4; i++)
         assert.sameValue(obj[i], i * 10);
@@ -76,7 +75,7 @@ testUnsettableLength(ObjectWithReadOnlyLength);
 
 
 Uint8Array.from = Array.from;
-assertThrowsInstanceOf(() => Uint8Array.from([]), TypeError);
+assert.throws(TypeError, () => Uint8Array.from([]));
 
 
 
@@ -107,12 +106,12 @@ function ObjectWithThrowingLengthSetter() {
 testUnsettableLength(ObjectWithThrowingLengthSetter, RangeError);
 
 
-assertThrowsInstanceOf(() => Array.from([3, 4, 5], {}), TypeError);
-assertThrowsInstanceOf(() => Array.from([3, 4, 5], "also not a function"), TypeError);
-assertThrowsInstanceOf(() => Array.from([3, 4, 5], null), TypeError);
+assert.throws(TypeError, () => Array.from([3, 4, 5], {}));
+assert.throws(TypeError, () => Array.from([3, 4, 5], "also not a function"));
+assert.throws(TypeError, () => Array.from([3, 4, 5], null));
 
 
-assertThrowsInstanceOf(() => Array.from([], JSON), TypeError);
+assert.throws(TypeError, () => Array.from([], JSON));
 
 
 
@@ -126,7 +125,7 @@ var p = new Proxy({}, {
     get: function () { log += "2"; },
     getOwnPropertyDescriptor: function () { log += "3"; }
 });
-assertThrowsInstanceOf(() => Array.from.call(C, p, {}), TypeError);
+assert.throws(TypeError, () => Array.from.call(C, p, {}));
 assert.sameValue(log, "");
 
 
@@ -142,20 +141,21 @@ assert.sameValue(obj instanceof C, true);
 
 
 for (var primitive of ["foo", 17, Symbol(), true]) {
-    assertThrowsInstanceOf(() => Array.from({[Symbol.iterator] : primitive}), TypeError);
+    assert.throws(TypeError, () => Array.from({[Symbol.iterator] : primitive}));
 }
 assert.deepEqual(Array.from({[Symbol.iterator]: null}), []);
 assert.deepEqual(Array.from({[Symbol.iterator]: undefined}), []);
 
 
 for (var primitive of [undefined, null, 17]) {
-    assertThrowsInstanceOf(
+    assert.throws(
+        TypeError,
         () => Array.from({
             [Symbol.iterator]() {
                 return {next() { return primitive; }};
             }
-        }),
-        TypeError);
+        })
+    );
 }
 
 

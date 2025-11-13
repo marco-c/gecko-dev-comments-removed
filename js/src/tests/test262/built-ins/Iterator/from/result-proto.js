@@ -7,7 +7,6 @@
 
 
 
-
 let iter = {
   next() {
     return {

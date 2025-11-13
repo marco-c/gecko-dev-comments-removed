@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- lead and trail patterns in RegExpUnicodeEscapeSequence.";
-
-print(BUGNUMBER + ": " + summary);
-
 
 
 assert.compareArray(/\uD83D\uDC38/u.exec("\u{1F438}"),
@@ -212,18 +207,17 @@ assert.compareArray(/\uD83DA*/u.exec("\uD83DAA"),
 
 
 
-assertThrowsInstanceOf(() => eval(`/\\u/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u0/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u00/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u000/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u000G/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u0.00/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\uD83D\\u/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\uD83D\\u0/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\uD83D\\u00/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\uD83D\\u000/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\uD83D\\u000G/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\uD83D\\u0.00/u`), SyntaxError);
-
+assert.throws(SyntaxError, () => eval(`/\\u/u`));
+assert.throws(SyntaxError, () => eval(`/\\u0/u`));
+assert.throws(SyntaxError, () => eval(`/\\u00/u`));
+assert.throws(SyntaxError, () => eval(`/\\u000/u`));
+assert.throws(SyntaxError, () => eval(`/\\u000G/u`));
+assert.throws(SyntaxError, () => eval(`/\\u0.00/u`));
+assert.throws(SyntaxError, () => eval(`/\\uD83D\\u/u`));
+assert.throws(SyntaxError, () => eval(`/\\uD83D\\u0/u`));
+assert.throws(SyntaxError, () => eval(`/\\uD83D\\u00/u`));
+assert.throws(SyntaxError, () => eval(`/\\uD83D\\u000/u`));
+assert.throws(SyntaxError, () => eval(`/\\uD83D\\u000G/u`));
+assert.throws(SyntaxError, () => eval(`/\\uD83D\\u0.00/u`));
 
 reportCompare(0, 0);

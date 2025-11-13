@@ -12,50 +12,19 @@
 
 
 
-
-
-
-var BUGNUMBER = 999999;
-var summary = '{ get x y() { } } is not valid getter syntax';
-
-print(BUGNUMBER + ": " + summary);
-
 var BAD_CODE = ["({ get x y() { } })", "({ set x y(v) { } })"];
 
 for (var i = 0, sz = BAD_CODE.length; i < sz; i++)
 {
   var code = BAD_CODE[i];
 
-  var err = "no exception";
-  try
-  {
+  assert.throws(SyntaxError, function() {
     eval(code);
-  }
-  catch (e)
-  {
-    err = e;
-  }
-  if (!(err instanceof SyntaxError))
-  {
-    assert.sameValue(true, false,
-             "bad or no exception thrown for eval(" + code + "): " + err);
-  }
+  }, "bad or no exception thrown for eval(" + code + ")");
 
-  err = "no exception";
-  try
-  {
-    new Function(code);
-  }
-  catch (e)
-  {
-    err = e;
-  }
-  if (!(err instanceof SyntaxError))
-  {
-    assert.sameValue(true, false,
-             "bad or no exception thrown for Function(" + code + "): " + err);
-  }
+  assert.throws(SyntaxError, function() {
+    Function(code);
+  }, "bad or no exception thrown for Function(" + code + ")");
 }
-
 
 reportCompare(0, 0);

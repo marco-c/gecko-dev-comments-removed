@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function f(x) {
     Object.defineProperty(arguments, 0, {
         get: function() {}
@@ -19,7 +16,7 @@ function f(x) {
 var obj = f(1);
 assert.sameValue(obj[0], undefined);
 assert.sameValue(Object.getOwnPropertyDescriptor(obj, 0).set, undefined);
-assertThrowsInstanceOf(() => { "use strict"; obj[0] = 1; }, TypeError);
+assert.throws(TypeError, () => { "use strict"; obj[0] = 1; });
 
 
 reportCompare(0, 0);

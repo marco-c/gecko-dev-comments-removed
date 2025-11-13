@@ -7,8 +7,6 @@
 
 
 
-
-
 var x;
 
 
@@ -64,9 +62,5 @@ assert.sameValue(x, "\uabcd");
 
 x = JSON.parse('"\\f"');
 assert.sameValue(x, "\f");
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

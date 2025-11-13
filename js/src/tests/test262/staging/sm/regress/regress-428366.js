@@ -11,7 +11,6 @@
 
 
 
-
 var BUGNUMBER = 428366;
 var summary = 'Do not assert deleting eval 16 times';
 var actual = '';

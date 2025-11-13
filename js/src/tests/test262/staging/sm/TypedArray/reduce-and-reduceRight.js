@@ -10,6 +10,9 @@
 
 
 
+var otherGlobal = $262.createRealm().global;
+
+
 for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(constructor.prototype.reduce.length, 1);
 
@@ -51,7 +54,7 @@ for (var constructor of anyTypedArrayConstructors) {
     
     var count = 0;
     var sum = 0;
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         arr.reduce((previous, current, index, array) => {
             count++;
             sum += current;
@@ -59,19 +62,19 @@ for (var constructor of anyTypedArrayConstructors) {
                 throw TypeError("reduce");
             }
         })
-    }, TypeError);
+    });
     assert.sameValue(count, 3);
     assert.sameValue(sum, 9);
 
     
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         arr.reduce();
-    }, TypeError);
+    });
     var invalidCallbacks = [undefined, null, 1, false, "", Symbol(), [], {}, /./];
     invalidCallbacks.forEach(callback => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             arr.reduce(callback);
-        }, TypeError);
+        });
     })
 
     
@@ -80,18 +83,16 @@ for (var constructor of anyTypedArrayConstructors) {
     });
 
     
-    if (typeof createNewGlobal === "function") {
-        var reduce = createNewGlobal()[constructor.name].prototype.reduce;
-        assert.sameValue(reduce.call(arr, (previous, current) => Math.min(previous, current)), 1);
-    }
+    var reduce = otherGlobal[constructor.name].prototype.reduce;
+    assert.sameValue(reduce.call(arr, (previous, current) => Math.min(previous, current)), 1);
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(3), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             constructor.prototype.reduce.call(invalidReceiver, () => {});
-        }, TypeError, "Assert that reduce fails if this value is not a TypedArray");
+        }, "Assert that reduce fails if this value is not a TypedArray");
     });
 
     
@@ -144,7 +145,7 @@ for (var constructor of anyTypedArrayConstructors) {
     
     var count = 0;
     var sum = 0;
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         arr.reduceRight((previous, current, index, array) => {
             count++;
             sum += current;
@@ -152,19 +153,19 @@ for (var constructor of anyTypedArrayConstructors) {
                 throw TypeError("reduceRight");
             }
         })
-    }, TypeError);
+    });
     assert.sameValue(count, 3);
     assert.sameValue(sum, 9);
 
     
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         arr.reduceRight();
-    }, TypeError);
+    });
     var invalidCallbacks = [undefined, null, 1, false, "", Symbol(), [], {}, /./];
     invalidCallbacks.forEach(callback => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             arr.reduceRight(callback);
-        }, TypeError);
+        });
     })
 
     
@@ -173,18 +174,16 @@ for (var constructor of anyTypedArrayConstructors) {
     });
 
     
-    if (typeof createNewGlobal === "function") {
-        var reduceRight = createNewGlobal()[constructor.name].prototype.reduceRight;
-        assert.sameValue(reduceRight.call(arr, (previous, current) => Math.min(previous, current)), 1);
-    }
+    var reduceRight = otherGlobal[constructor.name].prototype.reduceRight;
+    assert.sameValue(reduceRight.call(arr, (previous, current) => Math.min(previous, current)), 1);
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(3), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             constructor.prototype.reduceRight.call(invalidReceiver, () => {});
-        }, TypeError, "Assert that reduceRight fails if this value is not a TypedArray");
+        }, "Assert that reduceRight fails if this value is not a TypedArray");
     });
 
     

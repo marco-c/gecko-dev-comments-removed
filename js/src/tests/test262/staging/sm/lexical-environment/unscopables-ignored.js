@@ -12,7 +12,6 @@
 
 
 
-
 var obj = {
     get [Symbol.unscopables]() {
         throw "tried to read @@unscopables";

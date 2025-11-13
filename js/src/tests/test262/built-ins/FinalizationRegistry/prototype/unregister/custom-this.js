@@ -20,7 +20,6 @@
 
 
 
-
 var fn = function() {};
 var unregister = FinalizationRegistry.prototype.unregister;
 var finalizationRegistry = new FinalizationRegistry(fn);

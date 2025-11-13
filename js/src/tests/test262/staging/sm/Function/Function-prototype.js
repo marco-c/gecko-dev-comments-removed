@@ -8,15 +8,12 @@
 
 
 
-
-var desc = Object.getOwnPropertyDescriptor(Function.prototype, "length");
-assert.deepEqual(desc,
+verifyProperty(Function.prototype, "length",
     {value: 0, writable: false, enumerable: false, configurable: true});
 
 assert.sameValue(Function.prototype.prototype, undefined);
 assert.sameValue(Function.prototype.callee, undefined);
-assertThrowsInstanceOf(() => Function.prototype.caller, TypeError);
-assertThrowsInstanceOf(() => Function.prototype.arguments, TypeError);
-
+assert.throws(TypeError, () => Function.prototype.caller);
+assert.throws(TypeError, () => Function.prototype.arguments);
 
 reportCompare(0, 0);

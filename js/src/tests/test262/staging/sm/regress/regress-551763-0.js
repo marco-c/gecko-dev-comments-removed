@@ -8,7 +8,6 @@
 
 
 
-
 (function() {
     var o = {'arguments': 42};
     with (o) { 

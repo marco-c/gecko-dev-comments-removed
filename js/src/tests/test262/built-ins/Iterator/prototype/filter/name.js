@@ -21,7 +21,6 @@
 
 
 
-
 verifyProperty(Iterator.prototype.filter, 'name', {
   value: 'filter',
   writable: false,

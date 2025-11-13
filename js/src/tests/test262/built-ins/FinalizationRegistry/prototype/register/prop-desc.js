@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof FinalizationRegistry.prototype.register, 'function');
 
 verifyProperty(FinalizationRegistry.prototype, 'register', {

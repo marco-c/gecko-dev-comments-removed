@@ -11,7 +11,6 @@
 
 
 
-
 function f1() {
     { function* g() {} }
     assert.sameValue(typeof g, "undefined");

@@ -12,7 +12,6 @@
 
 
 
-
 const validOptions = [
   [undefined, "short"],
   ["long", "long"],

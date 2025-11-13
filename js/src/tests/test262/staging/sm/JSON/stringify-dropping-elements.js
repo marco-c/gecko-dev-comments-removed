@@ -7,8 +7,6 @@
 
 
 
-
-
 assert.sameValue(JSON.stringify({foo: 123}),
          '{"foo":123}');
 assert.sameValue(JSON.stringify({foo: 123, bar: function () {}}),
@@ -22,9 +20,5 @@ assert.sameValue(JSON.stringify([123, function () {}]),
          '[123,null]');
 assert.sameValue(JSON.stringify([123, function () {}, 456]),
          '[123,null,456]');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

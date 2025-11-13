@@ -6,9 +6,6 @@
 
 
 
-
-
-
 let evil = new RegExp();
 
 

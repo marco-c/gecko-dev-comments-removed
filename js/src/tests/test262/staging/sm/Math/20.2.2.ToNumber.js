@@ -18,9 +18,6 @@
 
 
 
-
-
-
 TestNumber.prototype = new Number();
 
 function TestNumber(value) {

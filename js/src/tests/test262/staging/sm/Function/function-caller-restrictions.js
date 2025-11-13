@@ -34,8 +34,4 @@ assert.sameValue(function*() {
     yield caller();
 }().next().value, null);
 
-
-if (typeof assert.sameValue === "function") {
-}
-
 reportCompare(0, 0);

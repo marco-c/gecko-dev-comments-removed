@@ -10,10 +10,6 @@
 
 
 
-
-
-
-
 const iter = [1, 2].values().flatMap(function*(x) {
   yield x;
   yield* [x + 1, x + 2];

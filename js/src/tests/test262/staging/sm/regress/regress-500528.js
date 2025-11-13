@@ -10,9 +10,6 @@
 
 
 
-
-
-
 var a = {x: 'a'},
     b1 = Object.create(a),
     c1 = Object.create(b1),

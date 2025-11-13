@@ -7,7 +7,6 @@
 
 
 
-
 let desc = Object.getOwnPropertyDescriptor(Iterator.prototype, Symbol.toStringTag);
 assert.sameValue(typeof desc.get, 'function');
 assert.sameValue(typeof desc.set, 'function');

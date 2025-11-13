@@ -11,20 +11,6 @@
 
 
 
-var gTestfile = "const-declaration-in-for-loop.js";
-
-var BUGNUMBER = 1146644;
-var summary =
-  "Don't crash compiling a non-body-level for-loop whose loop declaration is " +
-  "a const";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-
 
 
 
@@ -87,9 +73,5 @@ Function(`if (true)
             for (const a12 in {})
               continue;
           }`)();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

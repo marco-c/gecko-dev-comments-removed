@@ -12,17 +12,6 @@
 
 
 
-var BUGNUMBER = 901351;
-var summary = "Behavior when the JSON.parse reviver mutates the holder object";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-
-
 var first = "unset";
 
 var proxyObj = null;
@@ -53,9 +42,5 @@ else
   assert.sameValue(obj.a.d, 17);
   assert.sameValue(obj.b, 1);
 }
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

@@ -1,0 +1,7 @@
+
+
+
+
+export const p1 = Promise.withResolvers();
+export const pA_start = Promise.withResolvers();
+export const pB_start = Promise.withResolvers();

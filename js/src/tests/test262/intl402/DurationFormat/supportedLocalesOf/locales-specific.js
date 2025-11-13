@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.DurationFormat.supportedLocalesOf, "function",
                  "Should support Intl.DurationFormat.supportedLocalesOf.");
 

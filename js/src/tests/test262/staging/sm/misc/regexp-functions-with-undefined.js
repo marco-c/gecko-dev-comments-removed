@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var a = /undefined/.exec();
 assert.sameValue(a[0], 'undefined');
 assert.sameValue(a.length, 1);

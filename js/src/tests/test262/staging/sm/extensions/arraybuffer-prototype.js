@@ -10,17 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 665961;
-var summary =
-  "ArrayBuffer cannot access properties defined on the prototype chain.";
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 ArrayBuffer.prototype.prop = "on prototype";
 var b = new ArrayBuffer([]);
 assert.sameValue(b.prop, "on prototype");
@@ -34,6 +23,5 @@ assert.sameValue(ArrayBuffer.prototype.prop, "on prototype");
 assert.sameValue(new ArrayBuffer([]).prop, "on prototype");
 
 assert.sameValue(c.nonexistent, undefined);
-
 
 reportCompare(0, 0);

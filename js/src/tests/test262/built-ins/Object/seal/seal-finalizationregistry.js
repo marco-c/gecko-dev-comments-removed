@@ -33,7 +33,6 @@
 
 
 
-
 Object.seal(new FinalizationRegistry(() => {}));
 
 reportCompare(0, 0);

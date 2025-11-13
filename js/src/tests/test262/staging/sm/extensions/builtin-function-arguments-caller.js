@@ -10,19 +10,6 @@
 
 
 
-
-var gTestfile = 'builtin-function-arguments-caller.js';
-var BUGNUMBER = 929642;
-var summary =
-  "Built-in functions defined in ECMAScript pick up arguments/caller " +
-  "properties from Function.prototype";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function expectNoProperty(obj, prop)
 {
   var desc = Object.getOwnPropertyDescriptor(obj, prop);
@@ -59,9 +46,5 @@ expectNoProperty(callerGet, "arguments");
 expectNoProperty(callerGet, "caller");
 expectNoProperty(callerSet, "arguments");
 expectNoProperty(callerSet, "caller");
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

@@ -12,7 +12,6 @@
 
 
 
-
 class NonObjectIterator extends Iterator {
   next() {
     return null;

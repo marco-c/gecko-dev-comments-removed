@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var proxy = new Proxy(function() {}, {
     getOwnPropertyDescriptor(target, name) {
         assert.sameValue(name, "length");

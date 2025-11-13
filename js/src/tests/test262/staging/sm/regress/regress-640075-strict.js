@@ -12,11 +12,9 @@
 
 
 
-"use strict";
-assertThrowsInstanceOf(
-    () => eval("(function() { eval(); function eval() {} })"),
-    SyntaxError
+assert.throws(
+    SyntaxError,
+    () => eval("(function() { eval(); function eval() {} })")
 )
-
 
 reportCompare(0, 0);

@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.Segmenter.supportedLocalesOf, "name", {
   value: "supportedLocalesOf",
   writable: false,

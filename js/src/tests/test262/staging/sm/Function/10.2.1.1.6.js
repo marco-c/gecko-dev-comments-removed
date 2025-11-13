@@ -10,7 +10,6 @@
 
 
 
-
 function strictThis() { 'use strict'; return this; }
 
 

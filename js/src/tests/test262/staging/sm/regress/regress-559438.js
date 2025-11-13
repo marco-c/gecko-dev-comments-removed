@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function f(x) { return 1 + "" + (x + 1); }
 assert.sameValue("12", f(1), "");
 var g = eval("(" + f + ")");

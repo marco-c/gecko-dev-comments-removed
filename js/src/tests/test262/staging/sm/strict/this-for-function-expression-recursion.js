@@ -11,15 +11,6 @@
 
 
 
-var gTestfile = 'this-for-function-expression-recursion.js';
-var BUGNUMBER = 611276;
-var summary = "JSOP_CALLEE should push undefined, not null, for this";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
 
 
 
@@ -43,9 +34,5 @@ var calleeThisStrictFun =
     return calleeThisStrictFun(true);
   };
 assert.sameValue(calleeThisStrictFun(false), undefined);
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

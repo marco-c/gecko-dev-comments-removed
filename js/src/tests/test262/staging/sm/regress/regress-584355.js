@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var actual;
 var expect = "function f () { ff (); }";
 function fun() {

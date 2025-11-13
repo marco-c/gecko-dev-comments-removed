@@ -21,7 +21,6 @@
 
 
 
-
 verifyProperty(Intl.DurationFormat, 'name', {
   value: 'DurationFormat',
   enumerable: false,

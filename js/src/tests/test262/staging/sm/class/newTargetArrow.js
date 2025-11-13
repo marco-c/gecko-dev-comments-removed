@@ -7,13 +7,10 @@
 
 
 
-
-
-
 new Function('(() => new.target)()');
 
 
-assertThrowsInstanceOf(() => eval('() => new.target'), SyntaxError);
+assert.throws(SyntaxError, () => eval('() => new.target'));
 
 function assertNewTarget(expected) {
     assert.sameValue((()=>new.target)(), expected);

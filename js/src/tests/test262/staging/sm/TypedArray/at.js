@@ -8,6 +8,7 @@
 
 
 
+var otherGlobal = $262.createRealm().global;
 
 for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(constructor.prototype.at.length, 1);
@@ -32,18 +33,16 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(new constructor([0, 1]).at(NaN), 0); 
 
     
-    if (typeof createNewGlobal === "function") {
-        var at = createNewGlobal()[constructor.name].prototype.at;
-        assert.sameValue(at.call(new constructor([1, 2, 3]), 2), 3);
-    }
+    var at = otherGlobal[constructor.name].prototype.at;
+    assert.sameValue(at.call(new constructor([1, 2, 3]), 2), 3);
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             constructor.prototype.at.call(invalidReceiver);
-        }, TypeError, "Assert that 'at' fails if this value is not a TypedArray");
+        }, "Assert that 'at' fails if this value is not a TypedArray");
     });
 
     

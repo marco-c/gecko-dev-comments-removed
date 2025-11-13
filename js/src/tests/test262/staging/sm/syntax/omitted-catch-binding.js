@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var state = 'initial';
 try {
     throw new Error('caught');

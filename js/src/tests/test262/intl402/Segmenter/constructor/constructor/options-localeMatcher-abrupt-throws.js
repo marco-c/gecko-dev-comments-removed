@@ -21,7 +21,6 @@
 
 
 
-
 var options = {};
 Object.defineProperty(options, 'localeMatcher', {
   get() { throw new Test262Error(); },

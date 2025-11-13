@@ -10,9 +10,6 @@
 
 
 
-
-
-
 if (this.SharedArrayBuffer) {
 
 var sab = new SharedArrayBuffer(4096);
@@ -36,13 +33,13 @@ assert.sameValue(dv2.getInt8(0), 37);
 
 
 
-assertThrowsInstanceOf(() => dv.setInt32(4098, -1), RangeError);
-assertThrowsInstanceOf(() => dv.setInt32(4094, -1), RangeError);
-assertThrowsInstanceOf(() => dv.setInt32(-1, -1), RangeError);
+assert.throws(RangeError, () => dv.setInt32(4098, -1));
+assert.throws(RangeError, () => dv.setInt32(4094, -1));
+assert.throws(RangeError, () => dv.setInt32(-1, -1));
 
-assertThrowsInstanceOf(() => dv2.setInt32(2080, -1), RangeError);
-assertThrowsInstanceOf(() => dv2.setInt32(2046, -1), RangeError);
-assertThrowsInstanceOf(() => dv2.setInt32(-1, -1), RangeError);
+assert.throws(RangeError, () => dv2.setInt32(2080, -1));
+assert.throws(RangeError, () => dv2.setInt32(2046, -1));
+assert.throws(RangeError, () => dv2.setInt32(-1, -1));
 
 }
 

@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 1108382;
 var summary = 'Remove non-standard flag argument from String.prototype.{search,match,replace}.';
 

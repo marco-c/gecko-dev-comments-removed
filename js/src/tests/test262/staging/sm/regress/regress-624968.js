@@ -9,11 +9,8 @@
 
 
 
-
-
-try {
-    new {prototype: TypeError.prototype};
-} catch (e) {}
-
+assert.throws(TypeError, function() {
+  new {prototype: TypeError.prototype};
+});
 
 reportCompare(0, 0);

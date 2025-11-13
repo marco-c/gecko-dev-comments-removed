@@ -18,8 +18,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict('function f(x,y) {}',
                               parsesSuccessfully,
                               parsesSuccessfully),

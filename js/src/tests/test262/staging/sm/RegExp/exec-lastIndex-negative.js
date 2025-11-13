@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1207922;
-var summary = "negative lastIndex should be treated as 0.";
-
-print(BUGNUMBER + ": " + summary);
-
 var pattern = /abc/gi;
 var string = 'AbcaBcabC';
 
@@ -33,6 +27,5 @@ for (var index of indices) {
   assert.sameValue(result[0], "Abc");
   assert.sameValue(pattern.lastIndex, 3);
 }
-
 
 reportCompare(0, 0);

@@ -10,18 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 637643;
-var summary =
-  "new Int8Array([1, 2, 3]).subarray(1).subarray(1)[0] === 3";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var ta = new Int8Array([1, 2, 3]);
 assert.sameValue(ta.length, 3);
 assert.sameValue(ta[0], 1);
@@ -36,7 +24,5 @@ assert.sameValue(sa1[1], 3);
 var sa2 = sa1.subarray(1);
 assert.sameValue(sa2.length, 1);
 assert.sameValue(sa2[0], 3);
-
-print("All tests passed!");
 
 reportCompare(0, 0);

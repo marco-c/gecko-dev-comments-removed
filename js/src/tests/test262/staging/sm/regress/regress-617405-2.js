@@ -9,17 +9,13 @@
 
 
 
-
-
 function C(){}
 C.prototype = 1;
-try {
-    Object.defineProperty(C, "prototype", {get: function() { throw 0; }});
-    actual = "no exception";
-} catch (exc) {
-    actual = exc.name;
-}
+
+assert.throws(TypeError, function() {
+  Object.defineProperty(C, "prototype", {get: function() { throw 0; }});
+});
+
 new C; 
-assert.sameValue(actual, "TypeError");
 
 reportCompare(0, 0);

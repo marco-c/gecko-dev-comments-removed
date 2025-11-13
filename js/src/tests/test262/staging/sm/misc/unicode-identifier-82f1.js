@@ -9,16 +9,8 @@
 
 
 
-
-
 var o = {}
-try {
-    eval('o.\\u82f1 = 42;');
-}
-catch (e) {
-    assert.sameValue('should not fail', true);
-}
+eval('o.\\u82f1 = 42;');
 assert.sameValue(o['\u82f1'], 42);
-
 
 reportCompare(0, 0);

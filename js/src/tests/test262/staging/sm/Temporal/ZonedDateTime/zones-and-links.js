@@ -12,9 +12,6 @@
 
 
 
-
-
-
 const zones = [
   "Africa/Abidjan",
   "Africa/Accra",

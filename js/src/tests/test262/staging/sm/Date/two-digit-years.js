@@ -15,12 +15,6 @@
 
 
 
-
-
-
-
-
-
 for (let year of Array(100).keys()) {
     for (let month of Array(12).keys()) {
         for (let day of Array(31).keys()) {
@@ -70,9 +64,5 @@ for (let year of Array(1000).keys()) {
 
 assert.sameValue(new Date("may 1999 1999").getTime(), new Date(NaN).getTime());
 assert.sameValue(new Date("may 0 0").getTime(), new Date(NaN).getTime());
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

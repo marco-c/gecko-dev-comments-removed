@@ -9,7 +9,6 @@
 
 
 
-
 {
   let o = {
     0n: "0",
@@ -200,6 +199,5 @@
 
   assert.sameValue(o[10].name, "10");
 }
-
 
 reportCompare(0, 0);

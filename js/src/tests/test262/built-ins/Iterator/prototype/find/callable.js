@@ -6,7 +6,6 @@
 
 
 
-
 function* g() {}
 Iterator.prototype.find.call(g(), () => {});
 

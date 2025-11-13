@@ -9,12 +9,6 @@
 
 
 
-var BUGNUMBER = 1130860;
-var summary = "RegExp constructor shouldn't invoke source/flags getters on argument RegExp instance.";
-
-print(BUGNUMBER + ": " + summary);
-
-
 var a = /foo/;
 var flagsCalled = false;
 var sourceCalled = false;
@@ -39,7 +33,7 @@ assert.sameValue(sourceCalled, false);
 assert.sameValue(flagsCalled, false);
 
 
-var g = createNewGlobal();
+var g = $262.createRealm().global;
 var b = g.eval(`
 var b = /foo2/;
 var flagsCalled = false;
@@ -67,6 +61,5 @@ flagsCalled = false;
 assert.sameValue(new RegExp(b).source, "foo2");
 assert.sameValue(g.eval("sourceCalled;"), false);
 assert.sameValue(g.eval("flagsCalled;"), false);
-
 
 reportCompare(0, 0);

@@ -7,9 +7,6 @@
 
 
 
-
-
-
 class C {
     128 = class {};
 }

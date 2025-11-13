@@ -9,8 +9,6 @@
 
 
 
-
-
 function setup() {
   var o = {all: 1, nowrite: 1, noconfig: 1, noble: 1};
   Object.defineProperty(o, 'nowrite', {writable: false});

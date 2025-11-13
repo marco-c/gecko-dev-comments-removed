@@ -13,10 +13,6 @@
 
 
 
-
-
-
-
 class TestIterator extends Iterator {
   value = 0;
   next() { 

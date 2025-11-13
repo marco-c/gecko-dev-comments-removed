@@ -9,12 +9,9 @@
 
 
 
-
-
 Promise.all.call(class {
   constructor(exec){ exec(()=>{}, ()=>{}); }
   static resolve() { return {then(){}}; }
 }, [null]);
-
 
 reportCompare(0, 0);

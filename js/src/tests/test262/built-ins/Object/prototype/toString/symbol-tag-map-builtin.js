@@ -14,7 +14,6 @@
 
 
 
-
 var toString = Object.prototype.toString;
 
 var map = new Map();

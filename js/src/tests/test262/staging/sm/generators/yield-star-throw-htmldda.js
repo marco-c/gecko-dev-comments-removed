@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function* g(iter) {
     yield* iter;
 }
@@ -24,7 +21,7 @@ var it = g({
     next() {
         return {done: false};
     },
-    throw: createIsHTMLDDA(),
+    throw: $262.IsHTMLDDA,
     return() {
         calledReturn = true;
         return {done: false};
@@ -33,7 +30,7 @@ var it = g({
 
 it.next();
 
-assertThrowsInstanceOf(() => it.throw(""), TypeError);
+assert.throws(TypeError, () => it.throw(""));
 
 assert.sameValue(calledReturn, false);
 

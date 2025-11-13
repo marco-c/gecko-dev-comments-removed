@@ -10,9 +10,6 @@
 
 
 
-
-
-
 const eras = [
   {
     name: "meiji",

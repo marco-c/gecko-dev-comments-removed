@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Object.isExtensible(new Intl.Segmenter()),
   true,

@@ -8,8 +8,6 @@
 
 
 
-
-
 const TwoByteTypedArrays = anyTypedArrayConstructors.filter(ta => ta.BYTES_PER_ELEMENT === 2);
 
 

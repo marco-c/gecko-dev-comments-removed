@@ -10,11 +10,7 @@
 
 
 
-
-
-
-
-const otherGlobal = createNewGlobal({newCompartment: true});
+const otherGlobal = $262.createRealm().global;
 
 const iter = [1, 2, 3].values();
 assert.sameValue(iter, Iterator.from(iter));

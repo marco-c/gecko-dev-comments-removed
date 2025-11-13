@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var ab = new ArrayBuffer(16);
 
 assert.sameValue(new Int32Array(ab).length, 4);

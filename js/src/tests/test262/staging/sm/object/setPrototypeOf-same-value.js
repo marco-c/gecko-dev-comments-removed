@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var x = {}, t = Object.create(x);
 Object.preventExtensions(t);
 

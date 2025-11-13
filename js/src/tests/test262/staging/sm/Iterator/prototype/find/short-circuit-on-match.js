@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 const iter = [1, 2, 3].values();
 const log = [];
 const fn = (value) => {

@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class base {
     constructor() {}
 

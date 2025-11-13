@@ -6,7 +6,6 @@
 
 
 
-
 function* g() {}
 Iterator.prototype.flatMap.call(g(), () => []);
 

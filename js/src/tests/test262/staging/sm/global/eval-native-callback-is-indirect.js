@@ -12,15 +12,6 @@
 
 
 
-var BUGNUMBER = 604504;
-var summary = "eval called from a native function is indirect";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var originalEval = eval;
 
 var global = this;
@@ -33,9 +24,5 @@ function testBound()
   assert.sameValue(eval(), true);
 }
 testBound();
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

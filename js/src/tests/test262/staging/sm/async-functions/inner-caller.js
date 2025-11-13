@@ -7,8 +7,6 @@
 
 
 
-
-
 function g() {
       return g.caller;
 }
@@ -23,6 +21,5 @@ function g() {
   var inner = g();
   assert.sameValue(inner, null);
 })();
-
 
 reportCompare(0, 0);

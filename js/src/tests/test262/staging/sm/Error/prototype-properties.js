@@ -6,9 +6,6 @@
 
 
 
-
-
-
 const nativeErrors = [
     EvalError,
     RangeError,

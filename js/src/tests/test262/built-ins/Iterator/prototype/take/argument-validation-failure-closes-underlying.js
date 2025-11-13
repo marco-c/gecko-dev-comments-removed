@@ -11,7 +11,6 @@
 
 
 
-
 let closed = false;
 let closable = {
   __proto__: Iterator.prototype,

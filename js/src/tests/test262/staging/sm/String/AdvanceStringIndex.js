@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- AdvanceStringIndex in global match and replace.";
-
-print(BUGNUMBER + ": " + summary);
-
 
 
 assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".match(/\uD83D|X|/gu),
@@ -26,19 +21,19 @@ assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".match(/\uD83D\uDC38|
 
 
 
-assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D|X|/gu, ""),
+assert.sameValue("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D|X|/gu, ""),
               "\uD83D\uDC38\uD83D\uDC39\uD83D\uDC3A");
-assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uDC38|X|/gu, ""),
+assert.sameValue("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uDC38|X|/gu, ""),
               "\uD83D\uDC38\uD83D\uDC39\uD83D\uDC3A");
-assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D\uDC38|X|/gu, ""),
+assert.sameValue("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D\uDC38|X|/gu, ""),
               "\uD83D\uDC39\uD83D\uDC3A");
 
 
-assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D|X|/gu, "x"),
+assert.sameValue("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D|X|/gu, "x"),
               "x\uD83D\uDC38x\uD83D\uDC39xx\uD83D\uDC3Ax");
-assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uDC38|X|/gu, "x"),
+assert.sameValue("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uDC38|X|/gu, "x"),
               "x\uD83D\uDC38x\uD83D\uDC39xx\uD83D\uDC3Ax");
-assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D\uDC38|X|/gu, "x"),
+assert.sameValue("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".replace(/\uD83D\uDC38|X|/gu, "x"),
               "xx\uD83D\uDC39xx\uD83D\uDC3Ax");
 
 
@@ -49,6 +44,5 @@ assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".split(/\uDC38|X|/u),
               ["\uD83D\uDC38", "\uD83D\uDC39", "\uD83D\uDC3A"]);
 assert.compareArray("\uD83D\uDC38\uD83D\uDC39X\uD83D\uDC3A".split(/\uD83D\uDC38|X|/u),
               ["", "\uD83D\uDC39", "\uD83D\uDC3A"]);
-
 
 reportCompare(0, 0);

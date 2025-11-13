@@ -7,9 +7,6 @@
 
 
 
-
-
-
 function plainSet() {
     var callCount = 0;
     var value = {

@@ -21,7 +21,6 @@
 
 
 
-
 var cleanupCallback = function() {};
 var finalizationRegistry = new FinalizationRegistry(cleanupCallback);
 

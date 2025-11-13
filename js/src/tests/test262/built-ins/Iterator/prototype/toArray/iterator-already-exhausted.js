@@ -11,7 +11,6 @@
 
 
 
-
 let iterator = (function* () {})();
 
 let { value, done } = iterator.next();

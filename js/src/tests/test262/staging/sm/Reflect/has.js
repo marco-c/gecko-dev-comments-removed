@@ -9,9 +9,6 @@
 
 
 
-
-
-
 assert.sameValue(Reflect.has({x: 0}, "x"), true);
 assert.sameValue(Reflect.has({x: 0}, "y"), false);
 assert.sameValue(Reflect.has({x: 0}, "toString"), true);

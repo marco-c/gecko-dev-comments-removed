@@ -18,7 +18,6 @@
 
 
 
-
 verifyProperty(Intl.DurationFormat.prototype.resolvedOptions, "name", {
   value: "resolvedOptions",
   writable: false,

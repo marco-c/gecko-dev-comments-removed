@@ -47,43 +47,29 @@ function test() {
 
 test();
 
-var log = '';
 
-try {
-  
+assert.throws(SyntaxError, function() {
   eval(`"use strict";
   {
     function f() { }
     function f() { }
   }`);
-} catch (e) {
-  assert.sameValue(e instanceof SyntaxError, true);
-  log += 'e';
-}
+});
 
-try {
-  
+
+assert.throws(SyntaxError, function() {
   eval(`{
     let x = 42;
     function x() {}
   }`);
-} catch (e) {
-  assert.sameValue(e instanceof SyntaxError, true);
-  log += 'e';
-}
+});
 
-try {
-  
+
+assert.throws(SyntaxError, function() {
   eval(`{
     const x = 42;
     function x() {}
   }`);
-} catch (e) {
-  assert.sameValue(e instanceof SyntaxError, true);
-  log += 'e';
-}
-
-assert.sameValue(log, 'eee');
-
+});
 
 reportCompare(0, 0);

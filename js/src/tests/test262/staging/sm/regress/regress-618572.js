@@ -10,31 +10,8 @@
 
 
 
-
-
-var BUGNUMBER = 618572;
-var summary = 'Do not assert when ungetting a Unicode char sequence';
-var actual = '';
-var expect = '';
-
-
-test();
-
-
-function test()
-{
-  expect = 'SyntaxError';
-
-  try
-  {
-    eval("var a\\0021 = 3;");
-  }
-  catch(ex)
-  {
-    actual = ex.constructor.name;
-  }
-
-  assert.sameValue(expect, actual, summary);
-}
+assert.throws(SyntaxError, function() {
+  eval("var a\\0021 = 3;");
+});
 
 reportCompare(0, 0);

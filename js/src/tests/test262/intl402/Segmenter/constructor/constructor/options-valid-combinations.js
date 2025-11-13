@@ -12,7 +12,6 @@
 
 
 
-
 const granularityOptions = ["grapheme", "word", "sentence"];
 const combinations = [];
 

@@ -8,11 +8,8 @@
 
 
 
-
-
-
-assertThrowsInstanceOf(() => new Function("super();"), SyntaxError);
-assertThrowsInstanceOf(() => eval("super()"), SyntaxError);
+assert.throws(SyntaxError, () => new Function("super();"));
+assert.throws(SyntaxError, () => eval("super()"));
 
 
 reportCompare(0, 0);

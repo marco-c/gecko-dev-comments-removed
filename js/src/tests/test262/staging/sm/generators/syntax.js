@@ -17,17 +17,10 @@
 function assertSyntaxError(str) {
     var msg;
     var evil = eval;
-    try {
+    assert.throws(SyntaxError, function() {
         
         evil(str);
-    } catch (exc) {
-        if (exc instanceof SyntaxError)
-            return;
-        msg = "Assertion failed: expected SyntaxError, got " + exc;
-    }
-    if (msg === undefined)
-        msg = "Assertion failed: expected SyntaxError, but no exception thrown";
-    throw new Error(msg + " - " + str);
+    });
 }
 
 
@@ -60,14 +53,14 @@ function* g() {
     yield *
     foo
 }
-assertThrowsInstanceOf(() => Function("function* g() { yield\n* foo }"), SyntaxError);
+assert.throws(SyntaxError, () => Function("function* g() { yield\n* foo }"));
 assertIteratorNext(function*(){
                        yield
                        3
                    }(), undefined)
 
 
-assertThrowsInstanceOf(() => Function("function* g() { yield ? yield : yield }"), SyntaxError);
+assert.throws(SyntaxError, () => Function("function* g() { yield ? yield : yield }"));
 
 
 function* g() { "use strict"; yield 3; yield 4; }

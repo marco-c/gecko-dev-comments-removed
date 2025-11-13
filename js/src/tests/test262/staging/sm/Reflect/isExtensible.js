@@ -14,8 +14,6 @@
 
 
 
-
-
 var someObjects = [
     {},
     {a: "a"},
@@ -60,7 +58,7 @@ assertThrowsValue(() => Reflect.isExtensible(proxy), "oops");
 proxy = new Proxy({}, {
     isExtensible() { return false; }
 });
-assertThrowsInstanceOf(() => Reflect.isExtensible(proxy), TypeError);
+assert.throws(TypeError, () => Reflect.isExtensible(proxy));
 
 
 

@@ -1,0 +1,8 @@
+
+
+
+
+import "./fulfillment-order_b-sentinel_FIXTURE.js"; 
+
+import { p1 } from "./fulfillment-order_setup_FIXTURE.js";
+await p1.promise;

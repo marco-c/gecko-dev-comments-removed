@@ -408,6 +408,31 @@ assert.deepEqual._compare = (function () {
 
 
 
+
+
+
+
+function assertThrowsValue(f, val, msg) {
+  try {
+    f();
+  } catch (exc) {
+    assert.sameValue(exc, val, msg);
+    return;
+  }
+
+  var fullmsg = "Assertion failed: expected exception, no exception thrown";
+  if (msg !== void 0) {
+    fullmsg += " - " + msg;
+  }
+  throw new Test262Error(fullmsg);
+}
+
+
+
+
+
+
+
 var SOME_PRIMITIVE_VALUES = [
     undefined, null,
     false,

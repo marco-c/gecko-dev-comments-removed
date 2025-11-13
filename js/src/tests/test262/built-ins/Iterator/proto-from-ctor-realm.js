@@ -7,7 +7,6 @@
 
 
 
-
 let other = $262.createRealm().global;
 let newTarget = new other.Function();
 let ai;

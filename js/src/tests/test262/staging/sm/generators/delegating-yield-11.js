@@ -9,8 +9,6 @@
 
 
 
-
-
 function Iter() {
     function next() {
         if (arguments.length != 1)

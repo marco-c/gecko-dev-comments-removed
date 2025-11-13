@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(WeakRef.prototype.deref, 'name', {
   value: 'deref',
   writable: false,

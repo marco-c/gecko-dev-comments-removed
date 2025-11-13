@@ -9,21 +9,10 @@
 
 
 
-var BUGNUMBER = 924672;
-var summary = 'Method Definitions - Generators'
-
-print(BUGNUMBER + ": " + summary);
-
-
 function syntaxError (script) {
-    try {
+    assert.throws(SyntaxError, function() {
         Function(script);
-    } catch (e) {
-        if (e instanceof SyntaxError) {
-            return;
-        }
-    }
-    throw new Error('Expected syntax error: ' + script);
+    });
 }
 
 
@@ -61,7 +50,7 @@ syntaxError("b = {a :* 1}");
 syntaxError("b = {a*(){}}");
 
 
-b = { * g() {
+var b = { * g() {
     var a = { [yield 1]: 2, [yield 2]: 3};
     return a;
 } }
@@ -81,14 +70,13 @@ assert.sameValue(next.value.world, 3);
 assert.sameValue(b.g.hasOwnProperty("prototype"), true);
 
 
-a = {*b(c){"use strict";yield c;}};
+var a = {*b(c){"use strict";yield c;}};
 assert.sameValue(a.b(1).next().value, 1);
 a = {*["b"](c){"use strict";return c;}};
 assert.sameValue(a.b(1).next().value, 1);
 
 
 a = {*g() { yield 1; }}
-assertThrowsInstanceOf(() => { new a.g }, TypeError);
-
+assert.throws(TypeError, () => { new a.g });
 
 reportCompare(0, 0);

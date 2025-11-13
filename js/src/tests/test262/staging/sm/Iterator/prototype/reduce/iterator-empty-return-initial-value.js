@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 const reducer = (x, y) => 0;
 const iterator = [].values();
 

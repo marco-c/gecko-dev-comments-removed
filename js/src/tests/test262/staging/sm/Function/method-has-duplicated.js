@@ -7,25 +7,22 @@
 
 
 
-
-
-
 function f0(a) {
 }
 
 
-assertThrowsInstanceOf(() => eval(`
+assert.throws(SyntaxError, () => eval(`
 ({
   m1(a, a) {
   }
 });
-`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`
+`));
+assert.throws(SyntaxError, () => eval(`
 ({
   m2(a, ...a) {
   }
 });
-`), SyntaxError);
+`));
 
 
 reportCompare(0, 0);

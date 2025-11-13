@@ -9,8 +9,6 @@
 
 
 
-
-
 function callFunctionBody(expr) {
   return (
     '(function f() {\n'

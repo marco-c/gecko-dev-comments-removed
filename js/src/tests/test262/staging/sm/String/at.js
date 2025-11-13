@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function basic() {
   assert.sameValue("a".at(0), "a");
   assert.sameValue("a".at(-1), "a");

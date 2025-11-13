@@ -25,7 +25,6 @@
 
 
 
-
 const input = "a c";
 const granularities = [undefined, "grapheme", "word"];
 const index_to_one = [

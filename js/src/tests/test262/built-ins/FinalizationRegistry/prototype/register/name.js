@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(FinalizationRegistry.prototype.register, 'name', {
   value: 'register',
   enumerable: false,

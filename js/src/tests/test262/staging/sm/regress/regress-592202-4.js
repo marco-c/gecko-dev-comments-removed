@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function p() { }
 
 function test()

@@ -11,9 +11,6 @@
 
 
 
-
-
-
 const log = [];
 const handlerProxy = new Proxy({}, {
   get: (target, key, receiver) => (...args) => {

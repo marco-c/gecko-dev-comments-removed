@@ -10,9 +10,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 366941;
 var summary = 'Destructuring enumerations, iterations';
 var actual = '';

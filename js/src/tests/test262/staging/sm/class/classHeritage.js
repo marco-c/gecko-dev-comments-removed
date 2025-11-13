@@ -7,15 +7,12 @@
 
 
 
-
-
-
-assertThrowsInstanceOf(() => eval(`class a extends Math.sin {
+assert.throws(TypeError, () => eval(`class a extends Math.sin {
                                         constructor() { }
-                                    }`), TypeError);
-assertThrowsInstanceOf(() => eval(`(class a extends Math.sin {
+                                    }`));
+assert.throws(TypeError, () => eval(`(class a extends Math.sin {
                                         constructor() { }
-                                    })`), TypeError);
+                                    })`));
 
 
 
@@ -86,8 +83,8 @@ function nopeExpr() {
         constructor() { }
      });
 }
-assertThrowsInstanceOf(nope, TypeError);
-assertThrowsInstanceOf(nopeExpr, TypeError);
+assert.throws(TypeError, nope);
+assert.throws(TypeError, nopeExpr);
 
 
 nope.prototype = "not really, no";
@@ -101,8 +98,8 @@ function stillNoExpr() {
         constructor() { }
      });
 }
-assertThrowsInstanceOf(stillNo, TypeError);
-assertThrowsInstanceOf(stillNoExpr, TypeError);
+assert.throws(TypeError, stillNo);
+assert.throws(TypeError, stillNoExpr);
 
 
 reportCompare(0, 0);

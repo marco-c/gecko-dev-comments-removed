@@ -13,7 +13,6 @@
 
 
 
-
 let invalidOptions = {};
 for (const timeUnit of ["hours", "minutes", "seconds", "milliseconds", "microseconds", "nanoseconds"]){
   invalidOptions[timeUnit] = "numeric";

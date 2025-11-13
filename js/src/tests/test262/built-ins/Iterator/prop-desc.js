@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(globalThis, 'Iterator', {
   value: Iterator,
   writable: true,

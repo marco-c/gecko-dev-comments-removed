@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 883377;
-var summary = "Anonymous function name should be set based on property name";
-
-print(BUGNUMBER + ": " + summary);
-
 var fooSymbol = Symbol("foo");
 var emptySymbol = Symbol("");
 var undefSymbol = Symbol();
@@ -64,6 +58,5 @@ function testPropertyDefinition(expr, named) {
 for (var [expr, named] of exprs) {
     testPropertyDefinition(expr, named);
 }
-
 
 reportCompare(0, 0);

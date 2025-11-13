@@ -14,12 +14,6 @@
 
 
 
-
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- ignoreCase flag.";
-
-print(BUGNUMBER + ": " + summary);
-
 function test(code, ...equivs) {
   var codeRe = new RegExp(String.fromCodePoint(code) + "+", "iu");
   var ans = String.fromCodePoint(code) + equivs.map(c => String.fromCodePoint(c)).join("");
@@ -2965,6 +2959,5 @@ test(0x1E940, 0x1E91E);
 test(0x1E941, 0x1E91F); 
 test(0x1E942, 0x1E920); 
 test(0x1E943, 0x1E921); 
-
 
 reportCompare(0, 0);

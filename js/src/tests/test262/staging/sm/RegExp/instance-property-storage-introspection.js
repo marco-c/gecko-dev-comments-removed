@@ -10,18 +10,6 @@
 
 
 
-
-var BUGNUMBER = 640072;
-var summary =
-  "Represent /a/.{lastIndex,global,source,multiline,sticky,ignoreCase} with " +
-  "plain old data properties";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function checkDataProperty(obj, p, expect, msg)
 {
   var d = Object.getOwnPropertyDescriptor(obj, p);
@@ -127,9 +115,5 @@ do
   assert.sameValue(Object.getOwnPropertyDescriptor(r, "lastIndex").writable, false);
 }
 while (Math.random() > 17); 
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

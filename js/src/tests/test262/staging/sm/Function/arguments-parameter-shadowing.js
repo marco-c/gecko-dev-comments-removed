@@ -11,7 +11,6 @@
 
 
 
-
 function g8(h = () => arguments) {
   var arguments = 0;
   assert.sameValue(arguments, 0);

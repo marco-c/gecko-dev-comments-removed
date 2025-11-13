@@ -11,14 +11,11 @@
 
 
 
-
-
-
 const typedArray = new Int32Array(0);
 
 
 for (let invalidComparator of [null, 0, true, Symbol(), {}, []]) {
-    assertThrowsInstanceOf(() => typedArray.sort(invalidComparator), TypeError);
+    assert.throws(TypeError, () => typedArray.sort(invalidComparator));
 }
 
 

@@ -10,8 +10,6 @@
 
 
 
-
-
 var returnCalled = 0;
 function* wrapNoThrow() {
   let iter = {

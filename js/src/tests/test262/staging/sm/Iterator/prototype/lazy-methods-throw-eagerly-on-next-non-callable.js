@@ -13,10 +13,6 @@
 
 
 
-
-
-
-
 const methods = [
   next => Iterator.prototype.map.bind({next}, x => x),
   next => Iterator.prototype.filter.bind({next}, x => x),

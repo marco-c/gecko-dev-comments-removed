@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 const fn = (value) => value;
 assert.sameValue([true].values().some(fn), true);
 assert.sameValue([1].values().some(fn), true);
@@ -32,7 +28,7 @@ assert.sameValue([NaN].values().some(fn), false);
 assert.sameValue([-0].values().some(fn), false);
 assert.sameValue([0n].values().some(fn), false);
 
-const htmlDDA = createIsHTMLDDA();
+const htmlDDA = $262.IsHTMLDDA;
 assert.sameValue([htmlDDA].values().some(fn), false);
 
 

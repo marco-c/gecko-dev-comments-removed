@@ -10,7 +10,6 @@
 
 
 
-
 function* g() {
   yield 'a';
 }

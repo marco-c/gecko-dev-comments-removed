@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.DurationFormat, "function");
 
 assert.throws(TypeError, function() {

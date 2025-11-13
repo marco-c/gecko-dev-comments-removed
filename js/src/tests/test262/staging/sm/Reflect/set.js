@@ -11,8 +11,6 @@
 
 
 
-
-
 var obj = {};
 assert.sameValue(Reflect.set(obj, "prop", "value"), true);
 assert.sameValue(obj.prop, "value");
@@ -124,7 +122,7 @@ assert.sameValue(log, "sp");
 
 
 
-var g = createNewGlobal();
+var g = $262.createRealm().global;
 if (!("assert" in g) && "assert" in globalThis)
     g.assert = assert;  
 if (!("assert.sameValue" in g))
@@ -237,7 +235,7 @@ for (obj of [{a: 0}, {get a() { return 0; }}]) {
     proxy = new Proxy(obj, {
         set(t, k, v, r) { return true; }
     });
-    assertThrowsInstanceOf(() => Reflect.set(proxy, "a", "b"), TypeError);
+    assert.throws(TypeError, () => Reflect.set(proxy, "a", "b"));
 }
 
 

@@ -10,9 +10,6 @@
 
 
 
-
-
-
 var obj = {a: 1};
 obj[Symbol.for("ponies")] = {toJSON: function () { throw "fit"; }};
 obj[Symbol.iterator] = {toJSON: function () { throw "fit"; }};

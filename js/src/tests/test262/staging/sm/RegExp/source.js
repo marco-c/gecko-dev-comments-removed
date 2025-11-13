@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1120169;
-var summary = "Implement RegExp.prototype.source";
-
-print(BUGNUMBER + ": " + summary);
-
 assert.sameValue(RegExp.prototype.source, "(?:)");
 assert.sameValue(/foo/.source, "foo");
 assert.sameValue(/foo/iymg.source, "foo");
@@ -26,15 +20,14 @@ assert.sameValue(RegExp("/").source, "\\/");
 assert.sameValue(RegExp("\n\r").source, "\\n\\r");
 assert.sameValue(RegExp("\u2028\u2029").source, "\\u2028\\u2029");
 
-assertThrowsInstanceOf(() => genericSource(), TypeError);
-assertThrowsInstanceOf(() => genericSource(1), TypeError);
-assertThrowsInstanceOf(() => genericSource(""), TypeError);
-assertThrowsInstanceOf(() => genericSource({}), TypeError);
-assertThrowsInstanceOf(() => genericSource(new Proxy(/foo/, {get(){ return true; }})), TypeError);
+assert.throws(TypeError, () => genericSource());
+assert.throws(TypeError, () => genericSource(1));
+assert.throws(TypeError, () => genericSource(""));
+assert.throws(TypeError, () => genericSource({}));
+assert.throws(TypeError, () => genericSource(new Proxy(/foo/, {get(){ return true; }})));
 
 function genericSource(obj) {
     return Object.getOwnPropertyDescriptor(RegExp.prototype, "source").get.call(obj);
 }
-
 
 reportCompare(0, 0);

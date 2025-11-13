@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 887016;
-var summary = "Implement RegExp.prototype[@@match].";
-
-print(BUGNUMBER + ": " + summary);
-
 assert.sameValue(RegExp.prototype[Symbol.match].name, "[Symbol.match]");
 assert.sameValue(RegExp.prototype[Symbol.match].length, 1);
 var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, Symbol.match);
@@ -42,6 +36,5 @@ assert.sameValue(v[2], "A");
 re = /d/g;
 v = re[Symbol.match]("abcAbcABC");
 assert.sameValue(v, null);
-
 
 reportCompare(0, 0);

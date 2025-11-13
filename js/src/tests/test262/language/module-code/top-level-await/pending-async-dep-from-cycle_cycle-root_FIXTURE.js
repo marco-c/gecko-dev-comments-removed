@@ -1,0 +1,9 @@
+
+
+
+
+import "./pending-async-dep-from-cycle_cycle-leaf_FIXTURE.js";
+
+globalThis.logs.push("cycle root start");
+await 1;
+globalThis.logs.push("cycle root end");

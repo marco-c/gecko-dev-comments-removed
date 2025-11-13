@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Intl.Segmenter.supportedLocalesOf, "length", {
   value: 1,
   writable: false,

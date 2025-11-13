@@ -7,8 +7,6 @@
 
 
 
-
-
 assert.sameValue(typeof AggregateError, "function");
 assert.sameValue(Object.getPrototypeOf(AggregateError), Error);
 assert.sameValue(AggregateError.name, "AggregateError");
@@ -19,8 +17,8 @@ assert.sameValue(AggregateError.prototype.name, "AggregateError");
 assert.sameValue(AggregateError.prototype.message, "");
 
 
-assertThrowsInstanceOf(() => new AggregateError(), TypeError);
-assertThrowsInstanceOf(() => AggregateError(), TypeError);
+assert.throws(TypeError, () => new AggregateError());
+assert.throws(TypeError, () => AggregateError());
 
 
 {
@@ -74,7 +72,7 @@ assertThrowsInstanceOf(() => AggregateError(), TypeError);
   assert.sameValue(writable, true);
   assert.sameValue(value.length, 0);
 
-  const g = createNewGlobal();
+  const g = $262.createRealm().global;
 
   let obj = {};
   let errors = new g.AggregateError([obj]).errors;

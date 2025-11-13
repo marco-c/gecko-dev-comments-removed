@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var using = [], x = 0;
+
+asyncTest(async function () {
+  await using[x];
+});

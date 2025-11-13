@@ -6,9 +6,6 @@
 
 
 
-
-
-
 let superArrow;
 let thisArrow;
 
@@ -31,16 +28,16 @@ class foo extends base {
 }
 
 
-assertThrowsInstanceOf(()=>new foo(), ReferenceError);
+assert.throws(ReferenceError, ()=>new foo());
 
 
-assertThrowsInstanceOf(thisArrow, ReferenceError);
+assert.throws(ReferenceError, thisArrow);
 
 
 superArrow();
 
 
-assertThrowsInstanceOf(superArrow, ReferenceError);
+assert.throws(ReferenceError, superArrow);
 
 
 assert.sameValue(thisArrow(), thisStash);

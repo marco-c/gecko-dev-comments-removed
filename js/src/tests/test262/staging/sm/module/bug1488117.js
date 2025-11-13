@@ -17,7 +17,6 @@
 
 
 
-
 import "./bug1488117-import-namespace_FIXTURE.js";
 export* from "./bug1488117-empty_FIXTURE.js";
 

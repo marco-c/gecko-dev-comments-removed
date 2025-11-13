@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1185106;
-var summary = "async function toString";
-
-print(BUGNUMBER + ": " + summary);
-
 async function f1(a, b, c) { await a; }
 
 assert.sameValue(f1.toString(),
@@ -30,6 +24,5 @@ assert.sameValue((async (a, b, c) => { await a; }).toString(),
 
 assert.sameValue({ async foo(a, b, c) { await a; } }.foo.toString(),
          "async foo(a, b, c) { await a; }");
-
 
 reportCompare(0, 0);

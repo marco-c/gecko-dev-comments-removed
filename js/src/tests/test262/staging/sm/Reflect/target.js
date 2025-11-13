@@ -13,8 +13,6 @@
 
 
 
-
-
 var methodInfo = {
     apply: [undefined, []],
     construct: [[]],
@@ -43,11 +41,11 @@ for (const name of Object.keys(methodInfo)) {
     var args = methodInfo[name];
 
     
-    assertThrowsInstanceOf(Reflect[name], TypeError);
+    assert.throws(TypeError, Reflect[name]);
 
     
     for (var value of SOME_PRIMITIVE_VALUES) {
-        assertThrowsInstanceOf(() => Reflect[name](value, ...args), TypeError);
+        assert.throws(TypeError, () => Reflect[name](value, ...args));
     }
 }
 

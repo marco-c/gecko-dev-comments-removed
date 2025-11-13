@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var ta = new Uint8Array(1);
 ta[0] = 17;
 

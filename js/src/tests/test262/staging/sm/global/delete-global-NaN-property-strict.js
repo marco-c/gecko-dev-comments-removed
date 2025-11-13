@@ -12,17 +12,6 @@
 
 
 
-"use strict"
-
-
-var BUGNUMBER = 649570;
-var summary = "|delete window.NaN| should throw a TypeError";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
 
 var g = this, v = false;
 try
@@ -35,9 +24,5 @@ catch (e)
   assert.sameValue(e instanceof TypeError, true,
            "Expected a TypeError, got: " + e);
 }
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

@@ -22,29 +22,20 @@
 
 
 
-
-
-"use strict";
-
-function assertThrowsTypeErrorIncludes(f, propStr, details) {
-  assertThrowsInstanceOfWithMessageCheck(f, TypeError,
-    message => message.includes(propStr) && (!details || message.includes(details)));
-}
-
 const STR = "one", STR_NAME = `"one"`;
 const SYM = Symbol("two"), SYM_NAME = `'Symbol("two")'`;
 
 function errorHasPropertyTests(test) {
-  assertThrowsTypeErrorIncludes(() => test(STR), STR_NAME);
-  assertThrowsTypeErrorIncludes(() => test(SYM), SYM_NAME);
+  assert.throws(TypeError, () => test(STR));
+  assert.throws(TypeError, () => test(SYM));
 }
 
 function errorHasPropertyTestsWithDetails(test) {
   let [throwable, details] = test(STR);
-  assertThrowsTypeErrorIncludes(throwable, STR_NAME, details);
+  assert.throws(TypeError, throwable, details);
 
   [throwable, details] = test(SYM);
-  assertThrowsTypeErrorIncludes(throwable, SYM_NAME, details);
+  assert.throws(TypeError, throwable, details);
 }
 
 

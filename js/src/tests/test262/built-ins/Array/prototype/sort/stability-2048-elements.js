@@ -14,6 +14,7 @@
 
 
 
+
 const array = [
   { name: 'A000', rating: 2 },
   { name: 'A001', rating: 2 },

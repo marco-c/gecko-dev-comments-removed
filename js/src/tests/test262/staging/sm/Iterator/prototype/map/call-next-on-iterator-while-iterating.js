@@ -9,10 +9,6 @@
 
 
 
-
-
-
-
 const iterator = [1, 2, 3].values()
 const items = [];
 

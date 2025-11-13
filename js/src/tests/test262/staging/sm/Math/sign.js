@@ -7,9 +7,6 @@
 
 
 
-
-
-
 assert.sameValue(Math.sign(NaN), NaN);
 
 

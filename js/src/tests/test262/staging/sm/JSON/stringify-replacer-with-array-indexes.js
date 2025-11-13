@@ -10,19 +10,6 @@
 
 
 
-
-var gTestfile = 'stringify-replacer-with-array-indexes.js';
-
-var BUGNUMBER = 584909;
-var summary =
-  "Call the replacer function for array elements with stringified indexes";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var arr = [0, 1, 2, 3, 4];
 
 var seenTopmost = false;
@@ -57,9 +44,5 @@ function replacer()
 }
 
 assert.sameValue(JSON.stringify(arr, replacer), '[0,1,2,3,4]');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

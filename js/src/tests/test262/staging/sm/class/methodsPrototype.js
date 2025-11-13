@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class TestClass {
     constructor() { }
     method() { }

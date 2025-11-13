@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var constructors = [
     
     {constructor: Object},
@@ -119,9 +116,9 @@ for (let {constructor, args = []} of constructors) {
         }
     });
 
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         Reflect.construct(constructor, args, proxy);
-    }, TypeError);
+    });
 
     assert.sameValue(revoked, 1);
 }

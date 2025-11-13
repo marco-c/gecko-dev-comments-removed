@@ -10,7 +10,6 @@
 
 
 
-
 var x = "global-x";
 var log = "";
 

@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class A {
     "constructor"() { return {}; }
 }

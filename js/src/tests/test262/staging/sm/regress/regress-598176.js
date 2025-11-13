@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function make() {
   var r = {};
   r.desc = {get: function() {}};
@@ -19,11 +16,11 @@ function make() {
   return r;
 }
 
-r1 = make();
+var r1 = make();
 assert.sameValue(r1.desc.get, r1.info.get);
 
 
-r2 = make();
+var r2 = make();
 assert.sameValue(r1.desc.get === r2.desc.get, false);
 
 r1.info.get.foo = 42;

@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 class TestIterator {
   [Symbol.iterator]() {
     return this;

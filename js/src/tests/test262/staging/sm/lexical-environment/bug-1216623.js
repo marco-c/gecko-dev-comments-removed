@@ -8,9 +8,6 @@
 
 
 
-
-
-
 let x = 0;
 for (let i = 0, a = () => i; i < 4; i++) {
   assert.sameValue(i, x++);

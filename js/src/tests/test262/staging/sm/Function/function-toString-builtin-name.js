@@ -12,9 +12,6 @@
 
 
 
-
-
-
 var propertyName = [
     
     "\\w+",

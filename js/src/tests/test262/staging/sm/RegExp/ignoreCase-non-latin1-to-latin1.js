@@ -7,9 +7,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 1338779;
 var summary = "Non-Latin1 to Latin1 mapping in ignoreCase.";
 

@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- ignoreCase flag with negated character class.";
-
-print(BUGNUMBER + ": " + summary);
-
 assert.sameValue(/[^A]/iu.exec("A"),
          null);
 assert.sameValue(/[^a]/iu.exec("A"),
@@ -25,6 +20,5 @@ assert.sameValue(/[^a]/iu.exec("a"),
 
 assert.compareArray(/[^A]/iu.exec("b"),
               ["b"]);
-
 
 reportCompare(0, 0);

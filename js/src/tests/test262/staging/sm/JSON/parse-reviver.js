@@ -7,8 +7,6 @@
 
 
 
-
-
 function doubler(k, v)
 {
   assert.sameValue(typeof k, "string");
@@ -37,19 +35,9 @@ function dontCallMe(k, v)
   called = true;
 }
 
-try
-{
+assert.throws(SyntaxError, function() {
   JSON.parse('{{{{{{{}}}}', dontCallMe);
-  throw new Error("didn't throw?");
-}
-catch (e)
-{
-  assert.sameValue(e instanceof SyntaxError, true, "wrong exception: " + e);
-}
+});
 assert.sameValue(called, false);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

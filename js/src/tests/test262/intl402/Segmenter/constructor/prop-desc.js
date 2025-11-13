@@ -22,7 +22,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.Segmenter, "function");
 
 verifyProperty(Intl, "Segmenter", {

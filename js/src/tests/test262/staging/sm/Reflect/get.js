@@ -10,9 +10,6 @@
 
 
 
-
-
-
 var x = {p: 1};
 assert.sameValue(Reflect.get(x, "p"), 1);
 assert.sameValue(Reflect.get(x, "toString"), Object.prototype.toString);
@@ -46,7 +43,7 @@ var obj = new Proxy(x, {
 assert.sameValue(Reflect.get(obj, "mood"), "moodful");
 
 
-assertThrowsInstanceOf(() => Reflect.get(obj, Symbol()), TypeError);
+assert.throws(TypeError, () => Reflect.get(obj, Symbol()));
 
 
 obj = {set name(x) {}};

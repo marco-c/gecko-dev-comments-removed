@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function bogusConstruct(target) { return 4; }
 function bogusConstructUndefined(target) { }
 
@@ -18,11 +15,11 @@ function callable() {}
 
 var p = new Proxy(callable, handler);
 
-assertThrowsInstanceOf(function () { new p(); }, TypeError,
+assert.throws(TypeError, function () { new p(); },
                        "[[Construct must throw if an object is not returned.");
 
 handler.construct = bogusConstructUndefined;
-assertThrowsInstanceOf(function () { new p(); }, TypeError,
+assert.throws(TypeError, function () { new p(); },
                        "[[Construct must throw if an object is not returned.");
 
 

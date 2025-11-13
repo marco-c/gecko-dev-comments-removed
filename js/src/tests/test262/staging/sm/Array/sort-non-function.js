@@ -11,14 +11,11 @@
 
 
 
-
-
-
 const array = new Array(0);
 
 
 for (let invalidComparator of [null, 0, true, Symbol(), {}, []]) {
-    assertThrowsInstanceOf(() => array.sort(invalidComparator), TypeError);
+    assert.throws(TypeError, () => array.sort(invalidComparator));
 }
 
 

@@ -10,18 +10,6 @@
 
 
 
-
-var BUGNUMBER = 677820;
-var summary =
-  "String.prototype.match must define matches on the returned array, not set " +
-  "them";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var called = false;
 function setterFunction(v) { called = true; }
 function getterFunction(v) { return "getter"; }
@@ -48,7 +36,5 @@ assert.sameValue(desc.configurable, false);
 assert.sameValue([][1], "getter");
 
 assert.sameValue(called, false);
-
-print("Tests complete");
 
 reportCompare(0, 0);

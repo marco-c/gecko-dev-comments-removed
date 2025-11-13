@@ -6,39 +6,36 @@
 
 
 
-
-
-
 function neverCalled() {
   assert.sameValue(true, false, "unexpected call");
 }
 
-const g = createNewGlobal();
+const g = $262.createRealm().global;
 
 assert.sameValue(typeof String.prototype.replaceAll, "function");
 assert.sameValue(String.prototype.replaceAll.length, 2);
 assert.sameValue(String.prototype.replaceAll.name, "replaceAll");
 
 
-assertThrowsInstanceOf(() => String.prototype.replaceAll.call(undefined), TypeError);
-assertThrowsInstanceOf(() => String.prototype.replaceAll.call(null), TypeError);
+assert.throws(TypeError, () => String.prototype.replaceAll.call(undefined));
+assert.throws(TypeError, () => String.prototype.replaceAll.call(null));
 
 
-assertThrowsInstanceOf(() => "".replaceAll(/a/, ""), TypeError);
-assertThrowsInstanceOf(() => "".replaceAll(g.RegExp(""), ""), TypeError);
+assert.throws(TypeError, () => "".replaceAll(/a/, ""));
+assert.throws(TypeError, () => "".replaceAll(g.RegExp(""), ""));
 
 
-assertThrowsInstanceOf(() => {
+assert.throws(TypeError, () => {
   "".replaceAll({[Symbol.match]: neverCalled, flags: ""}, "");
-}, TypeError);
+});
 
 
-assertThrowsInstanceOf(() => {
+assert.throws(TypeError, () => {
   "".replaceAll({[Symbol.match]: neverCalled, flags: undefined}, "");
-}, TypeError);
-assertThrowsInstanceOf(() => {
+});
+assert.throws(TypeError, () => {
   "".replaceAll({[Symbol.match]: neverCalled, flags: null}, "");
-}, TypeError);
+});
 
 
 assert.sameValue("aba".replace(/a/g, "c"), "cbc");

@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var names = [
     "isConcatSpreadable",
     "iterator",
@@ -25,6 +22,8 @@ var names = [
     "asyncIterator"
 ];
 
+var g = $262.createRealm().global;
+
 for (var name of names) {
     
     assert.sameValue(typeof Symbol[name], "symbol");
@@ -33,12 +32,7 @@ for (var name of names) {
     assert.sameValue(Symbol[name] !== Symbol.for("Symbol." + name), true);
 
     
-    if (typeof Realm === 'function')
-        throw new Error("please update this test to use Realms");
-    if (typeof createNewGlobal === 'function') {
-        var g = createNewGlobal();
-        assert.sameValue(Symbol[name], g.Symbol[name]);
-    }
+    assert.sameValue(Symbol[name], g.Symbol[name]);
 
     
     var desc = Object.getOwnPropertyDescriptor(Symbol, name);

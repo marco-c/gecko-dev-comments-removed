@@ -10,18 +10,6 @@
 
 
 
-
-var gTestfile = 'stringify-toJSON-arguments.js';
-
-var BUGNUMBER = 584909;
-var summary = "Arguments when an object's toJSON method is called";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var obj =
   {
     p: {
@@ -35,9 +23,5 @@ var obj =
   };
 
 assert.sameValue(JSON.stringify(obj), '{"p":17}');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

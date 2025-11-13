@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class C {
   get prop_this() { return this; }
 }

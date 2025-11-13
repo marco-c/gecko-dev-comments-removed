@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function name(obj, property, get) {
     let desc = Object.getOwnPropertyDescriptor(obj, property);
     return (get ? desc.get : desc.set).name;

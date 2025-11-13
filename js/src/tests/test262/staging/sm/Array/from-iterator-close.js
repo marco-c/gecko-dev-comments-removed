@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1180306;
-var summary = 'Array.from should close iterator on error';
-
-print(BUGNUMBER + ": " + summary);
-
 function test(ctor, { mapVal=undefined,
                       nextVal=undefined,
                       nextThrowVal=undefined,
@@ -56,7 +50,7 @@ function test(ctor, { mapVal=undefined,
         }
         assert.sameValue(caught, true);
     } else if (exceptionType) {
-        assertThrowsInstanceOf(() => ctor.from(iterable, mapVal), exceptionType);
+        assert.throws(exceptionType, () => ctor.from(iterable, mapVal));
     } else {
         ctor.from(iterable, mapVal);
     }
@@ -189,6 +183,5 @@ test(Array, {
     nextVal: { value: 1, done: false },
     closed: false,
 });
-
 
 reportCompare(0, 0);

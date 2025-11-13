@@ -9,8 +9,6 @@
 
 
 
-
-
 function* g1() { return (yield 1); }
 function* g2() { try { yield 1; } catch (e) { yield e; } }
 function* delegate(iter) { return yield* iter; }
@@ -53,7 +51,7 @@ assertIteratorNext(outer, 1);
 delete GeneratorObjectPrototype.throw;
 var outer_throw_42 = GeneratorObjectPrototype_throw.bind(outer, 42);
 
-assertThrowsInstanceOf(outer_throw_42, TypeError);
+assert.throws(TypeError, outer_throw_42);
 
 assertThrowsValue(outer_throw_42, 42);
 

@@ -7,14 +7,11 @@
 
 
 
-
-
-
 var ta = new Int32Array([3, 2, 1]);
 
 $262.detachArrayBuffer(ta.buffer);
 
-assertThrowsInstanceOf(() => ta.toReversed(), TypeError);
+assert.throws(TypeError, () => ta.toReversed());
 
 
 reportCompare(0, 0);

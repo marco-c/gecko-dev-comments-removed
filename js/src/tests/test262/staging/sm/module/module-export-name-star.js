@@ -10,7 +10,6 @@
 
 
 
-
 var x = "ok";
 
 export {x as "*"};

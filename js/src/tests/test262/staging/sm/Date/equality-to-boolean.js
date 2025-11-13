@@ -9,15 +9,6 @@
 
 
 
-
-
-
-print("Test for correct implementation of |Date == boolean| and vice versa");
-
-
-
-
-
 Date.prototype.toString = function() { return 1; };
 Date.prototype.valueOf = function() { return 0; };
 
@@ -40,9 +31,5 @@ assert.sameValue(new Date == false, false);
 
 assert.sameValue(true == new Date, true);
 assert.sameValue(false == new Date, false);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

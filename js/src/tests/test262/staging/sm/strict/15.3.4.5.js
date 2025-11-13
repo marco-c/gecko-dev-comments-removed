@@ -10,7 +10,6 @@
 
 
 
-
 function strict() { 'use strict'; return this; }
 function lenient() { return this; }
 var obj = {};

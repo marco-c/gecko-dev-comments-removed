@@ -6,10 +6,7 @@
 
 
 
-
-
-
-const otherGlobal = createNewGlobal({newCompartment: true});
+const otherGlobal = $262.createRealm().global;
 
 let regExp = otherGlobal.eval("/a(b|c)/iy");
 

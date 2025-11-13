@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class func extends Function { }
 let inst = new func("x", "return this.bar + x");
 

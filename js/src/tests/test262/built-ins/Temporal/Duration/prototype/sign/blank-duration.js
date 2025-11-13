@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+const blank = new Temporal.Duration();
+assert.sameValue(blank.sign, 0);
+
+
+reportCompare(0, 0);

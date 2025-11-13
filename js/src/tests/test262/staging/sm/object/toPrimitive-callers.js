@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var STRING = "xyzzy";
 var NUMBER = 42;
 

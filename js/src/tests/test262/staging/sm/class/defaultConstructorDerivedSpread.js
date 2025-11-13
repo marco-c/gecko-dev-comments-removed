@@ -13,9 +13,6 @@
 
 
 
-
-
-
 Array.prototype[Symbol.iterator] = function*() {
     throw new Error("unexpected call");
 };

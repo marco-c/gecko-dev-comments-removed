@@ -10,19 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 1204027;
-var summary =
-  "Escape sequences aren't allowed in bolded grammar tokens (that is, in " +
-  "keywords, possibly contextual keywords)";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function memberVariants(code)
 {
   return ["(class { constructor() {} " + code + " });",
@@ -66,10 +53,6 @@ var badScripts =
   ];
 
 for (var script of badScripts)
-  assertThrowsInstanceOf(() => Function(script), SyntaxError);
-
-
-
-print("Tests complete");
+  assert.throws(SyntaxError, () => Function(script));
 
 reportCompare(0, 0);

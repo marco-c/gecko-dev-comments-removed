@@ -11,19 +11,15 @@
 
 
 
-
-
-
-
-const otherGlobal = createNewGlobal({newCompartment: true});
+const otherGlobal = $262.createRealm().global;
 assert.sameValue(TypeError !== otherGlobal.TypeError, true);
 
 const iter = [].values();
 
-assertThrowsInstanceOf(() => iter.reduce(), TypeError);
-assertThrowsInstanceOf(
-  otherGlobal.Iterator.prototype.reduce.bind(iter),
+assert.throws(TypeError, () => iter.reduce(), TypeError);
+assert.throws(
   otherGlobal.TypeError,
+  otherGlobal.Iterator.prototype.reduce.bind(iter),
   'TypeError comes from the realm of the method.',
 );
 

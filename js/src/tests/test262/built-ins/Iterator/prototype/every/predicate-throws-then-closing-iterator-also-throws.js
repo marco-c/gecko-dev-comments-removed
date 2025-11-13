@@ -13,7 +13,6 @@
 
 
 
-
 let returnCalls = 0;
 
 class TestIterator extends Iterator {

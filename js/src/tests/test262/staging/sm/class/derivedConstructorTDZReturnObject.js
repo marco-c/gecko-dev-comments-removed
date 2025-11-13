@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class foo extends null {
     constructor() {
         

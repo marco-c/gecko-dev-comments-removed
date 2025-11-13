@@ -6,9 +6,6 @@
 
 
 
-
-
-
 const EMPTY = 0;
 const INLINE_STORAGE = 10;
 const NON_INLINE_STORAGE = 1024;
@@ -26,7 +23,7 @@ const NON_INLINE_STORAGE = 1024;
 
 for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     let ta = new Int32Array(length);
-    assertThrowsInstanceOf(() => Object.seal(ta), TypeError);
+    assert.throws(TypeError, () => Object.seal(ta));
 
     assert.sameValue(Object.isExtensible(ta), false);
     assert.sameValue(Object.isSealed(ta), false);
@@ -46,7 +43,7 @@ for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
 
 for (let length of [INLINE_STORAGE, NON_INLINE_STORAGE]) {
     let ta = new Int32Array(length);
-    assertThrowsInstanceOf(() => Object.freeze(ta), TypeError);
+    assert.throws(TypeError, () => Object.freeze(ta));
 
     assert.sameValue(Object.isExtensible(ta), false);
     assert.sameValue(Object.isSealed(ta), false);

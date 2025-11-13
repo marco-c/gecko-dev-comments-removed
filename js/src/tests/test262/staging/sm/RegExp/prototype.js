@@ -7,8 +7,6 @@
 
 
 
-
-
 const t = RegExp.prototype;
 
 let properties = "toString,compile,exec,test," +
@@ -40,9 +38,9 @@ assert.sameValue(getter("unicode"), undefined);
 assert.sameValue(t.toString(), "/(?:)/");
 
 
-assertThrowsInstanceOf(() => t.compile("b", "i"), TypeError);
-assertThrowsInstanceOf(() => t.test("x"), TypeError);
-assertThrowsInstanceOf(() => t.exec("x"), TypeError);
+assert.throws(TypeError, () => t.compile("b", "i"));
+assert.throws(TypeError, () => t.test("x"));
+assert.throws(TypeError, () => t.exec("x"));
 
 
 reportCompare(0, 0);

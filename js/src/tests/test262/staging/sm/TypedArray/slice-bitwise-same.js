@@ -9,15 +9,13 @@
 
 
 
-
-
 const float32Constructors = anyTypedArrayConstructors.filter(isFloatConstructor)
                                                      .filter(c => c.BYTES_PER_ELEMENT === 4);
 const float64Constructors = anyTypedArrayConstructors.filter(isFloatConstructor)
                                                      .filter(c => c.BYTES_PER_ELEMENT === 8);
 
 
-const otherGlobal = createNewGlobal();
+const otherGlobal = $262.createRealm().global;
 float32Constructors.push(otherGlobal.Float32Array);
 float64Constructors.push(otherGlobal.Float64Array);
 

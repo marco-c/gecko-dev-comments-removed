@@ -7,10 +7,7 @@
 
 
 
-
-
 assert.sameValue(Object.keys(Promise).length, 0);
 assert.sameValue(Object.keys(Promise.prototype).length, 0);
-
 
 reportCompare(0, 0);

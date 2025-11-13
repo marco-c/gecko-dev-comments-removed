@@ -8,8 +8,6 @@
 
 
 
-
-
 function makeTestCases() {
     
     const resolveIndex = object => 0 in object;

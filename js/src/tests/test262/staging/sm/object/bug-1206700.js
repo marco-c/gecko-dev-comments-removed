@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var x = {};
 Reflect.set(x, "prop", 5, Object.prototype);
 var y = {};

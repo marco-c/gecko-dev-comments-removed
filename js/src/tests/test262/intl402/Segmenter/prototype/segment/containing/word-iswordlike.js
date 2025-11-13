@@ -18,7 +18,6 @@
 
 
 
-
 const inputs = [
     "Hello world!", 
     "Jedovatou mambu objevila žena v zahrádkářské kolonii.", 

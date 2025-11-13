@@ -11,18 +11,6 @@
 
 
 
-var BUGNUMBER = 645464;
-var summary =
-  "[[DefaultValue]] behavior wrong for Number with overridden valueOf/toString";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-
-
 
 var n = new Number();
 assert.sameValue(n == 0, true);
@@ -169,9 +157,5 @@ function testInOperatorName()
   assert.sameValue(n3 in { 0: 17 }, true);
 }
 testInOperatorName();
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

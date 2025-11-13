@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(TypeError, function () {
   Iterator.prototype.every.call({ next: 0 }, () => true);
 });

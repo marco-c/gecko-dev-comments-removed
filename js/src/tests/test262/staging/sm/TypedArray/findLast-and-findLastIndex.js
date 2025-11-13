@@ -11,9 +11,6 @@
 
 
 
-var BUGNUMBER = 1704385;
-var summary = "Implement %TypedArray%.prototype.{findLast, findLastIndex}";
-print(BUGNUMBER + ": " + summary);
 
 const methods = ["findLast", "findLastIndex"];
 
@@ -30,16 +27,14 @@ anyTypedArrayConstructors.forEach(constructor => {
         assert.sameValue(arr[method](v => v === 3), 3);
         assert.sameValue(arr[method](v => v === 6), method === "findLast" ? undefined : -1);
 
-        var thisValues = [undefined, null, true, 1, "foo", [], {}];
-        if (typeof Symbol == "function")
-            thisValues.push(Symbol());
+        var thisValues = [undefined, null, true, 1, "foo", [], {}, Symbol()];
 
         thisValues.forEach(thisArg =>
-            assertThrowsInstanceOf(() => arr[method].call(thisArg, () => true), TypeError)
+            assert.throws(TypeError, () => arr[method].call(thisArg, () => true))
         );
 
-        assertThrowsInstanceOf(() => arr[method](), TypeError);
-        assertThrowsInstanceOf(() => arr[method](1), TypeError);
+        assert.throws(TypeError, () => arr[method]());
+        assert.throws(TypeError, () => arr[method](1));
     });
 });
 
@@ -54,7 +49,5 @@ anyTypedArrayConstructors.filter(isFloatConstructor).forEach(constructor => {
     assert.sameValue(arr.findLast(v => Object.is(v, -0)), -0);
     assert.sameValue(arr.findLastIndex(v => Object.is(v, -0)), 0);
 })
-
-
 
 reportCompare(0, 0);

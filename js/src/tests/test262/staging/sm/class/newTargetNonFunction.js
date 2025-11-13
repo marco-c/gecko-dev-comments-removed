@@ -9,13 +9,10 @@
 
 
 
+assert.throws(TypeError, () => new ""(...Array()));
 
-
-
-assertThrowsInstanceOf(() => new ""(...Array()), TypeError);
-
-assertThrowsInstanceOf(() => new ""(), TypeError);
-assertThrowsInstanceOf(() => new ""(1), TypeError);
+assert.throws(TypeError, () => new ""());
+assert.throws(TypeError, () => new ""(1));
 
 
 reportCompare(0, 0);

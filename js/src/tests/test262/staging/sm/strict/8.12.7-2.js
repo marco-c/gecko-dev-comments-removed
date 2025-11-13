@@ -10,8 +10,6 @@
 
 
 
-
-
 var hits = 0;
 var p = {
     toString: function () {

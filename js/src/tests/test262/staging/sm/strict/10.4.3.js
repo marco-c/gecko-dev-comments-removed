@@ -10,7 +10,6 @@
 
 
 
-
 var obj = {}
 
 function strict() { "use strict"; return this; }

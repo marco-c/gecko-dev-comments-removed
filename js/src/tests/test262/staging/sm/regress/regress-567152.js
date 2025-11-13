@@ -10,7 +10,6 @@
 
 
 
-
 function c(a) {
     this.f = function () { a; };
 }

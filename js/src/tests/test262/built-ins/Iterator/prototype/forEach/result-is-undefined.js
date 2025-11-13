@@ -6,7 +6,6 @@
 
 
 
-
 function* g() {}
 let iter = g();
 assert.sameValue(

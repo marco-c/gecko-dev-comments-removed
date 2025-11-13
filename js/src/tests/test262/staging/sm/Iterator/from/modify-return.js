@@ -10,10 +10,6 @@
 
 
 
-
-
-
-
 const iter = {
   next: () => ({ done: false, value: 0 }),
   return: (value = "old return") => ({ done: true, value }),
@@ -26,7 +22,7 @@ assert.sameValue(done, true);
 assert.sameValue(value, "old return");
 
 iter.return = () => { throw new Error(); };
-assertThrowsInstanceOf(() => wrap.return(), Error);
+assert.throws(Error, () => wrap.return());
 
 iter.return = null;
 let nullResult = wrap.return("return argument ignored");

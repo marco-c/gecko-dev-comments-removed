@@ -8,8 +8,6 @@
 
 
 
-
-
 class a { constructor() { } }
 let b = class { constructor() { } };
 for (let test of [a,b]) {
@@ -34,43 +32,42 @@ for (let test of [a,b]) {
 
 
 
-assertThrowsInstanceOf(() => eval(`
+assert.throws(TypeError, () => eval(`
                                   class a {
                                     constructor() { };
                                     static ["prototype"]() { }
                                   }
-                                  `), TypeError);
-assertThrowsInstanceOf(() => eval(`
+                                  `));
+assert.throws(TypeError, () => eval(`
                                   class a {
                                     constructor() { };
                                     static get ["prototype"]() { }
                                   }
-                                  `), TypeError);
-assertThrowsInstanceOf(() => eval(`
+                                  `));
+assert.throws(TypeError, () => eval(`
                                   class a {
                                     constructor() { };
                                     static set ["prototype"](x) { }
                                   }
-                                  `), TypeError);
+                                  `));
 
-assertThrowsInstanceOf(() => eval(`(
+assert.throws(TypeError, () => eval(`(
                                   class a {
                                     constructor() { };
                                     static ["prototype"]() { }
                                   }
-                                  )`), TypeError);
-assertThrowsInstanceOf(() => eval(`(
+                                  )`));
+assert.throws(TypeError, () => eval(`(
                                   class a {
                                     constructor() { };
                                     static get ["prototype"]() { }
                                   }
-                                  )`), TypeError);
-assertThrowsInstanceOf(() => eval(`(
+                                  )`));
+assert.throws(TypeError, () => eval(`(
                                   class a {
                                     constructor() { };
                                     static set ["prototype"](x) { }
                                   }
-                                  )`), TypeError);
-
+                                  )`));
 
 reportCompare(0, 0);

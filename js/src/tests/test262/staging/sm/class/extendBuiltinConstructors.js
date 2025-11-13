@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function testBuiltinInstanceIsInstanceOf(instance, builtin, class_) {
     assert.sameValue(instance instanceof class_, true);
     assert.sameValue(instance instanceof builtin, true);
@@ -104,7 +101,7 @@ testBuiltin(WeakSet);
 testBuiltin(ArrayBuffer);
 testBuiltinTypedArrays();
 testBuiltin(DataView, new ArrayBuffer());
-testBuiltin(DataView, new (createNewGlobal().ArrayBuffer)());
+testBuiltin(DataView, new ($262.createRealm().global.ArrayBuffer)());
 testBuiltin(String);
 testBuiltin(Array);
 testBuiltin(Array, 15);

@@ -10,20 +10,6 @@
 
 
 
-
-var gTestfile = "stringify-replacer-array-trailing-holes.js";
-
-var BUGNUMBER = 1217069;
-var summary =
-  "Better/more correct handling for replacer arrays with trailing holes " +
-  "through which inherited elements might appear";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var obj = { 0: "hi", 1: "n-nao", 2: "run away!", 3: "bye" };
 
 var s;
@@ -50,9 +36,5 @@ Object.prototype[3] = 3;
 
 assert.sameValue(JSON.stringify(obj, replacer),
          '{"0":"hi","1":"n-nao","2":"run away!","3":"bye"}');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

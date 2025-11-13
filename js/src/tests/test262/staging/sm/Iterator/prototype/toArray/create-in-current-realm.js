@@ -11,11 +11,7 @@
 
 
 
-
-
-
-
-const otherGlobal = createNewGlobal({newCompartment: true});
+const otherGlobal = $262.createRealm().global;
 
 let array = [1, 2, 3].values().toArray();
 assert.sameValue(array instanceof Array, true);

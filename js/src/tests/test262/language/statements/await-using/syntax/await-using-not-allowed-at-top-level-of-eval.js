@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await assert.throwsAsync(SyntaxError, async function () {
+    eval('await using x = null;')
+  });
+});

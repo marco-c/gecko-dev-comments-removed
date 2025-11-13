@@ -20,7 +20,6 @@
 
 
 
-
 testOption( Intl.DurationFormat, "years", "string", ["long", "short", "narrow"], "short");
 testOption( Intl.DurationFormat, "months", "string", ["long", "short", "narrow"], "short");
 testOption( Intl.DurationFormat, "weeks", "string", ["long", "short", "narrow"], "short");

@@ -10,39 +10,17 @@
 
 
 
-
-
-var BUGNUMBER = 1178653;
-var summary =
-  "|new| on a cross-compartment wrapper to a non-constructor shouldn't assert";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-var g = createNewGlobal();
+var g = $262.createRealm().global;
 
 var otherStr = new g.String("foo");
 assert.sameValue(otherStr instanceof g.String, true);
 assert.sameValue(otherStr.valueOf(), "foo");
 
-try
-{
+
+
+assert.throws(TypeError, function() {
   var constructor = g.parseInt;
   new constructor();
-  throw new Error("no error thrown");
-}
-catch (e)
-{
-  
-  
-  assert.sameValue(e instanceof TypeError, true);
-}
-
-
-
-print("Tests complete");
+});
 
 reportCompare(0, 0);

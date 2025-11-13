@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class base {
     constructor(a, b, c) {
         assert.sameValue(a, 1);

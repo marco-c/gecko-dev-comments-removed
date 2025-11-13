@@ -9,8 +9,6 @@
 
 
 
-
-
 function arr() {
   return Object.defineProperty([1, 2, 3], 2, {configurable: false});
 }

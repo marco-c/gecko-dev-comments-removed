@@ -7,8 +7,6 @@
 
 
 
-
-
 var obj = new Int32Array(2);
 obj[0] = 100;
 
@@ -32,8 +30,8 @@ var throws = [
 ];
 
 for (var desc of throws) {
-    assertThrowsInstanceOf(function() { Object.defineProperty(obj, 0, desc); }, TypeError);
-    assertThrowsInstanceOf(function() { Object.defineProperties(obj, {0: desc}); }, TypeError);
+    assert.throws(TypeError, function() { Object.defineProperty(obj, 0, desc); });
+    assert.throws(TypeError, function() { Object.defineProperties(obj, {0: desc}); });
 }
 
 Object.defineProperty(obj, 0, {});

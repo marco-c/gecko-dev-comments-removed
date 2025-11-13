@@ -10,8 +10,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict('delete x;',
                               parsesSuccessfully,
                               parseRaisesException(SyntaxError)),

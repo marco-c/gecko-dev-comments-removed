@@ -22,7 +22,6 @@
 
 
 
-
 const segmenter = new Intl.Segmenter();
 const input = "ABCD";
 const segments = segmenter.segment(input);

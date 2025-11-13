@@ -8,7 +8,6 @@
 
 
 
-
 var o = { f: "string-f" };
 with (o) {
   var desc = Object.getOwnPropertyDescriptor(this, "f");

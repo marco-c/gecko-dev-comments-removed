@@ -29,7 +29,6 @@
 
 
 
-
 var finalizationRegistry;
 
 finalizationRegistry = Reflect.construct(FinalizationRegistry, [function() {}], Object);

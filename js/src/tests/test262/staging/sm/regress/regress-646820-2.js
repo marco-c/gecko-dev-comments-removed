@@ -8,9 +8,6 @@
 
 
 
-
-
-
 (function () {
     var obj = {prop: 1};
     var [x, {prop: y}] = [function () { return y; }, obj];

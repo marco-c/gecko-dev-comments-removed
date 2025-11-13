@@ -10,7 +10,6 @@
 
 
 
-
 function f(s) {
     if (s) {
         function b() { }

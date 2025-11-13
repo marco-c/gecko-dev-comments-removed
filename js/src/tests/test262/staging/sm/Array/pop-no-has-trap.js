@@ -10,8 +10,6 @@
 
 
 
-
-
 var log = [];
 var array = [];
 var proxy = new Proxy(array, new Proxy({}, {

@@ -10,7 +10,6 @@
 
 
 
-
 verifyProperty(Intl.DurationFormat, "prototype", {
   value: Intl.DurationFormat.prototype,
   writable: false,

@@ -13,7 +13,6 @@
 
 
 
-
 const segment = (new Intl.Segmenter()).segment("");
 verifyProperty(segment.containing, "length", {
   value: 1,

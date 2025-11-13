@@ -10,17 +10,6 @@
 
 
 
-
-var gTestfile = 'destructuring-__proto__-shorthand-assignment-before-var.js';
-var BUGNUMBER = 963641;
-var summary = "{ __proto__ } should work as a destructuring assignment pattern";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function objectWithProtoProperty(v)
 {
   var obj = {};
@@ -48,9 +37,5 @@ function nested()
   assert.sameValue(__proto__, "fnord");
 }
 nested();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

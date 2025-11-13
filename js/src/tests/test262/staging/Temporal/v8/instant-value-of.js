@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+
+
+let d1 = Temporal.Now.instant();
+assert.throws(TypeError, () => d1.valueOf());
+
+reportCompare(0, 0);

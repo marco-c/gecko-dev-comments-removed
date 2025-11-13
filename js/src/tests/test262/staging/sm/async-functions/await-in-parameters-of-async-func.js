@@ -10,15 +10,7 @@
 
 
 
-
-
-var BUGNUMBER = 1478910;
-var summary = 'JSMSG_AWAIT_IN_PARAMETER error for incomplete await expr in async function/generator parameter';
-
-
-
 test();
-
 
 function test()
 {
@@ -65,7 +57,6 @@ function test()
   testAwaitInDefaultExprOfAsyncFunc("async (a = await) => {}");
 
   testNoException("async (a = async () => { await 1; }) => {}");
-
 }
 
 reportCompare(0, 0);

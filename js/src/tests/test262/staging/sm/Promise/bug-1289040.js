@@ -7,14 +7,11 @@
 
 
 
-
-
-var global = createNewGlobal();
+var global = $262.createRealm().global;
 Promise.prototype.then = global.Promise.prototype.then;
-p1 = new Promise(function f(r) {
+var p1 = new Promise(function f(r) {
     r(1);
 });
-p2 = p1.then(function g(){});
-
+var p2 = p1.then(function g(){});
 
 reportCompare(0, 0);

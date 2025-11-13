@@ -10,16 +10,6 @@
 
 
 
-
-var gTestfile = 'object-literal-accessor-property-name.js';
-
-var BUGNUMBER = 715682;
-var summary =
-  "Permit numbers and strings containing numbers as accessor property names";
-print(BUGNUMBER + ": " + summary);
-
-
-
 ({ get "0"() { } });
 ({ get 0() { } });
 ({ get 0.0() { } });
@@ -33,8 +23,5 @@ print(BUGNUMBER + ": " + summary);
 ({ set 0.(q) { } });
 ({ set 1.(q) { } });
 ({ set 5.2322341234123(q) { } });
-
-
-
 
 reportCompare(0, 0);

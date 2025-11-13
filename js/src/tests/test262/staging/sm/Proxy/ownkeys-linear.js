@@ -11,18 +11,6 @@
 
 
 
-var gTestfile = 'ownkeys-linear.js';
-var BUGNUMBER = 1257779;
-var summary =
-  "Scripted proxies' [[OwnPropertyKeys]] should have linear complexity";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-
 
 
 const HALF_COUNT = 7500;
@@ -69,9 +57,5 @@ var p = new Proxy(target, handler);
 
 
 assert.sameValue(Object.getOwnPropertyNames(p).length, HALF_COUNT * 2);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

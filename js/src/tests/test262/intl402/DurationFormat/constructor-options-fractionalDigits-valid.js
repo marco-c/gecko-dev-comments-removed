@@ -11,7 +11,6 @@
 
 
 
-
 const validOptions = [
   0,
   1,

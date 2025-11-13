@@ -8,24 +8,21 @@
 
 
 
-
-
-
-assertThrowsInstanceOf(() => eval(`
+assert.throws(SyntaxError, () => eval(`
   class foo {
     constructor() {}
 
     get a() 1
   }
-`), SyntaxError);
+`));
 
-assertThrowsInstanceOf(() => eval(`
+assert.throws(SyntaxError, () => eval(`
   class foo {
     constructor() {}
 
     set a(v) 1
   }
-`), SyntaxError);
+`));
 
 
 reportCompare(0, 0);

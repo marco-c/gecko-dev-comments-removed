@@ -9,11 +9,7 @@
 
 
 
-
-
-
-var b = createExternalArrayBuffer(0);
+var b = new ArrayBuffer(0);
 assert.sameValue(b.byteLength, 0);
-
 
 reportCompare(0, 0);

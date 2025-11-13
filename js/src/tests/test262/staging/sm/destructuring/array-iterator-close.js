@@ -8,33 +8,37 @@
 
 
 
-
-
-
 function test() {
     var returnCalled = 0;
     var returnCalledExpected = 0;
     var iterable = {};
 
     
-    iterable[Symbol.iterator] = makeIterator({
-        next: function() {
-            return { done: true };
-        },
-        ret: function() {
-            returnCalled++;
-            return {};
-        }
-    });
+    iterable[Symbol.iterator] = function() {
+        return {
+            next() {
+                return { done: true };
+            },
+            return() {
+                returnCalled++;
+                return {};
+            }
+        };
+    };
     var [] = iterable;
     assert.sameValue(returnCalled, ++returnCalledExpected);
 
-    iterable[Symbol.iterator] = makeIterator({
-        ret: function() {
-            returnCalled++;
-            return {};
-        }
-    });
+    iterable[Symbol.iterator] = function() {
+        return {
+            next() {
+                return { done: false };
+            },
+            return() {
+                returnCalled++;
+                return {};
+            }
+        };
+    };
     var [] = iterable;
     assert.sameValue(returnCalled, ++returnCalledExpected);
 
@@ -55,46 +59,55 @@ function test() {
     assert.sameValue(returnCalled, ++returnCalledExpected);
 
     
-    iterable[Symbol.iterator] = makeIterator({
-        next: function() {
-            
-            return {};
-        },
-        ret: function() {
-            returnCalled++;
-            return {};
-        }
-    });
+    iterable[Symbol.iterator] = function() {
+        return {
+            next() {
+                
+                return {};
+            },
+            return() {
+                returnCalled++;
+                return {};
+            }
+        };
+    };
     assertThrowsValue(function() {
         0, [...{}[throwlhs()]] = iterable;
     }, "in lhs");
     assert.sameValue(returnCalled, ++returnCalledExpected);
 
     
-    iterable[Symbol.iterator] = makeIterator({
-        next: function() {
-            throw "in next";
-        },
-        ret: function() {
-            returnCalled++;
-            return {};
-        }
-    });
+    iterable[Symbol.iterator] = function() {
+        return {
+            next() {
+                throw "in next";
+            },
+            return() {
+                returnCalled++;
+                return {};
+            }
+        };
+    };
     assertThrowsValue(function() {
         var [d] = iterable;
     }, "in next");
     assert.sameValue(returnCalled, returnCalledExpected);
 
     
-    iterable[Symbol.iterator] = makeIterator({
-        ret: function() {
-            returnCalled++;
-            return 42;
-        }
-    });
-    assertThrowsInstanceOf(function() {
+    iterable[Symbol.iterator] = function() {
+        return {
+            next() {
+                return { done: false };
+            },
+            return() {
+                returnCalled++;
+                return 42;
+            }
+        };
+    };
+    assert.throws(TypeError, function() {
         var [] = iterable;
-    }, TypeError);
+    });
     assert.sameValue(returnCalled, ++returnCalledExpected);
 }
 

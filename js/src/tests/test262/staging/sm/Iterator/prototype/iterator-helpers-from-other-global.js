@@ -9,10 +9,6 @@
 
 
 
-
-
-
-
 class TestError extends Error {}
 
 class TestIterator extends Iterator {
@@ -32,7 +28,7 @@ function checkIterResult({done, value}, expectedDone, expectedValue) {
   assert.sameValue(Array.isArray(value) ? value[1] : value, expectedValue);
 }
 
-const otherGlobal = createNewGlobal({newCompartment: true});
+const otherGlobal = $262.createRealm().global;
 
 const methods = [
   ["map", x => x],

@@ -8,7 +8,6 @@
 
 
 
-
 assert((function* () {})().drop(0) instanceof Iterator, 'function*(){}().drop(0) must return an Iterator');
 
 reportCompare(0, 0);
