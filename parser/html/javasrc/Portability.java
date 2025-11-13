@@ -31,6 +31,7 @@ import nu.validator.htmlparser.common.Interner;
 
 public final class Portability {
 
+    
     public static int checkedAdd(int a, int b) throws SAXException {
         
         assert a >= 0;
@@ -41,6 +42,7 @@ public final class Portability {
         }
         return sum;
     }
+    
 
     
 
