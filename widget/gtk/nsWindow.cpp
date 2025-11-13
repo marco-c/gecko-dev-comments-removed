@@ -2333,7 +2333,9 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   }
 
   
-  mWaylandApplyPopupPositionBeforeShow = false;
+  if (aMove) {
+    mWaylandApplyPopupPositionBeforeShow = false;
+  }
 
   
   
