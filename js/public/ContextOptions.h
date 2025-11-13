@@ -29,6 +29,7 @@ class JS_PUBLIC_API ContextOptions {
         testWasmAwaitTier2_(false),
         disableIon_(false),
         disableEvalSecurityChecks_(false),
+        disableFilenameSecurityChecks_(false),
         asyncStack_(true),
         asyncStackCaptureDebuggeeOnly_(false),
         throwOnDebuggeeWouldRun_(true),
@@ -107,9 +108,25 @@ class JS_PUBLIC_API ContextOptions {
 
   
   
+
+  
+  
   bool disableEvalSecurityChecks() const { return disableEvalSecurityChecks_; }
   ContextOptions& setDisableEvalSecurityChecks() {
     disableEvalSecurityChecks_ = true;
+    return *this;
+  }
+
+  
+  
+  
+  
+  
+  bool disableFilenameSecurityChecks() const {
+    return disableFilenameSecurityChecks_;
+  }
+  ContextOptions& setDisableFilenameSecurityChecks() {
+    disableFilenameSecurityChecks_ = true;
     return *this;
   }
 
@@ -172,9 +189,10 @@ class JS_PUBLIC_API ContextOptions {
 
   
   bool disableIon_ : 1;
-  bool disableEvalSecurityChecks_ : 1;
 
   
+  bool disableEvalSecurityChecks_ : 1;
+  bool disableFilenameSecurityChecks_ : 1;
   bool asyncStack_ : 1;
   bool asyncStackCaptureDebuggeeOnly_ : 1;
   bool throwOnDebuggeeWouldRun_ : 1;
