@@ -7481,9 +7481,6 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   
   
-  
-  
-
   if (mDocumentViewer) {
     
     
@@ -7496,37 +7493,11 @@ nsresult nsDocShell::RestoreFromHistory() {
   }
 
   
-  
-  
-
-  nsView* rootViewSibling = nullptr;
-  nsView* rootViewParent = nullptr;
   LayoutDeviceIntRect newBounds(0, 0, 0, 0);
 
   PresShell* oldPresShell = GetPresShell();
   if (oldPresShell) {
-    nsViewManager* vm = oldPresShell->GetViewManager();
-    if (vm) {
-      nsView* oldRootView = vm->GetRootView();
-
-      if (oldRootView) {
-        rootViewSibling = oldRootView->GetNextSibling();
-        rootViewParent = oldRootView->GetParent();
-
-        mDocumentViewer->GetBounds(newBounds);
-      }
-    }
-  }
-
-  nsCOMPtr<nsIContent> container;
-  RefPtr<Document> sibling;
-  if (rootViewParent && rootViewParent->GetParent()) {
-    nsIFrame* frame = rootViewParent->GetParent()->GetFrame();
-    container = frame ? frame->GetContent() : nullptr;
-  }
-  if (rootViewSibling) {
-    nsIFrame* frame = rootViewSibling->GetFrame();
-    sibling = frame ? frame->PresShell()->GetDocument() : nullptr;
+    mDocumentViewer->GetBounds(newBounds);
   }
 
   
@@ -7729,39 +7700,6 @@ nsresult nsDocShell::RestoreFromHistory() {
   nsViewManager* newVM = presShell ? presShell->GetViewManager() : nullptr;
   nsView* newRootView = newVM ? newVM->GetRootView() : nullptr;
 
-  
-  if (container) {
-    nsSubDocumentFrame* subDocFrame =
-        do_QueryFrame(container->GetPrimaryFrame());
-    rootViewParent = subDocFrame ? subDocFrame->EnsureInnerView() : nullptr;
-  } else {
-    rootViewParent = nullptr;
-  }
-  if (sibling && sibling->GetPresShell() &&
-      sibling->GetPresShell()->GetViewManager()) {
-    rootViewSibling = sibling->GetPresShell()->GetViewManager()->GetRootView();
-  } else {
-    rootViewSibling = nullptr;
-  }
-  if (rootViewParent && newRootView &&
-      newRootView->GetParent() != rootViewParent) {
-    nsViewManager* parentVM = rootViewParent->GetViewManager();
-    if (parentVM) {
-      
-      
-      
-      
-      
-      
-      
-      parentVM->InsertChild(rootViewParent, newRootView, rootViewSibling,
-                            rootViewSibling ? true : false);
-
-      NS_ASSERTION(newRootView->GetNextSibling() == rootViewSibling,
-                   "error in InsertChild");
-    }
-  }
-
   nsCOMPtr<nsPIDOMWindowInner> privWinInner = privWin->GetCurrentInnerWindow();
 
   
@@ -7798,15 +7736,6 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   
 
-  
-  
-  
-  
-  
-  
-  
-  
-
   if (newRootView) {
     if (!newBounds.IsEmpty() &&
         !newBounds.ToUnknownRect().IsEqualEdges(oldBounds)) {
@@ -7822,7 +7751,7 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   
   
-  newRootView = rootViewSibling = rootViewParent = nullptr;
+  newRootView = nullptr;
   newVM = nullptr;
 
   

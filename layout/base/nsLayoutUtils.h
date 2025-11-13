@@ -747,19 +747,6 @@ class nsLayoutUtils {
 
 
 
-  static nsPoint TranslateWidgetToView(nsPresContext* aPresContext,
-                                       nsIWidget* aWidget,
-                                       const mozilla::LayoutDeviceIntPoint& aPt,
-                                       nsView* aView);
-
-  
-
-
-
-
-
-
-
 
   static mozilla::LayoutDeviceIntPoint TranslateViewToWidget(
       nsPresContext* aPresContext, nsView* aView, nsPoint aPt,
@@ -767,6 +754,9 @@ class nsLayoutUtils {
 
   static mozilla::LayoutDeviceIntPoint WidgetToWidgetOffset(
       nsIWidget* aFromWidget, nsIWidget* aToWidget);
+
+  static mozilla::Maybe<nsPoint> FrameToWidgetOffset(const nsIFrame* aFrame,
+                                                     nsIWidget* aWidget);
 
   enum class FrameForPointOption {
     

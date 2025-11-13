@@ -126,10 +126,8 @@
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class PrintPreviewResultInfo;
-}  
 }  
 
 using namespace mozilla;
@@ -340,14 +338,8 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
 
 
-
-
-  void MakeWindow(const nsSize& aSize, nsView* aContainerView);
-
-  
-
-
-  nsresult CreateDeviceContext(nsView* aContainerView);
+  void MakeWindow(const nsSize& aSize);
+  nsresult CreateDeviceContext(nsSubDocumentFrame* aContainerFrame);
 
   
 
@@ -692,7 +684,8 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   nsCOMPtr<Document> doc = mDocument;
   RefPtr<nsPresContext> presContext = mPresContext;
   RefPtr<nsViewManager> viewManager = mViewManager;
-  mPresShell = doc->CreatePresShell(presContext, viewManager);
+  mPresShell =
+      doc->CreatePresShell(presContext, viewManager, FindContainerFrame());
   if (!mPresShell) {
     return NS_ERROR_FAILURE;
   }
@@ -769,8 +762,8 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
 
 static already_AddRefed<nsPresContext> CreatePresContext(
     Document* aDocument, nsPresContext::nsPresContextType aType,
-    nsView* aContainerView) {
-  RefPtr<nsPresContext> result = aContainerView
+    nsIFrame* aContainerFrame) {
+  RefPtr<nsPresContext> result = aContainerFrame
                                      ? new nsPresContext(aDocument, aType)
                                      : new nsRootPresContext(aDocument, aType);
 
@@ -797,11 +790,11 @@ nsresult nsDocumentViewer::InitInternal(
   nsresult rv = NS_OK;
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NULL_POINTER);
 
-  nsView* containerView = FindContainerView();
+  nsSubDocumentFrame* containerFrame = FindContainerFrame();
 
   bool makeCX = false;
   if (aDoCreation) {
-    nsresult rv = CreateDeviceContext(containerView);
+    nsresult rv = CreateDeviceContext(containerFrame);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -809,7 +802,7 @@ nsresult nsDocumentViewer::InitInternal(
     
     
     if (!mPresContext &&
-        (aParentWidget || containerView || mDocument->IsBeingUsedAsImage() ||
+        (aParentWidget || containerFrame || mDocument->IsBeingUsedAsImage() ||
          (mDocument->GetDisplayDocument() &&
           mDocument->GetDisplayDocument()->GetPresShell()))) {
       
@@ -818,7 +811,7 @@ nsresult nsDocumentViewer::InitInternal(
         
       } else {
         mPresContext = CreatePresContext(
-            mDocument, nsPresContext::eContext_Galley, containerView);
+            mDocument, nsPresContext::eContext_Galley, containerFrame);
       }
       NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
 
@@ -846,8 +839,7 @@ nsresult nsDocumentViewer::InitInternal(
       
 
       MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(aBounds.width),
-                        mPresContext->DevPixelsToAppUnits(aBounds.height)),
-                 containerView);
+                        mPresContext->DevPixelsToAppUnits(aBounds.height)));
       Hide();
 
 #ifdef NS_PRINT_PREVIEW
@@ -896,7 +888,6 @@ nsresult nsDocumentViewer::InitInternal(
   if (aDoCreation && mPresContext) {
     
     
-
     rv = InitPresentationStuff(!makeCX);
   }
 
@@ -1607,31 +1598,8 @@ nsDocumentViewer::Destroy() {
     mIsSticky = true;
 
     
-    if (mPresShell) {
-      nsViewManager* vm = mPresShell->GetViewManager();
-      if (vm) {
-        nsView* rootView = vm->GetRootView();
-
-        if (rootView) {
-          nsView* rootViewParent = rootView->GetParent();
-          if (rootViewParent) {
-            nsView* subdocview = rootViewParent->GetParent();
-            if (subdocview) {
-              nsIFrame* f = subdocview->GetFrame();
-              if (f) {
-                nsSubDocumentFrame* s = do_QueryFrame(f);
-                if (s) {
-                  s->ClearDisplayItems();
-                }
-              }
-            }
-            nsViewManager* parentVM = rootViewParent->GetViewManager();
-            if (parentVM) {
-              parentVM->RemoveChild(rootView);
-            }
-          }
-        }
-      }
+    if (nsSubDocumentFrame* f = FindContainerFrame()) {
+      f->ClearDisplayItems();
     }
 
     Hide();
@@ -2073,16 +2041,16 @@ nsDocumentViewer::Show() {
       }
     }
 
-    nsView* containerView = FindContainerView();
+    nsSubDocumentFrame* containerFrame = FindContainerFrame();
 
-    nsresult rv = CreateDeviceContext(containerView);
+    nsresult rv = CreateDeviceContext(containerFrame);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
     NS_ASSERTION(!mPresContext,
                  "Shouldn't have a prescontext if we have no shell!");
     mPresContext = CreatePresContext(mDocument, nsPresContext::eContext_Galley,
-                                     containerView);
+                                     containerFrame);
     NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
 
     rv = mPresContext->Init(mDeviceContext);
@@ -2092,8 +2060,7 @@ nsDocumentViewer::Show() {
     }
 
     MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
-                      mPresContext->DevPixelsToAppUnits(mBounds.height)),
-               containerView);
+                      mPresContext->DevPixelsToAppUnits(mBounds.height)));
 
     if (mPresContext) {
       Hide();
@@ -2208,7 +2175,7 @@ nsDocumentViewer::ClearHistoryEntry() {
 
 
 
-void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
+void nsDocumentViewer::MakeWindow(const nsSize& aSize) {
   if (GetIsPrintPreview()) {
     return;
   }
@@ -2218,8 +2185,7 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
   
   nsRect tbounds(nsPoint(), aSize);
   
-  nsView* view = mViewManager->CreateView(tbounds, aContainerView);
-  MOZ_ASSERT(view);
+  nsView* view = mViewManager->CreateView(tbounds, nullptr);
 
   
   
@@ -2227,7 +2193,7 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize, nsView* aContainerView) {
   
   
   if (!mDocument->IsResourceDoc()) {
-    MOZ_ASSERT_IF(!aContainerView, mParentWidget);
+    MOZ_ASSERT_IF(!FindContainerFrame(), mParentWidget);
     if (mParentWidget) {
       
       view->AttachToTopLevelWidget(mParentWidget);
@@ -2256,7 +2222,7 @@ void nsDocumentViewer::DetachFromTopLevelWidget() {
   mAttachedToParent = false;
 }
 
-nsView* nsDocumentViewer::FindContainerView() {
+nsSubDocumentFrame* nsDocumentViewer::FindContainerFrame() {
   if (!mContainer) {
     return nullptr;
   }
@@ -2287,22 +2253,20 @@ nsView* nsDocumentViewer::FindContainerView() {
     return nullptr;
   }
 
-  NS_ASSERTION(subdocFrame->GetView(), "Subdoc frames must have views");
-  return static_cast<nsSubDocumentFrame*>(subdocFrame)->EnsureInnerView();
+  return static_cast<nsSubDocumentFrame*>(subdocFrame);
 }
 
-nsresult nsDocumentViewer::CreateDeviceContext(nsView* aContainerView) {
+nsresult nsDocumentViewer::CreateDeviceContext(
+    nsSubDocumentFrame* aContainerFrame) {
   MOZ_ASSERT(!mPresShell && !mWindow,
              "This will screw up our existing presentation");
   MOZ_ASSERT(mDocument, "Gotta have a document here");
 
-  Document* doc = mDocument->GetDisplayDocument();
-  if (doc) {
-    NS_ASSERTION(!aContainerView,
+  if (Document* doc = mDocument->GetDisplayDocument()) {
+    NS_ASSERTION(!aContainerFrame,
                  "External resource document embedded somewhere?");
     
-    nsPresContext* ctx = doc->GetPresContext();
-    if (ctx) {
+    if (nsPresContext* ctx = doc->GetPresContext()) {
       mDeviceContext = ctx->DeviceContext();
       return NS_OK;
     }
@@ -2311,8 +2275,8 @@ nsresult nsDocumentViewer::CreateDeviceContext(nsView* aContainerView) {
   
   
   nsIWidget* widget = nullptr;
-  if (aContainerView) {
-    widget = aContainerView->GetNearestWidget(nullptr);
+  if (aContainerFrame) {
+    widget = aContainerFrame->GetNearestWidget();
   }
   if (!widget) {
     widget = mParentWidget;
@@ -3345,14 +3309,13 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
     NS_ENSURE_SUCCESS(rv, rv);
 
     mPresContext = CreatePresContext(
-        mDocument, nsPresContext::eContext_PrintPreview, FindContainerView());
+        mDocument, nsPresContext::eContext_PrintPreview, FindContainerFrame());
     mPresContext->SetPrintSettings(aPrintSettings);
     rv = mPresContext->Init(mDeviceContext);
     NS_ENSURE_SUCCESS(rv, rv);
 
     MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
-                      mPresContext->DevPixelsToAppUnits(mBounds.height)),
-               FindContainerView());
+                      mPresContext->DevPixelsToAppUnits(mBounds.height)));
 
     MOZ_TRY(InitPresentationStuff(true));
   }
@@ -3388,7 +3351,7 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
   NS_ENSURE_STATE(mDocument);
   if (aPageMode) {
     mPresContext = CreatePresContext(
-        mDocument, nsPresContext::eContext_PageLayout, FindContainerView());
+        mDocument, nsPresContext::eContext_PageLayout, FindContainerFrame());
     NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
     mPresContext->SetPaginatedScrolling(true);
     mPresContext->SetPrintSettings(aPrintSettings);
@@ -3448,18 +3411,8 @@ void nsDocumentViewer::DestroyPresShell() {
 }
 
 void nsDocumentViewer::InvalidatePotentialSubDocDisplayItem() {
-  if (mViewManager) {
-    if (nsView* rootView = mViewManager->GetRootView()) {
-      if (nsView* rootViewParent = rootView->GetParent()) {
-        if (nsView* subdocview = rootViewParent->GetParent()) {
-          if (nsIFrame* f = subdocview->GetFrame()) {
-            if (nsSubDocumentFrame* s = do_QueryFrame(f)) {
-              s->MarkNeedsDisplayItemRebuild();
-            }
-          }
-        }
-      }
-    }
+  if (nsSubDocumentFrame* f = FindContainerFrame()) {
+    f->MarkNeedsDisplayItemRebuild();
   }
 }
 
