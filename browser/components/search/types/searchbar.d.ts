@@ -2,4 +2,5 @@
 
 interface MozSearchbar extends MozXULElement {
   select(): void;
+  get inputField(): HTMLInputElement;
 }

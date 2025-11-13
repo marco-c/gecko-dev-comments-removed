@@ -207,6 +207,13 @@
       return this._textbox;
     }
 
+    
+
+
+    get inputField() {
+      return this.textbox;
+    }
+
     set value(val) {
       this._textbox.value = val;
     }
