@@ -467,7 +467,6 @@ static void LoadConstantCompareOperand(MacroAssembler& masm,
   
   
   
-  
   Register pc = LoadBytecodePC(masm, payload);
   masm.load8ZeroExtend(Address(pc, ConstantCompareOperand::OFFSET_OF_TYPE),
                        constantType);
@@ -3041,65 +3040,47 @@ bool BaselineCompilerCodeGen::emitConstantStrictEq(JSOp op) {
   frame.popRegsAndSync(1);
 
   ValueOperand value = R0;
-  Label fail, pass, done;
+  Label pass, done;
 
   switch (data.type()) {
     case ConstantCompareOperand::EncodedType::Int32: {
       int32_t constantVal = data.toInt32();
 
-      Label maybeDouble;
-      masm.branchTestInt32(Assembler::NotEqual, value, &maybeDouble);
-      masm.branch32(JSOpToCondition(op, true), value.payloadOrValueReg(),
-                    Imm32(constantVal), &pass,
-                    MacroAssembler::LhsHighBitsAreClean::No);
-      masm.jump(&fail);
-
-      masm.bind(&maybeDouble);
-      {
-        FloatRegister unboxedValue = FloatReg0;
-        FloatRegister floatPayload = FloatReg1;
-
-        masm.branchTestDouble(Assembler::NotEqual, value,
-                              op == JSOp::StrictEq ? &fail : &pass);
-
-        masm.unboxDouble(value, unboxedValue);
-        masm.loadConstantDouble(double(constantVal), floatPayload);
-        masm.branchDouble(JSOpToDoubleCondition(op), unboxedValue, floatPayload,
-                          &pass);
+      Label fail;
+      masm.branchTestValue(Assembler::Equal, value, Int32Value(constantVal),
+                           op == JSOp::StrictEq ? &pass : &fail);
+      if (constantVal != 0) {
+        masm.branchTestValue(JSOpToCondition(op, false), value,
+                             DoubleValue(constantVal), &pass);
+      } else {
+        masm.branchTestValue(Assembler::Equal, value, DoubleValue(0.0),
+                             op == JSOp::StrictEq ? &pass : &fail);
+        masm.branchTestValue(JSOpToCondition(op, false), value,
+                             DoubleValue(-0.0), &pass);
       }
+      masm.bind(&fail);
       break;
     }
 
     case ConstantCompareOperand::EncodedType::Boolean: {
       bool constantVal = data.toBoolean();
-      Register boolUnboxed = R1.scratchReg();
-      masm.fallibleUnboxBoolean(value, boolUnboxed,
-                                op == JSOp::StrictEq ? &fail : &pass);
-      masm.branch32(JSOpToCondition(op, true), boolUnboxed, Imm32(constantVal),
-                    &pass);
+
+      masm.branchTestValue(JSOpToCondition(op, false), value,
+                           BooleanValue(constantVal), &pass);
       break;
     }
 
     case ConstantCompareOperand::EncodedType::Null: {
-      masm.branchTestNull(Assembler::NotEqual, value,
-                          op == JSOp::StrictEq ? &fail : &pass);
-      if (op == JSOp::StrictEq) {
-        masm.jump(&pass);
-      }
+      masm.branchTestNull(JSOpToCondition(op, false), value, &pass);
       break;
     }
 
     case ConstantCompareOperand::EncodedType::Undefined: {
-      masm.branchTestUndefined(Assembler::NotEqual, value,
-                               op == JSOp::StrictEq ? &fail : &pass);
-      if (op == JSOp::StrictEq) {
-        masm.jump(&pass);
-      }
+      masm.branchTestUndefined(JSOpToCondition(op, false), value, &pass);
       break;
     }
   }
 
-  masm.bind(&fail);
   {
     masm.moveValue(BooleanValue(false), R0);
     masm.jump(&done);
@@ -3130,81 +3111,52 @@ bool BaselineInterpreterCodeGen::emitConstantStrictEq(JSOp op) {
   frame.popRegsAndSync(1);
 
   ValueOperand value = R0;
+
+#if defined(JS_NUNBOX32)
+  Register constantType = R1.typeReg();
+  Register payload = R1.payloadReg();
+#else
   Register constantType = R1.scratchReg();
   Register payload = R2.scratchReg();
+#endif
 
   LoadConstantCompareOperand(masm, constantType, payload);
-  Label isInt32, isBool, isNull, isUndefined;
+
   Label pass, fail, done;
 
-  masm.branch32(Assembler::Equal, constantType,
+  
+  Label compareValueBitwise;
+  masm.branch32(Assembler::NotEqual, constantType,
                 Imm32(int32_t(ConstantCompareOperand::EncodedType::Int32)),
-                &isInt32);
-  masm.branch32(Assembler::Equal, constantType,
-                Imm32(int32_t(ConstantCompareOperand::EncodedType::Boolean)),
-                &isBool);
-  masm.branch32(Assembler::Equal, constantType,
-                Imm32(int32_t(ConstantCompareOperand::EncodedType::Null)),
-                &isNull);
-  masm.branch32(Assembler::Equal, constantType,
-                Imm32(int32_t(ConstantCompareOperand::EncodedType::Undefined)),
-                &isUndefined);
-  masm.assumeUnreachable("Unexpected constant compare type");
-
-  masm.bind(&isInt32);
+                &compareValueBitwise);
+  masm.branchTestDouble(Assembler::NotEqual, value, &compareValueBitwise);
   {
-    Label maybeDouble;
-    masm.branchTestInt32(Assembler::NotEqual, value, &maybeDouble);
-    masm.branch32(JSOpToCondition(op, true), value.payloadOrValueReg(), payload,
-                  &pass, MacroAssembler::LhsHighBitsAreClean::No);
-    masm.jump(&fail);
-
-    masm.bind(&maybeDouble);
-    {
-      FloatRegister unboxedValue = FloatReg0;
-      FloatRegister floatPayload = FloatReg1;
-      masm.branchTestDouble(Assembler::NotEqual, value,
-                            op == JSOp::StrictEq ? &fail : &pass);
-      masm.unboxDouble(value, unboxedValue);
-      masm.convertInt32ToDouble(payload, floatPayload);
-      masm.branchDouble(JSOpToDoubleCondition(op), unboxedValue, floatPayload,
-                        &pass);
-      masm.jump(&fail);
-    }
-  }
-
-  masm.bind(&isBool);
-  {
-    Register boolUnboxed = R1.scratchReg();
-    masm.fallibleUnboxBoolean(value, boolUnboxed,
-                              op == JSOp::StrictEq ? &fail : &pass);
-    masm.branch32(JSOpToCondition(op, true), boolUnboxed, payload, &pass);
+    FloatRegister unboxedValue = FloatReg0;
+    FloatRegister floatPayload = FloatReg1;
+    masm.unboxDouble(value, unboxedValue);
+    masm.convertInt32ToDouble(payload, floatPayload);
+    masm.branchDouble(JSOpToDoubleCondition(op), unboxedValue, floatPayload,
+                      &pass);
     masm.jump(&fail);
   }
+  masm.bind(&compareValueBitwise);
 
-  masm.bind(&isNull);
-  {
-    masm.branchTestNull(Assembler::NotEqual, value,
-                        op == JSOp::StrictEq ? &fail : &pass);
-    masm.jump(op == JSOp::StrictEq ? &pass : &fail);
-  }
+  
+  masm.boxNonDouble(constantType, payload, R1);
 
-  masm.bind(&isUndefined);
+  
+  masm.branch64(JSOpToCondition(op, false), value.toRegister64(),
+                R1.toRegister64(), &pass);
+
+  masm.bind(&fail);
   {
-    masm.branchTestUndefined(Assembler::NotEqual, value,
-                             op == JSOp::StrictEq ? &fail : &pass);
-    masm.jump(op == JSOp::StrictEq ? &pass : &fail);
+    masm.moveValue(BooleanValue(false), R0);
+    masm.jump(&done);
   }
 
   masm.bind(&pass);
   {
-    masm.moveValue(BooleanValue(true), value);
-    masm.jump(&done);
-  }
-
-  masm.bind(&fail);
-  {
-    masm.moveValue(BooleanValue(false), value);
+    masm.moveValue(BooleanValue(true), R0);
   }
 
   masm.bind(&done);
@@ -3955,9 +3907,9 @@ Address BaselineCodeGen<Handler>::getEnvironmentCoordinateAddress(
 
 static void LoadAliasedVarEnv(MacroAssembler& masm, Register env,
                               Register scratch) {
-  static_assert(ENVCOORD_HOPS_LEN == 1,
-                "Code assumes number of hops is stored in uint8 operand");
-  LoadUint8Operand(masm, scratch);
+  static_assert(ENVCOORD_HOPS_LEN == 2,
+                "Code assumes number of hops is stored in uint16 operand");
+  LoadUint16Operand(masm, scratch);
 
   Label top, done;
   masm.branchTest32(Assembler::Zero, scratch, scratch, &done);
@@ -5966,7 +5918,7 @@ bool BaselineCodeGen<Handler>::emit_Callee() {
 template <>
 bool BaselineCompilerCodeGen::emit_EnvCallee() {
   frame.syncStack(0);
-  uint8_t numHops = GET_UINT8(handler.pc());
+  uint16_t numHops = GET_ENVCOORD_HOPS(handler.pc());
   Register scratch = R0.scratchReg();
 
   masm.loadPtr(frame.addressOfEnvironmentChain(), scratch);
@@ -5987,7 +5939,7 @@ bool BaselineInterpreterCodeGen::emit_EnvCallee() {
   Register env = R1.scratchReg();
 
   static_assert(JSOpLength_EnvCallee - sizeof(jsbytecode) == ENVCOORD_HOPS_LEN,
-                "op must have uint8 operand for LoadAliasedVarEnv");
+                "op must have uint16 operand for LoadAliasedVarEnv");
 
   
   masm.loadPtr(frame.addressOfEnvironmentChain(), env);
