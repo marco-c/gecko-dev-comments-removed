@@ -3563,20 +3563,16 @@ static int32_t GetFrameLineNum(nsIFrame* aFrame, nsILineIterator* aLineIter) {
   if (!aLineIter) {
     return -1;
   }
-  int32_t n = aLineIter->FindLineContaining(aFrame);
-  if (n >= 0) {
-    return n;
-  }
   
   
-  nsIFrame* ancestor = aFrame->GetParent();
-  while (ancestor && ancestor->IsInlineFrame()) {
-    n = aLineIter->FindLineContaining(ancestor);
+  
+  do {
+    int32_t n = aLineIter->FindLineContaining(aFrame);
     if (n >= 0) {
       return n;
     }
-    ancestor = ancestor->GetParent();
-  }
+    aFrame = aFrame->GetParent();
+  } while (aFrame && aFrame->IsLineParticipant());
   return -1;
 }
 
