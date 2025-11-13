@@ -1,13 +1,7 @@
 
 
 
-add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.dragDrop.multiselectStacking", false]],
-  });
-  
-  gReduceMotionOverride = true;
-
+async function moveTabs() {
   let tab0 = gBrowser.selectedTab;
   let tab1 = await addTab();
   let tab2 = await addTab();
@@ -65,4 +59,22 @@ add_task(async function () {
   for (let tab of tabs.filter(t => t != tab0)) {
     BrowserTestUtils.removeTab(tab);
   }
+}
+
+add_task(async function () {
+  
+  gReduceMotionOverride = true;
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.dragDrop.multiselectStacking", false]],
+  });
+  info("Test tab reorder without tab stacking");
+  await moveTabs();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.dragDrop.multiselectStacking", true]],
+  });
+  info("Test tab reorder with tab stacking");
+  await moveTabs();
+  await SpecialPowers.popPrefEnv();
 });
