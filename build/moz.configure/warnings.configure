@@ -104,19 +104,16 @@ check_and_add_warning("-Wno-range-loop-analysis", min_clang_version="4.0.0")
 
 
 
-check_and_add_warning("-Wcomma-subscript", cxx_compiler, when=not_clang_based)
-check_and_add_warning("-Wenum-compare-conditional", min_clang_version="10.0.0")
-check_and_add_warning("-Wenum-float-conversion", min_clang_version="10.0.0")
-check_and_add_warning("-Wvolatile", cxx_compiler, when=not_clang)
-
 
 check_and_add_warning(
-    "-Wno-deprecated-anon-enum-enum-conversion",
+    "-Wno-deprecated-anon-enum-enum-conversion",  
     cxx_compiler,
     min_clang_version="10.0.0",
 )
 check_and_add_warning(
-    "-Wno-deprecated-enum-enum-conversion", cxx_compiler, min_clang_version="10.0.0"
+    "-Wno-deprecated-enum-enum-conversion",  
+    cxx_compiler,
+    min_clang_version="10.0.0",
 )
 
 
