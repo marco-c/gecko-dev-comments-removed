@@ -64,7 +64,11 @@ extern "C"
 
 
 #define MAX_FS_KHZ                              16
+#ifdef ENABLE_QEXT
+#define MAX_API_FS_KHZ                          96
+#else
 #define MAX_API_FS_KHZ                          48
+#endif
 
 
 #define TYPE_NO_VOICE_ACTIVITY                  0
