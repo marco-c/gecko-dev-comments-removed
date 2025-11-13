@@ -303,7 +303,11 @@ void WaylandSurface::RequestFrameCallbackLocked(
         }};
     mOpaqueRegionFrameCallback = wl_surface_frame(mSurface);
     wl_callback_add_listener(mOpaqueRegionFrameCallback, &listener, this);
-    mSurfaceNeedsCommit = true;
+    
+    
+    if (mBufferAttached) {
+      mSurfaceNeedsCommit = true;
+    }
   }
 
   if (!mFrameCallbackEnabled || !mFrameCallbackHandler.IsSet()) {
