@@ -10,6 +10,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/MediaSessionBinding.h"
+#include "mozilla/gfx/2D.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
@@ -31,6 +32,9 @@ class MediaImageData {
   nsString mSizes;
   nsString mSrc;
   nsString mType;
+  
+  
+  RefPtr<mozilla::gfx::DataSourceSurface> mDataSurface;
 };
 
 class MediaMetadataBase {
@@ -48,6 +52,9 @@ class MediaMetadataBase {
   nsCString mUrl;
   CopyableTArray<MediaImageData> mArtwork;
 };
+
+using MediaMetadataBasePromise =
+    mozilla::MozPromise<MediaMetadataBase, nsresult, true>;
 
 class MediaMetadata final : public nsISupports,
                             public nsWrapperCache,
@@ -88,7 +95,7 @@ class MediaMetadata final : public nsISupports,
   
   
   
-  MediaMetadataBase* AsMetadataBase() { return this; }
+  RefPtr<MediaMetadataBasePromise> LoadMetadataArtwork();
 
  private:
   MediaMetadata(nsIGlobalObject* aParent, const nsString& aTitle,
@@ -100,6 +107,10 @@ class MediaMetadata final : public nsISupports,
   
   void SetArtworkInternal(const Sequence<MediaImage>& aArtwork,
                           ErrorResult& aRv);
+
+  static RefPtr<MediaMetadataBasePromise> FetchArtwork(
+      const MediaMetadataBase& aMetadata, nsIPrincipal* aPrincipal,
+      const size_t aIndex);
 
   nsCOMPtr<nsIGlobalObject> mParent;
 };
