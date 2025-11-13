@@ -109,6 +109,13 @@ async function jsCacheContentTask(test, item) {
       if (item.events.length === 0) {
         resolve();
       }
+    } else if (param.event === "diskcache:noschedule") {
+      
+      
+      
+      
+      
+      dump("@@@ Ignoring: " + data + "\n");
     } else {
       dump("@@@ Got unexpected event: " + data + "\n");
       dump("@@@ Expected: " + JSON.stringify(item.events[0]) + "\n");
