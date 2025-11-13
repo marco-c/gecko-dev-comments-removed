@@ -467,6 +467,10 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
+
+
+
   prettyPrintNodeAsXHTML(node) {
     const tagLabel = this.doc.createElementNS(NS_XHTML, "span");
     tagLabel.className = "breadcrumbs-widget-item-tag";

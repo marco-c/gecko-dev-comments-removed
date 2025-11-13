@@ -54,6 +54,7 @@ const XUL_EVENTS = CLICK_EVENTS | COMMAND_EVENT;
 
 
 
+
 function testActions(aArray) {
   gActionsQueue = new eventQueue();
 

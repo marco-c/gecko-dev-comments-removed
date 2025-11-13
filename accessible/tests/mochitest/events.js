@@ -290,6 +290,7 @@ const DO_NOT_FINISH_TEST = 1;
 
 
 
+
 function eventQueue(aEventType) {
   
 
@@ -1962,6 +1963,7 @@ function nofocusChecker(aID) {
   this.__proto__ = new focusChecker(aID);
   this.unexpected = true;
 }
+
 
 
 

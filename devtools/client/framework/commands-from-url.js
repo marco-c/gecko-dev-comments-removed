@@ -46,7 +46,6 @@ const {
 
 
 
-
 exports.commandsFromURL = async function commandsFromURL(url) {
   const client = await clientFromURL(url);
   const params = url.searchParams;

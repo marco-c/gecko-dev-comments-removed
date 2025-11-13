@@ -155,6 +155,11 @@ exports.getFontPreviewData = getFontPreviewData;
 
 
 
+
+
+
+
+
 function getRuleText(initialText, line, column) {
   if (typeof line === "undefined" || typeof column === "undefined") {
     throw new Error("Location information is missing");

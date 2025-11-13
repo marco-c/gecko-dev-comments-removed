@@ -217,6 +217,7 @@ StreamCopier.prototype = {
 
 
 
+
 function delimitedRead(stream, delimiter, count) {
   dumpv(
     "Starting delimited read for " + delimiter + " up to " + count + " bytes"

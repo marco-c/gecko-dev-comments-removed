@@ -20,6 +20,7 @@ function baseCopyFormatter({ name, value, hasChildren }) {
 
 
 
+
 function baseCopyAllFormatter(object) {
   return JSON.stringify(object, null, "\t");
 }
