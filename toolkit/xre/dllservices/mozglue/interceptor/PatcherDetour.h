@@ -826,18 +826,23 @@ class WindowsDllDetourPatcher final
       }
 
       
+      
+      *aOutTramp = reinterpret_cast<void*>(originalTarget);
+
+      
       target.WritePointer(aDest);
       if (!target.Commit()) {
+        *aOutTramp = nullptr;
         return false;
       }
 
       
       aTramp.WritePointer(originalTarget);
       if (!aTramp) {
+        *aOutTramp = nullptr;
         return false;
       }
 
-      *aOutTramp = reinterpret_cast<void*>(originalTarget);
       return true;
     }
 #endif  
