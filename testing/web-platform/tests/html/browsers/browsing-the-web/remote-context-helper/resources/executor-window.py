@@ -25,10 +25,6 @@ def main(request, response):
   start_on_s = f"'{start_on[0]}'" if start_on else "null"
 
   headers = [("Content-Type", "text/html")]
-  
-  
-  if request.headers.get(b"Sec-Popin-Context") == b"partitioned":
-    headers.append((b'Popin-Policy', b"partitioned=*"))
 
   
   
