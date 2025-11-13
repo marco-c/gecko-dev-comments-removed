@@ -215,7 +215,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
   nsresult NewProxyInfo_Internal(const char* type, const nsACString& host,
-                                 int32_t port, const nsACString& pathTemplate,
+                                 int32_t port, const nsACString& masqueTemplate,
                                  const nsACString& username,
                                  const nsACString& password,
                                  const nsACString& aProxyAuthorizationHeader,
