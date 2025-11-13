@@ -981,11 +981,8 @@ void nsContainerFrame::ReflowAbsoluteFrames(nsPresContext* aPresContext,
 
     
     nsMargin usedBorder = GetUsedBorder();
-    nscoord containingBlockWidth =
-        std::max(0, aDesiredSize.Width() - usedBorder.LeftRight());
-    nscoord containingBlockHeight =
-        std::max(0, aDesiredSize.Height() - usedBorder.TopBottom());
-    nsRect containingBlock(0, 0, containingBlockWidth, containingBlockHeight);
+    nsRect containingBlock(nsPoint{}, aDesiredSize.PhysicalSize());
+    containingBlock.Deflate(usedBorder);
     
     
     AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,

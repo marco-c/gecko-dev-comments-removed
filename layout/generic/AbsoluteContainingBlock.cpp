@@ -1122,7 +1122,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     const auto cb = [&]() {
       if (isGrid) {
         
-        return ContainingBlockRect{nsGridContainerFrame::GridItemCB(aKidFrame)};
+        const auto border = aDelegatingFrame->GetUsedBorder();
+        const nsPoint borderShift{border.left, border.top};
+        
+        return ContainingBlockRect{nsGridContainerFrame::GridItemCB(aKidFrame) +
+                                   borderShift};
       }
 
       auto positionArea = aKidFrame->StylePosition()->mPositionArea;
@@ -1153,8 +1157,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
           StylePositionArea resolvedPositionArea{};
           const auto scrolledAnchorCb = AnchorPositioningUtils::
               AdjustAbsoluteContainingBlockRectForPositionArea(
-                  scrolledAnchorRect, aOriginalContainingBlockRect,
-                  aKidFrame->GetWritingMode(),
+                  scrolledAnchorRect + aOriginalContainingBlockRect.TopLeft(),
+                  aOriginalContainingBlockRect, aKidFrame->GetWritingMode(),
                   aDelegatingFrame->GetWritingMode(), positionArea,
                   &resolvedPositionArea);
           return ContainingBlockRect{offset, resolvedPositionArea,
@@ -1360,15 +1364,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             (offsets.BStart(outerWM) + kidMarginBox.BSize(outerWM));
       }
 
-      LogicalRect rect(outerWM,
-                       border.StartOffset(outerWM) +
-                           offsets.StartOffset(outerWM) +
-                           margin.StartOffset(outerWM),
-                       kidSize);
-      nsRect r = rect.GetPhysicalRect(
-          outerWM, cbSize.GetPhysicalSize(outerWM) +
-                       border.Size(outerWM).GetPhysicalSize(outerWM));
+      LogicalRect rect(
+          outerWM, offsets.StartOffset(outerWM) + margin.StartOffset(outerWM),
+          kidSize);
+      nsRect r = rect.GetPhysicalRect(outerWM, cbSize.GetPhysicalSize(outerWM));
 
+      
+      
       
       r += cb.mRect.TopLeft();
       if (cb.mAnchorShiftInfo) {
@@ -1429,23 +1431,15 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }();
 
     const auto fits = aStatus.IsComplete() && [&]() {
-      
-      
-      const auto paddingEdgeShift = [&]() {
-        const auto border = aDelegatingFrame->GetUsedBorder();
-        return nsPoint{border.left, border.top};
-      }();
-      auto overflowCheckRect = cb.mRect + paddingEdgeShift;
+      auto overflowCheckRect = cb.mRect;
       if (aAnchorPosResolutionCache && cb.mAnchorShiftInfo) {
         overflowCheckRect =
             GrowOverflowCheckRect(overflowCheckRect, aKidFrame->GetNormalRect(),
                                   cb.mAnchorShiftInfo->mResolvedArea);
         aAnchorPosResolutionCache->mReferenceData->mContainingBlockRect =
             overflowCheckRect;
-        const auto originalContainingBlockRect =
-            aOriginalContainingBlockRect + paddingEdgeShift;
         return AnchorPositioningUtils::FitsInContainingBlock(
-            overflowCheckRect, originalContainingBlockRect,
+            overflowCheckRect, aOriginalContainingBlockRect,
             aKidFrame->GetRect());
       }
       return overflowCheckRect.Contains(aKidFrame->GetRect());
