@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1130860;
-var summary = 'Slash and LineTerminator should be escaped correctly.';
-
-print(BUGNUMBER + ": " + summary);
-
 function test(re, source) {
   assert.sameValue(re.source, source);
   assert.sameValue(eval("/" + re.source + "/").source, source);
@@ -76,6 +70,5 @@ test(RegExp("\\[\/\\]"),    "\\[\\/\\]");
 test(RegExp("\\[\\/\\]"),   "\\[\\/\\]");
 test(RegExp("\\[\\\/\\]"),  "\\[\\/\\]");
 test(RegExp("\\[\\\\/\\]"), "\\[\\\\\\/\\]");
-
 
 reportCompare(0, 0);

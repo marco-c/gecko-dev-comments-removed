@@ -25,7 +25,6 @@
 
 
 
-
 verifyProperty(Intl, 'DurationFormat', {
   enumerable: false,
   writable: true,

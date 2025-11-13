@@ -11,10 +11,9 @@
 
 
 
-
 const x = 1;
 with ({x: 1, [Symbol.unscopables]: {x: true}})
-    assertThrowsInstanceOf(() => {x = 2;}, TypeError);
+    assert.throws(TypeError, () => {x = 2;});
 
 
 reportCompare(0, 0);

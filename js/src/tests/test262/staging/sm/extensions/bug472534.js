@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function monthNames () {
     return [
       /jan(uar(y)?)?/, 0,

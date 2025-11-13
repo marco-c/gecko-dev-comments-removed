@@ -12,7 +12,6 @@
 
 
 
-
 var hits = 0, obj = {};
 function f(x) {
     assert.sameValue(this, obj);

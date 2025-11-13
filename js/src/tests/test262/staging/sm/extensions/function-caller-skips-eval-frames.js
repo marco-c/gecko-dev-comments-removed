@@ -36,8 +36,4 @@ var innermost = innermostEvalTwice;
 
 assert.sameValue(nest2(), nestTwice);
 
-
-
-print("Tests complete");
-
 reportCompare(0, 0);

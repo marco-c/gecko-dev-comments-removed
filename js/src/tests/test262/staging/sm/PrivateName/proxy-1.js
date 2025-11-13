@@ -7,9 +7,6 @@
 
 
 
-
-
-
 class A {
   #x = 10;
   g() {
@@ -18,15 +15,8 @@ class A {
 };
 
 var p = new Proxy(new A, {});
-var completed = false;
-try {
+assert.throws(TypeError, function() {
   p.g();
-  completed = true;
-} catch (e) {
-  assert.sameValue(e instanceof TypeError, true);
-}
-assert.sameValue(completed, false);
-
-
+});
 
 reportCompare(0, 0);

@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(FinalizationRegistry, 'length', {
   value: 1,
   writable: false,

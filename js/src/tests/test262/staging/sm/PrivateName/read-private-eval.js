@@ -7,9 +7,6 @@
 
 
 
-
-
-
 class A {
   #x = 14;
   g() {
@@ -17,8 +14,7 @@ class A {
   }
 }
 
-a = new A;
+var a = new A;
 assert.sameValue(a.g(), 14);
-
 
 reportCompare(0, 0);

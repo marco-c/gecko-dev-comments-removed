@@ -10,20 +10,6 @@
 
 
 
-
-var gTestfile = 'stringify-replacer-array-skipped-element.js';
-
-var BUGNUMBER = 648471;
-var summary =
-  "Better/more correct handling for replacer arrays with getter array index " +
-  "properties";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 assert.sameValue(JSON.stringify({ 3: 3, 4: 4 },
                         ["3", { toString: function() { return "4" } }]),
          '{"3":3}');
@@ -63,9 +49,5 @@ assert.sameValue(JSON.stringify({ 3: 3, null: 4 }, ["3", "null", null]),
 
 assert.sameValue(JSON.stringify({ 3: 3, null: 4 }, ["3", null, "null"]),
          '{"3":3,"null":4}');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

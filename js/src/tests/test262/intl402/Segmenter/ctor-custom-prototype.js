@@ -23,7 +23,6 @@
 
 
 
-
 var custom = new Function();
 custom.prototype = {};
 

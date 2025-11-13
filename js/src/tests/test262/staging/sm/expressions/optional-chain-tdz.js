@@ -9,30 +9,27 @@
 
 
 
-
-
-
 {
-  assertThrowsInstanceOf(() => {
+  assert.throws(ReferenceError, () => {
     const Null = null;
     Null?.[b];
     b = 0;
     let b;
-  }, ReferenceError);
+  });
 
-  assertThrowsInstanceOf(() => {
+  assert.throws(ReferenceError, () => {
     const Null = null;
     Null?.[b]();
     b = 0;
     let b;
-  }, ReferenceError);
+  });
 
-  assertThrowsInstanceOf(() => {
+  assert.throws(ReferenceError, () => {
     const Null = null;
     delete Null?.[b];
     b = 0;
     let b;
-  }, ReferenceError);
+  });
 }
 
 

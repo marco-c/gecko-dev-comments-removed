@@ -7,26 +7,22 @@
 
 
 
-
-
 var BUGNUMBER = 1384299;
 var summary = "yield outside of generators should provide better error";
 
-print(BUGNUMBER + ": " + summary);
-
-assertThrowsInstanceOfWithMessage(
-    () => eval("yield 10"),
+assert.throws(
     SyntaxError,
+    () => eval("yield 10"),
     "yield expression is only valid in generators");
 
-assertThrowsInstanceOfWithMessage(
-    () => eval("yield 10"),
+assert.throws(
     SyntaxError,
+    () => eval("yield 10"),
     "yield expression is only valid in generators");
 
-assertThrowsInstanceOfWithMessage(
-    () => eval("yield 10"),
+assert.throws(
     SyntaxError,
+    () => eval("yield 10"),
     "yield expression is only valid in generators");
 
 

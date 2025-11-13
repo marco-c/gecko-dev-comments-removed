@@ -7,8 +7,6 @@
 
 
 
-
-
 function makeArray(array) {
     var log = [];
     Object.setPrototypeOf(array, new Proxy(Array.prototype, new Proxy({

@@ -17,14 +17,13 @@ assert.sameValue(Reflect.apply(Math.floor, undefined, [1.75]), 1);
 
 var nonCallable = [{}, [], (class clsX { constructor() {} })];
 for (var value of nonCallable) {
-    assertThrowsInstanceOf(() => Reflect.apply(nonCallable), TypeError);
+    assert.throws(TypeError, () => Reflect.apply(nonCallable));
 }
 
 
 var hits = 0;
 var bogusArgumentList = {get length() { hit++; throw "FAIL";}};
-assertThrowsInstanceOf(() => Reflect.apply({callable: false}, null, bogusArgumentList),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.apply({callable: false}, null, bogusArgumentList));
 assert.sameValue(hits, 0);
 
 
@@ -71,7 +70,7 @@ assert.sameValue(Reflect.apply(new Proxy(f, {}),
          13);
 
 
-var gw = createNewGlobal();
+var gw = $262.createRealm().global;
 assert.sameValue(Reflect.apply(gw.parseInt,
                        undefined,
                        ["45"]),

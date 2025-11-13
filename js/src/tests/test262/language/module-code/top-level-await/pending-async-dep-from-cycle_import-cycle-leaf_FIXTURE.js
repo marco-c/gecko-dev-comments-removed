@@ -1,0 +1,7 @@
+
+
+
+
+import "./pending-async-dep-from-cycle_cycle-leaf_FIXTURE.js";
+
+globalThis.logs.push("importer of cycle leaf");

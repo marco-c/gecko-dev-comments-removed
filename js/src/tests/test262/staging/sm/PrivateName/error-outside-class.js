@@ -8,17 +8,13 @@
 
 
 
+assert.throws(SyntaxError, () => eval('#x'));
 
 
-
-assertThrowsInstanceOf(() => eval('#x'), SyntaxError);
-
-
-assertThrowsInstanceOf(() => eval('this.#x'), SyntaxError);
+assert.throws(SyntaxError, () => eval('this.#x'));
 
 
-assertThrowsInstanceOf(
-    () => eval('function foo() { return this.#x'), SyntaxError);
+assert.throws(SyntaxError, () => eval('function foo() { return this.#x'));
 
 
 

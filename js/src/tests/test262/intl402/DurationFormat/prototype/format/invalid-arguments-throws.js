@@ -12,7 +12,6 @@
 
 
 
-
 const df = new Intl.DurationFormat();
 
 assert.throws(TypeError, () => { df.format(undefined) }, "undefined" );

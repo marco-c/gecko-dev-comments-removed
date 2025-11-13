@@ -10,9 +10,6 @@
 
 
 
-
-
-
 function DumpFunction(...args) {
     let code = "function anonymous(";
     code += args.slice(0, -1).join(", ");
@@ -32,7 +29,7 @@ const tests = [
 
 for (const test of tests) {
     DumpFunction(...test);
-    assertThrowsInstanceOf(() => new Function(...test), SyntaxError);
+    assert.throws(SyntaxError, () => new Function(...test));
 }
 
 

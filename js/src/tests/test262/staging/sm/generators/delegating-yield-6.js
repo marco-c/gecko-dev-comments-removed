@@ -10,8 +10,6 @@
 
 
 
-
-
 var log = "";
 
 function collect_results(iter) {

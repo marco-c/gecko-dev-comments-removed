@@ -10,43 +10,23 @@
 
 
 
-
-
-
 function strict() {
   "use strict";
   this.insert = function(){ bar(); };
   function bar() {}
 }
 
-var exception;
 
-
-exception = null;
-try {
+assert.throws(TypeError, function() {
   strict.call(undefined);
-} catch (x) {
-  exception = x;
-}
-assert.sameValue(exception instanceof TypeError, true);
+});
 
 
-exception = null;
-try {
+assert.throws(TypeError, function() {
   strict.call(null);
-} catch (x) {
-  exception = x;
-}
-assert.sameValue(exception instanceof TypeError, true);
+});
 
 
-exception = null;
-try {
-  strict.call({});
-} catch (x) {
-  exception = x;
-}
-assert.sameValue(exception, null);
-
+strict.call({});
 
 reportCompare(0, 0);

@@ -10,16 +10,13 @@
 
 
 
-
-
-
 for (var T of [Uint8Array, Uint8ClampedArray, Int16Array, Float32Array]) {
     
-    assertThrowsInstanceOf(() => new T([Symbol("a")]), TypeError);
+    assert.throws(TypeError, () => new T([Symbol("a")]));
 
     
     var arr = new T([1]);
-    assertThrowsInstanceOf(() => { arr[0] = Symbol.iterator; }, TypeError);
+    assert.throws(TypeError, () => { arr[0] = Symbol.iterator; });
     assert.sameValue(arr[0], 1);
 }
 

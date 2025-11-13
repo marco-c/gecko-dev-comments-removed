@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1184922;
-var summary = "Array destructuring with various default values in various context - yield expression";
-
-print(BUGNUMBER + ": " + summary);
-
 var opt = {
     no_plain: true,
     no_func: true,
@@ -28,6 +23,5 @@ var opt = {
     no_gen: false,
 };
 testDestructuringArrayDefault("yield 1", opt);
-
 
 reportCompare(0, 0);

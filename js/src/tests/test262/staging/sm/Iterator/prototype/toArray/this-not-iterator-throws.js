@@ -11,13 +11,9 @@
 
 
 
-
-
-
-
-assertThrowsInstanceOf(Iterator.prototype.toArray.bind(undefined), TypeError);
-assertThrowsInstanceOf(Iterator.prototype.toArray.bind({}), TypeError);
-assertThrowsInstanceOf(Iterator.prototype.toArray.bind({next: 0}), TypeError);
+assert.throws(TypeError, Iterator.prototype.toArray.bind(undefined));
+assert.throws(TypeError, Iterator.prototype.toArray.bind({}));
+assert.throws(TypeError, Iterator.prototype.toArray.bind({next: 0}));
 
 
 reportCompare(0, 0);

@@ -10,16 +10,6 @@
 
 
 
-
-var BUGNUMBER = 465199;
-var summary = "RegExp lastIndex property set should not coerce type to number";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var called = false;
 var o = { valueOf: function() { called = true; return 1; } };
 var r = /a/g;
@@ -69,10 +59,5 @@ assert.sameValue(Array.isArray(m), true);
 assert.sameValue(m.length, 1);
 assert.sameValue(m[0], "a");
 assert.sameValue(r.lastIndex, 2);
-
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

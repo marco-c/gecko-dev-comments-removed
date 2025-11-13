@@ -30,7 +30,6 @@
 
 
 
-
 var wr = new WeakRef({});
 assert.sameValue(Object.getPrototypeOf(wr), WeakRef.prototype);
 

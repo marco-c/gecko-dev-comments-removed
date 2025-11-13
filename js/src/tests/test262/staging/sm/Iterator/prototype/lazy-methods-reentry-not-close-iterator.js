@@ -9,10 +9,6 @@
 
 
 
-
-
-
-
 const methods = [
   [iter => iter.map, x => x],
   [iter => iter.filter, x => true],
@@ -28,7 +24,7 @@ for (const method of methods) {
     if (x == 2) {
       
       reentered = true;
-      assertThrowsInstanceOf(() => iterHelper.next(), TypeError);
+      assert.throws(TypeError, () => iterHelper.next());
     }
     return method[1](x);
   });

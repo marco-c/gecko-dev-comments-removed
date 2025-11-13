@@ -11,7 +11,6 @@
 
 
 
-
 const value = new Intl.Segmenter();
 assert.sameValue(
   Object.getPrototypeOf(value),

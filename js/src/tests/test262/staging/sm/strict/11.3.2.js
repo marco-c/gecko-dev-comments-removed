@@ -13,8 +13,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict('arguments--',
                               parsesSuccessfully,
                               parseRaisesException(SyntaxError)),

@@ -11,7 +11,6 @@
 
 
 
-
 const x = "global x";
 const y = "global y";
 

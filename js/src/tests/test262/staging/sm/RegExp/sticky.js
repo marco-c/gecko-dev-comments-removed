@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 773687;
-var summary = 'sticky flag should not break assertion behavior.';
-
-print(BUGNUMBER + ": " + summary);
-
 function test(re, text, expectations) {
   
   assert.sameValue(expectations.length, text.length + 1);
@@ -132,6 +126,5 @@ test(/\B/y, "abc bc", [
   { lastIndex: 5, matches: [""], index: 5 },
   null,
 ]);
-
 
 reportCompare(0, 0);

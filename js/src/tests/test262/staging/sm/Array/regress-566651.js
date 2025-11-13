@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 566651;
 var summary = 'setting array.length to null should not throw an uncatchable exception';
 var actual = 0;

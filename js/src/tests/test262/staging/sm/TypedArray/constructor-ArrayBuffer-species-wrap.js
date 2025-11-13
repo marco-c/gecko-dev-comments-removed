@@ -8,9 +8,7 @@
 
 
 
-
-
-let g = createNewGlobal();
+let g = $262.createRealm().global;
 
 
 for (let ctor of typedArrayConstructors) {

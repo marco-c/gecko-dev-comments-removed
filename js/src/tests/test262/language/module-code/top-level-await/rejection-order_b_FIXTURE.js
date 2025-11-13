@@ -1,0 +1,8 @@
+
+
+
+
+import "./rejection-order_b-sentinel_FIXTURE.js"; 
+
+import { p1 } from "./rejection-order_setup_FIXTURE.js";
+await p1.promise;

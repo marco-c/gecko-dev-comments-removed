@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.Segmenter.prototype.resolvedOptions, "length", {
   value: 0,
   writable: false,

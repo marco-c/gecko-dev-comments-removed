@@ -8,11 +8,8 @@
 
 
 
-
-
-
 var global = this;
-var otherGlobal = createNewGlobal();
+var otherGlobal = $262.createRealm().global;
 
 var thisGlobal = () => global;
 var alternateGlobals = (function(i) {
@@ -47,10 +44,10 @@ function performTests(pickGlobal)
 
     
     revocable.revoke();
-    assertThrowsInstanceOf(() => Array.isArray(revocable.proxy), TypeError);
+    assert.throws(TypeError, () => Array.isArray(revocable.proxy));
 
     
-    assertThrowsInstanceOf(() => Array.isArray(proxy), TypeError);
+    assert.throws(TypeError, () => Array.isArray(proxy));
 
 }
 

@@ -9,21 +9,19 @@
 
 
 
-
-
 let ta = new Int32Array(4);
 
 for (let nullOrUndefined of [null, undefined]) {
     
-    assertThrowsInstanceOf(() => ta.set(nullOrUndefined), TypeError);
+    assert.throws(TypeError, () => ta.set(nullOrUndefined));
 
     
     class ExpectedError extends Error {}
-    assertThrowsInstanceOf(() => ta.set(nullOrUndefined, {
+    assert.throws(ExpectedError, () => ta.set(nullOrUndefined, {
         valueOf() {
             throw new ExpectedError();
         }
-    }), ExpectedError);
+    }));
 }
 
 
@@ -37,7 +35,7 @@ ta.set("123");
 assert.compareArray(ta, [1, 2, 3, 0]);
 
 
-assertThrowsInstanceOf(() => ta.set("456789"), RangeError);
+assert.throws(RangeError, () => ta.set("456789"));
 assert.compareArray(ta, [1, 2, 3, 0]);
 
 

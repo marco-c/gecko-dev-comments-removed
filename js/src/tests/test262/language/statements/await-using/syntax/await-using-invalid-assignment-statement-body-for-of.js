@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await assert.throwsAsync(TypeError, async function () {
+    for (await using x of [null]) { x = { [Symbol.dispose]() { } }; }
+  });
+});

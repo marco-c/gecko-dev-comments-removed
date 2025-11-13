@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var o = {
     access() {
         super.foo.bar;
@@ -16,7 +13,7 @@ var o = {
 };
 
 
-assertThrowsInstanceOf(o.access, TypeError);
+assert.throws(TypeError, o.access);
 
 
 reportCompare(0, 0);

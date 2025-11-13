@@ -8,13 +8,7 @@
 
 
 
-
-var BUGNUMBER = 1147817;
-var summary = "RegExp constructor should check pattern.constructor.";
-
-print(BUGNUMBER + ": " + summary);
-
-var g = createNewGlobal();
+var g = $262.createRealm().global;
 
 var re = /foo/;
 assert.sameValue(RegExp(re), re);
@@ -84,6 +78,5 @@ g.eval(`obj.constructor = RegExp`);
 assert.sameValue(RegExp(obj) === obj, false);
 obj.constructor = RegExp;
 assert.sameValue(RegExp(obj), obj);
-
 
 reportCompare(0, 0);

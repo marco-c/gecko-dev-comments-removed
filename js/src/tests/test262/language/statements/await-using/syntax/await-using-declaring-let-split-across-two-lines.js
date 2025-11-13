@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await using
+  let = "irrelevant initializer";
+
+  assert(typeof let === "string");
+  var using, let;
+});

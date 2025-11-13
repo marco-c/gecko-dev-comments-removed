@@ -10,17 +10,14 @@
 
 
 
-
-
-
 for (let badThis of [null, undefined]) {
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         String.prototype.padStart.call(badThis, 42, "oups");
-    }, TypeError);
+    });
 
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         String.prototype.padEnd.call(badThis, 42, "oups");
-    }, TypeError);
+    });
 }
 
 let proxy = new Proxy({}, {
@@ -49,13 +46,13 @@ assert.sameValue("lame", "lame".padEnd(NaN, "foo"));
 assert.sameValue("lame", "lame".padEnd(-1, "foo"));
 assert.sameValue("lame", "lame".padEnd({toString: () => 0}, "foo"));
 
-assertThrowsInstanceOf(() => {
+assert.throws(TypeError, () => {
     "lame".padStart(Symbol("9900"), 0);
-}, TypeError);
+});
 
-assertThrowsInstanceOf(() => {
+assert.throws(TypeError, () => {
     "lame".padEnd(Symbol("9900"), 0);
-}, TypeError);
+});
 
 
 

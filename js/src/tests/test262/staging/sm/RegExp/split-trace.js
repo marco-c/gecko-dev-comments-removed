@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 887016;
-var summary = "Trace RegExp.prototype[@@split] behavior.";
-
-print(BUGNUMBER + ": " + summary);
-
 var n;
 var log;
 var target;
@@ -235,6 +229,5 @@ assert.sameValue(log,
          "set:lastIndex,get:exec,call:exec,get:lastIndex,");
 
 stopObserve();
-
 
 reportCompare(0, 0);

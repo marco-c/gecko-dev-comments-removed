@@ -11,7 +11,6 @@
 
 
 
-
 (function () {
     eval("var x=delete(x)")
 })();

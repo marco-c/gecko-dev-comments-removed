@@ -10,7 +10,6 @@
 
 
 
-
 let x = "global";
 let unscopables = {x: true};
 let env = Object.create(null);

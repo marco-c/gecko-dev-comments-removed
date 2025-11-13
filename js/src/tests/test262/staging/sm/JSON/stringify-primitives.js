@@ -8,8 +8,6 @@
 
 
 
-
-
 var x = JSON.stringify({});
 assert.sameValue(x, "{}");
 
@@ -41,9 +39,5 @@ assert.sameValue(x, '"asdf"');
 assert.sameValue(JSON.stringify(undefined), undefined);
 assert.sameValue(JSON.stringify(function(){}), undefined);
 assert.sameValue(JSON.stringify(JSON.stringify), undefined);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

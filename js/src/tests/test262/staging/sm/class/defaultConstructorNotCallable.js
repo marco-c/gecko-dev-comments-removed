@@ -7,13 +7,11 @@
 
 
 
-
-
 class badBase {}
-assertThrowsInstanceOf(badBase, TypeError);
+assert.throws(TypeError, badBase);
 
 class badSub extends (class {}) {}
-assertThrowsInstanceOf(badSub, TypeError);
+assert.throws(TypeError, badSub);
 
 
 reportCompare(0, 0);

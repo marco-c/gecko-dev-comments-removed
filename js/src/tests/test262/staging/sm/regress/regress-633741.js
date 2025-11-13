@@ -12,7 +12,6 @@
 
 
 
-
 Object.preventExtensions(this);
 delete Function;
 

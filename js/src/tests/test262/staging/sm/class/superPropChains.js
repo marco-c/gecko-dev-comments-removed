@@ -7,9 +7,6 @@
 
 
 
-
-
-
 class base {
     constructor() { }
     testChain() {

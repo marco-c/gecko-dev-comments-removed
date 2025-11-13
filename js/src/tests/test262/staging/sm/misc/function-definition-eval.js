@@ -12,15 +12,6 @@
 
 
 
-var BUGNUMBER = 577325;
-var summary = 'Implement the ES5 algorithm for processing function statements';
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var outer, desc;
 var isInShell = !("Window" in this);
 
@@ -347,9 +338,5 @@ if (isInShell) {
 	assert.sameValue(desc.value, "data8");
     }
 }
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

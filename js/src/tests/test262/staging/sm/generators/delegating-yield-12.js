@@ -9,8 +9,6 @@
 
 
 
-
-
 var log = '';
 
 function IteratorWrapper(iterator) {

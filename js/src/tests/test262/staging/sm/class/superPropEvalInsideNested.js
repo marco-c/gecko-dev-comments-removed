@@ -8,17 +8,14 @@
 
 
 
-
-
-
-assertThrowsInstanceOf(() =>
+assert.throws(SyntaxError, () =>
 ({
     method() {
         (function () {
             eval('super.toString');
         })();
     }
-}).method(), SyntaxError);
+}).method());
 
 
 reportCompare(0, 0);

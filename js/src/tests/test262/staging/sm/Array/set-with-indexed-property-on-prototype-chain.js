@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function ensureSetterCalledOnce(fn, value, index) {
     var setterCalled = false;
     Object.defineProperty(Array.prototype, index, {

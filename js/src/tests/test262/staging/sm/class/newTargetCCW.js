@@ -7,10 +7,7 @@
 
 
 
-
-
-
-var g = createNewGlobal();
+var g = $262.createRealm().global;
 
 let f = g.eval('(function (expected) { this.accept = new.target === expected; })');
 

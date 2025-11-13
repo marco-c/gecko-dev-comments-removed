@@ -10,8 +10,6 @@
 
 
 
-
-
 assert.sameValue(testLenientAndStrict('({x:1, x:1})',
                               parsesSuccessfully,
                               parsesSuccessfully),

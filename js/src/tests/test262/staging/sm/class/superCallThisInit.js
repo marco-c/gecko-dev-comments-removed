@@ -6,22 +6,11 @@
 
 
 
-
-
-
 function base() { this.prop = 42; }
 
 class testInitialize extends base {
     constructor() {
-        
-        
-        try {
-            this;
-            throw new Error();
-        } catch (e) {
-            if (!(e instanceof ReferenceError))
-                throw e;
-        }
+        assert.throws(ReferenceError, () => this);
         super();
         assert.sameValue(this.prop, 42);
     }
@@ -35,7 +24,7 @@ class willThrow extends base {
         super();
     }
 }
-assertThrowsInstanceOf(()=>new willThrow(), ReferenceError);
+assert.throws(ReferenceError, ()=>new willThrow());
 
 
 class willStillThrow extends base {
@@ -45,7 +34,7 @@ class willStillThrow extends base {
         }
     }
 }
-assertThrowsInstanceOf(()=>new willStillThrow(), ReferenceError);
+assert.throws(ReferenceError, ()=>new willStillThrow());
 
 class canCatchThrow extends base {
     constructor() {

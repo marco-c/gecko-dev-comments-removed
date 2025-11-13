@@ -12,8 +12,6 @@
 
 
 
-
-
 var obj = {};
 assert.sameValue(Reflect.defineProperty(obj, "x", {value: 7}), true);
 assert.sameValue(obj.x, 7);
@@ -79,13 +77,11 @@ assert.sameValue(Reflect.defineProperty(proxy, "prop", attributes), true);
 
 
 
-assertThrowsInstanceOf(() => Reflect.defineProperty(obj, "y"),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.defineProperty(obj, "y"));
 
 
 for (var attributes of SOME_PRIMITIVE_VALUES) {
-    assertThrowsInstanceOf(() => Reflect.defineProperty(obj, "y", attributes),
-                           TypeError);
+    assert.throws(TypeError, () => Reflect.defineProperty(obj, "y", attributes));
 }
 
 
@@ -134,9 +130,7 @@ assert.sameValue(Reflect.defineProperty(obj, "prop", {set: g}), false);
 assert.sameValue(Reflect.defineProperty(obj, "prop", {set: s}), true);  
 
 
-var falseValues = [false, 0, -0, "", NaN, null, undefined];
-if (typeof createIsHTMLDDA === "function")
-    falseValues.push(createIsHTMLDDA());
+var falseValues = [false, 0, -0, "", NaN, null, undefined, $262.IsHTMLDDA];
 var value;
 proxy = new Proxy({}, {
     defineProperty(t, id, desc) {
@@ -155,8 +149,8 @@ proxy = new Proxy(obj, {
         return true;
     }
 });
-assertThrowsInstanceOf(() => Reflect.defineProperty(proxy, "x", {value: 2}), TypeError);
-assertThrowsInstanceOf(() => Reflect.defineProperty(proxy, "y", {value: 0}), TypeError);
+assert.throws(TypeError, () => Reflect.defineProperty(proxy, "x", {value: 2}));
+assert.throws(TypeError, () => Reflect.defineProperty(proxy, "y", {value: 0}));
 assert.sameValue(Reflect.defineProperty(proxy, "x", {value: 1}), true);
 
 

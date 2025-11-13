@@ -11,13 +11,6 @@
 
 
 
-
-
-var BUGNUMBER = 730831;
-var summary = 'Date.prototype.toISOString returns an invalid ISO-8601 string';
-
-print(BUGNUMBER + ": " + summary);
-
 function iso(t) {
   return new Date(t).toISOString();
 }
@@ -49,16 +42,14 @@ var maxDateExtended = utc(+275760, 9, 13, 0, 0, 0, 0);
 assert.sameValue(maxDateExtended, +8.64e15);
 assert.sameValue(iso(maxDateExtended - 1), "+275760-09-12T23:59:59.999Z");
 assert.sameValue(iso(maxDateExtended    ), "+275760-09-13T00:00:00.000Z");
-assertThrowsInstanceOf(() => iso(maxDateExtended + 1), RangeError);
+assert.throws(RangeError, () => iso(maxDateExtended + 1));
 
 
 
 var minDateExtended = utc(-271821, 4, 20, 0, 0, 0, 0);
 assert.sameValue(minDateExtended, -8.64e15);
-assertThrowsInstanceOf(() => iso(minDateExtended - 1), RangeError);
+assert.throws(RangeError, () => iso(minDateExtended - 1));
 assert.sameValue(iso(minDateExtended    ), "-271821-04-20T00:00:00.000Z");
 assert.sameValue(iso(minDateExtended + 1), "-271821-04-20T00:00:00.001Z");
-
-
 
 reportCompare(0, 0);

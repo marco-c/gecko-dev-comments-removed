@@ -27,7 +27,6 @@
 
 
 
-
 function formatDuration(locale, duration, dfOpts){
   let result = [];
   for (const unit in duration){

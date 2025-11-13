@@ -2,4 +2,4 @@
 
 
 
-import "tla_FIXTURE.js"
+import "./tla_FIXTURE.js"

@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var revocationFunction = Proxy.revocable({}, {}).revoke;
 assert.sameValue(revocationFunction.name, "");
 

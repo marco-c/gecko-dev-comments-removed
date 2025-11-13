@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var x = new ArrayBuffer(2);
 
 var test = function(newProto) {

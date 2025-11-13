@@ -10,18 +10,6 @@
 
 
 
-
-var BUGNUMBER = 1160356;
-var summary =
-  "Date.UTC must convert *all* arguments to number, not return NaN early if " +
-  "a non-finite argument is encountered";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function expectThrowTypeError(f, i)
 {
   try
@@ -69,9 +57,5 @@ var args =
 
 for (var i = 0, len = args.length; i < len; i++)
   expectThrowTypeError(function() { Date.UTC.apply(null, args[i]); }, i);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

@@ -10,19 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 1061853;
-var summary =
-  "__proto__ in object literals in non-__proto__:v contexts doesn't modify " +
-  "[[Prototype]]";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function hasOwn(obj, prop)
 {
   return Object.getOwnPropertyDescriptor(obj, prop) !== undefined;
@@ -268,9 +255,5 @@ for (var first in members)
     }
   }
 }
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

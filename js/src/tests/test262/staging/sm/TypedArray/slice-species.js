@@ -7,19 +7,17 @@
 
 
 
-
-
 for (var constructor of typedArrayConstructors) {
     
     var undefConstructor = new constructor(2);
     undefConstructor.constructor = undefined;
     assert.deepEqual(undefConstructor.slice(1), new constructor(1));
 
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         var strConstructor = new constructor;
         strConstructor.constructor = "not a constructor";
         strConstructor.slice(123);
-    }, TypeError, "Assert that we have an invalid constructor");
+    }, "Assert that we have an invalid constructor");
 
     
     
@@ -49,11 +47,11 @@ for (var constructor of typedArrayConstructors) {
 
     
     
-    assertThrowsInstanceOf(() => {
+    assert.throws(TypeError, () => {
         var strSpecies = new constructor;
         strSpecies.constructor = { [Symbol.species]: "not a constructor" };
         strSpecies.slice(123);
-    }, TypeError);
+    });
 }
 
 

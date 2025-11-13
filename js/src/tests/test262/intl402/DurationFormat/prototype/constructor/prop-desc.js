@@ -25,7 +25,6 @@
 
 
 
-
 verifyProperty(Intl.DurationFormat.prototype, "constructor", {
   writable: true,
   enumerable: false,

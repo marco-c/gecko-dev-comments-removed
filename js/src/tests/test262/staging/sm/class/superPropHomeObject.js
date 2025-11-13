@@ -15,8 +15,6 @@
 
 
 
-
-
 class base {
     constructor() { }
     test(expectedThis) { assert.sameValue(this, expectedThis); }
@@ -66,7 +64,6 @@ for (let exprBase of [base1, base2])
         constructor() { super(); }
         test() { animals.push(super["test"]()); }
     }().test();
-assert.deepEqual(animals, ["llama", "alpaca"]);
-
+assert.compareArray(animals, ["llama", "alpaca"]);
 
 reportCompare(0, 0);

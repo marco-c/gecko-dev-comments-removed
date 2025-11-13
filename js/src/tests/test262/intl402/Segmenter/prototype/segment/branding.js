@@ -11,7 +11,6 @@
 
 
 
-
 const segment = Intl.Segmenter.prototype.segment;
 
 assert.sameValue(typeof segment, "function");

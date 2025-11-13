@@ -10,7 +10,6 @@
 
 
 
-
 function check() {
     obj2.__proto__ = null;
     return arguments.callee.caller;

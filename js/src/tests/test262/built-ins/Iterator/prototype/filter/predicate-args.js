@@ -12,7 +12,6 @@
 
 
 
-
 function* g() {
   yield 'a';
   yield 'b';

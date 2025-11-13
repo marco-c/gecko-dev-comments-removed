@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var sym = Symbol.for("hello");
 function F() {}
 var f = new F();
@@ -48,7 +45,7 @@ assert.sameValue(value, "gravity");
 Object.defineProperty(F.prototype, sym, {
     set: undefined
 });
-assertThrowsInstanceOf(function () { "use strict"; f[sym] = 0; }, TypeError);
+assert.throws(TypeError, function () { "use strict"; f[sym] = 0; });
 
 
 var g = Object.create(f);

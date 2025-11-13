@@ -7,9 +7,6 @@
 
 
 
-
-
-
 {
   class C {
     field = C;

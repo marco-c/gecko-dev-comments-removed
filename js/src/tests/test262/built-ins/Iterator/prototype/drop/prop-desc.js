@@ -18,7 +18,6 @@
 
 
 
-
 verifyProperty(Iterator.prototype, 'drop', {
   writable: true,
   enumerable: false,

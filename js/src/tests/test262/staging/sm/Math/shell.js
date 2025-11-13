@@ -5,7 +5,6 @@
 
 
 
-
 const ONE_PLUS_EPSILON = 1 + Math.pow(2, -52);  
 const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);  
 
@@ -53,10 +52,20 @@ const ONE_MINUS_EPSILON = 1 - Math.pow(2, -53);
     ENDIAN = 0;  
     if (diff(2, 4) === 0x100000)  
         ENDIAN = 1;
-    assertEq(diff(2,4), 0x10000000000000);
-    assertEq(diff(0, Number.MIN_VALUE), 1);
-    assertEq(diff(1, ONE_PLUS_EPSILON), 1);
-    assertEq(diff(1, ONE_MINUS_EPSILON), 1);
+    
+    
+    
+    const assertDiffResult = (a, b, expect, detail) => {
+        const result = diff(a, b);
+        if (result === expect) return;
+        throw new Error(
+            `Expected diff(${a}, ${b}) to be ${expect} but got ${result} [${detail}]`
+        );
+    };
+    assertDiffResult(2, 4, 0x10000000000000, "wanted 0x10000000000000");
+    assertDiffResult(0, Number.MIN_VALUE, 1, "0 vs. Number.MIN_VALUE");
+    assertDiffResult(1, ONE_PLUS_EPSILON, 1, "1 vs. ONE_PLUS_EPSILON");
+    assertDiffResult(1, ONE_MINUS_EPSILON, 1, "1 vs. ONE_MINUS_EPSILON");
 
     var assertNear = function assertNear(a, b, tolerance=1) {
         if (!Number.isFinite(b)) {

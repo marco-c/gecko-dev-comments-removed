@@ -6,7 +6,6 @@
 
 
 
-
 function* g() {}
 Iterator.prototype.drop.call(g(), 0);
 

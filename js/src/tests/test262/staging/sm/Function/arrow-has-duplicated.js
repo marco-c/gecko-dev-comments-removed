@@ -9,19 +9,18 @@
 
 
 
-
 function f0(a, a) {
 }
 
 
-assertThrowsInstanceOf(() => eval(`
+assert.throws(SyntaxError, () => eval(`
 (a, a) => {
 };
-`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`
+`));
+assert.throws(SyntaxError, () => eval(`
 (a, ...a) => {
 };
-`), SyntaxError);
+`));
 
 
 reportCompare(0, 0);

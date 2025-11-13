@@ -10,18 +10,6 @@
 
 
 
-
-var gTestfile = 'stringify-call-toJSON-once.js';
-
-var BUGNUMBER = 584909;
-var summary = "Stringification of Boolean/String/Number objects";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var obj =
   {
     p: {
@@ -33,9 +21,5 @@ var obj =
   };
 
 assert.sameValue(JSON.stringify(obj), '{"p":{}}');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

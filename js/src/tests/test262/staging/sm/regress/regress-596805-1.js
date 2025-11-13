@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var f = function(){};
 for (var y in f);
 f.j = 0;

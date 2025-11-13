@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function testBase(base) {
     class instance extends base {
         constructor(inst, one) {

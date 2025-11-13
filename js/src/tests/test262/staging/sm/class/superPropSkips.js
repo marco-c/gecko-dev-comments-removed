@@ -10,9 +10,6 @@
 
 
 
-
-
-
 class base {
     constructor() { }
 }

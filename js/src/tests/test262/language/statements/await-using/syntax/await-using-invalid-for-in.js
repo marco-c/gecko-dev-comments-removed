@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+async function f() {
+  for (await using x in [1, 2, 3]) { }
+}

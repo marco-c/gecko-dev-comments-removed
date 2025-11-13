@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 class TestIterator extends Iterator {
 }
 

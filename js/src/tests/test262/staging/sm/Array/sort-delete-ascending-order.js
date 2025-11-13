@@ -10,8 +10,6 @@
 
 
 
-
-
 function createProxy() {
   var deleted = [];
   var proxy = new Proxy([, , 0], {

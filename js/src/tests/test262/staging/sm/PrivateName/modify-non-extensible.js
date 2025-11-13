@@ -12,6 +12,11 @@
 
 
 
+
+
+
+
+
 class OverrideBase {
   constructor(o) {
     return o;
@@ -33,8 +38,8 @@ class A extends OverrideBase {
 }
 
 var obj = {};
-Object.seal(obj);
 new A(obj);  
+Object.seal(obj);
 assert.sameValue('g' in obj, false);
 assert.sameValue(A.gs(obj), 1);
 A.inca(obj);
@@ -68,8 +73,10 @@ assert.sameValue(A.gs(proxy), 2)
 
 var target = { a: 10 };
 Object.freeze(target);
-new A(target);
-assert.sameValue(Object.isFrozen(target), true)
+assert.throws(TypeError, function () {
+  new A(target);
+});
+assert.sameValue(Object.isFrozen(target), true);
 
 var getOwnKeys = [];
 var proxy = new Proxy(target, {
@@ -81,6 +88,5 @@ var proxy = new Proxy(target, {
 
 Object.isFrozen(proxy);
 assert.sameValue(getOwnKeys.length, 1);
-
 
 reportCompare(0, 0);

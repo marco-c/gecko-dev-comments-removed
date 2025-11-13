@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 class TestIterator extends Iterator {
   next() {
     throw new Error();
@@ -23,7 +19,7 @@ class TestIterator extends Iterator {
 
 const iter = new TestIterator();
 
-assertThrowsInstanceOf(() => iter.toArray(), Error);
+assert.throws(Error, () => iter.toArray());
 
 
 reportCompare(0, 0);

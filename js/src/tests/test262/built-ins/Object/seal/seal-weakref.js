@@ -33,7 +33,6 @@
 
 
 
-
 Object.seal(new WeakRef({}));
 
 reportCompare(0, 0);

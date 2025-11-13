@@ -16,7 +16,6 @@
 
 
 
-
 verifyProperty(Intl.Segmenter.prototype, "constructor", {
   value: Intl.Segmenter,
   writable: true,

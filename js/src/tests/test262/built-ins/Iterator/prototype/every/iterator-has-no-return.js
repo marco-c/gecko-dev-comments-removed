@@ -10,7 +10,6 @@
 
 
 
-
 let iterator = [1, 2, 3, 4, 5][Symbol.iterator]();
 
 assert.sameValue(iterator.return, undefined);

@@ -6,9 +6,6 @@
 
 
 
-
-
-
 (function() {
     var rx = /a/g;
     var b = {

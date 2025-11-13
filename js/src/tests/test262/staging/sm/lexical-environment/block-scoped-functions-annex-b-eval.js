@@ -8,7 +8,6 @@
 
 
 
-
 var log = "";
 
 function f() {

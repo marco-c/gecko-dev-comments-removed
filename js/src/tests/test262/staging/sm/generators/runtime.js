@@ -17,9 +17,8 @@
 
 
 
-
 function assertSyntaxError(str) {
-    assertThrowsInstanceOf(Function(str), SyntaxError);
+    assert.throws(SyntaxError, Function(str));
 }
 
 
@@ -39,7 +38,7 @@ function TestGeneratorFunctionInstance() {
     f_own_property_names.sort();
     g_own_property_names.sort();
 
-    assert.deepEqual(f_own_property_names, g_own_property_names);
+    assert.compareArray(f_own_property_names, g_own_property_names);
     var i;
     for (i = 0; i < f_own_property_names.length; i++) {
         var prop = f_own_property_names[i];
@@ -58,7 +57,7 @@ TestGeneratorFunctionInstance();
 function TestGeneratorFunctionPrototype() {
     
     assert.sameValue(Object.getPrototypeOf(f), Function.prototype);
-    assertNotEq(GeneratorFunctionPrototype, Function.prototype);
+    assert.notSameValue(GeneratorFunctionPrototype, Function.prototype);
     assert.sameValue(Object.getPrototypeOf(GeneratorFunctionPrototype),
                Function.prototype);
     assert.sameValue(Object.getPrototypeOf(function* () {}),
@@ -84,8 +83,8 @@ function TestGeneratorObjectPrototype() {
     expected_property_names.sort();
     found_property_names.sort();
 
-    assert.deepEqual(found_property_names, expected_property_names);
-    assert.deepEqual(Object.getOwnPropertySymbols(GeneratorObjectPrototype), [Symbol.toStringTag]);
+    assert.compareArray(found_property_names, expected_property_names);
+    assert.compareArray(Object.getOwnPropertySymbols(GeneratorObjectPrototype), [Symbol.toStringTag]);
 }
 TestGeneratorObjectPrototype();
 
@@ -94,27 +93,27 @@ TestGeneratorObjectPrototype();
 
 function TestGeneratorFunction() {
     assert.sameValue(GeneratorFunctionPrototype, GeneratorFunction.prototype);
-    assertTrue(g instanceof GeneratorFunction);
+    assert.sameValue(g instanceof GeneratorFunction, true);
 
     assert.sameValue(Function, Object.getPrototypeOf(GeneratorFunction));
-    assertTrue(g instanceof Function);
+    assert.sameValue(g instanceof Function, true);
 
     assert.sameValue("function* g() { yield 1; }", g.toString());
 
     
-    assertTrue(f instanceof Function);  
-    assertFalse(f instanceof GeneratorFunction);
+    assert.sameValue(f instanceof Function, true);  
+    assert.sameValue(f instanceof GeneratorFunction, false);
 
-    assertTrue((new GeneratorFunction()) instanceof GeneratorFunction);
-    assertTrue(GeneratorFunction() instanceof GeneratorFunction);
+    assert.sameValue((new GeneratorFunction()) instanceof GeneratorFunction, true);
+    assert.sameValue(GeneratorFunction() instanceof GeneratorFunction, true);
 
-    assertTrue(GeneratorFunction('yield 1') instanceof GeneratorFunction);
-    assertTrue(GeneratorFunction('return 1') instanceof GeneratorFunction);
-    assertTrue(GeneratorFunction('a', 'yield a') instanceof GeneratorFunction);
-    assertTrue(GeneratorFunction('a', 'return a') instanceof GeneratorFunction);
-    assertTrue(GeneratorFunction('a', 'return a') instanceof GeneratorFunction);
+    assert.sameValue(GeneratorFunction('yield 1') instanceof GeneratorFunction, true);
+    assert.sameValue(GeneratorFunction('return 1') instanceof GeneratorFunction, true);
+    assert.sameValue(GeneratorFunction('a', 'yield a') instanceof GeneratorFunction, true);
+    assert.sameValue(GeneratorFunction('a', 'return a') instanceof GeneratorFunction, true);
+    assert.sameValue(GeneratorFunction('a', 'return a') instanceof GeneratorFunction, true);
     assertSyntaxError("GeneratorFunction('yield', 'return yield')");
-    assertTrue(GeneratorFunction('with (x) return foo;') instanceof GeneratorFunction);
+    assert.sameValue(GeneratorFunction('with (x) return foo;') instanceof GeneratorFunction, true);
     assertSyntaxError("GeneratorFunction('\"use strict\"; with (x) return foo;')");
 
     
@@ -126,18 +125,16 @@ TestGeneratorFunction();
 
 
 function TestPerGeneratorPrototype() {
-    assertNotEq((function*(){}).prototype, (function*(){}).prototype);
-    assertNotEq((function*(){}).prototype, g.prototype);
+    assert.notSameValue((function*(){}).prototype, (function*(){}).prototype);
+    assert.notSameValue((function*(){}).prototype, g.prototype);
     assert.sameValue(typeof GeneratorFunctionPrototype, "object");
     assert.sameValue(g.prototype.__proto__.constructor, GeneratorFunctionPrototype, "object");
     assert.sameValue(Object.getPrototypeOf(g.prototype), GeneratorObjectPrototype);
-    assertFalse(g.prototype instanceof Function);
+    assert.sameValue(g.prototype instanceof Function, false);
     assert.sameValue(typeof (g.prototype), "object");
 
-    assert.deepEqual(Object.getOwnPropertyNames(g.prototype), []);
+    assert.compareArray(Object.getOwnPropertyNames(g.prototype), []);
 }
 TestPerGeneratorPrototype();
-
-
 
 reportCompare(0, 0);

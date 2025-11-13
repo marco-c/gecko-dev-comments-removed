@@ -6,9 +6,6 @@
 
 
 
-
-
-
 const OriginalHasInstance = Function.prototype[Symbol.hasInstance];
 
 

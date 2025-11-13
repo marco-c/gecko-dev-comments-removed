@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 assert.sameValue(typeof Iterator, 'function');
 
 

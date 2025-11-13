@@ -11,16 +11,6 @@
 
 
 
-var gTestfile = "setPrototypeOf.js";
-var BUGNUMBER = 888969;
-var summary = "Scripted proxies' [[SetPrototypeOf]] behavior";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 const log = [];
 
 function observe(obj)
@@ -50,45 +40,35 @@ var originalProto = Reflect.getPrototypeOf(p);
 assert.sameValue(originalProto, Object.prototype);
 
 rev.revoke();
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, originalProto),
-                       TypeError);
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, originalProto));
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 
 
 
 p = new Proxy({}, { setPrototypeOf: 9 });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: -3.7 });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: NaN });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: Infinity });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: true });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: /x/ });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: Symbol(42) });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, { setPrototypeOf: class X {} });
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 p = new Proxy({}, observe({}));
 
@@ -251,15 +231,10 @@ var newProto;
 p = new Proxy(Object.preventExtensions(Object.create(Math)),
               { setPrototypeOf(t, p) { return true; } });
 
-assertThrowsInstanceOf(() => Reflect.setPrototypeOf(p, null),
-                       TypeError);
+assert.throws(TypeError, () => Reflect.setPrototypeOf(p, null));
 
 
 
 assert.sameValue(Reflect.setPrototypeOf(p, Math), true);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

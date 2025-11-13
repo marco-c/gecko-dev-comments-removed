@@ -16,10 +16,6 @@
 
 
 
-
-
-
-
 let iter = [0, 1, 2, 3].values().flatMap(x => x % 2 ? [] : [x]);
 
 for (const expected of [0, 2]) {

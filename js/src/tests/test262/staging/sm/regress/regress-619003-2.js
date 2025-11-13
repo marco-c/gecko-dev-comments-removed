@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var expect = "global";
 var actual = expect;
 function f([actual]) { }

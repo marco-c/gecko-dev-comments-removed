@@ -21,8 +21,6 @@
 
 
 
-
-
 var keys = [
     {value: null, expected: "null"},
     {value: undefined, expected: "undefined"},
@@ -69,7 +67,7 @@ for (var {value, expected} of keys) {
 
     var obj = {};
     assert.sameValue(Reflect.defineProperty(obj, value, {value: 1, configurable: true}), true);
-    assert.deepEqual(Reflect.ownKeys(obj), [expected]);
+    assert.compareArray(Reflect.ownKeys(obj), [expected]);
     assert.deepEqual(Reflect.getOwnPropertyDescriptor(obj, value),
                  {value: 1,
                   writable: false,

@@ -13,7 +13,6 @@
 
 
 
-
 let effects = [];
 
 function* g() {

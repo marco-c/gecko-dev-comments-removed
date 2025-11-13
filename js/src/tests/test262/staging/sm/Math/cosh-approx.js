@@ -7,8 +7,6 @@
 
 
 
-
-
 assert.sameValue(Math.cosh(1000), Infinity);
 assert.sameValue(Math.cosh(Number.MAX_VALUE), Infinity);
 assertNear(Math.cosh(1e-30), 1);

@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var obj = {
   exec() {
     return function(){};

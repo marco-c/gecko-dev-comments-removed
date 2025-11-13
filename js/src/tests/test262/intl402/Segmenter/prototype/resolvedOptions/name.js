@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(Intl.Segmenter.prototype.resolvedOptions, "name", {
   value: "resolvedOptions",
   writable: false,

@@ -12,15 +12,6 @@
 
 
 
-var BUGNUMBER = 601307;
-var summary = "with (...) eval(...) is a direct eval";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var t = "global";
 function test()
 {
@@ -29,9 +20,5 @@ function test()
     return eval("t");
 }
 assert.sameValue(test(), "local");
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

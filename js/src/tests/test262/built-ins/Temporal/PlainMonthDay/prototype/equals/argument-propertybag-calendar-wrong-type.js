@@ -15,7 +15,7 @@ const instance = new Temporal.PlainMonthDay(5, 2);
 const wrongTypeTests = [
   [null, "null"],
   [true, "boolean"],
-  [1, "number that doesn't convert to a valid ISO string"],
+  [1, "number"],
   [1n, "bigint"],
   [19970327, "large number"],
   [-19970327, "negative number"],
@@ -30,7 +30,7 @@ for (const [calendar, description] of wrongTypeTests) {
   assert.throws(
     TypeError,
     () => instance.equals(arg),
-    `${description} does not convert to a valid ISO string`
+    `${description} is not a valid calendar`
   );
 }
 

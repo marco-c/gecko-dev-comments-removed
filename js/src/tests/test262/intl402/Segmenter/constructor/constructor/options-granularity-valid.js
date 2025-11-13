@@ -12,7 +12,6 @@
 
 
 
-
 const validOptions = [
   [undefined, "grapheme"],
   ["grapheme", "grapheme"],

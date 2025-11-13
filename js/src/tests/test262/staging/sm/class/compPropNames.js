@@ -9,32 +9,22 @@
 
 
 
-var BUGNUMBER = 924688;
-var summary = 'Computed Property Names';
-
-print(BUGNUMBER + ": " + summary);
-
 
 function syntaxError (script) {
-    try {
+    assert.throws(SyntaxError, function() {
         Function(script);
-    } catch (e) {
-        if (e instanceof SyntaxError) {
-            return;
-        }
-    }
-    throw new Error('Expected syntax error: ' + script);
+    });
 }
 
 
 
 
-assertThrowsInstanceOf(function() { var a = {[field1]: "a", [field2]: "b"}; }, ReferenceError);
+assert.throws(ReferenceError, function() { var a = {[field1]: "a", [field2]: "b"}; });
 
-assertThrowsInstanceOf(function() {
+assert.throws(ReferenceError, function() {
                            field1 = 1;
                            var a = {[field1]: "a", [field2]: "b"};
-                       }, ReferenceError);
+                       });
 
 var f1 = 1;
 var f2 = 2;
@@ -80,13 +70,13 @@ syntaxError("({[if (0) 0;]})");
 syntaxError("function f() { {[x]: 1} }");  
 syntaxError("function f() { [x]: 1 }");    
 syntaxError('a = {[f1@]: "a", [f2]: "b"}'); 
-try { JSON.parse('{["a"]:4}'); } catch(e) {
-    if (!(e instanceof SyntaxError)) throw new Error('Expected syntax error');
-}
+assert.throws(SyntaxError, function() {
+    JSON.parse('{["a"]:4}');
+});
 
 
 a = { ["b"] : 4 };
-b = Object.getOwnPropertyDescriptor(a, "b");
+var b = Object.getOwnPropertyDescriptor(a, "b");
 assert.sameValue(b.configurable, true);
 assert.sameValue(b.enumerable, true);
 assert.sameValue(b.writable, true);
@@ -231,7 +221,7 @@ assert.sameValue(a[expr], 5);
 assertThrowsValue(() => { a[expr] = 7; }, 4);
 
 
-log = "";
+var log = "";
 obj = {
     "a": log += 'a',
     get [log += 'b']() {},
@@ -249,6 +239,5 @@ obj = {
 assert.sameValue(obj.hey, 1);
 assert.sameValue(obj[4], 2);
 assertThrowsValue(() => { obj.x = 7; }, 3);
-
 
 reportCompare(0, 0);

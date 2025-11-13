@@ -9,8 +9,6 @@
 
 
 
-
-
 function results(results) {
     var i = 0;
     function iterator() {

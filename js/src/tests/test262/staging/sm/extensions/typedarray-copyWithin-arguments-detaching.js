@@ -10,20 +10,6 @@
 
 
 
-
-var gTestfile = "typedarray-copyWithin-arguments-detaching.js";
-
-var BUGNUMBER = 991981;
-var summary =
-  "%TypedArray.prototype.copyWithin shouldn't misbehave horribly if " +
-  "index-argument conversion detaches the underlying ArrayBuffer";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function testBegin()
 {
   var ab = new ArrayBuffer(0x1000);
@@ -39,17 +25,10 @@ function testBegin()
 
   var ta = new Uint8Array(ab);
 
-  var ok = false;
-  try
-  {
+  assert.throws(TypeError, function() {
     ta.copyWithin(0, begin, 0x1000);
-  }
-  catch (e)
-  {
-    ok = true;
-  }
-  assert.sameValue(ok, true, "start weirdness should have thrown");
-  assert.sameValue(ab.byteLength, 0, "detaching should work for start weirdness");
+  }, "begin weirdness should have thrown");
+  assert.sameValue(ab.byteLength, 0, "detaching should work for begin weirdness");
 }
 testBegin();
 
@@ -68,17 +47,10 @@ function testEnd()
 
   var ta = new Uint8Array(ab);
 
-  var ok = false;
-  try
-  {
+  assert.throws(TypeError, function() {
     ta.copyWithin(0, 0x800, end);
-  }
-  catch (e)
-  {
-    ok = true;
-  }
-  assert.sameValue(ok, true, "start weirdness should have thrown");
-  assert.sameValue(ab.byteLength, 0, "detaching should work for start weirdness");
+  }, "end weirdness should have thrown");
+  assert.sameValue(ab.byteLength, 0, "detaching should work for end weirdness");
 }
 testEnd();
 
@@ -97,22 +69,11 @@ function testDest()
 
   var ta = new Uint8Array(ab);
 
-  var ok = false;
-  try
-  {
+  assert.throws(TypeError, function() {
     ta.copyWithin(dest, 0x800, 0x1000);
-  }
-  catch (e)
-  {
-    ok = true;
-  }
-  assert.sameValue(ok, true, "start weirdness should have thrown");
-  assert.sameValue(ab.byteLength, 0, "detaching should work for start weirdness");
+  }, "dest weirdness should have thrown");
+  assert.sameValue(ab.byteLength, 0, "detaching should work for dest weirdness");
 }
 testDest();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

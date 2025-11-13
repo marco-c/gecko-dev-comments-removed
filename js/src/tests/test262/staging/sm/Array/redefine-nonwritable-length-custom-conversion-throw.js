@@ -10,17 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 866700;
-var summary = "Assertion redefining non-writable length to a non-numeric value";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var count = 0;
 
 var convertible =
@@ -37,8 +26,7 @@ var convertible =
 var arr = [];
 Object.defineProperty(arr, "length", { value: 0, writable: false });
 
-try
-{
+assert.throws(SyntaxError, function() {
   Object.defineProperty(arr, "length",
                         {
                           value: convertible,
@@ -46,18 +34,9 @@ try
                           configurable: true,
                           enumerable: true
                         });
-  throw new Error("didn't throw");
-}
-catch (e)
-{
-  assert.sameValue(e instanceof SyntaxError, true, "expected SyntaxError, got " + e);
-}
+});
 
 assert.sameValue(count, 1);
 assert.sameValue(arr.length, 0);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

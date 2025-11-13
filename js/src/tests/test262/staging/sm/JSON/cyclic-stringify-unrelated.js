@@ -10,17 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 1197097;
-var summary = "JSON.stringify shouldn't use context-wide cycle detection";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var arr;
 
 
@@ -40,9 +29,5 @@ arr = [{
   }
 }];
 assert.sameValue(arr.join(), "[{}]");
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

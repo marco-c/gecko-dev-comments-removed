@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var obj = {
   [1]: function() {},
   [2]: function*() {},
@@ -49,7 +46,7 @@ let dummy = class {
   set [12](x) {}
 };
 
-dum = new dummy();
+let dum = new dummy();
 
 assert.sameValue(dum[1].name, "1");
 assert.sameValue(dum[2].name, "2");

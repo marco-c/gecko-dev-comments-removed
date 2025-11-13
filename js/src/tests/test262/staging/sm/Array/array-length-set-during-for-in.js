@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var a = [0, 1];
 var iterations = 0;
 for (var k in a) {

@@ -8,8 +8,6 @@
 
 
 
-
-
 var from = Int8Array.from.bind(Uint32Array);
 var toCodePoint = s => s.codePointAt(0);
 

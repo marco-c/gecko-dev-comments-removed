@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class A {
     #x = "hello";
     constructor(o = this.#x) {

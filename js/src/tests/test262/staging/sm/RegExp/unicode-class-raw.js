@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- raw unicode.";
-
-print(BUGNUMBER + ": " + summary);
-
 
 
 assert.compareArray(eval(`/[\uD83D\uDC38]/u`).exec("\u{1F438}"),
@@ -71,6 +66,5 @@ assert.compareArray(new RegExp("[\\uD83D\uDC38]", "").exec("\u{1F438}"),
 
 assert.compareArray(new RegExp("[\uD83D\\uDC38]", "").exec("\u{1F438}"),
               ["\uD83D"]);
-
 
 reportCompare(0, 0);

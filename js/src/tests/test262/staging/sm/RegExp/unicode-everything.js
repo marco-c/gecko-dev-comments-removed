@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- everything Atom.";
-
-print(BUGNUMBER + ": " + summary);
-
 
 
 assert.compareArray(/./u.exec("ABC"),
@@ -65,6 +60,5 @@ assert.compareArray(/.*A/u.exec("\u{1F438}\u{1F438}\u{1F438}A"),
 
 assert.compareArray(/A.*/u.exec("A\u{1F438}\u{1F438}\u{1F438}"),
               ["A\u{1F438}\u{1F438}\u{1F438}"]);
-
 
 reportCompare(0, 0);

@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1185106;
-var summary = "async function constructor and prototype";
-
-print(BUGNUMBER + ": " + summary);
-
 var f1 = async function() {};
 
 var AsyncFunction = f1.constructor;
@@ -39,6 +33,5 @@ var f4 = AsyncFunction("a", "b", "c", "await 1");
 assert.sameValue(f4.constructor, AsyncFunction);
 assert.sameValue(f4.length, 3);
 assert.sameValue(Object.getPrototypeOf(f4), AsyncFunctionPrototype);
-
 
 reportCompare(0, 0);

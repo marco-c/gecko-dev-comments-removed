@@ -10,33 +10,11 @@
 
 
 
-
-
-var BUGNUMBER = 1476409;
-var summary =
-  "Properly handle the case of U+005C REVERSE SOLIDUS U+000D CARRIAGE RETURN " +
-  "at the end of source text being tokenized, in the middle of a string or " +
-  "template literal, where the next code point in memory (outside the bounds " +
-  "of the source text) is U+000A LINE FEED";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function expectSyntaxError(code)
 {
-  try
-  {
+  assert.throws(SyntaxError, function() {
     eval(code);
-    throw new Error("didn't throw");
-  }
-  catch (e)
-  {
-    assert.sameValue(e instanceof SyntaxError, true,
-             "got " + e.name + ", expected SyntaxError");
-  }
+  });
 }
 
 
@@ -87,9 +65,5 @@ function template()
   expectSyntaxError(containsBadTemplateLiteral.substr(2, 53));
 }
 template();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

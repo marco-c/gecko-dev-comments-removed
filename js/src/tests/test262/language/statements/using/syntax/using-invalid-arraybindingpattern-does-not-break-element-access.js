@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+var using = [], x = 0;
+
+{
+  using[x] = null;
+}
+
+reportCompare(0, 0);

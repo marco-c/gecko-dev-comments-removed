@@ -8,7 +8,6 @@
 
 
 
-
 var objects = [
     Math.sin.bind(null),
     new Proxy(Math.sin.bind(null), {}),
@@ -17,12 +16,12 @@ var objects = [
 
 for (var obj of objects) {
     
-    assert.deepEqual(Array.from.call(obj, [1, 2, 3]), [1, 2, 3]);
-    assert.deepEqual(Array.of.call(obj, 1, 2, 3), [1, 2, 3]);
+    assert.compareArray(Array.from.call(obj, [1, 2, 3]), [1, 2, 3]);
+    assert.compareArray(Array.of.call(obj, 1, 2, 3), [1, 2, 3]);
 
     
     obj();
-    assertThrowsInstanceOf(() => new obj, TypeError);
+    assert.throws(TypeError, () => new obj);
 }
 
 

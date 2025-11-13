@@ -6,7 +6,6 @@
 
 
 
-
 function* g() {}
 Iterator.prototype.take.call(g(), 0);
 

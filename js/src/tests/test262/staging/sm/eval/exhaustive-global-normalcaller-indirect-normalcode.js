@@ -12,15 +12,6 @@
 
 
 
-var BUGNUMBER = 514568;
-var summary = "eval in all its myriad flavors";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var x = 17;
 
 var ev = eval;
@@ -173,9 +164,5 @@ assert.sameValue(resultsY.local4, "ReferenceError");
 
 assert.sameValue(resultsY.inner5, 71);
 assert.sameValue(resultsY.local5, 71);
-
-
-
-print("Tests complete!");
 
 reportCompare(0, 0);

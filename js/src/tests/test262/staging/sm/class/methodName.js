@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class TestClass {
     get getter() { }
     set setter(x) { }

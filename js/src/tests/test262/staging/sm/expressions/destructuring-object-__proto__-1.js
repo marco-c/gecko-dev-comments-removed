@@ -9,9 +9,6 @@
 
 
 
-
-
-
 {
   let {__proto__} = {};
   assert.sameValue(__proto__, Object.prototype);

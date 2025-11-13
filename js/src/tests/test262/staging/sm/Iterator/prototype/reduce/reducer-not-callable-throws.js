@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 class TestIterator extends Iterator {
   next() {
     return { done: false, value: 0 };
@@ -22,14 +18,14 @@ class TestIterator extends Iterator {
 }
 
 const iter = new TestIterator();
-assertThrowsInstanceOf(() => iter.reduce(), TypeError);
-assertThrowsInstanceOf(() => iter.reduce(undefined), TypeError);
-assertThrowsInstanceOf(() => iter.reduce(null), TypeError);
-assertThrowsInstanceOf(() => iter.reduce(0), TypeError);
-assertThrowsInstanceOf(() => iter.reduce(false), TypeError);
-assertThrowsInstanceOf(() => iter.reduce(''), TypeError);
-assertThrowsInstanceOf(() => iter.reduce(Symbol('')), TypeError);
-assertThrowsInstanceOf(() => iter.reduce({}), TypeError);
+assert.throws(TypeError, () => iter.reduce());
+assert.throws(TypeError, () => iter.reduce(undefined));
+assert.throws(TypeError, () => iter.reduce(null));
+assert.throws(TypeError, () => iter.reduce(0));
+assert.throws(TypeError, () => iter.reduce(false));
+assert.throws(TypeError, () => iter.reduce(''));
+assert.throws(TypeError, () => iter.reduce(Symbol('')));
+assert.throws(TypeError, () => iter.reduce({}));
 
 
 reportCompare(0, 0);

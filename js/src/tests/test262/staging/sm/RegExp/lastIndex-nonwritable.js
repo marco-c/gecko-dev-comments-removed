@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1168416;
-var summary = "Regexp.prototype.test/exec shouldn't change lastIndex if not writable.";
-
-print(BUGNUMBER + ": " + summary);
-
 var regex = /0/g;
 Object.freeze(regex);
 var str = "abc000";
@@ -22,17 +16,16 @@ var desc = Object.getOwnPropertyDescriptor(regex, "lastIndex");
 assert.sameValue(desc.writable, false);
 assert.sameValue(desc.value, 0);
 
-assertThrowsInstanceOf(() => regex.test(str), TypeError);
+assert.throws(TypeError, () => regex.test(str));
 
 desc = Object.getOwnPropertyDescriptor(regex, "lastIndex");
 assert.sameValue(desc.writable, false);
 assert.sameValue(desc.value, 0);
 
-assertThrowsInstanceOf(() => regex.exec(str), TypeError);
+assert.throws(TypeError, () => regex.exec(str));
 
 desc = Object.getOwnPropertyDescriptor(regex, "lastIndex");
 assert.sameValue(desc.writable, false);
 assert.sameValue(desc.value, 0);
-
 
 reportCompare(0, 0);

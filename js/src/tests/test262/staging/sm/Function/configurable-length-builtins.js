@@ -11,7 +11,6 @@
 
 
 
-
 for (var fun of [Math.sin, Array.prototype.map, eval]) {
     assert.sameValue(delete fun.length, true);
     assert.sameValue(fun.hasOwnProperty("length"), false);

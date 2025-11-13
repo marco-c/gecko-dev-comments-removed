@@ -23,7 +23,6 @@
 
 
 
-
 const df = new Intl.DurationFormat("en", {style: "digital"});
 
 assert.sameValue(df.format({hours: 1234567, minutes: 20, seconds: 45}),

@@ -10,19 +10,6 @@
 
 
 
-
-var gTestfile = 'stringify-nonarray-noncallable-replacer.js';
-
-var BUGNUMBER = 653782;
-var summary =
-  "Treat non-array, non-callable replacers as if none had been specified";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var obj = { p: 2 };
 var str = '{"p":2}';
 
@@ -42,9 +29,5 @@ assert.sameValue(JSON.stringify(obj, /abcd/), str);
 assert.sameValue(JSON.stringify(obj, new Boolean(true)), str);
 assert.sameValue(JSON.stringify(obj, new Number(42)), str);
 assert.sameValue(JSON.stringify(obj, new String("aequorin")), str);
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

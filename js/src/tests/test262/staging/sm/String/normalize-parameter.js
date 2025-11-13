@@ -8,14 +8,8 @@
 
 
 
-
-var BUGNUMBER = 918987;
-var summary = 'String.prototype.normalize - passing wrong parameter';
-
-print(BUGNUMBER + ": " + summary);
-
 function test() {
-  assertThrowsInstanceOf(() => "abc".normalize("NFE"), RangeError,
+  assert.throws(RangeError, () => "abc".normalize("NFE"),
                          "String.prototype.normalize should raise RangeError on invalid form");
 
   assert.sameValue("".normalize(), "");
@@ -25,6 +19,5 @@ if ("normalize" in String.prototype) {
   
   test();
 }
-
 
 reportCompare(0, 0);

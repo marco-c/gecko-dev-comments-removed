@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 assert.sameValue(Iterator.prototype.map.length, 1);
 
 const propertyDescriptor = Reflect.getOwnPropertyDescriptor(Iterator.prototype.map, 'length');

@@ -18,7 +18,6 @@
 
 
 
-
 verifyProperty(Iterator.prototype, 'find', {
   writable: true,
   enumerable: false,

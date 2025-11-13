@@ -8,7 +8,6 @@
 
 
 
-
 function* g() {}
 
 assert.throws(TypeError, () => {

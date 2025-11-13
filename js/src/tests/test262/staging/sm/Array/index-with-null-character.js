@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var testArray = [1, 2, 3]
 assert.sameValue(testArray['0' + '\0'], undefined);
 assert.sameValue(testArray['1' + '\0' + 'aaaa'], undefined)

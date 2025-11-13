@@ -7,9 +7,6 @@
 
 
 
-
-
-
 function test(otherGlobal) {
     assert.sameValue(TypeError !== otherGlobal.TypeError, true);
     assert.sameValue(Object.getPrototypeOf(TypeError) !== Object.getPrototypeOf(otherGlobal.TypeError), true);
@@ -61,30 +58,14 @@ function test(otherGlobal) {
     
     
     for (const [message, f] of typeErrorCalls) {
-        try {
-            f();
-        } catch (exc) {
-            assert.sameValue(exc instanceof TypeError, false, message + " threw TypeError from wrong realm");
-            assert.sameValue(exc instanceof otherGlobal.TypeError, true, message + " didn't throw TypeError from other realm");
-            assert.sameValue(Object.getPrototypeOf(exc) !== Object.getPrototypeOf(TypeError), true,
-                     message + " TypeError has wrong prototype");
-        }
+        assert.throws(otherGlobal.TypeError, f, message);
     }
 
     for (const [message, f] of rangeErrorCalls) {
-        try {
-            f();
-        } catch (exc) {
-            assert.sameValue(exc instanceof RangeError, false, message + " threw RangeError from wrong realm");
-            assert.sameValue(exc instanceof otherGlobal.RangeError, true, message + " didn't throw RangeError from other realm");
-            assert.sameValue(Object.getPrototypeOf(exc) !== Object.getPrototypeOf(RangeError), true,
-                     message + " TypeError has wrong prototype");
-        }
+        assert.throws(otherGlobal.RangeError, f, message);
     }
 }
 
-test(createNewGlobal());
-test(createNewGlobal({newCompartment: true}));
-
+test($262.createRealm().global);
 
 reportCompare(0, 0);

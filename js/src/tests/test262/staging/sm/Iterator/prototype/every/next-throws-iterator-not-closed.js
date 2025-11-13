@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 class TestIterator extends Iterator {
   next() {
     throw new Error();
@@ -30,7 +26,7 @@ const fn = () => {};
 const iter = new TestIterator();
 
 assert.sameValue(iter.closed, false);
-assertThrowsInstanceOf(() => iter.every(fn), Error);
+assert.throws(Error, () => iter.every(fn));
 assert.sameValue(iter.closed, false);
 
 

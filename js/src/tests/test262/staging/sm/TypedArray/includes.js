@@ -8,6 +8,7 @@
 
 
 
+var otherGlobal = $262.createRealm().global;
 
 for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(constructor.prototype.includes.length, 1);
@@ -25,18 +26,16 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(new constructor([1, 2, 3]).includes(2, 100), false);
 
     
-    if (typeof createNewGlobal === "function") {
-        var includes = createNewGlobal()[constructor.name].prototype.includes;
-        assert.sameValue(includes.call(new constructor([1, 2, 3]), 2), true);
-    }
+    var includes = otherGlobal[constructor.name].prototype.includes;
+    assert.sameValue(includes.call(new constructor([1, 2, 3]), 2), true);
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             constructor.prototype.includes.call(invalidReceiver);
-        }, TypeError, "Assert that reverse fails if this value is not a TypedArray");
+        }, "Assert that reverse fails if this value is not a TypedArray");
     });
 
     

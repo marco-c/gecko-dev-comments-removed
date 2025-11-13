@@ -9,10 +9,6 @@
 
 
 
-var BUGNUMBER = 883377;
-var summary = "Anonymous function name should be set based on for-in initializer";
-
-print(BUGNUMBER + ": " + summary);
 
 var exprs = [
     ["function() {}", false],
@@ -37,6 +33,5 @@ function testForInHead(expr, named) {
 for (var [expr, named] of exprs) {
     testForInHead(expr, named);
 }
-
 
 reportCompare(0, 0);

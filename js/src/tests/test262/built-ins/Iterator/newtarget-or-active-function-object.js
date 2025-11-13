@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   Iterator();
 });

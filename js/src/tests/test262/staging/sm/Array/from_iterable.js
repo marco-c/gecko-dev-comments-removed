@@ -10,8 +10,6 @@
 
 
 
-
-
 (function () {
     assert.deepEqual(Array.from(arguments), ["arg0", "arg1", undefined]);
 })("arg0", "arg1", undefined);

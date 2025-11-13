@@ -10,8 +10,6 @@
 
 
 
-
-
 var log = [];
 function LoggingProxy(target) {
     var h = {

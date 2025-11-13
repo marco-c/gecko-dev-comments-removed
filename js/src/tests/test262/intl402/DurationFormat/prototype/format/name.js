@@ -18,7 +18,6 @@
 
 
 
-
 verifyProperty(Intl.DurationFormat.prototype.format, "name", {
   value: "format",
   writable: false,

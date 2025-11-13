@@ -13,7 +13,6 @@
 
 
 
-
 Object.defineProperty(Object.prototype, "prop", { writable: false });
 
 class strictAssignmentTest {
@@ -23,7 +22,7 @@ class strictAssignmentTest {
     }
 }
 
-assertThrowsInstanceOf(()=>new strictAssignmentTest(), TypeError);
+assert.throws(TypeError, ()=>new strictAssignmentTest());
 
 
 ({ test() { super.prop = 14; } }).test();

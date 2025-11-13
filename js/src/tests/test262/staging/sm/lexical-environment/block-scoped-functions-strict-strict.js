@@ -10,8 +10,6 @@
 
 
 
-"use strict"
-
 var log = "";
 
 function f() {

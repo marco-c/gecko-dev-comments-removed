@@ -9,8 +9,6 @@
 
 
 
-
-
 function* createTypedArrays(lengths = [0, 1, 4, 4096]) {
     
     for (let length of lengths) {
@@ -28,87 +26,84 @@ function* createTypedArrays(lengths = [0, 1, 4, 4096]) {
     }
 }
 
-if (typeof $262.detachArrayBuffer === "function") {
-    
-    for (let {typedArray, buffer} of createTypedArrays()) {
-        $262.detachArrayBuffer(buffer());
-        assertThrowsInstanceOf(() => {
-            typedArray.slice(0);
-        }, TypeError, "ArrayBuffer is detached on function entry");
-    }
 
-    
-    for (let {typedArray, length, buffer} of createTypedArrays()) {
-        let detached = false;
-        let start = {
-            valueOf() {
-                assert.sameValue(detached, false);
-                $262.detachArrayBuffer(buffer());
-                assert.sameValue(detached, false);
-                detached = true;
-                return 0;
-            }
-        };
-
-        
-        if (length === 0) {
-            typedArray.slice(start);
-        } else {
-            assertThrowsInstanceOf(() => {
-                typedArray.slice(start);
-            }, TypeError, "ArrayBuffer is detached in ToInteger(start)");
-        }
-        assert.sameValue(detached, true, "$262.detachArrayBuffer was called");
-    }
-
-    
-    for (let {typedArray, length, buffer} of createTypedArrays()) {
-        let detached = false;
-        let end = {
-            valueOf() {
-                assert.sameValue(detached, false);
-                $262.detachArrayBuffer(buffer());
-                assert.sameValue(detached, false);
-                detached = true;
-                return length;
-            }
-        };
-
-        
-        if (length === 0) {
-            typedArray.slice(0, end);
-        } else {
-            assertThrowsInstanceOf(() => {
-                typedArray.slice(0, end);
-            }, TypeError, "ArrayBuffer is detached in ToInteger(end)");
-        }
-        assert.sameValue(detached, true, "$262.detachArrayBuffer was called");
-    }
-
-    
-    for (let {typedArray, length, buffer} of createTypedArrays()) {
-        let detached = false;
-        typedArray.constructor = {
-            [Symbol.species]: function(...args) {
-                assert.sameValue(detached, false);
-                $262.detachArrayBuffer(buffer());
-                assert.sameValue(detached, false);
-                detached = true;
-                return new Int32Array(...args);
-            }
-        };
-
-        
-        if (length === 0) {
-            typedArray.slice(0);
-        } else {
-            assertThrowsInstanceOf(() => {
-                typedArray.slice(0);
-            }, TypeError, "ArrayBuffer is detached in TypedArraySpeciesCreate(...)");
-        }
-        assert.sameValue(detached, true, "$262.detachArrayBuffer was called");
-    }
+for (let {typedArray, buffer} of createTypedArrays()) {
+    $262.detachArrayBuffer(buffer());
+    assert.throws(TypeError, () => {
+        typedArray.slice(0);
+    }, "ArrayBuffer is detached on function entry");
 }
 
+
+for (let {typedArray, length, buffer} of createTypedArrays()) {
+    let detached = false;
+    let start = {
+        valueOf() {
+            assert.sameValue(detached, false);
+            $262.detachArrayBuffer(buffer());
+            assert.sameValue(detached, false);
+            detached = true;
+            return 0;
+        }
+    };
+
+    
+    if (length === 0) {
+        typedArray.slice(start);
+    } else {
+        assert.throws(TypeError, () => {
+            typedArray.slice(start);
+        }, "ArrayBuffer is detached in ToInteger(start)");
+    }
+    assert.sameValue(detached, true, "$262.detachArrayBuffer was called");
+}
+
+
+for (let {typedArray, length, buffer} of createTypedArrays()) {
+    let detached = false;
+    let end = {
+        valueOf() {
+            assert.sameValue(detached, false);
+            $262.detachArrayBuffer(buffer());
+            assert.sameValue(detached, false);
+            detached = true;
+            return length;
+        }
+    };
+
+    
+    if (length === 0) {
+        typedArray.slice(0, end);
+    } else {
+        assert.throws(TypeError, () => {
+            typedArray.slice(0, end);
+        }, "ArrayBuffer is detached in ToInteger(end)");
+    }
+    assert.sameValue(detached, true, "$262.detachArrayBuffer was called");
+}
+
+
+for (let {typedArray, length, buffer} of createTypedArrays()) {
+    let detached = false;
+    typedArray.constructor = {
+        [Symbol.species]: function(...args) {
+            assert.sameValue(detached, false);
+            $262.detachArrayBuffer(buffer());
+            assert.sameValue(detached, false);
+            detached = true;
+            return new Int32Array(...args);
+        }
+    };
+
+    
+    if (length === 0) {
+        typedArray.slice(0);
+    } else {
+        assert.throws(TypeError, () => {
+            typedArray.slice(0);
+        }, "ArrayBuffer is detached in TypedArraySpeciesCreate(...)");
+    }
+    assert.sameValue(detached, true, "$262.detachArrayBuffer was called");
+}
 
 reportCompare(0, 0);

@@ -29,7 +29,6 @@
 
 
 
-
 var finalizationRegistry = new FinalizationRegistry(function() {});
 assert.sameValue(Object.getPrototypeOf(finalizationRegistry), FinalizationRegistry.prototype);
 

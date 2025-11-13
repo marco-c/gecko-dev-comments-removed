@@ -10,8 +10,6 @@
 
 
 
-"use strict";
-
 
 assert.sameValue(Object.isSealed(new Int32Array(2)), false);
 assert.sameValue(Object.isSealed(new Int32Array(0)), false);
@@ -30,9 +28,9 @@ assert.sameValue(Object.isSealed(array), false);
 
 array = new Int32Array(2);
 array.b = "test";
-assertThrowsInstanceOf(() => Object.seal(array), TypeError);
+assert.throws(TypeError, () => Object.seal(array));
 assert.sameValue(Object.isSealed(array), false);
-assertThrowsInstanceOf(() => array.c = 15, TypeError);
+assert.throws(TypeError, () => array.c = 15);
 
 
 assert.sameValue(Object.isFrozen(new Int32Array(2)), false);
@@ -53,9 +51,8 @@ assert.sameValue(Object.isFrozen(array), true);
 
 
 array = new Int32Array(1);
-assertThrowsInstanceOf(() => Object.freeze(array), TypeError);
+assert.throws(TypeError, () => Object.freeze(array));
 assert.sameValue(Object.isExtensible(array), false);
 assert.sameValue(Object.isFrozen(array), false);
-
 
 reportCompare(0, 0);

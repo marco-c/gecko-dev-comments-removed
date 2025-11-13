@@ -10,7 +10,6 @@
 
 
 
-
 const duration = {
   hours: 0,
   seconds: -1,

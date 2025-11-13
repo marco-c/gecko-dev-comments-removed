@@ -11,7 +11,6 @@
 
 
 
-
 (function(f) {
   if (true) function f() {  }
   assert.sameValue(f, 123);

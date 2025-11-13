@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1268138;
-var summary = 'Internal usage of split should not be affected by prototpe change';
-
-print(BUGNUMBER + ": " + summary);
-
 function test() {
   var t = 24*60*60*1000;
   var possibleAnswer = ["1.1.1970", "2.1.1970", "3.1.1970"];
@@ -37,6 +31,5 @@ function test() {
 
 if (this.hasOwnProperty("Intl"))
   test();
-
 
 reportCompare(0, 0);

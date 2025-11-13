@@ -11,7 +11,6 @@
 
 
 
-
 const resolvedOptions = Intl.Segmenter.prototype.resolvedOptions;
 
 assert.sameValue(typeof resolvedOptions, "function");

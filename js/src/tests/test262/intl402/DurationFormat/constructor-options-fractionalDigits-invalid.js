@@ -11,7 +11,6 @@
 
 
 
-
 const invalidOptions = [
   -10,
   10

@@ -7,7 +7,6 @@
 
 
 
-
 assert.compareArray(
     Object.keys((new Intl.DurationFormat()).resolvedOptions()),
     ['locale',

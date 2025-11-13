@@ -9,8 +9,6 @@
 
 
 
-
-
 function fn() {
   return function(a, b, c) { };
 }

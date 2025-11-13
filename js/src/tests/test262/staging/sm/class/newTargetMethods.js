@@ -10,9 +10,6 @@
 
 
 
-
-
-
 let ol = {
     olTest(arg) { assert.sameValue(arg, 4); assert.sameValue(new.target, undefined); },
     get ol() { assert.sameValue(new.target, undefined); },

@@ -15,9 +15,6 @@
 
 
 
-
-
-
 const container = {
     async asyncMethod() {},
     *genMethod() {},
@@ -92,13 +89,13 @@ functions.forEach(f => {
 });
 
 function checkArgumentsAccess(f) {
-    assertThrowsInstanceOf(() => f.arguments, TypeError,
-                           `Expected 'arguments' property access to throw on ${f}`);
+    assert.throws(TypeError, () => f.arguments,
+                  `Expected 'arguments' property access to throw on ${f}`);
 }
 
 function checkCallerAccess(f) {
-    assertThrowsInstanceOf(() => f.caller, TypeError,
-                           `Expected 'caller' property access to throw on ${f}`);
+    assert.throws(TypeError, () => f.caller,
+                  `Expected 'caller' property access to throw on ${f}`);
 }
 
 

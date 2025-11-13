@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var order = 0;
 function assertOrdering(ordering) {
     assert.sameValue(order, ordering);

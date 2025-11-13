@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var hits = 0;
 function C() {}
 C.prototype = {set length(v) { hits++; }};

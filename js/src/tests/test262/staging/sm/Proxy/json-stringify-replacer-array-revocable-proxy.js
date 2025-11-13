@@ -10,20 +10,6 @@
 
 
 
-
-var gTestfile = "json-stringify-replacer-array-revocable-proxy.js";
-
-var BUGNUMBER = 1196497;
-var summary =
-  "Don't assert when JSON.stringify is passed a revocable proxy to an array, " +
-  "then that proxy is revoked midflight during stringification";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var arr = [];
 var { proxy, revoke } = Proxy.revocable(arr, {
   get(thisv, prop, receiver) {
@@ -40,9 +26,5 @@ var { proxy, revoke } = Proxy.revocable(arr, {
 });
 
 assert.sameValue(JSON.stringify({a: 0}, proxy), "{}");
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

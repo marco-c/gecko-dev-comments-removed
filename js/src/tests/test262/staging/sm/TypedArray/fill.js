@@ -8,6 +8,7 @@
 
 
 
+var otherGlobal = $262.createRealm().global;
 
 for (var constructor of anyTypedArrayConstructors) {
     assert.deepEqual(constructor.prototype.fill.length, 1);
@@ -46,18 +47,16 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.deepEqual(new constructor([1,1,1]).fill(2, 0, {valueOf: ()=>1}), new constructor([2,1,1]));
 
     
-    if (typeof createNewGlobal === "function") {
-        var fill = createNewGlobal()[constructor.name].prototype.fill;
-        assert.deepEqual(fill.call(new constructor([3, 2, 1]), 2), new constructor([2, 2, 2]));
-    }
+    var fill = otherGlobal[constructor.name].prototype.fill;
+    assert.deepEqual(fill.call(new constructor([3, 2, 1]), 2), new constructor([2, 2, 2]));
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assertThrowsInstanceOf(() => {
+        assert.throws(TypeError, () => {
             constructor.prototype.fill.call(invalidReceiver, 1);
-        }, TypeError);
+        });
     });
 
     

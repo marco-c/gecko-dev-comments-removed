@@ -10,19 +10,7 @@
 
 
 
-
-var BUGNUMBER = 614603;
-var summary = "RegExp.length";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 assert.sameValue(RegExp.length, 2);
 assert.sameValue(/a/.constructor.length, 2);
-
-print("All tests passed!");
 
 reportCompare(0, 0);

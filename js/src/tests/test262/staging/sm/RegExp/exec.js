@@ -10,32 +10,6 @@
 
 
 
-
-var BUGNUMBER = 646490;
-var summary =
-  "RegExp.prototype.exec doesn't get the lastIndex and ToInteger() it for " +
-  "non-global regular expressions when it should";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-function expectThrowTypeError(fun)
-{
-  try
-  {
-    var r = fun();
-    throw new Error("didn't throw TypeError, returned " + r);
-  }
-  catch (e)
-  {
-    assert.sameValue(e instanceof TypeError, true,
-             "didn't throw TypeError, got: " + e);
-  }
-}
-
 function checkExec(description, regex, args, obj)
 {
   var lastIndex = obj.lastIndex;
@@ -58,15 +32,15 @@ var exec = RegExp.prototype.exec;
 var r, res, called, obj;
 
 
-expectThrowTypeError(function() { exec.call(null); });
-expectThrowTypeError(function() { exec.call(""); });
-expectThrowTypeError(function() { exec.call(5); });
-expectThrowTypeError(function() { exec.call({}); });
-expectThrowTypeError(function() { exec.call([]); });
-expectThrowTypeError(function() { exec.call(); });
-expectThrowTypeError(function() { exec.call(true); });
-expectThrowTypeError(function() { exec.call(Object.create(RegExp.prototype)); });
-expectThrowTypeError(function() { exec.call(Object.create(/a/)); });
+assert.throws(TypeError, function() { exec.call(null); });
+assert.throws(TypeError, function() { exec.call(""); });
+assert.throws(TypeError, function() { exec.call(5); });
+assert.throws(TypeError, function() { exec.call({}); });
+assert.throws(TypeError, function() { exec.call([]); });
+assert.throws(TypeError, function() { exec.call(); });
+assert.throws(TypeError, function() { exec.call(true); });
+assert.throws(TypeError, function() { exec.call(Object.create(RegExp.prototype)); });
+assert.throws(TypeError, function() { exec.call(Object.create(/a/)); });
 
 
 
@@ -120,9 +94,9 @@ assert.sameValue(r.lastIndex, obj);
 
 r = /b/;
 r.lastIndex = { valueOf: {}, toString: {} };
-expectThrowTypeError(function() { r.exec("foopy"); });
+assert.throws(TypeError, function() { r.exec("foopy"); });
 r.lastIndex = { valueOf: function() { throw new TypeError(); } };
-expectThrowTypeError(function() { r.exec("foopy"); });
+assert.throws(TypeError, function() { r.exec("foopy"); });
 
 
 
@@ -239,9 +213,5 @@ checkExec("/a(b)c/g take two", r, ["00abcd"],
 
 
 
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

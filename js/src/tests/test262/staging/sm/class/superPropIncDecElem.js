@@ -7,9 +7,6 @@
 
 
 
-
-
-
 function base() { }
 
 base.prototype = {

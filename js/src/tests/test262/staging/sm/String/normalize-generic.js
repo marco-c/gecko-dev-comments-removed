@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 918987;
-var summary = 'String.prototype.normalize - normalize no String object';
-
-print(BUGNUMBER + ": " + summary);
-
 function test() {
   var myobj = {
     toString: () => "a\u0301",
@@ -26,6 +20,5 @@ if ("normalize" in String.prototype) {
   
   test();
 }
-
 
 reportCompare(0, 0);

@@ -25,7 +25,6 @@
 
 
 
-
 verifyProperty(Intl.DurationFormat.prototype.format, "length", {
   value: 1,
   writable: false,

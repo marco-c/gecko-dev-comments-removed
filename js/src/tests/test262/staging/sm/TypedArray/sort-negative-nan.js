@@ -8,13 +8,11 @@
 
 
 
-
-
 const floatConstructors = anyTypedArrayConstructors.filter(isFloatConstructor);
 
 
-if (typeof createNewGlobal === "function") {
-    const otherGlobal = createNewGlobal();
+{
+    const otherGlobal = $262.createRealm().global;
     floatConstructors.push(otherGlobal.Float16Array);
     floatConstructors.push(otherGlobal.Float32Array);
     floatConstructors.push(otherGlobal.Float64Array);

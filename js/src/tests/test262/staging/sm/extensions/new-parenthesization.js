@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 521456;
 var summary =
   'Incorrect decompilation of new (eval(v)).s and new (f.apply(2)).s';

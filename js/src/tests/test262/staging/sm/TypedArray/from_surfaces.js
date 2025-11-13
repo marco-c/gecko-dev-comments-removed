@@ -7,8 +7,6 @@
 
 
 
-
-
 for (var constructor of anyTypedArrayConstructors) {
     
     var desc = Object.getOwnPropertyDescriptor(constructor.__proto__, "from");
@@ -16,7 +14,7 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(desc.enumerable, false);
     assert.sameValue(desc.writable, true);
     assert.sameValue(constructor.from.length, 1);
-    assertThrowsInstanceOf(() => new constructor.from(), TypeError);  
+    assert.throws(TypeError, () => new constructor.from());  
 }
 
 

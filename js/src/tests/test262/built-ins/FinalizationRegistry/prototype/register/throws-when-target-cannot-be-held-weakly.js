@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(typeof FinalizationRegistry.prototype.register, 'function');
 
 var finalizationRegistry = new FinalizationRegistry(function() {});

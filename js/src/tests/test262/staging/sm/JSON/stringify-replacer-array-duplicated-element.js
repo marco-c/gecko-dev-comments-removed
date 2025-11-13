@@ -10,20 +10,6 @@
 
 
 
-
-var gTestfile = 'stringify-replacer-array-hijinks.js';
-
-var BUGNUMBER = 648471;
-var summary =
-  "Better/more correct handling for replacer arrays with getter array index " +
-  "properties";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var bigOdd = Math.pow(2, 50) + 1;
 
 function two()
@@ -70,9 +56,5 @@ assert.sameValue(JSON.stringify({ 1: 1 }, [new String(1), new Number(1)]), '{"1"
 assert.sameValue(JSON.stringify({ 1: 1 }, [new Number(1), new String(1)]), '{"1":1}');
 
 assert.sameValue(JSON.stringify({ 1: 1 }, [new Number(1), new Number(1)]), '{"1":1}');
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

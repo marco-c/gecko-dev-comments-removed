@@ -7,8 +7,6 @@
 
 
 
-
-
 var get = [];
 var fun = function() {}
 var p = new Proxy(fun, {
@@ -19,7 +17,7 @@ var p = new Proxy(fun, {
 });
 
 assert.sameValue(new fun instanceof p, true);
-assert.deepEqual(get, [Symbol.hasInstance, "prototype"]);
+assert.compareArray(get, [Symbol.hasInstance, "prototype"]);
 
 
 reportCompare(0, 0);

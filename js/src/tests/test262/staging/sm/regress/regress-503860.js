@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 503860;
 var summary = "Don't shadow a readonly or setter proto-property";
 var expect = "PASS";

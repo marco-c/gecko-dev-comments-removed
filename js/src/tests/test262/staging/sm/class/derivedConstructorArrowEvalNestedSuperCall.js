@@ -6,9 +6,6 @@
 
 
 
-
-
-
 new class extends class { } {
     constructor() {
         (()=>eval("super()"))();

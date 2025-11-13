@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var a = {d: true, w: true};
 Object.defineProperty(a, "d", {set: undefined});
 delete a.d;

@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var BUGNUMBER = 449627;
 var summary = 'Crash with JIT in js_FillPropertyCache';
 var actual = 'No Crash';
@@ -22,14 +19,14 @@ var expect = 'No Crash';
 
 if (typeof navigator == 'undefined')
 {
-  navigator = {
+  var navigator = {
     userAgent: "Firefox",
     vendor: "Mozilla",
     platform: "Mac"
   };
 }
 
-global = this;
+var global = this;
 
 var BrowserDetect = {
     init: function _init()

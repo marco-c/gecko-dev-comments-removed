@@ -9,58 +9,55 @@
 
 
 
-
-
-
 {
-  assertThrowsInstanceOf(() => { let a = (a &&= 0); }, ReferenceError);
-  assertThrowsInstanceOf(() => { let a = (a ||= 0); }, ReferenceError);
-  assertThrowsInstanceOf(() => { let a = (a ??= 0); }, ReferenceError);
+  assert.throws(ReferenceError, () => { let a = (a &&= 0); });
+  assert.throws(ReferenceError, () => { let a = (a ||= 0); });
+  assert.throws(ReferenceError, () => { let a = (a ??= 0); });
 }
 
 
 {
-  assertThrowsInstanceOf(() => { const a = (a &&= 0); }, ReferenceError);
-  assertThrowsInstanceOf(() => { const a = (a ||= 0); }, ReferenceError);
-  assertThrowsInstanceOf(() => { const a = (a ??= 0); }, ReferenceError);
+  assert.throws(ReferenceError, () => { const a = (a &&= 0); });
+  assert.throws(ReferenceError, () => { const a = (a ||= 0); });
+  assert.throws(ReferenceError, () => { const a = (a ??= 0); });
 }
 
 
 {
-  assertThrowsInstanceOf((a = (b &&= 0), b) => {}, ReferenceError);
-  assertThrowsInstanceOf((a = (b ||= 0), b) => {}, ReferenceError);
-  assertThrowsInstanceOf((a = (b ??= 0), b) => {}, ReferenceError);
+  assert.throws(ReferenceError, (a = (b &&= 0), b) => {});
+  assert.throws(ReferenceError, (a = (b ||= 0), b) => {});
+  assert.throws(ReferenceError, (a = (b ??= 0), b) => {});
 }
 
 
 {
-  assertThrowsInstanceOf(() => { class a extends (a &&= 0) {} }, ReferenceError);
-  assertThrowsInstanceOf(() => { class a extends (a ||= 0) {} }, ReferenceError);
-  assertThrowsInstanceOf(() => { class a extends (a ??= 0) {} }, ReferenceError);
+  assert.throws(ReferenceError, () => { class a extends (a &&= 0) {} });
+  assert.throws(ReferenceError, () => { class a extends (a ||= 0) {} });
+  assert.throws(ReferenceError, () => { class a extends (a ??= 0) {} });
 }
 
 
 {
-  assertThrowsInstanceOf(() => {
+  assert.throws(ReferenceError, () => {
     const False = false;
     False &&= b;
     b = 2;
     let b;
-  }, ReferenceError);
+  });
 
-  assertThrowsInstanceOf(() => {
+  assert.throws(ReferenceError, () => {
     const True = true;
     True ||= b;
     b = 2;
     let b;
-  }, ReferenceError);
+  });
 
-  assertThrowsInstanceOf(() => {
+  assert.throws(ReferenceError, () => {
     const NonNull = {};
     NonNull ??= b;
     b = 2;
     let b;
-  }, ReferenceError);
+  });
 }
 
 

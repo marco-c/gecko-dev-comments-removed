@@ -10,17 +10,6 @@
 
 
 
-
-
-var BUGNUMBER = 562446;
-var summary = 'ES5: Array.prototype.toLocaleString';
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 var o;
 
 o = { length: 2, 0: 7, 1: { toLocaleString: function() { return "baz" } } };
@@ -30,13 +19,9 @@ o = {};
 assert.sameValue(Array.prototype.toLocaleString.call(o), "");
 
 var log = '';
-arr = {length: {valueOf: function () { log += "L"; return 2; }},
+var arr = {length: {valueOf: function () { log += "L"; return 2; }},
       0: "x", 1: "z"};
 assert.sameValue(Array.prototype.toLocaleString.call(arr), "x,z");
 assert.sameValue(log, "L");
-
-
-
-print("All tests passed!");
 
 reportCompare(0, 0);

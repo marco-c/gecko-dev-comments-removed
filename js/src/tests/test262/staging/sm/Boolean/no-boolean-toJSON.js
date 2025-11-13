@@ -13,8 +13,6 @@
 
 
 
-
-
 JSON.stringify(new Boolean(false), function(k, v) { 
     assert.sameValue(typeof v, "object"); 
 });
@@ -23,6 +21,5 @@ assert.sameValue(Boolean.prototype.hasOwnProperty('toJSON'), false);
 
 Object.prototype.toJSON = function() { return 2; };
 assert.sameValue(JSON.stringify(new Boolean(true)), "2");
-
 
 reportCompare(0, 0);

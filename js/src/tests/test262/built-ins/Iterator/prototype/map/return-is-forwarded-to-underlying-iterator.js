@@ -10,7 +10,6 @@
 
 
 
-
 let returnCount = 0;
 
 class TestIterator extends Iterator {

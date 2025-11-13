@@ -21,7 +21,6 @@
 
 
 
-
 verifyProperty(Iterator.prototype.drop, 'name', {
   value: 'drop',
   writable: false,

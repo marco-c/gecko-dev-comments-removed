@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+for (using x = null;;) break;
+
+
+
+for (using of = null;;) break;
+
+reportCompare(0, 0);

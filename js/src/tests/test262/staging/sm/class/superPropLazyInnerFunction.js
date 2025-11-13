@@ -6,9 +6,6 @@
 
 
 
-
-
-
 testcase();
 function testcase() {
     var tokenCodes  = {

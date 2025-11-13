@@ -8,9 +8,6 @@
 
 
 
-
-
-
 assert.sameValue(Math.f16round(), NaN);
 
 

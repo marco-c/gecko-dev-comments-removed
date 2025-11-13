@@ -11,9 +11,6 @@
 
 
 
-
-
-
 var re = /a/;
 var newRe = Reflect.construct(RegExp, [re], Object.defineProperty(function(){}.bind(null), "prototype", {
   get() {

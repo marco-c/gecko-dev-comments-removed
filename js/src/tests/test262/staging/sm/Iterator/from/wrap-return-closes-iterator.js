@@ -10,10 +10,6 @@
 
 
 
-
-
-
-
 class Iter {
   next() {
     if (this.closed)

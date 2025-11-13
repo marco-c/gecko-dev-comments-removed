@@ -25,7 +25,6 @@
 
 
 
-
 assert.sameValue(Intl.DurationFormat.prototype.resolvedOptions.length, 0);
 
 verifyProperty(Intl.DurationFormat.prototype.resolvedOptions, "length", {

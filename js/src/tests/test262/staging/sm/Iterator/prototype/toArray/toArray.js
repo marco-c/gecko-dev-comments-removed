@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 const iter = [1, 2, 3].values();
 assert.sameValue(Array.isArray(iter), false);
 

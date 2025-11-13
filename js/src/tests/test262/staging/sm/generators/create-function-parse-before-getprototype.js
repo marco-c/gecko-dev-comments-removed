@@ -6,9 +6,6 @@
 
 
 
-
-
-
 var getProtoCalled = false;
 
 var newTarget = Object.defineProperty(function(){}.bind(), "prototype", {
@@ -20,9 +17,9 @@ var newTarget = Object.defineProperty(function(){}.bind(), "prototype", {
 
 var Generator = function*(){}.constructor;
 
-assertThrowsInstanceOf(() => {
+assert.throws(SyntaxError, () => {
     Reflect.construct(Generator, ["@error"], newTarget);
-}, SyntaxError);
+});
 
 assert.sameValue(getProtoCalled, false);
 

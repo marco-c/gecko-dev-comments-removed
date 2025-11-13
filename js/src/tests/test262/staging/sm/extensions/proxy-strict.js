@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var s = "grape";
 function f() { "use strict"; return this; }
 var p = new Proxy(f, {});

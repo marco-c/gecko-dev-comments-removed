@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 const fn = (value) => value;
 assert.sameValue([true].values().find(fn), true);
 assert.sameValue([1].values().find(fn), 1);
@@ -36,7 +32,7 @@ assert.sameValue([array].values().find(fn), array);
 let object = {};
 assert.sameValue([object].values().find(fn), object);
 
-const htmlDDA = createIsHTMLDDA();
+const htmlDDA = $262.IsHTMLDDA;
 assert.sameValue([htmlDDA].values().find(fn), undefined);
 
 

@@ -10,16 +10,6 @@
 
 
 
-
-var BUGNUMBER = 747197;
-var summary = "TimeClip behavior for very large numbers";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function addToLimit(n) { return 8.64e15 + n; }
 
 assert.sameValue(8.64e15 === addToLimit(0.0), true);
@@ -41,9 +31,5 @@ for (var i = 0, len = times.length; i < len; i++)
   assert.sameValue(d.getTime(), NaN);
   assert.sameValue(d.valueOf(), NaN);
 }
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

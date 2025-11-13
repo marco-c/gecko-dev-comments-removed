@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(FinalizationRegistry.prototype, Symbol.toStringTag, {
   value: 'FinalizationRegistry',
   writable: false,

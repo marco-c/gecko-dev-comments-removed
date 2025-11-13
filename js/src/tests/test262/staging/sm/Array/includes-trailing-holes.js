@@ -7,9 +7,6 @@
 
 
 
-
-
-
 assert.sameValue([,].includes(), true);
 assert.sameValue([,].includes(undefined), true);
 assert.sameValue([,].includes(undefined, 0), true);

@@ -9,7 +9,6 @@
 
 
 
-
 const style = "narrow";
 
 const duration = {

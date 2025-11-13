@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(
   Object.getPrototypeOf(Intl.Segmenter),
   Function.prototype,

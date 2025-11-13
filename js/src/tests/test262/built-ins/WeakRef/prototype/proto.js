@@ -10,7 +10,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(WeakRef.prototype);
 assert.sameValue(proto, Object.prototype);
 

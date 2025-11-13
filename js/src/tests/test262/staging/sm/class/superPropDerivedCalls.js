@@ -6,9 +6,6 @@
 
 
 
-
-
-
 let derivedInstance;
 
 class base {

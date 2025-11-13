@@ -12,7 +12,6 @@
 
 
 
-
 const value = new Intl.DurationFormat();
 assert.sameValue(
   Object.getPrototypeOf(value),

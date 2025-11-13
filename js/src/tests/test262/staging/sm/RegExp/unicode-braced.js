@@ -9,11 +9,6 @@
 
 
 
-var BUGNUMBER = 1135377;
-var summary = "Implement RegExp unicode flag -- braced pattern in RegExpUnicodeEscapeSequence.";
-
-print(BUGNUMBER + ": " + summary);
-
 
 
 assert.compareArray(/\u{41}/u.exec("ABC"),
@@ -149,21 +144,21 @@ assert.compareArray(/\u{DC38}/u.exec("A\uDC38"),
 
 
 
-assertThrowsInstanceOf(() => eval(`/\\u{-1}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{0.0}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{G}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{{/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{110000}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{00110000}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{100000000000000000000000000000}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{   FFFF}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{FFFF   }/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{FF   FF}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{F F F F}/u`), SyntaxError);
-assertThrowsInstanceOf(() => eval(`/\\u{100000001}/u`), SyntaxError);
+assert.throws(SyntaxError, () => eval(`/\\u{-1}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{0.0}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{G}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{{/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{110000}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{00110000}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{100000000000000000000000000000}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{   FFFF}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{FFFF   }/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{FF   FF}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{F F F F}/u`));
+assert.throws(SyntaxError, () => eval(`/\\u{100000001}/u`));
 
 
 assert.sameValue(/\u{D83D}\u{DC38}+/u.exec("\uD83D\uDC38\uDC38"),
@@ -172,6 +167,5 @@ assert.sameValue(/\uD83D\u{DC38}+/u.exec("\uD83D\uDC38\uDC38"),
          null);
 assert.sameValue(/\u{D83D}\uDC38+/u.exec("\uD83D\uDC38\uDC38"),
          null);
-
 
 reportCompare(0, 0);

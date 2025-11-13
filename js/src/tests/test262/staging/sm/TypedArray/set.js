@@ -7,8 +7,6 @@
 
 
 
-
-
 const TypedArrayPrototype = Object.getPrototypeOf(Int8Array.prototype);
 
 
@@ -18,15 +16,16 @@ assert.sameValue(typeof TypedArrayPrototype.set, "function");
 
 assert.sameValue(anyTypedArrayConstructors.every(c => !c.hasOwnProperty("set")), true);
 
-assert.deepEqual(Object.getOwnPropertyDescriptor(TypedArrayPrototype, "set"), {
+verifyProperty(TypedArrayPrototype, "set", {
     value: TypedArrayPrototype.set,
     writable: true,
     enumerable: false,
     configurable: true,
+}, {
+  restore: true
 });
 
 assert.sameValue(TypedArrayPrototype.set.name, "set");
 assert.sameValue(TypedArrayPrototype.set.length, 1);
-
 
 reportCompare(0, 0);

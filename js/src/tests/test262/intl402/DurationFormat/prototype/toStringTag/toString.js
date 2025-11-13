@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(Object.prototype.toString.call(Intl.DurationFormat.prototype), "[object Intl.DurationFormat]");
 assert.sameValue(Object.prototype.toString.call(new Intl.DurationFormat()), "[object Intl.DurationFormat]");
 

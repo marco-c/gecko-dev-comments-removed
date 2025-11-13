@@ -7,11 +7,6 @@
 
 
 
-
-
 assert.sameValue(Object.getOwnPropertyNames(this).includes('globalThis'), true);
-
-if (typeof assert.sameValue === "function") {
-}
 
 reportCompare(0, 0);

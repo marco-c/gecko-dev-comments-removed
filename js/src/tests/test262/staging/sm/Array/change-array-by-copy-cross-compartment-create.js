@@ -7,9 +7,6 @@
 
 
 
-
-
-
 function test(otherGlobal) {
     let arrays = [
         ["with", otherGlobal.Array.prototype.with.call([1,2,3], 1, 3)],
@@ -29,8 +26,6 @@ function test(otherGlobal) {
     }
 }
 
-test(createNewGlobal());
-test(createNewGlobal({newCompartment: true}));
-
+test($262.createRealm().global);
 
 reportCompare(0, 0);

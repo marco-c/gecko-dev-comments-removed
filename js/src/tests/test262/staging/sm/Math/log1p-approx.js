@@ -7,8 +7,6 @@
 
 
 
-
-
 assertNear(Math.log1p(1e-300), 1e-300);
 assertNear(Math.log1p(1e-15), 9.999999999999995e-16);
 assertNear(Math.log1p(1e-6), 9.999995000003334e-7);

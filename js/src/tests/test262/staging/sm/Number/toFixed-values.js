@@ -7,8 +7,6 @@
 
 
 
-
-
 let values = [
   [-0, undefined, "0"],
   [-0, 0, "0"],
@@ -122,9 +120,6 @@ let values = [
 
 for (let [val, prec, expected] of values) {
   assert.sameValue(Number.prototype.toFixed.call(val, prec), expected);
-}
-
-if (typeof assert.sameValue === "function") {
 }
 
 reportCompare(0, 0);

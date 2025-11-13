@@ -24,7 +24,6 @@
 
 
 
-
 verifyProperty(WeakRef, 'length', {
   value: 1,
   writable: false,

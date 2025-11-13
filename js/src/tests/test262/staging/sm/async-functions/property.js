@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1185106;
-var summary = "async name token in property and object destructuring pattern";
-
-print(BUGNUMBER + ": " + summary);
-
 {
   let a = { async: 10 };
   assert.sameValue(a.async, 10);
@@ -55,6 +49,5 @@ print(BUGNUMBER + ": " + summary);
   assert.sameValue(a.async, 15);
   assert.sameValue(a.other, 16);
 }
-
 
 reportCompare(0, 0);

@@ -10,9 +10,6 @@
 
 
 
-
-
-
 const months = [
   {
     name: "Tishrei",

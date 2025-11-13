@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 class TestIterator {
   next() {
     return { done: false, value: 0 };

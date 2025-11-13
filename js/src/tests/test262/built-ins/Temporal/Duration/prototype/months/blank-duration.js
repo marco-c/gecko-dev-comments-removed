@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const blank = new Temporal.Duration();
+assert.sameValue(blank.months, 0);
+
+reportCompare(0, 0);

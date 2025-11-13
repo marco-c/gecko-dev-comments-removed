@@ -12,8 +12,6 @@
 
 
 
-
-
 function denseCount(arr) {
     var c = 0;
     for (var i = 0; i < arr.length; i++)

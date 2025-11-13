@@ -8,9 +8,6 @@
 
 
 
-
-
-
 assert.sameValue(Date.UTC(Number.MAX_VALUE, Number.MAX_VALUE), NaN);
 assert.sameValue(new Date(Number.MAX_VALUE, Number.MAX_VALUE).getTime(), NaN);
 

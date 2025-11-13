@@ -9,12 +9,9 @@
 
 
 
-
-
-
 var toPrimitive = Date.prototype[Symbol.toPrimitive];
-assertThrowsInstanceOf(() => toPrimitive.call(undefined, "default"), TypeError);
-assertThrowsInstanceOf(() => toPrimitive.call(3, "default"), TypeError);
+assert.throws(TypeError, () => toPrimitive.call(undefined, "default"));
+assert.throws(TypeError, () => toPrimitive.call(3, "default"));
 
 
 var obj = {
@@ -26,11 +23,11 @@ assert.sameValue(toPrimitive.call(obj, "string"), "str");
 assert.sameValue(toPrimitive.call(obj, "default"), "str");
 
 
-assertThrowsInstanceOf(() => toPrimitive.call(obj), TypeError);
-assertThrowsInstanceOf(() => toPrimitive.call(obj, undefined), TypeError);
-assertThrowsInstanceOf(() => toPrimitive.call(obj, "boolean"), TypeError);
-assertThrowsInstanceOf(() => toPrimitive.call(obj, ["number"]), TypeError);
-assertThrowsInstanceOf(() => toPrimitive.call(obj, {toString() { throw "FAIL"; }}), TypeError);
+assert.throws(TypeError, () => toPrimitive.call(obj));
+assert.throws(TypeError, () => toPrimitive.call(obj, undefined));
+assert.throws(TypeError, () => toPrimitive.call(obj, "boolean"));
+assert.throws(TypeError, () => toPrimitive.call(obj, ["number"]));
+assert.throws(TypeError, () => toPrimitive.call(obj, {toString() { throw "FAIL"; }}));
 
 
 
@@ -61,7 +58,7 @@ assert.sameValue(dateobj[Symbol.toPrimitive]("number"), 15);
 
 
 Date.prototype.toString = "ponies";
-assertThrowsInstanceOf(() => dateobj[Symbol.toPrimitive]("default"), TypeError);
+assert.throws(TypeError, () => dateobj[Symbol.toPrimitive]("default"));
 
 
 assert.sameValue(toPrimitive.name, "[Symbol.toPrimitive]");

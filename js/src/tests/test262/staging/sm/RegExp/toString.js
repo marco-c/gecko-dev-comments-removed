@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 1079919;
-var summary = "Make RegExp.prototype.toString to be a generic function.";
-
-print(BUGNUMBER + ": " + summary);
-
 assert.sameValue(RegExp.prototype.toString(), "/(?:)/");
 assert.sameValue(/foo/.toString(), "/foo/");
 assert.sameValue(/foo/i.toString(), "/foo/i");
@@ -28,9 +22,9 @@ assert.sameValue(RegExp("\n\r").toString(), "/\\n\\r/");
 assert.sameValue(RegExp("\u2028\u2029").toString(), "/\\u2028\\u2029/");
 assert.sameValue(RegExp("/").toString(), "/\\//");
 
-assertThrowsInstanceOf(() => RegExp.prototype.toString.call(), TypeError);
-assertThrowsInstanceOf(() => RegExp.prototype.toString.call(1), TypeError);
-assertThrowsInstanceOf(() => RegExp.prototype.toString.call(""), TypeError);
+assert.throws(TypeError, () => RegExp.prototype.toString.call());
+assert.throws(TypeError, () => RegExp.prototype.toString.call(1));
+assert.throws(TypeError, () => RegExp.prototype.toString.call(""));
 assert.sameValue(RegExp.prototype.toString.call({}), "/undefined/undefined");
 assert.sameValue(RegExp.prototype.toString.call({ source:"foo", flags:"bar" }), "/foo/bar");
 
@@ -48,6 +42,5 @@ var p = new Proxy({}, {
 });
 assert.sameValue(RegExp.prototype.toString.call(p), "/source/flags");
 assert.sameValue(a.join(","), "source,source-tostring,flags,flags-tostring");
-
 
 reportCompare(0, 0);

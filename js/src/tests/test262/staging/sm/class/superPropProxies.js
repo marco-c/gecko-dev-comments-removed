@@ -6,9 +6,6 @@
 
 
 
-
-
-
 class base {
     constructor() { }
 }
@@ -80,7 +77,7 @@ child.testStaticLookups();
 assert.sameValue(new Proxy(({ method() { return super.hasOwnProperty("method"); } }), {}).method(), true);
 
 
-var g = createNewGlobal();
+var g = $262.createRealm().global;
 var wrappedSuper = g.eval("({ method() { return super.hasOwnProperty('method'); } })");
 assert.sameValue(wrappedSuper.method(), true);
 

@@ -10,14 +10,6 @@
 
 
 
-
-var BUGNUMBER = 805121;
-var summary = "Be more careful with string math to avoid wrong results";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
 function puff(x, n)
 {
   while(x.length < n)
@@ -37,9 +29,5 @@ catch (e)
 {
   
 }
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

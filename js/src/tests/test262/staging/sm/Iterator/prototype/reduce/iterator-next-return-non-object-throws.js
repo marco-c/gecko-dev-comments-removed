@@ -11,10 +11,6 @@
 
 
 
-
-
-
-
 class TestIterator extends Iterator {
   constructor(value) {
     super();
@@ -29,17 +25,17 @@ class TestIterator extends Iterator {
 const sum = (x, y) => x + y;
 
 let iter = new TestIterator(undefined);
-assertThrowsInstanceOf(() => iter.reduce(sum), TypeError);
+assert.throws(TypeError, () => iter.reduce(sum));
 iter = new TestIterator(null);
-assertThrowsInstanceOf(() => iter.reduce(sum), TypeError);
+assert.throws(TypeError, () => iter.reduce(sum));
 iter = new TestIterator(0);
-assertThrowsInstanceOf(() => iter.reduce(sum), TypeError);
+assert.throws(TypeError, () => iter.reduce(sum));
 iter = new TestIterator(false);
-assertThrowsInstanceOf(() => iter.reduce(sum), TypeError);
+assert.throws(TypeError, () => iter.reduce(sum));
 iter = new TestIterator('');
-assertThrowsInstanceOf(() => iter.reduce(sum), TypeError);
+assert.throws(TypeError, () => iter.reduce(sum));
 iter = new TestIterator(Symbol(''));
-assertThrowsInstanceOf(() => iter.reduce(sum), TypeError);
+assert.throws(TypeError, () => iter.reduce(sum));
 
 
 reportCompare(0, 0);

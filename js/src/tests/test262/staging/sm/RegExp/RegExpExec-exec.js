@@ -8,12 +8,6 @@
 
 
 
-
-var BUGNUMBER = 887016;
-var summary = "RegExpExec should throw if exec property of non-RegExp is not callable";
-
-print(BUGNUMBER + ": " + summary);
-
 for (var exec of [null, 0, false, undefined, ""]) {
   
   var re = /a/;
@@ -21,9 +15,7 @@ for (var exec of [null, 0, false, undefined, ""]) {
   RegExp.prototype[Symbol.match].call(re, "foo");
 
   
-  assertThrowsInstanceOf(() => RegExp.prototype[Symbol.match].call({ exec }, "foo"),
-                         TypeError);
+  assert.throws(TypeError, () => RegExp.prototype[Symbol.match].call({ exec }, "foo"));
 }
-
 
 reportCompare(0, 0);

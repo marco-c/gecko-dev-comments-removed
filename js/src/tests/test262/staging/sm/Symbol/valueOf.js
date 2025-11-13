@@ -8,9 +8,6 @@
 
 
 
-
-
-
 var symbols = [
     Symbol(),
     Symbol("ok"),
@@ -26,7 +23,7 @@ for (var sym of symbols) {
 
 var nonsymbols = [undefined, null, NaN, {}, Symbol.prototype];
 for (var nonsym of nonsymbols)
-    assertThrowsInstanceOf(() => Symbol.prototype.valueOf.call(nonsym), TypeError);
+    assert.throws(TypeError, () => Symbol.prototype.valueOf.call(nonsym));
 
 
 reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+async function f() {
+  for (await using of of []) { }
+}
+
+reportCompare(0, 0);

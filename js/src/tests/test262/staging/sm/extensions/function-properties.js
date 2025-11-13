@@ -23,8 +23,4 @@ foo();
 assert.sameValue(foo.arguments, null);
 assert.sameValue(foo.caller, null);
 
-
-
-print("Tests complete");
-
 reportCompare(0, 0);

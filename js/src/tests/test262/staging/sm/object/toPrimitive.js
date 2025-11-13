@@ -19,6 +19,7 @@
 
 
 
+
 var expectedThis, expectedHint;
 var obj = {
     [Symbol.toPrimitive](hint, ...rest) {
@@ -57,7 +58,7 @@ for (var constructor of [Boolean, Number, String, Symbol]) {
 assert.sameValue(Number(true), 1);
 assert.sameValue(Number(77.7), 77.7);
 assert.sameValue(Number("123"), 123);
-assertThrowsInstanceOf(() => Number(Symbol.iterator), TypeError);
+assert.throws(TypeError, () => Number(Symbol.iterator));
 assert.sameValue(String(true), "true");
 assert.sameValue(String(77.7), "77.7");
 assert.sameValue(String("123"), "123");
@@ -68,9 +69,9 @@ assert.sameValue(ok, true);
 
 delete Symbol.prototype[Symbol.toPrimitive];
 var sym = Symbol("ok");
-assertThrowsInstanceOf(() => `${sym}`, TypeError);
-assertThrowsInstanceOf(() => Number(sym), TypeError);
-assertThrowsInstanceOf(() => "" + sym, TypeError);
+assert.throws(TypeError, () => `${sym}`);
+assert.throws(TypeError, () => Number(sym));
+assert.throws(TypeError, () => "" + sym);
 
 
 
@@ -106,8 +107,7 @@ var handler = new Proxy({}, {
     }
 });
 proxy = new Proxy(Object.create(null), handler);
-assertThrowsInstanceOf(() => proxy == 0, TypeError);
-assert.deepEqual(log, [Symbol.toPrimitive, "valueOf", "toString"]);
-
+assert.throws(TypeError, () => proxy == 0);
+assert.compareArray(log, [Symbol.toPrimitive, "valueOf", "toString"]);
 
 reportCompare(0, 0);

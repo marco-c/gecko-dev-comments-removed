@@ -12,10 +12,6 @@
 
 
 
-
-
-
-
 assert.sameValue(Object.getPrototypeOf(Iterator), Function.prototype);
 
 const propDesc = Reflect.getOwnPropertyDescriptor(Iterator, 'prototype');

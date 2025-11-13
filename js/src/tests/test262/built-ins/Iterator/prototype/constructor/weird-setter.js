@@ -13,7 +13,6 @@
 
 
 
-
 let IteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()))
 
 let sentinel = {};

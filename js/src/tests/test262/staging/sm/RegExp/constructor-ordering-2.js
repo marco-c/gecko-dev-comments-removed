@@ -9,9 +9,6 @@
 
 
 
-
-
-
 var didLookup = false;
 
 var re = /a/;

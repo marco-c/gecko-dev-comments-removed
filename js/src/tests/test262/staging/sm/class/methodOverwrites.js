@@ -7,9 +7,6 @@
 
 
 
-
-
-
 {
     var result = 0;
     

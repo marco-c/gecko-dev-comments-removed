@@ -10,9 +10,6 @@
 
 
 
-
-
-
 var desc = Object.getOwnPropertyDescriptor(this, "Symbol");
 assert.sameValue(desc.configurable, true);
 assert.sameValue(desc.enumerable, false);

@@ -12,8 +12,6 @@
 
 
 
-
-
 var someObjects = [
     {},
     new Int32Array(7),
@@ -28,9 +26,9 @@ for (var obj of someObjects) {
 }
 
 
-assertThrowsInstanceOf(() => Reflect.isExtensible(), TypeError);
+assert.throws(TypeError, () => Reflect.isExtensible());
 for (var value of [undefined, null, true, 1, NaN, "Phaedo", Symbol("good")]) {
-    assertThrowsInstanceOf(() => Reflect.isExtensible(value), TypeError);
+    assert.throws(TypeError, () => Reflect.isExtensible(value));
 }
 
 
@@ -57,7 +55,7 @@ obj = {};
 proxy = new Proxy(obj, {
     preventExtensions() { return true; }
 });
-assertThrowsInstanceOf(() => Reflect.preventExtensions(proxy), TypeError);
+assert.throws(TypeError, () => Reflect.preventExtensions(proxy));
 assert.sameValue(Reflect.isExtensible(obj), true);
 assert.sameValue(Reflect.isExtensible(proxy), true);
 

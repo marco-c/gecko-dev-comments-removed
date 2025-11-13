@@ -9,8 +9,6 @@
 
 
 
-
-
 assert.sameValue(typeof String.prototype.matchAll, "function");
 assert.sameValue(String.prototype.matchAll.name, "matchAll");
 assert.sameValue(String.prototype.matchAll.length, 1);
@@ -81,7 +79,7 @@ assertEqMatchResults("ababcca".matchAll("a"), matchResults("ababcca", /a/g));
 
 
 {
-    let otherGlobal = createNewGlobal();
+    let otherGlobal = $262.createRealm().global;
 
     let iterator = otherGlobal.eval(`"ababcca".matchAll(/a/g)`);
     let expected = matchResults("ababcca", /a/g);

@@ -10,15 +10,11 @@
 
 
 
-
-
 var sortFunctions = [Int32Array.prototype.sort];
 
 
-if (typeof createNewGlobal === "function") {
-    var otherGlobal = createNewGlobal();
-    sortFunctions.push(createNewGlobal().Int32Array.prototype.sort);
-}
+var otherGlobal = $262.createRealm().global;
+sortFunctions.push(otherGlobal.Int32Array.prototype.sort);
 
 
 

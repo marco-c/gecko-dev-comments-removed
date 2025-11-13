@@ -13,10 +13,6 @@
 
 
 
-
-
-
-
 class EmptyIterator extends Iterator {
   next() { 
     return {done: true};

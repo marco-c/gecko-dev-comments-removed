@@ -11,10 +11,7 @@
 
 
 
-
-
-
-assertThrowsInstanceOf(() => {
+assert.throws(RangeError, () => {
   let date = Temporal.PlainDate.from({
     calendar: "islamic-umalqura",
     year: -6823,
@@ -22,7 +19,7 @@ assertThrowsInstanceOf(() => {
     day: 1,
   });
   
-}, RangeError);
+});
 
 
 reportCompare(0, 0);

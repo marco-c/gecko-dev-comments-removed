@@ -24,7 +24,6 @@
 
 
 
-
 const localeMatchers = [
   undefined,
   'lookup',

@@ -8,7 +8,6 @@
 
 
 
-
 assert(
   (function* () {})().filter(() => true) instanceof Iterator,
   'function*(){}().filter(() => true) must return an Iterator'

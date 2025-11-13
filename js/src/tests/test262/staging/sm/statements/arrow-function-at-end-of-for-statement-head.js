@@ -10,20 +10,6 @@
 
 
 
-
-
-var gTestfile = "arrow-function-in-for-statement-head.js";
-var BUGNUMBER = 1302994;
-var summary =
-  "Don't assert when an arrow function occurs at the end of a declaration " +
-  "init-component of a for(;;) loop head";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function f1()
 {
   for (var x = a => b; false; false)
@@ -65,9 +51,5 @@ function g2()
   {}
 }
 g2();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

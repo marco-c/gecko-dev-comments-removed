@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(Iterator, 'prototype', {
   value: Iterator.prototype,
   writable: false,

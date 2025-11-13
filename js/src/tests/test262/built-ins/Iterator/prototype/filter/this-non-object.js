@@ -12,7 +12,6 @@
 
 
 
-
 assert.throws(TypeError, function () {
   Iterator.prototype.filter.call(null, () => true);
 });

@@ -6,9 +6,6 @@
 
 
 
-
-
-
 function g1() {
     throw 10;
 }

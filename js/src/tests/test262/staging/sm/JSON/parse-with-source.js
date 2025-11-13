@@ -9,7 +9,6 @@
 
 
 
-
 (function checkJSONParseWithSource() {
     var actual;
 
@@ -95,14 +94,14 @@
     function assertIsRawJson(rawJson, expectedRawJsonValue) {
         assert.sameValue(null, Object.getPrototypeOf(rawJson));
         assert.sameValue(true, Object.hasOwn(rawJson, 'rawJSON'));
-        assert.deepEqual(['rawJSON'], Object.keys(rawJson));
-        assert.deepEqual(['rawJSON'], Object.getOwnPropertyNames(rawJson));
-        assert.deepEqual([], Object.getOwnPropertySymbols(rawJson));
+        assert.compareArray(['rawJSON'], Object.keys(rawJson));
+        assert.compareArray(['rawJSON'], Object.getOwnPropertyNames(rawJson));
+        assert.compareArray([], Object.getOwnPropertySymbols(rawJson));
         assert.sameValue(expectedRawJsonValue, rawJson.rawJSON);
     }
 
     assert.sameValue(true, Object.isFrozen(JSON.rawJSON('"shouldBeFrozen"')));
-    assertThrowsInstanceOf(() => JSON.rawJSON(), SyntaxError);
+    assert.throws(SyntaxError, () => JSON.rawJSON());
     assertIsRawJson(JSON.rawJSON(1, 2), '1');
 })();
 
@@ -117,17 +116,18 @@
     var p = JSON.rawJSON(false);
     var obj = { a: "hi" };
     Object.setPrototypeOf(obj, p);
-    assert.deepEqual(obj.rawJSON, "false");
+    assert.sameValue(obj.rawJSON, "false");
 })();
 
-(function checkErrorsComeFromCorrectRealm() {
-    const otherGlobal = createNewGlobal({newCompartment: true});
+
+{
+    const otherGlobal = $262.createRealm().global;
     assert.sameValue(TypeError !== otherGlobal.TypeError, true);
 
-    assertErrorComesFromCorrectRealm = (fun, thisRealmType) => {
-        assertThrowsInstanceOf(() => fun(this), thisRealmType,
+    let assertErrorComesFromCorrectRealm = (fun, thisRealmType) => {
+        assert.throws(thisRealmType, () => fun(this),
             `${thisRealmType.name} should come from this realm.`);
-        assertThrowsInstanceOf(() => fun(otherGlobal), otherGlobal[thisRealmType.name],
+        assert.throws(otherGlobal[thisRealmType.name], () => fun(otherGlobal),
             `${thisRealmType.name} should come from the other realm.`);
     }
 
@@ -141,7 +141,6 @@
     assertErrorComesFromCorrectRealm((gbl) => gbl.JSON.rawJSON('123\n'), SyntaxError);
     assertErrorComesFromCorrectRealm((gbl) => gbl.JSON.rawJSON('\t123'), SyntaxError);
     assertErrorComesFromCorrectRealm((gbl) => gbl.JSON.rawJSON(''), SyntaxError);
-})();
-
+}
 
 reportCompare(0, 0);

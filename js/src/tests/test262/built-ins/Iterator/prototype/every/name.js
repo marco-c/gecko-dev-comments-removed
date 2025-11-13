@@ -21,7 +21,6 @@
 
 
 
-
 verifyProperty(Iterator.prototype.every, 'name', {
   value: 'every',
   writable: false,

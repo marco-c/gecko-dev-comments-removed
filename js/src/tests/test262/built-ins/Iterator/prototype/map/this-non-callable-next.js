@@ -10,7 +10,6 @@
 
 
 
-
 let iter = Iterator.prototype.map.call({ next: 0 }, () => 0);
 
 assert.throws(TypeError, function () {

@@ -7,8 +7,6 @@
 
 
 
-
-
 function testName(thisv) {
   var failures = [
     
@@ -27,10 +25,10 @@ function testName(thisv) {
     if (key === "constructor") {
       assert.sameValue(String.prototype[key].call(thisv), "");
     } else if (failures.includes(key)) {
-      assertThrowsInstanceOf(() => String.prototype[key].call(thisv), TypeError, key);
+      assert.throws(TypeError, () => String.prototype[key].call(thisv), key);
     } else {
       var expected = `String.prototype.${key} called on incompatible ${thisv}`;
-      assertThrowsInstanceOfWithMessage(() => String.prototype[key].call(thisv), TypeError, expected, key)
+      assert.throws(TypeError, () => String.prototype[key].call(thisv), expected)
     }
   }
 }
@@ -39,7 +37,7 @@ testName(undefined);
 
 
 function testIterator(thisv) {
-  assertThrowsInstanceOfWithMessage(() => String.prototype[Symbol.iterator].call(thisv), TypeError,
+  assert.throws(TypeError, () => String.prototype[Symbol.iterator].call(thisv),
     `String.prototype[Symbol.iterator] called on incompatible ${thisv}`);
 }
 testIterator(null);

@@ -8,23 +8,12 @@
 
 
 
-
-var BUGNUMBER = 1315815;
-var summary = "async/await containing escapes";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
-
-function test(code, eval)
+function test(code)
 {
   var unescaped = code.replace("###", "async");
-  var escaped = code.replace("###", "\\u0061");
+  var escaped = code.replace("###", "\\u0061sync");
 
-  assertThrowsInstanceOf(() => eval(escaped), SyntaxError);
+  assert.throws(SyntaxError, () => eval(escaped));
   eval(unescaped);
 }
 
@@ -39,13 +28,8 @@ test("var x = ### (y) => {}", eval);
 test("({ ### x() {} })", eval);
 test("var x = ### function f() {}", eval);
 
-if (typeof parseModule === "function")
-  test("export default ### function f() {}", parseModule);
-
-assertThrowsInstanceOf(() => eval("async await => 1;"),
-                       SyntaxError);
-assertThrowsInstanceOf(() => eval("async aw\\u0061it => 1;"),
-                       SyntaxError);
+assert.throws(SyntaxError, () => eval("async await => 1;"));
+assert.throws(SyntaxError, () => eval("async aw\\u0061it => 1;"));
 
 var async = 0;
 assert.sameValue(\u0061sync, 0);
@@ -60,6 +44,5 @@ assert.sameValue(z, 42);
 
 var w = async(obj)=>{};
 assert.sameValue(typeof w, "function");
-
 
 reportCompare(0, 0);

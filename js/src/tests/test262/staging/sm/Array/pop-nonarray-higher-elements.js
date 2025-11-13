@@ -10,22 +10,8 @@
 
 
 
-
-
-var BUGNUMBER = 909602;
-var summary =
-  "Array.prototype.pop shouldn't touch elements greater than length on " +
-  "non-arrays";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
-
 function doTest(obj, index)
 {
-  
   assert.sameValue(Array.prototype.pop.call(obj), undefined);
   assert.sameValue(index in obj, true);
   assert.sameValue(obj[index], 42);
@@ -90,9 +76,5 @@ function testPop6()
 }
 for (var i = 0; i < 50; i++)
   testPop6();
-
-
-
-print("Tests complete");
 
 reportCompare(0, 0);

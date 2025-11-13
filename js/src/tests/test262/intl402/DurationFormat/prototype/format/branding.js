@@ -7,7 +7,6 @@
 
 
 
-
 const format = Intl.DurationFormat.prototype.format;
 
 assert.sameValue(typeof format, "function");
