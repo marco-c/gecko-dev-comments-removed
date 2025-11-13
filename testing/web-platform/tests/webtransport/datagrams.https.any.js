@@ -171,17 +171,24 @@ promise_test(async t => {
 
 promise_test(async t => {
   
-  const wt = new WebTransport(webtransport_url('echo.py'));
+  const wt = new WebTransport(webtransport_url('echo_datagram_length.py'));
   await wt.ready;
 
   const writer = wt.datagrams.writable.getWriter();
   const reader = wt.datagrams.readable.getReader();
 
   
-  await writer.write(new Uint8Array(wt.datagrams.maxDatagramSize));
+  const maxDatagramSize = wt.datagrams.maxDatagramSize;
+  await writer.write(new Uint8Array(maxDatagramSize));
+
+  
   const { value: token, done } = await reader.read();
   assert_false(done);
-  assert_equals(token.length, wt.datagrams.maxDatagramSize);
+
+  const decoder = new TextDecoder();
+  const datagramStr = decoder.decode(token);
+  const jsonObject = JSON.parse(datagramStr);
+  assert_equals(jsonObject['length'], maxDatagramSize);
 }, 'Transfer max-size datagram');
 
 promise_test(async t => {
@@ -192,13 +199,25 @@ promise_test(async t => {
   const writer = wt.datagrams.writable.getWriter();
   const reader = wt.datagrams.readable.getReader();
 
-  
-  await writer.write(new Uint8Array(wt.datagrams.maxDatagramSize+1));
-  
-  
-  const result = await Promise.race([reader.read(), wait(500)]);
-  assert_equals(result, undefined);
-}, 'Fail to transfer max-size+1 datagram');
+  let maxDatagramSize = wt.datagrams.maxDatagramSize;
+
+  while (true) {
+    
+    await writer.write(new Uint8Array(maxDatagramSize + 1));
+    
+    
+    const result = await Promise.race([reader.read(), wait(500)]);
+    if (result === undefined) {
+      return; 
+    }
+
+    
+    
+    const currentMaxDatagramSize = wt.datagrams.maxDatagramSize;
+    assert_greater_than(currentMaxDatagramSize, maxDatagramSize);
+    maxDatagramSize = currentMaxDatagramSize;
+  }
+}, 'Fail to transfer max-size+1 datagram, handle PMTUD increases');
 
 promise_test(async t => {
   

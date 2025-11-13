@@ -424,6 +424,8 @@ impl NeqoHttp3Conn {
             
             pmtud_enabled
             
+            || static_prefs::pref!("network.http.http3.pmtud")
+            
             
             && socket.as_ref().map_or(false, |s| !s.may_fragment());
 
