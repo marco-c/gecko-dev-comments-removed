@@ -6109,7 +6109,7 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mNetworkState == NETWORK_LOADING);
 
-  TimeStamp now = TimeStamp::NowLoRes();
+  TimeStamp now = TimeStamp::Now();
 
   if (aHaveNewProgress) {
     mDataTime = now;
@@ -6131,7 +6131,7 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
     
     
     
-    mProgressTime = now - TimeDuration::Resolution();
+    mProgressTime = now - TimeDuration::FromMilliseconds(1);
     if (mDataTime > mProgressTime) {
       mDataTime = mProgressTime;
     }
@@ -6185,7 +6185,7 @@ void HTMLMediaElement::StartProgressTimer() {
 
 void HTMLMediaElement::StartProgress() {
   
-  mDataTime = TimeStamp::NowLoRes();
+  mDataTime = TimeStamp::Now();
   
   
   mProgressTime = TimeStamp();
