@@ -44,8 +44,6 @@ var gSyncPane = {
       .getElementById("weavePrefsDeck")
       .removeAttribute("data-hidden-from-search");
 
-    this.updateBackupUIVisibility();
-
     
     let xps = Cc["@mozilla.org/weave/service;1"].getService(
       Ci.nsISupports
@@ -55,8 +53,6 @@ var gSyncPane = {
       this._init();
       return;
     }
-
-    this._addPrefObservers();
 
     
     
@@ -79,6 +75,26 @@ var gSyncPane = {
     window.addEventListener("unload", onUnload);
 
     xps.ensureLoaded();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  handlePrefControlledSection() {
+    let bs = lazy.BackupService.init();
+
+    if (!bs.archiveEnabledStatus.enabled && !bs.restoreEnabledStatus.enabled) {
+      document.getElementById("backupCategory").hidden = true;
+      document.getElementById("dataBackupGroup").hidden = true;
+    }
   },
 
   _showLoadPage() {
@@ -295,44 +311,6 @@ var gSyncPane = {
       syncConfiguredEl.hidden = true;
       syncNotConfiguredEl.hidden = false;
     }
-  },
-
-  updateBackupUIVisibility() {
-    let bs = lazy.BackupService.get();
-    let isBackupUIEnabled =
-      bs.archiveEnabledStatus.enabled || bs.restoreEnabledStatus.enabled;
-
-    let dataBackupSectionEl = document.getElementById("dataBackupSection");
-
-    dataBackupSectionEl.toggleAttribute(
-      "data-hidden-from-search",
-      !isBackupUIEnabled
-    );
-
-    let dataBackupGroupEl = document.getElementById("dataBackupGroup");
-    let backupGroupHeaderEl = document.getElementById("backupCategory");
-
-    dataBackupSectionEl.hidden = !isBackupUIEnabled;
-    dataBackupGroupEl.hidden = !isBackupUIEnabled;
-    backupGroupHeaderEl.hidden = !isBackupUIEnabled;
-  },
-
-  _addPrefObservers() {
-    Services.obs.addObserver(
-      this.updateBackupUIVisibility,
-      "backup-service-status-updated"
-    );
-
-    window.addEventListener(
-      "unload",
-      () => {
-        Services.obs.removeObserver(
-          this.updateBackupUIVisibility,
-          "backup-service-status-updated"
-        );
-      },
-      { once: true }
-    );
   },
 
   async _chooseWhatToSync(isSyncConfigured, why = null) {

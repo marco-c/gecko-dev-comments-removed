@@ -69,7 +69,10 @@ function checkElements(expectedPane) {
     }
 
     
-    if (element.id == "dataBackupSection" && backupSectionDisabled) {
+    if (
+      (element.id == "dataBackupGroup" || element.id == "backupCategory") &&
+      backupSectionDisabled
+    ) {
       is_element_hidden(element, "Disabled dataBackupSection should be hidden");
       continue;
     }

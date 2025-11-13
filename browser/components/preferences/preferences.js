@@ -443,6 +443,14 @@ async function gotoPref(
   }
 
   
+  
+  
+  
+  
+  
+  categoryModule.handlePrefControlledSection?.();
+
+  
   Glean.aboutpreferences["show" + aShowReason].record({ value: category });
 
   document.dispatchEvent(
