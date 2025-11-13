@@ -883,11 +883,6 @@ class DataSourceSurface : public SourceSurface {
 
   virtual void Invalidate(const IntRect& aDirtyRect) {}
 
-  
-
-
-  virtual bool ReadDataInto(uint8_t* aData, int32_t aStride) { return false; }
-
  protected:
   Atomic<int32_t> mMapCount;
 };
