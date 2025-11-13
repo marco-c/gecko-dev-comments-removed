@@ -4,39 +4,16 @@
 
 
 
-
-
-
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Uptime.h"
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <intrin.h>
 #include <windows.h>
 
 
-#define LOG(x)
 
-class AutoCriticalSection {
- public:
-  explicit AutoCriticalSection(LPCRITICAL_SECTION aSection)
-      : mSection(aSection) {
-    ::EnterCriticalSection(mSection);
-  }
-  ~AutoCriticalSection() { ::LeaveCriticalSection(mSection); }
 
- private:
-  LPCRITICAL_SECTION mSection;
-};
 
 
-static volatile ULONGLONG sResolution;
-static volatile ULONGLONG sResolutionSigDigs;
-static const double kNsPerSecd = 1000000000.0;
-static const LONGLONG kNsPerMillisec = 1000000;
 
 
 
@@ -46,444 +23,76 @@ static const LONGLONG kNsPerMillisec = 1000000;
 
 
 
-static const uint32_t kFailureFreeInterval = 5000;
 
-static const uint32_t kMaxFailuresPerInterval = 4;
 
+static double sTicksPerSecd;
+static double sTicksPerMsd;
 
-static const uint32_t kFailureThreshold = 50;
 
 
 
-static const DWORD kDefaultTimeIncrement = 156001;
 
+static constexpr double kMsPerSecd = 1000.0;
 
 
 
 
-
-
-
-static uint64_t sFrequencyPerSec = 1;
-
-namespace mozilla {
-
-MFBT_API uint64_t GetQueryPerformanceFrequencyPerSec() {
-  return sFrequencyPerSec;
-}
-
-}  
-
-
-
-
-static const LONGLONG kGTCTickLeapTolerance = 4;
-
-
-
-
-
-
-
-
-
-
-
-
-
-static LONGLONG sGTCResolutionThreshold;
-
-
-
-
-
-
-
-static const uint32_t kHardFailureLimit = 2000;
-
-static LONGLONG sHardFailureLimit;
-
-
-static LONGLONG sFailureFreeInterval;
-static LONGLONG sFailureThreshold;
-
-
-
-
-
-
-static bool sHasStableTSC = false;
-
-
-
-
-
-
-
-static bool volatile sUseQPC = true;
-
-
-
-
-
-
-
-static const DWORD kLockSpinCount = 4096;
-
-
-
-
-static CRITICAL_SECTION sTimeStampLock;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static ULONGLONG sFaultIntoleranceCheckpoint = 0;
+static constexpr LONGLONG kResolution = 1;
 
 namespace mozilla {
 
 
 static inline ULONGLONG PerformanceCounter() {
   LARGE_INTEGER pc;
-  ::QueryPerformanceCounter(&pc);
-
-  
-  
-  AutoCriticalSection lock(&sTimeStampLock);
-
-  static decltype(LARGE_INTEGER::QuadPart) last;
-  if (last > pc.QuadPart) {
-    return last * 1000ULL;
-  }
-  last = pc.QuadPart;
-  return pc.QuadPart * 1000ULL;
+  MOZ_ALWAYS_TRUE(::QueryPerformanceCounter(&pc));
+  return pc.QuadPart;
 }
 
-static void InitThresholds() {
-  DWORD timeAdjustment = 0, timeIncrement = 0;
-  BOOL timeAdjustmentDisabled;
-  GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                          &timeAdjustmentDisabled);
-
-  LOG(("TimeStamp: timeIncrement=%d [100ns]", timeIncrement));
-
-  if (!timeIncrement) {
-    timeIncrement = kDefaultTimeIncrement;
-  }
-
+static void InitConstants() {
   
-  
-  DWORD timeIncrementCeil = timeIncrement;
-  
-  timeIncrementCeil -= 1;
-  
-  timeIncrementCeil /= 10000;
-  
-  timeIncrementCeil += 1;
-  
-  timeIncrementCeil *= 10000;
-
-  
-  LONGLONG ticksPerGetTickCountResolutionCeiling =
-      (int64_t(timeIncrementCeil) * sFrequencyPerSec) / 10000LL;
-
-  
-  sGTCResolutionThreshold =
-      LONGLONG(kGTCTickLeapTolerance * ticksPerGetTickCountResolutionCeiling);
-
-  sHardFailureLimit = ms2mt(kHardFailureLimit);
-  sFailureFreeInterval = ms2mt(kFailureFreeInterval);
-  sFailureThreshold = ms2mt(kFailureThreshold);
+  LARGE_INTEGER freq;
+  bool hasQPC = ::QueryPerformanceFrequency(&freq);
+  MOZ_RELEASE_ASSERT(hasQPC);
+  sTicksPerSecd = double(freq.QuadPart);
+  sTicksPerMsd = sTicksPerSecd / kMsPerSecd;
 }
-
-static void InitResolution() {
-  
-  
-  
-
-  ULONGLONG minres = ~0ULL;
-  if (sUseQPC) {
-    int loops = 10;
-    do {
-      ULONGLONG start = PerformanceCounter();
-      ULONGLONG end = PerformanceCounter();
-
-      ULONGLONG candidate = (end - start);
-      if (candidate < minres) {
-        minres = candidate;
-      }
-    } while (--loops && minres);
-
-    if (0 == minres) {
-      minres = 1;
-    }
-  } else {
-    
-    minres = ms2mt(16);
-  }
-
-  
-  
-  ULONGLONG result = mt2ms(minres * kNsPerMillisec);
-  if (0 == result) {
-    result = 1;
-  }
-
-  sResolution = result;
-
-  
-  
-  ULONGLONG sigDigs;
-  for (sigDigs = 1; !(sigDigs == result || 10 * sigDigs > result);
-       sigDigs *= 10);
-
-  sResolutionSigDigs = sigDigs;
-}
-
-
-
-
-MFBT_API TimeStampValue& TimeStampValue::operator+=(const int64_t aOther) {
-  mGTC += aOther;
-  mQPC += aOther;
-  return *this;
-}
-
-MFBT_API TimeStampValue& TimeStampValue::operator-=(const int64_t aOther) {
-  mGTC -= aOther;
-  mQPC -= aOther;
-  return *this;
-}
-
-
-
-MFBT_API uint64_t TimeStampValue::CheckQPC(const TimeStampValue& aOther) const {
-  uint64_t deltaGTC = mGTC - aOther.mGTC;
-
-  if (!mHasQPC || !aOther.mHasQPC) {  
-    return deltaGTC;
-  }
-
-  uint64_t deltaQPC = mQPC - aOther.mQPC;
-
-  if (sHasStableTSC) {  
-    return deltaQPC;
-  }
-
-  
-  int64_t diff = DeprecatedAbs(int64_t(deltaQPC) - int64_t(deltaGTC));
-  if (diff <= sGTCResolutionThreshold) {
-    return deltaQPC;
-  }
-
-  
-  int64_t duration = DeprecatedAbs(int64_t(deltaGTC));
-  int64_t overflow = diff - sGTCResolutionThreshold;
-
-  LOG(("TimeStamp: QPC check after %llums with overflow %1.4fms",
-       mt2ms(duration), mt2ms_f(overflow)));
-
-  if (overflow <= sFailureThreshold) {  
-    return deltaQPC;
-  }
-
-  
-
-  if (!sUseQPC) {  
-                   
-    return deltaGTC;
-  }
-
-  LOG(("TimeStamp: QPC jittered over failure threshold"));
-
-  if (duration < sHardFailureLimit) {
-    
-    
-    uint64_t now = ms2mt(GetTickCount64());
-
-    AutoCriticalSection lock(&sTimeStampLock);
-
-    if (sFaultIntoleranceCheckpoint && sFaultIntoleranceCheckpoint > now) {
-      
-      
-      
-      uint64_t failureCount =
-          (sFaultIntoleranceCheckpoint - now + sFailureFreeInterval - 1) /
-          sFailureFreeInterval;
-      if (failureCount > kMaxFailuresPerInterval) {
-        sUseQPC = false;
-        LOG(("TimeStamp: QPC disabled"));
-      } else {
-        
-        
-        ++failureCount;
-        sFaultIntoleranceCheckpoint = now + failureCount * sFailureFreeInterval;
-        LOG(("TimeStamp: recording %dth QPC failure", failureCount));
-      }
-    } else {
-      
-      
-      sFaultIntoleranceCheckpoint = now + sFailureFreeInterval;
-      LOG(("TimeStamp: recording 1st QPC failure"));
-    }
-  }
-
-  return deltaGTC;
-}
-
-MFBT_API uint64_t
-TimeStampValue::operator-(const TimeStampValue& aOther) const {
-  if (IsNull() && aOther.IsNull()) {
-    return uint64_t(0);
-  }
-
-  return CheckQPC(aOther);
-}
-
-class TimeStampValueTests {
-  
-  static_assert(TimeStampValue{0}.IsNull());
-  static_assert(!TimeStampValue{1}.IsNull());
-
-  
-  
-  static_assert(TimeStampValue{1, 2, true} < TimeStampValue{1, 3, true});
-  static_assert(!(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, true}));
-
-  static_assert(TimeStampValue{2, 2, true} < TimeStampValue{1, 3, true});
-  static_assert(TimeStampValue{2, 2, true} <= TimeStampValue{1, 3, true});
-  static_assert(!(TimeStampValue{2, 2, true} > TimeStampValue{1, 3, true}));
-
-  static_assert(TimeStampValue{1, 3, true} > TimeStampValue{1, 2, true});
-  static_assert(!(TimeStampValue{1, 3, true} == TimeStampValue{1, 2, true}));
-
-  static_assert(TimeStampValue{1, 3, true} > TimeStampValue{2, 2, true});
-  static_assert(TimeStampValue{1, 3, true} >= TimeStampValue{2, 2, true});
-  static_assert(!(TimeStampValue{1, 3, true} < TimeStampValue{2, 2, true}));
-
-  static_assert(TimeStampValue{1, 3, true} == TimeStampValue{2, 3, true});
-  static_assert(!(TimeStampValue{1, 3, true} < TimeStampValue{2, 3, true}));
-
-  static_assert(TimeStampValue{1, 2, true} != TimeStampValue{1, 3, true});
-  static_assert(!(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, true}));
-
-  
-  
-  
-  
-  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, true});
-  static_assert(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, false});
-  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, false});
-
-  static_assert(TimeStampValue{2, 2, false} > TimeStampValue{1, 3, true});
-  static_assert(TimeStampValue{2, 2, true} > TimeStampValue{1, 3, false});
-  static_assert(TimeStampValue{2, 2, false} > TimeStampValue{1, 3, false});
-
-  static_assert(TimeStampValue{1, 3, false} == TimeStampValue{1, 2, true});
-  static_assert(TimeStampValue{1, 3, true} == TimeStampValue{1, 2, false});
-  static_assert(TimeStampValue{1, 3, false} == TimeStampValue{1, 2, false});
-
-  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 2, true});
-  static_assert(TimeStampValue{1, 3, true} < TimeStampValue{2, 2, false});
-  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 2, false});
-
-  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 3, true});
-  static_assert(TimeStampValue{1, 3, true} < TimeStampValue{2, 3, false});
-  static_assert(TimeStampValue{1, 3, false} < TimeStampValue{2, 3, false});
-
-  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, true});
-  static_assert(TimeStampValue{1, 2, true} == TimeStampValue{1, 3, false});
-  static_assert(TimeStampValue{1, 2, false} == TimeStampValue{1, 3, false});
-};
 
 
 
 
 
 MFBT_API double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
-  
-  return double(aTicks) / (double(sFrequencyPerSec) * 1000.0);
+  return double(aTicks) / sTicksPerSecd;
 }
 
 MFBT_API double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(
     int64_t aTicks) {
   
-  LONGLONG resolution = sResolution;
-  LONGLONG resolutionSigDigs = sResolutionSigDigs;
-  LONGLONG valueSigDigs = resolution * (aTicks / resolution);
   
-  valueSigDigs = resolutionSigDigs * (valueSigDigs / resolutionSigDigs);
-  return double(valueSigDigs) / kNsPerSecd;
+  static_assert(kResolution == 1);
+  return ToSeconds(aTicks);
 }
 
 MFBT_API int64_t
 BaseTimeDurationPlatformUtils::TicksFromMilliseconds(double aMilliseconds) {
-  double result = ms2mt(aMilliseconds);
+  double result = sTicksPerMsd * aMilliseconds;
   
   
   if (result >= double(INT64_MAX)) {
     return INT64_MAX;
-  } else if (result <= double(INT64_MIN)) {
+  }
+  if (result <= double(INT64_MIN)) {
     return INT64_MIN;
   }
 
-  return result;
+  return (int64_t)result;
 }
 
 MFBT_API int64_t BaseTimeDurationPlatformUtils::ResolutionInTicks() {
-  return static_cast<int64_t>(sResolution);
+  return static_cast<int64_t>(kResolution);
 }
 
-static bool HasStableTSC() {
-#if defined(_M_ARM64)
-  
-  
-  
-  return true;
-#else
-  union {
-    int regs[4];
-    struct {
-      int nIds;
-      char cpuString[12];
-    };
-  } cpuInfo;
 
-  __cpuid(cpuInfo.regs, 0);
-  
-  
-  
-  if (_strnicmp(cpuInfo.cpuString, "GenuntelineI", sizeof(cpuInfo.cpuString)) &&
-      _strnicmp(cpuInfo.cpuString, "AuthcAMDenti", sizeof(cpuInfo.cpuString))) {
-    return false;
-  }
-
-  int regs[4];
-
-  
-  __cpuid(regs, 0x80000000);
-  if ((unsigned int)regs[0] < 0x80000007) {
-    
-    
-    return false;
-  }
-
-  __cpuid(regs, 0x80000007);
-  
-  
-  return regs[3] & (1 << 8);
-#endif
-}
 
 static bool gInitialized = false;
 
@@ -491,61 +100,15 @@ MFBT_API void TimeStamp::Startup() {
   if (gInitialized) {
     return;
   }
-
+  InitConstants();
   gInitialized = true;
-
-  
-
-  InitializeCriticalSectionAndSpinCount(&sTimeStampLock, kLockSpinCount);
-
-  bool forceGTC = false;
-  bool forceQPC = false;
-
-  char* modevar = getenv("MOZ_TIMESTAMP_MODE");
-  if (modevar) {
-    if (!strcmp(modevar, "QPC")) {
-      forceQPC = true;
-    } else if (!strcmp(modevar, "GTC")) {
-      forceGTC = true;
-    }
-  }
-
-  LARGE_INTEGER freq;
-  sUseQPC = !forceGTC && ::QueryPerformanceFrequency(&freq);
-  if (!sUseQPC) {
-    
-    InitResolution();
-
-    LOG(("TimeStamp: using GetTickCount64"));
-    return;
-  }
-
-  sHasStableTSC = forceQPC || HasStableTSC();
-  LOG(("TimeStamp: HasStableTSC=%d", sHasStableTSC));
-
-  sFrequencyPerSec = freq.QuadPart;
-  LOG(("TimeStamp: QPC frequency=%llu", sFrequencyPerSec));
-
-  InitThresholds();
-  InitResolution();
-
-  return;
 }
 
-MFBT_API void TimeStamp::Shutdown() { DeleteCriticalSection(&sTimeStampLock); }
-
-TimeStampValue NowInternal(bool aHighResolution) {
-  
-  bool useQPC = (aHighResolution && sUseQPC);
-
-  
-  ULONGLONG QPC = useQPC ? PerformanceCounter() : uint64_t(0);
-  ULONGLONG GTC = ms2mt(GetTickCount64());
-  return TimeStampValue(GTC, QPC, useQPC);
-}
+MFBT_API void TimeStamp::Shutdown() {}
 
 MFBT_API TimeStamp TimeStamp::Now(bool aHighResolution) {
-  return TimeStamp(NowInternal(aHighResolution));
+  MOZ_ASSERT(gInitialized);
+  return TimeStamp((TimeStampValue)PerformanceCounter());
 }
 
 
