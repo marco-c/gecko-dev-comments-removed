@@ -7509,8 +7509,7 @@ static inline void AssertNoStaleServoDataIn(nsINode& aSubtreeRoot) {
 }
 
 already_AddRefed<PresShell> Document::CreatePresShell(
-    nsPresContext* aContext, nsViewManager* aViewManager,
-    nsSubDocumentFrame* aEmbedderFrame) {
+    nsPresContext* aContext, nsViewManager* aViewManager) {
   MOZ_DIAGNOSTIC_ASSERT(!mPresShell, "We have a presshell already!");
 
   NS_ENSURE_FALSE(GetBFCacheEntry(), nullptr);
@@ -7520,12 +7519,6 @@ already_AddRefed<PresShell> Document::CreatePresShell(
   RefPtr<PresShell> presShell = new PresShell(this);
   
   mPresShell = presShell;
-
-  if (aEmbedderFrame) {
-    
-    
-    aEmbedderFrame->AddEmbeddingPresShell(presShell);
-  }
 
   if (!mStyleSetFilled) {
     FillStyleSet();

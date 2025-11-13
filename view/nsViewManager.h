@@ -207,6 +207,12 @@ class nsViewManager final {
 
 
 
+  nsIWidget* GetRootWidget() const;
+
+  
+
+
+
 
 
   void IsPainting(bool& aIsPainting);
@@ -242,6 +248,8 @@ class nsViewManager final {
  private:
   static uint32_t gLastUserEventTime;
 
+  
+  void InvalidateHierarchy();
   void FlushPendingInvalidates();
 
   MOZ_CAN_RUN_SCRIPT
@@ -288,9 +296,11 @@ class nsViewManager final {
 
   void SetPainting(bool aPainting) { RootViewManager()->mPainting = aPainting; }
 
-  nsViewManager* RootViewManager() const;
-  nsViewManager* GetParentViewManager() const;
-  bool IsRootVM() const { return !GetParentViewManager(); }
+  nsViewManager* RootViewManager() const {
+    return mRootViewManager ? mRootViewManager.get()
+                            : const_cast<nsViewManager*>(this);
+  }
+  bool IsRootVM() const { return !mRootViewManager; }
 
   MOZ_CAN_RUN_SCRIPT void WillPaintWindow(nsIWidget* aWidget);
   MOZ_CAN_RUN_SCRIPT
@@ -309,6 +319,12 @@ class nsViewManager final {
   nsSize mDelayedResize;
 
   nsView* mRootView;
+
+  
+  
+  
+  
+  RefPtr<nsViewManager> mRootViewManager;
 
   
   

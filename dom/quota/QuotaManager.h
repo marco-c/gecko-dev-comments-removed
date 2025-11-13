@@ -860,19 +860,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
   OriginInfosNestedTraversable GetOriginInfosExceedingGlobalLimit() const;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  OriginInfosNestedTraversable GetOriginInfosWithZeroUsage(
-      const Maybe<int64_t>& aCutoffAccessTime = Nothing()) const;
+  OriginInfosNestedTraversable GetOriginInfosWithZeroUsage() const;
 
   
 

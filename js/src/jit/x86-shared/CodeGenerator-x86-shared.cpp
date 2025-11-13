@@ -872,54 +872,40 @@ void CodeGenerator::visitMulI(LMulI* ins) {
   }
 }
 
-template <class LIR>
-static void TrapIfDivideByZero(MacroAssembler& masm, LIR* lir, Register rhs) {
-  auto* mir = lir->mir();
-  MOZ_ASSERT(mir->trapOnError());
-  MOZ_ASSERT(mir->canBeDivideByZero());
-
-  Label nonZero;
-  masm.branchTest32(Assembler::NonZero, rhs, rhs, &nonZero);
-  masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-  masm.bind(&nonZero);
-}
-
-OutOfLineCode* CodeGeneratorX86Shared::emitOutOfLineZeroForDivideByZero(
-    Register rhs, Register output) {
-  
-  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
-    masm.mov(ImmWord(0), output);
-    masm.jmp(ool.rejoin());
-  });
-  masm.branchTest32(Assembler::Zero, rhs, rhs, ool->entry());
-
-  return ool;
-}
-
-void CodeGenerator::visitUDiv(LUDiv* ins) {
+void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
+  Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
-  Register remainder = ToRegister(ins->temp0());
 
-  MOZ_ASSERT(ToRegister(ins->lhs()) == eax);
-  MOZ_ASSERT(rhs != eax);
+  MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
   MOZ_ASSERT(rhs != edx);
-  MOZ_ASSERT(output == eax);
-  MOZ_ASSERT(remainder == edx);
-
-  MDiv* mir = ins->mir();
+  MOZ_ASSERT_IF(output == eax, ToRegister(ins->remainder()) == edx);
 
   OutOfLineCode* ool = nullptr;
 
   
-  if (mir->canBeDivideByZero()) {
-    if (mir->trapOnError()) {
-      TrapIfDivideByZero(masm, ins, rhs);
-    } else if (mir->isTruncated()) {
-      ool = emitOutOfLineZeroForDivideByZero(rhs, output);
+  if (lhs != eax) {
+    masm.mov(lhs, eax);
+  }
+
+  
+  if (ins->canBeDivideByZero()) {
+    masm.test32(rhs, rhs);
+    if (ins->mir()->isTruncated()) {
+      if (ins->trapOnError()) {
+        Label nonZero;
+        masm.j(Assembler::NonZero, &nonZero);
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->trapSiteDesc());
+        masm.bind(&nonZero);
+      } else {
+        ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+          masm.mov(ImmWord(0), output);
+          masm.jmp(ool.rejoin());
+        });
+        masm.j(Assembler::Zero, ool->entry());
+      }
     } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
+      bailoutIf(Assembler::Zero, ins->snapshot());
     }
   }
 
@@ -928,102 +914,56 @@ void CodeGenerator::visitUDiv(LUDiv* ins) {
   masm.udiv(rhs);
 
   
-  if (!mir->canTruncateRemainder()) {
-    bailoutTest32(Assembler::NonZero, remainder, remainder, ins->snapshot());
+  if (ins->mir()->isDiv() && !ins->mir()->toDiv()->canTruncateRemainder()) {
+    Register remainder = ToRegister(ins->remainder());
+    masm.test32(remainder, remainder);
+    bailoutIf(Assembler::NonZero, ins->snapshot());
   }
 
   
   
-  if (!mir->isTruncated()) {
-    bailoutTest32(Assembler::Signed, output, output, ins->snapshot());
+  if (!ins->mir()->isTruncated()) {
+    masm.test32(output, output);
+    bailoutIf(Assembler::Signed, ins->snapshot());
   }
 
   if (ool) {
-    addOutOfLineCode(ool, mir);
+    addOutOfLineCode(ool, ins->mir());
     masm.bind(ool->rejoin());
   }
 }
 
-void CodeGenerator::visitUMod(LUMod* ins) {
-  Register rhs = ToRegister(ins->rhs());
-  Register output = ToRegister(ins->output());
-
-  MOZ_ASSERT(ToRegister(ins->lhs()) == eax);
-  MOZ_ASSERT(rhs != eax);
-  MOZ_ASSERT(rhs != edx);
-  MOZ_ASSERT(output == edx);
-  MOZ_ASSERT(ToRegister(ins->temp0()) == eax);
-
-  MMod* mir = ins->mir();
-
-  OutOfLineCode* ool = nullptr;
-
-  
-  if (mir->canBeDivideByZero()) {
-    if (mir->trapOnError()) {
-      TrapIfDivideByZero(masm, ins, rhs);
-    } else if (mir->isTruncated()) {
-      ool = emitOutOfLineZeroForDivideByZero(rhs, output);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
-    }
-  }
-
-  
-  masm.mov(ImmWord(0), edx);
-  masm.udiv(rhs);
-
-  
-  
-  if (!mir->isTruncated()) {
-    bailoutTest32(Assembler::Signed, output, output, ins->snapshot());
-  }
-
-  if (ool) {
-    addOutOfLineCode(ool, mir);
-    masm.bind(ool->rejoin());
-  }
-}
-
-template <class LUDivOrUMod>
-static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins,
-                                       Register result, Register temp) {
+void CodeGenerator::visitUDivOrModConstant(LUDivOrModConstant* ins) {
   Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
   uint32_t d = ins->denominator();
 
-  MOZ_ASSERT(lhs != result && lhs != temp);
-#ifdef JS_CODEGEN_X86
-  MOZ_ASSERT(result == edx && temp == eax);
-#else
-  MOZ_ASSERT(result != temp);
-#endif
+  
+  MOZ_ASSERT(output == eax || output == edx);
+  MOZ_ASSERT(lhs != eax && lhs != edx);
+  bool isDiv = (output == edx);
+
+  if (d == 0) {
+    if (ins->mir()->isTruncated()) {
+      if (ins->trapOnError()) {
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->trapSiteDesc());
+      } else {
+        masm.xorl(output, output);
+      }
+    } else {
+      bailout(ins->snapshot());
+    }
+    return;
+  }
 
   
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
+  MOZ_ASSERT((d & (d - 1)) != 0);
 
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
   
-#ifdef JS_CODEGEN_X86
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.umull(lhs);
-#else
-  
-  masm.movl(lhs, result);
-
-  
-  
-  if (int32_t(rmc.multiplier) >= 0) {
-    masm.imulq(Imm32(rmc.multiplier), result, result);
-  } else {
-    masm.movl(Imm32(rmc.multiplier), temp);
-    masm.imulq(temp, result);
-  }
-  if (rmc.multiplier > UINT32_MAX || rmc.shiftAmount == 0) {
-    masm.shrq(Imm32(32), result);
-  }
-#endif
   if (rmc.multiplier > UINT32_MAX) {
     
     
@@ -1037,106 +977,39 @@ static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins,
     
     
     
-    
 
     
-    masm.movl(lhs, temp);
-    masm.subl(result, temp);
-    masm.shrl(Imm32(1), temp);
+    masm.movl(lhs, eax);
+    masm.subl(edx, eax);
+    masm.shrl(Imm32(1), eax);
 
     
-    masm.addl(temp, result);
-    if (rmc.shiftAmount > 1) {
-      masm.shrl(Imm32(rmc.shiftAmount - 1), result);
-    }
+    masm.addl(eax, edx);
+    masm.shrl(Imm32(rmc.shiftAmount - 1), edx);
   } else {
-    if (rmc.shiftAmount > 0) {
-#ifdef JS_CODEGEN_X86
-      masm.shrl(Imm32(rmc.shiftAmount), result);
-#else
-      masm.shrq(Imm32(32 + rmc.shiftAmount), result);
-#endif
+    masm.shrl(Imm32(rmc.shiftAmount), edx);
+  }
+
+  
+  
+  
+  
+  if (!isDiv) {
+    masm.imull(Imm32(d), edx, edx);
+    masm.movl(lhs, eax);
+    masm.subl(edx, eax);
+
+    
+    
+    
+    
+    if (!ins->mir()->isTruncated()) {
+      bailoutIf(Assembler::Signed, ins->snapshot());
     }
-  }
-}
-
-void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  Register output = ToRegister(ins->output());
-  Register temp = ToRegister(ins->temp0());
-  uint32_t d = ins->denominator();
-
-  MDiv* mir = ins->mir();
-
-#ifdef JS_CODEGEN_X86
-  
-  MOZ_ASSERT(output == edx);
-  MOZ_ASSERT(temp == eax);
-#endif
-
-  if (d == 0) {
-    if (mir->trapOnError()) {
-      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-    } else if (mir->isTruncated()) {
-      masm.xorl(output, output);
-    } else {
-      bailout(ins->snapshot());
-    }
-    return;
-  }
-
-  
-  UnsignedDivideWithConstant(masm, ins, output, temp);
-
-  if (!mir->isTruncated()) {
-    masm.imull(Imm32(d), output, temp);
-    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
-  }
-}
-
-void CodeGenerator::visitUModConstant(LUModConstant* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  Register output = ToRegister(ins->output());
-  Register temp = ToRegister(ins->temp0());
-  uint32_t d = ins->denominator();
-
-  MMod* mir = ins->mir();
-
-#ifdef JS_CODEGEN_X86
-  
-  MOZ_ASSERT(output == eax);
-  MOZ_ASSERT(temp == edx);
-#endif
-
-  if (d == 0) {
-    if (mir->trapOnError()) {
-      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-    } else if (mir->isTruncated()) {
-      masm.xorl(output, output);
-    } else {
-      bailout(ins->snapshot());
-    }
-    return;
-  }
-
-  
-  UnsignedDivideWithConstant(masm, ins, temp, output);
-
-  
-  
-  
-  
-  
-  masm.imull(Imm32(d), temp, temp);
-  masm.movl(lhs, output);
-  masm.subl(temp, output);
-
-  
-  
-  
-  
-  if (!mir->isTruncated()) {
-    bailoutIf(Assembler::Signed, ins->snapshot());
+  } else if (!ins->mir()->isTruncated()) {
+    masm.imull(Imm32(d), edx, eax);
+    masm.cmpl(lhs, eax);
+    bailoutIf(Assembler::NotEqual, ins->snapshot());
   }
 }
 
@@ -1154,14 +1027,15 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
 
   if (!mir->isTruncated() && negativeDivisor) {
     
-    bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
+    masm.test32(lhs, lhs);
+    bailoutIf(Assembler::Zero, ins->snapshot());
   }
 
   if (shift) {
     if (!mir->isTruncated()) {
       
-      bailoutTest32(Assembler::NonZero, lhs, Imm32(UINT32_MAX >> (32 - shift)),
-                    ins->snapshot());
+      masm.test32(lhs, Imm32(UINT32_MAX >> (32 - shift)));
+      bailoutIf(Assembler::NonZero, ins->snapshot());
     }
 
     if (mir->isUnsigned()) {
@@ -1211,45 +1085,33 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
     }
   } else if (mir->isUnsigned() && !mir->isTruncated()) {
     
-    bailoutTest32(Assembler::Signed, lhs, lhs, ins->snapshot());
+    
+    masm.test32(lhs, lhs);
+    bailoutIf(Assembler::Signed, ins->snapshot());
   }
 }
 
-template <class LDivOrMod>
-static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins,
-                               Register result, Register temp) {
+void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
   Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
   int32_t d = ins->denominator();
 
-  MOZ_ASSERT(lhs != result && lhs != temp);
-#ifdef JS_CODEGEN_X86
-  MOZ_ASSERT(result == edx && temp == eax);
-#else
-  MOZ_ASSERT(result != temp);
-#endif
+  
+  MOZ_ASSERT(output == eax || output == edx);
+  MOZ_ASSERT(lhs != eax && lhs != edx);
+  bool isDiv = (output == edx);
 
   
   
   MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
-
-  auto* mir = ins->mir();
 
   
   
   auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
 
   
-#ifdef JS_CODEGEN_X86
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.imull(lhs);
-#else
-  
-  masm.movslq(lhs, result);
-  masm.imulq(Imm32(rmc.multiplier), result, result);
-  if (rmc.multiplier > INT32_MAX || rmc.shiftAmount == 0) {
-    masm.shrq(Imm32(32), result);
-  }
-#endif
   if (rmc.multiplier > INT32_MAX) {
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
 
@@ -1257,118 +1119,58 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins,
     
     
     
-    masm.addl(lhs, result);
+    masm.addl(lhs, edx);
   }
   
   
   
-  if (rmc.shiftAmount > 0) {
-#ifdef JS_CODEGEN_X86
-    masm.sarl(Imm32(rmc.shiftAmount), result);
-#else
-    if (rmc.multiplier > INT32_MAX) {
-      masm.sarl(Imm32(rmc.shiftAmount), result);
-    } else {
-      masm.sarq(Imm32(32 + rmc.shiftAmount), result);
-    }
-#endif
-  }
+  masm.sarl(Imm32(rmc.shiftAmount), edx);
 
   
   
-  if (mir->canBeNegativeDividend()) {
-    masm.movl(lhs, temp);
-    masm.sarl(Imm32(31), temp);
-    masm.subl(temp, result);
+  if (ins->canBeNegativeDividend()) {
+    masm.movl(lhs, eax);
+    masm.sarl(Imm32(31), eax);
+    masm.subl(eax, edx);
   }
 
   
   if (d < 0) {
-    masm.negl(result);
+    masm.negl(edx);
   }
-}
 
-void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  Register output = ToRegister(ins->output());
-  Register temp = ToRegister(ins->temp0());
-  int32_t d = ins->denominator();
+  if (!isDiv) {
+    masm.imull(Imm32(-d), edx, eax);
+    masm.addl(lhs, eax);
+  }
 
-  MDiv* mir = ins->mir();
+  if (!ins->mir()->isTruncated()) {
+    if (isDiv) {
+      
+      
+      masm.imull(Imm32(d), edx, eax);
+      masm.cmp32(lhs, eax);
+      bailoutIf(Assembler::NotEqual, ins->snapshot());
 
-#ifdef JS_CODEGEN_X86
-  
-  MOZ_ASSERT(output == edx);
-  MOZ_ASSERT(temp == eax);
-#endif
+      
+      
+      if (d < 0) {
+        masm.test32(lhs, lhs);
+        bailoutIf(Assembler::Zero, ins->snapshot());
+      }
+    } else if (ins->canBeNegativeDividend()) {
+      
+      
+      Label done;
 
-  if (d == 0) {
-    if (mir->trapOnError()) {
-      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-    } else if (mir->isTruncated()) {
-      masm.xorl(output, output);
-    } else {
-      bailout(ins->snapshot());
+      masm.cmp32(lhs, Imm32(0));
+      masm.j(Assembler::GreaterThanOrEqual, &done);
+
+      masm.test32(eax, eax);
+      bailoutIf(Assembler::Zero, ins->snapshot());
+
+      masm.bind(&done);
     }
-    return;
-  }
-
-  
-  DivideWithConstant(masm, ins, output, temp);
-
-  if (!mir->isTruncated()) {
-    
-    
-    masm.imull(Imm32(d), output, temp);
-    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
-
-    
-    
-    if (d < 0) {
-      bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
-    }
-  }
-}
-
-void CodeGenerator::visitModConstantI(LModConstantI* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  Register output = ToRegister(ins->output());
-  Register temp = ToRegister(ins->temp0());
-  int32_t d = ins->denominator();
-
-  MMod* mir = ins->mir();
-
-#ifdef JS_CODEGEN_X86
-  
-  MOZ_ASSERT(output == eax);
-  MOZ_ASSERT(temp == edx);
-#endif
-
-  if (d == 0) {
-    if (mir->trapOnError()) {
-      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-    } else if (mir->isTruncated()) {
-      masm.xorl(output, output);
-    } else {
-      bailout(ins->snapshot());
-    }
-    return;
-  }
-
-  
-  DivideWithConstant(masm, ins, temp, output);
-
-  
-  masm.imull(Imm32(-d), temp, output);
-  masm.addl(lhs, output);
-
-  if (!mir->isTruncated() && mir->canBeNegativeDividend()) {
-    
-    
-    Label done;
-    masm.branch32(Assembler::GreaterThanOrEqual, lhs, Imm32(0), &done);
-    bailoutTest32(Assembler::Zero, output, output, ins->snapshot());
-    masm.bind(&done);
   }
 }
 
@@ -1378,43 +1180,61 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
 
-  MOZ_ASSERT(lhs == eax);
-  MOZ_ASSERT(rhs != eax);
+  MDiv* mir = ins->mir();
+
+  MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
   MOZ_ASSERT(rhs != edx);
   MOZ_ASSERT(remainder == edx);
   MOZ_ASSERT(output == eax);
-
-  MDiv* mir = ins->mir();
 
   Label done;
   OutOfLineCode* ool = nullptr;
 
   
+  
+  if (lhs != eax) {
+    masm.mov(lhs, eax);
+  }
+
+  
   if (mir->canBeDivideByZero()) {
+    masm.test32(rhs, rhs);
     if (mir->trapOnError()) {
-      TrapIfDivideByZero(masm, ins, rhs);
+      Label nonZero;
+      masm.j(Assembler::NonZero, &nonZero);
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+      masm.bind(&nonZero);
     } else if (mir->canTruncateInfinities()) {
-      ool = emitOutOfLineZeroForDivideByZero(rhs, output);
+      
+      if (!ool) {
+        ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+          masm.mov(ImmWord(0), output);
+          masm.jmp(ool.rejoin());
+        });
+      }
+      masm.j(Assembler::Zero, ool->entry());
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
+      bailoutIf(Assembler::Zero, ins->snapshot());
     }
   }
 
   
   if (mir->canBeNegativeOverflow()) {
     Label notOverflow;
-    masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &notOverflow);
+    masm.cmp32(lhs, Imm32(INT32_MIN));
+    masm.j(Assembler::NotEqual, &notOverflow);
+    masm.cmp32(rhs, Imm32(-1));
     if (mir->trapOnError()) {
-      masm.branch32(Assembler::NotEqual, rhs, Imm32(-1), &notOverflow);
+      masm.j(Assembler::NotEqual, &notOverflow);
       masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
     } else if (mir->canTruncateOverflow()) {
       
       
-      masm.branch32(Assembler::Equal, rhs, Imm32(-1), &done);
+      masm.j(Assembler::Equal, &done);
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
+      bailoutIf(Assembler::Equal, ins->snapshot());
     }
     masm.bind(&notOverflow);
   }
@@ -1422,18 +1242,24 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   
   if (!mir->canTruncateNegativeZero() && mir->canBeNegativeZero()) {
     Label nonzero;
-    masm.branchTest32(Assembler::NonZero, lhs, lhs, &nonzero);
-    bailoutCmp32(Assembler::LessThan, rhs, Imm32(0), ins->snapshot());
+    masm.test32(lhs, lhs);
+    masm.j(Assembler::NonZero, &nonzero);
+    masm.cmp32(rhs, Imm32(0));
+    bailoutIf(Assembler::LessThan, ins->snapshot());
     masm.bind(&nonzero);
   }
 
   
+  if (lhs != eax) {
+    masm.mov(lhs, eax);
+  }
   masm.cdq();
   masm.idiv(rhs);
 
   if (!mir->canTruncateRemainder()) {
     
-    bailoutTest32(Assembler::NonZero, remainder, remainder, ins->snapshot());
+    masm.test32(remainder, remainder);
+    bailoutIf(Assembler::NonZero, ins->snapshot());
   }
 
   masm.bind(&done);
@@ -1518,27 +1344,42 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register rhs = ToRegister(ins->rhs());
 
   
-  MOZ_ASSERT(lhs == eax);
-  MOZ_ASSERT(rhs != eax);
+  MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
   MOZ_ASSERT(rhs != edx);
   MOZ_ASSERT(remainder == edx);
   MOZ_ASSERT(ToRegister(ins->temp0()) == eax);
-
-  MMod* mir = ins->mir();
 
   Label done;
   OutOfLineCode* ool = nullptr;
   ModOverflowCheck* overflow = nullptr;
 
   
+  if (lhs != eax) {
+    masm.mov(lhs, eax);
+  }
+
+  MMod* mir = ins->mir();
+
+  
   if (mir->canBeDivideByZero()) {
-    if (mir->trapOnError()) {
-      TrapIfDivideByZero(masm, ins, rhs);
-    } else if (mir->isTruncated()) {
-      ool = emitOutOfLineZeroForDivideByZero(rhs, remainder);
+    masm.test32(rhs, rhs);
+    if (mir->isTruncated()) {
+      if (mir->trapOnError()) {
+        Label nonZero;
+        masm.j(Assembler::NonZero, &nonZero);
+        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+        masm.bind(&nonZero);
+      } else {
+        if (!ool) {
+          ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+            masm.mov(ImmWord(0), edx);
+            masm.jmp(ool.rejoin());
+          });
+        }
+        masm.j(Assembler::Zero, ool->entry());
+      }
     } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
+      bailoutIf(Assembler::Zero, ins->snapshot());
     }
   }
 
@@ -1584,16 +1425,17 @@ void CodeGenerator::visitModI(LModI* ins) {
     masm.bind(&negative);
 
     
+    masm.cmp32(lhs, Imm32(INT32_MIN));
     overflow = new (alloc()) ModOverflowCheck(ins, rhs);
-    masm.branch32(Assembler::Equal, lhs, Imm32(INT32_MIN), overflow->entry());
+    masm.j(Assembler::Equal, overflow->entry());
     masm.bind(overflow->rejoin());
-
     masm.cdq();
     masm.idiv(rhs);
 
     if (!mir->isTruncated()) {
       
-      bailoutTest32(Assembler::Zero, remainder, remainder, ins->snapshot());
+      masm.test32(remainder, remainder);
+      bailoutIf(Assembler::Zero, ins->snapshot());
     }
   }
 

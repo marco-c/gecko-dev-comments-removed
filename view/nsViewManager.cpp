@@ -69,10 +69,13 @@ nsViewManager::~nsViewManager() {
     mRootView = nullptr;
   }
 
+  mRootViewManager = nullptr;
+
   MOZ_RELEASE_ASSERT(!mPresShell,
                      "Releasing nsViewManager without having called Destroy on "
                      "the PresShell!");
 }
+
 nsView* nsViewManager::CreateView(const nsRect& aBounds, nsView* aParent,
                                   ViewVisibility aVisibilityFlag) {
   auto* v = new nsView(this, aVisibilityFlag);
@@ -90,6 +93,18 @@ void nsViewManager::SetRootView(nsView* aView) {
   
   
   mRootView = aView;
+
+  if (mRootView) {
+    nsView* parent = mRootView->GetParent();
+    if (parent) {
+      
+      
+      parent->InsertChild(mRootView, nullptr);
+    } else {
+      InvalidateHierarchy();
+    }
+  }
+  
 }
 
 void nsViewManager::GetWindowDimensions(nscoord* aWidth, nscoord* aHeight) {
@@ -197,25 +212,6 @@ nsView* nsViewManager::GetDisplayRootFor(nsView* aView) {
 
     displayRoot = displayParent;
   }
-}
-
-nsViewManager* nsViewManager::RootViewManager() const {
-  const auto* cur = this;
-  while (auto* parent = cur->GetParentViewManager()) {
-    cur = parent;
-  }
-  return const_cast<nsViewManager*>(cur);
-}
-
-nsViewManager* nsViewManager::GetParentViewManager() const {
-  if (!mPresShell) {
-    return nullptr;
-  }
-  auto* pc = mPresShell->GetPresContext();
-  if (auto* parent = pc->GetParentPresContext()) {
-    return parent->PresShell()->GetViewManager();
-  }
-  return nullptr;
 }
 
 
@@ -533,6 +529,7 @@ bool nsViewManager::PaintWindow(nsIWidget* aWidget,
   if (!aWidget) {
     return false;
   }
+
   
   
   nsView* view = nsView::GetViewFor(aWidget);
@@ -709,6 +706,19 @@ bool nsViewManager::IsViewInserted(nsView* aView) {
   return false;
 }
 
+nsIWidget* nsViewManager::GetRootWidget() const {
+  if (!mRootView) {
+    return nullptr;
+  }
+  if (mRootView->HasWidget()) {
+    return mRootView->GetWidget();
+  }
+  if (mRootView->GetParent()) {
+    return mRootView->GetParent()->GetViewManager()->GetRootWidget();
+  }
+  return nullptr;
+}
+
 LayoutDeviceIntRect nsViewManager::ViewToWidget(nsView* aView,
                                                 const nsRect& aRect) const {
   NS_ASSERTION(aView->GetViewManager() == this, "wrong view manager");
@@ -783,5 +793,18 @@ void nsViewManager::CallWillPaintOnObservers() {
         presShell->WillPaint();
       }
     }
+  }
+}
+
+void nsViewManager::InvalidateHierarchy() {
+  if (mRootView) {
+    mRootViewManager = nullptr;
+    nsView* parent = mRootView->GetParent();
+    if (parent) {
+      mRootViewManager = parent->GetViewManager()->RootViewManager();
+      NS_ASSERTION(mRootViewManager != this,
+                   "Root view had a parent, but it has the same view manager");
+    }
+    
   }
 }

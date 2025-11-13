@@ -94,7 +94,7 @@ const archOptions =
                     ldr x29, \\[sp\\]`
        },
        arm: {
-           encoding: `${HEX}{8}\\s+${HEX}{8}`,
+           encoding: `${HEX}{8} ${HEX}{8}`,
            
            
            prefix: `str fp, \\[sp, #-4\\]!
@@ -223,17 +223,37 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
     if (!options.no_suffix) {
         expected = expected + '\n' + suffix;
     }
-    expected = fixlines(expected);
+    if (genArm) {
+        
+        
+        
+        
+        
+        let newExpected = "";
+        let pattern = /^[0-9a-fA-F]{8} /;
+        for (line of expected.split(/\n+/)) {
+            
+            
+            while (line.match(/^\s/)) {
+                line = line.slice(1);
+            }
+            if (line.match(pattern)) {
+                line = line.slice(0,9) + line;
+            }
+            newExpected = newExpected + line + "\n";
+        }
+        expected = newExpected;
+    }
+    expected = fixlines(expected, encoding);
 
     
     let ins = wasmEvalText(module_text, {}, options.features);
     if (options.instanceBox)
         options.instanceBox.value = ins;
     let output = wasmDis(ins.exports[export_name], {tier:"ion", asString:true});
-    let output_simple = stripencoding(output, encoding);
 
     
-    let output_matches_expected = output_simple.match(new RegExp(expected)) != null;
+    let output_matches_expected = output.match(new RegExp(expected)) != null;
     if (!output_matches_expected) {
         print("---- adhoc-tier1-test.js: TEST FAILED ----");
     }

@@ -67,6 +67,8 @@ class MockTestGraph : public MediaTrackGraphImpl {
    protected:
     ~MockDriver() = default;
   };
+
+  bool mEnableFakeAppend = false;
 };
 
 AudioData* CreateAudioDataFromInfo(uint32_t aFrames, const AudioInfo& aInfo) {
@@ -392,21 +394,30 @@ TEST_F(TestAudioDecoderInputTrack, OutputAndEndEvent) {
   
   
   RefPtr<AudioData> audio = CreateAudioData(10);
-  auto outputPromise = TakeN(mTrack->OnOutput(), 1);
+  MozPromiseHolder<GenericPromise> holder;
+  RefPtr<GenericPromise> p = holder.Ensure(__func__);
+  MediaEventListener outputListener =
+      mTrack->OnOutput().Connect(NS_GetCurrentThread(), [&](TrackTime aFrame) {
+        EXPECT_EQ(aFrame, audio->Frames());
+        holder.Resolve(true, __func__);
+      });
   mTrack->AppendData(audio, nullptr);
   mTrack->NotifyEndOfStream();
   TrackTime start = 0;
   TrackTime end = 10;
   mTrack->ProcessInput(start, end, ProcessedMediaTrack::ALLOW_END);
-  auto output = WaitFor(outputPromise).unwrap()[0];
-  EXPECT_EQ(std::get<int64_t>(output), audio->Frames());
+  (void)WaitFor(p);
 
   
-  auto endPromise = TakeN(mTrack->OnEnd(), 1);
+  p = holder.Ensure(__func__);
+  MediaEventListener endListener = mTrack->OnEnd().Connect(
+      NS_GetCurrentThread(), [&]() { holder.Resolve(true, __func__); });
   start = end;
   end += 10;
   mTrack->ProcessInput(start, end, ProcessedMediaTrack::ALLOW_END);
-  (void)WaitFor(endPromise);
+  (void)WaitFor(p);
+  outputListener.Disconnect();
+  endListener.Disconnect();
 }
 
 TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
@@ -435,12 +446,9 @@ TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
 
   
   
-  auto outputPromise = TakeN(mTrack->OnOutput(), 1);
   TrackTime start = 0;
   TrackTime end = audio->Frames();
   mTrack->ProcessInput(start, end, kNoFlags);
-  auto output = WaitFor(outputPromise).unwrap()[0];
-  EXPECT_EQ(std::get<int64_t>(output), audio->Frames());
   EXPECT_PRED_FORMAT2(ExpectSegmentNonSilence, start, audio->Frames() / 2);
   EXPECT_PRED_FORMAT2(ExpectSegmentSilence, start + audio->Frames() / 2, end);
 }

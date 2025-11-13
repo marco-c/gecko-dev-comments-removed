@@ -184,6 +184,28 @@ function open_and_continue(uris, continueCallback) {
   }
 }
 
+function test_link_hover() {
+  if (!running_single_process && !is_child_process()) {
+    
+    
+    sendCommand("test_link_hover();");
+    return;
+  }
+
+  var uri = newURI("http://localhost:4444/foo/bar");
+  var referrer = newURI("http://localhost:4444/foo");
+  var preconns = ["http://localhost:4444"];
+
+  var verifier = new Verifier("hover", [], preconns, []);
+  predictor.predict(
+    uri,
+    referrer,
+    predictor.PREDICT_LINK,
+    origin_attributes,
+    verifier
+  );
+}
+
 const pageload_toplevel = newURI("http://localhost:4444/index.html");
 
 function continue_test_pageload() {
@@ -743,6 +765,7 @@ function cleanup() {
 var tests = [
   
   reset_predictor,
+  test_link_hover,
   test_pageload,
   
   

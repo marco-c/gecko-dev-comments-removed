@@ -27,14 +27,16 @@
 #include "mozilla/Uptime.h"
 
 
-static constexpr uint64_t kResolution = 1;
+static uint64_t sResolution;
+static uint64_t sResolutionSigDigs;
 
+static const uint64_t kNsPerMs = 1000000;
 static const uint64_t kUsPerSec = 1000000;
 static const double kNsPerMsd = 1000000.0;
 static const double kNsPerSecd = 1000000000.0;
 
 static bool gInitialized = false;
-static double sNsPerTickd;
+static double sNsPerTick;
 
 static uint64_t ClockTime() {
   
@@ -47,25 +49,53 @@ static uint64_t ClockTime() {
   return mach_absolute_time();
 }
 
+static uint64_t ClockResolutionNs() {
+  uint64_t start = ClockTime();
+  uint64_t end = ClockTime();
+  uint64_t minres = (end - start);
+
+  
+  
+  
+  for (int i = 0; i < 9; ++i) {
+    start = ClockTime();
+    end = ClockTime();
+
+    uint64_t candidate = (start - end);
+    if (candidate < minres) {
+      minres = candidate;
+    }
+  }
+
+  if (0 == minres) {
+    
+    
+    minres = 1 * kNsPerMs;
+  }
+
+  return minres;
+}
+
 namespace mozilla {
 
 double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
-  return (aTicks * sNsPerTickd) / kNsPerSecd;
+  return (aTicks * sNsPerTick) / kNsPerSecd;
 }
 
 double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
   
+  int64_t valueSigDigs = sResolution * (aTicks / sResolution);
   
-  static_assert(kResolution == 1);
-  return ToSeconds(aTicks);
+  valueSigDigs = sResolutionSigDigs * (valueSigDigs / sResolutionSigDigs);
+  return (valueSigDigs * sNsPerTick) / kNsPerSecd;
 }
 
 int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
     double aMilliseconds) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
-  double result = (aMilliseconds * kNsPerMsd) / sNsPerTickd;
+  double result = (aMilliseconds * kNsPerMsd) / sNsPerTick;
   
   
   if (result >= double(INT64_MAX)) {
@@ -79,7 +109,7 @@ int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
 
 int64_t BaseTimeDurationPlatformUtils::ResolutionInTicks() {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
-  return static_cast<int64_t>(kResolution);
+  return static_cast<int64_t>(sResolution);
 }
 
 void TimeStamp::Startup() {
@@ -96,7 +126,15 @@ void TimeStamp::Startup() {
     MOZ_RELEASE_ASSERT(false, "mach_timebase_info failed");
   }
 
-  sNsPerTickd = double(timebaseInfo.numer) / timebaseInfo.denom;
+  sNsPerTick = double(timebaseInfo.numer) / timebaseInfo.denom;
+
+  sResolution = ClockResolutionNs();
+
+  
+  
+  for (sResolutionSigDigs = 1; !(sResolutionSigDigs == sResolution ||
+                                 10 * sResolutionSigDigs > sResolution);
+       sResolutionSigDigs *= 10);
 
   gInitialized = true;
 }
@@ -108,7 +146,7 @@ TimeStamp TimeStamp::Now(bool aHighResolution) {
 }
 
 uint64_t TimeStamp::RawMachAbsoluteTimeNanoseconds() const {
-  return static_cast<uint64_t>(double(mValue) * sNsPerTickd);
+  return static_cast<uint64_t>(double(mValue) * sNsPerTick);
 }
 
 

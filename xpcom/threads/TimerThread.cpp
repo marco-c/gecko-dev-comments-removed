@@ -1230,25 +1230,25 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
   
   
 
+  nsCOMPtr<nsIEventTarget> target = timer->mEventTarget;
+
   void* p = nsTimerEvent::operator new(sizeof(nsTimerEvent));
   if (!p) {
     return;
   }
-
-  
-  
-
-  nsCOMPtr<nsIEventTarget> lockedTargetPtr = timer->mEventTarget;
-  RefPtr<nsTimerEvent> lockedEventPtr = ::new (KnownNotNull, p)
+  RefPtr<nsTimerEvent> event = ::new (KnownNotNull, p)
       nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
+
   {
+    
+    
     MonitorAutoUnlock unlock(mMonitor);
-    
-    nsCOMPtr<nsIEventTarget> target = lockedTargetPtr.forget();
-    RefPtr<nsTimerEvent> event = lockedEventPtr.forget();
-    
-    
-    target->Dispatch(event.forget(), NS_DISPATCH_FALLIBLE);
+    if (NS_WARN_IF(NS_FAILED(target->Dispatch(event, NS_DISPATCH_NORMAL)))) {
+      
+      
+      
+      RefPtr<nsTimerImpl> dropMe = event->ForgetTimer();
+    }
   }
 }
 

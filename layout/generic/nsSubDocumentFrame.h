@@ -55,8 +55,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   mozilla::IntrinsicSize GetIntrinsicSize() override;
   mozilla::AspectRatio GetIntrinsicRatio() const override;
 
-  const nsPoint& GetExtraOffset() const { return mExtraOffset; }
-
   SizeComputationResult ComputeSize(
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
@@ -91,12 +89,14 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
       bool aIgnoreContainment = false) const;
 
   nsIDocShell* GetDocShell() const;
-  nsIDocShell* GetExtantDocShell() const;
   nsresult BeginSwapDocShells(nsIFrame* aOther);
   void EndSwapDocShells(nsIFrame* aOther);
 
-  mozilla::dom::Document* GetExtantSubdocument();
-  mozilla::PresShell* GetSubdocumentPresShell();
+  static void InsertViewsInReverseOrder(nsView* aSibling, nsView* aParent);
+  static void EndSwapDocShellsForViews(nsView* aView);
+
+  nsView* EnsureInnerView();
+  nsPoint GetExtraOffset() const;
   nsIFrame* GetSubdocumentRootFrame();
   enum { IGNORE_PAINT_SUPPRESSION = 0x1 };
   mozilla::PresShell* GetSubdocumentPresShellForPainting(uint32_t aFlags);
@@ -151,10 +151,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   const Maybe<nsRect>& GetVisibleRect() const { return mVisibleRect; }
   void SetVisibleRect(const Maybe<nsRect>& aRect) { mVisibleRect = aRect; }
 
-  void AddEmbeddingPresShell(mozilla::PresShell*);
-  void EnsureEmbeddingPresShell(mozilla::PresShell*);
-  void RemoveEmbeddingPresShell(mozilla::PresShell*);
-
  protected:
   friend class AsyncFrameInit;
 
@@ -164,11 +160,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   void PropagateIsUnderHiddenEmbedderElement(bool aValue);
   void UpdateEmbeddedBrowsingContextDependentData();
 
-  
-  
-  bool FixUpInProcessPresShellsAfterAttach();
-  void PrepareInProcessPresShellsForDetach();
-
   bool IsInline() const { return mIsInline; }
 
   
@@ -176,26 +167,23 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   
   void ShowViewer();
 
+  nsView* GetViewInternal() const override { return mOuterView; }
+  void SetViewInternal(nsView* aView) override { mOuterView = aView; }
+  void CreateView();
+
   mutable RefPtr<nsFrameLoader> mFrameLoader;
+
+  nsView* mOuterView;
+  nsView* mInnerView;
 
   
   
-  
-  
-  AutoTArray<nsWeakPtr, 1> mInProcessPresShells;
-  
-  
   Maybe<RemoteFramePaintData> mRetainedRemoteFrame;
-  nsWeakPtr mLastPaintedPresShell;
 
   
   mozilla::gfx::MatrixScales mRasterScale;
   
   Maybe<nsRect> mVisibleRect;
-
-  
-  
-  nsPoint mExtraOffset;
 
   bool mIsInline : 1;
   bool mPostedReflowCallback : 1;

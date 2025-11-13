@@ -4330,11 +4330,7 @@ gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
     return FALSE;
   }
 
-  
-  
-  if (GdkIsX11Display()) {
-    SchedulePendingBounds(MayChangeCsdMargin::No);
-  }
+  SchedulePendingBounds(MayChangeCsdMargin::No);
   return FALSE;
 }
 

@@ -45,10 +45,6 @@ class CamerasChild;
 template <class T>
 class LockAndDispatch;
 
-static constexpr int kSuccess = 0;
-static constexpr int kError = -1;
-static constexpr int kIpcError = -2;
-
 
 
 
@@ -150,12 +146,10 @@ class CamerasChild final : public PCamerasChild {
 
   
   
-  mozilla::ipc::IPCResult RecvCaptureEnded(
-      nsTArray<int>&& aCaptureIds) override;
+  mozilla::ipc::IPCResult RecvCaptureEnded(const int&) override;
   mozilla::ipc::IPCResult RecvDeliverFrame(
-      const int& aCaptureId, nsTArray<int>&& aStreamIds,
-      mozilla::ipc::Shmem&& aShmem,
-      const VideoFrameProperties& aProps) override;
+      const int&, mozilla::ipc::Shmem&&,
+      const VideoFrameProperties& prop) override;
 
   mozilla::ipc::IPCResult RecvDeviceChange() override;
 
@@ -227,13 +221,7 @@ class CamerasChild final : public PCamerasChild {
   ~CamerasChild();
   
   
-  enum class DispatchToParentResult : int8_t {
-    SUCCESS = 0,
-    FAILURE = -1,
-    DISCONNECTED = -2,
-  };
-  DispatchToParentResult DispatchToParent(nsIRunnable* aRunnable,
-                                          MonitorAutoLock& aMonitor);
+  bool DispatchToParent(nsIRunnable* aRunnable, MonitorAutoLock& aMonitor);
   void AddCallback(int capture_id, FrameRelay* render);
   void RemoveCallback(int capture_id);
 
@@ -260,6 +248,7 @@ class CamerasChild final : public PCamerasChild {
   bool mReceivedReply;
   
   bool mReplySuccess;
+  const int mZero;
   int mReplyInteger;
   webrtc::VideoCaptureCapability* mReplyCapability = nullptr;
   nsCString mReplyDeviceName;

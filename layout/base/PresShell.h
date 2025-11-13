@@ -463,7 +463,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   nsSubDocumentFrame* GetInProcessEmbedderFrame() const;
-  void SetInProcessEmbedderFrame(nsSubDocumentFrame*);
 
   
 
@@ -3158,7 +3157,8 @@ class PresShell final : public nsStubDocumentObserver,
 
   void ClearApproximatelyVisibleFramesList(
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
-  void ClearApproximateFrameVisibilityVisited();
+  static void ClearApproximateFrameVisibilityVisited(nsView* aView,
+                                                     bool aClear);
   static void MarkFramesInListApproximatelyVisible(const nsDisplayList& aList);
   void MarkFramesInSubtreeApproximatelyVisible(nsIFrame* aFrame,
                                                const nsRect& aRect,
@@ -3358,9 +3358,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   uint64_t mAPZFocusSequenceNumber;
-
-  
-  WeakFrame mEmbedderFrame;
 
   nscoord mLastAnchorScrollPositionY = 0;
 

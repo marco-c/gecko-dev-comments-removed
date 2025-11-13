@@ -370,12 +370,13 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  using WeakPresShellArray = nsTArray<nsWeakPtr>;
-  void SetDetachedSubdocs(WeakPresShellArray&&);
-  WeakPresShellArray TakeDetachedSubdocs();
-  const WeakPresShellArray& GetDetachedSubdocs() const {
-    return mDetachedSubdocs;
-  }
+
+  void SetDetachedSubdocFrame(nsIFrame* aDetachedFrame);
+
+  
+
+
+  nsIFrame* GetDetachedSubdocFrame(bool* aOutIsSet = nullptr) const;
 
   
 
@@ -509,7 +510,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   
   
-  WeakPresShellArray mDetachedSubdocs;
+  WeakFrame mDetachedSubdocFrame;
 
   
   

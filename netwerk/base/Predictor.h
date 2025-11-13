@@ -246,6 +246,15 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
+  
+  
+  void PredictForLink(nsIURI* targetURI, nsIURI* sourceURI,
+                      const OriginAttributes& originAttributes,
+                      nsINetworkPredictorVerifier* verifier);
+
+  
+  
+  
   bool PredictForPageload(nsICacheEntry* entry, nsIURI* targetURI,
                           uint8_t stackCount, bool fullUri,
                           nsINetworkPredictorVerifier* verifier);

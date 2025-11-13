@@ -709,9 +709,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       JS::Handle<JS::Value> aDebuggerPrivateValue,
       JS::Handle<JSScript*> aDebuggerIntroductionScript, ErrorResult& aRv);
 
-  static nsCString& BytecodeMimeTypeFor(const ScriptLoadRequest* aRequest);
+  static nsCString& BytecodeMimeTypeFor(ScriptLoadRequest* aRequest);
   static nsCString& BytecodeMimeTypeFor(
-      const JS::loader::LoadedScript* aLoadedScript);
+      JS::loader::LoadedScript* aLoadedScript);
 
   
   
@@ -759,19 +759,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-
-
-  static bool EncodeAndCompress(JS::FrontendContext* aFc,
-                                const JS::loader::LoadedScript* aLoadedScript,
-                                JS::Stencil* aStencil,
-                                const JS::TranscodeBuffer& aSRI,
-                                Vector<uint8_t>& aCompressed);
-
-  
-
-
-  static bool SaveToDiskCache(const JS::loader::LoadedScript* aLoadedScript,
-                              const Vector<uint8_t>& aCompressed);
+  static void EncodeBytecodeAndSave(JS::FrontendContext* aFc,
+                                    JS::loader::LoadedScript* aLoadedScript);
 
  private:
   

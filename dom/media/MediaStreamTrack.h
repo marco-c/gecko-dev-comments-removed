@@ -128,18 +128,6 @@ class MediaStreamTrackSource : public nsISupports {
 
   virtual void Destroy() {}
 
-  struct CloneResult {
-    RefPtr<MediaStreamTrackSource> mSource;
-    RefPtr<mozilla::MediaTrack> mInputTrack;
-  };
-
-  
-
-
-
-
-  virtual CloneResult Clone();
-
   
 
 
@@ -481,7 +469,7 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   already_AddRefed<Promise> ApplyConstraints(
       const dom::MediaTrackConstraints& aConstraints, CallerType aCallerType,
       ErrorResult& aRv);
-  virtual already_AddRefed<MediaStreamTrack> Clone() = 0;
+  already_AddRefed<MediaStreamTrack> Clone();
   MediaStreamTrackState ReadyState() { return mReadyState; }
 
   IMPL_EVENT_HANDLER(mute)
@@ -654,22 +642,7 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
 
 
 
-
-  template <typename TrackType>
-  already_AddRefed<MediaStreamTrack> CloneInternal() {
-    auto cloneRes = mSource->Clone();
-    MOZ_ASSERT(!!cloneRes.mSource == !!cloneRes.mInputTrack);
-    if (!cloneRes.mSource || !cloneRes.mInputTrack) {
-      cloneRes.mSource = mSource;
-      cloneRes.mInputTrack = mInputTrack;
-    }
-    auto newTrack =
-        MakeRefPtr<TrackType>(mWindow, cloneRes.mInputTrack, cloneRes.mSource,
-                              ReadyState(), Muted(), mConstraints);
-    newTrack->SetEnabled(Enabled());
-    newTrack->SetMuted(Muted());
-    return newTrack.forget();
-  }
+  virtual already_AddRefed<MediaStreamTrack> CloneInternal() = 0;
 
   nsTArray<PrincipalChangeObserver<MediaStreamTrack>*>
       mPrincipalChangeObservers;

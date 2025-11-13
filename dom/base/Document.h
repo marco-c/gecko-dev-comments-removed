@@ -1175,8 +1175,7 @@ class Document : public nsINode,
 
 
   MOZ_CAN_RUN_SCRIPT already_AddRefed<PresShell> CreatePresShell(
-      nsPresContext* aContext, nsViewManager* aViewManager,
-      nsSubDocumentFrame* aEmbedderFrame);
+      nsPresContext* aContext, nsViewManager* aViewManager);
   void DeletePresShell();
 
   PresShell* GetPresShell() const {

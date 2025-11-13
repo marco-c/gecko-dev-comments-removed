@@ -34,10 +34,6 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
  public:
   explicit MediaEngineWebRTCMicrophoneSource(const MediaDevice* aMediaDevice);
 
-  static already_AddRefed<MediaEngineWebRTCMicrophoneSource> CreateFrom(
-      const MediaEngineWebRTCMicrophoneSource* aSource,
-      const MediaDevice* aMediaDevice);
-
   nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
                     const MediaEnginePrefs& aPrefs, uint64_t aWindowID,
                     const char** aOutBadConstraint) override;
@@ -318,13 +314,9 @@ class AudioProcessingTrack : public DeviceInputConsumerTrack {
   void DestroyImpl() override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
   uint32_t NumberOfChannels() const override {
-    if (!mInputProcessing) {
-      
-      
-      
-      
-      return 0;
-    }
+    MOZ_DIAGNOSTIC_ASSERT(
+        mInputProcessing,
+        "Must set mInputProcessing before exposing to content");
     return mInputProcessing->GetRequestedInputChannelCount();
   }
   
