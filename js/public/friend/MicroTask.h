@@ -58,21 +58,15 @@ namespace JS {
 
 
 
-using GenericMicroTask = JS::Value;
-using JSMicroTask = JSObject;
+using MicroTask = JS::Value;
 
-JS_PUBLIC_API bool IsJSMicroTask(const JS::GenericMicroTask& hv);
-JS_PUBLIC_API JSMicroTask* ToUnwrappedJSMicroTask(
-    const JS::GenericMicroTask& genericMicroTask);
-JS_PUBLIC_API JSMicroTask* ToMaybeWrappedJSMicroTask(
-    const JS::GenericMicroTask& genericMicroTask);
+JS_PUBLIC_API bool IsJSMicroTask(const JS::Value& hv);
 
 
 
 
 
-JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx,
-                                  Handle<JS::JSMicroTask*> entry);
+JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx, Handle<MicroTask> entry);
 
 
 
@@ -88,12 +82,9 @@ JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx,
 
 
 
-JS_PUBLIC_API bool EnqueueMicroTask(JSContext* cx,
-                                    const GenericMicroTask& entry);
-JS_PUBLIC_API bool EnqueueDebugMicroTask(JSContext* cx,
-                                         const GenericMicroTask& entry);
-JS_PUBLIC_API bool PrependMicroTask(JSContext* cx,
-                                    const GenericMicroTask& entry);
+JS_PUBLIC_API bool EnqueueMicroTask(JSContext* cx, const MicroTask& entry);
+JS_PUBLIC_API bool EnqueueDebugMicroTask(JSContext* cx, const MicroTask& entry);
+JS_PUBLIC_API bool PrependMicroTask(JSContext* cx, const MicroTask& entry);
 
 
 
@@ -109,9 +100,9 @@ JS_PUBLIC_API bool PrependMicroTask(JSContext* cx,
 
 
 
-JS_PUBLIC_API GenericMicroTask DequeueNextMicroTask(JSContext* cx);
-JS_PUBLIC_API GenericMicroTask DequeueNextDebuggerMicroTask(JSContext* cx);
-JS_PUBLIC_API GenericMicroTask DequeueNextRegularMicroTask(JSContext* cx);
+JS_PUBLIC_API MicroTask DequeueNextMicroTask(JSContext* cx);
+JS_PUBLIC_API MicroTask DequeueNextDebuggerMicroTask(JSContext* cx);
+JS_PUBLIC_API MicroTask DequeueNextRegularMicroTask(JSContext* cx);
 
 
 JS_PUBLIC_API bool HasAnyMicroTasks(JSContext* cx);
@@ -127,7 +118,8 @@ JS_PUBLIC_API bool HasRegularMicroTasks(JSContext* cx);
 JS_PUBLIC_API size_t GetRegularMicroTaskCount(JSContext* cx);
 
 
-JS_PUBLIC_API JSObject* GetExecutionGlobalFromJSMicroTask(JSMicroTask* entry);
+JS_PUBLIC_API JSObject* GetExecutionGlobalFromJSMicroTask(
+    const MicroTask& entry);
 
 
 
@@ -156,21 +148,22 @@ JS_PUBLIC_API void RestoreMicroTaskQueue(
 
 
 JS_PUBLIC_API JSObject* MaybeGetHostDefinedDataFromJSMicroTask(
-    JSMicroTask* entry);
+    const MicroTask& entry);
 JS_PUBLIC_API JSObject* MaybeGetAllocationSiteFromJSMicroTask(
-    JSMicroTask* entry);
+    const MicroTask& entry);
 
 
 
 JS_PUBLIC_API JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask(
-    JSMicroTask* entry);
+    const MicroTask& entry);
 
-JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(JSMicroTask* entry);
-
-
+JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(const MicroTask& entry);
 
 
-JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(JSMicroTask* entry, uint64_t* uid);
+
+
+JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(const MicroTask& entry,
+                                            uint64_t* uid);
 
 }  
 

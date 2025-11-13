@@ -196,8 +196,7 @@ class MustConsumeMicroTask {
   
   JSObject* GetExecutionGlobalFromJSMicroTask(JSContext* aCx) const {
     MOZ_ASSERT(IsJSMicroTask());
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    MOZ_ASSERT(task);
+    JS::Rooted<JS::MicroTask> task(aCx, mMicroTask);
     return JS::GetExecutionGlobalFromJSMicroTask(task);
   }
 
@@ -207,46 +206,30 @@ class MustConsumeMicroTask {
   
 
   bool GetFlowIdFromJSMicroTask(uint64_t* aFlowId) {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    MOZ_ASSERT(task);
-    return JS::GetFlowIdFromJSMicroTask(task, aFlowId);
+    MOZ_ASSERT(IsJSMicroTask());
+    return JS::GetFlowIdFromJSMicroTask(mMicroTask, aFlowId);
   }
 
   JSObject* MaybeGetPromiseFromJSMicroTask() {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    MOZ_ASSERT(task);
-    return JS::MaybeGetPromiseFromJSMicroTask(task);
+    MOZ_ASSERT(IsJSMicroTask());
+    return JS::MaybeGetPromiseFromJSMicroTask(mMicroTask);
   }
 
   JSObject* MaybeGetHostDefinedDataFromJSMicroTask() {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    if (!task) {
-      return nullptr;
-    }
-    return JS::MaybeGetHostDefinedDataFromJSMicroTask(task);
+    return JS::MaybeGetHostDefinedDataFromJSMicroTask(mMicroTask);
   }
 
   JSObject* MaybeGetAllocationSiteFromJSMicroTask() {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    if (!task) {
-      return nullptr;
-    }
-    return JS::MaybeGetAllocationSiteFromJSMicroTask(task);
+    return JS::MaybeGetAllocationSiteFromJSMicroTask(mMicroTask);
   }
 
   JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask() {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    if (!task) {
-      return nullptr;
-    }
-    return JS::MaybeGetHostDefinedGlobalFromJSMicroTask(task);
+    return JS::MaybeGetHostDefinedGlobalFromJSMicroTask(mMicroTask);
   }
 
   bool RunAndConsumeJSMicroTask(JSContext* aCx) {
-    JS::Rooted<JS::JSMicroTask*> task(
-        aCx, JS::ToMaybeWrappedJSMicroTask(mMicroTask));
-    MOZ_ASSERT(task);
-    bool v = JS::RunJSMicroTask(aCx, task);
+    JS::Rooted<JS::Value> rootedTask(aCx, mMicroTask);
+    bool v = JS::RunJSMicroTask(aCx, rootedTask);
     mMicroTask.setUndefined();
     return v;
   }
@@ -256,10 +239,10 @@ class MustConsumeMicroTask {
   }
 
  private:
-  explicit MustConsumeMicroTask(JS::GenericMicroTask&& aMicroTask)
+  explicit MustConsumeMicroTask(JS::MicroTask&& aMicroTask)
       : mMicroTask(aMicroTask) {}
 
-  JS::Heap<JS::GenericMicroTask> mMicroTask;
+  JS::Heap<JS::MicroTask> mMicroTask;
 };
 
 class SuppressedMicroTaskList final : public MicroTaskRunnable {
