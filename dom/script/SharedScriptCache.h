@@ -14,8 +14,10 @@
 #include "js/loader/ScriptLoadRequest.h"     
 #include "mozilla/CORSMode.h"                
 #include "mozilla/MemoryReporting.h"         
+#include "mozilla/Mutex.h"                   
 #include "mozilla/RefPtr.h"                  
 #include "mozilla/SharedSubResourceCache.h"  
+#include "mozilla/ThreadSafety.h"            
 #include "mozilla/WeakPtr.h"                 
 #include "mozilla/dom/CacheExpirationTime.h"  
 #include "mozilla/dom/SRIMetadata.h"          
@@ -196,6 +198,9 @@ class SharedScriptCache final
   bool MaybeScheduleUpdateDiskCache();
   void UpdateDiskCache();
 
+  void EncodeAndCompress();
+  void SaveToDiskCache();
+
   
   
   static void LoadCompleted(SharedScriptCache*, ScriptLoadData&);
@@ -210,6 +215,28 @@ class SharedScriptCache final
 
  protected:
   ~SharedScriptCache();
+
+ private:
+  class EncodeItem {
+   public:
+    EncodeItem(JS::Stencil* aStencil, JS::TranscodeBuffer&& aSRI,
+               JS::loader::LoadedScript* aLoadedScript)
+        : mStencil(aStencil),
+          mSRI(std::move(aSRI)),
+          mLoadedScript(aLoadedScript) {}
+
+    
+    RefPtr<JS::Stencil> mStencil;
+    JS::TranscodeBuffer mSRI;
+    Vector<uint8_t> mCompressed;
+
+    
+    
+    RefPtr<JS::loader::LoadedScript> mLoadedScript;
+  };
+
+  Mutex mEncodeMutex{"SharedScriptCache::mEncodeMutex"};
+  Vector<EncodeItem> mEncodeItems MOZ_GUARDED_BY(mEncodeMutex);
 };
 
 }  
