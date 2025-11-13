@@ -26,20 +26,12 @@ if CONFIG["OS_TARGET"] == "Android":
 if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
         "advapi32",
+        "bcrypt",
+        "ntdll",
+        "synchronization",
         "userenv",
         "ws2_32",
     ]
-    OS_LIBS += [
-        "bcrypt",
-        "ntdll",
-    ]
-    
-    
-    
-    if CONFIG["RUSTC_VERSION"] and CONFIG["RUSTC_VERSION"] >= "1.78.0":
-        OS_LIBS += [
-            "synchronization",
-        ]
 
 SharedLibrary("nssckbi")
 
