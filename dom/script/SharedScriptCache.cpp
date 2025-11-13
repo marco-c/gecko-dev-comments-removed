@@ -10,7 +10,6 @@
 #include "ScriptLoader.h"       
 #include "js/experimental/CompileScript.h"  
 #include "mozilla/Maybe.h"              
-#include "mozilla/TaskController.h"     
 #include "mozilla/dom/ContentParent.h"  
 #include "nsIMemoryReporter.h"  
 #include "nsIPrefBranch.h"   
@@ -222,54 +221,13 @@ bool SharedScriptCache::MaybeScheduleUpdateDiskCache() {
   return true;
 }
 
-class ScriptEncodeAndCompressionTask : public mozilla::Task {
- public:
-  ScriptEncodeAndCompressionTask()
-      : Task(Kind::OffMainThreadOnly, EventQueuePriority::Idle) {}
-  virtual ~ScriptEncodeAndCompressionTask() = default;
-
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  bool GetName(nsACString& aName) override {
-    aName.AssignLiteral("ScriptEncodeAndCompressionTask");
-    return true;
-  }
-#endif
-
-  TaskResult Run() override {
-    SharedScriptCache::Get()->EncodeAndCompress();
-    return TaskResult::Complete;
-  }
-};
-
-class ScriptSaveTask : public mozilla::Task {
- public:
-  ScriptSaveTask() : Task(Kind::MainThreadOnly, EventQueuePriority::Idle) {}
-  virtual ~ScriptSaveTask() = default;
-
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  bool GetName(nsACString& aName) override {
-    aName.AssignLiteral("ScriptSaveTask");
-    return true;
-  }
-#endif
-
-  TaskResult Run() override {
-    SharedScriptCache::Get()->SaveToDiskCache();
-    return TaskResult::Complete;
-  }
-};
-
 void SharedScriptCache::UpdateDiskCache() {
   auto strategy = ScriptLoader::GetDiskCacheStrategy();
   if (strategy.mIsDisabled) {
     return;
   }
 
-  mozilla::MutexAutoLock lock(mEncodeMutex);
-
-  if (!mEncodeItems.empty()) {
-    return;
-  }
+  JS::FrontendContext* fc = nullptr;
 
   for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
     JS::loader::LoadedScript* loadedScript = iter.Data().mResource;
@@ -277,69 +235,24 @@ void SharedScriptCache::UpdateDiskCache() {
       continue;
     }
 
-    if (!mEncodeItems.emplaceBack(loadedScript->GetStencil(),
-                                  std::move(loadedScript->SRIAndBytecode()),
-                                  loadedScript)) {
-      continue;
-    }
-  }
-
-  if (mEncodeItems.empty()) {
-    return;
-  }
-
-  RefPtr<ScriptEncodeAndCompressionTask> encodeTask =
-      new ScriptEncodeAndCompressionTask();
-  RefPtr<ScriptSaveTask> saveTask = new ScriptSaveTask();
-  saveTask->AddDependency(encodeTask);
-
-  TaskController::Get()->AddTask(encodeTask.forget());
-  TaskController::Get()->AddTask(saveTask.forget());
-}
-
-void SharedScriptCache::EncodeAndCompress() {
-  JS::FrontendContext* fc = JS::NewFrontendContext();
-  if (!fc) {
-    return;
-  }
-
-  mozilla::MutexAutoLock lock(mEncodeMutex);
-
-  for (auto& item : mEncodeItems) {
-    if (!ScriptLoader::EncodeAndCompress(fc, item.mLoadedScript, item.mStencil,
-                                         item.mSRI, item.mCompressed)) {
-      item.mCompressed.clear();
-    }
-  }
-
-  JS::DestroyFrontendContext(fc);
-}
-
-void SharedScriptCache::SaveToDiskCache() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  mozilla::MutexAutoLock lock(mEncodeMutex);
-
-  for (const auto& item : mEncodeItems) {
-    if (item.mCompressed.empty()) {
-      item.mLoadedScript->DropDiskCacheReference();
-      item.mLoadedScript->DropBytecode();
-      TRACE_FOR_TEST(item.mLoadedScript, "diskcache:failed");
-      continue;
+    if (!fc) {
+      
+      
+      fc = JS::NewFrontendContext();
+      if (!fc) {
+        return;
+      }
     }
 
-    if (!ScriptLoader::SaveToDiskCache(item.mLoadedScript, item.mCompressed)) {
-      item.mLoadedScript->DropDiskCacheReference();
-      item.mLoadedScript->DropBytecode();
-      TRACE_FOR_TEST(item.mLoadedScript, "diskcache:failed");
-    }
+    ScriptLoader::EncodeBytecodeAndSave(fc, loadedScript);
 
-    item.mLoadedScript->DropDiskCacheReference();
-    item.mLoadedScript->DropBytecode();
-    TRACE_FOR_TEST(item.mLoadedScript, "diskcache:saved");
+    loadedScript->DropDiskCacheReference();
+    loadedScript->DropBytecode();
   }
 
-  mEncodeItems.clear();
+  if (fc) {
+    JS::DestroyFrontendContext(fc);
+  }
 }
 
 }  
