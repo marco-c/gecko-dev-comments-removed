@@ -18,6 +18,7 @@ class FluentL10n {
 
 
 
+
   async init(resourceIds, { setAttributesOnDocument } = {}) {
     if (setAttributesOnDocument) {
       const primaryLocale = Services.locale.appLocalesAsBCP47[0];

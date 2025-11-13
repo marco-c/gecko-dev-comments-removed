@@ -517,7 +517,6 @@ function promiseSanitizationComplete() {
 
 
 
-
 function ClearHistoryDialogHelper({
   mode = "browser",
   checkingDataSizes = false,

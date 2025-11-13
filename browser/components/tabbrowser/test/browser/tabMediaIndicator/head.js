@@ -10,6 +10,7 @@ const gEMPTY_PAGE_URL = GetTestWebBasedURL("file_empty.html");
 
 
 
+
 function GetTestWebBasedURL(fileName, cors = false) {
   
   
@@ -19,6 +20,7 @@ function GetTestWebBasedURL(fileName, cors = false) {
     fileName
   );
 }
+
 
 
 
@@ -45,6 +47,7 @@ async function waitForTabSoundIndicatorAppears(tab) {
 
 
 
+
 async function waitForTabSoundIndicatorDisappears(tab) {
   if (tab.soundPlaying) {
     info("Tab sound indicator doesn't disappear yet");
@@ -59,6 +62,7 @@ async function waitForTabSoundIndicatorDisappears(tab) {
   }
   ok(!tab.soundPlaying, "Tab sound indicator disappears");
 }
+
 
 
 
@@ -103,6 +107,7 @@ function createSoundIndicatorObserver(tab) {
 
 
 
+
 function hoverIcon(icon, tooltip) {
   disableNonTestMouse(true);
 
@@ -126,6 +131,7 @@ function hoverIcon(icon, tooltip) {
 
 
 
+
 function leaveIcon(icon) {
   EventUtils.synthesizeMouse(icon, 0, 0, { type: "mouseout" });
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {
@@ -140,6 +146,7 @@ function leaveIcon(icon) {
 
   disableNonTestMouse(false);
 }
+
 
 
 

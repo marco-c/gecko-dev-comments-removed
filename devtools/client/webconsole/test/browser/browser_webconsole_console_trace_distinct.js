@@ -56,9 +56,11 @@ add_task(async function () {
 
 
 
+
 function getFrames(hud) {
   return Array.from(hud.ui.outputNode.querySelectorAll(".stacktrace .frames"));
 }
+
 
 
 

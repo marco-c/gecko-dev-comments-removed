@@ -44,6 +44,7 @@ function _getUriForModulePath(modulePath) {
 
 
 
+
 function setMockedModule(mock, modulePath) {
   const uri = _getUriForModulePath(modulePath);
   _mocks[uri] = new Proxy(mock, {

@@ -25,6 +25,7 @@ const TEST_HOST = "mochi.test:8888";
 
 
 
+
 var addTab = function (url, win) {
   info("Adding a new tab with URL: '" + url + "'");
 

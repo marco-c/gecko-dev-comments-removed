@@ -57,6 +57,7 @@ var createSavedPings = async function (aPingInfos) {
 
 
 
+
 function fakePendingPingsQuota(aPendingQuota) {
   let { Policy } = ChromeUtils.importESModule(
     "resource://gre/modules/TelemetryStorage.sys.mjs"

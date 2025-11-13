@@ -41,9 +41,13 @@ async function updateFrameLocation(frame, thunkArgs) {
     return frame;
   }
 
-  const location = await getOriginalLocation(frame.location, thunkArgs, {
-    waitForSource: true,
-  });
+  const location = await getOriginalLocation(
+    frame.generatedLocation || frame.location,
+    thunkArgs,
+    {
+      waitForSource: true,
+    }
+  );
   
   if (location == frame.location) {
     return frame;
@@ -159,6 +163,7 @@ export function updateAllFrameDisplayNames(thread) {
     });
   };
 }
+
 
 
 

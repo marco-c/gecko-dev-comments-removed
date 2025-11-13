@@ -75,6 +75,7 @@ var _referrerTests = [
 
 
 
+
 function getReferrerTest(aTestNumber) {
   return _referrerTests[aTestNumber];
 }
@@ -95,6 +96,7 @@ function getRemovedReferrerTest(aTestNumber) {
 
   return testCase;
 }
+
 
 
 
@@ -122,6 +124,7 @@ function getReferrerTestDescription(aTestNumber) {
 
 
 
+
 function clickTheLink(aWindow, aLinkId, aOptions) {
   return BrowserTestUtils.synthesizeMouseAtCenter(
     "#" + aLinkId,
@@ -136,11 +139,13 @@ function clickTheLink(aWindow, aLinkId, aOptions) {
 
 
 
+
 function referrerResultExtracted(aWindow) {
   return SpecialPowers.spawn(aWindow.gBrowser.selectedBrowser, [], function () {
     return content.document.getElementById("testdiv").textContent;
   });
 }
+
 
 
 
@@ -165,9 +170,11 @@ function delayedStartupFinished(aWindow) {
 
 
 
+
 function someTabLoaded() {
   return BrowserTestUtils.waitForNewTab(gTestWindow.gBrowser, null, true);
 }
+
 
 
 
@@ -179,6 +186,7 @@ function newWindowOpened() {
     ([win]) => win
   );
 }
+
 
 
 
@@ -203,11 +211,13 @@ function contextMenuOpened(aWindow, aLinkId) {
 
 
 
+
 function doContextMenuCommand(aWindow, aMenu, aItemId) {
   let command = aWindow.document.getElementById(aItemId);
   command.doCommand();
   aMenu.hidePopup();
 }
+
 
 
 
@@ -242,6 +252,7 @@ function referrerTestCaseLoaded(aTestNumber, aParams) {
     true
   );
 }
+
 
 
 
@@ -286,6 +297,7 @@ function checkReferrerAndStartNextTest(
     }
   });
 }
+
 
 
 

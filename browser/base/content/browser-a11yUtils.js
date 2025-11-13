@@ -27,6 +27,7 @@ var A11yUtils = {
 
 
 
+
   async announce({ id = null, args = {}, raw = null } = {}) {
     if ((!id && !raw) || (id && raw)) {
       throw new Error("One of raw or id must be specified.");

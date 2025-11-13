@@ -252,6 +252,7 @@ class ChangesView {
 
 
 
+
   onContextMenu(e) {
     this.contextMenu.show(e);
   }

@@ -35,9 +35,11 @@ let gTranslationsPane = {
 
 
 
+
   alwaysTranslateLanguages: [],
 
   
+
 
 
 
@@ -47,9 +49,11 @@ let gTranslationsPane = {
 
 
 
+
   neverTranslateSites: [],
 
   
+
 
 
 
@@ -64,6 +68,7 @@ let gTranslationsPane = {
   supportedLanguages: {},
 
   
+
 
 
 
@@ -465,6 +470,7 @@ let gTranslationsPane = {
 
 
 
+
   async handleAddAlwaysTranslateLanguage(langTag) {
     
     
@@ -476,6 +482,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -498,6 +505,7 @@ let gTranslationsPane = {
 
 
 
+
   setDifference(currentSet, newSet) {
     const added = newSet.filter(lang => !currentSet.includes(lang));
     const removed = currentSet.filter(lang => !newSet.includes(lang));
@@ -505,6 +513,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -565,6 +574,7 @@ let gTranslationsPane = {
 
 
 
+
   addSite(site) {
     const { neverTranslateSiteList } = this.elements;
 
@@ -607,6 +617,7 @@ let gTranslationsPane = {
 
 
 
+
   removeSite(site) {
     const { neverTranslateSiteList } = this.elements;
 
@@ -633,6 +644,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -694,6 +706,7 @@ let gTranslationsPane = {
 
 
 
+
   createLangElement(langChildren, langId) {
     const languageElement = document.createElement("div");
     languageElement.classList.add("translations-settings-language");
@@ -709,6 +722,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -734,6 +748,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -795,6 +810,7 @@ let gTranslationsPane = {
 
 
 
+
   createLangLabel(textContent, value, id) {
     const languageLabel = document.createElement("label");
     languageLabel.textContent = textContent;
@@ -804,6 +820,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -824,6 +841,7 @@ let gTranslationsPane = {
 
 
 
+
   handleRemoveAlwaysTranslateLanguage(event) {
     TranslationsParent.removeLangTagFromPref(
       event.target.parentNode.querySelector("label").getAttribute("value"),
@@ -832,6 +850,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -848,6 +867,7 @@ let gTranslationsPane = {
 
 
 
+
   handleRemoveNeverTranslateSite(event) {
     TranslationsParent.setNeverTranslateSiteByOrigin(
       false,
@@ -855,6 +875,7 @@ let gTranslationsPane = {
     );
   },
   
+
 
 
 
@@ -947,6 +968,7 @@ let gTranslationsPane = {
 
 
 
+
   async handleDownloadLanguage(event) {
     let eventButton = event.target;
     const langTag = eventButton.parentNode
@@ -1013,6 +1035,7 @@ let gTranslationsPane = {
 
 
 
+
   async handleRemoveDownloadLanguage(event) {
     let eventButton = event.target;
     const langTag = eventButton.parentNode
@@ -1074,6 +1097,7 @@ let gTranslationsPane = {
 
 
 
+
   async handleDownloadAllLanguages(event) {
     
     this.disableDownloadButtons();
@@ -1105,6 +1129,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 
@@ -1156,6 +1181,7 @@ let gTranslationsPane = {
   },
 
   
+
 
 
 

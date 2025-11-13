@@ -989,6 +989,7 @@ const DefaultBrowserHelper = {
 
 
 
+
   get canCheck() {
     return (
       this.shellSvc &&
@@ -2612,6 +2613,7 @@ var gMainPane = {
 
 
 
+
       updateDownloadPhase(langTag, downloadPhase) {
         this.state.downloadPhases.set(langTag, downloadPhase);
         this.updateButton(langTag, downloadPhase);
@@ -2628,6 +2630,7 @@ var gMainPane = {
       }
 
       
+
 
 
 

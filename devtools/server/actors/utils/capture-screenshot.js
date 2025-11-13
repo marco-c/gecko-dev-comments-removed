@@ -26,6 +26,7 @@ const MAX_IMAGE_HEIGHT = 10000;
 
 
 
+
 function simulateCameraFlash(browsingContext) {
   
   

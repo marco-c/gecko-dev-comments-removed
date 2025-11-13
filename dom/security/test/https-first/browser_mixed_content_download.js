@@ -23,6 +23,7 @@ let SECURE_BASE_URL =
 
 
 
+
 function shouldTriggerDownload() {
   return new Promise((resolve, reject) => {
     Services.wm.addListener({

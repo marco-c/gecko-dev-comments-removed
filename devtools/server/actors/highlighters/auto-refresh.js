@@ -118,6 +118,7 @@ class AutoRefreshHighlighter extends EventEmitter {
 
 
 
+
   show(node, options = {}) {
     const isSameNode = node === this.currentNode;
     const isSameOptions = this._isSameOptions(options);
@@ -166,6 +167,7 @@ class AutoRefreshHighlighter extends EventEmitter {
   }
 
   
+
 
 
 
@@ -230,6 +232,7 @@ class AutoRefreshHighlighter extends EventEmitter {
 
 
 
+
   _hasMoved() {
     const oldQuads = this.currentQuads;
     this._updateAdjustedQuads();
@@ -238,6 +241,7 @@ class AutoRefreshHighlighter extends EventEmitter {
   }
 
   
+
 
 
 
@@ -257,6 +261,7 @@ class AutoRefreshHighlighter extends EventEmitter {
   }
 
   
+
 
 
 

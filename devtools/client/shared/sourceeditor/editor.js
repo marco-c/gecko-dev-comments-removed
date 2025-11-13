@@ -891,7 +891,6 @@ class Editor extends EventEmitter {
 
 
 
-
   #createlineContentMarkersExtension() {
     const {
       codemirrorView: { Decoration, WidgetType, EditorView },
@@ -1138,6 +1137,7 @@ class Editor extends EventEmitter {
 
 
 
+
   addEditorDOMEventListeners(domEventHandlers) {
     const cm = editors.get(this);
     const {
@@ -1169,6 +1169,7 @@ class Editor extends EventEmitter {
   };
 
   
+
 
 
 
@@ -1233,6 +1234,7 @@ class Editor extends EventEmitter {
 
 
 
+
   setLineContentMarker(marker) {
     const cm = editors.get(this);
     
@@ -1245,6 +1247,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -1546,6 +1549,7 @@ class Editor extends EventEmitter {
 
 
 
+
   setPositionContentMarker(marker) {
     const cm = editors.get(this);
 
@@ -1562,6 +1566,7 @@ class Editor extends EventEmitter {
 
 
 
+
   removePositionContentMarker(markerId) {
     const cm = editors.get(this);
     this.#posContentMarkers.delete(markerId);
@@ -1572,6 +1577,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -1726,6 +1732,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -1891,6 +1898,7 @@ class Editor extends EventEmitter {
 
   /**
    * Gets the position information for the current selection
+   *
    * @returns {Object} cursor      - The location information for the  current selection
    *                   cursor.from - An object with the starting line / column of the selection
    *                   cursor.to   - An object with the end line / column of the selection
@@ -1922,6 +1930,7 @@ class Editor extends EventEmitter {
 
 
 
+
   getSelectedText() {
     const cm = editors.get(this);
     if (this.config.cm6) {
@@ -1932,6 +1941,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -1967,6 +1977,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -3432,6 +3443,7 @@ class Editor extends EventEmitter {
 
 
 
+
   #getElementAtOffset(offset) {
     const cm = editors.get(this);
     const el = cm.domAtPos(offset).node;
@@ -3447,6 +3459,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -3511,6 +3524,7 @@ class Editor extends EventEmitter {
 
 
 
+
   #positionToOffset(line, col = 0) {
     const cm = editors.get(this);
     try {
@@ -3560,6 +3574,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 
@@ -3628,6 +3643,7 @@ class Editor extends EventEmitter {
   }
 
   
+
 
 
 

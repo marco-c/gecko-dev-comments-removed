@@ -74,11 +74,13 @@ ArrowScrollBox.prototype = {
 
 
 
+
   scrollToElement(element, block) {
     element.scrollIntoView({ block, behavior: this.scrollBehavior });
   },
 
   
+
 
 
 
@@ -213,6 +215,7 @@ ArrowScrollBox.prototype = {
 
 
 
+
   elementLeftOfContainer(left, right, elementLeft, elementRight) {
     return (
       elementLeft < left - SCROLL_MARGIN && elementRight < right - SCROLL_MARGIN
@@ -220,6 +223,7 @@ ArrowScrollBox.prototype = {
   },
 
   
+
 
 
 
@@ -254,6 +258,7 @@ ArrowScrollBox.prototype = {
   },
 
   
+
 
 
 
@@ -313,6 +318,7 @@ ArrowScrollBox.prototype = {
   },
 
   
+
 
 
 
@@ -431,6 +437,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   prettyPrintNodeAsText(node) {
     let text = node.isShadowRoot ? SHADOW_ROOT_TAGNAME : node.displayName;
     if (node.isMarkerPseudoElement) {
@@ -537,6 +544,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   handleEvent(event) {
     if (event.type == "click" && event.button == 0) {
       this.handleClick(event);
@@ -550,6 +558,7 @@ HTMLBreadcrumbs.prototype = {
   },
 
   
+
 
 
 
@@ -572,6 +581,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   handleClick(event) {
     const target = event.originalTarget;
     if (target.tagName == "button") {
@@ -580,6 +590,7 @@ HTMLBreadcrumbs.prototype = {
   },
 
   
+
 
 
 
@@ -677,6 +688,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   setCursor(index) {
     
     if (
@@ -702,6 +714,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   indexOf(node) {
     for (let i = this.nodeHierarchy.length - 1; i >= 0; i--) {
       if (this.nodeHierarchy[i].node === node) {
@@ -716,6 +729,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   cutAfter(index) {
     while (this.nodeHierarchy.length > index + 1) {
       const toRemove = this.nodeHierarchy.pop();
@@ -724,6 +738,7 @@ HTMLBreadcrumbs.prototype = {
   },
 
   
+
 
 
 
@@ -759,6 +774,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   expand(node) {
     const fragment = this.doc.createDocumentFragment();
     let lastButtonInserted = null;
@@ -784,6 +800,7 @@ HTMLBreadcrumbs.prototype = {
   },
 
   
+
 
 
 
@@ -843,6 +860,7 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   _hasInterestingMutations(mutations) {
     if (!mutations || !mutations.length) {
       return false;
@@ -887,11 +905,13 @@ HTMLBreadcrumbs.prototype = {
 
 
 
+
   updateWithMutations(mutations) {
     return this.update("markupmutation", mutations);
   },
 
   
+
 
 
 

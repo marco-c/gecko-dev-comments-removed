@@ -42,9 +42,11 @@ class ConsoleServiceListener {
 
 
 
+
   window = null;
 
   
+
 
 
 

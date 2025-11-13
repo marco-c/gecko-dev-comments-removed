@@ -237,6 +237,7 @@ class DebuggerPanel {
 
 
 
+
   getMappedVariables() {
     if (!this._selectors.isMapScopesEnabled(this._getState())) {
       return null;

@@ -296,6 +296,7 @@ let dialog = {
 
 
 
+
   updateHandlerData(skipAsk) {
     
     if (this.selectedItem.obj) {

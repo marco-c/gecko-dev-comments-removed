@@ -146,6 +146,7 @@ function onSelect(state, { accessible, response: ancestry, error }) {
 
 
 
+
 function onCanBeDisabledChange(state, { canBeDisabled }) {
   return Object.assign({}, state, { canBeDisabled });
 }
@@ -156,9 +157,11 @@ function onCanBeDisabledChange(state, { canBeDisabled }) {
 
 
 
+
 function onCanBeEnabledChange(state, { canBeEnabled }) {
   return Object.assign({}, state, { canBeEnabled });
 }
+
 
 
 
@@ -179,6 +182,7 @@ function onPrefChange(state, { name, value }) {
 
 
 
+
 function onReset(state, { enabled, canBeDisabled, canBeEnabled, supports }) {
   const newState = {
     ...getInitialState(),
@@ -190,6 +194,7 @@ function onReset(state, { enabled, canBeDisabled, canBeEnabled, supports }) {
 
   return newState;
 }
+
 
 
 

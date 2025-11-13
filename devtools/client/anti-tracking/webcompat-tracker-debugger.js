@@ -175,6 +175,7 @@ class WebcompatTrackerDebugger {
 
 
 
+
   async blockOrUnblockSelected(blocked) {
     if (this.selectedTrackers.size === 0) {
       return;
@@ -219,6 +220,7 @@ class WebcompatTrackerDebugger {
 
 
 
+
   createTableHead() {
     const thead = document.createElement("thead");
     thead.id = "tracker-table-head";
@@ -249,6 +251,7 @@ class WebcompatTrackerDebugger {
 
 
 
+
   onSelectAllChange(e) {
     const checked = e.target.checked;
     this.selectedTrackers = new Set();
@@ -264,6 +267,7 @@ class WebcompatTrackerDebugger {
 
 
 
+
   createTableBody() {
     const tbody = document.createElement("tbody");
     Object.entries(this.allTrackers).forEach(([hostname, trackerData]) => {
@@ -273,6 +277,7 @@ class WebcompatTrackerDebugger {
   }
 
   
+
 
 
 
@@ -310,6 +315,7 @@ class WebcompatTrackerDebugger {
 
 
 
+
   createRowCheckboxCell(tracker) {
     const checkboxCell = document.createElement("td");
     const checkbox = document.createElement("input");
@@ -323,6 +329,7 @@ class WebcompatTrackerDebugger {
   }
 
   
+
 
 
 
@@ -341,6 +348,7 @@ class WebcompatTrackerDebugger {
 
 
 
+
   createActionCell(tracker, isBlocked) {
     const actionCell = document.createElement("td");
     const button = document.createElement("button");
@@ -354,6 +362,7 @@ class WebcompatTrackerDebugger {
   }
 
   
+
 
 
 

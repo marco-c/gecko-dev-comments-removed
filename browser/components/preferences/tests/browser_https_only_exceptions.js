@@ -285,6 +285,7 @@ add_task(async function checkDialogFunctionality() {
 
 
 
+
 async function setHttpsOnlyPref(state) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -298,6 +299,7 @@ async function setHttpsOnlyPref(state) {
 
 
 
+
 async function setHttpsFirstPref(state) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -306,6 +308,7 @@ async function setHttpsFirstPref(state) {
     ],
   });
 }
+
 
 
 

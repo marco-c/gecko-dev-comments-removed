@@ -107,6 +107,7 @@ function clearHighlightsBookmarks() {
 
 
 
+
 async function addHighlightsBookmarks(count) {
   const bookmarks = new Array(count).fill(null).map((entry, i) => ({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,

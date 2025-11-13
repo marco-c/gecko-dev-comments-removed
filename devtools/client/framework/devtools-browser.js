@@ -491,7 +491,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
 
 
-
   _getAboutDevtoolsToolbox(win) {
     if (!gDevToolsBrowser._isAboutDevtoolsToolbox(win)) {
       return null;

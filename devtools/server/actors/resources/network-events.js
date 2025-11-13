@@ -126,13 +126,11 @@ class NetworkEventWatcher {
 
 
 
-
   getThrottleData() {
     return this.listener.getThrottleData();
   }
 
   
-
 
 
 
@@ -145,6 +143,7 @@ class NetworkEventWatcher {
 
 
 
+
   setSaveRequestAndResponseBodies(save) {
     this.listener.setSaveRequestAndResponseBodies(save);
   }
@@ -153,11 +152,13 @@ class NetworkEventWatcher {
 
 
 
+
   blockRequest(filters) {
     this.listener.blockRequest(filters);
   }
 
   
+
 
 
 

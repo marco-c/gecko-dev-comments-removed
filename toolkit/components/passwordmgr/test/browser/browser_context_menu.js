@@ -604,6 +604,7 @@ async function assertContextMenuFill(
 
 
 
+
 function checkMenu(contextMenu, expectedCount) {
   let logins = loginList().filter(login => {
     return LoginHelper.isOriginMatching(login.origin, TEST_ORIGIN, {

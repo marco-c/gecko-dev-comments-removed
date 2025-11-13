@@ -611,6 +611,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handleTransformClick(pageX, pageY) {
     const { percentX, percentY } = this.convertPageCoordsToPercent(
       pageX,
@@ -633,6 +634,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -665,6 +667,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -710,6 +713,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -766,6 +770,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handleInsetTransformClick(pageX, pageY, type) {
     const { width, height } = this.currentDimensions;
     const pointsInfo = {};
@@ -795,6 +800,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handleTransformMove(pageX, pageY) {
     const { type } = this[_dragging];
     if (type === "translate") {
@@ -809,6 +815,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -831,6 +838,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -931,6 +939,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _rotateShape(pageX, pageY) {
     const { matrix } = this[_dragging];
     const { center, ne, nw, sw } = this[_dragging].transformedBB;
@@ -996,6 +1005,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _transformCircle(transX = null) {
     const { unitX, unitY, unitRad, valueX, valueY, ratioX, ratioY, ratioRad } =
       this[_dragging];
@@ -1022,6 +1032,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1106,6 +1117,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handlePolygonClick(pageX, pageY) {
     const { width, height } = this.currentDimensions;
     const { percentX, percentY } = this.convertPageCoordsToPercent(
@@ -1143,6 +1155,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1198,6 +1211,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _deletePolygonPoint(point) {
     const coordinates = this.coordUnits.slice();
     coordinates.splice(point, 1);
@@ -1214,6 +1228,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     this.emit("highlighter-event", { type: "shape-change", value: polygonDef });
   }
   
+
 
 
 
@@ -1275,6 +1290,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handleCircleMove(point, pageX, pageY) {
     const { radius, cx, cy } = this.coordUnits;
 
@@ -1317,6 +1333,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1386,6 +1403,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handleEllipseMove(point, pageX, pageY) {
     const { percentX, percentY } = this.convertPageCoordsToPercent(
       pageX,
@@ -1444,6 +1462,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _handleInsetClick(pageX, pageY) {
     const { width, height } = this.currentDimensions;
     const { percentX, percentY } = this.convertPageCoordsToPercent(
@@ -1468,6 +1487,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1549,6 +1569,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1698,6 +1719,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   convertPageCoordsToPercent(pageX, pageY) {
     
     const dims = this.frameDimensions;
@@ -1719,6 +1741,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   convertPercentToPageCoords(x, y) {
     const dims = this.frameDimensions;
     const { top, left, width, height } = dims;
@@ -1730,6 +1753,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1795,6 +1819,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   getPolygonPointAt(pageX, pageY) {
     const { coordinates } = this;
     const { width, height } = this.currentDimensions;
@@ -1818,6 +1843,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1852,6 +1878,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -1898,6 +1925,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   getEllipsePointAt(pageX, pageY) {
     const { cx, cy, rx, ry } = this.coordinates;
     const { width, height } = this.currentDimensions;
@@ -1921,6 +1949,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2005,6 +2034,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _parseCSSShapeValue(definition) {
     const shapeTypes = [
       {
@@ -2073,6 +2103,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   polygonPoints(definition) {
     this.coordUnits = this.polygonRawPoints();
     if (!this.origCoordUnits) {
@@ -2115,6 +2146,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   polygonRawPoints() {
     let definition = getDefinedShapeProperties(this.currentNode, this.property);
     if (definition === this.rawDefinition && this.coordUnits) {
@@ -2138,6 +2170,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2209,6 +2242,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   circleRawPoints() {
     let definition = getDefinedShapeProperties(this.currentNode, this.property);
     if (definition === this.rawDefinition && this.coordUnits) {
@@ -2229,6 +2263,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2282,6 +2317,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   ellipseRawPoints() {
     let definition = getDefinedShapeProperties(this.currentNode, this.property);
     if (definition === this.rawDefinition && this.coordUnits) {
@@ -2306,6 +2342,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2363,6 +2400,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   insetRawPoints() {
     let definition = getDefinedShapeProperties(this.currentNode, this.property);
     if (definition === this.rawDefinition && this.coordUnits) {
@@ -2410,6 +2448,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   convertCoordsToPercent(coord, i) {
     const { width, height } = this.currentDimensions;
     const size = i % 2 === 0 ? width : height;
@@ -2420,6 +2459,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2454,11 +2494,13 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   getElement(id) {
     return this.markup.getElement(id);
   }
 
   
+
 
 
 
@@ -2567,6 +2609,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _update() {
     setIgnoreLayoutChanges(true);
     this.getElement("shapes-group").setAttribute("transform", "");
@@ -2628,6 +2671,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _updateShapes(width, height, zoom) {
     if (this.transformMode && this.shapeType !== "none") {
       this._updateTransformMode(width, height, zoom);
@@ -2680,6 +2724,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2796,6 +2841,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _drawMarkers(coords, width, height, zoom) {
     const markers = coords
       .map(([x, y]) => {
@@ -2813,6 +2859,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2884,6 +2931,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -2968,6 +3016,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
+
 function getDefinedShapeProperties(node, property) {
   let prop = "";
   if (!node) {
@@ -2998,6 +3047,7 @@ function getDefinedShapeProperties(node, property) {
 
 
 
+
 function splitCoords(coords) {
   
   
@@ -3011,6 +3061,7 @@ function splitCoords(coords) {
     .split(" ");
 }
 exports.splitCoords = splitCoords;
+
 
 
 
@@ -3042,6 +3093,7 @@ exports.coordToPercent = coordToPercent;
 
 
 
+
 function evalCalcExpression(expression, size) {
   
   
@@ -3059,11 +3111,13 @@ exports.evalCalcExpression = evalCalcExpression;
 
 
 
+
 const shapeModeToCssPropertyName = mode => {
   const property = mode.substring(3);
   return property.substring(0, 1).toLowerCase() + property.substring(1);
 };
 exports.shapeModeToCssPropertyName = shapeModeToCssPropertyName;
+
 
 
 
@@ -3093,6 +3147,7 @@ const getCirclePath = (size, cx, cy, width, height, zoom) => {
   );
 };
 exports.getCirclePath = getCirclePath;
+
 
 
 
@@ -3142,6 +3197,7 @@ const getObjectBoundingBox = (top, left, width, height, node) => {
 
 
 
+
 const getUnit = point => {
   
   if (isUnitless(point)) {
@@ -3151,6 +3207,7 @@ const getUnit = point => {
   return unit;
 };
 exports.getUnit = getUnit;
+
 
 
 
@@ -3169,6 +3226,7 @@ const isUnitless = point => {
     point === "farthest-side"
   );
 };
+
 
 
 

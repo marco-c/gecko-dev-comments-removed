@@ -33,6 +33,7 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(
 
 
 
+
 async function hideTooltipAndWaitForRuleViewChanged(editorTooltip, view) {
   const onModified = view.once("ruleview-changed");
   const onHidden = editorTooltip.tooltip.once("hidden");
@@ -526,6 +527,7 @@ async function sendKeysAndWaitForFocus(view, element, keys) {
 
 
 
+
 function waitForStyleModification(inspector) {
   return new Promise(function (resolve) {
     function checkForStyleModification(mutations) {
@@ -606,6 +608,7 @@ async function clickSelectorIcon(view, selectorText, index = 0) {
 
 
 
+
 async function toggleClassPanelCheckBox(view, name) {
   info(`Clicking on checkbox for class ${name}`);
   const checkBox = [
@@ -619,6 +622,7 @@ async function toggleClassPanelCheckBox(view, name) {
   info("Waiting for a markupmutation as a result of toggling this class");
   await onMutation;
 }
+
 
 
 
@@ -647,6 +651,7 @@ function checkClassPanelContent(view, classes) {
     );
   }
 }
+
 
 
 

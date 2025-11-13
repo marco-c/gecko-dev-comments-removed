@@ -10,6 +10,7 @@
 
 
 
+
 function insertIframeAndWaitForLoad(browser, url) {
   return SpecialPowers.spawn(browser, [url], async url => {
     let iframe = content.document.createElement("iframe");

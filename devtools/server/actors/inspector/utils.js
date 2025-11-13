@@ -192,9 +192,11 @@ function allAnonymousContentTreeWalkerFilter(node) {
 
 
 
+
 function isWhitespaceTextNode(node) {
   return node.nodeType == Node.TEXT_NODE && !/[^\s]/.exec(node.nodeValue);
 }
+
 
 
 

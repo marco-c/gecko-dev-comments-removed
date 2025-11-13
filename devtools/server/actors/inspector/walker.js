@@ -200,6 +200,7 @@ class WalkerActor extends Actor {
 
 
 
+
   constructor(conn, targetActor, options) {
     super(conn, walkerSpec);
     this.targetActor = targetActor;
@@ -313,6 +314,7 @@ class WalkerActor extends Actor {
   }
 
   
+
 
 
 
@@ -471,11 +473,13 @@ class WalkerActor extends Actor {
 
 
 
+
   hasNode(rawNode) {
     return this._nodeActorsMap.has(rawNode);
   }
 
   
+
 
 
 
@@ -686,12 +690,14 @@ class WalkerActor extends Actor {
 
 
 
+
   document(node) {
     const doc = isNodeDead(node) ? this.rootDoc : nodeDocument(node.rawNode);
     return this._getOrCreateNodeActor(doc);
   }
 
   
+
 
 
 
@@ -911,6 +917,7 @@ class WalkerActor extends Actor {
 
 
 
+
   _rawChildren(rawNode, includeAssigned) {
     const filter = this.showAllAnonymousContent
       ? allAnonymousContentTreeWalkerFilter
@@ -1106,6 +1113,7 @@ class WalkerActor extends Actor {
 
 
 
+
   _multiFrameQuerySelectorAll(selector) {
     let nodes = [];
 
@@ -1121,6 +1129,7 @@ class WalkerActor extends Actor {
   }
 
   
+
 
 
 
@@ -1152,6 +1161,7 @@ class WalkerActor extends Actor {
   }
 
   
+
 
 
 
@@ -1483,6 +1493,7 @@ class WalkerActor extends Actor {
   }
 
   
+
 
 
 
@@ -2527,6 +2538,7 @@ class WalkerActor extends Actor {
   }
 
   
+
 
 
 

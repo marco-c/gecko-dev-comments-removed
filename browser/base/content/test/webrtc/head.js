@@ -665,18 +665,54 @@ async function getBrowsingContextsAndFrameIdsForSubFrames(
   return browsingContextsAndFrames;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function promiseRequestDevice(
   aRequestAudio,
   aRequestVideo,
   aFrameId,
   aType,
   aBrowsingContext,
-  aBadDevice = false
+  aBadDevice = false,
+  viaButtonClick = false
 ) {
   info("requesting devices");
   let bc =
     aBrowsingContext ??
     (await getBrowsingContextForFrame(gBrowser.selectedBrowser, aFrameId));
+
+  if (viaButtonClick) {
+    return SpecialPowers.spawn(
+      bc,
+      [{ aRequestAudio, aRequestVideo, aType, aBadDevice }],
+      async function (args) {
+        let global = content.wrappedJSObject;
+        global.queueRequestDeviceViaBtn(
+          args.aRequestAudio,
+          args.aRequestVideo,
+          args.aType,
+          args.aBadDevice
+        );
+        await EventUtils.synthesizeMouseAtCenter(
+          global.document.getElementById("gum"),
+          {},
+          content
+        );
+      }
+    );
+  }
+
   return SpecialPowers.spawn(
     bc,
     [{ aRequestAudio, aRequestVideo, aType, aBadDevice }],
@@ -686,7 +722,8 @@ async function promiseRequestDevice(
         args.aRequestAudio,
         args.aRequestVideo,
         args.aType,
-        args.aBadDevice
+        args.aBadDevice,
+        args.withUserActivation
       );
     }
   );
@@ -894,6 +931,7 @@ function checkDeviceSelectors(aExpectedTypes, aWindow = window) {
     ok(screenSelector.hidden, "screen selector hidden");
   }
 }
+
 
 
 

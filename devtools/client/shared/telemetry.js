@@ -422,7 +422,6 @@ class Telemetry {
 
 
 
-
 function getChartsFromToolId(id) {
   if (!id) {
     return null;

@@ -172,6 +172,7 @@ class WebConsoleActor extends Actor {
 
 
 
+
   _gripDepth = null;
 
   
@@ -293,6 +294,7 @@ class WebConsoleActor extends Actor {
   _progressListenerActive = false;
 
   
+
 
 
 

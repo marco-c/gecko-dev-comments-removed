@@ -7,6 +7,7 @@
 
 
 
+
 const {
   getUnicodeUrl,
 } = require("resource://devtools/client/shared/unicode-url.js");
@@ -115,6 +116,7 @@ export function findBlackBoxRange(source, blackboxedRanges, lineRange) {
       (lineRange.end >= range.start.line && lineRange.end <= range.end.line)
   );
 }
+
 
 
 

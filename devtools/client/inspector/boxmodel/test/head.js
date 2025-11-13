@@ -15,6 +15,7 @@ Services.scriptloader.loadSubScript(
 
 
 
+
 function isNodeVisible(node) {
   return !!node.getClientRects().length;
 }

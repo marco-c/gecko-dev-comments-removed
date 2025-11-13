@@ -31,6 +31,7 @@ async function checkPanelOpens() {
 
 
 
+
 async function downloadAndCheckPanel({ openDownloadsListOnStart = true } = {}) {
   info("creating a download and setting it to in progress");
   await task_addDownloads([
@@ -88,6 +89,7 @@ function clickCheckbox(checkbox) {
   checkbox.doCommand();
   checkbox.parentElement.hidePopup();
 }
+
 
 
 

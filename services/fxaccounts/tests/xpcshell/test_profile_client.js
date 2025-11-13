@@ -28,6 +28,7 @@ const STATUS_SUCCESS = 200;
 
 
 
+
 let mockResponse = function (response) {
   let Request = function (requestUri) {
     
@@ -63,6 +64,7 @@ const PROFILE_OPTIONS = {
   serverURL: "http://127.0.0.1:1111/v1",
   fxai: mockFxaInternal,
 };
+
 
 
 

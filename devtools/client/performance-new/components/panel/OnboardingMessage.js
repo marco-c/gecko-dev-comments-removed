@@ -42,6 +42,7 @@ const ONBOARDING_PREF = "devtools.performance.new-panel-onboarding";
 
 
 
+
 class OnboardingMessage extends PureComponent {
   
 

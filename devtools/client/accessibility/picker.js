@@ -51,11 +51,13 @@ class Picker {
 
 
 
+
   select(accessible) {
     this._panel.selectAccessible(accessible);
   }
 
   
+
 
 
 
@@ -86,6 +88,7 @@ class Picker {
 
 
 
+
   onPickerAccessibleHovered(accessible) {
     if (accessible) {
       this.emit("picker-accessible-hovered", accessible);
@@ -98,6 +101,7 @@ class Picker {
 
 
 
+
   onPickerAccessiblePicked(accessible) {
     if (accessible) {
       this.select(accessible);
@@ -106,6 +110,7 @@ class Picker {
   }
 
   
+
 
 
 
@@ -152,6 +157,7 @@ class Picker {
 
 
 
+
   async start(doFocus = true) {
     if (this.isPicking) {
       return;
@@ -173,6 +179,7 @@ class Picker {
   }
 
   
+
 
 
 

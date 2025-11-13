@@ -111,6 +111,7 @@ class WebConsole {
 
 
 
+
   get chromeUtilsWindow() {
     if (this.browserWindow) {
       return this.browserWindow;
@@ -150,11 +151,13 @@ class WebConsole {
 
 
 
+
   get jsterm() {
     return this.ui ? this.ui.jsterm : null;
   }
 
   
+
 
 
 

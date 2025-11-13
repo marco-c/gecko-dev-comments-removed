@@ -1614,6 +1614,7 @@ class Inspector extends EventEmitter {
 
 
 
+
   canAddHTMLChild() {
     const selection = this.selection;
 
@@ -1909,6 +1910,7 @@ class Inspector extends EventEmitter {
 
 
 
+
   showEyeDropper() {
     
     
@@ -1925,6 +1927,7 @@ class Inspector extends EventEmitter {
   }
 
   
+
 
 
 

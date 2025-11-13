@@ -34,9 +34,11 @@ const ROOT_DIR = getRootDirectory(gTestPath);
 
 
 
+
 function getBaseUrl(origin) {
   return ROOT_DIR.replace("chrome://mochitests/content", origin);
 }
+
 
 
 
@@ -169,6 +171,7 @@ function getBounceURL({
 
 
 
+
 async function navigateLinkClick(
   browser,
   targetURL,
@@ -223,6 +226,7 @@ async function navigateLinkClick(
 
 
 
+
 async function waitForRecordBounces(browser) {
   let { browserId } = browser.browsingContext;
   info(
@@ -240,6 +244,7 @@ async function waitForRecordBounces(browser) {
 
   info(`waitForRecordBounces: Recorded bounces for browser ${browserId}.`);
 }
+
 
 
 

@@ -66,6 +66,7 @@ const modifiedStyleSheets = new WeakMap();
 
 
 
+
 class StyleSheetsManager extends EventEmitter {
   #abortController;
   
@@ -121,6 +122,7 @@ class StyleSheetsManager extends EventEmitter {
   }
 
   
+
 
 
 

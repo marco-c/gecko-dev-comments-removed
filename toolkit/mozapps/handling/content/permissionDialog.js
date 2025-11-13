@@ -82,6 +82,7 @@ let dialog = {
 
 
 
+
   shouldShowPrincipal() {
     if (!this._principal) {
       return false;
@@ -179,6 +180,7 @@ let dialog = {
   },
 
   
+
 
 
 

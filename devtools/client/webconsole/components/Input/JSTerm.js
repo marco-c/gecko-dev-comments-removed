@@ -173,6 +173,7 @@ class JSTerm extends Component {
 
 
 
+
     this.lastInputValue = "";
 
     this.autocompletePopup = null;
@@ -766,6 +767,7 @@ class JSTerm extends Component {
 
 
 
+
   _getValue() {
     return this.editor ? this.editor.getText() || "" : "";
   }
@@ -1214,6 +1216,7 @@ class JSTerm extends Component {
   }
 
   
+
 
 
 

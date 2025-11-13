@@ -78,6 +78,7 @@ class DevToolsPresetSelection extends PureComponent {
 
 
 
+
     this.featureDescriptionMap = {};
     for (const feature of featureDescriptions) {
       this.featureDescriptionMap[feature.value] = feature;
@@ -85,6 +86,7 @@ class DevToolsPresetSelection extends PureComponent {
   }
 
   
+
 
 
 

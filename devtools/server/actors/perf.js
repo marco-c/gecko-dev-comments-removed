@@ -34,6 +34,7 @@ exports.PerfActor = class PerfActor extends Actor {
 
 
 
+
   #captureHandleCounter = 0;
 
   
@@ -41,9 +42,11 @@ exports.PerfActor = class PerfActor extends Actor {
 
 
 
+
   #previouslyRetrievedProfileDataPromise = null;
 
   
+
 
 
 
@@ -176,6 +179,7 @@ exports.PerfActor = class PerfActor extends Actor {
 
 
 
+
   async getPreviouslyCapturedProfileDataBulk(handle, startBulkSend) {
     if (handle < this.#captureHandleCounter) {
       
@@ -269,6 +273,7 @@ exports.PerfActor = class PerfActor extends Actor {
 
   /**
    * Lists the supported features of the profiler for the current browser.
+   *
    * @returns {string[]}
    */
   getSupportedFeatures() {

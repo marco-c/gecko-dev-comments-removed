@@ -56,6 +56,7 @@ function promiseNextTick() {
 
 
 
+
 function promiseWaitForAlertActive(aNotificationBox) {
   let deferred = Promise.withResolvers();
   aNotificationBox.stack.addEventListener(
@@ -67,6 +68,7 @@ function promiseWaitForAlertActive(aNotificationBox) {
   );
   return deferred.promise;
 }
+
 
 
 

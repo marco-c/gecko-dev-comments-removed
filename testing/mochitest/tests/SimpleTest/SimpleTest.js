@@ -8,6 +8,7 @@
 
 
 
+
 var SimpleTest = {};
 var parentRunner = null;
 
@@ -921,7 +922,6 @@ window.setTimeout = function SimpleTest_setTimeoutShim() {
   }
   return SimpleTest._originalSetTimeout.apply(window, arguments);
 };
-
 
 
 

@@ -38,6 +38,7 @@ exports.reportProfilerReady = isActive => ({
 
 
 
+
 exports.reportProfilerStarted = () => ({
   type: "REPORT_PROFILER_STARTED",
 });
@@ -46,9 +47,11 @@ exports.reportProfilerStarted = () => ({
 
 
 
+
 exports.reportProfilerStopped = () => ({
   type: "REPORT_PROFILER_STOPPED",
 });
+
 
 
 
@@ -65,10 +68,12 @@ exports.changeInterval = interval => ({
 
 
 
+
 exports.changeEntries = entries => ({
   type: "CHANGE_ENTRIES",
   entries,
 });
+
 
 
 
@@ -103,10 +108,12 @@ exports.changeFeatures = features => {
 
 
 
+
 exports.changeThreads = threads => ({
   type: "CHANGE_THREADS",
   threads,
 });
+
 
 
 
@@ -127,10 +134,12 @@ exports.changePreset = (presets, presetName) => ({
 
 
 
+
 exports.changeObjdirs = objdirs => ({
   type: "CHANGE_OBJDIRS",
   objdirs,
 });
+
 
 
 
@@ -151,12 +160,14 @@ exports.initializeStore = values => {
 
 
 
+
 exports.updateSettingsFromPreferences = recordingSettingsFromPreferences => {
   return {
     type: "UPDATE_SETTINGS_FROM_PREFERENCES",
     recordingSettingsFromPreferences,
   };
 };
+
 
 
 
@@ -179,6 +190,7 @@ exports.startRecording = perfFront => {
 
 
 
+
 exports.getProfileAndStopProfiler = perfFront => {
   return async ({ dispatch }) => {
     dispatch({ type: "REQUESTING_PROFILE" });
@@ -188,6 +200,7 @@ exports.getProfileAndStopProfiler = perfFront => {
     return profileAndAdditionalInformation;
   };
 };
+
 
 
 

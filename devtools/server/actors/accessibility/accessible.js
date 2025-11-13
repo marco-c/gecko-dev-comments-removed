@@ -92,6 +92,7 @@ const CSS_TEXT_SELECTOR = "#text";
 
 
 
+
 function getNodeDescription(node) {
   if (!node || Cu.isDeadWrapper(node)) {
     return { nodeType: undefined, nodeCssSelector: "" };
@@ -108,6 +109,7 @@ function getNodeDescription(node) {
         : findCssSelector(node),
   };
 }
+
 
 
 
@@ -184,6 +186,7 @@ function getSnapshot(acc, a11yService, targetActor) {
 
   return snapshot;
 }
+
 
 
 
@@ -551,6 +554,7 @@ class AccessibleActor extends Actor {
   }
 
   
+
 
 
 

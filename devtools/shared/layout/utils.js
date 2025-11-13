@@ -343,6 +343,7 @@ exports.getNodeBounds = getNodeBounds;
 
 
 
+
 function safelyGetContentWindow(frame) {
   if (frame.contentWindow) {
     return frame.contentWindow;
@@ -542,6 +543,7 @@ exports.isAfterPseudoElement = isAfterPseudoElement;
 
 
 
+
 function getCurrentZoom(node) {
   const win = getWindowFor(node);
 
@@ -616,6 +618,7 @@ function getViewportDimensions(window) {
   return { width, height };
 }
 exports.getViewportDimensions = getViewportDimensions;
+
 
 
 

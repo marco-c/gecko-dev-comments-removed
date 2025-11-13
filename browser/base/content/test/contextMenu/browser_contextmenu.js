@@ -2618,6 +2618,7 @@ async function selectText(selector) {
 
 
 
+
 function getTextRecognitionItems() {
   return Services.prefs.getBoolPref("dom.text-recognition.enabled") &&
     Services.appinfo.isTextRecognitionSupported

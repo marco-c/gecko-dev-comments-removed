@@ -149,6 +149,7 @@
 
 
 
+
     handleEvent(event) {
       if (event.type == "LightweightTheme:Set") {
         this._setProperties(event.detail.data || {});
@@ -168,6 +169,7 @@
 
 
 
+
     _setProperty(elem, variableName, value) {
       if (value) {
         elem.style.setProperty(variableName, value);
@@ -177,6 +179,7 @@
     },
 
     
+
 
 
 

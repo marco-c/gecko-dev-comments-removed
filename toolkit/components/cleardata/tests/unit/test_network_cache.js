@@ -35,7 +35,6 @@ function getPartitionedLoadContextInfo(
 
 
 
-
 async function waitForCacheClearing(url, cacheTypes, partitionContexts) {
   await TestUtils.waitForCondition(() => {
     return cacheTypes.every(cache => {

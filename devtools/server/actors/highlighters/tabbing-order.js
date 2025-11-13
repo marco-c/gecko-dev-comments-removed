@@ -206,6 +206,7 @@ class TabbingOrderHighlighter {
 
 
 
+
   updateFocus({ node, focused }) {
     const highlighter = this._highlighters.get(node);
     if (!highlighter) {

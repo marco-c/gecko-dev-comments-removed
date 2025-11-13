@@ -12,9 +12,11 @@
 
 
 
+
 const getDistance = (x1, y1, x2, y2) => {
   return Math.round(Math.hypot(x2 - x1, y2 - y1));
 };
+
 
 
 
@@ -66,12 +68,14 @@ const clickedOnEllipseEdge = (
 
 
 
+
 const distanceToLine = (x1, y1, x2, y2, x3, y3) => {
   
   const num = Math.abs((y2 - y1) * x3 - (x2 - x1) * y3 + x2 * y1 - y2 * x1);
   const denom = getDistance(x1, y1, x2, y2);
   return num / denom;
 };
+
 
 
 
@@ -97,11 +101,13 @@ const projection = (ax, ay, bx, by, cx, cy) => {
 
 
 
+
 const dotProduct = (a, b) => {
   return a.reduce((prev, curr, i) => {
     return prev + curr * b[i];
   }, 0);
 };
+
 
 
 

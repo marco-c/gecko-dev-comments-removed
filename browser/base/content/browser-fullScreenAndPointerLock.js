@@ -133,6 +133,7 @@ var PointerlockFsWarning = {
 
 
 
+
   close(elementId) {
     if (!elementId) {
       throw new Error("Must pass id of warning element to close");
@@ -411,6 +412,7 @@ var FullScreen = {
 
 
 
+
   shiftMacToolbarDown(shiftSize) {
     if (typeof shiftSize !== "number") {
       console.error("Tried to shift the toolbar by a non-numeric distance.");
@@ -682,7 +684,6 @@ var FullScreen = {
   },
 
   
-
 
 
 

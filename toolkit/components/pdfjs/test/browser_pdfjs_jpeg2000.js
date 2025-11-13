@@ -9,6 +9,7 @@ const TESTROOT = "https://example.com/browser/" + RELATIVE_DIR;
 
 
 
+
 async function getPixels(browser) {
   return SpecialPowers.spawn(browser, [], async function () {
     const { document } = content;

@@ -7,6 +7,8 @@
 
 
 
+
+import { createBreakpoint } from "../client/firefox/create";
 import { makeBreakpointId } from "../utils/breakpoint/index";
 
 export function initialBreakpointsState(xhrBreakpoints = []) {
@@ -36,7 +38,7 @@ function update(state = initialBreakpointsState(), action) {
       return { ...state, breakpoints: {} };
     }
 
-    case "REMOVE_THREAD": {
+    case "REMOVE_SOURCES": {
       return removeBreakpointsForSources(state, action.sources);
     }
 
@@ -137,13 +139,34 @@ function removeBreakpoint(state, { breakpoint }) {
 }
 
 function removeBreakpointsForSources(state, sources) {
+  if (!sources.length) {
+    return state;
+  }
   const remainingBreakpoints = {};
+  let changed = false;
   for (const [id, breakpoint] of Object.entries(state.breakpoints)) {
     if (!sources.includes(breakpoint.location.source)) {
       remainingBreakpoints[id] = breakpoint;
+    } else if (
+      breakpoint.location.source.isOriginal &&
+      !sources.includes(breakpoint.generatedLocation.source)
+    ) {
+      
+      
+      
+      const generatedId = makeBreakpointId(breakpoint.generatedLocation);
+      remainingBreakpoints[generatedId] = createBreakpoint({
+        ...breakpoint,
+        id: generatedId,
+        location: breakpoint.generatedLocation,
+        originalText: breakpoint.text,
+      });
+      changed = true;
+    } else {
+      changed = true;
     }
   }
-  return { ...state, breakpoints: remainingBreakpoints };
+  return changed ? { ...state, breakpoints: remainingBreakpoints } : state;
 }
 
 export default update;

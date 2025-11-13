@@ -31,6 +31,7 @@ var perfMetadata = {
 
 
 
+
 function rsObjectToEntry(rsObject) {
   let entry = Cc[
     "@mozilla.org/url-classifier/exception-list-entry;1"

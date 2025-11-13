@@ -44,6 +44,7 @@ const exampleRules = JSON.stringify([
 
 
 
+
 function cookieBannerSectionIsVisible({
   featureMode,
   featureModePBM,
@@ -63,6 +64,7 @@ function cookieBannerSectionIsVisible({
     (!testPBM && featureMode != MODE_DISABLED)
   );
 }
+
 
 
 
@@ -228,6 +230,7 @@ add_task(async function test_section_visibility_pref() {
 
 
 
+
 function assertSwitchAndPrefState({ win, isPBM, expectedSwitchState }) {
   let el = {
     section: win.document.getElementById(
@@ -314,6 +317,7 @@ function assertSwitchAndPrefState({ win, isPBM, expectedSwitchState }) {
     );
   }
 }
+
 
 
 

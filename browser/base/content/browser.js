@@ -1968,6 +1968,7 @@ var XULBrowserWindow = {
 
 
 
+
       url = url.replace(
         /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,
         encodeURIComponent
@@ -2388,6 +2389,7 @@ var XULBrowserWindow = {
 
 
 
+
   _updateMacUserActivity(win, uri, webProgress) {
     if (!webProgress.isTopLevel || AppConstants.platform != "macosx") {
       return;
@@ -2408,6 +2410,7 @@ var XULBrowserWindow = {
   },
 
   
+
 
 
 
@@ -4291,6 +4294,7 @@ class TabDialogBox {
   }
 
   
+
 
 
 

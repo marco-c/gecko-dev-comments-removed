@@ -23,6 +23,7 @@ let db;
 
 
 
+
 const strArrayMatches = (arr1, arr2) =>
   arr1.length === arr2.length &&
   arr1.sort().every((value, index) => value === arr2.sort()[index]);
@@ -44,6 +45,7 @@ add_setup(async function () {
   db = RemoteSettings(COLLECTION_NAME).db;
   await db.importChanges({}, Date.now(), [], { clear: true });
 });
+
 
 
 
@@ -84,6 +86,7 @@ async function runPurgeTest(expectTrackerPurged) {
 
 
 
+
 async function waitForAllowListState(allowedSiteHosts) {
   
   await BrowserTestUtils.waitForCondition(() => {
@@ -98,6 +101,7 @@ async function waitForAllowListState(allowedSiteHosts) {
     "Imported the correct site host exceptions"
   );
 }
+
 
 
 

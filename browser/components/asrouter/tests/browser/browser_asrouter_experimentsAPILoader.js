@@ -169,6 +169,7 @@ async function cleanup() {
 
 
 
+
 async function assertMessageInState(id, found = true, wait = true) {
   if (wait) {
     await BrowserTestUtils.waitForCondition(

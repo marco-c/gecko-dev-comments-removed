@@ -42,6 +42,7 @@ class ServiceWorkerRegistrationActor extends Actor {
 
 
 
+
   constructor(conn, registration) {
     super(conn, serviceWorkerRegistrationSpec);
     this._registration = registration;

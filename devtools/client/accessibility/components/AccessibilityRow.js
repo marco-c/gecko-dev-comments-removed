@@ -208,6 +208,7 @@ class AccessibilityRow extends Component {
 
 
 
+
   async scrollNodeIntoViewIfNeeded(accessibleFront) {
     if (accessibleFront.isDestroyed()) {
       return;
@@ -287,6 +288,7 @@ class AccessibilityRow extends Component {
   }
 
   
+
 
 
 

@@ -641,6 +641,7 @@ Toolbox.prototype = {
 
 
 
+
   isSplitConsoleEnabled() {
     if (typeof this._splitConsoleEnabled !== "boolean") {
       this.updateIsSplitConsoleEnabled();
@@ -1893,6 +1894,7 @@ Toolbox.prototype = {
 
 
 
+
   fireCustomKey(toolId) {
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
@@ -2095,11 +2097,13 @@ Toolbox.prototype = {
 
 
 
+
   _onToolbarFocus(id) {
     this.component.setFocusedButton(id);
   },
 
   
+
 
 
 
@@ -2660,7 +2664,6 @@ Toolbox.prototype = {
 
 
 
-
   hasAdditionalTool(toolId) {
     return this.additionalToolDefinitions.has(toolId);
   },
@@ -2940,6 +2943,7 @@ Toolbox.prototype = {
 
 
 
+
   selectSingleNode(collection, id) {
     [...collection].forEach(node => {
       if (node.id === id) {
@@ -3157,6 +3161,7 @@ Toolbox.prototype = {
   },
 
   
+
 
 
 
@@ -4041,6 +4046,7 @@ Toolbox.prototype = {
 
 
 
+
   _toolRegistered(toolId) {
     
     
@@ -4071,6 +4077,7 @@ Toolbox.prototype = {
 
 
 
+
   _toolUnregistered(toolId) {
     this.unloadTool(toolId);
 
@@ -4080,7 +4087,6 @@ Toolbox.prototype = {
   },
 
   
-
 
 
 
@@ -4551,6 +4557,7 @@ Toolbox.prototype = {
 
 
 
+
   openTextBoxContextMenu(x, y) {
     const menu = createEditContextMenu(this.topWindow, "toolbox-menu");
 
@@ -4756,6 +4763,7 @@ Toolbox.prototype = {
 
 
 
+
   viewSource(sourceURL, sourceLine, sourceColumn) {
     return viewSource.viewSource(this, sourceURL, sourceLine, sourceColumn);
   },
@@ -4852,6 +4860,7 @@ Toolbox.prototype = {
 
 
 
+
   listWebExtensions() {
     
     
@@ -4862,6 +4871,7 @@ Toolbox.prototype = {
   },
 
   
+
 
 
 
@@ -4883,6 +4893,7 @@ Toolbox.prototype = {
 
 
 
+
   unregisterWebExtension(extensionUUID) {
     
     
@@ -4891,6 +4902,7 @@ Toolbox.prototype = {
   },
 
   
+
 
 
 

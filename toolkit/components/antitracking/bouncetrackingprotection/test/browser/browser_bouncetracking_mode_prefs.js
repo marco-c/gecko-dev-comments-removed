@@ -19,6 +19,7 @@ const BTP_MODE_PREF = "privacy.bounceTrackingProtection.mode";
 
 
 
+
 async function runTestModePref(mode, shouldBeEnabled) {
   info("runTestModePref " + JSON.stringify({ mode, shouldBeEnabled }));
   await SpecialPowers.pushPrefEnv({

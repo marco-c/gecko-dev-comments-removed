@@ -72,6 +72,7 @@ const EventsLogger = {
 
 
 
+
 function eventToString(event) {
   let type = eventTypeToString(event.eventType);
   let info = `Event type: ${type}`;
@@ -130,6 +131,7 @@ function matchEvent(event, matchCriteria) {
 
   return false;
 }
+
 
 
 
@@ -214,6 +216,7 @@ class UnexpectedEvents {
     }
   }
 }
+
 
 
 
@@ -313,6 +316,7 @@ function stateChangeEventArgs(id, state, isEnabled, isExtra = false) {
 function waitForStateChange(id, state, isEnabled, isExtra = false) {
   return waitForEvent(...stateChangeEventArgs(id, state, isEnabled, isExtra));
 }
+
 
 
 

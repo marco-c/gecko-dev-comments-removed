@@ -79,6 +79,7 @@ async function runStyleAttributeAutocompleteTests(inspector, testData) {
 
 
 
+
 function enterData(data, editor, inspector) {
   const key = data[0];
 

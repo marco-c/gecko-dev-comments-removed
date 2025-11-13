@@ -16,6 +16,7 @@ import { isFulfilled } from "../../utils/async-value";
 
 
 
+
 export function setInScopeLines(editor) {
   return async thunkArgs => {
     const { getState, dispatch } = thunkArgs;

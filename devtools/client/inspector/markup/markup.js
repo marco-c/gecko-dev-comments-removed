@@ -848,7 +848,6 @@ class MarkupView extends EventEmitter {
 
 
 
-
   handleHighlighterEvent(eventName, data) {
     switch (data.type) {
       
@@ -2140,6 +2139,7 @@ class MarkupView extends EventEmitter {
   }
 
   
+
 
 
 

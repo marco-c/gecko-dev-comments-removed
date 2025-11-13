@@ -1928,6 +1928,7 @@ var BrowserAddonUI = {
 
 
 
+
   openAddonsMgr(aView, { selectTabByViewId = false } = {}) {
     return new Promise(resolve => {
       let emWindow;

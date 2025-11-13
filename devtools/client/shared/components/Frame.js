@@ -59,6 +59,7 @@ function savedFrameToDebuggerLocation(frame) {
 
 
 
+
 function getTooltipMessage(messageSource, url) {
   if (messageSource && messageSource === MESSAGE_SOURCE.CSS) {
     return l10n.getFormatStr("frame.viewsourceinstyleeditor", url);
@@ -151,6 +152,7 @@ class Frame extends Component {
 
 
 
+
   #getCurrentLocationInfo = () => {
     const { frame } = this.props;
     const { originalLocation } = this.state;
@@ -173,6 +175,7 @@ class Frame extends Component {
 
 
 
+
   #getCurrentLocationUnicodeHostName = () => {
     const { sourceURL } = this.#getCurrentLocationInfo();
 
@@ -181,6 +184,7 @@ class Frame extends Component {
   };
 
   
+
 
 
 
@@ -286,6 +290,7 @@ class Frame extends Component {
 
 
 
+
   #renderSourceElements = () => {
     const { line, column } = this.#getCurrentLocationInfo();
 
@@ -319,6 +324,7 @@ class Frame extends Component {
   };
 
   
+
 
 
 
@@ -356,6 +362,7 @@ class Frame extends Component {
   };
 
   
+
 
 
 

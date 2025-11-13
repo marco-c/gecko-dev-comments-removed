@@ -139,9 +139,14 @@ export function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
   );
 
   this.atRules = [];
+  this._isPrettyPrinted = false;
 }
 
 StyleSheetEditor.prototype = {
+  get isPrettyPrinted() {
+    return this._isPrettyPrinted;
+  },
+
   get resourceId() {
     return this._resource.resourceId;
   },
@@ -327,6 +332,7 @@ StyleSheetEditor.prototype = {
 
     if (force && this.sourceEditor) {
       this.sourceEditor.setText(result);
+      this._isPrettyPrinted = true;
     }
   },
 
@@ -411,6 +417,7 @@ StyleSheetEditor.prototype = {
 
   /**
    * Called when the stylesheet text changes.
+   *
    * @param {Object} update: The stylesheet resource update packet.
    */
   async onStyleApplied(update) {
@@ -475,6 +482,7 @@ StyleSheetEditor.prototype = {
 
   /**
    * Create source editor and load state into it.
+   *
    * @param  {DOMElement} inputElement
    *         Element to load source editor in
    * @param  {CssProperties} cssProperties

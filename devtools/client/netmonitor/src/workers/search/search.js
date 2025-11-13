@@ -123,6 +123,7 @@ function searchInResource(resource, query, modifiers) {
 
 
 
+
 function getResults(results, resource) {
   const tempResults = [].concat.apply([], results);
 
@@ -142,6 +143,7 @@ function find(query, modifiers, source) {
 
   return value.includes(q);
 }
+
 
 
 
@@ -200,9 +202,11 @@ function searchInProperties(query, modifiers, obj, data) {
 
 
 
+
 function getType(resource) {
   return Array.isArray(resource) ? "array" : typeof resource;
 }
+
 
 
 
@@ -214,6 +218,7 @@ function getValue(path, obj) {
   const properties = Array.isArray(path) ? path : path.split(".");
   return properties.reduce((prev, curr) => prev?.[curr], obj);
 }
+
 
 
 
@@ -274,6 +279,7 @@ function searchInText(query, modifiers, text, data) {
 
 
 
+
 function searchInArray(query, modifiers, arr, data) {
   const { key, label } = data;
   const matches = arr.map((match, i) =>
@@ -295,6 +301,7 @@ function searchInArray(query, modifiers, arr, data) {
 
 
 
+
 function getTruncatedValue(value, query, startIndex) {
   const valueSize = value.length;
   const endIndex = startIndex + query.length;
@@ -305,6 +312,7 @@ function getTruncatedValue(value, query, startIndex) {
 
   return value.substring(startIndex - 50, endIndex + 50);
 }
+
 
 
 

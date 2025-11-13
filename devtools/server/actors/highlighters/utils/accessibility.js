@@ -436,6 +436,7 @@ class ContrastRatio extends AuditReport {
 
 
 
+
   update(audit) {
     const els = {};
     for (const key of ["label", "min", "max", "error", "separator"]) {
@@ -551,6 +552,7 @@ class Keyboard extends AuditReport {
 
 
 
+
   update(audit) {
     const el = this.getElement("accessible-keyboard");
     el.setAttribute("hidden", true);
@@ -622,6 +624,7 @@ class TextLabel extends AuditReport {
   }
 
   
+
 
 
 

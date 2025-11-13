@@ -82,7 +82,6 @@ const SUPPORTED_OPTIONS = {
 
 
 
-
 class TargetConfigurationActor extends Actor {
   constructor(watcherActor) {
     super(watcherActor.conn, targetConfigurationSpec);

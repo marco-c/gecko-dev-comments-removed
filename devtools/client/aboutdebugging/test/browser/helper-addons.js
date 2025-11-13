@@ -109,6 +109,7 @@ function createTemporaryXPI(xpiData) {
 
 
 
+
 function updateTemporaryXPI(xpiData, existingXPI) {
   info("Delete and regenerate XPI for " + xpiData.id);
 
@@ -126,6 +127,7 @@ function updateTemporaryXPI(xpiData, existingXPI) {
   }
   return xpiFile;
 }
+
 
 
 

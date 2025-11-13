@@ -182,6 +182,7 @@ function promiseForNotificationBar(notificationID, browser) {
 
 
 
+
 function waitForNotificationShown(notification, callback) {
   if (PopupNotifications.panel.state == "open") {
     executeSoon(callback);

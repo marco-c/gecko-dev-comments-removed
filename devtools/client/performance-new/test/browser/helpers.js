@@ -17,6 +17,7 @@ function tick() {
 
 
 
+
 function createPeriodicLogger() {
   let startTime = Date.now();
   let lastCount = 0;
@@ -42,6 +43,7 @@ function createPeriodicLogger() {
     }
   };
 }
+
 
 
 
@@ -91,6 +93,7 @@ function getElementByTooltip(container, tooltip) {
 
 
 
+
 function getElementByXPath(document, path) {
   return document.evaluate(
     path,
@@ -122,6 +125,7 @@ async function getElementFromDocumentByText(document, text) {
     return null;
   }, `Trying to find a visible element with the text "${text}".`);
 }
+
 
 
 
@@ -212,6 +216,7 @@ function waitForProfilerPopupEvent(window, eventName) {
 
 
 
+
 async function _toggleOpenProfilerPopup(window) {
   info("Toggle open the profiler popup.");
 
@@ -250,6 +255,7 @@ async function _toggleOpenProfilerPopup(window) {
 
 
 
+
 async function _closePopup(window) {
   const popupHiddenPromise = waitForProfilerPopupEvent(window, "popuphidden");
   info("> Trigger an escape key to hide the popup");
@@ -261,6 +267,7 @@ async function _closePopup(window) {
   
   await tick();
 }
+
 
 
 
@@ -326,6 +333,7 @@ function setProfilerFrontendUrl(origin, pathname) {
 
 
 
+
 async function checkTabLoadedProfile({
   initialTitle,
   successTitle,
@@ -354,6 +362,7 @@ async function checkTabLoadedProfile({
     }
   });
 }
+
 
 
 
@@ -401,6 +410,7 @@ async function waitForTabUrl({
     }
   });
 }
+
 
 
 
@@ -609,6 +619,7 @@ async function devToolsActiveConfigurationHasFeature(document, feature) {
 
 
 
+
 function _adaptCustomPresetExpectationToCustomBuild(fixture) {
   const supportedFeatures = Services.profiler.GetFeatures();
   info("Supported features are: " + supportedFeatures.join(", "));
@@ -631,9 +642,11 @@ function _adaptCustomPresetExpectationToCustomBuild(fixture) {
 
 
 
+
 function getDevtoolsCustomPresetContent(devtoolsDocument) {
   return devtoolsDocument.querySelector(".perf-presets-custom").innerText;
 }
+
 
 
 
@@ -747,6 +760,7 @@ async function makeSureProfilerPopupIsDisabled() {
     }
   });
 }
+
 
 
 

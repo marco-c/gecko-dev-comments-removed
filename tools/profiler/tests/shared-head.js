@@ -38,6 +38,7 @@ async function wait(time) {
 
 
 
+
 function escapeStringRegexp(string) {
   if (typeof string !== "string") {
     throw new TypeError("Expected a string");

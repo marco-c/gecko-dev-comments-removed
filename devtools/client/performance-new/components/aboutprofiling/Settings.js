@@ -217,6 +217,7 @@ const jvmThreadColumns = [
 
 
 
+
 class Settings extends PureComponent {
   
 
@@ -240,6 +241,7 @@ class Settings extends PureComponent {
 
 
 
+
   _handleThreadCheckboxChange = event => {
     const { threads, changeThreads } = this.props;
     const { checked, value } = event.target;
@@ -254,6 +256,7 @@ class Settings extends PureComponent {
   };
 
   
+
 
 
 
@@ -600,6 +603,7 @@ class Settings extends PureComponent {
 
 
 
+
 function _threadTextToList(threads) {
   return (
     threads
@@ -617,12 +621,14 @@ function _threadTextToList(threads) {
 
 
 
+
 function _intervalTextDisplay(value) {
   return Localized({
     id: "perftools-range-interval-milliseconds",
     $interval: value,
   });
 }
+
 
 
 

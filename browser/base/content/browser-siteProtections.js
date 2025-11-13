@@ -45,6 +45,7 @@ class ProtectionCategory {
 
 
 
+
   constructor(
     id,
     { prefEnabled },
@@ -113,6 +114,7 @@ class ProtectionCategory {
 
 
 
+
   get categoryItem() {
     
     
@@ -128,11 +130,13 @@ class ProtectionCategory {
 
 
 
+
   get blockingEnabled() {
     return this.enabled;
   }
 
   
+
 
 
 
@@ -194,6 +198,7 @@ class ProtectionCategory {
 
 
 
+
   async _generateSubViewListItems() {
     let contentBlockingLog = gBrowser.selectedBrowser.getContentBlockingLog();
     contentBlockingLog = JSON.parse(contentBlockingLog);
@@ -219,12 +224,14 @@ class ProtectionCategory {
 
 
 
+
   async getBlockerCount() {
     let { items } = await this._generateSubViewListItems();
     return items?.childElementCount ?? 0;
   }
 
   
+
 
 
 
@@ -275,6 +282,7 @@ class ProtectionCategory {
   }
 
   
+
 
 
 

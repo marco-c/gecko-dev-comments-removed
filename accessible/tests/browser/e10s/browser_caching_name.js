@@ -378,6 +378,7 @@ const markupTests = [
 
 
 
+
 async function testAttrRule(browser, target, rule, expected) {
   let { id, acc } = target;
   let { attr } = rule;
@@ -393,6 +394,7 @@ async function testAttrRule(browser, target, rule, expected) {
   
   target.acc = findAccessibleChildByID(event.accessible, id);
 }
+
 
 
 
@@ -434,6 +436,7 @@ async function testElmRule(browser, target, rule, expected) {
 
 
 
+
 async function testSubtreeRule(browser, target, rule, expected) {
   let { id, acc } = target;
 
@@ -451,6 +454,7 @@ async function testSubtreeRule(browser, target, rule, expected) {
   
   target.acc = findAccessibleChildByID(event.accessible, id);
 }
+
 
 
 

@@ -200,6 +200,7 @@ async function dropAfter(rowToDrag, rowToDropAfter, win) {
 
 
 
+
 async function dropBefore(rowToDrag, rowToDropBefore, win) {
   const rect = rowToDropBefore.getBoundingClientRect();
   await drop(

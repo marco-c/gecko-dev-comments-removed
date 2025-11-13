@@ -44,6 +44,7 @@ function assertNoCookies() {
 
 
 
+
 async function visitTestSites(urls = [ORIGIN_A, ORIGIN_B, ORIGIN_C]) {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
 

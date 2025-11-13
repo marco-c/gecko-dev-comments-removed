@@ -323,6 +323,7 @@ function Spinner(props, context) {
 
 
 
+
     handleEvent(event) {
       const { mouseState = {}, index, itemsView } = this.state;
       const { viewportTopOffset, setValue } = this.props;
@@ -470,6 +471,7 @@ function Spinner(props, context) {
     },
 
     
+
 
 
 

@@ -13,6 +13,7 @@ add_setup(clickTestSetup);
 
 
 
+
 async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
   if (mode == null) {
     throw new Error("Invalid cookie banner service mode.");

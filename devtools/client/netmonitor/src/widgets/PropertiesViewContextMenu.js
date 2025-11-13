@@ -39,6 +39,7 @@ class PropertiesViewContextMenu {
 
 
 
+
   open(event = {}, selection, { member, object }) {
     const menuItems = [
       {
@@ -67,6 +68,7 @@ class PropertiesViewContextMenu {
 
 
 
+
   copyAll(object, selection) {
     let buffer = "";
     if (selection.toString() !== "") {
@@ -87,6 +89,7 @@ class PropertiesViewContextMenu {
   }
 
   
+
 
 
 

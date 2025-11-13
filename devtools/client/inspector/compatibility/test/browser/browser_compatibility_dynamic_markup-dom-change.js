@@ -82,6 +82,7 @@ add_task(async function () {
 
 
 
+
 var clickContainer = async function (selector, inspector) {
   info("Clicking on the markup-container for node " + selector);
 

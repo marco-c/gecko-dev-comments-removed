@@ -1623,10 +1623,12 @@ async function scrollAndGetEditorLineGutterElement(dbg, line) {
 
 
 
+
 async function getNodeAtEditorLine(dbg, line) {
   await scrollEditorIntoView(dbg, line, 0);
   return getCMEditor(dbg).getElementAtLine(line);
 }
+
 
 
 
@@ -1661,12 +1663,14 @@ async function waitForConditionalPanelFocus(dbg) {
 
 
 
+
 async function openContextMenuInDebugger(dbg, elementName, line) {
   const waitForOpen = waitForContextMenu(dbg);
   info(`Open ${elementName} context menu on line ${line || ""}`);
   rightClickElement(dbg, elementName, line);
   return waitForOpen;
 }
+
 
 
 
@@ -1684,6 +1688,7 @@ async function selectEditorLinesAndOpenContextMenu(
   setSelection(dbg, startLine, endLine ?? startLine);
   return openContextMenuInDebugger(dbg, elementName, startLine);
 }
+
 
 
 
@@ -2366,6 +2371,7 @@ async function waitForCursorPosition(dbg, expectedLine) {
 
 
 
+
 async function setEditorCursorAt(dbg, line, column) {
   const cursorSet = waitForCursorPosition(dbg, line);
   await getCMEditor(dbg).setCursorAt(line, column);
@@ -2693,11 +2699,13 @@ async function getTokenElAtLine(dbg, expression, line, column = 0) {
 
 
 
+
 async function assertNoTooltip(dbg) {
   await wait(200);
   const el = findElement(dbg, "previewPopup");
   is(el, null, "Tooltip should not exist");
 }
+
 
 
 
@@ -2738,6 +2746,7 @@ async function assertPreviewTextValue(
     await closePreviewForToken(dbg, tokenEl);
   }
 }
+
 
 
 
@@ -2828,6 +2837,7 @@ async function assertPreviews(dbg, previews) {
 
 
 
+
 async function assertInlineExceptionPreview(
   dbg,
   line,
@@ -2885,6 +2895,7 @@ async function assertInlineExceptionPreview(
 
 
 
+
 async function waitForPreviewWithResult(dbg, result) {
   info(`Wait for preview popup with result ${result}`);
   await waitUntil(async () => {
@@ -2892,6 +2903,7 @@ async function waitForPreviewWithResult(dbg, result) {
     return previewEl.innerText.includes(result);
   });
 }
+
 
 
 
@@ -3041,6 +3053,7 @@ async function assertNodeIsFocused(dbg, index) {
   const node = findElement(dbg, "sourceNode", index);
   ok(node.classList.contains("focused"), `node ${index} is focused`);
 }
+
 
 
 
@@ -3440,6 +3453,7 @@ if (protocolHandler.hasSubstitution("testing-common")) {
   
   PromiseTestUtils.allowMatchingRejectionsGlobally(/DebuggerContextError/);
 }
+
 
 
 

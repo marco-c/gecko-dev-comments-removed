@@ -639,7 +639,6 @@ class TextPropertyEditor {
     this.valueSpan.appendChild(frag);
     if (
       this.valueSpan.textProperty?.name === "grid-template-areas" &&
-      this.isValid() &&
       (this.valueSpan.innerText.includes(`"`) ||
         this.valueSpan.innerText.includes(`'`))
     ) {
@@ -1863,6 +1862,7 @@ class TextPropertyEditor {
 
 
 
+
   #isNameValid() {
     return this.prop.isNameValid();
   }
@@ -1898,7 +1898,7 @@ class TextPropertyEditor {
       .map(line => line.split(" "))
       .map((line, i, lines) =>
         line.map((col, j) =>
-          col.padEnd(Math.max(...lines.map(l => l[j].length)), " ")
+          col.padEnd(Math.max(...lines.map(l => l[j]?.length || 0)), " ")
         )
       )
       .map(

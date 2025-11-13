@@ -130,6 +130,7 @@ class AccessibilityTree extends Component {
 
 
 
+
   onReorder(accessibleFront) {
     if (this.props.accessibles.has(accessibleFront.actorID)) {
       this.props.dispatch(fetchChildren(accessibleFront));
@@ -166,6 +167,7 @@ class AccessibilityTree extends Component {
 
 
 
+
   onNameChange(accessibleFront, parentFront) {
     const { accessibles, dispatch } = this.props;
     const accessibleWalkerFront = accessibleFront.getParent();
@@ -180,6 +182,7 @@ class AccessibilityTree extends Component {
   }
 
   
+
 
 
 

@@ -132,6 +132,7 @@ function getTempFile(leafName) {
 
 
 
+
 async function fileExists(path) {
   try {
     return (await IOUtils.stat(path)).type == "regular";

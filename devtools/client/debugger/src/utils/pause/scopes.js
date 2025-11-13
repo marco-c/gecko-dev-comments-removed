@@ -226,6 +226,7 @@ function _getFrameExceptionOrReturnedValueVariables(why, path) {
 
 
 
+
 export function getScopesItemsForSelectedFrame(
   why,
   selectedFrame,

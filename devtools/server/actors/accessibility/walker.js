@@ -479,6 +479,7 @@ class AccessibleWalkerActor extends Actor {
 
 
 
+
   getAccessibleFor(domNode) {
     
     return this.getDocument().then(() => {
@@ -495,6 +496,7 @@ class AccessibleWalkerActor extends Actor {
   }
 
   
+
 
 
 
@@ -749,6 +751,7 @@ class AccessibleWalkerActor extends Actor {
 
 
 
+
   async clearStyles(win) {
     const requests = this._loadedSheets.get(win);
     if (requests != null) {
@@ -766,6 +769,7 @@ class AccessibleWalkerActor extends Actor {
   }
 
   
+
 
 
 
@@ -885,6 +889,7 @@ class AccessibleWalkerActor extends Actor {
   }
 
   
+
 
 
 

@@ -32,6 +32,7 @@ let db;
 
 
 
+
 async function remoteSettingsSync({ created, updated, deleted }) {
   await RemoteSettings(COLLECTION_NAME).emit("sync", {
     data: {
@@ -48,9 +49,11 @@ async function remoteSettingsSync({ created, updated, deleted }) {
 
 
 
+
 const strArrayMatches = (arr1, arr2) =>
   arr1.length === arr2.length &&
   arr1.sort().every((value, index) => value === arr2.sort()[index]);
+
 
 
 
@@ -67,6 +70,7 @@ async function waitForAllowListState(expected) {
     "Imported the correct site host exceptions"
   );
 }
+
 
 
 

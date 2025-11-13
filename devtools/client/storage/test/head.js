@@ -545,6 +545,7 @@ async function selectTableItem(id) {
 
 
 
+
 function once(target, eventName, useCapture = false) {
   info("Waiting for event: '" + eventName + "' on " + target + ".");
 
@@ -952,6 +953,7 @@ async function checkState(state) {
 
 
 
+
 function containsFocus(doc, container) {
   let elm = doc.activeElement;
   while (elm) {
@@ -1036,6 +1038,7 @@ function sidebarParseTreeVisible(state) {
 
 
 
+
 async function performAdd(store) {
   const storeName = store.join(" > ");
   const toolbar = gPanelWindow.document.getElementById("storage-toolbar");
@@ -1100,6 +1103,7 @@ async function scroll() {
 
 
 
+
 function checkTree(doc, path, isExpected = true) {
   const doesExist = isInTree(doc, path);
   ok(
@@ -1107,6 +1111,7 @@ function checkTree(doc, path, isExpected = true) {
     `${path.join(" > ")} is ${isExpected ? "" : "not "}in the tree`
   );
 }
+
 
 
 
@@ -1124,11 +1129,13 @@ function isInTree(doc, path) {
 
 
 
+
 function getTreeNodeLabel(doc, path) {
   const treeId = JSON.stringify(path);
   return doc.querySelector(`[data-id='${treeId}'] .tree-widget-item`)
     .textContent;
 }
+
 
 
 
@@ -1153,9 +1160,11 @@ async function waitForStorageData(name, value) {
 
 
 
+
 function hasStorageData(name, value) {
   return gUI.table.items.get(name)?.value === value;
 }
+
 
 
 
@@ -1172,12 +1181,14 @@ function buildURLWithContent(domain, html, protocol = "https") {
 
 
 
+
 function checkCookieData(name, value) {
   ok(
     hasCookieData(name, value),
     `Table row has an entry for: ${name} with value: ${value}`
   );
 }
+
 
 
 

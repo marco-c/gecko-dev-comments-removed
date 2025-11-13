@@ -137,7 +137,6 @@ exports.createExtraActors = createExtraActors;
 
 
 
-
 function LazyActor(factory, parent, pool) {
   this._options = factory.options;
   this._parentActor = parent;

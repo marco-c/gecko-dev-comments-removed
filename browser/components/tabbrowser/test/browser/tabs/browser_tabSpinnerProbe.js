@@ -11,6 +11,7 @@ const MAX_HANG_TIME = 5 * 1000;
 
 
 
+
 function sum(aArray) {
   return aArray.reduce(function (previousValue, currentValue) {
     return previousValue + currentValue;
@@ -38,6 +39,7 @@ function hangContentProcess(browser, aMs) {
     }
   });
 }
+
 
 
 

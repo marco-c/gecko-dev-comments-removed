@@ -8,6 +8,7 @@
 
 
 
+
 exports.preventDefaultAndStopPropagation = function (event) {
   event.preventDefault();
   event.stopPropagation();

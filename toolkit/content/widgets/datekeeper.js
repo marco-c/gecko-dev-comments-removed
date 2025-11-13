@@ -53,6 +53,7 @@ function DateKeeper(props) {
 
 
 
+
     init({
       year,
       month,
@@ -132,6 +133,7 @@ function DateKeeper(props) {
 
 
 
+
     setCalendarMonth({ year = this.year, month = this.month }) {
       
       
@@ -150,6 +152,7 @@ function DateKeeper(props) {
 
 
 
+
     setSelection({ year, month, day }) {
       this.state.selection.year = year;
       this.state.selection.month = month;
@@ -157,6 +160,7 @@ function DateKeeper(props) {
     },
 
     
+
 
 
 
@@ -168,6 +172,7 @@ function DateKeeper(props) {
 
 
 
+
     setYear(year) {
       this.setCalendarMonth({ year, month: this.month });
     },
@@ -176,11 +181,13 @@ function DateKeeper(props) {
 
 
 
+
     setMonthByOffset(offset) {
       this.setCalendarMonth({ year: this.year, month: this.month + offset });
     },
 
     
+
 
 
 
@@ -212,6 +219,7 @@ function DateKeeper(props) {
     },
 
     
+
 
 
 
@@ -254,6 +262,7 @@ function DateKeeper(props) {
     },
 
     
+
 
 
 
@@ -352,6 +361,7 @@ function DateKeeper(props) {
 
 
 
+
     _checkIsOffStep(start, next) {
       
       if (next - start >= this.state.step) {
@@ -368,6 +378,7 @@ function DateKeeper(props) {
     },
 
     
+
 
 
 
@@ -399,6 +410,7 @@ function DateKeeper(props) {
 
 
 
+
     _getFirstCalendarDate(dateObj, firstDayOfWeek) {
       const daysOffset = 1 - DAYS_IN_A_WEEK;
       let firstDayOfMonth = this._newUTCDate(
@@ -419,6 +431,7 @@ function DateKeeper(props) {
     },
 
     
+
 
 
 

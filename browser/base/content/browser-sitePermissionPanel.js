@@ -207,6 +207,7 @@ var gPermissionPanel = {
 
 
 
+
   openPopup(event) {
     
     
@@ -986,6 +987,7 @@ var gPermissionPanel = {
 
 
 
+
   _createWebRTCPermissionItem(permission, id, key) {
     if (!["camera", "screen", "microphone", "speaker"].includes(id)) {
       throw new Error("Invalid permission id for WebRTC permission item.");
@@ -1133,6 +1135,7 @@ var gPermissionPanel = {
       .appendChild(indicator);
   },
 };
+
 
 
 

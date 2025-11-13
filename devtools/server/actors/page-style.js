@@ -589,6 +589,7 @@ class PageStyleActor extends Actor {
 
 
 
+
   async getApplied(node, options) {
     
     
@@ -648,6 +649,7 @@ class PageStyleActor extends Actor {
   }
 
   
+
 
 
 
@@ -897,6 +899,7 @@ class PageStyleActor extends Actor {
 
 
 
+
   _getElementRules(node, pseudo, inherited, options) {
     if (!Element.isInstance(node)) {
       return [];
@@ -1016,6 +1019,7 @@ class PageStyleActor extends Actor {
 
 
 
+
   getAppliedProps(node, entries, options) {
     if (options.inherited) {
       let parent = this.walker.parentNode(node);
@@ -1087,6 +1091,7 @@ class PageStyleActor extends Actor {
   }
 
   
+
 
 
 
@@ -1206,6 +1211,7 @@ class PageStyleActor extends Actor {
 
 
 
+
   getNewAppliedProps(node, rule) {
     const ruleActor = this._styleRef(rule);
     return this.getAppliedProps(node, [{ rule: ruleActor }], {
@@ -1214,6 +1220,7 @@ class PageStyleActor extends Actor {
   }
 
   
+
 
 
 

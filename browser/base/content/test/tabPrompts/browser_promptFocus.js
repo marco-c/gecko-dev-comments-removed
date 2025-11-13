@@ -107,6 +107,7 @@ add_task(async function test_tabdialogbox_tab_switch_focus() {
 
 
 
+
 function testAlertPromptFocus(prompt, index) {
   if (isMacOS) {
     is(

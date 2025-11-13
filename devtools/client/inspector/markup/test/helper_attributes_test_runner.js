@@ -20,6 +20,7 @@
 
 
 
+
 function runAddAttributesTests(tests, nodeOrSelector, inspector) {
   info("Running " + tests.length + " add-attributes tests");
   return (async function () {
@@ -31,6 +32,7 @@ function runAddAttributesTests(tests, nodeOrSelector, inspector) {
     }
   })();
 }
+
 
 
 
@@ -91,6 +93,7 @@ async function runAddAttributesTest(test, selector, inspector) {
 
 
 
+
 function runEditAttributesTests(tests, inspector) {
   info("Running " + tests.length + " edit-attributes tests");
   return (async function () {
@@ -102,6 +105,7 @@ function runEditAttributesTests(tests, inspector) {
     }
   })();
 }
+
 
 
 

@@ -313,7 +313,6 @@ function getShapePoint(node) {
 
 
 
-
 function getCSSVariables(propertyValue = "") {
   const variables = [];
   const parts = propertyValue.split(/var\(\s*--/);

@@ -39,6 +39,7 @@ function getElementWithinVideo(video, aValue) {
 
 
 
+
 function shadowRootQuerySelectorAll(element, selector) {
   const shadowRoot = SpecialPowers.wrap(element).openOrClosedShadowRoot;
   return shadowRoot?.querySelectorAll(selector);

@@ -60,6 +60,7 @@ class Toolbar extends Component {
 
 
 
+
   onKeyDown(event, connector) {
     switch (event.key) {
       case "Escape":

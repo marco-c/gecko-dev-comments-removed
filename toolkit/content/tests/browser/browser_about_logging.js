@@ -43,6 +43,7 @@ function clearUploadedProfilesDB(content) {
 
 
 
+
 function getElementByXPath(document, path) {
   return document.evaluate(
     path,

@@ -135,6 +135,7 @@ class CookiesPanel extends Component {
 
 
 
+
   getTargetCookiePath(searchResult) {
     if (!searchResult) {
       return null;

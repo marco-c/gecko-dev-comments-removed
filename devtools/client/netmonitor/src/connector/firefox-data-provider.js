@@ -378,6 +378,7 @@ class FirefoxDataProvider {
 
 
 
+
   async onStackTraceAvailable(resource) {
     if (!this.stackTraces.has(resource.resourceId)) {
       
@@ -763,6 +764,7 @@ class FirefoxDataProvider {
   }
 
   
+
 
 
 

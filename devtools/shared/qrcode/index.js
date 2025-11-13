@@ -45,6 +45,7 @@ Object.defineProperty(this, "decoder", {
 
 
 
+
 exports.findMinimumVersion = function (message, quality) {
   const msgLength = message.length;
   const qualityLevel = QRErrorCorrectLevel[quality];
@@ -61,6 +62,7 @@ exports.findMinimumVersion = function (message, quality) {
   }
   throw new Error("Message too large");
 };
+
 
 
 
@@ -92,6 +94,7 @@ exports.encodeToDataURI = function (message, quality, version) {
 
 
 
+
 exports.decodeFromURI = function (URI) {
   if (!decoder) {
     return Promise.reject();
@@ -100,6 +103,7 @@ exports.decodeFromURI = function (URI) {
     decoder.decodeFromURI(URI, resolve, reject);
   });
 };
+
 
 
 

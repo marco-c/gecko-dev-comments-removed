@@ -661,6 +661,7 @@
 
 
 
+
     _setDiacriticMatching(diacriticMatching) {
       this._matchDiacritics = diacriticMatching;
       this._updateDiacriticMatching();

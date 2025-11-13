@@ -431,7 +431,6 @@ class GridInspector {
 
 
 
-
   async getGrids() {
     const promises = [];
     try {

@@ -9,6 +9,7 @@
 
 
 
+
 import { prefs, features } from "../utils/prefs";
 import { searchKeys } from "../constants";
 
@@ -144,10 +145,10 @@ function update(state = initialUIState(), action) {
       return { ...state, highlightedLineRange: null };
     }
 
-    case "REMOVE_THREAD": {
+    case "REMOVE_SOURCES": {
       
-      const sourceId = state.highlightedLineRange?.sourceId;
-      if (sourceId && action.sources.some(s => s.id == sourceId)) {
+      const source = state.highlightedLineRange?.source;
+      if (source && action.sources.includes(source)) {
         return { ...state, highlightedLineRange: null };
       }
       return state;

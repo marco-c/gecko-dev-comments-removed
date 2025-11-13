@@ -762,6 +762,7 @@ class CssComputedView {
 
 
 
+
   setFilterStyles(value = "") {
     this.searchField.value = value;
     this.searchField.focus();
@@ -1635,6 +1636,7 @@ class SelectorView {
 
   /**
    * Decode for cssInfo.rule.status
+   *
    * @see SelectorView.prototype.#cacheStatusNames
    * @see CssLogic.STATUS
    */
@@ -1645,6 +1647,7 @@ class SelectorView {
   static CLASS_NAMES = ["parentmatch", "matched", "bestmatch"];
 
   
+
 
 
 

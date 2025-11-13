@@ -10,6 +10,7 @@ add_setup(clickTestSetup);
 
 
 
+
 function insertTestRules({ runContext }) {
   info("Clearing existing rules");
   Services.cookieBanners.resetRules(false);

@@ -10,6 +10,7 @@
 
 
 
+
 async function testComputedTimingPath(testData) {
   await addTab(URL_ROOT + "doc_multi_timings.html");
   await removeAnimatedElementsExcept(testData.map(t => `.${t.targetClass}`));

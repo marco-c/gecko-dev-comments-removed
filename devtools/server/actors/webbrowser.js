@@ -241,6 +241,7 @@ BrowserTabList.prototype.destroy = function () {
 
 
 
+
 BrowserTabList.prototype._getSelectedBrowser = function (window) {
   return window.gBrowser ? window.gBrowser.selectedBrowser : null;
 };

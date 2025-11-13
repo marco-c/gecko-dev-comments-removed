@@ -404,6 +404,7 @@ class Accessible extends Component {
 
 
 
+
 const findAccessibleTarget = (relations, actorID) => {
   for (const relationType in relations) {
     let targets = relations[relationType];
@@ -417,6 +418,7 @@ const findAccessibleTarget = (relations, actorID) => {
 
   return null;
 };
+
 
 
 
@@ -446,7 +448,9 @@ const findByPath = (path, items) => {
 
 
 
+
 const isNodeFront = value => value && value.typeName === "domnode";
+
 
 
 
@@ -479,6 +483,7 @@ const translateNodeFrontToGripWrapper = nodeFront => ({
   ...translateNodeFrontToGrip(nodeFront),
   typeName: nodeFront.typeName,
 });
+
 
 
 

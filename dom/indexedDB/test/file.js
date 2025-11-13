@@ -108,6 +108,7 @@ function verifyBlobProperties(blob1, blob2, fileId) {
 
 
 
+
 async function verifyBlobAsync(blob1, blob2, fileId) {
   verifyBlobProperties(blob1, blob2, fileId);
 

@@ -44,6 +44,7 @@ function getTitleFromPath(filePath) {
 
 
 
+
 function separateWords(str) {
   return (
     str
@@ -52,6 +53,7 @@ function separateWords(str) {
       .join(" ") || str
   );
 }
+
 
 
 
@@ -74,6 +76,7 @@ function parseStoriesFromMarkdown(source) {
 
 
 
+
 function getComponentName(resourcePath) {
   let componentName = "";
   if (resourcePath.includes("toolkit/content/widgets")) {
@@ -82,6 +85,7 @@ function getComponentName(resourcePath) {
   }
   return componentName;
 }
+
 
 
 
@@ -111,6 +115,7 @@ function getStoryTitle(resourcePath) {
     : `${storyPath}/${storyTitle}`;
   return title;
 }
+
 
 
 
@@ -150,6 +155,7 @@ function getImportPath(resourcePath) {
   }
   return `"toolkit-widgets/${componentName}/${componentName}.${fileExtension}"`;
 }
+
 
 
 

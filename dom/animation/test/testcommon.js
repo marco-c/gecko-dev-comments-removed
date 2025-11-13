@@ -129,6 +129,7 @@ function assert_properties_equal(actual, expected) {
 
 
 
+
 function valueFormat(offset, value, composite, easing) {
   return { offset, value, easing, composite };
 }

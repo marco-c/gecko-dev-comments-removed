@@ -88,6 +88,7 @@ exports.ReflowActor = class ReflowActor extends Actor {
 
 
 
+
 class Observable {
   constructor(targetActor, callback) {
     this.targetActor = targetActor;
@@ -345,6 +346,7 @@ class LayoutChangesObserver extends EventEmitter {
 
 
 
+
   _onReflow(start, end, isInterruptible) {
     if (gIgnoreLayoutChanges) {
       return;
@@ -380,6 +382,7 @@ exports.LayoutChangesObserver = LayoutChangesObserver;
 
 
 
+
 var observedWindows = new Map();
 function getLayoutChangesObserver(targetActor) {
   const observerData = observedWindows.get(targetActor);
@@ -406,6 +409,7 @@ exports.getLayoutChangesObserver = getLayoutChangesObserver;
 
 
 
+
 function releaseLayoutChangesObserver(targetActor) {
   const observerData = observedWindows.get(targetActor);
   if (!observerData) {
@@ -419,6 +423,7 @@ function releaseLayoutChangesObserver(targetActor) {
   }
 }
 exports.releaseLayoutChangesObserver = releaseLayoutChangesObserver;
+
 
 
 
@@ -461,6 +466,7 @@ ReflowObserver.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsIReflowObserver",
   "nsISupportsWeakReference",
 ]);
+
 
 
 

@@ -15,6 +15,7 @@ const {
 
 
 
+
 class Provider {
   constructor(accessibles, filtered, dispatch) {
     this.accessibles = accessibles;
@@ -23,6 +24,7 @@ class Provider {
   }
 
   
+
 
 
 
@@ -46,11 +48,13 @@ class Provider {
 
 
 
+
   hasChildren(accessible) {
     return accessible.childCount > 0;
   }
 
   
+
 
 
 
@@ -67,6 +71,7 @@ class Provider {
 
 
 
+
   getLabel(accessible) {
     return accessible.role;
   }
@@ -77,11 +82,13 @@ class Provider {
 
 
 
+
   getKey(accessible) {
     return accessible.actorID;
   }
 
   
+
 
 
 

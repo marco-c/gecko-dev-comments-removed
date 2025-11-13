@@ -51,10 +51,12 @@ const STYLESHEET_URI =
 
 
 
+
 function isXUL(window) {
   return window.document.documentElement?.namespaceURI === XUL_NS;
 }
 exports.isXUL = isXUL;
+
 
 
 
@@ -370,6 +372,7 @@ class CanvasFrameAnonymousContentHelper {
 
 
 
+
   removeEventListenerForElement(id, type) {
     const listeners = this.#listeners.get(type);
     if (!listeners) {
@@ -520,6 +523,7 @@ class CanvasFrameAnonymousContentHelper {
 
 
 
+
   createSVGNode(options) {
     if (!options.nodeType) {
       options.nodeType = "box";
@@ -531,6 +535,7 @@ class CanvasFrameAnonymousContentHelper {
   }
 
   
+
 
 
 
@@ -564,6 +569,7 @@ class CanvasFrameAnonymousContentHelper {
 }
 
 exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
+
 
 
 

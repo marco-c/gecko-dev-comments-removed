@@ -76,6 +76,7 @@ add_task(async function () {
 
 
 
+
 async function getActualDisplayedInput(hud) {
   const message = Array.from(
     hud.ui.outputNode.querySelectorAll(".message.command")

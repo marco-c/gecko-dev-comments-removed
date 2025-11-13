@@ -223,6 +223,7 @@ async function assertPseudoRemovedFromView(
 
 
 
+
 function hasPseudoClassLock(selector, pseudoClass) {
   return SpecialPowers.spawn(
     gBrowser.selectedBrowser,

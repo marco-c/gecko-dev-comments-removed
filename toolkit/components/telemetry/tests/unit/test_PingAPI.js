@@ -21,6 +21,7 @@ ChromeUtils.defineLazyGetter(this, "gPingsArchivePath", function () {
 
 
 
+
 function fakeStorageQuota(aArchiveQuota) {
   let { Policy } = ChromeUtils.importESModule(
     "resource://gre/modules/TelemetryStorage.sys.mjs"

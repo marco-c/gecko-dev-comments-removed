@@ -1129,6 +1129,7 @@ function getToplevelMessageCount(state) {
 
 
 
+
 function getMessageVisibility(
   message,
   {

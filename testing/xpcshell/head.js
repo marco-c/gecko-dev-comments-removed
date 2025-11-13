@@ -337,6 +337,7 @@ var _fakeIdleService = {
 
 
 
+
 function do_get_idle() {
   _fakeIdleService.deactivate();
   return Cc[_fakeIdleService.contractID].getService(Ci.nsIUserIdleService);
@@ -1610,6 +1611,7 @@ function do_send_remote_message(name, data) {
   }
   mm[sender](name, data);
 }
+
 
 
 

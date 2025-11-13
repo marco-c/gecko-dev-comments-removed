@@ -152,7 +152,6 @@ class Connector {
 
 
 
-
   clear({ isExplicitClear }) {
     
     this.dataProvider.clear();
@@ -488,11 +487,13 @@ class Connector {
 
 
 
+
   getToolbox() {
     return this.toolbox;
   }
 
   
+
 
 
 
@@ -504,6 +505,7 @@ class Connector {
   }
 
   
+
 
 
 

@@ -35,6 +35,7 @@ async function waitForListServiceInit(strippingEnabled) {
 
 
 
+
 function setDefaultPrefs(prefs) {
   let originalValues = new Map();
   let defaultPrefs = Services.prefs.getDefaultBranch("");

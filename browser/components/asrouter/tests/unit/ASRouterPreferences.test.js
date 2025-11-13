@@ -170,6 +170,7 @@ describe("ASRouterPreferences", () => {
 
 
 
+
       function providerJsonMatches(provider) {
         return sandbox.match(migrated => {
           const parsed = JSON.parse(migrated);

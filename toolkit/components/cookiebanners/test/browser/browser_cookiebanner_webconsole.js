@@ -12,6 +12,7 @@ const { SiteDataTestUtils } = ChromeUtils.importESModule(
 
 
 
+
 async function waitForCookieBannerHandledConsoleMsg() {
   let msg;
   let checkFn = msg =>

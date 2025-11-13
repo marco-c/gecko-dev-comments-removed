@@ -134,6 +134,7 @@ class Accordion extends Component {
 
 
 
+
   toggleItem(item) {
     const opened = !this.state.opened[item.id];
 

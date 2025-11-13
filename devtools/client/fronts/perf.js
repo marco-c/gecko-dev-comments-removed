@@ -52,6 +52,7 @@ class PerfFront extends FrontClassWithSpec(perfSpec) {
 
 
 
+
   async getPreviouslyCapturedProfileDataBulk(handle) {
     
 

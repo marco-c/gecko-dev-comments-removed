@@ -512,6 +512,7 @@ async function assertContextMenuDisabled(dbg, selector, shouldBeDisabled) {
 
 
 
+
 async function assertGutterBlackBoxBoxContextMenuItems(dbg, testFixtures) {
   const { blackboxedLine, nonBlackBoxedLine, blackboxedSourceState } =
     testFixtures;
@@ -568,6 +569,7 @@ async function assertGutterBlackBoxBoxContextMenuItems(dbg, testFixtures) {
 
 
 
+
 async function assertSourceTreeBlackBoxBoxContextMenuItems(dbg, testFixtures) {
   const { blackBoxedSourceTreeNode, nonBlackBoxedSourceTreeNode } =
     testFixtures;
@@ -593,6 +595,7 @@ async function assertSourceTreeBlackBoxBoxContextMenuItems(dbg, testFixtures) {
     await closeContextMenu(dbg, popup);
   }
 }
+
 
 
 

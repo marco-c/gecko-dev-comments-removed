@@ -1091,6 +1091,7 @@ CommandChain.prototype = {
 
 
 
+
   indexOf(functionOrName, occurrence) {
     occurrence = occurrence || 0;
     return this.commands.findIndex(func => {

@@ -404,6 +404,7 @@ DevToolsClient.prototype = {
 
 
 
+
   _sendRequest(request) {
     const actor = request.actor;
     this.expectReply(actor, request);
@@ -856,6 +857,7 @@ DevToolsClient.prototype = {
   },
 
   
+
 
 
 

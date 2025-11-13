@@ -557,10 +557,12 @@ function internalPersist(persistArgs) {
 
 
 
+
 function AutoChosen(aFileAutoChosen, aUriAutoChosen) {
   this.file = aFileAutoChosen;
   this.uri = aUriAutoChosen;
 }
+
 
 
 
@@ -585,6 +587,7 @@ function FileInfo(
   this.fileExt = aFileExt;
   this.uri = aUri;
 }
+
 
 
 
@@ -652,6 +655,7 @@ function initFileInfo(
     }
   } catch (e) {}
 }
+
 
 
 

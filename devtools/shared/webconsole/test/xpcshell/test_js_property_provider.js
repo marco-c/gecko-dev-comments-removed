@@ -727,10 +727,12 @@ function runChecks(dbgObject, environment, sandbox) {
 
 
 
+
 function test_has_no_results(results) {
   Assert.notEqual(results, null);
   Assert.equal(results.matches.size, 0);
 }
+
 
 
 
@@ -748,6 +750,7 @@ function test_has_result(results, requiredSuggestion) {
     )}`
   );
 }
+
 
 
 

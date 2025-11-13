@@ -50,6 +50,7 @@ function waitForCondition(condition, nextTest, errorMsg) {
 
 
 
+
 let typeInSearchField = async function (browser, text, fieldName) {
   await SpecialPowers.spawn(
     browser,

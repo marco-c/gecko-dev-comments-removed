@@ -79,6 +79,7 @@ add_task(async () => {
 
 
 
+
       async function getFlippedAttribute(browser, videoID) {
         let videoFlippedAttribute = await SpecialPowers.spawn(
           browser,
@@ -93,6 +94,7 @@ add_task(async () => {
       }
 
       
+
 
 
 

@@ -15,6 +15,7 @@ let databasePath;
 
 
 
+
 async function countDatabaseEntries() {
   let db = await Sqlite.openConnection({ path: databasePath });
   let result = await db.execute("SELECT COUNT(*) as count FROM sites");
@@ -26,6 +27,7 @@ async function countDatabaseEntries() {
 const MAX_PENDING_UPDATES = Services.prefs.getIntPref(
   "privacy.bounceTrackingProtection.storage.maxPendingUpdates"
 );
+
 
 
 
@@ -52,6 +54,7 @@ function waitForObserverMessage(topic) {
 async function waitForDBFlush() {
   await waitForObserverMessage("bounce-tracking-protection-storage-flushed");
 }
+
 
 
 

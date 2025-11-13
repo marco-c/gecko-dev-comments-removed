@@ -34,6 +34,7 @@ SimpleTest.requestCompleteLog();
 
 
 
+
 function loadHelperScript(filePath) {
   const testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
   Services.scriptloader.loadSubScript(testDir + "/" + filePath, this);
@@ -47,9 +48,11 @@ function loadHelperScript(filePath) {
 
 
 
+
 function getContainerForNodeFront(nodeFront, { markup }) {
   return markup.getContainer(nodeFront);
 }
+
 
 
 
@@ -102,6 +105,7 @@ function getFirstChildNodeValue(selector) {
 
 
 
+
 function waitForChildrenUpdated({ markup }) {
   info("Waiting for queued children updates to be handled");
   return new Promise(resolve => {
@@ -110,6 +114,7 @@ function waitForChildrenUpdated({ markup }) {
     });
   });
 }
+
 
 
 
@@ -149,6 +154,7 @@ var clickContainer = async function (selector, inspector) {
 
 
 
+
 function setEditableFieldValue(field, value, inspector) {
   field.focus();
   EventUtils.sendKey("return", inspector.panelWin);
@@ -157,6 +163,7 @@ function setEditableFieldValue(field, value, inspector) {
   input.value = value;
   EventUtils.sendKey("return", inspector.panelWin);
 }
+
 
 
 
@@ -217,6 +224,7 @@ var assertAttributes = async function (selector, expected) {
 
 
 
+
 function undoChange(inspector) {
   const canUndo = inspector.markup.undo.canUndo();
   ok(canUndo, "The last change in the markup-view can be undone");
@@ -237,6 +245,7 @@ function undoChange(inspector) {
 
 
 
+
 function redoChange(inspector) {
   const canRedo = inspector.markup.undo.canRedo();
   ok(canRedo, "The last change in the markup-view can be redone");
@@ -248,6 +257,7 @@ function redoChange(inspector) {
   inspector.markup.undo.redo();
   return mutated;
 }
+
 
 
 
@@ -289,6 +299,7 @@ var isEditingMenuDisabled = async function (
     pasteHTMLMenuItem.disabled
   );
 };
+
 
 
 
@@ -396,6 +407,7 @@ function collapseSelectionAndShiftTab(inspector) {
 
 
 
+
 function checkFocusedAttribute(attrName, editMode) {
   const focusedAttr = Services.focus.focusedElement;
   ok(focusedAttr, "Has a focused element");
@@ -426,6 +438,7 @@ var getAttributesFromEditor = async function (selector, inspector) {
 
   return [...nodeList].map(node => node.getAttribute("data-attr"));
 };
+
 
 
 
@@ -481,6 +494,7 @@ async function simulateNodeDrag(
 
 
 
+
 async function simulateNodeDrop(inspector, selector) {
   info("Simulate mouseUp on element " + selector);
   const container =
@@ -490,6 +504,7 @@ async function simulateNodeDrop(inspector, selector) {
   container.onMouseUp();
   inspector.markup._onMouseUp();
 }
+
 
 
 

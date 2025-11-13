@@ -231,6 +231,7 @@ class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _getBorderBounds() {
     const quads = this.currentQuads.border;
     if (!quads || !quads.length) {
@@ -289,6 +290,7 @@ class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 

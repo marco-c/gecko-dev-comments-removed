@@ -25,7 +25,6 @@ const { BLACKBOXING } = SUPPORTED_DATA;
 
 
 
-
 class BlackboxingActor extends Actor {
   constructor(watcherActor) {
     super(watcherActor.conn, blackboxingSpec);

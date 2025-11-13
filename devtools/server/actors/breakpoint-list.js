@@ -25,7 +25,6 @@ const { BREAKPOINTS, XHR_BREAKPOINTS, EVENT_BREAKPOINTS } = SUPPORTED_DATA;
 
 
 
-
 class BreakpointListActor extends Actor {
   constructor(watcherActor) {
     super(watcherActor.conn, breakpointListSpec);

@@ -145,7 +145,6 @@ var AboutTabCrashed = {
 
 
 
-
   onSetCrashReportAvailable(message) {
     let data = message.data;
 

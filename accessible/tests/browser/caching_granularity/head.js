@@ -28,6 +28,7 @@ loadScripts(
 
 
 
+
 async function verifyAttributeCached(accessible, attribute) {
   
   await untilCacheOk(() => {
@@ -47,6 +48,7 @@ async function verifyAttributeCached(accessible, attribute) {
 
 
 
+
 function verifyAttributeCachedNoRetry(accessible, attribute) {
   try {
     accessible.cache.getStringProperty(attribute);
@@ -55,6 +57,7 @@ function verifyAttributeCachedNoRetry(accessible, attribute) {
     ok(false, `${attribute} is not present in the cache`);
   }
 }
+
 
 
 
@@ -90,6 +93,7 @@ async function testAttributeCachePresence(accessible, attribute, queryCb) {
   
   await verifyAttributeCached(accessible, attribute);
 }
+
 
 
 

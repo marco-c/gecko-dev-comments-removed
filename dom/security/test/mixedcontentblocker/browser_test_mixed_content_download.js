@@ -66,6 +66,7 @@ const downloadMonitoringView = {
 
 
 
+
 function shouldTriggerDownload(action = "save") {
   if (
     Services.prefs.getBoolPref(

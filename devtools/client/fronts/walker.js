@@ -439,6 +439,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
 
 
+
   pick(doFocus) {
     if (this._isPicking) {
       return Promise.resolve();

@@ -178,6 +178,7 @@ var gSearchResultsPane = {
 
 
 
+
   highlightMatches(textNodes, nodeSizes, textSearch, searchPhrase) {
     if (!searchPhrase) {
       return false;

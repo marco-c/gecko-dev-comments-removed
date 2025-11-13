@@ -2562,8 +2562,6 @@ const PREF_SYSTEM_STORIES_ENABLED = "feeds.system.topstories";
 
 
 
-
-
 function useIntersectionObserver(callback, threshold = 0.3) {
   const elementsRef = (0,external_React_namespaceObject.useRef)([]);
   const triggeredElements = (0,external_React_namespaceObject.useRef)(new WeakSet());
@@ -2590,6 +2588,7 @@ function useIntersectionObserver(callback, threshold = 0.3) {
   }, [callback, threshold]);
   return elementsRef;
 }
+
 
 
 
@@ -3457,6 +3456,7 @@ const PREF_OHTTP_MERINO = "discoverystream.merino-provider.ohttp.enabled";
 const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
 const DSCard_PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_FAVICONS_ENABLED = "discoverystream.publisherFavicon.enabled";
+
 
 
 
@@ -9751,6 +9751,7 @@ function topSiteIconType(link) {
   }
   return "no_image";
 }
+
 
 
 

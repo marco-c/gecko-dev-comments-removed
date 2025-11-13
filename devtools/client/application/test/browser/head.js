@@ -128,6 +128,7 @@ function selectPage(panel, page) {
 
 
 
+
   info(`Selecting application page: ${page}`);
   const doc = panel.panelWin.document;
   const navItem = doc.querySelector(`.js-sidebar-${page}`);

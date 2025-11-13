@@ -188,6 +188,7 @@ async function waitForTelemetry(browser) {
 
 
 
+
 async function enableEditor(browser, name, expectedPageRendered) {
   info("Enable editor: " + name);
   let loadPromise;
@@ -229,6 +230,7 @@ async function enableEditor(browser, name, expectedPageRendered) {
   }
   await TestUtils.waitForTick();
 }
+
 
 
 
@@ -278,6 +280,7 @@ async function getSpanBox(browser, text, pageNumber = 1) {
 
 
 
+
 async function countElements(browser, selector) {
   return SpecialPowers.spawn(browser, [selector], async function (selector) {
     return new Promise(resolve => {
@@ -287,6 +290,7 @@ async function countElements(browser, selector) {
     });
   });
 }
+
 
 
 
@@ -325,6 +329,7 @@ async function clickAt(browser, x, y, n = 1) {
 
 
 
+
 async function clickOn(browser, selector) {
   await waitForSelector(browser, selector);
   const [x, y] = await SpecialPowers.spawn(
@@ -346,6 +351,7 @@ async function clickOn(browser, selector) {
 function focusEditorLayer(browser) {
   return focus(browser, ".annotationEditorLayer");
 }
+
 
 
 
@@ -390,6 +396,7 @@ async function hitKey(browser, char) {
 
 
 
+
 async function write(browser, text) {
   info(`Write: ${text}`);
   for (const char of text.split("")) {
@@ -404,6 +411,7 @@ async function escape(browser) {
   info("Escape");
   await hitKey(browser, "KEY_Escape");
 }
+
 
 
 

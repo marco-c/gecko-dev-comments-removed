@@ -10,6 +10,7 @@
 
 
 
+
 function generateTabWithInfo({ title, url, description = "" }) {
   return {
     label: title,
@@ -21,6 +22,7 @@ function generateTabWithInfo({ title, url, description = "" }) {
     },
   };
 }
+
 
 
 

@@ -12,6 +12,7 @@ let btpGracePeriodSec = Services.prefs.getIntPref(
 
 
 
+
 async function waitForBTPConsoleMessage(type, siteHost) {
   if (!["classified", "purged"].includes(type)) {
     throw new Error("Invalid message type argument passed.");

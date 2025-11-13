@@ -44,6 +44,7 @@ registerCleanupFunction(() => {
 
 
 
+
 async function addJsonViewTab(
   url,
   { appReadyState = "complete", docReadyState = "complete" } = {}
@@ -214,6 +215,7 @@ function getElementAttr(selector, attr) {
     }
   );
 }
+
 
 
 

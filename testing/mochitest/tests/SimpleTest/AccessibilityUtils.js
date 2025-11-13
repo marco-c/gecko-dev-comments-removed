@@ -157,6 +157,7 @@ this.AccessibilityUtils = (function () {
 
 
 
+
   function getLabels(accessible) {
     const relation = accessible.getRelationByType(
       Ci.nsIAccessibleRelation.RELATION_LABELLED_BY
@@ -806,6 +807,7 @@ this.AccessibilityUtils = (function () {
 
 
 
+
   function a11yWarn(message, { DOMNode }) {
     SimpleTest.todo(false, buildMessage(message, DOMNode));
   }
@@ -1054,6 +1056,7 @@ this.AccessibilityUtils = (function () {
   }
 
   
+
 
 
 

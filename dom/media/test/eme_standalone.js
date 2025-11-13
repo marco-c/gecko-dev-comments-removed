@@ -42,6 +42,7 @@ var EmeHelper = class EmeHelper {
 
 
 
+
   static GetClearkeyKeySystemString() {
     return "org.w3.clearkey";
   }
@@ -49,6 +50,7 @@ var EmeHelper = class EmeHelper {
   
 
   
+
 
 
 
@@ -68,6 +70,7 @@ var EmeHelper = class EmeHelper {
 
 
 
+
   static HexToBase64(hexString) {
     return btoa(
       hexString
@@ -82,6 +85,7 @@ var EmeHelper = class EmeHelper {
   }
 
   
+
 
 
 
@@ -113,11 +117,13 @@ var EmeHelper = class EmeHelper {
 
 
 
+
   SetKeySystem(keySystem) {
     this._keySystem = keySystem;
   }
 
   
+
 
 
 
@@ -137,11 +143,13 @@ var EmeHelper = class EmeHelper {
 
 
 
+
   SetAudioCapabilities(audioCapabilities) {
     this._audioCapabilities = audioCapabilities;
   }
 
   
+
 
 
 
@@ -176,6 +184,7 @@ var EmeHelper = class EmeHelper {
 
 
 
+
   RemoveKeyIdAndKey(keyId) {
     this._keyMap.delete(keyId);
   }
@@ -183,6 +192,7 @@ var EmeHelper = class EmeHelper {
   
 
   
+
 
 
 
@@ -230,6 +240,7 @@ var EmeHelper = class EmeHelper {
   }
 
   
+
 
 
 

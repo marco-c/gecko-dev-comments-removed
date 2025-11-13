@@ -30,6 +30,7 @@ function trace(text) {
 
 
 
+
 function makeHandler(nameTemplate, eventName, expectedStates) {
   return function (e) {
     var name = nameTemplate.replace(/%1/, eventName);

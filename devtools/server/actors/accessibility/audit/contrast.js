@@ -79,6 +79,7 @@ loader.lazyGetter(this, "worker", () => new lazy.DevToolsWorker(WORKER_URL));
 
 
 
+
 function getImageCtx(win, bounds, zoom, scale, node) {
   const doc = win.document;
   const canvas = doc.createElementNS("http://www.w3.org/1999/xhtml", "canvas");

@@ -341,6 +341,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
+
   _flushIframeTargets(topInnerWindowID) {
     while (this._earlyIframeTargets[topInnerWindowID]?.length > 0) {
       const actor = this._earlyIframeTargets[topInnerWindowID].shift();

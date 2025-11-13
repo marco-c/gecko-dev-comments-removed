@@ -35,6 +35,7 @@ function details(state = getInitialState(), action) {
 
 
 
+
 function onUpdateDetails(state, action) {
   const { accessible, response, error } = action;
   if (error) {

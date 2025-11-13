@@ -92,6 +92,7 @@ const EXPANDABLE_PROPS = ["actions", "states", "attributes"];
 
 
 
+
 async function addTestTab(
   url,
   { waitUntilDocumentAccessibleInState = true } = {}
@@ -140,6 +141,7 @@ async function initAccessibilityPanel(tab = gBrowser.selectedTab) {
   });
   return toolbox.getCurrentPanel();
 }
+
 
 
 
@@ -208,6 +210,7 @@ function isVisible(element) {
 
 
 
+
 function checkSelected(row, expected) {
   if (!expected) {
     return true;
@@ -230,6 +233,7 @@ function checkSelected(row, expected) {
 
 
 
+
 function checkLevel(row, expected) {
   if (!expected) {
     return true;
@@ -237,6 +241,7 @@ function checkLevel(row, expected) {
 
   return parseInt(row.getAttribute("aria-level"), 10) === expected;
 }
+
 
 
 
@@ -265,6 +270,7 @@ async function checkTreeState(doc, expected) {
 
   ok(hasExpectedStructure, "Tree structure is correct.");
 }
+
 
 
 
@@ -308,6 +314,7 @@ function relationsMatch(relations, expected) {
 
 
 
+
 function parseNumReplacer(_, value) {
   if (typeof value === "number") {
     return value.toFixed(2);
@@ -315,6 +322,7 @@ function parseNumReplacer(_, value) {
 
   return value;
 }
+
 
 
 
@@ -345,6 +353,7 @@ async function checkAuditState(store, expectedState) {
     return true;
   });
 }
+
 
 
 
@@ -392,6 +401,7 @@ async function checkSidebarState(store, expectedState) {
 
 
 
+
 async function checkToolbarPrefsState(doc, toolbarPrefValues, store) {
   info("Checking toolbar prefs state.");
   const [hasExpectedStructure] = await Promise.all([
@@ -425,6 +435,7 @@ async function checkToolbarPrefsState(doc, toolbarPrefValues, store) {
 
 
 
+
 async function checkToolbarState(doc, activeToolbarFilters) {
   info("Checking toolbar state.");
   const hasExpectedStructure = await BrowserTestUtils.waitForCondition(
@@ -441,6 +452,7 @@ async function checkToolbarState(doc, activeToolbarFilters) {
 
   ok(hasExpectedStructure, "Toolbar state is correct.");
 }
+
 
 
 
@@ -522,6 +534,7 @@ async function focusAccessibleProperties(doc) {
 
 
 
+
 async function selectProperty(doc, id) {
   const win = doc.defaultView;
   let selected = false;
@@ -559,6 +572,7 @@ async function selectProperty(doc, id) {
 
 
 
+
 function selectRow(doc, rowNumber) {
   info(`Selecting row ${rowNumber}.`);
   AccessibilityUtils.setEnv({
@@ -572,6 +586,7 @@ function selectRow(doc, rowNumber) {
   );
   AccessibilityUtils.resetEnv();
 }
+
 
 
 
@@ -600,6 +615,7 @@ async function toggleRow(doc, rowNumber) {
     "Twisty updated."
   );
 }
+
 
 
 
@@ -743,6 +759,7 @@ async function selectAccessibleForNode(env, selector) {
 
 
 
+
 async function runA11yPanelTests(tests, env) {
   for (const { desc, setup, expected } of tests) {
     info(desc);
@@ -791,6 +808,7 @@ async function runA11yPanelTests(tests, env) {
 
 
 
+
 function buildURL(uri, options = {}) {
   if (options.remoteIframe) {
     const srcURL = new URL(`http://example.net/document-builder.sjs`);
@@ -825,9 +843,11 @@ function buildURL(uri, options = {}) {
 
 
 
+
 function addA11yPanelTestsTask(tests, uri, msg, options) {
   addA11YPanelTask(msg, uri, env => runA11yPanelTests(tests, env), options);
 }
+
 
 
 
@@ -846,6 +866,7 @@ async function closeTabToolboxAccessibility(tab = gBrowser.selectedTab) {
   await removeTab(tab);
   await new Promise(resolve => setTimeout(resolve, 0));
 }
+
 
 
 

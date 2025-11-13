@@ -55,6 +55,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
+
   async listAllServiceWorkers(workerTargets) {
     const result = [];
     const { registrations } = await this.listServiceWorkerRegistrations();
@@ -318,6 +319,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
   }
 
   
+
 
 
 

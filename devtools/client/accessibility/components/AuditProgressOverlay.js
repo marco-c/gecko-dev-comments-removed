@@ -20,6 +20,7 @@ const Localized = React.createFactory(FluentReact.Localized);
 
 
 
+
 function TextProgressBar({ id, fluentId }) {
   return Localized(
     {

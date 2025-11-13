@@ -17,6 +17,7 @@ let db;
 
 
 
+
 async function loadTracker({ topLevelURL, usePrivateWindow }) {
   let win = window;
 

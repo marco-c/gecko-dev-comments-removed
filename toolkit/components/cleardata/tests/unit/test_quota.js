@@ -26,6 +26,7 @@ const skipLocalStorageTests = Services.prefs.getBoolPref(
 
 
 
+
 function getOrigin(host, topLevelBaseDomain, originAttributes = {}) {
   return getPrincipal(host, topLevelBaseDomain, originAttributes).origin;
 }
@@ -126,6 +127,7 @@ async function setTestEntries(storageType) {
 
 
 
+
 async function runTestBaseDomain(storageType) {
   await new Promise(aResolve => {
     Services.clearData.deleteData(
@@ -188,6 +190,7 @@ async function runTestBaseDomain(storageType) {
     );
   });
 }
+
 
 
 
@@ -256,6 +259,7 @@ async function runTestHost(storageType) {
     );
   });
 }
+
 
 
 

@@ -24,6 +24,7 @@ function ok(test, message) {
 
 
 
+
 function makeHandler(nameTemplate, eventName, expectedState, prefix, custom) {
   prefix += ": ";
   return function (e) {

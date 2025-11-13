@@ -52,6 +52,7 @@ class ConsoleAPIListener {
 
 
 
+
   window = null;
 
   

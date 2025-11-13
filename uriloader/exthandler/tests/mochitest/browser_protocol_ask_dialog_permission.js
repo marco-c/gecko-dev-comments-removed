@@ -55,6 +55,7 @@ const NULL_PRINCIPAL_SCHEME = Services.scriptSecurityManager
 
 
 
+
 function getSkipProtoDialogPermissionKey(aProtocolScheme) {
   return (
     PROTOCOL_HANDLER_OPEN_PERM_KEY + PERMISSION_KEY_DELIMITER + aProtocolScheme
@@ -87,11 +88,13 @@ function initTestHandlers() {
 
 
 
+
 function updateAlwaysAsk(scheme, ask) {
   let handlerInfo = HandlerServiceTestUtils.getHandlerInfo(scheme);
   handlerInfo.alwaysAskBeforeHandling = ask;
   gHandlerService.store(handlerInfo);
 }
+
 
 
 
@@ -106,6 +109,7 @@ function testAlwaysAsk(scheme, ask) {
     "Should have correct alwaysAsk state."
   );
 }
+
 
 
 
@@ -140,6 +144,7 @@ function useServerRedirect(serverRedirect) {
 
 
 
+
 function useTriggeringPrincipal(principal = undefined) {
   return async (browser, scheme) => {
     let uri = `${scheme}://test`;
@@ -149,6 +154,7 @@ function useTriggeringPrincipal(principal = undefined) {
     browser.loadURI(Services.io.newURI(uri), { triggeringPrincipal });
   };
 }
+
 
 
 
@@ -331,6 +337,7 @@ async function testOpenProto(
 
 
 
+
 async function testCheckbox(
   dialogEl,
   dialogType,
@@ -380,6 +387,7 @@ async function testCheckbox(
 
 
 
+
 function waitForHandlerURL(browser, scheme) {
   return BrowserTestUtils.browserLoaded(
     browser,
@@ -387,6 +395,7 @@ function waitForHandlerURL(browser, scheme) {
     url => url == `${ORIGIN1}/?url=${scheme}%3A%2F%2Ftest`
   );
 }
+
 
 
 
@@ -403,6 +412,7 @@ function testPermission(principal, scheme, hasPerm) {
   }.`;
   is(result == Services.perms.ALLOW_ACTION, hasPerm, message);
 }
+
 
 
 
@@ -432,6 +442,7 @@ function getDialogType(dialog) {
   }
   throw new Error("Dialog with unexpected url");
 }
+
 
 
 

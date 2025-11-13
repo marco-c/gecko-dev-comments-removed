@@ -27,6 +27,7 @@ registerCleanupFunction(function () {
 
 
 
+
 async function runRequestStorageAccess({
   withUserActivation = false,
   sandboxAttr = "",

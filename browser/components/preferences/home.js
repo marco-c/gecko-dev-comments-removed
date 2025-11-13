@@ -138,6 +138,7 @@ var gHomePane = {
 
 
 
+
   async _updateMenuInterface(selectId) {
     let selects;
     if (selectId) {
@@ -289,6 +290,7 @@ var gHomePane = {
 
 
 
+
   _renderCustomSettings(options = {}) {
     let { shouldShow, isControlled } = options;
     const customSettingsContainerEl = document.getElementById("customSettings");
@@ -327,6 +329,7 @@ var gHomePane = {
 
 
 
+
   _isHomePageDefaultValue() {
     const startupPref = Preferences.get("browser.startup.page");
     return (
@@ -335,6 +338,7 @@ var gHomePane = {
   },
 
   
+
 
 
 
@@ -351,6 +355,7 @@ var gHomePane = {
 
 
 
+
   _isTabAboutPreferencesOrSettings(aTab) {
     return (
       aTab.linkedBrowser.currentURI.spec.startsWith("about:preferences") ||
@@ -359,6 +364,7 @@ var gHomePane = {
   },
 
   
+
 
 
 

@@ -671,6 +671,7 @@ async function getMessagePayload(payload, getLongString) {
 
 
 
+
 function processNetworkUpdates(update) {
   const newRequest = {};
   for (const [key, value] of Object.entries(update)) {
@@ -700,6 +701,7 @@ function isBase64(payload) {
     return false;
   }
 }
+
 
 
 
@@ -762,6 +764,7 @@ function parseJSON(payloadUnclean) {
     strippedChars,
   };
 }
+
 
 
 

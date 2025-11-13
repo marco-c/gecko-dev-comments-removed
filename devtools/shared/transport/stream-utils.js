@@ -277,15 +277,18 @@ class AsyncStreamToArrayBufferCopier {
 
 
 
+
   #binaryStream;
 
   
 
 
 
+
   #outputArray;
 
   
+
 
 
 
@@ -297,9 +300,11 @@ class AsyncStreamToArrayBufferCopier {
 
 
 
+
   #count;
 
   
+
 
 
 
@@ -419,9 +424,11 @@ class ArrayBufferToAsyncStreamCopier {
 
 
 
+
   #binaryStream;
 
   
+
 
 
 
@@ -432,9 +439,11 @@ class ArrayBufferToAsyncStreamCopier {
 
 
 
+
   #pointer = 0;
 
   
+
 
 
 

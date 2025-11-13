@@ -22,7 +22,7 @@
 
 const IGNORED_URLS = ["debugger eval code", "XStringBundle"];
 const IGNORED_EXTENSIONS = ["css", "svg", "png"];
-import { isPretty, getRawSourceURL } from "../utils/source";
+import { getRawSourceURL } from "../utils/source";
 import { prefs } from "../utils/prefs";
 import { getDisplayURL } from "../utils/sources-tree/getURL";
 
@@ -394,7 +394,7 @@ function isSourceVisibleInSourceTree(
     !!source.url &&
     !IGNORED_EXTENSIONS.includes(source.displayURL.fileExtension) &&
     !IGNORED_URLS.includes(source.url) &&
-    !isPretty(source) &&
+    !source.isPrettyPrinted &&
     
     
     (!source.isExtension || showContentScripts || debuggeeIsWebExtension)
@@ -499,6 +499,7 @@ function addSource(threadItems, source, sourceActor) {
 
   return true;
 }
+
 
 
 

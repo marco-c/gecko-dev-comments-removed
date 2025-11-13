@@ -16,6 +16,7 @@ import { getEditor } from "../utils/editor/index";
 
 
 
+
 export function willNavigate(event) {
   return async function ({ dispatch, getState, sourceMapLoader }) {
     sourceQueue.clear();

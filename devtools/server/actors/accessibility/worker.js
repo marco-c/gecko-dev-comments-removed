@@ -6,8 +6,6 @@
 
 
 
-
-
 importScripts("resource://gre/modules/workers/require.js");
 const { createTask } = require("resource://devtools/shared/worker/helper.js");
 
@@ -39,6 +37,7 @@ function calculateLuminance(rgba) {
   }
   return 0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2];
 }
+
 
 
 

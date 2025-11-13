@@ -162,6 +162,7 @@ function setCookieBehaviorPref(cookieBehavior, runInPrivateWindow) {
 
 
 
+
 async function waitForExceptionListServiceSynced(urlPattern) {
   info(
     `Waiting for the exception list service to initialize for ${urlPattern}`
@@ -179,6 +180,7 @@ async function waitForExceptionListServiceSynced(urlPattern) {
       .some(entry => entry.urlPattern === urlPattern);
   }, "Exception list service initialized");
 }
+
 
 
 
@@ -208,6 +210,7 @@ async function waitForContentBlockingEvent(win) {
 
 
 
+
 async function remoteSettingsSync(
   collectionName,
   { created, updated, deleted, current }
@@ -222,6 +225,7 @@ async function remoteSettingsSync(
     },
   });
 }
+
 
 
 

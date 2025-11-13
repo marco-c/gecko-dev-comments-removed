@@ -101,6 +101,7 @@ function _invalidLeaveTarget(target) {
 
 
 
+
 export function onMouseOver(editor) {
   let prevTokenPos = null;
 

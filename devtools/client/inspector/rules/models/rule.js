@@ -211,6 +211,7 @@ class Rule {
 
 
 
+
   async getCompatibilityIssues() {
     if (!this.compatibilityIssues) {
       this.compatibilityIssues =
@@ -907,6 +908,7 @@ class Rule {
   }
 
   
+
 
 
 

@@ -16,6 +16,7 @@ const MAX_DATA_URL_LENGTH = 40;
 
 
 
+
 loader.lazyRequireGetter(
   this,
   "InspectorCSSParserWrapper",
@@ -42,6 +43,7 @@ exports.FILTER = {
   
   UA: "ua",
 };
+
 
 
 
@@ -604,6 +606,7 @@ exports.hasVisitedState = hasVisitedState;
 
 
 
+
 function positionInNodeList(element, nodeList) {
   for (let i = 0; i < nodeList.length; i++) {
     if (element === nodeList[i]) {
@@ -640,6 +643,7 @@ function findNodeAndContainer(node) {
     node,
   };
 }
+
 
 
 

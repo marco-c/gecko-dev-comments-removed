@@ -259,6 +259,7 @@ class InspectorActor extends Actor {
 
 
 
+
   resolveRelativeURL(url, node) {
     const document = InspectorActorUtils.isNodeDead(node)
       ? this.window.document
@@ -298,6 +299,7 @@ class InspectorActor extends Actor {
   }
 
   
+
 
 
 

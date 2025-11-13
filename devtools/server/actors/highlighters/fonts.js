@@ -66,6 +66,7 @@ class FontsHighlighter {
 
 
 
+
   show(node, options) {
     this.currentNode = node;
     const doc = this.currentNodeDocument;

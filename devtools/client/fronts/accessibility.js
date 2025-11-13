@@ -200,6 +200,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
 
 
 
+
   async _accumulateSnapshot(snapshot) {
     const { childCount, useChildTargetToFetchChildren } = snapshot;
     
@@ -299,6 +300,7 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
 
 
 
+
   async getAncestry(accessible) {
     const ancestry = await super.getAncestry(accessible);
 
@@ -340,6 +342,7 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
   }
 
   
+
 
 
 

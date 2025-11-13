@@ -321,6 +321,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _isNodeValid(node) {
     return (
       node && (isNodeValid(node) || isNodeValid(node, nodeConstants.TEXT_NODE))
@@ -458,6 +459,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 
@@ -664,6 +666,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
 
 
+
   _nodeNeedsHighlighting() {
     return (
       this.currentQuads.margin.length ||
@@ -702,6 +705,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
   }
 
   
+
 
 
 

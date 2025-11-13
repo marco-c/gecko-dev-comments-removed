@@ -52,6 +52,7 @@ function promiseWebAuthnGetAssertionDiscoverableBC(
 
 
 
+
 async function runWebAuthTest(triggerFn, userActivationSiteHost) {
   is(
     bounceTrackingProtection.testGetUserActivationHosts({}).length,
@@ -77,6 +78,7 @@ async function runWebAuthTest(triggerFn, userActivationSiteHost) {
 
   bounceTrackingProtection.clearAll();
 }
+
 
 
 

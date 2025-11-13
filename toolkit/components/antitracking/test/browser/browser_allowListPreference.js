@@ -13,6 +13,7 @@ const COLLECTION_NAME = "url-classifier-exceptions";
 
 
 
+
 async function loadTracker({ trackerUrl }) {
   let win = window;
   const topLevelURL = "https://example.com/";
@@ -92,6 +93,7 @@ add_setup(async function () {
     await SpecialPowers.flushPrefEnv();
   });
 });
+
 
 
 

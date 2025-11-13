@@ -541,6 +541,7 @@ class EyeDropper {
 
 
 
+
   copyColor() {
     
     const color = toColorString(this.centerColor, this.format);
@@ -560,6 +561,7 @@ class EyeDropper {
 }
 
 exports.EyeDropper = EyeDropper;
+
 
 
 
@@ -592,6 +594,7 @@ function getWindowAsImageData(win) {
 
 
 
+
 function toColorString(rgb, format) {
   const [r, g, b] = rgb;
 
@@ -610,6 +613,7 @@ function toColorString(rgb, format) {
       return hexString(rgb);
   }
 }
+
 
 
 

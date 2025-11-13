@@ -42,6 +42,7 @@ var lastTimestamp = Date.now();
 
 
 
+
 function checkChange(XS, aPath, aChange) {
   Assert.ok(aPath.exists());
   lastTimestamp += 10000;

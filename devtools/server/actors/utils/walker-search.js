@@ -317,6 +317,7 @@ class WalkerSearch {
 
 
 
+
   search(query, options = {}) {
     options.searchMethod =
       options.searchMethod || WalkerSearch.SEARCH_METHOD_CONTAINS;

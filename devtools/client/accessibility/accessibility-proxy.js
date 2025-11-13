@@ -187,6 +187,7 @@ class AccessibilityProxy {
 
 
 
+
   async withAllAccessibilityFronts(taskFn) {
     const accessibilityFronts = await this.commands.targetCommand.getAllFronts(
       [this.commands.targetCommand.TYPES.FRAME],
@@ -207,6 +208,7 @@ class AccessibilityProxy {
   }
 
   
+
 
 
 
@@ -241,6 +243,7 @@ class AccessibilityProxy {
   }
 
   
+
 
 
 

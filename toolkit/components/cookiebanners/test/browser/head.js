@@ -386,6 +386,7 @@ function insertTestCookieRules() {
 
 
 
+
 async function runEventTest({ mode, detectOnly, initFn, triggerFn, testURL }) {
   await SpecialPowers.pushPrefEnv({
     set: [

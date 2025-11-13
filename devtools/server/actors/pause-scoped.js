@@ -11,6 +11,7 @@ class PauseScopedObjectActor extends ObjectActor {
 
 
 
+
   constructor(threadActor, obj, hooks) {
     super(threadActor, obj, hooks);
 

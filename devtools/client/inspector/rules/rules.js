@@ -831,6 +831,7 @@ CssRuleView.prototype = {
 
 
 
+
   setFilterStyles(value = "") {
     this.searchField.value = value;
     this.searchField.focus();

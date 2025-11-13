@@ -931,6 +931,7 @@ function replaceURL(text, replacementText = "") {
 
 
 
+
 function getWarningGroupType(message) {
   
   
@@ -991,6 +992,7 @@ function getParentWarningGroupMessageId(message) {
 
 
 
+
 function isWarningGroup(message) {
   return (
     message.type === MESSAGE_TYPE.CONTENT_BLOCKING_GROUP ||
@@ -1001,6 +1003,7 @@ function isWarningGroup(message) {
     message.type === MESSAGE_TYPE.CSP_GROUP
   );
 }
+
 
 
 
@@ -1022,10 +1025,12 @@ function isEnhancedTrackingProtectionMessage(message) {
 
 
 
+
 function isStorageIsolationMessage(message) {
   const { category } = message;
   return category == "cookiePartitionedForeign";
 }
+
 
 
 
@@ -1042,6 +1047,7 @@ function isTrackingProtectionMessage(message) {
 
 
 
+
 function isCookieMessage(message) {
   const { category } = message;
   return [
@@ -1051,6 +1057,7 @@ function isCookieMessage(message) {
     "cookieInvalidAttribute",
   ].includes(category);
 }
+
 
 
 

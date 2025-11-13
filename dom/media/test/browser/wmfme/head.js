@@ -7,6 +7,7 @@
 
 
 
+
 function GetTestWebBasedURL(fileName) {
   const origin = "https://example.com";
   return (
@@ -26,6 +27,7 @@ async function getMFCDMProcessId() {
   );
   return process.pid;
 }
+
 
 
 
@@ -109,6 +111,7 @@ async function crashUtilityProcess(utilityPid) {
 
 
 
+
 async function playVideo(tab) {
   return SpecialPowers.spawn(tab.linkedBrowser, [], async _ => {
     const video = content.document.querySelector("video");
@@ -121,6 +124,7 @@ async function playVideo(tab) {
     );
   });
 }
+
 
 
 
@@ -162,6 +166,7 @@ async function assertRunningProcessAndDecoderName(
     }
   );
 }
+
 
 
 

@@ -41,6 +41,7 @@ registerCleanupFunction(function () {
 
 
 
+
 async function captureAndCheckColor(aRed, aGreen, aBlue, aMessage) {
   let browser = gBrowser.selectedBrowser;
   
@@ -52,6 +53,7 @@ async function captureAndCheckColor(aRed, aGreen, aBlue, aMessage) {
   let [r, g, b] = await retrieveImageDataForURL(browser.currentURI.spec);
   is("" + [r, g, b], "" + [aRed, aGreen, aBlue], aMessage);
 }
+
 
 
 
@@ -84,9 +86,11 @@ async function retrieveImageDataForURL(aURL) {
 
 
 
+
 function thumbnailFile(aURL) {
   return new FileUtils.File(PageThumbsStorageService.getFilePathForURL(aURL));
 }
+
 
 
 
@@ -96,6 +100,7 @@ function thumbnailExists(aURL) {
   let file = thumbnailFile(aURL);
   return file.exists() && file.fileSize;
 }
+
 
 
 

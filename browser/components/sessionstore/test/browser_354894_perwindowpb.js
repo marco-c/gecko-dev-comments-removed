@@ -462,6 +462,7 @@ add_task(async function test_open_close_restore_from_popup() {
 
 
 
+
 add_task(async function test_mac_notifications() {
   if (!IS_MAC) {
     return;

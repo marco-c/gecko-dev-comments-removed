@@ -31,6 +31,7 @@ class ColumnTime extends Component {
 
 
 
+
   formatTime(highResTimeStamp) {
     const date = new Date(highResTimeStamp / 1000);
     const hh = date.getHours().toString().padStart(2, "0");

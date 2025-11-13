@@ -19,6 +19,7 @@ let bounceTrackingActivationLifetimeSec;
 
 
 
+
 function maybeFixupIpv6(host) {
   if (!host.includes(":")) {
     return host;
@@ -30,11 +31,13 @@ function maybeFixupIpv6(host) {
 
 
 
+
 async function addStateForHost(host) {
   info(`Populating cookies and indexedDB for host ${host}`);
   SiteDataTestUtils.addToCookies({ host });
   await SiteDataTestUtils.addToIndexedDB(`https://${maybeFixupIpv6(host)}`);
 }
+
 
 
 

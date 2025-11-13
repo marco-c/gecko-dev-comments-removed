@@ -41,6 +41,7 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
+
 function CubicBezier(coordinates) {
   if (!coordinates) {
     throw new Error("No offsets were defined");
@@ -91,6 +92,7 @@ CubicBezier.prototype = {
 
 
 
+
 function BezierCanvas(canvas, bezier, padding) {
   this.canvas = canvas;
   this.bezier = bezier;
@@ -111,6 +113,7 @@ exports.BezierCanvas = BezierCanvas;
 
 BezierCanvas.prototype = {
   
+
 
 
 
@@ -221,6 +224,7 @@ BezierCanvas.prototype = {
     this.ctx.closePath();
   },
 };
+
 
 
 
@@ -499,6 +503,7 @@ CubicBezierWidget.prototype = {
 
 
 
+
   _redraw(coordinates) {
     
     this.bezierCanvas.bezier = new CubicBezier(coordinates);
@@ -514,6 +519,7 @@ CubicBezierWidget.prototype = {
 
 
 
+
   set coordinates(coordinates) {
     this._redraw(coordinates);
 
@@ -526,6 +532,7 @@ CubicBezierWidget.prototype = {
   },
 
   
+
 
 
 
@@ -564,6 +571,7 @@ CubicBezierWidget.prototype = {
     this.curve = this.p1 = this.p2 = null;
   },
 };
+
 
 
 
@@ -779,6 +787,7 @@ CubicBezierPresetWidget.prototype = {
 
 
 
+
   refreshMenu(coordinates) {
     
     
@@ -814,6 +823,7 @@ CubicBezierPresetWidget.prototype = {
     this.parent.querySelector(".preset-pane").remove();
   },
 };
+
 
 
 
@@ -859,6 +869,7 @@ TimingFunctionPreviewWidget.prototype = {
 
 
 
+
   preview(value) {
     
     if (value === this.previousValue) {
@@ -873,6 +884,7 @@ TimingFunctionPreviewWidget.prototype = {
   },
 
   
+
 
 
 
@@ -956,6 +968,7 @@ function distance(x1, y1, x2, y2) {
 
 
 
+
 function parseTimingFunction(value) {
   if (value in PREDEFINED) {
     return PREDEFINED[value];
@@ -1004,6 +1017,7 @@ exports.parseTimingFunction = parseTimingFunction;
 
 
 
+
 function swapClassName(className, from, to) {
   if (from !== null) {
     from.classList.remove(className);
@@ -1013,6 +1027,7 @@ function swapClassName(className, from, to) {
     to.classList.add(className);
   }
 }
+
 
 
 

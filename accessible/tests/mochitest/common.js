@@ -874,6 +874,7 @@ function getTextFromClipboard() {
 
 
 
+
 function getAccessibleDOMNodeID(accessible) {
   try {
     return accessible.id;
@@ -954,6 +955,7 @@ function prettyName(aIdentifier) {
 
   return " '" + aIdentifier + "' ";
 }
+
 
 
 

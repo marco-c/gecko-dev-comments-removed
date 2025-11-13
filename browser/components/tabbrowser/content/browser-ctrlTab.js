@@ -23,6 +23,7 @@ var tabPreviews = {
 
 
 
+
   loadImage: async function tabPreviews_loadImage(uri) {
     let img = new Image();
     img.src = PageThumbs.getThumbnailURL(uri);
@@ -48,6 +49,7 @@ var tabPreviews = {
   },
 
   
+
 
 
 
@@ -91,6 +93,7 @@ var tabPreviews = {
   },
 
   
+
 
 
 

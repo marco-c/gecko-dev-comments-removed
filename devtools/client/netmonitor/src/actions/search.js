@@ -188,6 +188,7 @@ function clearSearchResults() {
 
 
 
+
 function clearSearchResultAndCancel() {
   return ({ dispatch }) => {
     dispatch(stopOngoingSearch());
@@ -219,6 +220,7 @@ function closeSearch() {
 
 
 
+
 function openSearch() {
   return ({ dispatch }) => {
     dispatch({ type: OPEN_ACTION_BAR, open: true });
@@ -229,6 +231,7 @@ function openSearch() {
     });
   };
 }
+
 
 
 

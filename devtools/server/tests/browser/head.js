@@ -117,9 +117,11 @@ async function initInspectorFront(url) {
 
 
 
+
 function waitUntilClientConnected(client) {
   return client.once("connected");
 }
+
 
 
 
@@ -256,11 +258,13 @@ function getCookieId(name, domain, path, partitionKey = "") {
 
 
 
+
 async function emitA11yEvent(emitter, name, handler, task) {
   const promise = emitter.once(name, handler);
   await task();
   await promise;
 }
+
 
 
 

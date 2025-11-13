@@ -17,6 +17,7 @@ let bounceTrackingGracePeriodSec;
 
 
 
+
 function waitForPurgeTelemetry(siteHosts) {
   let expectedSiteHosts = new Set(siteHosts);
 

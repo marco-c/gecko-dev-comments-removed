@@ -1849,6 +1849,7 @@ mockRequest.prototype = {
 
 
 
+
 function createNewZipFile(zipName, data) {
   
   let stream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
@@ -1908,6 +1909,7 @@ function revertContentSigTestPrefs(previousUrlOverride) {
   }
   Preferences.set("media.gmp-manager.checkContentSignature", false);
 }
+
 
 
 

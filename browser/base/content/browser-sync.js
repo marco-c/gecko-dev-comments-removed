@@ -918,6 +918,7 @@ var gSync = {
 
 
 
+
   async fetchListOfOAuthClients() {
     if (!this.isSignedIn) {
       console.info("Skipping fetching other attached clients");
@@ -2419,6 +2420,7 @@ var gSync = {
   },
 
   
+
 
 
 

@@ -445,6 +445,7 @@ function restartNetMonitor(monitor, { requestCount }) {
 
 
 
+
 async function clearNetworkEvents(monitor) {
   const { store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
@@ -972,7 +973,6 @@ function testFilterButtonsCustom(monitor, isChecked) {
 
 
 
-
 function promiseXHR(data) {
   return new Promise(resolve => {
     const xhr = new content.XMLHttpRequest();
@@ -1005,7 +1005,6 @@ function promiseXHR(data) {
     xhr.send(body);
   });
 }
-
 
 
 
@@ -1522,6 +1521,7 @@ function compareValues(first, second) {
 
 
 
+
 const clickOnSidebarTab = (doc, name) => {
   AccessibilityUtils.setEnv({
     
@@ -1622,6 +1622,7 @@ async function toggleUrlPreview(shouldExpand, monitor) {
 
 
 
+
 async function waitForEagerEvaluationResult(hud, text) {
   await waitUntil(() => {
     const elem = hud.ui.outputNode.querySelector(".eager-evaluation-result");
@@ -1653,7 +1654,6 @@ function testAutocompleteContents(expected, document) {
     );
   });
 }
-
 
 
 

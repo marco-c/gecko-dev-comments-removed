@@ -48,6 +48,7 @@ add_task(async function () {
 
 
 
+
   async function testSelectEvent(toolId) {
     const onSelect = toolbox.once("select");
     toolbox.selectTool(toolId);
@@ -56,6 +57,7 @@ add_task(async function () {
   }
 
   
+
 
 
 

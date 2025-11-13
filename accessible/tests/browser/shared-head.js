@@ -150,6 +150,7 @@ let Logger = {
 
 
 
+
 function invokeSetAttribute(browser, id, attr, value = null) {
   if (value !== null) {
     Logger.log(`Setting ${attr} attribute to ${value} for node with id: ${id}`);
@@ -182,6 +183,7 @@ function invokeSetAttribute(browser, id, attr, value = null) {
 
 
 
+
 function invokeSetStyle(browser, id, style, value) {
   if (value) {
     Logger.log(`Setting ${style} style to ${value} for node with id: ${id}`);
@@ -202,6 +204,7 @@ function invokeSetStyle(browser, id, style, value) {
     }
   );
 }
+
 
 
 
@@ -248,6 +251,7 @@ function getContentDPR(browser) {
 
 
 
+
 function invokeContentTask(browser, args, task) {
   return SpecialPowers.spawn(
     browser,
@@ -266,6 +270,7 @@ function invokeContentTask(browser, args, task) {
     }
   );
 }
+
 
 
 
@@ -295,6 +300,7 @@ async function comparePIDs(browser, isRemote) {
 
 
 
+
 function loadScripts(...scripts) {
   for (let script of scripts) {
     let path =
@@ -304,6 +310,7 @@ function loadScripts(...scripts) {
     Services.scriptloader.loadSubScript(path, this);
   }
 }
+
 
 
 
@@ -406,6 +413,7 @@ function wrapWithIFrame(doc, options = {}) {
 
   return `<iframe ${attrsToString(iframeAttrs)}/>`;
 }
+
 
 
 
@@ -732,6 +740,7 @@ function accessibleTask(doc, task, options = {}) {
 
 
 
+
 function addAccessibleTask(doc, task, options = {}) {
   const {
     topLevel = true,
@@ -789,6 +798,7 @@ function addAccessibleTask(doc, task, options = {}) {
 
 
 
+
 function isDefunct(accessible) {
   let defunct = false;
   try {
@@ -810,6 +820,7 @@ function isDefunct(accessible) {
 
 
 
+
 function getAccessibleTagName(acc) {
   try {
     return acc.attributes.getStringProperty("tag");
@@ -817,6 +828,7 @@ function getAccessibleTagName(acc) {
     return null;
   }
 }
+
 
 
 

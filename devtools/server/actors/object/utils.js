@@ -112,6 +112,7 @@ function unwrapDebuggeeValue(value) {
 
 
 
+
 function createValueGrip(threadActor, value, pool, depth = 0, objectActorAttributes = {}) {
   switch (typeof value) {
     case "boolean":

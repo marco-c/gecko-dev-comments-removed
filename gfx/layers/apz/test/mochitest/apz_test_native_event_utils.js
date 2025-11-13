@@ -898,6 +898,7 @@ async function promiseNativePointerInput(
 
 
 
+
 async function synthesizeNativePointerSequences(
   aTarget,
   aPointerType,

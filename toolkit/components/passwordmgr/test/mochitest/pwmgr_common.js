@@ -84,6 +84,7 @@ function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
 
 
 
+
 async function untilAutocompletePopupClosed() {
   return SimpleTest.promiseWaitForCondition(async () => {
     const popupState = await getPopupState();
@@ -301,6 +302,7 @@ function createLoginForm({
 
 
 
+
 function checkLoginForm(
   usernameField,
   expectedUsername,
@@ -355,6 +357,7 @@ function ensureCondition(
     }, 100);
   });
 }
+
 
 
 
@@ -826,6 +829,7 @@ async function promisePromptShown(expectedTopic) {
 
 
 
+
 function runInParent(aFunctionOrURL) {
   let chromeScript = SpecialPowers.loadChromeScript(aFunctionOrURL);
   SimpleTest.registerCleanupFunction(() => {
@@ -891,11 +895,13 @@ function manageLoginsInParent() {
 
 
 
+
 async function addLoginsInParent(...aLogins) {
   const script = manageLoginsInParent();
   await script.sendQuery("addLogins", aLogins);
   return script;
 }
+
 
 
 
@@ -917,6 +923,7 @@ async function setStoredLoginsAsync(...aLogins) {
 
 
 
+
 async function setStoredLoginsDuringTest(...logins) {
   const script = manageLoginsInParent();
   const loginsBefore = await script.sendQuery("getLogins");
@@ -927,6 +934,7 @@ async function setStoredLoginsDuringTest(...logins) {
     await script.sendQuery("addLogins", loginsBefore);
   });
 }
+
 
 
 

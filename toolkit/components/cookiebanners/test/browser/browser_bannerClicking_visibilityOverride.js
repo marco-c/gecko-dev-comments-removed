@@ -14,6 +14,7 @@ add_setup(clickTestSetup);
 
 
 
+
 function insertVisibilityTestRules(skipPresenceVisibilityCheck) {
   info("Clearing existing rules");
   Services.cookieBanners.resetRules(false);

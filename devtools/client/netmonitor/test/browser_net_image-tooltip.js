@@ -94,6 +94,7 @@ add_task(async function test() {
 
 
 
+
   async function showTooltipOn(element) {
     const win = element.ownerDocument.defaultView;
     EventUtils.synthesizeMouseAtCenter(element, { type: "mousemove" }, win);

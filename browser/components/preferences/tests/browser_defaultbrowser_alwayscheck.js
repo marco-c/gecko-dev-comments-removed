@@ -4,6 +4,7 @@
 
 
 
+
 async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.shell.checkDefaultBrowser", false]],

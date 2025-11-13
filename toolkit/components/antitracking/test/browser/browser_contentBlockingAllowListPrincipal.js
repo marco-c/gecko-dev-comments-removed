@@ -18,6 +18,7 @@ const TEST_SANDBOX_URL =
 
 
 
+
 function checkAllowListPrincipal(
   browser,
   type,
@@ -49,6 +50,7 @@ function checkAllowListPrincipal(
 
 
 
+
 async function runTestInNormalAndPrivateMode(initialUrl, testCallback) {
   for (let i = 0; i < 2; i++) {
     let isPrivateBrowsing = !!i;
@@ -66,6 +68,7 @@ async function runTestInNormalAndPrivateMode(initialUrl, testCallback) {
     await BrowserTestUtils.closeWindow(win);
   }
 }
+
 
 
 

@@ -220,6 +220,7 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getName() {
     if (this.player.id) {
       return this.player.id;
@@ -236,11 +237,13 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getDuration() {
     return this.player.effect.getComputedTiming().duration;
   }
 
   
+
 
 
 
@@ -252,11 +255,13 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getEndDelay() {
     return this.player.effect.getComputedTiming().endDelay;
   }
 
   
+
 
 
 
@@ -272,11 +277,13 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getIterationStart() {
     return this.player.effect.getComputedTiming().iterationStart;
   }
 
   
+
 
 
 
@@ -288,6 +295,7 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getFill() {
     return this.player.effect.getComputedTiming().fill;
   }
@@ -296,11 +304,13 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getDirection() {
     return this.player.effect.getComputedTiming().direction;
   }
 
   
+
 
 
 
@@ -331,6 +341,7 @@ class AnimationPlayerActor extends Actor {
   }
 
   
+
 
 
 
@@ -375,6 +386,7 @@ class AnimationPlayerActor extends Actor {
   }
 
   
+
 
 
 
@@ -453,6 +465,7 @@ class AnimationPlayerActor extends Actor {
   }
 
   
+
 
 
 
@@ -555,6 +568,7 @@ class AnimationPlayerActor extends Actor {
 
 
 
+
   getAnimationTypes(propertyNames) {
     const animationTypes = {};
     for (const propertyName of propertyNames) {
@@ -564,6 +578,7 @@ class AnimationPlayerActor extends Actor {
   }
 
   
+
 
 
 
@@ -628,11 +643,13 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
+
   setWalkerActor(walker) {
     this.walker = walker;
   }
 
   
+
 
 
 
@@ -807,6 +824,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
+
   setCurrentTimes(players, time, shouldPause) {
     for (const actor of players) {
       const player = actor.player;
@@ -826,6 +844,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
   }
 
   
+
 
 
 

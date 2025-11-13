@@ -150,6 +150,7 @@ class ScreenshotsHelper {
 
 
 
+
   getDialogButton(name) {
     let dialog = this.getDialog();
     let screenshotsPreviewEl = dialog._frame.contentDocument.querySelector(
@@ -321,6 +322,7 @@ class ScreenshotsHelper {
   }
 
   
+
 
 
 
@@ -678,6 +680,7 @@ class ScreenshotsHelper {
 
 
 
+
   getDialog() {
     let currDialogBox = this.browser.tabDialogBox;
     let manager = currDialogBox.getTabDialogManager();
@@ -736,6 +739,7 @@ class ScreenshotsHelper {
   }
 
   
+
 
 
 
@@ -900,6 +904,7 @@ class ScreenshotsHelper {
 
 
 
+
   async getImageSizeAndColorFromClipboard(options = {}) {
     let flavor = "image/png";
     let image = getRawClipboardData(flavor);
@@ -997,6 +1002,7 @@ class ScreenshotsHelper {
     );
   }
 }
+
 
 
 

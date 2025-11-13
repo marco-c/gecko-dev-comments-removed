@@ -20,7 +20,6 @@ const {
 
 
 
-
 class NetworkParentActor extends Actor {
   constructor(watcherActor) {
     super(watcherActor.conn, networkParentSpec);
@@ -129,6 +128,7 @@ class NetworkParentActor extends Actor {
 
 
 
+
   blockRequest(filters) {
     if (!this.networkEventWatcher) {
       throw new Error("Not listening for network events");
@@ -137,6 +137,7 @@ class NetworkParentActor extends Actor {
   }
 
   
+
 
 
 

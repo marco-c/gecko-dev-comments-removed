@@ -314,6 +314,7 @@ class RuleRewriter {
 
 
 
+
   skipWhitespaceBackward(string, index) {
     for (
       --index;

@@ -81,7 +81,6 @@ class WebConsoleWrapper {
 
 
 
-
   constructor(parentNode, webConsoleUI, toolbox, document) {
     EventEmitter.decorate(this);
 

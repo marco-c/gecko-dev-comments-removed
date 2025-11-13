@@ -1375,6 +1375,7 @@ function getConfirmDialog(toolbox) {
 
 
 
+
 function isConfirmDialogOpened(toolbox) {
   const tooltip = getConfirmDialog(toolbox);
   if (!tooltip) {
@@ -1404,9 +1405,11 @@ async function pauseDebugger(dbg, options) {
 
 
 
+
 function hasVerticalOverflow(container) {
   return container.scrollHeight > container.clientHeight;
 }
+
 
 
 
@@ -1553,6 +1556,7 @@ async function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
 
 
 
+
 async function checkMessageStack(hud, text, expectedFrameLines) {
   info(`Checking message stack for "${text}"`);
   const msgNode = await waitFor(
@@ -1597,6 +1601,7 @@ async function checkMessageStack(hud, text, expectedFrameLines) {
     `Found ${frameNodes.length} frames`
   );
 }
+
 
 
 
@@ -1773,6 +1778,7 @@ function selectTargetInContextSelector(hud, targetLabel) {
 
   itemToSelect.click();
 }
+
 
 
 

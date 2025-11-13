@@ -22,7 +22,6 @@ loader.lazyRequireGetter(
 
 
 
-
 class NodePicker extends EventEmitter {
   constructor(commands) {
     super();

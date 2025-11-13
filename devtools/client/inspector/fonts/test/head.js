@@ -57,6 +57,7 @@ selectNode = async function (node, inspector, reason) {
 
 
 
+
 var openFontInspectorForURL = async function (url) {
   const tab = await addTab(url);
   const { toolbox, inspector } = await openInspector();

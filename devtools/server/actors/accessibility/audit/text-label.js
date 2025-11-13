@@ -41,11 +41,13 @@ const {
 
 
 
+
 function isVisible(accessible) {
   const state = {};
   accessible.getState(state, {});
   return !(state.value & Ci.nsIAccessibleStates.STATE_INVISIBLE);
 }
+
 
 
 
@@ -418,6 +420,7 @@ const RULES = {
   [Ci.nsIAccessibleRole.ROLE_TOGGLE_BUTTON]: interactiveRule,
   [Ci.nsIAccessibleRole.ROLE_TOOLBAR]: toolbarRule,
 };
+
 
 
 

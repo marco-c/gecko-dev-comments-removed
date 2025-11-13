@@ -45,6 +45,7 @@ const LARGE_TEXT = {
 
 
 
+
 function getContrastRatioScore(ratio, isLargeText) {
   const levels = isLargeText ? LEVELS.LARGE_TEXT : LEVELS.REGULAR_TEXT;
 
@@ -57,6 +58,7 @@ function getContrastRatioScore(ratio, isLargeText) {
 
   return score;
 }
+
 
 
 

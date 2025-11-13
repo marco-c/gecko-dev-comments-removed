@@ -18,6 +18,7 @@ const ALLOW_LIST_CONVENIENCE_PREF =
 
 
 
+
 function rsObjectToEntry(rsObject) {
   let entry = Cc[
     "@mozilla.org/url-classifier/exception-list-entry;1"

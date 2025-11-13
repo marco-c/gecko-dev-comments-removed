@@ -17,10 +17,15 @@ const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
 
 
+
+
+
+
 async function runPreviewTest({
   requestCamera,
   requestMicrophone,
   expectCameraPreview,
+  withUserActivation = false,
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -35,7 +40,16 @@ async function runPreviewTest({
   await BrowserTestUtils.withNewTab(TEST_PAGE, async () => {
     let promise = promisePopupNotificationShown("webRTC-shareDevices");
     let observerPromise = expectObserverCalled("getUserMedia:request");
-    await promiseRequestDevice(requestMicrophone, requestCamera);
+
+    await promiseRequestDevice(
+      requestMicrophone,
+      requestCamera,
+      undefined,
+      false,
+      undefined,
+      false,
+      withUserActivation
+    );
     await promise;
     await observerPromise;
 
@@ -46,34 +60,53 @@ async function runPreviewTest({
     if (expectCameraPreview) {
       ok(BrowserTestUtils.isVisible(webRTCPreviewEl), "preview is visible");
 
-      let showPreviewButton = webRTCPreviewEl.shadowRoot.querySelector(
-        "#show-preview-button"
-      );
-      ok(
-        BrowserTestUtils.isVisible(showPreviewButton),
-        "show preview button is visible"
-      );
-
-      let stopPreviewButton = webRTCPreviewEl.shadowRoot.querySelector(
-        "#stop-preview-button"
-      );
-      ok(
-        !BrowserTestUtils.isVisible(stopPreviewButton),
-        "stop preview button is not visible"
-      );
-
+      
       videoEl = webRTCPreviewEl.shadowRoot.querySelector("video");
       ok(videoEl, "video element is visible");
 
-      info(
-        "Check the preview is not playing when the permission prompt is shown"
-      );
-      ok(videoEl.paused, "video is not playing");
-      is(videoEl.srcObject, null, "video srcObject is null");
-
-      info("Start the preview");
+      
+      
       let videoPlayPromise = BrowserTestUtils.waitForEvent(videoEl, "play");
-      showPreviewButton.click();
+
+      
+      let showPreviewButton = webRTCPreviewEl.shadowRoot.querySelector(
+        "#show-preview-button"
+      );
+      
+      let stopPreviewButton = webRTCPreviewEl.shadowRoot.querySelector(
+        "#stop-preview-button"
+      );
+
+      if (withUserActivation) {
+        info(
+          "Video preview should start automatically since we requested camera with user activation."
+        );
+      } else {
+        info(
+          "No auto preview because we don't have user activation. Start the preview manually."
+        );
+
+        ok(
+          BrowserTestUtils.isVisible(showPreviewButton),
+          "show preview button is visible"
+        );
+
+        ok(
+          !BrowserTestUtils.isVisible(stopPreviewButton),
+          "stop preview button is not visible"
+        );
+
+        info(
+          "Check the preview is not playing when the permission prompt is shown"
+        );
+        ok(videoEl.paused, "video is not playing");
+        is(videoEl.srcObject, null, "video srcObject is null");
+
+        info("Start the preview");
+        showPreviewButton.click();
+      }
+
+      info("Wait for the preview video to start playing.");
       await videoPlayPromise;
 
       ok(!videoEl.paused, "video is playing");
@@ -133,6 +166,15 @@ add_task(async function test_camera_preview_camera_only() {
     requestCamera: true,
     requestMicrophone: false,
     expectCameraPreview: true,
+  });
+});
+
+add_task(async function test_camera_preview_camera_only_preview_autostart() {
+  await runPreviewTest({
+    requestCamera: true,
+    requestMicrophone: false,
+    expectCameraPreview: true,
+    withUserActivation: true,
   });
 });
 

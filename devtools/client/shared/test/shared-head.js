@@ -552,6 +552,7 @@ function waitForAllTargetsToBeAttached(targetCommand) {
 
 
 
+
 async function addTab(url, options = {}) {
   info("Adding a new tab with URL: " + url);
 
@@ -586,6 +587,7 @@ async function addTab(url, options = {}) {
 
   return tab;
 }
+
 
 
 
@@ -1030,6 +1032,7 @@ async function createAndAttachTargetForTab(tab) {
 
 
 
+
 async function openInspectorForURL(url, hostType) {
   const tab = await addTab(url);
   const { inspector, toolbox, highlighterTestFront } =
@@ -1067,6 +1070,7 @@ function synthesizeKeyShortcut(key, target) {
 }
 
 var waitForTime = DevToolsUtils.waitForTime;
+
 
 
 
@@ -1282,10 +1286,12 @@ function once(target, eventName, useCapture = false) {
 
 
 
+
 function loadHelperScript(filePath) {
   const testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
   Services.scriptloader.loadSubScript(testDir + "/" + filePath, this);
 }
+
 
 
 
@@ -1325,10 +1331,12 @@ async function openToolboxForTab(tab, toolId, hostType) {
 
 
 
+
 async function openNewTabAndToolbox(url, toolId, hostType) {
   const tab = await addTab(url);
   return openToolboxForTab(tab, toolId, hostType);
 }
+
 
 
 
@@ -1345,6 +1353,7 @@ async function closeTabAndToolbox(tab = gBrowser.selectedTab) {
 
   await new Promise(resolve => setTimeout(resolve, 0));
 }
+
 
 
 
@@ -1787,6 +1796,7 @@ function checkImageColorAt({ image, x = 0, y, expectedColor, label }) {
   const color = colorAt(image, x, y);
   is(`rgb(${Object.values(color).join(", ")})`, expectedColor, label);
 }
+
 
 
 
@@ -2531,10 +2541,12 @@ async function toggleJsTracer(toolbox) {
 
 
 
+
 function getNetmonitorContextMenuItem(monitor, id) {
   const Menu = require("resource://devtools/client/framework/menu.js");
   return Menu.getMenuElementById(id, monitor.panelWin.document);
 }
+
 
 
 

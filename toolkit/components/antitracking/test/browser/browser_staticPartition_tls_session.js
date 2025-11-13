@@ -25,6 +25,7 @@ const TEST_URL_C = TEST_ORIGIN_C + TEST_ENDPOINT;
 
 
 
+
 async function waitForLoad(url) {
   return new Promise(resolve => {
     const TOPIC = "http-on-examine-response";
@@ -45,6 +46,7 @@ async function waitForLoad(url) {
     Services.obs.addObserver(observer, TOPIC);
   });
 }
+
 
 
 

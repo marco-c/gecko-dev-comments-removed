@@ -196,6 +196,7 @@ DebuggerTransport.prototype = {
 
 
 
+
   close(reason) {
     this.active = false;
     this._input.close();
@@ -374,6 +375,7 @@ DebuggerTransport.prototype = {
 
 
 
+
   _processIncoming(stream, count) {
     dumpv("Data available: " + count);
 
@@ -428,6 +430,7 @@ DebuggerTransport.prototype = {
   },
 
   
+
 
 
 

@@ -62,6 +62,7 @@ function Packet(transport) {
 
 
 
+
 Packet.fromHeader = function (header, transport) {
   return (
     JSONPacket.fromHeader(header, transport) ||
@@ -102,11 +103,13 @@ exports.Packet = Packet;
 
 
 
+
 function JSONPacket(transport) {
   Packet.call(this, transport);
   this._data = "";
   this._done = false;
 }
+
 
 
 
@@ -245,6 +248,7 @@ exports.JSONPacket = JSONPacket;
 
 
 
+
 function BulkPacket(transport) {
   Packet.call(this, transport);
   this._done = false;
@@ -254,6 +258,7 @@ function BulkPacket(transport) {
   });
   this._readyForWriting.resolve = _resolve;
 }
+
 
 
 
@@ -430,6 +435,7 @@ BulkPacket.prototype.toString = function () {
 };
 
 exports.BulkPacket = BulkPacket;
+
 
 
 

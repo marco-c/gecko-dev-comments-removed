@@ -45,6 +45,7 @@ function clamp(val, min, max) {
 
 
 
+
 function formatFileSize(num) {
   if (!Number.isFinite(num)) {
     throw new TypeError(`Expected a finite number, got ${typeof num}: ${num}`);
@@ -187,6 +188,7 @@ function makePowerOf2Scale(rangeStart, rangeEnd) {
     steps,
   };
 }
+
 
 
 

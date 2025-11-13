@@ -1,6 +1,20 @@
+
+
+
+"use strict";
+
+add_setup(async function () {
+  
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.revamp", false]],
+  });
+});
+
 registerCleanupFunction(() => {
   SidebarController.hide();
 });
+
 
 
 
@@ -24,12 +38,14 @@ function showSwitcherPanelPromise() {
 
 
 
+
 async function waitForSwitcherPopupShown() {
   return BrowserTestUtils.waitForEvent(
     SidebarController._switcherPanel,
     "popupshown"
   );
 }
+
 
 
 
@@ -53,6 +69,7 @@ function pickSwitcherMenuitem(querySelector = null) {
   }
   return hideSwitcherPanelPromise;
 }
+
 
 
 

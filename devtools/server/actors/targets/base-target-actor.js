@@ -32,6 +32,7 @@ class BaseTargetActor extends Actor {
 
 
 
+
     this.targetType = targetType;
 
     

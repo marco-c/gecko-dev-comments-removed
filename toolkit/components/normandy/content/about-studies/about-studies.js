@@ -15,6 +15,7 @@ const r = React.createElement;
 
 
 
+
 function sendPageEvent(action, data) {
   const event = new CustomEvent("ShieldPageEvent", {
     bubbles: true,

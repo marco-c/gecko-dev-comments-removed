@@ -557,6 +557,7 @@ async function getToggleClientRect(
 
 
 
+
 async function hoverToggle(browser, videoID) {
   await prepareForToggleClick(browser, videoID);
 
@@ -997,6 +998,7 @@ async function isVideoMuted(browser, videoID) {
 
 
 
+
 async function prepareVideosAndWebVTTTracks(
   browser,
   videoID,
@@ -1031,6 +1033,7 @@ async function prepareVideosAndWebVTTTracks(
     }
   );
 }
+
 
 
 
@@ -1094,12 +1097,14 @@ function overrideSavedPosition(left, top, width, height) {
 
 
 
+
 function matches(expected, actual) {
   if (expected === undefined) {
     return true;
   }
   return expected === actual;
 }
+
 
 
 

@@ -34,6 +34,7 @@ async function openContextMenuAt(browser, x, y) {
 
 
 
+
 function getContextMenuItems(browser, box) {
   return new Promise(resolve => {
     setTimeout(async () => {
@@ -72,6 +73,7 @@ function getContextMenuItems(browser, box) {
 
 
 
+
 async function getContextMenuItemsOn(browser, selector) {
   const box = await SpecialPowers.spawn(
     browser,
@@ -84,6 +86,7 @@ async function getContextMenuItemsOn(browser, selector) {
   );
   return getContextMenuItems(browser, box);
 }
+
 
 
 
@@ -118,6 +121,7 @@ async function clickOnItem(browser, items, entry) {
   contextMenu.activateItem(items.get(entry));
   await editingPromise;
 }
+
 
 
 

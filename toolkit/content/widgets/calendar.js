@@ -113,6 +113,7 @@ Calendar.prototype = {
 
 
 
+
   _render({ elements, items, prevState }) {
     let selected = {};
     let today = {};
@@ -250,6 +251,7 @@ Calendar.prototype = {
   },
 
   
+
 
 
 
@@ -402,6 +404,7 @@ Calendar.prototype = {
 
 
 
+
   _calculateNextId(nextDate) {
     for (let i = 0; i < this.state.days.length; i++) {
       if (this._isSameDay(this.state.days[i].dateObj, nextDate)) {
@@ -412,6 +415,7 @@ Calendar.prototype = {
   },
 
   
+
 
 
 
@@ -432,11 +436,13 @@ Calendar.prototype = {
 
 
 
+
   _isSameDayOfMonth(dateObj1, dateObj2) {
     return dateObj1.getUTCDate() == dateObj2.getUTCDate();
   },
 
   
+
 
 
 

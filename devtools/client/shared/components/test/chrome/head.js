@@ -347,6 +347,7 @@ async function waitFor(condition = () => true, delay = 50) {
 
 
 
+
 function matchSnapshot(name, el) {
   if (!_snapshots) {
     is(false, "No snapshots were loaded into test.");

@@ -9,6 +9,7 @@
 
 
 
+
 import { prefs } from "../utils/prefs";
 
 
@@ -145,20 +146,21 @@ function update(state = initialPauseState(), action) {
     }
 
     case "REMOVE_THREAD": {
+      const { threadActorID } = action;
       if (
-        action.threadActorID in state.threads ||
-        action.threadActorID == state.threadcx.thread
+        threadActorID in state.threads ||
+        threadActorID == state.threadcx.thread
       ) {
         
         const threads = { ...state.threads };
-        delete threads[action.threadActorID];
+        delete threads[threadActorID];
         let threadcx = state.threadcx;
 
         
         
         
         
-        if (state.threadcx.thread == action.threadActorID) {
+        if (state.threadcx.thread == threadActorID) {
           threadcx = {
             ...threadcx,
             thread: Object.keys(threads)[0],

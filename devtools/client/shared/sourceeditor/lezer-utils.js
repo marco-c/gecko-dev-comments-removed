@@ -499,6 +499,7 @@ async function walkTree(view, language, options) {
 
 
 
+
 async function walkCursor(cursor, options) {
   await cursor.iterate(node => {
     if (options.filterSet?.has(node.name)) {

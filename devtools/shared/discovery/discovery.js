@@ -56,6 +56,7 @@ function log(msg) {
 
 
 
+
 function Transport(port) {
   EventEmitter.decorate(this);
   try {
@@ -73,6 +74,7 @@ function Transport(port) {
 
 Transport.prototype = {
   
+
 
 
 
@@ -194,6 +196,7 @@ Discovery.prototype = {
 
 
 
+
   addService(service, info) {
     log("ADDING LOCAL SERVICE");
     if (Object.keys(this.localServices).length === 0) {
@@ -203,6 +206,7 @@ Discovery.prototype = {
   },
 
   
+
 
 
 

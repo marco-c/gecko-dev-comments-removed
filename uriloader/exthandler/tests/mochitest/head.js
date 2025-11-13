@@ -189,6 +189,7 @@ async function waitForSubDialog(browser, url, state) {
 
 
 
+
 async function waitForProtocolPermissionDialog(browser, state) {
   return waitForSubDialog(
     browser,
@@ -196,6 +197,7 @@ async function waitForProtocolPermissionDialog(browser, state) {
     state
   );
 }
+
 
 
 
@@ -231,6 +233,7 @@ async function acceptNextProtocolPermissionDialog(browser) {
 
   await dialogWindowClosePromise;
 }
+
 
 
 
@@ -367,6 +370,7 @@ const EXT_PROTO_URI_MAILTO = "mailto:test@example.com";
 
 
 
+
 async function navigateExternalProtoFromIframe(
   browser,
   sandboxAttr,
@@ -488,6 +492,7 @@ async function navigateExternalProtoFromIframe(
 
 
 
+
 function waitForExtProtocolSandboxError() {
   return new Promise(resolve => {
     Services.console.registerListener(function onMessage(msg) {
@@ -507,6 +512,7 @@ function waitForExtProtocolSandboxError() {
     });
   });
 }
+
 
 
 

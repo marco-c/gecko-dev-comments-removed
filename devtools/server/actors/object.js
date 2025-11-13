@@ -522,6 +522,7 @@ class ObjectActor extends Actor {
 
 
 
+
   _evaluateGetter(getter) {
     const result = getter.call(this.obj);
     if (!result || "throw" in result) {

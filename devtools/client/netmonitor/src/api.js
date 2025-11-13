@@ -204,6 +204,7 @@ NetMonitorAPI.prototype = {
 
 
 
+
   resendRequest(requestId) {
     
     this.store.dispatch(Actions.batchFlush());

@@ -38,6 +38,7 @@ class DebuggerFSMContext {
 
 
 
+
   changeState(state) {
     this.state = state;
   }
@@ -70,6 +71,7 @@ class DebuggerFSMContext {
 
 class FSMState {
   
+
 
 
 
@@ -163,6 +165,7 @@ class DomainStageState extends FSMState {
   }
 
   
+
 
 
 

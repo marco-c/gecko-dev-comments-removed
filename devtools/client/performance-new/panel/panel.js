@@ -46,6 +46,7 @@ class PerformancePanel {
 
 
 
+
   open() {
     if (!this._opening) {
       this._opening = this._doOpen();
@@ -54,6 +55,7 @@ class PerformancePanel {
   }
 
   
+
 
 
 

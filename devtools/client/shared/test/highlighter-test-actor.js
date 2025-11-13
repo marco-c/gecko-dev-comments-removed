@@ -50,6 +50,7 @@ const dumpn = msg => {
 
 
 
+
 function getHighlighterCanvasFrameHelper(conn, actorID) {
   
   const actor = conn.getActor(actorID);
@@ -226,6 +227,7 @@ class HighlighterTestActor extends protocol.Actor {
 
 
 
+
   _querySelector(selector) {
     let document = this.content.document;
     if (Array.isArray(selector)) {
@@ -274,6 +276,7 @@ class HighlighterTestActor extends protocol.Actor {
 
 
 
+
   getHighlighterAttribute(nodeID, name, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
 
@@ -309,6 +312,7 @@ class HighlighterTestActor extends protocol.Actor {
 
 
 
+
   getHighlighterComputedStyle(nodeID, property, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
 
@@ -320,6 +324,7 @@ class HighlighterTestActor extends protocol.Actor {
   }
 
   
+
 
 
 
@@ -341,6 +346,7 @@ class HighlighterTestActor extends protocol.Actor {
 
 
 
+
   getSelectorHighlighterBoxNb(actorID) {
     const highlighter = this.conn.getActor(actorID);
     const { _highlighter: h } = highlighter;
@@ -351,6 +357,7 @@ class HighlighterTestActor extends protocol.Actor {
   }
 
   
+
 
 
 
@@ -595,6 +602,7 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
 
 
+
   getHighlighterNodeAttribute(nodeID, name, highlighter) {
     return this.getHighlighterAttribute(
       nodeID,
@@ -611,6 +619,7 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   }
 
   
+
 
 
 
@@ -695,6 +704,7 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
 
 
+
   async assertHighlightedNode(selector) {
     const rect = await this.getNodeRect(selector);
     return this.isNodeRectHighlighted(rect);
@@ -708,12 +718,14 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
 
 
+
   async assertHighlightedTextNode(parentSelector, childNodeIndex) {
     const rect = await this.getTextNodeRect(parentSelector, childNodeIndex);
     return this.isNodeRectHighlighted(rect);
   }
 
   
+
 
 
 
@@ -828,6 +840,7 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
 
 
+
   async getGuidesRectangle() {
     const tGuide = await this._getGuideStatus("top");
     const rGuide = await this._getGuideStatus("right");
@@ -852,6 +865,7 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   }
 
   
+
 
 
 
@@ -892,6 +906,7 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   }
 }
 protocol.registerFront(HighlighterTestFront);
+
 
 
 

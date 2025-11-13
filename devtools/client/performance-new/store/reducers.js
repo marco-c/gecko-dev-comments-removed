@@ -22,6 +22,7 @@
 
 
 
+
 function recordingState(state = "not-yet-known", action) {
   switch (action.type) {
     case "REPORT_PROFILER_READY": {
@@ -114,6 +115,7 @@ function recordingState(state = "not-yet-known", action) {
 
 
 
+
 function recordingUnexpectedlyStopped(recState, state = false, action) {
   switch (action.type) {
     case "REPORT_PROFILER_STOPPED":
@@ -136,6 +138,7 @@ function recordingUnexpectedlyStopped(recState, state = false, action) {
 
 
 
+
 function isSupportedPlatform(state = null, action) {
   switch (action.type) {
     case "INITIALIZE_STORE":
@@ -144,6 +147,7 @@ function isSupportedPlatform(state = null, action) {
       return state;
   }
 }
+
 
 
 
@@ -166,6 +170,7 @@ const DEFAULT_RECORDING_SETTINGS = {
   
   duration: 0,
 };
+
 
 
 
@@ -209,6 +214,7 @@ function areSettingsEquals(a, b) {
 
   return true;
 }
+
 
 
 
@@ -305,6 +311,7 @@ function promptEnvRestart(state = null, action) {
       return state;
   }
 }
+
 
 
 

@@ -194,6 +194,7 @@ function waitForMutation(target, opts, cb) {
 
 
 
+
 function createObserveAllPromise(observances) {
   
   
@@ -251,6 +252,7 @@ function createObserveAllPromise(observances) {
 
 
 
+
 async function waitForAndAssertPrefState(pref, expectedValue, message) {
   await TestUtils.waitForPrefChange(pref, value => {
     if (value != expectedValue) {
@@ -260,6 +262,7 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
     return true;
   });
 }
+
 
 
 
@@ -564,6 +567,7 @@ function enrollByClick(el, wantedActive) {
 
 
 
+
 async function clickCheckboxAndWaitForPrefChange(
   doc,
   checkboxId,
@@ -583,6 +587,7 @@ async function clickCheckboxAndWaitForPrefChange(
   );
   return checkbox;
 }
+
 
 
 

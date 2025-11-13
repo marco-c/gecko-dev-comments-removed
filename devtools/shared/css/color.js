@@ -626,6 +626,7 @@ function hexToRGBA(name, highResolution) {
 
 
 
+
 function blendColors(foregroundColor, backgroundColor = [255, 255, 255, 1]) {
   const [fgR, fgG, fgB, fgA] = foregroundColor;
   const [bgR, bgG, bgB, bgA] = backgroundColor;

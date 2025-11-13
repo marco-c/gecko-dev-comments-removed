@@ -26,6 +26,7 @@ ConsoleFileActivityListener.prototype = {
 
 
 
+
   _initialized: false,
 
   _webProgress: null,
@@ -36,6 +37,7 @@ ConsoleFileActivityListener.prototype = {
   ]),
 
   
+
 
 
 
@@ -77,6 +79,7 @@ ConsoleFileActivityListener.prototype = {
   },
 
   
+
 
 
 

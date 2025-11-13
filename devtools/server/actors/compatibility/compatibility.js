@@ -121,6 +121,7 @@ class CompatibilityActor extends Actor {
 
 
 
+
   async getNodeCssIssues(node, targetBrowsers) {
     const pageStyle = await this.inspector.getPageStyle();
     const styles = await pageStyle.getApplied(node, {

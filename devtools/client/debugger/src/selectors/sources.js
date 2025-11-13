@@ -204,7 +204,6 @@ export function getShouldScrollToSelectedLocation(state) {
 
 
 
-
 export function getFirstSourceActorForGeneratedSource(
   state,
   sourceId,

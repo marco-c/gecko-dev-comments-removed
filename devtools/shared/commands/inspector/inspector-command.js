@@ -17,6 +17,8 @@ loader.lazyRequireGetter(
   true
 );
 
+const { getSystemInfo } = require("resource://devtools/shared/system.js");
+
 class InspectorCommand {
   constructor({ commands }) {
     this.commands = commands;
@@ -183,7 +185,7 @@ class InspectorCommand {
 
 
 
-  async findNodeFrontFromSelectors(nodeSelectors, timeoutInMs = 5000) {
+  async findNodeFrontFromSelectors(nodeSelectors, timeoutInMs = 1000) {
     if (
       !nodeSelectors ||
       !Array.isArray(nodeSelectors) ||
@@ -251,9 +253,9 @@ class InspectorCommand {
     
     
     
-    const onTimeout = new Promise(res => setTimeout(res, timeoutInMs)).then(
-      () => null
-    );
+    const onTimeout = new Promise(res =>
+      setTimeout(res, timeoutInMs * getSystemInfo().timeoutMultiplier)
+    ).then(() => null);
     const onQuerySelectors = querySelectors(rootNodeFront);
     return Promise.race([onTimeout, onQuerySelectors]);
   }
@@ -411,6 +413,7 @@ class InspectorCommand {
   }
 
   
+
 
 
 

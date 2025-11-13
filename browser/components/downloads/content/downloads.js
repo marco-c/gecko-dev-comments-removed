@@ -232,6 +232,7 @@ var DownloadsPanel = {
 
 
 
+
   get isPanelShowing() {
     return this._waitingDataForOpen || this.panel.state != "closed";
   },

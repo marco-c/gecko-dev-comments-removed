@@ -7,6 +7,7 @@
 
 
 
+
 import { parseQuickOpenQuery } from "../utils/quick-open";
 
 export const initialQuickOpenState = () => ({

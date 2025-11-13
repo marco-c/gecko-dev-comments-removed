@@ -84,6 +84,7 @@ var gPageStyleMenu = {
 
 
 
+
   _sendMessageToAll(message, data) {
     let contextsToVisit = [gBrowser.selectedBrowser.browsingContext];
     while (contextsToVisit.length) {
@@ -102,6 +103,7 @@ var gPageStyleMenu = {
   },
 
   
+
 
 
 

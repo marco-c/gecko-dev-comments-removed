@@ -6,6 +6,7 @@
 
 
 
+
 function GetTestWebBasedURL(fileName, { crossOrigin = false } = {}) {
   const origin = crossOrigin ? "http://example.org" : "http://example.com";
   return (
@@ -13,6 +14,7 @@ function GetTestWebBasedURL(fileName, { crossOrigin = false } = {}) {
     fileName
   );
 }
+
 
 
 
@@ -90,6 +92,7 @@ function loadAutoplayVideo(browser, args) {
 
 
 
+
 function checkVideoDidPlay(browser, args) {
   return SpecialPowers.spawn(browser, [args], async args => {
     let video = content.document.getElementById("v1");
@@ -106,6 +109,7 @@ function checkVideoDidPlay(browser, args) {
     content.document.body.remove(video);
   });
 }
+
 
 
 

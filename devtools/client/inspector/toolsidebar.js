@@ -156,6 +156,7 @@ class ToolSidebar extends EventEmitter {
 
 
 
+
   removeTab(tabId) {
     this.#tabbar.removeTab(tabId);
 
@@ -163,6 +164,7 @@ class ToolSidebar extends EventEmitter {
   }
 
   
+
 
 
 
@@ -186,6 +188,7 @@ class ToolSidebar extends EventEmitter {
   }
 
   
+
 
 
 

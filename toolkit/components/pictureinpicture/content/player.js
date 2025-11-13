@@ -109,6 +109,7 @@ function setIsMutedState(isMuted) {
 
 
 
+
 function resizeToVideo(rect) {
   Player.resizeToVideo(rect);
 }
@@ -562,6 +563,7 @@ let Player = {
 
 
 
+
   handleScrubbing(event) {
     
     
@@ -587,6 +589,7 @@ let Player = {
 
 
 
+
   handleScrubbingDone(event) {
     if (!this.scrubbing) {
       return;
@@ -600,6 +603,7 @@ let Player = {
   },
 
   
+
 
 
 
@@ -769,6 +773,7 @@ let Player = {
   },
 
   
+
 
 
 

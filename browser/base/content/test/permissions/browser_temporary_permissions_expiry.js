@@ -116,6 +116,7 @@ add_task(async function testTempPermissionRequestAfterExpiry() {
 
 
 
+
 async function testIdentityPermissionGrantedState(state) {
   let hasAttribute;
   let msg = `Identity permission box ${

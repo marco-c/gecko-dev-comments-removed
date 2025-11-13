@@ -44,6 +44,7 @@ registerCleanupFunction(function () {
 
 
 
+
 var startPicker = async function (toolbox, skipFocus) {
   info("Start the element picker");
   toolbox.win.focus();
@@ -61,11 +62,13 @@ var startPicker = async function (toolbox, skipFocus) {
 
 
 
+
 var stopPickerWithEscapeKey = async function (toolbox) {
   const onPickerStopped = toolbox.nodePicker.once("picker-node-canceled");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, toolbox.win);
   await onPickerStopped;
 };
+
 
 
 
@@ -219,6 +222,7 @@ async function getBrowsingContextForNestedFrame(selectorArray = []) {
 
 
 
+
 async function selectAndHighlightNode(selector, inspector) {
   const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info("Highlighting and selecting the node " + selector);
@@ -229,6 +233,7 @@ async function selectAndHighlightNode(selector, inspector) {
   await selectNode(selector, inspector, "test-highlight");
   await onHighlighterShown;
 }
+
 
 
 
@@ -259,6 +264,7 @@ function clearCurrentNodeSelection(inspector) {
   inspector.selection.setNodeFront(null);
   return updated;
 }
+
 
 
 
@@ -377,9 +383,11 @@ var focusSearchBoxUsingShortcut = async function (panelWin, callback) {
 
 
 
+
 function getContainerForNodeFront(nodeFront, { markup }) {
   return markup.getContainer(nodeFront);
 }
+
 
 
 
@@ -417,6 +425,7 @@ var getContainerForSelector = async function (
 
 
 
+
 var hoverContainer = async function (selector, inspector) {
   const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
   info("Hovering over the markup-container for node " + selector);
@@ -434,6 +443,7 @@ var hoverContainer = async function (selector, inspector) {
   );
   await onHighlighterShown;
 };
+
 
 
 
@@ -462,6 +472,7 @@ var clickContainer = async function (selector, inspector) {
   );
   return updated;
 };
+
 
 
 
@@ -503,6 +514,7 @@ function fireCopyEvent(element) {
 
 
 
+
 function undoChange(inspector) {
   const canUndo = inspector.markup.undo.canUndo();
   ok(canUndo, "The last change in the markup-view can be undone");
@@ -514,6 +526,7 @@ function undoChange(inspector) {
   inspector.markup.undo.undo();
   return mutated;
 }
+
 
 
 
@@ -549,6 +562,7 @@ async function getNodeFrontForSelector(selector, inspector) {
   const { nodes } = await inspector.walker.children(inspector.walker.rootNode);
   return nodes[0];
 }
+
 
 
 
@@ -840,6 +854,7 @@ function waitForStyleEditor(toolbox, href) {
     });
   });
 }
+
 
 
 
@@ -1521,6 +1536,7 @@ function reflowContentPage() {
     });
   });
 }
+
 
 
 

@@ -1448,6 +1448,7 @@ var Search = {
 
 
 
+
 function RenderObject(aObject) {
   let output = "";
   if (Array.isArray(aObject)) {
@@ -1540,6 +1541,7 @@ var GenericTable = {
 
 
 
+
   render(rows, headings = this.defaultHeadings()) {
     let table = document.createElement("table");
     this.renderHeader(table, headings);
@@ -1623,6 +1625,7 @@ var KeyedHistogram = {
 
 var AddonDetails = {
   
+
 
 
 
@@ -1756,6 +1759,7 @@ class Scalars extends Section {
 
 
 
+
   static render(aPayload) {
     const divName = "scalars";
     const section = "scalars-section";
@@ -1806,6 +1810,7 @@ class KeyedScalars extends Section {
 
 
 
+
   static render(aPayload) {
     const divName = "keyed-scalars";
     const section = "keyed-scalars-section";
@@ -1815,6 +1820,7 @@ class KeyedScalars extends Section {
 
 var Events = {
   
+
 
 
 

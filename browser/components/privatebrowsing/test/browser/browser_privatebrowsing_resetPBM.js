@@ -29,6 +29,7 @@ const SELECTOR_PANEL_COMPLETION_TOAST = "#confirmation-hint";
 
 
 
+
 async function waitForConfirmPanelShow(win) {
   
   let panelview = win.document.querySelector(SELECTOR_PANELVIEW);
@@ -48,6 +49,7 @@ async function waitForConfirmPanelShow(win) {
 
 
 
+
 async function hideCompletionToast(win) {
   let promiseHidden = BrowserTestUtils.waitForEvent(
     win.ConfirmationHint._panel,
@@ -58,6 +60,7 @@ async function hideCompletionToast(win) {
 
   await promiseHidden;
 }
+
 
 
 
@@ -94,12 +97,14 @@ async function triggerResetBtn(win, expectPanelOpen = true) {
 
 
 
+
 function waitForConfirmPanelHidden(win) {
   return BrowserTestUtils.waitForEvent(
     win.document.querySelector(SELECTOR_PANELVIEW).closest("panel"),
     "popuphidden"
   );
 }
+
 
 
 
@@ -123,9 +128,11 @@ function waitForCompletionToastShown(win) {
 
 
 
+
 function waitForPBMDataClear() {
   return TestUtils.topicObserved("last-pb-context-exited");
 }
+
 
 
 

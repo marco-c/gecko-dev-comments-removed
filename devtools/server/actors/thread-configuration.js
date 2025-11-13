@@ -56,7 +56,6 @@ const SUPPORTED_OPTIONS = {
 
 
 
-
 class ThreadConfigurationActor extends Actor {
   constructor(watcherActor) {
     super(watcherActor.conn, threadConfigurationSpec);

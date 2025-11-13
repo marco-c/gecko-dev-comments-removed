@@ -75,6 +75,7 @@ function getSourceActor(sources, url) {
 
 
 
+
 function synthesizeKeyElement(el) {
   const key = el.getAttribute("key") || el.getAttribute("keycode");
   const mod = {};
@@ -84,6 +85,7 @@ function synthesizeKeyElement(el) {
   info(`Synthesizing: key=${key}, mod=${JSON.stringify(mod)}`);
   EventUtils.synthesizeKey(key, mod, el.ownerDocument.defaultView);
 }
+
 
 
 
@@ -116,6 +118,7 @@ function checkHostType(toolbox, hostType, previousHostType) {
 
 
 
+
 function createScript(url) {
   info(`Creating script: ${url}`);
   
@@ -126,6 +129,7 @@ function createScript(url) {
     content.document.body.appendChild(script);
   });
 }
+
 
 
 

@@ -136,6 +136,7 @@ const createHost = async function (
 
 
 
+
 async function openAndCloseToolbox(nbOfTimes, usageTime, toolId) {
   for (let i = 0; i < nbOfTimes; i++) {
     info("Opening toolbox " + (i + 1));
@@ -156,11 +157,13 @@ async function openAndCloseToolbox(nbOfTimes, usageTime, toolId) {
 
 
 
+
 function showFilterPopupPresets(widget) {
   const onRender = widget.once("render");
   widget._togglePresets();
   return onRender;
 }
+
 
 
 

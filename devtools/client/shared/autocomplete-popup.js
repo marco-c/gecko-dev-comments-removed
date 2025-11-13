@@ -503,6 +503,7 @@ class AutocompletePopup extends EventEmitter {
 
 
 
+
   get selectedItem() {
     return this.items[this.selectedIndex];
   }
@@ -609,6 +610,7 @@ class AutocompletePopup extends EventEmitter {
   }
 
   
+
 
 
 

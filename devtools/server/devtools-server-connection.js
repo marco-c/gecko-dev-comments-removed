@@ -92,6 +92,7 @@ DevToolsServerConnection.prototype = {
 
 
 
+
   startBulkSend(header) {
     return this.transport.startBulkSend(header);
   },

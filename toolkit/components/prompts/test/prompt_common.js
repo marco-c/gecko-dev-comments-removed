@@ -5,6 +5,7 @@ const { Cc, Ci, Cu: ChromeUtils } = SpecialPowers;
 
 
 
+
 function propBagToObject(bag) {
   if (!(bag instanceof Ci.nsIPropertyBag)) {
     throw new TypeError("Not a property bag");
@@ -163,6 +164,7 @@ function onloadPromiseFor(id) {
     );
   });
 }
+
 
 
 

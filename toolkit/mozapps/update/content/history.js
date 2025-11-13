@@ -79,6 +79,7 @@ var gUpdateHistory = {
 
 
 
+
   _formatDate(seconds) {
     var date = new Date(seconds);
     const dtOptions = {

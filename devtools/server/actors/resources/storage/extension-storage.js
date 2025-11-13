@@ -132,6 +132,7 @@ class ExtensionStorageActor extends BaseStorageActor {
 
 
 
+
   async populateStoresForHost(host) {
     if (host !== this.extensionHostURL) {
       return;
@@ -240,6 +241,7 @@ class ExtensionStorageActor extends BaseStorageActor {
   }
 
   
+
 
 
 

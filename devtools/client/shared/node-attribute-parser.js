@@ -315,6 +315,7 @@ var parsers = {
 
 
 
+
 function parseAttribute(
   namespaceURI,
   tagName,
@@ -334,6 +335,7 @@ function parseAttribute(
 
   return parsers[type](attributeValue);
 }
+
 
 
 
@@ -384,6 +386,7 @@ function getAttribute(attributes, attributeName) {
   const attribute = attributes.find(x => x.name === attributeName);
   return attribute ? attribute.value : null;
 }
+
 
 
 

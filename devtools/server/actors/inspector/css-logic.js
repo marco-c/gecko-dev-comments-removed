@@ -140,6 +140,7 @@ class CssLogic {
 
 
 
+
   get computedStyle() {
     return this._computedStyle;
   }
@@ -148,11 +149,13 @@ class CssLogic {
 
 
 
+
   get sourceFilter() {
     return this._sourceFilter;
   }
 
   
+
 
 
 
@@ -213,6 +216,7 @@ class CssLogic {
   }
 
   
+
 
 
 
@@ -863,6 +867,7 @@ class CssSheet {
 
 
 
+
   get disabled() {
     return this.domSheet.disabled;
   }
@@ -1345,6 +1350,7 @@ class CssPropertyInfo {
 
 
 
+
   _findMatchedSelectors() {
     this._matchedSelectors = [];
     this.needRefilter = false;
@@ -1397,6 +1403,7 @@ class CssPropertyInfo {
   }
 
   
+
 
 
 

@@ -315,6 +315,7 @@ export class ContextMenuChild extends JSWindowActorChild {
 
 
 
+
   getTarget(aMessage, aKey = "target") {
     return this.target || (aMessage.objects && aMessage.objects[aKey]);
   }

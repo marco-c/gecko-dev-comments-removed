@@ -185,6 +185,7 @@ exports.getRuleText = getRuleText;
 
 
 
+
 function getTextAtLineColumn(text, line, column) {
   let offset;
   if (line > 1) {

@@ -276,6 +276,7 @@ function makeDisableControllingExtension(type, settingName) {
 
 
 
+
 async function initListenersForPrefChange(type, prefId, controlledElement) {
   await Management.asyncLoadSettingsModules();
 

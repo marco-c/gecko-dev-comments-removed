@@ -216,7 +216,6 @@ ServerWBO.prototype = {
 
 
 
-
 function ServerCollection(wbos, acceptNew, timestamp) {
   this._wbos = wbos || {};
   this.acceptNew = acceptNew || false;
@@ -762,7 +761,6 @@ SyncServer.prototype = {
   },
 
   
-
 
 
 

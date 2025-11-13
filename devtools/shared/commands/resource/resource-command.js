@@ -606,6 +606,7 @@ class ResourceCommand {
 
 
 
+
   _onTargetDestroyed({ targetFront, isModeSwitching }) {
     
     this._existingLegacyListeners.set(targetFront, []);

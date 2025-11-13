@@ -74,6 +74,7 @@ const SECOND_TOGGLE_EXPECTED_EVENTS = [
 
 
 
+
 async function openAndClosePipWithToggle(browser, videoID) {
   await SimpleTest.promiseFocus(browser);
   await ensureVideosReady(browser);
@@ -155,6 +156,7 @@ async function openAndClosePipWithToggle(browser, videoID) {
   await BrowserTestUtils.synthesizeMouseAtPoint(1, 1, {}, browser);
   await assertSawMouseEvents(browser, true);
 }
+
 
 
 

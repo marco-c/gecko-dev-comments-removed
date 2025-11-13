@@ -1763,7 +1763,6 @@ function synthesizeAndWaitNativeMouseMove(
 
 
 
-
 function synthesizeKey(aKey, aEvent = undefined, aWindow = window, aCallback) {
   const event = aEvent === undefined || aEvent === null ? {} : aEvent;
   let dispatchKeydown =

@@ -16,6 +16,8 @@
 
 
 
+
+
 export function truncateMiddleText(sourceText, maxLength) {
   let truncatedText = sourceText;
   if (sourceText.length > maxLength) {

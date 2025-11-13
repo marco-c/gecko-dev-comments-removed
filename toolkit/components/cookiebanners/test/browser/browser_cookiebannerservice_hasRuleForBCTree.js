@@ -51,6 +51,7 @@ let testRules = [
 
 
 
+
 function insertIframe(parentBC, uri) {
   return SpecialPowers.spawn(parentBC, [uri], async testURL => {
     let iframe = content.document.createElement("iframe");

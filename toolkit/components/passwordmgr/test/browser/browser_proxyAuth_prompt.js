@@ -71,6 +71,7 @@ add_setup(async function () {
 
 
 
+
 function getAuthPromptCallback() {
   let callbackResolver;
   let promise = new Promise(resolve => {

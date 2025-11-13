@@ -638,6 +638,7 @@ var FullZoom = {
 
 
 
+
   _getTargetedBrowser: function FullZoom__getTargetedBrowser(event) {
     let target = event.originalTarget;
 

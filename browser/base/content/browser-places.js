@@ -467,6 +467,7 @@ var PlacesCommandHook = {
 
 
 
+
   async bookmarkLink(url, title) {
     let bm = await PlacesUtils.bookmarks.fetch({ url });
     if (bm) {
@@ -496,6 +497,7 @@ var PlacesCommandHook = {
   },
 
   
+
 
 
 
@@ -532,6 +534,7 @@ var PlacesCommandHook = {
   },
 
   
+
 
 
 
@@ -741,6 +744,7 @@ var BookmarksEventHandler = {
 
 
 
+
   onMouseUp(aEvent) {
     
     if (aEvent.button == 2 || PlacesUIUtils.openInTabClosesMenu) {
@@ -814,6 +818,7 @@ var BookmarksEventHandler = {
   },
 
   
+
 
 
 
@@ -908,6 +913,7 @@ var PlacesMenuDNDHandler = {
 
 
 
+
   onDragEnter: function PMDH_onDragEnter(event) {
     
     if (!this._isStaticContainer(event.target)) {
@@ -998,6 +1004,7 @@ var PlacesMenuDNDHandler = {
 
 
 
+
   _isStaticContainer: function PMDH__isContainer(node) {
     let isMenu =
       node.localName == "menu" ||
@@ -1016,6 +1023,7 @@ var PlacesMenuDNDHandler = {
 
 
 
+
   onDragOver: function PMDH_onDragOver(event) {
     PlacesControllerDragHelper.currentDropTarget = event.target;
     let ip = new PlacesInsertionPoint({
@@ -1029,6 +1037,7 @@ var PlacesMenuDNDHandler = {
   },
 
   
+
 
 
 
@@ -1835,6 +1844,7 @@ var BookmarkingUI = {
   },
 
   
+
 
 
 

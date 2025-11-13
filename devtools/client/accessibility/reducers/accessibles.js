@@ -48,6 +48,7 @@ function getActorID(accessible) {
 
 
 
+
 function cleanupChild(cache, accessible) {
   const actorID = getActorID(accessible);
   const cached = cache.get(actorID);
@@ -61,6 +62,7 @@ function cleanupChild(cache, accessible) {
 
   cache.delete(actorID);
 }
+
 
 
 
@@ -108,6 +110,7 @@ function updateAncestry(cache, ancestry) {
 
   return cache;
 }
+
 
 
 

@@ -197,6 +197,7 @@ function once(target, name) {
 
 
 
+
 async function waitForExpectedWakeLockState(
   topic,
   { needLock, isForegroundLock }

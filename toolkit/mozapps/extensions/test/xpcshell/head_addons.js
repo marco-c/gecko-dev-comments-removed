@@ -425,6 +425,7 @@ function checkAddon(id, addon, expected) {
 
 
 
+
 function do_check_in_crash_annotation(aId, aVersion) {
   if (!AppConstants.MOZ_CRASHREPORTER) {
     return;
@@ -442,6 +443,7 @@ function do_check_in_crash_annotation(aId, aVersion) {
     )
   );
 }
+
 
 
 

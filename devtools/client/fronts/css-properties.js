@@ -180,6 +180,7 @@ function normalizeCssData(db) {
 
 
 
+
 function reattachCssColorValues(db) {
   if (db.properties.color.values[0] === "COLOR") {
     const colors = Object.keys(cssColors);

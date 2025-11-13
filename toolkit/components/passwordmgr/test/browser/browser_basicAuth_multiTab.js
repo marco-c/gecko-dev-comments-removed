@@ -27,6 +27,7 @@ const AUTH_PATH =
 
 
 
+
 async function openTabWithAuthPrompt(origin, authOptions) {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -50,6 +51,7 @@ async function openTabWithAuthPrompt(origin, authOptions) {
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url.toString());
   return { origin, tab, authOptions, loadPromise, promptPromise };
 }
+
 
 
 

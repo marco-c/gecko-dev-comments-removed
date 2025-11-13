@@ -32,7 +32,6 @@ const percentFormatter = new Intl.NumberFormat("en", {
 
 
 
-
 class LinearEasingFunctionWidget extends EventEmitter {
   
 
@@ -535,6 +534,7 @@ class TimingFunctionPreviewWidget {
 
 
 
+
   preview(timingFunction) {
     if (this.#previousValue == timingFunction) {
       return;
@@ -544,6 +544,7 @@ class TimingFunctionPreviewWidget {
   }
 
   
+
 
 
 

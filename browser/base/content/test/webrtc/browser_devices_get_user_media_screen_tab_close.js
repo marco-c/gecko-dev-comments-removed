@@ -13,6 +13,7 @@ const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
 
 
+
 function testSelected(aTab) {
   is(aTab, gBrowser.selectedTab, "Tab is gBrowser.selectedTab");
   ok(aTab.hasAttribute("selected"), "Tab has attribute 'selected'");

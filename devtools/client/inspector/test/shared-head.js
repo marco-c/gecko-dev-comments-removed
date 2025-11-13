@@ -24,6 +24,7 @@ var {
 
 
 
+
 var openInspector = async function (hostType) {
   info("Opening the inspector");
 
@@ -222,6 +223,7 @@ function selectLayoutView(inspector) {
 
 
 
+
 function getNodeFront(selector, { walker }) {
   if (selector._form) {
     return selector;
@@ -265,6 +267,7 @@ var selectNode = async function (
   await updated;
   await onSelectionCssSelectorsUpdated;
 };
+
 
 
 
@@ -395,6 +398,7 @@ async function selectNodeInFrames(
   await selectNode(nodeFront, inspector, reason, isSlotted);
   return nodeFront;
 }
+
 
 
 
@@ -817,10 +821,12 @@ function buildContextMenuItems(menu) {
 
 
 
+
 function openStyleContextMenuAndGetAllItems(view, target) {
   const menu = view.contextMenu._openMenu({ target });
   return buildContextMenuItems(menu);
 }
+
 
 
 

@@ -193,7 +193,6 @@ TalosPowersService.prototype = {
 
 
 
-
   addInstantMarker(marker) {
     ChromeUtils.addProfilerMarker("Talos", { category: "Test" }, marker);
   },

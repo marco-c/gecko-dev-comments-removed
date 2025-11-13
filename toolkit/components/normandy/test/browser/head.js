@@ -421,6 +421,7 @@ this.CryptoUtils = {
 
 
 
+
   getFileHash(file, algorithm = "sha256") {
     const crypto = CryptoHash(algorithm);
     const fis = new FileInputStream(file, -1, -1, false);

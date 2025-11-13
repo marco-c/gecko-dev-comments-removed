@@ -841,6 +841,7 @@ HTMLTooltip.prototype = {
 
 
 
+
   isVisible() {
     return this.container.classList.contains("tooltip-visible");
   },

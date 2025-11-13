@@ -11,6 +11,7 @@ const { PromptTestUtils } = ChromeUtils.importESModule(
 
 
 
+
 function getTestDirectory() {
   let tmpDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
   tmpDir.append("testdir");
@@ -45,6 +46,7 @@ add_setup(async function () {
     ],
   });
 });
+
 
 
 

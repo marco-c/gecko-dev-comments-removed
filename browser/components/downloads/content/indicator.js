@@ -340,6 +340,7 @@ const DownloadsIndicatorView = {
 
 
 
+
   _isAncestorPanelOpen(aNode) {
     while (aNode && aNode.localName != "panel") {
       aNode = aNode.parentNode;

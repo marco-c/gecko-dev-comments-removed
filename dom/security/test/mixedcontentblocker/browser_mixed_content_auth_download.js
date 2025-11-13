@@ -39,6 +39,7 @@ let SECURE_BASE_URL =
 
 
 
+
 function shouldTriggerDownload() {
   return new Promise(res => {
     downloadMonitoringView.waitForDownload(res);

@@ -809,6 +809,7 @@
 
 
 
+
     async getFindBar(aTab = this.selectedTab) {
       let findBar = this.getCachedFindBar(aTab);
       if (findBar) {
@@ -823,6 +824,7 @@
     }
 
     
+
 
 
 
@@ -2855,6 +2857,7 @@
 
 
 
+
     addTrustedTab(aURI, options = {}) {
       options.triggeringPrincipal =
         Services.scriptSecurityManager.getSystemPrincipal();
@@ -3186,6 +3189,7 @@
     }
 
     
+
 
 
 
@@ -4859,6 +4863,7 @@
 
 
 
+
       let tabGroupSurvivingTabs = new Map();
       let wholeGroups = [];
       for (let tab of tabs) {
@@ -5629,6 +5634,7 @@
 
 
 
+
     handleNewTabMiddleClick(node, event) {
       
       
@@ -5648,6 +5654,7 @@
     }
 
     
+
 
 
 
@@ -9006,6 +9013,7 @@
     },
 
     
+
 
 
 

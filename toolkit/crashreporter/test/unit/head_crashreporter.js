@@ -42,7 +42,6 @@ function sendCommandAsync(command) {
 
 
 
-
 async function do_crash(setup, callback, canReturnZero) {
   
   let bin = Services.dirsvc.get("XREExeF", Ci.nsIFile);
@@ -253,7 +252,6 @@ async function do_triggered_content_crash(trigger, callback) {
     do_report_unexpected_exception(x);
   }
 }
-
 
 
 

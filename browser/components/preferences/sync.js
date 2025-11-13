@@ -524,6 +524,7 @@ var gSyncPane = {
 
 
 
+
   async reSignIn(entrypoint) {
     const url = await FxAccounts.config.promiseConnectAccountURI(entrypoint);
     this.replaceTabWithUrl(url);

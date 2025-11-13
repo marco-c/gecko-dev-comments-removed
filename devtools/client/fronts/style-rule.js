@@ -220,6 +220,7 @@ class RuleModificationList {
 
 
 
+
   constructor(rule) {
     this.rule = rule;
     this.modifications = [];

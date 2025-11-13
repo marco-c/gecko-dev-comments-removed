@@ -154,6 +154,7 @@ TooltipToggle.prototype = {
 
 
 
+
   async isValidHoverTarget(target) {
     const res = await this._targetNodeCb(target, this.tooltip);
     if (res) {

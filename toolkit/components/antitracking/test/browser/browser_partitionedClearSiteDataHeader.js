@@ -39,6 +39,7 @@ const skipLocalStorageTests = Services.prefs.getBoolPref(
 
 
 
+
 function createFrame(browser, src, id, sandbox) {
   return SpecialPowers.spawn(
     browser,
@@ -68,6 +69,7 @@ function createFrame(browser, src, id, sandbox) {
 
 
 
+
 async function createTabWithFrame(
   firstPartyUrl,
   thirdPartyUrl,
@@ -84,6 +86,7 @@ async function createTabWithFrame(
   
   return { tab, frameBC: tab.linkedBrowser.browsingContext.children[0] };
 }
+
 
 
 
@@ -188,6 +191,7 @@ async function runClearSiteDataTest(
 
 
 
+
 function getOrigin(originNoSuffix, firstParty) {
   let origin = originNoSuffix;
   if (firstParty) {
@@ -196,6 +200,7 @@ function getOrigin(originNoSuffix, firstParty) {
   }
   return origin;
 }
+
 
 
 
@@ -221,6 +226,7 @@ function setStorageEntry(storageType, originNoSuffix, firstParty, key, value) {
   
   SiteDataTestUtils.addToLocalStorage(origin, key, value);
 }
+
 
 
 
@@ -263,6 +269,7 @@ function testHasCookie(hasCookie, originNoSuffix, firstParty, key, value) {
 
 
 
+
 function testHasLocalStorageEntry(
   hasEntry,
   originNoSuffix,
@@ -291,6 +298,7 @@ function testHasLocalStorageEntry(
     ok(!hasEntry, `localStorage for ${label} is not set for key ${key}`);
   }
 }
+
 
 
 

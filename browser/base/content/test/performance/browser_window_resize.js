@@ -50,6 +50,7 @@ async function toggleBookmarksToolbar(visible) {
 
 
 
+
 async function resizeWindow(win, width, height) {
   let toolbarEvent = BrowserTestUtils.waitForEvent(
     win,
@@ -81,7 +82,7 @@ add_task(async function () {
     children: Array(BOOKMARKS_COUNT)
       .fill("")
       
-      .map((_, i) => ({ url: `http://test.places.${i}/` })),
+      .map((_, i) => ({ url: `http://test.places.${i}.x/` })),
   });
 
   let wasCollapsed = gToolbar.collapsed;

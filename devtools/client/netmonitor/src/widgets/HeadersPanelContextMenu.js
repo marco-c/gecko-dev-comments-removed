@@ -36,6 +36,7 @@ class HeadersPanelContextMenu {
 
 
 
+
   open(event = {}, selection) {
     const { target } = event;
     const menuItems = [
@@ -83,6 +84,7 @@ class HeadersPanelContextMenu {
 
 
 
+
   copyAll(object, selection) {
     let buffer = "";
     if (selection.toString() !== "") {
@@ -103,6 +105,7 @@ class HeadersPanelContextMenu {
   }
 
   
+
 
 
 

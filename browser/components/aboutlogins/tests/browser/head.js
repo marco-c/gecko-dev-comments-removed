@@ -203,6 +203,7 @@ add_setup(async function setup_head() {
 
 
 
+
 function waitForMPDialog(action, aWindow = window) {
   const BRAND_BUNDLE = Services.strings.createBundle(
     "chrome://branding/locale/brand.properties"

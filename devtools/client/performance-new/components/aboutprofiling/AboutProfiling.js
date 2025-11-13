@@ -77,6 +77,7 @@ function encodeShellValue(value) {
 
 
 
+
 class MoreActionsButtonImpl extends PureComponent {
   state = {
     hasDeveloperOptions: Services.prefs.getBoolPref(
@@ -110,6 +111,7 @@ class MoreActionsButtonImpl extends PureComponent {
   };
 
   
+
 
 
 

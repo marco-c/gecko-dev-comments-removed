@@ -364,6 +364,7 @@ function writeFile(aFile, aText) {
 
 
 
+
 function ensureRemoved(file) {
   try {
     file.remove(false);

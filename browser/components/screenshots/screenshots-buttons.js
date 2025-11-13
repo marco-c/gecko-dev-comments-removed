@@ -61,6 +61,7 @@
 
 
 
+
     async focusButton(buttonToFocus) {
       await this.shadowRoot.querySelector("moz-button-group").updateComplete;
       if (buttonToFocus === "fullpage") {

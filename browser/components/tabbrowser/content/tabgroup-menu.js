@@ -807,11 +807,13 @@
 
 
 
+
     #shouldUpdateLabelWithMlLabel() {
       return !this.#nameField.value && this.panel.state !== "closed";
     }
 
     
+
 
 
 
@@ -1047,6 +1049,7 @@
 
 
 
+
     #setFormToDisabled(state) {
       const toolbarButtons =
         this.#tabGroupMain.querySelectorAll("toolbarbutton");
@@ -1141,6 +1144,7 @@
 
 
 
+
     #handleMlTelemetry(action) {
       if (!this.smartTabGroupsEnabled || !this.smartTabGroupsOptin) {
         return;
@@ -1171,6 +1175,7 @@
     }
 
     
+
 
 
 
@@ -1256,6 +1261,7 @@
     }
 
     
+
 
 
 

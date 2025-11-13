@@ -481,6 +481,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
 
 
+
   get docShells() {
     if (this.ignoreSubFrames) {
       return [this.docShell];
@@ -534,6 +535,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   }
 
   
+
 
 
 

@@ -1470,6 +1470,7 @@ exports.StyleRuleActor = StyleRuleActor;
 
 
 
+
 function getSelectorOffsets(initialText, line, column) {
   if (typeof line === "undefined" || typeof column === "undefined") {
     throw new Error("Location information is missing");

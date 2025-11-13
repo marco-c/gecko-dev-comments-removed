@@ -42,6 +42,7 @@ function getURL(origin) {
 
 
 
+
 function insertIframeAndWaitForLoad(browserOrBrowsingContext, url) {
   return SpecialPowers.spawn(browserOrBrowsingContext, [url], async url => {
     let iframe = content.document.createElement("iframe");
@@ -53,6 +54,7 @@ function insertIframeAndWaitForLoad(browserOrBrowsingContext, url) {
     return iframe.browsingContext;
   });
 }
+
 
 
 

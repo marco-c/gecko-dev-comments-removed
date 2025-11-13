@@ -181,11 +181,13 @@ var gTranslationsSettings = {
 
 
 
+
   getAlwaysTranslateLanguages() {
     return this.getLangsFromPref(ALWAYS_TRANSLATE_LANGS_PREF);
   },
 
   
+
 
 
 

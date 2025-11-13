@@ -37,6 +37,7 @@ function TimeKeeper(props) {
 
 
 
+
     get hour() {
       return this.state.time.getUTCHours();
     },
@@ -57,6 +58,7 @@ function TimeKeeper(props) {
     },
 
     
+
 
 
 
@@ -110,6 +112,7 @@ function TimeKeeper(props) {
 
 
 
+
     setDayPeriod(dayPeriod) {
       if (dayPeriod == this.dayPeriod) {
         return;
@@ -126,11 +129,13 @@ function TimeKeeper(props) {
 
 
 
+
     setHour(hour) {
       this.setState({ hour });
     },
 
     
+
 
 
 
@@ -142,11 +147,13 @@ function TimeKeeper(props) {
 
 
 
+
     setSecond(second) {
       this.setState({ second });
     },
 
     
+
 
 
 
@@ -267,6 +274,7 @@ function TimeKeeper(props) {
     },
 
     
+
 
 
 

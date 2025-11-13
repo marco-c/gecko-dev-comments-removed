@@ -370,6 +370,7 @@ exports.analyzeInputString = function (str, timeout = 2500) {
 
 
 
+
 exports.shouldInputBeAutocompleted = function (inputAnalysisState) {
   const { err, state, lastStatement } = inputAnalysisState;
 
@@ -399,6 +400,7 @@ exports.shouldInputBeAutocompleted = function (inputAnalysisState) {
 
   return true;
 };
+
 
 
 

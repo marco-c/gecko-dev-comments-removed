@@ -11,6 +11,7 @@ add_setup(async function () {
 
 
 
+
 function test_highlights(bookmarkCount, test) {
   test_newtab({
     async before({ tab }) {
