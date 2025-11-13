@@ -53,15 +53,7 @@ class nsViewManager final {
 
 
 
-
-
-
-
-
-
-
-  nsView* CreateView(const nsRect& aBounds, nsView* aParent,
-                     ViewVisibility aVisibilityFlag = ViewVisibility::Show);
+  nsView* CreateView(const nsSize& aSize);
 
   
 
@@ -133,58 +125,7 @@ class nsViewManager final {
 
 
 
-
-
-
-
-
-
-  void InsertChild(nsView* aParent, nsView* aChild, nsView* aSibling,
-                   bool aAfter);
-
-  
-
-
-
-
-
-
-  void RemoveChild(nsView* aChild);
-
-  
-
-
-
-
-
-
-
-
-  void MoveViewTo(nsView* aView, nscoord aX, nscoord aY);
-
-  
-
-
-
-
-
-
-
-
   void ResizeView(nsView* aView, const nsRect& aRect);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void SetViewVisibility(nsView* aView, ViewVisibility aVisible);
 
   
 
@@ -217,12 +158,6 @@ class nsViewManager final {
 
 
   static uint32_t GetLastUserEventTime() { return gLastUserEventTime; }
-
-  
-
-
-
-  static nsView* GetDisplayRootFor(nsView* aView);
 
   
 
@@ -268,10 +203,6 @@ class nsViewManager final {
   
   MOZ_CAN_RUN_SCRIPT
   void Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion);
-
-  
-
-  bool IsViewInserted(nsView* aView);
 
   
 

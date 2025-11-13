@@ -97,12 +97,6 @@ enum class WindowType : uint8_t;
 
 
 
-enum class ViewVisibility : uint8_t { Hide = 0, Show = 1 };
-
-
-
-
-
 
 
 
@@ -158,75 +152,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  nsPoint GetPosition() const {
-    NS_ASSERTION(!IsRoot() || (mPosX == 0 && mPosY == 0),
-                 "root views should always have explicit position of (0,0)");
-    return nsPoint(mPosX, mPosY);
-  }
-
-  
-
-
-
-
-
-
-
   nsRect GetBounds() const { return mDimBounds; }
-
-  
-
-
-
-  nsRect GetDimensions() const {
-    nsRect r = mDimBounds;
-    r.MoveBy(-mPosX, -mPosY);
-    return r;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsPoint GetOffsetTo(const nsView* aOther) const;
-
-  
-
-
-
-  ViewVisibility GetVisibility() const { return mVis; }
-
-  
-
-
-
-  nsView* GetParent() const { return mParent; }
-
-  
-
-
-
-  nsView* GetFirstChild() const { return mFirstChild; }
-
-  
-
-
-
-  nsView* GetNextSibling() const { return mNextSibling; }
 
   
 
@@ -237,18 +163,6 @@ class nsView final : public nsIWidgetListener {
 
 
   nsIFrame* GetFrame() const { return mFrame; }
-
-  
-
-
-
-
-
-
-
-
-
-  nsIWidget* GetNearestWidget(nsPoint* aOffset) const;
 
   
 
@@ -347,19 +261,6 @@ class nsView final : public nsIWidgetListener {
   nsPoint ViewToWidgetOffset() const { return mViewToWidgetOffset; }
 
   
-
-
-
-
-
-  void SetPosition(nscoord aX, nscoord aY);
-  void SetParent(nsView* aParent) { mParent = aParent; }
-  void SetNextSibling(nsView* aSibling) {
-    NS_ASSERTION(aSibling != this, "Can't be our own sibling!");
-    mNextSibling = aSibling;
-  }
-
-  
   mozilla::PresShell* GetPresShell() override;
   nsView* GetView() override { return this; }
   bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
@@ -388,19 +289,14 @@ class nsView final : public nsIWidgetListener {
 
   virtual ~nsView();
 
-  nsPoint GetOffsetTo(const nsView* aOther, const int32_t aAPD) const;
-  nsIWidget* GetNearestWidget(nsPoint* aOffset, const int32_t aAPD) const;
-
   bool IsPrimaryFramePaintSuppressed();
 
  private:
-  explicit nsView(nsViewManager* = nullptr,
-                  ViewVisibility = ViewVisibility::Show);
+  explicit nsView(nsViewManager* = nullptr);
 
   bool ForcedRepaint() { return mForcedRepaint; }
 
   void InitializeWindow(bool aEnableDragDrop, bool aResetVisibility);
-  bool IsEffectivelyVisible();
 
   
 
@@ -411,40 +307,22 @@ class nsView final : public nsIWidgetListener {
   void SetDimensions(const nsRect& aRect);
 
   
-
-
-
-
-  void SetVisibility(ViewVisibility visibility);
-
-  
   
   void DropMouseGrabbing();
 
   bool IsDirty() const { return mIsDirty; }
   void SetIsDirty(bool aDirty) { mIsDirty = aDirty; }
 
-  void InsertChild(nsView* aChild, nsView* aSibling);
-  void RemoveChild(nsView* aChild);
-
   void AssertNoWindow();
-
-  void NotifyEffectiveVisibilityChanged(bool aEffectivelyVisible);
 
   void CallOnAllRemoteChildren(
       const std::function<mozilla::CallState(mozilla::dom::BrowserParent*)>&
           aCallback);
 
   nsViewManager* mViewManager;
-  nsView* mParent;
   nsCOMPtr<nsIWidget> mWindow;
   nsCOMPtr<nsIWidget> mPreviousWindow;
-  nsView* mNextSibling;
-  nsView* mFirstChild;
   nsIFrame* mFrame;
-  ViewVisibility mVis;
-  
-  nscoord mPosX, mPosY;
   
   nsRect mDimBounds;
   

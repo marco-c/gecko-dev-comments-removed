@@ -435,8 +435,6 @@ void BlockReflowState::RecoverFloats(nsLineList::iterator aLine,
     for (nsIFrame* floatFrame : aLine->Floats()) {
       if (aDeltaBCoord != 0) {
         floatFrame->MovePositionBy(nsPoint(0, aDeltaBCoord));
-        nsContainerFrame::PositionFrameView(floatFrame);
-        nsContainerFrame::PositionChildViews(floatFrame);
       }
 #ifdef DEBUG
       if (nsBlockFrame::gNoisyReflow || nsBlockFrame::gNoisyFloatManager) {
@@ -885,13 +883,9 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
                                         ContainerSize());
 
   
-  
-  
   bool moved = aFloat->GetLogicalPosition(wm, ContainerSize()) != origin;
   if (moved) {
     aFloat->SetPosition(wm, origin, ContainerSize());
-    nsContainerFrame::PositionFrameView(aFloat);
-    nsContainerFrame::PositionChildViews(aFloat);
   }
 
   

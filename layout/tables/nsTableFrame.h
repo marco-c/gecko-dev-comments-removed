@@ -178,8 +178,6 @@ class nsTableFrame : public nsContainerFrame {
   
   static void RequestSpecialBSizeReflow(const ReflowInput& aReflowInput);
 
-  static void RePositionViews(nsIFrame* aFrame);
-
   static bool PageBreakAfter(nsIFrame* aSourceFrame, nsIFrame* aNextFrame);
 
   

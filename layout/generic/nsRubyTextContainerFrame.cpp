@@ -146,7 +146,6 @@ void nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
       
       
       child->SetPosition(rtcWM, pos, containerSize);
-      nsContainerFrame::PlaceFrameView(child);
     }
     aDesiredSize.SetSize(rtcWM, size);
   } else {

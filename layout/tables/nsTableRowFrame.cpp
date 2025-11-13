@@ -355,7 +355,6 @@ void nsTableRowFrame::DidResize(ForceAlignTopForTableCell aForceAlignTop) {
 
         if (oldPos != newPos) {
           cellFrame->SetPosition(wm, newPos, containerSize);
-          nsTableFrame::RePositionViews(cellFrame);
         }
       }
 
@@ -781,16 +780,6 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
 
         desiredSize.SetSize(wm, cellDesiredSize);
         desiredSize.mOverflowAreas = kidFrame->GetOverflowAreas();
-
-        
-        
-        
-        if (!aTableFrame.IsFloating()) {
-          
-          
-          
-          nsTableFrame::RePositionViews(kidFrame);
-        }
       }
 
       if (NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize()) {
@@ -854,7 +843,6 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
         
         kidFrame->MovePositionBy(
             wm, LogicalPoint(wm, iCoord - origKidNormalPosition.I(wm), 0));
-        nsTableFrame::RePositionViews(kidFrame);
         
         kidFrame->InvalidateFrameSubtree();
       }
@@ -911,7 +899,6 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
         kidFrame->MovePositionBy(
             wm,
             LogicalPoint(wm, 0, kidFrame->BSize(wm) - aDesiredSize.BSize(wm)));
-        nsTableFrame::RePositionViews(kidFrame);
         
       }
     }
@@ -1198,7 +1185,6 @@ nscoord nsTableRowFrame::CollapseRowIfNecessary(nscoord aRowOffset,
       OverflowAreas cellOverflow(cellPhysicalBounds, cellPhysicalBounds);
       cellFrame->FinishAndStoreOverflow(cellOverflow,
                                         cRect.Size(wm).GetPhysicalSize(wm));
-      nsTableFrame::RePositionViews(cellFrame);
       ConsiderChildOverflow(overflow, cellFrame);
 
       if (aRowOffset == 0) {
@@ -1211,8 +1197,6 @@ nscoord nsTableRowFrame::CollapseRowIfNecessary(nscoord aRowOffset,
   SetRect(wm, rowRect, containerSize);
   overflow.UnionAllWith(nsRect(0, 0, rowRect.Width(wm), rowRect.Height(wm)));
   FinishAndStoreOverflow(overflow, rowRect.Size(wm).GetPhysicalSize(wm));
-
-  nsTableFrame::RePositionViews(this);
   nsTableFrame::InvalidateTableFrame(this, oldRect, oldInkOverflow, false);
   return shift;
 }

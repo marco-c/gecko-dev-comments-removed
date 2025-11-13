@@ -206,8 +206,6 @@ class PresShell final : public nsStubDocumentObserver,
     return sCapturingContentInfo.mPreventDrag && sCapturingContentInfo.mContent;
   }
 
-  static void ClearMouseCaptureOnView(nsView* aView);
-
   
   static void ClearMouseCapture();
 

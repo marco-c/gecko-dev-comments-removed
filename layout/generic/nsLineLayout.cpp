@@ -3429,15 +3429,6 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
     
     
     
-    if (auto* view = frame->GetView()) {
-      nsContainerFrame::SyncFrameViewAfterReflow(
-          mPresContext, frame, view, pfd->mOverflowAreas.InkOverflow(),
-          nsIFrame::ReflowChildFlags::NoSizeView);
-    }
-
-    
-    
-    
     
     OverflowAreas r;
     if (pfd->mSpan) {
@@ -3463,24 +3454,6 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
         }
         frame->FinishAndStoreOverflow(r, frame->GetSize());
       }
-
-      
-      
-      
-      
-      
-      
-      
-      nsContainerFrame::PositionChildViews(frame);
-    }
-
-    
-    
-    
-    if (auto* view = frame->GetView()) {
-      nsContainerFrame::SyncFrameViewAfterReflow(
-          mPresContext, frame, view, r.InkOverflow(),
-          nsIFrame::ReflowChildFlags::NoMoveView);
     }
 
     overflowAreas.UnionWith(r + frame->GetPosition());

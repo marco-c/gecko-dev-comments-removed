@@ -1373,16 +1373,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
           bEndInsetAuto ? 0 : offsets.BEnd(outerWM),
           iStartInsetAuto ? 0 : offsets.IStart(outerWM)};
       cb.mRect.Deflate(insetModification.GetPhysicalMargin(outerWM));
-
-      nsView* view = aKidFrame->GetView();
-      if (view) {
-        
-        
-        nsContainerFrame::SyncFrameViewAfterReflow(
-            aPresContext, aKidFrame, view, kidDesiredSize.InkOverflow());
-      } else {
-        nsContainerFrame::PositionChildViews(aKidFrame);
-      }
     }
 
     aKidFrame->DidReflow(aPresContext, &kidReflowInput);
@@ -1419,7 +1409,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         aKidFrame->UpdateOverflow();
-        nsContainerFrame::PlaceFrameView(aKidFrame);
       }
       aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift = offset;
     }();
@@ -1480,7 +1469,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }
     aKidFrame->SetPosition(position);
     aKidFrame->UpdateOverflow();
-    nsContainerFrame::PlaceFrameView(aKidFrame);
   }();
 
   

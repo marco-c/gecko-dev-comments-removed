@@ -1918,7 +1918,7 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
     nscoord height = NSIntPixelsToAppUnits(mBounds.height, p2a);
     nsView* rootView = mViewManager->GetRootView();
     if (boundsChanged && rootView) {
-      nsRect viewDims = rootView->GetDimensions();
+      nsRect viewDims = rootView->GetBounds();
       
       
       
@@ -2183,9 +2183,7 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize) {
   mViewManager = new nsViewManager(mPresContext->DeviceContext());
 
   
-  nsRect tbounds(nsPoint(), aSize);
-  
-  nsView* view = mViewManager->CreateView(tbounds, nullptr);
+  nsView* view = mViewManager->CreateView(aSize);
 
   
   

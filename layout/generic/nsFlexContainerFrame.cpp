@@ -1399,7 +1399,7 @@ nsFlexContainerFrame::UsedAlignSelfAndFlagsForItem(
   
   
   
-  StyleAlignSelf usedAlignSelf =
+  StyleSelfAlignment usedAlignSelf =
       aFlexItem->StylePosition()->UsedAlignSelf(Style());
   if (MOZ_LIKELY(usedAlignSelf._0 == StyleAlignFlags::NORMAL)) {
     
@@ -6265,8 +6265,6 @@ void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
   FLEX_ITEM_LOG(aItem.Frame(), "Moving item to its desired position %s",
                 ToString(pos).c_str());
   aItem.Frame()->SetPosition(outerWM, pos, aContainerSize);
-  PositionFrameView(aItem.Frame());
-  PositionChildViews(aItem.Frame());
 }
 
 nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
@@ -6680,7 +6678,7 @@ Result<nsILineIterator::LineInfo, nsresult> nsFlexContainerFrame::GetLine(
   return lineInfo;
 }
 
-int32_t nsFlexContainerFrame::FindLineContaining(nsIFrame* aFrame,
+int32_t nsFlexContainerFrame::FindLineContaining(const nsIFrame* aFrame,
                                                  int32_t aStartLine) {
   const int32_t index = mFrames.IndexOf(aFrame);
   if (index < 0) {

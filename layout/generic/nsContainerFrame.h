@@ -47,8 +47,6 @@ class nsContainerFrame : public nsSplittableFrame {
   NS_DECL_QUERYFRAME
 
   
-  void Init(nsIContent* aContent, nsContainerFrame* aParent,
-            nsIFrame* aPrevInFlow) override;
   nsContainerFrame* GetContentInsertionFrame() override { return this; }
 
   const nsFrameList& GetChildList(ChildListID aList) const override;
@@ -152,9 +150,6 @@ class nsContainerFrame : public nsSplittableFrame {
                                      bool aDeletingEmptyFrames);
 
   
-  static void PositionFrameView(nsIFrame* aKidFrame);
-
-  
 
 
   static void ReparentFrame(nsIFrame* aFrame, nsContainerFrame* aOldParent,
@@ -171,12 +166,6 @@ class nsContainerFrame : public nsSplittableFrame {
   static void ReparentFrames(nsFrameList& aFrameList,
                              nsContainerFrame* aOldParent,
                              nsContainerFrame* aNewParent);
-
-  
-  static void SyncFrameViewAfterReflow(
-      nsPresContext* aPresContext, nsIFrame* aFrame, nsView* aView,
-      const nsRect& aInkOverflowArea,
-      ReflowChildFlags aFlags = ReflowChildFlags::Default);
 
   
 
@@ -281,8 +270,6 @@ class nsContainerFrame : public nsSplittableFrame {
                                 const ReflowOutput& aDesiredSize,
                                 const ReflowInput* aReflowInput, nscoord aX,
                                 nscoord aY, ReflowChildFlags aFlags);
-
-  static void PositionChildViews(nsIFrame* aFrame);
 
   
 
@@ -460,14 +447,6 @@ class nsContainerFrame : public nsSplittableFrame {
 
   virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
-
-  static void PlaceFrameView(nsIFrame* aFrame) {
-    if (aFrame->GetView()) {
-      nsContainerFrame::PositionFrameView(aFrame);
-    } else {
-      nsContainerFrame::PositionChildViews(aFrame);
-    }
-  }
 
   
 

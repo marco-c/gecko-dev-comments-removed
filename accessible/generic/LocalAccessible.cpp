@@ -317,12 +317,6 @@ uint64_t LocalAccessible::VisibilityState() const {
   
   nsIFrame* curFrame = frame;
   do {
-    if (nsView* view = curFrame->GetView()) {
-      if (view->GetVisibility() == ViewVisibility::Hide) {
-        return states::INVISIBLE;
-      }
-    }
-
     if (nsMenuPopupFrame* popup = do_QueryFrame(curFrame)) {
       return popup->IsOpen() ? 0 : states::INVISIBLE;
     }

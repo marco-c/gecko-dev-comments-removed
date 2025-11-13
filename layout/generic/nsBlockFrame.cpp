@@ -2356,7 +2356,6 @@ void nsBlockFrame::AlignContent(BlockReflowState& aState,
     }
     for (nsIFrame* kid : GetChildList(FrameChildListID::Float)) {
       kid->MovePositionBy(wm, translation);
-      nsContainerFrame::PlaceFrameView(kid);
     }
     nsIFrame* outsideMarker = GetOutsideMarker();
     if (outsideMarker && !mLines.empty()) {
@@ -2944,7 +2943,6 @@ bool nsBlockFrame::LinesAreEmpty() const {
 
 bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool keepGoing = true;
-  bool repositionViews = false;  
   bool foundAnyClears = aState.mTrailingClearFromPIF != UsedClear::None;
   bool willReflowAgain = false;
   bool usedOverflowWrap = false;
@@ -3354,8 +3352,6 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
       if (deltaBCoord != 0) {
         SlideLine(aState, line, deltaBCoord);
-      } else {
-        repositionViews = true;
       }
 
       NS_ASSERTION(!line->IsDirty() || !line->HasFloats(),
@@ -3441,11 +3437,6 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
                  "unexpected line frames");
     aState.mPrevChild = line == line_end ? mFrames.LastChild()
                                          : line->mFirstChild->GetPrevSibling();
-  }
-
-  
-  if (repositionViews) {
-    nsContainerFrame::PlaceFrameView(this);
   }
 
   
@@ -3932,22 +3923,17 @@ void nsBlockFrame::MoveChildFramesOfLine(nsLineBox* aLine,
     if (aDeltaBCoord) {
       kid->MovePositionBy(wm, translation);
     }
-
-    
-    nsContainerFrame::PlaceFrameView(kid);
   } else {
     
     
     
     
-    int32_t n = aLine->GetChildCount();
-    while (--n >= 0) {
-      if (aDeltaBCoord) {
+    if (aDeltaBCoord) {
+      int32_t n = aLine->GetChildCount();
+      while (--n >= 0) {
         kid->MovePositionBy(wm, translation);
+        kid = kid->GetNextSibling();
       }
-      
-      nsContainerFrame::PlaceFrameView(kid);
-      kid = kid->GetNextSibling();
     }
   }
 }
@@ -4183,9 +4169,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   const nscoord startingBCoord = aState.mBCoord;
   const CollapsingMargin incomingMargin = aState.mPrevBEndMargin;
   nscoord clearance;
-  
-  
-  nsPoint originalPosition = frame->GetPosition();
   while (true) {
     clearance = 0;
     nscoord bStartMargin = 0;
@@ -4553,13 +4536,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     aState.mPrevChild = frame;
 
     if (childReflowInput->WillReflowAgainForClearance()) {
-      
-      
-      
-      
-      
-      NS_ASSERTION(originalPosition == frame->GetPosition(),
-                   "we need to call PositionChildViews");
       return;
     }
 
@@ -4758,14 +4734,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       }
     }
     break;  
-  }
-
-  
-  
-  
-  
-  if (originalPosition != frame->GetPosition() && !frame->GetView()) {
-    nsContainerFrame::PositionChildViews(frame);
   }
 
 #ifdef DEBUG
@@ -7456,11 +7424,6 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
   
   WritingMode metricsWM = metrics.GetWritingMode();
   aFloat->SetSize(metricsWM, metrics.Size(metricsWM));
-  if (auto* view = aFloat->GetView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(aState.mPresContext, aFloat,
-                                               view, metrics.InkOverflow(),
-                                               ReflowChildFlags::NoMoveView);
-  }
   aFloat->DidReflow(aState.mPresContext, &aFloatRI);
 }
 

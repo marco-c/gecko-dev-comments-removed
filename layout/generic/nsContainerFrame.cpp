@@ -43,8 +43,6 @@
 #include "nsPrintfCString.h"
 #include "nsRect.h"
 #include "nsStyleConsts.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -62,19 +60,6 @@ nsContainerFrame::~nsContainerFrame() = default;
 NS_QUERYFRAME_HEAD(nsContainerFrame)
   NS_QUERYFRAME_ENTRY(nsContainerFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsSplittableFrame)
-
-void nsContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
-                            nsIFrame* aPrevInFlow) {
-  nsSplittableFrame::Init(aContent, aParent, aPrevInFlow);
-  if (aPrevInFlow) {
-    
-    
-    
-    if (aPrevInFlow->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-      AddStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW);
-    }
-  }
-}
 
 void nsContainerFrame::SetInitialChildList(ChildListID aListID,
                                            nsFrameList&& aChildList) {
@@ -225,11 +210,6 @@ void nsContainerFrame::SafelyDestroyFrameListProp(
 }
 
 void nsContainerFrame::Destroy(DestroyContext& aContext) {
-  
-  if (auto* view = GetView()) {
-    view->SetFrame(nullptr);
-  }
-
   DestroyAbsoluteFrames(aContext);
 
   
@@ -560,40 +540,6 @@ nsIFrame::FrameSearchResult nsContainerFrame::PeekOffsetCharacter(
 
 
 
-
-
-
-
-
-void nsContainerFrame::PositionFrameView(nsIFrame* aKidFrame) {
-  if (MOZ_LIKELY(!aKidFrame->MayHaveView())) {
-    return;
-  }
-  nsIFrame* parentFrame = aKidFrame->GetParent();
-  if (!parentFrame) {
-    return;
-  }
-  auto* view = aKidFrame->GetView();
-  if (!view) {
-    return;
-  }
-
-  nsViewManager* vm = view->GetViewManager();
-  nsPoint pt;
-  nsView* ancestorView = parentFrame->GetClosestView(&pt);
-
-  if (ancestorView != view->GetParent()) {
-    NS_ASSERTION(ancestorView == view->GetParent()->GetParent(),
-                 "Allowed only one anonymous view between frames");
-    
-    
-    return;
-  }
-
-  pt += aKidFrame->GetPosition();
-  vm->MoveViewTo(view, pt.x, pt.y);
-}
-
 void nsContainerFrame::ReparentFrame(nsIFrame* aFrame,
                                      nsContainerFrame* aOldParent,
                                      nsContainerFrame* aNewParent) {
@@ -660,26 +606,6 @@ void nsContainerFrame::SetSizeConstraints(nsPresContext* aPresContext,
   }
 
   aWidget->SetSizeConstraints(constraints);
-}
-
-void nsContainerFrame::SyncFrameViewAfterReflow(nsPresContext* aPresContext,
-                                                nsIFrame* aFrame, nsView* aView,
-                                                const nsRect& aInkOverflowArea,
-                                                ReflowChildFlags aFlags) {
-  if (!aView) {
-    return;
-  }
-
-  
-  if (!(aFlags & ReflowChildFlags::NoMoveView)) {
-    PositionFrameView(aFrame);
-  }
-
-  if (!(aFlags & ReflowChildFlags::NoSizeView)) {
-    nsViewManager* vm = aView->GetViewManager();
-
-    vm->ResizeView(aView, aInkOverflowArea);
-  }
 }
 
 void nsContainerFrame::DoInlineMinISize(const IntrinsicSizeInput& aInput,
@@ -784,11 +710,6 @@ void nsContainerFrame::ReflowChild(
     aKidFrame->SetPosition(aWM, aPos, aContainerSize);
   }
 
-  if (!(aFlags & ReflowChildFlags::NoMoveView)) {
-    PositionFrameView(aKidFrame);
-    PositionChildViews(aKidFrame);
-  }
-
   
   aKidFrame->Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
@@ -825,11 +746,6 @@ void nsContainerFrame::ReflowChild(nsIFrame* aKidFrame,
     aKidFrame->SetPosition(nsPoint(aX, aY));
   }
 
-  if (!(aFlags & ReflowChildFlags::NoMoveView)) {
-    PositionFrameView(aKidFrame);
-    PositionChildViews(aKidFrame);
-  }
-
   
   aKidFrame->Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
@@ -849,29 +765,6 @@ void nsContainerFrame::ReflowChild(nsIFrame* aKidFrame,
   }
 }
 
-
-
-
-
-void nsContainerFrame::PositionChildViews(nsIFrame* aFrame) {
-  if (!aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  for (const auto& [list, listID] : aFrame->ChildLists()) {
-    for (nsIFrame* childFrame : list) {
-      
-      
-      PlaceFrameView(childFrame);
-    }
-  }
-}
-
 void nsContainerFrame::FinishReflowChild(
     nsIFrame* aKidFrame, nsPresContext* aPresContext,
     const ReflowOutput& aDesiredSize, const ReflowInput* aReflowInput,
@@ -887,7 +780,6 @@ void nsContainerFrame::FinishReflowChild(
                  "FinishReflowChild with unconstrained container width!");
   }
 
-  nsPoint curOrigin = aKidFrame->GetPosition();
   const LogicalSize convertedSize = aDesiredSize.Size(aWM);
   LogicalPoint pos(aPos);
 
@@ -910,18 +802,6 @@ void nsContainerFrame::FinishReflowChild(
     aKidFrame->SetSize(aWM, convertedSize);
   }
 
-  if (nsView* view = aKidFrame->GetView()) {
-    
-    
-    SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
-                             aDesiredSize.InkOverflow(), aFlags);
-  } else if (!(aFlags & ReflowChildFlags::NoMoveView) &&
-             curOrigin != aKidFrame->GetPosition()) {
-    
-    
-    PositionChildViews(aKidFrame);
-  }
-
   aKidFrame->DidReflow(aPresContext, aReflowInput);
 }
 #if defined(_MSC_VER) && !defined(__clang__) && defined(_M_AMD64)
@@ -940,7 +820,6 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
              "only the logical version supports ApplyRelativePositioning "
              "since ApplyRelativePositioning requires the container size");
 
-  nsPoint curOrigin = aKidFrame->GetPosition();
   nsPoint pos(aX, aY);
   nsSize size(aDesiredSize.PhysicalSize());
 
@@ -949,17 +828,6 @@ void nsContainerFrame::FinishReflowChild(nsIFrame* aKidFrame,
     aKidFrame->SetRect(nsRect(pos, size));
   } else {
     aKidFrame->SetSize(size);
-  }
-
-  if (nsView* view = aKidFrame->GetView()) {
-    
-    
-    SyncFrameViewAfterReflow(aPresContext, aKidFrame, view,
-                             aDesiredSize.InkOverflow(), aFlags);
-  } else if (!(aFlags & ReflowChildFlags::NoMoveView) && curOrigin != pos) {
-    
-    
-    PositionChildViews(aKidFrame);
   }
 
   aKidFrame->DidReflow(aPresContext, aReflowInput);

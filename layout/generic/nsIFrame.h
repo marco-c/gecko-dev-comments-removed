@@ -3160,27 +3160,19 @@ class nsIFrame : public nsQueryFrame {
                       const ReflowInput& aReflowInput, nsReflowStatus& aStatus);
 
   
-  
   enum class ReflowChildFlags : uint32_t {
     Default = 0,
 
     
-    
-    NoMoveView = 1 << 0,
-
-    
-    NoMoveFrame = (1 << 1) | NoMoveView,
-
-    
-    NoSizeView = 1 << 2,
+    NoMoveFrame = (1 << 0),
 
     
     
-    NoDeleteNextInFlowChild = 1 << 3,
+    NoDeleteNextInFlowChild = 1 << 1,
 
     
     
-    ApplyRelativePositioning = 1 << 4,
+    ApplyRelativePositioning = 1 << 2,
   };
 
   
@@ -3348,14 +3340,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   nsView* GetClosestView(nsPoint* aOffset = nullptr) const;
-
-  
-
-
-
-
-
-  void SyncFrameViewProperties(nsView* aView = nullptr);
 
   
 

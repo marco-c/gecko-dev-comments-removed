@@ -917,15 +917,9 @@ void ScrollContainerFrame::ReflowScrolledFrame(ScrollReflowInput& aState,
   mHasHorizontalScrollbar = didHaveHorizontalScrollbar;
   mHasVerticalScrollbar = didHaveVerticalScrollbar;
 
-  
-  
-  
-  
-  
-  FinishReflowChild(
-      mScrolledFrame, presContext, *aMetrics, &kidReflowInput, wm,
-      LogicalPoint(wm), dummyContainerSize,
-      ReflowChildFlags::NoMoveFrame | ReflowChildFlags::NoSizeView);
+  FinishReflowChild(mScrolledFrame, presContext, *aMetrics, &kidReflowInput, wm,
+                    LogicalPoint(wm), dummyContainerSize,
+                    ReflowChildFlags::NoMoveFrame);
 
   if (mScrolledFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
     
@@ -1138,19 +1132,8 @@ void ScrollContainerFrame::PlaceScrollArea(ScrollReflowInput& aState,
   
   
   
-  
-  
   OverflowAreas overflow(scrolledArea, scrolledArea);
   mScrolledFrame->FinishAndStoreOverflow(overflow, mScrolledFrame->GetSize());
-
-  
-  
-  
-  
-  
-  nsContainerFrame::SyncFrameViewAfterReflow(
-      mScrolledFrame->PresContext(), mScrolledFrame, mScrolledFrame->GetView(),
-      scrolledArea, ReflowChildFlags::Default);
 }
 
 nscoord ScrollContainerFrame::IntrinsicScrollbarGutterSizeAtInlineEdges()
@@ -2555,32 +2538,6 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
   }
 }
 
-
-
-static void AdjustViews(nsIFrame* aFrame) {
-  nsView* view = aFrame->GetView();
-  if (view) {
-    nsPoint pt;
-    aFrame->GetParent()->GetClosestView(&pt);
-    pt += aFrame->GetPosition();
-    view->SetPosition(pt.x, pt.y);
-
-    return;
-  }
-
-  if (!aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    return;
-  }
-
-  
-  
-  for (const auto& [list, listID] : aFrame->ChildLists()) {
-    for (nsIFrame* child : list) {
-      AdjustViews(child);
-    }
-  }
-}
-
 void ScrollContainerFrame::MarkScrollbarsDirtyForReflow() const {
   auto* presShell = PresShell();
   if (mVScrollbarBox) {
@@ -2774,8 +2731,6 @@ void ScrollContainerFrame::TriggerDisplayPortExpiration() {
 
 void ScrollContainerFrame::ScrollVisual() {
   MarkEverScrolled();
-
-  AdjustViews(mScrolledFrame);
   
   
   MarkRecentlyScrolled();

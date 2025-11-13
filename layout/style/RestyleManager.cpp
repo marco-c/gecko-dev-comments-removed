@@ -752,8 +752,7 @@ static bool gInApplyRenderingChangeToTree = false;
 
 
 
-
-static void SyncViewsAndInvalidateDescendants(nsIFrame*, nsChangeHint);
+static void InvalidateDescendants(nsIFrame*, nsChangeHint);
 
 static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint);
 
@@ -817,14 +816,6 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   
   if (display->mPosition == StylePositionProperty::Static) {
     return true;
-  }
-
-  
-  
-  
-  if (aFrame->GetView() ||
-      aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    return false;
   }
 
   if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
@@ -1182,7 +1173,7 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
     
     
     
-    SyncViewsAndInvalidateDescendants(
+    InvalidateDescendants(
         aFrame, nsChangeHint(aChange & (nsChangeHint_RepaintFrame |
                                         nsChangeHint_UpdateOpacityLayer |
                                         nsChangeHint_SchedulePaint)));
@@ -1249,8 +1240,7 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
   }
 }
 
-static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
-                                              nsChangeHint aChange) {
+static void InvalidateDescendants(nsIFrame* aFrame, nsChangeHint aChange) {
   MOZ_ASSERT(gInApplyRenderingChangeToTree,
              "should only be called within ApplyRenderingChangeToTree");
 
@@ -1259,8 +1249,6 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
                                nsChangeHint_UpdateOpacityLayer |
                                nsChangeHint_SchedulePaint)),
                "Invalid change flag");
-
-  aFrame->SyncFrameViewProperties();
 
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
@@ -1272,7 +1260,7 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
               nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
           DoApplyRenderingChangeToTree(outOfFlowFrame, aChange);
         } else {  
-          SyncViewsAndInvalidateDescendants(child, aChange);
+          InvalidateDescendants(child, aChange);
         }
       }
     }

@@ -472,10 +472,6 @@ void nsTableCellFrame::AlignChildWithinCell(
 
   if (kidPosition != kidRect.Origin(innerWM)) {
     
-    
-    nsContainerFrame::PositionChildViews(inner);
-
-    
     inner->InvalidateFrameSubtree();
   }
 }

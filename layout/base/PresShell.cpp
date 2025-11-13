@@ -4017,43 +4017,6 @@ void PresShell::SchedulePaint() {
   }
 }
 
-void PresShell::ClearMouseCaptureOnView(nsView* aView) {
-  if (nsIContent* capturingContent = GetCapturingContent()) {
-    if (aView) {
-      
-      
-      nsIFrame* frame = capturingContent->GetPrimaryFrame();
-      if (frame) {
-        nsView* view = frame->GetClosestView();
-        
-        
-        if (view) {
-          do {
-            if (view == aView) {
-              ReleaseCapturingContent();
-              
-              
-              AllowMouseCapture(false);
-              break;
-            }
-
-            view = view->GetParent();
-          } while (view);
-          
-          return;
-        }
-      }
-    }
-
-    ReleaseCapturingContent();
-  }
-
-  
-  
-  
-  AllowMouseCapture(false);
-}
-
 void PresShell::ClearMouseCapture() {
   ReleaseCapturingContent();
   AllowMouseCapture(false);
@@ -5808,10 +5771,6 @@ static nsView* FindViewContaining(nsView* aRelativeToView,
                                   nsView* aView, nsPoint aPt) {
   MOZ_ASSERT(aRelativeToView->GetFrame());
 
-  if (aView->GetVisibility() == ViewVisibility::Hide) {
-    return nullptr;
-  }
-
   nsIFrame* frame = aView->GetFrame();
   if (frame) {
     if (!frame->PresShell()->IsActive() ||
@@ -5828,14 +5787,9 @@ static nsView* FindViewContaining(nsView* aRelativeToView,
     
     bool crossingZoomBoundary = false;
     if (aRelativeToViewportType == ViewportType::Visual) {
-      if (!aRelativeToView->GetParent() ||
-          aRelativeToView->GetViewManager() !=
-              aRelativeToView->GetParent()->GetViewManager()) {
-        if (aRelativeToView->GetFrame()
-                ->PresContext()
-                ->IsRootContentDocumentCrossProcess()) {
-          crossingZoomBoundary = true;
-        }
+      if (nsIFrame* f = aRelativeToView->GetFrame();
+          f && f->PresContext()->IsRootContentDocumentCrossProcess()) {
+        crossingZoomBoundary = true;
       }
     }
 
@@ -5865,21 +5819,13 @@ static nsView* FindViewContaining(nsView* aRelativeToView,
     
     
     if (!crossingZoomBoundary) {
-      if (!aView->GetDimensions().Contains(aPt)) {
+      if (!aView->GetBounds().Contains(aPt)) {
         return nullptr;
       }
     }
 
     aRelativeToView = aView;
     aRelativeToViewportType = nextRelativeToViewportType;
-  }
-
-  for (nsView* v = aView->GetFirstChild(); v; v = v->GetNextSibling()) {
-    nsView* r =
-        FindViewContaining(aRelativeToView, aRelativeToViewportType, v, aPt);
-    if (r) {
-      return r;
-    }
   }
 
   return frame ? aView : nullptr;
@@ -5890,11 +5836,6 @@ static BrowserBridgeChild* GetChildBrowser(nsView* aView) {
     return nullptr;
   }
   nsIFrame* frame = aView->GetFrame();
-  if (!frame && aView->GetParent()) {
-    
-    
-    frame = aView->GetParent()->GetFrame();
-  }
   if (!frame || !frame->GetContent()) {
     return nullptr;
   }
@@ -7208,16 +7149,7 @@ nsIFrame* PresShell::GetClosestAncestorFrameForAncestorView() const {
     return nullptr;
   }
   nsView* view = vm->GetRootView();
-  while (view && !view->GetFrame()) {
-    view = view->GetParent();
-  }
-
-  nsIFrame* frame = nullptr;
-  if (view) {
-    frame = view->GetFrame();
-  }
-
-  return frame;
+  return view ? view->GetFrame() : nullptr;
 }
 
 static CallState FlushThrottledStyles(Document& aDocument) {
@@ -10741,16 +10673,6 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   NS_ASSERTION(status.IsEmpty(), "reflow roots should never split");
 
   target->SetSize(boundsRelativeToTarget.Size());
-
-  
-  
-  
-  
-  if (auto* view = target->GetView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(mPresContext, target, view,
-                                               boundsRelativeToTarget);
-  }
-
   target->DidReflow(mPresContext, nullptr);
   if (target->IsInScrollAnchorChain()) {
     ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(target);
@@ -11948,7 +11870,6 @@ void PresShell::UpdateAnchorPosForScroll(
       
       
       positioned->UpdateOverflow();
-      nsContainerFrame::PlaceFrameView(positioned);
       positioned->GetParent()->UpdateOverflow();
       referenceData->mDefaultScrollShift = offset;
       return true;

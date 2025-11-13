@@ -344,11 +344,6 @@ bool nsIFrame::IsVisibleConsideringAncestors(uint32_t aFlags) const {
 
   const nsIFrame* frame = this;
   while (frame) {
-    nsView* view = frame->GetView();
-    if (view && view->GetVisibility() == ViewVisibility::Hide) {
-      return false;
-    }
-
     
     
     
@@ -1521,26 +1516,6 @@ void nsIFrame::AssertNewStyleIsSane(ComputedStyle& aNewStyle) {
        aNewStyle.GetPseudoType() == PseudoStyleType::mozText));
 }
 #endif
-
-void nsIFrame::SyncFrameViewProperties(nsView* aView) {
-  if (!aView) {
-    aView = GetView();
-    if (!aView) {
-      return;
-    }
-  }
-
-  nsViewManager* vm = aView->GetViewManager();
-
-  
-  if (!SupportsVisibilityHidden()) {
-    
-    ComputedStyle* sc = Style();
-    vm->SetViewVisibility(aView, sc->StyleVisibility()->IsVisible()
-                                     ? ViewVisibility::Show
-                                     : ViewVisibility::Hide);
-  }
-}
 
 
 nsMargin nsIFrame::GetUsedMargin() const {
@@ -7740,17 +7715,11 @@ nsIFrame* nsIFrame::GetTailContinuation() {
 void nsIFrame::SetView(nsView* aView) {
   if (aView) {
     MOZ_ASSERT(MayHaveView(), "Only specific frame types can have an nsView");
+    MOZ_ASSERT(!GetParent(), "Only the viewport can have views");
     aView->SetFrame(this);
 
     
     SetViewInternal(aView);
-
-    
-    for (nsIFrame* f = GetParent();
-         f && !f->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW);
-         f = f->GetParent()) {
-      f->AddStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW);
-    }
   } else {
     MOZ_ASSERT_UNREACHABLE("Destroying a view while the frame is alive?");
     SetViewInternal(nullptr);
@@ -11714,12 +11683,8 @@ void nsIFrame::SetParent(nsContainerFrame* aParent) {
   MOZ_ASSERT(!mParent || PresShell() == mParent->PresShell());
 
   nsFrameState flagsToPropagateSameDoc =
-      GetStateBits() &
-      (NS_FRAME_HAS_CHILD_WITH_VIEW | NS_FRAME_CONTAINS_RELATIVE_BSIZE |
-       NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE);
-  if (GetView()) {
-    flagsToPropagateSameDoc |= NS_FRAME_HAS_CHILD_WITH_VIEW;
-  }
+      GetStateBits() & (NS_FRAME_CONTAINS_RELATIVE_BSIZE |
+                        NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE);
   if (flagsToPropagateSameDoc) {
     for (nsIFrame* f = aParent; f; f = f->GetParent()) {
       if (f->HasAllStateBits(flagsToPropagateSameDoc)) {
