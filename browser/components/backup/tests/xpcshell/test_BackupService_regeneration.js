@@ -131,14 +131,6 @@ async function expectRegeneration(taskFn, msg) {
 
   
   
-  
-  let deleteDeferred = Promise.withResolvers();
-  sandbox.stub(bs, "deleteLastBackup").callsFake(() => {
-    Assert.ok(true, "Saw deleteLastBackup call");
-    deleteDeferred.resolve();
-    return Promise.resolve();
-  });
-
   let createBackupDeferred = Promise.withResolvers();
   sandbox.stub(bs, "createBackupOnIdleDispatch").callsFake(options => {
     Assert.ok(true, "Saw createBackupOnIdleDispatch call");
@@ -162,11 +154,6 @@ async function expectRegeneration(taskFn, msg) {
 
   await taskFn();
 
-  let regenerationPromises = [
-    deleteDeferred.promise,
-    createBackupDeferred.promise,
-  ];
-
   
   let timeoutPromise = new Promise((resolve, reject) =>
     
@@ -176,7 +163,7 @@ async function expectRegeneration(taskFn, msg) {
   );
 
   try {
-    await Promise.race([Promise.all(regenerationPromises), timeoutPromise]);
+    await Promise.race([createBackupDeferred.promise, timeoutPromise]);
     Assert.ok(true, msg);
   } catch (e) {
     Assert.ok(false, "Timed out waiting for regeneration.");
@@ -230,7 +217,7 @@ async function expectNoRegeneration(taskFn, msg) {
   Services.prefs.setBoolPref("browser.backup.scheduled.enabled", true);
   
   
-  sandbox.stub(bs, "onIdle").returns();
+  sandbox.stub(bs, "onIdle").resolves();
 
   bs.initBackupScheduler();
 
