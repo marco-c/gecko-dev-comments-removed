@@ -50,25 +50,24 @@
 #include "resampler_private.h"
 
 
-static const opus_int8 delay_matrix_enc[ 6 ][ 3 ] = {
+static const opus_int8 delay_matrix_enc[ 5 ][ 3 ] = {
 
    {  6,  0,  3 },
    {  0,  7,  3 },
    {  0,  1, 10 },
    {  0,  2,  6 },
-   { 18, 10, 12 },
-   {  0,  0,  44 }
+   { 18, 10, 12 }
 };
 
-static const opus_int8 delay_matrix_dec[ 3 ][ 6 ] = {
+static const opus_int8 delay_matrix_dec[ 3 ][ 5 ] = {
 
-   {  4,  0,  2,  0,  0,  0 },
-   {  0,  9,  4,  7,  4,  4 },
-   {  0,  3, 12,  7,  7,  7 }
+   {  4,  0,  2,  0,  0 },
+   {  0,  9,  4,  7,  4 },
+   {  0,  3, 12,  7,  7 }
 };
 
 
-#define rateID(R) IMIN(5, ( ( ( ((R)>>12) - ((R)>16000) ) >> ((R)>24000) ) - 1 ))
+#define rateID(R) ( ( ( ((R)>>12) - ((R)>16000) ) >> ((R)>24000) ) - 1 )
 
 #define USE_silk_resampler_copy                     (0)
 #define USE_silk_resampler_private_up2_HQ_wrapper   (1)
@@ -90,11 +89,7 @@ opus_int silk_resampler_init(
 
     
     if( forEnc ) {
-        if( ( Fs_Hz_in  != 8000 && Fs_Hz_in  != 12000 && Fs_Hz_in  != 16000 && Fs_Hz_in  != 24000 && Fs_Hz_in  != 48000
-#ifdef ENABLE_QEXT
-                  && Fs_Hz_in != 96000
-#endif
-              ) ||
+        if( ( Fs_Hz_in  != 8000 && Fs_Hz_in  != 12000 && Fs_Hz_in  != 16000 && Fs_Hz_in  != 24000 && Fs_Hz_in  != 48000 ) ||
             ( Fs_Hz_out != 8000 && Fs_Hz_out != 12000 && Fs_Hz_out != 16000 ) ) {
             celt_assert( 0 );
             return -1;
@@ -102,11 +97,7 @@ opus_int silk_resampler_init(
         S->inputDelay = delay_matrix_enc[ rateID( Fs_Hz_in ) ][ rateID( Fs_Hz_out ) ];
     } else {
         if( ( Fs_Hz_in  != 8000 && Fs_Hz_in  != 12000 && Fs_Hz_in  != 16000 ) ||
-            ( Fs_Hz_out != 8000 && Fs_Hz_out != 12000 && Fs_Hz_out != 16000 && Fs_Hz_out != 24000 && Fs_Hz_out != 48000
-#ifdef ENABLE_QEXT
-                  && Fs_Hz_out != 96000
-#endif
-                  ) ) {
+            ( Fs_Hz_out != 8000 && Fs_Hz_out != 12000 && Fs_Hz_out != 16000 && Fs_Hz_out != 24000 && Fs_Hz_out != 48000 ) ) {
             celt_assert( 0 );
             return -1;
         }

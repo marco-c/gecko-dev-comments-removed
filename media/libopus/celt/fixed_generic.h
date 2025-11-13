@@ -200,7 +200,7 @@
 
 #define DIV32(a,b) (((opus_val32)(a))/((opus_val32)(b)))
 
-#if defined(__mips)
+#if defined(__mips_dsp) && __mips == 32
 #include "mips/fixed_generic_mipsr1.h"
 #endif
 
