@@ -3360,6 +3360,9 @@ class nsIFrame : public nsQueryFrame {
   nsPoint GetOffsetTo(const nsIFrame* aOther) const;
 
   
+  nsPoint GetOffsetToRootFrame() const;
+
+  
 
 
 
@@ -3406,12 +3409,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   nsRect GetScreenRectInAppUnits() const;
-
-  
-
-
-
-  void GetOffsetFromView(nsPoint& aOffset, nsView** aView) const;
 
   
 
