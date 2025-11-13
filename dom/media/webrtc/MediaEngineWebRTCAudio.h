@@ -318,9 +318,13 @@ class AudioProcessingTrack : public DeviceInputConsumerTrack {
   void DestroyImpl() override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
   uint32_t NumberOfChannels() const override {
-    MOZ_DIAGNOSTIC_ASSERT(
-        mInputProcessing,
-        "Must set mInputProcessing before exposing to content");
+    if (!mInputProcessing) {
+      
+      
+      
+      
+      return 0;
+    }
     return mInputProcessing->GetRequestedInputChannelCount();
   }
   
