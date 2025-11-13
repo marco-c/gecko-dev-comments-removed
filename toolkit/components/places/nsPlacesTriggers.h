@@ -130,17 +130,10 @@
         "END")
 
 
-
-
-
-
-
-
 #  define CREATE_PLACES_AFTERUPDATE_FRECENCY_TRIGGER                           \
     nsLiteralCString(                                                          \
         "CREATE TEMP TRIGGER moz_places_afterupdate_frecency_trigger "         \
         "AFTER UPDATE OF frecency ON moz_places FOR EACH ROW "                 \
-        "WHEN NOT is_frecency_decaying() "                                     \
         "BEGIN "                                                               \
         "UPDATE moz_places SET recalc_frecency = 0 WHERE id = NEW.id; "        \
         "UPDATE moz_origins SET recalc_frecency = 1, recalc_alt_frecency = 1 " \

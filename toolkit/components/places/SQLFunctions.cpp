@@ -1485,38 +1485,6 @@ StripPrefixAndUserinfoFunction::OnFunctionCall(mozIStorageValueArray* aArgs,
 
 
 
-nsresult IsFrecencyDecayingFunction::create(mozIStorageConnection* aDBConn) {
-  RefPtr<IsFrecencyDecayingFunction> function =
-      new IsFrecencyDecayingFunction();
-  nsresult rv = aDBConn->CreateFunction("is_frecency_decaying"_ns, 0, function);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(IsFrecencyDecayingFunction, mozIStorageFunction)
-
-NS_IMETHODIMP
-IsFrecencyDecayingFunction::OnFunctionCall(mozIStorageValueArray* aArgs,
-                                           nsIVariant** _result) {
-  MOZ_ASSERT(aArgs);
-
-#ifdef DEBUG
-  uint32_t numArgs;
-  MOZ_ASSERT(NS_SUCCEEDED(aArgs->GetNumEntries(&numArgs)) && numArgs == 0);
-#endif
-
-  RefPtr<nsVariant> result = new nsVariant();
-  nsresult rv = result->SetAsBool(nsNavHistory::sIsFrecencyDecaying);
-  NS_ENSURE_SUCCESS(rv, rv);
-  result.forget(_result);
-  return NS_OK;
-}
-
-
-
-
-
 nsresult SetShouldStartFrecencyRecalculationFunction::create(
     mozIStorageConnection* aDBConn) {
   RefPtr<SetShouldStartFrecencyRecalculationFunction> function =

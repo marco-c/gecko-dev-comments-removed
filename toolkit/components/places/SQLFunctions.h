@@ -564,32 +564,6 @@ class StripPrefixAndUserinfoFunction final : public mozIStorageFunction {
 
 
 
-
-
-class IsFrecencyDecayingFunction final : public mozIStorageFunction {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_MOZISTORAGEFUNCTION
-
-  
-
-
-
-
-
-  static nsresult create(mozIStorageConnection* aDBConn);
-
- private:
-  ~IsFrecencyDecayingFunction() = default;
-};
-
-
-
-
-
-
-
-
 class SetShouldStartFrecencyRecalculationFunction final
     : public mozIStorageFunction {
  public:

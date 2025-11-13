@@ -341,10 +341,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
-  static mozilla::Atomic<bool> sIsFrecencyDecaying;
-  
-
-
   static mozilla::Atomic<bool> sShouldStartFrecencyRecalculation;
 
   static void StoreLastInsertedId(const nsACString& aTable,
