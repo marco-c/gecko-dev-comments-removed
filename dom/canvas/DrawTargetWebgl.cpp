@@ -25,6 +25,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/AAStroke.h"
 #include "mozilla/gfx/Blur.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/DrawTargetSkia.h"
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/HelpersSkia.h"
@@ -238,8 +239,9 @@ SharedContextWebgl::~SharedContextWebgl() {
   }
   ClearZeroBuffer();
   ClearAllTextures();
-  UnlinkSurfaceTextures();
+  UnlinkSurfaceTextures(true);
   UnlinkGlyphCaches();
+  ClearSnapshotPBOs();
 }
 
 gl::GLContext* SharedContextWebgl::GetGLContext() {
@@ -269,21 +271,22 @@ void SharedContextWebgl::ExitTlsScope() {
 
 
 inline void SharedContextWebgl::UnlinkSurfaceTexture(
-    const RefPtr<TextureHandle>& aHandle) {
+    const RefPtr<TextureHandle>& aHandle, bool aForce) {
   if (RefPtr<SourceSurface> surface = aHandle->GetSurface()) {
     
     if (surface->GetType() == SurfaceType::WEBGL) {
-      static_cast<SourceSurfaceWebgl*>(surface.get())->OnUnlinkTexture(this);
+      static_cast<SourceSurfaceWebgl*>(surface.get())
+          ->OnUnlinkTexture(this, aForce);
     }
     surface->RemoveUserData(&mTextureHandleKey);
   }
 }
 
 
-void SharedContextWebgl::UnlinkSurfaceTextures() {
+void SharedContextWebgl::UnlinkSurfaceTextures(bool aForce) {
   for (RefPtr<TextureHandle> handle = mTextureHandles.getFirst(); handle;
        handle = handle->getNext()) {
-    UnlinkSurfaceTexture(handle);
+    UnlinkSurfaceTexture(handle, aForce);
   }
 }
 
@@ -409,6 +412,7 @@ void SharedContextWebgl::ClearCachesIfNecessary() {
     ClearEmptyTextureMemory();
   }
   ClearLastTexture();
+  ClearSnapshotPBOs();
 }
 
 
@@ -1165,7 +1169,11 @@ bool DrawTargetWebgl::PrepareSkia() {
 }
 
 bool DrawTargetWebgl::EnsureDataSnapshot() {
-  return HasDataSnapshot() || PrepareSkia();
+  
+  
+  
+  return HasDataSnapshot() || (mSnapshot && mSnapshot->ForceReadFromPBO()) ||
+         PrepareSkia();
 }
 
 void DrawTargetWebgl::PrepareShmem() { PrepareSkia(); }
@@ -1209,7 +1217,8 @@ already_AddRefed<SourceSurface> DrawTargetWebgl::GetOptimizedSnapshot(
 
 bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
                                   SurfaceFormat aFormat, const IntRect& aBounds,
-                                  TextureHandle* aHandle) {
+                                  TextureHandle* aHandle,
+                                  const RefPtr<WebGLBuffer>& aBuffer) {
   MOZ_ASSERT(aFormat == SurfaceFormat::B8G8R8A8 ||
              aFormat == SurfaceFormat::B8G8R8X8 ||
              aFormat == SurfaceFormat::A8);
@@ -1218,7 +1227,8 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
   
   if (aHandle) {
     BindScratchFramebuffer(aHandle, false);
-  } else if (mCurrentTarget && !mTargetHandle && mCurrentTarget->mIsClear) {
+  } else if (!aBuffer && mCurrentTarget && !mTargetHandle &&
+             mCurrentTarget->mIsClear) {
     
     
     SkPixmap(MakeSkiaImageInfo(aBounds.Size(), aFormat), aDstData, aDstStride)
@@ -1230,8 +1240,14 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
   desc.srcOffset = *ivec2::From(aBounds);
   desc.size = *uvec2::FromSize(aBounds);
   desc.packState.rowLength = aDstStride / BytesPerPixel(aFormat);
-  Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
-  mWebgl->ReadPixelsInto(desc, range);
+  if (aBuffer) {
+    mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, aBuffer);
+    mWebgl->ReadPixelsPbo(desc, 0);
+    mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  } else {
+    Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
+    mWebgl->ReadPixelsInto(desc, range);
+  }
 
   
   if (aHandle) {
@@ -1267,6 +1283,117 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
   return surface.forget();
 }
 
+already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
+    SourceSurfaceWebgl* aOwner, TextureHandle* aHandle) {
+  
+  SurfaceFormat format = SurfaceFormat::UNKNOWN;
+  IntRect bounds;
+  if (aHandle) {
+    format = aHandle->GetFormat();
+    bounds = aHandle->GetBounds();
+  } else {
+    format = mCurrentTarget->GetFormat();
+    bounds = mCurrentTarget->GetRect();
+  }
+  int32_t stride = GetAlignedStride<16>(bounds.width, BytesPerPixel(format));
+  size_t bufSize = BufferSizeFromStrideAndHeight(stride, bounds.height);
+  if (!bufSize) {
+    return nullptr;
+  }
+
+  
+  
+  size_t maxPBOMemory =
+      StaticPrefs::gfx_canvas_accelerated_max_snapshot_pbo_memory();
+  if (bufSize > maxPBOMemory) {
+    return nullptr;
+  }
+
+  RefPtr<WebGLBuffer> pbo = mWebgl->CreateBuffer();
+  if (!pbo) {
+    return nullptr;
+  }
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, pbo);
+  mWebgl->UninitializedBufferData_SizeOnly(LOCAL_GL_PIXEL_PACK_BUFFER, bufSize,
+                                           LOCAL_GL_STREAM_READ);
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  if (!ReadInto(nullptr, stride, format, bounds, aHandle, pbo)) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  ClearSnapshotPBOs(maxPBOMemory - std::min(bufSize, maxPBOMemory));
+
+  mUsedSnapshotPBOMemory += bufSize;
+  mSnapshotPBOs.emplace_back(aOwner);
+  return pbo.forget();
+}
+
+already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
+    const RefPtr<WebGLBuffer>& aBuffer, SurfaceFormat aFormat,
+    const IntSize& aSize) {
+  
+  
+  int32_t stride = GetAlignedStride<16>(aSize.width, BytesPerPixel(aFormat));
+  size_t bufSize = BufferSizeFromStrideAndHeight(stride, aSize.height);
+  if (!bufSize) {
+    return nullptr;
+  }
+  RefPtr<DataSourceSurface> surface =
+      Factory::CreateDataSourceSurfaceWithStride(aSize, aFormat, stride);
+  if (!surface) {
+    return nullptr;
+  }
+  DataSourceSurface::ScopedMap dstMap(surface, DataSourceSurface::WRITE);
+  if (!dstMap.IsMapped()) {
+    return nullptr;
+  }
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, aBuffer);
+  Range<uint8_t> range = {dstMap.GetData(), bufSize};
+  bool success = static_cast<WebGL2Context*>(mWebgl.get())
+                     ->GetBufferSubData(LOCAL_GL_PIXEL_PACK_BUFFER, 0, range);
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  if (success) {
+    return surface.forget();
+  }
+  return nullptr;
+}
+
+void SharedContextWebgl::RemoveSnapshotPBO(
+    SourceSurfaceWebgl* aOwner, already_AddRefed<WebGLBuffer> aBuffer) {
+  RefPtr<WebGLBuffer> buffer(aBuffer);
+  MOZ_ASSERT(aOwner && buffer);
+  IntSize size = aOwner->GetSize();
+  SurfaceFormat format = aOwner->GetFormat();
+  int32_t stride = GetAlignedStride<16>(size.width, BytesPerPixel(format));
+  size_t bufSize = BufferSizeFromStrideAndHeight(stride, size.height);
+  
+  
+  if (mSnapshotPBOs.empty()) {
+    mUsedSnapshotPBOMemory = 0;
+  } else if (bufSize) {
+    mUsedSnapshotPBOMemory -= std::min(mUsedSnapshotPBOMemory, bufSize);
+  }
+}
+
+void SharedContextWebgl::ClearSnapshotPBOs(size_t aMaxMemory) {
+  
+  while (!mSnapshotPBOs.empty() &&
+         (!aMaxMemory || mUsedSnapshotPBOMemory > aMaxMemory)) {
+    RefPtr<SourceSurfaceWebgl> snapshot(mSnapshotPBOs.front());
+    mSnapshotPBOs.pop_front();
+    if (snapshot) {
+      snapshot->ForceReadFromPBO();
+    }
+  }
+  if (mSnapshotPBOs.empty()) {
+    mUsedSnapshotPBOMemory = 0;
+  }
+}
+
 
 bool DrawTargetWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride) {
   if (!PrepareContext(false)) {
@@ -1284,6 +1411,16 @@ already_AddRefed<DataSourceSurface> DrawTargetWebgl::ReadSnapshot() {
   }
   mProfile.OnReadback();
   return mSharedContext->ReadSnapshot();
+}
+
+already_AddRefed<WebGLBuffer> DrawTargetWebgl::ReadSnapshotIntoPBO(
+    SourceSurfaceWebgl* aOwner) {
+  AutoRestoreContext restore(this);
+  if (!PrepareContext(false)) {
+    return nullptr;
+  }
+  mProfile.OnReadback();
+  return mSharedContext->ReadSnapshotIntoPBO(aOwner);
 }
 
 already_AddRefed<SourceSurface> DrawTargetWebgl::GetBackingSurface() {
@@ -4787,6 +4924,180 @@ already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
   return handle.forget();
 }
 
+
+bool SharedContextWebgl::DrawWGRPath(
+    const Path* aPath, const IntRect& aIntBounds, const Rect& aQuantBounds,
+    const Matrix& aPathXform, RefPtr<PathCacheEntry>& aEntry,
+    const DrawOptions& aOptions, const StrokeOptions* aStrokeOptions,
+    AAStrokeMode aAAStrokeMode, const Pattern& aPattern,
+    const Maybe<DeviceColor>& aColor) {
+  const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
+  const Matrix& currentTransform = mCurrentTarget->GetTransform();
+  if (aEntry->GetVertexRange().IsValid()) {
+    
+    
+    
+    
+    mCurrentTarget->mProfile.OnCacheHit();
+    return DrawRectAccel(Rect(aIntBounds.TopLeft(), Size(1, 1)), aPattern,
+                         aOptions, Nothing(), nullptr, false, true, true, false,
+                         nullptr, &aEntry->GetVertexRange());
+  }
+
+  
+  
+  
+  WGR::OutputVertex* outputBuffer = nullptr;
+  size_t outputBufferCapacity = 0;
+  if (mWGROutputBuffer) {
+    outputBuffer = mWGROutputBuffer.get();
+    outputBufferCapacity = mPathVertexCapacity / sizeof(WGR::OutputVertex);
+  }
+  Maybe<WGR::VertexBuffer> wgrVB;
+  Maybe<AAStroke::VertexBuffer> strokeVB;
+  if (!aStrokeOptions) {
+    if (aPath == mUnitCirclePath) {
+      auto scaleFactors = aPathXform.ScaleFactors();
+      if (scaleFactors.AreScalesSame()) {
+        Point center = aPathXform.GetTranslation() - aQuantBounds.TopLeft();
+        float radius = scaleFactors.xScale;
+        AAStroke::VertexBuffer vb = AAStroke::aa_stroke_filled_circle(
+            center.x, center.y, radius, (AAStroke::OutputVertex*)outputBuffer,
+            outputBufferCapacity);
+        if (!vb.len || (outputBuffer && vb.len > outputBufferCapacity)) {
+          AAStroke::aa_stroke_vertex_buffer_release(vb);
+        } else {
+          strokeVB = Some(vb);
+        }
+      }
+    }
+    if (!strokeVB) {
+      wgrVB = GeneratePathVertexBuffer(
+          aEntry->GetPath(), IntRect(-aIntBounds.TopLeft(), mViewportSize),
+          mRasterizationTruncates, outputBuffer, outputBufferCapacity);
+    }
+  } else {
+    if (aAAStrokeMode != AAStrokeMode::Unsupported) {
+      auto scaleFactors = currentTransform.ScaleFactors();
+      if (scaleFactors.AreScalesSame()) {
+        strokeVB = GenerateStrokeVertexBuffer(aEntry->GetPath(), aStrokeOptions,
+                                              scaleFactors.xScale, outputBuffer,
+                                              outputBufferCapacity);
+      }
+    }
+    if (!strokeVB && mPathWGRStroke) {
+      
+      
+      
+      
+      Maybe<Rect> cullRect;
+      Matrix invTransform = currentTransform;
+      if (invTransform.Invert()) {
+        
+        
+        Rect invRect = invTransform.TransformBounds(Rect(mClipRect));
+        invRect.RoundOut();
+        cullRect = Some(invRect);
+      }
+      SkPath fillPath;
+      if (pathSkia->GetFillPath(*aStrokeOptions, aPathXform, fillPath,
+                                cullRect)) {
+        
+        
+        
+        if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
+                mWGRPathBuilder, fillPath, aQuantBounds, aPathXform)) {
+          wgrVB = GeneratePathVertexBuffer(
+              *qp, IntRect(-aIntBounds.TopLeft(), mViewportSize),
+              mRasterizationTruncates, outputBuffer, outputBufferCapacity);
+        }
+      }
+    }
+  }
+  if (!wgrVB && !strokeVB) {
+    
+    return false;
+  }
+  const uint8_t* vbData =
+      wgrVB ? (const uint8_t*)wgrVB->data : (const uint8_t*)strokeVB->data;
+  if (outputBuffer && !vbData) {
+    vbData = (const uint8_t*)outputBuffer;
+  }
+  size_t vbLen = wgrVB ? wgrVB->len : strokeVB->len;
+  uint32_t vertexBytes =
+      uint32_t(std::min(vbLen * sizeof(WGR::OutputVertex), size_t(UINT32_MAX)));
+  
+  
+  if (vertexBytes > mPathVertexCapacity - mPathVertexOffset &&
+      vertexBytes <= mPathVertexCapacity - sizeof(kRectVertexData)) {
+    
+    
+    
+    if (mPathCache) {
+      mPathCache->ClearVertexRanges();
+    }
+    ResetPathVertexBuffer();
+  }
+  if (vertexBytes > mPathVertexCapacity - mPathVertexOffset) {
+    
+    if (wgrVB) {
+      WGR::wgr_vertex_buffer_release(wgrVB.ref());
+    } else {
+      AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
+    }
+    return false;
+  }
+  
+  
+  
+  PathVertexRange vertexRange(
+      uint32_t(mPathVertexOffset / sizeof(WGR::OutputVertex)), uint32_t(vbLen));
+  
+  
+  
+  
+  mWebgl->BufferSubData(LOCAL_GL_ARRAY_BUFFER, mPathVertexOffset, vertexBytes,
+                        vbData,
+                         true);
+  mPathVertexOffset += vertexBytes;
+  if (wgrVB) {
+    WGR::wgr_vertex_buffer_release(wgrVB.ref());
+  } else {
+    AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
+  }
+  if (strokeVB && aAAStrokeMode == AAStrokeMode::Mask) {
+    
+    if (RefPtr<TextureHandle> handle =
+            DrawStrokeMask(vertexRange, aIntBounds.Size())) {
+      
+      if (aEntry) {
+        aEntry->Link(handle);
+      }
+      mCurrentTarget->mProfile.OnCacheMiss();
+      SurfacePattern maskPattern(nullptr, ExtendMode::CLAMP,
+                                 Matrix::Translation(aQuantBounds.TopLeft()),
+                                 SamplingFilter::GOOD);
+      return DrawRectAccel(aQuantBounds, maskPattern, aOptions, aColor, &handle,
+                           false, true, true);
+    }
+  } else {
+    
+    
+    if (aEntry) {
+      aEntry->SetVertexRange(vertexRange);
+    }
+
+    
+    mCurrentTarget->mProfile.OnCacheMiss();
+    return DrawRectAccel(Rect(aIntBounds.TopLeft(), Size(1, 1)), aPattern,
+                         aOptions, Nothing(), nullptr, false, true, true, false,
+                         nullptr, &vertexRange);
+  }
+  
+  
+  return false;
+}
+
 bool SharedContextWebgl::DrawPathAccel(
     const Path* aPath, const Pattern& aPattern, const DrawOptions& aOptions,
     const StrokeOptions* aStrokeOptions, bool aAllowStrokeAlpha,
@@ -4917,168 +5228,22 @@ bool SharedContextWebgl::DrawPathAccel(
 
   if (mPathVertexCapacity > 0 && !handle && entry && !aShadow &&
       aOptions.mAntialiasMode != AntialiasMode::NONE &&
-      SupportsPattern(aPattern) &&
       entry->GetPath().mPath.num_types <= mPathMaxComplexity) {
-    if (entry->GetVertexRange().IsValid()) {
-      
-      
-      
-      
-      mCurrentTarget->mProfile.OnCacheHit();
-      return DrawRectAccel(Rect(intBounds.TopLeft(), Size(1, 1)), aPattern,
-                           aOptions, Nothing(), nullptr, false, true, true,
-                           false, nullptr, &entry->GetVertexRange());
-    }
-
-    
-    
-    
-    WGR::OutputVertex* outputBuffer = nullptr;
-    size_t outputBufferCapacity = 0;
-    if (mWGROutputBuffer) {
-      outputBuffer = mWGROutputBuffer.get();
-      outputBufferCapacity = mPathVertexCapacity / sizeof(WGR::OutputVertex);
-    }
-    Maybe<WGR::VertexBuffer> wgrVB;
-    Maybe<AAStroke::VertexBuffer> strokeVB;
-    if (!aStrokeOptions) {
-      if (aPath == mUnitCirclePath) {
-        auto scaleFactors = pathXform.ScaleFactors();
-        if (scaleFactors.AreScalesSame()) {
-          Point center = pathXform.GetTranslation() - quantBounds.TopLeft();
-          float radius = scaleFactors.xScale;
-          AAStroke::VertexBuffer vb = AAStroke::aa_stroke_filled_circle(
-              center.x, center.y, radius, (AAStroke::OutputVertex*)outputBuffer,
-              outputBufferCapacity);
-          if (!vb.len || (outputBuffer && vb.len > outputBufferCapacity)) {
-            AAStroke::aa_stroke_vertex_buffer_release(vb);
-          } else {
-            strokeVB = Some(vb);
-          }
+    if (aPattern.GetType() == PatternType::LINEAR_GRADIENT) {
+      if (Maybe<SurfacePattern> gradient =
+              mCurrentTarget->LinearGradientToSurface(WidenToDouble(bounds),
+                                                      aPattern)) {
+        if (DrawWGRPath(aPath, intBounds, quantBounds, pathXform, entry,
+                        aOptions, aStrokeOptions, aaStrokeMode, gradient.ref(),
+                        color)) {
+          return true;
         }
       }
-      if (!strokeVB) {
-        wgrVB = GeneratePathVertexBuffer(
-            entry->GetPath(), IntRect(-intBounds.TopLeft(), mViewportSize),
-            mRasterizationTruncates, outputBuffer, outputBufferCapacity);
-      }
-    } else {
-      if (aaStrokeMode != AAStrokeMode::Unsupported) {
-        auto scaleFactors = currentTransform.ScaleFactors();
-        if (scaleFactors.AreScalesSame()) {
-          strokeVB = GenerateStrokeVertexBuffer(
-              entry->GetPath(), aStrokeOptions, scaleFactors.xScale,
-              outputBuffer, outputBufferCapacity);
-        }
-      }
-      if (!strokeVB && mPathWGRStroke) {
-        
-        
-        
-        
-        Maybe<Rect> cullRect;
-        Matrix invTransform = currentTransform;
-        if (invTransform.Invert()) {
-          
-          
-          Rect invRect = invTransform.TransformBounds(Rect(mClipRect));
-          invRect.RoundOut();
-          cullRect = Some(invRect);
-        }
-        SkPath fillPath;
-        if (pathSkia->GetFillPath(*aStrokeOptions, pathXform, fillPath,
-                                  cullRect)) {
-          
-          
-          
-          if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-                  mWGRPathBuilder, fillPath, quantBounds, pathXform)) {
-            wgrVB = GeneratePathVertexBuffer(
-                *qp, IntRect(-intBounds.TopLeft(), mViewportSize),
-                mRasterizationTruncates, outputBuffer, outputBufferCapacity);
-          }
-        }
-      }
-    }
-    if (wgrVB || strokeVB) {
-      const uint8_t* vbData =
-          wgrVB ? (const uint8_t*)wgrVB->data : (const uint8_t*)strokeVB->data;
-      if (outputBuffer && !vbData) {
-        vbData = (const uint8_t*)outputBuffer;
-      }
-      size_t vbLen = wgrVB ? wgrVB->len : strokeVB->len;
-      uint32_t vertexBytes = uint32_t(
-          std::min(vbLen * sizeof(WGR::OutputVertex), size_t(UINT32_MAX)));
-      
-      
-      if (vertexBytes > mPathVertexCapacity - mPathVertexOffset &&
-          vertexBytes <= mPathVertexCapacity - sizeof(kRectVertexData)) {
-        
-        
-        
-        if (mPathCache) {
-          mPathCache->ClearVertexRanges();
-        }
-        ResetPathVertexBuffer();
-      }
-      if (vertexBytes <= mPathVertexCapacity - mPathVertexOffset) {
-        
-        
-        
-        PathVertexRange vertexRange(
-            uint32_t(mPathVertexOffset / sizeof(WGR::OutputVertex)),
-            uint32_t(vbLen));
-        
-        
-        
-        
-        mWebgl->BufferSubData(LOCAL_GL_ARRAY_BUFFER, mPathVertexOffset,
-                              vertexBytes, vbData,
-                               true);
-        mPathVertexOffset += vertexBytes;
-        if (wgrVB) {
-          WGR::wgr_vertex_buffer_release(wgrVB.ref());
-        } else {
-          AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
-        }
-        if (strokeVB && aaStrokeMode == AAStrokeMode::Mask) {
-          
-          if (RefPtr<TextureHandle> handle =
-                  DrawStrokeMask(vertexRange, intBounds.Size())) {
-            
-            if (entry) {
-              entry->Link(handle);
-            }
-            mCurrentTarget->mProfile.OnCacheMiss();
-            SurfacePattern maskPattern(
-                nullptr, ExtendMode::CLAMP,
-                Matrix::Translation(quantBounds.TopLeft()),
-                SamplingFilter::GOOD);
-            return DrawRectAccel(quantBounds, maskPattern, aOptions, color,
-                                 &handle, false, true, true);
-          }
-        } else {
-          
-          
-          if (entry) {
-            entry->SetVertexRange(vertexRange);
-          }
-
-          
-          mCurrentTarget->mProfile.OnCacheMiss();
-          return DrawRectAccel(Rect(intBounds.TopLeft(), Size(1, 1)), aPattern,
-                               aOptions, Nothing(), nullptr, false, true, true,
-                               false, nullptr, &vertexRange);
-        }
-      } else {
-        if (wgrVB) {
-          WGR::wgr_vertex_buffer_release(wgrVB.ref());
-        } else {
-          AAStroke::aa_stroke_vertex_buffer_release(strokeVB.ref());
-        }
-      }
-      
-      
+    } else if (SupportsPattern(aPattern) &&
+               DrawWGRPath(aPath, intBounds, quantBounds, pathXform, entry,
+                           aOptions, aStrokeOptions, aaStrokeMode, aPattern,
+                           color)) {
+      return true;
     }
   }
 

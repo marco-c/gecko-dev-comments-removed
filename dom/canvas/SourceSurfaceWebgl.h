@@ -10,6 +10,10 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/2D.h"
 
+namespace mozilla {
+class WebGLBuffer;
+}  
+
 namespace mozilla::gfx {
 
 class DrawTargetWebgl;
@@ -46,7 +50,8 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
   explicit SourceSurfaceWebgl(const RefPtr<SharedContextWebgl>& aSharedContext);
 
-  bool EnsureData();
+  bool EnsureData(bool aForce = true);
+  bool ForceReadFromPBO();
 
   void DrawTargetWillChange(bool aNeedHandle);
 
@@ -54,12 +59,13 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
   void SetHandle(TextureHandle* aHandle);
 
-  void OnUnlinkTexture(SharedContextWebgl* aContext);
+  void OnUnlinkTexture(SharedContextWebgl* aContext, bool aForce);
 
   DrawTargetWebgl* GetTarget() const { return mDT.get(); }
 
   SurfaceFormat mFormat = SurfaceFormat::UNKNOWN;
   IntSize mSize;
+  RefPtr<WebGLBuffer> mReadBuffer;
   
   RefPtr<DataSourceSurface> mData;
   

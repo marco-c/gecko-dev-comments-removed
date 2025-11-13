@@ -7,6 +7,7 @@
 #include "SourceSurfaceWebgl.h"
 
 #include "DrawTargetWebglInternal.h"
+#include "WebGLBuffer.h"
 
 namespace mozilla::gfx {
 
@@ -25,25 +26,61 @@ SourceSurfaceWebgl::~SourceSurfaceWebgl() {
     
     mHandle->ClearSurface();
   }
+  if (mReadBuffer) {
+    if (RefPtr<SharedContextWebgl> sharedContext = {mSharedContext}) {
+      sharedContext->RemoveSnapshotPBO(this, mReadBuffer.forget());
+    }
+    mReadBuffer = nullptr;
+  }
 }
 
 
-inline bool SourceSurfaceWebgl::EnsureData() {
+
+
+inline bool SourceSurfaceWebgl::EnsureData(bool aForce) {
   if (mData) {
     return true;
   }
-  if (!mDT) {
+
+  if (mReadBuffer) {
     
-    
-    
-    if (!mHandle || !mSharedContext) {
-      return false;
+    if (RefPtr<SharedContextWebgl> sharedContext = {mSharedContext}) {
+      mData = sharedContext->ReadSnapshotFromPBO(mReadBuffer, mFormat, mSize);
+      sharedContext->RemoveSnapshotPBO(this, mReadBuffer.forget());
     }
-    mData = mSharedContext->ReadSnapshot(mHandle);
-  } else {
-    mData = mDT->ReadSnapshot();
+    mReadBuffer = nullptr;
+    return !!mData;
   }
-  return !!mData;
+
+  if (RefPtr<DrawTargetWebgl> dt = {mDT}) {
+    if (!aForce) {
+      mReadBuffer = dt->ReadSnapshotIntoPBO(this);
+    }
+    if (!mReadBuffer) {
+      mData = dt->ReadSnapshot();
+    }
+  } else if (mHandle) {
+    
+    
+    
+    if (RefPtr<SharedContextWebgl> sharedContext = {mSharedContext}) {
+      if (!aForce) {
+        mReadBuffer = sharedContext->ReadSnapshotIntoPBO(this, mHandle);
+      }
+      if (!mReadBuffer) {
+        mData = sharedContext->ReadSnapshot(mHandle);
+      }
+    }
+  }
+  return mData || mReadBuffer;
+}
+
+bool SourceSurfaceWebgl::ForceReadFromPBO() {
+  if (mReadBuffer && EnsureData()) {
+    MOZ_ASSERT(!mReadBuffer);
+    return true;
+  }
+  return false;
 }
 
 uint8_t* SourceSurfaceWebgl::GetData() {
@@ -78,21 +115,25 @@ void SourceSurfaceWebgl::Unmap() {
 
 
 void SourceSurfaceWebgl::DrawTargetWillChange(bool aNeedHandle) {
-  MOZ_ASSERT(mDT);
+  RefPtr<DrawTargetWebgl> dt(mDT);
+  if (!dt) {
+    MOZ_ASSERT_UNREACHABLE("No DrawTargetWebgl for SourceSurfaceWebgl");
+    return;
+  }
   
   
   
   
   
-  if ((!mData || aNeedHandle) && !mHandle) {
+  if ((aNeedHandle || (!mData && !mReadBuffer)) && !mHandle) {
     
-    mHandle = mDT->CopySnapshot();
+    mHandle = dt->CopySnapshot();
     if (mHandle) {
       
       mHandle->SetSurface(this);
     } else {
       
-      EnsureData();
+      EnsureData(false);
     }
   }
   mDT = nullptr;
@@ -120,7 +161,8 @@ void SourceSurfaceWebgl::SetHandle(TextureHandle* aHandle) {
 
 
 
-void SourceSurfaceWebgl::OnUnlinkTexture(SharedContextWebgl* aContext) {
+void SourceSurfaceWebgl::OnUnlinkTexture(SharedContextWebgl* aContext,
+                                         bool aForce) {
   
   
   MOZ_ASSERT(!mDT);
@@ -129,9 +171,14 @@ void SourceSurfaceWebgl::OnUnlinkTexture(SharedContextWebgl* aContext) {
   
   
   
-  MOZ_ASSERT(mHandle || mData);
-  if (!mData) {
-    mData = aContext->ReadSnapshot(mHandle);
+  MOZ_ASSERT(mHandle || mData || mReadBuffer);
+  if (!mData && !mReadBuffer) {
+    if (!aForce) {
+      mReadBuffer = aContext->ReadSnapshotIntoPBO(this, mHandle);
+    }
+    if (!mReadBuffer) {
+      mData = aContext->ReadSnapshot(mHandle);
+    }
   }
   mHandle = nullptr;
 }
@@ -139,36 +186,31 @@ void SourceSurfaceWebgl::OnUnlinkTexture(SharedContextWebgl* aContext) {
 already_AddRefed<SourceSurface> SourceSurfaceWebgl::ExtractSubrect(
     const IntRect& aRect) {
   
-  if (!(mDT || (mHandle && mSharedContext)) || aRect.IsEmpty() ||
-      !GetRect().Contains(aRect)) {
+  if (aRect.IsEmpty() || !GetRect().Contains(aRect)) {
     return nullptr;
   }
   RefPtr<TextureHandle> subHandle;
   RefPtr<SharedContextWebgl> sharedContext;
-  if (mDT) {
+  if (RefPtr<DrawTargetWebgl> dt = {mDT}) {
     
     
-    subHandle = mDT->CopySnapshot(aRect);
-    if (!subHandle) {
-      return nullptr;
-    }
-    sharedContext = mDT->mSharedContext;
-  } else {
+    subHandle = dt->CopySnapshot(aRect);
+    sharedContext = dt->mSharedContext;
+  } else if (mHandle) {
     
     
     sharedContext = mSharedContext;
-    if (!sharedContext) {
-      return nullptr;
-    }
-    
-    subHandle = sharedContext->CopySnapshot(aRect, mHandle);
-    if (!subHandle) {
-      return nullptr;
+    if (sharedContext) {
+      
+      subHandle = sharedContext->CopySnapshot(aRect, mHandle);
     }
   }
-  RefPtr<SourceSurfaceWebgl> surface = new SourceSurfaceWebgl(sharedContext);
-  surface->SetHandle(subHandle);
-  return surface.forget();
+  if (subHandle && sharedContext) {
+    RefPtr<SourceSurfaceWebgl> surface = new SourceSurfaceWebgl(sharedContext);
+    surface->SetHandle(subHandle);
+    return surface.forget();
+  }
+  return nullptr;
 }
 
 }  
