@@ -5,9 +5,14 @@
 
 const TEST_ROOT =
   "http://mochi.test:8888/browser/browser/base/content/test/favicons/";
-const ICON_URL = TEST_ROOT + "file_bug970276_favicon1.ico";
-const EMPTY_URL = "data:image/x-icon";
+
 const PAGE_URL = TEST_ROOT + "blank.html";
+const ICON_URL = TEST_ROOT + "file_bug970276_favicon1.ico";
+const ICON_DATAURI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABx0lEQVQ4T6WSMWsbQRCFP4EEKqTCBAwJpFkV+QGbStUh0igolVAjUohgzpUrBQ5cyFiFYCEuU/hQ4cJVVCblFfcDsj8gzZUJXGMEVwouzGrvYqGEBPJgudnZeW/e7F6D/0SjjjxWq1W5Xq85yTLQmvF4TL/fJwiCo1pBndxut+VgMABruQUsoIHYx4KbND0Scpu7u/vy7GzGu93OkYTwDLjScG3hO5AoRZ7nFEVxLNBsNkv5ikDVXZSshR/ACI2ZKKy1RFnG+SPnDSEvl0sWiwUfdztCf3DNvnPohaq8iMtYUz9OoyzLstvt8qIouNWg7b6gIghE7Km/E1kCqTFK/XLw5PLyoPuVjwUvgW+dDsPhkE+bjcs5J1rjHPR6PfdsIiBLCG8eiYjgZx+/iiIekgRtrRNxDpIkYTQa8b4oHEkOxKoQBVXui7+XkyjCJIZQh3sHrVaLdrvNTVEczC6k16enPM9z1GSCUgplEmJtubi4ZzZ726jvQP62eRAcWBeBc2/bGHPw/hXqZBRFZWIMX/3e3bwG86DIsuy3ZEF9kKZpOZ/PCa11Y1Tdxfpms/m7QAURSoPAxR86HabTKXEcH9VV+OPBv+In4P+u1zGvpjQAAAAASUVORK5CYII=";
+
+const EMPTY_PAGE_URL = TEST_ROOT + "file_favicon_empty.html";
+const EMPTY_ICON_URL = "about:blank";
 
 add_task(async function () {
   await BrowserTestUtils.withNewTab(
@@ -16,18 +21,27 @@ add_task(async function () {
       let iconBox = gBrowser
         .getTabForBrowser(browser)
         .querySelector(".tab-icon-image");
-
       await addContentLinkForIconUrl(ICON_URL, browser);
-      Assert.ok(
-        browser.mIconURL.startsWith(
-          "data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAA"
-        ),
-        "Favicon is correctly set."
-      );
+      Assert.equal(browser.mIconURL, ICON_DATAURI, "Favicon is correctly set.");
+
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
       let firstIconShotDataURL = TestUtils.screenshotArea(iconBox, window);
 
-      await addContentLinkForIconUrl(EMPTY_URL, browser);
-      Assert.equal(browser.mIconURL, EMPTY_URL, "Favicon is correctly set.");
+      let browserLoaded = BrowserTestUtils.browserLoaded(
+        browser,
+        false,
+        EMPTY_PAGE_URL
+      );
+      BrowserTestUtils.startLoadingURIString(browser, EMPTY_PAGE_URL);
+      let iconChanged = waitForFavicon(browser, EMPTY_ICON_URL);
+      await Promise.all([browserLoaded, iconChanged]);
+      Assert.equal(browser.mIconURL, EMPTY_ICON_URL, "Favicon was changed.");
+
+      
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
       let secondIconShotDataURL = TestUtils.screenshotArea(iconBox, window);
 
       Assert.notEqual(
