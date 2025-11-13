@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use api::{ImageBufferKind, units::DeviceSize};
 use crate::batch::{BatchKey, BatchKind, BrushBatchKind, BatchFeatures};
@@ -25,13 +25,13 @@ use std::rc::Rc;
 
 use webrender_build::shader::{ShaderFeatures, ShaderFeatureFlags, get_shader_features};
 
-/// Which extension version to use for texture external support.
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum TextureExternalVersion {
-    // GL_OES_EGL_image_external_essl3 (Compatible with ESSL 3.0 and
-    // later shaders, but not supported on all GLES 3 devices.)
+    
+    
     ESSL3,
-    // GL_OES_EGL_image_external (Compatible with ESSL 1.0 shaders)
+    
     ESSL1,
 }
 
@@ -107,8 +107,8 @@ impl LazilyCompiledShader {
         let mut features = unsorted_features.to_vec();
         features.sort();
 
-        // Ensure this shader config is in the available shader list so that we get
-        // alerted if the list gets out-of-date when shaders or features are added.
+        
+        
         let config = features.join(",");
         assert!(
             shader_list.get(name).map_or(false, |f| f.contains(&config)),
@@ -121,8 +121,8 @@ impl LazilyCompiledShader {
             program: None,
             name,
             kind,
-            //Note: this isn't really the default state, but there is no chance
-            // an actual projection passed here would accidentally match.
+            
+            
             cached_projection: Transform3D::identity(),
             features,
         };
@@ -170,7 +170,7 @@ impl LazilyCompiledShader {
         }
         if update_projection {
             device.set_uniforms(program, projection);
-            // thanks NLL for this (`program` technically borrows `self`)
+            
             self.cached_projection = *projection;
         }
     }
@@ -287,6 +287,7 @@ impl LazilyCompiledShader {
                             ("sColor0", TextureSampler::Color0),
                             ("sTransformPalette", TextureSampler::TransformPalette),
                             ("sRenderTasks", TextureSampler::RenderTasks),
+                            ("sGpuCache", TextureSampler::GpuCache),
                             ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
                             ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
                             ("sGpuBufferF", TextureSampler::GpuBufferF),
@@ -304,6 +305,7 @@ impl LazilyCompiledShader {
                             ("sDither", TextureSampler::Dither),
                             ("sTransformPalette", TextureSampler::TransformPalette),
                             ("sRenderTasks", TextureSampler::RenderTasks),
+                            ("sGpuCache", TextureSampler::GpuCache),
                             ("sPrimitiveHeadersF", TextureSampler::PrimitiveHeadersF),
                             ("sPrimitiveHeadersI", TextureSampler::PrimitiveHeadersI),
                             ("sClipMask", TextureSampler::ClipMask),
@@ -330,17 +332,17 @@ impl LazilyCompiledShader {
     }
 }
 
-// A brush shader supports two modes:
-// opaque:
-//   Used for completely opaque primitives,
-//   or inside segments of partially
-//   opaque primitives. Assumes no need
-//   for clip masks, AA etc.
-// alpha:
-//   Used for brush primitives in the alpha
-//   pass. Assumes that AA should be applied
-//   along the primitive edge, and also that
-//   clip mask is present.
+
+
+
+
+
+
+
+
+
+
+
 struct BrushShader {
     opaque: ShaderHandle,
     alpha: ShaderHandle,
@@ -608,9 +610,9 @@ impl ShaderLoader {
 pub struct Shaders {
     loader: ShaderLoader,
 
-    // These are "cache shaders". These shaders are used to
-    // draw intermediate results to cache targets. The results
-    // of these shaders are then used by the primitive shaders.
+    
+    
+    
     cs_blur_rgba8: ShaderHandle,
     cs_border_segment: ShaderHandle,
     cs_border_solid: ShaderHandle,
@@ -623,7 +625,7 @@ pub struct Shaders {
     cs_svg_filter: ShaderHandle,
     cs_svg_filter_node: ShaderHandle,
 
-    // Brush shaders
+    
     brush_solid: BrushShader,
     brush_image: Vec<Option<BrushShader>>,
     brush_fast_image: Vec<Option<BrushShader>>,
@@ -634,20 +636,20 @@ pub struct Shaders {
     brush_opacity: BrushShader,
     brush_opacity_aa: BrushShader,
 
-    /// These are "cache clip shaders". These shaders are used to
-    /// draw clip instances into the cached clip mask. The results
-    /// of these shaders are also used by the primitive shaders.
+    
+    
+    
     cs_clip_rectangle_slow: ShaderHandle,
     cs_clip_rectangle_fast: ShaderHandle,
     cs_clip_box_shadow: ShaderHandle,
 
-    // The are "primitive shaders". These shaders draw and blend
-    // final results on screen. They are aware of tile boundaries.
-    // Most draw directly to the framebuffer, but some use inputs
-    // from the cache shaders to draw. Specifically, the box
-    // shadow primitive shader stretches the box shadow cache
-    // output, and the cache_image shader blits the results of
-    // a cache shader (e.g. blur) to the screen.
+    
+    
+    
+    
+    
+    
+    
     ps_text_run: TextShader,
     ps_text_run_dual_source: Option<TextShader>,
 
@@ -699,8 +701,8 @@ impl Shaders {
             "brush_solid",
             &[],
             &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
+            false ,
+            false ,
             &mut loader,
         )?;
 
@@ -708,8 +710,8 @@ impl Shaders {
             "brush_blend",
             &[],
             &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
+            false ,
+            false ,
             &mut loader,
         )?;
 
@@ -717,8 +719,8 @@ impl Shaders {
             "brush_mix_blend",
             &[],
             &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
+            false ,
+            false ,
             &mut loader,
         )?;
 
@@ -730,8 +732,8 @@ impl Shaders {
                &[]
             },
             &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
+            false ,
+            false ,
             &mut loader,
         )?;
 
@@ -739,8 +741,8 @@ impl Shaders {
             "brush_opacity",
             &["ANTIALIASING"],
             &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
+            false ,
+            false ,
             &mut loader,
         )?;
 
@@ -748,8 +750,8 @@ impl Shaders {
             "brush_opacity",
             &[],
             &shader_list,
-            false /* advanced blend */,
-            false /* dual source */,
+            false ,
+            false ,
             &mut loader,
         )?;
 
@@ -811,7 +813,7 @@ impl Shaders {
 
         let mut cs_scale = Vec::new();
         let scale_shader_num = IMAGE_BUFFER_KINDS.len();
-        // PrimitiveShader is not clonable. Use push() to initialize the vec.
+        
         for _ in 0 .. scale_shader_num {
             cs_scale.push(None);
         }
@@ -841,9 +843,9 @@ impl Shaders {
             }
         }
 
-        // TODO(gw): The split composite + text shader are special cases - the only
-        //           shaders used during normal scene rendering that aren't a brush
-        //           shader. Perhaps we can unify these in future?
+        
+        
+        
 
         let ps_text_run = TextShader::new("ps_text_run",
             &[],
@@ -923,18 +925,18 @@ impl Shaders {
             &shader_list,
         )?;
 
-        // All image configuration.
+        
         let mut image_features = Vec::new();
         let mut brush_image = Vec::new();
         let mut brush_fast_image = Vec::new();
-        // PrimitiveShader is not clonable. Use push() to initialize the vec.
+        
         for _ in 0 .. IMAGE_BUFFER_KINDS.len() {
             brush_image.push(None);
             brush_fast_image.push(None);
         }
         for buffer_kind in 0 .. IMAGE_BUFFER_KINDS.len() {
             if !has_platform_support(IMAGE_BUFFER_KINDS[buffer_kind], device)
-                // Brush shaders are not ESSL1 compatible
+                
                 || (IMAGE_BUFFER_KINDS[buffer_kind] == ImageBufferKind::TextureExternal
                     && texture_external_version == TextureExternalVersion::ESSL1)
             {
@@ -973,13 +975,13 @@ impl Shaders {
             image_features.clear();
         }
 
-        // All yuv_image configuration.
+        
         let mut yuv_features = Vec::new();
         let mut rgba_features = Vec::new();
         let mut fast_path_features = Vec::new();
         let yuv_shader_num = IMAGE_BUFFER_KINDS.len();
         let mut brush_yuv_image = Vec::new();
-        // PrimitiveShader is not clonable. Use push() to initialize the vec.
+        
         for _ in 0 .. yuv_shader_num {
             brush_yuv_image.push(None);
         }
@@ -1002,15 +1004,15 @@ impl Shaders {
                     fast_path_features.push(feature_string);
                 }
 
-                // YUV shaders are not compatible with ESSL1
+                
                 if *image_buffer_kind != ImageBufferKind::TextureExternal ||
                     texture_external_version == TextureExternalVersion::ESSL3 {
                     let brush_shader = BrushShader::new(
                         "brush_yuv_image",
                         &yuv_features,
                         &shader_list,
-                        false /* advanced blend */,
-                        false /* dual source */,
+                        false ,
+                        false ,
                         &mut loader,
                     )?;
                     brush_yuv_image[index] = Some(brush_shader);
@@ -1137,7 +1139,7 @@ impl Shaders {
         }
     }
 
-    /// Returns true if another call is needed, false if precaching is finished.
+    
     pub fn resume_precache(
         &mut self,
         device: &mut Device,
@@ -1227,9 +1229,9 @@ impl Shaders {
                 self.ps_split_composite
             }
             BatchKind::Brush(brush_kind) => {
-                // SWGL uses a native anti-aliasing implementation that bypasses the shader.
-                // Don't consider it in that case when deciding whether or not to use
-                // an alpha-pass shader.
+                
+                
+                
                 if device.get_capabilities().uses_native_antialiasing {
                     features.remove(BatchFeatures::ANTIALIASING);
                 }
@@ -1257,14 +1259,14 @@ impl Shaders {
                         &mut self.brush_mix_blend
                     }
                     BrushBatchKind::LinearGradient => {
-                        // SWGL uses a native clip mask implementation that bypasses the shader.
-                        // Don't consider it in that case when deciding whether or not to use
-                        // an alpha-pass shader.
+                        
+                        
+                        
                         if device.get_capabilities().uses_native_clip_mask {
                             features.remove(BatchFeatures::CLIP_MASK);
                         }
-                        // Gradient brushes can optimistically use the opaque shader even
-                        // with a blend mode if they don't require any features.
+                        
+                        
                         if !features.intersects(
                             BatchFeatures::ANTIALIASING
                                 | BatchFeatures::REPETITION
@@ -1331,21 +1333,21 @@ impl Shaders {
 pub type SharedShaders = Rc<RefCell<Shaders>>;
 
 pub struct CompositorShaders {
-    // Composite shaders. These are very simple shaders used to composite
-    // picture cache tiles into the framebuffer on platforms that do not have an
-    // OS Compositor (or we cannot use it).  Such an OS Compositor (such as
-    // DirectComposite or CoreAnimation) handles the composition of the picture
-    // cache tiles at a lower level (e.g. in DWM for Windows); in that case we
-    // directly hand the picture cache surfaces over to the OS Compositor, and
-    // our own Composite shaders below never run.
-    // To composite external (RGB) surfaces we need various permutations of
-    // shaders with WR_FEATURE flags on or off based on the type of image
-    // buffer we're sourcing from (see IMAGE_BUFFER_KINDS).
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     rgba: Vec<Option<ShaderHandle>>,
-    // A faster set of rgba composite shaders that do not support UV clamping
-    // or color modulation.
+    
+    
     rgba_fast_path: Vec<Option<ShaderHandle>>,
-    // The same set of composite shaders but with WR_FEATURE_YUV added.
+    
     yuv_clip: Vec<Option<ShaderHandle>>,
     yuv_fast: Vec<Option<ShaderHandle>>,
 }
@@ -1404,7 +1406,7 @@ impl CompositorShaders {
                 fast_path_features.push(feature_string);
             }
 
-            // YUV shaders are not compatible with ESSL1
+            
             if *image_buffer_kind != ImageBufferKind::TextureExternal ||
                 texture_external_version == TextureExternalVersion::ESSL3 {
 
