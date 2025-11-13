@@ -932,8 +932,10 @@ static nsresult NewImageChannel(
     
     
     
-    
-    rv = NS_NewChannel(aResult, aURI, nsContentUtils::GetSystemPrincipal(),
+    rv = NS_NewChannel(aResult, aURI,
+                       aTriggeringPrincipal
+                           ? aTriggeringPrincipal
+                           : nsContentUtils::GetSystemPrincipal(),
                        securityFlags, aPolicyType,
                        nullptr,  
                        nullptr,  
