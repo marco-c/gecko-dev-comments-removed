@@ -9,6 +9,7 @@
 #include "js/Array.h"                 
 #include "js/friend/ErrorMessages.h"  
 #include "js/JSON.h"                  
+#include "js/PropertyDescriptor.h"    
 #include "LoadedScript.h"
 #include "ModuleLoaderBase.h"  
 #include "nsContentUtils.h"
@@ -371,6 +372,21 @@ static UniquePtr<IntegrityMap> NormalizeIntegrity(
   return normalized;
 }
 
+static bool GetOwnProperty(JSContext* aCx, Handle<JSObject*> aObj,
+                           const char* aName, MutableHandle<Value> aValueOut) {
+  JS::Rooted<mozilla::Maybe<JS::PropertyDescriptor>> desc(aCx);
+  if (!JS_GetOwnPropertyDescriptor(aCx, aObj, aName, &desc)) {
+    return false;
+  }
+
+  if (desc.isNothing()) {
+    return true;
+  }
+  MOZ_ASSERT(!desc->isAccessorDescriptor());
+  aValueOut.set(desc->value());
+  return true;
+}
+
 
 
 UniquePtr<ImportMap> ImportMap::ParseString(
@@ -417,7 +433,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
 
   RootedObject parsedObj(aCx, &parsedVal.toObject());
   RootedValue importsVal(aCx);
-  if (!JS_GetProperty(aCx, parsedObj, "imports", &importsVal)) {
+  if (!GetOwnProperty(aCx, parsedObj, "imports", &importsVal)) {
     return nullptr;
   }
 
@@ -453,7 +469,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
   }
 
   RootedValue scopesVal(aCx);
-  if (!JS_GetProperty(aCx, parsedObj, "scopes", &scopesVal)) {
+  if (!GetOwnProperty(aCx, parsedObj, "scopes", &scopesVal)) {
     return nullptr;
   }
 
@@ -489,7 +505,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
   }
 
   RootedValue integrityVal(aCx);
-  if (!JS_GetProperty(aCx, parsedObj, "integrity", &integrityVal)) {
+  if (!GetOwnProperty(aCx, parsedObj, "integrity", &integrityVal)) {
     return nullptr;
   }
 
@@ -583,7 +599,6 @@ static mozilla::Result<nsCOMPtr<nsIURI>, ResolveError> ResolveImportsMatch(
     const SpecifierMap* aSpecifierMap) {
   
   for (auto&& [specifierKey, resolutionResult] : *aSpecifierMap) {
-    nsAutoString specifier{aNormalizedSpecifier};
     nsCString asURL = aAsURL ? aAsURL->GetSpecOrDefault() : EmptyCString();
 
     
