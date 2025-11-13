@@ -3334,7 +3334,6 @@ class nsIFrame : public nsQueryFrame {
   }
   void SetView(nsView* aView);
 
-
   
 
 
