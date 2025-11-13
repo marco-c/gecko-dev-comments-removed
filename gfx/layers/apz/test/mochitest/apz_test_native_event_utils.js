@@ -213,37 +213,44 @@ function parseNativeModifiers(aModifiers, aWindow = window) {
 
 
 
-function _getTargetRect(aTarget) {
+function _getTargetRect(aTarget, atCenter) {
   let rect = { left: 0, top: 0, width: 0, height: 0 };
 
-  
-  
-  if (aTarget instanceof Window) {
-    return { rect, window: aTarget };
-  }
-  if (aTarget.Window && aTarget instanceof aTarget.Window) {
-    
-    
-    return { rect, window: aTarget };
-  }
-
-  
-  
-  
-  
-  const boundingClientRect = aTarget.getBoundingClientRect();
-  rect.left = boundingClientRect.left;
-  rect.top = boundingClientRect.top;
-  rect.width = boundingClientRect.width;
-  rect.height = boundingClientRect.height;
-
-  
-  
-  
   aTarget = SpecialPowers.wrap(aTarget);
-  while (aTarget.ownerDocument.defaultView.browsingContext.embedderElement) {
-    const iframe =
-      aTarget.ownerDocument.defaultView.browsingContext.embedderElement;
+  let containingWindow = null;
+  if (
+    aTarget instanceof Window ||
+    (aTarget.Window && aTarget instanceof aTarget.Window)
+  ) {
+    
+    
+
+    
+
+    
+    
+    
+    ok(!atCenter, "atCenter not supported with window targets, todo");
+    containingWindow = aTarget;
+  } else {
+    
+    
+    
+    
+
+    const boundingClientRect = aTarget.getBoundingClientRect();
+    rect.left = boundingClientRect.left;
+    rect.top = boundingClientRect.top;
+    rect.width = boundingClientRect.width;
+    rect.height = boundingClientRect.height;
+    containingWindow = aTarget.ownerDocument.defaultView;
+  }
+
+  
+  
+  
+  while (containingWindow.browsingContext.embedderElement) {
+    const iframe = containingWindow.browsingContext.embedderElement;
     
     
     
@@ -278,9 +285,10 @@ function _getTargetRect(aTarget) {
       );
     }
     aTarget = iframe;
+    containingWindow = aTarget.ownerDocument.defaultView;
   }
 
-  return { rect, window: aTarget.ownerDocument.defaultView };
+  return { rect, window: containingWindow };
 }
 
 
@@ -338,7 +346,7 @@ async function coordinatesRelativeToScreen(aParams) {
     };
   }
 
-  const rectAndWindow = _getTargetRect(target);
+  const rectAndWindow = _getTargetRect(target, atCenter);
 
   const inProcessRootWindow = getInProcessRootWindow(window);
 
