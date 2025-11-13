@@ -4,8 +4,6 @@
 
 
 
-#include <algorithm>
-
 #include "mozilla/IOInterposer.h"
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/ProcessedStack.h"

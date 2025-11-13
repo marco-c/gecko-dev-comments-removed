@@ -4,7 +4,6 @@
 
 
 
-#include <algorithm>
 #include "gtest/gtest.h"
 #include "Helpers.h"
 #include "mozilla/gtest/MozAssertions.h"
