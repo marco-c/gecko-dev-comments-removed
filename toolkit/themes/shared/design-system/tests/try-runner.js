@@ -27,7 +27,7 @@ function buildFilesWithTestConfig() {
   
   
   let testConfig = Object.assign({}, config);
-  testConfig.source = [path.join(__dirname, "../design-tokens.json")];
+  testConfig.source = [path.join(__dirname, "../src/design-tokens.json")];
   testConfig.platforms.css.buildPath = TEST_BUILD_PATH;
   testConfig.platforms.tables.buildPath = TEST_BUILD_PATH;
   testConfig.platforms.figma.buildPath = TEST_BUILD_PATH;
