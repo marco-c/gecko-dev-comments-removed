@@ -304,6 +304,15 @@ ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
   return IPC_OK();
 }
 
+void CanvasTranslator::DataSurfaceBufferWillChange() {
+  if (RefPtr<gfx::DataSourceSurface> owner = {mDataSurfaceShmemOwner}) {
+    
+    gfx::DataSourceSurface::ScopedMap map(
+        owner, gfx::DataSourceSurface::MapType::READ_WRITE);
+    mDataSurfaceShmemOwner = nullptr;
+  }
+}
+
 bool CanvasTranslator::SetDataSurfaceBuffer(
     ipc::MutableSharedMemoryHandle&& aBufferHandle) {
   MOZ_ASSERT(IsInTaskQueue());
@@ -322,6 +331,7 @@ bool CanvasTranslator::SetDataSurfaceBuffer(
     return false;
   }
 
+  DataSurfaceBufferWillChange();
   mDataSurfaceShmem = aBufferHandle.Map();
   if (!mDataSurfaceShmem) {
     return false;
@@ -345,22 +355,8 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
       return;
     }
   }
-  gfx::DataSourceSurface::ScopedMap map(dataSurface,
-                                        gfx::DataSourceSurface::READ);
-  if (!map.IsMapped()) {
-    return;
-  }
-
   auto dstSize = dataSurface->GetSize();
-  auto srcSize = map.GetSurface()->GetSize();
   gfx::SurfaceFormat format = dataSurface->GetFormat();
-  int32_t bpp = BytesPerPixel(format);
-  int32_t dataFormatWidth = dstSize.width * bpp;
-  int32_t srcStride = map.GetStride();
-  if (dataFormatWidth > srcStride || srcSize != dstSize) {
-    return;
-  }
-
   int32_t dstStride =
       ImageDataSerializer::ComputeRGBStride(format, dstSize.width);
   auto requiredSize =
@@ -369,14 +365,25 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
     return;
   }
 
+  
+  DataSurfaceBufferWillChange();
+
+  
   uint8_t* dst = mDataSurfaceShmem.DataAs<uint8_t>();
-  const uint8_t* src = map.GetData();
-  const uint8_t* endSrc = src + (srcSize.height * srcStride);
-  while (src < endSrc) {
-    memcpy(dst, src, dataFormatWidth);
-    src += srcStride;
-    dst += dstStride;
+  if (dataSurface->ReadDataInto(dst, dstStride)) {
+    mDataSurfaceShmemOwner = dataSurface;
+    return;
   }
+
+  
+  gfx::DataSourceSurface::ScopedMap map(dataSurface,
+                                        gfx::DataSourceSurface::MapType::READ);
+  if (!map.IsMapped()) {
+    return;
+  }
+
+  gfx::SwizzleData(map.GetData(), map.GetStride(), format, dst, dstStride,
+                   format, dstSize);
 }
 
 already_AddRefed<gfx::SourceSurface> CanvasTranslator::WaitForSurface(
@@ -998,6 +1005,8 @@ void CanvasTranslator::PrepareShmem(
 }
 
 void CanvasTranslator::CacheDataSnapshots() {
+  DataSurfaceBufferWillChange();
+
   if (mSharedContext) {
     
     
@@ -1371,6 +1380,8 @@ bool CanvasTranslator::PushRemoteTexture(
 
 void CanvasTranslator::ClearTextureInfo() {
   MOZ_ASSERT(mIPDLClosed);
+
+  DataSurfaceBufferWillChange();
 
   mUsedDataSurfaceForSurfaceDescriptor = nullptr;
   mUsedWrapperForSurfaceDescriptor = nullptr;
