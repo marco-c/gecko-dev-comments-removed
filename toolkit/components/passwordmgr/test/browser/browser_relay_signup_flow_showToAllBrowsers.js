@@ -17,11 +17,7 @@ registerCleanupFunction(() => {
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["signon.firefoxRelay.showToAllBrowsers", true],
-      ["identity.fxaccounts.oauth.enabled", false],
-      ["identity.fxaccounts.contextParam", "fx_desktop_v3"],
-    ],
+    set: [["signon.firefoxRelay.showToAllBrowsers", true]],
   });
 });
 
@@ -377,18 +373,19 @@ add_task(
   async function test_unauthenticated_browser_use_email_mask_opens_fxa_signin() {
     
     
+    const relayParams = {
+      service: "relay",
+      entrypoint_experiment: "first_offer_version",
+      entrypoint_variation: "control",
+      utm_source: "relay-integration",
+      utm_medium: "firefox-desktop",
+      utm_campaign: "first_offer_version",
+      utm_content: "control",
+    };
     const fxaSigninUrlString =
       await gFxAccounts.constructor.config.promiseConnectAccountURI(
         "relay_integration",
-        {
-          service: "relay",
-          entrypoint_experiment: "first_offer_version",
-          entrypoint_variation: "control",
-          utm_source: "relay-integration",
-          utm_medium: "firefox-desktop",
-          utm_campaign: "first_offer_version",
-          utm_content: "control",
-        }
+        relayParams
       );
     const fxaSigninURL = new URL(fxaSigninUrlString);
     
@@ -429,9 +426,28 @@ add_task(
         const primaryButton = notificationPopup.querySelector(
           "button.popup-notification-primary-button"
         );
+
+        
+        let isSigninUrl = href => {
+          const url = new URL(href);
+          if (
+            url.protocol != mockFxaServerURL.protocol ||
+            url.hostname != mockFxaServerURL.hostname ||
+            url.port != mockFxaServerURL.port
+          ) {
+            return false;
+          }
+          for (const [name, value] of Object.entries(relayParams)) {
+            if (url.searchParams.get(name) != value) {
+              return false;
+            }
+          }
+          return true;
+        };
+
         const newTabPromise = BrowserTestUtils.waitForNewTab(
           gBrowser,
-          mockFxaServerURL.href,
+          isSigninUrl,
           true
         );
 
@@ -439,9 +455,8 @@ add_task(
 
         const newTab = await newTabPromise;
         const loadedUrl = newTab.linkedBrowser.currentURI.spec;
-        Assert.equal(
-          loadedUrl,
-          mockFxaServerURL.href,
+        Assert.ok(
+          isSigninUrl(loadedUrl),
           "Clicking Use email mask should open a new tab to FXA sign-in."
         );
         BrowserTestUtils.removeTab(newTab);
