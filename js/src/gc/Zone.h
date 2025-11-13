@@ -451,10 +451,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<js::StringStats> previousGCStringStats;
   js::MainThreadData<js::StringStats> stringStats;
 
-#ifdef DEBUG
-  js::MainThreadData<unsigned> gcSweepGroupIndex;
-#endif
-
   js::gc::PretenuringZone pretenuring;
 
  private:
@@ -553,6 +549,16 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   using ObjectVector = js::GCVector<JSObject*, 0, js::SystemAllocPolicy>;
   js::MainThreadOrGCTaskData<ObjectVector> objectsWithWeakPointers;
+
+#ifdef DEBUG
+  js::MainThreadData<unsigned> gcSweepGroupIndex;
+
+  
+  
+  
+  js::MainThreadData<js::Vector<const js::gc::Cell*, 0, js::SystemAllocPolicy>>
+      cellsToAssertNotGray_;
+#endif
 
  public:
 #ifdef JS_GC_ZEAL
@@ -956,6 +962,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
+
+  auto& cellsToAssertNotGray() { return cellsToAssertNotGray_.ref(); }
 #endif
 
   

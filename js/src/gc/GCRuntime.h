@@ -1302,13 +1302,6 @@ class GCRuntime {
 
   
   mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
-
-  
-  
-  
-  MainThreadData<Vector<const Cell*, 0, SystemAllocPolicy>>
-      cellsToAssertNotGray;
-  friend void js::gc::detail::AssertCellIsNotGray(const Cell*);
 #endif
 
   friend class SweepGroupsIter;
