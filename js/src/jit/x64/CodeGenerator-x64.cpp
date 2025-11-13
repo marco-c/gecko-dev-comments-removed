@@ -12,7 +12,6 @@
 #include "jit/CodeGenerator.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
-#include "jit/ReciprocalMulConstants.h"
 #include "js/ScalarType.h"  
 
 #include "jit/MacroAssembler-inl.h"
@@ -20,6 +19,8 @@
 
 using namespace js;
 using namespace js::jit;
+
+using mozilla::DebugOnly;
 
 CodeGeneratorX64::CodeGeneratorX64(MIRGenerator* gen, LIRGraph* graph,
                                    MacroAssembler* masm,
@@ -196,75 +197,42 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
   }
 }
 
-template <class LIR>
-static void TrapIfDivideByZero(MacroAssembler& masm, LIR* lir, Register rhs) {
-  auto* mir = lir->mir();
-  MOZ_ASSERT(mir->trapOnError());
-
-  if (mir->canBeDivideByZero()) {
-    Label nonZero;
-    masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-    masm.bind(&nonZero);
-  }
-}
-
-void CodeGenerator::visitDivI64(LDivI64* lir) {
-  Register lhs = ToRegister(lir->lhs());
-  Register rhs = ToRegister(lir->rhs());
-
-  MOZ_ASSERT(lhs == rax);
-  MOZ_ASSERT(rhs != rax);
-  MOZ_ASSERT(rhs != rdx);
-  MOZ_ASSERT(ToRegister(lir->output()) == rax);
-  MOZ_ASSERT(ToRegister(lir->temp0()) == rdx);
-
-  MDiv* mir = lir->mir();
-
-  
-  TrapIfDivideByZero(masm, lir, rhs);
-
-  
-  if (mir->canBeNegativeOverflow()) {
-    Label notOverflow;
-    masm.branchPtr(Assembler::NotEqual, lhs, ImmWord(INT64_MIN), &notOverflow);
-    masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(-1), &notOverflow);
-    masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
-    masm.bind(&notOverflow);
-  }
-
-  
-  masm.cqo();
-  masm.idivq(rhs);
-}
-
-void CodeGenerator::visitModI64(LModI64* lir) {
+void CodeGenerator::visitDivOrModI64(LDivOrModI64* lir) {
   Register lhs = ToRegister(lir->lhs());
   Register rhs = ToRegister(lir->rhs());
   Register output = ToRegister(lir->output());
 
-  MOZ_ASSERT(lhs == rax);
-  MOZ_ASSERT(rhs != rax);
+  MOZ_ASSERT_IF(lhs != rhs, rhs != rax);
   MOZ_ASSERT(rhs != rdx);
-  MOZ_ASSERT(ToRegister(lir->output()) == rdx);
-  MOZ_ASSERT(ToRegister(lir->temp0()) == rax);
-
-  MMod* mir = lir->mir();
+  MOZ_ASSERT_IF(output == rax, ToRegister(lir->remainder()) == rdx);
+  MOZ_ASSERT_IF(output == rdx, ToRegister(lir->remainder()) == rax);
 
   Label done;
 
   
-  TrapIfDivideByZero(masm, lir, rhs);
+  if (lhs != rax) {
+    masm.mov(lhs, rax);
+  }
 
   
-  if (mir->canBeNegativeDividend()) {
+  if (lir->canBeDivideByZero()) {
+    Label nonZero;
+    masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->trapSiteDesc());
+    masm.bind(&nonZero);
+  }
+
+  
+  if (lir->canBeNegativeOverflow()) {
     Label notOverflow;
     masm.branchPtr(Assembler::NotEqual, lhs, ImmWord(INT64_MIN), &notOverflow);
     masm.branchPtr(Assembler::NotEqual, rhs, ImmWord(-1), &notOverflow);
-    {
+    if (lir->mir()->isMod()) {
       masm.xorl(output, output);
-      masm.jump(&done);
+    } else {
+      masm.wasmTrap(wasm::Trap::IntegerOverflow, lir->trapSiteDesc());
     }
+    masm.jump(&done);
     masm.bind(&notOverflow);
   }
 
@@ -275,331 +243,36 @@ void CodeGenerator::visitModI64(LModI64* lir) {
   masm.bind(&done);
 }
 
-void CodeGenerator::visitUDivI64(LUDivI64* lir) {
+void CodeGenerator::visitUDivOrModI64(LUDivOrModI64* lir) {
+  Register lhs = ToRegister(lir->lhs());
   Register rhs = ToRegister(lir->rhs());
 
-  MOZ_ASSERT(ToRegister(lir->lhs()) == rax);
-  MOZ_ASSERT(rhs != rax);
+  DebugOnly<Register> output = ToRegister(lir->output());
+  MOZ_ASSERT_IF(lhs != rhs, rhs != rax);
   MOZ_ASSERT(rhs != rdx);
-  MOZ_ASSERT(ToRegister(lir->output()) == rax);
-  MOZ_ASSERT(ToRegister(lir->temp0()) == rdx);
+  MOZ_ASSERT_IF(output.value == rax, ToRegister(lir->remainder()) == rdx);
+  MOZ_ASSERT_IF(output.value == rdx, ToRegister(lir->remainder()) == rax);
 
   
-  TrapIfDivideByZero(masm, lir, rhs);
+  if (lhs != rax) {
+    masm.mov(lhs, rax);
+  }
+
+  Label done;
+
+  
+  if (lir->canBeDivideByZero()) {
+    Label nonZero;
+    masm.branchTestPtr(Assembler::NonZero, rhs, rhs, &nonZero);
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, lir->trapSiteDesc());
+    masm.bind(&nonZero);
+  }
 
   
   masm.xorl(rdx, rdx);
   masm.udivq(rhs);
-}
 
-void CodeGenerator::visitUModI64(LUModI64* lir) {
-  Register rhs = ToRegister(lir->rhs());
-
-  MOZ_ASSERT(ToRegister(lir->lhs()) == rax);
-  MOZ_ASSERT(rhs != rax);
-  MOZ_ASSERT(rhs != rdx);
-  MOZ_ASSERT(ToRegister(lir->output()) == rdx);
-  MOZ_ASSERT(ToRegister(lir->temp0()) == rax);
-
-  
-  TrapIfDivideByZero(masm, lir, rhs);
-
-  
-  masm.xorl(rdx, rdx);
-  masm.udivq(rhs);
-}
-
-void CodeGenerator::visitDivPowTwoI64(LDivPowTwoI64* ins) {
-  Register lhs = ToRegister(ins->numerator());
-
-  int32_t shift = ins->shift();
-  bool negativeDivisor = ins->negativeDivisor();
-  MDiv* mir = ins->mir();
-
-  
-  
-  MOZ_ASSERT(lhs == ToRegister(ins->output()));
-
-  
-  if (mir->isUnsigned()) {
-    if (shift != 0) {
-      masm.shrq(Imm32(shift), lhs);
-    }
-    return;
-  }
-
-  if (shift != 0) {
-    
-    
-    
-    
-    if (mir->canBeNegativeDividend()) {
-      Register lhsCopy = ToRegister(ins->numeratorCopy());
-      MOZ_ASSERT(lhsCopy != lhs);
-      if (shift > 1) {
-        
-        masm.sarq(Imm32(63), lhs);
-      }
-      
-      
-      
-      masm.shrq(Imm32(64 - shift), lhs);
-      
-      
-      masm.addq(lhsCopy, lhs);
-    }
-    masm.sarq(Imm32(shift), lhs);
-  }
-
-  if (negativeDivisor) {
-    masm.negq(lhs);
-  }
-
-  if (shift == 0 && negativeDivisor) {
-    
-    Label ok;
-    masm.j(Assembler::NoOverflow, &ok);
-    masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
-    masm.bind(&ok);
-  }
-}
-
-void CodeGenerator::visitModPowTwoI64(LModPowTwoI64* ins) {
-  Register64 lhs = Register64(ToRegister(ins->input()));
-  int32_t shift = ins->shift();
-  bool canBeNegative =
-      !ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend();
-
-  MOZ_ASSERT(lhs.reg == ToRegister(ins->output()));
-
-  if (shift == 0) {
-    masm.xorl(lhs.reg, lhs.reg);
-    return;
-  }
-
-  auto clearHighBits = [&]() {
-    switch (shift) {
-      case 8:
-        masm.movzbl(lhs.reg, lhs.reg);
-        break;
-      case 16:
-        masm.movzwl(lhs.reg, lhs.reg);
-        break;
-      case 32:
-        masm.movl(lhs.reg, lhs.reg);
-        break;
-      default:
-        masm.and64(Imm64((uint64_t(1) << shift) - 1), lhs);
-        break;
-    }
-  };
-
-  Label negative;
-
-  if (canBeNegative) {
-    
-    
-    masm.branchTest64(Assembler::Signed, lhs, lhs, &negative);
-  }
-
-  clearHighBits();
-
-  if (canBeNegative) {
-    Label done;
-    masm.jump(&done);
-
-    
-    masm.bind(&negative);
-
-    
-    
-    
-    
-    
-    
-    masm.neg64(lhs);
-    clearHighBits();
-    masm.neg64(lhs);
-
-    masm.bind(&done);
-  }
-}
-
-template <class LDivOrMod>
-static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  [[maybe_unused]] Register output = ToRegister(ins->output());
-  [[maybe_unused]] Register temp = ToRegister(ins->temp0());
-  int64_t d = ins->denominator();
-
-  MOZ_ASSERT(lhs != rax && lhs != rdx);
-  MOZ_ASSERT((output == rax && temp == rdx) || (output == rdx && temp == rax));
-
-  
-  
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
-
-  auto* mir = ins->mir();
-
-  
-  
-  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
-
-  
-  masm.movq(ImmWord(uint64_t(rmc.multiplier)), rax);
-  masm.imulq(lhs);
-  if (rmc.multiplier > __int128_t(INT64_MAX)) {
-    MOZ_ASSERT(rmc.multiplier < (__int128_t(1) << 64));
-
-    
-    
-    
-    
-    masm.addq(lhs, rdx);
-  }
-  
-  
-  
-  if (rmc.shiftAmount > 0) {
-    masm.sarq(Imm32(rmc.shiftAmount), rdx);
-  }
-
-  
-  
-  if (mir->canBeNegativeDividend()) {
-    masm.movq(lhs, rax);
-    masm.sarq(Imm32(63), rax);
-    masm.subq(rax, rdx);
-  }
-
-  
-  if (d < 0) {
-    masm.negq(rdx);
-  }
-}
-
-void CodeGenerator::visitDivConstantI64(LDivConstantI64* ins) {
-  int32_t d = ins->denominator();
-
-  
-  MOZ_ASSERT(ToRegister(ins->output()) == rdx);
-  MOZ_ASSERT(ToRegister(ins->temp0()) == rax);
-
-  if (d == 0) {
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
-    return;
-  }
-
-  
-  Divide64WithConstant(masm, ins);
-}
-
-void CodeGenerator::visitModConstantI64(LModConstantI64* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  int64_t d = ins->denominator();
-
-  
-  MOZ_ASSERT(ToRegister(ins->output()) == rax);
-  MOZ_ASSERT(ToRegister(ins->temp0()) == rdx);
-
-  if (d == 0) {
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
-    return;
-  }
-
-  
-  Divide64WithConstant(masm, ins);
-
-  
-  masm.mul64(Imm64(d), Register64(rdx));
-  masm.movq(lhs, rax);
-  masm.subq(rdx, rax);
-}
-
-template <class LUDivOrUMod>
-static void UnsignedDivide64WithConstant(MacroAssembler& masm,
-                                         LUDivOrUMod* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  [[maybe_unused]] Register output = ToRegister(ins->output());
-  [[maybe_unused]] Register temp = ToRegister(ins->temp0());
-  uint64_t d = ins->denominator();
-
-  MOZ_ASSERT(lhs != rax && lhs != rdx);
-  MOZ_ASSERT((output == rax && temp == rdx) || (output == rdx && temp == rax));
-
-  
-  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
-
-  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
-
-  
-  masm.movq(ImmWord(uint64_t(rmc.multiplier)), rax);
-  masm.umulq(lhs);
-  if (rmc.multiplier > __int128_t(UINT64_MAX)) {
-    
-    
-    
-    MOZ_ASSERT(rmc.shiftAmount > 0);
-    MOZ_ASSERT(rmc.multiplier < (__int128_t(1) << 65));
-
-    
-    
-    
-    
-    
-    
-
-    
-    masm.movq(lhs, rax);
-    masm.subq(rdx, rax);
-    masm.shrq(Imm32(1), rax);
-
-    
-    masm.addq(rax, rdx);
-    masm.shrq(Imm32(rmc.shiftAmount - 1), rdx);
-  } else {
-    if (rmc.shiftAmount > 0) {
-      masm.shrq(Imm32(rmc.shiftAmount), rdx);
-    }
-  }
-}
-
-void CodeGenerator::visitUDivConstantI64(LUDivConstantI64* ins) {
-  uint64_t d = ins->denominator();
-
-  
-  MOZ_ASSERT(ToRegister(ins->output()) == rdx);
-  MOZ_ASSERT(ToRegister(ins->temp0()) == rax);
-
-  if (d == 0) {
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
-    return;
-  }
-
-  
-  UnsignedDivide64WithConstant(masm, ins);
-}
-
-void CodeGenerator::visitUModConstantI64(LUModConstantI64* ins) {
-  Register lhs = ToRegister(ins->numerator());
-  uint64_t d = ins->denominator();
-
-  
-  MOZ_ASSERT(ToRegister(ins->output()) == rax);
-  MOZ_ASSERT(ToRegister(ins->temp0()) == rdx);
-
-  if (d == 0) {
-    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
-    return;
-  }
-
-  
-  UnsignedDivide64WithConstant(masm, ins);
-
-  
-  masm.mul64(Imm64(d), Register64(rdx));
-  masm.movq(lhs, rax);
-  masm.subq(rdx, rax);
+  masm.bind(&done);
 }
 
 void CodeGeneratorX64::emitBigIntPtrDiv(LBigIntPtrDiv* ins, Register dividend,

@@ -2062,8 +2062,7 @@ void MacroAssembler::loadInt32ToStringWithBase(
       
       
 
-      auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(
-          uint32_t(base));
+      auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(base);
 
       
       mulHighUnsigned32(Imm32(rmc.multiplier), input, scratch1);
