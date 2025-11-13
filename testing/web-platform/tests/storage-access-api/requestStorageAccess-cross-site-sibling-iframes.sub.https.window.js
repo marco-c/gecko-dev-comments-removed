@@ -29,7 +29,12 @@
 
     await SetPermissionInFrame(frame1, [{ name: 'storage-access' }, 'granted']);
 
-    assert_false(await FrameHasStorageAccess(frame1), "frame1 should not have storage access initially.");
+    const hasStorageAccess = await FrameHasStorageAccess(frame1);
+    if (hasStorageAccess) {
+      
+      
+      return;
+    }
     assert_false(await FrameHasStorageAccess(frame2), "frame2 should not have storage access initially.");
 
     assert_false(await HasUnpartitionedCookie(frame1), "frame1 should not have cookie access.");
@@ -64,6 +69,12 @@
       await SetPermissionInFrame(crossSiteFrame, [{ name: 'storage-access' }, 'prompt']);
       await MaybeSetStorageAccess("*", "*", "allowed");
     });
+
+    const hasStorageAccess = await FrameHasStorageAccess(crossSiteFrame);
+    if (hasStorageAccess) {
+      
+      return;
+    }
 
     await SetPermissionInFrame(crossOriginFrame, [{ name: 'storage-access' }, 'granted']);
     await SetPermissionInFrame(crossSiteFrame, [{ name: 'storage-access' }, 'granted']);

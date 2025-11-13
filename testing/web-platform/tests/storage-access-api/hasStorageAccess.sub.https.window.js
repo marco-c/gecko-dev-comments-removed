@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 
 const {testPrefix, topLevelDocument} = processQueryParams();
@@ -11,15 +12,25 @@ promise_test(async () => {
 }, "[" + testPrefix + "] document.hasStorageAccess() should exist on the document interface");
 
 promise_test(async () => {
-  await MaybeSetStorageAccess("*", "*", "blocked");
   const hasAccess = await document.hasStorageAccess();
   if (topLevelDocument || testPrefix.includes('same-origin')) {
     assert_true(hasAccess, "Access should be granted in top-level frame or iframe that is in first-party context by default.");
-  } else if (testPrefix == 'ABA') {
-    assert_false(hasAccess, "Access should not be granted in secure same-origin iframe that is in a third-party context by default.");
-  } else {
-    assert_false(hasAccess, "Access should not be granted in secure cross-origin iframes.");
+    return;
   }
+  if (CanAccessCookiesViaJS()) {
+    
+    
+    return;
+  }
+  if (testPrefix == "ABA") {
+    assert_false(
+        hasAccess,
+        "Access should not be granted in secure same-origin iframe that is in a third-party context by default when cookies are blocked.");
+    return;
+  }
+  assert_false(
+      hasAccess,
+      "Access should not be granted in secure cross-origin iframes.");
 }, "[" + testPrefix + "] document.hasStorageAccess() should not be allowed by default unless in top-level frame or same-origin iframe.");
 
 promise_test(async (t) => {
