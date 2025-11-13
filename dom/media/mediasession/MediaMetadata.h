@@ -10,7 +10,6 @@
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/MediaSessionBinding.h"
-#include "mozilla/gfx/2D.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
@@ -20,22 +19,6 @@ namespace mozilla {
 class ErrorResult;
 
 namespace dom {
-
-class MediaImageData {
- public:
-  MediaImageData() = default;
-  explicit MediaImageData(const MediaImage& aImage)
-      : mSizes(aImage.mSizes), mSrc(aImage.mSrc), mType(aImage.mType) {}
-
-  MediaImage ToMediaImage() const;
-
-  nsString mSizes;
-  nsString mSrc;
-  nsString mType;
-  
-  
-  RefPtr<mozilla::gfx::DataSourceSurface> mDataSurface;
-};
 
 class MediaMetadataBase {
  public:
@@ -50,11 +33,8 @@ class MediaMetadataBase {
   nsString mArtist;
   nsString mAlbum;
   nsCString mUrl;
-  CopyableTArray<MediaImageData> mArtwork;
+  CopyableTArray<MediaImage> mArtwork;
 };
-
-using MediaMetadataBasePromise =
-    mozilla::MozPromise<MediaMetadataBase, nsresult, true>;
 
 class MediaMetadata final : public nsISupports,
                             public nsWrapperCache,
@@ -95,7 +75,7 @@ class MediaMetadata final : public nsISupports,
   
   
   
-  RefPtr<MediaMetadataBasePromise> LoadMetadataArtwork();
+  MediaMetadataBase* AsMetadataBase() { return this; }
 
  private:
   MediaMetadata(nsIGlobalObject* aParent, const nsString& aTitle,
@@ -107,10 +87,6 @@ class MediaMetadata final : public nsISupports,
   
   void SetArtworkInternal(const Sequence<MediaImage>& aArtwork,
                           ErrorResult& aRv);
-
-  static RefPtr<MediaMetadataBasePromise> FetchArtwork(
-      const MediaMetadataBase& aMetadata, nsIPrincipal* aPrincipal,
-      const size_t aIndex);
 
   nsCOMPtr<nsIGlobalObject> mParent;
 };

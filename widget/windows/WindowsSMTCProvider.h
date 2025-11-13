@@ -12,6 +12,7 @@
 #  include <Windows.Media.h>
 #  include <wrl.h>
 
+#  include "mozilla/dom/FetchImageHelper.h"
 #  include "mozilla/dom/MediaController.h"
 #  include "mozilla/dom/MediaControlKeySource.h"
 #  include "mozilla/UniquePtr.h"
@@ -71,7 +72,10 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   bool SetMusicMetadata(const nsString& aArtist, const nsString& aTitle);
 
   
-  void LoadThumbnail(const nsTArray<mozilla::dom::MediaImageData>& aArtwork);
+  void LoadThumbnail(const nsTArray<mozilla::dom::MediaImage>& aArtwork);
+  
+  
+  void LoadImageAtIndex(const size_t aIndex);
   
   
   void LoadImage(const char* aImageData, uint32_t aDataSize);
@@ -113,6 +117,10 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   
   CopyableTArray<mozilla::dom::MediaImage> mArtwork;
   size_t mNextImageIndex;
+
+  mozilla::UniquePtr<mozilla::dom::FetchImageHelper> mImageFetcher;
+  mozilla::MozPromiseRequestHolder<mozilla::dom::ImagePromise>
+      mImageFetchRequest;
 
   HWND mWindow;  
 
