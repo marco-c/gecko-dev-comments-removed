@@ -4,15 +4,15 @@
 "use strict";
 
 const VIEWTIME_THRESHOLD_SECONDS = Services.prefs.getIntPref(
-  "places.frecency.pages.alternative.interactions.viewTimeSeconds"
+  "places.frecency.pages.interactions.viewTimeSeconds"
 );
 
 const VIEWTIME_IF_MANY_KEYPRESSES_THRESHOLD_SECONDS = Services.prefs.getIntPref(
-  "places.frecency.pages.alternative.interactions.viewTimeIfManyKeypressesSeconds"
+  "places.frecency.pages.interactions.viewTimeIfManyKeypressesSeconds"
 );
 
 const MANY_KEYPRESSES_THRESHOLD = Services.prefs.getIntPref(
-  "places.frecency.pages.alternative.interactions.manyKeypresses"
+  "places.frecency.pages.interactions.manyKeypresses"
 );
 
 async function getPageWithUrl(url) {
@@ -29,7 +29,6 @@ async function getPageWithUrl(url) {
     frecency: r.getResultByName("frecency"),
     recalc_frecency: r.getResultByName("recalc_frecency"),
     alt_frecency: r.getResultByName("alt_frecency"),
-    recalc_alt_frecency: r.getResultByName("recalc_alt_frecency"),
   }))[0];
 }
 
@@ -187,13 +186,9 @@ add_task(async function test_insertion_triggers() {
     page = await getPageWithUrl(url);
 
     if (test.expectRecalc) {
-      Assert.equal(page.recalc_alt_frecency, 1, "Should recalc alt frecency.");
+      Assert.equal(page.recalc_frecency, 1, "Should recalc frecency.");
     } else {
-      Assert.equal(
-        page.recalc_alt_frecency,
-        0,
-        "Should not recalc alt frecency."
-      );
+      Assert.equal(page.recalc_frecency, 0, "Should not recalc frecency.");
     }
 
     await PlacesUtils.history.clear();
@@ -321,22 +316,14 @@ add_task(async function test_update_triggers_to_recalc() {
     let page = await getPageWithUrl(url);
     await insertIntoMozPlacesMetadata(page.id, test.insert.interaction);
     page = await getPageWithUrl(url);
-    Assert.equal(
-      page.recalc_alt_frecency,
-      0,
-      "Should not recalc alt frecency."
-    );
+    Assert.equal(page.recalc_frecency, 0, "Should not recalc frecency.");
 
     await updateMozPlacesMetadata(1, test.update.interaction);
     page = await getPageWithUrl(url);
     if (test.expectRecalc) {
-      Assert.equal(page.recalc_alt_frecency, 1, "Should recalc alt frecency.");
+      Assert.equal(page.recalc_frecency, 1, "Should recalc frecency.");
     } else {
-      Assert.equal(
-        page.recalc_alt_frecency,
-        0,
-        "Should not recalc alt frecency."
-      );
+      Assert.equal(page.recalc_frecency, 0, "Should not recalc frecency.");
     }
 
     await PlacesUtils.history.clear();
@@ -404,23 +391,15 @@ add_task(async function test_no_additional_recalc() {
     let page = await getPageWithUrl(url);
     await insertIntoMozPlacesMetadata(page.id, test.insert.interaction);
     page = await getPageWithUrl(url);
-    Assert.equal(page.recalc_alt_frecency, 1, "Should recalc alt frecency.");
+    Assert.equal(page.recalc_frecency, 1, "Should recalc frecency.");
 
     await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
     page = await getPageWithUrl(url);
-    Assert.equal(
-      page.recalc_alt_frecency,
-      0,
-      "Should not recalc alt frecency."
-    );
+    Assert.equal(page.recalc_frecency, 0, "Should not recalc frecency.");
 
     await updateMozPlacesMetadata(1, test.update.interaction);
     page = await getPageWithUrl(url);
-    Assert.equal(
-      page.recalc_alt_frecency,
-      0,
-      "Should not recalc alt frecency."
-    );
+    Assert.equal(page.recalc_frecency, 0, "Should not recalc frecency.");
 
     await PlacesUtils.history.clear();
   }
