@@ -439,7 +439,7 @@ class JujutsuRepository(Repository):
                 p.write_text(content)
                 
                 
-                self._run("file", "track", p)
+                self.add_remove_files(p)
             
             self._snapshot()
             yield self._resolve_to_change("@")
