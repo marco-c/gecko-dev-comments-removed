@@ -963,7 +963,7 @@ nsCSSRendering::CreateBorderRendererForNonThemedOutline(
     return Nothing();
   }
 
-  const nscoord width = ourOutline->GetOutlineWidth();
+  const nscoord width = ourOutline->mOutlineWidth;
 
   StyleBorderStyle outlineStyle;
   

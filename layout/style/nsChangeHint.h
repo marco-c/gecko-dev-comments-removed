@@ -139,15 +139,7 @@ enum nsChangeHint : uint32_t {
 
 
 
-
-
-  nsChangeHint_BorderStyleNoneChange = 1 << 17,
-
-  
-
-
-
-  nsChangeHint_SchedulePaint = 1 << 18,
+  nsChangeHint_SchedulePaint = 1 << 17,
 
   
 
@@ -163,26 +155,12 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_NeutralChange = 1 << 19,
+  nsChangeHint_NeutralChange = 1 << 18,
 
   
 
 
-  nsChangeHint_InvalidateRenderingObservers = 1 << 20,
-
-  
-
-
-
-
-
-  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 21,
-
-  
-
-
-
-  nsChangeHint_UpdateComputedBSize = 1 << 22,
+  nsChangeHint_InvalidateRenderingObservers = 1 << 19,
 
   
 
@@ -190,24 +168,13 @@ enum nsChangeHint : uint32_t {
 
 
 
-
-
-  nsChangeHint_UpdateUsesOpacity = 1 << 23,
+  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 20,
 
   
 
 
 
-
-
-
-  nsChangeHint_UpdateBackgroundPosition = 1 << 24,
-
-  
-
-
-
-  nsChangeHint_AddOrRemoveTransform = 1 << 25,
+  nsChangeHint_UpdateComputedBSize = 1 << 21,
 
   
 
@@ -217,15 +184,7 @@ enum nsChangeHint : uint32_t {
 
 
 
-
-
-  nsChangeHint_ScrollbarChange = 1 << 26,
-
-  
-
-
-
-  nsChangeHint_UpdateTableCellSpans = 1 << 27,
+  nsChangeHint_UpdateUsesOpacity = 1 << 22,
 
   
 
@@ -233,7 +192,40 @@ enum nsChangeHint : uint32_t {
 
 
 
-  nsChangeHint_VisibilityChange = 1u << 28,
+
+  nsChangeHint_UpdateBackgroundPosition = 1 << 23,
+
+  
+
+
+
+  nsChangeHint_AddOrRemoveTransform = 1 << 24,
+
+  
+
+
+
+
+
+
+
+
+
+  nsChangeHint_ScrollbarChange = 1 << 25,
+
+  
+
+
+
+  nsChangeHint_UpdateTableCellSpans = 1 << 26,
+
+  
+
+
+
+
+
+  nsChangeHint_VisibilityChange = 1u << 27,
 
   
   
@@ -250,7 +242,7 @@ enum nsChangeHint : uint32_t {
   
 
 
-  nsChangeHint_AllHints = uint32_t((1ull << 29) - 1),
+  nsChangeHint_AllHints = uint32_t((1ull << 28) - 1),
 };
 
 
@@ -322,15 +314,15 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight) {
    nsChangeHint_VisibilityChange)
 
 
-#define nsChangeHint_Hints_NeverHandledForDescendants                         \
-  (nsChangeHint_BorderStyleNoneChange | nsChangeHint_ChildrenOnlyTransform |  \
-   nsChangeHint_ScrollbarChange | nsChangeHint_InvalidateRenderingObservers | \
-   nsChangeHint_RecomputePosition | nsChangeHint_UpdateBackgroundPosition |   \
-   nsChangeHint_UpdateComputedBSize | nsChangeHint_UpdateContainingBlock |    \
-   nsChangeHint_UpdateEffects | nsChangeHint_UpdateOpacityLayer |             \
-   nsChangeHint_UpdateOverflow | nsChangeHint_UpdateParentOverflow |          \
-   nsChangeHint_UpdatePostTransformOverflow |                                 \
-   nsChangeHint_UpdateTableCellSpans | nsChangeHint_UpdateTransformLayer |    \
+#define nsChangeHint_Hints_NeverHandledForDescendants                       \
+  (nsChangeHint_ChildrenOnlyTransform | nsChangeHint_ScrollbarChange |      \
+   nsChangeHint_InvalidateRenderingObservers |                              \
+   nsChangeHint_RecomputePosition | nsChangeHint_UpdateBackgroundPosition | \
+   nsChangeHint_UpdateComputedBSize | nsChangeHint_UpdateContainingBlock |  \
+   nsChangeHint_UpdateEffects | nsChangeHint_UpdateOpacityLayer |           \
+   nsChangeHint_UpdateOverflow | nsChangeHint_UpdateParentOverflow |        \
+   nsChangeHint_UpdatePostTransformOverflow |                               \
+   nsChangeHint_UpdateTableCellSpans | nsChangeHint_UpdateTransformLayer |  \
    nsChangeHint_UpdateUsesOpacity | nsChangeHint_AddOrRemoveTransform)
 
 

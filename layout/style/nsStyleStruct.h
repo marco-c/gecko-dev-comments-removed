@@ -530,9 +530,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding {
   ((l) == 0) ? 0 : std::max((tpp), (l) / (tpp) * (tpp))
 
 
-static bool IsVisibleBorderStyle(mozilla::StyleBorderStyle aStyle) {
-  return (aStyle != mozilla::StyleBorderStyle::None &&
-          aStyle != mozilla::StyleBorderStyle::Hidden);
+static inline bool IsVisibleBorderStyle(mozilla::StyleBorderStyle aStyle) {
+  return aStyle != mozilla::StyleBorderStyle::None &&
+         aStyle != mozilla::StyleBorderStyle::Hidden;
 }
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
@@ -546,28 +546,34 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
   
   
   bool HasVisibleStyle(mozilla::Side aSide) const {
-    return IsVisibleBorderStyle(mBorderStyle[aSide]);
+    return IsVisibleBorderStyle(mBorderStyle.Get(aSide));
   }
 
   
   void SetBorderWidth(mozilla::Side aSide, nscoord aBorderWidth,
                       nscoord aAppUnitsPerDevPixel) {
-    nscoord roundedWidth =
+    mBorder.Get(aSide) =
         NS_ROUND_BORDER_TO_PIXELS(aBorderWidth, aAppUnitsPerDevPixel);
-    mBorder.Side(aSide) = roundedWidth;
-    if (HasVisibleStyle(aSide)) {
-      mComputedBorder.Side(aSide) = roundedWidth;
-    }
   }
 
   
-  
-  
-  const nsMargin& GetComputedBorder() const { return mComputedBorder; }
+  nsMargin GetComputedBorder() const {
+    nsMargin border(mBorder._0, mBorder._1, mBorder._2, mBorder._3);
+    for (auto side : mozilla::AllPhysicalSides()) {
+      if (!HasVisibleStyle(side)) {
+        border.Side(side) = 0;
+      }
+    }
+    return border;
+  }
 
   bool HasBorder() const {
-    return mComputedBorder != nsMargin(0, 0, 0, 0) ||
-           !mBorderImageSource.IsNone();
+    for (auto side : mozilla::AllPhysicalSides()) {
+      if (mBorder.Get(side) && HasVisibleStyle(side)) {
+        return true;
+      }
+    }
+    return !mBorderImageSource.IsNone();
   }
 
   
@@ -575,19 +581,20 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
   
   
   nscoord GetComputedBorderWidth(mozilla::Side aSide) const {
-    return GetComputedBorder().Side(aSide);
+    if (!HasVisibleStyle(aSide)) {
+      return 0;
+    }
+    return mBorder.Get(aSide);
   }
 
   mozilla::StyleBorderStyle GetBorderStyle(mozilla::Side aSide) const {
     NS_ASSERTION(aSide <= mozilla::eSideLeft, "bad side");
-    return mBorderStyle[aSide];
+    return mBorderStyle.Get(aSide);
   }
 
   void SetBorderStyle(mozilla::Side aSide, mozilla::StyleBorderStyle aStyle) {
     NS_ASSERTION(aSide <= mozilla::eSideLeft, "bad side");
-    mBorderStyle[aSide] = aStyle;
-    mComputedBorder.Side(aSide) =
-        (HasVisibleStyle(aSide) ? mBorder.Side(aSide) : 0);
+    mBorderStyle.Get(aSide) = aStyle;
   }
 
   inline bool IsBorderImageSizeAvailable() const {
@@ -611,7 +618,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
   mozilla::StyleBoxDecorationBreak mBoxDecorationBreak;
 
  protected:
-  mozilla::StyleBorderStyle mBorderStyle[4];  
+  mozilla::StyleRect<mozilla::StyleBorderStyle> mBorderStyle;
+  mozilla::StyleRect<mozilla::StyleBorderSideWidth> mBorder;
 
  public:
   
@@ -668,66 +676,28 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
   }
 
   nsStyleBorder& operator=(const nsStyleBorder&) = delete;
-
- protected:
-  
-  
-  
-  
-  
-  
-  nsMargin mComputedBorder;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsMargin mBorder;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
   STYLE_STRUCT(nsStyleOutline)
   nsStyleOutline();
 
-  
-  
-  
-  
-  
-  nscoord mOutlineWidth;
+  mozilla::StyleBorderSideWidth mOutlineWidth;
   mozilla::StyleAu mOutlineOffset;
   mozilla::StyleColor mOutlineColor;
   mozilla::StyleOutlineStyle mOutlineStyle;
-
-  nscoord GetOutlineWidth() const { return mActualOutlineWidth; }
 
   bool ShouldPaintOutline() const {
     if (mOutlineStyle.IsAuto()) {
       return true;
     }
-    if (GetOutlineWidth() > 0) {
-      MOZ_ASSERT(
-          mOutlineStyle.AsBorderStyle() != mozilla::StyleBorderStyle::None,
-          "outline-style: none implies outline-width of zero");
-      return true;
+    if (!IsVisibleBorderStyle(mOutlineStyle.AsBorderStyle())) {
+      return false;
     }
-    return false;
+    return mOutlineWidth > 0;
   }
 
   nsSize EffectiveOffsetFor(const nsRect& aRect) const;
-
- protected:
-  
-  
-  
-  nscoord mActualOutlineWidth;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
@@ -2190,7 +2160,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn {
   mozilla::StyleColumnFill mColumnFill = mozilla::StyleColumnFill::Balance;
   mozilla::StyleColumnSpan mColumnSpan = mozilla::StyleColumnSpan::None;
 
-  nscoord GetColumnRuleWidth() const { return mActualColumnRuleWidth; }
+  nscoord GetColumnRuleWidth() const {
+    if (!IsVisibleBorderStyle(mColumnRuleStyle)) {
+      return 0;
+    }
+    return mColumnRuleWidth;
+  }
 
   bool IsColumnContainerStyle() const {
     return !mColumnCount.IsAuto() || !mColumnWidth.IsAuto();
@@ -2201,16 +2176,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn {
   }
 
  protected:
-  
-  
-  
-  
-  
-  nscoord mColumnRuleWidth;
-  
-  
-  
-  nscoord mActualColumnRuleWidth;
+  mozilla::StyleBorderSideWidth mColumnRuleWidth;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
