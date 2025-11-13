@@ -1712,7 +1712,8 @@ impl Device {
         
         
         let requires_null_terminated_shader_source = is_emulator || renderer_name == "Mali-T628"
-            || renderer_name == "Mali-T720" || renderer_name == "Mali-T760";
+            || renderer_name == "Mali-T720" || renderer_name == "Mali-T760"
+            || renderer_name == "Mali-G57";
 
         
         
