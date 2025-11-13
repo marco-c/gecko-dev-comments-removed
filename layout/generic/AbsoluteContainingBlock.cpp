@@ -1119,7 +1119,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     AutoFallbackStyleSetter fallback(aKidFrame, currentFallbackStyle,
                                      aAnchorPosResolutionCache,
                                      firstTryIndex == currentFallbackIndex);
-    const auto cb = [&]() {
+    auto cb = [&]() {
       if (isGrid) {
         
         const auto border = aDelegatingFrame->GetUsedBorder();
@@ -1303,24 +1303,29 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
               AnchorPosResolutionParams::From(aKidFrame,
                                               aAnchorPosResolutionCache),
               &cbSize);
-      const bool iInsetAuto =
+      const bool iStartInsetAuto =
           stylePos
               ->GetAnchorResolvedInset(LogicalSide::IStart, outerWM,
                                        anchorResolutionParams)
-              ->IsAuto() ||
+              ->IsAuto();
+      const bool iEndInsetAuto =
           stylePos
               ->GetAnchorResolvedInset(LogicalSide::IEnd, outerWM,
                                        anchorResolutionParams)
               ->IsAuto();
-      const bool bInsetAuto =
+      const bool iInsetAuto = iStartInsetAuto || iEndInsetAuto;
+
+      const bool bStartInsetAuto =
           stylePos
               ->GetAnchorResolvedInset(LogicalSide::BStart, outerWM,
                                        anchorResolutionParams)
-              ->IsAuto() ||
+              ->IsAuto();
+      const bool bEndInsetAuto =
           stylePos
               ->GetAnchorResolvedInset(LogicalSide::BEnd, outerWM,
                                        anchorResolutionParams)
               ->IsAuto();
+      const bool bInsetAuto = bStartInsetAuto || bEndInsetAuto;
       const LogicalSize kidMarginBox{
           outerWM, margin.IStartEnd(outerWM) + kidSize.ISize(outerWM),
           margin.BStartEnd(outerWM) + kidSize.BSize(outerWM)};
@@ -1380,6 +1385,16 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
       aKidFrame->SetRect(r);
 
+      
+      
+      
+      LogicalMargin insetModification{
+          outerWM, bStartInsetAuto ? 0 : offsets.BStart(outerWM),
+          iEndInsetAuto ? 0 : offsets.IEnd(outerWM),
+          bEndInsetAuto ? 0 : offsets.BEnd(outerWM),
+          iStartInsetAuto ? 0 : offsets.IStart(outerWM)};
+      cb.mRect.Deflate(insetModification.GetPhysicalMargin(outerWM));
+
       nsView* view = aKidFrame->GetView();
       if (view) {
         
@@ -1431,13 +1446,14 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }();
 
     const auto fits = aStatus.IsComplete() && [&]() {
-      auto overflowCheckRect = cb.mRect;
-      if (aAnchorPosResolutionCache && cb.mAnchorShiftInfo) {
-        overflowCheckRect =
-            GrowOverflowCheckRect(overflowCheckRect, aKidFrame->GetNormalRect(),
-                                  cb.mAnchorShiftInfo->mResolvedArea);
-        aAnchorPosResolutionCache->mReferenceData->mContainingBlockRect =
-            overflowCheckRect;
+      const auto overflowCheckRect = cb.mRect;
+      if (aAnchorPosResolutionCache) {
+        if (cb.mAnchorShiftInfo) {
+          aAnchorPosResolutionCache->mReferenceData->mContainingBlockRect =
+              GrowOverflowCheckRect(overflowCheckRect,
+                                    aKidFrame->GetNormalRect(),
+                                    cb.mAnchorShiftInfo->mResolvedArea);
+        }
         return AnchorPositioningUtils::FitsInContainingBlock(
             AnchorPositioningUtils::ContainingBlockInfo::ExplicitCBFrameSize(
                 aOriginalContainingBlockRect),
