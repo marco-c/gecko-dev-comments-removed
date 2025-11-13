@@ -848,6 +848,21 @@ add_autofill_task(async function bookmarkBelowThreshold() {
   await PlacesTestUtils.addBookmarkWithDetails({
     uri: "http://" + url,
   });
+
+  
+  
+  
+  let thirtyYearsAgoMicroseconds =
+    (Date.now() - 30 * 365 * 24 * 60 * 60 * 1000) * 1000;
+  await PlacesUtils.withConnectionWrapper(
+    "test_autofill_originsAndQueries::add_autofill_task",
+    async db => {
+      await db.execute("UPDATE moz_bookmarks SET dateAdded = :dateAdded", {
+        dateAdded: thirtyYearsAgoMicroseconds,
+      });
+    }
+  );
+
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   
