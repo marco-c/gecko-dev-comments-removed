@@ -261,17 +261,38 @@ class CodeGeneratorShared : public LElementVisitor {
   
   
   inline bool isNextBlock(LBlock* block) {
-    uint32_t target = skipTrivialBlocks(block->mir())->id();
-    uint32_t i = current->mir()->id() + 1;
-    if (target < i) {
+    uint32_t targetId = skipTrivialBlocks(block->mir())->id();
+
+    
+    if (targetId < current->mir()->id() + 1) {
       return false;
     }
-    
-    for (; i != target; ++i) {
-      if (!graph.getBlock(i)->isTrivial()) {
-        return false;
-      }
+
+    if (current->isOutOfLine() != graph.getBlock(targetId)->isOutOfLine()) {
+      return false;
     }
+
+    
+    for (uint32_t nextId = current->mir()->id() + 1; nextId != targetId;
+         ++nextId) {
+      LBlock* nextBlock = graph.getBlock(nextId);
+
+      
+      
+      if (nextBlock->isOutOfLine() != graph.getBlock(targetId)->isOutOfLine()) {
+        continue;
+      }
+
+      
+      
+      if (nextBlock->isTrivial()) {
+        continue;
+      }
+
+      
+      return false;
+    }
+
     return true;
   }
 

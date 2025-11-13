@@ -36,6 +36,12 @@ using MResumePointIterator = InlineForwardListIterator<MResumePoint>;
 
 class LBlock;
 
+
+
+
+
+enum class Frequency : uint8_t { Unknown = 0, Likely = 1, Unlikely = 2 };
+
 class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
  public:
   enum Kind {
@@ -63,7 +69,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   bool alwaysBails_ = false;
 
   
-  wasm::BranchHint branchHint_ = wasm::BranchHint::Invalid;
+  
+  Frequency frequency_ = Frequency::Unknown;
 
   
   void pushVariable(uint32_t slot) { push(slots_[slot]); }
@@ -385,14 +392,14 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   uint32_t id() const { return id_; }
   uint32_t numPredecessors() const { return predecessors_.length(); }
 
-  bool branchHintingUnlikely() const {
-    return branchHint_ == wasm::BranchHint::Unlikely;
-  }
-  bool branchHintingLikely() const {
-    return branchHint_ == wasm::BranchHint::Likely;
-  }
+  bool isUnknownFrequency() const { return frequency_ == Frequency::Unknown; }
 
-  void setBranchHinting(wasm::BranchHint value) { branchHint_ = value; }
+  bool isLikelyFrequency() const { return frequency_ == Frequency::Likely; }
+
+  bool isUnlikelyFrequency() const { return frequency_ == Frequency::Unlikely; }
+
+  Frequency getFrequency() const { return frequency_; }
+  void setFrequency(Frequency value) { frequency_ = value; }
 
   uint32_t domIndex() const {
     MOZ_ASSERT(!isDead());

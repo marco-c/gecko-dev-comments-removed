@@ -23,38 +23,39 @@ using namespace js::jit;
 
 
 
-
-
 bool jit::BranchHinting(const MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_BranchHint, "Beginning BranchHinting pass");
 
   
-  mozilla::Vector<MBasicBlock*, 0> toBeMoved;
 
-  for (MBasicBlock* block : graph) {
-    
-    
-    
-    
-    
-    if (block->branchHintingUnlikely() && block->loopDepth() == 0 &&
-        block->hasLastIns() && block->lastIns()->is<js::jit::MWasmReturn>()) {
-      if (!toBeMoved.append(block)) {
-        return false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  for (ReversePostorderIterator block(graph.rpoBegin());
+       block != graph.rpoEnd(); block++) {
+    if (block->isUnknownFrequency()) {
+      continue;
+    }
+
+    for (MBasicBlock** it = block->immediatelyDominatedBlocksBegin();
+         it != block->immediatelyDominatedBlocksEnd(); it++) {
+      
+      
+      if ((*it)->isUnknownFrequency()) {
+        (*it)->setFrequency(block->getFrequency());
       }
     }
-  }
-
-  for (MBasicBlock* block : toBeMoved) {
-#ifdef JS_JITSPEW
-    JitSpew(JitSpew_BranchHint, "Moving block%u to the end", block->id());
-#endif
-    graph.moveBlockToEnd(block);
-  }
-
-  if (!toBeMoved.empty()) {
-    
-    RenumberBlocks(graph);
   }
 
   return true;
