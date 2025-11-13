@@ -149,6 +149,16 @@ class CharacterData : public nsIContent {
   
 
 
+  bool TextStartsWithOnlyWhitespace(uint32_t aOffset) const;
+
+  
+
+
+  bool TextEndsWithOnlyWhitespace(uint32_t aOffset) const;
+
+  
+
+
   void AppendTextTo(nsAString& aResult) const { mBuffer.AppendTo(aResult); }
 
   
@@ -260,6 +270,9 @@ class CharacterData : public nsIContent {
 
  private:
   already_AddRefed<nsAtom> GetCurrentValueAtom();
+
+  bool CheckTextIsOnlyWhitespace(uint32_t aStartOffset,
+                                 uint32_t aEndOffset) const;
 };
 
 }  
