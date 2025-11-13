@@ -100,7 +100,9 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   void Close();
   bool HasBatchedData() const;
 
-  MediaEventSource<int64_t, AwakeTimeStamp>& OnOutput() { return mOnOutput; }
+  MediaEventSource<int64_t, TimeStamp, AwakeTimeStamp>& OnOutput() {
+    return mOnOutput;
+  }
   MediaEventSource<void>& OnEnd() { return mOnEnd; }
 
   
@@ -177,7 +179,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
 
   
   
-  MediaEventProducer<int64_t, AwakeTimeStamp> mOnOutput;
+  MediaEventProducer<int64_t, TimeStamp, AwakeTimeStamp> mOnOutput;
   
   MediaEventProducer<void> mOnEnd;
 
