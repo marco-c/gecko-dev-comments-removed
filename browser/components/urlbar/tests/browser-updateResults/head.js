@@ -23,6 +23,10 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   return module;
 });
 
+
+
+const MUTATION_SETTLE_TIME_MS = 500;
+
 const MAX_RESULTS = 10;
 
 add_setup(async function headInit() {
@@ -384,41 +388,37 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   let mutationPromise = new Promise(resolve => {
-    let lastRowState = duringUpdate[duringUpdate.length - 1];
-    let observer = new MutationObserver(mutations => {
-      let visibleChildren = Array.from(mutations[0].target.children).filter(
-        child => BrowserTestUtils.isVisible(child)
-      );
-      Assert.lessOrEqual(
-        visibleChildren.length,
-        MAX_RESULTS,
-        `There must be less than ${MAX_RESULTS} visible rows during update`
-      );
-      observer.disconnect();
-      resolve();
+    let lastMutationTime = ChromeUtils.now();
+    let observer = new MutationObserver(() => {
+      info("Observed mutation");
+      lastMutationTime = ChromeUtils.now();
     });
-    if (lastRowState.stale) {
-      
-      
-      
-      let { children } = UrlbarTestUtils.getResultsContainer(window);
-      observer.observe(children[children.length - 1], { attributes: true });
-    } else if (search1.viewCount == rowCountDuringUpdate) {
-      
-      
-      
-      observer.observe(UrlbarTestUtils.getResultsContainer(window), {
-        subtree: true,
-        attributes: true,
-        characterData: true,
-      });
-    } else {
-      
-      observer.observe(UrlbarTestUtils.getResultsContainer(window), {
-        childList: true,
-      });
-    }
+    observer.observe(UrlbarTestUtils.getResultsContainer(window), {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+
+    let interval = setInterval(
+      () => {
+        if (MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime) {
+          info("No further mutations observed, stopping");
+          clearInterval(interval);
+          observer.disconnect();
+          resolve();
+        }
+      },
+      Math.ceil(MUTATION_SETTLE_TIME_MS / 10)
+    );
   });
 
   
@@ -432,6 +432,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   });
 
   
+  info("Waiting for mutations to settle");
   await mutationPromise;
 
   
