@@ -339,15 +339,9 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
-[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumption(
+[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumptionWithReturn(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
-    CompletionKind completionKind, JS::Handle<JS::Value> value) {
-  
-  
-  if (completionKind != CompletionKind::Return) {
-    return AsyncGeneratorResume(cx, generator, completionKind, value);
-  }
-
+    JS::Handle<JS::Value> value) {
   
   
   
@@ -367,8 +361,17 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
+
+
+
+
+
 [[nodiscard]] static bool AsyncGeneratorYield(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value,
+    bool* resumeAgain, CompletionKind* resumeCompletionKind,
+    JS::MutableHandle<JS::Value> resumeValue) {
+  *resumeAgain = false;
+
   
   
   
@@ -401,8 +404,20 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     
     
-    return AsyncGeneratorUnwrapYieldResumption(cx, generator, completionKind,
-                                               completionValue);
+    
+    
+    
+    
+    if (completionKind != CompletionKind::Return) {
+      *resumeAgain = true;
+      *resumeCompletionKind = completionKind;
+      resumeValue.set(completionValue);
+      return true;
+    }
+
+    
+    return AsyncGeneratorUnwrapYieldResumptionWithReturn(cx, generator,
+                                                         completionValue);
   }
 
   
@@ -1074,8 +1089,8 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
-    if (!AsyncGeneratorUnwrapYieldResumption(
-            cx, generator, CompletionKind::Return, completionValue)) {
+    if (!AsyncGeneratorUnwrapYieldResumptionWithReturn(cx, generator,
+                                                       completionValue)) {
       
       
       
@@ -1212,6 +1227,8 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
 [[nodiscard]] static bool AsyncGeneratorResume(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
     CompletionKind completionKind, HandleValue argument) {
+  
+  JS::Rooted<JS::Value> resumeArgument(cx, argument);
   while (true) {
     MOZ_ASSERT(!generator->isClosed(),
                "closed generator when resuming async generator");
@@ -1248,7 +1265,7 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
                                         ? cx->names().AsyncGeneratorThrow
                                         : cx->names().AsyncGeneratorReturn;
     FixedInvokeArgs<1> args(cx);
-    args[0].set(argument);
+    args[0].set(resumeArgument);
     RootedValue thisOrRval(cx, ObjectValue(*generator));
     if (!CallSelfHostedFunction(cx, funName, thisOrRval, args, &thisOrRval)) {
       if (!generator->isClosed()) {
@@ -1262,7 +1279,16 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     if (generator->isAfterYield()) {
-      return AsyncGeneratorYield(cx, generator, thisOrRval);
+      bool resumeAgain = false;
+      if (!AsyncGeneratorYield(cx, generator, thisOrRval, &resumeAgain,
+                               &completionKind, &resumeArgument)) {
+        return false;
+      }
+      if (resumeAgain) {
+        MOZ_ASSERT(completionKind != CompletionKind::Return);
+        continue;
+      }
+      return true;
     }
 
     return AsyncGeneratorReturned(cx, generator, thisOrRval);
