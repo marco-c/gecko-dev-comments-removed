@@ -32,10 +32,12 @@ namespace mozilla::hal_impl {
 
 
 
+
 const uint32_t kParentOomScoreAdjust = 0;
-const uint32_t kForegroundOomScoreAdjust = 100;
-const uint32_t kBackgroundPerceivableOomScoreAdjust = 133;
-const uint32_t kBackgroundOomScoreAdjust = 167;
+const uint32_t kForegroundHighOomScoreAdjust = 100;
+const uint32_t kForegroundOomScoreAdjust = 133;
+const uint32_t kBackgroundPerceivableOomScoreAdjust = 167;
+const uint32_t kBackgroundOomScoreAdjust = 200;
 const uint32_t kPreallocOomScoreAdjust = 233;
 
 static uint32_t OomScoreAdjForPriority(ProcessPriority aPriority) {
@@ -48,6 +50,8 @@ static uint32_t OomScoreAdjForPriority(ProcessPriority aPriority) {
       return kPreallocOomScoreAdjust;
     case PROCESS_PRIORITY_FOREGROUND:
       return kForegroundOomScoreAdjust;
+    case PROCESS_PRIORITY_FOREGROUND_HIGH:
+      return kForegroundOomHighScoreAdjust;
     default:
       return kParentOomScoreAdjust;
   }
