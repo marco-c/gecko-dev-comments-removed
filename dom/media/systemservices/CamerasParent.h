@@ -193,7 +193,7 @@ class CamerasParent final : public PCamerasParent {
   mozilla::ipc::IPCResult RecvStopCapture(const CaptureEngine& aCapEngine,
                                           const int& aStreamId) override;
   mozilla::ipc::IPCResult RecvReleaseFrame(
-      mozilla::ipc::Shmem&& aShmem) override;
+      const int& aCaptureId, mozilla::ipc::Shmem&& aShmem) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
   mozilla::ipc::IPCResult RecvEnsureInitialized(
       const CaptureEngine& aCapEngine) override;
@@ -207,10 +207,10 @@ class CamerasParent final : public PCamerasParent {
     MOZ_ASSERT(mPBackgroundEventTarget->IsOnCurrentThread());
     return mDestroyed;
   };
-  ShmemBuffer GetBuffer(size_t aSize);
+  ShmemBuffer GetBuffer(int aCaptureId, size_t aSize);
 
   
-  int DeliverFrameOverIPC(CaptureEngine aCapEngine,
+  int DeliverFrameOverIPC(CaptureEngine aCapEngine, int aCaptureId,
                           const Span<const int>& aStreamId,
                           const TrackingId& aTrackingId, ShmemBuffer aBuffer,
                           unsigned char* aAltBuffer,
@@ -273,7 +273,12 @@ class CamerasParent final : public PCamerasParent {
   const RefPtr<VideoCaptureFactory> mVideoCaptureFactory;
 
   
-  ShmemPool mShmemPool;
+  
+  
+  
+  
+  
+  DataMutex<std::map<int, ShmemPool>> mShmemPools;
 
   
   const nsCOMPtr<nsISerialEventTarget> mPBackgroundEventTarget;
