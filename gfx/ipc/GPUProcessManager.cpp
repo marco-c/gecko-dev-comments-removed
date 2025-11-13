@@ -615,6 +615,10 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   }
 #endif
 
+  
+  int pID = mProcess->GetChildProcessId();
+  hal::SetProcessPriority(pID, hal::PROCESS_PRIORITY_FOREGROUND_HIGH);
+
   ipc::Endpoint<PVsyncBridgeParent> vsyncParent;
   ipc::Endpoint<PVsyncBridgeChild> vsyncChild;
   nsresult rv = PVsyncBridge::CreateEndpoints(
