@@ -52,9 +52,9 @@ add_task(async function test_modal_ui() {
   
   await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
-  let promptElements = openedTab.linkedBrowser
-    .closest(".browserSidebarContainer")
-    .querySelectorAll(".content-prompt-dialog");
+  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll(
+    ".content-prompt-dialog"
+  );
 
   let dialogBox = gBrowser.getTabDialogBox(openedTab.linkedBrowser);
   let contentPromptManager = dialogBox.getContentDialogManager();
