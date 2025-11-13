@@ -1,11 +1,11 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-
-
-
-
-
-
-
+/*
+ * With no custom cleaning categories set and sanitizeOnShutdown disabled,
+ * the checkboxes "alwaysClear" and "deleteOnClose" should share the same state.
+ * The state of the cleaning categories cookies, cache and offlineApps should be in the state of the "deleteOnClose" box.
+ */
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.sanitize.useOldClearHistoryDialog", true]],
@@ -25,6 +25,9 @@ add_task(async function test_syncWithoutCustomPrefs() {
   ok(!alwaysClearBox.checked, "AlwaysClear initial state is deselected");
 
   deleteOnCloseBox.click();
+
+  // Wait for UI to update.
+  await new Promise(resolve => requestAnimationFrame(resolve));
 
   ok(deleteOnCloseBox.checked, "DeleteOnClose is selected");
   is(
@@ -50,6 +53,9 @@ add_task(async function test_syncWithoutCustomPrefs() {
   );
 
   deleteOnCloseBox.click();
+
+  // Wait for UI to update.
+  await new Promise(resolve => requestAnimationFrame(resolve));
 
   ok(!deleteOnCloseBox.checked, "DeleteOnClose is deselected");
   is(
@@ -83,11 +89,11 @@ add_task(async function test_syncWithoutCustomPrefs() {
   Services.prefs.clearUserPref("privacy.sanitize.sanitizeOnShutdown");
 });
 
-
-
-
-
-
+/*
+ * With custom cleaning category already set and SanitizeOnShutdown enabled,
+ * deselecting "deleteOnClose" should not change the state of "alwaysClear".
+ * The state of the cleaning categories cookies, cache and offlineApps should be in the state of the "deleteOnClose" box.
+ */
 add_task(async function test_syncWithCustomPrefs() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -163,11 +169,11 @@ add_task(async function test_syncWithCustomPrefs() {
   await SpecialPowers.popPrefEnv();
 });
 
-
-
-
-
-
+/*
+ * Setting/resetting cleaning prefs for cookies, cache, offline apps
+ * and selecting/deselecting the "alwaysClear" Box, also selects/deselects
+ * the "deleteOnClose" box.
+ */
 
 add_task(async function test_syncWithCustomPrefs() {
   await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
@@ -187,6 +193,8 @@ add_task(async function test_syncWithCustomPrefs() {
       ["privacy.clearOnShutdown.cache", true],
       ["privacy.clearOnShutdown.offlineApps", true],
       ["privacy.sanitize.sanitizeOnShutdown", true],
+      // Make sure custom is selected so the depending checkboxes are visible.
+      ["privacy.history.custom", true],
     ],
   });
 
@@ -199,7 +207,7 @@ add_task(async function test_syncWithCustomPrefs() {
 
   alwaysClearBox.click();
 
-  
+  // Wait for UI to update.
   await new Promise(resolve => requestAnimationFrame(resolve));
 
   ok(!alwaysClearBox.checked, "AlwaysClear is deselected");
@@ -213,9 +221,9 @@ add_task(async function test_syncWithCustomPrefs() {
   await SpecialPowers.popPrefEnv();
 });
 
-
-
-
+/*
+ * On loading the page, the ClearOnClose box should be set according to the pref selection
+ */
 add_task(async function test_initialState() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -264,7 +272,7 @@ add_task(async function test_initialState() {
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  
+  // When private browsing mode autostart is selected, the deleteOnClose Box is selected always
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.clearOnShutdown.cookies", false],
@@ -287,10 +295,9 @@ add_task(async function test_initialState() {
     "DeleteOnClose is set accordingly to the private Browsing autostart pref, selected"
   );
 
-  
-  let historyMode = document.getElementById("historyMode");
-  historyMode.value = "remember";
-  historyMode.doCommand();
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  // Reset history mode
   await SpecialPowers.popPrefEnv();
+  gBrowser.contentWindow.Preferences.getSetting("historyMode").value =
+    "remember";
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
