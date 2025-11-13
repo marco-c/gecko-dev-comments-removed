@@ -180,23 +180,6 @@ already_AddRefed<Attr> nsDOMAttributeMap::SetNamedItemNS(
     Attr& aAttr, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError) {
   NS_ENSURE_TRUE(mContent, nullptr);
 
-  
-  
-
-  
-  nsDOMAttributeMap* owner = aAttr.GetMap();
-  if (owner) {
-    if (owner != this) {
-      aError.Throw(NS_ERROR_DOM_INUSE_ATTRIBUTE_ERR);
-      return nullptr;
-    }
-
-    
-    
-    RefPtr<Attr> attribute = &aAttr;
-    return attribute.forget();
-  }
-
   nsAutoString value;
   aAttr.GetValue(value);
 
@@ -212,11 +195,19 @@ already_AddRefed<Attr> nsDOMAttributeMap::SetNamedItemNS(
   if (aError.Failed()) {
     return nullptr;
   }
+
   
-  
-  if (aAttr.GetMap() && aAttr.GetMap() != this) {
-    aError.Throw(NS_ERROR_DOM_INUSE_ATTRIBUTE_ERR);
-    return nullptr;
+  nsDOMAttributeMap* owner = aAttr.GetMap();
+  if (owner) {
+    if (owner != this) {
+      aError.Throw(NS_ERROR_DOM_INUSE_ATTRIBUTE_ERR);
+      return nullptr;
+    }
+
+    
+    
+    RefPtr<Attr> attribute = &aAttr;
+    return attribute.forget();
   }
 
   nsresult rv;
