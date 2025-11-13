@@ -1151,7 +1151,7 @@ NameLocation ScopeContext::searchInEnclosingScopeWithCache(
   mozilla::Maybe<NameLocation> found;
 
   
-  uint16_t hops = 0;
+  uint8_t hops = 0;
 
   for (InputScopeIter si(input.enclosingScope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(fc, parserAtoms, input.atomCache, si.scope(),
@@ -1221,7 +1221,7 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
   mozilla::Maybe<NameLocation> result;
 
   
-  uint16_t hops = 0;
+  uint8_t hops = 0;
 
   for (InputScopeIter si(input.enclosingScope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(fc, parserAtoms, input.atomCache, si.scope(),

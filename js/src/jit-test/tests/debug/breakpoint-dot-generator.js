@@ -27,7 +27,7 @@ assertEq(caught, true);
 
 
 script.setBreakpoint(0, {});
-script.setBreakpoint(7, {});
+script.setBreakpoint(6, {});
 
 
 assertEq(script.getPossibleBreakpoints().some(p => p.offset == 1), false);

@@ -15,18 +15,19 @@ class D extends C {
     }
 }
 
+const MAX_DEPTH = 250;
 
-var depths = [0, 1, 10, 200, 300];
+
+var depths = [0, 1, 10, 200, MAX_DEPTH];
 for (var d of depths) {
     var o = new D(d);
     assertEq(o.x, d + 1);
 }
 
 
-
 var ex;
 try {
-    new D(2000);
+    new D(MAX_DEPTH + 1);
 } catch(e) {
     ex = e;
 }

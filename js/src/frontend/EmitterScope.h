@@ -57,7 +57,7 @@ class MOZ_STACK_CLASS EmitterScope : public Nestable<EmitterScope> {
 #endif
 
   
-  uint16_t environmentChainLength_;
+  uint8_t environmentChainLength_;
 
   
   

@@ -2,7 +2,7 @@ g = newGlobal({newCompartment: true});
 hits = 0;
 Debugger(g).onDebuggerStatement = function(frame) {
     
-    frame.script.setBreakpoint(128, {hit: function() { hits++; }});
+    frame.script.setBreakpoint(120, {hit: function() { hits++; }});
 }
 g.eval(`
 function* range() {

@@ -242,16 +242,16 @@ static inline bool IsBackedgeForLoopHead(jsbytecode* pc, jsbytecode* loopHead) {
 
 
 
-static inline uint16_t GET_ENVCOORD_HOPS(jsbytecode* pc) {
-  return GET_UINT16(pc);
+static inline uint8_t GET_ENVCOORD_HOPS(jsbytecode* pc) {
+  return GET_UINT8(pc);
 }
 
-static inline void SET_ENVCOORD_HOPS(jsbytecode* pc, uint16_t hops) {
-  SET_UINT16(pc, hops);
+static inline void SET_ENVCOORD_HOPS(jsbytecode* pc, uint8_t hops) {
+  SET_UINT8(pc, hops);
 }
 
-static const unsigned ENVCOORD_HOPS_LEN = 2;
-static const unsigned ENVCOORD_HOPS_BITS = 16;
+static const unsigned ENVCOORD_HOPS_LEN = 1;
+static const unsigned ENVCOORD_HOPS_BITS = 8;
 static const unsigned ENVCOORD_HOPS_LIMIT = 1 << ENVCOORD_HOPS_BITS;
 
 
