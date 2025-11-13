@@ -11,8 +11,16 @@ import java.util.Locale;
 
 public class LocaleUtils {
   
-  
-  public static String getLanguageTagForAcceptLanguage(final Locale locale) {
+
+
+
+
+
+
+
+
+
+  public static String getLanguageRegionLocale(final Locale locale) {
     String language = locale.getLanguage();
     if (language.equals("in")) {
       language = "id";
