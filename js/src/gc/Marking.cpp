@@ -2909,10 +2909,11 @@ void UnmarkGrayTracer::onChild(JS::GCCellPtr thing, const char* name) {
   
   
   if (zone->isAtomsZone() && sourceZone) {
-    MOZ_ASSERT(tenured.is<JS::Symbol>());
     GCRuntime* gc = &runtime()->gc;
-    JS::Symbol* symbol = tenured.as<JS::Symbol>();
-    gc->atomMarking.maybeUnmarkGrayAtomically(sourceZone, symbol);
+    if (tenured.is<JS::Symbol>()) {
+      JS::Symbol* symbol = tenured.as<JS::Symbol>();
+      gc->atomMarking.maybeUnmarkGrayAtomically(sourceZone, symbol);
+    }
   }
 
   
