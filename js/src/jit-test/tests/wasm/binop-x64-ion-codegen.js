@@ -383,7 +383,7 @@ for ( [pAnyCmp, pAnySel, cmpArgL, cmovArgL ] of
     )`,
     'f',
     
-    (getBuildConfiguration("windows") ? '' : '48 89 ..       mov %r.+, %r.+\n') +
+    (getBuildConfiguration("windows") ? '' : 'mov %r.+, %r.+\n') +
     
     `mov %r.+, %r.+
      cmpq*    ${cmpArgL}, %r.+
