@@ -14,18 +14,6 @@ use uuid::Uuid;
 
 extern crate midir;
 
-#[cfg(target_os = "windows")]
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct GeckoTimeStamp {
-    gtc: u64,
-    qpc: u64,
-
-    is_null: u8,
-    has_qpc: u8,
-}
-
-#[cfg(not(target_os = "windows"))]
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct GeckoTimeStamp {
