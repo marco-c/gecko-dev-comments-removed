@@ -30,11 +30,9 @@ function checkForPrompt(prefVal) {
       return doc.defaultView.CONFIRM_RESTART_PROMPT_RESTART_NOW;
     };
     
-    await updateCheckBox(
-      gBrowser.contentWindow,
-      "privateBrowsingAutoStart",
-      prefVal
-    );
+    let checkbox = doc.getElementById("privateBrowsingAutoStart");
+    checkbox.checked = prefVal;
+    checkbox.doCommand();
 
     
     ok(
