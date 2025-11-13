@@ -16,14 +16,11 @@ class nsIWidget;
 
 class nsIRollupListener {
  public:
-  enum class FlushViews : bool { No, Yes };
   enum class AllowAnimations : bool { No, Yes };
   struct RollupOptions {
     
     
     uint32_t mCount = 0;
-    
-    FlushViews mFlush = FlushViews::No;
     
     
     const mozilla::LayoutDeviceIntPoint* mPoint = nullptr;

@@ -7667,8 +7667,7 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
     }
   }
   LayoutDeviceIntPoint point;
-  nsIRollupListener::RollupOptions options{0,
-                                           nsIRollupListener::FlushViews::Yes};
+  nsIRollupListener::RollupOptions options;
   
   
   

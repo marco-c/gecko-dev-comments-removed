@@ -2070,9 +2070,6 @@ class PresShell final : public nsStubDocumentObserver,
       LayoutDeviceIntRect* aScreenRect, RenderImageFlags aFlags);
 
   
-  void HideViewIfPopup(nsView* aView);
-
-  
   void RestoreRootScrollPosition();
 
   
