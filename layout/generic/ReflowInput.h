@@ -827,8 +827,7 @@ struct ReflowInput : public SizeComputationInput {
                                            WritingMode aContainingBlockWM,
                                            bool aIsMarginBStartAuto,
                                            bool aIsMarginBEndAuto,
-                                           LogicalMargin& aMargin,
-                                           LogicalMargin& aOffsets);
+                                           LogicalMargin& aMargin);
 
   
   
@@ -837,8 +836,7 @@ struct ReflowInput : public SizeComputationInput {
                                             WritingMode aContainingBlockWM,
                                             bool aIsMarginIStartAuto,
                                             bool aIsMarginIEndAuto,
-                                            LogicalMargin& aMargin,
-                                            LogicalMargin& aOffsets);
+                                            LogicalMargin& aMargin);
 
  protected:
   void InitCBReflowInput();
