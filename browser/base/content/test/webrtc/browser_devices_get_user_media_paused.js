@@ -245,10 +245,14 @@ var gTests = [
       
       await cloneTracks(true, true);
 
+      observerPromise = expectObserverCalled("recording-device-events", 2);
+
       
       await setTrackEnabled(false, false);
 
-      observerPromise = expectObserverCalled("recording-device-events", 2);
+      await observerPromise;
+
+      observerPromise = expectObserverCalled("recording-device-events");
 
       
       await stopClonedTracks(true, true);
