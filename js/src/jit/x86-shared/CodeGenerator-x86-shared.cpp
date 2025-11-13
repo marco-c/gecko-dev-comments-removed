@@ -987,14 +987,17 @@ void CodeGenerator::visitUMod(LUMod* ins) {
 }
 
 template <class LUDivOrUMod>
-static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins) {
+static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins,
+                                       Register result, Register temp) {
   Register lhs = ToRegister(ins->numerator());
-  [[maybe_unused]] Register output = ToRegister(ins->output());
-  [[maybe_unused]] Register temp = ToRegister(ins->temp0());
   uint32_t d = ins->denominator();
 
-  MOZ_ASSERT(lhs != eax && lhs != edx);
-  MOZ_ASSERT((output == eax && temp == edx) || (output == edx && temp == eax));
+  MOZ_ASSERT(lhs != result && lhs != temp);
+#ifdef JS_CODEGEN_X86
+  MOZ_ASSERT(result == edx && temp == eax);
+#else
+  MOZ_ASSERT(result != temp);
+#endif
 
   
   MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
@@ -1002,8 +1005,23 @@ static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins) {
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
   
+#ifdef JS_CODEGEN_X86
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.umull(lhs);
+#else
+  
+  masm.movl(lhs, result);
+
+  
+  
+  if (int32_t(rmc.multiplier) >= 0) {
+    masm.imulq(Imm32(rmc.multiplier), result, result);
+  } else {
+    masm.movl(Imm32(rmc.multiplier), temp);
+    masm.imulq(temp, result);
+  }
+  masm.shrq(Imm32(32), result);
+#endif
   if (rmc.multiplier > UINT32_MAX) {
     
     
@@ -1017,29 +1035,34 @@ static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins) {
     
     
     
+    
 
     
-    masm.movl(lhs, eax);
-    masm.subl(edx, eax);
-    masm.shrl(Imm32(1), eax);
+    masm.movl(lhs, temp);
+    masm.subl(result, temp);
+    masm.shrl(Imm32(1), temp);
 
     
-    masm.addl(eax, edx);
-    masm.shrl(Imm32(rmc.shiftAmount - 1), edx);
+    masm.addl(temp, result);
+    masm.shrl(Imm32(rmc.shiftAmount - 1), result);
   } else {
-    masm.shrl(Imm32(rmc.shiftAmount), edx);
+    masm.shrl(Imm32(rmc.shiftAmount), result);
   }
 }
 
 void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
   Register lhs = ToRegister(ins->numerator());
   Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
   uint32_t d = ins->denominator();
 
   MDiv* mir = ins->mir();
 
+#ifdef JS_CODEGEN_X86
   
   MOZ_ASSERT(output == edx);
+  MOZ_ASSERT(temp == eax);
+#endif
 
   if (d == 0) {
     if (mir->trapOnError()) {
@@ -1053,23 +1076,27 @@ void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
   }
 
   
-  UnsignedDivideWithConstant(masm, ins);
+  UnsignedDivideWithConstant(masm, ins, output, temp);
 
   if (!mir->isTruncated()) {
-    masm.imull(Imm32(d), edx, eax);
-    bailoutCmp32(Assembler::NotEqual, lhs, eax, ins->snapshot());
+    masm.imull(Imm32(d), output, temp);
+    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
   }
 }
 
 void CodeGenerator::visitUModConstant(LUModConstant* ins) {
   Register lhs = ToRegister(ins->numerator());
   Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
   uint32_t d = ins->denominator();
 
   MMod* mir = ins->mir();
 
+#ifdef JS_CODEGEN_X86
   
   MOZ_ASSERT(output == eax);
+  MOZ_ASSERT(temp == edx);
+#endif
 
   if (d == 0) {
     if (mir->trapOnError()) {
@@ -1083,16 +1110,16 @@ void CodeGenerator::visitUModConstant(LUModConstant* ins) {
   }
 
   
-  UnsignedDivideWithConstant(masm, ins);
+  UnsignedDivideWithConstant(masm, ins, temp, output);
 
   
   
   
   
   
-  masm.imull(Imm32(d), edx, edx);
-  masm.movl(lhs, eax);
-  masm.subl(edx, eax);
+  masm.imull(Imm32(d), temp, temp);
+  masm.movl(lhs, output);
+  masm.subl(temp, output);
 
   
   
@@ -1179,14 +1206,17 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
 }
 
 template <class LDivOrMod>
-static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
+static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins,
+                               Register result, Register temp) {
   Register lhs = ToRegister(ins->numerator());
-  [[maybe_unused]] Register output = ToRegister(ins->output());
-  [[maybe_unused]] Register temp = ToRegister(ins->temp0());
   int32_t d = ins->denominator();
 
-  MOZ_ASSERT(lhs != eax && lhs != edx);
-  MOZ_ASSERT((output == eax && temp == edx) || (output == edx && temp == eax));
+  MOZ_ASSERT(lhs != result && lhs != temp);
+#ifdef JS_CODEGEN_X86
+  MOZ_ASSERT(result == edx && temp == eax);
+#else
+  MOZ_ASSERT(result != temp);
+#endif
 
   
   
@@ -1199,8 +1229,15 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
 
   
+#ifdef JS_CODEGEN_X86
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.imull(lhs);
+#else
+  
+  masm.movslq(lhs, result);
+  masm.imulq(Imm32(rmc.multiplier), result, result);
+  masm.shrq(Imm32(32), result);
+#endif
   if (rmc.multiplier > INT32_MAX) {
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
 
@@ -1208,36 +1245,40 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
     
     
     
-    masm.addl(lhs, edx);
+    masm.addl(lhs, result);
   }
   
   
   
-  masm.sarl(Imm32(rmc.shiftAmount), edx);
+  masm.sarl(Imm32(rmc.shiftAmount), result);
 
   
   
   if (mir->canBeNegativeDividend()) {
-    masm.movl(lhs, eax);
-    masm.sarl(Imm32(31), eax);
-    masm.subl(eax, edx);
+    masm.movl(lhs, temp);
+    masm.sarl(Imm32(31), temp);
+    masm.subl(temp, result);
   }
 
   
   if (d < 0) {
-    masm.negl(edx);
+    masm.negl(result);
   }
 }
 
 void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
   Register lhs = ToRegister(ins->numerator());
   Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
   int32_t d = ins->denominator();
 
   MDiv* mir = ins->mir();
 
+#ifdef JS_CODEGEN_X86
   
   MOZ_ASSERT(output == edx);
+  MOZ_ASSERT(temp == eax);
+#endif
 
   if (d == 0) {
     if (mir->trapOnError()) {
@@ -1251,13 +1292,13 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
   }
 
   
-  DivideWithConstant(masm, ins);
+  DivideWithConstant(masm, ins, output, temp);
 
   if (!mir->isTruncated()) {
     
     
-    masm.imull(Imm32(d), edx, eax);
-    bailoutCmp32(Assembler::NotEqual, lhs, eax, ins->snapshot());
+    masm.imull(Imm32(d), output, temp);
+    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
 
     
     
@@ -1270,12 +1311,16 @@ void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
 void CodeGenerator::visitModConstantI(LModConstantI* ins) {
   Register lhs = ToRegister(ins->numerator());
   Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
   int32_t d = ins->denominator();
 
   MMod* mir = ins->mir();
 
+#ifdef JS_CODEGEN_X86
   
   MOZ_ASSERT(output == eax);
+  MOZ_ASSERT(temp == edx);
+#endif
 
   if (d == 0) {
     if (mir->trapOnError()) {
@@ -1289,18 +1334,18 @@ void CodeGenerator::visitModConstantI(LModConstantI* ins) {
   }
 
   
-  DivideWithConstant(masm, ins);
+  DivideWithConstant(masm, ins, temp, output);
 
   
-  masm.imull(Imm32(-d), edx, eax);
-  masm.addl(lhs, eax);
+  masm.imull(Imm32(-d), temp, output);
+  masm.addl(lhs, output);
 
   if (!mir->isTruncated() && mir->canBeNegativeDividend()) {
     
     
     Label done;
     masm.branch32(Assembler::GreaterThanOrEqual, lhs, Imm32(0), &done);
-    bailoutTest32(Assembler::Zero, eax, eax, ins->snapshot());
+    bailoutTest32(Assembler::Zero, output, output, ins->snapshot());
     masm.bind(&done);
   }
 }
