@@ -306,10 +306,6 @@ class nsView final : public nsIWidgetListener {
 
   void SetDimensions(const nsRect& aRect);
 
-  
-  
-  void DropMouseGrabbing();
-
   bool IsDirty() const { return mIsDirty; }
   void SetIsDirty(bool aDirty) { mIsDirty = aDirty; }
 
