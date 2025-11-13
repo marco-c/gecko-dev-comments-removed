@@ -140,14 +140,34 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
   }
 
   
-  
-  
-  
-  
+  if (lval.isBigInt() && rval.isString()) {
+    
+    BigInt* n;
+    JS::Rooted<JSString*> str(cx, rval.toString());
+    JS_TRY_VAR_OR_RETURN_FALSE(cx, n, StringToBigInt(cx, str));
+    if (!n) {
+      
+      *result = false;
+      return true;
+    }
+    
+    *result = JS::BigInt::equal(lval.toBigInt(), n);
+    return true;
+  }
 
   
   
-  
+  if (lval.isString() && rval.isBigInt()) {
+    BigInt* n;
+    JS::Rooted<JSString*> str(cx, lval.toString());
+    JS_TRY_VAR_OR_RETURN_FALSE(cx, n, StringToBigInt(cx, str));
+    if (!n) {
+      *result = false;
+      return true;
+    }
+    *result = JS::BigInt::equal(rval.toBigInt(), n);
+    return true;
+  }
 
   
   if (lval.isBoolean()) {
@@ -161,8 +181,8 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
 
   
   
-  
-  if ((lval.isString() || lval.isNumber() || lval.isSymbol()) &&
+  if ((lval.isString() || lval.isNumber() || lval.isBigInt() ||
+       lval.isSymbol()) &&
       rval.isObject()) {
     JS::Rooted<JS::Value> rvalue(cx, rval);
     if (!ToPrimitive(cx, &rvalue)) {
@@ -173,9 +193,8 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
 
   
   
-  
-  if (lval.isObject() &&
-      (rval.isString() || rval.isNumber() || rval.isSymbol())) {
+  if (lval.isObject() && (rval.isString() || rval.isNumber() ||
+                          rval.isBigInt() || rval.isSymbol())) {
     JS::Rooted<JS::Value> lvalue(cx, lval);
     if (!ToPrimitive(cx, &lvalue)) {
       return false;
@@ -185,25 +204,14 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
 
   
   
-  
-  
-  
-
-  if (lval.isBigInt()) {
-    JS::Rooted<JS::BigInt*> lbi(cx, lval.toBigInt());
-    bool tmpResult;
-    JS_TRY_VAR_OR_RETURN_FALSE(cx, tmpResult,
-                               JS::BigInt::looselyEqual(cx, lbi, rval));
-    *result = tmpResult;
+  if (lval.isBigInt() && rval.isNumber()) {
+    
+    
+    *result = BigInt::equal(lval.toBigInt(), rval.toNumber());
     return true;
   }
-
-  if (rval.isBigInt()) {
-    JS::Rooted<JS::BigInt*> rbi(cx, rval.toBigInt());
-    bool tmpResult;
-    JS_TRY_VAR_OR_RETURN_FALSE(cx, tmpResult,
-                               JS::BigInt::looselyEqual(cx, rbi, lval));
-    *result = tmpResult;
+  if (lval.isNumber() && rval.isBigInt()) {
+    *result = BigInt::equal(rval.toBigInt(), lval.toNumber());
     return true;
   }
 
