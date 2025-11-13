@@ -1212,59 +1212,61 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
 [[nodiscard]] static bool AsyncGeneratorResume(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
     CompletionKind completionKind, HandleValue argument) {
-  MOZ_ASSERT(!generator->isClosed(),
-             "closed generator when resuming async generator");
-  MOZ_ASSERT(generator->isSuspended(),
-             "non-suspended generator when resuming async generator");
+  while (true) {
+    MOZ_ASSERT(!generator->isClosed(),
+               "closed generator when resuming async generator");
+    MOZ_ASSERT(generator->isSuspended(),
+               "non-suspended generator when resuming async generator");
 
-  
-  
-  
-  
-  
+    
+    
+    
+    
+    
 
-  
-  
-  
-  
+    
+    
+    
+    
 
-  
-  generator->setExecuting();
+    
+    generator->setExecuting();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Handle<PropertyName*> funName = completionKind == CompletionKind::Normal
-                                      ? cx->names().AsyncGeneratorNext
-                                  : completionKind == CompletionKind::Throw
-                                      ? cx->names().AsyncGeneratorThrow
-                                      : cx->names().AsyncGeneratorReturn;
-  FixedInvokeArgs<1> args(cx);
-  args[0].set(argument);
-  RootedValue thisOrRval(cx, ObjectValue(*generator));
-  if (!CallSelfHostedFunction(cx, funName, thisOrRval, args, &thisOrRval)) {
-    if (!generator->isClosed()) {
-      generator->setClosed(cx);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Handle<PropertyName*> funName = completionKind == CompletionKind::Normal
+                                        ? cx->names().AsyncGeneratorNext
+                                    : completionKind == CompletionKind::Throw
+                                        ? cx->names().AsyncGeneratorThrow
+                                        : cx->names().AsyncGeneratorReturn;
+    FixedInvokeArgs<1> args(cx);
+    args[0].set(argument);
+    RootedValue thisOrRval(cx, ObjectValue(*generator));
+    if (!CallSelfHostedFunction(cx, funName, thisOrRval, args, &thisOrRval)) {
+      if (!generator->isClosed()) {
+        generator->setClosed(cx);
+      }
+      return AsyncGeneratorThrown(cx, generator);
     }
-    return AsyncGeneratorThrown(cx, generator);
-  }
 
-  if (generator->isAfterAwait()) {
-    return AsyncGeneratorAwait(cx, generator, thisOrRval);
-  }
+    if (generator->isAfterAwait()) {
+      return AsyncGeneratorAwait(cx, generator, thisOrRval);
+    }
 
-  if (generator->isAfterYield()) {
-    return AsyncGeneratorYield(cx, generator, thisOrRval);
-  }
+    if (generator->isAfterYield()) {
+      return AsyncGeneratorYield(cx, generator, thisOrRval);
+    }
 
-  return AsyncGeneratorReturned(cx, generator, thisOrRval);
+    return AsyncGeneratorReturned(cx, generator, thisOrRval);
+  }
 }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
