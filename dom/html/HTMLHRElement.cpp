@@ -150,7 +150,7 @@ void HTMLHRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
       
       
       
-      for (const nsCSSPropertyID* props =
+      for (const NonCustomCSSPropertyId* props =
                nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_radius);
            *props != eCSSProperty_UNKNOWN; ++props) {
         aBuilder.SetPixelValueIfUnset(*props, 10000.0f);

@@ -70,7 +70,8 @@ static void ExpandTransitionProperty(const StyleTransitionProperty& aProperty,
       break;
     }
     case StyleTransitionProperty::Tag::NonCustom: {
-      nsCSSPropertyID id = nsCSSPropertyID(aProperty.AsNonCustom()._0);
+      NonCustomCSSPropertyId id =
+          NonCustomCSSPropertyId(aProperty.AsNonCustom()._0);
       if (nsCSSProps::IsShorthand(id)) {
         CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(subprop, id,
                                              CSSEnabledState::ForAllContent) {
@@ -262,7 +263,7 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
     const ComputedStyle& aOldStyle, const ComputedStyle& aNewStyle,
     AnimatedPropertyIDSet& aPropertiesChecked) {
   
-  MOZ_ASSERT(aProperty.IsCustom() || !nsCSSProps::IsShorthand(aProperty.mID),
+  MOZ_ASSERT(aProperty.IsCustom() || !nsCSSProps::IsShorthand(aProperty.mId),
              "property out of range");
   NS_ASSERTION(
       !aElementTransitions || &aElementTransitions->mElement == aElement,

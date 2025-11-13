@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_KeyframeEffect_h
 #define mozilla_dom_KeyframeEffect_h
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/AnimatedPropertyIDSet.h"
 #include "mozilla/AnimationPerformanceWarning.h"
@@ -16,7 +17,6 @@
 #include "mozilla/Keyframe.h"
 #include "mozilla/KeyframeEffectParams.h"
 #include "mozilla/PostRestyleMode.h"
-#include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSValue.h"
 #include "nsChangeHint.h"
@@ -281,7 +281,8 @@ class KeyframeEffect : public AnimationEffect {
 
   
   bool IsRunningOnCompositor() const;
-  void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
+  void SetIsRunningOnCompositor(NonCustomCSSPropertyId aProperty,
+                                bool aIsRunning);
   void SetIsRunningOnCompositor(const nsCSSPropertyIDSet& aPropertySet,
                                 bool aIsRunning);
   void ResetIsRunningOnCompositor();
@@ -493,7 +494,7 @@ class KeyframeEffect : public AnimationEffect {
                         const ComputedTiming& aComputedTiming);
 
   already_AddRefed<const ComputedStyle> CreateComputedStyleForAnimationValue(
-      nsCSSPropertyID aProperty, const AnimationValue& aValue,
+      NonCustomCSSPropertyId aProperty, const AnimationValue& aValue,
       nsPresContext* aPresContext, const ComputedStyle* aBaseComputedStyle);
 
   
@@ -516,7 +517,7 @@ class KeyframeEffect : public AnimationEffect {
   static bool CanAnimateTransformOnCompositor(
       const nsIFrame* aFrame,
       AnimationPerformanceWarning::Type& aPerformanceWarning );
-  static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
+  static bool IsGeometricProperty(const NonCustomCSSPropertyId aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
 

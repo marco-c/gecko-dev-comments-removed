@@ -9,8 +9,8 @@
 #ifndef DOM_SMIL_SMILCSSVALUETYPE_H_
 #define DOM_SMIL_SMILCSSVALUETYPE_H_
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/SMILType.h"
-#include "nsCSSPropertyID.h"
 #include "nsStringFwd.h"
 
 namespace mozilla {
@@ -70,7 +70,7 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static void ValueFromString(nsCSSPropertyID aPropID,
+  static void ValueFromString(NonCustomCSSPropertyId aPropId,
                               dom::Element* aTargetElement,
                               const nsAString& aString, SMILValue& aValue,
                               bool* aIsContextSensitive);
@@ -86,7 +86,7 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static SMILValue ValueFromAnimationValue(nsCSSPropertyID aPropID,
+  static SMILValue ValueFromAnimationValue(NonCustomCSSPropertyId aPropId,
                                            dom::Element* aTargetElement,
                                            const AnimationValue& aValue);
 
@@ -95,7 +95,7 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static bool SetPropertyValues(nsCSSPropertyID, const SMILValue&,
+  static bool SetPropertyValues(NonCustomCSSPropertyId, const SMILValue&,
                                 mozilla::DeclarationBlock&);
 
   
@@ -106,7 +106,7 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static nsCSSPropertyID PropertyFromValue(const SMILValue& aValue);
+  static NonCustomCSSPropertyId PropertyFromValue(const SMILValue& aValue);
 
   
 

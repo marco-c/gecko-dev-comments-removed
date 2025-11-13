@@ -9,9 +9,9 @@
 #ifndef DOM_SMIL_SMILCSSPROPERTY_H_
 #define DOM_SMIL_SMILCSSPROPERTY_H_
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/SMILAttr.h"
 #include "nsAtom.h"
-#include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
 
 namespace mozilla {
@@ -36,7 +36,7 @@ class SMILCSSProperty : public SMILAttr {
 
 
 
-  SMILCSSProperty(nsCSSPropertyID aPropID, dom::Element* aElement,
+  SMILCSSProperty(NonCustomCSSPropertyId aPropId, dom::Element* aElement,
                   const ComputedStyle* aBaseComputedStyle);
 
   
@@ -56,10 +56,10 @@ class SMILCSSProperty : public SMILAttr {
 
 
 
-  static bool IsPropertyAnimatable(nsCSSPropertyID aPropID);
+  static bool IsPropertyAnimatable(NonCustomCSSPropertyId aPropId);
 
  protected:
-  nsCSSPropertyID mPropID;
+  NonCustomCSSPropertyId mPropId;
   
   
   

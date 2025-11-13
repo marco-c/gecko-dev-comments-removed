@@ -14,11 +14,11 @@
 
 #include <ostream>
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/CSSPropFlags.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/UseCounter.h"
-#include "nsCSSPropertyID.h"
 #include "nsString.h"
 #include "nsStyleStructFwd.h"
 
@@ -34,10 +34,12 @@ class gfxVarReceiver;
 }  
 
 extern "C" {
-nsCSSPropertyID Servo_ResolveLogicalProperty(nsCSSPropertyID,
-                                             const mozilla::ComputedStyle*);
-nsCSSPropertyID Servo_Property_LookupEnabledForAllContent(const nsACString*);
-const uint8_t* Servo_Property_GetName(nsCSSPropertyID, uint32_t* aLength);
+NonCustomCSSPropertyId Servo_ResolveLogicalProperty(
+    NonCustomCSSPropertyId, const mozilla::ComputedStyle*);
+NonCustomCSSPropertyId Servo_Property_LookupEnabledForAllContent(
+    const nsACString*);
+const uint8_t* Servo_Property_GetName(NonCustomCSSPropertyId,
+                                      uint32_t* aLength);
 }
 
 class nsCSSProps {
@@ -53,20 +55,20 @@ class nsCSSProps {
   
   
   
-  static nsCSSPropertyID LookupProperty(const nsACString& aProperty) {
+  static NonCustomCSSPropertyId LookupProperty(const nsACString& aProperty) {
     return Servo_Property_LookupEnabledForAllContent(&aProperty);
   }
 
   
   
-  static nsCSSPropertyID LookupPropertyByIDLName(
+  static NonCustomCSSPropertyId LookupPropertyByIDLName(
       const nsACString& aPropertyIDLName, EnabledState aEnabled);
 
   
   
   static bool IsCustomPropertyName(const nsACString& aProperty);
 
-  static bool IsShorthand(nsCSSPropertyID aProperty) {
+  static bool IsShorthand(NonCustomCSSPropertyId aProperty) {
     if (aProperty == eCSSPropertyExtra_variable) {
       return false;
     }
@@ -79,7 +81,7 @@ class nsCSSProps {
   static nsCSSFontDesc LookupFontDesc(const nsACString&);
 
   
-  static mozilla::UseCounter UseCounterFor(nsCSSPropertyID aProperty) {
+  static mozilla::UseCounter UseCounterFor(NonCustomCSSPropertyId aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_with_aliases,
                "out of range");
     return mozilla::UseCounter(size_t(mozilla::eUseCounter_FirstCSSProperty) +
@@ -89,7 +91,8 @@ class nsCSSProps {
   
   
   
-  static nsDependentCSubstring GetStringValue(nsCSSPropertyID aProperty) {
+  static nsDependentCSubstring GetStringValue(
+      NonCustomCSSPropertyId aProperty) {
     uint32_t len;
     const uint8_t* chars = Servo_Property_GetName(aProperty, &len);
     return nsDependentCSubstring(reinterpret_cast<const char*>(chars), len);
@@ -98,13 +101,13 @@ class nsCSSProps {
   static const nsCString& GetStringValue(nsCSSFontDesc aFontDesc);
   static const nsCString& GetStringValue(nsCSSCounterDesc aCounterDesc);
 
-  static Flags PropFlags(nsCSSPropertyID);
-  static bool PropHasFlags(nsCSSPropertyID aProperty, Flags aFlags) {
+  static Flags PropFlags(NonCustomCSSPropertyId);
+  static bool PropHasFlags(NonCustomCSSPropertyId aProperty, Flags aFlags) {
     return (PropFlags(aProperty) & aFlags) == aFlags;
   }
 
-  static nsCSSPropertyID Physicalize(nsCSSPropertyID aProperty,
-                                     const mozilla::ComputedStyle& aStyle) {
+  static NonCustomCSSPropertyId Physicalize(
+      NonCustomCSSPropertyId aProperty, const mozilla::ComputedStyle& aStyle) {
     MOZ_ASSERT(!IsShorthand(aProperty));
     if (PropHasFlags(aProperty, Flags::IsLogical)) {
       return Servo_ResolveLogicalProperty(aProperty, &aStyle);
@@ -115,7 +118,7 @@ class nsCSSProps {
  private:
   
   
-  static const nsCSSPropertyID* const
+  static const NonCustomCSSPropertyId* const
       kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
 
  public:
@@ -139,7 +142,8 @@ class nsCSSProps {
 
   static mozilla::gfx::gfxVarReceiver& GfxVarReceiver();
 
-  static const nsCSSPropertyID* SubpropertyEntryFor(nsCSSPropertyID aProperty) {
+  static const NonCustomCSSPropertyId* SubpropertyEntryFor(
+      NonCustomCSSPropertyId aProperty) {
     MOZ_ASSERT(eCSSProperty_COUNT_no_shorthands <= aProperty &&
                    aProperty < eCSSProperty_COUNT,
                "out of range");
@@ -163,7 +167,7 @@ class nsCSSProps {
 
 
 
-  static const char* PropertyIDLName(nsCSSPropertyID aProperty) {
+  static const char* PropertyIDLName(NonCustomCSSPropertyId aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return kIDLNameTable[aProperty];
@@ -173,13 +177,14 @@ class nsCSSProps {
 
 
 
-  static int32_t PropertyIDLNameSortPosition(nsCSSPropertyID aProperty) {
+  static int32_t PropertyIDLNameSortPosition(NonCustomCSSPropertyId aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return kIDLNameSortPositionTable[aProperty];
   }
 
-  static bool IsEnabled(nsCSSPropertyID aProperty, EnabledState aEnabled) {
+  static bool IsEnabled(NonCustomCSSPropertyId aProperty,
+                        EnabledState aEnabled) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_with_aliases,
                "out of range");
     
@@ -204,7 +209,7 @@ class nsCSSProps {
   }
 
   struct PropertyPref {
-    nsCSSPropertyID mPropID;
+    NonCustomCSSPropertyId mPropId;
     const char* mPref;
   };
   static const PropertyPref kPropertyPrefTable[];
@@ -213,17 +218,19 @@ class nsCSSProps {
 
 
 
-#define CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(it_, prop_, enabledstate_)  \
-  for (const nsCSSPropertyID *                                           \
-           it_ = nsCSSProps::SubpropertyEntryFor(prop_),                 \
-          es_ = (nsCSSPropertyID)((enabledstate_) | CSSEnabledState(0)); \
-       *it_ != eCSSProperty_UNKNOWN; ++it_)                              \
+#define CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(it_, prop_, enabledstate_)       \
+  for (const NonCustomCSSPropertyId *                                         \
+           it_ = nsCSSProps::SubpropertyEntryFor(prop_),                      \
+          es_ =                                                               \
+              (NonCustomCSSPropertyId)((enabledstate_) | CSSEnabledState(0)); \
+       *it_ != eCSSProperty_UNKNOWN; ++it_)                                   \
     if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState)es_))
 };
 
 
 
-inline std::ostream& operator<<(std::ostream& aOut, nsCSSPropertyID aProperty) {
+inline std::ostream& operator<<(std::ostream& aOut,
+                                NonCustomCSSPropertyId aProperty) {
   return aOut << nsCSSProps::GetStringValue(aProperty);
 }
 

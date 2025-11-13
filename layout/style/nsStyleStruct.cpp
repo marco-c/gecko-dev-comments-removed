@@ -1678,7 +1678,7 @@ ImageResolution StyleImage::GetResolution(
 
 
 
-const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
+const NonCustomCSSPropertyId nsStyleImageLayers::kBackgroundLayerTable[] = {
     eCSSProperty_background,             
     eCSSProperty_background_color,       
     eCSSProperty_background_image,       
@@ -1693,7 +1693,7 @@ const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
     eCSSProperty_UNKNOWN                 
 };
 
-const nsCSSPropertyID nsStyleImageLayers::kMaskLayerTable[] = {
+const NonCustomCSSPropertyId nsStyleImageLayers::kMaskLayerTable[] = {
     eCSSProperty_mask,             
     eCSSProperty_UNKNOWN,          
     eCSSProperty_mask_image,       

@@ -9,7 +9,7 @@
     from itertools import groupby
 %>
 
-#[cfg(feature = "gecko")] use crate::gecko_bindings::structs::nsCSSPropertyID;
+#[cfg(feature = "gecko")] use crate::gecko_bindings::structs::NonCustomCSSPropertyId;
 use crate::properties::{
     longhands::{
         self, visibility::computed_value::T as Visibility,
@@ -39,9 +39,9 @@ use crate::properties_and_values::value::CustomAnimatedValue;
 
 #[cfg(feature = "gecko")]
 #[allow(non_upper_case_globals)]
-impl From<nsCSSPropertyID> for TransitionProperty {
-    fn from(property: nsCSSPropertyID) -> TransitionProperty {
-        TransitionProperty::NonCustom(NonCustomPropertyId::from_nscsspropertyid(property).unwrap())
+impl From<NonCustomCSSPropertyId> for TransitionProperty {
+    fn from(property: NonCustomCSSPropertyId) -> TransitionProperty {
+        TransitionProperty::NonCustom(NonCustomPropertyId::from_noncustomcsspropertyid(property).unwrap())
     }
 }
 

@@ -24,7 +24,7 @@
 #include "mozilla/Maybe.h"                
 #include "mozilla/MotionPathUtils.h"      
 #include "mozilla/StyleAnimationValue.h"  
-#include "nsCSSPropertyID.h"              
+#include "NonCustomCSSPropertyId.h"       
 #include "nsDisplayList.h"                
 
 namespace mozilla::layers {
@@ -452,7 +452,7 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
   AnimationStorageData storageData;
   storageData.mLayersId = aLayersId;
 
-  nsCSSPropertyID prevID = eCSSProperty_UNKNOWN;
+  NonCustomCSSPropertyId prevId = eCSSProperty_UNKNOWN;
   PropertyAnimationGroup* currData = nullptr;
   DebugOnly<const layers::Animatable*> currBaseStyle = nullptr;
 
@@ -460,7 +460,7 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
     
     
     
-    if (prevID != animation.property()) {
+    if (prevId != animation.property()) {
       
       currData = storageData.mAnimation.AppendElement();
       currData->mProperty = animation.property();
@@ -470,7 +470,7 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
         storageData.mTransformData = animation.transformData();
       }
 
-      prevID = animation.property();
+      prevId = animation.property();
 
       
       currBaseStyle = nullptr;
@@ -585,7 +585,7 @@ AnimationStorageData AnimationHelper::ExtractAnimations(
   if (!storageData.mAnimation.IsEmpty()) {
     nsCSSPropertyIDSet seenProperties;
     for (const auto& group : storageData.mAnimation) {
-      nsCSSPropertyID id = group.mProperty;
+      NonCustomCSSPropertyId id = group.mProperty;
 
       MOZ_ASSERT(!seenProperties.HasProperty(id), "Should be a new property");
       seenProperties.AddProperty(id);
@@ -653,7 +653,7 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
     MOZ_ASSERT(value);
     AnimatedPropertyID property(eCSSProperty_UNKNOWN);
     Servo_AnimationValue_GetPropertyId(value, &property);
-    switch (property.mID) {
+    switch (property.mId) {
       case eCSSProperty_transform:
         MOZ_ASSERT(!transform);
         transform = Servo_AnimationValue_GetTransform(value);

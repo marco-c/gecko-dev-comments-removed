@@ -9,12 +9,12 @@
 
 #include <utility>
 
+#include "NonCustomCSSPropertyId.h"
 #include "PLDHashTable.h"
 #include "SMILTargetIdentifier.h"
 #include "mozilla/SMILAnimationFunction.h"
 #include "mozilla/SMILCompositorTable.h"
 #include "mozilla/UniquePtr.h"
-#include "nsCSSPropertyID.h"
 #include "nsString.h"
 #include "nsTHashtable.h"
 
@@ -74,6 +74,10 @@ class SMILCompositor : public PLDHashEntryHdr {
     mCachedBaseValue = std::move(aOther->mCachedBaseValue);
   }
 
+  bool HasSameNumberOfAnimationFunctionsAs(const SMILCompositor& aOther) const {
+    return mAnimationFunctions.Length() == aOther.mAnimationFunctions.Length();
+  }
+
  private:
   
   
@@ -83,7 +87,7 @@ class SMILCompositor : public PLDHashEntryHdr {
 
   
   
-  nsCSSPropertyID GetCSSPropertyToAnimate() const;
+  NonCustomCSSPropertyId GetCSSPropertyToAnimate() const;
 
   
   

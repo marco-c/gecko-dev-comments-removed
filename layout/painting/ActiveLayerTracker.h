@@ -7,7 +7,7 @@
 #ifndef ACTIVELAYERTRACKER_H_
 #define ACTIVELAYERTRACKER_H_
 
-#include "nsCSSPropertyID.h"
+#include "NonCustomCSSPropertyId.h"
 
 class nsIFrame;
 class nsIContent;
@@ -44,14 +44,14 @@ class ActiveLayerTracker {
 
 
 
-  static void NotifyRestyle(nsIFrame* aFrame, nsCSSPropertyID aProperty);
+  static void NotifyRestyle(nsIFrame* aFrame, NonCustomCSSPropertyId aProperty);
 
   
 
 
 
   static void NotifyInlineStyleRuleModified(nsIFrame* aFrame,
-                                            nsCSSPropertyID aProperty);
+                                            NonCustomCSSPropertyId aProperty);
   
 
 

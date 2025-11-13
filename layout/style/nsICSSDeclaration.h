@@ -18,10 +18,10 @@
 
 
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/CSSValue.h"
 #include "nsCOMPtr.h"
-#include "nsCSSPropertyID.h"
 #include "nsStringFwd.h"
 #include "nsWrapperCache.h"
 

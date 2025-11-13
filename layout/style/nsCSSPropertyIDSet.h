@@ -15,9 +15,9 @@
 #include "mozilla/ArrayUtils.h"
 
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/CompositorAnimatableProperties.h"
-#include "nsCSSPropertyID.h"
 #include "nsCSSProps.h"  
 
 
@@ -31,7 +31,7 @@ class nsCSSPropertyIDSet {
   
 
   explicit constexpr nsCSSPropertyIDSet(
-      std::initializer_list<nsCSSPropertyID> aProperties)
+      std::initializer_list<NonCustomCSSPropertyId> aProperties)
       : mProperties{0} {
     for (auto property : aProperties) {
       size_t p = property;
@@ -40,7 +40,7 @@ class nsCSSPropertyIDSet {
     }
   }
 
-  void AssertInSetRange(nsCSSPropertyID aProperty) const {
+  void AssertInSetRange(NonCustomCSSPropertyId aProperty) const {
     MOZ_DIAGNOSTIC_ASSERT(
         0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
         "out of bounds");
@@ -49,13 +49,13 @@ class nsCSSPropertyIDSet {
   
   
 
-  void AddProperty(nsCSSPropertyID aProperty) {
+  void AddProperty(NonCustomCSSPropertyId aProperty) {
     AssertInSetRange(aProperty);
     size_t p = aProperty;
     mProperties[p / kBitsInChunk] |= property_set_type(1) << (p % kBitsInChunk);
   }
 
-  void RemoveProperty(nsCSSPropertyID aProperty) {
+  void RemoveProperty(NonCustomCSSPropertyId aProperty) {
     AssertInSetRange(aProperty);
     size_t p = aProperty;
     mProperties[p / kBitsInChunk] &=
@@ -63,10 +63,10 @@ class nsCSSPropertyIDSet {
   }
 
   bool HasProperty(const mozilla::AnimatedPropertyID& aProperty) const {
-    return !aProperty.IsCustom() && HasProperty(aProperty.mID);
+    return !aProperty.IsCustom() && HasProperty(aProperty.mId);
   }
 
-  bool HasProperty(nsCSSPropertyID aProperty) const {
+  bool HasProperty(NonCustomCSSPropertyId aProperty) const {
     AssertInSetRange(aProperty);
     size_t p = aProperty;
     return (mProperties[p / kBitsInChunk] &
@@ -196,8 +196,8 @@ class nsCSSPropertyIDSet {
   bool HasPropertyAt(size_t aChunk, size_t aBit) const {
     return (mProperties[aChunk] & (property_set_type(1) << aBit)) != 0;
   }
-  static nsCSSPropertyID CSSPropertyAt(size_t aChunk, size_t aBit) {
-    return nsCSSPropertyID(aChunk * kBitsInChunk + aBit);
+  static NonCustomCSSPropertyId CSSPropertyAt(size_t aChunk, size_t aBit) {
+    return NonCustomCSSPropertyId(aChunk * kBitsInChunk + aBit);
   }
 
   
@@ -256,7 +256,7 @@ class nsCSSPropertyIDSet {
       return *this;
     }
 
-    nsCSSPropertyID operator*() {
+    NonCustomCSSPropertyId operator*() {
       MOZ_ASSERT(mChunk < kChunkCount, "Should not dereference beyond end");
       return nsCSSPropertyIDSet::CSSPropertyAt(mChunk, mBit);
     }
@@ -286,8 +286,8 @@ class nsCSSPropertyIDSet {
 
 inline std::ostream& operator<<(std::ostream& aOut,
                                 const nsCSSPropertyIDSet& aPropertySet) {
-  AutoTArray<nsCSSPropertyID, 16> properties;
-  for (nsCSSPropertyID property : aPropertySet) {
+  AutoTArray<NonCustomCSSPropertyId, 16> properties;
+  for (NonCustomCSSPropertyId property : aPropertySet) {
     properties.AppendElement(property);
   }
   return aOut << properties;

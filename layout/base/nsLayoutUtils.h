@@ -2483,7 +2483,7 @@ class nsLayoutUtils {
 
 
   static bool HasEffectiveAnimation(const nsIFrame* aFrame,
-                                    nsCSSPropertyID aProperty);
+                                    NonCustomCSSPropertyId aProperty);
 
   
 

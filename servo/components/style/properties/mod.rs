@@ -21,7 +21,7 @@ pub mod generated {
 
 use crate::custom_properties::{self, ComputedCustomProperties};
 #[cfg(feature = "gecko")]
-use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID, RefPtr};
+use crate::gecko_bindings::structs::{AnimatedPropertyID, NonCustomCSSPropertyId, RefPtr};
 use crate::logical_geometry::WritingMode;
 use crate::parser::ParserContext;
 use crate::stylesheets::CssRuleType;
@@ -221,7 +221,7 @@ impl NonCustomPropertyId {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn to_nscsspropertyid(self) -> nsCSSPropertyID {
+    pub fn to_noncustomcsspropertyid(self) -> NonCustomCSSPropertyId {
         
         unsafe { mem::transmute(self.0 as i32) }
     }
@@ -229,7 +229,7 @@ impl NonCustomPropertyId {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn from_nscsspropertyid(prop: nsCSSPropertyID) -> Option<Self> {
+    pub fn from_noncustomcsspropertyid(prop: NonCustomCSSPropertyId) -> Option<Self> {
         let prop = prop as i32;
         if prop < 0 || prop >= property_counts::NON_CUSTOM as i32 {
             return None;
@@ -422,8 +422,8 @@ impl PropertyId {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn from_nscsspropertyid(id: nsCSSPropertyID) -> Option<Self> {
-        Some(NonCustomPropertyId::from_nscsspropertyid(id)?.to_property_id())
+    pub fn from_noncustomcsspropertyid(id: NonCustomCSSPropertyId) -> Option<Self> {
+        Some(NonCustomPropertyId::from_noncustomcsspropertyid(id)?.to_property_id())
     }
 
     
@@ -431,11 +431,13 @@ impl PropertyId {
     #[inline]
     pub fn from_gecko_animated_property_id(property: &AnimatedPropertyID) -> Option<Self> {
         Some(
-            if property.mID == nsCSSPropertyID::eCSSPropertyExtra_variable {
+            if property.mId == NonCustomCSSPropertyId::eCSSPropertyExtra_variable {
                 debug_assert!(!property.mCustomName.mRawPtr.is_null());
                 Self::Custom(unsafe { crate::Atom::from_raw(property.mCustomName.mRawPtr) })
             } else {
-                Self::NonCustom(NonCustomPropertyId::from_nscsspropertyid(property.mID)?)
+                Self::NonCustom(NonCustomPropertyId::from_noncustomcsspropertyid(
+                    property.mId,
+                )?)
             },
         )
     }
@@ -490,10 +492,10 @@ impl PropertyId {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn to_nscsspropertyid_resolving_aliases(&self) -> nsCSSPropertyID {
+    pub fn to_noncustomcsspropertyid_resolving_aliases(&self) -> NonCustomCSSPropertyId {
         match self.non_custom_non_alias_id() {
-            Some(id) => id.to_nscsspropertyid(),
-            None => nsCSSPropertyID::eCSSPropertyExtra_variable,
+            Some(id) => id.to_noncustomcsspropertyid(),
+            None => NonCustomCSSPropertyId::eCSSPropertyExtra_variable,
         }
     }
 
@@ -610,14 +612,14 @@ impl LonghandId {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn to_nscsspropertyid(self) -> nsCSSPropertyID {
-        NonCustomPropertyId::from(self).to_nscsspropertyid()
+    pub fn to_noncustomcsspropertyid(self) -> NonCustomCSSPropertyId {
+        NonCustomPropertyId::from(self).to_noncustomcsspropertyid()
     }
 
     #[cfg(feature = "gecko")]
     
-    pub fn from_nscsspropertyid(id: nsCSSPropertyID) -> Option<Self> {
-        NonCustomPropertyId::from_nscsspropertyid(id)?
+    pub fn from_noncustomcsspropertyid(id: NonCustomCSSPropertyId) -> Option<Self> {
+        NonCustomPropertyId::from_noncustomcsspropertyid(id)?
             .unaliased()
             .as_longhand()
     }
@@ -649,15 +651,15 @@ impl ShorthandId {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn to_nscsspropertyid(self) -> nsCSSPropertyID {
-        NonCustomPropertyId::from(self).to_nscsspropertyid()
+    pub fn to_noncustomcsspropertyid(self) -> NonCustomCSSPropertyId {
+        NonCustomPropertyId::from(self).to_noncustomcsspropertyid()
     }
 
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn from_nscsspropertyid(id: nsCSSPropertyID) -> Option<Self> {
-        NonCustomPropertyId::from_nscsspropertyid(id)?
+    pub fn from_noncustomcsspropertyid(id: NonCustomCSSPropertyId) -> Option<Self> {
+        NonCustomPropertyId::from_noncustomcsspropertyid(id)?
             .unaliased()
             .as_shorthand()
     }
@@ -1125,10 +1127,10 @@ impl<'a> PropertyDeclarationId<'a> {
     
     #[cfg(feature = "gecko")]
     #[inline]
-    pub fn to_nscsspropertyid(self) -> nsCSSPropertyID {
+    pub fn to_noncustomcsspropertyid(self) -> NonCustomCSSPropertyId {
         match self {
-            PropertyDeclarationId::Longhand(id) => id.to_nscsspropertyid(),
-            PropertyDeclarationId::Custom(_) => nsCSSPropertyID::eCSSPropertyExtra_variable,
+            PropertyDeclarationId::Longhand(id) => id.to_noncustomcsspropertyid(),
+            PropertyDeclarationId::Custom(_) => NonCustomCSSPropertyId::eCSSPropertyExtra_variable,
         }
     }
 
@@ -1141,12 +1143,12 @@ impl<'a> PropertyDeclarationId<'a> {
     pub fn to_gecko_animated_property_id(&self) -> AnimatedPropertyID {
         match self {
             Self::Longhand(id) => AnimatedPropertyID {
-                mID: id.to_nscsspropertyid(),
+                mId: id.to_noncustomcsspropertyid(),
                 mCustomName: RefPtr::null(),
             },
             Self::Custom(name) => {
                 let mut property_id = AnimatedPropertyID {
-                    mID: nsCSSPropertyID::eCSSPropertyExtra_variable,
+                    mId: NonCustomCSSPropertyId::eCSSPropertyExtra_variable,
                     mCustomName: RefPtr::null(),
                 };
                 property_id.mCustomName.mRawPtr = (*name).clone().into_addrefed();

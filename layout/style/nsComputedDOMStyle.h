@@ -70,9 +70,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   NS_DECL_NSIDOMCSSSTYLEDECLARATION_HELPER
 
-  void GetPropertyValue(const nsCSSPropertyID aPropID,
+  void GetPropertyValue(const NonCustomCSSPropertyId aPropId,
                         nsACString& aValue) override;
-  void SetPropertyValue(const nsCSSPropertyID aPropID, const nsACString& aValue,
+  void SetPropertyValue(const NonCustomCSSPropertyId aPropId,
+                        const nsACString& aValue,
                         nsIPrincipal* aSubjectPrincipal,
                         mozilla::ErrorResult& aRv) override;
 
@@ -146,7 +147,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<nsROCSSPrimitiveValue> PixelsToCSSValue(float);
   void SetValueToPixels(nsROCSSPrimitiveValue*, float);
 
-  void GetPropertyValue(const nsCSSPropertyID aPropID,
+  void GetPropertyValue(const NonCustomCSSPropertyId aPropId,
                         const nsACString& aMaybeCustomPropertyNme,
                         nsACString& aValue);
   using nsDOMCSSDeclaration::GetPropertyValue;
@@ -161,7 +162,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   nsMargin GetAdjustedValuesForBoxSizing();
 
   
-  void UpdateCurrentStyleSources(nsCSSPropertyID);
+  void UpdateCurrentStyleSources(NonCustomCSSPropertyId);
   void ClearCurrentStyleSources();
 
   
@@ -299,10 +300,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   
-  bool NeedsToFlushStyle(nsCSSPropertyID) const;
+  bool NeedsToFlushStyle(NonCustomCSSPropertyId) const;
   
   
-  bool NeedsToFlushLayout(nsCSSPropertyID) const;
+  bool NeedsToFlushLayout(NonCustomCSSPropertyId) const;
   
   
   
