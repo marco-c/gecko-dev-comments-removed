@@ -120,14 +120,14 @@ async def test_set_to_user_context_and_then_to_context(
         contexts=[context_in_user_context_1["context"]],
         enabled=None
     )
-    assert await is_scripting_enabled(context_in_user_context_1) is True
+    
+    assert await is_scripting_enabled(context_in_user_context_1) is False
 
     await bidi_session.browsing_context.reload(
         context=context_in_user_context_1["context"], wait="complete"
     )
-
     
-    assert await is_scripting_enabled(context_in_user_context_1) is True
+    assert await is_scripting_enabled(context_in_user_context_1) is False
 
     
     context_in_user_context_2 = await bidi_session.browsing_context.create(
@@ -137,7 +137,7 @@ async def test_set_to_user_context_and_then_to_context(
     assert await is_scripting_enabled(context_in_user_context_2) is False
 
     await bidi_session.emulation.set_scripting_enabled(
-        contexts=[context_in_user_context_1["context"]],
+        user_contexts=[user_context],
         enabled=None,
     )
 
