@@ -11,6 +11,7 @@
 
 
 
+
 const values = [undefined, null, true, false, 0, -0, 1, NaN, Infinity, "string", Symbol(), 0n, {}, [], () => {}];
 
 let iter = values[Symbol.iterator]();

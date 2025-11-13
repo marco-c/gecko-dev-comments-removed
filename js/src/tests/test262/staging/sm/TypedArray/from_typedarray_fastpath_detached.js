@@ -9,10 +9,13 @@
 
 
 
+
+
+
 var ta = new Int32Array(4);
 $262.detachArrayBuffer(ta.buffer);
 
-assert.throws(TypeError, () => Int32Array.from(ta));
+assertThrowsInstanceOf(() => Int32Array.from(ta), TypeError);
 
 
 reportCompare(0, 0);

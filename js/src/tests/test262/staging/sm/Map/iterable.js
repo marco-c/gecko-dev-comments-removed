@@ -8,6 +8,9 @@
 
 
 
+
+
+
 let length;
 let iterable = {
    [Symbol.iterator]() { return this; },

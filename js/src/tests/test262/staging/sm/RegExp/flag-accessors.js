@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1120169;
+var summary = "Implement RegExp.prototype.{global, ignoreCase, multiline, sticky, unicode}";
+
+print(BUGNUMBER + ": " + summary);
+
 var props = [
   "global",
   "ignoreCase",
@@ -40,12 +46,13 @@ function test(obj, expects) {
 
 function testThrowsGeneric(obj) {
   for (var prop of props) {
-    assert.throws(TypeError, () => genericGet(obj, prop));
+    assertThrowsInstanceOf(() => genericGet(obj, prop), TypeError);
   }
 }
 
 function genericGet(obj, prop) {
     return Object.getOwnPropertyDescriptor(RegExp.prototype, prop).get.call(obj);
 }
+
 
 reportCompare(0, 0);

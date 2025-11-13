@@ -8,6 +8,9 @@
 
 
 
+
+
+
 const expressions = [
   
   "this",
@@ -47,8 +50,12 @@ const expressions = [
   "a?.``",
 ];
 
-function tryRun(s) {
-  try { Function(s)(); } catch {}
+function tryParse(s, f = Function) {
+  try { f(s); } catch {}
+}
+
+function tryRun(s, f = Function) {
+  try { f(s)(); } catch {}
 }
 
 for (let expr of expressions) {
@@ -74,5 +81,23 @@ for (let expr of ["super[a]", "super.a", "super()"]) {
   tryRun(inClassConstructor(`void ((${expr})?.());`));
   tryRun(inClassConstructor(`void ((${expr})?.p());`));
 }
+
+if (typeof parseModule === "function") {
+  const expressions = [
+    "import.meta",
+    "import('')",
+  ];
+
+  for (let expr of expressions) {
+    
+    tryParse(`void (${expr}?.());`, parseModule);
+    tryParse(`void (${expr}?.p());`, parseModule);
+
+    
+    tryParse(`void ((${expr})?.());`, parseModule);
+    tryParse(`void ((${expr})?.p());`, parseModule);
+  }
+}
+
 
 reportCompare(0, 0);

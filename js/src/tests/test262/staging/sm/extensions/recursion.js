@@ -12,6 +12,13 @@
 
 
 
+var BUGNUMBER = 622167;
+var summary = 'Handle infinite recursion';
+print(BUGNUMBER + ": " + summary);
+
+
+
+
 
 function eval() { eval(); }
 
@@ -50,5 +57,9 @@ function test()
   foopy();
 }
 test();
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

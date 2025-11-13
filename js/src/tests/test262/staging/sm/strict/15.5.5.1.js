@@ -9,6 +9,8 @@
 
 
 
+
+
 function str() {
   return new String("foo");
 }

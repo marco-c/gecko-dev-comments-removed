@@ -8,6 +8,8 @@
 
 
 
+
+
 Object.defineProperty(Array.prototype, 0, {
   set() {
     throw "bad";
@@ -15,10 +17,11 @@ Object.defineProperty(Array.prototype, 0, {
 });
 
 
-assert.compareArray([0].with(0, 1), [1]);
+assert.deepEqual([0].with(0, 1), [1]);
 
 
-assert.compareArray([1, 2].with(0, 3), [3, 2]);
-assert.compareArray([1, 2].with(1, 3), [1, 3]);
+assert.deepEqual([1, 2].with(0, 3), [3, 2]);
+assert.deepEqual([1, 2].with(1, 3), [1, 3]);
+
 
 reportCompare(0, 0);

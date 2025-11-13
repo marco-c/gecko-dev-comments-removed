@@ -7,7 +7,9 @@
 
 
 
-const otherGlobal = $262.createRealm().global;
+
+
+const otherGlobal = createNewGlobal();
 
 
 for (var constructor of typedArrayConstructors) {

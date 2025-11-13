@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1290655;
+var summary = "String.prototype.search should call GetMethod.";
+
+print(BUGNUMBER + ": " + summary);
+
 function create(value) {
     return {
         [Symbol.search]: value,
@@ -22,7 +28,8 @@ for (let v of [null, undefined]) {
 }
 
 for (let v of [1, true, Symbol.iterator, "", {}, []]) {
-    assert.throws(TypeError, () => "a-a".search(create(v)));
+    assertThrowsInstanceOf(() => "a-a".search(create(v)), TypeError);
 }
+
 
 reportCompare(0, 0);

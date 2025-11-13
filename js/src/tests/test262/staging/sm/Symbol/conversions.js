@@ -10,6 +10,7 @@
 
 
 
+
 var symbols = [
     Symbol(),
     Symbol("one"),
@@ -25,20 +26,20 @@ function testSymbolConversions(sym) {
     assert.sameValue(sym && 13, 13);
 
     
-    assert.throws(TypeError, () => +sym);
-    assert.throws(TypeError, () => sym | 0);
+    assertThrowsInstanceOf(() => +sym, TypeError);
+    assertThrowsInstanceOf(() => sym | 0, TypeError);
 
     
-    assert.throws(TypeError, () => "" + sym);
-    assert.throws(TypeError, () => sym + "");
-    assert.throws(TypeError, () => "" + [1, 2, sym]);
-    assert.throws(TypeError, () => ["simple", "thimble", sym].join());
+    assertThrowsInstanceOf(() => "" + sym, TypeError);
+    assertThrowsInstanceOf(() => sym + "", TypeError);
+    assertThrowsInstanceOf(() => "" + [1, 2, sym], TypeError);
+    assertThrowsInstanceOf(() => ["simple", "thimble", sym].join(), TypeError);
 
     
     assert.sameValue(String(sym), sym.toString());
 
     
-    assert.throws(TypeError, () => new String(sym));
+    assertThrowsInstanceOf(() => new String(sym), TypeError);
 
     
     var obj = Object(sym);
@@ -57,19 +58,19 @@ for (var sym of symbols) {
 
     
     var symobj = Object(sym);
-    assert.throws(TypeError, () => Number(symobj));
-    assert.throws(TypeError, () => String(symobj));
-    assert.throws(TypeError, () => symobj < 0);
-    assert.throws(TypeError, () => 0 < symobj);
-    assert.throws(TypeError, () => symobj + 1);
-    assert.throws(TypeError, () => "" + symobj);
+    assertThrowsInstanceOf(() => Number(symobj), TypeError);
+    assertThrowsInstanceOf(() => String(symobj), TypeError);
+    assertThrowsInstanceOf(() => symobj < 0, TypeError);
+    assertThrowsInstanceOf(() => 0 < symobj, TypeError);
+    assertThrowsInstanceOf(() => symobj + 1, TypeError);
+    assertThrowsInstanceOf(() => "" + symobj, TypeError);
     assert.sameValue(sym == symobj, true);
     assert.sameValue(sym === symobj, false);
     assert.sameValue(symobj == 0, false);
     assert.sameValue(0 != symobj, true);
 
     
-    assert.throws(TypeError, () => String(Object(sym)));
+    assertThrowsInstanceOf(() => String(Object(sym)), TypeError);
 }
 
 

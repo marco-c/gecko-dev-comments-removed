@@ -12,6 +12,7 @@
 
 
 
+
 assert.throws(TypeError, function () {
   Iterator.prototype.drop.call(null, 1);
 });

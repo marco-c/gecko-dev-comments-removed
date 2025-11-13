@@ -8,6 +8,9 @@
 
 
 
+
+
+
 assert.sameValue(undefined, void 0);
 
 assert.sameValue(Function.prototype.hasOwnProperty('prototype'), false);

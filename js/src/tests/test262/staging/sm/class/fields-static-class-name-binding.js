@@ -7,6 +7,9 @@
 
 
 
+
+
+
 {
   class C {
     static field = C;
@@ -23,11 +26,11 @@
 
 
 {
-  assert.throws(ReferenceError, () => {
+  assertThrowsInstanceOf(() => {
     let C = class {
       static field = C;
     };
-  });
+  }, ReferenceError);
 }
 
 

@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 887016;
+var summary = "Call RegExp.prototype[@@search] from String.prototype.search.";
+
+print(BUGNUMBER + ": " + summary);
+
 var called = 0;
 var myRegExp = {
   [Symbol.search](S) {
@@ -27,5 +33,6 @@ RegExp.prototype[Symbol.search] = function(S) {
 };
 assert.sameValue("abcAbcABC".search("abc"), 43);
 assert.sameValue(called, 1);
+
 
 reportCompare(0, 0);

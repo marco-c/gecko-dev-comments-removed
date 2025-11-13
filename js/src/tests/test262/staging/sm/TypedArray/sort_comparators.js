@@ -8,6 +8,9 @@
 
 
 
+
+
+
 let outsideArray = new Int32Array([1, 99, 2]);
 function addingComparator(x, y) {
     if (x == 99 || y == 99) {

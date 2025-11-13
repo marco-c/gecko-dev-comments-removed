@@ -10,11 +10,12 @@
 
 
 
+
 function TestStringIteratorPrototypeConfusion() {
     var iter = ""[Symbol.iterator]();
-    assert.throws(
-        TypeError,
+    assertThrowsInstanceOfWithMessage(
         () => iter.next.call(Object.getPrototypeOf(iter)),
+        TypeError,
         "next method called on incompatible String Iterator");
 }
 TestStringIteratorPrototypeConfusion();
@@ -23,9 +24,12 @@ TestStringIteratorPrototypeConfusion();
 
 function TestStringIteratorWrappers() {
     var iter = ""[Symbol.iterator]();
-    assert.deepEqual(iter.next.call($262.createRealm().global.eval('"x"[Symbol.iterator]()')),
+    assert.deepEqual(iter.next.call(createNewGlobal().eval('"x"[Symbol.iterator]()')),
 		 { value: "x", done: false })
 }
-TestStringIteratorWrappers();
+if (typeof createNewGlobal === "function") {
+    TestStringIteratorWrappers();
+}
+
 
 reportCompare(0, 0);

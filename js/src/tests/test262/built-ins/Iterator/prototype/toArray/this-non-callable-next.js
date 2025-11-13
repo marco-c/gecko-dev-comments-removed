@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws(TypeError, function () {
   Iterator.prototype.toArray.call({ next: 0 });
 });

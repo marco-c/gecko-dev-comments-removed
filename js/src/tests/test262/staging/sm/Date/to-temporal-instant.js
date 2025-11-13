@@ -10,6 +10,9 @@
 
 
 
+
+
+
 const min = new Date(-8640000000000000).toTemporalInstant();
 const max = new Date(8640000000000000).toTemporalInstant();
 const epoch = new Date(0).toTemporalInstant();
@@ -25,7 +28,7 @@ let minusOne = Temporal.Duration.from({nanoseconds: -1});
 
 {
     const invalidDate = new Date(NaN);
-    assert.throws(RangeError, () => invalidDate.toTemporalInstant());
+    assertThrowsInstanceOf(() => invalidDate.toTemporalInstant(), RangeError);
 }
 
 
@@ -60,12 +63,12 @@ let minusOne = Temporal.Duration.from({nanoseconds: -1});
     assert.sameValue(max.subtract(one).epochNanoseconds, max.epochNanoseconds - 1n);
 
     
-    assert.throws(RangeError, () => min.add(minusOne));
-    assert.throws(RangeError, () => min.subtract(one));
+    assertThrowsInstanceOf(() => min.add(minusOne), RangeError);
+    assertThrowsInstanceOf(() => min.subtract(one), RangeError);
 
     
-    assert.throws(RangeError, () => max.add(one));
-    assert.throws(RangeError, () => max.subtract(minusOne));
+    assertThrowsInstanceOf(() => max.add(one), RangeError);
+    assertThrowsInstanceOf(() => max.subtract(minusOne), RangeError);
 }
 
 

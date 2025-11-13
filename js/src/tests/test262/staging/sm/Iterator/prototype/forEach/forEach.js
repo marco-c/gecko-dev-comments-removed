@@ -11,6 +11,10 @@
 
 
 
+
+
+
+
 const log = [];
 const fn = (value) => log.push(value);
 const iter = [1, 2, 3].values();

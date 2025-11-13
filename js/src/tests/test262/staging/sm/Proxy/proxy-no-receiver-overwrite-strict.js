@@ -10,6 +10,8 @@
 
 
 
+"use strict";
+
 var y = new Proxy({}, {
     getOwnPropertyDescriptor(target, key) {
         if (key === "a") {
@@ -26,7 +28,8 @@ var y = new Proxy({}, {
 })
 
 
-assert.throws(TypeError, () => y.a = 1);
-assert.throws(TypeError, () => y.b = 2);
+assertThrowsInstanceOf(() => y.a = 1, TypeError);
+assertThrowsInstanceOf(() => y.b = 2, TypeError);
+
 
 reportCompare(0, 0);

@@ -10,6 +10,18 @@
 
 
 
+
+var BUGNUMBER = 501739;
+var summary =
+  "String.prototype.relace should zero the .lastIndex when called with a " +
+  "global RegExp";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var s = '0x2x4x6x8';
 
 var p1 = /x/g;
@@ -25,5 +37,9 @@ s.replace(p2, function(s) {
     return 'y';
 });
 assert.sameValue(p2.lastIndex, 4);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

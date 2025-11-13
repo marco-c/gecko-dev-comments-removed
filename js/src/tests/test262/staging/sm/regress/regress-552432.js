@@ -8,6 +8,9 @@
 
 
 
+
+
+
 (function (y) {
     arguments.y = 2;
     var x = Object.create(arguments);

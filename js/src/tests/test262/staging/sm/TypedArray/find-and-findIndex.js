@@ -11,6 +11,9 @@
 
 
 
+var BUGNUMBER = 1078975;
+var summary = "Implement %TypedArray%.prototype.{find, findIndex}";
+print(BUGNUMBER + ": " + summary);
 
 const methods = ["find", "findIndex"];
 
@@ -27,14 +30,16 @@ anyTypedArrayConstructors.forEach(constructor => {
         assert.sameValue(arr[method](v => v === 3), 3);
         assert.sameValue(arr[method](v => v === 6), method === "find" ? undefined : -1);
 
-        var thisValues = [undefined, null, true, 1, "foo", [], {}, Symbol()];
+        var thisValues = [undefined, null, true, 1, "foo", [], {}];
+        if (typeof Symbol == "function")
+            thisValues.push(Symbol());
 
         thisValues.forEach(thisArg =>
-            assert.throws(TypeError, () => arr[method].call(thisArg, () => true))
+            assertThrowsInstanceOf(() => arr[method].call(thisArg, () => true), TypeError)
         );
 
-        assert.throws(TypeError, () => arr[method]());
-        assert.throws(TypeError, () => arr[method](1));
+        assertThrowsInstanceOf(() => arr[method](), TypeError);
+        assertThrowsInstanceOf(() => arr[method](1), TypeError);
     });
 });
 
@@ -49,5 +54,7 @@ anyTypedArrayConstructors.filter(isFloatConstructor).forEach(constructor => {
     assert.sameValue(arr.find(v => Object.is(v, -0)), -0);
     assert.sameValue(arr.findIndex(v => Object.is(v, -0)), 0);
 })
+
+
 
 reportCompare(0, 0);

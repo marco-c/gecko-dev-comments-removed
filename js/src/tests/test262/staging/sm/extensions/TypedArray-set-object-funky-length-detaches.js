@@ -10,6 +10,21 @@
 
 
 
+
+var gTestfile = "set-object-funky-length-detaches.js";
+
+var BUGNUMBER = 991981;
+var summary =
+  "%TypedArray%.prototype.set(object w/funky length property, offset) " +
+  "shouldn't misbehave if the funky length property detaches this typed " +
+  "array's buffer";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var ctors = [Int8Array, Uint8Array, Uint8ClampedArray,
              Int16Array, Uint16Array,
              Int32Array, Uint32Array,
@@ -39,5 +54,9 @@ ctors.forEach(function(TypedArray) {
 
       ta.set(arraylike, 0x1234);
 });
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

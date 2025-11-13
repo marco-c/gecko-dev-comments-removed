@@ -6,12 +6,15 @@
 
 
 
+
+
+
 class instance extends null {
     constructor() { super(); }
 }
 
-assert.throws(TypeError, () => new instance());
-assert.throws(TypeError, () => new class extends null { }());
+assertThrowsInstanceOf(() => new instance(), TypeError);
+assertThrowsInstanceOf(() => new class extends null { }(), TypeError);
 
 
 reportCompare(0, 0);

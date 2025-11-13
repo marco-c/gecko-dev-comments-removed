@@ -10,6 +10,8 @@
 
 
 
+
+
 function logProxy(object = {}, handler = {}) {
     var log = [];
     var proxy = new Proxy(object, new Proxy(handler, {
@@ -23,11 +25,11 @@ function logProxy(object = {}, handler = {}) {
 
 var {proxy, log} = logProxy();
 Object.preventExtensions(proxy);
-assert.compareArray(log, ["preventExtensions"]);
+assert.deepEqual(log, ["preventExtensions"]);
 
 var {proxy, log} = logProxy();
 Object.preventExtensions(Object.preventExtensions(proxy));
-assert.compareArray(log, ["preventExtensions", "preventExtensions"]);
+assert.deepEqual(log, ["preventExtensions", "preventExtensions"]);
 
 
 reportCompare(0, 0);

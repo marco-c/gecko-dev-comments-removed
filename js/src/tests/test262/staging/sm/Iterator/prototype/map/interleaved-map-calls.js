@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 const iterator = [1, 2, 3].values();
 const mapped1 = iterator.map(x => x);
 const mapped2 = iterator.map(x => 0);

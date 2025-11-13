@@ -10,6 +10,7 @@
 
 
 
+
 const style = "digital";
 
 const duration = {

@@ -11,32 +11,34 @@
 
 
 
+
+
 const ab = new ArrayBuffer(0);
 
 for (let TA of typedArrayConstructors) {
     
-    assert.throws(RangeError, () => new TA(ab, 2**31 - TA.BYTES_PER_ELEMENT));
-    assert.throws(RangeError, () => new TA(ab, 2**31 - 1));
-    assert.throws(RangeError, () => new TA(ab, 2**31));
-    assert.throws(RangeError, () => new TA(ab, 2**31 + 1));
-    assert.throws(RangeError, () => new TA(ab, 2**31 + TA.BYTES_PER_ELEMENT));
+    assertThrowsInstanceOf(() => new TA(ab, 2**31 - TA.BYTES_PER_ELEMENT), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**31 - 1), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**31), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**31 + 1), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**31 + TA.BYTES_PER_ELEMENT), RangeError);
 
     
-    assert.throws(RangeError, () => new TA(ab, 2**32 - TA.BYTES_PER_ELEMENT));
-    assert.throws(RangeError, () => new TA(ab, 2**32 - 1));
-    assert.throws(RangeError, () => new TA(ab, 2**32));
-    assert.throws(RangeError, () => new TA(ab, 2**32 + 1));
-    assert.throws(RangeError, () => new TA(ab, 2**32 + TA.BYTES_PER_ELEMENT));
+    assertThrowsInstanceOf(() => new TA(ab, 2**32 - TA.BYTES_PER_ELEMENT), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**32 - 1), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**32), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**32 + 1), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 2**32 + TA.BYTES_PER_ELEMENT), RangeError);
 
     
-    assert.throws(RangeError, () => new TA(ab, 0, 2**31 - 1));
-    assert.throws(RangeError, () => new TA(ab, 0, 2**31));
-    assert.throws(RangeError, () => new TA(ab, 0, 2**31 + 1));
+    assertThrowsInstanceOf(() => new TA(ab, 0, 2**31 - 1), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 0, 2**31), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 0, 2**31 + 1), RangeError);
 
     
-    assert.throws(RangeError, () => new TA(ab, 0, 2**32 - 1));
-    assert.throws(RangeError, () => new TA(ab, 0, 2**32));
-    assert.throws(RangeError, () => new TA(ab, 0, 2**32 + 1));
+    assertThrowsInstanceOf(() => new TA(ab, 0, 2**32 - 1), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 0, 2**32), RangeError);
+    assertThrowsInstanceOf(() => new TA(ab, 0, 2**32 + 1), RangeError);
 }
 
 

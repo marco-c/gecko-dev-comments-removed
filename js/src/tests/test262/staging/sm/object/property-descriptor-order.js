@@ -8,16 +8,17 @@
 
 
 
+
 var names = Object.getOwnPropertyNames(Object.getOwnPropertyDescriptor({foo: 0}, "foo"));
-assert.compareArray(names, ["value", "writable", "enumerable", "configurable"]);
+assert.deepEqual(names, ["value", "writable", "enumerable", "configurable"]);
 
 names = Object.getOwnPropertyNames(Object.getOwnPropertyDescriptor({get foo(){}}, "foo"));
-assert.compareArray(names, ["get", "set", "enumerable", "configurable"]);
+assert.deepEqual(names, ["get", "set", "enumerable", "configurable"]);
 
 var proxy = new Proxy({}, {
     defineProperty(target, key, desc) {
         var names = Object.getOwnPropertyNames(desc);
-        assert.compareArray(names, ["set", "configurable"]);
+        assert.deepEqual(names, ["set", "configurable"]);
         return true;
     }
 });

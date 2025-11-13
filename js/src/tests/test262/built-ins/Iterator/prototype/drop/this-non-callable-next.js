@@ -12,6 +12,7 @@
 
 
 
+
 let iter = Iterator.prototype.drop.call({ next: 0 }, 1);
 
 assert.throws(TypeError, function () {

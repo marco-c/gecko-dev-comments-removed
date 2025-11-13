@@ -17,6 +17,8 @@
 
 
 
+
+
 assert.sameValue(testLenientAndStrict('undeclared=1',
                               completesNormally,
                               raisesException(ReferenceError)),

@@ -11,77 +11,82 @@
 
 
 
-var otherGlobal = $262.createRealm().global;
 
-function taintLengthProperty(obj) {
-    Object.defineProperty(obj, "length", {
-        get() {
-            assert.sameValue(true, false);
-        }
-    });
-}
+if (typeof createNewGlobal === "function") {
+    var otherGlobal = createNewGlobal();
 
-for (var TA of anyTypedArrayConstructors) {
-    var target = new TA(4);
-    var source = new otherGlobal[TA.name]([10, 20]);
+    function taintLengthProperty(obj) {
+        Object.defineProperty(obj, "length", {
+            get() {
+                assert.sameValue(true, false);
+            }
+        });
+    }
 
-    
-    taintLengthProperty(source);
+    for (var TA of anyTypedArrayConstructors) {
+        var target = new TA(4);
+        var source = new otherGlobal[TA.name]([10, 20]);
 
-    assert.compareArray(target, [0, 0, 0, 0]);
-    target.set(source, 1);
-    assert.compareArray(target, [0, 10, 20, 0]);
-}
+        
+        taintLengthProperty(source);
 
-
-
-
-for (var TA of typedArrayConstructors) {
-    var target = new TA(4);
-    var source = new otherGlobal[TA.name](1);
-    taintLengthProperty(source);
+        assert.compareArray(target, [0, 0, 0, 0]);
+        target.set(source, 1);
+        assert.compareArray(target, [0, 10, 20, 0]);
+    }
 
     
-    otherGlobal.$262.detachArrayBuffer(source.buffer);
-    assert.throws(TypeError, () => target.set(source));
+    if (typeof $262.detachArrayBuffer === "function") {
+        
+        for (var TA of typedArrayConstructors) {
+            var target = new TA(4);
+            var source = new otherGlobal[TA.name](1);
+            taintLengthProperty(source);
 
-    var source = new otherGlobal[TA.name](1);
-    taintLengthProperty(source);
-
-    
-    
-    var offset = {
-        valueOf() {
+            
             otherGlobal.$262.detachArrayBuffer(source.buffer);
-            return 0;
+            assertThrowsInstanceOf(() => target.set(source), TypeError);
+
+            var source = new otherGlobal[TA.name](1);
+            taintLengthProperty(source);
+
+            
+            
+            var offset = {
+                valueOf() {
+                    otherGlobal.$262.detachArrayBuffer(source.buffer);
+                    return 0;
+                }
+            };
+            assertThrowsInstanceOf(() => target.set(source, offset), TypeError);
         }
-    };
-    assert.throws(TypeError, () => target.set(source, offset));
-}
 
+        
+        
+        for (var TA of typedArrayConstructors) {
+            var target = new TA(4);
+            var source = new TA(new otherGlobal.ArrayBuffer(1 * TA.BYTES_PER_ELEMENT));
+            taintLengthProperty(source);
 
-
-for (var TA of typedArrayConstructors) {
-    var target = new TA(4);
-    var source = new TA(new otherGlobal.ArrayBuffer(1 * TA.BYTES_PER_ELEMENT));
-    taintLengthProperty(source);
-
-    
-    otherGlobal.$262.detachArrayBuffer(source.buffer);
-    assert.throws(TypeError, () => target.set(source));
-
-    var source = new TA(new otherGlobal.ArrayBuffer(1 * TA.BYTES_PER_ELEMENT));
-    taintLengthProperty(source);
-
-    
-    
-    var offset = {
-        valueOf() {
+            
             otherGlobal.$262.detachArrayBuffer(source.buffer);
-            return 0;
+            assertThrowsInstanceOf(() => target.set(source), TypeError);
+
+            var source = new TA(new otherGlobal.ArrayBuffer(1 * TA.BYTES_PER_ELEMENT));
+            taintLengthProperty(source);
+
+            
+            
+            var offset = {
+                valueOf() {
+                    otherGlobal.$262.detachArrayBuffer(source.buffer);
+                    return 0;
+                }
+            };
+            assertThrowsInstanceOf(() => target.set(source, offset), TypeError);
         }
-    };
-    assert.throws(TypeError, () => target.set(source, offset));
+    }
 }
+
 
 reportCompare(0, 0);

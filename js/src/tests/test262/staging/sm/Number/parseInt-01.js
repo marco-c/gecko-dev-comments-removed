@@ -10,6 +10,17 @@
 
 
 
+
+
+var BUGNUMBER = 886949;
+var summary = "ES6 (draft May 2013) 15.7.3.9 Number.parseInt(string, radix)";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var str, radix;
 var upvar;
 
@@ -162,5 +173,9 @@ assert.sameValue(Number.parseInt("00A", 17), 10);
 
 
 assert.sameValue(Number.parseInt, parseInt);
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

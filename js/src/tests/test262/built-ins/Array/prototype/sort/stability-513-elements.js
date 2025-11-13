@@ -14,7 +14,6 @@
 
 
 
-
 const array = [
   { name: 'A00', rating: 2 },
   { name: 'A01', rating: 2 },

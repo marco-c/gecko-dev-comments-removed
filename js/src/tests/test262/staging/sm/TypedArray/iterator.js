@@ -9,6 +9,9 @@
 
 
 
+
+
+
 function testIterationCount(iterator, expectedLength) {
     for (let i = 0; i < expectedLength; i++)
         assert.sameValue(iterator.next().done, false);
@@ -38,7 +41,7 @@ Object.defineProperty(i8Array, "length", {value: 15});
 (new Uint8Array(4)).set(i8Array, 3);
 
 
-let g2 = $262.createRealm().global;
+let g2 = createNewGlobal();
 
 i8Array = new Int8Array(8);
 Object.defineProperty(i8Array, "length", {value: 0});

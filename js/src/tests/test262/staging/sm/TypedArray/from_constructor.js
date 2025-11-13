@@ -7,6 +7,8 @@
 
 
 
+
+
 for (var constructor of anyTypedArrayConstructors) {
     
     
@@ -23,9 +25,9 @@ for (var constructor of anyTypedArrayConstructors) {
         () => ({})  
     ];
     for (var v of nonconstructors) {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             constructor.from.call(v, arr);
-        });
+        }, TypeError);
     }
 
     

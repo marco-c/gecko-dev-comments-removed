@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof FinalizationRegistry.prototype.unregister, 'function');
 
 var unregister = FinalizationRegistry.prototype.unregister;

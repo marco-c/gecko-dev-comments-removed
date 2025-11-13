@@ -9,25 +9,16 @@
 
 
 
-function* Permutations(items) {
-  if (items.length === 0) {
-    yield [];
-  } else {
-    for (let i = 0; i < items.length; i++) {
-      let tail = items.slice(0);
-      let head = tail.splice(i, 1);
-      for (let e of Permutations(tail)) {
-        yield head.concat(e);
-      }
-    }
-  }
-}
 
 function sortAllPermutations(data, comparefn) {
-  for (let permutation of Permutations(data)) {
-    permutation.sort(comparefn);
-    assert.compareArray(permutation, data);
-  }
+    for (let permutation of Permutations(Array.from(data))) {
+        let sorted = (Array.from(permutation)).sort(comparefn);
+        for (let i in sorted) {
+            assert.sameValue(sorted[i], data[i],
+            [`[${permutation}].sort(${comparefn})`,
+            `returned ${sorted}, expected ${data}`].join(' '));
+        }
+    }
 }
 
 let lex  = [2112, "bob", "is", "my", "name"];

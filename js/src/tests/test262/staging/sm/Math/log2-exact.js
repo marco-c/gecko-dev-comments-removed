@@ -9,6 +9,9 @@
 
 
 
+
+
+
 assert.sameValue(Math.log2(NaN), NaN);
 
 

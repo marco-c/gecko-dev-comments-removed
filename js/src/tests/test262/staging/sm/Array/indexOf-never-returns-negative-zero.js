@@ -6,6 +6,9 @@
 
 
 
+
+
+
 assert.sameValue([17].indexOf(17, -0), +0);
 
 

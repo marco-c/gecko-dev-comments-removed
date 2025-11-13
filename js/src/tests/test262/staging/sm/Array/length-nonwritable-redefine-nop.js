@@ -10,6 +10,17 @@
 
 
 
+
+
+var BUGNUMBER = 858381;
+var summary = "No-op array length redefinition";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var arr;
 
 
@@ -56,5 +67,9 @@ Object.defineProperty(arr, "length", { writable: false, configurable: false });
 Object.defineProperty(arr, "length", { writable: false, value: 8 });
 Object.defineProperty(arr, "length", { configurable: false, value: 8 });
 Object.defineProperty(arr, "length", { writable: false, configurable: false, value: 8 });
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

@@ -21,6 +21,7 @@
 
 
 
+
 verifyProperty(Iterator.from, 'name', {
   value: 'from',
   writable: false,

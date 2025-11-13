@@ -10,10 +10,24 @@
 
 
 
+
+
+var BUGNUMBER = 948583;
+var summary =
+  "Make __proto__ in object literals a special form not influenced by " +
+  "|Object.prototype|";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var passed = true;
 
 function performProtoTests(msg)
 {
+  print("Testing " + msg);
   assert.sameValue(passed, true, "passed wrong at start of test set");
 
   assert.sameValue(Object.getPrototypeOf({ __proto__: null }), null);
@@ -24,6 +38,7 @@ function performProtoTests(msg)
   assert.sameValue(Object.getPrototypeOf({ __proto__: obj }), obj);
 
   assert.sameValue(passed, true, "passed wrong at end of test set");
+  print("Tests of " + msg + " passed!");
 }
 
 function poisonProto(obj)
@@ -79,5 +94,7 @@ try
                     "proxy that throws for any access");
 }
 catch (e) {}
+
+print("Tests complete");
 
 reportCompare(0, 0);

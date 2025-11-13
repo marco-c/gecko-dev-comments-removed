@@ -19,6 +19,7 @@
 
 
 
+
 let effects = [];
 
 Iterator.prototype.take.call(

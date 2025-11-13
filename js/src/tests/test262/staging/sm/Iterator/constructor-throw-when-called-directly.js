@@ -12,7 +12,11 @@
 
 
 
-assert.throws(TypeError, () => new Iterator());
+
+
+
+
+assertThrowsInstanceOf(() => new Iterator(), TypeError);
 
 
 reportCompare(0, 0);

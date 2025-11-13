@@ -12,11 +12,15 @@
 
 
 
-assert.throws(TypeError, () => Iterator.from({ [Symbol.iterator]: 0 }));
-assert.throws(TypeError, () => Iterator.from({ [Symbol.iterator]: false }));
-assert.throws(TypeError, () => Iterator.from({ [Symbol.iterator]: "" }));
-assert.throws(TypeError, () => Iterator.from({ [Symbol.iterator]: {} }));
-assert.throws(TypeError, () => Iterator.from({ [Symbol.iterator]: Symbol('') }));
+
+
+
+
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: 0 }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: false }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: "" }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: {} }), TypeError);
+assertThrowsInstanceOf(() => Iterator.from({ [Symbol.iterator]: Symbol('') }), TypeError);
 
 
 reportCompare(0, 0);

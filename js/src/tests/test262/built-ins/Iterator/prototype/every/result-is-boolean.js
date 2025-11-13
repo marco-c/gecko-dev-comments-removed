@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {}
 let iter = g();
 assert.sameValue(typeof iter.every(() => {}), 'boolean');

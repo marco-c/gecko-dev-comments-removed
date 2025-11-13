@@ -10,14 +10,18 @@
 
 
 
+
+
+
+
 const mapper = (x) => x;
 
-assert.throws(TypeError, () => Iterator.prototype.map.call(undefined, mapper));
-assert.throws(TypeError, () => Iterator.prototype.map.call(null, mapper));
-assert.throws(TypeError, () => Iterator.prototype.map.call(0, mapper));
-assert.throws(TypeError, () => Iterator.prototype.map.call(false, mapper));
-assert.throws(TypeError, () => Iterator.prototype.map.call('', mapper));
-assert.throws(TypeError, () => Iterator.prototype.map.call(new Symbol(''), mapper));
+assertThrowsInstanceOf(() => Iterator.prototype.map.call(undefined, mapper), TypeError);
+assertThrowsInstanceOf(() => Iterator.prototype.map.call(null, mapper), TypeError);
+assertThrowsInstanceOf(() => Iterator.prototype.map.call(0, mapper), TypeError);
+assertThrowsInstanceOf(() => Iterator.prototype.map.call(false, mapper), TypeError);
+assertThrowsInstanceOf(() => Iterator.prototype.map.call('', mapper), TypeError);
+assertThrowsInstanceOf(() => Iterator.prototype.map.call(new Symbol(''), mapper), TypeError);
 
 
 reportCompare(0, 0);

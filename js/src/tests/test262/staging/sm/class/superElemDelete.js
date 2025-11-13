@@ -9,6 +9,9 @@
 
 
 
+
+
+
 class base {
     constructor() { }
 }
@@ -23,7 +26,7 @@ class derived extends base {
                 return "";
             }
         };
-        assert.throws(ReferenceError, () => delete super[key]);
+        assertThrowsInstanceOf(() => delete super[key], ReferenceError);
         assert.sameValue(sideEffect, 0);
     }
 }
@@ -38,17 +41,17 @@ class derivedTestDeleteElem extends base {
             }
         };
 
-        assert.throws(ReferenceError, () => delete super[key]);
+        assertThrowsInstanceOf(() => delete super[key], ReferenceError);
         assert.sameValue(sideEffect, 0);
 
         super();
 
-        assert.throws(ReferenceError, () => delete super[key]);
+        assertThrowsInstanceOf(() => delete super[key], ReferenceError);
         assert.sameValue(sideEffect, 0);
 
         Object.setPrototypeOf(derivedTestDeleteElem.prototype, null);
 
-        assert.throws(ReferenceError, () => delete super[key]);
+        assertThrowsInstanceOf(() => delete super[key], ReferenceError);
         assert.sameValue(sideEffect, 0);
 
         return {};

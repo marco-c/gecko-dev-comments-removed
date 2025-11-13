@@ -9,10 +9,13 @@
 
 
 
+
+
+
 assert.sameValue(typeof Reflect, 'object');
 assert.sameValue(Object.getPrototypeOf(Reflect), Object.prototype);
 assert.sameValue(Reflect.toString(), '[object Reflect]');
-assert.throws(TypeError, () => new Reflect);
+assertThrowsInstanceOf(() => new Reflect, TypeError);
 
 var desc = Object.getOwnPropertyDescriptor(this, "Reflect");
 assert.sameValue(desc.enumerable, false);

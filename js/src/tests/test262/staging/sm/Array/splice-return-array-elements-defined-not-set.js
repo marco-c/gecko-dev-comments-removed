@@ -10,6 +10,19 @@
 
 
 
+
+
+var BUGNUMBER = 668024;
+var summary =
+  'Array.prototype.splice should define, not set, the elements of the array ' +
+  'it returns';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 Object.defineProperty(Object.prototype, 2,
   {
     set: function(v)
@@ -32,5 +45,9 @@ assert.sameValue(removed[2], 2);
 assert.sameValue(removed[3], 3);
 assert.sameValue(removed[4], 4);
 assert.sameValue(removed[5], 5);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

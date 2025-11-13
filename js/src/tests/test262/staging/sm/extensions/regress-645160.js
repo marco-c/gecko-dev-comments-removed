@@ -10,6 +10,7 @@
 
 
 
+
 function potatoMasher(obj, arg) { this.eval(arg); }
 potatoMasher(this, "var s = Error().stack");
 assert.sameValue(/potatoMasher/.exec(s) instanceof Array, true);

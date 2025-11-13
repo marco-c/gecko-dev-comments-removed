@@ -13,5 +13,6 @@
 
 
 
+
 async () => class { [await] = 1 };
 $DONOTEVALUATE();

@@ -11,9 +11,13 @@
 
 
 
-assert.throws(TypeError, Iterator.prototype.toArray.bind(undefined));
-assert.throws(TypeError, Iterator.prototype.toArray.bind({}));
-assert.throws(TypeError, Iterator.prototype.toArray.bind({next: 0}));
+
+
+
+
+assertThrowsInstanceOf(Iterator.prototype.toArray.bind(undefined), TypeError);
+assertThrowsInstanceOf(Iterator.prototype.toArray.bind({}), TypeError);
+assertThrowsInstanceOf(Iterator.prototype.toArray.bind({next: 0}), TypeError);
 
 
 reportCompare(0, 0);

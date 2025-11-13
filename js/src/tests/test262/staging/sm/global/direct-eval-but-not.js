@@ -12,6 +12,17 @@
 
 
 
+var BUGNUMBER = 609256;
+var summary =
+  "Don't crash doing a direct eval when eval doesn't resolve to an object " +
+  "(let alone the original eval function)";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var eval = "";
 try
 {
@@ -22,5 +33,9 @@ catch (e)
 {
   assert.sameValue(e instanceof TypeError, true);
 }
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

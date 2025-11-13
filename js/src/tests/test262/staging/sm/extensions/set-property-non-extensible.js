@@ -14,12 +14,27 @@
 
 
 
+var BUGNUMBER = 600128;
+var summary =
+  "Properly handle attempted addition of properties to non-extensible objects";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var o = Object.freeze({});
 for (var i = 0; i < 10; i++)
-  o.u = "";
+  print(o.u = "");
 
 Object.freeze(this);
 for (let j = 0; j < 10; j++)
-  u = "";
+  print(u = "");
+
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

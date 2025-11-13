@@ -10,6 +10,8 @@
 
 
 
+
+
 var obj = {a: 0, b: 1, c: 2};
 delete obj.b;  
 Object.defineProperty(obj, 'g',

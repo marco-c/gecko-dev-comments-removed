@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 class InvalidIterable {
   [Symbol.iterator]() {
     return {};
@@ -47,7 +51,7 @@ for (const value of nonIterables) {
   const mapped = iter.flatMap(x => value);
 
   assert.sameValue(iter.closed, false);
-  assert.throws(TypeError, () => mapped.next());
+  assertThrowsInstanceOf(() => mapped.next(), TypeError);
   assert.sameValue(iter.closed, true);
 }
 

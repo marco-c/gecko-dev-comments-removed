@@ -11,6 +11,17 @@
 
 
 
+
+var BUGNUMBER = 983344;
+var summary =
+  "Uint8Array.prototype.set issues when this array changes during setting";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var ab = new ArrayBuffer(200);
 var a = new Uint8Array(ab);
 var a_2 = new Uint8Array(10);
@@ -35,5 +46,9 @@ Object.defineProperty(src, 4, {
 });
 
 a.set(src);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

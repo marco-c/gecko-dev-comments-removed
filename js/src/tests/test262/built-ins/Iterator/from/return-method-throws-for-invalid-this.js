@@ -13,6 +13,7 @@
 
 
 
+
 const WrapForValidIteratorPrototype = Object.getPrototypeOf(Iterator.from({}));
 
 {

@@ -11,6 +11,7 @@
 
 
 
+
 assert.throws(TypeError, function () {
   Iterator.from(null);
 });

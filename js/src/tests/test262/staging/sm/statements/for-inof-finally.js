@@ -8,6 +8,13 @@
 
 
 
+
+var BUGNUMBER = 1332881;
+var summary =
+  "Leaving for-in and try should handle stack value in correct order";
+
+print(BUGNUMBER + ": " + summary);
+
 var called = 0;
 function reset() {
   called = 0;
@@ -77,5 +84,6 @@ var d = (function () {
 })();
 assert.sameValue(called, 2);
 assert.sameValue(d, 14);
+
 
 reportCompare(0, 0);

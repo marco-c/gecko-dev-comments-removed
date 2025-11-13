@@ -7,6 +7,8 @@
 
 
 
+
+
 class base {
     constructor() { }
 }
@@ -31,7 +33,7 @@ const testArr = [525600, "Fred"];
 class derived extends base {
     constructor() { super(); }
     prepForTest() { seenValues = []; }
-    testAsserts() { assert.compareArray(seenValues, testArr); }
+    testAsserts() { assert.deepEqual(seenValues, testArr); }
     testProps() {
         this.prepForTest();
         [super.minutes, super.intendent] = testArr;

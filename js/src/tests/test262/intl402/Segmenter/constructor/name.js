@@ -12,6 +12,7 @@
 
 
 
+
 verifyProperty(Intl.Segmenter, "name", {
   value: "Segmenter",
   writable: false,

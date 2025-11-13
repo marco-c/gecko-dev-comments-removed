@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var symbols = [
     Symbol(),
     Symbol("0"),
@@ -33,7 +36,7 @@ for (var comparator of ["<", "<=", ">", ">="]) {
     var f = Function("a, b", "return a " + comparator + " b;");
     for (var a of symbols) {
         for (var b of values)
-            assert.throws(TypeError, () => f(a, b));
+            assertThrowsInstanceOf(() => f(a, b), TypeError);
     }
 }
 

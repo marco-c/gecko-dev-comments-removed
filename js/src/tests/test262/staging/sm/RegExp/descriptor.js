@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1120169;
+var summary = "Implement RegExp.prototype.{global, ignoreCase, multiline, sticky, unicode} - property descriptor";
+
+print(BUGNUMBER + ": " + summary);
+
 var getters = [
   "flags",
   "global",
@@ -25,5 +31,6 @@ for (var name of getters) {
   assert.sameValue("writable" in desc, false);
   assert.sameValue("get" in desc, true);
 }
+
 
 reportCompare(0, 0);

@@ -10,6 +10,7 @@
 
 
 
+
 var arguments;
 
 function b(foo) {

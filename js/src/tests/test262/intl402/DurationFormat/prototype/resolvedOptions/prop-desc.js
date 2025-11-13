@@ -8,6 +8,7 @@
 
 
 
+
 assert.sameValue(
   typeof Intl.DurationFormat.prototype.resolvedOptions,
   'function',

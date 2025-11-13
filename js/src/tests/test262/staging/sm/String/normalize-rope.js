@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 918987;
+var summary = 'String.prototype.normalize - normalize rope string';
+
+print(BUGNUMBER + ": " + summary);
+
 function test() {
   
   var a = "";
@@ -23,5 +29,6 @@ if ("normalize" in String.prototype) {
   
   test();
 }
+
 
 reportCompare(0, 0);

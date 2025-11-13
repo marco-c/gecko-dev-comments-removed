@@ -6,11 +6,14 @@
 
 
 
+
+
+
 [1, "", true, Symbol(), undefined].forEach(props => {
     assert.sameValue(Object.getPrototypeOf(Object.create(null, props)), null);
 });
 
-assert.throws(TypeError, () => Object.create(null, null));
+assertThrowsInstanceOf(() => Object.create(null, null), TypeError);
 
 
 reportCompare(0, 0);

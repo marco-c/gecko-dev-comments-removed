@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1021835;
+var summary = "Returning non-object from @@iterator should throw";
+
+print(BUGNUMBER + ": " + summary);
+
 let ctors = [
     Map,
     Set,
@@ -31,8 +37,9 @@ for (let ctor of ctors) {
                 return primitive;
             }
         };
-        assert.throws(TypeError, () => new ctor(arg));
+        assertThrowsInstanceOf(() => new ctor(arg), TypeError);
     }
 }
+
 
 reportCompare(0, 0);

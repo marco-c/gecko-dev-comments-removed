@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 const iter = {
   next() {
     assert.sameValue(arguments.length, 0);

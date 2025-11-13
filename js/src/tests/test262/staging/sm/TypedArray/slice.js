@@ -8,7 +8,6 @@
 
 
 
-var otherGlobal = $262.createRealm().global;
 
 for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(constructor.prototype.slice.length, 2);
@@ -29,17 +28,19 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.compareArray(new constructor([1, 2]).slice(1, 5), new constructor([2]));
 
     
-    var slice = otherGlobal[constructor.name].prototype.slice;
-    assert.compareArray(slice.call(new constructor([3, 2, 1]), 1),
-                  new constructor([2, 1]));
+    if (typeof createNewGlobal === "function") {
+        var slice = createNewGlobal()[constructor.name].prototype.slice;
+        assert.compareArray(slice.call(new constructor([3, 2, 1]), 1),
+                      new constructor([2, 1]));
+    }
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             constructor.prototype.slice.call(invalidReceiver, 0);
-        }, "Assert that slice fails if this value is not a TypedArray");
+        }, TypeError, "Assert that slice fails if this value is not a TypedArray");
     });
 
     

@@ -10,7 +10,7 @@
 
 
 
-
+"use strict"; 
 
 var emptyIterator = {
   next() {
@@ -32,5 +32,6 @@ Object.defineProperty(Number.prototype, Symbol.iterator, {
 Promise.all(0);
 Promise.allSettled(0);
 Promise.race(0);
+
 
 reportCompare(0, 0);

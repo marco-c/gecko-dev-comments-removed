@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 524826;
 var summary = 'null-closure property initialiser mis-brands object literal scope';
 var actual;

@@ -8,6 +8,7 @@
 
 
 
+
 var BUGNUMBER = 1099956;
 var summary =
   "The token next to yield should be tokenized as non-operand if yield is " +

@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1180306;
+var summary = 'Map/Set/WeakMap/WeakSet constructor should close iterator on error';
+
+print(BUGNUMBER + ": " + summary);
+
 function test(ctors, { nextVal=undefined,
                        nextThrowVal=undefined,
                        modifier=undefined,
@@ -55,7 +61,7 @@ function test(ctors, { nextVal=undefined,
             }
             assert.sameValue(caught, true);
         } else if (exceptionType) {
-            assert.throws(exceptionType, () => new ctor(iterable));
+            assertThrowsInstanceOf(() => new ctor(iterable), exceptionType);
         } else {
             new ctor(iterable);
         }
@@ -293,5 +299,6 @@ test([Set, WeakSet], {
     nextVal: { value: {}, done: false },
     closed: false,
 });
+
 
 reportCompare(0, 0);

@@ -21,6 +21,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype.toArray, 'name', {
   value: 'toArray',
   writable: false,

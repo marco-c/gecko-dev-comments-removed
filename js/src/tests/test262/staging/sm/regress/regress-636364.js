@@ -9,15 +9,29 @@
 
 
 
-var gnew = $262.createRealm().global;
 
-gnew.eval("function f() { return this; }");
-var f = gnew.f;
-assert.sameValue(f(), gnew);
 
-gnew.eval("function g() { 'use strict'; return this; }");
-var g = gnew.g;
-assert.sameValue(g(), undefined);
+if (typeof createNewGlobal == 'function') {
+    var gsame = createNewGlobal('same-compartment');
+
+    gsame.eval("function f() { return this; }");
+    f = gsame.f;
+    assert.sameValue(f(), gsame);
+
+    gsame.eval("function g() { 'use strict'; return this; }");
+    g = gsame.g;
+    assert.sameValue(g(), undefined);
+
+    var gnew = createNewGlobal();
+
+    gnew.eval("function f() { return this; }");
+    f = gnew.f;
+    assert.sameValue(f(), gnew);
+
+    gnew.eval("function g() { 'use strict'; return this; }");
+    g = gnew.g;
+    assert.sameValue(g(), undefined);
+}
 
 
 reportCompare(0, 0);

@@ -12,8 +12,12 @@
 
 
 
+
+
+
+
 Symbol = undefined;
-assert.throws(TypeError, () => Symbol.iterator);
+assertThrowsInstanceOf(() => Symbol.iterator, TypeError);
 
 const iterator = [0].values();
 assert.sameValue(

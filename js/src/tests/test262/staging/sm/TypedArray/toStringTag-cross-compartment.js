@@ -7,10 +7,12 @@
 
 
 
+
+
 const TypedArrayPrototype = Object.getPrototypeOf(Int8Array.prototype);
 const {get: toStringTag} = Object.getOwnPropertyDescriptor(TypedArrayPrototype, Symbol.toStringTag);
 
-const otherGlobal = $262.createRealm().global;
+const otherGlobal = createNewGlobal();
 
 for (let constructor of anyTypedArrayConstructors) {
     let ta = new otherGlobal[constructor.name](0);

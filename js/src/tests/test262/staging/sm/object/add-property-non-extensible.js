@@ -11,6 +11,18 @@
 
 
 
+var gTestfile = 'add-property-non-extensible.js';
+
+var BUGNUMBER = 602144;
+var summary =
+  'Properly method-compile attempted addition of properties to ' +
+  'non-extensible objects';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
 
 
 
@@ -103,5 +115,10 @@ var o16 = Object.preventExtensions(Object.create(Object.freeze({ a: 2 })));
 for (var i = 0; i < 5; i++)
   o16.a = 3;
 assert.sameValue(Object.getOwnPropertyDescriptor(o16, "a"), undefined);
+
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

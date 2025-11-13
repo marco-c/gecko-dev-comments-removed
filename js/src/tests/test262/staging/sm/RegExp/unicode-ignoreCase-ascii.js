@@ -10,6 +10,12 @@
 
 
 
+var BUGNUMBER = 1135377;
+var summary = "Implement RegExp unicode flag -- ignoreCase flag with non-ascii to ascii map.";
+
+print(BUGNUMBER + ": " + summary);
+
+
 assert.compareArray(/\u0178/iu.exec("\u00FF"),
               ["\u00FF"]);
 assert.compareArray(/\u00FF/iu.exec("\u0178"),
@@ -46,5 +52,6 @@ assert.compareArray(/\u212B/iu.exec("\u00E5"),
               ["\u00E5"]);
 assert.compareArray(/\u00E5/iu.exec("\u212B"),
               ["\u212B"]);
+
 
 reportCompare(0, 0);

@@ -13,7 +13,6 @@
 
 
 
-
 const array = [
   { name: 'A', rating: 2 },
   { name: 'B', rating: 3 },

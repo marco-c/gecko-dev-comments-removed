@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 306794;
 var summary = 'Do not assert: parsing foo getter';
 var actual = 'No Assertion';

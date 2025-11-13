@@ -7,22 +7,28 @@
 
 
 
+
+
+function checkErr(f) {
+    assertThrowsInstanceOfWithMessage(f, ReferenceError,
+        "must call super constructor before using 'this' in derived class constructor");
+}
 class TestNormal extends class {} {
     constructor() { this; }
 }
-assert.throws(ReferenceError, () => new TestNormal());
+checkErr(() => new TestNormal());
 
 class TestEval extends class {} {
     constructor() { eval("this") }
 }
-assert.throws(ReferenceError, () => new TestEval());
+checkErr(() => new TestEval());
 
 class TestNestedEval extends class {} {
     constructor() { eval("eval('this')") }
 }
-assert.throws(ReferenceError, () => new TestNestedEval());
+checkErr(() => new TestNestedEval());
 
-assert.throws(ReferenceError, () => {
+checkErr(() => {
     new class extends class {} {
         constructor() { eval("this") }
     }
@@ -31,21 +37,22 @@ assert.throws(ReferenceError, () => {
 class TestArrow extends class {} {
     constructor() { (() => this)(); }
 }
-assert.throws(ReferenceError, () => new TestArrow());
+checkErr(() => new TestArrow());
 
 class TestArrowEval extends class {} {
     constructor() { (() => eval("this"))(); }
 }
-assert.throws(ReferenceError, () => new TestArrowEval());
+checkErr(() => new TestArrowEval());
 
 class TestEvalArrow extends class {} {
     constructor() { eval("(() => this)()"); }
 }
-assert.throws(ReferenceError, () => new TestEvalArrow());
+checkErr(() => new TestEvalArrow());
 
 class TestTypeOf extends class {} {
     constructor() { eval("typeof this"); }
 }
-assert.throws(ReferenceError, () => new TestTypeOf());
+checkErr(() => new TestTypeOf());
+
 
 reportCompare(0, 0);

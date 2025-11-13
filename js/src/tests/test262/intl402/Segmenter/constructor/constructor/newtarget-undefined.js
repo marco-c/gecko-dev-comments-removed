@@ -11,6 +11,7 @@
 
 
 
+
 assert.sameValue(typeof Intl.Segmenter, "function");
 
 assert.throws(TypeError, function() {

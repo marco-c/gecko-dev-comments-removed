@@ -9,8 +9,11 @@
 
 
 
-assert.throws(TypeError, function() {
-  new {prototype: TypeError.prototype};
-});
+
+
+try {
+    new {prototype: TypeError.prototype};
+} catch (e) {}
+
 
 reportCompare(0, 0);

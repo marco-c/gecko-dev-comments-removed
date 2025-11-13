@@ -6,6 +6,9 @@
 
 
 
+
+
+
 class base {}
 class derived extends base {
   constructor() {
@@ -16,7 +19,7 @@ class derived extends base {
     }
   }
 }
-assert.throws(ReferenceError, ()=>new derived());
+assertThrowsInstanceOf(()=>new derived(), ReferenceError);
 
 
 reportCompare(0, 0);

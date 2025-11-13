@@ -10,9 +10,6 @@
 
 
 
-var otherGlobal = $262.createRealm().global;
-
-
 for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(constructor.prototype.map.length, 1);
 
@@ -97,14 +94,14 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(count, 3);
 
     
-    assert.throws(TypeError, () => {
+    assertThrowsInstanceOf(() => {
         arr.map();
-    });
+    }, TypeError);
     var invalidCallbacks = [undefined, null, 1, false, "", Symbol(), [], {}, /./];
     invalidCallbacks.forEach(callback => {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             arr.map(callback);
-        });
+        }, TypeError);
     })
 
     
@@ -113,18 +110,20 @@ for (var constructor of anyTypedArrayConstructors) {
     });
 
     
-    var map = otherGlobal[constructor.name].prototype.map;
-    var sum = 0;
-    assert.compareArray(map.call(new constructor([1, 2, 3]), v => sum += v), new constructor([1,3,6]));
-    assert.sameValue(sum, 6);
+    if (typeof createNewGlobal === "function") {
+        var map = createNewGlobal()[constructor.name].prototype.map;
+        var sum = 0;
+        assert.compareArray(map.call(new constructor([1, 2, 3]), v => sum += v), new constructor([1,3,6]));
+        assert.sameValue(sum, 6);
+    }
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             constructor.prototype.filter.call(invalidReceiver, () => true);
-        }, "Assert that map fails if this value is not a TypedArray");
+        }, TypeError, "Assert that map fails if this value is not a TypedArray");
     });
 
     
@@ -219,14 +218,14 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(count, 3);
 
     
-    assert.throws(TypeError, () => {
+    assertThrowsInstanceOf(() => {
         arr.filter();
-    });
+    }, TypeError);
     var invalidCallbacks = [undefined, null, 1, false, "", Symbol(), [], {}, /./];
     invalidCallbacks.forEach(callback => {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             arr.filter(callback);
-        });
+        }, TypeError);
     })
 
     
@@ -235,19 +234,21 @@ for (var constructor of anyTypedArrayConstructors) {
     });
 
     
-    var filter = otherGlobal[constructor.name].prototype.filter;
-    var sum = 0;
-    assert.compareArray(filter.call(new constructor([1, 2, 3]), v => {sum += v; return true}),
-    new constructor([1,2,3]));
-    assert.sameValue(sum, 6);
+    if (typeof createNewGlobal === "function") {
+        var filter = createNewGlobal()[constructor.name].prototype.filter;
+        var sum = 0;
+        assert.compareArray(filter.call(new constructor([1, 2, 3]), v => {sum += v; return true}),
+        new constructor([1,2,3]));
+        assert.sameValue(sum, 6);
+    }
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             constructor.prototype.filter.call(invalidReceiver, () => true);
-        }, "Assert that filter fails if this value is not a TypedArray");
+        }, TypeError, "Assert that filter fails if this value is not a TypedArray");
     });
 
     

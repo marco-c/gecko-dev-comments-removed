@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 const propDesc = Reflect.getOwnPropertyDescriptor(Iterator.prototype.toArray, 'name');
 assert.sameValue(propDesc.value, 'toArray');
 assert.sameValue(propDesc.writable, false);

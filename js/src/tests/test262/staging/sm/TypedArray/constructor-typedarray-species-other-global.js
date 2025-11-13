@@ -12,8 +12,10 @@
 
 
 
+
+
 const thisGlobal = this;
-const otherGlobal = $262.createRealm().global;
+const otherGlobal = createNewGlobal();
 
 const typedArrays = [otherGlobal.eval("new Int32Array(0)")];
 

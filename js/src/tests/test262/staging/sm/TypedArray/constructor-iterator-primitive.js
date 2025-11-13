@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1021835;
+var summary = "Returning non-object from @@iterator should throw";
+
+print(BUGNUMBER + ": " + summary);
+
 let primitives = [
     1,
     true,
@@ -25,10 +30,11 @@ for (let ctor of typedArrayConstructors) {
                 return primitive;
             }
         };
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             new ctor(arg);
-        });
+        }, TypeError);
     }
 }
+
 
 reportCompare(0, 0);

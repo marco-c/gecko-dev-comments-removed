@@ -9,6 +9,7 @@
 
 
 
+
 assert.sameValue(
   Object.getPrototypeOf(Iterator),
   Function.prototype,

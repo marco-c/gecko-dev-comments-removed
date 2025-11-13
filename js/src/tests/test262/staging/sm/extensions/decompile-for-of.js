@@ -9,16 +9,26 @@
 
 
 
-var x = {};
-assert.throws(TypeError, () => eval("for (var v of x) throw fit;"), "x is not iterable");
-assert.throws(TypeError, () => eval("[...x]"), "x is not iterable");
-assert.throws(TypeError, () => eval("Math.hypot(...x)"), "x is not iterable");
+
+
+var x;
+function check(code, msg) {
+    assertThrowsInstanceOfWithMessage(
+        () => eval(code),
+        TypeError,
+        msg);
+}
+
+x = {};
+check("for (var v of x) throw fit;", "x is not iterable");
+check("[...x]", "x is not iterable");
+check("Math.hypot(...x)", "x is not iterable");
 
 x[Symbol.iterator] = "potato";
-assert.throws(TypeError, () => eval("for (var v of x) throw fit;"), "x is not iterable");
+check("for (var v of x) throw fit;", "x is not iterable");
 
 x[Symbol.iterator] = {};
-assert.throws(TypeError, () => eval("for (var v of x) throw fit;"), "x[Symbol.iterator] is not a function");
+check("for (var v of x) throw fit;", "x[Symbol.iterator] is not a function");
 
 
 reportCompare(0, 0);

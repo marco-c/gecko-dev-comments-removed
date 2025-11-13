@@ -10,6 +10,19 @@
 
 
 
+
+
+var BUGNUMBER = 600392;
+var summary =
+  'Object.preventExtensions([]).length = 0 should do nothing, not throw';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 function testEmpty()
 {
   var a = [];
@@ -55,5 +68,9 @@ function testNonEmptyStrict()
   assert.sameValue(a.length, 0);
 }
 testNonEmptyStrict();
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

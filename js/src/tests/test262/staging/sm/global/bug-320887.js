@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var hit = 0;
 Object.defineProperty(this, "x", {
     get: function () { return ++hit; },

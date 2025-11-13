@@ -11,6 +11,7 @@
 
 
 
+
 let g = function () { "use strict"; assert.sameValue(this, undefined); }
 function f() { "use strict"; assert.sameValue(this, undefined); }
 

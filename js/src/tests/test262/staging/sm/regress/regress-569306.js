@@ -8,6 +8,7 @@
 
 
 
+
 function f() {}
 var g = new Function();
 delete Function;

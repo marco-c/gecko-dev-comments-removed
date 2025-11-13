@@ -12,6 +12,16 @@
 
 
 
+var BUGNUMBER = 721322;
+var summary =
+  'f.arguments must trigger an arguments object in non-strict mode functions';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var obj =
   {
     test: function()
@@ -31,11 +41,23 @@ var sobj =
     {
      "use strict";
 
-      assert.throws(TypeError, function() {
-        sobj.test.arguments;
-      }, "access to arguments property of strict mode function");
+      try
+      {
+        var args = sobj.test.arguments;
+        throw new Error("access to arguments property of strict mode " +
+                        "function didn't throw");
+      }
+      catch (e)
+      {
+        assert.sameValue(e instanceof TypeError, true,
+                 "should have thrown TypeError, instead got: " + e);
+      }
     }
   };
 sobj.test(5, undefined);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

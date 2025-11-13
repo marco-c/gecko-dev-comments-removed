@@ -9,7 +9,10 @@
 
 
 
-var BUGNUMBER = 441477;
+
+
+
+var BUGNUMBER = 441477-01;
 var summary = '';
 var actual = 'No Exception';
 var expect = 'No Exception';
@@ -23,12 +26,12 @@ function test()
 {
   try
   {
-    for (var i = 0; i < 5;)
-    {
-      if (i > 5)
-        throw "bad";
-      i++;
-      continue;
+    for (i = 0; i < 5;) 
+    { 
+      if (i > 5) 
+        throw "bad"; 
+      i++; 
+      continue; 
     }
   }
   catch(ex)

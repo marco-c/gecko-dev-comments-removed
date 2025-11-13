@@ -10,6 +10,7 @@
 
 
 
+
 const result = Intl.Segmenter.supportedLocalesOf("en");
 assert.sameValue(Array.isArray(result), true,
   "Array.isArray() should return true");

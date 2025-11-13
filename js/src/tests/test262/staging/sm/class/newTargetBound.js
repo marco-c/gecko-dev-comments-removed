@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function boundTarget(expected) {
     assert.sameValue(new.target, expected);
 }

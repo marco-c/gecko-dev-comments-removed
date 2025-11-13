@@ -11,8 +11,12 @@
 
 
 
+
+
+
+
 const iter = [].values();
-assert.throws(TypeError, () => iter.reduce((x, y) => x + y));
+assertThrowsInstanceOf(() => iter.reduce((x, y) => x + y), TypeError);
 
 
 reportCompare(0, 0);

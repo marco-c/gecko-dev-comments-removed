@@ -7,6 +7,9 @@
 
 
 
+
+
+
 const descriptors = [
     {get: 1}, {set: 1},
     {get: []}, {set: []},
@@ -20,8 +23,8 @@ const descriptors = [
 ];
 
 for (const descriptor of descriptors) {
-    assert.throws(TypeError, () => Object.create(null, {x: descriptor}));
-    assert.throws(TypeError, () => Object.defineProperties({}, {x: descriptor}));
+    assertThrowsInstanceOf(() => Object.create(null, {x: descriptor}), TypeError);
+    assertThrowsInstanceOf(() => Object.defineProperties({}, {x: descriptor}), TypeError);
 }
 
 

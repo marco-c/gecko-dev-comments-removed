@@ -14,6 +14,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype.flatMap, 'length', {
   value: 1,
   writable: false,

@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 class TestError extends Error {}
 class TestIterator extends Iterator {
   next() {
@@ -41,7 +45,7 @@ const methods = [
 for (const method of methods) {
   const iterator = new TestIterator();
   assert.sameValue(iterator.closed, false);
-  assert.throws(TestError, () => method(iterator).next());
+  assertThrowsInstanceOf(() => method(iterator).next(), TestError);
   assert.sameValue(iterator.closed, false);
 }
 

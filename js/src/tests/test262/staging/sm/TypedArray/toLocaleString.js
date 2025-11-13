@@ -7,6 +7,8 @@
 
 
 
+
+
 const TypedArrayPrototype = Object.getPrototypeOf(Int8Array.prototype);
 
 
@@ -19,22 +21,20 @@ assert.sameValue(TypedArrayPrototype.toLocaleString === Array.prototype.toLocale
 
 assert.sameValue(anyTypedArrayConstructors.every(c => !c.hasOwnProperty("toLocaleString")), true);
 
-verifyProperty(TypedArrayPrototype, "toLocaleString", {
+assert.deepEqual(Object.getOwnPropertyDescriptor(TypedArrayPrototype, "toLocaleString"), {
     value: TypedArrayPrototype.toLocaleString,
     writable: true,
     enumerable: false,
     configurable: true,
-}, {
-    restore: true
 });
 
 assert.sameValue(TypedArrayPrototype.toLocaleString.name, "toLocaleString");
 assert.sameValue(TypedArrayPrototype.toLocaleString.length, 0);
 
 
-assert.throws(TypeError, () => TypedArrayPrototype.toLocaleString.call());
+assertThrowsInstanceOf(() => TypedArrayPrototype.toLocaleString.call(), TypeError);
 for (let invalid of [void 0, null, {}, [], function(){}, true, 0, "", Symbol()]) {
-    assert.throws(TypeError, () => TypedArrayPrototype.toLocaleString.call(invalid));
+    assertThrowsInstanceOf(() => TypedArrayPrototype.toLocaleString.call(invalid), TypeError);
 }
 
 const localeOne = 1..toLocaleString(),
@@ -73,7 +73,7 @@ for (let constructor of anyTypedArrayConstructors) {
 Number.prototype.toLocaleString = originalNumberToLocaleString;
 
 
-const otherGlobal = $262.createRealm().global;
+const otherGlobal = createNewGlobal();
 for (let constructor of anyTypedArrayConstructors) {
     Number.prototype.toLocaleString = function() {
         "use strict";
@@ -86,5 +86,6 @@ for (let constructor of anyTypedArrayConstructors) {
     assert.sameValue(called, true);
 }
 Number.prototype.toLocaleString = originalNumberToLocaleString;
+
 
 reportCompare(0, 0);

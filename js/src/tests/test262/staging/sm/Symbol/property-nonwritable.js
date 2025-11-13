@@ -10,6 +10,7 @@
 
 
 
+
 var sym = Symbol.for("moon");
 function checkNotWritable(obj) {
     
@@ -17,7 +18,7 @@ function checkNotWritable(obj) {
     assert.sameValue(obj[sym], "cheese");
 
     
-    assert.throws(TypeError, function () { "use strict"; obj[sym] = "robots"; });
+    assertThrowsInstanceOf(function () { "use strict"; obj[sym] = "robots"; }, TypeError);
     assert.sameValue(obj[sym], "cheese");
 }
 

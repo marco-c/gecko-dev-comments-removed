@@ -7,9 +7,10 @@
 
 
 
-if (typeof window === "undefined") {
-    var window = this;
-}
+
+
+if (typeof window === "undefined")
+    window = this;
 
 Object.defineProperty(window, "foo", {
     get: function() { return 5; },
@@ -18,5 +19,6 @@ Object.defineProperty(window, "foo", {
 
 for (var i = 0; i < 100; ++i)
     assert.sameValue(window.foo, 5);
+
 
 reportCompare(0, 0);

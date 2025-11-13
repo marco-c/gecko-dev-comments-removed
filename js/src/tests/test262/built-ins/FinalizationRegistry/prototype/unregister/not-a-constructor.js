@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue(
   isConstructor(FinalizationRegistry.prototype.unregister),
   false,

@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {}
 Iterator.prototype.every.call(g(), () => {});
 

@@ -7,21 +7,24 @@
 
 
 
+
+
+
 function f1(a = 0) {
   var a;
 }
 
 
-assert.throws(SyntaxError, () => {
+assertThrowsInstanceOf(() => {
   eval(`function f2(a = 0) {
     let a;
   }`);
-});
-assert.throws(SyntaxError, () => {
+}, SyntaxError);
+assertThrowsInstanceOf(() => {
   eval(`function f3(a = 0) {
     const a;
   }`);
-});
+}, SyntaxError);
 
 
 reportCompare(0, 0);

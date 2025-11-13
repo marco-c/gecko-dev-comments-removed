@@ -9,14 +9,17 @@
 
 
 
-assert.throws(SyntaxError, () => eval(`var o = {#a: 0};`));
-assert.throws(SyntaxError, () => eval(`var o = {#a};`));
-assert.throws(SyntaxError, () => eval(`var o = {#a(){}};`));
-assert.throws(SyntaxError, () => eval(`var o = {get #a(){}};`));
-assert.throws(SyntaxError, () => eval(`var o = {set #a(v){}};`));
-assert.throws(SyntaxError, () => eval(`var o = {*#a(v){}};`));
-assert.throws(SyntaxError, () => eval(`var o = {async #a(v){}};`));
-assert.throws(SyntaxError, () => eval(`var o = {async *#a(v){}};`));
+
+
+
+assertThrowsInstanceOf(() => eval(`var o = {#a: 0};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {#a};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {#a(){}};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {get #a(){}};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {set #a(v){}};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {*#a(v){}};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {async #a(v){}};`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`var o = {async *#a(v){}};`), SyntaxError);
 
 
 reportCompare(0, 0);

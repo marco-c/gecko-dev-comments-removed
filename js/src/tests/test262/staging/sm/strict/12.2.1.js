@@ -9,6 +9,8 @@
 
 
 
+
+
 assert.sameValue(testLenientAndStrict('var eval;',
                               parsesSuccessfully,
                               parseRaisesException(SyntaxError)),

@@ -10,6 +10,17 @@
 
 
 
+
+var gTestfile = "for-inof-loop-const-declaration.js";
+var BUGNUMBER = 1278150;
+var summary = "Support const declarations in for-of loop heads";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var count;
 
 count = 0;
@@ -82,5 +93,9 @@ for (const { length, 0: c } of "012345")
              "didn't get a TypeError, instead got: " + e);
   }
 }
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

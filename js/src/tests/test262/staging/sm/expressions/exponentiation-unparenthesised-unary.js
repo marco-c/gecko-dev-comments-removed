@@ -6,6 +6,9 @@
 
 
 
+
+
+
 const AsyncFunction = async function(){}.constructor;
 
 function assertNoError(f, msg) {
@@ -17,8 +20,8 @@ function assertNoError(f, msg) {
 }
 
 function assertSyntaxError(code) {
-  assert.throws(SyntaxError, function () { Function(code); }, "Function:" + code);
-  assert.throws(SyntaxError, function () { AsyncFunction(code); }, "AsyncFunction:" + code);
+  assertThrowsInstanceOf(function () { Function(code); }, SyntaxError, "Function:" + code);
+  assertThrowsInstanceOf(function () { AsyncFunction(code); }, SyntaxError, "AsyncFunction:" + code);
 }
 
 function assertNoSyntaxError(code) {

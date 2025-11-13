@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {}
 Iterator.prototype.toArray.call(g());
 

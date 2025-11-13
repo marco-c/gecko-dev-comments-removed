@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 470758;
 var summary = 'Do not crash with eval upvars';
 var actual = '';

@@ -13,6 +13,8 @@
 
 
 
+
+
 assert.sameValue(testLenientAndStrict('let eval;',
                               parsesSuccessfully,
                               parseRaisesException(SyntaxError)),

@@ -11,6 +11,17 @@
 
 
 
+
+var BUGNUMBER = 722260;
+var summary = 'All NaNs must be treated as identical keys for Map';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 var key = -/a/g.missingProperty;
 
 var m = new Map();
@@ -43,5 +54,9 @@ m.delete(key);
 assert.sameValue(m.has(key), false);
 assert.sameValue(m.has(-key), false);
 assert.sameValue(m.has(NaN), false);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

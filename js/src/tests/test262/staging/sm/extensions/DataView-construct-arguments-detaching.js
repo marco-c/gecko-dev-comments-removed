@@ -11,6 +11,19 @@
 
 
 
+var gTestfile = "DataView-construct-arguments-detaching.js";
+
+var BUGNUMBER = 991981;
+var summary =
+  "new DataView(...) shouldn't misbehave horribly if index-argument " +
+  "conversion detaches the ArrayBuffer to be viewed";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function testByteOffset()
 {
   var ab = new ArrayBuffer(0x1000);
@@ -25,9 +38,16 @@ function testByteOffset()
       }
     };
 
-  assert.throws(TypeError, function() {
+  var ok = false;
+  try
+  {
     new DataView(ab, start);
-  }, "byteOffset weirdness should have thrown");
+  }
+  catch (e)
+  {
+    ok = true;
+  }
+  assert.sameValue(ok, true, "byteOffset weirdness should have thrown");
   assert.sameValue(ab.byteLength, 0, "detaching should work for byteOffset weirdness");
 }
 testByteOffset();
@@ -46,11 +66,22 @@ function testByteLength()
       }
     };
 
-  assert.throws(TypeError, function() {
+  var ok = false;
+  try
+  {
     new DataView(ab, 0x800, len);
-  }, "byteLength weirdness should have thrown");
+  }
+  catch (e)
+  {
+    ok = true;
+  }
+  assert.sameValue(ok, true, "byteLength weirdness should have thrown");
   assert.sameValue(ab.byteLength, 0, "detaching should work for byteLength weirdness");
 }
 testByteLength();
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

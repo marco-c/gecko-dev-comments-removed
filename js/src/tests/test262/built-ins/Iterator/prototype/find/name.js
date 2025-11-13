@@ -21,6 +21,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype.find, 'name', {
   value: 'find',
   writable: false,

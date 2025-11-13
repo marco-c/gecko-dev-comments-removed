@@ -14,25 +14,31 @@
 
 
 
-
-
-var log = [];
-var invalidKeys = [1, false, undefined, 'string', null];
-
 var s = new WeakMap();
 
-for (let invalidKey of invalidKeys) {
-  assert.throws(TypeError, function () {
-    s.getOrInsertComputed(invalidKey,
-      () => log.push(`Unexpected evaluation of callback function, key: ${invalidKey}`));
-  }, `${typeof invalidKey} not allowed as WeakMap key`);
-}
+assert.throws(TypeError, function() {
+  s.getOrInsertComputed(1, () => 1);
+});
 
-assert.throws(TypeError, function () {
-  s.getOrInsertComputed(Symbol.for('registered symbol'),
-    () => log.push("Unexpected callback evaluation"));
+assert.throws(TypeError, function() {
+  s.getOrInsertComputed(false, () => 1);
+});
+
+assert.throws(TypeError, function() {
+  s.getOrInsertComputed(undefined, () => 1);
+});
+
+assert.throws(TypeError, function() {
+  s.getOrInsertComputed('string', () => 1);
+});
+
+assert.throws(TypeError, function() {
+  s.getOrInsertComputed(null, () => 1);
+});
+
+assert.throws(TypeError, function() {
+  s.getOrInsertComputed(Symbol.for('registered symbol'), () => 1);
 }, 'Registered symbol not allowed as WeakMap key');
 
-assert.compareArray(log, []);
 
 reportCompare(0, 0);

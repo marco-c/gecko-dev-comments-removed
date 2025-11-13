@@ -6,6 +6,9 @@
 
 
 
+
+
+
 class foo extends Array { }
 
 function testArrs(arrs) {

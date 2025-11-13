@@ -10,6 +10,7 @@
 
 
 
+
 this.x = "global property x";
 let y = "global lexical y";
 this[Symbol.unscopables] = {x: true, y: true};

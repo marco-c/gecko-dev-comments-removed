@@ -17,6 +17,7 @@ var obj = {
     f: function() {
         expect = this.g;
         actual = arguments.callee.caller;
+        print("Ok");
     }
 };
 

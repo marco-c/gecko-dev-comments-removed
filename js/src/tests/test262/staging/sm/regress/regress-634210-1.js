@@ -8,6 +8,9 @@
 
 
 
+
+
+
 function f() {}
 f.p = function() {};
 Object.freeze(f);

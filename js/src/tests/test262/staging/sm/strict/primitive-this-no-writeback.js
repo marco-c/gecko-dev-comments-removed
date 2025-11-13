@@ -10,6 +10,9 @@
 
 
 
+
+
+
 var f = String.prototype.m = function () {
     "use strict";
     assert.sameValue(this, "s");

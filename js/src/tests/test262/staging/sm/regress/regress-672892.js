@@ -10,6 +10,7 @@
 
 
 
+
 with (0)
     for (var b in 0)  
 	;

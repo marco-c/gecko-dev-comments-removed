@@ -10,6 +10,7 @@
 
 
 
+
 var o = { f: function() { return o.g(); }, g: function() { return arguments.callee.caller; } };
 var c = o.f();
 var i = 'f';

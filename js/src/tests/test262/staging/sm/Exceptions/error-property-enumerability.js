@@ -9,6 +9,8 @@
 
 
 
+
+
 var errors = ["Error", "EvalError", "RangeError", "ReferenceError",
               "SyntaxError", "TypeError", "URIError"];
 
@@ -32,5 +34,6 @@ for (var i = 0; i < errors.length; i++) {
   assert.sameValue(!!desc, true, "new " + errors[i] + "(...).message should exist");
   assert.sameValue((desc || {}).enumerable, false, "new " + errors[i] + "(...).message should not be enumerable");
 }
+
 
 reportCompare(0, 0);

@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var called = false;
 class a { constructor(x) { assert.sameValue(x, 4); called = true } }
 new a(4);

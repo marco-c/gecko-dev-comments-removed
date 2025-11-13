@@ -7,7 +7,10 @@
 
 
 
-const otherGlobal = $262.createRealm().global;
+
+
+
+const otherGlobal = createNewGlobal();
 
 const intArrayConstructors = [
   otherGlobal.Int32Array,

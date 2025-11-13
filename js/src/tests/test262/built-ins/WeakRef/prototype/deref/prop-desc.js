@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof WeakRef.prototype.deref, 'function');
 
 verifyProperty(WeakRef.prototype, 'deref', {

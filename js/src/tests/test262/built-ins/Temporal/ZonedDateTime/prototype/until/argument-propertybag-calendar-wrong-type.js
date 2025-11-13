@@ -16,7 +16,7 @@ const instance = new Temporal.ZonedDateTime(0n, timeZone);
 const wrongTypeTests = [
   [null, "null"],
   [true, "boolean"],
-  [1, "number"],
+  [1, "number that doesn't convert to a valid ISO string"],
   [1n, "bigint"],
   [19970327, "large number"],
   [-19970327, "negative number"],
@@ -31,7 +31,7 @@ for (const [calendar, description] of wrongTypeTests) {
   assert.throws(
     TypeError,
     () => instance.until(arg),
-    `${description} is not a valid calendar`
+    `${description} does not convert to a valid ISO string`
   );
 }
 

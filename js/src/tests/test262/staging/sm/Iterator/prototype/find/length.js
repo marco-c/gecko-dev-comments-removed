@@ -14,6 +14,10 @@
 
 
 
+
+
+
+
 const propDesc = Reflect.getOwnPropertyDescriptor(Iterator.prototype.find, 'length');
 assert.sameValue(propDesc.value, 1);
 assert.sameValue(propDesc.writable, false);

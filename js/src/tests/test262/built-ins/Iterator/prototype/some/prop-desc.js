@@ -18,6 +18,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype, 'some', {
   writable: true,
   enumerable: false,

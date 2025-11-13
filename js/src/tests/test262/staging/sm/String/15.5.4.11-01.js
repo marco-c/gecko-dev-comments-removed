@@ -11,6 +11,16 @@
 
 
 
+var BUGNUMBER = 587366;
+var summary = "String.prototype.replace with non-regexp searchValue";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 
 
 
@@ -55,5 +65,9 @@ assert.sameValue(result, 'I once was lost but now am $1found$2.$3.');
 
 for (var ident in before)
     assert.sameValue(RegExp[ident], before[ident]);
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

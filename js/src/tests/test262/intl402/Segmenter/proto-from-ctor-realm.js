@@ -24,6 +24,7 @@
 
 
 
+
 const other = $262.createRealm().global;
 const newTarget = new other.Function();
 let sgm;

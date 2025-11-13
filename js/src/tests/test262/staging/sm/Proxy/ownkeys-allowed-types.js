@@ -6,14 +6,17 @@
 
 
 
+
+
+
 function makeProxy(type) {
     return new Proxy({}, { ownKeys() { return [type]; } });
 }
 
 for (var type of [123, 12.5, true, false, undefined, null, {}, []]) {
     var proxy = makeProxy(type);
-    assert.throws(TypeError, () => Object.ownKeys(proxy));
-    assert.throws(TypeError, () => Object.getOwnPropertyNames(proxy));
+    assertThrowsInstanceOf(() => Object.ownKeys(proxy), TypeError);
+    assertThrowsInstanceOf(() => Object.getOwnPropertyNames(proxy), TypeError);
 }
 
 type = Symbol();

@@ -11,6 +11,20 @@
 
 
 
+var gTestfile = 'stringify-replacer-array-edgecase-jsid-elements.js';
+
+var BUGNUMBER = 648471;
+var summary =
+  "Better/more correct handling for replacer arrays with getter array index " +
+  "properties";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 
 var obj =
   {
@@ -64,5 +78,9 @@ assert.sameValue(JSON.stringify({ "-0": 17, 0: 42 }, ["-0", -0]),
 assert.sameValue(JSON.stringify({ "-0": 17, 0: 42 }, [-0, "-0"]),
          '{"0":42,"-0":17}',
          "Failed to stringify number then string properties (-0, '-0) correctly");
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

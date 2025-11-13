@@ -10,15 +10,32 @@
 
 
 
-assert.throws(SyntaxError, () => Function("a: let x;"));
-assert.throws(SyntaxError, () => Function("b: const y = 3;"));
-assert.throws(SyntaxError, () => Function("c: class z {};"));
 
-assert.throws(SyntaxError, () => Function("'use strict'; d: function w() {};"));
+
+var BUGNUMBER = 1288459;
+var summary =
+  "Properly implement the spec's distinctions between StatementListItem and " +
+  "Statement grammar productions and their uses";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+assertThrowsInstanceOf(() => Function("a: let x;"), SyntaxError);
+assertThrowsInstanceOf(() => Function("b: const y = 3;"), SyntaxError);
+assertThrowsInstanceOf(() => Function("c: class z {};"), SyntaxError);
+
+assertThrowsInstanceOf(() => Function("'use strict'; d: function w() {};"), SyntaxError);
 
 
 Function("e: function x() {};");
 
-assert.throws(SyntaxError, () => Function("f: function* y() {}"));
+assertThrowsInstanceOf(() => Function("f: function* y() {}"), SyntaxError);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

@@ -12,6 +12,7 @@
 
 
 
+
 function segments(iterator) {
   return [...iterator].map(result => result.segment);
 }

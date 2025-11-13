@@ -10,11 +10,30 @@
 
 
 
+
+
+var BUGNUMBER = 663300;
+var summary =
+  "\\u and \\x must be followed by the appropriate number of hex digits or " +
+  "else it is a syntax error";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function expectSyntaxError(str)
 {
-  assert.throws(SyntaxError, function() {
+  try
+  {
     eval(str);
-  }, "syntax error evaluating " + str);
+  }
+  catch (e)
+  {
+    assert.sameValue(e instanceof SyntaxError, true,
+             "no syntax error evaluating " + str);
+  }
 }
 
 expectSyntaxError('"\\x"');
@@ -128,5 +147,9 @@ assert.sameValue(eval('"a\\\nb"'), "ab");
 assert.sameValue(eval('"a\\\r\nb"'), "ab");
 assert.sameValue(eval('"a\\\u2028b"'), "ab");
 assert.sameValue(eval('"a\\\u2029b"'), "ab");
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

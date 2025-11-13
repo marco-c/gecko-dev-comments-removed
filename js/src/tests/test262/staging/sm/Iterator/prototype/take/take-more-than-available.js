@@ -16,6 +16,10 @@
 
 
 
+
+
+
+
 let iter = [1, 2].values().take(3);
 for (const expected of [1, 2]) {
   const result = iter.next();

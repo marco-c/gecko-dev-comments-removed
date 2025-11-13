@@ -10,6 +10,17 @@
 
 
 
+
+var gTestfile = '__proto__.js';
+var BUGNUMBER = 770344;
+var summary = "__proto__ as accessor";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var protoDesc = Object.getOwnPropertyDescriptor(Object.prototype, "__proto__");
 assert.sameValue(protoDesc !== null, true);
 assert.sameValue(typeof protoDesc, "object");
@@ -41,5 +52,9 @@ assert.sameValue(desc.value, 5);
 assert.sameValue(desc.writable, true);
 assert.sameValue(desc.enumerable, true);
 assert.sameValue(desc.configurable, true);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

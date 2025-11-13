@@ -11,10 +11,14 @@
 
 
 
+
+
+
+
 const fn = x => x;
-assert.throws(TypeError, Iterator.prototype.some.bind(undefined, fn));
-assert.throws(TypeError, Iterator.prototype.some.bind({}, fn));
-assert.throws(TypeError, Iterator.prototype.some.bind({next: 0}, fn));
+assertThrowsInstanceOf(Iterator.prototype.some.bind(undefined, fn), TypeError);
+assertThrowsInstanceOf(Iterator.prototype.some.bind({}, fn), TypeError);
+assertThrowsInstanceOf(Iterator.prototype.some.bind({next: 0}, fn), TypeError);
 
 
 reportCompare(0, 0);

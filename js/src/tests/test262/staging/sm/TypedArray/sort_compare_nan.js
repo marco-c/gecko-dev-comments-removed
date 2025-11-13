@@ -7,6 +7,9 @@
 
 
 
+
+
+
 let ta = new Int32Array([0, 1]).sort(() => 0);
 assert.sameValue(ta[0], 0);
 assert.sameValue(ta[1], 1);

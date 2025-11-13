@@ -10,8 +10,29 @@
 
 
 
-assert.throws(SyntaxError, function() {
-  eval('function(){if(t)');
-});
+
+
+var BUGNUMBER = 410852;
+var summary = 'Valgrind errors in jsemit.cpp';
+
+
+
+test();
+
+
+function test()
+{
+  print('Note: You must run this test under valgrind to determine if it passes');
+
+  try
+  {
+    eval('function(){if(t)');
+  }
+  catch(ex)
+  {
+    assert.sameValue(ex instanceof SyntaxError, true, "wrong error: " + ex);
+  }
+
+}
 
 reportCompare(0, 0);

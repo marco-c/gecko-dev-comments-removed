@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1135377;
+var summary = "Implement RegExp unicode flag -- back reference should not match lead surrogate that has corresponding trail surrogate.";
+
+print(BUGNUMBER + ": " + summary);
+
 
 assert.compareArray(/foo(.+)bar\1/u.exec("fooAbarA\uDC00"),
               ["fooAbarA", "A"]);
@@ -40,5 +45,6 @@ assert.compareArray(/foo(.+)bar\1/u.exec("foo\uDC00bar\uDC00"),
 
 
 assert.sameValue(/^(.+)\1$/u.exec("\uDC00foobar\uD834\uDC00foobar\uD834"), null);
+
 
 reportCompare(0, 0);

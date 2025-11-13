@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var a = {b: null};
 
 class C extends a?.b {}

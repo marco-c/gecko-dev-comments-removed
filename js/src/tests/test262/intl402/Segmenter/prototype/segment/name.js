@@ -12,6 +12,7 @@
 
 
 
+
 verifyProperty(Intl.Segmenter.prototype.segment, "name", {
   value: "segment",
   writable: false,

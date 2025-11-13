@@ -7,6 +7,9 @@
 
 
 
+
+
+
 var func = new Function("new.target");
 
 

@@ -11,6 +11,8 @@
 
 
 
+
+
 const decimalTests = [
     [32n, -1n, 1n, "4294967295"],
     [32n, -1n, -1n, "-4294967295"],
@@ -35,5 +37,6 @@ for (const [power, offset, sign, result] of decimalTests) {
     assert.sameValue(((2n**power+offset)*sign).toString(),
              result);
 }
+
 
 reportCompare(0, 0);

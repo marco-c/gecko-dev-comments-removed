@@ -9,6 +9,20 @@
 
 
 
+
+
+function assertThrowsTypeError(f) {
+  var type;
+  try {
+    f();
+  } catch (ex) {
+    type = ex.name;
+  }
+  assert.sameValue(type, 'TypeError');
+}
+
+
+
 var target = {};
 var p1 = new Proxy(target, {});
 var p2 = new Proxy(target, {});
@@ -47,24 +61,25 @@ assert.sameValue(A.gf(p1), 15);
 
 
 
-assert.throws(TypeError, () => B.sf(p1));
-assert.throws(TypeError, () => B.gf(p1));
-assert.throws(TypeError, () => B.sf(p1));
+assertThrowsTypeError(() => B.sf(p1));
+assertThrowsTypeError(() => B.gf(p1));
+assertThrowsTypeError(() => B.sf(p1));
 new B(p1);
 assert.sameValue(B.gf(p1), 25);
 B.sf(p1);
 assert.sameValue(B.gf(p1), 20);
 
 
-assert.throws(TypeError, () => A.gf(target));
+assertThrowsTypeError(() => A.gf(target));
 
 
-assert.throws(TypeError, () => A.sf(p2));
+assertThrowsTypeError(() => A.sf(p2));
 
 
-assert.throws(TypeError, () => A.gf(p2));
+assertThrowsTypeError(() => A.gf(p2));
 
 
-assert.throws(TypeError, () => A.gf(target));
+assertThrowsTypeError(() => A.gf(target));
+
 
 reportCompare(0, 0);

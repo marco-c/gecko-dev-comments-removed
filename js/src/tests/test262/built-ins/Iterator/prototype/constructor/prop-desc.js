@@ -7,6 +7,7 @@
 
 
 
+
 let desc = Object.getOwnPropertyDescriptor(Iterator.prototype, 'constructor');
 assert.sameValue(typeof desc.get, 'function');
 assert.sameValue(typeof desc.set, 'function');

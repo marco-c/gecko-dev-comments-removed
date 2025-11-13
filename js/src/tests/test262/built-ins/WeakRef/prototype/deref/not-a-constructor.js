@@ -21,6 +21,7 @@
 
 
 
+
 assert.sameValue(
   isConstructor(WeakRef.prototype.deref),
   false,

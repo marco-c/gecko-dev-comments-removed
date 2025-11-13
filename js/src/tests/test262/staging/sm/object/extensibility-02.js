@@ -10,6 +10,18 @@
 
 
 
+
+var gTestfile = '15.2.3.4-01.js';
+
+var BUGNUMBER = 492849;
+var summary = 'ES5: Implement Object.preventExtensions, Object.isExtensible';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 assert.sameValue(typeof Object.isExtensible, "function");
 assert.sameValue(Object.isExtensible.length, 1);
 
@@ -28,5 +40,9 @@ for (var i = 0, sz = objs.length; i < sz; i++)
 
   assert.sameValue(Object.isExtensible(o), false, "object " + i + " is extensible?");
 }
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

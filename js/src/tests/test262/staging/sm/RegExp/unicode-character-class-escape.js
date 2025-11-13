@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1135377;
+var summary = "Implement RegExp unicode flag -- CharacterClassEscape.";
+
+print(BUGNUMBER + ": " + summary);
+
 
 
 assert.compareArray(/\d+/u.exec("abcxyzABCXYZ0123456789_\t\r\n\v\x0c\xa0\uFEFF*"),
@@ -76,5 +81,6 @@ testNonBMP(/\W/u);
 testNonBMP(/[\D]/u);
 testNonBMP(/[\S]/u);
 testNonBMP(/[\W]/u);
+
 
 reportCompare(0, 0);

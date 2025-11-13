@@ -11,15 +11,21 @@
 
 
 
+var BUGNUMBER = 1038545;
+var summary = "Coerce the argument passed to Object.keys using ToObject";
+print(BUGNUMBER + ": " + summary);
 
-assert.throws(TypeError, () => Object.keys());
-assert.throws(TypeError, () => Object.keys(undefined));
-assert.throws(TypeError, () => Object.keys(null));
+assertThrowsInstanceOf(() => Object.keys(), TypeError);
+assertThrowsInstanceOf(() => Object.keys(undefined), TypeError);
+assertThrowsInstanceOf(() => Object.keys(null), TypeError);
 
-assert.compareArray(Object.keys(1), []);
-assert.compareArray(Object.keys(true), []);
-assert.compareArray(Object.keys(Symbol("foo")), []);
+assert.deepEqual(Object.keys(1), []);
+assert.deepEqual(Object.keys(true), []);
+if (typeof Symbol === "function") {
+    assert.deepEqual(Object.keys(Symbol("foo")), []);
+}
 
-assert.compareArray(Object.keys("foo"), ["0", "1", "2"]);
+assert.deepEqual(Object.keys("foo"), ["0", "1", "2"]);
+
 
 reportCompare(0, 0);

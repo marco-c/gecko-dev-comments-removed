@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(typeof Intl.Segmenter.supportedLocalesOf, "function",
                  "supportedLocalesOf should be supported.");
 

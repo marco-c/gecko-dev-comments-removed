@@ -11,8 +11,9 @@
 
 
 
+
 with ({x: 1, [Symbol.unscopables]: {x: true}})
-    assert.throws(ReferenceError, () => x);
+    assertThrowsInstanceOf(() => x, ReferenceError);
 
 
 reportCompare(0, 0);

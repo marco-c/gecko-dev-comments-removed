@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function test() {
     delete arguments[1];
     return Array.prototype.join.call(arguments);

@@ -12,6 +12,17 @@
 
 
 
+var BUGNUMBER = 616294;
+var summary =
+  "|delete x| inside a function in eval code, where that eval code includes " +
+  "|var x| at top level, actually does delete the binding for x";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var f;
 
 function testOuterLet()
@@ -74,5 +85,10 @@ function testFunctionLocal()
 f = testFunctionLocal();
 
 assert.sameValue(f(), false); 
+
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

@@ -7,23 +7,26 @@
 
 
 
+
+
+
 class Foo {
     constructor() { }
 }
 
-assert.throws(TypeError, Foo);
+assertThrowsInstanceOf(Foo, TypeError);
 
 class Bar extends Foo {
     constructor() { }
 }
 
-assert.throws(TypeError, Bar);
+assertThrowsInstanceOf(Bar, TypeError);
 
-assert.throws(TypeError, class { constructor() { } });
-assert.throws(TypeError, class extends Foo { constructor() { } });
+assertThrowsInstanceOf(class { constructor() { } }, TypeError);
+assertThrowsInstanceOf(class extends Foo { constructor() { } }, TypeError);
 
-assert.throws(TypeError, class foo { constructor() { } });
-assert.throws(TypeError, class foo extends Foo { constructor() { } });
+assertThrowsInstanceOf(class foo { constructor() { } }, TypeError);
+assertThrowsInstanceOf(class foo extends Foo { constructor() { } }, TypeError);
 
 
 reportCompare(0, 0);

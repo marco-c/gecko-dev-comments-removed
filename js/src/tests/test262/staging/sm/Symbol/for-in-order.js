@@ -13,6 +13,8 @@
 
 
 
+
+
 var obj = {};
 obj[Symbol("moon")] = 0;
 obj.x = 1;
@@ -25,8 +27,8 @@ Object.prototype[Symbol.for("comet")] = 6;
 var keys = [];
 for (var k in obj)
     keys.push(k);
-assert.compareArray(keys, ["x", "y", "z"]);
-assert.compareArray(Object.keys(obj), ["x", "y", "z"]);
+assert.deepEqual(keys, ["x", "y", "z"]);
+assert.deepEqual(Object.keys(obj), ["x", "y", "z"]);
 
 
 for (var i = 0; i < 1000; i++)
@@ -35,6 +37,7 @@ obj.w = 1000;
 keys = []
 for (var k in obj)
     keys.push(k);
-assert.compareArray(keys, ["x", "y", "z", "w"]);
+assert.deepEqual(keys, ["x", "y", "z", "w"]);
+
 
 reportCompare(0, 0);

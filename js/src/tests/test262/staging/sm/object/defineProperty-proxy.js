@@ -13,6 +13,8 @@
 
 
 
+
+
 var log = [];
 function LoggingProxy(target) {
     return new Proxy(target, {
@@ -49,7 +51,7 @@ for (var obj of testSubjects) {
 
     
     
-    assert.compareArray(log, [
+    assert.deepEqual(log, [
         "has enumerable", "get enumerable",
         "has configurable", "get configurable",
         "has value", "get value",

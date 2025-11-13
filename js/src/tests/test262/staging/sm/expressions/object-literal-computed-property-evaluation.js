@@ -10,6 +10,19 @@
 
 
 
+
+
+var BUGNUMBER = 1199546;
+var summary =
+  "Convert computed property name expressions to property key before " +
+  "evaluating the property's value";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var s = "foo";
 var convertsToS = { toString() { return s; } };
 
@@ -26,5 +39,9 @@ var o = {
 
 assert.sameValue(o.foo, "abc");
 assert.sameValue(o.bar, "efg");
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

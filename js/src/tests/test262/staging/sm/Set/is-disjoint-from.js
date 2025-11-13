@@ -8,11 +8,13 @@
 
 
 
+
+
 assert.sameValue(typeof Set.prototype.isDisjointFrom, "function");
-verifyProperty(Set.prototype.isDisjointFrom, "length", {
+assert.deepEqual(Object.getOwnPropertyDescriptor(Set.prototype.isDisjointFrom, "length"), {
   value: 1, writable: false, enumerable: false, configurable: true,
 });
-verifyProperty(Set.prototype.isDisjointFrom, "name", {
+assert.deepEqual(Object.getOwnPropertyDescriptor(Set.prototype.isDisjointFrom, "name"), {
   value: "isDisjointFrom", writable: false, enumerable: false, configurable: true,
 });
 
@@ -143,7 +145,7 @@ for (let values of [
   ]);
 
   log.length = 0;
-  assert.throws(TypeError, () => new Set([1]).isDisjointFrom(setLike));
+  assertThrowsInstanceOf(() => new Set([1]).isDisjointFrom(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -168,7 +170,7 @@ for (let values of [
   ]);
 
   log.length = 0;
-  assert.throws(TypeError, () => new Set([1]).isDisjointFrom(setLike));
+  assertThrowsInstanceOf(() => new Set([1]).isDisjointFrom(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -181,7 +183,7 @@ for (let values of [
   setLikeObj.keys = nonCallable;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isDisjointFrom(setLike));
+  assertThrowsInstanceOf(() => emptySet.isDisjointFrom(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -194,7 +196,7 @@ for (let values of [
   setLikeObj.has = nonCallable;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isDisjointFrom(setLike));
+  assertThrowsInstanceOf(() => emptySet.isDisjointFrom(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -206,7 +208,7 @@ for (let values of [
   sizeValue = NaN;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isDisjointFrom(setLike));
+  assertThrowsInstanceOf(() => emptySet.isDisjointFrom(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -217,7 +219,7 @@ for (let values of [
   sizeValue = undefined;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isDisjointFrom(setLike));
+  assertThrowsInstanceOf(() => emptySet.isDisjointFrom(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -226,7 +228,7 @@ for (let values of [
 }
 
 
-assert.throws(TypeError, () => emptySet.isDisjointFrom([]));
+assertThrowsInstanceOf(() => emptySet.isDisjointFrom([]), TypeError);
 
 
 {
@@ -257,7 +259,7 @@ assert.throws(TypeError, () => emptySet.isDisjointFrom([]));
 for (let thisValue of [
   null, undefined, true, "", {}, new Map, new Proxy(new Set, {}),
 ]) {
-  assert.throws(TypeError, () => Set.prototype.isDisjointFrom.call(thisValue, emptySet));
+  assertThrowsInstanceOf(() => Set.prototype.isDisjointFrom.call(thisValue, emptySet), TypeError);
 }
 
 

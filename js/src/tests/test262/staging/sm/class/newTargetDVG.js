@@ -7,10 +7,12 @@
 
 
 
+
+
 function thunk() {
     new.target();
 }
-assert.throws(TypeError, thunk);
+assertThrownErrorContains(thunk, "new.target");
 
 
 reportCompare(0, 0);

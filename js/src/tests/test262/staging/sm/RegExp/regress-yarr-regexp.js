@@ -7,6 +7,8 @@
 
 
 
+
+
 var gcgcz = /((?:.)+)((?:.)*)/; 
 assert.compareArray(["a", "a", ""], gcgcz.exec("a"));
 assert.compareArray(["ab", "ab", ""], gcgcz.exec("ab"));

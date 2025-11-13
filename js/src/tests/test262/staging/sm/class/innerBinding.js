@@ -9,26 +9,29 @@
 
 
 
+
+
+
 class Foof { constructor() { }; tryBreak() { Foof = 4; } }
 for (let result of [Foof, class Bar { constructor() { }; tryBreak() { Bar = 4; } }])
-    assert.throws(TypeError, () => new result().tryBreak());
+    assertThrowsInstanceOf(() => new result().tryBreak(), TypeError);
 
 {
     class foo { constructor() { }; tryBreak() { foo = 4; } }
     for (let result of [foo, class Bar { constructor() { }; tryBreak() { Bar = 4 } }])
-        assert.throws(TypeError, () => new result().tryBreak());
+        assertThrowsInstanceOf(() => new result().tryBreak(), TypeError);
 }
 
 
-assert.throws(ReferenceError, ()=>eval(`class Bar {
+assertThrowsInstanceOf(()=>eval(`class Bar {
                                     constructor() { };
                                     [Bar] () { };
-                                 }`));
+                                 }`), ReferenceError);
 
-assert.throws(ReferenceError, ()=>eval(`(class Bar {
+assertThrowsInstanceOf(()=>eval(`(class Bar {
                                     constructor() { };
                                     [Bar] () { };
-                                 })`));
+                                 })`), ReferenceError);
 
 
 {

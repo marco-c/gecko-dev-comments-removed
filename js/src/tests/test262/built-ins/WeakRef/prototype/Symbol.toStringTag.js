@@ -15,6 +15,7 @@
 
 
 
+
 verifyProperty(WeakRef.prototype, Symbol.toStringTag, {
   value: 'WeakRef',
   writable: false,

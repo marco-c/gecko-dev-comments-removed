@@ -10,14 +10,15 @@
 
 
 
+
 class A {
   #x;
 };
 
 function assertThrowsSyntaxError(str) {
-  assert.throws(SyntaxError, () => eval(str));       
-  assert.throws(SyntaxError, () => (1, eval)(str));  
-  assert.throws(SyntaxError, () => Function(str));   
+  assertThrowsInstanceOf(() => eval(str), SyntaxError);       
+  assertThrowsInstanceOf(() => (1, eval)(str), SyntaxError);  
+  assertThrowsInstanceOf(() => Function(str), SyntaxError);   
 }
 
 assertThrowsSyntaxError(`
@@ -54,7 +55,7 @@ function assertNonExisting(fetchCode) {
   }
   var a = new X;
   a.b()`
-  assert.throws(SyntaxError, () => eval(source));
+  assertThrowsInstanceOf(() => eval(source), SyntaxError);
 }
 
 assertNonExisting(`return eval("this.#x")"`);

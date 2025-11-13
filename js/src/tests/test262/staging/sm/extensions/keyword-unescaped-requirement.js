@@ -10,6 +10,19 @@
 
 
 
+
+
+var BUGNUMBER = 1204027;
+var summary =
+  "Escape sequences aren't allowed in bolded grammar tokens (that is, in " +
+  "keywords, possibly contextual keywords)";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var randomExtensions =
   [
    "for \\u0065ach (var x in []);",
@@ -26,7 +39,12 @@ var randomExtensions =
 
 for (var extension of randomExtensions)
 {
-  assert.throws(SyntaxError, () => Function(extension), "bad behavior for: " + extension);
+  assertThrowsInstanceOf(() => Function(extension), SyntaxError,
+                         "bad behavior for: " + extension);
 }
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

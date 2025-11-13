@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 459293;
 var summary = 'Allow redeclaration of JSON';
 var actual = '';

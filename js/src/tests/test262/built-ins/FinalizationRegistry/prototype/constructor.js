@@ -15,6 +15,7 @@
 
 
 
+
 verifyProperty(FinalizationRegistry.prototype, 'constructor', {
   value: FinalizationRegistry,
   writable: true,

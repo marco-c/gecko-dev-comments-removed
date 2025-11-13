@@ -22,30 +22,45 @@ UNSUPPORTED_FEATURES = set(
         "source-phase-imports",
         "source-phase-imports-module-source",
         "import-defer",
-        "nonextensible-applies-to-private",  
     ]
 )
 FEATURE_CHECK_NEEDED = {
     "Atomics": "!this.hasOwnProperty('Atomics')",
+    "FinalizationRegistry": "!this.hasOwnProperty('FinalizationRegistry')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "Temporal": "!this.hasOwnProperty('Temporal')",
+    "WeakRef": "!this.hasOwnProperty('WeakRef')",
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
+    "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
+    "Intl.Segmenter": "!Intl.Segmenter",  
+    "Intl.DurationFormat": "!Intl.hasOwnProperty('DurationFormat')",  
     "uint8array-base64": "!Uint8Array.fromBase64",  
+    "RegExp.escape": "!RegExp.escape",
     "explicit-resource-management": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))",  
-    "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",  
-    "Error.isError": "!Error.isError",  
-    "iterator-sequencing": "!Iterator.concat",  
+    "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",
+    "Error.isError": "!Error.isError",
+    "iterator-sequencing": "!Iterator.concat",
     "Math.sumPrecise": "!Math.sumPrecise",  
-    "upsert": "!Map.prototype.getOrInsertComputed",  
-    "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
+    "upsert": "!Map.prototype.getOrInsertComputed",
+    "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",
 }
 RELEASE_OR_BETA = set()
 SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
+    "iterator-helpers": "--enable-iterator-helpers",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
+    "uint8array-base64": "--enable-uint8array-base64",
+    "regexp-duplicate-named-groups": "--enable-regexp-duplicate-named-groups",
+    "RegExp.escape": "--enable-regexp-escape",
+    "regexp-modifiers": "--enable-regexp-modifiers",
     "explicit-resource-management": "--enable-explicit-resource-management",
+    "Atomics.pause": "--enable-atomics-pause",
+    "Temporal": "--enable-temporal",
+    "Error.isError": "--enable-error-iserror",
     "iterator-sequencing": "--enable-iterator-sequencing",
+    "Math.sumPrecise": "--enable-math-sumprecise",
     "Atomics.waitAsync": "--setpref=atomics_wait_async",
+    "upsert": "--enable-upsert",
     "immutable-arraybuffer": "--enable-arraybuffer-immutable",
 }
 
@@ -297,15 +312,9 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     
     
     
-    
-    
-    
-    
-    
-    if isNegative and isAsync:
-        print(
-            f"bad isnegative + async: {testName} (https://github.com/tc39/test262/issues/4638)"
-        )
+    assert not (isNegative and isAsync), (
+        "Can't have both async and negative attributes: %s" % testName
+    )
 
     
     

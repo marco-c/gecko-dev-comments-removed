@@ -8,7 +8,6 @@
 
 
 
-var otherGlobal = $262.createRealm().global;
 
 for (var constructor of anyTypedArrayConstructors) {
     assert.sameValue(constructor.prototype.values.length, 0);
@@ -28,18 +27,20 @@ for (var constructor of anyTypedArrayConstructors) {
     assert.deepEqual(iterator.next(), {value: undefined, done: true});
 
     
-    var values = otherGlobal[constructor.name].prototype.values;
-    assert.deepEqual([...values.call(new constructor([42, 36]))], [42, 36]);
-    arr = new (otherGlobal[constructor.name])([42, 36]);
-    assert.sameValue([...constructor.prototype.values.call(arr)].toString(), "42,36");
+    if (typeof createNewGlobal === "function") {
+        var values = createNewGlobal()[constructor.name].prototype.values;
+        assert.deepEqual([...values.call(new constructor([42, 36]))], [42, 36]);
+        arr = new (createNewGlobal()[constructor.name])([42, 36]);
+        assert.sameValue([...constructor.prototype.values.call(arr)].toString(), "42,36");
+    }
 
     
     var invalidReceivers = [undefined, null, 1, false, "", Symbol(), [], {}, /./,
                             new Proxy(new constructor(), {})];
     invalidReceivers.forEach(invalidReceiver => {
-        assert.throws(TypeError, () => {
+        assertThrowsInstanceOf(() => {
             constructor.prototype.values.call(invalidReceiver);
-        }, "Assert that values fails if this value is not a TypedArray");
+        }, TypeError, "Assert that values fails if this value is not a TypedArray");
     });
 }
 

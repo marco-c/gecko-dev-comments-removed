@@ -7,6 +7,8 @@
 
 
 
+
+
 for (var i = -1074; i < 1023; i++)
     assertNear(Math.log2(Math.pow(2, i)), i);
 

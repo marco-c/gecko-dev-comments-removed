@@ -7,6 +7,9 @@
 
 
 
+
+
+
 assert.sameValue(Math.clz32(), 32);
 assert.sameValue(Math.clz32(NaN), 32);
 assert.sameValue(Math.clz32.call(), 32);

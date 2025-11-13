@@ -16,6 +16,7 @@
 
 
 
+
 let effects = [];
 
 assert.throws(TypeError, function () {

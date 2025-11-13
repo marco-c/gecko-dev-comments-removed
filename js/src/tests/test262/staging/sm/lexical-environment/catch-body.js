@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function f() {
   var probeParam, probeBlock;
   let x = 'outside';

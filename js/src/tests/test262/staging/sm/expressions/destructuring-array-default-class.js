@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1184922;
+var summary = "Array destructuring with various default values in various context - class expression and super/new.target";
+
+print(BUGNUMBER + ": " + summary);
+
 testDestructuringArrayDefault(`class E {
   constructor() {}
   method() {}
@@ -73,5 +78,6 @@ opt = {
     no_comp: false,
 };
 testDestructuringArrayDefault("new.target", opt);
+
 
 reportCompare(0, 0);

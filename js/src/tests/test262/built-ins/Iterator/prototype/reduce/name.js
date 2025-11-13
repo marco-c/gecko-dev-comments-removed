@@ -21,6 +21,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype.reduce, 'name', {
   value: 'reduce',
   writable: false,

@@ -7,9 +7,11 @@
 
 
 
+
+
 function TestGC2(m) {
   var head = new Object;
-  for (var key = head, i = 0; i < 99999; i++, key = m.get(key)) {
+  for (key = head, i = 0; i < 99999; i++, key = m.get(key)) {
     m.set(key, new Object);
   }
   $262.gc();

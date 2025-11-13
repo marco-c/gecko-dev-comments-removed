@@ -7,6 +7,9 @@
 
 
 
+
+
+
 let passed = false;
 let obj = { foo: true };
 let C = function(){};
@@ -50,11 +53,11 @@ for (let nonCallable of nonCallables) {
 
 
 
-assert.throws(TypeError, () => {
+assertThrowsInstanceOf(() => {
     function foo() {};
     let obj = {};
     foo instanceof obj;
-});
+}, TypeError);
 
 
 let o = {[Symbol.hasInstance](v) { return true; }}
@@ -94,7 +97,7 @@ assert.sameValue(desc.configurable, false);
 
 
 
-assert.throws(TypeError, () => {
+assertThrowsInstanceOf(() => {
     var fun = function() {}
     var p = new Proxy(fun, {
         get(target, key) {
@@ -102,7 +105,7 @@ assert.throws(TypeError, () => {
         }
     });
     fun instanceof p;
-});
+}, TypeError);
 
 
 

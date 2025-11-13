@@ -10,6 +10,9 @@
 
 
 
+
+
+
 class A {
   #x = 10;
   f() {
@@ -29,9 +32,12 @@ class A {
   }
 };
 
-var a = new A;
-assert.throws(TypeError, function() {
+a = new A;
+try {
   a.g();
-});
+} catch (e) {
+  assert.sameValue(e instanceof TypeError, true);
+}
+
 
 reportCompare(0, 0);

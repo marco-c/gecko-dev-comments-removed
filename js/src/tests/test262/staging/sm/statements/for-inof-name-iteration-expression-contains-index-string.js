@@ -10,6 +10,20 @@
 
 
 
+
+
+var gTestfile = "for-inof-name-iteration-expression-contains-index-string.js";
+var BUGNUMBER = 1235640;
+var summary =
+  "Don't assert parsing a for-in/of loop whose target is a name, where the " +
+  "expression being iterated over contains a string containing an index";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function f()
 {
   var x;
@@ -30,5 +44,9 @@ function g()
 }
 
 g();
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

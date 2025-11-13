@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {}
 Iterator.prototype.reduce.call(g(), () => {}, 0);
 

@@ -10,6 +10,8 @@
 
 
 
+
+
 assert.sameValue(Math.acosh(NaN), NaN);
 
 

@@ -12,6 +12,7 @@
 
 
 
+
 var x = "global";
 with ({x: "with", [Symbol.unscopables]: {x: true}})
     assert.sameValue(x, "global");

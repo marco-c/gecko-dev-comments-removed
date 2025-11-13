@@ -10,6 +10,7 @@
 
 
 
+
 class TestIterator extends Iterator {
   next() {
     return {

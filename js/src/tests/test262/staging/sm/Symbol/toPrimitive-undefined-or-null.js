@@ -6,6 +6,9 @@
 
 
 
+
+
+
 for (let method of [undefined, null]) {
     let obj = {
         [Symbol.toPrimitive]: method,
@@ -19,7 +22,7 @@ for (let method of [true, false, 0, 123, "", "abc", Symbol(), {}]) {
         [Symbol.toPrimitive]: method,
         toString: () => "pass",
     };
-    assert.throws(TypeError, () => "" + obj);
+    assertThrowsInstanceOf(() => "" + obj, TypeError);
 }
 
 

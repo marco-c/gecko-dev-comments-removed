@@ -7,6 +7,9 @@
 
 
 
+
+
+
 var global = this;
 var proto = Object.getPrototypeOf(global);
 var gets = 0, sets = 0;

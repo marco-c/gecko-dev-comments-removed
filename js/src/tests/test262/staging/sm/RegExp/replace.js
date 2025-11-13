@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 887016;
+var summary = "Implement RegExp.prototype[@@replace].";
+
+print(BUGNUMBER + ": " + summary);
+
 assert.sameValue(RegExp.prototype[Symbol.replace].name, "[Symbol.replace]");
 assert.sameValue(RegExp.prototype[Symbol.replace].length, 2);
 var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, Symbol.replace);
@@ -34,5 +40,6 @@ assert.sameValue(v, "012_$_abcd_012_345_$0_a_b_cd_$4_$+_$345");
 re = /(a)(b)(cd)/;
 v = re[Symbol.replace]("012abcd345", "_\u3042_$$_$&_$`_$'_$0_$1_$2_$3_$4_$+_$");
 assert.sameValue(v, "012_\u3042_$_abcd_012_345_$0_a_b_cd_$4_$+_$345");
+
 
 reportCompare(0, 0);

@@ -11,6 +11,7 @@
 
 
 
+
 var BUGNUMBER = 523846;
 var summary =
   "Assignments to a property that has a getter but not a setter should not " +

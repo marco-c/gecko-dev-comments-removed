@@ -11,6 +11,20 @@
 
 
 
+
+var BUGNUMBER = 1596706;
+var summary =
+  "Properly evaluate a bigint literal that's initially tokenized by a syntax " +
+  "parser (because the bigint literal appears immediately after an arrow " +
+  "function with expression body)";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 assert.sameValue(eval(`x=>{};
 17n`), 17n);
 
@@ -25,5 +39,9 @@ assert.sameValue(eval(`x=>y;
 
 assert.sameValue(eval(`x=>y
 78051120n`), 78051120n);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

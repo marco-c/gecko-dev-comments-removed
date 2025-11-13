@@ -9,6 +9,10 @@
 
 
 
+
+
+
+
 const methods = [
   iter => iter.map,
   iter => iter.filter,
@@ -20,7 +24,7 @@ for (const method of methods) {
   const iterMethod = method(iter);
   let iterHelper;
   iterHelper = iterMethod.call(iter, x => iterHelper.next());
-  assert.throws(TypeError, () => iterHelper.next());
+  assertThrowsInstanceOf(() => iterHelper.next(), TypeError);
 }
 
 

@@ -12,6 +12,7 @@
 
 
 
+
 var f = function (a1, a2, a3, a4) {};
 assert.sameValue(delete f.length, true);
 assert.sameValue(f.hasOwnProperty("length"), false);

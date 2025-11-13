@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 assert.sameValue(Iterator.prototype.flatMap.name, 'flatMap');
 
 const propertyDescriptor = Reflect.getOwnPropertyDescriptor(Iterator.prototype.flatMap, 'name');

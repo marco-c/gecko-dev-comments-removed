@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 518103;
 var summary = 'partial flat closures must not reach across funargs';
 var actual = "no crash";

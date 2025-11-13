@@ -8,6 +8,7 @@
 
 
 
+
 foo = 1;
 Object.defineProperty(this, "foo", {writable:false, configurable:true});
 foo = 2;

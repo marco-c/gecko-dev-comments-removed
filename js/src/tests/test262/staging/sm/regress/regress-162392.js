@@ -12,6 +12,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 162392;
 var summary = 'eval("arguments").length == 0 when no arguments specified';
 var actual = noargslength();

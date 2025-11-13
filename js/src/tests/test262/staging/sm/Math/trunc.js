@@ -8,6 +8,8 @@
 
 
 
+
+
 assert.sameValue(Math.trunc(NaN), NaN);
 
 

@@ -11,6 +11,9 @@
 
 
 
+
+
+
 const log = [];
 const handlerProxy = new Proxy({}, {
   get: (target, key, receiver) => (...args) => {
@@ -26,7 +29,7 @@ class TestIterator extends Iterator {
 }
 
 const iter = new Proxy(new TestIterator(), handlerProxy);
-assert.throws(TypeError, () => iter.forEach(1));
+assertThrowsInstanceOf(() => iter.forEach(1), TypeError);
 
 assert.compareArray(
   log,

@@ -14,6 +14,7 @@
 
 
 
+
 verifyProperty(Intl.Segmenter, "prototype", {
   writable: false,
   enumerable: false,

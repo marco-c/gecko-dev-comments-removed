@@ -8,13 +8,16 @@
 
 
 
+
+
+
 assert.sameValue(Symbol.keyFor(Symbol.for("moon")), "moon");
 assert.sameValue(Symbol.keyFor(Symbol.for("")), "");
 assert.sameValue(Symbol.keyFor(Symbol("moon")), undefined);
 assert.sameValue(Symbol.keyFor(Symbol.iterator), undefined);
 
-assert.throws(TypeError, () => Symbol.keyFor());
-assert.throws(TypeError, () => Symbol.keyFor(Object(Symbol("moon"))));
+assertThrowsInstanceOf(() => Symbol.keyFor(), TypeError);
+assertThrowsInstanceOf(() => Symbol.keyFor(Object(Symbol("moon"))), TypeError);
 
 assert.sameValue(Symbol.keyFor.length, 1);
 

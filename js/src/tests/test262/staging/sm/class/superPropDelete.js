@@ -9,6 +9,9 @@
 
 
 
+
+
+
 class base {
     constructor() { }
 }
@@ -18,13 +21,13 @@ class derived extends base {
     testDeleteProp() { delete super.prop; }
     testDeleteElem() {
         let sideEffect = 0;
-        assert.throws(ReferenceError, () => delete super[sideEffect = 1]);
+        assertThrowsInstanceOf(() => delete super[sideEffect = 1], ReferenceError);
         assert.sameValue(sideEffect, 1);
     }
 }
 
 var d = new derived();
-assert.throws(ReferenceError, () => d.testDeleteProp());
+assertThrowsInstanceOf(() => d.testDeleteProp(), ReferenceError);
 d.testDeleteElem();
 
 
@@ -32,7 +35,7 @@ var thing1 = {
     go() { delete super.toString; }
 };
 let saved = Object.prototype.toString;
-assert.throws(ReferenceError, () => thing1.go());
+assertThrowsInstanceOf(() => thing1.go(), ReferenceError);
 assert.sameValue(Object.prototype.toString, saved);
 
 
@@ -42,7 +45,7 @@ var thing2 = {
 Object.setPrototypeOf(thing2, new Proxy({}, {
     deleteProperty(x) { throw "FAIL"; }
 }));
-assert.throws(ReferenceError, () => thing2.go());
+assertThrowsInstanceOf(() => thing2.go(), ReferenceError);
 
 class derivedTestDeleteProp extends base {
     constructor() {
@@ -50,11 +53,11 @@ class derivedTestDeleteProp extends base {
         
         Object.setPrototypeOf(derivedTestDeleteProp.prototype, null);
 
-        assert.throws(ReferenceError, () => delete super.prop);
+        assertThrowsInstanceOf(() => delete super.prop, ReferenceError);
 
         super();
 
-        assert.throws(ReferenceError, () => delete super.prop);
+        assertThrowsInstanceOf(() => delete super.prop, ReferenceError);
 
         return {};
     }

@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 const iter = [].values();
 const methods = [
   value => iter.take(value),
@@ -26,9 +30,9 @@ const objectWithToPrimitive = {
 };
 
 for (const method of methods) {
-  assert.throws(TypeError, () => method(0n));
-  assert.throws(TypeError, () => method(Symbol('')));
-  assert.throws(TypeError, () => method(objectWithToPrimitive));
+  assertThrowsInstanceOf(() => method(0n), TypeError);
+  assertThrowsInstanceOf(() => method(Symbol('')), TypeError);
+  assertThrowsInstanceOf(() => method(objectWithToPrimitive), TypeError);
 }
 
 

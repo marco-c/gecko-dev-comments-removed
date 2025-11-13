@@ -10,6 +10,8 @@
 
 
 
+"use strict";
+
 Object.defineProperty(String.prototype, "toLocaleString", {
     get() {
         assert.sameValue(typeof this, "string");
@@ -19,5 +21,6 @@ Object.defineProperty(String.prototype, "toLocaleString", {
 })
 
 assert.sameValue(["test"].toLocaleString(), "string");
+
 
 reportCompare(0, 0);

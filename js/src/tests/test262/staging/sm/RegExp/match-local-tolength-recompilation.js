@@ -9,6 +9,9 @@
 
 
 
+
+
+
 for (var flag of ["", "y"]) {
     var regExp = new RegExp("a", flag);
 

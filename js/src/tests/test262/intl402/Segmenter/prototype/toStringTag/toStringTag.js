@@ -15,6 +15,7 @@
 
 
 
+
 verifyProperty(Intl.Segmenter.prototype, Symbol.toStringTag, {
   value: "Intl.Segmenter",
   writable: false,

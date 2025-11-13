@@ -23,6 +23,7 @@
 
 
 
+
 const input = "a b c";
 const granularities = [undefined, "grapheme", "word", "sentence"];
 const index_to_out_of_bound = [

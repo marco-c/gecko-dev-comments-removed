@@ -12,6 +12,7 @@
 
 
 
+
 function* g() {
   yield 0;
 }

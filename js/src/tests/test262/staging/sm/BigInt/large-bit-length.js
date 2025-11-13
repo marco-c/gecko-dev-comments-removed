@@ -10,6 +10,8 @@
 
 
 
+
+
 function test(thunk, result) {
     let val, err;
     try {
@@ -38,5 +40,6 @@ for (let bits of [UINT32_MAX-1, UINT32_MAX, UINT32_MAX+1, Number.MAX_SAFE_INTEGE
     test(() => BigInt.asUintN(bits, 0n), 0n);
     
 }
+
 
 reportCompare(0, 0);

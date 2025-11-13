@@ -33,6 +33,16 @@
 
 
 
+
+var BUGNUMBER = 614608;
+var summary = "String.prototype.split with regexp separator";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var ecmaSampleRe = /<(\/)?([^<>]+)>/;
 
 var testCode = [
@@ -112,5 +122,7 @@ function testSplit() {
 }
 
 testSplit();
+
+print("All tests passed!");
 
 reportCompare(0, 0);

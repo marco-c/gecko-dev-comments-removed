@@ -22,6 +22,7 @@
 
 
 
+
 const segmenter = new Intl.Segmenter();
 const input1 = "ABCD";
 const input2 = "123";

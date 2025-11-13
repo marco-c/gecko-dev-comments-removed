@@ -7,6 +7,8 @@
 
 
 
+
+
 const TypedArrayPrototype = Object.getPrototypeOf(Int8Array.prototype);
 
 
@@ -18,13 +20,11 @@ assert.sameValue(TypedArrayPrototype.toString, Array.prototype.toString);
 
 assert.sameValue(anyTypedArrayConstructors.every(c => !c.hasOwnProperty("toString")), true);
 
-verifyProperty(TypedArrayPrototype, "toString", {
+assert.deepEqual(Object.getOwnPropertyDescriptor(TypedArrayPrototype, "toString"), {
     value: TypedArrayPrototype.toString,
     writable: true,
     enumerable: false,
     configurable: true,
-}, {
-    restore: true
 });
 
 for (let constructor of anyTypedArrayConstructors) {
@@ -79,5 +79,6 @@ for (let constructor of anyTypedArrayConstructors) {
     let {array, expected} = testCases[constructor.name];
     assert.sameValue(new constructor(array).toString(), expected);
 }
+
 
 reportCompare(0, 0);

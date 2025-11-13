@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 const array = [1, 2, 3];
 const iterator = [1, 2, 3].values().map(x => x * 2);
 

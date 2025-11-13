@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(typeof Iterator.prototype.forEach, 'function');
 
 reportCompare(0, 0);

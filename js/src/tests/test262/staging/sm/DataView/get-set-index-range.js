@@ -7,17 +7,19 @@
 
 
 
+
+
 var buffer = new ArrayBuffer(2);
 var view = new DataView(buffer);
 
 function check(view) {
     for (let fun of ['getInt8', 'setInt8', 'getInt16', 'setInt16']) {
-        assert.throws(RangeError, () => view[fun](-10));
-        assert.throws(RangeError, () => view[fun](-Infinity));
-        assert.throws(RangeError, () => view[fun](Infinity));
+        assertThrowsInstanceOf(() => view[fun](-10), RangeError);
+        assertThrowsInstanceOf(() => view[fun](-Infinity), RangeError);
+        assertThrowsInstanceOf(() => view[fun](Infinity), RangeError);
 
-        assert.throws(RangeError, () => view[fun](Math.pow(2, 53)));
-        assert.throws(RangeError, () => view[fun](Math.pow(2, 54)));
+        assertThrowsInstanceOf(() => view[fun](Math.pow(2, 53)), RangeError);
+        assertThrowsInstanceOf(() => view[fun](Math.pow(2, 54)), RangeError);
     }
 }
 
@@ -29,15 +31,18 @@ for (let fun of ['getInt8', 'getInt16']) {
     assert.sameValue(view[fun](NaN), 0);
 }
 
+if ('$262.detachArrayBuffer' in this) {
+    
+    
+    $262.detachArrayBuffer(buffer);
 
+    check(view);
 
-$262.detachArrayBuffer(buffer);
+    assertThrowsInstanceOf(() => view.getInt8(0), TypeError);
+    assertThrowsInstanceOf(() => view.setInt8(0, 0), TypeError);
+    assertThrowsInstanceOf(() => view.getInt8(Math.pow(2, 53) - 1), TypeError);
+    assertThrowsInstanceOf(() => view.setInt8(Math.pow(2, 53) - 1, 0), TypeError);
+}
 
-check(view);
-
-assert.throws(TypeError, () => view.getInt8(0));
-assert.throws(TypeError, () => view.setInt8(0, 0));
-assert.throws(TypeError, () => view.getInt8(Math.pow(2, 53) - 1));
-assert.throws(TypeError, () => view.setInt8(Math.pow(2, 53) - 1, 0));
 
 reportCompare(0, 0);

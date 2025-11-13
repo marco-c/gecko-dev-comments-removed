@@ -11,6 +11,18 @@
 
 
 
+var gTestfile = 'mutation-prevention-methods.js';
+
+var BUGNUMBER = 492849;
+var summary = 'Object.is{Sealed,Frozen}, Object.{seal,freeze}';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 
 var o1 = {};
 
@@ -109,5 +121,10 @@ Object.freeze(o3);
 assert.sameValue(Object.isExtensible(o3), false);
 assert.sameValue(Object.isSealed(o3), true);
 assert.sameValue(Object.isFrozen(o3), true);
+
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

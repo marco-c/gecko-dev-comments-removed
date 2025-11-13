@@ -8,6 +8,9 @@
 
 
 
+
+
+
 assert.sameValue(function testcase() {
     var proto = {};
     Object.defineProperty(proto, "prop", {get: function () {return {};}, enumerable: true});

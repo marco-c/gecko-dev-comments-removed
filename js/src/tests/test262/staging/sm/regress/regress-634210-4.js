@@ -8,6 +8,9 @@
 
 
 
+
+
+
 function outer() {
     function f() {}
     f.p = function() {};

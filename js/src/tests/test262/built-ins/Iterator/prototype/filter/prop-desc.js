@@ -18,6 +18,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype, 'filter', {
   writable: true,
   enumerable: false,

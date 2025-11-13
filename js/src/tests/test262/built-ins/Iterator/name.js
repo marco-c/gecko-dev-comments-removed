@@ -22,6 +22,7 @@
 
 
 
+
 verifyProperty(Iterator, 'name', {
   value: 'Iterator',
   writable: false,

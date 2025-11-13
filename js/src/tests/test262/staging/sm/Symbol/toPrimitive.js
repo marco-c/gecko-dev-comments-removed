@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var sym = Symbol.for("truth")
 var obj = Object(sym);
 assert.sameValue(obj[Symbol.toPrimitive]("default"), sym);
@@ -23,7 +26,7 @@ assert.sameValue(obj[Symbol.toPrimitive](Math.atan2), sym);
 assert.sameValue(sym[Symbol.toPrimitive](), sym);
 
 
-var obj2 = $262.createRealm().global.Object(sym);
+var obj2 = createNewGlobal().Object(sym);
 assert.sameValue(obj2[Symbol.toPrimitive]("default"), sym);
 
 
@@ -34,7 +37,7 @@ var nonSymbols = [
     new Proxy(obj, {})
 ];
 for (var value of nonSymbols) {
-    assert.throws(TypeError, () => symbolToPrimitive.call(value, "string"));
+    assertThrowsInstanceOf(() => symbolToPrimitive.call(value, "string"), TypeError);
 }
 
 

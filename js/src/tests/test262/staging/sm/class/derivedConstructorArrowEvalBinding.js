@@ -8,10 +8,12 @@
 
 
 
+
+
 new class extends class { } {
     constructor() {
         let arrow = () => this;
-        assert.throws(ReferenceError, arrow);
+        assertThrowsInstanceOf(arrow, ReferenceError);
         super();
         assert.sameValue(arrow(), this);
     }

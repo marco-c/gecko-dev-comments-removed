@@ -21,6 +21,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype.map, 'name', {
   value: 'map',
   writable: false,

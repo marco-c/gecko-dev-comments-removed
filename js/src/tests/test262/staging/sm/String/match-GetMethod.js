@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1290655;
+var summary = "String.prototype.match should call GetMethod.";
+
+print(BUGNUMBER + ": " + summary);
+
 function create(value) {
     return {
         [Symbol.match]: value,
@@ -28,7 +33,8 @@ for (let v of [null, undefined]) {
 }
 
 for (let v of [1, true, Symbol.iterator, "", {}, []]) {
-    assert.throws(TypeError, () => "a-a".match(create(v)));
+    assertThrowsInstanceOf(() => "a-a".match(create(v)), TypeError);
 }
+
 
 reportCompare(0, 0);

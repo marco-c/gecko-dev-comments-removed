@@ -20,6 +20,7 @@
 
 
 
+
 var enterCount = 0;
 
 class TestIterator extends Iterator {

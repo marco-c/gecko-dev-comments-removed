@@ -25,6 +25,7 @@
 
 
 
+
 assert.sameValue(Intl.DateTimeFormat.prototype.formatToParts.length, 1);
 
 verifyProperty(Intl.DurationFormat.prototype.formatToParts, "length", {

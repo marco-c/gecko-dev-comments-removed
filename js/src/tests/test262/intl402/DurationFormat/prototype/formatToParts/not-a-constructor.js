@@ -13,6 +13,7 @@
 
 
 
+
 assert.throws(TypeError, () => {
   new Intl.DurationFormat.prototype.formatToParts();
 }, "Calling as constructor");

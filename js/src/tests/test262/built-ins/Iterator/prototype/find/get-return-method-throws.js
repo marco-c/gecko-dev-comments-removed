@@ -10,6 +10,7 @@
 
 
 
+
 class IteratorThrows extends Iterator {
   next() {
     return {

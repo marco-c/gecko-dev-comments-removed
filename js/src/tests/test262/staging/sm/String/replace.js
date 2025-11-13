@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 887016;
+var summary = "Call RegExp.prototype[@@replace] from String.prototype.replace.";
+
+print(BUGNUMBER + ": " + summary);
+
 var called = 0;
 var myRegExp = {
   [Symbol.replace](S, R) {
@@ -19,5 +25,6 @@ var myRegExp = {
 };
 assert.sameValue("abcAbcABC".replace(myRegExp, "foo"), 42);
 assert.sameValue(called, 1);
+
 
 reportCompare(0, 0);

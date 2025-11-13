@@ -12,6 +12,7 @@
 
 
 
+
 let nextGets = 0;
 
 class TestIterator extends Iterator {

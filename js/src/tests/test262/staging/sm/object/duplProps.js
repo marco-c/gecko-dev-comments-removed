@@ -11,7 +11,8 @@
 
 
 
-var a;
+
+
 
 
 a = function() { "use strict"; return { foo: 0, foo : 1 }};

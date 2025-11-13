@@ -7,6 +7,9 @@
 
 
 
+
+
+
 try {
     eval('new.target');
     assert.sameValue(false, true);
@@ -16,7 +19,7 @@ try {
 }
 
 
-assert.throws(SyntaxError, () => eval('new.target'));
+assertThrowsInstanceOf(() => eval('new.target'), SyntaxError);
 
 
 let ieval = eval;

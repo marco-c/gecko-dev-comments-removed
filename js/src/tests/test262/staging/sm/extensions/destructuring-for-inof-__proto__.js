@@ -10,6 +10,19 @@
 
 
 
+
+var gTestfile = 'destructuring-for-inof-__proto__.js';
+var BUGNUMBER = 963641;
+var summary =
+  "__proto__ should work in destructuring patterns as the targets of " +
+  "for-in/for-of loops";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function objectWithProtoProperty(v)
 {
   var obj = {};
@@ -71,5 +84,9 @@ function nested()
     assert.sameValue(target, String.prototype);
 }
 nested();
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

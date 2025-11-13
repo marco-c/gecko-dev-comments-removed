@@ -8,6 +8,9 @@
 
 
 
+
+
+
 if (typeof timeout == "function") {
     assert.sameValue(typeof timeout(), "number");
     assert.sameValue(typeof timeout(1), "undefined");

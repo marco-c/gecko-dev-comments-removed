@@ -6,15 +6,18 @@
 
 
 
+
+
+
 var obj = { method() { } };
-assert.throws(TypeError, () => {
+assertThrowsInstanceOf(() => {
     new obj.method;
-});
+}, TypeError);
 
 obj = { constructor() { } };
-assert.throws(TypeError, () => {
+assertThrowsInstanceOf(() => {
     new obj.constructor;
-});
+}, TypeError);
 
 
 reportCompare(0, 0);

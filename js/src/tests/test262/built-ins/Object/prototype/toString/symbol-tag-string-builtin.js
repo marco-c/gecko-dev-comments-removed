@@ -14,6 +14,7 @@
 
 
 
+
 var toString = Object.prototype.toString;
 
 var strIter = ''[Symbol.iterator]();

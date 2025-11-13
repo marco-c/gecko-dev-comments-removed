@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws(TypeError, function () {
   Iterator.prototype.find.call({ next: 0 }, () => true);
 });

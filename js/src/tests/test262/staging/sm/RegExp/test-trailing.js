@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1304737;
+var summary = "Trailing .* should not be ignored on matchOnly match.";
+
+print(BUGNUMBER + ": " + summary);
+
 function test(r, lastIndexIsZero) {
     r.lastIndex = 0;
     r.test("foo");
@@ -31,5 +37,6 @@ test(/f.*/, true);
 test(/f.*/g, false);
 test(/f.*/y, false);
 test(/f.*/gy, false);
+
 
 reportCompare(0, 0);

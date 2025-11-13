@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1145326;
+var summary = 'String.prototype.normalize error when normalization form parameter is not an atom';
+
+print(BUGNUMBER + ": " + summary);
+
 function test() {
   assert.sameValue("abc".normalize("NFKC".split("").join("")), "abc");
   assert.sameValue("abc".normalize("NFKCabc".replace("abc", "")), "abc");
@@ -18,5 +24,6 @@ if ("normalize" in String.prototype) {
   
   test();
 }
+
 
 reportCompare(0, 0);

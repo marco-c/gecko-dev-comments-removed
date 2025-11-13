@@ -10,42 +10,45 @@
 
 
 
-assert.throws(SyntaxError, () => eval(`var #a;`));
-assert.throws(SyntaxError, () => eval(`let #a;`));
-assert.throws(SyntaxError, () => eval(`const #a = 0;`));
-assert.throws(SyntaxError, () => eval(`function #a(){}`));
-assert.throws(SyntaxError, () => eval(`function f(#a){}`));
-
-
-assert.throws(SyntaxError, () => eval(String.raw`var #\u0061;`));
-assert.throws(SyntaxError, () => eval(String.raw`var #a\u0061;`));
-assert.throws(SyntaxError, () => eval(String.raw`let #\u0061;`));
-assert.throws(SyntaxError, () => eval(String.raw`let #a\u0061;`));
-assert.throws(SyntaxError, () => eval(String.raw`const #\u0061 = 0;`));
-assert.throws(SyntaxError, () => eval(String.raw`const #a\u0061 = 0;`));
-assert.throws(SyntaxError, () => eval(String.raw`function #\u0061(){}`));
-assert.throws(SyntaxError, () => eval(String.raw`function #a\u0061(){}`));
-assert.throws(SyntaxError, () => eval(String.raw`function f(#\u0061){}`));
-assert.throws(SyntaxError, () => eval(String.raw`function f(#a\u0061){}`));
 
 
 
-assert.throws(SyntaxError, () => eval(`#a: ;`));
+assertThrowsInstanceOf(() => eval(`var #a;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`let #a;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`const #a = 0;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`function #a(){}`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`function f(#a){}`), SyntaxError);
 
 
-assert.throws(SyntaxError, () => eval(String.raw`#\u0061: ;`));
-assert.throws(SyntaxError, () => eval(String.raw`#a\u0061: ;`));
+assertThrowsInstanceOf(() => eval(String.raw`var #\u0061;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`var #a\u0061;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`let #\u0061;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`let #a\u0061;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`const #\u0061 = 0;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`const #a\u0061 = 0;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`function #\u0061(){}`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`function #a\u0061(){}`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`function f(#\u0061){}`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`function f(#a\u0061){}`), SyntaxError);
 
 
 
-assert.throws(SyntaxError, () => eval(`#a = 0;`));
-assert.throws(SyntaxError, () => eval(`typeof #a;`));
+assertThrowsInstanceOf(() => eval(`#a: ;`), SyntaxError);
 
 
-assert.throws(SyntaxError, () => eval(String.raw`#\u0061 = 0;`));
-assert.throws(SyntaxError, () => eval(String.raw`#a\u0061 = 0;`));
-assert.throws(SyntaxError, () => eval(String.raw`typeof #\u0061;`));
-assert.throws(SyntaxError, () => eval(String.raw`typeof #a\u0061;`));
+assertThrowsInstanceOf(() => eval(String.raw`#\u0061: ;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`#a\u0061: ;`), SyntaxError);
+
+
+
+assertThrowsInstanceOf(() => eval(`#a = 0;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(`typeof #a;`), SyntaxError);
+
+
+assertThrowsInstanceOf(() => eval(String.raw`#\u0061 = 0;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`#a\u0061 = 0;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`typeof #\u0061;`), SyntaxError);
+assertThrowsInstanceOf(() => eval(String.raw`typeof #a\u0061;`), SyntaxError);
 
 
 

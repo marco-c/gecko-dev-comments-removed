@@ -11,6 +11,7 @@
 
 
 
+
 function f() {
   var outerX;
   { function x() {1} outerX = x; }

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert(Object.isExtensible(ArrayBuffer.prototype.transferToImmutable));
+
+reportCompare(0, 0);

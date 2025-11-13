@@ -9,6 +9,12 @@
 
 
 
+var BUGNUMBER = 1202134;
+var summary = "Return value should not be overwritten by finally block with normal execution.";
+
+print(BUGNUMBER + ": " + summary);
+
+
 
 var f, g, v;
 f = function*() {
@@ -309,5 +315,6 @@ assert.sameValue(v.done, false);
 v = g.return(44);
 assert.sameValue(v.value, 44);
 assert.sameValue(v.done, true);
+
 
 reportCompare(0, 0);

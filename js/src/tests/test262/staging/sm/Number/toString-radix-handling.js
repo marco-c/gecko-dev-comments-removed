@@ -10,13 +10,35 @@
 
 
 
-function test(r) {
-  assert.throws(RangeError, function() {
-    5..toString(r);
-  });
-}
 
+var BUGNUMBER = 647385;
+var summary =
+  "Number.prototype.toString should use ToInteger on the radix and should " +
+  "throw a RangeError if the radix is bad";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+function test(r)
+{
+  try
+  {
+    5..toString(r);
+    throw "should have thrown";
+  }
+  catch (e)
+  {
+    assert.sameValue(e instanceof RangeError, true, "expected a RangeError, got " + e);
+  }
+}
 test(Math.pow(2, 32) + 10);
 test(55);
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

@@ -11,6 +11,9 @@
 
 
 
+
+
+
 {
   let withMonthCode = Temporal.PlainMonthDay.from({
     calendar: "gregory",
@@ -39,7 +42,7 @@
     monthCode: "M01",
     day: 1,
   };
-  assert.throws(RangeError, () => Temporal.PlainMonthDay.from(fields));
+  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
 }
 
 
@@ -52,7 +55,7 @@
     month: 1,
     day: 1,
   };
-  assert.throws(RangeError, () => Temporal.PlainMonthDay.from(fields));
+  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
 }
 
 
@@ -64,7 +67,7 @@
     month: 2,
     day: 1,
   };
-  assert.throws(RangeError, () => Temporal.PlainMonthDay.from(fields));
+  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
 }
 
 

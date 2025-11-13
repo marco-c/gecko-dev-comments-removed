@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1184922;
+var summary = "iterator.next() should not be called when after iterator completes";
+
+print(BUGNUMBER + ": " + summary);
+
 var log;
 function reset() {
     log = "";
@@ -20,7 +26,6 @@ var obj = new Proxy({}, {
         else
             v = JSON.stringify(value);
         log += "set:" + name + "=" + v + ",";
-        return true;
     }
 });
 function createIterable(n) {
@@ -320,5 +325,6 @@ assert.sameValue(log,
          "next," +
          "next," +
          "set:r=[4],");
+
 
 reportCompare(0, 0);

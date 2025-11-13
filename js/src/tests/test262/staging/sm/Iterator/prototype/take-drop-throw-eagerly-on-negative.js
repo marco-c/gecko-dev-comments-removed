@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 const iter = [].values();
 const methods = [
   value => iter.take(value),
@@ -20,10 +24,10 @@ const methods = [
 ];
 
 for (const method of methods) {
-  assert.throws(RangeError, () => method(-1));
-  assert.throws(RangeError, () => method(-Infinity));
-  assert.throws(RangeError, () => method(NaN));
-  assert.throws(RangeError, () => method(-NaN));
+  assertThrowsInstanceOf(() => method(-1), RangeError);
+  assertThrowsInstanceOf(() => method(-Infinity), RangeError);
+  assertThrowsInstanceOf(() => method(NaN), RangeError);
+  assertThrowsInstanceOf(() => method(-NaN), RangeError);
 
   method(-0);
   method(-0.9);

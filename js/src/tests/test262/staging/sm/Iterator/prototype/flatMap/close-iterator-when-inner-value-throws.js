@@ -16,6 +16,10 @@
 
 
 
+
+
+
+
 class TestIterator extends Iterator {
   next() {
     return {done: false, value: 0};
@@ -44,7 +48,7 @@ const iter = new TestIterator();
 const mapped = iter.flatMap(x => new InnerIterator());
 
 assert.sameValue(iter.closed, false);
-assert.throws(TestError, () => mapped.next());
+assertThrowsInstanceOf(() => mapped.next(), TestError);
 assert.sameValue(iter.closed, true);
 
 

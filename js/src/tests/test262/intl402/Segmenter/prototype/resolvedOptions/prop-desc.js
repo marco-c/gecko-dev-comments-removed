@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(
   typeof Intl.Segmenter.prototype.resolvedOptions,
   "function",

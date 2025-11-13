@@ -18,6 +18,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype, 'map', {
   writable: true,
   enumerable: false,

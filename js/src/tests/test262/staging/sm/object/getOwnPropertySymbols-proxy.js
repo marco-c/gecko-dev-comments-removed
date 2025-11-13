@@ -11,6 +11,8 @@
 
 
 
+
+
 var symbols = [Symbol(), Symbol("moon"), Symbol.for("sun"), Symbol.iterator];
 var hits = 0;
 
@@ -29,7 +31,7 @@ function OwnKeysProxy() {
     return new Proxy({}, new HandlerProxy);
 }
 
-assert.compareArray(Object.getOwnPropertySymbols(new OwnKeysProxy), symbols);
+assert.deepEqual(Object.getOwnPropertySymbols(new OwnKeysProxy), symbols);
 assert.sameValue(hits, 1);
 
 

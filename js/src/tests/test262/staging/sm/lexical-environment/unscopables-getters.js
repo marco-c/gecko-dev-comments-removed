@@ -11,6 +11,7 @@
 
 
 
+
 let hit1 = 0;
 let x = "global x";
 let env1 = {
@@ -27,7 +28,7 @@ assert.sameValue(hit1, 1);
 
 function Fit() {}
 with ({x: 0, get [Symbol.unscopables]() { throw new Fit; }})
-    assert.throws(Fit, () => x);
+    assertThrowsInstanceOf(() => x, Fit);
 
 
 let hit2 = 0;
@@ -46,7 +47,7 @@ assert.sameValue(hit2, 1);
 
 
 with ({x: 0, [Symbol.unscopables]: {get x() { throw new Fit; }}})
-    assert.throws(Fit, () => x);
+    assertThrowsInstanceOf(() => x, Fit);
 
 
 reportCompare(0, 0);

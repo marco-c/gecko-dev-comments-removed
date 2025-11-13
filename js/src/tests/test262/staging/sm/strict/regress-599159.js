@@ -9,12 +9,15 @@
 
 
 
+
+
+
 function test(makeNonArray) {
     function C() {}
     C.prototype = []
     if (makeNonArray)
         C.prototype.constructor = C
-    var c = new C();
+    c = new C();
     c.push("foo");
     return c.length
 }

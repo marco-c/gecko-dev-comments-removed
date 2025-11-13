@@ -10,6 +10,8 @@
 
 
 
+
+
 var src = [1, 2, 3], copy = Array.from(src);
 assert.sameValue(copy === src, false);
 assert.sameValue(Array.isArray(copy), true);

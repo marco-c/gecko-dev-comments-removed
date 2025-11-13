@@ -12,6 +12,10 @@
 
 
 
+
+
+
+
 const propDesc = Reflect.getOwnPropertyDescriptor(Iterator.prototype, 'every');
 assert.sameValue(typeof propDesc.value, 'function');
 assert.sameValue(propDesc.writable, true);

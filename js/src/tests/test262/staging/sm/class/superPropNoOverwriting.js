@@ -6,6 +6,9 @@
 
 
 
+
+
+
 class X {
     constructor() {
         Object.defineProperty(this, "prop1", {
@@ -50,16 +53,16 @@ class X {
 
 var x = new X();
 
-assert.throws(TypeError, () => x.f1());
+assertThrowsInstanceOf(() => x.f1(), TypeError);
 assert.sameValue(x.prop1, 1);
 
-assert.throws(TypeError, () => x.f2());
+assertThrowsInstanceOf(() => x.f2(), TypeError);
 assert.sameValue(x.prop2, 15);
 
-assert.throws(TypeError, () => x.f3());
+assertThrowsInstanceOf(() => x.f3(), TypeError);
 assert.sameValue(x.prop3, undefined);
 
-assert.throws(TypeError, () => x.f4());
+assertThrowsInstanceOf(() => x.f4(), TypeError);
 assert.sameValue(x.prop4, 20);
 
 

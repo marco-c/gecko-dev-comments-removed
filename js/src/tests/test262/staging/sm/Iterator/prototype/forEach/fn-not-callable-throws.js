@@ -11,16 +11,20 @@
 
 
 
+
+
+
+
 const iter = [].values();
 
-assert.throws(TypeError, () => iter.forEach());
-assert.throws(TypeError, () => iter.forEach(undefined));
-assert.throws(TypeError, () => iter.forEach(null));
-assert.throws(TypeError, () => iter.forEach(0));
-assert.throws(TypeError, () => iter.forEach(false));
-assert.throws(TypeError, () => iter.forEach(''));
-assert.throws(TypeError, () => iter.forEach(Symbol('')));
-assert.throws(TypeError, () => iter.forEach({}));
+assertThrowsInstanceOf(() => iter.forEach(), TypeError);
+assertThrowsInstanceOf(() => iter.forEach(undefined), TypeError);
+assertThrowsInstanceOf(() => iter.forEach(null), TypeError);
+assertThrowsInstanceOf(() => iter.forEach(0), TypeError);
+assertThrowsInstanceOf(() => iter.forEach(false), TypeError);
+assertThrowsInstanceOf(() => iter.forEach(''), TypeError);
+assertThrowsInstanceOf(() => iter.forEach(Symbol('')), TypeError);
+assertThrowsInstanceOf(() => iter.forEach({}), TypeError);
 
 
 reportCompare(0, 0);

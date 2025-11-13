@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var argsContent;
 
 function argsWithNewTarget(foo) {

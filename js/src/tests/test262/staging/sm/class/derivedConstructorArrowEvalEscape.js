@@ -6,6 +6,9 @@
 
 
 
+
+
+
 let arrow;
 
 class foo extends class { } {

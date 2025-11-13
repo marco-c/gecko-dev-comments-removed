@@ -7,6 +7,8 @@
 
 
 
+
+
 function assertStringify(v, expect)
 {
   assert.sameValue(JSON.stringify(v), expect);
@@ -87,5 +89,9 @@ assertStringify(x, '[1]');
 var X = function() { this.a = "b" };
 X.prototype = { c: "d" };
 assertStringify(new X(), '{"a":"b"}');
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

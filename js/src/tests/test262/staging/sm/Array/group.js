@@ -7,6 +7,8 @@
 
 
 
+
+
 function isNeg(x) {
   if (Object.is(x, -0) || x < 0) {
     return true;
@@ -39,14 +41,14 @@ function isNeg(x) {
   assert.deepEqual(negMappedArray.get(0), a1);
   assert.deepEqual(negMappedArray.size, 1);
 
-  assert.throws(TypeError, () => Object.groupBy([], undefined));
-  assert.throws(TypeError, () => Object.groupBy([], null));
-  assert.throws(TypeError, () => Object.groupBy([], 0));
-  assert.throws(TypeError, () => Object.groupBy([], ""));
-  assert.throws(TypeError, () => Map.groupBy([], undefined));
-  assert.throws(TypeError, () => Map.groupBy([], null));
-  assert.throws(TypeError, () => Map.groupBy([], 0));
-  assert.throws(TypeError, () => Map.groupBy([], ""));
+  assertThrowsInstanceOf(() => Object.groupBy([], undefined), TypeError);
+  assertThrowsInstanceOf(() => Object.groupBy([], null), TypeError);
+  assertThrowsInstanceOf(() => Object.groupBy([], 0), TypeError);
+  assertThrowsInstanceOf(() => Object.groupBy([], ""), TypeError);
+  assertThrowsInstanceOf(() => Map.groupBy([], undefined), TypeError);
+  assertThrowsInstanceOf(() => Map.groupBy([], null), TypeError);
+  assertThrowsInstanceOf(() => Map.groupBy([], 0), TypeError);
+  assertThrowsInstanceOf(() => Map.groupBy([], ""), TypeError);
 }
 
 const array = [ 'test' ];
@@ -88,8 +90,8 @@ Object.defineProperty(Object.prototype, "foo", {
 Object.groupBy([1, 2, 3], () => 'foo');
 
 
-let count = 0;
-const p = Object.groupBy([1], () => ({ toString() { count++; return 10 } }));
+count = 0;
+p = Object.groupBy([1], () => ({ toString() { count++; return 10 } }));
 assert.sameValue(count, 1);
 Map.groupBy([1], () => ({ toString() { count++; return 10 } }));
 assert.sameValue(count, 1);

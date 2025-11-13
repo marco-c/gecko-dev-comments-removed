@@ -14,6 +14,7 @@
 
 
 
+
 assert.sameValue(
   typeof FinalizationRegistry, 'function',
   'typeof FinalizationRegistry is function'

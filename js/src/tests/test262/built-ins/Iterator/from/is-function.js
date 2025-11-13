@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(typeof Iterator.from, 'function', 'The value of `typeof Iterator.from` is "function"');
 
 reportCompare(0, 0);

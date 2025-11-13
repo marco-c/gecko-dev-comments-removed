@@ -8,6 +8,7 @@
 
 
 
+
 {
   function f() { return "inner"; }
 }

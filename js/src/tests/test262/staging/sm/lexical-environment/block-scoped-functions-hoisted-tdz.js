@@ -9,20 +9,33 @@
 
 
 
-assert.throws(ReferenceError, function() {
-  {
-    let y = f();
-    function f() { y; }
-  }
-});
+var log = "";
+try {
+  (function() {
+    {
+      let y = f();
+      function f() { y; }
+    }
+  })()
+} catch (e) {
+  log += e instanceof ReferenceError;
+}
 
-assert.throws(ReferenceError, function() {
-  switch (1) {
-    case 0:
-      let x;
-    case 1:
-      (function() { x; })();
+try {
+  function f() {
+    switch (1) {
+      case 0:
+        let x;
+      case 1:
+        (function() { x; })();
+    }
   }
-});
+  f();
+} catch (e) {
+  log += e instanceof ReferenceError;
+}
+
+assert.sameValue(log, "truetrue");
+
 
 reportCompare(0, 0);

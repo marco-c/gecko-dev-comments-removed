@@ -10,6 +10,18 @@
 
 
 
+
+var gTestfile = 'stringify-call-replacer-once.js';
+
+var BUGNUMBER = 584909;
+var summary = "Call replacer function exactly once per value";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var factor = 1;
 function replacer(k, v)
 {
@@ -23,5 +35,9 @@ var obj = { a: 1, b: 2, c: 3 };
 
 assert.sameValue(JSON.stringify(obj, replacer), '{"a":2,"b":6,"c":12}');
 assert.sameValue(factor, 4);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

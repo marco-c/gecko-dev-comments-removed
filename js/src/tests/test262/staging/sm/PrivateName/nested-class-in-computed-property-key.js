@@ -6,6 +6,9 @@
 
 
 
+
+
+
 let capturedPrivateAccess;
 class A {
   

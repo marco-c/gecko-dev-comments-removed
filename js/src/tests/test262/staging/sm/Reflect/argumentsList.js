@@ -12,11 +12,17 @@
 
 
 
-assert.throws(TypeError, () => Reflect.apply(Math.min, undefined));
-assert.throws(TypeError, () => Reflect.construct(Object));
+
+
+assertThrowsInstanceOf(() => Reflect.apply(Math.min, undefined),  
+                       TypeError);
+assertThrowsInstanceOf(() => Reflect.construct(Object),  
+                       TypeError);
 for (var primitive of SOME_PRIMITIVE_VALUES) {
-    assert.throws(TypeError, () => Reflect.apply(Math.min, undefined, primitive));
-    assert.throws(TypeError, () => Reflect.construct(Object, primitive));
+    assertThrowsInstanceOf(() => Reflect.apply(Math.min, undefined, primitive),
+                           TypeError);
+    assertThrowsInstanceOf(() => Reflect.construct(Object, primitive),
+                           TypeError);
 }
 
 
@@ -64,10 +70,14 @@ function getArgs(...args) {
     return args;
 }
 for (var method of BOTH) {
-    assert.compareArray(method(getArgs, undefined, {length: 0}), []);
-    assert.compareArray(method(getArgs, undefined, {length: 1, "0": "zero"}), ["zero"]);
-    assert.compareArray(method(getArgs, undefined, {length: 2}), [undefined, undefined]);
-    assert.compareArray(method(getArgs, undefined, function (a, b, c) {}), [undefined, undefined, undefined]);
+    assert.deepEqual(method(getArgs, undefined, {length: 0}),
+                 []);
+    assert.deepEqual(method(getArgs, undefined, {length: 1, "0": "zero"}),
+                 ["zero"]);
+    assert.deepEqual(method(getArgs, undefined, {length: 2}),
+                 [undefined, undefined]);
+    assert.deepEqual(method(getArgs, undefined, function (a, b, c) {}),
+                 [undefined, undefined, undefined]);
 }
 
 
@@ -79,7 +89,8 @@ var funnyArgs = {
     next() { throw "FAIL 2"; }
 };
 for (var method of BOTH) {
-    assert.compareArray(method(getArgs, undefined, funnyArgs), ["zero", "one"]);
+    assert.deepEqual(method(getArgs, undefined, funnyArgs),
+                 ["zero", "one"]);
 }
 
 
@@ -101,7 +112,8 @@ args = {
 };
 for (var method of BOTH) {
     log = "";
-    assert.compareArray(method(getArgs, undefined, args), ["zero"]);
+    assert.deepEqual(method(getArgs, undefined, args),
+                 ["zero"]);
     assert.sameValue(log, "L0");
 }
 

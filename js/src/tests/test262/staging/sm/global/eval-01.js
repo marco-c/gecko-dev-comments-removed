@@ -10,6 +10,7 @@
 
 
 
+
 var a = 9;
 var global = this;
 

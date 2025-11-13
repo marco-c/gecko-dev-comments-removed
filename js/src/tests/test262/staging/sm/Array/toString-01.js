@@ -10,6 +10,17 @@
 
 
 
+
+
+var BUGNUMBER = 562446;
+var summary = 'ES5: Array.prototype.toString';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var o;
 
 o = { join: function() { assert.sameValue(arguments.length, 0); return "ohai"; } };
@@ -38,5 +49,9 @@ catch (e)
            "expected thrown e === 42 when calling [].toString on an object " +
            "with a join getter that throws, got " + e);
 }
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

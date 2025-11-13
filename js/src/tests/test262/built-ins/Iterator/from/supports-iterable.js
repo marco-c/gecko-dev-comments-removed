@@ -11,6 +11,7 @@
 
 
 
+
 assert.compareArray(Array.from(Iterator.from([0, 1, 2, 3])), [0, 1, 2, 3]);
 assert.compareArray(Array.from(Iterator.from(new String('str'))), ['s', 't', 'r']);
 

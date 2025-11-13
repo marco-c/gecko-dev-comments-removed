@@ -11,6 +11,15 @@
 
 
 
+var gTestfile = "eval-has-lexical-environment.js"
+
+var BUGNUMBER = 1193583;
+var summary =
+  "Eval always has a lexical environment";
+
+
+
+
 
 eval(`
 let foo = 42;
@@ -37,5 +46,7 @@ assert.sameValue(f(), 84);
 
 
 assert.sameValue(bar, 84);
+
+print("Tests complete");
 
 reportCompare(0, 0);

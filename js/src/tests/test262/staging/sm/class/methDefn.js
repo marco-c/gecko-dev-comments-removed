@@ -9,10 +9,21 @@
 
 
 
+var BUGNUMBER = 924672;
+var summary = 'Method Definitions'
+
+print(BUGNUMBER + ": " + summary);
+
+
 function syntaxError (script) {
-    assert.throws(SyntaxError, function() {
+    try {
         Function(script);
-    });
+    } catch (e) {
+        if (e instanceof SyntaxError) {
+            return;
+        }
+    }
+    throw new Error('Expected syntax error: ' + script);
 }
 
 
@@ -35,8 +46,6 @@ syntaxError("b = {a() => 0}");
 syntaxError("b = {a() void 0}");
 syntaxError("b = {a() 1}");
 syntaxError("b = {a() false}");
-
-var b;
 
 b = {a(){return 5;}};
 assert.sameValue(b.a(), 5);
@@ -166,7 +175,7 @@ var obj = {
     meth : 3
 }
 assert.sameValue(obj.meth, 3);
-assert.throws(TypeError, function() {obj.meth();});
+assertThrowsInstanceOf(function() {obj.meth();}, TypeError);
 
 
 a = {b(c){"use strict";return c;}};
@@ -200,6 +209,7 @@ testStrictMode();
 
 
 assert.sameValue(({ method() {} }).method.name, "method");
-assert.throws(ReferenceError, function() {({ method() { method() } }).method() });
+assertThrowsInstanceOf(function() {({ method() { method() } }).method() }, ReferenceError);
+
 
 reportCompare(0, 0);

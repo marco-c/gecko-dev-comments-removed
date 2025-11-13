@@ -7,6 +7,8 @@
 
 
 
+
+
 var foo;
 
 function* gen() {
@@ -17,7 +19,7 @@ function* gen() {
 }
 
 var j = 0;
-for (var i of gen())
+for (i of gen())
     assert.sameValue(i, j++);
 
 

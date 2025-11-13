@@ -13,6 +13,8 @@
 
 
 
+
+
 assert.sameValue(testLenientAndStrict('with (1) {}',
                               completesNormally,
                               raisesException(SyntaxError)),

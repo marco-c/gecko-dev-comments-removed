@@ -12,6 +12,17 @@
 
 
 
+var BUGNUMBER = 620130;
+var summary =
+  "Calls to eval with same code + varying strict mode of script containing " +
+  "eval == fail";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function t(code) { return eval(code); }
 
 assert.sameValue(t("'use strict'; try { eval('with (5) 17'); } catch (e) { 'threw'; }"),
@@ -20,5 +31,9 @@ assert.sameValue(t("try { eval('with (5) 17'); } catch (e) { 'threw'; }"),
          17);
 assert.sameValue(t("'use strict'; try { eval('with (5) 17'); } catch (e) { 'threw'; }"),
          "threw");
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

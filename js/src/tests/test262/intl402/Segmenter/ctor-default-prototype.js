@@ -12,6 +12,7 @@
 
 
 
+
 var obj = new Intl.Segmenter();
 
 assert.sameValue(Object.getPrototypeOf(obj), Intl.Segmenter.prototype);

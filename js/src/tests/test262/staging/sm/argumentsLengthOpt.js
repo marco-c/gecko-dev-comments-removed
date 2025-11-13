@@ -10,6 +10,7 @@
 
 
 
+
 function f1() {
     return arguments.length;
 }

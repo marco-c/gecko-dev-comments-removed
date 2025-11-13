@@ -18,6 +18,12 @@
 
 
 
+
+
+
+
+
+
 assert.sameValue(new Date("1997-03-08 1:1:1.01").getTime(),
          new Date("1997-03-08T01:01:01.01").getTime());
 assert.sameValue(new Date("1997-03-08 11:19:20").getTime(),
@@ -64,5 +70,9 @@ assert.sameValue(new Date("1997-03-08T1:1:01").getTime(),
          new Date(NaN).getTime());
 assert.sameValue(new Date("1997-03-08T1:1:1").getTime(),
          new Date(NaN).getTime());
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

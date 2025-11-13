@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var cases = [
     {sym: Symbol(), str: "Symbol()"},
     {sym: Symbol("ok"), str: "Symbol(ok)"},
@@ -28,7 +31,7 @@ var nonsymbols = [
     undefined, null, "not-ok", new String("still-not-ok"), {}, []
 ];
 for (var nonsym of nonsymbols)
-    assert.throws(TypeError, () => Symbol.prototype.toString.call(nonsym));
+    assertThrowsInstanceOf(() => Symbol.prototype.toString.call(nonsym), TypeError);
 
 
 reportCompare(0, 0);

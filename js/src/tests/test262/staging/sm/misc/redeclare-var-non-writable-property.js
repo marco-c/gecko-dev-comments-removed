@@ -10,6 +10,23 @@
 
 
 
+
+
+var BUGNUMBER = 539488;
+var summary =
+  '|var| statements for existing, read-only/permanent properties should not ' +
+  'be errors';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var undefined;
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

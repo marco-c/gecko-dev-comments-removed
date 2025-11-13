@@ -14,6 +14,19 @@
 
 
 
+var gTestfile = 'prototype-constructor-identity.js';
+
+var BUGNUMBER = 896116;
+var summary =
+  "Typed array prototypes/constructors should be largely empty, inheriting "
+  "most functionality from %TypedArray% and %TypedArray%.prototype";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
 assert.sameValue(TypedArray !== Function.prototype, true,
@@ -49,5 +62,9 @@ anyTypedArrayConstructors.forEach(function(ctor) {
   assert.sameValue(Object.getPrototypeOf(proto), TypedArray.prototype,
            "prototype should inherit from %TypedArray%.prototype");
 });
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

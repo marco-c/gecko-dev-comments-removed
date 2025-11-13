@@ -7,11 +7,13 @@
 
 
 
+
+
 if (typeof window === "undefined") {
     
     
     
-    var window = this;
+    window = this;
 }
 
 var res = false;
@@ -26,5 +28,6 @@ Object.defineProperty(this, "foo", {configurable: true,
 	assert.sameValue(window.foo, true, "getter");
     }
 })();
+
 
 reportCompare(0, 0);

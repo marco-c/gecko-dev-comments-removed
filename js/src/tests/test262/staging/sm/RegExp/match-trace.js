@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 887016;
+var summary = "Trace RegExp.prototype[@@match] behavior.";
+
+print(BUGNUMBER + ": " + summary);
+
 var n;
 var log;
 var target;
@@ -150,5 +156,6 @@ assert.sameValue(JSON.stringify(ret), `["abc"]`);
 assert.sameValue(log,
          "get:flags," +
          "get:exec,call:exec,");
+
 
 reportCompare(0, 0);

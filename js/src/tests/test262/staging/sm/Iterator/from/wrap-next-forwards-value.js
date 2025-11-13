@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 class Iter {
   next(value) {
     assert.sameValue(arguments.length, 0);

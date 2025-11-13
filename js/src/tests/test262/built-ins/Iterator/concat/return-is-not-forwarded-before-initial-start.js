@@ -11,7 +11,10 @@
 
 let testIterator = {
   next() {
-    throw new Test262Error();
+    return {
+      done: false,
+      value: 1,
+    };
   },
   return() {
     throw new Test262Error();

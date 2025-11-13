@@ -14,6 +14,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype.forEach, 'length', {
   value: 1,
   writable: false,

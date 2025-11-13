@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1135377;
+var summary = "Implement RegExp unicode flag -- empty class should not match anything.";
+
+print(BUGNUMBER + ": " + summary);
+
 assert.sameValue(/[]/u.exec("A"),
          null);
 assert.sameValue(/[]/u.exec("\uD83D"),
@@ -26,5 +31,6 @@ assert.compareArray(/[^]/u.exec("\uDC38"),
               ["\uDC38"]);
 assert.compareArray(/[^]/u.exec("\uD83D\uDC38"),
               ["\uD83D\uDC38"]);
+
 
 reportCompare(0, 0);

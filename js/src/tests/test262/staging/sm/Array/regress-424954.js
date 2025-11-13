@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 424954;
 var summary = 'Do not crash with [].concat(null)';
 var actual = 'No Crash';

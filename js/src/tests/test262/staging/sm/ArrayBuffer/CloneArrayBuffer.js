@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1264941;
+var summary = 'CloneArrayBuffer should be called with byteLength of source typedArray';
+
+print(BUGNUMBER + ": " + summary);
+
 function test(ctor, byteLength) {
   var abuf = new ctor(byteLength);
   assert.sameValue(abuf.byteLength, byteLength);
@@ -35,5 +41,6 @@ test(ArrayBuffer, 128);
 class MyArrayBuffer extends ArrayBuffer {}
 test(MyArrayBuffer, 16);
 test(MyArrayBuffer, 128);
+
 
 reportCompare(0, 0);

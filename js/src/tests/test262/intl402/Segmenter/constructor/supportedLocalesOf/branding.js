@@ -10,6 +10,7 @@
 
 
 
+
 const supportedLocalesOf = Intl.Segmenter.supportedLocalesOf;
 
 assert.sameValue(typeof supportedLocalesOf, "function");

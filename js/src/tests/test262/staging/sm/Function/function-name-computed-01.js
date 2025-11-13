@@ -6,6 +6,9 @@
 
 
 
+
+
+
 var obj = {
   ["func"]: function() {},
   ["genFunc"]: function*() {},
@@ -47,7 +50,7 @@ let dummy = class {
   set ["setter"](x) {}
 };
 
-let dum = new dummy();
+dum = new dummy();
 
 assert.sameValue(dum.func.name, "func");
 assert.sameValue(dum.genFunc.name, "genFunc");

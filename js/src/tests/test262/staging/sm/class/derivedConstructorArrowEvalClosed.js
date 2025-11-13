@@ -7,11 +7,13 @@
 
 
 
+
+
 new class extends class { } {
     constructor() {
         let a1 = () => this;
         let a2 = (() => super());
-        assert.throws(ReferenceError, a1);
+        assertThrowsInstanceOf(a1, ReferenceError);
         assert.sameValue(a2(), a1());
     }
 }();

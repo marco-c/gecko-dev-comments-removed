@@ -26,6 +26,7 @@
 
 
 
+
 var finalizationRegistry = new FinalizationRegistry(function() {});
 assert.sameValue(Object.isExtensible(finalizationRegistry), true);
 

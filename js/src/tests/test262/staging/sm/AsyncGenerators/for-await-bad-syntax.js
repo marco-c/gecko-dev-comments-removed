@@ -13,10 +13,10 @@ var AsyncGenerator = async function*(){}.constructor;
 
 function assertSyntaxError(code) {
     var functionCode = `async function* f() { ${code} }`;
-    assert.throws(SyntaxError, () => AsyncGenerator(code), "AsyncGenerator:" + code);
-    assert.throws(SyntaxError, () => eval(functionCode), "eval:" + functionCode);
+    assertThrowsInstanceOf(() => AsyncGenerator(code), SyntaxError, "AsyncGenerator:" + code);
+    assertThrowsInstanceOf(() => eval(functionCode), SyntaxError, "eval:" + functionCode);
     var ieval = eval;
-    assert.throws(SyntaxError, () => ieval(functionCode), "indirect eval:" + functionCode);
+    assertThrowsInstanceOf(() => ieval(functionCode), SyntaxError, "indirect eval:" + functionCode);
 }
 
 assertSyntaxError(`for await (;;) ;`);
@@ -30,5 +30,6 @@ for (var decl of ["", "var", "let", "const"]) {
         assertSyntaxError(`for await (${decl} ${head} in null) ;`);
     }
 }
+
 
 reportCompare(0, 0);

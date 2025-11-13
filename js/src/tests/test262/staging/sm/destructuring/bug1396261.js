@@ -11,6 +11,9 @@
 
 
 
+
+
+
 [{a: 0}.x] = [];
 [[0].x] = [];
 
@@ -27,10 +30,10 @@
 ({...[0].x} = {});
 
 
-assert.throws(SyntaxError, () => Function(`[{a = 0}.x] = [];`));
-assert.throws(SyntaxError, () => Function(`[...{a = 0}.x] = [];`));
-assert.throws(SyntaxError, () => Function(`({a: {b = 0}.x} = {});`));
-assert.throws(SyntaxError, () => Function(`({...{b = 0}.x} = {});`));
+assertThrowsInstanceOf(() => Function(`[{a = 0}.x] = [];`), SyntaxError);
+assertThrowsInstanceOf(() => Function(`[...{a = 0}.x] = [];`), SyntaxError);
+assertThrowsInstanceOf(() => Function(`({a: {b = 0}.x} = {});`), SyntaxError);
+assertThrowsInstanceOf(() => Function(`({...{b = 0}.x} = {});`), SyntaxError);
 
 
 (function() {

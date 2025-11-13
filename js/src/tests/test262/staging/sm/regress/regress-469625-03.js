@@ -9,12 +9,29 @@
 
 
 
+
+
+
 var BUGNUMBER = 469625;
 var summary = 'Do not assert: script->objectsOffset != 0';
+var actual = '';
+var expect = '';
 
-function f(x) {
-  var [a, b, [c0, c1]] = [x, x, x];
+
+test();
+
+
+function test()
+{
+  function f(x) {
+    var [a, b, [c0, c1]] = [x, x, x];
+  }
+  assertThrowsInstanceOfWithMessageCheck(
+    () => f(null),
+    TypeError,
+    message => /.*\[\.\.\.\]\[Symbol.iterator\]\(\)\.next\(\)\.value is null/.exec(message) !== null
+  );
 }
-assert.throws(TypeError, () => f(null));
+
 
 reportCompare(0, 0);

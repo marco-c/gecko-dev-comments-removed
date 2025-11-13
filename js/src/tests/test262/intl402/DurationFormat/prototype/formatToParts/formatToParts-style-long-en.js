@@ -9,6 +9,7 @@
 
 
 
+
 function* zip(a, b) {
   for (let i = 0; i < a.length; ++i) {
     yield [i, a[i], b[i]];

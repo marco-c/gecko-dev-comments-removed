@@ -11,6 +11,8 @@
 
 
 
+
+
 var d = Array.from.call(Date, ["A", "B"]);
 assert.sameValue(Array.isArray(d), false);
 assert.sameValue(Object.prototype.toString.call(d), "[object Date]");

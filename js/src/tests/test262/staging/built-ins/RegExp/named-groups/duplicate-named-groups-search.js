@@ -6,9 +6,10 @@
 
 
 
-assert.sameValue(3, 'abcxyz'.search(/(?<a>x)|(?<a>y)/));
-assert.sameValue(3, 'abcxyz'.search(/(?<a>y)|(?<a>x)/));
-assert.sameValue(1, 'aybcxyz'.search(/(?<a>x)|(?<a>y)/));
-assert.sameValue(1, 'aybcxyz'.search(/(?<a>y)|(?<a>x)/));
+
+assert.compareArray(3, 'abcxyz'.search(/(?<a>x)|(?<a>y)/));
+assert.compareArray(3, 'abcxyz'.search(/(?<a>y)|(?<a>x)/));
+assert.compareArray(1, 'aybcxyz'.search(/(?<a>x)|(?<a>y)/));
+assert.compareArray(1, 'aybcxyz'.search(/(?<a>y)|(?<a>x)/));
 
 reportCompare(0, 0);

@@ -15,14 +15,16 @@
 
 
 
+
+
 var JSMSG_DEPRECATED_OCTAL_LITERAL = "\"0\"-prefixed octal literals are deprecated; use the \"0o\" prefix instead";
 var JSMSG_DEPRECATED_OCTAL_ESCAPE = "octal escape sequences can't be used in untagged template literals or in strict mode code";
 var JSMSG_DEPRECATED_EIGHT_OR_NINE_ESCAPE = "the escapes \\8 and \\9 can't be used in untagged template literals or in strict mode code";
 
 function checkPrologue(val, msg) {
-  assert.throws(
-    SyntaxError,
+  assertThrowsInstanceOfWithMessage(
     () => eval('function invalid () { "' + val + '"; "use strict"; }'),
+    SyntaxError,
     msg
   );
 }
@@ -32,9 +34,9 @@ checkPrologue('\\222', JSMSG_DEPRECATED_OCTAL_ESCAPE);
 checkPrologue('\\222\\8', JSMSG_DEPRECATED_EIGHT_OR_NINE_ESCAPE);
 
 function checkAfter(val, msg) {
-  assert.throws(
-    SyntaxError,
+  assertThrowsInstanceOfWithMessage(
     () => eval('function invalid () { "use strict" \n ' + val + ' }'),
+    SyntaxError,
     msg
   );
 }

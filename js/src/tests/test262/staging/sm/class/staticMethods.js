@@ -7,6 +7,9 @@
 
 
 
+
+
+
 class X {
     static count() { return ++this.hits; }
     constructor() { }

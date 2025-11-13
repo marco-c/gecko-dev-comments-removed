@@ -11,6 +11,10 @@
 
 
 
+
+
+
+
 let iterator;
 function mapper(x) {
   let n = iterator.next();
@@ -18,7 +22,7 @@ function mapper(x) {
 }
 iterator = [0].values().map(mapper);
 
-assert.throws(TypeError, iterator.next);
+assertThrowsInstanceOf(iterator.next, TypeError);
 
 
 reportCompare(0, 0);

@@ -7,10 +7,12 @@
 
 
 
+
+
 const testArray = [1n];
 for (const constructor of anyTypedArrayConstructors) {
-    assert.throws(TypeError, () => new constructor(testArray));
-    assert.throws(TypeError, () => new constructor(testArray.values()));
+    assertThrowsInstanceOf(() => new constructor(testArray), TypeError);
+    assertThrowsInstanceOf(() => new constructor(testArray.values()), TypeError);
 }
 
 

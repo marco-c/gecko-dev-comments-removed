@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1021835;
+var summary = "Returning non-object from @@iterator should throw";
+
+print(BUGNUMBER + ": " + summary);
+
 let primitives = [
     1,
     true,
@@ -26,7 +32,8 @@ for (let primitive of primitives) {
             return primitive;
         }
     };
-    assert.throws(TypeError, () => f(...arg));
+    assertThrowsInstanceOf(() => f(...arg), TypeError);
 }
+
 
 reportCompare(0, 0);

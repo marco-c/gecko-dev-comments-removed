@@ -13,6 +13,10 @@
 
 
 
+
+
+
+
 const iterResult = {done: false, value: 1, testProperty: 'test'};
 class TestIterator extends Iterator {
   next() {

@@ -410,34 +410,12 @@ assert.deepEqual._compare = (function () {
 
 
 
-
-
-function assertThrowsValue(f, val, msg) {
-  try {
-    f();
-  } catch (exc) {
-    assert.sameValue(exc, val, msg);
-    return;
-  }
-
-  var fullmsg = "Assertion failed: expected exception, no exception thrown";
-  if (msg !== void 0) {
-    fullmsg += " - " + msg;
-  }
-  throw new Test262Error(fullmsg);
-}
-
-
-
-
-
-
-
-
-
+function assertFalse(a) { assertEq(a, false) }
+function assertTrue(a) { assertEq(a, true) }
+function assertNotEq(found, not_expected) { assertEq(Object.is(found, not_expected), false) }
 function assertIteratorResult(result, value, done) {
-    assert.sameValue(result.value, value);
-    assert.sameValue(result.done, done);
+    assert.deepEqual(result.value, value);
+    assertEq(result.done, done);
 }
 function assertIteratorNext(iter, value) {
     assertIteratorResult(iter.next(), value, false);

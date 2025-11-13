@@ -10,6 +10,7 @@
 
 
 
+
 (function() {
   assert.sameValue(typeof arguments, "object");
   { function arguments() {} }

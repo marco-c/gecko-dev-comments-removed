@@ -10,6 +10,19 @@
 
 
 
+
+
+var BUGNUMBER = 668024;
+var summary =
+  'Array.prototype.splice, when it deletes elements, should make sure any ' +
+  'deleted but not visited elements are suppressed from subsequent enumeration';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var arr = [0, 1, 2, 3, 4, 5, , 7];
 
 var seen = [];
@@ -47,5 +60,9 @@ if (sawOneBeforeThree)
   
   assert.sameValue(seen.indexOf("3"), -1);
 }
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

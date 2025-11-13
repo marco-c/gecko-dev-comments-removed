@@ -16,6 +16,10 @@
 
 
 
+
+
+
+
 let iter = [1, 2].values().drop(3);
 let result = iter.next();
 assert.sameValue(result.value, undefined);

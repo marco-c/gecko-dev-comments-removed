@@ -10,6 +10,17 @@
 
 
 
+
+
+var BUGNUMBER = 518663;
+var summary = 'Object.getOwnPropertyNames: function objects';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function two(a, b) { }
 
 assert.sameValue(Object.getOwnPropertyNames(two).indexOf("length") >= 0, true);
@@ -41,5 +52,10 @@ var bound3 = Function.prototype.bind
 
 assert.sameValue(Object.getOwnPropertyNames(bound3).indexOf("length") >= 0, true);
 assert.sameValue(bound3.length, 0);
+
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

@@ -12,6 +12,7 @@
 
 
 
+
 const segment = (new Intl.Segmenter()).segment("");
 assert.sameValue(
   typeof segment.containing,

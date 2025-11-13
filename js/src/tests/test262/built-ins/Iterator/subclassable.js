@@ -13,6 +13,7 @@
 
 
 
+
 class SubIterator extends Iterator {}
 
 assert.sameValue(

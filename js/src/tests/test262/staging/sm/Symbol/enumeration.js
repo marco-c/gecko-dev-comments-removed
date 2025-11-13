@@ -10,6 +10,8 @@
 
 
 
+
+
 var obj = {};
 obj[Symbol.for("moon")] = "sun";
 obj[Symbol("asleep")] = "awake";
@@ -53,7 +55,8 @@ var h = {
     }
 };
 p = new Proxy({}, h);
-assert.compareArray(Object.keys(p), ["a", "0"]);
-assert.compareArray(log, ["ownKeys", "gopd", "a", "gopd", "0"]);
+assert.deepEqual(Object.keys(p), ["a", "0"]);
+assert.deepEqual(log, ["ownKeys", "gopd", "a", "gopd", "0"]);
+
 
 reportCompare(0, 0);

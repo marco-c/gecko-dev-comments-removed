@@ -11,6 +11,16 @@
 
 
 
+var gTestfile = "getPrototypeOf.js";
+var BUGNUMBER = 888969;
+var summary = "Scripted proxies' [[GetPrototypeOf]] behavior";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 const log = [];
 
 function observe(obj)
@@ -37,7 +47,7 @@ p = rev.proxy;
 
 assert.sameValue(Object.getPrototypeOf(p), Object.prototype);
 rev.revoke();
-assert.throws(TypeError, () => Object.getPrototypeOf(p));
+assertThrowsInstanceOf(() => Object.getPrototypeOf(p), TypeError);
 
 
 
@@ -57,7 +67,8 @@ assertThrowsValue(() => Object.getPrototypeOf(p), 42);
 
 p = new Proxy({}, { getPrototypeOf: 17 });
 
-assert.throws(TypeError, () => Object.getPrototypeOf(p));
+assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                       TypeError);
 
 
 
@@ -143,34 +154,44 @@ p = new Proxy(typeTestingTarget, { getPrototypeOf() { return rval; } });
 function returnsPrimitives()
 {
   rval = undefined;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = true;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = false;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = 0.0;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = -0.0;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = 3.141592654;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = NaN;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = -Infinity;
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = "[[Prototype]] FOR REALZ";
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 
   rval = Symbol("[[Prototype]] FOR REALZ");
-  assert.throws(TypeError, () => Object.getPrototypeOf(p));
+  assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                         TypeError);
 }
 
 returnsPrimitives();
@@ -227,8 +248,8 @@ targetProto = null;
 
 var regex = /targetProto/;
 
-var act1 = () => log.push("act1");
-var act2 = () => log.push("act2");
+act1 = () => log.push("act1");
+act2 = () => log.push("act2");
 
 log.length = 0;
 assert.sameValue(Object.getPrototypeOf(p), null);
@@ -249,7 +270,8 @@ assert.sameValue(log[0], "act1 again");
 
 act1 = act2 = nop;
 rval = /a/;
-assert.throws(TypeError, () => Object.getPrototypeOf(p));
+assertThrowsInstanceOf(() => Object.getPrototypeOf(p),
+                       TypeError);
 
 
 
@@ -262,5 +284,9 @@ p = new Proxy(Object.preventExtensions(new Number(55)),
               { getPrototypeOf() { return Number.prototype; } });
 
 assert.sameValue(Object.getPrototypeOf(p), Number.prototype);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

@@ -19,6 +19,7 @@
 
 
 
+
 assert.sameValue(isConstructor(WeakRef), true, 'isConstructor(WeakRef) must return true');
 new WeakRef({})
   

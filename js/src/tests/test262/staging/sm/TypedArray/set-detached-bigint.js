@@ -6,6 +6,9 @@
 
 
 
+
+
+
 let ta = new BigInt64Array(10);
 
 let obj = {
@@ -21,7 +24,7 @@ let obj = {
 };
 
 
-assert.throws(SyntaxError, () => ta.set(obj));
+assertThrowsInstanceOf(() => ta.set(obj), SyntaxError);
 
 
 reportCompare(0, 0);

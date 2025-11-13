@@ -10,15 +10,18 @@
 
 
 
+
+
+
 var sym = Symbol();
 
 
-assert.throws(TypeError, () => sym());
-assert.throws(TypeError, () => Function.prototype.call.call(sym));
+assertThrowsInstanceOf(() => sym(), TypeError);
+assertThrowsInstanceOf(() => Function.prototype.call.call(sym), TypeError);
 
 
-assert.throws(TypeError, () => new sym());
-assert.throws(TypeError, () => new Symbol());
+assertThrowsInstanceOf(() => new sym(), TypeError);
+assertThrowsInstanceOf(() => new Symbol(), TypeError);
 
 
 reportCompare(0, 0);

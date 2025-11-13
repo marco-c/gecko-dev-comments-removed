@@ -9,6 +9,9 @@
 
 
 
+
+
+
 var obj = {};
 assert.sameValue(Object.getPrototypeOf(obj), Object.prototype);
 var proto = {};
@@ -22,11 +25,11 @@ assert.sameValue(Object.getPrototypeOf(obj), null);
 
 
 obj = {};
-assert.throws(TypeError, () => Reflect.setPrototypeOf(obj));
+assertThrowsInstanceOf(() => Reflect.setPrototypeOf(obj), TypeError);
 
 
 for (proto of [undefined, false, 0, 1.6, "that", Symbol.iterator]) {
-    assert.throws(TypeError, () => Reflect.setPrototypeOf(obj, proto));
+    assertThrowsInstanceOf(() => Reflect.setPrototypeOf(obj, proto), TypeError);
 }
 
 

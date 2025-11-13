@@ -13,6 +13,7 @@
 
 
 
+
 let iterator = (function* () {})();
 
 iterator.drop(0);

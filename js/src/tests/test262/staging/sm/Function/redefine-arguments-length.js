@@ -10,6 +10,20 @@
 
 
 
+
+var gTestfile = 'redefine-arguments-length.js';
+
+var BUGNUMBER = 539766;
+var summary =
+  "Object.defineProperty sets arguments.length without setting the " +
+  "length-overridden bit";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function test_JSOP_ARGCNT()
 {
   var length = "length";
@@ -50,5 +64,10 @@ function test_array_toString_sub_2()
   assert.sameValue([].toLocaleString.call(arguments), "1");
 }
 test_array_toString_sub_2(1, 2);
+
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

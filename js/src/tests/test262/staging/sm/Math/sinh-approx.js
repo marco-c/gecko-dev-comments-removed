@@ -7,6 +7,8 @@
 
 
 
+
+
 for (var i = -20; i < 20; i++)
     assertNear(Math.sinh(i), (Math.exp(i) - Math.exp(-i)) / 2);
 

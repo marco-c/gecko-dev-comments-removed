@@ -18,6 +18,7 @@
 
 
 
+
 assert.sameValue(typeof WeakRef.prototype.deref, 'function');
 
 var deref = WeakRef.prototype.deref;

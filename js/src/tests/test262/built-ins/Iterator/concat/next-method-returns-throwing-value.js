@@ -19,6 +19,13 @@
 
 
 
+
+
+
+
+
+
+
 let throwingIterator = {
   next() {
     return {
@@ -40,9 +47,10 @@ let iterable = {
 };
 
 let iterator = Iterator.concat(iterable);
+let iteratorResult = iterator.next();
 
 assert.throws(Test262Error, function() {
-  iterator.next();
+  iteratorResult.value;
 });
 
 reportCompare(0, 0);

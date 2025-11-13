@@ -11,6 +11,9 @@
 
 
 
+
+
+
 assert.sameValue(Error.isError(null), false);
 assert.sameValue(Error.isError(undefined), false);
 assert.sameValue(Error.isError(123), false);

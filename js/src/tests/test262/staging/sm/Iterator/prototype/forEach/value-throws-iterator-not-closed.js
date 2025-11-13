@@ -11,6 +11,10 @@
 
 
 
+
+
+
+
 class TestError extends Error {}
 class TestIterator extends Iterator {
   next() {
@@ -29,7 +33,7 @@ class TestIterator extends Iterator {
 
 const iterator = new TestIterator();
 assert.sameValue(iterator.closed, false, 'iterator starts unclosed');
-assert.throws(TestError, () => iterator.forEach(x => x));
+assertThrowsInstanceOf(() => iterator.forEach(x => x), TestError);
 assert.sameValue(iterator.closed, false, 'iterator remains unclosed');
 
 

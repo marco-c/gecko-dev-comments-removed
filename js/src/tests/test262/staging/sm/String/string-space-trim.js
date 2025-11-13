@@ -11,6 +11,9 @@
 
 
 
+
+
+
 var onlySpace = String.fromCharCode(
     0x0009 ,
     0x000A ,

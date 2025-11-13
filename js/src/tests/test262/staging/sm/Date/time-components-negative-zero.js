@@ -8,6 +8,9 @@
 
 
 
+
+
+
 let date = new Date(1955, 0, 1);
 assert.sameValue(date.getTime() < 0, true);
 assert.sameValue(date.getHours(), +0);

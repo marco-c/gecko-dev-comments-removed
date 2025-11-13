@@ -12,6 +12,7 @@
 function createProxy(proxyTarget) {
   var {proxy, revoke} = Proxy.revocable(proxyTarget, new Proxy({}, {
     get(target, propertyKey, receiver) {
+      print("trap get:", propertyKey);
       revoke();
     }
   }));
@@ -56,8 +57,8 @@ assert.sameValue(createProxy({}).a, undefined);
 assert.sameValue(createProxy({a: 5}).a, 5);
 
 
-assert.throws(TypeError, () => createProxy({}).a = 0);
-assert.throws(TypeError, () => createProxy({a: 5}).a = 0);
+assertThrowsInstanceOf(() => createProxy({}).a = 0, TypeError);
+assertThrowsInstanceOf(() => createProxy({a: 5}).a = 0, TypeError);
 
 
 assert.sameValue(delete createProxy({}).a, true);
@@ -76,6 +77,8 @@ assert.sameValue(createProxy(function() { return "ok" })(), "ok");
 
 
 
-assert.throws(TypeError, () => new (createProxy(function q(){ return obj; })));
+assertThrowsInstanceOf(() => new (createProxy(function q(){ return obj; })),
+                       TypeError);
+
 
 reportCompare(0, 0);

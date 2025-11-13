@@ -12,6 +12,15 @@
 
 
 
+print("(eval)(...) is a direct eval, (1, eval)() isn't, etc.");
+
+
+
+
+
+
+
+
 
 
 
@@ -60,5 +69,9 @@ function groupAndNaNTernary()
   return (0 / 0 ? null : eval)("t");
 }
 assert.sameValue(groupAndNaNTernary(), "global");
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

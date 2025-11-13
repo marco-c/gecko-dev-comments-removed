@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function *generatorNewTarget(expected) {
     assert.sameValue(new.target, expected);
     assert.sameValue(eval('new.target'), expected);

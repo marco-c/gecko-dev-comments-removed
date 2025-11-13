@@ -10,6 +10,19 @@
 
 
 
+
+var gTestfile = "for-loop-declaration-contains-computed-name.js";
+var BUGNUMBER = 1233767;
+var summary =
+  "Support computed property names in destructuring declarations in " +
+  "for-in/of loop heads";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var count;
 
 count = 0;
@@ -34,5 +47,9 @@ for (var { length: x, [x - 1]: y } in "foo")
 
   count++;
 }
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

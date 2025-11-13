@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 883377;
+var summary = "Anonymous function name should be set based on binding pattern";
+
+print(BUGNUMBER + ": " + summary);
+
 var exprs = [
     ["function() {}", false],
     ["function named() {}", true],
@@ -54,5 +60,6 @@ function testSingleNameBinding(expr, named) {
 for (var [expr, named] of exprs) {
     testSingleNameBinding(expr, named);
 }
+
 
 reportCompare(0, 0);

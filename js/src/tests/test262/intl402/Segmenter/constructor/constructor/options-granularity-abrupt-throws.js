@@ -15,6 +15,7 @@
 
 
 
+
 var options = {};
 Object.defineProperty(options, 'granularity', {
   get() { throw new Test262Error(); },

@@ -10,7 +10,18 @@
 
 
 
-function allTests(Date)
+
+var BUGNUMBER = 645464;
+var summary =
+  "[[DefaultValue]] behavior wrong for Date with overridden valueOf/toString";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+function allTests()
 {
   var DS = new Date(2010, 1, 1).toString();
 
@@ -171,7 +182,16 @@ function allTests(Date)
   testInOperatorName();
 }
 
-allTests(Date);
-allTests($262.createRealm().global.Date);
+allTests();
+
+if (typeof createNewGlobal === "function")
+{
+  Date = createNewGlobal().Date;
+  allTests();
+}
+
+
+
+print("All tests passed!");
 
 reportCompare(0, 0);

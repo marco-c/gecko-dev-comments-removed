@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1135377;
+var summary = "Implement RegExp unicode flag -- negated CharacterClass.";
+
+print(BUGNUMBER + ": " + summary);
+
 
 
 assert.compareArray(/[^A]/u.exec("ABC"),
@@ -65,5 +70,6 @@ assert.compareArray(/[^\uDC38]/u.exec("\uDBFF\uDC38"),
               ["\uDBFF\uDC38"]);
 assert.compareArray(/[^\uDC38]/u.exec("\uDC00\uDC38"),
               ["\uDC00"]);
+
 
 reportCompare(0, 0);

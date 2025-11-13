@@ -7,6 +7,8 @@
 
 
 
+
+
 var getProtoCalled = false;
 
 var newTarget = Object.defineProperty(function(){}.bind(), "prototype", {
@@ -18,10 +20,11 @@ var newTarget = Object.defineProperty(function(){}.bind(), "prototype", {
 
 var AsyncFunction = async function(){}.constructor;
 
-assert.throws(SyntaxError, () => {
+assertThrowsInstanceOf(() => {
     Reflect.construct(AsyncFunction, ["@error"], newTarget);
-});
+}, SyntaxError);
 
 assert.sameValue(getProtoCalled, false);
+
 
 reportCompare(0, 0);

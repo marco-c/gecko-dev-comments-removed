@@ -10,6 +10,9 @@
 
 
 
+
+
+
 assert.sameValue(Object.isFrozen({}), false);
 
 assert.sameValue(Object.isFrozen(Object.preventExtensions({})), true);

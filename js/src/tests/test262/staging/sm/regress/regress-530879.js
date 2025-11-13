@@ -8,6 +8,9 @@
 
 
 
+
+
+
 function* f(a, b, c, d) {
     yield arguments.length;
 }

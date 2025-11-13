@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function test(otherGlobal) {
     var otherRegExp = otherGlobal.RegExp;
 
@@ -29,7 +32,8 @@ function test(otherGlobal) {
 
     assert.sameValue(RegExp.prototype.toString.call(otherRegExp.prototype), "/(?:)/");
 }
-test($262.createRealm().global);
+test(createNewGlobal());
+test(createNewGlobal({newCompartment: true}));
 
 
 reportCompare(0, 0);

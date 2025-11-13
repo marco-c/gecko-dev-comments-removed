@@ -6,6 +6,9 @@
 
 
 
+
+
+
 function base() { }
 
 class beforeSwizzle extends base {
@@ -30,7 +33,7 @@ class beforeThrow extends base {
 Object.setPrototypeOf(beforeThrow, Math.sin);
 
 
-assert.throws(MyError, () => new beforeThrow());
+assertThrowsInstanceOf(() => new beforeThrow(), MyError);
 
 
 reportCompare(0, 0);

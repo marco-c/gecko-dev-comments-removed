@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1290655;
+var summary = "String.prototype.split should call GetMethod.";
+
+print(BUGNUMBER + ": " + summary);
+
 function create(value) {
     return {
         [Symbol.split]: value,
@@ -19,11 +24,12 @@ function create(value) {
 }
 
 for (let v of [null, undefined]) {
-    assert.compareArray("a-a".split(create(v)), ["a", "a"]);
+    assert.deepEqual("a-a".split(create(v)), ["a", "a"]);
 }
 
 for (let v of [1, true, Symbol.iterator, "", {}, []]) {
-    assert.throws(TypeError, () => "a-a".split(create(v)));
+    assertThrowsInstanceOf(() => "a-a".split(create(v)), TypeError);
 }
+
 
 reportCompare(0, 0);

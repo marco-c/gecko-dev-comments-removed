@@ -9,6 +9,15 @@
 
 
 
+
+
+
+print("ES5: Array.prototype.join");
+
+
+
+
+
 var count;
 var stringifyCounter = { toString: function() { count++; return "obj"; } };
 
@@ -71,5 +80,9 @@ var funky =
   };
 var trailingHoles = [0, funky, , ,];
 assert.sameValue(trailingHoles.join(""), "0funkyfnord");
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

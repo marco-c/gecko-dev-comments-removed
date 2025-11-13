@@ -18,6 +18,7 @@
 
 
 
+
 verifyProperty(Iterator, 'length', {
   value: 0,
   writable: false,

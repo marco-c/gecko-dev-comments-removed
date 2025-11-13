@@ -9,6 +9,9 @@
 
 
 
+
+
+
 function testToString() {
     var tests = [
         [undefined, "[object Undefined]"],
@@ -59,7 +62,7 @@ function testProxy() {
     assert.sameValue(Object.prototype.toString.call(new Proxy(function() {}, metaHandler)), "[object Function]")
     var {proxy, revoke} = Proxy.revocable({}, metaHandler);
     revoke();
-    assert.throws(TypeError, () => Object.prototype.toString.call(proxy));
+    assertThrowsInstanceOf(() => Object.prototype.toString.call(proxy), TypeError);
 
     assert.sameValue(count, 4);
 }

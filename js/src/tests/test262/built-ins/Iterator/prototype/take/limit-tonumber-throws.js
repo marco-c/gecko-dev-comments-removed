@@ -11,6 +11,7 @@
 
 
 
+
 let iterator = (function* () {})();
 
 assert.throws(Test262Error, () => {

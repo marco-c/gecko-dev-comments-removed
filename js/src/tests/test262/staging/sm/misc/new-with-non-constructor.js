@@ -9,10 +9,16 @@
 
 
 
+
+
 function checkConstruct(thing) {
-  assert.throws(TypeError, function() {
-    new thing();
-  });
+    try {
+        new thing();
+        assert.sameValue(0, 1, "not reached " + thing);
+    } catch (e) {
+        assert.sameValue(e.message.includes(" is not a constructor") ||
+                 e.message === "Function.prototype.toString called on incompatible object", true);
+    }
 }
 
 var re = /aaa/
@@ -29,5 +35,6 @@ checkConstruct(proxiedFunctionPrototype);
 
 var proxiedBuiltin = new Proxy(parseInt, {});
 checkConstruct(proxiedBuiltin);
+
 
 reportCompare(0, 0);

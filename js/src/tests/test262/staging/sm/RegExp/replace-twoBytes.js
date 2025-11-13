@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1269719;
+var summary = "RegExp.prototype[@@replace] should check latin1/twoBytes for all strings used in relate operation.";
+
+print(BUGNUMBER + ": " + summary);
+
 var ans = [
   "[AB$2$3$]",
   "[AB$2$3$]\u3048",
@@ -44,5 +50,6 @@ for (var matched of ["A", "\u3042"]) {
     }
   }
 }
+
 
 reportCompare(0, 0);

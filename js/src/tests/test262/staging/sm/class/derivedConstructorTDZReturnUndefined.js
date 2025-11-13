@@ -7,6 +7,8 @@
 
 
 
+
+
 class foo extends null {
     constructor() {
         
@@ -16,7 +18,7 @@ class foo extends null {
 }
 
 for (let i = 0; i < 1100; i++)
-    assert.throws(ReferenceError, () => new foo());
+    assertThrownErrorContains(() => new foo(), "this");
 
 
 reportCompare(0, 0);

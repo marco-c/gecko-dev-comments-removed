@@ -18,6 +18,7 @@
 
 
 
+
 verifyProperty(Iterator.prototype, 'toArray', {
   writable: true,
   enumerable: false,

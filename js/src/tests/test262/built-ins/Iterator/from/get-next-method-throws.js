@@ -12,6 +12,7 @@
 
 
 
+
 class ThrowingIterator {
   get next() {
     throw new Test262Error();

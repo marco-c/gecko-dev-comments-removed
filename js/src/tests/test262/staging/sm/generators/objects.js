@@ -16,15 +16,16 @@
 
 
 
+
 function TestGeneratorObject() {
   function* g() { yield 1; }
 
   var iter = g();
   assert.sameValue(Object.getPrototypeOf(iter), g.prototype);
-  assert.sameValue(iter instanceof g, true);
+  assertTrue(iter instanceof g);
   assert.sameValue(String(iter), "[object Generator]");
-  assert.compareArray(Object.getOwnPropertyNames(iter), []);
-  assert.notSameValue(g(), iter);
+  assert.deepEqual(Object.getOwnPropertyNames(iter), []);
+  assertNotEq(g(), iter);
 }
 TestGeneratorObject();
 
@@ -39,11 +40,11 @@ function TestGeneratorObjectMethods() {
   assert.sameValue(iter.throw.length, 1);
 
   function TestNonGenerator(non_generator) {
-    assert.throws(TypeError, function() { iter.next.call(non_generator); });
-    assert.throws(TypeError, function() { iter.next.call(non_generator, 1); });
-    assert.throws(TypeError, function() { iter.return.call(non_generator, 1); });
-    assert.throws(TypeError, function() { iter.throw.call(non_generator, 1); });
-    assert.throws(TypeError, function() { iter.close.call(non_generator); });
+    assertThrowsInstanceOf(function() { iter.next.call(non_generator); }, TypeError);
+    assertThrowsInstanceOf(function() { iter.next.call(non_generator, 1); }, TypeError);
+    assertThrowsInstanceOf(function() { iter.return.call(non_generator, 1); }, TypeError);
+    assertThrowsInstanceOf(function() { iter.throw.call(non_generator, 1); }, TypeError);
+    assertThrowsInstanceOf(function() { iter.close.call(non_generator); }, TypeError);
   }
 
   TestNonGenerator(1);

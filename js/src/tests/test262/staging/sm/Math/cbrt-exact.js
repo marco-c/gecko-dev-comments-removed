@@ -9,6 +9,9 @@
 
 
 
+
+
+
 assert.sameValue(Math.cbrt(NaN), NaN);
 
 

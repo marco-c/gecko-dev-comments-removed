@@ -6,6 +6,9 @@
 
 
 
+
+
+
 new class extends class { } {
     constructor() {
         assert.sameValue(eval("super(); this"), this);

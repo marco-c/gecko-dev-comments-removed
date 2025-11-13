@@ -8,11 +8,13 @@
 
 
 
+
+
 assert.sameValue(typeof Set.prototype.isSubsetOf, "function");
-verifyProperty(Set.prototype.isSubsetOf, "length", {
+assert.deepEqual(Object.getOwnPropertyDescriptor(Set.prototype.isSubsetOf, "length"), {
   value: 1, writable: false, enumerable: false, configurable: true,
 });
-verifyProperty(Set.prototype.isSubsetOf, "name", {
+assert.deepEqual(Object.getOwnPropertyDescriptor(Set.prototype.isSubsetOf, "name"), {
   value: "isSubsetOf", writable: false, enumerable: false, configurable: true,
 });
 
@@ -116,7 +118,7 @@ for (let values of [
   setLikeObj.keys = nonCallable;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isSubsetOf(setLike));
+  assertThrowsInstanceOf(() => emptySet.isSubsetOf(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -129,7 +131,7 @@ for (let values of [
   setLikeObj.has = nonCallable;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isSubsetOf(setLike));
+  assertThrowsInstanceOf(() => emptySet.isSubsetOf(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -141,7 +143,7 @@ for (let values of [
   sizeValue = NaN;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isSubsetOf(setLike));
+  assertThrowsInstanceOf(() => emptySet.isSubsetOf(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -152,7 +154,7 @@ for (let values of [
   sizeValue = undefined;
 
   log.length = 0;
-  assert.throws(TypeError, () => emptySet.isSubsetOf(setLike));
+  assertThrowsInstanceOf(() => emptySet.isSubsetOf(setLike), TypeError);
 
   assert.compareArray(log, [
     "[[get]]", "size",
@@ -161,7 +163,7 @@ for (let values of [
 }
 
 
-assert.throws(TypeError, () => emptySet.isSubsetOf([]));
+assertThrowsInstanceOf(() => emptySet.isSubsetOf([]), TypeError);
 
 
 {
@@ -192,7 +194,7 @@ assert.throws(TypeError, () => emptySet.isSubsetOf([]));
 for (let thisValue of [
   null, undefined, true, "", {}, new Map, new Proxy(new Set, {}),
 ]) {
-  assert.throws(TypeError, () => Set.prototype.isSubsetOf.call(thisValue, emptySet));
+  assertThrowsInstanceOf(() => Set.prototype.isSubsetOf.call(thisValue, emptySet), TypeError);
 }
 
 

@@ -10,17 +10,21 @@
 
 
 
+
+
+
+
 const iterator = returnValue => Object.setPrototypeOf({
   next: () => returnValue,
 }, Iterator.prototype);
 const mapper = x => x;
 
-assert.throws(TypeError, () => iterator(undefined).map(mapper).next());
-assert.throws(TypeError, () => iterator(null).map(mapper).next());
-assert.throws(TypeError, () => iterator(0).map(mapper).next());
-assert.throws(TypeError, () => iterator(false).map(mapper).next());
-assert.throws(TypeError, () => iterator('').map(mapper).next());
-assert.throws(TypeError, () => iterator(Symbol()).map(mapper).next());
+assertThrowsInstanceOf(() => iterator(undefined).map(mapper).next(), TypeError);
+assertThrowsInstanceOf(() => iterator(null).map(mapper).next(), TypeError);
+assertThrowsInstanceOf(() => iterator(0).map(mapper).next(), TypeError);
+assertThrowsInstanceOf(() => iterator(false).map(mapper).next(), TypeError);
+assertThrowsInstanceOf(() => iterator('').map(mapper).next(), TypeError);
+assertThrowsInstanceOf(() => iterator(Symbol()).map(mapper).next(), TypeError);
 
 
 reportCompare(0, 0);

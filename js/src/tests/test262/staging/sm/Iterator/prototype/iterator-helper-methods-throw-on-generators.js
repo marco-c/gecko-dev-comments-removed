@@ -9,15 +9,19 @@
 
 
 
+
+
+
+
 const iteratorHelperProto = Object.getPrototypeOf([].values().map(x => x));
 
 function *gen() {
   yield 1;
 }
 
-assert.throws(TypeError, () => iteratorHelperProto.next.call(gen()));
-assert.throws(TypeError, () => iteratorHelperProto.return.call(gen()));
-assert.throws(TypeError, () => iteratorHelperProto.throw.call(gen()));
+assertThrowsInstanceOf(() => iteratorHelperProto.next.call(gen()), TypeError);
+assertThrowsInstanceOf(() => iteratorHelperProto.return.call(gen()), TypeError);
+assertThrowsInstanceOf(() => iteratorHelperProto.throw.call(gen()), TypeError);
 
 
 reportCompare(0, 0);

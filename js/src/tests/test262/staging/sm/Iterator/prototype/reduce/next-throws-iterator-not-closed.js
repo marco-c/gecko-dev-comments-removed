@@ -11,6 +11,10 @@
 
 
 
+
+
+
+
 class TestIterator extends Iterator {
   next() {
     throw new Error();
@@ -26,7 +30,7 @@ const sum = (x, y) => x + y;
 const iter = new TestIterator();
 
 assert.sameValue(iter.closed, false);
-assert.throws(Error, () => iter.reduce(sum));
+assertThrowsInstanceOf(() => iter.reduce(sum), Error);
 assert.sameValue(iter.closed, false);
 
 

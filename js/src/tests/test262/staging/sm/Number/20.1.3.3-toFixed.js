@@ -8,15 +8,18 @@
 
 
 
+
+
+
 assert.sameValue(Number.prototype.toFixed.call(-Infinity), "-Infinity");
 assert.sameValue(Number.prototype.toFixed.call(Infinity), "Infinity");
 assert.sameValue(Number.prototype.toFixed.call(NaN), "NaN");
 
-assert.throws(RangeError, () => Number.prototype.toFixed.call(-Infinity, 555));
-assert.throws(RangeError, () => Number.prototype.toFixed.call(Infinity, 555));
-assert.throws(RangeError, () => Number.prototype.toFixed.call(NaN, 555));
+assertThrowsInstanceOf(() => Number.prototype.toFixed.call(-Infinity, 555), RangeError);
+assertThrowsInstanceOf(() => Number.prototype.toFixed.call(Infinity, 555), RangeError);
+assertThrowsInstanceOf(() => Number.prototype.toFixed.call(NaN, 555), RangeError);
 
-assert.throws(TypeError, () => Number.prototype.toFixed.call("Hello"));
+assertThrowsInstanceOf(() => Number.prototype.toFixed.call("Hello"), TypeError);
 
 
 reportCompare(0, 0);

@@ -9,7 +9,7 @@
 
 
 assert.throws(RangeError, function () {
-  Temporal.PlainDate.from({ year: 1500, month: 1, day: 1, calendar: "islamic" });
+  Temporal.PlainDate.from({ year, month: 1, day: 1, calendar });
 }, "fallback for calendar ID 'islamic' only supported in Intl.DateTimeFormat constructor, not Temporal");
 
 reportCompare(0, 0);

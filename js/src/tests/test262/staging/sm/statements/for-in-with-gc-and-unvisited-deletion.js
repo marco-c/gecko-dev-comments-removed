@@ -11,6 +11,19 @@
 
 
 
+
+var gTestfile = "for-in-with-gc-and-unvisited-deletion.js";
+var BUGNUMBER = 1462939;
+var summary =
+  "Don't mishandle deletion of a property from the internal iterator " +
+  "created for a for-in loop, when a gc occurs just after it";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function testOneDeletion()
 {
   var o = {
@@ -64,5 +77,9 @@ function testThreeDeletions()
   }
 }
 testThreeDeletions();
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

@@ -10,6 +10,7 @@
 
 
 
+
 class ThrowingIterator extends Iterator {
   next() {
     throw new Test262Error();

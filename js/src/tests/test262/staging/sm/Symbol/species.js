@@ -9,6 +9,11 @@
 
 
 
+var BUGNUMBER = 1131043;
+var summary = "Implement @@species getter for builtin types";
+
+print(BUGNUMBER + ": " + summary);
+
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
 for (var C of [Array, Map, Set, RegExp,
@@ -23,7 +28,7 @@ for (C of [Array, Map, Set, RegExp,
            TypedArray,
            ArrayBuffer]) {
   var desc = Object.getOwnPropertyDescriptor(C, Symbol.species);
-  assert.compareArray(Object.keys(desc).sort(), ["configurable", "enumerable", "get", "set"]);
+  assert.deepEqual(Object.keys(desc).sort(), ["configurable", "enumerable", "get", "set"]);
   assert.sameValue(desc.set, undefined);
   assert.sameValue(desc.enumerable, false);
   assert.sameValue(desc.configurable, true);
@@ -31,5 +36,6 @@ for (C of [Array, Map, Set, RegExp,
   assert.sameValue(desc.get.apply(undefined), undefined);
   assert.sameValue(desc.get.apply(42), 42);
 }
+
 
 reportCompare(0, 0);

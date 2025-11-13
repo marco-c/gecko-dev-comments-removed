@@ -7,6 +7,8 @@
 
 
 
+
+
 const max = Number.MAX_SAFE_INTEGER;
 
 assert.sameValue(Array.prototype.indexOf.call({length: Infinity, [max - 1]: 'test'}, 'test', max - 3), max - 1);
@@ -29,7 +31,7 @@ assertThrowsValue(() => Array.prototype.copyWithin.call({length: Infinity, get [
 assert.sameValue(Array.prototype.includes.call({length: Infinity, [max - 1]: "test"}, "test", max - 3), true);
 
 
-assert.throws(RangeError, () => Array.from({length: Infinity}));
+assertThrowsInstanceOf(() => Array.from({length: Infinity}), RangeError);
 
 
 var proxy = new Proxy([], {

@@ -12,6 +12,7 @@
 
 
 
+
 const granularities = [undefined, "grapheme", "word", "sentence"];
 
 const inputs = [

@@ -9,6 +9,8 @@
 
 
 
+
+
 var x = {}, h = new WeakMap;
 h.set(x, null);
 $262.gc();

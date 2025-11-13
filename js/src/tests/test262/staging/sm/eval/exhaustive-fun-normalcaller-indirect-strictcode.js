@@ -12,6 +12,15 @@
 
 
 
+var BUGNUMBER = 514568;
+var summary = "eval in all its myriad flavors";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 var x = 17;
 function globalX() { return x; }
 var y = 42;
@@ -202,5 +211,9 @@ assert.sameValue(resultsY.global4, 8);
 assert.sameValue(resultsY.inner5, 71);
 assert.sameValue(resultsY.local5, 8);
 assert.sameValue(resultsY.global5, 8);
+
+
+
+print("Tests complete!");
 
 reportCompare(0, 0);

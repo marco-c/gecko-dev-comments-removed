@@ -10,6 +10,8 @@
 
 
 
+
+
 assert.sameValue(testLenientAndStrict("eval('010')",
                               completesNormally,
                               raisesException(SyntaxError)),

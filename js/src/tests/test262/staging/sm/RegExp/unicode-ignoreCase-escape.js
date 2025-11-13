@@ -10,8 +10,14 @@
 
 
 
+var BUGNUMBER = 1135377;
+var summary = "Implement RegExp unicode flag -- ignoreCase flag with character class escape.";
 
 
+
+
+
+print(BUGNUMBER + ": " + summary);
 
 
 
@@ -72,5 +78,6 @@ assert.sameValue(/[^\w]/iu.exec("k"),
          null);
 assert.sameValue(/[^\w]/iu.exec("\u212A"),
          null);
+
 
 reportCompare(0, 0);

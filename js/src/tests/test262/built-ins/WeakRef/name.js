@@ -23,6 +23,7 @@
 
 
 
+
 verifyProperty(WeakRef, 'name', {
   value: 'WeakRef',
   writable: false,

@@ -10,6 +10,8 @@
 
 
 
+
+
 assert.sameValue(Math.log1p(NaN), NaN);
 
 

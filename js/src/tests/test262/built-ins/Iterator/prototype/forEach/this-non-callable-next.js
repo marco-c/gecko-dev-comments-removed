@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws(TypeError, function () {
   Iterator.prototype.forEach.call({ next: 0 }, () => true);
 });

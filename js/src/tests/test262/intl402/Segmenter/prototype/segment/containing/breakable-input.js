@@ -13,6 +13,7 @@
 
 
 
+
 const granularities = [undefined, "grapheme", "word"];
 
 

@@ -6,6 +6,7 @@
 
 
 
+
 function* g() {}
 Iterator.prototype.map.call(g(), () => 0);
 

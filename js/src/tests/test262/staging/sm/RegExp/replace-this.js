@@ -8,8 +8,16 @@
 
 
 
+
+var BUGNUMBER = 887016;
+var summary = "RegExp.prototype[@@replace] should check |this| value.";
+
+print(BUGNUMBER + ": " + summary);
+
 for (var v of [null, 1, true, undefined, "", Symbol.iterator]) {
-  assert.throws(TypeError, () => RegExp.prototype[Symbol.replace].call(v));
+  assertThrowsInstanceOf(() => RegExp.prototype[Symbol.replace].call(v),
+                         TypeError);
 }
+
 
 reportCompare(0, 0);

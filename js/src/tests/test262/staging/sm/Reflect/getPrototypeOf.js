@@ -9,6 +9,9 @@
 
 
 
+
+
+
 assert.sameValue(Reflect.getPrototypeOf({}), Object.prototype);
 assert.sameValue(Reflect.getPrototypeOf(Object.prototype), null);
 assert.sameValue(Reflect.getPrototypeOf(Object.create(null)), null);

@@ -14,6 +14,7 @@
 
 
 
+
 verifyProperty(Intl.DurationFormat.supportedLocalesOf, "length", {
   value: 1,
   writable: false,

@@ -11,6 +11,7 @@
 
 
 
+
 const seg = new Intl.Segmenter([], {granularity: "word"})
 for (const text of [
     "Hello world!", 

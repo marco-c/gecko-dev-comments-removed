@@ -8,19 +8,21 @@
 
 
 
+
+
 class testNonExistent {
     constructor() {
         super["prop"]();
     }
 }
 
-
-assert.throws(TypeError, () => new testNonExistent());
+assertThrownErrorContains(() => new testNonExistent(), 'super.prop');
 
 var ol = { testNonExistent() { super.prop(); } };
-assert.throws(TypeError, () => ol.testNonExistent());
+assertThrownErrorContains(() => ol.testNonExistent(), "super.prop");
 
 var olElem = { testNonExistent() { var prop = "prop"; super[prop](); } };
-assert.throws(TypeError, () => olElem.testNonExistent());
+assertThrownErrorContains(() => olElem.testNonExistent(), "super[prop]");
+
 
 reportCompare(0, 0);

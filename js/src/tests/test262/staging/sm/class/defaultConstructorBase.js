@@ -6,6 +6,9 @@
 
 
 
+
+
+
 class base {
     method() { return 1; }
     *gen() { return 2; }

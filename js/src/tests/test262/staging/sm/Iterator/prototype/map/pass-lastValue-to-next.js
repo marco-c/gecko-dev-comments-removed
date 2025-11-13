@@ -10,6 +10,10 @@
 
 
 
+
+
+
+
 const iteratorWhereNextTakesValue = Object.setPrototypeOf({
   next: function(value) {
     assert.sameValue(arguments.length, 0);

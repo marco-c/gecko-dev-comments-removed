@@ -9,6 +9,10 @@
 
 
 
+
+
+
+
 class TestError extends Error {}
 
 function checkIterResult({done, value}, expectedDone, expectedValue) {
@@ -26,13 +30,13 @@ const iter = {
   throw: (value) => ({done: true, value}),
 };
 const thisWrap = Iterator.from(iter);
-const otherGlobal = $262.createRealm().global;
+const otherGlobal = createNewGlobal({newCompartment: true});
 const otherWrap = otherGlobal.Iterator.from(iter);
 
 checkIterResult(thisWrap.next.call(otherWrap), false, 0);
 checkIterResult(thisWrap.next.call(otherWrap, 'value'), false, 0);
 
-assert.throws(TestError, thisWrap.return.bind(otherWrap));
+assertThrowsInstanceOf(thisWrap.return.bind(otherWrap), TestError);
 
 
 reportCompare(0, 0);

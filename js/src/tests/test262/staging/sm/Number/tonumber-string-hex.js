@@ -10,6 +10,16 @@
 
 
 
+
+var BUGNUMBER = 872853;
+var summary = 'Various tests of ToNumber(string), particularly +"0x" being NaN';
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 assert.sameValue(+"0x", NaN);
 assert.sameValue(+"\t0x", NaN);
 assert.sameValue(+"0x\n", NaN);
@@ -27,5 +37,9 @@ assert.sameValue(+"\t+Infinity", Infinity);
 assert.sameValue(+"-Infinity\n", -Infinity);
 assert.sameValue(+"+ Infinity", NaN);
 assert.sameValue(+"- Infinity", NaN);
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

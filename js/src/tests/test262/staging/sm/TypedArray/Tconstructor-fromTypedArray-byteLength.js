@@ -7,7 +7,9 @@
 
 
 
-var g = $262.createRealm().global;
+
+
+var g = createNewGlobal();
 
 var arr = [1, 2, 3];
 for (var constructor of anyTypedArrayConstructors) {

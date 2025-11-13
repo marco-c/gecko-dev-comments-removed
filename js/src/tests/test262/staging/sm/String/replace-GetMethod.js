@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1290655;
+var summary = "String.prototype.replace should call GetMethod.";
+
+print(BUGNUMBER + ": " + summary);
+
 function create(value) {
     return {
         [Symbol.replace]: value,
@@ -22,7 +28,8 @@ for (let v of [null, undefined]) {
 }
 
 for (let v of [1, true, Symbol.iterator, "", {}, []]) {
-    assert.throws(TypeError, () => "a-a".replace(create(v)));
+    assertThrowsInstanceOf(() => "a-a".replace(create(v)), TypeError);
 }
+
 
 reportCompare(0, 0);

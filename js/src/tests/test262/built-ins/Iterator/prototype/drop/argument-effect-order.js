@@ -11,6 +11,7 @@
 
 
 
+
 let effects = [];
 
 Iterator.prototype.drop.call(

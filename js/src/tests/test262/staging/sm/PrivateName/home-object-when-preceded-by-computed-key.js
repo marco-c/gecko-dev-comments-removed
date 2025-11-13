@@ -6,6 +6,9 @@
 
 
 
+
+
+
 class Base {
   m() { return "pass"; }
   static m() { return "fail"; }

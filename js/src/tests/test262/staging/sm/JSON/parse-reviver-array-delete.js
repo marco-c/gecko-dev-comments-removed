@@ -11,6 +11,18 @@
 
 
 
+var gTestfile = 'parse-reviver-array-delete.js';
+
+var BUGNUMBER = 999999;
+var summary = "JSON.parse with a reviver which elides array elements";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
+
 
 
 
@@ -77,5 +89,10 @@ assert.sameValue(JSON.parse(str,
                       return undefined;
                     }) + "",
          expected2);
+
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

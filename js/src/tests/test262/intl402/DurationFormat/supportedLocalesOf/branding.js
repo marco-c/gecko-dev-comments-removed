@@ -10,6 +10,7 @@
 
 
 
+
 const supportedLocalesOf = Intl.DurationFormat.supportedLocalesOf;
 
 assert.sameValue(typeof supportedLocalesOf, "function");

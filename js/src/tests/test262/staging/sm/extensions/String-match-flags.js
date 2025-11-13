@@ -8,6 +8,12 @@
 
 
 
+
+var BUGNUMBER = 1263139;
+var summary = "String.prototype.match with non-string non-standard flags argument.";
+
+print(BUGNUMBER + ": " + summary);
+
 var called;
 var flags = {
   toString() {
@@ -27,5 +33,6 @@ assert.sameValue(called, false);
 called = false;
 "a".replace("a", "b", flags);
 assert.sameValue(called, false);
+
 
 reportCompare(0, 0);

@@ -8,6 +8,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 518103;
 var summary = 'lambda constructor "method" vs. instanceof';
 var actual;

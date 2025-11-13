@@ -10,6 +10,18 @@
 
 
 
+
+
+var BUGNUMBER = 858381;
+var summary =
+  "Array length setting/truncating with non-dense, indexed elements";
+
+print(BUGNUMBER + ": " + summary);
+
+
+
+
+
 function testTruncateDenseAndSparse()
 {
   var arr;
@@ -86,5 +98,9 @@ function testTruncateSparseShrinkCapacity()
   assert.sameValue(arr.length, 8);
 }
 testTruncateSparseShrinkCapacity();
+
+
+
+print("Tests complete");
 
 reportCompare(0, 0);

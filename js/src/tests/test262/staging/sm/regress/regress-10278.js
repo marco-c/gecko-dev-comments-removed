@@ -16,6 +16,9 @@
 
 
 
+
+
+
 var BUGNUMBER = 10278;
 var summary = 'Function declarations do not need to be separated by semi-colon';
 var actual;
