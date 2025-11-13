@@ -571,22 +571,10 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
     return NS_OK;
   }
 
-  enum RedirectBonus { eUnknown, eRedirect, eNormal };
-
-  RedirectBonus mostRecentVisitBonus = eUnknown;
-
+  int32_t isRedirect = 0;
   if (numEntries > 1) {
-    mostRecentVisitBonus = aArguments->AsInt32(1) ? eRedirect : eNormal;
+    isRedirect = aArguments->AsInt32(1);
   }
-
-  int32_t typed = 0;
-  int32_t visitCount = 0;
-  PRTime mostRecentBookmarkTime = 0;
-  int32_t isQuery = 0;
-  float pointsForSampledVisits = 0.0f;
-  int32_t numSampledVisits = 0;
-  int32_t bonus = 0;
-
   
   const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
   NS_ENSURE_STATE(history);
@@ -594,174 +582,223 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
   NS_ENSURE_STATE(DB);
 
   
-  {
-    nsCOMPtr<mozIStorageStatement> getPageInfo = DB->GetStatement(
-        "SELECT typed, visit_count, MAX(dateAdded), "
-        "(substr(url, 0, 7) = 'place:') "
-        "FROM moz_places h "
-        "LEFT JOIN moz_bookmarks ON fk = h.id "
-        "WHERE h.id = :page_id");
-    NS_ENSURE_STATE(getPageInfo);
-    mozStorageStatementScoper infoScoper(getPageInfo);
 
-    rv = getPageInfo->BindInt64ByName("page_id"_ns, pageId);
-    NS_ENSURE_SUCCESS(rv, rv);
 
-    bool hasResult = false;
-    rv = getPageInfo->ExecuteStep(&hasResult);
-    NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && hasResult, NS_ERROR_UNEXPECTED);
 
-    rv = getPageInfo->GetInt32(0, &typed);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = getPageInfo->GetInt32(1, &visitCount);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = getPageInfo->GetInt64(2, &mostRecentBookmarkTime);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = getPageInfo->GetInt32(3, &isQuery);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
-  if (visitCount > 0) {
-    
-    
-    
-    
-    nsCString redirectsTransitionFragment = nsPrintfCString(
-        "%d AND %d ", nsINavHistoryService::TRANSITION_REDIRECT_PERMANENT,
-        nsINavHistoryService::TRANSITION_REDIRECT_TEMPORARY);
-    nsCOMPtr<mozIStorageStatement> getVisits = DB->GetStatement(
-        nsLiteralCString(
-            "/* do not warn (bug 659740 - SQLite may ignore index if few "
-            "visits exist) */"
-            "SELECT "
-            "IFNULL(origin.visit_type, v.visit_type) AS visit_type, "
-            "target.visit_type AS target_visit_type, "
-            "ROUND((strftime('%s','now','localtime','utc') - "
-            "v.visit_date/1000000)/86400) AS age_in_days, "
-            "v.source AS visit_source "
-            "FROM moz_historyvisits v "
-            "LEFT JOIN moz_historyvisits origin ON origin.id = v.from_visit "
-            "AND v.visit_type BETWEEN ") +
-        redirectsTransitionFragment +
-        nsLiteralCString(
-            "LEFT JOIN moz_historyvisits target ON v.id = target.from_visit "
-            "AND target.visit_type BETWEEN ") +
-        redirectsTransitionFragment +
-        nsLiteralCString("WHERE v.place_id = :page_id "
-                         "ORDER BY v.visit_date DESC "
-                         "LIMIT :max_visits "));
-    NS_ENSURE_STATE(getVisits);
-    mozStorageStatementScoper visitsScoper(getVisits);
-    rv = getVisits->BindInt64ByName("page_id"_ns, pageId);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = getVisits->BindInt32ByName("max_visits"_ns,
-                                    history->GetNumVisitsForFrecency());
-    NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    bool hasResult = false;
-    while (NS_SUCCEEDED(getVisits->ExecuteStep(&hasResult)) && hasResult) {
+
+
+
+
+
+
+
+
+
+  nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+      "WITH "
+      "lambda (lambda) AS ( "
+      "  SELECT ln(2) / :halfLifeDays "
+      "), "
+      "interactions AS ( "
+      "  SELECT "
+      "    place_id, "
+      "    created_at * 1000 AS visit_date "
+      "  FROM "
+      "    moz_places_metadata "
+      "  WHERE "
+      "    place_id = :pageId "
       
       
-      int32_t visitType = getVisits->AsInt32(0);
-
+      "      AND (total_view_time >= :viewTimeSeconds * 1000 "
+      "        OR (total_view_time >= :viewTimeIfManyKeypressesSeconds * 1000 "
+      "          AND key_presses >= :manyKeypresses)) "
+      "  ORDER BY created_at DESC "
+      "  LIMIT :numSampledVisits "
+      "), "
+      "sampled_visits AS ( "
+      "  SELECT "
+      "    vs.id, "
+      "    vs.from_visit, "
+      "    vs.place_id, "
+      "    vs.visit_date, "
+      "    vs.visit_type, "
+      "    vs.source, "
+      "    ( "
+      "      SELECT EXISTS ( "
+      "        SELECT 1 "
+      "        FROM interactions i "
+      "        WHERE vs.visit_date BETWEEN "
       
+      "          i.visit_date - :maxVisitGapSeconds * 1000000 "
+      "            AND i.visit_date + :maxVisitGapSeconds * 1000000 "
+      "      ) "
+      "    ) AS is_interesting "
+      "  FROM moz_historyvisits vs "
+      "  WHERE place_id = :pageId "
       
-      
-      
-      bool useRedirectBonus = mostRecentVisitBonus == eRedirect;
-      if (mostRecentVisitBonus == eUnknown || numSampledVisits > 0) {
-        int32_t targetVisitType = getVisits->AsInt32(1);
-        useRedirectBonus =
-            targetVisitType ==
-                nsINavHistoryService::TRANSITION_REDIRECT_PERMANENT ||
-            (targetVisitType ==
-                 nsINavHistoryService::TRANSITION_REDIRECT_TEMPORARY &&
-             visitType != nsINavHistoryService::TRANSITION_TYPED);
-      }
-
-      uint32_t visitSource = getVisits->AsInt32(3);
-      if (mostRecentBookmarkTime) {
-        
-        bonus = history->GetFrecencyTransitionBonus(visitType, true,
-                                                    useRedirectBonus);
-        bonus += history->GetFrecencyTransitionBonus(
-            nsINavHistoryService::TRANSITION_BOOKMARK, true);
-      } else if (visitSource == nsINavHistoryService::VISIT_SOURCE_ORGANIC) {
-        bonus = history->GetFrecencyTransitionBonus(visitType, true,
-                                                    useRedirectBonus);
-      } else if (visitSource == nsINavHistoryService::VISIT_SOURCE_SEARCHED) {
-        bonus = history->GetFrecencyTransitionBonus(
-            nsINavHistoryService::TRANSITION_LINK, true, useRedirectBonus);
-      }
-
-      
-      if (bonus) {
-        int32_t ageInDays = getVisits->AsInt32(2);
-        int32_t weight = history->GetFrecencyAgedWeight(ageInDays);
-        pointsForSampledVisits += ((float)weight * ((float)bonus / 100.0f));
-      }
-
-      numSampledVisits++;
-    }
-  }
-
-  
-  if (numSampledVisits) {
-    
-    
-    
-    
-    if (pointsForSampledVisits == 0.0f) {
-      *_result = MakeAndAddRef<IntegerVariant>(-1).take();
-    } else {
+      "    AND vs.visit_type NOT IN (7, 8, 9) "
+      "  ORDER BY visit_date DESC "
+      "  LIMIT :numSampledVisits "
+      "), "
+      "virtual_visits AS ( "
+      "  SELECT "
+      "    NULL AS id, "
+      "    0 AS from_visit, "
+      "    i.place_id, "
+      "    i.visit_date, "
+      "    1 AS visit_type, "
+      "    0 AS source, "
+      "    1 AS is_interesting "
+      "  FROM interactions i "
+      "  WHERE NOT EXISTS ( "
+      "    SELECT 1 FROM moz_historyvisits vs "
+      "    WHERE place_id = :pageId "
+      "      AND vs.visit_date BETWEEN "
+      "        i.visit_date - :maxVisitGapSeconds * 1000000 "
+      "        AND i.visit_date + :maxVisitGapSeconds * 1000000 "
+      "  ) "
+      "), "
+      "visit_interaction AS ( "
+      "  SELECT * FROM sampled_visits "
+      "  UNION ALL "
+      "  SELECT * FROM virtual_visits "
+      "  ORDER BY visit_date DESC "
+      "  LIMIT :numSampledVisits "
+      "), "
+      "visits (days, weight) AS ( "
+      "  SELECT "
+      "    v.visit_date / 86400000000, "
       
       
       
-      *_result =
-          MakeAndAddRef<IntegerVariant>(
-              (int32_t)ceilf((float)visitCount * ceilf(pointsForSampledVisits) /
-                             (float)numSampledVisits))
-              .take();
-    }
-    return NS_OK;
-  }
+      
+      
+      "    (SELECT CASE "
+      "      WHEN IFNULL(s.visit_type, v.visit_type) = 3 "  
+      "        OR v.source = 2 "                            
+      "        OR  ( IFNULL(s.visit_type, v.visit_type) = 2 "  
+      "          AND v.source NOT IN (1, 3) "  
+      "          AND t.id IS NULL AND NOT :isRedirect "  
+      "        ) "
+      "      THEN "
+      "        CASE "
+      "          WHEN v.is_interesting = 1 THEN :veryHighWeight "
+      "          ELSE :highWeight "
+      "        END "
+      "      WHEN t.id IS NULL AND NOT :isRedirect "  
+      "       AND IFNULL(s.visit_type, v.visit_type) NOT IN (4, 8, 9) "
+      "       AND v.source <> 1 "  
+      "      THEN "
+      "        CASE "
+      "          WHEN v.is_interesting = 1 THEN :highWeight "
+      "          ELSE :mediumWeight "
+      "         END "
+      "      ELSE :lowWeight "
+      "     END) "
+      "  FROM visit_interaction v "
+      
+      "  LEFT JOIN moz_historyvisits s ON s.id = v.from_visit "
+      "                               AND v.visit_type IN (5,6) "
+      
+      "  LEFT JOIN moz_historyvisits t ON t.from_visit = v.id "
+      "                               AND t.visit_type IN (5,6) "
+      "), "
+      "bookmark (days, weight) AS ( "
+      "  SELECT dateAdded / 86400000000, :highWeight "
+      "  FROM moz_bookmarks "
+      "  WHERE fk = :pageId "
+      "  ORDER BY dateAdded DESC "
+      "  LIMIT 1 "
+      "), "
+      "samples (days, weight) AS ( "
+      "  SELECT * FROM bookmark WHERE (SELECT count(*) FROM visits) = 0 "
+      "  UNION ALL "
+      "  SELECT * FROM visits "
+      "), "
+      "reference (days, samples_count) AS ( "
+      "  SELECT max(samples.days), count(*) FROM samples "
+      "), "
+      "scores (score) AS ( "
+      "  SELECT (weight * exp(-lambda * (reference.days - samples.days))) "
+      "  FROM samples, reference, lambda "
+      ") "
+      "SELECT CASE "
+      "WHEN (substr(url, 0, 7) = 'place:') THEN 0 "
+      "ELSE "
+      "  reference.days + CAST (( "
+      "    ln( "
+      "      sum(score) / samples_count * MAX(visit_count, samples_count) "
+      "    ) / lambda "
+      "  ) AS INTEGER) "
+      "END "
+      "FROM moz_places h, reference, lambda, scores "
+      "WHERE h.id = :pageId");
+  NS_ENSURE_STATE(stmt);
+  mozStorageStatementScoper infoScoper(stmt);
 
-  
-  if (!mostRecentBookmarkTime || isQuery) {
+  rv = stmt->BindInt64ByName("pageId"_ns, pageId);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName("isRedirect"_ns, isRedirect);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "halfLifeDays"_ns,
+      StaticPrefs::places_frecency_pages_halfLifeDays_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "numSampledVisits"_ns,
+      StaticPrefs::places_frecency_pages_numSampledVisits_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "lowWeight"_ns, StaticPrefs::places_frecency_pages_lowWeight_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "mediumWeight"_ns,
+      StaticPrefs::places_frecency_pages_mediumWeight_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "highWeight"_ns,
+      StaticPrefs::places_frecency_pages_highWeight_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "veryHighWeight"_ns,
+      StaticPrefs::places_frecency_pages_veryHighWeight_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "maxVisitGapSeconds"_ns,
+      StaticPrefs::
+          places_frecency_pages_interactions_maxVisitGapSeconds_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "viewTimeSeconds"_ns,
+      StaticPrefs::
+          places_frecency_pages_interactions_viewTimeSeconds_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "manyKeypresses"_ns,
+      StaticPrefs::
+          places_frecency_pages_interactions_manyKeypresses_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName(
+      "viewTimeIfManyKeypressesSeconds"_ns,
+      StaticPrefs::
+          places_frecency_pages_interactions_viewTimeIfManyKeypressesSeconds_AtStartup());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  bool hasResult = false;
+  rv = stmt->ExecuteStep(&hasResult);
+  NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && hasResult, NS_ERROR_UNEXPECTED);
+
+  bool isNull;
+  if (NS_SUCCEEDED(stmt->GetIsNull(0, &isNull)) && isNull) {
     *_result = MakeAndAddRef<IntegerVariant>(0).take();
-    return NS_OK;
+  } else {
+    int32_t score;
+    rv = stmt->GetInt32(0, &score);
+    NS_ENSURE_SUCCESS(rv, rv);
+    *_result = MakeAndAddRef<IntegerVariant>(score).take();
   }
-
-  MOZ_ASSERT(bonus == 0, "Pages should arrive here with 0 bonus");
-  MOZ_ASSERT(mostRecentBookmarkTime > 0, "This should be a bookmarked page");
-
-  
-  
-  
-  
-  bonus += history->GetFrecencyTransitionBonus(
-      nsINavHistoryService::TRANSITION_BOOKMARK, false);
-  if (typed) {
-    bonus += history->GetFrecencyTransitionBonus(
-        nsINavHistoryService::TRANSITION_TYPED, false);
-  }
-
-  
-  int32_t bookmarkAgeInDays =
-      static_cast<int32_t>((PR_Now() - mostRecentBookmarkTime) /
-                           ((PRTime)SECONDS_PER_DAY * (PRTime)PR_USEC_PER_SEC));
-
-  pointsForSampledVisits =
-      (float)history->GetFrecencyAgedWeight(bookmarkAgeInDays) *
-      ((float)bonus / 100.0f);
-
-  
-  
-  *_result =
-      MakeAndAddRef<IntegerVariant>((int32_t)ceilf(pointsForSampledVisits))
-          .take();
-
   return NS_OK;
 }
 

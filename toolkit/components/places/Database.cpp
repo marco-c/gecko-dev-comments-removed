@@ -1348,6 +1348,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 83) {
+        rv = MigrateV83Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -1808,26 +1815,38 @@ nsresult Database::InitTempEntities() {
   rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_METADATA_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (StaticPrefs::places_frecency_pages_alternative_featureGate_AtStartup()) {
-    int32_t viewTimeMs =
-        StaticPrefs::
-            places_frecency_pages_alternative_interactions_viewTimeSeconds_AtStartup() *
-        1000;
-    int32_t viewTimeIfManyKeypressesMs =
-        StaticPrefs::
-            places_frecency_pages_alternative_interactions_viewTimeIfManyKeypressesSeconds_AtStartup() *
-        1000;
-    int32_t manyKeypresses = StaticPrefs::
-        places_frecency_pages_alternative_interactions_manyKeypresses_AtStartup();
+  
+  bool useAlternative =
+      StaticPrefs::places_frecency_pages_alternative_featureGate_AtStartup();
+  int32_t viewTimeMs =
+      (useAlternative
+           ? StaticPrefs::
+                     places_frecency_pages_alternative_interactions_viewTimeSeconds_AtStartup() *
+                 1000
+           : StaticPrefs::
+                     places_frecency_pages_interactions_viewTimeSeconds_AtStartup() *
+                 1000);
+  int32_t viewTimeIfManyKeypressesMs =
+      (useAlternative
+           ? StaticPrefs::
+                     places_frecency_pages_alternative_interactions_viewTimeIfManyKeypressesSeconds_AtStartup() *
+                 1000
+           : StaticPrefs::
+                     places_frecency_pages_interactions_viewTimeIfManyKeypressesSeconds_AtStartup() *
+                 1000);
+  int32_t manyKeypresses =
+      (useAlternative
+           ? StaticPrefs::
+                 places_frecency_pages_alternative_interactions_manyKeypresses_AtStartup()
+           : StaticPrefs::
+                 places_frecency_pages_interactions_manyKeypresses_AtStartup());
+  rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_METADATA_AFTERINSERT_TRIGGER(
+      viewTimeMs, viewTimeIfManyKeypressesMs, manyKeypresses));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_METADATA_AFTERINSERT_TRIGGER(
-        viewTimeMs, viewTimeIfManyKeypressesMs, manyKeypresses));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_METADATA_AFTERUPDATE_TRIGGER(
-        viewTimeMs, viewTimeIfManyKeypressesMs, manyKeypresses));
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_METADATA_AFTERUPDATE_TRIGGER(
+      viewTimeMs, viewTimeIfManyKeypressesMs, manyKeypresses));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_EXTRA_AFTERUPDATE_TRIGGER);
@@ -2252,6 +2271,14 @@ nsresult Database::MigrateV82Up() {
     rv = mMainConn->ExecuteSimpleSQL(CREATE_IDX_MOZ_NEWTAB_SHORTCUTS_PLACEID);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+  return NS_OK;
+}
+
+nsresult Database::MigrateV83Up() {
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(
+      "UPDATE moz_places SET recalc_frecency = 1 WHERE frecency > 0"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
 
