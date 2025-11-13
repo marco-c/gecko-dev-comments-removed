@@ -42,6 +42,7 @@ def browser_kwargs(logger, test_type, run_info_data, config, subsuite, **kwargs)
         "binary": kwargs["binary"],
         "debug_info": kwargs["debug_info"],
         "binary_args": kwargs["binary_args"] + subsuite.config.get("binary_args", []),
+        "headless": kwargs["headless"],
         "user_stylesheets": kwargs.get("user_stylesheets"),
         "ca_certificate_path": config.ssl_config["ca_cert_path"],
     }
@@ -96,6 +97,7 @@ class ServoWdspecBrowser(WebDriverBrowser):
     
     def __init__(self, logger, binary="servo", webdriver_binary="servo",
                  binary_args=None, webdriver_args=None, env=None, port=None,
+                 headless=None,
                  **kwargs):
 
         env = os.environ.copy() if env is None else env
@@ -109,6 +111,8 @@ class ServoWdspecBrowser(WebDriverBrowser):
                          env=env,
                          **kwargs)
         self.binary_args = binary_args
+        self.headless = ["--headless"] if headless else None
+
 
     def make_command(self):
         command = [self.binary,
@@ -117,10 +121,11 @@ class ServoWdspecBrowser(WebDriverBrowser):
                    
                    
                    "--ignore-certificate-errors",
-                   "--headless",
                    "--window-size",
                    "800x600",
                    "about:blank"] + self.webdriver_args
         if self.binary_args:
             command += self.binary_args
+        if self.headless:
+            command += self.headless
         return command
