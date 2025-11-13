@@ -21,19 +21,9 @@ template <typename T>
 struct ParamTraits;
 }  
 
-#ifdef XP_WIN
-
-
-#  include "TimeStamp_windows.h"
-
-#  include "mozilla/Maybe.h"  
-#endif
-
 namespace mozilla {
 
-#ifndef XP_WIN
-typedef uint64_t TimeStampValue;
-#endif
+using TimeStampValue = uint64_t;
 
 class TimeStamp;
 class TimeStampTests;
@@ -48,10 +38,6 @@ class BaseTimeDurationPlatformUtils {
   static MFBT_API int64_t TicksFromMilliseconds(double aMilliseconds);
   static MFBT_API int64_t ResolutionInTicks();
 };
-
-
-
-
 
 
 
@@ -368,23 +354,6 @@ typedef BaseTimeDuration<TimeDurationValueCalculator> TimeDuration;
 
 
 
-
-
-
-#if defined(XP_WIN)
-
-
-static_assert(sizeof(TimeStampValue) > 8);
-#endif
-
-
-
-
-
-
-
-
-
 class TimeStamp {
  public:
   using DurationType = TimeDuration;
@@ -434,12 +403,20 @@ class TimeStamp {
 
 
 
-
-
-
-
-
   static TimeStamp Now() { return Now(true); }
+
+  
+
+
+
+
+
+
+
+
+
+
+
   static TimeStamp NowLoRes() { return Now(false); }
 
   
@@ -481,10 +458,8 @@ class TimeStamp {
 #endif
 
 #ifdef XP_WIN
-  Maybe<uint64_t> RawQueryPerformanceCounterValue() const {
-    
-    
-    return mValue.mHasQPC ? Some(mValue.mQPC / 1000ULL) : Nothing();
+  uint64_t RawQueryPerformanceCounterValue() const {
+    return static_cast<uint64_t>(mValue);
   }
 #endif
 
