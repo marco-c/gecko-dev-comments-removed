@@ -38,6 +38,15 @@ window.insertIframeWith204Src = (t) => {
 };
 
 
+
+
+
+
+
+
+
+
+
 window.insertIframeWithAboutBlankSrc = (t) => {
   const iframe = document.createElement("iframe");
   t.add_cleanup(() => iframe.remove());
@@ -51,6 +60,8 @@ window.insertIframeWithAboutBlankSrc = (t) => {
 window.insertIframeWithAboutBlankSrcWaitForLoad = async (t) => {
   const iframe = insertIframeWithAboutBlankSrc(t);
   const aboutBlankLoad = new Promise(resolve => {
+    
+    
     
     
     
