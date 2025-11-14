@@ -148,6 +148,10 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 
+
+
+#include "api/create_modular_peer_connection_factory_internal.h"  
+
 namespace webrtc {
 
 
@@ -228,6 +232,10 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     kIceConnectionMax,
   };
   static constexpr absl::string_view AsString(IceConnectionState state);
+  template <typename Sink>
+  void AbslStringify(Sink& sink, IceConnectionState state) {
+    sink.Append(AsString(state));
+  }
 
   
   enum TlsCertPolicy {
@@ -652,8 +660,11 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
 
     
     
+    CryptoOptions crypto_options;
+
     
-    std::optional<CryptoOptions> crypto_options;
+    
+    CryptoOptions& GetWritableCryptoOptions() { return crypto_options; }
 
     
     
@@ -1120,8 +1131,9 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   virtual bool AddIceCandidate(const IceCandidate* candidate) = 0;
   
   
-  virtual void AddIceCandidate(std::unique_ptr<IceCandidate> ,
-                               std::function<void(RTCError)> ) {}
+  virtual void AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
+                               std::function<void(RTCError)> callback) {}
+  virtual bool RemoveIceCandidate(const IceCandidate* candidate) = 0;
 
   
   
@@ -1129,6 +1141,7 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
+  [[deprecated("Use IceCandidate version")]]
   virtual bool RemoveIceCandidates(
       const std::vector<Candidate>& candidates) = 0;
 
@@ -1520,9 +1533,6 @@ class RTC_EXPORT PeerConnectionFactoryInterface : public RefCountInterface {
     
     
     SSLProtocolVersion ssl_max_version = SSL_PROTOCOL_DTLS_12;
-
-    
-    CryptoOptions crypto_options = {};
   };
 
   
@@ -1558,13 +1568,6 @@ class RTC_EXPORT PeerConnectionFactoryInterface : public RefCountInterface {
   virtual scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       scoped_refptr<VideoTrackSourceInterface> source,
       absl::string_view label) = 0;
-  ABSL_DEPRECATED("Use version with scoped_refptr")
-  virtual scoped_refptr<VideoTrackInterface> CreateVideoTrack(
-      const std::string& label,
-      VideoTrackSourceInterface* source) {
-    return CreateVideoTrack(scoped_refptr<VideoTrackSourceInterface>(source),
-                            label);
-  }
 
   
   virtual scoped_refptr<AudioTrackInterface> CreateAudioTrack(
@@ -1593,26 +1596,6 @@ class RTC_EXPORT PeerConnectionFactoryInterface : public RefCountInterface {
   PeerConnectionFactoryInterface() {}
   ~PeerConnectionFactoryInterface() override = default;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-RTC_EXPORT scoped_refptr<PeerConnectionFactoryInterface>
-CreateModularPeerConnectionFactory(
-    PeerConnectionFactoryDependencies dependencies);
 
 
 inline constexpr absl::string_view PeerConnectionInterface::AsString(

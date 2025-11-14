@@ -10,9 +10,8 @@
 
 #include "pc/peer_connection.h"
 
-#include <limits.h>
-#include <stddef.h>
-
+#include <climits>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -24,6 +23,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -297,6 +297,7 @@ RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
       existing_configuration;
   modified_config.servers = configuration.servers;
   modified_config.type = configuration.type;
+  modified_config.crypto_options = configuration.crypto_options;
   modified_config.ice_candidate_pool_size =
       configuration.ice_candidate_pool_size;
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
@@ -403,7 +404,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     SdpSemantics sdp_semantics;
     std::optional<AdapterType> network_preference;
     bool active_reset_srtp_params;
-    std::optional<CryptoOptions> crypto_options;
+    CryptoOptions crypto_options;
     bool offer_extmap_allow_mixed;
     std::string turn_logging_id;
     bool enable_implicit_rollback;
@@ -686,11 +687,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
   config.disable_encryption = options_.disable_encryption;
   config.bundle_policy = configuration.bundle_policy;
   config.rtcp_mux_policy = configuration.rtcp_mux_policy;
-  
-  
-  config.crypto_options = configuration.crypto_options.has_value()
-                              ? *configuration.crypto_options
-                              : options_.crypto_options;
+  config.crypto_options = configuration.crypto_options;
 
   
   config.crypto_options.ephemeral_key_exchange_cipher_groups.Update(
@@ -779,12 +776,13 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
             }));
       });
   transport_controller_->SubscribeIceCandidatesRemoved(
-      [this](const std::vector<Candidate>& c) {
+      [this](IceTransportInternal* transport, const std::vector<Candidate>& c) {
         RTC_DCHECK_RUN_ON(network_thread());
-        signaling_thread()->PostTask(
-            SafeTask(signaling_thread_safety_.flag(), [this, c = c]() {
+        std::string mid = transport->transport_name();
+        signaling_thread()->PostTask(SafeTask(
+            signaling_thread_safety_.flag(), [this, mid = mid, c = c]() {
               RTC_DCHECK_RUN_ON(signaling_thread());
-              OnTransportControllerCandidatesRemoved(c);
+              OnTransportControllerCandidatesRemoved(mid, c);
             }));
       });
   transport_controller_->SubscribeIceCandidatePairChanged(
@@ -798,8 +796,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
       });
 
   IceConfig ice_config(configuration);
-  ice_config.dtls_handshake_in_stun =
-      CanAttemptDtlsStunPiggybacking(configuration);
+  ice_config.dtls_handshake_in_stun = CanAttemptDtlsStunPiggybacking();
 
   transport_controller_->SetIceConfig(ice_config);
   return transport_controller_.get();
@@ -1528,8 +1525,7 @@ RTCError PeerConnection::SetConfiguration(
       modified_config.GetTurnPortPrunePolicy() !=
           configuration_.GetTurnPortPrunePolicy();
   IceConfig ice_config(modified_config);
-  ice_config.dtls_handshake_in_stun =
-      CanAttemptDtlsStunPiggybacking(modified_config);
+  ice_config.dtls_handshake_in_stun = CanAttemptDtlsStunPiggybacking();
 
   
   
@@ -1577,6 +1573,12 @@ void PeerConnection::AddIceCandidate(std::unique_ptr<IceCandidate> candidate,
                                   ClearStatsCache();
                                   callback(result);
                                 });
+}
+
+bool PeerConnection::RemoveIceCandidate(const IceCandidate* candidate) {
+  TRACE_EVENT0("webrtc", "PeerConnection::RemoveIceCandidate");
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  return sdp_handler_->RemoveIceCandidate(candidate);
 }
 
 bool PeerConnection::RemoveIceCandidates(
@@ -1776,11 +1778,17 @@ void PeerConnection::Close() {
   legacy_stats_->UpdateStats(kStatsOutputLevelStandard);
 
   ice_connection_state_ = PeerConnectionInterface::kIceConnectionClosed;
-  Observer()->OnIceConnectionChange(ice_connection_state_);
+  RunWithObserver([&](auto observer) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    observer->OnIceConnectionChange(ice_connection_state_);
+  });
   standardized_ice_connection_state_ =
       PeerConnectionInterface::IceConnectionState::kIceConnectionClosed;
   connection_state_ = PeerConnectionInterface::PeerConnectionState::kClosed;
-  Observer()->OnConnectionChange(connection_state_);
+  RunWithObserver([&](auto observer) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    observer->OnConnectionChange(connection_state_);
+  });
 
   sdp_handler_->Close();
 
@@ -1868,7 +1876,10 @@ void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
              PeerConnectionInterface::kIceConnectionClosed);
 
   ice_connection_state_ = new_state;
-  Observer()->OnIceConnectionChange(ice_connection_state_);
+  RunWithObserver([&](auto observer) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    observer->OnIceConnectionChange(ice_connection_state_);
+  });
 }
 
 void PeerConnection::SetStandardizedIceConnectionState(
@@ -1885,7 +1896,9 @@ void PeerConnection::SetStandardizedIceConnectionState(
                    << standardized_ice_connection_state_ << " => " << new_state;
 
   standardized_ice_connection_state_ = new_state;
-  Observer()->OnStandardizedIceConnectionChange(new_state);
+  RunWithObserver([&](auto observer) {
+    observer->OnStandardizedIceConnectionChange(new_state);
+  });
 }
 
 void PeerConnection::SetConnectionState(
@@ -1895,7 +1908,8 @@ void PeerConnection::SetConnectionState(
   if (IsClosed())
     return;
   connection_state_ = new_state;
-  Observer()->OnConnectionChange(new_state);
+  RunWithObserver(
+      [&](auto observer) { observer->OnConnectionChange(new_state); });
 
   
   
@@ -2031,7 +2045,10 @@ void PeerConnection::OnIceGatheringChange(
     return;
   }
   ice_gathering_state_ = new_state;
-  Observer()->OnIceGatheringChange(ice_gathering_state_);
+  RunWithObserver([&](auto observer) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    observer->OnIceGatheringChange(ice_gathering_state_);
+  });
 }
 
 void PeerConnection::OnIceCandidate(std::unique_ptr<IceCandidate> candidate) {
@@ -2040,7 +2057,8 @@ void PeerConnection::OnIceCandidate(std::unique_ptr<IceCandidate> candidate) {
   }
   ReportIceCandidateCollected(candidate->candidate());
   ClearStatsCache();
-  Observer()->OnIceCandidate(candidate.get());
+  RunWithObserver(
+      [&](auto observer) { observer->OnIceCandidate(candidate.get()); });
 }
 
 void PeerConnection::OnIceCandidateError(const std::string& address,
@@ -2051,15 +2069,30 @@ void PeerConnection::OnIceCandidateError(const std::string& address,
   if (IsClosed()) {
     return;
   }
-  Observer()->OnIceCandidateError(address, port, url, error_code, error_text);
+  RunWithObserver([&](auto observer) {
+    observer->OnIceCandidateError(address, port, url, error_code, error_text);
+  });
 }
 
 void PeerConnection::OnIceCandidatesRemoved(
+    absl::string_view mid,
     const std::vector<Candidate>& candidates) {
   if (IsClosed()) {
     return;
   }
-  Observer()->OnIceCandidatesRemoved(candidates);
+  
+  
+  
+  
+  std::vector<Candidate> candidates_for_notification;
+  candidates_for_notification.reserve(candidates.size());
+  for (Candidate candidate : candidates) {  
+    candidate.set_transport_name(mid);
+    candidates_for_notification.push_back(candidate);
+  }
+  RunWithObserver([&](auto observer) {
+    observer->OnIceCandidatesRemoved(candidates_for_notification);
+  });
 }
 
 void PeerConnection::OnSelectedCandidatePairChanged(
@@ -2073,7 +2106,9 @@ void PeerConnection::OnSelectedCandidatePairChanged(
     NoteUsageEvent(UsageEvent::DIRECT_CONNECTION_SELECTED);
   }
 
-  Observer()->OnIceSelectedCandidatePairChanged(event);
+  RunWithObserver([&](auto observer) {
+    observer->OnIceSelectedCandidatePairChanged(event);
+  });
 }
 
 bool PeerConnection::CreateDataChannelTransport(absl::string_view mid) {
@@ -2431,18 +2466,11 @@ void PeerConnection::OnTransportControllerCandidateError(
 }
 
 void PeerConnection::OnTransportControllerCandidatesRemoved(
+    absl::string_view mid,
     const std::vector<Candidate>& candidates) {
-  
-  for (const Candidate& candidate : candidates) {
-    if (candidate.transport_name().empty()) {
-      RTC_LOG(LS_ERROR) << "OnTransportControllerCandidatesRemoved: "
-                           "empty content name in candidate "
-                        << candidate.ToString();
-      return;
-    }
-  }
-  sdp_handler_->RemoveLocalIceCandidates(candidates);
-  OnIceCandidatesRemoved(candidates);
+  RTC_DCHECK(!mid.empty());
+  sdp_handler_->RemoveLocalIceCandidates(mid, candidates);
+  OnIceCandidatesRemoved(mid, candidates);
 }
 
 void PeerConnection::OnTransportControllerCandidateChanged(
@@ -2686,7 +2714,10 @@ void PeerConnection::AddRemoteCandidate(absl::string_view mid,
 }
 
 void PeerConnection::ReportUsagePattern() const {
-  usage_pattern_.ReportUsagePattern(observer_);
+  RunWithMaybeNullObserver([&](auto observer) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    usage_pattern_.ReportUsagePattern(observer);
+  });
 }
 
 void PeerConnection::ReportRemoteIceCandidateAdded(const Candidate& candidate) {
@@ -2910,10 +2941,17 @@ bool PeerConnection::OnTransportChanged(
   return ret;
 }
 
-PeerConnectionObserver* PeerConnection::Observer() const {
+void PeerConnection::RunWithObserver(
+    absl::AnyInvocable<void(webrtc::PeerConnectionObserver*) &&> task) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(observer_);
-  return observer_;
+  std::move(task)(observer_);
+}
+
+void PeerConnection::RunWithMaybeNullObserver(
+    absl::AnyInvocable<void(webrtc::PeerConnectionObserver*) &&> task) const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  std::move(task)(observer_);
 }
 
 RTCError PeerConnection::StartSctpTransport(const SctpOptions& options) {
@@ -2932,11 +2970,7 @@ RTCError PeerConnection::StartSctpTransport(const SctpOptions& options) {
 
 CryptoOptions PeerConnection::GetCryptoOptions() {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  
-  
-  return configuration_.crypto_options.has_value()
-             ? *configuration_.crypto_options
-             : options_.crypto_options;
+  return configuration_.crypto_options;
 }
 
 void PeerConnection::ClearStatsCache() {
@@ -3006,13 +3040,8 @@ PeerConnection::InitializeUnDemuxablePacketHandler() {
   };
 }
 
-bool PeerConnection::CanAttemptDtlsStunPiggybacking(
-    const RTCConfiguration& configuration) {
-  
-  
-  
-  
-  return dtls_enabled_ && configuration.certificates.empty() &&
+bool PeerConnection::CanAttemptDtlsStunPiggybacking() {
+  return dtls_enabled_ &&
          env_.field_trials().IsEnabled("WebRTC-IceHandshakeDtls");
 }
 
