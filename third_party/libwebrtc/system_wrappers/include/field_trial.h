@@ -14,41 +14,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "rtc_base/containers/flat_set.h"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -64,30 +29,18 @@ namespace field_trial {
 
 
 
-std::string FindFullName(absl::string_view name);
 
-
-
-
-inline bool IsEnabled(absl::string_view name) {
-  return FindFullName(name).find("Enabled") == 0;
-}
-
-
-
-inline bool IsDisabled(absl::string_view name) {
-  return FindFullName(name).find("Disabled") == 0;
-}
-
-
-
-
-
+[[deprecated(
+    "Create FieldTrials and pass is where FieldTrialsView is expected")]]
 void InitFieldTrialsFromString(const char* trials_string);
 
+
+[[deprecated("Propagate and query FieldTrialsView interface")]]
 const char* GetFieldTrialString();
 
 
+
+[[deprecated("Use FieldTrials::Create to validate field trial string")]]
 bool FieldTrialsStringIsValid(absl::string_view trials_string);
 
 
@@ -95,20 +48,10 @@ bool FieldTrialsStringIsValid(absl::string_view trials_string);
 
 
 
+
+[[deprecated("Use FieldTrials::Merge")]]
 std::string MergeFieldTrialsStrings(absl::string_view first,
                                     absl::string_view second);
-
-
-
-
-
-
-
-class FieldTrialsAllowedInScopeForTesting {
- public:
-  explicit FieldTrialsAllowedInScopeForTesting(flat_set<std::string> keys);
-  ~FieldTrialsAllowedInScopeForTesting();
-};
 
 }  
 }  
