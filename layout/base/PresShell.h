@@ -762,6 +762,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   inline void AddAnchorPosPositioned(nsIFrame* aFrame) {
     if (!mAnchorPosPositioned.Contains(aFrame)) {
+      MarkHasSeenAnchorPos();
       mAnchorPosPositioned.AppendElement(aFrame);
     }
   }
@@ -777,6 +778,18 @@ class PresShell final : public nsStubDocumentObserver,
 
   const nsTArray<nsIFrame*>& GetAnchorPosPositioned() const {
     return mAnchorPosPositioned;
+  }
+
+  bool HasSeenAnchorPos() const { return mHasSeenAnchorPos; }
+
+  void MarkHasSeenAnchorPos() {
+    if (mHasSeenAnchorPos) {
+      return;
+    }
+    mHasSeenAnchorPos = true;
+    if (auto* rootPS = GetRootPresShell()) {
+      rootPS->mHasSeenAnchorPos = true;
+    }
   }
 
 #ifdef MOZ_REFLOW_PERF
@@ -3489,6 +3502,11 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool mProcessingReflowCommands : 1;
   bool mPendingDidDoReflow : 1;
+
+  
+  
+  
+  bool mHasSeenAnchorPos : 1;
 
   
   
