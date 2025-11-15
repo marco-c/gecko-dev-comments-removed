@@ -10,9 +10,8 @@
 
 #include "pc/jsep_transport.h"
 
-#include <stdint.h>
-#include <string.h>
-
+#include <cstdint>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -53,7 +52,6 @@
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "test/create_test_field_trials.h"
 #include "test/gtest.h"
@@ -61,11 +59,11 @@
 namespace webrtc {
 namespace {
 
-const char kIceUfrag1[] = "U001";
-const char kIcePwd1[] = "TESTICEPWD00000000000001";
-const char kIceUfrag2[] = "U002";
-const char kIcePwd2[] = "TESTIEPWD00000000000002";
-const char kTransportName[] = "Test Transport";
+constexpr char kIceUfrag1[] = "U001";
+constexpr char kIcePwd1[] = "TESTICEPWD00000000000001";
+constexpr char kIceUfrag2[] = "U002";
+constexpr char kIcePwd2[] = "TESTIEPWD00000000000002";
+constexpr char kTransportName[] = "Test Transport";
 
 struct NegotiateRoleParams {
   ConnectionRole local_role;
@@ -97,7 +95,7 @@ scoped_refptr<IceTransportInterface> CreateIceTransport(
   return make_ref_counted<FakeIceTransportWrapper>(std::move(internal));
 }
 
-class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
+class JsepTransport2Test : public ::testing::Test {
  protected:
   std::unique_ptr<SrtpTransport> CreateSdesTransport(
       PacketTransportInternal* rtp_packet_transport,
