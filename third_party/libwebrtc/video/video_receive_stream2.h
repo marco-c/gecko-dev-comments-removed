@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/environment/environment.h"
 #include "api/frame_transformer_interface.h"
@@ -33,6 +34,7 @@
 #include "api/units/timestamp.h"
 #include "api/video/encoded_frame.h"
 #include "api/video/recordable_encoded_frame.h"
+#include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "call/call.h"
@@ -48,7 +50,8 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/time_utils.h"
+#include "system_wrappers/include/ntp_time.h"
+#include "video/corruption_detection/frame_instrumentation_evaluation.h"
 #include "video/decode_synchronizer.h"
 #include "video/receive_statistics_proxy.h"
 #include "video/rtp_streams_synchronizer2.h"
@@ -79,18 +82,14 @@ class CallStats;
 struct VideoFrameMetaData {
   VideoFrameMetaData(const webrtc::VideoFrame& frame, Timestamp now)
       : rtp_timestamp(frame.rtp_timestamp()),
-        timestamp_us(frame.timestamp_us()),
+        render_time(Timestamp::Micros(frame.timestamp_us())),
         ntp_time_ms(frame.ntp_time_ms()),
         width(frame.width()),
         height(frame.height()),
         decode_timestamp(now) {}
 
-  int64_t render_time_ms() const {
-    return timestamp_us / kNumMicrosecsPerMillisec;
-  }
-
   const uint32_t rtp_timestamp;
-  const int64_t timestamp_us;
+  const Timestamp render_time;
   const int64_t ntp_time_ms;
   const int width;
   const int height;
@@ -150,7 +149,7 @@ class VideoReceiveStream2
   }
 
   void SignalNetworkState(NetworkState state);
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  bool DeliverRtcp(ArrayView<const uint8_t> packet);
 
   void SetSync(Syncable* audio_syncable);
 
@@ -197,13 +196,12 @@ class VideoReceiveStream2
   
   uint32_t id() const override;
   std::optional<Syncable::Info> GetInfo() const override;
-  bool GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
-                              int64_t* time_ms) const override;
-  void SetEstimatedPlayoutNtpTimestampMs(int64_t ntp_timestamp_ms,
-                                         int64_t time_ms) override;
+  std::optional<Syncable::PlayoutInfo> GetPlayoutRtpTimestamp() const override;
+  void SetEstimatedPlayoutNtpTimestamp(NtpTime ntp_time,
+                                       Timestamp time) override;
 
   
-  bool SetMinimumPlayoutDelay(int delay_ms) override;
+  bool SetMinimumPlayoutDelay(TimeDelta delay) override;
 
   std::vector<webrtc::RtpSource> GetSources() const override;
 
@@ -257,9 +255,10 @@ class VideoReceiveStream2
       RTC_RUN_ON(decode_sequence_checker_);
 
   void UpdateHistograms();
-  std::optional<double> CalculateCorruptionScore(
+  void CalculateCorruptionScore(
       const VideoFrame& frame,
-      const FrameInstrumentationData& frame_instrumentation_data) override;
+      const FrameInstrumentationData& frame_instrumentation_data,
+      VideoContentType content_type) override;
 
   const Environment env_;
 
@@ -361,6 +360,9 @@ class VideoReceiveStream2
       RTC_GUARDED_BY(pending_resolution_mutex_);
   
   std::vector<std::unique_ptr<EncodedFrame>> buffered_encoded_frames_
+      RTC_GUARDED_BY(decode_sequence_checker_);
+
+  FrameInstrumentationEvaluation frame_evaluator_
       RTC_GUARDED_BY(decode_sequence_checker_);
 
   

@@ -10,12 +10,10 @@
 
 #include "video/video_receive_stream2.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -49,6 +47,7 @@
 #include "api/video/recordable_encoded_frame.h"
 #include "api/video/render_resolution.h"
 #include "api/video/video_codec_type.h"
+#include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
@@ -85,6 +84,7 @@
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/ntp_time.h"
 #include "video/call_stats2.h"
 #include "video/corruption_detection/frame_instrumentation_evaluation.h"
 #include "video/decode_synchronizer.h"
@@ -268,6 +268,7 @@ VideoReceiveStream2::VideoReceiveStream2(
       max_wait_for_frame_(DetermineMaxWaitForFrame(
           TimeDelta::Millis(config_.rtp.nack.rtp_history_ms),
           false)),
+      frame_evaluator_(&stats_proxy_),
       decode_queue_(env_.task_queue_factory().CreateTaskQueue(
           "DecodingQueue",
           TaskQueueFactory::Priority::HIGH)) {
@@ -350,9 +351,9 @@ void VideoReceiveStream2::SignalNetworkState(NetworkState state) {
   rtp_video_stream_receiver_.SignalNetworkState(state);
 }
 
-bool VideoReceiveStream2::DeliverRtcp(const uint8_t* packet, size_t length) {
+bool VideoReceiveStream2::DeliverRtcp(ArrayView<const uint8_t> packet) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  return rtp_video_stream_receiver_.DeliverRtcp(packet, length);
+  return rtp_video_stream_receiver_.DeliverRtcp(packet);
 }
 
 void VideoReceiveStream2::SetSync(Syncable* audio_syncable) {
@@ -662,10 +663,13 @@ void VideoReceiveStream2::UpdateHistograms() {
   stats_proxy_.UpdateHistograms(fraction_lost, rtp_stats, nullptr);
 }
 
-std::optional<double> VideoReceiveStream2::CalculateCorruptionScore(
+void VideoReceiveStream2::CalculateCorruptionScore(
     const VideoFrame& frame,
-    const FrameInstrumentationData& frame_instrumentation_data) {
-  return GetCorruptionScore(frame_instrumentation_data, frame);
+    const FrameInstrumentationData& frame_instrumentation_data,
+    VideoContentType content_type) {
+  RTC_DCHECK_RUN_ON(&decode_sequence_checker_);
+  frame_evaluator_.OnInstrumentedFrame(frame_instrumentation_data, frame,
+                                       content_type);
 }
 
 bool VideoReceiveStream2::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
@@ -710,7 +714,7 @@ void VideoReceiveStream2::OnFrame(const VideoFrame& video_frame) {
         int64_t sync_offset_ms;
         double estimated_freq_khz;
         if (rtp_stream_sync_.GetStreamSyncOffsetInMs(
-                frame_meta.rtp_timestamp, frame_meta.render_time_ms(),
+                frame_meta.rtp_timestamp, frame_meta.render_time.ms(),
                 &video_playout_ntp_ms, &sync_offset_ms, &estimated_freq_khz)) {
           stats_proxy_.OnSyncOffsetUpdated(video_playout_ntp_ms, sync_offset_ms,
                                            estimated_freq_khz);
@@ -797,25 +801,24 @@ std::optional<Syncable::Info> VideoReceiveStream2::GetInfo() const {
   if (!info)
     return std::nullopt;
 
-  info->current_delay_ms = timing_->TargetVideoDelay().ms();
+  info->current_delay = timing_->TargetVideoDelay();
   return info;
 }
 
-bool VideoReceiveStream2::GetPlayoutRtpTimestamp(uint32_t* rtp_timestamp,
-                                                 int64_t* time_ms) const {
+std::optional<Syncable::PlayoutInfo>
+VideoReceiveStream2::GetPlayoutRtpTimestamp() const {
   RTC_DCHECK_NOTREACHED();
-  return false;
+  return std::nullopt;
 }
 
-void VideoReceiveStream2::SetEstimatedPlayoutNtpTimestampMs(
-    int64_t ntp_timestamp_ms,
-    int64_t time_ms) {
+void VideoReceiveStream2::SetEstimatedPlayoutNtpTimestamp(NtpTime ntp_time,
+                                                          Timestamp time) {
   RTC_DCHECK_NOTREACHED();
 }
 
-bool VideoReceiveStream2::SetMinimumPlayoutDelay(int delay_ms) {
+bool VideoReceiveStream2::SetMinimumPlayoutDelay(TimeDelta delay) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-  syncable_minimum_playout_delay_ = TimeDelta::Millis(delay_ms);
+  syncable_minimum_playout_delay_ = delay;
   UpdatePlayoutDelays();
   return true;
 }
