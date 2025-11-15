@@ -104,7 +104,7 @@ SdpMungingType DetermineTransportModification(
   return SdpMungingType::kNoModification;
 }
 
-SdpMungingType DetermineAudioSdpMungingType(
+SdpMungingType DetermineAudioSdpModification(
     const MediaContentDescription* last_created_media_description,
     const MediaContentDescription* media_description_to_set) {
   RTC_DCHECK(last_created_media_description);
@@ -281,7 +281,78 @@ SdpMungingType DetermineAudioSdpMungingType(
   return SdpMungingType::kNoModification;
 }
 
-SdpMungingType DetermineVideoSdpMungingType(
+SdpMungingType DetermineRtcpModification(
+    const MediaContentDescription* last_created_media_description,
+    const MediaContentDescription* media_description_to_set) {
+  
+  if (last_created_media_description->rtcp_mux() !=
+      media_description_to_set->rtcp_mux()) {
+    RTC_LOG(LS_WARNING) << "SDP munging: rtcp-mux modified.";
+    return SdpMungingType::kRtcpMux;
+  }
+
+  
+  if (last_created_media_description->rtcp_reduced_size() !=
+      media_description_to_set->rtcp_reduced_size()) {
+    RTC_LOG(LS_WARNING) << "SDP munging: rtcp-rsize modified.";
+    return last_created_media_description->type() == MediaType::AUDIO
+               ? SdpMungingType::kAudioCodecsRtcpReducedSize
+               : SdpMungingType::kVideoCodecsRtcpReducedSize;
+  }
+  return SdpMungingType::kNoModification;
+}
+
+SdpMungingType DetermineCodecModification(
+    const MediaContentDescription* last_created_media_description,
+    const MediaContentDescription* media_description_to_set) {
+  MediaType media_type = last_created_media_description->type();
+  
+  
+  auto last_created_codecs = last_created_media_description->codecs();
+  auto codecs_to_set = media_description_to_set->codecs();
+  if (last_created_codecs.size() == codecs_to_set.size()) {
+    for (size_t i = 0; i < last_created_codecs.size(); i++) {
+      if (last_created_codecs[i] == codecs_to_set[i]) {
+        continue;
+      }
+      
+      for (size_t j = i + 1; j < last_created_codecs.size(); j++) {
+        if (last_created_codecs[i] == codecs_to_set[j]) {
+          return media_type == MediaType::AUDIO
+                     ? SdpMungingType::kAudioCodecsReordered
+                     : SdpMungingType::kVideoCodecsReordered;
+        }
+      }
+      
+      if (last_created_codecs[i].name == codecs_to_set[i].name &&
+          last_created_codecs[i].id != codecs_to_set[i].id) {
+        return SdpMungingType::kPayloadTypes;
+      }
+      if (last_created_codecs[i].params != codecs_to_set[i].params) {
+        return media_type == MediaType::AUDIO
+                   ? SdpMungingType::kAudioCodecsFmtp
+                   : SdpMungingType::kVideoCodecsFmtp;
+      }
+      if (last_created_codecs[i].feedback_params !=
+          codecs_to_set[i].feedback_params) {
+        return media_type == MediaType::AUDIO
+                   ? SdpMungingType::kAudioCodecsRtcpFb
+                   : SdpMungingType::kVideoCodecsRtcpFb;
+      }
+      
+      if (media_type == MediaType::VIDEO &&
+          last_created_codecs[i].packetization !=
+              codecs_to_set[i].packetization) {
+        return SdpMungingType::kVideoCodecsModifiedWithRawPacketization;
+      }
+      
+      
+    }
+  }
+  return SdpMungingType::kNoModification;
+}
+
+SdpMungingType DetermineVideoSdpModification(
     const MediaContentDescription* last_created_media_description,
     const MediaContentDescription* media_description_to_set) {
   RTC_DCHECK(last_created_media_description);
@@ -359,55 +430,19 @@ SdpMungingType DetermineVideoSdpMungingType(
     RTC_LOG(LS_WARNING) << "SDP munging: sps-pps-idr-in-keyframe enabled.";
     return SdpMungingType::kVideoCodecsFmtpH264SpsPpsIdrInKeyframe;
   }
-
   return SdpMungingType::kNoModification;
 }
 
-}  
-
-
-
-SdpMungingType DetermineSdpMungingType(
-    const SessionDescriptionInterface* sdesc,
-    const SessionDescriptionInterface* last_created_desc) {
-  if (!sdesc || !sdesc->description()) {
-    RTC_LOG(LS_WARNING) << "SDP munging: Failed to parse session description.";
-    
-    
-    RTC_DCHECK_NOTREACHED();
-    return SdpMungingType::kCurrentDescriptionFailedToParse;
-  }
-
-  if (!last_created_desc || !last_created_desc->description()) {
-    RTC_LOG(LS_WARNING) << "SDP munging: SetLocalDescription called without "
-                           "CreateOffer or CreateAnswer.";
-    if (sdesc->GetType() == SdpType::kOffer) {
-      return SdpMungingType::kWithoutCreateOffer;
-    } else {  
-      return SdpMungingType::kWithoutCreateAnswer;
-    }
-  }
-
-  
-  
-
+SdpMungingType DetermineContentsModification(
+    const ContentInfos& last_created_contents,
+    const ContentInfos& contents_to_set) {
   SdpMungingType type;
-
-  
-  
-  if (sdesc->description() == last_created_desc->description()) {
-    return SdpMungingType::kNoModification;
-  }
-
-  
-  const auto& last_created_contents =
-      last_created_desc->description()->contents();
-  const auto& contents_to_set = sdesc->description()->contents();
   if (last_created_contents.size() != contents_to_set.size()) {
     RTC_LOG(LS_WARNING) << "SDP munging: Number of m= sections does not match "
                            "last created description.";
     return SdpMungingType::kNumberOfContents;
   }
+
   for (size_t content_index = 0; content_index < last_created_contents.size();
        content_index++) {
     
@@ -434,77 +469,29 @@ SdpMungingType DetermineSdpMungingType(
       continue;
     }
     if (media_type == MediaType::VIDEO) {
-      type = DetermineVideoSdpMungingType(last_created_media_description,
-                                          media_description_to_set);
+      type = DetermineVideoSdpModification(last_created_media_description,
+                                           media_description_to_set);
       if (type != SdpMungingType::kNoModification) {
         return type;
       }
     } else if (media_type == MediaType::AUDIO) {
-      type = DetermineAudioSdpMungingType(last_created_media_description,
-                                          media_description_to_set);
+      type = DetermineAudioSdpModification(last_created_media_description,
+                                           media_description_to_set);
       if (type != SdpMungingType::kNoModification) {
         return type;
       }
     }
 
-    
-    if (last_created_media_description->rtcp_mux() !=
-        media_description_to_set->rtcp_mux()) {
-      RTC_LOG(LS_WARNING) << "SDP munging: rtcp-mux modified.";
-      return SdpMungingType::kRtcpMux;
+    type = DetermineRtcpModification(last_created_media_description,
+                                     media_description_to_set);
+    if (type != SdpMungingType::kNoModification) {
+      return type;
     }
 
-    
-    if (last_created_media_description->rtcp_reduced_size() !=
-        media_description_to_set->rtcp_reduced_size()) {
-      RTC_LOG(LS_WARNING) << "SDP munging: rtcp-rsize modified.";
-      return media_type == MediaType::AUDIO
-                 ? SdpMungingType::kAudioCodecsRtcpReducedSize
-                 : SdpMungingType::kVideoCodecsRtcpReducedSize;
-    }
-
-    
-    
-    auto last_created_codecs = last_created_media_description->codecs();
-    auto codecs_to_set = media_description_to_set->codecs();
-    if (last_created_codecs.size() == codecs_to_set.size()) {
-      for (size_t i = 0; i < last_created_codecs.size(); i++) {
-        if (last_created_codecs[i] == codecs_to_set[i]) {
-          continue;
-        }
-        
-        for (size_t j = i + 1; j < last_created_codecs.size(); j++) {
-          if (last_created_codecs[i] == codecs_to_set[j]) {
-            return media_type == MediaType::AUDIO
-                       ? SdpMungingType::kAudioCodecsReordered
-                       : SdpMungingType::kVideoCodecsReordered;
-          }
-        }
-        
-        if (last_created_codecs[i].name == codecs_to_set[i].name &&
-            last_created_codecs[i].id != codecs_to_set[i].id) {
-          return SdpMungingType::kPayloadTypes;
-        }
-        if (last_created_codecs[i].params != codecs_to_set[i].params) {
-          return media_type == MediaType::AUDIO
-                     ? SdpMungingType::kAudioCodecsFmtp
-                     : SdpMungingType::kVideoCodecsFmtp;
-        }
-        if (last_created_codecs[i].feedback_params !=
-            codecs_to_set[i].feedback_params) {
-          return media_type == MediaType::AUDIO
-                     ? SdpMungingType::kAudioCodecsRtcpFb
-                     : SdpMungingType::kVideoCodecsRtcpFb;
-        }
-        
-        if (media_type == MediaType::VIDEO &&
-            last_created_codecs[i].packetization !=
-                codecs_to_set[i].packetization) {
-          return SdpMungingType::kVideoCodecsModifiedWithRawPacketization;
-        }
-        
-        
-      }
+    type = DetermineCodecModification(last_created_media_description,
+                                      media_description_to_set);
+    if (type != SdpMungingType::kNoModification) {
+      return type;
     }
 
     
@@ -550,6 +537,52 @@ SdpMungingType DetermineSdpMungingType(
       }
     }
   }
+  return SdpMungingType::kNoModification;
+}
+
+}  
+
+
+
+SdpMungingType DetermineSdpMungingType(
+    const SessionDescriptionInterface* sdesc,
+    const SessionDescriptionInterface* last_created_desc) {
+  if (!sdesc || !sdesc->description()) {
+    RTC_LOG(LS_WARNING) << "SDP munging: Failed to parse session description.";
+    
+    
+    RTC_DCHECK_NOTREACHED();
+    return SdpMungingType::kCurrentDescriptionFailedToParse;
+  }
+
+  if (!last_created_desc || !last_created_desc->description()) {
+    RTC_LOG(LS_WARNING) << "SDP munging: SetLocalDescription called without "
+                           "CreateOffer or CreateAnswer.";
+    if (sdesc->GetType() == SdpType::kOffer) {
+      return SdpMungingType::kWithoutCreateOffer;
+    } else {  
+      return SdpMungingType::kWithoutCreateAnswer;
+    }
+  }
+
+  
+  
+
+  SdpMungingType type;
+
+  
+  
+  if (sdesc->description() == last_created_desc->description()) {
+    return SdpMungingType::kNoModification;
+  }
+
+  
+  type = DetermineContentsModification(
+      last_created_desc->description()->contents(),
+      sdesc->description()->contents());
+  if (type != SdpMungingType::kNoModification) {
+    return type;
+  }
 
   
   type = DetermineTransportModification(
@@ -560,7 +593,8 @@ SdpMungingType DetermineSdpMungingType(
   }
 
   
-  for (size_t content_index = 0; content_index < last_created_contents.size();
+  for (size_t content_index = 0;
+       content_index < last_created_desc->description()->contents().size();
        content_index++) {
     
     
