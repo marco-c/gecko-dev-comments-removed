@@ -10,8 +10,7 @@
 
 #include "modules/desktop_capture/blank_detector_desktop_capturer_wrapper.h"
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -120,6 +119,9 @@ void BlankDetectorDesktopCapturerWrapper::OnCaptureResult(
 
 bool BlankDetectorDesktopCapturerWrapper::IsBlankFrame(
     const DesktopFrame& frame) const {
+  
+  RTC_CHECK_EQ(FOURCC_ARGB, frame.pixel_format());
+
   
   for (int i = 0; i < frame.size().width() * frame.size().height(); i += 105) {
     const int x = i % frame.size().width();

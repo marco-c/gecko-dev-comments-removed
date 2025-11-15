@@ -269,7 +269,7 @@ void ScreenCapturerX11::CaptureFrame() {
   
   if (!queue_.current_frame()) {
     std::unique_ptr<DesktopFrame> frame(
-        new BasicDesktopFrame(selected_monitor_rect_.size()));
+        new BasicDesktopFrame(selected_monitor_rect_.size(), FOURCC_ARGB));
 
     
     

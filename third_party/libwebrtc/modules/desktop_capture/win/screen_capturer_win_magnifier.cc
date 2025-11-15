@@ -347,6 +347,7 @@ void ScreenCapturerWinMagnifier::OnCaptured(void* data,
 
   
   
+  
   int captured_bytes_per_pixel = header.cbSize / header.width / header.height;
   if (header.format != GUID_WICPixelFormat32bppRGBA ||
       header.width != static_cast<UINT>(current_frame->size().width()) ||
@@ -388,9 +389,10 @@ void ScreenCapturerWinMagnifier::CreateCurrentFrameIfNecessary(
   if (!queue_.current_frame() || !queue_.current_frame()->size().equals(size)) {
     std::unique_ptr<DesktopFrame> frame =
         shared_memory_factory_
-            ? SharedMemoryDesktopFrame::Create(size,
+            ? SharedMemoryDesktopFrame::Create(size, FOURCC_ARGB,
                                                shared_memory_factory_.get())
-            : std::unique_ptr<DesktopFrame>(new BasicDesktopFrame(size));
+            : std::unique_ptr<DesktopFrame>(
+                  new BasicDesktopFrame(size, FOURCC_ARGB));
     queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(frame)));
   }
 }

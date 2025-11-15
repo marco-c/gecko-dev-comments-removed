@@ -80,7 +80,7 @@ MouseCursorMonitorX11::MouseCursorMonitorX11(
   
   const int kSize = 5;
   std::unique_ptr<DesktopFrame> default_cursor(
-      new BasicDesktopFrame(DesktopSize(kSize, kSize)));
+      new BasicDesktopFrame(DesktopSize(kSize, kSize), FOURCC_ARGB));
   const uint8_t pixels[kSize * kSize] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
       0x00, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0xff, 0xff,
@@ -135,7 +135,7 @@ void MouseCursorMonitorX11::Capture() {
   x_display_->ProcessPendingXEvents();
 
   
-  if (cursor_shape_.get())
+  if (cursor_shape_)
     callback_->OnMouseCursor(cursor_shape_.release());
 
   
@@ -211,7 +211,7 @@ void MouseCursorMonitorX11::CaptureCursor() {
   }
 
   std::unique_ptr<DesktopFrame> image(
-      new BasicDesktopFrame(DesktopSize(img->width, img->height)));
+      new BasicDesktopFrame(DesktopSize(img->width, img->height), FOURCC_ARGB));
 
   
   unsigned long* src = img->pixels;  

@@ -17,6 +17,7 @@
 #include <optional>
 #include <vector>
 
+#include "media/base/video_common.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/shared_memory.h"
@@ -57,6 +58,9 @@ class RTC_EXPORT DesktopFrame {
 
   
   int stride() const { return stride_; }
+
+  
+  FourCC pixel_format() const { return pixel_format_; }
 
   
   uint8_t* data() const { return data_; }
@@ -157,8 +161,16 @@ class RTC_EXPORT DesktopFrame {
   bool FrameDataIsBlack() const;
 
  protected:
+  
+  
   DesktopFrame(DesktopSize size,
                int stride,
+               uint8_t* data,
+               SharedMemory* shared_memory);
+
+  DesktopFrame(DesktopSize size,
+               int stride,
+               FourCC pixel_format,
                uint8_t* data,
                SharedMemory* shared_memory);
 
@@ -171,6 +183,10 @@ class RTC_EXPORT DesktopFrame {
  private:
   const DesktopSize size_;
   const int stride_;
+
+  
+  
+  const FourCC pixel_format_;
 
   DesktopRegion updated_region_;
   DesktopVector top_left_;
@@ -189,7 +205,11 @@ class RTC_EXPORT DesktopFrame {
 class RTC_EXPORT BasicDesktopFrame : public DesktopFrame {
  public:
   
+  
   explicit BasicDesktopFrame(DesktopSize size);
+
+  
+  BasicDesktopFrame(DesktopSize size, FourCC pixel_format);
 
   ~BasicDesktopFrame() override;
 
@@ -209,17 +229,26 @@ class RTC_EXPORT SharedMemoryDesktopFrame : public DesktopFrame {
   
   static std::unique_ptr<DesktopFrame> Create(
       DesktopSize size,
+      FourCC pixel_format,
       SharedMemoryFactory* shared_memory_factory);
 
   
   
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
+                           std::unique_ptr<SharedMemory> shared_memory);
+
+  
+  
+  SharedMemoryDesktopFrame(DesktopSize size,
+                           int stride,
+                           FourCC pixel_format,
                            SharedMemory* shared_memory);
 
   
   SharedMemoryDesktopFrame(DesktopSize size,
                            int stride,
+                           FourCC pixel_format,
                            std::unique_ptr<SharedMemory> shared_memory);
 
   ~SharedMemoryDesktopFrame() override;
@@ -237,6 +266,7 @@ class RTC_EXPORT SharedMemoryDesktopFrame : public DesktopFrame {
   
   SharedMemoryDesktopFrame(DesktopRect rect,
                            int stride,
+                           FourCC pixel_format,
                            SharedMemory* shared_memory);
 };
 

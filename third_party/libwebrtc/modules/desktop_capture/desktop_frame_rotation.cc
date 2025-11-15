@@ -101,6 +101,8 @@ void RotateDesktopFrame(const DesktopFrame& source,
   RTC_DCHECK(target);
   RTC_DCHECK(DesktopRect::MakeSize(source.size()).ContainsRect(source_rect));
   
+  RTC_CHECK_EQ(FOURCC_ARGB, source.pixel_format());
+  
   const DesktopRect target_rect =
       RotateAndOffsetRect(source_rect, source.size(), rotation, target_offset);
   RTC_DCHECK(DesktopRect::MakeSize(target->size()).ContainsRect(target_rect));
