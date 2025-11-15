@@ -16,17 +16,20 @@
 #include <windows.graphics.capture.h>
 #include <windows.graphics.h>
 #include <wrl/client.h>
+#include <wrl/implements.h>
 
 #include <cstdint>
 #include <memory>
 #include <optional>
 
+#include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/screen_capture_frame_queue.h"
 #include "modules/desktop_capture/shared_desktop_frame.h"
+#include "rtc_base/event.h"
 
 namespace webrtc {
 
@@ -68,6 +71,41 @@ class WgcCaptureSession final {
   static constexpr int kNumBuffers = 2;
 
  private:
+  class RefCountedEvent : public RefCountedNonVirtual<RefCountedEvent>,
+                          public Event {
+   public:
+    RefCountedEvent(bool manual_reset, bool initially_signaled);
+
+   private:
+    friend class RefCountedNonVirtual<RefCountedEvent>;
+    ~RefCountedEvent();
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  class AgileFrameArrivedHandler
+      : public Microsoft::WRL::RuntimeClass<
+            Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>,
+            ABI::Windows::Foundation::ITypedEventHandler<
+                ABI::Windows::Graphics::Capture::Direct3D11CaptureFramePool*,
+                IInspectable*>,
+            IAgileObject> {
+   public:
+    AgileFrameArrivedHandler(scoped_refptr<RefCountedEvent> event);
+
+    IFACEMETHODIMP Invoke(
+        ABI::Windows::Graphics::Capture::IDirect3D11CaptureFramePool* sender,
+        IInspectable* args) override;
+
+   private:
+    scoped_refptr<RefCountedEvent> frame_arrived_event_;
+  };
+
   
   
   
@@ -85,18 +123,29 @@ class WgcCaptureSession final {
 
   
   
+  
+  
+  
+  bool WaitForFirstFrame();
+
+  
+  
   void EnsureFrame();
 
   
   HRESULT ProcessFrame();
 
-  void RemoveEventHandler();
+  void RemoveEventHandlers();
+  void RemoveItemClosedEventHandler();
+  void RemoveFrameArrivedEventHandler();
+  HRESULT AddFrameArrivedEventHandler();
 
   bool FrameContentCanBeCompared();
 
   bool allow_zero_hertz() const { return allow_zero_hertz_; }
 
   std::unique_ptr<EventRegistrationToken> item_closed_token_;
+  std::unique_ptr<EventRegistrationToken> frame_arrived_token_;
 
   
   
@@ -165,6 +214,24 @@ class WgcCaptureSession final {
   
   
   bool is_window_source_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  scoped_refptr<RefCountedEvent> has_first_frame_arrived_event_;
+
+  
+  
+  
+  bool has_first_frame_arrived_ = false;
 
   SequenceChecker sequence_checker_;
 };
