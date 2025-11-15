@@ -36,6 +36,7 @@ class BaseTimeDurationPlatformUtils {
   static MFBT_API double ToSeconds(int64_t aTicks);
   static MFBT_API double ToSecondsSigDigits(int64_t aTicks);
   static MFBT_API int64_t TicksFromMilliseconds(double aMilliseconds);
+  static MFBT_API int64_t ResolutionInTicks();
 };
 
 
@@ -234,6 +235,14 @@ class BaseTimeDuration {
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const BaseTimeDuration& aDuration) {
     return aStream << aDuration.ToMilliseconds() << " ms";
+  }
+
+  
+  
+  
+  
+  static BaseTimeDuration Resolution() {
+    return FromTicks(BaseTimeDurationPlatformUtils::ResolutionInTicks());
   }
 
   
