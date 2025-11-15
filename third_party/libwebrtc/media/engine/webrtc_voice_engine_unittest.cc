@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/strings/match.h"
+#include "api/array_view.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio/builtin_audio_processing_builder.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
@@ -79,6 +80,7 @@
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_audio_encoder_factory.h"
 
+namespace webrtc {
 namespace {
 using ::testing::_;
 using ::testing::ContainerEq;
@@ -122,13 +124,13 @@ const webrtc::Codec kTelephoneEventCodec2 =
 const webrtc::Codec kUnknownCodec =
     webrtc::CreateAudioCodec(127, "XYZ", 32000, 1);
 
-const uint32_t kSsrc0 = 0;
-const uint32_t kSsrc1 = 1;
-const uint32_t kSsrcX = 0x99;
-const uint32_t kSsrcY = 0x17;
-const uint32_t kSsrcZ = 0x42;
-const uint32_t kSsrcW = 0x02;
-const uint32_t kSsrcs4[] = {11, 200, 30, 44};
+constexpr uint32_t kSsrc0 = 0;
+constexpr uint32_t kSsrc1 = 1;
+constexpr uint32_t kSsrcX = 0x99;
+constexpr uint32_t kSsrcY = 0x17;
+constexpr uint32_t kSsrcZ = 0x42;
+constexpr uint32_t kSsrcW = 0x02;
+constexpr uint32_t kSsrcs4[] = {11, 200, 30, 44};
 
 constexpr int kRtpHistoryMs = 5000;
 
@@ -210,8 +212,6 @@ std::vector<webrtc::Codec> ReceiveCodecsWithId(
   std::vector<webrtc::Codec> codecs = engine.LegacyRecvCodecs();
   return AddIdToCodecs(pt_mapper, std::move(codecs));
 }
-
-}  
 
 
 TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
@@ -351,9 +351,9 @@ class WebRtcVoiceEngineTestFake : public ::testing::TestWithParam<bool> {
     EXPECT_FALSE(call_.GetAudioSendStream(kSsrcX));
   }
 
-  void DeliverPacket(const void* data, int len) {
+  void DeliverPacket(ArrayView<const uint8_t> data) {
     webrtc::RtpPacketReceived packet;
-    packet.Parse(reinterpret_cast<const uint8_t*>(data), len);
+    packet.Parse(data);
     receive_channel_->OnPacketReceived(packet);
     webrtc::Thread::Current()->ProcessMessages(0);
   }
@@ -1601,7 +1601,7 @@ TEST_P(WebRtcVoiceEngineTestFake, GetRtpReceiveParametersWithUnsignaledSsrc) {
   EXPECT_FALSE(rtp_parameters.encodings[0].ssrc);
 
   
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
 
   
   rtp_parameters = receive_channel_->GetDefaultRtpReceiveParameters();
@@ -2597,7 +2597,7 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
   {
     webrtc::VoiceMediaSendInfo send_info;
     webrtc::VoiceMediaReceiveInfo receive_info;
-    DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+    DeliverPacket(kPcmuFrame);
     SetAudioReceiveStreamStats();
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
     EXPECT_EQ(true, send_channel_->GetStats(&send_info));
@@ -2756,7 +2756,7 @@ TEST_P(WebRtcVoiceEngineTestFake, GetStats) {
   
   
   {
-    DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+    DeliverPacket(kPcmuFrame);
     SetAudioReceiveStreamStats();
     EXPECT_CALL(*adm_, GetPlayoutUnderrunCount()).WillOnce(Return(0));
     webrtc::VoiceMediaSendInfo send_info;
@@ -2795,10 +2795,9 @@ TEST_P(WebRtcVoiceEngineTestFake, SetSendSsrcAfterCreatingReceiveChannel) {
 TEST_P(WebRtcVoiceEngineTestFake, Recv) {
   EXPECT_TRUE(SetupChannel());
   EXPECT_TRUE(AddRecvStream(1));
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
 
-  EXPECT_TRUE(
-      GetRecvStream(1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(GetRecvStream(1).VerifyLastPacket(kPcmuFrame));
 }
 
 
@@ -2811,7 +2810,7 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   EXPECT_TRUE(AddRecvStream(ssrc2));
   EXPECT_TRUE(AddRecvStream(ssrc3));
   
-  unsigned char packets[4][sizeof(kPcmuFrame)];
+  uint8_t packets[4][sizeof(kPcmuFrame)];
   for (size_t i = 0; i < std::size(packets); ++i) {
     memcpy(packets[i], kPcmuFrame, sizeof(kPcmuFrame));
     webrtc::SetBE32(packets[i] + 8, static_cast<uint32_t>(i));
@@ -2825,28 +2824,28 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvWithMultipleStreams) {
   EXPECT_EQ(s2.received_packets(), 0);
   EXPECT_EQ(s3.received_packets(), 0);
 
-  DeliverPacket(packets[0], sizeof(packets[0]));
+  DeliverPacket(packets[0]);
   EXPECT_EQ(s1.received_packets(), 0);
   EXPECT_EQ(s2.received_packets(), 0);
   EXPECT_EQ(s3.received_packets(), 0);
 
-  DeliverPacket(packets[1], sizeof(packets[1]));
+  DeliverPacket(packets[1]);
   EXPECT_EQ(s1.received_packets(), 1);
-  EXPECT_TRUE(s1.VerifyLastPacket(packets[1], sizeof(packets[1])));
+  EXPECT_TRUE(s1.VerifyLastPacket(packets[1]));
   EXPECT_EQ(s2.received_packets(), 0);
   EXPECT_EQ(s3.received_packets(), 0);
 
-  DeliverPacket(packets[2], sizeof(packets[2]));
+  DeliverPacket(packets[2]);
   EXPECT_EQ(s1.received_packets(), 1);
   EXPECT_EQ(s2.received_packets(), 1);
-  EXPECT_TRUE(s2.VerifyLastPacket(packets[2], sizeof(packets[2])));
+  EXPECT_TRUE(s2.VerifyLastPacket(packets[2]));
   EXPECT_EQ(s3.received_packets(), 0);
 
-  DeliverPacket(packets[3], sizeof(packets[3]));
+  DeliverPacket(packets[3]);
   EXPECT_EQ(s1.received_packets(), 1);
   EXPECT_EQ(s2.received_packets(), 1);
   EXPECT_EQ(s3.received_packets(), 1);
-  EXPECT_TRUE(s3.VerifyLastPacket(packets[3], sizeof(packets[3])));
+  EXPECT_TRUE(s3.VerifyLastPacket(packets[3]));
 
   EXPECT_TRUE(receive_channel_->RemoveRecvStream(ssrc3));
   EXPECT_TRUE(receive_channel_->RemoveRecvStream(ssrc2));
@@ -2858,11 +2857,10 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvUnsignaled) {
   EXPECT_TRUE(SetupChannel());
   EXPECT_EQ(0u, call_.GetAudioReceiveStreams().size());
 
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
 
   EXPECT_EQ(1u, call_.GetAudioReceiveStreams().size());
-  EXPECT_TRUE(
-      GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame));
 }
 
 
@@ -2877,12 +2875,10 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvUnsignaledSsrcWithSignaledStreamId) {
   
   
   EXPECT_EQ(0u, call_.GetAudioReceiveStreams().size());
-
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
 
   EXPECT_EQ(1u, call_.GetAudioReceiveStreams().size());
-  EXPECT_TRUE(
-      GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame));
   EXPECT_EQ(kSyncLabel, GetRecvStream(kSsrc1).GetConfig().sync_group);
 
   
@@ -2890,11 +2886,10 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvUnsignaledSsrcWithSignaledStreamId) {
   receive_channel_->ResetUnsignaledRecvStream();
   receive_channel_->RemoveRecvStream(kSsrc1);
 
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
 
   EXPECT_EQ(1u, call_.GetAudioReceiveStreams().size());
-  EXPECT_TRUE(
-      GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame));
   EXPECT_TRUE(GetRecvStream(kSsrc1).GetConfig().sync_group.empty());
 }
 
@@ -2905,12 +2900,12 @@ TEST_P(WebRtcVoiceEngineTestFake,
   ASSERT_TRUE(call_.GetAudioReceiveStreams().empty());
 
   
-  unsigned char packet[sizeof(kPcmuFrame)];
+  uint8_t packet[sizeof(kPcmuFrame)];
   memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
   webrtc::SetBE32(&packet[8], 0x1234);
-  DeliverPacket(packet, sizeof(packet));
+  DeliverPacket(packet);
   webrtc::SetBE32(&packet[8], 0x5678);
-  DeliverPacket(packet, sizeof(packet));
+  DeliverPacket(packet);
 
   
   const auto& receivers1 = call_.GetAudioReceiveStreams();
@@ -2926,34 +2921,34 @@ TEST_P(WebRtcVoiceEngineTestFake,
 
 TEST_P(WebRtcVoiceEngineTestFake, RecvMultipleUnsignaled) {
   EXPECT_TRUE(SetupChannel());
-  unsigned char packet[sizeof(kPcmuFrame)];
+  uint8_t packet[sizeof(kPcmuFrame)];
   memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
 
   
   for (uint32_t ssrc = 1; ssrc < (1 + kMaxUnsignaledRecvStreams); ++ssrc) {
     webrtc::SetBE32(&packet[8], ssrc);
-    DeliverPacket(packet, sizeof(packet));
+    DeliverPacket(packet);
 
     
     EXPECT_EQ(ssrc, call_.GetAudioReceiveStreams().size());
     EXPECT_EQ(1, GetRecvStream(ssrc).received_packets());
-    EXPECT_TRUE(GetRecvStream(ssrc).VerifyLastPacket(packet, sizeof(packet)));
+    EXPECT_TRUE(GetRecvStream(ssrc).VerifyLastPacket(packet));
   }
 
   
   for (uint32_t ssrc = 1; ssrc < (1 + kMaxUnsignaledRecvStreams); ++ssrc) {
     webrtc::SetBE32(&packet[8], ssrc);
-    DeliverPacket(packet, sizeof(packet));
+    DeliverPacket(packet);
 
     EXPECT_EQ(kMaxUnsignaledRecvStreams, call_.GetAudioReceiveStreams().size());
     EXPECT_EQ(2, GetRecvStream(ssrc).received_packets());
-    EXPECT_TRUE(GetRecvStream(ssrc).VerifyLastPacket(packet, sizeof(packet)));
+    EXPECT_TRUE(GetRecvStream(ssrc).VerifyLastPacket(packet));
   }
 
   
   constexpr uint32_t kAnotherSsrc = 667;
   webrtc::SetBE32(&packet[8], kAnotherSsrc);
-  DeliverPacket(packet, sizeof(packet));
+  DeliverPacket(packet);
 
   const auto& streams = call_.GetAudioReceiveStreams();
   EXPECT_EQ(kMaxUnsignaledRecvStreams, streams.size());
@@ -2972,32 +2967,30 @@ TEST_P(WebRtcVoiceEngineTestFake, RecvMultipleUnsignaled) {
 
 TEST_P(WebRtcVoiceEngineTestFake, RecvUnsignaledAfterSignaled) {
   EXPECT_TRUE(SetupChannel());
-  unsigned char packet[sizeof(kPcmuFrame)];
+  uint8_t packet[sizeof(kPcmuFrame)];
   memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
 
   
   const uint32_t signaled_ssrc = 1;
   webrtc::SetBE32(&packet[8], signaled_ssrc);
   EXPECT_TRUE(AddRecvStream(signaled_ssrc));
-  DeliverPacket(packet, sizeof(packet));
-  EXPECT_TRUE(
-      GetRecvStream(signaled_ssrc).VerifyLastPacket(packet, sizeof(packet)));
+  DeliverPacket(packet);
+  EXPECT_TRUE(GetRecvStream(signaled_ssrc).VerifyLastPacket(packet));
   EXPECT_EQ(1u, call_.GetAudioReceiveStreams().size());
 
   
   
   const uint32_t unsignaled_ssrc = 7011;
   webrtc::SetBE32(&packet[8], unsignaled_ssrc);
-  DeliverPacket(packet, sizeof(packet));
-  EXPECT_TRUE(
-      GetRecvStream(unsignaled_ssrc).VerifyLastPacket(packet, sizeof(packet)));
+  DeliverPacket(packet);
+  EXPECT_TRUE(GetRecvStream(unsignaled_ssrc).VerifyLastPacket(packet));
   EXPECT_EQ(2u, call_.GetAudioReceiveStreams().size());
 
-  DeliverPacket(packet, sizeof(packet));
+  DeliverPacket(packet);
   EXPECT_EQ(2, GetRecvStream(unsignaled_ssrc).received_packets());
 
   webrtc::SetBE32(&packet[8], signaled_ssrc);
-  DeliverPacket(packet, sizeof(packet));
+  DeliverPacket(packet);
   EXPECT_EQ(2, GetRecvStream(signaled_ssrc).received_packets());
   EXPECT_EQ(2u, call_.GetAudioReceiveStreams().size());
 }
@@ -3009,10 +3002,9 @@ TEST_P(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_NoRecreate) {
   EXPECT_TRUE(SetupChannel());
 
   
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
   EXPECT_EQ(1u, call_.GetAudioReceiveStreams().size());
-  EXPECT_TRUE(
-      GetRecvStream(1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(GetRecvStream(1).VerifyLastPacket(kPcmuFrame));
 
   
   
@@ -3028,10 +3020,9 @@ TEST_P(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_Updates) {
   EXPECT_TRUE(SetupChannel());
 
   
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
   EXPECT_EQ(1u, call_.GetAudioReceiveStreams().size());
-  EXPECT_TRUE(
-      GetRecvStream(1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(GetRecvStream(1).VerifyLastPacket(kPcmuFrame));
 
   
   
@@ -3461,7 +3452,7 @@ TEST_P(WebRtcVoiceEngineTestFake, SetOutputVolumeUnsignaledRecvStream) {
   EXPECT_TRUE(SetupChannel());
 
   
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
   EXPECT_DOUBLE_EQ(1, GetRecvStream(kSsrc1).gain());
 
   
@@ -3470,10 +3461,10 @@ TEST_P(WebRtcVoiceEngineTestFake, SetOutputVolumeUnsignaledRecvStream) {
   EXPECT_DOUBLE_EQ(2, GetRecvStream(kSsrc1).gain());
 
   
-  unsigned char pcmuFrame2[sizeof(kPcmuFrame)];
+  uint8_t pcmuFrame2[sizeof(kPcmuFrame)];
   memcpy(pcmuFrame2, kPcmuFrame, sizeof(kPcmuFrame));
   webrtc::SetBE32(&pcmuFrame2[8], kSsrcX);
-  DeliverPacket(pcmuFrame2, sizeof(pcmuFrame2));
+  DeliverPacket(pcmuFrame2);
   EXPECT_DOUBLE_EQ(2, GetRecvStream(kSsrcX).gain());
 
   
@@ -3511,7 +3502,7 @@ TEST_P(WebRtcVoiceEngineTestFake,
   EXPECT_TRUE(SetupChannel());
 
   
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
   EXPECT_EQ(
       0, receive_channel_->GetBaseMinimumPlayoutDelayMs(kSsrc1).value_or(-1));
   
@@ -3532,10 +3523,10 @@ TEST_P(WebRtcVoiceEngineTestFake,
       receive_channel_->GetBaseMinimumPlayoutDelayMs(kSsrcY).has_value());
 
   
-  unsigned char pcmuFrame2[sizeof(kPcmuFrame)];
+  uint8_t pcmuFrame2[sizeof(kPcmuFrame)];
   memcpy(pcmuFrame2, kPcmuFrame, sizeof(kPcmuFrame));
   webrtc::SetBE32(&pcmuFrame2[8], kSsrcX);
-  DeliverPacket(pcmuFrame2, sizeof(pcmuFrame2));
+  DeliverPacket(pcmuFrame2);
   EXPECT_EQ(
       100, receive_channel_->GetBaseMinimumPlayoutDelayMs(kSsrcX).value_or(-1));
 
@@ -3636,7 +3627,7 @@ TEST_P(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   
   const uint32_t kAudioSsrc = 1;
   webrtc::CopyOnWriteBuffer kPcmuPacket(kPcmuFrame, sizeof(kPcmuFrame));
-  static const unsigned char kRtcp[] = {
+  static const uint8_t kRtcp[] = {
       0x80, 0xc9, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
       0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -3719,7 +3710,7 @@ TEST_P(WebRtcVoiceEngineTestFake, SetRawAudioSinkUnsignaledRecvStream) {
 
   
   
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
   EXPECT_NE(nullptr, GetRecvStream(kSsrc1).sink());
 
   
@@ -3732,15 +3723,15 @@ TEST_P(WebRtcVoiceEngineTestFake, SetRawAudioSinkUnsignaledRecvStream) {
 
   
   EXPECT_TRUE(receive_channel_->RemoveRecvStream(kSsrc1));
-  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  DeliverPacket(kPcmuFrame);
   EXPECT_NE(nullptr, GetRecvStream(kSsrc1).sink());
 
   
   
-  unsigned char pcmuFrame2[sizeof(kPcmuFrame)];
+  uint8_t pcmuFrame2[sizeof(kPcmuFrame)];
   memcpy(pcmuFrame2, kPcmuFrame, sizeof(kPcmuFrame));
   webrtc::SetBE32(&pcmuFrame2[8], kSsrcX);
-  DeliverPacket(pcmuFrame2, sizeof(pcmuFrame2));
+  DeliverPacket(pcmuFrame2);
   if (kMaxUnsignaledRecvStreams > 1) {
     EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
   }
@@ -4044,20 +4035,21 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
   Environment env = CreateEnvironment();
   for (bool use_null_apm : {false, true}) {
     std::vector<webrtc::AudioCodecSpec> specs;
-    webrtc::AudioCodecSpec spec1{{"codec1", 48000, 2, {{"param1", "value1"}}},
-                                 {48000, 2, 16000, 10000, 20000}};
+    webrtc::AudioCodecSpec spec1 = {
+        .format = {"codec1", 48000, 2, {{"param1", "value1"}}},
+        .info = {48000, 2, 16000, 10000, 20000},
+    };
     spec1.info.allow_comfort_noise = false;
     spec1.info.supports_network_adaption = true;
     specs.push_back(spec1);
-    webrtc::AudioCodecSpec spec2{{"codec2", 48000, 2, {{"param1", "value1"}}},
-                                 {48000, 2, 16000, 10000, 20000}};
+    webrtc::AudioCodecSpec spec2 = {
+        .format = {"codec2", 48000, 2, {{"param1", "value1"}}},
+        .info = {48000, 2, 16000, 10000, 20000}};
     
     spec2.info.allow_comfort_noise = true;
     specs.push_back(spec2);
-    specs.push_back(
-        webrtc::AudioCodecSpec{{"codec3", 8000, 1}, {8000, 1, 64000}});
-    specs.push_back(
-        webrtc::AudioCodecSpec{{"codec4", 8000, 2}, {8000, 1, 64000}});
+    specs.push_back({.format = {"codec3", 8000, 1}, .info = {8000, 1, 64000}});
+    specs.push_back({.format = {"codec4", 8000, 2}, .info = {8000, 1, 64000}});
 
     webrtc::scoped_refptr<webrtc::MockAudioEncoderFactory>
         unused_encoder_factory =
@@ -4133,20 +4125,20 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecsWithLatePtAssignment) {
 
   for (bool use_null_apm : {false, true}) {
     std::vector<webrtc::AudioCodecSpec> specs;
-    webrtc::AudioCodecSpec spec1{{"codec1", 48000, 2, {{"param1", "value1"}}},
-                                 {48000, 2, 16000, 10000, 20000}};
+    webrtc::AudioCodecSpec spec1 = {
+        .format = {"codec1", 48000, 2, {{"param1", "value1"}}},
+        .info = {48000, 2, 16000, 10000, 20000}};
     spec1.info.allow_comfort_noise = false;
     spec1.info.supports_network_adaption = true;
     specs.push_back(spec1);
-    webrtc::AudioCodecSpec spec2{{"codec2", 48000, 2, {{"param1", "value1"}}},
-                                 {48000, 2, 16000, 10000, 20000}};
+    webrtc::AudioCodecSpec spec2 = {
+        .format = {"codec2", 48000, 2, {{"param1", "value1"}}},
+        .info = {48000, 2, 16000, 10000, 20000}};
     
     spec2.info.allow_comfort_noise = true;
     specs.push_back(spec2);
-    specs.push_back(
-        webrtc::AudioCodecSpec{{"codec3", 8000, 1}, {8000, 1, 64000}});
-    specs.push_back(
-        webrtc::AudioCodecSpec{{"codec4", 8000, 2}, {8000, 1, 64000}});
+    specs.push_back({.format = {"codec3", 8000, 1}, .info = {8000, 1, 64000}});
+    specs.push_back({.format = {"codec4", 8000, 2}, .info = {8000, 1, 64000}});
 
     webrtc::scoped_refptr<webrtc::MockAudioEncoderFactory>
         unused_encoder_factory =
@@ -4214,3 +4206,6 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecsWithLatePtAssignment) {
     EXPECT_GE(find_codec({"telephone-event", 48000, 1}), num_specs);
   }
 }
+
+}  
+}  

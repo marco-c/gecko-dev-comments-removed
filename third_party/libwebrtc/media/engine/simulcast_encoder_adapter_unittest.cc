@@ -538,7 +538,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
          ++stream_idx) {
       if (stream_idx >= codec_.numberOfSimulcastStreams) {
         
-        codec_.simulcastStream[stream_idx] = {0};
+        codec_.simulcastStream[stream_idx] = {};
       } else {
         codec_.simulcastStream[stream_idx].active = active_streams[stream_idx];
       }
@@ -559,7 +559,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
          ++stream_idx) {
       if (stream_idx >= codec_.numberOfSimulcastStreams) {
         
-        codec_.simulcastStream[stream_idx] = {0};
+        codec_.simulcastStream[stream_idx] = {};
       } else {
         codec_.simulcastStream[stream_idx].active = active_streams[stream_idx];
       }

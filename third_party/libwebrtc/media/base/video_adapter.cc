@@ -73,19 +73,19 @@ Fraction FindScale(int input_width,
 
   
   if (target_pixels >= input_pixels)
-    return Fraction{1, 1};
+    return {.numerator = 1, .denominator = 1};
 
-  Fraction current_scale = Fraction{1, 1};
-  Fraction best_scale = Fraction{1, 1};
+  Fraction current_scale = {.numerator = 1, .denominator = 1};
+  Fraction best_scale = {.numerator = 1, .denominator = 1};
 
   
   if (input_width % 3 == 0 && input_height % 3 == 0) {
     
-    current_scale = Fraction{6, 6};
+    current_scale = {.numerator = 6, .denominator = 6};
   }
   if (input_width % 9 == 0 && input_height % 9 == 0) {
     
-    current_scale = Fraction{36, 36};
+    current_scale = {.numerator = 36, .denominator = 36};
   }
 
   
