@@ -19,7 +19,6 @@
 #include "api/units/time_delta.h"
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
@@ -43,10 +42,6 @@ class CallStats {
   void EnsureStarted();
 
   
-  
-  
-  
-  
   RtcpRttStats* AsRtcpRttStats() { return &rtcp_rtt_stats_impl_; }
 
   
@@ -54,8 +49,6 @@ class CallStats {
   void RegisterStatsObserver(CallStatsObserver* observer);
   void DeregisterStatsObserver(CallStatsObserver* observer);
 
-  
-  
   int64_t LastProcessedRtt() const;
 
   
@@ -90,15 +83,6 @@ class CallStats {
       
       
       owner_->OnRttUpdate(rtt);
-    }
-
-    int64_t LastProcessedRtt() const override {
-      
-      
-      
-      
-      RTC_DCHECK_NOTREACHED() << "Legacy call path";
-      return 0;
     }
 
     CallStats* const owner_;
