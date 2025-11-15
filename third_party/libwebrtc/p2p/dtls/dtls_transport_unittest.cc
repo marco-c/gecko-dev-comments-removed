@@ -53,6 +53,7 @@
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/wait_until.h"
@@ -67,7 +68,7 @@ static const size_t kPacketHeaderLen = 12;
 static const int kFakePacketId = 0x1234;
 static const int kTimeout = 10000;
 
-const uint8_t kRtpLeadByte = 0x80;
+constexpr uint8_t kRtpLeadByte = 0x80;
 
 static bool IsRtpLeadByte(uint8_t b) {
   return b == kRtpLeadByte;
@@ -138,8 +139,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
         });
 
     dtls_transport_ = std::make_unique<DtlsTransportInternalImpl>(
-        fake_ice_transport_.get(), crypto_options,
-        nullptr, ssl_max_version_);
+        CreateTestEnvironment(), fake_ice_transport_.get(), crypto_options,
+        ssl_max_version_);
     
     dtls_transport_->SetLocalCertificate(certificate_);
     dtls_transport_->SignalWritableState.connect(
