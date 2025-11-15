@@ -50,6 +50,8 @@ class AudioSendStream : public AudioSender {
     uint64_t retransmitted_bytes_sent = 0;
     int32_t packets_sent = 0;
     
+    int32_t packets_sent_with_ect1 = 0;
+    
     TimeDelta total_packet_send_delay = TimeDelta::Zero();
     
     uint64_t retransmitted_packets_sent = 0;

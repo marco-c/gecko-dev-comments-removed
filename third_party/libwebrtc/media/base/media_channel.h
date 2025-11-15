@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_processing_statistics.h"
 #include "api/audio_codecs/audio_encoder.h"
@@ -60,7 +61,6 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
@@ -363,6 +363,8 @@ struct MediaSenderInfo {
   
   uint64_t retransmitted_bytes_sent = 0;
   int packets_sent = 0;
+  
+  int packets_sent_with_ect1 = 0;
   
   uint64_t retransmitted_packets_sent = 0;
   
@@ -1003,45 +1005,5 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using RtcpParameters = ::webrtc::MediaChannelParameters::RtcpParameters;
-using ::webrtc::AudioReceiverParameters;
-using ::webrtc::AudioSenderParameter;
-using ::webrtc::BandwidthEstimationInfo;
-using ::webrtc::kScreencastDefaultFps;
-using ::webrtc::MediaChannelNetworkInterface;
-using ::webrtc::MediaChannelParameters;
-using ::webrtc::MediaReceiveChannelInterface;
-using ::webrtc::MediaReceiverInfo;
-using ::webrtc::MediaSendChannelInterface;
-using ::webrtc::MediaSenderInfo;
-using ::webrtc::RtpCodecParametersMap;
-using ::webrtc::SenderParameters;
-using ::webrtc::SsrcReceiverInfo;
-using ::webrtc::SsrcSenderInfo;
-using ::webrtc::ToStringIfSet;
-using ::webrtc::VectorToString;
-using ::webrtc::VideoMediaInfo;
-using ::webrtc::VideoMediaReceiveChannelInterface;
-using ::webrtc::VideoMediaReceiveInfo;
-using ::webrtc::VideoMediaSendChannelInterface;
-using ::webrtc::VideoMediaSendInfo;
-using ::webrtc::VideoOptions;
-using ::webrtc::VideoReceiverInfo;
-using ::webrtc::VideoReceiverParameters;
-using ::webrtc::VideoSenderInfo;
-using ::webrtc::VideoSenderParameters;
-using ::webrtc::VoiceMediaInfo;
-using ::webrtc::VoiceMediaReceiveChannelInterface;
-using ::webrtc::VoiceMediaReceiveInfo;
-using ::webrtc::VoiceMediaSendChannelInterface;
-using ::webrtc::VoiceMediaSendInfo;
-using ::webrtc::VoiceReceiverInfo;
-using ::webrtc::VoiceSenderInfo;
-}  
-#endif  
 
 #endif  

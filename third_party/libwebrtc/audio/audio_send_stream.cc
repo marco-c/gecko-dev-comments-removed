@@ -20,6 +20,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio/audio_processing.h"
 #include "api/audio_codecs/audio_encoder.h"
@@ -442,6 +443,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
       call_stats.header_and_padding_bytes_sent;
   stats.retransmitted_bytes_sent = call_stats.retransmitted_bytes_sent;
   stats.packets_sent = call_stats.packetsSent;
+  stats.packets_sent_with_ect1 = call_stats.packets_sent_with_ect1;
   stats.total_packet_send_delay = call_stats.total_packet_send_delay;
   stats.retransmitted_packets_sent = call_stats.retransmitted_packets_sent;
   
@@ -490,9 +492,9 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   return stats;
 }
 
-void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+void AudioSendStream::DeliverRtcp(ArrayView<const uint8_t> packet) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  channel_send_->ReceivedRTCPPacket(packet, length);
+  channel_send_->ReceivedRTCPPacket(packet.data(), packet.size());
   
   
   UpdateOverheadPerPacket();

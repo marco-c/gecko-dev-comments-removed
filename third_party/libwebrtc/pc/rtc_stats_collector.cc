@@ -10,11 +10,9 @@
 
 #include "pc/rtc_stats_collector.h"
 
-#include <stdint.h>
-#include <stdio.h>
-
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <map>
 #include <memory>
 #include <optional>
@@ -86,8 +84,8 @@ namespace webrtc {
 
 namespace {
 
-const char kDirectionInbound = 'I';
-const char kDirectionOutbound = 'O';
+constexpr char kDirectionInbound = 'I';
+constexpr char kDirectionOutbound = 'O';
 
 constexpr char kAudioPlayoutSingletonId[] = "AP";
 
@@ -732,6 +730,8 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
   if (media_sender_info.active.has_value()) {
     outbound_stats->active = *media_sender_info.active;
   }
+  outbound_stats->packets_sent_with_ect1 =
+      media_sender_info.packets_sent_with_ect1;
 }
 
 std::unique_ptr<RTCOutboundRtpStreamStats>
@@ -1431,11 +1431,11 @@ void RTCStatsCollector::ProduceCertificateStats_n(
   for (const auto& transport_cert_stats_pair : transport_cert_stats) {
     if (transport_cert_stats_pair.second.local) {
       ProduceCertificateStatsFromSSLCertificateStats(
-          timestamp, *transport_cert_stats_pair.second.local.get(), report);
+          timestamp, *transport_cert_stats_pair.second.local, report);
     }
     if (transport_cert_stats_pair.second.remote) {
       ProduceCertificateStatsFromSSLCertificateStats(
-          timestamp, *transport_cert_stats_pair.second.remote.get(), report);
+          timestamp, *transport_cert_stats_pair.second.remote, report);
     }
   }
 }
@@ -1624,7 +1624,7 @@ void RTCStatsCollector::ProduceMediaSourceStats_s(
         
         
         auto audio_processor(audio_track->GetAudioProcessor());
-        if (audio_processor.get()) {
+        if (audio_processor) {
           
           
           AudioProcessorInterface::AudioProcessorStatistics ap_stats =
@@ -1972,8 +1972,11 @@ void RTCStatsCollector::ProduceTransportStats_n(
           channel_stats.ice_transport_stats.selected_candidate_pair_changes;
       channel_transport_stats->ice_role =
           IceRoleToRTCIceRole(channel_stats.ice_transport_stats.ice_role);
-      channel_transport_stats->ice_local_username_fragment =
-          channel_stats.ice_transport_stats.ice_local_username_fragment;
+      if (!channel_stats.ice_transport_stats.ice_local_username_fragment
+               .empty()) {
+        channel_transport_stats->ice_local_username_fragment =
+            channel_stats.ice_transport_stats.ice_local_username_fragment;
+      }
       channel_transport_stats->ice_state =
           IceTransportStateToRTCIceTransportState(
               channel_stats.ice_transport_stats.ice_state);

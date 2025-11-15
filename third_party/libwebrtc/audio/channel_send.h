@@ -47,6 +47,8 @@ struct CallSendStatistics {
   uint64_t retransmitted_bytes_sent;
   int packetsSent;
   
+  int packets_sent_with_ect1;
+  
   TimeDelta total_packet_send_delay = TimeDelta::Zero();
   
   uint64_t retransmitted_packets_sent;

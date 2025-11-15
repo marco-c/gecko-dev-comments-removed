@@ -369,6 +369,9 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
 
   
   std::optional<uint32_t> rtx_ssrc;
+
+  
+  std::optional<uint64_t> packets_sent_with_ect1;
 };
 
 
