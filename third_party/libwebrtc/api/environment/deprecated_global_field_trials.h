@@ -7,18 +7,18 @@
 
 
 
-#ifndef API_TRANSPORT_FIELD_TRIAL_BASED_CONFIG_H_
-#define API_TRANSPORT_FIELD_TRIAL_BASED_CONFIG_H_
+#ifndef API_ENVIRONMENT_DEPRECATED_GLOBAL_FIELD_TRIALS_H_
+#define API_ENVIRONMENT_DEPRECATED_GLOBAL_FIELD_TRIALS_H_
 
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "api/field_trials_registry.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
-class RTC_EXPORT FieldTrialBasedConfig : public FieldTrialsRegistry {
+
+class DeprecatedGlobalFieldTrials : public FieldTrialsRegistry {
  private:
   std::string GetValue(absl::string_view key) const override;
 };
