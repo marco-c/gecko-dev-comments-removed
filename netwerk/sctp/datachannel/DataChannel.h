@@ -232,21 +232,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   void CloseAll_s();
   void MarkStreamAvailable(uint16_t aStream);
 
-  
-  int SendMessage(uint16_t stream, nsACString&& aMsg) {
-    return SendDataMessage(stream, std::move(aMsg), false);
-  }
-
-  
-  int SendBinaryMessage(uint16_t stream, nsACString&& aMsg) {
-    return SendDataMessage(stream, std::move(aMsg), true);
-  }
-
-  
-  int SendBlob(uint16_t stream, nsIInputStream* aBlob);
-
-  void ReadBlob(already_AddRefed<DataChannelConnection> aThis, uint16_t aStream,
-                nsIInputStream* aBlob);
+  nsISerialEventTarget* GetIOThread();
 
   bool InShutdown() const {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -293,7 +279,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                         nsISerialEventTarget* aTarget,
                         MediaTransportHandler* aHandler);
 
-  int SendDataMessage(uint16_t aStream, nsACString&& aMsg, bool aIsBinary);
+  void SendDataMessage(uint16_t aStream, nsACString&& aMsg, bool aIsBinary);
 
   DataChannelConnectionState GetState() const {
     MOZ_ASSERT(mSTS->IsOnCurrentThread());
@@ -421,13 +407,13 @@ class DataChannel {
                                      ErrorResult& aRv);
 
   
-  int SendMsg(nsACString&& aMsg);
+  void SendMsg(nsCString&& aMsg);
 
   
-  int SendBinaryMsg(nsACString&& aMsg);
+  void SendBinaryMsg(nsCString&& aMsg);
 
   
-  int SendBinaryBlob(nsIInputStream* aBlob);
+  void SendBinaryBlob(nsIInputStream* aBlob);
 
   void DecrementBufferedAmount(size_t aSize);
   void AnnounceOpen();
@@ -464,6 +450,8 @@ class DataChannel {
 
  private:
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
+  void SendBuffer(nsCString&& aMsg, bool aBinary);
+  void UnsetMessagesSentPromiseWhenSettled();
 
   const nsCString mLabel;
   const nsCString mProtocol;
@@ -473,14 +461,12 @@ class DataChannel {
   const bool mOrdered;
 
   
-  
-  
-  
   dom::RTCDataChannel* mMainthreadDomDataChannel = nullptr;
   bool mHasWorkerDomDataChannel = false;
   bool mEverOpened = false;
   bool mAnnouncedClosed = false;
   uint16_t mStream;
+  RefPtr<GenericNonExclusivePromise> mMessagesSentPromise;
   RefPtr<DataChannelConnection> mConnection;
 
   
