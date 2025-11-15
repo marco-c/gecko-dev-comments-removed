@@ -273,7 +273,8 @@ DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
       mDeviceType(aType),
       mControlThread(mozilla::GetCurrentSerialEventTarget()),
       mNextFrameMinimumTime(Timestamp::Zero()),
-      mCallbacks("DesktopCaptureImpl::mCallbacks") {}
+      mCallbacks("DesktopCaptureImpl::mCallbacks"),
+      mBufferPool(false, 2) {}
 
 DesktopCaptureImpl::~DesktopCaptureImpl() {
   MOZ_ASSERT(!mCaptureThread);
@@ -399,6 +400,8 @@ int32_t DesktopCaptureImpl::StopCapture() {
     mRequestedCapability = mozilla::Nothing();
   }
 
+  mBufferPool.Release();
+
   if (mCaptureThread) {
     
     mCaptureThread->AsyncShutdown();
@@ -472,18 +475,22 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
     return;
   }
 
-  int stride_y = width;
-  int stride_uv = (width + 1) / 2;
-
   
   
   
 
   mozilla::PerformanceRecorder<mozilla::CopyVideoStage> rec(
       "DesktopCaptureImpl::ConvertToI420"_ns, mTrackingId, width, abs(height));
-  
-  webrtc::scoped_refptr<I420Buffer> buffer =
-      I420Buffer::Create(width, abs(height), stride_y, stride_uv, stride_uv);
+
+  webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
+      mBufferPool.CreateI420Buffer(width, abs(height));
+  if (!buffer) {
+    RTC_LOG(LS_ERROR) << "Failed to allocate I420Buffer from pool.";
+    MOZ_ASSERT_UNREACHABLE(
+        "We might fail to allocate a buffer, but with this "
+        "being a recycling pool that shouldn't happen");
+    return;
+  }
 
   const int conversionResult = libyuv::ConvertToI420(
       videoFrame, videoFrameLength, buffer->MutableDataY(), buffer->StrideY(),
