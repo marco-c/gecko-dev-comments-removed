@@ -1513,7 +1513,7 @@ class FontEntryStandardFaceComparator {
   }
   bool LessThan(const RefPtr<gfxFontEntry>& a,
                 const RefPtr<gfxFontEntry>& b) const {
-    return (a->mStandardFace == true && b->mStandardFace == false);
+    return (a->mStandardFace == false && b->mStandardFace == true);
   }
 };
 
@@ -1652,8 +1652,9 @@ void gfxFontFamily::FindAllFontsForStyle(
   gfxFontEntry* matched = nullptr;
   
   
-  for (uint32_t i = 0; i < count; i++) {
-    fe = mAvailableFonts[i];
+  
+  for (uint32_t i = count; i > 0;) {
+    fe = mAvailableFonts[--i];
     
     double distance = WeightStyleStretchDistance(fe, aFontStyle);
     if (distance < minDistance) {
@@ -1663,7 +1664,7 @@ void gfxFontFamily::FindAllFontsForStyle(
       }
       minDistance = distance;
     } else if (distance == minDistance) {
-      if (matched) {
+      if (matched && matched != fe) {
         aFontEntryList.AppendElement(matched);
       }
       matched = fe;
@@ -1860,9 +1861,9 @@ void gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData) {
   if (!mFamilyCharacterMap.test(aMatchData->mCh)) {
     return;
   }
-  uint32_t i, numFonts = mAvailableFonts.Length();
-  for (i = 0; i < numFonts; i++) {
-    gfxFontEntry* fe = mAvailableFonts[i];
+  uint32_t numFonts = mAvailableFonts.Length();
+  for (uint32_t i = numFonts; i > 0;) {
+    gfxFontEntry* fe = mAvailableFonts[--i];
     if (fe && fe->HasCharacter(aMatchData->mCh)) {
       float distance = WeightStyleStretchDistance(fe, aMatchData->mStyle);
       if (aMatchData->mPresentation != FontPresentation::Any) {
@@ -2156,8 +2157,8 @@ gfxFontEntry* gfxFontFamily::FindFont(const nsACString& aFontName,
   
   AutoReadLock lock(mLock);
   uint32_t numFonts = mAvailableFonts.Length();
-  for (uint32_t i = 0; i < numFonts; i++) {
-    gfxFontEntry* fe = mAvailableFonts[i].get();
+  for (uint32_t i = numFonts; i > 0;) {
+    gfxFontEntry* fe = mAvailableFonts[--i].get();
     if (fe && fe->Name().Equals(aFontName, aCmp)) {
       return fe;
     }
