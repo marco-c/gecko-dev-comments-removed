@@ -43,6 +43,15 @@ inTimeZone("Europe/Helsinki", () => {
 });
 
 
+inTimeZone("Asia/Novosibirsk", () => {
+    let dt1 = new Date(1984, Month.April, 1, -1);
+    assertDateTime(dt1, "Sat Mar 31 1984 23:00:00 GMT+0700 (NOVT)", "+07", "Novosibirsk Standard Time");
+
+    let dt2 = new Date(1984, Month.April, 1);
+    assertDateTime(dt2, "Sun Apr 01 1984 01:00:00 GMT+0800 (NOVST)", "+08", "Novosibirsk Summer Time");
+});
+
+
 inTimeZone("Europe/London", () => {
     let dt = new Date(0);
     assertEq(dt.getHours(), 1);
