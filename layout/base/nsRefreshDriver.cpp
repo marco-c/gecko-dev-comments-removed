@@ -100,8 +100,6 @@
 #  include "VRManagerChild.h"
 #endif  
 
-#include <numeric>
-
 #include "nsXULPopupManager.h"
 
 using namespace mozilla;

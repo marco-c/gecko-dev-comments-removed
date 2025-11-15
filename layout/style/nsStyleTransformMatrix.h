@@ -11,8 +11,6 @@
 #ifndef nsStyleTransformMatrix_h_
 #define nsStyleTransformMatrix_h_
 
-#include <limits>
-
 #include "Units.h"  
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/gfx/Matrix.h"
