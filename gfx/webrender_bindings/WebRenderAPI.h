@@ -615,6 +615,7 @@ class DisplayListBuilder final {
                               wr::LayoutRect aClipRect);
 
   wr::WrSpatialId DefineStickyFrame(
+      const ActiveScrolledRoot* aStickyAsr,
       Maybe<wr::WrSpatialId> aParentSpatialId,
       const wr::LayoutRect& aContentRect, const float* aTopMargin,
       const float* aRightMargin, const float* aBottomMargin,
@@ -625,6 +626,8 @@ class DisplayListBuilder final {
 
   Maybe<wr::WrSpatialId> GetScrollIdForDefinedScrollLayer(
       layers::ScrollableLayerGuid::ViewID aViewId) const;
+  Maybe<wr::WrSpatialId> GetSpatialIdForDefinedStickyLayer(
+      const ActiveScrolledRoot* aASR) const;
   wr::WrSpatialId DefineScrollLayer(
       const layers::ScrollableLayerGuid::ViewID& aViewId,
       const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
@@ -917,6 +920,13 @@ class DisplayListBuilder final {
   
   std::unordered_map<layers::ScrollableLayerGuid::ViewID, wr::WrSpatialId>
       mScrollIds;
+
+  
+  
+  
+  
+  std::unordered_map<const ActiveScrolledRoot*, wr::WrSpatialId>
+      mASRToSpatialIdMap;
 
   wr::WrSpaceAndClipChain mCurrentSpaceAndClipChain;
 
