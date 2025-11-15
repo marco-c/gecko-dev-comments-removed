@@ -30,7 +30,6 @@ namespace dcsctp {
 
 
 
-constexpr int ZeroChecksumAcceptableChunkParameter::kType;
 
 std::optional<ZeroChecksumAcceptableChunkParameter>
 ZeroChecksumAcceptableChunkParameter::Parse(

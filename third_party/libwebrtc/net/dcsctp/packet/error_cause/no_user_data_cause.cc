@@ -30,7 +30,6 @@ namespace dcsctp {
 
 
 
-constexpr int NoUserDataCause::kType;
 
 std::optional<NoUserDataCause> NoUserDataCause::Parse(
     webrtc::ArrayView<const uint8_t> data) {

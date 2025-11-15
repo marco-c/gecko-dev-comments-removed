@@ -30,7 +30,6 @@ namespace dcsctp {
 
 
 
-constexpr int RestartOfAnAssociationWithNewAddressesCause::kType;
 
 std::optional<RestartOfAnAssociationWithNewAddressesCause>
 RestartOfAnAssociationWithNewAddressesCause::Parse(

@@ -35,7 +35,6 @@ namespace dcsctp {
 
 
 
-constexpr int MissingMandatoryParameterCause::kType;
 
 std::optional<MissingMandatoryParameterCause>
 MissingMandatoryParameterCause::Parse(webrtc::ArrayView<const uint8_t> data) {

@@ -44,7 +44,6 @@ namespace dcsctp {
 
 
 
-constexpr int OutgoingSSNResetRequestParameter::kType;
 
 std::optional<OutgoingSSNResetRequestParameter>
 OutgoingSSNResetRequestParameter::Parse(webrtc::ArrayView<const uint8_t> data) {

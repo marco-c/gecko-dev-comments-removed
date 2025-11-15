@@ -23,7 +23,6 @@ namespace dcsctp {
 
 
 
-constexpr int CookieReceivedWhileShuttingDownCause::kType;
 
 std::optional<CookieReceivedWhileShuttingDownCause>
 CookieReceivedWhileShuttingDownCause::Parse(

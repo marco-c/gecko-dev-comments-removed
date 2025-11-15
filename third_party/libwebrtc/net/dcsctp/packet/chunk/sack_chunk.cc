@@ -56,7 +56,6 @@ namespace dcsctp {
 
 
 
-constexpr int SackChunk::kType;
 
 std::optional<SackChunk> SackChunk::Parse(
     webrtc::ArrayView<const uint8_t> data) {

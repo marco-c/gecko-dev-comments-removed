@@ -40,7 +40,6 @@ namespace dcsctp {
 
 
 
-constexpr int IncomingSSNResetRequestParameter::kType;
 
 std::optional<IncomingSSNResetRequestParameter>
 IncomingSSNResetRequestParameter::Parse(webrtc::ArrayView<const uint8_t> data) {

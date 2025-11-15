@@ -33,7 +33,6 @@ namespace dcsctp {
 
 
 
-constexpr int AbortChunk::kType;
 
 std::optional<AbortChunk> AbortChunk::Parse(
     webrtc::ArrayView<const uint8_t> data) {

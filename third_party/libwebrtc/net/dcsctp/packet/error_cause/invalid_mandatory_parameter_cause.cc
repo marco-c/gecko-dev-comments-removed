@@ -23,7 +23,6 @@ namespace dcsctp {
 
 
 
-constexpr int InvalidMandatoryParameterCause::kType;
 
 std::optional<InvalidMandatoryParameterCause>
 InvalidMandatoryParameterCause::Parse(webrtc::ArrayView<const uint8_t> data) {

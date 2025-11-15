@@ -27,7 +27,6 @@ namespace dcsctp {
 
 
 
-constexpr int ShutdownCompleteChunk::kType;
 
 std::optional<ShutdownCompleteChunk> ShutdownCompleteChunk::Parse(
     webrtc::ArrayView<const uint8_t> data) {

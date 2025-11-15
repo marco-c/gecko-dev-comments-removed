@@ -33,7 +33,6 @@ namespace dcsctp {
 
 
 
-constexpr int AddOutgoingStreamsRequestParameter::kType;
 
 std::optional<AddOutgoingStreamsRequestParameter>
 AddOutgoingStreamsRequestParameter::Parse(

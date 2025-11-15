@@ -28,7 +28,6 @@ namespace dcsctp {
 
 
 
-constexpr int StaleCookieErrorCause::kType;
 
 std::optional<StaleCookieErrorCause> StaleCookieErrorCause::Parse(
     webrtc::ArrayView<const uint8_t> data) {

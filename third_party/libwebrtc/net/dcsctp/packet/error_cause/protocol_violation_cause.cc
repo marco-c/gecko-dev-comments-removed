@@ -31,7 +31,6 @@ namespace dcsctp {
 
 
 
-constexpr int ProtocolViolationCause::kType;
 
 std::optional<ProtocolViolationCause> ProtocolViolationCause::Parse(
     webrtc::ArrayView<const uint8_t> data) {

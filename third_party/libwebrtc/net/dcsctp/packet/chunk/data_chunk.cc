@@ -42,7 +42,6 @@ namespace dcsctp {
 
 
 
-constexpr int DataChunk::kType;
 
 std::optional<DataChunk> DataChunk::Parse(
     webrtc::ArrayView<const uint8_t> data) {
