@@ -98,9 +98,6 @@ constexpr uint32_t kStunCandidatePriority = (100 << 24) | (30 << 8) | (256 - 1);
 
 constexpr uint32_t kIPv6StunCandidatePriority =
     (100 << 24) | (40 << 8) | (256 - 1);
-constexpr int kInfiniteLifetime = -1;
-constexpr int kHighCostPortKeepaliveLifetimeMs = 2 * 60 * 1000;
-
 constexpr uint64_t kTiebreakerDefault = 44444;
 
 struct IPAddressTypeTestConfig {
@@ -156,8 +153,7 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
         nat_server_(CreateNatServer(nat_server_address, webrtc::NAT_OPEN_CONE)),
         done_(false),
         error_(false),
-        stun_keepalive_delay_(1),
-        stun_keepalive_lifetime_(-1) {
+        stun_keepalive_delay_(1) {
     network_ = MakeNetwork(address);
     RTC_CHECK(address.family() == nat_server_address.family());
     for (const auto& addr : stun_server_addresses) {
@@ -212,8 +208,8 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
     stun_port_->set_stun_keepalive_delay(stun_keepalive_delay_);
     
     
-    if (stun_keepalive_lifetime_ >= 0) {
-      stun_port_->set_stun_keepalive_lifetime(stun_keepalive_lifetime_);
+    if (stun_keepalive_lifetime_.has_value()) {
+      stun_port_->set_stun_keepalive_lifetime(*stun_keepalive_lifetime_);
     }
     stun_port_->SignalPortComplete.connect(this,
                                            &StunPortTestBase::OnPortComplete);
@@ -292,7 +288,7 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
   }
   void SetKeepaliveDelay(int delay) { stun_keepalive_delay_ = delay; }
 
-  void SetKeepaliveLifetime(int lifetime) {
+  void SetKeepaliveLifetime(TimeDelta lifetime) {
     stun_keepalive_lifetime_ = lifetime;
   }
 
@@ -324,7 +320,7 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
   bool done_;
   bool error_;
   int stun_keepalive_delay_;
-  int stun_keepalive_lifetime_;
+  std::optional<TimeDelta> stun_keepalive_lifetime_;
 
  protected:
   webrtc::IceCandidateErrorEvent error_event_;
@@ -655,16 +651,15 @@ TEST_F(StunPortTest, TestTwoCandidatesWithTwoStunServersAcrossNat) {
 TEST_F(StunPortTest, TestStunPortGetStunKeepaliveLifetime) {
   
   CreateStunPort(kStunServerAddr1);
-  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
+  EXPECT_EQ(port()->stun_keepalive_lifetime(), TimeDelta::PlusInfinity());
   
   SetNetworkType(webrtc::ADAPTER_TYPE_CELLULAR);
-  EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
-            port()->stun_keepalive_lifetime());
+  EXPECT_EQ(port()->stun_keepalive_lifetime(), kHighCostPortKeepaliveLifetime);
 
   
   SetNetworkType(webrtc::ADAPTER_TYPE_WIFI);
   CreateStunPort(kStunServerAddr2);
-  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
+  EXPECT_EQ(port()->stun_keepalive_lifetime(), TimeDelta::PlusInfinity());
 }
 
 
@@ -673,23 +668,22 @@ TEST_F(StunPortTest, TestStunPortGetStunKeepaliveLifetime) {
 TEST_F(StunPortTest, TestUdpPortGetStunKeepaliveLifetime) {
   
   CreateSharedUdpPort(kStunServerAddr1, nullptr);
-  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
+  EXPECT_EQ(port()->stun_keepalive_lifetime(), TimeDelta::PlusInfinity());
   
   SetNetworkType(webrtc::ADAPTER_TYPE_CELLULAR);
-  EXPECT_EQ(kHighCostPortKeepaliveLifetimeMs,
-            port()->stun_keepalive_lifetime());
+  EXPECT_EQ(port()->stun_keepalive_lifetime(), kHighCostPortKeepaliveLifetime);
 
   
   SetNetworkType(webrtc::ADAPTER_TYPE_WIFI);
   CreateSharedUdpPort(kStunServerAddr2, nullptr);
-  EXPECT_EQ(kInfiniteLifetime, port()->stun_keepalive_lifetime());
+  EXPECT_EQ(port()->stun_keepalive_lifetime(), TimeDelta::PlusInfinity());
 }
 
 
 
 TEST_F(StunPortTest, TestStunBindingRequestShortLifetime) {
   SetKeepaliveDelay(101);
-  SetKeepaliveLifetime(100);
+  SetKeepaliveLifetime(TimeDelta::Millis(100));
   CreateStunPort(kStunServerAddr1);
   PrepareAddress();
   EXPECT_THAT(

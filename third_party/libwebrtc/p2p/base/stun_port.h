@@ -24,6 +24,7 @@
 #include "api/candidate.h"
 #include "api/field_trials_view.h"
 #include "api/packet_socket_factory.h"
+#include "api/units/time_delta.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_interface.h"
@@ -40,9 +41,8 @@
 namespace webrtc {
 
 
-static const int INFINITE_LIFETIME = -1;
-
-static const int HIGH_COST_PORT_KEEPALIVE_LIFETIME = 2 * 60 * 1000;
+inline constexpr TimeDelta kHighCostPortKeepaliveLifetime =
+    TimeDelta::Seconds(2 * 60);
 
 
 class RTC_EXPORT UDPPort : public Port {
@@ -105,11 +105,13 @@ class RTC_EXPORT UDPPort : public Port {
   void GetStunStats(std::optional<StunStats>* stats) override;
 
   void set_stun_keepalive_delay(const std::optional<int>& delay);
-  int stun_keepalive_delay() const { return stun_keepalive_delay_; }
+  TimeDelta stun_keepalive_delay() const {
+    return TimeDelta::Millis(stun_keepalive_delay_);
+  }
 
   
-  int stun_keepalive_lifetime() const { return stun_keepalive_lifetime_; }
-  void set_stun_keepalive_lifetime(int lifetime) {
+  TimeDelta stun_keepalive_lifetime() const { return stun_keepalive_lifetime_; }
+  void set_stun_keepalive_lifetime(TimeDelta lifetime) {
     stun_keepalive_lifetime_ = lifetime;
   }
 
@@ -201,7 +203,7 @@ class RTC_EXPORT UDPPort : public Port {
   void SendStunBindingRequest(const SocketAddress& stun_addr);
 
   
-  void OnStunBindingRequestSucceeded(int rtt_ms,
+  void OnStunBindingRequestSucceeded(TimeDelta rtt,
                                      const SocketAddress& stun_server_addr,
                                      const SocketAddress& stun_reflected_addr);
   void OnStunBindingOrResolveRequestFailed(
@@ -221,10 +223,9 @@ class RTC_EXPORT UDPPort : public Port {
   
   
   
-  int GetStunKeepaliveLifetime() {
-    return (network_cost() >= kNetworkCostHigh)
-               ? HIGH_COST_PORT_KEEPALIVE_LIFETIME
-               : INFINITE_LIFETIME;
+  TimeDelta GetStunKeepaliveLifetime() {
+    return (network_cost() >= kNetworkCostHigh) ? kHighCostPortKeepaliveLifetime
+                                                : TimeDelta::PlusInfinity();
   }
 
   ServerAddresses server_addresses_;
@@ -237,7 +238,7 @@ class RTC_EXPORT UDPPort : public Port {
   std::unique_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
-  int stun_keepalive_lifetime_ = INFINITE_LIFETIME;
+  TimeDelta stun_keepalive_lifetime_ = TimeDelta::PlusInfinity();
   DiffServCodePoint dscp_;
 
   StunStats stats_;
@@ -269,15 +270,5 @@ class StunPort : public UDPPort {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::HIGH_COST_PORT_KEEPALIVE_LIFETIME;
-using ::webrtc::INFINITE_LIFETIME;
-using ::webrtc::StunPort;
-using ::webrtc::UDPPort;
-}  
-#endif  
 
 #endif  
