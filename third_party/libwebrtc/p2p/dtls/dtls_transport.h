@@ -25,7 +25,6 @@
 #include "api/dtls_transport_interface.h"
 #include "api/environment/environment.h"
 #include "api/rtc_error.h"
-#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -121,31 +120,11 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   
   
   
-  
-  
-  
-  [[deprecated("bugs.webrtc.org/42223992")]]
-  DtlsTransportInternalImpl(
-      IceTransportInternal* ice_transport,
-      const CryptoOptions& crypto_options,
-      RtcEventLog* event_log,
-      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12)
-      : DtlsTransportInternalImpl(std::nullopt,
-                                  ice_transport,
-                                  crypto_options,
-                                  event_log,
-                                  max_version) {}
-
   DtlsTransportInternalImpl(
       const Environment& env,
       IceTransportInternal* ice_transport,
       const CryptoOptions& crypto_options,
-      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12)
-      : DtlsTransportInternalImpl(env,
-                                  ice_transport,
-                                  crypto_options,
-                                  &env.event_log(),
-                                  max_version) {}
+      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12);
 
   ~DtlsTransportInternalImpl() override;
 
@@ -262,13 +241,6 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   bool WasDtlsCompletedByPiggybacking();
 
  private:
-  
-  DtlsTransportInternalImpl(std::optional<Environment> env,
-                            IceTransportInternal* ice_transport,
-                            const CryptoOptions& crypto_options,
-                            RtcEventLog* event_log,
-                            SSLProtocolVersion max_version);
-
   void ConnectToIceTransport();
 
   void OnWritableState(PacketTransportInternal* transport);
@@ -296,9 +268,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
                               const ReceivedIpPacket& packet)> callback);
   void PeriodicRetransmitDtlsPacketUntilDtlsConnected();
 
-  
-  
-  const std::optional<Environment> env_;
+  const Environment env_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
 
   const int component_;
@@ -331,8 +301,6 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   
   
   bool ice_has_been_writable_ = false;
-
-  RtcEventLog* const event_log_;
 
   
   
