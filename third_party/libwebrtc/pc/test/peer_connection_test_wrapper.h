@@ -99,6 +99,7 @@ class PeerConnectionTestWrapper
   void OnIceGatheringChange(
       webrtc::PeerConnectionInterface::IceGatheringState new_state) override {}
   void OnIceCandidate(const webrtc::IceCandidate* candidate) override;
+  void OnIceCandidateRemoved(const webrtc::IceCandidate* candidate) override {}
 
   
   void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;

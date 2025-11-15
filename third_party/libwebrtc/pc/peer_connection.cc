@@ -2080,19 +2080,14 @@ void PeerConnection::OnIceCandidatesRemoved(
   if (IsClosed()) {
     return;
   }
-  
-  
-  
-  
-  std::vector<Candidate> candidates_for_notification;
-  candidates_for_notification.reserve(candidates.size());
+
   for (Candidate candidate : candidates) {  
+    
+    
     candidate.set_transport_name(mid);
-    candidates_for_notification.push_back(candidate);
+    IceCandidate c(mid, -1, candidate);
+    RunWithObserver([&](auto o) { o->OnIceCandidateRemoved(&c); });
   }
-  RunWithObserver([&](auto observer) {
-    observer->OnIceCandidatesRemoved(candidates_for_notification);
-  });
 }
 
 void PeerConnection::OnSelectedCandidatePairChanged(

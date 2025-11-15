@@ -1321,10 +1321,22 @@ class PeerConnectionObserver {
                                    const std::string& ) {}
 
   
-  
-  
+  [[deprecated("Implement OnIceCandidateRemoved")]]
   virtual void OnIceCandidatesRemoved(
       const std::vector<Candidate>& ) {}
+
+  
+  
+  
+  virtual void OnIceCandidateRemoved(const IceCandidate* candidate) {
+    
+    
+    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    OnIceCandidatesRemoved({candidate->candidate()});
+#pragma clang diagnostic pop
+  }
 
   
   virtual void OnIceConnectionReceivingChange(bool ) {}
