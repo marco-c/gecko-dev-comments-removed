@@ -64,6 +64,15 @@ class LocalNetworkAccessPermissionInterface {
 
   
   
+  
+  
+  
+  virtual bool ShouldRequestPermission(const SocketAddress& addr) {
+    return addr.IsPrivateIP() || addr.IsLoopbackIP();
+  }
+
+  
+  
   virtual void RequestPermission(
       const SocketAddress& addr,
       absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>

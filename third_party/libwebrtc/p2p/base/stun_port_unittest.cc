@@ -22,6 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/environment/environment_factory.h"
+#include "api/field_trials.h"
 #include "api/field_trials_view.h"
 #include "api/packet_socket_factory.h"
 #include "api/test/mock_async_dns_resolver.h"
@@ -56,11 +57,12 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/scoped_key_value_config.h"
 #include "test/wait_until.h"
 
+namespace webrtc {
 namespace {
 
 using ::testing::_;
@@ -70,10 +72,6 @@ using ::testing::IsTrue;
 using ::testing::Return;
 using ::testing::ReturnPointee;
 using ::testing::SetArgPointee;
-using ::webrtc::CreateEnvironment;
-using ::webrtc::IceCandidateType;
-using ::webrtc::ServerAddresses;
-using ::webrtc::SocketAddress;
 
 const SocketAddress kPrivateIP("192.168.1.12", 0);
 const SocketAddress kMsdnAddress("unittest-mdns-host-name.local", 0);
@@ -94,13 +92,14 @@ const SocketAddress kValidHostnameAddr("valid-hostname", 5000);
 const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
 
 
-const int kTimeoutMs = webrtc::STUN_TOTAL_TIMEOUT;
+constexpr int kTimeoutMs = webrtc::STUN_TOTAL_TIMEOUT;
 
-const uint32_t kStunCandidatePriority = (100 << 24) | (30 << 8) | (256 - 1);
+constexpr uint32_t kStunCandidatePriority = (100 << 24) | (30 << 8) | (256 - 1);
 
-const uint32_t kIPv6StunCandidatePriority = (100 << 24) | (40 << 8) | (256 - 1);
-const int kInfiniteLifetime = -1;
-const int kHighCostPortKeepaliveLifetimeMs = 2 * 60 * 1000;
+constexpr uint32_t kIPv6StunCandidatePriority =
+    (100 << 24) | (40 << 8) | (256 - 1);
+constexpr int kInfiniteLifetime = -1;
+constexpr int kHighCostPortKeepaliveLifetimeMs = 2 * 60 * 1000;
 
 constexpr uint64_t kTiebreakerDefault = 44444;
 
@@ -276,11 +275,6 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
   }
 
  protected:
-  static void SetUpTestSuite() {
-    
-    webrtc::InitRandom(nullptr, 0);
-  }
-
   void OnPortComplete(webrtc::Port* ) {
     ASSERT_FALSE(done_);
     done_ = true;
@@ -459,7 +453,7 @@ TEST_F(StunPortWithMockDnsResolverTest, TestPrepareAddressHostname) {
 
 TEST_F(StunPortWithMockDnsResolverTest,
        TestPrepareAddressHostnameWithPriorityAdjustment) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  FieldTrials field_trials = CreateTestFieldTrials(
       "WebRTC-IncreaseIceCandidatePriorityHostSrflx/Enabled/");
   SetDnsResolverExpectations(
       [](webrtc::MockAsyncDnsResolver* resolver,
@@ -474,7 +468,7 @@ TEST_F(StunPortWithMockDnsResolverTest,
         EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET, _))
             .WillOnce(DoAll(SetArgPointee<1>(kStunServerAddr1), Return(true)));
       });
-  CreateStunPort(kValidHostnameAddr);
+  CreateStunPort(kValidHostnameAddr, &field_trials);
   PrepareAddress();
   EXPECT_THAT(
       webrtc::WaitUntil([&] { return done(); }, IsTrue(),
@@ -972,7 +966,7 @@ TEST_F(StunIPv6PortTestWithMockDnsResolver, TestPrepareAddressHostname) {
 
 TEST_F(StunIPv6PortTestWithMockDnsResolver,
        TestPrepareAddressHostnameWithPriorityAdjustment) {
-  webrtc::test::ScopedKeyValueConfig field_trials(
+  FieldTrials field_trials = CreateTestFieldTrials(
       "WebRTC-IncreaseIceCandidatePriorityHostSrflx/Enabled/");
   SetDnsResolverExpectations(
       [](webrtc::MockAsyncDnsResolver* resolver,
@@ -1032,4 +1026,5 @@ INSTANTIATE_TEST_SUITE_P(All,
                          StunIPv6PortIPAddressTypeMetricsTest,
                          ::testing::ValuesIn(kAllIPv6AddressTypeTestConfigs));
 
+}  
 }  
