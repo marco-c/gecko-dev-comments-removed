@@ -7,6 +7,8 @@
 #ifndef vm_BytecodeLocation_h
 #define vm_BytecodeLocation_h
 
+#include <compare>  
+
 #include "frontend/NameAnalysisTypes.h"
 #include "js/TypeDecls.h"
 #include "vm/BuiltinObjectKind.h"
@@ -140,21 +142,9 @@ class BytecodeLocation {
     return !(other == *this);
   }
 
-  bool operator<(const BytecodeLocation& other) const {
+  auto operator<=>(const BytecodeLocation& other) const {
     MOZ_ASSERT(this->debugOnlyScript_ == other.debugOnlyScript_);
-    return rawBytecode_ < other.rawBytecode_;
-  }
-
-  
-  
-  bool operator>(const BytecodeLocation& other) const { return other < *this; }
-
-  bool operator<=(const BytecodeLocation& other) const {
-    return !(other < *this);
-  }
-
-  bool operator>=(const BytecodeLocation& other) const {
-    return !(*this < other);
+    return rawBytecode_ <=> other.rawBytecode_;
   }
 
   
