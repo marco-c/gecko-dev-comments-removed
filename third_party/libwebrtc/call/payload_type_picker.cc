@@ -138,18 +138,18 @@ PayloadTypePicker::PayloadTypePicker() {
   
   const MapTableEntry default_audio_mappings[] = {
       
-      {{kPcmuCodecName, 8000, 1}, 0},
-      {{"GSM", 8000, 1}, 3},
-      {{"G723", 8000, 1}, 4},
-      {{"DVI4", 8000, 1}, 5},
-      {{"DVI4", 16000, 1}, 6},
-      {{"LPC", 8000, 1}, 7},
-      {{kPcmaCodecName, 8000, 1}, 8},
-      {{kG722CodecName, 8000, 1}, 9},
-      {{kL16CodecName, 44100, 2}, 10},
-      {{kL16CodecName, 44100, 1}, 11},
-      {{"QCELP", 8000, 1}, 12},
-      {{kCnCodecName, 8000, 1}, 13},
+      {.format = {kPcmuCodecName, 8000, 1}, .payload_type = 0},
+      {.format = {"GSM", 8000, 1}, .payload_type = 3},
+      {.format = {"G723", 8000, 1}, .payload_type = 4},
+      {.format = {"DVI4", 8000, 1}, .payload_type = 5},
+      {.format = {"DVI4", 16000, 1}, .payload_type = 6},
+      {.format = {"LPC", 8000, 1}, .payload_type = 7},
+      {.format = {kPcmaCodecName, 8000, 1}, .payload_type = 8},
+      {.format = {kG722CodecName, 8000, 1}, .payload_type = 9},
+      {.format = {kL16CodecName, 44100, 2}, .payload_type = 10},
+      {.format = {kL16CodecName, 44100, 1}, .payload_type = 11},
+      {.format = {"QCELP", 8000, 1}, .payload_type = 12},
+      {.format = {kCnCodecName, 8000, 1}, .payload_type = 13},
       
       
       
@@ -158,39 +158,39 @@ PayloadTypePicker::PayloadTypePicker() {
       
       
       
-      {{"MPA", 90000, 0}, 14},
-      {{"MPA", 90000, 1}, 14},
-      {{"G728", 8000, 1}, 15},
-      {{"DVI4", 11025, 1}, 16},
-      {{"DVI4", 22050, 1}, 17},
-      {{"G729", 8000, 1}, 18},
+      {.format = {"MPA", 90000, 0}, .payload_type = 14},
+      {.format = {"MPA", 90000, 1}, .payload_type = 14},
+      {.format = {"G728", 8000, 1}, .payload_type = 15},
+      {.format = {"DVI4", 11025, 1}, .payload_type = 16},
+      {.format = {"DVI4", 22050, 1}, .payload_type = 17},
+      {.format = {"G729", 8000, 1}, .payload_type = 18},
 
       
       
       
       
-      {{"reserved-do-not-use", 1, 0}, 102},
-      {{kCnCodecName, 16000, 1}, 105},
-      {{kCnCodecName, 32000, 1}, 106},
-      {{kOpusCodecName,
-        48000,
-        2,
-        {{kCodecParamMinPTime, "10"},
-         {kCodecParamUseInbandFec, kParamValueTrue}}},
-       111},
+      {.format = {"reserved-do-not-use", 1, 0}, .payload_type = 102},
+      {.format = {kCnCodecName, 16000, 1}, .payload_type = 105},
+      {.format = {kCnCodecName, 32000, 1}, .payload_type = 106},
+      {.format = {kOpusCodecName,
+                  48000,
+                  2,
+                  {{kCodecParamMinPTime, "10"},
+                   {kCodecParamUseInbandFec, kParamValueTrue}}},
+       .payload_type = 111},
       
       
-      {{kRedCodecName,
-        48000,
-        2,
-        {{kCodecParamNotInNameValueFormat, "111/111"}}},
-       63},
+      {.format = {kRedCodecName,
+                  48000,
+                  2,
+                  {{kCodecParamNotInNameValueFormat, "111/111"}}},
+       .payload_type = 63},
       
       
-      {{kDtmfCodecName, 48000, 1}, 110},
-      {{kDtmfCodecName, 32000, 1}, 112},
-      {{kDtmfCodecName, 16000, 1}, 113},
-      {{kDtmfCodecName, 8000, 1}, 126}};
+      {.format = {kDtmfCodecName, 48000, 1}, .payload_type = 110},
+      {.format = {kDtmfCodecName, 32000, 1}, .payload_type = 112},
+      {.format = {kDtmfCodecName, 16000, 1}, .payload_type = 113},
+      {.format = {kDtmfCodecName, 8000, 1}, .payload_type = 126}};
   for (const MapTableEntry& entry : default_audio_mappings) {
     AddMapping(PayloadType(entry.payload_type), CreateAudioCodec(entry.format));
   }

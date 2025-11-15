@@ -10,39 +10,15 @@
 
 #include "rtc_base/logging.h"
 
-#include <string.h>
-
-#include <atomic>
-#include <cstdint>
-#include <string>
-
-#if RTC_LOG_ENABLED()
-
-#if defined(WEBRTC_WIN)
-#include <windows.h>
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
-#undef ERROR  // wingdi.h
-#endif
-
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#include <CoreServices/CoreServices.h>
-#elif defined(WEBRTC_ANDROID)
-#include <android/log.h>
-
-
-
-
-static const int kMaxLogLineSize = 1024 - 60;
-#endif  
-
-#include <inttypes.h>
-#include <stdio.h>
-#include <time.h>
-
 #include <algorithm>
+#include <atomic>
+#include <cinttypes>
 #include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+#include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -57,6 +33,24 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
+
+#if RTC_LOG_ENABLED()
+
+#if defined(WEBRTC_WIN)
+#include <windows.h>
+#undef ERROR  // wingdi.h
+#endif
+
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+#include <CoreServices/CoreServices.h>
+#elif defined(WEBRTC_ANDROID)
+#include <android/log.h>
+
+
+
+
+static const int kMaxLogLineSize = 1024 - 60;
+#endif  
 
 namespace webrtc {
 
@@ -485,7 +479,8 @@ void Log(const LogArgType* fmt, ...) {
   const char* tag = nullptr;
   switch (*fmt) {
     case LogArgType::kLogMetadata: {
-      meta = {va_arg(args, LogMetadata), ERRCTX_NONE, 0};
+      meta = {
+          .meta = va_arg(args, LogMetadata), .err_ctx = ERRCTX_NONE, .err = 0};
       break;
     }
     case LogArgType::kLogMetadataErr: {

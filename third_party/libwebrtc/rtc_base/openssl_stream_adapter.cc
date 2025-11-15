@@ -82,10 +82,10 @@ struct SrtpCipherMapEntry {
 
 
 constexpr SrtpCipherMapEntry kSrtpCipherMap[] = {
-    {"SRTP_AES128_CM_SHA1_80", kSrtpAes128CmSha1_80},
-    {"SRTP_AES128_CM_SHA1_32", kSrtpAes128CmSha1_32},
-    {"SRTP_AEAD_AES_128_GCM", kSrtpAeadAes128Gcm},
-    {"SRTP_AEAD_AES_256_GCM", kSrtpAeadAes256Gcm}};
+    {.internal_name = "SRTP_AES128_CM_SHA1_80", .id = kSrtpAes128CmSha1_80},
+    {.internal_name = "SRTP_AES128_CM_SHA1_32", .id = kSrtpAes128CmSha1_32},
+    {.internal_name = "SRTP_AEAD_AES_128_GCM", .id = kSrtpAeadAes128Gcm},
+    {.internal_name = "SRTP_AEAD_AES_256_GCM", .id = kSrtpAeadAes256Gcm}};
 
 #ifdef OPENSSL_IS_BORINGSSL
 
@@ -1280,16 +1280,17 @@ static const cipher_list OK_ECDSA_ciphers[] = {
 
 static const cipher_list OK_DTLS13_ciphers[] = {
 #ifdef TLS1_3_CK_AES_128_GCM_SHA256  
-    {static_cast<uint16_t>(TLS1_3_CK_AES_128_GCM_SHA256 & 0xffff),
-     "TLS_AES_128_GCM_SHA256"},
+    {.cipher = static_cast<uint16_t>(TLS1_3_CK_AES_128_GCM_SHA256 & 0xffff),
+     .cipher_str = "TLS_AES_128_GCM_SHA256"},
 #endif
 #ifdef TLS1_3_CK_AES_256_GCM_SHA256  
     {static_cast<uint16_t>(TLS1_3_CK_AES_256_GCM_SHA256 & 0xffff),
      "TLS_AES_256_GCM_SHA256"},
 #endif
 #ifdef TLS1_3_CK_CHACHA20_POLY1305_SHA256  
-    {static_cast<uint16_t>(TLS1_3_CK_CHACHA20_POLY1305_SHA256 & 0xffff),
-     "TLS_CHACHA20_POLY1305_SHA256"},
+    {.cipher =
+         static_cast<uint16_t>(TLS1_3_CK_CHACHA20_POLY1305_SHA256 & 0xffff),
+     .cipher_str = "TLS_CHACHA20_POLY1305_SHA256"},
 #endif
 };
 
