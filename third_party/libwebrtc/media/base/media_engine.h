@@ -23,6 +23,7 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
 #include "api/crypto/crypto_options.h"
+#include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
@@ -146,18 +147,19 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   VideoEngineInterface& operator=(const VideoEngineInterface&) = delete;
 
   virtual std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
-      Call* ,
-      const MediaConfig& ,
-      const VideoOptions& ,
-      const CryptoOptions& ,
-      VideoBitrateAllocatorFactory*
-      ) = 0;
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const CryptoOptions& crypto_options,
+      VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) = 0;
 
   virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
-  CreateReceiveChannel(Call* ,
-                       const MediaConfig& ,
-                       const VideoOptions& ,
-                       const CryptoOptions& ) = 0;
+  CreateReceiveChannel(const Environment& env,
+                       Call* call,
+                       const MediaConfig& config,
+                       const VideoOptions& options,
+                       const CryptoOptions& crypto_options) = 0;
 
   
   
@@ -238,22 +240,5 @@ std::vector<RtpExtension> GetDefaultEnabledRtpHeaderExtensions(
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CheckRtpParametersInvalidModificationAndValues;
-using ::webrtc::CheckRtpParametersValues;
-using ::webrtc::CheckScalabilityModeValues;
-using ::webrtc::CompositeMediaEngine;
-using ::webrtc::CreateRtpParametersWithEncodings;
-using ::webrtc::CreateRtpParametersWithOneEncoding;
-using ::webrtc::GetDefaultEnabledRtpHeaderExtensions;
-using ::webrtc::MediaEngineInterface;
-using ::webrtc::RtpHeaderExtensionQueryInterface;
-using ::webrtc::VideoEngineInterface;
-using ::webrtc::VoiceEngineInterface;
-}  
-#endif  
 
 #endif  

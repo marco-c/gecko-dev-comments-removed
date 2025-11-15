@@ -896,12 +896,14 @@ class FakeVideoEngine : public VideoEngineInterface {
   FakeVideoEngine();
   bool SetOptions(const VideoOptions& options);
   std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
+      const Environment& env,
       Call* call,
       const MediaConfig& config,
       const VideoOptions& options,
       const CryptoOptions& crypto_options,
       VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) override;
   std::unique_ptr<VideoMediaReceiveChannelInterface> CreateReceiveChannel(
+      const Environment& env,
       Call* call,
       const MediaConfig& config,
       const VideoOptions& options,
@@ -958,21 +960,5 @@ class FakeMediaEngine : public CompositeMediaEngine {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CompareDtmfInfo;
-using ::webrtc::FakeMediaEngine;
-using ::webrtc::FakeVideoEngine;
-using ::webrtc::FakeVideoMediaReceiveChannel;
-using ::webrtc::FakeVideoMediaSendChannel;
-using ::webrtc::FakeVoiceEngine;
-using ::webrtc::FakeVoiceMediaReceiveChannel;
-using ::webrtc::FakeVoiceMediaSendChannel;
-using ::webrtc::RtpReceiveChannelHelper;
-using ::webrtc::RtpSendChannelHelper;
-}  
-#endif  
 
 #endif  

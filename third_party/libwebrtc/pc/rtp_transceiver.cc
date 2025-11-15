@@ -10,9 +10,8 @@
 
 #include "pc/rtp_transceiver.h"
 
-#include <stdint.h>
-
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -28,6 +27,7 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_options.h"
 #include "api/crypto/crypto_options.h"
+#include "api/environment/environment.h"
 #include "api/jsep.h"
 #include "api/media_types.h"
 #include "api/rtc_error.h"
@@ -114,10 +114,12 @@ TaskQueueBase* GetCurrentTaskQueueOrThread() {
 
 }  
 
-RtpTransceiver::RtpTransceiver(MediaType media_type,
+RtpTransceiver::RtpTransceiver(const Environment& env,
+                               MediaType media_type,
                                ConnectionContext* context,
                                CodecLookupHelper* codec_lookup_helper)
-    : thread_(GetCurrentTaskQueueOrThread()),
+    : env_(env),
+      thread_(GetCurrentTaskQueueOrThread()),
       unified_plan_(false),
       media_type_(media_type),
       context_(context),
@@ -128,13 +130,15 @@ RtpTransceiver::RtpTransceiver(MediaType media_type,
 }
 
 RtpTransceiver::RtpTransceiver(
+    const Environment& env,
     scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
     scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>> receiver,
     ConnectionContext* context,
     CodecLookupHelper* codec_lookup_helper,
     std::vector<RtpHeaderExtensionCapability> header_extensions_to_negotiate,
     std::function<void()> on_negotiation_needed)
-    : thread_(GetCurrentTaskQueueOrThread()),
+    : env_(env),
+      thread_(GetCurrentTaskQueueOrThread()),
       unified_plan_(true),
       media_type_(sender->media_type()),
       context_(context),
@@ -261,11 +265,11 @@ RTCError RtpTransceiver::CreateChannel(
 
       std::unique_ptr<VideoMediaSendChannelInterface> media_send_channel =
           media_engine()->video().CreateSendChannel(
-              call_ptr, media_config, video_options, crypto_options,
+              env_, call_ptr, media_config, video_options, crypto_options,
               video_bitrate_allocator_factory);
       std::unique_ptr<VideoMediaReceiveChannelInterface> media_receive_channel =
           media_engine()->video().CreateReceiveChannel(
-              call_ptr, media_config, video_options, crypto_options);
+              env_, call_ptr, media_config, video_options, crypto_options);
       
       
       media_send_channel->SetSsrcListChangedCallback(
