@@ -313,11 +313,6 @@ void TSFTextStoreBase::DispatchEvent(WidgetGUIEvent& aEvent) {
   if (NS_WARN_IF(!mWidget) || NS_WARN_IF(mWidget->Destroyed())) {
     return;
   }
-  
-  
-  if (!aEvent.AsQueryContentEvent()) {
-    mDeferNotifyingTSFUntilNextUpdate = true;
-  }
   mWidget->DispatchWindowEvent(aEvent);
 }
 
