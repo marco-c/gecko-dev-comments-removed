@@ -17,7 +17,6 @@
 #include <optional>
 #include <string>
 
-#include "api/rtp_headers.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
@@ -94,7 +93,7 @@ class NetEqInput {
 
   
   
-  virtual std::optional<RTPHeader> NextHeader() const = 0;
+  virtual const RtpPacketReceived* NextPacket() const = 0;
 };
 
 
@@ -111,7 +110,7 @@ class TimeLimitedNetEqInput : public NetEqInput {
   void AdvanceOutputEvent() override;
   void AdvanceSetMinimumDelay() override;
   bool ended() const override;
-  std::optional<RTPHeader> NextHeader() const override;
+  const RtpPacketReceived* NextPacket() const override;
 
  private:
   void MaybeSetEnded();
