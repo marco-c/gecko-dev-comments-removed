@@ -28,6 +28,7 @@ namespace webrtc {
 
 class MockIceController : public IceControllerInterface {
  public:
+  MockIceController() = default;
   explicit MockIceController(const IceControllerFactoryArgs& ) {}
   ~MockIceController() override = default;
 
@@ -41,21 +42,18 @@ class MockIceController : public IceControllerInterface {
               (const, override));
   MOCK_METHOD(ArrayView<const Connection*>, connections, (), (const, override));
   MOCK_METHOD(bool, HasPingableConnection, (), (const, override));
-  MOCK_METHOD(IceControllerInterface::PingResult,
-              SelectConnectionToPing,
-              (int64_t),
-              (override));
+  MOCK_METHOD(PingResult, SelectConnectionToPing, (int64_t), (override));
   MOCK_METHOD(bool,
               GetUseCandidateAttr,
               (const Connection*, NominationMode, IceMode),
               (const, override));
   MOCK_METHOD(const Connection*, FindNextPingableConnection, (), (override));
   MOCK_METHOD(void, MarkConnectionPinged, (const Connection*), (override));
-  MOCK_METHOD(IceControllerInterface::SwitchResult,
+  MOCK_METHOD(SwitchResult,
               ShouldSwitchConnection,
               (IceSwitchReason, const Connection*),
               (override));
-  MOCK_METHOD(IceControllerInterface::SwitchResult,
+  MOCK_METHOD(SwitchResult,
               SortAndSwitchConnection,
               (IceSwitchReason),
               (override));
@@ -67,9 +65,9 @@ class MockIceControllerFactory : public IceControllerFactoryInterface {
   ~MockIceControllerFactory() override = default;
 
   std::unique_ptr<IceControllerInterface> Create(
-      const IceControllerFactoryArgs& args) override {
+      const IceControllerFactoryArgs& ) override {
     RecordIceControllerCreated();
-    return std::make_unique<MockIceController>(args);
+    return std::make_unique<MockIceController>();
   }
 
   MOCK_METHOD(void, RecordIceControllerCreated, ());
@@ -77,13 +75,5 @@ class MockIceControllerFactory : public IceControllerFactoryInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::MockIceController;
-using ::webrtc::MockIceControllerFactory;
-}  
-#endif  
 
 #endif  
