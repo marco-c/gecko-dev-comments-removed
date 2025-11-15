@@ -47,15 +47,14 @@
 namespace webrtc {
 namespace {
 
-using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::NiceMock;
 using ::testing::NotNull;
 using ::testing::Return;
 using ::testing::SaveArg;
 
-const int kFirstSeqNum = 1;
-const int kLastSeqNum = 2;
+constexpr int kFirstSeqNum = 1;
+constexpr int kLastSeqNum = 2;
 
 std::unique_ptr<RtpFrameObject> CreateRtpFrameObject(
     const RTPVideoHeader& video_header,
