@@ -804,6 +804,11 @@ void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
   MOZ_ASSERT(region->hasNurseryOwnedAllocs());
   MOZ_ASSERT(region->isNurseryOwned(alloc));
 
+  if (region->isMarked(alloc)) {
+    MOZ_ASSERT(nurseryOwned);
+    return;
+  }
+
   if (!nurseryOwned) {
     region->setNurseryOwned(alloc, false);
     
@@ -822,7 +827,11 @@ void BufferAllocator::markMediumNurseryOwnedBuffer(void* alloc,
   MOZ_ASSERT(chunk->hasNurseryOwnedAllocs);
   MOZ_ASSERT(chunk->isAllocated(alloc));
   MOZ_ASSERT(chunk->isNurseryOwned(alloc));
-  MOZ_ASSERT(!chunk->isMarked(alloc));
+
+  if (chunk->isMarked(alloc)) {
+    MOZ_ASSERT(nurseryOwned);
+    return;
+  }
 
   size_t size = chunk->allocBytes(alloc);
   increaseHeapSize(size, nurseryOwned, false, false);
@@ -845,6 +854,7 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
   
   auto* region = SmallBufferRegion::from(buffer);
   MOZ_ASSERT(region->isNurseryOwned(buffer));
+
   if (region->isMarked(buffer)) {
     MOZ_ASSERT(nurseryOwned);
     return;
