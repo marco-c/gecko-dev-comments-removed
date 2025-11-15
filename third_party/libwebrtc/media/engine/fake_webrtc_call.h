@@ -124,10 +124,10 @@ class FakeAudioReceiveStream final : public AudioReceiveStreamInterface {
   const AudioReceiveStreamInterface::Config& GetConfig() const;
   void SetStats(const AudioReceiveStreamInterface::Stats& stats);
   int received_packets() const { return received_packets_; }
-  bool VerifyLastPacket(const uint8_t* data, size_t length) const;
+  bool VerifyLastPacket(ArrayView<const uint8_t> data) const;
   const AudioSinkInterface* sink() const { return sink_; }
   float gain() const { return gain_; }
-  bool DeliverRtp(const uint8_t* packet, size_t length, int64_t packet_time_us);
+  bool DeliverRtp(ArrayView<const uint8_t> packet, int64_t packet_time_us);
   bool started() const { return started_; }
   int base_mininum_playout_delay_ms() const {
     return base_mininum_playout_delay_ms_;
@@ -433,6 +433,7 @@ class FakeCall final : public Call, public PacketReceiver {
   void SetClientBitratePreferences(
       const BitrateSettings& ) override {}
   const FieldTrialsView& trials() const override { return env_.field_trials(); }
+  const Environment& env() const override { return env_; }
   void EnableSendCongestionControlFeedbackAccordingToRfc8888() override {}
   int FeedbackAccordingToRfc8888Count() { return 0; }
   int FeedbackAccordingToTransportCcCount() { return 0; }
@@ -529,16 +530,4 @@ class FakeCall final : public Call, public PacketReceiver {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::FakeAudioReceiveStream;
-using ::webrtc::FakeAudioSendStream;
-using ::webrtc::FakeCall;
-using ::webrtc::FakeFlexfecReceiveStream;
-using ::webrtc::FakeVideoReceiveStream;
-using ::webrtc::FakeVideoSendStream;
-}  
-#endif  
 #endif  
