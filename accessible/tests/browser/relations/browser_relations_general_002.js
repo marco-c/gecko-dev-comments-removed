@@ -93,44 +93,6 @@ addAccessibleTask(
 
 addAccessibleTask(
   `
-  <div id="d"></div>
-  <label id="l">
-    <select id="s">
-  `,
-  async function (browser, accDoc) {
-    const label = findAccessibleChildByID(accDoc, "l");
-    const select = findAccessibleChildByID(accDoc, "s");
-    const div = findAccessibleChildByID(accDoc, "d");
-
-    await testCachedRelation(label, RELATION_LABEL_FOR, select);
-    await testCachedRelation(select, RELATION_LABELLED_BY, label);
-    await testCachedRelation(div, RELATION_LABELLED_BY, []);
-
-    const r = waitForEvent(EVENT_REORDER, "l");
-    await invokeContentTask(browser, [], () => {
-      content.document.getElementById("s").remove();
-    });
-    await r;
-    await invokeContentTask(browser, [], () => {
-      const l = content.document.getElementById("l");
-      l.htmlFor = "d";
-    });
-    await testCachedRelation(label, RELATION_LABEL_FOR, div);
-    await testCachedRelation(div, RELATION_LABELLED_BY, label);
-  },
-  {
-    chrome: false,
-    iframe: true,
-    remoteIframe: true,
-    topLevel: true,
-  }
-);
-
-
-
-
-addAccessibleTask(
-  `
   <div id="label">before</div><input id="input" aria-labelledby="label">
   `,
   async function (browser, accDoc) {
@@ -191,19 +153,23 @@ addAccessibleTask(
 
 addAccessibleTask(
   `
-  <div id="d"></div>
+  <input id="d"></input>
   <label id="l">
     <select id="s">
   `,
   async function (browser, accDoc) {
     const label = findAccessibleChildByID(accDoc, "l");
     const select = findAccessibleChildByID(accDoc, "s");
-    const div = findAccessibleChildByID(accDoc, "d");
+    const input = findAccessibleChildByID(accDoc, "d");
 
     await testCachedRelation(label, RELATION_LABEL_FOR, select);
     await testCachedRelation(select, RELATION_LABELLED_BY, label);
-    await testCachedRelation(div, RELATION_LABELLED_BY, []);
+    await testCachedRelation(input, RELATION_LABELLED_BY, []);
     await untilCacheOk(() => {
+      if (!browser.isRemoteBrowser) {
+        return true;
+      }
+
       try {
         
         
@@ -214,12 +180,16 @@ addAccessibleTask(
       }
     }, "Label for relation exists");
 
-    const r = waitForEvent(EVENT_REORDER, "l");
+    const r = waitForEvent(EVENT_INNER_REORDER, "l");
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("s").remove();
     });
     await r;
     await untilCacheOk(() => {
+      if (!browser.isRemoteBrowser) {
+        return true;
+      }
+
       try {
         label.cache.getStringProperty("for");
       } catch (e) {
@@ -234,15 +204,11 @@ addAccessibleTask(
       const l = content.document.getElementById("l");
       l.htmlFor = "d";
     });
-    await testCachedRelation(label, RELATION_LABEL_FOR, div);
-    await testCachedRelation(div, RELATION_LABELLED_BY, label);
+    await testCachedRelation(label, RELATION_LABEL_FOR, input);
+    await testCachedRelation(input, RELATION_LABELLED_BY, label);
   },
   {
-    
-
-
-
-    chrome: false,
+    chrome: true,
     iframe: true,
     remoteIframe: true,
     topLevel: true,
@@ -371,6 +337,24 @@ addAccessibleTask(
     const caption = findAccessibleChildByID(docAcc, "caption");
     await testCachedRelation(table, RELATION_LABELLED_BY, caption);
     await testCachedRelation(caption, RELATION_LABEL_FOR, table);
+  },
+  { chrome: true, topLevel: true }
+);
+
+
+
+
+addAccessibleTask(
+  `
+  <label id="label" for="btn">label</label>
+  <div role="button" id="btn"></div>
+  `,
+  async function testLabelOnDiv(browser, docAcc) {
+    const btn = findAccessibleChildByID(docAcc, "btn");
+
+    const label = findAccessibleChildByID(docAcc, "label");
+    await testCachedRelation(btn, RELATION_LABELLED_BY, []);
+    await testCachedRelation(label, RELATION_LABEL_FOR, []);
   },
   { chrome: true, topLevel: true }
 );
