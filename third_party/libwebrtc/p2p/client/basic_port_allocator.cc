@@ -420,15 +420,11 @@ std::vector<const Network*> BasicPortAllocatorSession::GetFailedNetworks() {
     }
   }
 
-  networks.erase(
-      std::remove_if(networks.begin(), networks.end(),
-                     [networks_with_connection](const Network* network) {
-                       
-                       
-                       return networks_with_connection.find(network->name()) !=
-                              networks_with_connection.end();
-                     }),
-      networks.end());
+  std::erase_if(networks, [networks_with_connection](const Network* network) {
+    
+    
+    return networks_with_connection.contains(network->name());
+  });
   return networks;
 }
 
