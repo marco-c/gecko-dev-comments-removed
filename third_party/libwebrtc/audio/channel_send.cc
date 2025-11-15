@@ -578,8 +578,17 @@ ChannelSend::~ChannelSend() {
   RTC_DCHECK(construction_thread_.IsCurrent());
 
   
-  if (frame_transformer_delegate_)
-    frame_transformer_delegate_->Reset();
+  
+  Event delegate_reset_event;
+  encoder_queue_->PostTask([this, &delegate_reset_event] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
+    if (frame_transformer_delegate_) {
+      frame_transformer_delegate_->Reset();
+      frame_transformer_delegate_ = nullptr;
+    }
+    delegate_reset_event.Set();
+  });
+  delegate_reset_event.Wait(Event::kForever);
 
   StopSend();
   int error = audio_coding_->RegisterTransportCallback(nullptr);
