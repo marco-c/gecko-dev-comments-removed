@@ -226,8 +226,9 @@ class RTC_EXPORT Network {
           const IPAddress& prefix,
           int prefix_length,
           AdapterType type);
-
-  Network(const Network&);
+  
+  Network(const Network& o);
+  Network(Network&&) = default;
   ~Network();
 
   
