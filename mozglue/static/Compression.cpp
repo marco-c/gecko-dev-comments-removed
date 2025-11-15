@@ -10,7 +10,6 @@
 
 
 
-#include <string>
 
 #include "lz4/lz4.h"
 #include "lz4/lz4frame.h"

@@ -41,7 +41,6 @@ namespace mozilla::baseprofiler {
 #  include "mozilla/Maybe.h"
 
 #  include <stdint.h>
-#  include <string>
 
 
 
