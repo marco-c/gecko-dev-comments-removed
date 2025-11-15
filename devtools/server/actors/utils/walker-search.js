@@ -6,11 +6,10 @@
 
 loader.lazyRequireGetter(
   this,
-  "isWhitespaceTextNode",
+  ["isWhitespaceTextNode", "getNodeDisplayName"],
   "resource://devtools/server/actors/inspector/utils.js",
   true
 );
-
 
 
 
@@ -104,22 +103,26 @@ class WalkerIndex {
       }
 
       if (node.nodeType === 1) {
-        
-        
-        const localName = node.localName;
-        if (localName === "_moz_generated_content_marker") {
-          this._addToIndex("tag", node, "::marker");
-          this._addToIndex("text", node, node.textContent.trim());
-        } else if (localName === "_moz_generated_content_before") {
-          this._addToIndex("tag", node, "::before");
-          this._addToIndex("text", node, node.textContent.trim());
-        } else if (localName === "_moz_generated_content_after") {
-          this._addToIndex("tag", node, "::after");
-          this._addToIndex("text", node, node.textContent.trim());
+        if (node.implementedPseudoElement) {
+          
+          const displayName = getNodeDisplayName(node);
+          this._addToIndex("tag", node, displayName);
+
+          
+          
+          if (
+            displayName === "::marker" ||
+            displayName === "::before" ||
+            displayName === "::after"
+          ) {
+            this._addToIndex("text", node, node.textContent.trim());
+          }
         } else {
+          
           this._addToIndex("tag", node, node.localName);
         }
 
+        
         for (const { name, value } of node.attributes) {
           this._addToIndex("attributeName", node, name);
           this._addToIndex("attributeValue", node, value);

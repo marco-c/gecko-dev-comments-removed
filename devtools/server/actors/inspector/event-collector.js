@@ -8,9 +8,6 @@
 "use strict";
 
 const {
-  isAfterPseudoElement,
-  isBeforePseudoElement,
-  isMarkerPseudoElement,
   isNativeAnonymous,
 } = require("resource://devtools/shared/layout/utils.js");
 const Debugger = require("Debugger");
@@ -427,13 +424,7 @@ class JQueryEventCollector extends MainEventCollector {
 
     
     
-    if (
-      !jQuery ||
-      isNativeAnonymous(node) ||
-      isMarkerPseudoElement(node) ||
-      isBeforePseudoElement(node) ||
-      isAfterPseudoElement(node)
-    ) {
+    if (!jQuery || isNativeAnonymous(node)) {
       if (checkOnly) {
         return false;
       }
