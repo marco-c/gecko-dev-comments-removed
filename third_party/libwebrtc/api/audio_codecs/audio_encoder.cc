@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
 #include "rtc_base/buffer.h"
@@ -82,9 +83,12 @@ AudioEncoder::ReclaimContainedEncoders() {
   return nullptr;
 }
 
-bool AudioEncoder::EnableAudioNetworkAdaptor(
-    const std::string& ,
-    RtcEventLog* ) {
+bool AudioEncoder::EnableAudioNetworkAdaptor(const std::string& config_string,
+                                             RtcEventLog* ) {
+  return EnableAudioNetworkAdaptor(config_string);
+}
+
+bool AudioEncoder::EnableAudioNetworkAdaptor(absl::string_view ) {
   return false;
 }
 
