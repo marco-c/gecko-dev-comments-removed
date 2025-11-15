@@ -168,9 +168,26 @@ void InitializeHitTestInfo(nsDisplayListBuilder* aBuilder,
 
 already_AddRefed<ActiveScrolledRoot> ActiveScrolledRoot::CreateASRForFrame(
     const ActiveScrolledRoot* aParent,
-    ScrollContainerFrame* aScrollContainerFrame) {
+    ScrollContainerFrame* aScrollContainerFrame
+#ifdef DEBUG
+    ,
+    const nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots
+#endif
+) {
   RefPtr<ActiveScrolledRoot> asr =
       aScrollContainerFrame->GetProperty(ActiveScrolledRootCache());
+
+#ifdef DEBUG
+  if (asr && aActiveScrolledRoots.Contains(asr)) {
+    
+    
+    
+    MOZ_ASSERT(asr->mParent == aParent);
+    MOZ_ASSERT(asr->mFrame == aScrollContainerFrame);
+    MOZ_ASSERT(asr->mKind == ASRKind::Scroll);
+    MOZ_ASSERT(asr->mDepth == (aParent ? aParent->mDepth + 1 : 1));
+  }
+#endif
 
   if (!asr) {
     asr = new ActiveScrolledRoot();
@@ -189,12 +206,29 @@ already_AddRefed<ActiveScrolledRoot> ActiveScrolledRoot::CreateASRForFrame(
 
 
 already_AddRefed<ActiveScrolledRoot>
-ActiveScrolledRoot::CreateASRForStickyFrame(const ActiveScrolledRoot* aParent,
-                                            nsIFrame* aStickyFrame) {
+ActiveScrolledRoot::CreateASRForStickyFrame(
+    const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame
+#ifdef DEBUG
+    ,
+    const nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots
+#endif
+) {
   aStickyFrame = aStickyFrame->FirstContinuation();
 
   RefPtr<ActiveScrolledRoot> asr =
       aStickyFrame->GetProperty(StickyActiveScrolledRootCache());
+
+#ifdef DEBUG
+  if (asr && aActiveScrolledRoots.Contains(asr)) {
+    
+    
+    
+    MOZ_ASSERT(asr->mParent == aParent);
+    MOZ_ASSERT(asr->mFrame == aStickyFrame);
+    MOZ_ASSERT(asr->mKind == ASRKind::Sticky);
+    MOZ_ASSERT(asr->mDepth == (aParent ? aParent->mDepth + 1 : 1));
+  }
+#endif
 
   if (!asr) {
     asr = new ActiveScrolledRoot();
@@ -1507,7 +1541,12 @@ ActiveScrolledRoot* nsDisplayListBuilder::AllocateActiveScrolledRoot(
     const ActiveScrolledRoot* aParent,
     ScrollContainerFrame* aScrollContainerFrame) {
   RefPtr<ActiveScrolledRoot> asr =
-      ActiveScrolledRoot::CreateASRForFrame(aParent, aScrollContainerFrame);
+      ActiveScrolledRoot::CreateASRForFrame(aParent, aScrollContainerFrame
+#ifdef DEBUG
+                                            ,
+                                            mActiveScrolledRoots
+#endif
+      );
   mActiveScrolledRoots.AppendElement(asr);
   return asr;
 }
@@ -1515,7 +1554,12 @@ ActiveScrolledRoot* nsDisplayListBuilder::AllocateActiveScrolledRoot(
 ActiveScrolledRoot* nsDisplayListBuilder::AllocateActiveScrolledRootForSticky(
     const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame) {
   RefPtr<ActiveScrolledRoot> asr =
-      ActiveScrolledRoot::CreateASRForStickyFrame(aParent, aStickyFrame);
+      ActiveScrolledRoot::CreateASRForStickyFrame(aParent, aStickyFrame
+#ifdef DEBUG
+                                                  ,
+                                                  mActiveScrolledRoots
+#endif
+      );
   mActiveScrolledRoots.AppendElement(asr);
   return asr;
 }
