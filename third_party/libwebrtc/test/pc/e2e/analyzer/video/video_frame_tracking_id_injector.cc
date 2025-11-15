@@ -31,8 +31,8 @@ EncodedImage VideoFrameTrackingIdInjector::InjectData(
 
 EncodedImageExtractionResult VideoFrameTrackingIdInjector::ExtractData(
     const EncodedImage& source) {
-  return EncodedImageExtractionResult{source.VideoFrameTrackingId(), source,
-                                      false};
+  return EncodedImageExtractionResult{
+      .id = source.VideoFrameTrackingId(), .image = source, .discard = false};
 }
 
 }  

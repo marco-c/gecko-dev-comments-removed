@@ -508,7 +508,7 @@ class PcapReader : public RtpFileReaderImpl {
 
     *next_packet_pos = ftell(file_) + incl_len;
 
-    RtpPacketMarker marker = {0};
+    RtpPacketMarker marker = {};
     marker.time_offset_ms = CalcTimeDelta(ts_sec, ts_usec, stream_start_ms);
     TRY_PCAP(ReadPacketHeader(&marker));
     marker.pos_in_file = ftell(file_);
@@ -557,7 +557,7 @@ class PcapReader : public RtpFileReaderImpl {
         TRY_PCAP(Read(&incl_len, false));
         TRY_PCAP(Read(&orig_len, false));
 
-        RtpPacketMarker marker = {0};
+        RtpPacketMarker marker = {};
         
         
         
