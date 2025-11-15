@@ -193,7 +193,11 @@ class RTC_EXPORT Candidate {
 
   
   
-  const std::string& transport_name() const { return transport_name_; }
+  [[deprecated("Use IceCandidate::sdp_mid")]]
+  const std::string& transport_name() const {
+    return transport_name_;
+  }
+  [[deprecated("Use the IceCandidate type for sdp_mid")]]
   void set_transport_name(absl::string_view transport_name) {
     Assign(transport_name_, transport_name);
   }
@@ -289,17 +293,5 @@ class RTC_EXPORT Candidate {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::Candidate;
-using ::webrtc::kMaxTurnServers;
-using ::webrtc::LOCAL_PORT_TYPE;
-using ::webrtc::PRFLX_PORT_TYPE;
-using ::webrtc::RELAY_PORT_TYPE;
-using ::webrtc::STUN_PORT_TYPE;
-}  
-#endif  
 
 #endif  

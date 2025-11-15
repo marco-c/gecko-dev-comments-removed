@@ -66,6 +66,8 @@ bool SdpDeserialize(absl::string_view message,
 
 
 
+
+[[deprecated("Use IceCandidate::Create instead.")]]
 RTC_EXPORT bool SdpDeserializeCandidate(absl::string_view transport_name,
                                         absl::string_view message,
                                         Candidate* candidate,
