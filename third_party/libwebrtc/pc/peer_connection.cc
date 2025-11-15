@@ -539,7 +539,7 @@ PeerConnection::PeerConnection(
           call_ != nullptr,
           worker_thread())),
       call_ptr_(call_.get()),
-      legacy_stats_(std::make_unique<LegacyStatsCollector>(this)),
+      legacy_stats_(std::make_unique<LegacyStatsCollector>(this, env_.clock())),
       stats_collector_(RTCStatsCollector::Create(this, env_)),
       
       

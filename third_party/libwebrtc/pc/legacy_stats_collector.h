@@ -38,6 +38,7 @@
 #include "rtc_base/network_constants.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -57,7 +58,7 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
  public:
   
   
-  explicit LegacyStatsCollector(PeerConnectionInternal* pc);
+  LegacyStatsCollector(PeerConnectionInternal* pc, Clock& clock);
   virtual ~LegacyStatsCollector();
 
   
@@ -199,6 +200,7 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
   TrackIdMap track_ids_;
   
   PeerConnectionInternal* const pc_;
+  Clock& clock_;
   int64_t cache_timestamp_ms_ RTC_GUARDED_BY(pc_->signaling_thread()) = 0;
   double stats_gathering_started_;
   const bool use_standard_bytes_stats_;
