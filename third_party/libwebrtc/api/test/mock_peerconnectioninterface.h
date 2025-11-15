@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "api/adaptation/resource.h"
-#include "api/candidate.h"
 #include "api/data_channel_event_observer_interface.h"
 #include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
@@ -196,8 +195,8 @@ class MockPeerConnectionInterface : public PeerConnectionInterface {
               (override));
   MOCK_METHOD(bool, AddIceCandidate, (const IceCandidate*), (override));
   MOCK_METHOD(bool,
-              RemoveIceCandidates,
-              (const std::vector<Candidate>&),
+              RemoveIceCandidate,
+              (const IceCandidate* candidate),
               (override));
   MOCK_METHOD(RTCError, SetBitrate, (const BitrateSettings&), (override));
   MOCK_METHOD(void,
