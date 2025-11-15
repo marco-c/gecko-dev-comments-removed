@@ -88,7 +88,7 @@ class NackRequester final : public NackRequesterBase {
  private:
   
   
-  enum NackFilterOptions { kSeqNumOnly, kTimeOnly, kSeqNumAndTime };
+  enum NackFilterOptions { kSeqNumOnly, kTimeOnly };
 
   
   
