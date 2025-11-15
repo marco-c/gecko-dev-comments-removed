@@ -1014,7 +1014,6 @@ function IteratorFind(predicate) {
   }
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -1091,6 +1090,7 @@ function* IteratorConcatGenerator(iterables) {
   }
 }
 
+#ifdef NIGHTLY_BUILD
 
 
 
