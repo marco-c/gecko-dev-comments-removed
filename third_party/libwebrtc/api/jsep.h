@@ -111,8 +111,8 @@ class RTC_EXPORT IceCandidate final {
 
 
 
-using JsepIceCandidate [[deprecated("Use IceCandidate")]] = IceCandidate;
-using IceCandidateInterface [[deprecated("Use IceCandidate")]] = IceCandidate;
+using JsepIceCandidate = IceCandidate;
+using IceCandidateInterface = IceCandidate;
 
 
 
