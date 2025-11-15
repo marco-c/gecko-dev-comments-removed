@@ -2729,7 +2729,7 @@
 
 
  \
-    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_PROPINIT) \
+    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 6, 1, 1, JOF_ENVCOORD|JOF_PROPINIT) \
     
 
 
@@ -2761,7 +2761,7 @@
 
 
  \
-    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD) \
+    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 6, 1, 1, JOF_ENVCOORD) \
     
 
 
@@ -2940,7 +2940,7 @@
 
 
  \
-    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_USES_ENV) \
+    MACRO(GetAliasedVar, get_aliased_var, NULL, 6, 0, 1, JOF_ENVCOORD|JOF_USES_ENV) \
     
 
 
@@ -2950,7 +2950,7 @@
 
 
  \
-    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD) \
+    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 6, 0, 1, JOF_DEBUGCOORD) \
     
 
 
@@ -3032,7 +3032,7 @@
 
 
  \
-    MACRO(EnvCallee, env_callee, NULL, 2, 0, 1, JOF_UINT8) \
+    MACRO(EnvCallee, env_callee, NULL, 3, 0, 1, JOF_UINT16) \
     
 
 
@@ -3129,7 +3129,7 @@
 
 
  \
-    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_PROPSET|JOF_USES_ENV) \
+    MACRO(SetAliasedVar, set_aliased_var, NULL, 6, 1, 1, JOF_ENVCOORD|JOF_PROPSET|JOF_USES_ENV) \
     
 
 
