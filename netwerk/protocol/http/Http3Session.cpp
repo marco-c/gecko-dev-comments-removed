@@ -1511,7 +1511,13 @@ nsresult Http3Session::TryActivating(
     }
 
     
-    return NS_OK;
+    
+    
+    if (StaticPrefs::network_http_http3_fallback_to_h2_on_error()) {
+      return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
+    }
+
+    return rv;
   }
 
   LOG(("Http3Session::TryActivating streamId=0x%" PRIx64
