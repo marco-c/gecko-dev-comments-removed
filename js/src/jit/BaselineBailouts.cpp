@@ -1565,6 +1565,8 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
                                    MaybeReadFallback::Fallback_DoNothing);
 
   
+  AutoUnsafeStackTrace aust(cx);
+  
   
   
   SnapshotIterator snapIter(iter, activation->bailoutData()->machineState());

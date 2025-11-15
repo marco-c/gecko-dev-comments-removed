@@ -1146,6 +1146,9 @@ static int32_t CoerceInPlace_JitEntry(int funcIndex, Instance* instance,
 
 static BigInt* AllocateBigIntTenuredNoGC() {
   JSContext* cx = TlsContext.get();  
+  
+  
+  AutoUnsafeStackTrace aust(cx);
 
   BigInt* bi = cx->newCell<BigInt, NoGC>(gc::Heap::Tenured);
   if (!bi) {
