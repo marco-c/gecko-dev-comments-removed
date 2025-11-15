@@ -722,7 +722,26 @@ class WalkerActor extends Actor {
     if (rawNode == this.rootDoc) {
       return null;
     }
-    return InspectorUtils.getParentForNode(rawNode,  true);
+    const parentNode = InspectorUtils.getParentForNode(
+      rawNode,
+       true
+    );
+
+    if (!parentNode) {
+      return null;
+    }
+
+    const filter = this.showAllAnonymousContent
+      ? allAnonymousContentTreeWalkerFilter
+      : standardTreeWalkerFilter;
+    
+    
+    
+    if (filter(parentNode) === nodeFilterConstants.FILTER_ACCEPT_CHILDREN) {
+      return this.rawParentNode(parentNode);
+    }
+
+    return parentNode;
   }
 
   
@@ -924,8 +943,15 @@ class WalkerActor extends Actor {
       includeAssigned
     );
     for (const child of children) {
-      if (filter(child) == nodeFilterConstants.FILTER_ACCEPT) {
+      const filterResult = filter(child);
+      if (filterResult == nodeFilterConstants.FILTER_ACCEPT) {
         ret.push(child);
+      } else if (filterResult == nodeFilterConstants.FILTER_ACCEPT_CHILDREN) {
+        
+        
+        
+        
+        ret.push(...this._rawChildren(child, includeAssigned));
       }
     }
     return ret;

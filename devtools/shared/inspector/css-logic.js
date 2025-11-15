@@ -558,6 +558,10 @@ exports.prettifyCSS = prettifyCSS;
 
 
 
+
+
+
+
 function getBindingElementAndPseudo(node) {
   let bindingElement = node;
   let pseudo = null;
@@ -571,8 +575,15 @@ function getBindingElementAndPseudo(node) {
     ) {
       pseudo = getNodeDisplayName(node);
       bindingElement = node.parentNode;
+    } else if (implementedPseudoElement.startsWith("::view-transition")) {
+      pseudo = getNodeDisplayName(node);
+      
+      
+      
+      bindingElement = node.getRootNode().documentElement;
     }
   }
+
   return {
     bindingElement,
     pseudo,
