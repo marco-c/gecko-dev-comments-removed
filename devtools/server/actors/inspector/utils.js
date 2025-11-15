@@ -73,13 +73,6 @@ const IMAGE_FETCHING_TIMEOUT = 500;
 const getNodeDisplayName = function (rawNode) {
   const { implementedPseudoElement } = rawNode;
   if (implementedPseudoElement) {
-    if (
-      implementedPseudoElement.startsWith("::view-transition") &&
-      rawNode.hasAttribute("name")
-    ) {
-      return `${implementedPseudoElement}(${rawNode.getAttribute("name")})`;
-    }
-
     return implementedPseudoElement;
   }
 
@@ -162,25 +155,10 @@ function standardTreeWalkerFilter(node) {
       : nodeFilterConstants.FILTER_SKIP;
   }
 
-  if (node.isNativeAnonymous && !isInXULDocument(node)) {
-    const nodeTypeAttribute = node.getAttribute && node.getAttribute("type");
-    
-    
-    
-    if (nodeTypeAttribute === ":-moz-snapshot-containing-block") {
-      
-      
-      return nodeFilterConstants.FILTER_ACCEPT_CHILDREN;
-    }
-
-    
-    if (nodeTypeAttribute && nodeTypeAttribute.startsWith(":view-transition")) {
-      return nodeFilterConstants.FILTER_ACCEPT;
-    }
-
-    
-    
-    
+  
+  
+  
+  if (isNativeAnonymous(node) && !isInXULDocument(node)) {
     return nodeFilterConstants.FILTER_SKIP;
   }
 

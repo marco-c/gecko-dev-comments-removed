@@ -558,14 +558,10 @@ exports.prettifyCSS = prettifyCSS;
 
 
 
-
-
-
 function getBindingElementAndPseudo(node) {
   let bindingElement = node;
   let pseudo = null;
-  const { implementedPseudoElement } = node;
-  if (implementedPseudoElement) {
+  if (node.implementedPseudoElement) {
     
     
     
@@ -576,14 +572,8 @@ function getBindingElementAndPseudo(node) {
       pseudo === "::after"
     ) {
       bindingElement = node.parentNode;
-    } else if (implementedPseudoElement.startsWith("::view-transition")) {
-      
-      
-      
-      bindingElement = node.getRootNode().documentElement;
     }
   }
-
   return {
     bindingElement,
     pseudo,
