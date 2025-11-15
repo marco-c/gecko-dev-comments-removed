@@ -28,6 +28,8 @@
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/stun.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/ice_logger.h"
@@ -57,18 +59,19 @@ constexpr int kGoogPingVersion = 1;
 constexpr int kMaxStunBindingLength = 1200 - 24 - 8;
 
 
-class Connection;
+
+
 
 
 
 class RTC_EXPORT Connection : public CandidatePairInterface {
  public:
   struct SentPing {
-    SentPing(absl::string_view id, int64_t sent_time, uint32_t nomination)
+    SentPing(absl::string_view id, Timestamp sent_time, uint32_t nomination)
         : id(id), sent_time(sent_time), nomination(nomination) {}
 
     std::string id;
-    int64_t sent_time;
+    Timestamp sent_time;
     uint32_t nomination;
   };
 
@@ -117,17 +120,36 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   bool pending_delete() const { return !port_; }
 
   
-  bool dead(int64_t now) const;
+  bool dead(Timestamp now) const;
 
   
-  int rtt() const;
+  
+  int rtt() const { return Rtt().ms(); }
+  TimeDelta Rtt() const;
 
-  int unwritable_timeout() const;
-  void set_unwritable_timeout(const std::optional<int>& value_ms);
+  TimeDelta UnwritableTimeout() const;
+  
+  void set_unwritable_timeout(const std::optional<int>& value_ms) {
+    if (value_ms.has_value()) {
+      SetUnwritableTimeout(TimeDelta::Millis(*value_ms));
+    } else {
+      SetUnwritableTimeout(std::nullopt);
+    }
+  }
+  void SetUnwritableTimeout(std::optional<TimeDelta> value);
   int unwritable_min_checks() const;
   void set_unwritable_min_checks(const std::optional<int>& value);
-  int inactive_timeout() const;
-  void set_inactive_timeout(const std::optional<int>& value);
+
+  
+  void set_inactive_timeout(const std::optional<int>& value) {
+    if (value.has_value()) {
+      SetInactiveTimeout(TimeDelta::Millis(*value));
+    } else {
+      SetInactiveTimeout(std::nullopt);
+    }
+  }
+  TimeDelta InactiveTimeout() const;
+  void SetInactiveTimeout(std::optional<TimeDelta> value);
 
   
   
@@ -187,8 +209,16 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   bool nominated() const;
 
-  int receiving_timeout() const;
-  void set_receiving_timeout(std::optional<int> receiving_timeout_ms);
+  TimeDelta ReceivingTimeout() const;
+  
+  void set_receiving_timeout(std::optional<int> receiving_timeout_ms) {
+    if (receiving_timeout_ms.has_value()) {
+      SetReceivingTimeout(TimeDelta::Millis(*receiving_timeout_ms));
+    } else {
+      SetReceivingTimeout(std::nullopt);
+    }
+  }
+  void SetReceivingTimeout(std::optional<TimeDelta> receiving_timeout);
 
   
   
@@ -208,25 +238,47 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
-  void UpdateState(int64_t now);
+  
+  void UpdateState(int64_t now) { UpdateState(Timestamp::Millis(now)); }
+  void UpdateState(Timestamp now);
 
   void UpdateLocalIceParameters(int component,
                                 absl::string_view username_fragment,
                                 absl::string_view password);
 
   
-  int64_t last_ping_sent() const;
+  
+  int64_t last_ping_sent() const { return LastPingSent().ms(); }
+  Timestamp LastPingSent() const;
+
+  
   void Ping(int64_t now,
+            std::unique_ptr<StunByteStringAttribute> delta = nullptr) {
+    Ping(Timestamp::Millis(now), std::move(delta));
+  }
+  void Ping();
+  void Ping(Timestamp now,
             std::unique_ptr<StunByteStringAttribute> delta = nullptr);
+  
   void ReceivedPingResponse(
       int rtt,
+      absl::string_view request_id,
+      const std::optional<uint32_t>& nomination = std::nullopt) {
+    ReceivedPingResponse(TimeDelta::Millis(rtt), request_id, nomination);
+  }
+  void ReceivedPingResponse(
+      TimeDelta rtt,
       absl::string_view request_id,
       const std::optional<uint32_t>& nomination = std::nullopt);
   std::unique_ptr<IceMessage> BuildPingRequest(
       std::unique_ptr<StunByteStringAttribute> delta)
       RTC_RUN_ON(network_thread_);
 
-  int64_t last_ping_response_received() const;
+  
+  int64_t last_ping_response_received() const {
+    return LastPingResponseReceived().ms();
+  }
+  Timestamp LastPingResponseReceived() const;
   const std::optional<std::string>& last_ping_id_received() const;
 
   
@@ -234,7 +286,9 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
-  int64_t last_ping_received() const;
+  
+  int64_t last_ping_received() const { return LastPingReceived().ms(); }
+  Timestamp LastPingReceived() const;
 
   void ReceivedPing(
       const std::optional<std::string>& request_id = std::nullopt);
@@ -245,8 +299,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   void HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg);
   
-  int64_t last_send_data() const;
-  int64_t last_data_received() const;
+  Timestamp LastSendData() const;
+  
+  int64_t last_data_received() const { return LastDataReceived().ms(); }
+  Timestamp LastDataReceived() const;
 
   
   std::string ToDebugId() const;
@@ -288,15 +344,22 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
-  int64_t last_received() const;
+  Timestamp LastReceived() const;
+
   
-  int64_t receiving_unchanged_since() const;
+  
+  int64_t receiving_unchanged_since() const {
+    return ReceivingUnchangedSince().ms();
+  }
+  Timestamp ReceivingUnchangedSince() const;
 
   
   
   uint32_t prflx_priority() const;
 
-  bool stable(int64_t now) const;
+  
+  bool stable(int64_t now) const { return stable(Timestamp::Millis(now)); }
+  bool stable(Timestamp now) const;
 
   
   bool TooManyOutstandingPings(const std::optional<int>& val) const;
@@ -367,6 +430,16 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   void DeregisterDtlsPiggyback() { dtls_stun_piggyback_callbacks_.reset(); }
 
+  
+  
+  
+  
+  
+  
+  static constexpr Timestamp AlignTime(Timestamp time) {
+    return Timestamp::Millis(time.us() / 1000);
+  }
+
  protected:
   
   class ConnectionRequest;
@@ -395,11 +468,12 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
-  bool missing_responses(int64_t now) const;
+  bool missing_responses(Timestamp now) const;
 
   
   void set_write_state(WriteState value);
-  void UpdateReceiving(int64_t now);
+  void UpdateReceiving(Timestamp now);
+
   void set_state(IceCandidatePairState state);
   void set_connected(bool value);
 
@@ -409,7 +483,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   const Environment& env() { return env_; }
   ConnectionInfo& mutable_stats() { return stats_; }
   RateTracker& send_rate_tracker() { return send_rate_tracker_; }
-  void set_last_send_data(int64_t now_ms) { last_send_data_ = now_ms; }
+  void set_last_send_data(Timestamp now) { last_send_data_ = AlignTime(now); }
 
  private:
   
@@ -444,7 +518,7 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   ConnectionInfo stats_;
   RateTracker recv_rate_tracker_;
   RateTracker send_rate_tracker_;
-  int64_t last_send_data_ = 0;
+  Timestamp last_send_data_;
 
   WriteState write_state_ RTC_GUARDED_BY(network_thread_);
   bool receiving_ RTC_GUARDED_BY(network_thread_);
@@ -470,21 +544,20 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   uint32_t remote_nomination_ RTC_GUARDED_BY(network_thread_) = 0;
 
   StunRequestManager requests_ RTC_GUARDED_BY(network_thread_);
-  int rtt_ RTC_GUARDED_BY(network_thread_);
+  TimeDelta rtt_ RTC_GUARDED_BY(network_thread_);
   int rtt_samples_ RTC_GUARDED_BY(network_thread_) = 0;
   
-  uint64_t total_round_trip_time_ms_ RTC_GUARDED_BY(network_thread_) = 0;
+  TimeDelta total_round_trip_time_ RTC_GUARDED_BY(network_thread_);
   
-  std::optional<uint32_t> current_round_trip_time_ms_
+  std::optional<TimeDelta> current_round_trip_time_
       RTC_GUARDED_BY(network_thread_);
-  int64_t last_ping_sent_ RTC_GUARDED_BY(
-      network_thread_);  
-  int64_t last_ping_received_
-      RTC_GUARDED_BY(network_thread_);  
-                                        
-  int64_t last_data_received_ RTC_GUARDED_BY(network_thread_);
-  int64_t last_ping_response_received_ RTC_GUARDED_BY(network_thread_);
-  int64_t receiving_unchanged_since_ RTC_GUARDED_BY(network_thread_) = 0;
+  
+  Timestamp last_ping_sent_ RTC_GUARDED_BY(network_thread_);
+  
+  Timestamp last_ping_received_ RTC_GUARDED_BY(network_thread_);
+  Timestamp last_data_received_ RTC_GUARDED_BY(network_thread_);
+  Timestamp last_ping_response_received_ RTC_GUARDED_BY(network_thread_);
+  Timestamp receiving_unchanged_since_ RTC_GUARDED_BY(network_thread_);
   std::vector<SentPing> pings_since_last_response_
       RTC_GUARDED_BY(network_thread_);
   
@@ -492,15 +565,15 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   std::optional<std::string> last_ping_id_received_
       RTC_GUARDED_BY(network_thread_);
 
-  std::optional<int> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<TimeDelta> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
   std::optional<int> unwritable_min_checks_ RTC_GUARDED_BY(network_thread_);
-  std::optional<int> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<TimeDelta> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
 
   IceCandidatePairState state_ RTC_GUARDED_BY(network_thread_);
   
-  std::optional<int> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
-  const int64_t time_created_ms_ RTC_GUARDED_BY(network_thread_);
-  const int64_t delta_internal_unix_epoch_ms_ RTC_GUARDED_BY(network_thread_);
+  std::optional<TimeDelta> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
+  const Timestamp time_created_ RTC_GUARDED_BY(network_thread_);
+  const TimeDelta delta_internal_unix_epoch_ RTC_GUARDED_BY(network_thread_);
   int num_pings_sent_ RTC_GUARDED_BY(network_thread_) = 0;
 
   std::optional<IceCandidatePairDescription> log_description_

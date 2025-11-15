@@ -13,6 +13,10 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "api/units/data_rate.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
+
 namespace webrtc {
 
 const char CN_AUDIO[] = "audio";
@@ -57,20 +61,16 @@ const int REGATHER_ON_FAILED_NETWORKS_INTERVAL = 5 * 60 * 1000;
 
 
 
-const int STUN_PING_PACKET_SIZE = 60 * 8;
-const int STRONG_PING_INTERVAL = 1000 * STUN_PING_PACKET_SIZE / 1000;  
-const int WEAK_PING_INTERVAL = 1000 * STUN_PING_PACKET_SIZE / 10000;   
-const int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL = 900;
-const int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL = 2500;
-const int CONNECTION_WRITE_CONNECT_TIMEOUT = 5 * 1000;  
+constexpr DataSize kStunPingPacketSize = DataSize::Bytes(60);
+static_assert(kStrongPingInterval ==
+              kStunPingPacketSize / DataRate::BitsPerSec(1'000));
+static_assert(kWeakPingInterval ==
+              kStunPingPacketSize / DataRate::BitsPerSec(10'000));
+
 const uint32_t CONNECTION_WRITE_CONNECT_FAILURES = 5;   
 
 const int STUN_KEEPALIVE_INTERVAL = 10 * 1000;  
 
-const int MIN_CONNECTION_LIFETIME = 10 * 1000;          
-const int DEAD_CONNECTION_RECEIVE_TIMEOUT = 30 * 1000;  
-const int WEAK_CONNECTION_RECEIVE_TIMEOUT = 2500;       
-const int CONNECTION_WRITE_TIMEOUT = 15 * 1000;         
 
 
 const int CONNECTION_RESPONSE_TIMEOUT = 60 * 1000;  

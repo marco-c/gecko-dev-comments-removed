@@ -11,9 +11,10 @@
 #ifndef P2P_BASE_P2P_CONSTANTS_H_
 #define P2P_BASE_P2P_CONSTANTS_H_
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
+#include "api/units/time_delta.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -23,11 +24,15 @@ namespace webrtc {
 
 
 
-extern const char CN_AUDIO[];
-extern const char CN_VIDEO[];
-extern const char CN_DATA[];
-extern const char CN_OTHER[];
 
+[[deprecated("plan-b")]]
+extern const char CN_AUDIO[];
+[[deprecated("plan-b")]]
+extern const char CN_VIDEO[];
+[[deprecated("plan-b")]]
+extern const char CN_DATA[];
+[[deprecated("plan-b")]]
+extern const char CN_OTHER[];
 
 extern const char GROUP_TYPE_BUNDLE[];
 
@@ -66,20 +71,28 @@ extern const int MIN_CHECK_RECEIVING_INTERVAL;
 
 
 
-extern const int STRONG_PING_INTERVAL;
+inline constexpr TimeDelta kStrongPingInterval = TimeDelta::Millis(480);
+inline constexpr int STRONG_PING_INTERVAL = kStrongPingInterval.ms();
 
 
 
 
-extern const int WEAK_PING_INTERVAL;
+inline constexpr TimeDelta kWeakPingInterval = TimeDelta::Millis(48);
+inline constexpr int WEAK_PING_INTERVAL = kWeakPingInterval.ms();
 
 
 
 
-extern const int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
+inline constexpr TimeDelta kStrongAndStableWritableConnectionPingInterval =
+    TimeDelta::Millis(2'500);
+inline constexpr int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL =
+    kStrongAndStableWritableConnectionPingInterval.ms();
 
 
-extern const int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
+inline constexpr TimeDelta kWeakOrStabilizingWritableConnectionPingInterval =
+    TimeDelta::Millis(900);
+inline constexpr int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL =
+    kWeakOrStabilizingWritableConnectionPingInterval.ms();
 
 extern const int BACKUP_CONNECTION_PING_INTERVAL;
 
@@ -87,29 +100,38 @@ extern const int RECEIVING_SWITCHING_DELAY;
 
 extern const int REGATHER_ON_FAILED_NETWORKS_INTERVAL;
 
-extern const int CONNECTION_WRITE_CONNECT_TIMEOUT;
+inline constexpr TimeDelta kConnectionWriteConnectTimeout =
+    TimeDelta::Seconds(5);
+inline constexpr int CONNECTION_WRITE_CONNECT_TIMEOUT =
+    kConnectionWriteConnectTimeout.ms();
 
 extern const uint32_t CONNECTION_WRITE_CONNECT_FAILURES;
 
-extern const int CONNECTION_WRITE_TIMEOUT;
+inline constexpr TimeDelta kConnectionWriteTimeout = TimeDelta::Seconds(15);
+inline constexpr int CONNECTION_WRITE_TIMEOUT = kConnectionWriteTimeout.ms();
 
 extern const int STUN_KEEPALIVE_INTERVAL;
 
-static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
+inline constexpr int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
 
 
 
 
-extern const int WEAK_CONNECTION_RECEIVE_TIMEOUT;
+inline constexpr TimeDelta kWeakConnectionReceiveTimeout =
+    TimeDelta::Millis(2'500);
 
 
-extern const int DEAD_CONNECTION_RECEIVE_TIMEOUT;
+inline constexpr TimeDelta kDeadConnectionReceiveTimeout =
+    TimeDelta::Seconds(30);
+inline constexpr int DEAD_CONNECTION_RECEIVE_TIMEOUT =
+    kDeadConnectionReceiveTimeout.ms();
 
 extern const int CONNECTION_RESPONSE_TIMEOUT;
 
 
-extern const int MIN_CONNECTION_LIFETIME;
+inline constexpr TimeDelta kMinConnectionLifetime = TimeDelta::Seconds(10);
+inline constexpr int MIN_CONNECTION_LIFETIME = kMinConnectionLifetime.ms();
 
 
 
@@ -128,57 +150,5 @@ const int kMaxTurnUsernameLength = 509;
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::BACKUP_CONNECTION_PING_INTERVAL;
-using ::webrtc::CN_AUDIO;
-using ::webrtc::CN_DATA;
-using ::webrtc::CN_OTHER;
-using ::webrtc::CN_VIDEO;
-using ::webrtc::CONNECTION_RESPONSE_TIMEOUT;
-using ::webrtc::CONNECTION_WRITE_CONNECT_FAILURES;
-using ::webrtc::CONNECTION_WRITE_CONNECT_TIMEOUT;
-using ::webrtc::CONNECTION_WRITE_TIMEOUT;
-using ::webrtc::CONNECTIONROLE_ACTIVE_STR;
-using ::webrtc::CONNECTIONROLE_ACTPASS_STR;
-using ::webrtc::CONNECTIONROLE_HOLDCONN_STR;
-using ::webrtc::CONNECTIONROLE_PASSIVE_STR;
-using ::webrtc::DEAD_CONNECTION_RECEIVE_TIMEOUT;
-using ::webrtc::GROUP_TYPE_BUNDLE;
-using ::webrtc::ICE_CANDIDATE_COMPONENT_DEFAULT;
-using ::webrtc::ICE_CANDIDATE_COMPONENT_RTCP;
-using ::webrtc::ICE_CANDIDATE_COMPONENT_RTP;
-using ::webrtc::ICE_PWD_LENGTH;
-using ::webrtc::ICE_PWD_MAX_LENGTH;
-using ::webrtc::ICE_PWD_MIN_LENGTH;
-using ::webrtc::ICE_TYPE_PREFERENCE_HOST;
-using ::webrtc::ICE_TYPE_PREFERENCE_HOST_TCP;
-using ::webrtc::ICE_TYPE_PREFERENCE_PRFLX;
-using ::webrtc::ICE_TYPE_PREFERENCE_PRFLX_TCP;
-using ::webrtc::ICE_TYPE_PREFERENCE_RELAY_TCP;
-using ::webrtc::ICE_TYPE_PREFERENCE_RELAY_TLS;
-using ::webrtc::ICE_TYPE_PREFERENCE_RELAY_UDP;
-using ::webrtc::ICE_TYPE_PREFERENCE_SRFLX;
-using ::webrtc::ICE_UFRAG_LENGTH;
-using ::webrtc::ICE_UFRAG_MAX_LENGTH;
-using ::webrtc::ICE_UFRAG_MIN_LENGTH;
-using ::webrtc::IcePriorityValue;
-using ::webrtc::LOCAL_TLD;
-using ::webrtc::MIN_CHECK_RECEIVING_INTERVAL;
-using ::webrtc::MIN_CONNECTION_LIFETIME;
-using ::webrtc::MIN_PINGS_AT_WEAK_PING_INTERVAL;
-using ::webrtc::RECEIVING_SWITCHING_DELAY;
-using ::webrtc::RECEIVING_TIMEOUT;
-using ::webrtc::REGATHER_ON_FAILED_NETWORKS_INTERVAL;
-using ::webrtc::STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
-using ::webrtc::STRONG_PING_INTERVAL;
-using ::webrtc::STUN_KEEPALIVE_INTERVAL;
-using ::webrtc::WEAK_CONNECTION_RECEIVE_TIMEOUT;
-using ::webrtc::WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
-using ::webrtc::WEAK_PING_INTERVAL;
-}  
-#endif  
 
 #endif  
