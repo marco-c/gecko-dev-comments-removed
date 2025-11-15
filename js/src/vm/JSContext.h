@@ -1210,11 +1210,7 @@ class MOZ_RAII AutoNoteExclusiveDebuggerOnEval {
   }
 };
 
-enum UnsafeABIStrictness {
-  NoExceptions,
-  AllowPendingExceptions,
-  AllowThrownExceptions
-};
+enum UnsafeABIStrictness { NoExceptions, AllowPendingExceptions };
 
 
 
