@@ -13,23 +13,16 @@
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_format_h264.h"
-#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "rtc_base/checks.h"
 #include "test/fuzzers/fuzz_data_helper.h"
+#include "test/fuzzers/utils/validate_rtp_packetizer.h"
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  test::FuzzDataHelper fuzz_input(webrtc::MakeArrayView(data, size));
+  test::FuzzDataHelper fuzz_input(MakeArrayView(data, size));
 
-  RtpPacketizer::PayloadSizeLimits limits;
-  limits.max_payload_len = 1200;
-  
-  
-  limits.first_packet_reduction_len = fuzz_input.ReadOrDefaultValue<uint8_t>(0);
-  limits.last_packet_reduction_len = fuzz_input.ReadOrDefaultValue<uint8_t>(0);
-  limits.single_packet_reduction_len =
-      fuzz_input.ReadOrDefaultValue<uint8_t>(0);
+  RtpPacketizer::PayloadSizeLimits limits = ReadPayloadSizeLimits(fuzz_input);
+
   const H264PacketizationMode kPacketizationModes[] = {
       H264PacketizationMode::NonInterleaved,
       H264PacketizationMode::SingleNalUnit};
@@ -41,36 +34,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   RtpPacketizerH264 packetizer(fuzz_input.ReadByteArray(fuzz_input.BytesLeft()),
                                limits, packetization_mode);
 
-  size_t num_packets = packetizer.NumPackets();
-  if (num_packets == 0) {
-    return;
-  }
-  
-  
-  RtpPacketToSend rtp_packet(nullptr);
-  
-  if (num_packets == 1) {
-    RTC_CHECK(packetizer.NextPacket(&rtp_packet));
-    RTC_CHECK_LE(rtp_packet.payload_size(),
-                 limits.max_payload_len - limits.single_packet_reduction_len);
-    return;
-  }
-  
-  RTC_CHECK(packetizer.NextPacket(&rtp_packet));
-  RTC_CHECK_LE(rtp_packet.payload_size(),
-               limits.max_payload_len - limits.first_packet_reduction_len);
-  
-  for (size_t i = 1; i < num_packets - 1; ++i) {
-    rtp_packet.Clear();
-    RTC_CHECK(packetizer.NextPacket(&rtp_packet))
-        << "Failed to get packet#" << i;
-    RTC_CHECK_LE(rtp_packet.payload_size(), limits.max_payload_len)
-        << "Packet #" << i << " exceeds it's limit";
-  }
-  
-  rtp_packet.Clear();
-  RTC_CHECK(packetizer.NextPacket(&rtp_packet));
-  RTC_CHECK_LE(rtp_packet.payload_size(),
-               limits.max_payload_len - limits.last_packet_reduction_len);
+  ValidateRtpPacketizer(limits, packetizer);
 }
 }  
