@@ -239,6 +239,13 @@ struct ActiveScrolledRoot {
   
   layers::ScrollableLayerGuid::ViewID GetNearestScrollASRViewId() const;
 
+  
+  
+  
+  
+  static const ActiveScrolledRoot* GetStickyASRFromFrame(
+      nsIFrame* aStickyFrame);
+
   enum class ASRKind { Root, Scroll, Sticky };
 
   RefPtr<const ActiveScrolledRoot> mParent;

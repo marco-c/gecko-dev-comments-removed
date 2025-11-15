@@ -274,6 +274,13 @@ ActiveScrolledRoot::GetNearestScrollASRViewId() const {
 }
 
 
+const ActiveScrolledRoot* ActiveScrolledRoot::GetStickyASRFromFrame(
+    nsIFrame* aStickyFrame) {
+  return aStickyFrame->FirstContinuation()->GetProperty(
+      StickyActiveScrolledRootCache());
+}
+
+
 nsCString ActiveScrolledRoot::ToString(
     const ActiveScrolledRoot* aActiveScrolledRoot) {
   nsAutoCString str;
