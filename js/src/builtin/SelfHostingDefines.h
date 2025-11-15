@@ -21,6 +21,11 @@
   callFunction(std_Function_apply, FUN, RECEIVER, ARGS)
 
 
+
+
+#define NEW_RECORD() std_Object_create(null)
+
+
 #define MAX_ARGS_LENGTH (500 * 1000)
 
 

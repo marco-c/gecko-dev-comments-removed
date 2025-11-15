@@ -171,7 +171,7 @@ function InitializeCollator(collator, locales, options) {
   lazyCollatorData.usage = u;
 
   
-  var opt = new_Record();
+  var opt = NEW_RECORD();
   lazyCollatorData.opt = opt;
 
   

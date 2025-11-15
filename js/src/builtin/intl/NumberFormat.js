@@ -36,15 +36,12 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
   
 
   
-  var localeData = NumberFormat.localeData;
-
-  
   var r = ResolveLocale(
     "NumberFormat",
     lazyNumberFormatData.requestedLocales,
     lazyNumberFormatData.opt,
     NumberFormat.relevantExtensionKeys,
-    localeData
+    NumberFormat.localeData
   );
 
   
@@ -678,7 +675,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
   
 
   
-  var opt = new_Record();
+  var opt = NEW_RECORD();
   lazyNumberFormatData.opt = opt;
 
   
@@ -799,15 +796,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
   }
 
   
-  var mnfdDefault, mxfdDefault;
-  if (style === "currency") {
-    var cDigits = CurrencyDigits(currency);
-    mnfdDefault = cDigits;
-    mxfdDefault = cDigits;
-  } else {
-    mnfdDefault = 0;
-    mxfdDefault = style === "percent" ? 0 : 3;
-  }
 
   
   var notation = GetOption(
@@ -818,6 +806,17 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     "standard"
   );
   lazyNumberFormatData.notation = notation;
+
+  
+  var mnfdDefault, mxfdDefault;
+  if (style === "currency" && notation === "standard") {
+    var cDigits = CurrencyDigits(currency);
+    mnfdDefault = cDigits;
+    mxfdDefault = cDigits;
+  } else {
+    mnfdDefault = 0;
+    mxfdDefault = style === "percent" ? 0 : 3;
+  }
 
   
   SetNumberFormatDigitOptions(
@@ -878,8 +877,6 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
   );
   lazyNumberFormatData.signDisplay = signDisplay;
 
-  
-  
   
   
   initializeIntlObject(numberFormat, "NumberFormat", lazyNumberFormatData);

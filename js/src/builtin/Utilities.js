@@ -31,15 +31,6 @@
 
 
 
-
-
-function new_Record() {
-  return std_Object_create(null);
-}
-
-
-
-
 function ToBoolean(v) {
   return !!v;
 }

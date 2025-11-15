@@ -135,7 +135,7 @@ function InitializeListFormat(listFormat, locales, options) {
   }
 
   
-  var opt = new_Record();
+  var opt = NEW_RECORD();
   lazyListFormatData.opt = opt;
 
   

@@ -139,7 +139,7 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
   }
 
   
-  var opt = new_Record();
+  var opt = NEW_RECORD();
 
   
   var matcher = GetOption(
