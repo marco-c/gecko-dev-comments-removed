@@ -10,9 +10,8 @@
 
 #include "pc/media_session.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
@@ -1342,11 +1341,13 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
   
   
   if (offer_content_description->rtcp_fb_ack_ccfb()) {
-    answer_content->set_rtcp_fb_ack_ccfb(
-        transport_desc_factory_->trials().IsEnabled(
-            "WebRTC-RFC8888CongestionControlFeedback"));
-    for (auto& codec : codecs_to_include) {
-      codec.feedback_params.Remove(FeedbackParam(kRtcpFbParamTransportCc));
+    bool use_ccfb = transport_desc_factory_->trials().IsEnabled(
+        "WebRTC-RFC8888CongestionControlFeedback");
+    if (use_ccfb) {
+      answer_content->set_rtcp_fb_ack_ccfb(use_ccfb);
+      for (auto& codec : codecs_to_include) {
+        codec.feedback_params.Remove(FeedbackParam(kRtcpFbParamTransportCc));
+      }
     }
   }
   if (!SetCodecsInAnswer(offer_content_description, codecs_to_include,
