@@ -276,8 +276,6 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
-  void SendCandidateReadyCallbackList(Port*, const Candidate&);
-
   
   const std::vector<Candidate>& Candidates() const override;
   
@@ -515,6 +513,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
       LocalNetworkAccessPermissionInterface* permission_query,
       absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)> callback,
       LocalNetworkAccessPermissionStatus status);
+
+  void SendCandidateReadyCallbackList(Port*, const Candidate&);
 
   const Environment env_;
   TaskQueueBase* const thread_;

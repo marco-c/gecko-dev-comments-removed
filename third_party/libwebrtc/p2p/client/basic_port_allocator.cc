@@ -920,12 +920,6 @@ void BasicPortAllocatorSession::AddAllocatedPort(Port* port,
   PortData data(port, seq);
   ports_.push_back(data);
 
-  
-  
-  
-  
-  port->SignalCandidateReady.connect(port,
-                                     &Port::SendCandidateReadyCallbackList);
   port->SubscribeCandidateReadyCallback(
       [this](Port* port, const Candidate& c) { OnCandidateReady(port, c); });
   port->SubscribeCandidateError(

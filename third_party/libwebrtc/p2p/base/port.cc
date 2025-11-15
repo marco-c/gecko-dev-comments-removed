@@ -148,6 +148,12 @@ Port::Port(const PortParametersRef& args,
   PostDestroyIfDead(true);
   RTC_LOG(LS_INFO) << ToString() << ": Port created with network cost "
                    << network_cost_;
+
+  
+  
+  
+  
+  SignalCandidateReady.connect(this, &Port::SendCandidateReadyCallbackList);
 }
 
 Port::~Port() {
