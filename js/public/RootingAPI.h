@@ -223,13 +223,10 @@ JS_PUBLIC_API void HeapScriptWriteBarriers(JSScript** objp, JSScript* prev,
 
 template <typename T, typename Enable = void>
 struct SafelyInitialized {
-  static T create() {
+  static constexpr T create() {
     
     
     
-
-#if defined(XP_WIN) || defined(XP_DARWIN) || \
-    (defined(XP_UNIX) && !defined(__clang__))
 
     
     
@@ -245,8 +242,6 @@ struct SafelyInitialized {
 
     static_assert(IsPointer || IsNonTriviallyDefaultConstructibleClassOrUnion,
                   "T() must evaluate to a safely-initialized T");
-
-#endif
 
     return T();
   }

@@ -104,7 +104,7 @@ class AnyRef {
   
   AnyRefTag pointerTag() const { return GetUintptrTag(value_); }
 
-  explicit AnyRef(uintptr_t value) : value_(value) {}
+  explicit constexpr AnyRef(uintptr_t value) : value_(value) {}
 
   static constexpr uintptr_t TagUintptr(uintptr_t value, AnyRefTag tag) {
     MOZ_ASSERT(!(value & TagMask));
@@ -151,15 +151,15 @@ class AnyRef {
   
   static constexpr int32_t MinI31Value = -(2 << 29);
 
-  explicit AnyRef() : value_(NullRefValue) {}
-  MOZ_IMPLICIT AnyRef(std::nullptr_t) : value_(NullRefValue) {}
+  explicit constexpr AnyRef() : value_(NullRefValue) {}
+  MOZ_IMPLICIT constexpr AnyRef(std::nullptr_t) : value_(NullRefValue) {}
 
   
-  static AnyRef null() { return AnyRef(NullRefValue); }
+  static constexpr AnyRef null() { return AnyRef(NullRefValue); }
 
   
   
-  static AnyRef invalid() { return AnyRef(InvalidRefValue); }
+  static constexpr AnyRef invalid() { return AnyRef(InvalidRefValue); }
 
   
   static AnyRef fromJSObjectOrNull(JSObject* objectOrNull) {
