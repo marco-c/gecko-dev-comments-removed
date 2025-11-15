@@ -223,19 +223,19 @@ impl NonCustomPropertyId {
     #[inline]
     pub fn to_noncustomcsspropertyid(self) -> NonCustomCSSPropertyId {
         
-        unsafe { mem::transmute(self.0) }
+        unsafe { mem::transmute(self.0 as i32) }
     }
 
     
     #[cfg(feature = "gecko")]
     #[inline]
     pub fn from_noncustomcsspropertyid(prop: NonCustomCSSPropertyId) -> Option<Self> {
-        let prop = prop as u16;
-        if prop >= property_counts::NON_CUSTOM as u16 {
+        let prop = prop as i32;
+        if prop < 0 || prop >= property_counts::NON_CUSTOM as i32 {
             return None;
         }
         
-        Some(NonCustomPropertyId(prop))
+        Some(NonCustomPropertyId(prop as u16))
     }
 
     
