@@ -1503,21 +1503,9 @@ nsresult Http3Session::TryActivating(
       QueueStream(aStream);
       return rv;
     }
-    if (rv == NS_ERROR_DOM_INVALID_HEADER_VALUE) {
-      
-      
-      
-      return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
-    }
-
     
     
-    
-    if (StaticPrefs::network_http_http3_fallback_to_h2_on_error()) {
-      return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
-    }
-
-    return rv;
+    return NS_OK;
   }
 
   LOG(("Http3Session::TryActivating streamId=0x%" PRIx64
