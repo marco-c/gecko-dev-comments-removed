@@ -388,6 +388,18 @@ if (rtc_use_h264 && rtc_system_openh264) {
   }
 }
 
+rtc_library("frame_sampler") {
+  visibility = [ "*" ]
+  sources = [
+    "utility/frame_sampler.cc",
+    "utility/frame_sampler.h",
+  ]
+  deps = [
+    "..:module_api_public",
+    "../../api/video:video_frame",
+  ]
+}
+
 rtc_library("video_coding_utility") {
   visibility = [ "*" ]
   sources = [
@@ -488,6 +500,7 @@ rtc_library("webrtc_h264") {
   defines = []
   deps = [
     ":codec_globals_headers",
+    ":frame_sampler",
     ":video_codec_interface",
     ":video_coding_utility",
     "../../api:scoped_refptr",
@@ -514,6 +527,7 @@ rtc_library("webrtc_h264") {
     "../../rtc_base:timeutils",
     "../../rtc_base/system:rtc_export",
     "../../system_wrappers:metrics",
+    "../rtp_rtcp:rtp_rtcp_format",
     "svc:scalability_structures",
     "svc:scalable_video_controller",
     "//third_party/abseil-cpp/absl/base:nullability",
@@ -556,6 +570,9 @@ rtc_library("mock_libvpx_interface") {
     ":webrtc_libvpx_interface",
     "../../test:test_support",
   ]
+  if (rtc_build_libvpx) {
+    deps += [ rtc_libvpx_dir ]
+  }
 }
 
 # This target includes the internal SW codec.
@@ -572,6 +589,7 @@ rtc_library("webrtc_vp8") {
 
   deps = [
     ":codec_globals_headers",
+    ":frame_sampler",
     ":video_codec_interface",
     ":video_coding_utility",
     ":webrtc_libvpx_interface",
@@ -605,6 +623,7 @@ rtc_library("webrtc_vp8") {
     "../../rtc_base/experiments:field_trial_parser",
     "../../rtc_base/experiments:rate_control_settings",
     "../../system_wrappers:metrics",
+    "../rtp_rtcp:rtp_rtcp_format",
     "svc:scalability_mode_util",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/base:nullability",
@@ -698,6 +717,7 @@ rtc_library("webrtc_vp9") {
 
   deps = [
     ":codec_globals_headers",
+    ":frame_sampler",
     ":video_codec_interface",
     ":video_coding_utility",
     ":webrtc_libvpx_interface",
@@ -759,7 +779,7 @@ if (rtc_include_tests) {
 
       deps = [
         "../../api/video_codecs:video_codecs_api",
-        "../../modules/utility:utility",
+        "../../modules/utility",
         "../../rtc_base:checks",
         "../../sdk/android:internal_jni",
         "../../sdk/android:native_api_base",
@@ -866,7 +886,7 @@ if (rtc_include_tests) {
       "../../api:videocodec_test_stats_api",
       "../../api/environment",
       "../../api/environment:environment_factory",
-      "../../api/numerics:numerics",
+      "../../api/numerics",
       "../../api/task_queue",
       "../../api/task_queue:default_task_queue_factory",
       "../../api/test/metrics:global_metrics_logger_and_exporter",
@@ -1206,6 +1226,7 @@ if (rtc_include_tests) {
       "utility/corruption_detection_settings_generator_unittest.cc",
       "utility/decoded_frames_history_unittest.cc",
       "utility/frame_dropper_unittest.cc",
+      "utility/frame_sampler_unittest.cc",
       "utility/framerate_controller_deprecated_unittest.cc",
       "utility/ivf_file_reader_unittest.cc",
       "utility/ivf_file_writer_unittest.cc",
@@ -1230,6 +1251,7 @@ if (rtc_include_tests) {
       ":encoded_frame",
       ":frame_dependencies_calculator",
       ":frame_helpers",
+      ":frame_sampler",
       ":h264_sprop_parameter_sets",
       ":h26x_packet_buffer",
       ":nack_requester",
@@ -1326,8 +1348,8 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
-      "../../test/time_controller:time_controller",
-      "../../third_party/libyuv:libyuv",
+      "../../test/time_controller",
+      "../../third_party/libyuv",
       "../../video/config:encoder_config",
       "../rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",

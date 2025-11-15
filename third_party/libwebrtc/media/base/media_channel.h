@@ -43,6 +43,7 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "api/video/encoded_image.h"
 #include "api/video/recordable_encoded_frame.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
@@ -593,8 +594,12 @@ struct VideoSenderInfo : public MediaSenderInfo {
   
   uint64_t total_encoded_bytes_target = 0;
   bool has_entered_low_resolution = false;
+  
   std::optional<uint64_t> qp_sum;
   VideoContentType content_type = VideoContentType::UNSPECIFIED;
+  
+  webrtc::EncodedImage::Psnr psnr_sum;
+  uint32_t psnr_measurements = 0;
   uint32_t frames_sent = 0;
   
   uint32_t huge_frames_sent = 0;

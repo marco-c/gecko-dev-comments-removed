@@ -10,11 +10,10 @@
 
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -45,6 +44,7 @@
 #include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers_factory.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/interface/libvpx_interface.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
@@ -95,8 +95,7 @@ constexpr int kScreenshareMinQp = 15;
 constexpr int kTokenPartitions = VP8_ONE_TOKENPARTITION;
 constexpr uint32_t kVp832ByteAlign = 32u;
 
-constexpr int kRtpTicksPerSecond = 90000;
-constexpr int kRtpTicksPerMs = kRtpTicksPerSecond / 1000;
+constexpr int kRtpTicksPerMs = kVideoPayloadTypeFrequency / 1000;
 
 
 
@@ -341,7 +340,9 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(const Environment& env,
       encoder_info_override_(env_.field_trials()),
       max_frame_drop_interval_(ParseFrameDropInterval(env_.field_trials())),
       android_specific_threading_settings_(env_.field_trials().IsEnabled(
-          "WebRTC-LibvpxVp8Encoder-AndroidSpecificThreadingSettings")) {
+          "WebRTC-LibvpxVp8Encoder-AndroidSpecificThreadingSettings")),
+      calculate_psnr_(
+          env.field_trials().IsEnabled("WebRTC-Video-CalculatePsnr")) {
   
   
   raw_images_.reserve(kMaxSimulcastStreams);
@@ -603,7 +604,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
   
   vpx_configs_[0].g_timebase.num = 1;
-  vpx_configs_[0].g_timebase.den = kRtpTicksPerSecond;
+  vpx_configs_[0].g_timebase.den = kVideoPayloadTypeFrequency;
   vpx_configs_[0].g_lag_in_frames = 0;  
 
   
@@ -1096,6 +1097,14 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     flags[i] = send_key_frame ? VPX_EFLAG_FORCE_KF : EncodeFlags(tl_configs[i]);
   }
 
+#ifdef VPX_EFLAG_CALCULATE_PSNR
+  if (calculate_psnr_ && psnr_frame_sampler_.ShouldBeSampled(frame)) {
+    for (size_t i = 0; i < encoders_.size(); ++i) {
+      flags[i] |= VPX_EFLAG_CALCULATE_PSNR;
+    }
+  }
+#endif
+
   
   
   
@@ -1157,7 +1166,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   
   
   RTC_DCHECK_GT(codec_.maxFramerate, 0);
-  uint32_t duration = kRtpTicksPerSecond / codec_.maxFramerate;
+  uint32_t duration = kVideoPayloadTypeFrequency / codec_.maxFramerate;
 
   int error = WEBRTC_VIDEO_CODEC_OK;
   int num_tries = 0;
@@ -1242,6 +1251,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image,
        ++encoder_idx, --stream_idx) {
     vpx_codec_iter_t iter = nullptr;
     encoded_images_[encoder_idx].set_size(0);
+    encoded_images_[encoder_idx].set_psnr(std::nullopt);
     encoded_images_[encoder_idx]._frameType = VideoFrameType::kVideoFrameDelta;
     CodecSpecificInfo codec_specific;
     const vpx_codec_cx_pkt_t* pkt = nullptr;
@@ -1268,11 +1278,19 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image,
           encoded_pos += pkt->data.frame.sz;
           break;
         }
+        case VPX_CODEC_PSNR_PKT:
+          
+          encoded_images_[encoder_idx].set_psnr(
+              EncodedImage::Psnr({.y = pkt->data.psnr.psnr[1],
+                                  .u = pkt->data.psnr.psnr[2],
+                                  .v = pkt->data.psnr.psnr[3]}));
+          break;
         default:
           break;
       }
       
-      if ((pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) == 0) {
+      if (pkt->kind == VPX_CODEC_CX_FRAME_PKT &&
+          (pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) == 0) {
         
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
           encoded_images_[encoder_idx]._frameType =
