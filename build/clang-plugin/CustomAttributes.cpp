@@ -5,7 +5,6 @@
 #include "CustomAttributes.h"
 #include "plugin.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
-#include <algorithm>
 
 
 
