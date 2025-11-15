@@ -700,6 +700,12 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 #endif
   }
 
+  
+  void unsetOOMStackTrace();
+  const char* getOOMStackTrace() const;
+  bool hasOOMStackTrace() const;
+  void captureOOMStackTrace();
+
   js::ContextData<int32_t> reportGranularity; 
 
   js::ContextData<js::AutoResolving*> resolvingList;
@@ -971,6 +977,14 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;
   js::ContextData<void*> promiseRejectionTrackerCallbackData;
+
+  
+  
+  
+  
+  static constexpr size_t OOMStackTraceBufferSize = 4096;
+  js::ContextData<char*> oomStackTraceBuffer_;
+  js::ContextData<bool> oomStackTraceBufferValid_;
 
   JSObject* getIncumbentGlobal(JSContext* cx);
   bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job,
