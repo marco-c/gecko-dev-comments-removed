@@ -2266,15 +2266,19 @@ class nsDisplayItem {
 
 
 
+  static uint32_t GetPerFrameKey(uint8_t aPageNum, uint16_t aPerFrameIndex,
+                                 DisplayItemType aType) {
+    
+    
+    
+    
+    return (static_cast<uint32_t>(aPageNum)
+            << (TYPE_BITS + (sizeof(aPerFrameIndex) * 8))) |
+           (static_cast<uint32_t>(aPerFrameIndex) << TYPE_BITS) |
+           static_cast<uint32_t>(aType);
+  }
   uint32_t GetPerFrameKey() const {
-    
-    
-    
-    
-    return (static_cast<uint32_t>(mPageNum)
-            << (TYPE_BITS + (sizeof(mPerFrameIndex) * 8))) |
-           (static_cast<uint32_t>(mPerFrameIndex) << TYPE_BITS) |
-           static_cast<uint32_t>(mType);
+    return GetPerFrameKey(mPageNum, mPerFrameIndex, mType);
   }
 
   
