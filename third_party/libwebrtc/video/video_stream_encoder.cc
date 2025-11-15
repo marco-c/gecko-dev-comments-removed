@@ -1028,8 +1028,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     encoder_.reset();
 
     encoder_ = MaybeCreateFrameDumpingEncoderWrapper(
-        settings_.encoder_factory->Create(env_, encoder_config_.video_format),
-        env_.field_trials());
+        env_,
+        settings_.encoder_factory->Create(env_, encoder_config_.video_format));
     if (!encoder_) {
       RTC_LOG(LS_ERROR) << "CreateVideoEncoder failed, failing encoder format: "
                         << encoder_config_.video_format.ToString();
@@ -1527,7 +1527,7 @@ void VideoStreamEncoder::RequestEncoderSwitch() {
   }
 
   if (!preferred_fallback_encoder) {
-    if (env_.field_trials().IsEnabled(
+    if (!env_.field_trials().IsDisabled(
             kSwitchEncoderFollowCodecPreferenceOrderFieldTrial)) {
       encoder_fallback_requested_ = true;
       settings_.encoder_switch_request_callback->RequestEncoderFallback();

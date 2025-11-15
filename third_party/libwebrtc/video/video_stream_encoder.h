@@ -382,7 +382,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   std::vector<VideoFrameType> next_frame_types_ RTC_GUARDED_BY(encoder_queue_);
 
-  FrameEncodeMetadataWriter frame_encode_metadata_writer_{this};
+  FrameEncodeMetadataWriter frame_encode_metadata_writer_{env_, this};
 
   
   VideoStreamInputStateProvider input_state_provider_;
