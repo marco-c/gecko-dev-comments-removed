@@ -3860,8 +3860,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (mWillBuildScrollableLayer) {
       return true;
     }
-    return StyleVisibility()->IsVisible() &&
-           nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll();
+    return nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll();
   }();
 
   
@@ -4123,7 +4122,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (couldBuildLayer) {
+  if (couldBuildLayer & StyleVisibility()->IsVisible()) {
     CompositorHitTestInfo info(CompositorHitTestFlags::eVisibleToHitTest,
                                CompositorHitTestFlags::eInactiveScrollframe);
     
