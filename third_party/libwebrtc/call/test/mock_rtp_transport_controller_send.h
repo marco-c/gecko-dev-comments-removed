@@ -119,11 +119,14 @@ class MockRtpTransportControllerSend
               EnableCongestionControlFeedbackAccordingToRfc8888,
               (),
               (override));
-  MOCK_METHOD(int,
+  MOCK_METHOD(std::optional<int>,
               ReceivedCongestionControlFeedbackCount,
               (),
               (const, override));
-  MOCK_METHOD(int, ReceivedTransportCcFeedbackCount, (), (const, override));
+  MOCK_METHOD(std::optional<int>,
+              ReceivedTransportCcFeedbackCount,
+              (),
+              (const, override));
 };
 }  
 #endif  

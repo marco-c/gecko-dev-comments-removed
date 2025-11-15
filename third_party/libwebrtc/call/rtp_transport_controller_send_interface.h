@@ -162,9 +162,9 @@ class RtpTransportControllerSendInterface {
   
   virtual void EnableCongestionControlFeedbackAccordingToRfc8888() = 0;
   
-  virtual int ReceivedCongestionControlFeedbackCount() const = 0;
+  virtual std::optional<int> ReceivedCongestionControlFeedbackCount() const = 0;
   
-  virtual int ReceivedTransportCcFeedbackCount() const = 0;
+  virtual std::optional<int> ReceivedTransportCcFeedbackCount() const = 0;
 };
 
 }  

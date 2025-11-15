@@ -476,6 +476,8 @@ class RTC_EXPORT RTCTransportStats final : public RTCStats {
   std::optional<std::string> ice_role;
   std::optional<std::string> ice_local_username_fragment;
   std::optional<std::string> ice_state;
+  
+  std::optional<int> ccfb_messages_received;
 };
 
 
