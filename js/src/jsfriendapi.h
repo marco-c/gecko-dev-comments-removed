@@ -84,8 +84,6 @@ extern JS_PUBLIC_API JSObject* JS_NewDeadWrapper(
 
 extern JS_PUBLIC_API void JS_TraceShapeCycleCollectorChildren(
     JS::CallbackTracer* trc, JS::GCCellPtr shape);
-extern JS_PUBLIC_API void JS_TraceObjectGroupCycleCollectorChildren(
-    JS::CallbackTracer* trc, JS::GCCellPtr group);
 
 extern JS_PUBLIC_API JSPrincipals* JS_GetScriptPrincipals(JSScript* script);
 
