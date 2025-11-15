@@ -29,6 +29,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "getNodeDisplayName",
+  "resource://devtools/server/actors/inspector/utils.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "SharedCssLogic",
   "resource://devtools/shared/inspector/css-logic.js"
 );
@@ -296,13 +302,37 @@ class StyleRuleActor extends Actor {
 
 
 
+  get isPseudoElementAnonymousNodeSelected() {
+    if (!this._pseudoElement) {
+      return false;
+    }
+
+    
+    
+    
+    
+    return (
+      this._pseudoElement === getNodeDisplayName(this.pageStyle.selectedElement)
+    );
+  }
+
+  
+
+
+
+
   get currentlySelectedElement() {
     let { selectedElement } = this.pageStyle;
-    if (!this._pseudoElement) {
+    
+    
+    
+    if (!this._pseudoElement || this.isPseudoElementAnonymousNodeSelected) {
       return selectedElement;
     }
 
     
+    
+
     
     
     
@@ -334,20 +364,11 @@ class StyleRuleActor extends Actor {
 
     const { selectedElement } = this.pageStyle;
 
-    
-    
-    
-    
-    
-    
-    const isPseudoElementParentSelected =
-      selectedElement.implementedPseudoElement !== this._pseudoElement;
-
     return selectedElement.ownerGlobal.getComputedStyle(
       selectedElement,
       
       
-      isPseudoElementParentSelected ? this._pseudoElement : null
+      !this.isPseudoElementAnonymousNodeSelected ? this._pseudoElement : null
     );
   }
 
