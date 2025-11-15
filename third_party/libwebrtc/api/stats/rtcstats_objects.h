@@ -196,6 +196,10 @@ class RTC_EXPORT RTCReceivedRtpStreamStats : public RTCRtpStreamStats {
 
   std::optional<double> jitter;
   std::optional<int32_t> packets_lost;  
+  
+  std::optional<int64_t> packets_received_with_ect1;
+  
+  std::optional<int64_t> packets_received_with_ce;
 
  protected:
   RTCReceivedRtpStreamStats(std::string id, Timestamp timestamp);
@@ -371,7 +375,7 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
   std::optional<uint32_t> rtx_ssrc;
 
   
-  std::optional<uint64_t> packets_sent_with_ect1;
+  std::optional<int64_t> packets_sent_with_ect1;
 };
 
 

@@ -364,7 +364,7 @@ struct MediaSenderInfo {
   uint64_t retransmitted_bytes_sent = 0;
   int packets_sent = 0;
   
-  int packets_sent_with_ect1 = 0;
+  int64_t packets_sent_with_ect1 = 0;
   
   uint64_t retransmitted_packets_sent = 0;
   
@@ -428,6 +428,10 @@ struct MediaReceiverInfo {
   
   int64_t header_and_padding_bytes_received = 0;
   int packets_received = 0;
+  
+  int64_t packets_received_with_ect1 = 0;
+  
+  int64_t packets_received_with_ce = 0;
   int packets_lost = 0;
 
   std::optional<uint64_t> retransmitted_bytes_received;

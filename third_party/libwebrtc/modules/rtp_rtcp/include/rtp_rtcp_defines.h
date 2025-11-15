@@ -38,6 +38,8 @@
 namespace webrtc {
 class RtpPacket;
 class RtpPacketToSend;
+class RtpPacketReceived;
+
 namespace rtcp {
 class TransportFeedback;
 }  
@@ -280,10 +282,12 @@ struct RtpPacketCounter {
         payload_bytes(0),
         padding_bytes(0),
         packets(0),
-        packets_with_ect1(0) {}
+        packets_with_ect1(0),
+        packets_with_ce(0) {}
 
   explicit RtpPacketCounter(const RtpPacket& packet);
   explicit RtpPacketCounter(const RtpPacketToSend& packet_to_send);
+  explicit RtpPacketCounter(const RtpPacketReceived& packet_received);
 
   void Add(const RtpPacketCounter& other) {
     header_bytes += other.header_bytes;
@@ -291,6 +295,7 @@ struct RtpPacketCounter {
     padding_bytes += other.padding_bytes;
     packets += other.packets;
     packets_with_ect1 += other.packets_with_ect1;
+    packets_with_ce += other.packets_with_ce;
     total_packet_delay += other.total_packet_delay;
   }
 
@@ -299,12 +304,14 @@ struct RtpPacketCounter {
            payload_bytes == other.payload_bytes &&
            padding_bytes == other.padding_bytes && packets == other.packets &&
            packets_with_ect1 == other.packets_with_ect1 &&
+           packets_with_ce == other.packets_with_ce &&
            total_packet_delay == other.total_packet_delay;
   }
 
   
   void AddPacket(const RtpPacket& packet);
   void AddPacket(const RtpPacketToSend& packet_to_send);
+  void AddPacket(const RtpPacketReceived& packet_received);
 
   size_t TotalBytes() const {
     return header_bytes + payload_bytes + padding_bytes;
@@ -315,6 +322,7 @@ struct RtpPacketCounter {
   size_t padding_bytes;  
   size_t packets;        
   size_t packets_with_ect1;  
+  size_t packets_with_ce;    
   
   
   TimeDelta total_packet_delay = TimeDelta::Zero();
