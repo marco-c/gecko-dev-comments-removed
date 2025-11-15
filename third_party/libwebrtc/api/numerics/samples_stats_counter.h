@@ -45,6 +45,7 @@ class SamplesStatsCounter {
   SamplesStatsCounter& operator=(SamplesStatsCounter&&);
 
   
+  [[deprecated("Use AddSample(StatsSample) instead.")]]
   void AddSample(double value);
   void AddSample(StatsSample sample);
 

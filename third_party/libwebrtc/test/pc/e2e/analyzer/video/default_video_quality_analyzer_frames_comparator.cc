@@ -247,7 +247,7 @@ void DefaultVideoQualityAnalyzerFramesComparator::Stop(
       
       
       if (stream_stats.freeze_time_ms.IsEmpty()) {
-        stream_stats.freeze_time_ms.AddSample(0);
+        stream_stats.freeze_time_ms.AddSample({.value = 0, .time = Now()});
       }
 
       
