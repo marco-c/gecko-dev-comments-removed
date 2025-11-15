@@ -58,7 +58,6 @@
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/media/MediaSystemResourceService.h"  
 #include "mozilla/mozalloc.h"                          
-#include "mozilla/PodOperations.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/glean/GfxMetrics.h"
