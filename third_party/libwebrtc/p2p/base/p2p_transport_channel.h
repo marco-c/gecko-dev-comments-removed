@@ -20,9 +20,8 @@
 #ifndef P2P_BASE_P2P_TRANSPORT_CHANNEL_H_
 #define P2P_BASE_P2P_TRANSPORT_CHANNEL_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -34,6 +33,7 @@
 #include "api/array_view.h"
 #include "api/async_dns_resolver.h"
 #include "api/candidate.h"
+#include "api/environment/environment.h"
 #include "api/ice_transport_interface.h"
 #include "api/local_network_access_permission.h"
 #include "api/rtc_error.h"
@@ -104,6 +104,13 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       absl::string_view transport_name,
       int component,
       IceTransportInit init);
+
+  
+  
+  P2PTransportChannel(const Environment& env,
+                      absl::string_view transport_name,
+                      int component,
+                      PortAllocator* allocator);
 
   
   
@@ -286,6 +293,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   };
 
   P2PTransportChannel(
+      std::optional<Environment> env,
       absl::string_view transport_name,
       int component,
       PortAllocator* allocator,
@@ -444,6 +452,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
       const StunByteStringAttribute*);
   void GoogDeltaAckReceived(RTCErrorOr<const StunUInt64Attribute*>);
 
+  const std::optional<Environment> env_;
   std::string transport_name_ RTC_GUARDED_BY(network_thread_);
   int component_ RTC_GUARDED_BY(network_thread_);
   PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
@@ -544,14 +553,5 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::IceCredentialsChanged;
-using ::webrtc::P2PTransportChannel;
-using ::webrtc::RemoteCandidate;
-}  
-#endif  
 
 #endif  

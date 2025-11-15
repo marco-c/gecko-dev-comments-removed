@@ -13,20 +13,9 @@
 
 #include "api/ice_transport_interface.h"
 #include "api/scoped_refptr.h"
-#include "p2p/base/port_allocator.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
-
-
-
-
-
-
-
-
-RTC_EXPORT scoped_refptr<IceTransportInterface> CreateIceTransport(
-    PortAllocator* port_allocator);
 
 
 
