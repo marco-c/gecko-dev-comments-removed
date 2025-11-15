@@ -3,11 +3,23 @@
 
 
 
+use icu_casemap::CaseMapperBorrowed;
+use icu_normalizer::DecomposingNormalizerBorrowed;
+use icu_properties::props::GeneralCategory;
+use icu_properties::props::GeneralCategoryGroup;
+use icu_properties::CodePointMapDataBorrowed;
 use std::borrow::Cow;
-use unicase::UniCase;
-use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 
 use crate::Result;
+
+static NFKD: DecomposingNormalizerBorrowed = DecomposingNormalizerBorrowed::new_nfkd();
+static GENERAL_CATEGORY: CodePointMapDataBorrowed<'static, GeneralCategory> =
+    icu_properties::CodePointMapData::<GeneralCategory>::new();
+static CASE_MAPPER: CaseMapperBorrowed = CaseMapperBorrowed::new();
+
+fn is_combining_mark(c: char) -> bool {
+    GeneralCategoryGroup::Mark.contains(GENERAL_CATEGORY.get(c))
+}
 
 
 
@@ -253,8 +265,12 @@ pub fn split_keyword(keyword: &str) -> (&str, &str) {
 
 
 
+
+
 pub fn i18n_cmp(a: &str, b: &str) -> std::cmp::Ordering {
-    UniCase::new(i18n_transform(a)).cmp(&UniCase::new(i18n_transform(b)))
+    CASE_MAPPER
+        .fold_string(&i18n_transform(a))
+        .cmp(&CASE_MAPPER.fold_string(&i18n_transform(b)))
 }
 
 
@@ -288,14 +304,17 @@ pub fn i18n_transform(s: &str) -> Cow<'_, str> {
         };
     }
 
-    let borrowable = !s
-        .nfkd()
+    let borrowable = !NFKD
+        .normalize_iter(s.chars())
         .any(|c| is_combining_mark(c) || matches!(c, pattern_all!()));
 
     if borrowable {
+        
+        
+        
         Cow::from(s)
     } else {
-        s.nfkd()
+        NFKD.normalize_iter(s.chars())
             .filter_map(|c| {
                 if is_combining_mark(c) {
                     

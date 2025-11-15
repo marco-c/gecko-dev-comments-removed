@@ -44,7 +44,7 @@ impl BreadcrumbRingBuffer {
     }
 
     fn push(&mut self, breadcrumb: impl Into<String>) {
-        let breadcrumb = breadcrumb.into();
+        let breadcrumb = truncate_breadcrumb(breadcrumb.into());
         if self.breadcrumbs.len() < Self::MAX_ITEMS {
             self.breadcrumbs.push(breadcrumb);
         } else {
@@ -58,6 +58,19 @@ impl BreadcrumbRingBuffer {
         breadcrumbs.extend(self.breadcrumbs[..self.pos].iter().map(|s| s.to_string()));
         breadcrumbs
     }
+}
+
+fn truncate_breadcrumb(breadcrumb: String) -> String {
+    
+    
+    if breadcrumb.len() <= 100 {
+        return breadcrumb;
+    }
+    let split_point = (0..=100)
+        .rev()
+        .find(|i| breadcrumb.is_char_boundary(*i))
+        .unwrap_or(0);
+    breadcrumb[0..split_point].to_string()
 }
 
 #[cfg(test)]
@@ -186,5 +199,17 @@ mod test {
                 "25".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn test_truncate_breadcrumb() {
+        
+        assert_eq!(truncate_breadcrumb("0".repeat(99)).len(), 99);
+        assert_eq!(truncate_breadcrumb("0".repeat(100)).len(), 100);
+        
+        assert_eq!(truncate_breadcrumb("0".repeat(101)).len(), 100);
+        
+        
+        assert_eq!(truncate_breadcrumb("0".repeat(99) + "🔥").len(), 99);
     }
 }

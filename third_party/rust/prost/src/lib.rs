@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/prost/0.12.1")]
+#![doc(html_root_url = "https://docs.rs/prost/0.13.5")]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![doc = include_str!("../README.md")]
 
@@ -17,13 +17,12 @@ mod types;
 #[doc(hidden)]
 pub mod encoding;
 
-pub use crate::error::{DecodeError, EncodeError};
+pub use crate::encoding::length_delimiter::{
+    decode_length_delimiter, encode_length_delimiter, length_delimiter_len,
+};
+pub use crate::error::{DecodeError, EncodeError, UnknownEnumValue};
 pub use crate::message::Message;
 pub use crate::name::Name;
-
-use bytes::{Buf, BufMut};
-
-use crate::encoding::{decode_varint, encode_varint, encoded_len_varint};
 
 
 
@@ -34,62 +33,10 @@ const RECURSION_LIMIT: u32 = 100;
 
 
 
-
-
-pub fn encode_length_delimiter<B>(length: usize, buf: &mut B) -> Result<(), EncodeError>
-where
-    B: BufMut,
-{
-    let length = length as u64;
-    let required = encoded_len_varint(length);
-    let remaining = buf.remaining_mut();
-    if required > remaining {
-        return Err(EncodeError::new(required, remaining));
-    }
-    encode_varint(length, buf);
-    Ok(())
-}
-
-
-
-
-
-pub fn length_delimiter_len(length: usize) -> usize {
-    encoded_len_varint(length as u64)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn decode_length_delimiter<B>(mut buf: B) -> Result<usize, DecodeError>
-where
-    B: Buf,
-{
-    let length = decode_varint(&mut buf)?;
-    if length > usize::max_value() as u64 {
-        return Err(DecodeError::new(
-            "length delimiter exceeds maximum usize value",
-        ));
-    }
-    Ok(length as usize)
-}
-
-
-
-
-
-#[cfg(feature = "prost-derive")]
+#[cfg(feature = "derive")]
 #[allow(unused_imports)]
 #[macro_use]
 extern crate prost_derive;
-#[cfg(feature = "prost-derive")]
+#[cfg(feature = "derive")]
 #[doc(hidden)]
 pub use prost_derive::*;

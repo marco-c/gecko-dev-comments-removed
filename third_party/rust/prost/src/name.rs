@@ -1,6 +1,8 @@
 
 
 use crate::Message;
+
+#[cfg(not(feature = "std"))]
 use alloc::{format, string::String};
 
 
@@ -15,10 +17,14 @@ pub trait Name: Message {
 
     
     
+    
+    
+    
     fn full_name() -> String {
-        format!("{}.{}", Self::NAME, Self::PACKAGE)
+        format!("{}.{}", Self::PACKAGE, Self::NAME)
     }
 
+    
     
     
     

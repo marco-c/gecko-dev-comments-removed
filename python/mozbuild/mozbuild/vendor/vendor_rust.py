@@ -97,8 +97,7 @@ PACKAGES_WE_DONT_WANT = {
     
     "unicode-joining-type": "Use icu_properties instead",
     "unicode-linebreak": "Use icu_segmenter instead",
-    
-    
+    "unicode-normalization": "Use icu_normalizer instead",
     "unicode-properties": "Use icu_properties instead",
     "unicode-script": "Use icu_properties instead",
     "unicode-segmentation": "Use icu_segmenter instead",
@@ -130,7 +129,6 @@ ALLOWED_DESPITE_PREFIX = {
     "unicode-bidi",  
     "unicode-bidi-ffi",  
     "unicode-ident",  
-    "unicode-normalization",  
     "unicode-width",  
     "unic-langid",  
     "unic-langid-ffi",  
