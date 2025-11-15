@@ -71,11 +71,6 @@ const IMAGE_FETCHING_TIMEOUT = 500;
 
 
 const getNodeDisplayName = function (rawNode) {
-  const { implementedPseudoElement } = rawNode;
-  if (implementedPseudoElement) {
-    return implementedPseudoElement;
-  }
-
   if (rawNode.nodeName && !rawNode.localName) {
     
     

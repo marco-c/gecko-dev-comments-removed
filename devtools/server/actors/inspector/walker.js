@@ -24,7 +24,10 @@ loader.lazyRequireGetter(
   this,
   [
     "getFrameElement",
+    "isAfterPseudoElement",
+    "isBeforePseudoElement",
     "isDirectShadowHostChild",
+    "isMarkerPseudoElement",
     "isFrameBlockedByCSP",
     "isFrameWithChildTarget",
     "isShadowHost",
@@ -734,7 +737,9 @@ class WalkerActor extends Actor {
   inlineTextChild(rawNode) {
     
     if (
-      !!rawNode.implementedPseudoElement ||
+      isMarkerPseudoElement(rawNode) ||
+      isBeforePseudoElement(rawNode) ||
+      isAfterPseudoElement(rawNode) ||
       isShadowHost(rawNode) ||
       rawNode.nodeType != Node.ELEMENT_NODE ||
       !!rawNode.children.length ||
