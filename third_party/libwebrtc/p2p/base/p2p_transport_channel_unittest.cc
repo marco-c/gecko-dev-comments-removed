@@ -696,7 +696,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
 
   void Test(const Environment& env, const Result& expected) {
     ScopedFakeClock clock;
-    int64_t connect_start = TimeMillis();
+    int64_t connect_start = env.clock().TimeInMilliseconds();
     int64_t connect_time;
 
     
@@ -704,7 +704,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     EXPECT_TRUE(WaitUntil(
         [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
         {.timeout = expected.connect_wait + kShortTimeout, .clock = &clock}));
-    connect_time = TimeMillis() - connect_start;
+    connect_time = env.clock().TimeInMilliseconds() - connect_start;
     if (connect_time < expected.connect_wait.ms()) {
       RTC_LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
@@ -715,7 +715,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     
     
     if (ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection()) {
-      int64_t converge_start = TimeMillis();
+      int64_t converge_start = env.clock().TimeInMilliseconds();
       int64_t converge_time;
       
       
@@ -730,7 +730,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
       ExpectCandidate1(expected);
       ExpectCandidate2(expected);
 
-      converge_time = TimeMillis() - converge_start;
+      converge_time = env.clock().TimeInMilliseconds() - converge_start;
       int64_t converge_wait = 2000;
       if (converge_time < converge_wait) {
         RTC_LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
@@ -4198,8 +4198,8 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
 
   clock.AdvanceTime(TimeDelta::Seconds(1));
   conn1->ReceivedPing();
-  conn1->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("ABC", 3, TimeMicros()));
+  conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "ABC", 3, env.clock().TimeInMicroseconds()));
 
   EXPECT_TRUE(WaitUntil([&] { return ch.receiving(); },
                         {.timeout = kShortTimeout, .clock = &clock}));
@@ -4540,8 +4540,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");  
-  conn2->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("ABC", 3, TimeMicros()));
+  conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "ABC", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(conn2, ch.selected_connection());
   conn2->ReceivedPingResponse(LOW_RTT, "id");  
 
@@ -4570,8 +4570,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   
   conn2->ReceivedPing();
   conn2->ReceivedPingResponse(LOW_RTT, "id");
-  conn2->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
+  conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "XYZ", 3, env.clock().TimeInMicroseconds()));
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn3),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4605,14 +4605,14 @@ TEST_F(P2PTransportChannelPingTest,
   
   SIMULATED_WAIT(false, 1, clock);
 
-  conn2->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
+  conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "XYZ", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   
-  conn1->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("ABC", 3, TimeMicros()));
+  conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "ABC", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
@@ -4621,8 +4621,8 @@ TEST_F(P2PTransportChannelPingTest,
   SIMULATED_WAIT(false, 1, clock);
   
   conn2->ReceivedPingResponse(LOW_RTT, "id");
-  conn2->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("ABC", 3, TimeMicros()));
+  conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "ABC", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
@@ -4655,8 +4655,8 @@ TEST_F(P2PTransportChannelPingTest,
   
   SIMULATED_WAIT(false, 1, clock);
 
-  conn1->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
+  conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "XYZ", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
@@ -4758,8 +4758,8 @@ TEST_F(P2PTransportChannelPingTest, TestEstimatedDisconnectedTime) {
   {
     clock.AdvanceTime(TimeDelta::Seconds(1));
     
-    conn1->OnReadPacket(
-        ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
+    conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+        "XYZ", 3, env.clock().TimeInMicroseconds()));
     clock.AdvanceTime(TimeDelta::Seconds(2));
 
     
@@ -4771,8 +4771,8 @@ TEST_F(P2PTransportChannelPingTest, TestEstimatedDisconnectedTime) {
 
   {
     clock.AdvanceTime(TimeDelta::Seconds(1));
-    conn2->OnReadPacket(
-        ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
+    conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+        "XYZ", 3, env.clock().TimeInMicroseconds()));
     clock.AdvanceTime(TimeDelta::Seconds(2));
     ReceivePingOnConnection(conn2, kIceUfrag[1], 1, nomination++);
 
@@ -4957,8 +4957,8 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneHighPriorityConnections) {
   
   NominateConnection(conn1);
   SIMULATED_WAIT(false, 1, clock);
-  conn1->OnReadPacket(
-      ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
+  conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
+      "XYZ", 3, env.clock().TimeInMicroseconds()));
   SIMULATED_WAIT(conn2->pruned(), 100, clock);
   EXPECT_FALSE(conn2->pruned());
 }
