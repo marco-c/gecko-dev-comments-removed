@@ -2744,10 +2744,7 @@ Maybe<nsRect> nsDisplayItem::GetClipWithRespectToASR(
           DisplayItemClipChain::ClipForASR(GetClipChain(), aASR)) {
     return Some(clip->GetClipRect());
   }
-  
-  
-  NS_ASSERTION(GetType() == DisplayItemType::TYPE_VT_CAPTURE,
-               "item should have finite clip with respect to aASR");
+
   return Nothing();
 }
 
