@@ -13,7 +13,6 @@ use crate::composite::CompositorSurfaceKind;
 use crate::clip::ClipLeafId;
 use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
 use crate::quad::QuadTileClassifier;
-use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
 use crate::segment::EdgeAaSegmentMask;
 use crate::border::BorderSegmentCacheKey;
 use crate::debug_item::{DebugItem, DebugMessage};
@@ -21,6 +20,7 @@ use crate::debug_colors;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use glyph_rasterizer::GlyphKey;
+use crate::gpu_cache::{GpuCacheAddress, GpuCacheHandle, GpuDataRequest};
 use crate::gpu_types::{BrushFlags, QuadSegment};
 use crate::intern;
 use crate::picture::PicturePrimitive;
@@ -90,7 +90,7 @@ impl PrimitiveOpacity {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DeferredResolve {
-    pub address: GpuBufferAddress,
+    pub address: GpuCacheAddress,
     pub image_properties: ImageProperties,
     pub rendering: ImageRendering,
     pub is_composited: bool,
@@ -488,16 +488,16 @@ impl PrimitiveTemplateKind {
     
     pub fn write_prim_gpu_blocks(
         &self,
-        writer: &mut GpuBufferWriterF,
+        request: &mut GpuDataRequest,
         scene_properties: &SceneProperties,
     ) {
         match *self {
             PrimitiveTemplateKind::Clear => {
                 
-                writer.push_one(PremultipliedColorF::BLACK);
+                request.push(PremultipliedColorF::BLACK);
             }
             PrimitiveTemplateKind::Rectangle { ref color, .. } => {
-                writer.push_one(scene_properties.resolve_color(color).premultiplied())
+                request.push(scene_properties.resolve_color(color).premultiplied())
             }
         }
     }
@@ -534,8 +534,7 @@ pub struct PrimTemplateCommonData {
     
     
     
-    
-    pub gpu_buffer_address: GpuBufferAddress,
+    pub gpu_cache_handle: GpuCacheHandle,
     
     
     
@@ -550,7 +549,7 @@ impl PrimTemplateCommonData {
             flags: common.flags,
             may_need_repetition: true,
             prim_rect: common.prim_rect.into(),
-            gpu_buffer_address: GpuBufferAddress::INVALID,
+            gpu_cache_handle: GpuCacheHandle::new(),
             opacity: PrimitiveOpacity::translucent(),
             edge_aa_mask: EdgeAaSegmentMask::all(),
         }
@@ -640,9 +639,9 @@ impl PrimitiveTemplate {
         frame_state: &mut FrameBuildingState,
         scene_properties: &SceneProperties,
     ) {
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(1);
-        self.kind.write_prim_gpu_blocks(&mut writer, scene_properties);
-        self.common.gpu_buffer_address = writer.finish();
+        if let Some(mut request) = frame_state.gpu_cache.request(&mut self.common.gpu_cache_handle) {
+            self.kind.write_prim_gpu_blocks(&mut request, scene_properties);
+        }
 
         self.opacity = match self.kind {
             PrimitiveTemplateKind::Clear => {
@@ -713,7 +712,7 @@ pub struct VisibleMaskImageTile {
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct VisibleGradientTile {
-    pub address: GpuBufferAddress,
+    pub handle: GpuCacheHandle,
     pub local_rect: LayoutRect,
     pub local_clip_rect: LayoutRect,
 }
@@ -1203,7 +1202,7 @@ impl PrimitiveInstance {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Debug)]
 pub struct SegmentedInstance {
-    pub gpu_data: GpuBufferAddress,
+    pub gpu_cache_handle: GpuCacheHandle,
     pub segments_range: SegmentsRange,
 }
 
@@ -1556,7 +1555,7 @@ fn test_struct_sizes() {
     
     assert_eq!(mem::size_of::<PrimitiveInstance>(), 88, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
-    assert_eq!(mem::size_of::<PrimitiveTemplate>(), 52, "PrimitiveTemplate size changed");
+    assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 28, "PrimitiveTemplateKind size changed");
     assert_eq!(mem::size_of::<PrimitiveKey>(), 36, "PrimitiveKey size changed");
     assert_eq!(mem::size_of::<PrimitiveKeyKind>(), 16, "PrimitiveKeyKind size changed");
