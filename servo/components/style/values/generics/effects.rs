@@ -4,6 +4,8 @@
 
 
 
+use crate::values::generics::{NonNegative, ZeroToOne};
+
 
 #[derive(
     Animate,
@@ -50,34 +52,34 @@ pub use self::GenericBoxShadow as BoxShadow;
 )]
 #[animation(no_bound(U))]
 #[repr(C, u8)]
-pub enum GenericFilter<Angle, NonNegativeFactor, ZeroToOneFactor, Length, Shadow, U> {
+pub enum GenericFilter<Angle, Factor, Length, Shadow, U> {
     
     #[css(function)]
-    Blur(Length),
+    Blur(#[animation(field_bound)] NonNegative<Length>),
     
     #[css(function)]
-    Brightness(NonNegativeFactor),
+    Brightness(#[animation(field_bound)] NonNegative<Factor>),
     
     #[css(function)]
-    Contrast(NonNegativeFactor),
+    Contrast(#[animation(field_bound)] NonNegative<Factor>),
     
     #[css(function)]
-    Grayscale(ZeroToOneFactor),
+    Grayscale(#[animation(field_bound)] ZeroToOne<Factor>),
     
     #[css(function)]
     HueRotate(Angle),
     
     #[css(function)]
-    Invert(ZeroToOneFactor),
+    Invert(#[animation(field_bound)] ZeroToOne<Factor>),
     
     #[css(function)]
-    Opacity(ZeroToOneFactor),
+    Opacity(#[animation(field_bound)] ZeroToOne<Factor>),
     
     #[css(function)]
-    Saturate(NonNegativeFactor),
+    Saturate(#[animation(field_bound)] NonNegative<Factor>),
     
     #[css(function)]
-    Sepia(ZeroToOneFactor),
+    Sepia(#[animation(field_bound)] ZeroToOne<Factor>),
     
     #[css(function)]
     DropShadow(Shadow),
