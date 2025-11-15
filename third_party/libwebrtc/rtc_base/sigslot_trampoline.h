@@ -51,20 +51,49 @@ namespace webrtc {
 
 
 
+namespace internal {
+template <typename MemberPtrT>
+struct member_pointer_traits;
 
-template <class T, sigslot::signal0<> T::* member_signal>
-class SignalTrampoline : public sigslot::has_slots<> {
+
+template <typename ClassT, typename MemberT>
+struct member_pointer_traits<MemberT ClassT::*> {
+  using member_type = MemberT;
+};
+
+template <typename SignalT>
+class SignalTrampolineBase;
+
+template <typename... Args>
+class SignalTrampolineBase<sigslot::signal<Args...>>
+    : public sigslot::has_slots<> {
  public:
-  explicit SignalTrampoline(T* that) {
-    (that->*member_signal).connect(this, &SignalTrampoline::Notify);
-  }
-  void Subscribe(absl::AnyInvocable<void()> callback) {
+  void Subscribe(absl::AnyInvocable<void(Args...)> callback) {
     callbacks_.AddReceiver(std::move(callback));
   }
+  void Notify(Args... args) { callbacks_.Send(args...); }
 
  private:
-  void Notify() { callbacks_.Send(); }
-  CallbackList<> callbacks_;
+  CallbackList<Args...> callbacks_;
+};
+
+template <typename T, auto member_signal>
+using SignalTrampolineMemberBase =
+    SignalTrampolineBase<typename internal::member_pointer_traits<
+        decltype(member_signal)>::member_type>;
+
+}  
+
+template <class T, auto member_signal>
+class SignalTrampoline
+    : public internal::SignalTrampolineMemberBase<T, member_signal> {
+ private:
+  using Base = internal::SignalTrampolineMemberBase<T, member_signal>;
+
+ public:
+  explicit SignalTrampoline(T* that) {
+    (that->*member_signal).connect(static_cast<Base*>(this), &Base::Notify);
+  }
 };
 
 }  
