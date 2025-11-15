@@ -1,5 +1,5 @@
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
 <html>
   <head>
     <style>
@@ -73,11 +73,18 @@ p:first-letter {
     margin-left: -16px;
 }
 
+.topleft {
+    color: blue;
+}
 .topleft:before {
     top:0;
     left:0;
 }
-
+:where(.topleft)::before {
+    top:10px;
+    left:20px;
+    color: lime;
+}
 .topleft:first-line {
     color: orange;
 }
