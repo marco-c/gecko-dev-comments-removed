@@ -18,9 +18,7 @@
 
 
 
-enum NonCustomCSSPropertyId : int32_t {
-  eCSSProperty_UNKNOWN = -1,
-
+enum NonCustomCSSPropertyId : uint16_t {
 $property_ids
 
   
@@ -28,11 +26,20 @@ $property_ids
 
   
   eCSSPropertyExtra_variable,
+
+  eCSSProperty_UNKNOWN,
+
+  
+  eCSSProperty_INVALID,
 };
 
 
 
 
+static_assert(static_cast<uint64_t>($longhand_first) == 0);
+
+const NonCustomCSSPropertyId
+  eCSSProperty_FIRST = NonCustomCSSPropertyId(0);
 const NonCustomCSSPropertyId
   eCSSProperty_COUNT_no_shorthands = $longhand_count;
 const NonCustomCSSPropertyId
