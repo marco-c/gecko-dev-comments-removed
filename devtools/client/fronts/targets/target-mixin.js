@@ -215,6 +215,9 @@ function TargetMixin(parentClass) {
 
 
     getTrait(traitName) {
+      if (this.isDestroyedOrBeingDestroyed()) {
+        return null;
+      }
       
       
       if (this.targetForm.traits && traitName in this.targetForm.traits) {
