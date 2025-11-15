@@ -1044,6 +1044,10 @@ class Element : public FragmentOrElement {
                    const nsAString& aValue,
                    nsIPrincipal* aMaybeScriptedPrincipal, bool aNotify);
 
+  nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
+                   nsAtom* aValue, nsIPrincipal* aMaybeScriptedPrincipal,
+                   bool aNotify);
+
   
 
 
@@ -2031,6 +2035,16 @@ class Element : public FragmentOrElement {
 
 
   static const DOMTokenListSupportedToken sSupportedBlockingValues[];
+
+  
+
+
+
+  template <typename ParseFunc>
+  nsresult SetAttrInternal(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
+                           const nsAttrValueOrString& aValueForComparison,
+                           nsIPrincipal* aSubjectPrincipal, bool aNotify,
+                           ParseFunc&& aParseFn);
 
   
 
