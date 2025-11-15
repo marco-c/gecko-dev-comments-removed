@@ -603,29 +603,23 @@ static bool MightBeContainingBlockFor(nsIFrame* aMaybeContainingBlock,
 }
 
 void ReflowInput::InitCBReflowInput() {
-  if (!mParentReflowInput) {
-    mCBReflowInput = nullptr;
+  mCBReflowInput = mParentReflowInput;
+  if (!mCBReflowInput || mParentReflowInput->mFlags.mDummyParentReflowInput) {
     return;
   }
-  if (mParentReflowInput->mFlags.mDummyParentReflowInput) {
-    mCBReflowInput = mParentReflowInput;
-    return;
-  }
-
   
   
-  if (MightBeContainingBlockFor(mParentReflowInput->mFrame, mFrame,
+  if (MightBeContainingBlockFor(mCBReflowInput->mFrame, mFrame,
                                 mStyleDisplay) &&
-      mParentReflowInput->mFrame ==
-          mFrame->GetContainingBlock(0, mStyleDisplay)) {
+      mCBReflowInput->mFrame == mFrame->GetContainingBlock(0, mStyleDisplay)) {
     
     
     if (mFrame->IsTableFrame()) {
+      MOZ_ASSERT(mParentReflowInput->mCBReflowInput,
+                 "Inner table frames shouldn't be reflow roots");
       mCBReflowInput = mParentReflowInput->mCBReflowInput;
-    } else {
-      mCBReflowInput = mParentReflowInput;
     }
-  } else {
+  } else if (mParentReflowInput->mCBReflowInput) {
     mCBReflowInput = mParentReflowInput->mCBReflowInput;
   }
 }

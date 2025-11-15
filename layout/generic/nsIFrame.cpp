@@ -8681,9 +8681,8 @@ bool nsIFrame::IsBlockContainer() const {
   
   
   
-  return !IsLineParticipant() && !IsBlockWrapper() && !IsSubgrid() &&
-         
-         !IsTableRowFrame();
+  
+  return !IsLineParticipant() && !IsBlockWrapper() && !IsTableRowFrame();
 }
 
 nsIFrame* nsIFrame::GetContainingBlock(
