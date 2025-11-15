@@ -10,18 +10,35 @@
 
 #include "modules/video_coding/utility/frame_sampler.h"
 
+#include <cstdint>
+
 #include "api/video/video_frame.h"
 #include "modules/include/module_common_types_public.h"
 
 namespace webrtc {
 
 constexpr int kTimestampDifference =
-    90'000 - 1;  
+    90'000;  
 
 bool FrameSampler::ShouldBeSampled(const VideoFrame& frame) {
-  if (!last_rtp_timestamp_sampled_.has_value() ||
-      (IsNewerTimestamp(frame.rtp_timestamp(),
-                        *last_rtp_timestamp_sampled_ + kTimestampDifference))) {
+  if (!last_rtp_timestamp_sampled_) {
+    
+    
+    last_rtp_timestamp_ =
+        frame.rtp_timestamp() + kTimestampDifference / 30;
+    last_rtp_timestamp_sampled_ = frame.rtp_timestamp();
+    return true;
+  }
+  
+  
+  
+  
+  uint32_t extrapolated_rtp_timestamp =
+      frame.rtp_timestamp() + (frame.rtp_timestamp() - *last_rtp_timestamp_);
+  last_rtp_timestamp_ = frame.rtp_timestamp();
+
+  if (IsNewerTimestamp(extrapolated_rtp_timestamp,
+                       *last_rtp_timestamp_sampled_ + kTimestampDifference)) {
     last_rtp_timestamp_sampled_ = frame.rtp_timestamp();
     return true;
   }
