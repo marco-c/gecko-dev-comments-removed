@@ -257,7 +257,9 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   const std::vector<Candidate>& Candidates() const override;
   
-  sigslot::signal2<Port*, const IceCandidateErrorEvent&> SignalCandidateError;
+  void SubscribeCandidateError(
+      std::function<void(Port*, const IceCandidateErrorEvent&)> callback);
+  void SendCandidateError(const IceCandidateErrorEvent& candidate_error_event);
 
   
   
@@ -517,6 +519,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
       permission_queries_;
 
   CallbackList<PortInterface*> port_destroyed_callback_list_;
+  CallbackList<Port*, const IceCandidateErrorEvent&>
+      candidate_error_callback_list_;
 
   
   WeakPtrFactory<Port> weak_factory_;
