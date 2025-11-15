@@ -29,8 +29,9 @@ namespace webrtc {
 RtpPacketizerH265::RtpPacketizerH265(ArrayView<const uint8_t> payload,
                                      PayloadSizeLimits limits)
     : limits_(limits), num_packets_left_(0) {
-  for (const auto& nalu : H264::FindNaluIndices(payload)) {
-    if (!nalu.payload_size) {
+  for (const H264::NaluIndex& nalu : H264::FindNaluIndices(payload)) {
+    if (nalu.payload_size < 2) {
+      
       input_fragments_.clear();
       return;
     }
@@ -210,9 +211,7 @@ bool RtpPacketizerH265::NextPacket(RtpPacketToSend* rtp_packet) {
   if (packet.first_fragment && packet.last_fragment) {
     
     
-    size_t bytes_to_send = packet.source_fragment.size();
-    uint8_t* buffer = rtp_packet->AllocatePayload(bytes_to_send);
-    memcpy(buffer, packet.source_fragment.data(), bytes_to_send);
+    rtp_packet->SetPayload(packet.source_fragment);
     packets_.pop();
     input_fragments_.pop_front();
   } else if (packet.aggregated) {
