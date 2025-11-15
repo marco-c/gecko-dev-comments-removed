@@ -260,6 +260,11 @@ struct ActiveScrolledRoot {
   }
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(ActiveScrolledRootCache,
                                       ActiveScrolledRoot, DetachASR)
+  
+  
+  
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(StickyActiveScrolledRootCache,
+                                      ActiveScrolledRoot, DetachASR)
 
   static uint32_t Depth(const ActiveScrolledRoot* aActiveScrolledRoot) {
     return aActiveScrolledRoot ? aActiveScrolledRoot->mDepth : 0;
