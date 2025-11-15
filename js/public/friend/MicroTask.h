@@ -60,7 +60,7 @@ namespace JS {
 
 using MicroTask = JS::Value;
 
-JS_PUBLIC_API bool IsJSMicroTask(const JS::Value& hv);
+JS_PUBLIC_API bool IsJSMicroTask(const JS::MicroTask& hv);
 
 
 
