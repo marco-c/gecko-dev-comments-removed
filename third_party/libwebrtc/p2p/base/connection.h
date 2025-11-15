@@ -11,8 +11,7 @@
 #ifndef P2P_BASE_CONNECTION_H_
 #define P2P_BASE_CONNECTION_H_
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -24,6 +23,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
+#include "api/environment/environment.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
@@ -372,7 +372,13 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   class ConnectionRequest;
 
   
+  [[deprecated("bugs.webrtc.org/42223992")]]
   Connection(WeakPtr<PortInterface> port,
+             size_t index,
+             const Candidate& candidate);
+
+  Connection(const Environment& env,
+             WeakPtr<PortInterface> port,
              size_t index,
              const Candidate& candidate);
 
@@ -520,13 +526,22 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
       received_packet_callback_;
 
   void MaybeAddDtlsPiggybackingAttributes(StunMessage* msg);
+  void MaybeHandleDtlsPiggybackingAttributes(
+      const StunMessage* msg,
+      const StunRequest* original_request);
   DtlsStunPiggybackCallbacks dtls_stun_piggyback_callbacks_;
 };
 
 
 class ProxyConnection : public Connection {
  public:
+  [[deprecated("bugs.webrtc.org/42223992")]]
   ProxyConnection(WeakPtr<PortInterface> port,
+                  size_t index,
+                  const Candidate& remote_candidate);
+
+  ProxyConnection(const Environment& env,
+                  WeakPtr<PortInterface> port,
                   size_t index,
                   const Candidate& remote_candidate);
 
@@ -541,15 +556,5 @@ class ProxyConnection : public Connection {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::Connection;
-using ::webrtc::kGoogPingVersion;
-using ::webrtc::kMaxStunBindingLength;
-using ::webrtc::ProxyConnection;
-}  
-#endif  
 
 #endif  
