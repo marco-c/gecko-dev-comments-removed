@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef VIDEO_CORRUPTION_DETECTION_EVALUATION_FILE_BASED_DECODER_H_
+#define VIDEO_CORRUPTION_DETECTION_EVALUATION_FILE_BASED_DECODER_H_
+
+#include <string>
+
+#include "absl/strings/string_view.h"
+#include "api/rtc_error.h"
+
+namespace webrtc {
+
+
+
+
+
+class FileBasedDecoder {
+ public:
+  FileBasedDecoder() = default;
+  virtual ~FileBasedDecoder() = default;
+
+  
+  
+  virtual RTCErrorOr<std::string> Decode(
+      absl::string_view encoded_file_path) = 0;
+};
+
+}  
+
+#endif  

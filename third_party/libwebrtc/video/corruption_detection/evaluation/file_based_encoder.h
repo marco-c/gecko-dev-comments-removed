@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "api/rtc_error.h"
 #include "api/units/data_rate.h"
 #include "api/video/video_codec_type.h"
 #include "video/corruption_detection/evaluation/test_clip.h"
@@ -30,9 +31,24 @@ class FileBasedEncoder {
 
   
   
+  virtual std::string Encode(const TestClip& clip, DataRate bitrate) {
+    RTCErrorOr<std::string> r = Encode2(clip, bitrate);
+    if (r.ok()) {
+      return r.value();
+    } else {
+      return "";
+    }
+  }
+
   
   
-  virtual std::string Encode(const TestClip& clip, DataRate bitrate) = 0;
+  
+  
+  
+  virtual RTCErrorOr<std::string> Encode2(const TestClip& clip,
+                                          DataRate bitrate) {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+  }
 
   
   virtual VideoCodecType GetCodec() const = 0;
