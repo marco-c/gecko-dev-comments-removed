@@ -85,7 +85,7 @@ class RtcEventRtpPacketOutgoing final : public RtcEvent {
   }
 
  private:
-  RtcEventRtpPacketOutgoing(const RtcEventRtpPacketOutgoing& other);
+  RtcEventRtpPacketOutgoing(const RtcEventRtpPacketOutgoing& other) = default;
 
   const RtpPacket packet_;
   
