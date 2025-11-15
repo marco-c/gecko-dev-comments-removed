@@ -144,10 +144,6 @@ class nsIWidgetListener {
 
   
 
-  virtual void RequestRepaint() {}
-
-  
-
 
 
 
