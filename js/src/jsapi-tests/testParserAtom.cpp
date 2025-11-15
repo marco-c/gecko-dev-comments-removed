@@ -5,9 +5,8 @@
 #include "mozilla/Range.h"  
 #include "mozilla/Utf8.h"   
 
-#include <string>   
-#include <utility>  
-#include <vector>   
+#include <string>  
+#include <vector>  
 
 #include "frontend/FrontendContext.h"  
 #include "frontend/ParserAtom.h"  

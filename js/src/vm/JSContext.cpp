@@ -20,7 +20,6 @@
 #ifdef ANDROID
 #  include <android/log.h>
 #  include <fstream>
-#  include <string>
 #endif  
 #ifdef XP_WIN
 #  include <processthreadsapi.h>

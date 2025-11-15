@@ -10,7 +10,6 @@
 #include "mozilla/Sprintf.h"
 
 #include <errno.h>
-#include <iterator>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +71,34 @@ inline JSAPITestString operator+(const JSAPITestString& a,
   return result;
 }
 
+
+
+
+
+
+template <typename T>
+class JSAPITestList {
+  T* first = nullptr;
+  T* last = nullptr;
+
+ public:
+  T* getFirst() const { return first; }
+
+  void pushBack(T* element) {
+    MOZ_ASSERT(!element->next);
+    MOZ_ASSERT(bool(first) == bool(last));
+
+    if (!first) {
+      first = element;
+      last = element;
+      return;
+    }
+
+    last->next = element;
+    last = element;
+  }
+};
+
 class JSAPIRuntimeTest;
 
 class JSAPITest {
@@ -111,8 +138,8 @@ class JSAPITest {
 
 class JSAPIRuntimeTest : public JSAPITest {
  public:
-  static JSAPIRuntimeTest* list;
-  JSAPIRuntimeTest* next;
+  static JSAPITestList<JSAPIRuntimeTest> list;
+  JSAPIRuntimeTest* next = nullptr;
 
   JSContext* cx;
   JS::PersistentRootedObject global;
@@ -124,8 +151,7 @@ class JSAPIRuntimeTest : public JSAPITest {
   bool reuseGlobal;
 
   JSAPIRuntimeTest() : JSAPITest(), cx(nullptr), reuseGlobal(false) {
-    next = list;
-    list = this;
+    list.pushBack(this);
   }
 
   virtual ~JSAPIRuntimeTest() {
@@ -400,13 +426,10 @@ class JSAPIRuntimeTest : public JSAPITest {
 
 class JSAPIFrontendTest : public JSAPITest {
  public:
-  static JSAPIFrontendTest* list;
-  JSAPIFrontendTest* next;
+  static JSAPITestList<JSAPIFrontendTest> list;
+  JSAPIFrontendTest* next = nullptr;
 
-  JSAPIFrontendTest() : JSAPITest() {
-    next = list;
-    list = this;
-  }
+  JSAPIFrontendTest() : JSAPITest() { list.pushBack(this); }
 
   virtual ~JSAPIFrontendTest() {}
 

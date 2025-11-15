@@ -30,7 +30,6 @@
 
 #include "mozilla/EnumeratedArray.h"
 
-#include <limits>
 #include <stddef.h>  
 
 #include "jit/ProcessExecutableMemory.h"

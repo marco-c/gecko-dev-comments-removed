@@ -5,8 +5,6 @@
 
 
 
-#include <array>
-
 #include "ds/SinglyLinkedList.h"
 #include "jsapi-tests/tests.h"
 

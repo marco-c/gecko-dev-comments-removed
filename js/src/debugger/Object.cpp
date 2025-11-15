@@ -12,9 +12,8 @@
 #include "mozilla/Vector.h"  
 
 #include <algorithm>
-#include <string.h>     
-#include <type_traits>  
-#include <utility>      
+#include <string.h>  
+#include <utility>   
 
 #include "jsapi.h"  
 

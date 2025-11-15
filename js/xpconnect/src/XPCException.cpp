@@ -9,8 +9,6 @@
 #include "xpcprivate.h"
 #include "nsError.h"
 
-#include <iterator>
-
 
 
 

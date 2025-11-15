@@ -5,8 +5,6 @@
 
 
 
-#include <utility>
-
 #include "gc/GCLock.h"
 #include "gc/GCRuntime.h"
 #include "jsapi-tests/tests.h"

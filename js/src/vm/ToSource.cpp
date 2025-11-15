@@ -9,7 +9,6 @@
 #include "mozilla/Assertions.h"     
 #include "mozilla/FloatingPoint.h"  
 
-#include <iterator>  
 #include <stdint.h>  
 
 #include "builtin/Array.h"          

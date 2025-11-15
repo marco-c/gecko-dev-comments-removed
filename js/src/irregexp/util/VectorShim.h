@@ -5,10 +5,7 @@
 #ifndef V8_UTIL_VECTOR_H_
 #define V8_UTIL_VECTOR_H_
 
-#include <algorithm>
 #include <cstring>
-#include <iterator>
-#include <memory>
 
 #include "js/AllocPolicy.h"
 #include "js/Utility.h"
@@ -191,7 +188,7 @@ class SmallVector {
  public:
   explicit SmallVector(const Allocator& allocator = DefaultAllocator())
       : inner_(allocator.policy()) {}
-  SmallVector(size_t size) { resize_no_init(size); }
+  SmallVector(size_t size) { resize(size); }
 
   inline bool empty() const { return inner_.empty(); }
   inline const T& back() const { return inner_.back(); }
@@ -213,9 +210,9 @@ class SmallVector {
 
   inline void clear() { inner_.clear(); }
 
-  void resize_no_init(size_t new_size) {
+  void resize(size_t new_size) {
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (!inner_.resizeUninitialized(new_size)) {
+    if (!inner_.resize(new_size)) {
       oomUnsafe.crash("Irregexp SmallVector resize");
     }
   }

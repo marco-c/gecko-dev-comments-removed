@@ -9,7 +9,6 @@
 #include "mozilla/Maybe.h"  
 
 #include <algorithm>  
-#include <iterator>   
 #include <stddef.h>   
 #include <stdint.h>   
 

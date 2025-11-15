@@ -10,7 +10,6 @@
 #include "mozilla/Utf8.h"        
 
 #include <algorithm>  
-#include <iterator>   
 #include <memory>     
 #include <stddef.h>   
 #include <stdint.h>   

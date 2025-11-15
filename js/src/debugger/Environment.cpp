@@ -11,7 +11,6 @@
 #include "mozilla/Vector.h"      
 
 #include <string.h>  
-#include <utility>   
 
 #include "debugger/Debugger.h"  
 #include "debugger/Object.h"    

@@ -8,7 +8,6 @@
 #include "irregexp/imported/regexp-bytecodes.h"
 
 
-#include <limits>
 #include <type_traits>
 
 namespace v8 {

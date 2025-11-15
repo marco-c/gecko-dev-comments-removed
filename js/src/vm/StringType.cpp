@@ -18,7 +18,6 @@
 #include "mozilla/Vector.h"
 
 #include <algorithm>    
-#include <iterator>     
 #include <type_traits>  
 
 #include "jsfriendapi.h"

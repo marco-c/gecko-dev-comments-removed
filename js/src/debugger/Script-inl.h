@@ -12,8 +12,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Variant.h"     
 
-#include <utility>  
-
 #include "jstypes.h"            
 #include "debugger/Debugger.h"  
 #include "gc/Cell.h"            
