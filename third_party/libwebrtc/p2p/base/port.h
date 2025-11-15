@@ -11,9 +11,8 @@
 #ifndef P2P_BASE_PORT_H_
 #define P2P_BASE_PORT_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -23,10 +22,12 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
+#include "api/local_network_access_permission.h"
 #include "api/packet_socket_factory.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
@@ -145,6 +146,7 @@ struct IceCandidateErrorEvent {
 };
 
 struct CandidatePairChangeEvent {
+  std::string transport_name;
   CandidatePair selected_candidate_pair;
   int64_t last_data_received_ms;
   std::string reason;
@@ -168,6 +170,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
     const ::webrtc::Network* network;
     absl::string_view ice_username_fragment;
     absl::string_view ice_password;
+    LocalNetworkAccessPermissionFactoryInterface* lna_permission_factory =
+        nullptr;
   };
 
  protected:
@@ -432,6 +436,15 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
   IceCandidateType type() const { return type_; }
 
+  
+  
+  
+  
+  
+  void MaybeRequestLocalNetworkAccessPermission(
+      const SocketAddress& address,
+      absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)> callback);
+
  private:
   bool MaybeObfuscateAddress(const Candidate& c, bool is_final)
       RTC_RUN_ON(thread_);
@@ -454,9 +467,15 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
   void OnNetworkTypeChanged(const ::webrtc::Network* network);
 
+  void OnRequestLocalNetworkAccessPermission(
+      LocalNetworkAccessPermissionInterface* permission_query,
+      absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)> callback,
+      LocalNetworkAccessPermissionStatus status);
+
   const Environment env_;
   TaskQueueBase* const thread_;
   PacketSocketFactory* const factory_;
+  LocalNetworkAccessPermissionFactoryInterface* const lna_permission_factory_;
   const IceCandidateType type_;
   bool send_retransmit_count_attribute_;
   const ::webrtc::Network* network_;
@@ -494,6 +513,9 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   MdnsNameRegistrationStatus mdns_name_registration_status_ =
       MdnsNameRegistrationStatus::kNotStarted;
 
+  std::vector<std::unique_ptr<LocalNetworkAccessPermissionInterface>>
+      permission_queries_;
+
   CallbackList<PortInterface*> port_destroyed_callback_list_;
 
   
@@ -502,26 +524,5 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CandidatePairChangeEvent;
-using ::webrtc::CandidateStats;
-using ::webrtc::CandidateStatsList;
-using ::webrtc::DISCARD_PORT;
-using ::webrtc::IceCandidateErrorEvent;
-using ::webrtc::MdnsNameRegistrationStatus;
-using ::webrtc::Port;
-using ::webrtc::ProtocolAddress;
-using ::webrtc::ProtoToString;
-using ::webrtc::ServerAddresses;
-using ::webrtc::StringToProto;
-using ::webrtc::StunStats;
-using ::webrtc::TCPTYPE_ACTIVE_STR;
-using ::webrtc::TCPTYPE_PASSIVE_STR;
-using ::webrtc::TCPTYPE_SIMOPEN_STR;
-}  
-#endif  
 
 #endif  

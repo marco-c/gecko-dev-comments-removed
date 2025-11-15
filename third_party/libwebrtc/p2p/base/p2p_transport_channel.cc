@@ -10,12 +10,11 @@
 
 #include "p2p/base/p2p_transport_channel.h"
 
-#include <errno.h>
-#include <stdlib.h>
-
 #include <algorithm>
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -1880,23 +1879,17 @@ void P2PTransportChannel::SwitchSelectedConnectionInternal(
   SignalNetworkRouteChanged(network_route_);
 
   
-  if (selected_connection_) {
-    CandidatePairChangeEvent pair_change;
-    pair_change.reason = IceSwitchReasonToString(reason);
-    pair_change.selected_candidate_pair = *GetSelectedCandidatePair();
-    pair_change.last_data_received_ms =
-        selected_connection_->last_data_received();
-
-    if (old_selected_connection) {
-      pair_change.estimated_disconnected_time_ms =
-          ComputeEstimatedDisconnectedTimeMs(TimeMillis(),
-                                             old_selected_connection);
-    } else {
-      pair_change.estimated_disconnected_time_ms = 0;
-    }
-    if (candidate_pair_change_callback_) {
-      candidate_pair_change_callback_(pair_change);
-    }
+  if (selected_connection_ && candidate_pair_change_callback_) {
+    CandidatePairChangeEvent pair_change = {
+        .transport_name = transport_name(),
+        .selected_candidate_pair = *GetSelectedCandidatePair(),
+        .last_data_received_ms = selected_connection_->last_data_received(),
+        .reason = IceSwitchReasonToString(reason),
+        .estimated_disconnected_time_ms =
+            old_selected_connection ? ComputeEstimatedDisconnectedTimeMs(
+                                          TimeMillis(), old_selected_connection)
+                                    : 0};
+    candidate_pair_change_callback_(pair_change);
   }
 
   ++selected_candidate_pair_changes_;
@@ -1980,12 +1973,13 @@ void P2PTransportChannel::UpdateTransportState() {
         RTC_DCHECK_NOTREACHED();
         break;
     }
-    state_ = state;
-    SignalStateChanged(this);
   }
 
-  if (standardized_state_ != current_standardized_state) {
+  if (standardized_state_ != current_standardized_state || state_ != state) {
     standardized_state_ = current_standardized_state;
+    state_ = state;
+    
+    
     SignalIceTransportStateChanged(this);
   }
 }
@@ -2220,14 +2214,8 @@ void P2PTransportChannel::OnCandidatesRemoved(
   if (!config_.gather_continually() || session != allocator_session()) {
     return;
   }
-
-  std::vector<Candidate> candidates_to_remove;
-  for (Candidate candidate : candidates) {
-    candidate.set_transport_name(transport_name());
-    candidates_to_remove.push_back(candidate);
-  }
   if (candidates_removed_callback_) {
-    candidates_removed_callback_(this, candidates_to_remove);
+    candidates_removed_callback_(this, candidates);
   }
 }
 

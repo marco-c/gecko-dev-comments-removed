@@ -391,16 +391,12 @@ void PeerConnectionDelegateAdapter::OnIceSelectedCandidatePairChanged(
   }
   const auto &selected_pair = event.selected_candidate_pair;
   IceCandidate local_candidate_wrapper(
-      selected_pair.local_candidate().transport_name(),
-      -1,
-      selected_pair.local_candidate());
+      event.transport_name, -1, selected_pair.local_candidate());
   RTC_OBJC_TYPE(RTCIceCandidate) *local_candidate =
       [[RTC_OBJC_TYPE(RTCIceCandidate) alloc]
           initWithNativeCandidate:&local_candidate_wrapper];
   IceCandidate remote_candidate_wrapper(
-      selected_pair.remote_candidate().transport_name(),
-      -1,
-      selected_pair.remote_candidate());
+      event.transport_name, -1, selected_pair.remote_candidate());
   RTC_OBJC_TYPE(RTCIceCandidate) *remote_candidate =
       [[RTC_OBJC_TYPE(RTCIceCandidate) alloc]
           initWithNativeCandidate:&remote_candidate_wrapper];
@@ -636,18 +632,12 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
 }
 - (void)removeIceCandidates:
     (NSArray<RTC_OBJC_TYPE(RTCIceCandidate) *> *)iceCandidates {
-  std::vector<webrtc::Candidate> candidates;
   for (RTC_OBJC_TYPE(RTCIceCandidate) * iceCandidate in iceCandidates) {
-    std::unique_ptr<const webrtc::IceCandidate> candidate(
+    std::unique_ptr<webrtc::IceCandidate> candidate(
         iceCandidate.nativeCandidate);
     if (candidate) {
-      candidates.push_back(candidate->candidate());
-      
-      candidates.back().set_transport_name(candidate->sdp_mid());
+      _peerConnection->RemoveIceCandidate(candidate.get());
     }
-  }
-  if (!candidates.empty()) {
-    _peerConnection->RemoveIceCandidates(candidates);
   }
 }
 
