@@ -560,6 +560,22 @@ SdpMungingType DetermineSdpMungingType(
   }
 
   
+  for (size_t content_index = 0; content_index < last_created_contents.size();
+       content_index++) {
+    
+    
+    RTC_DCHECK(sdesc->candidates(content_index));
+    if (sdesc->candidates(content_index)->count() !=
+        last_created_desc->candidates(content_index)->count()) {
+      RTC_LOG(LS_WARNING)
+          << "SDP munging: media section " << content_index << " changed from "
+          << last_created_desc->candidates(content_index)->count() << " to "
+          << sdesc->candidates(content_index)->count() << " candidates";
+      return SdpMungingType::kIceCandidateCount;
+    }
+  }
+
+  
   
   
   std::string serialized_description;
