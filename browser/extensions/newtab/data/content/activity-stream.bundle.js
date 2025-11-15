@@ -725,7 +725,6 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.refreshTopicSelectionCache = this.refreshTopicSelectionCache.bind(this);
     this.handleSectionsToggle = this.handleSectionsToggle.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
-    this.sendConversionEvent = this.sendConversionEvent.bind(this);
     this.state = {
       toggledStories: {},
       weatherQuery: ""
@@ -889,19 +888,6 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
     this.props.dispatch(actionCreators.SetPref(PREF_SECTIONS_ENABLED, pressed));
     this.props.dispatch(actionCreators.SetPref("discoverystream.sections.cards.enabled", pressed));
     this.props.dispatch(actionCreators.SetPref("discoverystream.sections.cards.thumbsUpDown.enabled", pressed));
-  }
-  sendConversionEvent() {
-    const detail = {
-      partnerId: "demo-partner",
-      lookbackDays: 7,
-      impressionType: "default"
-    };
-    const event = new CustomEvent("FirefoxConversionNotification", {
-      detail,
-      bubbles: true,
-      composed: true
-    });
-    window?.dispatchEvent(event);
   }
   renderComponent(width, component) {
     return external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, external_React_default().createElement(Row, null, external_React_default().createElement("td", {
@@ -1127,10 +1113,7 @@ class DiscoveryStreamAdminUI extends (external_React_default()).PureComponent {
       pressed: mediumRectangleEnabledPressed || null,
       onToggle: this.toggleIABBanners,
       label: "Enable IAB Medium Rectangle (MREC)"
-    }))), external_React_default().createElement("button", {
-      className: "button",
-      onClick: this.sendConversionEvent
-    }, "Send conversion event"), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, prefToggles.map(pref => external_React_default().createElement(Row, {
+    }))), external_React_default().createElement("table", null, external_React_default().createElement("tbody", null, prefToggles.map(pref => external_React_default().createElement(Row, {
       key: pref
     }, external_React_default().createElement("td", null, external_React_default().createElement(TogglePrefCheckbox, {
       checked: config[pref],
