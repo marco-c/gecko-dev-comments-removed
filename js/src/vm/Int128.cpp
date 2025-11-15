@@ -4,7 +4,7 @@
 
 
 
-#include "builtin/temporal/Int128.h"
+#include "vm/Int128.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 using namespace js;
-using namespace js::temporal;
 
 double Uint128::toDouble(const Uint128& x, bool negative) {
   

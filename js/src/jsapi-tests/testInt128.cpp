@@ -14,8 +14,8 @@
 #  include <optional>
 #  include <stdint.h>
 
-#  include "builtin/temporal/Int128.h"
 #  include "jsapi-tests/tests.h"
+#  include "vm/Int128.h"
 
 
 
@@ -32,8 +32,7 @@
 #    define UINT128_PARSE_ERROR(...) std::abort()
 #  endif
 
-using Int128 = js::temporal::Int128;
-using Uint128 = js::temporal::Uint128;
+using namespace js;
 
 
 template <char... DIGITS>
