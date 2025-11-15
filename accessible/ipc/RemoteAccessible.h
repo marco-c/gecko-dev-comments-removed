@@ -500,6 +500,10 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   virtual nsTArray<int32_t>& GetCachedHyperTextOffsets() override;
 
+  nsTArray<RemoteAccessible*> LegendsOrCaptions() const;
+
+  RemoteAccessible* LegendOrCaptionFor() const;
+
  private:
   
 
