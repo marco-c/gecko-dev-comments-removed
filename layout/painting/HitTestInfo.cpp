@@ -42,8 +42,10 @@ ViewID HitTestInfo::GetViewId(wr::DisplayListBuilder& aBuilder,
     return *fixedTarget;
   }
 
+  
+  
   if (aASR) {
-    return aASR->GetViewId();
+    return aASR->GetNearestScrollASRViewId();
   }
 
   return layers::ScrollableLayerGuid::NULL_SCROLL_ID;

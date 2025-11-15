@@ -184,9 +184,13 @@ LazyLogModule& GetLoggerByProcess();
 
 
 struct ActiveScrolledRoot {
+  
   static already_AddRefed<ActiveScrolledRoot> CreateASRForFrame(
       const ActiveScrolledRoot* aParent,
       ScrollContainerFrame* aScrollContainerFrame, bool aIsRetained);
+  static already_AddRefed<ActiveScrolledRoot> CreateASRForStickyFrame(
+      const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame,
+      bool aIsRetained);
 
   static const ActiveScrolledRoot* PickAncestor(
       const ActiveScrolledRoot* aOne, const ActiveScrolledRoot* aTwo) {
@@ -215,14 +219,32 @@ struct ActiveScrolledRoot {
 
 
   layers::ScrollableLayerGuid::ViewID GetViewId() const {
+    MOZ_ASSERT(mKind == ASRKind::Scroll);
     if (!mViewId.isSome()) {
       mViewId = Some(ComputeViewId());
     }
     return *mViewId;
   }
 
+  ScrollContainerFrame* ScrollFrame() const {
+    MOZ_ASSERT(mKind == ASRKind::Scroll);
+    return ScrollFrameOrNull();
+  }
+
+  ScrollContainerFrame* ScrollFrameOrNull() const;
+
+  
+  const ActiveScrolledRoot* GetNearestScrollASR() const;
+
+  
+  
+  layers::ScrollableLayerGuid::ViewID GetNearestScrollASRViewId() const;
+
+  enum class ASRKind { Root, Scroll, Sticky };
+
   RefPtr<const ActiveScrolledRoot> mParent;
-  ScrollContainerFrame* mScrollContainerFrame = nullptr;
+  nsIFrame* mFrame = nullptr;
+  ASRKind mKind = ASRKind::Root;
 
   NS_INLINE_DECL_REFCOUNTING(ActiveScrolledRoot)
 
@@ -233,7 +255,7 @@ struct ActiveScrolledRoot {
 
   static void DetachASR(ActiveScrolledRoot* aASR) {
     aASR->mParent = nullptr;
-    aASR->mScrollContainerFrame = nullptr;
+    aASR->mFrame = nullptr;
     NS_RELEASE(aASR);
   }
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(ActiveScrolledRootCache,
@@ -2806,6 +2828,7 @@ class nsDisplayItem {
   const ActiveScrolledRoot* GetActiveScrolledRoot() const {
     return mActiveScrolledRoot;
   }
+  const ActiveScrolledRoot* GetNearestScrollASR() const;
 
   virtual void SetClipChain(const DisplayItemClipChain* aClipChain,
                             bool aStore);

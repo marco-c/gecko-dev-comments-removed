@@ -723,11 +723,13 @@ static PartialPrerenderData GetPartialPrerenderData(
       nsLayoutUtils::AsyncPanZoomEnabled(aFrame)) {
     const bool isInPositionFixed =
         nsLayoutUtils::IsInPositionFixedSubtree(aFrame);
-    const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
+    
+    
+    const ActiveScrolledRoot* asr = aItem->GetNearestScrollASR();
     if (!isInPositionFixed && asr &&
-        aFrame->PresContext() == asr->mScrollContainerFrame->PresContext()) {
+        aFrame->PresContext() == asr->ScrollFrame()->PresContext()) {
       scrollId = asr->GetViewId();
-      MOZ_ASSERT(clipFrame == asr->mScrollContainerFrame);
+      MOZ_ASSERT(clipFrame == asr->ScrollFrame());
     } else {
       
       
