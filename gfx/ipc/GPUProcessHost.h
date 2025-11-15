@@ -11,7 +11,7 @@
 #include "mozilla/gfx/Types.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/ipc/TaskFactory.h"
+#include "mozilla/media/MediaUtils.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/CompositorSurfaceManagerWrappers.h"
@@ -125,10 +125,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   ~GPUProcessHost();
 
   
-  void OnChannelConnectedTask();
-  void OnChannelErrorTask();
-
-  
   void InitAfterConnect(bool aSucceeded);
 
   
@@ -150,7 +146,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   DISALLOW_COPY_AND_ASSIGN(GPUProcessHost);
 
   Listener* mListener;
-  mozilla::ipc::TaskFactory<GPUProcessHost> mTaskFactory;
 
   enum class LaunchPhase { Unlaunched, Waiting, Complete };
   LaunchPhase mLaunchPhase;
@@ -164,6 +159,14 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   bool mChannelClosed;
 
   TimeStamp mLaunchTime;
+
+  
+  
+  
+  
+  
+  
+  const RefPtr<media::Refcountable<bool>> mLiveToken;
 
 #ifdef MOZ_WIDGET_ANDROID
   
