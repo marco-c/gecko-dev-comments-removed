@@ -89,18 +89,6 @@ class nsViewManager final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  void DispatchEvent(mozilla::WidgetGUIEvent* aEvent, nsView* aViewTarget,
-                     nsEventStatus* aStatus);
-
-  
-
-
-
-
-
-
-
 
   void ResizeView(nsView* aView, const nsRect& aRect);
 
@@ -130,6 +118,7 @@ class nsViewManager final {
 
 
   static uint32_t GetLastUserEventTime() { return gLastUserEventTime; }
+  static void MaybeUpdateLastUserEventTime(mozilla::WidgetGUIEvent*);
 
   
 
@@ -141,6 +130,10 @@ class nsViewManager final {
 
 
   MOZ_CAN_RUN_SCRIPT void UpdateWidgetGeometry();
+
+  
+  
+  void PostPendingUpdate();
 
  private:
   static uint32_t gLastUserEventTime;
@@ -181,10 +174,6 @@ class nsViewManager final {
   MOZ_CAN_RUN_SCRIPT
   bool PaintWindow(nsIWidget* aWidget, const LayoutDeviceIntRegion& aRegion);
   MOZ_CAN_RUN_SCRIPT void DidPaintWindow();
-
-  
-  
-  void PostPendingUpdate();
 
   mozilla::PresShell* mPresShell;
 

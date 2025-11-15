@@ -2670,7 +2670,7 @@ ViewportFrame* nsCSSFrameConstructor::ConstructRootFrame() {
   
   if (nsView* rootView = mPresShell->GetViewManager()->GetRootView()) {
     viewportFrame->SetView(rootView);
-    rootView->SetNeedsWindowPropertiesSync();
+    mPresShell->SetNeedsWindowPropertiesSync();
   }
 
   

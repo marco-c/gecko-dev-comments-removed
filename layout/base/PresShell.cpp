@@ -5748,97 +5748,6 @@ static nsMenuPopupFrame* FindPopupFrame(nsPresContext* aRootPresContext,
       nsLayoutUtils::GetPopupFrameForPointFlags::OnlyReturnFramesWithWidgets);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static nsView* FindViewContaining(nsView* aRelativeToView,
-                                  ViewportType aRelativeToViewportType,
-                                  nsView* aView, nsPoint aPt) {
-  MOZ_ASSERT(aRelativeToView->GetFrame());
-
-  nsIFrame* frame = aView->GetFrame();
-  if (frame) {
-    if (!frame->PresShell()->IsActive() ||
-        !frame->IsVisibleConsideringAncestors(
-            nsIFrame::VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY)) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    
-    bool crossingZoomBoundary = false;
-    if (aRelativeToViewportType == ViewportType::Visual) {
-      if (nsIFrame* f = aRelativeToView->GetFrame();
-          f && f->PresContext()->IsRootContentDocumentCrossProcess()) {
-        crossingZoomBoundary = true;
-      }
-    }
-
-    ViewportType nextRelativeToViewportType = aRelativeToViewportType;
-    if (crossingZoomBoundary) {
-      nextRelativeToViewportType = ViewportType::Layout;
-    }
-
-    nsLayoutUtils::TransformResult result = nsLayoutUtils::TransformPoint(
-        RelativeTo{aRelativeToView->GetFrame(), aRelativeToViewportType},
-        RelativeTo{frame, nextRelativeToViewportType}, aPt);
-    if (result != nsLayoutUtils::TRANSFORM_SUCCEEDED) {
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!crossingZoomBoundary) {
-      if (!aView->GetBounds().Contains(aPt)) {
-        return nullptr;
-      }
-    }
-
-    aRelativeToView = aView;
-    aRelativeToViewportType = nextRelativeToViewportType;
-  }
-
-  return frame ? aView : nullptr;
-}
-
-static BrowserBridgeChild* GetChildBrowser(nsView* aView) {
-  if (!aView) {
-    return nullptr;
-  }
-  nsIFrame* frame = aView->GetFrame();
-  if (!frame || !frame->GetContent()) {
-    return nullptr;
-  }
-  return BrowserBridgeChild::GetFrom(frame->GetContent());
-}
-
 void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   auto forgetMouseMove = MakeScopeExit([&]() {
     
@@ -5954,34 +5863,25 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   RefPtr<BrowserBridgeChild> bbc;
 
   
-  nsMenuPopupFrame* popupFrame = nullptr;
-  if (rootView->GetFrame()) {
-    popupFrame = FindPopupFrame(mPresContext, rootView->GetWidget(),
-                                LayoutDeviceIntPoint::FromAppUnitsToNearest(
-                                    aPointerInfo.mLastRefPointInRootDoc, APD));
-    if (popupFrame) {
-      pointShell = popupFrame->PresShell();
-      widget = popupFrame->GetWidget();
-      widgetAPD = popupFrame->PresContext()->AppUnitsPerDevPixel();
-      refpoint = aPointerInfo.mLastRefPointInRootDoc;
-      DebugOnly<nsLayoutUtils::TransformResult> result =
-          nsLayoutUtils::TransformPoint(
-              RelativeTo{rootView->GetFrame(), ViewportType::Visual},
-              RelativeTo{popupFrame, ViewportType::Layout}, refpoint);
-      MOZ_ASSERT(result == nsLayoutUtils::TRANSFORM_SUCCEEDED);
-    }
+  nsMenuPopupFrame* popupFrame =
+      FindPopupFrame(mPresContext, rootView->GetWidget(),
+                     LayoutDeviceIntPoint::FromAppUnitsToNearest(
+                         aPointerInfo.mLastRefPointInRootDoc, APD));
+  if (popupFrame) {
+    pointShell = popupFrame->PresShell();
+    widget = popupFrame->GetWidget();
+    widgetAPD = popupFrame->PresContext()->AppUnitsPerDevPixel();
+    refpoint = aPointerInfo.mLastRefPointInRootDoc;
+    DebugOnly<nsLayoutUtils::TransformResult> result =
+        nsLayoutUtils::TransformPoint(
+            RelativeTo{rootView->GetFrame(), ViewportType::Visual},
+            RelativeTo{popupFrame, ViewportType::Layout}, refpoint);
+    MOZ_ASSERT(result == nsLayoutUtils::TRANSFORM_SUCCEEDED);
   }
   if (!widget) {
     widget = rootView->GetWidget();
     widgetAPD = APD;
-    nsView* pointView = rootView;
-    if (rootView->GetFrame()) {
-      pointView = FindViewContaining(rootView, ViewportType::Visual, rootView,
-                                     aPointerInfo.mLastRefPointInRootDoc);
-    }
-    
-    pointShell = (pointView ? pointView : rootView)->GetPresShell();
-    bbc = GetChildBrowser(pointView);
+    pointShell = this;
     refpoint = aPointerInfo.mLastRefPointInRootDoc;
   }
   NS_ASSERTION(widget, "view should have a widget here");
@@ -6018,41 +5918,20 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   event.pointerId = aPointerId;
   event.mModifiers = PresShell::GetCurrentModifiers();
 
-  if (bbc) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aMoveMessage == eMouseMove) {
-      event.mLayersId = bbc->GetLayersId();
-      event.convertToPointer = true;
-      bbc->SendDispatchSynthesizedMouseEvent(event);
-    }
-    return;
-  }
-
-  if (pointShell) {
-    
-    
-    
-    
-    
-    
-    InputAPZContext apzContext(aPointerInfo.mLastTargetGuid, 0,
-                               nsEventStatus_eIgnore);
-    AUTO_PROFILER_MARKER_DOCSHELL("DispatchSynthMouseOrPointerMove", GRAPHICS,
-                                  pointShell->GetPresContext()->GetDocShell());
-    nsEventStatus status = nsEventStatus_eIgnore;
-    if (popupFrame) {
-      pointShell->HandleEvent(popupFrame, &event, false, &status);
-    } else {
-      RefPtr<nsViewManager> viewManager = rootView->GetViewManager();
-      viewManager->DispatchEvent(&event, rootView, &status);
-    }
+  MOZ_ASSERT(pointShell);
+  
+  
+  
+  
+  
+  
+  InputAPZContext apzContext(aPointerInfo.mLastTargetGuid, 0,
+                             nsEventStatus_eIgnore);
+  AUTO_PROFILER_MARKER_DOCSHELL("DispatchSynthMouseOrPointerMove", GRAPHICS,
+                                pointShell->GetPresContext()->GetDocShell());
+  nsEventStatus status = nsEventStatus_eIgnore;
+  if (auto* eventFrame = popupFrame ? popupFrame : GetRootFrame()) {
+    pointShell->HandleEvent(eventFrame, &event, false, &status);
   }
 }
 
@@ -12328,6 +12207,13 @@ void PresShell::ResetVisualViewportSize() {
   }
 }
 
+void PresShell::SetNeedsWindowPropertiesSync() {
+  mNeedsWindowPropertiesSync = true;
+  if (mViewManager) {
+    mViewManager->PostPendingUpdate();
+  }
+}
+
 bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,
                                         const nsPoint& aPrevLayoutScrollPos) {
   nsPoint newOffset = aScrollOffset;
@@ -12603,15 +12489,12 @@ PresShell::WindowSizeConstraints PresShell::GetWindowSizeConstraints() {
   return {minSize, maxSize};
 }
 
-void PresShell::SyncWindowProperties(bool aSync) {
-  if (XRE_IsContentProcess()) {
+void PresShell::SyncWindowProperties() {
+  if (!mNeedsWindowPropertiesSync || XRE_IsContentProcess()) {
     return;
   }
 
-  nsView* view = mViewManager->GetRootView();
-  if (!view || !view->HasWidget()) {
-    return;
-  }
+  mNeedsWindowPropertiesSync = false;
 
   RefPtr pc = mPresContext;
   if (!pc) {
@@ -12620,11 +12503,6 @@ void PresShell::SyncWindowProperties(bool aSync) {
 
   nsCOMPtr<nsIWidget> windowWidget = GetPresContextContainerWidget(pc);
   if (!windowWidget || !IsTopLevelWidget(windowWidget)) {
-    return;
-  }
-
-  if (!aSync) {
-    view->SetNeedsWindowPropertiesSync();
     return;
   }
 

@@ -34,19 +34,9 @@ enum nsSizeMode {
   nsSizeMode_Invalid
 };
 
-
-
-
-enum nsWindowZ {
-  nsWindowZTop = 0,  
-  nsWindowZBottom,   
-  nsWindowZRelative  
-};
-
 class nsIWidgetListener {
  public:
   
-
 
 
 
@@ -162,6 +152,9 @@ class nsIWidgetListener {
 
 
   virtual bool ShouldNotBeVisible() { return false; }
+
+  
+  virtual bool IsPaintSuppressed() const { return false; }
 
   
   virtual nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,

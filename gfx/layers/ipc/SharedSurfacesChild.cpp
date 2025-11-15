@@ -480,8 +480,7 @@ void SharedSurfacesAnimation::HoldSurfaceForRecycling(
 
 static nsIWidgetListener* GetPaintWidgetListener(nsIWidget* aWidget) {
   if (auto* attached = aWidget->GetAttachedWidgetListener()) {
-    if (attached->GetView() &&
-        attached->GetView()->IsPrimaryFramePaintSuppressed()) {
+    if (attached->IsPaintSuppressed()) {
       if (auto* previouslyAttached =
               aWidget->GetPreviouslyAttachedWidgetListener()) {
         return previouslyAttached;

@@ -2270,6 +2270,9 @@ class nsIWidget : public nsSupportsWeakReference {
   TextEventDispatcher* GetTextEventDispatcher();
 
   
+  mozilla::PresShell* GetPresShell() const;
+
+  
 
 
 

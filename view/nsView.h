@@ -130,13 +130,6 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  static nsView* GetViewFor(const nsIWidget* aWidget);
-
-  
-
-
-
-
 
 
 
@@ -255,6 +248,9 @@ class nsView final : public nsIWidgetListener {
   
   mozilla::PresShell* GetPresShell() override;
   nsView* GetView() override { return this; }
+  bool IsPaintSuppressed() const override {
+    return IsPrimaryFramePaintSuppressed();
+  }
   bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
                      int32_t aHeight) override;
 #ifdef MOZ_WIDGET_ANDROID
@@ -280,7 +276,7 @@ class nsView final : public nsIWidgetListener {
 
   virtual ~nsView();
 
-  bool IsPrimaryFramePaintSuppressed();
+  bool IsPrimaryFramePaintSuppressed() const;
 
  private:
   explicit nsView(nsViewManager* = nullptr);
@@ -314,7 +310,6 @@ class nsView final : public nsIWidgetListener {
   nsRect mDimBounds;
   bool mWidgetIsTopLevel;
   bool mForcedRepaint;
-  bool mNeedsWindowPropertiesSync;
   bool mIsDirty = false;
 };
 

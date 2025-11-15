@@ -1276,7 +1276,7 @@ class PresShell final : public nsStubDocumentObserver,
     return mNeedLayoutFlush || mNeedStyleFlush;
   }
 
-  void SyncWindowProperties(bool aSync);
+  void SyncWindowProperties();
   struct WindowSizeConstraints {
     nsSize mMinSize;
     nsSize mMaxSize;
@@ -1550,6 +1550,7 @@ class PresShell final : public nsStubDocumentObserver,
   void SetVisualViewportSize(nscoord aWidth, nscoord aHeight);
   void ResetVisualViewportSize();
   bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
+  void SetNeedsWindowPropertiesSync();
   nsSize GetVisualViewportSize() {
     NS_ASSERTION(mVisualViewportSizeSet,
                  "asking for visual viewport size when its not set?");
@@ -3389,6 +3390,9 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   bool mNeedStyleFlush : 1;
+
+  
+  bool mNeedsWindowPropertiesSync : 1 = false;
 
   
   
