@@ -13,7 +13,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -21,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/call/transport.h"
@@ -40,7 +40,6 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
 #include "rtc_base/random.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
@@ -51,11 +50,6 @@ namespace webrtc {
 class RTCPSender final {
  public:
   struct Configuration {
-    
-    
-    static Configuration FromRtpRtcpConfiguration(
-        const RtpRtcpInterface::Configuration& config);
-
     
     
     bool audio = false;
@@ -69,19 +63,14 @@ class RTCPSender final {
     
     
     bool non_sender_rtt_measurement = false;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    std::function<void(TimeDelta)> schedule_next_rtcp_send_evaluation_function;
 
-    std::optional<TimeDelta> rtcp_report_interval;
+    
+    
+    
+    
+    absl::AnyInvocable<void(TimeDelta)> schedule_next_rtcp_send_evaluation;
+
+    TimeDelta rtcp_report_interval;
     ReceiveStatisticsProvider* receive_statistics = nullptr;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer = nullptr;
   };
@@ -247,10 +236,7 @@ class RTCPSender final {
   Transport* const transport_;
 
   const TimeDelta report_interval_;
-  
-  
-  const std::function<void(TimeDelta)>
-      schedule_next_rtcp_send_evaluation_function_;
+  absl::AnyInvocable<void(TimeDelta)> schedule_next_rtcp_send_evaluation_;
 
   mutable Mutex mutex_rtcp_sender_;
   bool sending_ RTC_GUARDED_BY(mutex_rtcp_sender_);
