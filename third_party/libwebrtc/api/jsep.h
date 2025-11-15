@@ -111,8 +111,8 @@ class RTC_EXPORT IceCandidate final {
 
 
 
-using JsepIceCandidate = IceCandidate;
-using IceCandidateInterface = IceCandidate;
+using JsepIceCandidate [[deprecated("Use IceCandidate")]] = IceCandidate;
+using IceCandidateInterface [[deprecated("Use IceCandidate")]] = IceCandidate;
 
 
 
@@ -157,11 +157,6 @@ class IceCandidateCollection final {
   
   
   
-  size_t remove(const Candidate& candidate);
-
-  
-  
-  
   size_t remove(const IceCandidate* candidate);
 
   const std::vector<std::unique_ptr<IceCandidate>>& candidates() const {
@@ -197,6 +192,11 @@ enum class SdpType {
 
 
 RTC_EXPORT const char* SdpTypeToString(SdpType type);
+
+template <typename Sink>
+void AbslStringify(Sink& sink, SdpType sdp_type) {
+  sink.Append(SdpTypeToString(sdp_type));
+}
 
 
 
@@ -264,13 +264,6 @@ class RTC_EXPORT SessionDescriptionInterface {
   virtual bool RemoveCandidate(const IceCandidate* candidate) = 0;
 
   
-  
-  
-  
-  
-  virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
-
-  
   virtual size_t number_of_mediasections() const = 0;
 
   
@@ -283,7 +276,7 @@ class RTC_EXPORT SessionDescriptionInterface {
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const SessionDescriptionInterface& p) {
     sink.Append("\n--- BEGIN SDP ");
-    sink.Append(SdpTypeToString(p.GetType()));
+    absl::Format(&sink, "%v", p.GetType());
     sink.Append(" ---\n");
     std::string temp;
     if (p.ToString(&temp)) {
