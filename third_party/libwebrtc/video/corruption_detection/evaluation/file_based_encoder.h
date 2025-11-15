@@ -31,23 +31,19 @@ class FileBasedEncoder {
 
   
   
-  virtual std::string Encode(const TestClip& clip, DataRate bitrate) {
-    RTCErrorOr<std::string> r = Encode2(clip, bitrate);
-    if (r.ok()) {
-      return r.value();
-    } else {
-      return "";
-    }
+  
+  
+  
+  virtual RTCErrorOr<std::string> Encode(const TestClip& clip,
+                                         DataRate bitrate) {
+    return Encode2(clip, bitrate);
   }
 
   
-  
-  
-  
-  
+  [[deprecated("Use above Encode instead")]]
   virtual RTCErrorOr<std::string> Encode2(const TestClip& clip,
                                           DataRate bitrate) {
-    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+    return Encode(clip, bitrate);
   }
 
   
