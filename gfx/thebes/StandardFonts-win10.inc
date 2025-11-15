@@ -1,13 +1,13 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifdef StandardFonts
 
-// List of standard font families installed as part of Windows 10
-// from https://docs.microsoft.com/en-us/typography/fonts/windows_10_font_list
-// TODO: check whether we need to list legacy styled family names like "...
-// Light".
+
+
+
+
 [[maybe_unused]] static const char* kBaseFonts[] = {
     "Arial",
     "Arial Black",
@@ -61,6 +61,7 @@
     "MS UI Gothic",
     "MV Boli",
     "Myanmar Text",
+    "Nirmala Text",
     "Nirmala UI",
     "Nirmala UI Semilight",
     "NSimSun",
@@ -103,109 +104,109 @@
     "Yu Gothic UI Semilight",
 };
 
-// Additional fonts provided by language-pack installation.
+
 [[maybe_unused]] static const char* kLangPackFonts[] = {
-    "Aharoni",            // Hebrew Supplemental Fonts
-    "Aldhabi",            // Arabic Script Supplemental Fonts
-    "Andalus",            // Arabic Script Supplemental Fonts
-    "Angsana New",        // Thai Supplemental Fonts
-    "AngsanaUPC",         // Thai Supplemental Fonts
-    "Aparajita",          // Devanagari Supplemental Fonts
-    "BatangChe",          // Korean Supplemental Fonts
-    "BIZ UDGothic",       // Japanese Supplemental Fonts
-    "BIZ UDMincho",       // Japanese Supplemental Fonts
-    "BIZ UDPGothic",      // Japanese Supplemental Fonts
-    "BIZ UDPMincho",      // Japanese Supplemental Fonts
-    "Browallia New",      // Thai Supplemental Fonts
-    "BrowalliaUPC",       // Thai Supplemental Fonts
-    "Cordia New",         // Thai Supplemental Fonts
-    "CordiaUPC",          // Thai Supplemental Fonts
-    "DaunPenh",           // Khmer Supplemental Fonts
-    "David",              // Hebrew Supplemental Fonts
-    "DengXian",           // Chinese (Simplified) Supplemental Fonts
-    "DFKai-SB",           // Chinese (Traditional) Supplemental Fonts
-    "DilleniaUPC",        // Thai Supplemental Fonts
-    "DokChampa",          // Lao Supplemental Fonts
-    "Dotum",              // Korean Supplemental Fonts
-    "DotumChe",           // Korean Supplemental Fonts
-    "Estrangelo Edessa",  // Syriac Supplemental Fonts
-    "EucrosiaUPC",        // Thai Supplemental Fonts
-    "Euphemia",           // Canadian Aboriginal Syllabics Supplemental Fonts
-    "FangSong",           // Chinese (Simplified) Supplemental Fonts
-    "FrankRuehl",         // Hebrew Supplemental Fonts
-    "FreesiaUPC",         // Thai Supplemental Fonts
-    "Gautami",            // Telugu Supplemental Fonts
-    "Gisha",              // Hebrew Supplemental Fonts
-    "Gulim",              // Korean Supplemental Fonts
-    "GulimChe",           // Korean Supplemental Fonts
-    "Gungsuh",            // Korean Supplemental Fonts
-    "GungsuhChe",         // Korean Supplemental Fonts
-    "IrisUPC",            // Thai Supplemental Fonts
-    "Iskoola Pota",       // Sinhala Supplemental Fonts
-    "JasmineUPC",         // Thai Supplemental Fonts
-    "KaiTi",              // Chinese (Simplified) Supplemental Fonts
-    "Kalinga",            // Odia Supplemental Fonts
-    "Kartika",            // Malayalam Supplemental Fonts
-    "Khmer UI",           // Khmer Supplemental Fonts
-    "KodchiangUPC",       // Thai Supplemental Fonts
-    "Kokila",             // Devanagari Supplemental Fonts
-    "Lao UI",             // Lao Supplemental Fonts
-    "Latha",              // Tamil Supplemental Fonts
-    "LilyUPC",            // Thai Supplemental Fonts
-    "Mangal",             // Devanagari Supplemental Fonts
-    "Meiryo",             // Japanese Supplemental Fonts
-    "MingLiU",            // Chinese (Traditional) Supplemental Fonts
-    "MingLiU_HKSCS",      // Chinese (Traditional) Supplemental Fonts
-    "Miriam",             // Hebrew Supplemental Fonts
-    "Miriam Fixed",       // Hebrew Supplemental Fonts
-    "MoolBoran",          // Khmer Supplemental Fonts
-    "MS PMincho",         // Japanese Supplemental Fonts
-    "Narkisim",           // Hebrew Supplemental Fonts
-    "Noto Sans HK",       // Chinese (Traditional, Hong Kong) Supplemental Fonts
-    "Noto Sans JP",       // Japanese Supplemental Fonts
-    "Noto Sans KR",       // Korean Supplemental Fonts
-    "Noto Sans SC",       // Chinese (Simplified) Supplemental Fonts
-    "Noto Sans TC",       // Chinese (Traditional) Supplemental Fonts
-    "Noto Serif HK",      // Chinese (Traditional, Hong Kong) Supplemental Fonts
-    "Noto Serif JP",      // Japanese Supplemental Fonts
-    "Noto Serif KR",      // Korean Supplemental Fonts
-    "Noto Serif SC",      // Chinese (Simplified) Supplemental Fonts
-    "Noto Serif TC",      // Chinese (Traditional) Supplemental Fonts
-    "Nyala",              // Ethiopic Supplemental Fonts
-    "Plantagenet Cherokee",   // Cherokee Supplemental Fonts
-    "Raavi",                  // Gurmukhi Supplemental Fonts
-    "Rod",                    // Hebrew Supplemental Fonts
-    "Sakkal Majalla",         // Arabic Script Supplemental Fonts
-    "Sanskrit Text",          // Devanagari Supplemental Fonts
-    "Shonar Bangla",          // Bangla Script Supplemental Fonts
-    "Shruti",                 // Gujarati Supplemental Fonts
-    "Simplified Arabic",      // Arabic Script Supplemental Fonts
-    "Traditional Arabic",     // Arabic Script Supplemental Fonts
-    "Tunga",                  // Kannada Supplemental Fonts
-    "UD Digi Kyokasho N",  // Japanese Supplemental Fonts (since 24H2)
-    "UD Digi Kyokasho N-B",  // Japanese Supplemental Fonts (until 23H2)
-    "UD Digi Kyokasho N-R",  // Japanese Supplemental Fonts (until 23H2)
-    "UD Digi Kyokasho NK",  // Japanese Supplemental Fonts (since 24H2)
-    "UD Digi Kyokasho NK-B",  // Japanese Supplemental Fonts (until 23H2)
-    "UD Digi Kyokasho NK-R",  // Japanese Supplemental Fonts (until 23H2)
-    "UD Digi Kyokasho NP",  // Japanese Supplemental Fonts (since 24H2)
-    "UD Digi Kyokasho NP-B",  // Japanese Supplemental Fonts (until 23H2)
-    "UD Digi Kyokasho NP-R",  // Japanese Supplemental Fonts (until 23H2)
-    "Urdu Typesetting",       // Arabic Script Supplemental Fonts
-    "Utsaah",                 // Devanagari Supplemental Fonts
-    "Vani",                   // Telugu Supplemental Fonts
-    "Vijaya",                 // Tamil Supplemental Fonts
-    "Vrinda",                 // Bangla Script Supplemental Fonts
-    "Yu Mincho",              // Japanese Supplemental Fonts
-    // Latin/Greek/Cyrillic scripts are already well-supported by the base
-    // fonts, so we do not include these even when the LangPack collection is
-    // enabled.
-    //  "Arial Nova",  // Pan-European Supplemental Fonts - EXCLUDED
-    //  "Georgia Pro",  // Pan-European Supplemental Fonts - EXCLUDED
-    //  "Gill Sans Nova",  // Pan-European Supplemental Fonts - EXCLUDED
-    //  "Neue Haas Grotesk Text Pro",  // Pan-European Supplemental Fonts -
-    //  EXCLUDED "Rockwell Nova",  // Pan-European Supplemental Fonts - EXCLUDED
-    //  "Verdana Pro",  // Pan-European Supplemental Fonts - EXCLUDED
+    "Aharoni",            
+    "Aldhabi",            
+    "Andalus",            
+    "Angsana New",        
+    "AngsanaUPC",         
+    "Aparajita",          
+    "BatangChe",          
+    "BIZ UDGothic",       
+    "BIZ UDMincho",       
+    "BIZ UDPGothic",      
+    "BIZ UDPMincho",      
+    "Browallia New",      
+    "BrowalliaUPC",       
+    "Cordia New",         
+    "CordiaUPC",          
+    "DaunPenh",           
+    "David",              
+    "DengXian",           
+    "DFKai-SB",           
+    "DilleniaUPC",        
+    "DokChampa",          
+    "Dotum",              
+    "DotumChe",           
+    "Estrangelo Edessa",  
+    "EucrosiaUPC",        
+    "Euphemia",           
+    "FangSong",           
+    "FrankRuehl",         
+    "FreesiaUPC",         
+    "Gautami",            
+    "Gisha",              
+    "Gulim",              
+    "GulimChe",           
+    "Gungsuh",            
+    "GungsuhChe",         
+    "IrisUPC",            
+    "Iskoola Pota",       
+    "JasmineUPC",         
+    "KaiTi",              
+    "Kalinga",            
+    "Kartika",            
+    "Khmer UI",           
+    "KodchiangUPC",       
+    "Kokila",             
+    "Lao UI",             
+    "Latha",              
+    "LilyUPC",            
+    "Mangal",             
+    "Meiryo",             
+    "MingLiU",            
+    "MingLiU_HKSCS",      
+    "Miriam",             
+    "Miriam Fixed",       
+    "MoolBoran",          
+    "MS PMincho",         
+    "Narkisim",           
+    "Noto Sans HK",       
+    "Noto Sans JP",       
+    "Noto Sans KR",       
+    "Noto Sans SC",       
+    "Noto Sans TC",       
+    "Noto Serif HK",      
+    "Noto Serif JP",      
+    "Noto Serif KR",      
+    "Noto Serif SC",      
+    "Noto Serif TC",      
+    "Nyala",              
+    "Plantagenet Cherokee",   
+    "Raavi",                  
+    "Rod",                    
+    "Sakkal Majalla",         
+    "Sanskrit Text",          
+    "Shonar Bangla",          
+    "Shruti",                 
+    "Simplified Arabic",      
+    "Traditional Arabic",     
+    "Tunga",                  
+    "UD Digi Kyokasho N",  
+    "UD Digi Kyokasho N-B",  
+    "UD Digi Kyokasho N-R",  
+    "UD Digi Kyokasho NK",  
+    "UD Digi Kyokasho NK-B",  
+    "UD Digi Kyokasho NK-R",  
+    "UD Digi Kyokasho NP",  
+    "UD Digi Kyokasho NP-B",  
+    "UD Digi Kyokasho NP-R",  
+    "Urdu Typesetting",       
+    "Utsaah",                 
+    "Vani",                   
+    "Vijaya",                 
+    "Vrinda",                 
+    "Yu Mincho",              
+    
+    
+    
+    
+    
+    
+    
+    
+    
 };
 
 struct FontSubstitute {
@@ -214,7 +215,7 @@ struct FontSubstitute {
 };
 
 static const FontSubstitute kFontSubstitutes[] = {
-    // Common substitutions
+    
     {"Arabic Transparent", "Arial"},
     {"Arial Baltic", "Arial"},
     {"Arial CE", "Arial"},
@@ -237,21 +238,21 @@ static const FontSubstitute kFontSubstitutes[] = {
     {"Times New Roman Greek", "Times New Roman"},
     {"Times New Roman TUR", "Times New Roman"},
     {"Tms Rmn", "Times New Roman"},
-    // Common, except Japanese (which uses MS UI Gothic, instead)
+    
     {"MS Shell Dlg", "Microsoft Sans Serif"},
-    // Arabic
+    
     {"Arial (Arabic)", "Arial"},
     {"Courier New (Arabic)", "Courier New"},
     {"Times New Roman (Arabic)", "Times New Roman"},
-    // Cyrillic + Greek
+    
     {"Courier", "Courier New"},
-    // Greek
+    
     {"Fixedsys Greek", "Fixedsys"},
     {"MS Serif Greek", "Times New Roman"},
     {"MS Sans Serif Greek", "Microsoft Sans Serif"},
     {"Small Fonts Greek", "Arial"},
     {"System Greek", "System"},
-    // Hebrew
+    
     {"Arial (Hebrew)", "Arial"},
     {"Courier New (Hebrew)", "Courier New"},
     {"David Transparent", "David"},
@@ -259,7 +260,7 @@ static const FontSubstitute kFontSubstitutes[] = {
     {"Miriam Transparent", "Miriam"},
     {"Rod Transparent", "Rod"},
     {"Times New Roman (Hebrew)", "Times New Roman"},
-    // Japanese
+    
     {"標準明朝", "ＭＳ 明朝"},
     {"標準ゴシック", "ＭＳ ゴシック"},
     {"ゴシック", "ＭＳ ゴシック"},
@@ -267,7 +268,7 @@ static const FontSubstitute kFontSubstitutes[] = {
     {"ｸｰﾘｴ", "Courier New"},
     {"ﾀｲﾑｽﾞﾛﾏﾝ", "Times New Roman"},
     {"ﾍﾙﾍﾞﾁｶ", "Arial"},
-    // Simplified Chinese
+    
     {"FangSong_GB2312", "FangSong"},
     {"KaiTi_GB2312", "KaiTi"},
 };
