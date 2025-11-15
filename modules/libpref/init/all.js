@@ -1803,10 +1803,6 @@ pref("extensions.browser_style_mv3.supported", false);
 pref("extensions.browser_style_mv3.same_as_mv2", false);
 
 
-
-pref("extensions.cookie.rejectWhenInvalid", true);
-
-
 pref("extensions.ml.enabled", true);
 
 
