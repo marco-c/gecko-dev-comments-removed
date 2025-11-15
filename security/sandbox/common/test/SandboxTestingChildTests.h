@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "SandboxTestingChild.h"
 
@@ -34,8 +34,8 @@
 #    ifdef MOZ_X11
 #      include "X11/Xlib.h"
 #      include "X11UndefineNone.h"
-#    endif  // MOZ_X11
-#  endif    // XP_LINUX
+#    endif  
+#  endif    
 #  include <sys/socket.h>
 #  include <sys/stat.h>
 #  include <sys/types.h>
@@ -74,20 +74,20 @@ extern "C" int sandbox_check(pid_t pid, const char* operation, int type, ...);
 #endif
 
 #ifdef XP_LINUX
-// Defined in <linux/watch_queue.h> which was added in 5.8
+
 #  ifndef O_NOTIFICATION_PIPE
 #    define O_NOTIFICATION_PIPE O_EXCL
 #  endif
-// Added in 5.7.
+
 #  ifndef MREMAP_DONTUNMAP
 #    define MREMAP_DONTUNMAP 4
 #  endif
-// Added in 4.14.
+
 #  ifndef MFD_HUGETLB
 #    define MFD_HUGETLB 4U
 #    define MFD_HUGE_2MB (21U << 26)
 #  endif
-// (MAP_HUGE_* is from 3.8.  MAP_HUGETLB is 2.6.32.)
+
 #endif
 
 constexpr bool kIsDebug =
@@ -117,10 +117,10 @@ static void RunTestsSched(SandboxTestingChild* child) {
 }
 #endif
 
-// Tests that apply to every process type (more or less)
+
 static void RunGenericTests(SandboxTestingChild* child, bool aIsGMP = false) {
 #ifdef XP_LINUX
-  // Check ABI issues with 32-bit arguments on 64-bit platforms.
+  
   if (sizeof(void*) == 8) {
     static constexpr uint64_t kHighBits = 0xDEADBEEF00000000;
 
@@ -128,15 +128,15 @@ static void RunGenericTests(SandboxTestingChild* child, bool aIsGMP = false) {
     child->ErrnoTest("high_bits_gettime"_ns, true, [&] {
       return syscall(__NR_clock_gettime, kHighBits | CLOCK_MONOTONIC, &ts0);
     });
-    // Try to make sure we got the correct clock by reading it again and
-    // comparing to see if the times are vaguely similar.
+    
+    
     int rv = clock_gettime(CLOCK_MONOTONIC, &ts1);
     MOZ_RELEASE_ASSERT(rv == 0);
     MOZ_RELEASE_ASSERT(ts0.tv_sec <= ts1.tv_sec + 1);
     MOZ_RELEASE_ASSERT(ts1.tv_sec <= ts0.tv_sec + 60);
 
-    // Check some non-zeroth arguments.  (fcntl is convenient for
-    // this, but GMP has a stricter policy, so skip it there.)
+    
+    
     if (!aIsGMP) {
       int flags;
       child->ErrnoTest("high_bits_fcntl_getfl"_ns, true, [&] {
@@ -157,14 +157,14 @@ static void RunGenericTests(SandboxTestingChild* child, bool aIsGMP = false) {
       MOZ_RELEASE_ASSERT(flags & O_NONBLOCK);
     }
   }
-#endif  // XP_LINUX
+#endif  
 }
 
 #ifdef XP_WIN
-/**
- * Uses NtCreateFile directly to test file system brokering.
- *
- */
+
+
+
+
 static void FileTest(const nsCString& aName, const char* aSpecialDirName,
                      const nsString& aRelativeFilePath, ACCESS_MASK aAccess,
                      bool aExpectSuccess, SandboxTestingChild* aChild) {
@@ -173,7 +173,7 @@ static void FileTest(const nsCString& aName, const char* aSpecialDirName,
   static const StaticDynamicallyLinkedFunctionPtr<decltype(&NtClose)> pNtClose(
       L"ntdll.dll", "NtClose");
 
-  // Start the filename with the NT namespace
+  
   nsString testFilename(u"\\??\\"_ns);
   nsString dirPath;
   aChild->SendGetSpecialDirectory(nsDependentCString(aSpecialDirName),
@@ -233,18 +233,18 @@ static void FileTest(const nsCString& aName, const char* aSpecialDirName,
 #endif
 
 #ifdef XP_MACOSX
-/*
- * Test if this process can launch another process with posix_spawnp,
- * exec, and LSOpenCFURLRef. All launches are expected to fail. In processes
- * where the sandbox permits reading of file metadata (content processes at
- * this time), we expect the posix_spawnp error to be EPERM. In processes
- * without that permission, we expect ENOENT. Changing the sandbox policy
- * may break this assumption, but the important aspect to test for is that the
- * launch is not permitted.
- */
+
+
+
+
+
+
+
+
+
 void RunMacTestLaunchProcess(SandboxTestingChild* child,
                              int aPosixSpawnExpectedError = ENOENT) {
-  // Test that posix_spawnp fails
+  
   char* argv[2];
   argv[0] = const_cast<char*>("bash");
   argv[1] = NULL;
@@ -255,13 +255,13 @@ void RunMacTestLaunchProcess(SandboxTestingChild* child,
                                rv == aPosixSpawnExpectedError,
                                posixSpawnMessage);
 
-  // Test that exec fails
+  
   child->ErrnoTest("execv /bin/bash test"_ns, false, [&] {
     char* argvp = NULL;
     return execv("/bin/bash", &argvp);
   });
 
-  // Test that launching an application using LSOpenCFURLRef fails
+  
   char* uri = const_cast<char*>("/System/Applications/Utilities/Console.app");
   CFStringRef filePath = ::CFStringCreateWithCString(kCFAllocatorDefault, uri,
                                                      kCFStringEncodingUTF8);
@@ -284,15 +284,15 @@ void RunMacTestLaunchProcess(SandboxTestingChild* child,
       status == ApplicationServices::kLSServerCommunicationErr, lsMessage);
 }
 
-/*
- * Test if this process can connect to the macOS window server.
- * When |aShouldHaveAccess| is true, the test passes if access is __permitted__.
- * When |aShouldHaveAccess| is false, the test passes if access is __blocked__.
- */
+
+
+
+
+
 void RunMacTestWindowServer(SandboxTestingChild* child,
                             bool aShouldHaveAccess = false) {
-  // CGSessionCopyCurrentDictionary() returns NULL when a
-  // connection to the window server is not available.
+  
+  
   CFDictionaryRef windowServerDict = CGSessionCopyCurrentDictionary();
   bool gotWindowServerDetails = (windowServerDict != nullptr);
   bool testPassed = (gotWindowServerDetails == aShouldHaveAccess);
@@ -306,11 +306,11 @@ void RunMacTestWindowServer(SandboxTestingChild* child,
   }
 }
 
-/*
- * Test if this process can get access to audio components on macOS.
- * When |aShouldHaveAccess| is true, the test passes if access is __permitted__.
- * When |aShouldHaveAccess| is false, the test passes if access is __blocked__.
- */
+
+
+
+
+
 void RunMacTestAudioAPI(SandboxTestingChild* child,
                         bool aShouldHaveAccess = false) {
   AudioStreamBasicDescription inputFormat;
@@ -333,7 +333,7 @@ void RunMacTestAudioAPI(SandboxTestingChild* child,
       gotAudioFormat ? "got audio format, access is permitted"_ns
                      : "no audio format, access appears blocked"_ns);
 }
-#endif /* XP_MACOSX */
+#endif 
 
 #ifdef XP_WIN
 void RunWinTestWin32k(SandboxTestingChild* child,
@@ -345,7 +345,7 @@ void RunWinTestWin32k(SandboxTestingChild* child,
       isLockedDown ? "got lockdown, access is blocked"_ns
                    : "no lockdown, access appears permitted"_ns);
 }
-#endif  // XP_WIN
+#endif  
 
 void RunTestsContent(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
@@ -374,42 +374,42 @@ void RunTestsContent(SandboxTestingChild* child) {
   child->ErrnoTest("clock_getres"_ns, true,
                    [&] { return clock_getres(CLOCK_REALTIME, &res); });
 
-  // same process is allowed
+  
   struct timespec tproc = {0, 0};
   clockid_t same_process = MAKE_PROCESS_CPUCLOCK(getpid(), CPUCLOCK_SCHED);
   child->ErrnoTest("clock_gettime_same_process"_ns, true,
                    [&] { return clock_gettime(same_process, &tproc); });
 
-  // different process is blocked by sandbox (SIGSYS, kernel would return
-  // EINVAL)
+  
+  
   struct timespec tprocd = {0, 0};
   clockid_t diff_process = MAKE_PROCESS_CPUCLOCK(1, CPUCLOCK_SCHED);
   child->ErrnoValueTest("clock_gettime_diff_process"_ns, ENOSYS,
                         [&] { return clock_gettime(diff_process, &tprocd); });
 
-  // thread is allowed
+  
   struct timespec tthread = {0, 0};
   clockid_t thread =
       MAKE_THREAD_CPUCLOCK((pid_t)syscall(__NR_gettid), CPUCLOCK_SCHED);
   child->ErrnoTest("clock_gettime_thread"_ns, true,
                    [&] { return clock_gettime(thread, &tthread); });
 
-  // getcpu is allowed
-  // We're using syscall directly because:
-  // - sched_getcpu uses vdso and as a result doesn't go through the sandbox.
-  // - getcpu isn't defined in the header files we're using yet.
+  
+  
+  
+  
   int c;
   child->ErrnoTest("getcpu"_ns, true,
                    [&] { return syscall(SYS_getcpu, &c, NULL, NULL); });
 
-  // An abstract socket that does not starts with '/', so we don't want it to
-  // work.
-  // Checking ENETUNREACH should be thrown by SandboxBrokerClient::Connect()
-  // when it detects it does not starts with a '/'
+  
+  
+  
+  
   child->ErrnoValueTest("connect_abstract_blocked"_ns, ENETUNREACH, [&] {
     int sockfd;
     struct sockaddr_un addr;
-    char str[] = "\0xyz";  // Abstract socket requires first byte to be NULL
+    char str[] = "\0xyz";  
     size_t str_size = 4;
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -426,25 +426,25 @@ void RunTestsContent(SandboxTestingChild* child) {
     return con_st;
   });
 
-  // An abstract socket that does starts with /, so we do want it to work.
-  //
-  // Normally, this will be passed to the broker (unlike the previous
-  // test) and rejected, failing with EACCES.
-  //
-  // With content sandbox level <5, the expected error is ECONNREFUSED
-  // (the broker tries to connect but it fails at the OS level);
-  // however, these tests don't handle non-default pref settings.
+  
+  
+  
+  
+  
+  
+  
+  
   child->ErrnoValueTest("connect_abstract_permit"_ns, EACCES, [&] {
     int sockfd;
     struct sockaddr_un addr;
-    // we re-use actual X path, because this is what is allowed within
-    // SandboxBrokerPolicyFactory::InitContentPolicy()
-    // We can't just use any random path allowed, but one with CONNECT allowed.
+    
+    
+    
 
-    // (Note that the real X11 sockets have names like `X0` for
-    // display `:0`; there shouldn't be anything named just `X`.)
+    
+    
 
-    // Abstract socket requires first byte to be NULL
+    
     char str[] = "\0/tmp/.X11-unix/X";
     size_t str_size = 17;
 
@@ -462,11 +462,11 @@ void RunTestsContent(SandboxTestingChild* child) {
     return con_st;
   });
 
-  // Testing FIPS-relevant files, which need to be accessible
+  
   std::vector<std::pair<const char*, bool>> open_tests = {
       {"/dev/random", true}};
-  // Not all systems have that file, so we only test access, if it exists
-  // in the first place
+  
+  
   if (stat("/proc/sys/crypto/fips_enabled", &st) == 0) {
     open_tests.push_back({"/proc/sys/crypto/fips_enabled", true});
   }
@@ -507,8 +507,8 @@ void RunTestsContent(SandboxTestingChild* child) {
   });
 
 #    ifdef MOZ_X11
-  // Check that X11 access is blocked (bug 1129492).
-  // This will fail if security.sandbox.content.level is less than 5.
+  
+  
   if (PR_GetEnv("DISPLAY")) {
     Display* disp = XOpenDisplay(nullptr);
 
@@ -519,16 +519,16 @@ void RunTestsContent(SandboxTestingChild* child) {
       XCloseDisplay(disp);
     }
   }
-#    endif  // MOZ_X11
+#    endif  
 
   child->ErrnoTest("realpath localtime"_ns, true, [] {
     char buf[PATH_MAX];
     return realpath("/etc/localtime", buf) ? 0 : -1;
   });
 
-  // Check that readlink truncates results longer than the buffer
-  // (rather than failing) and returns the total number of bytes
-  // actually written (not the size of the link or anything else).
+  
+  
+  
   {
     char buf;
     ssize_t rv = readlink("/etc/localtime", &buf, 1);
@@ -561,8 +561,8 @@ void RunTestsContent(SandboxTestingChild* child) {
 
     child->ErrnoValueTest("mremap-forbidden"_ns, ENOSYS, [&] {
       void* rv = mremap(mapping, kMapSize, kMapSize, MREMAP_DONTUNMAP);
-      // This is an invalid flag combination (DONTUNMAP requires
-      // MAYMOVE) so it will always fail with *something*.
+      
+      
       MOZ_ASSERT(rv == MAP_FAILED);
       return -1;
     });
@@ -571,9 +571,9 @@ void RunTestsContent(SandboxTestingChild* child) {
   }
 
   child->ErrnoValueTest("ioctl_dma_buf"_ns, ENOSYS, [] {
-    // Attempt an arbitrary non-tty ioctl, on the wrong type of fd; if
-    // allowed it would fail with ENOTTY (see the RDD tests) but in
-    // this sandbox it should be blocked (ENOSYS).
+    
+    
+    
     return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
   });
 
@@ -595,11 +595,11 @@ void RunTestsContent(SandboxTestingChild* child) {
     if (fd >= 0) {
       close(fd);
     }
-    // Returning a closed fd is fine; it's just going to be tested for >= 0.
+    
     return fd;
   });
 
-#  endif  // XP_LINUX
+#  endif  
 
 #  ifdef XP_MACOSX
   RunMacTestLaunchProcess(child, EPERM);
@@ -612,13 +612,13 @@ void RunTestsContent(SandboxTestingChild* child) {
            FILE_GENERIC_READ, true, child);
   FileTest("read from profile via relative path"_ns, NS_APP_USER_CHROME_DIR,
            u"..\\sandboxTest.txt"_ns, FILE_GENERIC_READ, false, child);
-  // The profile dir is the parent of the chrome dir.
+  
   FileTest("read from chrome using forward slash"_ns,
            NS_APP_USER_PROFILE_50_DIR, u"chrome/sandboxTest.txt"_ns,
            FILE_GENERIC_READ, false, child);
 
-  // Note: these only pass in DEBUG builds because we allow write access to the
-  // temp dir for certain test logs and that is where the profile is created.
+  
+  
   FileTest("read from profile"_ns, NS_APP_USER_PROFILE_50_DIR,
            u"sandboxTest.txt"_ns, FILE_GENERIC_READ, kIsDebug, child);
   FileTest("read/write from chrome"_ns, NS_APP_USER_CHROME_DIR,
@@ -655,11 +655,11 @@ void RunTestsSocket(SandboxTestingChild* child) {
     return rv;
   });
 
-  // Testing FIPS-relevant files, which need to be accessible
+  
   std::vector<std::pair<const char*, bool>> open_tests = {
       {"/dev/random", true}};
-  // Not all systems have that file, so we only test access, if it exists
-  // in the first place
+  
+  
   struct stat st;
   if (stat("/proc/sys/crypto/fips_enabled", &st) == 0) {
     open_tests.push_back({"/proc/sys/crypto/fips_enabled", true});
@@ -676,10 +676,10 @@ void RunTestsSocket(SandboxTestingChild* child) {
                      });
   }
 
-  // getcpu is allowed
-  // We're using syscall directly because:
-  // - sched_getcpu uses vdso and as a result doesn't go through the sandbox.
-  // - getcpu isn't defined in the header files we're using yet.
+  
+  
+  
+  
   int c;
   child->ErrnoTest("getcpu"_ns, true,
                    [&] { return syscall(SYS_getcpu, &c, NULL, NULL); });
@@ -693,7 +693,7 @@ void RunTestsSocket(SandboxTestingChild* child) {
     struct sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
-    // Address within 100::/64, i.e. IPv6 discard prefix.
+    
     inet_pton(AF_INET6, "100::1", &addr.sin6_addr);
     addr.sin6_port = htons(12345);
 
@@ -720,7 +720,7 @@ void RunTestsSocket(SandboxTestingChild* child) {
       return fd;
     }
 
-    // Set the socket to non-blocking mode
+    
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) {
       close(fd);
@@ -765,19 +765,19 @@ void RunTestsSocket(SandboxTestingChild* child) {
   });
 
   child->ErrnoValueTest("ioctl_dma_buf"_ns, ENOSYS, [] {
-    // Attempt an arbitrary non-tty ioctl, on the wrong type of fd; if
-    // allowed it would fail with ENOTTY (see the RDD tests) but in
-    // this sandbox it should be blocked (ENOSYS).
+    
+    
+    
     return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
   });
-#  endif  // XP_LINUX
+#  endif  
 #elif XP_MACOSX
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(child);
-#else   // XP_UNIX
+#else   
     child->ReportNoTests();
-#endif  // XP_UNIX
+#endif  
 }
 
 void RunTestsRDD(SandboxTestingChild* child) {
@@ -822,34 +822,34 @@ void RunTestsRDD(SandboxTestingChild* child) {
   });
 
   child->ErrnoValueTest("ioctl_dma_buf"_ns, ENOTTY, [] {
-    // Apply the ioctl to the wrong kind of fd; it should fail with
-    // ENOTTY (rather than ENOSYS if it were blocked).
+    
+    
     return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
   });
 
-  // getcpu is allowed
-  // We're using syscall directly because:
-  // - sched_getcpu uses vdso and as a result doesn't go through the sandbox.
-  // - getcpu isn't defined in the header files we're using yet.
+  
+  
+  
+  
   int c;
   child->ErrnoTest("getcpu"_ns, true,
                    [&] { return syscall(SYS_getcpu, &c, NULL, NULL); });
 
-  // The nvidia proprietary drivers will, in some cases, try to
-  // mknod their device files; we reject this politely.
+  
+  
   child->ErrnoValueTest("mknod"_ns, EPERM, [] {
     return mknod("/dev/null", S_IFCHR | 0666, makedev(1, 3));
   });
 
-  // Rust panics call getcwd to try to print relative paths in
-  // backtraces.
+  
+  
   child->ErrnoValueTest("getcwd"_ns, ENOENT, [] {
     char buf[4096];
     return (getcwd(buf, sizeof(buf)) == nullptr) ? -1 : 0;
   });
 
-  // nvidia defines some ioctls with the type 0x46 ('F', otherwise
-  // used by fbdev) and numbers starting from 200 (0xc8).
+  
+  
   child->ErrnoValueTest("ioctl_nvidia"_ns, ENOTTY,
                         [] { return ioctl(0, 0x46c8, nullptr); });
 
@@ -861,8 +861,8 @@ void RunTestsRDD(SandboxTestingChild* child) {
   child->ErrnoValueTest("fork"_ns, EPERM, [] {
     pid_t pid = fork();
     if (pid == 0) {
-      // Success: shouldn't happen, and parent will report a test
-      // failure.
+      
+      
       _exit(0);
     }
     return pid;
@@ -873,10 +873,10 @@ void RunTestsRDD(SandboxTestingChild* child) {
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(child, true);
 #  endif
-#else  // XP_UNIX
+#else  
 #  ifdef XP_WIN
   RunWinTestWin32k(child, false);
-#  endif  // XP_WIN
+#  endif  
   child->ReportNoTests();
 #endif
 }
@@ -884,7 +884,7 @@ void RunTestsRDD(SandboxTestingChild* child) {
 void RunTestsGMPlugin(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
 
-  RunGenericTests(child, /* aIsGMP = */ true);
+  RunGenericTests(child,  true);
 
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
@@ -935,7 +935,7 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
     int fd = syscall(__NR_memfd_create, "sandbox-test", 0);
     if (fd < 0) {
       if (errno == ENOSYS) {
-        // Don't fail the test if the kernel is old.
+        
         return 0;
       }
       return -1;
@@ -960,8 +960,8 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
       if (rv == MAP_FAILED) {
         return -1;
       }
-      // It *may* move the mapping, but when the size doesn't change
-      // it's not expected to:
+      
+      
       MOZ_ASSERT(rv == mapping);
       return 0;
     });
@@ -969,8 +969,8 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
 
     child->ErrnoValueTest("mremap-forbidden"_ns, ENOSYS, [&] {
       void* rv = mremap(mapping, kMapSize, kMapSize, MREMAP_DONTUNMAP);
-      // This is an invalid flag combination (DONTUNMAP requires
-      // MAYMOVE) so it will always fail with *something*.
+      
+      
       MOZ_ASSERT(rv == MAP_FAILED);
       return -1;
     });
@@ -978,13 +978,13 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
     munmap(mapping, kMapSize);
   }
 
-#  elif XP_MACOSX  // XP_LINUX
+#  elif XP_MACOSX  
   RunMacTestLaunchProcess(child);
-  /* The Mac GMP process requires access to the window server */
-  RunMacTestWindowServer(child, true /* aShouldHaveAccess */);
+  
+  RunMacTestWindowServer(child, true );
   RunMacTestAudioAPI(child);
-#  endif           // XP_MACOSX
-#else              // XP_UNIX
+#  endif           
+#else              
   child->ReportNoTests();
 #endif
 }
@@ -1001,17 +1001,22 @@ void RunTestsGenericUtility(SandboxTestingChild* child) {
     return rv;
   });
 
-  struct rusage res;
   child->ErrnoTest("getrusage"_ns, true, [&] {
-    int rv = getrusage(RUSAGE_SELF, &res);
-    return rv;
+    struct rusage res;
+    return getrusage(RUSAGE_SELF, &res);
   });
-#  elif XP_MACOSX  // XP_LINUX
+
+  child->ErrnoTest("uname"_ns, true, [&] {
+    struct utsname uts;
+    return uname(&uts);
+  });
+
+#  elif XP_MACOSX  
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(child);
-#  endif           // XP_MACOSX
-#elif XP_WIN       // XP_UNIX
+#  endif           
+#elif XP_WIN       
   child->ErrnoValueTest("write_only"_ns, EACCES, [&] {
     FILE* rv = fopen("test_sandbox.txt", "w");
     if (rv != nullptr) {
@@ -1021,9 +1026,9 @@ void RunTestsGenericUtility(SandboxTestingChild* child) {
     return -1;
   });
   RunWinTestWin32k(child);
-#else              // XP_UNIX
+#else              
     child->ReportNoTests();
-#endif             // XP_MACOSX
+#endif             
 }
 
 void RunTestsUtilityMediaService(SandboxTestingChild* child,
@@ -1034,25 +1039,25 @@ void RunTestsUtilityMediaService(SandboxTestingChild* child,
 
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
-  // getrusage is allowed in Generic Utility and on AudioDecoder
+  
   struct rusage res;
   child->ErrnoTest("getrusage"_ns, true, [&] {
     int rv = getrusage(RUSAGE_SELF, &res);
     return rv;
   });
 
-  // get_mempolicy is not allowed in Generic Utility but is on AudioDecoder
+  
   child->ErrnoTest("get_mempolicy"_ns, true, [&] {
     int numa_node;
     int test_val = 0;
-    // <numaif.h> not installed by default, let's call directly the syscall
+    
     long rv = syscall(SYS_get_mempolicy, &numa_node, NULL, 0, (void*)&test_val,
                       MPOL_F_NODE | MPOL_F_ADDR);
     return rv;
   });
-  // set_mempolicy is not allowed in Generic Utility but is on AudioDecoder
+  
   child->ErrnoValueTest("set_mempolicy"_ns, ENOSYS, [&] {
-    // <numaif.h> not installed by default, let's call directly the syscall
+    
     long rv = syscall(SYS_set_mempolicy, 0, NULL, 0);
     return rv;
   });
@@ -1062,19 +1067,19 @@ void RunTestsUtilityMediaService(SandboxTestingChild* child,
     return rv;
   });
 
-#  elif XP_MACOSX  // XP_LINUX
+#  elif XP_MACOSX  
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(
       child,
       aSandbox == ipc::SandboxingKind::UTILITY_AUDIO_DECODING_APPLE_MEDIA);
-#  endif           // XP_MACOSX
-#else              // XP_UNIX
+#  endif           
+#else              
 #  ifdef XP_WIN
   RunWinTestWin32k(child);
-#  endif  // XP_WIN
+#  endif  
   child->ReportNoTests();
-#endif    // XP_UNIX
+#endif    
 }
 
 void RunTestsGPU(SandboxTestingChild* child) {
@@ -1094,7 +1099,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
 
 #elif defined(XP_MACOSX)
 
-  // Check if the GPU process sandbox has been started
+  
   bool isSandboxStarted = sandbox_check(getpid(), NULL, 0) == 1;
   nsCString gpuSandboxCheckMessage;
   if (isSandboxStarted) {
@@ -1107,10 +1112,10 @@ void RunTestsGPU(SandboxTestingChild* child) {
   child->SendReportTestResults("sandbox_check()"_ns, isSandboxStarted,
                                gpuSandboxCheckMessage);
 
-  // Home directory tests
+  
   const char* home = getenv("HOME");
   if (home) {
-    // Test write to home directory
+    
     nsCString testFile(home);
     testFile.Append("/gpu_sbox_writetest.tmp");
 
@@ -1123,7 +1128,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
                        return fd;
                      });
 
-    // Test reading from home directory - file already created by parent process
+    
     nsCString testReadFile(home);
     testReadFile.Append("/.mozilla_gpu_sandbox_read_test");
     std::string path = std::string(testReadFile.get());
@@ -1145,7 +1150,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
                                  "HOME environment variable not set"_ns);
   }
 
-  // System directory
+  
   child->ErrnoTest("write denied (/tmp)"_ns, false, [] {
     int fd = open("/tmp/gpu_sandbox_test_file.txt", O_CREAT | O_WRONLY, 0600);
     if (fd >= 0) {
@@ -1162,23 +1167,23 @@ void RunTestsGPU(SandboxTestingChild* child) {
     return fd;
   });
 
-  // Shader cache tests
+  
   char buf[PATH_MAX];
   if (confstr(_CS_DARWIN_USER_CACHE_DIR, buf, sizeof(buf)) > 0) {
     nsCString cache(buf);
 
-    // Can't create directories at the cache root.
+    
     nsCString subdir = cache + "/mozilla-gpu-sbox-test"_ns;
     child->ErrnoTest("mkdir denied (cache root subdir)"_ns, false,
                      [s = std::string(subdir.get())] {
                        int rv = mkdir(s.c_str(), 0700);
                        if (rv == 0) {
-                         rmdir(s.c_str());  // cleanup if somehow created
+                         rmdir(s.c_str());  
                        }
                        return rv;
                      });
 
-    // Can't write files at the cache root.
+    
     nsCString file = cache + "/gpu_test_file.txt"_ns;
     child->ErrnoTest("write denied (cache root)"_ns, false,
                      [f = std::string(file.get())] {
@@ -1190,40 +1195,40 @@ void RunTestsGPU(SandboxTestingChild* child) {
                        return fd;
                      });
 
-    // Can't create a fake GPU bundle cache directory.
+    
     nsCString fakeGpuDir = cache + "/org.mozilla.firefox-fake-gpu"_ns;
     child->ErrnoTest("mkdir denied (fake GPU cache dir)"_ns, false,
                      [dir = std::string(fakeGpuDir.get())] {
                        int rv = mkdir(dir.c_str(), 0700);
                        if (rv == 0) {
-                         rmdir(dir.c_str());  // cleanup if somehow created
+                         rmdir(dir.c_str());  
                        }
                        return rv;
                      });
 
-    // Actual GPU bundle cache directory
+    
     nsCString actualGpuCacheDir =
         cache + "/"_ns + nsCString(MOZ_GPU_PROCESS_BUNDLEID);
 
-    // Allowed to write a regular file in the GPU bundle cache.
+    
     nsCString legitGpuFile = actualGpuCacheDir + "/gpu_test.cache"_ns;
     child->ErrnoTest("write allowed (GPU bundle cache)"_ns, true,
                      [f = std::string(legitGpuFile.get())] {
                        int fd = open(f.c_str(), O_CREAT | O_WRONLY, 0600);
                        if (fd >= 0) {
                          close(fd);
-                         unlink(f.c_str());  // cleanup
+                         unlink(f.c_str());  
                          return 0;
                        }
                        return fd;
                      });
 
-    // Symlink test inside the GPU bundle cache.
+    
     nsCString symlinkInGpuCache = actualGpuCacheDir + "/bad_symlink"_ns;
     child->ErrnoTest("symlink denied (GPU bundle cache)"_ns, false,
                      [s = std::string(symlinkInGpuCache.get())] {
                        int rv = symlink("/etc/passwd", s.c_str());
-                       if (rv == 0) {  // cleanup if somehow created
+                       if (rv == 0) {  
                          int fd = open(s.c_str(), O_RDONLY);
                          if (fd >= 0) {
                            close(fd);
@@ -1238,7 +1243,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
                                  "Could not get user cache directory"_ns);
   }
 
-  // Test read permissions
+  
   child->ErrnoTest(
       "read allowed (/System/.../SystemVersion.plist)"_ns, true, [] {
         int fd =
@@ -1250,7 +1255,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
         return fd;
       });
 
-  // Test directory listing permissions
+  
   child->ErrnoTest("list allowed (/Library/ColorSync/Profiles)"_ns, true, [] {
     DIR* d = opendir("/Library/ColorSync/Profiles");
     if (!d) return -1;
@@ -1267,7 +1272,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
     return entry ? 0 : -1;
   });
 
-  // Test sysctl permissions
+  
   child->ErrnoTest("sysctl allowed (kern.ostype)"_ns, true, [] {
     char buf[256];
     size_t sz = sizeof(buf);
@@ -1282,7 +1287,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
     return rv;
   });
 
-  // System directory write
+  
   child->ErrnoTest("write denied (root)"_ns, false, [] {
     int fd = open("/gpu_root_test.txt", O_CREAT | O_WRONLY, 0600);
     if (fd >= 0) {
@@ -1311,9 +1316,9 @@ void RunTestsGPU(SandboxTestingChild* child) {
   RunMacTestAudioAPI(child);
   RunMacTestWindowServer(child, true);
 
-#else   // defined(XP_WIN)
+#else   
     child->ReportNoTests();
-#endif  // defined(XP_WIN)
+#endif  
 }
 
-}  // namespace mozilla
+}  

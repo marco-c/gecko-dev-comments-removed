@@ -1399,6 +1399,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case __NR_getcwd:
         return Error(ENOENT);
 
+        
+        
+        
+        
+      case __NR_uname:
+        return Allow();
+
       default:
         return SandboxPolicyBase::EvaluateSyscall(sysno);
     }
@@ -1781,9 +1788,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
 #endif  
 
-        
-        
-      case __NR_uname:
 #ifdef DESKTOP
       case __NR_sysinfo:
 #endif
@@ -2119,10 +2123,6 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Allow();
 
         
-      case __NR_uname:
-        return Allow();
-
-        
         
 #ifdef __NR_mknod
       case __NR_mknod:
@@ -2312,10 +2312,6 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             .Else(InvalidSyscall());
       }
 #endif  
-
-      
-      case __NR_uname:
-        return Allow();
 
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
