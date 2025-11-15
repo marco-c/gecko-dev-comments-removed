@@ -60,7 +60,12 @@ static RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *gWebRTCConfiguration = nil;
     
     
     _category = AVAudioSessionCategoryPlayAndRecord;
+#if defined(__IPHONE_26_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_26_0
+    _categoryOptions = AVAudioSessionCategoryOptionAllowBluetoothHFP;
+#else
+    
     _categoryOptions = AVAudioSessionCategoryOptionAllowBluetooth;
+#endif
 
     
     _mode = AVAudioSessionModeVoiceChat;
