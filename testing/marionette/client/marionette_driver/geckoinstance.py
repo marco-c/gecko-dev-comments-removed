@@ -51,12 +51,6 @@ class GeckoInstance:
         
         "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": False,
         
-        "browser.newtabpage.activity-stream.discoverystream.region-weather-config": "",
-        
-        "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
-        
-        "browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled": False,
-        
         "browser.newtabpage.activity-stream.showSponsoredTopSites": False,
         
         "browser.region.network.url": "",
@@ -647,9 +641,7 @@ class DesktopInstance(GeckoInstance):
         
         "browser.ml.enable": False,
         
-        "browser.newtabpage.activity-stream.telemetry": False,
-        
-        "browser.newtabpage.enabled": False,
+        "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds": False,
         
         
         "browser.pagethumbnails.capturing_disabled": True,
