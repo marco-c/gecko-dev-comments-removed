@@ -157,7 +157,7 @@ def read_toml(
                         new_val = new_val[0 : comment_found.span()[0]]
                     if " = " in new_val:
                         raise Exception(
-                            f"Should not assign in {key} condition for {section}"
+                            f"Should not assign in {key} list condition for {section}"
                         )
                     new_vals += new_val
                 val = new_vals
@@ -194,16 +194,67 @@ def read_toml(
     return sections, defaults, manifest
 
 
-def alphabetize_toml_str(manifest):
+def idiomatic_condition(condition: str) -> str:
+    """converts a manifest condtiion into an idiomatic form"""
+
+    AND: str = " && "
+    EQUAL: str = " == "
+    ops: ListStr = condition.replace("processor", "arch").split(AND)
+    new_ops: ListStr = []
+    new_op: OptStr = None
+    os: OptStr = None
+    arch: OptStr = None
+    for op in ops:
+        if EQUAL in op:
+            k, v = op.split(EQUAL)
+            if k == "os":
+                os = v.strip("'\"")
+            elif k == "arch":
+                arch = v.strip("'\"")
+    for op in ops:
+        new_op = op
+        if EQUAL in op:
+            k, v = op.split(EQUAL)
+            if k == "bits":
+                if arch is None:
+                    if v == "32":
+                        new_op = "arch == 'x86'"
+                    elif os is not None and os == "mac":
+                        new_op = "arch == 'aarch64'"  
+                    else:
+                        new_op = "arch == 'x86_64'"  
+                else:
+                    new_op = None
+        if new_op is not None:
+            new_ops.append(new_op)
+    return AND.join(new_ops)
+
+
+def add_unique_condition(
+    conds: OptConditions, condition: str, comment: str
+) -> OptConditions:
+    """only add a condition if it is unique"""
+
+    ignore: bool = False
+    for c in conds:
+        if _should_ignore_new_condition(c[0], condition):
+            ignore = True
+    if not ignore:
+        conds.append([condition, comment])
+    return conds
+
+
+def alphabetize_toml_str(manifest, fix: bool = False):
     """
     Will take a TOMLkit manifest document (i.e. from a previous invocation
     of read_toml(..., document=True) and accessing the document
     from mp.source_documents[filename]) and return it as a string
     in sorted order by section (i.e. test file name, taking bug ids into consideration).
+    If fix then fix non-idiomatic conditions
     """
 
-    from tomlkit import document, dumps, table
-    from tomlkit.items import Table
+    from tomlkit import array, document, dumps, table
+    from tomlkit.items import Comment, String, Whitespace
 
     preamble = ""
     new_manifest = document()
@@ -233,6 +284,61 @@ def alphabetize_toml_str(manifest):
         if section is None:
             section = str(k).strip("'\"")
             sections[section] = v
+        if fix:
+            mp_array: Array = array()
+            conds: OptConditions = []
+            first: OptStr = None  
+            first_comment: str = ""  
+            e_cond: OptStr = None  
+            e_comment: str = ""  
+
+            keyvals: dict = sections[section]
+            for cond, skip_if in keyvals.items():
+                if not cond.endswith("-if"):
+                    continue
+
+                
+                if len(skip_if) == 1:
+                    for e in skip_if._iter_items():
+                        if first is None:
+                            if not isinstance(e, Whitespace):
+                                first = e.as_string().strip('"')
+                        else:
+                            c: str = e.as_string()
+                            if c != ",":
+                                first_comment += c
+                    if skip_if.trivia is not None:
+                        first_comment += skip_if.trivia.comment
+                if first is not None:
+                    if first_comment:
+                        first_comment = _simplify_comment(first_comment)
+                    e_cond = idiomatic_condition(first)
+                    e_comment = first_comment
+
+                
+                for e in skip_if._iter_items():
+                    if isinstance(e, String):
+                        if e_cond is not None:
+                            conds = add_unique_condition(conds, e_cond, e_comment)
+                            e_cond = None
+                            e_comment = ""
+                        if len(e) > 0:
+                            e_cond = e.as_string().strip('"')
+                            if e_cond == first:
+                                e_cond = None  
+                            else:
+                                e_cond = idiomatic_condition(e_cond)
+                    elif isinstance(e, Comment):
+                        e_comment = _simplify_comment(e.as_string())
+                if e_cond is not None:
+                    conds = add_unique_condition(conds, e_cond, e_comment)
+
+                
+                conds.sort()
+                for c in conds:
+                    mp_array.add_line(c[0], indent="  ", comment=c[1])
+                mp_array.add_line("", indent="")  
+                sections[section][cond] = mp_array
 
     if not first_section:
         new_manifest.add(DEFAULT_SECTION, table())
@@ -241,6 +347,7 @@ def alphabetize_toml_str(manifest):
         new_manifest.add(section, sections[section])
 
     manifest_str = dumps(new_manifest)
+
     
     manifest_str = preamble + manifest_str.replace('"",]', "]")
     while manifest_str.endswith("\n\n"):
@@ -451,7 +558,7 @@ def add_skip_if(
     first: OptStr = None
     first_comment: str = ""
     skip_if: OptArray = None
-    ignore_condition: bool = False  
+    ignore_cond: bool = False  
     if "skip-if" in keyvals:
         skip_if = keyvals["skip-if"]
         if len(skip_if) == 1:
@@ -480,16 +587,16 @@ def add_skip_if(
     else:
         
         
-        conditions_array: OptConditions = []
+        conds: OptConditions = []
         if first is not None:
             if _should_ignore_new_condition(first, condition):
-                ignore_condition = True
+                ignore_cond = True
             if first_comment:
                 first_comment = _simplify_comment(first_comment)
             if _should_keep_existing_condition(first, condition):
-                conditions_array.append([first, first_comment])
+                conds.append([first, first_comment])
                 if (
-                    not ignore_condition
+                    not ignore_cond
                     and mode == Mode.CARRYOVER
                     and carry.is_carryover(first, condition)
                 ):
@@ -498,43 +605,43 @@ def add_skip_if(
             elif bug_reference is None and create_bug_lambda is None:
                 bug_reference = first_comment
         if len(skip_if) > 1:
-            e_condition = None
+            e_cond = None
             e_comment = None
             for e in skip_if._iter_items():
                 if isinstance(e, String):
-                    if e_condition is not None:
-                        if _should_keep_existing_condition(e_condition, condition):
-                            conditions_array.append([e_condition, e_comment])
+                    if e_cond is not None:
+                        if _should_keep_existing_condition(e_cond, condition):
+                            conds.append([e_cond, e_comment])
                             if (
-                                not ignore_condition
+                                not ignore_cond
                                 and mode == Mode.CARRYOVER
-                                and carry.is_carryover(e_condition, condition)
+                                and carry.is_carryover(e_cond, condition)
                             ):
                                 carryover = True
                                 bug_reference = e_comment
                         elif bug_reference is None and create_bug_lambda is None:
                             bug_reference = e_comment
                         e_comment = None
-                        e_condition = None
+                        e_cond = None
                     if len(e) > 0:
-                        e_condition = e.as_string().strip('"')
-                        if _should_ignore_new_condition(e_condition, condition):
-                            ignore_condition = True
+                        e_cond = e.as_string().strip('"')
+                        if _should_ignore_new_condition(e_cond, condition):
+                            ignore_cond = True
                 elif isinstance(e, Comment):
                     e_comment = _simplify_comment(e.as_string())
-            if e_condition is not None:
-                if _should_keep_existing_condition(e_condition, condition):
-                    conditions_array.append([e_condition, e_comment])
+            if e_cond is not None:
+                if _should_keep_existing_condition(e_cond, condition):
+                    conds.append([e_cond, e_comment])
                     if (
-                        not ignore_condition
+                        not ignore_cond
                         and mode == Mode.CARRYOVER
-                        and carry.is_carryover(e_condition, condition)
+                        and carry.is_carryover(e_cond, condition)
                     ):
                         carryover = True
                         bug_reference = e_comment
                 elif bug_reference is None and create_bug_lambda is None:
                     bug_reference = e_comment
-        if ignore_condition:
+        if ignore_cond:
             carryover = False
             bug_reference = None
         else:
@@ -542,9 +649,9 @@ def add_skip_if(
                 bug = create_bug_lambda()
                 if bug is not None:
                     bug_reference = f"Bug {bug.id}"
-            conditions_array.append([condition, bug_reference])
-        conditions_array.sort()
-        for c in conditions_array:
+            conds.append([condition, bug_reference])
+        conds.sort()
+        for c in conds:
             mp_array.add_line(c[0], indent="  ", comment=c[1])
         mp_array.add_line("", indent="")  
         skip_if = {"skip-if": mp_array}
@@ -553,7 +660,7 @@ def add_skip_if(
     return (additional_comment, carryover, bug_reference)
 
 
-def _should_remove_condition(
+def _should_remove_cond(
     condition: str,
     os_name: OptStr = None,
     os_version: OptStr = None,
@@ -592,7 +699,7 @@ def remove_skip_if(
                 for item in condition_array._iter_items():
                     if isinstance(item, String):
                         if condition is not None:
-                            if not _should_remove_condition(
+                            if not _should_remove_cond(
                                 condition, os_name, os_version, processor
                             ):
                                 conditions_to_add.append((condition, comment))
@@ -605,7 +712,7 @@ def remove_skip_if(
                     elif isinstance(item, Comment):
                         comment = _simplify_comment(item.as_string())
                 if condition is not None:
-                    if not _should_remove_condition(
+                    if not _should_remove_cond(
                         condition, os_name, os_version, processor
                     ):
                         conditions_to_add.append((condition, comment))
@@ -662,10 +769,10 @@ def replace_tbd_skip_if(
         )
     skip_if: Array = keyvals["skip-if"]
     mp_array: Array = array()
-    conditions_array: OptConditions = []
+    conds: OptConditions = []
     first: OptStr = None  
     first_comment: str = ""  
-    e_condition: OptStr = None  
+    e_cond: OptStr = None  
     e_comment: str = ""  
 
     
@@ -687,32 +794,32 @@ def replace_tbd_skip_if(
             i: int = max(first_comment.find(BUG_TBD), 0)
             first_comment = f"{' ' * i}Bug {bugid}"
             updated = True
-        e_condition = first
+        e_cond = first
         e_comment = first_comment
 
     
     for e in skip_if._iter_items():
         if isinstance(e, String):
-            if e_condition is not None:
-                conditions_array.append([e_condition, e_comment])
-                e_condition = None
+            if e_cond is not None:
+                conds.append([e_cond, e_comment])
+                e_cond = None
                 e_comment = ""
             if len(e) > 0:
-                e_condition = e.as_string().strip('"')
-                if e_condition == first:
-                    e_condition = None  
+                e_cond = e.as_string().strip('"')
+                if e_cond == first:
+                    e_cond = None  
         elif isinstance(e, Comment):
             e_comment = _simplify_comment(e.as_string())
-        if e_condition == condition and e_comment.endswith(BUG_TBD):
+        if e_cond == condition and e_comment.endswith(BUG_TBD):
             i: int = max(e_comment.find(BUG_TBD), 0)
             e_comment = f"{' ' * i}Bug {bugid}"
             updated = True
-    if e_condition is not None:
-        conditions_array.append([e_condition, e_comment])
+    if e_cond is not None:
+        conds.append([e_cond, e_comment])
 
     
-    conditions_array.sort()
-    for c in conditions_array:
+    conds.sort()
+    for c in conds:
         mp_array.add_line(c[0], indent="  ", comment=c[1])
     mp_array.add_line("", indent="")  
     skip_if = {"skip-if": mp_array}

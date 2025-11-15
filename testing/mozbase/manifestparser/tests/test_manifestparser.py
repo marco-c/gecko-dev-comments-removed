@@ -540,7 +540,7 @@ yellow = submarine
         parser = ManifestParser(use_toml=True)
         manifest = os.path.join(here, "broken-skip-if.toml")
         with self.assertRaisesRegex(
-            Exception, "Should not assign in skip-if condition for DEFAULT"
+            Exception, "Should not assign in skip-if list condition for DEFAULT"
         ):
             parser.read(manifest)
 
@@ -610,13 +610,16 @@ yellow = submarine
         condition = "apple_catalina"
         bug = "Bug 200"
         manifestparser.toml.add_skip_if(manifest, filename, condition, bug)
-        condition = "os == 'android' && os_version == '14' && debug"
+        condition = "os == 'android' && os_version == '14' && ccov"
         bug = "Bug 99999"
-        (additional_comment, carryover) = manifestparser.toml.add_skip_if(
-            manifest, filename, condition, bug, None, True
+        (additional_comment, carryover, bug_reference) = (
+            manifestparser.toml.add_skip_if(
+                manifest, filename, condition, bug, None, True
+            )
         )
         assert not additional_comment
         assert carryover
+        assert bug_reference == "Bug 100, will be carried over"
 
         filename = "bug_3.js"
         assert filename in manifest
