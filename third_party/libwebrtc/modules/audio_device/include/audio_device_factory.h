@@ -11,10 +11,9 @@
 #ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_FACTORY_H_
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_FACTORY_H_
 
-#include <memory>
-
 #include "api/audio/audio_device.h"
-#include "api/task_queue/task_queue_factory.h"
+#include "api/environment/environment.h"
+#include "api/scoped_refptr.h"
 
 namespace webrtc {
 
@@ -44,15 +43,13 @@ namespace webrtc {
 
 
 
-
 webrtc::scoped_refptr<AudioDeviceModule>
-CreateWindowsCoreAudioAudioDeviceModule(TaskQueueFactory* task_queue_factory,
+CreateWindowsCoreAudioAudioDeviceModule(const Environment& env,
                                         bool automatic_restart = true);
 
 webrtc::scoped_refptr<AudioDeviceModuleForTest>
-CreateWindowsCoreAudioAudioDeviceModuleForTest(
-    TaskQueueFactory* task_queue_factory,
-    bool automatic_restart = true);
+CreateWindowsCoreAudioAudioDeviceModuleForTest(const Environment& env,
+                                               bool automatic_restart = true);
 
 }  
 

@@ -11,13 +11,14 @@
 #ifndef MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 #define MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "api/audio/audio_device_defines.h"
+#include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
@@ -82,6 +83,9 @@ class AudioDeviceBuffer {
   
   
   
+  explicit AudioDeviceBuffer(const Environment& env,
+                             bool create_detached = false);
+  [[deprecated("bugs.webrtc.org/42223992")]]
   explicit AudioDeviceBuffer(TaskQueueFactory* task_queue_factory,
                              bool create_detached = false);
   virtual ~AudioDeviceBuffer();
