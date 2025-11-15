@@ -268,7 +268,16 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
   
   
+  void SubscribeCandidateReadyCallback(
+      absl::AnyInvocable<void(Port*, const Candidate&)> callback);
+
+  void SendCandidateReady(const Candidate& candidate);
+  
+  
+  
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
+  void SendCandidateReadyCallbackList(Port*, const Candidate&);
+
   
   const std::vector<Candidate>& Candidates() const override;
   
@@ -551,6 +560,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
       RTC_GUARDED_BY(thread_);
   CallbackList<Port*, const IceCandidateErrorEvent&>
       candidate_error_callback_list_ RTC_GUARDED_BY(thread_);
+  CallbackList<Port*, const Candidate&> candidate_ready_callback_list_
+      RTC_GUARDED_BY(thread_);
 
   
   WeakPtrFactory<Port> weak_factory_ RTC_GUARDED_BY(thread_);
