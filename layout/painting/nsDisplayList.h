@@ -5744,8 +5744,7 @@ class nsDisplayStickyPosition final : public nsDisplayOwnLayer {
       : nsDisplayOwnLayer(aBuilder, aOther),
         mContainerASR(aOther.mContainerASR),
         mClippedToDisplayPort(aOther.mClippedToDisplayPort),
-        mShouldFlatten(false),
-        mWrStickyAnimationId(0) {
+        mShouldFlatten(false) {
     MOZ_COUNT_CTOR(nsDisplayStickyPosition);
   }
 
@@ -5817,13 +5816,6 @@ class nsDisplayStickyPosition final : public nsDisplayOwnLayer {
 
   
   bool mShouldFlatten;
-
-  
-  
-  
-  
-  
-  uint64_t mWrStickyAnimationId;
 };
 
 class nsDisplayViewTransitionCapture final : public nsDisplayOwnLayer {
