@@ -11,21 +11,8 @@
 #ifndef API_VIDEO_CORRUPTION_DETECTION_FILTER_SETTINGS_H_
 #define API_VIDEO_CORRUPTION_DETECTION_FILTER_SETTINGS_H_
 
-#include <stdint.h>
-
-namespace webrtc {
+#include "api/video/corruption_detection/corruption_detection_filter_settings.h"
 
 
-
-
-struct CorruptionDetectionFilterSettings {
-  
-  double std_dev = 0.0;
-  
-  int luma_error_threshold = 0;
-  int chroma_error_threshold = 0;
-};
-
-}  
 
 #endif  
