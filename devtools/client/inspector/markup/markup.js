@@ -1174,7 +1174,6 @@ class MarkupView extends EventEmitter {
     
     
     if (!this._selectedContainer || !searchQuery) {
-      this.emitForTests("search-results-highlighting-updated");
       return;
     }
 
@@ -1245,7 +1244,6 @@ class MarkupView extends EventEmitter {
         false
       );
     }
-    this.emitForTests("search-results-highlighting-updated");
   }
 
   
