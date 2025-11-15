@@ -515,16 +515,6 @@ function ArrayFill(value, start = 0, end = undefined) {
 }
 
 
-function CreateArrayIterator(obj, kind) {
-  var iteratedObject = ToObject(obj);
-  var iterator = NewArrayIterator();
-  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, iteratedObject);
-  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);
-  UnsafeSetReservedSlot(iterator, ARRAY_ITERATOR_SLOT_ITEM_KIND, kind);
-  return iterator;
-}
-
-
 
 function ArrayIteratorNext() {
   
@@ -603,16 +593,16 @@ SetIsInlinableLargeFunction(ArrayIteratorNext);
 
 
 function $ArrayValues() {
-  return CreateArrayIterator(this, ITEM_KIND_VALUE);
+  RETURN_ARRAY_ITERATOR(this, ITEM_KIND_VALUE);
 }
 SetCanonicalName($ArrayValues, "values");
 
 function ArrayEntries() {
-  return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
+  RETURN_ARRAY_ITERATOR(this, ITEM_KIND_KEY_AND_VALUE);
 }
 
 function ArrayKeys() {
-  return CreateArrayIterator(this, ITEM_KIND_KEY);
+  RETURN_ARRAY_ITERATOR(this, ITEM_KIND_KEY);
 }
 
 

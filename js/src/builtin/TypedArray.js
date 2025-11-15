@@ -214,7 +214,7 @@ function TypedArrayEntries() {
   PossiblyWrappedTypedArrayLength(O);
 
   
-  return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
+  RETURN_ARRAY_ITERATOR(O, ITEM_KIND_KEY_AND_VALUE);
 }
 
 
@@ -456,7 +456,7 @@ function TypedArrayKeys() {
   PossiblyWrappedTypedArrayLength(O);
 
   
-  return CreateArrayIterator(O, ITEM_KIND_KEY);
+  RETURN_ARRAY_ITERATOR(O, ITEM_KIND_KEY);
 }
 
 
@@ -879,7 +879,7 @@ function $TypedArrayValues() {
   PossiblyWrappedTypedArrayLength(O);
 
   
-  return CreateArrayIterator(O, ITEM_KIND_VALUE);
+  RETURN_ARRAY_ITERATOR(O, ITEM_KIND_VALUE);
 }
 SetCanonicalName($TypedArrayValues, "values");
 
