@@ -5,12 +5,9 @@
 
 
 #include "mozilla/BoundedMPSCQueue.h"
-#include <vector>
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include <memory>
-#include <string>
 
 using namespace mozilla;
 
