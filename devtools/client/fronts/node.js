@@ -289,6 +289,22 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.nodeName;
   }
   get displayName() {
+    
+    
+    if (
+      this.isPseudoElement &&
+      !this.traits.hasPseudoElementNameInDisplayName
+    ) {
+      if (this.isMarkerPseudoElement) {
+        return "::marker";
+      }
+      if (this.isBeforePseudoElement) {
+        return "::before";
+      }
+      if (this.isAfterPseudoElement) {
+        return "::after";
+      }
+    }
     const { displayName, nodeName } = this._form;
 
     
@@ -369,11 +385,18 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.isAfterPseudoElement;
   }
   get isPseudoElement() {
-    return (
-      this.isBeforePseudoElement ||
-      this.isAfterPseudoElement ||
-      this.isMarkerPseudoElement
-    );
+    
+    
+    
+    if (!this.traits.hasPseudoElementNameInDisplayName) {
+      return (
+        this.isBeforePseudoElement ||
+        this.isAfterPseudoElement ||
+        this.isMarkerPseudoElement
+      );
+    }
+
+    return this._form.isPseudoElement;
   }
   get isAnonymous() {
     return this._form.isAnonymous;

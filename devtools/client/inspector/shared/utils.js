@@ -148,23 +148,8 @@ async function getLongString(longStringActorPromise) {
 
 
 function getSelectorFromGrip(grip) {
-  const {
-    attributes,
-    nodeName,
-    isAfterPseudoElement,
-    isBeforePseudoElement,
-    isMarkerPseudoElement,
-  } = grip.preview;
-
-  if (isAfterPseudoElement) {
-    return "::after";
-  } else if (isBeforePseudoElement) {
-    return "::before";
-  } else if (isMarkerPseudoElement) {
-    return "::marker";
-  }
-
-  let selector = nodeName;
+  const { attributes, displayName } = grip.preview;
+  let selector = displayName;
 
   if (attributes.id) {
     selector += `#${attributes.id}`;
@@ -217,11 +202,10 @@ function translateNodeFrontToGrip(nodeFront) {
     preview: {
       attributes: attributesMap,
       attributesLength: attributes.length,
-      isAfterPseudoElement: nodeFront.isAfterPseudoElement,
-      isBeforePseudoElement: nodeFront.isBeforePseudoElement,
-      isMarkerPseudoElement: nodeFront.isMarkerPseudoElement,
+      isPseudoElement: nodeFront.isPseudoElement,
       
       isConnected: true,
+      displayName: nodeFront.displayName,
       
       nodeName: nodeFront.nodeName.toLowerCase(),
       nodeType: nodeFront.nodeType,

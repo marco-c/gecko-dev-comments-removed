@@ -489,12 +489,8 @@ exports.isShadowHost = isShadowHost;
 
 function isDirectShadowHostChild(node) {
   
-  if (
-    isMarkerPseudoElement(node) ||
-    isBeforePseudoElement(node) ||
-    isAfterPseudoElement(node) ||
-    node.isNativeAnonymous
-  ) {
+  
+  if (node.isNativeAnonymous) {
     return false;
   }
 
@@ -502,39 +498,6 @@ function isDirectShadowHostChild(node) {
   return parentNode && !!parentNode.openOrClosedShadowRoot;
 }
 exports.isDirectShadowHostChild = isDirectShadowHostChild;
-
-
-
-
-
-
-
-function isMarkerPseudoElement(node) {
-  return node.nodeName === "_moz_generated_content_marker";
-}
-exports.isMarkerPseudoElement = isMarkerPseudoElement;
-
-
-
-
-
-
-
-function isBeforePseudoElement(node) {
-  return node.nodeName === "_moz_generated_content_before";
-}
-exports.isBeforePseudoElement = isBeforePseudoElement;
-
-
-
-
-
-
-
-function isAfterPseudoElement(node) {
-  return node.nodeName === "_moz_generated_content_after";
-}
-exports.isAfterPseudoElement = isAfterPseudoElement;
 
 
 
