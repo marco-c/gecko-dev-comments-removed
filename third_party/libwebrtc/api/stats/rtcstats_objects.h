@@ -365,7 +365,10 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
   std::optional<uint32_t> fir_count;
   std::optional<uint32_t> pli_count;
   std::optional<uint32_t> nack_count;
+  
   std::optional<uint64_t> qp_sum;
+  std::optional<std::map<std::string, double>> psnr_sum;  
+  std::optional<uint32_t> psnr_measurements;
   std::optional<bool> active;
   
   std::optional<bool> power_efficient_encoder;
