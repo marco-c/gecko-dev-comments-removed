@@ -16,7 +16,7 @@ const SKELETONUI = Services.prefs.getBoolPref(
 );
 
 const GPUPROCESS =
-  ((WIN || LINUX) &&
+  ((WIN || LINUX || MAC) &&
     Services.prefs.getBoolPref("layers.gpu-process.enabled")) ||
   Services.prefs.getBoolPref("layers.gpu-process.force-enabled");
 
