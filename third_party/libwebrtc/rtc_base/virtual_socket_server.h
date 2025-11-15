@@ -11,21 +11,31 @@
 #ifndef RTC_BASE_VIRTUAL_SOCKET_SERVER_H_
 #define RTC_BASE_VIRTUAL_SOCKET_SERVER_H_
 
+#include <cstddef>
+#include <cstdint>
 #include <deque>
+#include <list>
 #include <map>
+#include <memory>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "api/make_ref_counted.h"
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
-#include "api/task_queue/task_queue_base.h"
-#include "rtc_base/checks.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/sigslot_trampoline.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/socket_address_pair.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -371,7 +381,13 @@ class VirtualSocketServer : public SocketServer {
   uint32_t SendDelay(uint32_t size) RTC_LOCKS_EXCLUDED(mutex_);
 
   
+  
   sigslot::signal0<> SignalReadyToSend;
+  
+  void NotifyReadyToSend() { SignalReadyToSend(); }
+  void SubscribeReadyToSend(absl::AnyInvocable<void()> callback) {
+    ready_to_send_trampoline_.Subscribe(std::move(callback));
+  }
 
  protected:
   
@@ -476,16 +492,11 @@ class VirtualSocketServer : public SocketServer {
   size_t max_udp_payload_ RTC_GUARDED_BY(mutex_) = 65507;
 
   bool sending_blocked_ RTC_GUARDED_BY(mutex_) = false;
+  SignalTrampoline<VirtualSocketServer, &VirtualSocketServer::SignalReadyToSend>
+      ready_to_send_trampoline_;
 };
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::VirtualSocketServer;
-}
-#endif  
 
 #endif  
