@@ -189,7 +189,7 @@ void BaseCapturerPipeWire::CaptureFrame() {
 }
 
 bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
-  RTC_DCHECK(sources->size() == 0);
+  RTC_DCHECK(sources->empty());
   
   
   

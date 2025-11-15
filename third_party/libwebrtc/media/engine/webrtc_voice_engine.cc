@@ -1791,7 +1791,7 @@ bool WebRtcVoiceSendChannel::GetStats(VoiceMediaSendInfo* info) {
   
   
   
-  RTC_DCHECK(info->senders.size() == 0U || send_streams_.size() == 0);
+  RTC_DCHECK(info->senders.empty() || send_streams_.empty());
   for (const auto& stream : send_streams_) {
     AudioSendStream::Stats stats = stream.second->GetStats(false);
     VoiceSenderInfo sinfo;

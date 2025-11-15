@@ -55,7 +55,7 @@
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/win32.h"
-#elif !defined(__native_client__)
+#else
 #include "rtc_base/ifaddrs_converter.h"
 #endif
 
@@ -158,7 +158,6 @@ uint16_t ComputeNetworkCostByType(int type,
   }
 }
 
-#if !defined(__native_client__)
 bool IsIgnoredIPv6(bool allow_mac_based_ipv6, const InterfaceAddress& ip) {
   if (ip.family() != AF_INET6) {
     return false;
@@ -186,7 +185,6 @@ bool IsIgnoredIPv6(bool allow_mac_based_ipv6, const InterfaceAddress& ip) {
 
   return false;
 }
-#endif  
 
 
 
@@ -535,7 +533,7 @@ Network* NetworkManagerBase::GetNetworkFromAddress(const IPAddress& ip) const {
 }
 
 bool NetworkManagerBase::IsVpnMacAddress(ArrayView<const uint8_t> address) {
-  if (address.data() == nullptr && address.size() == 0) {
+  if (address.data() == nullptr && address.empty()) {
     return false;
   }
   for (const auto& vpn : kVpns) {
@@ -573,17 +571,7 @@ void BasicNetworkManager::OnNetworksChanged() {
   UpdateNetworksOnce();
 }
 
-#if defined(__native_client__)
-
-bool BasicNetworkManager::CreateNetworks(
-    bool include_ignored,
-    std::vector<std::unique_ptr<Network>>* networks) const {
-  RTC_DCHECK_NOTREACHED();
-  RTC_LOG(LS_WARNING) << "BasicNetworkManager doesn't work on NaCl yet";
-  return false;
-}
-
-#elif defined(WEBRTC_POSIX)
+#if defined(WEBRTC_POSIX)
 NetworkMonitorInterface::InterfaceInfo BasicNetworkManager::GetInterfaceInfo(
     struct ifaddrs* cursor) const {
   if (cursor->ifa_flags & IFF_LOOPBACK) {
@@ -1154,7 +1142,7 @@ bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
 
 
 IPAddress Network::GetBestIP() const {
-  if (ips_.size() == 0) {
+  if (ips_.empty()) {
     return IPAddress();
   }
 

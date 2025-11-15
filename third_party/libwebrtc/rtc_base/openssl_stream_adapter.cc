@@ -608,7 +608,7 @@ StreamResult OpenSSLStreamAdapter::Write(ArrayView<const uint8_t> data,
   }
 
   
-  if (data.size() == 0) {
+  if (data.empty()) {
     written = 0;
     return SR_SUCCESS;
   }
@@ -665,7 +665,7 @@ StreamResult OpenSSLStreamAdapter::Read(ArrayView<uint8_t> data,
   }
 
   
-  if (data.size() == 0) {
+  if (data.empty()) {
     read = 0;
     return SR_SUCCESS;
   }
@@ -852,10 +852,15 @@ void OpenSSLStreamAdapter::SetTimeout(int delay_ms) {
           
           
           if (state_ == SSL_CONNECTING) {
+            
             ContinueSSL();
+          } else if (state_ == SSL_CONNECTED) {
+            MaybeSetTimeout();
+          } else {
+            RTC_DCHECK_NOTREACHED() << "state_: " << state_;
           }
         } else {
-          RTC_DCHECK_NOTREACHED();
+          RTC_DCHECK_NOTREACHED() << "flag->alive() == false";
         }
         
         return TimeDelta::PlusInfinity();
@@ -970,6 +975,12 @@ int OpenSSLStreamAdapter::ContinueSSL() {
     }
   }
 
+  MaybeSetTimeout();
+
+  return 0;
+}
+
+void OpenSSLStreamAdapter::MaybeSetTimeout() {
   if (ssl_ != nullptr) {
     struct timeval timeout;
     if (DTLSv1_get_timeout(ssl_, &timeout)) {
@@ -977,8 +988,6 @@ int OpenSSLStreamAdapter::ContinueSSL() {
       SetTimeout(delay);
     }
   }
-
-  return 0;
 }
 
 void OpenSSLStreamAdapter::Error(absl::string_view context,

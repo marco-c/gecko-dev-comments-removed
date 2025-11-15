@@ -10,9 +10,8 @@
 
 #include "media/base/rtp_utils.h"
 
-#include <string.h>
-
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 
@@ -74,8 +73,7 @@ void UpdateAbsSendTimeExtensionValue(uint8_t* extension_data,
 
 
 
-void UpdateRtpAuthTag(uint8_t* rtp,
-                      size_t length,
+void UpdateRtpAuthTag(ArrayView<uint8_t> rtp,
                       const PacketTimeUpdateParams& packet_time_params) {
   
   if (packet_time_params.srtp_auth_key.empty()) {
@@ -86,12 +84,12 @@ void UpdateRtpAuthTag(uint8_t* rtp,
 
   
   const size_t kRocLength = 4;
-  if (tag_length < kRocLength || tag_length > length) {
+  if (tag_length < kRocLength || tag_length > rtp.size()) {
     RTC_DCHECK_NOTREACHED();
     return;
   }
 
-  uint8_t* auth_tag = rtp + (length - tag_length);
+  uint8_t* auth_tag = rtp.data() + (rtp.size() - tag_length);
 
   
   RTC_DCHECK_EQ(0, memcmp(auth_tag, kFakeAuthTag, tag_length));
@@ -99,12 +97,12 @@ void UpdateRtpAuthTag(uint8_t* rtp,
   
   memcpy(auth_tag, &packet_time_params.srtp_packet_index, kRocLength);
   
-  size_t auth_required_length = length - tag_length + kRocLength;
+  size_t auth_required_length = rtp.size() - tag_length + kRocLength;
 
   uint8_t output[64];
   size_t result =
       ComputeHmac(DIGEST_SHA_1, &packet_time_params.srtp_auth_key[0],
-                  packet_time_params.srtp_auth_key.size(), rtp,
+                  packet_time_params.srtp_auth_key.size(), rtp.data(),
                   auth_required_length, output, sizeof(output));
 
   if (result < tag_length) {
@@ -185,9 +183,8 @@ RtpPacketType InferRtpPacketType(ArrayView<const uint8_t> packet) {
   return RtpPacketType::kUnknown;
 }
 
-bool ValidateRtpHeader(const uint8_t* rtp,
-                       size_t length,
-                       size_t* header_length) {
+bool ValidateRtpHeader(ArrayView<const uint8_t> rtp, size_t* header_length) {
+  size_t length = rtp.size();
   if (header_length) {
     *header_length = 0;
   }
@@ -211,15 +208,14 @@ bool ValidateRtpHeader(const uint8_t* rtp,
     return true;
   }
 
-  rtp += header_length_without_extension;
-
   if (header_length_without_extension + kRtpExtensionHeaderLen > length) {
     return false;
   }
 
   
   
-  uint16_t extension_length_in_32bits = GetBE16(rtp + 2);
+  uint16_t extension_length_in_32bits =
+      GetBE16(&rtp[header_length_without_extension + 2]);
   size_t extension_length = extension_length_in_32bits * 4;
 
   size_t rtp_header_length = extension_length +
@@ -239,8 +235,7 @@ bool ValidateRtpHeader(const uint8_t* rtp,
 
 
 
-bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
-                                   size_t ,
+bool UpdateRtpAbsSendTimeExtension(ArrayView<uint8_t> packet,
                                    int extension_id,
                                    uint64_t time_us) {
   
@@ -257,13 +252,14 @@ bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
   
 
   
-  if (!(rtp[0] & 0x10)) {
+  if (!(packet[0] & 0x10)) {
     return true;
   }
 
-  size_t cc_count = rtp[0] & 0x0F;
+  size_t cc_count = packet[0] & 0x0F;
   size_t header_length_without_extension = kMinRtpPacketLen + 4 * cc_count;
 
+  uint8_t* rtp = packet.data();
   rtp += header_length_without_extension;
 
   
@@ -354,12 +350,10 @@ bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
   return found;
 }
 
-bool ApplyPacketOptions(uint8_t* data,
-                        size_t length,
+bool ApplyPacketOptions(ArrayView<uint8_t> data,
                         const PacketTimeUpdateParams& packet_time_params,
                         uint64_t time_us) {
-  RTC_DCHECK(data);
-  RTC_DCHECK(length);
+  RTC_DCHECK(!data.empty());
 
   
   
@@ -373,30 +367,28 @@ bool ApplyPacketOptions(uint8_t* data,
   
   size_t rtp_start_pos;
   size_t rtp_length;
-  if (!UnwrapTurnPacket(data, length, &rtp_start_pos, &rtp_length)) {
+  if (!UnwrapTurnPacket(data.data(), data.size(), &rtp_start_pos,
+                        &rtp_length)) {
     RTC_DCHECK_NOTREACHED();
     return false;
   }
 
   
-  auto packet = MakeArrayView(data + rtp_start_pos, rtp_length);
-  if (!IsRtpPacket(packet) ||
-      !ValidateRtpHeader(data + rtp_start_pos, rtp_length, nullptr)) {
+  auto packet = data.subview(rtp_start_pos, rtp_length);
+  if (!IsRtpPacket(packet) || !ValidateRtpHeader(packet, nullptr)) {
     RTC_DCHECK_NOTREACHED();
     return false;
   }
 
-  uint8_t* start = data + rtp_start_pos;
   
   
   
   if (packet_time_params.rtp_sendtime_extension_id != -1) {
-    UpdateRtpAbsSendTimeExtension(start, rtp_length,
-                                  packet_time_params.rtp_sendtime_extension_id,
-                                  time_us);
+    UpdateRtpAbsSendTimeExtension(
+        packet, packet_time_params.rtp_sendtime_extension_id, time_us);
   }
 
-  UpdateRtpAuthTag(start, rtp_length, packet_time_params);
+  UpdateRtpAuthTag(packet, packet_time_params);
   return true;
 }
 

@@ -1364,7 +1364,7 @@ std::optional<bool> PeerConnection::can_trickle_ice_candidates() {
     return std::nullopt;
   }
   
-  if (description->description()->transport_infos().size() < 1) {
+  if (description->description()->transport_infos().empty()) {
     return std::nullopt;
   }
   return description->description()->transport_infos()[0].description.HasOption(

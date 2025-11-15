@@ -3691,7 +3691,7 @@ bool SdpOfferAnswerHandler::CheckIfNegotiationIsNeeded() {
     
     
     if (RtpTransceiverDirectionHasSend(transceiver->direction())) {
-      if (current_local_media_description->streams().size() == 0)
+      if (current_local_media_description->streams().empty())
         return true;
 
       std::vector<std::string> msection_msids;

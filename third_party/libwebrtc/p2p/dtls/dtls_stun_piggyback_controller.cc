@@ -23,7 +23,6 @@
 #include "api/sequence_checker.h"
 #include "api/transport/stun.h"
 #include "p2p/dtls/dtls_utils.h"
-#include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/str_join.h"
@@ -128,19 +127,20 @@ DtlsStunPiggybackController::GetDataToPiggyback(
                            packet.size());
 }
 
-std::optional<absl::string_view> DtlsStunPiggybackController::GetAckToPiggyback(
+std::optional<const std::vector<uint32_t>>
+DtlsStunPiggybackController::GetAckToPiggyback(
     StunMessageType stun_message_type) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   if (state_ == State::OFF || state_ == State::COMPLETE) {
     return std::nullopt;
   }
-  return handshake_ack_writer_.DataAsStringView();
+  return handshake_messages_received_;
 }
 
 void DtlsStunPiggybackController::ReportDataPiggybacked(
-    const StunByteStringAttribute* data,
-    const StunByteStringAttribute* ack) {
+    std::optional<ArrayView<uint8_t>> data,
+    std::optional<std::vector<uint32_t>> acks) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   
@@ -152,7 +152,7 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   
   
   
-  if (state_ == State::TENTATIVE && data == nullptr && ack == nullptr) {
+  if (state_ == State::TENTATIVE && !data.has_value() && !acks.has_value()) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking not supported by peer.";
     state_ = State::OFF;
     return;
@@ -160,11 +160,10 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
 
   
   
-  if (state_ == State::PENDING && data == nullptr && ack == nullptr) {
+  if (state_ == State::PENDING && !data.has_value() && !acks.has_value()) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
     pending_packets_.clear();
-    handshake_ack_writer_.Clear();
     handshake_messages_received_.clear();
     return;
   }
@@ -174,16 +173,12 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
     state_ = State::CONFIRMED;
   }
 
-  if (ack != nullptr) {
+  if (acks.has_value()) {
     if (!pending_packets_.empty()) {
       
       absl::flat_hash_set<uint32_t> acked_packets;
-      {
-        ByteBufferReader ack_reader(ack->array_view());
-        uint32_t packet_hash;
-        while (ack_reader.ReadUInt32(&packet_hash)) {
-          acked_packets.insert(packet_hash);
-        }
+      for (const auto& ack : *acks) {
+        acked_packets.insert(ack);
       }
       RTC_LOG(LS_VERBOSE) << "DTLS-STUN piggybacking ACK: "
                           << StrJoin(acked_packets, ",");
@@ -197,21 +192,20 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
   
   
   
-  if (data == nullptr && ack != nullptr && state_ == State::PENDING) {
+  if (!data.has_value() && acks.has_value() && state_ == State::PENDING) {
     RTC_LOG(LS_INFO) << "DTLS-STUN piggybacking complete.";
     state_ = State::COMPLETE;
     pending_packets_.clear();
-    handshake_ack_writer_.Clear();
     handshake_messages_received_.clear();
     return;
   }
 
-  if (!data || data->length() == 0) {
+  if (!data.has_value() || data->empty()) {
     return;
   }
 
   
-  if (!IsDtlsPacket(data->array_view())) {
+  if (!IsDtlsPacket(*data)) {
     RTC_LOG(LS_WARNING) << "Dropping non-DTLS data.";
     return;
   }
@@ -219,28 +213,20 @@ void DtlsStunPiggybackController::ReportDataPiggybacked(
 
   
   
-  uint32_t hash = ComputeDtlsPacketHash(data->array_view());
+  uint32_t hash = ComputeDtlsPacketHash(*data);
 
   
   if (std::find(handshake_messages_received_.begin(),
                 handshake_messages_received_.end(),
                 hash) == handshake_messages_received_.end()) {
-    handshake_messages_received_.push_back(hash);
-    handshake_ack_writer_.WriteUInt32(hash);
-
-    if (handshake_ack_writer_.Length() > kMaxAckSize) {
-      
+    
+    while (handshake_messages_received_.size() >= kMaxAckSize) {
       handshake_messages_received_.erase(handshake_messages_received_.begin());
-      handshake_ack_writer_.Clear();
-      for (const auto& val : handshake_messages_received_) {
-        handshake_ack_writer_.WriteUInt32(val);
-      }
     }
-
-    RTC_DCHECK(handshake_ack_writer_.Length() <= kMaxAckSize);
+    handshake_messages_received_.push_back(hash);
   }
 
-  dtls_data_callback_(data->array_view());
+  dtls_data_callback_(*data);
 }
 
 }  

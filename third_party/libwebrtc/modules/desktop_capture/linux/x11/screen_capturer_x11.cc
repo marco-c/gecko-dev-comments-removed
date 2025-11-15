@@ -292,7 +292,7 @@ void ScreenCapturerX11::CaptureFrame() {
 }
 
 bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
-  RTC_DCHECK(sources->size() == 0);
+  RTC_DCHECK(sources->empty());
   if (!use_randr_) {
     sources->push_back({});
     return true;
@@ -512,7 +512,7 @@ std::unique_ptr<DesktopCapturer> ScreenCapturerX11::CreateRawScreenCapturer(
     return nullptr;
 
   std::unique_ptr<ScreenCapturerX11> capturer(new ScreenCapturerX11());
-  if (!capturer.get()->Init(options)) {
+  if (!capturer->Init(options)) {
     return nullptr;
   }
 

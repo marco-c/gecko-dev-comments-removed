@@ -10,10 +10,9 @@
 
 #include "pc/webrtc_sdp.h"
 
-#include <ctype.h>
-#include <limits.h>
-
 #include <algorithm>
+#include <cctype>
+#include <climits>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -1769,7 +1768,7 @@ bool ParseSessionDescription(absl::string_view message,
         return false;
       }
     } else if (HasAttribute(*aline, kAttributeFingerprint)) {
-      if (session_td->identity_fingerprint.get()) {
+      if (session_td->identity_fingerprint) {
         return ParseFailed(
             *aline,
             "Can't have multiple fingerprint attributes at the same level.",
@@ -2248,7 +2247,7 @@ bool ParseSsrcAttribute(absl::string_view line,
     
     std::vector<absl::string_view> fields =
         split(value, kSdpDelimiterSpaceChar);
-    if (fields.size() < 1 || fields.size() > 2) {
+    if (fields.empty() || fields.size() > 2) {
       return ParseFailed(
           line, "Expected format \"msid:<identifier>[ <appdata>]\".", error);
     }
@@ -3127,7 +3126,7 @@ bool ParseMediaDescription(
       unsupported_desc->set_protocol(protocol);
       content = std::move(unsupported_desc);
     }
-    if (!content.get()) {
+    if (!content) {
       
       return false;
     }
