@@ -18,7 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "api/audio_options.h"
 #include "api/environment/environment.h"
@@ -55,7 +54,6 @@
 #include "pc/media_stream_proxy.h"
 #include "pc/media_stream_track_proxy.h"
 #include "pc/peer_connection.h"
-#include "pc/peer_connection_factory_proxy.h"
 #include "pc/peer_connection_proxy.h"
 #include "pc/rtp_parameters_conversion.h"
 #include "pc/video_track.h"
@@ -86,28 +84,6 @@ Environment AssembleEnvironment(PeerConnectionFactoryDependencies& deps) {
 }
 
 }  
-
-scoped_refptr<PeerConnectionFactoryInterface>
-CreateModularPeerConnectionFactory(
-    PeerConnectionFactoryDependencies dependencies) {
-  
-  if (dependencies.signaling_thread &&
-      !dependencies.signaling_thread->IsCurrent()) {
-    return dependencies.signaling_thread->BlockingCall([&dependencies] {
-      return CreateModularPeerConnectionFactory(std::move(dependencies));
-    });
-  }
-
-  auto pc_factory = PeerConnectionFactory::Create(std::move(dependencies));
-  if (!pc_factory) {
-    return nullptr;
-  }
-  
-  
-  RTC_DCHECK_RUN_ON(pc_factory->signaling_thread());
-  return PeerConnectionFactoryProxy::Create(
-      pc_factory->signaling_thread(), pc_factory->worker_thread(), pc_factory);
-}
 
 
 scoped_refptr<PeerConnectionFactory> PeerConnectionFactory::Create(
@@ -400,7 +376,8 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
     RTC_LOG(LS_INFO) << "Using pc injected network controller factory";
     call_config.per_call_network_controller_factory =
         std::move(per_call_network_controller_factory);
-  } else if (IsTrialEnabled("WebRTC-Bwe-InjectedCongestionController")) {
+  } else if (field_trials().IsEnabled(
+                 "WebRTC-Bwe-InjectedCongestionController")) {
     RTC_LOG(LS_INFO) << "Using pcf injected network controller factory";
     call_config.network_controller_factory =
         injected_network_controller_factory_.get();
@@ -414,10 +391,6 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
   call_config.encode_metronome = encode_metronome_.get();
   call_config.pacer_burst_interval = configuration.pacer_burst_interval;
   return context_->call_factory()->CreateCall(std::move(call_config));
-}
-
-bool PeerConnectionFactory::IsTrialEnabled(absl::string_view key) const {
-  return absl::StartsWith(field_trials().Lookup(key), "Enabled");
 }
 
 }  
