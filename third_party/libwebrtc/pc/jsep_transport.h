@@ -115,14 +115,12 @@ class JsepTransport {
   }
 
   RTCError SetLocalJsepTransportDescription(
-      const JsepTransportDescription& jsep_description,
-      SdpType type);
+      const JsepTransportDescription& jsep_description, SdpType type);
 
   
   
   RTCError SetRemoteJsepTransportDescription(
-      const JsepTransportDescription& jsep_description,
-      SdpType type);
+      const JsepTransportDescription& jsep_description, SdpType type);
   RTCError AddRemoteCandidates(const Candidates& candidates);
 
   
@@ -204,7 +202,9 @@ class JsepTransport {
     return rtp_dtls_transport_;
   }
 
-  scoped_refptr<SctpTransport> SctpTransport() const { return sctp_transport_; }
+  scoped_refptr<::webrtc::SctpTransport> SctpTransport() const {
+    return sctp_transport_;
+  }
 
   
   
@@ -328,14 +328,5 @@ class JsepTransport {
 };
 
 }  
-
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::JsepTransport;
-using ::webrtc::JsepTransportDescription;
-}  
-#endif  
 
 #endif  

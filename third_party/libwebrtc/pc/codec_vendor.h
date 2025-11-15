@@ -119,7 +119,7 @@ class CodecVendor {
 class CodecLookupHelper {
  public:
   virtual ~CodecLookupHelper() = default;
-  virtual PayloadTypeSuggester* PayloadTypeSuggester() = 0;
+  virtual ::webrtc::PayloadTypeSuggester* PayloadTypeSuggester() = 0;
   
   
   
@@ -127,14 +127,5 @@ class CodecLookupHelper {
 };
 
 }  
-
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CodecLookupHelper;
-using ::webrtc::CodecVendor;
-}  
-#endif  
 
 #endif  
