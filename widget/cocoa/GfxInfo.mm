@@ -14,8 +14,6 @@
 #include "mozilla/Preferences.h"
 #include "js/PropertyAndElement.h"  
 
-#include <algorithm>
-
 #import <Foundation/Foundation.h>
 #import <IOKit/IOKitLib.h>
 #import <Cocoa/Cocoa.h>
