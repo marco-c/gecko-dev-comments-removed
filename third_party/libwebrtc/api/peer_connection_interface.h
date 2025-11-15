@@ -664,10 +664,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
 
     
     
-    CryptoOptions& GetWritableCryptoOptions() { return crypto_options; }
-
-    
-    
     bool offer_extmap_allow_mixed = true;
 
     
