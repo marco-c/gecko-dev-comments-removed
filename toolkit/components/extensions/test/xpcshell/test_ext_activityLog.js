@@ -37,15 +37,14 @@ add_task(async function test_api_restricted() {
 });
 
 
+
 add_task(
   {
     
     pref_set: [["extensions.experiments.enabled", false]],
   },
   async function test_api_restricted_temporary_without_privilege() {
-    let extension = ExtensionTestUtils.loadExtension({
-      temporarilyInstalled: true,
-      isPrivileged: false,
+    let xpiFile = AddonTestUtils.createTempWebExtensionFile({
       manifest: {
         browser_specific_settings: {
           gecko: { id: "activityLog-permission@tests.mozilla.org" },
@@ -55,10 +54,13 @@ add_task(
     });
     ExtensionTestUtils.failOnSchemaWarnings(false);
     let { messages } = await promiseConsoleOutput(async () => {
+      const { AddonManager } = ChromeUtils.importESModule(
+        "resource://gre/modules/AddonManager.sys.mjs"
+      );
       await Assert.rejects(
-        extension.startup(),
-        /Using the privileged permission/,
-        "Startup failed with privileged permission"
+        AddonManager.installTemporaryAddon(xpiFile),
+        /Extension is invalid/,
+        "Install failed with privileged permission"
       );
     });
     ExtensionTestUtils.failOnSchemaWarnings(true);
@@ -74,5 +76,6 @@ add_task(
       },
       true
     );
+    xpiFile.remove(true);
   }
 );
