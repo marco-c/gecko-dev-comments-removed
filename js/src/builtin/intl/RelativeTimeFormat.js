@@ -245,7 +245,7 @@ function Intl_RelativeTimeFormat_format(value, unit) {
   }
 
   
-  var t = ToNumber(value);
+  var t = TO_NUMBER(value);
 
   
   var u = ToString(unit);
@@ -282,7 +282,7 @@ function Intl_RelativeTimeFormat_formatToParts(value, unit) {
   }
 
   
-  var t = ToNumber(value);
+  var t = TO_NUMBER(value);
 
   
   var u = ToString(unit);

@@ -1836,7 +1836,7 @@ function CreateNumericRangeIterator(start, end, optionOrStep, isNumberRange) {
     step = optionOrStep.step;
 
     
-    inclusiveEnd = ToBoolean(optionOrStep.inclusiveEnd);
+    inclusiveEnd = TO_BOOLEAN(optionOrStep.inclusiveEnd);
   }
   
   else if (isNumberRange && typeof optionOrStep === 'number') {

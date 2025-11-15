@@ -26,6 +26,12 @@
 #define NEW_RECORD() std_Object_create(null)
 
 
+#define TO_BOOLEAN(v) !!v
+
+
+#define TO_NUMBER(v) +v
+
+
 #define MAX_ARGS_LENGTH (500 * 1000)
 
 

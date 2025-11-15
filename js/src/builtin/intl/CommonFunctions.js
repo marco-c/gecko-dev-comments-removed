@@ -654,7 +654,7 @@ function GetOption(options, property, type, values, fallback) {
   if (value !== undefined) {
     
     if (type === "boolean") {
-      value = ToBoolean(value);
+      value = TO_BOOLEAN(value);
     } else if (type === "string") {
       value = ToString(value);
     } else {
@@ -752,7 +752,7 @@ function DefaultNumberOption(value, minimum, maximum, fallback) {
   }
 
   
-  value = ToNumber(value);
+  value = TO_NUMBER(value);
 
   
   if (Number_isNaN(value) || value < minimum || value > maximum) {

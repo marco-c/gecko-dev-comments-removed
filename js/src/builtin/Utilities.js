@@ -31,22 +31,6 @@
 
 
 
-function ToBoolean(v) {
-  return !!v;
-}
-
-
-function ToNumber(v) {
-  return +v;
-}
-
-
-
-function SameValueZero(x, y) {
-  return x === y || (x !== x && y !== y);
-}
-
-
 function GetMethod(V, P) {
   
   assert(IsPropertyKey(P), "Invalid property key");
