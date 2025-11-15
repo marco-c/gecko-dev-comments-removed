@@ -34,11 +34,6 @@ static double sTicksPerMsd;
 
 static constexpr double kMsPerSecd = 1000.0;
 
-
-
-
-static constexpr LONGLONG kResolution = 1;
-
 namespace mozilla {
 
 
@@ -49,6 +44,10 @@ static inline ULONGLONG PerformanceCounter() {
 }
 
 static void InitConstants() {
+  
+  
+  
+  
   
   LARGE_INTEGER freq;
   bool hasQPC = ::QueryPerformanceFrequency(&freq);
@@ -68,8 +67,6 @@ MFBT_API double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
 MFBT_API double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(
     int64_t aTicks) {
   
-  
-  static_assert(kResolution == 1);
   return ToSeconds(aTicks);
 }
 
@@ -86,10 +83,6 @@ BaseTimeDurationPlatformUtils::TicksFromMilliseconds(double aMilliseconds) {
   }
 
   return (int64_t)result;
-}
-
-MFBT_API int64_t BaseTimeDurationPlatformUtils::ResolutionInTicks() {
-  return static_cast<int64_t>(kResolution);
 }
 
 

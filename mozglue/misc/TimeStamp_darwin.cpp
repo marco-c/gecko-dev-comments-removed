@@ -26,9 +26,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Uptime.h"
 
-
-static constexpr uint64_t kResolution = 1;
-
 static const uint64_t kUsPerSec = 1000000;
 static const double kNsPerMsd = 1000000.0;
 static const double kNsPerSecd = 1000000000.0;
@@ -57,8 +54,6 @@ double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
 double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
   
-  
-  static_assert(kResolution == 1);
   return ToSeconds(aTicks);
 }
 
@@ -75,11 +70,6 @@ int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
   }
 
   return result;
-}
-
-int64_t BaseTimeDurationPlatformUtils::ResolutionInTicks() {
-  MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
-  return static_cast<int64_t>(kResolution);
 }
 
 void TimeStamp::Startup() {
