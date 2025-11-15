@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "absl/base/macros.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -24,12 +23,6 @@ enum class MediaType {
   DATA,
   UNSUPPORTED,
   ANY,
-  
-  
-  MEDIA_TYPE_AUDIO [[deprecated("Use AUDIO")]] = AUDIO,
-  MEDIA_TYPE_VIDEO [[deprecated("Use VIDEO")]] = VIDEO,
-  MEDIA_TYPE_DATA [[deprecated("Use DATA")]] = DATA,
-  MEDIA_TYPE_UNSUPPORTED [[deprecated("Use UNSUPPORTED")]] = UNSUPPORTED,
 };
 
 RTC_EXPORT std::string MediaTypeToString(MediaType type);
@@ -44,29 +37,5 @@ extern const char kMediaTypeVideo[];
 extern const char kMediaTypeData[];
 
 }  
-
-
-
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-
-using MediaType ABSL_DEPRECATE_AND_INLINE() = webrtc::MediaType;
-using webrtc::kMediaTypeAudio;
-using webrtc::kMediaTypeData;
-using webrtc::kMediaTypeVideo;
-using webrtc::MediaTypeToString;
-
-
-
-[[deprecated]] constexpr MediaType MEDIA_TYPE_AUDIO = webrtc::MediaType::AUDIO;
-[[deprecated]] constexpr MediaType MEDIA_TYPE_VIDEO = webrtc::MediaType::VIDEO;
-[[deprecated]] constexpr MediaType MEDIA_TYPE_DATA = webrtc::MediaType::DATA;
-[[deprecated]] constexpr MediaType MEDIA_TYPE_UNSUPPORTED =
-    webrtc::MediaType::UNSUPPORTED;
-
-}  
-#endif  
 
 #endif  
