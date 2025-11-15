@@ -172,6 +172,17 @@ inline absl::AnyInvocable<void() &&> SafeTask(
   };
 }
 
+
+inline absl::AnyInvocable<void()> SafeInvocable(
+    scoped_refptr<PendingTaskSafetyFlag> flag,
+    absl::AnyInvocable<void()> task) {
+  return [flag = std::move(flag), task = std::move(task)]() mutable {
+    if (flag->alive()) {
+      task();
+    }
+  };
+}
+
 }  
 
 #endif  

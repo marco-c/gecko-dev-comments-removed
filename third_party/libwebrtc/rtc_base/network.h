@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "absl/base/nullability.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/environment/environment.h"
@@ -27,6 +28,7 @@
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
+#include "rtc_base/callback_list.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/mdns_responder_interface.h"
@@ -124,6 +126,8 @@ class NetworkMask {
 class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
                                   public MdnsResponderProvider {
  public:
+  NetworkManager()
+      : networks_changed_trampoline_(this), error_trampoline_(this) {}
   
   enum EnumerationPermission {
     ENUMERATION_ALLOWED,  
@@ -188,6 +192,33 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
   MdnsResponderInterface* GetMdnsResponder() const override;
 
   virtual void set_vpn_list(const std::vector<NetworkMask>& ) {}
+  void SubscribeNetworksChanged(absl::AnyInvocable<void()> callback) {
+    networks_changed_trampoline_.Subscribe(std::move(callback));
+  }
+  void NotifyNetworksChanged() { SignalNetworksChanged(); }
+  void SubscribeError(absl::AnyInvocable<void()> callback) {
+    error_trampoline_.Subscribe(std::move(callback));
+  }
+  void NotifyError() { SignalError(); }
+
+ private:
+  template <auto member_signal>
+  class SignalTrampoline : public sigslot::has_slots<> {
+   public:
+    explicit SignalTrampoline(NetworkManager* that) {
+      (that->*member_signal).connect(this, &SignalTrampoline::Notify);
+    }
+    void Notify() { callbacks_.Send(); }
+    void Subscribe(absl::AnyInvocable<void()> callback) {
+      callbacks_.AddReceiver(std::move(callback));
+    }
+
+   private:
+    CallbackList<> callbacks_;
+  };
+  SignalTrampoline<&NetworkManager::SignalNetworksChanged>
+      networks_changed_trampoline_;
+  SignalTrampoline<&NetworkManager::SignalError> error_trampoline_;
 };
 
 
@@ -578,23 +609,5 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::BasicNetworkManager;
-using ::webrtc::DefaultLocalAddressProvider;
-using ::webrtc::GetAdapterTypeFromName;
-using ::webrtc::kDefaultNetworkIgnoreMask;
-using ::webrtc::kPublicIPv4Host;
-using ::webrtc::kPublicIPv6Host;
-using ::webrtc::MakeNetworkKey;
-using ::webrtc::MdnsResponderProvider;
-using ::webrtc::Network;
-using ::webrtc::NetworkManager;
-using ::webrtc::NetworkManagerBase;
-using ::webrtc::NetworkMask;
-}  
-#endif  
 
 #endif  
