@@ -25,10 +25,6 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
   const uint8_t *data() const override {
     return static_cast<const uint8_t *>(data_.bytes);
   }
-  
-  uint8_t *data() override {
-    return const_cast<uint8_t *>(static_cast<const uint8_t *>(data_.bytes));
-  }
   size_t size() const override { return data_.length; }
 
  protected:
@@ -85,9 +81,15 @@ class ObjCEncodedImageBuffer : public webrtc::EncodedImageBufferInterface {
     
     self.encodedData = encodedImage.GetEncodedData();
     
-    self.buffer = [NSData dataWithBytesNoCopy:self.encodedData->data()
-                                       length:encodedImage.size()
-                                 freeWhenDone:NO];
+    
+    
+    
+    
+    
+    self.buffer = [NSData
+        dataWithBytesNoCopy:const_cast<uint8_t *>(self.encodedData->data())
+                     length:encodedImage.size()
+               freeWhenDone:NO];
     self.encodedWidth =
         webrtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
     self.encodedHeight =

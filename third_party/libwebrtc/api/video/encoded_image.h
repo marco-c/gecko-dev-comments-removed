@@ -45,7 +45,11 @@ class EncodedImageBufferInterface : public RefCountInterface {
   virtual const uint8_t* data() const = 0;
   
   
-  virtual uint8_t* data() = 0;
+  
+  virtual uint8_t* data() {
+    return const_cast<uint8_t*>(
+        static_cast<const EncodedImageBufferInterface*>(this)->data());
+  }
   virtual size_t size() const = 0;
 
   const uint8_t* begin() const { return data(); }
