@@ -3,7 +3,6 @@
 
 
 
-#include <algorithm>
 #include <stdlib.h>
 
 #include "Dictionary.h"
