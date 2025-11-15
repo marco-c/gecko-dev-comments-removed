@@ -1696,6 +1696,10 @@ class nsDisplayListBuilder {
 
   bool ShouldRebuildDisplayListDueToPrefChange();
 
+  bool ShouldActivateAllScrollFrames() const {
+    return mShouldActivateAllScrollFrames;
+  }
+
   
 
 
@@ -2025,6 +2029,9 @@ class nsDisplayListBuilder {
   
   
   bool mAvoidBuildingDuplicateOofs = false;
+
+  
+  bool mShouldActivateAllScrollFrames = false;
 
   Maybe<layers::ScrollDirection> mCurrentScrollbarDirection;
 };
