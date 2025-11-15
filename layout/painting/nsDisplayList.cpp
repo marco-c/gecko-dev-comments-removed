@@ -6109,7 +6109,16 @@ bool nsDisplayStickyPosition::UpdateScrollData(
     }
 
     if (ShouldGetStickyAnimationId()) {
-      aLayerData->SetStickyPositionAnimationId(mWrStickyAnimationId);
+      
+      
+      
+      RefPtr<WebRenderAPZAnimationData> animationData =
+          aData->GetManager()
+              ->CommandBuilder()
+              .CreateOrRecycleWebRenderUserData<WebRenderAPZAnimationData>(
+                  this);
+      MOZ_ASSERT(animationData);
+      aLayerData->SetStickyPositionAnimationId(animationData->GetAnimationId());
     }
   }
   
