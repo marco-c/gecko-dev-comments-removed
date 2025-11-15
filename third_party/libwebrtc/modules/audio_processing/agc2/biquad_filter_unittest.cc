@@ -40,8 +40,8 @@ constexpr FloatArraySequence kBiQuadInputSeq = {
 
 
 constexpr BiQuadFilter::Config kBiQuadConfig{
-    {0.99446179f, -1.98892358f, 0.99446179f},
-    {-1.98889291f, 0.98895425f}};
+    .b = {0.99446179f, -1.98892358f, 0.99446179f},
+    .a = {-1.98889291f, 0.98895425f}};
 
 
 
@@ -118,16 +118,16 @@ TEST(BiQuadFilterTest, FilterInPlace) {
 
 
 TEST(BiQuadFilterTest, SetConfigDifferentOutput) {
-  BiQuadFilter filter({{0.97803048f, -1.95606096f, 0.97803048f},
-                                  {-1.95557824f, 0.95654368f}});
+  BiQuadFilter filter({.b = {0.97803048f, -1.95606096f, 0.97803048f},
+                                  .a = {-1.95557824f, 0.95654368f}});
 
   std::array<float, kFrameSize> samples1;
   for (int i = 0; i < kNumFrames; ++i) {
     filter.Process(kBiQuadInputSeq[i], samples1);
   }
 
-  filter.SetConfig(
-      {{0.09763107f, 0.19526215f, 0.09763107f}, {-0.94280904f, 0.33333333f}});
+  filter.SetConfig({.b = {0.09763107f, 0.19526215f, 0.09763107f},
+                    .a = {-0.94280904f, 0.33333333f}});
   std::array<float, kFrameSize> samples2;
   for (int i = 0; i < kNumFrames; ++i) {
     filter.Process(kBiQuadInputSeq[i], samples2);

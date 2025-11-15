@@ -136,7 +136,7 @@ void AnalyzeZeroCrestFactorAudio(int num_calls,
 
 TEST(ClippingPeakPredictorTest, NoPredictorCreated) {
   auto predictor =
-      CreateClippingPredictor(kNumChannels, {false});
+      CreateClippingPredictor(kNumChannels, {.enabled = false});
   EXPECT_FALSE(predictor);
 }
 
@@ -144,8 +144,8 @@ TEST(ClippingPeakPredictorTest, ClippingEventPredictionCreated) {
   
   auto predictor = CreateClippingPredictor(
       kNumChannels,
-      {true,
-                  ClippingPredictorMode::kClippingEventPrediction});
+      {.enabled = true,
+                  .mode = ClippingPredictorMode::kClippingEventPrediction});
   EXPECT_TRUE(predictor);
 }
 
@@ -153,17 +153,18 @@ TEST(ClippingPeakPredictorTest, AdaptiveStepClippingPeakPredictionCreated) {
   
   auto predictor = CreateClippingPredictor(
       kNumChannels, {
-          true,
-          ClippingPredictorMode::kAdaptiveStepClippingPeakPrediction});
+          .enabled = true,
+          .mode = ClippingPredictorMode::kAdaptiveStepClippingPeakPrediction});
   EXPECT_TRUE(predictor);
 }
 
 TEST(ClippingPeakPredictorTest, FixedStepClippingPeakPredictionCreated) {
   
   auto predictor = CreateClippingPredictor(
-      kNumChannels, {
-          true,
-          ClippingPredictorMode::kFixedStepClippingPeakPrediction});
+      kNumChannels,
+      {
+          .enabled = true,
+          .mode = ClippingPredictorMode::kFixedStepClippingPeakPrediction});
   EXPECT_TRUE(predictor);
 }
 

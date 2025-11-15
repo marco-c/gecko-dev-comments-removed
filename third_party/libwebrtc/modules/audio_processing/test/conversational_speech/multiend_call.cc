@@ -109,8 +109,8 @@ bool MultiEndCall::CheckTiming() {
   speaking_turns_.clear();
 
   
-  Interval second_last_turn = {0, 0};
-  Interval last_turn = {0, 0};
+  Interval second_last_turn = {.begin = 0, .end = 0};
+  Interval last_turn = {.begin = 0, .end = 0};
 
   
   

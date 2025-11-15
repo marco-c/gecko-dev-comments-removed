@@ -118,9 +118,13 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
   
   
   
-  ExpectedSplit expected_splits[] = {{10, 1, {10}},     {20, 1, {20}},
-                                     {30, 1, {30}},     {40, 2, {20, 20}},
-                                     {50, 2, {25, 25}}, {60, 2, {30, 30}}};
+  ExpectedSplit expected_splits[] = {
+      {.payload_size_ms = 10, .num_frames = 1, .frame_sizes = {10}},
+      {.payload_size_ms = 20, .num_frames = 1, .frame_sizes = {20}},
+      {.payload_size_ms = 30, .num_frames = 1, .frame_sizes = {30}},
+      {.payload_size_ms = 40, .num_frames = 2, .frame_sizes = {20, 20}},
+      {.payload_size_ms = 50, .num_frames = 2, .frame_sizes = {25, 25}},
+      {.payload_size_ms = 60, .num_frames = 2, .frame_sizes = {30, 30}}};
 
   for (const auto& expected_split : expected_splits) {
     
