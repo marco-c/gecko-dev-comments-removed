@@ -372,11 +372,6 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   class ConnectionRequest;
 
   
-  [[deprecated("bugs.webrtc.org/42223992")]]
-  Connection(WeakPtr<PortInterface> port,
-             size_t index,
-             const Candidate& candidate);
-
   Connection(const Environment& env,
              WeakPtr<PortInterface> port,
              size_t index,
@@ -411,21 +406,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   PortInterface* port() { return port_.get(); }
 
-  
-  
-  
-  
-  
-  TaskQueueBase* const network_thread_;
-  const uint32_t id_;
-  WeakPtr<PortInterface> port_;
-  Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
-  Candidate remote_candidate_;
-
-  ConnectionInfo stats_;
-  RateTracker recv_rate_tracker_;
-  RateTracker send_rate_tracker_;
-  int64_t last_send_data_ = 0;
+  const Environment& env() { return env_; }
+  ConnectionInfo& mutable_stats() { return stats_; }
+  RateTracker& send_rate_tracker() { return send_rate_tracker_; }
+  void set_last_send_data(int64_t now_ms) { last_send_data_ = now_ms; }
 
  private:
   
@@ -443,6 +427,24 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   bool ShouldSendGoogPing(const StunMessage* message)
       RTC_RUN_ON(network_thread_);
+
+  const Environment env_;
+
+  
+  
+  
+  
+  
+  TaskQueueBase* const network_thread_;
+  const uint32_t id_;
+  WeakPtr<PortInterface> port_;
+  Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
+  Candidate remote_candidate_;
+
+  ConnectionInfo stats_;
+  RateTracker recv_rate_tracker_;
+  RateTracker send_rate_tracker_;
+  int64_t last_send_data_ = 0;
 
   WriteState write_state_ RTC_GUARDED_BY(network_thread_);
   bool receiving_ RTC_GUARDED_BY(network_thread_);
@@ -535,11 +537,6 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
 class ProxyConnection : public Connection {
  public:
-  [[deprecated("bugs.webrtc.org/42223992")]]
-  ProxyConnection(WeakPtr<PortInterface> port,
-                  size_t index,
-                  const Candidate& remote_candidate);
-
   ProxyConnection(const Environment& env,
                   WeakPtr<PortInterface> port,
                   size_t index,
