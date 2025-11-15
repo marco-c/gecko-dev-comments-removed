@@ -5040,9 +5040,9 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     ContentSource source,
     const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid) {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::PushdownMediaDescription");
+  RTC_DCHECK_RUN_ON(signaling_thread());
   const SessionDescriptionInterface* sdesc =
       (source == CS_LOCAL ? local_description() : remote_description());
-  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(sdesc);
 
   if (ConfiguredForMedia()) {
@@ -5114,11 +5114,29 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     
     
     if (pc_->trials().IsEnabled("WebRTC-RFC8888CongestionControlFeedback")) {
-      if (use_ccfb && local_description() && remote_description()) {
+      if (type == SdpType::kAnswer && use_ccfb && local_description() &&
+          remote_description()) {
+        bool remote_supports_ccfb = true;
         
-        context_->worker_thread()->PostTask([call = pc_->call_ptr()] {
-          call->EnableSendCongestionControlFeedbackAccordingToRfc8888();
-        });
+        for (const auto& content :
+             remote_description()->description()->contents()) {
+          if (content.type != MediaProtocolType::kRtp || content.rejected ||
+              content.media_description() == nullptr) {
+            continue;
+          }
+          if (!content.media_description()->rtcp_fb_ack_ccfb()) {
+            remote_supports_ccfb = false;
+            break;
+          }
+        }
+        if (remote_supports_ccfb) {
+          
+          context_->worker_thread()->PostTask([call = pc_->call_ptr()] {
+            call->EnableSendCongestionControlFeedbackAccordingToRfc8888();
+          });
+        } else {
+          RTC_LOG(LS_WARNING) << "Local but not Remote supports CCFB.";
+        }
       }
     }
   }
