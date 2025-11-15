@@ -11,8 +11,7 @@
 #ifndef P2P_BASE_ICE_TRANSPORT_INTERNAL_H_
 #define P2P_BASE_ICE_TRANSPORT_INTERNAL_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -260,6 +259,12 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   ~IceTransportInternal() override;
 
   
+  IceTransportInternal(const IceTransportInternal&) = delete;
+  IceTransportInternal& operator=(const IceTransportInternal&) = delete;
+  IceTransportInternal(IceTransportInternal&&) = delete;
+  IceTransportInternal& operator=(IceTransportInternal&&) = delete;
+
+  
   
   virtual IceTransportStateInternal GetState() const = 0;
   virtual IceTransportState GetIceTransportState() const = 0;
@@ -383,11 +388,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
 
   
-  
-  
-  sigslot::signal1<IceTransportInternal*> SignalStateChanged;
-
-  
   sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
 
   
@@ -446,32 +446,5 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::Candidates;
-using ::webrtc::ContinualGatheringPolicy;
-using ::webrtc::GATHER_CONTINUALLY;
-using ::webrtc::GATHER_ONCE;
-using ::webrtc::IceConfig;
-using ::webrtc::IceConnectionState;
-using ::webrtc::IceGatheringState;
-using ::webrtc::IceTransportInternal;
-using ::webrtc::IceTransportStats;
-using ::webrtc::kIceConnectionCompleted;
-using ::webrtc::kIceConnectionConnected;
-using ::webrtc::kIceConnectionConnecting;
-using ::webrtc::kIceConnectionFailed;
-using ::webrtc::kIceGatheringComplete;
-using ::webrtc::kIceGatheringGathering;
-using ::webrtc::kIceGatheringNew;
-using ::webrtc::NominationMode;
-using ::webrtc::VerifyCandidate;
-using ::webrtc::VerifyCandidates;
-
-using IceTransportState = ::webrtc::IceTransportStateInternal;
-}  
-#endif  
 
 #endif  
