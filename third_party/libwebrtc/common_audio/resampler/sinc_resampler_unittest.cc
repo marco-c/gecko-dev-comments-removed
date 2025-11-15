@@ -136,7 +136,7 @@ TEST(SincResamplerTest, Convolve) {
 
   
   
-  double result = resampler.Convolve_C(
+  double result = SincResampler::Convolve_C(
       resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
       resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   double result2 = resampler.convolve_proc_(
@@ -145,7 +145,7 @@ TEST(SincResamplerTest, Convolve) {
   EXPECT_NEAR(result2, result, kEpsilon);
 
   
-  result = resampler.Convolve_C(
+  result = SincResampler::Convolve_C(
       resampler.kernel_storage_.get() + 1, resampler.kernel_storage_.get(),
       resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   result2 = resampler.convolve_proc_(
@@ -172,7 +172,7 @@ TEST(SincResamplerTest, ConvolveBenchmark) {
   
   int64_t start = TimeNanos();
   for (int i = 0; i < kConvolveIterations; ++i) {
-    resampler.Convolve_C(
+    SincResampler::Convolve_C(
         resampler.kernel_storage_.get(), resampler.kernel_storage_.get(),
         resampler.kernel_storage_.get(), kKernelInterpolationFactor);
   }

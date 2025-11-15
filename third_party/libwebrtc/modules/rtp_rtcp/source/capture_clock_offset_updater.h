@@ -45,7 +45,7 @@ class CaptureClockOffsetUpdater {
   void SetRemoteToLocalClockOffset(std::optional<int64_t> offset_q32x32);
 
   
-  static std::optional<TimeDelta> ConvertsToTimeDela(
+  static std::optional<TimeDelta> ConvertToTimeDelta(
       std::optional<int64_t> q32x32);
 
  private:

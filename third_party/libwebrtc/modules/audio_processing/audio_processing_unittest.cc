@@ -85,7 +85,7 @@ using ::testing::WithoutArgs;
 
 
 
-const int kProcessSampleRates[] = {16000, 32000, 48000};
+constexpr int kProcessSampleRates[] = {16000, 32000, 48000};
 
 enum StreamDirection { kForward = 0, kReverse };
 
@@ -811,7 +811,8 @@ TEST_F(ApmTest, ChannelsInt16Interface) {
   
   Init(16000, 16000, 16000, 4, 4, 4, false);
 
-  TestChangingChannelsInt16Interface(0, apm_->kBadNumberChannelsError);
+  TestChangingChannelsInt16Interface(0,
+                                     AudioProcessing::kBadNumberChannelsError);
 
   for (size_t i = 1; i < 4; i++) {
     TestChangingChannelsInt16Interface(i, AudioProcessing::kNoError);
@@ -823,8 +824,8 @@ TEST_F(ApmTest, Channels) {
   
   Init(16000, 16000, 16000, 4, 4, 4, false);
 
-  TestChangingForwardChannels(0, 1, apm_->kBadNumberChannelsError);
-  TestChangingReverseChannels(0, apm_->kBadNumberChannelsError);
+  TestChangingForwardChannels(0, 1, AudioProcessing::kBadNumberChannelsError);
+  TestChangingReverseChannels(0, AudioProcessing::kBadNumberChannelsError);
 
   for (size_t i = 1; i < 4; ++i) {
     for (size_t j = 0; j < 1; ++j) {
@@ -2741,7 +2742,7 @@ TEST(MAYBE_ApmStatistics, AECEnabledTest) {
 
   
   int16_t* ptr = frame.data.data();
-  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+  for (size_t i = 0; i < Int16FrameData::kMaxDataSizeSamples; i++) {
     ptr[i] = 10000 * ((i % 3) - 1);
   }
 
@@ -2790,7 +2791,7 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
 
   
   int16_t* ptr = frame.data.data();
-  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+  for (size_t i = 0; i < Int16FrameData::kMaxDataSizeSamples; i++) {
     ptr[i] = 10000 * ((i % 3) - 1);
   }
 
@@ -2837,7 +2838,7 @@ TEST(ApmStatistics, DoNotReportVoiceDetectedStat) {
 
   
   int16_t* ptr = frame.data.data();
-  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+  for (size_t i = 0; i < Int16FrameData::kMaxDataSizeSamples; i++) {
     ptr[i] = 10000 * ((i % 3) - 1);
   }
 
