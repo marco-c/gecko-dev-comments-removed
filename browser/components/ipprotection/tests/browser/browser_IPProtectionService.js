@@ -347,7 +347,7 @@ add_task(async function test_IPProtectionService_retry_errors() {
 
   
   IPPEnrollAndEntitleManager.resetEntitlement();
-  IPPProxyManager.setErrorState();
+  IPPProxyManager.setErrorState(ERRORS.GENERIC);
 
   let startedEventPromise = BrowserTestUtils.waitForEvent(
     IPPProxyManager,
