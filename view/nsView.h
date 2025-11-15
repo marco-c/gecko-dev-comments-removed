@@ -210,17 +210,6 @@ class nsView final : public nsIWidgetListener {
 
   void SetNeedsWindowPropertiesSync();
 
-  
-
-
-
-
-  void AttachWidgetEventHandler(nsIWidget* aWidget);
-  
-
-
-  void DetachWidgetEventHandler(nsIWidget* aWidget);
-
 #ifdef DEBUG
   
 
@@ -291,11 +280,6 @@ class nsView final : public nsIWidgetListener {
 
 
   void SetDimensions(const nsRect& aRect);
-
-  bool IsDirty() const { return mIsDirty; }
-  void SetIsDirty(bool aDirty) { mIsDirty = aDirty; }
-
-  void AssertNoWindow();
 
   void CallOnAllRemoteChildren(
       const std::function<mozilla::CallState(mozilla::dom::BrowserParent*)>&
