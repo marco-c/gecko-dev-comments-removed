@@ -26,7 +26,7 @@ async function expectFocusAfterKey(aKey, aFocus) {
 
 add_task(async function test_keyboard_navigation_in_panel() {
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
   });
 
   Assert.ok(
@@ -34,7 +34,9 @@ add_task(async function test_keyboard_navigation_in_panel() {
     "ipprotection-content component should be present"
   );
 
-  await expectFocusAfterKey("Tab", content.connectionToggleEl);
+  let statusCard = content.statusCardEl;
+
+  await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
   await expectFocusAfterKey("Tab", content.upgradeEl.querySelector("a"));
   await expectFocusAfterKey(
     "Tab",
@@ -42,7 +44,7 @@ add_task(async function test_keyboard_navigation_in_panel() {
   );
   await expectFocusAfterKey("Tab", content.headerEl.helpButtonEl);
   
-  await expectFocusAfterKey("Tab", content.connectionToggleEl);
+  await expectFocusAfterKey("Tab", statusCard.connectionToggleEl);
 
   await expectFocusAfterKey("ArrowDown", content.upgradeEl.querySelector("a"));
   await expectFocusAfterKey(
@@ -51,7 +53,7 @@ add_task(async function test_keyboard_navigation_in_panel() {
   );
   await expectFocusAfterKey("ArrowDown", content.headerEl.helpButtonEl);
   
-  await expectFocusAfterKey("ArrowDown", content.connectionToggleEl);
+  await expectFocusAfterKey("ArrowDown", statusCard.connectionToggleEl);
 
   
   await expectFocusAfterKey("Shift+Tab", content.headerEl.helpButtonEl);
