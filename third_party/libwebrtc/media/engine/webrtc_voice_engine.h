@@ -306,6 +306,7 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
 
   std::map<uint32_t, WebRtcAudioSendStream*> send_streams_;
   std::vector<RtpExtension> send_rtp_extensions_;
+  std::optional<RtcpFeedbackType> rtcp_cc_ack_type_;
   std::string mid_;
   RtcpMode rtcp_mode_;
 
@@ -499,14 +500,5 @@ class WebRtcVoiceReceiveChannel final
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::WebRtcVoiceEngine;
-using ::webrtc::WebRtcVoiceReceiveChannel;
-using ::webrtc::WebRtcVoiceSendChannel;
-}  
-#endif  
 
 #endif  

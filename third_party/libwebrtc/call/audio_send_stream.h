@@ -134,6 +134,9 @@ class AudioSendStream : public AudioSender {
 
     double bitrate_priority = 1.0;
     bool has_dscp = false;
+    
+    
+    bool include_in_congestion_control_allocation = false;
 
     
     

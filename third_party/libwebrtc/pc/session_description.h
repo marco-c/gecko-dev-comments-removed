@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -117,6 +118,20 @@ class MediaContentDescription {
   
   bool rtcp_fb_ack_ccfb() const { return rtcp_fb_ack_ccfb_; }
   void set_rtcp_fb_ack_ccfb(bool enable) { rtcp_fb_ack_ccfb_ = enable; }
+
+  
+  
+  std::optional<RtcpFeedbackType> preferred_rtcp_cc_ack_type() const {
+    if (rtcp_fb_ack_ccfb_) {
+      return RtcpFeedbackType::CCFB;
+    }
+    for (const auto& codec : codecs_) {
+      if (codec.feedback_params.Has(FeedbackParam(kRtcpFbParamTransportCc))) {
+        return RtcpFeedbackType::TRANSPORT_CC;
+      }
+    }
+    return std::nullopt;
+  }
 
   int bandwidth() const { return bandwidth_; }
   void set_bandwidth(int bandwidth) { bandwidth_ = bandwidth; }
