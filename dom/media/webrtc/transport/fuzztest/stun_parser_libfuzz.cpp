@@ -4,8 +4,6 @@
 
 
 
-#include <string>
-
 #include "FuzzingInterface.h"
 #include "gtest/gtest.h"
 

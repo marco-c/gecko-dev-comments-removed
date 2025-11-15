@@ -3,7 +3,6 @@
 
 #include <iomanip>
 #include <set>
-#include <string>
 
 extern "C" {
 #include "nr_api.h"

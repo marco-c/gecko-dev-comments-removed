@@ -5,7 +5,6 @@
 
 
 #include <string>
-#include <vector>
 
 #include "GMPUtils.h"
 #include "gtest/gtest.h"

@@ -5,9 +5,7 @@
 
 
 #include <cstdint>
-#include <memory>
 #include <ostream>
-#include <utility>
 
 #include "gtest/gtest.h"
 #include "mozilla/Maybe.h"

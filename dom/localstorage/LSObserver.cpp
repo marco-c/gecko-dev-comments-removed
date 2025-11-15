@@ -10,7 +10,6 @@
 #include "ActorsChild.h"
 
 
-#include <utility>
 
 #include "mozilla/StaticPtr.h"
 #include "nsHashKeys.h"

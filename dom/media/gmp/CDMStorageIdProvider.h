@@ -12,8 +12,6 @@
 
 
 
-#include <string>
-
 #include "nsString.h"
 
 namespace mozilla {

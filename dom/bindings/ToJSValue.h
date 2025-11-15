@@ -10,7 +10,6 @@
 #include <cstddef>  
 #include <cstdint>  
 #include <type_traits>  
-#include <utility>  
 
 #include "ErrorList.h"    
 #include "js/Array.h"     

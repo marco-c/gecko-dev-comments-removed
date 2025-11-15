@@ -101,7 +101,6 @@
 #include "nsIObserverService.h"
 
 
-#include <limits>
 
 #include "HTMLSplitOnSpacesTokenizer.h"
 #include "imgRequestProxy.h"

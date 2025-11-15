@@ -5,7 +5,6 @@
 
 
 #include <memory>
-#include <type_traits>
 
 #include "MediaEventSource.h"
 #include "VideoUtils.h"

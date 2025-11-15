@@ -2,9 +2,7 @@
 
 
 
-#include <memory>
 #include <type_traits>
-#include <utility>
 
 #include "gtest/gtest.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"

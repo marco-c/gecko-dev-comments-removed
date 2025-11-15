@@ -14,7 +14,6 @@
 
 #include <cstring>
 #include <new>
-#include <utility>
 
 #include "MainThreadUtils.h"
 #include "mozilla/RefPtr.h"

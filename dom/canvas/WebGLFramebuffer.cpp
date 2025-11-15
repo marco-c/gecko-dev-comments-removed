@@ -7,7 +7,6 @@
 
 
 #include <algorithm>
-#include <iterator>
 
 #include "GLBlitHelper.h"
 #include "GLContext.h"

@@ -10,7 +10,6 @@
 #include "SDBConnection.h"
 
 
-#include <utility>
 
 #include "mozilla/ErrorNames.h"
 #include "nsError.h"

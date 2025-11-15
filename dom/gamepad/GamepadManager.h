@@ -10,7 +10,6 @@
 #include "nsIObserver.h"
 #include "nsRefPtrHashtable.h"
 
-#include <utility>
 
 #include "mozilla/dom/GamepadBinding.h"
 #include "mozilla/dom/GamepadHandle.h"

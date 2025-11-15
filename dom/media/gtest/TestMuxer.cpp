@@ -4,8 +4,6 @@
 
 
 
-#include <vector>
-
 #include "ContainerWriter.h"
 #include "EncodedFrame.h"
 #include "Muxer.h"

@@ -3,8 +3,6 @@
 
 
 
-#include <limits>
-
 #include "ClientWebGLContext.h"
 #include "GLContext.h"
 #include "WebGLBuffer.h"
