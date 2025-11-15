@@ -3483,6 +3483,11 @@ void nsIFrame::BuildDisplayListForStackingContext(
     nsDisplayListBuilder::AutoInEventsOnly inEventsSetter(
         aBuilder, opacityItemForEventsOnly);
 
+    DisplayListClipState::AutoSaveRestore stickyItemNestedClipState(aBuilder);
+    if (useStickyPosition && !shouldFlattenStickyItem) {
+      stickyItemNestedClipState.MaybeRemoveDisplayportClip();
+    }
+
     
     
     
@@ -3919,14 +3924,15 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     
+    DisplayListClipState::AutoSaveRestore stickyItemClipState(aBuilder);
+    stickyItemClipState.MaybeRemoveDisplayportClip();
     const ActiveScrolledRoot* stickyItemASR = ActiveScrolledRoot::PickAncestor(
         containerItemASR, aBuilder->CurrentActiveScrolledRoot());
 
     auto* stickyItem = MakeDisplayItem<nsDisplayStickyPosition>(
         aBuilder, this, &resultList, stickyItemASR,
         nsDisplayItem::ContainerASRType::AncestorOfContained,
-        aBuilder->CurrentActiveScrolledRoot(),
-        clipState.IsClippedToDisplayPort());
+        aBuilder->CurrentActiveScrolledRoot());
 
     stickyItem->SetShouldFlatten(shouldFlattenStickyItem);
 

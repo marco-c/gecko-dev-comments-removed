@@ -4011,13 +4011,15 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         scrolledRectClip = scrolledRectClip.Intersect(visibleRect);
         clippedToDisplayPort = scrolledRectClip.IsEqualEdges(visibleRect);
       }
-      scrolledRectClipState.ClipContainingBlockDescendants(
-          scrolledRectClip + aBuilder->ToReferenceFrame(this));
       if (clippedToDisplayPort) {
+        scrolledRectClipState.ClipToDisplayPort(
+            scrolledRectClip + aBuilder->ToReferenceFrame(this));
+      } else {
         
         
         
-        scrolledRectClipState.SetClippedToDisplayPort();
+        scrolledRectClipState.ClipContainingBlockDescendants(
+            scrolledRectClip + aBuilder->ToReferenceFrame(this));
       }
 
       nsRect visibleRectForChildren = visibleRect;

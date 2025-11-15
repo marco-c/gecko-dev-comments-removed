@@ -189,13 +189,6 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
     
     auto* sticky = static_cast<nsDisplayStickyPosition*>(aItem);
     asr = sticky->GetContainerASR();
-
-    
-    
-    
-    if (sticky->IsClippedToDisplayPort() && clip && clip->mASR == asr) {
-      clip = clip->mParent;
-    }
   }
 
   CLIP_LOG("processing item %p (%s) asr %p clip %p, inherited = %p\n", aItem,

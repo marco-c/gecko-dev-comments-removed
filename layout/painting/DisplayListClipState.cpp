@@ -6,6 +6,7 @@
 
 #include "DisplayListClipState.h"
 
+#include "DisplayItemClipChain.h"
 #include "nsDisplayList.h"
 
 namespace mozilla {
@@ -33,7 +34,10 @@ static void ApplyClip(nsDisplayListBuilder* aBuilder,
                       const ActiveScrolledRoot* aASR,
                       DisplayItemClipChain& aClipChainOnStack) {
   aClipChainOnStack.mASR = aASR;
-  if (aClipToModify && aClipToModify->mASR == aASR) {
+  if (aClipToModify && aClipToModify->mASR == aASR &&
+      !aClipChainOnStack.IsDisplayportClip()) {
+    
+    
     
     aClipChainOnStack.mClip.IntersectWith(aClipToModify->mClip);
     aClipChainOnStack.mParent = aClipToModify->mParent;
@@ -70,6 +74,17 @@ void DisplayListClipState::ClipContainingBlockDescendants(
   } else {
     aClipChainOnStack.mClip.SetTo(aRect);
   }
+  const ActiveScrolledRoot* asr = aBuilder->CurrentActiveScrolledRoot();
+  ApplyClip(aBuilder, mClipChainContainingBlockDescendants, asr,
+            aClipChainOnStack);
+  InvalidateCurrentCombinedClipChain(asr);
+}
+
+void DisplayListClipState::ClipToDisplayPort(
+    nsDisplayListBuilder* aBuilder, const nsRect& aRect,
+    DisplayItemClipChain& aClipChainOnStack) {
+  aClipChainOnStack.mClip.SetTo(aRect);
+  aClipChainOnStack.mKind = DisplayItemClipChain::ClipKind::Displayport;
   const ActiveScrolledRoot* asr = aBuilder->CurrentActiveScrolledRoot();
   ApplyClip(aBuilder, mClipChainContainingBlockDescendants, asr,
             aClipChainOnStack);
