@@ -204,6 +204,7 @@ nsresult TextEditor::Init(Document& aDocument, Element& aAnonymousDivElement,
   
   MOZ_ASSERT(!mInitSucceeded, "TextEditor::Init() shouldn't be nested");
   mInitSucceeded = true;
+  editActionData.OnEditorInitialized();
 
   rv = InitEditorContentAndSelection();
   if (NS_FAILED(rv)) {
@@ -212,6 +213,7 @@ nsresult TextEditor::Init(Document& aDocument, Element& aAnonymousDivElement,
     
     
     mInitSucceeded = false;
+    editActionData.OnEditorDestroy();
     return EditorBase::ToGenericNSResult(rv);
   }
 

@@ -984,6 +984,8 @@ class EditorBase : public nsIEditor,
     AutoEditActionDataSetter(const EditorBase& aEditorBase,
                              EditAction aEditAction,
                              nsIPrincipal* aPrincipal = nullptr);
+    AutoEditActionDataSetter() = delete;
+    AutoEditActionDataSetter(const AutoEditActionDataSetter& aOther) = delete;
     ~AutoEditActionDataSetter();
 
     void SetSelectionCreatedByDoubleclick(bool aSelectionCreatedByDoubleclick) {
@@ -1017,7 +1019,7 @@ class EditorBase : public nsIEditor,
       
       
       if (mEditAction != EditAction::eInitializing &&
-          mEditorWasDestroyedDuringHandlingEditAction) {
+          HasEditorDestroyedDuringHandlingEditActionAndNotYetReinitialized()) {
         NS_WARNING("Editor was destroyed during an edit action being handled");
         return false;
       }
@@ -1214,13 +1216,37 @@ class EditorBase : public nsIEditor,
         
         
         mEditorWasDestroyedDuringHandlingEditAction = true;
+        mEditorWasReinitialized = false;
       }
       if (mParentData) {
         mParentData->OnEditorDestroy();
       }
     }
-    bool HasEditorDestroyedDuringHandlingEditAction() const {
+    void OnEditorInitialized() {
+      if (mEditorWasDestroyedDuringHandlingEditAction) {
+        mEditorWasReinitialized = true;
+      }
+      if (mParentData) {
+        mParentData->OnEditorInitialized();
+      }
+    }
+    
+
+
+
+
+    [[nodiscard]] bool HasEditorDestroyedDuringHandlingEditAction() const {
       return mEditorWasDestroyedDuringHandlingEditAction;
+    }
+    
+
+
+
+
+    [[nodiscard]] bool
+    HasEditorDestroyedDuringHandlingEditActionAndNotYetReinitialized() const {
+      return mEditorWasDestroyedDuringHandlingEditAction &&
+             !mEditorWasReinitialized;
     }
 
     void SetTopLevelEditSubAction(EditSubAction aEditSubAction,
@@ -1457,40 +1483,40 @@ class EditorBase : public nsIEditor,
     
     
     
-    EditSubAction mTopLevelEditSubAction;
+    EditSubAction mTopLevelEditSubAction = EditSubAction::eNone;
 
-    EDirection mDirectionOfTopLevelEditSubAction;
+    EDirection mDirectionOfTopLevelEditSubAction = nsIEditor::eNone;
 
-    bool mAborted;
+    bool mAborted = false;
 
     
     
     
-    bool mHasTriedToDispatchBeforeInputEvent;
+    bool mHasTriedToDispatchBeforeInputEvent = false;
     
-    bool mBeforeInputEventCanceled;
-    
-    
-    bool mMakeBeforeInputEventNonCancelable;
+    bool mBeforeInputEventCanceled = false;
     
     
-    bool mHasTriedToDispatchClipboardEvent;
+    bool mMakeBeforeInputEventNonCancelable = false;
+    
+    
+    bool mHasTriedToDispatchClipboardEvent = false;
     
     
     
     bool mEditorWasDestroyedDuringHandlingEditAction;
     
     
-    bool mHandled;
+    bool mEditorWasReinitialized;
+    
+    
+    bool mHandled = false;
     
     bool mDispatchingInputEvent = false;
 
 #ifdef DEBUG
     mutable bool mHasCanHandleChecked = false;
 #endif  
-
-    AutoEditActionDataSetter() = delete;
-    AutoEditActionDataSetter(const AutoEditActionDataSetter& aOther) = delete;
   };
 
   void UpdateEditActionData(const nsAString& aData) {
