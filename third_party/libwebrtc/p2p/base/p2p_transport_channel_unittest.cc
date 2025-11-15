@@ -29,7 +29,6 @@
 #include "api/candidate.h"
 #include "api/environment/environment.h"
 #include "api/environment/environment_factory.h"
-#include "api/field_trials.h"
 #include "api/ice_transport_interface.h"
 #include "api/local_network_access_permission.h"
 #include "api/packet_socket_factory.h"
@@ -96,10 +95,12 @@
 #include "rtc_base/time_utils.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/wait_until.h"
 
+namespace webrtc {
 namespace {
 
 using ::testing::_;
@@ -108,34 +109,26 @@ using ::testing::Contains;
 using ::testing::DoAll;
 using ::testing::Eq;
 using ::testing::Gt;
-using ::testing::IsFalse;
-using ::testing::IsTrue;
 using ::testing::MockFunction;
 using ::testing::Ne;
+using ::testing::NotNull;
 using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::SetArgPointee;
 using ::testing::SizeIs;
 using ::testing::Values;
 using ::testing::WithParamInterface;
-using ::webrtc::CreateEnvironment;
-using ::webrtc::Environment;
-using ::webrtc::FieldTrials;
-using ::webrtc::IceCandidateType;
-using ::webrtc::PendingTaskSafetyFlag;
-using ::webrtc::SafeTask;
-using ::webrtc::SocketAddress;
 
 
 
-const int kDefaultTimeout = 10000;
-const int kMediumTimeout = 3000;
-const int kShortTimeout = 1000;
+constexpr TimeDelta kDefaultTimeout = TimeDelta::Seconds(10);
+constexpr TimeDelta kMediumTimeout = TimeDelta::Seconds(3);
+constexpr TimeDelta kShortTimeout = TimeDelta::Seconds(1);
 
-const int kOnlyLocalPorts = webrtc::PORTALLOCATOR_DISABLE_STUN |
-                            webrtc::PORTALLOCATOR_DISABLE_RELAY |
-                            webrtc::PORTALLOCATOR_DISABLE_TCP;
-const int LOW_RTT = 20;
+constexpr int kOnlyLocalPorts = PORTALLOCATOR_DISABLE_STUN |
+                                PORTALLOCATOR_DISABLE_RELAY |
+                                PORTALLOCATOR_DISABLE_TCP;
+constexpr int LOW_RTT = 20;
 
 const SocketAddress kPublicAddrs[2] = {SocketAddress("11.11.11.11", 0),
                                        SocketAddress("22.22.22.22", 0)};
@@ -162,12 +155,12 @@ const SocketAddress kCascadedNatAddrs[2] = {SocketAddress("192.168.10.1", 0),
 const SocketAddress kCascadedPrivateAddrs[2] = {
     SocketAddress("192.168.10.11", 0), SocketAddress("192.168.20.22", 0)};
 
-const SocketAddress kStunAddr("99.99.99.1", webrtc::STUN_SERVER_PORT);
+const SocketAddress kStunAddr("99.99.99.1", STUN_SERVER_PORT);
 
-const SocketAddress kTurnUdpIntAddr("99.99.99.3", webrtc::STUN_SERVER_PORT);
-const SocketAddress kTurnTcpIntAddr("99.99.99.4", webrtc::STUN_SERVER_PORT + 1);
+const SocketAddress kTurnUdpIntAddr("99.99.99.3", STUN_SERVER_PORT);
+const SocketAddress kTurnTcpIntAddr("99.99.99.4", STUN_SERVER_PORT + 1);
 const SocketAddress kTurnUdpExtAddr("99.99.99.5", 0);
-const webrtc::RelayCredentials kRelayCredentials("test", "test");
+const RelayCredentials kRelayCredentials("test", "test");
 
 
 const char* kIceUfrag[4] = {"UF00", "UF01", "UF02", "UF03"};
@@ -175,72 +168,70 @@ const char* kIceUfrag[4] = {"UF00", "UF01", "UF02", "UF03"};
 const char* kIcePwd[4] = {
     "TESTICEPWD00000000000000", "TESTICEPWD00000000000001",
     "TESTICEPWD00000000000002", "TESTICEPWD00000000000003"};
-const webrtc::IceParameters kIceParams[4] = {{kIceUfrag[0], kIcePwd[0], false},
-                                             {kIceUfrag[1], kIcePwd[1], false},
-                                             {kIceUfrag[2], kIcePwd[2], false},
-                                             {kIceUfrag[3], kIcePwd[3], false}};
+const IceParameters kIceParams[4] = {{kIceUfrag[0], kIcePwd[0], false},
+                                     {kIceUfrag[1], kIcePwd[1], false},
+                                     {kIceUfrag[2], kIcePwd[2], false},
+                                     {kIceUfrag[3], kIcePwd[3], false}};
 
-webrtc::IceConfig CreateIceConfig(
+IceConfig CreateIceConfig(
     int receiving_timeout,
-    webrtc::ContinualGatheringPolicy continual_gathering_policy,
+    ContinualGatheringPolicy continual_gathering_policy,
     std::optional<int> backup_ping_interval = std::nullopt) {
-  webrtc::IceConfig config;
+  IceConfig config;
   config.receiving_timeout = receiving_timeout;
   config.continual_gathering_policy = continual_gathering_policy;
   config.backup_connection_ping_interval = backup_ping_interval;
   return config;
 }
 
-webrtc::Candidate CreateUdpCandidate(IceCandidateType type,
-                                     absl::string_view ip,
-                                     int port,
-                                     int priority,
-                                     absl::string_view ufrag = "") {
-  webrtc::Candidate c;
-  c.set_address(webrtc::SocketAddress(ip, port));
-  c.set_component(webrtc::ICE_CANDIDATE_COMPONENT_DEFAULT);
-  c.set_protocol(webrtc::UDP_PROTOCOL_NAME);
+Candidate CreateUdpCandidate(IceCandidateType type,
+                             absl::string_view ip,
+                             int port,
+                             int priority,
+                             absl::string_view ufrag = "") {
+  Candidate c;
+  c.set_address(SocketAddress(ip, port));
+  c.set_component(ICE_CANDIDATE_COMPONENT_DEFAULT);
+  c.set_protocol(UDP_PROTOCOL_NAME);
   c.set_priority(priority);
   c.set_username(ufrag);
   c.set_type(type);
   return c;
 }
 
-std::unique_ptr<webrtc::BasicPortAllocator> CreateBasicPortAllocator(
+std::unique_ptr<BasicPortAllocator> CreateBasicPortAllocator(
     const Environment& env,
-    webrtc::NetworkManager* network_manager,
-    webrtc::PacketSocketFactory* socket_factory,
-    const webrtc::ServerAddresses& stun_servers,
-    const webrtc::SocketAddress& turn_server_udp,
-    const webrtc::SocketAddress& turn_server_tcp) {
-  webrtc::RelayServerConfig turn_server;
+    NetworkManager* network_manager,
+    PacketSocketFactory* socket_factory,
+    const ServerAddresses& stun_servers,
+    const SocketAddress& turn_server_udp,
+    const SocketAddress& turn_server_tcp) {
+  RelayServerConfig turn_server;
   turn_server.credentials = kRelayCredentials;
   if (!turn_server_udp.IsNil()) {
-    turn_server.ports.push_back(
-        webrtc::ProtocolAddress(turn_server_udp, webrtc::PROTO_UDP));
+    turn_server.ports.push_back(ProtocolAddress(turn_server_udp, PROTO_UDP));
   }
   if (!turn_server_tcp.IsNil()) {
-    turn_server.ports.push_back(
-        webrtc::ProtocolAddress(turn_server_tcp, webrtc::PROTO_TCP));
+    turn_server.ports.push_back(ProtocolAddress(turn_server_tcp, PROTO_TCP));
   }
-  std::vector<webrtc::RelayServerConfig> turn_servers(1, turn_server);
+  std::vector<RelayServerConfig> turn_servers(1, turn_server);
 
-  auto allocator = std::make_unique<webrtc::BasicPortAllocator>(
-      env, network_manager, socket_factory);
+  auto allocator = std::make_unique<BasicPortAllocator>(env, network_manager,
+                                                        socket_factory);
   allocator->Initialize();
-  allocator->SetConfiguration(stun_servers, turn_servers, 0, webrtc::NO_PRUNE);
+  allocator->SetConfiguration(stun_servers, turn_servers, 0, NO_PRUNE);
   return allocator;
 }
 
 
 
-class ResolverFactoryFixture : public webrtc::MockAsyncDnsResolverFactory {
+class ResolverFactoryFixture : public MockAsyncDnsResolverFactory {
  public:
   ResolverFactoryFixture() {
-    mock_async_dns_resolver_ = std::make_unique<webrtc::MockAsyncDnsResolver>();
+    mock_async_dns_resolver_ = std::make_unique<MockAsyncDnsResolver>();
     EXPECT_CALL(*mock_async_dns_resolver_, Start(_, _))
         .WillRepeatedly(
-            [](const webrtc::SocketAddress& ,
+            [](const SocketAddress& ,
                absl::AnyInvocable<void()> callback) { callback(); });
     EXPECT_CALL(*mock_async_dns_resolver_, result())
         .WillOnce(ReturnRef(mock_async_dns_resolver_result_));
@@ -257,7 +248,7 @@ class ResolverFactoryFixture : public webrtc::MockAsyncDnsResolverFactory {
     });
   }
 
-  void SetAddressToReturn(webrtc::SocketAddress address_to_return) {
+  void SetAddressToReturn(SocketAddress address_to_return) {
     EXPECT_CALL(mock_async_dns_resolver_result_, GetResolvedAddress(_, _))
         .WillOnce(DoAll(SetArgPointee<1>(address_to_return), Return(true)));
   }
@@ -265,7 +256,7 @@ class ResolverFactoryFixture : public webrtc::MockAsyncDnsResolverFactory {
     
     ASSERT_TRUE(!!mock_async_dns_resolver_);
     EXPECT_CALL(*mock_async_dns_resolver_, Start(_, _))
-        .WillOnce([this](const webrtc::SocketAddress& addr,
+        .WillOnce([this](const SocketAddress& addr,
                          absl::AnyInvocable<void()> callback) {
           saved_callback_ = std::move(callback);
         });
@@ -277,51 +268,20 @@ class ResolverFactoryFixture : public webrtc::MockAsyncDnsResolverFactory {
   }
 
  private:
-  std::unique_ptr<webrtc::MockAsyncDnsResolver> mock_async_dns_resolver_;
-  webrtc::MockAsyncDnsResolverResult mock_async_dns_resolver_result_;
+  std::unique_ptr<MockAsyncDnsResolver> mock_async_dns_resolver_;
+  MockAsyncDnsResolverResult mock_async_dns_resolver_result_;
   absl::AnyInvocable<void()> saved_callback_;
 };
 
-class PermissionFactoryFixture
-    : public webrtc::MockLocalNetworkAccessPermissionFactory {
- public:
-  explicit PermissionFactoryFixture(
-      webrtc::LocalNetworkAccessPermissionStatus result) {
-    EXPECT_CALL(*this, Create()).WillRepeatedly([result]() {
-      auto mock_lna_permission =
-          std::make_unique<webrtc::MockLocalNetworkAccessPermission>();
-
-      EXPECT_CALL(*mock_lna_permission, RequestPermission(_, _))
-          .WillRepeatedly(
-              [result](
-                  const SocketAddress& ,
-                  absl::AnyInvocable<void(
-                      webrtc::LocalNetworkAccessPermissionStatus)> callback) {
-                webrtc::Thread::Current()->PostTask(
-                    [callback = std::move(callback), result]() mutable {
-                      callback(result);
-                    });
-              });
-
-      return mock_lna_permission;
-    });
-  }
-};
-
-bool HasLocalAddress(const webrtc::CandidatePairInterface* pair,
+bool HasLocalAddress(const CandidatePairInterface* pair,
                      const SocketAddress& address) {
   return pair->local_candidate().address().EqualIPs(address);
 }
 
-bool HasRemoteAddress(const webrtc::CandidatePairInterface* pair,
+bool HasRemoteAddress(const CandidatePairInterface* pair,
                       const SocketAddress& address) {
   return pair->remote_candidate().address().EqualIPs(address);
 }
-
-}  
-
-namespace webrtc {
-using ::testing::NotNull;
 
 
 
@@ -386,7 +346,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
            absl::string_view controlling_protocol,
            IceCandidateType controlled_type,
            absl::string_view controlled_protocol,
-           int wait)
+           TimeDelta wait)
         : controlling_type(controlling_type),
           controlling_protocol(controlling_protocol),
           controlled_type(controlled_type),
@@ -400,7 +360,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     IceCandidateType controlled_type;
     std::string controlled_protocol;
     
-    int connect_wait;
+    TimeDelta connect_wait;
   };
 
   struct ChannelData {
@@ -741,18 +701,15 @@ class P2PTransportChannelTestBase : public ::testing::Test,
 
     
     CreateChannels(env);
-    EXPECT_THAT(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
-                          IsTrue(),
-                          {.timeout = TimeDelta::Millis(expected.connect_wait +
-                                                        kShortTimeout),
-                           .clock = &clock}),
-                IsRtcOk());
+    EXPECT_TRUE(WaitUntil(
+        [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+        {.timeout = expected.connect_wait + kShortTimeout, .clock = &clock}));
     connect_time = TimeMillis() - connect_start;
-    if (connect_time < expected.connect_wait) {
+    if (connect_time < expected.connect_wait.ms()) {
       RTC_LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
       RTC_LOG(LS_INFO) << "Connect time: TIMEOUT (" << expected.connect_wait
-                       << " ms)";
+                       << ")";
     }
 
     
@@ -764,14 +721,11 @@ class P2PTransportChannelTestBase : public ::testing::Test,
       
       
       
-      EXPECT_THAT(
-          WaitUntil(
-              [&] {
-                return CheckCandidate1(expected) && CheckCandidate2(expected);
-              },
-              IsTrue(),
-              {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-          IsRtcOk());
+      EXPECT_TRUE(WaitUntil(
+          [&] {
+            return CheckCandidate1(expected) && CheckCandidate2(expected);
+          },
+          {.timeout = kDefaultTimeout, .clock = &clock}));
       
       ExpectCandidate1(expected);
       ExpectCandidate2(expected);
@@ -798,27 +752,19 @@ class P2PTransportChannelTestBase : public ::testing::Test,
       int len = static_cast<int>(strlen(data));
       
       EXPECT_THAT(
-          WaitUntil(
-              [&] { return SendData(ep1_ch1(), data, len); }, Eq(len),
-              {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &*clock}),
+          WaitUntil([&] { return SendData(ep1_ch1(), data, len); }, Eq(len),
+                    {.timeout = kMediumTimeout, .clock = clock}),
           IsRtcOk());
+      EXPECT_TRUE(
+          WaitUntil([&] { return CheckDataOnChannel(ep2_ch1(), data, len); },
+                    {.timeout = kMediumTimeout, .clock = clock}));
       EXPECT_THAT(
-          WaitUntil(
-              [&] { return CheckDataOnChannel(ep2_ch1(), data, len); },
-              IsTrue(),
-              {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &*clock}),
+          WaitUntil([&] { return SendData(ep2_ch1(), data, len); }, Eq(len),
+                    {.timeout = kMediumTimeout, .clock = clock}),
           IsRtcOk());
-      EXPECT_THAT(
-          WaitUntil(
-              [&] { return SendData(ep2_ch1(), data, len); }, Eq(len),
-              {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &*clock}),
-          IsRtcOk());
-      EXPECT_THAT(
-          WaitUntil(
-              [&] { return CheckDataOnChannel(ep1_ch1(), data, len); },
-              IsTrue(),
-              {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &*clock}),
-          IsRtcOk());
+      EXPECT_TRUE(
+          WaitUntil([&] { return CheckDataOnChannel(ep1_ch1(), data, len); },
+                    {.timeout = kMediumTimeout, .clock = clock}));
     }
   }
 
@@ -831,11 +777,8 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     ScopedFakeClock clock;
     ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
     ep2_ch1()->SetRemoteIceParameters(kIceParams[0]);
-    EXPECT_THAT(
-        WaitUntil(
-            [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-            {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-        IsRtcOk());
+    EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                          {.timeout = kMediumTimeout, .clock = &clock}));
 
     const Candidate* old_local_candidate1 = LocalCandidate(ep1_ch1());
     const Candidate* old_local_candidate2 = LocalCandidate(ep2_ch1());
@@ -851,28 +794,24 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     ep2_ch1()->MaybeStartGathering();
 
     EXPECT_THAT(
-        WaitUntil(
-            [&] { return LocalCandidate(ep1_ch1())->generation(); },
-            Ne(old_local_candidate1->generation()),
-            {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+        WaitUntil([&] { return LocalCandidate(ep1_ch1())->generation(); },
+                  Ne(old_local_candidate1->generation()),
+                  {.timeout = kMediumTimeout, .clock = &clock}),
         IsRtcOk());
     EXPECT_THAT(
-        WaitUntil(
-            [&] { return LocalCandidate(ep2_ch1())->generation(); },
-            Ne(old_local_candidate2->generation()),
-            {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+        WaitUntil([&] { return LocalCandidate(ep2_ch1())->generation(); },
+                  Ne(old_local_candidate2->generation()),
+                  {.timeout = kMediumTimeout, .clock = &clock}),
         IsRtcOk());
     EXPECT_THAT(
-        WaitUntil(
-            [&] { return RemoteCandidate(ep1_ch1())->generation(); },
-            Ne(old_remote_candidate1->generation()),
-            {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+        WaitUntil([&] { return RemoteCandidate(ep1_ch1())->generation(); },
+                  Ne(old_remote_candidate1->generation()),
+                  {.timeout = kMediumTimeout, .clock = &clock}),
         IsRtcOk());
     EXPECT_THAT(
-        WaitUntil(
-            [&] { return RemoteCandidate(ep2_ch1())->generation(); },
-            Ne(old_remote_candidate2->generation()),
-            {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+        WaitUntil([&] { return RemoteCandidate(ep2_ch1())->generation(); },
+                  Ne(old_remote_candidate2->generation()),
+                  {.timeout = kMediumTimeout, .clock = &clock}),
         IsRtcOk());
     EXPECT_EQ(1u, RemoteCandidate(ep2_ch1())->generation());
     EXPECT_EQ(1u, RemoteCandidate(ep1_ch1())->generation());
@@ -1090,85 +1029,85 @@ const P2PTransportChannelTestBase::Result
                                                      "udp",
                                                      IceCandidateType::kHost,
                                                      "udp",
-                                                     1000);
+                                                     TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kLocalUdpToStunUdp(IceCandidateType::kHost,
                                                     "udp",
                                                     IceCandidateType::kSrflx,
                                                     "udp",
-                                                    1000);
+                                                    TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kLocalUdpToPrflxUdp(IceCandidateType::kHost,
                                                      "udp",
                                                      IceCandidateType::kPrflx,
                                                      "udp",
-                                                     1000);
+                                                     TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kPrflxUdpToLocalUdp(IceCandidateType::kPrflx,
                                                      "udp",
                                                      IceCandidateType::kHost,
                                                      "udp",
-                                                     1000);
+                                                     TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kStunUdpToLocalUdp(IceCandidateType::kSrflx,
                                                     "udp",
                                                     IceCandidateType::kHost,
                                                     "udp",
-                                                    1000);
+                                                    TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kStunUdpToStunUdp(IceCandidateType::kSrflx,
                                                    "udp",
                                                    IceCandidateType::kSrflx,
                                                    "udp",
-                                                   1000);
+                                                   TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kStunUdpToPrflxUdp(IceCandidateType::kSrflx,
                                                     "udp",
                                                     IceCandidateType::kPrflx,
                                                     "udp",
-                                                    1000);
+                                                    TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kPrflxUdpToStunUdp(IceCandidateType::kPrflx,
                                                     "udp",
                                                     IceCandidateType::kSrflx,
                                                     "udp",
-                                                    1000);
+                                                    TimeDelta::Seconds(1));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kLocalUdpToRelayUdp(IceCandidateType::kHost,
                                                      "udp",
                                                      IceCandidateType::kRelay,
                                                      "udp",
-                                                     2000);
+                                                     TimeDelta::Seconds(2));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kPrflxUdpToRelayUdp(IceCandidateType::kPrflx,
                                                      "udp",
                                                      IceCandidateType::kRelay,
                                                      "udp",
-                                                     2000);
+                                                     TimeDelta::Seconds(2));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kRelayUdpToPrflxUdp(IceCandidateType::kRelay,
                                                      "udp",
                                                      IceCandidateType::kPrflx,
                                                      "udp",
-                                                     2000);
+                                                     TimeDelta::Seconds(2));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kLocalTcpToLocalTcp(IceCandidateType::kHost,
                                                      "tcp",
                                                      IceCandidateType::kHost,
                                                      "tcp",
-                                                     3000);
+                                                     TimeDelta::Seconds(3));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kLocalTcpToPrflxTcp(IceCandidateType::kHost,
                                                      "tcp",
                                                      IceCandidateType::kPrflx,
                                                      "tcp",
-                                                     3000);
+                                                     TimeDelta::Seconds(3));
 const P2PTransportChannelTestBase::Result
     P2PTransportChannelTestBase::kPrflxTcpToLocalTcp(IceCandidateType::kPrflx,
                                                      "tcp",
                                                      IceCandidateType::kHost,
                                                      "tcp",
-                                                     3000);
+                                                     TimeDelta::Seconds(3));
 
 
 
@@ -1304,7 +1243,7 @@ const P2PTransportChannelMatrixTest::Result*
 #define P2P_TEST_DECLARATION(x, y, z)                                 \
   TEST_P(P2PTransportChannelMatrixTest, z##Test##x##To##y) {          \
     const Environment env =                                           \
-        CreateEnvironment(FieldTrials::CreateNoGlobal(GetParam()));   \
+        CreateEnvironment(CreateTestFieldTrialsPtr(GetParam()));      \
     ConfigureEndpoints(env, x, y, PORTALLOCATOR_ENABLE_SHARED_SOCKET, \
                        PORTALLOCATOR_ENABLE_SHARED_SOCKET);           \
     if (kMatrix[x][y] != NULL)                                        \
@@ -1373,15 +1312,12 @@ TEST_F(P2PTransportChannelTest, GetStats) {
   ConfigureEndpoints(env, OPEN, OPEN, kDefaultPortAllocatorFlags,
                      kDefaultPortAllocatorFlags);
   CreateChannels(env);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+               ep2_ch1()->receiving() && ep2_ch1()->writable();
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
   
   TestSendRecv(&clock);
 
@@ -1434,15 +1370,12 @@ TEST_F(P2PTransportChannelTest, GetStatsSwitchConnection) {
   AddAddress(0, kAlternateAddrs[1], "rmnet0", ADAPTER_TYPE_CELLULAR);
 
   CreateChannels(env, continual_gathering_config, continual_gathering_config);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                   ep2_ch1()->receiving() && ep2_ch1()->writable();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+               ep2_ch1()->receiving() && ep2_ch1()->writable();
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
   
   TestSendRecv(&clock);
 
@@ -1474,9 +1407,8 @@ TEST_F(P2PTransportChannelTest, GetStatsSwitchConnection) {
       const_cast<Connection*>(old_selected_connection));
 
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kMediumTimeout, .clock = &clock}),
       IsRtcOk());
 
   
@@ -1515,11 +1447,8 @@ TEST_F(P2PTransportChannelTest,
   IceConfig default_config;
   CreateChannels(env, continual_gathering_config, default_config);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
 
   
   AddAddress(0, kAlternateAddrs[0]);
@@ -1529,8 +1458,7 @@ TEST_F(P2PTransportChannelTest,
             return GetEndpoint(0)->GetIceRegatheringCountForReason(
                 IceRegatheringReason::NETWORK_CHANGE);
           },
-          Eq(1),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+          Eq(1), {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
@@ -1538,7 +1466,7 @@ TEST_F(P2PTransportChannelTest,
   ep2_ch1()->MaybeStartGathering();
 
   AddAddress(1, kAlternateAddrs[1]);
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
   
   EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
                    IceRegatheringReason::NETWORK_CHANGE));
@@ -1561,11 +1489,8 @@ TEST_F(P2PTransportChannelTest,
   config2.regather_on_failed_networks_interval = 2000;
   CreateChannels(env, config1, config2);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
 
   fw()->AddRule(false, FP_ANY, FD_ANY, kPublicAddrs[0]);
   
@@ -1597,10 +1522,9 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
 
   
   
-  ASSERT_THAT(
-      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep2_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   
   
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
@@ -1613,7 +1537,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
                     return selected_connection =
                                ep1_ch1()->selected_connection();
                   },
-                  Ne(nullptr), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                  Ne(nullptr), {.timeout = kMediumTimeout}),
               IsRtcOk());
   EXPECT_TRUE(selected_connection->remote_candidate().is_prflx());
   EXPECT_EQ(kIceUfrag[1], selected_connection->remote_candidate().username());
@@ -1622,15 +1546,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
 
   ResumeCandidates(1);
   
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()
-                        ->selected_connection()
-                        ->remote_candidate()
-                        .is_local();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->remote_candidate().is_local();
+      },
+      {.timeout = kMediumTimeout}));
   EXPECT_EQ(selected_connection, ep1_ch1()->selected_connection());
   DestroyChannels();
 }
@@ -1652,15 +1572,13 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
   
   PauseCandidates(1);
 
-  ASSERT_THAT(
-      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep2_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
-  ASSERT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
 
   
   auto pair_ep1 = ep1_ch1()->GetSelectedCandidatePair();
@@ -1681,16 +1599,12 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
 
   
   ResumeCandidates(1);
-  ASSERT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()->selected_connection() != nullptr &&
-                           ep1_ch1()
-                               ->selected_connection()
-                               ->remote_candidate()
-                               .is_local();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection() != nullptr &&
+               ep1_ch1()->selected_connection()->remote_candidate().is_local();
+      },
+      {.timeout = kMediumTimeout}));
 
   
   
@@ -1730,10 +1644,9 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
 
   
   
-  ASSERT_THAT(
-      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep2_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   
   
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
@@ -1747,7 +1660,7 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
                     return selected_connection =
                                ep1_ch1()->selected_connection();
                   },
-                  Ne(nullptr), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                  Ne(nullptr), {.timeout = kMediumTimeout}),
               IsRtcOk());
   EXPECT_TRUE(selected_connection->remote_candidate().is_prflx());
   EXPECT_EQ(kIceUfrag[1], selected_connection->remote_candidate().username());
@@ -1756,15 +1669,11 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
 
   ResumeCandidates(1);
 
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()
-                        ->selected_connection()
-                        ->remote_candidate()
-                        .is_prflx();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->remote_candidate().is_prflx();
+      },
+      {.timeout = kMediumTimeout}));
   EXPECT_EQ(selected_connection, ep1_ch1()->selected_connection());
   DestroyChannels();
 }
@@ -1793,10 +1702,8 @@ TEST_F(P2PTransportChannelTest,
   
   ep1_ch1()->SetRemoteIceParameters(kIceParams[1]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[0]);
-  EXPECT_THAT(
-      WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout}));
 
   
   
@@ -1808,15 +1715,11 @@ TEST_F(P2PTransportChannelTest,
 
   
   
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()
-                        ->selected_connection()
-                        ->remote_candidate()
-                        .is_prflx();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->remote_candidate().is_prflx();
+      },
+      {.timeout = kDefaultTimeout}));
   const Connection* prflx_selected_connection =
       ep1_ch1()->selected_connection();
 
@@ -1830,15 +1733,11 @@ TEST_F(P2PTransportChannelTest,
   
   ResumeCandidates(1);
 
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()
-                        ->selected_connection()
-                        ->remote_candidate()
-                        .is_relay();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->remote_candidate().is_relay();
+      },
+      {.timeout = kDefaultTimeout}));
   EXPECT_EQ(prflx_selected_connection, ep1_ch1()->selected_connection());
   DestroyChannels();
 }
@@ -1853,17 +1752,16 @@ TEST_F(P2PTransportChannelTest, RemoteCandidatesWithoutUfragPwd) {
   CreateChannels(env);
   const Connection* selected_connection = nullptr;
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return selected_connection = ep2_ch1()->selected_connection();
-          },
-          NotNull(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil(
+                  [&] {
+                    return selected_connection =
+                               ep2_ch1()->selected_connection();
+                  },
+                  NotNull(), {.timeout = kMediumTimeout, .clock = &clock}),
+              IsRtcOk());
   
   SIMULATED_WAIT(ep2_ch1()->selected_connection() != selected_connection,
-                 kShortTimeout, clock);
+                 kShortTimeout.ms(), clock);
   EXPECT_TRUE(ep2_ch1()->selected_connection() == selected_connection);
   DestroyChannels();
 }
@@ -1881,7 +1779,7 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyBlocked) {
   ep1_ch1()->set_incoming_only(true);
 
   
-  SIMULATED_WAIT(false, kShortTimeout, clock);
+  SIMULATED_WAIT(false, kShortTimeout.ms(), clock);
 
   EXPECT_FALSE(ep1_ch1()->receiving());
   EXPECT_FALSE(ep1_ch1()->writable());
@@ -1903,11 +1801,8 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyOpen) {
   CreateChannels(env);
   ep1_ch1()->set_incoming_only(true);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
 
   DestroyChannels();
 }
@@ -1977,15 +1872,12 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionsFromActiveToPassive) {
   ResumeCandidates(0);
   ResumeCandidates(1);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kShortTimeout, .clock = &clock}));
 
   TestSendRecv(&clock);
   DestroyChannels();
@@ -2003,12 +1895,9 @@ TEST_F(P2PTransportChannelTest, TestTcpConnectionTcptypeSet) {
   SetAllowTcpListen(1, true);   
   CreateChannels(env);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
 
   EXPECT_EQ(RemoteCandidate(ep1_ch1())->tcptype(), "passive");
   EXPECT_EQ(LocalCandidate(ep1_ch1())->tcptype(), "active");
@@ -2035,20 +1924,15 @@ TEST_F(P2PTransportChannelTest, TestIceRoleConflict) {
       GetEndpoint(1)->allocator_->ice_tiebreaker();
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return GetRoleConflict(first_endpoint_has_lower_tiebreaker ? 0 : 1);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return GetRoleConflict(first_endpoint_has_lower_tiebreaker ? 0 : 1);
+      },
+      {.timeout = kShortTimeout, .clock = &clock}));
   EXPECT_FALSE(GetRoleConflict(first_endpoint_has_lower_tiebreaker ? 1 : 0));
 
-  EXPECT_THAT(
-      WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
 
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection());
@@ -2072,10 +1956,9 @@ TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
 
   CreateChannels(env);
 
-  EXPECT_THAT(
-      WaitUntil([&] { return ep1_ch1()->ports().size(); }, Eq(2u),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->ports().size(); }, Eq(2u),
+                        {.timeout = kShortTimeout, .clock = &clock}),
+              IsRtcOk());
 
   const std::vector<PortInterface*> ports_before = ep1_ch1()->ports();
   for (size_t i = 0; i < ports_before.size(); ++i) {
@@ -2089,10 +1972,8 @@ TEST_F(P2PTransportChannelTest, TestIceConfigWillPassDownToPort) {
     EXPECT_EQ(ICEROLE_CONTROLLED, ports_before[i]->GetIceRole());
   }
 
-  EXPECT_THAT(
-      WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
 
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection());
@@ -2143,15 +2024,12 @@ TEST_F(P2PTransportChannelTest, TestIPv6Connections) {
 
   CreateChannels(env);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kIPv6PublicAddrs[0], kIPv6PublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(
+            ep1_ch1(), ep2_ch1(), kIPv6PublicAddrs[0], kIPv6PublicAddrs[1]);
+      },
+      {.timeout = kShortTimeout, .clock = &clock}));
 
   TestSendRecv(&clock);
   DestroyChannels();
@@ -2172,11 +2050,8 @@ TEST_F(P2PTransportChannelTest, TestForceTurn) {
 
   CreateChannels(env);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
 
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection());
@@ -2205,14 +2080,11 @@ TEST_F(P2PTransportChannelTest, TestContinualGathering) {
   IceConfig default_config;
   CreateChannels(env, continual_gathering_config, default_config);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
   SIMULATED_WAIT(
       IceGatheringState::kIceGatheringComplete == ep1_ch1()->gathering_state(),
-      kShortTimeout, clock);
+      kShortTimeout.ms(), clock);
   EXPECT_EQ(IceGatheringState::kIceGatheringGathering,
             ep1_ch1()->gathering_state());
   
@@ -2252,11 +2124,8 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionBeforeDoneGathering) {
   EXPECT_TRUE(pooled_session_2->ReadyCandidates().empty());
   
   CreateChannels(env);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
   TestSendRecv(&clock);
   
   
@@ -2294,22 +2163,16 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
   ASSERT_NE(nullptr, pooled_session_2);
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return pooled_session_1->CandidatesAllocationDone() &&
-                   pooled_session_2->CandidatesAllocationDone();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return pooled_session_1->CandidatesAllocationDone() &&
+               pooled_session_2->CandidatesAllocationDone();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   
   CreateChannels(env);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
   TestSendRecv(&clock);
   
   
@@ -2342,7 +2205,7 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
   ep1_ch1()->MaybeStartGathering();
   EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->gathering_state(); },
                         Eq(IceGatheringState::kIceGatheringComplete),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   
   
@@ -2352,10 +2215,9 @@ TEST_F(P2PTransportChannelTest, TurnToTurnPresumedWritable) {
       CreateUdpCandidate(IceCandidateType::kRelay, "2.2.2.2", 2, 0));
   
   
-  EXPECT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kShortTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kShortTimeout}),
+              IsRtcOk());
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
   
@@ -2402,12 +2264,9 @@ TEST_F(P2PTransportChannelTest, TurnToPrflxPresumedWritable) {
   ep2_ch1()->MaybeStartGathering();
 
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->receiving() && ep1_ch1()->writable(); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &fake_clock}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ep1_ch1()->receiving() && ep1_ch1()->writable(); },
+                {.timeout = kShortTimeout, .clock = &fake_clock}));
   ASSERT_NE(nullptr, ep1_ch1()->selected_connection());
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_prflx());
@@ -2416,12 +2275,9 @@ TEST_F(P2PTransportChannelTest, TurnToPrflxPresumedWritable) {
   EXPECT_FALSE(ep1_ch1()->selected_connection()->writable());
 
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection()->writable(); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &fake_clock}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ep1_ch1()->selected_connection()->writable(); },
+                {.timeout = kShortTimeout, .clock = &fake_clock}));
 
   
   DestroyChannels();
@@ -2446,19 +2302,14 @@ TEST_F(P2PTransportChannelTest, PresumedWritablePreferredOverUnreliable) {
   ep1_ch1()->MaybeStartGathering();
   ep2_ch1()->MaybeStartGathering();
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &fake_clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kShortTimeout, .clock = &fake_clock}));
   const Connection* old_selected_connection = ep1_ch1()->selected_connection();
   
   
   GetEndpoint(1)->cd1_.ch_.reset();
-  EXPECT_THAT(WaitUntil([&] { return !ep1_ch1()->writable(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &fake_clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !ep1_ch1()->writable(); },
+                        {.timeout = kDefaultTimeout, .clock = &fake_clock}));
   EXPECT_NE(nullptr, ep1_ch1()->selected_connection());
   
   
@@ -2489,15 +2340,14 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
   ep1_ch1()->MaybeStartGathering();
   EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->gathering_state(); },
                         Eq(IceGatheringState::kIceGatheringComplete),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   ep1_ch1()->AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 0));
   
-  EXPECT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kShortTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kShortTimeout}),
+              IsRtcOk());
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->is_relay());
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->is_relay());
 
@@ -2548,12 +2398,9 @@ TEST_F(P2PTransportChannelTest,
   ep1_ch1()->MaybeStartGathering();
   ep2_ch1()->MaybeStartGathering();
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->receiving() && ep1_ch1()->writable(); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ep1_ch1()->receiving() && ep1_ch1()->writable(); },
+                {.timeout = kMediumTimeout, .clock = &clock}));
 
   ASSERT_NE(nullptr, ep1_ch1()->selected_connection());
 
@@ -2568,7 +2415,7 @@ TEST_F(P2PTransportChannelTest,
 TEST_F(P2PTransportChannelTest,
        CanConnectWithPiggybackCheckAcknowledgementWhenCheckResponseBlocked) {
   ScopedFakeClock clock;
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-PiggybackIceCheckAcknowledgement/Enabled/"));
   ConfigureEndpoints(env, OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
   IceConfig ep1_config;
@@ -2584,23 +2431,17 @@ TEST_F(P2PTransportChannelTest,
   CreateChannels(env, ep1_config, ep2_config);
 
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
   
   
   ASSERT_NE(nullptr, LocalCandidate(ep1_ch1()));
   fw()->AddRule(false, FP_ANY, FD_IN, LocalCandidate(ep1_ch1())->address());
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1() != nullptr && !ep1_ch1()->writable(); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ep1_ch1() != nullptr && !ep1_ch1()->writable(); },
+                {.timeout = kDefaultTimeout, .clock = &clock}));
   EXPECT_TRUE(ep2_ch1() != nullptr && ep2_ch1()->writable());
   
   
@@ -2609,12 +2450,9 @@ TEST_F(P2PTransportChannelTest,
   
   fw()->ClearRules();
   fw()->AddRule(false, FP_ANY, FD_OUT, LocalCandidate(ep1_ch1())->address());
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1() != nullptr && ep1_ch1()->writable(); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return ep1_ch1() != nullptr && ep1_ch1()->writable(); },
+                {.timeout = kDefaultTimeout, .clock = &clock}));
   DestroyChannels();
 }
 
@@ -2658,7 +2496,7 @@ TEST_F(P2PTransportChannelSameNatTest, TestConesBehindSameCone) {
   ConfigureEndpoints(env, NAT_FULL_CONE, NAT_FULL_CONE, NAT_FULL_CONE);
   Test(env, P2PTransportChannelTestBase::Result(IceCandidateType::kPrflx, "udp",
                                                 IceCandidateType::kSrflx, "udp",
-                                                1000));
+                                                TimeDelta::Seconds(1)));
 }
 
 
@@ -2761,15 +2599,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   
   CreateChannels(env, config, config);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   RTC_LOG(LS_INFO) << "Failing over...";
@@ -2777,23 +2612,17 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControlledSide) {
   
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return !selected_connection1->receiving(); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !selected_connection1->receiving(); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->selected_connection()->receiving() &&
-                   ep2_ch1()->selected_connection()->receiving();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->receiving() &&
+               ep2_ch1()->selected_connection()->receiving();
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
   EXPECT_TRUE(LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]));
   EXPECT_TRUE(
       RemoteCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[1]));
@@ -2822,15 +2651,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   
   CreateChannels(env, config, config);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   RTC_LOG(LS_INFO) << "Failing over...";
@@ -2839,15 +2665,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kAlternateAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(
+            ep1_ch1(), ep2_ch1(), kAlternateAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   DestroyChannels();
 }
@@ -2896,15 +2719,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   
   CreateChannels(env, config, config, true );
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
-                                                  wifiIpv6[0], wifiIpv6[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), wifiIpv6[0],
+                                              wifiIpv6[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   RTC_LOG(LS_INFO) << "Failing over...";
@@ -2914,15 +2734,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
   
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   const Connection* selected_connection2 = ep2_ch1()->selected_connection();
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return !selected_connection1->receiving() &&
-                   !selected_connection2->receiving();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return !selected_connection1->receiving() &&
+               !selected_connection2->receiving();
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   
@@ -2932,10 +2749,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
   int64_t last_ping_sent1 = per_network_best_connection1->last_ping_sent();
   int num_pings_sent1 = per_network_best_connection1->num_pings_sent();
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return per_network_best_connection1->num_pings_sent(); },
-          Gt(num_pings_sent1),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+      WaitUntil([&] { return per_network_best_connection1->num_pings_sent(); },
+                Gt(num_pings_sent1),
+                {.timeout = kMediumTimeout, .clock = &clock}),
       IsRtcOk());
   ASSERT_GT(per_network_best_connection1->num_pings_sent() - num_pings_sent1,
             0);
@@ -2949,15 +2765,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
 
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
-                                                  cellularIpv6[0], wifiIpv6[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              cellularIpv6[0], wifiIpv6[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   DestroyChannels();
 }
@@ -2984,20 +2797,14 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
   
   CreateChannels(env, config, config, true);
-  ASSERT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep2_ch1()->selected_connection()->remote_nomination() > 0 &&
-                   ep1_ch1()->selected_connection()->acked_nomination() > 0;
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep2_ch1()->selected_connection()->remote_nomination() > 0 &&
+               ep1_ch1()->selected_connection()->acked_nomination() > 0;
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   Connection* selected_connection2 =
       const_cast<Connection*>(ep2_ch1()->selected_connection());
@@ -3005,7 +2812,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   
   
   ConnectSignalNominated(selected_connection2);
-  SIMULATED_WAIT(nominated(), kMediumTimeout, clock);
+  SIMULATED_WAIT(nominated(), kMediumTimeout.ms(), clock);
   EXPECT_FALSE(nominated());
 
   
@@ -3015,8 +2822,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
   
   EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
                         Ne(selected_connection1),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout),
-                         .clock = &clock}),
+                        {.timeout = kMediumTimeout, .clock = &clock}),
               IsRtcOk());
   
   
@@ -3024,7 +2830,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestIceRenomination) {
       WaitUntil(
           [&] { return ep2_ch1()->selected_connection()->remote_nomination(); },
           Gt(remote_nomination2),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+          {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
 
   DestroyChannels();
@@ -3052,15 +2858,12 @@ TEST_F(P2PTransportChannelMultihomedTest,
   
   CreateChannels(env);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
@@ -3075,26 +2878,20 @@ TEST_F(P2PTransportChannelMultihomedTest,
   
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return !selected_connection1->receiving(); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !selected_connection1->receiving(); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
   
   SIMULATED_WAIT(false, 10, clock);
   fw()->ClearRules();
 
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->selected_connection()->receiving() &&
-                   ep2_ch1()->selected_connection()->receiving();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->receiving() &&
+               ep2_ch1()->selected_connection()->receiving();
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_TRUE(LocalCandidate(ep2_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_EQ(0, reset_selected_candidate_pair_switches());
@@ -3120,15 +2917,12 @@ TEST_F(P2PTransportChannelMultihomedTest,
 
   
   CreateChannels(env);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   IceConfig config = CreateIceConfig(1000, GATHER_ONCE);
@@ -3142,26 +2936,20 @@ TEST_F(P2PTransportChannelMultihomedTest,
   
   const Connection* selected_connection1 = ep1_ch1()->selected_connection();
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return !selected_connection1->receiving(); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !selected_connection1->receiving(); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
   
   SIMULATED_WAIT(false, 10, clock);
   fw()->ClearRules();
 
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
   EXPECT_EQ(0, reset_selected_candidate_pair_switches());
   DestroyChannels();
 }
@@ -3193,26 +2981,20 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRemoteFailover) {
   ep1_ch1()->SetIceConfig(config);
   ep2_ch1()->SetIceConfig(config);
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), wifi[0],
-                                                  wifi[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), wifi[0],
+                                              wifi[1]);
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   Connection* backup_conn =
       GetConnectionWithLocalAddress(ep1_ch1(), cellular[0]);
   ASSERT_NE(nullptr, backup_conn);
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return backup_conn->writable() && !backup_conn->receiving(); },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] { return backup_conn->writable() && !backup_conn->receiving(); },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   reset_selected_candidate_pair_switches();
   
   RTC_LOG(LS_INFO) << "Failing over...";
@@ -3245,17 +3027,13 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiToWifiConnection) {
   
   CreateChannels(env);
 
-  EXPECT_THAT(WaitUntil([&]() { return CheckConnected(ep1_ch1(), ep2_ch1()); },
-                        IsTrue()),
-              IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&]() { return CheckConnected(ep1_ch1(), ep2_ch1()); }));
   
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
-                                                          wifi[0], wifi[1]);
-                  },
-                  IsTrue()),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] {
+    return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), wifi[0],
+                                          wifi[1]);
+  }));
   DestroyChannels();
 }
 
@@ -3279,13 +3057,10 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPreferWifiOverCellularNetwork) {
   
   CreateChannels(env);
 
-  EXPECT_THAT(WaitUntil(
-                  [&]() {
-                    return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
-                                                          cellular[0], wifi[1]);
-                  },
-                  IsTrue()),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&]() {
+    return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), cellular[0],
+                                          wifi[1]);
+  }));
   DestroyChannels();
 }
 
@@ -3306,9 +3081,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
 
   
   CreateChannels(env);
-  EXPECT_THAT(
-      WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue()),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }));
   int backup_ping_interval = 2000;
   ep2_ch1()->SetIceConfig(
       CreateIceConfig(2000, GATHER_ONCE, backup_ping_interval));
@@ -3320,14 +3093,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
   auto connections = ep2_ch1()->connections();
   ASSERT_EQ(2U, connections.size());
   Connection* backup_conn = GetBackupConnection(ep2_ch1());
-  EXPECT_THAT(WaitUntil([&] { return backup_conn->writable(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return backup_conn->writable(); },
+                        {.timeout = kMediumTimeout}));
   int64_t last_ping_response_ms = backup_conn->last_ping_response_received();
   EXPECT_THAT(
       WaitUntil([&] { return backup_conn->last_ping_response_received(); },
-                Gt(last_ping_response_ms),
-                {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                Gt(last_ping_response_ms), {.timeout = kDefaultTimeout}),
       IsRtcOk());
   int time_elapsed =
       backup_conn->last_ping_response_received() - last_ping_response_ms;
@@ -3354,9 +3125,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestStableWritableRate) {
 
   
   CreateChannels(env);
-  EXPECT_THAT(
-      WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue()),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }));
   
   int ping_interval_ms = 3456;
   IceConfig config = CreateIceConfig(2 * ping_interval_ms, GATHER_ONCE);
@@ -3370,18 +3139,17 @@ TEST_F(P2PTransportChannelMultihomedTest, TestStableWritableRate) {
   auto connections = ep2_ch1()->connections();
   ASSERT_EQ(2U, connections.size());
   Connection* conn = GetBestConnection(ep2_ch1());
-  EXPECT_THAT(WaitUntil([&] { return conn->writable(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(
+      WaitUntil([&] { return conn->writable(); }, {.timeout = kMediumTimeout}));
 
   int64_t last_ping_response_ms;
   
   for (int i = 0; i < 5; i++) {
     last_ping_response_ms = conn->last_ping_response_received();
-    EXPECT_THAT(WaitUntil([&] { return conn->last_ping_response_received(); },
-                          Gt(last_ping_response_ms),
-                          {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-                IsRtcOk());
+    EXPECT_THAT(
+        WaitUntil([&] { return conn->last_ping_response_received(); },
+                  Gt(last_ping_response_ms), {.timeout = kDefaultTimeout}),
+        IsRtcOk());
   }
   EXPECT_TRUE(conn->stable(last_ping_response_ms)) << "Connection not stable";
   int time_elapsed =
@@ -3403,16 +3171,14 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
   CreateChannels(env);
 
   
-  EXPECT_THAT(
-      WaitUntil([&] { return ep1_ch1()->GetState(); },
-                Eq(IceTransportStateInternal::STATE_COMPLETED),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
-  EXPECT_THAT(
-      WaitUntil([&] { return ep2_ch1()->GetState(); },
-                Eq(IceTransportStateInternal::STATE_COMPLETED),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->GetState(); },
+                        Eq(IceTransportStateInternal::STATE_COMPLETED),
+                        {.timeout = kShortTimeout, .clock = &clock}),
+              IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return ep2_ch1()->GetState(); },
+                        Eq(IceTransportStateInternal::STATE_COMPLETED),
+                        {.timeout = kShortTimeout, .clock = &clock}),
+              IsRtcOk());
   DestroyChannels();
 }
 
@@ -3433,11 +3199,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
 
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
-  ASSERT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
   
   EXPECT_LE(1U, ep1_ch1()->ports().size());
   
@@ -3445,9 +3208,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
   RemoveAddress(0, kPublicAddrs[0]);
   EXPECT_TRUE(ep1_ch1()->ports().empty());
   
-  EXPECT_THAT(WaitUntil([&] { return ep2_ch1()->remote_candidates().empty(); },
-                        IsTrue(), {.clock = &clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return ep2_ch1()->remote_candidates().empty(); },
+                        {.clock = &clock}));
 
   size_t num_ports = ep2_ch1()->ports().size();
   EXPECT_LE(1U, num_ports);
@@ -3458,8 +3220,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestNetworkBecomesInactive) {
   RemoveAddress(1, kPublicAddrs[1]);
 
   EXPECT_THAT(WaitUntil([&] { return ep2_ch1()->ports().size(); }, Eq(0U),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   SIMULATED_WAIT(ep1_ch1()->remote_candidates().empty(), 500, clock);
   EXPECT_EQ(num_remote_candidates, ep1_ch1()->remote_candidates().size());
@@ -3483,67 +3244,55 @@ TEST_F(P2PTransportChannelMultihomedTest,
   CreateChannels(env, continual_gathering_config, continual_gathering_config);
   SetAllocatorFlags(0, kOnlyLocalPorts);
   SetAllocatorFlags(1, kOnlyLocalPorts);
-  EXPECT_THAT(
-      WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout}));
 
   
   
   AddAddress(1, wifi[1], "test_wifi1", ADAPTER_TYPE_WIFI);
   const Connection* conn;
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return (conn = ep1_ch1()->selected_connection()) !=
-                               nullptr &&
-                           HasRemoteAddress(conn, wifi[1]);
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return (conn = ep2_ch1()->selected_connection()) !=
-                               nullptr &&
-                           HasLocalAddress(conn, wifi[1]);
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return (conn = ep1_ch1()->selected_connection()) != nullptr &&
+               HasRemoteAddress(conn, wifi[1]);
+      },
+      {.timeout = kDefaultTimeout}));
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return (conn = ep2_ch1()->selected_connection()) != nullptr &&
+               HasLocalAddress(conn, wifi[1]);
+      },
+      {.timeout = kDefaultTimeout}));
 
   
   
   AddAddress(0, cellular[0], "test_cellular0", ADAPTER_TYPE_CELLULAR);
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()->GetState() ==
-                               IceTransportStateInternal::STATE_COMPLETED &&
-                           absl::c_any_of(
-                               ep1_ch1()->connections(),
-                               [channel = ep1_ch1(),
-                                address = cellular[0]](const Connection* conn) {
-                                 return HasLocalAddress(conn, address) &&
-                                        conn !=
-                                            channel->selected_connection() &&
-                                        conn->writable();
-                               });
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep2_ch1()->GetState() ==
-                               IceTransportStateInternal::STATE_COMPLETED &&
-                           absl::c_any_of(
-                               ep2_ch1()->connections(),
-                               [channel = ep2_ch1(),
-                                address = cellular[0]](const Connection* conn) {
-                                 return HasRemoteAddress(conn, address) &&
-                                        conn !=
-                                            channel->selected_connection() &&
-                                        conn->receiving();
-                               });
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->GetState() ==
+                   IceTransportStateInternal::STATE_COMPLETED &&
+               absl::c_any_of(ep1_ch1()->connections(),
+                              [channel = ep1_ch1(),
+                               address = cellular[0]](const Connection* conn) {
+                                return HasLocalAddress(conn, address) &&
+                                       conn != channel->selected_connection() &&
+                                       conn->writable();
+                              });
+      },
+      {.timeout = kDefaultTimeout}));
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep2_ch1()->GetState() ==
+                   IceTransportStateInternal::STATE_COMPLETED &&
+               absl::c_any_of(ep2_ch1()->connections(),
+                              [channel = ep2_ch1(),
+                               address = cellular[0]](const Connection* conn) {
+                                return HasRemoteAddress(conn, address) &&
+                                       conn != channel->selected_connection() &&
+                                       conn->receiving();
+                              });
+      },
+      {.timeout = kDefaultTimeout}));
 
   DestroyChannels();
 }
@@ -3565,44 +3314,35 @@ TEST_F(P2PTransportChannelMultihomedTest,
       CreateIceConfig(1000, GATHER_CONTINUALLY);
   
   CreateChannels(env, continual_gathering_config, continual_gathering_config);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kPublicAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(),
+                                              kPublicAddrs[0], kPublicAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   RTC_LOG(LS_INFO) << "Draining...";
   AddAddress(1, kAlternateAddrs[1]);
   RemoveAddress(1, kPublicAddrs[1]);
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kAlternateAddrs[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(
+            ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kAlternateAddrs[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   RTC_LOG(LS_INFO) << "Draining again...";
   RemoveAddress(1, kAlternateAddrs[1]);
   AddAddress(1, kAlternateAddrs[0]);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(
-                ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kAlternateAddrs[0]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(
+            ep1_ch1(), ep2_ch1(), kPublicAddrs[0], kAlternateAddrs[0]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   DestroyChannels();
 }
@@ -3626,15 +3366,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   config.regather_on_failed_networks_interval = 2000;
   CreateChannels(env, config, config);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), wifi[0],
-                                                  wifi[1]);
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckCandidatePairAndConnected(ep1_ch1(), ep2_ch1(), wifi[0],
+                                              wifi[1]);
+      },
+      {.timeout = kMediumTimeout, .clock = &clock}));
 
   
   DestroyAllButBestConnection(ep1_ch1());
@@ -3642,20 +3379,17 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
   EXPECT_THAT(
       WaitUntil(
           [&] { return GetConnectionWithLocalAddress(ep1_ch1(), cellular[0]); },
-          Eq(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+          Eq(nullptr), {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   const Connection* conn;
-  EXPECT_THAT(
+  EXPECT_TRUE(
       WaitUntil(
           [&] {
             return (conn = GetConnectionWithLocalAddress(
                         ep1_ch1(), cellular[0])) != nullptr &&
                    conn != ep1_ch1()->selected_connection() && conn->writable();
           },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+          {.timeout = kDefaultTimeout, .clock = &clock}));
 
   DestroyChannels();
 }
@@ -3670,15 +3404,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestVpnDefault) {
 
   IceConfig config;
   CreateChannels(env, config, config, false);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   !ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               !ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 }
 
 TEST_F(P2PTransportChannelMultihomedTest, TestVpnPreferVpn) {
@@ -3694,29 +3425,23 @@ TEST_F(P2PTransportChannelMultihomedTest, TestVpnPreferVpn) {
   config.vpn_preference = VpnPreference::kPreferVpn;
   RTC_LOG(LS_INFO) << "KESO: config.vpn_preference: " << config.vpn_preference;
   CreateChannels(env, config, config, false);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   
   fw()->AddRule(false, FP_ANY, FD_ANY, kAlternateAddrs[0]);
 
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   !ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               !ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 }
 
 TEST_F(P2PTransportChannelMultihomedTest, TestVpnAvoidVpn) {
@@ -3731,29 +3456,23 @@ TEST_F(P2PTransportChannelMultihomedTest, TestVpnAvoidVpn) {
   IceConfig config;
   config.vpn_preference = VpnPreference::kAvoidVpn;
   CreateChannels(env, config, config, false);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   !ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               !ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   
   fw()->AddRule(false, FP_ANY, FD_ANY, kPublicAddrs[0]);
 
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 }
 
 TEST_F(P2PTransportChannelMultihomedTest, TestVpnNeverVpn) {
@@ -3768,26 +3487,20 @@ TEST_F(P2PTransportChannelMultihomedTest, TestVpnNeverVpn) {
   IceConfig config;
   config.vpn_preference = VpnPreference::kNeverUseVpn;
   CreateChannels(env, config, config, false);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   !ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               !ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   
   fw()->AddRule(false, FP_ANY, FD_ANY, kPublicAddrs[0]);
 
   
-  clock.AdvanceTime(TimeDelta::Millis(kDefaultTimeout));
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return !CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  clock.AdvanceTime(kDefaultTimeout);
+  EXPECT_TRUE(WaitUntil([&] { return !CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
 }
 
 TEST_F(P2PTransportChannelMultihomedTest, TestVpnOnlyVpn) {
@@ -3802,26 +3515,20 @@ TEST_F(P2PTransportChannelMultihomedTest, TestVpnOnlyVpn) {
   IceConfig config;
   config.vpn_preference = VpnPreference::kOnlyUseVpn;
   CreateChannels(env, config, config, false);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return CheckConnected(ep1_ch1(), ep2_ch1()) &&
-                   ep1_ch1()->selected_connection()->network()->IsVpn();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return CheckConnected(ep1_ch1(), ep2_ch1()) &&
+               ep1_ch1()->selected_connection()->network()->IsVpn();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   
   fw()->AddRule(false, FP_ANY, FD_ANY, kAlternateAddrs[0]);
 
   
-  clock.AdvanceTime(TimeDelta::Millis(kDefaultTimeout));
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return !CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  clock.AdvanceTime(kDefaultTimeout);
+  EXPECT_TRUE(WaitUntil([&] { return !CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
 }
 
 TEST_F(P2PTransportChannelMultihomedTest, StunDictionaryPerformsSync) {
@@ -3854,11 +3561,8 @@ TEST_F(P2PTransportChannelMultihomedTest, StunDictionaryPerformsSync) {
         EXPECT_EQ(view.GetByteString(12)->string_view(), "keso");
       });
   EXPECT_CALL(writer_synced_func, Call).Times(1);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
 }
 
 
@@ -3881,7 +3585,7 @@ class P2PTransportChannelPingTest : public ::testing::Test,
         this, &P2PTransportChannelPingTest::OnNetworkRouteChanged);
     ch->SignalReadyToSend.connect(this,
                                   &P2PTransportChannelPingTest::OnReadyToSend);
-    ch->SignalStateChanged.connect(
+    ch->SignalIceTransportStateChanged.connect(
         this, &P2PTransportChannelPingTest::OnChannelStateChanged);
     ch->SetCandidatePairChangeCallback(
         [this](const CandidatePairChangeEvent& event) {
@@ -3895,14 +3599,12 @@ class P2PTransportChannelPingTest : public ::testing::Test,
                                   ThreadProcessingFakeClock* clock = nullptr) {
     if (clock == nullptr) {
       EXPECT_THAT(WaitUntil([&] { return GetConnectionTo(ch, ip, port_num); },
-                            Ne(nullptr),
-                            {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                            Ne(nullptr), {.timeout = kMediumTimeout}),
                   IsRtcOk());
     } else {
       EXPECT_THAT(
-          WaitUntil(
-              [&] { return GetConnectionTo(ch, ip, port_num); }, Ne(nullptr),
-              {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &*clock}),
+          WaitUntil([&] { return GetConnectionTo(ch, ip, port_num); },
+                    Ne(nullptr), {.timeout = kMediumTimeout, .clock = clock}),
           IsRtcOk());
     }
     return GetConnectionTo(ch, ip, port_num);
@@ -3958,10 +3660,8 @@ class P2PTransportChannelPingTest : public ::testing::Test,
     channel->AddRemoteCandidate(
         CreateUdpCandidate(IceCandidateType::kHost, ip_addr, port, priority));
     EXPECT_THAT(
-        WaitUntil(
-            [&] { return GetConnectionTo(channel, ip_addr, port); },
-            Ne(nullptr),
-            {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &*clock}),
+        WaitUntil([&] { return GetConnectionTo(channel, ip_addr, port); },
+                  Ne(nullptr), {.timeout = kMediumTimeout, .clock = clock}),
         IsRtcOk());
     Connection* conn = GetConnectionTo(channel, ip_addr, port);
 
@@ -4142,14 +3842,12 @@ TEST_F(P2PTransportChannelPingTest, TestAllConnectionsPingedSufficiently) {
   
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return conn1->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL &&
-                   conn2->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL;
-          },
-          IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return conn1->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL &&
+               conn2->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL;
+      },
+      {.timeout = kDefaultTimeout}));
 }
 
 
@@ -4169,13 +3867,13 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   Connection* conn = WaitForConnectionTo(&ch, "1.1.1.1", 1);
 
   ASSERT_TRUE(conn != nullptr);
-  SIMULATED_WAIT(conn->num_pings_sent() == 1, kDefaultTimeout, clock);
+  SIMULATED_WAIT(conn->num_pings_sent() == 1, kDefaultTimeout.ms(), clock);
 
   
 
   int64_t start = clock.TimeNanos();
   SIMULATED_WAIT(conn->num_pings_sent() >= MIN_PINGS_AT_WEAK_PING_INTERVAL,
-                 kDefaultTimeout, clock);
+                 kDefaultTimeout.ms(), clock);
   int64_t ping_interval_ms = (clock.TimeNanos() - start) /
                              kNumNanosecsPerMillisec /
                              (MIN_PINGS_AT_WEAK_PING_INTERVAL - 1);
@@ -4188,8 +3886,8 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   start = clock.TimeNanos();
   
   
-  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
-                 clock);
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
+                 kMediumTimeout.ms(), clock);
   ping_interval_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
   EXPECT_GE(ping_interval_ms,
             WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
@@ -4206,8 +3904,8 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   }
   ping_sent_before = conn->num_pings_sent();
   start = clock.TimeNanos();
-  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
-                 clock);
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
+                 kMediumTimeout.ms(), clock);
   ping_interval_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
   EXPECT_GE(ping_interval_ms,
             STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL);
@@ -4223,20 +3921,20 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   start = clock.TimeNanos();
   
   SIMULATED_WAIT(!conn->stable(clock.TimeNanos() / kNumNanosecsPerMillisec),
-                 kMediumTimeout, clock);
+                 kMediumTimeout.ms(), clock);
   int64_t duration_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
   EXPECT_GE(duration_ms, 2 * conn->rtt() - RTT_RANGE);
   EXPECT_LE(duration_ms, 2 * conn->rtt() + RTT_RANGE);
   
   ping_sent_before = conn->num_pings_sent();
-  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
-                 clock);
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
+                 kMediumTimeout.ms(), clock);
   
   
   start = clock.TimeNanos();
   ping_sent_before = conn->num_pings_sent();
-  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
-                 clock);
+  SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
+                 kMediumTimeout.ms(), clock);
   ping_interval_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
   EXPECT_GE(ping_interval_ms,
             WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
@@ -4258,7 +3956,7 @@ TEST_F(P2PTransportChannelPingTest, PingingStartedAsSoonAsPossible) {
   ch.MaybeStartGathering();
   EXPECT_THAT(WaitUntil([&] { return ch.gathering_state(); },
                         Eq(IceGatheringState::kIceGatheringComplete),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -4353,7 +4051,7 @@ TEST_F(P2PTransportChannelPingTest, TestSignalStateChanged) {
   conn1->Prune();
   EXPECT_THAT(WaitUntil([&] { return channel_state(); },
                         Eq(IceTransportStateInternal::STATE_FAILED),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 }
 
@@ -4400,7 +4098,7 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithVariousUfrags) {
   Connection* conn3 = nullptr;
   ASSERT_THAT(
       WaitUntil([&] { return conn3 = GetConnectionTo(&ch, "3.3.3.3", 3); },
-                Ne(nullptr), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Ne(nullptr), {.timeout = kMediumTimeout}),
       IsRtcOk());
   const Candidate& new_candidate = conn3->remote_candidate();
   EXPECT_EQ(kIcePwd[2], new_candidate.password());
@@ -4444,14 +4142,13 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
 
   
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                        {.timeout = kMediumTimeout}),
               IsRtcOk());
   
   ch.RemoveConnectionForTest(conn1);
-  EXPECT_THAT(
-      WaitUntil([&] { return GetConnectionTo(&ch, "1.1.1.1", 1); }, Eq(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return GetConnectionTo(&ch, "1.1.1.1", 1); },
+                        Eq(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
 
   
   IceMessage request(STUN_BINDING_REQUEST);
@@ -4502,14 +4199,10 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   conn1->OnReadPacket(
       ReceivedIpPacket::CreateFromLegacy("ABC", 3, TimeMicros()));
 
-  EXPECT_THAT(
-      WaitUntil([&] { return ch.receiving(); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
-  EXPECT_THAT(
-      WaitUntil([&] { return !ch.receiving(); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return ch.receiving(); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
+  EXPECT_TRUE(WaitUntil([&] { return !ch.receiving(); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
 }
 
 
@@ -4540,7 +4233,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
   EXPECT_TRUE(ConnectionMatchesChangeEvent(
@@ -4555,7 +4248,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
   EXPECT_TRUE(
@@ -4603,7 +4296,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   
   conn4->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn4),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn4));
   EXPECT_TRUE(
@@ -4617,7 +4310,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
 
 
 TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/send_ping_on_nomination_ice_controlled:true/"));
   FakePortAllocator pa(env, ss());
   P2PTransportChannel ch("receiving state change", 1, &pa, &env.field_trials());
@@ -4633,7 +4326,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
@@ -4645,7 +4338,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
@@ -4663,7 +4356,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
 
 
 TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/send_ping_on_switch_ice_controlling:true/"));
   FakePortAllocator pa(env, ss());
   P2PTransportChannel ch("receiving state change", 1, &pa, &env.field_trials());
@@ -4679,7 +4372,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
@@ -4694,7 +4387,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
 
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
@@ -4706,7 +4399,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
 
 
 TEST_F(P2PTransportChannelPingTest, TestPingOnSelected) {
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/send_ping_on_selected_ice_controlling:true/"));
   FakePortAllocator pa(env, ss());
   P2PTransportChannel ch("receiving state change", 1, &pa, &env.field_trials());
@@ -4724,7 +4417,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSelected) {
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
@@ -4761,7 +4454,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_NE(conn1, ch.selected_connection());
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -4801,7 +4494,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ(conn2, ch.selected_connection());
   conn4->ReceivedPingResponse(LOW_RTT, "id");  
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn4),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -4834,7 +4527,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -4868,7 +4561,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   EXPECT_NE(conn3, ch.selected_connection());  
   conn3->ReceivedPingResponse(LOW_RTT, "id");  
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn3),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -4878,7 +4571,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   conn2->OnReadPacket(
       ReceivedIpPacket::CreateFromLegacy("XYZ", 3, TimeMicros()));
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn3),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 }
 
@@ -5001,8 +4694,7 @@ TEST_F(P2PTransportChannelPingTest,
 
   
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
   reset_selected_candidate_pair_switches();
@@ -5052,8 +4744,7 @@ TEST_F(P2PTransportChannelPingTest, TestEstimatedDisconnectedTime) {
 
   
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
   
@@ -5138,26 +4829,22 @@ TEST_F(P2PTransportChannelPingTest,
   
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return reset_selected_candidate_pair_switches(); }, Eq(1),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return reset_selected_candidate_pair_switches(); }, Eq(1),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return reset_selected_candidate_pair_switches(); }, Eq(1),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return reset_selected_candidate_pair_switches(); }, Eq(1),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
 
@@ -5231,17 +4918,13 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPingResponse(LOW_RTT, "id");  
   NominateConnection(conn2);
-  EXPECT_THAT(WaitUntil([&] { return conn1->pruned(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout),
-                         .clock = &clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return conn1->pruned(); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
 
   ch.SetIceConfig(CreateIceConfig(500, GATHER_ONCE));
   
-  EXPECT_THAT(WaitUntil([&] { return !conn2->receiving(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout),
-                         .clock = &clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !conn2->receiving(); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
 
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kHost, "3.3.3.3", 3, 1));
@@ -5250,7 +4933,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   
   
   
-  SIMULATED_WAIT(conn3->pruned(), kShortTimeout, clock);
+  SIMULATED_WAIT(conn3->pruned(), kShortTimeout.ms(), clock);
   EXPECT_FALSE(conn3->pruned());
 }
 
@@ -5310,19 +4993,16 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   EXPECT_EQ(IceTransportState::kChecking, ch.GetIceTransportState());
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
-  EXPECT_THAT(
-      WaitUntil([&] { return conn2->pruned(); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return conn2->pruned(); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
   EXPECT_EQ(IceTransportStateInternal::STATE_COMPLETED, ch.GetState());
   EXPECT_EQ(IceTransportState::kConnected, ch.GetIceTransportState());
   conn1->Prune();  
   
-  EXPECT_THAT(
-      WaitUntil([&] { return ch.GetState(); },
-                Eq(IceTransportStateInternal::STATE_FAILED),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return ch.GetState(); },
+                        Eq(IceTransportStateInternal::STATE_FAILED),
+                        {.timeout = kShortTimeout, .clock = &clock}),
+              IsRtcOk());
   EXPECT_EQ(IceTransportState::kFailed, ch.GetIceTransportState());
 }
 
@@ -5347,8 +5027,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   EXPECT_EQ(nullptr, ch.selected_connection());
   conn1->ReceivedPingResponse(LOW_RTT, "id");  
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
 
   
@@ -5359,43 +5038,34 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
-  EXPECT_THAT(WaitUntil([&] { return !conn2->active(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !conn2->active(); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
   
   EXPECT_EQ(IceCandidatePairState::WAITING, conn2->state());
   EXPECT_EQ(IceTransportStateInternal::STATE_COMPLETED, ch.GetState());
   
-  EXPECT_THAT(WaitUntil([&] { return !conn1->receiving(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout),
-                         .clock = &clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !conn1->receiving(); },
+                        {.timeout = kMediumTimeout, .clock = &clock}));
   
   conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_THAT(WaitUntil([&] { return conn2->state(); },
                         Eq(IceCandidatePairState::IN_PROGRESS),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_EQ(IceTransportStateInternal::STATE_CONNECTING, ch.GetState());
 
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
-  EXPECT_THAT(WaitUntil([&] { return !conn2->active(); }, IsTrue(),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !conn2->active(); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
   EXPECT_EQ(IceTransportStateInternal::STATE_COMPLETED, ch.GetState());
 }
 
@@ -5415,10 +5085,8 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   ASSERT_TRUE(conn1 != nullptr);
   conn1->ReceivedPing();  
   conn1->Prune();
-  EXPECT_THAT(
-      WaitUntil([&] { return ch.connections().empty(); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return ch.connections().empty(); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
 
   
   ch.AddRemoteCandidate(
@@ -5434,10 +5102,8 @@ TEST_F(P2PTransportChannelPingTest, TestDeleteConnectionsIfAllWriteTimedout) {
   
   conn2->Prune();
   conn3->Prune();
-  EXPECT_THAT(
-      WaitUntil([&] { return ch.connections().empty(); }, IsTrue(),
-                {.timeout = TimeDelta::Millis(kShortTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return ch.connections().empty(); },
+                        {.timeout = kShortTimeout, .clock = &clock}));
 }
 
 
@@ -5570,7 +5236,7 @@ TEST_F(P2PTransportChannelPingTest, TestPortDestroyedAfterTimeoutAndPruned) {
 }
 
 TEST_F(P2PTransportChannelPingTest, TestMaxOutstandingPingsFieldTrial) {
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/max_outstanding_pings:3/"));
   FakePortAllocator pa(env, ss());
   P2PTransportChannel ch("max", 1, &pa, &env.field_trials());
@@ -5587,13 +5253,11 @@ TEST_F(P2PTransportChannelPingTest, TestMaxOutstandingPingsFieldTrial) {
   ASSERT_TRUE(conn1 != nullptr);
   ASSERT_TRUE(conn2 != nullptr);
 
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return conn1->num_pings_sent() == 3 &&
-                           conn2->num_pings_sent() == 3;
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return conn1->num_pings_sent() == 3 && conn2->num_pings_sent() == 3;
+      },
+      {.timeout = kDefaultTimeout}));
 
   
   EXPECT_EQ(nullptr, ch.FindNextPingableConnection());
@@ -5674,7 +5338,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   P2PTransportChannel& ch =
       StartTransportChannel(env, true, max_strong_interval);
   EXPECT_THAT(WaitUntil([&] { return ch.ports().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_EQ(ch.ports()[0]->Type(), IceCandidateType::kHost);
   EXPECT_EQ(ch.ports()[1]->Type(), IceCandidateType::kRelay);
@@ -5685,7 +5349,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
 
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(4),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -5741,7 +5405,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   CreatePortAllocator(env);
   P2PTransportChannel& ch = StartTransportChannel(env, true, 500);
   EXPECT_THAT(WaitUntil([&] { return ch.ports().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_EQ(ch.ports()[0]->Type(), IceCandidateType::kHost);
   EXPECT_EQ(ch.ports()[1]->Type(), IceCandidateType::kRelay);
@@ -5749,7 +5413,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 1));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -5762,7 +5426,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kRelay, "2.2.2.2", 2, 2));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(4),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -5787,7 +5451,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   CreatePortAllocator(env);
   P2PTransportChannel& ch = StartTransportChannel(env, true, 500);
   EXPECT_THAT(WaitUntil([&] { return ch.ports().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_EQ(ch.ports()[0]->Type(), IceCandidateType::kHost);
   EXPECT_EQ(ch.ports()[1]->Type(), IceCandidateType::kRelay);
@@ -5795,7 +5459,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -5810,7 +5474,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(4),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -5831,12 +5495,12 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
 
 TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
        TestSkipRelayToNonRelayConnectionsFieldTrial) {
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/skip_relay_to_non_relay_connections:true/"));
   CreatePortAllocator(env);
   P2PTransportChannel& ch = StartTransportChannel(env, true, 500);
   EXPECT_THAT(WaitUntil([&] { return ch.ports().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_EQ(ch.ports()[0]->Type(), IceCandidateType::kHost);
   EXPECT_EQ(ch.ports()[1]->Type(), IceCandidateType::kRelay);
@@ -5845,14 +5509,14 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(1),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 2));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 }
 
@@ -5869,7 +5533,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
 
   P2PTransportChannel& ch = StartTransportChannel(env, true, 500);
   EXPECT_THAT(WaitUntil([&] { return ch.ports().size(); }, Eq(3),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_EQ(ch.ports()[0]->Type(), IceCandidateType::kHost);
   EXPECT_EQ(ch.ports()[1]->Type(), IceCandidateType::kRelay);
@@ -5879,7 +5543,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
   ch.AddRemoteCandidate(
       CreateUdpCandidate(IceCandidateType::kRelay, "1.1.1.1", 1, 1));
   EXPECT_THAT(WaitUntil([&] { return ch.connections().size(); }, Eq(3),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
 
   
@@ -5914,10 +5578,9 @@ TEST(P2PTransportChannelResolverTest, HostnameCandidateIsResolved) {
   hostname_candidate.set_address(hostname_address);
   channel->AddRemoteCandidate(hostname_candidate);
 
-  ASSERT_THAT(
-      WaitUntil([&] { return channel->remote_candidates().size(); }, Eq(1u),
-                {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return channel->remote_candidates().size(); },
+                        Eq(1u), {.timeout = kDefaultTimeout}),
+              IsRtcOk());
   const RemoteCandidate& candidate = channel->remote_candidates()[0];
   EXPECT_FALSE(candidate.address().IsUnresolvedIP());
 }
@@ -5946,7 +5609,7 @@ TEST_F(P2PTransportChannelTest,
   PauseCandidates(1);
   ASSERT_THAT(
       WaitUntil([&] { return GetEndpoint(0)->saved_candidates_.size(); },
-                Eq(1u), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Eq(1u), {.timeout = kMediumTimeout}),
       IsRtcOk());
   const auto& local_candidate = GetEndpoint(0)->saved_candidates_[0].candidate;
   
@@ -5959,10 +5622,9 @@ TEST_F(P2PTransportChannelTest,
   
   
   ResumeCandidates(1);
-  ASSERT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   
   
   const Connection* selected_connection = nullptr;
@@ -5971,7 +5633,7 @@ TEST_F(P2PTransportChannelTest,
                     return selected_connection =
                                ep2_ch1()->selected_connection();
                   },
-                  Ne(nullptr), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                  Ne(nullptr), {.timeout = kMediumTimeout}),
               IsRtcOk());
   EXPECT_TRUE(selected_connection->remote_candidate().is_prflx());
   EXPECT_EQ(kIceUfrag[0], selected_connection->remote_candidate().username());
@@ -5980,15 +5642,11 @@ TEST_F(P2PTransportChannelTest,
   resolver_fixture.SetAddressToReturn(local_address);
   ResumeCandidates(0);
   
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep2_ch1()
-                        ->selected_connection()
-                        ->remote_candidate()
-                        .is_local();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep2_ch1()->selected_connection()->remote_candidate().is_local();
+      },
+      {.timeout = kMediumTimeout}));
   EXPECT_EQ(selected_connection, ep2_ch1()->selected_connection());
 
   DestroyChannels();
@@ -6021,7 +5679,7 @@ TEST_F(P2PTransportChannelTest,
 
   ASSERT_THAT(
       WaitUntil([&] { return GetEndpoint(0)->saved_candidates_.size(); },
-                Eq(1u), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Eq(1u), {.timeout = kMediumTimeout}),
       IsRtcOk());
   const auto& local_candidate = GetEndpoint(0)->saved_candidates_[0].candidate;
   
@@ -6035,10 +5693,9 @@ TEST_F(P2PTransportChannelTest,
   
   
   ResumeCandidates(1);
-  ASSERT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   
   resolver_fixture.SetAddressToReturn(local_address);
 
@@ -6047,25 +5704,20 @@ TEST_F(P2PTransportChannelTest,
   
   
   
-  ASSERT_THAT(
-      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep2_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   EXPECT_TRUE(ep2_ch1()->selected_connection()->remote_candidate().is_prflx());
   
   
 
   resolver_fixture.FireDelayedResolution();
 
-  EXPECT_THAT(WaitUntil(
-                  [&] {
-                    return ep2_ch1()
-                        ->selected_connection()
-                        ->remote_candidate()
-                        .is_local();
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep2_ch1()->selected_connection()->remote_candidate().is_local();
+      },
+      {.timeout = kMediumTimeout}));
   EXPECT_EQ(1u, ep2_ch1()->remote_candidates().size());
 
   DestroyChannels();
@@ -6093,7 +5745,7 @@ TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMdnsName) {
   PauseCandidates(1);
   ASSERT_THAT(
       WaitUntil([&] { return GetEndpoint(0)->saved_candidates_.size(); },
-                Eq(1u), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Eq(1u), {.timeout = kMediumTimeout}),
       IsRtcOk());
   const auto& local_candidate_ep1 =
       GetEndpoint(0)->saved_candidates_[0].candidate;
@@ -6110,10 +5762,9 @@ TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMdnsName) {
 
   
   
-  ASSERT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_local());
   EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_prflx());
 
@@ -6150,11 +5801,11 @@ TEST_F(P2PTransportChannelTest,
   
   ASSERT_THAT(
       WaitUntil([&] { return GetEndpoint(0)->saved_candidates_.size(); },
-                Eq(3u), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Eq(3u), {.timeout = kMediumTimeout}),
       IsRtcOk());
   ASSERT_THAT(
       WaitUntil([&] { return GetEndpoint(1)->saved_candidates_.size(); },
-                Eq(1u), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Eq(1u), {.timeout = kMediumTimeout}),
       IsRtcOk());
 
   for (const auto& candidates_data : GetEndpoint(0)->saved_candidates_) {
@@ -6172,16 +5823,15 @@ TEST_F(P2PTransportChannelTest,
   ResumeCandidates(1);
 
   ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->gathering_state(); },
-                        Eq(kIceGatheringComplete),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                        Eq(kIceGatheringComplete), {.timeout = kMediumTimeout}),
               IsRtcOk());
   
   
   ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->connections().size(); }, Eq(3u),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                        {.timeout = kMediumTimeout}),
               IsRtcOk());
   ASSERT_THAT(WaitUntil([&] { return ep2_ch1()->connections().size(); }, Eq(3u),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                        {.timeout = kMediumTimeout}),
               IsRtcOk());
 
   IceTransportStats ice_transport_stats1;
@@ -6239,9 +5889,8 @@ TEST_F(P2PTransportChannelTest,
 
   
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kMediumTimeout, .clock = &clock}),
       IsRtcOk());
 
   ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
@@ -6264,9 +5913,8 @@ TEST_F(P2PTransportChannelTest,
 
   
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kMediumTimeout, .clock = &clock}),
       IsRtcOk());
 
   ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
@@ -6277,9 +5925,8 @@ TEST_F(P2PTransportChannelTest,
     con->Prune();
   }
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Eq(nullptr),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Eq(nullptr),
+                {.timeout = kMediumTimeout, .clock = &clock}),
       IsRtcOk());
 
   ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
@@ -6302,9 +5949,8 @@ TEST_F(P2PTransportChannelTest,
 
   
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kMediumTimeout, .clock = &clock}),
       IsRtcOk());
 
   ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
@@ -6318,16 +5964,14 @@ TEST_F(P2PTransportChannelTest,
       con->Prune();
     }
   }
-  EXPECT_THAT(
+  EXPECT_TRUE(
       WaitUntil(
           [&] {
             return ep1_ch1()->selected_connection() != nullptr &&
                    (ep1_ch1()->GetStats(&ice_transport_stats),
                     ice_transport_stats.selected_candidate_pair_changes >= 2u);
           },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kMediumTimeout), .clock = &clock}),
-      IsRtcOk());
+          {.timeout = kMediumTimeout, .clock = &clock}));
 
   ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
   EXPECT_GE(ice_transport_stats.selected_candidate_pair_changes, 2u);
@@ -6357,7 +6001,7 @@ TEST_F(P2PTransportChannelTest,
   PauseCandidates(1);
   ASSERT_THAT(
       WaitUntil([&] { return GetEndpoint(0)->saved_candidates_.size(); },
-                Eq(1u), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                Eq(1u), {.timeout = kMediumTimeout}),
       IsRtcOk());
   const auto& candidates_data = GetEndpoint(0)->saved_candidates_[0];
   const auto& local_candidate_ep1 = candidates_data.candidate;
@@ -6371,13 +6015,12 @@ TEST_F(P2PTransportChannelTest,
   ResumeCandidates(0);
   ResumeCandidates(1);
 
-  ASSERT_THAT(WaitUntil(
-                  [&] {
-                    return ep1_ch1()->selected_connection() != nullptr &&
-                           ep2_ch1()->selected_connection() != nullptr;
-                  },
-                  IsTrue(), {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection() != nullptr &&
+               ep2_ch1()->selected_connection() != nullptr;
+      },
+      {.timeout = kMediumTimeout}));
 
   const auto pair_ep1 = ep1_ch1()->GetSelectedCandidatePair();
   ASSERT_TRUE(pair_ep1.has_value());
@@ -6410,7 +6053,7 @@ TEST_F(P2PTransportChannelTest,
   ep1_ch1()->MaybeStartGathering();
   EXPECT_THAT(WaitUntil([&] { return ep1_ch1()->gathering_state(); },
                         Eq(IceGatheringState::kIceGatheringComplete),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
+                        {.timeout = kDefaultTimeout}),
               IsRtcOk());
   EXPECT_EQ(1u, ep1_ch1()->ports().size());
   
@@ -6491,10 +6134,9 @@ TEST_F(P2PTransportChannelTest,
   CreateChannels(env);
 
   
-  ASSERT_THAT(
-      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-                {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-      IsRtcOk());
+  ASSERT_THAT(WaitUntil([&] { return ep1_ch1()->selected_connection(); },
+                        Ne(nullptr), {.timeout = kMediumTimeout}),
+              IsRtcOk());
   EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_stun());
   EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_local());
 
@@ -6525,48 +6167,34 @@ TEST_F(P2PTransportChannelTest,
   ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
   CreateChannels(env, ice_config, ice_config);
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_relay());
   EXPECT_TRUE(ep2_ch1()->selected_connection()->local_candidate().is_relay());
 
   
   ep1->allocator_->SetCandidateFilter(CF_ALL);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->selected_connection() != nullptr &&
-                   ep1_ch1()
-                       ->selected_connection()
-                       ->local_candidate()
-                       .is_local();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection() != nullptr &&
+               ep1_ch1()->selected_connection()->local_candidate().is_local();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
 
   
   ep2->allocator_->SetCandidateFilter(CF_ALL);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep2_ch1()->selected_connection() != nullptr &&
-                   ep2_ch1()
-                       ->selected_connection()
-                       ->local_candidate()
-                       .is_local();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep2_ch1()->selected_connection() != nullptr &&
+               ep2_ch1()->selected_connection()->local_candidate().is_local();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   
   EXPECT_TRUE(ep2_ch1()->selected_connection()->remote_candidate().is_local());
 
@@ -6577,17 +6205,11 @@ TEST_F(P2PTransportChannelTest,
   fw()->AddRule(false, FP_ANY, kPublicAddrs[1], kTurnUdpExtAddr);
 
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()
-                ->selected_connection()
-                ->local_candidate()
-                .is_relay();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->local_candidate().is_relay();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
   DestroyChannels();
 }
@@ -6620,46 +6242,32 @@ TEST_F(P2PTransportChannelTest,
   ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
   CreateChannels(env, ice_config, ice_config);
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   const uint32_t kCandidateFilterNoHost = CF_ALL & ~CF_HOST;
   
   ep1->allocator_->SetCandidateFilter(kCandidateFilterNoHost);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->selected_connection() != nullptr &&
-                   ep1_ch1()
-                       ->selected_connection()
-                       ->local_candidate()
-                       .is_stun();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection() != nullptr &&
+               ep1_ch1()->selected_connection()->local_candidate().is_stun();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
 
   
   ep2->allocator_->SetCandidateFilter(kCandidateFilterNoHost);
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep2_ch1()->selected_connection() != nullptr &&
-                   ep2_ch1()
-                       ->selected_connection()
-                       ->local_candidate()
-                       .is_stun();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep2_ch1()->selected_connection() != nullptr &&
+               ep2_ch1()->selected_connection()->local_candidate().is_stun();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   
   EXPECT_TRUE(ep2_ch1()->selected_connection()->remote_candidate().is_stun());
 
@@ -6669,17 +6277,11 @@ TEST_F(P2PTransportChannelTest,
   fw()->AddRule(false, FP_ANY, kPrivateAddrs[0], kTurnUdpExtAddr);
   fw()->AddRule(false, FP_ANY, kPrivateAddrs[1], kTurnUdpExtAddr);
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()
-                ->selected_connection()
-                ->local_candidate()
-                .is_relay();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection()->local_candidate().is_relay();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
   EXPECT_TRUE(ep1_ch1()->selected_connection()->remote_candidate().is_relay());
   DestroyChannels();
 }
@@ -6707,19 +6309,17 @@ TEST_F(P2PTransportChannelTest,
   ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
   CreateChannels(env, ice_config, ice_config);
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep1_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   
   ep1->allocator_->SetCandidateFilter(CF_ALL);
   
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
   EXPECT_TRUE(ep1_ch1()->selected_connection()->local_candidate().is_relay());
 
   
@@ -6757,12 +6357,11 @@ TEST_F(P2PTransportChannelTest,
 
   
   EXPECT_THAT(WaitUntil([&] { return ep1->saved_candidates_.size(); }, Eq(3u),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   ResumeCandidates(0);
   ResumeCandidates(1);
-  ASSERT_THAT(
+  ASSERT_TRUE(
       WaitUntil(
           [&] {
             return ep1_ch1()->selected_connection() != nullptr &&
@@ -6776,13 +6375,10 @@ TEST_F(P2PTransportChannelTest,
                        ->remote_candidate()
                        .is_local();
           },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+          {.timeout = kDefaultTimeout, .clock = &clock}));
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
   
   
@@ -6797,15 +6393,15 @@ TEST_F(P2PTransportChannelTest,
 
   
   ep1->allocator_->SetCandidateFilter(CF_HOST | CF_REFLEXIVE);
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
   test_invariants();
 
   ep1->allocator_->SetCandidateFilter(CF_HOST);
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
   test_invariants();
 
   ep1->allocator_->SetCandidateFilter(CF_NONE);
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
   test_invariants();
   DestroyChannels();
 }
@@ -6818,7 +6414,7 @@ TEST_F(P2PTransportChannelTest,
 
 TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
   ScopedFakeClock clock;
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/skip_relay_to_non_relay_connections:true/"));
 
   ConfigureEndpoints(
@@ -6843,17 +6439,15 @@ TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
   
   
   EXPECT_THAT(WaitUntil([&] { return ep1->saved_candidates_.size(); }, Eq(1u),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_THAT(WaitUntil([&] { return ep2->saved_candidates_.size(); }, Eq(3u),
-                        {.timeout = TimeDelta::Millis(kDefaultTimeout),
-                         .clock = &clock}),
+                        {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
 
   ResumeCandidates(0);
   ResumeCandidates(1);
-  ASSERT_THAT(
+  ASSERT_TRUE(
       WaitUntil(
           [&] {
             return ep1_ch1()->selected_connection() != nullptr &&
@@ -6867,13 +6461,10 @@ TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
                        ->remote_candidate()
                        .is_relay();
           },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+          {.timeout = kDefaultTimeout, .clock = &clock}));
   ASSERT_THAT(
-      WaitUntil(
-          [&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return ep2_ch1()->selected_connection(); }, Ne(nullptr),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
 
   
@@ -6883,7 +6474,7 @@ TEST_F(P2PTransportChannelTest, SurfaceRequiresCoordination) {
   
   ep1->allocator_->SetCandidateFilter(CF_ALL);
 
-  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  SIMULATED_WAIT(false, kDefaultTimeout.ms(), clock);
 
   
   EXPECT_TRUE(ep1_ch1()->selected_connection() != nullptr &&
@@ -6898,7 +6489,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening0) {
   constexpr int kMargin = 10;
   ScopedFakeClock clock;
   clock.AdvanceTime(TimeDelta::Seconds(1));
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/initial_select_dampening:0/"));
 
   FakePortAllocator pa(env, ss());
@@ -6925,7 +6516,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening) {
   constexpr int kMargin = 10;
   ScopedFakeClock clock;
   clock.AdvanceTime(TimeDelta::Seconds(1));
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/initial_select_dampening:100/"));
 
   FakePortAllocator pa(env, ss());
@@ -6952,7 +6543,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningPingReceived) {
   constexpr int kMargin = 10;
   ScopedFakeClock clock;
   clock.AdvanceTime(TimeDelta::Seconds(1));
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/initial_select_dampening_ping_received:100/"));
 
   FakePortAllocator pa(env, ss());
@@ -6980,7 +6571,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningBoth) {
   constexpr int kMargin = 10;
   ScopedFakeClock clock;
   clock.AdvanceTime(TimeDelta::Seconds(1));
-  const Environment env = CreateEnvironment(FieldTrials::CreateNoGlobal(
+  const Environment env = CreateEnvironment(CreateTestFieldTrialsPtr(
       "WebRTC-IceFieldTrials/"
       "initial_select_dampening:100,initial_select_dampening_ping_received:"
       "50/"));
@@ -7105,7 +6696,7 @@ TEST_F(P2PTransportChannelPingTest, TestForgetLearnedState) {
   
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_THAT(WaitUntil([&] { return ch->selected_connection(); }, Eq(conn1),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
+                        {.timeout = kMediumTimeout}),
               IsRtcOk());
 
   conn2->ReceivedPingResponse(LOW_RTT, "id");
@@ -7118,9 +6709,8 @@ TEST_F(P2PTransportChannelPingTest, TestForgetLearnedState) {
 
   
   
-  EXPECT_THAT(WaitUntil([&] { return conn2->writable(); }, IsFalse(),
-                        {.timeout = TimeDelta::Millis(kMediumTimeout)}),
-              IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return !conn2->writable(); },
+                        {.timeout = kMediumTimeout}));
 }
 
 TEST_F(P2PTransportChannelTest, DisableDnsLookupsWithTransportPolicyRelay) {
@@ -7215,16 +6805,16 @@ static struct LocalAreaNetworkPermissionTestConfig {
     sink.Append(config.address);
     sink.Append("_");
     switch (config.lna_permission_status) {
-      case webrtc::LocalNetworkAccessPermissionStatus::kDenied:
+      case LocalNetworkAccessPermissionStatus::kDenied:
         sink.Append("Denied");
         break;
-      case webrtc::LocalNetworkAccessPermissionStatus::kGranted:
+      case LocalNetworkAccessPermissionStatus::kGranted:
         sink.Append("Granted");
         break;
     }
   }
 
-  webrtc::LocalNetworkAccessPermissionStatus lna_permission_status;
+  LocalNetworkAccessPermissionStatus lna_permission_status;
   absl::string_view address;
   bool candidate_added;
 } kAllLocalAreNetworkPermissionTestConfigs[] = {
@@ -7262,7 +6852,7 @@ class LocalAreaNetworkPermissionTest
 TEST_P(LocalAreaNetworkPermissionTest, LiteralAddresses) {
   const Environment env = CreateEnvironment();
   FakePortAllocator pa(env, ss());
-  PermissionFactoryFixture lna_permission_factory(
+  FakeLocalNetworkAccessPermissionFactory lna_permission_factory(
       GetParam().lna_permission_status);
 
   IceTransportInit init;
@@ -7291,7 +6881,7 @@ TEST_P(LocalAreaNetworkPermissionTest, LiteralAddresses) {
 TEST_P(LocalAreaNetworkPermissionTest, UnresolvedAddresses) {
   const Environment env = CreateEnvironment();
   FakePortAllocator pa(env, ss());
-  PermissionFactoryFixture lna_permission_factory(
+  FakeLocalNetworkAccessPermissionFactory lna_permission_factory(
       GetParam().lna_permission_status);
 
   ResolverFactoryFixture resolver_fixture;
@@ -7339,7 +6929,7 @@ TEST_P(GatherAfterConnectedTest, GatherAfterConnected) {
 
   ScopedFakeClock clock;
   const Environment env =
-      CreateEnvironment(FieldTrials::CreateNoGlobal(field_trial));
+      CreateEnvironment(CreateTestFieldTrialsPtr(field_trial));
   
   constexpr uint32_t flags =
       kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_SHARED_SOCKET |
@@ -7362,15 +6952,12 @@ TEST_P(GatherAfterConnectedTest, GatherAfterConnected) {
   PauseCandidates(1);
 
   
-  ASSERT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1->saved_candidates_.size() == 1u &&
-                   ep2->saved_candidates_.size() == 1u;
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1->saved_candidates_.size() == 1u &&
+               ep2->saved_candidates_.size() == 1u;
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   ResumeCandidates(0);
   ResumeCandidates(1);
@@ -7378,25 +6965,19 @@ TEST_P(GatherAfterConnectedTest, GatherAfterConnected) {
   PauseCandidates(0);
   PauseCandidates(1);
 
-  ASSERT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->remote_candidates().size() == 1 &&
-                   ep2_ch1()->remote_candidates().size() == 1;
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->remote_candidates().size() == 1 &&
+               ep2_ch1()->remote_candidates().size() == 1;
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
-  ASSERT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->selected_connection() &&
-                   ep2_ch1()->selected_connection();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection() &&
+               ep2_ch1()->selected_connection();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   clock.AdvanceTime(TimeDelta::Millis(10 * delay));
 
@@ -7419,7 +7000,7 @@ TEST_P(GatherAfterConnectedTest, GatherAfterConnectedMultiHomed) {
 
   ScopedFakeClock clock;
   const Environment env =
-      CreateEnvironment(FieldTrials::CreateNoGlobal(field_trial));
+      CreateEnvironment(CreateTestFieldTrialsPtr(field_trial));
 
   
   constexpr uint32_t flags =
@@ -7444,15 +7025,12 @@ TEST_P(GatherAfterConnectedTest, GatherAfterConnectedMultiHomed) {
   PauseCandidates(1);
 
   
-  ASSERT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1->saved_candidates_.size() == 2u &&
-                   ep2->saved_candidates_.size() == 1u;
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1->saved_candidates_.size() == 2u &&
+               ep2->saved_candidates_.size() == 1u;
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   ResumeCandidates(0);
   ResumeCandidates(1);
@@ -7460,25 +7038,19 @@ TEST_P(GatherAfterConnectedTest, GatherAfterConnectedMultiHomed) {
   PauseCandidates(0);
   PauseCandidates(1);
 
-  ASSERT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->remote_candidates().size() == 1 &&
-                   ep2_ch1()->remote_candidates().size() == 2;
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->remote_candidates().size() == 1 &&
+               ep2_ch1()->remote_candidates().size() == 2;
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
-  ASSERT_THAT(
-      WaitUntil(
-          [&] {
-            return ep1_ch1()->selected_connection() &&
-                   ep2_ch1()->selected_connection();
-          },
-          IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  ASSERT_TRUE(WaitUntil(
+      [&] {
+        return ep1_ch1()->selected_connection() &&
+               ep2_ch1()->selected_connection();
+      },
+      {.timeout = kDefaultTimeout, .clock = &clock}));
 
   clock.AdvanceTime(TimeDelta::Millis(10 * delay));
 
@@ -7506,11 +7078,8 @@ TEST_F(P2PTransportChannelTest, TestIceNoOldCandidatesAfterIceRestart) {
   IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
   CreateChannels(env, config, config);
 
-  EXPECT_THAT(
-      WaitUntil(
-          [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
-      IsRtcOk());
+  EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                        {.timeout = kDefaultTimeout, .clock = &clock}));
 
   PauseCandidates(0);
 
@@ -7518,9 +7087,8 @@ TEST_F(P2PTransportChannelTest, TestIceNoOldCandidatesAfterIceRestart) {
   ep1_ch1()->MaybeStartGathering();
 
   EXPECT_THAT(
-      WaitUntil(
-          [&] { return GetEndpoint(0)->saved_candidates_.size(); }, Gt(0),
-          {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock}),
+      WaitUntil([&] { return GetEndpoint(0)->saved_candidates_.size(); }, Gt(0),
+                {.timeout = kDefaultTimeout, .clock = &clock}),
       IsRtcOk());
 
   for (const auto& cd : GetEndpoint(0)->saved_candidates_) {
@@ -7561,21 +7129,19 @@ class P2PTransportChannelTestDtlsInStun : public P2PTransportChannelTestBase {
           [&](auto type) { return data_to_piggyback_func(type); },
           [&](auto data, auto ack) { piggyback_data_received(data, ack); }));
     }
-    EXPECT_THAT(
-        WaitUntil(
-            [&] { return CheckConnected(ep1_ch1(), ep2_ch1()); }, IsTrue(),
-            {.timeout = TimeDelta::Millis(kDefaultTimeout), .clock = &clock_}),
-        IsRtcOk());
+    EXPECT_TRUE(WaitUntil([&] { return CheckConnected(ep1_ch1(), ep2_ch1()); },
+                          {.timeout = kDefaultTimeout, .clock = &clock_}));
     DestroyChannels();
   }
 
-  std::pair<std::optional<absl::string_view>, std::optional<absl::string_view>>
+  std::pair<std::optional<absl::string_view>,
+            std::optional<std::vector<uint32_t>>>
   data_to_piggyback_func(StunMessageType type) {
     return make_pair(absl::string_view(pending_packet_), std::nullopt);
   }
 
-  void piggyback_data_received(const StunByteStringAttribute* data,
-                               const StunByteStringAttribute* ack) {}
+  void piggyback_data_received(std::optional<ArrayView<uint8_t>> data,
+                               std::optional<std::vector<uint32_t>> ack) {}
 
   ScopedFakeClock clock_;
   Buffer pending_packet_;
@@ -7597,4 +7163,5 @@ TEST_F(P2PTransportChannelTestDtlsInStun, SupportedByBoth) {
   Run(true, true);
 }
 
+}  
 }  
