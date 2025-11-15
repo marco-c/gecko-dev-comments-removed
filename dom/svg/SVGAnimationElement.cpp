@@ -13,6 +13,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGSwitchElement.h"
+#include "nsAttrValueOrString.h"
 #include "nsContentUtils.h"
 #include "nsIContentInlines.h"
 
@@ -256,7 +257,7 @@ void SVGAnimationElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       const nsAttrValue* xlinkHref =
           mAttrs.GetAttr(nsGkAtoms::href, kNameSpaceID_XLink);
       if (xlinkHref) {
-        UpdateHrefTarget(xlinkHref->GetStringValue());
+        UpdateHrefTarget(nsAttrValueOrString(xlinkHref).String());
       }
     } else if (!HasAttr(nsGkAtoms::href)) {
       mHrefTarget.Unlink();
@@ -267,9 +268,10 @@ void SVGAnimationElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                HasAttr(nsGkAtoms::href))) {
     
     
-    MOZ_ASSERT(aValue->Type() == nsAttrValue::eString,
-               "Expected href attribute to be string type");
-    UpdateHrefTarget(aValue->GetStringValue());
+    MOZ_ASSERT(aValue->Type() == nsAttrValue::eString ||
+                   aValue->Type() == nsAttrValue::eAtom,
+               "Expected href attribute to be string or atom type");
+    UpdateHrefTarget(nsAttrValueOrString(aValue).String());
   }  
      
 }

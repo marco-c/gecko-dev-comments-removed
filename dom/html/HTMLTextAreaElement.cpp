@@ -380,7 +380,9 @@ void HTMLTextAreaElement::MapAttributesIntoRule(
     MappedDeclarationsBuilder& aBuilder) {
   
   const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::wrap);
-  if (value && value->Type() == nsAttrValue::eString &&
+  if (value &&
+      (value->Type() == nsAttrValue::eString ||
+       value->Type() == nsAttrValue::eAtom) &&
       value->Equals(nsGkAtoms::OFF, eIgnoreCase)) {
     
     aBuilder.SetKeywordValue(eCSSProperty_white_space_collapse,
