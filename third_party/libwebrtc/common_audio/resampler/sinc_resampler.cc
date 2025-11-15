@@ -163,12 +163,17 @@ SincResampler::SincResampler(double io_sample_rate_ratio,
   Flush();
   RTC_DCHECK_GT(block_size_, kKernelSize);
 
+  
+  
+  
+  
   memset(kernel_storage_.get(), 0,
          sizeof(*kernel_storage_.get()) * kKernelStorageSize);
   memset(kernel_pre_sinc_storage_.get(), 0,
          sizeof(*kernel_pre_sinc_storage_.get()) * kKernelStorageSize);
   memset(kernel_window_storage_.get(), 0,
          sizeof(*kernel_window_storage_.get()) * kKernelStorageSize);
+  
 
   InitializeKernel();
 }
@@ -319,6 +324,7 @@ void SincResampler::Resample(size_t frames, float* destination) {
 
     
     
+    
     memcpy(r1_, r3_, sizeof(*input_buffer_.get()) * kKernelSize);
 
     
@@ -339,6 +345,7 @@ size_t SincResampler::ChunkSize() const {
 void SincResampler::Flush() {
   virtual_source_idx_ = 0;
   buffer_primed_ = false;
+  
   memset(input_buffer_.get(), 0,
          sizeof(*input_buffer_.get()) * input_buffer_size_);
   UpdateRegions(false);

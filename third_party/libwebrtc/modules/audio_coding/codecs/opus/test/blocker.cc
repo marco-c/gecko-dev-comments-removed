@@ -10,7 +10,7 @@
 
 #include "modules/audio_coding/codecs/opus/test/blocker.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "rtc_base/checks.h"
 
@@ -119,6 +119,7 @@ Blocker::Blocker(size_t chunk_size,
   RTC_CHECK_LE(num_output_channels_, num_input_channels_);
   RTC_CHECK_LE(shift_amount_, block_size_);
 
+  
   memcpy(window_.get(), window, block_size_ * sizeof(*window_.get()));
   input_buffer_.MoveReadPositionBackward(initial_delay_);
 }
