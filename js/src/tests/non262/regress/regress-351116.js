@@ -4,7 +4,6 @@
 
 
 
-
 var BUGNUMBER = 351116;
 var summary = 'formal parameter and inner function have same name';
 var actual = 'No Crash';
