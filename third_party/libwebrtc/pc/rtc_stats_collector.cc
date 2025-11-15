@@ -1207,7 +1207,7 @@ void RTCStatsCollector::GetStatsReportInternal(
   requests_.push_back(std::move(request));
 
   
-  int64_t cache_now_us = TimeMicros();
+  int64_t cache_now_us = env_.clock().TimeInMicroseconds();
   if (cached_report_ &&
       cache_now_us - cache_timestamp_us_ <= cache_lifetime_us_) {
     
