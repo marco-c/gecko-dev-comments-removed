@@ -20,7 +20,9 @@
 #include "nsCRT.h"
 #include "nsMIMEInfoMac.h"
 #include "nsEmbedCID.h"
+#include "nsCocoaUtils.h"
 
+#import <Cocoa/Cocoa.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 
@@ -88,37 +90,26 @@ nsOSHelperAppService::~nsOSHelperAppService() {}
 
 nsresult nsOSHelperAppService::OSProtocolHandlerExists(
     const char* aProtocolScheme, bool* aHandlerExists) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
   *aHandlerExists = false;
 
-  
-  
-  
-  
-  CFStringRef schemeString = ::CFStringCreateWithBytes(
-      kCFAllocatorDefault, (const UInt8*)aProtocolScheme,
-      strlen(aProtocolScheme), kCFStringEncodingUTF8, false);
+  nsAutoreleasePool localPool;
+
+  NSString* schemeString = [NSString stringWithCString:aProtocolScheme
+                                              encoding:NSUTF8StringEncoding];
+  schemeString = [schemeString stringByAppendingString:@"://"];
   if (!schemeString) {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  CFArrayRef handlerArray = ::LSCopyAllHandlersForURLScheme(schemeString);
-  ::CFRelease(schemeString);
-  if (handlerArray) {
-    *aHandlerExists = true;
-    ::CFRelease(handlerArray);
-  }
+  NSURL* url = [[NSWorkspace sharedWorkspace]
+      URLForApplicationToOpenURL:[NSURL URLWithString:schemeString]];
+  *aHandlerExists = !!url;
 
   return NS_OK;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
@@ -333,7 +324,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   
   RefPtr<nsMIMEInfoMac> mimeInfoMac = new nsMIMEInfoMac(aMIMEType);
 
-  NSAutoreleasePool* localPool = [[NSAutoreleasePool alloc] init];
+  nsAutoreleasePool localPool;
 
   OSStatus err;
   bool haveAppForType = false;
@@ -557,7 +548,6 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   MOZ_LOG(sLog, LogLevel::Debug,
           ("OS gave us: type '%s' found '%i'\n", mimeType.get(), *aFound));
 
-  [localPool release];
   mimeInfoMac.forget(aMIMEInfo);
   return NS_OK;
 
