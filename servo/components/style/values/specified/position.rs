@@ -482,21 +482,11 @@ impl Parse for AnchorScope {
 #[repr(u8)]
 pub enum PositionAnchor {
     
+    None,
+    
     Auto,
     
     Ident(DashedIdent),
-}
-
-impl PositionAnchor {
-    
-    pub fn auto() -> Self {
-        Self::Auto
-    }
-
-    
-    pub fn is_auto(&self) -> bool {
-        *self == Self::Auto
-    }
 }
 
 #[derive(
