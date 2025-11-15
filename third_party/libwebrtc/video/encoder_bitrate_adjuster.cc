@@ -31,7 +31,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 #include "video/encoder_overshoot_detector.h"
 #include "video/rate_utilization_tracker.h"
@@ -386,7 +385,12 @@ void EncoderBitrateAdjuster::OnEncodedFrame(DataSize size,
   
   auto& detector = overshoot_detectors_[stream_index][temporal_index];
   if (detector) {
-    detector->OnEncodedFrame(size.bytes(), TimeMillis());
+    
+    
+    
+    
+    
+    detector->OnEncodedFrame(size.bytes(), clock_.TimeInMicroseconds() / 1000);
   }
   if (media_rate_trackers_[stream_index]) {
     media_rate_trackers_[stream_index]->OnDataProduced(size,
