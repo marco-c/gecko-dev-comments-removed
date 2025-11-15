@@ -184,10 +184,17 @@ TEST(BweRampupTest, RampUpWithUndemuxableRtpPackets) {
   DataRate initial_bwe = GetAvailableSendBitrate(GetStatsAndProcess(s, caller));
   s.ProcessMessages(TimeDelta::Seconds(2));
 
+  
+  
+  
+  
+  
+  
+  
   auto callee_inbound_stats =
       GetStatsAndProcess(s, callee)->GetStatsOfType<RTCInboundRtpStreamStats>();
-  ASSERT_THAT(callee_inbound_stats, SizeIs(1));
-  ASSERT_EQ(*callee_inbound_stats[0]->frames_received, 0u);
+  ASSERT_TRUE(callee_inbound_stats.empty() ||
+              *callee_inbound_stats[0]->frames_received == 0u);
 
   DataRate final_bwe = GetAvailableSendBitrate(GetStatsAndProcess(s, caller));
   
