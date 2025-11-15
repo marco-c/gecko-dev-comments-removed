@@ -85,33 +85,24 @@ void nsViewManager::SetRootView(nsView* aView) {
   mRootView = aView;
 }
 
-void nsViewManager::GetWindowDimensions(nscoord* aWidth, nscoord* aHeight) {
-  if (nullptr != mRootView) {
-    if (mDelayedResize == nsSize(NSCOORD_NONE, NSCOORD_NONE)) {
-      nsRect dim = mRootView->GetBounds();
-      *aWidth = dim.Width();
-      *aHeight = dim.Height();
-    } else {
-      *aWidth = mDelayedResize.width;
-      *aHeight = mDelayedResize.height;
-    }
-  } else {
-    *aWidth = 0;
-    *aHeight = 0;
+nsSize nsViewManager::GetWindowDimensions() const {
+  if (!mRootView) {
+    return {};
   }
+  if (mDelayedResize != nsSize(NSCOORD_NONE, NSCOORD_NONE)) {
+    return mDelayedResize;
+  }
+  return mRootView->GetBounds().Size();
 }
 
-void nsViewManager::DoSetWindowDimensions(nscoord aWidth, nscoord aHeight) {
-  nsRect oldDim = mRootView->GetBounds();
-  nsRect newDim(0, 0, aWidth, aHeight);
-  
-  if (oldDim.IsEqualEdges(newDim)) {
+void nsViewManager::DoSetWindowDimensions(const nsSize& aSize) {
+  if (mRootView->GetBounds().Size() == aSize) {
     return;
   }
   
-  mRootView->SetDimensions(newDim);
+  mRootView->SetDimensions(nsRect(nsPoint(), aSize));
   if (RefPtr<PresShell> presShell = mPresShell) {
-    presShell->ResizeReflow(aWidth, aHeight);
+    presShell->ResizeReflow(aSize);
   }
 }
 
@@ -128,35 +119,36 @@ bool nsViewManager::ShouldDelayResize() const {
   return false;
 }
 
-void nsViewManager::SetWindowDimensions(nscoord aWidth, nscoord aHeight,
+void nsViewManager::SetWindowDimensions(const nsSize& aSize,
                                         bool aDelayResize) {
-  if (mRootView) {
-    if (!ShouldDelayResize() && !aDelayResize) {
-      if (mDelayedResize != nsSize(NSCOORD_NONE, NSCOORD_NONE) &&
-          mDelayedResize != nsSize(aWidth, aHeight)) {
-        
-        
-        
-        
-        
-        mDelayedResize = nsSize(aWidth, aHeight);
-        FlushDelayedResize();
-      }
-      mDelayedResize.SizeTo(NSCOORD_NONE, NSCOORD_NONE);
-      DoSetWindowDimensions(aWidth, aHeight);
-    } else {
-      mDelayedResize.SizeTo(aWidth, aHeight);
-      if (mPresShell) {
-        mPresShell->SetNeedStyleFlush();
-        mPresShell->SetNeedLayoutFlush();
-      }
+  if (!mRootView) {
+    return;
+  }
+  if (!ShouldDelayResize() && !aDelayResize) {
+    if (mDelayedResize != nsSize(NSCOORD_NONE, NSCOORD_NONE) &&
+        mDelayedResize != aSize) {
+      
+      
+      
+      
+      
+      mDelayedResize = aSize;
+      FlushDelayedResize();
+    }
+    mDelayedResize.SizeTo(NSCOORD_NONE, NSCOORD_NONE);
+    DoSetWindowDimensions(aSize);
+  } else {
+    mDelayedResize = aSize;
+    if (mPresShell) {
+      mPresShell->SetNeedStyleFlush();
+      mPresShell->SetNeedLayoutFlush();
     }
   }
 }
 
 void nsViewManager::FlushDelayedResize() {
   if (mDelayedResize != nsSize(NSCOORD_NONE, NSCOORD_NONE)) {
-    DoSetWindowDimensions(mDelayedResize.width, mDelayedResize.height);
+    DoSetWindowDimensions(mDelayedResize);
     mDelayedResize.SizeTo(NSCOORD_NONE, NSCOORD_NONE);
   }
 }

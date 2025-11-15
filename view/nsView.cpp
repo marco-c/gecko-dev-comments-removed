@@ -341,9 +341,8 @@ bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
     
     frame->InvalidateFrame();
   }
-
-  mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(aWidth, p2a),
-                                    NSIntPixelsToAppUnits(aHeight, p2a));
+  const LayoutDeviceIntSize size(aWidth, aHeight);
+  mViewManager->SetWindowDimensions(LayoutDeviceIntSize::ToAppUnits(size, p2a));
 
   if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
     pm->AdjustPopupsOnWindowChange(ps);

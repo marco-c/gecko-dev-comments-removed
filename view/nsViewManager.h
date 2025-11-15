@@ -68,22 +68,13 @@ class nsViewManager final {
   void SetRootView(nsView* aView);
 
   
-
-
-
-
-
-  void GetWindowDimensions(nscoord* aWidth, nscoord* aHeight);
+  nsSize GetWindowDimensions() const;
 
   
 
 
 
-
-
-
-  void SetWindowDimensions(nscoord aWidth, nscoord aHeight,
-                           bool aDelayResize = false);
+  void SetWindowDimensions(const nsSize& aSize, bool aDelayResize = false);
 
   
 
@@ -175,8 +166,7 @@ class nsViewManager final {
   MOZ_CAN_RUN_SCRIPT
   void Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion);
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void DoSetWindowDimensions(nscoord aWidth, nscoord aHeight);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoSetWindowDimensions(const nsSize&);
   bool ShouldDelayResize() const;
 
   bool IsPainting() const { return RootViewManager()->mPainting; }
