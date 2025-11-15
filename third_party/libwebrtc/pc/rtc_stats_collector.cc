@@ -1754,7 +1754,10 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     if (!voice_receiver_info.connected()) {
       continue;  
     }
-    if (spec_lifetime && voice_receiver_info.packets_received == 0) {
+    
+    
+    if (spec_lifetime && voice_receiver_info.packets_received == 0 &&
+        voice_receiver_info.total_samples_received == 0) {
       
       
       continue;
@@ -1868,7 +1871,10 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     if (!video_receiver_info.connected()) {
       continue;  
     }
-    if (spec_lifetime && video_receiver_info.packets_received == 0) {
+    
+    
+    if (spec_lifetime && video_receiver_info.packets_received == 0 &&
+        video_receiver_info.frames_received == 0) {
       
       
       continue;
