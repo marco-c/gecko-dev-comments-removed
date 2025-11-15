@@ -148,7 +148,7 @@ RuleEditor.prototype = {
 
     
     
-    return trait && !this.rule.elementStyle.element.isAnonymous;
+    return trait && !this.rule.elementStyle.element.isNativeAnonymous;
   },
 
   _create() {

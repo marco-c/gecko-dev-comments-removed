@@ -426,19 +426,6 @@ exports.isNodeConnected = isNodeConnected;
 
 
 
-
-
-
-const isAnonymous = node => node.isNativeAnonymous;
-exports.isAnonymous = isAnonymous;
-exports.isNativeAnonymous = isAnonymous;
-
-
-
-
-
-
-
 function isTemplateElement(node) {
   return (
     node.ownerGlobal && node.ownerGlobal.HTMLTemplateElement.isInstance(node)
