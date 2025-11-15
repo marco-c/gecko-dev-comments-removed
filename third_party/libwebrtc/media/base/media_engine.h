@@ -97,18 +97,20 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   virtual scoped_refptr<AudioState> GetAudioState() const = 0;
 
   virtual std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
-      Call* ,
-      const MediaConfig& ,
-      const AudioOptions& ,
-      const CryptoOptions& ,
-      AudioCodecPairId ) = 0;
+      const Environment& env,
+      Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const CryptoOptions& crypto_options,
+      AudioCodecPairId codec_pair_id) = 0;
 
   virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
-  CreateReceiveChannel(Call* ,
-                       const MediaConfig& ,
-                       const AudioOptions& ,
-                       const CryptoOptions& ,
-                       AudioCodecPairId ) = 0;
+  CreateReceiveChannel(const Environment& env,
+                       Call* call,
+                       const MediaConfig& config,
+                       const AudioOptions& options,
+                       const CryptoOptions& crypto_options,
+                       AudioCodecPairId codec_pair_id) = 0;
 
   
   
