@@ -36,8 +36,6 @@ namespace webrtc {
 
 
 
-
-
 class AsyncDnsResolverResult {
  public:
   virtual ~AsyncDnsResolverResult() = default;

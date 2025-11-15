@@ -10,7 +10,6 @@
 
 #include "api/crypto/crypto_options.h"
 
-#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <set>
@@ -18,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "api/field_trials_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ssl_stream_adapter.h"
@@ -127,35 +127,26 @@ void CryptoOptions::EphemeralKeyExchangeCipherGroups::Update(
           field_trials);
   
   if (disabled_groups) {
-    default_groups.erase(
-        std::remove_if(default_groups.begin(), default_groups.end(),
-                       [&](uint16_t val) {
-                         return std::find(disabled_groups->begin(),
-                                          disabled_groups->end(),
-                                          val) != disabled_groups->end();
-                       }),
-        default_groups.end());
-    enabled_.erase(std::remove_if(enabled_.begin(), enabled_.end(),
-                                  [&](uint16_t val) {
-                                    return std::find(disabled_groups->begin(),
-                                                     disabled_groups->end(),
-                                                     val) !=
-                                           disabled_groups->end();
-                                  }),
-                   enabled_.end());
+    std::erase_if(default_groups, [&](uint16_t val) {
+      return absl::c_linear_search(*disabled_groups, val);
+    });
+    std::erase_if(enabled_, [&](uint16_t val) {
+      return absl::c_linear_search(*disabled_groups, val);
+    });
   }
 
   
   std::vector<uint16_t> current = std::move(enabled_);
+  enabled_.clear();
   for (auto val : default_groups) {
-    if (std::find(current.begin(), current.end(), val) == current.end()) {
+    if (!absl::c_linear_search(current, val)) {
       enabled_.push_back(val);
     }
   }
 
   
   for (auto val : current) {
-    if (std::find(enabled_.begin(), enabled_.end(), val) == enabled_.end()) {
+    if (!absl::c_linear_search(enabled_, val)) {
       enabled_.push_back(val);
     }
   }

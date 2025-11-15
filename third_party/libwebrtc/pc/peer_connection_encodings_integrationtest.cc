@@ -26,7 +26,6 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/audio_options.h"
-#include "api/field_trials.h"
 #include "api/field_trials_view.h"
 #include "api/jsep.h"
 #include "api/make_ref_counted.h"
@@ -235,10 +234,9 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
       absl::string_view field_trials = "") {
     auto pc_wrapper = make_ref_counted<PeerConnectionTestWrapper>(
         "pc", &pss_, background_thread_.get(), background_thread_.get());
-    pc_wrapper->CreatePc(
-        {}, CreateBuiltinAudioEncoderFactory(),
-        CreateBuiltinAudioDecoderFactory(),
-        std::make_unique<FieldTrials>(CreateTestFieldTrials(field_trials)));
+    pc_wrapper->CreatePc({}, CreateBuiltinAudioEncoderFactory(),
+                         CreateBuiltinAudioDecoderFactory(),
+                         CreateTestFieldTrialsPtr(field_trials));
     return pc_wrapper;
   }
 
@@ -277,13 +275,10 @@ class PeerConnectionEncodingsIntegrationTest : public ::testing::Test {
         pc_wrapper->pc_factory()
             ->GetRtpReceiverCapabilities(MediaType::VIDEO)
             .codecs;
-    codecs.erase(std::remove_if(codecs.begin(), codecs.end(),
-                                [&codec_name](const RtpCodecCapability& codec) {
-                                  return !codec.IsResiliencyCodec() &&
-                                         !absl::EqualsIgnoreCase(codec.name,
-                                                                 codec_name);
-                                }),
-                 codecs.end());
+    std::erase_if(codecs, [&codec_name](const RtpCodecCapability& codec) {
+      return !codec.IsResiliencyCodec() &&
+             !absl::EqualsIgnoreCase(codec.name, codec_name);
+    });
     RTC_DCHECK(std::find_if(codecs.begin(), codecs.end(),
                             [&codec_name](const RtpCodecCapability& codec) {
                               return absl::EqualsIgnoreCase(codec.name,
@@ -1737,12 +1732,9 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::AUDIO)
           .codecs;
-  not_opus_codecs.erase(
-      std::remove_if(not_opus_codecs.begin(), not_opus_codecs.end(),
-                     [&](const auto& codec) {
-                       return absl::EqualsIgnoreCase(codec.name, opus->name);
-                     }),
-      not_opus_codecs.end());
+  std::erase_if(not_opus_codecs, [&](const auto& codec) {
+    return absl::EqualsIgnoreCase(codec.name, opus->name);
+  });
 
   auto transceiver_or_error =
       local_pc_wrapper->pc()->AddTransceiver(MediaType::AUDIO);
@@ -1775,12 +1767,9 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::AUDIO)
           .codecs;
-  not_opus_codecs.erase(
-      std::remove_if(not_opus_codecs.begin(), not_opus_codecs.end(),
-                     [&](const auto& codec) {
-                       return absl::EqualsIgnoreCase(codec.name, opus->name);
-                     }),
-      not_opus_codecs.end());
+  std::erase_if(not_opus_codecs, [&](const auto& codec) {
+    return absl::EqualsIgnoreCase(codec.name, opus->name);
+  });
 
   auto transceiver_or_error =
       local_pc_wrapper->pc()->AddTransceiver(MediaType::AUDIO);
@@ -1902,12 +1891,9 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::VIDEO)
           .codecs;
-  not_vp8_codecs.erase(
-      std::remove_if(not_vp8_codecs.begin(), not_vp8_codecs.end(),
-                     [&](const auto& codec) {
-                       return absl::EqualsIgnoreCase(codec.name, vp8->name);
-                     }),
-      not_vp8_codecs.end());
+  std::erase_if(not_vp8_codecs, [&](const auto& codec) {
+    return absl::EqualsIgnoreCase(codec.name, vp8->name);
+  });
 
   auto transceiver_or_error =
       local_pc_wrapper->pc()->AddTransceiver(MediaType::VIDEO);
@@ -1940,12 +1926,9 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::VIDEO)
           .codecs;
-  not_vp8_codecs.erase(
-      std::remove_if(not_vp8_codecs.begin(), not_vp8_codecs.end(),
-                     [&](const auto& codec) {
-                       return absl::EqualsIgnoreCase(codec.name, vp8->name);
-                     }),
-      not_vp8_codecs.end());
+  std::erase_if(not_vp8_codecs, [&](const auto& codec) {
+    return absl::EqualsIgnoreCase(codec.name, vp8->name);
+  });
 
   auto transceiver_or_error =
       local_pc_wrapper->pc()->AddTransceiver(MediaType::VIDEO);
@@ -2001,12 +1984,9 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::AUDIO)
           .codecs;
-  not_opus_codecs.erase(
-      std::remove_if(not_opus_codecs.begin(), not_opus_codecs.end(),
-                     [&](const auto& codec) {
-                       return absl::EqualsIgnoreCase(codec.name, opus->name);
-                     }),
-      not_opus_codecs.end());
+  std::erase_if(not_opus_codecs, [&](const auto& codec) {
+    return absl::EqualsIgnoreCase(codec.name, opus->name);
+  });
 
   RtpTransceiverInit init;
   init.direction = RtpTransceiverDirection::kSendOnly;
@@ -2131,12 +2111,9 @@ TEST_F(PeerConnectionEncodingsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::VIDEO)
           .codecs;
-  not_vp8_codecs.erase(
-      std::remove_if(not_vp8_codecs.begin(), not_vp8_codecs.end(),
-                     [&](const auto& codec) {
-                       return absl::EqualsIgnoreCase(codec.name, vp8->name);
-                     }),
-      not_vp8_codecs.end());
+  std::erase_if(not_vp8_codecs, [&](const auto& codec) {
+    return absl::EqualsIgnoreCase(codec.name, vp8->name);
+  });
 
   RtpTransceiverInit init;
   init.direction = RtpTransceiverDirection::kSendOnly;
@@ -3261,21 +3238,17 @@ TEST_F(PeerConnectionEncodingsFakeCodecsIntegrationTest,
       local_pc_wrapper->pc_factory()
           ->GetRtpSenderCapabilities(MediaType::VIDEO)
           .codecs;
-  send_codecs.erase(std::remove_if(send_codecs.begin(), send_codecs.end(),
-                                   [](const RtpCodecCapability& codec) {
-                                     return codec.name != "H264";
-                                   }),
-                    send_codecs.end());
+  std::erase_if(send_codecs, [](const RtpCodecCapability& codec) {
+    return codec.name != "H264";
+  });
   std::vector<RtpCodecCapability> recv_codecs =
       local_pc_wrapper->pc_factory()
           ->GetRtpReceiverCapabilities(MediaType::VIDEO)
           .codecs;
-  recv_codecs.erase(std::remove_if(recv_codecs.begin(), recv_codecs.end(),
-                                   [](const RtpCodecCapability& codec) {
-                                     RTC_LOG(LS_ERROR) << codec.name;
-                                     return codec.name != "H264";
-                                   }),
-                    recv_codecs.end());
+  std::erase_if(recv_codecs, [](const RtpCodecCapability& codec) {
+    RTC_LOG(LS_ERROR) << codec.name;
+    return codec.name != "H264";
+  });
   ASSERT_THAT(send_codecs, SizeIs(2u));
   ASSERT_THAT(recv_codecs, SizeIs(2u));
   EXPECT_EQ(send_codecs[0], recv_codecs[0]);

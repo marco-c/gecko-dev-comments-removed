@@ -47,7 +47,6 @@ namespace webrtc {
 
 
 
-
 enum class LocalNetworkAccessPermissionStatus {
   kGranted,
   kDenied,
