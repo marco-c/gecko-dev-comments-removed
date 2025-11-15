@@ -99,14 +99,14 @@ TEST(RnnVadTest, ComputePitchPeriod48kHzBitExactness) {
                                          y_energy_view, cpu_features);
   
   
-  EXPECT_EQ(
-      ComputePitchPeriod48kHz(test_data.PitchBuffer24kHzView(), y_energy_view,
-                              {280, 284}, cpu_features),
-      560);
-  EXPECT_EQ(
-      ComputePitchPeriod48kHz(test_data.PitchBuffer24kHzView(), y_energy_view,
-                              {260, 284}, cpu_features),
-      568);
+  EXPECT_EQ(ComputePitchPeriod48kHz(
+                test_data.PitchBuffer24kHzView(), y_energy_view,
+                {280, 284}, cpu_features),
+            560);
+  EXPECT_EQ(ComputePitchPeriod48kHz(
+                test_data.PitchBuffer24kHzView(), y_energy_view,
+                {260, 284}, cpu_features),
+            568);
 }
 
 struct PitchCandidatesParameters {

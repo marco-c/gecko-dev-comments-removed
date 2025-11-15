@@ -9335,12 +9335,13 @@ TEST_F(VideoStreamEncoderTest, RecreatesEncoderWhenEnableVp9SpatialLayer) {
   video_encoder_config.encoder_specific_settings =
       make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
           vp9_settings);
-  video_encoder_config.spatial_layers = GetSvcConfig(1280, 720,
-                                                     30.0,
-                                                     0,
-                                                     2,
-                                                     3,
-                                                     false);
+  video_encoder_config.spatial_layers =
+      GetSvcConfig(1280, 720,
+                   30.0,
+                   0,
+                   2,
+                   3,
+                   false);
   ConfigureEncoder(video_encoder_config.Copy(),
                    VideoStreamEncoder::BitrateAllocationCallbackType::
                        kVideoLayersAllocation);

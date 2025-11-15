@@ -10,6 +10,11 @@
 
 #include "audio/utility/audio_frame_operations.h"
 
+#include <cstddef>
+#include <cstdint>
+
+#include "api/audio/audio_frame.h"
+#include "api/audio/audio_view.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 
@@ -21,7 +26,7 @@ class AudioFrameOperationsTest : public ::testing::Test {
   AudioFrameOperationsTest() = default;
 
   
-  AudioFrame frame_{32000,  2};
+  AudioFrame frame_{32000, 2};
 };
 
 class AudioFrameOperationsDeathTest : public AudioFrameOperationsTest {};

@@ -54,7 +54,7 @@ constexpr DataRate kSecondClusterRate = DataRate::KilobitsPerSec(1800);
 
 constexpr DataRate kProbingErrorMargin = DataRate::KilobitsPerSec(150);
 
-const float kPaceMultiplier = 2.5f;
+constexpr float kPaceMultiplier = 2.5f;
 
 constexpr uint32_t kAudioSsrc = 12345;
 constexpr uint32_t kVideoSsrc = 234565;
@@ -2404,10 +2404,10 @@ TEST_F(PacingControllerTest, FlushesPacketsOnKeyFrames) {
   pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, kSsrc,
                                    1, 1,
                                    100));
-  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kRetransmission,
-                                   kRtxSsrc,
-                                   10, 1,
-                                   100));
+  pacer->EnqueuePacket(
+      BuildPacket(RtpPacketMediaType::kRetransmission, kRtxSsrc,
+                  10, 1,
+                  100));
   EXPECT_EQ(pacer->QueueSizePackets(), 2u);
 
   
