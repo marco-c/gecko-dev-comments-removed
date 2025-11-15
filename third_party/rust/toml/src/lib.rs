@@ -17,6 +17,8 @@
 
 
 
+#![cfg_attr(not(feature = "default"), doc = " ```ignore")]
+#![cfg_attr(feature = "default", doc = " ```")]
 
 
 
@@ -33,6 +35,8 @@
 
 
 
+#![cfg_attr(not(feature = "default"), doc = " ```ignore")]
+#![cfg_attr(feature = "default", doc = " ```")]
 
 
 
@@ -68,6 +72,8 @@
 
 
 
+#![cfg_attr(not(feature = "default"), doc = " ```ignore")]
+#![cfg_attr(feature = "default", doc = " ```")]
 
 
 
@@ -99,6 +105,8 @@
 
 
 
+#![cfg_attr(not(feature = "default"), doc = " ```ignore")]
+#![cfg_attr(feature = "default", doc = " ```")]
 
 
 
@@ -131,46 +139,66 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-#![deny(missing_docs)]
-#![warn(rust_2018_idioms)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
+#![warn(clippy::std_instead_of_core)]
+#![warn(clippy::std_instead_of_alloc)]
 
 
 
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(clippy::print_stderr)]
+#![warn(clippy::print_stdout)]
+
+#[allow(unused_extern_crates)]
+extern crate alloc;
+
+pub(crate) mod alloc_prelude {
+    pub(crate) use alloc::borrow::ToOwned as _;
+    pub(crate) use alloc::format;
+    pub(crate) use alloc::string::String;
+    pub(crate) use alloc::string::ToString as _;
+    pub(crate) use alloc::vec::Vec;
+}
 
 pub mod map;
+#[cfg(feature = "serde")]
 pub mod value;
-#[doc(no_inline)]
-pub use crate::value::Value;
-mod datetime;
 
-pub mod ser;
-#[doc(no_inline)]
-pub use crate::ser::{to_string, to_string_pretty, to_vec, Serializer};
 pub mod de;
-#[doc(no_inline)]
-pub use crate::de::{from_slice, from_str, Deserializer};
-mod tokens;
+#[cfg(feature = "serde")]
+pub mod ser;
 
 #[doc(hidden)]
+#[cfg(feature = "serde")]
 pub mod macros;
 
-mod spanned;
-pub use crate::spanned::Spanned;
+#[cfg(feature = "serde")]
+mod table;
+
+#[doc(inline)]
+#[cfg(feature = "parse")]
+#[cfg(feature = "serde")]
+pub use crate::de::{from_slice, from_str, Deserializer};
+#[doc(inline)]
+#[cfg(feature = "display")]
+#[cfg(feature = "serde")]
+pub use crate::ser::{to_string, to_string_pretty, Serializer};
+#[doc(inline)]
+#[cfg(feature = "serde")]
+pub use crate::value::Value;
+pub use serde_spanned::Spanned;
+#[cfg(feature = "serde")]
+pub use table::Table;
 
 
-#[allow(unused_imports)]
-use crate::datetime::Datetime;
 #[allow(unused_imports)]
 use core::str::FromStr;
+#[allow(unused_imports)]
+use toml_datetime::Datetime;
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;

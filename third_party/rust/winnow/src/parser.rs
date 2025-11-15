@@ -47,6 +47,18 @@ use crate::stream::{Recover, Recoverable};
 
 pub trait Parser<I, O, E> {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     fn parse(&mut self, mut input: I) -> Result<O, ParseError<I, <E as ParserError<I>>::Inner>>
     where
@@ -74,6 +86,9 @@ pub trait Parser<I, O, E> {
         Ok(o)
     }
 
+    
+    
+    
     
     
     

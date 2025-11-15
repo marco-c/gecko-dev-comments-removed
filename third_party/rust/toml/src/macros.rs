@@ -1,13 +1,7 @@
-pub use serde::de::{Deserialize, IntoDeserializer};
+pub use serde_core::de::{Deserialize, IntoDeserializer};
 
+use crate::alloc_prelude::*;
 use crate::value::{Array, Table, Value};
-
-
-
-
-
-
-
 
 
 
@@ -32,7 +26,10 @@ macro_rules! toml {
         let table = $crate::value::Table::new();
         let mut root = $crate::Value::Table(table);
         $crate::toml_internal!(@toplevel root [] $($toml)+);
-        root
+        match root {
+            $crate::Value::Table(table) => table,
+            _ => unreachable!(),
+        }
     }};
 }
 
@@ -197,27 +194,27 @@ macro_rules! toml_internal {
     }};
 
     (@value (-nan)) => {
-        $crate::Value::Float(-::std::f64::NAN)
+        $crate::Value::Float(::core::f64::NAN.copysign(-1.0))
     };
 
     (@value (nan)) => {
-        $crate::Value::Float(::std::f64::NAN)
+        $crate::Value::Float(::core::f64::NAN.copysign(1.0))
     };
 
     (@value nan) => {
-        $crate::Value::Float(::std::f64::NAN)
+        $crate::Value::Float(::core::f64::NAN.copysign(1.0))
     };
 
     (@value (-inf)) => {
-        $crate::Value::Float(::std::f64::NEG_INFINITY)
+        $crate::Value::Float(::core::f64::NEG_INFINITY)
     };
 
     (@value (inf)) => {
-        $crate::Value::Float(::std::f64::INFINITY)
+        $crate::Value::Float(::core::f64::INFINITY)
     };
 
     (@value inf) => {
-        $crate::Value::Float(::std::f64::INFINITY)
+        $crate::Value::Float(::core::f64::INFINITY)
     };
 
     
