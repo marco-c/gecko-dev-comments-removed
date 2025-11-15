@@ -458,6 +458,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void MaybeReconstructActiveEntryList();
 
+  
+  already_AddRefed<net::DocumentLoadListener> GetCurrentLoad();
+
  protected:
   
   void CanonicalDiscard();
