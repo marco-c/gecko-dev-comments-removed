@@ -105,6 +105,7 @@ static inline void profiler_record_wakeup_count(
 #else  
 
 #  include "js/ProfilingStack.h"
+#  include "mozilla/Assertions.h"
 #  include "mozilla/Attributes.h"
 #  include "mozilla/BaseProfilerRAIIMacro.h"
 #  include "mozilla/Maybe.h"
