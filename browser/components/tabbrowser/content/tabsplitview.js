@@ -161,6 +161,16 @@
     
 
 
+    reverseTabs() {
+      const [firstTab, secondTab] = this.#tabs;
+      gBrowser.moveTabBefore(secondTab, firstTab);
+      this.#tabs = [secondTab, firstTab];
+      gBrowser.showSplitViewPanels(this.#tabs);
+    }
+
+    
+
+
     close() {
       gBrowser.removeTabs(this.#tabs);
     }
