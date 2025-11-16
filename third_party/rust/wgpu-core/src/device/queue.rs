@@ -1799,9 +1799,13 @@ fn validate_command_buffer(
                 }
             }
         }
+        
+        
+        
         {
             profiling::scope!("bind groups");
             for bind_group in &cmd_buf_data.trackers.bind_groups {
+                
                 bind_group.try_raw(snatch_guard)?;
             }
         }

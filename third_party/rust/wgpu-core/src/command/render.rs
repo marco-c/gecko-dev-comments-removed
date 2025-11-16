@@ -578,7 +578,7 @@ impl<'scope, 'snatch_guard, 'cmd_enc> State<'scope, 'snatch_guard, 'cmd_enc> {
     
     
     fn flush_bindings(&mut self) -> Result<(), RenderPassErrorInner> {
-        flush_bindings_helper(&mut self.pass, |_| {})?;
+        flush_bindings_helper(&mut self.pass)?;
         Ok(())
     }
 

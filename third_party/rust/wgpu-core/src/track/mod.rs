@@ -678,12 +678,19 @@ impl Tracker {
     
     
     
-    pub fn set_from_bind_group(&mut self, scope: &mut UsageScope, bind_group: &BindGroupStates) {
-        self.buffers.set_multiple(
+    
+    
+    
+    pub fn set_and_remove_from_usage_scope_sparse(
+        &mut self,
+        scope: &mut UsageScope,
+        bind_group: &BindGroupStates,
+    ) {
+        self.buffers.set_and_remove_from_usage_scope_sparse(
             &mut scope.buffers,
             bind_group.buffers.used_tracker_indices(),
         );
         self.textures
-            .set_multiple(&mut scope.textures, &bind_group.views);
+            .set_and_remove_from_usage_scope_sparse(&mut scope.textures, &bind_group.views);
     }
 }

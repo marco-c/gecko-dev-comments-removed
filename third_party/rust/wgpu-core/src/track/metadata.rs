@@ -130,6 +130,14 @@ impl<T: Clone> ResourceMetadata<T> {
         };
         iterate_bitvec_indices(&self.owned)
     }
+
+    
+    pub(super) unsafe fn remove(&mut self, index: usize) {
+        unsafe {
+            *self.resources.get_unchecked_mut(index) = None;
+        }
+        self.owned.set(index, false);
+    }
 }
 
 

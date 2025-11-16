@@ -8,8 +8,10 @@ use alloc::{borrow::Cow, boxed::Box, sync::Arc, vec::Vec};
 use core::{convert::Infallible, fmt, str};
 
 use crate::{
-    api_log, binding_model::BindError, command::pass::flush_bindings_helper,
-    resource::RawResourceAccess,
+    api_log,
+    binding_model::BindError,
+    command::pass::flush_bindings_helper,
+    resource::{RawResourceAccess, Trackable},
 };
 use crate::{
     binding_model::{LateMinBufferBindingSizeMismatch, PushConstantUploadError},
@@ -30,7 +32,7 @@ use crate::{
     resource::{
         self, Buffer, InvalidResourceError, Labeled, MissingBufferUsageError, ParentDevice,
     },
-    track::{ResourceUsageCompatibilityError, Tracker, TrackerIndex},
+    track::{ResourceUsageCompatibilityError, Tracker},
     Label,
 };
 use crate::{command::InnerCommandEncoder, resource::DestroyedResourceError};
@@ -314,37 +316,57 @@ impl<'scope, 'snatch_guard, 'cmd_enc> State<'scope, 'snatch_guard, 'cmd_enc> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     fn flush_bindings(
         &mut self,
         indirect_buffer: Option<&Arc<Buffer>>,
-        indirect_buffer_index_if_not_validating: Option<TrackerIndex>,
+        track_indirect_buffer: bool,
     ) -> Result<(), ComputePassErrorInner> {
-        let mut scope = self.pass.base.device.new_usage_scope();
-
         for bind_group in self.pass.binder.list_active() {
-            unsafe { scope.merge_bind_group(&bind_group.used)? };
+            unsafe { self.pass.scope.merge_bind_group(&bind_group.used)? };
         }
 
         
         
         
-        
-        
         if let Some(buffer) = indirect_buffer {
-            scope
+            self.pass
+                .scope
                 .buffers
                 .merge_single(buffer, wgt::BufferUses::INDIRECT)?;
         }
 
         
-        self.intermediate_trackers
-            .buffers
-            .set_multiple(&mut scope.buffers, indirect_buffer_index_if_not_validating);
+        
+        
+        
 
-        flush_bindings_helper(&mut self.pass, |bind_group| {
+        for bind_group in self.pass.binder.list_active() {
             self.intermediate_trackers
-                .set_from_bind_group(&mut scope, &bind_group.used)
-        })?;
+                .set_and_remove_from_usage_scope_sparse(&mut self.pass.scope, &bind_group.used);
+        }
+
+        if track_indirect_buffer {
+            self.intermediate_trackers
+                .buffers
+                .set_and_remove_from_usage_scope_sparse(
+                    &mut self.pass.scope.buffers,
+                    indirect_buffer.map(|buf| buf.tracker_index()),
+                );
+        } else if let Some(buffer) = indirect_buffer {
+            self.pass
+                .scope
+                .buffers
+                .remove_usage(buffer, wgt::BufferUses::INDIRECT);
+        }
+
+        flush_bindings_helper(&mut self.pass)?;
 
         CommandEncoder::drain_barriers(
             self.pass.base.raw_encoder,
@@ -894,7 +916,7 @@ fn dispatch(state: &mut State, groups: [u32; 3]) -> Result<(), ComputePassErrorI
 
     state.is_ready()?;
 
-    state.flush_bindings(None, None)?;
+    state.flush_bindings(None, false)?;
 
     let groups_size_limit = state
         .pass
@@ -1095,7 +1117,7 @@ fn dispatch_indirect(
                 }]);
         }
 
-        state.flush_bindings(Some(&buffer), None)?;
+        state.flush_bindings(Some(&buffer), false)?;
         unsafe {
             state
                 .pass
@@ -1104,8 +1126,7 @@ fn dispatch_indirect(
                 .dispatch_indirect(params.dst_buffer, 0);
         }
     } else {
-        use crate::resource::Trackable;
-        state.flush_bindings(Some(&buffer), Some(buffer.tracker_index()))?;
+        state.flush_bindings(Some(&buffer), true)?;
 
         let buf_raw = buffer.try_raw(state.pass.base.snatch_guard)?;
         unsafe {
