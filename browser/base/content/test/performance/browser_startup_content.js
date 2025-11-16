@@ -76,6 +76,10 @@ const intermittently_loaded_scripts = {
     "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 
     
+    "resource:///actors/CanonicalURLChild.sys.mjs",
+    "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
+
+    
     "chrome://remote/content/marionette/actors/MarionetteEventsChild.sys.mjs",
     "chrome://remote/content/shared/Log.sys.mjs",
     "resource://testing-common/BrowserTestUtilsChild.sys.mjs",
