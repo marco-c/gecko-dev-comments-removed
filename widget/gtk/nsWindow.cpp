@@ -411,8 +411,7 @@ static void GtkWindowSetTransientFor(GtkWindow* aWindow, GtkWindow* aParent) {
   }
 
 nsWindow::nsWindow()
-    : mWindowVisibilityMutex("nsWindow::mWindowVisibilityMutex"),
-      mIsMapped(false),
+    : mIsMapped(false),
       mIsDestroyed(false),
       mIsShown(false),
       mNeedsShow(false),
@@ -737,15 +736,20 @@ void nsWindow::Destroy() {
     gtk_accessible_set_widget(GTK_ACCESSIBLE(ac), nullptr);
   }
 
+  
+  
+  mEGLWindow = nullptr;
+
+  
+  g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", nullptr);
+  mGdkWindow = nullptr;
+
   gtk_widget_destroy(mShell);
   mShell = nullptr;
   mContainer = nullptr;
 #ifdef MOZ_WAYLAND
   mSurface = nullptr;
 #endif
-
-  MOZ_ASSERT(!mGdkWindow,
-             "mGdkWindow should be NULL when mContainer is destroyed");
 
 #ifdef ACCESSIBILITY
   if (mRootAccessible) {
@@ -3758,41 +3762,8 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
     }
     case NS_NATIVE_OPENGL_CONTEXT:
       return nullptr;
-    case NS_NATIVE_EGL_WINDOW: {
-      
-      
-      
-      
-      
-
-      
-      
-      
-      
-      
-      
-      
-
-      
-      
-      MutexAutoLock lock(mWindowVisibilityMutex);
-      void* eglWindow = nullptr;
-      if (mIsMapped && !mIsDestroyed) {
-#ifdef MOZ_X11
-        if (GdkIsX11Display()) {
-          eglWindow = (void*)GDK_WINDOW_XID(mGdkWindow);
-        }
-#endif
-#ifdef MOZ_WAYLAND
-        if (GdkIsWaylandDisplay()) {
-          eglWindow = moz_container_wayland_get_egl_window(mContainer);
-        }
-#endif
-      }
-      LOG("Get NS_NATIVE_EGL_WINDOW mGdkWindow %p returned eglWindow %p",
-          mGdkWindow, eglWindow);
-      return eglWindow;
-    }
+    case NS_NATIVE_EGL_WINDOW:
+      return mIsDestroyed ? nullptr : mEGLWindow;
     default:
       NS_WARNING("nsWindow::GetNativeData called with bad value");
       return nullptr;
@@ -4121,8 +4092,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 
   
-  if (!mGdkWindow || !mHasMappedToplevel) {
-    LOG("quit, !mGdkWindow || !mHasMappedToplevel");
+  if (!mHasMappedToplevel) {
+    LOG("quit, !mHasMappedToplevel");
     return FALSE;
   }
 
@@ -4156,8 +4127,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   
   
-  if (!mGdkWindow || mIsDestroyed) {
-    LOG("quit, !mGdkWindow || mIsDestroyed");
+  if (mIsDestroyed) {
+    LOG("quit, mIsDestroyed");
     return TRUE;
   }
 
@@ -4310,7 +4281,7 @@ gboolean nsWindow::OnShellConfigureEvent(GdkEventConfigure* aEvent) {
 
   
   
-  if (mGdkWindow && IsTopLevelWidget() &&
+  if (IsTopLevelWidget() &&
       mCeiledScaleFactor != gdk_window_get_scale_factor(mGdkWindow)) {
     LOG("  scale factor changed to %d, return early",
         gdk_window_get_scale_factor(mGdkWindow));
@@ -4335,10 +4306,6 @@ void nsWindow::OnContainerSizeAllocate(GtkAllocation* aAllocation) {
   mHasReceivedSizeAllocate = true;
   mReceivedClientArea = DesktopIntRect(aAllocation->x, aAllocation->y,
                                        aAllocation->width, aAllocation->height);
-
-  if (!mGdkWindow) {
-    return;
-  }
 
   
   
@@ -4610,10 +4577,6 @@ void nsWindow::EmulateResizeDrag(GdkEventMotion* aEvent) {
 void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
   mLastMouseCoordinates.Set(aEvent);
 
-  if (!mGdkWindow) {
-    return;
-  }
-
   
   
   if (mAspectResizer && mAspectRatio != 0.0f) {
@@ -4630,10 +4593,8 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
     GdkWindow* dragWindow = nullptr;
 
     
-    if (mGdkWindow) {
-      dragWindow = gdk_window_get_toplevel(mGdkWindow);
-      MOZ_ASSERT(dragWindow, "gdk_window_get_toplevel should not return null");
-    }
+    dragWindow = gdk_window_get_toplevel(mGdkWindow);
+    MOZ_ASSERT(dragWindow, "gdk_window_get_toplevel should not return null");
 
 #ifdef MOZ_X11
     if (dragWindow && GdkIsX11Display()) {
@@ -5068,10 +5029,6 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   SetLastPointerDownEvent(nullptr);
   mLastMouseCoordinates.Set(aEvent);
 
-  if (!mGdkWindow) {
-    return;
-  }
-
   if (mAspectResizer) {
     mAspectResizer = Nothing();
     return;
@@ -5251,7 +5208,7 @@ WidgetEventTime nsWindow::GetWidgetEventTime(guint32 aEventTime) {
 }
 
 TimeStamp nsWindow::GetEventTimeStamp(guint32 aEventTime) {
-  if (MOZ_UNLIKELY(!mGdkWindow)) {
+  if (MOZ_UNLIKELY(mIsDestroyed)) {
     
     return TimeStamp::Now();
   }
@@ -5287,7 +5244,6 @@ TimeStamp nsWindow::GetEventTimeStamp(guint32 aEventTime) {
 
 #ifdef MOZ_X11
 mozilla::CurrentX11TimeGetter* nsWindow::GetCurrentTimeGetter() {
-  MOZ_ASSERT(mGdkWindow, "Expected mGdkWindow to be set");
   if (MOZ_UNLIKELY(!mCurrentTimeGetter)) {
     mCurrentTimeGetter = MakeUnique<CurrentX11TimeGetter>(mGdkWindow);
   }
@@ -5741,7 +5697,7 @@ void nsWindow::OnCompositedChanged() {
 
 
 void nsWindow::OnScaleEvent() {
-  if (!mGdkWindow || !IsTopLevelWidget()) {
+  if (!IsTopLevelWidget()) {
     return;
   }
 
@@ -5759,7 +5715,6 @@ void nsWindow::RefreshScale(bool aRefreshScreen, bool aForceRefresh) {
   LOG("nsWindow::RefreshScale() GdkWindow scale %d refresh %d",
       gdk_window_get_scale_factor(mGdkWindow), aRefreshScreen);
 
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped && mGdkWindow);
   int ceiledScale = gdk_window_get_scale_factor(mGdkWindow);
   const bool scaleChanged =
       aForceRefresh || GdkCeiledScaleFactor() != ceiledScale;
@@ -5804,7 +5759,7 @@ void nsWindow::SetDragPopupSurface(
 
   mDragPopupSurface = aDragPopupSurface;
   mDragPopupSurfaceRegion = aInvalidRegion;
-  if (mGdkWindow) {
+  if (!mIsDestroyed) {
     gdk_window_invalidate_rect(mGdkWindow, nullptr, false);
   }
 }
@@ -6215,28 +6170,17 @@ nsCString nsWindow::GetPopupTypeName() {
 Window nsWindow::GetX11Window() {
 #ifdef MOZ_X11
   if (GdkIsX11Display()) {
-    return mGdkWindow ? gdk_x11_window_get_xid(mGdkWindow) : X11None;
+    return gdk_x11_window_get_xid(mGdkWindow);
   }
 #endif
   return (Window) nullptr;
 }
 
-void nsWindow::EnsureGdkWindow() {
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
-  if (!mGdkWindow) {
-    mGdkWindow = gtk_widget_get_window(GTK_WIDGET(mContainer));
-    g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", this);
-  }
-}
-
 void nsWindow::ConfigureCompositor() {
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
-
   LOG("nsWindow::ConfigureCompositor()");
 
-  if (mIsDestroyed || !mIsMapped) {
-    LOG("  quit, mIsDestroyed = %d mIsMapped = %d", !!mIsDestroyed,
-        !!mIsMapped);
+  if (mIsDestroyed) {
+    LOG("  quit, mIsDestroyed = %d", !!mIsDestroyed);
     return;
   }
   
@@ -6498,6 +6442,24 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   }
 
   gtk_widget_realize(container);
+
+  mGdkWindow = gtk_widget_get_window(GTK_WIDGET(mContainer));
+  g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", this);
+
+#ifdef MOZ_X11
+  if (GdkIsX11Display()) {
+    mEGLWindow = (void*)GDK_WINDOW_XID(mGdkWindow);
+  }
+#endif
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay() && mIsAccelerated) {
+    mEGLWindow = MOZ_WL_SURFACE(container)->GetEGLWindow(mClientArea.Size());
+  }
+#endif
+  if (mEGLWindow) {
+    LOG("Get NS_NATIVE_EGL_WINDOW mGdkWindow %p returned mEGLWindow %p",
+        mGdkWindow, mEGLWindow);
+  }
 
   
   gtk_widget_show(container);
@@ -9933,7 +9895,7 @@ bool nsWindow::SetEGLNativeWindowSize(
   
   MOZ_ASSERT(GdkIsWaylandDisplay());
 
-  if (!mIsMapped) {
+  if (mIsDestroyed) {
     return true;
   }
 
@@ -9970,10 +9932,8 @@ void nsWindow::OnMap() {
   MaybeCreatePipResources();
 
   {
-    MutexAutoLock lock(mWindowVisibilityMutex);
     mIsMapped = true;
 
-    EnsureGdkWindow();
     RefreshScale( false);
 
     if (mIsAlert) {
@@ -10025,7 +9985,6 @@ void nsWindow::OnUnmap() {
   ClearPipResources();
 
   {
-    MutexAutoLock lock(mWindowVisibilityMutex);
     mIsMapped = false;
     mHasReceivedSizeAllocate = false;
 
@@ -10039,23 +9998,8 @@ void nsWindow::OnUnmap() {
       }
     }
 
-    if (mGdkWindow) {
-      g_object_set_data(G_OBJECT(mGdkWindow), "nsWindow", nullptr);
-      mGdkWindow = nullptr;
-    }
-
     
     mCeiledScaleFactor = sNoScale;
-
-    
-    
-    
-    if (mCompositorWidgetDelegate) {
-      mCompositorWidgetDelegate->CleanupResources();
-    }
-
-    
-    mSurfaceProvider.CleanupResources();
   }
 
   
@@ -10066,28 +10010,6 @@ void nsWindow::OnUnmap() {
   
   if (mWindowType == WindowType::Popup && !mPopupTemporaryHidden) {
     DestroyLayerManager();
-  } else {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
-      remoteRenderer->SendResume();
-    }
   }
 }
 
