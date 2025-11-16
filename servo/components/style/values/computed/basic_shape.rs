@@ -10,9 +10,9 @@
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::angle::Angle;
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{Image, LengthPercentage, Position};
+use crate::values::computed::{Image, LengthPercentage, NonNegativeLengthPercentage, Position};
 use crate::values::generics::basic_shape as generic;
-use crate::values::generics::basic_shape::ShapePosition;
+use crate::values::generics::position::Position as GenericPosition;
 use crate::values::specified::svg_path::{CoordPair, PathCommand};
 use crate::values::CSSFloat;
 
@@ -32,35 +32,34 @@ pub type BasicShape = generic::GenericBasicShape<Angle, Position, LengthPercenta
 pub type InsetRect = generic::GenericInsetRect<LengthPercentage>;
 
 
-pub type Circle = generic::Circle<LengthPercentage>;
+pub type Circle = generic::Circle<Position, NonNegativeLengthPercentage>;
 
 
-pub type Ellipse = generic::Ellipse<LengthPercentage>;
+pub type Ellipse = generic::Ellipse<Position, NonNegativeLengthPercentage>;
 
 
-pub type ShapeRadius = generic::GenericShapeRadius<LengthPercentage>;
+pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;
 
 
-pub type Shape = generic::Shape<Angle, Position, LengthPercentage>;
+pub type Shape = generic::Shape<Angle, LengthPercentage>;
 
 
-pub type ShapeCommand = generic::GenericShapeCommand<Angle, Position, LengthPercentage>;
+pub type ShapeCommand = generic::GenericShapeCommand<Angle, LengthPercentage>;
 
 
-pub type PathOrShapeFunction =
-    generic::GenericPathOrShapeFunction<Angle, Position, LengthPercentage>;
+pub type PathOrShapeFunction = generic::GenericPathOrShapeFunction<Angle, LengthPercentage>;
 
 
 pub type CoordinatePair = generic::CoordinatePair<LengthPercentage>;
 
 
-pub type ControlPoint = generic::ControlPoint<Position, LengthPercentage>;
+pub type ControlPoint = generic::ControlPoint<LengthPercentage>;
 
 
 pub type RelativeControlPoint = generic::RelativeControlPoint<LengthPercentage>;
 
 
-pub type CommandEndPoint = generic::CommandEndPoint<Position, LengthPercentage>;
+pub type CommandEndPoint = generic::CommandEndPoint<LengthPercentage>;
 
 
 macro_rules! animate_shape {
@@ -215,9 +214,9 @@ impl From<&CoordPair> for CoordinatePair {
     }
 }
 
-impl From<&ShapePosition<CSSFloat>> for Position {
+impl From<&GenericPosition<CSSFloat, CSSFloat>> for Position {
     #[inline]
-    fn from(p: &ShapePosition<CSSFloat>) -> Self {
+    fn from(p: &GenericPosition<CSSFloat, CSSFloat>) -> Self {
         use crate::values::computed::CSSPixelLength;
         Self::new(
             LengthPercentage::new_length(CSSPixelLength::new(p.horizontal)),
@@ -226,9 +225,9 @@ impl From<&ShapePosition<CSSFloat>> for Position {
     }
 }
 
-impl From<&generic::CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>> for CommandEndPoint {
+impl From<&generic::CommandEndPoint<CSSFloat>> for CommandEndPoint {
     #[inline]
-    fn from(p: &generic::CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>) -> Self {
+    fn from(p: &generic::CommandEndPoint<CSSFloat>) -> Self {
         match p {
             generic::CommandEndPoint::ToPosition(pos) => Self::ToPosition(pos.into()),
             generic::CommandEndPoint::ByCoordinate(coord) => Self::ByCoordinate(coord.into()),
@@ -236,11 +235,11 @@ impl From<&generic::CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>> for Comm
     }
 }
 
-impl From<&generic::ControlPoint<ShapePosition<CSSFloat>, CSSFloat>> for ControlPoint {
+impl From<&generic::ControlPoint<CSSFloat>> for ControlPoint {
     #[inline]
-    fn from(p: &generic::ControlPoint<ShapePosition<CSSFloat>, CSSFloat>) -> Self {
+    fn from(p: &generic::ControlPoint<CSSFloat>) -> Self {
         match p {
-            generic::ControlPoint::Absolute(pos) => Self::Absolute(pos.into()),
+            generic::ControlPoint::Position(pos) => Self::Position(pos.into()),
             generic::ControlPoint::Relative(point) => Self::Relative(RelativeControlPoint {
                 coord: CoordinatePair::from(&point.coord),
                 reference: point.reference,

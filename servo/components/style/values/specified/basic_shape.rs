@@ -12,13 +12,13 @@ use crate::values::computed::basic_shape::InsetRect as ComputedInsetRect;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::generics::basic_shape as generic;
 use crate::values::generics::basic_shape::{Path, PolygonCoord};
-use crate::values::generics::position::GenericPositionOrAuto;
+use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
 use crate::values::generics::rect::Rect;
 use crate::values::specified::angle::Angle;
 use crate::values::specified::border::BorderRadius;
 use crate::values::specified::image::Image;
 use crate::values::specified::length::LengthPercentageOrAuto;
-use crate::values::specified::position::{Position, Side};
+use crate::values::specified::position::Side;
 use crate::values::specified::url::SpecifiedUrl;
 use crate::values::specified::PositionComponent;
 use crate::values::specified::{LengthPercentage, NonNegativeLengthPercentage, SVGPathData};
@@ -39,32 +39,32 @@ pub type ShapeOutside = generic::GenericShapeOutside<BasicShape, Image>;
 
 
 
-pub type RadialPosition = generic::ShapePosition<LengthPercentage>;
+pub type ShapePosition = GenericPosition<LengthPercentage, LengthPercentage>;
 
 
-pub type BasicShape = generic::GenericBasicShape<Angle, Position, LengthPercentage, BasicShapeRect>;
+pub type BasicShape =
+    generic::GenericBasicShape<Angle, ShapePosition, LengthPercentage, BasicShapeRect>;
 
 
 pub type InsetRect = generic::GenericInsetRect<LengthPercentage>;
 
 
-pub type Circle = generic::Circle<LengthPercentage>;
+pub type Circle = generic::Circle<ShapePosition, NonNegativeLengthPercentage>;
 
 
-pub type Ellipse = generic::Ellipse<LengthPercentage>;
+pub type Ellipse = generic::Ellipse<ShapePosition, NonNegativeLengthPercentage>;
 
 
-pub type ShapeRadius = generic::ShapeRadius<LengthPercentage>;
+pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthPercentage>;
 
 
 pub type Polygon = generic::GenericPolygon<LengthPercentage>;
 
 
-pub type PathOrShapeFunction =
-    generic::GenericPathOrShapeFunction<Angle, Position, LengthPercentage>;
+pub type PathOrShapeFunction = generic::GenericPathOrShapeFunction<Angle, LengthPercentage>;
 
 
-pub type ShapeCommand = generic::GenericShapeCommand<Angle, Position, LengthPercentage>;
+pub type ShapeCommand = generic::GenericShapeCommand<Angle, LengthPercentage>;
 
 
 
@@ -384,7 +384,7 @@ impl InsetRect {
     }
 }
 
-impl ToCss for RadialPosition {
+impl ToCss for ShapePosition {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
@@ -427,11 +427,11 @@ fn convert_to_length_percentage<S: Side>(c: PositionComponent<S>) -> LengthPerce
 fn parse_at_position<'i, 't>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
-) -> Result<GenericPositionOrAuto<RadialPosition>, ParseError<'i>> {
+) -> Result<GenericPositionOrAuto<ShapePosition>, ParseError<'i>> {
     use crate::values::specified::position::Position;
     if input.try_parse(|i| i.expect_ident_matching("at")).is_ok() {
         Position::parse(context, input).map(|pos| {
-            GenericPositionOrAuto::Position(RadialPosition::new(
+            GenericPositionOrAuto::Position(ShapePosition::new(
                 convert_to_length_percentage(pos.horizontal),
                 convert_to_length_percentage(pos.vertical),
             ))
@@ -440,6 +440,19 @@ fn parse_at_position<'i, 't>(
         
         Ok(GenericPositionOrAuto::Auto)
     }
+}
+
+fn parse_to_position<'i, 't>(
+    context: &ParserContext,
+    input: &mut Parser<'i, 't>,
+) -> Result<ShapePosition, ParseError<'i>> {
+    use crate::values::specified::position::Position;
+    Position::parse(context, input).map(|pos| {
+        ShapePosition::new(
+            convert_to_length_percentage(pos.horizontal),
+            convert_to_length_percentage(pos.vertical),
+        )
+    })
 }
 
 impl Parse for Circle {
@@ -733,7 +746,7 @@ impl ToComputedValue for BasicShapeRect {
     }
 }
 
-impl generic::Shape<Angle, Position, LengthPercentage> {
+impl generic::Shape<Angle, LengthPercentage> {
     
     
     fn parse_function_arguments<'i, 't>(
@@ -803,7 +816,7 @@ impl Parse for ShapeCommand {
                 // parse 2 offsets as valid (i.e. hline to left 30% works), and similarly
                 // incorrectly parse top or bottom as valid values.
                 let x = if by_to.is_abs() {
-                    convert_to_length_percentage(Position::parse(context, input)?.horizontal)
+                    parse_to_position(context, input)?.horizontal
                 } else {
                     LengthPercentage::parse(context, input)?
                 };
@@ -813,7 +826,7 @@ impl Parse for ShapeCommand {
                 let by_to = ByTo::parse(input)?;
                 // FIXME(Bug 1993311): Should parse y-start and y-end too.
                 let y = if by_to.is_abs() {
-                    convert_to_length_percentage(Position::parse(context, input)?.horizontal)
+                    parse_to_position(context, input)?.horizontal
                 } else {
                     LengthPercentage::parse(context, input)?
                 };
@@ -910,7 +923,7 @@ impl Parse for generic::CoordinatePair<LengthPercentage> {
     }
 }
 
-impl generic::ControlPoint<Position, LengthPercentage> {
+impl generic::ControlPoint<LengthPercentage> {
     
     fn parse<'i, 't>(
         context: &ParserContext,
@@ -921,8 +934,8 @@ impl generic::ControlPoint<Position, LengthPercentage> {
 
         
         if by_to.is_abs() && coord.is_err() {
-            let pos = Position::parse(context, input)?;
-            return Ok(Self::Absolute(pos));
+            let pos = parse_to_position(context, input)?;
+            return Ok(Self::Position(pos));
         }
 
         
@@ -938,7 +951,7 @@ impl generic::ControlPoint<Position, LengthPercentage> {
     }
 }
 
-impl generic::CommandEndPoint<Position, LengthPercentage> {
+impl generic::CommandEndPoint<LengthPercentage> {
     
     pub fn parse<'i, 't>(
         context: &ParserContext,
@@ -946,7 +959,7 @@ impl generic::CommandEndPoint<Position, LengthPercentage> {
         by_to: generic::ByTo,
     ) -> Result<Self, ParseError<'i>> {
         if by_to.is_abs() {
-            let point = Position::parse(context, input)?;
+            let point = parse_to_position(context, input)?;
             Ok(Self::ToPosition(point))
         } else {
             let point = generic::CoordinatePair::parse(context, input)?;
