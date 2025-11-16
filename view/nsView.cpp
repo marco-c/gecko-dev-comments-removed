@@ -28,10 +28,7 @@ using namespace mozilla;
 using namespace mozilla::widget;
 
 nsView::nsView(nsViewManager* aViewManager)
-    : mViewManager(aViewManager),
-      mFrame(nullptr),
-      mWidgetIsTopLevel(false),
-      mForcedRepaint(false) {
+    : mViewManager(aViewManager), mForcedRepaint(false) {
   MOZ_COUNT_CTOR(nsView);
 
   
@@ -58,8 +55,6 @@ nsView::~nsView() {
 
   
   DestroyWidget();
-
-  MOZ_RELEASE_ASSERT(!mFrame);
 }
 
 class DestroyWidgetRunnable : public Runnable {
@@ -85,22 +80,7 @@ void nsView::DestroyWidget() {
     
     
     
-    if (mWidgetIsTopLevel) {
-      mWindow->SetAttachedWidgetListener(nullptr);
-    } else {
-      mWindow->SetWidgetListener(nullptr);
-
-      nsCOMPtr<nsIRunnable> widgetDestroyer =
-          new DestroyWidgetRunnable(mWindow);
-
-      
-      
-      nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
-      if (mainThread) {
-        mainThread->Dispatch(widgetDestroyer.forget(), NS_DISPATCH_NORMAL);
-      }
-    }
-
+    mWindow->SetAttachedWidgetListener(nullptr);
     mWindow = nullptr;
   }
 }
@@ -174,8 +154,6 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(
                                         aTransparency);
 }
 
-void nsView::SetDimensions(const nsRect& aRect) { mDimBounds = aRect; }
-
 
 void nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
   MOZ_ASSERT(aWidget, "null widget ptr");
@@ -205,12 +183,10 @@ void nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
   if (mWindow->GetWindowType() != WindowType::Invisible) {
     mWindow->AsyncEnableDragDrop(true);
   }
-  mWidgetIsTopLevel = true;
 }
 
 
 void nsView::DetachFromTopLevelWidget() {
-  MOZ_ASSERT(mWidgetIsTopLevel, "Not attached currently!");
   MOZ_ASSERT(mWindow, "null mWindow for DetachFromTopLevelWidget!");
 
   mWindow->SetAttachedWidgetListener(nullptr);
@@ -218,7 +194,7 @@ void nsView::DetachFromTopLevelWidget() {
           mWindow->GetPreviouslyAttachedWidgetListener()) {
     if (nsView* view = listener->GetView()) {
       
-      view->SetPreviousWidget(nullptr);
+      view->mPreviousWindow = nullptr;
     }
   }
 
@@ -228,8 +204,6 @@ void nsView::DetachFromTopLevelWidget() {
 
   mPreviousWindow = mWindow;
   mWindow = nullptr;
-
-  mWidgetIsTopLevel = false;
 }
 
 #ifdef DEBUG
@@ -243,10 +217,7 @@ void nsView::List(FILE* out, int32_t aIndent) const {
     fprintf(out, "(widget=%p[%" PRIuPTR "] pos=%s) ", (void*)mWindow,
             widgetRefCnt, ToString(mWindow->GetBounds()).c_str());
   }
-  nsRect brect = GetBounds();
-  fprintf(out, "{%d,%d,%d,%d}", brect.X(), brect.Y(), brect.Width(),
-          brect.Height());
-  fprintf(out, " frame=%p <\n", mFrame);
+  fprintf(out, "{%d, %d}", mSize.width, mSize.height);
   for (i = aIndent; --i >= 0;) fputs("  ", out);
   fputs(">\n", out);
 }
@@ -283,7 +254,7 @@ bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
   
   pc->DeviceContext()->CheckDPIChange();
   int32_t p2a = pc->AppUnitsPerDevPixel();
-  if (auto* frame = GetFrame()) {
+  if (auto* frame = ps->GetRootFrame()) {
     
     
     
@@ -452,8 +423,9 @@ void nsView::SafeAreaInsetsChanged(
 }
 
 bool nsView::IsPrimaryFramePaintSuppressed() const {
-  return StaticPrefs::layout_show_previous_page() && mFrame &&
-         mFrame->PresShell()->IsPaintingSuppressed();
+  return StaticPrefs::layout_show_previous_page() &&
+         mViewManager->GetPresShell() &&
+         mViewManager->GetPresShell()->IsPaintingSuppressed();
 }
 
 void nsView::CallOnAllRemoteChildren(

@@ -86,11 +86,7 @@ class nsViewManager final {
 
 
 
-
-
-
-
-  void ResizeView(nsView* aView, const nsRect& aRect);
+  void ResizeView(nsView* aView, const nsSize& aSize);
 
   
 

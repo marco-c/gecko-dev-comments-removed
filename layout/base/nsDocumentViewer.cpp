@@ -1916,8 +1916,7 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
     int32_t p2a = mPresContext->AppUnitsPerDevPixel();
     const nsSize size = LayoutDeviceSize::ToAppUnits(mBounds.Size(), p2a);
     nsView* rootView = mViewManager->GetRootView();
-    if (boundsChanged && rootView) {
-      nsRect viewDims = rootView->GetBounds();
+    if (boundsChanged && rootView && rootView->GetSize() == size) {
       
       
       
@@ -1927,16 +1926,14 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
       
       
       
-      if (viewDims.Size() == size) {
-        if (nsIFrame* f = rootView->GetFrame()) {
-          f->InvalidateFrame();
+      if (nsIFrame* f = mPresShell->GetRootFrame()) {
+        f->InvalidateFrame();
 
-          
-          
-          
-          
-          mPresShell->RefreshViewportSize();
-        }
+        
+        
+        
+        
+        mPresShell->RefreshViewportSize();
       }
     }
 
@@ -2212,7 +2209,7 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize) {
 void nsDocumentViewer::DetachFromTopLevelWidget() {
   if (mViewManager) {
     nsView* oldView = mViewManager->GetRootView();
-    if (oldView && oldView->IsAttachedToTopLevel()) {
+    if (oldView && oldView->HasWidget()) {
       oldView->DetachFromTopLevelWidget();
     }
   }

@@ -2180,13 +2180,6 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-
-
-  [[nodiscard]] nsIFrame* GetClosestAncestorFrameForAncestorView() const;
-
-  
-
-
   class MOZ_STACK_CLASS EventHandler final {
    public:
     EventHandler() = delete;

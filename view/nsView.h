@@ -140,22 +140,7 @@ class nsView final : public nsIWidgetListener {
   
 
 
-
-
-
-
-
-  nsRect GetBounds() const { return mDimBounds; }
-
-  
-
-
-  void SetFrame(nsIFrame* aRootFrame) { mFrame = aRootFrame; }
-
-  
-
-
-  nsIFrame* GetFrame() const { return mFrame; }
+  nsSize GetSize() const { return mSize; }
 
   
 
@@ -182,24 +167,10 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  bool IsAttachedToTopLevel() const { return mWidgetIsTopLevel; }
-
-  
-
-
-
 
 
 
   nsIWidget* GetWidget() const { return mWindow; }
-
-  
-
-
-
-
-
-  void SetPreviousWidget(nsIWidget* aWidget) { mPreviousWindow = aWidget; }
 
   
 
@@ -271,15 +242,7 @@ class nsView final : public nsIWidgetListener {
 
   bool ForcedRepaint() { return mForcedRepaint; }
 
-  void InitializeWindow(bool aEnableDragDrop, bool aResetVisibility);
-
-  
-
-
-
-
-
-  void SetDimensions(const nsRect& aRect);
+  void SetSize(const nsSize& aSize) { mSize = aSize; }
 
   void CallOnAllRemoteChildren(
       const std::function<mozilla::CallState(mozilla::dom::BrowserParent*)>&
@@ -288,10 +251,7 @@ class nsView final : public nsIWidgetListener {
   nsViewManager* mViewManager;
   nsCOMPtr<nsIWidget> mWindow;
   nsCOMPtr<nsIWidget> mPreviousWindow;
-  nsIFrame* mFrame;
-  
-  nsRect mDimBounds;
-  bool mWidgetIsTopLevel;
+  nsSize mSize;
   bool mForcedRepaint;
   bool mIsDirty = false;
 };
