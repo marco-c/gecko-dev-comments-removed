@@ -8,6 +8,10 @@
 
 
 
+
+
+
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -224,122 +228,104 @@ Preferences.addSetting({
   pref: "browser.privatebrowsing.autostart",
 });
 
-Preferences.addSetting(
-   ({
-    id: "launchOnLoginApproved",
-    _getLaunchOnLoginApprovedCachedValue: true,
-    get() {
-      return this._getLaunchOnLoginApprovedCachedValue;
-    },
-    
-    
-    
-    
-    
-    
-    setup() {
-      if (AppConstants.platform !== "win") {
-        
-
-
-
-
-
-        return;
-      }
+Preferences.addSetting({
+  id: "launchOnLoginApproved",
+  _getLaunchOnLoginApprovedCachedValue: true,
+  get() {
+    return this._getLaunchOnLoginApprovedCachedValue;
+  },
+  
+  
+  
+  
+  
+  
+  async setup() {
+    if (AppConstants.platform !== "win") {
       
-      WindowsLaunchOnLogin.getLaunchOnLoginApproved().then(val => {
-        this._getLaunchOnLoginApprovedCachedValue = val;
-      });
-    },
-  })
-);
+
+
+
+
+
+      return;
+    }
+    this._getLaunchOnLoginApprovedCachedValue =
+      await WindowsLaunchOnLogin.getLaunchOnLoginApproved();
+  },
+});
 
 Preferences.addSetting({
   id: "windowsLaunchOnLoginEnabled",
   pref: "browser.startup.windowsLaunchOnLogin.enabled",
 });
 
-Preferences.addSetting(
-   ({
-    id: "windowsLaunchOnLogin",
-    deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
-    _getLaunchOnLoginEnabledValue: false,
-    get startWithLastProfile() {
-      return Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-        Ci.nsIToolkitProfileService
-      ).startWithLastProfile;
-    },
-    get() {
-      return this._getLaunchOnLoginEnabledValue;
-    },
-    setup(emitChange) {
-      if (AppConstants.platform !== "win") {
-        
-
-
-
-
-
-        return;
-      }
-
+Preferences.addSetting({
+  id: "windowsLaunchOnLogin",
+  deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
+  _getLaunchOnLoginEnabledValue: false,
+  get startWithLastProfile() {
+    return Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+      Ci.nsIToolkitProfileService
+    ).startWithLastProfile;
+  },
+  get() {
+    return this._getLaunchOnLoginEnabledValue;
+  },
+  async setup(emitChange) {
+    if (AppConstants.platform !== "win") {
       
-      let getLaunchOnLoginEnabledValue;
-      let maybeEmitChange = () => {
-        if (
-          getLaunchOnLoginEnabledValue !== this._getLaunchOnLoginEnabledValue
-        ) {
-          this._getLaunchOnLoginEnabledValue = getLaunchOnLoginEnabledValue;
-          emitChange();
-        }
-      };
-      if (!this.startWithLastProfile) {
-        getLaunchOnLoginEnabledValue = false;
-        maybeEmitChange();
-      } else {
-        
-        WindowsLaunchOnLogin.getLaunchOnLoginEnabled().then(val => {
-          getLaunchOnLoginEnabledValue = val;
-          maybeEmitChange();
-        });
-      }
-    },
-    visible: ({ windowsLaunchOnLoginEnabled }) => {
-      let isVisible =
-        AppConstants.platform === "win" && windowsLaunchOnLoginEnabled.value;
-      if (isVisible) {
-        
-        NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
-          once: true,
-        });
-      }
-      return isVisible;
-    },
-    disabled({ launchOnLoginApproved }) {
-      return !this.startWithLastProfile || !launchOnLoginApproved.value;
-    },
-    onUserChange(checked) {
-      if (checked) {
-        
-        
-        
-        
-        
-        
-        WindowsLaunchOnLogin.createLaunchOnLogin();
-        Services.prefs.setBoolPref(
-          "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
-          true
-        );
-      } else {
-        
-        
-        WindowsLaunchOnLogin.removeLaunchOnLogin();
-      }
-    },
-  })
-);
+
+
+
+
+
+      return;
+    }
+
+    let getLaunchOnLoginEnabledValue;
+    if (!this.startWithLastProfile) {
+      getLaunchOnLoginEnabledValue = false;
+    } else {
+      getLaunchOnLoginEnabledValue =
+        await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+    }
+    if (getLaunchOnLoginEnabledValue !== this._getLaunchOnLoginEnabledValue) {
+      this._getLaunchOnLoginEnabledValue = getLaunchOnLoginEnabledValue;
+      emitChange();
+    }
+  },
+  visible: ({ windowsLaunchOnLoginEnabled }) => {
+    let isVisible =
+      AppConstants.platform === "win" && windowsLaunchOnLoginEnabled.value;
+    if (isVisible) {
+      NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
+        once: true,
+      });
+    }
+    return isVisible;
+  },
+  disabled({ launchOnLoginApproved }) {
+    return !this.startWithLastProfile || !launchOnLoginApproved.value;
+  },
+  onUserChange(checked) {
+    if (checked) {
+      
+      
+      
+      
+      
+      WindowsLaunchOnLogin.createLaunchOnLogin();
+      Services.prefs.setBoolPref(
+        "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
+        true
+      );
+    } else {
+      
+      WindowsLaunchOnLogin.removeLaunchOnLogin();
+    }
+  },
+});
 
 Preferences.addSetting({
   id: "windowsLaunchOnLoginDisabledProfileBox",
@@ -407,7 +393,6 @@ Preferences.addSetting({
     if (checked) {
       
       if (startupPref.value === gMainPane.STARTUP_PREF_BLANK) {
-        
         HomePage.safeSet("about:blank");
       }
       newValue = gMainPane.STARTUP_PREF_RESTORE_SESSION;
@@ -446,13 +431,11 @@ Preferences.addSetting({
   id: "useCursorNavigation",
   pref: "accessibility.browsewithcaret",
 });
-Preferences.addSetting(
-   ({
-    _storedFullKeyboardNavigation: -1,
-    id: "useFullKeyboardNavigation",
-    pref: "accessibility.tabfocus",
-    visible: () => AppConstants.platform == "macosx",
-    
+Preferences.addSetting({
+  id: "useFullKeyboardNavigation",
+  pref: "accessibility.tabfocus",
+  visible: () => AppConstants.platform == "macosx",
+  
 
 
 
@@ -464,38 +447,35 @@ Preferences.addSetting(
 
 
 
-    get(prefVal) {
-      this._storedFullKeyboardNavigation = prefVal;
-      return prefVal == 7;
-    },
-    
+  get(prefVal) {
+    this._storedFullKeyboardNavigation = prefVal;
+    return prefVal == 7;
+  },
+  
 
 
 
 
-    set(checked) {
-      if (checked) {
-        return 7;
-      }
-      if (this._storedFullKeyboardNavigation != 7) {
-        
-        return this._storedFullKeyboardNavigation;
-      }
+  set(checked) {
+    if (checked) {
+      return 7;
+    }
+    if (this._storedFullKeyboardNavigation != 7) {
       
-      return 1;
-    },
-  })
-);
+      return this._storedFullKeyboardNavigation;
+    }
+    
+    return 1;
+  },
+});
 Preferences.addSetting({
   id: "linkPreviewEnabled",
   pref: "browser.ml.linkPreview.enabled",
-  
   visible: () => LinkPreview.canShowPreferences,
 });
 Preferences.addSetting({
   id: "linkPreviewKeyPoints",
   pref: "browser.ml.linkPreview.optin",
-  
   visible: () => LinkPreview.canShowKeyPoints,
 });
 Preferences.addSetting({
@@ -552,46 +532,38 @@ Preferences.addSetting({
   },
 });
 
-Preferences.addSetting(
-   ({
-    id: "web-appearance-chooser",
-    themeNames: ["dark", "light", "auto"],
-    pref: "layout.css.prefers-color-scheme.content-override",
-    setup(emitChange) {
-      Services.obs.addObserver(emitChange, "look-and-feel-changed");
-      return () =>
-        Services.obs.removeObserver(emitChange, "look-and-feel-changed");
-    },
-    get(val, _, setting) {
-      return (
-        this.themeNames[val] ||
-        this.themeNames[ (setting.pref.defaultValue)]
-      );
-    },
+Preferences.addSetting({
+  id: "web-appearance-chooser",
+  themeNames: ["dark", "light", "auto"],
+  pref: "layout.css.prefers-color-scheme.content-override",
+  setup(emitChange) {
+    Services.obs.addObserver(emitChange, "look-and-feel-changed");
+    return () =>
+      Services.obs.removeObserver(emitChange, "look-and-feel-changed");
+  },
+  get(val, _, setting) {
+    return this.themeNames[val] || this.themeNames[setting.pref.defaultValue];
+  },
+  set(val) {
+    return this.themeNames.indexOf(val);
+  },
+  getControlConfig(config) {
     
-    set(val) {
-      return this.themeNames.indexOf(val);
-    },
-    getControlConfig(config) {
-      
-      let systemThemeIndex = Services.appinfo
-        .contentThemeDerivedColorSchemeIsDark
-        ? 2
-        : 1;
-      config.options[0].controlAttrs = {
-        ...config.options[0].controlAttrs,
-        imagesrc: config.options[systemThemeIndex].controlAttrs.imagesrc,
-      };
-      return config;
-    },
-  })
-);
+    let systemThemeIndex = Services.appinfo.contentThemeDerivedColorSchemeIsDark
+      ? 2
+      : 1;
+    config.options[0].controlAttrs = {
+      ...config.options[0].controlAttrs,
+      imagesrc: config.options[systemThemeIndex].controlAttrs.imagesrc,
+    };
+    return config;
+  },
+});
 
 Preferences.addSetting({
   id: "web-appearance-manage-themes-link",
   onUserClick: e => {
     e.preventDefault();
-    
     window.browsingContext.topChromeWindow.BrowserAddonUI.openAddonsMgr(
       "addons://list/theme"
     );
@@ -921,11 +893,7 @@ const DefaultBrowserHelper = {
 
 
   get shellSvc() {
-    return (
-      AppConstants.HAVE_SHELL_SERVICE &&
-      
-      getShellService()
-    );
+    return AppConstants.HAVE_SHELL_SERVICE && getShellService();
   },
 
   
@@ -1049,7 +1017,7 @@ Preferences.addSetting({
 
 
   visible: () => DefaultBrowserHelper.canCheck,
-  disabled: (_, setting) =>
+  disabled: (deps, setting) =>
     !DefaultBrowserHelper.canCheck ||
     setting.locked ||
     DefaultBrowserHelper.isBrowserDefault,
@@ -1127,7 +1095,10 @@ Preferences.addSetting({
   },
 });
 
-SettingGroupManager.registerGroups({
+
+
+
+let SETTINGS_CONFIG = {
   containers: {
     
     inProgress: true,
@@ -1878,7 +1849,7 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
-});
+};
 
 
 
@@ -1886,7 +1857,7 @@ SettingGroupManager.registerGroups({
 function initSettingGroup(id) {
   
   let group = document.querySelector(`setting-group[groupid=${id}]`);
-  const config = SettingGroupManager.get(id);
+  const config = SETTINGS_CONFIG[id];
   if (group && config) {
     if (config.inProgress && !srdSectionEnabled(id)) {
       group.remove();
@@ -2914,7 +2885,7 @@ var gMainPane = {
           case "loading":
             downloadButton.hidden = false;
             deleteButton.hidden = true;
-            downloadButton.setAttribute("disabled", "true");
+            downloadButton.setAttribute("disabled", true);
             break;
         }
       }

@@ -9,12 +9,9 @@
 
 
 
-
-
-const MozButtonClass = customElements.get("button");
-class HighlightableButton extends MozButtonClass {
+const MozButton = customElements.get("button");
+class HighlightableButton extends MozButton {
   static get inheritedAttributes() {
-    
     return Object.assign({}, super.inheritedAttributes, {
       ".button-text": "text=label,accesskey,crop",
     });
@@ -25,14 +22,9 @@ customElements.define("highlightable-button", HighlightableButton, {
 });
 
 var gSearchResultsPane = {
-  
-  query: undefined,
   listSearchTooltips: new Set(),
   listSearchMenuitemIndicators: new Set(),
-  
   searchInput: null,
-  
-  searchTooltipContainer: null,
   
   
   searchKeywords: new WeakMap(),
@@ -57,11 +49,9 @@ var gSearchResultsPane = {
       return;
     }
     this.inited = true;
-    this.searchInput =  (
-      document.getElementById("searchInput")
-    );
-    this.searchTooltipContainer =  (
-      document.getElementById("search-tooltip-container")
+    this.searchInput = document.getElementById("searchInput");
+    this.searchTooltipContainer = document.getElementById(
+      "search-tooltip-container"
     );
 
     window.addEventListener("resize", () => {
@@ -81,7 +71,6 @@ var gSearchResultsPane = {
     ensureScrollPadding();
   },
 
-  
   async handleEvent(event) {
     
     await this.initializeCategories();

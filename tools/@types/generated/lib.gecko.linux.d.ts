@@ -11,8 +11,6 @@ declare global {
 interface nsIGNOMEShellService extends nsIShellService {
   readonly canSetDesktopBackground: boolean;
   isDefaultForScheme(aScheme: string): boolean;
-  getGSettingsString(aScheme: string, aKey: string): string;
-  setGSettingsString(aScheme: string, aKey: string, aValue: string): void;
 }
 
 

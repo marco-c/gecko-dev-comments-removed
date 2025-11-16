@@ -16,12 +16,6 @@
 
 
 
-
-
-
-
-
-
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -152,7 +146,6 @@ ChromeUtils.defineLazyGetter(this, "gSubDialog", function () {
   });
 });
 
-
 const srdSectionPrefs = {};
 XPCOMUtils.defineLazyPreferenceGetter(
   srdSectionPrefs,
@@ -160,9 +153,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.settings-redesign.enabled",
   false
 );
-
-
-
 
 function srdSectionEnabled(section) {
   if (!(section in srdSectionPrefs)) {
@@ -176,102 +166,13 @@ function srdSectionEnabled(section) {
   return srdSectionPrefs.all || srdSectionPrefs[section];
 }
 
-var SettingPaneManager = {
-  
-  _data: new Map(),
-
-  
-
-
-  get(id) {
-    if (!this._data.has(id)) {
-      throw new Error(`Setting pane "${id}" not found`);
-    }
-    return this._data.get(id);
-  },
-
-  
-
-
-
-  registerPane(id, config) {
-    if (this._data.has(id)) {
-      throw new Error(`Setting pane "${id}" already registered`);
-    }
-    this._data.set(id, config);
-    let subPane = friendlyPrefCategoryNameToInternalName(id);
-    let settingPane =  (
-      document.createElement("setting-pane")
-    );
-    settingPane.name = subPane;
-    settingPane.config = config;
-    settingPane.isSubPane = !!config.parent;
-    document.getElementById("mainPrefPane").append(settingPane);
-    register_module(subPane, {
-      init() {
-        settingPane.init();
-      },
-    });
-  },
-
-  
-
-
-  registerPanes(paneConfigs) {
-    for (let id in paneConfigs) {
-      this.registerPane(id, paneConfigs[id]);
-    }
-  },
-};
-
-var SettingGroupManager = {
-  
-  _data: new Map(),
-
-  
-
-
-  get(id) {
-    if (!this._data.has(id)) {
-      throw new Error(`Setting group "${id}" not found`);
-    }
-    return this._data.get(id);
-  },
-
-  
-
-
-
-  registerGroup(id, config) {
-    if (this._data.has(id)) {
-      throw new Error(`Setting group "${id}" already registered`);
-    }
-    this._data.set(id, config);
-  },
-
-  
-
-
-  registerGroups(groupConfigs) {
-    for (let id in groupConfigs) {
-      this.registerGroup(id, groupConfigs[id]);
-    }
-  },
-};
-
-
-
-
-
-
-
-const CONFIG_PANES = Object.freeze({
+const CONFIG_PANES = {
   containers2: {
     parent: "general",
     l10nId: "containers-section-header",
     groupIds: ["containers"],
   },
-});
+};
 
 var gLastCategory = { category: undefined, subcategory: undefined };
 const gXULDOMParser = new DOMParser();
@@ -325,8 +226,18 @@ function init_all() {
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
 
-  for (let [id, config] of Object.entries(CONFIG_PANES)) {
-    SettingPaneManager.registerPane(id, config);
+  for (let [subPane, config] of Object.entries(CONFIG_PANES)) {
+    subPane = friendlyPrefCategoryNameToInternalName(subPane);
+    let settingPane = document.createElement("setting-pane");
+    settingPane.name = subPane;
+    settingPane.config = config;
+    settingPane.isSubPane = config.parent;
+    document.getElementById("mainPrefPane").append(settingPane);
+    register_module(subPane, {
+      init() {
+        settingPane.init();
+      },
+    });
   }
 
   if (Services.prefs.getBoolPref("browser.translations.newSettingsUI.enable")) {
@@ -407,12 +318,6 @@ function onHashChange() {
   gotoPref(null, "Hash");
 }
 
-
-
-
-
-
-
 async function gotoPref(
   aCategory,
   aShowReason = aCategory ? "Click" : "Initial"
@@ -421,7 +326,7 @@ async function gotoPref(
   const kDefaultCategoryInternalName = "paneGeneral";
   const kDefaultCategory = "general";
   let hash = document.location.hash;
-  let category = aCategory || hash.substring(1) || kDefaultCategoryInternalName;
+  let category = aCategory || hash.substr(1) || kDefaultCategoryInternalName;
 
   let breakIndex = category.indexOf("-");
   
@@ -457,8 +362,8 @@ async function gotoPref(
       element.hidden = true;
     }
 
-    item =  (
-      categories.querySelector(".category[value=" + CSS.escape(category) + "]")
+    item = categories.querySelector(
+      ".category[value=" + CSS.escape(category) + "]"
     );
     if (!item || item.hidden) {
       unknownCategory = true;
@@ -492,10 +397,8 @@ async function gotoPref(
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
   if (item) {
-    
     categories.selectedItem = item;
   } else {
-    
     categories.clearSelection();
   }
   window.history.replaceState(category, document.title);
@@ -548,10 +451,7 @@ async function gotoPref(
   categoryModule.handlePrefControlledSection?.();
 
   
-  let gleanId =  (
-    "show" + aShowReason
-  );
-  Glean.aboutpreferences[gleanId].record({ value: category });
+  Glean.aboutpreferences["show" + aShowReason].record({ value: category });
 
   document.dispatchEvent(
     new CustomEvent("paneshown", {
@@ -564,15 +464,9 @@ async function gotoPref(
   );
 }
 
-
-
-
-
 function search(aQuery, aAttribute) {
   let mainPrefPane = document.getElementById("mainPrefPane");
-  let elements =  (
-    Array.from(mainPrefPane.children)
-  );
+  let elements = mainPrefPane.children;
   for (let element of elements) {
     
     
