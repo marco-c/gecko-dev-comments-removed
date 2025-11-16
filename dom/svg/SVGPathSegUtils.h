@@ -12,9 +12,28 @@
 #include "mozilla/gfx/Rect.h"
 
 namespace mozilla {
-template <typename Angle, typename LP>
+
+
+template <typename H, typename V>
+struct StyleGenericPosition;
+
+
+template <typename Position, typename LP>
+struct StyleCommandEndPoint;
+template <typename T>
+using StyleEndPoint = StyleCommandEndPoint<StyleGenericPosition<T, T>, T>;
+
+
+template <typename Position, typename LP>
+struct StyleControlPoint;
+template <typename T>
+using StyleCurveControlPoint = StyleControlPoint<StyleGenericPosition<T, T>, T>;
+
+
+template <typename Angle, typename Position, typename LP>
 struct StyleGenericShapeCommand;
-using StylePathCommand = StyleGenericShapeCommand<float, float>;
+using StylePathCommand =
+    StyleGenericShapeCommand<float, StyleGenericPosition<float, float>, float>;
 
 
 
