@@ -2813,12 +2813,13 @@ where
         Some(pseudo) => {
             
             
-            match selector.pseudo_element() {
-                Some(selector_pseudo) if *selector_pseudo == pseudo => {
-                    matching_mode = MatchingMode::ForStatelessPseudoElement
-                },
-                _ => return None,
-            };
+            let selector_pseudo = selector.pseudo_element()?;
+            
+            
+            if !pseudo.matches(selector_pseudo, &element) {
+                return None;
+            }
+            matching_mode = MatchingMode::ForStatelessPseudoElement;
         },
         None => {
             
