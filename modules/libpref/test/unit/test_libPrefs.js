@@ -751,6 +751,7 @@ add_task(function test_deleteBranch_weak_observers() {
 
 
 
+
 function assertPrefExists(
   prefName,
   expectedValue,
@@ -759,6 +760,7 @@ function assertPrefExists(
 ) {
   Assert.equal(Services.prefs[getter](prefName), expectedValue, message);
 }
+
 
 
 
