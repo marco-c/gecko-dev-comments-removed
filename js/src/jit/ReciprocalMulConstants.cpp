@@ -8,13 +8,35 @@
 
 #include "mozilla/Assertions.h"
 
+#include <limits>
+
 using namespace js::jit;
 
-ReciprocalMulConstants ReciprocalMulConstants::computeDivisionConstants(
-    uint32_t d, int maxLog) {
-  MOZ_ASSERT(maxLog >= 2 && maxLog <= 32);
+template <typename UintT>
+struct TwiceLarger;
+
+template <>
+struct TwiceLarger<uint32_t> {
+  using Type = uint64_t;
+  using SignedType = int64_t;
+};
+
+template <>
+struct TwiceLarger<uint64_t> {
+  using Type = js::Uint128;
+  using SignedType = js::Int128;
+};
+
+template <typename DivConstants, typename UintT>
+static auto ComputeDivisionConstants(UintT d, int maxLog) {
+  using UintT_Twice = typename TwiceLarger<UintT>::Type;
+  using IntT_Twice = typename TwiceLarger<UintT>::SignedType;
+
+  MOZ_ASSERT(maxLog >= 2 && maxLog <= std::numeric_limits<UintT>::digits);
+
   
-  MOZ_ASSERT(d < (uint64_t(1) << maxLog) && (d & (d - 1)) != 0);
+  MOZ_ASSERT(UintT_Twice(d) < (UintT_Twice(1) << maxLog) &&
+             !mozilla::IsPowerOfTwo(d));
 
   
   
@@ -75,20 +97,47 @@ ReciprocalMulConstants ReciprocalMulConstants::computeDivisionConstants(
   
   
   
+  
+  
+  
+
+  static constexpr auto UINT_BITS = std::numeric_limits<UintT>::digits;
+  static constexpr auto UINT_TWICE_BITS =
+      std::numeric_limits<UintT_Twice>::digits;
+  static constexpr auto UINT_TWICE_MAX =
+      std::numeric_limits<UintT_Twice>::max();
 
   
-  int32_t p = 32;
-  while ((uint64_t(1) << (p - maxLog)) + (UINT64_MAX >> (64 - p)) % d + 1 < d) {
-    p++;
+  int32_t p = UINT_BITS;
+  while (true) {
+    auto u = (UintT_Twice(1) << (p - maxLog));
+    auto v = (UINT_TWICE_MAX >> (UINT_TWICE_BITS - p));
+    if (u + (v % UintT_Twice(d)) + UintT_Twice(1) < UintT_Twice(d)) {
+      p++;
+    } else {
+      break;
+    }
   }
 
   
   
   
   
-  ReciprocalMulConstants rmc;
-  rmc.multiplier = (UINT64_MAX >> (64 - p)) / d + 1;
-  rmc.shiftAmount = p - 32;
+  DivConstants rmc;
+  rmc.multiplier = static_cast<IntT_Twice>(
+      (UINT_TWICE_MAX >> (UINT_TWICE_BITS - p)) / UintT_Twice(d) +
+      UintT_Twice(1));
+  rmc.shiftAmount = p - UINT_BITS;
 
   return rmc;
+}
+
+ReciprocalMulConstants::Div32Constants
+ReciprocalMulConstants::computeDivisionConstants(uint32_t d, int maxLog) {
+  return ComputeDivisionConstants<Div32Constants>(d, maxLog);
+}
+
+ReciprocalMulConstants::Div64Constants
+ReciprocalMulConstants::computeDivisionConstants(uint64_t d, int maxLog) {
+  return ComputeDivisionConstants<Div64Constants>(d, maxLog);
 }
