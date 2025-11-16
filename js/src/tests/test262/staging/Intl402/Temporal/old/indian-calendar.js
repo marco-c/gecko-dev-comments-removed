@@ -10,12 +10,6 @@
 
 
 
-var vulnerableToBceBug = new Date("0000-01-01T00:00Z").toLocaleDateString("en-US-u-ca-indian", { timeZone: "UTC" }) !== "10/11/-79 Saka";
-if (vulnerableToBceBug) {
-  assert.throws(RangeError, () => Temporal.PlainDate.from("0000-01-01").withCalendar("indian").day);
-}
-
-
 var leapYearFirstDay = Temporal.PlainDate.from("2004-03-21[u-ca=indian]");
 assert.sameValue(leapYearFirstDay.year, 2004 - 78);
 assert.sameValue(leapYearFirstDay.month, 1);

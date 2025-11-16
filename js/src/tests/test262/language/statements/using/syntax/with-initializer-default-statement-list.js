@@ -15,7 +15,7 @@
 
 
 
+
+
 $DONOTEVALUATE();
 switch (true) { default: using x = null; }
-
-reportCompare(0, 0);

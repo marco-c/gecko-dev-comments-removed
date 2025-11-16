@@ -22,13 +22,12 @@
 
 
 
-
 const result = new Intl.Locale('en').getWeekInfo();
 function isIntegerBetweenOneAndSeven(value) {
   return value === 1 || value === 2 || value === 3 || value === 4 || value === 5 || value === 6 || value === 7;
 }
 
-assert.compareArray(Reflect.ownKeys(result), ['firstDay', 'weekend', 'minimalDays']);
+assert.compareArray(Reflect.ownKeys(result), ['firstDay', 'weekend']);
 
 verifyProperty(result, 'firstDay', {
   writable: true,
@@ -53,15 +52,5 @@ assert(
 let original = new Intl.Locale('en').getWeekInfo().weekend;
 let sorted = original.slice().sort();
 assert.compareArray(original, sorted);
-
-verifyProperty(result, 'minimalDays', {
-  writable: true,
-  enumerable: true,
-  configurable: true
-});
-assert(
-  isIntegerBetweenOneAndSeven(new Intl.Locale('en').getWeekInfo().minimalDays),
-  '`minimalDays` must be an integer between one and seven (inclusive)'
-);
 
 reportCompare(0, 0);
