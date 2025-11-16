@@ -8,11 +8,11 @@
 #define mozilla_dom_KeyframeEffect_h
 
 #include "NonCustomCSSPropertyId.h"
-#include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/AnimatedPropertyIDSet.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationPropertySegment.h"
 #include "mozilla/AnimationTarget.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/Keyframe.h"
 #include "mozilla/KeyframeEffectParams.h"
@@ -56,7 +56,7 @@ struct AnimationPropertyDetails;
 }  
 
 struct AnimationProperty {
-  AnimatedPropertyID mProperty;
+  CSSPropertyId mProperty;
 
   
   
@@ -222,12 +222,12 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  bool HasEffectiveAnimationOfProperty(const AnimatedPropertyID& aProperty,
+  bool HasEffectiveAnimationOfProperty(const CSSPropertyId& aProperty,
                                        const EffectSet& aEffect) const {
     return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
   }
   const AnimationProperty* GetEffectiveAnimationOfProperty(
-      const AnimatedPropertyID&, const EffectSet&) const;
+      const CSSPropertyId&, const EffectSet&) const;
 
   
   
@@ -330,7 +330,7 @@ class KeyframeEffect : public AnimationEffect {
   
   bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
 
-  AnimationValue BaseStyle(const AnimatedPropertyID& aProperty) const {
+  AnimationValue BaseStyle(const CSSPropertyId& aProperty) const {
     AnimationValue result;
     bool hasProperty = false;
     
@@ -461,8 +461,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   using BaseValuesHashmap =
-      nsRefPtrHashtable<nsGenericHashKey<AnimatedPropertyID>,
-                        StyleAnimationValue>;
+      nsRefPtrHashtable<nsGenericHashKey<CSSPropertyId>, StyleAnimationValue>;
   BaseValuesHashmap mBaseValues;
 
  private:

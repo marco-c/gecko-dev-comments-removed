@@ -10,7 +10,7 @@
 #define mozilla_StyleAnimationValue_h_
 
 #include "NonCustomCSSPropertyId.h"
-#include "mozilla/AnimatedPropertyID.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoStyleConsts.h"  
@@ -84,12 +84,12 @@ struct AnimationValue {
   mozilla::gfx::MatrixScales GetScaleValue(const nsIFrame* aFrame) const;
 
   
-  void SerializeSpecifiedValue(const AnimatedPropertyID& aProperty,
+  void SerializeSpecifiedValue(const CSSPropertyId& aProperty,
                                const StylePerDocumentStyleData* aRawData,
                                nsACString& aString) const;
 
   
-  bool IsInterpolableWith(const AnimatedPropertyID& aProperty,
+  bool IsInterpolableWith(const CSSPropertyId& aProperty,
                           const AnimationValue& aToValue) const;
 
   
@@ -98,7 +98,7 @@ struct AnimationValue {
   
   
   
-  static AnimationValue FromString(AnimatedPropertyID& aProperty,
+  static AnimationValue FromString(CSSPropertyId& aProperty,
                                    const nsACString& aValue,
                                    dom::Element* aElement);
 
@@ -122,7 +122,7 @@ inline std::ostream& operator<<(std::ostream& aOut,
 }
 
 struct PropertyStyleAnimationValuePair {
-  AnimatedPropertyID mProperty;
+  CSSPropertyId mProperty;
   AnimationValue mValue;
 };
 }  

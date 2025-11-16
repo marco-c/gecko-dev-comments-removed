@@ -47,7 +47,7 @@ struct AnimationEventInfo {
 
   struct CssTransitionData : public CssAnimationOrTransitionData {
     
-    const AnimatedPropertyID mProperty;
+    const CSSPropertyId mProperty;
   };
 
   struct WebAnimationData {
@@ -110,7 +110,7 @@ struct AnimationEventInfo {
   }
 
   
-  AnimationEventInfo(const AnimatedPropertyID& aProperty,
+  AnimationEventInfo(const CSSPropertyId& aProperty,
                      const NonOwningAnimationTarget& aTarget,
                      EventMessage aMessage, double aElapsedTime,
                      uint64_t aTransitionGeneration,

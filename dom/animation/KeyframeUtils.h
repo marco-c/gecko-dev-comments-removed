@@ -16,9 +16,9 @@ struct JSContext;
 class JSObject;
 
 namespace mozilla {
-struct AnimatedPropertyID;
 struct AnimationProperty;
 class ComputedStyle;
+struct CSSPropertyId;
 
 enum class PseudoStyleType : uint8_t;
 class ErrorResult;
@@ -103,7 +103,7 @@ class KeyframeUtils {
 
 
 
-  static bool IsAnimatableProperty(const AnimatedPropertyID& aProperty);
+  static bool IsAnimatableProperty(const CSSPropertyId& aProperty);
 };
 
 }  

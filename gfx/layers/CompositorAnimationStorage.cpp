@@ -63,7 +63,7 @@ already_AddRefed<StyleAnimationValue> AnimatedValue::AsAnimationValue(
         
         
         for (const auto& value : Transform().mAnimationValues) {
-          AnimatedPropertyID property(eCSSProperty_UNKNOWN);
+          CSSPropertyId property(eCSSProperty_UNKNOWN);
           Servo_AnimationValue_GetPropertyId(value, &property);
           if (property.mId == aProperty) {
             result = value;

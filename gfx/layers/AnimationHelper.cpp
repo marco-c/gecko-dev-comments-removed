@@ -19,7 +19,7 @@
 #include "mozilla/dom/KeyframeEffect.h"  
 #include "mozilla/dom/Nullable.h"        
 #include "mozilla/layers/APZSampler.h"   
-#include "mozilla/AnimatedPropertyID.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/LayerAnimationInfo.h"   
 #include "mozilla/Maybe.h"                
 #include "mozilla/MotionPathUtils.h"      
@@ -651,7 +651,7 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
 
   for (const auto& value : aValues) {
     MOZ_ASSERT(value);
-    AnimatedPropertyID property(eCSSProperty_UNKNOWN);
+    CSSPropertyId property(eCSSProperty_UNKNOWN);
     Servo_AnimationValue_GetPropertyId(value, &property);
     switch (property.mId) {
       case eCSSProperty_transform:
