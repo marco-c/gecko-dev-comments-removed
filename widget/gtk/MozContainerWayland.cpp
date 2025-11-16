@@ -99,11 +99,6 @@ static void moz_container_wayland_invalidate(MozContainer* container) {
   gdk_window_invalidate_rect(window, nullptr, true);
 }
 
-void moz_container_wayland_add_or_fire_initial_draw_callback(
-    MozContainer* container, const std::function<void(void)>& initial_draw_cb) {
-  MOZ_WL_SURFACE(container)->AddOrFireReadyToDrawCallback(initial_draw_cb);
-}
-
 void moz_container_wayland_unmap(GtkWidget* widget) {
   g_return_if_fail(IS_MOZ_CONTAINER(widget));
 
@@ -145,21 +140,7 @@ gboolean moz_container_wayland_map_event(GtkWidget* widget,
 
   
   
-  
-  
-  MOZ_WL_CONTAINER(widget)->waiting_to_show = true;
   MozContainer* container = MOZ_CONTAINER(widget);
-  MOZ_WL_SURFACE(container)->AddOrFireReadyToDrawCallback(
-      [container]() -> void {
-        LOGCONTAINER(
-            "[%p] moz_container_wayland_add_or_fire_initial_draw_callback set "
-            "visible",
-            moz_container_get_nsWindow(container));
-        moz_container_wayland_clear_waiting_to_show_flag(container);
-      });
-
-  
-  
   if (MOZ_WL_SURFACE(container)->IsMapped() ||
       MOZ_WL_CONTAINER(container)->before_first_size_alloc) {
     return false;
@@ -300,21 +281,7 @@ struct wl_egl_window* moz_container_wayland_get_egl_window(
   return MOZ_WL_SURFACE(container)->GetEGLWindow(size);
 }
 
-gboolean moz_container_wayland_can_draw(MozContainer* container) {
-  return MOZ_WL_SURFACE(container)->IsReadyToDraw();
-}
-
 double moz_container_wayland_get_scale(MozContainer* container) {
   nsWindow* window = moz_container_get_nsWindow(container);
   return window ? window->FractionalScaleFactor() : 1.0;
-}
-
-bool moz_container_wayland_is_waiting_to_show(MozContainer* container) {
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-  return MOZ_WL_CONTAINER(container)->waiting_to_show;
-}
-
-void moz_container_wayland_clear_waiting_to_show_flag(MozContainer* container) {
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-  MOZ_WL_CONTAINER(container)->waiting_to_show = false;
 }
