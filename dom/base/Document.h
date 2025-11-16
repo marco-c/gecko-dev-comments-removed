@@ -5664,10 +5664,6 @@ class Document : public nsINode,
   nsTArray<nsString> mShadowedHTMLDocumentProperties;
 
   
-  
-  nsTArray<nsString> mShadowedHTMLFormElementProperties;
-
-  
   PageloadEventData mPageloadEventData;
 
   
