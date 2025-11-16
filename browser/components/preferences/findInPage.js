@@ -413,6 +413,16 @@ var gSearchResultsPane = {
 
 
 
+  _isAnchor(el) {
+    return (el.prefix === null || el.prefix === "html") && el.localName === "a";
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -421,6 +431,8 @@ var gSearchResultsPane = {
     let matchesFound = false;
     if (
       nodeObject.childElementCount == 0 ||
+      (typeof nodeObject.children !== "undefined" &&
+        Array.prototype.every.call(nodeObject.children, this._isAnchor)) ||
       this.searchableNodes.has(nodeObject.localName) ||
       (nodeObject.localName?.startsWith("moz-") &&
         nodeObject.localName !== "moz-input-box")
