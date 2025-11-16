@@ -2829,6 +2829,25 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
   mCustomNonClient = aCustomTitlebar;
 
   
+  
+  
+  
+  
+  
+  
+  const LONG_PTR actualStyle = ::GetWindowLongPtrW(mWnd, GWL_STYLE);
+  LONG_PTR newStyle = actualStyle;
+  if (mCustomNonClient) {
+    newStyle &= ~WS_BORDER;
+  } else {
+    newStyle |= WS_BORDER;
+  }
+  if (newStyle != actualStyle) {
+    VERIFY_WINDOW_STYLE(newStyle);
+    ::SetWindowLongPtrW(mWnd, GWL_STYLE, newStyle);
+  }
+
+  
   if (mCustomNonClient) {
     UpdateNonClientMargins();
   } else {
