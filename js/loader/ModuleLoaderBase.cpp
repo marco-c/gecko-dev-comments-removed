@@ -1465,6 +1465,10 @@ void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
 
   LOG(("ScriptLoadRequest (%p): ProcessDynamicImport", aRequest));
   FinishLoadingImportedModule(cx, aRequest);
+
+  (void)mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
+
+  mLoader->MaybeUpdateDiskCache();
 }
 
 nsresult ModuleLoaderBase::EvaluateModule(ModuleLoadRequest* aRequest) {
@@ -1474,7 +1478,14 @@ nsresult ModuleLoaderBase::EvaluateModule(ModuleLoadRequest* aRequest) {
   mozilla::dom::AutoEntryScript aes(mGlobalObject, "EvaluateModule",
                                     NS_IsMainThread());
 
-  return EvaluateModuleInContext(aes.cx(), aRequest, ReportModuleErrorsAsync);
+  
+  
+  
+  
+  
+  return EvaluateModuleInContext(
+      aes.cx(), aRequest,
+      IsForServiceWorker() ? ThrowModuleErrorsSync : ReportModuleErrorsAsync);
 }
 
 nsresult ModuleLoaderBase::EvaluateModuleInContext(
@@ -1550,6 +1561,13 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   
   if (!ThrowOnModuleEvaluationFailure(aCx, evaluationPromise, errorBehaviour)) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
+
+    if (IsForServiceWorker()) {
+      
+      
+      
+      return NS_ERROR_ABORT;
+    }
   }
 
   

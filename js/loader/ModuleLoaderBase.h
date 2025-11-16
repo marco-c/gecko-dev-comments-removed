@@ -333,6 +333,8 @@ class ModuleLoaderBase : public nsISupports {
 
   virtual bool IsDynamicImportSupported() { return true; }
 
+  virtual bool IsForServiceWorker() const { return false; }
+
   
   virtual void OnDynamicImportStarted(ModuleLoadRequest* aRequest) {}
 
