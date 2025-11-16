@@ -570,32 +570,33 @@ add_task(function test_deleteBranch_observers() {
   );
 
   
-  Assert.throws(
-    () => ps.getBoolPref("DeleteTest.branch1.bool"),
-    /NS_ERROR_UNEXPECTED/,
-    "Deleted boolean pref should throw when accessed"
+  assertPrefNotExists(
+    "DeleteTest.branch1.bool",
+    "Deleted boolean pref should throw when accessed",
+    "getBoolPref"
   );
-  Assert.throws(
-    () => ps.getIntPref("DeleteTest.branch1.int"),
-    /NS_ERROR_UNEXPECTED/,
+  assertPrefNotExists(
+    "DeleteTest.branch1.int",
     "Deleted integer pref should throw when accessed"
   );
-  Assert.throws(
-    () => ps.getCharPref("DeleteTest.branch1.char"),
-    /NS_ERROR_UNEXPECTED/,
-    "Deleted char pref should throw when accessed"
+  assertPrefNotExists(
+    "DeleteTest.branch1.char",
+    "Deleted char pref should throw when accessed",
+    "getCharPref"
   );
 
   
-  Assert.equal(
-    ps.getBoolPref("DeleteTest.branch2.bool"),
+  assertPrefExists(
+    "DeleteTest.branch2.bool",
     false,
-    "Unrelated preferences should not be affected"
+    "Unrelated preferences should not be affected",
+    "getBoolPref"
   );
-  Assert.equal(
-    ps.getCharPref("DeleteTest.other"),
+  assertPrefExists(
+    "DeleteTest.other",
     "other",
-    "Unrelated preferences should not be affected"
+    "Unrelated preferences should not be affected",
+    "getCharPref"
   );
 
   
@@ -684,20 +685,19 @@ add_task(function test_deleteBranch_user_and_default_values() {
   );
 
   
-  Assert.throws(
-    () => ps.getBoolPref("MixedTest.pref1"),
-    /NS_ERROR_UNEXPECTED/,
+  assertPrefNotExists(
+    "MixedTest.pref1",
+    "Pref with default value should be completely deleted",
+    "getBoolPref"
+  );
+  assertPrefNotExists(
+    "MixedTest.pref2",
     "Pref with default value should be completely deleted"
   );
-  Assert.throws(
-    () => ps.getIntPref("MixedTest.pref2"),
-    /NS_ERROR_UNEXPECTED/,
-    "Pref with default value should be completely deleted"
-  );
-  Assert.throws(
-    () => ps.getCharPref("MixedTest.pref3"),
-    /NS_ERROR_UNEXPECTED/,
-    "User-only pref should be deleted"
+  assertPrefNotExists(
+    "MixedTest.pref3",
+    "User-only pref should be deleted",
+    "getCharPref"
   );
 
   ps.removeObserver("MixedTest.", observer);
@@ -742,6 +742,138 @@ add_task(function test_deleteBranch_weak_observers() {
   );
 
   ps.removeObserver("WeakTest.", observer);
+});
+
+
+
+
+
+
+
+
+function assertPrefExists(
+  prefName,
+  expectedValue,
+  message,
+  getter = "getIntPref"
+) {
+  Assert.equal(Services.prefs[getter](prefName), expectedValue, message);
+}
+
+
+
+
+
+
+
+function assertPrefNotExists(prefName, message, getter = "getIntPref") {
+  Assert.throws(
+    () => Services.prefs[getter](prefName),
+    /NS_ERROR_UNEXPECTED/,
+    message
+  );
+}
+
+
+
+
+add_task(function test_deleteBranch_edge_cases() {
+  const ps = Services.prefs;
+
+  
+  ps.setIntPref("EdgeTest.foo", 1);
+  ps.setIntPref("EdgeTest.foo.", 2);
+  ps.setIntPref("EdgeTest.foo.bar", 3);
+  ps.setIntPref("EdgeTest.foo..", 4);
+  ps.setIntPref("EdgeTest.foo..baz", 5);
+
+  ps.deleteBranch("EdgeTest.foo");
+
+  assertPrefNotExists(
+    "EdgeTest.foo",
+    "EdgeTest.foo should be deleted by deleteBranch('EdgeTest.foo')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo.",
+    "EdgeTest.foo. should be deleted by deleteBranch('EdgeTest.foo')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo.bar",
+    "EdgeTest.foo.bar should be deleted by deleteBranch('EdgeTest.foo')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo..",
+    "EdgeTest.foo.. should be deleted by deleteBranch('EdgeTest.foo')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo..baz",
+    "EdgeTest.foo..baz should be deleted by deleteBranch('EdgeTest.foo')"
+  );
+
+  
+  ps.setIntPref("EdgeTest.foo", 1);
+  ps.setIntPref("EdgeTest.foo.", 2);
+  ps.setIntPref("EdgeTest.foo.bar", 3);
+  ps.setIntPref("EdgeTest.foo..", 4);
+  ps.setIntPref("EdgeTest.foo..baz", 5);
+
+  ps.deleteBranch("EdgeTest.foo.");
+
+  assertPrefNotExists(
+    "EdgeTest.foo",
+    "EdgeTest.foo should be deleted by deleteBranch('EdgeTest.foo.')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo.",
+    "EdgeTest.foo. should be deleted by deleteBranch('EdgeTest.foo.')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo.bar",
+    "EdgeTest.foo.bar should be deleted by deleteBranch('EdgeTest.foo.')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo..",
+    "EdgeTest.foo.. should be deleted by deleteBranch('EdgeTest.foo.')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo..baz",
+    "EdgeTest.foo..baz should be deleted by deleteBranch('EdgeTest.foo.')"
+  );
+
+  
+  ps.setIntPref("EdgeTest.foo", 1);
+  ps.setIntPref("EdgeTest.foo.", 2);
+  ps.setIntPref("EdgeTest.foo.bar", 3);
+  ps.setIntPref("EdgeTest.foo..", 4);
+  ps.setIntPref("EdgeTest.foo..baz", 5);
+
+  ps.deleteBranch("EdgeTest.foo..");
+
+  assertPrefExists(
+    "EdgeTest.foo",
+    1,
+    "EdgeTest.foo should not be deleted by deleteBranch('EdgeTest.foo..')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo.",
+    "EdgeTest.foo. should be deleted by deleteBranch('EdgeTest.foo..')"
+  );
+  assertPrefExists(
+    "EdgeTest.foo.bar",
+    3,
+    "EdgeTest.foo.bar should not be deleted by deleteBranch('EdgeTest.foo..')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo..",
+    "EdgeTest.foo.. should be deleted by deleteBranch('EdgeTest.foo..')"
+  );
+  assertPrefNotExists(
+    "EdgeTest.foo..baz",
+    "EdgeTest.foo..baz should be deleted by deleteBranch('EdgeTest.foo..')"
+  );
+
+  
+  ps.deleteBranch("EdgeTest");
 });
 
 
