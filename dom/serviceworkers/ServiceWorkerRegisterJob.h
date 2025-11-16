@@ -18,11 +18,13 @@ class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob {
  public:
   ServiceWorkerRegisterJob(
       nsIPrincipal* aPrincipal, const nsACString& aScope,
-      const nsACString& aScriptSpec,
+      const WorkerType& aType, const nsACString& aScriptSpec,
       ServiceWorkerUpdateViaCache aUpdateViaCache,
       const ServiceWorkerLifetimeExtension& aLifetimeExtension);
 
  private:
+  WorkerType mType;
+
   
   
   virtual void AsyncExecute() override;
