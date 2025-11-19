@@ -62,9 +62,28 @@ TEST(TimeStamp, Main)
   EXPECT_TRUE(td.ToSeconds() < -1.0);
   EXPECT_TRUE(td.ToSeconds() > -20.0);
 
-  double resolution = TimeDuration::Resolution().ToSecondsSigDigits();
-  printf(" (platform timer resolution is ~%g s)\n", resolution);
-  EXPECT_TRUE(1e-10 < resolution);
   
   
+  
+  
+  
+  TimeStamp start = TimeStamp::Now();
+  TimeStamp last = start;
+  int updated = 0;
+  int same = 0;
+  while ((last - start).ToMilliseconds() < 1.0) {
+    TimeStamp next = TimeStamp::Now();
+    if ((next - last).ToMicroseconds() > 0.0) {
+      
+      ++updated;
+      last = next;
+    } else {
+      ++same;
+    }
+  }
+  printf("  Poll saw updated iterations in 1ms: %d\n", updated);
+  printf("  Poll saw same iterations in 1ms: %d\n", same);
+  
+  
+  EXPECT_GE(updated, 2);
 }
