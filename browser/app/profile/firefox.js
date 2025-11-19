@@ -3507,7 +3507,7 @@ pref("toolkit.contentRelevancy.log", false);
 
 
 
-pref("browser.contextual-services.contextId.rotation-in-days", 7);
+pref("browser.contextual-services.contextId.rotation-in-days", 3);
 pref("browser.contextual-services.contextId.rust-component.enabled", true);
 
 
