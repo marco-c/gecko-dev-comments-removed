@@ -9,6 +9,11 @@ const server = AddonTestUtils.createHttpServer();
 
 add_setup(async () => {
   ExtensionTestUtils.mockAppInfo();
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(PREF_EM_CHECK_UPDATE_SECURITY);
+    Services.prefs.clearUserPref(PREF_DATA_COLLECTION_PERMISSIONS_ENABLED);
+  });
 });
 
 async function deleteDataCollectionFromDB(addonId) {
@@ -64,8 +69,19 @@ function prepareToServeUpdate(extensionData) {
 }
 
 
-add_task(async function test_db_without_data_collection_background_update() {
-  const ID = "@addon-without-data_collection-in-extensions.json";
+
+
+
+
+
+async function do_test_db_without_data_collection_background_update(
+  ID,
+  permissionEnabled
+) {
+  Services.prefs.setBoolPref(
+    PREF_DATA_COLLECTION_PERMISSIONS_ENABLED,
+    permissionEnabled
+  );
 
   await promiseStartupManager();
 
@@ -128,10 +144,11 @@ add_task(async function test_db_without_data_collection_background_update() {
 
   let addon = await AddonManager.getAddonByID(ID);
   equal(addon.version, "2.0", "Add-on was updated");
+  const expected_data_collection = permissionEnabled ? ["none"] : [];
   Assert.deepEqual(
     addon.userPermissions,
-    { permissions: [], origins: [], data_collection: ["none"] },
-    ".userPermissions now contains the updated data_collection"
+    { permissions: [], origins: [], data_collection: expected_data_collection },
+    ".userPermissions now contains the expected data_collection"
   );
   Services.obs.removeObserver(
     promptObserver,
@@ -140,4 +157,18 @@ add_task(async function test_db_without_data_collection_background_update() {
 
   await addon.uninstall();
   await promiseShutdownManager();
+}
+
+
+add_task(async function test_db_without_data_collection_background_update() {
+  const ID = "@addon-without-data_collection-in-extensions-db-feature-enabled";
+  await do_test_db_without_data_collection_background_update(ID, true);
+});
+
+
+
+
+add_task(async function test_db_with_data_collection_feature_disabled() {
+  const ID = "@addon-without-data_collection-in-extensions-db-feature-disabled";
+  await do_test_db_without_data_collection_background_update(ID, false);
 });
