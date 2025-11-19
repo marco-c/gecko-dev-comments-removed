@@ -246,8 +246,10 @@ bool CrashStatsLogForwarder::UpdateStringsVectorInternal(
   MOZ_ASSERT(index >= 0 && index < (int32_t)mMaxCapacity);
   MOZ_ASSERT(index <= mIndex && index <= (int32_t)mBuffer.size());
 
-  double tStamp = (TimeStamp::NowLoRes() - TimeStamp::ProcessCreation())
-                      .ToSecondsSigDigits();
+  
+  
+  double tStamp =
+      (TimeStamp::NowLoRes() - TimeStamp::ProcessCreation()).ToSeconds();
 
   
   
