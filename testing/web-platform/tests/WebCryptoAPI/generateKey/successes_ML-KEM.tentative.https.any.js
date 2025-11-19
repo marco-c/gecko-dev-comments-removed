@@ -1,0 +1,6 @@
+
+
+
+
+
+run_test(["ML-KEM-512", "ML-KEM-768", "ML-KEM-1024"]);

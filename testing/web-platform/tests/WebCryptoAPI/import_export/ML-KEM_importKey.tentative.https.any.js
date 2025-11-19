@@ -1,0 +1,9 @@
+
+
+
+
+
+
+runTests("ML-KEM-512");
+runTests("ML-KEM-768");
+runTests("ML-KEM-1024");

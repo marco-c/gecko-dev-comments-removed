@@ -1,0 +1,8 @@
+
+
+
+
+
+runTests("Argon2i");
+runTests("Argon2d");
+runTests("Argon2id");

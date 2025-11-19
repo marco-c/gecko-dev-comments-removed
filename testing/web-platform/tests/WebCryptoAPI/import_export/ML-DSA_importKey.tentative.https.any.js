@@ -1,0 +1,9 @@
+
+
+
+
+
+
+runTests("ML-DSA-44");
+runTests("ML-DSA-65");
+runTests("ML-DSA-87");
