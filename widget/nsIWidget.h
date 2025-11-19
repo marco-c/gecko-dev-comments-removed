@@ -556,17 +556,24 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual void AttachViewToTopLevel(bool aUseAttachedEvents);
+  void AttachViewToTopLevel(bool aUseAttachedEvents);
 
   
 
 
 
-  virtual void SetAttachedWidgetListener(nsIWidgetListener* aListener);
-  virtual nsIWidgetListener* GetAttachedWidgetListener() const;
-  virtual void SetPreviouslyAttachedWidgetListener(
-      nsIWidgetListener* aListener);
-  virtual nsIWidgetListener* GetPreviouslyAttachedWidgetListener();
+  void SetAttachedWidgetListener(nsIWidgetListener* aListener) {
+    mAttachedWidgetListener = aListener;
+  }
+  nsIWidgetListener* GetAttachedWidgetListener() const {
+    return mAttachedWidgetListener;
+  }
+  void SetPreviouslyAttachedWidgetListener(nsIWidgetListener* aListener) {
+    mPreviouslyAttachedWidgetListener = aListener;
+  }
+  nsIWidgetListener* GetPreviouslyAttachedWidgetListener() {
+    return mPreviouslyAttachedWidgetListener;
+  }
 
   
 
@@ -577,8 +584,13 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
-  virtual nsIWidgetListener* GetWidgetListener() const;
-  virtual void SetWidgetListener(nsIWidgetListener* alistener);
+  nsIWidgetListener* GetWidgetListener() const { return mWidgetListener; }
+  void SetWidgetListener(nsIWidgetListener* aListener) {
+    mWidgetListener = aListener;
+  }
+
+  
+  nsIWidgetListener* GetPaintListener() const;
 
   
 

@@ -615,10 +615,6 @@ void nsWindow::DispatchResized() {
   }
 }
 
-nsIWidgetListener* nsWindow::GetListener() {
-  return mAttachedWidgetListener ? mAttachedWidgetListener : mWidgetListener;
-}
-
 void nsWindow::OnDestroy() {
   if (mOnDestroyCalled) {
     return;
@@ -4129,8 +4125,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 #endif
 
-  if (!GetListener()) {
-    LOG("quit, !GetListener()");
+  if (!GetPaintListener()) {
+    LOG("quit, !GetPaintListener()");
     return FALSE;
   }
 
@@ -4155,7 +4151,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   
   
   
-  GetListener()->WillPaintWindow(this);
+  GetPaintListener()->WillPaintWindow(this);
 
   
   
@@ -4166,7 +4162,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   
   
-  nsIWidgetListener* listener = GetListener();
+  nsIWidgetListener* listener = GetPaintListener();
   if (!listener) {
     LOG("quit, !listener");
     return FALSE;
@@ -4198,7 +4194,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
     
     
-    listener = GetListener();
+    listener = GetPaintListener();
     if (!listener) {
       return TRUE;
     }
@@ -4250,7 +4246,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
       
       
-      listener = GetListener();
+      listener = GetPaintListener();
       if (!listener) {
         return TRUE;
       }

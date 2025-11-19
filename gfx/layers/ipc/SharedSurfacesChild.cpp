@@ -474,24 +474,6 @@ void SharedSurfacesAnimation::HoldSurfaceForRecycling(
   aEntry.mPendingRelease.AppendElement(aSurface);
 }
 
-
-
-
-
-static nsIWidgetListener* GetPaintWidgetListener(nsIWidget* aWidget) {
-  if (auto* attached = aWidget->GetAttachedWidgetListener()) {
-    if (attached->IsPaintSuppressed()) {
-      if (auto* previouslyAttached =
-              aWidget->GetPreviouslyAttachedWidgetListener()) {
-        return previouslyAttached;
-      }
-    }
-    return attached;
-  }
-
-  return aWidget->GetWidgetListener();
-}
-
 nsresult SharedSurfacesAnimation::SetCurrentFrame(
     SourceSurfaceSharedData* aSurface, const gfx::IntRect& aDirtyRect) {
   MOZ_ASSERT(aSurface);
@@ -521,7 +503,9 @@ nsresult SharedSurfacesAnimation::SetCurrentFrame(
     
     
     if (auto* widget = entry.mManager->LayerManager()->GetWidget()) {
-      nsIWidgetListener* wl = GetPaintWidgetListener(widget);
+      nsIWidgetListener* wl = widget->GetPaintListener();
+      
+      
       
       
       if (wl && wl->GetView() && wl->GetPresShell()) {

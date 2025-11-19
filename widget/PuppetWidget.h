@@ -317,8 +317,6 @@ class PuppetWidget final : public nsIWidget,
   bool GetCaretRect(LayoutDeviceIntRect& aCaretRect, uint32_t aCaretOffset);
   uint32_t GetCaretOffset();
 
-  nsIWidgetListener* GetCurrentWidgetListener();
-
   
   
   bool HaveValidInputContextCache() const;

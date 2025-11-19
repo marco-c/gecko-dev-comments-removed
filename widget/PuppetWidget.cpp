@@ -181,10 +181,9 @@ void PuppetWidget::Resize(const DesktopSize& aSize, bool aRepaint) {
   
   
   if (!oldBounds.IsEqualEdges(mBounds) && mAttachedWidgetListener) {
-    if (GetCurrentWidgetListener() &&
-        GetCurrentWidgetListener() != mAttachedWidgetListener) {
-      GetCurrentWidgetListener()->WindowResized(this, mBounds.Width(),
-                                                mBounds.Height());
+    if (auto* paintListener = GetPaintListener();
+        paintListener && paintListener != mAttachedWidgetListener) {
+      paintListener->WindowResized(this, mBounds.Width(), mBounds.Height());
     }
     mAttachedWidgetListener->WindowResized(this, mBounds.Width(),
                                            mBounds.Height());
@@ -897,16 +896,18 @@ PuppetWidget::WidgetPaintTask::Run() {
 }
 
 void PuppetWidget::Paint() {
-  if (!GetCurrentWidgetListener()) return;
+  if (!GetPaintListener()) {
+    return;
+  }
 
   mWidgetPaintTask.Revoke();
 
   RefPtr<PuppetWidget> strongThis(this);
 
-  GetCurrentWidgetListener()->WillPaintWindow(this);
+  GetPaintListener()->WillPaintWindow(this);
 
-  if (GetCurrentWidgetListener()) {
-    GetCurrentWidgetListener()->DidPaintWindow();
+  if (auto* listener = GetPaintListener()) {
+    listener->DidPaintWindow();
   }
 }
 
@@ -977,18 +978,6 @@ LayoutDeviceIntMargin PuppetWidget::GetSafeAreaInsets() const {
 void PuppetWidget::UpdateSafeAreaInsets(
     const LayoutDeviceIntMargin& aSafeAreaInsets) {
   mSafeAreaInsets = aSafeAreaInsets;
-}
-
-nsIWidgetListener* PuppetWidget::GetCurrentWidgetListener() {
-  if (!mPreviouslyAttachedWidgetListener || !mAttachedWidgetListener) {
-    return mAttachedWidgetListener;
-  }
-
-  if (mAttachedWidgetListener->IsPaintSuppressed()) {
-    return mPreviouslyAttachedWidgetListener;
-  }
-
-  return mAttachedWidgetListener;
 }
 
 void PuppetWidget::ZoomToRect(const uint32_t& aPresShellId,
