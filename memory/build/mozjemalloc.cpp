@@ -1594,7 +1594,8 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     chunk->mPageMap[run_ind].bits |= aSize;
   }
 
-  if (chunk->mNumDirty == 0 && old_ndirty > 0 && !chunk->mIsPurging) {
+  if (chunk->mNumDirty == 0 && old_ndirty > 0 && !chunk->mIsPurging &&
+      mChunksDirty.ElementProbablyInList(chunk)) {
     mChunksDirty.remove(chunk);
   }
   return true;
@@ -1676,7 +1677,9 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 
   if (aChunk->mNumDirty > 0) {
     MOZ_ASSERT(aChunk->mArena == this);
-    mChunksDirty.remove(aChunk);
+    if (mChunksDirty.ElementProbablyInList(aChunk)) {
+      mChunksDirty.remove(aChunk);
+    }
     mNumDirty -= aChunk->mNumDirty;
     mStats.committed -= aChunk->mNumDirty;
   }
@@ -1891,6 +1894,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       ndirty += chunk.mNumDirty;
     }
     
+    
     MOZ_ASSERT(ndirty <= mNumDirty);
 #endif
 
@@ -1908,7 +1912,8 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     
     
     
-    if (mSpare && mSpare->mNumDirty && !mSpare->mIsPurging) {
+    if (mSpare && mSpare->mNumDirty && !mSpare->mIsPurging &&
+        mChunksDirty.ElementProbablyInList(mSpare)) {
       
       
       
@@ -2304,11 +2309,6 @@ void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised) {
   if (mChunk->mDying) {
     
     
-    
-    
-    mArena.mNumDirty -= mChunk->mNumDirty;
-    mArena.mStats.committed -= mChunk->mNumDirty;
-    mChunk->mNumDirty = 0;
 
     DebugOnly<bool> release_chunk = mArena.RemoveChunk(mChunk);
     
@@ -2430,7 +2430,11 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   }
 
   if (aDirty) {
-    if (chunk->mNumDirty == 0 && !chunk->mIsPurging) {
+    
+    
+    
+    if (!chunk->mIsPurging &&
+        (chunk->mNumDirty == 0 || !mChunksDirty.ElementProbablyInList(chunk))) {
       mChunksDirty.pushBack(chunk);
     }
     chunk->mNumDirty += run_pages;
