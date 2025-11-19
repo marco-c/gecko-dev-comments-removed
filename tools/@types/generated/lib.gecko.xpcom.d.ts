@@ -10334,6 +10334,28 @@ interface mozISandboxSettings extends nsISupports {
 
 
 
+interface mozISandboxReport extends nsISupports {
+  readonly msecAgo: u64;
+  readonly pid: i32;
+  readonly tid: i32;
+  readonly procType: string;
+  readonly syscall: u32;
+  readonly numArgs: u32;
+  getArg(aIndex: u32): string;
+}
+
+interface mozISandboxReportArray extends nsISupports {
+  readonly begin: u64;
+  readonly end: u64;
+  getElement(aIndex: u64): mozISandboxReport;
+}
+
+interface mozISandboxReporter extends nsISupports {
+  snapshot(): mozISandboxReportArray;
+}
+
+
+
 interface nsIFormFillController extends nsISupports {
   controlledElement: Element;
   readonly passwordPopupAutomaticallyOpened: boolean;
@@ -13643,6 +13665,12 @@ interface nsIAvailableMemoryWatcherBase extends nsISupports {
 
 
 
+interface nsIAvailableMemoryWatcherTestingLinux extends nsISupports {
+  setPSIPathForTesting(aPSIPath: string): void;
+}
+
+
+
 type nsIConsoleListener = Callable<{
   observe(aMessage: nsIConsoleMessage): void;
 }>
@@ -16195,6 +16223,9 @@ interface nsIXPCComponents_Interfaces {
   nsIApplicationReputationQuery: nsJSIID<nsIApplicationReputationQuery>;
   nsIApplicationReputationCallback: nsJSIID<nsIApplicationReputationCallback>;
   mozISandboxSettings: nsJSIID<mozISandboxSettings>;
+  mozISandboxReport: nsJSIID<mozISandboxReport>;
+  mozISandboxReportArray: nsJSIID<mozISandboxReportArray>;
+  mozISandboxReporter: nsJSIID<mozISandboxReporter>;
   nsIFormFillController: nsJSIID<nsIFormFillController>;
   nsIFormFillCompleteObserver: nsJSIID<nsIFormFillCompleteObserver>;
   mozIBridgedSyncEngineCallback: nsJSIID<mozIBridgedSyncEngineCallback>;
@@ -16430,6 +16461,7 @@ interface nsIXPCComponents_Interfaces {
   nsIWindowWatcher: nsJSIID<nsIWindowWatcher>;
   nsITabUnloader: nsJSIID<nsITabUnloader>;
   nsIAvailableMemoryWatcherBase: nsJSIID<nsIAvailableMemoryWatcherBase>;
+  nsIAvailableMemoryWatcherTestingLinux: nsJSIID<nsIAvailableMemoryWatcherTestingLinux>;
   nsIConsoleListener: nsJSIID<nsIConsoleListener>;
   nsIConsoleMessage: nsJSIID<nsIConsoleMessage>;
   nsIConsoleService: nsJSIID<nsIConsoleService, typeof nsIConsoleService_OutputMode>;
