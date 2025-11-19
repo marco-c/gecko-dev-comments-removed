@@ -33,7 +33,6 @@ import mozilla.components.feature.tabs.TabsUseCases.UndoTabRemovalUseCase
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -114,7 +113,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             TranslationsAction.TranslationStarted(sessionId = sessionId),
         )
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = R.string.translation_in_progress_snackbar,
@@ -143,7 +141,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             TranslationsAction.TranslationStarted(sessionId = tab2.id),
         )
-        waitForStoreToSettle()
 
         verify(snackbarDelegate, never()).show(
             text = R.string.translation_in_progress_snackbar,
@@ -158,7 +155,6 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(SnackbarAction.SnackbarDismissed)
-        waitForStoreToSettle()
 
         assertEquals(None(Dismiss(None())), appStore.state.snackbarState)
         verify(snackbarDelegate).dismiss()
@@ -177,7 +173,6 @@ class SnackbarBindingTest {
                 source = Source.TEST,
             ),
         )
-        waitForStoreToSettle()
 
         assertEquals(None(BookmarkAdded("1", parent)), appStore.state.snackbarState)
 
@@ -189,6 +184,7 @@ class SnackbarBindingTest {
             duration = eq(LENGTH_LONG),
             isError = eq(false),
             action = eq("EDIT"),
+            withDismissAction = eq(false),
             listener = any(),
         )
     }
@@ -207,11 +203,6 @@ class SnackbarBindingTest {
             ),
         )
 
-        // Wait for BookmarkAction.BookmarkAdded(guidToEdit = "1"),
-        appStore.waitUntilIdle()
-        // Wait for SnackbarAction.SnackbarShown
-        appStore.waitUntilIdle()
-
         assertEquals(None(BookmarkAdded("1", parent)), appStore.state.snackbarState)
 
         val outputMessage = testContext.getString(R.string.bookmark_saved_in_folder_snackbar, "mobile")
@@ -222,6 +213,7 @@ class SnackbarBindingTest {
             duration = eq(LENGTH_LONG),
             isError = eq(false),
             action = eq(testContext.getString(R.string.edit_bookmark_snackbar_action)),
+            withDismissAction = eq(false),
             listener = any(),
         )
     }
@@ -235,11 +227,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             BookmarkAction.BookmarkAdded(guidToEdit = null, parentNode = parent, source = Source.TEST),
         )
-
-        // Wait for BookmarkAction.BookmarkAdded(guidToEdit = null),
-        appStore.waitUntilIdle()
-        // Wait for SnackbarAction.SnackbarShown
-        appStore.waitUntilIdle()
 
         assertEquals(None(BookmarkAdded(null, parent)), appStore.state.snackbarState)
         verify(snackbarDelegate).show(
@@ -256,7 +243,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             BookmarkAction.BookmarkAdded(guidToEdit = "guid", parentNode = null, source = Source.TEST),
         )
-        waitForStoreToSettle()
 
         assertEquals(None(BookmarkAdded("guid", null)), appStore.state.snackbarState)
         verify(snackbarDelegate).show(
@@ -274,7 +260,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             AppAction.ShortcutAction.ShortcutAdded,
         )
-        waitForStoreToSettle()
 
         assertEquals(None(ShortcutAdded), appStore.state.snackbarState)
         verify(snackbarDelegate).show(
@@ -292,7 +277,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             AppAction.DeleteAndQuitStarted,
         )
-        waitForStoreToSettle()
 
         assertEquals(None(DeletingBrowserDataInProgress), appStore.state.snackbarState)
         verify(snackbarDelegate).show(
@@ -310,7 +294,6 @@ class SnackbarBindingTest {
         appStore.dispatch(
             AppAction.UserAccountAuthenticated,
         )
-        waitForStoreToSettle()
 
         assertEquals(None(UserAccountAuthenticated), appStore.state.snackbarState)
         verify(snackbarDelegate).show(
@@ -327,7 +310,6 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.ShareToAppFailed)
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = R.string.share_error_snackbar,
@@ -346,10 +328,9 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.SharedTabsSuccessfully(destinations, sharedTabs))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
-            text = R.string.sync_sent_tab_snackbar,
+            text = R.string.sync_sent_tab_snackbar_2,
             duration = LENGTH_SHORT,
             isError = false,
         )
@@ -365,10 +346,9 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.SharedTabsSuccessfully(destinations, sharedTabs))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
-            text = R.string.sync_sent_tabs_snackbar,
+            text = R.string.sync_sent_tabs_snackbar_2,
             duration = LENGTH_SHORT,
             isError = false,
         )
@@ -384,13 +364,13 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.ShareTabsFailed(destinations, sharedTabs))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(R.string.sync_sent_tab_error_snackbar),
             duration = eq(LENGTH_LONG),
             isError = eq(true),
             action = eq(R.string.sync_sent_tab_error_snackbar_action),
+            withDismissAction = eq(false),
             listener = any(),
         )
 
@@ -414,21 +394,20 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.ShareTabsFailed(destinations, sharedTabs))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(R.string.sync_sent_tab_error_snackbar),
             duration = eq(LENGTH_LONG),
             isError = eq(true),
             action = eq(R.string.sync_sent_tab_error_snackbar_action),
+            withDismissAction = eq(false),
             listener = retryActionCaptor.capture(),
         )
 
         retryActionCaptor.value.invoke(mock())
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
-            text = R.string.sync_sent_tab_snackbar,
+            text = R.string.sync_sent_tab_snackbar_2,
             duration = LENGTH_SHORT,
             isError = false,
         )
@@ -453,24 +432,24 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.ShareTabsFailed(destinations, sharedTabs))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(R.string.sync_sent_tab_error_snackbar),
             duration = eq(LENGTH_LONG),
             isError = eq(true),
             action = eq(R.string.sync_sent_tab_error_snackbar_action),
+            withDismissAction = eq(false),
             listener = retryActionCaptor.capture(),
         )
 
         retryActionCaptor.value.invoke(mock())
-        waitForStoreToSettle()
 
         verify(snackbarDelegate, times(2)).show(
             text = eq(R.string.sync_sent_tab_error_snackbar),
             duration = eq(LENGTH_LONG),
             isError = eq(true),
             action = eq(R.string.sync_sent_tab_error_snackbar_action),
+            withDismissAction = eq(false),
             listener = any(),
         )
 
@@ -483,7 +462,6 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(ShareAction.CopyLinkToClipboard)
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = R.string.toast_copy_link_to_clipboard,
@@ -502,7 +480,6 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(AppAction.CurrentTabClosed(isPrivate = false))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(testContext.tabClosedUndoMessage(false)),
@@ -511,6 +488,7 @@ class SnackbarBindingTest {
             duration = eq(LENGTH_LONG),
             isError = eq(false),
             action = eq(testContext.getString(R.string.snackbar_deleted_undo)),
+            withDismissAction = eq(false),
             listener = snackbarAction.capture(),
         )
         snackbarAction.value.invoke(mock())
@@ -526,15 +504,15 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(AppAction.DownloadAction.DownloadFailed(fileName = "fileName"))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.download_item_status_failed)),
             subText = eq("fileName"),
             subTextOverflow = eq(TextOverflow.MiddleEllipsis),
-            duration = eq(testContext.getSnackbarTimeout(hasAction = true).value.toInt()),
+            duration = eq(LENGTH_INDEFINITE),
             isError = eq(false),
             action = eq(testContext.getString(R.string.download_failed_snackbar_action_details)),
+            withDismissAction = eq(true),
             listener = snackbarAction.capture(),
         )
         snackbarAction.value.invoke(mock())
@@ -567,7 +545,6 @@ class SnackbarBindingTest {
         )
 
         appStore.dispatch(AppAction.DownloadAction.DownloadCompleted(downloadState))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.download_completed_snackbar)),
@@ -576,6 +553,7 @@ class SnackbarBindingTest {
             duration = eq(testContext.getSnackbarTimeout(hasAction = true).value.toInt()),
             isError = eq(false),
             action = eq(testContext.getString(R.string.download_completed_snackbar_action_open)),
+            withDismissAction = eq(false),
             listener = snackbarAction.capture(),
         )
     }
@@ -600,7 +578,6 @@ class SnackbarBindingTest {
         )
 
         appStore.dispatch(AppAction.DownloadAction.CannotOpenFile(downloadState))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = "No app found to open  files",
@@ -625,7 +602,6 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(AppAction.DownloadAction.DownloadInProgress(downloadId = "id"))
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.download_in_progress_snackbar)),
@@ -634,6 +610,7 @@ class SnackbarBindingTest {
             duration = eq(testContext.getSnackbarTimeout(hasAction = true).value.toInt()),
             isError = eq(false),
             action = eq(testContext.getString(R.string.download_in_progress_snackbar_action_details)),
+            withDismissAction = eq(false),
             listener = snackbarAction.capture(),
         )
         snackbarAction.value.invoke(mock())
@@ -652,7 +629,6 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(WebCompatAction.WebCompatReportSent)
-        waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.webcompat_reporter_success_snackbar_text_2)),
@@ -661,6 +637,7 @@ class SnackbarBindingTest {
             duration = eq(testContext.getSnackbarTimeout().value.toInt()),
             isError = eq(false),
             action = eq(null),
+            withDismissAction = eq(false),
             listener = snackbarAction.capture(),
         )
 
@@ -692,13 +669,6 @@ class SnackbarBindingTest {
         customTabSessionId = customTabSessionId,
         ioDispatcher = ioDispatcher,
     )
-
-    private fun waitForStoreToSettle() {
-        // Wait for the trigger action to be handled,
-        appStore.waitUntilIdle()
-        // Wait for SnackbarAction.SnackbarShown to be dispatched
-        appStore.waitUntilIdle()
-    }
 
     private fun buildParentBookmarkNode(
         guid: String = "guid",
