@@ -243,85 +243,12 @@ static void EraseIf(js::gc::EphemeronEdgeVector& entries, Pred pred) {
   entries.shrinkBy(removed);
 }
 
-static void SweepEphemeronEdgesWhileMinorSweeping(
-    js::gc::EphemeronEdgeVector& entries) {
-  EraseIf(entries, [](js::gc::EphemeronEdge& edge) -> bool {
-    Cell* target = edge.target();
-    bool dead = IsAboutToBeFinalizedDuringMinorSweep(&target);
-    edge = js::gc::EphemeronEdge(edge.color(), target);
-    return dead;
-  });
-}
-
 void Zone::sweepAfterMinorGC(JSTracer* trc) {
-  sweepEphemeronTablesAfterMinorGC();
   crossZoneStringWrappers().sweepAfterMinorGC(trc);
 
   for (CompartmentsInZoneIter comp(this); !comp.done(); comp.next()) {
     comp->sweepAfterMinorGC(trc);
   }
-}
-
-void Zone::sweepEphemeronTablesAfterMinorGC() {
-  for (auto r = gcNurseryEphemeronEdges().all(); !r.empty(); r.popFront()) {
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    gc::Cell* key = r.front().key();
-    MOZ_ASSERT(!key->isTenured());
-    if (!Nursery::getForwardedPointer(&key)) {
-      
-      continue;
-    }
-
-    
-    
-    EphemeronEdgeVector& entries = r.front().value();
-    SweepEphemeronEdgesWhileMinorSweeping(entries);
-
-    
-    EphemeronEdgeTable& tenuredEdges = gcEphemeronEdges();
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    auto entry = tenuredEdges.lookupForAdd(key);
-    if (!entry) {
-      if (!tenuredEdges.add(entry, key, EphemeronEdgeVector())) {
-        oomUnsafe.crash("Failed to tenure weak keys entry");
-      }
-    }
-    if (!entry->value().appendAll(entries)) {
-      oomUnsafe.crash("Failed to tenure weak keys entry");
-    }
-
-    
-    
-
-    JSObject* delegate = gc::detail::GetDelegate(key->as<JSObject>());
-    if (!delegate) {
-      continue;
-    }
-    MOZ_ASSERT(delegate->isTenured());
-
-    
-    
-    
-    
-    
-    
-    auto p = delegate->zone()->gcEphemeronEdges().lookup(delegate);
-    if (p) {
-      SweepEphemeronEdgesWhileMinorSweeping(p->value());
-    }
-  }
-
-  gcNurseryEphemeronEdges().clearAndCompact();
 }
 
 void Zone::traceWeakCCWEdges(JSTracer* trc) {
