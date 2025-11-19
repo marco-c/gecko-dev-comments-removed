@@ -152,7 +152,7 @@ struct arena_chunk_t {
   arena_t* mArena;
 
   
-  RedBlackTreeNode<arena_chunk_t> mLinkDirty;
+  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksDirtyElim;
 
 #ifdef MALLOC_DOUBLE_PURGE
   

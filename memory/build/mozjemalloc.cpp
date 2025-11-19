@@ -299,29 +299,22 @@ struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
   }
 };
 
-struct ArenaDirtyChunkTrait {
-  static RedBlackTreeNode<arena_chunk_t>& GetTreeNode(arena_chunk_t* aThis) {
-    return aThis->mLinkDirty;
-  }
+namespace mozilla {
 
-  static inline Order Compare(arena_chunk_t* aNode, arena_chunk_t* aOther) {
-    MOZ_ASSERT(aNode);
-    MOZ_ASSERT(aOther);
-    return CompareAddr(aNode, aOther);
+struct DirtyChunkListTrait {
+  static DoublyLinkedListElement<arena_chunk_t>& Get(arena_chunk_t* aThis) {
+    return aThis->mChunksDirtyElim;
   }
 };
 
 #ifdef MALLOC_DOUBLE_PURGE
-namespace mozilla {
-
-template <>
-struct GetDoublyLinkedListElement<arena_chunk_t> {
+struct MadvisedChunkListTrait {
   static DoublyLinkedListElement<arena_chunk_t>& Get(arena_chunk_t* aThis) {
     return aThis->mChunksMavisedElim;
   }
 };
-}  
 #endif
+}  
 
 enum class purge_action_t {
   None,
@@ -499,13 +492,19 @@ struct arena_t {
 
  private:
   
-  RedBlackTree<arena_chunk_t, ArenaDirtyChunkTrait> mChunksDirty
+  
+  
+  
+  
+  
+  DoublyLinkedList<arena_chunk_t, DirtyChunkListTrait> mChunksDirty
       MOZ_GUARDED_BY(mLock);
 
 #ifdef MALLOC_DOUBLE_PURGE
   
   
-  DoublyLinkedList<arena_chunk_t> mChunksMAdvised MOZ_GUARDED_BY(mLock);
+  DoublyLinkedList<arena_chunk_t, MadvisedChunkListTrait> mChunksMAdvised
+      MOZ_GUARDED_BY(mLock);
 #endif
 
   
@@ -1596,7 +1595,7 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
   }
 
   if (chunk->mNumDirty == 0 && old_ndirty > 0 && !chunk->mIsPurging) {
-    mChunksDirty.Remove(chunk);
+    mChunksDirty.remove(chunk);
   }
   return true;
 }
@@ -1677,7 +1676,7 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 
   if (aChunk->mNumDirty > 0) {
     MOZ_ASSERT(aChunk->mArena == this);
-    mChunksDirty.Remove(aChunk);
+    mChunksDirty.remove(aChunk);
     mNumDirty -= aChunk->mNumDirty;
     mStats.committed -= aChunk->mNumDirty;
   }
@@ -1874,7 +1873,7 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 #endif
 
 ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
-  arena_chunk_t* chunk;
+  arena_chunk_t* chunk = nullptr;
 
   
   
@@ -1888,8 +1887,8 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 
 #ifdef MOZ_DEBUG
     size_t ndirty = 0;
-    for (auto* chunk : mChunksDirty.iter()) {
-      ndirty += chunk->mNumDirty;
+    for (auto& chunk : mChunksDirty) {
+      ndirty += chunk.mNumDirty;
     }
     
     MOZ_ASSERT(ndirty <= mNumDirty);
@@ -1916,8 +1915,11 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       
       
       chunk = mSpare;
+      mChunksDirty.remove(chunk);
     } else {
-      chunk = mChunksDirty.Last();
+      if (!mChunksDirty.isEmpty()) {
+        chunk = mChunksDirty.popFront();
+      }
     }
     if (!chunk) {
       
@@ -1937,7 +1939,6 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     
     
     MOZ_ASSERT(!chunk->mIsPurging);
-    mChunksDirty.Remove(chunk);
     chunk->mIsPurging = true;
     aStats.chunks++;
   }  
@@ -2317,7 +2318,9 @@ void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised) {
   }
 
   if (mChunk->mNumDirty != 0) {
-    mArena.mChunksDirty.Insert(mChunk);
+    
+    
+    mArena.mChunksDirty.pushFront(mChunk);
   }
 
 #ifdef MALLOC_DOUBLE_PURGE
@@ -2428,7 +2431,7 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
 
   if (aDirty) {
     if (chunk->mNumDirty == 0 && !chunk->mIsPurging) {
-      mChunksDirty.Insert(chunk);
+      mChunksDirty.pushBack(chunk);
     }
     chunk->mNumDirty += run_pages;
     mNumDirty += run_pages;
