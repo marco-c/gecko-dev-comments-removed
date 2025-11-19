@@ -9630,7 +9630,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
              StaticPrefs::test_events_async_enabled()) {
     status = aWidget->DispatchInputEvent(&mouseOrPointerEvent).mContentStatus;
   } else {
-    aWidget->DispatchEvent(&mouseOrPointerEvent);
+    status = aWidget->DispatchEvent(&mouseOrPointerEvent);
   }
 
   
