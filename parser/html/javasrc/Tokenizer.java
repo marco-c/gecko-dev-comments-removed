@@ -1631,127 +1631,58 @@ public class Tokenizer implements Locator, Locator2 {
             switch (state) {
                 case DATA:
                     dataloop: for (;;) {
-                        
-                        
-                        
                         if (reconsume) {
                             reconsume = false;
-                            
-                            
-                            switch (c) {
-                                case '&':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-                                    assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                    appendCharRefBuf(c);
-                                    setAdditionalAndRememberAmpersandLocation('\u0000');
-                                    returnState = state;
-                                    state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                    continue stateloop;
-                                case '<':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-
-                                    state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
-                                    
-                                    break dataloop;
-                                case '\u0000':
-                                    maybeEmitReplacementCharacter(buf, pos);
-                                    break;
-                                case '\r':
-                                    emitCarriageReturn(buf, pos);
-                                    break stateloop;
-                                case '\n':
-                                    silentLineFeed();
-                                    
-                                default:
-                                    
-
-
-
-
-
-                                    break;
-                            }
-                        }
-                        datamiddle: for (;;) {
+                        } else {
                             ++pos;
                             
                             
                             
-                            for (;;) {
-                                if (pos == endPos) {
-                                    break stateloop;
-                                }
-                                c = checkChar(buf, pos);
-                                
-                                switch (c) {
-                                    case '&':
-                                        
-
-
-
-                                        flushChars(buf, pos);
-                                        assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                        appendCharRefBuf(c);
-                                        setAdditionalAndRememberAmpersandLocation('\u0000');
-                                        returnState = state;
-                                        state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                        continue stateloop;
-                                    case '<':
-                                        
-
-
-
-                                        flushChars(buf, pos);
-
-                                        state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
-                                        
-                                        break dataloop;
-                                    case '\u0000':
-                                        maybeEmitReplacementCharacter(buf, pos);
-                                        
-                                        continue datamiddle;
-                                    case '\r':
-                                        emitCarriageReturn(buf, pos);
-                                        break stateloop;
-                                    case '\n':
-                                        silentLineFeed();
-                                        
-                                        continue datamiddle;
-                                    default:
-                                        
-
-
-
-
-
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        ++pos;
-                                        continue;
-                                }
+                            if (pos == endPos) {
+                                break stateloop;
                             }
+                            c = checkChar(buf, pos);
+                        }
+                        switch (c) {
+                            case '&':
+                                
+
+
+
+                                flushChars(buf, pos);
+                                assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
+                                appendCharRefBuf(c);
+                                setAdditionalAndRememberAmpersandLocation('\u0000');
+                                returnState = state;
+                                state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
+                                continue stateloop;
+                            case '<':
+                                
+
+
+
+                                flushChars(buf, pos);
+
+                                state = transition(state, Tokenizer.TAG_OPEN, reconsume, pos);
+                                
+                                break dataloop;
+                            case '\u0000':
+                                maybeEmitReplacementCharacter(buf, pos);
+                                continue;
+                            case '\r':
+                                emitCarriageReturn(buf, pos);
+                                break stateloop;
+                            case '\n':
+                                silentLineFeed();
+                                
+                            default:
+                                
+
+
+
+
+
+                                continue;
                         }
                     }
                     
@@ -2282,7 +2213,11 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);
@@ -2779,7 +2714,11 @@ public class Tokenizer implements Locator, Locator2 {
                     
                 case COMMENT:
                     commentloop: for (;;) {
-                        if (++pos == endPos) {
+                        ++pos;
+                        
+                        
+                        
+                        if (pos == endPos) {
                             break stateloop;
                         }
                         c = checkChar(buf, pos);
@@ -3275,7 +3214,11 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);
@@ -3362,7 +3305,11 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);
@@ -3974,7 +3921,11 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);
@@ -4083,122 +4034,57 @@ public class Tokenizer implements Locator, Locator2 {
                     
                 case RCDATA:
                     rcdataloop: for (;;) {
-                        
-                        
-                        
                         if (reconsume) {
                             reconsume = false;
-                            
-                            
-                            switch (c) {
-                                case '&':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-                                    assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                    appendCharRefBuf(c);
-                                    setAdditionalAndRememberAmpersandLocation('\u0000');
-                                    returnState = state;
-                                    state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                    continue stateloop;
-                                case '<':
-                                    
-
-
-
-                                    flushChars(buf, pos);
-                                    returnState = state;
-                                    state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
-                                    continue stateloop;
-                                case '\u0000':
-                                    maybeEmitReplacementCharacter(buf, pos);
-                                    break;
-                                case '\r':
-                                    emitCarriageReturn(buf, pos);
-                                    break stateloop;
-                                case '\n':
-                                    silentLineFeed();
-                                    
-                                default:
-                                    
-
-
-
-                                    break;
-                            }
-                        }
-                        rcdatamiddle: for (;;) {
+                        } else {
                             ++pos;
                             
                             
                             
                             
-                            for (;;) {
-                                if (pos == endPos) {
-                                    break stateloop;
-                                }
-                                c = checkChar(buf, pos);
-                                
-                                switch (c) {
-                                    case '&':
-                                        
-
-
-
-                                        flushChars(buf, pos);
-                                        assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
-                                        appendCharRefBuf(c);
-                                        setAdditionalAndRememberAmpersandLocation('\u0000');
-                                        returnState = state;
-                                        state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
-                                        continue stateloop;
-                                    case '<':
-                                        
-
-
-
-                                        flushChars(buf, pos);
-                                        returnState = state;
-                                        state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
-                                        continue stateloop;
-                                    case '\u0000':
-                                        maybeEmitReplacementCharacter(buf, pos);
-                                        
-                                        continue rcdatamiddle;
-                                    case '\r':
-                                        emitCarriageReturn(buf, pos);
-                                        break stateloop;
-                                    case '\n':
-                                        silentLineFeed();
-                                        
-                                        continue rcdatamiddle;
-                                    default:
-                                        
-
-
-
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        
-                                        ++pos;
-                                        continue;
-                                }
+                            if (pos == endPos) {
+                                break stateloop;
                             }
+                            c = checkChar(buf, pos);
+                        }
+                        switch (c) {
+                            case '&':
+                                
+
+
+
+                                flushChars(buf, pos);
+                                assert charRefBufLen == 0: "charRefBufLen not reset after previous use!";
+                                appendCharRefBuf(c);
+                                setAdditionalAndRememberAmpersandLocation('\u0000');
+                                returnState = state;
+                                state = transition(state, Tokenizer.CONSUME_CHARACTER_REFERENCE, reconsume, pos);
+                                continue stateloop;
+                            case '<':
+                                
+
+
+
+                                flushChars(buf, pos);
+
+                                returnState = state;
+                                state = transition(state, Tokenizer.RAWTEXT_RCDATA_LESS_THAN_SIGN, reconsume, pos);
+                                continue stateloop;
+                            case '\u0000':
+                                emitReplacementCharacter(buf, pos);
+                                continue;
+                            case '\r':
+                                emitCarriageReturn(buf, pos);
+                                break stateloop;
+                            case '\n':
+                                silentLineFeed();
+                                
+                            default:
+                                
+
+
+
+                                continue;
                         }
                     }
                     
@@ -4207,7 +4093,11 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);
@@ -4491,7 +4381,12 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);
@@ -4687,7 +4582,11 @@ public class Tokenizer implements Locator, Locator2 {
                         if (reconsume) {
                             reconsume = false;
                         } else {
-                            if (++pos == endPos) {
+                            ++pos;
+                            
+                            
+                            
+                            if (pos == endPos) {
                                 break stateloop;
                             }
                             c = checkChar(buf, pos);

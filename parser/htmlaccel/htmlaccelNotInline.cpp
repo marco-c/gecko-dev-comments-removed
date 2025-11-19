@@ -18,6 +18,8 @@ MOZ_NEVER_INLINE bool ContainsMarkup(const char16_t* aPtr,
 
 
 
+
+
 MOZ_NEVER_INLINE size_t SkipNonEscapedInTextNode(const char16_t* aPtr,
                                                  const char16_t* aEnd) {
   return detail::AccelerateTextNode(aPtr, aEnd, detail::LT_GT_AMP_NBSP, true);
@@ -58,6 +60,30 @@ MOZ_NEVER_INLINE uint32_t CountEscapedInAttributeValue(const char16_t* aPtr,
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 MOZ_NEVER_INLINE int32_t AccelerateDataFastest(const char16_t* aPtr,
                                                const char16_t* aEnd) {
   return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_AMP_CR, true);
@@ -75,6 +101,131 @@ MOZ_NEVER_INLINE int32_t AccelerateDataLineCol(const char16_t* aPtr,
                                                const char16_t* aEnd) {
   return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_AMP_CR_LF,
                                     false);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateRawtextFastest(const char16_t* aPtr,
+                                                  const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR, true);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateRawtextViewSource(const char16_t* aPtr,
+                                                     const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, true);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateRawtextLineCol(const char16_t* aPtr,
+                                                  const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, false);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateCommentFastest(const char16_t* aPtr,
+                                                  const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR, true,
+                                    false);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateCommentViewSource(const char16_t* aPtr,
+                                                     const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, true,
+                                    false);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateCommentLineCol(const char16_t* aPtr,
+                                                  const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_LT_CR_LF, false,
+                                    false);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedFastest(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_APOS_AMP_CR, true);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedViewSource(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_APOS_AMP_CR_LF,
+                                    true);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateAttributeValueSingleQuotedLineCol(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_APOS_AMP_CR_LF,
+                                    false);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedFastest(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_QUOT_AMP_CR, true);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedViewSource(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_QUOT_AMP_CR_LF,
+                                    true);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateAttributeValueDoubleQuotedLineCol(
+    const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_QUOT_AMP_CR_LF,
+                                    false);
+}
+
+
+
+MOZ_NEVER_INLINE int32_t AccelerateCdataSectionFastest(const char16_t* aPtr,
+                                                       const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_CR, true, true,
+                                    false);
+}
+
+
+MOZ_NEVER_INLINE int32_t
+AccelerateCdataSectionViewSource(const char16_t* aPtr, const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_CR_LF, true, true,
+                                    false);
+}
+
+
+MOZ_NEVER_INLINE int32_t AccelerateCdataSectionLineCol(const char16_t* aPtr,
+                                                       const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_CR_LF, false, true,
+                                    false);
+}
+
+
+MOZ_NEVER_INLINE int32_t AcceleratePlaintextFastest(const char16_t* aPtr,
+                                                    const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_CR, true);
+}
+
+
+MOZ_NEVER_INLINE int32_t AcceleratePlaintextViewSource(const char16_t* aPtr,
+                                                       const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_CR_LF, true);
+}
+
+
+MOZ_NEVER_INLINE int32_t AcceleratePlaintextLineCol(const char16_t* aPtr,
+                                                    const char16_t* aEnd) {
+  return detail::AccelerateTextNode(aPtr, aEnd, detail::ZERO_CR_LF, false);
 }
 
 }  
