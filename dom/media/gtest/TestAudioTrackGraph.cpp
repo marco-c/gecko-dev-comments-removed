@@ -2721,7 +2721,7 @@ TEST(TestAudioTrackGraph, SecondaryOutputDevice)
 }
 
 
-TEST(TestAudioInputProcessing, ClockDriftExpectation)
+TEST(TestAudioTrackGraph, ClockDriftExpectation)
 {
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
