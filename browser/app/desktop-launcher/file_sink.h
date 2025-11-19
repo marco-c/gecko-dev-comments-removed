@@ -16,9 +16,12 @@ class FileSink : public DataSink {
   bool open(std::wstring& filename);
   
   bool accept(char* buf, int bytesToWrite) override;
+  
+  bool freeze();
 
  private:
   nsAutoHandle fileHandle;
+  std::wstring mFilename;
 };
 
 #endif

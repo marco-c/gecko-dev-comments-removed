@@ -9,8 +9,10 @@
 
 
 bool FileSink::open(std::wstring& filename) {
+  mFilename.assign(filename);
   
-  fileHandle.own(CreateFileW(filename.c_str(), GENERIC_WRITE, 0, nullptr,
+  fileHandle.own(CreateFileW(filename.c_str(), GENERIC_WRITE,
+                             FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
                              CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr));
   if (fileHandle.get() == INVALID_HANDLE_VALUE) {
     return false;
@@ -29,5 +31,20 @@ bool FileSink::accept(char* buf, int bytesToWrite) {
     }
     bytesToWrite -= bytesWritten;
   }
+  return true;
+}
+
+bool FileSink::freeze() {
+  
+  
+  
+  HANDLE readOnlyHandle = CreateFileW(
+      mFilename.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+      nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (readOnlyHandle == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+
+  fileHandle.own(readOnlyHandle);
   return true;
 }

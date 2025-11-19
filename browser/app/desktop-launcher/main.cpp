@@ -62,8 +62,12 @@ int wmain() {
   bool download_completed = false;
   
   std::optional<std::wstring> tempfileName = get_tempfile_name();
+  
+  
+  
+  std::unique_ptr<FileSink> fileSink;
   if (tempfileName.has_value()) {
-    std::unique_ptr<FileSink> fileSink = std::make_unique<FileSink>();
+    fileSink = std::make_unique<FileSink>();
     if (fileSink->open(tempfileName.value())) {
       ErrCode rc = download_firefox(fileSink.get());
       if (rc == ErrCode::OK) {
@@ -74,7 +78,8 @@ int wmain() {
   }
   
   if (download_completed) {
-    if (ExecuteAndWaitForIdle(tempfileName.value(), STUB_INSTALLER_ARGS)) {
+    if (fileSink->freeze() &&
+        ExecuteAndWaitForIdle(tempfileName.value(), STUB_INSTALLER_ARGS)) {
       std::wcout << L"Firefox installer launched" << std::endl;
       return 0;
     }
