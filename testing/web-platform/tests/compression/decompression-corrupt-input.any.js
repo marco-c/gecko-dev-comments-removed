@@ -222,6 +222,14 @@ const expectations = [
         ]
       }
     ]
+  },
+  {
+    format: 'brotli',
+
+    
+    baseInput: brotliChunkValue,
+
+    fields: []
   }
 ];
 
