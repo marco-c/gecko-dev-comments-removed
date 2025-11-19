@@ -376,6 +376,17 @@ struct PrivateCapabilities {
     
     
     shader_int8: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    multiview_instance_index_limit: u32,
 }
 
 bitflags::bitflags!(
@@ -447,7 +458,7 @@ struct RenderPassKey {
     colors: ArrayVec<Option<ColorAttachmentKey>, { crate::MAX_COLOR_ATTACHMENTS }>,
     depth_stencil: Option<DepthStencilAttachmentKey>,
     sample_count: u32,
-    multiview: Option<NonZeroU32>,
+    multiview_mask: Option<NonZeroU32>,
 }
 
 struct DeviceShared {
@@ -720,7 +731,7 @@ impl Texture {
 pub struct TextureView {
     raw_texture: vk::Image,
     raw: vk::ImageView,
-    layers: NonZeroU32,
+    _layers: NonZeroU32,
     format: wgt::TextureFormat,
     raw_format: vk::Format,
     base_mip_level: u32,
@@ -953,6 +964,8 @@ pub struct CommandEncoder {
     temp_texture_views: FastHashMap<TempTextureViewKey, IdentifiedTextureView>,
 
     counters: Arc<wgt::HalCounters>,
+
+    current_pipeline_is_multiview: bool,
 }
 
 impl Drop for CommandEncoder {
@@ -1025,6 +1038,7 @@ impl crate::DynShaderModule for ShaderModule {}
 #[derive(Debug)]
 pub struct RenderPipeline {
     raw: vk::Pipeline,
+    is_multiview: bool,
 }
 
 impl crate::DynRenderPipeline for RenderPipeline {}

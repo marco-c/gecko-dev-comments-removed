@@ -320,13 +320,21 @@ pub enum ConservativeDepth {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-#[allow(missing_docs)] 
 pub enum ShaderStage {
+    
     Vertex,
-    Fragment,
-    Compute,
+
+    
     Task,
+
+    
     Mesh,
+
+    
+    Fragment,
+
+    
+    Compute,
 }
 
 
@@ -363,6 +371,8 @@ pub enum AddressSpace {
     
     
     PushConstant,
+    
+    TaskPayload,
 }
 
 
@@ -371,36 +381,75 @@ pub enum AddressSpace {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum BuiltIn {
+    
     Position { invariant: bool },
+    
     ViewIndex,
+
     
     BaseInstance,
+    
     BaseVertex,
+    
     ClipDistance,
+    
     CullDistance,
+    
     InstanceIndex,
+    
     PointSize,
+    
     VertexIndex,
+    
     DrawID,
+
     
     FragDepth,
+    
     PointCoord,
+    
     FrontFacing,
+    
     PrimitiveIndex,
+    
+    Barycentric,
+    
     SampleIndex,
+    
     SampleMask,
+
     
     GlobalInvocationId,
+    
     LocalInvocationId,
+    
     LocalInvocationIndex,
+    
     WorkGroupId,
+    
     WorkGroupSize,
+    
     NumWorkGroups,
+
     
     NumSubgroups,
+    
     SubgroupId,
+    
     SubgroupSize,
+    
     SubgroupInvocationId,
+
+    
+    MeshTaskSize,
+    
+    CullPrimitive,
+    
+    PointIndex,
+    
+    LineIndices,
+    
+    TriangleIndices,
 }
 
 
@@ -959,13 +1008,32 @@ pub enum Binding {
     
     
     
+    
+    
+    
+    
     Location {
         location: u32,
         interpolation: Option<Interpolation>,
         sampling: Option<Sampling>,
+
         
         
         blend_src: Option<u32>,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        per_primitive: bool,
     },
 }
 
@@ -1724,10 +1792,12 @@ pub enum Expression {
         query: Handle<Expression>,
         committed: bool,
     },
+
     
     
     
     SubgroupBallotResult,
+
     
     
     
@@ -2142,6 +2212,8 @@ pub enum Statement {
         fun: RayQueryFunction,
     },
     
+    MeshFunction(MeshFunction),
+    
     SubgroupBallot {
         
         
@@ -2314,6 +2386,12 @@ pub struct EntryPoint {
     pub workgroup_size_overrides: Option<[Option<Handle<Expression>>; 3]>,
     
     pub function: Function,
+    
+    
+    
+    pub mesh_info: Option<MeshStageInfo>,
+    
+    pub task_payload: Option<Handle<GlobalVariable>>,
 }
 
 
@@ -2488,6 +2566,66 @@ pub struct DocComments {
     pub global_variables: FastIndexMap<Handle<GlobalVariable>, Vec<String>>,
     
     pub module: Vec<String>,
+}
+
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum MeshOutputTopology {
+    
+    Points,
+    
+    Lines,
+    
+    Triangles,
+}
+
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+#[allow(dead_code)]
+pub struct MeshStageInfo {
+    
+    pub topology: MeshOutputTopology,
+    
+    pub max_vertices: u32,
+    
+    pub max_vertices_override: Option<Handle<Expression>>,
+    
+    pub max_primitives: u32,
+    
+    pub max_primitives_override: Option<Handle<Expression>>,
+    
+    pub vertex_output_type: Handle<Type>,
+    
+    pub primitive_output_type: Handle<Type>,
+}
+
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum MeshFunction {
+    
+    SetMeshOutputs {
+        vertex_count: Handle<Expression>,
+        primitive_count: Handle<Expression>,
+    },
+    
+    SetVertex {
+        index: Handle<Expression>,
+        value: Handle<Expression>,
+    },
+    
+    SetPrimitive {
+        index: Handle<Expression>,
+        value: Handle<Expression>,
+    },
 }
 
 

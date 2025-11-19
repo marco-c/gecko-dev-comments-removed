@@ -519,12 +519,14 @@ macro_rules! with_limits {
 
         $macro_name!(max_task_workgroup_total_count, Ordering::Less);
         $macro_name!(max_task_workgroups_per_dimension, Ordering::Less);
-        $macro_name!(max_mesh_multiview_count, Ordering::Less);
+        $macro_name!(max_mesh_multiview_view_count, Ordering::Less);
         $macro_name!(max_mesh_output_layers, Ordering::Less);
 
         $macro_name!(max_blas_primitive_count, Ordering::Less);
         $macro_name!(max_blas_geometry_count, Ordering::Less);
         $macro_name!(max_tlas_instance_count, Ordering::Less);
+
+        $macro_name!(max_multiview_view_count, Ordering::Less);
     };
 }
 
@@ -695,7 +697,7 @@ pub struct Limits {
     
     pub max_mesh_output_layers: u32,
     
-    pub max_mesh_multiview_count: u32,
+    pub max_mesh_multiview_view_count: u32,
 
     
     
@@ -713,6 +715,9 @@ pub struct Limits {
     
     
     pub max_acceleration_structures_per_shader_stage: u32,
+
+    
+    pub max_multiview_view_count: u32,
 }
 
 impl Default for Limits {
@@ -722,6 +727,7 @@ impl Default for Limits {
 }
 
 impl Limits {
+    
     
     
     
@@ -820,16 +826,20 @@ impl Limits {
 
             max_task_workgroup_total_count: 0,
             max_task_workgroups_per_dimension: 0,
-            max_mesh_multiview_count: 0,
+            max_mesh_multiview_view_count: 0,
             max_mesh_output_layers: 0,
 
             max_blas_primitive_count: 0,
             max_blas_geometry_count: 0,
             max_tlas_instance_count: 0,
             max_acceleration_structures_per_shader_stage: 0,
+
+            max_multiview_view_count: 0,
         }
     }
 
+    
+    
     
     
     
@@ -898,12 +908,14 @@ impl Limits {
 
             max_task_workgroups_per_dimension: 0,
             max_task_workgroup_total_count: 0,
-            max_mesh_multiview_count: 0,
+            max_mesh_multiview_view_count: 0,
             max_mesh_output_layers: 0,
             ..Self::defaults()
         }
     }
 
+    
+    
     
     
     
@@ -1018,7 +1030,7 @@ impl Limits {
         Self {
             max_blas_geometry_count: (1 << 24) - 1, 
             max_tlas_instance_count: (1 << 24) - 1, 
-            max_blas_primitive_count: 1 << 28,      
+            max_blas_primitive_count: (1 << 24) - 1, 
             max_acceleration_structures_per_shader_stage: 16, 
             ..self
         }
@@ -1051,7 +1063,7 @@ impl Limits {
             max_task_workgroup_total_count: 65536,
             max_task_workgroups_per_dimension: 256,
             
-            max_mesh_multiview_count: 0,
+            max_mesh_multiview_view_count: 0,
             
             max_mesh_output_layers: 8,
             ..self
@@ -2772,6 +2784,17 @@ impl TextureAspect {
             _ => return None,
         })
     }
+
+    
+    #[must_use]
+    pub fn to_plane(&self) -> Option<u32> {
+        match self {
+            TextureAspect::Plane0 => Some(0),
+            TextureAspect::Plane1 => Some(1),
+            TextureAspect::Plane2 => Some(2),
+            _ => None,
+        }
+    }
 }
 
 
@@ -2860,6 +2883,20 @@ impl TextureFormat {
 
     
     #[must_use]
+    pub fn subsampling_factors(&self, plane: Option<u32>) -> (u32, u32) {
+        match *self {
+            Self::NV12 | Self::P010 => match plane {
+                Some(0) => (1, 1),
+                Some(1) => (2, 2),
+                Some(plane) => unreachable!("plane {plane} is not valid for {self:?}"),
+                None => unreachable!("the plane must be specified for multi-planar formats"),
+            },
+            _ => (1, 1),
+        }
+    }
+
+    
+    #[must_use]
     pub fn has_color_aspect(&self) -> bool {
         !self.is_depth_stencil_format()
     }
@@ -2886,6 +2923,10 @@ impl TextureFormat {
         }
     }
 
+    
+    
+    
+    
     
     #[must_use]
     pub fn size_multiple_requirement(&self) -> (u32, u32) {
@@ -5346,6 +5387,8 @@ bitflags::bitflags! {
 
 bitflags::bitflags! {
     /// Similar to `BufferUsages`, but used only for `CommandEncoder::transition_resources`.
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct BufferUses: u16 {
         /// The argument to a read-only mapping.
@@ -5397,6 +5440,7 @@ bitflags::bitflags! {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BufferTransition<T> {
     
     pub buffer: T,
@@ -5658,6 +5702,8 @@ bitflags::bitflags! {
 bitflags::bitflags! {
     /// Similar to `TextureUsages`, but used only for `CommandEncoder::transition_resources`.
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct TextureUses: u16 {
         /// The texture is in unknown state.
         const UNINITIALIZED = 1 << 0;
@@ -5693,10 +5739,10 @@ bitflags::bitflags! {
         const TRANSIENT = 1 << 12;
         /// The combination of states that a texture may be in _at the same time_.
         /// cbindgen:ignore
-        const INCLUSIVE = Self::COPY_SRC.bits() | Self::RESOURCE.bits() | Self::DEPTH_STENCIL_READ.bits();
+        const INCLUSIVE = Self::COPY_SRC.bits() | Self::RESOURCE.bits() | Self::DEPTH_STENCIL_READ.bits() | Self::STORAGE_READ_ONLY.bits();
         /// The combination of states that a texture must exclusively be in.
         /// cbindgen:ignore
-        const EXCLUSIVE = Self::COPY_DST.bits() | Self::COLOR_TARGET.bits() | Self::DEPTH_STENCIL_WRITE.bits() | Self::STORAGE_READ_ONLY.bits() | Self::STORAGE_WRITE_ONLY.bits() | Self::STORAGE_READ_WRITE.bits() | Self::STORAGE_ATOMIC.bits() | Self::PRESENT.bits();
+        const EXCLUSIVE = Self::COPY_DST.bits() | Self::COLOR_TARGET.bits() | Self::DEPTH_STENCIL_WRITE.bits() | Self::STORAGE_WRITE_ONLY.bits() | Self::STORAGE_READ_WRITE.bits() | Self::STORAGE_ATOMIC.bits() | Self::PRESENT.bits();
         /// The combination of all usages that the are guaranteed to be be ordered by the hardware.
         /// If a usage is ordered, then if the texture state doesn't change between draw calls, there
         /// are no barriers needed for synchronization.
@@ -5713,6 +5759,7 @@ bitflags::bitflags! {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TextureTransition<T> {
     
     pub texture: T,
@@ -5726,6 +5773,7 @@ pub struct TextureTransition<T> {
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TextureSelector {
     
     pub mips: Range<u32>,
@@ -5796,6 +5844,21 @@ pub struct SurfaceConfiguration<V> {
     
     
     pub present_mode: PresentMode,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -6144,6 +6207,14 @@ impl Extent3d {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[doc(hidden)]
     #[must_use]
     pub fn mip_level_size(&self, level: u32, dim: TextureDimension) -> Self {
         Self {
@@ -6415,11 +6486,29 @@ impl<L, V> TextureDescriptor<L, V> {
     
     
     
+    
+    
+    
+    
+    
+    
+    #[doc(hidden)]
     #[must_use]
-    pub fn compute_render_extent(&self, mip_level: u32) -> Extent3d {
+    pub fn compute_render_extent(&self, mip_level: u32, plane: Option<u32>) -> Extent3d {
+        let Extent3d {
+            width,
+            height,
+            depth_or_array_layers: _,
+        } = self.mip_level_size(mip_level).expect("invalid mip level");
+
+        let (w_subsampling, h_subsampling) = self.format.subsampling_factors(plane);
+
+        let width = width / w_subsampling;
+        let height = height / h_subsampling;
+
         Extent3d {
-            width: u32::max(1, self.size.width >> mip_level),
-            height: u32::max(1, self.size.height >> mip_level),
+            width,
+            height,
             depth_or_array_layers: 1,
         }
     }

@@ -85,6 +85,25 @@ struct FunctionUniformity {
     exit: ExitFlags,
 }
 
+
+#[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg_attr(test, derive(PartialEq))]
+pub struct FunctionMeshShaderInfo {
+    
+    
+    
+    
+    pub vertex_type: Option<(Handle<crate::Type>, Handle<crate::Expression>)>,
+
+    
+    
+    
+    
+    pub primitive_type: Option<(Handle<crate::Type>, Handle<crate::Expression>)>,
+}
+
 impl ops::BitOr for FunctionUniformity {
     type Output = Self;
     fn bitor(self, other: Self) -> Self {
@@ -302,6 +321,9 @@ pub struct FunctionInfo {
     
     
     diagnostic_filter_leaf: Option<Handle<DiagnosticFilterNode>>,
+
+    
+    pub mesh_shader_info: FunctionMeshShaderInfo,
 }
 
 impl FunctionInfo {
@@ -370,6 +392,22 @@ impl FunctionInfo {
             self.global_uses[global.index()] |= global_use;
         }
         info.uniformity.non_uniform_result
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) fn insert_global_use(
+        &mut self,
+        global_use: GlobalUse,
+        global: Handle<crate::GlobalVariable>,
+    ) {
+        self.global_uses[global.index()] |= global_use;
     }
 
     
@@ -481,6 +519,9 @@ impl FunctionInfo {
         for (mine, other) in self.global_uses.iter_mut().zip(callee.global_uses.iter()) {
             *mine |= *other;
         }
+
+        
+        self.try_update_mesh_info(&callee.mesh_shader_info)?;
 
         Ok(FunctionUniformity {
             result: callee.uniformity.clone(),
@@ -635,7 +676,8 @@ impl FunctionInfo {
                     
                     As::Function | As::Private => false,
                     
-                    As::WorkGroup => true,
+                    
+                    As::WorkGroup | As::TaskPayload => true,
                     
                     As::Uniform | As::PushConstant => true,
                     
@@ -1113,6 +1155,36 @@ impl FunctionInfo {
                     }
                     FunctionUniformity::new()
                 }
+                S::MeshFunction(func) => {
+                    self.available_stages |= ShaderStages::MESH;
+                    match &func {
+                        
+                        &crate::MeshFunction::SetMeshOutputs {
+                            vertex_count,
+                            primitive_count,
+                        } => {
+                            let _ = self.add_ref(vertex_count);
+                            let _ = self.add_ref(primitive_count);
+                            FunctionUniformity::new()
+                        }
+                        &crate::MeshFunction::SetVertex { index, value }
+                        | &crate::MeshFunction::SetPrimitive { index, value } => {
+                            let _ = self.add_ref(index);
+                            let _ = self.add_ref(value);
+                            let ty = self.expressions[value.index()].ty.handle().ok_or(
+                                FunctionError::InvalidMeshShaderOutputType(value).with_span(),
+                            )?;
+
+                            if matches!(func, crate::MeshFunction::SetVertex { .. }) {
+                                self.try_update_mesh_vertex_type(ty, value)?;
+                            } else {
+                                self.try_update_mesh_primitive_type(ty, value)?;
+                            };
+
+                            FunctionUniformity::new()
+                        }
+                    }
+                }
                 S::SubgroupBallot {
                     result: _,
                     predicate,
@@ -1158,6 +1230,72 @@ impl FunctionInfo {
         }
         Ok(combined_uniformity)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_update_mesh_vertex_type(
+        &mut self,
+        ty: Handle<crate::Type>,
+        value: Handle<crate::Expression>,
+    ) -> Result<(), WithSpan<FunctionError>> {
+        if let &Some(ref existing) = &self.mesh_shader_info.vertex_type {
+            if existing.0 != ty {
+                return Err(
+                    FunctionError::ConflictingMeshOutputTypes(existing.1, value).with_span()
+                );
+            }
+        } else {
+            self.mesh_shader_info.vertex_type = Some((ty, value));
+        }
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_update_mesh_primitive_type(
+        &mut self,
+        ty: Handle<crate::Type>,
+        value: Handle<crate::Expression>,
+    ) -> Result<(), WithSpan<FunctionError>> {
+        if let &Some(ref existing) = &self.mesh_shader_info.primitive_type {
+            if existing.0 != ty {
+                return Err(
+                    FunctionError::ConflictingMeshOutputTypes(existing.1, value).with_span()
+                );
+            }
+        } else {
+            self.mesh_shader_info.primitive_type = Some((ty, value));
+        }
+        Ok(())
+    }
+
+    
+    fn try_update_mesh_info(
+        &mut self,
+        callee: &FunctionMeshShaderInfo,
+    ) -> Result<(), WithSpan<FunctionError>> {
+        if let &Some(ref other_vertex) = &callee.vertex_type {
+            self.try_update_mesh_vertex_type(other_vertex.0, other_vertex.1)?;
+        }
+        if let &Some(ref other_primitive) = &callee.primitive_type {
+            self.try_update_mesh_primitive_type(other_primitive.0, other_primitive.1)?;
+        }
+        Ok(())
+    }
 }
 
 impl ModuleInfo {
@@ -1193,6 +1331,7 @@ impl ModuleInfo {
             sampling: crate::FastHashSet::default(),
             dual_source_blending: false,
             diagnostic_filter_leaf: fun.diagnostic_filter_leaf,
+            mesh_shader_info: FunctionMeshShaderInfo::default(),
         };
         let resolve_context =
             ResolveContext::with_locals(module, &fun.local_variables, &fun.arguments);
@@ -1326,6 +1465,7 @@ fn uniform_control_flow() {
         sampling: crate::FastHashSet::default(),
         dual_source_blending: false,
         diagnostic_filter_leaf: None,
+        mesh_shader_info: FunctionMeshShaderInfo::default(),
     };
     let resolve_context = ResolveContext {
         constants: &Arena::new(),

@@ -1,0 +1,568 @@
+
+
+
+
+
+
+
+#![cfg_attr(feature = "better-docs",
+    cfg_attr(all(), doc = include_str!("../README.md"))
+)]
+#![cfg_attr(feature = "better-docs",
+    feature(doc_auto_cfg),
+)]
+#![no_std]
+#![forbid(unsafe_code)]
+
+
+
+
+
+
+
+
+
+pub use ::macro_rules_attribute_proc_macro::macro_rules_attribute;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub use ::macro_rules_attribute_proc_macro::macro_rules_attribute as apply;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub use ::macro_rules_attribute_proc_macro::macro_rules_derive;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! derive_alias {(
+    $(
+        #[derive($MacroName:ident !)] = #[derive($($derives:tt)*)];
+    )*
+) => (
+    $crate::ඞ_with_dollar! {( $_:tt ) => (
+        $crate::ඞ::paste! {
+            $(
+                
+                
+                //
+                
+                
+                
+                #[allow(nonstandard_style)]
+                macro_rules! [< $MacroName __derive_macro >] {(
+                    $_($item:tt)*
+                ) => (
+                    $crate::ඞ_nested_derive! {
+                        #[derive($($derives)*)]
+                        $_($item)*
+                    }
+                )}
+                #[allow(unused_imports)]
+                pub(in crate) use [< $MacroName __derive_macro >] as $MacroName;
+            )*
+        }
+    )}
+)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! attribute_alias {(
+    $(
+        #[apply($name:ident $(!)?)] = $( #[$($attrs:tt)*] )+;
+    )*
+) => (
+    $(
+        $crate::ඞ_with_dollar! {( $_:tt ) => (
+            // Let's not do the paste + module + re-export dance here since it
+            // is less likely for an attribute name to collide with a prelude item.
+            #[allow(nonstandard_style)]
+            macro_rules! $name {( $_($item:tt)* ) => (
+             $( #[$($attrs)*] )+
+                $_($item)*
+            )}
+            #[allow(unused_imports)]
+            pub(in crate) use $name;
+        )}
+    )*
+)}
+
+#[doc(hidden)]  #[macro_export]
+macro_rules! ඞ_with_dollar {( $($rules:tt)* ) => (
+    macro_rules! __emit__ { $($rules)* }
+    __emit__! { $ }
+)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub use ::macro_rules_attribute_proc_macro::derive;
+
+
+
+
+
+pub use ::macro_rules_attribute_proc_macro::Custom;
+
+attribute_alias! {
+    #[apply(this_macro_is_private!)] =
+        #[doc(hidden)]
+        /// Not part of the public API
+        #[macro_export]
+    ;
+}
+
+mod nested_derive {
+    
+    #[crate::apply(this_macro_is_private!)]
+    macro_rules! ඞ_nested_derive {
+        (
+            #[derive( $($Derives:tt)* )]
+            $($rest:tt)*
+        ) => (
+            #[$crate::derive( $($Derives)* )]
+            #[$crate::apply($crate::ඞ_dalek_EXTERMINATE!)]
+            $($rest)*
+        );
+    }
+
+    
+    
+    
+    
+    #[crate::apply(this_macro_is_private!)]
+    macro_rules! ඞ_dalek_EXTERMINATE {( $it:item ) => ()}
+}
+
+#[doc(hidden)]  pub
+mod ඞ {
+    pub use {
+        ::paste::paste,
+    };
+}

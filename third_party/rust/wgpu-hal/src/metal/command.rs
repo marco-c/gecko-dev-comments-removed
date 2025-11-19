@@ -9,6 +9,7 @@ use metal::{
     MTLIndexType, MTLLoadAction, MTLPrimitiveType, MTLScissorRect, MTLSize, MTLStoreAction,
     MTLViewport, MTLVisibilityResultMode, NSRange,
 };
+use smallvec::SmallVec;
 
 
 const WORD_SIZE: usize = 4;
@@ -653,9 +654,33 @@ impl crate::CommandEncoder for super::CommandEncoder {
                 descriptor
                     .set_visibility_result_buffer(Some(occlusion_query_set.raw_buffer.as_ref()))
             }
-
+            
+            
+            
+            
+            
+            if let Some(mv) = desc.multiview_mask {
+                descriptor.set_render_target_array_length(32 - mv.leading_zeros() as u64);
+            }
             let raw = self.raw_cmd_buf.as_ref().unwrap();
             let encoder = raw.new_render_command_encoder(descriptor);
+            if let Some(mv) = desc.multiview_mask {
+                
+                
+                let mv = mv.get();
+                let msb = 32 - mv.leading_zeros();
+                let mut maps: SmallVec<[metal::VertexAmplificationViewMapping; 32]> =
+                    SmallVec::new();
+                for i in 0..msb {
+                    if (mv & (1 << i)) != 0 {
+                        maps.push(metal::VertexAmplificationViewMapping {
+                            renderTargetArrayIndexOffset: i,
+                            viewportArrayIndexOffset: i,
+                        });
+                    }
+                }
+                encoder.set_vertex_amplification_count(mv.count_ones() as u64, Some(&maps));
+            }
             if let Some(label) = desc.label {
                 encoder.set_label(label);
             }

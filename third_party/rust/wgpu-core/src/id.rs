@@ -82,22 +82,20 @@ impl RawId {
 
 
 #[repr(transparent)]
-#[cfg_attr(any(feature = "serde", feature = "trace"), derive(serde::Serialize))]
-#[cfg_attr(any(feature = "serde", feature = "replay"), derive(serde::Deserialize))]
-#[cfg_attr(
-    any(feature = "serde", feature = "trace", feature = "replay"),
-    serde(transparent)
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Id<T: Marker>(RawId, PhantomData<T>);
 
 
-#[allow(dead_code)]
+#[cfg(feature = "serde")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-enum SerialId {
+#[derive(Clone, Debug)]
+pub enum SerialId {
     
     Id(Index, Epoch),
 }
 
+#[cfg(feature = "serde")]
 impl From<RawId> for SerialId {
     fn from(id: RawId) -> Self {
         let (index, epoch) = id.unzip();
@@ -105,14 +103,17 @@ impl From<RawId> for SerialId {
     }
 }
 
+#[cfg(feature = "serde")]
 pub struct ZeroIdError;
 
+#[cfg(feature = "serde")]
 impl fmt::Display for ZeroIdError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "IDs may not be zero")
     }
 }
 
+#[cfg(feature = "serde")]
 impl TryFrom<SerialId> for RawId {
     type Error = ZeroIdError;
     fn try_from(id: SerialId) -> Result<Self, ZeroIdError> {
@@ -122,6 +123,61 @@ impl TryFrom<SerialId> for RawId {
         } else {
             Ok(RawId::zip(index, epoch))
         }
+    }
+}
+
+
+
+
+#[allow(dead_code)]
+#[cfg(feature = "serde")]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub enum PointerId<T: Marker> {
+    
+    PointerId(usize, #[serde(skip)] PhantomData<T>),
+}
+
+#[cfg(feature = "serde")]
+impl<T: Marker> Copy for PointerId<T> {}
+
+#[cfg(feature = "serde")]
+impl<T: Marker> Clone for PointerId<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<T: Marker> PartialEq for PointerId<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let PointerId::PointerId(this, _) = self;
+        let PointerId::PointerId(other, _) = other;
+        this == other
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<T: Marker> Eq for PointerId<T> {}
+
+#[cfg(feature = "serde")]
+impl<T: Marker> Hash for PointerId<T> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let PointerId::PointerId(this, _) = self;
+        this.hash(state);
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<T: crate::storage::StorageItem> From<&alloc::sync::Arc<T>> for PointerId<T::Marker> {
+    fn from(arc: &alloc::sync::Arc<T>) -> Self {
+        
+        
+        
+        
+        
+        
+        
+        PointerId::PointerId(alloc::sync::Arc::as_ptr(arc) as usize, PhantomData)
     }
 }
 

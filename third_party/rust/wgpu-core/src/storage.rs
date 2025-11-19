@@ -19,7 +19,9 @@ where
     Occupied(T, Epoch),
 }
 
-pub(crate) trait StorageItem: ResourceType {
+
+#[doc(hidden)]
+pub trait StorageItem: ResourceType {
     type Marker: Marker;
 }
 

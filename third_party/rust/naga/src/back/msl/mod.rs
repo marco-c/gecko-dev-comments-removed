@@ -527,8 +527,19 @@ impl Options {
                     }
                     
                     
-                    crate::BuiltIn::PrimitiveIndex if self.lang_version < (2, 2) => {
+                    crate::BuiltIn::PrimitiveIndex if self.lang_version < (2, 3) => {
                         return Err(Error::UnsupportedAttribute("primitive_id".to_string()));
+                    }
+                    
+                    
+                    
+                    crate::BuiltIn::ViewIndex if self.lang_version < (2, 2) => {
+                        return Err(Error::UnsupportedAttribute("amplification_id".to_string()));
+                    }
+                    
+                    
+                    crate::BuiltIn::Barycentric if self.lang_version < (2, 3) => {
+                        return Err(Error::UnsupportedAttribute("barycentric_coord".to_string()));
                     }
                     _ => {}
                 }
@@ -540,6 +551,7 @@ impl Options {
                 interpolation,
                 sampling,
                 blend_src,
+                per_primitive: _,
             } => match mode {
                 LocationMode::VertexInput => Ok(ResolvedBinding::Attribute(location)),
                 LocationMode::FragmentOutput => {
@@ -668,6 +680,7 @@ impl ResolvedBinding {
                 let name = match built_in {
                     Bi::Position { invariant: false } => "position",
                     Bi::Position { invariant: true } => "position, invariant",
+                    Bi::ViewIndex => "amplification_id",
                     
                     Bi::BaseInstance => "base_instance",
                     Bi::BaseVertex => "base_vertex",
@@ -680,6 +693,7 @@ impl ResolvedBinding {
                     Bi::PointCoord => "point_coord",
                     Bi::FrontFacing => "front_facing",
                     Bi::PrimitiveIndex => "primitive_id",
+                    Bi::Barycentric => "barycentric_coord",
                     Bi::SampleIndex => "sample_id",
                     Bi::SampleMask => "sample_mask",
                     
@@ -694,9 +708,13 @@ impl ResolvedBinding {
                     Bi::SubgroupId => "simdgroup_index_in_threadgroup",
                     Bi::SubgroupSize => "threads_per_simdgroup",
                     Bi::SubgroupInvocationId => "thread_index_in_simdgroup",
-                    Bi::CullDistance | Bi::ViewIndex | Bi::DrawID => {
+                    Bi::CullDistance | Bi::DrawID => {
                         return Err(Error::UnsupportedBuiltIn(built_in))
                     }
+                    Bi::CullPrimitive => "primitive_culled",
+                    
+                    Bi::PointIndex | Bi::LineIndices | Bi::TriangleIndices => unimplemented!(),
+                    Bi::MeshTaskSize => unreachable!(),
                 };
                 write!(out, "{name}")?;
             }
