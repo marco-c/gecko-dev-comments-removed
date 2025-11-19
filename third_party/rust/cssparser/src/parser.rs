@@ -380,6 +380,10 @@ macro_rules! expect {
     }
 }
 
+
+
+pub type ArbitrarySubstitutionFunctions<'a> = &'a [&'static str];
+
 impl<'i: 't, 't> Parser<'i, 't> {
     
     #[inline]
@@ -549,16 +553,20 @@ impl<'i: 't, 't> Parser<'i, 't> {
     
     
     #[inline]
-    pub fn look_for_var_or_env_functions(&mut self) {
-        self.input.tokenizer.look_for_var_or_env_functions()
+    pub fn look_for_arbitrary_substitution_functions(
+        &mut self,
+        fns: ArbitrarySubstitutionFunctions<'i>,
+    ) {
+        self.input
+            .tokenizer
+            .look_for_arbitrary_substitution_functions(fns)
     }
 
     
     
-    
     #[inline]
-    pub fn seen_var_or_env_functions(&mut self) -> bool {
-        self.input.tokenizer.seen_var_or_env_functions()
+    pub fn seen_arbitrary_substitution_functions(&mut self) -> bool {
+        self.input.tokenizer.seen_arbitrary_substitution_functions()
     }
 
     
