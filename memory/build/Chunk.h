@@ -200,4 +200,16 @@ extern mozilla::Atomic<size_t> gRecycledSize;
 
 extern AddressRadixTree<(sizeof(void*) << 3) - LOG2(kChunkSize)> gChunkRTree;
 
+enum ShouldCommit {
+  
+  ReserveOnly,
+
+  
+  
+  
+  ReserveAndCommit,
+};
+
+void* pages_mmap_aligned(size_t size, size_t alignment, ShouldCommit committed);
+
 #endif 

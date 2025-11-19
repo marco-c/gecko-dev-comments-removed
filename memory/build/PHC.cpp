@@ -110,6 +110,7 @@
 #endif
 
 #include "mozjemalloc.h"
+#include "Chunk.h"
 #include "FdPrintf.h"
 #include "Mutex.h"
 #include "mozilla/Assertions.h"
@@ -612,26 +613,11 @@ class PHCRegion {
     
     
     
-    
-    
-    
-    size_t jemalloc_allocation = kPhcVirtualReservation - kPageSize;
-    void* pages = MozJemalloc::memalign(kPhcAlign, jemalloc_allocation);
+    void* pages =
+        pages_mmap_aligned(kPhcVirtualReservation, kPhcAlign, ReserveOnly);
     if (!pages) {
       return false;
     }
-
-    
-#ifdef XP_WIN
-    if (!VirtualFree(pages, jemalloc_allocation, MEM_DECOMMIT)) {
-      return false;
-    }
-#else
-    if (mmap(pages, jemalloc_allocation, PROT_NONE,
-             MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0) == MAP_FAILED) {
-      return false;
-    }
-#endif
 
     mPagesStart = static_cast<uint8_t*>(pages);
     mPagesLimit = mPagesStart + kPhcVirtualReservation;
@@ -2014,15 +2000,12 @@ inline void MozJemallocPHC::jemalloc_stats_internal(
   }
 
   
-  
-  
-  
-  
-  aStats->allocated -= PHC::sRegion.ReservedBytes();
-
   phc::MemoryUsage mem_info;
   PHC::sPHC->GetMemoryUsage(mem_info);
   aStats->allocated += mem_info.mAllocatedBytes;
+  aStats->waste += mem_info.mFragmentationBytes;
+  aStats->mapped += PHC::sRegion.ReservedBytes() - mem_info.mAllocatedBytes -
+                    mem_info.mFragmentationBytes;
 
   
   
