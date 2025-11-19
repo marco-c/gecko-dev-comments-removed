@@ -286,6 +286,13 @@ class gfxUtils {
                                            SurfaceFormat aFormat);
 
   
+  
+  
+  
+  static already_AddRefed<SourceSurface> ScaleSourceSurface(
+      SourceSurface& aSurface, const mozilla::gfx::IntSize& aTargetSize);
+
+  
 
 
 
