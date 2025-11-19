@@ -90,10 +90,14 @@ class GeckoProfile(RaptorProfiling):
             symbolicator.symbolicate_profile(profile)
             return profile
         except MemoryError:
-            LOG.critical("Ran out of memory while trying to symbolicate profile")
+            LOG.critical(
+                "Ran out of memory while trying to symbolicate profile.", exc_info=True
+            )
             raise
         except Exception:
-            LOG.critical("Encountered an exception during profile symbolication")
+            LOG.critical(
+                "Encountered an exception during profile symbolication.", exc_info=True
+            )
             
             
             return profile
