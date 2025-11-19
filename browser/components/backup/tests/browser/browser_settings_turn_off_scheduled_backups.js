@@ -50,13 +50,23 @@ async function turnOffScheduledBackupsHelper(browser, taskFn) {
   await taskFn();
 }
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
+  });
+
+  registerCleanupFunction(async () => {
+    await SpecialPowers.popPrefEnv();
+  });
+});
+
 
 
 
 
 
 add_task(async function test_turn_off_scheduled_backups_confirm() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     Services.telemetry.clearEvents();
     Services.fog.testResetFOG();
 
@@ -64,10 +74,6 @@ add_task(async function test_turn_off_scheduled_backups_confirm() {
     let deleteLastBackupStub = sandbox
       .stub(BackupService.prototype, "deleteLastBackup")
       .resolves(true);
-
-    await SpecialPowers.pushPrefEnv({
-      set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
-    });
 
     await turnOffScheduledBackupsHelper(browser, () => {
       let scheduledPrefVal = Services.prefs.getBoolPref(
@@ -93,7 +99,6 @@ add_task(async function test_turn_off_scheduled_backups_confirm() {
     let events = Glean.browserBackup.toggleOff.testGetValue();
     Assert.equal(events.length, 1, "Found the toggleOff Glean event.");
 
-    await SpecialPowers.popPrefEnv();
     sandbox.restore();
   });
 });
@@ -103,7 +108,7 @@ add_task(async function test_turn_off_scheduled_backups_confirm() {
 
 
 add_task(async function test_turn_off_scheduled_backups_disables_encryption() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let disableEncryptionStub = sandbox
       .stub(BackupService.prototype, "disableEncryption")
@@ -126,10 +131,6 @@ add_task(async function test_turn_off_scheduled_backups_disables_encryption() {
       };
     });
 
-    await SpecialPowers.pushPrefEnv({
-      set: [[SCHEDULED_BACKUPS_ENABLED_PREF, true]],
-    });
-
     await turnOffScheduledBackupsHelper(browser, () => {
       Assert.ok(
         disableEncryptionStub.calledOnce,
@@ -141,7 +142,6 @@ add_task(async function test_turn_off_scheduled_backups_disables_encryption() {
       );
     });
 
-    await SpecialPowers.popPrefEnv();
     sandbox.restore();
   });
 });

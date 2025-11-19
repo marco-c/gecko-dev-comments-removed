@@ -12,6 +12,26 @@ const MOCK_PASSWORD = "mckP@ss3x2 fake_password";
 
 
 
+function createBackupServiceState(overrides = {}) {
+  const testDefaultName = "test-default-path";
+  return {
+    defaultParent: {
+      path: PathUtils.join(PathUtils.tempDir, testDefaultName),
+      fileName: testDefaultName,
+    },
+    archiveEnabledStatus: true,
+    restoreEnabledStatus: true,
+    ...overrides,
+  };
+}
+
+
+
+
+
+
+
+
 
 
 
