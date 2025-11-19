@@ -8,11 +8,11 @@ let gw = dbg.addDebuggee(g);
 dbg.onDebuggerStatement = frame => {
   
   
-  enqueueJob(function() {});
+  Promise.resolve()
+    .then(function() {});
 };
 
 g.eval(`
-  enqueueJob(function() {
-    debugger;
-  });
+  Promise.resolve()
+    .then(function() {debugger});
 `);

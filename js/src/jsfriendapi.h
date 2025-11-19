@@ -216,14 +216,6 @@ extern JS_PUBLIC_API JSObject* GetJobsInInternalJobQueue(JSContext* cx);
 
 
 
-extern JS_PUBLIC_API bool EnqueueJob(JSContext* cx, JS::HandleObject job);
-
-
-
-
-
-
-
 extern JS_PUBLIC_API void StopDrainingJobQueue(JSContext* cx);
 
 
