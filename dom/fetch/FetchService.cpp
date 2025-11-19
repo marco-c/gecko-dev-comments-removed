@@ -284,8 +284,6 @@ RefPtr<FetchServicePromises> FetchService::FetchInstance::Fetch() {
 
   if (mArgsType == FetchArgsType::MainThreadFetch) {
     auto& args = mArgs.as<MainThreadFetchArgs>();
-    mFetchDriver->SetAssociatedBrowsingContextID(
-        args.mAssociatedBrowsingContextID);
     mFetchDriver->SetIsThirdPartyContext(Some(args.mIsThirdPartyContext));
   }
 
@@ -578,25 +576,25 @@ void FetchService::FetchInstance::OnNotifyNetworkMonitorAlternateStack(
   FETCH_LOG(("FetchInstance::OnNotifyNetworkMonitorAlternateStack [%p]", this));
   MOZ_ASSERT(mFetchDriver);
   MOZ_ASSERT(mPromises);
-
-  if (mArgsType != FetchArgsType::WorkerFetch &&
-      mArgsType != FetchArgsType::MainThreadFetch) {
+  if (mArgsType != FetchArgsType::WorkerFetch) {
+    
     
     return;
   }
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [actorID = GetActorID(), channelID = aChannelID]() {
+      __func__, [actorID = mArgs.as<WorkerFetchArgs>().mActorID,
+                 channelID = aChannelID]() {
         FETCH_LOG(
-            ("FetchInstance::OnNotifyNetworkMonitorAlternateStack, Runnable"));
+            ("FetchInstance::NotifyNetworkMonitorAlternateStack, Runnable"));
         RefPtr<FetchParent> actor = FetchParent::GetActorByID(actorID);
         if (actor) {
           actor->OnNotifyNetworkMonitorAlternateStack(channelID);
         }
       });
 
-  MOZ_ALWAYS_SUCCEEDS(
-      GetBackgroundEventTarget()->Dispatch(r, nsIThread::DISPATCH_NORMAL));
+  MOZ_ALWAYS_SUCCEEDS(mArgs.as<WorkerFetchArgs>().mEventTarget->Dispatch(
+      r, nsIThread::DISPATCH_NORMAL));
 }
 
 nsID FetchService::FetchInstance::GetActorID() {
