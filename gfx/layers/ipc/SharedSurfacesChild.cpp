@@ -503,16 +503,9 @@ nsresult SharedSurfacesAnimation::SetCurrentFrame(
     
     
     if (auto* widget = entry.mManager->LayerManager()->GetWidget()) {
-      nsIWidgetListener* wl = widget->GetPaintListener();
-      
-      
-      
-      
-      if (wl && wl->GetView() && wl->GetPresShell()) {
-        if (auto* rd = wl->GetPresShell()->GetRefreshDriver()) {
-          if (rd->IsThrottled()) {
-            continue;
-          }
+      if (auto* ps = widget->GetPresShell()) {
+        if (auto* rd = ps->GetRefreshDriver(); rd && rd->IsThrottled()) {
+          continue;
         }
       }
     }
