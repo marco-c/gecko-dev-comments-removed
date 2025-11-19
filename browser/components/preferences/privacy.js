@@ -568,53 +568,68 @@ if (Services.prefs.getBoolPref("privacy.ui.status_card", false)) {
     pref: "browser.contentblocking.category",
     get: prefValue => prefValue == "strict",
   });
-  Preferences.addSetting({
-    id: "trackerCount",
-    cachedValue: null,
-    async setup(emitChange) {
-      const now = Date.now();
-      const aMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-      const events = await lazy.TrackingDBService.getEventsByDateRange(
-        now,
-        aMonthAgo
-      );
-      const total = events.reduce((acc, day) => {
-        return acc + day.getResultByName("count");
-      }, 0);
-      this.cachedValue = total;
-      emitChange();
-    },
-    get() {
-      return this.cachedValue;
-    },
-  });
-  Preferences.addSetting({
-    id: "appUpdateStatus",
-    cachedValue: AppUpdater.STATUS.NO_UPDATER,
-    async setup(emitChange) {
-      if (AppConstants.MOZ_UPDATER && !gIsPackagedApp) {
-        let appUpdater = new AppUpdater();
-        let listener = (status, ..._args) => {
-          this.cachedValue = status;
-          emitChange();
-        };
-        appUpdater.addListener(listener);
-        await appUpdater.check();
-        return () => {
-          appUpdater.removeListener(listener);
-          appUpdater.stop();
-        };
-      }
-      return () => {};
-    },
-    get() {
-      return this.cachedValue;
-    },
-    set(value) {
-      this.cachedValue = value;
-    },
-  });
+  Preferences.addSetting(
+     ({
+      id: "trackerCount",
+      cachedValue: null,
+      async loadTrackerCount(emitChange) {
+        const now = Date.now();
+        const aMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        
+        const events = await lazy.TrackingDBService.getEventsByDateRange(
+          now,
+          aMonthAgo
+        );
+
+        const total = events.reduce((acc, day) => {
+          return acc + day.getResultByName("count");
+        }, 0);
+        this.cachedValue = total;
+        emitChange();
+      },
+      setup(emitChange) {
+        this.loadTrackerCount(emitChange);
+      },
+      get() {
+        return this.cachedValue;
+      },
+    })
+  );
+  Preferences.addSetting(
+     ({
+      id: "appUpdateStatus",
+      cachedValue: AppUpdater.STATUS.NO_UPDATER,
+      setup(emitChange) {
+        if (AppConstants.MOZ_UPDATER && !gIsPackagedApp) {
+          let appUpdater = new AppUpdater();
+          
+
+
+
+          let listener = (status, ..._args) => {
+            this.cachedValue = status;
+            emitChange();
+          };
+          appUpdater.addListener(listener);
+          appUpdater.check();
+          return () => {
+            appUpdater.removeListener(listener);
+            appUpdater.stop();
+          };
+        }
+        return () => {};
+      },
+      get() {
+        return this.cachedValue;
+      },
+      set(value) {
+        this.cachedValue = value;
+      },
+    })
+  );
 }
+
+
 
 
 
@@ -1112,6 +1127,7 @@ if (Services.prefs.getBoolPref("privacy.ui.status_card", false)) {
   );
 }
 
+
 const SECURITY_WARNINGS = [
   {
     l10nId: "security-privacy-issue-warning-test",
@@ -1207,39 +1223,41 @@ const SECURITY_WARNINGS = [
   },
 ];
 
-Preferences.addSetting({
-  id: "securityWarningsGroup",
-  makeSecurityWarningItems() {
-    return SECURITY_WARNINGS.map(({ id, l10nId }) => ({
-      id,
-      l10nId,
-      control: "moz-box-item",
-      options: [
-        {
-          control: "moz-button",
-          l10nId: "issue-card-reset-button",
-          controlAttrs: { slot: "actions", size: "small", id: "reset" },
-        },
-        {
-          control: "moz-button",
-          l10nId: "issue-card-dismiss-button",
-          controlAttrs: {
-            slot: "actions",
-            size: "small",
-            iconsrc: "chrome://global/skin/icons/close.svg",
-            id: "dismiss",
+Preferences.addSetting(
+   ({
+    id: "securityWarningsGroup",
+    makeSecurityWarningItems() {
+      return SECURITY_WARNINGS.map(({ id, l10nId }) => ({
+        id,
+        l10nId,
+        control: "moz-box-item",
+        options: [
+          {
+            control: "moz-button",
+            l10nId: "issue-card-reset-button",
+            controlAttrs: { slot: "actions", size: "small", id: "reset" },
           },
-        },
-      ],
-    }));
-  },
-  getControlConfig(config) {
-    if (!config.items) {
-      return { ...config, items: this.makeSecurityWarningItems() };
-    }
-    return config;
-  },
-});
+          {
+            control: "moz-button",
+            l10nId: "issue-card-dismiss-button",
+            controlAttrs: {
+              slot: "actions",
+              size: "small",
+              iconsrc: "chrome://global/skin/icons/close.svg",
+              id: "dismiss",
+            },
+          },
+        ],
+      }));
+    },
+    getControlConfig(config) {
+      if (!config.items) {
+        return { ...config, items: this.makeSecurityWarningItems() };
+      }
+      return config;
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "privacyCard",
@@ -1508,7 +1526,7 @@ Preferences.addSetting({
     deps.blockUnwantedDownloads.value = value;
 
     let malwareTable = Preferences.get("urlclassifier.malwareTable");
-    let malware = malwareTable.value
+    let malware =  (malwareTable.value)
       .split(",")
       .filter(
         x =>
@@ -1545,61 +1563,68 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "manageDataSettingsGroup",
 });
-Preferences.addSetting({
-  id: "siteDataSize",
-  setup(emitChange) {
-    let onUsageChanged = async () => {
-      let [siteDataUsage, cacheUsage] = await Promise.all([
-        SiteDataManager.getTotalUsage(),
-        SiteDataManager.getCacheSize(),
-      ]);
-      let totalUsage = siteDataUsage + cacheUsage;
-      let [value, unit] = DownloadUtils.convertByteUnits(totalUsage);
-      this.usage = { value, unit };
+Preferences.addSetting(
+   ({
+    id: "siteDataSize",
+    usage: null,
+    isUpdatingSites: false,
+    setup(emitChange) {
+      let onUsageChanged = async () => {
+        let [siteDataUsage, cacheUsage] = await Promise.all([
+          SiteDataManager.getTotalUsage(),
+          SiteDataManager.getCacheSize(),
+        ]);
+        let totalUsage = siteDataUsage + cacheUsage;
+        let [value, unit] = DownloadUtils.convertByteUnits(totalUsage);
+        this.usage = { value, unit };
 
-      this.isUpdatingSites = false;
-      emitChange();
-    };
+        this.isUpdatingSites = false;
+        emitChange();
+      };
 
-    let onUpdatingSites = () => {
-      this.isUpdatingSites = true;
-      emitChange();
-    };
+      let onUpdatingSites = () => {
+        this.isUpdatingSites = true;
+        emitChange();
+      };
 
-    Services.obs.addObserver(onUsageChanged, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(onUpdatingSites, "sitedatamanager:updating-sites");
-
-    return () => {
-      Services.obs.removeObserver(
-        onUsageChanged,
-        "sitedatamanager:sites-updated"
-      );
-      Services.obs.removeObserver(
+      Services.obs.addObserver(onUsageChanged, "sitedatamanager:sites-updated");
+      Services.obs.addObserver(
         onUpdatingSites,
         "sitedatamanager:updating-sites"
       );
-    };
-  },
-  getControlConfig(config) {
-    if (this.isUpdatingSites || !this.usage) {
-      
+
+      return () => {
+        Services.obs.removeObserver(
+          onUsageChanged,
+          "sitedatamanager:sites-updated"
+        );
+        Services.obs.removeObserver(
+          onUpdatingSites,
+          "sitedatamanager:updating-sites"
+        );
+      };
+    },
+    getControlConfig(config) {
+      if (this.isUpdatingSites || !this.usage) {
+        
+        return {
+          ...config,
+          l10nId: "sitedata-total-size-calculating",
+        };
+      }
+
+      let { value, unit } = this.usage;
       return {
         ...config,
-        l10nId: "sitedata-total-size-calculating",
+        l10nId: "sitedata-total-size2",
+        l10nArgs: {
+          value,
+          unit,
+        },
       };
-    }
-
-    let { value, unit } = this.usage;
-    return {
-      ...config,
-      l10nId: "sitedata-total-size2",
-      l10nArgs: {
-        value,
-        unit,
-      },
-    };
-  },
-});
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "deleteOnCloseInfo",
@@ -1609,91 +1634,104 @@ Preferences.addSetting({
   },
 });
 
-Preferences.addSetting({
-  id: "clearSiteDataButton",
-  setup(emitChange) {
-    let onSitesUpdated = async () => {
-      this.isUpdatingSites = false;
-      emitChange();
-    };
+Preferences.addSetting(
+   ({
+    id: "clearSiteDataButton",
+    isUpdatingSites: false,
+    setup(emitChange) {
+      let onSitesUpdated = async () => {
+        this.isUpdatingSites = false;
+        emitChange();
+      };
 
-    let onUpdatingSites = () => {
-      this.isUpdatingSites = true;
-      emitChange();
-    };
+      let onUpdatingSites = () => {
+        this.isUpdatingSites = true;
+        emitChange();
+      };
 
-    Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(onUpdatingSites, "sitedatamanager:updating-sites");
-
-    return () => {
-      Services.obs.removeObserver(
-        onSitesUpdated,
-        "sitedatamanager:sites-updated"
-      );
-      Services.obs.removeObserver(
+      Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
+      Services.obs.addObserver(
         onUpdatingSites,
         "sitedatamanager:updating-sites"
       );
-    };
-  },
-  onUserClick() {
-    let uri;
-    if (useOldClearHistoryDialog) {
-      uri = "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml";
-    } else {
-      uri = "chrome://browser/content/sanitize_v2.xhtml";
-    }
 
-    gSubDialog.open(
-      uri,
-      {
-        features: "resizable=no",
-      },
-      {
-        mode: "clearSiteData",
+      return () => {
+        Services.obs.removeObserver(
+          onSitesUpdated,
+          "sitedatamanager:sites-updated"
+        );
+        Services.obs.removeObserver(
+          onUpdatingSites,
+          "sitedatamanager:updating-sites"
+        );
+      };
+    },
+    onUserClick() {
+      let uri;
+      if (useOldClearHistoryDialog) {
+        uri =
+          "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml";
+      } else {
+        uri = "chrome://browser/content/sanitize_v2.xhtml";
       }
-    );
-  },
-  disabled() {
-    return this.isUpdatingSites;
-  },
-});
-Preferences.addSetting({
-  id: "siteDataSettings",
-  setup(emitChange) {
-    let onSitesUpdated = async () => {
-      this.isUpdatingSites = false;
-      emitChange();
-    };
 
-    let onUpdatingSites = () => {
-      this.isUpdatingSites = true;
-      emitChange();
-    };
-
-    Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(onUpdatingSites, "sitedatamanager:updating-sites");
-
-    return () => {
-      Services.obs.removeObserver(
-        onSitesUpdated,
-        "sitedatamanager:sites-updated"
+      gSubDialog.open(
+        uri,
+        {
+          features: "resizable=no",
+        },
+        {
+          mode: "clearSiteData",
+        }
       );
-      Services.obs.removeObserver(
+    },
+    disabled() {
+      return this.isUpdatingSites;
+    },
+  })
+);
+Preferences.addSetting(
+   ({
+    id: "siteDataSettings",
+    isUpdatingSites: false,
+    setup(emitChange) {
+      let onSitesUpdated = async () => {
+        this.isUpdatingSites = false;
+        emitChange();
+      };
+
+      let onUpdatingSites = () => {
+        this.isUpdatingSites = true;
+        emitChange();
+      };
+
+      Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
+      Services.obs.addObserver(
         onUpdatingSites,
         "sitedatamanager:updating-sites"
       );
-    };
-  },
-  onUserClick() {
-    gSubDialog.open(
-      "chrome://browser/content/preferences/dialogs/siteDataSettings.xhtml"
-    );
-  },
-  disabled() {
-    return this.isUpdatingSites;
-  },
-});
+
+      return () => {
+        Services.obs.removeObserver(
+          onSitesUpdated,
+          "sitedatamanager:sites-updated"
+        );
+        Services.obs.removeObserver(
+          onUpdatingSites,
+          "sitedatamanager:updating-sites"
+        );
+      };
+    },
+    onUserClick() {
+      gSubDialog.open(
+        "chrome://browser/content/preferences/dialogs/siteDataSettings.xhtml"
+      );
+    },
+    disabled() {
+      return this.isUpdatingSites;
+    },
+  })
+);
 Preferences.addSetting({
   id: "cookieExceptions",
   onUserClick() {

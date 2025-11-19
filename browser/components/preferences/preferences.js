@@ -16,6 +16,12 @@
 
 
 
+
+
+
+
+
+
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -146,6 +152,7 @@ ChromeUtils.defineLazyGetter(this, "gSubDialog", function () {
   });
 });
 
+
 const srdSectionPrefs = {};
 XPCOMUtils.defineLazyPreferenceGetter(
   srdSectionPrefs,
@@ -153,6 +160,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.settings-redesign.enabled",
   false
 );
+
+
+
 
 function srdSectionEnabled(section) {
   if (!(section in srdSectionPrefs)) {
@@ -165,6 +175,7 @@ function srdSectionEnabled(section) {
   }
   return srdSectionPrefs.all || srdSectionPrefs[section];
 }
+
 
 const CONFIG_PANES = {
   containers2: {
@@ -233,10 +244,12 @@ function init_all() {
 
   for (let [subPane, config] of Object.entries(CONFIG_PANES)) {
     subPane = friendlyPrefCategoryNameToInternalName(subPane);
-    let settingPane = document.createElement("setting-pane");
+    let settingPane =  (
+      document.createElement("setting-pane")
+    );
     settingPane.name = subPane;
     settingPane.config = config;
-    settingPane.isSubPane = config.parent;
+    settingPane.isSubPane = !!config.parent;
     document.getElementById("mainPrefPane").append(settingPane);
     register_module(subPane, {
       init() {
@@ -323,6 +336,12 @@ function onHashChange() {
   gotoPref(null, "Hash");
 }
 
+
+
+
+
+
+
 async function gotoPref(
   aCategory,
   aShowReason = aCategory ? "Click" : "Initial"
@@ -331,7 +350,7 @@ async function gotoPref(
   const kDefaultCategoryInternalName = "paneGeneral";
   const kDefaultCategory = "general";
   let hash = document.location.hash;
-  let category = aCategory || hash.substr(1) || kDefaultCategoryInternalName;
+  let category = aCategory || hash.substring(1) || kDefaultCategoryInternalName;
 
   let breakIndex = category.indexOf("-");
   
@@ -367,8 +386,8 @@ async function gotoPref(
       element.hidden = true;
     }
 
-    item = categories.querySelector(
-      ".category[value=" + CSS.escape(category) + "]"
+    item =  (
+      categories.querySelector(".category[value=" + CSS.escape(category) + "]")
     );
     if (!item || item.hidden) {
       unknownCategory = true;
@@ -402,8 +421,10 @@ async function gotoPref(
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
   if (item) {
+    
     categories.selectedItem = item;
   } else {
+    
     categories.clearSelection();
   }
   window.history.replaceState(category, document.title);
@@ -456,7 +477,10 @@ async function gotoPref(
   categoryModule.handlePrefControlledSection?.();
 
   
-  Glean.aboutpreferences["show" + aShowReason].record({ value: category });
+  let gleanId =  (
+    "show" + aShowReason
+  );
+  Glean.aboutpreferences[gleanId].record({ value: category });
 
   document.dispatchEvent(
     new CustomEvent("paneshown", {
@@ -469,9 +493,15 @@ async function gotoPref(
   );
 }
 
+
+
+
+
 function search(aQuery, aAttribute) {
   let mainPrefPane = document.getElementById("mainPrefPane");
-  let elements = mainPrefPane.children;
+  let elements =  (
+    Array.from(mainPrefPane.children)
+  );
   for (let element of elements) {
     
     
