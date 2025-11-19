@@ -223,13 +223,12 @@ static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
 
 enum ArenaPurgeResult {
   
-  ReachedThreshold,
+  
+  
+  ReachedThresholdOrBusy,
 
   
   NotDone,
-
-  
-  Busy,
 
   
   Dying,

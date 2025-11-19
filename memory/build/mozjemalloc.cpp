@@ -1897,7 +1897,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 
     if (!ShouldContinuePurge(aCond)) {
       mIsPurgePending = false;
-      return ReachedThreshold;
+      return ReachedThresholdOrBusy;
     }
 
     
@@ -1925,11 +1925,12 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       
       
       
-      
-      
-      
       mIsPurgePending = false;
-      return Busy;
+
+      
+      
+      
+      return ReachedThresholdOrBusy;
     }
     MOZ_ASSERT(chunk->mNumDirty > 0);
 
@@ -1984,7 +1985,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
       }
       
       
-      return continue_purge_arena ? NotDone : ReachedThreshold;
+      return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
     }
 
 #ifdef MALLOC_DECOMMIT
@@ -2033,7 +2034,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
     purged_once = true;
   }
 
-  return continue_purge_arena ? NotDone : ReachedThreshold;
+  return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
 }
 
 ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
