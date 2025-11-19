@@ -239,13 +239,20 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
       
       
 
+      
+      
+      
       gc::TenuredCell* tenuredValue = nullptr;
       if (cellValue && cellValue->isTenured()) {
         tenuredValue = &cellValue->asTenured();
       }
 
-      if (!this->addEphemeronEdgesForEntry(AsMarkColor(mapColor), keyCell,
-                                           delegate, tenuredValue)) {
+      
+      MOZ_ASSERT(keyCell->isTenured());
+
+      if (!this->addEphemeronEdgesForEntry(AsMarkColor(mapColor),
+                                           &keyCell->asTenured(), delegate,
+                                           tenuredValue)) {
         marker->abortLinearWeakMarking();
       }
     }

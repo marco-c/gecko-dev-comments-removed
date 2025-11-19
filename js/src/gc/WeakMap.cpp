@@ -12,6 +12,7 @@
 #include "vm/JSObject.h"
 
 #include "gc/Marking-inl.h"
+#include "gc/StoreBuffer-inl.h"
 
 using namespace js;
 using namespace js::gc;
@@ -64,11 +65,26 @@ bool WeakMapBase::markMap(MarkColor markColor) {
   }
 }
 
-bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor, Cell* key,
-                                            Cell* delegate,
+bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor,
+                                            TenuredCell* key, Cell* delegate,
                                             TenuredCell* value) {
-  if (delegate && !addEphemeronEdge(mapColor, delegate, key)) {
-    return false;
+  if (delegate) {
+    if (!delegate->isTenured()) {
+      MOZ_ASSERT(false);
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
+      delegate->storeBuffer()->putWholeCell(key);
+    } else if (!addEphemeronEdge(mapColor, &delegate->asTenured(), key)) {
+      return false;
+    }
   }
 
   if (value && !addEphemeronEdge(mapColor, key, value)) {
@@ -78,8 +94,8 @@ bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor, Cell* key,
   return true;
 }
 
-bool WeakMapBase::addEphemeronEdge(MarkColor color, gc::Cell* src,
-                                   gc::Cell* dst) {
+bool WeakMapBase::addEphemeronEdge(MarkColor color, gc::TenuredCell* src,
+                                   gc::TenuredCell* dst) {
   
 
   auto& edgeTable = src->zone()->gcEphemeronEdges(src);
