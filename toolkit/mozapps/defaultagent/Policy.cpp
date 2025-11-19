@@ -15,7 +15,6 @@
 #include "UtfConvert.h"
 
 #include "json/json.h"
-#include "mozilla/HelperMacros.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
 
