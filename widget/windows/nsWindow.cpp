@@ -3998,34 +3998,6 @@ WidgetEventTime nsWindow::CurrentMessageWidgetEventTime() const {
 
 
 
-
-
-nsresult nsWindow::DispatchEvent(WidgetGUIEvent* event,
-                                 nsEventStatus& aStatus) {
-#ifdef WIDGET_DEBUG_OUTPUT
-  debug_DumpEvent(stdout, event->mWidget, event, "something", (int32_t)mWnd);
-#endif  
-
-  aStatus = nsEventStatus_eIgnore;
-
-  
-  
-  
-  
-  if (mAttachedWidgetListener) {
-    aStatus = mAttachedWidgetListener->HandleEvent(event, mUseAttachedEvents);
-  } else if (mWidgetListener) {
-    aStatus = mWidgetListener->HandleEvent(event, mUseAttachedEvents);
-  }
-
-  
-  
-  
-  
-  if (mOnDestroyCalled) aStatus = nsEventStatus_eConsumeNoDefault;
-  return NS_OK;
-}
-
 bool nsWindow::DispatchStandardEvent(EventMessage aMsg) {
   WidgetGUIEvent event(true, aMsg, this);
   InitEvent(event);
@@ -4040,8 +4012,7 @@ bool nsWindow::DispatchKeyboardEvent(WidgetKeyboardEvent* event) {
 }
 
 bool nsWindow::DispatchContentCommandEvent(WidgetContentCommandEvent* aEvent) {
-  nsEventStatus status;
-  DispatchEvent(aEvent, status);
+  nsEventStatus status = DispatchEvent(aEvent);
   return ConvertStatus(status);
 }
 
@@ -5862,8 +5833,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       WidgetGestureNotifyEvent gestureNotifyEvent(true, eGestureNotify, this);
       gestureNotifyEvent.mRefPoint =
           LayoutDeviceIntPoint::FromUnknownPoint(touchPoint);
-      nsEventStatus status;
-      DispatchEvent(&gestureNotifyEvent, status);
+      DispatchEvent(&gestureNotifyEvent);
       mDisplayPanFeedback = gestureNotifyEvent.mDisplayPanFeedback;
       if (!mTouchWindow) {
         mGesture.SetWinGestureSupport(mWnd, gestureNotifyEvent.mPanDirection);
@@ -6811,8 +6781,6 @@ bool nsWindow::OnGesture(WPARAM wParam, LPARAM lParam) {
     if (!mGesture.ProcessPanMessage(mWnd, wParam, lParam))
       return false;  
 
-    nsEventStatus status;
-
     WidgetWheelEvent wheelEvent(true, eWheel, this);
 
     ModifierKeyState modifierKeyState;
@@ -6825,7 +6793,7 @@ bool nsWindow::OnGesture(WPARAM wParam, LPARAM lParam) {
     bool endFeedback = true;
 
     if (mGesture.PanDeltaToPixelScroll(wheelEvent)) {
-      DispatchEvent(&wheelEvent, status);
+      DispatchEvent(&wheelEvent);
     }
 
     if (mDisplayPanFeedback) {
@@ -6856,8 +6824,7 @@ bool nsWindow::OnGesture(WPARAM wParam, LPARAM lParam) {
   event.mTimeStamp = GetMessageTimeStamp(::GetMessageTime());
   event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_TOUCH;
 
-  nsEventStatus status;
-  DispatchEvent(&event, status);
+  nsEventStatus status = DispatchEvent(&event);
   if (status == nsEventStatus_eIgnore) {
     return false;  
   }

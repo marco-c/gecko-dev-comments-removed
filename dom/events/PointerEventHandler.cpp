@@ -773,8 +773,7 @@ void PointerEventHandler::SynthesizeMoveToDispatchBoundaryEvents(
   
   
   
-  nsEventStatus eventStatus = nsEventStatus_eIgnore;
-  widget->DispatchEvent(&event, eventStatus);
+  widget->DispatchEvent(&event);
 }
 
 

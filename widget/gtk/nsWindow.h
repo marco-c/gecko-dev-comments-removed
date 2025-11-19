@@ -167,9 +167,6 @@ class nsWindow final : public nsIWidget {
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsIWidget)
 
-  nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus& aStatus) override;
-
   
   void OnDestroy() override;
 

@@ -486,14 +486,13 @@ class TextEventDispatcher final {
   
 
 
-  nsresult DispatchEvent(nsIWidget* aWidget, WidgetGUIEvent& aEvent,
-                         nsEventStatus& aStatus);
+  nsEventStatus DispatchEvent(nsIWidget* aWidget, WidgetGUIEvent& aEvent);
 
   
 
 
-  nsresult DispatchInputEvent(nsIWidget* aWidget, WidgetInputEvent& aEvent,
-                              nsEventStatus& aStatus);
+  nsEventStatus DispatchInputEvent(nsIWidget* aWidget,
+                                   WidgetInputEvent& aEvent);
 
   
 
