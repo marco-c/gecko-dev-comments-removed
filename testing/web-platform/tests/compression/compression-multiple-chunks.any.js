@@ -2,6 +2,8 @@
 
 
 
+
+
 'use strict';
 
 
@@ -43,25 +45,14 @@ async function compressMultipleChunks(input, numberOfChunks, format) {
 
 const hello = 'Hello';
 
-for (let numberOfChunks = 2; numberOfChunks <= 16; ++numberOfChunks) {
-  promise_test(async t => {
-    const compressedData = await compressMultipleChunks(hello, numberOfChunks, 'deflate');
-    const expectedValue = makeExpectedChunk(hello, numberOfChunks);
-    
-    assert_array_equals(expectedValue, pako.inflate(compressedData), 'value should match');
-  }, `compressing ${numberOfChunks} chunks with deflate should work`);
-
-  promise_test(async t => {
-    const compressedData = await compressMultipleChunks(hello, numberOfChunks, 'gzip');
-    const expectedValue = makeExpectedChunk(hello, numberOfChunks);
-    
-    assert_array_equals(expectedValue, pako.inflate(compressedData), 'value should match');
-  }, `compressing ${numberOfChunks} chunks with gzip should work`);
-
-  promise_test(async t => {
-    const compressedData = await compressMultipleChunks(hello, numberOfChunks, 'deflate-raw');
-    const expectedValue = makeExpectedChunk(hello, numberOfChunks);
-    
-    assert_array_equals(expectedValue, pako.inflateRaw(compressedData), 'value should match');
-  }, `compressing ${numberOfChunks} chunks with deflate-raw should work`);
+for (const format of formats) {
+  for (let numberOfChunks = 2; numberOfChunks <= 16; ++numberOfChunks) {
+    promise_test(async t => {
+      const compressedData = await compressMultipleChunks(hello, numberOfChunks, format);
+      const decompressedData = await decompressDataOrPako(compressedData, format);
+      const expectedValue = makeExpectedChunk(hello, numberOfChunks);
+      
+      assert_array_equals(decompressedData, expectedValue, 'value should match');
+    }, `compressing ${numberOfChunks} chunks with ${format} should work`);
+  }
 }

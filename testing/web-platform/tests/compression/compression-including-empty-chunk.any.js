@@ -2,6 +2,8 @@
 
 
 
+
+
 'use strict';
 
 
@@ -42,22 +44,13 @@ const chunkLists = [
 ];
 const expectedValue = new TextEncoder().encode('HelloHello');
 
-for (const chunkList of chunkLists) {
-  promise_test(async t => {
-    const compressedData = await compressChunkList(chunkList, 'deflate');
-    
-    assert_array_equals(expectedValue, pako.inflate(compressedData), 'value should match');
-  }, `the result of compressing [${chunkList}] with deflate should be 'HelloHello'`);
-
-  promise_test(async t => {
-    const compressedData = await compressChunkList(chunkList, 'gzip');
-    
-    assert_array_equals(expectedValue, pako.inflate(compressedData), 'value should match');
-  }, `the result of compressing [${chunkList}] with gzip should be 'HelloHello'`);
-
-  promise_test(async t => {
-    const compressedData = await compressChunkList(chunkList, 'deflate-raw');
-    
-    assert_array_equals(expectedValue, pako.inflateRaw(compressedData), 'value should match');
-  }, `the result of compressing [${chunkList}] with deflate-raw should be 'HelloHello'`);
+for (const format of formats) {
+  for (const chunkList of chunkLists) {
+    promise_test(async t => {
+      const compressedData = await compressChunkList(chunkList, format);
+      const decompressedData = await decompressDataOrPako(compressedData, format);
+      
+      assert_array_equals(expectedValue, decompressedData, 'value should match');
+    }, `the result of compressing [${chunkList}] with ${format} should be 'HelloHello'`);
+  }
 }

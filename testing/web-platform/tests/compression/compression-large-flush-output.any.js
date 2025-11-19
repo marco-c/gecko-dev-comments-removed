@@ -3,6 +3,8 @@
 
 
 
+
+
 'use strict';
 
 
@@ -21,21 +23,11 @@ const fullData = new TextEncoder().encode(JSON.stringify(Array.from({ length: 10
 const data = fullData.subarray(0, 35_579);
 const expectedValue = data;
 
-promise_test(async t => {
-  const compressedData = await compressData(data, 'deflate');
-  
-  assert_array_equals(expectedValue, pako.inflate(compressedData), 'value should match');
-}, `deflate compression with large flush output`);
-
-promise_test(async t => {
-  const compressedData = await compressData(data, 'gzip');
-  
-  assert_array_equals(expectedValue, pako.inflate(compressedData), 'value should match');
-}, `gzip compression with large flush output`);
-
-promise_test(async t => {
-  const compressedData = await compressData(data, 'deflate-raw');
-  
-  assert_array_equals(expectedValue, pako.inflateRaw(compressedData), 'value should match');
-}, `deflate-raw compression with large flush output`);
-
+for (const format of formats) {
+  promise_test(async t => {
+    const compressedData = await compressData(data, format);
+    const decompressedData = await decompressDataOrPako(compressedData, format);
+    
+    assert_array_equals(decompressedData, expectedValue, 'value should match');
+  }, `${format} compression with large flush output`);
+}
