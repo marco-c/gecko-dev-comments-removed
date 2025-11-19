@@ -73,6 +73,10 @@ class WindowSurfaceWaylandMB : public WindowSurface {
   nsTArray<RefPtr<WaylandBufferSHM>> mInUseBuffers;
   nsTArray<RefPtr<WaylandBufferSHM>> mPendingBuffers;
   nsTArray<RefPtr<WaylandBufferSHM>> mAvailableBuffers;
+
+  
+  bool mFrameInProcess;
+  bool mCallbackRequested;
 };
 
 }  

@@ -43,6 +43,10 @@ class WaylandSurface final {
   void SetLoggingWidget(void* aWidget) { mLoggingWidget = aWidget; }
 #endif
 
+  void ReadyToDrawFrameCallbackHandler(struct wl_callback* aCallback);
+  void AddOrFireReadyToDrawCallback(const std::function<void(void)>& aDrawCB);
+  void ClearReadyToDrawCallbacks();
+
   void FrameCallbackHandler(struct wl_callback* aCallback, uint32_t aTime,
                             bool aRoutedFromChildSurface);
 
@@ -75,11 +79,10 @@ class WaylandSurface final {
   bool HasEGLWindow() const { return !!mEGLWindow; }
 
   
-  bool IsMapped() const { return mIsMapped; }
-
   
-  bool IsVisible() const { return mIsVisible; }
-
+  bool IsReadyToDraw() const { return mIsReadyToDraw; }
+  
+  bool IsMapped() const { return mIsMapped; }
   
   
   
@@ -118,6 +121,10 @@ class WaylandSurface final {
   
   bool CreateViewportLocked(const WaylandSurfaceLock& aProofOfLock,
                             bool aFollowsSizeChanges);
+
+  void AddReadyToDrawCallbackLocked(
+      const WaylandSurfaceLock& aProofOfLock,
+      const std::function<void(void)>& aInitialDrawCB);
 
   
   
@@ -274,7 +281,8 @@ class WaylandSurface final {
   bool MapLocked(const WaylandSurfaceLock& aProofOfLock,
                  wl_surface* aParentWLSurface,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
-                 gfx::IntPoint aSubsurfacePosition, bool aSubsurfaceDesync);
+                 gfx::IntPoint aSubsurfacePosition, bool aSubsurfaceDesync,
+                 bool aUseReadyToDrawCallback = true);
 
   void SetSizeLocked(const WaylandSurfaceLock& aProofOfLock,
                      gfx::IntSize aSizeScaled, gfx::IntSize aUnscaledSize);
@@ -296,6 +304,8 @@ class WaylandSurface final {
   bool HasEmulatedFrameCallbackLocked(
       const WaylandSurfaceLock& aProofOfLock) const;
 
+  void ClearReadyToDrawCallbacksLocked(const WaylandSurfaceLock& aProofOfLock);
+
   void ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock);
 
   
@@ -303,11 +313,12 @@ class WaylandSurface final {
   void* mLoggingWidget = nullptr;
 
   
-  
   mozilla::Atomic<bool, mozilla::Relaxed> mIsMapped{false};
 
   
-  mozilla::Atomic<bool, mozilla::Relaxed> mIsVisible{false};
+  
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsReadyToDraw{false};
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mIsPendingGdkCleanup{false};
@@ -373,6 +384,11 @@ class WaylandSurface final {
   
   bool mBufferTransformFlippedX = false;
   bool mBufferTransformFlippedY = false;
+
+  
+  
+  wl_callback* mReadyToDrawFrameCallback = nullptr;
+  std::vector<std::function<void(void)>> mReadyToDrawCallbacks;
 
   
   wl_callback* mFrameCallback = nullptr;
