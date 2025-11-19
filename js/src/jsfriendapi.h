@@ -13,6 +13,7 @@
 #include "js/Class.h"
 #include "js/ColumnNumber.h"  
 #include "js/GCAPI.h"
+#include "js/GCVector.h"
 #include "js/HeapAPI.h"
 #include "js/Object.h"           
 #include "js/shadow/Function.h"  
@@ -426,6 +427,18 @@ JS_PUBLIC_API bool GetPropertyKeys(JSContext* cx, JS::HandleObject obj,
 
 JS_PUBLIC_API bool AppendUnique(JSContext* cx, JS::MutableHandleIdVector base,
                                 JS::HandleIdVector others);
+
+
+
+
+
+JS_PUBLIC_API bool GetSetObjectKeys(
+    JSContext* cx, JS::HandleObject obj,
+    JS::MutableHandle<JS::GCVector<JS::Value>> keys);
+
+JS_PUBLIC_API bool GetMapObjectKeysAndValuesInterleaved(
+    JSContext* cx, JS::HandleObject obj,
+    JS::MutableHandle<JS::GCVector<JS::Value>> entries);
 
 
 

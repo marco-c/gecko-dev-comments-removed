@@ -9,6 +9,7 @@
 
 #include "ipc/EnumSerializer.h"
 #include "js/TypeDecls.h"
+#include "mozilla/dom/JSIPCValue.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
@@ -65,21 +66,20 @@ class JSActor : public nsISupports, public nsWrapperCache {
   
   
   virtual void SendRawMessage(const JSActorMessageMeta& aMetadata,
-                              UniquePtr<ipc::StructuredCloneData> aData,
+                              JSIPCValue&& aData,
                               UniquePtr<ipc::StructuredCloneData> aStack,
                               ErrorResult& aRv) = 0;
 
   
   using OtherSideCallback = std::function<already_AddRefed<JSActorManager>()>;
   static void SendRawMessageInProcess(
-      const JSActorMessageMeta& aMeta,
-      UniquePtr<ipc::StructuredCloneData> aData,
+      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
       UniquePtr<ipc::StructuredCloneData> aStack,
       OtherSideCallback&& aGetOtherSide);
 
   virtual ~JSActor() = default;
 
-  void Init(const nsACString& aName);
+  void Init(const nsACString& aName, bool aSendTyped);
 
   bool CanSend() const { return mCanSend; }
 
@@ -134,7 +134,7 @@ class JSActor : public nsISupports, public nsWrapperCache {
     ~QueryHandler() = default;
 
     void SendReply(JSContext* aCx, JSActorMessageKind aKind,
-                   UniquePtr<ipc::StructuredCloneData> aData);
+                   JSIPCValue&& aData);
 
     RefPtr<JSActor> mActor;
     RefPtr<Promise> mPromise;
@@ -155,6 +155,12 @@ class JSActor : public nsISupports, public nsWrapperCache {
   nsTHashMap<nsUint64HashKey, PendingQuery> mPendingQueries;
   uint64_t mNextQueryId = 0;
   bool mCanSend = true;
+
+  
+  
+  
+  
+  bool mSendTyped = true;
 };
 
 }  

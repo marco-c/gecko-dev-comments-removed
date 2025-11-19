@@ -15,6 +15,8 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/JSActorService.h"
+#include "mozilla/dom/JSIPCValue.h"
+#include "mozilla/dom/JSIPCValueUtils.h"
 #include "mozilla/dom/JSProcessActorProtocol.h"
 #include "mozilla/dom/JSWindowActorProtocol.h"
 #include "mozilla/dom/MessagePort.h"
@@ -132,8 +134,7 @@ already_AddRefed<JSActor> JSActorManager::GetExistingActor(
   } while (0)
 
 void JSActorManager::ReceiveRawMessage(
-    const JSActorMessageMeta& aMetadata,
-    UniquePtr<ipc::StructuredCloneData> aData,
+    const JSActorMessageMeta& aMetadata, JSIPCValue&& aData,
     UniquePtr<ipc::StructuredCloneData> aStack) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
@@ -197,23 +198,11 @@ void JSActorManager::ReceiveRawMessage(
 #endif  
 
   JS::Rooted<JS::Value> data(cx);
-  if (aData) {
-    aData->Read(cx, &data, error);
-    
-    
-    
-    
-    
-    
-    nsTArray<RefPtr<MessagePort>> ports = aData->TakeTransferredPorts();
-    
-    
-    (void)ports;
-    if (error.Failed()) {
-      CHILD_DIAGNOSTIC_ASSERT(CycleCollectedJSRuntime::Get()->OOMReported(),
-                              "Should not receive non-decodable data");
-      return;
-    }
+  JSIPCValueUtils::ToJSVal(cx, std::move(aData), &data, error);
+  if (error.Failed()) {
+    CHILD_DIAGNOSTIC_ASSERT(CycleCollectedJSRuntime::Get()->OOMReported(),
+                            "Should not receive non-decodable data");
+    return;
   }
 
   switch (aMetadata.kind()) {

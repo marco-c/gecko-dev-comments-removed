@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+[ChromeOnly, Exposed=Window]
+namespace JSActorTypeUtils {
+    
+
+
+    [Throws]
+    any serializeDeserialize(boolean strict, any val);
+};
