@@ -2206,7 +2206,7 @@ bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
 
     mFreeRunInd = run_idx;
     mFreeRunLen = run_pages;
-
+    mDirtyInd = 0;
     
     for (size_t page_idx = run_idx; page_idx < run_idx + run_pages;
          page_idx++) {
@@ -2215,16 +2215,23 @@ bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
       
       MOZ_ASSERT((page_bits & CHUNK_MAP_BUSY) == 0);
 
+      
+      
+      if ((page_idx & (gPagesPerRealPage - 1)) == 0) {
+        
+        mDirtyInd = page_idx;
+      }
+
       if (page_bits & CHUNK_MAP_DIRTY) {
         MOZ_ASSERT((page_bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
         MOZ_ASSERT(mChunk->mDirtyRunHint <= run_idx);
         mChunk->mDirtyRunHint = run_idx;
 
-        if ((page_idx & (gPagesPerRealPage - 1)) == 0) {
-          mDirtyInd = page_idx;
+        if (mDirtyInd) {
           return true;
         }
 
+        
         
         mPurgeStats.pages_unpurgable++;
       }
@@ -2238,16 +2245,23 @@ bool arena_t::PurgeInfo::ScanForLastDirtyPage() {
   mDirtyLen = 0;
   for (size_t i = FreeRunLastInd(); i >= mDirtyInd; i--) {
     size_t& bits = mChunk->mPageMap[i].bits;
-    if (bits & CHUNK_MAP_DIRTY) {
-      
-      
-      MOZ_ASSERT(!(bits & CHUNK_MAP_BUSY));
+    
+    
+    MOZ_ASSERT(!(bits & CHUNK_MAP_BUSY));
 
-      if ((i & (gPagesPerRealPage - 1)) == gPagesPerRealPage - 1) {
-        mDirtyLen = i - mDirtyInd + 1;
+    
+    
+    if ((i & (gPagesPerRealPage - 1)) == gPagesPerRealPage - 1) {
+      
+      mDirtyLen = i - mDirtyInd + 1;
+    }
+
+    if (bits & CHUNK_MAP_DIRTY) {
+      if (mDirtyLen) {
         return true;
       }
 
+      
       
       mPurgeStats.pages_unpurgable++;
     }
