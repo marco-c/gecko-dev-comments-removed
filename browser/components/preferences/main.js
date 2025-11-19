@@ -1127,8 +1127,7 @@ Preferences.addSetting({
   },
 });
 
-
-let SETTINGS_CONFIG = {
+SettingGroupManager.registerGroups({
   containers: {
     
     inProgress: true,
@@ -2103,7 +2102,7 @@ let SETTINGS_CONFIG = {
       },
     ],
   },
-};
+});
 
 
 
@@ -2111,7 +2110,7 @@ let SETTINGS_CONFIG = {
 function initSettingGroup(id) {
   
   let group = document.querySelector(`setting-group[groupid=${id}]`);
-  const config = SETTINGS_CONFIG[id];
+  const config = SettingGroupManager.get(id);
   if (group && config) {
     if (config.inProgress && !srdSectionEnabled(id)) {
       group.remove();

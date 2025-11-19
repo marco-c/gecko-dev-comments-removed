@@ -718,3 +718,17 @@ async function waitForSettingControlChange(control) {
   await waitForSettingChange(control.setting);
   await new Promise(resolve => requestAnimationFrame(resolve));
 }
+
+
+
+
+
+
+async function waitForPaneChange(paneId) {
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
+  let expectId = paneId.startsWith("pane")
+    ? paneId
+    : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
+  is(event.detail.category, expectId, "Loaded the correct pane");
+}

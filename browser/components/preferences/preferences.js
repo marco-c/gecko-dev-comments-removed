@@ -176,8 +176,96 @@ function srdSectionEnabled(section) {
   return srdSectionPrefs.all || srdSectionPrefs[section];
 }
 
+var SettingPaneManager = {
+  
+  _data: new Map(),
 
-const CONFIG_PANES = {
+  
+
+
+  get(id) {
+    if (!this._data.has(id)) {
+      throw new Error(`Setting pane "${id}" not found`);
+    }
+    return this._data.get(id);
+  },
+
+  
+
+
+
+  registerPane(id, config) {
+    if (this._data.has(id)) {
+      throw new Error(`Setting pane "${id}" already registered`);
+    }
+    this._data.set(id, config);
+    let subPane = friendlyPrefCategoryNameToInternalName(id);
+    let settingPane =  (
+      document.createElement("setting-pane")
+    );
+    settingPane.name = subPane;
+    settingPane.config = config;
+    settingPane.isSubPane = !!config.parent;
+    document.getElementById("mainPrefPane").append(settingPane);
+    register_module(subPane, {
+      init() {
+        settingPane.init();
+      },
+    });
+  },
+
+  
+
+
+  registerPanes(paneConfigs) {
+    for (let id in paneConfigs) {
+      this.registerPane(id, paneConfigs[id]);
+    }
+  },
+};
+
+var SettingGroupManager = {
+  
+  _data: new Map(),
+
+  
+
+
+  get(id) {
+    if (!this._data.has(id)) {
+      throw new Error(`Setting group "${id}" not found`);
+    }
+    return this._data.get(id);
+  },
+
+  
+
+
+
+  registerGroup(id, config) {
+    if (this._data.has(id)) {
+      throw new Error(`Setting group "${id}" already registered`);
+    }
+    this._data.set(id, config);
+  },
+
+  
+
+
+  registerGroups(groupConfigs) {
+    for (let id in groupConfigs) {
+      this.registerGroup(id, groupConfigs[id]);
+    }
+  },
+};
+
+
+
+
+
+
+
+const CONFIG_PANES = Object.freeze({
   containers2: {
     parent: "general",
     l10nId: "containers-section-header",
@@ -188,7 +276,7 @@ const CONFIG_PANES = {
     l10nId: "preferences-doh-header2",
     groupIds: ["dnsOverHttpsAdvanced"],
   },
-};
+});
 
 var gLastCategory = { category: undefined, subcategory: undefined };
 const gXULDOMParser = new DOMParser();
@@ -242,20 +330,8 @@ function init_all() {
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
 
-  for (let [subPane, config] of Object.entries(CONFIG_PANES)) {
-    subPane = friendlyPrefCategoryNameToInternalName(subPane);
-    let settingPane =  (
-      document.createElement("setting-pane")
-    );
-    settingPane.name = subPane;
-    settingPane.config = config;
-    settingPane.isSubPane = !!config.parent;
-    document.getElementById("mainPrefPane").append(settingPane);
-    register_module(subPane, {
-      init() {
-        settingPane.init();
-      },
-    });
+  for (let [id, config] of Object.entries(CONFIG_PANES)) {
+    SettingPaneManager.registerPane(id, config);
   }
 
   if (Services.prefs.getBoolPref("browser.translations.newSettingsUI.enable")) {
