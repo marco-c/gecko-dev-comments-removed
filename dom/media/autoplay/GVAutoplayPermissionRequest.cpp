@@ -136,9 +136,12 @@ GVAutoplayPermissionRequest::Cancel() {
   
   
   
+  
+  
   const RStatus status = GetRequestStatus(mContext, mType);
   REQUEST_LOG("Cancel, current status=%s", EnumValueToString(status));
-  MOZ_ASSERT(status == RStatus::ePENDING || status == RStatus::eUNKNOWN);
+  MOZ_ASSERT(status == RStatus::ePENDING || status == RStatus::eDENIED ||
+             status == RStatus::eUNKNOWN);
   if ((status == RStatus::ePENDING) && !mContext->IsDiscarded()) {
     SetRequestStatus(RStatus::eDENIED);
   }
@@ -153,9 +156,12 @@ GVAutoplayPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
   
   
   
+  
+  
   const RStatus status = GetRequestStatus(mContext, mType);
   REQUEST_LOG("Allow, current status=%s", EnumValueToString(status));
-  MOZ_ASSERT(status == RStatus::ePENDING || status == RStatus::eUNKNOWN);
+  MOZ_ASSERT(status == RStatus::ePENDING || status == RStatus::eALLOWED ||
+             status == RStatus::eUNKNOWN);
   if (status == RStatus::ePENDING) {
     SetRequestStatus(RStatus::eALLOWED);
     
@@ -166,7 +172,6 @@ GVAutoplayPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
                             nullptr);
     }
   }
-
   mContext = nullptr;
   return NS_OK;
 }
