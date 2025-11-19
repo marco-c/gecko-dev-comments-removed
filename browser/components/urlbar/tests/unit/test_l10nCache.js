@@ -338,319 +338,284 @@ add_task(async function comprehensive() {
 });
 
 
-add_task(async function excludeArgsFromCacheKey() {
+add_task(async function eviction() {
   
   let l10n = initL10n({
     args0: "Zero args value",
     args1: "One arg value is { $arg1 }",
+    args2: "Two arg values are { $arg1 } and { $arg2 }",
+    args3: "Three arg values are { $arg1 }, { $arg2 }, and { $arg3 }",
+
     attrs0: [".label = attrs0 label has zero args"],
     attrs1: [
       ".label = attrs1 label has zero args",
       ".tooltiptext = attrs1 tooltiptext arg value is { $arg1 }",
+    ],
+    attrs2: [
+      ".label = attrs2 label has zero args",
+      ".tooltiptext = attrs2 tooltiptext arg value is { $arg1 }",
+      ".alt = attrs2 alt arg values are { $arg1 } and { $arg2 }",
     ],
   });
 
   let cache = new L10nCache(l10n);
 
   
+  let maxEntriesPerId = L10nCache.MAX_ENTRIES_PER_ID;
+  Assert.equal(
+    typeof maxEntriesPerId,
+    "number",
+    "MAX_ENTRIES_PER_ID should be a number"
+  );
+  Assert.greater(maxEntriesPerId, 0, "MAX_ENTRIES_PER_ID should be > 0");
+
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  let tests = [
-    
-    {
-      methods: ["add", "ensure"],
-      obj: {
-        id: "args0",
-        excludeArgsFromCacheKey: true,
-      },
-      gets: [
-        {
-          obj: { id: "args0" },
-          expected: {
-            value: "Zero args value",
-            attributes: null,
-          },
-        },
-        {
-          obj: { id: "args0", excludeArgsFromCacheKey: true },
-          expected: {
-            value: "Zero args value",
-            attributes: null,
-          },
-        },
-      ],
-    },
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    let arg1 = "aaa-" + i;
+    let l10nObj = {
+      id: "args1",
+      args: { arg1 },
+    };
+    await cache.add(l10nObj);
 
     
-    {
-      methods: ["add"],
-      obj: {
+    Assert.deepEqual(
+      cache.get(l10nObj),
+      {
+        value: `One arg value is ${arg1}`,
+        attributes: null,
+      },
+      "Message should be cached: " + JSON.stringify(l10nObj)
+    );
+
+    
+    Assert.equal(
+      cache.size(),
+      i + 1,
+      "Expected cache size after adding l10n obj: " + JSON.stringify(l10nObj)
+    );
+  }
+
+  
+  for (let arg1 of [`aaa-${maxEntriesPerId}`, "some other value"]) {
+    let l10nObj = {
+      id: "args1",
+      args: { arg1 },
+    };
+    Assert.ok(
+      !cache.get(l10nObj),
+      "Message should not be cached since it wasn't added: " +
+        JSON.stringify(l10nObj)
+    );
+  }
+
+  
+  
+  
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    let arg1 = "bbb-" + i;
+    let l10nObj = {
+      id: "args1",
+      args: { arg1 },
+    };
+    await cache.add(l10nObj);
+
+    
+    Assert.deepEqual(
+      cache.get(l10nObj),
+      {
+        value: `One arg value is ${arg1}`,
+        attributes: null,
+      },
+      "Message should be cached: " + JSON.stringify(l10nObj)
+    );
+
+    
+    Assert.equal(
+      cache.size(),
+      maxEntriesPerId,
+      "Cache size should remain maxed out after caching l10n obj: " +
+        JSON.stringify(l10nObj)
+    );
+
+    
+    
+    for (let j = 0; j < maxEntriesPerId; j++) {
+      let oldArg1 = "aaa-" + j;
+      let oldL10nObj = {
         id: "args1",
-        args: { arg1: "ADD" },
-        excludeArgsFromCacheKey: true,
-      },
-      gets: [
-        {
-          obj: { id: "args1" },
-          expected: {
-            value: "One arg value is ADD",
-            attributes: null,
-          },
-        },
-        {
-          obj: { id: "args1", excludeArgsFromCacheKey: true },
-          expected: {
-            value: "One arg value is ADD",
-            attributes: null,
-          },
-        },
-        {
-          obj: {
-            id: "args1",
-            args: { arg1: "some other value" },
-            excludeArgsFromCacheKey: true,
-          },
-          expected: {
-            value: "One arg value is ADD",
-            attributes: null,
-          },
-        },
-        {
-          obj: {
-            id: "args1",
-            args: { arg1: "some other value" },
-          },
-          expected: undefined,
-        },
-      ],
-    },
-    {
-      methods: ["ensure"],
-      obj: {
-        id: "args1",
-        args: { arg1: "ENSURE" },
-        excludeArgsFromCacheKey: true,
-      },
-      gets: [
-        {
-          obj: { id: "args1" },
-          expected: {
-            value: "One arg value is ENSURE",
-            attributes: null,
-          },
-        },
-        {
-          obj: { id: "args1", excludeArgsFromCacheKey: true },
-          expected: {
-            value: "One arg value is ENSURE",
-            attributes: null,
-          },
-        },
-        {
-          obj: {
-            id: "args1",
-            args: { arg1: "some other value" },
-            excludeArgsFromCacheKey: true,
-          },
-          expected: {
-            value: "One arg value is ENSURE",
-            attributes: null,
-          },
-        },
-        {
-          obj: {
-            id: "args1",
-            args: { arg1: "some other value" },
-          },
-          expected: undefined,
-        },
-      ],
-    },
-
-    
-    {
-      methods: ["add", "ensure"],
-      obj: {
-        id: "attrs0",
-        excludeArgsFromCacheKey: true,
-      },
-      gets: [
-        {
-          obj: { id: "attrs0" },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs0 label has zero args",
-            },
-          },
-        },
-        {
-          obj: { id: "attrs0", excludeArgsFromCacheKey: true },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs0 label has zero args",
-            },
-          },
-        },
-      ],
-    },
-
-    
-    {
-      methods: ["add"],
-      obj: {
-        id: "attrs1",
-        args: { arg1: "ADD" },
-        excludeArgsFromCacheKey: true,
-      },
-      gets: [
-        {
-          obj: { id: "attrs1" },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs1 label has zero args",
-              tooltiptext: "attrs1 tooltiptext arg value is ADD",
-            },
-          },
-        },
-        {
-          obj: { id: "attrs1", excludeArgsFromCacheKey: true },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs1 label has zero args",
-              tooltiptext: "attrs1 tooltiptext arg value is ADD",
-            },
-          },
-        },
-        {
-          obj: {
-            id: "attrs1",
-            args: { arg1: "some other value" },
-            excludeArgsFromCacheKey: true,
-          },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs1 label has zero args",
-              tooltiptext: "attrs1 tooltiptext arg value is ADD",
-            },
-          },
-        },
-        {
-          obj: {
-            id: "attrs1",
-            args: { arg1: "some other value" },
-          },
-          expected: undefined,
-        },
-      ],
-    },
-    {
-      methods: ["ensure"],
-      obj: {
-        id: "attrs1",
-        args: { arg1: "ENSURE" },
-        excludeArgsFromCacheKey: true,
-      },
-      gets: [
-        {
-          obj: { id: "attrs1" },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs1 label has zero args",
-              tooltiptext: "attrs1 tooltiptext arg value is ENSURE",
-            },
-          },
-        },
-        {
-          obj: { id: "attrs1", excludeArgsFromCacheKey: true },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs1 label has zero args",
-              tooltiptext: "attrs1 tooltiptext arg value is ENSURE",
-            },
-          },
-        },
-        {
-          obj: {
-            id: "attrs1",
-            args: { arg1: "some other value" },
-            excludeArgsFromCacheKey: true,
-          },
-          expected: {
-            value: null,
-            attributes: {
-              label: "attrs1 label has zero args",
-              tooltiptext: "attrs1 tooltiptext arg value is ENSURE",
-            },
-          },
-        },
-        {
-          obj: {
-            id: "attrs1",
-            args: { arg1: "some other value" },
-          },
-          expected: undefined,
-        },
-      ],
-    },
-  ];
-
-  let sandbox = sinon.createSandbox();
-  let spy = sandbox.spy(cache, "add");
-
-  for (let { methods, obj, gets } of tests) {
-    for (let method of methods) {
-      info(`Calling method '${method}' with l10n obj: ` + JSON.stringify(obj));
-      await cache[method](obj);
-
-      
-      
-      Assert.ok(
-        spy.calledOnce,
-        "add() should have been called once: " + JSON.stringify(obj)
-      );
-      spy.resetHistory();
-
-      for (let { obj: getObj, expected } of gets) {
+        args: { arg1: oldArg1 },
+      };
+      if (j <= i) {
         Assert.deepEqual(
-          cache.get(getObj),
-          expected,
-          "Expected message for get: " + JSON.stringify(getObj)
+          cache.get(oldL10nObj),
+          null,
+          "Message should be evicted for old l10n obj: " +
+            JSON.stringify(oldL10nObj)
+        );
+      } else {
+        Assert.deepEqual(
+          cache.get(oldL10nObj),
+          {
+            value: `One arg value is ${oldArg1}`,
+            attributes: null,
+          },
+          "Message should not yet be evicted for old l10n obj: " +
+            JSON.stringify(oldL10nObj)
         );
       }
     }
   }
 
-  sandbox.restore();
+  
+  
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    let arg1 = "yyy-" + i;
+    let arg2 = "zzz-" + i;
+    let l10nObj = {
+      id: "args2",
+      args: { arg1, arg2 },
+    };
+    await cache.add(l10nObj);
+
+    
+    Assert.deepEqual(
+      cache.get(l10nObj),
+      {
+        value: `Two arg values are ${arg1} and ${arg2}`,
+        attributes: null,
+      },
+      "Message should be cached: " + JSON.stringify(l10nObj)
+    );
+
+    
+    
+    Assert.equal(
+      cache.size(),
+      maxEntriesPerId + i + 1,
+      "Cache size should start increasing again: " + JSON.stringify(l10nObj)
+    );
+
+    
+    for (let j = 0; j < maxEntriesPerId; j++) {
+      let prevArg1 = "bbb-" + j;
+      let prevL10nObj = {
+        id: "args1",
+        args: { arg1: prevArg1 },
+      };
+      Assert.deepEqual(
+        cache.get(prevL10nObj),
+        {
+          value: `One arg value is ${prevArg1}`,
+          attributes: null,
+        },
+        "Previous message should remain cached: " + JSON.stringify(prevL10nObj)
+      );
+    }
+  }
+
+  
+  
+  
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    if (i % 2 == 0) {
+      let arg1 = "bbb-" + i;
+      let l10nObj = {
+        id: "args1",
+        args: { arg1 },
+      };
+      Assert.ok(
+        await cache.get(l10nObj),
+        "Sanity check: Message should still be cached: " +
+          JSON.stringify(l10nObj)
+      );
+      await cache.add(l10nObj);
+
+      
+      Assert.equal(
+        cache.size(),
+        2 * maxEntriesPerId,
+        "Cache size should remain maxed out after caching l10n obj: " +
+          JSON.stringify(l10nObj)
+      );
+    }
+  }
+
+  
+  
+  
+  
+  let expected = [];
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    if (i % 2) {
+      
+      expected.push("bbb-" + i);
+    }
+  }
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    if (i % 2 == 0) {
+      
+      expected.push("bbb-" + i);
+    }
+  }
+
+  
+  
+  for (let i = 0; i < maxEntriesPerId; i++) {
+    let arg1 = "ccc-" + i;
+    let l10nObj = {
+      id: "args1",
+      args: { arg1 },
+    };
+    await cache.add(l10nObj);
+
+    
+    Assert.deepEqual(
+      cache.get(l10nObj),
+      {
+        value: `One arg value is ${arg1}`,
+        attributes: null,
+      },
+      "Message should be cached: " + JSON.stringify(l10nObj)
+    );
+
+    
+    Assert.equal(
+      cache.size(),
+      2 * maxEntriesPerId,
+      "Cache size should remain maxed out after caching l10n obj: " +
+        JSON.stringify(l10nObj)
+    );
+
+    
+    
+    for (let j = 0; j < expected.length; j++) {
+      let oldArg1 = expected[j];
+      let oldL10nObj = {
+        id: "args1",
+        args: { arg1: oldArg1 },
+      };
+      if (j <= i) {
+        Assert.deepEqual(
+          cache.get(oldL10nObj),
+          null,
+          "Message should be evicted for old l10n obj: " +
+            JSON.stringify(oldL10nObj)
+        );
+      } else {
+        Assert.deepEqual(
+          cache.get(oldL10nObj),
+          {
+            value: `One arg value is ${oldArg1}`,
+            attributes: null,
+          },
+          "Message should not yet be evicted for old l10n obj: " +
+            JSON.stringify(oldL10nObj)
+        );
+      }
+    }
+  }
 });
 
 

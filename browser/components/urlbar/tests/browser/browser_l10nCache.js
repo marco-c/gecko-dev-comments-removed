@@ -174,6 +174,7 @@ add_task(async function comprehensive() {
       assert: span => {
         checkAttributes(span, {
           label: "attrs1 label has zero args",
+          tooltiptext: "attrs1 tooltiptext arg value is foo",
         });
       },
     },
@@ -186,6 +187,7 @@ add_task(async function comprehensive() {
       },
       assert: span => {
         checkAttributes(span, {
+          label: "attrs1 label has zero args",
           tooltiptext: "attrs1 tooltiptext arg value is foo",
         });
       },
@@ -200,43 +202,34 @@ add_task(async function comprehensive() {
     let span = document.createElement("span");
 
     
-    
     await cache.setElementL10n(span, l10n);
-    Assert.ok(!cache.get(l10n), "String should not be cached");
-    Assert.equal(
-      span.dataset.l10nId,
-      l10n.id,
-      "span.dataset.l10nId should be set"
+
+    Assert.ok(
+      cache.get(l10n),
+      "String should be cached after awaiting setElementL10n"
     );
-    if (l10n.attribute) {
-      Assert.equal(
-        span.dataset.l10nAttrs,
-        l10n.attribute,
-        "span.dataset.l10nAttrs should be set"
-      );
+
+    
+    checkL10n(span, l10n);
+
+    
+    
+    span.textContent = "";
+    for (let name of span.getAttributeNames()) {
+      span.removeAttribute(name);
     }
 
     
     
     
-    
-    await cache.setElementL10n(span, {
-      ...l10n,
-      cacheable: true,
-    });
-    Assert.ok(cache.get(l10n), "String should be cached");
+    let cachePromise = cache.setElementL10n(span, l10n);
 
-    
-    
-    let cachePromise = cache.setElementL10n(span, {
-      ...l10n,
-      cacheable: true,
-    });
     Assert.ok(cache.get(l10n), "String should still be cached");
-    for (let a of ["data-l10n-id", "data-l10n-attrs", "data-l10n-args"]) {
-      Assert.ok(!span.hasAttribute(a), "Attribute should be unset: " + a);
-    }
     await assert(span);
+
+    
+    checkL10n(span, l10n);
+
     await cachePromise;
 
     cache.clear();
@@ -256,21 +249,8 @@ add_task(async function removeElementL10n() {
   };
   await cache.setElementL10n(span, l10n);
 
-  Assert.equal(
-    span.dataset.l10nId,
-    l10n.id,
-    "span.dataset.l10nId should be set"
-  );
-  Assert.equal(
-    span.dataset.l10nAttrs,
-    l10n.attribute,
-    "span.dataset.l10nAttrs should be set"
-  );
-  Assert.equal(
-    span.dataset.l10nArgs,
-    JSON.stringify(l10n.args),
-    "span.dataset.l10nArgs should be set"
-  );
+  
+  checkL10n(span, l10n);
 
   
   cache.removeElementL10n(span, l10n);
@@ -281,7 +261,7 @@ add_task(async function removeElementL10n() {
 });
 
 
-add_task(async function excludeArgsFromCacheKey() {
+add_task(async function inDocument() {
   
   
   
@@ -293,29 +273,21 @@ add_task(async function excludeArgsFromCacheKey() {
 
   
   
-  
   let id = "urlbar-result-action-search-w-engine";
   let arg = "engine";
   let value = a => `Search with ${a}`;
 
   
   
-  
-  await cache.setElementL10n(span, {
+  let l10n1 = {
     id,
     args: { [arg]: "aaa" },
-    cacheable: true,
-    excludeArgsFromCacheKey: true,
-  });
+  };
+  await cache.setElementL10n(span, l10n1);
+  checkL10n(span, l10n1);
 
-  Assert.equal(span.dataset.l10nId, id, "span.dataset.l10nId should be set");
-  Assert.equal(
-    span.dataset.l10nArgs,
-    JSON.stringify({ [arg]: "aaa" }),
-    "span.dataset.l10nArgs should be set"
-  );
   Assert.deepEqual(
-    cache.get({ id }),
+    cache.get(l10n1),
     {
       attributes: null,
       value: value("aaa"),
@@ -324,34 +296,35 @@ add_task(async function excludeArgsFromCacheKey() {
   );
 
   
+  await TestUtils.waitForCondition(() => {
+    info("Waiting for new textContent, current is: " + span.textContent);
+    return span.textContent == value("aaa");
+  }, "Waiting for new textContent with 'aaa' arg value");
+
   
   
   
   
   
-  let cachePromise = cache.setElementL10n(span, {
+  
+  let l10n2 = {
     id,
     args: { [arg]: "bbb" },
-    cacheable: true,
-    excludeArgsFromCacheKey: true,
-  });
+  };
+  let cachePromise = cache.setElementL10n(span, l10n2);
 
   Assert.equal(
     span.textContent,
     value("aaa"),
     "span.textContent should be the old cached value with 'aaa'"
   );
-  Assert.equal(span.dataset.l10nId, id, "span.dataset.l10nId should be set");
-  Assert.equal(
-    span.dataset.l10nArgs,
-    JSON.stringify({ [arg]: "bbb" }),
-    "span.dataset.l10nArgs should be set with the new 'bbb' arg value"
-  );
+
+  checkL10n(span, l10n2);
 
   
   await cachePromise;
   Assert.deepEqual(
-    cache.get({ id }),
+    cache.get(l10n2),
     {
       attributes: null,
       value: value("bbb"),
@@ -428,7 +401,33 @@ function checkAttributes(element, expected) {
   let attrs = {};
   for (let i = 0; i < element.attributes.length; i++) {
     let a = element.attributes.item(i);
-    attrs[a.name] = a.value;
+
+    
+    
+    if (!a.name.startsWith("data-")) {
+      attrs[a.name] = a.value;
+    }
   }
   Assert.deepEqual(attrs, expected, "Attributes should be correct");
+}
+
+function checkL10n(element, expectedL10n) {
+  
+  
+  
+  Assert.deepEqual(
+    document.l10n.getAttributes(element),
+    {
+      id: expectedL10n.id,
+      args: expectedL10n.args ?? null,
+    },
+    "The element should have the expected l10n attributes"
+  );
+
+  
+  Assert.equal(
+    element.dataset.l10nAttrs,
+    expectedL10n.attribute,
+    "element.dataset.l10nAttrs should be set or not as expected"
+  );
 }
