@@ -634,7 +634,9 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   mGPUChild->SendInitVsyncBridge(std::move(vsyncParent));
 
   MOZ_DIAGNOSTIC_ASSERT(!mBatteryObserver);
-  mBatteryObserver = new BatteryObserver();
+  if (!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    mBatteryObserver = new BatteryObserver();
+  }
 
   
   
