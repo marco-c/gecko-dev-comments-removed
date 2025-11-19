@@ -279,6 +279,8 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
   MOZ_ASSERT(aBlockInlineCheck != BlockInlineCheck::Auto);
 
   if (MOZ_UNLIKELY(!aContent.IsElement())) {
+    
+    
     return false;
   }
   
@@ -314,6 +316,11 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
     return true;
   }
   
+  
+  if (HTMLEditUtils::ParentElementIsGridOrFlexContainer(aContent)) {
+    return true;
+  }
+  
   return aBlockInlineCheck == BlockInlineCheck::UseComputedDisplayStyle &&
          styleDisplay->DisplayInside() == StyleDisplayInside::FlowRoot &&
          
@@ -327,6 +334,8 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
   MOZ_ASSERT(aBlockInlineCheck != BlockInlineCheck::Auto);
 
   if (!aContent.IsElement()) {
+    
+    
     return true;
   }
   
@@ -359,11 +368,26 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
   }
   
   
+  if (HTMLEditUtils::ParentElementIsGridOrFlexContainer(aContent)) {
+    return false;
+  }
+  
+  
   return styleDisplay->IsInlineOutsideStyle();
 }
 
-bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
-  Element* const parentElement = aElement.GetParentElement();
+bool HTMLEditUtils::ParentElementIsGridOrFlexContainer(
+    const nsIContent& aMaybeFlexOrGridItemContent) {
+  if (!aMaybeFlexOrGridItemContent.IsElement()) {
+    if (!aMaybeFlexOrGridItemContent.IsText() ||
+        !aMaybeFlexOrGridItemContent.AsText()->TextDataLength()) {
+      return false;
+    }
+    
+    
+    
+  }
+  Element* const parentElement = aMaybeFlexOrGridItemContent.GetParentElement();
   
   
   
@@ -376,8 +400,11 @@ bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
   
   
   
-  RefPtr<const ComputedStyle> elementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(&aElement);
+  const RefPtr<const ComputedStyle> elementStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(
+          aMaybeFlexOrGridItemContent.IsElement()
+              ? aMaybeFlexOrGridItemContent.AsElement()
+              : parentElement);
   if (MOZ_UNLIKELY(!elementStyle)) {
     return false;
   }
@@ -386,23 +413,30 @@ bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
     return false;
   }
   const RefPtr<const ComputedStyle> parentElementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(parentElement);
+      aMaybeFlexOrGridItemContent.IsElement()
+          ? nsComputedDOMStyle::GetComputedStyleNoFlush(parentElement)
+          : elementStyle;
   if (MOZ_UNLIKELY(!parentElementStyle)) {
     return false;
   }
-  const nsStyleDisplay* parentStyleDisplay = parentElementStyle->StyleDisplay();
-  const auto parentDisplayInside = parentStyleDisplay->DisplayInside();
-  const bool parentIsFlexContainerOrGridContainer =
-      parentDisplayInside == StyleDisplayInside::Flex ||
-      parentDisplayInside == StyleDisplayInside::Grid;
+  const auto parentDisplayInside =
+      parentElementStyle->StyleDisplay()->DisplayInside();
+  return parentDisplayInside == StyleDisplayInside::Flex ||
+         parentDisplayInside == StyleDisplayInside::Grid;
+}
+
+bool HTMLEditUtils::IsFlexOrGridItem(const nsIContent& aContent) {
+  if (!HTMLEditUtils::ParentElementIsGridOrFlexContainer(aContent)) {
+    return false;
+  }
   
   
   
-  
-  
-  MOZ_ASSERT_IF(parentIsFlexContainerOrGridContainer,
-                styleDisplay->IsBlockOutsideStyle());
-  return parentIsFlexContainerOrGridContainer;
+  MOZ_ASSERT_IF(aContent.IsElement(),
+                HTMLEditUtils::IsBlockElement(
+                    *aContent.AsElement(),
+                    BlockInlineCheck::UseComputedDisplayOutsideStyle));
+  return true;
 }
 
 bool HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(

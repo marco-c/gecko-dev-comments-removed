@@ -236,7 +236,8 @@ class HTMLEditUtils final {
 
 
 
-  [[nodiscard]] static bool IsFlexOrGridItem(const Element& aElement);
+
+  [[nodiscard]] static bool IsFlexOrGridItem(const nsIContent& aContent);
 
   
 
@@ -543,17 +544,14 @@ class HTMLEditUtils final {
   
 
 
-  static bool IsContainerNode(const nsIContent& aContent) {
-    nsHTMLTag tagEnum;
-    
-    if (aContent.IsText()) {
-      tagEnum = eHTMLTag_text;
-    } else {
-      
-      
-      tagEnum = nsHTMLTags::StringTagToId(aContent.NodeName());
+  [[nodiscard]] static bool IsContainerNode(const nsIContent& aContent) {
+    if (aContent.IsCharacterData()) {
+      return false;
     }
-    return HTMLEditUtils::IsContainerNode(tagEnum);
+    return HTMLEditUtils::IsContainerNode(
+        
+        
+        nsHTMLTags::StringTagToId(aContent.NodeName()));
   }
 
   
@@ -764,6 +762,22 @@ class HTMLEditUtils final {
   static bool ShouldInsertLinefeedCharacter(
       const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
 
+  enum class EmptyCheckOption {
+    TreatSingleBRElementAsVisible,
+    TreatBlockAsVisible,
+    TreatListItemAsVisible,
+    TreatTableCellAsVisible,
+    TreatNonEditableContentAsInvisible,
+    TreatCommentAsVisible,
+    SafeToAskLayout,
+  };
+  using EmptyCheckOptions = EnumSet<EmptyCheckOption, uint32_t>;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const EmptyCheckOption& aOption);
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const EmptyCheckOptions& aOptions);
+
   
 
 
@@ -776,18 +790,21 @@ class HTMLEditUtils final {
 
 
 
-  enum class EmptyCheckOption {
-    TreatSingleBRElementAsVisible,
-    TreatBlockAsVisible,
-    TreatListItemAsVisible,
-    TreatTableCellAsVisible,
-    TreatNonEditableContentAsInvisible,
-    SafeToAskLayout,
-  };
-  using EmptyCheckOptions = EnumSet<EmptyCheckOption, uint32_t>;
   static bool IsEmptyNode(nsPresContext* aPresContext, const nsINode& aNode,
                           const EmptyCheckOptions& aOptions = {},
                           bool* aSeenBR = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
   static bool IsEmptyNode(const nsINode& aNode,
                           const EmptyCheckOptions& aOptions = {},
                           bool* aSeenBR = nullptr) {
@@ -1311,8 +1328,15 @@ class HTMLEditUtils final {
     LeafNodeOrNonEditableNode,
     
     OnlyEditableLeafNode,
+    
+    TreatCommentAsLeafNode,
   };
   using LeafNodeTypes = EnumSet<LeafNodeType>;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const LeafNodeType& aLeafNodeType);
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const LeafNodeTypes& aLeafNodeTypes);
 
   
 
@@ -1343,6 +1367,11 @@ class HTMLEditUtils final {
         content = HTMLEditUtils::GetPreviousContent(
             *content, {WalkTreeOption::IgnoreNonEditableNode},
             aBlockInlineCheck, aAncestorLimiter);
+        continue;
+      }
+      if (!aLeafNodeTypes.contains(LeafNodeType::TreatCommentAsLeafNode) &&
+          content->IsComment()) {
+        content = content->GetPreviousSibling();
         continue;
       }
       if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrChildBlock) &&
@@ -1395,6 +1424,11 @@ class HTMLEditUtils final {
             aBlockInlineCheck, aAncestorLimiter);
         continue;
       }
+      if (!aLeafNodeTypes.contains(LeafNodeType::TreatCommentAsLeafNode) &&
+          content->IsComment()) {
+        content = content->GetNextSibling();
+        continue;
+      }
       if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrChildBlock) &&
           HTMLEditUtils::IsBlockElement(
               *content,
@@ -1435,55 +1469,68 @@ class HTMLEditUtils final {
       return nullptr;
     }
 
-    nsIContent* nextContent = aStartContent.GetNextSibling();
-    if (!nextContent) {
-      if (!aStartContent.GetParentElement()) {
-        NS_WARNING("Reached orphan node while climbing up the DOM tree");
-        return nullptr;
-      }
-      for (Element* parentElement : aStartContent.AncestorsOfType<Element>()) {
-        if (parentElement == aAncestorLimiter ||
-            HTMLEditUtils::IsBlockElement(
-                *parentElement,
-                UseComputedDisplayStyleIfAuto(aBlockInlineCheck))) {
-          return nullptr;
-        }
-        if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
-            !parentElement->IsEditable()) {
-          return nullptr;
-        }
-        nextContent = parentElement->GetNextSibling();
-        if (nextContent) {
-          break;
-        }
-        if (!parentElement->GetParentElement()) {
+    Element* container = aStartContent.GetParentElement();
+    for (nsIContent* nextContent = aStartContent.GetNextSibling();;) {
+      if (!nextContent) {
+        if (!container) {
           NS_WARNING("Reached orphan node while climbing up the DOM tree");
           return nullptr;
         }
+        for (Element* parentElement :
+             container->InclusiveAncestorsOfType<Element>()) {
+          if (parentElement == aAncestorLimiter ||
+              HTMLEditUtils::IsBlockElement(
+                  *parentElement,
+                  UseComputedDisplayStyleIfAuto(aBlockInlineCheck))) {
+            return nullptr;
+          }
+          if (aLeafNodeTypes.contains(
+                  LeafNodeType::LeafNodeOrNonEditableNode) &&
+              !parentElement->IsEditable()) {
+            return nullptr;
+          }
+          nextContent = parentElement->GetNextSibling();
+          if (nextContent) {
+            container = nextContent->GetParentElement();
+            break;
+          }
+          if (!parentElement->GetParentElement()) {
+            NS_WARNING("Reached orphan node while climbing up the DOM tree");
+            return nullptr;
+          }
+        }
+        MOZ_ASSERT(nextContent);
       }
-      MOZ_ASSERT(nextContent);
-    }
 
-    
-    if (HTMLEditUtils::IsBlockElement(
-            *nextContent,
-            PreferDisplayOutsideIfUsingDisplay(
-                UseComputedDisplayStyleIfAuto(aBlockInlineCheck)))) {
-      return nextContent;
-    }
-    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
-        !nextContent->IsEditable()) {
-      return nextContent;
-    }
-    if (HTMLEditUtils::IsContainerNode(*nextContent)) {
-      
-      if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
-              *nextContent, aLeafNodeTypes, aBlockInlineCheck)) {
-        return child;
+      if (!aLeafNodeTypes.contains(LeafNodeType::TreatCommentAsLeafNode) &&
+          nextContent->IsComment()) {
+        nextContent = nextContent->GetNextSibling();
+        continue;
       }
+
+      
+      if (HTMLEditUtils::IsBlockElement(
+              *nextContent,
+              PreferDisplayOutsideIfUsingDisplay(
+                  UseComputedDisplayStyleIfAuto(aBlockInlineCheck)))) {
+        return nextContent;
+      }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          !nextContent->IsEditable()) {
+        return nextContent;
+      }
+      if (HTMLEditUtils::IsContainerNode(*nextContent)) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
+                *nextContent, aLeafNodeTypes, aBlockInlineCheck)) {
+          return child;
+        }
+      }
+      
+      return nextContent;
     }
-    
-    return nextContent;
+    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+        "Must return from the preceding for-loop");
   }
 
   
@@ -1517,43 +1564,52 @@ class HTMLEditUtils final {
           aBlockInlineCheck, aAncestorLimiter);
     }
 
-    nsCOMPtr<nsIContent> nextContent = aStartPoint.GetChild();
-    if (!nextContent) {
-      if (aStartPoint.GetContainer() == aAncestorLimiter ||
-          HTMLEditUtils::IsBlockElement(
-              *aStartPoint.template ContainerAs<nsIContent>(),
-              UseComputedDisplayStyleIfAuto(aBlockInlineCheck))) {
+    for (nsIContent* nextContent = aStartPoint.GetChild();;) {
+      if (!nextContent) {
+        if (aStartPoint.GetContainer() == aAncestorLimiter ||
+            HTMLEditUtils::IsBlockElement(
+                *aStartPoint.template ContainerAs<nsIContent>(),
+                UseComputedDisplayStyleIfAuto(aBlockInlineCheck))) {
+          
+          return nullptr;
+        }
+
         
-        return nullptr;
+        return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+            *aStartPoint.template ContainerAs<nsIContent>(), aLeafNodeTypes,
+            PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck),
+            aAncestorLimiter);
+      }
+
+      if (!aLeafNodeTypes.contains(LeafNodeType::TreatCommentAsLeafNode) &&
+          nextContent->IsComment()) {
+        nextContent = nextContent->GetNextSibling();
+        continue;
       }
 
       
-      return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.template ContainerAs<nsIContent>(), aLeafNodeTypes,
-          PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck),
-          aAncestorLimiter);
-    }
-
-    
-    if (HTMLEditUtils::IsBlockElement(
-            *nextContent,
-            UseComputedDisplayOutsideStyleIfAuto(aBlockInlineCheck))) {
-      return nextContent;
-    }
-    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
-        !HTMLEditUtils::IsSimplyEditableNode(*nextContent)) {
-      return nextContent;
-    }
-    if (HTMLEditUtils::IsContainerNode(*nextContent)) {
-      
-      if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
-              *nextContent, aLeafNodeTypes,
-              PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck))) {
-        return child;
+      if (HTMLEditUtils::IsBlockElement(
+              *nextContent,
+              UseComputedDisplayOutsideStyleIfAuto(aBlockInlineCheck))) {
+        return nextContent;
       }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          !HTMLEditUtils::IsSimplyEditableNode(*nextContent)) {
+        return nextContent;
+      }
+      if (HTMLEditUtils::IsContainerNode(*nextContent)) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
+                *nextContent, aLeafNodeTypes,
+                PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck))) {
+          return child;
+        }
+      }
+      
+      return nextContent;
     }
-    
-    return nextContent;
+    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+        "Must return from the preceding for-loop");
   }
 
   
@@ -1580,56 +1636,69 @@ class HTMLEditUtils final {
       return nullptr;
     }
 
-    nsIContent* previousContent = aStartContent.GetPreviousSibling();
-    if (!previousContent) {
-      if (!aStartContent.GetParentElement()) {
-        NS_WARNING("Reached orphan node while climbing up the DOM tree");
-        return nullptr;
-      }
-      for (Element* parentElement : aStartContent.AncestorsOfType<Element>()) {
-        if (parentElement == aAncestorLimiter ||
-            HTMLEditUtils::IsBlockElement(
-                *parentElement,
-                UseComputedDisplayStyleIfAuto(aBlockInlineCheck))) {
-          return nullptr;
-        }
-        if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
-            !parentElement->IsEditable()) {
-          return nullptr;
-        }
-        previousContent = parentElement->GetPreviousSibling();
-        if (previousContent) {
-          break;
-        }
-        if (!parentElement->GetParentElement()) {
+    Element* container = aStartContent.GetParentElement();
+    for (nsIContent* previousContent = aStartContent.GetPreviousSibling();;) {
+      if (!previousContent) {
+        if (!container) {
           NS_WARNING("Reached orphan node while climbing up the DOM tree");
           return nullptr;
         }
+        for (Element* parentElement :
+             container->InclusiveAncestorsOfType<Element>()) {
+          if (parentElement == aAncestorLimiter ||
+              HTMLEditUtils::IsBlockElement(
+                  *parentElement,
+                  UseComputedDisplayStyleIfAuto(aBlockInlineCheck))) {
+            return nullptr;
+          }
+          if (aLeafNodeTypes.contains(
+                  LeafNodeType::LeafNodeOrNonEditableNode) &&
+              !parentElement->IsEditable()) {
+            return nullptr;
+          }
+          previousContent = parentElement->GetPreviousSibling();
+          if (previousContent) {
+            container = previousContent->GetParentElement();
+            break;
+          }
+          if (!parentElement->GetParentElement()) {
+            NS_WARNING("Reached orphan node while climbing up the DOM tree");
+            return nullptr;
+          }
+        }
+        MOZ_ASSERT(previousContent);
       }
-      MOZ_ASSERT(previousContent);
-    }
 
-    
-    if (HTMLEditUtils::IsBlockElement(
-            *previousContent,
-            PreferDisplayOutsideIfUsingDisplay(
-                UseComputedDisplayOutsideStyleIfAuto(aBlockInlineCheck)))) {
-      return previousContent;
-    }
-    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
-        !HTMLEditUtils::IsSimplyEditableNode(*previousContent)) {
-      return previousContent;
-    }
-    if (HTMLEditUtils::IsContainerNode(*previousContent)) {
-      
-      if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
-              *previousContent, aLeafNodeTypes,
-              PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck))) {
-        return child;
+      if (!aLeafNodeTypes.contains(LeafNodeType::TreatCommentAsLeafNode) &&
+          previousContent->IsComment()) {
+        previousContent = previousContent->GetPreviousSibling();
+        continue;
       }
+
+      
+      if (HTMLEditUtils::IsBlockElement(
+              *previousContent,
+              PreferDisplayOutsideIfUsingDisplay(
+                  UseComputedDisplayOutsideStyleIfAuto(aBlockInlineCheck)))) {
+        return previousContent;
+      }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          !HTMLEditUtils::IsSimplyEditableNode(*previousContent)) {
+        return previousContent;
+      }
+      if (HTMLEditUtils::IsContainerNode(*previousContent)) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
+                *previousContent, aLeafNodeTypes,
+                PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck))) {
+          return child;
+        }
+      }
+      
+      return previousContent;
     }
-    
-    return previousContent;
+    MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
+        "Must return from the preceding for-loop");
   }
 
   
@@ -1679,32 +1748,33 @@ class HTMLEditUtils final {
           aAncestorLimiter);
     }
 
-    nsCOMPtr<nsIContent> previousContent =
-        aStartPoint.GetPreviousSiblingOfChild();
-    if (NS_WARN_IF(!previousContent)) {
-      return nullptr;
-    }
-
-    
-    if (HTMLEditUtils::IsBlockElement(
-            *previousContent,
-            UseComputedDisplayOutsideStyleIfAuto(aBlockInlineCheck))) {
-      return previousContent;
-    }
-    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
-        !HTMLEditUtils::IsSimplyEditableNode(*previousContent)) {
-      return previousContent;
-    }
-    if (HTMLEditUtils::IsContainerNode(*previousContent)) {
+    for (nsIContent* previousContent = aStartPoint.GetPreviousSiblingOfChild();
+         previousContent &&
+         (aLeafNodeTypes.contains(LeafNodeType::TreatCommentAsLeafNode) ||
+          !previousContent->IsComment());
+         previousContent = previousContent->GetPreviousSibling()) {
       
-      if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
-              *previousContent, aLeafNodeTypes,
-              PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck))) {
-        return child;
+      if (HTMLEditUtils::IsBlockElement(
+              *previousContent,
+              UseComputedDisplayOutsideStyleIfAuto(aBlockInlineCheck))) {
+        return previousContent;
       }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          !HTMLEditUtils::IsSimplyEditableNode(*previousContent)) {
+        return previousContent;
+      }
+      if (HTMLEditUtils::IsContainerNode(*previousContent)) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
+                *previousContent, aLeafNodeTypes,
+                PreferDisplayOutsideIfUsingDisplay(aBlockInlineCheck))) {
+          return child;
+        }
+      }
+      
+      return previousContent;
     }
-    
-    return previousContent;
+    return nullptr;
   }
 
   
@@ -3145,6 +3215,15 @@ class HTMLEditUtils final {
 
   static Element* GetElementOfImmediateBlockBoundary(
       const nsIContent& aContent, const WalkTreeDirection aDirection);
+
+  
+
+
+
+
+
+  [[nodiscard]] static bool ParentElementIsGridOrFlexContainer(
+      const nsIContent& aMaybeFlexOrGridItemContent);
 };
 
 
