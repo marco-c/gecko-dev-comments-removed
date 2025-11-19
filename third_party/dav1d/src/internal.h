@@ -302,7 +302,7 @@ struct Dav1dFrameContext {
         int cdef_buf_sbh;
         int lr_buf_plane_sz[2]; 
         int re_sz ;
-        ALIGN(Av1FilterLUT lim_lut, 16);
+        Av1FilterLUT lim_lut;
         ALIGN(uint8_t lvl[8 ][4 ][8 ][2 ], 16);
         int last_sharpness;
         uint8_t *tx_lpf_right_edge[2];
