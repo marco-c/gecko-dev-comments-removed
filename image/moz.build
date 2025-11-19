@@ -4,7 +4,7 @@
 
 
 
-DIRS += ["build", "decoders", "encoders"]
+DIRS += ["build", "decoders", "encoders", "remote"]
 TEST_DIRS += ["test/gtest"]
 
 if CONFIG["FUZZING_INTERFACES"]:
