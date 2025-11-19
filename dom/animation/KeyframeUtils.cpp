@@ -569,12 +569,7 @@ static bool GetPropertyValuesPairs(JSContext* aCx,
           propName, CSSEnabledState::ForAllContent);
     }
 
-    
-    
-    CSSPropertyId property = propertyId == eCSSPropertyExtra_variable
-                                 ? CSSPropertyId(NS_Atomize(Substring(
-                                       propName, 2, propName.Length() - 2)))
-                                 : CSSPropertyId(propertyId);
+    auto property = CSSPropertyId::FromIdOrCustomProperty(propertyId, propName);
 
     if (KeyframeUtils::IsAnimatableProperty(property)) {
       properties.AppendElement(AdditionalProperty{std::move(property), i});
