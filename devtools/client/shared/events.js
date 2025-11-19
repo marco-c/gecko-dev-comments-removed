@@ -21,3 +21,16 @@ exports.preventDefaultAndStopPropagation = function (event) {
     }
   }
 };
+
+
+
+
+
+
+
+
+
+
+exports.canPointerEventDrag = function (event) {
+  return event.pointerType == "mouse" || event.pointerType == "pen";
+};

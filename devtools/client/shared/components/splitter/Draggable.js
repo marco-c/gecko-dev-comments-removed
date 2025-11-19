@@ -10,6 +10,9 @@ const {
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
+const {
+  canPointerEventDrag,
+} = require("resource://devtools/client/shared/events.js");
 
 class Draggable extends Component {
   static get propTypes() {
@@ -38,9 +41,7 @@ class Draggable extends Component {
     this.mouseY = 0;
   }
   startDragging(ev) {
-    
-    
-    if (ev.pointerType != "mouse") {
+    if (!canPointerEventDrag(ev)) {
       return;
     }
 

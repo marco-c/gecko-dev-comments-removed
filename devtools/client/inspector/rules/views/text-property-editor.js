@@ -22,6 +22,9 @@ const { throttle } = require("resource://devtools/shared/throttle.js");
 const {
   style: { ELEMENT_STYLE },
 } = require("resource://devtools/shared/constants.js");
+const {
+  canPointerEventDrag,
+} = require("resource://devtools/client/shared/events.js");
 
 loader.lazyRequireGetter(
   this,
@@ -1684,9 +1687,7 @@ class TextPropertyEditor {
   }
 
   #draggingOnPointerDown = event => {
-    
-    
-    if (event.pointerType != "mouse") {
+    if (!canPointerEventDrag(event)) {
       return;
     }
 
