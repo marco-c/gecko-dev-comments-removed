@@ -34,7 +34,6 @@ class TimeStampTests;
 class BaseTimeDurationPlatformUtils {
  public:
   static MFBT_API double ToSeconds(int64_t aTicks);
-  static MFBT_API double ToSecondsSigDigits(int64_t aTicks);
   static MFBT_API int64_t TicksFromMilliseconds(double aMilliseconds);
 };
 
@@ -71,6 +70,8 @@ class BaseTimeDuration {
     return *this;
   }
 
+  
+  
   double ToSeconds() const {
     if (mValue == INT64_MAX) {
       return PositiveInfinity<double>();
@@ -82,17 +83,9 @@ class BaseTimeDuration {
   }
   
   
-  
-  double ToSecondsSigDigits() const {
-    if (mValue == INT64_MAX) {
-      return PositiveInfinity<double>();
-    }
-    if (mValue == INT64_MIN) {
-      return NegativeInfinity<double>();
-    }
-    return BaseTimeDurationPlatformUtils::ToSecondsSigDigits(mValue);
-  }
   double ToMilliseconds() const { return ToSeconds() * 1000.0; }
+  
+  
   double ToMicroseconds() const { return ToMilliseconds() * 1000.0; }
 
   

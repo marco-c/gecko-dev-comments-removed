@@ -54,10 +54,6 @@
 #  include <pthread.h>
 #endif
 
-
-static uint64_t sResolution;
-static uint64_t sResolutionSigDigs;
-
 #ifdef CLOCK_MONOTONIC_COARSE
 static bool sSupportsMonotonicCoarseClock = false;
 #endif
@@ -66,7 +62,6 @@ static bool sSupportsMonotonicCoarseClock = false;
 static const uint16_t kNsPerUs = 1000;
 #endif
 
-static const uint64_t kNsPerMs = 1000000;
 static const uint64_t kNsPerSec = 1000000000;
 static const double kNsPerMsd = 1000000.0;
 static const double kNsPerSecd = 1000000000.0;
@@ -99,61 +94,10 @@ static uint64_t ClockTimeNs(const clockid_t aClockId = CLOCK_MONOTONIC) {
   return TimespecToNs(ts);
 }
 
-static uint64_t ClockResolutionNs() {
-  
-  
-  
-  
-  
-  
-
-  uint64_t start = ClockTimeNs();
-  uint64_t end = ClockTimeNs();
-  uint64_t minres = (end - start);
-
-  
-  
-  
-  for (int i = 0; i < 9; ++i) {
-    start = ClockTimeNs();
-    end = ClockTimeNs();
-
-    uint64_t candidate = (start - end);
-    if (candidate < minres) {
-      minres = candidate;
-    }
-  }
-
-  if (0 == minres) {
-    
-    
-    struct timespec ts;
-    if (0 == clock_getres(CLOCK_MONOTONIC, &ts)) {
-      minres = TimespecToNs(ts);
-    }
-  }
-
-  if (0 == minres) {
-    
-    
-    minres = 1 * kNsPerMs;
-  }
-
-  return minres;
-}
-
 namespace mozilla {
 
 double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
   return double(aTicks) / kNsPerSecd;
-}
-
-double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks) {
-  
-  int64_t valueSigDigs = sResolution * (aTicks / sResolution);
-  
-  valueSigDigs = sResolutionSigDigs * (valueSigDigs / sResolutionSigDigs);
-  return double(valueSigDigs) / kNsPerSecd;
 }
 
 int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
@@ -188,14 +132,6 @@ void TimeStamp::Startup() {
     sSupportsMonotonicCoarseClock = true;
   }
 #endif
-
-  sResolution = ClockResolutionNs();
-
-  
-  
-  for (sResolutionSigDigs = 1; !(sResolutionSigDigs == sResolution ||
-                                 10 * sResolutionSigDigs > sResolution);
-       sResolutionSigDigs *= 10);
 
   gInitialized = true;
 }

@@ -51,12 +51,6 @@ double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
   return (aTicks * sNsPerTickd) / kNsPerSecd;
 }
 
-double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks) {
-  MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
-  
-  return ToSeconds(aTicks);
-}
-
 int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
     double aMilliseconds) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
