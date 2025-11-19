@@ -85,8 +85,10 @@ function injectErrorPageFrame(tab, src) {
       
       
       
-      await ContentTaskUtils.waitForCondition(() =>
-        iframe.contentDocument.body.classList.contains("certerror")
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          iframe.contentDocument.body.classList.contains("certerror") ||
+          iframe.contentDocument.body.classList.contains("felt-privacy-body")
       );
     }
   );
