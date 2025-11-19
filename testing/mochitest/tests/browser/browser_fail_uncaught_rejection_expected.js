@@ -1,5 +1,3 @@
-setExpectedFailuresForSelfTest(1);
-
 
 const { PromiseTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromiseTestUtils.sys.mjs"
