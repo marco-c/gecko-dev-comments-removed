@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Machine Learning")
+    BUG_COMPONENT = ("Core", "Machine Learning: On Device")
 
 JAR_MANIFESTS += ["jar.mn"]
 
