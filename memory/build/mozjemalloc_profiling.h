@@ -26,6 +26,10 @@ struct PurgeStats {
   
   size_t pages_total = 0;
 
+  
+  
+  size_t pages_unpurgable = 0;
+
   size_t system_calls = 0;
   size_t chunks = 0;
 

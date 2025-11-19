@@ -48,28 +48,45 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef MALLOC_STATIC_PAGESIZE
 
-
-
 #  if defined(__powerpc64__)
-static const size_t gPageSize = 64_KiB;
+static const size_t gRealPageSize = 64_KiB;
 #  elif defined(__loongarch64)
-static const size_t gPageSize = 16_KiB;
+static const size_t gRealPageSize = 16_KiB;
 #  else
-static const size_t gPageSize = 4_KiB;
+static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gRealPageSize = gPageSize;
+static const size_t gPageSize = gRealPageSize;
 #else
-
-
-
 
 
 extern size_t gRealPageSize;
 extern size_t gPageSize;
-
 #endif
+
+
+#define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
+#define REAL_PAGE_CEILING(s) (((s) + gRealPageSizeMask) & ~gRealPageSizeMask)
+
+#define PAGES_PER_REAL_PAGE_CEILING(s) \
+  (((s) + gPagesPerRealPage - 1) & ~(gPagesPerRealPage - 1))
 
 #ifdef MALLOC_STATIC_PAGESIZE
 #  define GLOBAL(type, name, value) static const type name = value;
@@ -117,9 +134,6 @@ void DefineGlobals();
 
 
 #define SUBPAGE_CEILING(a) (RoundUpPow2(a))
-
-
-#define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
 
 
 #define NUM_SMALL_CLASSES \

@@ -819,11 +819,11 @@ struct arena_t {
     
     
     
-    bool ScanForFirstDirtyPage();
+    bool ScanForFirstDirtyPage() MOZ_REQUIRES(mArena.mLock);
 
     
     
-    bool ScanForLastDirtyPage();
+    bool ScanForLastDirtyPage() MOZ_REQUIRES(mArena.mLock);
 
     
     
@@ -834,7 +834,8 @@ struct arena_t {
     
     
     
-    void FinishPurgingInChunk(bool aAddToMAdvised) MOZ_REQUIRES(mArena.mLock);
+    void FinishPurgingInChunk(bool aAddToMAdvised, bool aAddToDirty)
+        MOZ_REQUIRES(mArena.mLock);
 
     explicit PurgeInfo(arena_t& arena, arena_chunk_t* chunk, PurgeStats& stats)
         : mArena(arena), mChunk(chunk), mPurgeStats(stats) {}
@@ -1488,6 +1489,9 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
     
     if (chunk->mPageMap[run_ind + i].bits & CHUNK_MAP_DECOMMITTED) {
       
+      MOZ_ASSERT((run_ind + i) % gPagesPerRealPage == 0);
+
+      
       
       size_t j;
       for (j = 0; i + j < need_pages && (chunk->mPageMap[run_ind + i + j].bits &
@@ -1503,6 +1507,9 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
       
       if (i + j == need_pages) {
         size_t extra_commit = ExtraCommitPages(j, rem_pages);
+        extra_commit =
+            PAGES_PER_REAL_PAGE_CEILING(run_ind + i + j + extra_commit) -
+            run_ind - i - j;
         for (; i + j < need_pages + extra_commit &&
                (chunk->mPageMap[run_ind + i + j].bits &
                 CHUNK_MAP_MADVISED_OR_DECOMMITTED);
@@ -1511,6 +1518,8 @@ bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
                       (CHUNK_MAP_FRESH | CHUNK_MAP_MADVISED)) == 0);
         }
       }
+      
+      MOZ_ASSERT((run_ind + i + j) % gPagesPerRealPage == 0);
 
       if (!pages_commit(
               (void*)(uintptr_t(chunk) + ((run_ind + i) << gPageSize2Pow)),
@@ -1612,25 +1621,35 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
 
   
   size_t i;
-  for (i = 0; i < gChunkHeaderNumPages - 1; i++) {
+  for (i = 0; i < gChunkHeaderNumPages - gPagesPerRealPage; i++) {
     aChunk->mPageMap[i].bits = 0;
   }
-  mStats.committed += gChunkHeaderNumPages - 1;
+  mStats.committed += gChunkHeaderNumPages - gPagesPerRealPage;
 
   
-  pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)), gPageSize);
-  aChunk->mPageMap[i++].bits = CHUNK_MAP_DECOMMITTED;
+  MOZ_ASSERT(i % gPagesPerRealPage == 0);
+  pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)),
+                 gRealPageSize);
+  for (; i < gChunkHeaderNumPages; i++) {
+    aChunk->mPageMap[i].bits = CHUNK_MAP_DECOMMITTED;
+  }
 
   
   
 #ifdef MALLOC_DECOMMIT
-  size_t n_fresh_pages =
+  
+  
+  
+  
+  size_t chunk_usable_pages =
+      gChunkNumPages - gChunkHeaderNumPages - gPagesPerRealPage;
+  size_t n_fresh_pages = PAGES_PER_REAL_PAGE_CEILING(
       aMinCommittedPages +
-      ExtraCommitPages(
-          aMinCommittedPages,
-          gChunkNumPages - gChunkHeaderNumPages - aMinCommittedPages - 1);
+      ExtraCommitPages(aMinCommittedPages,
+                       chunk_usable_pages - aMinCommittedPages));
 #else
-  size_t n_fresh_pages = gChunkNumPages - 1 - gChunkHeaderNumPages;
+  size_t n_fresh_pages =
+      gChunkNumPages - gPagesPerRealPage - gChunkHeaderNumPages;
 #endif
 
   
@@ -1644,12 +1663,13 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
 #ifndef MALLOC_DECOMMIT
   
   
-  MOZ_ASSERT(i == gChunkNumPages - 1);
+  MOZ_ASSERT(i == gChunkNumPages - gPagesPerRealPage);
 #endif
 
   
   
   
+  MOZ_ASSERT(i % gPagesPerRealPage == 0);
   pages_decommit((void*)(uintptr_t(aChunk) + (i << gPageSize2Pow)),
                  (gChunkNumPages - i) << gPageSize2Pow);
   for (; i < gChunkNumPages; i++) {
@@ -1658,11 +1678,13 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
 
   
   MOZ_ASSERT(aMinCommittedPages > 0);
-  MOZ_ASSERT(aMinCommittedPages <= gChunkNumPages - gChunkHeaderNumPages - 1);
+  MOZ_ASSERT(aMinCommittedPages <=
+             gChunkNumPages - gChunkHeaderNumPages - gPagesPerRealPage);
 
   
   aChunk->mPageMap[gChunkHeaderNumPages].bits |= gMaxLargeClass;
-  aChunk->mPageMap[gChunkNumPages - 2].bits |= gMaxLargeClass;
+  aChunk->mPageMap[gChunkNumPages - gPagesPerRealPage - 1].bits |=
+      gMaxLargeClass;
   mRunsAvail.Insert(&aChunk->mPageMap[gChunkHeaderNumPages]);
 }
 
@@ -1687,7 +1709,8 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
   
   size_t madvised = 0;
   size_t fresh = 0;
-  for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - 1; i++) {
+  for (size_t i = gChunkHeaderNumPages; i < gChunkNumPages - gPagesPerRealPage;
+       i++) {
     
     
     MOZ_ASSERT(aChunk->mPageMap[i].bits &
@@ -1711,7 +1734,7 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 #endif
 
   mStats.mapped -= kChunkSize;
-  mStats.committed -= gChunkHeaderNumPages - 1;
+  mStats.committed -= gChunkHeaderNumPages - gPagesPerRealPage;
 
   return true;
 }
@@ -2024,7 +2047,7 @@ ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats) {
 
       if (!continue_purge_chunk || !continue_purge_arena) {
         
-        purge_info.FinishPurgingInChunk(true);
+        purge_info.FinishPurgingInChunk(true, continue_purge_chunk);
         purge_info.mArena.mIsPurgePending = false;
       }
     }  
@@ -2086,7 +2109,7 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
   if (mChunk->mNumDirty == 0 || mChunk->mDying) {
     
     
-    FinishPurgingInChunk(aPurgedOnce);
+    FinishPurgingInChunk(aPurgedOnce, false);
     return false;
   }
 
@@ -2101,8 +2124,12 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
   
   
   
-  MOZ_ALWAYS_TRUE(ScanForFirstDirtyPage());
-  MOZ_ALWAYS_TRUE(ScanForLastDirtyPage());
+  do {
+    if (!ScanForFirstDirtyPage()) {
+      FinishPurgingInChunk(aPurgedOnce, false);
+      return false;
+    }
+  } while (!ScanForLastDirtyPage());
 
   MOZ_ASSERT(mFreeRunInd >= gChunkHeaderNumPages);
   MOZ_ASSERT(mFreeRunInd <= mDirtyInd);
@@ -2111,33 +2138,30 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
   MOZ_ASSERT(mDirtyLen != 0);
   MOZ_ASSERT(mDirtyLen <= mFreeRunLen);
   MOZ_ASSERT(mDirtyInd + mDirtyLen <= mFreeRunInd + mFreeRunLen);
+  MOZ_ASSERT(mDirtyInd % gPagesPerRealPage == 0);
+  MOZ_ASSERT(mDirtyLen % gPagesPerRealPage == 0);
 
   
   mDirtyNPages = 0;
   for (size_t i = 0; i < mDirtyLen; i++) {
     size_t& bits = mChunk->mPageMap[mDirtyInd + i].bits;
-
-    
-    
-    MOZ_ASSERT(!(bits & CHUNK_MAP_BUSY));
-
     if (bits & CHUNK_MAP_DIRTY) {
-      MOZ_ASSERT((bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
       mDirtyNPages++;
       bits ^= CHUNK_MAP_DIRTY;
     }
   }
+
   MOZ_ASSERT(mDirtyNPages > 0);
   MOZ_ASSERT(mDirtyNPages <= mChunk->mNumDirty);
   MOZ_ASSERT(mDirtyNPages <= mDirtyLen);
+
+  mChunk->mNumDirty -= mDirtyNPages;
+  mArena.mNumDirty -= mDirtyNPages;
 
   
   
   mChunk->mPageMap[mFreeRunInd].bits |= CHUNK_MAP_BUSY;
   mChunk->mPageMap[FreeRunLastInd()].bits |= CHUNK_MAP_BUSY;
-
-  mChunk->mNumDirty -= mDirtyNPages;
-  mArena.mNumDirty -= mDirtyNPages;
 
   
   
@@ -2152,8 +2176,8 @@ bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
   
   
   size_t run_pages;
-  for (size_t run_idx = mChunk->mDirtyRunHint; run_idx < gChunkNumPages;
-       run_idx += run_pages) {
+  for (size_t run_idx = mChunk->mDirtyRunHint;
+       run_idx < gChunkNumPages - gPagesPerRealPage; run_idx += run_pages) {
     size_t run_bits = mChunk->mPageMap[run_idx].bits;
     
     
@@ -2186,16 +2210,23 @@ bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
     
     for (size_t page_idx = run_idx; page_idx < run_idx + run_pages;
          page_idx++) {
-      size_t page_bits = mChunk->mPageMap[page_idx].bits;
+      size_t& page_bits = mChunk->mPageMap[page_idx].bits;
       
       
       MOZ_ASSERT((page_bits & CHUNK_MAP_BUSY) == 0);
 
       if (page_bits & CHUNK_MAP_DIRTY) {
         MOZ_ASSERT((page_bits & CHUNK_MAP_FRESH_MADVISED_OR_DECOMMITTED) == 0);
-        mDirtyInd = page_idx;
+        MOZ_ASSERT(mChunk->mDirtyRunHint <= run_idx);
         mChunk->mDirtyRunHint = run_idx;
-        return true;
+
+        if ((page_idx & (gPagesPerRealPage - 1)) == 0) {
+          mDirtyInd = page_idx;
+          return true;
+        }
+
+        
+        mPurgeStats.pages_unpurgable++;
       }
     }
   }
@@ -2204,15 +2235,26 @@ bool arena_t::PurgeInfo::ScanForFirstDirtyPage() {
 }
 
 bool arena_t::PurgeInfo::ScanForLastDirtyPage() {
-  for (size_t i = mFreeRunInd + mFreeRunLen - 1; i >= mFreeRunInd; i--) {
-    size_t bits = mChunk->mPageMap[i].bits;
-    MOZ_ASSERT((bits & CHUNK_MAP_BUSY) == 0);
+  mDirtyLen = 0;
+  for (size_t i = FreeRunLastInd(); i >= mDirtyInd; i--) {
+    size_t& bits = mChunk->mPageMap[i].bits;
     if (bits & CHUNK_MAP_DIRTY) {
-      mDirtyLen = i - mDirtyInd + 1;
-      return true;
+      
+      
+      MOZ_ASSERT(!(bits & CHUNK_MAP_BUSY));
+
+      if ((i & (gPagesPerRealPage - 1)) == gPagesPerRealPage - 1) {
+        mDirtyLen = i - mDirtyInd + 1;
+        return true;
+      }
+
+      
+      mPurgeStats.pages_unpurgable++;
     }
   }
 
+  
+  mChunk->mDirtyRunHint = FreeRunLastInd() + 1;
   return false;
 }
 
@@ -2277,7 +2319,8 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
     
     
     MOZ_ASSERT(mFreeRunInd == gChunkHeaderNumPages &&
-               mFreeRunLen == gChunkNumPages - gChunkHeaderNumPages - 1);
+               mFreeRunLen ==
+                   gChunkNumPages - gChunkHeaderNumPages - gPagesPerRealPage);
 
     return std::make_pair(false, mChunk);
   }
@@ -2300,7 +2343,8 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
   return std::make_pair(mChunk->mNumDirty != 0, chunk_to_release);
 }
 
-void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised) {
+void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised,
+                                              bool aAddToDirty) {
   
   
   MOZ_ASSERT(mChunk->mIsPurging);
@@ -2317,7 +2361,7 @@ void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised) {
     return;
   }
 
-  if (mChunk->mNumDirty != 0) {
+  if (mChunk->mNumDirty != 0 && aAddToDirty) {
     
     
     mArena.mChunksDirty.pushFront(mChunk);
@@ -2346,7 +2390,7 @@ size_t arena_t::TryCoalesce(arena_chunk_t* aChunk, size_t run_ind,
   MOZ_ASSERT(size == run_pages << gPageSize2Pow);
 
   
-  if (run_ind + run_pages < gChunkNumPages - 1 &&
+  if (run_ind + run_pages < gChunkNumPages - gPagesPerRealPage &&
       (aChunk->mPageMap[run_ind + run_pages].bits &
        (CHUNK_MAP_ALLOCATED | CHUNK_MAP_BUSY)) == 0) {
     size_t nrun_size =
@@ -3698,7 +3742,7 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
   
   
   
-  csize = CHUNK_CEILING(aSize + gPageSize);
+  csize = CHUNK_CEILING(aSize + gRealPageSize);
   if (csize < aSize) {
     
     return nullptr;
@@ -3716,7 +3760,8 @@ void* arena_t::PallocHuge(size_t aSize, size_t aAlignment, bool aZero) {
     ExtentAlloc::dealloc(node);
     return nullptr;
   }
-  psize = PAGE_CEILING(aSize);
+  psize = REAL_PAGE_CEILING(aSize);
+  MOZ_ASSERT(psize < csize);
 #ifdef MOZ_DEBUG
   if (aZero) {
     chunk_assert_zero(ret, psize);
@@ -3772,7 +3817,7 @@ void* arena_t::RallocHuge(void* aPtr, size_t aSize, size_t aOldSize) {
   
   if (aOldSize > gMaxLargeClass &&
       CHUNK_CEILING(aSize + gPageSize) == CHUNK_CEILING(aOldSize + gPageSize)) {
-    size_t psize = PAGE_CEILING(aSize);
+    size_t psize = REAL_PAGE_CEILING(aSize);
     if (aSize < aOldSize) {
       MaybePoison((void*)((uintptr_t)aPtr + aSize), aOldSize - aSize);
     }
@@ -3859,7 +3904,7 @@ static void huge_dalloc(void* aPtr, arena_t* aArena) {
     MOZ_RELEASE_ASSERT(node->mArenaId == node->mArena->mId);
     huge.Remove(node);
 
-    mapped = CHUNK_CEILING(node->mSize + gPageSize);
+    mapped = CHUNK_CEILING(node->mSize + gRealPageSize);
     huge_allocated -= node->mSize;
     huge_mapped -= mapped;
     huge_operations++;
@@ -3893,14 +3938,15 @@ static bool malloc_init_hard() {
   
   MOZ_ASSERT(IsPowerOfTwo(page_size));
 #ifdef MALLOC_STATIC_PAGESIZE
-  if (gPageSize % page_size) {
+  if (gRealPageSize % page_size) {
     _malloc_message(
         _getprogname(),
         "Compile-time page size does not divide the runtime one.\n");
     MOZ_CRASH();
   }
 #else
-  gRealPageSize = gPageSize = page_size;
+  gPageSize = page_size;
+  gRealPageSize = page_size;
 #endif
 
   
@@ -3964,15 +4010,29 @@ static bool malloc_init_hard() {
           break;
 #  ifndef MALLOC_STATIC_PAGESIZE
         case 'P':
-          MOZ_ASSERT(gPageSize >= 4_KiB);
+          MOZ_ASSERT(gPageSize >= 1_KiB);
           MOZ_ASSERT(gPageSize <= 64_KiB);
           prefix_arg = prefix_arg ? prefix_arg : 1;
           gPageSize <<= prefix_arg;
           
           
           
-          if (gPageSize < 4_KiB || gPageSize > 64_KiB) {
+          if (gPageSize < 1_KiB || gPageSize > 64_KiB) {
             gPageSize = 64_KiB;
+          }
+          
+          
+          if (gPageSize > gRealPageSize) {
+            gPageSize = gRealPageSize;
+          }
+          break;
+        case 'p':
+          MOZ_ASSERT(gPageSize >= 1_KiB);
+          MOZ_ASSERT(gPageSize <= 64_KiB);
+          prefix_arg = prefix_arg ? prefix_arg : 1;
+          gPageSize >>= prefix_arg;
+          if (gPageSize < 1_KiB) {
+            gPageSize = 1_KiB;
           }
           break;
 #  endif
@@ -3997,6 +4057,7 @@ static bool malloc_init_hard() {
     }
   }
 
+  MOZ_ASSERT(gPageSize <= gRealPageSize);
 #ifndef MALLOC_STATIC_PAGESIZE
   DefineGlobals();
 #endif
@@ -4436,6 +4497,10 @@ static size_t hard_purge_chunk(arena_chunk_t* aChunk) {
     
     
     if (npages > 0) {
+      
+      
+      MOZ_ASSERT((i % gPagesPerRealPage) == 0);
+      MOZ_ASSERT((npages % gPagesPerRealPage) == 0);
       pages_decommit(((char*)aChunk) + (i << gPageSize2Pow),
                      npages << gPageSize2Pow);
       (void)pages_commit(((char*)aChunk) + (i << gPageSize2Pow),
