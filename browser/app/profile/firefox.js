@@ -2377,6 +2377,13 @@ pref("browser.translations.newSettingsUI.enable", false);
 pref("browser.translations.select.enable", true);
 
 
+#ifdef NIGHTLY_BUILD
+  pref("browser.translations.quickAction.enabled", true);
+#else
+  pref("browser.translations.quickAction.enabled", false);
+#endif
+
+
 
 pref("toolkit.telemetry.archive.enabled", true);
 
