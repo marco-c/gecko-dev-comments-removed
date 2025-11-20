@@ -398,7 +398,8 @@ static bool BlocklistEntryToDriverInfo(const nsACString& aBlocklistEntry,
       aDriverInfo->mFeature = BlocklistFeatureToGfxFeature(dataValue);
       if (aDriverInfo->mFeature == nsIGfxInfo::FEATURE_INVALID) {
         
-        gfxWarning() << "Unrecognized feature " << value.get();
+        
+        
         return false;
       }
     } else if (key.EqualsLiteral("featureStatus")) {
