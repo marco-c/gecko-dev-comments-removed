@@ -13609,6 +13609,10 @@ function Widgets() {
   return external_React_default().createElement("div", {
     className: "widgets-wrapper"
   }, external_React_default().createElement("div", {
+    className: "widgets-section-container"
+  }, external_React_default().createElement("h1", {
+    "data-l10n-id": "newtab-widget-section-title"
+  }), external_React_default().createElement("div", {
     className: "widgets-container"
   }, listsEnabled && external_React_default().createElement(Lists, {
     dispatch: dispatch,
@@ -13616,7 +13620,7 @@ function Widgets() {
   }), timerEnabled && external_React_default().createElement(FocusTimer, {
     dispatch: dispatch,
     handleUserInteraction: handleUserInteraction
-  })), messageData?.content?.messageType === "WidgetMessage" && external_React_default().createElement(MessageWrapper, {
+  }))), messageData?.content?.messageType === "WidgetMessage" && external_React_default().createElement(MessageWrapper, {
     dispatch: dispatch
   }, external_React_default().createElement(WidgetsFeatureHighlight, {
     dispatch: dispatch
