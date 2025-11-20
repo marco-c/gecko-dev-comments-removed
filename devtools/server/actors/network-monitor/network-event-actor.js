@@ -446,8 +446,23 @@ class NetworkEventActor extends Actor {
 
 
   getResponseContent() {
+    const content = { ...this._response.content };
+    if (this._response.contentLongStringActor) {
+      
+      
+      this.unmanage(this._response.contentLongStringActor);
+    }
+    this._response.contentLongStringActor = new LongStringActor(
+      this.conn,
+      content.text
+    );
+    
+    
+    this.manage(this._response.contentLongStringActor);
+    content.text = this._response.contentLongStringActor.form();
+
     return {
-      content: this._response.content,
+      content,
       contentDiscarded: this._discardResponseBody,
     };
   }
@@ -671,12 +686,6 @@ class NetworkEventActor extends Actor {
     }
 
     this._response.content = content;
-    content.text = new LongStringActor(this.conn, content.text);
-    
-    
-    this.manage(content.text);
-    content.text = content.text.form();
-
     this._onEventUpdate(
       lazy.NetworkUtils.NETWORK_EVENT_TYPES.RESPONSE_CONTENT,
       {
