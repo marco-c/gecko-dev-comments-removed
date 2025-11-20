@@ -203,6 +203,7 @@ export interface RecordingSettings {
   objdirs: string[];
   
   duration?: number;
+  mozLogs?: string;
 }
 
 
@@ -447,6 +448,7 @@ export interface PresetDefinition {
   threads: string[];
   duration: number;
   profilerViewMode?: ProfilerViewMode;
+  mozLogs?: string;
   l10nIds: {
     popup: {
       label: string;
