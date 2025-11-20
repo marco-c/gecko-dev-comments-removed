@@ -2646,7 +2646,9 @@ void HTMLMediaElement::QueueLoadFromSourceTask() {
 
 void HTMLMediaElement::QueueSelectResourceTask() {
   
-  if (mHaveQueuedSelectResource) return;
+  if (mHaveQueuedSelectResource) {
+    return;
+  }
   mHaveQueuedSelectResource = true;
   ChangeNetworkState(NETWORK_NO_SOURCE);
   RefPtr<Runnable> r = NewRunnableMethod<JSCallingLocation>(
@@ -3286,7 +3288,9 @@ MediaResult HTMLMediaElement::LoadResource(
     
     nsresult rv = InitializeDecoderAsClone(
         static_cast<ChannelMediaDecoder*>(other->mDecoder.get()));
-    if (NS_SUCCEEDED(rv)) return rv;
+    if (NS_SUCCEEDED(rv)) {
+      return rv;
+    }
   }
 
   LOG(LogLevel::Debug, ("%p LoadResource", this));
@@ -3336,7 +3340,9 @@ nsresult HTMLMediaElement::LoadWithChannel(nsIChannel* aChannel,
   *aListener = nullptr;
 
   
-  if (mIsRunningLoadMethod) return NS_OK;
+  if (mIsRunningLoadMethod) {
+    return NS_OK;
+  }
   mIsRunningLoadMethod = true;
   AbortExistingLoads();
   mIsRunningLoadMethod = false;
@@ -3649,7 +3655,9 @@ void HTMLMediaElement::SetVolume(double aVolume, ErrorResult& aRv) {
     return;
   }
 
-  if (aVolume == mVolume) return;
+  if (aVolume == mVolume) {
+    return;
+  }
 
   mVolume = aVolume;
 
@@ -4728,7 +4736,9 @@ HTMLMediaElement::~HTMLMediaElement() {
 
 void HTMLMediaElement::StopSuspendingAfterFirstFrame() {
   mAllowSuspendAfterFirstFrame = false;
-  if (!mSuspendedAfterFirstFrame) return;
+  if (!mSuspendedAfterFirstFrame) {
+    return;
+  }
   mSuspendedAfterFirstFrame = false;
   if (mDecoder) {
     mDecoder->Resume();
@@ -5418,7 +5428,9 @@ nsresult HTMLMediaElement::InitializeDecoderAsClone(
       HasAttr(nsGkAtoms::loop), aOriginal->ContainerType());
 
   RefPtr<ChannelMediaDecoder> decoder = aOriginal->Clone(decoderInit);
-  if (!decoder) return NS_ERROR_FAILURE;
+  if (!decoder) {
+    return NS_ERROR_FAILURE;
+  }
 
   LOG(LogLevel::Debug,
       ("%p Cloned decoder %p from %p", this, decoder.get(), aOriginal));
@@ -6685,7 +6697,9 @@ VideoFrameContainer* HTMLMediaElement::GetVideoFrameContainer() {
     return nullptr;
   }
 
-  if (mVideoFrameContainer) return mVideoFrameContainer;
+  if (mVideoFrameContainer) {
+    return mVideoFrameContainer;
+  }
 
   
   if (!IsVideo()) {
@@ -7111,7 +7125,9 @@ HTMLSourceElement* HTMLMediaElement::GetNextSource() {
 }
 
 void HTMLMediaElement::ChangeDelayLoadStatus(bool aDelay) {
-  if (mDelayingLoadEvent == aDelay) return;
+  if (mDelayingLoadEvent == aDelay) {
+    return;
+  }
 
   mDelayingLoadEvent = aDelay;
 
