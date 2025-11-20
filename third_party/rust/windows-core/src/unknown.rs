@@ -6,12 +6,13 @@ use core::ptr::NonNull;
 
 
 
+
+
 #[repr(transparent)]
 pub struct IUnknown(NonNull<c_void>);
 
 #[doc(hidden)]
 #[repr(C)]
-#[allow(non_camel_case_types)]
 pub struct IUnknown_Vtbl {
     pub QueryInterface: unsafe extern "system" fn(
         this: *mut c_void,
@@ -56,15 +57,15 @@ impl PartialEq for IUnknown {
         
         
         
-        self.as_raw() == other.as_raw()
-            || self.cast::<IUnknown>().unwrap().0 == other.cast::<IUnknown>().unwrap().0
+        core::ptr::eq(self.as_raw(), other.as_raw())
+            || self.cast::<Self>().unwrap().0 == other.cast::<Self>().unwrap().0
     }
 }
 
 impl Eq for IUnknown {}
 
 impl core::fmt::Debug for IUnknown {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.debug_tuple("IUnknown").field(&self.as_raw()).finish()
     }
 }
@@ -119,16 +120,6 @@ pub trait IUnknownImpl {
     
     
     
-    
-    
-    
-    
-    unsafe fn from_inner_ref(inner: &Self::Impl) -> &Self;
-
-    
-    
-    
-    
     #[inline(always)]
     fn as_interface<I: Interface>(&self) -> InterfaceRef<'_, I>
     where
@@ -156,10 +147,6 @@ pub trait IUnknownImpl {
     fn to_object(&self) -> ComObject<Self::Impl>
     where
         Self::Impl: ComObjectInner<Outer = Self>;
-
-    
-    
-    const INNER_OFFSET_IN_POINTERS: usize;
 }
 
 impl IUnknown_Vtbl {
@@ -169,20 +156,26 @@ impl IUnknown_Vtbl {
             iid: *const GUID,
             interface: *mut *mut c_void,
         ) -> HRESULT {
-            let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
-            (*this).QueryInterface(iid, interface)
+            unsafe {
+                let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
+                (*this).QueryInterface(iid, interface)
+            }
         }
         unsafe extern "system" fn AddRef<T: IUnknownImpl, const OFFSET: isize>(
             this: *mut c_void,
         ) -> u32 {
-            let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
-            (*this).AddRef()
+            unsafe {
+                let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
+                (*this).AddRef()
+            }
         }
         unsafe extern "system" fn Release<T: IUnknownImpl, const OFFSET: isize>(
             this: *mut c_void,
         ) -> u32 {
-            let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
-            T::Release(this)
+            unsafe {
+                let this = (this as *mut *mut c_void).offset(OFFSET) as *mut T;
+                T::Release(this)
+            }
         }
         Self {
             QueryInterface: QueryInterface::<T, OFFSET>,

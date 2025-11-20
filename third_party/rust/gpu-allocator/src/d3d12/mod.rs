@@ -1,90 +1,33 @@
-use std::{backtrace::Backtrace, fmt, sync::Arc};
+#[cfg(feature = "std")]
+use alloc::sync::Arc;
+use alloc::{boxed::Box, string::String, vec::Vec};
+use core::{
+    fmt,
+    
+    mem::size_of_val,
+};
+#[cfg(feature = "std")]
+use std::backtrace::Backtrace;
 
 use log::{debug, warn, Level};
 use windows::Win32::{
     Foundation::E_OUTOFMEMORY,
-    Graphics::{Direct3D12::*, Dxgi::Common::DXGI_FORMAT},
+    Graphics::{
+        Direct3D12::*,
+        Dxgi::{Common::DXGI_FORMAT, DXGI_ERROR_DEVICE_REMOVED},
+    },
 };
-
-#[cfg(feature = "public-winapi")]
-mod public_winapi {
-    pub use winapi::um::d3d12 as winapi_d3d12;
-
-    use super::*;
-
-    
-    pub trait ToWinapi<T> {
-        fn as_winapi(&self) -> *const T;
-        fn as_winapi_mut(&mut self) -> *mut T;
-    }
-
-    
-    
-    
-    pub trait ToWindows<T> {
-        fn as_windows(&self) -> &T;
-    }
-
-    impl ToWinapi<winapi_d3d12::ID3D12Resource> for ID3D12Resource {
-        fn as_winapi(&self) -> *const winapi_d3d12::ID3D12Resource {
-            unsafe { std::mem::transmute_copy(self) }
-        }
-
-        fn as_winapi_mut(&mut self) -> *mut winapi_d3d12::ID3D12Resource {
-            unsafe { std::mem::transmute_copy(self) }
-        }
-    }
-
-    impl ToWinapi<winapi_d3d12::ID3D12Device> for ID3D12Device {
-        fn as_winapi(&self) -> *const winapi_d3d12::ID3D12Device {
-            unsafe { std::mem::transmute_copy(self) }
-        }
-
-        fn as_winapi_mut(&mut self) -> *mut winapi_d3d12::ID3D12Device {
-            unsafe { std::mem::transmute_copy(self) }
-        }
-    }
-
-    impl ToWindows<ID3D12Device> for *const winapi_d3d12::ID3D12Device {
-        fn as_windows(&self) -> &ID3D12Device {
-            unsafe { std::mem::transmute(self) }
-        }
-    }
-
-    impl ToWindows<ID3D12Device> for *mut winapi_d3d12::ID3D12Device {
-        fn as_windows(&self) -> &ID3D12Device {
-            unsafe { std::mem::transmute(self) }
-        }
-    }
-
-    impl ToWindows<ID3D12Device> for &mut winapi_d3d12::ID3D12Device {
-        fn as_windows(&self) -> &ID3D12Device {
-            unsafe { std::mem::transmute(self) }
-        }
-    }
-
-    impl ToWinapi<winapi_d3d12::ID3D12Heap> for ID3D12Heap {
-        fn as_winapi(&self) -> *const winapi_d3d12::ID3D12Heap {
-            unsafe { std::mem::transmute_copy(self) }
-        }
-
-        fn as_winapi_mut(&mut self) -> *mut winapi_d3d12::ID3D12Heap {
-            unsafe { std::mem::transmute_copy(self) }
-        }
-    }
-}
-
-#[cfg(feature = "public-winapi")]
-pub use public_winapi::*;
 
 #[cfg(feature = "visualizer")]
 mod visualizer;
 #[cfg(feature = "visualizer")]
 pub use visualizer::AllocatorVisualizer;
 
-use super::{allocator, allocator::AllocationType};
 use crate::{
-    allocator::{AllocatorReport, MemoryBlockReport},
+    allocator::{
+        AllocationType, AllocatorReport, DedicatedBlockAllocator, FreeListAllocator,
+        MemoryBlockReport, SubAllocator,
+    },
     AllocationError, AllocationSizes, AllocatorDebugSettings, MemoryLocation, Result,
 };
 
@@ -148,23 +91,6 @@ impl From<&D3D12_RESOURCE_DESC> for ResourceCategory {
     }
 }
 
-#[cfg(feature = "public-winapi")]
-impl From<&winapi_d3d12::D3D12_RESOURCE_DESC> for ResourceCategory {
-    fn from(desc: &winapi_d3d12::D3D12_RESOURCE_DESC) -> Self {
-        if desc.Dimension == winapi_d3d12::D3D12_RESOURCE_DIMENSION_BUFFER {
-            Self::Buffer
-        } else if (desc.Flags
-            & (winapi_d3d12::D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
-                | winapi_d3d12::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL))
-            != 0
-        {
-            Self::RtvDsvTexture
-        } else {
-            Self::OtherTexture
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct AllocationCreateDesc<'a> {
     
@@ -179,41 +105,12 @@ pub struct AllocationCreateDesc<'a> {
     
     
     
+    
+    
     pub resource_category: ResourceCategory,
 }
 
 impl<'a> AllocationCreateDesc<'a> {
-    
-    
-    
-    
-    #[cfg(feature = "public-winapi")]
-    pub fn from_winapi_d3d12_resource_desc(
-        device: *const winapi_d3d12::ID3D12Device,
-        desc: &winapi_d3d12::D3D12_RESOURCE_DESC,
-        name: &'a str,
-        location: MemoryLocation,
-    ) -> Self {
-        let device = device.as_windows();
-        
-        let desc = unsafe {
-            std::mem::transmute::<&winapi_d3d12::D3D12_RESOURCE_DESC, &D3D12_RESOURCE_DESC>(desc)
-        };
-        let allocation_info =
-            unsafe { device.GetResourceAllocationInfo(0, std::slice::from_ref(desc)) };
-        let resource_category: ResourceCategory = desc.into();
-
-        AllocationCreateDesc {
-            name,
-            location,
-            size: allocation_info.SizeInBytes,
-            alignment: allocation_info.Alignment,
-            resource_category,
-        }
-    }
-
-    
-    
     
     
     pub fn from_d3d12_resource_desc(
@@ -222,8 +119,10 @@ impl<'a> AllocationCreateDesc<'a> {
         name: &'a str,
         location: MemoryLocation,
     ) -> Self {
+        
+        
         let allocation_info =
-            unsafe { device.GetResourceAllocationInfo(0, std::slice::from_ref(desc)) };
+            unsafe { device.GetResourceAllocationInfo(0, core::slice::from_ref(desc)) };
         let resource_category: ResourceCategory = desc.into();
 
         AllocationCreateDesc {
@@ -248,7 +147,7 @@ pub enum ID3D12DeviceVersion {
     Device12(ID3D12Device12),
 }
 
-impl std::ops::Deref for ID3D12DeviceVersion {
+impl core::ops::Deref for ID3D12DeviceVersion {
     type Target = ID3D12Device;
 
     fn deref(&self) -> &Self::Target {
@@ -313,7 +212,7 @@ pub struct CommittedAllocationStatistics {
 
 #[derive(Debug)]
 pub struct Allocation {
-    chunk_id: Option<std::num::NonZeroU64>,
+    chunk_id: Option<core::num::NonZeroU64>,
     offset: u64,
     size: u64,
     memory_block_index: usize,
@@ -324,10 +223,14 @@ pub struct Allocation {
 }
 
 impl Allocation {
-    pub fn chunk_id(&self) -> Option<std::num::NonZeroU64> {
+    pub fn chunk_id(&self) -> Option<core::num::NonZeroU64> {
         self.chunk_id
     }
 
+    
+    
+    
+    
     
     
     
@@ -359,7 +262,7 @@ impl Allocation {
 struct MemoryBlock {
     heap: ID3D12Heap,
     size: u64,
-    sub_allocator: Box<dyn allocator::SubAllocator>,
+    sub_allocator: Box<dyn SubAllocator>,
 }
 impl MemoryBlock {
     fn new(
@@ -388,8 +291,7 @@ impl MemoryBlock {
             match hr {
                 Err(e) if e.code() == E_OUTOFMEMORY => Err(AllocationError::OutOfMemory),
                 Err(e) => Err(AllocationError::Internal(format!(
-                    "ID3D12Device::CreateHeap failed: {}",
-                    e
+                    "ID3D12Device::CreateHeap failed: {e}"
                 ))),
                 Ok(()) => heap.ok_or_else(|| {
                     AllocationError::Internal(
@@ -399,10 +301,10 @@ impl MemoryBlock {
             }?
         };
 
-        let sub_allocator: Box<dyn allocator::SubAllocator> = if dedicated {
-            Box::new(allocator::DedicatedBlockAllocator::new(size))
+        let sub_allocator: Box<dyn SubAllocator> = if dedicated {
+            Box::new(DedicatedBlockAllocator::new(size))
         } else {
-            Box::new(allocator::FreeListAllocator::new(size))
+            Box::new(FreeListAllocator::new(size))
         };
 
         Ok(Self {
@@ -429,16 +331,13 @@ impl MemoryType {
         &mut self,
         device: &ID3D12DeviceVersion,
         desc: &AllocationCreateDesc<'_>,
-        backtrace: Arc<Backtrace>,
+        #[cfg(feature = "std")] backtrace: Arc<Backtrace>,
         allocation_sizes: &AllocationSizes,
     ) -> Result<Allocation> {
         let allocation_type = AllocationType::Linear;
 
-        let memblock_size = if self.heap_properties.Type == D3D12_HEAP_TYPE_DEFAULT {
-            allocation_sizes.device_memblock_size
-        } else {
-            allocation_sizes.host_memblock_size
-        };
+        let is_host = self.heap_properties.Type != D3D12_HEAP_TYPE_DEFAULT;
+        let memblock_size = allocation_sizes.get_memblock_size(is_host, self.active_general_blocks);
 
         let size = desc.size;
         let alignment = desc.alignment;
@@ -475,6 +374,7 @@ impl MemoryType {
                 allocation_type,
                 1,
                 desc.name,
+                #[cfg(feature = "std")]
                 backtrace,
             )?;
 
@@ -498,6 +398,7 @@ impl MemoryType {
                     allocation_type,
                     1,
                     desc.name,
+                    #[cfg(feature = "std")]
                     backtrace.clone(),
                 );
 
@@ -548,6 +449,7 @@ impl MemoryType {
             allocation_type,
             1,
             desc.name,
+            #[cfg(feature = "std")]
             backtrace,
         );
         let (offset, chunk_id) = match allocation {
@@ -578,28 +480,22 @@ impl MemoryType {
 
         mem_block.sub_allocator.free(allocation.chunk_id)?;
 
-        if mem_block.sub_allocator.is_empty() {
-            if mem_block.sub_allocator.supports_general_allocations() {
-                if self.active_general_blocks > 1 {
-                    let block = self.memory_blocks[block_idx].take();
-                    if block.is_none() {
-                        return Err(AllocationError::Internal(
-                            "Memory block must be Some.".into(),
-                        ));
-                    }
-                    
+        
+        
+        
+        let is_dedicated_or_not_last_general_block =
+            !mem_block.sub_allocator.supports_general_allocations()
+                || self.active_general_blocks > 1;
+        if mem_block.sub_allocator.is_empty() && is_dedicated_or_not_last_general_block {
+            let block = self.memory_blocks[block_idx]
+                .take()
+                .ok_or_else(|| AllocationError::Internal("Memory block must be Some.".into()))?;
 
-                    self.active_general_blocks -= 1;
-                }
-            } else {
-                let block = self.memory_blocks[block_idx].take();
-                if block.is_none() {
-                    return Err(AllocationError::Internal(
-                        "Memory block must be Some.".into(),
-                    ));
-                }
-                
+            if block.sub_allocator.supports_general_allocations() {
+                self.active_general_blocks -= 1;
             }
+
+            
         }
 
         Ok(())
@@ -628,11 +524,11 @@ impl Allocator {
             device.CheckFeatureSupport(
                 D3D12_FEATURE_D3D12_OPTIONS,
                 <*mut D3D12_FEATURE_DATA_D3D12_OPTIONS>::cast(&mut options),
-                std::mem::size_of_val(&options) as u32,
+                size_of_val(&options) as u32,
             )
         }
         .map_err(|e| {
-            AllocationError::Internal(format!("ID3D12Device::CheckFeatureSupport failed: {}", e))
+            AllocationError::Internal(format!("ID3D12Device::CheckFeatureSupport failed: {e}"))
         })?;
 
         let is_heap_tier1 = options.ResourceHeapTier == D3D12_RESOURCE_HEAP_TIER_1;
@@ -725,6 +621,7 @@ impl Allocator {
         let size = desc.size;
         let alignment = desc.alignment;
 
+        #[cfg(feature = "std")]
         let backtrace = Arc::new(if self.debug_settings.store_stack_traces {
             Backtrace::force_capture()
         } else {
@@ -736,9 +633,10 @@ impl Allocator {
                 "Allocating `{}` of {} bytes with an alignment of {}.",
                 &desc.name, size, alignment
             );
+            #[cfg(feature = "std")]
             if self.debug_settings.log_stack_traces {
                 let backtrace = Backtrace::force_capture();
-                debug!("Allocation stack trace: {}", backtrace);
+                debug!("Allocation stack trace: {backtrace}");
             }
         }
 
@@ -761,16 +659,23 @@ impl Allocator {
             })
             .ok_or(AllocationError::NoCompatibleMemoryTypeFound)?;
 
-        memory_type.allocate(&self.device, desc, backtrace, &self.allocation_sizes)
+        memory_type.allocate(
+            &self.device,
+            desc,
+            #[cfg(feature = "std")]
+            backtrace,
+            &self.allocation_sizes,
+        )
     }
 
     pub fn free(&mut self, allocation: Allocation) -> Result<()> {
         if self.debug_settings.log_frees {
             let name = allocation.name.as_deref().unwrap_or("<null>");
-            debug!("Freeing `{}`.", name);
+            debug!("Freeing `{name}`.");
+            #[cfg(feature = "std")]
             if self.debug_settings.log_stack_traces {
                 let backtrace = Backtrace::force_capture();
-                debug!("Free stack trace: {}", backtrace);
+                debug!("Free stack trace: {backtrace}");
             }
         }
 
@@ -947,9 +852,14 @@ impl Allocator {
                         }
                     }
                 } {
+                    if e.code() == DXGI_ERROR_DEVICE_REMOVED {
+                        return Err(AllocationError::Internal(format!(
+                            "ID3D12Device::CreateCommittedResource DEVICE_REMOVED: {:?}",
+                            unsafe { self.device.GetDeviceRemovedReason() }
+                        )));
+                    }
                     return Err(AllocationError::Internal(format!(
-                        "ID3D12Device::CreateCommittedResource failed: {}",
-                        e
+                        "ID3D12Device::CreateCommittedResource failed: {e}"
                     )));
                 }
 
@@ -1057,9 +967,14 @@ impl Allocator {
                         }
                     }
                 } {
+                    if e.code() == DXGI_ERROR_DEVICE_REMOVED {
+                        return Err(AllocationError::Internal(format!(
+                            "ID3D12Device::CreatePlacedResource DEVICE_REMOVED: {:?}",
+                            unsafe { self.device.GetDeviceRemovedReason() }
+                        )));
+                    }
                     return Err(AllocationError::Internal(format!(
-                        "ID3D12Device::CreatePlacedResource failed: {}",
-                        e
+                        "ID3D12Device::CreatePlacedResource failed: {e}"
                     )));
                 }
 
@@ -1104,11 +1019,11 @@ impl Allocator {
     pub fn generate_report(&self) -> AllocatorReport {
         let mut allocations = vec![];
         let mut blocks = vec![];
-        let mut total_reserved_bytes = 0;
+        let mut total_capacity_bytes = 0;
 
         for memory_type in &self.memory_types {
             for block in memory_type.memory_blocks.iter().flatten() {
-                total_reserved_bytes += block.size;
+                total_capacity_bytes += block.size;
                 let first_allocation = allocations.len();
                 allocations.extend(block.sub_allocator.report_allocations());
                 blocks.push(MemoryBlockReport {
@@ -1124,8 +1039,21 @@ impl Allocator {
             allocations,
             blocks,
             total_allocated_bytes,
-            total_reserved_bytes,
+            total_capacity_bytes,
         }
+    }
+
+    
+    pub fn capacity(&self) -> u64 {
+        let mut total_capacity_bytes = 0;
+
+        for memory_type in &self.memory_types {
+            for block in memory_type.memory_blocks.iter().flatten() {
+                total_capacity_bytes += block.size;
+            }
+        }
+
+        total_capacity_bytes
     }
 }
 

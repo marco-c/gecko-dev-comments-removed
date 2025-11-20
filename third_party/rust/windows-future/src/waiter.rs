@@ -2,17 +2,16 @@ use super::*;
 
 pub struct Waiter(HANDLE);
 pub struct WaiterSignaler(HANDLE);
-
 unsafe impl Send for WaiterSignaler {}
 
 impl Waiter {
-    pub fn new() -> crate::Result<(Waiter, WaiterSignaler)> {
+    pub fn new() -> crate::Result<(Self, WaiterSignaler)> {
         unsafe {
             let handle = CreateEventW(core::ptr::null(), 1, 0, core::ptr::null());
             if handle.is_null() {
-                Err(crate::Error::from_win32())
+                Err(crate::Error::from_thread())
             } else {
-                Ok((Waiter(handle), WaiterSignaler(handle)))
+                Ok((Self(handle), WaiterSignaler(handle)))
             }
         }
     }
@@ -26,7 +25,9 @@ impl WaiterSignaler {
     
     pub unsafe fn signal(&self) {
         
-        SetEvent(self.0);
+        unsafe {
+            SetEvent(self.0);
+        }
     }
 }
 

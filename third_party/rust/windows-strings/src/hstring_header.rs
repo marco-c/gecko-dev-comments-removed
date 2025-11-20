@@ -14,9 +14,9 @@ pub struct HStringHeader {
 }
 
 impl HStringHeader {
-    pub fn alloc(len: u32) -> Result<*mut Self> {
+    pub fn alloc(len: u32) -> *mut Self {
         if len == 0 {
-            return Ok(core::ptr::null_mut());
+            return core::ptr::null_mut();
         }
 
         
@@ -27,7 +27,7 @@ impl HStringHeader {
             unsafe { bindings::HeapAlloc(bindings::GetProcessHeap(), 0, bytes) } as *mut Self;
 
         if header.is_null() {
-            return Err(Error::from_hresult(HRESULT(bindings::E_OUTOFMEMORY)));
+            panic!("allocation failed");
         }
 
         unsafe {
@@ -38,7 +38,7 @@ impl HStringHeader {
             (*header).data = &mut (*header).buffer_start;
         }
 
-        Ok(header)
+        header
     }
 
     pub unsafe fn free(header: *mut Self) {
@@ -46,23 +46,25 @@ impl HStringHeader {
             return;
         }
 
-        bindings::HeapFree(bindings::GetProcessHeap(), 0, header as *mut _);
+        unsafe {
+            bindings::HeapFree(bindings::GetProcessHeap(), 0, header as *mut _);
+        }
     }
 
-    pub fn duplicate(&self) -> Result<*mut Self> {
+    pub fn duplicate(&self) -> *mut Self {
         if self.flags & HSTRING_REFERENCE_FLAG == 0 {
             
             self.count.add_ref();
-            Ok(self as *const Self as *mut Self)
+            self as *const Self as *mut Self
         } else {
             
-            let copy = Self::alloc(self.len)?;
+            let copy = Self::alloc(self.len);
             
             
             unsafe {
                 core::ptr::copy_nonoverlapping(self.data, (*copy).data, self.len as usize + 1);
             }
-            Ok(copy)
+            copy
         }
     }
 }

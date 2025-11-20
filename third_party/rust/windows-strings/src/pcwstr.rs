@@ -32,10 +32,10 @@ impl PCWSTR {
     
     
     pub unsafe fn len(&self) -> usize {
-        extern "C" {
+        unsafe extern "C" {
             fn wcslen(s: *const u16) -> usize;
         }
-        wcslen(self.0)
+        unsafe { wcslen(self.0) }
     }
 
     
@@ -44,7 +44,7 @@ impl PCWSTR {
     
     
     pub unsafe fn is_empty(&self) -> bool {
-        self.len() == 0
+        unsafe { self.len() == 0 }
     }
 
     
@@ -53,7 +53,7 @@ impl PCWSTR {
     
     
     pub unsafe fn as_wide(&self) -> &[u16] {
-        core::slice::from_raw_parts(self.0, self.len())
+        unsafe { core::slice::from_raw_parts(self.0, self.len()) }
     }
 
     
@@ -62,7 +62,7 @@ impl PCWSTR {
     
     
     pub unsafe fn to_string(&self) -> core::result::Result<String, alloc::string::FromUtf16Error> {
-        String::from_utf16(self.as_wide())
+        unsafe { String::from_utf16(self.as_wide()) }
     }
 
     
@@ -70,8 +70,8 @@ impl PCWSTR {
     
     
     
-    pub unsafe fn to_hstring(&self) -> Result<HSTRING> {
-        HSTRING::from_wide(self.as_wide())
+    pub unsafe fn to_hstring(&self) -> HSTRING {
+        unsafe { HSTRING::from_wide(self.as_wide()) }
     }
 
     
@@ -80,6 +80,18 @@ impl PCWSTR {
     
     
     pub unsafe fn display(&self) -> impl core::fmt::Display + '_ {
-        Decode(move || core::char::decode_utf16(self.as_wide().iter().cloned()))
+        unsafe { Decode(move || core::char::decode_utf16(self.as_wide().iter().cloned())) }
+    }
+}
+
+impl Default for PCWSTR {
+    fn default() -> Self {
+        Self::null()
+    }
+}
+
+impl AsRef<Self> for PCWSTR {
+    fn as_ref(&self) -> &Self {
+        self
     }
 }

@@ -38,7 +38,7 @@ pub unsafe trait Interface: Sized + Clone {
     #[doc(hidden)]
     #[inline(always)]
     unsafe fn assume_vtable<T: Interface>(&self) -> &T::Vtable {
-        &**(self.as_raw() as *mut *mut T::Vtable)
+        unsafe { &**(self.as_raw() as *mut *mut T::Vtable) }
     }
 
     
@@ -64,7 +64,7 @@ pub unsafe trait Interface: Sized + Clone {
     
     
     unsafe fn from_raw(raw: *mut c_void) -> Self {
-        transmute_copy(&raw)
+        unsafe { transmute_copy(&raw) }
     }
 
     
@@ -75,10 +75,12 @@ pub unsafe trait Interface: Sized + Clone {
     
     #[inline(always)]
     unsafe fn from_raw_borrowed(raw: &*mut c_void) -> Option<&Self> {
-        if raw.is_null() {
-            None
-        } else {
-            Some(transmute_copy(&raw))
+        unsafe {
+            if raw.is_null() {
+                None
+            } else {
+                Some(transmute_copy(&raw))
+            }
         }
     }
 
@@ -235,7 +237,7 @@ pub unsafe trait Interface: Sized + Clone {
     
     fn downgrade(&self) -> Result<Weak<Self>> {
         self.cast::<imp::IWeakReferenceSource>()
-            .and_then(|source| Weak::downgrade(&source))
+            .map(|source| Weak::downgrade(&source))
     }
 
     
@@ -245,10 +247,12 @@ pub unsafe trait Interface: Sized + Clone {
     
     #[inline(always)]
     unsafe fn query(&self, iid: *const GUID, interface: *mut *mut c_void) -> HRESULT {
-        if Self::UNKNOWN {
-            (self.assume_vtable::<IUnknown>().QueryInterface)(self.as_raw(), iid, interface)
-        } else {
-            panic!("Non-COM interfaces cannot be queried.")
+        unsafe {
+            if Self::UNKNOWN {
+                (self.assume_vtable::<IUnknown>().QueryInterface)(self.as_raw(), iid, interface)
+            } else {
+                panic!("Non-COM interfaces cannot be queried.")
+            }
         }
     }
 
@@ -260,33 +264,27 @@ pub unsafe trait Interface: Sized + Clone {
 }
 
 
-#[doc(hidden)]
-pub unsafe fn from_raw_borrowed<T: Interface>(raw: &*mut c_void) -> Option<&T> {
-    T::from_raw_borrowed(raw)
-}
-
-
 
 
 
 #[repr(transparent)]
 pub struct InterfaceRef<'a, I>(NonNull<c_void>, PhantomData<&'a I>);
 
-impl<'a, I> Copy for InterfaceRef<'a, I> {}
+impl<I> Copy for InterfaceRef<'_, I> {}
 
-impl<'a, I> Clone for InterfaceRef<'a, I> {
+impl<I> Clone for InterfaceRef<'_, I> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, I: core::fmt::Debug + Interface> core::fmt::Debug for InterfaceRef<'a, I> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl<I: core::fmt::Debug + Interface> core::fmt::Debug for InterfaceRef<'_, I> {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         <I as core::fmt::Debug>::fmt(&**self, f)
     }
 }
 
-impl<'a, I: Interface> InterfaceRef<'a, I> {
+impl<I: Interface> InterfaceRef<'_, I> {
     
     
     
@@ -320,12 +318,12 @@ impl<'a, I: Interface> InterfaceRef<'a, I> {
 
 impl<'a, 'i: 'a, I: Interface> From<&'i I> for InterfaceRef<'a, I> {
     #[inline(always)]
-    fn from(interface: &'a I) -> InterfaceRef<'a, I> {
+    fn from(interface: &'a I) -> Self {
         InterfaceRef::from_interface(interface)
     }
 }
 
-impl<'a, I: Interface> core::ops::Deref for InterfaceRef<'a, I> {
+impl<I: Interface> core::ops::Deref for InterfaceRef<'_, I> {
     type Target = I;
 
     #[inline(always)]

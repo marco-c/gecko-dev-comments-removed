@@ -181,6 +181,7 @@ pub struct AllocatorReport {
     
     pub total_allocated_bytes: u64,
     
+    
     pub total_reserved_bytes: u64,
 }
 

@@ -40,7 +40,7 @@ impl<C: crate::RuntimeName, I: Interface> FactoryCache<C, I> {
             }
 
             
-            let factory = factory::<C, I>()?;
+            let factory = load_factory::<C, I>()?;
 
             
             if factory.cast::<IAgileObject>().is_ok() {
@@ -70,7 +70,7 @@ unsafe impl<C, I> Sync for FactoryCache<C, I> {}
 
 
 
-pub fn factory<C: crate::RuntimeName, I: Interface>() -> crate::Result<I> {
+pub fn load_factory<C: crate::RuntimeName, I: Interface>() -> crate::Result<I> {
     let mut factory: Option<I> = None;
     let name = crate::HSTRING::from(C::NAME);
 
@@ -104,16 +104,16 @@ pub fn factory<C: crate::RuntimeName, I: Interface>() -> crate::Result<I> {
 
     
     
-    let original: crate::Error = code.into();
-
-    
-    if let Some(i) = search_path(C::NAME, |library| unsafe {
-        get_activation_factory(library, &name)
-    }) {
-        i.cast()
-    } else {
-        Err(original)
+    if code == REGDB_E_CLASSNOTREG {
+        
+        if let Some(i) = search_path(C::NAME, |library| unsafe {
+            get_activation_factory(library, &name)
+        }) {
+            return i.cast();
+        }
     }
+
+    Err(crate::Error::from_hresult(code))
 }
 
 
@@ -146,32 +146,36 @@ unsafe fn get_activation_factory(
     library: crate::PCSTR,
     name: &crate::HSTRING,
 ) -> crate::Result<IGenericFactory> {
-    let function =
-        delay_load::<DllGetActivationFactory>(library, crate::s!("DllGetActivationFactory"))
-            .ok_or_else(crate::Error::from_win32)?;
-    let mut abi = null_mut();
-    function(transmute_copy(name), &mut abi).and_then(|| crate::Type::from_abi(abi))
+    unsafe {
+        let function =
+            delay_load::<DllGetActivationFactory>(library, crate::s!("DllGetActivationFactory"))
+                .ok_or_else(crate::Error::from_thread)?;
+        let mut abi = null_mut();
+        function(transmute_copy(name), &mut abi).and_then(|| crate::Type::from_abi(abi))
+    }
 }
 
 unsafe fn delay_load<T>(library: crate::PCSTR, function: crate::PCSTR) -> Option<T> {
-    let library = LoadLibraryExA(
-        library.0,
-        core::ptr::null_mut(),
-        LOAD_LIBRARY_SEARCH_DEFAULT_DIRS,
-    );
+    unsafe {
+        let library = LoadLibraryExA(
+            library.0,
+            core::ptr::null_mut(),
+            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS,
+        );
 
-    if library.is_null() {
-        return None;
+        if library.is_null() {
+            return None;
+        }
+
+        let address = GetProcAddress(library, function.0);
+
+        if address.is_some() {
+            return Some(core::mem::transmute_copy(&address));
+        }
+
+        FreeLibrary(library);
+        None
     }
-
-    let address = GetProcAddress(library, function.0);
-
-    if address.is_some() {
-        return Some(core::mem::transmute_copy(&address));
-    }
-
-    FreeLibrary(library);
-    None
 }
 
 type DllGetActivationFactory =

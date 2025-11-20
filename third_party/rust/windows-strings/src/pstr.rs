@@ -32,8 +32,10 @@ impl PSTR {
     
     
     pub unsafe fn as_bytes(&self) -> &[u8] {
-        let len = strlen(PCSTR::from_raw(self.0));
-        core::slice::from_raw_parts(self.0, len)
+        unsafe {
+            let len = strlen(PCSTR::from_raw(self.0));
+            core::slice::from_raw_parts(self.0, len)
+        }
     }
 
     
@@ -42,7 +44,7 @@ impl PSTR {
     
     
     pub unsafe fn to_string(&self) -> core::result::Result<String, alloc::string::FromUtf8Error> {
-        String::from_utf8(self.as_bytes().into())
+        unsafe { String::from_utf8(self.as_bytes().into()) }
     }
 
     
@@ -51,6 +53,12 @@ impl PSTR {
     
     
     pub unsafe fn display(&self) -> impl core::fmt::Display + '_ {
-        Decode(move || decode_utf8(self.as_bytes()))
+        unsafe { Decode(move || decode_utf8(self.as_bytes())) }
+    }
+}
+
+impl Default for PSTR {
+    fn default() -> Self {
+        Self::null()
     }
 }

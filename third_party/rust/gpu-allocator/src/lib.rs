@@ -207,6 +207,23 @@
 
 
 
+#![deny(clippy::unimplemented, clippy::unwrap_used, clippy::ok_expect)]
+#![warn(
+    clippy::alloc_instead_of_core,
+    clippy::std_instead_of_alloc,
+    clippy::std_instead_of_core
+)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[macro_use]
+extern crate alloc;
+
+#[cfg(all(not(feature = "std"), feature = "visualizer"))]
+compile_error!("Cannot enable `visualizer` feature in `no_std` environment.");
+
+#[cfg(not(any(feature = "std", feature = "hashbrown")))]
+compile_error!("Either `std` or `hashbrown` feature must be enabled");
+
 mod result;
 pub use result::*;
 
@@ -223,7 +240,7 @@ pub mod vulkan;
 #[cfg(all(windows, feature = "d3d12"))]
 pub mod d3d12;
 
-#[cfg(all(any(target_os = "macos", target_os = "ios"), feature = "metal"))]
+#[cfg(all(target_vendor = "apple", feature = "metal"))]
 pub mod metal;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -239,6 +256,7 @@ pub enum MemoryLocation {
     GpuToCpu,
 }
 
+#[non_exhaustive]
 #[derive(Copy, Clone, Debug)]
 pub struct AllocatorDebugSettings {
     
@@ -248,12 +266,14 @@ pub struct AllocatorDebugSettings {
     
     
     
+    #[cfg(feature = "std")]
     pub store_stack_traces: bool,
     
     pub log_allocations: bool,
     
     pub log_frees: bool,
     
+    #[cfg(feature = "std")]
     pub log_stack_traces: bool,
 }
 
@@ -262,13 +282,53 @@ impl Default for AllocatorDebugSettings {
         Self {
             log_memory_information: false,
             log_leaks_on_shutdown: true,
+            #[cfg(feature = "std")]
             store_stack_traces: false,
             log_allocations: false,
             log_frees: false,
+            #[cfg(feature = "std")]
             log_stack_traces: false,
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -281,53 +341,109 @@ pub struct AllocationSizes {
     
     
     
-    device_memblock_size: u64,
     
     
     
-    host_memblock_size: u64,
+    min_device_memblock_size: u64,
+    
+    
+    
+    max_device_memblock_size: u64,
+    
+    
+    
+    
+    
+    
+    min_host_memblock_size: u64,
+    
+    
+    
+    max_host_memblock_size: u64,
 }
 
 impl AllocationSizes {
+    
+    
+    
+    
+    
     pub fn new(device_memblock_size: u64, host_memblock_size: u64) -> Self {
-        const FOUR_MB: u64 = 4 * 1024 * 1024;
-        const TWO_HUNDRED_AND_FIFTY_SIX_MB: u64 = 256 * 1024 * 1024;
-
-        let mut device_memblock_size =
-            device_memblock_size.clamp(FOUR_MB, TWO_HUNDRED_AND_FIFTY_SIX_MB);
-        let mut host_memblock_size =
-            host_memblock_size.clamp(FOUR_MB, TWO_HUNDRED_AND_FIFTY_SIX_MB);
-
-        if device_memblock_size % FOUR_MB != 0 {
-            let val = device_memblock_size / FOUR_MB + 1;
-            device_memblock_size = val * FOUR_MB;
-            log::warn!(
-                "Device memory block size must be a multiple of 4MB, clamping to {}MB",
-                device_memblock_size / 1024 / 1024
-            )
-        }
-
-        if host_memblock_size % FOUR_MB != 0 {
-            let val = host_memblock_size / FOUR_MB + 1;
-            host_memblock_size = val * FOUR_MB;
-            log::warn!(
-                "Host memory block size must be a multiple of 4MB, clamping to {}MB",
-                host_memblock_size / 1024 / 1024
-            )
-        }
+        let device_memblock_size = Self::adjust_memblock_size(device_memblock_size, "Device");
+        let host_memblock_size = Self::adjust_memblock_size(host_memblock_size, "Host");
 
         Self {
-            device_memblock_size,
-            host_memblock_size,
+            min_device_memblock_size: device_memblock_size,
+            max_device_memblock_size: device_memblock_size,
+            min_host_memblock_size: host_memblock_size,
+            max_host_memblock_size: host_memblock_size,
         }
+    }
+
+    
+    pub fn with_max_device_memblock_size(mut self, size: u64) -> Self {
+        self.max_device_memblock_size =
+            Self::adjust_memblock_size(size, "Device").max(self.min_device_memblock_size);
+
+        self
+    }
+
+    
+    pub fn with_max_host_memblock_size(mut self, size: u64) -> Self {
+        self.max_host_memblock_size =
+            Self::adjust_memblock_size(size, "Host").max(self.min_host_memblock_size);
+
+        self
+    }
+
+    fn adjust_memblock_size(size: u64, kind: &str) -> u64 {
+        const MB: u64 = 1024 * 1024;
+
+        let size = size.clamp(4 * MB, 256 * MB);
+
+        if size % (4 * MB) == 0 {
+            return size;
+        }
+
+        let val = size / (4 * MB) + 1;
+        let new_size = val * 4 * MB;
+        log::warn!(
+            "{kind} memory block size must be a multiple of 4MB, clamping to {}MB",
+            new_size / MB
+        );
+
+        new_size
+    }
+
+    
+    
+    
+    
+    
+    
+    pub(crate) fn get_memblock_size(&self, is_host: bool, count: usize) -> u64 {
+        let (min_size, max_size) = if is_host {
+            (self.min_host_memblock_size, self.max_host_memblock_size)
+        } else {
+            (self.min_device_memblock_size, self.max_device_memblock_size)
+        };
+
+        
+        
+        
+        let shift = count.min(7) as u64;
+        (min_size << shift).min(max_size)
     }
 }
 
 impl Default for AllocationSizes {
     fn default() -> Self {
+        const MB: u64 = 1024 * 1024;
         Self {
-            device_memblock_size: 256 * 1024 * 1024,
-            host_memblock_size: 64 * 1024 * 1024,
+            min_device_memblock_size: 256 * MB,
+            max_device_memblock_size: 256 * MB,
+            min_host_memblock_size: 64 * MB,
+            max_host_memblock_size: 64 * MB,
         }
     }
 }

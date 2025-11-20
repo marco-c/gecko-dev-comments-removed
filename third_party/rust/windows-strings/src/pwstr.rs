@@ -32,7 +32,7 @@ impl PWSTR {
     
     
     pub unsafe fn len(&self) -> usize {
-        PCWSTR(self.0).len()
+        unsafe { PCWSTR(self.0).len() }
     }
 
     
@@ -41,7 +41,7 @@ impl PWSTR {
     
     
     pub unsafe fn is_empty(&self) -> bool {
-        self.len() == 0
+        unsafe { self.len() == 0 }
     }
 
     
@@ -50,7 +50,7 @@ impl PWSTR {
     
     
     pub unsafe fn as_wide(&self) -> &[u16] {
-        core::slice::from_raw_parts(self.0, self.len())
+        unsafe { core::slice::from_raw_parts(self.0, self.len()) }
     }
 
     
@@ -59,7 +59,7 @@ impl PWSTR {
     
     
     pub unsafe fn to_string(&self) -> core::result::Result<String, alloc::string::FromUtf16Error> {
-        String::from_utf16(self.as_wide())
+        unsafe { String::from_utf16(self.as_wide()) }
     }
 
     
@@ -67,8 +67,8 @@ impl PWSTR {
     
     
     
-    pub unsafe fn to_hstring(&self) -> Result<HSTRING> {
-        HSTRING::from_wide(self.as_wide())
+    pub unsafe fn to_hstring(&self) -> HSTRING {
+        unsafe { HSTRING::from_wide(self.as_wide()) }
     }
 
     
@@ -77,6 +77,12 @@ impl PWSTR {
     
     
     pub unsafe fn display(&self) -> impl core::fmt::Display + '_ {
-        Decode(move || core::char::decode_utf16(self.as_wide().iter().cloned()))
+        unsafe { Decode(move || core::char::decode_utf16(self.as_wide().iter().cloned())) }
+    }
+}
+
+impl Default for PWSTR {
+    fn default() -> Self {
+        Self::null()
     }
 }

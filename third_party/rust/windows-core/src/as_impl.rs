@@ -7,7 +7,7 @@ pub trait AsImpl<T> {
     
     
     unsafe fn as_impl(&self) -> &T {
-        self.as_impl_ptr().as_ref()
+        unsafe { self.as_impl_ptr().as_ref() }
     }
 
     
