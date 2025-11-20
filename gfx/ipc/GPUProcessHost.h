@@ -65,8 +65,10 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
+  
   bool Launch(geckoargs::ChildProcessArgs aExtraOpts);
 
+  
   
   
   
@@ -125,7 +127,14 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   ~GPUProcessHost();
 
   
+  
   void InitAfterConnect(bool aSucceeded);
+  
+  
+  void OnAsyncInitComplete();
+  
+  
+  bool CompleteInitSynchronously();
 
   
   void OnChannelClosed();
@@ -147,7 +156,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   Listener* mListener;
 
-  enum class LaunchPhase { Unlaunched, Waiting, Complete };
+  enum class LaunchPhase { Unlaunched, Waiting, Connected, Complete };
   LaunchPhase mLaunchPhase;
 
   RefPtr<GPUChild> mGPUChild;
