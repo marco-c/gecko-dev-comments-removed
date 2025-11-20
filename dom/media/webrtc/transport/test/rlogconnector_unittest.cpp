@@ -33,7 +33,7 @@ class RLogConnectorTest : public ::testing::Test {
   ~RLogConnectorTest() { Free(); }
 
   static void SetUpTestCase() {
-    NR_reg_init(NR_REG_MODE_LOCAL);
+    NR_reg_init();
     r_log_init();
     
     const char* facility = "rlogconnector_test";
