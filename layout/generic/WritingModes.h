@@ -532,6 +532,11 @@ class WritingMode {
 
   bool ParallelAxisStartsOnSameSide(LogicalAxis aLogicalAxis,
                                     const WritingMode& aOther) const {
+    if (MOZ_LIKELY(*this == aOther)) {
+      
+      return true;
+    }
+
     mozilla::Side myStartSide =
         this->PhysicalSide(MakeLogicalSide(aLogicalAxis, LogicalEdge::Start));
 

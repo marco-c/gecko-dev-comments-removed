@@ -1327,33 +1327,6 @@ static bool AreAllEarlierInFlowFramesEmpty(nsIFrame* aFrame,
   return true;
 }
 
-static bool AxisPolarityFlipped(LogicalAxis aThisAxis, WritingMode aThisWm,
-                                WritingMode aOtherWm) {
-  if (MOZ_LIKELY(aThisWm == aOtherWm)) {
-    
-    return false;
-  }
-  LogicalAxis otherAxis = aThisWm.IsOrthogonalTo(aOtherWm)
-                              ? GetOrthogonalAxis(aThisAxis)
-                              : aThisAxis;
-  NS_ASSERTION(
-      aThisWm.PhysicalAxis(aThisAxis) == aOtherWm.PhysicalAxis(otherAxis),
-      "Physical axes must match!");
-  Side thisStartSide =
-      aThisWm.PhysicalSide(MakeLogicalSide(aThisAxis, LogicalEdge::Start));
-  Side otherStartSide =
-      aOtherWm.PhysicalSide(MakeLogicalSide(otherAxis, LogicalEdge::Start));
-  return thisStartSide != otherStartSide;
-}
-
-static bool InlinePolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
-  return AxisPolarityFlipped(LogicalAxis::Inline, aThisWm, aOtherWm);
-}
-
-static bool BlockPolarityFlipped(WritingMode aThisWm, WritingMode aOtherWm) {
-  return AxisPolarityFlipped(LogicalAxis::Block, aThisWm, aOtherWm);
-}
-
 
 
 
@@ -1592,13 +1565,15 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   const LogicalMargin border = aCBReflowInput->ComputedLogicalBorder(wm);
-  if (hypotheticalPosWillUseCbwm && InlinePolarityFlipped(wm, cbwm)) {
+  if (hypotheticalPosWillUseCbwm &&
+      !wm.ParallelAxisStartsOnSameSide(LogicalAxis::Inline, cbwm)) {
     aHypotheticalPos.mIStart += border.IEnd(wm);
   } else {
     aHypotheticalPos.mIStart -= border.IStart(wm);
   }
 
-  if (hypotheticalPosWillUseCbwm && BlockPolarityFlipped(wm, cbwm)) {
+  if (hypotheticalPosWillUseCbwm &&
+      !wm.ParallelAxisStartsOnSameSide(LogicalAxis::Block, cbwm)) {
     aHypotheticalPos.mBStart += border.BEnd(wm);
   } else {
     aHypotheticalPos.mBStart -= border.BStart(wm);
