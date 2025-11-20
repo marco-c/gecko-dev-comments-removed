@@ -61,28 +61,18 @@ static const gc::AllocKind ITERATOR_FINALIZE_KIND =
 
 void NativeIterator::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &objectBeingIterated_, "objectBeingIterated_");
-  TraceNullableEdge(trc, &iterObj_, "iterObj");
+  TraceNullableEdge(trc, &iterObj_, "iterObj_");
+  TraceNullableEdge(trc, &objShape_, "objShape_");
 
   
   
   
-  std::for_each(shapesBegin(), shapesEnd(), [trc](GCPtr<Shape*>& shape) {
-    TraceEdge(trc, &shape, "iterator_shape");
-  });
+  std::for_each(protoShapesBegin(allocatedPropertyCount()), protoShapesEnd(),
+                [trc](GCPtr<Shape*>& shape) {
+                  TraceEdge(trc, &shape, "iterator_proto_shape");
+                });
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  IteratorProperty* begin =
-      MOZ_LIKELY(isInitialized()) ? propertiesBegin() : propertyCursor_;
-  std::for_each(begin, propertiesEnd(),
+  std::for_each(propertiesBegin(), propertiesEnd(),
                 [trc](IteratorProperty& prop) { prop.traceString(trc); });
 }
 
@@ -771,23 +761,23 @@ static PropertyIteratorObject* NewPropertyIteratorObject(JSContext* cx) {
   return res;
 }
 
-static inline size_t NumTrailingBytes(size_t propertyCount, size_t shapeCount,
-                                      bool hasIndices) {
+static inline size_t NumTrailingBytes(size_t propertyCount,
+                                      size_t protoShapeCount, bool hasIndices) {
   static_assert(alignof(IteratorProperty) <= alignof(NativeIterator));
   static_assert(alignof(GCPtr<Shape*>) <= alignof(IteratorProperty));
   static_assert(alignof(PropertyIndex) <= alignof(GCPtr<Shape*>));
   size_t result = propertyCount * sizeof(IteratorProperty) +
-                  shapeCount * sizeof(GCPtr<Shape*>);
+                  protoShapeCount * sizeof(GCPtr<Shape*>);
   if (hasIndices) {
     result += propertyCount * sizeof(PropertyIndex);
   }
   return result;
 }
 
-static inline size_t AllocationSize(size_t propertyCount, size_t shapeCount,
-                                    bool hasIndices) {
+static inline size_t AllocationSize(size_t propertyCount,
+                                    size_t protoShapeCount, bool hasIndices) {
   return sizeof(NativeIterator) +
-         NumTrailingBytes(propertyCount, shapeCount, hasIndices);
+         NumTrailingBytes(propertyCount, protoShapeCount, hasIndices);
 }
 
 static PropertyIteratorObject* CreatePropertyIterator(
@@ -810,6 +800,11 @@ static PropertyIteratorObject* CreatePropertyIterator(
   if (numShapes == 0 && hasIndices) {
     numShapes = 1;
   }
+  if (numShapes > NativeIterator::ShapeCountLimit) {
+    ReportAllocationOverflow(cx);
+    return nullptr;
+  }
+  uint32_t numProtoShapes = numShapes > 0 ? numShapes - 1 : 0;
 
   Rooted<PropertyIteratorObject*> propIter(cx, NewPropertyIteratorObject(cx));
   if (!propIter) {
@@ -817,7 +812,7 @@ static PropertyIteratorObject* CreatePropertyIterator(
   }
 
   void* mem = cx->pod_malloc_with_extra<NativeIterator, uint8_t>(
-      NumTrailingBytes(props.length(), numShapes, hasIndices));
+      NumTrailingBytes(props.length(), numProtoShapes, hasIndices));
   if (!mem) {
     return nullptr;
   }
@@ -852,17 +847,11 @@ NativeIterator::NativeIterator(JSContext* cx,
                                bool* hadError)
     : objectBeingIterated_(objBeingIterated),
       iterObj_(propIter),
+      objShape_(numShapes > 0 ? objBeingIterated->shape() : nullptr),
       
       
-      shapesEnd_(shapesBegin()),
-      
-      propertyCursor_(
-          reinterpret_cast<IteratorProperty*>(shapesBegin() + numShapes)),
-      propertiesEnd_(propertyCursor_),
-      shapesHash_(0),
-      flagsAndCount_(
-          initialFlagsAndCount(props.length()))  
-{
+      propertyCursor_(props.length()),
+      shapesHash_(0) {
   
   
   MOZ_ASSERT_IF(numShapes > 0,
@@ -872,6 +861,12 @@ NativeIterator::NativeIterator(JSContext* cx,
 
   bool hasActualIndices = !!indices;
   MOZ_ASSERT_IF(hasActualIndices, indices->length() == props.length());
+
+  if (hasActualIndices) {
+    flags_ |= Flags::IndicesAllocated;
+  } else if (supportsIndices) {
+    flags_ |= Flags::IndicesSupported;
+  }
 
   
   
@@ -885,22 +880,9 @@ NativeIterator::NativeIterator(JSContext* cx,
   
   
   
-  size_t nbytes = AllocationSize(props.length(), numShapes, hasActualIndices);
+  size_t nbytes = AllocationSize(
+      props.length(), numShapes > 0 ? numShapes - 1 : 0, hasActualIndices);
   AddCellMemory(propIter, nbytes, MemoryUse::NativeIterator);
-  if (supportsIndices) {
-    if (hasActualIndices) {
-      
-      
-      
-      setIndicesState(NativeIteratorIndices::Disabled);
-    } else {
-      
-      
-      
-      
-      setIndicesState(NativeIteratorIndices::AvailableOnRequest);
-    }
-  }
 
   if (numShapes > 0) {
     
@@ -911,8 +893,10 @@ NativeIterator::NativeIterator(JSContext* cx,
     for (uint32_t i = 0; i < numShapes; i++) {
       MOZ_ASSERT(pobj->is<NativeObject>());
       Shape* shape = pobj->shape();
-      new (shapesEnd_) GCPtr<Shape*>(shape);
-      shapesEnd_++;
+      if (i > 0) {
+        new (protoShapesEnd()) GCPtr<Shape*>(shape);
+        protoShapeCount_++;
+      }
       shapesHash = mozilla::AddToHash(shapesHash, HashIteratorShape(shape));
       pobj = pobj->staticPrototype();
     }
@@ -926,8 +910,8 @@ NativeIterator::NativeIterator(JSContext* cx,
     
     
     MOZ_ASSERT_IF(numShapes > 1, pobj == nullptr);
+    MOZ_ASSERT(uintptr_t(protoShapesEnd()) == uintptr_t(this) + nbytes);
   }
-  MOZ_ASSERT(static_cast<void*>(shapesEnd_) == propertyCursor_);
 
   
   
@@ -951,8 +935,8 @@ NativeIterator::NativeIterator(JSContext* cx,
     
     
     
-    new (propertiesEnd_) IteratorProperty(str);
-    propertiesEnd_++;
+    new (propertiesEnd()) IteratorProperty(str);
+    propertyCount_++;
     if (maybeNeedGC && gc::IsInsideNursery(str)) {
       maybeNeedGC = false;
       cx->runtime()->gc.storeBuffer().putWholeCell(propIter);
@@ -964,19 +948,18 @@ NativeIterator::NativeIterator(JSContext* cx,
     for (size_t i = 0; i < numProps; i++) {
       *cursor++ = (*indices)[i];
     }
-    MOZ_ASSERT(uintptr_t(cursor) == uintptr_t(this) + nbytes);
-    setIndicesState(NativeIteratorIndices::Valid);
+    flags_ |= Flags::IndicesAvailable;
   }
 
-  markInitialized();
+  propertyCursor_ = 0;
+  flags_ |= Flags::Initialized;
 
   MOZ_ASSERT(!*hadError);
 }
 
 inline size_t NativeIterator::allocationSize() const {
-  size_t numShapes = shapesEnd() - shapesBegin();
-
-  return AllocationSize(initialPropertyCount(), numShapes, indicesAllocated());
+  return AllocationSize(allocatedPropertyCount(), protoShapeCount_,
+                        indicesAllocated());
 }
 
 
@@ -984,12 +967,13 @@ bool IteratorHashPolicy::match(PropertyIteratorObject* obj,
                                const Lookup& lookup) {
   NativeIterator* ni = obj->getNativeIterator();
   if (ni->shapesHash() != lookup.shapesHash ||
-      ni->shapeCount() != lookup.numShapes) {
+      ni->protoShapeCount() != lookup.numProtoShapes ||
+      ni->objShape() != lookup.objShape) {
     return false;
   }
 
-  return ArrayEqual(reinterpret_cast<Shape**>(ni->shapesBegin()), lookup.shapes,
-                    ni->shapeCount());
+  return ArrayEqual(reinterpret_cast<Shape**>(ni->protoShapesBegin()),
+                    lookup.protoShapes, ni->protoShapeCount());
 }
 
 static inline bool CanCompareIterableObjectToCache(JSObject* obj) {
@@ -1023,14 +1007,15 @@ static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInShapeIteratorCache(
   }
   PropertyIteratorObject* iterobj = obj->shape()->cache().toIterator();
   NativeIterator* ni = iterobj->getNativeIterator();
-  MOZ_ASSERT(*ni->shapesBegin() == obj->shape());
+  MOZ_ASSERT(ni->objShape() == obj->shape());
   if (!ni->isReusable()) {
     return nullptr;
   }
 
   
   JSObject* pobj = obj;
-  for (GCPtr<Shape*>* s = ni->shapesBegin() + 1; s != ni->shapesEnd(); s++) {
+  for (GCPtr<Shape*>* s = ni->protoShapesBegin(); s != ni->protoShapesEnd();
+       s++) {
     Shape* shape = *s;
     pobj = pobj->staticPrototype();
     if (pobj->shape() != shape) {
@@ -1041,7 +1026,7 @@ static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInShapeIteratorCache(
     }
   }
   MOZ_ASSERT(CanStoreInIteratorCache(obj));
-  *cacheableProtoChainLength = ni->shapeCount();
+  *cacheableProtoChainLength = ni->objShape() ? ni->protoShapeCount() + 1 : 0;
   return iterobj;
 }
 
@@ -1077,8 +1062,8 @@ static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInIteratorCache(
   MOZ_ASSERT(!shapes.empty());
   *cacheableProtoChainLength = shapes.length();
 
-  IteratorHashPolicy::Lookup lookup(shapes.begin(), shapes.length(),
-                                    shapesHash);
+  IteratorHashPolicy::Lookup lookup(shapes[0], shapes.begin() + 1,
+                                    shapes.length() - 1, shapesHash);
   auto p = ObjectRealm::get(obj).iteratorCache.lookup(lookup);
   if (!p) {
     return nullptr;
@@ -1100,13 +1085,13 @@ static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInIteratorCache(
   MOZ_ASSERT(CanStoreInIteratorCache(obj));
 
   NativeIterator* ni = iterobj->getNativeIterator();
-  MOZ_ASSERT(ni->shapeCount() > 0);
+  MOZ_ASSERT(ni->objShape());
 
   obj->shape()->maybeCacheIterator(cx, iterobj);
 
   IteratorHashPolicy::Lookup lookup(
-      reinterpret_cast<Shape**>(ni->shapesBegin()), ni->shapeCount(),
-      ni->shapesHash());
+      ni->objShape(), reinterpret_cast<Shape**>(ni->protoShapesBegin()),
+      ni->protoShapeCount(), ni->shapesHash());
 
   ObjectRealm::IteratorCache& cache = ObjectRealm::get(obj).iteratorCache;
   bool ok;
@@ -1142,7 +1127,7 @@ bool js::EnumerateProperties(JSContext* cx, HandleObject obj,
 
 #ifdef DEBUG
 static bool IndicesAreValid(NativeObject* obj, NativeIterator* ni) {
-  MOZ_ASSERT(ni->hasValidIndices());
+  MOZ_ASSERT(ni->indicesAvailable());
   size_t numDenseElements = obj->getDenseInitializedLength();
   size_t numFixedSlots = obj->numFixedSlots();
   const Value* elements = obj->getDenseElements();
@@ -1202,9 +1187,9 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx,
   if (PropertyIteratorObject* iterobj =
           LookupInIteratorCache(cx, obj, &cacheableProtoChainLength)) {
     NativeIterator* ni = iterobj->getNativeIterator();
-    bool recreateWithIndices = WantIndices && ni->indicesAvailableOnRequest();
+    bool recreateWithIndices = WantIndices && ni->indicesSupported();
     if (!recreateWithIndices) {
-      MOZ_ASSERT_IF(WantIndices && ni->hasValidIndices(),
+      MOZ_ASSERT_IF(WantIndices && ni->indicesAvailable(),
                     IndicesAreValid(&obj->as<NativeObject>(), ni));
       ni->initObjectBeingIterated(*obj);
       RegisterEnumerator(cx, ni);
@@ -1213,6 +1198,9 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx,
   }
 
   if (cacheableProtoChainLength > 0 && !CanStoreInIteratorCache(obj)) {
+    cacheableProtoChainLength = 0;
+  }
+  if (cacheableProtoChainLength > NativeIterator::ShapeCountLimit) {
     cacheableProtoChainLength = 0;
   }
 
