@@ -545,23 +545,6 @@ class nsIWidget : public nsSupportsWeakReference {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-  void AttachViewToTopLevel(bool aUseAttachedEvents);
-
-  
-
-
-
   void SetAttachedWidgetListener(nsIWidgetListener* aListener) {
     mAttachedWidgetListener = aListener;
   }
@@ -2445,7 +2428,6 @@ class nsIWidget : public nsSupportsWeakReference {
   mozilla::Maybe<FullscreenSavedState> mSavedBounds;
 
   bool mUpdateCursor;
-  bool mUseAttachedEvents;
   bool mIMEHasFocus;
   bool mIMEHasQuit;
   
