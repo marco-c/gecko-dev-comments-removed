@@ -517,6 +517,13 @@ class WritingMode {
   
 
 
+  LogicalAxis ConvertAxisTo(LogicalAxis aAxis, WritingMode aToMode) const {
+    return IsOrthogonalTo(aToMode) ? GetOrthogonalAxis(aAxis) : aAxis;
+  }
+
+  
+
+
 
 
 
@@ -530,9 +537,7 @@ class WritingMode {
 
     
     
-    LogicalAxis otherWMAxis = aOther.IsOrthogonalTo(*this)
-                                  ? GetOrthogonalAxis(aLogicalAxis)
-                                  : aLogicalAxis;
+    const LogicalAxis otherWMAxis = ConvertAxisTo(aLogicalAxis, aOther);
     mozilla::Side otherWMStartSide =
         aOther.PhysicalSide(MakeLogicalSide(otherWMAxis, LogicalEdge::Start));
 
