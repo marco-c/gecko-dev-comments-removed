@@ -3245,71 +3245,23 @@ void MacroAssembler::extractCurrentIndexAndKindFromIterator(Register iterator,
   loadPrivate(nativeIterAddr, outIndex);
 
   
-  load32(Address(outIndex, NativeIterator::offsetOfPropertyCount()), outKind);
+  loadPtr(Address(outIndex, NativeIterator::offsetOfPropertyCursor()), outKind);
+  subPtr(Address(outIndex, NativeIterator::offsetOfShapesEnd()), outKind);
 
   
-  static_assert(NativeIterator::PropCountLimit <= 1 << 30);
-
   
   
-  
-  
-  static_assert(sizeof(IteratorProperty) == sizeof(PropertyIndex) ||
-                sizeof(IteratorProperty) == sizeof(PropertyIndex) * 2);
-  if constexpr (sizeof(IteratorProperty) > sizeof(PropertyIndex)) {
-    lshift32(Imm32(1), outKind);
+  size_t indexAdjustment =
+      sizeof(GCPtr<JSLinearString*>) / sizeof(PropertyIndex);
+  if (indexAdjustment != 1) {
+    MOZ_ASSERT(indexAdjustment == 2);
+    rshift32(Imm32(1), outKind);
   }
 
   
-  
-  
-  add32(Address(outIndex, NativeIterator::offsetOfPropertyCursor()), outKind);
-
-  
-  
-  
-  load32(BaseIndex(outIndex, outKind, Scale::TimesFour,
-                   NativeIterator::offsetOfFirstProperty() -
-                       int32_t(sizeof(PropertyIndex))),
-         outIndex);
-
-  
-  rshift32(Imm32(PropertyIndex::KindShift), outIndex, outKind);
-
-  
-  and32(Imm32(PropertyIndex::IndexMask), outIndex);
-}
-
-void MacroAssembler::extractIndexAndKindFromIteratorByIterIndex(
-    Register iterator, Register inIndex, Register outKind, Register outIndex) {
-  
-  Address nativeIterAddr(iterator,
-                         PropertyIteratorObject::offsetOfIteratorSlot());
-  loadPrivate(nativeIterAddr, outIndex);
-
-  
-  load32(Address(outIndex, NativeIterator::offsetOfPropertyCount()), outKind);
-
-  
-  static_assert(NativeIterator::PropCountLimit <= 1 << 30);
-
-  
-  
-  
-  
-  static_assert(sizeof(IteratorProperty) == sizeof(PropertyIndex) ||
-                sizeof(IteratorProperty) == sizeof(PropertyIndex) * 2);
-  if constexpr (sizeof(IteratorProperty) > sizeof(PropertyIndex)) {
-    lshift32(Imm32(1), outKind);
-  }
-
-  
-  add32(inIndex, outKind);
-
-  
-  
-  load32(BaseIndex(outIndex, outKind, Scale::TimesFour,
-                   NativeIterator::offsetOfFirstProperty()),
+  loadPtr(Address(outIndex, NativeIterator::offsetOfPropertiesEnd()), outIndex);
+  load32(BaseIndex(outIndex, outKind, Scale::TimesOne,
+                   -int32_t(sizeof(PropertyIndex))),
          outIndex);
 
   
@@ -9398,7 +9350,7 @@ void MacroAssembler::branchIfResizableArrayBufferViewInBounds(Register obj,
 void MacroAssembler::branchIfNativeIteratorNotReusable(Register ni,
                                                        Label* notReusable) {
   
-  Address flagsAddr(ni, NativeIterator::offsetOfFlags());
+  Address flagsAddr(ni, NativeIterator::offsetOfFlagsAndCount());
 
 #ifdef DEBUG
   Label niIsInitialized;
@@ -9412,6 +9364,17 @@ void MacroAssembler::branchIfNativeIteratorNotReusable(Register ni,
 
   branchTest32(Assembler::NonZero, flagsAddr,
                Imm32(NativeIterator::Flags::NotReusable), notReusable);
+}
+
+void MacroAssembler::branchNativeIteratorIndices(Condition cond, Register ni,
+                                                 Register temp,
+                                                 NativeIteratorIndices kind,
+                                                 Label* label) {
+  Address iterFlagsAddr(ni, NativeIterator::offsetOfFlagsAndCount());
+  load32(iterFlagsAddr, temp);
+  and32(Imm32(NativeIterator::IndicesMask), temp);
+  uint32_t shiftedKind = uint32_t(kind) << NativeIterator::IndicesShift;
+  branch32(cond, temp, Imm32(shiftedKind), label);
 }
 
 static void LoadNativeIterator(MacroAssembler& masm, Register obj,
@@ -9443,8 +9406,8 @@ static void LoadNativeIterator(MacroAssembler& masm, Register obj,
 
 void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
                                                 Register temp, Register temp2,
-                                                Register temp3, Label* failure,
-                                                bool exclusive) {
+                                                Register temp3,
+                                                Label* failure) {
   
   
   
@@ -9480,30 +9443,18 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
   
   andPtr(Imm32(~ShapeCachePtr::MASK), dest);
   LoadNativeIterator(*this, dest, nativeIterator);
-
-  if (exclusive) {
-    branchIfNativeIteratorNotReusable(nativeIterator, failure);
-  }
-
-  Label skipIndices;
-  load32(Address(nativeIterator, NativeIterator::offsetOfPropertyCount()),
-         temp3);
-  branchTest32(Assembler::Zero,
-               Address(nativeIterator, NativeIterator::offsetOfFlags()),
-               Imm32(NativeIterator::Flags::IndicesAllocated), &skipIndices);
-
-  computeEffectiveAddress(BaseIndex(nativeIterator, temp3, Scale::TimesFour),
-                          nativeIterator);
-
-  bind(&skipIndices);
-  computeEffectiveAddress(BaseIndex(nativeIterator, temp3, ScalePointer,
-                                    NativeIterator::offsetOfFirstProperty()),
-                          nativeIterator);
-
-  Register expectedProtoShape = nativeIterator;
+  branchIfNativeIteratorNotReusable(nativeIterator, failure);
 
   
   
+  
+  
+  
+  
+  
+  
+  size_t nativeIteratorProtoShapeOffset =
+      NativeIterator::offsetOfFirstShape() + sizeof(Shape*);
 
   
   
@@ -9530,11 +9481,11 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
 
   
   loadPtr(Address(shapeAndProto, JSObject::offsetOfShape()), shapeAndProto);
-  loadPtr(Address(expectedProtoShape, 0), temp3);
+  loadPtr(Address(nativeIterator, nativeIteratorProtoShapeOffset), temp3);
   branchPtr(Assembler::NotEqual, shapeAndProto, temp3, failure);
 
   
-  addPtr(Imm32(sizeof(Shape*)), expectedProtoShape);
+  addPtr(Imm32(sizeof(Shape*)), nativeIterator);
   jump(&protoLoop);
 
 #ifdef DEBUG
@@ -9556,17 +9507,15 @@ void MacroAssembler::iteratorMore(Register obj, ValueOperand output,
   Label iterDone, restart;
   bind(&restart);
   Address cursorAddr(outputScratch, NativeIterator::offsetOfPropertyCursor());
-  Address cursorEndAddr(outputScratch, NativeIterator::offsetOfPropertyCount());
-  load32(cursorAddr, temp);
-  branch32(Assembler::BelowOrEqual, cursorEndAddr, temp, &iterDone);
+  Address cursorEndAddr(outputScratch, NativeIterator::offsetOfPropertiesEnd());
+  loadPtr(cursorAddr, temp);
+  branchPtr(Assembler::BelowOrEqual, cursorEndAddr, temp, &iterDone);
 
   
-  BaseIndex propAddr(outputScratch, temp, ScalePointer,
-                     NativeIterator::offsetOfFirstProperty());
-  loadPtr(propAddr, temp);
+  loadPtr(Address(temp, 0), temp);
 
   
-  addPtr(Imm32(1), cursorAddr);
+  addPtr(Imm32(sizeof(IteratorProperty)), cursorAddr);
 
   
   branchTestPtr(Assembler::NonZero, temp,
@@ -9581,34 +9530,11 @@ void MacroAssembler::iteratorMore(Register obj, ValueOperand output,
   bind(&done);
 }
 
-void MacroAssembler::iteratorLength(Register obj, Register output) {
-  LoadNativeIterator(*this, obj, output);
-  load32(Address(output, NativeIterator::offsetOfOwnPropertyCount()), output);
-}
-
-void MacroAssembler::iteratorLoadElement(Register obj, Register index,
-                                         Register output) {
-  LoadNativeIterator(*this, obj, output);
-  loadPtr(BaseIndex(output, index, ScalePointer,
-                    NativeIterator::offsetOfFirstProperty()),
-          output);
-  andPtr(Imm32(int32_t(~IteratorProperty::DeletedBit)), output);
-}
-
-void MacroAssembler::iteratorLoadElement(Register obj, int32_t index,
-                                         Register output) {
-  LoadNativeIterator(*this, obj, output);
-  loadPtr(Address(output, index * sizeof(IteratorProperty) +
-                              NativeIterator::offsetOfFirstProperty()),
-          output);
-  andPtr(Imm32(int32_t(~IteratorProperty::DeletedBit)), output);
-}
-
 void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
                                    Register temp3) {
   LoadNativeIterator(*this, obj, temp1);
 
-  Address flagsAddr(temp1, NativeIterator::offsetOfFlags());
+  Address flagsAddr(temp1, NativeIterator::offsetOfFlagsAndCount());
 
   
   
@@ -9622,7 +9548,8 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
   storePtr(ImmPtr(nullptr), iterObjAddr);
 
   
-  store32(Imm32(0), Address(temp1, NativeIterator::offsetOfPropertyCursor()));
+  loadPtr(Address(temp1, NativeIterator::offsetOfShapesEnd()), temp2);
+  storePtr(temp2, Address(temp1, NativeIterator::offsetOfPropertyCursor()));
 
   
   Label clearDeletedLoopStart, clearDeletedLoopEnd;
@@ -9630,13 +9557,7 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
                Imm32(NativeIterator::Flags::HasUnvisitedPropertyDeletion),
                &clearDeletedLoopEnd);
 
-  load32(Address(temp1, NativeIterator::offsetOfPropertyCount()), temp3);
-
-  computeEffectiveAddress(BaseIndex(temp1, temp3, ScalePointer,
-                                    NativeIterator::offsetOfFirstProperty()),
-                          temp3);
-  computeEffectiveAddress(
-      Address(temp1, NativeIterator::offsetOfFirstProperty()), temp2);
+  loadPtr(Address(temp1, NativeIterator::offsetOfPropertiesEnd()), temp3);
 
   bind(&clearDeletedLoopStart);
   and32(Imm32(~uint32_t(IteratorProperty::DeletedBit)), Address(temp2, 0));

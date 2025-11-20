@@ -193,6 +193,27 @@ class NativeIteratorListIter {
   }
 };
 
+
+
+
+enum class NativeIteratorIndices : uint32_t {
+  
+  Unavailable = 0,
+
+  
+  
+  
+  AvailableOnRequest = 1,
+
+  
+  
+  Disabled = 2,
+
+  
+  
+  Valid = 3
+};
+
 class IteratorProperty {
   uintptr_t raw_ = 0;
 
@@ -230,13 +251,31 @@ struct NativeIterator : public NativeIteratorListNode {
 
   
   const GCPtr<JSObject*> iterObj_ = {};
-  const GCPtr<Shape*> objShape_ = {};
-  uint32_t propertyCount_ = 0;
-  uint32_t propertyCursor_;    
-  uint32_t ownPropertyCount_;  
-  HashNumber shapesHash_;      
-  uint16_t protoShapeCount_ = 0;
-  uint8_t flags_ = 0;
+
+  
+  
+  
+  
+  GCPtr<Shape*>* shapesEnd_;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  IteratorProperty* propertyCursor_;  
+
+  
+  
+  
+  
+  IteratorProperty* propertiesEnd_;  
+
+  HashNumber shapesHash_;  
 
  public:
   
@@ -273,35 +312,31 @@ struct NativeIterator : public NativeIteratorListNode {
     
     
     
-
-    
-    
-    static constexpr uint32_t IndicesSupported = 0x10;
-
-    
-    static constexpr uint32_t IndicesAllocated = 0x20;
-
-    
-    static constexpr uint32_t IndicesAvailable = 0x40;
-
-    
-    
-    
-    
     static constexpr uint32_t NotReusable =
         Active | HasUnvisitedPropertyDeletion;
   };
 
-  
-  
-  
-  static constexpr uint32_t PropCountLimit = 1 << 30;
+ private:
+  static constexpr uint32_t FlagsBits = 4;
+  static constexpr uint32_t IndicesBits = 2;
 
-  
-  
-  static constexpr uint32_t ShapeCountLimit = 1 << 16;
+  static constexpr uint32_t FlagsMask = (1 << FlagsBits) - 1;
+
+  static constexpr uint32_t PropCountShift = IndicesBits + FlagsBits;
+  static constexpr uint32_t PropCountBits = 32 - PropCountShift;
+
+ public:
+  static constexpr uint32_t IndicesShift = FlagsBits;
+  static constexpr uint32_t IndicesMask = ((1 << IndicesBits) - 1)
+                                          << IndicesShift;
+
+  static constexpr uint32_t PropCountLimit = 1 << PropCountBits;
 
  private:
+  
+  
+  uint32_t flagsAndCount_ = 0;
+
 #ifdef DEBUG
   
   
@@ -314,6 +349,7 @@ struct NativeIterator : public NativeIteratorListNode {
   
   
   
+
  public:
   
 
@@ -328,7 +364,7 @@ struct NativeIterator : public NativeIteratorListNode {
   NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
                  Handle<JSObject*> objBeingIterated, HandleIdVector props,
                  bool supportsIndices, PropertyIndexVector* indices,
-                 uint32_t numShapes, uint32_t ownPropertyCount, bool* hadError);
+                 uint32_t numShapes, bool* hadError);
 
   JSObject* objectBeingIterated() const { return objectBeingIterated_; }
 
@@ -341,29 +377,21 @@ struct NativeIterator : public NativeIteratorListNode {
     objectBeingIterated_ = nullptr;
   }
 
-  const GCPtr<Shape*>& objShape() const { return objShape_; }
-
-  GCPtr<Shape*>* protoShapesBegin(size_t numProperties) const {
-    uintptr_t raw = reinterpret_cast<uintptr_t>(this);
-    uintptr_t propertiesStart = raw + offsetOfFirstProperty();
-    uintptr_t propertiesEnd =
-        propertiesStart + numProperties * sizeof(IteratorProperty);
-    uintptr_t result = propertiesEnd;
-    if (flags_ & Flags::IndicesAllocated) {
-      result += numProperties * sizeof(PropertyIndex);
-    }
-    return reinterpret_cast<GCPtr<Shape*>*>(result);
+  GCPtr<Shape*>* shapesBegin() const {
+    static_assert(
+        alignof(GCPtr<Shape*>) <= alignof(NativeIterator),
+        "NativeIterator must be aligned to begin storing "
+        "GCPtr<Shape*>s immediately after it with no required padding");
+    const NativeIterator* immediatelyAfter = this + 1;
+    auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
+    return reinterpret_cast<GCPtr<Shape*>*>(afterNonConst);
   }
 
-  GCPtr<Shape*>* protoShapesBegin() const {
-    return protoShapesBegin(allocatedPropertyCount());
-  }
+  GCPtr<Shape*>* shapesEnd() const { return shapesEnd_; }
 
-  GCPtr<Shape*>* protoShapesEnd() const {
-    return protoShapesBegin() + protoShapeCount_;
+  uint32_t shapeCount() const {
+    return mozilla::PointerRangeSize(shapesBegin(), shapesEnd());
   }
-
-  uint32_t protoShapeCount() const { return protoShapeCount_; }
 
   IteratorProperty* propertiesBegin() const {
     static_assert(
@@ -378,32 +406,37 @@ struct NativeIterator : public NativeIteratorListNode {
         "present, with no padding space required for correct "
         "alignment");
 
-    return reinterpret_cast<IteratorProperty*>(uintptr_t(this) + sizeof(*this));
+    
+    
+    
+    
+    MOZ_ASSERT(isInitialized(),
+               "NativeIterator must be initialized, or else |shapesEnd_| "
+               "isn't necessarily the start of properties and instead "
+               "|propertyCursor_| is");
+
+    return reinterpret_cast<IteratorProperty*>(shapesEnd_);
   }
 
-  IteratorProperty* propertiesEnd() const {
-    return propertiesBegin() + propertyCount_;
-  }
+  IteratorProperty* propertiesEnd() const { return propertiesEnd_; }
 
-  IteratorProperty* nextProperty() const {
-    return propertiesBegin() + propertyCursor_;
-  }
+  IteratorProperty* nextProperty() const { return propertyCursor_; }
 
   PropertyIndex* indicesBegin() const {
     
     
     static_assert(alignof(IteratorProperty) >= alignof(PropertyIndex));
-    return reinterpret_cast<PropertyIndex*>(propertiesEnd());
+    return reinterpret_cast<PropertyIndex*>(propertiesEnd_);
   }
 
   PropertyIndex* indicesEnd() const {
-    MOZ_ASSERT(flags_ & Flags::IndicesAllocated);
-    return indicesBegin() + propertyCount_ * sizeof(PropertyIndex);
+    MOZ_ASSERT(indicesState() == NativeIteratorIndices::Valid);
+    return indicesBegin() + numKeys() * sizeof(PropertyIndex);
   }
 
   MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
-    while (propertyCursor_ < propertyCount_) {
-      IteratorProperty& prop = *nextProperty();
+    while (propertyCursor_ < propertiesEnd_) {
+      IteratorProperty& prop = *propertyCursor_;
       incCursor();
       if (prop.deleted()) {
         continue;
@@ -411,6 +444,7 @@ struct NativeIterator : public NativeIteratorListNode {
       return JS::StringValue(prop.asString());
     }
 
+    MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
     return JS::MagicValue(JS_NO_ITER_VALUE);
   }
 
@@ -433,27 +467,17 @@ struct NativeIterator : public NativeIteratorListNode {
 
     
     
-    propertyCursor_ = 0;
+    propertyCursor_ = propertiesBegin();
   }
 
   bool previousPropertyWas(JS::Handle<JSLinearString*> str) {
     MOZ_ASSERT(isInitialized());
-    return propertyCursor_ > 0 &&
-           propertiesBegin()[propertyCursor_ - 1].asString() == str;
+    return propertyCursor_ > propertiesBegin() &&
+           propertyCursor_[-1].asString() == str;
   }
 
-  size_t numKeys() const { return propertyCount_; }
-
-  size_t ownPropertyCount() const { return ownPropertyCount_; }
-
-  size_t allocatedPropertyCount() const {
-    
-    
-    
-    if (!isInitialized()) {
-      return propertyCursor_;
-    }
-    return propertyCount_;
+  size_t numKeys() const {
+    return mozilla::PointerRangeSize(propertiesBegin(), propertiesEnd());
   }
 
   JSObject* iterObj() const { return iterObj_; }
@@ -465,7 +489,7 @@ struct NativeIterator : public NativeIteratorListNode {
 
   HashNumber shapesHash() const { return shapesHash_; }
 
-  bool isInitialized() const { return flags_ & Flags::Initialized; }
+  bool isInitialized() const { return flags() & Flags::Initialized; }
 
   size_t allocationSize() const;
 
@@ -479,30 +503,60 @@ struct NativeIterator : public NativeIteratorListNode {
 #endif
 
  private:
-  bool indicesAllocated() const { return flags_ & Flags::IndicesAllocated; }
+  uint32_t flags() const { return flagsAndCount_ & FlagsMask; }
+
+  NativeIteratorIndices indicesState() const {
+    return NativeIteratorIndices((flagsAndCount_ & IndicesMask) >>
+                                 IndicesShift);
+  }
+
+  uint32_t initialPropertyCount() const {
+    return flagsAndCount_ >> PropCountShift;
+  }
+
+  static uint32_t initialFlagsAndCount(uint32_t count) {
+    
+    MOZ_ASSERT(count < PropCountLimit);
+    return count << PropCountShift;
+  }
+
+  void setFlags(uint32_t flags) {
+    MOZ_ASSERT((flags & ~FlagsMask) == 0);
+    flagsAndCount_ = (flagsAndCount_ & ~FlagsMask) | flags;
+  }
+
+  void setIndicesState(NativeIteratorIndices indices) {
+    uint32_t indicesBits = uint32_t(indices) << IndicesShift;
+    flagsAndCount_ = (flagsAndCount_ & ~IndicesMask) | indicesBits;
+  }
+
+  bool indicesAllocated() const {
+    return indicesState() >= NativeIteratorIndices::Disabled;
+  }
+
+  void markInitialized() {
+    MOZ_ASSERT(flags() == 0);
+    setFlags(Flags::Initialized);
+  }
 
   bool isUnlinked() const { return !prev_ && !next_; }
 
  public:
-  bool indicesAvailable() const { return flags_ & Flags::IndicesAvailable; }
-
-  bool indicesSupported() const { return flags_ & Flags::IndicesSupported; }
-
   
   
   bool isEmptyIteratorSingleton() const {
     
-    bool res = flags_ & Flags::IsEmptyIteratorSingleton;
+    bool res = flags() & Flags::IsEmptyIteratorSingleton;
     MOZ_ASSERT_IF(
-        res, flags_ == (Flags::Initialized | Flags::IsEmptyIteratorSingleton));
+        res, flags() == (Flags::Initialized | Flags::IsEmptyIteratorSingleton));
     MOZ_ASSERT_IF(res, !objectBeingIterated_);
-    MOZ_ASSERT_IF(res, propertyCount_ == 0);
-    MOZ_ASSERT_IF(res, protoShapeCount_ == 0);
+    MOZ_ASSERT_IF(res, initialPropertyCount() == 0);
+    MOZ_ASSERT_IF(res, shapeCount() == 0);
     MOZ_ASSERT_IF(res, isUnlinked());
     return res;
   }
   void markEmptyIteratorSingleton() {
-    flags_ |= Flags::IsEmptyIteratorSingleton;
+    flagsAndCount_ |= Flags::IsEmptyIteratorSingleton;
 
     
     MOZ_ASSERT(isEmptyIteratorSingleton());
@@ -511,40 +565,39 @@ struct NativeIterator : public NativeIteratorListNode {
   bool isActive() const {
     MOZ_ASSERT(isInitialized());
 
-    return flags_ & Flags::Active;
+    return flags() & Flags::Active;
   }
 
   void markActive() {
     MOZ_ASSERT(isInitialized());
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
-    flags_ |= Flags::Active;
+    flagsAndCount_ |= Flags::Active;
   }
 
   void markInactive() {
     MOZ_ASSERT(isInitialized());
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
-    flags_ &= ~Flags::Active;
+    flagsAndCount_ &= ~Flags::Active;
   }
 
   bool isReusable() const {
     MOZ_ASSERT(isInitialized());
 
-    if (!(flags_ & Flags::Initialized)) {
-      return false;
-    }
-    if (flags_ & Flags::Active) {
-      return false;
-    }
-    return true;
+    
+    
+    
+    
+    
+    return flags() == Flags::Initialized;
   }
 
   void markHasUnvisitedPropertyDeletion() {
     MOZ_ASSERT(isInitialized());
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
-    flags_ |= Flags::HasUnvisitedPropertyDeletion;
+    flagsAndCount_ |= Flags::HasUnvisitedPropertyDeletion;
   }
 
   void unmarkHasUnvisitedPropertyDeletion() {
@@ -552,13 +605,21 @@ struct NativeIterator : public NativeIteratorListNode {
     MOZ_ASSERT(!isEmptyIteratorSingleton());
     MOZ_ASSERT(hasUnvisitedPropertyDeletion());
 
-    flags_ &= ~Flags::HasUnvisitedPropertyDeletion;
+    flagsAndCount_ &= ~Flags::HasUnvisitedPropertyDeletion;
   }
 
   bool hasUnvisitedPropertyDeletion() const {
     MOZ_ASSERT(isInitialized());
 
-    return flags_ & Flags::HasUnvisitedPropertyDeletion;
+    return flags() & Flags::HasUnvisitedPropertyDeletion;
+  }
+
+  bool hasValidIndices() const {
+    return indicesState() == NativeIteratorIndices::Valid;
+  }
+
+  bool indicesAvailableOnRequest() const {
+    return indicesState() == NativeIteratorIndices::AvailableOnRequest;
   }
 
   
@@ -566,16 +627,16 @@ struct NativeIterator : public NativeIteratorListNode {
     
     
     
-    return !indicesAvailable() && !indicesSupported();
+    return !hasValidIndices() && !indicesAvailableOnRequest();
   }
 
   void disableIndices() {
     
     
     
-    
-    
-    flags_ &= ~(Flags::IndicesAvailable | Flags::IndicesSupported);
+    if (indicesState() == NativeIteratorIndices::Valid) {
+      setIndicesState(NativeIteratorIndices::Disabled);
+    }
   }
 
   void link(NativeIteratorListNode* other) {
@@ -610,31 +671,23 @@ struct NativeIterator : public NativeIteratorListNode {
     return offsetof(NativeIterator, objectBeingIterated_);
   }
 
-  static constexpr size_t offsetOfProtoShapeCount() {
-    return offsetof(NativeIterator, protoShapeCount_);
+  static constexpr size_t offsetOfShapesEnd() {
+    return offsetof(NativeIterator, shapesEnd_);
   }
 
   static constexpr size_t offsetOfPropertyCursor() {
     return offsetof(NativeIterator, propertyCursor_);
   }
 
-  static constexpr size_t offsetOfPropertyCount() {
-    return offsetof(NativeIterator, propertyCount_);
+  static constexpr size_t offsetOfPropertiesEnd() {
+    return offsetof(NativeIterator, propertiesEnd_);
   }
 
-  static constexpr size_t offsetOfOwnPropertyCount() {
-    return offsetof(NativeIterator, ownPropertyCount_);
+  static constexpr size_t offsetOfFlagsAndCount() {
+    return offsetof(NativeIterator, flagsAndCount_);
   }
 
-  static constexpr size_t offsetOfFlags() {
-    return offsetof(NativeIterator, flags_);
-  }
-
-  static constexpr size_t offsetOfObjectShape() {
-    return offsetof(NativeIterator, objShape_);
-  }
-
-  static constexpr size_t offsetOfFirstProperty() {
+  static constexpr size_t offsetOfFirstShape() {
     
     return sizeof(NativeIterator);
   }
@@ -708,11 +761,6 @@ PropertyIteratorObject* LookupInShapeIteratorCache(JSContext* cx,
 
 PropertyIteratorObject* GetIterator(JSContext* cx, HandleObject obj);
 PropertyIteratorObject* GetIteratorWithIndices(JSContext* cx, HandleObject obj);
-
-PropertyIteratorObject* GetIteratorUnregistered(JSContext* cx,
-                                                HandleObject obj);
-PropertyIteratorObject* GetIteratorWithIndicesUnregistered(JSContext* cx,
-                                                           HandleObject obj);
 
 PropertyIteratorObject* ValueToIterator(JSContext* cx, HandleValue vp);
 
