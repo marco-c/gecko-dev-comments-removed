@@ -149,9 +149,6 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
                                                        JS::Zone* mapZone);
 
   
-  static void sweepZoneAfterMinorGC(JS::Zone* zone);
-
-  
   static void traceAllMappings(WeakMapTracer* tracer);
 
   
@@ -183,6 +180,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   virtual bool traceNurseryEntriesOnMinorGC(JSTracer* trc) = 0;
+  virtual bool sweepAfterMinorGC() = 0;
 
   
   
@@ -516,6 +514,7 @@ class WeakMap : public WeakMapBase {
   void traceMappings(WeakMapTracer* tracer) override;
 
   bool traceNurseryEntriesOnMinorGC(JSTracer* trc) override;
+  bool sweepAfterMinorGC() override;
 };
 
 } 

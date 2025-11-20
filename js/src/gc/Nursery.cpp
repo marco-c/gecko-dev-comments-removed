@@ -1713,7 +1713,11 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
   }
   endProfile(ProfileKey::MarkDebugger);
 
+  
+  
+  startProfile(ProfileKey::TraceWeakMaps);
   traceWeakMaps(mover);
+  endProfile(ProfileKey::TraceWeakMaps);
 }
 
 bool js::Nursery::shouldTenureEverything(JS::GCReason reason) {
@@ -2064,6 +2068,8 @@ void js::Nursery::sweep() {
   }
 
   sweepMapAndSetObjects();
+
+  sweepWeakMaps();
 
   runtime()->caches().sweepAfterMinorGC(&trc);
 }
@@ -2596,10 +2602,21 @@ void js::Nursery::sweepMapAndSetObjects() {
 }
 
 void Nursery::traceWeakMaps(TenuringTracer& trc) {
-  
   MOZ_ASSERT(trc.weakMapAction() == JS::WeakMapTraceAction::TraceKeysAndValues);
   weakMapsWithNurseryEntries_.eraseIf(
       [&](WeakMapBase* wm) { return wm->traceNurseryEntriesOnMinorGC(&trc); });
+}
+
+void js::Nursery::sweepWeakMaps() {
+  
+  
+  
+
+  
+  AutoSetThreadGCUse setUse(runtime()->gcContext(), GCUse::Unspecified);
+
+  weakMapsWithNurseryEntries_.eraseIf(
+      [&](WeakMapBase* wm) { return wm->sweepAfterMinorGC(); });
 }
 
 void js::Nursery::joinSweepTask() { sweepTask->join(); }

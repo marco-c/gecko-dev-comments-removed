@@ -2,12 +2,20 @@
 
 gczeal(0); 
 
+var keys = [];
 var maps = Array(1000).fill().map(() => new WeakMap);
 for (const map of maps) {
-    for (let i = 0; i < 100; i++) {
-        map.set({}, {}); 
-    }
+  for (let i = 0; i < 100; i++) {
+    
+    
+    let key = {};
+    keys.push(key);
+    map.set(key, {}); 
+  }
 }
+
+minorgc();
+keys = undefined;
 
 
 startgc(10);
