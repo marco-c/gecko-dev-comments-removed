@@ -199,13 +199,25 @@ promise_test(async t => {
   const writer = wt.datagrams.writable.getWriter();
   const reader = wt.datagrams.readable.getReader();
 
-  
-  await writer.write(new Uint8Array(wt.datagrams.maxDatagramSize+1));
-  
-  
-  const result = await Promise.race([reader.read(), wait(500)]);
-  assert_equals(result, undefined);
-}, 'Fail to transfer max-size+1 datagram');
+  let maxDatagramSize = wt.datagrams.maxDatagramSize;
+
+  while (true) {
+    
+    await writer.write(new Uint8Array(maxDatagramSize + 1));
+    
+    
+    const result = await Promise.race([reader.read(), wait(500)]);
+    if (result === undefined) {
+      return; 
+    }
+
+    
+    
+    const currentMaxDatagramSize = wt.datagrams.maxDatagramSize;
+    assert_greater_than(currentMaxDatagramSize, maxDatagramSize);
+    maxDatagramSize = currentMaxDatagramSize;
+  }
+}, 'Fail to transfer max-size+1 datagram, handle PMTUD increases');
 
 promise_test(async t => {
   
