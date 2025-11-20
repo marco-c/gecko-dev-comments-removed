@@ -201,6 +201,8 @@ class SharedScriptCache final
   void EncodeAndCompress();
   void SaveToDiskCache();
 
+  void InvalidateInProcess();
+
   
   
   static void LoadCompleted(SharedScriptCache*, ScriptLoadData&);
@@ -210,6 +212,8 @@ class SharedScriptCache final
                     const Maybe<nsCString>& aSchemelessSite = Nothing(),
                     const Maybe<OriginAttributesPattern>& aPattern = Nothing(),
                     const Maybe<nsCString>& aURL = Nothing());
+
+  static void Invalidate();
 
   static void PrepareForLastCC();
 
