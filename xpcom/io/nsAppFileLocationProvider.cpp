@@ -13,6 +13,7 @@
 #include "nsIFile.h"
 #include "nsString.h"
 #include "nsSimpleEnumerator.h"
+#include "nsXREDirProvider.h"
 #include "prenv.h"
 #include "nsCRT.h"
 #if defined(MOZ_WIDGET_COCOA)
@@ -172,6 +173,7 @@ nsresult nsAppFileLocationProvider::CloneMozBinDirectory(nsIFile** aLocalFile) {
 
 
 
+
 nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
                                                         bool aLocal) {
   if (NS_WARN_IF(!aLocalFile)) {
@@ -204,21 +206,49 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
     return rv;
   }
 #elif defined(XP_UNIX)
-  rv = NS_NewNativeLocalFile(nsDependentCString(PR_GetEnv("HOME")),
+  const char* homeDir = PR_GetEnv("HOME");
+  rv = NS_NewNativeLocalFile(nsDependentCString(homeDir),
                              getter_AddRefs(localDir));
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+#  if defined(MOZ_WIDGET_GTK)
+  rv = nsXREDirProvider::GetLegacyOrXDGHomePath(homeDir,
+                                                getter_AddRefs(localDir));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+#  endif
+
 #else
 #  error dont_know_how_to_get_product_dir_on_your_platform
 #endif
 
-  rv = localDir->AppendRelativeNativePath(DEFAULT_PRODUCT_DIR);
+#if defined(MOZ_WIDGET_GTK)
+  bool legacyExists = nsXREDirProvider::LegacyHomeExists(nullptr);
+  if (legacyExists || nsXREDirProvider::IsForceLegacyHome()) {
+    nsAutoCString productDir;
+    nsAutoCString mozUserDir;
+    mozUserDir = nsLiteralCString(MOZ_USER_DIR);
+    if (mozUserDir.get()[0] != '.') {
+      productDir = "."_ns + DEFAULT_PRODUCT_DIR;
+    } else {
+      productDir = DEFAULT_PRODUCT_DIR;
+    }
+    rv = localDir->AppendNative(productDir);
+  } else {
+    rv = localDir->AppendNative(DEFAULT_PRODUCT_DIR);
+  }
+#else
+  rv = localDir->AppendNative(DEFAULT_PRODUCT_DIR);
+#endif
+
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = localDir->Exists(&exists);
 
+  rv = localDir->Exists(&exists);
   if (NS_SUCCEEDED(rv) && !exists) {
     rv = localDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
   }
@@ -231,6 +261,7 @@ nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
 
   return rv;
 }
+
 
 
 
