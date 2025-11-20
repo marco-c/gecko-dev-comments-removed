@@ -6,6 +6,7 @@ use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
+use crate::quad::LayoutOrDeviceRect;
 use crate::segment::EdgeAaSegmentMask;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::internal_types::{FastHashMap, FrameVec, FrameMemory};
@@ -14,7 +15,7 @@ use crate::render_task::RenderTaskAddress;
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferWriterF, GpuBufferDataF, ShaderColorMode};
 use std::i32;
-use crate::util::{MatrixHelpers, TransformedRectKind};
+use crate::util::{MatrixHelpers, ScaleOffset, TransformedRectKind};
 use glyph_rasterizer::SubpixelDirection;
 use crate::util::pack_as_float;
 
@@ -646,11 +647,47 @@ impl From<QuadInstance> for PrimitiveInstanceData {
     }
 }
 
+
+pub struct QuadPrimitive {
+    pub bounds: LayoutOrDeviceRect,
+    pub clip: LayoutOrDeviceRect,
+    
+    
+    pub input_task: RenderTaskId,
+    pub pattern_scale_offset: ScaleOffset,
+    
+    pub color: PremultipliedColorF,
+}
+
+impl GpuBufferDataF for QuadPrimitive {
+    const NUM_BLOCKS: usize = 5;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one(self.bounds);
+        writer.push_one(self.clip);
+        writer.push_render_task(self.input_task);
+        writer.push_one(self.pattern_scale_offset);
+        writer.push_one(self.color);
+    }
+}
+
+pub const VECS_PER_QUAD_SEGMENT: usize = 2;
+
+
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct QuadSegment {
-    pub rect: LayoutRect,
+    pub rect: LayoutOrDeviceRect,
+    
+    
     pub task_id: RenderTaskId,
+}
+
+impl GpuBufferDataF for QuadSegment {
+    const NUM_BLOCKS: usize = VECS_PER_QUAD_SEGMENT;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one(self.rect);
+        writer.push_render_task(self.task_id)
+    }
 }
 
 #[derive(Copy, Debug, Clone, PartialEq)]
