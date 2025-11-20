@@ -6499,9 +6499,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
 
     
     auto selfAlignment =
-        isInlineAxis
-            ? child->StylePosition()->UsedJustifySelf(containerStyle)._0
-            : child->StylePosition()->UsedAlignSelf(containerStyle)._0;
+        child->StylePosition()->UsedSelfAlignment(mAxis, containerStyle);
     selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
     if (selfAlignment == StyleAlignFlags::BASELINE) {
       state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
@@ -10638,7 +10636,6 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
   }
 
   const auto cbwm = GetWritingMode();
-  const bool isOrthogonal = wm.IsOrthogonalTo(cbwm);
   if (IsMasonry(wm, aAxis)) {
     
     
@@ -10646,10 +10643,8 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
     return false;
   }
 
-  const auto* pos = aChild->StylePosition();
-  const auto alignment = (aAxis == LogicalAxis::Inline) == !isOrthogonal
-                             ? pos->UsedJustifySelf(Style())._0
-                             : pos->UsedAlignSelf(Style())._0;
+  const auto alignment =
+      aChild->StylePosition()->UsedSelfAlignment(wm, aAxis, cbwm, Style());
   
   
   

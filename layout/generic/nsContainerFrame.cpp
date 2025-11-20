@@ -2038,7 +2038,6 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   FillCB inlineFillCB = FillCB::No;  
   FillCB blockFillCB = FillCB::No;   
 
-  const bool isOrthogonal = aWM.IsOrthogonalTo(parentFrame->GetWritingMode());
   const LogicalSize fallbackIntrinsicSize(aWM, kFallbackIntrinsicSize);
   const Maybe<nscoord>& maybeIntrinsicISize = aIntrinsicSize.ISize(aWM);
   const bool hasIntrinsicISize = maybeIntrinsicISize.isSome();
@@ -2063,9 +2062,9 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     if (cbSize != NS_UNCONSTRAINEDSIZE) {
       if (!StyleMargin()->HasInlineAxisAuto(
               aWM, AnchorPosResolutionParams::From(this))) {
-        auto inlineAxisAlignment =
-            isOrthogonal ? stylePos->UsedAlignSelf(GetParent()->Style())._0
-                         : stylePos->UsedJustifySelf(GetParent()->Style())._0;
+        auto inlineAxisAlignment = stylePos->UsedSelfAlignment(
+            aWM, LogicalAxis::Inline, parentFrame->GetWritingMode(),
+            parentFrame->Style());
         if (inlineAxisAlignment == StyleAlignFlags::STRETCH) {
           inlineFillCB = FillCB::Stretch;
         }
@@ -2125,9 +2124,9 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     if (cbSize != NS_UNCONSTRAINEDSIZE) {
       if (!StyleMargin()->HasBlockAxisAuto(
               aWM, AnchorPosResolutionParams::From(this))) {
-        auto blockAxisAlignment =
-            !isOrthogonal ? stylePos->UsedAlignSelf(GetParent()->Style())._0
-                          : stylePos->UsedJustifySelf(GetParent()->Style())._0;
+        auto blockAxisAlignment = stylePos->UsedSelfAlignment(
+            aWM, LogicalAxis::Block, parentFrame->GetWritingMode(),
+            parentFrame->Style());
         if (blockAxisAlignment == StyleAlignFlags::STRETCH) {
           blockFillCB = FillCB::Stretch;
         }
@@ -2491,10 +2490,7 @@ StyleAlignFlags nsContainerFrame::CSSAlignmentForAbsPosChild(
   
   
   StyleAlignFlags alignment =
-      (aLogicalAxis == LogicalAxis::Inline)
-          ? aChildRI.mStylePosition->UsedJustifySelf(Style())._0
-          : aChildRI.mStylePosition->UsedAlignSelf(Style())._0;
-
+      aChildRI.mStylePosition->UsedSelfAlignment(aLogicalAxis, Style());
   return MapCSSAlignment(alignment, aChildRI, aLogicalAxis, GetWritingMode());
 }
 
@@ -2508,9 +2504,7 @@ nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
   
   
   StyleAlignFlags alignment =
-      (aLogicalAxis == LogicalAxis::Inline)
-          ? aChildRI.mStylePosition->UsedJustifySelf(nullptr)._0
-          : aChildRI.mStylePosition->UsedAlignSelf(nullptr)._0;
+      aChildRI.mStylePosition->UsedSelfAlignment(aLogicalAxis, nullptr);
 
   
   

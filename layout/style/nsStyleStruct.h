@@ -954,8 +954,28 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
 
 
 
+
+
+
+
   inline mozilla::StyleAlignFlags UsedSelfAlignment(
-      LogicalAxis aAxis, const mozilla::ComputedStyle* aParent) const;
+      LogicalAxis aAlignContainerAxis,
+      const mozilla::ComputedStyle* aAlignContainerStyle) const;
+
+  
+
+
+
+
+
+
+
+
+
+  inline mozilla::StyleAlignFlags UsedSelfAlignment(
+      WritingMode aAlignSubjectWM, LogicalAxis aAlignSubjectAxis,
+      WritingMode aAlignContainerWM,
+      const ComputedStyle* aAlignContainerStyle) const;
 
   
 
