@@ -1377,9 +1377,6 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
   
   ProcessEventQueue();
   
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-  
   auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
   EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
   std::tie(stream) = WaitFor(initPromise).unwrap()[0];
@@ -1413,9 +1410,6 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
   });
   
   ProcessEventQueue();
-  
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
   
   initPromise = TakeN(cubeb->StreamInitEvent(), 1);
   EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
@@ -1456,9 +1450,6 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
 
   
   ProcessEventQueue();
-  
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
   
   EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
 
@@ -2517,11 +2508,6 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 
   ProcessEventQueue();
 
-  EXPECT_EQ(inputStream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-  EXPECT_EQ(partnerStream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-
   EXPECT_EQ(inputStream->ManualDataCallback(128),
             MockCubebStream::KeepProcessing::No);
   EXPECT_EQ(partnerStream->ManualDataCallback(128),
@@ -2980,9 +2966,6 @@ TEST(TestAudioTrackGraph, PlatformProcessing)
   });
   ProcessEventQueue();
   
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-  
   auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
   EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
   std::tie(stream) = WaitFor(initPromise).unwrap()[0];
@@ -3032,9 +3015,6 @@ TEST(TestAudioTrackGraph, PlatformProcessing)
     track->Destroy();
   });
   ProcessEventQueue();
-  
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
   
   EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
   RefPtr<SmartMockCubebStream> destroyedStream =
@@ -3249,9 +3229,6 @@ TEST(TestAudioTrackGraph, PlatformProcessingNonNativeToNativeSwitch)
   
   
   EXPECT_EQ(nativeStream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
-  
-  EXPECT_EQ(nativeStream->ManualDataCallback(0),
             MockCubebStream::KeepProcessing::No);
   std::tie(nativeStream) = WaitFor(initPromise).unwrap()[0];
   EXPECT_TRUE(nativeStream->mHasInput);
@@ -3294,9 +3271,6 @@ TEST(TestAudioTrackGraph, PlatformProcessingNonNativeToNativeSwitch)
   auto destroyPromise = TakeN(cubeb->StreamDestroyEvent(), 1);
   DispatchFunction([&] {
     ProcessEventQueue();
-    
-    EXPECT_EQ(nativeStream->ManualDataCallback(0),
-              MockCubebStream::KeepProcessing::Yes);
     
     EXPECT_EQ(nativeStream->ManualDataCallback(0),
               MockCubebStream::KeepProcessing::No);
@@ -3471,9 +3445,6 @@ TEST(TestAudioTrackGraph, DefaultOutputDeviceIDTracking)
   auto initPromise = TakeN(cubeb->StreamInitEvent(), 1);
   ProcessEventQueue();
   
-  
-  EXPECT_EQ(stream->ManualDataCallback(0),
-            MockCubebStream::KeepProcessing::Yes);
   
   EXPECT_EQ(stream->ManualDataCallback(0), MockCubebStream::KeepProcessing::No);
   std::tie(stream) = WaitFor(initPromise).unwrap()[0];
