@@ -24,15 +24,6 @@
     
 
 
-    get group() {
-      return gBrowser.isTabGroup(this.parentElement)
-        ? this.parentElement
-        : null;
-    }
-
-    
-
-
     set hasActiveTab(val) {
       this.toggleAttribute("hasactivetab", val);
     }
