@@ -2,7 +2,7 @@
 
 
 
-use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
+use api::{AlphaType, ExtendMode, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
@@ -707,6 +707,32 @@ impl GpuBufferDataF for QuadSegment {
     fn write(&self, writer: &mut GpuBufferWriterF) {
         writer.push_one(self.rect);
         writer.push_render_task(self.task_id)
+    }
+}
+
+
+pub struct LinearGradientBrushData {
+    pub start: LayoutPoint,
+    pub end: LayoutPoint,
+    pub extend_mode: ExtendMode,
+    pub stretch_size: LayoutSize,
+}
+
+impl GpuBufferDataF for LinearGradientBrushData {
+    const NUM_BLOCKS: usize = 2;
+    fn write(&self, writer: &mut GpuBufferWriterF) {
+        writer.push_one([
+            self.start.x,
+            self.start.y,
+            self.end.x,
+            self.end.y,
+        ]);
+        writer.push_one([
+            pack_as_float(self.extend_mode as u32),
+            self.stretch_size.width,
+            self.stretch_size.height,
+            0.0,
+        ]);
     }
 }
 
