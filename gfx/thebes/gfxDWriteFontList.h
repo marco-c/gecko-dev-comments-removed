@@ -158,7 +158,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
 
   gfxDWriteFontEntry(const nsACString& aFaceName, IDWriteFontFile* aFontFile,
-                     IDWriteFontFileStream* aFontFileStream,
+                     gfxDWriteFontFileStream* aFontFileStream,
                      WeightRange aWeight, StretchRange aStretch,
                      SlantStyleRange aStyle)
       : gfxFontEntry(aFaceName),
@@ -199,6 +199,9 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
 
+  size_t ComputedSizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) override;
+
  protected:
   friend class gfxDWriteFont;
   friend class gfxDWriteFontList;
@@ -225,7 +228,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   
   
-  RefPtr<IDWriteFontFileStream> mFontFileStream;
+  RefPtr<gfxDWriteFontFileStream> mFontFileStream;
 
   
   

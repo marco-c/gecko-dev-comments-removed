@@ -1475,8 +1475,7 @@ void gfxFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 
 
-size_t gfxFontEntry::ComputedSizeOfExcludingThis(
-    MallocSizeOf aMallocSizeOf) const {
+size_t gfxFontEntry::ComputedSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) {
   FontListSizes s = {0};
   AddSizeOfExcludingThis(aMallocSizeOf, &s);
 
@@ -1486,14 +1485,7 @@ size_t gfxFontEntry::ComputedSizeOfExcludingThis(
   
   
   
-  size_t result = s.mFontListSize + s.mFontTableCacheSize + s.mCharMapsSize;
-
-  if (mIsDataUserFont) {
-    MOZ_ASSERT(mComputedSizeOfUserFont > 0, "user font with no data?");
-    result += mComputedSizeOfUserFont;
-  }
-
-  return result;
+  return s.mFontListSize + s.mFontTableCacheSize + s.mCharMapsSize;
 }
 
 

@@ -655,8 +655,6 @@ void gfxUserFontEntry::SetLoadState(UserFontLoadState aLoadState) {
   mUserFontLoadState = aLoadState;
 }
 
-MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(UserFontMallocSizeOfOnAlloc)
-
 bool gfxUserFontEntry::LoadPlatformFontSync(uint32_t aSrcIndex,
                                             const uint8_t* aFontData,
                                             uint32_t aLength) {
@@ -745,7 +743,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 
   gfxFontEntry* fe = nullptr;
   uint32_t fontCompressionRatio = 0;
-  size_t computedSize = 0;
 
   if (aSanitizedFontData) {
     if (aSanitizedLength) {
@@ -769,14 +766,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 
     
     
-    
-    
-    
-    
-    computedSize = UserFontMallocSizeOfOnAlloc(aSanitizedFontData);
-
-    
-    
     fe = gfxPlatform::GetPlatform()->MakePlatformFont(
         mName, Weight(), Stretch(), SlantStyle(), aSanitizedFontData,
         aSanitizedLength);
@@ -786,8 +775,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
   }
 
   if (fe) {
-    fe->mComputedSizeOfUserFont = computedSize;
-
     
     
     

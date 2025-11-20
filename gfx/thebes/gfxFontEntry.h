@@ -493,7 +493,8 @@ class gfxFontEntry {
 
   
   
-  size_t ComputedSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  virtual size_t ComputedSizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf);
 
   
   struct ScriptRange {
@@ -792,12 +793,6 @@ class gfxFontEntry {
   nsrefcnt mGrFaceRefCnt = 0;
 
   friend class gfxFontEntryCallbacks;
-
-  
-  
-  
-  
-  uint32_t mComputedSizeOfUserFont = 0;
 
   
   
