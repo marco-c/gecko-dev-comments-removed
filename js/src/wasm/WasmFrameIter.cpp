@@ -827,15 +827,19 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
                         callIndirectId.instanceDataOffset() +
                         offsetof(wasm::TypeDefInstanceData, superTypeVector))),
             scratch1);
-        masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg,
-                       scratch1, &functionBody);
 
         
         
-        
-        
-        
         if (callIndirectId.hasSuperType()) {
+          
+          masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg,
+                         scratch1, &functionBody);
+
+          
+          
+          
+          
+
           
           
           
@@ -854,16 +858,34 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
           
           masm.branchWasmSTVIsSubtypeDynamicDepth(scratch1, WasmTableCallSigReg,
                                                   subTypingDepth, scratch2,
-                                                  &functionBody, true);
+                                                  &fail, false);
+        } else {
+          
+          
+          masm.branchPtr(Assembler::Condition::NotEqual, WasmTableCallSigReg,
+                         scratch1, &fail);
         }
+        masm.jump(&functionBody);
 
+        
+        
+        
+        
         masm.bind(&fail);
         masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
         break;
       }
       case CallIndirectIdKind::Immediate: {
-        masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
-                      Imm32(callIndirectId.immediate()), &functionBody);
+        Label fail;
+        masm.branch32(Assembler::Condition::NotEqual, WasmTableCallSigReg,
+                      Imm32(callIndirectId.immediate()), &fail);
+        masm.jump(&functionBody);
+
+        
+        
+        
+        
+        masm.bind(&fail);
         masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
         break;
       }
