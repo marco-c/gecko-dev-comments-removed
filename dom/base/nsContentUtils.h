@@ -2978,14 +2978,6 @@ class nsContentUtils {
 
 
 
-  static nsresult DeserializeTransferableDataImageContainer(
-      const mozilla::dom::IPCTransferableDataImageContainer& aData,
-      imgIContainer** aContainer);
-
-  
-
-
-
   static bool IsFlavorImage(const nsACString& aFlavor);
 
   static bool IPCTransferableDataItemHasKnownFlavor(
@@ -3030,6 +3022,8 @@ class nsContentUtils {
   static mozilla::Maybe<mozilla::dom::IPCImage> SurfaceToIPCImage(
       mozilla::gfx::DataSourceSurface&);
   static already_AddRefed<mozilla::gfx::DataSourceSurface> IPCImageToSurface(
+      const mozilla::dom::IPCImage&);
+  static already_AddRefed<imgIContainer> IPCImageToImage(
       const mozilla::dom::IPCImage&);
 
   
