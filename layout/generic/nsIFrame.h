@@ -4723,7 +4723,16 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
   inline bool IsMasonry(mozilla::LogicalAxis aAxis) const;
+
+  
+
+
+
+
+  inline bool IsMasonry(mozilla::WritingMode aWM,
+                        mozilla::LogicalAxis aAxis) const;
 
   
 
