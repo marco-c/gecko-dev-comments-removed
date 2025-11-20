@@ -14,11 +14,14 @@
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
 #include "jit/BytecodeAnalysis.h"
+#include "jit/CacheIRCompiler.h"
 #include "jit/IonScript.h"
 #include "jit/JitFrames.h"
 #include "jit/JitSpewer.h"
 #include "jit/ScriptFromCalleeToken.h"
+#include "jit/ShapeList.h"
 #include "jit/TrialInlining.h"
+#include "jit/WarpSnapshot.h"
 #include "js/ColumnNumber.h"  
 #include "vm/BytecodeUtil.h"
 #include "vm/Compartment.h"
@@ -976,13 +979,46 @@ JitScript* ICScript::outerJitScript() {
 
 
 
+
+
+
 HashNumber ICScript::hash() {
   HashNumber h = 0;
   for (size_t i = 0; i < numICEntries(); i++) {
     ICStub* stub = icEntry(i).firstStub();
+    ICFallbackStub* fallback = fallbackStub(i);
 
     
     h = mozilla::AddToHash(h, stub);
+
+    
+    if (!stub->isFallback() && fallback->mayHaveFoldedStub()) {
+      const CacheIRStubInfo* stubInfo = stub->toCacheIRStub()->stubInfo();
+      CacheIRReader reader(stubInfo);
+      while (reader.more()) {
+        CacheOp op = reader.readOp();
+        switch (op) {
+          case CacheOp::GuardMultipleShapes: {
+            auto args = reader.argsForGuardMultipleShapes();
+            JSObject* shapes =
+                stubInfo->getStubField<StubField::Type::JSObject>(
+                    stub->toCacheIRStub(), args.shapesOffset);
+            auto* shapesObject = &shapes->as<ShapeListObject>();
+            size_t numShapes = shapesObject->length();
+            if (ShapeListSnapshot::shouldSnapshot(numShapes)) {
+              for (size_t i = 0; i < numShapes; i++) {
+                Shape* shape = shapesObject->getUnbarriered(i);
+                h = mozilla::AddToHash(h, shape);
+              }
+            }
+            break;
+          }
+          default:
+            reader.skip(CacheIROpInfos[size_t(op)].argLength);
+            break;
+        }
+      }
+    }
 
     
     if (!stub->isFallback()) {
