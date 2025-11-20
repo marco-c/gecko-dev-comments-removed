@@ -87,6 +87,20 @@ class nsSplittableFrame : public nsIFrame {
   
   static void RemoveFromFlow(nsIFrame* aFrame);
 
+  
+
+
+
+
+
+
+
+
+
+  LogicalSides PreReflowBlockLevelLogicalSkipSides() const {
+    return GetBlockLevelLogicalSkipSides(false);
+  };
+
  protected:
   nsSplittableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                     ClassID aID)
@@ -143,20 +157,6 @@ class nsSplittableFrame : public nsIFrame {
   }
 
   LogicalSides GetBlockLevelLogicalSkipSides(bool aAfterReflow) const;
-
-  
-
-
-
-
-
-
-
-
-
-  LogicalSides PreReflowBlockLevelLogicalSkipSides() const {
-    return GetBlockLevelLogicalSkipSides(false);
-  };
 
   nsIFrame* mPrevContinuation = nullptr;
   nsIFrame* mNextContinuation = nullptr;
