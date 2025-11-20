@@ -707,10 +707,9 @@ class Accessible {
   
 
 
-
   Accessible* GetNonGenericParent() const {
     for (Accessible* parent = Parent(); parent; parent = parent->Parent()) {
-      if (parent->IsDoc() || !parent->IsGeneric()) {
+      if (!parent->IsGeneric()) {
         return parent;
       }
     }
