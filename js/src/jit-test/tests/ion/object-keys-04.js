@@ -26,13 +26,6 @@ function objKeysLength(obj, expected, i) {
     return len;
 }
 
-
-
-
-
-
-
-
 function objKeysLengthDiffBlock(obj, expected, i) {
     var keys = Object.keys(obj);
     if (i >= 99) {
@@ -42,7 +35,7 @@ function objKeysLengthDiffBlock(obj, expected, i) {
         assertEq(arraysEqual(keys, expected), true);
     }
     let len = keys.length;
-    assertRecoveredOnBailout(keys, false);
+    assertRecoveredOnBailout(keys, true);
     return len;
 }
 
@@ -54,7 +47,7 @@ function objKeysLengthMutate0(obj, expected, i) {
     var keys = Object.keys(obj);
     obj.foo = 42;
     let len = keys.length;
-    assertRecoveredOnBailout(keys, false);
+    assertRecoveredOnBailout(keys, true);
     if (i >= 99) {
         bailout();
         assertEq(arraysEqual(keys, expected), true);
@@ -65,7 +58,7 @@ function objKeysLengthMutate0(obj, expected, i) {
 function objKeysLengthMutate1(obj, expected, i) {
     var keys = Object.keys(obj);
     let len = keys.length;
-    assertRecoveredOnBailout(keys, false);
+    assertRecoveredOnBailout(keys, true);
     obj.foo = 42;
     if (i >= 99) {
         bailout();
@@ -77,7 +70,7 @@ function objKeysLengthMutate1(obj, expected, i) {
 function objKeysLengthMutate2(obj, expected, i) {
     var keys = Object.keys(obj);
     let len = keys.length;
-    assertRecoveredOnBailout(keys, false);
+    assertRecoveredOnBailout(keys, true);
     if (i >= 99) {
         bailout();
         assertEq(arraysEqual(keys, expected), true);
@@ -91,8 +84,6 @@ function objKeysLengthMutate3(obj, expected, i) {
     let len = keys.length;
     assertRecoveredOnBailout(keys, true);
     if (i >= 99) {
-        
-        
         obj.foo = 42;
         bailout();
         assertEq(arraysEqual(keys, expected), true);
@@ -101,9 +92,6 @@ function objKeysLengthMutate3(obj, expected, i) {
 }
 
 function objKeysLengthMutate4(obj, expected, i) {
-    
-    
-    
     obj.foo = 42;
     var keys = Object.keys(obj);
     let len = keys.length;
@@ -123,7 +111,7 @@ function doNotInlineSideEffect() {
 function objKeysLengthSideEffect0(obj, expected, i) {
     var keys = Object.keys(obj);
     let len = keys.length;
-    assertRecoveredOnBailout(keys, false);
+    assertRecoveredOnBailout(keys, true);
     doNotInlineSideEffect();
     if (i >= 99) {
         bailout();
@@ -135,7 +123,7 @@ function objKeysLengthSideEffect0(obj, expected, i) {
 function objKeysLengthSideEffect1(obj, expected, i) {
     var keys = Object.keys(obj);
     let len = keys.length;
-    assertRecoveredOnBailout(keys, false);
+    assertRecoveredOnBailout(keys, true);
     if (i >= 99) {
         bailout();
         assertEq(arraysEqual(keys, expected), true);
@@ -161,6 +149,48 @@ function objKeysLengthSideEffect2(obj, expected, i) {
 function objKeysLengthSideEffect3(obj, expected, i) {
     doNotInlineSideEffect();
     var keys = Object.keys(obj);
+    let len = keys.length;
+    assertRecoveredOnBailout(keys, true);
+    if (i >= 99) {
+        bailout();
+        assertEq(arraysEqual(keys, expected), true);
+    }
+    return len;
+}
+
+function objKeysLengthMutateElements0(obj, expected, i) {
+    var keys = Object.keys(obj);
+    obj[0] = 42;
+    obj[1] = 42;
+    obj[2] = 42;
+    let len = keys.length;
+    assertRecoveredOnBailout(keys, true);
+    if (i >= 99) {
+        bailout();
+        assertEq(arraysEqual(keys, expected), true);
+    }
+    return len;
+}
+
+function objKeysLengthMutateElements1(obj, expected, i) {
+    obj[0] = 42;
+    var keys = Object.keys(obj);
+    obj[1] = 42;
+    obj[2] = 42;
+    let len = keys.length;
+    assertRecoveredOnBailout(keys, true);
+    if (i >= 99) {
+        bailout();
+        assertEq(arraysEqual(keys, expected), true);
+    }
+    return len;
+}
+
+function objKeysLengthMutateElements2(obj, expected, i) {
+    obj[0] = 42;
+    obj[1] = 42;
+    var keys = Object.keys(obj);
+    obj[2] = 42;
     let len = keys.length;
     assertRecoveredOnBailout(keys, true);
     if (i >= 99) {
@@ -204,5 +234,8 @@ for (let i = 0; i < 100; i++) {
     objKeysLengthSideEffect1({...obj}, ["a", "b", "c", "d"], i);
     objKeysLengthSideEffect2({...obj}, ["a", "b", "c", "d"], i);
     objKeysLengthSideEffect3({...obj}, ["a", "b", "c", "d"], i);
+    objKeysLengthMutateElements0({...obj}, ["a", "b", "c", "d"], i);
+    objKeysLengthMutateElements1({...obj}, ["0", "a", "b", "c", "d"], i);
+    objKeysLengthMutateElements2({...obj}, ["0", "1", "a", "b", "c", "d"], i);
     nonEscapedObjKeysLength(i);
 }
