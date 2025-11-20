@@ -59,9 +59,8 @@ class SoftNavigationTestHelper {
 
 
 
-
   async getBufferedPerformanceEntriesWithTimeout(
-      type, includeSoftNavigationObservations, minNumEntries, timeout = 1000) {
+      type, minNumEntries = 1, timeout = 1000) {
     let observer;
     return this
         .newPromiseWithTimeoutMessage(
@@ -76,14 +75,9 @@ class SoftNavigationTestHelper {
               observer.observe({
                 type: type,
                 buffered: true,
-                includeSoftNavigationObservations:
-                    includeSoftNavigationObservations,
               });
             },
-            `${minNumEntries} entries of type ${type}${
-                includeSoftNavigationObservations ?
-                    ' with soft navigation observations' :
-                    ''} never arrived`,
+            `${minNumEntries} entries of type ${type} never arrived`,
             timeout)
         .finally(() => {
           observer.disconnect();
@@ -98,9 +92,7 @@ class SoftNavigationTestHelper {
 
 
 
-
-  static getPerformanceEntries(
-      type, includeSoftNavigationObservations, minNumEntries) {
+  static getPerformanceEntries(type, minNumEntries = 1) {
     return new Promise((resolve) => {
       const entries = [];
       const observer = new PerformanceObserver((list) => {
@@ -112,7 +104,6 @@ class SoftNavigationTestHelper {
       })
       observer.observe({
         type: type,
-        includeSoftNavigationObservations: includeSoftNavigationObservations,
       });
     });
   }
