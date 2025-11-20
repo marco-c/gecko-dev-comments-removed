@@ -201,6 +201,7 @@ Preferences.addAll([
 
   
   { id: "browser.ipProtection.variant", type: "string" },
+  { id: "browser.ipProtection.features.siteExceptions", type: "bool" },
   { id: "browser.ipProtection.exceptionsMode", type: "string" },
   { id: "browser.ipProtection.autoStartEnabled", type: "bool" },
   { id: "browser.ipProtection.autoStartPrivateEnabled", type: "bool" },
@@ -1413,12 +1414,20 @@ Preferences.addSetting({
   pref: "browser.ipProtection.variant",
   get: prefVal => prefVal == "beta",
 });
+Preferences.addSetting({
+  id: "ipProtectionSiteExceptionsFeatureEnabled",
+  pref: "browser.ipProtection.features.siteExceptions",
+});
 
 Preferences.addSetting({
   id: "ipProtectionExceptionsMode",
   pref: "browser.ipProtection.exceptionsMode",
-  deps: ["ipProtectionVisible"],
-  visible: ({ ipProtectionVisible }) => ipProtectionVisible.value,
+  deps: ["ipProtectionVisible", "ipProtectionSiteExceptionsFeatureEnabled"],
+  visible: ({
+    ipProtectionVisible,
+    ipProtectionSiteExceptionsFeatureEnabled,
+  }) =>
+    ipProtectionVisible.value && ipProtectionSiteExceptionsFeatureEnabled.value,
 });
 Preferences.addSetting({
   id: "ipProtectionExceptionAllListButton",
