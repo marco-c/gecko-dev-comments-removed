@@ -1928,17 +1928,17 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       saveFailedICHash = true;
       break;
 
-    case BailoutKind::MonomorphicInlinedStubFolding:
+    case BailoutKind::StubFoldingGuardMultipleShapes:
       action = BailoutAction::InvalidateIfFrequent;
       saveFailedICHash = true;
-      if (innerScript != outerScript) {
-        
-        
-        
-        
-        
-        cx->zone()->jitZone()->noteStubFoldingBailout(innerScript, outerScript);
-      }
+      
+      
+      
+      
+      
+      
+      
+      cx->zone()->jitZone()->noteStubFoldingBailout(innerScript, outerScript);
       break;
 
     case BailoutKind::SpeculativePhi:

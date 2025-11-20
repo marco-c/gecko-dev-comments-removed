@@ -115,7 +115,7 @@ enum class BailoutKind : uint8_t {
   
   
   
-  MonomorphicInlinedStubFolding,
+  StubFoldingGuardMultipleShapes,
 
   
   
@@ -207,8 +207,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Unknown";
     case BailoutKind::TranspiledCacheIR:
       return "TranspiledCacheIR";
-    case BailoutKind::MonomorphicInlinedStubFolding:
-      return "MonomorphicInlinedStubFolding";
+    case BailoutKind::StubFoldingGuardMultipleShapes:
+      return "StubFoldingGuardMultipleShapes";
     case BailoutKind::SpeculativePhi:
       return "SpeculativePhi";
     case BailoutKind::TypePolicy:

@@ -2564,12 +2564,23 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     stub->resetEnteredCount();
     JSScript* owningScript = nullptr;
+    bool hadGuardMultipleShapesBailout = false;
     if (cx->zone()->jitZone()->hasStubFoldingBailoutData(outerScript)) {
-      owningScript = cx->zone()->jitZone()->stubFoldingBailoutParent();
-      JitSpew(JitSpew_StubFolding,
-              "Found stub folding bailout parent: %s:%u:%u",
+      owningScript = cx->zone()->jitZone()->stubFoldingBailoutOuter();
+      hadGuardMultipleShapesBailout = true;
+      JitSpew(JitSpew_StubFolding, "Found stub folding bailout outer: %s:%u:%u",
               owningScript->filename(), owningScript->lineno(),
               owningScript->column().oneOriginValue());
     } else {
@@ -2578,13 +2589,14 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
                          : outerScript;
     }
     cx->zone()->jitZone()->clearStubFoldingBailoutData();
-    if (stub->usedByTranspiler()) {
+    if (stub->usedByTranspiler() && hadGuardMultipleShapesBailout) {
       if (owningScript->hasIonScript()) {
         owningScript->ionScript()->resetNumFixableBailouts();
       } else if (owningScript->hasJitScript()) {
         owningScript->jitScript()->clearFailedICHash();
       }
     } else {
+      
       
       owningScript->updateLastICStubCounter();
     }

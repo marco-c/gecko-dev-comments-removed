@@ -134,8 +134,11 @@ class JitZone {
   
   
   
-  WeakHeapPtr<JSScript*> lastStubFoldingBailoutChild_;
-  WeakHeapPtr<JSScript*> lastStubFoldingBailoutParent_;
+  
+  
+  
+  WeakHeapPtr<JSScript*> lastStubFoldingBailoutInner_;
+  WeakHeapPtr<JSScript*> lastStubFoldingBailoutOuter_;
 
   
   
@@ -227,22 +230,22 @@ class JitZone {
     inlinedCompilations_.remove(inlined);
   }
 
-  void noteStubFoldingBailout(JSScript* child, JSScript* parent) {
-    lastStubFoldingBailoutChild_ = child;
-    lastStubFoldingBailoutParent_ = parent;
+  void noteStubFoldingBailout(JSScript* inner, JSScript* outer) {
+    lastStubFoldingBailoutInner_ = inner;
+    lastStubFoldingBailoutOuter_ = outer;
   }
-  bool hasStubFoldingBailoutData(JSScript* child) const {
-    return lastStubFoldingBailoutChild_ &&
-           lastStubFoldingBailoutChild_.get() == child &&
-           lastStubFoldingBailoutParent_;
+  bool hasStubFoldingBailoutData(JSScript* inner) const {
+    return lastStubFoldingBailoutInner_ &&
+           lastStubFoldingBailoutInner_.get() == inner &&
+           lastStubFoldingBailoutOuter_;
   }
-  JSScript* stubFoldingBailoutParent() const {
-    MOZ_ASSERT(lastStubFoldingBailoutChild_);
-    return lastStubFoldingBailoutParent_.get();
+  JSScript* stubFoldingBailoutOuter() const {
+    MOZ_ASSERT(lastStubFoldingBailoutInner_);
+    return lastStubFoldingBailoutOuter_.get();
   }
   void clearStubFoldingBailoutData() {
-    lastStubFoldingBailoutChild_ = nullptr;
-    lastStubFoldingBailoutParent_ = nullptr;
+    lastStubFoldingBailoutInner_ = nullptr;
+    lastStubFoldingBailoutOuter_ = nullptr;
   }
 
   void registerJitScript(JitScript* script) { jitScripts_.insertBack(script); }
