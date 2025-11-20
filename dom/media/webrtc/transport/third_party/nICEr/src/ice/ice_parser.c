@@ -337,6 +337,13 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
         ABORT(R_BAD_DATA);
     }
     
+#if 0
+    
+
+    if (strlen(str) != 0) {
+      ABORT(R_BAD_DATA);
+    }
+#endif
 
     nr_ice_candidate_compute_codeword(cand);
 
@@ -468,6 +475,15 @@ nr_ice_peer_ctx_parse_global_attributes(nr_ice_peer_ctx *pctx, char **attrs, int
                     ABORT(R_BAD_DATA);
 
                 skip_to_past_space(&str);
+
+#if 0
+                
+                
+                if(r=nr_ip4_port_to_transport_addr(ntohl(addr),port,IPPROTO_UDP,&candidate->base))
+                  ABORT(r);
+
+                TAILQ_INSERT_TAIL(head, elm, field);
+#endif
 
                 component_id = 0;  
                 RFREE(connection_address);
