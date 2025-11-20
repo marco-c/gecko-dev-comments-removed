@@ -5603,21 +5603,15 @@ struct PaintParams {
 
 WindowRenderer* PresShell::GetWindowRenderer() {
   NS_ASSERTION(mViewManager, "Should have view manager");
-  if (nsView* rootView = mViewManager->GetRootView()) {
-    if (nsIWidget* widget = rootView->GetWidget()) {
-      return widget->GetWindowRenderer();
-    }
+  if (nsIWidget* widget = GetOwnWidget()) {
+    return widget->GetWindowRenderer();
   }
   return nullptr;
 }
 
 nsIWidget* PresShell::GetNearestWidget() const {
-  if (mViewManager) {
-    if (auto* root = mViewManager->GetRootView()) {
-      if (nsIWidget* widget = root->GetWidget()) {
-        return widget;
-      }
-    }
+  if (auto* widget = GetOwnWidget()) {
+    return widget;
   }
   if (auto* embedder = GetInProcessEmbedderFrame()) {
     return embedder->GetNearestWidget();
@@ -5625,13 +5619,19 @@ nsIWidget* PresShell::GetNearestWidget() const {
   return GetRootWidget();
 }
 
+nsIWidget* PresShell::GetOwnWidget() const {
+  if (!mViewManager) {
+    return nullptr;
+  }
+  if (auto* root = mViewManager->GetRootView()) {
+    return root->GetWidget();
+  }
+  return nullptr;
+}
+
 bool PresShell::AsyncPanZoomEnabled() {
-  NS_ASSERTION(mViewManager, "Should have view manager");
-  nsView* rootView = mViewManager->GetRootView();
-  if (rootView) {
-    if (nsIWidget* widget = rootView->GetWidget()) {
-      return widget->AsyncPanZoomEnabled();
-    }
+  if (nsIWidget* widget = GetOwnWidget()) {
+    return widget->AsyncPanZoomEnabled();
   }
   return gfxPlatform::AsyncPanZoomEnabled();
 }
@@ -5757,12 +5757,11 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
     mSynthMouseMoveEvent.Forget();
   });
   
-  nsView* rootView = mViewManager ? mViewManager->GetRootView() : nullptr;
-  if (!rootView || !rootView->HasWidget()) {
+  nsIWidget* widget = GetOwnWidget();
+  if (!widget) {
     return;
   }
-  nsCOMPtr<nsIDragSession> dragSession =
-      nsContentUtils::GetDragSession(rootView->GetWidget());
+  nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession(widget);
   if (dragSession) {
     
     
@@ -5843,11 +5842,11 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
   
   nsPoint refpoint(0, 0);
 
-  nsView* const rootView = mViewManager ? mViewManager->GetRootView() : nullptr;
-  if (!rootView || !rootView->HasWidget()) {
+  nsIWidget* ownWidget = GetOwnWidget();
+  if (!ownWidget) {
     return;
   }
-  MOZ_ASSERT(!nsCOMPtr{nsContentUtils::GetDragSession(rootView->GetWidget())});
+  MOZ_ASSERT(!nsCOMPtr{nsContentUtils::GetDragSession(ownWidget)});
 
   
   
@@ -5865,7 +5864,7 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
 
   
   nsMenuPopupFrame* popupFrame =
-      FindPopupFrame(mPresContext, rootView->GetWidget(),
+      FindPopupFrame(mPresContext, ownWidget,
                      LayoutDeviceIntPoint::FromAppUnitsToNearest(
                          aPointerInfo.mLastRefPointInRootDoc, APD));
   if (popupFrame) {
@@ -5880,7 +5879,7 @@ void PresShell::ProcessSynthMouseOrPointerMoveEvent(
     MOZ_ASSERT(result == nsLayoutUtils::TRANSFORM_SUCCEEDED);
   }
   if (!widget) {
-    widget = rootView->GetWidget();
+    widget = ownWidget;
     widgetAPD = APD;
     pointShell = this;
     refpoint = aPointerInfo.mLastRefPointInRootDoc;
@@ -12021,12 +12020,8 @@ nsIWidget* PresShell::GetRootWidget() const {
     return nullptr;
   }
   for (nsPresContext* pc = mPresContext; pc; pc = pc->GetParentPresContext()) {
-    if (auto* vm = pc->PresShell()->GetViewManager()) {
-      if (auto* view = vm->GetRootView()) {
-        if (auto* widget = view->GetWidget()) {
-          return widget;
-        }
-      }
+    if (auto* widget = pc->PresShell()->GetOwnWidget()) {
+      return widget;
     }
   }
   return nullptr;

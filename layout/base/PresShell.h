@@ -455,6 +455,10 @@ class PresShell final : public nsStubDocumentObserver,
   nsIWidget* GetNearestWidget() const;
 
   
+  
+  nsIWidget* GetOwnWidget() const;
+
+  
   nsSubDocumentFrame* GetInProcessEmbedderFrame() const;
   void SetInProcessEmbedderFrame(nsSubDocumentFrame*);
 
