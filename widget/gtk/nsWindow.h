@@ -340,8 +340,7 @@ class nsWindow final : public nsIWidget {
   static guint32 sLastButtonPressTime;
 
   MozContainer* GetMozContainer() { return mContainer; }
-  GdkWindow* GetGdkWindow() const { return mGdkWindow; }
-  void SetGdkWindow(GdkWindow* aGdkWindow);
+  GdkWindow* GetGdkWindow() const { return mGdkWindow; };
   GdkWindow* GetToplevelGdkWindow() const;
   GtkWidget* GetGtkWidget() const { return mShell; }
   nsWindow* GetEffectiveParent();
@@ -499,6 +498,10 @@ class nsWindow final : public nsIWidget {
 
   void ResumeCompositorImpl();
 
+  
+  
+  void ClearRenderingQueue();
+
   bool ApplyEnterLeaveMutterWorkaround();
 
   void NotifyOcclusionState(mozilla::widget::OcclusionState aState) override;
@@ -549,6 +552,7 @@ class nsWindow final : public nsIWidget {
   GtkWidget* GetToplevelWidget() const;
   nsWindow* GetContainerWindow() const;
   Window GetX11Window();
+  void EnsureGdkWindow();
   void SetUrgencyHint(GtkWidget* top_window, bool state);
   void SetDefaultIcon(void);
   void SetWindowDecoration(BorderStyle aStyle);
@@ -592,8 +596,6 @@ class nsWindow final : public nsIWidget {
   GtkWidget* mShell = nullptr;
   MozContainer* mContainer = nullptr;
   GdkWindow* mGdkWindow = nullptr;
-  
-  void* mEGLWindow = nullptr;
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::widget::WaylandSurface> mSurface;
 #endif
@@ -701,6 +703,9 @@ class nsWindow final : public nsIWidget {
 
   
   bool mDrawInTitlebar = false;
+
+  
+  mozilla::Mutex mWindowVisibilityMutex;
 
   
   
