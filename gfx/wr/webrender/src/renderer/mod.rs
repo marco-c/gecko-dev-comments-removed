@@ -130,6 +130,7 @@ pub use shade::{PendingShadersToPrecache, Shaders, SharedShaders};
 pub use vertex::{desc, VertexArrayKind, MAX_VERTEX_TEXTURE_WIDTH};
 pub use gpu_buffer::{GpuBuffer, GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBufferBuilderI};
 pub use gpu_buffer::{GpuBufferAddress, GpuBufferBuilder, GpuBufferWriterF, GpuBufferBlockF};
+pub use gpu_buffer::GpuBufferDataF;
 
 
 
