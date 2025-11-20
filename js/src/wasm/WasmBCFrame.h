@@ -1387,11 +1387,10 @@ struct StackMapGenerator {
   
   
   
-  
   [[nodiscard]] bool createStackMap(
       const char* who, const ExitStubMapVector& extras,
-      uint32_t assemblerOffset,
-      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk);
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk,
+      wasm::StackMap** result);
 };
 
 }  

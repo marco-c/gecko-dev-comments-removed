@@ -1869,40 +1869,6 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
   GenPrintf(DebugChannel::Import, masm, "\n");
 }
 
-static bool AddStackCheckForImportFunctionEntry(jit::MacroAssembler& masm,
-                                                unsigned reserve,
-                                                const FuncType& funcType,
-                                                StackMaps* stackMaps) {
-  std::pair<CodeOffset, uint32_t> pair =
-      masm.wasmReserveStackChecked(reserve, TrapSiteDesc());
-
-  
-  ArgTypeVector argTypes(funcType);
-  RegisterOffsets trapExitLayout;
-  size_t trapExitLayoutNumWords;
-  GenerateTrapExitRegisterOffsets(&trapExitLayout, &trapExitLayoutNumWords);
-  CodeOffset trapInsnOffset = pair.first;
-  size_t nBytesReservedBeforeTrap = pair.second;
-  size_t nInboundStackArgBytes =
-      StackArgAreaSizeUnaligned(argTypes, ABIKind::Wasm);
-  wasm::StackMap* stackMap = nullptr;
-  if (!CreateStackMapForFunctionEntryTrap(
-          argTypes, trapExitLayout, trapExitLayoutNumWords,
-          nBytesReservedBeforeTrap, nInboundStackArgBytes, *stackMaps,
-          &stackMap)) {
-    return false;
-  }
-
-  
-  
-  MOZ_ASSERT(stackMap);
-  if (stackMap) {
-    return stackMaps->finalize(trapInsnOffset.offset(), stackMap);
-  }
-
-  return true;
-}
-
 
 
 
@@ -1928,10 +1894,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
       sizeof(Frame),  
       StackArgBytesForWasmABI(funcType) + sizeOfInstanceSlot);
 
-  if (!AddStackCheckForImportFunctionEntry(masm, framePushed, funcType,
-                                           stackMaps)) {
-    return false;
-  }
+  masm.wasmReserveStackChecked(framePushed, TrapSiteDesc());
 
   MOZ_ASSERT(masm.framePushed() == framePushed);
 

@@ -289,7 +289,7 @@ class StackMaps {
 
   
   
-  StackMap* create(uint32_t numMappedWords) {
+  [[nodiscard]] StackMap* create(uint32_t numMappedWords) {
     MOZ_ASSERT(!createdButNotFinalized_,
                "a previous StackMap has been created but not finalized");
 
@@ -309,7 +309,7 @@ class StackMaps {
   
   
   
-  StackMap* create(const StackMapHeader& header) {
+  [[nodiscard]] StackMap* create(const StackMapHeader& header) {
     StackMap* map = create(header.numMappedWords);
     if (!map) {
       return nullptr;
@@ -321,8 +321,7 @@ class StackMaps {
   
   
   
-  
-  [[nodiscard]] bool finalize(uint32_t codeOffset, StackMap* map) {
+  [[nodiscard]] StackMap* finalize(StackMap* map) {
 #ifdef DEBUG
     MOZ_ASSERT(
         map == createdButNotFinalized_,
@@ -335,13 +334,27 @@ class StackMaps {
       
       
       stackMaps_.release(beforeLastCreated_);
-      return codeOffsetToStackMap_.put(codeOffset, lastAdded_);
+      return lastAdded_;
     }
 
     
     lastAdded_ = map;
     stackMaps_.cancelMark(beforeLastCreated_);
+    return map;
+  }
+
+  
+  [[nodiscard]] bool add(uint32_t codeOffset, StackMap* map) {
+    MOZ_ASSERT(!createdButNotFinalized_);
+    MOZ_ASSERT(stackMaps_.contains(map));
     return codeOffsetToStackMap_.put(codeOffset, map);
+  }
+
+  
+  
+  
+  [[nodiscard]] bool finalize(uint32_t codeOffset, StackMap* map) {
+    return add(codeOffset, finalize(map));
   }
 
   void clear() {

@@ -1030,7 +1030,7 @@ void CodeGeneratorShared::visitOutOfLineTruncateSlow(
   masm.jump(ool->rejoin());
 }
 
-bool CodeGeneratorShared::omitOverRecursedCheck() const {
+bool CodeGeneratorShared::omitOverRecursedStackCheck() const {
   
   
   
@@ -1038,6 +1038,10 @@ bool CodeGeneratorShared::omitOverRecursedCheck() const {
   
   return frameSize() < MAX_UNCHECKED_LEAF_FRAME_SIZE &&
          !gen->needsOverrecursedCheck();
+}
+
+bool CodeGeneratorShared::omitOverRecursedInterruptCheck() const {
+  return !gen->needsOverrecursedCheck();
 }
 
 void CodeGeneratorShared::emitPreBarrier(Address address) {

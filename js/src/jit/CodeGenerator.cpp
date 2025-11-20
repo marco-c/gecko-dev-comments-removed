@@ -7957,7 +7957,7 @@ void CodeGenerator::visitUnreachableResultT(LUnreachableResultT* lir) {
 
 void CodeGenerator::visitCheckOverRecursed(LCheckOverRecursed* lir) {
   
-  if (omitOverRecursedCheck()) {
+  if (omitOverRecursedStackCheck()) {
     return;
   }
 
@@ -17139,29 +17139,46 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
     return decoder->fail(decoder->beginOffset(), "stack frame is too large");
   }
 
-  if (omitOverRecursedCheck()) {
+  if (omitOverRecursedStackCheck()) {
     masm.reserveStack(frameSize());
+
+    
+    
+    MOZ_ASSERT(omitOverRecursedInterruptCheck());
   } else {
-    std::pair<CodeOffset, uint32_t> pair =
-        masm.wasmReserveStackChecked(frameSize(), entryTrapSiteDesc);
-    CodeOffset trapInsnOffset = pair.first;
-    size_t nBytesReservedBeforeTrap = pair.second;
+    masm.wasmReserveStackChecked(frameSize(), entryTrapSiteDesc);
 
-    wasm::StackMap* functionEntryStackMap = nullptr;
-    if (!CreateStackMapForFunctionEntryTrap(
-            argTypes, trapExitLayout, trapExitLayoutNumWords,
-            nBytesReservedBeforeTrap, nInboundStackArgBytes, *stackMaps,
-            &functionEntryStackMap)) {
-      return false;
-    }
+    if (!omitOverRecursedInterruptCheck()) {
+      wasm::StackMap* functionEntryStackMap = nullptr;
+      if (!CreateStackMapForFunctionEntryTrap(
+              argTypes, trapExitLayout, trapExitLayoutNumWords, frameSize(),
+              nInboundStackArgBytes, *stackMaps, &functionEntryStackMap)) {
+        return false;
+      }
 
-    
-    
-    MOZ_ASSERT(functionEntryStackMap);
+      
+      
+      MOZ_ASSERT(functionEntryStackMap);
 
-    if (functionEntryStackMap &&
-        !stackMaps->finalize(trapInsnOffset.offset(), functionEntryStackMap)) {
-      return false;
+      auto* ool = new (alloc()) LambdaOutOfLineCode(
+          [this, stackMaps, functionEntryStackMap](OutOfLineCode& ool) {
+            masm.wasmTrap(wasm::Trap::CheckInterrupt, wasm::TrapSiteDesc());
+            CodeOffset trapInsnOffset = CodeOffset(masm.currentOffset());
+
+            if (functionEntryStackMap &&
+                !stackMaps->add(trapInsnOffset.offset(),
+                                functionEntryStackMap)) {
+              return false;
+            }
+            masm.jump(ool.rejoin());
+            return true;
+          });
+
+      addOutOfLineCode(ool, (const BytecodeSite*)nullptr);
+      masm.branch32(Assembler::NotEqual,
+                    Address(InstanceReg, wasm::Instance::offsetOfInterrupt()),
+                    Imm32(0), ool->entry());
+      masm.bind(ool->rejoin());
     }
   }
 

@@ -120,9 +120,7 @@ class alignas(16) Instance {
   GCPtr<AnyRef> pendingExceptionTag_;
 
   
-  
-  
-  mozilla::Atomic<JS::NativeStackLimit, mozilla::Relaxed> stackLimit_;
+  JS::NativeStackLimit stackLimit_;
 
   
   mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
@@ -395,7 +393,7 @@ class alignas(16) Instance {
 
   void setInterrupt();
   bool isInterrupted() const;
-  void resetInterrupt(JSContext* cx);
+  void resetInterrupt();
 
   void setTemporaryStackLimit(JS::NativeStackLimit limit);
   void resetTemporaryStackLimit(JSContext* cx);

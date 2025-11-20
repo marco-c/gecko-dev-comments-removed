@@ -311,6 +311,9 @@ struct BaseCompiler final {
   Vector<OutOfLineCode*, 8, SystemAllocPolicy> outOfLine_;
 
   
+  StackMaps* stackMaps_;
+
+  
   
   StackMapGenerator stackMapGenerator_;
 
@@ -953,12 +956,6 @@ struct BaseCompiler final {
   
   [[nodiscard]] bool createStackMap(
       const char* who, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
-
-  
-  [[nodiscard]] bool createStackMap(
-      const char* who, const ExitStubMapVector& extras,
-      uint32_t assemblerOffset,
-      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
 
   
   

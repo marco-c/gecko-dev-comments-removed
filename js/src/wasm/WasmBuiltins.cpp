@@ -993,17 +993,9 @@ static void* WasmHandleTrap() {
     case Trap::CheckInterrupt:
       return CheckInterrupt(cx, activation);
     case Trap::StackOverflow: {
-      
-      
-      
-      
-      
       AutoCheckRecursionLimit recursion(cx);
       if (!recursion.check(cx)) {
         return nullptr;
-      }
-      if (activation->wasmExitInstance()->isInterrupted()) {
-        return CheckInterrupt(cx, activation);
       }
       ReportTrapError(cx, JSMSG_OVER_RECURSED);
       return nullptr;
