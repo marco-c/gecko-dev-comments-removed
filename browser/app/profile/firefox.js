@@ -2241,6 +2241,9 @@ pref("browser.ml.smartAssist.model", "");
 pref("browser.ml.smartAssist.overrideNewTab", false);
 
 
+pref("browser.aiwindow.enabled", false);
+
+
 pref("security.mixed_content.block_active_content", true);
 
 
