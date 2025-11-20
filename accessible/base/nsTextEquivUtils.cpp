@@ -96,9 +96,10 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(const Accessible* aAccessible,
   return NS_OK;
 }
 
-nsresult nsTextEquivUtils::GetTextEquivFromIDRefs(
+bool nsTextEquivUtils::GetTextEquivFromIDRefs(
     const LocalAccessible* aAccessible, nsAtom* aIDRefsAttr,
     nsAString& aTextEquiv) {
+  bool usedHiddenOrSelf = false;
   
   
   
@@ -106,13 +107,15 @@ nsresult nsTextEquivUtils::GetTextEquivFromIDRefs(
                                aIDRefsAttr == nsGkAtoms::aria_describedby;
   if ((sInAriaRelationTraversal && isAriaTraversal) ||
       GetReferencedAccs().Contains(aAccessible)) {
-    return NS_OK;
+    return usedHiddenOrSelf;
   }
 
   aTextEquiv.Truncate();
 
   nsIContent* content = aAccessible->GetContent();
-  if (!content) return NS_OK;
+  if (!content) {
+    return usedHiddenOrSelf;
+  }
 
   nsIContent* refContent = nullptr;
   AssociatedElementsIterator iter(aAccessible->Document(), content,
@@ -132,23 +135,23 @@ nsresult nsTextEquivUtils::GetTextEquivFromIDRefs(
         sInAriaRelationTraversal = false;
       }
     });
-    nsresult rv =
+    usedHiddenOrSelf |=
         AppendTextEquivFromContent(aAccessible, refContent, &aTextEquiv);
-    NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  return NS_OK;
+  return usedHiddenOrSelf;
 }
 
-nsresult nsTextEquivUtils::AppendTextEquivFromContent(
+bool nsTextEquivUtils::AppendTextEquivFromContent(
     const LocalAccessible* aInitiatorAcc, nsIContent* aContent,
     nsAString* aString) {
   
   LocalAccessible* accessible =
       aInitiatorAcc->Document()->GetAccessible(aContent);
+  bool usedHiddenOrSelf = aInitiatorAcc == accessible;
   if (GetReferencedAccs().Contains(aInitiatorAcc) ||
       GetReferencedAccs().Contains(accessible)) {
-    return NS_OK;
+    return usedHiddenOrSelf;
   }
 
   
@@ -157,14 +160,14 @@ nsresult nsTextEquivUtils::AppendTextEquivFromContent(
   }
   GetReferencedAccs().Insert(aInitiatorAcc);
 
-  nsresult rv = NS_ERROR_FAILURE;
   if (accessible) {
-    rv = AppendFromAccessible(accessible, aString);
+    AppendFromAccessible(accessible, aString);
     GetReferencedAccs().Insert(accessible);
   } else {
     
     
-    rv = AppendFromDOMNode(aContent, aString);
+    AppendFromDOMNode(aContent, aString);
+    usedHiddenOrSelf = true;
   }
 
   
@@ -174,7 +177,8 @@ nsresult nsTextEquivUtils::AppendTextEquivFromContent(
     GetReferencedAccs().Clear();
     sInitiatorAcc = nullptr;
   }
-  return rv;
+
+  return usedHiddenOrSelf;
 }
 
 nsresult nsTextEquivUtils::AppendTextEquivFromTextContent(nsIContent* aContent,
