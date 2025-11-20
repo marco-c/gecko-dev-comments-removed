@@ -19,7 +19,13 @@
 #ifndef wasm_context_h
 #define wasm_context_h
 
-#include "mozilla/DoublyLinkedList.h"
+#ifdef ENABLE_WASM_JSPI
+#  include "mozilla/DoublyLinkedList.h"
+
+#  include "gc/Barrier.h"
+#endif  
+
+#include "js/NativeStackLimits.h"
 
 namespace js::wasm {
 
@@ -51,24 +57,38 @@ class SuspenderContext {
 
 class Context {
  public:
-  Context()
-      : triedToInstallSignalHandlers(false),
-        haveSignalHandlers(false)
-#ifdef ENABLE_WASM_JSPI
-        ,
-        suspendableStackLimit(JS::NativeStackLimitMin),
-        suspendableStacksCount(0)
-#endif
-  {
+  Context();
+
+  static constexpr size_t offsetOfStackLimit() {
+    return offsetof(Context, stackLimit);
   }
+#ifdef ENABLE_WASM_JSPI
+  static constexpr size_t offsetOfOnSuspendableStack() {
+    return offsetof(Context, onSuspendableStack);
+  }
+#endif
+
+  void initStackLimit(JSContext* cx);
+
+#ifdef ENABLE_WASM_JSPI
+  void enterSuspendableStack(JS::NativeStackLimit newStackLimit);
+  void leaveSuspendableStack(JSContext* cx);
+#endif
 
   
   
   bool triedToInstallSignalHandlers;
   bool haveSignalHandlers;
 
+  
+  
+  
+  JS::NativeStackLimit stackLimit;
+
 #ifdef ENABLE_WASM_JSPI
-  JS::NativeStackLimit suspendableStackLimit;
+  
+  
+  int32_t onSuspendableStack;
   mozilla::Atomic<uint32_t> suspendableStacksCount;
   SuspenderContext promiseIntegration;
 #endif

@@ -52,6 +52,11 @@
 #endif
 
 #ifdef XP_WIN
+
+
+
+#  include <winternl.h>  
+
 #  include "util/WindowsWrapper.h"
 #endif
 
@@ -433,7 +438,7 @@ void SuspenderObject::trace(JSTracer* trc, JSObject* obj) {
 
 void SuspenderObject::setMoribund(JSContext* cx) {
   MOZ_ASSERT(state() == SuspenderState::Active);
-  ResetInstanceStackLimits(cx);
+  cx->wasm().leaveSuspendableStack(cx);
 #  if defined(_WIN32)
   data()->restoreTIBStackFields();
 #  endif
@@ -448,7 +453,7 @@ void SuspenderObject::setMoribund(JSContext* cx) {
 
 void SuspenderObject::setActive(JSContext* cx) {
   data()->setState(SuspenderState::Active);
-  UpdateInstanceStackLimitsForSuspendableStack(cx, getStackMemoryLimit());
+  cx->wasm().enterSuspendableStack(getStackMemoryLimit());
 #  if defined(_WIN32)
   data()->updateTIBStackFields();
 #  endif
@@ -456,7 +461,7 @@ void SuspenderObject::setActive(JSContext* cx) {
 
 void SuspenderObject::setSuspended(JSContext* cx) {
   data()->setState(SuspenderState::Suspended);
-  ResetInstanceStackLimits(cx);
+  cx->wasm().leaveSuspendableStack(cx);
 #  if defined(_WIN32)
   data()->restoreTIBStackFields();
 #  endif
@@ -1714,7 +1719,11 @@ static bool WasmPIPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  CleanupActiveSuspender(cx);
+  
+  
+  if (cx->wasm().promiseIntegration.activeSuspender() != nullptr) {
+    CleanupActiveSuspender(cx);
+  }
 
   if (cx->isThrowingOutOfMemory()) {
     return false;

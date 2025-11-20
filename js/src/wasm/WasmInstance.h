@@ -120,14 +120,7 @@ class alignas(16) Instance {
   GCPtr<AnyRef> pendingExceptionTag_;
 
   
-  JS::NativeStackLimit stackLimit_;
-
-  
   mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
-
-  
-  
-  int32_t onSuspendableStack_;
 
   
   
@@ -314,14 +307,8 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfPendingExceptionTag() {
     return offsetof(Instance, pendingExceptionTag_);
   }
-  static constexpr size_t offsetOfStackLimit() {
-    return offsetof(Instance, stackLimit_);
-  }
   static constexpr size_t offsetOfInterrupt() {
     return offsetof(Instance, interrupt_);
-  }
-  static constexpr size_t offsetOfOnSuspendableStack() {
-    return offsetof(Instance, onSuspendableStack_);
   }
   static constexpr size_t offsetOfAllocSites() {
     return offsetof(Instance, allocSites_);
@@ -394,9 +381,6 @@ class alignas(16) Instance {
   void setInterrupt();
   bool isInterrupted() const;
   void resetInterrupt();
-
-  void setTemporaryStackLimit(JS::NativeStackLimit limit);
-  void resetTemporaryStackLimit(JSContext* cx);
 
   void setAllocationMetadataBuilder(
       const js::AllocationMetadataBuilder* allocationMetadataBuilder) {
