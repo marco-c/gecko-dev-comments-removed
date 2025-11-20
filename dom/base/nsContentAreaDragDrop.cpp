@@ -470,11 +470,16 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
 
     
     
+    
     if (!mIsAltKeyPressed) {
-      const auto* form = nsIFormControl::FromNodeOrNull(mTarget);
-      if (form && form->ControlType() != FormControlType::Object) {
-        *aCanDrag = false;
-        return NS_OK;
+      if (const auto* form = nsIFormControl::FromNodeOrNull(mTarget)) {
+        if (form->IsConceptButton()) {
+          return NS_OK;
+        }
+        if (form->ControlType() != FormControlType::Object) {
+          *aCanDrag = false;
+          return NS_OK;
+        }
       }
     }
 
