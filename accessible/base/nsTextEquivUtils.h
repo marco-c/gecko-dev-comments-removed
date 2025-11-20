@@ -16,8 +16,7 @@ class nsIContent;
 namespace mozilla {
 namespace a11y {
 class LocalAccessible;
-class AccIterable;
-}  
+}
 }  
 
 
@@ -52,7 +51,6 @@ class nsTextEquivUtils {
  public:
   typedef mozilla::a11y::LocalAccessible LocalAccessible;
   typedef mozilla::a11y::Accessible Accessible;
-  typedef mozilla::a11y::AccIterable AccIterable;
 
   
 
@@ -61,7 +59,10 @@ class nsTextEquivUtils {
 
 
 
-  static bool HasNameRule(const Accessible* aAccessible, ETextEquivRule aRule);
+  static inline bool HasNameRule(Accessible* aAccessible,
+                                 ETextEquivRule aRule) {
+    return (GetRoleRule(aAccessible->Role()) & aRule) == aRule;
+  }
 
   
 
@@ -69,7 +70,7 @@ class nsTextEquivUtils {
 
 
 
-  static nsresult GetNameFromSubtree(const Accessible* aAccessible,
+  static nsresult GetNameFromSubtree(const LocalAccessible* aAccessible,
                                      nsAString& aName);
 
   
@@ -94,15 +95,9 @@ class nsTextEquivUtils {
 
 
 
-
-
-  static bool GetTextEquivFromIDRefs(const LocalAccessible* aAccessible,
-                                     nsAtom* aIDRefsAttr,
-                                     nsAString& aTextEquiv);
-
-  static void GetTextEquivFromAccIterable(const Accessible* aAccessible,
-                                          AccIterable* aIter,
-                                          nsAString& aTextEquiv);
+  static nsresult GetTextEquivFromIDRefs(const LocalAccessible* aAccessible,
+                                         nsAtom* aIDRefsAttr,
+                                         nsAString& aTextEquiv);
 
   
 
@@ -115,11 +110,9 @@ class nsTextEquivUtils {
 
 
 
-
-
-  static bool AppendTextEquivFromContent(const LocalAccessible* aInitiatorAcc,
-                                         nsIContent* aContent,
-                                         nsAString* aString);
+  static nsresult AppendTextEquivFromContent(
+      const LocalAccessible* aInitiatorAcc, nsIContent* aContent,
+      nsAString* aString);
 
   
 
@@ -141,13 +134,6 @@ class nsTextEquivUtils {
   static nsresult AppendFromDOMChildren(nsIContent* aContent,
                                         nsAString* aString);
 
-  
-
-
-
-  static nsresult AppendFromAccessible(Accessible* aAccessible,
-                                       nsAString* aString);
-
  private:
   
 
@@ -155,6 +141,13 @@ class nsTextEquivUtils {
 
   static nsresult AppendFromAccessibleChildren(const Accessible* aAccessible,
                                                nsAString* aString);
+
+  
+
+
+
+  static nsresult AppendFromAccessible(Accessible* aAccessible,
+                                       nsAString* aString);
 
   
 

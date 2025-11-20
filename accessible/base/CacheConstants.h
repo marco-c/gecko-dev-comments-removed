@@ -160,8 +160,6 @@ class CacheKey {
   
   static constexpr nsStaticAtom* CssPosition = nsGkAtoms::position;
   
-  static constexpr nsStaticAtom* CssAltContent = nsGkAtoms::content;
-  
   static constexpr nsStaticAtom* Description = nsGkAtoms::description;
   
   
@@ -209,6 +207,9 @@ class CacheKey {
   static constexpr nsStaticAtom* MinValue = nsGkAtoms::min;
   
   static constexpr nsStaticAtom* Name = nsGkAtoms::name;
+  
+  
+  static constexpr nsStaticAtom* NameValueFlag = nsGkAtoms::explicit_name;
   
   
   static constexpr nsStaticAtom* NumericValue = nsGkAtoms::value;
@@ -267,8 +268,6 @@ class CacheKey {
   
   
   static constexpr nsStaticAtom* TextValue = nsGkAtoms::aria_valuetext;
-  
-  static constexpr nsStaticAtom* Tooltip = nsGkAtoms::tooltip;
   
   static constexpr nsStaticAtom* TransformMatrix = nsGkAtoms::transform;
   

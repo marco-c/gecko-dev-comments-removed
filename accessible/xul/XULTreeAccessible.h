@@ -223,7 +223,7 @@ class XULTreeItemAccessible : public XULTreeItemAccessibleBase {
 
   
   virtual void Shutdown() override;
-  virtual ENameValueFlag DirectName(nsString& aName) const override;
+  virtual ENameValueFlag Name(nsString& aName) const override;
   virtual a11y::role NativeRole() const override;
 
   

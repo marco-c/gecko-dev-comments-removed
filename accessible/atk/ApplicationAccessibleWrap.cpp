@@ -66,7 +66,7 @@ gboolean toplevel_event_watcher(GSignalInvocationHint* ihint,
   return TRUE;
 }
 
-ENameValueFlag ApplicationAccessibleWrap::DirectName(nsString& aName) const {
+ENameValueFlag ApplicationAccessibleWrap::Name(nsString& aName) const {
   
   
   

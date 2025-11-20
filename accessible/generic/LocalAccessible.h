@@ -155,9 +155,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual ENameValueFlag Name(nsString& aName) const override final;
-
-  virtual ENameValueFlag DirectName(nsString& aName) const;
+  virtual ENameValueFlag Name(nsString& aName) const override;
 
   
 
@@ -873,12 +871,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
   bool ARIADescription(nsString& aDescription) const;
-
-  
-
-
-
-  bool Tooltip(nsString& aTooltip) const;
 
   
 
