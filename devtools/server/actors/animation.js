@@ -35,6 +35,13 @@ const {
   ANIMATION_TYPE_FOR_LONGHANDS,
 } = require("resource://devtools/server/actors/animation-type-longhand.js");
 
+loader.lazyRequireGetter(
+  this,
+  "getNodeDisplayName",
+  "resource://devtools/server/actors/inspector/utils.js",
+  true
+);
+
 
 const ANIMATION_TYPES = {
   CSS_ANIMATION: "cssanimation",
@@ -83,16 +90,19 @@ class AnimationPlayerActor extends Actor {
 
     this.walker = animationsActor.walker;
     this.player = player;
+    
+    
+    this.node = this.getNode();
 
-    
-    
-    
-    
     
     
     this.observer = new this.window.MutationObserver(this.onAnimationMutation);
     if (this.isPseudoElement) {
-      this.observer.observe(this.node.parentElement, {
+      
+      
+      
+      
+      this.observer.observe(this.player.effect.target, {
         animations: true,
         subtree: true,
       });
@@ -119,23 +129,11 @@ class AnimationPlayerActor extends Actor {
     return !!this.player.effect.pseudoElement;
   }
 
-  get pseudoElemenName() {
-    if (!this.isPseudoElement) {
-      return null;
-    }
-
-    return `_moz_generated_content_${this.player.effect.pseudoElement.replace(
-      /^::/,
-      ""
-    )}`;
-  }
-
-  get node() {
+  getNode() {
     if (!this.isPseudoElement) {
       return this.player.effect.target;
     }
 
-    const pseudoElementName = this.pseudoElemenName;
     const originatingElem = this.player.effect.target;
     const treeWalker = this.walker.getDocumentWalker(originatingElem);
 
@@ -144,9 +142,15 @@ class AnimationPlayerActor extends Actor {
     for (
       let next = treeWalker.firstChild();
       next;
-      next = treeWalker.nextSibling()
+      
+      
+      next = treeWalker.nextNode()
     ) {
-      if (next.nodeName === pseudoElementName) {
+      if (!next.implementedPseudoElement) {
+        continue;
+      }
+
+      if (this.player.effect.pseudoElement === getNodeDisplayName(next)) {
         return next;
       }
     }
@@ -154,11 +158,12 @@ class AnimationPlayerActor extends Actor {
     console.warn(
       `Pseudo element ${this.player.effect.pseudoElement} is not found`
     );
-    return originatingElem;
+
+    return null;
   }
 
   get document() {
-    return this.node.ownerDocument;
+    return this.player.effect.target.ownerDocument;
   }
 
   get window() {
@@ -376,7 +381,7 @@ class AnimationPlayerActor extends Actor {
       
       
       
-      documentCurrentTime: this.node.ownerDocument.timeline.currentTime,
+      documentCurrentTime: this.document.timeline.currentTime,
       
       createdTime: this.createdTime,
       
@@ -660,7 +665,16 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
   getAnimationPlayersForNode(nodeActor) {
-    const animations = nodeActor.rawNode.getAnimations({ subtree: true });
+    let { rawNode } = nodeActor;
+
+    
+    
+    const viewTransitionNode = this.#closestViewTransitionNode(rawNode);
+    if (viewTransitionNode) {
+      rawNode = viewTransitionNode;
+    }
+
+    const animations = rawNode.getAnimations({ subtree: true });
 
     
     if (this.actors) {
@@ -684,14 +698,40 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     this.stopAnimationPlayerUpdates();
     
     
-    const win = nodeActor.rawNode.ownerDocument.defaultView;
+    const win = rawNode.ownerDocument.defaultView;
     this.observer = new win.MutationObserver(this.onAnimationMutation);
-    this.observer.observe(nodeActor.rawNode, {
+    this.observer.observe(rawNode, {
       animations: true,
       subtree: true,
     });
 
     return this.actors;
+  }
+
+  
+
+
+
+
+
+  #closestViewTransitionNode(rawNode) {
+    const { implementedPseudoElement } = rawNode;
+    if (
+      !implementedPseudoElement ||
+      !implementedPseudoElement?.startsWith("::view-transition")
+    ) {
+      return null;
+    }
+    
+    while (
+      rawNode &&
+      rawNode.implementedPseudoElement &&
+      rawNode.implementedPseudoElement !== "::view-transition"
+    ) {
+      rawNode = rawNode.parentElement;
+    }
+
+    return rawNode;
   }
 
   onAnimationMutation(mutations) {
@@ -737,7 +777,9 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
               a.player.animationName === player.animationName) ||
             (a.isCssTransition() &&
               a.player.transitionProperty === player.transitionProperty);
-          const isSameNode = a.player.effect.target === player.effect.target;
+          const isSameNode =
+            a.player.effect.target === player.effect.target &&
+            a.player.effect.pseudoElement === player.effect.pseudoElement;
 
           return isSameType && isSameNode && isSameName;
         });
