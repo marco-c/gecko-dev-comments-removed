@@ -502,29 +502,29 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsITransferable> mTransferable;
 
   
-  uint32_t mDropEffect;
-  uint32_t mEffectAllowed;
+  uint32_t mDropEffect = nsIDragService::DRAGDROP_ACTION_NONE;
+  uint32_t mEffectAllowed = nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
 
   
   
   EventMessage mEventMessage;
 
   
-  bool mCursorState;
+  bool mCursorState = false;
 
   
   Mode mMode;
 
   
   
-  bool mIsExternal;
+  bool mIsExternal = false;
 
   
-  bool mUserCancelled;
+  bool mUserCancelled = false;
 
   
   
-  bool mIsCrossDomainSubFrameDrop;
+  bool mIsCrossDomainSubFrameDrop = false;
 
   
   
@@ -543,8 +543,8 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   
   
   nsCOMPtr<mozilla::dom::Element> mDragImage;
-  uint32_t mDragImageX;
-  uint32_t mDragImageY;
+  uint32_t mDragImageX = 0;
+  uint32_t mDragImageY = 0;
 
   
   
