@@ -1183,7 +1183,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   
   
   
-  ScriptHashKey key(this, aRequest, aFetchOptions, aURI);
+  ScriptHashKey key(this, aRequest, aReferrerPolicy, aFetchOptions, aURI);
   auto cacheResult = mCache->Lookup(*this, key,  true);
   if (cacheResult.mState != CachedSubResourceState::Complete) {
     aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
@@ -4104,8 +4104,8 @@ nsresult ScriptLoader::OnStreamComplete(
         if (aRequest->HasDirtyCache()) {
           
           
-          ScriptHashKey key(this, aRequest, aRequest->FetchOptions(),
-                            aRequest->URI());
+          ScriptHashKey key(this, aRequest, aRequest->ReferrerPolicy(),
+                            aRequest->FetchOptions(), aRequest->URI());
           auto cacheResult = mCache->Lookup(*this, key,  true);
           if (cacheResult.mState == CachedSubResourceState::Complete &&
               cacheResult.mCompleteValue->CacheEntryId() == id) {
