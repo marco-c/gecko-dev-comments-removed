@@ -718,6 +718,10 @@ WebrtcTCPSocket::OnInputStreamReady(nsIAsyncInputStream* in) {
     array.AppendElements(buffer, read);
 
     InvokeOnRead(std::move(array));
+    if (remainingCapacity == 0) {
+      
+      return OnInputStreamReady(in);
+    }
   }
 
   mSocketIn->AsyncWait(this, 0, 0, nullptr);
