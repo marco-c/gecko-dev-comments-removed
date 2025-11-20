@@ -46,7 +46,7 @@ GPUChild::GPUChild(GPUProcessHost* aHost) : mHost(aHost), mGPUReady(false) {}
 
 GPUChild::~GPUChild() = default;
 
-RefPtr<GPUChild::InitPromiseType> GPUChild::Init() {
+void GPUChild::Init() {
   nsTArray<GfxVarUpdate> updates = gfxVars::FetchNonDefaultVars();
 
   DevicePrefs devicePrefs;
@@ -70,24 +70,12 @@ RefPtr<GPUChild::InitPromiseType> GPUChild::Init() {
     features = gfxInfoRaw->GetAllFeatures();
   }
 
-  RefPtr<InitPromiseType> promise =
-      SendInit(updates, devicePrefs, mappings, features,
-               GPUProcessManager::Get()->AllocateNamespace())
-          ->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              [self = RefPtr{this}](GPUDeviceData&& aData) {
-                self->OnInitComplete(aData);
-                return InitPromiseType::CreateAndResolve(Ok{}, __func__);
-              },
-              [](ipc::ResponseRejectReason) {
-                return InitPromiseType::CreateAndReject(Ok{}, __func__);
-              });
+  SendInit(updates, devicePrefs, mappings, features,
+           GPUProcessManager::Get()->AllocateNamespace());
 
   gfxVars::AddReceiver(this);
 
   (void)SendInitProfiler(ProfilerParent::CreateForProcess(OtherPid()));
-
-  return promise;
 }
 
 void GPUChild::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
@@ -108,7 +96,14 @@ bool GPUChild::EnsureGPUReady(bool aForceSync ) {
     return false;
   }
 
-  OnInitComplete(data);
+  
+  if (!mGPUReady) {
+    gfxPlatform::GetPlatform()->ImportGPUDeviceData(data);
+    glean::gpu_process::launch_time.AccumulateRawDuration(
+        TimeStamp::Now() - mHost->GetLaunchTime());
+    mGPUReady = true;
+  }
+
   return true;
 }
 
@@ -141,20 +136,17 @@ void GPUChild::DeletePairedMinidump() {
   }
 }
 
-void GPUChild::OnInitComplete(const GPUDeviceData& aData) {
-  
-  
-  
-  
+mozilla::ipc::IPCResult GPUChild::RecvInitComplete(const GPUDeviceData& aData) {
   
   if (mGPUReady) {
-    return;
+    return IPC_OK();
   }
 
   gfxPlatform::GetPlatform()->ImportGPUDeviceData(aData);
   glean::gpu_process::launch_time.AccumulateRawDuration(TimeStamp::Now() -
                                                         mHost->GetLaunchTime());
   mGPUReady = true;
+  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult GPUChild::RecvDeclareStable() {

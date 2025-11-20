@@ -275,8 +275,7 @@ void GPUParent::NotifyDisableRemoteCanvas() {
 mozilla::ipc::IPCResult GPUParent::RecvInit(
     nsTArray<GfxVarUpdate>&& vars, const DevicePrefs& devicePrefs,
     nsTArray<LayerTreeIdMapping>&& aMappings,
-    nsTArray<GfxInfoFeatureStatus>&& aFeatures, uint32_t aWrNamespace,
-    InitResolver&& aInitResolver) {
+    nsTArray<GfxInfoFeatureStatus>&& aFeatures, uint32_t aWrNamespace) {
   gfxVars::ApplyUpdate(vars);
 
   
@@ -397,7 +396,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   
   GPUDeviceData data;
   RecvGetDeviceStatus(&data);
-  aInitResolver(data);
+  (void)SendInitComplete(data);
 
   
   
