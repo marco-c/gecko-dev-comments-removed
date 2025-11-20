@@ -472,7 +472,7 @@ pub mod system_font {
         
         
         
-        if Some(system) != context.cached_system_font.as_ref().map(|x| x.system_font) {
+        if context.cached_system_font.as_ref().is_none_or(|x| x.system_font != system) {
             let computed = system.to_computed_value(context);
             context.cached_system_font = Some(computed);
         }
