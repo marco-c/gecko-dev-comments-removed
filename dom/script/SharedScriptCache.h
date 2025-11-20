@@ -127,13 +127,6 @@ class ScriptHashKey : public PLDHashEntryHdr {
   
   
   nsString mHintCharset;
-
-  
-  
-  
-  
-  
-  
 };
 
 class ScriptLoadData final
