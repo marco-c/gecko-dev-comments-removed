@@ -1398,6 +1398,7 @@ function getSmallIncrementKey() {
 
 
 
+
 function checkRuleViewContent(view, expectedElements) {
   const elementsInView = _getRuleViewElements(view);
   is(
@@ -1425,10 +1426,25 @@ function checkRuleViewContent(view, expectedElements) {
       return;
     }
 
-    const selector = elementInView.querySelector(
-      ".ruleview-selectors-container"
-    ).innerText;
-    is(selector, expectedElement.selector, `Expected selector for ${selector}`);
+    const selector = [
+      ...elementInView.querySelectorAll(
+        
+        ".ruleview-selectors-container .ruleview-selector, .ruleview-selectors-container.alternative-selector"
+      ),
+    ]
+      .map(selectorEl => {
+        let selectorPart = selectorEl.textContent;
+        if (selectorEl.classList.contains("unmatched")) {
+          selectorPart = `~~${selectorPart}~~`;
+        }
+        return selectorPart;
+      })
+      .join(", ");
+    is(
+      selector,
+      expectedElement.selector,
+      `Expected selector for element #${i}`
+    );
 
     const ancestorData = elementInView.querySelector(
       `.ruleview-rule-ancestor-data`
