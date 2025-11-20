@@ -18,9 +18,11 @@ class OffthreadGCPtr {
   
   
   
-  T ptr_;
+  T ptr_ = JS::SafelyInitialized<T>::create();
 
  public:
+  constexpr OffthreadGCPtr() = default;
+
   explicit OffthreadGCPtr(const T& ptr) : ptr_(ptr) {
     MOZ_ASSERT(JS::GCPolicy<T>::isTenured(ptr),
                "OffthreadSnapshot pointers must be tenured");
@@ -39,7 +41,6 @@ class OffthreadGCPtr {
   }
 
  private:
-  OffthreadGCPtr() = delete;
   void operator=(OffthreadGCPtr<T>& other) = delete;
 };
 
