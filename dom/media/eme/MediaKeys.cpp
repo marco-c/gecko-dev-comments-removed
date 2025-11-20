@@ -189,9 +189,15 @@ void MediaKeys::Terminated() {
 }
 
 void MediaKeys::Shutdown() {
+  
+  
+  
+  RefPtr<MediaKeys> selfReference = this;
+
   EME_LOG("MediaKeys[%p]::Shutdown()", this);
   if (mProxy) {
-    mProxy->Shutdown();
+    RefPtr<CDMProxy> proxy = mProxy;
+    proxy->Shutdown();
     mProxy = nullptr;
   }
 
@@ -200,11 +206,6 @@ void MediaKeys::Shutdown() {
   if (observerService && mObserverAdded) {
     observerService->RemoveObserver(this, kMediaKeysResponseTopic);
   }
-
-  
-  
-  
-  RefPtr<MediaKeys> selfReference = this;
 
   for (const RefPtr<dom::DetailedPromise>& promise : mPromises.Values()) {
     promise->MaybeRejectWithInvalidStateError(
