@@ -39,12 +39,12 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   explicit ScriptHashKey(const ScriptHashKey& aKey)
       : PLDHashEntryHdr(),
+        mURI(aKey.mURI),
+        mPartitionPrincipal(aKey.mPartitionPrincipal),
+        mLoaderPrincipal(aKey.mLoaderPrincipal),
         mKind(aKey.mKind),
         mCORSMode(aKey.mCORSMode),
         mReferrerPolicy(aKey.mReferrerPolicy),
-        mURI(aKey.mURI),
-        mLoaderPrincipal(aKey.mLoaderPrincipal),
-        mPartitionPrincipal(aKey.mPartitionPrincipal),
         mSRIMetadata(aKey.mSRIMetadata),
         mNonce(aKey.mNonce),
         mHintCharset(aKey.mHintCharset) {
@@ -55,12 +55,12 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   ScriptHashKey(ScriptHashKey&& aKey)
       : PLDHashEntryHdr(),
+        mURI(std::move(aKey.mURI)),
+        mPartitionPrincipal(std::move(aKey.mPartitionPrincipal)),
+        mLoaderPrincipal(std::move(aKey.mLoaderPrincipal)),
         mKind(std::move(aKey.mKind)),
         mCORSMode(std::move(aKey.mCORSMode)),
         mReferrerPolicy(std::move(aKey.mReferrerPolicy)),
-        mURI(std::move(aKey.mURI)),
-        mLoaderPrincipal(std::move(aKey.mLoaderPrincipal)),
-        mPartitionPrincipal(std::move(aKey.mPartitionPrincipal)),
         mSRIMetadata(std::move(aKey.mSRIMetadata)),
         mNonce(std::move(aKey.mNonce)),
         mHintCharset(std::move(aKey.mHintCharset)) {
@@ -101,13 +101,26 @@ class ScriptHashKey : public PLDHashEntryHdr {
   enum { ALLOW_MEMMOVE = true };
 
  protected:
+  
+  
+  
+
+  
+  const nsCOMPtr<nsIURI> mURI;
+
+  
+  
+  const nsCOMPtr<nsIPrincipal> mPartitionPrincipal;
+
+  
+  
+  const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
+
+  
   const JS::loader::ScriptKind mKind;
   const CORSMode mCORSMode;
   const mozilla::dom::ReferrerPolicy mReferrerPolicy;
 
-  const nsCOMPtr<nsIURI> mURI;
-  const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
-  const nsCOMPtr<nsIPrincipal> mPartitionPrincipal;
   const SRIMetadata mSRIMetadata;
   const nsString mNonce;
 
