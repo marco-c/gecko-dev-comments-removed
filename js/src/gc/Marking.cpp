@@ -204,7 +204,8 @@ template <typename T>
 static void CheckMarkedThing(GCMarker* gcMarker, T* thing) {
   Zone* zone = thing->zoneFromAnyThread();
 
-  MOZ_ASSERT(zone->shouldMarkInZone(gcMarker->markColor()));
+  MOZ_ASSERT(zone->shouldMarkInZone(gcMarker->markColor()) ||
+             zone->isAtomsZone());
 
   MOZ_ASSERT_IF(gcMarker->shouldCheckCompartments(),
                 zone->isCollectingFromAnyThread() || zone->isAtomsZone());
@@ -336,6 +337,30 @@ static bool ShouldTraceCrossCompartment(JSTracer* trc, JSObject* src,
          ShouldTraceCrossCompartment(trc, src, val.toGCThing(), name);
 }
 
+template <typename T>
+static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
+  
+  
+  if (!thing->isTenured()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (std::is_same_v<T, JS::Symbol> &&
+      gcmarker->markColor() == MarkColor::Black) {
+    return true;
+  }
+
+  
+  
+  
+  Zone* zone = thing->asTenured().zoneFromAnyThread();
+  return zone->shouldMarkInZone(gcmarker->markColor());
+}
+
 #ifdef DEBUG
 
 template <typename T>
@@ -344,9 +369,6 @@ void js::gc::AssertShouldMarkInZone(GCMarker* marker, T* thing) {
     return;
   }
 
-  
-  
-  
   Zone* zone = thing->zone();
   MOZ_ASSERT(zone->shouldMarkInZone(marker->markColor()) ||
              zone->isAtomsZone());
@@ -808,21 +830,6 @@ template void GCMarker::markImplicitEdges(JS::Symbol*);
 
 }  
 
-template <typename T>
-static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
-  
-  
-  if (!thing->isTenured()) {
-    return false;
-  }
-
-  
-  
-  
-  Zone* zone = thing->asTenured().zoneFromAnyThread();
-  return zone->shouldMarkInZone(gcmarker->markColor());
-}
-
 template <uint32_t opts>
 MarkingTracerT<opts>::MarkingTracerT(JSRuntime* runtime, GCMarker* marker)
     : GenericTracerImpl<MarkingTracerT<opts>>(
@@ -852,7 +859,8 @@ void MarkingTracerT<opts>::onEdge(T** thingp, const char* name) {
     return;
   }
 
-  MOZ_ASSERT(!IsOwnedByOtherRuntime(this->runtime(), thing));
+  MOZ_ASSERT_IF(IsOwnedByOtherRuntime(this->runtime(), thing),
+                thing->isMarkedBlack());
 
 #ifdef DEBUG
   CheckMarkedThing(marker, thing);
