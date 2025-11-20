@@ -3280,6 +3280,45 @@ void MacroAssembler::extractCurrentIndexAndKindFromIterator(Register iterator,
   and32(Imm32(PropertyIndex::IndexMask), outIndex);
 }
 
+void MacroAssembler::extractIndexAndKindFromIteratorByIterIndex(
+    Register iterator, Register inIndex, Register outKind, Register outIndex) {
+  
+  Address nativeIterAddr(iterator,
+                         PropertyIteratorObject::offsetOfIteratorSlot());
+  loadPrivate(nativeIterAddr, outIndex);
+
+  
+  load32(Address(outIndex, NativeIterator::offsetOfPropertyCount()), outKind);
+
+  
+  static_assert(NativeIterator::PropCountLimit <= 1 << 30);
+
+  
+  
+  
+  
+  static_assert(sizeof(IteratorProperty) == sizeof(PropertyIndex) ||
+                sizeof(IteratorProperty) == sizeof(PropertyIndex) * 2);
+  if constexpr (sizeof(IteratorProperty) > sizeof(PropertyIndex)) {
+    lshift32(Imm32(1), outKind);
+  }
+
+  
+  add32(inIndex, outKind);
+
+  
+  
+  load32(BaseIndex(outIndex, outKind, Scale::TimesFour,
+                   NativeIterator::offsetOfFirstProperty()),
+         outIndex);
+
+  
+  rshift32(Imm32(PropertyIndex::KindShift), outIndex, outKind);
+
+  
+  and32(Imm32(PropertyIndex::IndexMask), outIndex);
+}
+
 template <typename IdType>
 void MacroAssembler::emitMegamorphicCachedSetSlot(
     IdType id, Register obj, Register scratch1,
