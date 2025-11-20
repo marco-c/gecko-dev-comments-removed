@@ -416,9 +416,6 @@ bool js::jit::RecompileBaselineScriptForDebugMode(
           observing ? "DEBUGGING" : "NORMAL EXECUTION");
 
   AutoKeepJitScripts keepJitScripts(cx);
-  
-  
-  AutoUnsafeStackTrace aust(cx);
   BaselineScript* oldBaselineScript =
       script->jitScript()->clearBaselineScript(cx->gcContext(), script);
 

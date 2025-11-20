@@ -56,9 +56,7 @@
 #include "util/NativeStack.h"
 #include "util/Text.h"
 #include "util/WindowsWrapper.h"
-#include "js/friend/DumpFunctions.h"  
-#include "js/Printer.h"               
-#include "vm/BytecodeUtil.h"          
+#include "vm/BytecodeUtil.h"  
 #include "vm/ErrorObject.h"
 #include "vm/ErrorReporting.h"
 #include "vm/FrameIter.h"
@@ -268,12 +266,6 @@ static void MaybeReportOutOfMemoryForDifferentialTesting() {
   }
 }
 
-bool JSContext::safeToCaptureStackTrace() const {
-  
-  
-  return !inUnsafeCallWithABI && !unsafeToCaptureStackTrace;
-}
-
 
 
 
@@ -285,9 +277,6 @@ bool JSContext::safeToCaptureStackTrace() const {
 void JSContext::onOutOfMemory() {
   runtime()->hadOutOfMemory = true;
   gc::AutoSuppressGC suppressGC(this);
-
-  
-  maybeCaptureOOMStackTrace();
 
   
   if (JS::OutOfMemoryCallback oomCallback = runtime()->oomCallback) {
@@ -1238,9 +1227,10 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       activation_(this, nullptr),
       profilingActivation_(nullptr),
       noExecuteDebuggerTop(this, nullptr),
-      unsafeToCaptureStackTrace(this, false),
+#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
       inUnsafeCallWithABI(this, false),
       hasAutoUnsafeCallWithABI(this, false),
+#endif
 #ifdef DEBUG
       liveArraySortDataInstances(this, 0),
 #endif
@@ -1302,17 +1292,9 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       canSkipEnqueuingJobs(this, false),
       promiseRejectionTrackerCallback(this, nullptr),
       promiseRejectionTrackerCallbackData(this, nullptr),
-      oomStackTraceBuffer_(this, nullptr),
-      oomStackTraceBufferValid_(this, false),
       insideExclusiveDebuggerOnEval(this, nullptr) {
   MOZ_ASSERT(static_cast<JS::RootingContext*>(this) ==
              JS::RootingContext::get(this));
-
-  if (JS::Prefs::experimental_capture_oom_stack_trace()) {
-    
-    oomStackTraceBuffer_ =
-        static_cast<char*>(js_calloc(OOMStackTraceBufferSize));
-  }
 }
 
 JSContext::~JSContext() {
@@ -1342,43 +1324,7 @@ JSContext::~JSContext() {
     irregexp::DestroyIsolate(isolate.ref());
   }
 
-  
-  if (oomStackTraceBuffer_) {
-    js_free(oomStackTraceBuffer_);
-  }
-
   TlsContext.set(nullptr);
-}
-
-void JSContext::unsetOOMStackTrace() { oomStackTraceBufferValid_ = false; }
-
-const char* JSContext::getOOMStackTrace() const {
-  if (!oomStackTraceBufferValid_ || !oomStackTraceBuffer_) {
-    return nullptr;
-  }
-  return oomStackTraceBuffer_;
-}
-
-bool JSContext::hasOOMStackTrace() const { return oomStackTraceBufferValid_; }
-
-void JSContext::maybeCaptureOOMStackTrace() {
-  
-  oomStackTraceBufferValid_ = false;
-
-  if (!oomStackTraceBuffer_) {
-    return;  
-  }
-
-  
-  FixedBufferPrinter fbp(oomStackTraceBuffer_, OOMStackTraceBufferSize);
-  if (safeToCaptureStackTrace()) {
-    js::DumpBacktrace(this, fbp);
-  } else {
-    fbp.put("Unsafe to capture stack trace");
-  }
-
-  MOZ_ASSERT(strlen(oomStackTraceBuffer_) < OOMStackTraceBufferSize);
-  oomStackTraceBufferValid_ = true;
 }
 
 void JSContext::setRuntime(JSRuntime* rt) {
@@ -1759,16 +1705,7 @@ void JSContext::suspendExecutionTracing() {
 
 #endif
 
-AutoUnsafeStackTrace::AutoUnsafeStackTrace(JSContext* cx)
-    : cx_(cx), nested_(cx_->unsafeToCaptureStackTrace) {
-  cx_->unsafeToCaptureStackTrace = true;
-}
-
-AutoUnsafeStackTrace::~AutoUnsafeStackTrace() {
-  if (!nested_) {
-    cx_->unsafeToCaptureStackTrace = false;
-  }
-}
+#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
 
 AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
     : cx_(TlsContext.get()),
@@ -1778,7 +1715,6 @@ AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
     
     return;
   }
-#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   switch (strictness) {
     case UnsafeABIStrictness::NoExceptions:
       MOZ_ASSERT(!JS_IsExceptionPending(cx_));
@@ -1787,8 +1723,10 @@ AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
     case UnsafeABIStrictness::AllowPendingExceptions:
       checkForPendingException_ = !JS_IsExceptionPending(cx_);
       break;
+    case UnsafeABIStrictness::AllowThrownExceptions:
+      checkForPendingException_ = false;
+      break;
   }
-#endif
 
   cx_->hasAutoUnsafeCallWithABI = true;
 }
@@ -1797,15 +1735,15 @@ AutoUnsafeCallWithABI::~AutoUnsafeCallWithABI() {
   if (!cx_) {
     return;
   }
-#ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   MOZ_ASSERT(cx_->hasAutoUnsafeCallWithABI);
-  MOZ_ASSERT_IF(checkForPendingException_, !JS_IsExceptionPending(cx_));
-#endif
   if (!nested_) {
     cx_->hasAutoUnsafeCallWithABI = false;
     cx_->inUnsafeCallWithABI = false;
   }
+  MOZ_ASSERT_IF(checkForPendingException_, !JS_IsExceptionPending(cx_));
 }
+
+#endif  
 
 #ifdef __wasi__
 JS_PUBLIC_API void js::IncWasiRecursionDepth(JSContext* cx) {
