@@ -170,22 +170,7 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   CACHE_IR_COMPILER_UNSHARED_GENERATED
 };
 
-
-
-class ShapeListObject : public ListObject {
- public:
-  static const JSClass class_;
-  static const JSClassOps classOps_;
-  static ShapeListObject* create(JSContext* cx);
-  static void trace(JSTracer* trc, JSObject* obj);
-
-  Shape* get(uint32_t index) const;
-  Shape* getUnbarriered(uint32_t index) const;
-
-  bool traceWeak(JSTracer* trc);
-};
-
 }  
 }  
 
-#endif
+#endif 
