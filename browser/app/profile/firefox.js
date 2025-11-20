@@ -3505,6 +3505,8 @@ pref("browser.ipProtection.enabled", false);
 
 pref("browser.ipProtection.optedOut", false);
 
+pref("browser.ipProtection.features.autoStart", false);
+
 pref("browser.ipProtection.autoStartEnabled", false);
 pref("browser.ipProtection.autoStartPrivateEnabled", false);
 
