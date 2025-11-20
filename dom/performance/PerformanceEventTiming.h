@@ -73,9 +73,7 @@ class PerformanceEventTiming final
   nsINode* GetTarget() const;
 
   void SetDuration(const DOMHighResTimeStamp aDuration) {
-    
-    
-    mDuration = Some(std::round(aDuration / 8) * 8);
+    mDuration = Some(aDuration);
   }
 
   
@@ -85,8 +83,12 @@ class PerformanceEventTiming final
 
   DOMHighResTimeStamp Duration() const override {
     if (mCachedDuration.isNothing()) {
+      
+      
+      DOMHighResTimeStamp roundedDuration =
+          std::round(mDuration.valueOr(0) / 8) * 8;
       mCachedDuration.emplace(nsRFPService::ReduceTimePrecisionAsMSecs(
-          mDuration.valueOr(0), mPerformance->GetRandomTimelineSeed(),
+          roundedDuration, mPerformance->GetRandomTimelineSeed(),
           mPerformance->GetRTPCallerType()));
     }
     return mCachedDuration.value();
