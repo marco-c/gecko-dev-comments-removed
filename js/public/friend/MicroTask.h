@@ -58,6 +58,9 @@ namespace JS {
 
 
 
+
+
+
 using GenericMicroTask = JS::Value;
 using JSMicroTask = JSObject;
 
@@ -125,6 +128,7 @@ JS_PUBLIC_API bool HasRegularMicroTasks(JSContext* cx);
 
 
 JS_PUBLIC_API size_t GetRegularMicroTaskCount(JSContext* cx);
+
 
 
 JS_PUBLIC_API JSObject* GetExecutionGlobalFromJSMicroTask(JSMicroTask* entry);

@@ -7756,6 +7756,10 @@ JS_PUBLIC_API JSObject* JS::MaybeGetHostDefinedGlobalFromJSMicroTask(
 JS_PUBLIC_API JSObject* JS::GetExecutionGlobalFromJSMicroTask(
     JS::JSMicroTask* entry) {
   JSObject* unwrapped = UncheckedUnwrap(entry);
+  if (JS_IsDeadWrapper(unwrapped)) {
+    return nullptr;
+  }
+
   if (unwrapped->is<PromiseReactionRecord>()) {
     
     JSObject* enqueueGlobalRepresentative =
@@ -7763,13 +7767,9 @@ JS_PUBLIC_API JSObject* JS::GetExecutionGlobalFromJSMicroTask(
     JSObject* unwrappedRepresentative =
         UncheckedUnwrap(enqueueGlobalRepresentative);
 
-    
-    
-    
-    
-    
-    
-    MOZ_RELEASE_ASSERT(!JS_IsDeadWrapper(unwrappedRepresentative));
+    if (JS_IsDeadWrapper(unwrappedRepresentative)) {
+      return nullptr;
+    }
 
     return &unwrappedRepresentative->nonCCWGlobal();
   }
