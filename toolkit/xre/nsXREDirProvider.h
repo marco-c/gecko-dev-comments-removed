@@ -104,6 +104,16 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   nsresult GetProfileDir(nsIFile** aResult);
 
+  
+
+
+
+  static nsresult ClearUserDataProfileDirectoryFromGTest(nsIFile** aLocal,
+                                                         nsIFile** aGlobal);
+
+  static nsresult RestoreUserDataProfileDirectoryFromGTest(
+      nsCOMPtr<nsIFile>& aLocal, nsCOMPtr<nsIFile>& aGlobal);
+
  private:
   nsresult GetFilesInternal(const char* aProperty,
                             nsISimpleEnumerator** aResult);
