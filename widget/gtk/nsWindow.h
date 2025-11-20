@@ -498,10 +498,6 @@ class nsWindow final : public nsIWidget {
 
   void ResumeCompositorImpl();
 
-  
-  
-  void ClearRenderingQueue();
-
   bool ApplyEnterLeaveMutterWorkaround();
 
   void NotifyOcclusionState(mozilla::widget::OcclusionState aState) override;
