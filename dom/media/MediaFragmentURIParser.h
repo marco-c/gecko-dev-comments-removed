@@ -3,12 +3,12 @@
 
 
 
-#if !defined(nsMediaFragmentURIParser_h__)
-#  define nsMediaFragmentURIParser_h__
+#if !defined(MediaFragmentURIParser_h__)
+#  define MediaFragmentURIParser_h__
 
 #  include "mozilla/Maybe.h"
-#  include "nsStringFwd.h"
 #  include "nsRect.h"
+#  include "nsStringFwd.h"
 
 class nsIURI;
 
@@ -22,20 +22,19 @@ class nsIURI;
 
 
 namespace mozilla {
-namespace net {
 
 enum ClipUnit {
   eClipUnit_Pixel,
   eClipUnit_Percent,
 };
 
-class nsMediaFragmentURIParser {
+class MediaFragmentURIParser {
  public:
   
-  explicit nsMediaFragmentURIParser(nsIURI* aURI);
+  explicit MediaFragmentURIParser(nsIURI* aURI);
 
   
-  explicit nsMediaFragmentURIParser(nsCString& aRef);
+  explicit MediaFragmentURIParser(nsCString& aRef);
 
   
   bool HasStartTime() const { return mStart.isSome(); }
@@ -93,7 +92,6 @@ class nsMediaFragmentURIParser {
   ClipUnit mClipUnit;
 };
 
-}  
 }  
 
 #endif
