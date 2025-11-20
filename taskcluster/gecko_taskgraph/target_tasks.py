@@ -769,6 +769,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 
                 return False
             
+            if "chrome-unity-webgl" in try_name and "windows11" in platform:
+                return False
+            
             if "windows11" in platform and "bing-search" in try_name:
                 return False
             if "browsertime" in try_name:
