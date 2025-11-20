@@ -324,11 +324,6 @@ pref("media.navigator.permission.device", true);
 pref("media.throttle-cellular-regardless-of-download-rate", true);
 
 
-
-
-pref("media.video-queue.send-to-compositor-size", 1);
-
-
 pref("network.buffer.cache.size",  16384);
 
 

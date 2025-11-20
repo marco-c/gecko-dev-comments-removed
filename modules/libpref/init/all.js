@@ -356,14 +356,6 @@ pref("media.recorder.audio_node.enabled", false);
 
 pref("media.recorder.video.frame_drops", true);
 
-
-
-pref("media.video-queue.default-size", 10);
-
-
-
-pref("media.video-queue.send-to-compositor-size", 9999);
-
 pref("media.cubeb.output_voice_routing", true);
 
 
