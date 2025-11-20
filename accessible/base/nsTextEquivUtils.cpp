@@ -11,6 +11,7 @@
 #include "AccIterator.h"
 #include "CssAltContent.h"
 #include "nsCoreUtils.h"
+#include "Relation.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Text.h"
 
@@ -94,6 +95,44 @@ nsresult nsTextEquivUtils::GetNameFromSubtree(const Accessible* aAccessible,
   }
 
   return NS_OK;
+}
+
+void nsTextEquivUtils::GetTextEquivFromAccIterable(
+    const Accessible* aAccessible, AccIterable* aIter, nsAString& aTextEquiv) {
+  if (GetReferencedAccs().Contains(aAccessible)) {
+    
+    
+    return;
+  }
+  
+  if (GetReferencedAccs().IsEmpty()) {
+    sInitiatorAcc = aAccessible;
+  }
+  
+  
+  GetReferencedAccs().Insert(aAccessible);
+
+  aTextEquiv.Truncate();
+
+  while (Accessible* acc = aIter->Next()) {
+    if (!aTextEquiv.IsEmpty()) aTextEquiv += ' ';
+
+    if (GetReferencedAccs().Contains(acc)) {
+      continue;
+    }
+    GetReferencedAccs().Insert(acc);
+
+    AppendFromAccessible(acc, &aTextEquiv);
+  }
+
+  if (aAccessible == sInitiatorAcc) {
+    
+    GetReferencedAccs().Clear();
+    sInitiatorAcc = nullptr;
+  } else {
+    
+    GetReferencedAccs().Remove(aAccessible);
+  }
 }
 
 bool nsTextEquivUtils::GetTextEquivFromIDRefs(
