@@ -181,7 +181,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   
 
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag Name(nsString& aName) const override final;
   virtual EDescriptionValueFlag Description(
       nsString& aDescription) const override;
   virtual void Value(nsString& aValue) const override;
