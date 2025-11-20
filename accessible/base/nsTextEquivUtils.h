@@ -92,9 +92,11 @@ class nsTextEquivUtils {
 
 
 
-  static nsresult GetTextEquivFromIDRefs(const LocalAccessible* aAccessible,
-                                         nsAtom* aIDRefsAttr,
-                                         nsAString& aTextEquiv);
+
+
+  static bool GetTextEquivFromIDRefs(const LocalAccessible* aAccessible,
+                                     nsAtom* aIDRefsAttr,
+                                     nsAString& aTextEquiv);
 
   
 
@@ -107,9 +109,11 @@ class nsTextEquivUtils {
 
 
 
-  static nsresult AppendTextEquivFromContent(
-      const LocalAccessible* aInitiatorAcc, nsIContent* aContent,
-      nsAString* aString);
+
+
+  static bool AppendTextEquivFromContent(const LocalAccessible* aInitiatorAcc,
+                                         nsIContent* aContent,
+                                         nsAString* aString);
 
   
 
