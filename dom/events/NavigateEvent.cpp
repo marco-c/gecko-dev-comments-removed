@@ -533,6 +533,9 @@ void NavigateEvent::ProcessScrollBehavior() {
   }
 
   
+  
+  
+  document->SetScrollToRef(document->GetDocumentURI());
   document->ScrollToRef();
 }
 
