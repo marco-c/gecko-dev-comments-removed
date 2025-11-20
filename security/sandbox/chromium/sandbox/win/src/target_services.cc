@@ -122,14 +122,6 @@ bool SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
     return true;
   }
 
-  
-  
-  
-  DWORD rv = SetObjectIntegrityLabel(::GetCurrentProcess(),
-                                     base::win::SecurityObjectType::kKernel,
-                                     0, integrity_level);
-  DCHECK(rv == ERROR_SUCCESS);
-
   absl::optional<base::win::AccessToken> token =
       base::win::AccessToken::FromCurrentProcess(false,
                                                  TOKEN_ADJUST_DEFAULT);
@@ -137,6 +129,29 @@ bool SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
     return false;
   }
   return token->SetIntegrityLevel(*rid);
+}
+
+void SetProcessAclIntegrityLevel(IntegrityLevel integrity_level) {
+  absl::optional<DWORD> rid = GetIntegrityLevelRid(integrity_level);
+  if (!rid) {
+    
+    return;
+  }
+
+  
+  
+  
+  base::win::SecurityDescriptor sdWrapper;
+  if (!sdWrapper.SetMandatoryLabel(*rid, 0, 0)) {
+    DCHECK(false);
+    return;
+  }
+
+  SECURITY_DESCRIPTOR sd;
+  sdWrapper.ToAbsolute(sd);
+  BOOL success = ::SetKernelObjectSecurity(::GetCurrentProcess(),
+                                           LABEL_SECURITY_INFORMATION, &sd);
+  DCHECK(success);
 }
 
 
@@ -185,10 +200,12 @@ void TargetServicesBase::LowerToken() {
     ::TerminateProcess(::GetCurrentProcess(), SBOX_FATAL_CLOSEHANDLES);
   process_state_.SetCsrssConnected(is_csrss_connected);
   
+  
   if (g_shared_delayed_mitigations &&
       !LockDownSecurityMitigations(g_shared_delayed_mitigations)) {
     ::TerminateProcess(::GetCurrentProcess(), SBOX_FATAL_MITIGATION);
   }
+  SetProcessAclIntegrityLevel(g_shared_delayed_integrity_level);
 }
 
 ProcessState* TargetServicesBase::GetState() {
