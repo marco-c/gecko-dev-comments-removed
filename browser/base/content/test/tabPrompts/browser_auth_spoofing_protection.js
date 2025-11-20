@@ -109,7 +109,7 @@ async function waitForDialog(doConfirmPrompt, crossDomain, prefEnabled) {
       );
       
       gBrowser.selectedBrowser.userTypedValue = "";
-      gURLBar.setURI(null, true);
+      gURLBar.setURI({ dueToTabSwitch: true });
       Assert.equal(
         window.gURLBar.value,
         UrlbarTestUtils.trimURL(AUTH_URL),
@@ -168,7 +168,7 @@ async function waitForDialog(doConfirmPrompt, crossDomain, prefEnabled) {
   await onDialogClosed;
   
   
-  gURLBar.setURI(null, true);
+  gURLBar.setURI({ dueToTabSwitch: true });
   Assert.equal(
     window.gURLBar.value,
     UrlbarTestUtils.trimURL(crossDomain ? CROSS_DOMAIN_URL : SAME_DOMAIN_URL),

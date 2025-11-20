@@ -2207,13 +2207,12 @@ var XULBrowserWindow = {
     
     
     
-    gURLBar.setURI(
-      aLocationURI,
-      aIsSimulated,
-      isSessionRestore,
-      false,
-      isSameDocument
-    );
+    gURLBar.setURI({
+      uri: aLocationURI,
+      dueToTabSwitch: aIsSimulated,
+      dueToSessionRestore: isSessionRestore,
+      isSameDocument,
+    });
 
     BookmarkingUI.onLocationChange();
     
