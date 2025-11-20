@@ -252,6 +252,12 @@ class nsLayoutUtils {
 
 
 
+  static void NotifyApzTransaction(ViewID aScrollId);
+
+  
+
+
+
   static mozilla::FrameChildListID GetChildListNameFor(nsIFrame* aChildFrame);
 
   

@@ -420,10 +420,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   
   
   
-  auto scrollIdsUpdated = ClearPendingScrollInfoUpdate();
-  for (ScrollableLayerGuid::ViewID update : scrollIdsUpdated) {
-    nsLayoutUtils::NotifyPaintSkipTransaction(update);
-  }
+  ClearAndNotifyOfFullTransactionPendingScrollInfoUpdate();
 
   
   const bool throttle = mWidget->IsMapped() && !aRenderOffscreen;
@@ -823,13 +820,12 @@ UniquePtr<LayerUserData> WebRenderLayerManager::RemoveUserData(void* aKey) {
   return d;
 }
 
-std::unordered_set<ScrollableLayerGuid::ViewID>
-WebRenderLayerManager::ClearPendingScrollInfoUpdate() {
-  std::unordered_set<ScrollableLayerGuid::ViewID> scrollIds(
-      mPendingScrollUpdates.Keys().cbegin(),
-      mPendingScrollUpdates.Keys().cend());
+void WebRenderLayerManager::
+    ClearAndNotifyOfFullTransactionPendingScrollInfoUpdate() {
+  for (ScrollableLayerGuid::ViewID update : mPendingScrollUpdates.Keys()) {
+    nsLayoutUtils::NotifyApzTransaction(update);
+  }
   mPendingScrollUpdates.Clear();
-  return scrollIds;
 }
 
 bool WebRenderLayerManager::AddPendingScrollUpdateForNextTransaction(
