@@ -6,8 +6,6 @@
 #ifndef AddonManagerStartup_inlines_h
 #define AddonManagerStartup_inlines_h
 
-#include <utility>
-
 #include "js/Array.h"  
 #include "js/Exception.h"
 #include "js/PropertyAndElement.h"  

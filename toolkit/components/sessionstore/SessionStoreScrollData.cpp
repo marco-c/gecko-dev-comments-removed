@@ -5,7 +5,6 @@
 
 
 #include "mozilla/dom/SessionStoreScrollData.h"
-#include <utility>
 
 #include "js/PropertyAndElement.h"
 #include "js/TypeDecls.h"

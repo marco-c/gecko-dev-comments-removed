@@ -5,7 +5,6 @@
 
 
 #include "mozilla/dom/BrowserSessionStore.h"
-#include <algorithm>
 #include <cstdint>
 #include <functional>
 
