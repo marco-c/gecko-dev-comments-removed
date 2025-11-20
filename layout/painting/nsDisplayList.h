@@ -256,11 +256,12 @@ struct ActiveScrolledRoot {
   static const ActiveScrolledRoot* GetStickyASRFromFrame(
       nsIFrame* aStickyFrame);
 
-  enum class ASRKind { Root, Scroll, Sticky };
+  enum class ASRKind { Scroll, Sticky };
 
   RefPtr<const ActiveScrolledRoot> mParent;
   nsIFrame* mFrame = nullptr;
-  ASRKind mKind = ASRKind::Root;
+  
+  ASRKind mKind = ASRKind::Scroll;
 
   NS_INLINE_DECL_REFCOUNTING(ActiveScrolledRoot)
 
