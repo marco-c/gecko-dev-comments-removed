@@ -132,6 +132,9 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(baselineInterpreter, true);
 
+  
+  SET_DEFAULT(disableObjectKeysScalarReplacement, false);
+
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   
   SET_DEFAULT(portableBaselineInterpreter, false);
