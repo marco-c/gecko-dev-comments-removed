@@ -13595,17 +13595,24 @@ function Widgets() {
     
     prevTimerEnabledRef.current = isTimerEnabled;
   }, [timerEnabled, timerData, dispatch, timerType]);
+
   
-  const handleHideAllWidgets = e => {
-    
-    
-    if (!e.key || e.key === "Enter" || e.key === " ") {
+  function handleHideAllWidgetsClick(e) {
+    e.preventDefault();
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
+      dispatch(actionCreators.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
+    });
+  }
+  function handleHideAllWidgetsKeyDown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
       (0,external_ReactRedux_namespaceObject.batch)(() => {
         dispatch(actionCreators.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
         dispatch(actionCreators.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
       });
     }
-  };
+  }
   function handleUserInteraction(widgetName) {
     const prefName = `widgets.${widgetName}.interaction`;
     const hasInteracted = prefs[prefName];
@@ -13631,8 +13638,8 @@ function Widgets() {
     size: "small",
     "data-l10n-id": "newtab-widget-section-hide-all-button",
     iconsrc: "chrome://global/skin/icons/close.svg",
-    onClick: handleHideAllWidgets,
-    onKeyDown: handleHideAllWidgets
+    onClick: handleHideAllWidgetsClick,
+    onKeyDown: handleHideAllWidgetsKeyDown
   })), external_React_default().createElement("div", {
     className: "widgets-container"
   }, listsEnabled && external_React_default().createElement(Lists, {
