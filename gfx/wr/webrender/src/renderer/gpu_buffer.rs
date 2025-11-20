@@ -336,6 +336,22 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
         )
     }
 
+    
+    
+    pub fn reserve_renderer_deferred_blocks(&mut self, block_count: usize) -> GpuBufferAddress {
+        let index = self.data.len();
+
+        self.data.reserve(block_count);
+        for _ in 0 ..block_count {
+            self.data.push(Default::default());
+        }
+
+        GpuBufferAddress {
+            u: (index % MAX_VERTEX_TEXTURE_WIDTH) as u16,
+            v: (index / MAX_VERTEX_TEXTURE_WIDTH) as u16,
+        }
+    }
+
     pub fn finalize(
         mut self,
         render_tasks: &RenderTaskGraph,
