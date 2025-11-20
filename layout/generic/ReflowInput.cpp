@@ -2128,9 +2128,11 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
   }
 
   auto IsQuirky = [](const StyleSize& aSize) -> bool {
-    return aSize.ConvertsToPercentage();
+    return aSize.ConvertsToPercentage() ||
+           aSize.BehavesLikeStretchOnBlockAxis();
   };
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
+  
   
   
   
