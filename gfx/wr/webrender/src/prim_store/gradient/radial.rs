@@ -240,9 +240,7 @@ impl RadialGradientTemplate {
 
         
         for segment in &self.brush_segments {
-            
-            writer.push_one(segment.local_rect);
-            writer.push_one(segment.extra_data);
+            segment.write_gpu_blocks(&mut writer);
         }
         self.common.gpu_buffer_address = writer.finish();
 
