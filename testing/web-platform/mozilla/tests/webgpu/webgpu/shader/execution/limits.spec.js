@@ -412,11 +412,22 @@ fn((t) => {
 
 g.test('const_array_elements').
 desc(`Test that constant array expressions with the maximum number of elements are supported.`).
+params(
+  (u) =>
+  
+  
+  
+  
+  
+  
+  u.combine('sizeDivisor', [64, 8, 1]) 
+).
 fn((t) => {
-  const type = `array<u32, ${kMaxConstArrayElements}>`;
+  const elementCount = Math.ceil(kMaxConstArrayElements / t.params.sizeDivisor);
+  const type = `array<u32, ${elementCount}>`;
 
   let expr = `${type}(`;
-  for (let i = 0; i < kMaxConstArrayElements; i++) {
+  for (let i = 0; i < elementCount; i++) {
     expr += `${i}, `;
   }
   expr += `)`;
@@ -430,10 +441,5 @@ fn((t) => {
     }
     `;
 
-  runShaderTest(
-    t,
-    code,
-    new Uint32Array([...iterRange(kMaxConstArrayElements, (_i) => 0xdeadbeef)]),
-    (i) => i
-  );
+  runShaderTest(t, code, new Uint32Array([...iterRange(elementCount, (_i) => 0xdeadbeef)]), (i) => i);
 });
