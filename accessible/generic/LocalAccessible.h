@@ -876,6 +876,12 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
+  bool Tooltip(nsString& aTooltip) const;
+
+  
+
+
+
   static void NameFromAssociatedXULLabel(DocAccessible* aDocument,
                                          nsIContent* aElm, nsString& aName);
 
