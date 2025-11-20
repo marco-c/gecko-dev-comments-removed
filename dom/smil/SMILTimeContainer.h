@@ -57,6 +57,12 @@ class SMILTimeContainer {
 
 
 
+  void PauseAt(SMILTime aTime);
+
+  
+
+
+
 
 
 
@@ -255,6 +261,9 @@ class SMILTimeContainer {
   
   
   SMILTime mParentOffset;
+
+  
+  Maybe<SMILTime> mPauseTime;
 
   
   SMILTime mPauseStart;

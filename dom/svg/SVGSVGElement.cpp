@@ -171,6 +171,20 @@ void SVGSVGElement::PauseAnimations() {
   
 }
 
+static SMILTime SecondsToSMILTime(float aSeconds) {
+  double milliseconds = double(aSeconds) * PR_MSEC_PER_SEC;
+  
+  
+  return SVGUtils::ClampToInt64(NS_round(milliseconds));
+}
+
+void SVGSVGElement::PauseAnimationsAt(float aSeconds) {
+  if (mTimedDocumentRoot) {
+    mTimedDocumentRoot->PauseAt(SecondsToSMILTime(aSeconds));
+  }
+  
+}
+
 void SVGSVGElement::UnpauseAnimations() {
   if (mTimedDocumentRoot) {
     mTimedDocumentRoot->Resume(SMILTimeContainer::PAUSE_SCRIPT);
@@ -205,11 +219,7 @@ void SVGSVGElement::SetCurrentTime(float seconds) {
     return;
   }
   FlushAnimations();
-  double fMilliseconds = double(seconds) * PR_MSEC_PER_SEC;
-  
-  
-  SMILTime lMilliseconds = SVGUtils::ClampToInt64(NS_round(fMilliseconds));
-  mTimedDocumentRoot->SetCurrentTime(lMilliseconds);
+  mTimedDocumentRoot->SetCurrentTime(SecondsToSMILTime(seconds));
   AnimationNeedsResample();
   
   

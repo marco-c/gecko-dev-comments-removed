@@ -41,6 +41,13 @@ class SVGFragmentIdentifier {
 
   static bool ProcessSVGViewSpec(const nsAString& aViewSpec,
                                  dom::SVGSVGElement* root);
+
+  
+
+
+
+  static bool ProcessMediaFragment(const nsAString& aMediaFragment,
+                                   dom::SVGSVGElement* root);
 };
 
 }  
