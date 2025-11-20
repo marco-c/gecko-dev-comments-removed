@@ -85,7 +85,12 @@ add_task(async function session_storage() {
   
   let tab2 = gBrowser.duplicateTab(tab);
   let browser2 = tab2.linkedBrowser;
-  await promiseTabRestored(tab2);
+  
+  const subframeLoaded = BrowserTestUtils.browserLoaded(tab2.linkedBrowser, {
+    includeSubFrames: true,
+    wantLoad: url => url.startsWith("http://example.com"),
+  });
+  await Promise.all([promiseTabRestored(tab2), subframeLoaded]);
 
   
   await TabStateFlusher.flush(browser2);
@@ -248,7 +253,12 @@ add_task(async function respect_privacy_level() {
   tab = BrowserTestUtils.addTab(gBrowser, URL + "&secure");
   await promiseBrowserLoaded(tab.linkedBrowser);
   let tab2 = gBrowser.duplicateTab(tab);
-  await promiseTabRestored(tab2);
+  
+  const subframeLoaded = BrowserTestUtils.browserLoaded(tab2.linkedBrowser, {
+    includeSubFrames: true,
+    wantLoad: url => url.startsWith("https://example.com"),
+  });
+  await Promise.all([promiseTabRestored(tab2), subframeLoaded]);
   await promiseRemoveTabAndSessionState(tab);
 
   
