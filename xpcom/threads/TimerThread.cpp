@@ -720,13 +720,9 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
-#if !defined(XP_WIN)
-  
-  
   MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <=
              ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
-#endif
 
   return bundleWakeup;
 }
