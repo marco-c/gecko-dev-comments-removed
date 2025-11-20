@@ -1613,7 +1613,6 @@ bool MediaTrackGraphImpl::UpdateMainThreadState() {
         mForceShutDownReceived || (IsEmpty() && mBackMessageQueue.IsEmpty());
     PrepareUpdatesToMainThreadState(finalUpdate);
     if (!finalUpdate) {
-      SwapMessageQueues();
       return true;
     }
     
@@ -1668,6 +1667,7 @@ auto MediaTrackGraphImpl::OneIterationImpl(
   WebCore::DenormalDisabler disabler;
 
   
+  SwapMessageQueues();
   RunMessagesInQueue();
 
   
@@ -2076,9 +2076,7 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
       
       
       
-      
       MOZ_ASSERT(MessagesQueued());
-      SwapMessageQueues();
 
       LOG(LogLevel::Debug,
           ("%p: Starting a graph with a %s", this,
