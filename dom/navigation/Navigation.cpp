@@ -922,6 +922,9 @@ bool Navigation::FireTraverseNavigateEvent(
   
 
   
+  InnerInformAboutAbortingNavigation(aCx);
+
+  
   RefPtr<NavigationHistoryEntry> destinationNHE =
       FindNavigationHistoryEntry(aDestinationSessionHistoryInfo);
 
@@ -1016,6 +1019,7 @@ bool Navigation::FireDownloadRequestNavigateEvent(
   
   
 
+  
   InnerInformAboutAbortingNavigation(aCx);
 
   
