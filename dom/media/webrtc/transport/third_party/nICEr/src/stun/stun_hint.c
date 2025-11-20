@@ -55,9 +55,6 @@ nr_is_stun_message(UCHAR *buf, size_t len)
 {
    const UINT4 cookie = htonl(NR_STUN_MAGIC_COOKIE);
    const UINT4 cookie2 = htonl(NR_STUN_MAGIC_COOKIE2);
-#if 0
-   nr_stun_message msg;
-#endif
    UINT2 type;
    nr_stun_encoded_attribute* attr;
    unsigned int attrLen;
@@ -135,25 +132,6 @@ nr_is_stun_message(UCHAR *buf, size_t len)
 
    
 
-
-#if 0
-
-
-
-
-
-   if (nr_stun_parse_attr_UINT4(buf + (len - 4), attrLen, &msg.fingerprint))
-       return 2;
-
-
-   if (nr_stun_compute_fingerprint(buf, len - 8, &computedFingerprint))
-       return 2;
-
-   if (msg.fingerprint.number != computedFingerprint)
-       return 2;
-
-   
-#endif
 
    return 3;
 }
