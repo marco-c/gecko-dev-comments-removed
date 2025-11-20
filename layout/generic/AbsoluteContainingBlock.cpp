@@ -1003,7 +1003,7 @@ static nsRect GrowOverflowCheckRect(const nsRect& aOverflowCheckRect,
 
 
 void AbsoluteContainingBlock::ReflowAbsoluteFrame(
-    nsIFrame* aDelegatingFrame, nsPresContext* aPresContext,
+    nsContainerFrame* aDelegatingFrame, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, const nsRect& aOriginalContainingBlockRect,
     AbsPosReflowFlags aFlags, nsIFrame* aKidFrame, nsReflowStatus& aStatus,
     OverflowAreas* aOverflowAreas,
