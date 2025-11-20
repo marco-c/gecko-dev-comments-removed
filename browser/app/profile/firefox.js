@@ -896,12 +896,6 @@ pref("browser.search.totalSearches", 0);
 pref("browser.search.visualSearch.featureGate", true);
 
 
-pref("browser.search.suggest.ohttp.featureGate", false);
-
-
-pref("browser.search.suggest.ohttp.enabled", true);
-
-
 pref("browser.spin_cursor_while_busy", false);
 
 
