@@ -13,6 +13,7 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
+#include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShell.h"
 #include "nsFocusManager.h"
@@ -468,7 +469,8 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 
 
 static void RestoreScrollPositionData(Document* aDocument,
-                                      const uint32_t& aLastScrollGeneration) {
+                                      const uint32_t& aLastScrollGeneration,
+                                      SessionHistoryInfo* aHistoryEntry) {
   
   
   
@@ -485,7 +487,7 @@ static void RestoreScrollPositionData(Document* aDocument,
   
   
   
-  docShell->RestoreScrollPosFromActiveSHE();
+  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(aHistoryEntry);
 }
 
 
@@ -500,7 +502,17 @@ void NavigateEvent::ProcessScrollBehavior() {
   if (mNavigationType == NavigationType::Traverse ||
       mNavigationType == NavigationType::Reload) {
     RefPtr<Document> document = GetAssociatedDocument();
-    RestoreScrollPositionData(document, mLastScrollGeneration);
+    
+    
+    
+    
+    
+    
+    RestoreScrollPositionData(
+        document, mLastScrollGeneration,
+        mDestination->GetEntry()
+            ? mDestination->GetEntry()->SessionHistoryInfo()
+            : nullptr);
     return;
   }
 

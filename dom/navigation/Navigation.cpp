@@ -1280,6 +1280,17 @@ struct NavigationWaitForAllScope final : public nsISupports,
     if (mEvent->InterceptionState() != NavigateEvent::InterceptionState::None) {
       
       
+      
+      
+      
+      if (RefPtr current = mNavigation->GetCurrentEntry()) {
+        nsPoint scrollPos = docShell->GetCurScrollPos();
+        current->SessionHistoryInfo()->SetScrollPosition(scrollPos.x,
+                                                         scrollPos.y);
+      }
+
+      
+      
       mEvent->SetInterceptionState(NavigateEvent::InterceptionState::Committed);
       
       switch (aNavigationType) {
