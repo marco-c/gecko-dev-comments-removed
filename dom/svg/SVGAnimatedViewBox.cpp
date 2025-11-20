@@ -148,18 +148,28 @@ void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
   aSVGElement->DidAnimateViewBox();
 }
 
+void SVGAnimatedViewBox::SetBaseField(float aValue, SVGElement* aSVGElement,
+                                      float& aField) {
+  if (!mHasBaseVal) {
+    aField = aValue;
+    return;
+  }
+  if (aField == aValue) {
+    return;
+  }
+  AutoChangeViewBoxNotifier notifier(this, aSVGElement);
+  aField = aValue;
+}
+
 void SVGAnimatedViewBox::SetBaseValue(const SVGViewBox& aRect,
-                                      SVGElement* aSVGElement) {
-  if (!mHasBaseVal || mBaseVal == aRect) {
-    
-    
-    
-    
-    mBaseVal = aRect;
+                                      SVGElement* aSVGElement,
+                                      bool aDoSetAttr) {
+  
+  if (mHasBaseVal && mBaseVal == aRect) {
     return;
   }
 
-  AutoChangeViewBoxNotifier notifier(this, aSVGElement);
+  AutoChangeViewBoxNotifier notifier(this, aSVGElement, aDoSetAttr);
 
   mBaseVal = aRect;
   mHasBaseVal = true;
@@ -174,15 +184,7 @@ nsresult SVGAnimatedViewBox::SetBaseValueString(const nsAString& aValue,
   if (NS_FAILED(rv)) {
     return rv;
   }
-  
-  if (mHasBaseVal && viewBox == mBaseVal) {
-    return NS_OK;
-  }
-
-  AutoChangeViewBoxNotifier notifier(this, aSVGElement, aDoSetAttr);
-  mHasBaseVal = true;
-  mBaseVal = viewBox;
-
+  SetBaseValue(viewBox, aSVGElement, aDoSetAttr);
   return NS_OK;
 }
 
