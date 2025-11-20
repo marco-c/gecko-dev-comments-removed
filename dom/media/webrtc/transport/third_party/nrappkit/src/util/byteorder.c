@@ -35,10 +35,10 @@
 
 
 
-#include "nr_common.h"
 #ifndef WIN32
 #include <arpa/inet.h>
 #endif
+#include <csi_platform.h>
 #include "r_types.h"
 #include "byteorder.h"
 
