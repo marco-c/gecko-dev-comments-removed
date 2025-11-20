@@ -38,7 +38,7 @@
 use api::{AlphaType, BorderDetails, BorderDisplayItem, BuiltDisplayList, BuiltDisplayListIter, PrimitiveFlags, SnapshotInfo};
 use api::{ClipId, ColorF, CommonItemProperties, ComplexClipRegion, ComponentTransferFuncType, RasterSpace};
 use api::{DebugFlags, DisplayItem, DisplayItemRef, ExtendMode, ExternalScrollId, FilterData};
-use api::{FilterOp, FontInstanceKey, FontSize, GlyphInstance, GlyphOptions, GradientStop};
+use api::{FilterOp, FilterPrimitive, FontInstanceKey, FontSize, GlyphInstance, GlyphOptions, GradientStop};
 use api::{IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth, QualitySettings};
 use api::{LineOrientation, LineStyle, NinePatchBorderSource, PipelineId, MixBlendMode, StackingContextFlags};
 use api::{PropertyBinding, ReferenceFrameKind, ScrollFrameDescriptor};
@@ -152,6 +152,7 @@ pub struct CompositeOps {
     
     pub filters: Vec<Filter>,
     pub filter_datas: Vec<FilterData>,
+    pub filter_primitives: Vec<FilterPrimitive>,
     pub snapshot: Option<SnapshotInfo>,
 
     
@@ -162,12 +163,14 @@ impl CompositeOps {
     pub fn new(
         filters: Vec<Filter>,
         filter_datas: Vec<FilterData>,
+        filter_primitives: Vec<FilterPrimitive>,
         mix_blend_mode: Option<MixBlendMode>,
         snapshot: Option<SnapshotInfo>,
     ) -> Self {
         CompositeOps {
             filters,
             filter_datas,
+            filter_primitives,
             mix_blend_mode,
             snapshot,
         }
@@ -175,6 +178,7 @@ impl CompositeOps {
 
     pub fn is_empty(&self) -> bool {
         self.filters.is_empty() &&
+            self.filter_primitives.is_empty() &&
             self.mix_blend_mode.is_none() &&
             self.snapshot.is_none()
     }
@@ -206,6 +210,10 @@ impl CompositeOps {
                     }
                 }
             }
+        }
+
+        if !self.filter_primitives.is_empty() {
+            return true;
         }
 
         false
@@ -805,6 +813,7 @@ impl<'a> SceneBuilder<'a> {
         let has_blur = match &pictures[pic_index.0].composite_mode {
             Some(PictureCompositeMode::Filter(Filter::Blur { .. })) => true,
             Some(PictureCompositeMode::Filter(Filter::DropShadows { .. })) => true,
+            Some(PictureCompositeMode::SvgFilter( .. )) => true,
             Some(PictureCompositeMode::SVGFEGraph( .. )) => true,
             _ => false,
         };
@@ -997,6 +1006,7 @@ impl<'a> SceneBuilder<'a> {
                         let composition_operations = CompositeOps::new(
                             filter_ops_for_compositing(item.filters()),
                             filter_datas_for_compositing(item.filter_datas()),
+                            filter_primitives_for_compositing(item.filter_primitives()),
                             info.stacking_context.mix_blend_mode_for_compositing(),
                             snapshot,
                         );
@@ -1921,6 +1931,7 @@ impl<'a> SceneBuilder<'a> {
 
                 let filters = filter_ops_for_compositing(item.filters());
                 let filter_datas = filter_datas_for_compositing(item.filter_datas());
+                let filter_primitives = filter_primitives_for_compositing(item.filter_primitives());
 
                 self.add_backdrop_filter(
                     spatial_node_index,
@@ -1928,6 +1939,7 @@ impl<'a> SceneBuilder<'a> {
                     &layout,
                     filters,
                     filter_datas,
+                    filter_primitives,
                 );
             }
 
@@ -1935,6 +1947,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::SetGradientStops |
             DisplayItem::SetFilterOps |
             DisplayItem::SetFilterData |
+            DisplayItem::SetFilterPrimitives |
             DisplayItem::SetPoints => {}
 
             
@@ -2222,6 +2235,7 @@ impl<'a> SceneBuilder<'a> {
                 CompositeOps {
                     filters: Vec::new(),
                     filter_datas: Vec::new(),
+                    filter_primitives: Vec::new(),
                     mix_blend_mode: None,
                     snapshot,
                 },
@@ -2690,6 +2704,7 @@ impl<'a> SceneBuilder<'a> {
             source,
             stacking_context.clip_node_id,
             stacking_context.composite_ops.filters,
+            stacking_context.composite_ops.filter_primitives,
             stacking_context.composite_ops.filter_datas,
             false,
             spatial_node_context_offset,
@@ -3789,6 +3804,7 @@ impl<'a> SceneBuilder<'a> {
         info: &LayoutPrimitiveInfo,
         filters: Vec<Filter>,
         filter_datas: Vec<FilterData>,
+        filter_primitives: Vec<FilterPrimitive>,
     ) {
         
         
@@ -3842,6 +3858,7 @@ impl<'a> SceneBuilder<'a> {
             source,
             clip_node_id,
             filters,
+            filter_primitives,
             filter_datas,
             true,
             LayoutVector2D::zero(),
@@ -3940,10 +3957,17 @@ impl<'a> SceneBuilder<'a> {
         mut source: PictureChainBuilder,
         clip_node_id: ClipNodeId,
         mut filter_ops: Vec<Filter>,
+        mut filter_primitives: Vec<FilterPrimitive>,
         filter_datas: Vec<FilterData>,
         is_backdrop_filter: bool,
         context_offset: LayoutVector2D,
     ) -> PictureChainBuilder {
+        
+        
+        
+        assert!(filter_ops.is_empty() || filter_primitives.is_empty(),
+            "Filter ops and filter primitives are not allowed on the same stacking context.");
+
         
         let mut current_filter_data_index = 0;
         
@@ -4502,6 +4526,44 @@ impl<'a> SceneBuilder<'a> {
             );
         }
 
+        if !filter_primitives.is_empty() {
+            let filter_datas = filter_datas.iter()
+                .map(|filter_data| filter_data.sanitize())
+                .map(|filter_data| {
+                    SFilterData {
+                        r_func: SFilterDataComponent::from_functype_values(
+                            filter_data.func_r_type, &filter_data.r_values),
+                        g_func: SFilterDataComponent::from_functype_values(
+                            filter_data.func_g_type, &filter_data.g_values),
+                        b_func: SFilterDataComponent::from_functype_values(
+                            filter_data.func_b_type, &filter_data.b_values),
+                        a_func: SFilterDataComponent::from_functype_values(
+                            filter_data.func_a_type, &filter_data.a_values),
+                    }
+                })
+                .collect();
+
+            
+            for primitive in &mut filter_primitives {
+                primitive.sanitize();
+            }
+
+            let composite_mode = PictureCompositeMode::SvgFilter(
+                filter_primitives,
+                filter_datas,
+            );
+
+            source = source.add_picture(
+                composite_mode,
+                clip_node_id,
+                Picture3DContext::Out,
+                &mut self.interners,
+                &mut self.prim_store,
+                &mut self.prim_instances,
+                &mut self.clip_tree_builder,
+            );
+        }
+
         source
     }
 }
@@ -4799,6 +4861,16 @@ fn filter_datas_for_compositing(
         });
     }
     filter_datas
+}
+
+fn filter_primitives_for_compositing(
+    input_filter_primitives: ItemRange<FilterPrimitive>,
+) -> Vec<FilterPrimitive> {
+    
+    
+    
+    
+    input_filter_primitives.iter().map(|primitive| primitive).collect()
 }
 
 fn process_repeat_size(
