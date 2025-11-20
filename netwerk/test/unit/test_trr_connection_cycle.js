@@ -12,6 +12,41 @@ function setLocalModeAndURI(mode, url) {
   Services.prefs.setIntPref("network.trr.mode", mode);
 }
 
+async function registerNS() {
+  await trrServer.registerDoHAnswers("confirm.example.com", "NS", {
+    answers: [
+      {
+        name: "confirm.example.com",
+        ttl: 55,
+        type: "NS",
+        flush: false,
+        data: "test.com",
+      },
+    ],
+  });
+}
+
+async function unregisterNS() {
+  await trrServer.registerDoHAnswers("confirm.example.com", "NS", {
+    answers: [],
+    error: 500, 
+  });
+}
+
+async function registerDomain(domain) {
+  await trrServer.registerDoHAnswers(domain, "A", {
+    answers: [
+      {
+        name: domain,
+        ttl: 55,
+        type: "A",
+        flush: false,
+        data: "9.8.7.6",
+      },
+    ],
+  });
+}
+
 let trrServer;
 add_setup(async function setup() {
   trr_test_setup();
@@ -30,18 +65,9 @@ add_setup(async function setup() {
   });
   await trrServer.start();
   dump(`port = ${trrServer.port()}\n`);
-  await trrServer.registerDoHAnswers("confirm.example.com", "NS", {
-    answers: [
-      {
-        name: "confirm.example.com",
-        ttl: 55,
-        type: "NS",
-        flush: false,
-        data: "test.com",
-      },
-    ],
-  });
+  await registerNS();
 });
+
 
 add_task(async function test_connection_reuse_and_cycling() {
   Services.prefs.setCharPref(
@@ -78,20 +104,6 @@ add_task(async function test_connection_reuse_and_cycling() {
     5000
   );
   
-
-  async function registerDomain(domain) {
-    await trrServer.registerDoHAnswers(domain, "A", {
-      answers: [
-        {
-          name: domain,
-          ttl: 55,
-          type: "A",
-          flush: false,
-          data: "9.8.7.6",
-        },
-      ],
-    });
-  }
 
   for (let i = 1; i <= 6; i++) {
     await registerDomain(`bar${i}.example.org`);
@@ -214,4 +226,138 @@ add_task(async function test_connection_reuse_and_cycling() {
       );
     }
   }
+
+  
+  await trrServer.execute(
+    `global.gDoHPortsLog = []; global.gDoHNewConnLog = {};`
+  );
+});
+
+
+
+
+
+add_task(async function test_connection_reuse_and_cycling2() {
+  Services.prefs.setBoolPref("network.trr.retry_on_recoverable_errors", false);
+  Services.dns.clearCache(true);
+  Services.prefs.setCharPref(
+    "network.trr.confirmationNS",
+    "confirm.example.com"
+  );
+  setLocalModeAndURI(
+    2,
+    `https://foo.example.com:${trrServer.port()}/dns-query`
+  );
+  Services.prefs.setBoolPref("network.trr.strict_native_fallback", true);
+
+  await TestUtils.waitForCondition(
+    
+    () => Services.dns.currentTrrConfirmationState == 2,
+    `Timed out waiting for confirmation success. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+
+  
+  
+  
+  setLocalModeAndURI(
+    2,
+    `https://foo.example.com:${trrServer.port()}/dns-query?conncycle=true`
+  );
+  await TestUtils.waitForCondition(
+    
+    () => Services.dns.currentTrrConfirmationState == 2,
+    `Timed out waiting for confirmation success. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+  
+
+  for (let i = 1; i <= 6; i++) {
+    await registerDomain(`bar${i}.example.org`);
+  }
+  await registerDomain("newconn.example.org");
+  await registerDomain("newconn2.example.org");
+
+  await new TRRDNSListener("bar1.example.org", "9.8.7.6");
+  await new TRRDNSListener("bar2.example.org", "9.8.7.6");
+
+  let initialPort = await trrServer.execute(
+    `global.gDoHPortsLog[global.gDoHPortsLog.length-1]`
+  );
+  
+  await unregisterNS();
+  await new TRRDNSListener("newconn.example.org", "127.0.0.1");
+  await TestUtils.waitForCondition(
+    
+    () => Services.dns.currentTrrConfirmationState == 3,
+    `Timed out waiting for confirmation success. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+  await registerNS();
+
+  await TestUtils.waitForCondition(
+    
+    () => Services.dns.currentTrrConfirmationState == 2,
+    `Timed out waiting for confirmation success. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+  let newConfirmationPort = await trrServer.execute(
+    `global.gDoHPortsLog[global.gDoHPortsLog.length-1]`
+  );
+
+  
+  await new TRRDNSListener("bar3.example.org", "9.8.7.6");
+  await new TRRDNSListener("bar4.example.org", "9.8.7.6");
+
+  initialPort = await trrServer.execute(
+    `global.gDoHPortsLog[global.gDoHPortsLog.length-1]`
+  );
+  await unregisterNS();
+  
+  await new TRRDNSListener("newconn2.example.org", "127.0.0.1");
+  await TestUtils.waitForCondition(
+    
+    () => Services.dns.currentTrrConfirmationState == 3,
+    `Timed out waiting for confirmation success. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+  await registerNS();
+
+  await TestUtils.waitForCondition(
+    
+    () => Services.dns.currentTrrConfirmationState == 2,
+    `Timed out waiting for confirmation success. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+  newConfirmationPort = await trrServer.execute(
+    `global.gDoHPortsLog[global.gDoHPortsLog.length-1]`
+  );
+  notEqual(
+    initialPort,
+    newConfirmationPort,
+    "Failed confirmation must cycle the connection"
+  );
+
+  
+  await new TRRDNSListener("bar5.example.org", "9.8.7.6");
+  await new TRRDNSListener("bar6.example.org", "9.8.7.6");
+
+  let dohReqPortLog = await trrServer.execute(`global.gDoHPortsLog`);
+
+  const uniquePorts = new Set(dohReqPortLog.map(([_, port]) => port));
+  if (uniquePorts.size < 3) {
+    info(JSON.stringify(dohReqPortLog));
+  }
+
+  greaterOrEqual(
+    uniquePorts.size,
+    3,
+    "Connection must be cycled at least twice"
+  );
 });
