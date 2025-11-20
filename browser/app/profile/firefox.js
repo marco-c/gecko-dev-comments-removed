@@ -3517,8 +3517,6 @@ pref("browser.ipProtection.userEnabled", false);
 pref("browser.ipProtection.variant", "");
 
 pref("browser.ipProtection.panelOpenCount", 0);
-
-pref("browser.ipProtection.features.siteExceptions", false);
 pref("browser.ipProtection.exceptionsMode", "all");
 pref("browser.ipProtection.domainExclusions", "");
 pref("browser.ipProtection.domainInclusions", "");
