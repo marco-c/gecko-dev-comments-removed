@@ -5,6 +5,7 @@
 
 
 #include "builtin/FinalizationRegistryObject.h"
+#include "debugger/Debugger.h"
 #include "gc/GC.h"
 #include "gc/PublicIterators.h"
 #include "js/friend/WindowProxy.h"  
@@ -446,6 +447,12 @@ JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
       
       
       if (!nukeAll && wrapped->nonCCWRealm() != target) {
+        continue;
+      }
+
+      
+      
+      if (MOZ_UNLIKELY(wrapped->is<DebuggerInstanceObject>())) {
         continue;
       }
 
