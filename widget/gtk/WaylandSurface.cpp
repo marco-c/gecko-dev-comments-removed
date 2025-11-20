@@ -389,6 +389,18 @@ void WaylandSurface::DisableDMABufFormatsLocked(
   mFormats = nullptr;
 }
 
+void WaylandSurface::VisibleCallbackHandler() {
+  WaylandSurfaceLock lock(this);
+  LOGVERBOSE("WaylandSurface::VisibleCallbackHandler()");
+  MozClearPointer(mVisibleFrameCallback, wl_callback_destroy);
+  
+  
+  if (mIsMapped) {
+    mIsVisible = true;
+    mBufferAttached = true;
+  }
+}
+
 bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
                                wl_surface* aParentWLSurface,
                                WaylandSurfaceLock* aParentWaylandSurfaceLock,
@@ -435,6 +447,15 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
 
   LOGWAYLAND("  register frame callback");
   RequestFrameCallbackLocked(aProofOfLock);
+
+  MOZ_DIAGNOSTIC_ASSERT(!mVisibleFrameCallback);
+  static const struct wl_callback_listener listener{
+      [](void* aData, struct wl_callback* callback, uint32_t time) {
+        RefPtr waylandSurface = static_cast<WaylandSurface*>(aData);
+        waylandSurface->VisibleCallbackHandler();
+      }};
+  mVisibleFrameCallback = wl_surface_frame(mSurface);
+  wl_callback_add_listener(mVisibleFrameCallback, &listener, this);
 
   CommitLocked(aProofOfLock,  true,
                 true);
@@ -537,6 +558,8 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
 
   MozClearPointer(mPendingOpaqueRegion, wl_region_destroy);
   MozClearPointer(mOpaqueRegionFrameCallback, wl_callback_destroy);
+
+  MozClearPointer(mVisibleFrameCallback, wl_callback_destroy);
 
   
   

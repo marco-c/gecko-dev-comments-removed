@@ -81,6 +81,9 @@ class WaylandSurface final {
   bool IsVisible() const { return mIsVisible; }
 
   
+  void VisibleCallbackHandler();
+
+  
   
   
   
@@ -373,6 +376,9 @@ class WaylandSurface final {
   
   bool mBufferTransformFlippedX = false;
   bool mBufferTransformFlippedY = false;
+
+  
+  wl_callback* mVisibleFrameCallback = nullptr;
 
   
   wl_callback* mFrameCallback = nullptr;
