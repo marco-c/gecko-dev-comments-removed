@@ -331,6 +331,13 @@ add_task(async () => {
   await simpleRFPTest(uri, testNavigator, expectedResults);
 });
 
+add_task(async () => {
+  expectedResults = structuredClone(allSpoofed);
+  await simpleRFPTest(uri, testNavigator, expectedResults, {}, [
+    ["pdfjs.disabled", true],
+  ]);
+});
+
 
 
 

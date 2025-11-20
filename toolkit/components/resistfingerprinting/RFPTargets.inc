@@ -36,6 +36,7 @@ ITEM_VALUE(NavigatorOscpu,              17)
 ITEM_VALUE(NavigatorPlatform,           18)
 ITEM_VALUE(NavigatorUserAgent,          19)
 
+ITEM_VALUE(PdfjsSpoof,                  20)
 ITEM_VALUE(StreamVideoFacingMode,       21)
 ITEM_VALUE(JSDateTimeUTC,               22)
 ITEM_VALUE(JSMathFdlibm,                23)
