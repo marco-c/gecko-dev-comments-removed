@@ -168,12 +168,18 @@ class ScriptLoadRequest : public nsISupports,
   
   void CacheEntryFound(LoadedScript* aLoadedScript);
 
+  void CacheEntryRevived(LoadedScript* aLoadedScript);
+
   
   
   
   void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                          ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
 
+ private:
+  void SetCacheEntry(LoadedScript* aLoadedScript);
+
+ public:
   bool PassedConditionForDiskCache() const {
     return mDiskCachingPlan == CachingPlan::PassedCondition;
   }
@@ -255,6 +261,9 @@ class ScriptLoadRequest : public nsISupports,
     mHasSourceMapURL_ = true;
   }
 
+  bool HasDirtyCache() const { return mHasDirtyCache_; }
+  void SetHasDirtyCache() { mHasDirtyCache_ = true; }
+
  public:
   
 
@@ -272,6 +281,13 @@ class ScriptLoadRequest : public nsISupports,
   
   
   bool mHasSourceMapURL_ : 1;
+
+  
+  
+  
+  
+  
+  bool mHasDirtyCache_ : 1;
 
   enum class CachingPlan : uint8_t {
     

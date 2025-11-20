@@ -299,6 +299,34 @@ class LoadedScript : public nsIMemoryReporter {
   void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
                                            nsIURI* aOriginalURI);
 
+  bool IsDirty() const { return mIsDirty; }
+  void SetDirty() {
+    MOZ_ASSERT(HasCacheEntryId());
+    mIsDirty = true;
+  }
+  void UnsetDirty() {
+    MOZ_ASSERT(HasCacheEntryId());
+    mIsDirty = false;
+  }
+
+  bool HasCacheEntryId() const { return mCacheEntryId != InvalidCacheEntryId; }
+  uint64_t CacheEntryId() const {
+    MOZ_ASSERT(HasCacheEntryId());
+    return mCacheEntryId;
+  }
+  void SetCacheEntryId(uint64_t aId) {
+    mCacheEntryId = aId;
+
+    
+    MOZ_ASSERT(mCacheEntryId == aId);
+  }
+
+  void AddFetchCount() {
+    if (mFetchCount < UINT8_MAX) {
+      mFetchCount++;
+    }
+  }
+
  public:
   
 
@@ -325,6 +353,32 @@ class LoadedScript : public nsIMemoryReporter {
   uint32_t mBytecodeOffset;
 
  private:
+  static constexpr uint64_t InvalidCacheEntryId = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mCacheEntryId : 48;
+
+  
+  
+  
+  
+  bool mIsDirty : 1;
+
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;
 
