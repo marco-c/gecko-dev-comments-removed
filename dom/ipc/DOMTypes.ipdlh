@@ -237,7 +237,7 @@ struct DocShellLoadStateInit
   HTTPSUpgradeTelemetryType HttpsUpgradeTelemetry;
 
   
-  ClonedMessageData? NavigationAPIState; 
+  ClonedMessageData? NavigationAPIState;
 
   
   
@@ -363,13 +363,14 @@ struct IPCNotificationAction {
 
 
 
+
 struct IPCNotificationOptions {
   nsString title;
   NotificationDirection dir;
   nsString lang;
   nsString body;
   nsString tag;
-  nsString icon;
+  nullable nsIURI icon;
   bool requireInteraction;
   bool silent;
   uint32_t[] vibrate;
