@@ -2231,6 +2231,10 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   if (NS_WARN_IF(!newWindow)) {
     
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
+    
+    
+    
+    mDocShell = nullptr;
     return NS_ERROR_FAILURE;
   }
 
