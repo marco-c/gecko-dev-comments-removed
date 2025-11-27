@@ -185,21 +185,13 @@ LazyLogModule& GetLoggerByProcess();
 
 struct ActiveScrolledRoot {
   
-  static already_AddRefed<ActiveScrolledRoot> CreateASRForFrame(
+  static already_AddRefed<ActiveScrolledRoot> GetOrCreateASRForFrame(
       const ActiveScrolledRoot* aParent,
-      ScrollContainerFrame* aScrollContainerFrame
-#ifdef DEBUG
-      ,
-      const nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots
-#endif
-  );
-  static already_AddRefed<ActiveScrolledRoot> CreateASRForStickyFrame(
-      const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame
-#ifdef DEBUG
-      ,
-      const nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots
-#endif
-  );
+      ScrollContainerFrame* aScrollContainerFrame,
+      nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots);
+  static already_AddRefed<ActiveScrolledRoot> GetOrCreateASRForStickyFrame(
+      const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame,
+      nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots);
 
   static const ActiveScrolledRoot* PickAncestor(
       const ActiveScrolledRoot* aOne, const ActiveScrolledRoot* aTwo) {
@@ -988,10 +980,10 @@ class nsDisplayListBuilder {
 
 
 
-  ActiveScrolledRoot* AllocateActiveScrolledRoot(
+  ActiveScrolledRoot* GetOrCreateActiveScrolledRoot(
       const ActiveScrolledRoot* aParent,
       ScrollContainerFrame* aScrollContainerFrame);
-  ActiveScrolledRoot* AllocateActiveScrolledRootForSticky(
+  ActiveScrolledRoot* GetOrCreateActiveScrolledRootForSticky(
       const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame);
 
   
@@ -1245,7 +1237,7 @@ class nsDisplayListBuilder {
 
     void EnterScrollFrame(ScrollContainerFrame* aScrollContainerFrame) {
       MOZ_ASSERT(!mUsed);
-      ActiveScrolledRoot* asr = mBuilder->AllocateActiveScrolledRoot(
+      ActiveScrolledRoot* asr = mBuilder->GetOrCreateActiveScrolledRoot(
           mBuilder->mCurrentActiveScrolledRoot, aScrollContainerFrame);
       mBuilder->mCurrentActiveScrolledRoot = asr;
       mUsed = true;
