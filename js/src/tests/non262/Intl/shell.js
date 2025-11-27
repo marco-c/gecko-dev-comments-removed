@@ -357,6 +357,10 @@ const numberingSystems = {
     "algorithmic": false,
     "digits": "𖫀𖫁𖫂𖫃𖫄𖫅𖫆𖫇𖫈𖫉"
   },
+  "tols": {
+    "algorithmic": false,
+    "digits": "𑷠𑷡𑷢𑷣𑷤𑷥𑷦𑷧𑷨𑷩"
+  },
   "vaii": {
     "algorithmic": false,
     "digits": "꘠꘡꘢꘣꘤꘥꘦꘧꘨꘩"
