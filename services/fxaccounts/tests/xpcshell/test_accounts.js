@@ -412,8 +412,9 @@ add_test(function test_getKeyForScope() {
 
 add_task(async function test_oauth_verification() {
   let fxa = new MockFxAccounts();
-  let user = getTestUser("foo");
+  let user = getTestUser("eusebius");
   user.verified = false;
+
   await fxa.setSignedInUser(user);
   let fetched = await fxa.getSignedInUser();
   Assert.ok(!fetched.verified);
@@ -423,7 +424,7 @@ add_task(async function test_oauth_verification() {
   });
 
   fetched = await fxa.getSignedInUser();
-  Assert.ok(!fetched.verified); 
+  Assert.ok(!fetched.verified);
 
   
   await fxa._internal.updateUserAccountData({
@@ -433,6 +434,69 @@ add_task(async function test_oauth_verification() {
 
   fetched = await fxa.getSignedInUser();
   Assert.ok(fetched.verified);
+});
+
+
+add_task(async function test_hasKeysForScope_not_signed_in() {
+  const fxa = await MakeFxAccounts();
+  
+  Assert.ok(!(await fxa.keys.hasKeysForScope(SCOPE_APP_SYNC)));
+});
+
+add_task(async function test_hasKeysForScope_not_verified() {
+  const credentials = {
+    email: "foo@example.com",
+    uid: "1234567890abcdef1234567890abcdef",
+    sessionToken: "dead",
+    verified: false, 
+    ...MOCK_ACCOUNT_KEYS,
+  };
+  const fxa = await MakeFxAccounts({ credentials });
+  
+  Assert.ok(!(await fxa.keys.hasKeysForScope(SCOPE_APP_SYNC)));
+});
+
+add_task(async function test_hasKeysForScope_no_keys() {
+  const credentials = {
+    email: "foo@example.com",
+    uid: "1234567890abcdef1234567890abcdef",
+    sessionToken: "dead",
+    verified: true,
+    
+  };
+  const fxa = await MakeFxAccounts({ credentials });
+  
+  Assert.ok(!(await fxa.keys.hasKeysForScope(SCOPE_APP_SYNC)));
+});
+
+add_task(async function test_hasKeysForScope_with_keys() {
+  const credentials = {
+    email: "foo@example.com",
+    uid: "1234567890abcdef1234567890abcdef",
+    sessionToken: "dead",
+    verified: true,
+    ...MOCK_ACCOUNT_KEYS, 
+  };
+  const fxa = await MakeFxAccounts({ credentials });
+  
+  Assert.ok(await fxa.keys.hasKeysForScope(SCOPE_APP_SYNC));
+});
+
+add_task(async function test_hasKeysForScope_wrong_scope() {
+  const credentials = {
+    email: "foo@example.com",
+    uid: "1234567890abcdef1234567890abcdef",
+    sessionToken: "dead",
+    verified: true,
+    ...MOCK_ACCOUNT_KEYS,
+  };
+  const fxa = await MakeFxAccounts({ credentials });
+  
+  Assert.ok(
+    !(await fxa.keys.hasKeysForScope(
+      "https://identity.mozilla.com/apps/unknown"
+    ))
+  );
 });
 
 add_task(

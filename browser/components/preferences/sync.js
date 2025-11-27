@@ -4,6 +4,10 @@
 
 
 
+const { SCOPE_APP_SYNC } = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccountsCommon.sys.mjs"
+);
+
 const FXA_PAGE_LOGGED_OUT = 0;
 const FXA_PAGE_LOGGED_IN = 1;
 
@@ -265,8 +269,31 @@ var gSyncPane = {
         document.getElementById("fxaCancelChangeDeviceName").click();
       }
     });
-    setEventListener("syncSetup", "command", function () {
-      this._chooseWhatToSync(false, "setupSync");
+    setEventListener("syncSetup", "command", async function () {
+      
+      try {
+        const hasKeys = await fxAccounts.keys.hasKeysForScope(SCOPE_APP_SYNC);
+        if (hasKeys) {
+          
+          this._chooseWhatToSync(false, "setupSync");
+        } else {
+          
+          
+          
+          
+          if (!(await FxAccounts.canConnectAccount())) {
+            return;
+          }
+          const url = await FxAccounts.config.promiseConnectAccountURI(
+            this._getEntryPoint()
+          );
+          this.replaceTabWithUrl(url);
+        }
+      } catch (err) {
+        console.error("Failed to check for sync keys", err);
+        
+        this._chooseWhatToSync(false, "setupSync");
+      }
     });
     setEventListener("syncChangeOptions", "command", function () {
       this._chooseWhatToSync(true, "manageSyncSettings");

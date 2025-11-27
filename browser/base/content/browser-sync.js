@@ -5,6 +5,7 @@
 const {
   FX_MONITOR_OAUTH_CLIENT_ID,
   FX_RELAY_OAUTH_CLIENT_ID,
+  SCOPE_APP_SYNC,
   VPN_OAUTH_CLIENT_ID,
 } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
@@ -501,8 +502,10 @@ var gSync = {
   
   
   get sendTabConfiguredAndLoading() {
+    const state = UIState.get();
     return (
-      UIState.get().status == UIState.STATUS_SIGNED_IN &&
+      state.status == UIState.STATUS_SIGNED_IN &&
+      state.syncEnabled &&
       !fxAccounts.device.recentDeviceList
     );
   },
@@ -527,8 +530,10 @@ var gSync = {
 
   getSendTabTargets() {
     const targets = [];
+    const state = UIState.get();
     if (
-      UIState.get().status != UIState.STATUS_SIGNED_IN ||
+      state.status != UIState.STATUS_SIGNED_IN ||
+      !state.syncEnabled ||
       !fxAccounts.device.recentDeviceList
     ) {
       return targets;
@@ -798,7 +803,7 @@ var gSync = {
         this.openPrefsFromFxaMenu("sync_settings", button);
         break;
       case "PanelUI-fxa-menu-setup-sync-button":
-        this.openChooseWhatToSync("sync_settings", button);
+        this.openSyncSetup("sync_settings", button);
         break;
 
       case "PanelUI-fxa-menu-sendtab-connect-device-button":
@@ -830,7 +835,7 @@ var gSync = {
         this.openVPNLink(button);
         break;
       case "PanelUI-fxa-menu-sendtab-not-configured-button":
-        this.openPrefsFromFxaMenu("send_tab", button);
+        this.openSyncSetup("send_tab", button);
         break;
     }
   },
@@ -950,8 +955,8 @@ var gSync = {
   },
 
   showSendToDeviceViewFromFxaMenu(anchor) {
-    const { status } = UIState.get();
-    if (status === UIState.STATUS_NOT_CONFIGURED) {
+    const state = UIState.get();
+    if (state.status !== UIState.STATUS_SIGNED_IN || !state.syncEnabled) {
       PanelUI.showSubView("PanelUI-fxa-menu-sendtab-not-configured", anchor);
       return;
     }
@@ -2300,6 +2305,41 @@ var gSync = {
     this.emitFxaToolbarTelemetry(type, sourceElement);
     let entryPoint = this._getEntryPointForElement(sourceElement);
     this.openPrefs(entryPoint, null, { action: "choose-what-to-sync" });
+  },
+
+  
+
+
+
+
+  async openSyncSetup(type, sourceElement, extraParams = {}) {
+    this.emitFxaToolbarTelemetry(type, sourceElement);
+    const entryPoint = this._getEntryPointForElement(sourceElement);
+
+    try {
+      
+      const hasKeys = await fxAccounts.keys.hasKeysForScope(SCOPE_APP_SYNC);
+
+      if (hasKeys) {
+        
+        this.openPrefs(entryPoint, null, { action: "choose-what-to-sync" });
+      } else {
+        
+        
+        if (!(await FxAccounts.canConnectAccount())) {
+          return;
+        }
+        const url = await FxAccounts.config.promiseConnectAccountURI(
+          entryPoint,
+          extraParams
+        );
+        switchToTabHavingURI(url, true, { replaceQueryString: true });
+      }
+    } catch (err) {
+      this.log.error("Failed to determine sync setup flow", err);
+      
+      this.openPrefs(entryPoint);
+    }
   },
 
   openSyncedTabsPanel() {
