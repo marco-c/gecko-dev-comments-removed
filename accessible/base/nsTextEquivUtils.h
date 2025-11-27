@@ -59,10 +59,7 @@ class nsTextEquivUtils {
 
 
 
-  static inline bool HasNameRule(Accessible* aAccessible,
-                                 ETextEquivRule aRule) {
-    return (GetRoleRule(aAccessible->Role()) & aRule) == aRule;
-  }
+  static bool HasNameRule(const Accessible* aAccessible, ETextEquivRule aRule);
 
   
 
