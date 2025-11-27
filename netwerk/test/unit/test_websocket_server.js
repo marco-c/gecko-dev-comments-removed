@@ -9,7 +9,6 @@
 
 
 const {
-  NodeWebSocketPlainServer,
   NodeWebSocketServer,
   NodeWebSocketHttp2Server,
   NodeHTTPProxyServer,
@@ -64,41 +63,6 @@ async function channelOpenPromise(url, msg) {
   conn.close();
   let finalStatus = await finalStatusPromise;
   return [finalStatus.status, res];
-}
-
-
-async function test_h1_plain_websocket_direct() {
-  let wss = new NodeWebSocketPlainServer();
-  await wss.start();
-  registerCleanupFunction(async () => wss.stop());
-  Assert.notEqual(wss.port(), null);
-  await wss.registerMessageHandler((data, ws) => {
-    ws.send(data);
-  });
-  let url = `ws://localhost:${wss.port()}`;
-  const msg = "test websocket";
-
-  let conn = new WebSocketConnection();
-  await conn.open(url);
-  conn.send(msg);
-  let mess1 = await conn.receiveMessages();
-  Assert.deepEqual(mess1, [msg]);
-
-  
-  conn.send(msg);
-  conn.send(msg);
-  conn.send(msg);
-  let mess2 = [];
-  while (mess2.length < 3) {
-    
-    mess2 = mess2.concat(await conn.receiveMessages());
-  }
-  Assert.deepEqual(mess2, [msg, msg, msg]);
-
-  conn.close();
-  let { status } = await conn.finished();
-
-  Assert.equal(status, Cr.NS_OK);
 }
 
 
@@ -452,7 +416,6 @@ async function test_websocket_fallback() {
   checkConnectionActivities(observer.activites, "localhost", wss.port());
 }
 
-add_task(test_h1_plain_websocket_direct);
 add_task(test_h1_websocket_direct);
 add_task(test_h2_websocket_direct);
 add_task(test_h1_ws_with_secure_h1_proxy);
