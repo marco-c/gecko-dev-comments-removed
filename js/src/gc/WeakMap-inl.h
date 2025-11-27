@@ -385,15 +385,12 @@ void WeakMap<K, V, AP>::addNurseryKey(const K& key) {
     return;
   }
 
-  if (nurseryKeys.length() >= map().count() / 2) {
-    
-    
-    nurseryKeys.clear();
-    nurseryKeysValid = false;
-    return;
-  }
+  
+  
+  bool tooManyKeys = nurseryKeys.length() >= map().count() / 2;
 
-  if (!nurseryKeys.append(key)) {
+  if (tooManyKeys || !nurseryKeys.append(key)) {
+    nurseryKeys.clear();
     nurseryKeysValid = false;
   }
 }
