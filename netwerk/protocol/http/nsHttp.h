@@ -485,11 +485,18 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode);
 
 SupportedAlpnRank IsAlpnSupported(const nsACString& aAlpn);
 
-static inline bool AllowedErrorForHTTPSRRFallback(nsresult aError) {
+
+
+
+static inline bool AllowedErrorForTransactionRetry(nsresult aError) {
   return psm::IsNSSErrorCode(-1 * NS_ERROR_GET_CODE(aError)) ||
          aError == NS_ERROR_NET_RESET ||
          aError == NS_ERROR_CONNECTION_REFUSED ||
-         aError == NS_ERROR_UNKNOWN_HOST || aError == NS_ERROR_NET_TIMEOUT;
+         aError == NS_ERROR_UNKNOWN_HOST || aError == NS_ERROR_NET_TIMEOUT ||
+         aError == NS_ERROR_NOT_CONNECTED ||
+         aError == NS_ERROR_SOCKET_ADDRESS_IN_USE ||
+         aError == NS_ERROR_FILE_ALREADY_EXISTS ||
+         aError == NS_ERROR_NET_INTERRUPT;
 }
 
 [[nodiscard]] nsresult MakeOriginURL(const nsACString& origin,

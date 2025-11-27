@@ -1337,7 +1337,8 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   
-  if (NS_FAILED(reason) && mHttp3BackupTimerCreated && mHttp3BackupTimer) {
+  if (NS_FAILED(reason) && AllowedErrorForTransactionRetry(reason) &&
+      mHttp3BackupTimerCreated && mHttp3BackupTimer) {
     reason = NS_ERROR_NET_RESET;
   }
 
@@ -1392,7 +1393,7 @@ void nsHttpTransaction::Close(nsresult reason) {
   
   
   bool shouldRestartTransactionForHTTPSRR =
-      mOrigConnInfo && AllowedErrorForHTTPSRRFallback(reason) &&
+      mOrigConnInfo && AllowedErrorForTransactionRetry(reason) &&
       !mDoNotRemoveAltSvc;
 
   

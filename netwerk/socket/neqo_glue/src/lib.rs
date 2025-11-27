@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #![expect(clippy::missing_panics_doc, reason = "OK here")]
 
@@ -41,11 +41,11 @@ use neqo_transport::{
     Error as TransportError, Output, OutputBatch, RandomConnectionIdGenerator, StreamId, Version,
 };
 use nserror::{
-    nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED, NS_ERROR_FAILURE,
-    NS_ERROR_FILE_ALREADY_EXISTS, NS_ERROR_ILLEGAL_VALUE, NS_ERROR_INVALID_ARG,
-    NS_ERROR_NET_HTTP3_PROTOCOL_ERROR, NS_ERROR_NET_INTERRUPT, NS_ERROR_NET_RESET,
-    NS_ERROR_NET_TIMEOUT, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_CONNECTED, NS_ERROR_OUT_OF_MEMORY,
-    NS_ERROR_SOCKET_ADDRESS_IN_USE, NS_ERROR_UNEXPECTED, NS_OK, NS_ERROR_DOM_INVALID_HEADER_NAME,
+    nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
+    NS_ERROR_DOM_INVALID_HEADER_NAME, NS_ERROR_FILE_ALREADY_EXISTS, NS_ERROR_ILLEGAL_VALUE,
+    NS_ERROR_INVALID_ARG, NS_ERROR_NET_HTTP3_PROTOCOL_ERROR, NS_ERROR_NET_INTERRUPT,
+    NS_ERROR_NET_RESET, NS_ERROR_NET_TIMEOUT, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_CONNECTED,
+    NS_ERROR_OUT_OF_MEMORY, NS_ERROR_SOCKET_ADDRESS_IN_USE, NS_ERROR_UNEXPECTED, NS_OK,
 };
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
@@ -104,16 +104,16 @@ pub struct NeqoHttp3Conn {
     conn: Http3Client,
     local_addr: SocketAddr,
     refcnt: AtomicRefcnt,
-    
-    
-    
-    
-    
-    
-    
+    /// Socket to use for IO.
+    ///
+    /// When [`None`], NSPR is used for IO.
+    //
+    // Use a `BorrowedSocket` instead of e.g. `std::net::UdpSocket`. The latter
+    // would close the file descriptor on `Drop`. The lifetime of the underlying
+    // OS socket is managed not by `neqo_glue` but `NSPR`.
     socket: Option<neqo_udp::Socket<BorrowedSocket>>,
-    
-    
+    /// Buffered outbound datagram from previous send that failed with
+    /// WouldBlock. To be sent once UDP socket has write-availability again.
     buffered_outbound_datagram: Option<DatagramBatch>,
 
     datagram_segment_size_sent: LocalMemoryDistribution<'static>,
@@ -131,7 +131,7 @@ impl Drop for NeqoHttp3Conn {
     }
 }
 
-
+// Opaque interface to mozilla::net::NetAddr defined in DNS.h
 #[repr(C)]
 pub union NetAddr {
     private: [u8; 0],
@@ -174,7 +174,7 @@ fn enable_zlib_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
     struct ZlibCertDecoder {}
 
     impl CertificateCompressor for ZlibCertDecoder {
-        
+        // RFC 8879
         const ID: u16 = 0x1;
         const NAME: &std::ffi::CStr = c"zlib";
 
@@ -211,7 +211,7 @@ fn enable_zstd_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
     struct ZstdCertDecoder {}
 
     impl CertificateCompressor for ZstdCertDecoder {
-        
+        // RFC 8879
         const ID: u16 = 0x3;
         const NAME: &std::ffi::CStr = c"zstd";
 
@@ -232,7 +232,7 @@ fn enable_zstd_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
                 )
             };
 
-            
+            // ZSTD_isError return 1 if error, 0 otherwise
             if unsafe { ZSTD_isError(output_len) != 0 } {
                 qdebug!("zstd compression failed with {output_len}");
                 return Err(neqo_crypto::Error::CertificateDecoding);
@@ -272,7 +272,7 @@ fn enable_brotli_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
     struct BrotliCertDecoder {}
 
     impl CertificateCompressor for BrotliCertDecoder {
-        
+        // RFC 8879
         const ID: u16 = 0x2;
         const NAME: &std::ffi::CStr = c"brotli";
 
@@ -326,12 +326,12 @@ type BorrowedSocket = std::os::fd::BorrowedFd<'static>;
 type BorrowedSocket = std::os::windows::io::BorrowedSocket<'static>;
 
 impl NeqoHttp3Conn {
-    
-    
-    
-    
-    
-    
+    /// Create a new [`NeqoHttp3Conn`].
+    ///
+    /// Note that [`NeqoHttp3Conn`] works under the assumption that the UDP
+    /// socket of the connection, i.e. the one provided to
+    /// [`NeqoHttp3Conn::new`], does not change throughout the lifetime of
+    /// [`NeqoHttp3Conn`].
     #[expect(
         clippy::too_many_arguments,
         clippy::too_many_lines,
@@ -354,7 +354,7 @@ impl NeqoHttp3Conn {
         pmtud_enabled: bool,
         socket: Option<i64>,
     ) -> Result<RefPtr<Self>, nsresult> {
-        
+        // Nss init.
         init().map_err(|_| NS_ERROR_UNEXPECTED)?;
 
         let socket = socket
@@ -415,18 +415,18 @@ impl NeqoHttp3Conn {
             0 => CongestionControlAlgorithm::NewReno,
             1 => CongestionControlAlgorithm::Cubic,
             _ => {
-                
+                // Unknown preferences; default to Cubic
                 CongestionControlAlgorithm::Cubic
             }
         };
 
         let pmtud_enabled =
-            
+            // Check if PMTUD is explicitly enabled,
             pmtud_enabled
-            
+            // or enabled via pref,
             || static_prefs::pref!("network.http.http3.pmtud")
-            
-            
+            // but disable PMTUD if NSPR is used (socket == None) or
+            // transmitted UDP datagrams might get fragmented by the IP layer.
             && socket.as_ref().map_or(false, |s| !s.may_fragment());
 
         let params = ConnectionParameters::default()
@@ -437,13 +437,13 @@ impl NeqoHttp3Conn {
             .grease(static_prefs::pref!("security.tls.grease_http3_enable"))
             .sni_slicing(static_prefs::pref!("network.http.http3.sni-slicing"))
             .idle_timeout(Duration::from_secs(idle_timeout.into()))
-            
+            // Disabled on OpenBSD. See <https://bugzilla.mozilla.org/show_bug.cgi?id=1952304>.
             .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
-            
+            // MLKEM support is configured further below. By default, disable it.
             .mlkem(false)
             .pmtud(pmtud_enabled);
 
-        
+        // Set a short timeout when fuzzing.
         #[cfg(feature = "fuzzing")]
         if static_prefs::pref!("fuzzing.necko.http3") {
             params = params.idle_timeout(Duration::from_millis(10));
@@ -479,7 +479,7 @@ impl NeqoHttp3Conn {
             && (provider_flags & nsISocketProvider::IS_RETRY) == 0
             && (provider_flags & nsISocketProvider::BE_CONSERVATIVE) == 0
         {
-            
+            // These operations are infallible when conn.state == State::Init.
             conn.set_groups(&[
                 neqo_crypto::TLS_GRP_KEM_MLKEM768X25519,
                 neqo_crypto::TLS_GRP_EC_X25519,
@@ -490,9 +490,9 @@ impl NeqoHttp3Conn {
             .map_err(|_| NS_ERROR_UNEXPECTED)?;
             additional_shares += 1;
         }
-        
-        
-        
+        // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
+        // If additional_shares == 1, send {mlkem768x25519, x25519} or {x25519, p256}.
+        // If additional_shares == 0, send x25519.
         conn.send_additional_key_shares(additional_shares)
             .map_err(|_| NS_ERROR_UNEXPECTED)?;
 
@@ -530,8 +530,8 @@ impl NeqoHttp3Conn {
             ) {
                 Ok(qlog) => conn.set_qlog(qlog),
                 Err(e) => {
-                    
-                    
+                    // Emit warnings but to not return an error if qlog initialization
+                    // fails.
                     qwarn!("failed to create Qlog at {}: {}", qlog_path.display(), e);
                 }
             }
@@ -562,10 +562,10 @@ impl NeqoHttp3Conn {
         use neqo_common::Ecn;
         use neqo_transport::ecn;
 
-        
-        
-        
-        
+        // Metric values must be recorded as integers. Glean does not support
+        // floating point distributions. In order to represent values <1, they
+        // are multiplied by `PRECISION_FACTOR`. A `PRECISION_FACTOR` of
+        // `10_000` allows one to represent fractions down to 0.0001.
         const PRECISION_FACTOR: u64 = 10_000;
         #[allow(clippy::cast_possible_truncation, reason = "see check below")]
         const PRECISION_FACTOR_USIZE: usize = PRECISION_FACTOR as usize;
@@ -672,7 +672,7 @@ impl NeqoHttp3Conn {
             }
         }
 
-        
+        // Ignore connections into the void.
         if stats.packets_rx != 0 {
             if let Ok(loss) =
                 i64::try_from((stats.lost * PRECISION_FACTOR_USIZE) / stats.packets_tx)
@@ -703,19 +703,19 @@ impl NeqoHttp3Conn {
     }
 }
 
-
-
-
+/// # Safety
+///
+/// See [`AtomicRefcnt::inc`].
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_addref(conn: &NeqoHttp3Conn) {
     conn.refcnt.inc();
 }
 
-
-
-
-
-
+/// # Safety
+///
+/// Manually drops a pointer without consuming pointee. The caller needs to
+/// ensure no other referenecs remain. In addition safety conditions of
+/// [`AtomicRefcnt::dec`] apply.
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_release(conn: &NeqoHttp3Conn) {
     let rc = conn.refcnt.dec();
@@ -724,7 +724,7 @@ pub unsafe extern "C" fn neqo_http3conn_release(conn: &NeqoHttp3Conn) {
     }
 }
 
-
+// xpcom::RefPtr support
 unsafe impl RefCounted for NeqoHttp3Conn {
     unsafe fn addref(&self) {
         neqo_http3conn_addref(self);
@@ -734,7 +734,7 @@ unsafe impl RefCounted for NeqoHttp3Conn {
     }
 }
 
-
+// Allocate a new NeqoHttp3Conn object.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_new(
     origin: &nsACString,
@@ -781,7 +781,7 @@ pub extern "C" fn neqo_http3conn_new(
     }
 }
 
-
+// Allocate a new NeqoHttp3Conn object using NSPR for IO.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     origin: &nsACString,
@@ -826,12 +826,12 @@ pub extern "C" fn neqo_http3conn_new_use_nspr_for_io(
     }
 }
 
-
-
-
-
-
-
+/// Process a packet.
+/// packet holds packet data.
+///
+/// # Safety
+///
+/// Use of raw (i.e. unsafe) pointers as arguments.
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_process_input_use_nspr_for_io(
     conn: &mut NeqoHttp3Conn,
@@ -860,12 +860,12 @@ pub struct ProcessInputResult {
     pub bytes_read: u32,
 }
 
-
-
-
-
-
-
+/// Process input, reading incoming datagrams from the socket and passing them
+/// to the Neqo state machine.
+///
+/// # Safety
+///
+/// Marked as unsafe given exposition via FFI i.e. `extern "C"`.
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_process_input(
     conn: &mut NeqoHttp3Conn,
@@ -894,7 +894,7 @@ pub unsafe extern "C" fn neqo_http3conn_process_input(
                 }
             };
 
-            
+            // Attach metric instrumentation to `dgrams` iterator.
             let mut sum = 0;
             let mut segment_count = 0;
             let datagram_segment_size_received = &mut conn.datagram_segment_size_received;
@@ -904,7 +904,7 @@ pub unsafe extern "C" fn neqo_http3conn_process_input(
                 segment_count += 1;
             });
 
-            
+            // Override `dgrams` ECN marks according to prefs.
             let ecn_enabled = static_prefs::pref!("network.http.http3.ecn_report");
             let dgrams = dgrams.map(|mut d| {
                 if !ecn_enabled {
@@ -991,8 +991,8 @@ pub struct ProcessOutputAndSendResult {
     pub bytes_written: u32,
 }
 
-
-
+/// Process output, retrieving outgoing datagrams from the Neqo state machine
+/// and writing them to the socket.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_process_output_and_send(
     conn: &mut NeqoHttp3Conn,
@@ -1050,9 +1050,9 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                             qdebug!("Buffer outbound datagram to be sent once UDP socket has write-availability.");
                             conn.buffered_outbound_datagram = Some(dg);
                             return ProcessOutputAndSendResult {
-                                
-                                
-                                
+                                // Propagate WouldBlock error, thus indicating that
+                                // the UDP socket should be polled for
+                                // write-availability.
                                 result: NS_BASE_STREAM_WOULD_BLOCK,
                                 bytes_written: bytes_written.try_into().unwrap_or(u32::MAX),
                             };
@@ -1062,11 +1062,11 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                         }
                     }
                     Err(e) if e.raw_os_error() == Some(libc::EIO) && dg.num_datagrams() > 1 => {
-                        
-                        
-                        
-                        
-                        
+                        // See following resources for details:
+                        // - <https://github.com/quinn-rs/quinn/blob/93b6d01605147b9763ee1b1b381a6feb9fcd454e/quinn-udp/src/unix.rs#L345-L349>
+                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1989895>
+                        //
+                        // Ideally one would retry at the quinn-udp layer, see <https://github.com/quinn-rs/quinn/issues/2399>.
                         qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Socket will set max_gso_segments to 1. QUIC layer will retry.", dg.num_datagrams());
                     }
                     Err(e) => {
@@ -1079,7 +1079,7 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                 }
                 bytes_written += dg.data().len();
 
-                
+                // Glean metrics
                 conn.datagram_size_sent.accumulate(dg.data().len() as u64);
                 conn.datagram_segments_sent
                     .accumulate(dg.num_datagrams() as u64);
@@ -1143,37 +1143,37 @@ fn is_excluded_header(name: &str) -> bool {
 
 fn parse_headers(headers: &nsACString) -> Result<Vec<Header>, nsresult> {
     let mut hdrs = Vec::new();
-    
-    
-    
-    
+    // this is only used for headers built by Firefox.
+    // Firefox supplies all headers already prepared for sending over http1.
+    // They need to be split into (name, value) pairs where name is a String
+    // and value is a Vec<u8>.
 
     let headers_bytes: &[u8] = headers;
 
-    
-    
-    
+    // Split on either \r or \n. When splitting "\r\n" sequences, this produces
+    // an empty element between them which is filtered out by the is_empty check.
+    // This also handles malformed inputs with bare \r or \n.
     for elem in headers_bytes.split(|&b| b == b'\r' || b == b'\n').skip(1) {
         if elem.is_empty() {
             continue;
         }
         if elem.starts_with(b":") {
-            
-            
-            
+            // colon headers are for http/2 and 3 and this is http/1
+            // input, so that is probably a smuggling attack of some
+            // kind.
             continue;
         }
 
         let colon_pos = match elem.iter().position(|&b| b == b':') {
             Some(pos) => pos,
-            None => continue, 
+            None => continue, // No colon, skip this line
         };
 
         let name_bytes = &elem[..colon_pos];
-        
+        // Safe: if colon is at the end, this yields an empty slice
         let value_bytes = &elem[colon_pos + 1..];
 
-        
+        // Header names must be valid UTF-8
         let name = match str::from_utf8(name_bytes) {
             Ok(n) => n.trim().to_lowercase(),
             Err(_) => return Err(NS_ERROR_DOM_INVALID_HEADER_NAME),
@@ -1183,8 +1183,8 @@ fn parse_headers(headers: &nsACString) -> Result<Vec<Header>, nsresult> {
             continue;
         }
 
-        
-        
+        // Trim leading and trailing optional whitespace (OWS) from value.
+        // Per RFC 9110, OWS is defined as *( SP / HTAB ), i.e., space and tab only.
         let value = value_bytes
             .iter()
             .position(|&b| b != b' ' && b != b'\t')
@@ -1304,9 +1304,9 @@ pub extern "C" fn neqo_http3conn_priority_update(
     }
 }
 
-
-
-
+/// # Safety
+///
+/// Use of raw (i.e. unsafe) pointers as arguments.
 #[no_mangle]
 pub unsafe extern "C" fn neqo_htttp3conn_send_request_body(
     conn: &mut NeqoHttp3Conn,
@@ -1333,10 +1333,10 @@ pub unsafe extern "C" fn neqo_htttp3conn_send_request_body(
 
 const fn crypto_error_code(err: &neqo_crypto::Error) -> u64 {
     match err {
-        
-        
-        
-        
+        // Removed in https://github.com/mozilla/neqo/pull/2912. Don't reuse
+        // code point.
+        //
+        // neqo_crypto::Error::Aead => 1,
         neqo_crypto::Error::CertificateLoading => 2,
         neqo_crypto::Error::CreateSslSocket => 3,
         neqo_crypto::Error::Hkdf => 4,
@@ -1346,10 +1346,10 @@ const fn crypto_error_code(err: &neqo_crypto::Error) -> u64 {
         neqo_crypto::Error::MixedHandshakeMethod => 8,
         neqo_crypto::Error::NoDataAvailable => 9,
         neqo_crypto::Error::Nss { .. } => 10,
-        
-        
-        
-        
+        // Removed in https://github.com/mozilla/neqo/pull/2912. Don't reuse
+        // code point.
+        //
+        // neqo_crypto::Error::Overrun => 11,
         neqo_crypto::Error::SelfEncrypt => 12,
         neqo_crypto::Error::TimeTravel => 13,
         neqo_crypto::Error::UnsupportedCipher => 14,
@@ -1364,9 +1364,9 @@ const fn crypto_error_code(err: &neqo_crypto::Error) -> u64 {
     }
 }
 
-
-
-
+// This is only used for telemetry. Therefore we only return error code
+// numbers and do not label them. Recording telemetry is easier with a
+// number.
 #[repr(C)]
 pub enum CloseError {
     TransportInternalError,
@@ -1439,7 +1439,7 @@ impl From<TransportError> for CloseError {
     }
 }
 
-
+// Keep in sync with `netwerk/metrics.yaml` `http_3_connection_close_reason` metric labels.
 #[cfg(not(target_os = "android"))]
 const fn transport_error_to_glean_label(error: &TransportError) -> &'static str {
     match error {
@@ -1505,7 +1505,7 @@ impl From<neqo_transport::CloseReason> for CloseError {
     }
 }
 
-
+// Reset a stream with streamId.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_cancel_fetch(
     conn: &mut NeqoHttp3Conn,
@@ -1518,7 +1518,7 @@ pub extern "C" fn neqo_http3conn_cancel_fetch(
     }
 }
 
-
+// Reset a stream with streamId.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_reset_stream(
     conn: &mut NeqoHttp3Conn,
@@ -1549,7 +1549,7 @@ pub extern "C" fn neqo_http3conn_stream_stop_sending(
     }
 }
 
-
+// Close sending side of a stream with stream_id
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_close_stream(
     conn: &mut NeqoHttp3Conn,
@@ -1564,8 +1564,8 @@ pub extern "C" fn neqo_http3conn_close_stream(
     }
 }
 
-
-
+// WebTransport streams can be unidirectional and bidirectional.
+// It is mapped to and from neqo's StreamType enum.
 #[repr(C)]
 pub enum WebTransportStreamType {
     BiDi,
@@ -1727,11 +1727,11 @@ impl ConnectUdpEventExternal {
 
 #[repr(C)]
 pub enum Http3Event {
-    
+    /// A request stream has space for more data to be sent.
     DataWritable {
         stream_id: u64,
     },
-    
+    /// A server has sent a `STOP_SENDING` frame.
     StopSending {
         stream_id: u64,
         error: u64,
@@ -1741,31 +1741,31 @@ pub enum Http3Event {
         fin: bool,
         interim: bool,
     },
-    
+    /// New bytes available for reading.
     DataReadable {
         stream_id: u64,
     },
-    
+    /// Peer reset the stream.
     Reset {
         stream_id: u64,
         error: u64,
         local: bool,
     },
-    
+    /// A `PushPromise`
     PushPromise {
         push_id: u64,
         request_stream_id: u64,
     },
-    
+    /// A push response headers are ready.
     PushHeaderReady {
         push_id: u64,
         fin: bool,
     },
-    
+    /// New bytes are available on a push stream for reading.
     PushDataReadable {
         push_id: u64,
     },
-    
+    /// A push has been canceled.
     PushCanceled {
         push_id: u64,
     },
@@ -1785,7 +1785,7 @@ pub enum Http3Event {
         error: CloseError,
     },
     ResumptionToken {
-        expire_in: u64, 
+        expire_in: u64, // microseconds
     },
     EchFallbackAuthenticationNeeded,
     WebTransport(WebTransportEventExternal),
@@ -1918,9 +1918,9 @@ pub extern "C" fn neqo_http3conn_event(
             Http3ClientEvent::AuthenticationNeeded => Http3Event::AuthenticationNeeded,
             Http3ClientEvent::ZeroRttRejected => Http3Event::ZeroRttRejected,
             Http3ClientEvent::ResumptionToken(token) => {
-                
-                
-                
+                // expiration_time time is Instant, transform it into microseconds it will
+                // be valid for. Necko code will add the value to PR_Now() to get the expiration
+                // time in PRTime.
                 if token.expiration_time() > Instant::now() {
                     let e = (token.expiration_time() - Instant::now()).as_micros();
                     u64::try_from(e).map_or(Http3Event::NoEvent, |expire_in| {
@@ -1996,11 +1996,11 @@ pub extern "C" fn neqo_http3conn_event(
     NS_OK
 }
 
-
-
-
-
-
+// Read response data into buf.
+///
+/// # Safety
+///
+/// Marked as unsafe given exposition via FFI i.e. `extern "C"`.
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_read_response_data(
     conn: &mut NeqoHttp3Conn,
@@ -2146,29 +2146,29 @@ pub extern "C" fn neqo_http3conn_is_zero_rtt(conn: &mut NeqoHttp3Conn) -> bool {
 #[repr(C)]
 #[derive(Default)]
 pub struct Http3Stats {
-    
+    /// Total packets received, including all the bad ones.
     pub packets_rx: usize,
-    
+    /// Duplicate packets received.
     pub dups_rx: usize,
-    
+    /// Dropped packets or dropped garbage.
     pub dropped_rx: usize,
-    
+    /// The number of packet that were saved for later processing.
     pub saved_datagrams: usize,
-    
+    /// Total packets sent.
     pub packets_tx: usize,
-    
+    /// Total number of packets that are declared lost.
     pub lost: usize,
-    
+    /// Late acknowledgments, for packets that were declared lost already.
     pub late_ack: usize,
-    
-    
+    /// Acknowledgments for packets that contained data that was marked
+    /// for retransmission when the PTO timer popped.
     pub pto_ack: usize,
-    
-    
+    /// Count PTOs. Single PTOs, 2 PTOs in a row, 3 PTOs in row, etc. are counted
+    /// separately.
     pub pto_counts: [usize; 16],
-    
+    /// The count of WouldBlock errors encountered during receive operations on the UDP socket.
     pub would_block_rx: usize,
-    
+    /// The count of WouldBlock errors encountered during transmit operations on the UDP socket.
     pub would_block_tx: usize,
 }
 
@@ -2376,9 +2376,9 @@ pub extern "C" fn neqo_http3conn_webtransport_max_datagram_size(
         })
 }
 
-
-
-
+/// # Safety
+///
+/// Use of raw (i.e. unsafe) pointers as arguments.
 #[no_mangle]
 pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendorder(
     conn: &mut NeqoHttp3Conn,
@@ -2394,35 +2394,36 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendorder(
     }
 }
 
-
-
-
-
-
-
-
-
-
+/// Convert a [`std::io::Error`] into a [`nsresult`].
+///
+/// Note that this conversion is specific to `neqo_glue`, i.e. does not aim to
+/// implement a general-purpose conversion.
+/// Treat NS_ERROR_NET_RESET as a generic retryable error for the upper layer.
+///
+/// Modeled after
+/// [`ErrorAccordingToNSPR`](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#164-168).
+//
+// TODO: Use `non_exhaustive_omitted_patterns_lint` [once stablized](https://github.com/rust-lang/rust/issues/89554).
 fn into_nsresult(e: &io::Error) -> nsresult {
     #[expect(clippy::match_same_arms, reason = "It's cleaner this way.")]
     match e.kind() {
         io::ErrorKind::ConnectionRefused => NS_ERROR_CONNECTION_REFUSED,
         io::ErrorKind::ConnectionReset => NS_ERROR_NET_RESET,
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // > We lump the following NSPR codes in with PR_CONNECT_REFUSED_ERROR. We
+        // > could get better diagnostics by adding distinct XPCOM error codes for
+        // > each of these, but there are a lot of places in Gecko that check
+        // > specifically for NS_ERROR_CONNECTION_REFUSED, all of which would need to
+        // > be checked.
+        //
+        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#164-168>
+        //
+        // TODO: `HostUnreachable` and `NetworkUnreachable` available since Rust
+        // v1.83.0 only <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
+        // io::ErrorKind::HostUnreachable | io::ErrorKind::NetworkUnreachable |
         io::ErrorKind::AddrNotAvailable => NS_ERROR_CONNECTION_REFUSED,
 
-        
+        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#156>
         io::ErrorKind::ConnectionAborted => NS_ERROR_NET_RESET,
 
         io::ErrorKind::NotConnected => NS_ERROR_NOT_CONNECTED,
@@ -2430,72 +2431,64 @@ fn into_nsresult(e: &io::Error) -> nsresult {
         io::ErrorKind::AlreadyExists => NS_ERROR_FILE_ALREADY_EXISTS,
         io::ErrorKind::WouldBlock => NS_BASE_STREAM_WOULD_BLOCK,
 
-        
-        
-        
+        // TODO: available since Rust v1.83.0 only
+        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.NotADirectory>
+        // io::ErrorKind::NotADirectory => NS_ERROR_FILE_NOT_DIRECTORY,
 
-        
-        
-        
+        // TODO: available since Rust v1.83.0 only
+        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.IsADirectory>
+        // io::ErrorKind::IsADirectory => NS_ERROR_FILE_IS_DIRECTORY,
 
-        
-        
-        
+        // TODO: available since Rust v1.83.0 only
+        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.DirectoryNotEmpty>
+        // io::ErrorKind::DirectoryNotEmpty => NS_ERROR_FILE_DIR_NOT_EMPTY,
 
-        
-        
-        
+        // TODO: available since Rust v1.83.0 only
+        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.ReadOnlyFilesystem>
+        // io::ErrorKind::ReadOnlyFilesystem => NS_ERROR_FILE_READ_ONLY,
 
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        io::ErrorKind::InvalidInput => NS_ERROR_FAILURE,
-
+        // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.FilesystemLoop>.
+        // io::ErrorKind::FilesystemLoop => NS_ERROR_FILE_UNRESOLVABLE_SYMLINK,
         io::ErrorKind::TimedOut => NS_ERROR_NET_TIMEOUT,
         io::ErrorKind::Interrupted => NS_ERROR_NET_INTERRUPT,
 
-        
+        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#160-161>
         io::ErrorKind::UnexpectedEof => NS_ERROR_NET_INTERRUPT,
 
         io::ErrorKind::OutOfMemory => NS_ERROR_OUT_OF_MEMORY,
 
-        
-        
+        // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.InProgress>.
+        // io::ErrorKind::InProgress => NS_ERROR_IN_PROGRESS,
 
-        
-        
+        // The errors below are either not relevant for `neqo_glue`, or not
+        // defined as `nsresult`.
         io::ErrorKind::NotFound
         | io::ErrorKind::PermissionDenied
         | io::ErrorKind::BrokenPipe
         | io::ErrorKind::InvalidData
         | io::ErrorKind::WriteZero
         | io::ErrorKind::Unsupported
-        | io::ErrorKind::Other => NS_ERROR_FAILURE,
+        | io::ErrorKind::Other => NS_ERROR_NET_RESET,
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // TODO: available since Rust v1.83.0 only
+        // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
+        // io::ErrorKind::NotSeekable
+        // | io::ErrorKind::FilesystemQuotaExceeded
+        // | io::ErrorKind::FileTooLarge
+        // | io::ErrorKind::ResourceBusy
+        // | io::ErrorKind::ExecutableFileBusy
+        // | io::ErrorKind::Deadlock
+        // | io::ErrorKind::TooManyLinks
+        // | io::ErrorKind::ArgumentListTooLong
+        // | io::ErrorKind::NetworkDown
+        // | io::ErrorKind::StaleNetworkFileHandle
+        // | io::ErrorKind::StorageFull => NS_ERROR_NET_RESET,
 
-        
-        
-        _ => NS_ERROR_FAILURE,
+        // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
+        // io::ErrorKind::CrossesDevices
+        // | io::ErrorKind::InvalidFilename
+        // | io::ErrorKind::InvalidInput => NS_ERROR_NET_RESET,
+        _ => NS_ERROR_NET_RESET,
     }
 }
 
@@ -2529,7 +2522,7 @@ pub unsafe extern "C" fn neqo_encoder_release(encoder: &NeqoEncoder) {
     }
 }
 
-
+// xpcom::RefPtr support
 unsafe impl RefCounted for NeqoEncoder {
     unsafe fn addref(&self) {
         neqo_encoder_addref(self);
@@ -2627,7 +2620,7 @@ pub unsafe extern "C" fn neqo_decoder_release(decoder: &NeqoDecoder) {
     }
 }
 
-
+// xpcom::RefPtr support
 unsafe impl RefCounted for NeqoDecoder {
     unsafe fn addref(&self) {
         neqo_decoder_addref(self);
@@ -2705,8 +2698,8 @@ pub unsafe extern "C" fn neqo_decoder_offset(decoder: &mut NeqoDecoder) -> u64 {
     decoder.offset() as u64
 }
 
-
-
+// Test function called from C++ gtest
+// Callback signature: fn(user_data, name_ptr, name_len, value_ptr, value_len)
 type HeaderCallback = extern "C" fn(*mut c_void, *const u8, usize, *const u8, usize);
 
 #[no_mangle]
