@@ -69,6 +69,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StartupTimeline.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -4255,17 +4256,9 @@ bool PresShell::IsSafeToFlush() const {
   if (mIsReflowing || mChangeNestCount || mIsDestroying) {
     return false;
   }
-
   
-  if (nsViewManager* viewManager = GetViewManager()) {
-    bool isPainting = false;
-    viewManager->IsPainting(isPainting);
-    if (isPainting) {
-      return false;
-    }
-  }
-
-  return true;
+  
+  return !mIsPainting;
 }
 
 void PresShell::NotifyFontFaceSetOnRefresh() {
@@ -4481,12 +4474,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     
     
     TriggerPendingScrollTimelineAnimations(mDocument);
-  }
-
-  if (flushType >= FlushType::Layout) {
-    if (!mIsDestroying) {
-      viewManager->UpdateWidgetGeometry();
-    }
   }
 }
 
@@ -12197,10 +12184,13 @@ void PresShell::ResetVisualViewportSize() {
 }
 
 void PresShell::SetNeedsWindowPropertiesSync() {
-  mNeedsWindowPropertiesSync = true;
-  if (mViewManager) {
-    mViewManager->PostPendingUpdate();
+  if (XRE_IsContentProcess() || !IsRoot()) {
+    
+    
+    return;
   }
+  mNeedsWindowPropertiesSync = true;
+  SchedulePaint();
 }
 
 bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,
@@ -12478,8 +12468,42 @@ PresShell::WindowSizeConstraints PresShell::GetWindowSizeConstraints() {
   return {minSize, maxSize};
 }
 
-void PresShell::SyncWindowProperties() {
-  if (!mNeedsWindowPropertiesSync || XRE_IsContentProcess()) {
+void PresShell::PaintSynchronously() {
+  MOZ_ASSERT(!mIsPainting, "re-entrant paint?");
+  if (IsNeverPainting() || IsPaintingSuppressed() || !IsVisible() ||
+      MOZ_UNLIKELY(NS_WARN_IF(mIsPainting))) {
+    return;
+  }
+  RefPtr widget = GetOwnWidget();
+  if (NS_WARN_IF(!widget)) {
+    
+    
+    return;
+  }
+  MOZ_ASSERT(widget->IsTopLevelWidget());
+  if (!widget->NeedsPaint()) {
+    return;
+  }
+
+  
+  
+  WillPaint();
+
+  if (MOZ_UNLIKELY(mIsDestroying)) {
+    return;
+  }
+
+  mViewManager->FlushDelayedResize();
+
+  mIsPainting = true;
+  auto cleanUpPaintingBit = MakeScopeExit([&] { mIsPainting = false; });
+  nsAutoScriptBlocker blocker;
+  RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
+  PaintAndRequestComposite(GetRootFrame(), renderer, PaintFlags::None);
+}
+
+void PresShell::SyncWindowPropertiesIfNeeded() {
+  if (!mNeedsWindowPropertiesSync) {
     return;
   }
 
