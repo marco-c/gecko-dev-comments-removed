@@ -37,6 +37,22 @@ function optional_ev(...args) {
 }
 
 async function jsCacheContentTask(test, item) {
+  const defaultSkippedEvents = test.skippedEvents ?? [
+    
+    "compile:main thread",
+    
+    
+    "memorycache:invalidate",
+    
+    
+    
+    "diskcache:noschedule",
+  ];
+  const nonSkippedEvents = test.nonSkippedEvents ?? [];
+  const skippedEvents = defaultSkippedEvents.filter(
+    ev => !nonSkippedEvents.includes(ev)
+  );
+
   function match(param, event) {
     if (event.event !== param.event) {
       return false;
@@ -102,21 +118,12 @@ async function jsCacheContentTask(test, item) {
       param[m[1]] = m[2];
     }
 
-    if (param.event === "compile:main thread") {
-      return;
-    }
-
     if (consumeIfMatched(param, item.events)) {
       dump("@@@ Got expected event: " + data + "\n");
       if (item.events.length === 0) {
         resolve();
       }
-    } else if (param.event === "diskcache:noschedule") {
-      
-      
-      
-      
-      
+    } else if (skippedEvents.includes(param.event)) {
       dump("@@@ Ignoring: " + data + "\n");
     } else {
       dump("@@@ Got unexpected event: " + data + "\n");
