@@ -144,6 +144,8 @@ class LoadedScript : public nsIMemoryReporter {
   using MaybeSourceText =
       mozilla::MaybeOneOf<SourceText<char16_t>, SourceText<Utf8Unit>>;
 
+  
+
   bool IsUnknownDataType() const { return mDataType == DataType::eUnknown; }
   bool IsTextSource() const { return mDataType == DataType::eTextSource; }
   bool IsSource() const { return IsTextSource(); }
@@ -151,6 +153,8 @@ class LoadedScript : public nsIMemoryReporter {
     return mDataType == DataType::eSerializedStencil;
   }
   bool IsCachedStencil() const { return mDataType == DataType::eCachedStencil; }
+
+  
 
   void SetUnknownDataType() {
     mDataType = DataType::eUnknown;
@@ -180,6 +184,8 @@ class LoadedScript : public nsIMemoryReporter {
   bool IsUTF8Text() const {
     return mScriptData->is<ScriptTextBuffer<Utf8Unit>>();
   }
+
+  
 
   template <typename Unit>
   const ScriptTextBuffer<Unit>& ScriptText() const {
@@ -221,48 +227,67 @@ class LoadedScript : public nsIMemoryReporter {
     mReceivedScriptTextLength = aLength;
   }
 
-  bool CanHaveBytecode() const {
-    return IsSerializedStencil() || IsSource() || IsCachedStencil();
+  
+  
+  
+
+  
+
+  bool CanHaveSRIOnly() const { return IsSource() || IsCachedStencil(); }
+
+  bool HasSRI() {
+    MOZ_ASSERT(CanHaveSRIOnly());
+    return !mSRIAndBytecode.empty();
   }
 
-  TranscodeBuffer& SRIAndBytecode() {
-    
-    
-    
-    MOZ_ASSERT(CanHaveBytecode());
+  TranscodeBuffer& SRI() {
+    MOZ_ASSERT(CanHaveSRIOnly());
+    return mSRIAndBytecode;
+  }
+
+  void DropSRI() {
+    MOZ_ASSERT(CanHaveSRIOnly());
+    mSRIAndBytecode.clearAndFree();
+  }
+
+  
+
+  bool CanHaveSRIAndSerializedStencil() const { return IsSerializedStencil(); }
+
+  TranscodeBuffer& SRIAndSerializedStencil() {
+    MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
     return mSRIAndBytecode;
   }
   TranscodeRange Bytecode() const {
-    MOZ_ASSERT(IsSerializedStencil());
+    MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
     const auto& bytecode = mSRIAndBytecode;
     auto offset = mBytecodeOffset;
     return TranscodeRange(bytecode.begin() + offset,
                           bytecode.length() - offset);
   }
 
+  
+
   size_t GetSRILength() const {
-    MOZ_ASSERT(CanHaveBytecode());
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     return mBytecodeOffset;
   }
   void SetSRILength(size_t sriLength) {
-    MOZ_ASSERT(CanHaveBytecode());
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     mBytecodeOffset = AlignTranscodingBytecodeOffset(sriLength);
   }
 
+  bool HasNoSRIOrSRIAndSerializedStencil() const {
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
+    return mSRIAndBytecode.empty();
+  }
+
   void DropBytecode() {
-    MOZ_ASSERT(CanHaveBytecode());
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     mSRIAndBytecode.clearAndFree();
   }
 
-  bool HasSRI() {
-    MOZ_ASSERT(IsSource() || IsCachedStencil());
-    return !mSRIAndBytecode.empty();
-  }
-
-  void DropSRI() {
-    MOZ_ASSERT(IsSource() || IsCachedStencil());
-    mSRIAndBytecode.clearAndFree();
-  }
+  
 
   bool HasStencil() const { return mStencil; }
 
@@ -281,6 +306,8 @@ class LoadedScript : public nsIMemoryReporter {
   void ClearStencil() { mStencil = nullptr; }
 
   
+
+  
   
   bool HasDiskCacheReference() const { return !!mCacheInfo; }
 
@@ -293,6 +320,8 @@ class LoadedScript : public nsIMemoryReporter {
       DropSRI();
     }
   }
+
+  
 
   
 
@@ -521,8 +550,13 @@ class LoadedScriptDelegate {
 
   void ClearScriptText() { GetLoadedScript()->ClearScriptText(); }
 
-  TranscodeBuffer& SRIAndBytecode() {
-    return GetLoadedScript()->SRIAndBytecode();
+  bool HasNoSRIOrSRIAndSerializedStencil() const {
+    return GetLoadedScript()->HasNoSRIOrSRIAndSerializedStencil();
+  }
+
+  TranscodeBuffer& SRI() { return GetLoadedScript()->SRI(); }
+  TranscodeBuffer& SRIAndSerializedStencil() {
+    return GetLoadedScript()->SRIAndSerializedStencil();
   }
   TranscodeRange Bytecode() const { return GetLoadedScript()->Bytecode(); }
 
