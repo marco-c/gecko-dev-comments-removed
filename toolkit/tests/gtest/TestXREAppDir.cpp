@@ -30,8 +30,8 @@ using namespace mozilla;
 
 #if defined(XP_WIN)
 #  include <windows.h>
-#  include <Shlobj.h>
-#  include <KnownFolders.h>  
+#  include <shlobj.h>
+#  include <knownfolders.h>  
 #endif
 
 #include "mozilla/XREAppData.h"
