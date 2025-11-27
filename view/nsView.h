@@ -193,19 +193,6 @@ class nsView final : public nsIWidgetListener {
 #endif  
 
   
-
-
-  bool IsRoot() const;
-
-  static LayoutDeviceIntRect CalcWidgetBounds(
-      const nsRect& aBounds, int32_t aAppUnitsPerDevPixel,
-      nsIFrame* aParentFrame, nsIWidget* aThisWidget,
-      mozilla::widget::WindowType, mozilla::widget::TransparencyMode);
-
-  LayoutDeviceIntRect CalcWidgetBounds(mozilla::widget::WindowType,
-                                       mozilla::widget::TransparencyMode);
-
-  
   mozilla::PresShell* GetPresShell() override;
   nsView* GetView() override { return this; }
   bool IsPaintSuppressed() const override {
