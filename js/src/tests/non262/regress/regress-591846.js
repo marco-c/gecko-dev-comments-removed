@@ -8,13 +8,16 @@
 
 
 
+
+
 /x/.test('x');
 
 var d = Object.getOwnPropertyDescriptor(RegExp, "leftContext");
 assertEq(d.set, undefined);
 assertEq(typeof d.get, "function");
-assertEq(d.enumerable, true);
-assertEq(d.configurable, false);
+let regexpLegacyFeatures = getPrefValue('experimental.legacy_regexp');
+assertEq(d.enumerable, !regexpLegacyFeatures);
+assertEq(d.configurable, regexpLegacyFeatures);
 assertEq(d.get.call(RegExp), "");
 
 reportCompare(0, 0, "ok");
