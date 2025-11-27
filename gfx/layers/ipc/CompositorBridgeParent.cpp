@@ -32,7 +32,6 @@
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  
-#include "mozilla/layers/APZInputBridgeParent.h"   
 #include "mozilla/layers/APZSampler.h"             
 #include "mozilla/layers/APZThreadUtils.h"         
 #include "mozilla/layers/APZUpdater.h"             
@@ -382,20 +381,6 @@ void CompositorBridgeParent::StopAndClearResources() {
   
   
   mAnimationStorage = nullptr;
-}
-
-mozilla::ipc::IPCResult CompositorBridgeParent::RecvInitAPZInputBridge(
-    Endpoint<PAPZInputBridgeParent>&& aEndpoint) {
-  NS_DispatchToMainThread(NewRunnableFunction(
-      "APZInputBridgeParent::Create", &APZInputBridgeParent::Create,
-      mRootLayerTreeID, std::move(aEndpoint)));
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult CompositorBridgeParent::RecvInitUiCompositorController(
-    Endpoint<PUiCompositorControllerParent>&& aEndpoint) {
-  UiCompositorControllerParent::Start(mRootLayerTreeID, std::move(aEndpoint));
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvWillClose() {
