@@ -4,8 +4,11 @@
 
 use crate::{
     errors::IPCError,
-    platform::windows::{create_manual_reset_event, server_addr, OverlappedOperation},
-    IPCConnector, Pid,
+    platform::{
+        windows::{create_manual_reset_event, server_addr, OverlappedOperation},
+        PlatformError,
+    },
+    IPCConnector, IPCListenerError, Pid,
 };
 
 use std::{
@@ -39,9 +42,10 @@ pub struct IPCListener {
 }
 
 impl IPCListener {
-    pub(crate) fn new(server_addr: CString) -> Result<IPCListener, IPCError> {
-        let pipe = create_named_pipe(&server_addr,  true)?;
-        let event = create_manual_reset_event()?;
+    pub(crate) fn new(server_addr: CString) -> Result<IPCListener, IPCListenerError> {
+        let pipe = create_named_pipe(&server_addr,  true)
+            .map_err(IPCListenerError::PipeCreationFailure)?;
+        let event = create_manual_reset_event().map_err(IPCListenerError::AcceptError)?;
 
         Ok(IPCListener {
             server_addr,
@@ -59,15 +63,15 @@ impl IPCListener {
         &self.server_addr
     }
 
-    pub(crate) fn listen(&mut self) -> Result<(), IPCError> {
-        self.overlapped = Some(OverlappedOperation::listen(
-            &self.handle,
-            self.event_raw_handle(),
-        )?);
+    pub(crate) fn listen(&mut self) -> Result<(), IPCListenerError> {
+        self.overlapped = Some(
+            OverlappedOperation::listen(&self.handle, self.event_raw_handle())
+                .map_err(IPCListenerError::ListenError)?,
+        );
         Ok(())
     }
 
-    pub fn accept(&mut self) -> Result<IPCConnector, IPCError> {
+    pub fn accept(&mut self) -> Result<IPCConnector, IPCListenerError> {
         let connected_pipe = {
             
             
@@ -76,8 +80,13 @@ impl IPCListener {
                 .overlapped
                 .take()
                 .expect("Accepting a connection without listening first");
-            overlapped.accept(self.handle.as_raw_handle() as HANDLE)?;
-            let new_pipe = create_named_pipe(&self.server_addr,  false)?;
+            overlapped
+                .accept(self.handle.as_raw_handle() as HANDLE)
+                .map_err(IPCListenerError::AcceptError)?;
+
+            let new_pipe = create_named_pipe(&self.server_addr,  false)
+                .map_err(IPCListenerError::PipeCreationFailure)?;
+
             std::mem::replace(&mut self.handle, Rc::new(new_pipe))
         };
 
@@ -88,7 +97,9 @@ impl IPCListener {
 
         
         
-        IPCConnector::from_ancillary(Rc::<OwnedHandle>::try_unwrap(connected_pipe).unwrap())
+        Ok(IPCConnector::from_ancillary(
+            Rc::<OwnedHandle>::try_unwrap(connected_pipe).unwrap(),
+        )?)
     }
 
     
@@ -101,13 +112,13 @@ impl IPCListener {
 
     
     
-    pub fn deserialize(string: &CStr, pid: Pid) -> Result<IPCListener, IPCError> {
+    pub fn deserialize(string: &CStr, pid: Pid) -> Result<IPCListener, IPCListenerError> {
         let server_addr = server_addr(pid);
         let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
         let handle = usize::from_str(string).map_err(|_e| IPCError::ParseError)?;
         
         let handle = unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) };
-        let event = create_manual_reset_event()?;
+        let event = create_manual_reset_event().map_err(IPCListenerError::CreationError)?;
 
         let mut listener = IPCListener {
             server_addr,
@@ -129,7 +140,10 @@ impl IPCListener {
 
 unsafe impl Send for IPCListener {}
 
-fn create_named_pipe(server_addr: &CStr, first_instance: bool) -> Result<OwnedHandle, IPCError> {
+fn create_named_pipe(
+    server_addr: &CStr,
+    first_instance: bool,
+) -> Result<OwnedHandle, PlatformError> {
     const PIPE_BUFFER_SIZE: u32 = 4096;
 
     let open_mode = PIPE_ACCESS_DUPLEX
@@ -162,7 +176,7 @@ fn create_named_pipe(server_addr: &CStr, first_instance: bool) -> Result<OwnedHa
     };
 
     if pipe == INVALID_HANDLE_VALUE {
-        return Err(IPCError::System(unsafe { GetLastError() }));
+        return Err(PlatformError::CreatePipeFailure(unsafe { GetLastError() }));
     }
 
     

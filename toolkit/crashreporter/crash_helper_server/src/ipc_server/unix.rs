@@ -3,17 +3,13 @@
 
 
 use crash_helper_common::{errors::IPCError, ignore_eintr, IPCEvent};
-use nix::{
-    errno::Errno,
-    poll::{poll, PollFd, PollFlags, PollTimeout},
-};
+use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
 
 use super::IPCServer;
 
 impl IPCServer {
     pub fn wait_for_events(&mut self) -> Result<Vec<IPCEvent>, IPCError> {
-        let mut pollfds = Vec::with_capacity(1 + self.connections.len());
-        pollfds.push(PollFd::new(self.listener.as_raw_ref(), PollFlags::POLLIN));
+        let mut pollfds = Vec::with_capacity(self.connections.len());
         pollfds.extend(
             self.connections.iter().map(|connection| {
                 PollFd::new(connection.connector.as_raw_ref(), PollFlags::POLLIN)
@@ -21,8 +17,8 @@ impl IPCServer {
         );
 
         let mut events = Vec::<IPCEvent>::new();
-        let mut num_events =
-            ignore_eintr!(poll(&mut pollfds, PollTimeout::NONE)).map_err(IPCError::System)?;
+        let mut num_events = ignore_eintr!(poll(&mut pollfds, PollTimeout::NONE))
+            .map_err(|errno| IPCError::WaitingFailure(Some(errno)))?;
 
         for (index, pollfd) in pollfds.iter().enumerate() {
             
@@ -31,39 +27,27 @@ impl IPCServer {
             let revents = pollfd.revents().unwrap();
 
             if revents.contains(PollFlags::POLLHUP) {
-                if index > 0 {
-                    events.push(IPCEvent::Disconnect(index - 1));
-                    
-                    
-                    
-                    
-                    
-                    
-                    continue;
-                } else {
-                    
-                    
-                    return Err(IPCError::System(Errno::EFAULT));
-                }
+                events.push(IPCEvent::Disconnect(index));
+                
+                
+                
+                
+                
+                
+                continue;
             }
 
             if revents.contains(PollFlags::POLLIN) {
-                if index == 0 {
-                    if let Ok(connector) = self.listener.accept() {
-                        events.push(IPCEvent::Connect(connector));
-                    }
-                } else {
+                
+                
+                let connection = unsafe { self.connections.get_unchecked(index) };
+                let header = connection.connector.recv_header();
+                if let Ok(header) = header {
                     
                     
-                    let connection = unsafe { self.connections.get_unchecked(index - 1) };
-                    let header = connection.connector.recv_header();
-                    if let Ok(header) = header {
-                        
-                        
-                        
-                        
-                        events.push(IPCEvent::Header(index - 1, header));
-                    }
+                    
+                    
+                    events.push(IPCEvent::Header(index, header));
                 }
             }
 
