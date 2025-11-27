@@ -216,15 +216,14 @@ class nsWindow final : public nsIWidget {
 
   
   
-  void RecomputeBounds(bool aMayChangeCsdMargin, bool aScaleChange = false);
+  void RecomputeBounds(bool aScaleChange = false);
 #ifdef MOZ_X11
-  void RecomputeBoundsX11(bool aMayChangeCsdMargin);
+  void RecomputeBoundsX11();
 #endif
 #ifdef MOZ_WAYLAND
-  void RecomputeBoundsWayland(bool aMayChangeCsdMargin);
+  void RecomputeBoundsWayland();
 #endif
-  enum class MayChangeCsdMargin : bool { No = false, Yes };
-  void SchedulePendingBounds(MayChangeCsdMargin);
+  void SchedulePendingBounds();
   void MaybeRecomputeBounds();
 
   void SetCursor(const Cursor&) override;
@@ -730,12 +729,6 @@ class nsWindow final : public nsIWidget {
   bool mHasMappedToplevel : 1;
   bool mPanInProgress : 1;
   bool mPendingBoundsChange : 1;
-  
-  
-  
-  
-  
-  bool mPendingBoundsChangeMayChangeCsdMargin : 1;
   
   bool mTitlebarBackdropState : 1;
   bool mAlwaysOnTop : 1;
