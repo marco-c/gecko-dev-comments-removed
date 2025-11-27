@@ -1388,7 +1388,7 @@ void nsPresContext::SetFullZoom(float aZoom) {
   
   
   
-  if (MOZ_UNLIKELY(!std::isfinite(aZoom) || aZoom <= 0.0f)) {
+  if (MOZ_UNLIKELY(!std::isfinite(aZoom) || aZoom < 1e-6f)) {
     aZoom = 1.0f;
   }
 
