@@ -279,6 +279,11 @@ static sk_sp<SkImage> GetSkImageForSurface(SourceSurface* aSurface,
     releaseProc = ReleaseTemporarySurface;
   }
 
+  if (!map.mData || map.mStride <= 0) {
+    gfxWarning() << "Failed mapping DataSourceSurface for Skia image";
+    return nullptr;
+  }
+
   DataSourceSurface* surf = dataSurface.forget().take();
 
   
