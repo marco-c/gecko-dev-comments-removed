@@ -119,16 +119,6 @@ class nsNavBookmarks final : public nsINavBookmarksService,
 
 
 
-  nsresult FetchItemInfo(const nsCString& aGUID, BookmarkData& _bookmark);
-
-  
-
-
-
-
-
-
-
   void NotifyItemVisited(const ItemVisitData& aData);
 
   static const int32_t kGetChildrenIndex_Guid;
