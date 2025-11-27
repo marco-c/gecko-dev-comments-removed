@@ -551,18 +551,8 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   
-  
-  if (IsComposing()) {
-    
-    
-    
-    if (!StaticPrefs::dom_keyboardevent_dispatch_during_composition() ||
-        aMessage == eKeyPress) {
-      return false;
-    }
-    
-    
-    
+  if (IsComposing() && aMessage == eKeyPress) {
+    return false;
   }
 
   WidgetKeyboardEvent keyEvent(true, aMessage, mWidget);
