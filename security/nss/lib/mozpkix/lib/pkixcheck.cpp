@@ -746,6 +746,15 @@ MatchEKU(Reader& value, KeyPurposeId requiredEKU,
   static const uint8_t code  [] = { (40*1)+3, 6, 1, 5, 5, 7, 3, 3 };
   static const uint8_t email [] = { (40*1)+3, 6, 1, 5, 5, 7, 3, 4 };
   static const uint8_t ocsp  [] = { (40*1)+3, 6, 1, 5, 5, 7, 3, 9 };
+  
+  
+  static const uint8_t documentSigning[] = { (40*1)+3, 6, 1, 5, 5, 7, 3, 36 };
+  
+  
+  static const uint8_t documentSigningAdobe[] = { (40*1)+2, 128+6, 72, 128+6, 128+119, 47, 1, 1, 5 };
+  
+  
+  static const uint8_t documentSigningMicrosoft[] = { (40*1)+3, 6, 1, 4, 1, 128+2, 55, 10, 3, 12 };
 
   bool match = false;
 
@@ -769,6 +778,18 @@ MatchEKU(Reader& value, KeyPurposeId requiredEKU,
 
       case KeyPurposeId::id_kp_OCSPSigning:
         match = value.MatchRest(ocsp);
+        break;
+
+      case KeyPurposeId::id_kp_documentSigning:
+        match = value.MatchRest(documentSigning);
+        break;
+
+      case KeyPurposeId::id_kp_documentSigningAdobe:
+        match = value.MatchRest(documentSigningAdobe);
+        break;
+
+      case KeyPurposeId::id_kp_documentSigningMicrosoft:
+        match = value.MatchRest(documentSigningMicrosoft);
         break;
 
       case KeyPurposeId::anyExtendedKeyUsage:

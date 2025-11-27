@@ -1069,8 +1069,13 @@ tls13_ClientSendHrrCookieXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 {
     SECStatus rv;
 
+    
+
+
+
+
     if (ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_3 ||
-        !ss->ssl3.hs.cookie.len) {
+        !ss->ssl3.hs.cookie.len || !ss->ssl3.hs.helloRetry) {
         return SECSuccess;
     }
 

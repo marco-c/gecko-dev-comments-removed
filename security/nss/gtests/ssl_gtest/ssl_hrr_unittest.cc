@@ -17,6 +17,69 @@
 
 namespace nss_test {
 
+
+
+
+static void SendHelloVerifyRequest(const std::shared_ptr<TlsAgent>& server,
+                                   uint8_t cookie_len = 8) {
+  
+  DataBuffer hvr_body;
+  size_t off = 0;
+  off = hvr_body.Write(off, SSL_LIBRARY_VERSION_DTLS_1_0_WIRE, 2);
+
+  DataBuffer cookie;
+  cookie.Allocate(cookie_len);
+  for (uint8_t i = 0; i < cookie_len; ++i) {
+    cookie.Write(i, 0xA0 + i, 1);
+  }
+  WriteVariable(&hvr_body, off, cookie, 1);
+
+  
+  DataBuffer hvr;
+  off = 0;
+  off = hvr.Write(off, ssl_hs_hello_verify_request, 1);
+  off = hvr.Write(off, hvr_body.len(), 3);
+  off = hvr.Write(off, static_cast<uint32_t>(0), 2);
+  off = hvr.Write(off, static_cast<uint32_t>(0), 3);
+  off = hvr.Write(off, hvr_body.len(), 3);
+  off = hvr.Write(off, hvr_body);
+
+  
+  TlsRecordHeader rec(ssl_variant_datagram, SSL_LIBRARY_VERSION_DTLS_1_0,
+                      ssl_ct_handshake, 0 );
+  DataBuffer record;
+  rec.Write(&record, 0, hvr);
+  server->SendDirect(record);
+}
+
+
+
+
+TEST_F(DtlsConnectTest, NoTls13CookieExtensionAfterHelloVerifyRequest) {
+  EnsureTlsSetup();
+  client_->SetVersionRange(SSL_LIBRARY_VERSION_DTLS_1_0,
+                           SSL_LIBRARY_VERSION_DTLS_1_3);
+  server_->SetVersionRange(SSL_LIBRARY_VERSION_DTLS_1_0,
+                           SSL_LIBRARY_VERSION_DTLS_1_3);
+
+  auto cookie_xtn_capture =
+      MakeTlsFilter<TlsExtensionCapture>(client_, ssl_tls13_cookie_xtn, true);
+
+  StartConnect();
+  client_->Handshake();  
+
+  
+  SendHelloVerifyRequest(server_);
+
+  
+  client_->Handshake();
+
+  
+  EXPECT_FALSE(cookie_xtn_capture->captured())
+      << "TLS 1.3 cookie extension must NOT be included after "
+         "HelloVerifyRequest";
+}
+
 TEST_P(TlsConnectTls13, HelloRetryRequestAbortsZeroRtt) {
   const char* k0RttData = "Such is life";
   const PRInt32 k0RttDataLen = static_cast<PRInt32>(strlen(k0RttData));
@@ -107,6 +170,8 @@ TEST_P(TlsConnectTls13, SecondClientHelloRejectEarlyDataXtn) {
   auto orig_client =
       std::make_shared<TlsAgent>(client_->name(), TlsAgent::CLIENT, variant_);
   client_.swap(orig_client);
+  
+  client_->ConfigNamedGroups(kNonPQDHEGroups);
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_1,
                            SSL_LIBRARY_VERSION_TLS_1_3);
   client_->ConfigureSessionCache(RESUME_BOTH);
@@ -950,7 +1015,7 @@ TEST_P(TlsKeyExchange13, ConnectEcdhePreferenceMismatchHrr) {
   client_->ConfigNamedGroups(client_groups);
   server_->ConfigNamedGroups(server_groups);
   Connect();
-  CheckKeys();
+  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519);
   static const std::vector<SSLNamedGroup> expectedShares = {
       ssl_grp_ec_secp384r1};
   CheckKEXDetails(client_groups, expectedShares, ssl_grp_ec_curve25519);
@@ -997,7 +1062,7 @@ TEST_P(TlsKeyExchange13, ConnectEcdhePreferenceMismatchHrrExtraShares) {
   EXPECT_EQ(SECSuccess, SSL_SendAdditionalKeyShares(client_->ssl_fd(), 1));
 
   Connect();
-  CheckKeys();
+  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519);
   CheckKEXDetails(client_groups, client_groups);
 }
 
@@ -1043,7 +1108,7 @@ TEST_P(TlsKeyExchange13,
   EXPECT_EQ(2U, cb_called);
   EXPECT_TRUE(shares_capture2_->captured()) << "client should send shares";
 
-  CheckKeys();
+  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519);
   static const std::vector<SSLNamedGroup> client_shares(
       client_groups.begin(), client_groups.begin() + 2);
   CheckKEXDetails(client_groups, client_shares, server_groups[0]);

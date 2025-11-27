@@ -74,6 +74,12 @@ enum class KeyPurposeId {
   id_kp_codeSigning = 3,      
   id_kp_emailProtection = 4,  
   id_kp_OCSPSigning = 9,      
+  
+  
+  id_kp_documentSigning = 36,  
+  
+  id_kp_documentSigningAdobe,
+  id_kp_documentSigningMicrosoft,
 };
 
 struct CertPolicyId final {
@@ -272,8 +278,7 @@ class TrustDomain {
                                  const CertID& certID, Time time,
                                  Duration validityDuration,
                                   const Input* stapledOCSPresponse,
-                                  const Input* aiaExtension,
-                                  const Input* sctExtension) = 0;
+                                  const Input* aiaExtension) = 0;
 
   
   

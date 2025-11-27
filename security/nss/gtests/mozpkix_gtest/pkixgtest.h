@@ -103,7 +103,6 @@ class EverythingFailsByDefaultTrustDomain : public TrustDomain {
 
   Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
                           const Input*,
-                          const Input*,
                           const Input*) override {
     ADD_FAILURE();
     return NotReached("CheckRevocation should not be called",
@@ -240,6 +239,20 @@ const uint8_t tlv_id_kp_codeSigning[] = {0x06, 0x08, 0x2b, 0x06, 0x01,
 
 
 const uint8_t tlv_id_ce_extKeyUsage[] = {0x06, 0x03, 0x55, 0x1d, 0x25};
+
+
+static const uint8_t tlv_id_kp_documentSigning[] = {
+    0x06, 0x08, 0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x24};
+
+
+
+static const uint8_t tlv_id_kp_documentSigningAdobe[] = {
+    0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x2f, 0x01, 0x01, 0x05};
+
+
+
+static const uint8_t tlv_id_kp_documentSigningMicrosoft[] = {
+    0x06, 0x0a, 0x2b, 0x06, 0x01, 0x04, 0x01, 0x82, 0x37, 0x0a, 0x03, 0x0c};
 
 inline ByteString CreateEKUExtension(ByteString ekuOIDs) {
   return TLV(der::SEQUENCE,
