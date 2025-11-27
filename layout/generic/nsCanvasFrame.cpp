@@ -219,7 +219,6 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
              "::-moz-{scrolled-,}canvas doesn't have native appearance");
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayAbsoluteContinuations(aBuilder, aLists);
   }
 
   

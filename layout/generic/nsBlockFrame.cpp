@@ -1646,9 +1646,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  AbsoluteContainingBlock* absoluteContainer =
-      IsAbsoluteContainer() ? GetAbsoluteContainingBlock() : nullptr;
-  if (absoluteContainer && absoluteContainer->PrepareAbsoluteFrames(this)) {
+  if (HasAbsolutelyPositionedChildren()) {
+    AbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
     bool haveInterrupt = aPresContext->HasPendingInterrupt();
     if (aReflowInput.WillReflowAgainForClearance() || haveInterrupt) {
       
@@ -1695,6 +1694,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
           !(isRoot && NS_UNCONSTRAINEDSIZE == aReflowInput.ComputedHeight()) &&
           aMetrics.Height() != oldSize.height;
 
+      const LogicalRect containingBlock = [&]() {
+        LogicalRect rect(wm, LogicalPoint(wm), aMetrics.Size(wm));
+        rect.Deflate(wm, aReflowInput.ComputedLogicalBorder(wm));
+        return rect;
+      }();
       AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation};
       if (cbWidthChanged) {
         flags += AbsPosReflowFlag::CBWidthChanged;
@@ -1706,13 +1710,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       
       SetupLineCursorForQuery();
-
-      LogicalRect cbRect(wm, LogicalPoint(wm), aMetrics.Size(wm));
-      cbRect.Deflate(wm, aReflowInput.ComputedLogicalBorder(wm).ApplySkipSides(
-                             PreReflowBlockLevelLogicalSkipSides()));
       absoluteContainer->Reflow(
           this, aPresContext, aReflowInput, reflowStatus,
-          cbRect.GetPhysicalRect(wm, aMetrics.PhysicalSize()), flags,
+          containingBlock.GetPhysicalRect(wm, aMetrics.PhysicalSize()), flags,
           &aMetrics.mOverflowAreas);
     }
   }
@@ -7764,7 +7764,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayAbsoluteContinuations(aBuilder, aLists);
     for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
       if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
         BuildDisplayListForChild(aBuilder, f, aLists);

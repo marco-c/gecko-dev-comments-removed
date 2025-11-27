@@ -57,9 +57,6 @@ class AbsoluteContainingBlock {
   }
 
   const nsFrameList& GetChildList() const { return mAbsoluteFrames; }
-  const nsFrameList& GetPushedChildList() const {
-    return mPushedAbsoluteFrames;
-  }
 
   void SetInitialChildList(nsIFrame* aDelegatingFrame, FrameChildListID aListID,
                            nsFrameList&& aChildList);
@@ -68,30 +65,6 @@ class AbsoluteContainingBlock {
   void InsertFrames(nsIFrame* aDelegatingFrame, FrameChildListID aListID,
                     nsIFrame* aPrevFrame, nsFrameList&& aFrameList);
   void RemoveFrame(FrameDestroyContext&, FrameChildListID, nsIFrame*);
-
-  
-
-
-
-  [[nodiscard]] nsFrameList StealPushedChildList();
-
-  
-
-
-
-
-
-
-  bool PrepareAbsoluteFrames(nsContainerFrame* aDelegatingFrame);
-
-  
-
-
-
-
-
-
-  bool HasAbsoluteFrames() const { return mAbsoluteFrames.NotEmpty(); }
 
   
 
@@ -117,6 +90,8 @@ class AbsoluteContainingBlock {
 
   using DestroyContext = nsIFrame::DestroyContext;
   void DestroyFrames(DestroyContext&);
+
+  bool HasAbsoluteFrames() const { return mAbsoluteFrames.NotEmpty(); }
 
   
 
@@ -188,18 +163,8 @@ class AbsoluteContainingBlock {
 
   void DoMarkFramesDirty(bool aMarkAllDirty);
 
-  
-
-
-  void StealFrame(nsIFrame* aFrame);
-
-  
-  nsFrameList mAbsoluteFrames;
-
-  
-  
-  
-  nsFrameList mPushedAbsoluteFrames;
+ protected:
+  nsFrameList mAbsoluteFrames;  
 
 #ifdef DEBUG
   
