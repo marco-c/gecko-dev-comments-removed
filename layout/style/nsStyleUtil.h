@@ -45,7 +45,7 @@ class nsStyleUtil {
 
   
   
-  static void AppendQuotedCSString(const nsACString& aString,
+  static void AppendQuotedCSSString(const nsACString& aString,
                                    nsACString& aResult, char aQuoteChar = '"');
 
   
