@@ -227,8 +227,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static bool IsBackendAccelerated(
       const mozilla::gfx::BackendType aBackendType);
 
-  static bool CanMigrateMacGPUs();
-
   
 
 
