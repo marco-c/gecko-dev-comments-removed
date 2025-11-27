@@ -1570,7 +1570,6 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     }
   }
 
-  
   rv = mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
 
   mLoader->MaybeUpdateDiskCache();

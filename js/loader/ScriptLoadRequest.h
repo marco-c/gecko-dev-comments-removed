@@ -73,6 +73,10 @@ class ScriptLoadRequestList;
 
 
 
+
+
+
+
 class ScriptLoadRequest : public nsISupports,
                           private mozilla::LinkedListElement<ScriptLoadRequest>,
                           public LoadedScriptDelegate<ScriptLoadRequest> {
@@ -325,11 +329,6 @@ class ScriptLoadRequest : public nsISupports,
   
   nsAutoCString mURL;
 
-  
-  
-  
-  
-  
   
   RefPtr<LoadedScript> mLoadedScript;
 

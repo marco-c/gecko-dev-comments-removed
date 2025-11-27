@@ -422,13 +422,13 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       }
     } else {
       MOZ_ASSERT(mRequest->IsSerializedStencil());
-      JS::TranscodeBuffer& bytecode = mRequest->SRIAndSerializedStencil();
-      if (!bytecode.append(aData, aDataLength)) {
+      JS::TranscodeBuffer& buf = mRequest->SRIAndSerializedStencil();
+      if (!buf.append(aData, aDataLength)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
-      LOG(("ScriptLoadRequest (%p): Bytecode length = %u", mRequest.get(),
-           unsigned(bytecode.length())));
+      LOG(("ScriptLoadRequest (%p): SRIAndSerializedStencil length = %u",
+           mRequest.get(), unsigned(buf.length())));
 
       
       
@@ -445,20 +445,20 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       
       
       uint32_t sriLength;
-      rv = SRICheckDataVerifier::DataSummaryLength(
-          bytecode.length(), bytecode.begin(), &sriLength);
+      rv = SRICheckDataVerifier::DataSummaryLength(buf.length(), buf.begin(),
+                                                   &sriLength);
       if (NS_FAILED(rv)) {
         return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
       }
 
       mRequest->SetSRILength(sriLength);
 
-      Vector<uint8_t> compressedBytecode;
+      Vector<uint8_t> compressed;
       
       
-      compressedBytecode.swap(bytecode);
+      compressed.swap(buf);
       if (!JS::loader::ScriptBytecodeDecompress(
-              compressedBytecode, mRequest->GetSRILength(), bytecode)) {
+              compressed, mRequest->GetSRILength(), buf)) {
         return NS_ERROR_UNEXPECTED;
       }
     }

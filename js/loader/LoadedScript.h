@@ -441,6 +441,7 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   
+  
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 };
 
