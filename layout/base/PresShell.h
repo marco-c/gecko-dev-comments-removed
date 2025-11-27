@@ -1293,10 +1293,7 @@ class PresShell final : public nsStubDocumentObserver,
     return mNeedLayoutFlush || mNeedStyleFlush;
   }
 
-  void MOZ_CAN_RUN_SCRIPT PaintSynchronously();
-  
-  
-  void SyncWindowPropertiesIfNeeded();
+  void SyncWindowProperties();
   struct WindowSizeConstraints {
     nsSize mMinSize;
     nsSize mMaxSize;
@@ -3416,7 +3413,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool mDidInitialize : 1;
   bool mIsDestroying : 1;
   bool mIsReflowing : 1;
-  bool mIsPainting : 1 = false;
   bool mIsObservingDocument : 1;
 
   
