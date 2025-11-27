@@ -142,8 +142,11 @@ const MERINO_ADDON_SUGGESTION = {
   },
 };
 
-const MERINO_UNKNOWN_SUGGESTION = {
-  provider: "some_unknown_provider",
+
+
+
+const MERINO_UNMANAGED_SUGGESTION = {
+  provider: "top_picks",
   score: DEFAULT_SUGGESTION_SCORE,
   keywords: ["test"],
   url: "https://example.com/merino-unknown",
@@ -468,12 +471,12 @@ add_task(async function merino_sponsored_addon_addonWins() {
   await QuickSuggestTestUtils.setRemoteSettingsRecords(REMOTE_SETTINGS_RECORDS);
 });
 
-add_task(async function merino_sponsored_unknown_sponsoredWins() {
+add_task(async function merino_sponsored_unmanaged_sponsoredWins() {
   await QuickSuggestTestUtils.setRemoteSettingsRecords([]);
 
   MerinoTestUtils.server.response.body.suggestions = [
     MERINO_SPONSORED_SUGGESTION,
-    MERINO_UNKNOWN_SUGGESTION,
+    MERINO_UNMANAGED_SUGGESTION,
   ];
 
   let score = 10 * DEFAULT_SUGGESTION_SCORE;
@@ -496,24 +499,24 @@ add_task(async function merino_sponsored_unknown_sponsoredWins() {
   await QuickSuggestTestUtils.setRemoteSettingsRecords(REMOTE_SETTINGS_RECORDS);
 });
 
-add_task(async function merino_sponsored_unknown_unknownWins() {
+add_task(async function merino_sponsored_unmanaged_unmanagedWins() {
   await QuickSuggestTestUtils.setRemoteSettingsRecords([]);
 
   MerinoTestUtils.server.response.body.suggestions = [
     MERINO_SPONSORED_SUGGESTION,
-    MERINO_UNKNOWN_SUGGESTION,
+    MERINO_UNMANAGED_SUGGESTION,
   ];
 
   let score = 10 * DEFAULT_SUGGESTION_SCORE;
   await doTest({
     keyword: "test",
     scoreMap: {
-      [MERINO_UNKNOWN_SUGGESTION.provider]: score,
+      [MERINO_UNMANAGED_SUGGESTION.provider]: score,
     },
     expectedFeatureName: null,
     expectedScore: score,
     expectedResult: makeExpectedDefaultMerinoResult({
-      suggestion: MERINO_UNKNOWN_SUGGESTION,
+      suggestion: MERINO_UNMANAGED_SUGGESTION,
     }),
   });
 
