@@ -79,6 +79,10 @@ class GtkCompositorWidget : public CompositorWidget,
   
   void SetRenderingSurface(const uintptr_t aXWindow) override;
 
+  
+  
+  bool SetEGLNativeWindowSize(const LayoutDeviceIntSize& aEGLWindowSize);
+
 #if defined(MOZ_X11)
   Window XWindow() const { return mProvider.GetXWindow(); }
 #endif

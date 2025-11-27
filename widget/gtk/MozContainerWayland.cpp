@@ -83,7 +83,7 @@ using namespace mozilla;
 using namespace mozilla::widget;
 
 static bool moz_container_wayland_ensure_surface(
-    MozContainer* container, DesktopIntPoint* aPosition = nullptr);
+    MozContainer* container, gfx::IntPoint* aPosition = nullptr);
 
 
 
@@ -176,14 +176,14 @@ void moz_container_wayland_size_allocate(GtkWidget* widget,
     
     
     
-    auto pos = DesktopIntPoint(allocation->x, allocation->y);
-    moz_container_wayland_ensure_surface(MOZ_CONTAINER(widget), &pos);
+    gfx::IntPoint position(allocation->x, allocation->y);
+    moz_container_wayland_ensure_surface(MOZ_CONTAINER(widget), &position);
     MOZ_WL_CONTAINER(widget)->before_first_size_alloc = false;
   }
 }
 
 static bool moz_container_wayland_ensure_surface(MozContainer* container,
-                                                 DesktopIntPoint* aPosition) {
+                                                 gfx::IntPoint* aPosition) {
   WaylandSurface* surface = MOZ_WL_SURFACE(container);
   WaylandSurfaceLock lock(surface);
 
@@ -213,8 +213,12 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
   nsWindow* window = moz_container_get_nsWindow(container);
   MOZ_RELEASE_ASSERT(window);
 
-  if (!surface->MapLocked(lock, parentSurface,
-                          aPosition ? *aPosition : DesktopIntPoint())) {
+  gfx::IntPoint subsurfacePosition;
+  if (aPosition) {
+    subsurfacePosition = *aPosition;
+  }
+
+  if (!surface->MapLocked(lock, parentSurface, subsurfacePosition)) {
     return false;
   }
 
