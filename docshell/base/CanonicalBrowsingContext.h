@@ -289,12 +289,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  bool LoadInParent(nsDocShellLoadState* aLoadState, bool aSetNavigating);
-
-  
-  
-  
-  
   bool AttemptSpeculativeLoadInParent(nsDocShellLoadState* aLoadState);
 
   
