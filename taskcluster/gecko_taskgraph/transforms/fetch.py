@@ -210,6 +210,7 @@ def make_task(config, jobs):
             
             Required("key-path"): str,
         },
+        Optional("headers"): [str],
         
         
         
@@ -272,6 +273,9 @@ def create_fetch_url_task(config, name, fetch):
                 "FETCH_GPG_KEY",
             ]
         )
+
+    for header in fetch.get("headers", []):
+        command.extend(["--header", header])
 
     command.extend(
         [
