@@ -79,19 +79,12 @@ class ICU4XCalendar : public icu::Calendar {
   
 
 
-  static MonthCode monthCodeFrom(const icu4x::capi::Date* date,
-                                 UErrorCode& status);
+  static MonthCode monthCodeFrom(const icu4x::capi::Date* date);
 
   
 
 
   UniqueICU4XDate createICU4XDate(const ISODate& date,
-                                  UErrorCode& status) const;
-
-  
-
-
-  UniqueICU4XDate createICU4XDate(const CalendarDate& date,
                                   UErrorCode& status) const;
 
  public:
