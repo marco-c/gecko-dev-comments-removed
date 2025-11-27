@@ -1879,8 +1879,11 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
         if (mozilla::SessionHistoryInParent()) {
           uint32_t addedEntries = 0;
           browsingContext->PreOrderWalk([&addedEntries](BrowsingContext* aBC) {
+            const uint32_t len = aBC->GetHistoryEntryCount();
             
-            addedEntries += aBC->GetHistoryEntryCount() - 1;
+            
+            
+            addedEntries += len > 0 ? len - 1 : 0;
           });
 
           nsID changeID = {};
