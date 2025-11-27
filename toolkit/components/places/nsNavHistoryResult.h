@@ -21,6 +21,7 @@
 #include "nsTHashMap.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozIStoragePendingStatement.h"
+#include "mozIStorageValueArray.h"
 #include "Helpers.h"
 
 class nsNavHistory;
@@ -797,6 +798,29 @@ class nsNavHistoryFolderResultNode final
   nsresult OnChildrenFilled();
   void EnsureRegisteredAsFolderObserver();
   nsresult FillChildrenAsync();
+  
+
+
+
+
+
+
+  nsresult FillChildrenInternal(
+      mozIStoragePendingStatement** aPendingStmt = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult AppendRowAsChild(mozIStorageValueArray* aRow,
+                            int32_t& aCurrentIndex);
 
   bool mIsRegisteredFolderObserver;
   int32_t mAsyncBookmarkIndex;
