@@ -788,6 +788,10 @@ class AsyncFutexWaiter : public FutexWaiter {
   AsyncFutexWaiter(JSContext* cx, size_t offset)
       : FutexWaiter(cx, offset, FutexWaiterKind::Async) {}
 
+  
+  
+  ~AsyncFutexWaiter();
+
   WaitAsyncNotifyTask* notifyTask() { return notifyTask_; }
 
   void setNotifyTask(WaitAsyncNotifyTask* task) {
@@ -795,10 +799,14 @@ class AsyncFutexWaiter : public FutexWaiter {
     notifyTask_ = task;
   }
 
+  void resetNotifyTask() { notifyTask_ = nullptr; }
+
   void setTimeoutTask(WaitAsyncTimeoutTask* task) {
     MOZ_ASSERT(!timeoutTask_);
     timeoutTask_ = task;
   }
+
+  void resetTimeoutTask() { timeoutTask_ = nullptr; }
 
   bool hasTimeout() const { return !!timeoutTask_; }
   WaitAsyncTimeoutTask* timeoutTask() const { return timeoutTask_; }
@@ -809,7 +817,15 @@ class AsyncFutexWaiter : public FutexWaiter {
   
   
   
+  
+  
+  
+  
   WaitAsyncNotifyTask* notifyTask_ = nullptr;
+
+  
+  
+  
   WaitAsyncTimeoutTask* timeoutTask_ = nullptr;
 };
 
@@ -833,16 +849,27 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
 
   
   
+  
+  
+  
+  
   AsyncFutexWaiter* waiter_ = nullptr;
 
  public:
   WaitAsyncNotifyTask(JSContext* cx, Handle<PromiseObject*> promise)
       : OffThreadPromiseTask(cx, promise) {}
 
+  ~WaitAsyncNotifyTask() override {
+    if (waiter_) {
+      waiter_->resetNotifyTask();
+    }
+  }
+
   void setWaiter(AsyncFutexWaiter* waiter) {
     MOZ_ASSERT(!waiter_);
     waiter_ = waiter;
   }
+  void resetWaiter() { waiter_ = nullptr; }
 
   void setResult(Result result, AutoLockFutexAPI& lock) { result_ = result; }
 
@@ -875,19 +902,42 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
 
 
 class WaitAsyncTimeoutTask : public JS::Dispatchable {
+  
+  
   AsyncFutexWaiter* waiter_;
 
  public:
   explicit WaitAsyncTimeoutTask(AsyncFutexWaiter* waiter) : waiter_(waiter) {
     MOZ_ASSERT(waiter_);
   }
+  ~WaitAsyncTimeoutTask() {
+    if (waiter_) {
+      waiter_->resetTimeoutTask();
+    }
+  }
 
-  void clear(AutoLockFutexAPI&) { waiter_ = nullptr; }
+  void resetWaiter() { waiter_ = nullptr; }
+
+  void clear(AutoLockFutexAPI&) {
+    if (waiter_) {
+      waiter_->resetTimeoutTask();
+    }
+    waiter_ = nullptr;
+  }
   bool cleared(AutoLockFutexAPI&) { return !waiter_; }
 
   void run(JSContext*, MaybeShuttingDown maybeshuttingdown) final;
   void transferToRuntime() final;
 };
+
+AsyncFutexWaiter::~AsyncFutexWaiter() {
+  if (notifyTask_) {
+    notifyTask_->resetWaiter();
+  }
+  if (timeoutTask_) {
+    timeoutTask_->resetWaiter();
+  }
+}
 
 }  
 
@@ -1021,6 +1071,7 @@ void WaitAsyncTimeoutTask::run(JSContext* cx,
   
   
   UniquePtr<AsyncFutexWaiter> asyncWaiter(RemoveAsyncWaiter(waiter_, lock));
+  asyncWaiter->resetTimeoutTask();
 
   
   WaitAsyncNotifyTask* task = asyncWaiter->notifyTask();

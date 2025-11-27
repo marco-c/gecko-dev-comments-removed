@@ -1,0 +1,9 @@
+
+
+function f() {
+  var x = new Int32Array(new SharedArrayBuffer(4));
+  x[0] = 1;
+  Atomics.waitAsync(x, 0, 1, 65535);
+  oomTest(f);
+}
+f();
