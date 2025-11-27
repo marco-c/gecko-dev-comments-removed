@@ -4109,6 +4109,11 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   
   
+  
+  GetPaintListener()->WillPaintWindow(this);
+
+  
+  
   if (mIsDestroyed) {
     LOG("quit, mIsDestroyed");
     return TRUE;
@@ -4132,6 +4137,9 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     layerManager->SetNeedsComposite(false);
   }
 
+  
+  
+  
   region.AndWith(LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
   if (region.IsEmpty()) {
     LOG("quit, region.IsEmpty()");
@@ -4141,7 +4149,16 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   
   if (renderer->GetBackendType() == LayersBackend::LAYERS_WR) {
     LOG("redirect painting to OMTC rendering...");
-    listener->PaintWindow(this);
+    listener->PaintWindow(this, region);
+
+    
+    
+    listener = GetPaintListener();
+    if (!listener) {
+      return TRUE;
+    }
+
+    listener->DidPaintWindow();
     return TRUE;
   }
 
@@ -4174,16 +4191,25 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
 #endif  
 
-  if (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) {
-    if (GetTransparencyMode() == TransparencyMode::Transparent &&
-        mHasAlphaVisual) {
+  {
+    if (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) {
+      if (GetTransparencyMode() == TransparencyMode::Transparent &&
+          mHasAlphaVisual) {
+        
+        
+        
+        dt->ClearRect(Rect(boundsRect));
+      }
+      AutoLayerManagerSetup setupLayerManager(this, ctx.ptrOr(nullptr));
+      listener->PaintWindow(this, region);
+
       
       
-      
-      dt->ClearRect(Rect(boundsRect));
+      listener = GetPaintListener();
+      if (!listener) {
+        return TRUE;
+      }
     }
-    AutoLayerManagerSetup setupLayerManager(this, ctx.ptrOr(nullptr));
-    listener->PaintWindow(this);
   }
 
 #ifdef MOZ_X11
@@ -4193,8 +4219,12 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   EndRemoteDrawingInRegion(dt, region);
 
+  listener->DidPaintWindow();
+
   
-  if (cairo_region_t* dirtyArea = gdk_window_get_update_area(mGdkWindow)) {
+  cairo_region_t* dirtyArea = gdk_window_get_update_area(mGdkWindow);
+
+  if (dirtyArea) {
     gdk_window_invalidate_region(mGdkWindow, dirtyArea, false);
     cairo_region_destroy(dirtyArea);
     gdk_window_process_updates(mGdkWindow, false);
