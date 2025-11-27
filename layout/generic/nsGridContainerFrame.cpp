@@ -3276,6 +3276,11 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
       MOZ_ASSERT(mGridItems.Length() == len + 1, "can't find GridItemInfo");
     }
 
+    if (aGridContainerFrame->IsAbsoluteContainer()) {
+      
+      aGridContainerFrame->GetAbsoluteContainingBlock()->PrepareAbsoluteFrames(
+          aGridContainerFrame);
+    }
     
     const nsFrameList& absPosChildren = aGridContainerFrame->GetChildList(
         aGridContainerFrame->GetAbsoluteListID());
@@ -9301,6 +9306,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
 
   AbsoluteContainingBlock* absoluteContainer =
       IsAbsoluteContainer() ? GetAbsoluteContainingBlock() : nullptr;
+  
   if (absoluteContainer && absoluteContainer->HasAbsoluteFrames()) {
     
     

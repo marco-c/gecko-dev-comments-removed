@@ -2106,15 +2106,6 @@ static nscoord CalcQuirkContainingBlockHeight(
 
 LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const {
-  MOZ_ASSERT(!mFrame->IsAbsolutelyPositioned(mStyleDisplay) ||
-                 
-                 
-                 
-                 
-                 mFrame->GetPrevInFlow(),
-             "AbsoluteContainingBlock always provides a containing-block size "
-             "when creating ReflowInput for its children!");
-
   LogicalSize cbSize = aContainingBlockRI->ComputedSize();
   WritingMode wm = aContainingBlockRI->GetWritingMode();
 
@@ -2197,6 +2188,20 @@ void ReflowInput::InitConstraints(
     
     if (aContainingBlockSize.isNothing()) {
       cbSize = ComputeContainingBlockRectangle(aPresContext, cbri);
+    } else if (StaticPrefs::
+                   layout_abspos_fragmentainer_aware_positioning_enabled() &&
+               mFrame->IsAbsolutelyPositioned(mStyleDisplay) &&
+               mFrame->GetPrevInFlow()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      cbSize = ComputeContainingBlockRectangle(aPresContext, cbri) +
+               cbri->ComputedLogicalPadding(wm).Size(wm);
     }
 
     
