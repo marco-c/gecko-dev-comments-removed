@@ -2138,13 +2138,16 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
         newLayerData->mStopAtAsr =
             mAsrStack.empty() ? nullptr : mAsrStack.back();
+        newLayerData->mStopAtAsr = ActiveScrolledRoot::LowestCommonAncestor(
+            asr, newLayerData->mStopAtAsr);
         newLayerData->ComputeDeferredTransformInfo(aSc, item);
 
         
         
         
-        const ActiveScrolledRoot* stopAtAsrForChildren =
-            ActiveScrolledRoot::PickDescendant(asr, newLayerData->mStopAtAsr);
+        MOZ_ASSERT(
+            ActiveScrolledRoot::IsAncestor(newLayerData->mStopAtAsr, asr));
+        const ActiveScrolledRoot* stopAtAsrForChildren = asr;
         
         
         
