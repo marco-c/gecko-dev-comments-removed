@@ -105,14 +105,6 @@ class nsViewManager final {
 
 
 
-
-  void IsPainting(bool& aIsPainting);
-
-  
-
-
-
-
   static uint32_t GetLastUserEventTime() { return gLastUserEventTime; }
   static void MaybeUpdateLastUserEventTime(mozilla::WidgetGUIEvent*);
 
@@ -122,27 +114,8 @@ class nsViewManager final {
 
   MOZ_CAN_RUN_SCRIPT void ProcessPendingUpdates();
 
-  
-
-
-  MOZ_CAN_RUN_SCRIPT void UpdateWidgetGeometry();
-
-  
-  
-  void PostPendingUpdate();
-
  private:
   static uint32_t gLastUserEventTime;
-
-  void FlushPendingInvalidates();
-
-  MOZ_CAN_RUN_SCRIPT
-  void ProcessPendingUpdatesForView(nsView* aView,
-                                    bool aFlushDirtyRegion = true);
-  void ProcessPendingUpdatesRecurse(
-      nsView* aView, AutoTArray<nsCOMPtr<nsIWidget>, 1>& aWidgets);
-  MOZ_CAN_RUN_SCRIPT
-  void ProcessPendingUpdatesPaint(nsIWidget* aWidget);
 
   
 
@@ -151,24 +124,15 @@ class nsViewManager final {
   static void CollectVMsForWillPaint(nsView* aView, nsViewManager* aParentVM,
                                      nsTArray<RefPtr<nsViewManager>>& aVMs);
 
-  
-  MOZ_CAN_RUN_SCRIPT
-  void Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion);
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoSetWindowDimensions(const nsSize&);
   bool ShouldDelayResize() const;
-
-  bool IsPainting() const { return RootViewManager()->mPainting; }
-
-  void SetPainting(bool aPainting) { RootViewManager()->mPainting = aPainting; }
 
   nsViewManager* RootViewManager() const;
   nsViewManager* GetParentViewManager() const;
   bool IsRootVM() const { return !GetParentViewManager(); }
 
   MOZ_CAN_RUN_SCRIPT void WillPaintWindow(nsIWidget* aWidget);
-  MOZ_CAN_RUN_SCRIPT
-  bool PaintWindow(nsIWidget* aWidget, const LayoutDeviceIntRegion& aRegion);
+  MOZ_CAN_RUN_SCRIPT void PaintWindow(nsIWidget* aWidget);
   MOZ_CAN_RUN_SCRIPT void DidPaintWindow();
 
   mozilla::PresShell* mPresShell;
@@ -178,14 +142,6 @@ class nsViewManager final {
   nsSize mDelayedResize;
 
   nsView* mRootView;
-
-  
-  
-  
-  
-  bool mPainting;
-  bool mHasPendingWidgetGeometryChanges;
-
   
 };
 

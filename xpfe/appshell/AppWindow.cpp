@@ -1081,6 +1081,10 @@ void AppWindow::OnChromeLoaded() {
     mChromeLoaded = true;
     ApplyChromeFlags();
     SyncAttributesToWidget();
+    if (RefPtr ps = GetPresShell()) {
+      
+      ps->SyncWindowPropertiesIfNeeded();
+    }
     if (mWindow) {
       SizeShell();
       if (mShowAfterLoad) {
