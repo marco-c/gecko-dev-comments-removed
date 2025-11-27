@@ -619,12 +619,6 @@ NS_IMETHODIMP nsBaseClipboard::GetDataSnapshot(
     }
   }
 
-  
-  if (aRequestingPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
-    MOZ_CLIPBOARD_LOG("%s: Addon without read permission.", __FUNCTION__);
-    return aCallback->OnError(NS_ERROR_FAILURE);
-  }
-
   RequestUserConfirmation(aWhichClipboard, aFlavorList,
                           aRequestingWindowContext, aRequestingPrincipal,
                           aCallback);
