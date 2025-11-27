@@ -42,14 +42,6 @@ class nsViewManager final {
 
 
 
-  nsresult Init();
-
-  
-
-
-
-
-
 
   nsView* CreateView(const nsSize& aSize);
 
@@ -108,28 +100,11 @@ class nsViewManager final {
   static uint32_t GetLastUserEventTime() { return gLastUserEventTime; }
   static void MaybeUpdateLastUserEventTime(mozilla::WidgetGUIEvent*);
 
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT void ProcessPendingUpdates();
-
  private:
   static uint32_t gLastUserEventTime;
 
-  
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CallWillPaintOnObservers();
-  static void CollectVMsForWillPaint(nsView* aView, nsViewManager* aParentVM,
-                                     nsTArray<RefPtr<nsViewManager>>& aVMs);
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoSetWindowDimensions(const nsSize&);
   bool ShouldDelayResize() const;
-
-  nsViewManager* RootViewManager() const;
-  nsViewManager* GetParentViewManager() const;
-  bool IsRootVM() const { return !GetParentViewManager(); }
 
   MOZ_CAN_RUN_SCRIPT void WillPaintWindow(nsIWidget* aWidget);
   MOZ_CAN_RUN_SCRIPT void PaintWindow(nsIWidget* aWidget);
