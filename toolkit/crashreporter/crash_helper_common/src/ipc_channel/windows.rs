@@ -2,14 +2,15 @@
 
 
 
-use std::{ffi::CString, hash::RandomState, process};
+use std::{ffi::CString, process};
 
 use windows_sys::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_ADDRESS_ALREADY_ASSOCIATED};
 
 use crate::{
     ipc_channel::IPCChannelError,
-    platform::{windows::server_addr, PlatformError},
-    IPCConnector, IPCListener, IPCListenerError, Pid,
+    ipc_listener::IPCListenerError,
+    platform::windows::{server_addr, PlatformError},
+    IPCConnector, IPCListener, Pid,
 };
 
 pub struct IPCChannel {
@@ -70,8 +71,9 @@ impl IPCClientChannel {
         
         
         for _i in 0..ATTEMPTS {
-            use std::hash::{BuildHasher, Hasher};
-            let random_id = RandomState::new().build_hasher().finish();
+            let Ok(random_id) = getrandom::u64() else {
+                continue;
+            };
 
             let pipe_name = CString::new(format!(
                 "\\\\.\\pipe\\gecko-crash-helper-child-pipe.{random_id:}"
