@@ -934,16 +934,11 @@ RuleEditor.prototype = {
       });
     }
 
-    let containerClass = "ruleview-selector ";
-
-    
-    
-
-    if (this.rule.matchedSelectorIndexes.length) {
-      containerClass += this.rule.matchedSelectorIndexes.includes(selectorIndex)
+    const containerClass =
+      "ruleview-selector " +
+      (this.rule.matchedSelectorIndexes.includes(selectorIndex)
         ? "matched"
-        : "unmatched";
-    }
+        : "unmatched");
 
     let selectorContainerTitle;
     if (
