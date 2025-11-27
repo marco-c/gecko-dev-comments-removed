@@ -416,6 +416,12 @@ bool FontFaceSetDocumentImpl::UpdateRules(
   
   
   
+  oldRecords.Reverse();
+
+  
+  
+  
+  
   
   for (const auto& fontFamily : mFontFamilies.Values()) {
     fontFamily->DetachFontEntries();
@@ -524,8 +530,9 @@ bool FontFaceSetDocumentImpl::InsertRuleFontFace(
   
   
   
-  for (size_t i = 0; i < aOldRecords.Length(); ++i) {
-    FontFaceRecord& rec = aOldRecords[i];
+  
+  for (size_t i = aOldRecords.Length(); i > 0;) {
+    FontFaceRecord& rec = aOldRecords[--i];
 
     const bool matches =
         rec.mOrigin == Some(aSheetType) &&
@@ -574,7 +581,9 @@ bool FontFaceSetDocumentImpl::InsertRuleFontFace(
 
     
     
-    return i > 0;
+    
+    
+    return i < aOldRecords.Length();
   }
 
   RefPtr<FontFace> fontFace =
