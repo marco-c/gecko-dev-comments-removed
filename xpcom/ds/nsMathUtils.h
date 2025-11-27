@@ -28,42 +28,6 @@ inline int32_t NS_lround(double aNum) {
   return aNum >= 0.0 ? int32_t(aNum + 0.5) : int32_t(aNum - 0.5);
 }
 
-
-
-
-#if defined(XP_WIN) && defined(_M_IX86) && !defined(__GNUC__) && \
-    !defined(__clang__)
-inline int32_t NS_lroundup30(float x) {
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  static const double round_to_nearest = 0.5f;
-  int i;
-
-  __asm {
-    fld     x                   ; load fp argument
-    fadd    st, st(0)           ; double it
-    fadd    round_to_nearest    ; add the rounding factor
-    fistp   dword ptr i         ; convert the result to int
-  }
-  return i >> 1; 
-}
-#endif 
-
 inline int32_t NS_lroundf(float aNum) {
   return aNum >= 0.0f ? int32_t(aNum + 0.5f) : int32_t(aNum - 0.5f);
 }
