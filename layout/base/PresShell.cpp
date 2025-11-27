@@ -1728,8 +1728,14 @@ nsresult PresShell::Initialize() {
     
     mPaintingSuppressed = true;
     
-    Document::ReadyState readyState = mDocument->GetReadyStateEnum();
-    if (readyState != Document::READYSTATE_COMPLETE) {
+    
+    
+    nsIDocShell* docShell = mDocument->GetDocShell();
+    if ((docShell &&
+         !nsDocShell::Cast(docShell)
+              ->HasStartedLoadingOtherThanInitialBlankURI() &&
+         mDocument->IsInitialDocument()) ||
+        mDocument->GetReadyStateEnum() != Document::READYSTATE_COMPLETE) {
       mPaintSuppressionTimer = NS_NewTimer();
     }
     if (!mPaintSuppressionTimer) {

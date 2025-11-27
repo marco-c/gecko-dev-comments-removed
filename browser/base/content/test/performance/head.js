@@ -489,7 +489,10 @@ async function recordFrames(testPromise, win = window) {
   win.addEventListener("MozAfterPaint", afterPaintListener);
 
   
-  if (win.document.readyState == "complete") {
+  if (
+    win.document.readyState == "complete" &&
+    win.location.href != "about:blank"
+  ) {
     afterPaintListener();
   }
 

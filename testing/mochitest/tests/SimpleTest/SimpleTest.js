@@ -2162,11 +2162,15 @@ var add_task = (function () {
         
         
         
+        
+        
         if (
-          typeof window !== "undefined" &&
-          typeof HTMLDocument !== "undefined" &&
-          window.document instanceof HTMLDocument &&
-          window.document.readyState !== "complete"
+          (typeof window !== "undefined" &&
+            typeof HTMLDocument !== "undefined" &&
+            window.document instanceof HTMLDocument &&
+            window.document.readyState !== "complete") ||
+          (typeof window !== "undefined" &&
+            window.document.location.href === "about:blank")
         ) {
           setTimeout(nextTick);
           return;

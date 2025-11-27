@@ -3560,7 +3560,12 @@ function synthesizeDrop(
   } finally {
     let srcWindowUtils = _getDOMWindowUtils(aWindow);
     const srcDragSession = srcWindowUtils.dragSession;
-    srcDragSession.endDragSession(true, _parseModifiers(aDragEvent));
+    if (srcDragSession) {
+      
+      
+      
+      srcDragSession.endDragSession(true, _parseModifiers(aDragEvent));
+    }
   }
 }
 

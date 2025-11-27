@@ -46,10 +46,12 @@ class HTMLEditor;
 class ObservedDocShell;
 class ScrollContainerFrame;
 enum class TaskCategory;
+class PresShell;
 namespace dom {
 class ClientInfo;
 class ClientSource;
 class EventTarget;
+class WindowGlobalChild;
 enum class NavigationHistoryBehavior : uint8_t;
 struct NavigationAPIMethodTracker;
 class SessionHistoryInfo;
@@ -76,6 +78,7 @@ class nsIURILoader;
 class nsIWebBrowserFind;
 class nsIWidget;
 class nsIReferrerInfo;
+class nsIOpenWindowInfo;
 
 class nsBrowserStatusFilter;
 class nsCommandManager;
@@ -187,7 +190,13 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext,
       uint64_t aContentWindowID = 0);
 
-  bool Initialize();
+  bool Initialize(nsIOpenWindowInfo* aOpenWindowInfo,
+                  mozilla::dom::WindowGlobalChild* aWindowActor);
+
+  nsresult InitWindow(nsIWidget* aParentWidget, int32_t aX, int32_t aY,
+                      int32_t aWidth, int32_t aHeight,
+                      nsIOpenWindowInfo* aOpenWindowInfo,
+                      mozilla::dom::WindowGlobalChild* aWindowActor);
 
   NS_IMETHOD Stop() override {
     
@@ -402,6 +411,7 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult InternalLoad(
       nsDocShellLoadState* aLoadState,
@@ -413,11 +423,6 @@ class nsDocShell final : public nsDocLoader,
 
   void SetWillChangeProcess() { mWillChangeProcess = true; }
   bool WillChangeProcess() { return mWillChangeProcess; }
-
-  
-  
-  nsresult CreateDocumentViewerForActor(
-      mozilla::dom::WindowGlobalChild* aWindowActor);
 
   
   
@@ -576,8 +581,15 @@ class nsDocShell final : public nsDocLoader,
   
   
 
-  nsresult EnsureDocumentViewer();
+  
+  
+  bool VerifyDocumentViewer();
+
   void DestroyDocumentViewer();
+
+  nsresult CreateInitialDocumentViewer(
+      nsIOpenWindowInfo* aOpenWindowInfo = nullptr,
+      mozilla::dom::WindowGlobalChild* aWindowActor = nullptr);
 
   
   
@@ -665,8 +677,12 @@ class nsDocShell final : public nsDocLoader,
 
  public:
   bool IsAboutBlankLoadOntoInitialAboutBlank(nsIURI* aURI,
-                                             bool aInheritPrincipal,
                                              nsIPrincipal* aPrincipalToInherit);
+
+  void UnsuppressPaintingIfNoNavigationAwayFromAboutBlank(
+      mozilla::PresShell* aPresShell);
+
+  bool HasStartedLoadingOtherThanInitialBlankURI();
 
  private:
   
@@ -706,6 +722,9 @@ class nsDocShell final : public nsDocLoader,
   
   MOZ_CAN_RUN_SCRIPT nsresult PerformTrustedTypesPreNavigationCheck(
       nsDocShellLoadState* aLoadState, nsGlobalWindowInner* aWindow) const;
+
+  nsresult CompleteInitialAboutBlankLoad(nsDocShellLoadState* aLoadState,
+                                         nsILoadInfo* aLoadInfo);
 
   static nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                       nsIChannel* aChannel);
@@ -950,6 +969,10 @@ class nsDocShell final : public nsDocLoader,
   
   
   void MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal = nullptr);
+
+  
+  void MaybeInheritController(mozilla::dom::ClientSource* aClientSource,
+                              nsIPrincipal* aPrincipal);
 
   
   
@@ -1420,7 +1443,12 @@ class nsDocShell final : public nsDocLoader,
   bool mSavingOldViewer : 1;
 
   bool mInvisible : 1;
+
+  
   bool mHasLoadedNonBlankURI : 1;
+
+  
+  bool mHasStartedLoadingOtherThanInitialBlankURI : 1;
 
   
   

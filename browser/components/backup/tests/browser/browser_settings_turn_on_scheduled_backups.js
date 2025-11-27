@@ -556,6 +556,15 @@ add_task(async function test_default_location_selected() {
   await SpecialPowers.popPrefEnv();
 });
 
+async function waitInitialRequestStateSettled() {
+  
+  
+  
+  
+  
+  await new Promise(res => setTimeout(res));
+}
+
 
 
 
@@ -566,6 +575,7 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    await waitInitialRequestStateSettled();
     const mockCustomParentDir = await IOUtils.createUniqueDirectory(
       PathUtils.tempDir,
       "our-dummy-folder"
@@ -651,6 +661,7 @@ add_task(
     await BrowserTestUtils.withNewTab(
       "about:preferences#sync",
       async browser => {
+        await waitInitialRequestStateSettled();
         const mockCustomParentDir = await IOUtils.createUniqueDirectory(
           PathUtils.tempDir,
           "our-dummy-folder"

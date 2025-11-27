@@ -20,10 +20,9 @@ add_task(async function () {
 
       
       const iframe = content.document.createElement("iframe");
-      content.document.body.appendChild(iframe);
       iframe.setAttribute("id", "fake-iframe");
 
-      iframe.contentWindow.addEventListener("load", () => {
+      iframe.addEventListener("load", () => {
         
         const div = content.document.createElement("div");
         div.id = "in-frame";
@@ -34,6 +33,7 @@ add_task(async function () {
         frameContent.appendChild(div);
         resolve();
       });
+      content.document.body.appendChild(iframe);
     });
   });
 

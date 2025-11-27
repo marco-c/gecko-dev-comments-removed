@@ -2588,6 +2588,7 @@
         
         
         
+        
         this.tabpanels.appendChild(panel);
       }
 
@@ -3117,7 +3118,7 @@
           fromExternal,
           forceAllowDataURI,
           isCaptivePortalTab,
-          skipLoad,
+          skipLoad: skipLoad || uriIsAboutBlank,
           referrerInfo,
           charset,
           postData,
@@ -3718,6 +3719,16 @@
       return t;
     }
 
+    
+
+
+
+
+
+
+
+
+
     _createBrowserForTab(
       tab,
       {
@@ -3849,21 +3860,28 @@
         textDirectiveUserActivation,
       }
     ) {
-      if (
-        !usingPreloadedContent &&
-        originPrincipal &&
-        originStoragePrincipal &&
-        uriString
-      ) {
-        let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
-        
-        
-        if (!uri || doGetProtocolFlags(uri) & URI_INHERITS_SECURITY_CONTEXT) {
-          browser.createAboutBlankDocumentViewer(
-            originPrincipal,
-            originStoragePrincipal
-          );
+      const shouldInheritSecurityContext = (() => {
+        if (
+          !usingPreloadedContent &&
+          originPrincipal &&
+          originStoragePrincipal &&
+          uriString
+        ) {
+          let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
+          
+          
+          if (!uri || doGetProtocolFlags(uri) & URI_INHERITS_SECURITY_CONTEXT) {
+            return true;
+          }
         }
+        return false;
+      })();
+
+      if (shouldInheritSecurityContext) {
+        browser.createAboutBlankDocumentViewer(
+          originPrincipal,
+          originStoragePrincipal
+        );
       }
 
       
@@ -3887,6 +3905,8 @@
         if (fromExternal) {
           loadFlags |= LOAD_FLAGS_FROM_EXTERNAL;
         } else if (!triggeringPrincipal.isSystemPrincipal) {
+          
+          
           
           
           loadFlags |= LOAD_FLAGS_FIRST_LOAD;
@@ -6879,15 +6899,10 @@
         
         params.userContextId = aTab.getAttribute("usercontextid");
       }
+      params.skipLoad = true;
       let newTab = this.addWebTab("about:blank", params);
-      let newBrowser = this.getBrowserForTab(newTab);
 
       aTab.container.tabDragAndDrop.finishAnimateTabMove();
-
-      if (!createLazyBrowser) {
-        
-        newBrowser.stop();
-      }
 
       if (!this.swapBrowsersAndCloseOther(newTab, aTab)) {
         

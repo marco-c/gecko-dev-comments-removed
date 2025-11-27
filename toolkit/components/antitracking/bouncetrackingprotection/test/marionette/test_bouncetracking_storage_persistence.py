@@ -2,6 +2,7 @@
 
 
 
+from marionette_driver import Wait
 from marionette_harness import MarionetteTestCase
 
 
@@ -20,6 +21,11 @@ class BounceTrackingStoragePersistenceTestCase(MarionetteTestCase):
 
         self.marionette.set_context("chrome")
         self.populate_state()
+
+    def tearDown(self):
+        self.marionette.restart(in_app=False, clean=True)
+
+        super(BounceTrackingStoragePersistenceTestCase, self).tearDown()
 
     def populate_state(self):
         
@@ -43,14 +49,23 @@ class BounceTrackingStoragePersistenceTestCase(MarionetteTestCase):
 
     def test_state_after_restart(self):
         self.marionette.restart(clean=False, in_app=True)
-        bounceTrackerCandidates = self.marionette.execute_script(
-            """
-                let bounceTrackingProtection = Cc["@mozilla.org/bounce-tracking-protection;1"].getService(
-                Ci.nsIBounceTrackingProtection
+
+        def get_candidates(_):
+            return self.marionette.execute_script(
+                """
+                const bounceTrackingProtection = Cc["@mozilla.org/bounce-tracking-protection;1"].getService(
+                    Ci.nsIBounceTrackingProtection
                 );
-                return bounceTrackingProtection.testGetBounceTrackerCandidateHosts({}).map(entry => entry.siteHost).sort();
-            """,
+                return bounceTrackingProtection.testGetBounceTrackerCandidateHosts({})
+                    .map(entry => entry.siteHost)
+                    .sort();
+                """
+            )
+
+        bounceTrackerCandidates = Wait(self.marionette).until(
+            get_candidates, message="Wait for persistent state to be restored"
         )
+
         self.assertEqual(
             len(bounceTrackerCandidates),
             2,

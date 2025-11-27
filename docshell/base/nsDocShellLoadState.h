@@ -468,6 +468,13 @@ class nsDocShellLoadState final {
   bool GetIsCaptivePortalTab() const;
   void SetIsCaptivePortalTab(bool aIsCaptivePortalTab);
 
+  void ProhibitInitialAboutBlankHandling() {
+    mIsInitialAboutBlankHandlingProhibited = true;
+  }
+  bool IsInitialAboutBlankHandlingProhibited() {
+    return mIsInitialAboutBlankHandlingProhibited;
+  }
+
  protected:
   
   
@@ -751,6 +758,11 @@ class nsDocShellLoadState final {
 
   
   bool mIsCaptivePortalTab = false;
+
+  
+  
+  
+  bool mIsInitialAboutBlankHandlingProhibited;
 };
 
 #endif 

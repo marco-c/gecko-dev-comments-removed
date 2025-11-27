@@ -64,6 +64,7 @@
 #include "nsIDOMStorageManager.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIInterfaceRequestorUtils.h"
+#include "nsILoadGroup.h"
 #include "nsIPermissionManager.h"
 #include "nsIScriptContext.h"
 #include "nsISecureBrowserUI.h"
@@ -2501,8 +2502,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     
     
     
-    
-    const bool isContentAboutBlankInChromeDocshell = [&] {
+    const bool isAboutBlankInChromeDocshell = [&] {
       if (!mDocShell) {
         return false;
       }
@@ -2512,10 +2512,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
         return false;
       }
 
-      return !mDoc->NodePrincipal()->IsSystemPrincipal();
+      return mDoc->IsInitialDocument();
     }();
 
-    if (!isContentAboutBlankInChromeDocshell) {
+    if (!isAboutBlankInChromeDocshell) {
       newInnerWindow->mHasNotifiedGlobalCreated = true;
       nsContentUtils::AddScriptRunner(NewRunnableMethod(
           "nsGlobalWindowOuter::DispatchDOMWindowCreated", this,
@@ -5900,7 +5900,13 @@ bool nsGlobalWindowOuter::CanClose() {
   if (viewer) {
     bool canClose;
     nsresult rv = viewer->PermitUnload(&canClose);
-    if (NS_SUCCEEDED(rv) && !canClose) return false;
+    
+    if (!mDocShell || mDocShell->IsBeingDestroyed()) {
+      return true;
+    }
+    if (NS_SUCCEEDED(rv) && !canClose) {
+      return false;
+    }
   }
 
   
@@ -6336,7 +6342,17 @@ Selection* nsGlobalWindowOuter::GetSelectionOuter() {
 
   PresShell* presShell = mDocShell->GetPresShell();
   if (!presShell) {
-    return nullptr;
+    
+    
+    
+    EnsureSizeAndPositionUpToDate();
+    if (!mDocShell) {
+      return nullptr;
+    }
+    presShell = mDocShell->GetPresShell();
+    if (!presShell) {
+      return nullptr;
+    }
   }
   return presShell->GetCurrentSelection(SelectionType::eNormal);
 }

@@ -1,91 +1,64 @@
 
 
 
-function test() {
-  
-  waitForExplicitFinish();
-  let windowsToClose = [];
-  let innerID;
-  let beforeEvents;
-  let afterEvents;
-  let storageShouldOccur;
-  let testURI =
-    "http://example.com/browser/dom/tests/browser/test-console-api.html";
-  let ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+
+const testURI =
+  "http://example.com/browser/dom/tests/browser/test-console-api.html";
+
+function getInnerWindowId(aWindow) {
+  return aWindow.windowGlobalChild.innerWindowId;
+}
+
+async function doTest(aIsPrivateMode) {
+  const window = await BrowserTestUtils.openNewBrowserWindow({
+    private: aIsPrivateMode,
+  });
+
+  const ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
     Ci.nsIConsoleAPIStorage
   );
 
-  function getInnerWindowId(aWindow) {
-    return aWindow.windowGlobalChild.innerWindowId;
-  }
+  const innerID = getInnerWindowId(window);
+  const beforeEvents = ConsoleAPIStorage.getEvents(innerID);
+  BrowserTestUtils.startLoadingURIString(
+    window.gBrowser.selectedBrowser,
+    testURI
+  );
 
-  function whenNewWindowLoaded(aPrivate, aCallback) {
-    BrowserTestUtils.openNewBrowserWindow({
-      private: aPrivate,
-    }).then(aCallback);
-  }
-
-  function doTest(aIsPrivateMode, aWindow, aCallback) {
-    BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser).then(
-      () => {
-        function observe() {
-          afterEvents = ConsoleAPIStorage.getEvents(innerID);
-          is(
-            beforeEvents.length == afterEvents.length - 1,
-            storageShouldOccur,
-            "storage should" + (storageShouldOccur ? "" : " not") + " occur"
-          );
-
-          executeSoon(function () {
-            ConsoleAPIStorage.removeLogEventListener(observe);
-            aCallback();
-          });
-        }
-
-        ConsoleAPIStorage.addLogEventListener(
-          observe,
-          aWindow.document.nodePrincipal
-        );
-        aWindow.nativeConsole.log(
-          "foo bar baz (private: " + aIsPrivateMode + ")"
-        );
-      }
-    );
-
-    
-    storageShouldOccur = true;
-    innerID = getInnerWindowId(aWindow);
-    beforeEvents = ConsoleAPIStorage.getEvents(innerID);
-    BrowserTestUtils.startLoadingURIString(
-      aWindow.gBrowser.selectedBrowser,
-      testURI
-    );
-  }
-
-  function testOnWindow(aPrivate, aCallback) {
-    whenNewWindowLoaded(aPrivate, function (aWin) {
-      windowsToClose.push(aWin);
-      
-      
-      
-      executeSoon(() => aCallback(aWin));
-    });
-  }
-
-  
-  registerCleanupFunction(function () {
-    windowsToClose.forEach(function (aWin) {
-      aWin.close();
-    });
+  await BrowserTestUtils.browserLoaded(window.gBrowser.selectedBrowser, {
+    wantLoad: testURI,
   });
 
-  
-  testOnWindow(false, function (aWin) {
-    doTest(false, aWin, function () {
-      
-      testOnWindow(true, function (aWin) {
-        doTest(true, aWin, finish);
-      });
-    });
+  const consoleEventPromise = new Promise(res => {
+    function listener() {
+      ConsoleAPIStorage.removeLogEventListener(listener);
+      res();
+    }
+    ConsoleAPIStorage.addLogEventListener(
+      listener,
+      window.document.nodePrincipal
+    );
   });
+
+  window.nativeConsole.log("foo bar baz (private: " + aIsPrivateMode + ")");
+
+  await consoleEventPromise;
+
+  const afterEvents = ConsoleAPIStorage.getEvents(innerID);
+  
+  is(
+    beforeEvents.length == afterEvents.length - 1,
+    true,
+    "storage should occur"
+  );
+
+  await BrowserTestUtils.closeWindow(window);
 }
+
+add_task(async function test_console_storage() {
+  await doTest(false);
+});
+
+add_task(async function test_console_storage_private_browsing() {
+  await doTest(true);
+});

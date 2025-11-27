@@ -110,6 +110,7 @@
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
 #include "nsNetUtil.h"
+#include "nsOpenWindowInfo.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
 #include "nsQueryObject.h"
@@ -765,7 +766,8 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
   
   bool tmpState = mNeedsAsyncDestroy;
-  mNeedsAsyncDestroy = true;
+  
+  mNeedsAsyncDestroy = !NS_IsAboutBlankAllowQueryAndFragment(mURIToLoad);
 
   RefPtr<nsDocShell> docShell = GetDocShell();
   rv = docShell->LoadURI(loadState, false);
@@ -955,6 +957,7 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* aFrame) {
     return ShowRemoteFrame(aFrame);
   }
   const LayoutDeviceIntSize size = aFrame->GetInitialSubdocumentSize();
+
   nsresult rv = MaybeCreateDocShell();
   if (NS_FAILED(rv)) {
     return false;
@@ -985,7 +988,9 @@ bool nsFrameLoader::Show(nsSubDocumentFrame* aFrame) {
   }
 
   RefPtr<nsDocShell> baseWindow = GetDocShell();
-  baseWindow->InitWindow(nullptr, 0, 0, size.width, size.height);
+  MOZ_ASSERT(ds == baseWindow, "How did the docshell change?");
+  baseWindow->InitWindow(nullptr, 0, 0, size.width, size.height, nullptr,
+                         nullptr);
   baseWindow->SetVisibility(true);
   NS_ENSURE_TRUE(GetDocShell(), false);
 
@@ -2236,12 +2241,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     nsGlobalWindowOuter::Cast(newWindow)->AllowScriptsToClose();
   }
 
-  if (!docShell->Initialize()) {
-    
-    NS_WARNING("Something wrong when creating the docshell for a frameloader!");
-    return NS_ERROR_FAILURE;
-  }
-
   NS_ENSURE_STATE(mOwnerContent);
 
   
@@ -2264,6 +2263,43 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   MOZ_ALWAYS_SUCCEEDS(mPendingBrowsingContext->SetInitialSandboxFlags(
       mPendingBrowsingContext->GetSandboxFlags()));
 
+  
+
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
+  nsCOMPtr<nsIPrincipal> partitionedPrincipal = doc->PartitionedPrincipal();
+
+  
+  if (mOpenWindowInfo && mOpenWindowInfo->PrincipalToInheritForAboutBlank()) {
+    principal = mOpenWindowInfo->PrincipalToInheritForAboutBlank();
+    partitionedPrincipal =
+        mOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank();
+  }
+
+  if ((mPendingBrowsingContext->IsContent() || XRE_IsContentProcess()) &&
+      (!principal || principal->IsSystemPrincipal())) {
+    
+    principal = NullPrincipal::Create(
+        mPendingBrowsingContext->OriginAttributesRef(), nullptr);
+    partitionedPrincipal = principal;
+  }
+
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  openWindowInfo->mPrincipalToInheritForAboutBlank = principal.forget();
+  openWindowInfo->mPartitionedPrincipalToInheritForAboutBlank =
+      partitionedPrincipal.forget();
+  openWindowInfo->mPolicyContainerToInheritForAboutBlank =
+      doc->GetPolicyContainer();
+  openWindowInfo->mCoepToInheritForAboutBlank = doc->GetEmbedderPolicy();
+  openWindowInfo->mBaseUriToInheritForAboutBlank = mOwnerContent->GetBaseURI();
+  if (!docShell->Initialize(openWindowInfo, nullptr)) {
+    
+    NS_WARNING("Something wrong when creating the docshell for a frameloader!");
+    return NS_ERROR_FAILURE;
+  }
+
   ReallyLoadFrameScripts();
 
   
@@ -2272,11 +2308,10 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   
   
-  
-  
-  if (mIsTopLevelContent &&
-      mPendingBrowsingContext->GetMessageManagerGroup() == u"browsers"_ns) {
-    (void)mDocShell->GetDocument();
+  if (Document* doc = docShell->GetDocument()) {
+    if (nsPIDOMWindowOuter* window = doc->GetWindow()) {
+      window->UpdateParentTarget();
+    }
   }
 
   return NS_OK;

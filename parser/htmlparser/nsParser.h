@@ -225,6 +225,11 @@ class nsParser final : public nsIParser,
   
 
 
+  virtual bool IsAboutBlankMode() override;
+
+  
+
+
 
 
 

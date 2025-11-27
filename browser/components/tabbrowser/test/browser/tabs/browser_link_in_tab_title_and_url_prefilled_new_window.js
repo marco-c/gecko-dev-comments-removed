@@ -56,5 +56,12 @@ add_task(async function blank_page__by_script() {
   await doTestWithNewWindow({
     link: "blank-page--by-script",
     expectedSetURICalled: false,
+    async actionWhileLoading(_onTabLoaded) {
+      
+      
+      info("Skip waiting for link target to load");
+      
+      _onTabLoaded.catch(() => {});
+    },
   });
 });

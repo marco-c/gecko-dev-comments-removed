@@ -51,7 +51,7 @@ async function addJsonViewTab(
 ) {
   info("Adding a new JSON tab with URL: '" + url + "'");
   const tabAdded = BrowserTestUtils.waitForNewTab(gBrowser, url);
-  const tabLoaded = addTab(url);
+  const tabLoaded = addTab(url, { waitForLoad: true });
 
   
   

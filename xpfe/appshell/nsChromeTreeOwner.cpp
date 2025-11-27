@@ -233,14 +233,6 @@ nsChromeTreeOwner::GetHasPrimaryContent(bool* aResult) {
 
 
 
-NS_IMETHODIMP nsChromeTreeOwner::InitWindow(nsIWidget* parentWidget, int32_t x,
-                                            int32_t y, int32_t cx, int32_t cy) {
-  
-  
-  NS_ENSURE_SUCCESS(SetPositionAndSize(x, y, cx, cy, 0), NS_ERROR_FAILURE);
-  return NS_OK;
-}
-
 NS_IMETHODIMP nsChromeTreeOwner::Destroy() {
   NS_ENSURE_STATE(mAppWindow);
   return mAppWindow->Destroy();

@@ -334,16 +334,6 @@ nsresult nsHTMLDocument::StartDocumentLoad(
     loadAsHtml5 = false;
   }
 
-  
-  if (loadAsHtml5 && view) {
-    
-    nsCOMPtr<nsIURI> uri;
-    aChannel->GetURI(getter_AddRefs(uri));
-    if (NS_IsAboutBlankAllowQueryAndFragment(uri)) {
-      loadAsHtml5 = false;
-    }
-  }
-
   nsresult rv = Document::StartDocumentLoad(aCommand, aChannel, aLoadGroup,
                                             aContainer, aDocListener, aReset);
   if (NS_FAILED(rv)) {
@@ -371,6 +361,17 @@ nsresult nsHTMLDocument::StartDocumentLoad(
       }
     } else if (mViewSource && !html) {
       html5Parser->MarkAsNotScriptCreated("view-source-xml");
+    } else if (view && NS_IsAboutBlank(uri)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      html5Parser->MarkAsNotScriptCreated("about-blank");
     } else {
       html5Parser->MarkAsNotScriptCreated(aCommand);
     }
@@ -487,15 +488,8 @@ nsresult nsHTMLDocument::StartDocumentLoad(
       mParser->SetContentSink(xmlsink);
     }
   } else {
-    if (loadAsHtml5) {
-      html5Parser->Initialize(this, uri, docShell, aChannel);
-    } else {
-      
-      nsCOMPtr<nsIHTMLContentSink> htmlsink;
-      NS_NewHTMLContentSink(getter_AddRefs(htmlsink), this, uri, docShell,
-                            aChannel);
-      mParser->SetContentSink(htmlsink);
-    }
+    MOZ_ASSERT(loadAsHtml5);
+    html5Parser->Initialize(this, uri, docShell, aChannel);
   }
 
   

@@ -214,7 +214,8 @@ add_task(async function test_unload_extension_during_background_page_startup() {
           "Expected background page"
         );
         
-        arguments[0] = "about:blank";
+        
+        arguments[0] = "data:text/html,";
         browserFixupAndLoadURIString.apply(this, arguments);
 
         

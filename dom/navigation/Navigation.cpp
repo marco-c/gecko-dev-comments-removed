@@ -294,9 +294,7 @@ bool SupportsInterface(nsISupports* aSupports) {
 bool Navigation::HasEntriesAndEventsDisabled() const {
   Document* doc = GetAssociatedDocument();
   return !doc || !doc->IsCurrentActiveDocument() ||
-         doc->GetInitialStatus() == Document::InitialStatus::IsInitial ||
-         doc->GetInitialStatus() ==
-             Document::InitialStatus::IsInitialButExplicitlyOpened ||
+         doc->IsEverInitialDocument() ||
          doc->GetPrincipal()->GetIsNullPrincipal() ||
          
          

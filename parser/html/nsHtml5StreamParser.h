@@ -86,7 +86,13 @@ enum eParserMode {
   
 
 
-  LOAD_AS_DATA
+  LOAD_AS_DATA,
+
+  
+
+
+
+  ABOUT_BLANK,
 };
 
 enum eBomState {

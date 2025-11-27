@@ -707,6 +707,10 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   bool mIsAnon;
 
   
+  
+  bool mAlreadyGotStopRequest;
+
+  
 
 
   void CloseRequest(nsresult detail);

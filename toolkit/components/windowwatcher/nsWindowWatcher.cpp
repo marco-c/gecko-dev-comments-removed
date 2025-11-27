@@ -886,43 +886,43 @@ nsresult nsWindowWatcher::OpenWindowInternal(
          : nsContentUtils::GetSystemPrincipal();
   MOZ_ASSERT(subjectPrincipal);
 
-  nsCOMPtr<nsIPrincipal> newWindowPrincipal;
+  
+  
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+
   if (!targetBC) {
     if (windowTypeIsChrome) {
       
       
       MOZ_RELEASE_ASSERT(subjectPrincipal->IsSystemPrincipal(),
                          "Only system principals can create chrome windows");
-      newWindowPrincipal = subjectPrincipal;
+      openWindowInfo->mPrincipalToInheritForAboutBlank = subjectPrincipal;
     } else if (nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
       
       
       
       
       if (parentBC) {
-        newWindowPrincipal =
+        openWindowInfo->mPrincipalToInheritForAboutBlank =
             NullPrincipal::Create(parentBC->OriginAttributesRef());
       } else {
-        newWindowPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
+        openWindowInfo->mPrincipalToInheritForAboutBlank =
+            NullPrincipal::CreateWithoutOriginAttributes();
       }
     } else if (aForceNoOpener) {
       
       
       
-      newWindowPrincipal =
+      openWindowInfo->mPrincipalToInheritForAboutBlank =
           NullPrincipal::CreateWithInheritedAttributes(subjectPrincipal);
     } else {
       
       
-      newWindowPrincipal = subjectPrincipal;
+      openWindowInfo->mPrincipalToInheritForAboutBlank = subjectPrincipal;
     }
   }
 
-  
-  
-  RefPtr<nsOpenWindowInfo> openWindowInfo;
   if (!targetBC && !windowTypeIsChrome) {
-    openWindowInfo = new nsOpenWindowInfo();
     openWindowInfo->mForceNoOpener = aForceNoOpener;
     openWindowInfo->mParent = parentBC;
     openWindowInfo->mIsForPrinting = aPrintKind != PRINT_NONE;
@@ -935,21 +935,17 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     openWindowInfo->mIsRemote = XRE_IsContentProcess();
 
     
-    MOZ_ASSERT(
-        newWindowPrincipal &&
-        !nsContentUtils::IsSystemOrExpandedPrincipal(newWindowPrincipal));
-    openWindowInfo->mOriginAttributes =
-        newWindowPrincipal->OriginAttributesRef();
+    MOZ_ASSERT(openWindowInfo->mPrincipalToInheritForAboutBlank &&
+               !nsContentUtils::IsSystemOrExpandedPrincipal(
+                   openWindowInfo->mPrincipalToInheritForAboutBlank));
 
     MOZ_DIAGNOSTIC_ASSERT(
-        !parentBC || openWindowInfo->mOriginAttributes.EqualsIgnoringFPD(
+        !parentBC || openWindowInfo->GetOriginAttributes().EqualsIgnoringFPD(
                          parentBC->OriginAttributesRef()),
         "subject principal origin attributes doesn't match opener");
   }
 
   uint32_t activeDocsSandboxFlags = 0;
-  nsCOMPtr<nsIPolicyContainer> policyContainerToInheritForAboutBlank;
-  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> coepToInheritForAboutBlank;
   if (!targetBC) {
     
     
@@ -963,8 +959,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       activeDocsSandboxFlags = parentDoc->GetSandboxFlags();
 
       if (!aForceNoOpener) {
-        policyContainerToInheritForAboutBlank = parentDoc->GetPolicyContainer();
-        coepToInheritForAboutBlank = parentDoc->GetEmbedderPolicy();
+        openWindowInfo->mPolicyContainerToInheritForAboutBlank =
+            parentDoc->GetPolicyContainer();
+        openWindowInfo->mCoepToInheritForAboutBlank =
+            parentDoc->GetEmbedderPolicy();
       }
 
       
@@ -1003,7 +1001,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
               windowIsNew = false;
             }
           }
-
         } else if (rv == NS_ERROR_ABORT) {
           
           
@@ -1090,8 +1087,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
 
 
-      rv = CreateChromeWindow(parentChrome, chromeFlags, openWindowInfo,
-                              getter_AddRefs(newChrome));
+      rv = CreateChromeWindow(
+          parentChrome, chromeFlags,
+          windowTypeIsChrome ? nullptr : openWindowInfo.get(),
+          getter_AddRefs(newChrome));
       if (parentTopInnerWindow) {
         parentTopInnerWindow->Resume();
       }
@@ -1232,8 +1231,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   if (windowIsNew) {
     MOZ_DIAGNOSTIC_ASSERT(
         !targetBC->IsContent() ||
-        newWindowPrincipal->OriginAttributesRef().EqualsIgnoringFPD(
-            targetBC->OriginAttributesRef()));
+        openWindowInfo->mPrincipalToInheritForAboutBlank->OriginAttributesRef()
+            .EqualsIgnoringFPD(targetBC->OriginAttributesRef()));
 
     bool autoPrivateBrowsing = StaticPrefs::browser_privatebrowsing_autostart();
 
@@ -1263,16 +1262,28 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     NS_ASSERTION(targetOuterWin == targetDocShell->GetWindow(),
                  "Different windows??");
 
-    
-    
-    
     if (targetOuterWin) {
       MOZ_ASSERT(windowIsNew);
       MOZ_ASSERT(!targetOuterWin->GetSameProcessOpener() ||
                  targetOuterWin->GetSameProcessOpener() == aParent);
-      targetOuterWin->SetInitialPrincipal(newWindowPrincipal,
-                                          policyContainerToInheritForAboutBlank,
-                                          coepToInheritForAboutBlank);
+      Document* doc = targetBC->GetExtantDocument();
+      if (doc) {
+        
+        
+        MOZ_ASSERT(doc->GetPrincipal()->Equals(
+                       openWindowInfo->mPrincipalToInheritForAboutBlank) ||
+                       (doc->GetPrincipal()->GetIsNullPrincipal() &&
+                        openWindowInfo->mPrincipalToInheritForAboutBlank
+                            ->GetIsNullPrincipal()),
+                   "Wrong principal!");
+        
+        
+        if (nsIURI* uri = doc->GetDocumentURI()) {
+          targetDocShell->FireOnLocationChange(targetDocShell, nullptr, uri, 0);
+        }
+      } else {
+        MOZ_ASSERT_UNREACHABLE("How come there is no doc?");
+      }
 
       if (aIsPopupSpam) {
         MOZ_ASSERT(!targetBC->GetIsPopupSpam(),
@@ -1315,19 +1326,31 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       targetBC->UseRemoteSubframes() ==
       !!(chromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
 
-  if (aLoadState) {
+  
+  
+  RefPtr<nsDocShellLoadState> loadState = aLoadState;
+  nsCOMPtr<nsIURI> uriToLoad = aUri;
+  if (windowIsNew && !uriToLoad && aCalledFromJS && !loadState) {
+    NS_NewURI(getter_AddRefs(uriToLoad), "about:blank"_ns);
+    
+    
+    loadState = CreateLoadState(
+        uriToLoad, aParent ? nsPIDOMWindowOuter::From(aParent) : nullptr);
+  }
+
+  if (loadState) {
     
     
     
-    if (!aLoadState->TriggeringPrincipal()) {
-      aLoadState->SetTriggeringPrincipal(subjectPrincipal);
+    if (!loadState->TriggeringPrincipal()) {
+      loadState->SetTriggeringPrincipal(subjectPrincipal);
 #ifndef ANDROID
       MOZ_ASSERT(subjectPrincipal,
                  "nsWindowWatcher: triggeringPrincipal required");
 #endif
     }
 
-    if (!aLoadState->GetReferrerInfo() && !aForceNoReferrer) {
+    if (!loadState->GetReferrerInfo() && !aForceNoReferrer) {
       
 
 
@@ -1340,7 +1363,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       }
       if (doc) {
         auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
-        aLoadState->SetReferrerInfo(referrerInfo);
+        loadState->SetReferrerInfo(referrerInfo);
       }
     }
 
@@ -1349,7 +1372,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       if (win) {
         nsCOMPtr<nsIPolicyContainer> policyContainer =
             win->GetPolicyContainer();
-        aLoadState->SetPolicyContainer(policyContainer);
+        loadState->SetPolicyContainer(policyContainer);
       }
     }
   }
@@ -1379,10 +1402,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     if (obsSvc) {
       RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
 
-      if (aUri) {
+      if (uriToLoad) {
         
         
-        props->SetPropertyAsACString(u"url"_ns, aUri->GetSpecOrDefault());
+        props->SetPropertyAsACString(u"url"_ns, uriToLoad->GetSpecOrDefault());
       }
 
       props->SetPropertyAsInterface(u"sourceTabDocShell"_ns, parentDocShell);
@@ -1395,7 +1418,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
   }
 
-  if (aLoadState) {
+  if (loadState) {
     uint32_t loadFlags = nsIWebNavigation::LOAD_FLAGS_NONE;
     if (windowIsNew) {
       loadFlags |= nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD;
@@ -1412,11 +1435,11 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         loadFlags |= nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
       }
     }
-    aLoadState->SetLoadFlags(loadFlags);
-    aLoadState->SetFirstParty(true);
+    loadState->SetLoadFlags(loadFlags);
+    loadState->SetFirstParty(true);
 
     
-    targetBC->LoadURI(aLoadState);
+    targetBC->LoadURI(loadState);
   }
 
   if (windowIsModal) {

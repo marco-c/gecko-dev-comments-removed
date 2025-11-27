@@ -37,6 +37,14 @@ var state = {
 
 add_task(async function test() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+
+  
+  
+  
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+    wantLoad: "about:blank",
+  });
+
   await promiseTabState(tab, state);
 
   function compareEntries(i, j, history) {

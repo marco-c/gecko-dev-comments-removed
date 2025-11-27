@@ -420,8 +420,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           });
 
           
-          
-          if (url !== null) {
+          if (url !== null && !url.startsWith("about:blank")) {
             tabListener.initializingTabs.add(nativeTab);
           } else {
             url = "about:blank";

@@ -13,6 +13,7 @@
 #include "nsPIWindowWatcher.h"
 #include "nsPIDOMWindow.h"
 #include "AppWindow.h"
+#include "nsOpenWindowInfo.h"
 
 #include "mozilla/widget/InitData.h"
 #include "nsWidgetsCID.h"
@@ -27,6 +28,7 @@
 #include "nsIWebNavigation.h"
 #include "nsIWindowlessBrowser.h"
 
+#include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StartupTimeline.h"
@@ -424,11 +426,21 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
     browsingContext->SetPrivateBrowsing(true);
   }
 
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  if (aIsChrome) {
+    openWindowInfo->mPrincipalToInheritForAboutBlank =
+        nsContentUtils::GetSystemPrincipal();
+  } else {
+    openWindowInfo->mPrincipalToInheritForAboutBlank =
+        NullPrincipal::CreateWithoutOriginAttributes();
+  }
+
   
 
 
-  nsCOMPtr<nsIWebBrowser> browser = nsWebBrowser::Create(
-      stub, widget, browsingContext, nullptr );
+  nsCOMPtr<nsIWebBrowser> browser =
+      nsWebBrowser::Create(stub, widget, browsingContext,
+                           nullptr , openWindowInfo);
 
   if (NS_WARN_IF(!browser)) {
     NS_ERROR("Couldn't create instance of nsWebBrowser!");
@@ -585,9 +597,30 @@ nsresult nsAppShellService::JustCreateTopWindow(
   }
   widgetInitData.mIsPrivate = isPrivateBrowsingWindow;
 
-  nsresult rv =
-      window->Initialize(parent, center ? aParent : nullptr, aInitialWidth,
-                         aInitialHeight, aIsHiddenWindow, widgetInitData);
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (nsContentUtils::IsInitialized()) {  
+                                          
+    MOZ_DIAGNOSTIC_ASSERT(
+        nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
+        "Previously, this method would use the subject principal rather than "
+        "hardcoding the system principal");
+    openWindowInfo->mPrincipalToInheritForAboutBlank =
+        nsContentUtils::GetSystemPrincipal();
+  }
+
+  nsresult rv = window->Initialize(
+      parent, center ? aParent : nullptr, aInitialWidth, aInitialHeight,
+      aIsHiddenWindow, widgetInitData, openWindowInfo);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -610,36 +643,6 @@ nsresult nsAppShellService::JustCreateTopWindow(
                             nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
     docShell->SetRemoteSubframes(aChromeMask &
                                  nsIWebBrowserChrome::CHROME_FISSION_WINDOW);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (nsContentUtils::IsInitialized()) {  
-                                            
-      MOZ_DIAGNOSTIC_ASSERT(
-          nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
-          "Previously, this method would use the subject principal rather than "
-          "hardcoding the system principal");
-      
-      
-      rv = docShell->CreateAboutBlankDocumentViewer(
-          nsContentUtils::GetSystemPrincipal(),
-          nsContentUtils::GetSystemPrincipal(),
-           nullptr,  nullptr,
-           true);
-      NS_ENSURE_SUCCESS(rv, rv);
-      RefPtr<dom::Document> doc = docShell->GetDocument();
-      NS_ENSURE_TRUE(!!doc, NS_ERROR_FAILURE);
-      MOZ_ASSERT(doc->IsInitialDocument(),
-                 "Document should be an initial document");
-    }
 
     
     if (aUrl) {
@@ -715,8 +718,15 @@ nsAppShellService::RegisterTopLevelWindow(nsIAppWindow* aWindow) {
       nsContentUtils::LegacyIsCallerChromeOrNativeCode(),
       "Previously, this method would use the subject principal rather than "
       "hardcoding the system principal");
-  domWindow->SetInitialPrincipal(nsContentUtils::GetSystemPrincipal(), nullptr,
-                                 Nothing());
+#ifdef DEBUG
+  mozilla::dom::Document* doc = domWindow->GetDoc();
+  if (doc) {
+    MOZ_ASSERT(doc->GetPrincipal() == nsContentUtils::GetSystemPrincipal(),
+               "Wrong principal!");
+  } else {
+    MOZ_ASSERT(false, "How come there was no doc?");
+  }
+#endif
 
   
   nsCOMPtr<nsIWindowMediator> mediator(

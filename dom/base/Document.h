@@ -668,6 +668,8 @@ class Document : public nsINode,
     }
   };
 
+  void ApplyCspFromLoadInfo(nsILoadInfo* aLoadInfo);
+
   
 
 
@@ -1014,18 +1016,31 @@ class Document : public nsINode,
 
   void SetBidiEnabled() { mBidiEnabled = true; }
 
+  
+
+
+
   enum class InitialStatus : uint8_t {
-    IsInitial,
+    
+    
+    IsInitialUncommitted,
+    
+    
+    IsInitialCommitted,
+    
     IsInitialButExplicitlyOpened,
-    WasInitial,
+    
     NeverInitial,
   };
 
   
 
 
+
+
   bool IsInitialDocument() const {
-    return mInitialStatus == InitialStatus::IsInitial;
+    return mInitialStatus == InitialStatus::IsInitialUncommitted ||
+           mInitialStatus == InitialStatus::IsInitialCommitted;
   }
 
   
@@ -1040,11 +1055,33 @@ class Document : public nsINode,
 
 
 
-  void SetIsInitialDocument(bool aIsInitialDocument);
+
+  bool IsUncommittedInitialDocument() const {
+    return mInitialStatus == InitialStatus::IsInitialUncommitted;
+  }
 
   InitialStatus GetInitialStatus() const { return mInitialStatus; }
 
+  
+
+
+
+
   void SetInitialStatus(Document::InitialStatus aStatus);
+
+  
+
+
+
+  bool InitialAboutBlankLoadCompleting() const {
+    return mInitialAboutBlankLoadCompleting;
+  }
+
+  void BeginInitialAboutBlankLoadCompleting(nsIChannel* aChannel);
+
+  void EndInitialAboutBlankLoadCompleting() {
+    mInitialAboutBlankLoadCompleting = false;
+  }
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
 
@@ -4875,6 +4912,13 @@ class Document : public nsINode,
   
   bool mMayNeedFontPrefsUpdate : 1;
 
+  
+  
+  
+  
+  
+  bool mInitialAboutBlankLoadCompleting : 1;
+
   bool mIgnoreDocGroupMismatches : 1;
 
   
@@ -5035,6 +5079,7 @@ class Document : public nsINode,
 
   bool mDelayFrameLoaderInitialization : 1;
 
+  
   bool mSynchronousDOMContentLoaded : 1;
 
   

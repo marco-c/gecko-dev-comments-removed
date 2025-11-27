@@ -5,6 +5,7 @@
 
 
 #include "nsISupports.idl"
+#include "nsIPrincipal.idl"
 #include "nsrootidl.idl"
 
 [ptr] native nsIWidget(nsIWidget);
@@ -28,36 +29,6 @@ native DimensionKind(mozilla::DimensionKind);
 [scriptable, builtinclass, uuid(ca635529-a977-4552-9b8a-66187e54d882)]
 interface nsIBaseWindow : nsISupports
 {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [noscript]void initWindow(
-    in nsIWidget parentWidget,  in long x, in long y, in long cx, in long cy);
-
   
 
 

@@ -109,6 +109,11 @@ add_task(async function test_profile_js_sources_with_tracing() {
     "The profiler is not currently active"
   );
 
+  
+  
+  await TestUtils.waitForTick();
+  await TestUtils.waitForTick();
+
   const url = BASE_URL + "tracing.html";
   await BrowserTestUtils.withNewTab("about:blank", async contentBrowser => {
     

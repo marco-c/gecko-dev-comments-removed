@@ -2905,7 +2905,8 @@ Toolbox.prototype = {
       
       
       if (iframe.contentWindow) {
-        DOMHelpers.onceDOMReady(iframe.contentWindow, onLoad);
+        const loadingUrl = definition.url || "about:blank";
+        DOMHelpers.onceDOMReady(iframe.contentWindow, onLoad, loadingUrl);
       } else {
         const callback = () => {
           iframe.removeEventListener("DOMContentLoaded", callback);

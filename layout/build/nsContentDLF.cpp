@@ -269,6 +269,8 @@ already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
   blankDoc->ResetToURI(uri, aLoadGroup, aPrincipal, aPartitionedPrincipal);
   blankDoc->SetContainer(aContainer);
 
+  blankDoc->SetAllowDeclarativeShadowRoots(true);
+
   
   nsNodeInfoManager* nim = blankDoc->NodeInfoManager();
 

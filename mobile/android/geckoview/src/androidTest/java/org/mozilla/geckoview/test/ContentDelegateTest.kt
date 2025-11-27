@@ -410,7 +410,8 @@ class ContentDelegateTest : BaseSessionTest() {
             override fun onCloseRequest(session: GeckoSession) {
             }
 
-            @AssertCalled(count = 1)
+            
+            @AssertCalled(count = 2)
             override fun onPageStop(session: GeckoSession, success: Boolean) {
             }
         })

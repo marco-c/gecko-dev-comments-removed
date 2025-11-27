@@ -38,10 +38,15 @@ exports.DOMHelpers = {
         Services.tm.dispatchToMainThread(callback);
       }
     };
+    
+    
+    
+    
     if (
       (win.document.readyState == "complete" ||
         win.document.readyState == "interactive") &&
-      win.location.href == targetURL
+      win.location.href == targetURL &&
+      !win.document.isUncommittedInitialDocument
     ) {
       Services.tm.dispatchToMainThread(callback);
     } else {

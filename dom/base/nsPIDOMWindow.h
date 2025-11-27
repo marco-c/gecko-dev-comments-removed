@@ -1114,6 +1114,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   already_AddRefed<nsIBaseWindow> GetTreeOwnerWindow();
   already_AddRefed<nsIWebBrowserChrome> GetWebBrowserChrome();
 
+  virtual void UpdateParentTarget() = 0;
+
  protected:
   
   
@@ -1121,8 +1123,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   void SetChromeEventHandlerInternal(
       mozilla::dom::EventTarget* aChromeEventHandler);
-
-  virtual void UpdateParentTarget() = 0;
 
   
   

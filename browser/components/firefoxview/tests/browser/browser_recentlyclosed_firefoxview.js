@@ -1,7 +1,7 @@
 
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 ChromeUtils.defineESModuleGetters(globalThis, {
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",

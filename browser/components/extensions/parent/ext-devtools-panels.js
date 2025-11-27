@@ -16,8 +16,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 var { watchExtensionProxyContextLoad } = ExtensionParent;
 
-var { promiseDocumentLoaded } = ExtensionUtils;
-
 const WEBEXT_PANELS_URL = "chrome://browser/content/webext-panels.xhtml";
 
 class BaseDevToolsPanel {
@@ -489,9 +487,17 @@ class ParentDevToolsInspectorSidebar extends BaseDevToolsPanel {
 
     
     
-    promiseDocumentLoaded(containerEl.contentDocument).then(() => {
+    const onLoaded = () => {
       this.createBrowserElement(containerEl.contentWindow);
-    });
+    };
+    
+    
+    const doc = containerEl.contentDocument;
+    if (doc.readyState == "complete" && doc.location.href != "about:blank") {
+      onLoaded();
+    } else {
+      containerEl.addEventListener("load", onLoaded, { once: true });
+    }
   }
 
   onExtensionPageUnmount() {

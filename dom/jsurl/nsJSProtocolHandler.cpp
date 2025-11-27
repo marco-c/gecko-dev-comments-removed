@@ -880,6 +880,8 @@ void nsJSChannel::EvaluateScript() {
           
           mStatus = NS_ERROR_DOM_RETVAL_UNDEFINED;
         }
+        
+        
       }
     }
 

@@ -43,8 +43,6 @@ class JSExecutionManager;
 
 class DocGroup final {
  public:
-  typedef nsTArray<Document*>::iterator Iterator;
-
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DocGroup)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(DocGroup)
 
@@ -77,16 +75,6 @@ class DocGroup final {
   
   
   void RemoveDocument(Document* aDocument);
-
-  
-  Iterator begin() {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mDocuments.begin();
-  }
-  Iterator end() {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mDocuments.end();
-  }
 
   
   

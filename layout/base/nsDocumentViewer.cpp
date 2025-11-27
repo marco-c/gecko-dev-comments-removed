@@ -932,6 +932,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
 
   
   nsCOMPtr<nsPIDOMWindowOuter> window = mDocument->GetWindow();
+  RefPtr<nsDocShell> docShell = nsDocShell::Cast(window->GetDocShell());
 
   mLoaded = true;
 
@@ -957,7 +958,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     
     
 
-    RefPtr<nsDocShell> docShell = nsDocShell::Cast(window->GetDocShell());
     NS_ENSURE_TRUE(docShell, NS_ERROR_UNEXPECTED);
 
     
@@ -966,15 +966,16 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     
     
     restoring =
-        (mDocument->GetReadyStateEnum() == Document::READYSTATE_COMPLETE);
+        (mDocument->GetReadyStateEnum() == Document::READYSTATE_COMPLETE) &&
+        !mDocument->InitialAboutBlankLoadCompleting();
     if (!restoring) {
       NS_ASSERTION(
           mDocument->GetReadyStateEnum() == Document::READYSTATE_INTERACTIVE ||
               
               
               (mDocument->GetReadyStateEnum() ==
-                   Document::READYSTATE_UNINITIALIZED &&
-               NS_IsAboutBlank(mDocument->GetDocumentURI())),
+                   Document::READYSTATE_COMPLETE &&
+               mDocument->InitialAboutBlankLoadCompleting()),
           "Bad readystate");
 #ifdef DEBUG
       bool docShellThinksWeAreRestoring;
@@ -984,7 +985,9 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
                  "READYSTATE_COMPLETE document?");
 #endif  
       nsCOMPtr<Document> d = mDocument;
-      mDocument->SetReadyStateInternal(Document::READYSTATE_COMPLETE);
+      if (!mDocument->InitialAboutBlankLoadCompleting()) {
+        mDocument->SetReadyStateInternal(Document::READYSTATE_COMPLETE);
+      }
 
       RefPtr<nsDOMNavigationTiming> timing(d->GetNavigationTiming());
       if (timing) {
@@ -1046,7 +1049,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     
     window = mDocument->GetWindow();
     if (window) {
-      nsIDocShell* docShell = window->GetDocShell();
+      docShell = nsDocShell::Cast(window->GetDocShell());
       bool isInUnload;
       if (docShell && NS_SUCCEEDED(docShell->GetIsInUnload(&isInUnload)) &&
           !isInUnload) {
@@ -1068,11 +1071,27 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     
     
     if (mPresShell) {
-      RefPtr<PresShell> presShell = mPresShell;
-      presShell->UnsuppressPainting();
-      
-      if (mPresShell) {
-        mPresShell->LoadComplete();
+      if (mDocument && mDocument->IsInitialDocument() && docShell &&
+          !docShell->HasStartedLoadingOtherThanInitialBlankURI()) {
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIRunnable> task = NewRunnableMethod<RefPtr<PresShell>>(
+            "nsDocShell::UnsuppressPaintingIfNoNavigationAwayFromAboutBlank",
+            docShell,
+            &nsDocShell::UnsuppressPaintingIfNoNavigationAwayFromAboutBlank,
+            mPresShell);
+        mDocument->Dispatch(task.forget());
+      } else {
+        RefPtr<PresShell> presShell = mPresShell;
+        presShell->UnsuppressPainting();
+        
+        if (mPresShell) {
+          mPresShell->LoadComplete();
+        }
       }
     }
   }

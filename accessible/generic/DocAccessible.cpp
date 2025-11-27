@@ -533,7 +533,8 @@ void DocAccessible::Init() {
   
   
   if (mDocumentNode->GetReadyStateEnum() ==
-      dom::Document::READYSTATE_COMPLETE) {
+          dom::Document::READYSTATE_COMPLETE &&
+      !mDocumentNode->IsUncommittedInitialDocument()) {
     mLoadState |= eDOMLoaded;
     
     
@@ -543,7 +544,8 @@ void DocAccessible::Init() {
     
     
     mLoadEventType = nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE;
-  } else if (mDocumentNode->IsInitialDocument()) {
+  } else if (mDocumentNode->IsUncommittedInitialDocument()) {
+    
     
     
     mLoadState |= eDOMLoaded;

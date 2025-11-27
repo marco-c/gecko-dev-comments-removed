@@ -99,7 +99,7 @@ class ParentProcessDocumentEventWatcher {
       
       
       
-      if (browsingContext.currentWindowGlobal.isInitialDocument) {
+      if (browsingContext.currentWindowGlobal.isUncommittedInitialDocument) {
         return;
       }
 

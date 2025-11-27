@@ -60,6 +60,12 @@ async function openProtectionsPanel(toast, win = window) {
   );
 
   
+  Assert.ok(
+    !SpecialPowers.isHeadless,
+    "openProtectionsPanel cannot be used in headless mode."
+  );
+
+  
   
   EventUtils.synthesizeMouseAtCenter(
     win.gURLBar,

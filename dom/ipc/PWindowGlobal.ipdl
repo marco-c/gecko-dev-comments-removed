@@ -148,6 +148,9 @@ parent:
   [LazySend] async SetIsInitialDocument(bool aIsInitialDocument);
 
   
+  [LazySend] async CommitToInitialDocument();
+
+  
   async Share(IPCWebShareData aData) returns (nsresult rv);
 
   

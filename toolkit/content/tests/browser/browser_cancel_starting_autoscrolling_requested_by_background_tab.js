@@ -30,13 +30,19 @@ add_task(async function testStopStartingAutoScroll() {
           content.document.documentElement.scrollTop; 
           const iframe = content.document.querySelector("iframe");
           
-          if (!iframe || iframe.contentDocument?.readyState == "complete") {
+          if (
+            !iframe ||
+            (iframe.contentDocument?.readyState == "complete" &&
+              !iframe.contentDocument?.isUncommittedInitialDocument)
+          ) {
             return;
           }
           
           
           await ContentTaskUtils.waitForCondition(
-            () => iframe.contentDocument?.readyState == "complete",
+            () =>
+              iframe.contentDocument?.readyState == "complete" &&
+              !iframe.contentDocument?.isUncommittedInitialDocument,
             "Waiting for loading the subdocument"
           );
         });

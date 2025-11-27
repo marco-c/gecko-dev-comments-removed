@@ -175,6 +175,12 @@ class nsIParser : public nsParserBase {
 
 
   virtual bool IsScriptCreated() = 0;
+
+  
+
+
+
+  virtual bool IsAboutBlankMode() = 0;
 };
 
 #endif

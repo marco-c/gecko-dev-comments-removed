@@ -513,6 +513,8 @@ bool nsParser::HasNonzeroScriptNestingLevel() const { return false; }
 
 bool nsParser::IsScriptCreated() { return false; }
 
+bool nsParser::IsAboutBlankMode() { return false; }
+
 
 
 

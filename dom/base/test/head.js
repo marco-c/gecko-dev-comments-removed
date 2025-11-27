@@ -1,4 +1,4 @@
-async function newFocusedWindow(trigger) {
+async function newFocusedWindow(trigger, isInitialBlank = false) {
   let winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
   let delayedStartupPromise = BrowserTestUtils.waitForNewWindow();
 
@@ -6,10 +6,17 @@ async function newFocusedWindow(trigger) {
 
   let win = await winPromise;
   
-  await BrowserTestUtils.waitForContentEvent(
-    win.gBrowser.selectedBrowser,
-    "MozAfterPaint"
-  );
+  
+  if (!isInitialBlank) {
+    await BrowserTestUtils.waitForContentEvent(
+      win.gBrowser.selectedBrowser,
+      "MozAfterPaint"
+    );
+  } else {
+    await new Promise(res =>
+      win.requestAnimationFrame(() => win.requestAnimationFrame(res))
+    );
+  }
   await delayedStartupPromise;
   return win;
 }

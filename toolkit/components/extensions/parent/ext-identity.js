@@ -109,7 +109,7 @@ const openOAuthWindow = (details, redirectURI) => {
 
     
     unloadListener = () => {
-      if (window.document.isInitialDocument) {
+      if (window.document.isUncommittedInitialDocument) {
         
         
         return;

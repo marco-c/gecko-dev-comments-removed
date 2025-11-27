@@ -1893,10 +1893,10 @@ static RefPtr<dom::BrowsingContextCallbackReceivedPromise> SwitchToNewTab(
   RefPtr<nsOpenWindowInfo> openInfo = new nsOpenWindowInfo();
   openInfo->mBrowsingContextReadyCallback =
       new nsBrowsingContextReadyCallback(promise);
-  openInfo->mOriginAttributes = aLoadingBrowsingContext->OriginAttributesRef();
   openInfo->mParent = aLoadingBrowsingContext;
   openInfo->mForceNoOpener = true;
   openInfo->mIsRemote = true;
+  openInfo->mPrincipalToInheritForAboutBlank = triggeringPrincipal;
 
   
   nsresult rv = NS_DispatchToMainThread(NS_NewRunnableFunction(

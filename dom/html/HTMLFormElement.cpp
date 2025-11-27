@@ -303,35 +303,33 @@ void HTMLFormElement::MaybeSubmit(Element* aSubmitter) {
     presShell = doc->GetPresShell();
   }
 
-  
-  
-  
-  
-  if (presShell) {
-    SubmitEventInit init;
-    init.mBubbles = true;
-    init.mCancelable = true;
-    init.mSubmitter =
-        aSubmitter ? nsGenericHTMLElement::FromNode(aSubmitter) : nullptr;
-    RefPtr<SubmitEvent> event =
-        SubmitEvent::Constructor(this, u"submit"_ns, init);
-    event->SetTrusted(true);
-    nsEventStatus status = nsEventStatus_eIgnore;
-    presShell->HandleDOMEventWithTarget(this, event, &status);
+  if (!doc->IsCurrentActiveDocument()) {
+    
+    return;
   }
+
+  SubmitEventInit init;
+  init.mBubbles = true;
+  init.mCancelable = true;
+  init.mSubmitter =
+      aSubmitter ? nsGenericHTMLElement::FromNode(aSubmitter) : nullptr;
+  RefPtr<SubmitEvent> event =
+      SubmitEvent::Constructor(this, u"submit"_ns, init);
+  event->SetTrusted(true);
+  nsEventStatus status = nsEventStatus_eIgnore;
+  EventDispatcher::DispatchDOMEvent(this, nullptr, event, nullptr, &status);
 }
 
 void HTMLFormElement::MaybeReset(Element* aSubmitter) {
-  
-  
-  
-  
-  if (RefPtr<PresShell> presShell = OwnerDoc()->GetPresShell()) {
-    InternalFormEvent event(true, eFormReset);
-    event.mOriginator = aSubmitter;
-    nsEventStatus status = nsEventStatus_eIgnore;
-    presShell->HandleDOMEventWithTarget(this, &event, &status);
+  if (!OwnerDoc()->IsCurrentActiveDocument()) {
+    
+    return;
   }
+
+  InternalFormEvent event(true, eFormReset);
+  event.mOriginator = aSubmitter;
+  nsEventStatus status = nsEventStatus_eIgnore;
+  EventDispatcher::DispatchDOMEvent(this, &event, nullptr, nullptr, &status);
 }
 
 void HTMLFormElement::Submit(ErrorResult& aRv) { aRv = DoSubmit(); }

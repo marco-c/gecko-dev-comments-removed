@@ -27,9 +27,17 @@ add_task(async function check_history_not_persisted() {
   
   tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   browser = tab.linkedBrowser;
-  await promiseTabState(tab, state);
 
   let sessionHistory = browser.browsingContext.sessionHistory;
+
+  
+  
+  
+  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  is(sessionHistory.count, 1, "Should have initial entry");
+
+  info("New about:blank loaded, restoring state");
+  await promiseTabState(tab, state);
 
   is(sessionHistory.count, 1, "Should be a single history entry");
   is(
@@ -40,7 +48,7 @@ add_task(async function check_history_not_persisted() {
 
   
   BrowserTestUtils.startLoadingURIString(browser, "about:robots");
-  await promiseBrowserLoaded(browser, false, "about:robots");
+  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:robots" });
 
   sessionHistory = browser.browsingContext.sessionHistory;
 
@@ -75,9 +83,17 @@ add_task(async function check_history_default_persisted() {
   
   tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   browser = tab.linkedBrowser;
-  await promiseTabState(tab, state);
 
   let sessionHistory = browser.browsingContext.sessionHistory;
+
+  
+  
+  
+  await BrowserTestUtils.browserLoaded(browser, { wantLoad: "about:blank" });
+  is(sessionHistory.count, 1, "Should have initial entry");
+
+  info("New about:blank loaded, restoring state");
+  await promiseTabState(tab, state);
 
   is(sessionHistory.count, 1, "Should be a single history entry");
   is(

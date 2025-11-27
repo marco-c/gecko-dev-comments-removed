@@ -451,9 +451,13 @@ bool BrowserChild::DoUpdateZoomConstraints(
 }
 
 nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
-                            WindowGlobalChild* aInitialWindowChild) {
-  MOZ_ASSERT_IF(aInitialWindowChild,
-                aInitialWindowChild->BrowsingContext() == mBrowsingContext);
+                            WindowGlobalChild* aInitialWindowChild,
+                            nsIOpenWindowInfo* aOpenWindowInfo) {
+  MOZ_ASSERT(aOpenWindowInfo, "Must have openwindowinfo");
+  MOZ_ASSERT(aInitialWindowChild, "Must have window child");
+  MOZ_ASSERT(aInitialWindowChild->BrowsingContext() == mBrowsingContext);
+  MOZ_ASSERT(aInitialWindowChild->DocumentPrincipal() ==
+             aOpenWindowInfo->PrincipalToInheritForAboutBlank());
 
   nsCOMPtr<nsIWidget> widget = nsIWidget::CreatePuppetWidget(this);
   mPuppetWidget = static_cast<PuppetWidget*>(widget.get());
@@ -465,7 +469,12 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
                                   widget::InitData());
 
   mWebBrowser = nsWebBrowser::Create(this, mPuppetWidget, mBrowsingContext,
-                                     aInitialWindowChild);
+                                     aInitialWindowChild, aOpenWindowInfo);
+  if (!mWebBrowser) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
   nsIWebBrowser* webBrowser = mWebBrowser;
 
   mWebNav = do_QueryInterface(webBrowser);
@@ -3063,9 +3072,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   presShell->SuppressDisplayport(true);
   if (nsContentUtils::IsSafeToRunScript()) {
     WebWidget()->PaintNowIfNeeded();
-  } else if (nsIFrame* root = presShell->GetRootFrame()) {
-    presShell->PaintAndRequestComposite(
-        root, mPuppetWidget->GetWindowRenderer(), PaintFlags::None);
+  } else {
+    
+    
+    presShell->PaintAndRequestComposite(presShell->GetRootFrame(),
+                                        mPuppetWidget->GetWindowRenderer(),
+                                        PaintFlags::None);
   }
   presShell->SuppressDisplayport(false);
   return IPC_OK();

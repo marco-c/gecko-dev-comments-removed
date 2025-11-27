@@ -23,13 +23,25 @@
 #include "nsHtml5StreamListener.h"
 #include "nsCharsetSource.h"
 
-class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
+class nsHtml5Parser final : public nsIParser,
+                            public nsSupportsWeakReference,
+                            public nsIStreamListener {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5Parser, nsIParser)
 
   nsHtml5Parser();
+
+  
+  NS_IMETHOD OnStartRequest(nsIRequest* aRequest) override;
+
+  
+  NS_IMETHOD OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInStream,
+                             uint64_t aSourceOffset, uint32_t aLength) override;
+
+  
+  NS_IMETHOD OnStopRequest(nsIRequest* aRequest, nsresult aStatus) override;
 
   
   
@@ -179,6 +191,12 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
   
 
+
+
+  virtual bool IsAboutBlankMode() override;
+
+  
+
   
   
 
@@ -237,6 +255,12 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   
 
 
+
+  bool mAboutBlankMode;
+
+  
+
+
   bool mLastWasCR;
 
   
@@ -261,6 +285,11 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
   int32_t mScriptNestingLevel;
+
+  
+
+
+  bool mTerminationStarted;
 
   
 

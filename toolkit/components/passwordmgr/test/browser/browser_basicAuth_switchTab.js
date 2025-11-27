@@ -4,6 +4,12 @@
 
 add_task(async function test_auth_switchtab() {
   let tab = BrowserTestUtils.addTab(gBrowser);
+  
+  
+  
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+    wantLoad: "about:blank",
+  });
   isnot(tab, gBrowser.selectedTab, "New tab shouldn't be selected");
 
   let authPromptShown = PromptTestUtils.waitForPrompt(tab.linkedBrowser, {

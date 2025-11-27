@@ -1377,6 +1377,7 @@ Document::Document(const char* aContentType,
       mRenderingSuppressedForViewTransitions(false),
       mBidiEnabled(false),
       mMayNeedFontPrefsUpdate(true),
+      mInitialAboutBlankLoadCompleting(false),
       mIgnoreDocGroupMismatches(false),
       mAddedToMemoryReportingAsDataDocument(false),
       mMayStartLayout(true),
@@ -3682,6 +3683,20 @@ static void CheckIsBadPolicy(nsILoadInfo::CrossOriginOpenerPolicy aPolicy,
 #endif  
 }
 
+void Document::ApplyCspFromLoadInfo(nsILoadInfo* aLoadInfo) {
+  
+  
+  
+  
+  
+  
+  
+  mUpgradeInsecureRequests = aLoadInfo->GetUpgradeInsecureRequests();
+  mUpgradeInsecurePreloads = mUpgradeInsecureRequests;
+  mBlockAllMixedContent = aLoadInfo->GetBlockAllMixedContent();
+  mBlockAllMixedContentPreloads = mBlockAllMixedContent;
+}
+
 nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
                                      nsILoadGroup* aLoadGroup,
                                      nsISupports* aContainer,
@@ -3795,17 +3810,7 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     (void)docShell->GetBrowsingContext()->SetOpenerPolicy(policy);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  mUpgradeInsecureRequests = loadInfo->GetUpgradeInsecureRequests();
-  mUpgradeInsecurePreloads = mUpgradeInsecureRequests;
-  mBlockAllMixedContent = loadInfo->GetBlockAllMixedContent();
-  mBlockAllMixedContentPreloads = mBlockAllMixedContent;
+  ApplyCspFromLoadInfo(loadInfo);
 
   
   
@@ -8608,7 +8613,7 @@ void Document::BeginLoad() {
   mDidFireDOMContentLoaded = false;
   BlockDOMContentLoaded();
 
-  if (mScriptLoader) {
+  if (mScriptLoader && !IsInitialDocument()) {
     mScriptLoader->BeginDeferringScripts();
   }
 
@@ -8836,9 +8841,10 @@ void Document::UnblockDOMContentLoaded() {
 
   mDidFireDOMContentLoaded = true;
 
-  MOZ_ASSERT(mReadyState == READYSTATE_INTERACTIVE);
+  MOZ_ASSERT(IsInitialDocument() || mReadyState == READYSTATE_INTERACTIVE);
   if (!mSynchronousDOMContentLoaded) {
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(!IsInitialDocument());
     nsCOMPtr<nsIRunnable> ev =
         NewRunnableMethod("Document::DispatchContentLoadedEvents", this,
                           &Document::DispatchContentLoadedEvents);
@@ -10473,10 +10479,6 @@ Document* Document::Open(const Optional<nsAString>& ,
     
     mSecurityInfo = callerDoc->GetSecurityInfo();
 
-    
-    
-    
-    
     
     if (IsInitialDocument()) {
       SetInitialStatus(Document::InitialStatus::IsInitialButExplicitlyOpened);
@@ -12417,8 +12419,10 @@ void Document::BlockOnload() {
   
   
   
+  
   if (mOnloadBlockCount == 0 && mScriptGlobalObject &&
-      mReadyState != ReadyState::READYSTATE_COMPLETE) {
+      (mReadyState != ReadyState::READYSTATE_COMPLETE ||
+       mInitialAboutBlankLoadCompleting)) {
     if (nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup()) {
       loadGroup->AddRequest(mOnloadBlocker, nullptr);
     }
@@ -14848,7 +14852,8 @@ class UnblockParsingPromiseHandler final : public PromiseNativeHandler {
                                         const BlockParsingOptions& aOptions)
       : mPromise(aPromise) {
     nsCOMPtr<nsIParser> parser = aDocument->CreatorParserOrNull();
-    if (parser &&
+    
+    if (parser && !parser->IsAboutBlankMode() &&
         (aOptions.mBlockScriptCreated || !parser->IsScriptCreated())) {
       parser->BlockParser();
       mParser = do_GetWeakReference(parser);
@@ -20368,28 +20373,40 @@ nsIPrincipal* Document::GetPrincipalForPrefBasedHacks() const {
   return nullptr;
 }
 
-void Document::SetIsInitialDocument(bool aIsInitialDocument) {
-  if (aIsInitialDocument) {
-    mInitialStatus = InitialStatus::IsInitial;
-  } else if (mInitialStatus != InitialStatus::NeverInitial) {
-    mInitialStatus = InitialStatus::WasInitial;
-  }
-
-  
-  
-  if (auto* wgc = GetWindowGlobalChild()) {
-    wgc->SendSetIsInitialDocument(aIsInitialDocument);
-  }
-}
-
 void Document::SetInitialStatus(InitialStatus aStatus) {
   mInitialStatus = aStatus;
 
+  if (aStatus == InitialStatus::IsInitialUncommitted) {
+    
+    mReadyState = READYSTATE_COMPLETE;
+    mSetCompleteAfterDOMContentLoaded = false;
+    mSynchronousDOMContentLoaded = true;
+  } else if (aStatus == InitialStatus::IsInitialButExplicitlyOpened) {
+    mSynchronousDOMContentLoaded = false;
+  }
+
   
   
   if (auto* wgc = GetWindowGlobalChild()) {
-    wgc->SendSetIsInitialDocument(aStatus == InitialStatus::IsInitial);
+    wgc->SendSetIsInitialDocument(IsInitialDocument());
   }
+}
+
+void Document::BeginInitialAboutBlankLoadCompleting(nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+  SetInitialStatus(InitialStatus::IsInitialCommitted);
+  if (auto* wgc = GetWindowGlobalChild()) {
+    wgc->SendCommitToInitialDocument();
+  }
+  mInitialAboutBlankLoadCompleting = true;
+  mChannel = aChannel;
+  mChannel->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
+
+  
+  
+  MOZ_ASSERT(mDocumentContainer && mScriptGlobalObject,
+             "Should have document container and script global");
+  mMaybeServiceWorkerControlled = true;
 }
 
 

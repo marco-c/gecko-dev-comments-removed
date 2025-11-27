@@ -1091,7 +1091,8 @@ bool DocInfo::IsTopLevelOpaqueAboutBlank() const {
             mThis.URL().Spec().EqualsLiteral("about:blank") &&
             
             
-            !aWin->GetDoc()->IsInitialDocument();
+            
+            !aWin->GetDoc()->IsUncommittedInitialDocument();
 
         
         MOZ_ASSERT(mThis.Principal());

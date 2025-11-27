@@ -54,7 +54,6 @@ async function test_body() {
   );
 
   
-  await ContentTaskUtils.waitForEvent(newFrame, "load");
   newFrameWin = newFrame.contentWindow;
   bc = newFrameWin.browsingContext;
   is(

@@ -139,6 +139,7 @@
 #include "nsISimpleEnumerator.h"
 #include "nsIStringBundle.h"
 #include "nsIURIMutator.h"
+#include "nsOpenWindowInfo.h"
 #include "nsQueryObject.h"
 #include "nsRefreshDriver.h"
 #include "nsSandboxFlags.h"
@@ -962,6 +963,8 @@ nsresult ContentChild::ProvideWindowCommon(
     bool aForceNoReferrer, bool aIsPopupRequested,
     nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
     BrowsingContext** aReturn) {
+  MOZ_ASSERT(aOpenWindowInfo, "Must have openwindowinfo");
+
   *aReturn = nullptr;
 
   nsAutoCString features(aFeatures);
@@ -1097,10 +1100,18 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   
+  
+  
   nsCOMPtr<nsIPrincipal> initialPrincipal =
       NullPrincipal::Create(browsingContext->OriginAttributesRef());
   WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
       browsingContext, initialPrincipal);
+  nsCOMPtr<nsIOpenWindowInfo> openWindowInfoInitialPrincipal;
+  
+  
+  aOpenWindowInfo->CloneWithPrincipals(
+      initialPrincipal, initialPrincipal,
+      getter_AddRefs(openWindowInfoInitialPrincipal));
 
   RefPtr<WindowGlobalChild> windowChild =
       WindowGlobalChild::CreateDisconnected(windowInit);
@@ -1150,9 +1161,18 @@ nsresult ContentChild::ProvideWindowCommon(
   
   RefPtr<nsPIDOMWindowOuter> parentWindow =
       parent ? parent->GetDOMWindow() : nullptr;
-  if (NS_FAILED(MOZ_KnownLive(newChild)->Init(parentWindow, windowChild))) {
+  if (NS_FAILED(MOZ_KnownLive(newChild)->Init(
+          parentWindow, windowChild, openWindowInfoInitialPrincipal))) {
     return NS_ERROR_ABORT;
   }
+
+  
+  
+  NS_ENSURE_TRUE(browsingContext->GetDOMWindow(), NS_ERROR_ABORT);
+  browsingContext->GetDOMWindow()->SetInitialPrincipal(
+      aOpenWindowInfo->PrincipalToInheritForAboutBlank(),
+      aOpenWindowInfo->PolicyContainerToInheritForAboutBlank(),
+      aOpenWindowInfo->CoepToInheritForAboutBlank());
 
   
   bool ready = false;
@@ -1938,8 +1958,11 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
   MOZ_RELEASE_ASSERT(browserChild->mBrowsingContext->Id() ==
                      aWindowInit.context().mBrowsingContextId);
 
-  if (NS_WARN_IF(
-          NS_FAILED(browserChild->Init( nullptr, windowChild)))) {
+  RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
+  openWindowInfo->mPrincipalToInheritForAboutBlank = aWindowInit.principal();
+
+  if (NS_WARN_IF(NS_FAILED(browserChild->Init( nullptr,
+                                              windowChild, openWindowInfo)))) {
     return IPC_FAIL(browserChild, "BrowserChild::Init failed");
   }
 

@@ -285,6 +285,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread(
       mLoadTransferred(0),
       mIsSystem(false),
       mIsAnon(false),
+      mAlreadyGotStopRequest(false),
       mResultJSON(JS::UndefinedValue()),
       mArrayBufferBuilder(new ArrayBufferBuilder()),
       mResultArrayBuffer(nullptr),
@@ -2240,8 +2241,16 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
 
   if (request != mChannel) {
     
+    
     return NS_OK;
   }
+
+  if (mAlreadyGotStopRequest) {
+    
+    
+    return NS_OK;
+  }
+  mAlreadyGotStopRequest = true;
 
   
   
@@ -2623,6 +2632,8 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
                        loadFlags, nullptr, sandboxFlags);
   }
   NS_ENSURE_SUCCESS(rv, rv);
+
+  mAlreadyGotStopRequest = false;
 
   if (mCSPEventListener) {
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
@@ -3245,12 +3256,34 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
       return;
     }
 
+    nsresult channelStatus = NS_OK;
     nsAutoSyncOperation sync(suspendedDoc,
                              SyncOperationBehavior::eSuspendInput);
-    if (!SpinEventLoopUntil("XMLHttpRequestMainThread::SendInternal"_ns,
-                            [&]() { return !mFlagSyncLooping; })) {
+    if (!SpinEventLoopUntil("XMLHttpRequestMainThread::SendInternal"_ns, [&]() {
+          if (mFlagSyncLooping && mChannel) {
+            
+            
+            
+            mChannel->GetStatus(&channelStatus);
+            
+            
+            
+            
+          }
+          return !mFlagSyncLooping || NS_FAILED(channelStatus);
+        })) {
       aRv.Throw(NS_ERROR_UNEXPECTED);
       return;
+    }
+    if (NS_FAILED(channelStatus)) {
+      MOZ_ASSERT(mFlagSyncLooping);
+      
+      
+      
+      
+      
+      
+      OnStopRequest(mChannel, channelStatus);
     }
 
     
