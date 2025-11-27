@@ -2987,6 +2987,7 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, tempLists);
+    DisplayAbsoluteContinuations(aBuilder, tempLists);
   }
 
   
