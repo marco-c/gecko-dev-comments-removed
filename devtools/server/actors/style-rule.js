@@ -1354,56 +1354,46 @@ class StyleRuleActor extends Actor {
 
 
 
-  modifySelector(node, value, editAuthored = false) {
+  async modifySelector(node, value, editAuthored = false) {
     if (this.type === ELEMENT_STYLE || this.rawRule.selectorText === value) {
       return { ruleProps: null, isMatching: true };
     }
 
     
     const oldValue = this.rawRule.selectorText;
-    let selectorPromise = this._addNewSelector(value, editAuthored);
+    const newCssRule = await this._addNewSelector(value, editAuthored);
 
-    if (editAuthored) {
-      selectorPromise = selectorPromise.then(newCssRule => {
-        if (newCssRule) {
-          this.logSelectorChange(oldValue, value);
-          const style = this.pageStyle._styleRef(newCssRule);
-          
-          return style.getAuthoredCssText().then(() => newCssRule);
-        }
-        return newCssRule;
-      });
+    if (editAuthored && newCssRule) {
+      this.logSelectorChange(oldValue, value);
+      const style = this.pageStyle._styleRef(newCssRule);
+      
+      await style.getAuthoredCssText();
     }
 
-    return selectorPromise.then(newCssRule => {
-      let entries = null;
-      let isMatching = false;
+    let entries = null;
+    let isMatching = false;
 
-      if (newCssRule) {
-        const ruleEntry = this.pageStyle.findEntryMatchingRule(
-          node,
-          newCssRule
-        );
-        if (ruleEntry.length === 1) {
-          entries = this.pageStyle.getAppliedProps(node, ruleEntry, {
-            matchedSelectors: true,
-          });
-        } else {
-          entries = this.pageStyle.getNewAppliedProps(node, newCssRule);
-        }
-
-        isMatching = entries.some(
-          ruleProp => !!ruleProp.matchedSelectorIndexes.length
-        );
+    if (newCssRule) {
+      const ruleEntry = this.pageStyle.findEntryMatchingRule(node, newCssRule);
+      if (ruleEntry.length === 1) {
+        entries = this.pageStyle.getAppliedProps(node, ruleEntry, {
+          matchedSelectors: true,
+        });
+      } else {
+        entries = this.pageStyle.getNewAppliedProps(node, newCssRule);
       }
 
-      const result = { isMatching };
-      if (entries) {
-        result.ruleProps = { entries };
-      }
+      isMatching = entries.some(
+        ruleProp => !!ruleProp.matchedSelectorIndexes.length
+      );
+    }
 
-      return result;
-    });
+    const result = { isMatching };
+    if (entries) {
+      result.ruleProps = { entries };
+    }
+
+    return result;
   }
 
   
