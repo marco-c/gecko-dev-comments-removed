@@ -31,10 +31,13 @@ available.map(x => {
   return loc.script && loc.region;
 }).filter(loc => {
   
-  return !((loc.language === "sd" && loc.script === "Deva" && loc.region === "IN") ||
-           (loc.language === "ff" && (loc.script === "Adlm" || loc.script === "Latn") &&
-            (loc.region === "GH" || loc.region === "GM" || loc.region === "LR" || loc.region === "SL"))
-          );
+  
+  
+  
+  if (loc.language === "ku" && loc.script === "Latn" && loc.region === "IQ") {
+    return false;
+  }
+  return true;
 }).forEach(loc => {
   
   let noScript = new Intl.Locale(`${loc.language}-${loc.region}`);

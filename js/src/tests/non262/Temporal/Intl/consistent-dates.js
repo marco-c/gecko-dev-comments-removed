@@ -13,6 +13,21 @@ const weekdays = [
   "Sunday",
 ];
 
+const months = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 
 const hebrewMonths = {
   "Tishri": "M01",
@@ -51,7 +66,9 @@ function dateFromParts(parts) {
         relatedYear = Number(value);
         break;
       case "month": {
-        if (value in hebrewMonths) {
+        if (months.includes(value)) {
+          monthCode = "M" + String(months.indexOf(value) + 1).padStart(2, "0");
+        } else if (value in hebrewMonths) {
           monthCode = hebrewMonths[value];
         } else {
           

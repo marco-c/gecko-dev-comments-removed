@@ -47,8 +47,8 @@ var dtf = new Intl.DateTimeFormat("ja-u-ca-japanese-nu-arab", {
     timeZone: "Asia/Tokyo",
 });
 
-assertEq(dtf.format(endShowa), "昭和64年١月");
-assertEq(dtf.format(startHeisei), "平成元年١月");
+assertEq(dtf.format(endShowa), "昭和٦٤/١");
+assertEq(dtf.format(startHeisei), "平成١/١");
 
 if (typeof reportCompare === "function")
     reportCompare(0, 0);
