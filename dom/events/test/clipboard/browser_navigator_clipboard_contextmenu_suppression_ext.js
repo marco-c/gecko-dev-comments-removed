@@ -126,7 +126,6 @@ function testExtensionContentScript(aContentScript, aMessage) {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["dom.events.asyncClipboard.clipboardItem", true],
       ["test.events.async.enabled", true],
       
       ["security.dialog_enable_delay", 0],
