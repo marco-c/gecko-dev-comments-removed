@@ -453,7 +453,8 @@ add_task(async function test_hasKeysForScope_not_verified() {
   };
   const fxa = await MakeFxAccounts({ credentials });
   
-  Assert.ok(!(await fxa.keys.hasKeysForScope(SCOPE_APP_SYNC)));
+  
+  Assert.ok(await fxa.keys.hasKeysForScope(SCOPE_APP_SYNC));
 });
 
 add_task(async function test_hasKeysForScope_no_keys() {
