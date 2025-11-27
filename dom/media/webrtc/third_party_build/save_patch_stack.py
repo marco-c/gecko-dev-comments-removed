@@ -37,6 +37,26 @@ def build_repo_name_from_path(input_dir):
     return output_dir
 
 
+def write_patch_files_with_prefix(
+    github_path,
+    patch_directory,
+    start_commit_sha,
+    end_commit_sha,
+    prefix,
+):
+    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {start_commit_sha}..{end_commit_sha}"
+    run_git(cmd, github_path)
+
+    
+    patches_to_rename = os.listdir(patch_directory)
+    for file in patches_to_rename:
+        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", f"{prefix}\\1.patch", file)
+        os.rename(
+            os.path.join(patch_directory, file),
+            os.path.join(patch_directory, shortened_name),
+        )
+
+
 def save_patch_stack(
     github_path,
     github_branch,
@@ -92,32 +112,14 @@ def save_patch_stack(
     
 
     
-    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {merge_base}..{base_commit_sha}^"
-    stdout_lines = run_git(cmd, github_path)
+    write_patch_files_with_prefix(
+        github_path, patch_directory, f"{merge_base}", f"{base_commit_sha}^", "p"
+    )
 
     
-    
-    patches_to_rename = os.listdir(patch_directory)
-    for file in patches_to_rename:
-        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "p\\1.patch", file)
-        os.rename(
-            os.path.join(patch_directory, file),
-            os.path.join(patch_directory, shortened_name),
-        )
-
-    
-    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {base_commit_sha}^..{github_branch}"
-    run_git(cmd, github_path)
-
-    
-    
-    patches_to_rename = os.listdir(patch_directory)
-    for file in patches_to_rename:
-        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "s\\1.patch", file)
-        os.rename(
-            os.path.join(patch_directory, file),
-            os.path.join(patch_directory, shortened_name),
-        )
+    write_patch_files_with_prefix(
+        github_path, patch_directory, f"{base_commit_sha}^", f"{github_branch}", "s"
+    )
 
     
     
