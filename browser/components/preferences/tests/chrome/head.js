@@ -9,6 +9,8 @@
 
 
 
+
+
 async function testCommonSettingControlPropertiesSet(renderTemplateFunction) {
   const l10nId = "l10n ID";
   const l10nArgs = { foo: "bar" };
@@ -75,4 +77,20 @@ async function testCommonSettingControlPropertiesUnset(renderTemplateFunction) {
 async function testCommonSettingControlProperties(renderTemplateFunction) {
   await testCommonSettingControlPropertiesSet(renderTemplateFunction);
   await testCommonSettingControlPropertiesUnset(renderTemplateFunction);
+}
+
+
+
+
+
+
+
+
+function waitForSettingChange(setting) {
+  return new Promise(resolve => {
+    setting.on("change", function handler() {
+      setting.off("change", handler);
+      resolve();
+    });
+  });
 }
