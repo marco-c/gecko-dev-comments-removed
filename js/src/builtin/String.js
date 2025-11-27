@@ -14,14 +14,10 @@ function String_match(regexp) {
   }
 
   
-  var isPatternString = typeof regexp === "string";
-  if (
-    !(isPatternString && CanOptimizeStringProtoSymbolLookup()) &&
-    !IsNullOrUndefined(regexp)
-  ) {
+  if (IsObject(regexp)) {
     
     
-    if (IsObject(regexp) && IsOptimizableRegExpObject(regexp)) {
+    if (IsOptimizableRegExpObject(regexp)) {
       return callFunction(RegExpMatch, regexp, this);
     }
 
@@ -30,9 +26,6 @@ function String_match(regexp) {
 
     
     if (matcher !== undefined) {
-      if (!IsObject(regexp)) {
-        RegExpSymbolProtocolOnPrimitiveCounter();
-      }
       return callContentFunction(matcher, regexp, this);
     }
   }
@@ -40,7 +33,7 @@ function String_match(regexp) {
   
   var S = ToString(this);
 
-  if (isPatternString && IsRegExpPrototypeOptimizable()) {
+  if (typeof regexp === "string" && IsRegExpPrototypeOptimizable()) {
     var flatResult = FlatStringMatch(S, regexp);
     if (flatResult !== undefined) {
       return flatResult;
@@ -69,7 +62,7 @@ function String_matchAll(regexp) {
   }
 
   
-  if (!IsNullOrUndefined(regexp)) {
+  if (IsObject(regexp)) {
     
     if (IsRegExp(regexp)) {
       
@@ -88,7 +81,7 @@ function String_matchAll(regexp) {
 
     
     
-    if (IsObject(regexp) && IsOptimizableRegExpObject(regexp)) {
+    if (IsOptimizableRegExpObject(regexp)) {
       return callFunction(RegExpMatchAll, regexp, this);
     }
 
@@ -97,9 +90,6 @@ function String_matchAll(regexp) {
 
     
     if (matcher !== undefined) {
-      if (!IsObject(regexp)) {
-        RegExpSymbolProtocolOnPrimitiveCounter();
-      }
       return callContentFunction(matcher, regexp, this);
     }
   }
@@ -212,13 +202,10 @@ function String_replace(searchValue, replaceValue) {
   }
 
   
-  if (
-    !(typeof searchValue === "string" && CanOptimizeStringProtoSymbolLookup()) &&
-    !IsNullOrUndefined(searchValue)
-  ) {
+  if (IsObject(searchValue)) {
     
     
-    if (IsObject(searchValue) && IsOptimizableRegExpObject(searchValue)) {
+    if (IsOptimizableRegExpObject(searchValue)) {
       return callFunction(RegExpReplace, searchValue, this, replaceValue);
     }
 
@@ -227,9 +214,6 @@ function String_replace(searchValue, replaceValue) {
 
     
     if (replacer !== undefined) {
-      if (!IsObject(searchValue)) {
-        RegExpSymbolProtocolOnPrimitiveCounter();
-      }
       return callContentFunction(replacer, searchValue, this, replaceValue);
     }
   }
@@ -294,7 +278,7 @@ function String_replaceAll(searchValue, replaceValue) {
   }
 
   
-  if (!IsNullOrUndefined(searchValue)) {
+  if (IsObject(searchValue)) {
     
     if (IsRegExp(searchValue)) {
       
@@ -313,7 +297,7 @@ function String_replaceAll(searchValue, replaceValue) {
 
     
     
-    if (IsObject(searchValue) && IsOptimizableRegExpObject(searchValue)) {
+    if (IsOptimizableRegExpObject(searchValue)) {
       return callFunction(RegExpReplace, searchValue, this, replaceValue);
     }
 
@@ -322,9 +306,6 @@ function String_replaceAll(searchValue, replaceValue) {
 
     
     if (replacer !== undefined) {
-      if (!IsObject(searchValue)) {
-        RegExpSymbolProtocolOnPrimitiveCounter();
-      }
       return callContentFunction(replacer, searchValue, this, replaceValue);
     }
   }
@@ -425,13 +406,10 @@ function String_search(regexp) {
 
   
   var isPatternString = typeof regexp === "string";
-  if (
-    !(isPatternString && CanOptimizeStringProtoSymbolLookup()) &&
-    !IsNullOrUndefined(regexp)
-  ) {
+  if (IsObject(regexp)) {
     
     
-    if (IsObject(regexp) && IsOptimizableRegExpObject(regexp)) {
+    if (IsOptimizableRegExpObject(regexp)) {
       return callFunction(RegExpSearch, regexp, this);
     }
 
@@ -440,9 +418,6 @@ function String_search(regexp) {
 
     
     if (searcher !== undefined) {
-      if (!IsObject(regexp)) {
-        RegExpSymbolProtocolOnPrimitiveCounter();
-      }
       return callContentFunction(searcher, regexp, this);
     }
   }
@@ -479,25 +454,20 @@ function String_split(separator, limit) {
   
   
   if (typeof this === "string") {
-    if (CanOptimizeStringProtoSymbolLookup()) {
-      if (typeof separator === "string") {
-        if (limit === undefined) {
-          
-          
-          return StringSplitString(this, separator);
-        }
+    if (typeof separator === "string") {
+      if (limit === undefined) {
+        
+        
+        return StringSplitString(this, separator);
       }
     }
   }
 
   
-  if (
-    !(typeof separator === "string" && CanOptimizeStringProtoSymbolLookup()) &&
-    !IsNullOrUndefined(separator)
-  ) {
+  if (IsObject(separator)) {
     
     
-    if (IsObject(separator) && IsOptimizableRegExpObject(separator)) {
+    if (IsOptimizableRegExpObject(separator)) {
       return callFunction(RegExpSplit, separator, this, limit);
     }
 
@@ -506,9 +476,6 @@ function String_split(separator, limit) {
 
     
     if (splitter !== undefined) {
-      if (!IsObject(separator)) {
-        RegExpSymbolProtocolOnPrimitiveCounter();
-      }
       return callContentFunction(splitter, separator, this, limit);
     }
   }
