@@ -19,7 +19,7 @@ use crate::frame_builder::FrameBuilderConfig;
 use crate::glyph_cache::GlyphCache;
 use glyph_rasterizer::{GlyphRasterThread, GlyphRasterizer, SharedFontResources};
 use crate::gpu_types::PrimitiveInstanceData;
-use crate::internal_types::{FastHashMap, FastHashSet};
+use crate::internal_types::{FastHashMap, FastHashSet, FrameId};
 use crate::picture;
 use crate::profiler::{self, Profiler, TransactionProfile};
 use crate::device::query::{GpuProfiler, GpuDebugMethod};
@@ -29,7 +29,7 @@ use crate::scene_builder_thread::{SceneBuilderThread, SceneBuilderThreadChannels
 use crate::texture_cache::{TextureCache, TextureCacheConfig};
 use crate::picture_textures::PictureTextures;
 use crate::renderer::{
-    debug, vertex, gl,
+    debug, gpu_cache, vertex, gl,
     Renderer, DebugOverlayState, BufferDamageTracker, PipelineInfo, TextureResolver,
     RendererError, ShaderPrecacheFlags, VERTEX_DATA_TEXTURE_COUNT,
     upload::UploadTexturePool,
@@ -514,7 +514,24 @@ pub fn create_webrender_instance(
         vertex_data_textures.push(vertex::VertexDataTextures::new());
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     let is_software = device.get_capabilities().renderer_name.starts_with("Software");
+
+    
+    
+    
+    let supports_scatter = device.get_capabilities().supports_color_buffer_float;
+    let gpu_cache_texture = gpu_cache::GpuCacheTexture::new(
+        &mut device,
+        supports_scatter && !is_software,
+    )?;
 
     device.end_frame();
 
@@ -763,6 +780,8 @@ pub fn create_webrender_instance(
         pending_texture_updates: Vec::new(),
         pending_texture_cache_updates: false,
         pending_native_surface_updates: Vec::new(),
+        pending_gpu_cache_updates: Vec::new(),
+        pending_gpu_cache_clear: false,
         pending_shader_updates: Vec::new(),
         shaders,
         debug: debug::LazyInitializedDebugRenderer::new(),
@@ -770,6 +789,7 @@ pub fn create_webrender_instance(
         profile: TransactionProfile::new(),
         frame_counter: 0,
         resource_upload_time: 0.0,
+        gpu_cache_upload_time: 0.0,
         profiler: Profiler::new(),
         max_recorded_profiles: options.max_recorded_profiles,
         clear_color: options.clear_color,
@@ -780,10 +800,6 @@ pub fn create_webrender_instance(
         last_time: 0,
         gpu_profiler,
         vaos,
-        gpu_buffer_texture_f: None,
-        gpu_buffer_texture_f_too_large: 0,
-        gpu_buffer_texture_i: None,
-        gpu_buffer_texture_i_too_large: 0,
         vertex_data_textures,
         current_vertex_data_textures: 0,
         pipeline_info: PipelineInfo::default(),
@@ -792,6 +808,10 @@ pub fn create_webrender_instance(
         size_of_ops: make_size_of_ops(),
         cpu_profiles: VecDeque::new(),
         gpu_profiles: VecDeque::new(),
+        gpu_cache_texture,
+        gpu_cache_debug_chunks: Vec::new(),
+        gpu_cache_frame_id: FrameId::INVALID,
+        gpu_cache_overflow: false,
         texture_upload_pbo_pool,
         staging_texture_pool,
         texture_resolver,

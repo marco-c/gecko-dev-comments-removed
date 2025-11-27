@@ -19,7 +19,7 @@ use crate::frame_builder::FrameBuildingState;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::image_tiling::simplify_repeated_primitive;
-use crate::prim_store::{BrushSegment, GradientTileRange, VECS_PER_SEGMENT};
+use crate::prim_store::{BrushSegment, GradientTileRange};
 use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
@@ -494,43 +494,46 @@ impl LinearGradientTemplate {
         &mut self,
         frame_state: &mut FrameBuildingState,
     ) {
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + self.brush_segments.len() * VECS_PER_SEGMENT);
+        if let Some(mut request) = frame_state.gpu_cache.request(
+            &mut self.common.gpu_cache_handle
+        ) {
 
-        
-        if self.cached {
             
-            writer.push_one(PremultipliedColorF::WHITE);
-            writer.push_one(PremultipliedColorF::WHITE);
-            writer.push_one([
-                self.stretch_size.width,
-                self.stretch_size.height,
-                0.0,
-                0.0,
-            ]);
-        } else {
+            if self.cached {
+                
+                request.push(PremultipliedColorF::WHITE);
+                request.push(PremultipliedColorF::WHITE);
+                request.push([
+                    self.stretch_size.width,
+                    self.stretch_size.height,
+                    0.0,
+                    0.0,
+                ]);
+            } else {
+                
+                request.push([
+                    self.start_point.x,
+                    self.start_point.y,
+                    self.end_point.x,
+                    self.end_point.y,
+                ]);
+                request.push([
+                    pack_as_float(self.extend_mode as u32),
+                    self.stretch_size.width,
+                    self.stretch_size.height,
+                    0.0,
+                ]);
+            }
+
             
-            writer.push_one([
-                self.start_point.x,
-                self.start_point.y,
-                self.end_point.x,
-                self.end_point.y,
-            ]);
-            writer.push_one([
-                pack_as_float(self.extend_mode as u32),
-                self.stretch_size.width,
-                self.stretch_size.height,
-                0.0,
-            ]);
+            for segment in &self.brush_segments {
+                
+                request.write_segment(
+                    segment.local_rect,
+                    segment.extra_data,
+                );
+            }
         }
-
-        
-        for segment in &self.brush_segments {
-            
-            writer.push_one(segment.local_rect);
-            writer.push_one(segment.extra_data);
-        }
-
-        self.common.gpu_buffer_address = writer.finish();
 
         
         
@@ -562,10 +565,11 @@ impl LinearGradientTemplate {
                 }),
                 false,
                 RenderTaskParent::Surface,
+                frame_state.gpu_cache,
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.rg_builder,
                 &mut frame_state.surface_builder,
-                &mut |rg_builder, _| {
+                &mut |rg_builder, _, _| {
                     rg_builder.add().init(RenderTask::new_dynamic(
                         self.task_size,
                         RenderTaskKind::FastLinearGradient(gradient),
@@ -590,10 +594,11 @@ impl LinearGradientTemplate {
                 }),
                 false,
                 RenderTaskParent::Surface,
+                frame_state.gpu_cache,
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.rg_builder,
                 &mut frame_state.surface_builder,
-                &mut |rg_builder, gpu_buffer_builder| {
+                &mut |rg_builder, gpu_buffer_builder, _| {
                     let stops = Some(GradientGpuBlockBuilder::build(
                         self.reverse_stops,
                         gpu_buffer_builder,
