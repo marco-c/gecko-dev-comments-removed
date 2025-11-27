@@ -986,21 +986,29 @@ class PageStyleActor extends Actor {
 
 
 
-
-
-
-  findEntryMatchingRule(node, filterRule) {
+  findEntryMatchingRule(nodeActor, matchingRule) {
     const options = { matchedSelectors: true, inherited: true };
-    let entries = [];
-    let parent = this.walker.parentNode(node);
-    while (parent && parent.rawNode.nodeType != Node.DOCUMENT_NODE) {
-      entries = entries.concat(
-        this._getAllElementRules(parent, parent, options)
-      );
-      parent = this.walker.parentNode(parent);
+    let currentNodeActor = nodeActor;
+    while (
+      currentNodeActor &&
+      currentNodeActor.rawNode.nodeType != Node.DOCUMENT_NODE
+    ) {
+      for (const entry of this._getAllElementRules(
+        currentNodeActor,
+        
+        nodeActor !== currentNodeActor ? currentNodeActor : null,
+        options
+      )) {
+        if (entry.rule.rawRule === matchingRule) {
+          return entry;
+        }
+      }
+
+      currentNodeActor = this.walker.parentNode(currentNodeActor);
     }
 
-    return entries.filter(entry => entry.rule.rawRule === filterRule);
+    
+    return null;
   }
 
   
