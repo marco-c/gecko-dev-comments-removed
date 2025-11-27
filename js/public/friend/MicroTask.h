@@ -159,10 +159,13 @@ JS_PUBLIC_API void RestoreMicroTaskQueue(
 
 
 
-JS_PUBLIC_API JSObject* MaybeGetHostDefinedDataFromJSMicroTask(
-    JSMicroTask* entry);
-JS_PUBLIC_API JSObject* MaybeGetAllocationSiteFromJSMicroTask(
-    JSMicroTask* entry);
+
+
+
+JS_PUBLIC_API bool MaybeGetHostDefinedDataFromJSMicroTask(
+    JSMicroTask* entry, MutableHandleObject out);
+JS_PUBLIC_API bool MaybeGetAllocationSiteFromJSMicroTask(
+    JSMicroTask* entry, MutableHandleObject out);
 
 
 
