@@ -331,8 +331,8 @@ already_AddRefed<AccAttributes> HTMLTextFieldAccessible::NativeAttributes() {
   return attributes.forget();
 }
 
-ENameValueFlag HTMLTextFieldAccessible::Name(nsString& aName) const {
-  ENameValueFlag nameFlag = LocalAccessible::Name(aName);
+ENameValueFlag HTMLTextFieldAccessible::DirectName(nsString& aName) const {
+  ENameValueFlag nameFlag = LocalAccessible::DirectName(aName);
   if (!aName.IsEmpty()) return nameFlag;
 
   
@@ -510,8 +510,8 @@ bool HTMLFileInputAccessible::IsAcceptableChild(nsIContent* aEl) const {
   return aEl->IsText();
 }
 
-ENameValueFlag HTMLFileInputAccessible::Name(nsString& aName) const {
-  ENameValueFlag flag = HyperTextAccessible::Name(aName);
+ENameValueFlag HTMLFileInputAccessible::DirectName(nsString& aName) const {
+  ENameValueFlag flag = HyperTextAccessible::DirectName(aName);
   if (flag == eNameFromSubtree) {
     
     
