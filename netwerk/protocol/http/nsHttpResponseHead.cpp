@@ -619,7 +619,8 @@ nsresult nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t* result) {
   
   
   
-  if ((mStatus == 302 || mStatus == 304 || mStatus == 307) &&
+  
+  if ((mStatus == 302 || mStatus == 303 || mStatus == 304 || mStatus == 307) &&
       !mCacheControlPublic && !mCacheControlPrivate) {
     LOG((
         "nsHttpResponseHead::ComputeFreshnessLifetime [this = %p] "
@@ -666,6 +667,7 @@ bool nsHttpResponseHead::MustValidate() {
     case 300:
     case 301:
     case 302:
+    case 303:
     case 304:
     case 307:
     case 308:
@@ -673,7 +675,6 @@ bool nsHttpResponseHead::MustValidate() {
     case 410:
       break;
       
-    case 303:
     case 305:
       
     case 401:
