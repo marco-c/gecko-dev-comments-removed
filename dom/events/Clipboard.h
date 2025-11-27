@@ -42,13 +42,6 @@ class Clipboard : public DOMEventTargetHelper {
 
   static LogModule* GetClipboardLog();
 
-  
-  
-  
-  
-  
-  static bool ReadTextEnabled(JSContext* aCx, JSObject* aGlobal);
-
   static Span<const nsLiteralCString> MandatoryDataTypes();
 
   virtual JSObject* WrapObject(JSContext* aCx,

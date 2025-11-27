@@ -28,7 +28,6 @@ async function waitForPasteContextMenu() {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["dom.events.asyncClipboard.readText", true],
       ["test.events.async.enabled", true],
       
       ["security.dialog_enable_delay", 0],
@@ -176,20 +175,14 @@ add_task(async function test_multiple_readText_from_cross_origin_frame() {
       "readText() from different origin child frame again before interacting with paste button"
     );
     const crossOriginFrame = browser.browsingContext.children[1];
-    const readTextRequest2 = SpecialPowers.spawn(
-      crossOriginFrame,
-      [],
-      async () => {
+    await Assert.rejects(
+      SpecialPowers.spawn(crossOriginFrame, [], async () => {
         content.document.notifyUserGestureActivation();
         return content.eval(`navigator.clipboard.readText();`);
-      }
+      }),
+      /NotAllowedError/,
+      "Second request should be rejected"
     );
-    
-    await SpecialPowers.spawn(crossOriginFrame, [], async () => {
-      return new Promise(resolve => {
-        content.setTimeout(resolve, 0);
-      });
-    });
 
     info("Click paste button, both request should be resolved");
     await promiseClickPasteButton();
@@ -197,11 +190,6 @@ add_task(async function test_multiple_readText_from_cross_origin_frame() {
       await readTextRequest1,
       clipboardText,
       "First request should be resolved"
-    );
-    is(
-      await readTextRequest2,
-      clipboardText,
-      "Second request should be resolved"
     );
   });
 });
@@ -226,20 +214,14 @@ add_task(async function test_multiple_readText_from_background_frame() {
     info(
       "readText() from background tab again before interact with paste button"
     );
-    const readTextRequest2 = SpecialPowers.spawn(
-      backgroundTab.linkedBrowser,
-      [],
-      async () => {
+    await Assert.rejects(
+      SpecialPowers.spawn(backgroundTab.linkedBrowser, [], async () => {
         content.document.notifyUserGestureActivation();
         return content.eval(`navigator.clipboard.readText();`);
-      }
+      }),
+      /NotAllowedError/,
+      "Second request should be rejected"
     );
-    
-    await SpecialPowers.spawn(backgroundTab.linkedBrowser, [], async () => {
-      return new Promise(resolve => {
-        content.setTimeout(resolve, 0);
-      });
-    });
 
     info("Click paste button, both request should be resolved");
     await promiseClickPasteButton();
@@ -247,11 +229,6 @@ add_task(async function test_multiple_readText_from_background_frame() {
       await readTextRequest1,
       clipboardText,
       "First request should be resolved"
-    );
-    is(
-      await readTextRequest2,
-      clipboardText,
-      "Second request should be resolved"
     );
   });
 
@@ -269,6 +246,16 @@ add_task(async function test_multiple_readText_from_background_window() {
       kContentFileUrl
     );
     await SimpleTest.promiseFocus(browser);
+
+    info("readText() from background window");
+    await Assert.rejects(
+      SpecialPowers.spawn(backgroundTab.linkedBrowser, [], async () => {
+        content.document.notifyUserGestureActivation();
+        return content.eval(`navigator.clipboard.readText();`);
+      }),
+      /NotAllowedError/,
+      "Request from background window should be rejected"
+    );
 
     const pasteButtonIsShown = waitForPasteContextMenu();
     const readTextRequest1 = SpecialPowers.spawn(browser, [], async () => {
@@ -299,4 +286,30 @@ add_task(async function test_multiple_readText_from_background_window() {
 
     await BrowserTestUtils.closeWindow(newWin);
   });
+});
+
+add_task(async function test_multiple_readText_focuse_in_chrome_document() {
+  
+  const clipboardText = await promiseWritingRandomTextToClipboard();
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    kContentFileUrl
+  );
+
+  info("Move focus to url bar");
+  win.gURLBar.focus();
+
+  info("readText() from web content");
+  await Assert.rejects(
+    SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+      content.document.notifyUserGestureActivation();
+      return content.eval(`navigator.clipboard.readText();`);
+    }),
+    /NotAllowedError/,
+    "Request should be rejected when focus is not in content"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
 });

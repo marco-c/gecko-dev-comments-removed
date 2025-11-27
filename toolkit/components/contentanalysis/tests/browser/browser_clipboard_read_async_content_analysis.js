@@ -7,7 +7,6 @@ add_setup(async function test_setup() {
   mockCA = await mockContentAnalysisService(mockCA);
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["dom.events.asyncClipboard.readText", true],
       
       ["dom.events.testing.asyncClipboard", true],
     ],
