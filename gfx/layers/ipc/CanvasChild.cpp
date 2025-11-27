@@ -552,7 +552,12 @@ bool CanvasChild::EnsureDataSurfaceShmem(size_t aSizeRequired) {
       return false;
     }
 
-    if (!SendSetDataSurfaceBuffer(std::move(shmemHandle))) {
+    auto id = ++mNextDataSurfaceShmemId;
+    if (!id) {
+      
+      id = ++mNextDataSurfaceShmemId;
+    }
+    if (!SendSetDataSurfaceBuffer(id, std::move(shmemHandle))) {
       return false;
     }
 
@@ -648,19 +653,13 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  bool forceData = ShouldGrowDataSurfaceShmem(sizeRequired);
-  RecordEvent(RecordedCacheDataSurface(aSurface, forceData));
+  RecordEvent(RecordedCacheDataSurface(aSurface));
 
   if (!EnsureDataSurfaceShmem(sizeRequired)) {
     return nullptr;
   }
 
-  RecordEvent(RecordedGetDataForSurface(aSurface));
+  RecordEvent(RecordedGetDataForSurface(mNextDataSurfaceShmemId, aSurface));
   auto checkpoint = CreateCheckpoint();
   if (NS_WARN_IF(!mRecorder->WaitForCheckpoint(checkpoint))) {
     return nullptr;
