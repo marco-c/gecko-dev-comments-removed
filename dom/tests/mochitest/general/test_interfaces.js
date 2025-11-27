@@ -1609,8 +1609,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ViewTransition", insecureContext: true },
   
-  { name: "ViewTransitionTypeSet", insecureContext: true },
-  
   { name: "VisualViewport", insecureContext: true },
   
   { name: "WGSLLanguageFeatures", earlyBetaOrEarlier: true },
