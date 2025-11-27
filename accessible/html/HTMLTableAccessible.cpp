@@ -287,21 +287,6 @@ role HTMLTableHeaderCellAccessible::NativeRole() const {
 
 
 
-ENameValueFlag HTMLTableRowAccessible::NativeName(nsString& aName) const {
-  
-  
-  if (HasStrongARIARole()) {
-    return AccessibleWrap::NativeName(aName);
-  }
-
-  return eNameOK;
-}
-
-
-
-
-
-
 
 
 bool HTMLTableAccessible::InsertChildAt(uint32_t aIndex,
