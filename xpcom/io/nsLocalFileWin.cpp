@@ -208,6 +208,21 @@ bool nsLocalFile::ChildAclMatchesAclInheritedFromParent(
     const NotNull<ACL*> aChildDacl, bool aIsChildDir,
     const AutoFreeSecurityDescriptor& aChildSecDesc, nsIFile* aParentDir) {
   
+  auto getInheritedAceCount = [](const ACL* aAcl) {
+    AclAceRange aclAceRange(WrapNotNull(aAcl));
+    return std::count_if(
+        aclAceRange.begin(), aclAceRange.end(),
+        [](const auto& hdr) { return hdr.AceFlags & INHERITED_ACE; });
+  };
+
+  auto childInheritedCount = getInheritedAceCount(aChildDacl);
+  if (childInheritedCount == 0) {
+    
+    
+    
+    return false;
+  }
+
   ACL* parentDacl = nullptr;
   AutoFreeSecurityDescriptor parentSecDesc;
   nsAutoString parentPath;
@@ -260,14 +275,7 @@ bool nsLocalFile::ChildAclMatchesAclInheritedFromParent(
     return false;
   }
 
-  auto getInheritedAceCount = [](const ACL* aAcl) {
-    AclAceRange aclAceRange(WrapNotNull(aAcl));
-    return std::count_if(
-        aclAceRange.begin(), aclAceRange.end(),
-        [](const auto& hdr) { return hdr.AceFlags & INHERITED_ACE; });
-  };
-
-  return getInheritedAceCount(aChildDacl) == getInheritedAceCount(newDacl);
+  return childInheritedCount == getInheritedAceCount(newDacl);
 }
 
 class nsDriveEnumerator : public nsSimpleEnumerator,
