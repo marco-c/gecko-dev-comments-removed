@@ -13,7 +13,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_50 Your_png_h_is_not_version_1_6_50;
+typedef png_libpng_version_1_6_51 Your_png_h_is_not_version_1_6_51;
 
 
 
@@ -108,10 +108,16 @@ png_zalloc,(voidpf png_ptr, uInt items, uInt size),PNG_ALLOCATED)
    if (png_ptr == NULL)
       return NULL;
 
-   if (items >= (~(png_alloc_size_t)0)/size)
+   
+
+
+
+
+
+   if (size != 0 && items >= (~(png_alloc_size_t)0) / size)
    {
-      png_warning (png_voidcast(png_structrp, png_ptr),
-          "Potential overflow in png_zalloc()");
+      png_warning(png_voidcast(png_structrp, png_ptr),
+                  "Potential overflow in png_zalloc()");
       return NULL;
    }
 
@@ -236,10 +242,6 @@ png_user_version_check(png_structrp png_ptr, png_const_charp user_png_ver)
       PNG_UNUSED(pos)
 
       png_warning(png_ptr, m);
-#endif
-
-#ifdef PNG_ERROR_NUMBERS_SUPPORTED
-      png_ptr->flags = 0;
 #endif
 
       return 0;
@@ -815,7 +817,7 @@ png_get_copyright(png_const_structrp png_ptr)
    return PNG_STRING_COPYRIGHT
 #else
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.50" PNG_STRING_NEWLINE \
+      "libpng version 1.6.51" PNG_STRING_NEWLINE \
       "Copyright (c) 2018-2025 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \

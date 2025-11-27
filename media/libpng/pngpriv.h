@@ -302,7 +302,7 @@
 #   define PNG_LOONGARCH_LSX_IMPLEMENTATION 0
 #endif
 
-#if PNG_RISCV_RVV_OPT > 0
+#if PNG_RISCV_RVV_OPT > 0 && __riscv_v >= 1000000
 #  define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_rvv
 #  ifndef PNG_RISCV_RVV_IMPLEMENTATION
       
@@ -310,7 +310,7 @@
 #  endif
 #else
 #  define PNG_RISCV_RVV_IMPLEMENTATION 0
-#endif
+#endif 
 
 
 
@@ -653,10 +653,6 @@
 #define PNG_HAVE_CHUNK_AFTER_IDAT 0x2000U /* Have another chunk after IDAT */
 #define PNG_WROTE_eXIf            0x4000U
 #define PNG_IS_READ_STRUCT        0x8000U /* Else is a write struct */
-#ifdef PNG_APNG_SUPPORTED
-#define PNG_HAVE_acTL            0x10000U
-#define PNG_HAVE_fcTL            0x20000U
-#endif
 
 
 #define PNG_BGR                 0x0001U
@@ -714,7 +710,7 @@
 
 
 #define PNG_FLAG_LIBRARY_MISMATCH        0x20000U
-#define PNG_FLAG_STRIP_ERROR_NUMBERS     0x40000U
+                                  
 #define PNG_FLAG_STRIP_ERROR_TEXT        0x80000U
 #define PNG_FLAG_BENIGN_ERRORS_WARN     0x100000U /* Added to libpng-1.4.0 */
 #define PNG_FLAG_APP_WARNINGS_WARN      0x200000U /* Added to libpng-1.6.0 */
@@ -920,16 +916,6 @@
 #define png_tIME PNG_U32(116,  73,  77,  69)
 #define png_tRNS PNG_U32(116,  82,  78,  83)
 #define png_zTXt PNG_U32(122,  84,  88, 116)
-
-#ifdef PNG_APNG_SUPPORTED
-#define png_acTL PNG_U32( 97,  99,  84,  76)
-#define png_fcTL PNG_U32(102,  99,  84,  76)
-#define png_fdAT PNG_U32(102, 100,  65,  84)
-
-
-#define PNG_FIRST_FRAME_HIDDEN       0x0001U
-#define PNG_APNG_APP                 0x0002U
-#endif
 
 
 
@@ -1560,7 +1546,7 @@ PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_lsx,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 #endif
 
-#if PNG_RISCV_RVV_OPT > 0
+#if PNG_RISCV_RVV_IMPLEMENTATION == 1
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_rvv,(png_row_infop
     row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_rvv,(png_row_infop
@@ -1731,49 +1717,6 @@ PNG_INTERNAL_FUNCTION(void,png_process_some_data,(png_structrp png_ptr,
     png_inforp info_ptr),PNG_EMPTY);
 PNG_INTERNAL_FUNCTION(void,png_read_push_finish_row,(png_structrp png_ptr),
     PNG_EMPTY);
-#endif 
-
-#ifdef PNG_APNG_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_ensure_fcTL_is_valid,(png_structp png_ptr,
-   png_uint_32 width, png_uint_32 height,
-   png_uint_32 x_offset, png_uint_32 y_offset,
-   png_uint_16 delay_num, png_uint_16 delay_den,
-   png_byte dispose_op, png_byte blend_op),PNG_EMPTY);
-
-#ifdef PNG_READ_APNG_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_handle_acTL,(png_structp png_ptr,
-   png_infop info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_handle_fcTL,(png_structp png_ptr,
-   png_infop info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_handle_fdAT,(png_structp png_ptr,
-   png_infop info_ptr, png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_have_info,(png_structp png_ptr,
-   png_infop info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_ensure_sequence_number,(png_structp png_ptr,
-   png_uint_32 length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_reset,(png_structp png_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_reinit,(png_structp png_ptr,
-   png_infop info_ptr),PNG_EMPTY);
-#ifdef PNG_PROGRESSIVE_READ_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_progressive_read_reset,(png_structp png_ptr),
-   PNG_EMPTY);
-#endif 
-#endif 
-
-#ifdef PNG_WRITE_APNG_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_acTL,(png_structp png_ptr,
-   png_uint_32 num_frames, png_uint_32 num_plays),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_write_fcTL,(png_structp png_ptr,
-   png_uint_32 width, png_uint_32 height,
-   png_uint_32 x_offset, png_uint_32 y_offset,
-   png_uint_16 delay_num, png_uint_16 delay_den,
-   png_byte dispose_op, png_byte blend_op),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_write_fdAT,(png_structp png_ptr,
-   png_const_bytep data, png_size_t length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_write_reset,(png_structp png_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_write_reinit,(png_structp png_ptr,
-   png_infop info_ptr, png_uint_32 width, png_uint_32 height),PNG_EMPTY);
-#endif 
 #endif 
 
 #ifdef PNG_iCCP_SUPPORTED
@@ -2232,7 +2175,7 @@ PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_lsx,
     (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif
 
-#  if PNG_RISCV_RVV_OPT > 0
+#  if PNG_RISCV_RVV_IMPLEMENTATION == 1
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_rvv,
    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif

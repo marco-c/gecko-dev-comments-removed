@@ -155,93 +155,13 @@ png_read_info(png_structrp png_ptr, png_inforp info_ptr)
 
       else if (chunk_name == png_IDAT)
       {
-#ifdef PNG_READ_APNG_SUPPORTED
-         png_have_info(png_ptr, info_ptr);
-#endif
          png_ptr->idat_size = length;
          break;
       }
 
-#ifdef PNG_READ_APNG_SUPPORTED
-      else if (chunk_name == png_acTL)
-         png_handle_acTL(png_ptr, info_ptr, length);
-
-      else if (chunk_name == png_fcTL)
-         png_handle_fcTL(png_ptr, info_ptr, length);
-
-      else if (chunk_name == png_fdAT)
-         png_handle_fdAT(png_ptr, info_ptr, length);
-#endif
-
       else
          png_handle_chunk(png_ptr, info_ptr, length);
    }
-}
-#endif 
-
-#ifdef PNG_READ_APNG_SUPPORTED
-void PNGAPI
-png_read_frame_head(png_structp png_ptr, png_infop info_ptr)
-{
-    png_byte have_chunk_after_DAT; 
-
-    png_debug(0, "Reading frame head");
-
-    if ((png_ptr->mode & PNG_HAVE_acTL) == 0)
-        png_error(png_ptr, "attempt to png_read_frame_head() but "
-                           "no acTL present");
-
-    
-    if (png_ptr->num_frames_read == 0)
-        return;
-
-    png_read_reset(png_ptr);
-    png_ptr->flags &= ~PNG_FLAG_ROW_INIT;
-    png_ptr->mode &= ~PNG_HAVE_fcTL;
-
-    have_chunk_after_DAT = 0;
-    for (;;)
-    {
-        png_uint_32 length = png_read_chunk_header(png_ptr);
-
-        if (png_ptr->chunk_name == png_IDAT)
-        {
-            
-            if (have_chunk_after_DAT != 0 || png_ptr->num_frames_read > 1)
-                png_error(png_ptr, "png_read_frame_head(): out of place IDAT");
-            png_crc_finish(png_ptr, length);
-        }
-
-        else if (png_ptr->chunk_name == png_fcTL)
-        {
-            png_handle_fcTL(png_ptr, info_ptr, length);
-            have_chunk_after_DAT = 1;
-        }
-
-        else if (png_ptr->chunk_name == png_fdAT)
-        {
-            png_ensure_sequence_number(png_ptr, length);
-
-            
-            if (have_chunk_after_DAT == 0 && png_ptr->num_frames_read > 1)
-                png_crc_finish(png_ptr, length - 4);
-            else if (png_ptr->mode & PNG_HAVE_fcTL)
-            {
-                png_ptr->idat_size = length - 4;
-                png_ptr->mode |= PNG_HAVE_IDAT;
-
-                break;
-            }
-            else
-                png_error(png_ptr, "png_read_frame_head(): out of place fdAT");
-        }
-        else
-        {
-            png_warning(png_ptr, "Skipped (ignored) a chunk "
-                                 "between APNG chunks");
-            png_crc_finish(png_ptr, length);
-        }
-    }
 }
 #endif 
 
@@ -3211,6 +3131,54 @@ png_image_read_colormapped(png_voidp argument)
 
 
 static int
+png_image_read_direct_scaled(png_voidp argument)
+{
+   png_image_read_control *display = png_voidcast(png_image_read_control*,
+       argument);
+   png_imagep image = display->image;
+   png_structrp png_ptr = image->opaque->png_ptr;
+   png_bytep local_row = png_voidcast(png_bytep, display->local_row);
+   png_bytep first_row = png_voidcast(png_bytep, display->first_row);
+   ptrdiff_t row_bytes = display->row_bytes;
+   int passes;
+
+   
+   switch (png_ptr->interlaced)
+   {
+      case PNG_INTERLACE_NONE:
+         passes = 1;
+         break;
+
+      case PNG_INTERLACE_ADAM7:
+         passes = PNG_INTERLACE_ADAM7_PASSES;
+         break;
+
+      default:
+         png_error(png_ptr, "unknown interlace type");
+   }
+
+   
+   while (--passes >= 0)
+   {
+      png_uint_32 y = image->height;
+      png_bytep output_row = first_row;
+
+      for (; y > 0; --y)
+      {
+         
+         png_read_row(png_ptr, local_row, NULL);
+
+         
+         memcpy(output_row, local_row, (size_t)row_bytes);
+         output_row += row_bytes;
+      }
+   }
+
+   return 1;
+}
+
+
+static int
 png_image_read_composite(png_voidp argument)
 {
    png_image_read_control *display = png_voidcast(png_image_read_control*,
@@ -3627,6 +3595,7 @@ png_image_read_direct(png_voidp argument)
    int linear = (format & PNG_FORMAT_FLAG_LINEAR) != 0;
    int do_local_compose = 0;
    int do_local_background = 0; 
+   int do_local_scale = 0; 
    int passes = 0;
 
    
@@ -3760,7 +3729,15 @@ png_image_read_direct(png_voidp argument)
             png_set_expand_16(png_ptr);
 
          else 
+         {
             png_set_scale_16(png_ptr);
+
+            
+
+
+            if (png_ptr->interlaced != 0)
+               do_local_scale = 1;
+         }
 
          change &= ~PNG_FORMAT_FLAG_LINEAR;
       }
@@ -4031,6 +4008,24 @@ png_image_read_direct(png_voidp argument)
 
       display->local_row = row;
       result = png_safe_execute(image, png_image_read_background, display);
+      display->local_row = NULL;
+      png_free(png_ptr, row);
+
+      return result;
+   }
+
+   else if (do_local_scale != 0)
+   {
+      
+
+
+
+
+      int result;
+      png_voidp row = png_malloc(png_ptr, png_get_rowbytes(png_ptr, info_ptr));
+
+      display->local_row = row;
+      result = png_safe_execute(image, png_image_read_direct_scaled, display);
       display->local_row = NULL;
       png_free(png_ptr, row);
 

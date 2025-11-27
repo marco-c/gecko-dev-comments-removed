@@ -391,27 +391,6 @@ struct png_struct_def
    png_byte filter_type;
 #endif
 
-#ifdef PNG_APNG_SUPPORTED
-   png_uint_32 apng_flags;
-   png_uint_32 next_seq_num;         
-   png_uint_32 first_frame_width;
-   png_uint_32 first_frame_height;
-
-#ifdef PNG_READ_APNG_SUPPORTED
-   png_uint_32 num_frames_read;      
-                                     
-#ifdef PNG_PROGRESSIVE_READ_SUPPORTED
-   png_progressive_frame_ptr frame_info_fn; 
-   png_progressive_frame_ptr frame_end_fn;  
-#endif
-#endif
-
-#ifdef PNG_WRITE_APNG_SUPPORTED
-   png_uint_32 num_frames_to_write;
-   png_uint_32 num_frames_written;
-#endif
-#endif 
-
 
 
 
@@ -426,7 +405,6 @@ struct png_struct_def
 
 #ifdef PNG_READ_QUANTIZE_SUPPORTED
 
-   png_bytep quantize_sort;          
    png_bytep index_to_palette;       
 
    png_bytep palette_to_index;       
