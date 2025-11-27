@@ -61,18 +61,6 @@ bool ICU4XChineseBasedCalendar::inTemporalLeapYear(UErrorCode& status) const {
   return days > (monthsInNonLeapYear * maxDaysInMonth);
 }
 
-int32_t ICU4XChineseBasedCalendar::getRelatedYear(UErrorCode& status) const {
-  int32_t year = get(UCAL_EXTENDED_YEAR, status);
-  if (U_FAILURE(status)) {
-    return 0;
-  }
-  return year + relatedYearDifference();
-}
-
-void ICU4XChineseBasedCalendar::setRelatedYear(int32_t year) {
-  set(UCAL_EXTENDED_YEAR, year - relatedYearDifference());
-}
-
 void ICU4XChineseBasedCalendar::handleComputeFields(int32_t julianDay,
                                                     UErrorCode& status) {
   int32_t gyear = getGregorianYear();
@@ -96,7 +84,8 @@ void ICU4XChineseBasedCalendar::handleComputeFields(int32_t julianDay,
   MOZ_ASSERT(date);
 
   MonthCode monthCode = monthCodeFrom(date.get());
-  int32_t extendedYear = icu4x::capi::icu4x_Date_extended_year_mv1(date.get());
+  int32_t extendedYear =
+      icu4x::capi::icu4x_Date_era_year_or_related_iso_mv1(date.get());
   int32_t month = icu4x::capi::icu4x_Date_ordinal_month_mv1(date.get());
   int32_t dayOfMonth = icu4x::capi::icu4x_Date_day_of_month_mv1(date.get());
   int32_t dayOfYear = icu4x::capi::icu4x_Date_day_of_year_mv1(date.get());
@@ -107,9 +96,16 @@ void ICU4XChineseBasedCalendar::handleComputeFields(int32_t julianDay,
 
   
   
-  int32_t chineseExtendedYear =
-      extendedYear + relatedYearDifference() - chineseRelatedYearDiff;
-  int32_t cycle_year = chineseExtendedYear - 1;
+  
+  
+  
+  
+  constexpr int32_t chineseCalendarYearDiff = -2637;
+
+  
+  
+  int32_t chineseCalendarYear = extendedYear - chineseCalendarYearDiff;
+  int32_t cycle_year = chineseCalendarYear - 1;
   int32_t cycle = FloorDiv(cycle_year, 60);
   int32_t yearOfCycle = cycle_year - (cycle * 60);
 
