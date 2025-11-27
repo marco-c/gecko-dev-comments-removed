@@ -59,6 +59,7 @@ async function ensureExpectedTabOrder(
   if (expectSendMoreInfo) {
     order.push("#report-broken-site-popup-send-more-info-link");
   }
+  order.push("#report-broken-site-popup-preview-button");
   
   
   order.push([

@@ -58,7 +58,7 @@ add_task(async function testSendingMoreInfo() {
   
   
   const tab2 = await openTab(VIDEO_URL);
-  await testSendMoreInfo(tab2, HelpMenu());
+  await testSendMoreInfo(tab2, AppMenu());
   closeTab(tab2);
 
   closeTab(tab);
