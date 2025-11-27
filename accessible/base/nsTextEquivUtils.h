@@ -16,6 +16,7 @@ class nsIContent;
 namespace mozilla {
 namespace a11y {
 class LocalAccessible;
+class AccIterable;
 }
 }  
 
@@ -51,6 +52,7 @@ class nsTextEquivUtils {
  public:
   typedef mozilla::a11y::LocalAccessible LocalAccessible;
   typedef mozilla::a11y::Accessible Accessible;
+  typedef mozilla::a11y::AccIterable AccIterable;
 
   
 
@@ -98,6 +100,10 @@ class nsTextEquivUtils {
                                      nsAtom* aIDRefsAttr,
                                      nsAString& aTextEquiv);
 
+  static void GetTextEquivFromAccIterable(const Accessible* aAccessible,
+                                          AccIterable* aIter,
+                                          nsAString& aTextEquiv);
+
   
 
 
@@ -135,6 +141,13 @@ class nsTextEquivUtils {
   static nsresult AppendFromDOMChildren(nsIContent* aContent,
                                         nsAString* aString);
 
+  
+
+
+
+  static nsresult AppendFromAccessible(Accessible* aAccessible,
+                                       nsAString* aString);
+
  private:
   
 
@@ -142,13 +155,6 @@ class nsTextEquivUtils {
 
   static nsresult AppendFromAccessibleChildren(const Accessible* aAccessible,
                                                nsAString* aString);
-
-  
-
-
-
-  static nsresult AppendFromAccessible(Accessible* aAccessible,
-                                       nsAString* aString);
 
   
 

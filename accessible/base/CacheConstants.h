@@ -211,9 +211,6 @@ class CacheKey {
   static constexpr nsStaticAtom* Name = nsGkAtoms::name;
   
   
-  static constexpr nsStaticAtom* NameValueFlag = nsGkAtoms::explicit_name;
-  
-  
   static constexpr nsStaticAtom* NumericValue = nsGkAtoms::value;
   
   static constexpr nsStaticAtom* Opacity = nsGkAtoms::opacity;
