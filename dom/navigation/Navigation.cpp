@@ -211,6 +211,10 @@ bool Navigation::IsAPIEnabled(JSContext* , JSObject* ) {
 
 void Navigation::Entries(
     nsTArray<RefPtr<NavigationHistoryEntry>>& aResult) const {
+  if (HasEntriesAndEventsDisabled()) {
+    aResult.Clear();
+    return;
+  }
   aResult = mEntries.Clone();
 }
 
