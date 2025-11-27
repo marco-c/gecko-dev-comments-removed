@@ -63,11 +63,8 @@ static_assert(RegExpFlag::UnicodeSets == REGEXP_UNICODESETS_FLAG,
 static_assert(RegExpFlag::Sticky == REGEXP_STICKY_FLAG,
               "self-hosted JS and /y flag bits must agree");
 
-
-
-
 RegExpObject* js::RegExpAlloc(JSContext* cx, NewObjectKind newKind,
-                              HandleObject proto, HandleObject newTarget) {
+                              HandleObject proto ) {
   Rooted<RegExpObject*> regexp(
       cx, NewObjectWithClassProtoAndKind<RegExpObject>(cx, proto, newKind));
   if (!regexp) {
@@ -77,34 +74,10 @@ RegExpObject* js::RegExpAlloc(JSContext* cx, NewObjectKind newKind,
   if (!SharedShape::ensureInitialCustomShape<RegExpObject>(cx, regexp)) {
     return nullptr;
   }
-  
-  
-  
-  
-  bool legacyFeaturesEnabled = false;
-  if (JS::Prefs::experimental_legacy_regexp()) {
-    
-    
-    JS::Realm* thisRealm = regexp->nonCCWRealm();
 
-    JSObject* thisRealmRegExp =
-        &thisRealm->maybeGlobal()->getConstructor(JSProto_RegExp);
-
-    
-    
-    
-    
-    legacyFeaturesEnabled = (!newTarget || newTarget == thisRealmRegExp);
-  }
-  regexp->setLegacyFeaturesEnabled(legacyFeaturesEnabled);
-
-  
-  
-  
   MOZ_ASSERT(regexp->lookupPure(cx->names().lastIndex)->slot() ==
              RegExpObject::lastIndexSlot());
 
-  
   return regexp;
 }
 
@@ -172,8 +145,7 @@ const JSClass RegExpObject::protoClass_ = {
 template <typename CharT>
 RegExpObject* RegExpObject::create(JSContext* cx, const CharT* chars,
                                    size_t length, RegExpFlags flags,
-                                   NewObjectKind newKind,
-                                   HandleObject newTarget) {
+                                   NewObjectKind newKind) {
   static_assert(std::is_same_v<CharT, char16_t>,
                 "this code may need updating if/when CharT encodes UTF-8");
 
@@ -182,21 +154,19 @@ RegExpObject* RegExpObject::create(JSContext* cx, const CharT* chars,
     return nullptr;
   }
 
-  return create(cx, source, flags, newKind, newTarget);
+  return create(cx, source, flags, newKind);
 }
 
 template RegExpObject* RegExpObject::create(JSContext* cx,
                                             const char16_t* chars,
                                             size_t length, RegExpFlags flags,
-                                            NewObjectKind newKind,
-                                            HandleObject newTarget);
+                                            NewObjectKind newKind);
 
 RegExpObject* RegExpObject::createSyntaxChecked(JSContext* cx,
                                                 Handle<JSAtom*> source,
                                                 RegExpFlags flags,
-                                                NewObjectKind newKind,
-                                                HandleObject newTarget) {
-  RegExpObject* regexp = RegExpAlloc(cx, newKind, nullptr, newTarget);
+                                                NewObjectKind newKind) {
+  RegExpObject* regexp = RegExpAlloc(cx, newKind);
   if (!regexp) {
     return nullptr;
   }
@@ -207,8 +177,7 @@ RegExpObject* RegExpObject::createSyntaxChecked(JSContext* cx,
 }
 
 RegExpObject* RegExpObject::create(JSContext* cx, Handle<JSAtom*> source,
-                                   RegExpFlags flags, NewObjectKind newKind,
-                                   HandleObject newTarget) {
+                                   RegExpFlags flags, NewObjectKind newKind) {
   Rooted<RegExpObject*> regexp(cx);
   {
     AutoReportFrontendContext fc(cx);
@@ -221,7 +190,7 @@ RegExpObject* RegExpObject::create(JSContext* cx, Handle<JSAtom*> source,
       return nullptr;
     }
 
-    regexp = RegExpAlloc(cx, newKind, nullptr, newTarget);
+    regexp = RegExpAlloc(cx, newKind);
     if (!regexp) {
       return nullptr;
     }
@@ -1119,9 +1088,7 @@ JSObject* js::CloneRegExpObject(JSContext* cx, Handle<RegExpObject*> regex) {
 
   clone->initAndZeroLastIndex(shared->getSource(), shared->getFlags(), cx);
   clone->setShared(shared);
-  if (JS::Prefs::experimental_legacy_regexp()) {
-    clone->setLegacyFeaturesEnabled(regex->legacyFeaturesEnabled());
-  }
+
   return clone;
 }
 

@@ -18,6 +18,7 @@ UNSUPPORTED_FEATURES = set(
     [
         "tail-call-optimization",
         "Intl.Locale-info",  
+        "legacy-regexp",  
         "source-phase-imports",
         "source-phase-imports-module-source",
         "import-defer",
@@ -38,7 +39,7 @@ FEATURE_CHECK_NEEDED = {
     "upsert": "!Map.prototype.getOrInsertComputed",  
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
 }
-RELEASE_OR_BETA = set(["legacy-regexp"])
+RELEASE_OR_BETA = set()
 SHELL_OPTIONS = {
     "ShadowRealm": "--enable-shadow-realms",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
