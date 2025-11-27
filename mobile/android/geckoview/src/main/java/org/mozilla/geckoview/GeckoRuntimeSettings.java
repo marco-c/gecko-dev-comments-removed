@@ -575,8 +575,51 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+    @Deprecated
+    @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
     public @NonNull Builder setLnaBlockingEnabled(@NonNull final Boolean enabled) {
       getSettings().setLnaBlockingEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder setLnaBlocking(@NonNull final Boolean enabled) {
+      getSettings().setLnaBlocking(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder setLnaBlockTrackers(@NonNull final Boolean enabled) {
+      getSettings().setLnaBlockTrackers(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder setLnaEnabled(@NonNull final Boolean enabled) {
+      getSettings().setLnaEnabled(enabled);
       return this;
     }
 
@@ -755,7 +798,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
 
-   final Pref<Boolean> mLnaBlockingEnabled = new Pref<>("network.lna.blocking", false);
+   final PrefWithoutDefault<Boolean> mLnaBlocking =
+      new PrefWithoutDefault<>("network.lna.blocking");
+   final PrefWithoutDefault<Boolean> mLnaBlockTrackers =
+      new PrefWithoutDefault<>("network.lna.block_trackers");
+   final PrefWithoutDefault<Boolean> mLnaEnabled =
+      new PrefWithoutDefault<>("network.lna.enabled");
    final PrefWithoutDefault<Integer> mTrustedRecursiveResolverMode =
       new PrefWithoutDefault<>("network.trr.mode");
    final PrefWithoutDefault<String> mTrustedRecursiveResolverUri =
@@ -1998,6 +2046,72 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setLnaBlocking(final boolean enabled) {
+    mLnaBlocking.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+
+  public @Nullable Boolean getLnaBlocking() {
+    return mLnaBlocking.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setLnaEnabled(final boolean enabled) {
+    mLnaEnabled.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+
+  public @Nullable Boolean getLnaEnabled() {
+    return mLnaEnabled.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setLnaBlockTrackers(final boolean enabled) {
+    mLnaBlockTrackers.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+
+  public @Nullable Boolean getLnaBlockTrackers() {
+    return mLnaBlockTrackers.get();
+  }
+
+  
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({ALLOW_ALL, HTTPS_ONLY_PRIVATE, HTTPS_ONLY})
   public @interface HttpsOnlyMode {}
@@ -2033,8 +2147,13 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+  @Deprecated
+  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
   public @NonNull GeckoRuntimeSettings setLnaBlockingEnabled(final boolean enabled) {
-    mLnaBlockingEnabled.commit(enabled);
+    mLnaBlocking.commit(enabled);
     return this;
   }
 
@@ -2043,8 +2162,13 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+  @Deprecated
+  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
   public boolean getLnaBlockingEnabled() {
-    return mLnaBlockingEnabled.get();
+    final Boolean lnaBlocking = mLnaBlocking.get();
+    return lnaBlocking != null ? lnaBlocking : false;
   }
 
   
