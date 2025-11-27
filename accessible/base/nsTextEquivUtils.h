@@ -67,7 +67,7 @@ class nsTextEquivUtils {
 
 
 
-  static nsresult GetNameFromSubtree(const LocalAccessible* aAccessible,
+  static nsresult GetNameFromSubtree(const Accessible* aAccessible,
                                      nsAString& aName);
 
   
