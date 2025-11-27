@@ -1,12 +1,12 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
+/* exported initAccService, shutdownAccService, waitForEvent, accConsumersChanged */
 
-
-
+// Load the shared-head file first.
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -16,16 +16,16 @@ const { CommonUtils } = ChromeUtils.importESModule(
   "chrome://mochitests/content/browser/accessible/tests/browser/Common.sys.mjs"
 );
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Capture when 'a11y-consumers-changed' event is fired.
+ *
+ * @param  {?object} target
+ *         [optional] browser object that indicates that accessibility service
+ *         is in content process.
+ * @return {Array}
+ *         List of promises where first one is the promise for when the event
+ *         observer is added and the second one for when the event is observed.
+ */
 function accConsumersChanged(target) {
   return target
     ? [
@@ -42,16 +42,16 @@ function accConsumersChanged(target) {
       ];
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Capture when accessibility service is initialized.
+ *
+ * @param  {?object} target
+ *         [optional] browser object that indicates that accessibility service
+ *         is expected to be initialized in content process.
+ * @return {Array}
+ *         List of promises where first one is the promise for when the event
+ *         observer is added and the second one for when the event is observed.
+ */
 function initAccService(target) {
   return target
     ? [
@@ -68,16 +68,16 @@ function initAccService(target) {
       ];
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Capture when accessibility service is shutdown.
+ *
+ * @param  {?object} target
+ *         [optional] browser object that indicates that accessibility service
+ *         is expected to be shutdown in content process.
+ * @return {Array}
+ *         List of promises where first one is the promise for when the event
+ *         observer is added and the second one for when the event is observed.
+ */
 function shutdownAccService(target) {
   return target
     ? [
@@ -94,10 +94,10 @@ function shutdownAccService(target) {
       ];
 }
 
-
-
-
-
+/**
+ * Simpler verions of waitForEvent defined in
+ * accessible/tests/browser/events.js
+ */
 function waitForEvent(eventType, expectedId) {
   return new Promise(resolve => {
     let eventObserver = {
@@ -107,7 +107,7 @@ function waitForEvent(eventType, expectedId) {
         try {
           id = event.accessible.id;
         } catch (e) {
-          
+          // This can throw NS_ERROR_FAILURE.
         }
         if (event.eventType === eventType && id === expectedId) {
           Services.obs.removeObserver(this, "accessible-event");
