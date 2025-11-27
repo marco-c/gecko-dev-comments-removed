@@ -1281,18 +1281,32 @@ class PageStyleActor extends Actor {
     }
 
     const cssRules = sheet.cssRules;
-    const rawNode = node.rawNode;
-    const classes = [...rawNode.classList];
+
+    
+    
+    const { bindingElement, pseudo } = CssLogic.getBindingElementAndPseudo(
+      node.rawNode
+    );
+    const classes = [...bindingElement.classList];
 
     let selector;
-    if (rawNode.id) {
-      selector = "#" + CSS.escape(rawNode.id);
+    if (bindingElement.id) {
+      selector = "#" + CSS.escape(bindingElement.id);
     } else if (classes.length) {
       selector = "." + classes.map(c => CSS.escape(c)).join(".");
     } else {
-      selector = rawNode.localName;
+      selector = bindingElement.localName;
     }
 
+    if (pseudo && pseudoClasses?.length) {
+      throw new Error(
+        `Can't set pseudo classes (${JSON.stringify(pseudoClasses)}) onto a pseudo element (${pseudo})`
+      );
+    }
+
+    if (pseudo) {
+      selector += pseudo;
+    }
     if (pseudoClasses && pseudoClasses.length) {
       selector += pseudoClasses.join("");
     }
