@@ -23,6 +23,17 @@ namespace jit {
 class JitActivation;
 class JSJitProfilingFrameIterator;
 class JitcodeGlobalEntry;
+
+
+
+struct CallStackFrameInfo {
+  
+  const char* label;
+  
+  
+  uint32_t sourceId;
+};
+
 }  
 namespace wasm {
 class ProfilingFrameIterator;
@@ -295,8 +306,7 @@ class ProfiledFrameRange {
   void* addr_;
   js::jit::JitcodeGlobalEntry* entry_;
   
-  const char* labels_[64];
-  uint32_t sourceIds_[64];
+  js::jit::CallStackFrameInfo frames_[64];
   uint32_t depth_;
 };
 
