@@ -336,6 +336,11 @@ var allowlist = [
   {
     file: "moz-src:///browser/components/aiwindow/models/InsightsHistorySource.sys.mjs",
   },
+
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
