@@ -4427,7 +4427,12 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
         
         
         !aBuilder->IsInViewTransitionCapture() &&
-        child->IsAbsolutelyPositioned(disp)) {
+        child->IsAbsolutelyPositioned(disp) &&
+        
+        
+        
+        
+        !PresContext()->Document()->GetActiveViewTransition()) {
       scrollsWithAnchor =
           AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(child);
     }
