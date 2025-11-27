@@ -208,6 +208,16 @@ class AnimationsFront extends FrontClassWithSpec(animationsSpec) {
     
     this.formAttributeName = "animationsActor";
   }
+
+  setWalkerActor(walkerFront) {
+    this.walker = walkerFront;
+    return super.setWalkerActor(walkerFront);
+  }
+
+  destroy() {
+    super.destroy();
+    this.walker = null;
+  }
 }
 
 exports.AnimationsFront = AnimationsFront;

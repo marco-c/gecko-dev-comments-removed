@@ -62,7 +62,10 @@ class AnimationInspector {
     this.simulateAnimationForKeyframesProgressBar =
       this.simulateAnimationForKeyframesProgressBar.bind(this);
     this.toggleElementPicker = this.toggleElementPicker.bind(this);
-    this.update = this.update.bind(this);
+    this.watchAnimationsForSelectedNode =
+      this.watchAnimationsForSelectedNode.bind(this);
+    this.unwatchAnimationsForSelectedNode =
+      this.unwatchAnimationsForSelectedNode.bind(this);
     this.onAnimationStateChanged = this.onAnimationStateChanged.bind(this);
     this.onAnimationsCurrentTimeUpdated =
       this.onAnimationsCurrentTimeUpdated.bind(this);
@@ -71,9 +74,9 @@ class AnimationInspector {
     this.onElementPickerStarted = this.onElementPickerStarted.bind(this);
     this.onElementPickerStopped = this.onElementPickerStopped.bind(this);
     this.onNavigate = this.onNavigate.bind(this);
+    this.onNewNodeFront = this.onNewNodeFront.bind(this);
     this.onSidebarResized = this.onSidebarResized.bind(this);
     this.onSidebarSelectionChanged = this.onSidebarSelectionChanged.bind(this);
-    this.onTargetAvailable = this.onTargetAvailable.bind(this);
 
     EventEmitter.decorate(this);
     this.emitForTests = this.emitForTests.bind(this);
@@ -144,13 +147,16 @@ class AnimationInspector {
   }
 
   async initListeners() {
-    await this.inspector.commands.targetCommand.watchTargets({
-      types: [this.inspector.commands.targetCommand.TYPES.FRAME],
-      onAvailable: this.onTargetAvailable,
+    await this.watchAnimationsForSelectedNode({
+      
+      
+      
+      
+      force: true,
     });
 
     this.inspector.on("new-root", this.onNavigate);
-    this.inspector.selection.on("new-node-front", this.update);
+    this.inspector.selection.on("new-node-front", this.onNewNodeFront);
     this.inspector.sidebar.on("select", this.onSidebarSelectionChanged);
     this.inspector.toolbox.on("select", this.onSidebarSelectionChanged);
     this.inspector.toolbox.on(
@@ -169,8 +175,11 @@ class AnimationInspector {
 
   destroy() {
     this.setAnimationStateChangedListenerEnabled(false);
-    this.inspector.off("new-root", this.onNavigate);
-    this.inspector.selection.off("new-node-front", this.update);
+    this.inspector.off("new-root", this.onNewNodeFront);
+    this.inspector.selection.off(
+      "new-node-front",
+      this.watchAnimationsForSelectedNode
+    );
     this.inspector.sidebar.off("select", this.onSidebarSelectionChanged);
     this.inspector.toolbox.off(
       "inspector-sidebar-resized",
@@ -225,6 +234,12 @@ class AnimationInspector {
 
 
   async doSetCurrentTimes(currentTime) {
+    
+    
+    if (!this.animationsFront) {
+      return;
+    }
+
     const { animations, timeScale } = this.state;
     currentTime = currentTime + timeScale.minStartTime;
     await this.animationsFront.setCurrentTimes(animations, currentTime, true, {
@@ -300,7 +315,11 @@ class AnimationInspector {
       return Promise.reject("Animation inspector already destroyed");
     }
 
-    return this.inspector.walker.getNodeFromActor(actorID, ["node"]);
+    if (!this.animationsFront?.walker) {
+      return Promise.reject("No animations front walker");
+    }
+
+    return this.animationsFront.walker.getNodeFromActor(actorID, ["node"]);
   }
 
   isPanelVisible() {
@@ -415,11 +434,11 @@ class AnimationInspector {
     this.wasPanelVisibled = isPanelVisibled;
 
     if (this.isPanelVisible()) {
-      await this.update();
+      await this.watchAnimationsForSelectedNode();
       this.onSidebarResized(null, this.inspector.getSidebarSize());
     } else {
+      await this.unwatchAnimationsForSelectedNode();
       this.stopAnimationsCurrentTimeTimer();
-      this.setAnimationStateChangedListenerEnabled(false);
     }
   }
 
@@ -429,16 +448,6 @@ class AnimationInspector {
     }
 
     this.inspector.store.dispatch(updateSidebarSize(size));
-  }
-
-  async onTargetAvailable({ targetFront }) {
-    if (targetFront.isTopLevel) {
-      this.animationsFront = await targetFront.getFront("animations");
-      this.animationsFront.setWalkerActor(this.inspector.walker);
-      this.animationsFront.on("mutations", this.onAnimationsMutation);
-
-      await this.update();
-    }
   }
 
   removeAnimationsCurrentTimeListener(listener) {
@@ -498,6 +507,12 @@ class AnimationInspector {
       return; 
     }
 
+    
+    
+    if (!this.animationsFront) {
+      return;
+    }
+
     let animations = this.state.animations;
     
     
@@ -523,6 +538,12 @@ class AnimationInspector {
   async setAnimationsPlayState(doPlay) {
     if (!this.inspector) {
       return; 
+    }
+
+    
+    
+    if (!this.animationsFront) {
+      return;
     }
 
     let { animations, timeScale } = this.state;
@@ -720,24 +741,72 @@ class AnimationInspector {
     this.inspector.toolbox.nodePicker.togglePicker();
   }
 
-  async update() {
-    if (!this.isPanelVisible()) {
+  onNewNodeFront() {
+    this.watchAnimationsForSelectedNode();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async watchAnimationsForSelectedNode({ force = false } = {}) {
+    this.unwatchAnimationsForSelectedNode();
+
+    if (!this.isPanelVisible() && !force) {
       return;
     }
 
     const done = this.inspector.updating("animationinspector");
-
     const selection = this.inspector.selection;
-    const animations =
-      selection.isConnected() && selection.isElementNode()
-        ? await this.animationsFront.getAnimationPlayersForNode(
-            selection.nodeFront
-          )
-        : [];
-    this.fireUpdateAction(animations);
+
+    let animations;
+    const shouldWatchAnimationForSelectedNode =
+      selection && selection.isConnected() && selection.isElementNode();
+    if (shouldWatchAnimationForSelectedNode) {
+      
+      
+      
+      this.animationsFront =
+        await selection.nodeFront.targetFront.getFront("animations");
+      
+      
+      this.animationsFront.setWalkerActor(
+        selection.nodeFront.inspectorFront.walker
+      );
+      
+      this.animationsFront.on("mutations", this.onAnimationsMutation);
+      
+      animations = await this.animationsFront.getAnimationPlayersForNode(
+        selection.nodeFront
+      );
+    }
+
+    this.fireUpdateAction(animations || []);
     this.setAnimationStateChangedListenerEnabled(true);
 
     done();
+  }
+
+  
+
+
+
+
+
+
+
+  unwatchAnimationsForSelectedNode() {
+    if (this.animationsFront) {
+      this.animationsFront.off("mutations", this.onAnimationsMutation);
+      this.animationsFront = null;
+    }
+    this.setAnimationStateChangedListenerEnabled(false);
   }
 
   async refreshAnimationsState(animations) {
