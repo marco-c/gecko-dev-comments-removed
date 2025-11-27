@@ -1333,6 +1333,14 @@ void nsHttpTransaction::Close(nsresult reason) {
     mDNSRequest = nullptr;
   }
 
+  
+  
+  
+  
+  if (NS_FAILED(reason) && mHttp3BackupTimerCreated && mHttp3BackupTimer) {
+    reason = NS_ERROR_NET_RESET;
+  }
+
   MaybeCancelFallbackTimer();
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
