@@ -82,12 +82,19 @@ class SkipUnlessHasRelevantTests(OptimizationStrategy):
 
 @register_strategy("skip-unless-changed")
 class SkipUnlessChanged(OptimizationStrategy):
+    @memoize
+    def _match_path(self, path, pattern):
+        return match_path(path, pattern)
+
     def check(self, files_changed, patterns):
-        for pattern in patterns:
-            for path in files_changed:
-                if match_path(path, pattern):
-                    return True
-        return False
+        """Optimized check using memoized path matching"""
+        
+        
+        return any(
+            self._match_path(path, pattern)
+            for path in files_changed
+            for pattern in patterns
+        )
 
     def should_remove_task(self, task, params, file_patterns):
         
