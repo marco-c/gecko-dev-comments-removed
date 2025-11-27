@@ -12,7 +12,6 @@
 #include "plstr.h"
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
-#include "CNavDTD.h"
 #include "prenv.h"
 #include "prlock.h"
 #include "prcvar.h"
@@ -25,7 +24,6 @@
 #include "nsMimeTypes.h"
 #include "nsCharsetSource.h"
 #include "nsThreadUtils.h"
-#include "nsIHTMLContentSink.h"
 
 #include "mozilla/CondVar.h"
 #include "mozilla/dom/ScriptLoader.h"
@@ -36,10 +34,6 @@ using namespace mozilla;
 
 #define NS_PARSER_FLAG_PENDING_CONTINUE_EVENT 0x00000001
 #define NS_PARSER_FLAG_CAN_TOKENIZE 0x00000002
-
-
-
-
 
 
 
@@ -120,7 +114,6 @@ void nsParser::Initialize() {
 
   mProcessingNetworkData = false;
   mOnStopPending = false;
-  mIsAboutBlank = false;
 }
 
 void nsParser::Cleanup() {
@@ -246,10 +239,6 @@ nsParser::SetContentSink(nsIContentSink* aSink) {
 
   if (mSink) {
     mSink->SetParser(this);
-    nsCOMPtr<nsIHTMLContentSink> htmlSink = do_QueryInterface(mSink);
-    if (htmlSink) {
-      mIsAboutBlank = true;
-    }
   }
 }
 
@@ -281,13 +270,8 @@ nsresult nsParser::WillBuildModel() {
   if (eUnknownDetect != mParserContext->mAutoDetectStatus) return NS_OK;
 
   if (eDTDMode_autodetect == mParserContext->mDTDMode) {
-    if (mIsAboutBlank) {
-      mParserContext->mDTDMode = eDTDMode_quirks;
-      mParserContext->mDocType = eHTML_Quirks;
-    } else {
-      mParserContext->mDTDMode = eDTDMode_full_standards;
-      mParserContext->mDocType = eXML;
-    }
+    mParserContext->mDTDMode = eDTDMode_full_standards;
+    mParserContext->mDocType = eXML;
   }  
 
   
@@ -298,17 +282,11 @@ nsresult nsParser::WillBuildModel() {
              "The old parser is not supposed to be used for View Source "
              "anymore.");
 
-  
-  
-  if (mParserContext->mDocType == eXML) {
-    RefPtr<nsExpatDriver> expat = new nsExpatDriver();
-    nsresult rv = expat->Initialize(mParserContext->mScanner.GetURI(), mSink);
-    NS_ENSURE_SUCCESS(rv, rv);
+  RefPtr<nsExpatDriver> expat = new nsExpatDriver();
+  nsresult rv = expat->Initialize(mParserContext->mScanner.GetURI(), mSink);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    mDTD = expat.forget();
-  } else {
-    mDTD = new CNavDTD();
-  }
+  mDTD = expat.forget();
 
   return mSink->WillBuildModel(mParserContext->mDTDMode);
 }
@@ -918,14 +896,6 @@ inline char GetNextChar(nsACString::const_iterator& aStart,
   return (++aStart != aEnd) ? *aStart : '\0';
 }
 
-static nsresult NoOpParserWriteFunc(nsIInputStream* in, void* closure,
-                                    const char* fromRawSegment,
-                                    uint32_t toOffset, uint32_t count,
-                                    uint32_t* writeCount) {
-  *writeCount = count;
-  return NS_OK;
-}
-
 typedef struct {
   bool mNeedCharsetCheck;
   nsParser* mParser;
@@ -1007,16 +977,6 @@ nsresult nsParser::OnDataAvailable(nsIRequest* request,
              "Must have a buffered input stream");
 
   nsresult rv = NS_OK;
-
-  if (mIsAboutBlank) {
-    MOZ_ASSERT(false, "Must not get OnDataAvailable for about:blank");
-    
-    
-    uint32_t totalRead;
-    rv = pIStream->ReadSegments(NoOpParserWriteFunc, nullptr, aLength,
-                                &totalRead);
-    return rv;
-  }
 
   if (mParserContext->mRequest == request) {
     mParserContext->mStreamListenerState = eOnDataAvail;
