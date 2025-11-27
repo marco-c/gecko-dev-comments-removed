@@ -76,9 +76,6 @@ class ConnectionEntry : public SupportsWeakPtr {
   HttpConnectionBase* GetH2orH3ActiveConn();
   
   
-  already_AddRefed<nsHttpConnection> GetH2TunnelActiveConn();
-  
-  
   bool MakeFirstActiveSpdyConnDontReuse();
 
   void ClosePersistentConnections();
