@@ -4047,7 +4047,11 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool IsSelectable(mozilla::StyleUserSelect* aSelectStyle) const;
+
+
+
+  [[nodiscard]] bool IsSelectable(
+      mozilla::StyleUserSelect* aSelectStyle = nullptr) const;
 
   
 

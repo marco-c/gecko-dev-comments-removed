@@ -20,7 +20,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/ToString.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/DOMRect.h"
@@ -3364,7 +3363,7 @@ void nsRange::ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges) {
             frame = p->GetPrimaryFrame();
           }
           if (frame) {
-            selectable = frame->IsSelectable(nullptr);
+            selectable = frame->IsSelectable();
           }
         }
       }
