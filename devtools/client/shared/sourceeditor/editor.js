@@ -1796,7 +1796,7 @@ class Editor extends EventEmitter {
    * This should add the class to the results of a search pattern specified
    *
    * @param {RegExp} pattern - The search pattern
-   * @param {String} className - The class used to decorate each result
+   * @param {string} className - The class used to decorate each result
    */
   highlightSearchMatches(pattern, className) {
     const cm = editors.get(this);
@@ -1817,7 +1817,7 @@ class Editor extends EventEmitter {
   /**
    * Retrieves the cursor for the next selection to be highlighted
    *
-   * @param {Boolean} reverse - Determines the direction of the cursor movement
+   * @param {boolean} reverse - Determines the direction of the cursor movement
    * @returns {RegExpSearchCursor}
    */
   getNextSearchCursor(reverse) {
@@ -1842,9 +1842,9 @@ class Editor extends EventEmitter {
   /**
    * Get the start and end locations of the current viewport
    *
-   * @param {Number} offsetHorizontalCharacters - Offset of characters offscreen
-   * @param {Number} offsetVerticalLines - Offset of lines offscreen
-   * @returns {Object}  - The location information for the current viewport
+   * @param {number} offsetHorizontalCharacters - Offset of characters offscreen
+   * @param {number} offsetVerticalLines - Offset of lines offscreen
+   * @returns {object}  - The location information for the current viewport
    */
   getLocationsInViewport(
     offsetHorizontalCharacters = 0,
@@ -1899,7 +1899,7 @@ class Editor extends EventEmitter {
   /**
    * Gets the position information for the current selection
    *
-   * @returns {Object} cursor      - The location information for the  current selection
+   * @returns {object} cursor      - The location information for the  current selection
    *                   cursor.from - An object with the starting line / column of the selection
    *                   cursor.to   - An object with the end line / column of the selection
    */

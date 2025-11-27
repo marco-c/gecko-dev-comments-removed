@@ -750,12 +750,12 @@ class InplaceEditor extends EventEmitter {
    * from a selection of default units corresponding to supported CSS value
    * dimensions (distance, angle, duration).
    *
-   * @param {String} beforeValue
+   * @param {string} beforeValue
    *        The string preceeding the number value in the current property
    *        value.
-   * @param {String} afterValue
+   * @param {string} afterValue
    *        The string following the number value in the current property value.
-   * @return {String} a valid unit that can be used for this number value or
+   * @return {string} a valid unit that can be used for this number value or
    *         empty string if no match could be found.
    */
   #findCompatibleUnit(beforeValue, afterValue) {

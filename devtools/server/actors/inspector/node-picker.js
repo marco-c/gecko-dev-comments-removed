@@ -225,7 +225,7 @@ class NodePicker {
    * mousemove event handler
    *
    * @param {MouseEvent} event
-   * @param {Boolean} shiftKeyOverride: If passed, will override event.shiftKey in _findAndAttachElement
+   * @param {boolean} shiftKeyOverride: If passed, will override event.shiftKey in _findAndAttachElement
    */
   _onHovered(event, shiftKeyOverride) {
     // If the hovered node is a remote frame, then we need to let the event through

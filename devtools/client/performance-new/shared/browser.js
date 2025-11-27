@@ -98,7 +98,7 @@ async function openProfilerTab({ profilerViewMode, defaultPanel }) {
   
   
   const win =
-    Services.wm.getMostRecentWindow("navigator:browser") ||
+    Services.wm.getMostRecentBrowserWindow() ||
     Services.wm.getMostRecentWindow("devtools:toolbox");
   if (!win) {
     throw new Error("No browser window");
@@ -171,7 +171,7 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
 
 
 async function openScriptInDebugger(tabId, scriptUrl, line, columnOneBased) {
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  const win = Services.wm.getMostRecentBrowserWindow();
 
   
   const foundTab = win.gBrowser.tabs.find(

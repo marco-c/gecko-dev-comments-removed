@@ -2,11 +2,7 @@
 
 
 
-import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
-
 import {
-  getSource,
-  getSourceFromId,
   getBreakpointPositionsForSource,
   getSourceActorsForSource,
 } from "../../selectors/index";
@@ -150,8 +146,7 @@ async function _setBreakpointPositions(location, thunkArgs) {
       location.source.id,
       true
     );
-    const generatedSourceId = originalToGeneratedId(location.source.id);
-    generatedSource = getSourceFromId(getState(), generatedSourceId);
+    generatedSource = location.source.generatedSource;
 
     
     
@@ -172,7 +167,7 @@ async function _setBreakpointPositions(location, thunkArgs) {
       
       
       const allActorsPositions = await Promise.all(
-        getSourceActorsForSource(getState(), generatedSourceId).map(actor =>
+        getSourceActorsForSource(getState(), generatedSource.id).map(actor =>
           client.getSourceActorBreakpointPositions(actor, range)
         )
       );
@@ -261,10 +256,7 @@ async function _setBreakpointPositions(location, thunkArgs) {
 }
 
 function generatedSourceActorKey(state, source) {
-  const generatedSource = getSource(
-    state,
-    source.isOriginal ? originalToGeneratedId(source.id) : source.id
-  );
+  const generatedSource = source.isOriginal ? source.generatedSource : source;
   const actors = generatedSource
     ? getSourceActorsForSource(state, generatedSource.id).map(
         ({ actor }) => actor
