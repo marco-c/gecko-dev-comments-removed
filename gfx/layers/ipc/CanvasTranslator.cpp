@@ -284,7 +284,7 @@ bool CanvasTranslator::AddBuffer(
 }
 
 ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
-    uint32_t aId, ipc::MutableSharedMemoryHandle&& aBufferHandle) {
+    ipc::MutableSharedMemoryHandle&& aBufferHandle) {
   if (mDeactivated) {
     
     return IPC_OK();
@@ -293,77 +293,29 @@ ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
   if (UsePendingCanvasTranslatorEvents()) {
     MutexAutoLock lock(mCanvasTranslatorEventsLock);
     mPendingCanvasTranslatorEvents.push_back(
-        CanvasTranslatorEvent::SetDataSurfaceBuffer(aId,
-                                                    std::move(aBufferHandle)));
+        CanvasTranslatorEvent::SetDataSurfaceBuffer(std::move(aBufferHandle)));
     PostCanvasTranslatorEvents(lock);
   } else {
-    DispatchToTaskQueue(
-        NewRunnableMethod<uint32_t, ipc::MutableSharedMemoryHandle&&>(
-            "CanvasTranslator::SetDataSurfaceBuffer", this,
-            &CanvasTranslator::SetDataSurfaceBuffer, aId,
-            std::move(aBufferHandle)));
+    DispatchToTaskQueue(NewRunnableMethod<ipc::MutableSharedMemoryHandle&&>(
+        "CanvasTranslator::SetDataSurfaceBuffer", this,
+        &CanvasTranslator::SetDataSurfaceBuffer, std::move(aBufferHandle)));
   }
 
   return IPC_OK();
 }
 
-void CanvasTranslator::DataSurfaceBufferWillChange(uint32_t aId,
-                                                   bool aKeepAlive,
-                                                   size_t aLimit) {
-  if (aId) {
+void CanvasTranslator::DataSurfaceBufferWillChange() {
+  RefPtr<gfx::DataSourceSurface> owner(mDataSurfaceShmemOwner);
+  if (owner) {
     
-    auto it = mDataSurfaceShmems.find(aId);
-    if (it != mDataSurfaceShmems.end()) {
-      RefPtr<gfx::DataSourceSurface> owner(it->second.mOwner);
-      if (owner) {
-        
-        gfx::DataSourceSurface::ScopedMap map(
-            owner, gfx::DataSourceSurface::MapType::READ_WRITE);
-        it->second.mOwner = nullptr;
-      }
-      
-      if (!aKeepAlive || aId != mLastDataSurfaceShmemId) {
-        mDataSurfaceShmems.erase(it);
-      }
-    }
-  } else {
-    
-    if (!aLimit) {
-      aLimit = mDataSurfaceShmems.size();
-    }
-    
-    DataSurfaceShmem lastShmem;
-    auto it = mDataSurfaceShmems.begin();
-    for (; aLimit > 0 && it != mDataSurfaceShmems.end(); ++it, --aLimit) {
-      
-      
-      if (aKeepAlive && it->first == mLastDataSurfaceShmemId) {
-        lastShmem = std::move(it->second);
-        continue;
-      }
-      RefPtr<gfx::DataSourceSurface> owner(it->second.mOwner);
-      if (owner) {
-        
-        gfx::DataSourceSurface::ScopedMap map(
-            owner, gfx::DataSourceSurface::MapType::READ_WRITE);
-        it->second.mOwner = nullptr;
-      }
-    }
-    
-    if (it == mDataSurfaceShmems.end()) {
-      mDataSurfaceShmems.clear();
-    } else if (it != mDataSurfaceShmems.begin()) {
-      mDataSurfaceShmems.erase(mDataSurfaceShmems.begin(), it);
-    }
-    
-    if (lastShmem.mShmem.IsValid()) {
-      mDataSurfaceShmems[mLastDataSurfaceShmemId] = std::move(lastShmem);
-    }
+    gfx::DataSourceSurface::ScopedMap map(
+        owner, gfx::DataSourceSurface::MapType::READ_WRITE);
+    mDataSurfaceShmemOwner = nullptr;
   }
 }
 
 bool CanvasTranslator::SetDataSurfaceBuffer(
-    uint32_t aId, ipc::MutableSharedMemoryHandle&& aBufferHandle) {
+    ipc::MutableSharedMemoryHandle&& aBufferHandle) {
   MOZ_ASSERT(IsInTaskQueue());
   if (mHeader->readerState == State::Failed) {
     
@@ -380,53 +332,16 @@ bool CanvasTranslator::SetDataSurfaceBuffer(
     return false;
   }
 
-  if (!aId) {
+  DataSurfaceBufferWillChange();
+  mDataSurfaceShmem = aBufferHandle.Map();
+  if (!mDataSurfaceShmem) {
     return false;
-  }
-
-  if (aId < mLastDataSurfaceShmemId) {
-    
-    DataSurfaceBufferWillChange(0, false);
-  } else if (mLastDataSurfaceShmemId != aId) {
-    
-    
-    
-    auto it = mDataSurfaceShmems.find(mLastDataSurfaceShmemId);
-    if (it != mDataSurfaceShmems.end() && it->second.mOwner.IsDead()) {
-      mDataSurfaceShmems.erase(it);
-    }
-    
-    size_t maxShmems = StaticPrefs::gfx_canvas_accelerated_max_data_shmems();
-    if (maxShmems > 0 && mDataSurfaceShmems.size() >= maxShmems) {
-      DataSurfaceBufferWillChange(0, false,
-                                  (mDataSurfaceShmems.size() - maxShmems) + 1);
-    }
-  }
-  mLastDataSurfaceShmemId = aId;
-
-  
-  
-  DataSurfaceBufferWillChange(aId);
-
-  
-  {
-    auto& dataSurfaceShmem = mDataSurfaceShmems[aId];
-    dataSurfaceShmem.mShmem = aBufferHandle.Map();
-    if (!dataSurfaceShmem.mShmem) {
-      
-      DataSurfaceBufferWillChange(0, false);
-      
-      dataSurfaceShmem.mShmem = aBufferHandle.Map();
-      if (!dataSurfaceShmem.mShmem) {
-        return false;
-      }
-    }
   }
 
   return TranslateRecording();
 }
 
-void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
+void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
   MOZ_ASSERT(IsInTaskQueue());
 
   ReferencePtr surfaceRef = reinterpret_cast<void*>(aSurfaceRef);
@@ -447,31 +362,17 @@ void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
       ImageDataSerializer::ComputeRGBStride(format, dstSize.width);
   auto requiredSize =
       ImageDataSerializer::ComputeRGBBufferSize(dstSize, format);
-  if (requiredSize <= 0) {
+  if (requiredSize <= 0 || size_t(requiredSize) > mDataSurfaceShmem.Size()) {
     return;
   }
 
   
-  DataSurfaceBufferWillChange(aId);
+  DataSurfaceBufferWillChange();
 
   
-  auto it = mDataSurfaceShmems.find(aId);
-  if (it == mDataSurfaceShmems.end()) {
-    return;
-  }
-
-  
-  if (size_t(requiredSize) > it->second.mShmem.Size()) {
-    return;
-  }
-
-  uint8_t* dst = it->second.mShmem.DataAs<uint8_t>();
+  uint8_t* dst = mDataSurfaceShmem.DataAs<uint8_t>();
   if (dataSurface->ReadDataInto(dst, dstStride)) {
-    
-    
-    it->second.mOwner = dataSurface;
-    dataSurface->AddUserData(&mDataSurfaceShmemIdKey,
-                             reinterpret_cast<void*>(aId), nullptr);
+    mDataSurfaceShmemOwner = dataSurface;
     return;
   }
 
@@ -883,8 +784,8 @@ void CanvasTranslator::HandleCanvasTranslatorEvents() {
         dispatchTranslate = AddBuffer(event->TakeBufferHandle());
         break;
       case CanvasTranslatorEvent::Tag::SetDataSurfaceBuffer:
-        dispatchTranslate = SetDataSurfaceBuffer(
-            event->mId, event->TakeDataSurfaceBufferHandle());
+        dispatchTranslate =
+            SetDataSurfaceBuffer(event->TakeDataSurfaceBufferHandle());
         break;
       case CanvasTranslatorEvent::Tag::ClearCachedResources:
         ClearCachedResources();
@@ -1481,7 +1382,7 @@ bool CanvasTranslator::PushRemoteTexture(
 void CanvasTranslator::ClearTextureInfo() {
   MOZ_ASSERT(mIPDLClosed);
 
-  DataSurfaceBufferWillChange(0, false);
+  DataSurfaceBufferWillChange();
 
   mUsedDataSurfaceForSurfaceDescriptor = nullptr;
   mUsedWrapperForSurfaceDescriptor = nullptr;
@@ -1850,20 +1751,7 @@ void CanvasTranslator::AddDataSurface(
 }
 
 void CanvasTranslator::RemoveDataSurface(gfx::ReferencePtr aRefPtr) {
-  RefPtr<gfx::DataSourceSurface> surface;
-  if (mDataSurfaces.Remove(aRefPtr, getter_AddRefs(surface))) {
-    
-    
-    if (auto id = reinterpret_cast<uintptr_t>(
-            surface->GetUserData(&mDataSurfaceShmemIdKey))) {
-      if (id != mLastDataSurfaceShmemId) {
-        auto it = mDataSurfaceShmems.find(id);
-        if (it != mDataSurfaceShmems.end()) {
-          mDataSurfaceShmems.erase(it);
-        }
-      }
-    }
-  }
+  mDataSurfaces.Remove(aRefPtr);
 }
 
 }  
