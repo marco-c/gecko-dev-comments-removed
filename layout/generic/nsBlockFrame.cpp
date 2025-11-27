@@ -1646,8 +1646,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  AbsoluteContainingBlock* absoluteContainer =
-      IsAbsoluteContainer() ? GetAbsoluteContainingBlock() : nullptr;
+  auto* absoluteContainer = GetAbsoluteContainingBlock();
   if (absoluteContainer && absoluteContainer->PrepareAbsoluteFrames(this)) {
     bool haveInterrupt = aPresContext->HasPendingInterrupt();
     if (aReflowInput.WillReflowAgainForClearance() || haveInterrupt) {
