@@ -225,38 +225,31 @@ addAccessibleTask(
   </label>
 `,
   async function testARIACoreExamples(browser, docAcc) {
-    function testName_(id, expected, cached) {
+    function testName_(id, expected) {
       const acc = findAccessibleChildByID(docAcc, id);
-      if (browser.isRemoteBrowser) {
-        is(
-          acc.cache.has("name"),
-          cached,
-          `Name should ${cached ? "" : "not "}be in cache for '${id}'`
-        );
-      }
       testName(acc, expected);
     }
     
     
     
     
-    testName_("el1", "hello", false);
-    testName_("el2", null, false);
+    testName_("el1", "hello");
+    testName_("el2", null);
 
     
     
-    testName_("del_row1", "Delete Documentation.pdf", true);
-    testName_("del_row2", "Delete HolidayLetter.pdf", true);
-
-    
-    
-    
-    testName_("chkbx", "Flash the screen 5 times", false);
+    testName_("del_row1", "Delete Documentation.pdf");
+    testName_("del_row2", "Delete HolidayLetter.pdf");
 
     
     
     
-    testName_("input_with_html_label", "foo bar baz", false);
+    testName_("chkbx", "Flash the screen 5 times");
+
+    
+    
+    
+    testName_("input_with_html_label", "foo bar baz");
   },
   { topLevel: true, chrome: true }
 );

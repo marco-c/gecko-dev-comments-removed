@@ -130,8 +130,8 @@ ENameValueFlag XULMenuitemAccessible::NativeName(nsString& aName) const {
   return eNameOK;
 }
 
-ENameValueFlag XULMenuitemAccessible::DirectName(nsString& aName) const {
-  ENameValueFlag flag = AccessibleWrap::DirectName(aName);
+ENameValueFlag XULMenuitemAccessible::Name(nsString& aName) const {
+  ENameValueFlag flag = AccessibleWrap::Name(aName);
   if (!aName.IsEmpty()) {
     
     

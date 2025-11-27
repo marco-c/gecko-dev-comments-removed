@@ -29,7 +29,7 @@ uint64_t XULAlertAccessible::NativeState() const {
   return LocalAccessible::NativeState() | states::ALERT;
 }
 
-ENameValueFlag XULAlertAccessible::DirectName(nsString& aName) const {
+ENameValueFlag XULAlertAccessible::Name(nsString& aName) const {
   
   
   aName.Truncate();

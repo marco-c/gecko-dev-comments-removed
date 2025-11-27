@@ -166,7 +166,7 @@ NS_IMPL_RELEASE_INHERITED(DocAccessible, HyperTextAccessible)
 
 
 
-ENameValueFlag DocAccessible::DirectName(nsString& aName) const {
+ENameValueFlag DocAccessible::Name(nsString& aName) const {
   aName.Truncate();
 
   if (mParent) {
@@ -174,7 +174,7 @@ ENameValueFlag DocAccessible::DirectName(nsString& aName) const {
   }
   if (aName.IsEmpty()) {
     
-    LocalAccessible::DirectName(aName);
+    LocalAccessible::Name(aName);
   }
   if (aName.IsEmpty()) {
     Title(aName);  
