@@ -1721,12 +1721,14 @@ bool nsGlobalWindowOuter::WouldReuseInnerWindow(Document* aNewDocument) {
   
   
   
+  
+  
 
   if (!mDoc || !aNewDocument) {
     return false;
   }
 
-  if (!mDoc->IsInitialDocument()) {
+  if (!mDoc->IsUncommittedInitialDocument()) {
     return false;
   }
 
