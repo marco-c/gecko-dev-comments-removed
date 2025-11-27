@@ -2,14 +2,13 @@
 
 
 
-use std::{ffi::CString, process};
+use std::{ffi::CString, hash::RandomState, process};
 
-use windows_sys::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_ADDRESS_ALREADY_ASSOCIATED};
+use windows_sys::Win32::Foundation::ERROR_ACCESS_DENIED;
 
 use crate::{
-    ipc_channel::IPCChannelError,
-    ipc_listener::IPCListenerError,
-    platform::windows::{server_addr, PlatformError},
+    errors::IPCError,
+    platform::windows::{get_last_error, server_addr},
     IPCConnector, IPCListener, Pid,
 };
 
@@ -23,7 +22,7 @@ impl IPCChannel {
     
     
     
-    pub fn new() -> Result<IPCChannel, IPCChannelError> {
+    pub fn new() -> Result<IPCChannel, IPCError> {
         let pid = process::id() as Pid;
         let mut listener = IPCListener::new(server_addr(pid))?;
         listener.listen()?;
@@ -53,7 +52,7 @@ pub struct IPCClientChannel {
 impl IPCClientChannel {
     
     
-    pub fn new() -> Result<IPCClientChannel, IPCChannelError> {
+    pub fn new() -> Result<IPCClientChannel, IPCError> {
         let mut listener = Self::create_listener()?;
         listener.listen()?;
         let client_endpoint = IPCConnector::connect(listener.address())?;
@@ -65,15 +64,14 @@ impl IPCClientChannel {
         })
     }
 
-    fn create_listener() -> Result<IPCListener, IPCListenerError> {
+    fn create_listener() -> Result<IPCListener, IPCError> {
         const ATTEMPTS: u32 = 5;
 
         
         
         for _i in 0..ATTEMPTS {
-            let Ok(random_id) = getrandom::u64() else {
-                continue;
-            };
+            use std::hash::{BuildHasher, Hasher};
+            let random_id = RandomState::new().build_hasher().finish();
 
             let pipe_name = CString::new(format!(
                 "\\\\.\\pipe\\gecko-crash-helper-child-pipe.{random_id:}"
@@ -81,19 +79,14 @@ impl IPCClientChannel {
             .unwrap();
             match IPCListener::new(pipe_name) {
                 Ok(listener) => return Ok(listener),
-                Err(
-                    _error @ IPCListenerError::CreationError(PlatformError::CreatePipeFailure(
-                        ERROR_ACCESS_DENIED,
-                    )),
-                ) => {} 
+                Err(_error @ IPCError::System(ERROR_ACCESS_DENIED)) => {} 
                 Err(error) => return Err(error),
             }
         }
 
         
-        Err(IPCListenerError::CreationError(
-            PlatformError::CreatePipeFailure(ERROR_ADDRESS_ALREADY_ASSOCIATED),
-        ))
+        
+        Err(IPCError::System(get_last_error()))
     }
 
     

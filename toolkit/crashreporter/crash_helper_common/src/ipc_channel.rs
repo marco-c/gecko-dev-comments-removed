@@ -2,24 +2,6 @@
 
 
 
-use thiserror::Error;
-
-use crate::{errors::IPCError, platform::PlatformError, IPCListenerError};
-
-
-
-
-
-#[derive(Debug, Error)]
-pub enum IPCChannelError {
-    #[error("Could not create connector: {0}")]
-    Connector(#[from] IPCError),
-    #[error("Could not create a listener: {0}")]
-    Listener(#[from] IPCListenerError),
-    #[error("Could not create a socketpair: {0}")]
-    SocketPair(#[from] PlatformError),
-}
-
 
 
 
