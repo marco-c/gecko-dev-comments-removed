@@ -1318,6 +1318,11 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
   MOZ_ASSERT(
       aFrame,
       "GetNearestScrollableOrOverflowClipFrame expects a non-null frame");
+  
+  MOZ_ASSERT_IF(aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE,
+                !(aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASRS));
+  MOZ_ASSERT_IF(aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASRS,
+                !(aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE));
 
   auto GetNextFrame = [aFlags](const nsIFrame* aFrame) -> nsIFrame* {
     return (aFlags & nsLayoutUtils::SCROLLABLE_SAME_DOC)
@@ -1325,6 +1330,7 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
                : nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
   };
 
+  
   
   
   for (nsIFrame* f = aFrame; f; f = GetNextFrame(f)) {
@@ -1338,7 +1344,8 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
 
     
     
-    if ((aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) &&
+    if ((aFlags & (nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE |
+                   nsLayoutUtils::SCROLLABLE_ONLY_ASRS)) &&
         f->IsMenuPopupFrame()) {
       break;
     }
@@ -1346,6 +1353,10 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
     if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(f)) {
       if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) {
         if (scrollContainerFrame->WantAsyncScroll()) {
+          return f;
+        }
+      } else if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASRS) {
+        if (scrollContainerFrame->IsMaybeAsynchronouslyScrolled()) {
           return f;
         }
       } else {
@@ -1381,10 +1392,26 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
     
     
     
-    if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) {
+    if (aFlags & (nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE |
+                  nsLayoutUtils::SCROLLABLE_ONLY_ASRS)) {
       while (
           (anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(f))) {
         f = anchor;
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASRS) {
+      if (f->StyleDisplay()->mPosition == StylePositionProperty::Sticky) {
+        auto* ssc = StickyScrollContainer::GetOrCreateForFrame(f);
+        if (ssc && ssc->ScrollContainer()->IsMaybeAsynchronouslyScrolled()) {
+          return f;
+        }
       }
     }
 
@@ -1402,6 +1429,10 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
 
 ScrollContainerFrame* nsLayoutUtils::GetNearestScrollContainerFrame(
     nsIFrame* aFrame, uint32_t aFlags) {
+  
+  
+  MOZ_ASSERT(!(aFlags & SCROLLABLE_ONLY_ASRS),
+             "can't use SCROLLABLE_ONLY_ASRS flag");
   nsIFrame* found = GetNearestScrollableOrOverflowClipFrame(aFrame, aFlags);
   if (!found) {
     return nullptr;
@@ -2628,6 +2659,21 @@ ScrollContainerFrame* nsLayoutUtils::GetAsyncScrollableAncestorFrame(
                    nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE |
                    nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT;
   return nsLayoutUtils::GetNearestScrollContainerFrame(aTarget, flags);
+}
+
+nsIFrame* nsLayoutUtils::GetASRAncestorFrame(nsIFrame* aTarget,
+                                             nsDisplayListBuilder* aBuilder) {
+  MOZ_ASSERT(aBuilder->IsPaintingToWindow());
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t flags = nsLayoutUtils::SCROLLABLE_ONLY_ASRS;
+  return GetNearestScrollableOrOverflowClipFrame(aTarget, flags);
 }
 
 void nsLayoutUtils::AddExtraBackgroundItems(nsDisplayListBuilder* aBuilder,
