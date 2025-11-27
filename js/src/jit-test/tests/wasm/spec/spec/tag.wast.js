@@ -40,6 +40,12 @@ assert_invalid(
 );
 
 
+assert_invalid(
+  () => instantiate(`(module (import "" "" (tag (result i32))))`),
+  `non-empty tag result type`,
+);
+
+
 let $2 = instantiate(`(module
   (rec
     (type \$t1 (func))

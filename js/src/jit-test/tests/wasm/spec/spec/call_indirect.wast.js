@@ -77,15 +77,10 @@ let $0 = instantiate(`(module
     )
   )
 
-  (table \$t64 i64 funcref
-    (elem \$const-i32)
-  )
-
   ;; Syntax
 
   (func
     (call_indirect (i32.const 0))
-    (call_indirect \$t64 (i64.const 0))
     (call_indirect (param i64) (i64.const 0) (i32.const 0))
     (call_indirect (param i64) (param) (param f64 i32 i64)
       (i64.const 0) (f64.const 0) (i32.const 0) (i64.const 0) (i32.const 0)
@@ -114,9 +109,6 @@ let $0 = instantiate(`(module
 
   (func (export "type-i32") (result i32)
     (call_indirect (type \$out-i32) (i32.const 0))
-  )
-  (func (export "type-i32-t64") (result i32)
-    (call_indirect \$t64 (type \$out-i32) (i64.const 0))
   )
   (func (export "type-i64") (result i64)
     (call_indirect (type \$out-i64) (i32.const 1))
@@ -506,9 +498,6 @@ assert_return(() => invoke($0, `type-f64`, []), [value("f64", 3940)]);
 
 
 assert_return(() => invoke($0, `type-f64-i32`, []), [value("f64", 3940), value("i32", 32)]);
-
-
-assert_return(() => invoke($0, `type-i32-t64`, []), [value("i32", 306)]);
 
 
 assert_return(() => invoke($0, `type-index`, []), [value("i64", 100n)]);

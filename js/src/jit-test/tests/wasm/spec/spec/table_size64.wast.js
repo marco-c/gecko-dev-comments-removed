@@ -1,0 +1,150 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let $0 = instantiate(`(module
+  (table \$t0 i64 0 externref)
+  (table \$t1 i64 1 externref)
+  (table \$t2 i64 0 2 externref)
+  (table \$t3 i64 3 8 externref)
+
+  (func (export "size-t0") (result i64) table.size)
+  (func (export "size-t1") (result i64) (table.size \$t1))
+  (func (export "size-t2") (result i64) (table.size \$t2))
+  (func (export "size-t3") (result i64) (table.size \$t3))
+
+  (func (export "grow-t0") (param \$sz i64)
+    (drop (table.grow \$t0 (ref.null extern) (local.get \$sz)))
+  )
+  (func (export "grow-t1") (param \$sz i64)
+    (drop (table.grow \$t1 (ref.null extern) (local.get \$sz)))
+  )
+  (func (export "grow-t2") (param \$sz i64)
+    (drop (table.grow \$t2 (ref.null extern) (local.get \$sz)))
+  )
+  (func (export "grow-t3") (param \$sz i64)
+    (drop (table.grow \$t3 (ref.null extern) (local.get \$sz)))
+  )
+)`);
+
+
+assert_return(() => invoke($0, `size-t0`, []), [value("i64", 0n)]);
+
+
+assert_return(() => invoke($0, `grow-t0`, [1n]), []);
+
+
+assert_return(() => invoke($0, `size-t0`, []), [value("i64", 1n)]);
+
+
+assert_return(() => invoke($0, `grow-t0`, [4n]), []);
+
+
+assert_return(() => invoke($0, `size-t0`, []), [value("i64", 5n)]);
+
+
+assert_return(() => invoke($0, `grow-t0`, [0n]), []);
+
+
+assert_return(() => invoke($0, `size-t0`, []), [value("i64", 5n)]);
+
+
+assert_return(() => invoke($0, `size-t1`, []), [value("i64", 1n)]);
+
+
+assert_return(() => invoke($0, `grow-t1`, [1n]), []);
+
+
+assert_return(() => invoke($0, `size-t1`, []), [value("i64", 2n)]);
+
+
+assert_return(() => invoke($0, `grow-t1`, [4n]), []);
+
+
+assert_return(() => invoke($0, `size-t1`, []), [value("i64", 6n)]);
+
+
+assert_return(() => invoke($0, `grow-t1`, [0n]), []);
+
+
+assert_return(() => invoke($0, `size-t1`, []), [value("i64", 6n)]);
+
+
+assert_return(() => invoke($0, `size-t2`, []), [value("i64", 0n)]);
+
+
+assert_return(() => invoke($0, `grow-t2`, [3n]), []);
+
+
+assert_return(() => invoke($0, `size-t2`, []), [value("i64", 0n)]);
+
+
+assert_return(() => invoke($0, `grow-t2`, [1n]), []);
+
+
+assert_return(() => invoke($0, `size-t2`, []), [value("i64", 1n)]);
+
+
+assert_return(() => invoke($0, `grow-t2`, [0n]), []);
+
+
+assert_return(() => invoke($0, `size-t2`, []), [value("i64", 1n)]);
+
+
+assert_return(() => invoke($0, `grow-t2`, [4n]), []);
+
+
+assert_return(() => invoke($0, `size-t2`, []), [value("i64", 1n)]);
+
+
+assert_return(() => invoke($0, `grow-t2`, [1n]), []);
+
+
+assert_return(() => invoke($0, `size-t2`, []), [value("i64", 2n)]);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i64", 3n)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [1n]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i64", 4n)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [3n]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i64", 7n)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [0n]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i64", 7n)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [2n]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i64", 7n)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [1n]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i64", 8n)]);

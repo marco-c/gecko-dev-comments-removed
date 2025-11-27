@@ -1,0 +1,70 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let $0 = instantiate(`(module
+  (table \$t2 i64 2 externref)
+  (table \$t3 i64 3 funcref)
+  (elem (table \$t3) (i64.const 1) func \$dummy)
+  (func \$dummy)
+
+  (func (export "init") (param \$r externref)
+    (table.set \$t2 (i64.const 1) (local.get \$r))
+    (table.set \$t3 (i64.const 2) (table.get \$t3 (i64.const 1)))
+  )
+
+  (func (export "get-externref") (param \$i i64) (result externref)
+    (table.get (local.get \$i))
+  )
+  (func \$f3 (export "get-funcref") (param \$i i64) (result funcref)
+    (table.get \$t3 (local.get \$i))
+  )
+
+  (func (export "is_null-funcref") (param \$i i64) (result i32)
+    (ref.is_null (call \$f3 (local.get \$i)))
+  )
+)`);
+
+
+invoke($0, `init`, [externref(1)]);
+
+
+assert_return(() => invoke($0, `get-externref`, [0n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-externref`, [1n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `get-funcref`, [0n]), [value('anyfunc', null)]);
+
+
+assert_return(() => invoke($0, `is_null-funcref`, [1n]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($0, `is_null-funcref`, [2n]), [value("i32", 0)]);
+
+
+assert_trap(() => invoke($0, `get-externref`, [2n]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `get-funcref`, [3n]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `get-externref`, [-1n]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `get-funcref`, [-1n]), `out of bounds table access`);

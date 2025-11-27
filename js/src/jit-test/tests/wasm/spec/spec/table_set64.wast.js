@@ -1,0 +1,99 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let $0 = instantiate(`(module
+  (table \$t2 i64 1 externref)
+  (table \$t3 i64 2 funcref)
+  (elem (table \$t3) (i64.const 1) func \$dummy)
+  (func \$dummy)
+
+  (func (export "get-externref") (param \$i i64) (result externref)
+    (table.get \$t2 (local.get \$i))
+  )
+  (func \$f3 (export "get-funcref") (param \$i i64) (result funcref)
+    (table.get \$t3 (local.get \$i))
+  )
+
+  (func (export "set-externref") (param \$i i64) (param \$r externref)
+    (table.set (local.get \$i) (local.get \$r))
+  )
+  (func (export "set-funcref") (param \$i i64) (param \$r funcref)
+    (table.set \$t3 (local.get \$i) (local.get \$r))
+  )
+  (func (export "set-funcref-from") (param \$i i64) (param \$j i64)
+    (table.set \$t3 (local.get \$i) (table.get \$t3 (local.get \$j)))
+  )
+
+  (func (export "is_null-funcref") (param \$i i64) (result i32)
+    (ref.is_null (call \$f3 (local.get \$i)))
+  )
+)`);
+
+
+assert_return(() => invoke($0, `get-externref`, [0n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `set-externref`, [0n, externref(1)]), []);
+
+
+assert_return(() => invoke($0, `get-externref`, [0n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `set-externref`, [0n, null]), []);
+
+
+assert_return(() => invoke($0, `get-externref`, [0n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-funcref`, [0n]), [value('anyfunc', null)]);
+
+
+assert_return(() => invoke($0, `set-funcref-from`, [0n, 1n]), []);
+
+
+assert_return(() => invoke($0, `is_null-funcref`, [0n]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($0, `set-funcref`, [0n, null]), []);
+
+
+assert_return(() => invoke($0, `get-funcref`, [0n]), [value('anyfunc', null)]);
+
+
+assert_trap(() => invoke($0, `set-externref`, [2n, null]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-funcref`, [3n, null]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-externref`, [-1n, null]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-funcref`, [-1n, null]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-externref`, [2n, externref(0)]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-funcref-from`, [3n, 1n]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-externref`, [-1n, externref(0)]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `set-funcref-from`, [-1n, 1n]), `out of bounds table access`);

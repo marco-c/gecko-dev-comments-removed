@@ -17,827 +17,827 @@
 
 
 let $0 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
     (nop))
-  (func (export "load8_u") (param i32) (result i32)
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($0, `test`, []);
 
 
-assert_return(() => invoke($0, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($0, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($0, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($0, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($0, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [12]), [value("i32", 7)]);
+assert_return(() => invoke($0, `load8_u`, [12n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [13]), [value("i32", 5)]);
+assert_return(() => invoke($0, `load8_u`, [13n]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [14]), [value("i32", 2)]);
+assert_return(() => invoke($0, `load8_u`, [14n]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [15]), [value("i32", 3)]);
+assert_return(() => invoke($0, `load8_u`, [15n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [16]), [value("i32", 6)]);
+assert_return(() => invoke($0, `load8_u`, [16n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [26]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [26n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($0, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $1 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 13) (i32.const 2) (i32.const 3)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 13) (i64.const 2) (i64.const 3)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($1, `test`, []);
 
 
-assert_return(() => invoke($1, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($1, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($1, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($1, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($1, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [12]), [value("i32", 7)]);
+assert_return(() => invoke($1, `load8_u`, [12n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [13]), [value("i32", 3)]);
+assert_return(() => invoke($1, `load8_u`, [13n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [14]), [value("i32", 1)]);
+assert_return(() => invoke($1, `load8_u`, [14n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [15]), [value("i32", 4)]);
+assert_return(() => invoke($1, `load8_u`, [15n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [16]), [value("i32", 6)]);
+assert_return(() => invoke($1, `load8_u`, [16n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [26]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [26n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($1, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($1, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $2 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 25) (i32.const 15) (i32.const 2)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 25) (i64.const 15) (i64.const 2)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($2, `test`, []);
 
 
-assert_return(() => invoke($2, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($2, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($2, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($2, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($2, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [12]), [value("i32", 7)]);
+assert_return(() => invoke($2, `load8_u`, [12n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [13]), [value("i32", 5)]);
+assert_return(() => invoke($2, `load8_u`, [13n]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [14]), [value("i32", 2)]);
+assert_return(() => invoke($2, `load8_u`, [14n]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [15]), [value("i32", 3)]);
+assert_return(() => invoke($2, `load8_u`, [15n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [16]), [value("i32", 6)]);
+assert_return(() => invoke($2, `load8_u`, [16n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [25]), [value("i32", 3)]);
+assert_return(() => invoke($2, `load8_u`, [25n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [26]), [value("i32", 6)]);
+assert_return(() => invoke($2, `load8_u`, [26n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($2, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($2, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $3 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 13) (i32.const 25) (i32.const 3)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 13) (i64.const 25) (i64.const 3)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($3, `test`, []);
 
 
-assert_return(() => invoke($3, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($3, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($3, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($3, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($3, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [12]), [value("i32", 7)]);
+assert_return(() => invoke($3, `load8_u`, [12n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [13]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [13n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [14]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [14n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [15]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [15n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [16]), [value("i32", 6)]);
+assert_return(() => invoke($3, `load8_u`, [16n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [26]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [26n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($3, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $4 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 20) (i32.const 22) (i32.const 4)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 20) (i64.const 22) (i64.const 4)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($4, `test`, []);
 
 
-assert_return(() => invoke($4, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($4, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($4, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($4, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($4, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [12]), [value("i32", 7)]);
+assert_return(() => invoke($4, `load8_u`, [12n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [13]), [value("i32", 5)]);
+assert_return(() => invoke($4, `load8_u`, [13n]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [14]), [value("i32", 2)]);
+assert_return(() => invoke($4, `load8_u`, [14n]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [15]), [value("i32", 3)]);
+assert_return(() => invoke($4, `load8_u`, [15n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [16]), [value("i32", 6)]);
+assert_return(() => invoke($4, `load8_u`, [16n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [26]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [26n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($4, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($4, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $5 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 25) (i32.const 1) (i32.const 3)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 25) (i64.const 1) (i64.const 3)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($5, `test`, []);
 
 
-assert_return(() => invoke($5, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($5, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($5, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($5, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($5, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [12]), [value("i32", 7)]);
+assert_return(() => invoke($5, `load8_u`, [12n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [13]), [value("i32", 5)]);
+assert_return(() => invoke($5, `load8_u`, [13n]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [14]), [value("i32", 2)]);
+assert_return(() => invoke($5, `load8_u`, [14n]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [15]), [value("i32", 3)]);
+assert_return(() => invoke($5, `load8_u`, [15n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [16]), [value("i32", 6)]);
+assert_return(() => invoke($5, `load8_u`, [16n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [26]), [value("i32", 3)]);
+assert_return(() => invoke($5, `load8_u`, [26n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [27]), [value("i32", 1)]);
+assert_return(() => invoke($5, `load8_u`, [27n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($5, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($5, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $6 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 10) (i32.const 12) (i32.const 7)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 10) (i64.const 12) (i64.const 7)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($6, `test`, []);
 
 
-assert_return(() => invoke($6, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($6, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($6, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($6, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($6, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [10]), [value("i32", 7)]);
+assert_return(() => invoke($6, `load8_u`, [10n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [11]), [value("i32", 5)]);
+assert_return(() => invoke($6, `load8_u`, [11n]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [12]), [value("i32", 2)]);
+assert_return(() => invoke($6, `load8_u`, [12n]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [13]), [value("i32", 3)]);
+assert_return(() => invoke($6, `load8_u`, [13n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [14]), [value("i32", 6)]);
+assert_return(() => invoke($6, `load8_u`, [14n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [15]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [15n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [16]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [16n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [17]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [17n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [18]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [18n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [26]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [26n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($6, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($6, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $7 = instantiate(`(module
-  (memory (export "memory0") 1 1)
-  (data (i32.const 2) "\\03\\01\\04\\01")
-  (data (i32.const 12) "\\07\\05\\02\\03\\06")
+  (memory (export "memory0") i64 1 1)
+  (data (i64.const 2) "\\03\\01\\04\\01")
+  (data (i64.const 12) "\\07\\05\\02\\03\\06")
   (func (export "test")
-    (memory.copy (i32.const 12) (i32.const 10) (i32.const 7)))
-  (func (export "load8_u") (param i32) (result i32)
+    (memory.copy (i64.const 12) (i64.const 10) (i64.const 7)))
+  (func (export "load8_u") (param i64) (result i32)
     (i32.load8_u (local.get 0))))`);
 
 
 invoke($7, `test`, []);
 
 
-assert_return(() => invoke($7, `load8_u`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [0n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [1]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [1n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [2]), [value("i32", 3)]);
+assert_return(() => invoke($7, `load8_u`, [2n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [3]), [value("i32", 1)]);
+assert_return(() => invoke($7, `load8_u`, [3n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [4]), [value("i32", 4)]);
+assert_return(() => invoke($7, `load8_u`, [4n]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [5]), [value("i32", 1)]);
+assert_return(() => invoke($7, `load8_u`, [5n]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [6]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [6n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [7]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [7n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [8]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [8n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [9]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [9n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [10]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [10n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [11]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [11n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [12]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [12n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [13]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [13n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [14]), [value("i32", 7)]);
+assert_return(() => invoke($7, `load8_u`, [14n]), [value("i32", 7)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [15]), [value("i32", 5)]);
+assert_return(() => invoke($7, `load8_u`, [15n]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [16]), [value("i32", 2)]);
+assert_return(() => invoke($7, `load8_u`, [16n]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [17]), [value("i32", 3)]);
+assert_return(() => invoke($7, `load8_u`, [17n]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [18]), [value("i32", 6)]);
+assert_return(() => invoke($7, `load8_u`, [18n]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [19]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [19n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [20]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [20n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [21]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [21n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [22]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [22n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [23]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [23n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [24]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [24n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [25]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [25n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [26]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [26n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [27]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [27n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [28]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [28n]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($7, `load8_u`, [29]), [value("i32", 0)]);
+assert_return(() => invoke($7, `load8_u`, [29n]), [value("i32", 0)]);
 
 
 let $8 = instantiate(`(module
@@ -12498,14 +12498,23 @@ assert_return(() => invoke($18, `load8_u`, [65490]), [value("i32", 0)]);
 assert_invalid(
   () => instantiate(`(module
     (func (export "testfn")
-      (memory.copy (i32.const 10) (i32.const 20) (i32.const 30))))`),
+      (memory.copy (i64.const 10) (i64.const 20) (i64.const 30))))`),
   `unknown memory 0`,
 );
 
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
+    (func (export "testfn")
+      (memory.copy (i32.const 10) (i32.const 20) (i32.const 30))))`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12514,7 +12523,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12523,7 +12532,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12532,7 +12541,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12541,7 +12550,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12550,7 +12559,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12559,7 +12568,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12568,7 +12577,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12577,7 +12586,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12586,7 +12595,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12595,7 +12604,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (i64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12604,7 +12613,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12613,7 +12622,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12622,7 +12631,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12631,7 +12640,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i32.const 10) (f64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12640,7 +12649,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12649,7 +12658,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12658,7 +12667,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12667,7 +12676,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12676,7 +12685,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12685,7 +12694,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12694,7 +12703,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12703,7 +12712,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12712,7 +12721,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12721,7 +12730,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12730,7 +12739,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12739,7 +12748,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (i64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12748,7 +12757,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12757,7 +12766,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12766,7 +12775,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12775,7 +12784,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f32.const 10) (f64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12784,7 +12793,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12793,7 +12802,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12802,7 +12811,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12811,7 +12820,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12820,7 +12829,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12829,7 +12838,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12838,7 +12847,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12847,7 +12856,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12856,7 +12865,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12865,7 +12874,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12874,16 +12883,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
-    (func (export "testfn")
-      (memory.copy (i64.const 10) (i64.const 20) (i64.const 30))))`),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (i64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12892,7 +12892,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12901,7 +12901,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12910,7 +12910,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12919,7 +12919,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (i64.const 10) (f64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12928,7 +12928,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12937,7 +12937,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12946,7 +12946,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12955,7 +12955,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -12964,7 +12964,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f32.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -12973,7 +12973,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f32.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -12982,7 +12982,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f32.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -12991,7 +12991,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f32.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -13000,7 +13000,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -13009,7 +13009,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -13018,7 +13018,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -13027,7 +13027,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (i64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -13036,7 +13036,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f64.const 20) (i32.const 30))))`),
   `type mismatch`,
@@ -13045,7 +13045,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f64.const 20) (f32.const 30))))`),
   `type mismatch`,
@@ -13054,7 +13054,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f64.const 20) (i64.const 30))))`),
   `type mismatch`,
@@ -13063,7 +13063,7 @@ assert_invalid(
 
 assert_invalid(
   () => instantiate(`(module
-    (memory 1 1)
+    (memory i64 1 1)
     (func (export "testfn")
       (memory.copy (f64.const 10) (f64.const 20) (f64.const 30))))`),
   `type mismatch`,
@@ -13071,19 +13071,19 @@ assert_invalid(
 
 
 let $19 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.fill (i32.const 10) (i32.const 0x55) (i32.const 10))
-    (memory.copy (i32.const 9) (i32.const 10) (i32.const 5)))
+    (memory.fill (i64.const 10) (i32.const 0x55) (i64.const 10))
+    (memory.copy (i64.const 9) (i64.const 10) (i64.const 5)))
   
-  (func (export "checkRange") (param \$from i32) (param \$to i32) (param \$expected i32) (result i32)
+  (func (export "checkRange") (param \$from i64) (param \$to i64) (param \$expected i32) (result i64)
     (loop \$cont
-      (if (i32.eq (local.get \$from) (local.get \$to))
+      (if (i64.eq (local.get \$from) (local.get \$to))
         (then
-          (return (i32.const -1))))
+          (return (i64.const -1))))
       (if (i32.eq (i32.load8_u (local.get \$from)) (local.get \$expected))
         (then
-          (local.set \$from (i32.add (local.get \$from) (i32.const 1)))
+          (local.set \$from (i64.add (local.get \$from) (i64.const 1)))
           (br \$cont))))
     (return (local.get \$from)))
 )`);
@@ -13092,29 +13092,29 @@ let $19 = instantiate(`(module
 invoke($19, `test`, []);
 
 
-assert_return(() => invoke($19, `checkRange`, [0, 9, 0]), [value("i32", -1)]);
+assert_return(() => invoke($19, `checkRange`, [0n, 9n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($19, `checkRange`, [9, 20, 85]), [value("i32", -1)]);
+assert_return(() => invoke($19, `checkRange`, [9n, 20n, 85]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($19, `checkRange`, [20, 65536, 0]), [value("i32", -1)]);
+assert_return(() => invoke($19, `checkRange`, [20n, 65536n, 0]), [value("i64", -1n)]);
 
 
 let $20 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.fill (i32.const 10) (i32.const 0x55) (i32.const 10))
-    (memory.copy (i32.const 16) (i32.const 15) (i32.const 5)))
+    (memory.fill (i64.const 10) (i32.const 0x55) (i64.const 10))
+    (memory.copy (i64.const 16) (i64.const 15) (i64.const 5)))
   
-  (func (export "checkRange") (param \$from i32) (param \$to i32) (param \$expected i32) (result i32)
+  (func (export "checkRange") (param \$from i64) (param \$to i64) (param \$expected i32) (result i64)
     (loop \$cont
-      (if (i32.eq (local.get \$from) (local.get \$to))
+      (if (i64.eq (local.get \$from) (local.get \$to))
         (then
-          (return (i32.const -1))))
+          (return (i64.const -1))))
       (if (i32.eq (i32.load8_u (local.get \$from)) (local.get \$expected))
         (then
-          (local.set \$from (i32.add (local.get \$from) (i32.const 1)))
+          (local.set \$from (i64.add (local.get \$from) (i64.const 1)))
           (br \$cont))))
     (return (local.get \$from)))
 )`);
@@ -13123,66 +13123,66 @@ let $20 = instantiate(`(module
 invoke($20, `test`, []);
 
 
-assert_return(() => invoke($20, `checkRange`, [0, 10, 0]), [value("i32", -1)]);
+assert_return(() => invoke($20, `checkRange`, [0n, 10n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($20, `checkRange`, [10, 21, 85]), [value("i32", -1)]);
+assert_return(() => invoke($20, `checkRange`, [10n, 21n, 85]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($20, `checkRange`, [21, 65536, 0]), [value("i32", -1)]);
+assert_return(() => invoke($20, `checkRange`, [21n, 65536n, 0]), [value("i64", -1n)]);
 
 
 let $21 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0xFF00) (i32.const 0x8000) (i32.const 257))))`);
+    (memory.copy (i64.const 0xFF00) (i64.const 0x8000) (i64.const 257))))`);
 
 
 assert_trap(() => invoke($21, `test`, []), `out of bounds memory access`);
 
 
 let $22 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0xFFFFFF00) (i32.const 0x4000) (i32.const 257))))`);
+    (memory.copy (i64.const 0xFFFFFF00) (i64.const 0x4000) (i64.const 257))))`);
 
 
 assert_trap(() => invoke($22, `test`, []), `out of bounds memory access`);
 
 
 let $23 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x8000) (i32.const 0xFF00) (i32.const 257))))`);
+    (memory.copy (i64.const 0x8000) (i64.const 0xFF00) (i64.const 257))))`);
 
 
 assert_trap(() => invoke($23, `test`, []), `out of bounds memory access`);
 
 
 let $24 = instantiate(`(module
- (memory 1 1)
+ (memory i64 1 1)
  (func (export "test")
-   (memory.copy (i32.const 0x4000) (i32.const 0xFFFFFF00) (i32.const 257))))`);
+   (memory.copy (i64.const 0x4000) (i64.const 0xFFFFFF00) (i64.const 257))))`);
 
 
 assert_trap(() => invoke($24, `test`, []), `out of bounds memory access`);
 
 
 let $25 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.fill (i32.const 0x0000) (i32.const 0x55) (i32.const 0x8000))
-    (memory.fill (i32.const 0x8000) (i32.const 0xAA) (i32.const 0x8000))
-    (memory.copy (i32.const 0x9000) (i32.const 0x7000) (i32.const 0)))
+    (memory.fill (i64.const 0x0000) (i32.const 0x55) (i64.const 0x8000))
+    (memory.fill (i64.const 0x8000) (i32.const 0xAA) (i64.const 0x8000))
+    (memory.copy (i64.const 0x9000) (i64.const 0x7000) (i64.const 0)))
   
-  (func (export "checkRange") (param \$from i32) (param \$to i32) (param \$expected i32) (result i32)
+  (func (export "checkRange") (param \$from i64) (param \$to i64) (param \$expected i32) (result i64)
     (loop \$cont
-      (if (i32.eq (local.get \$from) (local.get \$to))
+      (if (i64.eq (local.get \$from) (local.get \$to))
         (then
-          (return (i32.const -1))))
+          (return (i64.const -1))))
       (if (i32.eq (i32.load8_u (local.get \$from)) (local.get \$expected))
         (then
-          (local.set \$from (i32.add (local.get \$from) (i32.const 1)))
+          (local.set \$from (i64.add (local.get \$from) (i64.const 1)))
           (br \$cont))))
     (return (local.get \$from)))
 )`);
@@ -13191,279 +13191,279 @@ let $25 = instantiate(`(module
 invoke($25, `test`, []);
 
 
-assert_return(() => invoke($25, `checkRange`, [0, 32768, 85]), [value("i32", -1)]);
+assert_return(() => invoke($25, `checkRange`, [0n, 32768n, 85]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($25, `checkRange`, [32768, 65536, 170]), [value("i32", -1)]);
+assert_return(() => invoke($25, `checkRange`, [32768n, 65536n, 170]), [value("i64", -1n)]);
 
 
 let $26 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x10000) (i32.const 0x7000) (i32.const 0))))`);
+    (memory.copy (i64.const 0x10000) (i64.const 0x7000) (i64.const 0))))`);
 
 
 invoke($26, `test`, []);
 
 
 let $27 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x20000) (i32.const 0x7000) (i32.const 0))))`);
+    (memory.copy (i64.const 0x20000) (i64.const 0x7000) (i64.const 0))))`);
 
 
 assert_trap(() => invoke($27, `test`, []), `out of bounds memory access`);
 
 
 let $28 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x9000) (i32.const 0x10000) (i32.const 0))))`);
+    (memory.copy (i64.const 0x9000) (i64.const 0x10000) (i64.const 0))))`);
 
 
 invoke($28, `test`, []);
 
 
 let $29 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x9000) (i32.const 0x20000) (i32.const 0))))`);
+    (memory.copy (i64.const 0x9000) (i64.const 0x20000) (i64.const 0))))`);
 
 
 assert_trap(() => invoke($29, `test`, []), `out of bounds memory access`);
 
 
 let $30 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x10000) (i32.const 0x10000) (i32.const 0))))`);
+    (memory.copy (i64.const 0x10000) (i64.const 0x10000) (i64.const 0))))`);
 
 
 invoke($30, `test`, []);
 
 
 let $31 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.copy (i32.const 0x20000) (i32.const 0x20000) (i32.const 0))))`);
+    (memory.copy (i64.const 0x20000) (i64.const 0x20000) (i64.const 0))))`);
 
 
 assert_trap(() => invoke($31, `test`, []), `out of bounds memory access`);
 
 
 let $32 = instantiate(`(module
-  (memory 1 1)
+  (memory i64 1 1)
   (func (export "test")
-    (memory.fill (i32.const 17767) (i32.const 1) (i32.const 1344))
-    (memory.fill (i32.const 39017) (i32.const 2) (i32.const 1055))
-    (memory.fill (i32.const 56401) (i32.const 3) (i32.const 988))
-    (memory.fill (i32.const 37962) (i32.const 4) (i32.const 322))
-    (memory.fill (i32.const 7977) (i32.const 5) (i32.const 1994))
-    (memory.fill (i32.const 22714) (i32.const 6) (i32.const 3036))
-    (memory.fill (i32.const 16882) (i32.const 7) (i32.const 2372))
-    (memory.fill (i32.const 43491) (i32.const 8) (i32.const 835))
-    (memory.fill (i32.const 124) (i32.const 9) (i32.const 1393))
-    (memory.fill (i32.const 2132) (i32.const 10) (i32.const 2758))
-    (memory.fill (i32.const 8987) (i32.const 11) (i32.const 3098))
-    (memory.fill (i32.const 52711) (i32.const 12) (i32.const 741))
-    (memory.fill (i32.const 3958) (i32.const 13) (i32.const 2823))
-    (memory.fill (i32.const 49715) (i32.const 14) (i32.const 1280))
-    (memory.fill (i32.const 50377) (i32.const 15) (i32.const 1466))
-    (memory.fill (i32.const 20493) (i32.const 16) (i32.const 3158))
-    (memory.fill (i32.const 47665) (i32.const 17) (i32.const 544))
-    (memory.fill (i32.const 12451) (i32.const 18) (i32.const 2669))
-    (memory.fill (i32.const 24869) (i32.const 19) (i32.const 2651))
-    (memory.fill (i32.const 45317) (i32.const 20) (i32.const 1570))
-    (memory.fill (i32.const 43096) (i32.const 21) (i32.const 1691))
-    (memory.fill (i32.const 33886) (i32.const 22) (i32.const 646))
-    (memory.fill (i32.const 48555) (i32.const 23) (i32.const 1858))
-    (memory.fill (i32.const 53453) (i32.const 24) (i32.const 2657))
-    (memory.fill (i32.const 30363) (i32.const 25) (i32.const 981))
-    (memory.fill (i32.const 9300) (i32.const 26) (i32.const 1807))
-    (memory.fill (i32.const 50190) (i32.const 27) (i32.const 487))
-    (memory.fill (i32.const 62753) (i32.const 28) (i32.const 530))
-    (memory.fill (i32.const 36316) (i32.const 29) (i32.const 943))
-    (memory.fill (i32.const 6768) (i32.const 30) (i32.const 381))
-    (memory.fill (i32.const 51262) (i32.const 31) (i32.const 3089))
-    (memory.fill (i32.const 49729) (i32.const 32) (i32.const 658))
-    (memory.fill (i32.const 44540) (i32.const 33) (i32.const 1702))
-    (memory.fill (i32.const 33342) (i32.const 34) (i32.const 1092))
-    (memory.fill (i32.const 50814) (i32.const 35) (i32.const 1410))
-    (memory.fill (i32.const 47594) (i32.const 36) (i32.const 2204))
-    (memory.fill (i32.const 54123) (i32.const 37) (i32.const 2394))
-    (memory.fill (i32.const 55183) (i32.const 38) (i32.const 250))
-    (memory.fill (i32.const 22620) (i32.const 39) (i32.const 2097))
-    (memory.fill (i32.const 17132) (i32.const 40) (i32.const 3264))
-    (memory.fill (i32.const 54331) (i32.const 41) (i32.const 3299))
-    (memory.fill (i32.const 39474) (i32.const 42) (i32.const 2796))
-    (memory.fill (i32.const 36156) (i32.const 43) (i32.const 2070))
-    (memory.fill (i32.const 35308) (i32.const 44) (i32.const 2763))
-    (memory.fill (i32.const 32731) (i32.const 45) (i32.const 312))
-    (memory.fill (i32.const 63746) (i32.const 46) (i32.const 192))
-    (memory.fill (i32.const 30974) (i32.const 47) (i32.const 596))
-    (memory.fill (i32.const 16635) (i32.const 48) (i32.const 501))
-    (memory.fill (i32.const 57002) (i32.const 49) (i32.const 686))
-    (memory.fill (i32.const 34299) (i32.const 50) (i32.const 385))
-    (memory.fill (i32.const 60881) (i32.const 51) (i32.const 903))
-    (memory.fill (i32.const 61445) (i32.const 52) (i32.const 2390))
-    (memory.fill (i32.const 46972) (i32.const 53) (i32.const 1441))
-    (memory.fill (i32.const 25973) (i32.const 54) (i32.const 3162))
-    (memory.fill (i32.const 5566) (i32.const 55) (i32.const 2135))
-    (memory.fill (i32.const 35977) (i32.const 56) (i32.const 519))
-    (memory.fill (i32.const 44892) (i32.const 57) (i32.const 3280))
-    (memory.fill (i32.const 46760) (i32.const 58) (i32.const 1678))
-    (memory.fill (i32.const 46607) (i32.const 59) (i32.const 3168))
-    (memory.fill (i32.const 22449) (i32.const 60) (i32.const 1441))
-    (memory.fill (i32.const 58609) (i32.const 61) (i32.const 663))
-    (memory.fill (i32.const 32261) (i32.const 62) (i32.const 1671))
-    (memory.fill (i32.const 3063) (i32.const 63) (i32.const 721))
-    (memory.fill (i32.const 34025) (i32.const 64) (i32.const 84))
-    (memory.fill (i32.const 33338) (i32.const 65) (i32.const 2029))
-    (memory.fill (i32.const 36810) (i32.const 66) (i32.const 29))
-    (memory.fill (i32.const 19147) (i32.const 67) (i32.const 3034))
-    (memory.fill (i32.const 12616) (i32.const 68) (i32.const 1043))
-    (memory.fill (i32.const 18276) (i32.const 69) (i32.const 3324))
-    (memory.fill (i32.const 4639) (i32.const 70) (i32.const 1091))
-    (memory.fill (i32.const 16158) (i32.const 71) (i32.const 1997))
-    (memory.fill (i32.const 18204) (i32.const 72) (i32.const 2259))
-    (memory.fill (i32.const 50532) (i32.const 73) (i32.const 3189))
-    (memory.fill (i32.const 11028) (i32.const 74) (i32.const 1968))
-    (memory.fill (i32.const 15962) (i32.const 75) (i32.const 1455))
-    (memory.fill (i32.const 45406) (i32.const 76) (i32.const 1177))
-    (memory.fill (i32.const 54137) (i32.const 77) (i32.const 1568))
-    (memory.fill (i32.const 33083) (i32.const 78) (i32.const 1642))
-    (memory.fill (i32.const 61028) (i32.const 79) (i32.const 3284))
-    (memory.fill (i32.const 51729) (i32.const 80) (i32.const 223))
-    (memory.fill (i32.const 4361) (i32.const 81) (i32.const 2171))
-    (memory.fill (i32.const 57514) (i32.const 82) (i32.const 1322))
-    (memory.fill (i32.const 55724) (i32.const 83) (i32.const 2648))
-    (memory.fill (i32.const 24091) (i32.const 84) (i32.const 1045))
-    (memory.fill (i32.const 43183) (i32.const 85) (i32.const 3097))
-    (memory.fill (i32.const 32307) (i32.const 86) (i32.const 2796))
-    (memory.fill (i32.const 3811) (i32.const 87) (i32.const 2010))
-    (memory.fill (i32.const 54856) (i32.const 88) (i32.const 0))
-    (memory.fill (i32.const 49941) (i32.const 89) (i32.const 2069))
-    (memory.fill (i32.const 20411) (i32.const 90) (i32.const 2896))
-    (memory.fill (i32.const 33826) (i32.const 91) (i32.const 192))
-    (memory.fill (i32.const 9402) (i32.const 92) (i32.const 2195))
-    (memory.fill (i32.const 12413) (i32.const 93) (i32.const 24))
-    (memory.fill (i32.const 14091) (i32.const 94) (i32.const 577))
-    (memory.fill (i32.const 44058) (i32.const 95) (i32.const 2089))
-    (memory.fill (i32.const 36735) (i32.const 96) (i32.const 3436))
-    (memory.fill (i32.const 23288) (i32.const 97) (i32.const 2765))
-    (memory.fill (i32.const 6392) (i32.const 98) (i32.const 830))
-    (memory.fill (i32.const 33307) (i32.const 99) (i32.const 1938))
-    (memory.fill (i32.const 21941) (i32.const 100) (i32.const 2750))
-    (memory.copy (i32.const 59214) (i32.const 54248) (i32.const 2098))
-    (memory.copy (i32.const 63026) (i32.const 39224) (i32.const 230))
-    (memory.copy (i32.const 51833) (i32.const 23629) (i32.const 2300))
-    (memory.copy (i32.const 6708) (i32.const 23996) (i32.const 639))
-    (memory.copy (i32.const 6990) (i32.const 33399) (i32.const 1097))
-    (memory.copy (i32.const 19403) (i32.const 10348) (i32.const 3197))
-    (memory.copy (i32.const 27308) (i32.const 54406) (i32.const 100))
-    (memory.copy (i32.const 27221) (i32.const 43682) (i32.const 1717))
-    (memory.copy (i32.const 60528) (i32.const 8629) (i32.const 119))
-    (memory.copy (i32.const 5947) (i32.const 2308) (i32.const 658))
-    (memory.copy (i32.const 4787) (i32.const 51631) (i32.const 2269))
-    (memory.copy (i32.const 12617) (i32.const 19197) (i32.const 833))
-    (memory.copy (i32.const 11854) (i32.const 46505) (i32.const 3300))
-    (memory.copy (i32.const 11376) (i32.const 45012) (i32.const 2281))
-    (memory.copy (i32.const 34186) (i32.const 6697) (i32.const 2572))
-    (memory.copy (i32.const 4936) (i32.const 1690) (i32.const 1328))
-    (memory.copy (i32.const 63164) (i32.const 7637) (i32.const 1670))
-    (memory.copy (i32.const 44568) (i32.const 18344) (i32.const 33))
-    (memory.copy (i32.const 43918) (i32.const 22348) (i32.const 1427))
-    (memory.copy (i32.const 46637) (i32.const 49819) (i32.const 1434))
-    (memory.copy (i32.const 63684) (i32.const 8755) (i32.const 834))
-    (memory.copy (i32.const 33485) (i32.const 20131) (i32.const 3317))
-    (memory.copy (i32.const 40575) (i32.const 54317) (i32.const 3201))
-    (memory.copy (i32.const 25812) (i32.const 59254) (i32.const 2452))
-    (memory.copy (i32.const 19678) (i32.const 56882) (i32.const 346))
-    (memory.copy (i32.const 15852) (i32.const 35914) (i32.const 2430))
-    (memory.copy (i32.const 11824) (i32.const 35574) (i32.const 300))
-    (memory.copy (i32.const 59427) (i32.const 13957) (i32.const 3153))
-    (memory.copy (i32.const 34299) (i32.const 60594) (i32.const 1281))
-    (memory.copy (i32.const 8964) (i32.const 12276) (i32.const 943))
-    (memory.copy (i32.const 2827) (i32.const 10425) (i32.const 1887))
-    (memory.copy (i32.const 43194) (i32.const 43910) (i32.const 738))
-    (memory.copy (i32.const 63038) (i32.const 18949) (i32.const 122))
-    (memory.copy (i32.const 24044) (i32.const 44761) (i32.const 1755))
-    (memory.copy (i32.const 22608) (i32.const 14755) (i32.const 702))
-    (memory.copy (i32.const 11284) (i32.const 26579) (i32.const 1830))
-    (memory.copy (i32.const 23092) (i32.const 20471) (i32.const 1064))
-    (memory.copy (i32.const 57248) (i32.const 54770) (i32.const 2631))
-    (memory.copy (i32.const 25492) (i32.const 1025) (i32.const 3113))
-    (memory.copy (i32.const 49588) (i32.const 44220) (i32.const 975))
-    (memory.copy (i32.const 28280) (i32.const 41722) (i32.const 2336))
-    (memory.copy (i32.const 61289) (i32.const 230) (i32.const 2872))
-    (memory.copy (i32.const 22480) (i32.const 52506) (i32.const 2197))
-    (memory.copy (i32.const 40553) (i32.const 9578) (i32.const 1958))
-    (memory.copy (i32.const 29004) (i32.const 20862) (i32.const 2186))
-    (memory.copy (i32.const 53029) (i32.const 43955) (i32.const 1037))
-    (memory.copy (i32.const 25476) (i32.const 35667) (i32.const 1650))
-    (memory.copy (i32.const 58516) (i32.const 45819) (i32.const 1986))
-    (memory.copy (i32.const 38297) (i32.const 5776) (i32.const 1955))
-    (memory.copy (i32.const 28503) (i32.const 55364) (i32.const 2368))
-    (memory.copy (i32.const 62619) (i32.const 18108) (i32.const 1356))
-    (memory.copy (i32.const 50149) (i32.const 13861) (i32.const 382))
-    (memory.copy (i32.const 16904) (i32.const 36341) (i32.const 1900))
-    (memory.copy (i32.const 48098) (i32.const 11358) (i32.const 2807))
-    (memory.copy (i32.const 28512) (i32.const 40362) (i32.const 323))
-    (memory.copy (i32.const 35506) (i32.const 27856) (i32.const 1670))
-    (memory.copy (i32.const 62970) (i32.const 53332) (i32.const 1341))
-    (memory.copy (i32.const 14133) (i32.const 46312) (i32.const 644))
-    (memory.copy (i32.const 29030) (i32.const 19074) (i32.const 496))
-    (memory.copy (i32.const 44952) (i32.const 47577) (i32.const 2784))
-    (memory.copy (i32.const 39559) (i32.const 44661) (i32.const 1350))
-    (memory.copy (i32.const 10352) (i32.const 29274) (i32.const 1475))
-    (memory.copy (i32.const 46911) (i32.const 46178) (i32.const 1467))
-    (memory.copy (i32.const 4905) (i32.const 28740) (i32.const 1895))
-    (memory.copy (i32.const 38012) (i32.const 57253) (i32.const 1751))
-    (memory.copy (i32.const 26446) (i32.const 27223) (i32.const 1127))
-    (memory.copy (i32.const 58835) (i32.const 24657) (i32.const 1063))
-    (memory.copy (i32.const 61356) (i32.const 38790) (i32.const 766))
-    (memory.copy (i32.const 44160) (i32.const 2284) (i32.const 1520))
-    (memory.copy (i32.const 32740) (i32.const 47237) (i32.const 3014))
-    (memory.copy (i32.const 11148) (i32.const 21260) (i32.const 1011))
-    (memory.copy (i32.const 7665) (i32.const 31612) (i32.const 3034))
-    (memory.copy (i32.const 18044) (i32.const 12987) (i32.const 3320))
-    (memory.copy (i32.const 57306) (i32.const 55905) (i32.const 308))
-    (memory.copy (i32.const 24675) (i32.const 16815) (i32.const 1155))
-    (memory.copy (i32.const 19900) (i32.const 10115) (i32.const 722))
-    (memory.copy (i32.const 2921) (i32.const 5935) (i32.const 2370))
-    (memory.copy (i32.const 32255) (i32.const 50095) (i32.const 2926))
-    (memory.copy (i32.const 15126) (i32.const 17299) (i32.const 2607))
-    (memory.copy (i32.const 45575) (i32.const 28447) (i32.const 2045))
-    (memory.copy (i32.const 55149) (i32.const 36113) (i32.const 2596))
-    (memory.copy (i32.const 28461) (i32.const 54157) (i32.const 1168))
-    (memory.copy (i32.const 47951) (i32.const 53385) (i32.const 3137))
-    (memory.copy (i32.const 30646) (i32.const 45155) (i32.const 2649))
-    (memory.copy (i32.const 5057) (i32.const 4295) (i32.const 52))
-    (memory.copy (i32.const 6692) (i32.const 24195) (i32.const 441))
-    (memory.copy (i32.const 32984) (i32.const 27117) (i32.const 3445))
-    (memory.copy (i32.const 32530) (i32.const 59372) (i32.const 2785))
-    (memory.copy (i32.const 34361) (i32.const 8962) (i32.const 2406))
-    (memory.copy (i32.const 17893) (i32.const 54538) (i32.const 3381))
-    (memory.copy (i32.const 22685) (i32.const 44151) (i32.const 136))
-    (memory.copy (i32.const 59089) (i32.const 7077) (i32.const 1045))
-    (memory.copy (i32.const 42945) (i32.const 55028) (i32.const 2389))
-    (memory.copy (i32.const 44693) (i32.const 20138) (i32.const 877))
-    (memory.copy (i32.const 36810) (i32.const 25196) (i32.const 3447))
-    (memory.copy (i32.const 45742) (i32.const 31888) (i32.const 854))
-    (memory.copy (i32.const 24236) (i32.const 31866) (i32.const 1377))
-    (memory.copy (i32.const 33778) (i32.const 692) (i32.const 1594))
-    (memory.copy (i32.const 60618) (i32.const 18585) (i32.const 2987))
-    (memory.copy (i32.const 50370) (i32.const 41271) (i32.const 1406))
+    (memory.fill (i64.const 17767) (i32.const 1) (i64.const 1344))
+    (memory.fill (i64.const 39017) (i32.const 2) (i64.const 1055))
+    (memory.fill (i64.const 56401) (i32.const 3) (i64.const 988))
+    (memory.fill (i64.const 37962) (i32.const 4) (i64.const 322))
+    (memory.fill (i64.const 7977) (i32.const 5) (i64.const 1994))
+    (memory.fill (i64.const 22714) (i32.const 6) (i64.const 3036))
+    (memory.fill (i64.const 16882) (i32.const 7) (i64.const 2372))
+    (memory.fill (i64.const 43491) (i32.const 8) (i64.const 835))
+    (memory.fill (i64.const 124) (i32.const 9) (i64.const 1393))
+    (memory.fill (i64.const 2132) (i32.const 10) (i64.const 2758))
+    (memory.fill (i64.const 8987) (i32.const 11) (i64.const 3098))
+    (memory.fill (i64.const 52711) (i32.const 12) (i64.const 741))
+    (memory.fill (i64.const 3958) (i32.const 13) (i64.const 2823))
+    (memory.fill (i64.const 49715) (i32.const 14) (i64.const 1280))
+    (memory.fill (i64.const 50377) (i32.const 15) (i64.const 1466))
+    (memory.fill (i64.const 20493) (i32.const 16) (i64.const 3158))
+    (memory.fill (i64.const 47665) (i32.const 17) (i64.const 544))
+    (memory.fill (i64.const 12451) (i32.const 18) (i64.const 2669))
+    (memory.fill (i64.const 24869) (i32.const 19) (i64.const 2651))
+    (memory.fill (i64.const 45317) (i32.const 20) (i64.const 1570))
+    (memory.fill (i64.const 43096) (i32.const 21) (i64.const 1691))
+    (memory.fill (i64.const 33886) (i32.const 22) (i64.const 646))
+    (memory.fill (i64.const 48555) (i32.const 23) (i64.const 1858))
+    (memory.fill (i64.const 53453) (i32.const 24) (i64.const 2657))
+    (memory.fill (i64.const 30363) (i32.const 25) (i64.const 981))
+    (memory.fill (i64.const 9300) (i32.const 26) (i64.const 1807))
+    (memory.fill (i64.const 50190) (i32.const 27) (i64.const 487))
+    (memory.fill (i64.const 62753) (i32.const 28) (i64.const 530))
+    (memory.fill (i64.const 36316) (i32.const 29) (i64.const 943))
+    (memory.fill (i64.const 6768) (i32.const 30) (i64.const 381))
+    (memory.fill (i64.const 51262) (i32.const 31) (i64.const 3089))
+    (memory.fill (i64.const 49729) (i32.const 32) (i64.const 658))
+    (memory.fill (i64.const 44540) (i32.const 33) (i64.const 1702))
+    (memory.fill (i64.const 33342) (i32.const 34) (i64.const 1092))
+    (memory.fill (i64.const 50814) (i32.const 35) (i64.const 1410))
+    (memory.fill (i64.const 47594) (i32.const 36) (i64.const 2204))
+    (memory.fill (i64.const 54123) (i32.const 37) (i64.const 2394))
+    (memory.fill (i64.const 55183) (i32.const 38) (i64.const 250))
+    (memory.fill (i64.const 22620) (i32.const 39) (i64.const 2097))
+    (memory.fill (i64.const 17132) (i32.const 40) (i64.const 3264))
+    (memory.fill (i64.const 54331) (i32.const 41) (i64.const 3299))
+    (memory.fill (i64.const 39474) (i32.const 42) (i64.const 2796))
+    (memory.fill (i64.const 36156) (i32.const 43) (i64.const 2070))
+    (memory.fill (i64.const 35308) (i32.const 44) (i64.const 2763))
+    (memory.fill (i64.const 32731) (i32.const 45) (i64.const 312))
+    (memory.fill (i64.const 63746) (i32.const 46) (i64.const 192))
+    (memory.fill (i64.const 30974) (i32.const 47) (i64.const 596))
+    (memory.fill (i64.const 16635) (i32.const 48) (i64.const 501))
+    (memory.fill (i64.const 57002) (i32.const 49) (i64.const 686))
+    (memory.fill (i64.const 34299) (i32.const 50) (i64.const 385))
+    (memory.fill (i64.const 60881) (i32.const 51) (i64.const 903))
+    (memory.fill (i64.const 61445) (i32.const 52) (i64.const 2390))
+    (memory.fill (i64.const 46972) (i32.const 53) (i64.const 1441))
+    (memory.fill (i64.const 25973) (i32.const 54) (i64.const 3162))
+    (memory.fill (i64.const 5566) (i32.const 55) (i64.const 2135))
+    (memory.fill (i64.const 35977) (i32.const 56) (i64.const 519))
+    (memory.fill (i64.const 44892) (i32.const 57) (i64.const 3280))
+    (memory.fill (i64.const 46760) (i32.const 58) (i64.const 1678))
+    (memory.fill (i64.const 46607) (i32.const 59) (i64.const 3168))
+    (memory.fill (i64.const 22449) (i32.const 60) (i64.const 1441))
+    (memory.fill (i64.const 58609) (i32.const 61) (i64.const 663))
+    (memory.fill (i64.const 32261) (i32.const 62) (i64.const 1671))
+    (memory.fill (i64.const 3063) (i32.const 63) (i64.const 721))
+    (memory.fill (i64.const 34025) (i32.const 64) (i64.const 84))
+    (memory.fill (i64.const 33338) (i32.const 65) (i64.const 2029))
+    (memory.fill (i64.const 36810) (i32.const 66) (i64.const 29))
+    (memory.fill (i64.const 19147) (i32.const 67) (i64.const 3034))
+    (memory.fill (i64.const 12616) (i32.const 68) (i64.const 1043))
+    (memory.fill (i64.const 18276) (i32.const 69) (i64.const 3324))
+    (memory.fill (i64.const 4639) (i32.const 70) (i64.const 1091))
+    (memory.fill (i64.const 16158) (i32.const 71) (i64.const 1997))
+    (memory.fill (i64.const 18204) (i32.const 72) (i64.const 2259))
+    (memory.fill (i64.const 50532) (i32.const 73) (i64.const 3189))
+    (memory.fill (i64.const 11028) (i32.const 74) (i64.const 1968))
+    (memory.fill (i64.const 15962) (i32.const 75) (i64.const 1455))
+    (memory.fill (i64.const 45406) (i32.const 76) (i64.const 1177))
+    (memory.fill (i64.const 54137) (i32.const 77) (i64.const 1568))
+    (memory.fill (i64.const 33083) (i32.const 78) (i64.const 1642))
+    (memory.fill (i64.const 61028) (i32.const 79) (i64.const 3284))
+    (memory.fill (i64.const 51729) (i32.const 80) (i64.const 223))
+    (memory.fill (i64.const 4361) (i32.const 81) (i64.const 2171))
+    (memory.fill (i64.const 57514) (i32.const 82) (i64.const 1322))
+    (memory.fill (i64.const 55724) (i32.const 83) (i64.const 2648))
+    (memory.fill (i64.const 24091) (i32.const 84) (i64.const 1045))
+    (memory.fill (i64.const 43183) (i32.const 85) (i64.const 3097))
+    (memory.fill (i64.const 32307) (i32.const 86) (i64.const 2796))
+    (memory.fill (i64.const 3811) (i32.const 87) (i64.const 2010))
+    (memory.fill (i64.const 54856) (i32.const 88) (i64.const 0))
+    (memory.fill (i64.const 49941) (i32.const 89) (i64.const 2069))
+    (memory.fill (i64.const 20411) (i32.const 90) (i64.const 2896))
+    (memory.fill (i64.const 33826) (i32.const 91) (i64.const 192))
+    (memory.fill (i64.const 9402) (i32.const 92) (i64.const 2195))
+    (memory.fill (i64.const 12413) (i32.const 93) (i64.const 24))
+    (memory.fill (i64.const 14091) (i32.const 94) (i64.const 577))
+    (memory.fill (i64.const 44058) (i32.const 95) (i64.const 2089))
+    (memory.fill (i64.const 36735) (i32.const 96) (i64.const 3436))
+    (memory.fill (i64.const 23288) (i32.const 97) (i64.const 2765))
+    (memory.fill (i64.const 6392) (i32.const 98) (i64.const 830))
+    (memory.fill (i64.const 33307) (i32.const 99) (i64.const 1938))
+    (memory.fill (i64.const 21941) (i32.const 100) (i64.const 2750))
+    (memory.copy (i64.const 59214) (i64.const 54248) (i64.const 2098))
+    (memory.copy (i64.const 63026) (i64.const 39224) (i64.const 230))
+    (memory.copy (i64.const 51833) (i64.const 23629) (i64.const 2300))
+    (memory.copy (i64.const 6708) (i64.const 23996) (i64.const 639))
+    (memory.copy (i64.const 6990) (i64.const 33399) (i64.const 1097))
+    (memory.copy (i64.const 19403) (i64.const 10348) (i64.const 3197))
+    (memory.copy (i64.const 27308) (i64.const 54406) (i64.const 100))
+    (memory.copy (i64.const 27221) (i64.const 43682) (i64.const 1717))
+    (memory.copy (i64.const 60528) (i64.const 8629) (i64.const 119))
+    (memory.copy (i64.const 5947) (i64.const 2308) (i64.const 658))
+    (memory.copy (i64.const 4787) (i64.const 51631) (i64.const 2269))
+    (memory.copy (i64.const 12617) (i64.const 19197) (i64.const 833))
+    (memory.copy (i64.const 11854) (i64.const 46505) (i64.const 3300))
+    (memory.copy (i64.const 11376) (i64.const 45012) (i64.const 2281))
+    (memory.copy (i64.const 34186) (i64.const 6697) (i64.const 2572))
+    (memory.copy (i64.const 4936) (i64.const 1690) (i64.const 1328))
+    (memory.copy (i64.const 63164) (i64.const 7637) (i64.const 1670))
+    (memory.copy (i64.const 44568) (i64.const 18344) (i64.const 33))
+    (memory.copy (i64.const 43918) (i64.const 22348) (i64.const 1427))
+    (memory.copy (i64.const 46637) (i64.const 49819) (i64.const 1434))
+    (memory.copy (i64.const 63684) (i64.const 8755) (i64.const 834))
+    (memory.copy (i64.const 33485) (i64.const 20131) (i64.const 3317))
+    (memory.copy (i64.const 40575) (i64.const 54317) (i64.const 3201))
+    (memory.copy (i64.const 25812) (i64.const 59254) (i64.const 2452))
+    (memory.copy (i64.const 19678) (i64.const 56882) (i64.const 346))
+    (memory.copy (i64.const 15852) (i64.const 35914) (i64.const 2430))
+    (memory.copy (i64.const 11824) (i64.const 35574) (i64.const 300))
+    (memory.copy (i64.const 59427) (i64.const 13957) (i64.const 3153))
+    (memory.copy (i64.const 34299) (i64.const 60594) (i64.const 1281))
+    (memory.copy (i64.const 8964) (i64.const 12276) (i64.const 943))
+    (memory.copy (i64.const 2827) (i64.const 10425) (i64.const 1887))
+    (memory.copy (i64.const 43194) (i64.const 43910) (i64.const 738))
+    (memory.copy (i64.const 63038) (i64.const 18949) (i64.const 122))
+    (memory.copy (i64.const 24044) (i64.const 44761) (i64.const 1755))
+    (memory.copy (i64.const 22608) (i64.const 14755) (i64.const 702))
+    (memory.copy (i64.const 11284) (i64.const 26579) (i64.const 1830))
+    (memory.copy (i64.const 23092) (i64.const 20471) (i64.const 1064))
+    (memory.copy (i64.const 57248) (i64.const 54770) (i64.const 2631))
+    (memory.copy (i64.const 25492) (i64.const 1025) (i64.const 3113))
+    (memory.copy (i64.const 49588) (i64.const 44220) (i64.const 975))
+    (memory.copy (i64.const 28280) (i64.const 41722) (i64.const 2336))
+    (memory.copy (i64.const 61289) (i64.const 230) (i64.const 2872))
+    (memory.copy (i64.const 22480) (i64.const 52506) (i64.const 2197))
+    (memory.copy (i64.const 40553) (i64.const 9578) (i64.const 1958))
+    (memory.copy (i64.const 29004) (i64.const 20862) (i64.const 2186))
+    (memory.copy (i64.const 53029) (i64.const 43955) (i64.const 1037))
+    (memory.copy (i64.const 25476) (i64.const 35667) (i64.const 1650))
+    (memory.copy (i64.const 58516) (i64.const 45819) (i64.const 1986))
+    (memory.copy (i64.const 38297) (i64.const 5776) (i64.const 1955))
+    (memory.copy (i64.const 28503) (i64.const 55364) (i64.const 2368))
+    (memory.copy (i64.const 62619) (i64.const 18108) (i64.const 1356))
+    (memory.copy (i64.const 50149) (i64.const 13861) (i64.const 382))
+    (memory.copy (i64.const 16904) (i64.const 36341) (i64.const 1900))
+    (memory.copy (i64.const 48098) (i64.const 11358) (i64.const 2807))
+    (memory.copy (i64.const 28512) (i64.const 40362) (i64.const 323))
+    (memory.copy (i64.const 35506) (i64.const 27856) (i64.const 1670))
+    (memory.copy (i64.const 62970) (i64.const 53332) (i64.const 1341))
+    (memory.copy (i64.const 14133) (i64.const 46312) (i64.const 644))
+    (memory.copy (i64.const 29030) (i64.const 19074) (i64.const 496))
+    (memory.copy (i64.const 44952) (i64.const 47577) (i64.const 2784))
+    (memory.copy (i64.const 39559) (i64.const 44661) (i64.const 1350))
+    (memory.copy (i64.const 10352) (i64.const 29274) (i64.const 1475))
+    (memory.copy (i64.const 46911) (i64.const 46178) (i64.const 1467))
+    (memory.copy (i64.const 4905) (i64.const 28740) (i64.const 1895))
+    (memory.copy (i64.const 38012) (i64.const 57253) (i64.const 1751))
+    (memory.copy (i64.const 26446) (i64.const 27223) (i64.const 1127))
+    (memory.copy (i64.const 58835) (i64.const 24657) (i64.const 1063))
+    (memory.copy (i64.const 61356) (i64.const 38790) (i64.const 766))
+    (memory.copy (i64.const 44160) (i64.const 2284) (i64.const 1520))
+    (memory.copy (i64.const 32740) (i64.const 47237) (i64.const 3014))
+    (memory.copy (i64.const 11148) (i64.const 21260) (i64.const 1011))
+    (memory.copy (i64.const 7665) (i64.const 31612) (i64.const 3034))
+    (memory.copy (i64.const 18044) (i64.const 12987) (i64.const 3320))
+    (memory.copy (i64.const 57306) (i64.const 55905) (i64.const 308))
+    (memory.copy (i64.const 24675) (i64.const 16815) (i64.const 1155))
+    (memory.copy (i64.const 19900) (i64.const 10115) (i64.const 722))
+    (memory.copy (i64.const 2921) (i64.const 5935) (i64.const 2370))
+    (memory.copy (i64.const 32255) (i64.const 50095) (i64.const 2926))
+    (memory.copy (i64.const 15126) (i64.const 17299) (i64.const 2607))
+    (memory.copy (i64.const 45575) (i64.const 28447) (i64.const 2045))
+    (memory.copy (i64.const 55149) (i64.const 36113) (i64.const 2596))
+    (memory.copy (i64.const 28461) (i64.const 54157) (i64.const 1168))
+    (memory.copy (i64.const 47951) (i64.const 53385) (i64.const 3137))
+    (memory.copy (i64.const 30646) (i64.const 45155) (i64.const 2649))
+    (memory.copy (i64.const 5057) (i64.const 4295) (i64.const 52))
+    (memory.copy (i64.const 6692) (i64.const 24195) (i64.const 441))
+    (memory.copy (i64.const 32984) (i64.const 27117) (i64.const 3445))
+    (memory.copy (i64.const 32530) (i64.const 59372) (i64.const 2785))
+    (memory.copy (i64.const 34361) (i64.const 8962) (i64.const 2406))
+    (memory.copy (i64.const 17893) (i64.const 54538) (i64.const 3381))
+    (memory.copy (i64.const 22685) (i64.const 44151) (i64.const 136))
+    (memory.copy (i64.const 59089) (i64.const 7077) (i64.const 1045))
+    (memory.copy (i64.const 42945) (i64.const 55028) (i64.const 2389))
+    (memory.copy (i64.const 44693) (i64.const 20138) (i64.const 877))
+    (memory.copy (i64.const 36810) (i64.const 25196) (i64.const 3447))
+    (memory.copy (i64.const 45742) (i64.const 31888) (i64.const 854))
+    (memory.copy (i64.const 24236) (i64.const 31866) (i64.const 1377))
+    (memory.copy (i64.const 33778) (i64.const 692) (i64.const 1594))
+    (memory.copy (i64.const 60618) (i64.const 18585) (i64.const 2987))
+    (memory.copy (i64.const 50370) (i64.const 41271) (i64.const 1406))
   )
   
-  (func (export "checkRange") (param \$from i32) (param \$to i32) (param \$expected i32) (result i32)
+  (func (export "checkRange") (param \$from i64) (param \$to i64) (param \$expected i32) (result i64)
     (loop \$cont
-      (if (i32.eq (local.get \$from) (local.get \$to))
+      (if (i64.eq (local.get \$from) (local.get \$to))
         (then
-          (return (i32.const -1))))
+          (return (i64.const -1))))
       (if (i32.eq (i32.load8_u (local.get \$from)) (local.get \$expected))
         (then
-          (local.set \$from (i32.add (local.get \$from) (i32.const 1)))
+          (local.set \$from (i64.add (local.get \$from) (i64.const 1)))
           (br \$cont))))
     (return (local.get \$from)))
 )`);
@@ -13472,694 +13472,694 @@ let $32 = instantiate(`(module
 invoke($32, `test`, []);
 
 
-assert_return(() => invoke($32, `checkRange`, [0, 124, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [0n, 124n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [124, 1517, 9]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [124n, 1517n, 9]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [1517, 2132, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [1517n, 2132n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [2132, 2827, 10]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [2132n, 2827n, 10]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [2827, 2921, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [2827n, 2921n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [2921, 3538, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [2921n, 3538n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [3538, 3786, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [3538n, 3786n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [3786, 4042, 97]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [3786n, 4042n, 97]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [4042, 4651, 99]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [4042n, 4651n, 99]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [4651, 5057, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [4651n, 5057n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [5057, 5109, 99]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [5057n, 5109n, 99]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [5109, 5291, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [5109n, 5291n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [5291, 5524, 72]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [5291n, 5524n, 72]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [5524, 5691, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [5524n, 5691n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [5691, 6552, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [5691n, 6552n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [6552, 7133, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [6552n, 7133n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [7133, 7665, 99]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [7133n, 7665n, 99]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [7665, 8314, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [7665n, 8314n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [8314, 8360, 62]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [8314n, 8360n, 62]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [8360, 8793, 86]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [8360n, 8793n, 86]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [8793, 8979, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [8793n, 8979n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [8979, 9373, 79]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [8979n, 9373n, 79]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [9373, 9518, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [9373n, 9518n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [9518, 9934, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [9518n, 9934n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [9934, 10087, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [9934n, 10087n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [10087, 10206, 5]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [10087n, 10206n, 5]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [10206, 10230, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [10206n, 10230n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [10230, 10249, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [10230n, 10249n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [10249, 11148, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [10249n, 11148n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [11148, 11356, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [11148n, 11356n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [11356, 11380, 93]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [11356n, 11380n, 93]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [11380, 11939, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [11380n, 11939n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [11939, 12159, 68]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [11939n, 12159n, 68]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [12159, 12575, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [12159n, 12575n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [12575, 12969, 79]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [12575n, 12969n, 79]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [12969, 13114, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [12969n, 13114n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [13114, 14133, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [13114n, 14133n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [14133, 14404, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [14133n, 14404n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [14404, 14428, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [14404n, 14428n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [14428, 14458, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [14428n, 14458n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [14458, 14580, 32]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [14458n, 14580n, 32]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [14580, 14777, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [14580n, 14777n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [14777, 15124, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [14777n, 15124n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [15124, 15126, 36]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [15124n, 15126n, 36]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [15126, 15192, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [15126n, 15192n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [15192, 15871, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [15192n, 15871n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [15871, 15998, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [15871n, 15998n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [15998, 17017, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [15998n, 17017n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17017, 17288, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17017n, 17288n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17288, 17312, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17288n, 17312n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17312, 17342, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17312n, 17342n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17342, 17464, 32]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17342n, 17464n, 32]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17464, 17661, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17464n, 17661n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17661, 17727, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17661n, 17727n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17727, 17733, 5]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17727n, 17733n, 5]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17733, 17893, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17733n, 17893n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [17893, 18553, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [17893n, 18553n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18553, 18744, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18553n, 18744n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18744, 18801, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18744n, 18801n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18801, 18825, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18801n, 18825n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18825, 18876, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18825n, 18876n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18876, 18885, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18876n, 18885n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18885, 18904, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18885n, 18904n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [18904, 19567, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [18904n, 19567n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [19567, 20403, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [19567n, 20403n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [20403, 21274, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [20403n, 21274n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [21274, 21364, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [21274n, 21364n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [21364, 21468, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [21364n, 21468n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [21468, 21492, 93]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [21468n, 21492n, 93]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [21492, 22051, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [21492n, 22051n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [22051, 22480, 68]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [22051n, 22480n, 68]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [22480, 22685, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [22480n, 22685n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [22685, 22694, 68]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [22685n, 22694n, 68]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [22694, 22821, 10]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [22694n, 22821n, 10]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [22821, 22869, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [22821n, 22869n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [22869, 24107, 97]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [22869n, 24107n, 97]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [24107, 24111, 37]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [24107n, 24111n, 37]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [24111, 24236, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [24111n, 24236n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [24236, 24348, 72]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [24236n, 24348n, 72]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [24348, 24515, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [24348n, 24515n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [24515, 24900, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [24515n, 24900n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [24900, 25136, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [24900n, 25136n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [25136, 25182, 85]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [25136n, 25182n, 85]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [25182, 25426, 68]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [25182n, 25426n, 68]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [25426, 25613, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [25426n, 25613n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [25613, 25830, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [25613n, 25830n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [25830, 26446, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [25830n, 26446n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [26446, 26517, 10]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [26446n, 26517n, 10]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [26517, 27468, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [26517n, 27468n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [27468, 27503, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [27468n, 27503n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [27503, 27573, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [27503n, 27573n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [27573, 28245, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [27573n, 28245n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [28245, 28280, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [28245n, 28280n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [28280, 29502, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [28280n, 29502n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [29502, 29629, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [29502n, 29629n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [29629, 30387, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [29629n, 30387n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [30387, 30646, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [30387n, 30646n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [30646, 31066, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [30646n, 31066n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31066, 31131, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31066n, 31131n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31131, 31322, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31131n, 31322n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31322, 31379, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31322n, 31379n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31379, 31403, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31379n, 31403n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31403, 31454, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31403n, 31454n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31454, 31463, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31454n, 31463n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31463, 31482, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31463n, 31482n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31482, 31649, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31482n, 31649n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31649, 31978, 72]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31649n, 31978n, 72]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [31978, 32145, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [31978n, 32145n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [32145, 32530, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [32145n, 32530n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [32530, 32766, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [32530n, 32766n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [32766, 32812, 85]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [32766n, 32812n, 85]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [32812, 33056, 68]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [32812n, 33056n, 68]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [33056, 33660, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [33056n, 33660n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [33660, 33752, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [33660n, 33752n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [33752, 33775, 36]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [33752n, 33775n, 36]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [33775, 33778, 32]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [33775n, 33778n, 32]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [33778, 34603, 9]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [33778n, 34603n, 9]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [34603, 35218, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [34603n, 35218n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [35218, 35372, 10]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [35218n, 35372n, 10]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [35372, 35486, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [35372n, 35486n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [35486, 35605, 5]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [35486n, 35605n, 5]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [35605, 35629, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [35605n, 35629n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [35629, 35648, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [35629n, 35648n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [35648, 36547, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [35648n, 36547n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [36547, 36755, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [36547n, 36755n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [36755, 36767, 93]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [36755n, 36767n, 93]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [36767, 36810, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [36767n, 36810n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [36810, 36839, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [36810n, 36839n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [36839, 37444, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [36839n, 37444n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [37444, 38060, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [37444n, 38060n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [38060, 38131, 10]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [38060n, 38131n, 10]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [38131, 39082, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [38131n, 39082n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [39082, 39117, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [39082n, 39117n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [39117, 39187, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [39117n, 39187n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [39187, 39859, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [39187n, 39859n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [39859, 39894, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [39859n, 39894n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [39894, 40257, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [39894n, 40257n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [40257, 40344, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [40257n, 40344n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [40344, 40371, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [40344n, 40371n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [40371, 40804, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [40371n, 40804n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [40804, 40909, 5]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [40804n, 40909n, 5]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [40909, 42259, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [40909n, 42259n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [42259, 42511, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [42259n, 42511n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [42511, 42945, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [42511n, 42945n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [42945, 43115, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [42945n, 43115n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43115, 43306, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43115n, 43306n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43306, 43363, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43306n, 43363n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43363, 43387, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43363n, 43387n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43387, 43438, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43387n, 43438n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43438, 43447, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43438n, 43447n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43447, 43466, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43447n, 43466n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [43466, 44129, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [43466n, 44129n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [44129, 44958, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [44129n, 44958n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [44958, 45570, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [44958n, 45570n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [45570, 45575, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [45570n, 45575n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [45575, 45640, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [45575n, 45640n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [45640, 45742, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [45640n, 45742n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [45742, 45832, 72]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [45742n, 45832n, 72]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [45832, 45999, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [45832n, 45999n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [45999, 46384, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [45999n, 46384n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [46384, 46596, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [46384n, 46596n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [46596, 46654, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [46596n, 46654n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [46654, 47515, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [46654n, 47515n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [47515, 47620, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [47515n, 47620n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [47620, 47817, 79]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [47620n, 47817n, 79]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [47817, 47951, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [47817n, 47951n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [47951, 48632, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [47951n, 48632n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [48632, 48699, 97]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [48632n, 48699n, 97]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [48699, 48703, 37]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [48699n, 48703n, 37]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [48703, 49764, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [48703n, 49764n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [49764, 49955, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [49764n, 49955n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [49955, 50012, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [49955n, 50012n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [50012, 50036, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [50012n, 50036n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [50036, 50087, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [50036n, 50087n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [50087, 50096, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [50087n, 50096n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [50096, 50115, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [50096n, 50115n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [50115, 50370, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [50115n, 50370n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [50370, 51358, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [50370n, 51358n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [51358, 51610, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [51358n, 51610n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [51610, 51776, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [51610n, 51776n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [51776, 51833, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [51776n, 51833n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [51833, 52895, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [51833n, 52895n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [52895, 53029, 97]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [52895n, 53029n, 97]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [53029, 53244, 68]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [53029n, 53244n, 68]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [53244, 54066, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [53244n, 54066n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [54066, 54133, 97]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [54066n, 54133n, 97]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [54133, 54137, 37]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [54133n, 54137n, 37]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [54137, 55198, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [54137n, 55198n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55198, 55389, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55198n, 55389n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55389, 55446, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55389n, 55446n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55446, 55470, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55446n, 55470n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55470, 55521, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55470n, 55521n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55521, 55530, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55521n, 55530n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55530, 55549, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55530n, 55549n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [55549, 56212, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [55549n, 56212n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [56212, 57048, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [56212n, 57048n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [57048, 58183, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [57048n, 58183n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [58183, 58202, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [58183n, 58202n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [58202, 58516, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [58202n, 58516n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [58516, 58835, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [58516n, 58835n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [58835, 58855, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [58835n, 58855n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [58855, 59089, 95]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [58855n, 59089n, 95]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [59089, 59145, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [59089n, 59145n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [59145, 59677, 99]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [59145n, 59677n, 99]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [59677, 60134, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [59677n, 60134n, 0]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60134, 60502, 89]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60134n, 60502n, 89]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60502, 60594, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60502n, 60594n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60594, 60617, 36]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60594n, 60617n, 36]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60617, 60618, 32]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60617n, 60618n, 32]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60618, 60777, 42]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60618n, 60777n, 42]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60777, 60834, 76]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60777n, 60834n, 76]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60834, 60858, 57]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60834n, 60858n, 57]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60858, 60909, 59]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60858n, 60909n, 59]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60909, 60918, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60909n, 60918n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60918, 60937, 41]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60918n, 60937n, 41]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [60937, 61600, 83]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [60937n, 61600n, 83]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [61600, 62436, 96]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [61600n, 62436n, 96]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [62436, 63307, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [62436n, 63307n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63307, 63397, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63307n, 63397n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63397, 63501, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63397n, 63501n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63501, 63525, 93]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63501n, 63525n, 93]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63525, 63605, 74]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63525n, 63605n, 74]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63605, 63704, 100]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63605n, 63704n, 100]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63704, 63771, 97]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63704n, 63771n, 97]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63771, 63775, 37]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63771n, 63775n, 37]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [63775, 64311, 77]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [63775n, 64311n, 77]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [64311, 64331, 26]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [64311n, 64331n, 26]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [64331, 64518, 92]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [64331n, 64518n, 92]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [64518, 64827, 11]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [64518n, 64827n, 11]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [64827, 64834, 26]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [64827n, 64834n, 26]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($32, `checkRange`, [64834, 65536, 0]), [value("i32", -1)]);
+assert_return(() => invoke($32, `checkRange`, [64834n, 65536n, 0]), [value("i64", -1n)]);

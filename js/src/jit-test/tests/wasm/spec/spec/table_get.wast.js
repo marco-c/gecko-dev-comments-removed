@@ -19,7 +19,6 @@
 let $0 = instantiate(`(module
   (table \$t2 2 externref)
   (table \$t3 3 funcref)
-  (table \$t64 i64 3 funcref)
   (elem (table \$t3) (i32.const 1) func \$dummy)
   (func \$dummy)
 
@@ -34,10 +33,6 @@ let $0 = instantiate(`(module
   (func \$f3 (export "get-funcref") (param \$i i32) (result funcref)
     (table.get \$t3 (local.get \$i))
   )
-  (func \$f4 (export "get-funcref-t64") (param \$i i64) (result funcref)
-    (table.get \$t64 (local.get \$i))
-  )
-
   (func (export "is_null-funcref") (param \$i i32) (result i32)
     (ref.is_null (call \$f3 (local.get \$i)))
   )
@@ -54,9 +49,6 @@ assert_return(() => invoke($0, `get-externref`, [1]), [new ExternRefResult(1)]);
 
 
 assert_return(() => invoke($0, `get-funcref`, [0]), [value('anyfunc', null)]);
-
-
-assert_return(() => invoke($0, `get-funcref-t64`, [0n]), [value('anyfunc', null)]);
 
 
 assert_return(() => invoke($0, `is_null-funcref`, [1]), [value("i32", 0)]);

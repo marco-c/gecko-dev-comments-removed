@@ -17,102 +17,6 @@
 
 
 let $0 = instantiate(`(module
-  (memory \$mem1 1)
-  (memory \$mem2 1)
-
-  (func (export "load1") (param i32) (result i64)
-    (i64.load \$mem1 (local.get 0))
-  )
-  (func (export "load2") (param i32) (result i64)
-    (i64.load \$mem2 (local.get 0))
-  )
-
-  (data (memory \$mem1) (i32.const 0) "\\01")
-  (data (memory \$mem2) (i32.const 0) "\\02")
-)`);
-
-
-assert_return(() => invoke($0, `load1`, [0]), [value("i64", 1n)]);
-
-
-assert_return(() => invoke($0, `load2`, [0]), [value("i64", 2n)]);
-
-
-let $1 = instantiate(`(module \$M
-  (memory (export "mem") 2)
-
-  (func (export "read") (param i32) (result i32)
-    (i32.load8_u (local.get 0))
-  )
-)`);
-let $M = $1;
-
-
-register($1, `M`);
-
-
-let $2 = instantiate(`(module
-  (memory \$mem1 (import "M" "mem") 2)
-  (memory \$mem2 3)
-
-  (data (memory \$mem1) (i32.const 20) "\\01\\02\\03\\04\\05")
-  (data (memory \$mem2) (i32.const 50) "\\0A\\0B\\0C\\0D\\0E")
-
-  (func (export "read1") (param i32) (result i32)
-    (i32.load8_u \$mem1 (local.get 0))
-  )
-  (func (export "read2") (param i32) (result i32)
-    (i32.load8_u \$mem2 (local.get 0))
-  )
-)`);
-
-
-assert_return(() => invoke($M, `read`, [20]), [value("i32", 1)]);
-
-
-assert_return(() => invoke($M, `read`, [21]), [value("i32", 2)]);
-
-
-assert_return(() => invoke($M, `read`, [22]), [value("i32", 3)]);
-
-
-assert_return(() => invoke($M, `read`, [23]), [value("i32", 4)]);
-
-
-assert_return(() => invoke($M, `read`, [24]), [value("i32", 5)]);
-
-
-assert_return(() => invoke($2, `read1`, [20]), [value("i32", 1)]);
-
-
-assert_return(() => invoke($2, `read1`, [21]), [value("i32", 2)]);
-
-
-assert_return(() => invoke($2, `read1`, [22]), [value("i32", 3)]);
-
-
-assert_return(() => invoke($2, `read1`, [23]), [value("i32", 4)]);
-
-
-assert_return(() => invoke($2, `read1`, [24]), [value("i32", 5)]);
-
-
-assert_return(() => invoke($2, `read2`, [50]), [value("i32", 10)]);
-
-
-assert_return(() => invoke($2, `read2`, [51]), [value("i32", 11)]);
-
-
-assert_return(() => invoke($2, `read2`, [52]), [value("i32", 12)]);
-
-
-assert_return(() => invoke($2, `read2`, [53]), [value("i32", 13)]);
-
-
-assert_return(() => invoke($2, `read2`, [54]), [value("i32", 14)]);
-
-
-let $3 = instantiate(`(module
   (memory 1)
 
   (func (export "as-br-value") (result i32)
@@ -271,115 +175,115 @@ let $3 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($3, `as-br-value`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-br-value`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-br_if-cond`, []), []);
+assert_return(() => invoke($0, `as-br_if-cond`, []), []);
 
 
-assert_return(() => invoke($3, `as-br_if-value`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-br_if-value`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-br_if-value-cond`, []), [value("i32", 7)]);
+assert_return(() => invoke($0, `as-br_if-value-cond`, []), [value("i32", 7)]);
 
 
-assert_return(() => invoke($3, `as-br_table-index`, []), []);
+assert_return(() => invoke($0, `as-br_table-index`, []), []);
 
 
-assert_return(() => invoke($3, `as-br_table-value`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-br_table-value`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-br_table-value-index`, []), [value("i32", 6)]);
+assert_return(() => invoke($0, `as-br_table-value-index`, []), [value("i32", 6)]);
 
 
-assert_return(() => invoke($3, `as-return-value`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-return-value`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-if-cond`, []), [value("i32", 1)]);
+assert_return(() => invoke($0, `as-if-cond`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `as-if-then`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-if-then`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-if-else`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-if-else`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-select-first`, [0, 1]), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-select-first`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-select-second`, [0, 0]), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-select-second`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-select-cond`, []), [value("i32", 1)]);
+assert_return(() => invoke($0, `as-select-cond`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `as-call-first`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call-first`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-call-mid`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call-mid`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-call-last`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call-last`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-call_indirect-first`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call_indirect-first`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-call_indirect-mid`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call_indirect-mid`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-call_indirect-last`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call_indirect-last`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-call_indirect-index`, []), [value("i32", -1)]);
+assert_return(() => invoke($0, `as-call_indirect-index`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($3, `as-local.set-value`, []), []);
+assert_return(() => invoke($0, `as-local.set-value`, []), []);
 
 
-assert_return(() => invoke($3, `as-local.tee-value`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-local.tee-value`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-global.set-value`, []), []);
+assert_return(() => invoke($0, `as-global.set-value`, []), []);
 
 
-assert_return(() => invoke($3, `as-load-address`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-load-address`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-loadN-address`, []), [value("i32", 0)]);
+assert_return(() => invoke($0, `as-loadN-address`, []), [value("i32", 0)]);
 
 
-assert_return(() => invoke($3, `as-store-address`, []), []);
+assert_return(() => invoke($0, `as-store-address`, []), []);
 
 
-assert_return(() => invoke($3, `as-store-value`, []), []);
+assert_return(() => invoke($0, `as-store-value`, []), []);
 
 
-assert_return(() => invoke($3, `as-storeN-address`, []), []);
+assert_return(() => invoke($0, `as-storeN-address`, []), []);
 
 
-assert_return(() => invoke($3, `as-storeN-value`, []), []);
+assert_return(() => invoke($0, `as-storeN-value`, []), []);
 
 
-assert_return(() => invoke($3, `as-unary-operand`, []), [value("i32", 32)]);
+assert_return(() => invoke($0, `as-unary-operand`, []), [value("i32", 32)]);
 
 
-assert_return(() => invoke($3, `as-binary-left`, []), [value("i32", 10)]);
+assert_return(() => invoke($0, `as-binary-left`, []), [value("i32", 10)]);
 
 
-assert_return(() => invoke($3, `as-binary-right`, []), [value("i32", 10)]);
+assert_return(() => invoke($0, `as-binary-right`, []), [value("i32", 10)]);
 
 
-assert_return(() => invoke($3, `as-test-operand`, []), [value("i32", 1)]);
+assert_return(() => invoke($0, `as-test-operand`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `as-compare-left`, []), [value("i32", 1)]);
+assert_return(() => invoke($0, `as-compare-left`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `as-compare-right`, []), [value("i32", 1)]);
+assert_return(() => invoke($0, `as-compare-right`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `as-memory.grow-size`, []), [value("i32", 1)]);
+assert_return(() => invoke($0, `as-memory.grow-size`, []), [value("i32", 1)]);
 
 
 assert_malformed(

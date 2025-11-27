@@ -27,14 +27,6 @@ let $0 = instantiate(`(module
   (global (export "global-i32") i32 (i32.const 55))
   (global (export "global-f32") f32 (f32.const 44))
   (global (export "global-mut-i64") (mut i64) (i64.const 66))
-  (table (export "table-10-inf") 10 funcref)
-  (table (export "table-10-20") 10 20 funcref)
-  (table (export "table64-10-inf") i64 10 funcref)
-  (table (export "table64-10-20") i64 10 20 funcref)
-  (memory (export "memory-2-inf") 2)
-  (memory (export "memory-2-4") 2 4)
-  (memory (export "memory64-2-inf") i64 2)
-  (memory (export "memory64-2-4") i64 2 4)
   (tag (export "tag"))
   (tag \$tag-i32 (param i32))
   (export "tag-i32" (tag \$tag-i32))
@@ -45,7 +37,31 @@ let $0 = instantiate(`(module
 register($0, `test`);
 
 
-let $1 = instantiate(`(module
+let $1 = instantiate(`(module (table (export "table-10-inf") 10 funcref))`);
+
+
+register($1, `test-table-10-inf`);
+
+
+let $2 = instantiate(`(module (table (export "table-10-20") 10 20 funcref))`);
+
+
+register($2, `test-table-10-20`);
+
+
+let $3 = instantiate(`(module (memory (export "memory-2-inf") 2))`);
+
+
+register($3, `test-memory-2-inf`);
+
+
+let $4 = instantiate(`(module (memory (export "memory-2-4") 2 4))`);
+
+
+register($4, `test-memory-2-4`);
+
+
+let $5 = instantiate(`(module
   (type \$func_i32 (func (param i32)))
   (type \$func_i64 (func (param i64)))
   (type \$func_f32 (func (param f32)))
@@ -108,10 +124,10 @@ let $1 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($1, `print32`, [13]), []);
+assert_return(() => invoke($5, `print32`, [13]), []);
 
 
-assert_return(() => invoke($1, `print64`, [24n]), []);
+assert_return(() => invoke($5, `print64`, [24n]), []);
 
 
 assert_invalid(
@@ -123,7 +139,7 @@ assert_invalid(
 );
 
 
-let $2 = instantiate(`(module
+let $6 = instantiate(`(module
   (import "spectest" "print_i32" (func \$imported_print (param i32)))
   (func (export "print_i32") (param \$i i32)
     (call \$imported_print (local.get \$i))
@@ -131,10 +147,10 @@ let $2 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($2, `print_i32`, [13]), []);
+assert_return(() => invoke($6, `print_i32`, [13]), []);
 
 
-let $3 = instantiate(`(module
+let $7 = instantiate(`(module
   (import "spectest" "print_i32" (func \$imported_print (param i32)))
   (func (export "print_i32") (param \$i i32) (param \$j i32) (result i32)
     (i32.add (local.get \$i) (local.get \$j))
@@ -142,28 +158,28 @@ let $3 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($3, `print_i32`, [5, 11]), [value("i32", 16)]);
+assert_return(() => invoke($7, `print_i32`, [5, 11]), [value("i32", 16)]);
 
 
-let $4 = instantiate(`(module (import "test" "func" (func)))`);
+let $8 = instantiate(`(module (import "test" "func" (func)))`);
 
 
-let $5 = instantiate(`(module (import "test" "func-i32" (func (param i32))))`);
+let $9 = instantiate(`(module (import "test" "func-i32" (func (param i32))))`);
 
 
-let $6 = instantiate(`(module (import "test" "func-f32" (func (param f32))))`);
+let $10 = instantiate(`(module (import "test" "func-f32" (func (param f32))))`);
 
 
-let $7 = instantiate(`(module (import "test" "func->i32" (func (result i32))))`);
+let $11 = instantiate(`(module (import "test" "func->i32" (func (result i32))))`);
 
 
-let $8 = instantiate(`(module (import "test" "func->f32" (func (result f32))))`);
+let $12 = instantiate(`(module (import "test" "func->f32" (func (result f32))))`);
 
 
-let $9 = instantiate(`(module (import "test" "func-i32->i32" (func (param i32) (result i32))))`);
+let $13 = instantiate(`(module (import "test" "func-i32->i32" (func (param i32) (result i32))))`);
 
 
-let $10 = instantiate(`(module (import "test" "func-i64->i64" (func (param i64) (result i64))))`);
+let $14 = instantiate(`(module (import "test" "func-i64->i64" (func (param i64) (result i64))))`);
 
 
 assert_unlinkable(
@@ -281,13 +297,13 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-inf" (func)))`),
+  () => instantiate(`(module (import "test-table-10-inf" "table-10-inf" (func)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (func)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (func)))`),
   `incompatible import type`,
 );
 
@@ -346,7 +362,7 @@ assert_unlinkable(
 );
 
 
-let $11 = instantiate(`(module
+let $15 = instantiate(`(module
   (import "spectest" "global_i32" (global i32))
   (global (import "spectest" "global_i32") i32)
 
@@ -367,34 +383,34 @@ let $11 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($11, `get-0`, []), [value("i32", 666)]);
+assert_return(() => invoke($15, `get-0`, []), [value("i32", 666)]);
 
 
-assert_return(() => invoke($11, `get-1`, []), [value("i32", 666)]);
+assert_return(() => invoke($15, `get-1`, []), [value("i32", 666)]);
 
 
-assert_return(() => invoke($11, `get-x`, []), [value("i32", 666)]);
+assert_return(() => invoke($15, `get-x`, []), [value("i32", 666)]);
 
 
-assert_return(() => invoke($11, `get-y`, []), [value("i32", 666)]);
+assert_return(() => invoke($15, `get-y`, []), [value("i32", 666)]);
 
 
-assert_return(() => invoke($11, `get-4`, []), [value("i64", 666n)]);
+assert_return(() => invoke($15, `get-4`, []), [value("i64", 666n)]);
 
 
-assert_return(() => invoke($11, `get-5`, []), [value("f32", 666.6)]);
+assert_return(() => invoke($15, `get-5`, []), [value("f32", 666.6)]);
 
 
-assert_return(() => invoke($11, `get-6`, []), [value("f64", 666.6)]);
+assert_return(() => invoke($15, `get-6`, []), [value("f64", 666.6)]);
 
 
-let $12 = instantiate(`(module (import "test" "global-i32" (global i32)))`);
+let $16 = instantiate(`(module (import "test" "global-i32" (global i32)))`);
 
 
-let $13 = instantiate(`(module (import "test" "global-f32" (global f32)))`);
+let $17 = instantiate(`(module (import "test" "global-f32" (global f32)))`);
 
 
-let $14 = instantiate(`(module (import "test" "global-mut-i64" (global (mut i64))))`);
+let $18 = instantiate(`(module (import "test" "global-mut-i64" (global (mut i64))))`);
 
 
 assert_unlinkable(
@@ -488,13 +504,13 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-inf" (global i32)))`),
+  () => instantiate(`(module (import "test-table-10-inf" "table-10-inf" (global i32)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (global i32)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (global i32)))`),
   `incompatible import type`,
 );
 
@@ -517,10 +533,9 @@ assert_unlinkable(
 );
 
 
-let $15 = instantiate(`(module
+let $19 = instantiate(`(module
   (type (func (result i32)))
   (import "spectest" "table" (table \$tab 10 20 funcref))
-  (import "test" "table64-10-inf" (table \$tab64 i64 10 funcref))
   (elem (table \$tab) (i32.const 1) func \$f \$g)
 
   (func (export "call") (param i32) (result i32)
@@ -531,25 +546,24 @@ let $15 = instantiate(`(module
 )`);
 
 
-assert_trap(() => invoke($15, `call`, [0]), `uninitialized element`);
+assert_trap(() => invoke($19, `call`, [0]), `uninitialized element`);
 
 
-assert_return(() => invoke($15, `call`, [1]), [value("i32", 11)]);
+assert_return(() => invoke($19, `call`, [1]), [value("i32", 11)]);
 
 
-assert_return(() => invoke($15, `call`, [2]), [value("i32", 22)]);
+assert_return(() => invoke($19, `call`, [2]), [value("i32", 22)]);
 
 
-assert_trap(() => invoke($15, `call`, [3]), `uninitialized element`);
+assert_trap(() => invoke($19, `call`, [3]), `uninitialized element`);
 
 
-assert_trap(() => invoke($15, `call`, [100]), `undefined element`);
+assert_trap(() => invoke($19, `call`, [100]), `undefined element`);
 
 
-let $16 = instantiate(`(module
+let $20 = instantiate(`(module
   (type (func (result i32)))
   (table \$tab (import "spectest" "table") 10 20 funcref)
-  (table \$tab64 (import "test" "table64-10-inf") i64 10 funcref)
   (elem (table \$tab) (i32.const 1) func \$f \$g)
 
   (func (export "call") (param i32) (result i32)
@@ -560,127 +574,91 @@ let $16 = instantiate(`(module
 )`);
 
 
-assert_trap(() => invoke($16, `call`, [0]), `uninitialized element`);
+assert_trap(() => invoke($20, `call`, [0]), `uninitialized element`);
 
 
-assert_return(() => invoke($16, `call`, [1]), [value("i32", 11)]);
+assert_return(() => invoke($20, `call`, [1]), [value("i32", 11)]);
 
 
-assert_return(() => invoke($16, `call`, [2]), [value("i32", 22)]);
+assert_return(() => invoke($20, `call`, [2]), [value("i32", 22)]);
 
 
-assert_trap(() => invoke($16, `call`, [3]), `uninitialized element`);
+assert_trap(() => invoke($20, `call`, [3]), `uninitialized element`);
 
 
-assert_trap(() => invoke($16, `call`, [100]), `undefined element`);
+assert_trap(() => invoke($20, `call`, [100]), `undefined element`);
 
 
-let $17 = instantiate(`(module
-  (import "spectest" "table" (table 0 funcref))
-  (import "spectest" "table" (table 0 funcref))
-  (import "test" "table64-10-inf" (table i64 10 funcref))
-  (import "test" "table64-10-inf" (table i64 10 funcref))
-  (table 10 funcref)
-  (table 10 funcref)
-  (table i64 10 funcref)
-  (table i64 10 funcref)
-)`);
+let $21 = instantiate(`(module (import "spectest" "table" (table 0 funcref)))`);
 
 
-let $18 = instantiate(`(module (import "test" "table-10-inf" (table 10 funcref)))`);
+let $22 = instantiate(`(module (import "spectest" "table" (table 0 funcref)))`);
 
 
-let $19 = instantiate(`(module (import "test" "table-10-inf" (table 5 funcref)))`);
+let $23 = instantiate(`(module (table 10 funcref))`);
 
 
-let $20 = instantiate(`(module (import "test" "table-10-inf" (table 0 funcref)))`);
+let $24 = instantiate(`(module (table 10 funcref))`);
 
 
-let $21 = instantiate(`(module (import "test" "table-10-20" (table 10 funcref)))`);
+let $25 = instantiate(`(module (import "test-table-10-inf" "table-10-inf" (table 10 funcref)))`);
 
 
-let $22 = instantiate(`(module (import "test" "table-10-20" (table 5 funcref)))`);
+let $26 = instantiate(`(module (import "test-table-10-inf" "table-10-inf" (table 5 funcref)))`);
 
 
-let $23 = instantiate(`(module (import "test" "table-10-20" (table 0 funcref)))`);
+let $27 = instantiate(`(module (import "test-table-10-inf" "table-10-inf" (table 0 funcref)))`);
 
 
-let $24 = instantiate(`(module (import "test" "table-10-20" (table 10 20 funcref)))`);
+let $28 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 10 funcref)))`);
 
 
-let $25 = instantiate(`(module (import "test" "table-10-20" (table 5 20 funcref)))`);
+let $29 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 5 funcref)))`);
 
 
-let $26 = instantiate(`(module (import "test" "table-10-20" (table 0 20 funcref)))`);
+let $30 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 0 funcref)))`);
 
 
-let $27 = instantiate(`(module (import "test" "table-10-20" (table 10 25 funcref)))`);
+let $31 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 10 20 funcref)))`);
 
 
-let $28 = instantiate(`(module (import "test" "table-10-20" (table 5 25 funcref)))`);
+let $32 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 5 20 funcref)))`);
 
 
-let $29 = instantiate(`(module (import "test" "table-10-20" (table 0 25 funcref)))`);
+let $33 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 0 20 funcref)))`);
 
 
-let $30 = instantiate(`(module (import "test" "table64-10-inf" (table i64 10 funcref)))`);
+let $34 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 10 25 funcref)))`);
 
 
-let $31 = instantiate(`(module (import "test" "table64-10-inf" (table i64 5 funcref)))`);
+let $35 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 5 25 funcref)))`);
 
 
-let $32 = instantiate(`(module (import "test" "table64-10-inf" (table i64 0 funcref)))`);
+let $36 = instantiate(`(module (import "test-table-10-20" "table-10-20" (table 0 25 funcref)))`);
 
 
-let $33 = instantiate(`(module (import "test" "table64-10-20" (table i64 10 funcref)))`);
+let $37 = instantiate(`(module (import "spectest" "table" (table 10 funcref)))`);
 
 
-let $34 = instantiate(`(module (import "test" "table64-10-20" (table i64 5 funcref)))`);
+let $38 = instantiate(`(module (import "spectest" "table" (table 5 funcref)))`);
 
 
-let $35 = instantiate(`(module (import "test" "table64-10-20" (table i64 0 funcref)))`);
+let $39 = instantiate(`(module (import "spectest" "table" (table 0 funcref)))`);
 
 
-let $36 = instantiate(`(module (import "test" "table64-10-20" (table i64 10 20 funcref)))`);
+let $40 = instantiate(`(module (import "spectest" "table" (table 10 20 funcref)))`);
 
 
-let $37 = instantiate(`(module (import "test" "table64-10-20" (table i64 5 20 funcref)))`);
+let $41 = instantiate(`(module (import "spectest" "table" (table 5 20 funcref)))`);
 
 
-let $38 = instantiate(`(module (import "test" "table64-10-20" (table i64 0 20 funcref)))`);
+let $42 = instantiate(`(module (import "spectest" "table" (table 0 20 funcref)))`);
 
 
-let $39 = instantiate(`(module (import "test" "table64-10-20" (table i64 10 25 funcref)))`);
+let $43 = instantiate(`(module (import "spectest" "table" (table 10 25 funcref)))`);
 
 
-let $40 = instantiate(`(module (import "test" "table64-10-20" (table i64 5 25 funcref)))`);
-
-
-let $41 = instantiate(`(module (import "test" "table64-10-20" (table i64 0 25 funcref)))`);
-
-
-let $42 = instantiate(`(module (import "spectest" "table" (table 10 funcref)))`);
-
-
-let $43 = instantiate(`(module (import "spectest" "table" (table 5 funcref)))`);
-
-
-let $44 = instantiate(`(module (import "spectest" "table" (table 0 funcref)))`);
-
-
-let $45 = instantiate(`(module (import "spectest" "table" (table 10 20 funcref)))`);
-
-
-let $46 = instantiate(`(module (import "spectest" "table" (table 5 20 funcref)))`);
-
-
-let $47 = instantiate(`(module (import "spectest" "table" (table 0 20 funcref)))`);
-
-
-let $48 = instantiate(`(module (import "spectest" "table" (table 10 25 funcref)))`);
-
-
-let $49 = instantiate(`(module (import "spectest" "table" (table 5 25 funcref)))`);
+let $44 = instantiate(`(module (import "spectest" "table" (table 5 25 funcref)))`);
 
 
 assert_unlinkable(
@@ -696,49 +674,25 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-inf" (table 12 funcref)))`),
+  () => instantiate(`(module (import "test-table-10-inf" "table-10-inf" (table 12 funcref)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-inf" (table 10 20 funcref)))`),
+  () => instantiate(`(module (import "test-table-10-inf" "table-10-inf" (table 10 20 funcref)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table64-10-inf" (table i64 12 funcref)))`),
+  () => instantiate(`(module (import "test-table-10-20" "table-10-20" (table 12 20 funcref)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table64-10-inf" (table i64 10 20 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-20" (table 12 20 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-20" (table 10 18 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table64-10-20" (table i64 12 20 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table64-10-20" (table i64 10 18 funcref)))`),
+  () => instantiate(`(module (import "test-table-10-20" "table-10-20" (table 10 18 funcref)))`),
   `incompatible import type`,
 );
 
@@ -768,7 +722,7 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (table 10 funcref)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (table 10 funcref)))`),
   `incompatible import type`,
 );
 
@@ -779,159 +733,101 @@ assert_unlinkable(
 );
 
 
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-inf" (table i64 10 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table64-10-inf" (table 10 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-20" (table i64 10 20 funcref)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "table64-10-20" (table 10 20 funcref)))`),
-  `incompatible import type`,
-);
-
-
-let $50 = instantiate(`(module
+let $45 = instantiate(`(module
   (import "spectest" "memory" (memory 1 2))
-  (import "test" "memory-2-inf" (memory 2))
-  (import "test" "memory64-2-inf" (memory i64 2))
   (data (memory 0) (i32.const 10) "\\10")
 
   (func (export "load") (param i32) (result i32) (i32.load (local.get 0)))
 )`);
 
 
-assert_return(() => invoke($50, `load`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($45, `load`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($50, `load`, [10]), [value("i32", 16)]);
+assert_return(() => invoke($45, `load`, [10]), [value("i32", 16)]);
 
 
-assert_return(() => invoke($50, `load`, [8]), [value("i32", 1048576)]);
+assert_return(() => invoke($45, `load`, [8]), [value("i32", 1048576)]);
 
 
-assert_trap(() => invoke($50, `load`, [1000000]), `out of bounds memory access`);
+assert_trap(() => invoke($45, `load`, [1000000]), `out of bounds memory access`);
 
 
-let $51 = instantiate(`(module
+let $46 = instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 2)))`);
+
+
+let $47 = instantiate(`(module
   (memory (import "spectest" "memory") 1 2)
-  (memory (import "test" "memory-2-inf") 2)
-  (memory (import "test" "memory64-2-inf") i64 2)
   (data (memory 0) (i32.const 10) "\\10")
 
   (func (export "load") (param i32) (result i32) (i32.load (local.get 0)))
 )`);
 
 
-assert_return(() => invoke($51, `load`, [0]), [value("i32", 0)]);
+assert_return(() => invoke($47, `load`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($51, `load`, [10]), [value("i32", 16)]);
+assert_return(() => invoke($47, `load`, [10]), [value("i32", 16)]);
 
 
-assert_return(() => invoke($51, `load`, [8]), [value("i32", 1048576)]);
+assert_return(() => invoke($47, `load`, [8]), [value("i32", 1048576)]);
 
 
-assert_trap(() => invoke($51, `load`, [1000000]), `out of bounds memory access`);
+assert_trap(() => invoke($47, `load`, [1000000]), `out of bounds memory access`);
 
 
-let $52 = instantiate(`(module (import "test" "memory-2-inf" (memory 2)))`);
+let $48 = instantiate(`(module (memory (import "test-memory-2-inf" "memory-2-inf") 2))`);
 
 
-let $53 = instantiate(`(module (import "test" "memory-2-inf" (memory 1)))`);
+let $49 = instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 2)))`);
 
 
-let $54 = instantiate(`(module (import "test" "memory-2-inf" (memory 0)))`);
+let $50 = instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 1)))`);
 
 
-let $55 = instantiate(`(module (import "test" "memory-2-4" (memory 2)))`);
+let $51 = instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 0)))`);
 
 
-let $56 = instantiate(`(module (import "test" "memory-2-4" (memory 1)))`);
+let $52 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 2)))`);
 
 
-let $57 = instantiate(`(module (import "test" "memory-2-4" (memory 0)))`);
+let $53 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 1)))`);
 
 
-let $58 = instantiate(`(module (import "test" "memory-2-4" (memory 2 4)))`);
+let $54 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 0)))`);
 
 
-let $59 = instantiate(`(module (import "test" "memory-2-4" (memory 1 4)))`);
+let $55 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 2 4)))`);
 
 
-let $60 = instantiate(`(module (import "test" "memory-2-4" (memory 0 4)))`);
+let $56 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 1 4)))`);
 
 
-let $61 = instantiate(`(module (import "test" "memory-2-4" (memory 2 5)))`);
+let $57 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 0 4)))`);
 
 
-let $62 = instantiate(`(module (import "test" "memory-2-4" (memory 2 6)))`);
+let $58 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 2 5)))`);
 
 
-let $63 = instantiate(`(module (import "test" "memory64-2-inf" (memory i64 2)))`);
+let $59 = instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 2 6)))`);
 
 
-let $64 = instantiate(`(module (import "test" "memory64-2-inf" (memory i64 1)))`);
+let $60 = instantiate(`(module (import "spectest" "memory" (memory 1)))`);
 
 
-let $65 = instantiate(`(module (import "test" "memory64-2-inf" (memory i64 0)))`);
+let $61 = instantiate(`(module (import "spectest" "memory" (memory 0)))`);
 
 
-let $66 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 2)))`);
+let $62 = instantiate(`(module (import "spectest" "memory" (memory 1 2)))`);
 
 
-let $67 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 1)))`);
+let $63 = instantiate(`(module (import "spectest" "memory" (memory 0 2)))`);
 
 
-let $68 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 0)))`);
+let $64 = instantiate(`(module (import "spectest" "memory" (memory 1 3)))`);
 
 
-let $69 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 2 4)))`);
-
-
-let $70 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 1 4)))`);
-
-
-let $71 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 0 4)))`);
-
-
-let $72 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 2 5)))`);
-
-
-let $73 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 1 5)))`);
-
-
-let $74 = instantiate(`(module (import "test" "memory64-2-4" (memory i64 0 5)))`);
-
-
-let $75 = instantiate(`(module (import "spectest" "memory" (memory 1)))`);
-
-
-let $76 = instantiate(`(module (import "spectest" "memory" (memory 0)))`);
-
-
-let $77 = instantiate(`(module (import "spectest" "memory" (memory 1 2)))`);
-
-
-let $78 = instantiate(`(module (import "spectest" "memory" (memory 0 2)))`);
-
-
-let $79 = instantiate(`(module (import "spectest" "memory" (memory 1 3)))`);
-
-
-let $80 = instantiate(`(module (import "spectest" "memory" (memory 0 3)))`);
+let $65 = instantiate(`(module (import "spectest" "memory" (memory 0 3)))`);
 
 
 assert_unlinkable(
@@ -947,217 +843,109 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (memory 0 1)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 0 1)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (memory 0 2)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 0 2)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (memory 0 3)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 0 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (memory 2 3)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 2 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (memory 3)))`),
+  () => instantiate(`(module (import "test-memory-2-inf" "memory-2-inf" (memory 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 0 1)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 0 1)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 0 2)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 0 2)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 0 3)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 0 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 2 2)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 2 2)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 2 3)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 2 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 3 3)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 3 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 3 4)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 3 4)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 3 5)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 3 5)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 4 4)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 4 4)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 4 5)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 4 5)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 3)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 3)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 4)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 4)))`),
   `incompatible import type`,
 );
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory 5)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-inf" (memory i64 0 1)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-inf" (memory i64 0 2)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-inf" (memory i64 0 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-inf" (memory i64 2 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-inf" (memory i64 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 0 1)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 0 2)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 0 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 2 2)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 2 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 3 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 3 4)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 3 5)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 4 4)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 4 5)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 3)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 4)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory i64 5)))`),
+  () => instantiate(`(module (import "test-memory-2-4" "memory-2-4" (memory 5)))`),
   `incompatible import type`,
 );
 
@@ -1175,30 +963,6 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-inf" (memory i64 2)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-inf" (memory 2)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory-2-4" (memory i64 2 4)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
-  () => instantiate(`(module (import "test" "memory64-2-4" (memory 2 4)))`),
-  `incompatible import type`,
-);
-
-
-assert_unlinkable(
   () => instantiate(`(module (import "test" "func-i32" (memory 1)))`),
   `incompatible import type`,
 );
@@ -1211,7 +975,7 @@ assert_unlinkable(
 
 
 assert_unlinkable(
-  () => instantiate(`(module (import "test" "table-10-inf" (memory 1)))`),
+  () => instantiate(`(module (import "test-table-10-inf" "table-10-inf" (memory 1)))`),
   `incompatible import type`,
 );
 
@@ -1246,25 +1010,25 @@ assert_unlinkable(
 );
 
 
-let $81 = instantiate(`(module
+let $66 = instantiate(`(module
   (import "spectest" "memory" (memory 0 3))  ;; actual has max size 2
   (func (export "grow") (param i32) (result i32) (memory.grow (local.get 0)))
 )`);
 
 
-assert_return(() => invoke($81, `grow`, [0]), [value("i32", 1)]);
+assert_return(() => invoke($66, `grow`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($81, `grow`, [1]), [value("i32", 1)]);
+assert_return(() => invoke($66, `grow`, [1]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($81, `grow`, [0]), [value("i32", 2)]);
+assert_return(() => invoke($66, `grow`, [0]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($81, `grow`, [1]), [value("i32", -1)]);
+assert_return(() => invoke($66, `grow`, [1]), [value("i32", -1)]);
 
 
-assert_return(() => invoke($81, `grow`, [0]), [value("i32", 2)]);
+assert_return(() => invoke($66, `grow`, [0]), [value("i32", 2)]);
 
 
 assert_malformed(
@@ -1363,10 +1127,10 @@ assert_malformed(
 );
 
 
-let $82 = instantiate(`(module)`);
+let $67 = instantiate(`(module)`);
 
 
-register($82, `not wasm`);
+register($67, `not wasm`);
 
 
 assert_unlinkable(

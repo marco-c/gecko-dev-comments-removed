@@ -30,6 +30,16 @@ let $0 = instantiate(`(module
   (func (export "get") (param \$i i32) (result externref)
     (table.get \$t (local.get \$i))
   )
+
+  (table \$t64 i64 10 externref)
+
+  (func (export "fill-t64") (param \$i i64) (param \$r externref) (param \$n i64)
+    (table.fill \$t64 (local.get \$i) (local.get \$r) (local.get \$n))
+  )
+
+  (func (export "get-t64") (param \$i i64) (result externref)
+    (table.get \$t64 (local.get \$i))
+  )
 )`);
 
 
@@ -136,6 +146,111 @@ assert_trap(() => invoke($0, `fill`, [11, null, 0]), `out of bounds table access
 
 
 assert_trap(() => invoke($0, `fill`, [11, null, 10]), `out of bounds table access`);
+
+
+assert_return(() => invoke($0, `get-t64`, [1n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [2n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [3n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [4n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [5n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `fill-t64`, [2n, externref(1), 3n]), []);
+
+
+assert_return(() => invoke($0, `get-t64`, [1n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [2n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [3n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [4n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [5n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `fill-t64`, [4n, externref(2), 2n]), []);
+
+
+assert_return(() => invoke($0, `get-t64`, [3n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [4n]), [new ExternRefResult(2)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [5n]), [new ExternRefResult(2)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [6n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `fill-t64`, [4n, externref(3), 0n]), []);
+
+
+assert_return(() => invoke($0, `get-t64`, [3n]), [new ExternRefResult(1)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [4n]), [new ExternRefResult(2)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [5n]), [new ExternRefResult(2)]);
+
+
+assert_return(() => invoke($0, `fill-t64`, [8n, externref(4), 2n]), []);
+
+
+assert_return(() => invoke($0, `get-t64`, [7n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [8n]), [new ExternRefResult(4)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [9n]), [new ExternRefResult(4)]);
+
+
+assert_return(() => invoke($0, `fill-t64`, [9n, null, 1n]), []);
+
+
+assert_return(() => invoke($0, `get-t64`, [8n]), [new ExternRefResult(4)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [9n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `fill-t64`, [10n, externref(5), 0n]), []);
+
+
+assert_return(() => invoke($0, `get-t64`, [9n]), [value('externref', null)]);
+
+
+assert_trap(() => invoke($0, `fill-t64`, [8n, externref(6), 3n]), `out of bounds table access`);
+
+
+assert_return(() => invoke($0, `get-t64`, [7n]), [value('externref', null)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [8n]), [new ExternRefResult(4)]);
+
+
+assert_return(() => invoke($0, `get-t64`, [9n]), [value('externref', null)]);
+
+
+assert_trap(() => invoke($0, `fill-t64`, [11n, null, 0n]), `out of bounds table access`);
+
+
+assert_trap(() => invoke($0, `fill-t64`, [11n, null, 10n]), `out of bounds table access`);
 
 
 assert_invalid(

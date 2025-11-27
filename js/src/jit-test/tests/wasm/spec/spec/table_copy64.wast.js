@@ -3881,12 +3881,12 @@ assert_trap(() => invoke($18, `check_t1`, [29]), `uninitialized element`);
 
 
 let $19 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -3900,7 +3900,7 @@ let $19 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 28) (i32.const 1) (i32.const 3))
+    (table.copy \$t0 \$t0 (i64.const 28) (i64.const 1) (i64.const 3))
     ))`);
 
 
@@ -3908,12 +3908,12 @@ assert_trap(() => invoke($19, `test`, []), `out of bounds table access`);
 
 
 let $20 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -3927,7 +3927,7 @@ let $20 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 0xFFFFFFFE) (i32.const 1) (i32.const 2))
+    (table.copy \$t0 \$t0 (i64.const 0xFFFFFFFE) (i64.const 1) (i64.const 2))
     ))`);
 
 
@@ -3935,12 +3935,12 @@ assert_trap(() => invoke($20, `test`, []), `out of bounds table access`);
 
 
 let $21 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -3954,7 +3954,7 @@ let $21 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 15) (i32.const 25) (i32.const 6))
+    (table.copy \$t0 \$t0 (i64.const 15) (i64.const 25) (i64.const 6))
     ))`);
 
 
@@ -3962,12 +3962,12 @@ assert_trap(() => invoke($21, `test`, []), `out of bounds table access`);
 
 
 let $22 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -3981,7 +3981,7 @@ let $22 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 15) (i32.const 0xFFFFFFFE) (i32.const 2))
+    (table.copy \$t0 \$t0 (i64.const 15) (i64.const 0xFFFFFFFE) (i64.const 2))
     ))`);
 
 
@@ -3989,12 +3989,12 @@ assert_trap(() => invoke($22, `test`, []), `out of bounds table access`);
 
 
 let $23 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4008,7 +4008,7 @@ let $23 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 15) (i32.const 25) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 15) (i64.const 25) (i64.const 0))
     ))`);
 
 
@@ -4016,12 +4016,12 @@ invoke($23, `test`, []);
 
 
 let $24 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4035,7 +4035,7 @@ let $24 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 30) (i32.const 15) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 30) (i64.const 15) (i64.const 0))
     ))`);
 
 
@@ -4043,12 +4043,12 @@ invoke($24, `test`, []);
 
 
 let $25 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4062,7 +4062,7 @@ let $25 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 31) (i32.const 15) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 31) (i64.const 15) (i64.const 0))
     ))`);
 
 
@@ -4070,12 +4070,12 @@ assert_trap(() => invoke($25, `test`, []), `out of bounds table access`);
 
 
 let $26 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4089,7 +4089,7 @@ let $26 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 15) (i32.const 30) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 15) (i64.const 30) (i64.const 0))
     ))`);
 
 
@@ -4097,12 +4097,12 @@ invoke($26, `test`, []);
 
 
 let $27 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4116,7 +4116,7 @@ let $27 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 15) (i32.const 31) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 15) (i64.const 31) (i64.const 0))
     ))`);
 
 
@@ -4124,12 +4124,12 @@ assert_trap(() => invoke($27, `test`, []), `out of bounds table access`);
 
 
 let $28 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4143,7 +4143,7 @@ let $28 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 30) (i32.const 30) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 30) (i64.const 30) (i64.const 0))
     ))`);
 
 
@@ -4151,12 +4151,12 @@ invoke($28, `test`, []);
 
 
 let $29 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4170,7 +4170,7 @@ let $29 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t0 \$t0 (i32.const 31) (i32.const 31) (i32.const 0))
+    (table.copy \$t0 \$t0 (i64.const 31) (i64.const 31) (i64.const 0))
     ))`);
 
 
@@ -4178,12 +4178,12 @@ assert_trap(() => invoke($29, `test`, []), `out of bounds table access`);
 
 
 let $30 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4197,7 +4197,7 @@ let $30 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 28) (i32.const 1) (i32.const 3))
+    (table.copy \$t1 \$t0 (i64.const 28) (i64.const 1) (i64.const 3))
     ))`);
 
 
@@ -4205,12 +4205,12 @@ assert_trap(() => invoke($30, `test`, []), `out of bounds table access`);
 
 
 let $31 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4224,7 +4224,7 @@ let $31 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 0xFFFFFFFE) (i32.const 1) (i32.const 2))
+    (table.copy \$t1 \$t0 (i64.const 0xFFFFFFFE) (i64.const 1) (i64.const 2))
     ))`);
 
 
@@ -4232,12 +4232,12 @@ assert_trap(() => invoke($31, `test`, []), `out of bounds table access`);
 
 
 let $32 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4251,7 +4251,7 @@ let $32 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 15) (i32.const 25) (i32.const 6))
+    (table.copy \$t1 \$t0 (i64.const 15) (i64.const 25) (i64.const 6))
     ))`);
 
 
@@ -4259,12 +4259,12 @@ assert_trap(() => invoke($32, `test`, []), `out of bounds table access`);
 
 
 let $33 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4278,7 +4278,7 @@ let $33 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 15) (i32.const 0xFFFFFFFE) (i32.const 2))
+    (table.copy \$t1 \$t0 (i64.const 15) (i64.const 0xFFFFFFFE) (i64.const 2))
     ))`);
 
 
@@ -4286,12 +4286,12 @@ assert_trap(() => invoke($33, `test`, []), `out of bounds table access`);
 
 
 let $34 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4305,7 +4305,7 @@ let $34 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 15) (i32.const 25) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 15) (i64.const 25) (i64.const 0))
     ))`);
 
 
@@ -4313,12 +4313,12 @@ invoke($34, `test`, []);
 
 
 let $35 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4332,7 +4332,7 @@ let $35 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 30) (i32.const 15) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 30) (i64.const 15) (i64.const 0))
     ))`);
 
 
@@ -4340,12 +4340,12 @@ invoke($35, `test`, []);
 
 
 let $36 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4359,7 +4359,7 @@ let $36 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 31) (i32.const 15) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 31) (i64.const 15) (i64.const 0))
     ))`);
 
 
@@ -4367,12 +4367,12 @@ assert_trap(() => invoke($36, `test`, []), `out of bounds table access`);
 
 
 let $37 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4386,7 +4386,7 @@ let $37 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 15) (i32.const 30) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 15) (i64.const 30) (i64.const 0))
     ))`);
 
 
@@ -4394,12 +4394,12 @@ invoke($37, `test`, []);
 
 
 let $38 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4413,7 +4413,7 @@ let $38 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 15) (i32.const 31) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 15) (i64.const 31) (i64.const 0))
     ))`);
 
 
@@ -4421,12 +4421,12 @@ assert_trap(() => invoke($38, `test`, []), `out of bounds table access`);
 
 
 let $39 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4440,7 +4440,7 @@ let $39 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 30) (i32.const 30) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 30) (i64.const 30) (i64.const 0))
     ))`);
 
 
@@ -4448,12 +4448,12 @@ invoke($39, `test`, []);
 
 
 let $40 = instantiate(`(module
-  (table \$t0 30 30 funcref)
-  (table \$t1 30 30 funcref)
-  (elem (table \$t0) (i32.const 2) func 3 1 4 1)
+  (table \$t0 i64 30 30 funcref)
+  (table \$t1 i64 30 30 funcref)
+  (elem (table \$t0) (i64.const 2) func 3 1 4 1)
   (elem funcref
     (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
-  (elem (table \$t0) (i32.const 12) func 7 5 2 3 6)
+  (elem (table \$t0) (i64.const 12) func 7 5 2 3 6)
   (elem funcref
     (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
   (func (result i32) (i32.const 0))
@@ -4467,7 +4467,7 @@ let $40 = instantiate(`(module
   (func (result i32) (i32.const 8))
   (func (result i32) (i32.const 9))
   (func (export "test")
-    (table.copy \$t1 \$t0 (i32.const 31) (i32.const 31) (i32.const 0))
+    (table.copy \$t1 \$t0 (i64.const 31) (i64.const 31) (i64.const 0))
     ))`);
 
 
