@@ -1,9 +1,3 @@
-
-
-
-
-
-
 with Files("**"):
     BUG_COMPONENT = ("Testing", "General")
 
@@ -18,7 +12,7 @@ PYTHON_UNITTEST_MANIFESTS += ["test/python.toml"]
 
 SPHINX_TREES["/testing"] = "docs"
 
-DIRS += ["manifest", "mozbase", "mozharness"]
+DIRS += ["mozbase", "mozharness"]
 
 PERFTESTS_MANIFESTS += [
     "performance/perftest.toml",
