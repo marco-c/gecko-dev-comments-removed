@@ -86,12 +86,6 @@ using namespace mozilla;
 
 
 
-
-
-
-
-
-
 class nsParserContinueEvent : public Runnable {
  public:
   RefPtr<nsParser> mParser;

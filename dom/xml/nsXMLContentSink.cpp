@@ -69,10 +69,6 @@ using namespace mozilla::dom;
 
 
 
-
-
-
-
 nsresult NS_NewXMLContentSink(nsIXMLContentSink** aResult, Document* aDoc,
                               nsIURI* aURI, nsISupports* aContainer,
                               nsIChannel* aChannel) {
