@@ -829,11 +829,20 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
   pauseSome(actors) {
-    for (const { player } of actors) {
-      this.pauseSync(player);
+    const handledActors = [];
+    for (const actor of actors) {
+      
+      
+      
+      
+      if (!this.actors.includes(actor)) {
+        continue;
+      }
+      this.pauseSync(actor.player);
+      handledActors.push(actor);
     }
 
-    return this.waitForNextFrame(actors);
+    return this.waitForNextFrame(handledActors);
   }
 
   
@@ -842,11 +851,20 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
   playSome(actors) {
-    for (const { player } of actors) {
-      this.playSync(player);
+    const handledActors = [];
+    for (const actor of actors) {
+      
+      
+      
+      
+      if (!this.actors.includes(actor)) {
+        continue;
+      }
+      this.playSync(actor.player);
+      handledActors.push(actor);
     }
 
-    return this.waitForNextFrame(actors);
+    return this.waitForNextFrame(handledActors);
   }
 
   
@@ -856,8 +874,16 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
-  setCurrentTimes(players, time, shouldPause) {
-    for (const actor of players) {
+  setCurrentTimes(actors, time, shouldPause) {
+    const handledActors = [];
+    for (const actor of actors) {
+      
+      
+      
+      
+      if (!this.actors.includes(actor)) {
+        continue;
+      }
       const player = actor.player;
 
       if (shouldPause) {
@@ -869,9 +895,10 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
           ? time - actor.createdTime
           : actor.createdTime - time;
       player.currentTime = currentTime * Math.abs(player.playbackRate);
+      handledActors.push(actor);
     }
 
-    return this.waitForNextFrame(players);
+    return this.waitForNextFrame(handledActors);
   }
 
   
@@ -880,13 +907,20 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
 
 
-  setPlaybackRates(players, rate) {
-    return Promise.all(
-      players.map(({ player }) => {
-        player.updatePlaybackRate(rate);
-        return player.ready;
-      })
-    );
+  setPlaybackRates(actors, rate) {
+    const readyPromises = [];
+    for (const actor of actors) {
+      
+      
+      
+      
+      if (!this.actors.includes(actor)) {
+        continue;
+      }
+      actor.player.updatePlaybackRate(rate);
+      readyPromises.push(actor.player.ready);
+    }
+    return Promise.all(readyPromises);
   }
 
   
