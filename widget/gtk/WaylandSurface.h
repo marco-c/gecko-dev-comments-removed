@@ -35,7 +35,7 @@ class WaylandSurface final {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaylandSurface);
 
-  WaylandSurface(RefPtr<WaylandSurface> aParent);
+  explicit WaylandSurface(RefPtr<WaylandSurface> aParent);
 
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
@@ -68,11 +68,11 @@ class WaylandSurface final {
       const WaylandSurfaceLock& aProofOfLock,
       const std::function<void(bool)>& aFrameCallbackStateHandler);
 
-  
   wl_egl_window* GetEGLWindow(DesktopIntSize aSize);
-  
-  bool SetEGLWindowSize(LayoutDeviceIntSize aSize);
   bool HasEGLWindow() const { return !!mEGLWindow; }
+
+  
+  void SetSize(DesktopIntSize aSize);
 
   
   bool IsMapped() const { return mIsMapped; }
@@ -279,8 +279,8 @@ class WaylandSurface final {
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
                  DesktopIntPoint aSubsurfacePosition, bool aSubsurfaceDesync);
 
-  void SetSizeLocked(const WaylandSurfaceLock& aProofOfLock,
-                     DesktopIntSize aSize);
+  void SetRenderingSizeLocked(const WaylandSurfaceLock& aProofOfLock,
+                              DesktopIntSize aSize);
 
   wl_surface* Lock(WaylandSurfaceLock* aWaylandSurfaceLock);
   void Unlock(struct wl_surface** aSurface,
@@ -318,9 +318,7 @@ class WaylandSurface final {
   std::function<void(void)> mGdkCommitCallback;
   std::function<void(void)> mUnmapCallback;
 
-  
-  
-  gfx::IntSize mSizeScaled;
+  DesktopIntSize mSize;
 
   
   RefPtr<GdkWindow> mGdkWindow;
