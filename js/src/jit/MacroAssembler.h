@@ -3985,10 +3985,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void branchWasmRefIsSubtype(Register ref, wasm::MaybeRefType sourceType,
-                              wasm::RefType destType, Label* label,
-                              bool onSuccess, Register superSTV,
-                              Register scratch1, Register scratch2);
+  
+  
+  
+  
+  FaultingCodeOffset branchWasmRefIsSubtype(
+      Register ref, wasm::MaybeRefType sourceType, wasm::RefType destType,
+      Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+      Register scratch1, Register scratch2);
 
   
   
@@ -4001,10 +4005,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void branchWasmRefIsSubtypeAny(Register ref, wasm::RefType sourceType,
-                                 wasm::RefType destType, Label* label,
-                                 bool onSuccess, Register superSTV,
-                                 Register scratch1, Register scratch2);
+  
+  
+  
+  
+  FaultingCodeOffset branchWasmRefIsSubtypeAny(
+      Register ref, wasm::RefType sourceType, wasm::RefType destType,
+      Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+      Register scratch1, Register scratch2);
 
   
   
@@ -4109,8 +4117,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                 const Address& dst, Register scratch);
 
   
-  void branchObjectIsWasmGcObject(bool isGcObject, Register src,
-                                  Register scratch, Label* label);
+  FaultingCodeOffset branchObjectIsWasmGcObject(bool isGcObject, Register src,
+                                                Register scratch, Label* label);
 
   
   

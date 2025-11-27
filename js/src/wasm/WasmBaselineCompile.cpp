@@ -3749,8 +3749,9 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
 
       masm.branchWasmRefIsSubtype(
           object, sourceType, destType, &notTaken,
-          b->invertBranch ? onSuccess : !onSuccess, regs.superSTV,
-          regs.scratch1, regs.scratch2);
+          b->invertBranch ? onSuccess : !onSuccess,
+          false, regs.superSTV, regs.scratch1,
+          regs.scratch2);
       freeRegistersForBranchIfRefSubtype(regs);
 
       
@@ -3764,8 +3765,8 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
 
   masm.branchWasmRefIsSubtype(
       object, sourceType, destType, b->label,
-      b->invertBranch ? !onSuccess : onSuccess, regs.superSTV,
-      regs.scratch1, regs.scratch2);
+      b->invertBranch ? !onSuccess : onSuccess,
+      false, regs.superSTV, regs.scratch1, regs.scratch2);
   freeRegistersForBranchIfRefSubtype(regs);
   return true;
 }
@@ -8943,8 +8944,8 @@ bool BaseCompiler::emitRefTest(bool nullable) {
   BranchIfRefSubtypeRegisters regs =
       allocRegistersForBranchIfRefSubtype(destType);
   masm.branchWasmRefIsSubtype(ref, MaybeRefType(sourceType), destType, &success,
-                              true, regs.superSTV, regs.scratch1,
-                              regs.scratch2);
+                              true, false,
+                              regs.superSTV, regs.scratch1, regs.scratch2);
   freeRegistersForBranchIfRefSubtype(regs);
 
   masm.xor32(result, result);
@@ -8976,9 +8977,14 @@ bool BaseCompiler::emitRefCast(bool nullable) {
   Label success;
   BranchIfRefSubtypeRegisters regs =
       allocRegistersForBranchIfRefSubtype(destType);
-  masm.branchWasmRefIsSubtype(ref, MaybeRefType(sourceType), destType, &success,
-                              true, regs.superSTV, regs.scratch1,
-                              regs.scratch2);
+  FaultingCodeOffset fco = masm.branchWasmRefIsSubtype(
+      ref, MaybeRefType(sourceType), destType, &success,
+      true, true, regs.superSTV,
+      regs.scratch1, regs.scratch2);
+  if (fco.isValid()) {
+    masm.append(wasm::Trap::BadCast, wasm::TrapMachineInsnForLoadWord(),
+                fco.get(), trapSiteDesc());
+  }
   freeRegistersForBranchIfRefSubtype(regs);
 
   trap(Trap::BadCast);

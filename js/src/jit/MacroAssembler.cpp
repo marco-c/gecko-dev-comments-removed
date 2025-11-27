@@ -6924,15 +6924,16 @@ BranchWasmRefIsSubtypeRegisters MacroAssembler::regsForBranchWasmRefIsSubtype(
   }
 }
 
-void MacroAssembler::branchWasmRefIsSubtype(
+FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtype(
     Register ref, wasm::MaybeRefType sourceType, wasm::RefType destType,
-    Label* label, bool onSuccess, Register superSTV, Register scratch1,
-    Register scratch2) {
+    Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+    Register scratch1, Register scratch2) {
+  FaultingCodeOffset result = FaultingCodeOffset();
   switch (destType.hierarchy()) {
     case wasm::RefTypeHierarchy::Any: {
-      branchWasmRefIsSubtypeAny(ref, sourceType.valueOr(wasm::RefType::any()),
-                                destType, label, onSuccess, superSTV, scratch1,
-                                scratch2);
+      result = branchWasmRefIsSubtypeAny(
+          ref, sourceType.valueOr(wasm::RefType::any()), destType, label,
+          onSuccess, signalNullChecks, superSTV, scratch1, scratch2);
     } break;
     case wasm::RefTypeHierarchy::Func: {
       branchWasmRefIsSubtypeFunc(ref, sourceType.valueOr(wasm::RefType::func()),
@@ -6951,12 +6952,14 @@ void MacroAssembler::branchWasmRefIsSubtype(
     default:
       MOZ_CRASH("unknown type hierarchy for wasm cast");
   }
+  MOZ_ASSERT_IF(!signalNullChecks, !result.isValid());
+  return result;
 }
 
-void MacroAssembler::branchWasmRefIsSubtypeAny(
+FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
     Register ref, wasm::RefType sourceType, wasm::RefType destType,
-    Label* label, bool onSuccess, Register superSTV, Register scratch1,
-    Register scratch2) {
+    Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+    Register scratch1, Register scratch2) {
   MOZ_ASSERT(sourceType.isValid());
   MOZ_ASSERT(destType.isValid());
   MOZ_ASSERT(sourceType.isAnyHierarchy());
@@ -6987,7 +6990,52 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   };
 
   
-  if (sourceType.isNullable()) {
+  
+  
+  
+  bool willLoadShape =
+      
+      (wasm::RefType::isSubTypeOf(destType, wasm::RefType::eq()) &&
+       !destType.isI31() && !destType.isNone()) &&
+      
+      !(wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::struct_()) ||
+        wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::array()));
+  bool willLoadSTV =
+      
+      (wasm::RefType::isSubTypeOf(destType, wasm::RefType::struct_()) ||
+       wasm::RefType::isSubTypeOf(destType, wasm::RefType::array())) &&
+      !destType.isNone();
+  bool canOmitNullCheck = signalNullChecks && !destType.isNullable() &&
+                          (willLoadShape || willLoadSTV);
+
+  FaultingCodeOffset fco = FaultingCodeOffset();
+  auto trackFCO = [&](FaultingCodeOffset newFco) {
+    if (signalNullChecks && !destType.isNullable() && !fco.isValid()) {
+      fco = newFco;
+    }
+  };
+  auto fcoLogicCheck = mozilla::DebugOnly(mozilla::MakeScopeExit([&]() {
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT_IF(signalNullChecks && fco.isValid(), canOmitNullCheck);
+    MOZ_ASSERT_IF(signalNullChecks && !fco.isValid(), !canOmitNullCheck);
+
+    
+    
+    MOZ_ASSERT_IF(!signalNullChecks, !fco.isValid());
+  }));
+
+  
+  
+
+  
+  if (sourceType.isNullable() && !canOmitNullCheck) {
     branchWasmAnyRefIsNull(true, ref, nullLabel);
   }
 
@@ -6995,13 +7043,15 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   
   if (destType.isNone()) {
     finishFail();
-    return;
+    MOZ_ASSERT(!willLoadShape && !willLoadSTV);
+    return fco;
   }
 
   if (destType.isAny()) {
     
     finishSuccess();
-    return;
+    MOZ_ASSERT(!willLoadShape && !willLoadSTV);
+    return fco;
   }
 
   
@@ -7015,7 +7065,8 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
     if (destType.isI31()) {
       
       finishFail();
-      return;
+      MOZ_ASSERT(!willLoadShape && !willLoadSTV);
+      return fco;
     }
   }
 
@@ -7024,13 +7075,18 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   if (!wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::struct_()) &&
       !wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::array())) {
     branchWasmAnyRefIsObjectOrNull(false, ref, failLabel);
-    branchObjectIsWasmGcObject(false, ref, scratch1, failLabel);
+
+    MOZ_ASSERT(willLoadShape);
+    trackFCO(branchObjectIsWasmGcObject(false, ref, scratch1, failLabel));
+  } else {
+    MOZ_ASSERT(!willLoadShape);
   }
 
   if (destType.isEq()) {
     
     finishSuccess();
-    return;
+    MOZ_ASSERT(!willLoadSTV);
+    return fco;
   }
 
   
@@ -7041,14 +7097,16 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   
   
 
-  loadPtr(Address(ref, int32_t(WasmGcObject::offsetOfSuperTypeVector())),
-          scratch1);
+  MOZ_ASSERT(willLoadSTV);
+  trackFCO(
+      loadPtr(Address(ref, int32_t(WasmGcObject::offsetOfSuperTypeVector())),
+              scratch1));
   if (destType.isTypeRef()) {
     
     branchWasmSTVIsSubtype(scratch1, superSTV, scratch2, destType.typeDef(),
                            label, onSuccess);
     bind(&fallthrough);
-    return;
+    return fco;
   }
 
   
@@ -7060,6 +7118,7 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   branch32(onSuccess ? Assembler::Equal : Assembler::NotEqual, scratch1,
            Imm32(int32_t(destType.typeDefKind())), label);
   bind(&fallthrough);
+  return fco;
 }
 
 void MacroAssembler::branchWasmRefIsSubtypeFunc(
@@ -7491,19 +7550,22 @@ void MacroAssembler::convertStringToWasmAnyRef(Register src, Register dest) {
   orPtr(Imm32(int32_t(wasm::AnyRefTag::String)), src, dest);
 }
 
-void MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject, Register src,
-                                                Register scratch,
-                                                Label* label) {
+FaultingCodeOffset MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject,
+                                                              Register src,
+                                                              Register scratch,
+                                                              Label* label) {
   constexpr uint32_t ShiftedMask = (Shape::kindMask() << Shape::kindShift());
   constexpr uint32_t ShiftedKind =
       (uint32_t(Shape::Kind::WasmGC) << Shape::kindShift());
   MOZ_ASSERT(src != scratch);
 
-  loadPtr(Address(src, JSObject::offsetOfShape()), scratch);
+  FaultingCodeOffset fco =
+      loadPtr(Address(src, JSObject::offsetOfShape()), scratch);
   load32(Address(scratch, Shape::offsetOfImmutableFlags()), scratch);
   and32(Imm32(ShiftedMask), scratch);
   branch32(isGcObject ? Assembler::Equal : Assembler::NotEqual, scratch,
            Imm32(ShiftedKind), label);
+  return fco;
 }
 
 void MacroAssembler::wasmNewStructObject(Register instance, Register result,

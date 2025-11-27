@@ -1,6 +1,3 @@
-
-
-
 load(libdir + "wasm-binary.js");
 
 
