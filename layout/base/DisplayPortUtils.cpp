@@ -25,6 +25,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
+#include "AnchorPositioningUtils.h"
 
 namespace mozilla {
 
@@ -834,8 +835,17 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
 
 nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
     nsIFrame* aFrame) {
+  
+  
+  
+  
   if (aFrame->IsMenuPopupFrame()) {
     return nullptr;
+  }
+  nsIFrame* anchor = nullptr;
+  while ((anchor =
+              AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
+    aFrame = anchor;
   }
   if (aFrame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
       nsLayoutUtils::IsReallyFixedPos(aFrame)) {
