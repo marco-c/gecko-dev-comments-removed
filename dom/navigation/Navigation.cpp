@@ -1363,6 +1363,11 @@ struct NavigationWaitForAllScope final : public nsISupports,
     if (endResultIsSameDocument) {
       
       AutoTArray<RefPtr<Promise>, 16> promiseList;
+
+      if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
+        promiseList.AppendElement(mAPIMethodTracker->CommittedPromise());
+      }
+
       
       for (auto& handler : mEvent->NavigationHandlerList().Clone()) {
         
@@ -1408,7 +1413,8 @@ struct NavigationWaitForAllScope final : public nsISupports,
                   scope->CommitNavigateEventSuccessSteps();
                 }
               };
-      if (mAPIMethodTracker) {
+      if (mAPIMethodTracker &&
+          !StaticPrefs::dom_navigation_api_internal_method_tracker()) {
         LOG_FMTD("Waiting for committed");
         mAPIMethodTracker->CommittedPromise()
             ->AddCallbacksWithCycleCollectedArgs(
@@ -1505,6 +1511,19 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
 
+already_AddRefed<NavigationAPIMethodTracker> CreateInternalTracker(
+    Navigation* aNavigation) {
+  RefPtr committedPromise =
+      Promise::CreateInfallible(aNavigation->GetOwnerGlobal());
+  (void)committedPromise->SetAnyPromiseIsHandled();
+  RefPtr finishedPromise = Promise::CreateResolvedWithUndefined(
+      aNavigation->GetOwnerGlobal(), IgnoreErrors());
+  return MakeAndAddRef<NavigationAPIMethodTracker>(
+      aNavigation, Nothing(), JS::UndefinedHandleValue,
+       nullptr,
+       nullptr, committedPromise, finishedPromise);
+}
+
 
 bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
@@ -1552,7 +1571,10 @@ bool Navigation::InnerFireNavigateEvent(
   
   if (apiMethodTracker) {
     apiMethodTracker->MarkAsNotPending();
+  } else if (StaticPrefs::dom_navigation_api_internal_method_tracker()) {
+    apiMethodTracker = CreateInternalTracker(this);
   }
+
   
   
   mOngoingAPIMethodTracker = apiMethodTracker;
