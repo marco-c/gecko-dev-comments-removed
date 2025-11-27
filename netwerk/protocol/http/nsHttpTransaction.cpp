@@ -1851,6 +1851,11 @@ nsresult nsHttpTransaction::Restart() {
     return NS_ERROR_NET_RESET;
   }
 
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+
   LOG(("restarting transaction @%p\n", this));
 
   if (mRequestHead) {
