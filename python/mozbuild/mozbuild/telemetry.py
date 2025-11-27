@@ -6,6 +6,7 @@
 This file contains functions used for telemetry.
 """
 
+import functools
 import os
 import platform
 import subprocess
@@ -166,38 +167,31 @@ def get_shell_info():
 
 def get_vscode_running():
     """Return if the vscode is currently running."""
-    try:
-        import psutil
-
-        for proc in psutil.process_iter():
-            try:
-                
-                
-                
-                if proc.name in ("Code.exe", "Code Helper (Renderer)", "code"):
-                    return True
-            except Exception:
-                
-                continue
-    except Exception:
-        
-        
-        return False
-
-    return False
+    return any(
+        _is_process_running(pname)
+        for pname in ("Code.exe", "Code Helper (Renderer)", "code")
+    )
 
 
 def _is_process_running(process_name: str) -> bool:
-    """Check if a process is running using pgrep."""
-    try:
-        result = subprocess.run(
-            ["pgrep", "-f", process_name],
-            capture_output=True,
-            check=False,
-        )
-        return result.returncode == 0
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
+    """Check if a process is running using psutil."""
+
+    @functools.cache
+    def list_running_processes():
+        running_processes = set()
+        try:
+            import psutil
+
+            for proc in psutil.process_iter():
+                try:
+                    running_processes.add(proc.name())
+                except Exception:
+                    continue
+        except Exception:
+            ...
+        return running_processes
+
+    return process_name in list_running_processes()
 
 
 def get_fleet_running() -> bool:
