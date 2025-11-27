@@ -45,9 +45,8 @@ class nsStyleUtil {
 
   
   
-  static void AppendEscapedCSSString(const nsACString& aString,
-                                     nsACString& aResult,
-                                     char aQuoteChar = '"');
+  static void AppendQuotedCSString(const nsACString& aString,
+                                   nsACString& aResult, char aQuoteChar = '"');
 
   
   

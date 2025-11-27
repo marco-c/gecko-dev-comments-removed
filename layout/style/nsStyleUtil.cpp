@@ -139,8 +139,8 @@ bool nsStyleUtil::ValueIncludes(const nsAString& aValueList,
   return false;
 }
 
-void nsStyleUtil::AppendEscapedCSSString(const nsACString& aString,
-                                         nsACString& aReturn, char aQuoteChar) {
+void nsStyleUtil::AppendQuotedCSSString(const nsACString& aString,
+                                        nsACString& aReturn, char aQuoteChar) {
   MOZ_ASSERT(aQuoteChar == '\'' || aQuoteChar == '"',
              "CSS strings must be quoted with ' or \"");
 
@@ -149,19 +149,14 @@ void nsStyleUtil::AppendEscapedCSSString(const nsACString& aString,
   const char* in = aString.BeginReading();
   const char* const end = aString.EndReading();
   for (; in != end; in++) {
-    if (*in < 0x20 || *in == 0x7F) {
+    if (*in == '\\' || *in == aQuoteChar) {
       
-      aReturn.AppendPrintf("\\%x ", *in);
-    } else {
-      if (*in == '"' || *in == '\'' || *in == '\\') {
-        
-        
-        
-        
-        aReturn.Append('\\');
-      }
-      aReturn.Append(*in);
+      
+      
+      
+      aReturn.Append('\\');
     }
+    aReturn.Append(*in);
   }
   aReturn.Append(aQuoteChar);
 }

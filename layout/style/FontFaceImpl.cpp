@@ -451,7 +451,7 @@ bool FontFaceImpl::SetDescriptor(nsCSSFontDesc aFontDesc,
     if (aFontDesc == eCSSFontDesc_Family) {
       
       nsAutoCString quoted;
-      nsStyleUtil::AppendEscapedCSSString(aValue, quoted, '"');
+      nsStyleUtil::AppendQuotedCSSString(aValue, quoted, '"');
       if (Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &quoted, url,
                                            &changed)) {
         return true;
