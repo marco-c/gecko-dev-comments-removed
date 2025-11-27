@@ -5231,7 +5231,14 @@ UniquePtr<SelectionDetails> nsTextFrame::GetSelectionDetails() {
     return nullptr;
   }
   UniquePtr<SelectionDetails> details = frameSelection->LookUpSelection(
-      mContent, GetContentOffset(), GetContentLength(), false);
+      mContent, GetContentOffset(), GetContentLength(),
+      
+      
+      
+      
+      
+      IsSelectable() ? nsFrameSelection::IgnoreNormalSelection::No
+                     : nsFrameSelection::IgnoreNormalSelection::Yes);
   for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     sd->mStart += mContentOffset;
     sd->mEnd += mContentOffset;

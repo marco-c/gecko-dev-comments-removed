@@ -538,6 +538,21 @@ class nsIContent : public nsINode {
   nsIFrame* GetPrimaryFrame(mozilla::FlushType aType);
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool IsSelectable() const;
+
+  
   inline void SetPrimaryFrame(nsIFrame* aFrame);
 
   nsresult LookupNamespaceURIInternal(const nsAString& aNamespacePrefix,

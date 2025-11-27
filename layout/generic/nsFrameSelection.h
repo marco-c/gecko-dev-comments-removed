@@ -433,10 +433,11 @@ class nsFrameSelection final {
 
 
 
-  mozilla::UniquePtr<SelectionDetails> LookUpSelection(nsIContent* aContent,
-                                                       int32_t aContentOffset,
-                                                       int32_t aContentLength,
-                                                       bool aSlowCheck) const;
+
+  enum class IgnoreNormalSelection : bool { No, Yes };
+  mozilla::UniquePtr<SelectionDetails> LookUpSelection(
+      nsIContent* aContent, int32_t aContentOffset, int32_t aContentLength,
+      IgnoreNormalSelection aIgnoreNormalSelection) const;
 
   
 

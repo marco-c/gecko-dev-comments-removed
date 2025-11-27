@@ -222,13 +222,62 @@ class AccessibleCaretManager {
   void SetSelectionDirection(nsDirection aDir) const;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIFrame* GetFrameForRangeStart(nsRange& aRange,
+                                  int32_t* aOutOffsetInFrameContent,
+                                  nsIContent** aOutContent = nullptr,
+                                  int32_t* aOutOffsetInContent = nullptr) const;
+
   
-  
-  
-  nsIFrame* GetFrameForFirstRangeStartOrLastRangeEnd(
-      nsDirection aDirection, int32_t* aOutOffset,
-      nsIContent** aOutContent = nullptr,
-      int32_t* aOutContentOffset = nullptr) const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsIFrame* GetFrameForRangeEnd(nsRange& aRange,
+                                int32_t* aOutOffsetInFrameContent,
+                                nsIContent** aOutContent = nullptr,
+                                int32_t* aOutOffsetInContent = nullptr) const;
 
   MOZ_CAN_RUN_SCRIPT nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
@@ -279,9 +328,9 @@ class AccessibleCaretManager {
 
   
   virtual bool CompareTreePosition(const nsIFrame* aStartFrame,
+                                   int32_t aStartOffset,
                                    const nsIFrame* aEndFrame,
-                                   const nsIContent* aStartContent,
-                                   const nsIContent* aEndContent) const;
+                                   int32_t aEndOffset) const;
 
   
   

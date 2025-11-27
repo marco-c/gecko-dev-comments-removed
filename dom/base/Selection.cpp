@@ -1113,8 +1113,9 @@ static void UserSelectRangesToAdd(nsRange* aItem,
   
   
   
-  if (IsEditorNode(aItem->GetStartContainer()) &&
-      IsEditorNode(aItem->GetEndContainer())) {
+  if (!StaticPrefs::dom_selection_exclude_non_selectable_nodes() ||
+      (IsEditorNode(aItem->GetStartContainer()) &&
+       IsEditorNode(aItem->GetEndContainer()))) {
     
     
     aRangesToAdd.AppendElement(aItem);
@@ -2114,8 +2115,7 @@ void Selection::SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
 
 UniquePtr<SelectionDetails> Selection::LookUpSelection(
     nsIContent* aContent, uint32_t aContentOffset, uint32_t aContentLength,
-    UniquePtr<SelectionDetails> aDetailsHead, SelectionType aSelectionType,
-    bool aSlowCheck) {
+    UniquePtr<SelectionDetails> aDetailsHead, SelectionType aSelectionType) {
   if (!aContent) {
     return aDetailsHead;
   }

@@ -135,6 +135,7 @@
 #include "nsCOMPtr.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCompatibility.h"
+#include "nsComputedDOMStyle.h"
 #include "nsContainerFrame.h"
 #include "nsContentList.h"
 #include "nsContentListDeclarations.h"
@@ -286,6 +287,56 @@ nsIFrame* nsIContent::GetPrimaryFrame(mozilla::FlushType aType) {
   }
 
   return frame;
+}
+
+bool nsIContent::IsSelectable() const {
+  if (!IsInComposedDoc() ||
+      
+      IsGeneratedContentContainerForBefore() ||
+      IsGeneratedContentContainerForAfter() ||
+      
+      (!IsElement() && !IsText() && !IsShadowRoot())) {
+    return false;
+  }
+  
+  
+  if (IsEditable()) {
+    return true;
+  }
+  
+  if (const auto* const textControlElement =
+          mozilla::TextControlElement::FromNode(this)) {
+    if (textControlElement->IsSingleLineTextControlOrTextArea()) {
+      return true;
+    }
+  }
+  
+  for (const nsIContent* content = this; content;
+       content = content->GetFlattenedTreeParent()) {
+    
+    if (nsIFrame* const frame = content->GetPrimaryFrame()) {
+      
+      
+      return frame->IsSelectable();
+    }
+    if (!content->IsElement()) {
+      
+      
+      continue;
+    }
+    
+    
+    
+    
+    const RefPtr<const mozilla::ComputedStyle> elementStyle =
+        nsComputedDOMStyle::GetComputedStyleNoFlush(content->AsElement());
+    if (elementStyle &&
+        elementStyle->UserSelect() != mozilla::StyleUserSelect::Auto) {
+      return elementStyle->UserSelect() != mozilla::StyleUserSelect::None;
+    }
+    
+  }
+  return false;
 }
 
 namespace mozilla::dom {
