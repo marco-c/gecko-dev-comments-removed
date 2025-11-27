@@ -335,8 +335,13 @@ ENameValueFlag HTMLTextFieldAccessible::DirectName(nsString& aName) const {
   ENameValueFlag nameFlag = LocalAccessible::DirectName(aName);
   if (!aName.IsEmpty()) return nameFlag;
 
-  
-  mContent->AsElement()->GetAttr(nsGkAtoms::placeholder, aName);
+  mContent->AsElement()->GetAttr(nsGkAtoms::title, aName);
+  aName.CompressWhitespace();
+  if (aName.IsEmpty()) {
+    
+    mContent->AsElement()->GetAttr(nsGkAtoms::placeholder, aName);
+  }
+
   return eNameOK;
 }
 
