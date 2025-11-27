@@ -593,7 +593,7 @@ void ScriptLoader::RunScriptWhenSafe(ScriptLoadRequest* aRequest) {
 }
 
 nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
-  aRequest->DropBytecode();
+  aRequest->DropSRIOrSRIAndSerializedStencil();
   TRACE_FOR_TEST(aRequest, "load:fallback");
 
   
@@ -2538,7 +2538,7 @@ nsresult ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest) {
     
     
     
-    aRequest->DropBytecode();
+    aRequest->DropSRIOrSRIAndSerializedStencil();
   }
 
   return rv;
@@ -3667,20 +3667,20 @@ void ScriptLoader::UpdateDiskCache() {
     if (!EncodeAndCompress(fc, loadedScript, loadedScript->GetStencil(),
                            loadedScript->SRI(), compressed)) {
       loadedScript->DropDiskCacheReference();
-      loadedScript->DropBytecode();
+      loadedScript->DropSRIOrSRIAndSerializedStencil();
       TRACE_FOR_TEST(loadedScript, "diskcache:failed");
       continue;
     }
 
     if (!SaveToDiskCache(loadedScript, compressed)) {
       loadedScript->DropDiskCacheReference();
-      loadedScript->DropBytecode();
+      loadedScript->DropSRIOrSRIAndSerializedStencil();
       TRACE_FOR_TEST(loadedScript, "diskcache:failed");
       continue;
     }
 
     loadedScript->DropDiskCacheReference();
-    loadedScript->DropBytecode();
+    loadedScript->DropSRIOrSRIAndSerializedStencil();
     TRACE_FOR_TEST(loadedScript, "diskcache:saved");
   }
   mDiskCacheQueue.Clear();
@@ -3791,7 +3791,7 @@ void ScriptLoader::GiveUpDiskCaching() {
     TRACE_FOR_TEST(loadedScript, "diskcache:giveup");
 
     loadedScript->DropDiskCacheReference();
-    loadedScript->DropBytecode();
+    loadedScript->DropSRIOrSRIAndSerializedStencil();
   }
   mDiskCacheQueue.Clear();
 
