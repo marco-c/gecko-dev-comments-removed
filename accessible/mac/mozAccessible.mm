@@ -493,7 +493,6 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   switch (aAccessible->Role()) {
     case roles::PAGETAB:
     case roles::COMBOBOX_OPTION:
-    case roles::OPTION:
     case roles::PARENT_MENUITEM:
     case roles::MENUITEM:
       
@@ -1131,8 +1130,6 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       mIsLiveRegion = false;
       break;
     case nsIAccessibleEvent::EVENT_NAME_CHANGE: {
-      
-      CacheDomainActivationBlocker cacheBlocker;
       nsAutoString nameNotUsed;
       if (ProvidesTitle(mGeckoAccessible, nameNotUsed)) {
         [self moxPostNotification:NSAccessibilityTitleChangedNotification];
