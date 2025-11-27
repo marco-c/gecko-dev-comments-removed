@@ -143,7 +143,11 @@ class nsView final : public nsIWidgetListener {
   nsSize GetSize() const { return mSize; }
 
   
-  void DetachWidget();
+
+
+
+
+  void DestroyWidget();
 
   
 
@@ -172,6 +176,10 @@ class nsView final : public nsIWidgetListener {
 
 
   bool HasWidget() const { return mWindow != nullptr; }
+
+  void SetForcedRepaint(bool aForceRepaint) { mForcedRepaint = aForceRepaint; }
+
+  void SetNeedsWindowPropertiesSync();
 
 #ifdef DEBUG
   
@@ -218,6 +226,8 @@ class nsView final : public nsIWidgetListener {
  private:
   explicit nsView(nsViewManager* = nullptr);
 
+  bool ForcedRepaint() { return mForcedRepaint; }
+
   void SetSize(const nsSize& aSize) { mSize = aSize; }
 
   void CallOnAllRemoteChildren(
@@ -228,6 +238,7 @@ class nsView final : public nsIWidgetListener {
   nsCOMPtr<nsIWidget> mWindow;
   nsCOMPtr<nsIWidget> mPreviousWindow;
   nsSize mSize;
+  bool mForcedRepaint;
   bool mIsDirty = false;
 };
 

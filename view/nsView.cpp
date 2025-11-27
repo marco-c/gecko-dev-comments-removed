@@ -27,8 +27,14 @@
 using namespace mozilla;
 using namespace mozilla::widget;
 
-nsView::nsView(nsViewManager* aViewManager) : mViewManager(aViewManager) {
+nsView::nsView(nsViewManager* aViewManager)
+    : mViewManager(aViewManager), mForcedRepaint(false) {
   MOZ_COUNT_CTOR(nsView);
+
+  
+  
+  
+  
 }
 
 nsView::~nsView() {
@@ -48,10 +54,27 @@ nsView::~nsView() {
   }
 
   
-  DetachWidget();
+  DestroyWidget();
 }
 
-void nsView::DetachWidget() {
+class DestroyWidgetRunnable : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+
+  explicit DestroyWidgetRunnable(nsIWidget* aWidget)
+      : mozilla::Runnable("DestroyWidgetRunnable"), mWidget(aWidget) {}
+
+ private:
+  nsCOMPtr<nsIWidget> mWidget;
+};
+
+NS_IMETHODIMP DestroyWidgetRunnable::Run() {
+  mWidget->Destroy();
+  mWidget = nullptr;
+  return NS_OK;
+}
+
+void nsView::DestroyWidget() {
   if (mWindow) {
     
     
@@ -137,7 +160,14 @@ PresShell* nsView::GetPresShell() { return GetViewManager()->GetPresShell(); }
 
 bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
                            int32_t aHeight) {
-  PresShell* ps = GetPresShell();
+  
+  
+  SetForcedRepaint(true);
+  if (this != mViewManager->GetRootView()) {
+    return false;
+  }
+
+  PresShell* ps = mViewManager->GetPresShell();
   if (!ps) {
     return false;
   }
@@ -247,7 +277,7 @@ void nsView::DidPaintWindow() {
 void nsView::DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                                 const TimeStamp& aCompositeStart,
                                 const TimeStamp& aCompositeEnd) {
-  PresShell* presShell = GetPresShell();
+  PresShell* presShell = mViewManager->GetPresShell();
   if (!presShell) {
     return;
   }
@@ -279,7 +309,7 @@ nsEventStatus nsView::HandleEvent(WidgetGUIEvent* aEvent) {
 
 void nsView::SafeAreaInsetsChanged(
     const LayoutDeviceIntMargin& aSafeAreaInsets) {
-  PresShell* presShell = GetPresShell();
+  PresShell* presShell = mViewManager->GetPresShell();
   if (!presShell) {
     return;
   }
@@ -311,7 +341,7 @@ bool nsView::IsPrimaryFramePaintSuppressed() const {
 
 void nsView::CallOnAllRemoteChildren(
     const std::function<CallState(dom::BrowserParent*)>& aCallback) {
-  PresShell* presShell = GetPresShell();
+  PresShell* presShell = mViewManager->GetPresShell();
   if (!presShell) {
     return;
   }
