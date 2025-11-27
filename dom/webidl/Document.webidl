@@ -372,12 +372,6 @@ partial interface Document {
 
 //  Mozilla extensions of various sorts
 partial interface Document {
-  // @deprecated We are going to remove these (bug 1584269).
-  [Pref="dom.events.script_execute.enabled"]
-  attribute EventHandler onbeforescriptexecute;
-  [Pref="dom.events.script_execute.enabled"]
-  attribute EventHandler onafterscriptexecute;
-
   // Creates a new XUL element regardless of the document's default type.
   [ChromeOnly, CEReactions, NewObject, Throws]
   Element createXULElement(DOMString localName, optional (ElementCreationOptions or DOMString) options = {});
@@ -749,6 +743,8 @@ partial interface Document {
 partial interface Document {
   [Pref="dom.viewTransitions.enabled"]
   ViewTransition startViewTransition(optional ViewTransitionUpdateCallback updateCallback);
+  [Pref="dom.viewTransitions.enabled"]
+  readonly attribute ViewTransition? activeViewTransition;
 };
 
 // https://github.com/w3c/csswg-drafts/pull/10767 for the name divergence in the spec
