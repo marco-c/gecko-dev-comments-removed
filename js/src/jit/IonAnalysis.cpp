@@ -5145,14 +5145,36 @@ static MDefinition* SkipIterObjectUnbox(MDefinition* ins) {
   return ins;
 }
 
-#ifndef JS_CODEGEN_X86
 static MDefinition* SkipBox(MDefinition* ins) {
   if (ins->isBox()) {
     return ins->toBox()->input();
   }
   return ins;
 }
-#endif
+
+static MObjectToIterator* FindObjectToIteratorUse(MDefinition* ins) {
+  for (MUseIterator use(ins->usesBegin()); use != ins->usesEnd(); use++) {
+    if (!(*use)->consumer()->isDefinition()) {
+      continue;
+    }
+    MDefinition* def = (*use)->consumer()->toDefinition();
+    if (def->isGuardIsNotProxy()) {
+      MObjectToIterator* recursed = FindObjectToIteratorUse(def);
+      if (recursed) {
+        return recursed;
+      }
+    } else if (def->isUnbox()) {
+      MObjectToIterator* recursed = FindObjectToIteratorUse(def);
+      if (recursed) {
+        return recursed;
+      }
+    } else if (def->isObjectToIterator()) {
+      return def->toObjectToIterator();
+    }
+  }
+
+  return nullptr;
+}
 
 bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
   bool changed = false;
@@ -5215,11 +5237,34 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#ifdef JS_CODEGEN_X86
+      
+      
+      bool supportObjectKeys = false;
+#else
+      bool supportObjectKeys = true;
+#endif
 
       MObjectToIterator* iter = nullptr;
-#ifndef JS_CODEGEN_X86
+      MObjectToIterator* otherIter = nullptr;
       MDefinition* iterElementIndex = nullptr;
-#endif
       if (idVal->isIteratorMore()) {
         auto* iterNext = idVal->toIteratorMore();
 
@@ -5232,8 +5277,7 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
             SkipIterObjectUnbox(receiver)) {
           continue;
         }
-#ifndef JS_CODEGEN_X86
-      } else if (SkipBox(idVal)->isLoadIteratorElement()) {
+      } else if (supportObjectKeys && SkipBox(idVal)->isLoadIteratorElement()) {
         auto* iterLoad = SkipBox(idVal)->toLoadIteratorElement();
 
         if (!iterLoad->iter()->isObjectToIterator()) {
@@ -5243,16 +5287,31 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
         iter = iterLoad->iter()->toObjectToIterator();
         if (SkipIterObjectUnbox(iter->object()) !=
             SkipIterObjectUnbox(receiver)) {
-          continue;
+          if (!setValue) {
+            otherIter = FindObjectToIteratorUse(SkipIterObjectUnbox(receiver));
+          }
+
+          if (!otherIter) {
+            continue;
+          }
         }
         iterElementIndex = iterLoad->index();
-#endif
       } else {
         continue;
       }
 
-      MInstruction* indicesCheck =
-          MIteratorHasIndices::New(graph.alloc(), iter->object(), iter);
+      MOZ_ASSERT_IF(iterElementIndex, supportObjectKeys);
+      MOZ_ASSERT_IF(otherIter, supportObjectKeys);
+
+      MInstruction* indicesCheck = nullptr;
+      if (otherIter) {
+        indicesCheck = MIteratorsMatchAndHaveIndices::New(
+            graph.alloc(), otherIter->object(), iter, otherIter);
+      } else {
+        indicesCheck =
+            MIteratorHasIndices::New(graph.alloc(), iter->object(), iter);
+      }
+
       MInstruction* replacement;
       if (ins->isHasOwnCache() || ins->isMegamorphicHasProp()) {
         MOZ_ASSERT(!setValue);
@@ -5260,7 +5319,6 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
       } else if (ins->isMegamorphicLoadSlotByValue() ||
                  ins->isGetPropertyCache()) {
         MOZ_ASSERT(!setValue);
-#ifndef JS_CODEGEN_X86
         if (iterElementIndex) {
           replacement = MLoadSlotByIteratorIndexIndexed::New(
               graph.alloc(), receiver, iter, iterElementIndex);
@@ -5268,14 +5326,9 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
           replacement =
               MLoadSlotByIteratorIndex::New(graph.alloc(), receiver, iter);
         }
-#else
-        replacement =
-            MLoadSlotByIteratorIndex::New(graph.alloc(), receiver, iter);
-#endif
       } else {
         MOZ_ASSERT(ins->isMegamorphicSetElement() || ins->isSetPropertyCache());
         MOZ_ASSERT(setValue);
-#ifndef JS_CODEGEN_X86
         if (iterElementIndex) {
           replacement = MStoreSlotByIteratorIndexIndexed::New(
               graph.alloc(), receiver, iter, iterElementIndex, setValue);
@@ -5283,10 +5336,6 @@ bool jit::OptimizeIteratorIndices(const MIRGenerator* mir, MIRGraph& graph) {
           replacement = MStoreSlotByIteratorIndex::New(graph.alloc(), receiver,
                                                        iter, setValue);
         }
-#else
-        replacement = MStoreSlotByIteratorIndex::New(graph.alloc(), receiver,
-                                                     iter, setValue);
-#endif
       }
 
       if (!block->wrapInstructionInFastpath(ins, replacement, indicesCheck)) {
