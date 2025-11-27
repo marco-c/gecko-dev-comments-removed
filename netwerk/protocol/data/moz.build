@@ -4,11 +4,6 @@
 
 
 
-EXPORTS.mozilla.net += [
-    "DataChannelChild.h",
-    "DataChannelParent.h",
-]
-
 XPIDL_SOURCES += [
     "nsIDataChannel.idl",
 ]
@@ -21,8 +16,6 @@ EXPORTS += [
 ]
 
 UNIFIED_SOURCES += [
-    "DataChannelChild.cpp",
-    "DataChannelParent.cpp",
     "nsDataChannel.cpp",
     "nsDataHandler.cpp",
 ]
