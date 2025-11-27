@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 import mozpack.path as mozpath
-from buildconfig import topsrcdir
 from mach.decorators import Command, CommandArgument
 from mozfile import which
 
@@ -49,7 +48,9 @@ def run(command_context, ide, no_interactive, args):
         return 1
 
     if ide == "vscode":
-        result = subprocess.run([sys.executable, "mach", "configure"], cwd=topsrcdir)
+        result = subprocess.run(
+            [sys.executable, "mach", "configure"], cwd=command_context.topsrcdir
+        )
         if result.returncode:
             return result.returncode
 
@@ -58,7 +59,7 @@ def run(command_context, ide, no_interactive, args):
         
         result = subprocess.run(
             [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"],
-            cwd=topsrcdir,
+            cwd=command_context.topsrcdir,
         )
         if result.returncode:
             return result.returncode
@@ -66,7 +67,9 @@ def run(command_context, ide, no_interactive, args):
         
         
         
-        result = subprocess.run([sys.executable, "mach", "build"], cwd=topsrcdir)
+        result = subprocess.run(
+            [sys.executable, "mach", "build"], cwd=command_context.topsrcdir
+        )
         if result.returncode:
             return result.returncode
 
@@ -82,7 +85,8 @@ def run(command_context, ide, no_interactive, args):
     if backend:
         
         result = subprocess.run(
-            [sys.executable, "mach", "build-backend", "-b", backend], cwd=topsrcdir
+            [sys.executable, "mach", "build-backend", "-b", backend],
+            cwd=command_context.topsrcdir,
         )
         if result.returncode:
             return result.returncode
