@@ -1016,7 +1016,7 @@ async function checkLoadedScripts({
 
 
 function isLikelyFocusChange(rects, frame) {
-  if (rects.length > 3 && rects.every(r => r.y2 < 100)) {
+  if (rects.length >= 3 && rects.every(r => r.y2 < 100)) {
     
     
     
