@@ -4571,6 +4571,21 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
 
   
   
+  nsCOMPtr<nsICookieJarSettings> oldCookieJarSettings;
+  mLoadInfo->GetCookieJarSettings(getter_AddRefs(oldCookieJarSettings));
+
+  RefPtr<CookieJarSettings> newCookieJarSettings;
+  newCookieJarSettings = CookieJarSettings::Cast(oldCookieJarSettings)->Clone();
+
+  newLoadInfo->SetCookieJarSettings(newCookieJarSettings);
+
+  
+  
+  static_cast<net::LoadInfo*>(newLoadInfo.get())
+      ->ClearIsThirdPartyContextToTopWindow();
+
+  
+  
   
   newLoadInfo->SetResultPrincipalURI(nullptr);
 
