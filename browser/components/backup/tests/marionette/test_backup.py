@@ -27,6 +27,11 @@ class BackupTest(MarionetteTestCase):
                 "browser.backup.log": True,
                 "browser.backup.archive.enabled": True,
                 "browser.backup.restore.enabled": True,
+                "browser.backup.archive.overridePlatformCheck": True,
+                "browser.backup.restore.overridePlatformCheck": True,
+                
+                
+                "browser.sessionstore.resume_from_crash": True,
             }
         )
 
@@ -93,6 +98,11 @@ class BackupTest(MarionetteTestCase):
         
         
         self.marionette.restart()
+
+        
+        
+        
+        self.add_test_sessionstore()
 
         
         
@@ -254,6 +264,7 @@ class BackupTest(MarionetteTestCase):
         self.verify_recovered_preferences()
         self.verify_recovered_permissions()
         self.verify_recovered_payment_methods(osKeyStoreLabel)
+        self.verify_recovered_sessionstore()
 
         
         self.marionette.execute_async_script(
@@ -859,3 +870,26 @@ class BackupTest(MarionetteTestCase):
             script_args=[osKeyStoreLabel],
         )
         self.assertTrue(cardExists)
+
+    def add_test_sessionstore(self):
+        with self.marionette.using_context("content"):
+            self.marionette.navigate("about:mozilla")
+
+    def verify_recovered_sessionstore(self):
+        [tabCount, url] = self.marionette.execute_script(
+            """
+          const { SessionStore } = ChromeUtils.importESModule(
+            "resource:///modules/sessionstore/SessionStore.sys.mjs"
+          );
+          const session = SessionStore.getCurrentState(true);
+          const win = session.windows[0];
+          const tabLen = win.tabs.length;
+          const tab = win.tabs[0];
+          const entry = tab.entries[0];
+          const url = entry.url;
+          return [tabLen, url];
+        """
+        )
+
+        self.assertEqual(tabCount, 1)
+        self.assertEqual(url, "about:mozilla")
