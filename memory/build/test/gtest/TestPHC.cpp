@@ -70,12 +70,7 @@ TEST(PHC, TestPHCAllocations)
   }
 
   
-  
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
   ASSERT_POS(8U, 16U);
-#else
-  ASSERT_POS(8U, 8U);
-#endif
   for (unsigned i = 16; i <= kPageSize; i *= 2) {
     ASSERT_POS(i, i);
   }
@@ -99,12 +94,7 @@ TEST(PHC, TestPHCAllocations)
   free(p);
 
   
-  
-#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD)
   ASSERT_ALIGN(8U, 16U);
-#else
-  ASSERT_ALIGN(8U, 8U);
-#endif
   for (unsigned i = 16; i <= kPageSize; i *= 2) {
     ASSERT_ALIGN(i, i);
   }
@@ -513,7 +503,11 @@ TEST(PHC, TestPHCLimit)
   
   size_t limit =
 #ifdef HAVE_64BIT_BUILD
-      1024 * 1024 * 1024;
+#  if defined(XP_DARWIN) && defined(__aarch64__)
+      512 * 1024 * 1024;
+#  else
+      128 * 1024 * 1024;
+#  endif
 #else
       2 * 1024 * 1024;
 #endif
