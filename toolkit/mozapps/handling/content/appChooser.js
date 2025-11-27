@@ -146,7 +146,12 @@ let dialog = {
           
           
           
-          elm.setAttribute("image", uri.prePath + "/favicon.ico");
+          let params = new URLSearchParams({
+            url: uri.prePath + "/favicon.ico",
+            width: 32,
+            height: 32,
+          });
+          elm.setAttribute("image", "moz-remote-image://?" + params);
         }
         elm.setAttribute("description", uri.prePath);
 
