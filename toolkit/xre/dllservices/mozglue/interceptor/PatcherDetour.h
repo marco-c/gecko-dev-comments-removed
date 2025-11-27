@@ -937,6 +937,8 @@ class WindowsDllDetourPatcher final
   }
 #endif  
 
+  
+  
   void CreateTrampoline(ReadOnlyTargetFunction<MMPolicyT>& origBytes,
                         TrampPoolT* aTrampPool, Trampoline<MMPolicyT>& aTramp,
                         intptr_t aDest, void** aOutTramp) {
@@ -964,7 +966,6 @@ class WindowsDllDetourPatcher final
 
     auto clearInstanceOnFailure = MakeScopeExit([this, aOutTramp, &tramp,
                                                  &origBytes]() -> void {
-      
       
       if (*aOutTramp) {
         return;
@@ -1699,6 +1700,23 @@ class WindowsDllDetourPatcher final
         break;
       }
 
+      if (pcRelInfo.inspect().mType == arm64::LoadOrBranch::Type::Branch) {
+        
+        
+        
+        
+        
+
+        
+        
+        if (!origBytes.BackUpOneInstruction()) {
+          return;
+        }
+
+        break;
+      }
+
+      MOZ_ASSERT(pcRelInfo.inspect().mType == arm64::LoadOrBranch::Type::Load);
       
       tramp.WriteLoadLiteral(pcRelInfo.inspect().mAbsAddress,
                              pcRelInfo.inspect().mDestReg);
