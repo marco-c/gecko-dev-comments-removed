@@ -147,25 +147,6 @@ void MaybePopReturnFuses(JSContext* cx, Handle<NativeObject*> nobj) {
   }
 }
 
-static void MaybePopStringPrototypeSymbolsFuse(JSContext* cx, NativeObject* obj,
-                                               PropertyKey key) {
-  if (!key.isSymbol()) {
-    return;
-  }
-  GlobalObject* global = &obj->global();
-  if (obj != global->maybeGetPrototype(JSProto_String) &&
-      obj != global->maybeGetPrototype(JSProto_Object)) {
-    return;
-  }
-  if (key.toSymbol() == cx->wellKnownSymbols().match ||
-      key.toSymbol() == cx->wellKnownSymbols().replace ||
-      key.toSymbol() == cx->wellKnownSymbols().search ||
-      key.toSymbol() == cx->wellKnownSymbols().split) {
-    obj->realm()->realmFuses.optimizeStringPrototypeSymbolsFuse.popFuse(
-        cx, obj->realm()->realmFuses);
-  }
-}
-
 
 bool Watchtower::watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
                                       HandleId id) {
@@ -182,8 +163,6 @@ bool Watchtower::watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
     if (id == NameToId(cx->names().return_)) {
       MaybePopReturnFuses(cx, obj);
     }
-
-    MaybePopStringPrototypeSymbolsFuse(cx, obj, id);
   }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
@@ -297,11 +276,6 @@ static bool WatchProtoChangeImpl(JSContext* cx, HandleObject obj) {
 
     if (nobj == nobj->global().maybeGetIteratorPrototype()) {
       nobj->realm()->realmFuses.iteratorPrototypeHasObjectProto.popFuse(
-          cx, nobj->realm()->realmFuses);
-    }
-
-    if (nobj == nobj->global().maybeGetPrototype(JSProto_String)) {
-      nobj->realm()->realmFuses.optimizeStringPrototypeSymbolsFuse.popFuse(
           cx, nobj->realm()->realmFuses);
     }
 
@@ -622,7 +596,8 @@ static void MaybePopRealmFuses(JSContext* cx, NativeObject* obj, jsid id) {
 
 bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
                                          Handle<NativeObject*> obj, HandleId id,
-                                         PropertyInfo propInfo) {
+                                         PropertyInfo propInfo,
+                                         bool* wasTrackedObjectFuseProp) {
   MOZ_ASSERT(watchesPropertyRemove(obj));
 
   if (obj->isUsedAsPrototype() && !id.isInt()) {
@@ -638,7 +613,7 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
   }
   if (obj->hasObjectFuse()) {
     if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
-      objFuse->handlePropertyRemove(cx, propInfo);
+      objFuse->handlePropertyRemove(cx, propInfo, wasTrackedObjectFuseProp);
     }
   }
 

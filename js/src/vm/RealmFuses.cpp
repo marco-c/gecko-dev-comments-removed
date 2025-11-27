@@ -554,35 +554,6 @@ bool js::OptimizeRegExpPrototypeFuse::checkInvariant(JSContext* cx) {
   return true;
 }
 
-bool js::OptimizeStringPrototypeSymbolsFuse::checkInvariant(JSContext* cx) {
-  auto* stringProto =
-      cx->global()->maybeGetPrototype<NativeObject>(JSProto_String);
-  if (!stringProto) {
-    
-    return true;
-  }
-
-  
-  auto* objectProto = &cx->global()->getObjectPrototype().as<NativeObject>();
-  if (stringProto->staticPrototype() != objectProto) {
-    return false;
-  }
-
-  
-  auto hasSymbolProp = [&](JS::Symbol* symbol) {
-    PropertyKey key = PropertyKey::Symbol(symbol);
-    return stringProto->containsPure(key) || objectProto->containsPure(key);
-  };
-  if (hasSymbolProp(cx->wellKnownSymbols().match) ||
-      hasSymbolProp(cx->wellKnownSymbols().replace) ||
-      hasSymbolProp(cx->wellKnownSymbols().search) ||
-      hasSymbolProp(cx->wellKnownSymbols().split)) {
-    return false;
-  }
-
-  return true;
-}
-
 bool js::OptimizeMapObjectIteratorFuse::checkInvariant(JSContext* cx) {
   
   auto* proto = cx->global()->maybeGetPrototype<NativeObject>(JSProto_Map);
