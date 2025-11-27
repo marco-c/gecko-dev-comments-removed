@@ -1996,6 +1996,22 @@ class Inspector extends EventEmitter {
   
 
 
+
+
+
+  canTogglePseudoClassForSelectedNode() {
+    if (!this.selection) {
+      return false;
+    }
+
+    return (
+      this.selection.isElementNode() && !this.selection.isPseudoElementNode()
+    );
+  }
+
+  
+
+
   async screenshotNode() {
     
     
