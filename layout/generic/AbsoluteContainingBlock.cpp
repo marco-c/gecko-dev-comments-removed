@@ -1005,7 +1005,19 @@ struct MOZ_STACK_CLASS MOZ_RAII AutoFallbackStyleSetter {
             });
   }
 
-  void CommitCurrentFallback() { mOldCacheState = OldCacheState{None{}}; }
+  void CommitCurrentFallback() {
+    mOldCacheState = OldCacheState{None{}};
+    
+    
+    
+    nsMargin margin;
+    if (mOldStyle &&
+        !mOldStyle->StyleMargin()->MarginEquals(*mFrame->StyleMargin()) &&
+        mFrame->StyleMargin()->GetMargin(margin)) {
+      mFrame->SetOrUpdateDeletableProperty(nsIFrame::UsedMarginProperty(),
+                                           margin);
+    }
+  }
 
  private:
   nsIFrame* const mFrame;
