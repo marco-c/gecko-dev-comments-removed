@@ -191,6 +191,7 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
   }
   const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
   DisplayItemType type = aItem->GetType();
+  const ActiveScrolledRoot* stickyAsr = nullptr;
   if (type == DisplayItemType::TYPE_STICKY_POSITION) {
     
     
@@ -199,6 +200,8 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
     
     auto* sticky = static_cast<nsDisplayStickyPosition*>(aItem);
     asr = sticky->GetContainerASR();
+    stickyAsr = ActiveScrolledRoot::GetStickyASRFromFrame(sticky->Frame());
+    MOZ_ASSERT(stickyAsr);
   }
 
   CLIP_LOG("processing item %p (%s) asr %p clip %p, inherited = %p\n", aItem,
@@ -257,13 +260,18 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayListBuilder* aBuilder,
   
   
   
-  const ActiveScrolledRoot* leafmostASR = asr;
-  if (clip) {
-    leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR, clip->mASR);
+  
+  
+  
+  
+  
+  (void)DefineSpatialNodes(aBuilder, asr, aItem);
+  if (clip && clip->mASR != asr) {
+    (void)DefineSpatialNodes(aBuilder, clip->mASR, aItem);
   }
-  Maybe<wr::WrSpatialId> leafmostId =
-      DefineSpatialNodes(aBuilder, leafmostASR, aItem);
-  (void)leafmostId;
+  if (stickyAsr && stickyAsr != asr) {
+    (void)DefineSpatialNodes(aBuilder, stickyAsr, aItem);
+  }
 
   
   
