@@ -480,6 +480,17 @@ class nsLayoutUtils {
 
 
 
+  static bool IsProperAncestorFrameConsideringContinuations(
+      const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
+      const nsIFrame* aCommonAncestor = nullptr);
+
+  
+
+
+
+
+
+
   static bool IsProperAncestorFrameCrossDoc(
       const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
       const nsIFrame* aCommonAncestor = nullptr);
