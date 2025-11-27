@@ -40,6 +40,7 @@
 
 
 
+
 #ifndef intl_components_UnicodeScriptCodes_h_
 #define intl_components_UnicodeScriptCodes_h_
 
@@ -253,8 +254,13 @@ enum class Script : int16_t {
   SUNUWAR = 205,
   TODHRI = 206,
   TULU_TIGALARI = 207,
+  BERIA_ERFE = 208,
+  SIDETIC = 209,
+  TAI_YO = 210,
+  TOLONG_SIKI = 211,
+  TRADITIONAL_HAN_WITH_LATIN = 212,
 
-  NUM_SCRIPT_CODES = 208,
+  NUM_SCRIPT_CODES = 213,
 
   INVALID = -1
 };
