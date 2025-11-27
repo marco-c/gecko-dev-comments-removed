@@ -296,7 +296,9 @@ class DisplayPortUtils {
 
 
 
-  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame);
+
+  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame,
+                                     nsIFrame* aLimitAncestor = nullptr);
 
   
 

@@ -856,7 +856,8 @@ nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
   return nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
 }
 
-nsIFrame* DisplayPortUtils::OneStepInASRChain(nsIFrame* aFrame) {
+nsIFrame* DisplayPortUtils::OneStepInASRChain(
+    nsIFrame* aFrame, nsIFrame* aLimitAncestor ) {
   
   
   
@@ -867,9 +868,18 @@ nsIFrame* DisplayPortUtils::OneStepInASRChain(nsIFrame* aFrame) {
   nsIFrame* anchor = nullptr;
   while ((anchor =
               AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
+    MOZ_ASSERT_IF(aLimitAncestor,
+                  nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+                      aLimitAncestor, anchor));
     aFrame = anchor;
   }
-  return nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
+  nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
+  if (aLimitAncestor && parent &&
+      (parent == aLimitAncestor ||
+       parent->FirstContinuation() == aLimitAncestor->FirstContinuation())) {
+    return nullptr;
+  }
+  return parent;
 }
 
 void DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
