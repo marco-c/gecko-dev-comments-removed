@@ -8,7 +8,6 @@
 
 #include "DisplayItemClipChain.h"
 #include "FrameMetrics.h"
-#include "mozilla/ReverseIterator.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/layers/StackingContextHelper.h"
@@ -16,6 +15,7 @@
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDisplayList.h"
+#include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
 #include "nsStyleStructInlines.h"
 #include "UnitTransforms.h"
@@ -154,15 +154,6 @@ void ClipManager::PopOverrideForASR(const ActiveScrolledRoot* aASR) {
   if (it != mASROverride.end() && it->second.empty()) {
     mASROverride.erase(it);
   }
-}
-
-void ClipManager::PushStickyItem(const nsDisplayStickyPosition* aItem) {
-  mStickyItemStack.push_back(aItem);
-}
-
-void ClipManager::PopStickyItem() {
-  MOZ_ASSERT(!mStickyItemStack.empty());
-  mStickyItemStack.pop_back();
 }
 
 wr::WrSpatialId ClipManager::SpatialIdAfterOverride(
@@ -386,56 +377,6 @@ static nscoord NegativePart(nscoord min, nscoord max) {
   return 0;
 }
 
-const nsDisplayStickyPosition* ClipManager::FindStickyItem(
-    nsDisplayItem* aItemWithStickyASR, const nsIFrame* aStickyFrame) const {
-  
-  if (aItemWithStickyASR->GetType() == DisplayItemType::TYPE_STICKY_POSITION &&
-      aItemWithStickyASR->Frame() == aStickyFrame) {
-    return static_cast<nsDisplayStickyPosition*>(aItemWithStickyASR);
-  }
-
-  
-  
-  
-  for (const nsDisplayStickyPosition* item :
-       mozilla::Reversed(mStickyItemStack)) {
-    if (item->Frame() == aStickyFrame) {
-      return item;
-    }
-  }
-
-  
-  
-  if (aItemWithStickyASR->Frame() == aStickyFrame) {
-    nsDisplayItem* item = aItemWithStickyASR;
-    while (item) {
-      nsDisplayList* children = item->GetChildren();
-      if (!children) {
-        return nullptr;
-      }
-      nsDisplayItem* onlyChild = nullptr;
-      for (nsDisplayItem* child : *children) {
-        if (!onlyChild) {
-          onlyChild = child;
-        } else {
-          
-          return nullptr;
-        }
-      }
-      if (!onlyChild || onlyChild->Frame() != aStickyFrame) {
-        
-        return nullptr;
-      }
-      if (onlyChild->GetType() == DisplayItemType::TYPE_STICKY_POSITION) {
-        return static_cast<nsDisplayStickyPosition*>(onlyChild);
-      }
-      
-      item = onlyChild;
-    }
-  }
-  return nullptr;
-}
-
 Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
     nsDisplayListBuilder* aBuilder, Maybe<wr::WrSpatialId> aParentSpatialId,
     const ActiveScrolledRoot* aASR, nsDisplayItem* aItem) {
@@ -462,22 +403,21 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   float auPerDevPixel = stickyFrame->PresContext()->AppUnitsPerDevPixel();
 
   nsRect itemBounds;
-  nsPoint toReferenceFrame;
 
-  const nsDisplayStickyPosition* stickyItem =
-      FindStickyItem(aItem, stickyFrame);
-  if (stickyItem) {
-    bool snap;
-    itemBounds = stickyItem->GetBounds(aBuilder, &snap);
-    toReferenceFrame = stickyItem->ToReferenceFrame();
-  } else {
-    MOZ_ASSERT(false,
-               "Cannot find sticky item in ClipManager::DefineStickyNode, "
-               "using fallback bounds which may be inaccurate");
-    itemBounds = stickyFrame->GetRect() +
-                 aBuilder->ToReferenceFrame(stickyFrame->GetParent());
-    toReferenceFrame = aBuilder->ToReferenceFrame(stickyFrame);
-  }
+  
+  
+  nsRect scrollPort =
+      stickyScrollContainer->ScrollContainer()->GetScrollPortRect();
+  const nsIFrame* referenceFrame =
+      aBuilder->FindReferenceFrameFor(stickyFrame->GetParent());
+  nsRect transformedBounds = stickyFrame->GetRectRelativeToSelf();
+  DebugOnly transformResult = nsLayoutUtils::TransformRect(
+      stickyFrame, referenceFrame, transformedBounds);
+  MOZ_ASSERT(transformResult == nsLayoutUtils::TRANSFORM_SUCCEEDED);
+  itemBounds = transformedBounds;
+  scrollPort = scrollPort +
+               stickyScrollContainer->ScrollContainer()->GetOffsetToCrossDoc(
+                   referenceFrame);
 
   Maybe<float> topMargin;
   Maybe<float> rightMargin;
@@ -490,17 +430,6 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   nsRectAbsolute outer;
   nsRectAbsolute inner;
   stickyScrollContainer->GetScrollRanges(stickyFrame, &outer, &inner);
-
-  nsPoint offset =
-      stickyScrollContainer->ScrollContainer()->GetOffsetToCrossDoc(
-          stickyFrame) +
-      toReferenceFrame;
-
-  
-  
-  nsRect scrollPort =
-      stickyScrollContainer->ScrollContainer()->GetScrollPortRect();
-  scrollPort += offset;
 
   
   
