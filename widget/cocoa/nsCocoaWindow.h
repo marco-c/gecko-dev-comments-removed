@@ -523,7 +523,7 @@ class nsCocoaWindow final : public nsIWidget {
   void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
 
-  BaseWindow* mWindow;                
+  BaseWindow* mWindow;  
   
   
   

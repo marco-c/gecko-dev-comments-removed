@@ -6050,16 +6050,22 @@ void nsCocoaWindow::ProcessTransitions() {
           
           
           NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-          while (mWindow && !CanStartNativeTransition() &&
+
+          
+          
+          NSWindow* initialWindow = mWindow;
+          [initialWindow retain];
+
+          while (!CanStartNativeTransition() &&
                  [localRunLoop runMode:NSDefaultRunLoopMode
                             beforeDate:[NSDate distantFuture]]) {
-            
             
             
           }
 
           
-          [mWindow toggleFullScreen:nil];
+          [initialWindow toggleFullScreen:nil];
+          [initialWindow release];
           continue;
         }
         break;
@@ -6085,16 +6091,22 @@ void nsCocoaWindow::ProcessTransitions() {
             
             
             NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-            while (mWindow && !CanStartNativeTransition() &&
+
+            
+            
+            NSWindow* initialWindow = mWindow;
+            [initialWindow retain];
+
+            while (!CanStartNativeTransition() &&
                    [localRunLoop runMode:NSDefaultRunLoopMode
                               beforeDate:[NSDate distantFuture]]) {
-              
               
               
             }
 
             
-            [mWindow toggleFullScreen:nil];
+            [initialWindow toggleFullScreen:nil];
+            [initialWindow release];
             continue;
           } else {
             mSuppressSizeModeEvents = true;
