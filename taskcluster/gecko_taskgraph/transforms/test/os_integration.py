@@ -20,7 +20,7 @@ def maybe_setup_os_integration(config, tasks):
     for task in tasks:
         
         
-        if task["suite"] in ("raptor", "talos", "marionette"):
+        if task["suite"] in ("raptor", "talos", "marionette-unittest"):
             yield task
             continue
 
