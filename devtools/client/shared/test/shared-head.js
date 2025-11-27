@@ -256,7 +256,7 @@ try {
   ok(
     false,
     "MISSING DEPENDENCY ON telemetry-test-helpers.js\n" +
-      "Please add the following line in browser.ini:\n" +
+      "Please add the following line in browser.toml:\n" +
       "  !/devtools/client/shared/test/telemetry-test-helpers.js\n"
   );
   throw e;

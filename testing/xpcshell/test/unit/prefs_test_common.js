@@ -30,7 +30,7 @@ function check_common_xpcshell_with_prefs() {
 
   Assert.ok(
     has_pref_from_manifest_defaults(),
-    "Should have pref from DEFAULTS in xpcshell-with-prefs.ini"
+    "Should have pref from DEFAULTS in xpcshell-with-prefs.toml"
   );
 }
 
@@ -42,6 +42,6 @@ function check_common_xpcshell_without_prefs() {
 
   Assert.ok(
     !has_pref_from_manifest_defaults(),
-    "xpcshell.ini did not set any prefs in DEFAULTS"
+    "xpcshell.toml did not set any prefs in DEFAULTS"
   );
 }
