@@ -9320,8 +9320,29 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
   
   
+  
+  
+  if (RefPtr navigation = win ? win->Navigation() : nullptr) {
+    MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
+            ("nsDocShell %p triggering a navigation event from "
+             "HandleSameDocumentNavigation",
+             this));
+    
+    
+    
+    navigation->UpdateEntriesForSameDocumentNavigation(
+        mActiveEntry.get(),
+        NavigationUtils::NavigationTypeFromLoadType(mLoadType).valueOr(
+            NavigationType::Push));
+  }
+
+  
+  
   const bool hasTextDirectives =
       doc->FragmentDirective()->HasUninvokedDirectives();
+
+  
+  
 
   
   
@@ -9356,19 +9377,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   
   if (win) {
-    if (RefPtr navigation = win->Navigation()) {
-      MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
-              ("nsDocShell %p triggering a navigation event from "
-               "HandleSameDocumentNavigation",
-               this));
-      
-      
-      navigation->UpdateEntriesForSameDocumentNavigation(
-          mActiveEntry.get(),
-          NavigationUtils::NavigationTypeFromLoadType(mLoadType).valueOr(
-              NavigationType::Push));
-    }
-
     
     
     bool doHashchange = aState.mSameExceptHashes &&
