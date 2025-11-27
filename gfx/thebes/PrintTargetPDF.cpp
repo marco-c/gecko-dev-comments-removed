@@ -4,6 +4,9 @@
 
 
 #include "PrintTargetPDF.h"
+#ifdef MOZ_ENABLE_SKIA_PDF
+#  include "PrintTargetSkPDF.h"
+#endif
 
 #include "cairo.h"
 #include "cairo-pdf.h"
@@ -48,11 +51,17 @@ PrintTargetPDF::~PrintTargetPDF() {
 }
 
 
-already_AddRefed<PrintTargetPDF> PrintTargetPDF::CreateOrNull(
+already_AddRefed<PrintTarget> PrintTargetPDF::CreateOrNull(
     nsIOutputStream* aStream, const IntSize& aSizeInPoints) {
   if (NS_WARN_IF(!aStream)) {
     return nullptr;
   }
+
+#ifdef MOZ_ENABLE_SKIA_PDF
+  if (StaticPrefs::print_experimental_skpdf()) {
+    return PrintTargetSkPDF::CreateOrNull(aStream, aSizeInPoints);
+  }
+#endif
 
   cairo_surface_t* surface = cairo_pdf_surface_create_for_stream(
       write_func, (void*)aStream, aSizeInPoints.width, aSizeInPoints.height);

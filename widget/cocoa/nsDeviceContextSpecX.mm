@@ -99,9 +99,7 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
   [printInfo release];
 
 #ifdef MOZ_ENABLE_SKIA_PDF
-  nsAutoString printViaPdf;
-  mozilla::Preferences::GetString("print.print_via_pdf_encoder", printViaPdf);
-  if (printViaPdf.EqualsLiteral("skia-pdf")) {
+  if (StaticPrefs::print_experimental_skpdf()) {
     
     
     

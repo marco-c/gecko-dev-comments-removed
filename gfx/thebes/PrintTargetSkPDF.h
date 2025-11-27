@@ -21,11 +21,10 @@ namespace gfx {
 
 class PrintTargetSkPDF final : public PrintTarget {
  public:
-  
-  
-  
   static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
       UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints);
+  static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
+      nsIOutputStream* aStream, const IntSize& aSizeInPoints);
 
   nsresult BeginPrinting(const nsAString& aTitle,
                          const nsAString& aPrintToFileName, int32_t aStartPage,
