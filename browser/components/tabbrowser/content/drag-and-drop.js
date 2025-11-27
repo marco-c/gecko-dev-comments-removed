@@ -8,6 +8,7 @@
 {
   const isTab = element => gBrowser.isTab(element);
   const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
+  const isSplitViewWrapper = element => gBrowser.isSplitViewWrapper(element);
 
   
 
@@ -31,8 +32,10 @@
 
 
 
+
+
   const elementToMove = element => {
-    if (isTab(element)) {
+    if (isTab(element) || isSplitViewWrapper(element)) {
       return element;
     }
     if (isTabGroupLabel(element)) {
@@ -195,7 +198,7 @@
         newMargin = pixelsToScroll > 0 ? maxMargin : minMargin;
       } else {
         let newIndex = this._getDropIndex(event);
-        let children = this._tabbrowserTabs.ariaFocusableItems;
+        let children = this._tabbrowserTabs.dragAndDropElements;
         if (newIndex == children.length) {
           let itemRect = children.at(-1).getBoundingClientRect();
           if (this._tabbrowserTabs.verticalMode) {
@@ -270,7 +273,7 @@
         let duplicatedDraggedTab;
         let duplicatedTabs = [];
         let dropTarget =
-          this._tabbrowserTabs.ariaFocusableItems[this._getDropIndex(event)];
+          this._tabbrowserTabs.dragAndDropElements[this._getDropIndex(event)];
         for (let tab of movingTabs) {
           let duplicatedTab = gBrowser.duplicateTab(tab);
           duplicatedTabs.push(duplicatedTab);
@@ -307,7 +310,7 @@
             newTranslateY -= tabHeight;
           }
         } else {
-          let tabs = this._tabbrowserTabs.ariaFocusableItems.slice(
+          let tabs = this._tabbrowserTabs.dragAndDropElements.slice(
             isPinned ? 0 : numPinned,
             isPinned ? numPinned : undefined
           );
@@ -532,8 +535,8 @@
 
         
         gBrowser.addRangeToMultiSelectedTabs(
-          this._tabbrowserTabs.ariaFocusableItems[dropIndex],
-          this._tabbrowserTabs.ariaFocusableItems[newIndex - 1]
+          this._tabbrowserTabs.dragAndDropElements[dropIndex],
+          this._tabbrowserTabs.dragAndDropElements[newIndex - 1]
         );
       } else {
         
@@ -579,7 +582,7 @@
             }
           }
 
-          let nextItem = this._tabbrowserTabs.ariaFocusableItems[newIndex];
+          let nextItem = this._tabbrowserTabs.dragAndDropElements[newIndex];
           let tabGroup = isTab(nextItem) && nextItem.group;
           gBrowser.loadTabs(urls, {
             inBackground,
@@ -786,7 +789,7 @@
     _getDropIndex(event) {
       let item = this._getDragTarget(event);
       if (!item) {
-        return this._tabbrowserTabs.ariaFocusableItems.length;
+        return this._tabbrowserTabs.dragAndDropElements.length;
       }
       let isBeforeMiddle;
 
@@ -1175,7 +1178,7 @@
       }
       let isPinned = tab.pinned;
       let numPinned = gBrowser.pinnedTabCount;
-      let allTabs = this._tabbrowserTabs.ariaFocusableItems;
+      let dragAndDropElements = this._tabbrowserTabs.dragAndDropElements;
       let isGrid = this._isContainerVerticalPinnedGrid(tab);
       let periphery = document.getElementById(
         "tabbrowser-arrowscrollbox-periphery"
@@ -1219,7 +1222,7 @@
       
       const pinnedTabsOrigBounds = new Map();
 
-      for (let t of allTabs) {
+      for (let t of dragAndDropElements) {
         t = elementToMove(t);
         let tabRect = window.windowUtils.getBoundsWithoutFlushing(t);
 
@@ -1387,7 +1390,7 @@
 
       
       
-      for (let t of allTabs) {
+      for (let t of dragAndDropElements) {
         let tabIsPinned = t.pinned;
         t = elementToMove(t);
         if (!t.hasAttribute("dragtarget")) {
@@ -1454,7 +1457,7 @@
       let addAnimationData = (movingTab, isBeforeSelectedTab) => {
         let lowerIndex = Math.min(movingTab.elementIndex, draggedTabIndex) + 1;
         let higherIndex = Math.max(movingTab.elementIndex, draggedTabIndex);
-        let middleItems = this._tabbrowserTabs.ariaFocusableItems
+        let middleItems = this._tabbrowserTabs.dragAndDropElements
           .slice(lowerIndex, higherIndex)
           .filter(item => !item.multiselected);
         if (!middleItems.length) {
@@ -1551,7 +1554,7 @@
       }
 
       
-      for (let item of this._tabbrowserTabs.ariaFocusableItems) {
+      for (let item of this._tabbrowserTabs.dragAndDropElements) {
         item = elementToMove(item);
         if (item._moveTogetherSelectedTabsData?.translatePos) {
           let translatePos =
@@ -1596,7 +1599,7 @@
         gBrowser.moveTabAfter(selectedTabs[i], tab);
       }
 
-      for (let item of this._tabbrowserTabs.ariaFocusableItems) {
+      for (let item of this._tabbrowserTabs.dragAndDropElements) {
         item = elementToMove(item);
         item.style.transform = "";
         item.removeAttribute("multiselected-move-together");
@@ -1835,8 +1838,8 @@
 
       let isPinned = draggedTab.pinned;
       let numPinned = gBrowser.pinnedTabCount;
-      let allTabs = this._tabbrowserTabs.ariaFocusableItems;
-      let tabs = allTabs.slice(
+      let dragAndDropElements = this._tabbrowserTabs.dragAndDropElements;
+      let tabs = dragAndDropElements.slice(
         isPinned ? 0 : numPinned,
         isPinned ? numPinned : undefined
       );
@@ -2128,7 +2131,7 @@
             maxElementIndexForDropElement
           );
           let oldDropElementCandidate =
-            this._tabbrowserTabs.ariaFocusableItems.at(index);
+            this._tabbrowserTabs.dragAndDropElements.at(index);
           if (!movingTabsSet.has(oldDropElementCandidate)) {
             dropElement = oldDropElementCandidate;
           }
@@ -2218,7 +2221,7 @@
           : dropElement.elementIndex < numPinned;
         if (isOutOfBounds) {
           
-          dropElement = this._tabbrowserTabs.ariaFocusableItems[numPinned - 1];
+          dropElement = this._tabbrowserTabs.dragAndDropElements[numPinned - 1];
           dropBefore = false;
         }
       }
@@ -2423,7 +2426,7 @@
 
       this.#setMovingTabMode(false);
 
-      for (let item of this._tabbrowserTabs.ariaFocusableItems) {
+      for (let item of this._tabbrowserTabs.dragAndDropElements) {
         this._resetGroupTarget(item);
         item = elementToMove(item);
         item.style.transform = "";

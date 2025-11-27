@@ -13,6 +13,7 @@
   const isTab = element => gBrowser.isTab(element);
   const isTabGroup = element => gBrowser.isTabGroup(element);
   const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
+  const isSplitViewWrapper = element => gBrowser.isSplitViewWrapper(element);
 
   class MozTabbrowserTabs extends MozElements.TabsBase {
     static observedAttributes = ["orient"];
@@ -38,6 +39,8 @@
       this.addEventListener("TabGroupAnimationComplete", this);
       this.addEventListener("TabGroupCreate", this);
       this.addEventListener("TabGroupRemoved", this);
+      this.addEventListener("SplitViewCreated", this);
+      this.addEventListener("SplitViewRemoved", this);
       this.addEventListener("transitionend", this);
       this.addEventListener("dblclick", this);
       this.addEventListener("click", this);
@@ -393,6 +396,14 @@
     }
 
     on_TabGroupRemoved() {
+      this._invalidateCachedTabs();
+    }
+
+    on_SplitViewCreated() {
+      this._invalidateCachedTabs();
+    }
+
+    on_SplitViewRemoved() {
       this._invalidateCachedTabs();
     }
 
@@ -916,6 +927,9 @@
     #focusableItems;
 
     
+    #dragAndDropElements;
+
+    
 
 
 
@@ -924,36 +938,25 @@
         return this.#focusableItems;
       }
 
-      let elementIndex = 0;
-
       let unpinnedChildren = Array.from(this.arrowScrollbox.children);
       let pinnedChildren = Array.from(this.pinnedTabsContainer.children);
 
       let focusableItems = [];
       for (let child of pinnedChildren) {
         if (isTab(child)) {
-          child.elementIndex = elementIndex++;
           focusableItems.push(child);
         }
       }
       for (let child of unpinnedChildren) {
         if (isTab(child) && child.visible) {
-          child.elementIndex = elementIndex++;
           focusableItems.push(child);
         } else if (isTabGroup(child)) {
-          child.labelElement.elementIndex = elementIndex++;
           focusableItems.push(child.labelElement);
 
           let visibleTabsInGroup = child.tabs.filter(tab => tab.visible);
-          visibleTabsInGroup.forEach(tab => {
-            tab.elementIndex = elementIndex++;
-          });
           focusableItems.push(...visibleTabsInGroup);
         } else if (child.tagName == "tab-split-view-wrapper") {
           let visibleTabsInSplitView = child.tabs.filter(tab => tab.visible);
-          visibleTabsInSplitView.forEach(tab => {
-            tab.elementIndex = elementIndex++;
-          });
           focusableItems.push(...visibleTabsInSplitView);
         }
       }
@@ -961,6 +964,55 @@
       this.#focusableItems = focusableItems;
 
       return this.#focusableItems;
+    }
+
+    
+
+
+
+
+
+    get dragAndDropElements() {
+      if (this.#dragAndDropElements) {
+        return this.#dragAndDropElements;
+      }
+
+      let elementIndex = 0;
+      let dragAndDropElements = [];
+      let unpinnedChildren = Array.from(this.arrowScrollbox.children);
+      let pinnedChildren = Array.from(this.pinnedTabsContainer.children);
+
+      for (let child of [...pinnedChildren, ...unpinnedChildren]) {
+        if (
+          !(
+            (isTab(child) && child.visible) ||
+            isTabGroup(child) ||
+            isSplitViewWrapper(child)
+          )
+        ) {
+          continue;
+        }
+
+        if (isTabGroup(child)) {
+          child.labelElement.elementIndex = elementIndex++;
+          dragAndDropElements.push(child.labelElement);
+
+          let visibleChildren = Array.from(child.children).filter(
+            ele => ele.visible || ele.tagName == "tab-split-view-wrapper"
+          );
+
+          visibleChildren.forEach(tab => {
+            tab.elementIndex = elementIndex++;
+          });
+          dragAndDropElements.push(...visibleChildren);
+        } else {
+          child.elementIndex = elementIndex++;
+          dragAndDropElements.push(child);
+        }
+      }
+
+      this.#dragAndDropElements = dragAndDropElements;
+      return this.#dragAndDropElements;
     }
 
     
@@ -1002,6 +1054,7 @@
       
       
       this.#focusableItems = null;
+      this.#dragAndDropElements = null;
     }
 
     #isMovingTab() {
