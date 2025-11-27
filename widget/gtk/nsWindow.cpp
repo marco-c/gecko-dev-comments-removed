@@ -9972,16 +9972,6 @@ void nsWindow::OnUnmap() {
     
     mCeiledScaleFactor = sNoScale;
   }
-
-  
-  
-  
-  
-  
-  
-  if (mWindowType == WindowType::Popup && !mPopupTemporaryHidden) {
-    DestroyLayerManager();
-  }
 }
 
 
