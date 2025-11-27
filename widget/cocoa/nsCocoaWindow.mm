@@ -4624,7 +4624,6 @@ BOOL ChildViewMouseTracker::WindowAcceptsEvent(NSWindow* aWindow,
 
 nsCocoaWindow::nsCocoaWindow()
     : mWindow(nil),
-      mClosedRetainedWindow(nil),
       mDelegate(nil),
       mChildView(nil),
       mBackingScaleFactor(0.0),
@@ -4674,11 +4673,6 @@ void nsCocoaWindow::DestroyNativeWindow() {
   mWindow.delegate = nil;
 
   
-  
-  
-  
-  [mClosedRetainedWindow autorelease];
-  mClosedRetainedWindow = [mWindow retain];
   MOZ_ASSERT(mWindow.releasedWhenClosed);
   [mWindow close];
 
@@ -4696,8 +4690,6 @@ nsCocoaWindow::~nsCocoaWindow() {
     CancelAllTransitions();
     DestroyNativeWindow();
   }
-
-  [mClosedRetainedWindow release];
 
   
   if (mNativeLayerRoot) {

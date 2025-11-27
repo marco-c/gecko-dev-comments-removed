@@ -524,7 +524,6 @@ class nsCocoaWindow final : public nsIWidget {
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);
 
   BaseWindow* mWindow;                
-  BaseWindow* mClosedRetainedWindow;  
   
   
   
