@@ -188,6 +188,7 @@ void gfxPlatformMac::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
     
     
     case Script::TRADITIONAL_HAN:
+    case Script::TRADITIONAL_HAN_WITH_LATIN:
       aFontList.AppendElement("Songti TC");
       if (aCh > 0x10000) {
         
@@ -656,6 +657,10 @@ void gfxPlatformMac::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
     case Script::SUNUWAR:
     case Script::TODHRI:
     case Script::TULU_TIGALARI:
+    case Script::BERIA_ERFE:
+    case Script::SIDETIC:
+    case Script::TAI_YO:
+    case Script::TOLONG_SIKI:
       break;
   }
 
