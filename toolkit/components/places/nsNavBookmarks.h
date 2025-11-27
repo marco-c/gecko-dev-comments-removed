@@ -102,46 +102,6 @@ class nsNavBookmarks final : public nsINavBookmarksService,
                    const nsAString& aLastKnownTitle);
 
   
-  
-  
-  nsresult QueryFolderChildren(int64_t aFolderId,
-                               nsNavHistoryQueryOptions* aOptions,
-                               nsCOMArray<nsNavHistoryResultNode>* children);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult ProcessFolderNodeRow(mozIStorageValueArray* aRow,
-                                nsNavHistoryQueryOptions* aOptions,
-                                nsCOMArray<nsNavHistoryResultNode>* aChildren,
-                                int32_t& aCurrentIndex);
-
-  
-
-
-
-
-
-
-
-
-  nsresult QueryFolderChildrenAsync(nsNavHistoryFolderResultNode* aNode,
-                                    mozIStoragePendingStatement** _pendingStmt);
-
-  
 
 
 

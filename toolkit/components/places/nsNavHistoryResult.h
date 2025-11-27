@@ -797,6 +797,29 @@ class nsNavHistoryFolderResultNode final
   nsresult OnChildrenFilled();
   void EnsureRegisteredAsFolderObserver();
   nsresult FillChildrenAsync();
+  
+
+
+
+
+
+
+  nsresult FillChildrenInternal(
+      mozIStoragePendingStatement** aPendingStmt = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult AppendRowAsChild(mozIStorageValueArray* aRow,
+                            int32_t& aCurrentIndex);
 
   bool mIsRegisteredFolderObserver;
   int32_t mAsyncBookmarkIndex;
