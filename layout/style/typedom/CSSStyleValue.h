@@ -60,6 +60,8 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   
 
+  ValueType GetValueType() const { return mValueType; }
+
   bool IsCSSUnsupportedValue() const;
 
   
