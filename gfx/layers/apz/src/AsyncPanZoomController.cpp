@@ -2808,6 +2808,9 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   APZC_LOG_DETAIL("got a pan-begin in state %s\n", this,
                   ToString(mState).c_str());
 
+  
+  StateChangeNotificationBlocker blocker(this);
+
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   GetCurrentPanGestureBlock()->GetOverscrollHandoffChain()->CancelAnimations(
       ExcludeOverscroll);
@@ -2830,6 +2833,18 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
 
   
   OnPan(aEvent, FingersOnTouchpad::Yes);
+
+  
+  
+  
+  
+  
+  if (!CanScroll(ViewAs<ParentLayerPixel>(
+          aEvent.mPanDisplacement,
+          PixelCastJustification::ScreenIsParentLayerForRoot)) &&
+      mState != OVERSCROLL_ANIMATION) {
+    SetState(NOTHING);
+  }
 
   return nsEventStatus_eConsumeNoDefault;
 }
