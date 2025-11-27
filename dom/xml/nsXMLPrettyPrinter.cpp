@@ -101,7 +101,13 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
 
   
   
-  RefPtr<DocumentL10n> l10n = DocumentL10n::Create(aDocument, true);
+  RefPtr<DocumentL10n> l10n;
+  if (aDocument->ShouldResistFingerprinting(RFPTarget::JSLocale)) {
+    AutoTArray<nsCString, 1> langs = {nsRFPService::GetSpoofedJSLocale()};
+    l10n = DocumentL10n::Create(aDocument, true, langs);
+  } else {
+    l10n = DocumentL10n::Create(aDocument, true);
+  }
   NS_ENSURE_TRUE(l10n, NS_ERROR_UNEXPECTED);
   l10n->AddResourceId("dom/XMLPrettyPrint.ftl"_ns);
 
