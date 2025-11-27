@@ -453,6 +453,7 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
+       CLASS_BREAKABLE,
   };
 
   static_assert(U_LB_COUNT == std::size(sUnicodeLineBreakToClass),
