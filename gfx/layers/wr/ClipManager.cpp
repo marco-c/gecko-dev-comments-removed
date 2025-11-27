@@ -378,14 +378,51 @@ static nscoord NegativePart(nscoord min, nscoord max) {
   return 0;
 }
 
-const nsDisplayStickyPosition* ClipManager::FindStickyItemFromFrame(
-    const nsIFrame* aStickyFrame) const {
+const nsDisplayStickyPosition* ClipManager::FindStickyItem(
+    nsDisplayItem* aItemWithStickyASR, const nsIFrame* aStickyFrame) const {
+  
+  if (aItemWithStickyASR->GetType() == DisplayItemType::TYPE_STICKY_POSITION &&
+      aItemWithStickyASR->Frame() == aStickyFrame) {
+    return static_cast<nsDisplayStickyPosition*>(aItemWithStickyASR);
+  }
+
+  
   
   
   for (const nsDisplayStickyPosition* item :
        mozilla::Reversed(mStickyItemStack)) {
     if (item->Frame() == aStickyFrame) {
       return item;
+    }
+  }
+
+  
+  
+  if (aItemWithStickyASR->Frame() == aStickyFrame) {
+    nsDisplayItem* item = aItemWithStickyASR;
+    while (item) {
+      nsDisplayList* children = item->GetChildren();
+      if (!children) {
+        return nullptr;
+      }
+      nsDisplayItem* onlyChild = nullptr;
+      for (nsDisplayItem* child : *children) {
+        if (!onlyChild) {
+          onlyChild = child;
+        } else {
+          
+          return nullptr;
+        }
+      }
+      if (!onlyChild || onlyChild->Frame() != aStickyFrame) {
+        
+        return nullptr;
+      }
+      if (onlyChild->GetType() == DisplayItemType::TYPE_STICKY_POSITION) {
+        return static_cast<nsDisplayStickyPosition*>(onlyChild);
+      }
+      
+      item = onlyChild;
     }
   }
   return nullptr;
@@ -420,7 +457,7 @@ Maybe<wr::WrSpatialId> ClipManager::DefineStickyNode(
   nsPoint toReferenceFrame;
 
   const nsDisplayStickyPosition* stickyItem =
-      FindStickyItemFromFrame(stickyFrame);
+      FindStickyItem(aItem, stickyFrame);
   if (stickyItem) {
     bool snap;
     itemBounds = stickyItem->GetBounds(aBuilder, &snap);
