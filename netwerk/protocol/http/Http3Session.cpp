@@ -589,6 +589,7 @@ nsresult Http3Session::ProcessEvents() {
 
         if (stream) {
           StreamReadyToWrite(stream);
+          stream->SetBlockedByFlowControl(false);
         }
       } break;
       case Http3Event::Tag::Reset:
@@ -1823,11 +1824,18 @@ nsresult Http3Session::SendData(nsIUDPSocket* socket) {
   nsresult rv = NS_OK;
   RefPtr<Http3StreamBase> stream;
 
+  nsTArray<RefPtr<Http3StreamBase>> blockedStreams;
+
   
   while (CanSendData() && (stream = mReadyForWrite.PopFront())) {
     LOG(("Http3Session::SendData call ReadSegments from stream=%p [this=%p]",
          stream.get(), this));
     stream->SetInTxQueue(false);
+    if (stream->BlockedByFlowControl()) {
+      LOG(("stream %p blocked by flow control", stream.get()));
+      blockedStreams.AppendElement(stream);
+      continue;
+    }
     rv = stream->ReadSegments();
 
     
@@ -1863,6 +1871,13 @@ nsresult Http3Session::SendData(nsIUDPSocket* socket) {
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+  
+  for (const auto& stream : blockedStreams) {
+    mReadyForWrite.Push(stream);
+    stream->SetInTxQueue(true);
+  }
+
   rv = ProcessEvents();
 
   
