@@ -11,7 +11,7 @@ use crate::values::generics::{
     border::GenericBorderRadius,
     position::{GenericPosition, GenericPositionOrAuto},
     rect::Rect,
-    NonNegative,
+    NonNegative, Optional,
 };
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
 use crate::Zero;
@@ -794,7 +794,7 @@ pub enum GenericShapeCommand<Angle, Position, LengthPercentage> {
     
     Arc {
         point: CommandEndPoint<Position, LengthPercentage>,
-        radii: CoordinatePair<LengthPercentage>,
+        radii: ArcRadii<LengthPercentage>,
         arc_sweep: ArcSweep,
         arc_size: ArcSize,
         rotate: Angle,
@@ -883,11 +883,7 @@ where
                 dest.write_str("arc ")?;
                 point.to_css(dest)?;
                 dest.write_str(" of ")?;
-                radii.x.to_css(dest)?;
-                if radii.x != radii.y {
-                    dest.write_char(' ')?;
-                    radii.y.to_css(dest)?;
-                }
+                radii.to_css(dest)?;
 
                 if matches!(arc_sweep, ArcSweep::Cw) {
                     dest.write_str(" cw")?;
@@ -1177,6 +1173,37 @@ pub enum ControlReference {
     Start,
     End,
     Origin,
+}
+
+
+
+
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct ArcRadii<LengthPercentage> {
+    pub rx: LengthPercentage,
+    pub ry: Optional<LengthPercentage>,
 }
 
 
