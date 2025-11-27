@@ -4340,26 +4340,7 @@ nsRect ScrollContainerFrame::RestrictToRootDisplayPort(
       FissionAutostart()) {
     return true;
   }
-  return StaticPrefs::apz_async_scroll_css_anchor_pos_AtStartup() &&
-         aFrame->PresShell()->GetRootPresShell()->HasSeenAnchorPos();
-}
-
-bool ScrollContainerFrame::DecideScrollableLayerEnsureDisplayport(
-    nsDisplayListBuilder* aBuilder) {
-  MOZ_ASSERT(ShouldActivateAllScrollFrames(aBuilder, this));
-  nsIContent* content = GetContent();
-  bool hasDisplayPort = DisplayPortUtils::HasDisplayPort(content);
-
-  
-  
-  if (!hasDisplayPort && aBuilder->IsPaintingToWindow() &&
-      nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll()) {
-    DisplayPortUtils::SetMinimalDisplayPortDuringPainting(content, PresShell());
-    hasDisplayPort = true;
-  }
-
-  mWillBuildScrollableLayer = hasDisplayPort || mZoomableByAPZ;
-  return mWillBuildScrollableLayer;
+  return aFrame->PresShell()->GetRootPresShell()->HasSeenAnchorPos();
 }
 
 bool ScrollContainerFrame::DecideScrollableLayer(
@@ -4381,7 +4362,18 @@ bool ScrollContainerFrame::DecideScrollableLayer(
   if (aSetBase && !hasDisplayPort && aBuilder->IsPaintingToWindow() &&
       ShouldActivateAllScrollFrames(aBuilder, this) &&
       nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll()) {
-    DisplayPortUtils::SetMinimalDisplayPortDuringPainting(content, PresShell());
+    
+    
+    
+    
+    
+    content->SetProperty(nsGkAtoms::MinimalDisplayPort,
+                         reinterpret_cast<void*>(true));
+
+    DisplayPortUtils::SetDisplayPortMargins(
+        content, PresShell(), DisplayPortMargins::Empty(content),
+        DisplayPortUtils::ClearMinimalDisplayPortProperty::No, 0,
+        DisplayPortUtils::RepaintMode::DoNotRepaint);
     hasDisplayPort = true;
   }
 

@@ -240,12 +240,6 @@ class DisplayPortUtils {
   
 
 
-  static void SetMinimalDisplayPortDuringPainting(nsIContent* aContent,
-                                                  PresShell* aPresShell);
-
-  
-
-
   static bool ViewportHasDisplayPort(nsPresContext* aPresContext);
 
   
@@ -298,18 +292,6 @@ class DisplayPortUtils {
 
 
 
-
-
-
-
-
-  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame,
-                                     nsIFrame* aLimitAncestor = nullptr);
-
-  
-
-
-
   static void SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
       nsIFrame* aFrame);
 
@@ -338,23 +320,6 @@ class DisplayPortUtils {
 
 
   static bool WillUseEmptyDisplayPortMargins(nsIContent* aContent);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static const ActiveScrolledRoot* ActivateDisplayportOnASRAncestors(
-      nsIFrame* aAnchor, nsIFrame* aLimitAncestor,
-      const ActiveScrolledRoot* aASRofLimitAncestor,
-      nsDisplayListBuilder* aBuilder);
 };
 
 }  

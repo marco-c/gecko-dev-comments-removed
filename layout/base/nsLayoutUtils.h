@@ -608,17 +608,7 @@ class nsLayoutUtils {
 
 
 
-
-
-
-    SCROLLABLE_ONLY_ASRS = 0x20,
-    
-
-
-
-
-
-    SCROLLABLE_STOP_AT_PAGE = 0x40,
+    SCROLLABLE_STOP_AT_PAGE = 0x20,
   };
   
 
@@ -2900,35 +2890,8 @@ class nsLayoutUtils {
   static FrameMetrics CalculateBasicFrameMetrics(
       mozilla::ScrollContainerFrame* aScrollContainerFrame);
 
-  
-
-
-
-
   static mozilla::ScrollContainerFrame* GetAsyncScrollableAncestorFrame(
       nsIFrame* aTarget);
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsIFrame* GetASRAncestorFrame(nsIFrame* aTarget,
-                                       nsDisplayListBuilder* aBuilder);
 
   static void SetBSizeFromFontMetrics(
       const nsIFrame* aFrame, mozilla::ReflowOutput& aMetrics,

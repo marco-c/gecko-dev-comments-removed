@@ -9,7 +9,6 @@
 #include "ScrollContainerFrame.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsCanvasFrame.h"
@@ -873,35 +872,6 @@ bool AnchorPositioningUtils::FitsInContainingBlock(
   return overflowCheckRect.Intersect(originalContainingBlockRect)
       .Union(originalContainingBlockRect)
       .Contains(rect);
-}
-
-nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
-    nsIFrame* aFrame) {
-  if (!StaticPrefs::apz_async_scroll_css_anchor_pos_AtStartup()) {
-    return nullptr;
-  }
-  mozilla::PhysicalAxes axes = aFrame->GetAnchorPosCompensatingForScroll();
-  
-  
-  if (axes.isEmpty()) {
-    return nullptr;
-  }
-
-  const auto* pos = aFrame->StylePosition();
-  if (!pos->mPositionAnchor.IsIdent()) {
-    return nullptr;
-  }
-
-  const nsAtom* defaultAnchorName = pos->mPositionAnchor.AsIdent().AsAtom();
-  nsIFrame* anchor = const_cast<nsIFrame*>(
-      aFrame->PresShell()->GetAnchorPosAnchor(defaultAnchorName, aFrame));
-  
-  
-  if (anchor && !nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
-                    aFrame->GetParent(), anchor)) {
-    return nullptr;
-  }
-  return anchor;
 }
 
 }  

@@ -4421,74 +4421,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   if (savedOutOfFlowData) {
     aBuilder->SetBuildingInvisibleItems(false);
 
-    nsIFrame* scrollsWithAnchor = nullptr;
-    if (aBuilder->IsPaintingToWindow() &&
-        
-        
-        
-        !aBuilder->IsInViewTransitionCapture() &&
-        child->IsAbsolutelyPositioned(disp) &&
-        
-        
-        
-        
-        !PresContext()->Document()->GetActiveViewTransition()) {
-      scrollsWithAnchor =
-          AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(child);
-
-      if (scrollsWithAnchor && aBuilder->IsRetainingDisplayList()) {
-        if (aBuilder->IsPartialUpdate()) {
-          aBuilder->SetPartialBuildFailed(true);
-        } else {
-          aBuilder->SetDisablePartialUpdates(true);
-        }
-      }
-    }
-
-    const ActiveScrolledRoot* asr =
-        savedOutOfFlowData->mContainingBlockActiveScrolledRoot;
-
-#ifdef DEBUG
-    if (aBuilder->IsPaintingToWindow()) {
-      
-      if (savedOutOfFlowData->mContainingBlockInViewTransitionCapture) {
-        MOZ_ASSERT(asr == nullptr);
-        MOZ_ASSERT(aBuilder->IsInViewTransitionCapture());
-      } else if ((asr ? asr->mFrame : nullptr) !=
-                 nsLayoutUtils::GetASRAncestorFrame(child->GetParent(),
-                                                    aBuilder)) {
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(asr == nullptr);
-        MOZ_ASSERT(PresContext()->Document()->GetActiveViewTransition());
-        MOZ_ASSERT(
-            child->GetParent()->GetContent()->IsInNativeAnonymousSubtree());
-        bool inTopLayer = false;
-        nsIFrame* curr = child->GetParent();
-        while (curr) {
-          if (curr->StyleDisplay()->mTopLayer == StyleTopLayer::Auto) {
-            inTopLayer = true;
-            break;
-          }
-          curr = curr->GetParent();
-        }
-        MOZ_ASSERT(inTopLayer);
-      }
-    }
-#endif
-
-    if (scrollsWithAnchor) {
-      asr = DisplayPortUtils::ActivateDisplayportOnASRAncestors(
-          scrollsWithAnchor, child->GetParent(), asr, aBuilder);
-
-      
-      
-    }
-
     if (aBuilder->IsInViewTransitionCapture()) {
       if (!savedOutOfFlowData->mContainingBlockInViewTransitionCapture) {
         clipState.Clear();
@@ -4500,7 +4432,8 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     } else {
       clipState.SetClipChainForContainingBlockDescendants(
           savedOutOfFlowData->mContainingBlockClipChain);
-      asrSetter.SetCurrentActiveScrolledRoot(asr);
+      asrSetter.SetCurrentActiveScrolledRoot(
+          savedOutOfFlowData->mContainingBlockActiveScrolledRoot);
       asrSetter.SetCurrentScrollParentId(savedOutOfFlowData->mScrollParentId);
     }
     MOZ_ASSERT(awayFromCommonPath,

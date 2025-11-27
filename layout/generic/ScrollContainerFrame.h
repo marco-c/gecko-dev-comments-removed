@@ -745,16 +745,6 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  bool DecideScrollableLayerEnsureDisplayport(nsDisplayListBuilder* aBuilder);
-
-  
-
-
-
-
-
-
-
 
 
 

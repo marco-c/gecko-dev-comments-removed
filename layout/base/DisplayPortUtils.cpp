@@ -10,7 +10,6 @@
 
 #include "FrameMetrics.h"
 #include "RetainedDisplayListBuilder.h"
-#include "StickyScrollContainer.h"
 #include "WindowRenderer.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -734,22 +733,6 @@ void DisplayPortUtils::RemoveDisplayPort(nsIContent* aContent) {
   aContent->RemoveProperty(nsGkAtoms::DisplayPortMargins);
 }
 
-void DisplayPortUtils::SetMinimalDisplayPortDuringPainting(
-    nsIContent* aContent, PresShell* aPresShell) {
-  
-  
-  
-  
-  
-  aContent->SetProperty(nsGkAtoms::MinimalDisplayPort,
-                        reinterpret_cast<void*>(true));
-
-  DisplayPortUtils::SetDisplayPortMargins(
-      aContent, aPresShell, DisplayPortMargins::Empty(aContent),
-      DisplayPortUtils::ClearMinimalDisplayPortProperty::No, 0,
-      DisplayPortUtils::RepaintMode::DoNotRepaint);
-}
-
 bool DisplayPortUtils::ViewportHasDisplayPort(nsPresContext* aPresContext) {
   nsIFrame* rootScrollContainerFrame =
       aPresContext->PresShell()->GetRootScrollContainerFrame();
@@ -851,17 +834,8 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(
 
 nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
     nsIFrame* aFrame) {
-  
-  
-  
-  
   if (aFrame->IsMenuPopupFrame()) {
     return nullptr;
-  }
-  nsIFrame* anchor = nullptr;
-  while ((anchor =
-              AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
-    aFrame = anchor;
   }
   if (aFrame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
       nsLayoutUtils::IsReallyFixedPos(aFrame)) {
@@ -870,32 +844,6 @@ nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
     }
   }
   return nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
-}
-
-nsIFrame* DisplayPortUtils::OneStepInASRChain(
-    nsIFrame* aFrame, nsIFrame* aLimitAncestor ) {
-  
-  
-  
-  
-  if (aFrame->IsMenuPopupFrame()) {
-    return nullptr;
-  }
-  nsIFrame* anchor = nullptr;
-  while ((anchor =
-              AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
-    MOZ_ASSERT_IF(aLimitAncestor,
-                  nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
-                      aLimitAncestor, anchor));
-    aFrame = anchor;
-  }
-  nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
-  if (aLimitAncestor && parent &&
-      (parent == aLimitAncestor ||
-       parent->FirstContinuation() == aLimitAncestor->FirstContinuation())) {
-    return nullptr;
-  }
-  return parent;
 }
 
 void DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
@@ -1060,129 +1008,6 @@ bool DisplayPortUtils::WillUseEmptyDisplayPortMargins(nsIContent* aContent) {
   return aContent->GetProperty(nsGkAtoms::MinimalDisplayPort) ||
          frame->PresShell()->IsDisplayportSuppressed() ||
          nsLayoutUtils::ShouldDisableApzForElement(aContent);
-}
-
-
-
-
-static bool ActivatePotentialScrollASR(nsIFrame* aFrame,
-                                       nsDisplayListBuilder* aBuilder) {
-  ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(aFrame);
-  if (!scrollContainerFrame) {
-    return false;
-  }
-  return scrollContainerFrame->DecideScrollableLayerEnsureDisplayport(aBuilder);
-}
-
-
-
-
-
-static bool ActivatePotentialStickyASR(nsIFrame* aFrame,
-                                       nsDisplayListBuilder* aBuilder) {
-  if (aFrame->StyleDisplay()->mPosition != StylePositionProperty::Sticky) {
-    return false;
-  }
-  auto* ssc = StickyScrollContainer::GetOrCreateForFrame(aFrame);
-  if (!ssc) {
-    return false;
-  }
-  return ssc->ScrollContainer()->DecideScrollableLayerEnsureDisplayport(
-      aBuilder);
-}
-
-struct FrameAndASRKind {
-  nsIFrame* mFrame;
-  ActiveScrolledRoot::ASRKind mASRKind;
-};
-
-const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
-    nsIFrame* aAnchor, nsIFrame* aLimitAncestor,
-    const ActiveScrolledRoot* aASRofLimitAncestor,
-    nsDisplayListBuilder* aBuilder) {
-  MOZ_ASSERT(ScrollContainerFrame::ShouldActivateAllScrollFrames(
-      aBuilder, aLimitAncestor));
-
-  MOZ_ASSERT((aASRofLimitAncestor ? aASRofLimitAncestor->mFrame : nullptr) ==
-             nsLayoutUtils::GetASRAncestorFrame(aLimitAncestor, aBuilder));
-
-  MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
-      aLimitAncestor, aAnchor));
-
-  AutoTArray<FrameAndASRKind, 4> ASRframes;
-  nsIFrame* frame = aAnchor;
-
-  
-  
-  
-  if (ActivatePotentialStickyASR(frame, aBuilder)) {
-    ASRframes.EmplaceBack(frame, ActiveScrolledRoot::ASRKind::Sticky);
-  }
-  frame = OneStepInASRChain(frame, aLimitAncestor);
-  while (frame && frame != aLimitAncestor &&
-         (!aLimitAncestor ||
-          frame->FirstContinuation() != aLimitAncestor->FirstContinuation())) {
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (ActivatePotentialScrollASR(frame, aBuilder)) {
-      ASRframes.EmplaceBack(frame, ActiveScrolledRoot::ASRKind::Scroll);
-    }
-
-    
-    if (ActivatePotentialStickyASR(frame, aBuilder)) {
-      ASRframes.EmplaceBack(frame, ActiveScrolledRoot::ASRKind::Sticky);
-    }
-
-    frame = OneStepInASRChain(frame, aLimitAncestor);
-  }
-
-  const ActiveScrolledRoot* asr = aASRofLimitAncestor;
-
-  
-  
-  for (auto asrFrame : Reversed(ASRframes)) {
-    MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
-        aLimitAncestor, asrFrame.mFrame));
-
-#ifdef DEBUG
-    if (asr && (asr->mFrame == asrFrame.mFrame)) {
-      MOZ_ASSERT(asr->mKind == ActiveScrolledRoot::ASRKind::Sticky);
-      MOZ_ASSERT(asrFrame.mASRKind == ActiveScrolledRoot::ASRKind::Scroll);
-    } else {
-      MOZ_ASSERT((asr ? asr->mFrame : nullptr) ==
-                 nsLayoutUtils::GetASRAncestorFrame(
-                     OneStepInASRChain(asrFrame.mFrame), aBuilder));
-    }
-#endif
-
-    asr = (asrFrame.mASRKind == ActiveScrolledRoot::ASRKind::Scroll)
-              ? aBuilder->GetOrCreateActiveScrolledRoot(
-                    asr, static_cast<ScrollContainerFrame*>(
-                             do_QueryFrame(asrFrame.mFrame)))
-              : aBuilder->GetOrCreateActiveScrolledRootForSticky(
-                    asr, asrFrame.mFrame);
-  }
-  return asr;
 }
 
 }  
