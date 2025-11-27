@@ -5305,7 +5305,14 @@ var gMainPane = {
       /^https?$/.test(uri.scheme) &&
       Services.prefs.getBoolPref("browser.chrome.site_icons")
     ) {
-      return uri.prePath + "/favicon.ico";
+      
+      
+      let params = new URLSearchParams({
+        url: uri.prePath + "/favicon.ico",
+        width: 16,
+        height: 16,
+      });
+      return "moz-remote-image://?" + params;
     }
 
     return "";

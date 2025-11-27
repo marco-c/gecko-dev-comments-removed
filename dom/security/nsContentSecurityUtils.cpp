@@ -1322,6 +1322,12 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
     "chrome://pippki/content/setp12password.xhtml"_ns,
 };
 
+static nsLiteralCString sImgSrcMozRemoteImageAllowList[] = {
+    "about:preferences"_ns,
+    "about:settings"_ns,
+    "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"_ns,
+};
+
 static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "about:addons"_ns,
     "about:debugging"_ns,
@@ -1382,7 +1388,6 @@ static nsLiteralCString sImgSrcHttpsAllowList[] = {
     "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
-    "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"_ns,
     "chrome://global/content/alerts/alert.xhtml"_ns,
     "chrome://mozapps/content/handling/appChooser.xhtml"_ns,
 };
@@ -1393,7 +1398,6 @@ static nsLiteralCString sImgSrcHttpAllowList[] = {
     "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
-    "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"_ns,
     "chrome://global/content/alerts/alert.xhtml"_ns,
     "chrome://mozapps/content/handling/appChooser.xhtml"_ns,
     
@@ -1598,6 +1602,14 @@ class ImgSrcVisitor : public AllowBuiltinSrcVisitor {
     
     if (scheme == u"moz-icon"_ns) {
       return true;
+    }
+
+    
+    
+    if (scheme == u"moz-remote-image"_ns) {
+      if (CheckAllowList(sImgSrcMozRemoteImageAllowList)) {
+        return true;
+      }
     }
 
     
