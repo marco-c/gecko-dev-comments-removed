@@ -892,8 +892,8 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
 
   
   
-  if (bc && bc->InRDMPane()) {
-    return bc->GetMaxTouchPointsOverride();
+  if (bc && bc->Top()->InRDMPane()) {
+    return bc->Top()->GetMaxTouchPointsOverride();
   }
 
   
