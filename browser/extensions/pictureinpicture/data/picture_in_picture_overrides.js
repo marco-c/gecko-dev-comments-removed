@@ -501,8 +501,9 @@ let AVAILABLE_PIP_OVERRIDES;
 
 
 
+
       "https://*.youtube.com/*": {
-        visibilityThreshold: 0.7,
+        visibilityThreshold: 0.6,
         videoWrapperScriptPath: "video-wrappers/youtube.js",
       },
       "https://*.youtube-nocookie.com/*": {
