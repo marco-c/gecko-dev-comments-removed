@@ -1248,9 +1248,14 @@ static PropertyIteratorObject* GetIteratorImpl(JSContext* cx,
   
   
   
-  if (!SkipRegistration) {
-    if (obj->is<NativeObject>() &&
-        obj->as<NativeObject>().getDenseInitializedLength() > 0) {
+  
+  
+  
+  if (obj->is<NativeObject>() &&
+      obj->as<NativeObject>().getDenseInitializedLength() > 0) {
+    if (SkipRegistration) {
+      supportsIndices = false;
+    } else {
       obj->as<NativeObject>().markDenseElementsMaybeInIteration();
     }
   }
