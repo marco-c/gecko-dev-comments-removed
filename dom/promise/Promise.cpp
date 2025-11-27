@@ -322,8 +322,18 @@ void Promise::WaitForAll(nsIGlobalObject* aGlobal,
       return nullptr;
     };
     
-    (void)promise->ThenCatchWithCycleCollectedArgs(
+    Result resultPromise = promise->ThenCatchWithCycleCollectedArgs(
         fulfillmentHandlerSteps, rejectionHandlerSteps, result, arg);
+
+    
+    
+    
+    
+    
+    
+    if (resultPromise.isOk()) {
+      (void)resultPromise.unwrap()->SetAnyPromiseIsHandled();
+    }
 
     
     index++;
