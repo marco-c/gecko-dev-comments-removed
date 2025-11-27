@@ -237,17 +237,17 @@ class LoadedScript : public nsIMemoryReporter {
 
   bool HasSRI() {
     MOZ_ASSERT(CanHaveSRIOnly());
-    return !mSRIAndBytecode.empty();
+    return !mSRIAndSerializedStencil.empty();
   }
 
   TranscodeBuffer& SRI() {
     MOZ_ASSERT(CanHaveSRIOnly());
-    return mSRIAndBytecode;
+    return mSRIAndSerializedStencil;
   }
 
   void DropSRI() {
     MOZ_ASSERT(CanHaveSRIOnly());
-    mSRIAndBytecode.clearAndFree();
+    mSRIAndSerializedStencil.clearAndFree();
   }
 
   
@@ -256,14 +256,13 @@ class LoadedScript : public nsIMemoryReporter {
 
   TranscodeBuffer& SRIAndSerializedStencil() {
     MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
-    return mSRIAndBytecode;
+    return mSRIAndSerializedStencil;
   }
   TranscodeRange SerializedStencil() const {
     MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
-    const auto& bytecode = mSRIAndBytecode;
+    const auto& buf = mSRIAndSerializedStencil;
     auto offset = mBytecodeOffset;
-    return TranscodeRange(bytecode.begin() + offset,
-                          bytecode.length() - offset);
+    return TranscodeRange(buf.begin() + offset, buf.length() - offset);
   }
 
   
@@ -279,12 +278,12 @@ class LoadedScript : public nsIMemoryReporter {
 
   bool HasNoSRIOrSRIAndSerializedStencil() const {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
-    return mSRIAndBytecode.empty();
+    return mSRIAndSerializedStencil.empty();
   }
 
   void DropSRIOrSRIAndSerializedStencil() {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
-    mSRIAndBytecode.clearAndFree();
+    mSRIAndSerializedStencil.clearAndFree();
   }
 
   
@@ -432,7 +431,7 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   
-  TranscodeBuffer mSRIAndBytecode;
+  TranscodeBuffer mSRIAndSerializedStencil;
 
   
   RefPtr<Stencil> mStencil;
