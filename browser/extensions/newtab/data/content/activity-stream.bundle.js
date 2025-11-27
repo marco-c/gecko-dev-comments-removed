@@ -9056,17 +9056,16 @@ class _TopSiteList extends (external_React_default()).PureComponent {
     if (this.state.activeIndex || this.state.activeIndex === 0) {
       return;
     }
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       
-      e.preventDefault();
-    }
-    if (this.focusedRef?.nextSibling?.querySelector("a") && e.key === "ArrowDown") {
-      this.focusedRef.nextSibling.querySelector("a").tabIndex = 0;
-      this.focusedRef.nextSibling.querySelector("a").focus();
-    }
-    if (this.focusedRef?.previousSibling?.querySelector("a") && e.key === "ArrowUp") {
-      this.focusedRef.previousSibling.querySelector("a").tabIndex = 0;
-      this.focusedRef.previousSibling.querySelector("a").focus();
+      const isRTL = document.dir === "rtl";
+      const navigateToPrevious = isRTL ? e.key === "ArrowRight" : e.key === "ArrowLeft";
+      const targetTopSite = navigateToPrevious ? this.focusedRef?.previousSibling : this.focusedRef?.nextSibling;
+      const targetAnchor = targetTopSite?.querySelector("a");
+      if (targetAnchor) {
+        targetAnchor.tabIndex = 0;
+        targetAnchor.focus();
+      }
     }
   }
   onWrapperFocus() {
