@@ -8,6 +8,8 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/net/DNS.h"
+#include "nsNetUtil.h"
+#include "nsIOService.h"
 
 TEST(TestNetAddrLNAUtil, IPAddressSpaceCategorization)
 {
@@ -28,6 +30,7 @@ TEST(TestNetAddrLNAUtil, IPAddressSpaceCategorization)
 
 
   using namespace mozilla::net;
+  using namespace mozilla;
 
   struct TestCase {
     const char* mIp;
@@ -38,8 +41,12 @@ TEST(TestNetAddrLNAUtil, IPAddressSpaceCategorization)
       
       {"", nsILoadInfo::IPAddressSpace::Unknown},
       {"127.0.0.1", nsILoadInfo::IPAddressSpace::Local},
-      {"198.18.0.0", nsILoadInfo::IPAddressSpace::Local},
-      {"198.19.255.255", nsILoadInfo::IPAddressSpace::Local},
+      {"198.18.0.0", StaticPrefs::network_lna_benchmarking_is_local()
+                         ? nsILoadInfo::IPAddressSpace::Local
+                         : nsILoadInfo::IPAddressSpace::Public},
+      {"198.19.255.255", StaticPrefs::network_lna_benchmarking_is_local()
+                             ? nsILoadInfo::IPAddressSpace::Local
+                             : nsILoadInfo::IPAddressSpace::Public},
 
       
       {"10.0.0.1", nsILoadInfo::IPAddressSpace::Private},
@@ -122,7 +129,7 @@ TEST(TestNetAddrLNAUtil, DefaultAndOverrideTransitions)
        "network.lna.address_space.public.override"},
 
       
-      {"198.18.0.1", 9999, IPAddressSpace::Local, IPAddressSpace::Private,
+      {"127.0.0.1", 9999, IPAddressSpace::Local, IPAddressSpace::Private,
        "network.lna.address_space.private.override"},
   };
 
@@ -149,4 +156,115 @@ TEST(TestNetAddrLNAUtil, DefaultAndOverrideTransitions)
     ASSERT_EQ(resetAddr.GetIpAddressSpace(), tc.defaultSpace)
         << "Expected reset back to default space for " << tc.ip;
   }
+}
+
+TEST(TestNetAddrLNAUtil, ShouldSkipDomainForLNA)
+{
+  using mozilla::Preferences;
+  
+  mozilla::net::nsIOService* ioService = mozilla::net::gIOService;
+  ASSERT_NE(ioService, nullptr);
+
+  
+  Preferences::SetCString("network.lna.skip-domains", ""_ns);
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("example.com"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("test.example.com"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("localhost"_ns));
+
+  
+  Preferences::SetCString("network.lna.skip-domains",
+                          "example.com,test.org"_ns);
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("example.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("test.org"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("sub.example.com"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("example.org"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("notexample.com"_ns));
+
+  
+  Preferences::SetCString("network.lna.skip-domains",
+                          "*.example.com,*.test.org"_ns);
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("sub.example.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("deep.sub.example.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("api.test.org"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "example.com"_ns));  
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "test.org"_ns));  
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("example.net"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("notexample.com"_ns));
+
+  
+  Preferences::SetCString("network.lna.skip-domains",
+                          "*.local,*.internal,*.test"_ns);
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("server.local"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("api.internal"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("service.test"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("deep.subdomain.local"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "local"_ns));  
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "internal"_ns));  
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("local.example.com"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("localhost"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("example.com"_ns));
+
+  
+  Preferences::SetCString(
+      "network.lna.skip-domains",
+      "localhost,*.dev.local,*.staging.com,production.example.com"_ns);
+  
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("localhost"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("production.example.com"_ns));
+  
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("api.dev.local"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("web.dev.local"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("dev.local"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("test.staging.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("api.staging.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("staging.com"_ns));
+  
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("example.com"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("dev.example.com"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("staging.example.com"_ns));
+
+  
+  Preferences::SetCString(
+      "network.lna.skip-domains",
+      " example.com , , *.test.local , admin.internal  "_ns);
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("example.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("api.test.local"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("admin.internal"_ns));
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("test.com"_ns));
+
+  
+  Preferences::SetCString("network.lna.skip-domains",
+                          "example.com,invalid.pattern"_ns);
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "example.com"_ns));  
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "invalid.pattern"_ns));  
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA("test.com"_ns));  
+
+  
+  Preferences::SetCString("network.lna.skip-domains",
+                          "Example.COM,*.Test.ORG"_ns);
+  EXPECT_TRUE(
+      ioService->ShouldSkipDomainForLNA("Example.COM"_ns));  
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA(
+      "example.com"_ns));  
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA(
+      "api.Test.ORG"_ns));  
+  EXPECT_FALSE(ioService->ShouldSkipDomainForLNA(
+      "api.test.org"_ns));  
+
+  
+  Preferences::SetCString("network.lna.skip-domains", "*"_ns);
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("example.com"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("test.org"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("localhost"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("any.domain.here"_ns));
+  EXPECT_TRUE(ioService->ShouldSkipDomainForLNA("server.local"_ns));
+
+  
+  Preferences::SetCString("network.lna.skip-domains", ""_ns);
 }
