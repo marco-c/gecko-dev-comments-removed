@@ -292,6 +292,16 @@ class DisplayPortUtils {
 
 
 
+
+
+
+
+  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame);
+
+  
+
+
+
   static void SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
       nsIFrame* aFrame);
 

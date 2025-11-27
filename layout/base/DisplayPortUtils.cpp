@@ -10,6 +10,7 @@
 
 #include "FrameMetrics.h"
 #include "RetainedDisplayListBuilder.h"
+#include "StickyScrollContainer.h"
 #include "WindowRenderer.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -852,6 +853,22 @@ nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
     if (nsIFrame* root = aFrame->PresShell()->GetRootScrollContainerFrame()) {
       return root;
     }
+  }
+  return nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
+}
+
+nsIFrame* DisplayPortUtils::OneStepInASRChain(nsIFrame* aFrame) {
+  
+  
+  
+  
+  if (aFrame->IsMenuPopupFrame()) {
+    return nullptr;
+  }
+  nsIFrame* anchor = nullptr;
+  while ((anchor =
+              AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
+    aFrame = anchor;
   }
   return nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
 }
