@@ -112,6 +112,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   private String mIMEAutocapitalize = ""; 
   private boolean mIMEAutocorrect = false; 
   @IMEContextFlags private int mIMEFlags; 
+  private volatile boolean mIsNewICCreated = false; 
 
   private boolean mIgnoreSelectionChange; 
   
@@ -1844,9 +1845,20 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         new Runnable() {
           @Override
           public void run() {
-            if (DEBUG) {
-              Log.d(LOGTAG, "restartInput(" + reason + ", " + toggleSoftInput + ')');
+            if (LOGGING) {
+              final StringBuilder sb = new StringBuilder("restartInput(reason=");
+              sb.append(
+                      getConstantName(
+                          GeckoSession.TextInputDelegate.class, "RESTART_REASON_", reason))
+                  .append(", toggleSoftInput=")
+                  .append(toggleSoftInput)
+                  .append(")");
+              MozLog.d(LOGTAG, sb.toString());
             }
+
+            
+            
+            mIsNewICCreated = false;
 
             final GeckoSession session = mSession.get();
             if (session != null) {
@@ -1867,6 +1879,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                       
                       state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
                     }
+                    if (state != SessionTextInput.EditableListener.IME_STATE_DISABLED
+                        && mIsNewICCreated) {
+                      
+                      
+                      return;
+                    }
+
+                    
+                    mIsNewICCreated = true;
+
                     toggleSoftInput( false, state);
                   }
                 });
@@ -1882,6 +1904,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final String autocapitalize = mIMEAutocapitalize;
     boolean autocorrect = mIMEAutocorrect;
     final int flags = mIMEFlags;
+
+    
+    mIsNewICCreated = true;
 
     
     outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
