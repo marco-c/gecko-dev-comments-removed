@@ -46,6 +46,8 @@ already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
     return nullptr;
   }
 
+  
+  
   cairo_surface_t* surface = cairo_win32_printing_surface_create(aDC);
 
   if (cairo_surface_status(surface)) {
