@@ -274,6 +274,8 @@ add_task(async function test_csp_validator_extension_pages() {
   );
 
   
+  
+  
   for (let src of [
     "http://localhost",
     "https://localhost",
@@ -284,6 +286,15 @@ add_task(async function test_csp_validator_extension_pages() {
     checkPolicy(
       `script-src 'self' ${src};`,
       `\u2018script-src\u2019 directive contains a forbidden ${protocol}: protocol source`
+    );
+
+    equal(
+      cps.validateAddonCSP(
+        `script-src 'self' ${src}`,
+        Ci.nsIAddonContentPolicy.CSP_ALLOW_LOCALHOST
+      ),
+      null,
+      `Localhost source should be allowed by CSP_ALLOW_LOCALHOST: ${src}`
     );
   }
 
