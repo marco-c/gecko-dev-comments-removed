@@ -130,6 +130,13 @@ static_assert(MFD_HUGE_SHIFT == MAP_HUGE_SHIFT);
 #endif
 
 
+#ifndef F_DUPFD_QUERY
+#  define F_DUPFD_QUERY (F_LINUX_SPECIFIC_BASE + 3)
+#else
+static_assert(F_DUPFD_QUERY == (F_LINUX_SPECIFIC_BASE + 3));
+#endif
+
+
 #ifndef ANDROID
 #  define DESKTOP
 #endif
@@ -1111,6 +1118,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #endif
             
             .Case(F_DUPFD_CLOEXEC, Allow())
+            
+            
+            .Case(F_DUPFD_QUERY, Allow())
             .Default(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 

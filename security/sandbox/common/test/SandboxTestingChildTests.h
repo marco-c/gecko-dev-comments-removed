@@ -88,6 +88,16 @@ extern "C" int sandbox_check(pid_t pid, const char* operation, int type, ...);
 #    define MFD_HUGE_2MB (21U << 26)
 #  endif
 
+
+
+
+#  ifndef F_LINUX_SPECIFIC_BASE
+#    define F_LINUX_SPECIFIC_BASE 1024
+#  endif
+
+#  ifndef F_DUPFD_QUERY
+#    define F_DUPFD_QUERY (F_LINUX_SPECIFIC_BASE + 3)
+#  endif
 #endif
 
 constexpr bool kIsDebug =
@@ -155,6 +165,23 @@ static void RunGenericTests(SandboxTestingChild* child, bool aIsGMP = false) {
       flags = fcntl(fds[0], F_GETFL);
       MOZ_RELEASE_ASSERT(flags >= 0);
       MOZ_RELEASE_ASSERT(flags & O_NONBLOCK);
+    }
+  }
+
+  if (!aIsGMP) {
+    constexpr auto name = "fcntl_dupfd_query"_ns;
+    int rv = fcntl(0, F_DUPFD_QUERY, 0);
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(rv != 0);
+    if (rv > 0) {
+      child->PosixTest(name, true, 0);
+    } else {  
+      child->PosixTest(name, false, errno, Some(EINVAL));
     }
   }
 #endif  
