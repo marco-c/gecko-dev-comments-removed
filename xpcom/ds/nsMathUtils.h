@@ -87,19 +87,6 @@ inline double NS_hypot(double aNum1, double aNum2) {
 
 
 
-inline bool NS_finite(double aNum) {
-#ifdef WIN32
-  
-  return !!_finite(aNum);
-#else
-  return std::isfinite(aNum);
-#endif
-}
-
-
-
-
-
 
 
 inline double NS_floorModulo(double aNum1, double aNum2) {
