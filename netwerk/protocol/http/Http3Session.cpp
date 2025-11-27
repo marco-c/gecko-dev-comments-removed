@@ -1513,12 +1513,6 @@ nsresult Http3Session::TryActivating(
       QueueStream(aStream);
       return rv;
     }
-    if (rv == NS_ERROR_DOM_INVALID_HEADER_VALUE) {
-      
-      
-      
-      return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
-    }
 
     
     
