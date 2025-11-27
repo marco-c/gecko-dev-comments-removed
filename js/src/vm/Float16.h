@@ -205,14 +205,7 @@ class float16 final {
   uint16_t val;
 
  public:
-  
-  
-  
-  
-  
-  
-
-   float16() = default;
+  constexpr float16() = default;
   constexpr float16(const float16&) = default;
 
   explicit float16(float x) : val(half::float2half_impl(x)) {}

@@ -32,14 +32,7 @@ class uint8_clamped final {
   }
 
  public:
-  
-  
-  
-  
-  
-  
-
-   uint8_clamped() = default;
+  constexpr uint8_clamped() = default;
   constexpr uint8_clamped(const uint8_clamped&) = default;
 
   constexpr explicit uint8_clamped(uint8_t x) : val(x) {}
