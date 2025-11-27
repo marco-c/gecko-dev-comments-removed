@@ -1265,15 +1265,6 @@ bool RetainedDisplayListBuilder::ComputeRebuildRegion(
 
 bool RetainedDisplayListBuilder::ShouldBuildPartial(
     nsTArray<nsIFrame*>& aModifiedFrames) {
-  
-  
-  
-  if (mBuilder.DisablePartialUpdates()) {
-    mBuilder.SetDisablePartialUpdates(false);
-    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
-    return false;
-  }
-
   if (mList.IsEmpty()) {
     
     Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::EmptyList;
@@ -1284,6 +1275,15 @@ bool RetainedDisplayListBuilder::ShouldBuildPartial(
       StaticPrefs::layout_display_list_rebuild_frame_limit()) {
     
     Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::RebuildLimit;
+    return false;
+  }
+
+  
+  
+  
+  if (mBuilder.DisablePartialUpdates()) {
+    mBuilder.SetDisablePartialUpdates(false);
+    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
     return false;
   }
 
