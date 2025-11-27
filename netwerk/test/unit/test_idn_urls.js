@@ -153,10 +153,12 @@ const testcases = [
   ["super𝟖", "super8", true],
 
   
-  ["𠀀𠀁𠀂", "xn--j50icd", true],
+  ["𠀀𠀁𠀂", "xn--j50icd", false],
+  ["𠜎𠜱𠝹", "xn--4m2igcqk", true],
 
   
-  ["\uD840\uDC00\uD840\uDC01\uD840\uDC02", "xn--j50icd", true],
+  ["\uD840\uDC00\uD840\uDC01\uD840\uDC02", "xn--j50icd", false],
+  ["\uD841\uDF0E\uD841\uDF31\uD841\uDF79", "xn--4m2igcqk", true],
 
   
   
@@ -191,26 +193,26 @@ const testcases = [
   ["萬万城", "xn--chq31vrl1b", true],
 
   
-  ["注音符号bopomofoㄅㄆㄇㄈ", "xn--bopomofo-hj5gkalm1637i876cuw0brk5f", true],
+  ["注音符号bopomofoㄅㄆㄇㄈ", "xn--bopomofo-hj5gkalm1637i876cuw0brk5f", false],
 
   
   
   
-  ["注音符号ㄅbopomofo", "xn--bopomofo-8i5gx891aylvccz9asi4e", true],
+  ["注音符号ㄅbopomofo", "xn--bopomofo-8i5gx891aylvccz9asi4e", false],
 
   
-  ["bopomofo注音符号ㄅㄆㄇㄈ", "xn--bopomofo-hj5gkalm9637i876cuw0brk5f", true],
+  ["bopomofo注音符号ㄅㄆㄇㄈ", "xn--bopomofo-hj5gkalm9637i876cuw0brk5f", false],
 
   
-  ["bopomofoㄅㄆㄇㄈ注音符号", "xn--bopomofo-hj5gkalm3737i876cuw0brk5f", true],
+  ["bopomofoㄅㄆㄇㄈ注音符号", "xn--bopomofo-hj5gkalm3737i876cuw0brk5f", false],
 
   
-  ["ㄅㄆㄇㄈ注音符号bopomofo", "xn--bopomofo-8i5gkalm3737i876cuw0brk5f", true],
+  ["ㄅㄆㄇㄈ注音符号bopomofo", "xn--bopomofo-8i5gkalm3737i876cuw0brk5f", false],
 
   
   
   
-  ["ㄅbopomofo注音符号", "xn--bopomofo-8i5g6891aylvccz9asi4e", true],
+  ["ㄅbopomofo注音符号", "xn--bopomofo-8i5g6891aylvccz9asi4e", false],
 
   
   ["注音符号ㄅㄆㄇㄈボポモフォ", "xn--jckteuaez1shij0450gylvccz9asi4e", false],
@@ -262,10 +264,10 @@ const testcases = [
   ],
 
   
-  ["䕮䕵䕶䕱.ascii", "xn--google.ascii", true],
-  ["ascii.䕮䕵䕶䕱", "ascii.xn--google", true],
-  ["中国123.䕮䕵䕶䕱", "xn--123-u68dy61b.xn--google", true],
-  ["䕮䕵䕶䕱.中国123", "xn--google.xn--123-u68dy61b", true],
+  ["曹曳曷曽.ascii", "xn--movies.ascii", true],
+  ["ascii.曹曳曷曽", "ascii.xn--movies", true],
+  ["中国123.曹曳曷曽", "xn--123-u68dy61b.xn--movies", true],
+  ["曹曳曷曽.中国123", "xn--movies.xn--123-u68dy61b", true],
   
   
   
