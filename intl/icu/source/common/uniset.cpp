@@ -974,12 +974,12 @@ void UnicodeSet::_add(const UnicodeString& s) {
         setToBogus();
         return;
     }
-    UnicodeString* t = new UnicodeString(s);
-    if (t == nullptr) { 
+    LocalPointer<UnicodeString> t(new UnicodeString(s));
+    if (t.isNull()) { 
         setToBogus();
         return;
     }
-    strings_->sortedInsert(t, compareUnicodeString, ec);
+    strings_->sortedInsert(t.orphan(), compareUnicodeString, ec);
     if (U_FAILURE(ec)) {
         setToBogus();
     }

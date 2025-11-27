@@ -157,11 +157,9 @@ private:
     
 
 
-
     CanonicalIterator(const CanonicalIterator& other) = delete;
 
     
-
 
 
     CanonicalIterator& operator=(const CanonicalIterator& other) = delete;

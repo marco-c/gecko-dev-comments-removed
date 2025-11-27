@@ -61,7 +61,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "16.0"
+#define U_UNICODE_VERSION "17.0"
 
 
 
@@ -552,14 +552,12 @@ typedef enum UProperty {
 
 
     UCHAR_ID_COMPAT_MATH_CONTINUE=74,
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
     UCHAR_MODIFIER_COMBINING_MARK=75,
-#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -682,14 +680,12 @@ typedef enum UProperty {
 
 
     UCHAR_IDENTIFIER_STATUS=0x1019,
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
 
     UCHAR_INDIC_CONJUNCT_BREAK=0x101A,
-#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1985,6 +1981,25 @@ enum UBlockCode {
     
     UBLOCK_TULU_TIGALARI = 338, 
 
+    
+
+    
+    UBLOCK_BERIA_ERFE = 339, 
+    
+    UBLOCK_CJK_UNIFIED_IDEOGRAPHS_EXTENSION_J = 340, 
+    
+    UBLOCK_MISCELLANEOUS_SYMBOLS_SUPPLEMENT = 341, 
+    
+    UBLOCK_SHARADA_SUPPLEMENT = 342, 
+    
+    UBLOCK_SIDETIC = 343, 
+    
+    UBLOCK_TAI_YO = 344, 
+    
+    UBLOCK_TANGUT_COMPONENTS_SUPPLEMENT = 345, 
+    
+    UBLOCK_TOLONG_SIKI = 346, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1992,7 +2007,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 339,
+    UBLOCK_COUNT = 347,
 #endif  
 
     
@@ -2289,6 +2304,8 @@ typedef enum UJoiningGroup {
 
     U_JG_KASHMIRI_YEH,  
 
+    U_JG_THIN_NOON,  
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2536,6 +2553,8 @@ typedef enum ULineBreak {
     U_LB_VIRAMA_FINAL = 46,      
     
     U_LB_VIRAMA = 47,            
+    
+    U_LB_UNAMBIGUOUS_HYPHEN = 48,
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2543,7 +2562,7 @@ typedef enum ULineBreak {
 
 
 
-    U_LB_COUNT = 48
+    U_LB_COUNT = 49
 #endif  
 } ULineBreak;
 
@@ -2741,7 +2760,6 @@ typedef enum UIndicSyllabicCategory {
     U_INSC_REORDERING_KILLER,
 } UIndicSyllabicCategory;
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -2764,7 +2782,6 @@ typedef enum UIndicConjunctBreak {
     
     U_INCB_LINKER,
 } UIndicConjunctBreak;
-#endif  
 
 
 

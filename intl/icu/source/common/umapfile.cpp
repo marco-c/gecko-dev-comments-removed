@@ -119,6 +119,7 @@ typedef HANDLE MemoryMap;
 
         HANDLE map = nullptr;
         HANDLE file = INVALID_HANDLE_VALUE;
+        DWORD fileLength = 0;
 
         UDataMemory_init(pData); 
 
@@ -159,6 +160,8 @@ typedef HANDLE MemoryMap;
             return false;
         }
 
+        fileLength = GetFileSize(file, nullptr);
+
         
         
         
@@ -181,6 +184,8 @@ typedef HANDLE MemoryMap;
             return false;
         }
         pData->map = map;
+        pData->length = fileLength;
+
         return true;
     }
 
@@ -237,6 +242,7 @@ typedef HANDLE MemoryMap;
         pData->map = (char *)data + length;
         pData->pHeader=(const DataHeader *)data;
         pData->mapAddr = data;
+        pData->length = length;
 #if U_PLATFORM == U_PF_IPHONE || U_PLATFORM == U_PF_ANDROID
     
     
@@ -320,6 +326,7 @@ typedef HANDLE MemoryMap;
         pData->map=p;
         pData->pHeader=(const DataHeader *)p;
         pData->mapAddr=p;
+        pData->length = fileLength;
         return true;
     }
 

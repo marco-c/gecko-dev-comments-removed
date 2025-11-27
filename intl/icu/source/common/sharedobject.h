@@ -51,62 +51,62 @@ private:
 
 
 
-class U_COMMON_API SharedObject : public UObject {
+class U_COMMON_API_CLASS SharedObject : public UObject {
 public:
     
-    SharedObject() :
+    U_COMMON_API SharedObject() :
             softRefCount(0),
             hardRefCount(0),
             cachePtr(nullptr) {}
 
     
-    SharedObject(const SharedObject &other) :
+    U_COMMON_API SharedObject(const SharedObject &other) :
             UObject(other),
             softRefCount(0),
             hardRefCount(0),
             cachePtr(nullptr) {}
 
-    virtual ~SharedObject();
+    U_COMMON_API virtual ~SharedObject();
 
     
 
 
 
-    void addRef() const;
-
-    
-
-
-
-
-
-
-    void removeRef() const;
-
-    
-
-
-
-    int32_t getRefCount() const;
-
-    
-
-
-
-    inline UBool noHardReferences() const { return getRefCount() == 0; }
-
-    
-
-
-
-    inline UBool hasHardReferences() const { return getRefCount() != 0; }
+    U_COMMON_API void addRef() const;
 
     
 
 
 
 
-    void deleteIfZeroRefCount() const;
+
+
+    U_COMMON_API void removeRef() const;
+
+    
+
+
+
+    U_COMMON_API int32_t getRefCount() const;
+
+    
+
+
+
+    U_COMMON_API inline UBool noHardReferences() const { return getRefCount() == 0; }
+
+    
+
+
+
+    U_COMMON_API inline UBool hasHardReferences() const { return getRefCount() != 0; }
+
+    
+
+
+
+
+    U_COMMON_API void deleteIfZeroRefCount() const;
 
         
     

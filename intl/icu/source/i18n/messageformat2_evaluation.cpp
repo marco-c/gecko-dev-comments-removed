@@ -11,6 +11,7 @@
 
 #include "messageformat2_allocation.h"
 #include "messageformat2_evaluation.h"
+#include "messageformat2_function_registry_internal.h"
 #include "messageformat2_macros.h"
 #include "uvector.h" 
 
@@ -28,6 +29,7 @@ using namespace data_model;
 ResolvedFunctionOption::ResolvedFunctionOption(ResolvedFunctionOption&& other) {
     name = std::move(other.name);
     value = std::move(other.value);
+    sourceIsLiteral = other.sourceIsLiteral;
 }
 
 ResolvedFunctionOption::~ResolvedFunctionOption() {}
@@ -46,7 +48,21 @@ FunctionOptions::FunctionOptions(UVector&& optionsVector, UErrorCode& status) {
     options = moveVectorToArray<ResolvedFunctionOption>(optionsVector, status);
 }
 
-UBool FunctionOptions::getFunctionOption(const UnicodeString& key, Formattable& option) const {
+
+UBool FunctionOptions::wasSetFromLiteral(const UnicodeString& key) const {
+    if (options == nullptr) {
+        U_ASSERT(functionOptionsLen == 0);
+    }
+    for (int32_t i = 0; i < functionOptionsLen; i++) {
+        const ResolvedFunctionOption& opt = options[i];
+        if (opt.getName() == key) {
+            return opt.isLiteral();
+        }
+    }
+    return false;
+}
+
+UBool FunctionOptions::getFunctionOption(std::u16string_view key, Formattable& option) const {
     if (options == nullptr) {
         U_ASSERT(functionOptionsLen == 0);
     }
@@ -60,7 +76,7 @@ UBool FunctionOptions::getFunctionOption(const UnicodeString& key, Formattable& 
     return false;
 }
 
-UnicodeString FunctionOptions::getStringFunctionOption(const UnicodeString& key) const {
+UnicodeString FunctionOptions::getStringFunctionOption(std::u16string_view key) const {
     Formattable option;
     if (getFunctionOption(key, option)) {
         if (option.getType() == UFMT_STRING) {
@@ -211,10 +227,9 @@ PrioritizedVariant::~PrioritizedVariant() {}
         errors.checkErrors(status);
     }
 
-    const Formattable* MessageContext::getGlobal(const MessageFormatter& context,
-                                                 const VariableName& v,
+    const Formattable* MessageContext::getGlobal(const VariableName& v,
                                                  UErrorCode& errorCode) const {
-       return arguments.getArgument(context, v, errorCode);
+       return arguments.getArgument(v, errorCode);
     }
 
     MessageContext::MessageContext(const MessageArguments& args,
@@ -304,11 +319,24 @@ PrioritizedVariant::~PrioritizedVariant() {}
         FunctionOptions opts;
         InternalValue* p = this;
         FunctionName selectorName = name;
+
+        bool operandSelect = false;
         while (std::holds_alternative<InternalValue*>(p->argument)) {
             if (p->name != selectorName) {
                 
                 errorCode = U_ILLEGAL_ARGUMENT_ERROR;
                 return;
+            }
+            
+            
+            
+            if (p != this &&
+                !p->options.getStringFunctionOption(options::SELECT).isEmpty()
+                && (selectorName == functions::NUMBER || selectorName == functions::INTEGER)) {
+                
+                
+                
+                operandSelect = true;
             }
             
             opts = opts.mergeOptions(std::move(p->options), errorCode);
@@ -320,13 +348,48 @@ PrioritizedVariant::~PrioritizedVariant() {}
         }
         FormattedPlaceholder arg = std::move(*std::get_if<FormattedPlaceholder>(&p->argument));
 
+        
+        
+        
+        
+        
+        
+        
+        bool badSelectOption = !checkSelectOption();
+
         selector->selectKey(std::move(arg), std::move(opts),
                             keys, keysLen,
                             prefs, prefsLen, errorCode);
-        if (U_FAILURE(errorCode)) {
+        if (errorCode == U_MF_SELECTOR_ERROR) {
             errorCode = U_ZERO_ERROR;
             errs.setSelectorError(selectorName, errorCode);
+        } else if (errorCode == U_MF_BAD_OPTION) {
+            errorCode = U_ZERO_ERROR;
+            errs.setBadOption(selectorName, errorCode);
+        } else if (operandSelect || badSelectOption) {
+            errs.setRecoverableBadOption(selectorName, errorCode);
+            
+            prefsLen = 0;
         }
+    }
+
+    bool InternalValue::checkSelectOption() const {
+        if (name != UnicodeString("number") && name != UnicodeString("integer")) {
+            return true;
+        }
+
+        
+        
+
+        Formattable opt;
+        
+
+        
+        if (!options.getFunctionOption(UnicodeString("select"), opt)) {
+            return true;
+        }
+        
+        return options.wasSetFromLiteral(UnicodeString("select"));
     }
 
     FormattedPlaceholder InternalValue::forceFormatting(DynamicErrors& errs, UErrorCode& errorCode) {
@@ -356,6 +419,10 @@ PrioritizedVariant::~PrioritizedVariant() {}
             return {};
         }
 
+        if (arg.isFallback()) {
+            return arg;
+        }
+
         
         UnicodeString fallback;
         if (arg.isNullOperand()) {
@@ -366,11 +433,25 @@ PrioritizedVariant::~PrioritizedVariant() {}
         }
 
         
+        
+        
+        
+        
+        bool badSelect = !checkSelectOption();
+
+        
         FormattedPlaceholder result = formatter->format(std::move(arg), std::move(options), errorCode);
+        if (U_SUCCESS(errorCode) && errorCode == U_USING_DEFAULT_WARNING) {
+            
+            errorCode = U_ZERO_ERROR;
+        }
         if (U_FAILURE(errorCode)) {
             if (errorCode == U_MF_OPERAND_MISMATCH_ERROR) {
                 errorCode = U_ZERO_ERROR;
                 errs.setOperandMismatchError(name, errorCode);
+            } else if (errorCode == U_MF_BAD_OPTION) {
+                errorCode = U_ZERO_ERROR;
+                errs.setBadOption(name, errorCode);
             } else {
                 errorCode = U_ZERO_ERROR;
                 
@@ -379,10 +460,17 @@ PrioritizedVariant::~PrioritizedVariant() {}
             }
         }
         
-        if (errs.hasFormattingError()) {
+        
+        
+        
+        if (errs.hasFormattingError() || errs.hasBadOptionError()) {
             return FormattedPlaceholder(fallback);
         }
-
+        if (badSelect) {
+            
+            
+            errs.setRecoverableBadOption(name, errorCode);
+        }
         return result;
     }
 

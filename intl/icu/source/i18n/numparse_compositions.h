@@ -11,13 +11,6 @@
 
 U_NAMESPACE_BEGIN
 
-
-
-
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API MaybeStackArray<const numparse::impl::NumberParseMatcher*, 3>;
-#endif
-
 namespace numparse::impl {
 
 
@@ -91,18 +84,18 @@ class U_I18N_API SeriesMatcher : public CompositionMatcher {
 
 
 
-class U_I18N_API ArraySeriesMatcher : public SeriesMatcher {
+class U_I18N_API_CLASS ArraySeriesMatcher : public SeriesMatcher {
   public:
-    ArraySeriesMatcher();  
+    U_I18N_API ArraySeriesMatcher();  
 
     typedef MaybeStackArray<const NumberParseMatcher*, 3> MatcherArray;
 
     
-    ArraySeriesMatcher(MatcherArray& matchers, int32_t matchersLen);
+    U_I18N_API ArraySeriesMatcher(MatcherArray& matchers, int32_t matchersLen);
 
     UnicodeString toString() const override;
 
-    int32_t length() const override;
+    U_I18N_API int32_t length() const override;
 
   protected:
     const NumberParseMatcher* const* begin() const override;

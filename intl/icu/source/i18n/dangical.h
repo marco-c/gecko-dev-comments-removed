@@ -68,24 +68,6 @@ class DangiCalendar : public ChineseCalendar {
 
   virtual DangiCalendar* clone() const override;
 
-  
-  
-  
-
-  
-
-
-
-
-  virtual int32_t getRelatedYear(UErrorCode &status) const override;
-
-  
-
-
-
-
-  virtual void setRelatedYear(int32_t year) override;
-
  private:
 
   

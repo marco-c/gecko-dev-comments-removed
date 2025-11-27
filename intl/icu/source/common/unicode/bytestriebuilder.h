@@ -150,9 +150,6 @@ private:
     virtual int32_t getMinLinearMatch() const override { return BytesTrie::kMinLinearMatch; }
     virtual int32_t getMaxLinearMatchLength() const override { return BytesTrie::kMaxLinearMatchLength; }
 
-    
-
-
     class BTLinearMatchNode : public LinearMatchNode {
     public:
         BTLinearMatchNode(const char *units, int32_t len, Node *nextNode);

@@ -125,6 +125,30 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
         U_NAMESPACE_USE
 #   endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef U_FORCE_HIDE_DRAFT_API
 
 
@@ -135,30 +159,7 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif  
 
 
 #if defined(_MSC_VER) || (UPRV_HAS_DECLSPEC_ATTRIBUTE(__dllexport__) && \
@@ -180,7 +181,6 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
 #define U_HEADER_ONLY_NAMESPACE U_ICU_NAMESPACE::U_HEADER_NESTED_NAMESPACE
 
 namespace U_HEADER_ONLY_NAMESPACE {}
-#endif  
 
 #endif 
 

@@ -157,7 +157,6 @@ public:
 
     static void U_EXPORT2 operator delete[](void *p) noexcept;
 
-#if U_HAVE_PLACEMENT_NEW
     
 
 
@@ -171,7 +170,7 @@ public:
 
 
     static inline void U_EXPORT2 operator delete(void *, void *) noexcept {}
-#endif 
+
 #if U_HAVE_DEBUG_LOCATION_NEW
     
 

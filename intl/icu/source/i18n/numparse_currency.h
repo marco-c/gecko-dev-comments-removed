@@ -30,7 +30,7 @@ using ::icu::number::impl::CurrencySymbols;
 
 
 
-class U_I18N_API CombinedCurrencyMatcher : public NumberParseMatcher, public UMemory {
+class U_I18N_API_CLASS CombinedCurrencyMatcher : public NumberParseMatcher, public UMemory {
   public:
     CombinedCurrencyMatcher() = default;  
 

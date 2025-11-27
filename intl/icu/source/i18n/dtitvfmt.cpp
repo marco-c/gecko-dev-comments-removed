@@ -635,7 +635,7 @@ DateIntervalFormat::getTimeZone() const
     
     return *(TimeZone::createDefault());
 }
-
+ 
 void DateIntervalFormat::adoptCalendar(Calendar *calendarToAdopt) {
     if (fDateFormat != nullptr) {
         fDateFormat->adoptCalendar(calendarToAdopt);

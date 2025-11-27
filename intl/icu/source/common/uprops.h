@@ -501,6 +501,10 @@ ublock_addPropertyStarts(const USetAdder *sa, UErrorCode &errorCode);
 
 
 
+U_CAPI void U_EXPORT2
+uprv_addScriptExtensionsCodePoints(const USetAdder *sa, UErrorCode *pErrorCode);
+
+
 
 
 

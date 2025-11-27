@@ -518,6 +518,17 @@ typedef enum UScriptCode {
       
       USCRIPT_TULU_TIGALARI                 = 207, 
 
+      
+      USCRIPT_BERIA_ERFE                    = 208, 
+      
+      USCRIPT_SIDETIC                       = 209, 
+      
+      USCRIPT_TAI_YO                        = 210, 
+      
+      USCRIPT_TOLONG_SIKI                   = 211, 
+      
+      USCRIPT_TRADITIONAL_HAN_WITH_LATIN    = 212, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -525,7 +536,7 @@ typedef enum UScriptCode {
 
 
 
-    USCRIPT_CODE_LIMIT    = 208
+    USCRIPT_CODE_LIMIT    = 213
 #endif  
 } UScriptCode;
 

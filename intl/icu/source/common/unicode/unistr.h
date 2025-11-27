@@ -292,9 +292,18 @@ class UnicodeStringAppendable;
 
 
 
+
+
+
+
+
+
+
 class U_COMMON_API UnicodeString : public Replaceable
 {
 public:
+  
+  using value_type = char16_t;
 
   
 
@@ -327,7 +336,6 @@ public:
 
   inline bool operator== (const UnicodeString& text) const;
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -349,7 +357,6 @@ public:
     uint32_t len;  
     return !isBogus() && (len = length()) == sv.length() && doEquals(sv.data(), len);
   }
-#endif  
 
   
 
@@ -360,7 +367,6 @@ public:
 
   inline bool operator!= (const UnicodeString& text) const;
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -382,7 +388,6 @@ public:
   inline bool operator!=(const S &text) const {
     return !operator==(text);
   }
-#endif  
 
   
 
@@ -1773,12 +1778,34 @@ public:
 
 
 
+
   template<typename StringClass>
   StringClass &toUTF8String(StringClass &result) const {
     StringByteSink<StringClass> sbs(&result, length());
     toUTF8(sbs);
     return result;
   }
+
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+
+
+
+
+  template<typename StringClass>
+  StringClass toUTF8String() const {
+    StringClass result;
+    StringByteSink<StringClass> sbs(&result, length());
+    toUTF8(sbs);
+    return result;
+  }
+#endif  
 
   
 
@@ -1892,6 +1919,42 @@ public:
 
   inline UBool isBogus() const;
 
+#ifndef U_HIDE_DRAFT_API
+private:
+  
+  
+  
+  
+  using unspecified_iterator = std::u16string_view::const_iterator;
+  using unspecified_reverse_iterator = std::u16string_view::const_reverse_iterator;
+
+public:
+  
+
+
+
+
+  unspecified_iterator begin() const { return std::u16string_view(*this).begin(); }
+  
+
+
+
+
+  unspecified_iterator end() const { return std::u16string_view(*this).end(); }
+  
+
+
+
+
+  unspecified_reverse_iterator rbegin() const { return std::u16string_view(*this).rbegin(); }
+  
+
+
+
+
+  unspecified_reverse_iterator rend() const { return std::u16string_view(*this).rend(); }
+#endif  
+
   
   
   
@@ -1945,7 +2008,6 @@ public:
 
   UnicodeString &fastCopyFrom(const UnicodeString &src);
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -1961,7 +2023,6 @@ public:
     unBogus();
     return doReplace(0, length(), internal::toU16StringView(src));
   }
-#endif  
 
   
 
@@ -2212,7 +2273,6 @@ public:
 
   inline UnicodeString& operator+= (const UnicodeString& srcText);
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -2227,7 +2287,6 @@ public:
   inline UnicodeString& operator+=(const S &src) {
     return doAppend(internal::toU16StringView(src));
   }
-#endif  
 
   
 
@@ -2285,7 +2344,6 @@ public:
   inline UnicodeString& append(ConstChar16Ptr srcChars,
             int32_t srcLength);
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -2300,7 +2358,6 @@ public:
   inline UnicodeString& append(const S &src) {
     return doAppend(internal::toU16StringView(src));
   }
-#endif  
 
   
 
@@ -2318,6 +2375,16 @@ public:
 
   UnicodeString& append(UChar32 srcChar);
 
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+  inline void push_back(char16_t c) { append(c); }
+#endif  
 
   
 
@@ -3025,7 +3092,6 @@ public:
 
   const char16_t *getTerminatedBuffer();
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -3053,7 +3119,6 @@ public:
 #endif
     return { reinterpret_cast<const wchar_t *>(p), (std::wstring_view::size_type)length() };
   }
-#endif  
 #endif  
 
   
@@ -3257,7 +3322,6 @@ public:
 
   inline UnicodeString(const std::nullptr_t text, int32_t textLength);
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -3275,7 +3339,6 @@ public:
     fUnion.fFields.fLengthAndFlags = kShortString;
     doAppend(internal::toU16StringViewNullable(text));
   }
-#endif  
 
   
 
@@ -3573,7 +3636,6 @@ public:
 
   virtual ~UnicodeString();
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -3623,7 +3685,6 @@ public:
   static inline UnicodeString readOnlyAlias(const UnicodeString &text) {
     return readOnlyAliasFromUnicodeString(text);
   }
-#endif  
 
   
 
@@ -4102,7 +4163,6 @@ private:
 U_COMMON_API UnicodeString U_EXPORT2
 operator+ (const UnicodeString &s1, const UnicodeString &s2);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -4117,7 +4177,6 @@ template<typename S, typename = std::enable_if_t<ConvertibleToU16StringView<S>>>
 inline UnicodeString operator+(const UnicodeString &s1, const S &s2) {
   return unistr_internalConcat(s1, internal::toU16StringView(s2));
 }
-#endif  
 
 #ifndef U_FORCE_HIDE_INTERNAL_API
 

@@ -17,27 +17,21 @@
 
 U_NAMESPACE_BEGIN
 
-
-
-
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API LocalPointerBase<number::impl::AdoptingModifierStore>;
-template class U_I18N_API LocalPointer<number::impl::AdoptingModifierStore>;
-#endif
-
 namespace number::impl {
 
 
 class MutablePatternModifier;
 
 
-class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public UMemory {
+class U_I18N_API_CLASS ImmutablePatternModifier : public MicroPropsGenerator, public UMemory {
   public:
     ~ImmutablePatternModifier() override = default;
 
     void processQuantity(DecimalQuantity&, MicroProps& micros, UErrorCode& status) const override;
 
-    void applyToMicros(MicroProps& micros, const DecimalQuantity& quantity, UErrorCode& status) const;
+    U_I18N_API void applyToMicros(MicroProps& micros,
+                                  const DecimalQuantity& quantity,
+                                  UErrorCode& status) const;
 
     const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const;
 
@@ -73,7 +67,7 @@ class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public U
 
 
 
-class U_I18N_API MutablePatternModifier
+class U_I18N_API_CLASS MutablePatternModifier
         : public MicroPropsGenerator,
           public Modifier,
           public SymbolProvider,
@@ -88,7 +82,7 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    explicit MutablePatternModifier(bool isStrong);
+    U_I18N_API explicit MutablePatternModifier(bool isStrong);
 
     
 
@@ -98,19 +92,7 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setPatternInfo(const AffixPatternProvider *patternInfo, Field field);
-
-    
-
-
-
-
-
-
-
-
-
-    void setPatternAttributes(UNumberSignDisplay signDisplay, bool perMille, bool approximately);
+    U_I18N_API void setPatternInfo(const AffixPatternProvider *patternInfo, Field field);
 
     
 
@@ -122,13 +104,8 @@ class U_I18N_API MutablePatternModifier
 
 
 
-
-
-
-
-
-    void setSymbols(const DecimalFormatSymbols* symbols, const CurrencyUnit& currency,
-                    UNumberUnitWidth unitWidth, const PluralRules* rules, UErrorCode& status);
+    U_I18N_API void setPatternAttributes(UNumberSignDisplay signDisplay, bool perMille,
+                                         bool approximately);
 
     
 
@@ -139,7 +116,25 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setNumberProperties(Signum signum, StandardPlural::Form plural);
+
+
+
+
+
+
+    U_I18N_API void setSymbols(const DecimalFormatSymbols* symbols, const CurrencyUnit& currency,
+                               UNumberUnitWidth unitWidth, const PluralRules* rules, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+    U_I18N_API void setNumberProperties(Signum signum, StandardPlural::Form plural);
 
     
 
@@ -148,7 +143,8 @@ class U_I18N_API MutablePatternModifier
     bool needsPlurals() const;
 
     
-    AdoptingSignumModifierStore createImmutableForPlural(StandardPlural::Form plural, UErrorCode& status);
+    U_I18N_API AdoptingSignumModifierStore createImmutableForPlural(StandardPlural::Form plural,
+                                                                    UErrorCode& status);
 
     
 
@@ -163,14 +159,15 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    ImmutablePatternModifier *createImmutable(UErrorCode &status);
+    U_I18N_API ImmutablePatternModifier *createImmutable(UErrorCode &status);
 
-    MicroPropsGenerator &addToChain(const MicroPropsGenerator *parent);
+    U_I18N_API MicroPropsGenerator &addToChain(const MicroPropsGenerator *parent);
 
-    void processQuantity(DecimalQuantity &, MicroProps &micros, UErrorCode &status) const override;
+    U_I18N_API void processQuantity(DecimalQuantity &, MicroProps &micros,
+                                    UErrorCode &status) const override;
 
-    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
-                  UErrorCode &status) const override;
+    U_I18N_API int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+                             UErrorCode &status) const override;
 
     int32_t getPrefixLength() const override;
 

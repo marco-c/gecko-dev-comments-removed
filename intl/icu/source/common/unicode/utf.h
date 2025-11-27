@@ -121,6 +121,37 @@
 
 
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+#define U_IS_CODE_POINT(c) ((uint32_t)(c)<=0x10ffff)
+
+
+
+
+
+
+
+
+
+
+
+
+#define U_IS_SCALAR_VALUE(c) ((uint32_t)(c)<0xd800 || (0xe000<=(c) && (c)<=0x10ffff))
+
+#endif  
+
+
+
 
 
 
@@ -150,7 +181,7 @@
 
 #define U_IS_UNICODE_CHAR(c) \
     ((uint32_t)(c)<0xd800 || \
-        (0xdfff<(c) && (c)<=0x10ffff && !U_IS_UNICODE_NONCHAR(c)))
+        (0xe000<=(c) && (c)<=0x10ffff && !U_IS_UNICODE_NONCHAR(c)))
 
 
 

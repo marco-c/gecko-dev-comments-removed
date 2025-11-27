@@ -56,6 +56,7 @@ enum Key {
     PERCENT_SIGN,
     PERMILLE_SIGN,
     INFINITY_SIGN,
+    APPROXIMATELY_SIGN,
 
     
     DOLLAR_SIGN,

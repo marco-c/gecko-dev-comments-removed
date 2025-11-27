@@ -37,21 +37,9 @@ class UVector32;
 
 
 
-
-
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API MaybeStackArray<int64_t, CEBUFFER_INITIAL_CAPACITY>;
-#endif
-
-
-
-
-
-
-
-class U_I18N_API CollationIterator : public UObject {
+class U_I18N_API_CLASS CollationIterator : public UObject {
 private:
-    class U_I18N_API CEBuffer {
+    class CEBuffer {
     private:
         
         static const int32_t INITIAL_CAPACITY = CEBUFFER_INITIAL_CAPACITY;
@@ -69,7 +57,7 @@ private:
             buffer[length++] = ce;
         }
 
-        UBool ensureAppendCapacity(int32_t appCap, UErrorCode &errorCode);
+        U_I18N_API UBool ensureAppendCapacity(int32_t appCap, UErrorCode &errorCode);
 
         inline UBool incLength(UErrorCode &errorCode) {
             
@@ -278,8 +266,8 @@ protected:
     const CollationData *data;
 
 private:
-    int64_t nextCEFromCE32(const CollationData *d, UChar32 c, uint32_t ce32,
-                           UErrorCode &errorCode);
+    U_I18N_API int64_t nextCEFromCE32(const CollationData *d, UChar32 c, uint32_t ce32,
+                                      UErrorCode &errorCode);
 
     uint32_t getCE32FromPrefix(const CollationData *d, uint32_t ce32,
                                UErrorCode &errorCode);

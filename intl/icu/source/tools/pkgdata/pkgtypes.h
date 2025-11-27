@@ -124,6 +124,7 @@ typedef struct UPKGOptions_
   const char *install;     
   const char *icuroot;     
   const char *libName;     
+  const char* cpuArch;     
   UBool      rebuild;
   UBool      verbose;
   UBool      quiet;

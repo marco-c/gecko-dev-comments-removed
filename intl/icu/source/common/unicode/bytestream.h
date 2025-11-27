@@ -41,6 +41,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#include <type_traits>
+
 #include "unicode/uobject.h"
 #include "unicode/std_string.h"
 
@@ -258,6 +260,28 @@ private:
   CheckedArrayByteSink &operator=(const CheckedArrayByteSink &) = delete;
 };
 
+namespace prv {
+
+template<typename StringClass, typename = void>
+struct value_type_or_char {
+  
+  using type = char;
+};
+
+template<typename StringClass>
+struct value_type_or_char<StringClass, std::void_t<typename StringClass::value_type>> {
+  
+  using type = typename StringClass::value_type;
+};
+
+template<typename StringClass>
+using value_type_or_char_t = typename value_type_or_char<StringClass>::type;
+}
+
+
+
+
+
 
 
 
@@ -265,6 +289,7 @@ private:
 
 template<typename StringClass>
 class StringByteSink : public ByteSink {
+  using Unit = typename prv::value_type_or_char_t<StringClass>;
  public:
   
 
@@ -291,7 +316,13 @@ class StringByteSink : public ByteSink {
 
 
 
-  virtual void Append(const char* data, int32_t n) override { dest_->append(data, n); }
+  virtual void Append(const char* data, int32_t n) override {
+    if constexpr (std::is_same_v<Unit, char>) {
+      dest_->append(data, n);
+    } else {
+      dest_->append(reinterpret_cast<const Unit*>(data), n);
+    }
+  }
  private:
   StringClass* dest_;
 

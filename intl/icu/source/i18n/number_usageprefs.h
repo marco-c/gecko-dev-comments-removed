@@ -30,7 +30,7 @@ namespace number::impl {
 
 
 
-class U_I18N_API UsagePrefsHandler : public MicroPropsGenerator, public UMemory {
+class UsagePrefsHandler : public MicroPropsGenerator, public UMemory {
   public:
     UsagePrefsHandler(const Locale &locale, const MeasureUnit &inputUnit, const StringPiece usage,
                       const MicroPropsGenerator *parent, UErrorCode &status);
@@ -61,27 +61,12 @@ class U_I18N_API UsagePrefsHandler : public MicroPropsGenerator, public UMemory 
     const MicroPropsGenerator *fParent;
 };
 
-} 
 
 
 
 
 
-
-
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API LocalPointerBase<ComplexUnitsConverter>;
-template class U_I18N_API LocalPointer<ComplexUnitsConverter>;
-#endif
-
-namespace number::impl {
-
-
-
-
-
-
-class U_I18N_API UnitConversionHandler : public MicroPropsGenerator, public UMemory {
+class UnitConversionHandler : public MicroPropsGenerator, public UMemory {
   public:
     
 

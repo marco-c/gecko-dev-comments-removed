@@ -66,6 +66,17 @@ namespace message2 {
     enum DynamicErrorType {
         UnresolvedVariable,
         FormattingError,
+        BadOptionError,
+        
+
+
+
+
+
+
+
+
+        RecoverableBadOptionError,
         OperandMismatchError,
         SelectorError,
         UnknownFunction,
@@ -114,6 +125,7 @@ namespace message2 {
         const StaticErrors& staticErrors;
         LocalPointer<UVector> resolutionAndFormattingErrors;
         bool formattingError = false;
+        bool badOptionError = false;
         bool selectorError = false;
         bool unknownFunctionError = false;
         bool unresolvedVariableError = false;
@@ -128,9 +140,12 @@ namespace message2 {
         void setFormattingError(const FunctionName&, UErrorCode&);
         
         void setFormattingError(UErrorCode&);
+        void setBadOption(const FunctionName&, UErrorCode&);
+        void setRecoverableBadOption(const FunctionName&, UErrorCode&);
         void setOperandMismatchError(const FunctionName&, UErrorCode&);
         bool hasDataModelError() const { return staticErrors.hasDataModelError(); }
         bool hasFormattingError() const { return formattingError; }
+        bool hasBadOptionError() const { return badOptionError; }
         bool hasSelectorError() const { return selectorError; }
         bool hasSyntaxError() const { return staticErrors.hasSyntaxError(); }
         bool hasUnknownFunctionError() const { return unknownFunctionError; }

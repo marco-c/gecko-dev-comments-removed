@@ -987,8 +987,6 @@ uset_size(const USet* set);
 U_CAPI int32_t U_EXPORT2
 uset_getRangeCount(const USet *set);
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -1014,8 +1012,6 @@ uset_getStringCount(const USet *set);
 
 U_CAPI const UChar* U_EXPORT2
 uset_getString(const USet *set, int32_t index, int32_t *pLength);
-
-#endif  
 
 
 
@@ -1327,7 +1323,6 @@ uset_getSerializedRange(const USerializedSet* set, int32_t rangeIndex,
                         UChar32* pStart, UChar32* pEnd);
 
 #if U_SHOW_CPLUSPLUS_API || U_SHOW_CPLUSPLUS_HEADER_API
-#ifndef U_HIDE_DRAFT_API
 
 namespace U_HEADER_ONLY_NAMESPACE {
 
@@ -1740,7 +1735,6 @@ private:
     const USet *uset;
     int32_t count;
 };
-#endif
 
 #ifndef U_HIDE_DRAFT_API
 
@@ -1900,9 +1894,10 @@ private:
     int32_t rangeCount, stringCount;
 };
 
+#endif  
+
 }  
 
-#endif  
 #endif  
 
 #endif  

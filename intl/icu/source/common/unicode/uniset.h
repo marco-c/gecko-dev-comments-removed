@@ -495,7 +495,7 @@ public:
 
 
 
-    virtual bool operator==(const UnicodeSet& o) const;
+    bool operator==(const UnicodeSet& o) const;
 
     
 
@@ -522,7 +522,7 @@ public:
 
 
 
-    virtual int32_t hashCode() const;
+    int32_t hashCode() const;
 
     
 
@@ -792,7 +792,7 @@ public:
 
 
 
-    virtual int32_t size() const;
+    int32_t size() const;
 
     
 
@@ -800,7 +800,7 @@ public:
 
 
 
-    virtual UBool isEmpty() const;
+    UBool isEmpty() const;
 
     
 
@@ -825,7 +825,7 @@ public:
 
 
 
-    virtual UBool contains(UChar32 start, UChar32 end) const;
+    UBool contains(UChar32 start, UChar32 end) const;
 
     
 
@@ -843,7 +843,7 @@ public:
 
 
 
-    virtual UBool containsAll(const UnicodeSet& c) const;
+    UBool containsAll(const UnicodeSet& c) const;
 
     
 
@@ -1021,7 +1021,7 @@ public:
 
 
 
-    virtual UMatchDegree matches(const Replaceable& text,
+    UMatchDegree matches(const Replaceable& text,
                          int32_t& offset,
                          int32_t limit,
                          UBool incremental) override;
@@ -1102,7 +1102,6 @@ public:
 
     UChar32 charAt(int32_t index) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1173,7 +1172,6 @@ public:
     inline U_HEADER_NESTED_NAMESPACE::USetStrings strings() const {
         return U_HEADER_NESTED_NAMESPACE::USetStrings(toUSet());
     }
-#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -1231,7 +1229,7 @@ public:
 
 
 
-    virtual UnicodeSet& add(UChar32 start, UChar32 end);
+    UnicodeSet& add(UChar32 start, UChar32 end);
 
     
 
@@ -1337,7 +1335,7 @@ public:
 
 
 
-    virtual UnicodeSet& retain(UChar32 start, UChar32 end);
+    UnicodeSet& retain(UChar32 start, UChar32 end);
 
 
     
@@ -1375,7 +1373,7 @@ public:
 
 
 
-    virtual UnicodeSet& remove(UChar32 start, UChar32 end);
+    UnicodeSet& remove(UChar32 start, UChar32 end);
 
     
 
@@ -1412,7 +1410,7 @@ public:
 
 
 
-    virtual UnicodeSet& complement();
+    UnicodeSet& complement();
 
     
 
@@ -1426,7 +1424,7 @@ public:
 
 
 
-    virtual UnicodeSet& complement(UChar32 start, UChar32 end);
+    UnicodeSet& complement(UChar32 start, UChar32 end);
 
     
 
@@ -1463,7 +1461,7 @@ public:
 
 
 
-    virtual UnicodeSet& addAll(const UnicodeSet& c);
+    UnicodeSet& addAll(const UnicodeSet& c);
 
     
 
@@ -1476,7 +1474,7 @@ public:
 
 
 
-    virtual UnicodeSet& retainAll(const UnicodeSet& c);
+    UnicodeSet& retainAll(const UnicodeSet& c);
 
     
 
@@ -1489,7 +1487,7 @@ public:
 
 
 
-    virtual UnicodeSet& removeAll(const UnicodeSet& c);
+    UnicodeSet& removeAll(const UnicodeSet& c);
 
     
 
@@ -1501,7 +1499,7 @@ public:
 
 
 
-    virtual UnicodeSet& complementAll(const UnicodeSet& c);
+    UnicodeSet& complementAll(const UnicodeSet& c);
 
     
 
@@ -1509,7 +1507,7 @@ public:
 
 
 
-    virtual UnicodeSet& clear();
+    UnicodeSet& clear();
 
     
 
@@ -1546,7 +1544,7 @@ public:
 
 
 
-    virtual UnicodeSet &removeAllStrings();
+    UnicodeSet &removeAllStrings();
 
     
 
@@ -1555,7 +1553,7 @@ public:
 
 
 
-    virtual int32_t getRangeCount() const;
+    int32_t getRangeCount() const;
 
     
 
@@ -1564,7 +1562,7 @@ public:
 
 
 
-    virtual UChar32 getRangeStart(int32_t index) const;
+    UChar32 getRangeStart(int32_t index) const;
 
     
 
@@ -1573,7 +1571,7 @@ public:
 
 
 
-    virtual UChar32 getRangeEnd(int32_t index) const;
+    UChar32 getRangeEnd(int32_t index) const;
 
     
 
@@ -1631,7 +1629,7 @@ public:
 
 
 
-    virtual UnicodeSet& compact();
+    UnicodeSet& compact();
 
     
 

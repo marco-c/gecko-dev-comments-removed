@@ -170,7 +170,7 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 
-#define U8_IS_SINGLE(c) (((c)&0x80)==0)
+#define U8_IS_SINGLE(c) ((int8_t)(c)>=0)
 
 
 
@@ -213,6 +213,32 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
 #define U8_MAX_LENGTH 4
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+#define U8_LENGTH_FROM_LEAD_BYTE(leadByte) (U8_COUNT_TRAIL_BYTES(leadByte) + 1)
+
+
+
+
+
+
+
+
+
+
+#define U8_LENGTH_FROM_LEAD_BYTE_UNSAFE(leadByte) (U8_COUNT_TRAIL_BYTES_UNSAFE(leadByte) + 1)
+
+#endif  
 
 
 
@@ -517,7 +543,7 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
             if(U8_IS_TRAIL(__t1)) { \
                 ++(i); \
             } \
-        } else /* c>=0xf0 */ { \
+        } else /* b>=0xf0 */ { \
             if(U8_IS_VALID_LEAD4_AND_T1(__b, __t1) && \
                     ++(i)!=(length) && U8_IS_TRAIL((s)[i]) && \
                     ++(i)!=(length) && U8_IS_TRAIL((s)[i])) { \
@@ -683,7 +709,7 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 #define U8_PREV_UNSAFE(s, i, c) UPRV_BLOCK_MACRO_BEGIN { \
     (c)=(uint8_t)(s)[--(i)]; \
-    if(U8_IS_TRAIL(c)) { \
+    if(!U8_IS_SINGLE(c)) { \
         uint8_t __b, __count=1, __shift=6; \
 \
         /* c is a trail byte */ \

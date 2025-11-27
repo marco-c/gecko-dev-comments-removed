@@ -15,20 +15,13 @@ U_NAMESPACE_BEGIN
 
 #define DECNUM_INITIAL_CAPACITY 34
 
-
-
-
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API MaybeStackHeaderAndArray<decNumber, char, DECNUM_INITIAL_CAPACITY>;
-#endif
-
 namespace number::impl {
 
 
 
-class U_I18N_API DecNum : public UMemory {
+class U_I18N_API_CLASS DecNum : public UMemory {
   public:
-    DecNum();  
+    U_I18N_API DecNum();  
 
     
     DecNum(const DecNum& other, UErrorCode& status);

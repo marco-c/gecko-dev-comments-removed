@@ -47,20 +47,22 @@ class UnicodeSet;
 
 
 
-struct U_I18N_API CollationTailoring : public SharedObject {
-    CollationTailoring(const CollationSettings *baseSettings);
-    virtual ~CollationTailoring();
+
+
+struct U_I18N_API_CLASS CollationTailoring : public SharedObject {
+    U_I18N_API CollationTailoring(const CollationSettings *baseSettings);
+    U_I18N_API virtual ~CollationTailoring();
 
     
 
 
-    UBool isBogus() { return settings == nullptr; }
+    U_I18N_API UBool isBogus() { return settings == nullptr; }
 
-    UBool ensureOwnedData(UErrorCode &errorCode);
+    U_I18N_API UBool ensureOwnedData(UErrorCode &errorCode);
 
-    static void makeBaseVersion(const UVersionInfo ucaVersion, UVersionInfo version);
-    void setVersion(const UVersionInfo baseVersion, const UVersionInfo rulesVersion);
-    int32_t getUCAVersion() const;
+    U_I18N_API static void makeBaseVersion(const UVersionInfo ucaVersion, UVersionInfo version);
+    U_I18N_API void setVersion(const UVersionInfo baseVersion, const UVersionInfo rulesVersion);
+    U_I18N_API int32_t getUCAVersion() const;
 
     
     const CollationData *data;  
@@ -94,14 +96,15 @@ private:
     CollationTailoring(const CollationTailoring &other) = delete;
 };
 
-struct U_I18N_API CollationCacheEntry : public SharedObject {
-    CollationCacheEntry(const Locale &loc, const CollationTailoring *t)
+
+struct U_I18N_API_CLASS CollationCacheEntry : public SharedObject {
+    U_I18N_API CollationCacheEntry(const Locale &loc, const CollationTailoring *t)
             : validLocale(loc), tailoring(t) {
         if(t != nullptr) {
             t->addRef();
         }
     }
-    ~CollationCacheEntry();
+    U_I18N_API ~CollationCacheEntry();
 
     Locale validLocale;
     const CollationTailoring *tailoring;

@@ -422,7 +422,7 @@ public:
 
 
 
-class U_COMMON_API ICULocaleService : public ICUService 
+class U_COMMON_API_CLASS ICULocaleService : public ICUService
 {
  private:
   Locale fallbackLocale;
@@ -432,17 +432,17 @@ class U_COMMON_API ICULocaleService : public ICUService
   
 
 
-  ICULocaleService();
+  U_COMMON_API ICULocaleService();
 
   
 
 
-  ICULocaleService(const UnicodeString& name);
+  U_COMMON_API ICULocaleService(const UnicodeString& name);
 
   
 
 
-  virtual ~ICULocaleService();
+  U_COMMON_API virtual ~ICULocaleService();
 
 #if 0
   
@@ -462,19 +462,19 @@ class U_COMMON_API ICULocaleService : public ICUService
 
 
 
-  UObject* get(const Locale& locale, UErrorCode& status) const;
+  U_COMMON_API UObject* get(const Locale& locale, UErrorCode& status) const;
 
   
 
 
 
-  UObject* get(const Locale& locale, int32_t kind, UErrorCode& status) const;
+  U_COMMON_API UObject* get(const Locale& locale, int32_t kind, UErrorCode& status) const;
 
   
 
 
 
-  UObject* get(const Locale& locale, Locale* actualReturn, UErrorCode& status) const;
+  U_COMMON_API UObject* get(const Locale& locale, Locale* actualReturn, UErrorCode& status) const;
                    
   
 
@@ -482,27 +482,27 @@ class U_COMMON_API ICULocaleService : public ICUService
 
 
 
-  UObject* get(const Locale& locale, int32_t kind, Locale* actualReturn, UErrorCode& status) const;
+  U_COMMON_API UObject* get(const Locale& locale, int32_t kind, Locale* actualReturn, UErrorCode& status) const;
 
   
 
 
 
 
-  virtual URegistryKey registerInstance(UObject* objToAdopt, const Locale& locale, UErrorCode& status);
+  U_COMMON_API virtual URegistryKey registerInstance(UObject* objToAdopt, const Locale& locale, UErrorCode& status);
 
   
 
 
 
 
-  virtual URegistryKey registerInstance(UObject* objToAdopt, const Locale& locale, int32_t kind, UErrorCode& status);
+  U_COMMON_API virtual URegistryKey registerInstance(UObject* objToAdopt, const Locale& locale, int32_t kind, UErrorCode& status);
 
   
 
 
 
-  virtual URegistryKey registerInstance(UObject* objToAdopt, const Locale& locale, int32_t kind, int32_t coverage, UErrorCode& status);
+  U_COMMON_API virtual URegistryKey registerInstance(UObject* objToAdopt, const Locale& locale, int32_t kind, int32_t coverage, UErrorCode& status);
 
 
   
@@ -512,13 +512,13 @@ class U_COMMON_API ICULocaleService : public ICUService
 
 
 
-  virtual URegistryKey registerInstance(UObject* objToAdopt, const UnicodeString& locale, UBool visible, UErrorCode& status) override;
+  U_COMMON_API virtual URegistryKey registerInstance(UObject* objToAdopt, const UnicodeString& locale, UBool visible, UErrorCode& status) override;
 
   
 
 
 
-  virtual StringEnumeration* getAvailableLocales() const;
+  U_COMMON_API virtual StringEnumeration* getAvailableLocales() const;
 
  protected:
 
@@ -526,17 +526,17 @@ class U_COMMON_API ICULocaleService : public ICUService
 
 
 
-  const UnicodeString& validateFallbackLocale() const;
+  U_COMMON_API const UnicodeString& validateFallbackLocale() const;
 
   
 
 
-  virtual ICUServiceKey* createKey(const UnicodeString* id, UErrorCode& status) const override;
+  U_COMMON_API virtual ICUServiceKey* createKey(const UnicodeString* id, UErrorCode& status) const override;
 
   
 
 
-  virtual ICUServiceKey* createKey(const UnicodeString* id, int32_t kind, UErrorCode& status) const;
+  U_COMMON_API virtual ICUServiceKey* createKey(const UnicodeString* id, int32_t kind, UErrorCode& status) const;
 
   friend class ServiceEnumeration;
 };

@@ -853,7 +853,7 @@ DateTimePatternGenerator::addICUPatterns(const Locale& locale, UErrorCode& statu
         
         if (U_SUCCESS(status)) {
             UnicodeString conflictingPattern;
-            addPatternWithSkeleton(pattern, nullptr, false, conflictingPattern, status);
+            addPatternWithOptionalSkeleton(pattern, nullptr, false, conflictingPattern, status);
         }
     }
 }
@@ -1049,7 +1049,7 @@ struct DateTimePatternGenerator::AvailableFormatsSink : public ResourceSink {
             
             const UnicodeString& formatValue = value.getUnicodeString(errorCode);
             conflictingPattern.remove();
-            dtpg.addPatternWithSkeleton(formatValue, &formatKey, true, conflictingPattern, errorCode);
+            dtpg.addPatternWithSkeleton(formatValue, formatKey, true, conflictingPattern, errorCode);
         }
     }
 };
@@ -1513,7 +1513,18 @@ DateTimePatternGenerator::addPattern(
         return UDATPG_NO_CONFLICT;
     }
 
-    return addPatternWithSkeleton(pattern, nullptr, override, conflictingPattern, status);
+    return addPatternWithOptionalSkeleton(pattern, nullptr, override, conflictingPattern, status);
+}
+
+UDateTimePatternConflict
+DateTimePatternGenerator::addPatternWithSkeleton(
+    const UnicodeString& pattern,
+    const UnicodeString& skeletonToUse,
+    UBool override,
+    UnicodeString& conflictingPattern,
+    UErrorCode& status)
+{
+    return addPatternWithOptionalSkeleton(pattern, &skeletonToUse, override, conflictingPattern, status);
 }
 
 
@@ -1527,7 +1538,7 @@ DateTimePatternGenerator::addPattern(
 
 
 UDateTimePatternConflict
-DateTimePatternGenerator::addPatternWithSkeleton(
+DateTimePatternGenerator::addPatternWithOptionalSkeleton(
     const UnicodeString& pattern,
     const UnicodeString* skeletonToUse,
     UBool override,
@@ -1744,8 +1755,8 @@ DateTimePatternGenerator::adjustFieldTypes(const UnicodeString& pattern,
                         
                         int32_t skelFieldLen = specifiedSkeleton->original.getFieldLength(typeValue);
                         UBool patFieldIsNumeric = (row->type > 0);
-                        UBool skelFieldIsNumeric = (specifiedSkeleton->type[typeValue] > 0);
-                        if (skelFieldLen == reqFieldLen || (patFieldIsNumeric && !skelFieldIsNumeric) || (skelFieldIsNumeric && !patFieldIsNumeric)) {
+                        UBool reqFieldIsNumeric = (dtMatcher->skeleton.type[typeValue] > 0);
+                        if (skelFieldLen == reqFieldLen || (patFieldIsNumeric && !reqFieldIsNumeric) || (reqFieldIsNumeric && !patFieldIsNumeric)) {
                             
                             adjFieldLen = field.length();
                         }
@@ -2306,7 +2317,9 @@ DateTimeMatcher::DateTimeMatcher(const DateTimeMatcher& other) {
 }
 
 DateTimeMatcher& DateTimeMatcher::operator=(const DateTimeMatcher& other) {
-    copyFrom(other.skeleton);
+    if (this != &other) {
+        copyFrom(other.skeleton);
+    }
     return *this;
 }
 

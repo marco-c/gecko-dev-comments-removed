@@ -28,7 +28,7 @@ using ::icu::number::impl::TokenConsumer;
 using ::icu::number::impl::CurrencySymbols;
 
 
-class U_I18N_API CodePointMatcher : public NumberParseMatcher, public UMemory {
+class CodePointMatcher : public NumberParseMatcher, public UMemory {
   public:
     CodePointMatcher() = default;  
 
@@ -44,20 +44,6 @@ class U_I18N_API CodePointMatcher : public NumberParseMatcher, public UMemory {
     UChar32 fCp;
 };
 
-} 
-
-
-
-
-
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API MaybeStackArray<numparse::impl::CodePointMatcher*, 8>; 
-template class U_I18N_API MaybeStackArray<char16_t, 4>;
-template class U_I18N_API MemoryPool<numparse::impl::CodePointMatcher, 8>;
-template class U_I18N_API numparse::impl::CompactUnicodeString<4>;
-#endif
-
-namespace numparse::impl {
 
 struct AffixTokenMatcherSetupData {
     const CurrencySymbols& currencySymbols;
@@ -79,21 +65,23 @@ struct AffixTokenMatcherSetupData {
 
 
 
-class U_I18N_API AffixTokenMatcherWarehouse : public UMemory {
+class U_I18N_API_CLASS AffixTokenMatcherWarehouse : public UMemory {
   public:
     AffixTokenMatcherWarehouse() = default;  
 
-    AffixTokenMatcherWarehouse(const AffixTokenMatcherSetupData* setupData);
+    U_I18N_API AffixTokenMatcherWarehouse(const AffixTokenMatcherSetupData* setupData);
 
     NumberParseMatcher& minusSign();
 
     NumberParseMatcher& plusSign();
 
+    NumberParseMatcher& approximatelySign();
+
     NumberParseMatcher& percent();
 
     NumberParseMatcher& permille();
 
-    NumberParseMatcher& currency(UErrorCode& status);
+    U_I18N_API NumberParseMatcher& currency(UErrorCode& status);
 
     IgnorablesMatcher& ignorables();
 
@@ -108,6 +96,7 @@ class U_I18N_API AffixTokenMatcherWarehouse : public UMemory {
     
     MinusSignMatcher fMinusSign;
     PlusSignMatcher fPlusSign;
+    ApproximatelySignMatcher fApproximatelySign;
     PercentMatcher fPercent;
     PermilleMatcher fPermille;
     CombinedCurrencyMatcher fCurrency;
@@ -144,14 +133,14 @@ class AffixPatternMatcherBuilder : public TokenConsumer, public MutableMatcherCo
 
 
 
-class U_I18N_API AffixPatternMatcher : public ArraySeriesMatcher {
+class U_I18N_API_CLASS AffixPatternMatcher : public ArraySeriesMatcher {
   public:
     AffixPatternMatcher() = default;  
 
-    static AffixPatternMatcher fromAffixPattern(const UnicodeString& affixPattern,
-                                                AffixTokenMatcherWarehouse& warehouse,
-                                                parse_flags_t parseFlags, bool* success,
-                                                UErrorCode& status);
+    U_I18N_API static AffixPatternMatcher fromAffixPattern(const UnicodeString& affixPattern,
+                                                           AffixTokenMatcherWarehouse& warehouse,
+                                                           parse_flags_t parseFlags, bool* success,
+                                                           UErrorCode& status);
 
     UnicodeString getPattern() const;
 

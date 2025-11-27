@@ -164,9 +164,11 @@ NFRuleSet::NFRuleSet(RuleBasedNumberFormat *_owner, UnicodeString* descriptions,
     
     if (description.charAt(0) == gPercent) {
         int32_t pos = description.indexOf(gColon);
-        if (pos == -1) {
+        
+        if (pos < 2) {
             
             status = U_PARSE_ERROR;
+            return;
         } else {
             name.setTo(description, 0, pos);
             while (pos < description.length() && PatternProps::isWhiteSpace(description.charAt(++pos))) {
@@ -180,6 +182,7 @@ NFRuleSet::NFRuleSet(RuleBasedNumberFormat *_owner, UnicodeString* descriptions,
     if (description.isEmpty()) {
         
         status = U_PARSE_ERROR;
+        return;
     }
 
     fIsPublic = name.indexOf(gPercentPercent, 2, 0) != 0;
@@ -220,6 +223,9 @@ NFRuleSet::parseRules(UnicodeString& description, UErrorCode& status)
         }
         currentDescription.setTo(description, oldP, p - oldP);
         NFRule::makeRules(currentDescription, this, rules.last(), owner, rules, status);
+        if (U_FAILURE(status)) {
+            return;
+        }
         oldP = p + 1;
     }
 
@@ -244,6 +250,9 @@ NFRuleSet::parseRules(UnicodeString& description, UErrorCode& status)
             
             
             rule->setBaseValue(defaultBaseValue, status);
+            if (U_FAILURE(status)) {
+                return;
+            }
         }
         else {
             

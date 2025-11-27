@@ -27,44 +27,50 @@ namespace number::impl {
 
 
 
-class U_I18N_API LocalizedNumberFormatterAsFormat : public Format {
+class U_I18N_API_CLASS LocalizedNumberFormatterAsFormat : public Format {
   public:
-    LocalizedNumberFormatterAsFormat(const LocalizedNumberFormatter& formatter, const Locale& locale);
+    U_I18N_API LocalizedNumberFormatterAsFormat(const LocalizedNumberFormatter& formatter,
+                                                const Locale& locale);
 
     
 
 
-    ~LocalizedNumberFormatterAsFormat() override;
+    U_I18N_API ~LocalizedNumberFormatterAsFormat() override;
 
     
 
 
-    bool operator==(const Format& other) const override;
+    U_I18N_API bool operator==(const Format& other) const override;
 
     
 
 
-    LocalizedNumberFormatterAsFormat* clone() const override;
-
-    
-
-
-
-    UnicodeString& format(const Formattable& obj, UnicodeString& appendTo, FieldPosition& pos,
-                          UErrorCode& status) const override;
+    U_I18N_API LocalizedNumberFormatterAsFormat* clone() const override;
 
     
 
 
 
-    UnicodeString& format(const Formattable& obj, UnicodeString& appendTo, FieldPositionIterator* posIter,
-                          UErrorCode& status) const override;
+    U_I18N_API UnicodeString& format(const Formattable& obj,
+                                     UnicodeString& appendTo,
+                                     FieldPosition& pos,
+                                     UErrorCode& status) const override;
 
     
 
 
-    void parseObject(const UnicodeString& source, Formattable& result,
-                     ParsePosition& parse_pos) const override;
+
+    U_I18N_API UnicodeString& format(const Formattable& obj,
+                                     UnicodeString& appendTo,
+                                     FieldPositionIterator* posIter,
+                                     UErrorCode& status) const override;
+
+    
+
+
+    U_I18N_API void parseObject(const UnicodeString& source,
+                                Formattable& result,
+                                ParsePosition& parse_pos) const override;
 
     
 
@@ -84,10 +90,10 @@ class U_I18N_API LocalizedNumberFormatterAsFormat : public Format {
 
 
 
-    const LocalizedNumberFormatter& getNumberFormatter() const;
+    U_I18N_API const LocalizedNumberFormatter& getNumberFormatter() const;
 
-    UClassID getDynamicClassID() const override;
-    static UClassID U_EXPORT2 getStaticClassID();
+    U_I18N_API UClassID getDynamicClassID() const override;
+    U_I18N_API static UClassID getStaticClassID();
 
   private:
     LocalizedNumberFormatter fFormatter;

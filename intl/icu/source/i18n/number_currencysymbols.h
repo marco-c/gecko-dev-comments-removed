@@ -15,7 +15,7 @@ U_NAMESPACE_BEGIN
 namespace number::impl {
 
 
-class U_I18N_API CurrencySymbols : public UMemory {
+class U_I18N_API_CLASS CurrencySymbols : public UMemory {
   public:
     CurrencySymbols() = default; 
 
@@ -23,8 +23,10 @@ class U_I18N_API CurrencySymbols : public UMemory {
     CurrencySymbols(CurrencyUnit currency, const Locale& locale, UErrorCode& status);
 
     
-    CurrencySymbols(CurrencyUnit currency, const Locale& locale, const DecimalFormatSymbols& symbols,
-                    UErrorCode& status);
+    U_I18N_API CurrencySymbols(CurrencyUnit currency,
+                               const Locale& locale,
+                               const DecimalFormatSymbols& symbols,
+                               UErrorCode& status);
 
     const char16_t* getIsoCode() const;
 

@@ -18,7 +18,7 @@
 
 
 U_NAMESPACE_BEGIN
-class CharString;
+class FixedString;
 
 
 
@@ -297,7 +297,7 @@ private:
     char language_[9];
     char script_[5];
     char region_[4];
-    CharString *variant_;  
+    FixedString *variant_;  
     icu::Locale *extensions_;  
 
 };

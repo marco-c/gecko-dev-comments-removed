@@ -16,17 +16,8 @@
 #include "unicode/locid.h"
 #include "unicode/uobject.h"
 
-
-
-
-
-
-#define U_LOCALE_BASED(varname, objname) \
-  LocaleBased varname((objname).validLocale, (objname).actualLocale)
-
 U_NAMESPACE_BEGIN
 
-class CharString;
 
 
 
@@ -42,20 +33,14 @@ class U_COMMON_API LocaleBased : public UMemory {
 
 
 
-    inline LocaleBased(CharString*& validAlias, CharString*& actualAlias);
-
-    
 
 
 
 
 
 
-
-
-
-    static Locale getLocale(
-        const CharString* valid, const CharString* actual,
+    static const Locale& getLocale(
+        const Locale& valid, const Locale& actual,
         ULocDataLocaleType type, UErrorCode& status);
 
     
@@ -69,50 +54,10 @@ class U_COMMON_API LocaleBased : public UMemory {
 
 
     static const char* getLocaleID(
-        const CharString* valid, const CharString* actual,
+        const Locale& valid, const Locale& actual,
         ULocDataLocaleType type, UErrorCode& status);
 
-    
-
-
-
-
-
-    void setLocaleIDs(const char* valid, const char* actual, UErrorCode& status);
-    void setLocaleIDs(const CharString* valid, const CharString* actual, UErrorCode& status);
-
-    static void setLocaleID(const char* id, CharString*& dest, UErrorCode& status);
-    static void setLocaleID(const CharString* id, CharString*& dest, UErrorCode& status);
-
-    static bool equalIDs(const CharString* left, const CharString* right);
-
- private:
-
-    void setValidLocaleID(const CharString* id, UErrorCode& status);
-    void setActualLocaleID(const CharString* id, UErrorCode& status);
-    void setValidLocaleID(const char* id, UErrorCode& status);
-    void setActualLocaleID(const char* id, UErrorCode& status);
-
-    CharString*& valid;
-    CharString*& actual;
 };
-
-inline LocaleBased::LocaleBased(CharString*& validAlias, CharString*& actualAlias) :
-    valid(validAlias), actual(actualAlias) {
-}
-
-inline void LocaleBased::setValidLocaleID(const CharString* id, UErrorCode& status) {
-    setLocaleID(id, valid, status);
-}
-inline void LocaleBased::setActualLocaleID(const CharString* id, UErrorCode& status) {
-    setLocaleID(id, actual, status);
-}
-inline void LocaleBased::setValidLocaleID(const char* id, UErrorCode& status) {
-    setLocaleID(id, valid, status);
-}
-inline void LocaleBased::setActualLocaleID(const char* id, UErrorCode& status) {
-    setLocaleID(id, actual, status);
-}
 
 U_NAMESPACE_END
 

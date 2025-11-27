@@ -627,7 +627,7 @@ ulocimp_getKeywords(std::string_view localeID,
         do {
             bool duplicate = false;
             
-            while (localeID.front() == ' ') {
+            while (!localeID.empty() && localeID.front() == ' ') {
                 localeID.remove_prefix(1);
             }
             if (localeID.empty()) { 
@@ -1102,7 +1102,21 @@ ulocimp_setKeywordValue(std::string_view keywords,
         
 
         U_ASSERT(status != U_STRING_NOT_TERMINATED_WARNING);
-        return static_cast<int32_t>(keywords.size());
+        
+        
+        
+        
+        needLen = static_cast<int32_t>(keywords.size());
+        int32_t capacity = 0;
+        char* buffer = sink.GetAppendBuffer(
+                needLen, needLen, nullptr, needLen, &capacity);
+        if (capacity < needLen || buffer == nullptr) {
+            status = U_BUFFER_OVERFLOW_ERROR;
+        } else {
+            *buffer = '@';
+            sink.Append(buffer, needLen);
+        }
+        return needLen;
     }
 
     needLen = updatedKeysAndValues.length();

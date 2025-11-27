@@ -341,6 +341,7 @@ NFSubstitution::makeSubstitution(int32_t pos,
                                  const UnicodeString& description,
                                  UErrorCode& status)
 {
+    if (U_FAILURE(status)) return nullptr;
     
     if (description.length() == 0) {
         return nullptr;
@@ -427,6 +428,7 @@ NFSubstitution::NFSubstitution(int32_t _pos,
                                UErrorCode& status)
                                : pos(_pos), ruleSet(nullptr), numberFormat(nullptr)
 {
+    if (U_FAILURE(status)) return;
     
     
     
@@ -592,6 +594,7 @@ NFSubstitution::toString(UnicodeString& text) const
 void
 NFSubstitution::doSubstitution(int64_t number, UnicodeString& toInsertInto, int32_t _pos, int32_t recursionCount, UErrorCode& status) const
 {
+    if (U_FAILURE(status)) return;
     if (ruleSet != nullptr) {
         
         
@@ -634,6 +637,7 @@ NFSubstitution::doSubstitution(int64_t number, UnicodeString& toInsertInto, int3
 
 void
 NFSubstitution::doSubstitution(double number, UnicodeString& toInsertInto, int32_t _pos, int32_t recursionCount, UErrorCode& status) const {
+    if (U_FAILURE(status)) return;
     
     
     double numberToFormat = transformNumber(number);
@@ -850,6 +854,7 @@ ModulusSubstitution::ModulusSubstitution(int32_t _pos,
  , divisor(rule->getDivisor())
  , ruleToUse(nullptr)
 {
+  if (U_FAILURE(status)) return;
   
   
   
@@ -893,6 +898,7 @@ bool ModulusSubstitution::operator==(const NFSubstitution& rhs) const
 void
 ModulusSubstitution::doSubstitution(int64_t number, UnicodeString& toInsertInto, int32_t _pos, int32_t recursionCount, UErrorCode& status) const
 {
+    if (U_FAILURE(status)) return;
     
     
     
@@ -918,6 +924,7 @@ ModulusSubstitution::doSubstitution(int64_t number, UnicodeString& toInsertInto,
 void
 ModulusSubstitution::doSubstitution(double number, UnicodeString& toInsertInto, int32_t _pos, int32_t recursionCount, UErrorCode& status) const
 {
+    if (U_FAILURE(status)) return;
     
     
     
@@ -1026,6 +1033,7 @@ FractionalPartSubstitution::FractionalPartSubstitution(int32_t _pos,
  , useSpaces(true)
 
 {
+    if (U_FAILURE(status)) return;
     
     if (0 == description.compare(gGreaterGreaterThan, 2) ||
         0 == description.compare(gGreaterGreaterGreaterThan, 3) ||
@@ -1036,7 +1044,12 @@ FractionalPartSubstitution::FractionalPartSubstitution(int32_t _pos,
         }
     } else {
         
-        const_cast<NFRuleSet*>(getRuleSet())->makeIntoFractionRuleSet();
+        NFRuleSet* rs = const_cast<NFRuleSet*>(getRuleSet());
+        if (rs != nullptr) {
+            rs->makeIntoFractionRuleSet();
+        } else {
+            status = U_PARSE_ERROR;
+        }
     }
 }
 
@@ -1058,6 +1071,7 @@ void
 FractionalPartSubstitution::doSubstitution(double number, UnicodeString& toInsertInto,
                                            int32_t _pos, int32_t recursionCount, UErrorCode& status) const
 {
+  if (U_FAILURE(status)) return;
   
   
   if (!byDigits) {
@@ -1233,6 +1247,7 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(AbsoluteValueSubstitution)
 
 void
 NumeratorSubstitution::doSubstitution(double number, UnicodeString& toInsertInto, int32_t apos, int32_t recursionCount, UErrorCode& status) const {
+    if (U_FAILURE(status)) return;
     
     
 

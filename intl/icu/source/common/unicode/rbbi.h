@@ -123,7 +123,6 @@ private:
     
 
 
-
     UText  fText = UTEXT_INITIALIZER;
 
 #ifndef U_HIDE_INTERNAL_API
@@ -173,7 +172,6 @@ private:
 
 
 
-
     UStack              *fLanguageBreakEngines = nullptr;
 
     
@@ -182,11 +180,9 @@ private:
 
 
 
-
     UnhandledEngine     *fUnhandledBreakEngine = nullptr;
 
     
-
 
 
 
@@ -234,7 +230,6 @@ private:
 
 
 
-
     RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode &status);
 
     
@@ -249,16 +244,12 @@ private:
 
 
 
-
     RuleBasedBreakIterator(UDataMemory* image, UBool isPhraseBreaking, UErrorCode &status);
 
-    
     friend class RBBIRuleBuilder;
-    
     friend class BreakIterator;
 
     
-
 
 
 
@@ -733,12 +724,9 @@ private:
 
 
 
-
     int32_t handleSafePrevious(int32_t fromPosition);
 
     
-
-
 
 
 
@@ -774,7 +762,6 @@ private:
 
 
     
-
 
 
 
