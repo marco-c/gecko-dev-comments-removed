@@ -1,77 +1,20 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.notes.enabled", true]],
-  });
+const { TabNotes } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs"
+);
 
-  registerCleanupFunction(async function () {
-    await SpecialPowers.popPrefEnv();
-  });
+registerCleanupFunction(() => {
+  TabNotes.reset();
 });
 
-add_task(async function tabNotesBasicStorageTests() {
-  let url = "https://example.com/abc";
-  let value = "some note";
-
-  let result = gBrowser.TabNotes.set(url, value);
-  Assert.equal(result, value, "TabNotes.set returns note value");
-
-  Assert.equal(
-    gBrowser.TabNotes.has(url),
-    true,
-    "TabNotes.has indicates that URL has a note"
-  );
-
-  Assert.equal(
-    gBrowser.TabNotes.get(url),
-    value,
-    "TabNotes.get returns previously set note value"
-  );
-
-  let fgWindow = await BrowserTestUtils.openNewBrowserWindow();
-  Assert.equal(
-    fgWindow.gBrowser.TabNotes.get(url),
-    value,
-    "TabNotes.get returns previously set note value from any window"
-  );
-  await BrowserTestUtils.closeWindow(fgWindow);
-
-  gBrowser.TabNotes.delete(url);
-
-  Assert.equal(
-    gBrowser.TabNotes.has(url),
-    false,
-    "TabNotes.has indicates that the deleted URL no longer has a note"
-  );
-
-  Assert.equal(
-    gBrowser.TabNotes.get(url),
-    undefined,
-    "TabNotes.get returns undefined for URL that does not have a note"
-  );
-
-  gBrowser.TabNotes.reset();
-});
-
-add_task(async function tabNotesSanitizationTests() {
-  let url = "https://example.com/";
-  let tooLongValue = "x".repeat(1500);
-  let correctValue = "x".repeat(1000);
-
-  gBrowser.TabNotes.set(url, tooLongValue);
-  let result = gBrowser.TabNotes.get(url);
-
-  Assert.equal(result, correctValue, "TabNotes.set truncates note length");
-});
-
-
-
-
+/**
+ *  Tab note menu tests
+ */
 
 async function openTabNoteMenu(tab) {
   let tabContextMenu = await getContextMenu(tab, "tabContextMenu");
@@ -89,8 +32,38 @@ async function closeTabNoteMenu() {
   return menuHidden;
 }
 
+/**
+ * Adds a tab, waits for it to load, and waits for the canonical URL to be
+ * identified from the loaded contents of the tab. This ensures that the tab
+ * meets the requirements to have a tab note.
+ *
+ * @param {string} [url="https://www.example.com"]
+ * @returns {Promise<{tab: MozTabbrowserTab, canonicalUrl: string}>}
+ */
+async function addTabWithCanonicalUrl(url = "https://www.example.com") {
+  const { promise, resolve } = Promise.withResolvers();
+  BrowserTestUtils.addTab(
+    gBrowser,
+    url,
+    {
+      skipAnimation: true,
+    },
+    tab => {
+      BrowserTestUtils.waitForEvent(
+        window,
+        "CanonicalURL:Identified",
+        false,
+        e => e.target == tab.linkedBrowser
+      ).then(e => {
+        resolve({ tab, canonicalUrl: e.detail.canonicalUrl });
+      });
+    }
+  );
+  return promise;
+}
+
 add_task(async function test_openTabNotePanelFromContextMenu() {
-  
+  // open context menu with tab notes disabled
   await SpecialPowers.pushPrefEnv({
     set: [["browser.tabs.notes.enabled", false]],
   });
@@ -104,7 +77,7 @@ add_task(async function test_openTabNotePanelFromContextMenu() {
   await closeContextMenu(tabContextMenu);
   await SpecialPowers.popPrefEnv();
 
-  
+  // open context menu with tab notes enabled
   await SpecialPowers.pushPrefEnv({
     set: [["browser.tabs.notes.enabled", true]],
   });
@@ -115,7 +88,7 @@ add_task(async function test_openTabNotePanelFromContextMenu() {
   );
   let tabNotePanel = document.getElementById("tabNotePanel");
 
-  
+  // open panel from context menu
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabNotePanel, "shown");
   Assert.equal(tabNotePanel.state, "closed", "Tab note panel starts hidden");
   tabContextMenu.activateItem(addNoteElement);
@@ -131,11 +104,7 @@ add_task(async function test_openTabNotePanelFromContextMenu() {
 });
 
 add_task(async function test_dismissTabNotePanel() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.notes.enabled", true]],
-  });
-
-  
+  // Dismiss panel by pressing Esc
   let tab = await addTab("about:blank");
   let tabNoteMenu = await openTabNoteMenu(tab);
   Assert.equal(tabNoteMenu.state, "open", "Tab note menu is open");
@@ -147,7 +116,7 @@ add_task(async function test_dismissTabNotePanel() {
     "Tab note menu closes after pressing Esc"
   );
 
-  
+  // Dismiss panel by clicking Cancel
   tabNoteMenu = await openTabNoteMenu(tab);
   Assert.equal(tabNoteMenu.state, "open", "Tab note menu is open");
   let menuHidden = BrowserTestUtils.waitForPopupEvent(tabNoteMenu, "hidden");
@@ -160,23 +129,18 @@ add_task(async function test_dismissTabNotePanel() {
     "Tab note menu closes after clicking cancel button"
   );
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_saveTabNote() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.notes.enabled", true]],
-  });
-  let tab = await addTab("about:blank");
+  let { tab, canonicalUrl } = await addTabWithCanonicalUrl();
   let tabNoteMenu = await openTabNoteMenu(tab);
   tabNoteMenu.querySelector("textarea").value = "Lorem ipsum dolor";
   let menuHidden = BrowserTestUtils.waitForPopupEvent(tabNoteMenu, "hidden");
   tabNoteMenu.querySelector("#tab-note-editor-button-save").click();
   await menuHidden;
 
-  Assert.equal(gBrowser.TabNotes.get("about:blank"), "Lorem ipsum dolor");
+  Assert.equal(TabNotes.get(canonicalUrl), "Lorem ipsum dolor");
 
-  gBrowser.TabNotes.delete("about:blank");
+  TabNotes.delete(canonicalUrl);
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
