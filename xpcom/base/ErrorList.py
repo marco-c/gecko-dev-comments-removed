@@ -358,9 +358,6 @@ with modules["NETWORK"]:
     errors["NS_ERROR_PARSING_HTTP_STATUS_LINE"] = FAILURE(90)
     
     
-    errors["NS_ERROR_SUPERFLUOS_AUTH"] = FAILURE(91)
-    
-    
     errors["NS_ERROR_BASIC_HTTP_AUTH_DISABLED"] = FAILURE(92)
     errors["NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED"] = FAILURE(93)
     

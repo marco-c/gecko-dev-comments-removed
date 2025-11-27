@@ -99,11 +99,6 @@ add_task(async function test_basic() {
 
 add_task(async function test_userpass() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["network.auth.confirmAuth.enabled", false]],
-  });
-
-  
   await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "https://example.org/tests/toolkit/components/places/tests/browser/userpass.html"

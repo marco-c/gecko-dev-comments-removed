@@ -3135,20 +3135,7 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
-  
   if (httpStatus != 401 && httpStatus != 407) {
-    if (!mAuthRetryPending) {
-      MOZ_DIAGNOSTIC_ASSERT(mAuthProvider);
-      rv = mAuthProvider ? mAuthProvider->CheckForSuperfluousAuth()
-                         : NS_ERROR_UNEXPECTED;
-      if (NS_FAILED(rv)) {
-        mStatus = rv;
-        LOG(("  CheckForSuperfluousAuth failed (%08x)",
-             static_cast<uint32_t>(rv)));
-      }
-    }
-    if (mCanceled) return CallOnStartRequest();
-
     
     
     MOZ_DIAGNOSTIC_ASSERT(mAuthProvider);
@@ -3393,15 +3380,6 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
         }
         if (rv == NS_ERROR_BASIC_HTTP_AUTH_DISABLED) {
           mStatus = rv;
-        } else if (!mAuthRetryPending) {
-          MOZ_DIAGNOSTIC_ASSERT(mAuthProvider);
-          rv = mAuthProvider ? mAuthProvider->CheckForSuperfluousAuth()
-                             : NS_ERROR_UNEXPECTED;
-          if (NS_FAILED(rv)) {
-            mStatus = rv;
-            LOG(("CheckForSuperfluousAuth failed [rv=%x]\n",
-                 static_cast<uint32_t>(rv)));
-          }
         }
         rv = ProcessNormal();
       } else {
@@ -9280,24 +9258,6 @@ nsresult nsHttpChannel::ContinueOnStartRequest3(nsresult result) {
     
     
     return NS_OK;
-  }
-
-  return ContinueOnStartRequest4(NS_OK);
-}
-
-nsresult nsHttpChannel::ContinueOnStartRequest4(nsresult result) {
-  LOG(("nsHttpChannel::ContinueOnStartRequest4 [this=%p]", this));
-
-  if (NS_SUCCEEDED(mStatus) && mResponseHead && mAuthProvider) {
-    uint32_t httpStatus = mResponseHead->Status();
-    if (httpStatus != 401 && httpStatus != 407) {
-      nsresult rv = mAuthProvider->CheckForSuperfluousAuth();
-      if (NS_FAILED(rv)) {
-        mStatus = rv;
-        LOG(("  CheckForSuperfluousAuth failed (%08x)",
-             static_cast<uint32_t>(rv)));
-      }
-    }
   }
 
   return CallOnStartRequest();

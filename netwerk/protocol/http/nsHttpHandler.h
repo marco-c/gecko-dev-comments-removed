@@ -142,7 +142,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   uint32_t NetworkChangedTimeout() { return mNetworkChangedTimeout; }
   uint16_t MaxRequestAttempts() { return mMaxRequestAttempts; }
   const nsCString& DefaultSocketType() { return mDefaultSocketType; }
-  uint32_t PhishyUserPassLength() { return mPhishyUserPassLength; }
   uint8_t GetQoSBits() { return mQoSBits; }
   uint16_t GetIdleSynTimeout() { return mIdleSynTimeout; }
   uint16_t GetFallbackSynTimeout() { return mFallbackSynTimeout; }
@@ -615,12 +614,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   uint8_t mRedirectionLimit{10};
 
   bool mBeConservativeForProxy{true};
-
-  
-  
-  
-  
-  uint8_t mPhishyUserPassLength{1};
 
   uint8_t mQoSBits{0x00};
 

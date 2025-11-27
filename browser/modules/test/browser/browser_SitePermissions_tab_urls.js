@@ -13,11 +13,6 @@ function newPrincipal(origin) {
 
 add_task(async function testTemporaryPermissionTabURLs() {
   
-  SpecialPowers.pushPrefEnv({
-    set: [["network.http.phishy-userpass-length", 2048]],
-  });
-
-  
   
   requestLongerTimeout(2);
 

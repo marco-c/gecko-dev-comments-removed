@@ -42,8 +42,6 @@ user_pref("gfx.font_loader.delay", 0);
 
 user_pref("gfx.font_rendering.ahem_antialias_none", true);
 
-user_pref("network.http.phishy-userpass-length", 255);
-
 user_pref("browser.safebrowsing.blockedURIs.enabled", false);
 user_pref("browser.safebrowsing.downloads.enabled", false);
 user_pref("browser.safebrowsing.malware.enabled", false);

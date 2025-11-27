@@ -24,7 +24,6 @@ interface nsIHttpAuthenticableChannel;
 
 
 
-
 [uuid(788f331b-2e1f-436c-b405-4f88a31a105b)]
 interface nsIHttpChannelAuthProvider : nsICancelable
 {
@@ -64,12 +63,6 @@ interface nsIHttpChannelAuthProvider : nsICancelable
 
 
   [must_use] void addAuthorizationHeaders(in boolean dontUseCachedWWWCreds);
-
-  
-
-
-
-  [must_use] void checkForSuperfluousAuth();
 
   
 

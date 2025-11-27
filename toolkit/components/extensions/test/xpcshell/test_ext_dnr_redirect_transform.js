@@ -12,9 +12,6 @@ add_setup(() => {
   Services.prefs.setBoolPref("extensions.dnr.enabled", true);
 
   
-  Services.prefs.setBoolPref("network.auth.confirmAuth.enabled", false);
-
-  
   
   Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
 });
