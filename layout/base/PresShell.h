@@ -1087,11 +1087,7 @@ class PresShell final : public nsStubDocumentObserver,
                        bool aDontRetargetEvents, nsEventStatus* aEventStatus);
   bool ShouldIgnoreInvalidation();
   
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void DidPaintWindow();
+  void DidPaintWindow();
 
   bool IsVisible() const;
   bool IsUnderHiddenEmbedderElement() const {

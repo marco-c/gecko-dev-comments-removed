@@ -179,13 +179,6 @@ bool nsWindow::OnPaint() {
   mLastPaintBounds = mBounds;
 
   RefPtr<nsWindow> strongThis(this);
-  if (nsIWidgetListener* listener = GetPaintListener()) {
-    
-    
-    listener->WillPaintWindow(this);
-  }
-
-  bool didPaint = false;
   
   
   
@@ -196,38 +189,8 @@ bool nsWindow::OnPaint() {
   HDC hDC = ::BeginPaint(mWnd, &ps);
   auto endPaint = MakeScopeExit([&] {
     ::EndPaint(mWnd, &ps);
-    if (didPaint) {
-      mLastPaintEndTime = TimeStamp::Now();
-      if (nsIWidgetListener* listener = GetPaintListener()) {
-        listener->DidPaintWindow();
-      }
-    }
+    mLastPaintEndTime = TimeStamp::Now();
   });
-
-  LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
-  LayoutDeviceIntRegion regionToClear;
-  
-  if (isTransparent) {
-    auto translucentRegion = GetTranslucentRegion();
-    
-    
-    
-    
-    
-    
-    
-    regionToClear = translucentRegion;
-    if (!mClearedRegion.IsEmpty()) {
-      mClearedRegion.SubOut(region);
-      regionToClear.SubOut(mClearedRegion);
-    }
-    region.OrWith(translucentRegion);
-    mClearedRegion = std::move(translucentRegion);
-  }
-
-  if (region.IsEmpty() || !GetPaintListener()) {
-    return false;
-  }
 
   Maybe<FallbackPaintContext> fallback;
   if (isFallback) {
@@ -246,12 +209,23 @@ bool nsWindow::OnPaint() {
     fallback.emplace(this, std::move(targetSurface), std::move(dt));
   }
 
-  if (knowsCompositor && layerManager) {
-    layerManager->SendInvalidRegion(region.ToUnknownRegion());
-    layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
+  LayoutDeviceIntRegion region = GetRegionToPaint(ps, hDC);
+  if (!mClearedRegion.IsEmpty()) {
+    
+    
+    mClearedRegion.SubOut(region);
   }
 
-  if (!regionToClear.IsEmpty()) {
+  auto ComputeAndClearTranslucentRegion = [&]() {
+    if (!isTransparent) {
+      return;
+    }
+    const LayoutDeviceIntRegion translucentRegion = GetTranslucentRegion();
+    auto regionToClear = translucentRegion;
+    if (!mClearedRegion.IsEmpty()) {
+      regionToClear.SubOut(mClearedRegion);
+    }
+    mClearedRegion = std::move(translucentRegion);
     auto black = reinterpret_cast<HBRUSH>(::GetStockObject(BLACK_BRUSH));
     
     
@@ -268,6 +242,33 @@ bool nsWindow::OnPaint() {
         ::FillRect(hDC, &rect, black);
       }
     }
+    region.OrWith(regionToClear);
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (fallback) {
+    ComputeAndClearTranslucentRegion();
+  }
+
+  if (auto* listener = GetPaintListener()) {
+    listener->PaintWindow(this);
+  }
+
+  if (!fallback) {
+    ComputeAndClearTranslucentRegion();
+  }
+
+  if (knowsCompositor && layerManager && !region.IsEmpty()) {
+    layerManager->SendInvalidRegion(region.ToUnknownRegion());
+    layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
   }
 
 #ifdef WIDGET_DEBUG_OUTPUT
@@ -275,18 +276,12 @@ bool nsWindow::OnPaint() {
                        (int32_t)mWnd);
 #endif  
 
-  bool result = true;
-  if (nsIWidgetListener* listener = GetPaintListener()) {
-    result = listener->PaintWindow(this, region);
-  }
-
   if (!isFallback && !gfxEnv::MOZ_DISABLE_FORCE_PRESENT()) {
     NS_DispatchToMainThread(NewRunnableMethod("nsWindow::ForcePresent", this,
                                               &nsWindow::ForcePresent));
   }
 
-  didPaint = true;
-  return result;
+  return true;
 }
 
 bool nsWindow::NeedsToTrackWindowOcclusionState() {

@@ -111,32 +111,8 @@ class nsIWidgetListener {
   virtual bool RequestWindowClose(nsIWidget* aWidget) { return false; }
 
   
-
-
-
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void WillPaintWindow(nsIWidget* aWidget) {}
-
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual bool PaintWindow(nsIWidget* aWidget,
-                           mozilla::LayoutDeviceIntRegion aRegion) {
-    return false;
-  }
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void DidPaintWindow() {}
+  virtual void PaintWindow(nsIWidget* aWidget) {}
 
   virtual void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                                   const mozilla::TimeStamp& aCompositeStart,
