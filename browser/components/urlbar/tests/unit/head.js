@@ -995,12 +995,16 @@ function makeGlobalActionsResult({
 
 
 
+
+
+
 async function check_results({
   context,
   incompleteSearch,
   autofilled,
   completed,
   matches = [],
+  conditionalPayloadProperties = {},
 } = {}) {
   if (!context) {
     return;
@@ -1093,7 +1097,7 @@ async function check_results({
   
   
   
-  let conditionalPayloadProperties = {
+  conditionalPayloadProperties = {
     frecency: { optional: true },
     lastVisit: { optional: true },
     
@@ -1101,6 +1105,7 @@ async function check_results({
     
     
     suggestionObject: { ignore: true },
+    ...conditionalPayloadProperties,
   };
 
   for (let i = 0; i < matches.length; i++) {
