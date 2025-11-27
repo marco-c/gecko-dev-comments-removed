@@ -10,6 +10,7 @@
 #include <limits>
 
 #include "ActiveLayerTracker.h"
+#include "AnchorPositioningUtils.h"
 #include "DisplayItemClip.h"
 #include "ImageContainer.h"
 #include "ImageOps.h"
@@ -164,6 +165,7 @@
 #include "nsTransitionManager.h"
 #include "nsXULPopupManager.h"
 #include "prenv.h"
+#include "AnchorPositioningUtils.h"
 
 
 #ifdef XP_WIN
@@ -1362,6 +1364,29 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
         }
       }
     }
+
+    nsIFrame* anchor = nullptr;
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) {
+      while (
+          (anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(f))) {
+        f = anchor;
+      }
+    }
+
     if ((aFlags & nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT) &&
         f->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
         nsLayoutUtils::IsReallyFixedPos(f)) {

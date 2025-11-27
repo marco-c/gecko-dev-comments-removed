@@ -309,6 +309,12 @@ struct AnchorPositioningUtils {
       const ContainingBlockInfo& aContainingBlockInfo,
       const nsIFrame* aPositioned,
       const AnchorPosReferenceData* aReferenceData);
+
+  
+
+
+
+  static nsIFrame* GetAnchorThatFrameScrollsWith(nsIFrame* aFrame);
 };
 
 }  
