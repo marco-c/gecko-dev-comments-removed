@@ -13,6 +13,7 @@
 #include <stdint.h>   
 
 #include "gc/Tracer.h"  
+#include "jit/InlineScriptTree.h"
 #include "jit/JitcodeMap.h"
 #include "jit/JitRuntime.h"
 #include "js/friend/ErrorMessages.h"  
@@ -762,7 +763,7 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
   }
 
   
-  jit::CallStackFrameInfo frameInfos[64];
+  jit::CallStackFrameInfo frameInfos[jit::InlineScriptTree::MaxDepth];
   uint32_t depth = entry->callStackAtAddr(cx_->runtime(),
                                           jsJitIter().resumePCinCurrentFrame(),
                                           frameInfos, std::size(frameInfos));

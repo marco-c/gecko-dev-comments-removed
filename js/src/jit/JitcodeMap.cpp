@@ -996,6 +996,13 @@ JS_PUBLIC_API uint32_t JS::ProfiledFrameHandle::sourceId() const {
 
 JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,
                                                            void* addr) {
+  
+  
+  static_assert(ProfiledFrameRange::MaxInliningDepth ==
+                    js::jit::InlineScriptTree::MaxDepth,
+                "ProfiledFrameRange::MaxInliningDepth must match "
+                "InlineScriptTree::MaxDepth");
+
   JSRuntime* rt = cx->runtime();
   js::jit::JitcodeGlobalTable* table =
       rt->jitRuntime()->getJitcodeGlobalTable();

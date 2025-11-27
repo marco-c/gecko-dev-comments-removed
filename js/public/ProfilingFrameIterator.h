@@ -306,7 +306,10 @@ class ProfiledFrameRange {
   void* addr_;
   js::jit::JitcodeGlobalEntry* entry_;
   
-  js::jit::CallStackFrameInfo frames_[64];
+  
+  
+  static constexpr uint32_t MaxInliningDepth = 8;
+  js::jit::CallStackFrameInfo frames_[MaxInliningDepth];
   uint32_t depth_;
 };
 

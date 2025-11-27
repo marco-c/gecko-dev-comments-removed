@@ -1326,9 +1326,8 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
 
   
   
-  const uint32_t maxInliningDepth = 8;
   if (!isTrialInlined &&
-      info_->inlineScriptTree()->depth() > maxInliningDepth) {
+      info_->inlineScriptTree()->depth() > InlineScriptTree::MaxDepth) {
     return false;
   }
 
