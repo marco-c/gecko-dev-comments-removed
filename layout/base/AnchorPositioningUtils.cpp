@@ -893,8 +893,15 @@ nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
   }
 
   const nsAtom* defaultAnchorName = pos->mPositionAnchor.AsIdent().AsAtom();
-  return const_cast<nsIFrame*>(
+  nsIFrame* anchor = const_cast<nsIFrame*>(
       aFrame->PresShell()->GetAnchorPosAnchor(defaultAnchorName, aFrame));
+  
+  
+  if (anchor && !nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+                    aFrame->GetParent(), anchor)) {
+    return nullptr;
+  }
+  return anchor;
 }
 
 }  
