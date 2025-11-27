@@ -36,4 +36,9 @@ async function theRightNumberOfPlayersIsReturned(walker, animations) {
     1,
     "One animation player was returned for the transitioned node"
   );
+
+  
+  node = await walker.querySelector(walker.rootNode, ".button-animation");
+  players = await animations.getAnimationPlayersForNode(node);
+  is(players.length, 1, "Got an animation player for the animated button");
 }
