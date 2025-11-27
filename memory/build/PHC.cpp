@@ -367,8 +367,16 @@ static_assert((kPhcAlign % kPageSize) == 0);
 
 
 
+
+
+
+
 #ifdef HAVE_64BIT_BUILD
-static const size_t kPhcVirtualReservation = 1024 * 1024 * 1024;
+#  if defined(XP_DARWIN) && defined(__aarch64__)
+static const size_t kPhcVirtualReservation = 512 * 1024 * 1024;
+#  else
+static const size_t kPhcVirtualReservation = 128 * 1024 * 1024;
+#  endif
 #else
 static const size_t kPhcVirtualReservation = 2 * 1024 * 1024;
 #endif
