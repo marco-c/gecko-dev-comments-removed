@@ -161,6 +161,11 @@ class AnchorPosReferenceData {
   mozilla::PhysicalAxes mCompensatingForScroll;
 };
 
+struct LastSuccessfulPositionData {
+  uint32_t mIndex = 0;
+  bool mTriedAllFallbacks = false;
+};
+
 struct StylePositionArea;
 class WritingMode;
 
@@ -315,6 +320,11 @@ struct AnchorPositioningUtils {
 
 
   static nsIFrame* GetAnchorThatFrameScrollsWith(nsIFrame* aFrame);
+
+  
+  
+  static bool TriggerLayoutOnOverflow(PresShell* aPresShell,
+                                      bool aEvaluateAllFallbacksIfNeeded);
 };
 
 }  

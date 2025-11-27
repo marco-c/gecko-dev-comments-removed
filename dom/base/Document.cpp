@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <limits>
 
+#include "AnchorPositioningUtils.h"
 #include "Attr.h"
 #include "ErrorList.h"
 #include "ExpandedPrincipal.h"
@@ -18619,6 +18620,8 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
       interruptible ? FlushType::InterruptibleLayout : FlushType::Layout,
        false,  false);
 
+  bool initialAnchorOverflowDone = false;
+
   
   while (true) {
     
@@ -18646,6 +18649,16 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
     
     
     UpdateLastRememberedSizes();
+
+    const bool evaluateAllFallbacksIfNeeded = !initialAnchorOverflowDone;
+    initialAnchorOverflowDone = true;
+    if (AnchorPositioningUtils::TriggerLayoutOnOverflow(
+            ps, evaluateAllFallbacksIfNeeded)) {
+      
+      
+      
+      continue;
+    }
 
     
     
