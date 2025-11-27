@@ -3084,6 +3084,12 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
       DL_LOGI("Partial updates are disabled");
       metrics->mPartialUpdateResult = PartialUpdateResult::Failed;
       metrics->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
+
+      
+      
+      
+      
+      builder->SetDisablePartialUpdates(false);
     }
 
     
