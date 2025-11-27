@@ -220,7 +220,7 @@ impl Streams {
         
         self.receiver_fc
             .borrow_mut()
-            .write_frames(builder, tokens, stats);
+            .write_frames(builder, tokens, stats, now, rtt);
         if builder.is_full() {
             return;
         }

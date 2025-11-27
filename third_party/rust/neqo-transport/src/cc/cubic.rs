@@ -18,69 +18,6 @@ use crate::cc::classic_cc::WindowAdjustment;
 
 
 
-
-
-
-
-
-pub const CUBIC_C: f64 = 0.4;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub const CUBIC_ALPHA: f64 = 3.0 * (1.0 - 0.7) / (1.0 + 0.7); 
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub const CUBIC_BETA_USIZE_DIVIDEND: usize = 7;
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub const CUBIC_BETA_USIZE_DIVISOR: usize = 10;
-
-
-
-
-
-
-
-
-pub const CUBIC_FAST_CONVERGENCE_FACTOR: f64 = (1.0 + 0.7) / 2.0;
-
-
-
-
 pub fn convert_to_f64(v: usize) -> f64 {
     let mut f_64 = f64::from(u32::try_from(v >> 21).unwrap_or(u32::MAX));
     f_64 *= 2_097_152.0; 
@@ -165,13 +102,82 @@ impl Cubic {
     
     
     
+    pub const C: f64 = 0.4;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const ALPHA: f64 = 3.0 * (1.0 - 0.7) / (1.0 + 0.7); 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const BETA_USIZE_DIVIDEND: usize = 7;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const BETA_USIZE_DIVISOR: usize = 10;
+
+    
+    
+    
+    
+    
+    
+    
+    pub const FAST_CONVERGENCE_FACTOR: f64 = (1.0 + 0.7) / 2.0;
+
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     
     
     fn calc_k(&self, cwnd_epoch: f64, max_datagram_size: f64) -> f64 {
-        ((self.w_max - cwnd_epoch) / max_datagram_size / CUBIC_C).cbrt()
+        ((self.w_max - cwnd_epoch) / max_datagram_size / Self::C).cbrt()
     }
 
     
@@ -185,7 +191,7 @@ impl Cubic {
     
     
     fn w_cubic(&self, t: f64, max_datagram_size: f64) -> f64 {
-        (CUBIC_C * (t - self.k).powi(3)).mul_add(max_datagram_size, self.w_max)
+        (Self::C * (t - self.k).powi(3)).mul_add(max_datagram_size, self.w_max)
     }
 
     
@@ -301,14 +307,14 @@ impl WindowAdjustment for Cubic {
         
 
         
-        let increase = (CUBIC_ALPHA * self.reno_acked_bytes / curr_cwnd).floor();
+        let increase = (Self::ALPHA * self.reno_acked_bytes / curr_cwnd).floor();
 
         
         if increase > 0.0 {
             self.w_est += increase * max_datagram_size;
             
             
-            let acked_bytes_used = increase * curr_cwnd / CUBIC_ALPHA;
+            let acked_bytes_used = increase * curr_cwnd / Self::ALPHA;
             self.reno_acked_bytes -= acked_bytes_used;
         }
 
@@ -398,7 +404,7 @@ impl WindowAdjustment for Cubic {
         
         
         self.w_max = if curr_cwnd_f64 + convert_to_f64(max_datagram_size) < self.w_max {
-            curr_cwnd_f64 * CUBIC_FAST_CONVERGENCE_FACTOR
+            curr_cwnd_f64 * Self::FAST_CONVERGENCE_FACTOR
         } else {
             curr_cwnd_f64
         };
@@ -406,8 +412,8 @@ impl WindowAdjustment for Cubic {
         
         self.t_epoch = None;
         (
-            curr_cwnd * CUBIC_BETA_USIZE_DIVIDEND / CUBIC_BETA_USIZE_DIVISOR,
-            acked_bytes * CUBIC_BETA_USIZE_DIVIDEND / CUBIC_BETA_USIZE_DIVISOR,
+            curr_cwnd * Self::BETA_USIZE_DIVIDEND / Self::BETA_USIZE_DIVISOR,
+            acked_bytes * Self::BETA_USIZE_DIVIDEND / Self::BETA_USIZE_DIVISOR,
         )
     }
 

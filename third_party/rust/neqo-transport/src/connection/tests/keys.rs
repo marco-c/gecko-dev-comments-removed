@@ -5,7 +5,10 @@
 
 
 use neqo_common::{qdebug, Datagram};
-use test_fixture::{now, split_datagram};
+use test_fixture::{
+    assertions::{is_handshake, is_initial},
+    now, split_datagram,
+};
 
 use super::{
     super::{
@@ -17,7 +20,7 @@ use super::{
 };
 use crate::{
     crypto::{OVERWRITE_INVOCATIONS, UPDATE_WRITE_KEYS_AT},
-    packet,
+    packet, MIN_INITIAL_PACKET_SIZE,
 };
 
 fn check_discarded(
@@ -355,4 +358,53 @@ fn automatic_update_write_keys_blocked() {
         client.state(),
         State::Closed(CloseReason::Transport(Error::KeysExhausted))
     ));
+}
+
+
+
+
+
+#[test]
+fn initial_handshake_pto_padding() {
+    let mut client = default_client();
+    let mut now = now();
+
+    let c_init1 = client.process_output(now).dgram();
+    let c_init2 = client.process_output(now).dgram();
+    assert!(c_init1.is_some() && c_init2.is_some());
+
+    let mut server = default_server();
+    server.process_input(c_init1.unwrap(), now);
+    let s_hs1 = server.process(c_init2, now).dgram();
+    assert!(s_hs1.is_some());
+    let s_hs2 = server.process_output(now).dgram();
+    assert!(s_hs2.is_some());
+
+    
+    
+    
+    client.process_input(s_hs1.unwrap(), now);
+    client.process_input(s_hs2.unwrap(), now);
+    now += AT_LEAST_PTO;
+
+    
+    let mut pto_dgrams = Vec::new();
+    while let Some(dgram) = client.process_output(now).dgram() {
+        pto_dgrams.push(dgram);
+    }
+    assert!(!pto_dgrams.is_empty());
+
+    
+    
+    let mut found_coalesced = false;
+    for dgram in &pto_dgrams {
+        let (first, second) = split_datagram(dgram);
+        if is_initial(&first, false) {
+            assert!(dgram.len() >= MIN_INITIAL_PACKET_SIZE);
+            if let Some(hs) = &second {
+                found_coalesced |= is_handshake(hs);
+            }
+        }
+    }
+    assert!(found_coalesced);
 }

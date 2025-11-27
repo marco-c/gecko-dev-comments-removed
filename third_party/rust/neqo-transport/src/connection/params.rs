@@ -6,12 +6,9 @@
 
 use std::{cmp::max, time::Duration};
 
-use neqo_common::MAX_VARINT;
-
 pub use crate::recovery::FAST_PTO_SCALE;
 use crate::{
-    connection::{ConnectionIdManager, Role, LOCAL_ACTIVE_CID_LIMIT},
-    recv_stream::INITIAL_RECV_WINDOW_SIZE,
+    connection::{ConnectionIdManager, Role},
     rtt::GRANULARITY,
     stream_id::StreamType,
     tparams::{
@@ -29,9 +26,66 @@ use crate::{
     CongestionControlAlgorithm, Res, DEFAULT_INITIAL_RTT,
 };
 
-const LOCAL_MAX_DATA: u64 = MAX_VARINT;
-const LOCAL_STREAM_LIMIT_BIDI: u64 = 16;
-const LOCAL_STREAM_LIMIT_UNI: u64 = 16;
+
+
+
+
+
+const LOCAL_STREAM_LIMIT_BIDI: u64 = 100;
+
+
+
+
+
+const LOCAL_STREAM_LIMIT_UNI: u64 = 100;
+
+
+
+
+
+
+
+
+const CONNECTION_FACTOR: u64 = 2;
+
+
+
+
+
+
+
+pub const INITIAL_LOCAL_MAX_STREAM_DATA: usize = 1024 * 1024;
+
+
+
+
+
+
+
+
+
+pub const INITIAL_LOCAL_MAX_DATA: u64 = INITIAL_LOCAL_MAX_STREAM_DATA as u64 * CONNECTION_FACTOR;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub const MAX_LOCAL_MAX_STREAM_DATA: u64 = 10 * 1024 * 1024;
+
+
+
+
+pub const MAX_LOCAL_MAX_DATA: u64 = MAX_LOCAL_MAX_STREAM_DATA * CONNECTION_FACTOR;
+
 
 const MAX_DATAGRAM_FRAME_SIZE: u64 = 65535;
 const MAX_QUEUED_DATAGRAMS_DEFAULT: usize = 10;
@@ -105,12 +159,12 @@ impl Default for ConnectionParameters {
         Self {
             versions: version::Config::default(),
             cc_algorithm: CongestionControlAlgorithm::Cubic,
-            max_data: LOCAL_MAX_DATA,
-            max_stream_data_bidi_remote: u64::try_from(INITIAL_RECV_WINDOW_SIZE)
+            max_data: INITIAL_LOCAL_MAX_DATA,
+            max_stream_data_bidi_remote: u64::try_from(INITIAL_LOCAL_MAX_STREAM_DATA)
                 .expect("usize fits in u64"),
-            max_stream_data_bidi_local: u64::try_from(INITIAL_RECV_WINDOW_SIZE)
+            max_stream_data_bidi_local: u64::try_from(INITIAL_LOCAL_MAX_STREAM_DATA)
                 .expect("usize fits in u64"),
-            max_stream_data_uni: u64::try_from(INITIAL_RECV_WINDOW_SIZE)
+            max_stream_data_uni: u64::try_from(INITIAL_LOCAL_MAX_STREAM_DATA)
                 .expect("usize fits in u64"),
             max_streams_bidi: LOCAL_STREAM_LIMIT_BIDI,
             max_streams_uni: LOCAL_STREAM_LIMIT_UNI,
@@ -450,7 +504,7 @@ impl ConnectionParameters {
         
         tps.local_mut().set_integer(
             ActiveConnectionIdLimit,
-            u64::try_from(LOCAL_ACTIVE_CID_LIMIT)?,
+            u64::try_from(ConnectionIdManager::ACTIVE_LIMIT)?,
         );
         if self.disable_migration {
             tps.local_mut().set_empty(DisableMigration);

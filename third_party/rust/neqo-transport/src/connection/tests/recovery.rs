@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use neqo_common::qdebug;
 use neqo_crypto::AuthenticationStatus;
 use test_fixture::{
-    assertions::{assert_handshake, assert_initial},
+    assertions::{assert_handshake, assert_initial, is_handshake, is_initial},
     now, split_datagram,
 };
 
@@ -943,4 +943,92 @@ fn ack_for_unsent() {
             ..
         }
     ));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[test]
+fn pto_handshake_space_when_server_flight_lost() {
+    const RTT: Duration = Duration::from_millis(10);
+    let mut now = now();
+    
+    
+    let mut client = new_client(ConnectionParameters::default().mlkem(false));
+    let mut server = default_server();
+    
+    
+    let big = TransportParameter::Bytes(vec![0; Pmtud::default_plpmtu(DEFAULT_ADDR.ip())]);
+    server
+        .set_local_tparam(TestTransportParameter, big)
+        .unwrap();
+
+    let c1 = client.process_output(now).dgram();
+    now += RTT / 2;
+
+    
+    let mut server_dgrams = Vec::new();
+    server_dgrams.push(server.process(c1, now).dgram().unwrap());
+    while let Some(dgram) = server.process_output(now).dgram() {
+        server_dgrams.push(dgram);
+    }
+    assert!(!server_dgrams.is_empty());
+
+    
+    now += RTT / 2;
+    let mut found_hs = false;
+    for dgram in server_dgrams {
+        let (first, second) = split_datagram(&dgram);
+        if is_initial(&first, false) {
+            assert!(!found_hs, "got Initial after Handshake");
+            if let Some(hs) = second {
+                found_hs |= is_handshake(&hs);
+            }
+            client.process_input(first, now);
+        } else {
+            found_hs |= is_handshake(&first);
+        }
+    }
+    assert!(found_hs);
+
+    
+    let c2 = client.process_output(now).dgram();
+    assert!(c2.is_some()); 
+    assert_eq!(*client.state(), State::Handshaking);
+
+    let pto = client.process_output(now).callback();
+    assert_ne!(pto, Duration::ZERO);
+    now += pto;
+
+    
+    let next_timeout = loop {
+        if let Output::Callback(callback) = client.process_output(now) {
+            break callback;
+        }
+    };
+    
+    now += next_timeout;
+
+    
+    let stats_before = client.stats().frame_tx;
+    let mut pto_packets = Vec::new();
+    while let Some(dgram) = client.process_output(now).dgram() {
+        pto_packets.push(dgram);
+    }
+
+    
+    let mut has_handshake = false;
+    for dgram in &pto_packets {
+        let (first, second) = split_datagram(dgram);
+        has_handshake |= is_handshake(&first) || second.as_ref().is_some_and(|s| is_handshake(s));
+    }
+    assert!(has_handshake && client.stats().frame_tx.ping > stats_before.ping);
 }

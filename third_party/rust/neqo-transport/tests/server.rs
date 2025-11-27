@@ -449,7 +449,7 @@ fn bad_client_initial() {
         .unwrap();
 
     let mut payload_enc = Encoder::from(plaintext);
-    payload_enc.encode(&[0x08, 0x02, 0x00, 0x00]); 
+    payload_enc.encode([0x08, 0x02, 0x00, 0x00]); 
 
     
     let mut header_enc = Encoder::new();
@@ -541,7 +541,7 @@ fn bad_client_initial_connection_close() {
     let (_, pn) = header_protection::remove(&hp, header, payload);
 
     let mut payload_enc = Encoder::with_capacity(MIN_INITIAL_PACKET_SIZE);
-    payload_enc.encode(&[0x1c, 0x01, 0x00, 0x00]); 
+    payload_enc.encode([0x1c, 0x01, 0x00, 0x00]); 
 
     
     let mut header_enc = Encoder::new();
