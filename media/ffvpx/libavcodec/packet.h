@@ -582,7 +582,14 @@ typedef struct AVPacket {
 
     AVRational time_base;
 
+    
+
+
+
     void* moz_ndk_crypto_info;
+    void* moz_crypto_info;
+    void (*moz_crypto_info_addref)(void*);
+    void (*moz_crypto_info_release)(void*);
 } AVPacket;
 
 #if FF_API_INIT_PACKET
