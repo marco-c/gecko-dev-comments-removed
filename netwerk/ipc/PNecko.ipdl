@@ -120,6 +120,12 @@ parent:
 
 
 
+  async ConnectBaseChannel(uint32_t channelId);
+
+  
+
+
+
   async PDataChannel(uint32_t channelId);
 #ifdef MOZ_WIDGET_GTK
   async PGIOChannel(nullable PBrowser browser, SerializedLoadContext loadContext, GIOChannelCreationArgs args);
