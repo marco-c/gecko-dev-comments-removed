@@ -677,12 +677,6 @@ pref("browser.urlbar.merino.ohttpConfigURL", "");
 pref("browser.urlbar.merino.ohttpRelayURL", "");
 
 
-pref("dap.ohttp.hpke", "https://dap-09-3.api.divviup.org/ohttp-configs");
-
-
-pref("dap.ohttp.relayURL", "https://mozilla-ohttp-dap.mozilla.fastly-edge.com/");
-
-
 pref("browser.urlbar.contextualSearch.enabled", true);
 
 
