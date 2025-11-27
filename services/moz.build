@@ -15,6 +15,17 @@ DIRS += [
 ]
 
 
+
+
+if CONFIG["MOZ_APPSERVICES_IN_TREE"]:
+    DIRS += [
+        "app-services/components/support/nimbus-fml",
+        "app-services/megazords/full",
+        "app-services/megazords/fenix-dylib",
+        "app-services/tools/embedded-uniffi-bindgen",
+    ]
+
+
 if not CONFIG["RELEASE_OR_BETA"] or CONFIG["MOZ_DEBUG"]:
     DIRS += ["automation"]
 
