@@ -8729,6 +8729,7 @@
             
             
             
+            
             let isNavigating = this.mBrowser.isNavigating;
             if (
               this.mTab.selected &&

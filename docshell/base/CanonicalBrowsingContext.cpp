@@ -2713,13 +2713,42 @@ bool CanonicalBrowsingContext::SupportsLoadingInParent(
   return true;
 }
 
+bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
+                                            bool aSetNavigating) {
+  
+  
+  
+  
+  if (!IsTopContent() || !GetContentParent() ||
+      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
+    return false;
+  }
+
+  uint64_t outerWindowId = 0;
+  if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
+    return false;
+  }
+
+  MOZ_ASSERT(!aLoadState->URI()->SchemeIs("javascript"));
+
+  MOZ_ALWAYS_SUCCEEDS(
+      SetParentInitiatedNavigationEpoch(++gParentInitiatedNavigationEpoch));
+  
+  
+  
+  
+  return net::DocumentLoadListener::LoadInParent(this, aLoadState,
+                                                 aSetNavigating);
+}
+
 bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
     nsDocShellLoadState* aLoadState) {
   
   
   
   
-  if (!IsTopContent() || !GetContentParent()) {
+  if (!IsTopContent() || !GetContentParent() ||
+      (StaticPrefs::browser_tabs_documentchannel_parent_controlled())) {
     return false;
   }
 
@@ -2736,6 +2765,18 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
 
 bool CanonicalBrowsingContext::StartDocumentLoad(
     net::DocumentLoadListener* aLoad) {
+  
+  
+  if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
+      mCurrentLoad) {
+    
+    MOZ_ASSERT(!aLoad->IsLoadingJSURI());
+
+    
+    if (!aLoad->IsDownload()) {
+      mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
+    }
+  }
   mCurrentLoad = aLoad;
 
   if (NS_FAILED(SetCurrentLoadIdentifier(Some(aLoad->GetLoadIdentifier())))) {

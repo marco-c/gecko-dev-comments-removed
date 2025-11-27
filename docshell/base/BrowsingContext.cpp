@@ -2182,6 +2182,10 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       wgc->SendLoadURI(this, mozilla::WrapNotNull(aLoadState), aSetNavigating);
     }
   } else if (XRE_IsParentProcess()) {
+    if (Canonical()->LoadInParent(aLoadState, aSetNavigating)) {
+      return NS_OK;
+    }
+
     if (ContentParent* cp = Canonical()->GetContentParent()) {
       
       
