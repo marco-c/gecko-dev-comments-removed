@@ -24,6 +24,7 @@
 #include "nsHttpHandler.h"
 #include "ConnectionEntry.h"
 #include "HttpConnectionUDP.h"
+#include "NullHttpTransaction.h"
 #include "nsServiceManagerUtils.h"
 #include "mozilla/net/NeckoChannelParams.h"  
 
@@ -622,6 +623,35 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
 
     ent->InsertIntoActiveConns(conn);
     if (mIsHttp3) {
+      
+      
+      
+      
+      
+      
+      nsHttpTransaction* trans = pendingTransInfo->Transaction();
+      if (trans->IsWebsocketUpgrade()) {
+        LOG(
+            ("DnsAndConnectSocket::SetupConn WebSocket through HTTP/3 proxy, "
+             "queueing for tunnel creation after H3 connected"));
+        
+        
+        
+        RefPtr<PendingTransactionInfo> newPendingInfo =
+            new PendingTransactionInfo(trans);
+        ent->InsertTransaction(newPendingInfo);
+
+        
+        
+        nsCOMPtr<nsIInterfaceRequestor> nullCallbacks;
+        trans->GetSecurityCallbacks(getter_AddRefs(nullCallbacks));
+        RefPtr<nsAHttpTransaction> nullTrans =
+            new NullHttpTransaction(mConnInfo, nullCallbacks, mCaps);
+        rv = gHttpHandler->ConnMgr()->DispatchAbstractTransaction(
+            ent, nullTrans, mCaps, conn, 0);
+        return rv;
+      }
+
       
       
       
