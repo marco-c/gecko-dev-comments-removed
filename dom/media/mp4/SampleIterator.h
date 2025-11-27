@@ -44,7 +44,7 @@ class SampleIterator {
   
   
   SampleDescriptionEntry* GetSampleDescriptionEntry();
-  CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry();
+  const CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry() const;
 
   
   

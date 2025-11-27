@@ -154,12 +154,12 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
     return sample.forget();
   }
 
+  const nsTArray<Moof>& moofs = moofParser->Moofs();
+  const Moof* currentMoof = &moofs[mCurrentMoof];
   
   
   
   if (mCurrentSample == 0) {
-    const nsTArray<Moof>& moofs = moofParser->Moofs();
-    const Moof* currentMoof = &moofs[mCurrentMoof];
     if (!currentMoof->mPsshes.IsEmpty()) {
       
       
@@ -189,7 +189,7 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
              "Sample should not already have a key ID");
   MOZ_ASSERT(writer->mCrypto.mConstantIV.IsEmpty(),
              "Sample should not already have a constant IV");
-  CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+  const CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
   if (sampleInfo) {
     
     
@@ -209,7 +209,8 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
   }
 
   if ((writer->mCrypto.mIVSize == 0 && writer->mCrypto.mConstantIV.IsEmpty()) ||
-      (writer->mCrypto.mIVSize != 0 && s->mCencRange.IsEmpty())) {
+      (writer->mCrypto.mIVSize != 0 &&
+       (s->mCencRange.IsEmpty() && !currentMoof->SencIsValid()))) {
     
     
     
@@ -220,7 +221,20 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
                                    gMediaDemuxerLog));
   }
   
-  if (!s->mCencRange.IsEmpty()) {
+  
+  
+  
+  
+  if (currentMoof->SencIsValid()) {
+    if (writer->mCrypto.mIVSize != s->mIV.Length()) {
+      return Err(MediaResult::Logged(
+          NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
+          RESULT_DETAIL("Inconsistent crypto IV size"), gMediaDemuxerLog));
+    }
+    writer->mCrypto.mIV = s->mIV;
+    writer->mCrypto.mPlainSizes = s->mPlainSizes;
+    writer->mCrypto.mEncryptedSizes = s->mEncryptedSizes;
+  } else if (!s->mCencRange.IsEmpty()) {
     
     AutoTArray<uint8_t, 256> cencAuxInfo;
     cencAuxInfo.SetLength(s->mCencRange.Length());
@@ -292,61 +306,10 @@ SampleDescriptionEntry* SampleIterator::GetSampleDescriptionEntry() {
   return &sampleDescriptions[sampleDescriptionIndex];
 }
 
-CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry() {
-  nsTArray<Moof>& moofs = mIndex->mMoofParser->Moofs();
-  Moof* currentMoof = &moofs[mCurrentMoof];
-  SampleToGroupEntry* sampleToGroupEntry = nullptr;
-
-  
-  
-  FallibleTArray<SampleToGroupEntry>* sampleToGroupEntries =
-      currentMoof->mFragmentSampleToGroupEntries.Length() != 0
-          ? &currentMoof->mFragmentSampleToGroupEntries
-          : &mIndex->mMoofParser->mTrackSampleToGroupEntries;
-
-  uint32_t seen = 0;
-
-  for (SampleToGroupEntry& entry : *sampleToGroupEntries) {
-    if (seen + entry.mSampleCount > mCurrentSample) {
-      sampleToGroupEntry = &entry;
-      break;
-    }
-    seen += entry.mSampleCount;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-
-  if (!sampleToGroupEntry || sampleToGroupEntry->mGroupDescriptionIndex == 0) {
-    return nullptr;
-  }
-
-  FallibleTArray<CencSampleEncryptionInfoEntry>* entries =
-      &mIndex->mMoofParser->mTrackSampleEncryptionInfoEntries;
-
-  uint32_t groupIndex = sampleToGroupEntry->mGroupDescriptionIndex;
-
-  
-  
-  if (groupIndex > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
-    groupIndex -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
-    entries = &currentMoof->mFragmentSampleEncryptionInfoEntries;
-  }
-
-  
-  return groupIndex > entries->Length() ? nullptr
-                                        : &entries->ElementAt(groupIndex - 1);
+const CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
+    const {
+  return mIndex->mMoofParser->GetSampleEncryptionEntry(mCurrentMoof,
+                                                       mCurrentSample);
 }
 
 Result<CryptoScheme, nsCString> SampleIterator::GetEncryptionScheme() {
@@ -381,7 +344,7 @@ Result<CryptoScheme, nsCString> SampleIterator::GetEncryptionScheme() {
         "indicates encryption, but could not find associated sinf box."));
   }
 
-  CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+  const CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
   if (sampleInfo && !sampleInfo->mIsEncrypted) {
     
     

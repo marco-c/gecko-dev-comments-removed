@@ -122,7 +122,7 @@ class Edts : public Atom {
  public:
   Edts() : mMediaStart(0), mEmptyOffset(0) {}
   explicit Edts(Box& aBox);
-  virtual bool IsValid() override {
+  virtual bool IsValid() const override {
     
     return true;
   }
@@ -136,6 +136,14 @@ class Edts : public Atom {
 
 struct Sample {
   mozilla::MediaByteRange mByteRange;
+  
+  CopyableTArray<uint8_t> mIV;
+  CopyableTArray<uint32_t> mPlainSizes;
+  
+  
+  CopyableTArray<uint32_t> mEncryptedSizes;
+  
+  
   mozilla::MediaByteRange mCencRange;
   media::TimeUnit mDecodeTime;
   MP4Interval<media::TimeUnit> mCompositionRange;
@@ -239,11 +247,24 @@ using TrackParseMode = Variant<ParseAllTracks, uint32_t>;
 class Moof final : public Atom {
  public:
   Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
-       Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
+       Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, const Sinf& aSinf,
        uint64_t* aDecodeTime, bool aIsAudio,
        nsTArray<TrackEndCts>& aTracksEndCts);
-  bool GetAuxInfo(AtomType aType, FallibleTArray<MediaByteRange>* aByteRanges);
   void FixRounding(const Moof& aMoof);
+
+  
+  
+  
+  const CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry(
+      size_t aSample,
+      const FallibleTArray<SampleToGroupEntry>* aTrackSampleToGroupEntries =
+          nullptr,
+      const FallibleTArray<CencSampleEncryptionInfoEntry>*
+          aTrackSampleEncryptionInfoEntries = nullptr) const;
+
+  
+  
+  bool SencIsValid() const { return mSencValid; }
 
   mozilla::MediaByteRange mRange;
   mozilla::MediaByteRange mMdatRange;
@@ -262,12 +283,13 @@ class Moof final : public Atom {
  private:
   
   void ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
-                 Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
+                 Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, const Sinf& aSinf,
                  uint64_t* aDecodeTime, bool aIsAudio);
   
   Result<Ok, nsresult> ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
                                  Edts& aEdts, uint64_t* aDecodeTime,
                                  bool aIsAudio);
+  Result<Ok, nsresult> ParseSenc(Box& aBox, const Sinf& aSinf);
   
   
   
@@ -275,7 +297,10 @@ class Moof final : public Atom {
   
   
   bool ProcessCencAuxInfo(AtomType aScheme);
+  bool GetAuxInfo(AtomType aType, FallibleTArray<MediaByteRange>* aByteRanges);
+
   media::TimeUnit mMaxRoundingError;
+  bool mSencValid = false;
 };
 
 DDLoggedTypeDeclName(MoofParser);
@@ -330,6 +355,9 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   already_AddRefed<mozilla::MediaByteBuffer> Metadata();
   MediaByteRange FirstCompleteMediaSegment();
   MediaByteRange FirstCompleteMediaHeader();
+
+  const CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry(
+      size_t moofNumber, size_t aMoof) const;
 
   mozilla::MediaByteRange mInitRange;
   RefPtr<ByteStream> mSource;

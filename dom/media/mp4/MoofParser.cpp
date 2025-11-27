@@ -122,6 +122,15 @@ MediaByteRange MoofParser::FirstCompleteMediaSegment() {
   return MediaByteRange();
 }
 
+const CencSampleEncryptionInfoEntry* MoofParser::GetSampleEncryptionEntry(
+    size_t aMoof, size_t aSample) const {
+  if (aMoof >= mMoofs.Length()) {
+    return nullptr;
+  }
+  return mMoofs[aMoof].GetSampleEncryptionEntry(
+      aSample, &mTrackSampleToGroupEntries, &mTrackSampleEncryptionInfoEntries);
+}
+
 DDLoggedTypeDeclNameAndBase(BlockingStream, ByteStream);
 
 class BlockingStream : public ByteStream,
@@ -421,7 +430,7 @@ class CtsComparator {
 };
 
 Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
-           Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
+           Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, const Sinf& aSinf,
            uint64_t* aDecodeTime, bool aIsAudio,
            nsTArray<TrackEndCts>& aTracksEndCts)
     : mRange(aBox.Range()),
@@ -548,7 +557,11 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
           MP4Interval<TimeUnit>(ctsOrder[0]->mCompositionRange.start,
                                 ctsOrder.LastElement()->mCompositionRange.end);
     }
-    ProcessCencAuxInfo(aSinf.mDefaultEncryptionType);
+    
+    
+    if (!mSencValid) {
+      ProcessCencAuxInfo(aSinf.mDefaultEncryptionType);
+    }
   }
   LOG_DEBUG(Moof, "Done.");
 }
@@ -645,9 +658,76 @@ bool Moof::ProcessCencAuxInfo(AtomType aScheme) {
   return true;
 }
 
+const CencSampleEncryptionInfoEntry* Moof::GetSampleEncryptionEntry(
+    size_t aSample,
+    const FallibleTArray<SampleToGroupEntry>* aTrackSampleToGroupEntries,
+    const FallibleTArray<CencSampleEncryptionInfoEntry>*
+        aTrackSampleEncryptionInfoEntries) const {
+  const SampleToGroupEntry* sampleToGroupEntry = nullptr;
+
+  
+  
+  const FallibleTArray<SampleToGroupEntry>* sampleToGroupEntries =
+      mFragmentSampleToGroupEntries.Length() != 0
+          ? &mFragmentSampleToGroupEntries
+          : aTrackSampleToGroupEntries;
+
+  if (!sampleToGroupEntries) {
+    return nullptr;
+  }
+
+  uint32_t seen = 0;
+
+  for (const SampleToGroupEntry& entry : *sampleToGroupEntries) {
+    if (seen + entry.mSampleCount > aSample) {
+      sampleToGroupEntry = &entry;
+      break;
+    }
+    seen += entry.mSampleCount;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+
+  if (!sampleToGroupEntry || sampleToGroupEntry->mGroupDescriptionIndex == 0) {
+    return nullptr;
+  }
+
+  const FallibleTArray<CencSampleEncryptionInfoEntry>* entries =
+      aTrackSampleEncryptionInfoEntries;
+
+  uint32_t groupIndex = sampleToGroupEntry->mGroupDescriptionIndex;
+
+  
+  
+  if (groupIndex > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
+    groupIndex -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
+    entries = &mFragmentSampleEncryptionInfoEntries;
+  }
+
+  if (!entries) {
+    return nullptr;
+  }
+
+  
+  return groupIndex > entries->Length() ? nullptr
+                                        : &entries->ElementAt(groupIndex - 1);
+}
+
 void Moof::ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode,
                      Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
-                     Sinf& aSinf, uint64_t* aDecodeTime, bool aIsAudio) {
+                     const Sinf& aSinf, uint64_t* aDecodeTime, bool aIsAudio) {
   LOG_DEBUG(
       Traf,
       "Starting, aTrackParseMode=%s, track#=%" PRIu32
@@ -715,6 +795,7 @@ void Moof::ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode,
   
   uint64_t decodeTime =
       tfdt.IsValid() ? tfdt.mBaseMediaDecodeTime : *aDecodeTime;
+  Box sencBox;
   for (Box box = aBox.FirstChild(); box.IsAvailable(); box = box.Next()) {
     if (box.IsType("trun")) {
       if (ParseTrun(box, aMvhd, aMdhd, aEdts, &decodeTime, aIsAudio).isOk()) {
@@ -724,8 +805,23 @@ void Moof::ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode,
         mValid = false;
         return;
       }
+    } else if (box.IsType("senc")) {
+      LOG_DEBUG(Moof, "Found senc box");
+      sencBox = box;
     }
   }
+
+  
+  
+  
+  
+  
+  if (sencBox.IsAvailable()) {
+    if (ParseSenc(sencBox, aSinf).isErr()) [[unlikely]] {
+      LOG_WARN(Moof, "ParseSenc failed");
+    }
+  }
+
   *aDecodeTime = decodeTime;
   LOG_DEBUG(Traf, "Done, setting aDecodeTime=%." PRIu64 ".", decodeTime);
 }
@@ -735,6 +831,82 @@ void Moof::FixRounding(const Moof& aMoof) {
   if (gap.IsPositive() && gap <= mMaxRoundingError) {
     mTimeRange.end = aMoof.mTimeRange.start;
   }
+}
+
+Result<Ok, nsresult> Moof::ParseSenc(Box& aBox, const Sinf& aSinf) {
+  
+  
+  if (mSencValid) [[unlikely]] {
+    LOG_WARN(Moof, "Already found a valid senc box, ignoring new one");
+    return Ok();
+  }
+
+  BoxReader reader(aBox);
+  const uint8_t version = MOZ_TRY(reader->ReadU8());
+  const uint32_t flags = MOZ_TRY(reader->ReadU24());
+  const uint32_t sampleCount = MOZ_TRY(reader->ReadU32());
+  
+  
+  
+  
+  if (sampleCount == 0) {
+    LOG_DEBUG(Moof, "senc box has 0 sample_count");
+    
+    
+    
+    return Ok();
+  }
+  if (sampleCount != mIndex.Length()) {
+    LOG_ERROR(Moof, "Invalid sample count in senc box: expecting %zu, got %d\n",
+              mIndex.Length(), sampleCount);
+    return Err(NS_ERROR_FAILURE);
+  }
+
+  if (version == 0) {
+    for (size_t i = 0; i < sampleCount; ++i) {
+      Sample& sample = mIndex[i];
+      const CencSampleEncryptionInfoEntry* sampleInfo =
+          GetSampleEncryptionEntry(i);
+      uint8_t ivSize = sampleInfo ? sampleInfo->mIVSize : aSinf.mDefaultIVSize;
+      if (!reader->ReadArray(sample.mIV, ivSize)) {
+        return Err(MediaResult::Logged(
+            NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
+            RESULT_DETAIL("sample InitializationVector error"),
+            gMediaDemuxerLog));
+      }
+      
+      
+      sample.mPlainSizes.Clear();
+      sample.mEncryptedSizes.Clear();
+      const bool useSubSampleEncryption = flags & 0x02;
+      if (useSubSampleEncryption) {
+        uint16_t subsampleCount = MOZ_TRY(reader->ReadU16());
+        for (uint16_t i = 0; i < subsampleCount; ++i) {
+          uint16_t bytesOfClearData = MOZ_TRY(reader->ReadU16());
+          uint32_t bytesOfProtectedData = MOZ_TRY(reader->ReadU32());
+          sample.mPlainSizes.AppendElement(bytesOfClearData);
+          sample.mEncryptedSizes.AppendElement(bytesOfProtectedData);
+        }
+      } else {
+        
+        sample.mPlainSizes.AppendElement(0);
+        sample.mEncryptedSizes.AppendElement(sample.mByteRange.Length());
+      }
+    }
+  } else if (version == 1) {
+    
+    LOG_ERROR(Senc, "version %d not supported yet", version);
+    return Err(NS_ERROR_FAILURE);
+  } else if (version == 2) {
+    
+    LOG_ERROR(Senc, "version %d not supported yet", version);
+    return Err(NS_ERROR_FAILURE);
+  } else {
+    LOG_ERROR(Senc, "Unknown version %d", version);
+    return Err(NS_ERROR_FAILURE);
+  }
+  mSencValid = true;
+  return Ok();
 }
 
 Result<Ok, nsresult> Moof::ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
