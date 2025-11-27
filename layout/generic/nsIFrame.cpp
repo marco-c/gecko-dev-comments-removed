@@ -4450,13 +4450,33 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
 
 #ifdef DEBUG
     if (aBuilder->IsPaintingToWindow()) {
+      
       if (savedOutOfFlowData->mContainingBlockInViewTransitionCapture) {
         MOZ_ASSERT(asr == nullptr);
         MOZ_ASSERT(aBuilder->IsInViewTransitionCapture());
-      } else {
+      } else if ((asr ? asr->mFrame : nullptr) !=
+                 nsLayoutUtils::GetASRAncestorFrame(child->GetParent(),
+                                                    aBuilder)) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(asr == nullptr);
+        MOZ_ASSERT(PresContext()->Document()->GetActiveViewTransition());
         MOZ_ASSERT(
-            (asr ? asr->mFrame : nullptr) ==
-            nsLayoutUtils::GetASRAncestorFrame(child->GetParent(), aBuilder));
+            child->GetParent()->GetContent()->IsInNativeAnonymousSubtree());
+        bool inTopLayer = false;
+        nsIFrame* curr = child->GetParent();
+        while (curr) {
+          if (curr->StyleDisplay()->mTopLayer == StyleTopLayer::Auto) {
+            inTopLayer = true;
+            break;
+          }
+          curr = curr->GetParent();
+        }
+        MOZ_ASSERT(inTopLayer);
       }
     }
 #endif
