@@ -3565,8 +3565,34 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   
   
   
-  const uint32_t maxBytes =
+  uint32_t maxBytes =
       (aFlags & VALIDATE_DONT_TRUNCATE) ? 0 : kDefaultMaxFileNameLength;
+
+  const auto downloadSuffix = u".download"_ns;
+  bool appendDownloadSuffix = false;
+
+  if (!(aFlags & VALIDATE_ALLOW_INVALID_FILENAMES)) {
+    
+    
+    
+    if (StringEndsWith(fileName, u".lnk"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(fileName, u".local"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(fileName, u".url"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(fileName, u".scf"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(fileName, u".desktop"_ns,
+                       nsCaseInsensitiveStringComparator)) {
+      appendDownloadSuffix = true;
+
+      
+      if (maxBytes) {
+        maxBytes -= downloadSuffix.Length();
+      }
+    }
+  }
 
   
   bool lastWasWhitespace = false;
@@ -3587,6 +3613,13 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
 
   
   uint32_t extensionBytesLength = 0;
+
+  
+  
+  
+  
+  
+  constexpr uint32_t filesFolderLength = "_files"_ns.Length();
 
   
   
@@ -3679,7 +3712,10 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   
   
   
-  if (bytesLength > maxBytes && !outFileName.IsEmpty()) {
+  
+  if ((bytesLength > std::min(maxBytes, maxBytes - filesFolderLength +
+                                            extensionBytesLength)) &&
+      !outFileName.IsEmpty()) {
     
     nsAutoString extension;
     int32_t dotidx = outFileName.RFind(u".");
@@ -3701,7 +3737,7 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
       
       
       
-      longFileNameEnd -= extensionBytesLength;
+      longFileNameEnd -= std::max(extensionBytesLength, filesFolderLength);
       if (longFileNameEnd <= 0) {
         
         
@@ -3752,22 +3788,8 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
   }
 #endif
 
-  if (!(aFlags & VALIDATE_ALLOW_INVALID_FILENAMES)) {
-    
-    
-    
-    if (StringEndsWith(outFileName, u".lnk"_ns,
-                       nsCaseInsensitiveStringComparator) ||
-        StringEndsWith(outFileName, u".local"_ns,
-                       nsCaseInsensitiveStringComparator) ||
-        StringEndsWith(outFileName, u".url"_ns,
-                       nsCaseInsensitiveStringComparator) ||
-        StringEndsWith(outFileName, u".scf"_ns,
-                       nsCaseInsensitiveStringComparator) ||
-        StringEndsWith(outFileName, u".desktop"_ns,
-                       nsCaseInsensitiveStringComparator)) {
-      outFileName.AppendLiteral(".download");
-    }
+  if (appendDownloadSuffix) {
+    outFileName.Append(downloadSuffix);
   }
 
   aFileName = outFileName;
