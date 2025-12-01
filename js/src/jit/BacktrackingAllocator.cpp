@@ -836,6 +836,28 @@ void LiveRange::tryToMoveDefAndUsesInto(LiveRange* other) {
   CodePosition otherTo = other->to();
 
   
+  if (hasDefinition() && from() == otherFrom) {
+    other->setHasDefinition();
+  }
+
+  
+  if (!hasUses()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!other->hasUses() && usesBegin()->pos >= otherFrom &&
+      lastUse()->pos < otherTo) {
+    moveAllUsesToTheEndOf(other);
+    return;
+  }
+
+  
   
   UsePositionIterator iter = usesBegin();
   while (iter && iter->pos < otherFrom) {
@@ -852,21 +874,20 @@ void LiveRange::tryToMoveDefAndUsesInto(LiveRange* other) {
   }
 
   MOZ_ASSERT_IF(iter, !other->covers(iter->pos));
-
-  
-  if (hasDefinition() && from() == other->from()) {
-    other->setHasDefinition();
-  }
 }
 
 void LiveRange::moveAllUsesToTheEndOf(LiveRange* other) {
   MOZ_ASSERT(&other->vreg() == &vreg());
   MOZ_ASSERT(this != other);
-  MOZ_ASSERT(other->contains(this));
+  MOZ_ASSERT(intersects(other));
 
   if (uses_.empty()) {
     return;
   }
+
+  
+  MOZ_ASSERT(other->covers(uses_.begin()->pos));
+  MOZ_ASSERT(other->covers(uses_.back()->pos));
 
   
   MOZ_ASSERT_IF(!other->uses_.empty(),
