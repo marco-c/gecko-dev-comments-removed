@@ -593,6 +593,7 @@ static Duration TemporalDurationFromInternal(const TimeDuration& timeDuration,
     case TemporalUnit::Millisecond:
     case TemporalUnit::Microsecond:
     case TemporalUnit::Nanosecond:
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       MOZ_CRASH("Unexpected temporal unit");
   }
@@ -770,6 +771,7 @@ bool js::temporal::TemporalDurationFromInternal(
       return true;
     }
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
   }
@@ -2021,28 +2023,29 @@ static UnsignedRoundingMode GetUnsignedRoundingMode(
   MOZ_CRASH("invalid rounding mode");
 }
 
-struct DurationNudge {
-  InternalDuration duration;
-  EpochNanoseconds epochNs;
-  double total = 0;
-  bool didExpandCalendarUnit = false;
+struct NudgeWindow {
+  int64_t r1;
+  int64_t r2;
+  EpochNanoseconds startEpochNs;
+  EpochNanoseconds endEpochNs;
+  DateDuration startDuration;
+  DateDuration endDuration;
 };
 
 
 
 
 
-static bool NudgeToCalendarUnit(
-    JSContext* cx, const InternalDuration& duration,
-    const EpochNanoseconds& originEpochNs, const EpochNanoseconds& destEpochNs,
-    const ISODateTime& isoDateTime, Handle<TimeZoneValue> timeZone,
-    Handle<CalendarValue> calendar, Increment increment, TemporalUnit unit,
-    TemporalRoundingMode roundingMode, DurationNudge* result) {
+static bool ComputeNudgeWindow(JSContext* cx, const InternalDuration& duration,
+                               const EpochNanoseconds& originEpochNs,
+                               const ISODateTime& isoDateTime,
+                               Handle<TimeZoneValue> timeZone,
+                               Handle<CalendarValue> calendar,
+                               Increment increment, TemporalUnit unit,
+                               bool additionalShift, NudgeWindow* result) {
   MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(originEpochNs));
   MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(originEpochNs));
-  MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(destEpochNs));
-  MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(destEpochNs));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
   MOZ_ASSERT(unit <= TemporalUnit::Day);
 
@@ -2059,10 +2062,14 @@ static bool NudgeToCalendarUnit(
                                            TemporalRoundingMode::Trunc);
 
     
-    r1 = years;
+    if (!additionalShift) {
+      r1 = years;
+    } else {
+      r1 = years + int64_t(increment.value()) * sign;
+    }
 
     
-    r2 = years + int64_t(increment.value()) * sign;
+    r2 = r1 + int64_t(increment.value()) * sign;
 
     
     startDuration = {r1};
@@ -2075,10 +2082,14 @@ static bool NudgeToCalendarUnit(
                                             TemporalRoundingMode::Trunc);
 
     
-    r1 = months;
+    if (!additionalShift) {
+      r1 = months;
+    } else {
+      r1 = months + int64_t(increment.value()) * sign;
+    }
 
     
-    r2 = months + int64_t(increment.value()) * sign;
+    r2 = r1 + int64_t(increment.value()) * sign;
 
     
     startDuration = {duration.date.years, r1};
@@ -2117,10 +2128,14 @@ static bool NudgeToCalendarUnit(
                                increment, TemporalRoundingMode::Trunc);
 
     
-    r1 = weeks;
+    if (!additionalShift) {
+      r1 = weeks;
+    } else {
+      r1 = weeks + int64_t(increment.value()) * sign;
+    }
 
     
-    r2 = weeks + int64_t(increment.value()) * sign;
+    r2 = r1 + int64_t(increment.value()) * sign;
 
     
     startDuration = {duration.date.years, duration.date.months, r1};
@@ -2136,10 +2151,14 @@ static bool NudgeToCalendarUnit(
                                           TemporalRoundingMode::Trunc);
 
     
-    r1 = days;
+    if (!additionalShift) {
+      r1 = days;
+    } else {
+      r1 = days + int64_t(increment.value()) * sign;
+    }
 
     
-    r2 = days + int64_t(increment.value()) * sign;
+    r2 = r1 + int64_t(increment.value()) * sign;
 
     
     startDuration = {duration.date.years, duration.date.months,
@@ -2215,13 +2234,75 @@ static bool NudgeToCalendarUnit(
   }
 
   
+  *result = {r1, r2, startEpochNs, endEpochNs, startDuration, endDuration};
+  return true;
+}
+
+struct DurationNudge {
+  InternalDuration duration;
+  EpochNanoseconds epochNs;
+  double total = 0;
+  bool didExpandCalendarUnit = false;
+};
+
+
+
+
+
+static bool NudgeToCalendarUnit(
+    JSContext* cx, const InternalDuration& duration,
+    const EpochNanoseconds& originEpochNs, const EpochNanoseconds& destEpochNs,
+    const ISODateTime& isoDateTime, Handle<TimeZoneValue> timeZone,
+    Handle<CalendarValue> calendar, Increment increment, TemporalUnit unit,
+    TemporalRoundingMode roundingMode, DurationNudge* result) {
+  MOZ_ASSERT(IsValidDuration(duration));
+  MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(originEpochNs));
+  MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(originEpochNs));
+  MOZ_ASSERT_IF(timeZone, IsValidEpochNanoseconds(destEpochNs));
+  MOZ_ASSERT_IF(!timeZone, IsValidLocalNanoseconds(destEpochNs));
+  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
+  MOZ_ASSERT(unit <= TemporalUnit::Day);
+
+  int32_t sign = InternalDurationSign(duration) < 0 ? -1 : 1;
+
+  
+  bool didExpandCalendarUnit = false;
+
+  
+  NudgeWindow nudgeWindow;
+  if (!ComputeNudgeWindow(cx, duration, originEpochNs, isoDateTime, timeZone,
+                          calendar, increment, unit, false, &nudgeWindow)) {
+    return false;
+  }
+
+  
+  const auto& startPoint =
+      sign > 0 ? nudgeWindow.startEpochNs : nudgeWindow.endEpochNs;
+  const auto& endPoint =
+      sign > 0 ? nudgeWindow.endEpochNs : nudgeWindow.startEpochNs;
+  if (!(startPoint <= destEpochNs && destEpochNs <= endPoint)) {
+    
+    if (!ComputeNudgeWindow(cx, duration, originEpochNs, isoDateTime, timeZone,
+                            calendar, increment, unit, true, &nudgeWindow)) {
+      return false;
+    }
+
+    
+
+    
+    didExpandCalendarUnit = true;
+  }
+
+  
+  const auto& [r1, r2, startEpochNs, endEpochNs, startDuration, endDuration] =
+      nudgeWindow;
+
+  
+  MOZ_ASSERT(startEpochNs != endEpochNs);
   MOZ_ASSERT_IF(sign > 0,
                 startEpochNs <= destEpochNs && destEpochNs <= endEpochNs);
   MOZ_ASSERT_IF(sign < 0,
                 endEpochNs <= destEpochNs && destEpochNs <= startEpochNs);
-
-  
-  MOZ_ASSERT(startEpochNs != endEpochNs);
 
   
   auto numerator = (destEpochNs - startEpochNs).toNanoseconds();
@@ -2289,33 +2370,38 @@ static bool NudgeToCalendarUnit(
   
   
   
-  bool didExpandCalendarUnit;
+  bool roundedUp;
   if (numerator == denominator) {
-    didExpandCalendarUnit = true;
+    roundedUp = true;
   } else if (numerator == Int128{0}) {
-    didExpandCalendarUnit = false;
+    roundedUp = false;
   } else if (unsignedRoundingMode == UnsignedRoundingMode::Zero) {
-    didExpandCalendarUnit = false;
+    roundedUp = false;
   } else if (unsignedRoundingMode == UnsignedRoundingMode::Infinity) {
-    didExpandCalendarUnit = true;
+    roundedUp = true;
   } else if (numerator + numerator < denominator) {
-    didExpandCalendarUnit = false;
+    roundedUp = false;
   } else if (numerator + numerator > denominator) {
-    didExpandCalendarUnit = true;
+    roundedUp = true;
   } else if (unsignedRoundingMode == UnsignedRoundingMode::HalfZero) {
-    didExpandCalendarUnit = false;
+    roundedUp = false;
   } else if (unsignedRoundingMode == UnsignedRoundingMode::HalfInfinity) {
-    didExpandCalendarUnit = true;
+    roundedUp = true;
   } else if ((r1 / increment.value()) % 2 == 0) {
-    didExpandCalendarUnit = false;
+    roundedUp = false;
   } else {
-    didExpandCalendarUnit = true;
+    roundedUp = true;
   }
 
   
-  auto resultDuration = didExpandCalendarUnit ? endDuration : startDuration;
-  auto resultEpochNs = didExpandCalendarUnit ? endEpochNs : startEpochNs;
-  *result = {{resultDuration, {}}, resultEpochNs, total, didExpandCalendarUnit};
+  auto resultDuration = roundedUp ? endDuration : startDuration;
+  auto resultEpochNs = roundedUp ? endEpochNs : startEpochNs;
+  *result = {
+      {resultDuration, {}},
+      resultEpochNs,
+      total,
+      didExpandCalendarUnit || roundedUp,
+  };
   return true;
 }
 
@@ -2567,18 +2653,16 @@ static bool BubbleRelativeDuration(
   MOZ_ASSERT(IsValidDuration(duration));
   MOZ_ASSERT(IsValidDuration(nudge.duration));
   MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime));
-  MOZ_ASSERT(largestUnit <= TemporalUnit::Day);
   MOZ_ASSERT(smallestUnit <= TemporalUnit::Day);
-  MOZ_ASSERT(largestUnit <= smallestUnit);
-
-  int32_t sign = InternalDurationSign(duration) < 0 ? -1 : 1;
 
   
-  if (smallestUnit == largestUnit) {
+  if (smallestUnit <= largestUnit) {
     *result = nudge.duration;
     return true;
   }
   MOZ_ASSERT(smallestUnit != TemporalUnit::Year);
+
+  int32_t sign = InternalDurationSign(duration) < 0 ? -1 : 1;
 
   
   auto dateDuration = nudge.duration.date;
@@ -2587,8 +2671,8 @@ static bool BubbleRelativeDuration(
   while (unit > largestUnit) {
     using TemporalUnitType = std::underlying_type_t<TemporalUnit>;
 
-    static_assert(static_cast<TemporalUnitType>(TemporalUnit::Auto) == 0,
-                  "TemporalUnit::Auto has value zero");
+    static_assert(static_cast<TemporalUnitType>(TemporalUnit::Auto) == 1,
+                  "TemporalUnit::Auto has value one");
     MOZ_ASSERT(unit > TemporalUnit::Auto, "can subtract unit by one");
 
     
@@ -3416,8 +3500,8 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   auto existingLargestUnit = DefaultTemporalLargestUnit(duration);
 
   
-  auto smallestUnit = TemporalUnit::Auto;
-  TemporalUnit largestUnit;
+  auto smallestUnit = TemporalUnit::Unset;
+  auto largestUnit = TemporalUnit::Unset;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
   Rooted<PlainDate> plainRelativeTo(cx);
@@ -3430,8 +3514,13 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     
     Rooted<JSString*> paramString(cx, args[0].toString());
     if (!GetTemporalUnitValuedOption(
-            cx, paramString, TemporalUnitKey::SmallestUnit,
-            TemporalUnitGroup::DateTime, &smallestUnit)) {
+            cx, paramString, TemporalUnitKey::SmallestUnit, &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::DateTime)) {
       return false;
     }
 
@@ -3465,27 +3554,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     bool largestUnitPresent = true;
 
     
-    
-    
-    
-    Rooted<Value> largestUnitValue(cx);
-    if (!GetProperty(cx, options, options, cx->names().largestUnit,
-                     &largestUnitValue)) {
+    if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::LargestUnit,
+                                     &largestUnit)) {
       return false;
-    }
-
-    if (!largestUnitValue.isUndefined()) {
-      Rooted<JSString*> largestUnitStr(cx, JS::ToString(cx, largestUnitValue));
-      if (!largestUnitStr) {
-        return false;
-      }
-
-      largestUnit = TemporalUnit::Auto;
-      if (!GetTemporalUnitValuedOption(
-              cx, largestUnitStr, TemporalUnitKey::LargestUnit,
-              TemporalUnitGroup::DateTime, &largestUnit)) {
-        return false;
-      }
     }
 
     
@@ -3507,13 +3578,18 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::DateTime,
                                      &smallestUnit)) {
       return false;
     }
 
     
-    if (smallestUnit == TemporalUnit::Auto) {
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::DateTime)) {
+      return false;
+    }
+
+    
+    if (smallestUnit == TemporalUnit::Unset) {
       
       smallestUnitPresent = false;
 
@@ -3527,7 +3603,7 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     auto defaultLargestUnit = std::min(existingLargestUnit, smallestUnit);
 
     
-    if (largestUnitValue.isUndefined()) {
+    if (largestUnit == TemporalUnit::Unset) {
       
       largestUnitPresent = false;
 
@@ -3779,7 +3855,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   
   Rooted<PlainDate> plainRelativeTo(cx);
   Rooted<ZonedDateTime> zonedRelativeTo(cx);
-  auto unit = TemporalUnit::Auto;
+  auto unit = TemporalUnit::Unset;
   if (args.get(0).isString()) {
     
 
@@ -3789,7 +3865,7 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
     
     Rooted<JSString*> paramString(cx, args[0].toString());
     if (!GetTemporalUnitValuedOption(cx, paramString, TemporalUnitKey::Unit,
-                                     TemporalUnitGroup::DateTime, &unit)) {
+                                     &unit)) {
       return false;
     }
   } else {
@@ -3809,15 +3885,21 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalUnitValuedOption(cx, totalOf, TemporalUnitKey::Unit,
-                                     TemporalUnitGroup::DateTime, &unit)) {
+                                     &unit)) {
       return false;
     }
 
-    if (unit == TemporalUnit::Auto) {
+    if (unit == TemporalUnit::Unset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_MISSING_OPTION, "unit");
       return false;
     }
+  }
+
+  
+  if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::Unit, unit,
+                                 TemporalUnitGroup::DateTime)) {
+    return false;
   }
 
   
@@ -3922,7 +4004,6 @@ static bool Duration_total(JSContext* cx, unsigned argc, Value* vp) {
 static bool Duration_toString(JSContext* cx, const CallArgs& args) {
   auto duration = ToDuration(&args.thisv().toObject().as<DurationObject>());
 
-  
   SecondsStringPrecision precision = {Precision::Auto(),
                                       TemporalUnit::Nanosecond, Increment{1}};
   auto roundingMode = TemporalRoundingMode::Trunc;
@@ -3946,9 +4027,15 @@ static bool Duration_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto smallestUnit = TemporalUnit::Auto;
+    auto smallestUnit = TemporalUnit::Unset;
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
