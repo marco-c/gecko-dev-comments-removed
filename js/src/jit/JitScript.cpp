@@ -982,7 +982,7 @@ JitScript* ICScript::outerJitScript() {
 
 
 
-HashNumber ICScript::hash() {
+HashNumber ICScript::hash(JSContext* cx) {
   HashNumber h = 0;
   for (size_t i = 0; i < numICEntries(); i++) {
     ICStub* stub = icEntry(i).firstStub();
@@ -1010,6 +1010,11 @@ HashNumber ICScript::hash() {
                 Shape* shape = shapesObject->getUnbarriered(i);
                 h = mozilla::AddToHash(h, shape);
               }
+              
+              
+              
+              
+              h = mozilla::AddToHash(h, cx->runtime()->gc.majorGCCount());
             }
             break;
           }

@@ -23,6 +23,7 @@
 #include "jit/JitZone.h"
 #include "jit/MIRGenerator.h"
 #include "jit/ShapeList.h"
+#include "jit/StubFolding.h"
 #include "jit/TrialInlining.h"
 #include "jit/TypeData.h"
 #include "jit/WarpBuilder.h"
@@ -133,7 +134,8 @@ void WarpOracle::addScriptSnapshot(WarpScriptSnapshot* scriptSnapshot,
   scriptSnapshots_.insertBack(scriptSnapshot);
   accumulatedBytecodeSize_ += bytecodeLength;
 #ifdef DEBUG
-  runningScriptHash_ = mozilla::AddToHash(runningScriptHash_, icScript->hash());
+  runningScriptHash_ =
+      mozilla::AddToHash(runningScriptHash_, icScript->hash(cx_));
 #endif
 }
 
@@ -206,7 +208,7 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   
   
   
-  HashNumber hash = mozilla::AddToHash(icScript->hash(), runningScriptHash_);
+  HashNumber hash = mozilla::AddToHash(icScript->hash(cx_), runningScriptHash_);
   if (outerScript_->jitScript()->hasFailedICHash()) {
     HashNumber oldHash = outerScript_->jitScript()->getFailedICHash();
     MOZ_ASSERT_IF(hash == oldHash && !js::SupportDifferentialTesting(),
@@ -1007,7 +1009,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   ICFallbackStub* fallbackStub;
   const ICEntry& entry = getICEntryAndFallback(loc, &fallbackStub);
-  ICStub* firstStub = entry.firstStub();
 
   uint32_t offset = loc.bytecodeToOffset(script_);
 
@@ -1020,7 +1021,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   
   fallbackStub->clearUsedByTranspiler();
 
-  if (firstStub == fallbackStub) {
+  if (entry.firstStub() == fallbackStub) {
     [[maybe_unused]] unsigned line;
     [[maybe_unused]] JS::LimitedColumnNumberOneOrigin column;
     LineNumberAndColumn(script_, loc, &line, &column);
@@ -1044,7 +1045,10 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     return Ok();
   }
 
-  ICCacheIRStub* stub = firstStub->toCacheIRStub();
+  
+  if (!TryFoldingStubs(cx_, fallbackStub, script_, icScript_)) {
+    return abort(AbortReason::Error);
+  }
 
   
   
@@ -1058,6 +1062,8 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
             column.oneOriginValue());
     return Ok();
   }
+
+  ICCacheIRStub* stub = entry.firstStub()->toCacheIRStub();
 
   
   
