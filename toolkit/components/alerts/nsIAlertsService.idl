@@ -106,6 +106,12 @@ interface nsIAlertNotification : nsISupports
             [optional] in Array<uint32_t> aVibrate);
 
   /**
+   * Initializes an alert notification with another instance.
+   * Can be useful in JS as it can provide a dictionary object.
+   */
+  void initWithObject(in nsIAlertNotification aAlertNotification);
+
+  /**
    * The unique ID of the notification, based on the profile path and the caller
    * given name.
    *
@@ -317,6 +323,11 @@ interface nsIAlertsService : nsISupports
    *                       unless explicitly closed, e.g. by notification.close().
    */
   void closeAlert([optional] in AString aName, [optional] in boolean aContextClosed);
+
+  /**
+   * Returns identifiers of notifications that exist in OS notification center.
+   */
+  Array<AString> getHistory();
 
   /**
    * Clean up all resources used to listen to alerts.
