@@ -6185,7 +6185,8 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
 }
 
 bool Document::QueryCommandSupported(const nsAString& aHTMLCommandName,
-                                     nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) {
+                                     nsIPrincipal& aSubjectPrincipal,
+                                     ErrorResult& aRv) {
   
   if (!IsHTMLOrXHTML()) {
     aRv.ThrowInvalidStateError(
