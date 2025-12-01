@@ -24,18 +24,26 @@ add_task(async function () {
   
   
   
-  await PlacesTestUtils.addVisits(`http://${host}`);
+  await PlacesTestUtils.addVisits({
+    uri: `http://${host}`,
+    visitDate: daysAgo(90),
+  });
 
-  for (let i = 0; i < 3; i++) {
-    await PlacesTestUtils.addVisits(`https://${host}`);
-  }
-  
-  for (let i = 0; i < 15; i++) {
-    await PlacesTestUtils.addVisits({
-      url: `https://not-${host}`,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    });
-  }
+  await PlacesTestUtils.addVisits({
+    uri: `https://${host}`,
+    visitDate: daysAgo(30),
+  });
+
+  await PlacesTestUtils.addVisits({
+    uri: `https://fakedomain1.com/`,
+  });
+  await PlacesTestUtils.addVisits({
+    uri: `https://fakedomain2.com/`,
+  });
+  await PlacesTestUtils.addVisits({
+    url: `https://not-${host}/`,
+    transition: PlacesUtils.history.TRANSITION_TYPED,
+  });
 
   async function check_autofill() {
     await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
@@ -56,6 +64,12 @@ add_task(async function () {
       httpOriginFrecency,
       httpsOriginFrecency,
       "Http origin frecency should be below the https origin frecency"
+    );
+    let not = await getOriginFrecency("https://", "not-example.com");
+    Assert.less(
+      httpsOriginFrecency,
+      not,
+      "Http origin frecency should be below not example.com"
     );
 
     
@@ -107,8 +121,6 @@ add_task(async function () {
     url: `http://${host}`,
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
   });
-  
-  await PlacesTestUtils.addVisits(`http://${host}`);
 
   await checkOriginsOrder(host, ["https://", "http://"]);
 

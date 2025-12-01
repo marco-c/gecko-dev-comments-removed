@@ -1353,6 +1353,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 84) {
+        rv = MigrateV84Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -2276,6 +2281,17 @@ nsresult Database::MigrateV83Up() {
   
   nsresult rv = mMainConn->ExecuteSimpleSQL(
       "UPDATE moz_places SET recalc_frecency = 1 WHERE frecency > 0"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+nsresult Database::MigrateV84Up() {
+  printf("Upgrading database.");
+  
+  nsresult rv = mMainConn->ExecuteSimpleSQL(
+      "UPDATE moz_origins "
+      "SET recalc_frecency = 1 "
+      "WHERE frecency > 1"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }

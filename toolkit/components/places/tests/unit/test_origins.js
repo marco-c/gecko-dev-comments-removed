@@ -1042,18 +1042,56 @@ add_task(async function test_cutoff() {
 
 
 async function expectedOriginFrecency(urls) {
-  let value = 0;
-  for (let url of urls) {
-    let v = Math.max(
-      (await PlacesTestUtils.getDatabaseValue("moz_places", "frecency", {
-        url,
-        last_visit_date: [">", 0],
-      })) ?? 0,
-      0
-    );
-    value += v;
+  if (!urls.length) {
+    return 1.0;
   }
-  return value || 1.0;
+
+  
+  let cutOffDays = Services.prefs.getIntPref(
+    "places.frecency.originsFrecencyCutOffDays",
+    90
+  );
+  let cutOff = new Date();
+  cutOff.setHours(0, 0, 0, 0);
+  cutOff.setDate(cutOff.getDate() - cutOffDays);
+  let cutOffMicroseconds = cutOff.getTime() * 1000;
+
+  
+  let dailyFrecencies = new Map();
+  for (let url of urls) {
+    let frecency = await PlacesTestUtils.getDatabaseValue(
+      "moz_places",
+      "frecency",
+      { url, last_visit_date: [">", cutOffMicroseconds] }
+    );
+    if (frecency === undefined) {
+      continue;
+    }
+
+    let lastVisitDate = await PlacesTestUtils.getDatabaseValue(
+      "moz_places",
+      "last_visit_date",
+      { url, last_visit_date: [">", cutOffMicroseconds] }
+    );
+
+    
+    
+    let day = new Date(lastVisitDate / 1000).toISOString().slice(0, 10);
+    if (!dailyFrecencies.has(day)) {
+      dailyFrecencies.set(day, []);
+    }
+    dailyFrecencies.get(day).push(frecency);
+  }
+
+  
+  
+  let total = 0;
+  for (const frecencies of dailyFrecencies.values()) {
+    let sum = frecencies.reduce((a, b) => a + b, 0);
+    total += Math.trunc(sum / frecencies.length);
+  }
+
+  return total || 1.0;
 }
 
 
@@ -1114,12 +1152,25 @@ async function checkThreshold(expectedOriginFrecencies) {
     DEFAULT_THRESHOLD
   );
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let filteredResults = expectedOriginFrecencies.filter(value => value > 1);
+  filteredResults.sort((a, b) => a - b);
+  let middle = Math.ceil(filteredResults.length / 2);
+  let maxOfLowerGroup = filteredResults.at(middle - 1);
+
   Assert.equal(
     threshold,
-    expectedOriginFrecencies.length
-      ? expectedOriginFrecencies.reduce((a, b) => a + b, 0) /
-          expectedOriginFrecencies.length
-      : DEFAULT_THRESHOLD
+    maxOfLowerGroup ?? DEFAULT_THRESHOLD,
+    "Threshold is equal."
   );
 }
 
