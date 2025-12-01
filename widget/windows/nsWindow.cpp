@@ -817,7 +817,6 @@ static bool IsCloaked(HWND hwnd) {
 nsWindow::nsWindow()
     : nsIWidget(BorderStyle::Default),
       mFrameState(std::in_place, this),
-      mPIPWindow(false),
       mMicaBackdrop(false),
       mLastPaintEndTime(TimeStamp::Now()),
       mCachedHitTestTime(TimeStamp::Now()),
@@ -1028,7 +1027,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
       aParent ? (HWND)aParent->GetNativeData(NS_NATIVE_WINDOW) : nullptr;
 
   mIsRTL = aInitData.mRTL;
-  mPIPWindow = aInitData.mPIPWindow;
   mOpeningAnimationSuppressed = aInitData.mIsAnimationSuppressed;
   mAlwaysOnTop = aInitData.mAlwaysOnTop;
   mIsAlert = aInitData.mIsAlert;
@@ -2807,7 +2805,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     metrics.mOffset.top = metrics.mCaptionHeight;
-  } else if (mPIPWindow &&
+  } else if (mIsPIPWindow &&
              !StaticPrefs::widget_windows_pip_decorations_enabled()) {
     metrics.mOffset = metrics.DefaultMargins();
   } else {

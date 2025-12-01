@@ -853,9 +853,6 @@ class nsWindow final : public nsIWidget {
   bool mSendingSetText = false;
 
   
-  bool mPIPWindow : 1;
-
-  
   bool mMicaBackdrop : 1;
 
   int32_t mCachedHitTestResult = 0;
