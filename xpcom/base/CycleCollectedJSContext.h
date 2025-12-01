@@ -109,9 +109,7 @@ class SuppressedMicroTasks : public MicroTaskRunnable {
 
 
 
-
-
-class MOZ_STACK_CLASS MustConsumeMicroTask {
+class MustConsumeMicroTask {
  public:
   
   MustConsumeMicroTask() = default;
@@ -255,14 +253,14 @@ class MOZ_STACK_CLASS MustConsumeMicroTask {
   }
 
   void trace(JSTracer* aTrc) {
-    TraceRoot(aTrc, &mMicroTask, "MustConsumeMicroTask value");
+    TraceEdge(aTrc, &mMicroTask, "MustConsumeMicroTask value");
   }
 
  private:
   explicit MustConsumeMicroTask(JS::GenericMicroTask&& aMicroTask)
       : mMicroTask(aMicroTask) {}
 
-  JS::GenericMicroTask mMicroTask;
+  JS::Heap<JS::GenericMicroTask> mMicroTask;
 };
 
 class SuppressedMicroTaskList final : public MicroTaskRunnable {
