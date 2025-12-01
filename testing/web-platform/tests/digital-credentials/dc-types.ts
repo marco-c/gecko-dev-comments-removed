@@ -1,4 +1,4 @@
-export type GetProtocol = "default" | "openid4vp";
+export type GetProtocol = "default" | "openid4vp-v1-unsigned" | "openid4vp-v1-signed" | "openid4vp-v1-multisigned";
 export type CreateProtocol = "default" | "openid4vci";
 
 export type CredentialMediationRequirement =
@@ -33,10 +33,16 @@ export interface CredentialRequestOptions {
   mediation: CredentialMediationRequirement;
 }
 
+
+
+
 export interface DigitalCredentialCreateRequest {
   protocol: string;
   data: object;
 }
+
+
+
 
 export interface DigitalCredentialCreationOptions {
   
@@ -44,6 +50,9 @@ export interface DigitalCredentialCreationOptions {
 
   requests: DigitalCredentialCreateRequest[] | any;
 }
+
+
+
 
 export interface CredentialCreationOptions {
   digital: DigitalCredentialCreationOptions;

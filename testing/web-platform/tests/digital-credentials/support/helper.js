@@ -38,7 +38,9 @@ function _makeOptionsInternal(requestsInputArray, mediation, requestMapping) {
 
 const allMappings = {
   get: {
-    "openid4vp": () => makeOID4VPDict(),
+    "openid4vp-v1-unsigned": () => makeOID4VPDict("openid4vp-v1-unsigned"),
+    "openid4vp-v1-signed": () => makeOID4VPDict("openid4vp-v1-signed"),
+    "openid4vp-v1-multisigned": () => makeOID4VPDict("openid4vp-v1-multisigned"),
     "default": () => makeDigitalCredentialGetRequest(undefined, undefined),
   },
   create: {
@@ -135,8 +137,9 @@ function makeDigitalCredentialGetRequest(protocol = "protocol", data = {}) {
 
 
 
-function makeOID4VPDict() {
-  return makeDigitalCredentialGetRequest("openid4vp", {
+
+function makeOID4VPDict(identifier = "openid4vp-v1-unsigned") {
+  return makeDigitalCredentialGetRequest(identifier, {
     
   });
 }
