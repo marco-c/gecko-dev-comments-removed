@@ -201,9 +201,12 @@ void ThreadStackHelper::CollectJitReturnAddr(void* aAddr) {
   TryAppendFrame(HangEntryJit());
 }
 
-void ThreadStackHelper::CollectWasmFrame(JS::ProfilingCategoryPair aCategory,
-                                         const char* aLabel) {
+void ThreadStackHelper::CollectWasmOrSyncJITFrame(
+    JS::ProfilingCategoryPair aCategory, const char* aLabel) {
   MOZ_RELEASE_ASSERT(mStackToFill);
+  
+  
+  
   
   
   TryAppendFrame(HangEntryWasm());
