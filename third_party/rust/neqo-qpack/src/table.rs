@@ -134,7 +134,7 @@ impl HeaderTable {
     
     pub fn get_static(index: u64) -> Res<&'static StaticTableEntry> {
         let inx = usize::try_from(index).or(Err(Error::HeaderLookup))?;
-        if inx > HEADER_STATIC_TABLE.len() {
+        if inx >= HEADER_STATIC_TABLE.len() {
             return Err(Error::HeaderLookup);
         }
         Ok(&HEADER_STATIC_TABLE[inx])

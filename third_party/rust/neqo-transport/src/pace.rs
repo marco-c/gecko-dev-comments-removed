@@ -17,16 +17,6 @@ use neqo_common::qtrace;
 use crate::rtt::GRANULARITY;
 
 
-
-
-
-
-
-
-
-const PACER_SPEEDUP: usize = 2;
-
-
 pub struct Pacer {
     
     enabled: bool,
@@ -42,6 +32,16 @@ pub struct Pacer {
 }
 
 impl Pacer {
+    
+    
+    
+    
+    
+    
+    
+    
+    const SPEEDUP: usize = 2;
+
     
     
     
@@ -90,7 +90,7 @@ impl Pacer {
         let deficit =
             u128::try_from(packet - self.c).expect("packet is larger than current credit");
         let d = r.saturating_mul(deficit);
-        let add = d / u128::try_from(cwnd * PACER_SPEEDUP).expect("usize fits into u128");
+        let add = d / u128::try_from(cwnd * Self::SPEEDUP).expect("usize fits into u128");
         let w = u64::try_from(add).map(Duration::from_nanos).unwrap_or(rtt);
 
         
@@ -124,7 +124,7 @@ impl Pacer {
         let incr = now
             .saturating_duration_since(self.t)
             .as_nanos()
-            .saturating_mul(u128::try_from(cwnd * PACER_SPEEDUP).expect("usize fits into u128"))
+            .saturating_mul(u128::try_from(cwnd * Self::SPEEDUP).expect("usize fits into u128"))
             .checked_div(rtt.as_nanos())
             .and_then(|i| usize::try_from(i).ok())
             .unwrap_or(self.m);

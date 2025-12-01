@@ -4,13 +4,12 @@
 
 
 
-use std::{
-    collections::hash_map::DefaultHasher,
-    fs::File,
-    hash::{Hash as _, Hasher as _},
-    io::Write,
-    path::Path,
-};
+use std::{env, fs::File, io::Write, path::Path};
+
+use sha1::{Digest as _, Sha1};
+
+
+
 
 
 
@@ -22,15 +21,17 @@ pub fn write_item_to_fuzzing_corpus(target: &str, data: &[u8]) {
     
     
     
-    let corpus = Path::new("../fuzz/corpus").join(target);
+    let corpus =
+        Path::new(&env::var("NEQO_CORPUS").unwrap_or_else(|_| "../fuzz/corpus".to_string()))
+            .join(target);
     if !corpus.exists() {
         std::fs::create_dir_all(&corpus).expect("failed to create corpus directory");
     }
 
     
-    let mut hasher = DefaultHasher::new();
-    data.hash(&mut hasher);
-    let item_name = hex::encode(hasher.finish().to_be_bytes());
+    let mut hasher = Sha1::new();
+    hasher.update(data);
+    let item_name = hex::encode(hasher.finalize());
     let item_path = corpus.join(item_name);
     if item_path.exists() {
         

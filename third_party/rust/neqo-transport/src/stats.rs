@@ -20,8 +20,6 @@ use strum::IntoEnumIterator as _;
 
 use crate::{ecn, packet};
 
-pub const MAX_PTO_COUNTS: usize = 16;
-
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct FrameStats {
     pub ack: usize,
@@ -136,6 +134,20 @@ pub struct DatagramStats {
     pub dropped_queue_full: usize,
 }
 
+
+#[derive(Default, Clone, PartialEq, Eq)]
+pub struct CongestionControlStats {
+    
+    pub congestion_events_loss: usize,
+    
+    pub congestion_events_ecn: usize,
+    
+    
+    
+    pub congestion_events_spurious: usize,
+    
+    pub slow_start_exited: bool,
+}
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct EcnCount(EnumMap<packet::Type, ecn::Count>);
@@ -283,7 +295,7 @@ pub struct Stats {
 
     
     
-    pub pto_counts: [usize; MAX_PTO_COUNTS],
+    pub pto_counts: [usize; Self::MAX_PTO_COUNTS],
 
     
     pub frame_rx: FrameStats,
@@ -295,6 +307,8 @@ pub struct Stats {
     pub incoming_datagram_dropped: usize,
 
     pub datagram_tx: DatagramStats,
+
+    pub cc: CongestionControlStats,
 
     
     pub ecn_path_validation: ecn::ValidationCount,
@@ -325,6 +339,8 @@ pub struct Stats {
 }
 
 impl Stats {
+    pub const MAX_PTO_COUNTS: usize = 16;
+
     pub fn init(&mut self, info: String) {
         self.info = info;
     }
@@ -344,7 +360,7 @@ impl Stats {
     
     pub fn add_pto_count(&mut self, count: usize) {
         debug_assert!(count > 0);
-        if count >= MAX_PTO_COUNTS {
+        if count >= Self::MAX_PTO_COUNTS {
             
             return;
         }
@@ -369,6 +385,14 @@ impl Debug for Stats {
             "  tx: {} lost {} lateack {} ptoack {} unackdrop {}",
             self.packets_tx, self.lost, self.late_ack, self.pto_ack, self.unacked_range_dropped
         )?;
+        writeln!(
+            f,
+            "  cc: ce_loss {} ce_ecn {} ce_spurious {}",
+            self.cc.congestion_events_loss,
+            self.cc.congestion_events_ecn,
+            self.cc.congestion_events_spurious,
+        )?;
+        writeln!(f, "  ss_exit: {}", self.cc.slow_start_exited)?;
         writeln!(
             f,
             "  pmtud: {} sent {} acked {} lost {} change {} iface_mtu {} pmtu",

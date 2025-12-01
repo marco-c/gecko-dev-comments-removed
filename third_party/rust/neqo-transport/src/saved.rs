@@ -10,10 +10,6 @@ use neqo_common::{qdebug, qinfo, Datagram};
 
 use crate::crypto::Epoch;
 
-
-
-pub const MAX_SAVED_DATAGRAMS: usize = 4;
-
 pub struct SavedDatagram {
     
     pub d: Datagram,
@@ -29,6 +25,10 @@ pub struct SavedDatagrams {
 }
 
 impl SavedDatagrams {
+    
+    
+    pub const CAPACITY: usize = 4;
+
     fn store(&mut self, epoch: Epoch) -> &mut Vec<SavedDatagram> {
         match epoch {
             Epoch::Handshake => &mut self.handshake,
@@ -39,14 +39,13 @@ impl SavedDatagrams {
 
     
     pub fn is_either_full(&self) -> bool {
-        self.handshake.len() == MAX_SAVED_DATAGRAMS
-            || self.application_data.len() == MAX_SAVED_DATAGRAMS
+        self.handshake.len() == Self::CAPACITY || self.application_data.len() == Self::CAPACITY
     }
 
     pub fn save(&mut self, epoch: Epoch, d: Datagram, t: Instant) {
         let store = self.store(epoch);
 
-        if store.len() < MAX_SAVED_DATAGRAMS {
+        if store.len() < Self::CAPACITY {
             qdebug!("saving {epoch:?} datagram of {} bytes", d.len());
             store.push(SavedDatagram { d, t });
         } else {

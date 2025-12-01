@@ -8,7 +8,7 @@
 
 use std::ops::RangeInclusive;
 
-use neqo_common::{qtrace, Decoder, Encoder, MAX_VARINT};
+use neqo_common::{qtrace, Buffer, Decoder, Encoder, MAX_VARINT};
 use strum::FromRepr;
 
 use crate::{
@@ -681,6 +681,43 @@ impl<'a> Frame<'a> {
                 Ok(Self::Datagram { data, fill })
             }
         }
+    }
+}
+
+
+pub trait FrameEncoder {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn encode_frame<T, F>(&mut self, frame_type: T, encode_fn: F) -> &mut Self
+    where
+        T: Into<u64>,
+        F: FnOnce(&mut Self);
+}
+
+impl<B: Buffer> FrameEncoder for Encoder<B> {
+    fn encode_frame<T, F>(&mut self, frame_type: T, encode_fn: F) -> &mut Self
+    where
+        T: Into<u64>,
+        F: FnOnce(&mut Self),
+    {
+        #[cfg(feature = "build-fuzzing-corpus")]
+        let frame_start = self.len();
+        self.encode_varint(frame_type.into());
+        encode_fn(self);
+        #[cfg(feature = "build-fuzzing-corpus")]
+        neqo_common::write_item_to_fuzzing_corpus("frame", &self.as_ref()[frame_start..]);
+        self
     }
 }
 

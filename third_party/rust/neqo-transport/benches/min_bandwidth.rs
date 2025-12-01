@@ -43,7 +43,7 @@ fn gbit_bandwidth(ecn: bool) {
     
     
     
-    const MINIMUM_EXPECTED_UTILIZATION: f64 = 0.3;
+    const MINIMUM_EXPECTED_UTILIZATION: f64 = 0.4;
 
     let gbit_link = || {
         let rate_byte = LINK_BANDWIDTH / 8;
