@@ -10,6 +10,12 @@ ChromeUtils.defineESModuleGetters(ToolkitModules, {
   EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
 });
 
+const AlertNotification = Components.Constructor(
+  "@mozilla.org/alert-notification;1",
+  "nsIAlertNotification",
+  "initWithObject"
+);
+
 var { ignoreEvent } = ExtensionCommon;
 
 
@@ -31,23 +37,19 @@ function Notification(context, notificationsMap, id, options) {
     let svc = Cc["@mozilla.org/alerts-service;1"].getService(
       Ci.nsIAlertsService
     );
-    svc.showAlertNotification(
+    
+    
+    
+    let alert = new AlertNotification({
       imageURL,
-      options.title,
-      options.message,
-      true, 
-      this.id,
-      this,
-      this.id,
-      undefined,
-      undefined,
-      undefined,
-      
-      
-      
-      undefined,
-      context.incognito
-    );
+      title: options.title,
+      text: options.message,
+      textClickable: true,
+      cookie: this.id,
+      name: this.id,
+      inPrivateBrowsing: context.incognito,
+    });
+    svc.showAlert(alert, this);
   } catch (e) {
     
 
