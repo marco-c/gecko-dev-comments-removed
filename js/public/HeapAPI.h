@@ -870,6 +870,9 @@ extern JS_PUBLIC_API void PerformIncrementalReadBarrier(JS::GCCellPtr thing);
 static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   
   
+
+  
+  
   
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
