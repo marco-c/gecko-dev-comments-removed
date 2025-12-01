@@ -967,10 +967,6 @@ GetDateTimeFormat(const mozilla::intl::DateTimeFormat::ComponentsBag& options,
   }
 
   
-  
-  
-  
-  
   bool anyPresent = options.weekday || options.year || options.month ||
                     options.day || options.dayPeriod || options.hour ||
                     options.minute || options.second ||
