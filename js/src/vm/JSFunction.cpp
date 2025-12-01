@@ -1481,8 +1481,10 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
   }
 
   
-  bool canCompileStrings = false;
-  if (!cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, functionText,
+  bool canCompileStrings = cx->bypassCSPForDebugger;
+
+  if (!canCompileStrings &&
+      !cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, functionText,
                                    JS::CompilationType::Function,
                                    parameterStrings, bodyString, parameterArgs,
                                    bodyArg, &canCompileStrings)) {

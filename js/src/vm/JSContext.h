@@ -1016,6 +1016,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   
   
+  js::ContextData<bool> bypassCSPForDebugger;
+
+  
+  
+  
   
   
   js::ContextData<js::Debugger*> insideExclusiveDebuggerOnEval;
@@ -1199,6 +1204,19 @@ class MOZ_RAII AutoNoteExclusiveDebuggerOnEval {
   ~AutoNoteExclusiveDebuggerOnEval() {
     cx->insideExclusiveDebuggerOnEval = oldValue;
   }
+};
+
+class MOZ_RAII AutoSetBypassCSPForDebugger {
+  JSContext* cx;
+  bool oldValue;
+
+ public:
+  AutoSetBypassCSPForDebugger(JSContext* cx, bool value)
+      : cx(cx), oldValue(cx->bypassCSPForDebugger) {
+    cx->bypassCSPForDebugger = value;
+  }
+
+  ~AutoSetBypassCSPForDebugger() { cx->bypassCSPForDebugger = oldValue; }
 };
 
 enum UnsafeABIStrictness {
