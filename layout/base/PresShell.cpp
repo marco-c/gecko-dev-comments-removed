@@ -17,6 +17,7 @@
 #include "OverflowChangedTracker.h"
 #include "PLDHashTable.h"
 #include "PositionedEventTargeting.h"
+#include "PresShellWidgetListener.h"
 #include "ScrollSnap.h"
 #include "StickyScrollContainer.h"
 #include "Units.h"
@@ -197,7 +198,6 @@
 #include "nsTransitionManager.h"
 #include "nsTreeBodyFrame.h"
 #include "nsTreeColumns.h"
-#include "nsView.h"
 #include "nsViewportInfo.h"
 #include "nsWindowSizes.h"
 #include "nsXPCOM.h"
@@ -788,13 +788,12 @@ PresShell::~PresShell() {
 
 
 
-
 void PresShell::Init(nsPresContext* aPresContext) {
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(aPresContext);
-  MOZ_ASSERT(!mRootView, "Already initialized");
+  MOZ_ASSERT(!mWidgetListener, "Already initialized");
 
-  mRootView = MakeUnique<nsView>(this);
+  mWidgetListener = MakeUnique<PresShellWidgetListener>(this);
 
   
   
@@ -1254,7 +1253,7 @@ void PresShell::Destroy() {
     mAccessibleCaretEventHub = nullptr;
   }
 
-  mRootView = nullptr;
+  mWidgetListener = nullptr;
 
   if (mPresContext) {
     
@@ -4392,7 +4391,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   }
 
   MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying || !isSafeToFlush);
-  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mRootView);
+  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mWidgetListener);
   MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mDocument->HasShellOrBFCacheEntry());
 
   if (!isSafeToFlush) {
@@ -5635,10 +5634,7 @@ nsIWidget* PresShell::GetNearestWidget() const {
 }
 
 nsIWidget* PresShell::GetOwnWidget() const {
-  if (mRootView) {
-    return mRootView->GetWidget();
-  }
-  return nullptr;
+  return mWidgetListener ? mWidgetListener->GetWidget() : nullptr;
 }
 
 bool PresShell::AsyncPanZoomEnabled() {
@@ -8625,7 +8621,7 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
   nsPresContext* rootPresContext = framePresContext->GetRootPresContext();
   NS_ASSERTION(rootPresContext == GetPresContext()->GetRootPresContext(),
                "How did we end up outside the connected "
-               "prescontext/viewmanager hierarchy?");
+               "prescontext hierarchy?");
   nsIFrame* popupFrame = nsLayoutUtils::GetPopupFrameForEventCoordinates(
       rootPresContext, aGUIEvent);
   if (!popupFrame) {

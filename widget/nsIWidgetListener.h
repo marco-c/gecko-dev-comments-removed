@@ -21,6 +21,7 @@ class nsMenuPopupFrame;
 
 namespace mozilla {
 class PresShell;
+class PresShellWidgetListener;
 }  
 
 
@@ -43,7 +44,9 @@ class nsIWidgetListener {
   virtual nsIAppWindow* GetAppWindow() { return nullptr; }
 
   
-  virtual nsView* GetView() { return nullptr; }
+  virtual mozilla::PresShellWidgetListener* GetAsPresShellWidgetListener() {
+    return nullptr;
+  }
 
   
   virtual nsMenuPopupFrame* GetAsMenuPopupFrame() { return nullptr; }
@@ -78,11 +81,9 @@ class nsIWidgetListener {
   virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight) {
   }
   virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) {}
-#ifdef MOZ_WIDGET_ANDROID
   
   virtual void KeyboardHeightChanged(mozilla::ScreenIntCoord aHeight) {}
   virtual void AndroidPipModeChanged(bool) {}
-#endif
 
   
   virtual void MacFullscreenMenubarOverlapChanged(
@@ -111,32 +112,8 @@ class nsIWidgetListener {
   virtual bool RequestWindowClose(nsIWidget* aWidget) { return false; }
 
   
-
-
-
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void WillPaintWindow(nsIWidget* aWidget) {}
-
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual bool PaintWindow(nsIWidget* aWidget,
-                           mozilla::LayoutDeviceIntRegion aRegion) {
-    return false;
-  }
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void DidPaintWindow() {}
+  virtual void PaintWindow(nsIWidget* aWidget) {}
 
   virtual void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                                   const mozilla::TimeStamp& aCompositeStart,

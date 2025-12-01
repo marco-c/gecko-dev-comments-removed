@@ -3,20 +3,16 @@
 
 
 
-#ifndef nsView_h__
-#define nsView_h__
+#ifndef mozilla_PresShellWidgetListener_h__
+#define mozilla_PresShellWidgetListener_h__
 
-#include "nsRect.h"
-#include "nsCOMPtr.h"
-#include "nsIWidgetListener.h"
 #include "Units.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CallState.h"
-#include "mozilla/EventForwards.h"
+#include "nsCOMPtr.h"
+#include "nsIWidgetListener.h"
 
-class nsViewManager;
 class nsIWidget;
-class nsIFrame;
 
 namespace mozilla {
 class PresShell;
@@ -28,103 +24,9 @@ struct InitData;
 enum class TransparencyMode : uint8_t;
 enum class WindowType : uint8_t;
 }  
-}  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsView final : public nsIWidgetListener {
+class PresShellWidgetListener final : public nsIWidgetListener {
  public:
-  friend class nsViewManager;
-
-  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
-  typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
-
-  void operator delete(void* ptr) { ::operator delete(ptr); }
-
-  
-
-
-
-
-
-
-
-
-
-  void Destroy();
-
   
   void DetachWidget();
 
@@ -144,45 +46,23 @@ class nsView final : public nsIWidgetListener {
 
   static uint32_t GetLastUserEventTime();
 
-  
-
-
-
-
-
-
   nsIWidget* GetWidget() const { return mWindow; }
-
-  
-
-
-  bool HasWidget() const { return mWindow != nullptr; }
-
-#ifdef DEBUG
-  
-
-
-
-
-
-
-  virtual void List(FILE* out, int32_t aIndent = 0) const;
-#endif  
+  bool HasWidget() const { return !!mWindow; }
 
   
   mozilla::PresShell* GetPresShell() override;
-  nsView* GetView() override { return this; }
+  PresShellWidgetListener* GetAsPresShellWidgetListener() override {
+    return this;
+  }
   bool IsPaintSuppressed() const override {
     return IsPrimaryFramePaintSuppressed();
   }
   bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
                      int32_t aHeight) override;
-#ifdef MOZ_WIDGET_ANDROID
   void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight) override;
   void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) override;
   void KeyboardHeightChanged(mozilla::ScreenIntCoord aHeight) override;
   void AndroidPipModeChanged(bool) override;
-#endif
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void PaintWindow(nsIWidget* aWidget) override;
   void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
@@ -192,8 +72,8 @@ class nsView final : public nsIWidgetListener {
   nsEventStatus HandleEvent(mozilla::WidgetGUIEvent*) override;
   void SafeAreaInsetsChanged(const mozilla::LayoutDeviceIntMargin&) override;
 
-  explicit nsView(mozilla::PresShell*);
-  virtual ~nsView();
+  explicit PresShellWidgetListener(mozilla::PresShell*);
+  virtual ~PresShellWidgetListener();
 
   bool IsPrimaryFramePaintSuppressed() const;
 
@@ -206,5 +86,7 @@ class nsView final : public nsIWidgetListener {
   nsCOMPtr<nsIWidget> mWindow;
   nsCOMPtr<nsIWidget> mPreviousWindow;
 };
+
+}  
 
 #endif
