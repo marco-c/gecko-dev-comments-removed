@@ -5454,6 +5454,34 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void computeHash2MFBT(Register hashTable, Register hashCode, Register hash2,
                         Register sizeMask, Register scratch);
   void applyDoubleHashMFBT(Register hash1, Register hash2, Register sizeMask);
+  template <typename Table>
+  void checkForMatchMFBT(Register hashTable, Register hashIndex,
+                         Register hashCode, Register scratch, Register scratch2,
+                         Label* missing, Label* collision);
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename Table, typename Match>
+  void lookupMFBT(Register hashTable, Register hashCode, Register scratch,
+                  Register scratch2, Register scratch3, Register scratch4,
+                  Register scratch5, Label* missing, Match match);
 
  private:
   enum class IsBigInt { No, Yes, Maybe };
