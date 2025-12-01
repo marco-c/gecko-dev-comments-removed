@@ -4,12 +4,12 @@
 
 use std::{ffi::CString, hash::RandomState, process};
 
-use windows_sys::Win32::Foundation::ERROR_ACCESS_DENIED;
+use windows_sys::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_ADDRESS_ALREADY_ASSOCIATED};
 
 use crate::{
-    errors::IPCError,
-    platform::windows::{get_last_error, server_addr},
-    IPCConnector, IPCListener, Pid,
+    ipc_channel::IPCChannelError,
+    platform::{windows::server_addr, PlatformError},
+    IPCConnector, IPCListener, IPCListenerError, Pid,
 };
 
 pub struct IPCChannel {
@@ -22,7 +22,7 @@ impl IPCChannel {
     
     
     
-    pub fn new() -> Result<IPCChannel, IPCError> {
+    pub fn new() -> Result<IPCChannel, IPCChannelError> {
         let pid = process::id() as Pid;
         let mut listener = IPCListener::new(server_addr(pid))?;
         listener.listen()?;
@@ -52,7 +52,7 @@ pub struct IPCClientChannel {
 impl IPCClientChannel {
     
     
-    pub fn new() -> Result<IPCClientChannel, IPCError> {
+    pub fn new() -> Result<IPCClientChannel, IPCChannelError> {
         let mut listener = Self::create_listener()?;
         listener.listen()?;
         let client_endpoint = IPCConnector::connect(listener.address())?;
@@ -64,7 +64,7 @@ impl IPCClientChannel {
         })
     }
 
-    fn create_listener() -> Result<IPCListener, IPCError> {
+    fn create_listener() -> Result<IPCListener, IPCListenerError> {
         const ATTEMPTS: u32 = 5;
 
         
@@ -79,14 +79,19 @@ impl IPCClientChannel {
             .unwrap();
             match IPCListener::new(pipe_name) {
                 Ok(listener) => return Ok(listener),
-                Err(_error @ IPCError::System(ERROR_ACCESS_DENIED)) => {} 
+                Err(
+                    _error @ IPCListenerError::CreationError(PlatformError::CreatePipeFailure(
+                        ERROR_ACCESS_DENIED,
+                    )),
+                ) => {} 
                 Err(error) => return Err(error),
             }
         }
 
         
-        
-        Err(IPCError::System(get_last_error()))
+        Err(IPCListenerError::CreationError(
+            PlatformError::CreatePipeFailure(ERROR_ADDRESS_ALREADY_ASSOCIATED),
+        ))
     }
 
     

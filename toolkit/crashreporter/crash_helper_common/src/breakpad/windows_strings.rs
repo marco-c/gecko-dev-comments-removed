@@ -9,7 +9,7 @@ use std::{
     os::windows::ffi::{OsStrExt, OsStringExt},
 };
 
-use crate::{errors::MessageError, BreakpadChar, BreakpadString};
+use crate::{messages::MessageError, BreakpadChar, BreakpadString};
 
 
 impl BreakpadString for OsString {
