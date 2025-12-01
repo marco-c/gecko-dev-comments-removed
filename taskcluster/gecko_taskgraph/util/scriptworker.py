@@ -535,6 +535,11 @@ def generate_beetmover_upstream_artifacts(
                 and platform in map_config["mapping"][filename]["not_for_platforms"]
             ):
                 continue
+            if (
+                "not_for_locales" in map_config["mapping"][filename]
+                and locale in map_config["mapping"][filename]["not_for_locales"]
+            ):
+                continue
             if "partials_only" in map_config["mapping"][filename]:
                 continue
             
@@ -672,6 +677,12 @@ def generate_beetmover_artifact_map(config, job, **kwargs):
             if (
                 "not_for_platforms" in map_config["mapping"][filename]
                 and platform in map_config["mapping"][filename]["not_for_platforms"]
+            ):
+                
+                continue
+            if (
+                "not_for_locales" in map_config["mapping"][filename]
+                and locale in map_config["mapping"][filename]["not_for_locales"]
             ):
                 
                 continue
