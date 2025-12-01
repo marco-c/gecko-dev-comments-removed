@@ -4191,16 +4191,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
 
-  void emitPreBarrierFastPath(MIRType type, Register temp1, Register temp2,
-                              Register temp3, Label* noBarrier);
-  void emitValueReadBarrierFastPath(ValueOperand value, Register cell,
-                                    Register temp1, Register temp2,
-                                    Register temp3, Register temp4,
-                                    Label* barrier);
-
- private:
-  void loadMarkBits(Register cell, Register chunk, Register markWord,
-                    Register bitIndex, Register temp, gc::ColorBit color);
+  void emitPreBarrierFastPath(JSRuntime* rt, MIRType type, Register temp1,
+                              Register temp2, Register temp3, Label* noBarrier);
 
  public:
   
@@ -5438,7 +5430,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void scrambleHashCode(Register result);
 
  public:
-  void hashAndScrambleValue(ValueOperand value, Register result, Register temp);
   void prepareHashNonGCThing(ValueOperand value, Register result,
                              Register temp);
   void prepareHashString(Register str, Register result, Register temp);
@@ -5451,45 +5442,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void prepareHashValue(Register setObj, ValueOperand value, Register result,
                         Register temp1, Register temp2, Register temp3,
                         Register temp4);
-
-  
-  
-  void prepareHashMFBT(Register hashCode, bool alreadyScrambled);
-  template <typename Table>
-  void computeHash1MFBT(Register hashTable, Register hashCode, Register hash1,
-                        Register scratch);
-  template <typename Table>
-  void computeHash2MFBT(Register hashTable, Register hashCode, Register hash2,
-                        Register sizeMask, Register scratch);
-  void applyDoubleHashMFBT(Register hash1, Register hash2, Register sizeMask);
-  template <typename Table>
-  void checkForMatchMFBT(Register hashTable, Register hashIndex,
-                         Register hashCode, Register scratch, Register scratch2,
-                         Label* missing, Label* collision);
-
- public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <typename Table, typename Match>
-  void lookupMFBT(Register hashTable, Register hashCode, Register scratch,
-                  Register scratch2, Register scratch3, Register scratch4,
-                  Register scratch5, Label* missing, Match match);
 
  private:
   enum class IsBigInt { No, Yes, Maybe };
