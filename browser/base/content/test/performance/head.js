@@ -770,6 +770,10 @@ async function runUrlbarTest(
 
   URLBar.focus();
   URLBar.value = SEARCH_TERM;
+
+  let SHADOW_OVERFLOW_LEFT, SHADOW_OVERFLOW_RIGHT, SHADOW_OVERFLOW_TOP;
+  let INLINE_MARGIN, VERTICAL_OFFSET;
+
   let testFn = async function () {
     let popup = URLBar.view;
     let oldOnQueryResults = popup.onQueryResults.bind(popup);
@@ -820,22 +824,69 @@ async function runUrlbarTest(
       await waitExtra();
     }
 
+    let shadowElem = win.document.querySelector("#urlbar > .urlbar-background");
+    let shadow = getComputedStyle(shadowElem).boxShadow;
+
+    let inlineElem = win.document.querySelector("#urlbar");
+    let inlineMargin = getComputedStyle(inlineElem).marginInlineStart;
+
+    let offsetElem = win.document.querySelector("#urlbar-container");
+    let verticalOffset = getComputedStyle(offsetElem).paddingTop;
+
+    function extractPixelValue(value) {
+      if (value) {
+        return parseInt(value.replace("px", ""), 10);
+      }
+      return 0;
+    }
+
+    function calculateShadowOverflow(boxShadow) {
+      const regex = /-?\d+px/g;
+      const matches = boxShadow.match(regex);
+
+      if (matches && matches.length >= 2) {
+        
+        const [offsetX, offsetY, blurRadius = 0, spreadRadius = 0] =
+          matches.map(value => parseInt(value.replace("px", ""), 10));
+
+        const left = Math.max(0, -offsetX + blurRadius + spreadRadius);
+        const right = Math.max(0, offsetX + blurRadius + spreadRadius);
+        const top = Math.max(0, -offsetY + blurRadius + spreadRadius);
+        const bottom = Math.max(0, offsetY + blurRadius + spreadRadius);
+
+        return { left, right, top, bottom };
+      }
+
+      return { left: 0, right: 0, top: 0, bottom: 0 };
+    }
+
+    let overflow = calculateShadowOverflow(shadow);
+    const FUZZ_FACTOR = 4;
+    
+    SHADOW_OVERFLOW_LEFT = overflow.left + FUZZ_FACTOR;
+    SHADOW_OVERFLOW_RIGHT = overflow.right + FUZZ_FACTOR;
+    SHADOW_OVERFLOW_TOP = overflow.top + FUZZ_FACTOR;
+
+    
+    INLINE_MARGIN = -extractPixelValue(inlineMargin); 
+    
+    VERTICAL_OFFSET = -extractPixelValue(verticalOffset); 
+
     await UrlbarTestUtils.promisePopupClose(win);
+    URLBar.value = "";
   };
 
   let urlbarRect = URLBar.getBoundingClientRect();
-  
-  
-  const SHADOW_SIZE = 17; 
-  const INLINE_MARGIN = 5; 
-  const VERTICAL_OFFSET = -4; 
+  await testFn();
   let expectedRects = {
     filter: rects => {
       const referenceRect = {
-        x1: Math.floor(urlbarRect.left) - INLINE_MARGIN - SHADOW_SIZE,
-        x2: Math.ceil(urlbarRect.right) + INLINE_MARGIN + SHADOW_SIZE,
-        y1: Math.floor(urlbarRect.top) + VERTICAL_OFFSET - SHADOW_SIZE,
+        x1: Math.floor(urlbarRect.left) - INLINE_MARGIN - SHADOW_OVERFLOW_LEFT,
+        x2:
+          Math.floor(urlbarRect.right) + INLINE_MARGIN + SHADOW_OVERFLOW_RIGHT,
+        y1: Math.floor(urlbarRect.top) + VERTICAL_OFFSET - SHADOW_OVERFLOW_TOP,
       };
+
       
       
       
@@ -871,6 +922,7 @@ async function runUrlbarTest(
   }
 
   await BrowserTestUtils.closeWindow(win);
+  await TestUtils.waitForTick();
 }
 
 
