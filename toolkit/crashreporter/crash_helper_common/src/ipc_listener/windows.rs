@@ -12,6 +12,7 @@ use std::{
     ffi::{CStr, CString, OsString},
     os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle, RawHandle},
     ptr::null_mut,
+    rc::Rc,
     str::FromStr,
 };
 use windows_sys::Win32::{
@@ -27,9 +28,13 @@ use windows_sys::Win32::{
 };
 
 pub struct IPCListener {
+    
     server_addr: CString,
-    handle: OwnedHandle,
+    
+    handle: Rc<OwnedHandle>,
+    
     overlapped: Option<OverlappedOperation>,
+    
     event: OwnedHandle,
 }
 
@@ -40,7 +45,7 @@ impl IPCListener {
 
         Ok(IPCListener {
             server_addr,
-            handle: pipe,
+            handle: Rc::new(pipe),
             overlapped: None,
             event,
         })
@@ -56,28 +61,34 @@ impl IPCListener {
 
     pub(crate) fn listen(&mut self) -> Result<(), IPCError> {
         self.overlapped = Some(OverlappedOperation::listen(
-            self.handle
-                .try_clone()
-                .map_err(IPCError::CloneHandleFailed)?,
+            &self.handle,
             self.event_raw_handle(),
         )?);
         Ok(())
     }
 
     pub fn accept(&mut self) -> Result<IPCConnector, IPCError> {
-        
-        
-        let overlapped = self.overlapped.take().unwrap();
-        overlapped.accept(self.handle.as_raw_handle() as HANDLE)?;
-        let new_pipe = create_named_pipe(&self.server_addr,  false)?;
-        let connected_pipe = std::mem::replace(&mut self.handle, new_pipe);
+        let connected_pipe = {
+            
+            
+            
+            let overlapped = self
+                .overlapped
+                .take()
+                .expect("Accepting a connection without listening first");
+            overlapped.accept(self.handle.as_raw_handle() as HANDLE)?;
+            let new_pipe = create_named_pipe(&self.server_addr,  false)?;
+            std::mem::replace(&mut self.handle, Rc::new(new_pipe))
+        };
 
         
         
         
         self.listen()?;
 
-        IPCConnector::from_ancillary(connected_pipe)
+        
+        
+        IPCConnector::from_ancillary(Rc::<OwnedHandle>::try_unwrap(connected_pipe).unwrap())
     }
 
     
@@ -100,7 +111,7 @@ impl IPCListener {
 
         let mut listener = IPCListener {
             server_addr,
-            handle,
+            handle: Rc::new(handle),
             overlapped: None,
             event,
         };
