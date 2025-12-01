@@ -67,6 +67,7 @@ import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_S
 import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_STRIPPING_PMB
 import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_STRIPPING_STRIP_LIST
 import org.mozilla.fenix.settings.PhoneFeature
+import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.mozilla.fenix.settings.logins.SavedLoginsSortingStrategyMenu
 import org.mozilla.fenix.settings.logins.SortingStrategy
@@ -214,7 +215,7 @@ class Settings(
      */
     var toolbarSimpleShortcutKey: String by stringPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_toolbar_simple_shortcut),
-        default = { "new_tab" },
+        default = { ShortcutType.NEW_TAB.value },
         persistDefaultIfNotExists = true,
     )
 
@@ -223,7 +224,7 @@ class Settings(
      */
     var toolbarExpandedShortcutKey: String by stringPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_toolbar_expanded_shortcut),
-        default = { "bookmark" },
+        default = { ShortcutType.BOOKMARK.value },
         persistDefaultIfNotExists = true,
     )
 
@@ -418,7 +419,7 @@ class Settings(
 
     var contileContextId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_contile_context_id),
-        default = TopSites.contextId.generateAndSet().toString(),
+        default = { TopSites.contextId.generateAndSet().toString() },
         persistDefaultIfNotExists = true,
     )
 
@@ -2087,7 +2088,7 @@ class Settings(
      */
     val pocketSponsoredStoriesProfileId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories_profile),
-        default = UUID.randomUUID().toString(),
+        default = { UUID.randomUUID().toString() },
         persistDefaultIfNotExists = true,
     )
 
@@ -2663,7 +2664,7 @@ class Settings(
      * Indicates whether or not we should use the new compose autofill settings UI
      */
     var enableComposeAutofillSettings by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_logins),
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_autofill_settings),
         default = false,
     )
 
