@@ -11616,15 +11616,30 @@ static nsTArray<AffectedAnchorGroup> FindAnchorsAffectedByScroll(
 static Maybe<const AffectedAnchor&> FindScrollCompensatedAnchor(
     const PresShell* aPresShell,
     const nsTArray<AffectedAnchorGroup>& aAffectedAnchors,
-    const nsIFrame* aPositioned, const AnchorPosReferenceData& aReferenceData) {
+    const nsIFrame* aPositioned, const AnchorPosReferenceData& aReferenceData,
+    const nsIFrame** aResolvedDefaultAnchor) {
   MOZ_ASSERT(aPositioned->IsAbsolutelyPositioned(),
              "Anchor positioned frame is not absolutely positioned?");
+  if (aResolvedDefaultAnchor) {
+    *aResolvedDefaultAnchor = nullptr;
+  }
+
   if (aReferenceData.IsEmpty()) {
     return Nothing{};
   }
 
-  if (!aReferenceData.mDefaultAnchorName) {
+  const auto* defaultAnchorName = aReferenceData.mDefaultAnchorName.get();
+  if (!defaultAnchorName) {
     return Nothing{};
+  }
+
+  const auto* defaultAnchor =
+      aPresShell->GetAnchorPosAnchor(defaultAnchorName, aPositioned);
+  if (!defaultAnchor) {
+    return Nothing{};
+  }
+  if (aResolvedDefaultAnchor) {
+    *aResolvedDefaultAnchor = defaultAnchor;
   }
 
   const auto compensatingForScroll = aReferenceData.CompensatingForScrollAxes();
@@ -11639,24 +11654,11 @@ static Maybe<const AffectedAnchor&> FindScrollCompensatedAnchor(
   };
 
   
-  const auto* defaultAnchorName =
-      AnchorPositioningUtils::GetUsedAnchorName(aPositioned, nullptr);
-  nsIFrame const* defaultAnchor = nullptr;
   for (const auto& group : aAffectedAnchors) {
-    if (defaultAnchorName &&
-        !group.mAnchorName->Equals(defaultAnchorName->GetUTF16String(),
-                                   defaultAnchorName->GetLength())) {
+    if (group.mAnchorName != defaultAnchorName) {
       
       
       continue;
-    }
-    if (!defaultAnchor) {
-      defaultAnchor =
-          aPresShell->GetAnchorPosAnchor(defaultAnchorName, aPositioned);
-      if (!defaultAnchor) {
-        
-        return Nothing{};
-      }
     }
     const auto& anchors = group.mFrames;
     
@@ -11691,6 +11693,41 @@ static bool CheckOverflow(nsIFrame* aPositioned,
 }
 
 
+
+
+
+
+
+
+
+static bool AnchorIsStickyOrChainedToScrollCompensatedAnchor(
+    const nsIFrame* aAnchor) {
+  if (!aAnchor) {
+    return false;
+  }
+
+  if (aAnchor->IsStickyPositioned()) {
+    return true;
+  }
+
+  if (aAnchor->StylePosition()->mPositionAnchor.IsNone()) {
+    
+    return false;
+  }
+
+  const auto* referenceData =
+      aAnchor->GetProperty(nsIFrame::AnchorPosReferences());
+  if (!referenceData) {
+    return false;
+  }
+
+  
+  
+  
+  return !referenceData->CompensatingForScrollAxes().isEmpty();
+}
+
+
 void PresShell::UpdateAnchorPosForScroll(
     const ScrollContainerFrame* aScrollContainer) {
   if (mAnchorPosAnchors.IsEmpty()) {
@@ -11716,8 +11753,9 @@ void PresShell::UpdateAnchorPosForScroll(
     if (!referenceData) {
       continue;
     }
+    const nsIFrame* defaultAnchor = nullptr;
     const auto scrollDependency = FindScrollCompensatedAnchor(
-        this, affectedAnchors, positioned, *referenceData);
+        this, affectedAnchors, positioned, *referenceData, &defaultAnchor);
     const bool offsetChanged = [&]() {
       if (!scrollDependency) {
         return false;
@@ -11745,8 +11783,18 @@ void PresShell::UpdateAnchorPosForScroll(
     }();
     const bool cbScrolls =
         positioned->GetParent() == aScrollContainer->GetScrolledFrame();
-    if (offsetChanged || cbScrolls) {
-      if (CheckOverflow(positioned, *referenceData)) {
+    
+    
+    
+    
+    
+    
+    const bool anchorIsStickyOrScrollCompensatedAnchor =
+        defaultAnchor &&
+        AnchorIsStickyOrChainedToScrollCompensatedAnchor(defaultAnchor);
+    if (offsetChanged || cbScrolls || anchorIsStickyOrScrollCompensatedAnchor) {
+      if (CheckOverflow(positioned, *referenceData) ||
+          anchorIsStickyOrScrollCompensatedAnchor) {
 #ifdef ACCESSIBILITY
         if (nsAccessibilityService* accService = GetAccService()) {
           accService->NotifyAnchorPositionedScrollUpdate(this, positioned);
