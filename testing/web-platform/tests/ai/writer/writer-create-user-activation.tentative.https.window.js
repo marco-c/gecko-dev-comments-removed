@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 
 
@@ -13,9 +14,12 @@ promise_test(async t => {
   assert_false(navigator.userActivation.isActive);
   await promise_rejects_dom(t, 'NotAllowedError', Writer.create());
   await test_driver.bless('Writer.create', Writer.create);
+  
+  assert_true(navigator.userActivation.isActive);
+  consumeTransientUserActivation();
 
   
   assert_equals(await Writer.availability(), 'available');
   assert_false(navigator.userActivation.isActive);
   await Writer.create();
-}, 'Create requires user activation when availability is "downloadable"');
+}, 'Create requires sticky user activation when availability is "downloadable"');

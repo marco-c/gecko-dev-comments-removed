@@ -15,9 +15,12 @@ promise_test(async t => {
   assert_false(navigator.userActivation.isActive);
   await promise_rejects_dom(t, 'NotAllowedError', LanguageModel.create());
   await test_driver.bless('LanguageModel.create', LanguageModel.create);
+  
+  assert_true(navigator.userActivation.isActive);
+  consumeTransientUserActivation();
 
   
   assert_equals(await LanguageModel.availability(), 'available');
   assert_false(navigator.userActivation.isActive);
   await LanguageModel.create();
-}, 'Create requires user activation when availability is "downloadable"');
+}, 'Create requires sticky user activation when availability is "downloadable"');
