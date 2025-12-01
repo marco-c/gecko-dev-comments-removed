@@ -10420,6 +10420,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
     return AttachDecision::NoAction;
   }
 
+  Shape* expectedObjKeysShape =
+      GlobalObject::getArrayShapeWithDefaultProto(cx_);
+  if (!expectedObjKeysShape) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
   
   
   Int32OperandId argcId = initializeInputOperand();
@@ -10438,13 +10445,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
 
   
   writer.guardIsNotProxy(argObjId);
-
-  Shape* expectedObjKeysShape =
-      GlobalObject::getArrayShapeWithDefaultProto(cx_);
-  if (!expectedObjKeysShape) {
-    cx_->recoverFromOutOfMemory();
-    return AttachDecision::NoAction;
-  }
 
   
   writer.objectKeysResult(argObjId, expectedObjKeysShape);
