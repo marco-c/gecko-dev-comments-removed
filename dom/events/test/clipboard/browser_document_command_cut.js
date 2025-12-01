@@ -172,11 +172,9 @@ const kContentFileUrl = kBaseUrlForContent + "simple_page_ext.html";
           await BrowserTestUtils.withNewTab(kContentFileUrl, async browser => {
             let [supported, enabled, succeed] =
               await extension.awaitMessage("ready");
-            
-            
             is(
               supported,
-              aPrefValue,
+              aPrefValue || aPermission,
               "Check if the 'cut' command is supported"
             );
 
@@ -252,11 +250,9 @@ const kContentFileUrl = kBaseUrlForContent + "simple_page_ext.html";
           await BrowserTestUtils.withNewTab(kContentFileUrl, async browser => {
             let [supported, enabled, succeed] =
               await extension.awaitMessage("ready");
-            
-            
             is(
               supported,
-              aPrefValue,
+              aPrefValue || aPermission,
               "Check if the 'cut' command is supported"
             );
 
@@ -309,11 +305,9 @@ const kContentFileUrl = kBaseUrlForContent + "simple_page_ext.html";
           await BrowserTestUtils.withNewTab(kContentFileUrl, async browser => {
             let [supported, enabled, succeed] =
               await extension.awaitMessage("ready");
-            
-            
             is(
               supported,
-              aPrefValue,
+              aPrefValue || aPermission,
               "Check if the 'cut' command is supported"
             );
             

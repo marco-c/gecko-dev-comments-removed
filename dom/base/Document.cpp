@@ -5990,11 +5990,14 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
 
   
   if (commandData.IsCutOrCopyCommand()) {
+    
+    
     return nsContentUtils::IsCutCopyAllowed(this, aSubjectPrincipal);
   }
 
-  
-  if (commandData.IsPasteCommand() && !aSubjectPrincipal.IsSystemPrincipal()) {
+  if (commandData.IsPasteCommand() &&
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                              nsGkAtoms::clipboardRead)) {
     return false;
   }
 
@@ -6182,7 +6185,7 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
 }
 
 bool Document::QueryCommandSupported(const nsAString& aHTMLCommandName,
-                                     CallerType aCallerType, ErrorResult& aRv) {
+                                     nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) {
   
   if (!IsHTMLOrXHTML()) {
     aRv.ThrowInvalidStateError(
@@ -6213,17 +6216,15 @@ bool Document::QueryCommandSupported(const nsAString& aHTMLCommandName,
   
   
   
-  if (aCallerType != CallerType::System) {
-    if (commandData.IsPasteCommand()) {
-      return false;
-    }
-    if (commandData.IsCutOrCopyCommand() &&
-        !StaticPrefs::dom_allow_cut_copy()) {
-      
-      
-      
-      return false;
-    }
+  if (commandData.IsPasteCommand() &&
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                              nsGkAtoms::clipboardRead)) {
+    return false;
+  }
+  if (commandData.IsCutOrCopyCommand() && !StaticPrefs::dom_allow_cut_copy() &&
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                              nsGkAtoms::clipboardWrite)) {
+    return false;
   }
 
   
@@ -17495,7 +17496,7 @@ void Document::MaybeRecomputePartitionKey() {
   
   
   mozilla::net::CookieJarSettings::Cast(mCookieJarSettings)
-      ->SetPartitionKey(originURI, false);
+      ->SetPartitionKey(originURI);
 }
 
 bool Document::RecomputeResistFingerprinting(bool aForceRefreshRTPCallerType) {
