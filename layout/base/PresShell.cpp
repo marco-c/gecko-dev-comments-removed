@@ -11733,6 +11733,13 @@ void PresShell::UpdateAnchorPosForScroll(
       
       positioned->UpdateOverflow();
       positioned->GetParent()->UpdateOverflow();
+      
+      
+      
+      
+      
+      
+      positioned->SchedulePaint();
       referenceData->mDefaultScrollShift = offset;
       return true;
     }();
