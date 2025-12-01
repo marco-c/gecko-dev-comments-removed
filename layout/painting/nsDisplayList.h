@@ -616,10 +616,10 @@ class nsDisplayListBuilder {
   
 
 
-  void SetPaintingForWebRender(bool aForWebRender) {
-    mIsPaintingForWebRender = true;
+  static void SetPaintingForWebRender(bool aForWebRender) {
+    sIsPaintingForWebRender = aForWebRender;
   }
-  bool IsPaintingForWebRender() const { return mIsPaintingForWebRender; }
+  static bool IsPaintingForWebRender() { return sIsPaintingForWebRender; }
   
 
 
@@ -2024,7 +2024,10 @@ class nsDisplayListBuilder {
   bool mIsPaintingToWindow;
   bool mAsyncPanZoomEnabled;
   bool mUseHighQualityScaling;
-  bool mIsPaintingForWebRender;
+  
+  
+  
+  static bool sIsPaintingForWebRender;
   bool mAncestorHasApzAwareEventHandler;
   
   
