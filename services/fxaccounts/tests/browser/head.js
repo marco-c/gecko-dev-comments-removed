@@ -45,21 +45,14 @@ function waitForDocLoadComplete(aBrowser = gBrowser) {
 
 function setupMockAlertsService(expectedObj) {
   const alertsService = {
-    showAlertNotification: (
-      image,
-      title,
-      body,
-      clickable,
-      cookie,
-      clickCallback
-    ) => {
+    showAlert: (alert, clickCallback) => {
       
       clickCallback(null, "alertshow", null);
 
       
       if (expectedObj) {
-        expectedObj.title && Assert.equal(title, expectedObj.title);
-        expectedObj.body && Assert.equal(body, expectedObj.body);
+        expectedObj.title && Assert.equal(alert.title, expectedObj.title);
+        expectedObj.body && Assert.equal(alert.text, expectedObj.body);
       }
 
       
