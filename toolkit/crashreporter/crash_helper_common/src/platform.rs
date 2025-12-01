@@ -3,19 +3,19 @@
 
 
 #[cfg(target_os = "windows")]
-pub use windows::{server_addr, PlatformError, ProcessHandle};
+pub use windows::{server_addr, ProcessHandle};
 
 #[cfg(target_os = "windows")]
 pub(crate) mod windows;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use linux::{PlatformError, ProcessHandle};
+pub use linux::ProcessHandle;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) mod linux;
 
 #[cfg(target_os = "macos")]
-pub use macos::{PlatformError, ProcessHandle};
+pub use macos::ProcessHandle;
 
 #[cfg(target_os = "macos")]
 pub(crate) mod macos;
