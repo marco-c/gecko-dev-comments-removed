@@ -46,8 +46,7 @@ class nsIDocumentViewerPrint : public nsISupports {
   
 
 
-  virtual void SetPrintPreviewPresentation(nsViewManager* aViewManager,
-                                           nsPresContext* aPresContext,
+  virtual void SetPrintPreviewPresentation(nsPresContext* aPresContext,
                                            mozilla::PresShell* aPresShell) = 0;
 };
 
@@ -59,8 +58,7 @@ class nsIDocumentViewerPrint : public nsISupports {
   void IncrementDestroyBlockedCount() override;                 \
   void DecrementDestroyBlockedCount() override;                 \
   void OnDonePrinting() override;                               \
-  void SetPrintPreviewPresentation(nsViewManager* aViewManager, \
-                                   nsPresContext* aPresContext, \
+  void SetPrintPreviewPresentation(nsPresContext* aPresContext, \
                                    mozilla::PresShell* aPresShell) override;
 
 #endif 

@@ -198,7 +198,6 @@
 #include "nsTreeBodyFrame.h"
 #include "nsTreeColumns.h"
 #include "nsView.h"
-#include "nsViewManager.h"
 #include "nsViewportInfo.h"
 #include "nsWindowSizes.h"
 #include "nsXPCOM.h"
@@ -670,7 +669,6 @@ bool PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell) {
 
 PresShell::PresShell(Document* aDocument)
     : mDocument(aDocument),
-      mViewManager(nullptr),
       mLastSelectionForToString(nullptr),
 #ifdef ACCESSIBILITY
       mDocAccessible(nullptr),
@@ -791,13 +789,12 @@ PresShell::~PresShell() {
 
 
 
-void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
+void PresShell::Init(nsPresContext* aPresContext) {
   MOZ_ASSERT(mDocument);
   MOZ_ASSERT(aPresContext);
-  MOZ_ASSERT(aViewManager);
-  MOZ_ASSERT(!mViewManager, "already initialized");
+  MOZ_ASSERT(!mRootView, "Already initialized");
 
-  mViewManager = aViewManager;
+  mRootView = MakeUnique<nsView>(this);
 
   
   
@@ -808,9 +805,6 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
 
   
   mFrameConstructor = MakeUnique<nsCSSFrameConstructor>(mDocument, this);
-
-  
-  mViewManager->SetPresShell(this);
 
   
   
@@ -1260,15 +1254,7 @@ void PresShell::Destroy() {
     mAccessibleCaretEventHub = nullptr;
   }
 
-  if (mViewManager) {
-    if (auto* root = mViewManager->GetRootView()) {
-      root->Destroy();
-    }
-    
-    
-    mViewManager->SetPresShell(nullptr);
-    mViewManager = nullptr;
-  }
+  mRootView = nullptr;
 
   if (mPresContext) {
     
@@ -4406,7 +4392,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   }
 
   MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying || !isSafeToFlush);
-  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mViewManager);
+  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mRootView);
   MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mDocument->HasShellOrBFCacheEntry());
 
   if (!isSafeToFlush) {
@@ -5632,7 +5618,6 @@ struct PaintParams {
 };
 
 WindowRenderer* PresShell::GetWindowRenderer() {
-  NS_ASSERTION(mViewManager, "Should have view manager");
   if (nsIWidget* widget = GetOwnWidget()) {
     return widget->GetWindowRenderer();
   }
@@ -5650,11 +5635,8 @@ nsIWidget* PresShell::GetNearestWidget() const {
 }
 
 nsIWidget* PresShell::GetOwnWidget() const {
-  if (!mViewManager) {
-    return nullptr;
-  }
-  if (auto* root = mViewManager->GetRootView()) {
-    return root->GetWidget();
+  if (mRootView) {
+    return mRootView->GetWidget();
   }
   return nullptr;
 }

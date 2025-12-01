@@ -78,7 +78,6 @@ class nsRegion;
 class nsTextFrame;
 class nsSubDocumentFrame;
 class nsView;
-class nsViewManager;
 class nsWindowSizes;
 class WeakFrame;
 class ZoomConstraintsClient;
@@ -243,7 +242,7 @@ class PresShell final : public nsStubDocumentObserver,
     return mLastOverWindowPointerLocation;
   }
 
-  MOZ_CAN_RUN_SCRIPT void Init(nsPresContext*, nsViewManager*);
+  MOZ_CAN_RUN_SCRIPT void Init(nsPresContext*);
 
   
 
@@ -312,7 +311,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   PresShell* GetRootPresShell() const;
 
-  nsViewManager* GetViewManager() const { return mViewManager; }
+  nsView* GetRootView() const { return mRootView.get(); }
 
   nsRefreshDriver* GetRefreshDriver() const;
 
@@ -3204,7 +3203,9 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_KNOWN_LIVE RefPtr<Document> const mDocument;
   MOZ_KNOWN_LIVE RefPtr<nsPresContext> const mPresContext;
   UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
-  nsViewManager* mViewManager;  
+  
+  
+  UniquePtr<nsView> mRootView;
   RefPtr<nsFrameSelection> mSelection;
   
   

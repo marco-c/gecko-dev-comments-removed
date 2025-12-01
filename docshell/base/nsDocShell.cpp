@@ -234,8 +234,6 @@
 #include "nsSubDocumentFrame.h"
 #include "nsURILoader.h"
 #include "nsURLHelper.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 #include "nsViewSourceHandler.h"
 #include "nsWebBrowserFind.h"
 #include "nsWhitespaceTokenizer.h"
@@ -7735,9 +7733,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     pc->RecomputeBrowsingContextDependentData();
   }
 
-  nsViewManager* newVM = presShell ? presShell->GetViewManager() : nullptr;
-  nsView* newRootView = newVM ? newVM->GetRootView() : nullptr;
-
   nsCOMPtr<nsPIDOMWindowInner> privWinInner = privWin->GetCurrentInnerWindow();
 
   
@@ -7774,7 +7769,7 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   
 
-  if (newRootView) {
+  if (presShell) {
     if (!newBounds.IsEmpty() &&
         !newBounds.ToUnknownRect().IsEqualEdges(oldBounds)) {
       MOZ_LOG(gPageCacheLog, LogLevel::Debug,
@@ -7786,11 +7781,6 @@ nsresult nsDocShell::RestoreFromHistory() {
       sf->PostScrolledAreaEventForCurrentArea();
     }
   }
-
-  
-  
-  newRootView = nullptr;
-  newVM = nullptr;
 
   
   

@@ -62,7 +62,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
 #include "nsPresContextInlines.h"
-#include "nsViewManager.h"
 #include "nsXULElement.h"
 
 using namespace mozilla;
@@ -3067,17 +3066,9 @@ nsXULMenuCommandEvent::Run() {
     }
   }
 
-  
-  
-  
-  
-  
   RefPtr<nsPresContext> presContext = menu->OwnerDoc()->GetPresContext();
   RefPtr<PresShell> presShell =
       presContext ? presContext->PresShell() : nullptr;
-  RefPtr<nsViewManager> kungFuDeathGrip =
-      presShell ? presShell->GetViewManager() : nullptr;
-  (void)kungFuDeathGrip;  
 
   
   if (mCloseMenuMode != CloseMenuMode_None) {

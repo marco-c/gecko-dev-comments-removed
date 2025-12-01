@@ -90,7 +90,6 @@
 #include "nsSandboxFlags.h"
 #include "nsStyleSheetService.h"
 #include "nsView.h"
-#include "nsViewManager.h"
 #include "nsXULPopupManager.h"
 
 
@@ -334,10 +333,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   virtual ~nsDocumentViewer();
 
  private:
-  
-
-
-
   void MakeWindow();
   nsresult CreateDeviceContext(nsSubDocumentFrame* aContainerFrame);
 
@@ -382,8 +377,11 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
  protected:
   
-  nsViewManager* GetViewManager();
-
+  
+  
+  
+  
+  void AttachToTopLevelWidget();
   void DetachFromTopLevelWidget();
 
   
@@ -399,7 +397,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   
   nsCOMPtr<Document> mDocument;
   nsCOMPtr<nsIWidget> mWindow;  
-  RefPtr<nsViewManager> mViewManager;
   RefPtr<nsPresContext> mPresContext;
   RefPtr<PresShell> mPresShell;
 
@@ -413,7 +410,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<BFCachePreventionObserver> mBFCachePreventionObserver;
 
   nsIWidget* mParentWidget;  
-  bool mAttachedToParent;    
 
   LayoutDeviceIntRect mBounds;
 
@@ -475,7 +471,6 @@ void nsDocumentViewer::PrepareToStartLoad() {
 
   mStopped = false;
   mLoaded = false;
-  mAttachedToParent = false;
   mDeferredWindowClose = false;
 
 #ifdef NS_PRINTING
@@ -492,7 +487,6 @@ void nsDocumentViewer::PrepareToStartLoad() {
 
 nsDocumentViewer::nsDocumentViewer()
     : mParentWidget(nullptr),
-      mAttachedToParent(false),
       mNumURLStarts(0),
       mDestroyBlockedCount(0),
       mStopped(false),
@@ -683,12 +677,12 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   
   nsCOMPtr<Document> doc = mDocument;
   RefPtr<nsPresContext> presContext = mPresContext;
-  RefPtr<nsViewManager> viewManager = mViewManager;
-  mPresShell =
-      doc->CreatePresShell(presContext, viewManager, FindContainerFrame());
+  mPresShell = doc->CreatePresShell(presContext, FindContainerFrame());
   if (!mPresShell) {
     return NS_ERROR_FAILURE;
   }
+
+  AttachToTopLevelWidget();
 
   if (aDoInitialReflow) {
     
@@ -835,7 +829,6 @@ nsresult nsDocumentViewer::InitInternal(
       
       
       
-      MakeWindow();
       Hide();
 
 #ifdef NS_PRINT_PREVIEW
@@ -882,8 +875,6 @@ nsresult nsDocumentViewer::InitInternal(
   }
 
   if (aDoCreation && mPresContext) {
-    
-    
     rv = InitPresentationStuff(!makeCX);
   }
 
@@ -1467,19 +1458,7 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
   
   
   
-  if (mParentWidget && mPresContext) {
-    
-    DetachFromTopLevelWidget();
-
-    nsViewManager* vm = GetViewManager();
-    MOZ_ASSERT(vm, "no view manager");
-    nsView* v = vm->GetRootView();
-    MOZ_ASSERT(v, "no root view");
-    MOZ_ASSERT(mParentWidget, "no mParentWidget to set");
-    v->AttachToTopLevelWidget(mParentWidget);
-
-    mAttachedToParent = true;
-  }
+  AttachToTopLevelWidget();
 
   return NS_OK;
 }
@@ -1725,7 +1704,6 @@ nsDocumentViewer::Destroy() {
   }
 
   mWindow = nullptr;
-  mViewManager = nullptr;
   mContainer = WeakPtr<nsDocShell>();
 
   return NS_OK;
@@ -1861,8 +1839,6 @@ PresShell* nsDocumentViewer::GetPresShell() { return mPresShell; }
 
 nsPresContext* nsDocumentViewer::GetPresContext() { return mPresContext; }
 
-nsViewManager* nsDocumentViewer::GetViewManager() { return mViewManager; }
-
 NS_IMETHODIMP
 nsDocumentViewer::GetBounds(LayoutDeviceIntRect& aResult) {
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_AVAILABLE);
@@ -1914,11 +1890,7 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
   bool boundsChanged = !mBounds.IsEqualEdges(aBounds);
   mBounds = aBounds;
 
-  if (mWindow && !mAttachedToParent) {
-    
-    
-    mWindow->Resize(aBounds / mWindow->GetDesktopToDeviceScale(), false);
-  } else if (mPresContext && mViewManager) {
+  if (mPresContext) {
     
     
     
@@ -2021,15 +1993,6 @@ nsDocumentViewer::Show() {
     }
   }
 
-  if (mWindow) {
-    
-    
-    
-    if (!mAttachedToParent) {
-      mWindow->Show(true);
-    }
-  }
-
   
   
   
@@ -2070,8 +2033,6 @@ nsDocumentViewer::Show() {
       return rv;
     }
 
-    MakeWindow();
-
     if (mPresContext) {
       Hide();
 
@@ -2098,10 +2059,6 @@ nsDocumentViewer::Show() {
 
 NS_IMETHODIMP
 nsDocumentViewer::Hide() {
-  if (!mAttachedToParent && mWindow) {
-    mWindow->Show(false);
-  }
-
   if (!mPresShell) {
     return NS_OK;
   }
@@ -2142,17 +2099,9 @@ nsDocumentViewer::Hide() {
 
   DestroyPresContext();
 
-  mViewManager = nullptr;
   mWindow = nullptr;
   mDeviceContext = nullptr;
   mParentWidget = nullptr;
-
-  nsCOMPtr<nsIBaseWindow> base_win(mContainer);
-
-  if (base_win && !mAttachedToParent) {
-    base_win->SetParentWidget(nullptr);
-  }
-
   return NS_OK;
 }
 
@@ -2185,49 +2134,22 @@ nsDocumentViewer::ClearHistoryEntry() {
 
 
 
-void nsDocumentViewer::MakeWindow() {
-  if (GetIsPrintPreview()) {
-    return;
-  }
-
-  mViewManager = new nsViewManager();
-
-  
-  nsView* view = mViewManager->CreateView();
-
-  
-  
-  
-  
-  
-  if (!mDocument->IsResourceDoc()) {
-    MOZ_ASSERT_IF(!FindContainerFrame(), mParentWidget);
-    if (mParentWidget) {
-      
-      view->AttachToTopLevelWidget(mParentWidget);
-      mAttachedToParent = true;
-    }
-  }
-
-  
-  mViewManager->SetRootView(view);
-
-  mWindow = view->GetWidget();
-
-  
-  
-  
-  
-}
-
 void nsDocumentViewer::DetachFromTopLevelWidget() {
-  if (mViewManager) {
-    nsView* oldView = mViewManager->GetRootView();
+  if (mPresShell) {
+    nsView* oldView = mPresShell->GetRootView();
     if (oldView && oldView->HasWidget()) {
       oldView->DetachFromTopLevelWidget();
     }
   }
-  mAttachedToParent = false;
+}
+
+void nsDocumentViewer::AttachToTopLevelWidget() {
+  DetachFromTopLevelWidget();
+  if (mPresShell && mParentWidget) {
+    nsView* view = mPresShell->GetRootView();
+    view->AttachToTopLevelWidget(mParentWidget);
+    mWindow = mParentWidget;
+  }
 }
 
 nsSubDocumentFrame* nsDocumentViewer::FindContainerFrame() {
@@ -3207,7 +3129,6 @@ void nsDocumentViewer::SetIsPrintPreview(bool aIsPrintPreview) {
       DestroyPresShell();
     }
     mWindow = nullptr;
-    mViewManager = nullptr;
     mPresContext = nullptr;
     mPresShell = nullptr;
   }
@@ -3318,11 +3239,7 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
     mPresContext = CreatePresContext(
         mDocument, nsPresContext::eContext_PrintPreview, FindContainerFrame());
     mPresContext->SetPrintSettings(aPrintSettings);
-    rv = mPresContext->Init(mDeviceContext);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    MakeWindow();
-
+    MOZ_TRY(mPresContext->Init(mDeviceContext));
     MOZ_TRY(InitPresentationStuff(true));
   }
 
@@ -3351,7 +3268,6 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     DestroyPresContext();
   }
 
-  mViewManager = nullptr;
   mWindow = nullptr;
 
   NS_ENSURE_STATE(mDocument);
@@ -3427,8 +3343,7 @@ void nsDocumentViewer::DestroyPresContext() {
   mPresContext = nullptr;
 }
 
-void nsDocumentViewer::SetPrintPreviewPresentation(nsViewManager* aViewManager,
-                                                   nsPresContext* aPresContext,
+void nsDocumentViewer::SetPrintPreviewPresentation(nsPresContext* aPresContext,
                                                    PresShell* aPresShell) {
   
   
@@ -3439,16 +3354,10 @@ void nsDocumentViewer::SetPrintPreviewPresentation(nsViewManager* aViewManager,
   }
 
   mWindow = nullptr;
-  mViewManager = aViewManager;
   mPresContext = aPresContext;
   mPresShell = aPresShell;
 
-  if (mParentWidget) {
-    DetachFromTopLevelWidget();
-    nsView* rootView = mViewManager->GetRootView();
-    rootView->AttachToTopLevelWidget(mParentWidget);
-    mAttachedToParent = true;
-  }
+  AttachToTopLevelWidget();
 }
 
 
