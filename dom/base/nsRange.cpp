@@ -3060,7 +3060,11 @@ void nsRange::CollectClientRectsAndText(
   }
 
   if (aFlushLayout) {
-    aStartContainer->OwnerDoc()->FlushPendingNotifications(FlushType::Layout);
+    if (auto* content = nsIContent::FromNode(aStartContainer)) {
+      content->GetPrimaryFrame(FlushType::Layout);
+    } else {
+      aStartContainer->OwnerDoc()->FlushPendingNotifications(FlushType::Layout);
+    }
     
     if (!aStartContainer->IsInComposedDoc()) {
       return;
