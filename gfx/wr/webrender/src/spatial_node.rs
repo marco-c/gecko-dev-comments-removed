@@ -446,8 +446,34 @@ impl SpatialNode {
                     ReferenceFrameKind::Transform { .. } => source_transform,
                 };
 
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let parent_origin = match self.snapping_transform {
+                    Some(..) => {
+                        info.origin_in_parent_reference_frame
+                    }
+                    None => {
+                        snap_offset(
+                            info.origin_in_parent_reference_frame,
+                            state.coordinate_system_relative_scale_offset.scale,
+                        )
+                    }
+                };
+
                 let resolved_transform =
-                    LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
+                    LayoutFastTransform::with_vector(parent_origin)
                         .pre_transform(&source_transform);
 
                 
