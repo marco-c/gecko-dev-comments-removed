@@ -8,15 +8,10 @@
 #define DOM_QUOTA_DATE_H_
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/dom/quota/Constants.h"
 #include "prtime.h"
 
 namespace mozilla::dom::quota {
-
-namespace {
-
-const int64_t kSecPerDay = 86400;
-
-}
 
 
 
