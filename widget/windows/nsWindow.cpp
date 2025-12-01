@@ -1520,10 +1520,29 @@ DWORD nsWindow::WindowExStyle() {
 
 
 
+bool nsWindow::ShouldAssociateWithWinAppSDK() const {
+  
+  
+  
+  
+  
+  
+  return IsTopLevelWidget() && !mIsPIPWindow;
+}
+
 bool nsWindow::AssociateWithNativeWindow() {
   if (!mWnd || !IsWindow(mWnd)) {
     NS_ERROR("Invalid window handle");
     return false;
+  }
+
+  if (ShouldAssociateWithWinAppSDK()) {
+    
+    
+    
+    
+    
+    WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
   }
 
   
@@ -1552,12 +1571,7 @@ void nsWindow::DissociateFromNativeWindow() {
   DebugOnly<WNDPROC> wndProcBeforeDissociate =
       reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(
           mWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(*mPrevWndProc)));
-  
-  
-  
-  
-  NS_ASSERTION(WinUtils::MicaAvailable() ||
-                   wndProcBeforeDissociate == nsWindow::WindowProc,
+  NS_ASSERTION(wndProcBeforeDissociate == nsWindow::WindowProc,
                "Unstacked an unexpected native window procedure");
 
   WinUtils::SetNSWindowPtr(mWnd, nullptr);
@@ -2835,9 +2849,7 @@ void nsWindow::SetCustomTitlebar(bool aCustomTitlebar) {
     mCustomNonClientMetrics = {};
     ResetLayout();
   }
-  
-  
-  if (!mPIPWindow) {
+  if (ShouldAssociateWithWinAppSDK()) {
     WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
   }
 }

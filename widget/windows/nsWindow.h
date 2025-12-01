@@ -335,6 +335,8 @@ class nsWindow final : public nsIWidget {
 
   bool IsRTL() const { return mIsRTL; }
 
+  bool ShouldAssociateWithWinAppSDK() const;
+
   
 
 
