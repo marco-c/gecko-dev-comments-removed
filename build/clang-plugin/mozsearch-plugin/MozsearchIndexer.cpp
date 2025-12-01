@@ -375,7 +375,7 @@ private:
   
   
   std::string locationToString(SourceLocation Loc, size_t Length = 0) {
-    std::pair<FileID, unsigned> Pair = SM.getDecomposedLoc(Loc);
+    std::pair<FileID, unsigned> Pair = SM.getDecomposedExpansionLoc(Loc);
 
     bool IsInvalid;
     unsigned Line = SM.getLineNumber(Pair.first, Pair.second, &IsInvalid);
@@ -397,8 +397,8 @@ private:
   
   
   std::string lineRangeToString(SourceRange Range, bool omitEnd = false) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -446,8 +446,8 @@ private:
   
   
   std::string fullRangeToString(SourceRange Range) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -2005,12 +2005,12 @@ public:
     
     SourceLocation End = D->getLocation();
 
-    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedLoc(End);
+    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedExpansionLoc(End);
 
     
     for (ParmVarDecl *Param : D->parameters()) {
       std::pair<FileID, unsigned> ParamLoc =
-          SM.getDecomposedLoc(Param->getLocation());
+          SM.getDecomposedExpansionLoc(Param->getLocation());
 
       
       
@@ -2029,12 +2029,12 @@ public:
     
     SourceLocation End = D->getLocation();
 
-    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedLoc(End);
+    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedExpansionLoc(End);
 
     if (CXXRecordDecl *D2 = dyn_cast<CXXRecordDecl>(D)) {
       
       for (CXXBaseSpecifier &Base : D2->bases()) {
-        std::pair<FileID, unsigned> Loc = SM.getDecomposedLoc(Base.getEndLoc());
+        std::pair<FileID, unsigned> Loc = SM.getDecomposedExpansionLoc(Base.getEndLoc());
 
         
         
@@ -2067,10 +2067,10 @@ public:
       return Range1;
     }
 
-    std::pair<FileID, unsigned> Begin1 = SM.getDecomposedLoc(Range1.getBegin());
-    std::pair<FileID, unsigned> End1 = SM.getDecomposedLoc(Range1.getEnd());
-    std::pair<FileID, unsigned> Begin2 = SM.getDecomposedLoc(Range2.getBegin());
-    std::pair<FileID, unsigned> End2 = SM.getDecomposedLoc(Range2.getEnd());
+    std::pair<FileID, unsigned> Begin1 = SM.getDecomposedExpansionLoc(Range1.getBegin());
+    std::pair<FileID, unsigned> End1 = SM.getDecomposedExpansionLoc(Range1.getEnd());
+    std::pair<FileID, unsigned> Begin2 = SM.getDecomposedExpansionLoc(Range2.getBegin());
+    std::pair<FileID, unsigned> End2 = SM.getDecomposedExpansionLoc(Range2.getEnd());
 
     if (End1.first != Begin2.first) {
       
@@ -2091,9 +2091,9 @@ public:
   
   
   SourceRange validateRange(SourceLocation Loc, SourceRange Range) {
-    std::pair<FileID, unsigned> Decomposed = SM.getDecomposedLoc(Loc);
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Decomposed = SM.getDecomposedExpansionLoc(Loc);
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
 
     if (Begin.first != Decomposed.first || End.first != Decomposed.first) {
       return SourceRange();
