@@ -600,7 +600,7 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 
   RefPtr bc = document->GetBrowsingContext();
   MOZ_DIAGNOSTIC_ASSERT(bc);
-  bc->Navigate(urlRecord, *document->NodePrincipal(),
+  bc->Navigate(urlRecord, document, *document->NodePrincipal(),
                 IgnoreErrors(),
                aOptions.mHistory,  false,
                serializedState, apiMethodTracker);
@@ -686,44 +686,55 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   
   auto* childSHistory = traversable->GetChildSessionHistory();
-  auto performNavigationTraversalSteps =
-      [finished =
-           RefPtr(apiMethodTracker->FinishedPromise())](nsresult aResult) {
-        switch (aResult) {
-          case NS_ERROR_DOM_INVALID_STATE_ERR:
-            
-            
-            
-            finished->MaybeRejectWithInvalidStateError(
-                "No such entry with key found");
-            break;
-          case NS_ERROR_DOM_ABORT_ERR:
-            
-            
-            
-            
-            
-            finished->MaybeRejectWithAbortError("Navigation was canceled");
-            break;
-          case NS_ERROR_DOM_SECURITY_ERR:
-            
-            
-            
-            
-            
-            
-            finished->MaybeRejectWithSecurityError(
-                "Navigation was not allowed");
-            break;
-          case NS_OK:
-            
-            
-            break;
-          default:
-            MOZ_DIAGNOSTIC_ASSERT(false, "Unexpected result");
-            break;
-        }
-      };
+  auto performNavigationTraversalSteps = [apiMethodTracker](nsresult aResult) {
+    
+    
+    if (NS_SUCCEEDED(aResult)) {
+      return;
+    }
+
+    AutoJSAPI jsapi;
+    if (NS_WARN_IF(!jsapi.Init(
+            apiMethodTracker->mNavigationObject->GetParentObject()))) {
+      return;
+    }
+
+    ErrorResult rv;
+
+    switch (aResult) {
+      case NS_ERROR_DOM_INVALID_STATE_ERR:
+        
+        
+        
+        rv.ThrowInvalidStateError("No such entry with key found");
+        break;
+      case NS_ERROR_DOM_ABORT_ERR:
+        
+        
+        
+        
+        
+        
+        rv.ThrowAbortError("Navigation was canceled");
+        break;
+      case NS_ERROR_DOM_SECURITY_ERR:
+        
+        
+        
+        
+        
+        rv.ThrowSecurityError("Navigation was not allowed");
+        break;
+      default:
+        MOZ_DIAGNOSTIC_ASSERT(false, "Unexpected result");
+        rv.ThrowInvalidStateError("Unexpected result");
+        break;
+    }
+    JS::Rooted<JS::Value> rootedExceptionValue(jsapi.cx());
+    MOZ_ALWAYS_TRUE(
+        ToJSValue(jsapi.cx(), std::move(rv), &rootedExceptionValue));
+    apiMethodTracker->RejectFinishedPromise(rootedExceptionValue);
+  };
 
   
   
