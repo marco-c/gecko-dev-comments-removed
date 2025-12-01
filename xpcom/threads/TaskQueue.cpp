@@ -100,7 +100,7 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
   
   
   if (mIsShutdown && !mIsRunning) {
-    return NS_ERROR_UNEXPECTED;
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
   AbstractThread* currentThread;
