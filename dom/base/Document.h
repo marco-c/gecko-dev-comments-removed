@@ -104,7 +104,6 @@
 #include "nsURIHashKey.h"
 #include "nsWeakReference.h"
 #include "nsWindowSizes.h"
-#include "nsXULElement.h"
 #include "nscore.h"
 
 
@@ -184,6 +183,7 @@ class nsTextNode;
 class nsViewManager;
 class nsViewportInfo;
 class nsXULPrototypeDocument;
+class nsXULPrototypeElement;
 struct JSContext;
 struct nsFont;
 

@@ -103,6 +103,7 @@
 #include "nsStyleStructInlines.h"
 #include "nsTableWrapperFrame.h"
 #include "nsTextControlFrame.h"
+#include "nsXULElement.h"
 
 
 #include "RetainedDisplayListBuilder.h"
