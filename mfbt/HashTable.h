@@ -1506,7 +1506,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     
     ~ModIterator() {
       if (mRekeyed) {
-        mTable.mGen++;
+        mTable.incrementGeneration();
         mTable.infallibleRehashIfOverloaded();
       }
 
@@ -1582,16 +1582,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     ReentrancyGuard g1(*this);
     ReentrancyGuard g2(aOther);
 
-    
-    uint64_t generation = mGen;
-    mGen = aOther.mGen;
-    aOther.mGen = generation;
-
-    
-    uint64_t hashShift = mHashShift;
-    mHashShift = aOther.mHashShift;
-    aOther.mHashShift = hashShift;
-
+    std::swap(mGenAndHashShift, aOther.mGenAndHashShift);
     std::swap(mTable, aOther.mTable);
     std::swap(mEntryCount, aOther.mEntryCount);
     std::swap(mRemovedCount, aOther.mRemovedCount);
@@ -1603,8 +1594,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
  private:
   void moveFrom(HashTable& aRhs) {
-    mGen = aRhs.mGen;
-    mHashShift = aRhs.mHashShift;
+    mGenAndHashShift = aRhs.mGenAndHashShift;
     mTable = aRhs.mTable;
     mEntryCount = aRhs.mEntryCount;
     mRemovedCount = aRhs.mRemovedCount;
@@ -1623,11 +1613,11 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   static const uint32_t CAP_BITS = 30;
 
  public:
-  uint64_t mGen : 56;       
-  uint64_t mHashShift : 8;  
-  char* mTable;             
-  uint32_t mEntryCount;     
-  uint32_t mRemovedCount;   
+  uint64_t mGenAndHashShift;  
+                              
+  char* mTable;               
+  uint32_t mEntryCount;       
+  uint32_t mRemovedCount;     
 
 #ifdef DEBUG
   uint64_t mMutationCount;
@@ -1653,6 +1643,29 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   static const HashNumber sRemovedKey = Entry::sRemovedKey;
   static const HashNumber sCollisionBit = Entry::sCollisionBit;
 
+  static const uint64_t sHashShiftBits = 8;
+  static const uint64_t sHashShiftMask = (1 << sHashShiftBits) - 1;
+  static const uint64_t sGenerationShift = sHashShiftBits;
+
+  MOZ_ALWAYS_INLINE uint8_t hashShift() const {
+    return uint8_t(mGenAndHashShift & sHashShiftMask);
+  }
+  MOZ_ALWAYS_INLINE uint64_t gen() const {
+    return mGenAndHashShift >> sGenerationShift;
+  }
+
+ private:
+  void setGenAndHashShift(uint64_t aGeneration, uint8_t aHashShift) {
+    mGenAndHashShift = aGeneration << sGenerationShift | aHashShift;
+  }
+
+ public:
+  void incrementGeneration() { setGenAndHashShift(gen() + 1, hashShift()); }
+  void setHashShift(uint32_t aHashShift) {
+    MOZ_ASSERT((aHashShift & sHashShiftMask) == aHashShift);
+    mGenAndHashShift = (mGenAndHashShift & ~sHashShiftMask) | aHashShift;
+  }
+
   static uint32_t bestCapacity(uint32_t aLen) {
     static_assert(
         (sMaxInit * sAlphaDenominator) / sAlphaDenominator == sMaxInit,
@@ -1677,7 +1690,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     return capacity;
   }
 
-  static uint32_t hashShift(uint32_t aLen) {
+  static uint32_t hashShiftForLength(uint32_t aLen) {
     
     
     
@@ -1747,8 +1760,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
  public:
   HashTable(AllocPolicy aAllocPolicy, uint32_t aLen)
       : AllocPolicy(std::move(aAllocPolicy)),
-        mGen(0),
-        mHashShift(hashShift(aLen)),
+        mGenAndHashShift(hashShiftForLength(aLen)),
         mTable(nullptr),
         mEntryCount(0),
         mRemovedCount(0)
@@ -1770,7 +1782,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   }
 
  private:
-  HashNumber hash1(HashNumber aHash0) const { return aHash0 >> mHashShift; }
+  HashNumber hash1(HashNumber aHash0) const { return aHash0 >> hashShift(); }
 
   struct DoubleHash {
     HashNumber mHash2;
@@ -1778,8 +1790,8 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   };
 
   DoubleHash hash2(HashNumber aCurKeyHash) const {
-    uint32_t sizeLog2 = kHashNumberBits - mHashShift;
-    DoubleHash dh = {((aCurKeyHash << sizeLog2) >> mHashShift) | 1,
+    uint32_t sizeLog2 = kHashNumberBits - hashShift();
+    DoubleHash dh = {((aCurKeyHash << sizeLog2) >> hashShift()) | 1,
                      (HashNumber(1) << sizeLog2) - 1};
     return dh;
   }
@@ -1910,9 +1922,9 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     }
 
     
-    mHashShift = kHashNumberBits - newLog2;
     mRemovedCount = 0;
-    mGen++;
+    incrementGeneration();
+    setHashShift(kHashNumberBits - newLog2);
     mTable = newTable;
 
     
@@ -1994,7 +2006,7 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   
   void rehashTableInPlace() {
     mRemovedCount = 0;
-    mGen++;
+    incrementGeneration();
     forEachSlot(mTable, capacity(), [&](Slot& slot) { slot.unsetCollision(); });
     for (uint32_t i = 0; i < capacity();) {
       Slot src = slotForIndex(i);
@@ -2067,8 +2079,9 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
     if (empty()) {
       
       freeTable(*this, mTable, capacity());
-      mGen++;
-      mHashShift = hashShift(0);  
+      incrementGeneration();
+      setHashShift(
+          hashShiftForLength(0));  
       mTable = nullptr;
       mRemovedCount = 0;
       return;
@@ -2119,11 +2132,11 @@ class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
 
   uint32_t count() const { return mEntryCount; }
 
-  uint32_t rawCapacity() const { return 1u << (kHashNumberBits - mHashShift); }
+  uint32_t rawCapacity() const { return 1u << (kHashNumberBits - hashShift()); }
 
   uint32_t capacity() const { return mTable ? rawCapacity() : 0; }
 
-  Generation generation() const { return Generation(mGen); }
+  Generation generation() const { return Generation(gen()); }
 
   size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(mTable);
