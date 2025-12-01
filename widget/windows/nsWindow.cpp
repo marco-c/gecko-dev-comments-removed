@@ -1540,7 +1540,7 @@ bool nsWindow::AssociateWithNativeWindow() {
     
     
     
-    WindowsUIUtils::SetIsTitlebarCollapsed(mWnd, mCustomNonClient);
+    WindowsUIUtils::AssociateWithWinAppSDK(mWnd);
   }
 
   

@@ -1211,7 +1211,35 @@ using GetWindowIdFromWindowType = HRESULT(STDAPICALLTYPE*)(
 static GetWindowIdFromWindowType sGetWindowIdFromWindowProc = nullptr;
 
 
-bool InitializeWindowsAppSDKStatics() {
+[[nodiscard]] static bool InitializeWindowsAppSDKStatics() {
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  
+  
+  
+  if (!widget::WinUtils::MicaAvailable()) {
+    MOZ_LOG(
+        gWindowsLog, LogLevel::Info,
+        ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
+    MOZ_LOG(gWindowsLog, LogLevel::Info,
+            ("Skipping SetIsTitlebarCollapsed() because "
+             "widget.windows.windowsappsdk.enabled is false"));
+    return false;
+  }
   if (!sGetWindowIdFromWindowProc) {
     HMODULE frameworkUdkModule =
         ::LoadLibraryW(L"Microsoft.Internal.FrameworkUdk.dll");
@@ -1303,51 +1331,14 @@ bool InitializeWindowsAppSDKStatics() {
   }
   return true;
 }
-#endif
 
-void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
-#ifndef __MINGW32__
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  
-  
-  
-  if (!widget::WinUtils::MicaAvailable()) {
-    MOZ_LOG(
-        gWindowsLog, LogLevel::Info,
-        ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
-    return;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
-    MOZ_LOG(gWindowsLog, LogLevel::Info,
-            ("Skipping SetIsTitlebarCollapsed() because "
-             "widget.windows.windowsappsdk.enabled is false"));
-    return;
-  }
+static RefPtr<winrt::Microsoft::UI::Windowing::IAppWindow>
+GetAppWindowForWindow(HWND aWnd) {
   if (!InitializeWindowsAppSDKStatics()) {
-    return;
+    return nullptr;
   }
-
   
-  
-  
-  
-  
-
-  
-  struct winrt::Microsoft::UI::WindowId windowId;
+  struct winrt::Microsoft::UI::WindowId windowId{0};
   HRESULT hr = sGetWindowIdFromWindowProc(aWnd, &windowId);
   if (FAILED(hr) || windowId.value == 0) {
     MOZ_LOG(gWindowsLog, LogLevel::Error,
@@ -1355,43 +1346,46 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
              "GetWindowIdFromWindow failed, hr=0x%" PRIX32,
              static_cast<uint32_t>(hr)));
     MOZ_ASSERT_UNREACHABLE("GetWindowIdFromWindow failed");
-    return;
+    return nullptr;
   }
 
   RefPtr<winrt::Microsoft::UI::Windowing::IAppWindow> appWindow;
-  hr = (HRESULT)sAppWindowStatics->GetFromWindowId(windowId,
-                                                   getter_AddRefs(appWindow));
-  if (FAILED(hr) || !appWindow) {
-    
-    
+  sAppWindowStatics->GetFromWindowId(windowId, getter_AddRefs(appWindow));
+  return appWindow;
+}
+#endif
+
+void WindowsUIUtils::AssociateWithWinAppSDK(HWND aWnd) {
+#ifndef __MINGW32__
+  RefPtr win = GetAppWindowForWindow(aWnd);
+  (void)win;
+#endif
+}
+
+void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
+#ifndef __MINGW32__
+  
+  
+  
+  
+  
+  RefPtr appWindow = GetAppWindowForWindow(aWnd);
+  if (!appWindow) {
     MOZ_LOG(gWindowsLog, LogLevel::Warning,
             ("Skipping SetIsTitlebarCollapsed() because "
-             "IAppWindow could not be acquired from window id, hr=%" PRIX32,
-             static_cast<uint32_t>(hr)));
+             "IAppWindow could not be acquired from window id"));
     return;
   }
 
-  RefPtr<IInspectable> inspectableTitleBar;
-  hr = appWindow->get_TitleBar(getter_AddRefs(inspectableTitleBar));
-  if (FAILED(hr) || !inspectableTitleBar) {
+  RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar> titleBar;
+  HRESULT hr = appWindow->get_TitleBar(getter_AddRefs(titleBar));
+  if (FAILED(hr) || !titleBar) {
     
     
     MOZ_LOG(gWindowsLog, LogLevel::Warning,
             ("Skipping SetIsTitlebarCollapsed() because "
              "titlebar could not be acquired, hr=%" PRIX32,
              static_cast<uint32_t>(hr)));
-    return;
-  }
-  RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar> titleBar;
-  hr = inspectableTitleBar->QueryInterface(
-      __uuidof(winrt::Microsoft::UI::Windowing::IAppWindowTitleBar),
-      (void**)getter_AddRefs(titleBar));
-  if (FAILED(hr) || !titleBar) {
-    MOZ_LOG(gWindowsLog, LogLevel::Error,
-            ("Skipping SetIsTitlebarCollapsed() because "
-             "IAppWindowTitleBar could not be acquired, hr=%" PRIX32,
-             static_cast<uint32_t>(hr)));
-    MOZ_ASSERT_UNREACHABLE("IAppWindowTitleBar could not be acquired");
     return;
   }
   if (aIsCollapsed) {
@@ -1410,7 +1404,7 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
   if (aIsCollapsed) {
     
     RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar2> titleBar2;
-    hr = inspectableTitleBar->QueryInterface(
+    hr = titleBar->QueryInterface(
         __uuidof(winrt::Microsoft::UI::Windowing::IAppWindowTitleBar2),
         (void**)getter_AddRefs(titleBar2));
     if (FAILED(hr) || !titleBar2) {
