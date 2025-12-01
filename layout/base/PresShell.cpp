@@ -1261,6 +1261,9 @@ void PresShell::Destroy() {
   }
 
   if (mViewManager) {
+    if (auto* root = mViewManager->GetRootView()) {
+      root->Destroy();
+    }
     
     
     mViewManager->SetPresShell(nullptr);
@@ -1799,8 +1802,44 @@ void PresShell::RefreshZoomConstraintsForScreenSizeChange() {
   }
 }
 
+nsSize PresShell::MaybePendingLayoutViewportSize() const {
+  if (mPendingLayoutViewportSize) {
+    return *mPendingLayoutViewportSize;
+  }
+  return mPresContext ? mPresContext->GetVisibleArea().Size() : nsSize();
+}
+
+bool PresShell::ShouldDelayResize() const {
+  if (!IsVisible()) {
+    return true;
+  }
+  nsRefreshDriver* rd = GetRefreshDriver();
+  return rd && rd->IsResizeSuppressed();
+}
+
+void PresShell::FlushDelayedResize() {
+  if (!mPendingLayoutViewportSize) {
+    return;
+  }
+  auto size = mPendingLayoutViewportSize.extract();
+  if (!mPresContext || size == mPresContext->GetVisibleArea().Size()) {
+    return;
+  }
+  ResizeReflow(size);
+}
+
+void PresShell::SetLayoutViewportSize(const nsSize& aSize, bool aDelay) {
+  mPendingLayoutViewportSize = Some(aSize);
+  if (aDelay || ShouldDelayResize()) {
+    SetNeedStyleFlush();
+    SetNeedLayoutFlush();
+    return;
+  }
+  FlushDelayedResize();
+}
+
 void PresShell::ForceResizeReflowWithCurrentDimensions() {
-  ResizeReflow(mViewManager->GetWindowDimensions());
+  ResizeReflow(MaybePendingLayoutViewportSize());
 }
 
 void PresShell::ResizeReflow(const nsSize& aSize,
@@ -4375,8 +4414,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   }
 
   
-  RefPtr<nsViewManager> viewManager = mViewManager;
-  
   
   
   
@@ -4395,7 +4432,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   
   
   if (MOZ_LIKELY(!mIsDestroying)) {
-    viewManager->FlushDelayedResize();
+    FlushDelayedResize();
     mPresContext->FlushPendingMediaFeatureValuesChanged();
   }
 
@@ -10137,23 +10174,16 @@ void PresShell::WillPaint() {
 }
 
 void PresShell::DidPaintWindow() {
-  nsRootPresContext* rootPresContext = mPresContext->GetRootPresContext();
-  if (rootPresContext != mPresContext) {
-    
-    
+  if (mHasReceivedPaintMessage) {
     return;
   }
-
-  if (!mHasReceivedPaintMessage) {
-    mHasReceivedPaintMessage = true;
-
-    nsCOMPtr<nsIObserverService> obsvc = services::GetObserverService();
-    if (obsvc && mDocument) {
-      nsPIDOMWindowOuter* window = mDocument->GetWindow();
-      if (window && nsGlobalWindowOuter::Cast(window)->IsChromeWindow()) {
-        obsvc->NotifyObservers(window, "widget-first-paint", nullptr);
-      }
-    }
+  mHasReceivedPaintMessage = true;
+  nsPIDOMWindowOuter* win = mDocument->GetWindow();
+  if (!win || !nsGlobalWindowOuter::Cast(win)->IsChromeWindow()) {
+    return;
+  }
+  if (nsCOMPtr<nsIObserverService> obsvc = services::GetObserverService()) {
+    obsvc->NotifyObservers(win, "widget-first-paint", nullptr);
   }
 }
 
@@ -12493,7 +12523,7 @@ void PresShell::PaintSynchronously() {
     return;
   }
 
-  mViewManager->FlushDelayedResize();
+  FlushDelayedResize();
 
   mIsPainting = true;
   auto cleanUpPaintingBit = MakeScopeExit([&] { mIsPainting = false; });

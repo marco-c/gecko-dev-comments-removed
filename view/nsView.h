@@ -138,11 +138,6 @@ class nsView final : public nsIWidgetListener {
   void Destroy();
 
   
-
-
-  nsSize GetSize() const { return mSize; }
-
-  
   void DetachWidget();
 
   
@@ -199,11 +194,7 @@ class nsView final : public nsIWidgetListener {
   void AndroidPipModeChanged(bool) override;
 #endif
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void WillPaintWindow(nsIWidget* aWidget) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool PaintWindow(nsIWidget* aWidget, LayoutDeviceIntRegion aRegion) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void DidPaintWindow() override;
+  void PaintWindow(nsIWidget* aWidget) override;
   void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                           const mozilla::TimeStamp& aCompositeStart,
                           const mozilla::TimeStamp& aCompositeEnd) override;
@@ -218,8 +209,6 @@ class nsView final : public nsIWidgetListener {
  private:
   explicit nsView(nsViewManager* = nullptr);
 
-  void SetSize(const nsSize& aSize) { mSize = aSize; }
-
   void CallOnAllRemoteChildren(
       const std::function<mozilla::CallState(mozilla::dom::BrowserParent*)>&
           aCallback);
@@ -227,7 +216,6 @@ class nsView final : public nsIWidgetListener {
   nsViewManager* mViewManager;
   nsCOMPtr<nsIWidget> mWindow;
   nsCOMPtr<nsIWidget> mPreviousWindow;
-  nsSize mSize;
 };
 
 #endif

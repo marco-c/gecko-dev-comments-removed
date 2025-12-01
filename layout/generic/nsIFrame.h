@@ -3316,19 +3316,9 @@ class nsIFrame : public nsQueryFrame {
     return IsIntrinsicKeyword(*bSize);
   }
 
- protected:
-  nsView* DoGetView() const;
-
  public:
   
   nsIWidget* GetOwnWidget() const;
-
-  nsView* GetView() const {
-    if (MOZ_LIKELY(!IsViewportFrame())) {
-      return nullptr;
-    }
-    return DoGetView();
-  }
 
   
 

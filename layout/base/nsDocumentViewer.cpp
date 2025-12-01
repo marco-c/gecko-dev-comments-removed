@@ -338,8 +338,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
 
 
-
-  void MakeWindow(const nsSize& aSize);
+  void MakeWindow();
   nsresult CreateDeviceContext(nsSubDocumentFrame* aContainerFrame);
 
   
@@ -714,7 +713,6 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
         mPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
 
     const nsSize size = LayoutDevicePixel::ToAppUnits(mBounds.Size(), p2a);
-    mViewManager->SetWindowDimensions(size);
     mPresContext->SetInitialVisibleArea(nsRect(nsPoint(), size));
     
     mPresContext->RecomputeBrowsingContextDependentData();
@@ -837,9 +835,7 @@ nsresult nsDocumentViewer::InitInternal(
       
       
       
-
-      MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(aBounds.width),
-                        mPresContext->DevPixelsToAppUnits(aBounds.height)));
+      MakeWindow();
       Hide();
 
 #ifdef NS_PRINT_PREVIEW
@@ -1934,8 +1930,7 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
 
     int32_t p2a = mPresContext->AppUnitsPerDevPixel();
     const nsSize size = LayoutDeviceSize::ToAppUnits(mBounds.Size(), p2a);
-    nsView* rootView = mViewManager->GetRootView();
-    if (boundsChanged && rootView && rootView->GetSize() == size) {
+    if (boundsChanged && mPresContext->GetVisibleArea().Size() == size) {
       
       
       
@@ -1956,8 +1951,9 @@ nsDocumentViewer::SetBoundsWithFlags(const LayoutDeviceIntRect& aBounds,
       }
     }
 
-    mViewManager->SetWindowDimensions(
-        size, !!(aFlags & nsIDocumentViewer::eDelayResize));
+    RefPtr ps = mPresShell;
+    ps->SetLayoutViewportSize(size,
+                              !!(aFlags & nsIDocumentViewer::eDelayResize));
   }
 
   
@@ -2074,8 +2070,7 @@ nsDocumentViewer::Show() {
       return rv;
     }
 
-    MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
-                      mPresContext->DevPixelsToAppUnits(mBounds.height)));
+    MakeWindow();
 
     if (mPresContext) {
       Hide();
@@ -2190,7 +2185,7 @@ nsDocumentViewer::ClearHistoryEntry() {
 
 
 
-void nsDocumentViewer::MakeWindow(const nsSize& aSize) {
+void nsDocumentViewer::MakeWindow() {
   if (GetIsPrintPreview()) {
     return;
   }
@@ -2198,7 +2193,7 @@ void nsDocumentViewer::MakeWindow(const nsSize& aSize) {
   mViewManager = new nsViewManager();
 
   
-  nsView* view = mViewManager->CreateView(aSize);
+  nsView* view = mViewManager->CreateView();
 
   
   
@@ -3326,8 +3321,7 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
     rv = mPresContext->Init(mDeviceContext);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    MakeWindow(nsSize(mPresContext->DevPixelsToAppUnits(mBounds.width),
-                      mPresContext->DevPixelsToAppUnits(mBounds.height)));
+    MakeWindow();
 
     MOZ_TRY(InitPresentationStuff(true));
   }

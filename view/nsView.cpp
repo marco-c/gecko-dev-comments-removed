@@ -22,6 +22,7 @@
 #include "nsContentUtils.h"  
 #include "nsDocShell.h"
 #include "nsLayoutUtils.h"
+#include "WindowRenderer.h"
 #include "mozilla/StartupTimeline.h"
 
 using namespace mozilla;
@@ -127,7 +128,6 @@ void nsView::List(FILE* out, int32_t aIndent) const {
     fprintf(out, "(widget=%p[%" PRIuPTR "] pos=%s) ", (void*)mWindow,
             widgetRefCnt, ToString(mWindow->GetBounds()).c_str());
   }
-  fprintf(out, "{%d, %d}", mSize.width, mSize.height);
   for (i = aIndent; --i >= 0;) fputs("  ", out);
   fputs(">\n", out);
 }
@@ -137,7 +137,7 @@ PresShell* nsView::GetPresShell() { return GetViewManager()->GetPresShell(); }
 
 bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
                            int32_t aHeight) {
-  PresShell* ps = GetPresShell();
+  RefPtr<PresShell> ps = GetPresShell();
   if (!ps) {
     return false;
   }
@@ -158,7 +158,8 @@ bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
     frame->InvalidateFrame();
   }
   const LayoutDeviceIntSize size(aWidth, aHeight);
-  mViewManager->SetWindowDimensions(LayoutDeviceIntSize::ToAppUnits(size, p2a));
+  ps->SetLayoutViewportSize(LayoutDeviceIntSize::ToAppUnits(size, p2a),
+                             false);
 
   if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
     pm->AdjustPopupsOnWindowChange(ps);
@@ -228,20 +229,20 @@ void nsView::AndroidPipModeChanged(bool aPipMode) {
 }
 #endif
 
-void nsView::WillPaintWindow(nsIWidget* aWidget) {
-  RefPtr<nsViewManager> vm = mViewManager;
-  vm->WillPaintWindow(aWidget);
-}
-
-bool nsView::PaintWindow(nsIWidget* aWidget, LayoutDeviceIntRegion) {
-  RefPtr<nsViewManager> vm = mViewManager;
-  vm->PaintWindow(aWidget);
-  return true;
-}
-
-void nsView::DidPaintWindow() {
-  RefPtr<nsViewManager> vm = mViewManager;
-  vm->DidPaintWindow();
+void nsView::PaintWindow(nsIWidget* aWidget) {
+  RefPtr ps = GetPresShell();
+  if (!ps) {
+    return;
+  }
+  RefPtr renderer = aWidget->GetWindowRenderer();
+  if (!renderer->NeedsWidgetInvalidation()) {
+    ps->PaintSynchronously();
+    renderer->FlushRendering(wr::RenderReasons::WIDGET);
+  } else {
+    ps->SyncPaintFallback(ps->GetRootFrame(), renderer);
+  }
+  mozilla::StartupTimeline::RecordOnce(mozilla::StartupTimeline::FIRST_PAINT);
+  ps->DidPaintWindow();
 }
 
 void nsView::DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,

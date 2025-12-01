@@ -2153,15 +2153,11 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       
       
       
-      nsIFrame* frame = GetFrame();
-      if (frame) {
-        nsView* view = frame->GetView();
-        if (view) {
-          ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
-          if (scrollContainerFrame || view->GetWidget() ||
-              !frame->GetParent()) {
-            rel.AppendTarget(LocalParent());
-          }
+      if (nsIFrame* frame = GetFrame()) {
+        ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(frame);
+        if (scrollContainerFrame || frame->GetOwnWidget() ||
+            !frame->GetParent()) {
+          rel.AppendTarget(LocalParent());
         }
       }
 

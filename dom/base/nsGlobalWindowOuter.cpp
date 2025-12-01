@@ -3432,24 +3432,25 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
 
   NS_ENSURE_STATE(mDocShell);
 
-  RefPtr<nsPresContext> presContext = mDocShell->GetPresContext();
-  PresShell* presShell = mDocShell->GetPresShell();
-
-  if (!presContext || !presShell) {
+  RefPtr<PresShell> presShell = mDocShell->GetPresShell();
+  if (!presShell) {
     aSize = {};
     return NS_OK;
   }
 
   
   
-  if (RefPtr<nsViewManager> viewManager = presShell->GetViewManager()) {
-    viewManager->FlushDelayedResize();
+  presShell->FlushDelayedResize();
+
+  nsPresContext* pc = presShell->GetPresContext();
+  if (NS_WARN_IF(!pc)) {
+    aSize = {};
+    return NS_OK;
   }
 
   nsSize innerSize = presShell->GetInnerSize();
-  if (presContext->GetDynamicToolbarState() == DynamicToolbarState::Collapsed) {
-    innerSize =
-        nsLayoutUtils::ExpandHeightForViewportUnits(presContext, innerSize);
+  if (pc->GetDynamicToolbarState() == DynamicToolbarState::Collapsed) {
+    innerSize = nsLayoutUtils::ExpandHeightForViewportUnits(pc, innerSize);
   }
 
   aSize = CSSPixel::FromAppUnits(innerSize);

@@ -366,6 +366,13 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT bool ResizeReflowIgnoreOverride(
       const nsSize&, ResizeReflowOptions = ResizeReflowOptions::NoOption);
   MOZ_CAN_RUN_SCRIPT void ForceResizeReflowWithCurrentDimensions();
+  MOZ_CAN_RUN_SCRIPT void FlushDelayedResize();
+  nsSize MaybePendingLayoutViewportSize() const;
+  bool ShouldDelayResize() const;
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetLayoutViewportSize(const nsSize&,
+                                                         bool aDelay);
 
   
   enum class ResizeEventKind : uint8_t { Regular, Visual };
@@ -1087,11 +1094,8 @@ class PresShell final : public nsStubDocumentObserver,
                        bool aDontRetargetEvents, nsEventStatus* aEventStatus);
   bool ShouldIgnoreInvalidation();
   
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void DidPaintWindow();
+  MOZ_CAN_RUN_SCRIPT
+  void DidPaintWindow();
 
   bool IsVisible() const;
   bool IsUnderHiddenEmbedderElement() const {
@@ -3337,6 +3341,9 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   nsSize mVisualViewportSize;
+
+  
+  Maybe<nsSize> mPendingLayoutViewportSize;
 
   using Arena = nsPresArena<8192, ArenaObjectID, eArenaObjectID_COUNT>;
   Arena mFrameArena;

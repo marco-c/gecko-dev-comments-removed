@@ -541,19 +541,16 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     
     
     (void)mDeviceContext->CheckDPIChange();
-    OwningNonNull<mozilla::PresShell> presShell(*mPresShell);
+    RefPtr ps = mPresShell;
     
     
-    RefPtr<nsViewManager> vm = presShell->GetViewManager();
-    if (!vm) {
-      return;
-    }
     auto oldSizeDevPixels = LayoutDeviceSize::FromAppUnits(
-        vm->GetWindowDimensions(), oldAppUnitsPerDevPixel);
+        ps->MaybePendingLayoutViewportSize(), oldAppUnitsPerDevPixel);
 
     UIResolutionChangedInternal();
-    vm->SetWindowDimensions(
-        LayoutDeviceSize::ToAppUnits(oldSizeDevPixels, AppUnitsPerDevPixel()));
+    ps->SetLayoutViewportSize(
+        LayoutDeviceSize::ToAppUnits(oldSizeDevPixels, AppUnitsPerDevPixel()),
+         false);
     return;
   }
 
@@ -1401,17 +1398,18 @@ void nsPresContext::SetFullZoom(float aZoom) {
 
   
   
+  RefPtr ps = mPresShell;
   const auto oldSizeDevPixels = LayoutDeviceSize::FromAppUnits(
-      mPresShell->GetViewManager()->GetWindowDimensions(),
-      mCurAppUnitsPerDevPixel);
+      ps->MaybePendingLayoutViewportSize(), mCurAppUnitsPerDevPixel);
   mDeviceContext->SetFullZoom(aZoom);
 
   mFullZoom = aZoom;
 
   AppUnitsPerDevPixelChanged();
 
-  mPresShell->GetViewManager()->SetWindowDimensions(
-      LayoutDeviceSize::ToAppUnits(oldSizeDevPixels, AppUnitsPerDevPixel()));
+  ps->SetLayoutViewportSize(
+      LayoutDeviceSize::ToAppUnits(oldSizeDevPixels, AppUnitsPerDevPixel()),
+       false);
 }
 
 void nsPresContext::SetOverrideDPPX(float aDPPX) {

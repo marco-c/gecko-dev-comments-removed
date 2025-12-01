@@ -12,7 +12,6 @@
 #include "nsCRT.h"
 #include "nsTArray.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 
 class nsIWidget;
@@ -40,10 +39,7 @@ class nsViewManager final {
 
 
 
-
-
-
-  nsView* CreateView(const nsSize& aSize);
+  nsView* CreateView();
 
   
 
@@ -58,27 +54,6 @@ class nsViewManager final {
 
 
   void SetRootView(nsView* aView);
-
-  
-  nsSize GetWindowDimensions() const;
-
-  
-
-
-
-  void SetWindowDimensions(const nsSize& aSize, bool aDelayResize = false);
-
-  
-
-
-  void FlushDelayedResize();
-
-  
-
-
-
-
-  void ResizeView(nsView* aView, const nsSize& aSize);
 
   
 
@@ -103,18 +78,7 @@ class nsViewManager final {
  private:
   static uint32_t gLastUserEventTime;
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DoSetWindowDimensions(const nsSize&);
-  bool ShouldDelayResize() const;
-
-  MOZ_CAN_RUN_SCRIPT void WillPaintWindow(nsIWidget* aWidget);
-  MOZ_CAN_RUN_SCRIPT void PaintWindow(nsIWidget* aWidget);
-  MOZ_CAN_RUN_SCRIPT void DidPaintWindow();
-
   mozilla::PresShell* mPresShell;
-
-  
-  
-  nsSize mDelayedResize;
 
   nsView* mRootView;
   
