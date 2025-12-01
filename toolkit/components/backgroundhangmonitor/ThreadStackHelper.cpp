@@ -202,7 +202,8 @@ void ThreadStackHelper::CollectJitReturnAddr(void* aAddr) {
 }
 
 void ThreadStackHelper::CollectWasmOrSyncJITFrame(
-    JS::ProfilingCategoryPair aCategory, const char* aLabel) {
+    JS::ProfilingCategoryPair aCategory, const char* aLabel,
+    uint32_t aSourceId) {
   MOZ_RELEASE_ASSERT(mStackToFill);
   
   
