@@ -12,6 +12,7 @@
 #include "mozilla/dom/SVGAnimatedString.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/gfx/2D.h"
+#include "nsISizeOf.h"
 #include "nsImageLoadingContent.h"
 
 nsresult NS_NewSVGImageElement(
@@ -43,6 +44,7 @@ class SVGImageElement final : public SVGImageElementBase,
   
 
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   
   void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
