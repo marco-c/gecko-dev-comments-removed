@@ -308,11 +308,11 @@ TEST(TestAudioTrackGraph, NotifyDeviceStarted)
       nullptr, GetMainThreadSerialEventTarget());
 
   RefPtr<SourceMediaTrack> dummySource;
-  (void)WaitFor(InvokeAsync([&] {
+  (void)WaitForResolve(InvokeAsync([&] {
     
     
     dummySource = graph->CreateSourceTrack(MediaSegment::AUDIO);
-
+    dummySource->AddAudioOutput(reinterpret_cast<void*>(1), nullptr);
     return graph->NotifyWhenDeviceStarted(nullptr);
   }));
 
