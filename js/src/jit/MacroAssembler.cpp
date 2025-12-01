@@ -9936,17 +9936,13 @@ void MacroAssembler::scrambleHashCode(Register result) {
   mul32(Imm32(mozilla::kGoldenRatioU32), result);
 }
 
-void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
-                                           Register temp) {
+void MacroAssembler::hashAndScrambleValue(ValueOperand value, Register result,
+                                          Register temp) {
   
   
-
-#ifdef DEBUG
-  Label ok;
-  branchTestGCThing(Assembler::NotEqual, value, &ok);
-  assumeUnreachable("Unexpected GC thing");
-  bind(&ok);
-#endif
+  
+  
+  
 
   
 #ifdef JS_PUNBOX64
@@ -9980,6 +9976,21 @@ void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
   
   
   mul32(Imm32(mozilla::kGoldenRatioU32 * mozilla::kGoldenRatioU32), result);
+}
+
+void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
+                                           Register temp) {
+  
+  
+
+#ifdef DEBUG
+  Label ok;
+  branchTestGCThing(Assembler::NotEqual, value, &ok);
+  assumeUnreachable("Unexpected GC thing");
+  bind(&ok);
+#endif
+
+  hashAndScrambleValue(value, result, temp);
 }
 
 void MacroAssembler::prepareHashString(Register str, Register result,
@@ -10470,6 +10481,33 @@ void MacroAssembler::loadSetObjectSize(Register setObj, Register result) {
 
 void MacroAssembler::loadMapObjectSize(Register mapObj, Register result) {
   loadOrderedHashTableCount<MapObject>(mapObj, result);
+}
+
+void MacroAssembler::prepareHashMFBT(Register hashCode, bool alreadyScrambled) {
+  
+  static_assert(sizeof(HashNumber) == sizeof(uint32_t));
+
+  
+  
+  if (!alreadyScrambled) {
+    
+    scrambleHashCode(hashCode);
+  }
+
+  const mozilla::HashNumber RemovedKey = mozilla::detail::kHashTableRemovedKey;
+  const mozilla::HashNumber CollisionBit =
+      mozilla::detail::kHashTableCollisionBit;
+
+  
+  
+  Label isLive;
+  branch32(Assembler::Above, hashCode, Imm32(RemovedKey), &isLive);
+  
+  sub32(Imm32(RemovedKey + 1), hashCode);
+  bind(&isLive);
+
+  
+  and32(Imm32(~CollisionBit), hashCode);
 }
 
 
