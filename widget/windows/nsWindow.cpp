@@ -4759,17 +4759,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
   
   
   
-  LRESULT dwmHitResult;
-  if (mCustomNonClient &&
-      DwmDefWindowProc(mWnd, msg, wParam, lParam, &dwmHitResult)) {
-    *aRetValue = dwmHitResult;
-    return true;
-  }
-
-  
-  
-  
-  
   
   
   static const bool sSwitchKeyboardLayout =
@@ -4978,11 +4967,6 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
 
       
-
-
-
-
-
 
 
       if (!mCustomNonClient) {
