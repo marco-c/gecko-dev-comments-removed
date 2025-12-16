@@ -372,7 +372,7 @@ class Assembler : public AssemblerShared,
   bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos,
                             bool trampoline = false);
   int32_t branchOffsetHelper(Label* L, OffsetSize bits);
-  int32_t branchLongOffset(Label* L);
+  int32_t branchLongOffsetHelper(Label* L);
 
   
   

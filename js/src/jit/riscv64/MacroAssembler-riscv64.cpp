@@ -4999,13 +4999,13 @@ void MacroAssemblerRiscv64::BranchLong(Label* L) {
   
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  int32_t imm = branchLongOffset(L);
+  int32_t imm = branchLongOffsetHelper(L);
   GenPCRelativeJump(scratch, imm);
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLinkLong(Label* L) {
   
-  int32_t imm = branchLongOffset(L);
+  int32_t imm = branchLongOffsetHelper(L);
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
   GenPCRelativeJumpAndLink(scratch, imm);
