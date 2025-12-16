@@ -63,6 +63,8 @@ function assert_style_value_equals(a, b) {
       break;
     case 'CSSMathSum':
     case 'CSSMathProduct':
+      assert_style_value_array_unordered_equals(a.values, b.values);
+      break;
     case 'CSSMathMin':
     case 'CSSMathMax':
       assert_style_value_array_equals(a.values, b.values);
@@ -124,6 +126,34 @@ function assert_style_value_array_equals(a, b) {
   for (let i = 0; i < a.length; i++) {
     assert_style_value_equals(a[i], b[i]);
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+function assert_style_value_array_unordered_equals(a, b) {
+  assert_equals(a.length, b.length);
+
+  const remaining = [...b];
+  a.forEach((valueA) => {
+    const matched = remaining.some((valueB, i) => {
+      try {
+        assert_style_value_equals(valueA, valueB);
+        remaining.splice(i, 1);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    assert_true(matched);
+  });
 }
 
 const gValidUnits = [
