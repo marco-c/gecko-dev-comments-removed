@@ -7,24 +7,24 @@
 
 
 
-function RootContainer(markupView, node) {
-  this.doc = markupView.doc;
-  this.elt = this.doc.createElement("ul");
-  
-  this.elt.setAttribute("role", "tree");
-  this.elt.setAttribute("tabindex", "0");
-  this.elt.setAttribute("aria-dropeffect", "none");
-  this.elt.container = this;
-  this.children = this.elt;
-  this.node = node;
-  this.toString = () => "[root container]";
-}
+class RootContainer {
+  constructor(markupView, node) {
+    this.doc = markupView.doc;
+    this.elt = this.doc.createElement("ul");
+    
+    this.elt.setAttribute("role", "tree");
+    this.elt.setAttribute("tabindex", "0");
+    this.elt.setAttribute("aria-dropeffect", "none");
+    this.elt.container = this;
+    this.children = this.elt;
+    this.node = node;
+    this.toString = () => "[root container]";
+  }
 
-RootContainer.prototype = {
-  hasChildren: true,
-  expanded: true,
-  update() {},
-  destroy() {},
+  hasChildren = true;
+  expanded = true;
+  update() {}
+  destroy() {}
 
   
 
@@ -35,28 +35,28 @@ RootContainer.prototype = {
     return [...this.children.children]
       .filter(node => node.container)
       .map(node => node.container);
-  },
+  }
 
   
 
 
 
 
-  setExpanded() {},
+  setExpanded() {}
 
   
 
 
-  setChildrenRole() {},
+  setChildrenRole() {}
 
   
 
 
-  updateLevel() {},
+  updateLevel() {}
 
   isSlotted() {
     return false;
-  },
-};
+  }
+}
 
 module.exports = RootContainer;
