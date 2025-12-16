@@ -291,6 +291,7 @@ public class GeckoSession {
   private float mViewportLeft;
   private float mViewportTop;
   private float mViewportZoom = 1.0f;
+  private ScrollPositionUpdate mLastScrollPositionUpdate = null;
   private int mKeyboardHeight = 0; 
 
   
@@ -3427,7 +3428,17 @@ public class GeckoSession {
   @UiThread
   public void setCompositorScrollDelegate(final @Nullable CompositorScrollDelegate delegate) {
     ThreadUtils.assertOnUiThread();
+    if (mCompositorScrollDelegate == delegate) {
+      return;
+    }
+
     mCompositorScrollDelegate = delegate;
+
+    
+    
+    if (mCompositorScrollDelegate != null && mLastScrollPositionUpdate != null) {
+      mCompositorScrollDelegate.onScrollChanged(this, mLastScrollPositionUpdate);
+    }
   }
 
   
@@ -7835,6 +7846,7 @@ public class GeckoSession {
     update.scrollY = scrollY;
     update.zoom = zoom;
     update.source = source;
+    mLastScrollPositionUpdate = update;
     if (mCompositorScrollDelegate != null) {
       mCompositorScrollDelegate.onScrollChanged(this, update);
     }
