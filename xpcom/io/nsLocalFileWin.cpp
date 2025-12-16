@@ -1950,12 +1950,10 @@ nsresult nsLocalFile::MoveOrCopyAsSingleFileOrDir(nsIFile* aDestParent,
           !ChildAclMatchesAclInheritedFromParent(WrapNotNull(childDacl), *isDir,
                                                  childSecDesc, aDestParent)) {
         
-        MOZ_ALWAYS_TRUE(
-            ERROR_SUCCESS ==
-            ::SetNamedSecurityInfoW(destPath.get(), SE_FILE_OBJECT,
-                                    DACL_SECURITY_INFORMATION |
-                                        UNPROTECTED_DACL_SECURITY_INFORMATION,
-                                    nullptr, nullptr, childDacl, nullptr));
+        ::SetNamedSecurityInfoW(
+            destPath.get(), SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION,
+            nullptr, nullptr, childDacl, nullptr);
       }
     }
   }
