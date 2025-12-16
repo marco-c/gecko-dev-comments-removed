@@ -13,28 +13,27 @@ var { types } = require("resource://devtools/shared/protocol/types.js");
 
 
 
+class Response {
+  
 
 
 
+  constructor(template = {}) {
+    this.template = template;
+    if (this.template instanceof RetVal && this.template.isArrayType()) {
+      throw Error("Arrays should be wrapped in objects");
+    }
 
-var Response = function (template = {}) {
-  this.template = template;
-  if (this.template instanceof RetVal && this.template.isArrayType()) {
-    throw Error("Arrays should be wrapped in objects");
+    const placeholders = findPlaceholders(template, RetVal);
+    if (placeholders.length > 1) {
+      throw Error("More than one RetVal specified in response");
+    }
+    const placeholder = placeholders.shift();
+    if (placeholder) {
+      this.retVal = placeholder.placeholder;
+      this.path = placeholder.path;
+    }
   }
-
-  const placeholders = findPlaceholders(template, RetVal);
-  if (placeholders.length > 1) {
-    throw Error("More than one RetVal specified in response");
-  }
-  const placeholder = placeholders.shift();
-  if (placeholder) {
-    this.retVal = placeholder.placeholder;
-    this.path = placeholder.path;
-  }
-};
-
-Response.prototype = {
   
 
 
@@ -62,7 +61,7 @@ Response.prototype = {
       }
     }
     return result;
-  },
+  }
 
   
 
@@ -78,40 +77,40 @@ Response.prototype = {
     }
     const v = getPath(packet, this.path);
     return this.retVal.read(v, ctx);
-  },
-};
+  }
+}
 
 exports.Response = Response;
 
 
 
 
-
-
-
-var RetVal = function (type) {
-  this._type = type;
+class RetVal {
   
-  loader.lazyGetter(this, "type", function () {
-    return types.getType(type);
-  });
-};
 
-RetVal.prototype = {
+
+
+  constructor(type) {
+    this._type = type;
+    
+    loader.lazyGetter(this, "type", function () {
+      return types.getType(type);
+    });
+  }
   write(v, ctx) {
     return this.type.write(v, ctx);
-  },
+  }
 
   read(v, ctx) {
     return this.type.read(v, ctx);
-  },
+  }
 
   isArrayType() {
     
     
     return typeof this._type === "string" && this._type.startsWith("array:");
-  },
-};
+  }
+}
 
 
 exports.RetVal = function (type) {
