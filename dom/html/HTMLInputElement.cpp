@@ -4162,13 +4162,14 @@ void EndSubmitClick(EventChainPostVisitor& aVisitor) {
 void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
   auto oldType = FormControlType(NS_CONTROL_TYPE(aVisitor.mItemFlags));
 
+  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
+
   if (IsDisabled() && oldType != FormControlType::InputCheckbox &&
       oldType != FormControlType::InputRadio) {
     
     
     
     
-    EndSubmitClick(aVisitor);
     return;
   }
 
@@ -4216,6 +4217,7 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
           form->MaybeSubmit(this);
         }
         aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+        return;
       }
       break;
 
@@ -4227,8 +4229,6 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
         do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     HandlePopoverTargetAction(eventTarget);
   }
-
-  EndSubmitClick(aVisitor);
 }
 
 void HTMLInputElement::LegacyCanceledActivationBehavior(
