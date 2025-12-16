@@ -16,7 +16,6 @@
 
 
 
-
 const GET_PROTOCOLS =  ([
   "openid4vp-v1-unsigned",
   "openid4vp-v1-signed",
@@ -27,52 +26,33 @@ const GET_PROTOCOLS =  ([
 
 const CREATE_PROTOCOLS =  (["openid4vci"]);
 
-const SUPPORTED_GET_PROTOCOL = GET_PROTOCOLS.find(
-  (protocol) => DigitalCredential.userAgentAllowsProtocol(protocol)
+const SUPPORTED_GET_PROTOCOL = GET_PROTOCOLS.find((protocol) =>
+  DigitalCredential.userAgentAllowsProtocol(protocol)
 );
-const SUPPORTED_CREATE_PROTOCOL = CREATE_PROTOCOLS.find(
-  (protocol) => DigitalCredential.userAgentAllowsProtocol(protocol)
+const SUPPORTED_CREATE_PROTOCOL = CREATE_PROTOCOLS.find((protocol) =>
+  DigitalCredential.userAgentAllowsProtocol(protocol)
 );
 
 
-
-
-
-
-
-
-
-
-
-
-function _makeOptionsInternal(requestsInputArray, mediation, requestMapping, signal) {
-  const requests = [];
-  for (const request of requestsInputArray) {
-    const factoryFunction = requestMapping[request];
-    if (factoryFunction) {
-      requests.push(factoryFunction()); 
-    } else {
-      
-      throw new Error(`Unknown request type within array: ${request}`);
-    }
-  }
-  
-  const result = { digital: { requests }, mediation };
-  if (signal !== undefined) {
-    result.signal = signal;
-  }
-  return result;
-}
-
-const allMappings = {
-  get: {
-    "org-iso-mdoc": () => makeMDocRequest(),
-    "openid4vp-v1-unsigned": () => makeOID4VPDict("openid4vp-v1-unsigned"),
-    "openid4vp-v1-signed": () => makeOID4VPDict("openid4vp-v1-signed"),
-    "openid4vp-v1-multisigned": () => makeOID4VPDict("openid4vp-v1-multisigned"),
+const CANONICAL_REQUEST_OBJECTS = {
+  openid4vci: {
+    
   },
-  create: {
-    "openid4vci": () => makeOID4VCIDict(),
+  "openid4vp-v1-unsigned": {
+    
+  },
+  "openid4vp-v1-signed": {
+    
+  },
+  "openid4vp-v1-multisigned": {
+    
+  },
+  
+  "org-iso-mdoc": {
+    deviceRequest:
+      "omd2ZXJzaW9uYzEuMGtkb2NSZXF1ZXN0c4GhbGl0ZW1zUmVxdWVzdNgYWIKiZ2RvY1R5cGV1b3JnLmlzby4xODAxMy41LjEubURMam5hbWVTcGFjZXOhcW9yZy5pc28uMTgwMTMuNS4x9pWthZ2Vfb3Zlcl8yMfRqZ2l2ZW5fbmFtZfRrZmFtaWx5X25hbWX0cmRyaXZpbmdfcHJpdmlsZWdlc_RocG9ydHJhaXT0",
+    encryptionInfo:
+      "gmVkY2FwaaJlbm9uY2VYICBetSsDkKlE_G9JSIHwPzr3ctt6Ol9GgmCH8iGdGQNJcnJlY2lwaWVudFB1YmxpY0tleaQBAiABIVggKKm1iPeuOb9bDJeeJEL4QldYlWvY7F_K8eZkmYdS9PwiWCCm9PLEmosiE_ildsE11lqq4kDkjhfQUKPpbX-Hm1ZSLg",
   },
 };
 
@@ -86,48 +66,105 @@ const allMappings = {
 
 
 
-
-function _makeOptionsUnified(type, protocol, mediation, signal) {
+function makeOptionsFromRequests(requests, mediation, signal) {
   
-  const mapping = allMappings[type];
-   
-  if (!mapping) {
-    throw new Error(`Internal error: Invalid options type specified: ${type}`);
+  const options =  ({ digital: { requests } });
+
+  if (mediation) {
+    options.mediation = mediation;
   }
 
-  
-  if (typeof protocol === 'string') {
-    if (protocol in mapping) {
-      
-      return _makeOptionsInternal([protocol], mediation, mapping, signal);
-    } else {
-      
-      throw new Error(`Unknown request type string '${protocol}' provided for operation type '${type}'`);
-    }
+  if (signal) {
+    options.signal = signal;
   }
 
-  
-  if (Array.isArray(protocol)) {
-    if (protocol.length === 0) {
-      
-      
-      const result = { digital: { requests: [] }, mediation };
-      if (signal !== undefined) {
-        result.signal = signal;
-      }
-      return result;
+  return options;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function buildRequestsFromProtocols(protocols, mapping, explicitData) {
+  return protocols.map((protocol) => {
+    if (!(protocol in mapping)) {
+      throw new Error(`Unknown request type within array: ${protocol}`);
     }
     
-    return _makeOptionsInternal(protocol, mediation, mapping, signal);
+    return mapping[protocol](explicitData);
+  });
+}
+
+
+
+
+
+const allMappings = {
+  get: {
+    "org-iso-mdoc": (
+      data = { ...CANONICAL_REQUEST_OBJECTS["org-iso-mdoc"] },
+    ) => {
+      return { protocol: "org-iso-mdoc", data };
+    },
+    "openid4vp-v1-unsigned": (
+      data = { ...CANONICAL_REQUEST_OBJECTS["openid4vp-v1-unsigned"] },
+    ) => {
+      return { protocol: "openid4vp-v1-unsigned", data };
+    },
+    "openid4vp-v1-signed": (
+      data = { ...CANONICAL_REQUEST_OBJECTS["openid4vp-v1-signed"] },
+    ) => {
+      return { protocol: "openid4vp-v1-signed", data };
+    },
+    "openid4vp-v1-multisigned": (
+      data = { ...CANONICAL_REQUEST_OBJECTS["openid4vp-v1-multisigned"] },
+    ) => {
+      return { protocol: "openid4vp-v1-multisigned", data };
+    },
+  },
+  create: {
+    "openid4vci": (data = { ...CANONICAL_REQUEST_OBJECTS["openid4vci"] }) => {
+      return { protocol: "openid4vci", data };
+    },
+  },
+};
+
+
+
+
+
+
+
+
+
+
+function makeCredentialOptionsFromConfig(config, mapping) {
+  const { protocol, requests = [], data, mediation = "required", signal } = config;
+
+  
+  if (!protocol && !requests?.length) {
+    throw new Error("No protocol. Can't make options.");
   }
 
   
-  
-  const result = { digital: { requests: [] }, mediation };
-  if (signal !== undefined) {
-    result.signal = signal;
+  const  allRequests = [];
+
+  allRequests.push(... (requests));
+
+  if (protocol) {
+    const protocolArray = Array.isArray(protocol) ? protocol : [protocol];
+    const protocolRequests = buildRequestsFromProtocols(protocolArray, mapping, data);
+    allRequests.push(...protocolRequests);
   }
-  return result;
+
+  return  (makeOptionsFromRequests(allRequests, mediation, signal));
 }
 
 
@@ -137,11 +174,14 @@ function _makeOptionsUnified(type, protocol, mediation, signal) {
 
 
 export function makeGetOptions(config = {}) {
-  const { protocol = SUPPORTED_GET_PROTOCOL, mediation = "required", signal } = config;
-  if (!protocol) {
-    throw new Error("No Protocol. Can't make get options.");
-  }
-  return _makeOptionsUnified('get', protocol, mediation, signal);
+  const configWithDefaults = {
+    protocol: SUPPORTED_GET_PROTOCOL,
+    ...config,
+  };
+
+  return  (
+    makeCredentialOptionsFromConfig(configWithDefaults, allMappings.get)
+  );
 }
 
 
@@ -151,71 +191,14 @@ export function makeGetOptions(config = {}) {
 
 
 export function makeCreateOptions(config = {}) {
-  const { protocol = SUPPORTED_CREATE_PROTOCOL, mediation = "required", signal } = config;
-  if (!protocol) {
-    throw new Error("No protocol. Can't make create options.");
-  }
-  return _makeOptionsUnified('create', protocol, mediation, signal);
-}
-
-
-
-
-
-
-
-function makeDigitalCredentialGetRequest(protocol = "protocol", data = {}) {
-  return {
-    protocol,
-    data,
+  const configWithDefaults = {
+    protocol: SUPPORTED_CREATE_PROTOCOL,
+    ...config,
   };
-}
 
-
-
-
-
-
-
-function makeOID4VPDict(identifier = "openid4vp-v1-unsigned") {
-  return makeDigitalCredentialGetRequest(identifier, {
-    
-  });
-}
-
-
-
-
-
-
-
-function makeDigitalCredentialCreateRequest(protocol = "protocol", data = {}) {
-  return {
-    protocol,
-    data,
-  };
-}
-
-
-
-
-
-
-function makeOID4VCIDict() {
-  return makeDigitalCredentialCreateRequest("openid4vci", {
-    
-  });
-}
-
-
-
-
-
-
-function makeMDocRequest() {
-  return makeDigitalCredentialGetRequest("org-iso-mdoc", {
-    
-  });
+  return  (
+    makeCredentialOptionsFromConfig(configWithDefaults, allMappings.create)
+  );
 }
 
 
@@ -230,8 +213,8 @@ export function sendMessage(iframe, data) {
     if (!iframe.contentWindow) {
       reject(
         new Error(
-          "iframe.contentWindow is undefined, cannot send message (something is wrong with the test that called this)."
-        )
+          "iframe.contentWindow is undefined, cannot send message (something is wrong with the test that called this).",
+        ),
       );
       return;
     }
@@ -255,7 +238,9 @@ export function sendMessage(iframe, data) {
 export function loadIframe(iframe, url) {
   return new Promise((resolve, reject) => {
     iframe.addEventListener("load", () => resolve(), { once: true });
-    iframe.addEventListener("error", (event) => reject(event.error), { once: true });
+    iframe.addEventListener("error", (event) => reject(event.error), {
+      once: true,
+    });
     if (!iframe.isConnected) {
       document.body.appendChild(iframe);
     }

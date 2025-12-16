@@ -35,7 +35,18 @@ export interface MakeGetOptionsConfig {
   
 
 
+
+
   protocol?: GetProtocol | GetProtocol[];
+  
+
+
+
+  requests?: DigitalCredentialGetRequest[];
+  
+
+
+  data?: MobileDocumentRequest | object;
   
 
 
@@ -53,7 +64,18 @@ export interface MakeCreateOptionsConfig {
   
 
 
+
+
   protocol?: CreateProtocol | CreateProtocol[];
+  
+
+
+
+  requests?: DigitalCredentialCreateRequest[];
+  
+
+
+  data?: object;
   
 
 
@@ -87,7 +109,7 @@ export interface DigitalCredentialRequestOptions {
 
 export interface CredentialRequestOptions {
   digital: DigitalCredentialRequestOptions;
-  mediation: CredentialMediationRequirement;
+  mediation?: CredentialMediationRequirement;
   signal?: AbortSignal;
 }
 
@@ -114,7 +136,7 @@ export interface DigitalCredentialCreationOptions {
 
 export interface CredentialCreationOptions {
   digital: DigitalCredentialCreationOptions;
-  mediation: CredentialMediationRequirement;
+  mediation?: CredentialMediationRequirement;
   signal?: AbortSignal;
 }
 
