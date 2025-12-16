@@ -1,0 +1,225 @@
+
+
+
+
+"use strict";
+
+const ONBOARDING_MESSAGE_MASK_PREF =
+  "browser.ipProtection.onboardingMessageMask";
+
+
+
+
+
+
+
+
+
+
+async function openDialogWithFilter(permissionType, browser, capabilityFilter) {
+  let params = {
+    hideStatusColumn: true,
+    prefilledHost: "",
+    permissionType,
+    capabilityFilter,
+  };
+
+  let dialogLoaded = TestUtils.topicObserved("subdialog-loaded");
+
+  browser.contentWindow.gSubDialog.open(
+    "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+    { features: "resizable=yes" },
+    params
+  );
+
+  let [dialogWin] = await dialogLoaded;
+  return dialogWin;
+}
+
+function addMockPrincipal(permissionType, site, capability) {
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(site);
+  Services.perms.addFromPrincipal(principal, permissionType, capability);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getMockSiteOrigins(permissionType, capabilityToFilter) {
+  const site1 = "https://www.example.com";
+  const site2 = "https://www.another.example.com";
+  const site3 = "https://www.shouldbeignored.example.org";
+
+  const DENY_ACTION = Ci.nsIPermissionManager.DENY_ACTION;
+  const ALLOW_ACTION = Ci.nsIPermissionManager.ALLOW_ACTION;
+
+  let expectedCapability;
+  let unexpectedCapability;
+
+  if (capabilityToFilter === DENY_ACTION) {
+    expectedCapability = DENY_ACTION;
+    unexpectedCapability = ALLOW_ACTION;
+  } else {
+    expectedCapability = ALLOW_ACTION;
+    unexpectedCapability = DENY_ACTION;
+  }
+
+  
+  addMockPrincipal(permissionType, site1, expectedCapability);
+  addMockPrincipal(permissionType, site2, expectedCapability);
+
+  
+  
+  addMockPrincipal(permissionType, site3, unexpectedCapability);
+
+  
+  let expectedSites = Services.perms
+    .getAllByTypes([permissionType])
+    .filter(perm => perm.capability === expectedCapability);
+  let unexpectedSites = Services.perms
+    .getAllByTypes([permissionType])
+    .filter(perm => perm.capability === unexpectedCapability);
+
+  let expectedTypeName =
+    capabilityToFilter === ALLOW_ACTION ? "ALLOW_ACTION" : "DENY_ACTION";
+  let unexpectedTypeName =
+    capabilityToFilter === ALLOW_ACTION ? "DENY_ACTION" : "ALLOW_ACTION";
+
+  Assert.equal(
+    expectedSites.length,
+    2,
+    `There should be 2 permissions with ${expectedTypeName}`
+  );
+  Assert.equal(
+    unexpectedSites.length,
+    1,
+    `There should be 1 permission with ${unexpectedTypeName}`
+  );
+
+  let sites = [
+    expectedSites.map(permission => permission.principal.prePath),
+    unexpectedSites.map(permission => permission.principal.prePath),
+  ].flat();
+
+  return sites;
+}
+
+
+
+
+
+
+
+
+
+
+async function testFilteredPermissionsInDialog(
+  permissionType,
+  sitesArray,
+  capabilityFilter
+) {
+  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+    let dialog = await openDialogWithFilter(
+      permissionType,
+      browser,
+      capabilityFilter
+    );
+    Assert.ok(dialog, "Dialog was found");
+
+    let permissionsBox = dialog.document.getElementById("permissionsBox");
+
+    
+    await BrowserTestUtils.waitForMutationCondition(
+      permissionsBox,
+      { childList: true, subtree: true },
+      () => {
+        return permissionsBox.itemCount === 2;
+      }
+    );
+
+    let numberOfPermissions = permissionsBox.itemCount;
+    Assert.equal(
+      numberOfPermissions,
+      2,
+      "There should be 2 permissions in the dialog"
+    );
+
+    let displayedSites = Array.from(permissionsBox.children).map(entry =>
+      entry.getAttribute("origin")
+    );
+    Assert.ok(
+      displayedSites.includes(sitesArray[0]),
+      `${sitesArray[0]} was displayed in the dialog`
+    );
+    Assert.ok(
+      displayedSites.includes(sitesArray[1]),
+      `${sitesArray[1]} was displayed in the dialog`
+    );
+    Assert.ok(
+      !displayedSites.includes(sitesArray[2]),
+      `${sitesArray[2]} was not displayed in the dialog`
+    );
+  });
+}
+
+function cleanupPermissions(permissionType) {
+  Services.perms.removeByType(permissionType);
+}
+
+
+
+
+
+add_task(async function test_filter_dialog_DENY_ACTION_only() {
+  
+  
+  const permissionType = "ipp-vpn";
+  const capabilityFilter = Ci.nsIPermissionManager.DENY_ACTION;
+
+  let sites = getMockSiteOrigins(permissionType, capabilityFilter);
+
+  await testFilteredPermissionsInDialog(
+    permissionType,
+    sites,
+    capabilityFilter
+  );
+
+  cleanupPermissions(permissionType);
+  
+  
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+});
+
+
+
+
+
+add_task(async function test_filter_dialog_ALLOW_ACTION_only() {
+  
+  
+  const permissionType = "ipp-vpn";
+  const capabilityFilter = Ci.nsIPermissionManager.ALLOW_ACTION;
+
+  let sites = getMockSiteOrigins(permissionType, capabilityFilter);
+
+  await testFilteredPermissionsInDialog(
+    permissionType,
+    sites,
+    capabilityFilter
+  );
+
+  cleanupPermissions(permissionType);
+  
+  
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+});
