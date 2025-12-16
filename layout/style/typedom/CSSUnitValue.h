@@ -27,9 +27,6 @@ class GlobalObject;
 
 class CSSUnitValue final : public CSSNumericValue {
  public:
-  
-  explicit CSSUnitValue(nsCOMPtr<nsISupports> aParent);
-
   CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
                const nsACString& aUnit);
 
@@ -56,7 +53,7 @@ class CSSUnitValue final : public CSSNumericValue {
   virtual ~CSSUnitValue() = default;
 
   double mValue;
-  nsCString mUnit;
+  const nsCString mUnit;
 };
 
 }  
