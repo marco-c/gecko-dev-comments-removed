@@ -15,20 +15,19 @@ loader.lazyRequireGetter(
 
 
 
-function DomPanel(iframeWindow, toolbox, commands) {
-  this.panelWin = iframeWindow;
-  this._toolbox = toolbox;
-  this._commands = commands;
+class DomPanel {
+  constructor(iframeWindow, toolbox, commands) {
+    this.panelWin = iframeWindow;
+    this._toolbox = toolbox;
+    this._commands = commands;
 
-  this.onContentMessage = this.onContentMessage.bind(this);
-  this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
+    this.onContentMessage = this.onContentMessage.bind(this);
+    this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
 
-  this.pendingRequests = new Map();
+    this.pendingRequests = new Map();
 
-  EventEmitter.decorate(this);
-}
-
-DomPanel.prototype = {
+    EventEmitter.decorate(this);
+  }
   
 
 
@@ -46,10 +45,9 @@ DomPanel.prototype = {
     await onGetProperties;
 
     return this;
-  },
+  }
 
   
-
   async initialize() {
     this.panelWin.addEventListener(
       "devtools/content/message",
@@ -91,7 +89,7 @@ DomPanel.prototype = {
     };
 
     exportIntoContentScope(this.panelWin, provider, "DomProvider");
-  },
+  }
 
   destroy() {
     if (this._destroyed) {
@@ -111,10 +109,9 @@ DomPanel.prototype = {
     this._toolbox.off("select", this.onPanelVisibilityChange);
 
     this.emit("destroyed");
-  },
+  }
 
   
-
   refresh() {
     
     if (!this.isPanelVisible()) {
@@ -132,7 +129,7 @@ DomPanel.prototype = {
     this.getRootGrip().then(rootGrip => {
       this.postContentMessage("initialize", rootGrip);
     });
-  },
+  }
 
   
 
@@ -145,11 +142,11 @@ DomPanel.prototype = {
     
     
     this.refresh();
-  },
+  }
 
   _onTargetSelected() {
     this.forceRefresh();
-  },
+  }
 
   onResourceAvailable(resources) {
     for (const resource of resources) {
@@ -163,23 +160,22 @@ DomPanel.prototype = {
         this.forceRefresh();
       }
     }
-  },
+  }
 
   
 
 
   onPanelVisibilityChange() {
     this.refresh();
-  },
+  }
 
   
-
   
 
 
   isPanelVisible() {
     return this._toolbox.currentToolId === "dom";
-  },
+  }
 
   async getPrototypeAndProperties(objectFront) {
     if (!objectFront.actorID) {
@@ -210,11 +206,11 @@ DomPanel.prototype = {
     }
 
     return response;
-  },
+  }
 
   openLink(url) {
     openContentLink(url);
-  },
+  }
 
   async getRootGrip() {
     const { result } = await this._toolbox.commands.scriptCommand.execute(
@@ -224,7 +220,7 @@ DomPanel.prototype = {
       }
     );
     return result;
-  },
+  }
 
   postContentMessage(type, args) {
     const data = {
@@ -239,7 +235,7 @@ DomPanel.prototype = {
     });
 
     this.panelWin.dispatchEvent(event);
-  },
+  }
 
   onContentMessage(event) {
     const data = event.data;
@@ -247,16 +243,16 @@ DomPanel.prototype = {
     if (typeof this[method] == "function") {
       this[method](data.args);
     }
-  },
+  }
 
   getToolbox() {
     return this._toolbox;
-  },
+  }
 
   get currentTarget() {
     return this._toolbox.target;
-  },
-};
+  }
+}
 
 
 
