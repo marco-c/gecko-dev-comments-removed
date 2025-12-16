@@ -1401,6 +1401,8 @@ function getSmallIncrementKey() {
 
 
 
+
+
 function checkRuleViewContent(view, expectedElements) {
   const elementsInView = _getRuleViewElements(view);
   is(
@@ -1457,6 +1459,11 @@ function checkRuleViewContent(view, expectedElements) {
       ) !== null,
       expectedElement.selectorEditable ?? true,
       `Selector for element #${i} (${selector}) ${(expectedElement.selectorEditable ?? true) ? "is" : "isn't"} editable`
+    );
+    is(
+      elementInView.querySelector(`.ruleview-selectorhighlighter`) !== null,
+      expectedElement.hasSelectorHighlighterButton ?? true,
+      `Element #${i} (${selector}) ${(expectedElement.hasSelectorHighlighterButton ?? true) ? "has" : "does not have"} a selector highlighter button`
     );
 
     const ancestorData = elementInView.querySelector(

@@ -904,7 +904,12 @@ class Rule {
 
 
   isEditable() {
-    return !this.isSystem && this.domRule.type !== PRES_HINTS;
+    return (
+      !this.isSystem &&
+      this.domRule.type !== PRES_HINTS &&
+      
+      this.domRule.className !== "CSSPositionTryRule"
+    );
   }
 
   

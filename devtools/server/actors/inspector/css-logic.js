@@ -196,6 +196,9 @@ class CssLogic {
   #keyframesRules = null;
 
   
+  #positionTryRules = null;
+
+  
 
 
   reset() {
@@ -207,6 +210,7 @@ class CssLogic {
     this.#matchedRules = null;
     this.#matchedSelectors = null;
     this.#keyframesRules = [];
+    this.#positionTryRules = [];
   }
 
   
@@ -383,6 +387,8 @@ class CssLogic {
             this.#cacheSheet(aDomRule.styleSheet);
           } else if (ruleClassName === "CSSKeyframesRule") {
             this.#keyframesRules.push(aDomRule);
+          } else if (ruleClassName === "CSSPositionTryRule") {
+            this.#positionTryRules.push(aDomRule);
           }
 
           if (aDomRule.cssRules) {
@@ -425,6 +431,18 @@ class CssLogic {
       this.#cacheSheets();
     }
     return this.#keyframesRules;
+  }
+
+  
+
+
+
+
+  get positionTryRules() {
+    if (!this.#sheetsCached) {
+      this.#cacheSheets();
+    }
+    return this.#positionTryRules;
   }
 
   
