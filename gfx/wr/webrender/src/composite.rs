@@ -102,7 +102,6 @@ pub enum CompositeTileSurface {
     Color {
         color: ColorF,
     },
-    Clear,
     ExternalSurface {
         external_surface_index: ResolvedExternalSurfaceIndex,
     },
@@ -136,7 +135,6 @@ bitflags! {
 pub enum TileKind {
     Opaque,
     Alpha,
-    Clear,
 }
 
 
@@ -177,8 +175,6 @@ pub fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
         
         
         CompositeTileSurface::Color { .. } => TileKind::Opaque,
-        
-        CompositeTileSurface::Clear => TileKind::Clear,
         CompositeTileSurface::Texture { .. }
         | CompositeTileSurface::ExternalSurface { .. } => {
             
@@ -458,7 +454,6 @@ pub enum TileSurfaceKind {
     Color {
         color: ColorF,
     },
-    Clear,
 }
 
 impl From<&TileSurface> for TileSurfaceKind {
@@ -466,7 +461,6 @@ impl From<&TileSurface> for TileSurfaceKind {
         match surface {
             TileSurface::Texture { .. } => TileSurfaceKind::Texture,
             TileSurface::Color { color } => TileSurfaceKind::Color { color: *color },
-            TileSurface::Clear => TileSurfaceKind::Clear,
         }
     }
 }

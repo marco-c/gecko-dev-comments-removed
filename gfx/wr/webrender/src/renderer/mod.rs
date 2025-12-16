@@ -282,7 +282,6 @@ struct OcclusionItemKey {
 
 struct SwapChainLayer {
     occlusion: occlusion::FrontToBackBuilder<OcclusionItemKey>,
-    clear_tiles: Vec<occlusion::Item<OcclusionItemKey>>,
 }
 
 
@@ -3475,23 +3474,6 @@ impl Renderer {
                         },
                     }
                 }
-                CompositeTileSurface::Clear => {
-                    let dummy = TextureSource::Dummy;
-                    let image_buffer_kind = dummy.image_buffer_kind();
-                    let instance = CompositeInstance::new(
-                        tile_rect,
-                        clip_rect,
-                        PremultipliedColorF::BLACK,
-                        flip,
-                        clip,
-                    );
-                    let features = instance.get_rgb_features();
-                    (
-                        instance,
-                        BatchTextures::composite_rgb(dummy),
-                        (CompositeSurfaceFormat::Rgba, image_buffer_kind, features, None),
-                    )
-                }
                 CompositeTileSurface::Texture { surface: ResolvedSurfaceTexture::Native { .. } } => {
                     unreachable!("bug: found native surface in simple composite path");
                 }
@@ -3613,21 +3595,6 @@ impl Renderer {
         }
 
         
-        if !layer.clear_tiles.is_empty() {
-            let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
-            self.set_blend(true, FramebufferKind::Main);
-            self.device.set_blend_mode_premultiplied_dest_out();
-            self.draw_tile_list(
-                layer.clear_tiles.iter(),
-                &composite_state,
-                &composite_state.external_surfaces,
-                projection,
-                &mut results.stats,
-            );
-            self.gpu_profiler.finish_sampler(transparent_sampler);
-        }
-
-        
         let alpha_items = layer.occlusion.alpha_items();
         if !alpha_items.is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
@@ -3661,11 +3628,7 @@ impl Renderer {
         let _gm = self.gpu_profiler.start_marker("framebuffer");
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
 
-        
-        
-        let num_tiles = composite_state.tiles
-            .iter()
-            .filter(|tile| tile.kind != TileKind::Clear).count();
+        let num_tiles = composite_state.tiles.len();
         self.profile.set(profiler::PICTURE_TILES, num_tiles);
 
         let (window_is_opaque, enable_screenshot)  = match self.compositor_config.layer_compositor() {
@@ -3701,7 +3664,6 @@ impl Renderer {
             });
 
             swapchain_layers.push(SwapChainLayer {
-                clear_tiles: Vec::new(),
                 occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
             });
         }
@@ -3750,8 +3712,7 @@ impl Renderer {
             
             let usage = match tile.surface {
                 CompositeTileSurface::Texture { .. } |
-                CompositeTileSurface::Color { .. } |
-                CompositeTileSurface::Clear => {
+                CompositeTileSurface::Color { .. } => {
                     CompositorSurfaceUsage::Content
                 }
                 CompositeTileSurface::ExternalSurface { external_surface_index } => {
@@ -3876,7 +3837,6 @@ impl Renderer {
                 });
 
                 swapchain_layers.push(SwapChainLayer {
-                    clear_tiles: Vec::new(),
                     occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
                 })
             }
@@ -3884,44 +3844,39 @@ impl Renderer {
 
             
 
-            match tile.kind {
-                TileKind::Opaque | TileKind::Alpha => {
-                    let is_opaque = tile.kind != TileKind::Alpha;
+            let is_opaque = tile.kind == TileKind::Opaque;
 
-                    match tile.clip_index {
-                        Some(clip_index) => {
-                            let clip = composite_state.get_compositor_clip(clip_index);
+            match tile.clip_index {
+                Some(clip_index) => {
+                    let clip = composite_state.get_compositor_clip(clip_index);
 
-                            
-                            segment_builder.initialize(
-                                rect.cast_unit(),
-                                None,
-                                rect.cast_unit(),
-                            );
-                            segment_builder.push_clip_rect(
-                                clip.rect.cast_unit(),
-                                Some(clip.radius),
-                                ClipMode::Clip,
-                            );
-                            segment_builder.build(|segment| {
-                                let key = OcclusionItemKey { tile_index: idx, needs_mask: segment.has_mask };
+                    
+                    segment_builder.initialize(
+                        rect.cast_unit(),
+                        None,
+                        rect.cast_unit(),
+                    );
+                    segment_builder.push_clip_rect(
+                        clip.rect.cast_unit(),
+                        Some(clip.radius),
+                        ClipMode::Clip,
+                    );
+                    segment_builder.build(|segment| {
+                        let key = OcclusionItemKey { tile_index: idx, needs_mask: segment.has_mask };
 
-                                full_render_occlusion.add(
-                                    &segment.rect.cast_unit(),
-                                    is_opaque && !segment.has_mask,
-                                    key,
-                                );
-                            });
-                        }
-                        None => {
-                            full_render_occlusion.add(&rect, is_opaque, OcclusionItemKey {
-                                tile_index: idx,
-                                needs_mask: false,
-                            });
-                        }
-                    }
+                        full_render_occlusion.add(
+                            &segment.rect.cast_unit(),
+                            is_opaque && !segment.has_mask,
+                            key,
+                        );
+                    });
                 }
-                TileKind::Clear => {}
+                None => {
+                    full_render_occlusion.add(&rect, is_opaque, OcclusionItemKey {
+                        tile_index: idx,
+                        needs_mask: false,
+                    });
+                }
             }
         }
 
@@ -3949,7 +3904,6 @@ impl Renderer {
                     });
 
                     swapchain_layers.push(SwapChainLayer {
-                        clear_tiles: Vec::new(),
                         occlusion: occlusion::FrontToBackBuilder::with_capacity(cap, cap),
                     });
                 }
@@ -4004,16 +3958,11 @@ impl Renderer {
                 let mut combined_dirty_rect = DeviceRect::zero();
 
                 for tile in composite_state.tiles.iter() {
-                    if tile.kind == TileKind::Clear {
-                        continue;
-                    }
-
                     if tile.tile_id.is_none() {
                         match tile.surface {
                             CompositeTileSurface::ExternalSurface { .. } => {}
                             CompositeTileSurface::Texture { .. }  |
-                            CompositeTileSurface::Color { .. } |
-                            CompositeTileSurface::Clear => {
+                            CompositeTileSurface::Color { .. } => {
                                 unreachable!();
                             },
                         }
@@ -4140,53 +4089,40 @@ impl Renderer {
             };
 
             
-            
             let layer = &mut swapchain_layers[layer_index];
 
-            
-            match tile.kind {
-                TileKind::Opaque | TileKind::Alpha => {
-                    let is_opaque = tile.kind != TileKind::Alpha;
+            let is_opaque = tile.kind == TileKind::Opaque;
 
-                    match tile.clip_index {
-                        Some(clip_index) => {
-                            let clip = composite_state.get_compositor_clip(clip_index);
+            match tile.clip_index {
+                Some(clip_index) => {
+                    let clip = composite_state.get_compositor_clip(clip_index);
 
-                                
-                            segment_builder.initialize(
-                                rect.cast_unit(),
-                                None,
-                                rect.cast_unit(),
-                            );
-                            segment_builder.push_clip_rect(
-                                clip.rect.cast_unit(),
-                                Some(clip.radius),
-                                ClipMode::Clip,
-                            );
-                            segment_builder.build(|segment| {
-                                let key = OcclusionItemKey { tile_index: idx, needs_mask: segment.has_mask };
+                        
+                    segment_builder.initialize(
+                        rect.cast_unit(),
+                        None,
+                        rect.cast_unit(),
+                    );
+                    segment_builder.push_clip_rect(
+                        clip.rect.cast_unit(),
+                        Some(clip.radius),
+                        ClipMode::Clip,
+                    );
+                    segment_builder.build(|segment| {
+                        let key = OcclusionItemKey { tile_index: idx, needs_mask: segment.has_mask };
 
-                                layer.occlusion.add(
-                                    &segment.rect.cast_unit(),
-                                    is_opaque && !segment.has_mask,
-                                    key,
-                                );
-                            });
-                        }
-                        None => {
-                            layer.occlusion.add(&rect, is_opaque, OcclusionItemKey {
-                                tile_index: idx,
-                                needs_mask: false,
-                            });
-                        }
-                    }
+                        layer.occlusion.add(
+                            &segment.rect.cast_unit(),
+                            is_opaque && !segment.has_mask,
+                            key,
+                        );
+                    });
                 }
-                TileKind::Clear => {
-                    
-                    
-                    
-                    
-                    layer.clear_tiles.push(occlusion::Item { rectangle: rect, key: OcclusionItemKey { tile_index: idx, needs_mask: false } });
+                None => {
+                    layer.occlusion.add(&rect, is_opaque, OcclusionItemKey {
+                        tile_index: idx,
+                        needs_mask: false,
+                    });
                 }
             }
         }
@@ -5075,9 +5011,6 @@ impl Renderer {
                 
                 
                 for tile in &composite_state.tiles {
-                    if tile.kind == TileKind::Clear {
-                        continue;
-                    }
                     let dirty_rect = composite_state.get_device_rect(
                         &tile.local_dirty_rect,
                         tile.transform_index,
@@ -5373,9 +5306,6 @@ impl Renderer {
             
             if !frame.has_been_rendered {
                 for tile in &frame.composite_state.tiles {
-                    if tile.kind == TileKind::Clear {
-                        continue;
-                    }
                     if !tile.local_dirty_rect.is_empty() {
                         if let CompositeTileSurface::Texture { surface: ResolvedSurfaceTexture::Native { id, .. } } = tile.surface {
                             let valid_rect = frame.composite_state.get_surface_rect(

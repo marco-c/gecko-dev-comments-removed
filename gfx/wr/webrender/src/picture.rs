@@ -680,7 +680,6 @@ pub enum TileSurface {
     Color {
         color: ColorF,
     },
-    Clear,
 }
 
 impl TileSurface {
@@ -688,7 +687,6 @@ impl TileSurface {
         match *self {
             TileSurface::Color { .. } => "Color",
             TileSurface::Texture { .. } => "Texture",
-            TileSurface::Clear => "Clear",
         }
     }
 }
@@ -1316,9 +1314,6 @@ impl Tile {
                         color,
                     }
                 }
-                Some(BackdropKind::Clear) => {
-                    TileSurface::Clear
-                }
                 None => {
                     
                     unreachable!();
@@ -1336,7 +1331,7 @@ impl Tile {
                         descriptor,
                     }
                 }
-                Some(TileSurface::Color { .. }) | Some(TileSurface::Clear) | None => {
+                Some(TileSurface::Color { .. }) | None => {
                     
                     
                     
@@ -1540,13 +1535,11 @@ impl DirtyRegion {
 
 
 
-
 #[derive(Debug, Copy, Clone)]
 pub enum BackdropKind {
     Color {
         color: ColorF,
     },
-    Clear,
 }
 
 
@@ -3300,12 +3293,8 @@ impl TileCacheInstance {
                 
                 
                 
-                let color = match data_stores.prim[data_handle].kind {
-                    PrimitiveTemplateKind::Rectangle { color, .. } => {
-                        frame_context.scene_properties.resolve_color(&color)
-                    }
-                    _ => unreachable!(),
-                };
+                let PrimitiveTemplateKind::Rectangle { color, .. } = data_stores.prim[data_handle].kind;
+                let color = frame_context.scene_properties.resolve_color(&color);
                 if color.a >= 1.0 {
                     backdrop_candidate = Some(BackdropInfo {
                         opaque_rect: pic_coverage_rect,
@@ -3555,14 +3544,6 @@ impl TileCacheInstance {
                     generation: resource_cache.get_image_generation(border_data.request.key),
                 });
             }
-            PrimitiveInstanceKind::Clear { .. } => {
-                backdrop_candidate = Some(BackdropInfo {
-                    opaque_rect: pic_coverage_rect,
-                    spanning_opaque_color: None,
-                    kind: Some(BackdropKind::Clear),
-                    backdrop_rect: pic_coverage_rect,
-                });
-            }
             PrimitiveInstanceKind::LinearGradient { data_handle, .. }
             | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
                 let gradient_data = &data_stores.linear_grad[data_handle];
@@ -3690,34 +3671,22 @@ impl TileCacheInstance {
                         surface.is_opaque = true;
                     }
                 }
-                Some(BackdropKind::Clear) => {}
             }
 
-            let is_suitable_backdrop = match backdrop_candidate.kind {
-                Some(BackdropKind::Clear) => {
-                    
-                    
-                    
-                    
-                    true
-                }
-                Some(BackdropKind::Color { .. }) | None => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let same_coord_system = frame_context.spatial_tree.is_matching_coord_system(
-                        prim_spatial_node_index,
-                        self.spatial_node_index,
-                    );
+            
+            
+            
+            
+            
+            
+            
+            
+            let same_coord_system = frame_context.spatial_tree.is_matching_coord_system(
+                prim_spatial_node_index,
+                self.spatial_node_index,
+            );
 
-                    same_coord_system && on_picture_surface
-                }
-            };
+            let is_suitable_backdrop = same_coord_system && on_picture_surface;
 
             if sub_slice_index == 0 &&
                is_suitable_backdrop &&
@@ -3753,11 +3722,10 @@ impl TileCacheInstance {
                         
                         
                         
-                        if let BackdropKind::Color { color } = kind {
-                            if backdrop_candidate.opaque_rect.contains_box(&self.local_rect) {
-                                vis_flags |= PrimitiveVisibilityFlags::IS_BACKDROP;
-                                self.backdrop.spanning_opaque_color = Some(color);
-                            }
+                        let BackdropKind::Color { color } = kind;
+                        if backdrop_candidate.opaque_rect.contains_box(&self.local_rect) {
+                            vis_flags |= PrimitiveVisibilityFlags::IS_BACKDROP;
+                            self.backdrop.spanning_opaque_color = Some(color);
                         }
                     }
                 }
@@ -5764,10 +5732,6 @@ impl PicturePrimitive {
                         let (surface, is_opaque) = match surface {
                             TileSurface::Color { color } => {
                                 (CompositeTileSurface::Color { color: *color }, true)
-                            }
-                            TileSurface::Clear => {
-                                
-                                (CompositeTileSurface::Clear, false)
                             }
                             TileSurface::Texture { descriptor, .. } => {
                                 let surface = descriptor.resolve(frame_state.resource_cache, tile_cache.current_tile_size);

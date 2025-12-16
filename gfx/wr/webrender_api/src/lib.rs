@@ -780,8 +780,6 @@ impl core::fmt::Debug for DebugFlags {
 #[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub enum PrimitiveKeyKind {
     
-    Clear,
-    
     Rectangle {
         
         color: PropertyBinding<ColorU>,

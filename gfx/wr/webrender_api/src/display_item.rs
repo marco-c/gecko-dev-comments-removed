@@ -164,7 +164,6 @@ pub enum SpatialTreeItem {
 pub enum DisplayItem {
     
     Rectangle(RectangleDisplayItem),
-    ClearRectangle(ClearRectangleDisplayItem),
     HitTest(HitTestDisplayItem),
     Text(TextDisplayItem),
     Line(LineDisplayItem),
@@ -216,7 +215,6 @@ pub enum DisplayItem {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum DebugDisplayItem {
     Rectangle(RectangleDisplayItem),
-    ClearRectangle(ClearRectangleDisplayItem),
     HitTest(HitTestDisplayItem),
     Text(TextDisplayItem, Vec<font::GlyphInstance>),
     Line(LineDisplayItem),
@@ -362,14 +360,6 @@ pub struct RectangleDisplayItem {
     pub common: CommonItemProperties,
     pub bounds: LayoutRect,
     pub color: PropertyBinding<ColorF>,
-}
-
-
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
-pub struct ClearRectangleDisplayItem {
-    pub common: CommonItemProperties,
-    pub bounds: LayoutRect,
 }
 
 
@@ -2269,7 +2259,6 @@ impl DisplayItem {
         match *self {
             DisplayItem::Border(..) => "border",
             DisplayItem::BoxShadow(..) => "box_shadow",
-            DisplayItem::ClearRectangle(..) => "clear_rectangle",
             DisplayItem::HitTest(..) => "hit_test",
             DisplayItem::RectClip(..) => "rect_clip",
             DisplayItem::RoundedRectClip(..) => "rounded_rect_clip",
