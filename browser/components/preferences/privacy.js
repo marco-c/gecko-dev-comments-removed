@@ -2801,6 +2801,44 @@ Preferences.addSetting({
   },
 });
 
+Preferences.addSetting({
+  id: "contentBlockingCategory",
+  pref: "browser.contentblocking.category",
+});
+
+Preferences.addSetting({
+  id: "etpStatusBoxGroup",
+});
+
+Preferences.addSetting({
+  id: "etpStatusItem",
+  deps: ["contentBlockingCategory"],
+  getControlConfig(config, { contentBlockingCategory }) {
+    
+    let categoryToL10nId = {
+      standard: "preferences-etp-level-standard",
+      strict: "preferences-etp-level-strict",
+      custom: "preferences-etp-level-custom",
+    };
+
+    return {
+      ...config,
+      l10nId:
+        categoryToL10nId[contentBlockingCategory.value] ??
+        "preferences-etp-level-standard",
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "etpStatusAdvancedButton",
+  
+});
+
+Preferences.addSetting({
+  id: "protectionsDashboardLink",
+});
+
 function setEventListener(aId, aEventType, aCallback) {
   document
     .getElementById(aId)
@@ -3362,6 +3400,7 @@ var gPrivacyPane = {
     initSettingGroup("permissions");
     initSettingGroup("dnsOverHttps");
     initSettingGroup("dnsOverHttpsAdvanced");
+    initSettingGroup("etpStatus");
 
     
     this.initContentBlocking();
