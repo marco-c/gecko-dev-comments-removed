@@ -38,9 +38,7 @@ const trace = {
 
 
 
-function HarAutomation() {}
-
-HarAutomation.prototype = {
+class HarAutomation {
   
 
   async initialize(toolbox) {
@@ -48,7 +46,7 @@ HarAutomation.prototype = {
     this.commands = toolbox.commands;
 
     await this.startMonitoring();
-  },
+  }
 
   destroy() {
     if (this.collector) {
@@ -58,7 +56,7 @@ HarAutomation.prototype = {
     if (this.tabWatcher) {
       this.tabWatcher.disconnect();
     }
-  },
+  }
 
   
 
@@ -86,11 +84,11 @@ HarAutomation.prototype = {
         ignoreExistingResources: true,
       }
     );
-  },
+  }
 
   pageLoadBegin() {
     this.resetCollector();
-  },
+  }
 
   resetCollector() {
     if (this.collector) {
@@ -104,7 +102,7 @@ HarAutomation.prototype = {
     });
 
     this.collector.start();
-  },
+  }
 
   
 
@@ -124,7 +122,7 @@ HarAutomation.prototype = {
         return this.autoExport();
       });
     }
-  },
+  }
 
   autoExport() {
     const autoExport = Services.prefs.getBoolPref(
@@ -142,7 +140,7 @@ HarAutomation.prototype = {
     };
 
     return this.executeExport(data);
-  },
+  }
 
   
 
@@ -157,14 +155,14 @@ HarAutomation.prototype = {
     }
 
     return this.executeExport(data);
-  },
+  }
 
   
 
 
   clear() {
     this.resetCollector();
-  },
+  }
 
   
 
@@ -210,7 +208,7 @@ HarAutomation.prototype = {
     }
 
     return jsonString;
-  },
+  }
 
   
 
@@ -221,8 +219,8 @@ HarAutomation.prototype = {
       stringGrip
     );
     return fullText;
-  },
-};
+  }
+}
 
 
 
