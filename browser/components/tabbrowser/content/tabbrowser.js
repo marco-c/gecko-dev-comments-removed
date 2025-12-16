@@ -4430,6 +4430,13 @@
         tabContainer.insertBefore(tab, itemAfter);
       }
 
+      if (tab.group?.collapsed) {
+        
+        
+        
+        tab.group.collapsed = false;
+      }
+
       this._updateTabsAfterInsert();
 
       if (pinned) {
