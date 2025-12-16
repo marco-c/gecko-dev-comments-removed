@@ -75,36 +75,34 @@ DevToolsServer.disallowNewThreadGlobals = function () {
 
 
 
-function TestTabList(connection) {
-  this.conn = connection;
-
-  
-  
-  this._descriptorActors = [];
-
-  
-  this._descriptorActorPool = new LazyPool(connection);
-
-  for (const global of gTestGlobals) {
-    const actor = new TestTargetActor(connection, global);
-    this._descriptorActorPool.manage(actor);
+class TestTabList {
+  constructor(connection) {
+    this.conn = connection;
 
     
-    TargetActorRegistry.registerXpcShellTargetActor(actor);
+    
+    this._descriptorActors = [];
 
-    const descriptorActor = new TestDescriptorActor(connection, actor);
-    this._descriptorActorPool.manage(descriptorActor);
+    
+    this._descriptorActorPool = new LazyPool(connection);
 
-    this._descriptorActors.push(descriptorActor);
+    for (const global of gTestGlobals) {
+      const actor = new TestTargetActor(connection, global);
+      this._descriptorActorPool.manage(actor);
+
+      
+      TargetActorRegistry.registerXpcShellTargetActor(actor);
+
+      const descriptorActor = new TestDescriptorActor(connection, actor);
+      this._descriptorActorPool.manage(descriptorActor);
+
+      this._descriptorActors.push(descriptorActor);
+    }
   }
-}
-
-TestTabList.prototype = {
-  constructor: TestTabList,
-  destroy() {},
+  destroy() {}
   getList() {
     return Promise.resolve([...this._descriptorActors]);
-  },
+  }
   
   getTargetActorForTab(title) {
     const descriptorActor = this._descriptorActors.find(d => d.title === title);
@@ -112,8 +110,8 @@ TestTabList.prototype = {
       return null;
     }
     return descriptorActor._targetActor;
-  },
-};
+  }
+}
 
 exports.createRootActor = function createRootActor(connection) {
   ActorRegistry.registerModule("devtools/server/actors/webconsole", {
