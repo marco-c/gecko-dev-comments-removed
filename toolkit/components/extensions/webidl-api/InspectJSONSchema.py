@@ -12,7 +12,7 @@ try:
     
     
     buildconfig.topsrcdir
-except ModuleNotFoundError or AttributeError:
+except (ModuleNotFoundError, AttributeError):
     print(
         "This script should be executed using `mach python %s`" % __file__,
         file=sys.stderr,
