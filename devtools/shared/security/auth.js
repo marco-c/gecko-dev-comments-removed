@@ -80,9 +80,8 @@ var Prompt = (Authenticators.Prompt = {});
 
 Prompt.mode = "PROMPT";
 
-Prompt.Client = function () {};
-Prompt.Client.prototype = {
-  mode: Prompt.mode,
+Prompt.Client = class {
+  mode = Prompt.mode;
 
   
 
@@ -90,7 +89,7 @@ Prompt.Client.prototype = {
 
 
 
-  validateSettings() {},
+  validateSettings() {}
 
   
 
@@ -109,7 +108,7 @@ Prompt.Client.prototype = {
 
   validateConnection() {
     return true;
-  },
+  }
 
   
 
@@ -127,12 +126,11 @@ Prompt.Client.prototype = {
 
 
 
-  authenticate() {},
+  authenticate() {}
 };
 
-Prompt.Server = function () {};
-Prompt.Server.prototype = {
-  mode: Prompt.mode,
+Prompt.Server = class {
+  mode = Prompt.mode;
 
   
 
@@ -145,7 +143,7 @@ Prompt.Server.prototype = {
 
   augmentAdvertisement(listener, advertisement) {
     advertisement.authentication = Prompt.mode;
-  },
+  }
 
   
 
@@ -176,7 +174,7 @@ Prompt.Server.prototype = {
       client,
       server,
     });
-  },
+  }
 
   
 
@@ -202,7 +200,7 @@ Prompt.Server.prototype = {
 
 
 
-  allowConnection: prompt.Server.defaultAllowConnection,
+  allowConnection = prompt.Server.defaultAllowConnection;
 };
 
 exports.Authenticators = {
