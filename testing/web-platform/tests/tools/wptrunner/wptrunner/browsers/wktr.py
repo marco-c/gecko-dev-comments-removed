@@ -18,7 +18,7 @@ from ..executors.executorwktr import (
 )
 
 
-__wptrunner__ = {"product": "WebKitTestRunner",
+__wptrunner__ = {"product": "wktr",
                  "check_args": "check_args",
                  "browser": "WKTRBrowser",
                  "executor": {
