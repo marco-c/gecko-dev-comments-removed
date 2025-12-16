@@ -61,7 +61,7 @@ class GeckoProfile:
         
         self.profile_arcname = os.path.join(
             self.upload_dir,
-            "profile_{0}.zip".format(test_config.get("suite", test_config["name"])),
+            "profile_{}.zip".format(test_config.get("suite", test_config["name"])),
         )
 
         
@@ -214,7 +214,7 @@ class GeckoProfile:
                 
                 cycle_name = f"cycle_{cycle}.profile"
                 path_in_zip = os.path.join(
-                    "profile_{0}".format(self.test_config["name"]), testname, cycle_name
+                    "profile_{}".format(self.test_config["name"]), testname, cycle_name
                 )
                 LOG.info(
                     f"Adding profile {path_in_zip} to archive {self.profile_arcname}"

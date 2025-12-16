@@ -148,12 +148,12 @@ class Wait:
 
         if message:
             message = f" with message: {message}"
+        else:
+            message = ""
 
+        elapsed = round(self.clock.now - start, 1)
         raise errors.TimeoutException(
-            
-            "Timed out after {0:.1f} seconds{1}".format(
-                float(round((self.clock.now - start), 1)), message if message else ""
-            ),
+            f"Timed out after {elapsed:.1f} seconds{message}",
             cause=last_exc,
         )
 
