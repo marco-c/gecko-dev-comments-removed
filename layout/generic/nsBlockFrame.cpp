@@ -2371,9 +2371,8 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
   
   
   auto overflowClipAxes = ShouldApplyOverflowClipping(aDisplay);
-  auto overflowClipMargin =
-      OverflowClipMargin(overflowClipAxes,  false);
-  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin.IsAllZero()) {
+  auto overflowClipMargin = OverflowClipMargin(overflowClipAxes);
+  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin == nsSize()) {
     return;
   }
 

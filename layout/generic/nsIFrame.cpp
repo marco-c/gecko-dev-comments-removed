@@ -2763,19 +2763,6 @@ static void ApplyOverflowClipping(
       haveRadii ? &radii : nullptr);
 }
 
-static Sides ToSkipSides(PhysicalAxes aClipAxes) {
-  SideBits result{};
-  if (!aClipAxes.contains(PhysicalAxis::Vertical)) {
-    result |= SideBits::eTop;
-    result |= SideBits::eBottom;
-  }
-  if (!aClipAxes.contains(PhysicalAxis::Horizontal)) {
-    result |= SideBits::eLeft;
-    result |= SideBits::eRight;
-  }
-  return Sides(result);
-}
-
 bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
     const PhysicalAxes aClipAxes, nsRect& aOutRect,
     nsRectCornerRadii& aOutRadii) const {
@@ -2785,8 +2772,12 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
   
   MOZ_ASSERT(!aClipAxes.isEmpty());
   MOZ_ASSERT(ShouldApplyOverflowClipping(StyleDisplay()) == aClipAxes);
-  auto boxMargin = OverflowClipMargin(aClipAxes,  true);
-  boxMargin.ApplySkipSides(GetSkipSides() | ToSkipSides(aClipAxes));
+  
+  nsMargin boxMargin = -GetUsedBorder();
+  auto clipMargin = OverflowClipMargin(aClipAxes);
+  boxMargin += nsMargin(clipMargin.height, clipMargin.width, clipMargin.height,
+                        clipMargin.width);
+  boxMargin.ApplySkipSides(GetSkipSides());
 
   aOutRect = nsRect(nsPoint(), GetSize());
   aOutRect.Inflate(boxMargin);
@@ -2811,32 +2802,21 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
   return true;
 }
 
-nsMargin nsIFrame::OverflowClipMargin(PhysicalAxes aClipAxes,
-                                      bool aAllowNegative) const {
-  nsMargin result;
+nsSize nsIFrame::OverflowClipMargin(PhysicalAxes aClipAxes) const {
+  nsSize result;
   if (aClipAxes.isEmpty()) {
     return result;
   }
   const auto& margin = StyleMargin()->mOverflowClipMargin;
-  if (!aAllowNegative && margin.offset.IsZero()) {
+  if (margin.IsZero()) {
     return result;
   }
-  switch (margin.visual_box) {
-    case StyleOverflowClipMarginBox::BorderBox:
-      break;
-    case StyleOverflowClipMarginBox::PaddingBox:
-      result = -GetUsedBorder();
-      break;
-    case StyleOverflowClipMarginBox::ContentBox:
-      result = -GetUsedBorderAndPadding();
-      break;
+  nscoord marginAu = margin.ToAppUnits();
+  if (aClipAxes.contains(PhysicalAxis::Horizontal)) {
+    result.width = marginAu;
   }
-  if (!margin.offset.IsZero()) {
-    nscoord marginAu = margin.offset.ToAppUnits();
-    result += nsMargin(marginAu, marginAu, marginAu, marginAu);
-  }
-  if (!aAllowNegative) {
-    result.EnsureAtLeast(nsMargin());
+  if (aClipAxes.contains(PhysicalAxis::Vertical)) {
+    result.height = marginAu;
   }
   return result;
 }
@@ -10741,9 +10721,8 @@ static nsRect ComputeOutlineInnerRect(
   }
 
   auto overflowClipAxes = aFrame->ShouldApplyOverflowClipping(disp);
-  auto overflowClipMargin = aFrame->OverflowClipMargin(
-      overflowClipAxes,  false);
-  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin.IsAllZero()) {
+  auto overflowClipMargin = aFrame->OverflowClipMargin(overflowClipAxes);
+  if (overflowClipAxes == kPhysicalAxesBoth && overflowClipMargin == nsSize()) {
     return u;
   }
 
@@ -11022,9 +11001,8 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
   
   
   if (!overflowClipAxes.isEmpty()) {
-    aOverflowAreas.ApplyClipping(
-        bounds, overflowClipAxes,
-        OverflowClipMargin(overflowClipAxes,  false));
+    aOverflowAreas.ApplyClipping(bounds, overflowClipAxes,
+                                 OverflowClipMargin(overflowClipAxes));
   }
 
   ComputeAndIncludeOutlineArea(this, aOverflowAreas, aNewSize);
@@ -12292,7 +12270,8 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
   }
 
   
-  if (aDisp->IsScrollableOverflow()) {
+  if (aDisp->mOverflowX == StyleOverflow::Hidden &&
+      aDisp->mOverflowY == StyleOverflow::Hidden) {
     
     LayoutFrameType type = Type();
     switch (type) {
@@ -12306,20 +12285,10 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
       case LayoutFrameType::SVGInnerSVG:
       case LayoutFrameType::SVGOuterSVG:
       case LayoutFrameType::SVGSymbol:
-      case LayoutFrameType::Image:
-      case LayoutFrameType::TableCell:
-        return kPhysicalAxesBoth;
       case LayoutFrameType::Table:
-        
-        
-        
-        
-        
-        
-        return aDisp->mOverflowX == StyleOverflow::Hidden &&
-                       aDisp->mOverflowY == StyleOverflow::Hidden
-                   ? kPhysicalAxesBoth
-                   : PhysicalAxes();
+      case LayoutFrameType::TableCell:
+      case LayoutFrameType::Image:
+        return kPhysicalAxesBoth;
       case LayoutFrameType::TextInput:
         
         return PhysicalAxes();
@@ -12330,8 +12299,8 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
 
   
   
-  if (MOZ_UNLIKELY((aDisp->mOverflowX == StyleOverflow::Clip ||
-                    aDisp->mOverflowY == StyleOverflow::Clip) &&
+  if (MOZ_UNLIKELY((aDisp->mOverflowX == mozilla::StyleOverflow::Clip ||
+                    aDisp->mOverflowY == mozilla::StyleOverflow::Clip) &&
                    !IsListControlFrame())) {
     
     
@@ -12339,10 +12308,10 @@ PhysicalAxes nsIFrame::ShouldApplyOverflowClipping(
     if (!element ||
         !PresContext()->ElementWouldPropagateScrollStyles(*element)) {
       PhysicalAxes axes;
-      if (aDisp->mOverflowX == StyleOverflow::Clip) {
+      if (aDisp->mOverflowX == mozilla::StyleOverflow::Clip) {
         axes += PhysicalAxis::Horizontal;
       }
-      if (aDisp->mOverflowY == StyleOverflow::Clip) {
+      if (aDisp->mOverflowY == mozilla::StyleOverflow::Clip) {
         axes += PhysicalAxis::Vertical;
       }
       return axes;
