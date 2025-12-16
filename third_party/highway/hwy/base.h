@@ -22,8 +22,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #if defined(HWY_HEADER_ONLY)
-#include <cstdarg>
-#include <cstdio>
+#include <stdarg.h>
+#include <stdio.h>
 #endif
 
 #if !defined(HWY_NO_LIBCXX)
@@ -34,6 +34,7 @@
 #include "hwy/highway_export.h"
 
 #include <mozilla/Attributes.h>
+
 
 
 #define HWY_MAJOR 1
@@ -59,7 +60,7 @@
 
 #endif  
 
-#if (HWY_ARCH_X86 && !defined(HWY_NO_LIBCXX)) || HWY_COMPILER_MSVC
+#if !defined(HWY_NO_LIBCXX) || HWY_COMPILER_MSVC
 #include <atomic>
 #endif
 
@@ -150,6 +151,21 @@
 
 #endif  
 
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1200) || \
+    (HWY_COMPILER_ICC && !HWY_COMPILER_ICX)
+
+
+
+
+
+#define HWY_MEMBER_VAR_MAYBE_UNUSED
+#else
+
+
+
+#define HWY_MEMBER_VAR_MAYBE_UNUSED HWY_MAYBE_UNUSED
+#endif
+
 
 
 
@@ -204,7 +220,9 @@ namespace hwy {
 
 
 
-#define HWY_API static HWY_INLINE HWY_FLATTEN HWY_MAYBE_UNUSED
+
+
+#define HWY_API static HWY_INLINE HWY_FLATTEN
 
 #define HWY_CONCAT_IMPL(a, b) a##b
 #define HWY_CONCAT(a, b) HWY_CONCAT_IMPL(a, b)
@@ -401,10 +419,19 @@ HWY_DLLEXPORT HWY_NORETURN void HWY_FORMAT(3, 4)
 #endif
 
 
+
+
+
+
+
+
+
+
 #if !defined(HWY_IS_DEBUG_BUILD)
 
 
-#if (!defined(__OPTIMIZE__) && !defined(NDEBUG)) || HWY_IS_SANITIZER || \
+#if (!defined(__OPTIMIZE__) && !defined(NDEBUG)) ||         \
+    (HWY_IS_ASAN || (HWY_IS_SANITIZER && !HWY_IS_UBSAN)) || \
     defined(__clang_analyzer__)
 #define HWY_IS_DEBUG_BUILD 1
 #else
@@ -1720,9 +1747,9 @@ HWY_F16_CONSTEXPR inline std::partial_ordering operator<=>(
 
 
 #ifndef HWY_SSE2_HAVE_SCALAR_BF16_TYPE
-#if HWY_ARCH_X86 && defined(__SSE2__) &&                     \
-    ((HWY_COMPILER_CLANG >= 1700 && !HWY_COMPILER_CLANGCL && \
-      !HWY_IS_DEBUG_BUILD) ||                                \
+#if HWY_ARCH_X86 && defined(__SSE2__) &&                         \
+    ((HWY_COMPILER_CLANG >= 1700 && !HWY_COMPILER_CLANGCL &&     \
+      (!HWY_IS_DEBUG_BUILD || HWY_COMPILER3_CLANG >= 220101)) || \
      HWY_COMPILER_GCC_ACTUAL >= 1300)
 #define HWY_SSE2_HAVE_SCALAR_BF16_TYPE 1
 #else
@@ -1740,7 +1767,11 @@ HWY_F16_CONSTEXPR inline std::partial_ordering operator<=>(
 #ifndef HWY_HAVE_SCALAR_BF16_OPERATORS
 
 
-#if HWY_HAVE_SCALAR_BF16_TYPE && (HWY_COMPILER_GCC_ACTUAL >= 1300)
+
+
+
+
+#if HWY_HAVE_SCALAR_BF16_TYPE && (HWY_COMPILER_GCC_ACTUAL >= 1700)
 #define HWY_HAVE_SCALAR_BF16_OPERATORS 1
 #else
 #define HWY_HAVE_SCALAR_BF16_OPERATORS 0
@@ -2736,7 +2767,7 @@ HWY_API constexpr TTo ConvertScalarTo(TFrom in) {
 template <typename T1, typename T2>
 constexpr inline T1 DivCeil(T1 a, T2 b) {
 #if HWY_CXX_LANG >= 201703L
-  HWY_DASSERT(b != 0);
+  HWY_DASSERT(b != T2{0});
 #endif
   return (a + b - 1) / b;
 }
@@ -2959,9 +2990,10 @@ HWY_INLINE constexpr T AddWithWraparound(T t, T2 n) {
 
 HWY_API uint64_t Mul128(uint64_t a, uint64_t b, uint64_t* HWY_RESTRICT upper) {
 #if defined(__SIZEOF_INT128__)
-  __uint128_t product = (__uint128_t)a * (__uint128_t)b;
-  *upper = (uint64_t)(product >> 64);
-  return (uint64_t)(product & 0xFFFFFFFFFFFFFFFFULL);
+  __uint128_t product =
+      static_cast<__uint128_t>(a) * static_cast<__uint128_t>(b);
+  *upper = static_cast<uint64_t>(product >> 64);
+  return static_cast<uint64_t>(product & 0xFFFFFFFFFFFFFFFFULL);
 #elif HWY_COMPILER_MSVC && HWY_ARCH_X86_64
   return _umul128(a, b, upper);
 #else
@@ -2978,9 +3010,9 @@ HWY_API uint64_t Mul128(uint64_t a, uint64_t b, uint64_t* HWY_RESTRICT upper) {
 
 HWY_API int64_t Mul128(int64_t a, int64_t b, int64_t* HWY_RESTRICT upper) {
 #if defined(__SIZEOF_INT128__)
-  __int128_t product = (__int128_t)a * (__int128_t)b;
-  *upper = (int64_t)(product >> 64);
-  return (int64_t)(product & 0xFFFFFFFFFFFFFFFFULL);
+  __int128_t product = static_cast<__int128_t>(a) * static_cast<__int128_t>(b);
+  *upper = static_cast<int64_t>(product >> 64);
+  return static_cast<int64_t>(product & 0xFFFFFFFFFFFFFFFFULL);
 #elif HWY_COMPILER_MSVC && HWY_ARCH_X86_64
   return _mul128(a, b, upper);
 #else

@@ -15,6 +15,7 @@
 
 #include "hwy/contrib/thread_pool/topology.h"
 
+#include <ctype.h>  
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -113,7 +114,9 @@ bool ForEachSLPI(LOGICAL_PROCESSOR_RELATIONSHIP rel, Func&& func) {
   }
   HWY_ASSERT(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
   
-  uint8_t* buf = static_cast<uint8_t*>(malloc(buf_bytes));
+  
+  
+  uint8_t* buf = static_cast<uint8_t*>(calloc(1, buf_bytes));
   HWY_ASSERT(buf);
 
   
@@ -561,6 +564,9 @@ std::vector<size_t> ExpandList(const char* list, size_t list_end,
   size_t pos = 0;
 
   
+  if (isspace(list[0]) && list_end <= 2) return expanded;
+
+  
   
   const auto find = [list, list_end, &pos](char c) -> size_t {
     const char* found_ptr = strchr(list + pos, c);
@@ -655,6 +661,27 @@ void SetClusterCacheSizes(std::vector<Topology::Package>& packages) {
 #elif HWY_OS_WIN
 
 
+
+
+
+
+
+
+static size_t GroupCount(const CACHE_RELATIONSHIP& cr) {
+  
+  
+  const uint8_t* pcount =
+      reinterpret_cast<const uint8_t*>(&cr.GroupMask) - sizeof(uint16_t);
+  return HWY_MAX(pcount[HWY_IS_BIG_ENDIAN], 1);
+}
+
+static size_t GroupCount(const NUMA_NODE_RELATIONSHIP& nn) {
+  const uint8_t* pcount =
+      reinterpret_cast<const uint8_t*>(&nn.GroupMask) - sizeof(uint16_t);
+  return HWY_MAX(pcount[HWY_IS_BIG_ENDIAN], 1);
+}
+
+
 size_t MaxLpsPerCore(std::vector<Topology::LP>& lps) {
   size_t max_lps_per_core = 0;
   size_t core_idx = 0;
@@ -707,7 +734,7 @@ size_t MaxCoresPerCluster(const size_t max_lps_per_core,
     const CACHE_RELATIONSHIP& cr = info.Cache;
     if (cr.Type != CacheUnified && cr.Type != CacheData) return;
     if (cr.Level != 3) return;
-    foreach_cluster(cr.GroupCount, cr.GroupMasks);
+    foreach_cluster(GroupCount(cr), cr.GroupMasks);
   };
 
   if (!ForEachSLPI(RelationProcessorDie, foreach_die)) {
@@ -764,7 +791,7 @@ void SetNodes(std::vector<Topology::LP>& lps) {
     if (info.Relationship != RelationNumaNode) return;
     const NUMA_NODE_RELATIONSHIP& nn = info.NumaNode;
     
-    const size_t num_groups = HWY_MAX(1, nn.GroupCount);
+    const size_t num_groups = HWY_MAX(1, GroupCount(nn));
     const uint8_t node = static_cast<uint8_t>(nn.NodeNumber);
     ForeachBit(num_groups, nn.GroupMasks, lps, __LINE__,
                [node](size_t lp, std::vector<Topology::LP>& lps) {
@@ -991,7 +1018,7 @@ bool InitCachesSysfs(Caches& caches) {
 
 
 #ifndef __ANDROID__
-    HWY_WARN("sysfs detected L1=%u L2=%u, err %x\n", caches[1].size_kib,
+    HWY_WARN("sysfs detected L1=%u L2=%u, err %d\n", caches[1].size_kib,
              caches[2].size_kib, errno);
 #endif
     return false;
@@ -1023,7 +1050,7 @@ bool InitCachesWin(Caches& caches) {
                             : cr.Associativity;
 
       
-      size_t shared_with = NumBits(cr.GroupCount, cr.GroupMasks);
+      size_t shared_with = NumBits(GroupCount(cr), cr.GroupMasks);
       
       
       shared_with = DivCeil(shared_with, max_lps_per_core);

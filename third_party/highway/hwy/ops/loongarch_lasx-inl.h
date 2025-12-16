@@ -15,10 +15,27 @@
 
 
 
-#include <lasxintrin.h>
-
 #include "hwy/ops/loongarch_lsx-inl.h"
 #include "hwy/ops/shared-inl.h"
+
+#ifndef __loongarch_asx
+
+
+
+
+
+
+
+HWY_PUSH_ATTRIBUTES("lsx,lasx")
+#define __loongarch_asx
+#include <lasxintrin.h>
+#undef __loongarch_asx
+
+HWY_MAYBE_UNUSED static void HWY_CONCAT(hwy_lasx_dummy, __COUNTER__) () {}
+HWY_POP_ATTRIBUTES
+#else
+#include <lasxintrin.h>
+#endif
 
 HWY_BEFORE_NAMESPACE();
 namespace hwy {

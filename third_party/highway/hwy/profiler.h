@@ -17,8 +17,16 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>  
 
+#include <atomic>
+#include <functional>
+
+#include "hwy/base.h"
 #include "hwy/highway_export.h"
+
+
+
 
 
 
@@ -44,14 +52,12 @@
 
 #if PROFILER_ENABLED
 #include <stdio.h>
-#include <string.h>  
 
 #include <algorithm>  
-#include <atomic>
+#include <utility>
 #include <vector>
 
 #include "hwy/aligned_allocator.h"
-#include "hwy/base.h"
 #include "hwy/bit_set.h"
 #include "hwy/timer.h"
 #endif  
@@ -69,6 +75,78 @@ enum class ProfilerFlags : uint32_t {
   kInclusive = 1
 };
 
+
+using ProfilerFunc = std::function<void(void)>;
+
+template <size_t kMaxStrings>
+class StringTable {
+  static constexpr std::memory_order kRelaxed = std::memory_order_relaxed;
+  static constexpr std::memory_order kAcq = std::memory_order_acquire;
+  static constexpr std::memory_order kRel = std::memory_order_release;
+
+ public:
+  
+  
+  const char* Name(size_t idx) const {
+    
+    
+    return ptrs_[idx].load(kRelaxed);
+  }
+
+  
+  
+  size_t Add(const char* name) {
+    
+    const size_t num_strings = next_ptr_.load(kAcq);
+    HWY_ASSERT(num_strings < kMaxStrings);
+    for (size_t idx = 1; idx < num_strings; ++idx) {
+      const char* existing = ptrs_[idx].load(kAcq);
+      
+      HWY_ASSERT(existing != nullptr);
+      if (HWY_UNLIKELY(!strcmp(existing, name))) {
+        return idx;
+      }
+    }
+
+    
+    const size_t len = strlen(name) + 1;
+    const size_t pos = next_char_.fetch_add(len, kRelaxed);
+    HWY_ASSERT(pos + len <= sizeof(chars_));
+    strcpy(chars_ + pos, name);  
+
+    for (;;) {
+      size_t idx = next_ptr_.load(kRelaxed);
+      HWY_ASSERT(idx < kMaxStrings);
+
+      
+      const char* expected = nullptr;
+      if (HWY_LIKELY(ptrs_[idx].compare_exchange_weak(expected, chars_ + pos,
+                                                      kRel, kRelaxed))) {
+        
+        next_ptr_.store(idx + 1, kRel);
+        HWY_DASSERT(!strcmp(Name(idx), name));
+        return idx;
+      }
+
+      
+      if (HWY_UNLIKELY(!strcmp(expected, name))) {
+        
+        
+        HWY_DASSERT(!strcmp(Name(idx), name));
+        return idx;
+      }
+
+      
+    }
+  }
+
+ private:
+  std::atomic<const char*> ptrs_[kMaxStrings];
+  std::atomic<size_t> next_ptr_{1};  
+  std::atomic<size_t> next_char_{0};
+  char chars_[kMaxStrings * 55];
+};
+
 #if PROFILER_ENABLED
 
 
@@ -84,7 +162,7 @@ HWY_INLINE_VAR constexpr size_t kMaxDepth = 13;
 HWY_INLINE_VAR constexpr size_t kMaxZones = 128;
 
 
-HWY_INLINE_VAR constexpr size_t kMaxThreads = 256;
+HWY_INLINE_VAR constexpr size_t kMaxWorkers = 256;
 
 
 class ZoneHandle {
@@ -120,7 +198,10 @@ class ZoneHandle {
   
   uint64_t ChildTotalMask() const {
     
-    return IsInclusive() ? 0 : ~uint64_t{0};
+    
+    const uint32_t bit =
+        bits_ & static_cast<uint32_t>(ProfilerFlags::kInclusive);
+    return uint64_t{bit} - 1;
   }
 
  private:
@@ -128,44 +209,92 @@ class ZoneHandle {
 };
 
 
-class Names {
-  static constexpr std::memory_order kRel = std::memory_order_relaxed;
-
+class Zones {
  public:
   
   
-  const char* Get(ZoneHandle zone) const { return ptrs_[zone.ZoneIdx()]; }
+  const char* Name(ZoneHandle zone) const {
+    return strings_.Name(zone.ZoneIdx());
+  }
 
+  
+  
   ZoneHandle AddZone(const char* name, ProfilerFlags flags) {
-    
-    const size_t num_zones = next_ptr_.load(kRel);
-    HWY_ASSERT(num_zones < kMaxZones);
-    for (size_t zone_idx = 1; zone_idx < num_zones; ++zone_idx) {
-      if (!strcmp(ptrs_[zone_idx], name)) {
-        return ZoneHandle(zone_idx, flags);
-      }
-    }
-
-    
-    const size_t zone_idx = next_ptr_.fetch_add(1, kRel);
-
-    
-    const size_t len = strlen(name) + 1;
-    const size_t pos = next_char_.fetch_add(len, kRel);
-    HWY_ASSERT(pos + len <= sizeof(chars_));
-    strcpy(chars_ + pos, name);  
-
-    ptrs_[zone_idx] = chars_ + pos;
-    const ZoneHandle zone(zone_idx, flags);
-    HWY_DASSERT(!strcmp(Get(zone), name));
-    return zone;
+    return ZoneHandle(strings_.Add(name), flags);
   }
 
  private:
-  const char* ptrs_[kMaxZones];
-  std::atomic<size_t> next_ptr_{1};  
-  char chars_[kMaxZones * 70];
-  std::atomic<size_t> next_char_{0};
+  StringTable<kMaxZones> strings_;
+};
+
+
+
+
+
+class Funcs {
+  static constexpr auto kAcq = std::memory_order_acquire;
+  static constexpr auto kRel = std::memory_order_release;
+
+ public:
+  
+  void Add(intptr_t key, ProfilerFunc func) {
+    HWY_ASSERT(key != 0 && key != kPending);  
+    HWY_ASSERT(func);                         
+
+    for (size_t i = 0; i < kMaxFuncs; ++i) {
+      intptr_t expected = 0;
+      
+      if (!keys_[i].compare_exchange_strong(expected, kPending, kRel)) {
+        continue;
+      }
+      
+      funcs_[i] = std::move(func);
+      keys_[i].store(key, kRel);  
+      return;
+    }
+
+    HWY_ABORT("Funcs::Add: no free slot, increase kMaxFuncs.");
+  }
+
+  
+  
+  void Remove(intptr_t key) {
+    HWY_ASSERT(key != 0 && key != kPending);  
+
+    for (size_t i = 0; i < kMaxFuncs; ++i) {
+      intptr_t actual = keys_[i].load(kAcq);
+      if (actual == key) {
+        
+        
+        
+        if (!keys_[i].compare_exchange_strong(actual, kPending, kRel)) {
+          HWY_WARN("Funcs: CAS failed, why is there a concurrent Remove?");
+        }
+        funcs_[i] = ProfilerFunc();
+        keys_[i].store(0, kRel);  
+        return;
+      }
+    }
+    HWY_ABORT("Funcs::Remove: failed to find key %p.",
+              reinterpret_cast<void*>(key));
+  }
+
+  void CallAll() const {
+    for (size_t i = 0; i < kMaxFuncs; ++i) {
+      intptr_t key = keys_[i].load(kAcq);  
+      
+      if (key != 0 && key != kPending) {
+        funcs_[i]();
+      }
+    }
+  }
+
+ private:
+  static constexpr size_t kMaxFuncs = 64;
+  static constexpr intptr_t kPending = -1;
+
+  ProfilerFunc funcs_[kMaxFuncs];  
+  std::atomic<intptr_t> keys_[kMaxFuncs] = {};
 };
 
 
@@ -183,7 +312,7 @@ struct Accumulator {
     num_calls += 1;
   }
 
-  void Assimilate(Accumulator& other) {
+  void Take(Accumulator& other) {
     duration += other.duration;
     other.duration = 0;
 
@@ -203,79 +332,23 @@ struct Accumulator {
 };
 static_assert(sizeof(Accumulator) == 16, "Wrong Accumulator size");
 
+using ZoneSet = hwy::BitSet<kMaxZones>;
+using WorkerSet = hwy::BitSet<kMaxWorkers>;
+using AtomicWorkerSet = hwy::AtomicBitSet<kMaxWorkers>;
 
 
-class ZoneSet {
- public:
-  
-  void Set(size_t i) {
-    HWY_DASSERT(i < kMaxZones);
-    const size_t idx = i / 64;
-    const size_t mod = i % 64;
-    bits_[idx].Set(mod);
-    HWY_DASSERT(Get(i));
-  }
-
-  void Clear(size_t i) {
-    HWY_DASSERT(i < kMaxZones);
-    const size_t idx = i / 64;
-    const size_t mod = i % 64;
-    bits_[idx].Clear(mod);
-    HWY_DASSERT(!Get(i));
-  }
-
-  bool Get(size_t i) const {
-    HWY_DASSERT(i < kMaxZones);
-    const size_t idx = i / 64;
-    const size_t mod = i % 64;
-    return bits_[idx].Get(mod);
-  }
-
-  
-  size_t First() const {
-    HWY_DASSERT(bits_[0].Any() || bits_[1].Any());
-    const size_t idx = bits_[0].Any() ? 0 : 1;
-    return idx * 64 + bits_[idx].First();
-  }
-
-  
-  
-  
-  template <class Func>
-  void Foreach(const Func& func) const {
-    bits_[0].Foreach([&func](size_t mod) { func(mod); });
-    bits_[1].Foreach([&func](size_t mod) { func(64 + mod); });
-  }
-
-  size_t Count() const { return bits_[0].Count() + bits_[1].Count(); }
-
- private:
-  static_assert(kMaxZones == 128, "Update ZoneSet");
-  BitSet64 bits_[2];
-};
 
 
-class ThreadSet {
- public:
-  
-  void Set(size_t i) {
-    HWY_DASSERT(i < kMaxThreads);
-    const size_t idx = i / 64;
-    const size_t mod = i % 64;
-    bits_[idx].Set(mod);
-  }
 
-  size_t Count() const {
-    size_t total = 0;
-    for (const BitSet64& bits : bits_) {
-      total += bits.Count();
-    }
-    return total;
-  }
 
- private:
-  BitSet64 bits_[DivCeil(kMaxThreads, size_t{64})];
-};
+
+
+
+
+
+
+
+
 
 
 
@@ -328,41 +401,38 @@ static_assert(sizeof(ConcurrencyStats) == (8 + 3 * sizeof(size_t)), "");
 
 class Results {
  public:
-  void Assimilate(const size_t thread, const size_t zone_idx,
-                  Accumulator& other) {
-    HWY_DASSERT(thread < kMaxThreads);
+  void TakeAccumulator(const size_t global_idx, const size_t zone_idx,
+                       Accumulator& other) {
+    HWY_DASSERT(global_idx < kMaxWorkers);
     HWY_DASSERT(zone_idx < kMaxZones);
     HWY_DASSERT(other.zone.ZoneIdx() == zone_idx);
 
     visited_zones_.Set(zone_idx);
-    totals_[zone_idx].Assimilate(other);
-    threads_[zone_idx].Set(thread);
+    totals_[zone_idx].Take(other);
+    workers_[zone_idx].Set(global_idx);
   }
 
   
   
-  void CountThreadsAndReset(const size_t zone_idx) {
+  void CountWorkersAndReset(const size_t zone_idx) {
     HWY_DASSERT(zone_idx < kMaxZones);
-    const size_t num_threads = threads_[zone_idx].Count();
+    const size_t num_workers = workers_[zone_idx].Count();
     
     
     
-    if (num_threads != 0) {
-      concurrency_[zone_idx].Notify(num_threads);
+    if (num_workers != 0) {
+      concurrency_[zone_idx].Notify(num_workers);
     }
-    threads_[zone_idx] = ThreadSet();
+    workers_[zone_idx] = WorkerSet();
   }
 
-  void CountThreadsAndReset() {
+  void CountWorkersAndReset() {
     visited_zones_.Foreach(
-        [&](size_t zone_idx) { CountThreadsAndReset(zone_idx); });
+        [&](size_t zone_idx) { CountWorkersAndReset(zone_idx); });
   }
 
-  void AddAnalysisTime(uint64_t t0) { analyze_elapsed_ += timer::Stop() - t0; }
-
-  void Print(const Names& names) {
-    const uint64_t t0 = timer::Start();
-    const double inv_freq = 1.0 / platform::InvariantTicksPerSecond();
+  void PrintAndReset(const Zones& zones) {
+    const double inv_freq = 1.0 / hwy::platform::InvariantTicksPerSecond();
 
     
     
@@ -371,7 +441,7 @@ class Results {
     visited_zones_.Foreach([&](size_t zone_idx) {
       indices.push_back(static_cast<uint32_t>(zone_idx));
       
-      CountThreadsAndReset(zone_idx);
+      CountWorkersAndReset(zone_idx);
     });
     std::sort(indices.begin(), indices.end(), [&](uint32_t a, uint32_t b) {
       return totals_[a].duration > totals_[b].duration;
@@ -391,7 +461,7 @@ class Results {
       
       const double concurrency_divisor = HWY_MAX(1.0, avg_concurrency);
       printf("%s%-40s: %10.0f x %15.0f / %5.1f (%5zu %3zu-%3zu) = %9.6f\n",
-             total.zone.IsInclusive() ? "(I)" : "   ", names.Get(total.zone),
+             total.zone.IsInclusive() ? "(I)" : "   ", zones.Name(total.zone),
              static_cast<double>(total.num_calls), per_call, avg_concurrency,
              concurrency.Count(), concurrency.Min(), concurrency.Max(),
              duration * inv_freq / concurrency_divisor);
@@ -401,19 +471,13 @@ class Results {
       
     }
     visited_zones_ = ZoneSet();
-
-    AddAnalysisTime(t0);
-    printf("Total analysis [s]: %f\n",
-           static_cast<double>(analyze_elapsed_) * inv_freq);
-    analyze_elapsed_ = 0;
   }
 
  private:
-  uint64_t analyze_elapsed_ = 0;
   
   ZoneSet visited_zones_;
   Accumulator totals_[kMaxZones];
-  ThreadSet threads_[kMaxZones];
+  WorkerSet workers_[kMaxZones];
   ConcurrencyStats concurrency_[kMaxZones];
 };
 
@@ -421,10 +485,10 @@ class Results {
 
 
 struct Overheads {
-  uint32_t self = 0;
-  uint32_t child = 0;
+  uint64_t self = 0;
+  uint64_t child = 0;
 };
-static_assert(sizeof(Overheads) == 8, "Wrong Overheads size");
+static_assert(sizeof(Overheads) == 16, "Wrong Overheads size");
 
 class Accumulators {
   
@@ -433,21 +497,21 @@ class Accumulators {
   static constexpr size_t kPerLine = HWY_ALIGNMENT / sizeof(Accumulator);
 
  public:
-  Accumulator& Get(const size_t thread, const size_t zone_idx) {
-    HWY_DASSERT(thread < kMaxThreads);
+  Accumulator& Get(const size_t global_idx, const size_t zone_idx) {
+    HWY_DASSERT(global_idx < kMaxWorkers);
     HWY_DASSERT(zone_idx < kMaxZones);
     const size_t line = zone_idx / kPerLine;
     const size_t offset = zone_idx % kPerLine;
-    return zones_[(line * kMaxThreads + thread) * kPerLine + offset];
+    return zones_[(line * kMaxWorkers + global_idx) * kPerLine + offset];
   }
 
  private:
-  Accumulator zones_[kMaxZones * kMaxThreads];
+  Accumulator zones_[kMaxZones * kMaxWorkers];
 };
 
 
 
-class PerThread {
+class PerWorker {
  public:
   template <typename T>
   static T ClampedSubtract(const T minuend, const T subtrahend) {
@@ -467,12 +531,11 @@ class PerThread {
     t_enter_[depth] = t_enter;
     child_total_[1 + depth] = 0;
     depth_ = 1 + depth;
-    HWY_IF_CONSTEXPR(HWY_IS_DEBUG_BUILD) { any_ = 1; }
   }
 
   
-  void Exit(const uint64_t t_exit, const size_t thread, const ZoneHandle zone,
-            Accumulators& accumulators) {
+  void Exit(const uint64_t t_exit, const size_t global_idx,
+            const ZoneHandle zone, Accumulators& accumulators) {
     HWY_DASSERT(depth_ > 0);
     const size_t depth = depth_ - 1;
     const size_t zone_idx = zone.ZoneIdx();
@@ -484,7 +547,7 @@ class PerThread {
 
     const uint64_t self_duration = ClampedSubtract(
         duration, overheads_.self + overheads_.child + child_total);
-    accumulators.Get(thread, zone_idx).Add(zone, self_duration);
+    accumulators.Get(global_idx, zone_idx).Add(zone, self_duration);
     
     visited_zones_.Set(zone_idx);
 
@@ -495,11 +558,10 @@ class PerThread {
     depth_ = depth;
   }
 
-  bool HadAnyZones() const { return HWY_IS_DEBUG_BUILD ? (any_ != 0) : false; }
-
   
   
-  uint64_t GetFirstDurationAndReset(size_t thread, Accumulators& accumulators) {
+  uint64_t GetFirstDurationAndReset(size_t global_idx,
+                                    Accumulators& accumulators) {
     HWY_DASSERT(depth_ == 0);
 
     HWY_DASSERT(visited_zones_.Count() == 1);
@@ -508,32 +570,28 @@ class PerThread {
     HWY_DASSERT(visited_zones_.Get(zone_idx));
     visited_zones_.Clear(zone_idx);
 
-    Accumulator& zone = accumulators.Get(thread, zone_idx);
+    Accumulator& zone = accumulators.Get(global_idx, zone_idx);
     const uint64_t duration = zone.duration;
     zone = Accumulator();
     return duration;
   }
 
   
-  void MoveTo(const size_t thread, Accumulators& accumulators,
+  void MoveTo(const size_t global_idx, Accumulators& accumulators,
               Results& results) {
-    const uint64_t t0 = timer::Start();
-
     visited_zones_.Foreach([&](size_t zone_idx) {
-      results.Assimilate(thread, zone_idx, accumulators.Get(thread, zone_idx));
+      results.TakeAccumulator(global_idx, zone_idx,
+                              accumulators.Get(global_idx, zone_idx));
     });
     
     
     visited_zones_ = ZoneSet();
-
-    results.AddAnalysisTime(t0);
   }
 
  private:
   
   ZoneSet visited_zones_;  
   uint64_t depth_ = 0;     
-  uint64_t any_ = 0;
   Overheads overheads_;
 
   uint64_t t_enter_[kMaxDepth];
@@ -542,8 +600,7 @@ class PerThread {
   uint64_t child_total_[1 + kMaxDepth] = {0};
 };
 
-
-static_assert(sizeof(PerThread) == 256, "Wrong size");
+static_assert(sizeof(PerWorker) == 256, "Wrong size");
 
 }  
 
@@ -556,32 +613,54 @@ class Profiler {
   
   
   
+  static size_t Thread() { return s_global_idx; }
+  static size_t GlobalIdx() { return s_global_idx; }
   
-  static void InitThread() { s_thread = s_num_threads.fetch_add(1); }
+  
+  static void SetGlobalIdx(size_t global_idx) { s_global_idx = global_idx; }
 
-  
-  
-  
-  
-  
-  static size_t Thread() { return s_thread; }
-
-  
-  
-  
-  void SetMaxThreads(size_t max_threads) {
-    HWY_ASSERT(max_threads <= profiler::kMaxThreads);
-    max_threads_ = max_threads;
+  void ReserveWorker(size_t global_idx) {
+    HWY_ASSERT(!workers_reserved_.Get(global_idx));
+    workers_reserved_.Set(global_idx);
   }
 
-  const char* Name(profiler::ZoneHandle zone) const { return names_.Get(zone); }
+  void FreeWorker(size_t global_idx) {
+    HWY_ASSERT(workers_reserved_.Get(global_idx));
+    workers_reserved_.Clear(global_idx);
+  }
+
+  
+  void Enter(uint64_t t_enter, size_t global_idx) {
+    GetWorker(global_idx).Enter(t_enter);
+  }
+
+  
+  void Exit(uint64_t t_exit, size_t global_idx, profiler::ZoneHandle zone) {
+    GetWorker(global_idx).Exit(t_exit, global_idx, zone, accumulators_);
+  }
+
+  uint64_t GetFirstDurationAndReset(size_t global_idx) {
+    return GetWorker(global_idx)
+        .GetFirstDurationAndReset(global_idx, accumulators_);
+  }
+
+  const char* Name(profiler::ZoneHandle zone) const {
+    return zones_.Name(zone);
+  }
 
   
   
   
   profiler::ZoneHandle AddZone(const char* name,
                                ProfilerFlags flags = ProfilerFlags::kDefault) {
-    return names_.AddZone(name, flags);
+    return zones_.AddZone(name, flags);
+  }
+
+  void AddFunc(void* owner, ProfilerFunc func) {
+    funcs_.Add(reinterpret_cast<intptr_t>(owner), func);
+  }
+  void RemoveFunc(void* owner) {
+    funcs_.Remove(reinterpret_cast<intptr_t>(owner));
   }
 
   
@@ -616,7 +695,7 @@ class Profiler {
   
   void EndRootRun() {
     UpdateResults();
-    results_.CountThreadsAndReset();
+    results_.CountWorkersAndReset();
 
     run_active_.clear(std::memory_order_release);
   }
@@ -627,56 +706,57 @@ class Profiler {
     UpdateResults();
     
 
-    results_.Print(names_);
+    results_.PrintAndReset(zones_);
+
+    funcs_.CallAll();
   }
 
   
-  profiler::PerThread& GetThread(size_t thread) {
-    HWY_DASSERT(thread < profiler::kMaxThreads);
-    return threads_[thread];
-  }
-  profiler::Accumulators& Accumulators() { return accumulators_; }
+  void SetMaxThreads(size_t) {}
 
  private:
   
   Profiler();
 
-  
-  void UpdateResults() {
-    for (size_t thread = 0; thread < max_threads_; ++thread) {
-      threads_[thread].MoveTo(thread, accumulators_, results_);
-    }
-
-    
-    HWY_IF_CONSTEXPR(HWY_IS_DEBUG_BUILD) {
-      for (size_t thread = max_threads_; thread < profiler::kMaxThreads;
-           ++thread) {
-        HWY_ASSERT(!threads_[thread].HadAnyZones());
-      }
-    }
+  profiler::PerWorker& GetWorker(size_t global_idx) {
+    HWY_DASSERT(workers_reserved_.Get(global_idx));
+    return workers_[global_idx];
   }
 
-  static thread_local size_t s_thread;
-  static std::atomic<size_t> s_num_threads;
-  size_t max_threads_ = profiler::kMaxThreads;
+  
+  void UpdateResults() {
+    
+    std::atomic_thread_fence(std::memory_order_acquire);
+
+    workers_reserved_.Foreach([&](size_t global_idx) {
+      workers_[global_idx].MoveTo(global_idx, accumulators_, results_);
+    });
+  }
+
+  static thread_local size_t s_global_idx;
+
+  
+  
+  
+  
+  
+  profiler::AtomicWorkerSet workers_reserved_;
 
   std::atomic_flag run_active_ = ATOMIC_FLAG_INIT;
 
+  profiler::Funcs funcs_;
+
   
   
   
   
-  profiler::PerThread threads_[profiler::kMaxThreads];
+  profiler::PerWorker workers_[profiler::kMaxWorkers];
 
   profiler::Accumulators accumulators_;
 
-  
-  
-  profiler::ConcurrencyStats concurrency_[profiler::kMaxZones];
-
-  profiler::Names names_;
-
   profiler::Results results_;
+
+  profiler::Zones zones_;
 };
 
 namespace profiler {
@@ -690,29 +770,27 @@ class Zone {
   
   
   
-  
-  Zone(Profiler& profiler, size_t thread, ZoneHandle zone)
+  Zone(Profiler& profiler, size_t global_idx, ZoneHandle zone)
       : profiler_(profiler) {
     HWY_FENCE;
     const uint64_t t_enter = timer::Start();
     HWY_FENCE;
-    thread_ = static_cast<uint32_t>(thread);
+    global_idx_ = static_cast<uint32_t>(global_idx);
     zone_ = zone;
-    profiler.GetThread(thread).Enter(t_enter);
+    profiler.Enter(t_enter, global_idx);
     HWY_FENCE;
   }
 
   ~Zone() {
     HWY_FENCE;
     const uint64_t t_exit = timer::Stop();
-    profiler_.GetThread(thread_).Exit(t_exit, thread_, zone_,
-                                      profiler_.Accumulators());
+    profiler_.Exit(t_exit, static_cast<size_t>(global_idx_), zone_);
     HWY_FENCE;
   }
 
  private:
   Profiler& profiler_;
-  uint32_t thread_;
+  uint32_t global_idx_;
   ZoneHandle zone_;
 };
 
@@ -726,9 +804,15 @@ struct ZoneHandle {};
 struct Profiler {
   static HWY_DLLEXPORT Profiler& Get();
 
-  static void InitThread() {}
+  
   static size_t Thread() { return 0; }
-  void SetMaxThreads(size_t) {}
+  static size_t GlobalIdx() { return 0; }
+  static void SetGlobalIdx(size_t) {}
+  void ReserveWorker(size_t) {}
+  void FreeWorker(size_t) {}
+  void Enter(uint64_t, size_t) {}
+  void Exit(uint64_t, size_t, profiler::ZoneHandle) {}
+  uint64_t GetFirstDurationAndReset(size_t) { return 0; }
 
   const char* Name(profiler::ZoneHandle) const { return nullptr; }
   profiler::ZoneHandle AddZone(const char*,
@@ -736,10 +820,15 @@ struct Profiler {
     return profiler::ZoneHandle();
   }
 
+  void AddFunc(void*, ProfilerFunc) {}
+  void RemoveFunc(void*) {}
+
   bool IsRootRun() { return false; }
   void EndRootRun() {}
-
   void PrintResults() {}
+
+  
+  void SetMaxThreads(size_t) {}
 };
 
 namespace profiler {
@@ -757,23 +846,23 @@ struct Zone {
 
 
 
-#define PROFILER_ZONE3(p, thread, zone)                               \
-  HWY_FENCE;                                                          \
-  const hwy::profiler::Zone HWY_CONCAT(Z, __LINE__)(p, thread, zone); \
+#define PROFILER_ZONE3(p, global_idx, zone)                               \
+  HWY_FENCE;                                                              \
+  const hwy::profiler::Zone HWY_CONCAT(Z, __LINE__)(p, global_idx, zone); \
   HWY_FENCE
 
 
 
-#define PROFILER_ZONE2(thread, name)                                  \
+#define PROFILER_ZONE2(global_idx, name)                              \
   static const hwy::profiler::ZoneHandle HWY_CONCAT(zone, __LINE__) = \
       hwy::Profiler::Get().AddZone(name);                             \
-  PROFILER_ZONE3(hwy::Profiler::Get(), thread, HWY_CONCAT(zone, __LINE__))
-#define PROFILER_FUNC2(thread) PROFILER_ZONE2(thread, __func__)
+  PROFILER_ZONE3(hwy::Profiler::Get(), global_idx, HWY_CONCAT(zone, __LINE__))
+#define PROFILER_FUNC2(global_idx) PROFILER_ZONE2(global_idx, __func__)
 
 
 
-#define PROFILER_ZONE(name) PROFILER_ZONE2(hwy::Profiler::Thread(), name)
-#define PROFILER_FUNC PROFILER_FUNC2(hwy::Profiler::Thread())
+#define PROFILER_ZONE(name) PROFILER_ZONE2(hwy::Profiler::GlobalIdx(), name)
+#define PROFILER_FUNC PROFILER_FUNC2(hwy::Profiler::GlobalIdx())
 
 
 #define PROFILER_ADD_ZONE(name) hwy::Profiler::Get().AddZone(name)

@@ -343,7 +343,7 @@ class PMU {
 
 
 PMU& GetPMU() {
-  static PMU pmu;
+  static PMU& pmu = *new PMU();  
   return pmu;
 }
 

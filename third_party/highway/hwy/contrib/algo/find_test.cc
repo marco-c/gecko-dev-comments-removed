@@ -173,8 +173,8 @@ struct TestFindIf {
     
     for (int val = min_val; val <= 9; ++val) {
 #if HWY_GENERIC_LAMBDA
-      const auto greater = [val](const auto d, const auto v) HWY_ATTR {
-        return Gt(v, Set(d, ConvertScalarTo<T>(val)));
+      const auto greater = [val](const auto d2, const auto v) HWY_ATTR {
+        return Gt(v, Set(d2, ConvertScalarTo<T>(val)));
       };
 #else
       const GreaterThan greater(val);

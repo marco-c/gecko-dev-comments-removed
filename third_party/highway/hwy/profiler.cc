@@ -33,15 +33,15 @@ namespace hwy {
 
 #if PROFILER_ENABLED
 
-constexpr bool kPrintOverhead = true;
+static constexpr bool kPrintOverhead = true;
 
 
 
- thread_local size_t Profiler::s_thread = ~size_t{0};
- std::atomic<size_t> Profiler::s_num_threads{0};
+ thread_local size_t Profiler::s_global_idx = 0;
 
 
-static uint64_t DetectSelfOverhead(Profiler& profiler, size_t thread) {
+static uint64_t DetectSelfOverhead(Profiler& profiler, size_t global_idx) {
+  static const profiler::ZoneHandle zone = profiler.AddZone("DetectSelf");
   profiler::Results results;
   const size_t kNumSamples = 25;
   uint32_t samples[kNumSamples];
@@ -52,13 +52,10 @@ static uint64_t DetectSelfOverhead(Profiler& profiler, size_t thread) {
     for (size_t idx_duration = 0; idx_duration < kNumDurations;
          ++idx_duration) {
       {
-        static const profiler::ZoneHandle zone =
-            profiler.AddZone("DetectSelfOverhead");
-        PROFILER_ZONE3(profiler, 0, zone);
+        PROFILER_ZONE3(profiler, global_idx, zone);
       }
-      durations[idx_duration] = static_cast<uint32_t>(
-          profiler.GetThread(thread).GetFirstDurationAndReset(
-              thread, profiler.Accumulators()));
+      durations[idx_duration] =
+          static_cast<uint32_t>(profiler.GetFirstDurationAndReset(global_idx));
     }
     samples[idx_sample] = robust_statistics::Mode(durations, kNumDurations);
   }
@@ -68,8 +65,9 @@ static uint64_t DetectSelfOverhead(Profiler& profiler, size_t thread) {
 
 
 
-static uint64_t DetectChildOverhead(Profiler& profiler, size_t thread,
+static uint64_t DetectChildOverhead(Profiler& profiler, size_t global_idx,
                                     uint64_t self_overhead) {
+  static const profiler::ZoneHandle zone = profiler.AddZone("DetectChild");
   
   const size_t kMaxSamples = 30;
   uint32_t samples[kMaxSamples];
@@ -83,20 +81,17 @@ static uint64_t DetectChildOverhead(Profiler& profiler, size_t thread,
       HWY_FENCE;
       const uint64_t t0 = timer::Start();
       for (size_t r = 0; r < kReps; ++r) {
-        static const profiler::ZoneHandle zone =
-            profiler.AddZone("DetectChildOverhead");
-        PROFILER_ZONE3(profiler, 0, zone);
+        PROFILER_ZONE3(profiler, global_idx, zone);
       }
       const uint64_t t1 = timer::Stop();
       HWY_FENCE;
       
       
-      (void)profiler.GetThread(thread).GetFirstDurationAndReset(
-          thread, profiler.Accumulators());
+      (void)profiler.GetFirstDurationAndReset(global_idx);
 
       const uint64_t avg_duration = (t1 - t0 + kReps / 2) / kReps;
       durations[d] = static_cast<uint32_t>(
-          profiler::PerThread::ClampedSubtract(avg_duration, self_overhead));
+          profiler::PerWorker::ClampedSubtract(avg_duration, self_overhead));
     }
     samples[num_samples] = robust_statistics::Mode(durations, kNumDurations);
     
@@ -109,21 +104,26 @@ static uint64_t DetectChildOverhead(Profiler& profiler, size_t thread,
 Profiler::Profiler() {
   const uint64_t t0 = timer::Start();
 
-  InitThread();
-
   char cpu[100];
   if (HWY_UNLIKELY(!platform::HaveTimerStop(cpu))) {
     HWY_ABORT("CPU %s is too old for PROFILER_ENABLED=1, exiting", cpu);
   }
 
+  
+  
+  constexpr size_t kMain = 0;
+  
+  
+  ReserveWorker(kMain);
+  SetGlobalIdx(kMain);
+
   profiler::Overheads overheads;
   
   
-  constexpr size_t kThread = 0;
-  overheads.self = DetectSelfOverhead(*this, kThread);
-  overheads.child = DetectChildOverhead(*this, kThread, overheads.self);
-  for (size_t thread = 0; thread < profiler::kMaxThreads; ++thread) {
-    threads_[thread].SetOverheads(overheads);
+  overheads.self = DetectSelfOverhead(*this, kMain);
+  overheads.child = DetectChildOverhead(*this, kMain, overheads.self);
+  for (size_t worker = 0; worker < profiler::kMaxWorkers; ++worker) {
+    workers_[worker].SetOverheads(overheads);
   }
 
   HWY_IF_CONSTEXPR(kPrintOverhead) {
@@ -139,8 +139,8 @@ Profiler::Profiler() {
 
 
 HWY_DLLEXPORT Profiler& Profiler::Get() {
-  static Profiler profiler;
-  return profiler;
+  static Profiler* profiler = new Profiler();
+  return *profiler;
 }
 
 }  

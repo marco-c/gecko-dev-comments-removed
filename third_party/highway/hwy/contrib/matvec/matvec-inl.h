@@ -49,13 +49,13 @@ HWY_NOINLINE void MatVecAddImpl(const T* HWY_RESTRICT mat,
   
   
   
-  constexpr size_t kChunkSize = 64 / sizeof(T);
-  const uint64_t num_chunks = static_cast<uint64_t>(kOuter / kChunkSize);
+  constexpr size_t kChunkSize2 = 64 / sizeof(T);
+  const uint64_t num_chunks = static_cast<uint64_t>(kOuter / kChunkSize2);
 
   const ScalableTag<T> d;
   const size_t N = Lanes(d);
   
-  HWY_DASSERT(kChunkSize >= N);
+  HWY_DASSERT(kChunkSize2 >= N);
   pool.Run(0, num_chunks,
            [&](const uint64_t chunk, size_t ) HWY_ATTR {
              
@@ -126,7 +126,7 @@ HWY_NOINLINE void MatVecAddImpl(const T* HWY_RESTRICT mat,
   hwy::FlushStream();
 
   
-  for (size_t r = num_chunks * kChunkSize; r < kOuter; ++r) {
+  for (size_t r = num_chunks * kChunkSize2; r < kOuter; ++r) {
     auto sum0 = Zero(d);
 
     const T* HWY_RESTRICT row = &mat[r * kInner];

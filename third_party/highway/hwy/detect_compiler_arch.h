@@ -20,6 +20,11 @@
 
 
 
+
+
+
+
+
 #if (defined __CDT_PARSER__) || (defined __INTELLISENSE__) || \
     (defined Q_CREATOR_RUN) || (defined __CLANGD__) ||        \
     (defined GROK_ELLIPSIS_BUILD)
@@ -65,15 +70,23 @@
 #define HWY_COMPILER_GCC 0
 #endif
 
-
-#ifdef __clang__
+#ifndef HWY_COMPILER_CLANG  
+#ifdef __clang__            
 
 
 
 
 
 #if defined(__apple_build_version__) || __clang_major__ >= 999
-#if __has_warning("-Woverriding-option")
+#if __has_builtin(__builtin_elementwise_fshl)
+#define HWY_COMPILER_CLANG 2201
+#elif __has_builtin(__builtin_structured_binding_size)
+#define HWY_COMPILER_CLANG 2101
+#elif __has_builtin(__builtin_common_type)
+#define HWY_COMPILER_CLANG 2001
+#elif __has_warning("-Wreturn-mismatch")
+#define HWY_COMPILER_CLANG 1901
+#elif __has_warning("-Woverriding-option")
 #define HWY_COMPILER_CLANG 1801
 
 
@@ -108,7 +121,6 @@
 #else  
 #define HWY_COMPILER_CLANG 600
 #endif  
-#define HWY_COMPILER3_CLANG (HWY_COMPILER_CLANG * 100)
 #else  
 #define HWY_COMPILER_CLANG (__clang_major__ * 100 + __clang_minor__)
 #define HWY_COMPILER3_CLANG \
@@ -117,6 +129,12 @@
 #else  
 #define HWY_COMPILER_CLANG 0
 #define HWY_COMPILER3_CLANG 0
+#endif  
+#endif  
+
+
+#ifndef HWY_COMPILER3_CLANG
+#define HWY_COMPILER3_CLANG (HWY_COMPILER_CLANG * 100)
 #endif
 
 #if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && !HWY_COMPILER_ICC && \

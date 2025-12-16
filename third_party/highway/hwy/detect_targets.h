@@ -92,7 +92,7 @@
 #define HWY_SVE2 (1LL << 23)
 #define HWY_SVE (1LL << 24)
 
-#define HWY_NEON_BF16 (1LL << 26)  // fp16/dot/bf16 (e.g. Neoverse V2/N2/N3)
+#define HWY_NEON_BF16 (1LL << 26)  // fp16/dot/bf16/i8mm (e.g. Neoverse V2/N2)
 
 #define HWY_NEON (1LL << 28)  // Implies support for AES
 #define HWY_NEON_WITHOUT_AES (1LL << 29)
@@ -194,6 +194,17 @@
 #endif
 #endif  
 
+#ifndef HWY_BROKEN_AVX10_2  
+
+
+
+#if (HWY_COMPILER_CLANG < 2300) && (HWY_COMPILER_GCC_ACTUAL < 1502)
+#define HWY_BROKEN_AVX10_2 HWY_AVX10_2
+#else
+#define HWY_BROKEN_AVX10_2 0
+#endif
+#endif  
+
 #ifndef HWY_BROKEN_AVX3_DL_ZEN4  
 
 
@@ -247,7 +258,8 @@
 #ifndef HWY_BROKEN_NEON_BF16  
 
 #if (HWY_COMPILER_CLANG != 0 && HWY_COMPILER_CLANG < 1700) || \
-    (HWY_COMPILER_GCC_ACTUAL != 0 && HWY_COMPILER_GCC_ACTUAL < 1302)
+    (HWY_COMPILER_GCC_ACTUAL != 0 && HWY_COMPILER_GCC_ACTUAL < 1302) || \
+    (defined(__apple_build_version__) && __apple_build_version__ <= 17000000)
 #define HWY_BROKEN_NEON_BF16 (HWY_NEON_BF16)
 #else
 #define HWY_BROKEN_NEON_BF16 0
@@ -259,7 +271,7 @@
 #ifndef HWY_BROKEN_SVE  
 
 
-#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2000) ||           \
+#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2300) ||           \
     (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
     HWY_OS_APPLE
 #define HWY_BROKEN_SVE (HWY_SVE | HWY_SVE_256)
@@ -270,7 +282,7 @@
 
 #ifndef HWY_BROKEN_SVE2  
 
-#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2000) ||           \
+#if (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2300) ||           \
     (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
     HWY_OS_APPLE
 #define HWY_BROKEN_SVE2 (HWY_SVE2 | HWY_SVE2_128)
@@ -332,9 +344,12 @@
 #ifndef HWY_BROKEN_LOONGARCH  
 
 
-#if !defined(__loongarch_sx)
+
+#if !defined(__loongarch_sx) && \
+    !(HWY_COMPILER_CLANG && HWY_COMPILER_CLANG >= 1800)
 #define HWY_BROKEN_LOONGARCH (HWY_LSX | HWY_LASX)
-#elif !defined(__loongarch_asx)
+#elif !defined(__loongarch_asx) && \
+      !(HWY_COMPILER_CLANG && HWY_COMPILER_CLANG >= 1800)
 #define HWY_BROKEN_LOONGARCH (HWY_LASX)
 #else
 #define HWY_BROKEN_LOONGARCH 0
@@ -360,12 +375,12 @@
 
 #ifndef HWY_BROKEN_TARGETS
 
-#define HWY_BROKEN_TARGETS                                     \
-  (HWY_BROKEN_CLANG6 | HWY_BROKEN_32BIT | HWY_BROKEN_MSVC |    \
-   HWY_BROKEN_AVX3_DL_ZEN4 | HWY_BROKEN_AVX3_SPR |             \
-   HWY_BROKEN_ARM7_BIG_ENDIAN | HWY_BROKEN_ARM7_WITHOUT_VFP4 | \
-   HWY_BROKEN_NEON_BF16 | HWY_BROKEN_SVE | HWY_BROKEN_SVE2 |   \
-   HWY_BROKEN_PPC10 | HWY_BROKEN_PPC_32BIT | HWY_BROKEN_RVV |  \
+#define HWY_BROKEN_TARGETS                                              \
+  (HWY_BROKEN_CLANG6 | HWY_BROKEN_32BIT | HWY_BROKEN_MSVC |             \
+   HWY_BROKEN_AVX10_2 | HWY_BROKEN_AVX3_DL_ZEN4 | HWY_BROKEN_AVX3_SPR | \
+   HWY_BROKEN_ARM7_BIG_ENDIAN | HWY_BROKEN_ARM7_WITHOUT_VFP4 |          \
+   HWY_BROKEN_NEON_BF16 | HWY_BROKEN_SVE | HWY_BROKEN_SVE2 |            \
+   HWY_BROKEN_PPC10 | HWY_BROKEN_PPC_32BIT | HWY_BROKEN_RVV |           \
    HWY_BROKEN_LOONGARCH | HWY_BROKEN_Z14)
 
 #endif  
@@ -489,7 +504,8 @@
 #if defined(__ARM_FEATURE_AES) &&                    \
     defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) && \
     defined(__ARM_FEATURE_DOTPROD) &&                \
-    defined(__ARM_FEATURE_BF16_VECTOR_ARITHMETIC)
+    defined(__ARM_FEATURE_BF16_VECTOR_ARITHMETIC) && \
+    defined(__ARM_FEATURE_MATMUL_INT8)
 #define HWY_BASELINE_NEON HWY_ALL_NEON
 #elif defined(__ARM_FEATURE_AES)
 #define HWY_BASELINE_NEON (HWY_NEON_WITHOUT_AES | HWY_NEON)
@@ -642,8 +658,7 @@
 #define HWY_BASELINE_AVX3_SPR 0
 #endif
 
-#if HWY_BASELINE_AVX3_SPR != 0 && defined(__AVX10_2__) && \
-    (HWY_COMPILER_GCC_ACTUAL >= 1500 || HWY_COMPILER_CLANG >= 2001)
+#if HWY_BASELINE_AVX3_SPR != 0 && defined(__AVX10_2__)
 #define HWY_BASELINE_AVX10_2 HWY_AVX10_2
 #else
 #define HWY_BASELINE_AVX10_2 0
@@ -670,6 +685,19 @@
 #endif
 
 
+
+#if defined(HWY_BASELINE_TARGETS)
+#if HWY_BASELINE_TARGETS == HWY_AVX3_DL && \
+    ((HWY_BROKEN_TARGETS | HWY_DISABLED_TARGETS) & HWY_AVX3_DL)
+#undef HWY_BASELINE_TARGETS
+#define HWY_BASELINE_TARGETS HWY_AVX2
+#endif
+#endif  
+
+
+
+
+
 #ifndef HWY_BASELINE_TARGETS
 #define HWY_BASELINE_TARGETS                                               \
   (HWY_BASELINE_SCALAR | HWY_BASELINE_WASM | HWY_BASELINE_PPC8 |           \
@@ -686,7 +714,11 @@
 
 #define HWY_ENABLED_BASELINE HWY_ENABLED(HWY_BASELINE_TARGETS)
 #if HWY_ENABLED_BASELINE == 0
-#error "At least one baseline target must be defined and enabled"
+#pragma message                                                            \
+    "All baseline targets are disabled or considered broken."              \
+    "This is typically due to very restrictive HWY_BASELINE_TARGETS, or "  \
+    "too expansive HWY_BROKEN_TARGETS or HWY_DISABLED_TAREGTS. User code " \
+    "must also check for this and skip any usage of SIMD."
 #endif
 
 
@@ -766,8 +798,8 @@
 #endif  
 
 #ifndef HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH  
-#if HWY_ARCH_LOONGARCH && HWY_HAVE_AUXV && (defined(__loongarch_sx) || \
-    defined(__loongarch_asx))
+#if HWY_ARCH_LOONGARCH && HWY_HAVE_AUXV && !defined(__loongarch_asx) && \
+    HWY_COMPILER_CLANG && HWY_COMPILER_CLANG >= 1800
 #define HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH 1
 #else
 #define HWY_HAVE_RUNTIME_DISPATCH_LOONGARCH 0
@@ -930,7 +962,7 @@
 
 
 
-#if (HWY_TARGETS & HWY_STATIC_TARGET) == 0
+#if (HWY_TARGETS & HWY_STATIC_TARGET) == 0 && HWY_ENABLED_BASELINE != 0
 #error "Logic error: best baseline should be included in dynamic targets"
 #endif
 

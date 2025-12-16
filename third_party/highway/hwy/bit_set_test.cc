@@ -32,48 +32,77 @@
 namespace hwy {
 namespace {
 
+template <class Set>
+void SmokeTest() {
+  constexpr size_t kMax = Set().MaxSize() - 1;
 
-template <class Set, size_t kMax, size_t kMin = 0>
-void TestSet() {
   Set set;
   
   HWY_ASSERT(!set.Any());
-  HWY_ASSERT(set.Count() == 0);
-  set.Foreach(
-      [](size_t i) { HWY_ABORT("Set should be empty but got %zu\n", i); });
+  HWY_ASSERT(!set.All());
   HWY_ASSERT(!set.Get(0));
   HWY_ASSERT(!set.Get(kMax));
+  HWY_ASSERT(set.First0() == 0);
+  set.Foreach(
+      [](size_t i) { HWY_ABORT("Set should be empty but got %zu\n", i); });
+  HWY_ASSERT(set.Count() == 0);
 
   
   set.Set(kMax);
   HWY_ASSERT(set.Get(kMax));
   HWY_ASSERT(set.Any());
+  HWY_ASSERT(!set.All());
   HWY_ASSERT(set.First() == kMax);
-  HWY_ASSERT(set.Count() == 1);
+  HWY_ASSERT(set.First0() == 0);
   set.Foreach([](size_t i) { HWY_ASSERT(i == kMax); });
+  HWY_ASSERT(set.Count() == 1);
 
   
-  set.SetNonzeroBitsFrom64(1ull << kMin);
-  HWY_ASSERT(set.Any());
-  HWY_ASSERT(set.First() == kMin);
-  HWY_ASSERT(set.Get(kMin));
-  HWY_ASSERT(set.Get(kMax));
-  HWY_ASSERT(set.Count() == 2);
-  set.Foreach([](size_t i) { HWY_ASSERT(i == kMin || i == kMax); });
-
-  
-  set.Clear(kMin);
   set.Clear(kMax);
-  HWY_ASSERT(!set.Any());
-  HWY_ASSERT(set.Count() == 0);
-  set.Foreach(
-      [](size_t i) { HWY_ABORT("Set should be empty but got %zu\n", i); });
+  set.Clear(0);  
   HWY_ASSERT(!set.Get(0));
   HWY_ASSERT(!set.Get(kMax));
+  HWY_ASSERT(!set.Any());
+  HWY_ASSERT(!set.All());
+  HWY_ASSERT(set.First0() == 0);
+  set.Foreach(
+      [](size_t i) { HWY_ABORT("Set should be empty but got %zu\n", i); });
+  HWY_ASSERT(set.Count() == 0);
 }
 
-TEST(BitSetTest, TestSet64) { TestSet<BitSet64, 63>(); }
-TEST(BitSetTest, TestSet4096) { TestSet<BitSet4096<>, 4095>(); }
+TEST(BitSetTest, SmokeTestSet64) { SmokeTest<BitSet64>(); }
+TEST(BitSetTest, SmokeTestSet) { SmokeTest<BitSet<320>>(); }
+TEST(BitSetTest, SmokeTestAtomicSet) { SmokeTest<AtomicBitSet<400>>(); }
+TEST(BitSetTest, SmokeTestSet4096) { SmokeTest<BitSet4096<>>(); }
+
+template <class Set>
+void TestSetNonzeroBitsFrom64() {
+  constexpr size_t kMin = 0;
+  Set set;
+  set.SetNonzeroBitsFrom64(1ull << kMin);
+  HWY_ASSERT(set.Any());
+  HWY_ASSERT(!set.All());
+  HWY_ASSERT(set.Get(kMin));
+  HWY_ASSERT(set.First() == kMin);
+  HWY_ASSERT(set.First0() == kMin + 1);
+  set.Foreach([](size_t i) { HWY_ASSERT(i == kMin); });
+  HWY_ASSERT(set.Count() == 1);
+
+  set.SetNonzeroBitsFrom64(0x70ULL);
+  HWY_ASSERT(set.Get(kMin) && set.Get(4) && set.Get(5) && set.Get(6));
+  HWY_ASSERT(set.Any());
+  HWY_ASSERT(!set.All());
+  HWY_ASSERT(set.First() == kMin);  
+  HWY_ASSERT(set.First0() == kMin + 1);
+  set.Foreach([](size_t i) { HWY_ASSERT(i == kMin || (4 <= i && i <= 6)); });
+  HWY_ASSERT(set.Count() == 4);
+}
+
+TEST(BitSetTest, TestSetNonzeroBits64) { TestSetNonzeroBitsFrom64<BitSet64>(); }
+TEST(BitSetTest, TestSetNonzeroBits4096) {
+  TestSetNonzeroBitsFrom64<BitSet4096<>>();
+}
+
 
 
 class SlowSet {
@@ -136,6 +165,7 @@ class SlowSet {
   template <class Set>
   void CheckSame(const Set& set) {
     HWY_ASSERT(set.Any() == (set.Count() != 0));
+    HWY_ASSERT(set.All() == (set.Count() == set.MaxSize()));
     HWY_ASSERT(Count() == set.Count());
     
     set.Foreach([this](size_t i) { HWY_ASSERT(Get(i)); });
@@ -146,6 +176,12 @@ class SlowSet {
     if (set.Any()) {
       HWY_ASSERT(set.First() == idx_for_i_.begin()->first);
     }
+    if (!set.All()) {
+      const size_t idx0 = set.First0();
+      HWY_ASSERT(idx0 < set.MaxSize());
+      HWY_ASSERT(!set.Get(idx0));
+      HWY_ASSERT(!Get(idx0));
+    }
   }
 
  private:
@@ -153,16 +189,17 @@ class SlowSet {
   std::map<size_t, size_t> idx_for_i_;
 };
 
-void TestSetRandom(uint64_t grow_prob) {
-  const uint32_t mod = 4096;
+template <class Set>
+void TestSetWithGrowProb(uint64_t grow_prob) {
+  constexpr uint32_t max_size = static_cast<uint32_t>(Set().MaxSize());
   RandomState rng;
 
   
   for (size_t rep = 0; rep < AdjustedReps(100); ++rep) {
-    BitSet4096<> set;
+    Set set;
     SlowSet slow_set;
     
-    for (size_t iter = 0; iter < 200; ++iter) {
+    for (size_t iter = 0; iter < AdjustedReps(1000); ++iter) {
       const uint64_t bits = (Random64(&rng) >> 10) & 0x3FF;
       if (bits > 980 && slow_set.Count() != 0) {
         
@@ -175,7 +212,7 @@ void TestSetRandom(uint64_t grow_prob) {
         HWY_ASSERT(count == set.Count());
       } else if (bits < grow_prob) {
         
-        const size_t i = static_cast<size_t>(Random32(&rng) % mod);
+        const size_t i = static_cast<size_t>(Random32(&rng) % max_size);
         slow_set.Set(i);
         set.Set(i);
         HWY_ASSERT(set.Get(i));
@@ -194,9 +231,23 @@ void TestSetRandom(uint64_t grow_prob) {
   }
 }
 
+template <class Set>
+void TestSetRandom() {
+  
+  TestSetWithGrowProb<Set>(400);
 
-TEST(BitSetTest, TestSetRandomShrink) { TestSetRandom(400); }
-TEST(BitSetTest, TestSetRandomGrow) { TestSetRandom(600); }
+  TestSetWithGrowProb<Set>(600);
+}
+
+TEST(BitSetTest, TestSet64) { TestSetRandom<BitSet64>(); }
+TEST(BitSetTest, TestSet41) { TestSetRandom<BitSet<41>>(); }
+TEST(BitSetTest, TestSet) { TestSetRandom<BitSet<199>>(); }
+
+TEST(BitSetTest, TestAtomicSet32) { TestSetRandom<AtomicBitSet<32>>(); }
+
+TEST(BitSetTest, TestAtomicSet192) { TestSetRandom<AtomicBitSet<192>>(); }
+TEST(BitSetTest, TestSet3000) { TestSetRandom<BitSet4096<3000>>(); }
+TEST(BitSetTest, TestSet4096) { TestSetRandom<BitSet4096<>>(); }
 
 }  
 }  

@@ -98,9 +98,10 @@ template <typename T>
 HWY_INLINE HWY_ATTR_CACHE void Prefetch(const T* p) {
   (void)p;
 #ifndef HWY_DISABLE_CACHE_CONTROL
-#if HWY_ARCH_X86
+
+#if HWY_ARCH_X86 && !(HWY_COMPILER_CLANGCL && !defined(__MMX__))
   _mm_prefetch(reinterpret_cast<const char*>(p), _MM_HINT_T0);
-#elif HWY_COMPILER_GCC  
+#elif HWY_COMPILER_GCC || HWY_COMPILER_CLANGCL  
   
   
   __builtin_prefetch(p, 0, 3);

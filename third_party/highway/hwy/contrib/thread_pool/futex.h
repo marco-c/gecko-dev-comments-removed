@@ -31,6 +31,14 @@
 
 #include "hwy/base.h"
 
+#if HWY_OS_APPLE
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED < 101200 && !defined(HWY_DISABLE_FUTEX)
+#define HWY_DISABLE_FUTEX
+#endif
+#endif  
+
 #if HWY_OS_WIN
 
 

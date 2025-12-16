@@ -678,6 +678,19 @@ struct AddExport {
 #endif
 
 
+#if HWY_ENABLED_BASELINE == 0
+
+
+#if HWY_TARGET != 0
+#error "Why is HWY_TARGET not 0 when HWY_ENABLED_BASELINE == 0?"
+#endif
+#if HWY_STATIC_TARGET != 0
+#error "Why is HWY_STATIC_TARGET not 0 when HWY_ENABLED_BASELINE == 0?"
+#endif
+
+#else
+
+
 #if HWY_TARGET == HWY_SSE2 || HWY_TARGET == HWY_SSSE3 || HWY_TARGET == HWY_SSE4
 #include "hwy/ops/x86_128-inl.h"
 #elif HWY_TARGET == HWY_AVX2
@@ -712,5 +725,7 @@ struct AddExport {
 #endif  
 
 #include "hwy/ops/generic_ops-inl.h"
+
+#endif  
 
 #endif  
