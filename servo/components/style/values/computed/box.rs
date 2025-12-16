@@ -8,7 +8,8 @@ use crate::values::animated::{Animate, Procedure, ToAnimatedValue};
 use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
 use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
-    GenericContainIntrinsicSize, GenericLineClamp, GenericPerspective, GenericVerticalAlign,
+    GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin, GenericPerspective,
+    GenericVerticalAlign,
 };
 use crate::values::specified::box_ as specified;
 use std::fmt;
@@ -16,14 +17,16 @@ use style_traits::{CssWriter, ToCss};
 
 pub use crate::values::specified::box_::{
     Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain, ContainerName,
-    ContainerType, ContentVisibility, Display, Float, Overflow, OverflowAnchor, OverflowClipBox,
-    OverscrollBehavior, PositionProperty, ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop,
-    ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
-    WritingModeProperty,
+    ContainerType, ContentVisibility, Display, Float, Overflow, OverflowAnchor, OverscrollBehavior,
+    PositionProperty, ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness,
+    ScrollSnapType, ScrollbarGutter, TouchAction, WillChange, WritingModeProperty,
 };
 
 
 pub type VerticalAlign = GenericVerticalAlign<LengthPercentage>;
+
+
+pub type OverflowClipMargin = GenericOverflowClipMargin<NonNegativeLength>;
 
 
 pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;
