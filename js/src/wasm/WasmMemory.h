@@ -79,78 +79,110 @@ static_assert((StandardPageSizeBytes * MaxMemory64PagesValidation) <=
 
 
 
+
+
+
 struct Pages {
  private:
   
   
-  uint64_t value_;
+  uint64_t pageCount_;
+  PageSize pageSize_;
+
+  constexpr Pages(uint64_t pageCount, PageSize pageSize)
+      : pageCount_(pageCount), pageSize_(pageSize) {}
 
  public:
-  constexpr Pages() : value_(0) {}
-  constexpr explicit Pages(uint64_t value) : value_(value) {}
+  static constexpr Pages fromPageCount(uint64_t pageCount, PageSize pageSize) {
+    return Pages(pageCount, pageSize);
+  }
 
-  
-  
-  uint64_t value() const { return value_; }
+  static constexpr Pages forPageSize(PageSize pageSize) {
+    return Pages(0, pageSize);
+  }
 
-  
-  
-  static Pages fromByteLengthExact(size_t byteLength) {
-    MOZ_ASSERT(byteLength % StandardPageSizeBytes == 0);
-    return Pages(byteLength / StandardPageSizeBytes);
+  static constexpr bool byteLengthIsMultipleOfPageSize(size_t byteLength,
+                                                       PageSize pageSize) {
+    return byteLength % PageSizeInBytes(pageSize) == 0;
   }
 
   
   
+  static constexpr Pages fromByteLengthExact(size_t byteLength,
+                                             PageSize pageSize) {
+    MOZ_RELEASE_ASSERT(byteLengthIsMultipleOfPageSize(byteLength, pageSize));
+    return Pages(byteLength / PageSizeInBytes(pageSize), pageSize);
+  }
+
+  Pages& operator=(const Pages& other) {
+    MOZ_RELEASE_ASSERT(other.pageSize_ == pageSize_);
+    pageCount_ = other.pageCount_;
+    return *this;
+  }
+
+  
+  
+  uint64_t pageCount() const { return pageCount_; }
+  PageSize pageSize() const { return pageSize_; }
+
+  
+  
   bool hasByteLength() const {
-    mozilla::CheckedInt<size_t> length(value_);
-    length *= StandardPageSizeBytes;
+    mozilla::CheckedInt<size_t> length(pageCount_);
+    length *= PageSizeInBytes(pageSize_);
     return length.isValid();
   }
 
   
   
   size_t byteLength() const {
-    mozilla::CheckedInt<size_t> length(value_);
-    length *= StandardPageSizeBytes;
+    mozilla::CheckedInt<size_t> length(pageCount_);
+    length *= PageSizeInBytes(pageSize_);
     return length.value();
   }
 
   
   uint64_t byteLength64() const {
-    mozilla::CheckedInt<uint64_t> length(value_);
-    length *= StandardPageSizeBytes;
+    mozilla::CheckedInt<uint64_t> length(pageCount_);
+    length *= PageSizeInBytes(pageSize_);
     return length.value();
   }
 
   
   
   
-  bool checkedIncrement(Pages delta) {
-    mozilla::CheckedInt<uint64_t> newValue = value_;
-    newValue += delta.value_;
+  bool checkedIncrement(uint64_t delta) {
+    mozilla::CheckedInt<uint64_t> newValue = pageCount_;
+    newValue += delta;
     if (!newValue.isValid()) {
       return false;
     }
-    value_ = newValue.value();
+    pageCount_ = newValue.value();
     return true;
   }
 
   
 
-  constexpr auto operator<=>(const Pages& other) const = default;
+  constexpr auto operator<=>(const Pages& other) const {
+    MOZ_RELEASE_ASSERT(other.pageSize_ == pageSize_);
+    return pageCount_ <=> other.pageCount_;
+  };
+  constexpr auto operator==(const Pages& other) const {
+    MOZ_RELEASE_ASSERT(other.pageSize_ == pageSize_);
+    return pageCount_ == other.pageCount_;
+  };
 };
 
 
-extern Pages MaxMemoryPages(AddressType t);
+extern Pages MaxMemoryPages(AddressType t, PageSize pageSize);
 
 
-static inline size_t MaxMemoryBytes(AddressType t) {
-  return MaxMemoryPages(t).byteLength();
+static inline size_t MaxMemoryBytes(AddressType t, PageSize pageSize) {
+  return MaxMemoryPages(t, pageSize).byteLength();
 }
 
 
-extern size_t MaxMemoryBoundsCheckLimit(AddressType t);
+extern size_t MaxMemoryBoundsCheckLimit(AddressType t, PageSize pageSize);
 
 static inline uint64_t MaxMemoryPagesValidation(AddressType addressType) {
   return addressType == AddressType::I32 ? MaxMemory32PagesValidation

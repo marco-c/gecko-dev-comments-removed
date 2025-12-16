@@ -509,7 +509,8 @@ bool Module::instantiateMemories(
       }
 
       if (!CheckLimits(cx, desc.initialPages(), desc.maximumPages(),
-                        MaxMemoryPages(desc.addressType()),
+                       
+                       MaxMemoryPages(desc.addressType(), desc.pageSize()),
                        
                        memory->volatilePages(), memory->sourceMaxPages(),
                        codeMeta().isAsmJS(), "Memory")) {
@@ -522,7 +523,8 @@ bool Module::instantiateMemories(
     } else {
       MOZ_ASSERT(!codeMeta().isAsmJS());
 
-      if (desc.initialPages() > MaxMemoryPages(desc.addressType())) {
+      if (desc.initialPages() >
+          MaxMemoryPages(desc.addressType(), desc.pageSize())) {
         JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                  JSMSG_WASM_MEM_IMP_LIMIT);
         return false;

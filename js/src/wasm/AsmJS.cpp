@@ -7428,7 +7428,7 @@ bool js::IsValidAsmJSHeapLength(size_t length) {
   }
 
   
-  if (length > MaxMemoryBytes(AddressType::I32)) {
+  if (length > MaxMemoryBytes(AddressType::I32, wasm::PageSize::Standard)) {
     return false;
   }
 
