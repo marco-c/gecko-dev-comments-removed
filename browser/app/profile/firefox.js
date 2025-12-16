@@ -1755,7 +1755,6 @@ pref("services.sync.prefs.sync.privacy.donottrackheader.enabled", true);
 pref("services.sync.prefs.sync.privacy.globalprivacycontrol.enabled", true);
 pref("services.sync.prefs.sync.privacy.sanitize.sanitizeOnShutdown", true);
 pref("services.sync.prefs.sync.privacy.trackingprotection.enabled", true);
-pref("services.sync.prefs.sync.privacy.trackingprotection.harmfuladdon.enabled", true);
 pref("services.sync.prefs.sync.privacy.trackingprotection.cryptomining.enabled", true);
 pref("services.sync.prefs.sync.privacy.trackingprotection.fingerprinting.enabled", true);
 pref("services.sync.prefs.sync.privacy.trackingprotection.pbmode.enabled", true);
@@ -2402,9 +2401,6 @@ pref("network.cookie.cookieBehavior", 5 );
 
 
 pref("network.cookie.cookieBehavior.pbmode", 5 );
-
-
-pref("privacy.trackingprotection.harmfuladdon.enabled", true);
 
 
 pref("privacy.trackingprotection.fingerprinting.enabled", true);
