@@ -90,7 +90,7 @@ def start_browser(command_context):
     
     time.sleep(5)
     subprocess.run(
-        run_mach(command_context, "storybook", subcommand="launch"), check=False
+        run_mach(command_context, "storybook", subcommand="launch"), check=True
     )
 
 
