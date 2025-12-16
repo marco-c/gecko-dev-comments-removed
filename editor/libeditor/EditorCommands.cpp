@@ -11,6 +11,7 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"  
+#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCommandParams.h"
@@ -432,9 +433,34 @@ bool PasteCommand::IsCommandEnabled(Command aCommand,
 
 nsresult PasteCommand::DoCommand(Command aCommand, EditorBase& aEditorBase,
                                  nsIPrincipal* aPrincipal) const {
+  RefPtr<DataTransfer> dataTransfer;
+  nsCOMPtr<nsIPrincipal> subjectPrincipal =
+      aPrincipal ? aPrincipal
+                 : nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
+  MOZ_ASSERT(subjectPrincipal);
+
+  
+  
+  
+  
+  
+  
+  if (!nsContentUtils::PrincipalHasPermission(*subjectPrincipal,
+                                              nsGkAtoms::clipboardRead)) {
+    MOZ_DIAGNOSTIC_ASSERT(StaticPrefs::dom_execCommand_paste_enabled(),
+                          "How did we get here?");
+    
+    nsCOMPtr<nsPIDOMWindowOuter> window = aEditorBase.GetWindow();
+    dataTransfer = DataTransfer::WaitForClipboardDataSnapshotAndCreate(
+        window, subjectPrincipal);
+    if (!dataTransfer) {
+      return NS_SUCCESS_DOM_NO_OPERATION;
+    }
+  }
+
   nsresult rv = aEditorBase.PasteAsAction(nsIClipboard::kGlobalClipboard,
                                           EditorBase::DispatchPasteEvent::Yes,
-                                          nullptr, aPrincipal);
+                                          dataTransfer, aPrincipal);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::PasteAsAction(nsIClipboard::"
                        "kGlobalClipboard, DispatchPasteEvent::Yes) failed");
