@@ -92,6 +92,7 @@ class AnchorPosReferenceData {
   struct PositionTryBackup {
     mozilla::PhysicalAxes mCompensatingForScroll;
     nsPoint mDefaultScrollShift;
+    nsRect mAdjustedContainingBlock;
   };
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
@@ -126,12 +127,14 @@ class AnchorPosReferenceData {
   PositionTryBackup TryPositionWithSameDefaultAnchor() {
     auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
     auto defaultScrollShift = std::exchange(mDefaultScrollShift, {});
-    return {compensatingForScroll, defaultScrollShift};
+    auto adjustedContainingBlock = std::exchange(mAdjustedContainingBlock, {});
+    return {compensatingForScroll, defaultScrollShift, adjustedContainingBlock};
   }
 
   void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
     mCompensatingForScroll = aBackup.mCompensatingForScroll;
     mDefaultScrollShift = aBackup.mDefaultScrollShift;
+    mAdjustedContainingBlock = aBackup.mAdjustedContainingBlock;
   }
 
   
@@ -139,8 +142,11 @@ class AnchorPosReferenceData {
   
   nsPoint mDefaultScrollShift;
   
+  nsRect mOriginalContainingBlockRect;
   
-  nsRect mContainingBlockRect;
+  
+  
+  nsRect mAdjustedContainingBlock;
   
   
   

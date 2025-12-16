@@ -1279,8 +1279,15 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       return ContainingBlockRect{aOriginalContainingBlockRect};
     }();
     if (aAnchorPosResolutionCache) {
-      aAnchorPosResolutionCache->mReferenceData->mContainingBlockRect =
-          cb.mMaybeScrollableRect;
+      const auto& originalCb = cb.mMaybeScrollableRect;
+      aAnchorPosResolutionCache->mReferenceData->mOriginalContainingBlockRect =
+          originalCb;
+      
+      
+      
+      
+      aAnchorPosResolutionCache->mReferenceData->mAdjustedContainingBlock =
+          cb.mFinalRect;
     }
     const WritingMode outerWM = aReflowInput.GetWritingMode();
     const WritingMode wm = aKidFrame->GetWritingMode();

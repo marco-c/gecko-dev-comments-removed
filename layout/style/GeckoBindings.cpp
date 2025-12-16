@@ -1897,13 +1897,13 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   }
   const auto* positioned = aParams->mBaseParams.mFrame;
   const auto* containingBlock = positioned->GetParent();
+  auto* cache = aParams->mBaseParams.mCache;
   const auto info = AnchorPositioningUtils::ResolveAnchorPosRect(
-      positioned, containingBlock, aAnchorName, !aParams->mCBSize,
-      aParams->mBaseParams.mCache);
+      positioned, containingBlock, aAnchorName, !aParams->mCBSize, cache);
   if (!info) {
     return false;
   }
-  if (info->mCompensatesForScroll && aParams->mBaseParams.mCache) {
+  if (info->mCompensatesForScroll && cache) {
     
     
     const auto axis = [aPropSide]() {
@@ -1919,19 +1919,38 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
       }
       return PhysicalAxis::Vertical;
     }();
-    aParams->mBaseParams.mCache->mReferenceData->AdjustCompensatingForScroll(
-        axis);
+    cache->mReferenceData->AdjustCompensatingForScroll(axis);
   }
   
   
-  const auto& rect = info->mRect;
+
   const auto usesCBWM = AnchorSideUsesCBWM(aAnchorSideKeyword);
   const auto cbwm = containingBlock->GetWritingMode();
   const auto wm =
       usesCBWM ? aParams->mBaseParams.mFrame->GetWritingMode() : cbwm;
-  const auto logicalCBSize = aParams->mCBSize
-                                 ? aParams->mCBSize->ConvertTo(wm, cbwm)
-                                 : containingBlock->PaddingSize(wm);
+  const auto [rect, logicalCBSize] = [&] {
+    
+    
+    
+    
+    const auto* referenceData =
+        cache ? cache->mReferenceData
+              : positioned->GetProperty(nsIFrame::AnchorPosReferences());
+    if (!referenceData) {
+      return std::make_pair(
+          info->mRect, aParams->mCBSize ? aParams->mCBSize->ConvertTo(wm, cbwm)
+                                        : containingBlock->PaddingSize(wm));
+    }
+    
+    const auto offset = referenceData->mAdjustedContainingBlock.TopLeft() -
+                        referenceData->mOriginalContainingBlockRect.TopLeft();
+    return std::make_pair(
+        info->mRect - offset,
+        aParams->mCBSize
+            ? aParams->mCBSize->ConvertTo(wm, cbwm)
+            : LogicalSize{cbwm, referenceData->mAdjustedContainingBlock.Size()}
+                  .ConvertTo(wm, cbwm));
+  }();
   const LogicalRect logicalAnchorRect{wm, rect,
                                       logicalCBSize.GetPhysicalSize(wm)};
   const auto logicalPropSide = wm.LogicalSideForPhysicalSide(ToSide(aPropSide));
