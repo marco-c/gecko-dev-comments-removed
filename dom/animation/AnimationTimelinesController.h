@@ -11,6 +11,7 @@
 
 namespace mozilla::dom {
 class DocumentTimeline;
+class ScrollTimeline;
 
 
 
@@ -22,10 +23,12 @@ class AnimationTimelinesController final {
   ~AnimationTimelinesController() {
     
     
-    MOZ_ASSERT(mTimelines.isEmpty());
+    MOZ_ASSERT(mDocumentTimelines.isEmpty());
+    MOZ_ASSERT(mScrollTimelines.isEmpty());
   }
 
   void AddDocumentTimeline(DocumentTimeline& aTimeline);
+  void AddScrollTimeline(ScrollTimeline& aTimeline);
 
   void WillRefresh();
   void UpdateLastRefreshDriverTime();
@@ -33,9 +36,12 @@ class AnimationTimelinesController final {
   void UpdateHiddenByContentVisibility();
 
  private:
-  LinkedList<DocumentTimeline> mTimelines;
-
+  LinkedList<DocumentTimeline> mDocumentTimelines;
   
+  
+  
+  
+  LinkedList<ScrollTimeline> mScrollTimelines;
 };
 
 }  

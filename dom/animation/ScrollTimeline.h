@@ -8,10 +8,10 @@
 #define mozilla_dom_ScrollTimeline_h
 
 #include "mozilla/HashTable.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/AnimationTimeline.h"
-#include "mozilla/dom/Document.h"
 
 #define PROGRESS_TIMELINE_DURATION_MILLISEC 100000
 
@@ -20,6 +20,7 @@ class ScrollContainerFrame;
 class ElementAnimationData;
 struct NonOwningAnimationTarget;
 namespace dom {
+class Document;
 class Element;
 
 
@@ -60,7 +61,8 @@ class Element;
 
 
 
-class ScrollTimeline : public AnimationTimeline {
+class ScrollTimeline : public AnimationTimeline,
+                       public LinkedListElement<ScrollTimeline> {
   template <typename T, typename... Args>
   friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
 
@@ -80,16 +82,8 @@ class ScrollTimeline : public AnimationTimeline {
     
     PseudoStyleType mPseudoType;
 
-    
-    
-    static Scroller Root(const Document* aOwnerDoc) {
-      
-      
-      
-      
-      
-      return {Type::Root, aOwnerDoc->GetDocumentElement(),
-              PseudoStyleType::NotPseudo};
+    static Scroller Root(Element* aDocumentElement) {
+      return {Type::Root, aDocumentElement, PseudoStyleType::NotPseudo};
     }
 
     static Scroller Nearest(Element* aElement, PseudoStyleType aPseudoType) {
@@ -181,6 +175,8 @@ class ScrollTimeline : public AnimationTimeline {
     return mState;
   }
 
+  void WillRefresh();
+
   
   
   
@@ -208,6 +204,8 @@ class ScrollTimeline : public AnimationTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleScrollTimeline& aNew);
 
+  void NotifyAnimationUpdated(Animation& aAnimation) override;
+
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
@@ -227,10 +225,17 @@ class ScrollTimeline : public AnimationTimeline {
       const ScrollContainerFrame* aScrollFrame,
       layers::ScrollDirection aOrientation) const;
 
+  void UpdateCachedCurrentTime();
+
   
   
   
-  void Teardown() { UnregisterFromScrollSource(); }
+  void Teardown() {
+    if (isInList()) {
+      remove();
+    }
+    UnregisterFromScrollSource();
+  }
 
   
   void RegisterWithScrollSource();
@@ -255,6 +260,15 @@ class ScrollTimeline : public AnimationTimeline {
   
   
   TimelineState mState = TimelineState::None;
+
+  struct CurrentTimeData {
+    
+    
+    
+    nscoord mPosition;
+    ScrollOffsets mOffsets;
+  };
+  Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 
 
