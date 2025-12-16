@@ -3287,6 +3287,7 @@ png_image_read_composite(png_voidp argument)
       ptrdiff_t    step_row = display->row_bytes;
       unsigned int channels =
           (image->format & PNG_FORMAT_FLAG_COLOR) != 0 ? 3 : 1;
+      int optimize_alpha = (png_ptr->flags & PNG_FLAG_OPTIMIZE_ALPHA) != 0;
       int pass;
 
       for (pass = 0; pass < passes; ++pass)
@@ -3343,20 +3344,44 @@ png_image_read_composite(png_voidp argument)
 
                      if (alpha < 255) 
                      {
-                        
+                        if (optimize_alpha != 0)
+                        {
+                           
 
 
 
 
 
-                        component *= 257*255; 
-                        component += (255-alpha)*png_sRGB_table[outrow[c]];
+                           component *= 257*255; 
+                           component += (255-alpha)*png_sRGB_table[outrow[c]];
 
-                        
+                           
 
 
 
-                        component = PNG_sRGB_FROM_LINEAR(component);
+
+                           if (component > 255*65535)
+                              component = 255*65535;
+
+                           
+
+
+
+                           component = PNG_sRGB_FROM_LINEAR(component);
+                        }
+                        else
+                        {
+                           
+
+
+
+
+
+                           png_uint_32 background = outrow[c];
+                           component += ((255-alpha) * background + 127) / 255;
+                           if (component > 255)
+                              component = 255;
+                        }
                      }
 
                      outrow[c] = (png_byte)component;

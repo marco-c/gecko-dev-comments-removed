@@ -10,6 +10,9 @@
 
 
 
+
+
+
 #include "../pngpriv.h"
 
 #ifdef PNG_READ_SUPPORTED
@@ -141,10 +144,7 @@ png_read_filter_row_avg_rvv(size_t len, size_t bpp, unsigned char* row,
       x = __riscv_vle8_v_u8m1(row, vl);
 
       
-      vuint16m2_t tmp = __riscv_vwaddu_vv_u16m2(a, b, vl);
-
-      
-      a = __riscv_vnsrl_wx_u8m1(tmp, 1, vl);
+      a = __riscv_vaaddu_vv_u8m1(a, b, 2, vl);
 
       
       a = __riscv_vadd_vv_u8m1(a, x, vl);
@@ -175,47 +175,6 @@ png_read_filter_row_avg4_rvv(png_row_infop row_info, png_bytep row,
    png_read_filter_row_avg_rvv(len, 4, row, prev_row);
 
    PNG_UNUSED(prev_row)
-}
-
-#define MIN_CHUNK_LEN 256
-#define MAX_CHUNK_LEN 2048
-
-static inline vuint8m1_t
-prefix_sum(vuint8m1_t chunk, unsigned char* carry, size_t vl,
-    size_t max_chunk_len)
-{
-   size_t r;
-
-   for (r = 1; r < MIN_CHUNK_LEN; r <<= 1)
-   {
-      vbool8_t shift_mask = __riscv_vmsgeu_vx_u8m1_b8(__riscv_vid_v_u8m1(vl), r, vl);
-      chunk = __riscv_vadd_vv_u8m1_mu(shift_mask, chunk, chunk, __riscv_vslideup_vx_u8m1(__riscv_vundefined_u8m1(), chunk, r, vl), vl);
-   }
-
-   for (r = MIN_CHUNK_LEN; r < MAX_CHUNK_LEN && r < max_chunk_len; r <<= 1)
-   {
-      vbool8_t shift_mask = __riscv_vmsgeu_vx_u8m1_b8(__riscv_vid_v_u8m1(vl), r, vl);
-      chunk = __riscv_vadd_vv_u8m1_mu(shift_mask, chunk, chunk, __riscv_vslideup_vx_u8m1(__riscv_vundefined_u8m1(), chunk, r, vl), vl);
-   }
-
-   chunk = __riscv_vadd_vx_u8m1(chunk, *carry, vl);
-   *carry = __riscv_vmv_x_s_u8m1_u8(__riscv_vslidedown_vx_u8m1(chunk, vl - 1, vl));
-
-   return chunk;
-}
-
-static inline vint16m1_t
-abs_diff(vuint16m1_t a, vuint16m1_t b, size_t vl)
-{
-   vint16m1_t diff = __riscv_vreinterpret_v_u16m1_i16m1(__riscv_vsub_vv_u16m1(a, b, vl));
-   vbool16_t mask = __riscv_vmslt_vx_i16m1_b16(diff, 0, vl);
-   return __riscv_vrsub_vx_i16m1_m(mask, diff, 0, vl);
-}
-
-static inline vint16m1_t
-abs_sum(vint16m1_t a, vint16m1_t b, size_t vl)
-{
-   return __riscv_vadd_vv_i16m1(a, b, vl);
 }
 
 static inline void
@@ -266,26 +225,21 @@ png_read_filter_row_paeth_rvv(size_t len, size_t bpp, unsigned char* row,
       vuint8m1_t x = __riscv_vle8_v_u8m1(row, vl);
 
       
-      vuint16m2_t p_wide = __riscv_vwsubu_vv_u16m2(b, c, vl);
-      vuint16m2_t pc_wide = __riscv_vwsubu_vv_u16m2(a, c, vl);
+      vuint16m2_t p = __riscv_vwsubu_vv_u16m2(b, c, vl);
+      vuint16m2_t pc = __riscv_vwsubu_vv_u16m2(a, c, vl);
 
       
-      size_t vl16 = __riscv_vsetvl_e16m2(bpp);
-      vint16m2_t p = __riscv_vreinterpret_v_u16m2_i16m2(p_wide);
-      vint16m2_t pc = __riscv_vreinterpret_v_u16m2_i16m2(pc_wide);
+      vuint16m2_t tmp = __riscv_vrsub_vx_u16m2(p, 0, vl);
+      vuint16m2_t pa = __riscv_vminu_vv_u16m2(p, tmp, vl);
 
       
-      vbool8_t p_neg_mask = __riscv_vmslt_vx_i16m2_b8(p, 0, vl16);
-      vint16m2_t pa = __riscv_vrsub_vx_i16m2_m(p_neg_mask, p, 0, vl16);
+      tmp = __riscv_vrsub_vx_u16m2(pc, 0, vl);
+      vuint16m2_t pb = __riscv_vminu_vv_u16m2(pc, tmp, vl);
 
       
-      vbool8_t pc_neg_mask = __riscv_vmslt_vx_i16m2_b8(pc, 0, vl16);
-      vint16m2_t pb = __riscv_vrsub_vx_i16m2_m(pc_neg_mask, pc, 0, vl16);
-
-      
-      vint16m2_t p_plus_pc = __riscv_vadd_vv_i16m2(p, pc, vl16);
-      vbool8_t p_plus_pc_neg_mask = __riscv_vmslt_vx_i16m2_b8(p_plus_pc, 0, vl16);
-      pc = __riscv_vrsub_vx_i16m2_m(p_plus_pc_neg_mask, p_plus_pc, 0, vl16);
+      pc = __riscv_vadd_vv_u16m2(p, pc, vl);
+      tmp = __riscv_vrsub_vx_u16m2(pc, 0, vl);
+      pc = __riscv_vminu_vv_u16m2(pc, tmp, vl);
 
       
 
@@ -295,30 +249,16 @@ png_read_filter_row_paeth_rvv(size_t len, size_t bpp, unsigned char* row,
 
 
       
-      vbool8_t pa_le_pb = __riscv_vmsle_vv_i16m2_b8(pa, pb, vl16);
-      vbool8_t pa_le_pc = __riscv_vmsle_vv_i16m2_b8(pa, pc, vl16);
-      vbool8_t pb_le_pc = __riscv_vmsle_vv_i16m2_b8(pb, pc, vl16);
+      vbool8_t m1 = __riscv_vmsltu_vv_u16m2_b8(pb, pa, vl);
+      pa = __riscv_vmerge_vvm_u16m2(pa, pb, m1, vl);
+      a = __riscv_vmerge_vvm_u8m1(a, b, m1, vl);
 
       
-      vbool8_t use_a = __riscv_vmand_mm_b8(pa_le_pb, pa_le_pc, vl16);
+      vbool8_t m2 = __riscv_vmsltu_vv_u16m2_b8(pc, pa, vl);
+      a = __riscv_vmerge_vvm_u8m1(a, c, m2, vl);
 
       
-      vbool8_t not_use_a = __riscv_vmnot_m_b8(use_a, vl16);
-      vbool8_t use_b = __riscv_vmand_mm_b8(not_use_a, pb_le_pc, vl16);
-
-      
-      vl = __riscv_vsetvl_e8m1(bpp);
-
-      
-      vuint8m1_t result = a;
-      result = __riscv_vmerge_vvm_u8m1(result, b, use_b, vl);
-
-      
-      vbool8_t use_c = __riscv_vmnand_mm_b8(__riscv_vmor_mm_b8(use_a, use_b, vl), __riscv_vmor_mm_b8(use_a, use_b, vl), vl);
-      result = __riscv_vmerge_vvm_u8m1(result, c, use_c, vl);
-
-      
-      a = __riscv_vadd_vv_u8m1(result, x, vl);
+      a = __riscv_vadd_vv_u8m1(a, x, vl);
 
       
       __riscv_vse8_v_u8m1(row, a, vl);

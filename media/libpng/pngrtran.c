@@ -1843,6 +1843,7 @@ png_init_read_transformations(png_structrp png_ptr)
 
 
             png_ptr->transformations &= ~(PNG_COMPOSE | PNG_GAMMA);
+            png_ptr->flags &= ~PNG_FLAG_OPTIMIZE_ALPHA;
          } 
 
          
