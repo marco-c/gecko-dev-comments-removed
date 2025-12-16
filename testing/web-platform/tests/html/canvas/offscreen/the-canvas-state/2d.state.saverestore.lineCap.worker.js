@@ -6,15 +6,9 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("save()/restore() works for lineCap");
-var t_pass = t.done.bind(t);
-var t_fail = t.step_func(function(reason) {
-    throw reason;
-});
-t.step(function() {
-
-  var canvas = new OffscreenCanvas(100, 50);
-  var ctx = canvas.getContext('2d');
+test(t => {
+  const canvas = new OffscreenCanvas(300, 150);
+  const ctx = canvas.getContext('2d');
 
   
   var old = ctx.lineCap;
@@ -31,6 +25,27 @@ t.step(function() {
   ctx.save();
   _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
   ctx.restore();
-  t.done();
-});
+}, "save()/restore() works for lineCap, with a canvas size of (300, 150)");
+
+test(t => {
+  const canvas = new OffscreenCanvas(0, 0);
+  const ctx = canvas.getContext('2d');
+
+  
+  var old = ctx.lineCap;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.restore();
+  _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
+
+  
+  ctx.lineCap = "round";
+  old = ctx.lineCap;
+      
+      
+  ctx.save();
+  _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
+  ctx.restore();
+}, "save()/restore() works for lineCap, with a canvas size of (0, 0)");
+
 done();
