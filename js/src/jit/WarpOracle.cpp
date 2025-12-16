@@ -1106,7 +1106,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   
   mozilla::Maybe<ShapeListSnapshot> shapeList;
-  mozilla::Maybe<ShapeListWithOffsetsSnapshot> shapeListWithOffsets;
 
   
   CacheIRReader reader(stubInfo);
@@ -1224,22 +1223,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
         }
         break;
       }
-      case CacheOp::GuardMultipleShapesToOffset: {
-        auto args = reader.argsForGuardMultipleShapesToOffset();
-        JSObject* shapes = stubInfo->getStubField<StubField::Type::JSObject>(
-            stub, args.shapesOffset);
-        auto* shapesObject = &shapes->as<ShapeListWithOffsetsObject>();
-        MOZ_ASSERT(shapeListWithOffsets.isNothing());
-        size_t numShapes = shapesObject->numShapes();
-        if (ShapeListSnapshot::shouldSnapshot(numShapes)) {
-          shapeListWithOffsets.emplace();
-          for (size_t i = 0; i < numShapes; i++) {
-            shapeListWithOffsets->init(i, shapesObject->getShape(i),
-                                       shapesObject->getOffset(i));
-          }
-        }
-        break;
-      }
       default:
         reader.skip(opInfo.argLength);
         break;
@@ -1293,16 +1276,9 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   }
 
   if (shapeList.isSome()) {
-    MOZ_ASSERT(shapeListWithOffsets.isNothing());
     if (!AddOpSnapshot<WarpCacheIRWithShapeList>(alloc_, snapshots, offset,
                                                  jitCode, stubInfo,
                                                  stubDataCopy, *shapeList)) {
-      return abort(AbortReason::Alloc);
-    }
-  } else if (shapeListWithOffsets.isSome()) {
-    if (!AddOpSnapshot<WarpCacheIRWithShapeListAndOffsets>(
-            alloc_, snapshots, offset, jitCode, stubInfo, stubDataCopy,
-            *shapeListWithOffsets)) {
       return abort(AbortReason::Alloc);
     }
   } else {

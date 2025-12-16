@@ -24,18 +24,19 @@
 using namespace js;
 using namespace js::jit;
 
-static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
-                                  JSScript* script, ICScript* icScript) {
-  
-  
-
+bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
+                              JSScript* script, ICScript* icScript) {
   ICEntry* icEntry = icScript->icEntryForStub(fallback);
   ICStub* entryStub = icEntry->firstStub();
-  ICCacheIRStub* firstStub = entryStub->toCacheIRStub();
 
   
-  MOZ_ASSERT(entryStub != fallback);
-  MOZ_ASSERT(!firstStub->next()->isFallback());
+  if (entryStub == fallback) {
+    return true;
+  }
+  ICCacheIRStub* firstStub = entryStub->toCacheIRStub();
+  if (firstStub->next()->isFallback()) {
+    return true;
+  }
 
   const uint8_t* firstStubData = firstStub->stubDataStart();
   const CacheIRStubInfo* stubInfo = firstStub->stubInfo();
@@ -50,21 +51,16 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   
   
   
-  
 
   uint32_t numActive = 0;
-  mozilla::Maybe<uint32_t> foldableShapeOffset;
-  mozilla::Maybe<uint32_t> foldableOffsetOffset;
+  mozilla::Maybe<uint32_t> foldableFieldOffset;
   GCVector<Value, 8> shapeList(cx);
-  GCVector<Value, 8> offsetList(cx);
 
-  
   
   
   
   auto addShape = [&shapeList, cx](uintptr_t rawShape) -> bool {
     Shape* shape = reinterpret_cast<Shape*>(rawShape);
-
     
     if (shape->realm() != cx->realm()) {
       return false;
@@ -79,114 +75,65 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     return true;
   };
 
-  
-  
-  
-  
-  auto lazyAddOffset = [&offsetList, &shapeList, cx](uintptr_t slotOffset) {
-    Value v = PrivateUint32Value(static_cast<uint32_t>(slotOffset));
-    if (offsetList.length() == 1) {
-      if (v == offsetList[0]) return true;
-
-      while (offsetList.length() + 1 < shapeList.length()) {
-        if (!offsetList.append(offsetList[0])) {
-          cx->recoverFromOutOfMemory();
-          return false;
-        }
-      }
-    }
-
-    if (!offsetList.append(v)) {
-      cx->recoverFromOutOfMemory();
-      return false;
-    }
-    return true;
-  };
-
-#ifdef JS_JITSPEW
-  JitSpew(JitSpew_StubFolding, "Trying to fold stubs at offset %u @ %s:%u:%u",
-          fallback->pcOffset(), script->filename(), script->lineno(),
-          script->column().oneOriginValue());
-
-  if (JitSpewEnabled(JitSpew_StubFoldingDetails)) {
-    Fprinter& printer(JitSpewPrinter());
-    uint32_t i = 0;
-    for (ICCacheIRStub* stub = firstStub; stub; stub = stub->nextCacheIR()) {
-      printer.printf("- stub %d (enteredCount: %d)\n", i, stub->enteredCount());
-      ICCacheIRStub* cache_stub = stub->toCacheIRStub();
-
-      CacheIRReader reader(cache_stub->stubInfo());
-      SpewCacheIROps(printer, "  ", cache_stub->stubInfo());
-      i++;
-    }
-  }
-#endif
-
-  
-  
-  
   for (ICCacheIRStub* other = firstStub->nextCacheIR(); other;
        other = other->nextCacheIR()) {
     
     if (other->stubInfo() != stubInfo) {
       return true;
     }
+    const uint8_t* otherStubData = other->stubDataStart();
 
     if (other->enteredCount() > 0) {
       numActive++;
     }
 
-    if (foldableShapeOffset.isSome()) {
-      
-      
-      continue;
-    }
-
-    const uint8_t* otherStubData = other->stubDataStart();
     uint32_t fieldIndex = 0;
     size_t offset = 0;
     while (stubInfo->fieldType(fieldIndex) != StubField::Type::Limit) {
       StubField::Type fieldType = stubInfo->fieldType(fieldIndex);
 
-      
-      if (StubField::sizeIsInt64(fieldType)) {
-        if (stubInfo->getStubRawInt64(firstStubData, offset) ==
-            stubInfo->getStubRawInt64(otherStubData, offset)) {
-          offset += StubField::sizeInBytes(fieldType);
-          fieldIndex++;
-          continue;
+      if (StubField::sizeIsWord(fieldType)) {
+        uintptr_t firstRaw = stubInfo->getStubRawWord(firstStubData, offset);
+        uintptr_t otherRaw = stubInfo->getStubRawWord(otherStubData, offset);
+
+        if (firstRaw != otherRaw) {
+          if (fieldType != StubField::Type::WeakShape) {
+            
+            
+            return true;
+          }
+          if (foldableFieldOffset.isNothing()) {
+            
+            foldableFieldOffset.emplace(offset);
+            if (!addShape(firstRaw) || !addShape(otherRaw)) {
+              return true;
+            }
+          } else if (*foldableFieldOffset == offset) {
+            
+            if (!addShape(otherRaw)) {
+              return true;
+            }
+          } else {
+            
+            return true;
+          }
         }
       } else {
-        MOZ_ASSERT(StubField::sizeIsWord(fieldType));
-        if (stubInfo->getStubRawWord(firstStubData, offset) ==
-            stubInfo->getStubRawWord(otherStubData, offset)) {
-          offset += StubField::sizeInBytes(fieldType);
-          fieldIndex++;
-          continue;
+        MOZ_ASSERT(StubField::sizeIsInt64(fieldType));
+
+        
+        if (stubInfo->getStubRawInt64(firstStubData, offset) !=
+            stubInfo->getStubRawInt64(otherStubData, offset)) {
+          return true;
         }
       }
 
-      
-      if (fieldType != StubField::Type::WeakShape) {
-        return true;
-      }
-
-      
-      foldableShapeOffset.emplace(offset);
-
-      
       offset += StubField::sizeInBytes(fieldType);
       fieldIndex++;
-      if (stubInfo->fieldType(fieldIndex) == StubField::Type::RawInt32) {
-        foldableOffsetOffset.emplace(offset);
-      }
-
-      break;
     }
-  }
 
-  if (foldableShapeOffset.isNothing()) {
-    return true;
+    
+    MOZ_ASSERT(foldableFieldOffset.isSome());
   }
 
   if (numActive == 0) {
@@ -194,60 +141,9 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   }
 
   
-  
-  for (ICCacheIRStub* stub = firstStub; stub; stub = stub->nextCacheIR()) {
-    const uint8_t* stubData = stub->stubDataStart();
-    uint32_t fieldIndex = 0;
-    size_t offset = 0;
-
-    while (stubInfo->fieldType(fieldIndex) != StubField::Type::Limit) {
-      StubField::Type fieldType = stubInfo->fieldType(fieldIndex);
-      if (offset == *foldableShapeOffset) {
-        
-        MOZ_ASSERT(fieldType == StubField::Type::WeakShape);
-        uintptr_t raw = stubInfo->getStubRawWord(stubData, offset);
-        if (!addShape(raw)) {
-          return true;
-        }
-      } else if (foldableOffsetOffset.isSome() &&
-                 offset == *foldableOffsetOffset) {
-        
-        MOZ_ASSERT(fieldType == StubField::Type::RawInt32);
-        uintptr_t raw = stubInfo->getStubRawWord(stubData, offset);
-        if (!lazyAddOffset(raw)) {
-          return true;
-        }
-      } else {
-        
-        if (StubField::sizeIsInt64(fieldType)) {
-          if (stubInfo->getStubRawInt64(firstStubData, offset) !=
-              stubInfo->getStubRawInt64(stubData, offset)) {
-            return true;
-          }
-        } else {
-          MOZ_ASSERT(StubField::sizeIsWord(fieldType));
-          if (stubInfo->getStubRawWord(firstStubData, offset) !=
-              stubInfo->getStubRawWord(stubData, offset)) {
-            return true;
-          }
-        }
-      }
-
-      offset += StubField::sizeInBytes(fieldType);
-      fieldIndex++;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
   CacheIRWriter writer(cx);
   CacheIRReader reader(stubInfo);
   CacheIRCloner cloner(firstStub);
-  bool hasSlotOffsets = offsetList.length() > 1;
 
   
   CacheKind cacheKind = stubInfo->kind();
@@ -255,120 +151,40 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     writer.setInputOperandId(i);
   }
 
-  
-  Rooted<ListObject*> shapeObj(cx);
-  {
-    gc::AutoSuppressGC suppressGC(cx);
-
-    if (!hasSlotOffsets) {
-      shapeObj.set(ShapeListObject::create(cx));
-    } else {
-      shapeObj.set(ShapeListWithOffsetsObject::create(cx));
-    }
-
-    if (!shapeObj) {
-      return false;
-    }
-
-    MOZ_ASSERT_IF(hasSlotOffsets, shapeList.length() == offsetList.length());
-
-    for (uint32_t i = 0; i < shapeList.length(); i++) {
-      if (!shapeObj->append(cx, shapeList[i])) {
-        cx->recoverFromOutOfMemory();
-        return false;
-      }
-
-      if (hasSlotOffsets) {
-        if (!shapeObj->append(cx, offsetList[i])) {
-          cx->recoverFromOutOfMemory();
-          return false;
-        }
-      }
-
-      MOZ_ASSERT(static_cast<Shape*>(shapeList[i].toPrivate())->realm() ==
-                 shapeObj->realm());
-    }
-  }
-
-  mozilla::Maybe<Int32OperandId> offsetId;
-  bool shapeSuccess = false;
-  bool offsetSuccess = false;
+  bool success = false;
   while (reader.more()) {
     CacheOp op = reader.readOp();
     switch (op) {
       case CacheOp::GuardShape: {
         auto [objId, shapeOffset] = reader.argsForGuardShape();
-        if (shapeOffset != *foldableShapeOffset) {
+        if (shapeOffset == *foldableFieldOffset) {
           
+          
+          
+          
+          gc::AutoSuppressGC suppressGC(cx);
+
+          Rooted<ShapeListObject*> shapeObj(cx, ShapeListObject::create(cx));
+          if (!shapeObj) {
+            return false;
+          }
+          for (uint32_t i = 0; i < shapeList.length(); i++) {
+            if (!shapeObj->append(cx, shapeList[i])) {
+              return false;
+            }
+
+            MOZ_ASSERT(static_cast<Shape*>(shapeList[i].toPrivate())->realm() ==
+                       shapeObj->realm());
+          }
+
+          writer.guardMultipleShapes(objId, shapeObj);
+          success = true;
+        } else {
           WeakHeapPtr<Shape*>& ptr =
               stubInfo->getStubField<StubField::Type::WeakShape>(firstStub,
                                                                  shapeOffset);
           writer.guardShape(objId, ptr.unbarrieredGet());
-          break;
         }
-
-        if (hasSlotOffsets) {
-          offsetId.emplace(writer.guardMultipleShapesToOffset(objId, shapeObj));
-        } else {
-          writer.guardMultipleShapes(objId, shapeObj);
-        }
-        shapeSuccess = true;
-        break;
-      }
-      case CacheOp::LoadFixedSlotResult: {
-        auto [objId, offsetOffset] = reader.argsForLoadFixedSlotResult();
-        if (!hasSlotOffsets || offsetOffset != *foldableOffsetOffset) {
-          
-          uint32_t offset = stubInfo->getStubRawWord(firstStub, offsetOffset);
-          writer.loadFixedSlotResult(objId, offset);
-          break;
-        }
-
-        MOZ_ASSERT(offsetId.isSome());
-        writer.loadFixedSlotFromOffsetResult(objId, offsetId.value());
-        offsetSuccess = true;
-        break;
-      }
-      case CacheOp::StoreFixedSlot: {
-        auto [objId, offsetOffset, rhsId] = reader.argsForStoreFixedSlot();
-        if (!hasSlotOffsets || offsetOffset != *foldableOffsetOffset) {
-          
-          uint32_t offset = stubInfo->getStubRawWord(firstStub, offsetOffset);
-          writer.storeFixedSlot(objId, offset, rhsId);
-          break;
-        }
-
-        MOZ_ASSERT(offsetId.isSome());
-        writer.storeFixedSlotFromOffset(objId, offsetId.value(), rhsId);
-        offsetSuccess = true;
-        break;
-      }
-      case CacheOp::StoreDynamicSlot: {
-        auto [objId, offsetOffset, rhsId] = reader.argsForStoreDynamicSlot();
-        if (!hasSlotOffsets || offsetOffset != *foldableOffsetOffset) {
-          
-          uint32_t offset = stubInfo->getStubRawWord(firstStub, offsetOffset);
-          writer.storeDynamicSlot(objId, offset, rhsId);
-          break;
-        }
-
-        MOZ_ASSERT(offsetId.isSome());
-        writer.storeDynamicSlotFromOffset(objId, offsetId.value(), rhsId);
-        offsetSuccess = true;
-        break;
-      }
-      case CacheOp::LoadDynamicSlotResult: {
-        auto [objId, offsetOffset] = reader.argsForLoadDynamicSlotResult();
-        if (!hasSlotOffsets || offsetOffset != *foldableOffsetOffset) {
-          
-          uint32_t offset = stubInfo->getStubRawWord(firstStub, offsetOffset);
-          writer.loadDynamicSlotResult(objId, offset);
-          break;
-        }
-
-        MOZ_ASSERT(offsetId.isSome());
-        writer.loadDynamicSlotFromOffsetResult(objId, offsetId.value());
-        offsetSuccess = true;
         break;
       }
       default:
@@ -376,30 +192,9 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
         break;
     }
   }
-
-  if (!shapeSuccess) {
+  if (!success) {
     
     
-    JitSpew(JitSpew_StubFolding,
-            "Foldable shape field at offset %u was not a GuardShape "
-            "(icScript: %p) with %zu shapes (%s:%u:%u)",
-            fallback->pcOffset(), icScript, shapeList.length(),
-            script->filename(), script->lineno(),
-            script->column().oneOriginValue());
-    return true;
-  }
-
-  if (hasSlotOffsets && !offsetSuccess) {
-    
-    
-    
-    JitSpew(JitSpew_StubFolding,
-            "Failed to fold GuardShape into GuardMultipleShapesToOffset at "
-            "offset %u "
-            "(icScript: %p) with %zu shapes (%s:%u:%u)",
-            fallback->pcOffset(), icScript, shapeList.length(),
-            script->filename(), script->lineno(),
-            script->column().oneOriginValue());
     return true;
   }
 
@@ -420,40 +215,7 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
           script->filename(), script->lineno(),
           script->column().oneOriginValue());
 
-#ifdef JS_JITSPEW
-  if (JitSpewEnabled(JitSpew_StubFoldingDetails)) {
-    ICStub* newEntryStub = icEntry->firstStub();
-    ICCacheIRStub* newStub = newEntryStub->toCacheIRStub();
-
-    Fprinter& printer(JitSpewPrinter());
-    printer.printf("- stub 0 (enteredCount: %d)\n", newStub->enteredCount());
-    CacheIRReader reader(newStub->stubInfo());
-    SpewCacheIROps(printer, "  ", newStub->stubInfo());
-  }
-#endif
-
   fallback->setMayHaveFoldedStub();
-
-  return true;
-}
-
-bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
-                              JSScript* script, ICScript* icScript) {
-  ICEntry* icEntry = icScript->icEntryForStub(fallback);
-  ICStub* entryStub = icEntry->firstStub();
-
-  
-  if (entryStub == fallback) {
-    return true;
-  }
-
-  ICCacheIRStub* firstStub = entryStub->toCacheIRStub();
-  if (firstStub->next()->isFallback()) {
-    return true;
-  }
-
-  if (!TryFoldingGuardShapes(cx, fallback, script, icScript)) return false;
-
   return true;
 }
 
@@ -475,10 +237,8 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
   const uint8_t* stubData = stub->stubDataStart();
 
   mozilla::Maybe<uint32_t> shapeFieldOffset;
-  mozilla::Maybe<uint32_t> offsetFieldOffset;
   RootedValue newShape(cx);
-  RootedValue newOffset(cx);
-  Rooted<ListObject*> shapeList(cx);
+  Rooted<ShapeListObject*> foldedShapes(cx);
 
   CacheIRReader stubReader(stubInfo);
   CacheIRReader newReader(writer);
@@ -491,6 +251,7 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
         if (newOp != CacheOp::GuardShape) {
           return false;
         }
+
         
         if (newReader.objOperandId() != stubReader.objOperandId()) {
           return false;
@@ -502,8 +263,7 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
         if (newShapeOffset != stubShapesOffset) {
           return false;
         }
-
-        MOZ_ASSERT(shapeList == nullptr);
+        MOZ_ASSERT(shapeFieldOffset.isNothing());
         shapeFieldOffset.emplace(newShapeOffset);
 
         
@@ -513,10 +273,10 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
         newShape = PrivateValue(shape);
 
         
-        JSObject* obj = stubInfo->getStubField<StubField::Type::JSObject>(
+        JSObject* shapeList = stubInfo->getStubField<StubField::Type::JSObject>(
             stub, stubShapesOffset);
-        shapeList = &obj->as<ShapeListObject>();
-        MOZ_ASSERT(shapeList->compartment() == shape->compartment());
+        foldedShapes = &shapeList->as<ShapeListObject>();
+        MOZ_ASSERT(foldedShapes->compartment() == shape->compartment());
 
         
         
@@ -528,137 +288,13 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
         
         
         
-        Realm* shapesRealm = shapeList->realm();
-        MOZ_ASSERT_IF(
-            !shapeList->isEmpty(),
-            shapeList->as<ShapeListObject>().getUnbarriered(0)->realm() ==
-                shapesRealm);
+        Realm* shapesRealm = foldedShapes->realm();
+        MOZ_ASSERT_IF(!foldedShapes->isEmpty(),
+                      foldedShapes->getUnbarriered(0)->realm() == shapesRealm);
         if (shapesRealm != shape->realm()) {
           return false;
         }
 
-        break;
-      }
-      case CacheOp::GuardMultipleShapesToOffset: {
-        
-        if (newOp != CacheOp::GuardShape) {
-          return false;
-        }
-        
-        if (newReader.objOperandId() != stubReader.objOperandId()) {
-          return false;
-        }
-
-        
-        uint32_t newShapeOffset = newReader.stubOffset();
-        uint32_t stubShapesOffset = stubReader.stubOffset();
-        if (newShapeOffset != stubShapesOffset) {
-          return false;
-        }
-
-        MOZ_ASSERT(shapeList == nullptr);
-        shapeFieldOffset.emplace(newShapeOffset);
-
-        
-        StubField shapeField =
-            writer.readStubField(newShapeOffset, StubField::Type::WeakShape);
-        Shape* shape = reinterpret_cast<Shape*>(shapeField.asWord());
-        newShape = PrivateValue(shape);
-
-        
-        JSObject* obj = stubInfo->getStubField<StubField::Type::JSObject>(
-            stub, stubShapesOffset);
-        shapeList = &obj->as<ShapeListWithOffsetsObject>();
-        MOZ_ASSERT(shapeList->compartment() == shape->compartment());
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Realm* shapesRealm = shapeList->realm();
-        MOZ_ASSERT_IF(
-            !shapeList->isEmpty(),
-            shapeList->as<ShapeListWithOffsetsObject>().getShape(0)->realm() ==
-                shapesRealm);
-        if (shapesRealm != shape->realm()) {
-          return false;
-        }
-
-        
-        stubReader.skip();
-        break;
-      }
-      case CacheOp::LoadFixedSlotFromOffsetResult:
-      case CacheOp::LoadDynamicSlotFromOffsetResult: {
-        
-        
-        if (stubOp == CacheOp::LoadFixedSlotFromOffsetResult &&
-            newOp != CacheOp::LoadFixedSlotResult) {
-          return false;
-        }
-        if (stubOp == CacheOp::LoadDynamicSlotFromOffsetResult &&
-            newOp != CacheOp::LoadDynamicSlotResult) {
-          return false;
-        }
-
-        
-        if (newReader.objOperandId() != stubReader.objOperandId()) {
-          return false;
-        }
-
-        MOZ_ASSERT(offsetFieldOffset.isNothing());
-        offsetFieldOffset.emplace(newReader.stubOffset());
-
-        
-        StubField offsetField =
-            writer.readStubField(*offsetFieldOffset, StubField::Type::RawInt32);
-        newOffset = PrivateUint32Value(offsetField.asWord());
-
-        
-        stubReader.skip();
-        break;
-      }
-      case CacheOp::StoreFixedSlotFromOffset:
-      case CacheOp::StoreDynamicSlotFromOffset: {
-        
-        if (stubOp == CacheOp::StoreFixedSlotFromOffset &&
-            newOp != CacheOp::StoreFixedSlot) {
-          return false;
-        }
-        if (stubOp == CacheOp::StoreDynamicSlotFromOffset &&
-            newOp != CacheOp::StoreDynamicSlot) {
-          return false;
-        }
-
-        
-        if (newReader.objOperandId() != stubReader.objOperandId()) {
-          return false;
-        }
-
-        MOZ_ASSERT(offsetFieldOffset.isNothing());
-        offsetFieldOffset.emplace(newReader.stubOffset());
-
-        
-        StubField offsetField =
-            writer.readStubField(*offsetFieldOffset, StubField::Type::RawInt32);
-        newOffset = PrivateUint32Value(offsetField.asWord());
-
-        
-        stubReader.skip();
-
-        
-        if (newReader.valOperandId() != stubReader.valOperandId()) {
-          return false;
-        }
-
-        MOZ_ASSERT(stubReader.peekOp() == CacheOp::ReturnFromIC);
-        MOZ_ASSERT(newReader.peekOp() == CacheOp::ReturnFromIC);
         break;
       }
       default: {
@@ -684,40 +320,27 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
     return false;
   }
 
-  if (!writer.stubDataEqualsIgnoringShapeAndOffset(stubData, *shapeFieldOffset,
-                                                   offsetFieldOffset)) {
+  
+  if (!writer.stubDataEqualsIgnoring(stubData, *shapeFieldOffset)) {
     return false;
   }
 
   
-  uint32_t numShapes = offsetFieldOffset.isNothing() ? shapeList->length()
-                                                     : shapeList->length() / 2;
-
   
-  
-  if (numShapes == ShapeListObject::MaxLength) {
+  if (foldedShapes->length() == ShapeListObject::MaxLength) {
     MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
     fallback->state().forceTransition();
     fallback->discardStubs(cx->zone(), icEntry);
     return false;
   }
 
-  if (!shapeList->append(cx, newShape)) {
+  if (!foldedShapes->append(cx, newShape)) {
     cx->recoverFromOutOfMemory();
     return false;
   }
 
-  if (offsetFieldOffset.isSome()) {
-    if (!shapeList->append(cx, newOffset)) {
-      
-      shapeList->shrinkElements(cx, shapeList->length() - 1);
-      cx->recoverFromOutOfMemory();
-      return false;
-    }
-  }
+  JitSpew(JitSpew_StubFolding, "ShapeListObject %p: new length: %u",
+          foldedShapes.get(), foldedShapes->length());
 
-  JitSpew(JitSpew_StubFolding, "ShapeList%sObject %p: new length: %u",
-          offsetFieldOffset.isNothing() ? "" : "WithOffset", shapeList.get(),
-          shapeList->length());
   return true;
 }

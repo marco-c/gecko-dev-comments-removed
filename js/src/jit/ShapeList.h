@@ -35,28 +35,6 @@ class ShapeListObject : public ListObject {
   bool traceWeak(JSTracer* trc);
 };
 
-
-
-
-class ShapeListWithOffsetsObject : public ListObject {
- public:
-  static const JSClass class_;
-  static const JSClassOps classOps_;
-
-  static constexpr size_t MaxLength = 16;
-
-  static ShapeListWithOffsetsObject* create(JSContext* cx);
-  static void trace(JSTracer* trc, JSObject* obj);
-
-  uint32_t numShapes() const;
-  Shape* getShape(uint32_t index) const;
-  Shape* getShapeUnbarriered(uint32_t index) const;
-
-  uint32_t getOffset(uint32_t index) const;
-
-  bool traceWeak(JSTracer* trc);
-};
-
 }  
 
 #endif  
