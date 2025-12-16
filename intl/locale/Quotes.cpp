@@ -54,36 +54,34 @@ const Quotes* QuotesForLang(const nsAtom* aLang) {
   
   
   
-  
-  
   Locale loc;
   auto result = LocaleParser::TryParse(langStr, loc);
   if (result.isErr()) {
     return nullptr;
   }
-  
-  const Span<const char> langAsSpan = loc.Language().Span();
-  nsAutoCString lang(langAsSpan.data(), langAsSpan.size());
-  const auto langLen = lang.Length();
-  
+  if (loc.Canonicalize().isErr()) {
+    return nullptr;
+  }
   if (loc.Region().Present()) {
-    lang.Append('-');
-    lang.Append(loc.Region().Span());
-    if ((entry = sQuotesForLang->Lookup(lang).DataPtrOrNull())) {
+    nsAutoCString langAndRegion;
+    langAndRegion.Append(loc.Language().Span());
+    langAndRegion.Append('-');
+    langAndRegion.Append(loc.Region().Span());
+    if ((entry = sQuotesForLang->Lookup(langAndRegion).DataPtrOrNull())) {
       return entry;
     }
-    lang.Truncate(langLen);
   }
-  
   if (loc.Script().Present()) {
-    lang.Append('-');
-    lang.Append(loc.Script().Span());
-    if ((entry = sQuotesForLang->Lookup(lang).DataPtrOrNull())) {
+    nsAutoCString langAndScript;
+    langAndScript.Append(loc.Language().Span());
+    langAndScript.Append('-');
+    langAndScript.Append(loc.Script().Span());
+    if ((entry = sQuotesForLang->Lookup(langAndScript).DataPtrOrNull())) {
       return entry;
     }
-    lang.Truncate(langLen);
   }
-  
+  Span<const char> langAsSpan = loc.Language().Span();
+  nsAutoCString lang(langAsSpan.data(), langAsSpan.size());
   if ((entry = sQuotesForLang->Lookup(lang).DataPtrOrNull())) {
     return entry;
   }
