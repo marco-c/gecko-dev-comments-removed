@@ -9326,16 +9326,17 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
       *cb = itemCB.GetPhysicalRect(wm, gridCBPhysicalSize);
       ++i;
     }
-    const auto border = aGridRI.mReflowInput->ComputedPhysicalBorder();
-    const nsPoint borderShift{border.left, border.top};
-    const nsRect paddingRect(borderShift, gridCBPhysicalSize);
+    
+    
+    
+    nsRect dummyRect;
     
     
     AbsPosReflowFlags flags{
         AbsPosReflowFlag::AllowFragmentation, AbsPosReflowFlag::CBWidthChanged,
         AbsPosReflowFlag::CBHeightChanged, AbsPosReflowFlag::IsGridContainerCB};
     absoluteContainer->Reflow(this, PresContext(), *aGridRI.mReflowInput,
-                              aStatus, paddingRect, flags,
+                              aStatus, dummyRect, flags,
                               &aDesiredSize.mOverflowAreas);
   }
   return bSize;
