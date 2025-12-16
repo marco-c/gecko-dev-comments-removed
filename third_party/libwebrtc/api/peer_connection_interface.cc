@@ -63,11 +63,4 @@ PeerConnectionFactoryDependencies::PeerConnectionFactoryDependencies(
 PeerConnectionFactoryDependencies::~PeerConnectionFactoryDependencies() =
     default;
 
-
-bool PeerConnectionInterface::RemoveIceCandidates(
-    const std::vector<Candidate>& candidates) {
-  RTC_CHECK_NOTREACHED();
-  return false;
-}
-
 }  

@@ -1132,15 +1132,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
-  [[deprecated("Use IceCandidate version")]] virtual bool RemoveIceCandidates(
-      const std::vector<Candidate>& candidates);
-
-  
-  
-  
-  
-  
-  
   virtual RTCError SetBitrate(const BitrateSettings& bitrate) = 0;
 
   

@@ -158,7 +158,7 @@ PROXY_METHOD2(void,
               AddIceCandidate,
               std::unique_ptr<IceCandidate>,
               std::function<void(RTCError)>)
-PROXY_METHOD1(bool, RemoveIceCandidates, const std::vector<Candidate>&)
+PROXY_METHOD1(bool, RemoveIceCandidate, const IceCandidate*)
 PROXY_METHOD1(RTCError, SetBitrate, const BitrateSettings&)
 PROXY_METHOD1(void,
               ReconfigureBandwidthEstimation,
