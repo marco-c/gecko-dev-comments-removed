@@ -578,6 +578,9 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
       
       for (const auto& entry : *mElements) {
         const CanonicalElementAttributes& elemAttributes = entry.GetData();
+        MOZ_ASSERT(
+            elemAttributes.mAttributes || elemAttributes.mRemoveAttributes,
+            "Canonical elements must at least have removeAttributes");
 
         
         
@@ -782,6 +785,11 @@ void Sanitizer::MaybeMaterializeDefaultConfig() {
         }
         i++;
         elementAttributes.mAttributes = Some(std::move(attributes));
+      } else {
+        
+        
+        CanonicalAttributeSet set{};
+        elementAttributes.mAttributes = Some(std::move(set));
       }
 
       CanonicalElement elementName(name, aNamespace);
