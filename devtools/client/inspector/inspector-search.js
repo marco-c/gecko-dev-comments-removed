@@ -19,6 +19,8 @@ const MAX_SUGGESTIONS = 15;
 
 
 
+class InspectorSearch {
+  
 
 
 
@@ -34,33 +36,29 @@ const MAX_SUGGESTIONS = 15;
 
 
 
-function InspectorSearch(inspector, input, clearBtn, prevBtn, nextBtn) {
-  this.inspector = inspector;
-  this.searchBox = input;
-  this.searchClearButton = clearBtn;
-  this.searchPrevButton = prevBtn;
-  this.searchNextButton = nextBtn;
-  this._lastSearched = null;
+  constructor(inspector, input, clearBtn, prevBtn, nextBtn) {
+    this.inspector = inspector;
+    this.searchBox = input;
+    this.searchClearButton = clearBtn;
+    this.searchPrevButton = prevBtn;
+    this.searchNextButton = nextBtn;
+    this._lastSearched = null;
 
-  this._onKeyDown = this._onKeyDown.bind(this);
-  this._onInput = this._onInput.bind(this);
-  this.findPrev = this.findPrev.bind(this);
-  this.findNext = this.findNext.bind(this);
-  this._onClearSearch = this._onClearSearch.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
+    this._onInput = this._onInput.bind(this);
+    this.findPrev = this.findPrev.bind(this);
+    this.findNext = this.findNext.bind(this);
+    this._onClearSearch = this._onClearSearch.bind(this);
 
-  this.searchBox.addEventListener("keydown", this._onKeyDown, true);
-  this.searchBox.addEventListener("input", this._onInput, true);
-  this.searchPrevButton.addEventListener("click", this.findPrev, true);
-  this.searchNextButton.addEventListener("click", this.findNext, true);
-  this.searchClearButton.addEventListener("click", this._onClearSearch);
+    this.searchBox.addEventListener("keydown", this._onKeyDown, true);
+    this.searchBox.addEventListener("input", this._onInput, true);
+    this.searchPrevButton.addEventListener("click", this.findPrev, true);
+    this.searchNextButton.addEventListener("click", this.findNext, true);
+    this.searchClearButton.addEventListener("click", this._onClearSearch);
 
-  this.autocompleter = new SelectorAutocompleter(inspector, input);
-  EventEmitter.decorate(this);
-}
-
-exports.InspectorSearch = InspectorSearch;
-
-InspectorSearch.prototype = {
+    this.autocompleter = new SelectorAutocompleter(inspector, input);
+    EventEmitter.decorate(this);
+  }
   destroy() {
     this.searchBox.removeEventListener("keydown", this._onKeyDown, true);
     this.searchBox.removeEventListener("input", this._onInput, true);
@@ -72,11 +70,11 @@ InspectorSearch.prototype = {
     this.searchNextButton = null;
     this.searchClearButton = null;
     this.autocompleter.destroy();
-  },
+  }
 
   _onSearch(reverse = false) {
     this.doFullTextSearch(this.searchBox.value, reverse).catch(console.error);
-  },
+  }
 
   async doFullTextSearch(query, reverse) {
     const lastSearched = this._lastSearched;
@@ -116,7 +114,7 @@ InspectorSearch.prototype = {
       searchContainer.classList.add("devtools-searchbox-no-match");
       this.emit("search-result");
     }
-  },
+  }
 
   _onInput() {
     if (this.searchBox.value.length === 0) {
@@ -125,7 +123,7 @@ InspectorSearch.prototype = {
     } else {
       this.searchClearButton.hidden = false;
     }
-  },
+  }
 
   _onKeyDown(event) {
     if (event.keyCode === KeyCodes.DOM_VK_RETURN) {
@@ -150,15 +148,15 @@ InspectorSearch.prototype = {
       event.preventDefault();
       this.autocompleter.hidePopup();
     }
-  },
+  }
 
   findNext() {
     this._onSearch();
-  },
+  }
 
   findPrev() {
     this._onSearch(true);
-  },
+  }
 
   _onClearSearch() {
     this.searchBox.parentNode.classList.remove("devtools-searchbox-no-match");
@@ -166,16 +164,10 @@ InspectorSearch.prototype = {
     this.searchBox.focus();
     this.searchClearButton.hidden = true;
     this.emit("search-cleared");
-  },
-};
+  }
+}
 
-
-
-
-
-
-
-
+exports.InspectorSearch = InspectorSearch;
 
 
 
@@ -185,6 +177,14 @@ InspectorSearch.prototype = {
 
 
 class SelectorAutocompleter extends EventEmitter {
+  
+
+
+
+
+
+
+
   constructor(inspector, inputNode) {
     super();
 
