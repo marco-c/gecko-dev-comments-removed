@@ -301,10 +301,10 @@ class LoadedScript : public nsIMemoryReporter {
 
   
   
-  bool HasDiskCacheReference() const { return !!mCacheInfo; }
+  bool HasDiskCacheReference() const { return !!mCacheEntry; }
 
   
-  void DropDiskCacheReference() { mCacheInfo = nullptr; }
+  void DropDiskCacheReference() { mCacheEntry = nullptr; }
 
   void DropDiskCacheReferenceAndSRI() {
     DropDiskCacheReference();
@@ -438,7 +438,7 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   
-  nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
+  nsCOMPtr<nsICacheEntryWriteHandle> mCacheEntry;
 };
 
 
