@@ -20,7 +20,6 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "api/candidate.h"
 #include "api/jsep.h"
 
 namespace webrtc {
@@ -28,16 +27,17 @@ namespace webrtc {
 class SessionDescription;
 
 
-class JsepSessionDescription : public SessionDescriptionInterface {
+class JsepSessionDescription final : public SessionDescriptionInterface {
  public:
   explicit JsepSessionDescription(SdpType type);
-  
+  [[deprecated(
+      "Use the CreateSessionDescription() method(s) to create an instance.")]]
   explicit JsepSessionDescription(const std::string& type);
   JsepSessionDescription(SdpType type,
                          std::unique_ptr<SessionDescription> description,
                          absl::string_view session_id,
                          absl::string_view session_version);
-  virtual ~JsepSessionDescription();
+  ~JsepSessionDescription() override;
 
   JsepSessionDescription(const JsepSessionDescription&) = delete;
   JsepSessionDescription& operator=(const JsepSessionDescription&) = delete;
@@ -47,36 +47,35 @@ class JsepSessionDescription : public SessionDescriptionInterface {
                   const std::string& session_id,
                   const std::string& session_version);
 
-  virtual std::unique_ptr<SessionDescriptionInterface> Clone() const;
+  std::unique_ptr<SessionDescriptionInterface> Clone() const override;
 
-  virtual SessionDescription* description() { return description_.get(); }
-  virtual const SessionDescription* description() const {
+  SessionDescription* description() override { return description_.get(); }
+  const SessionDescription* description() const override {
     return description_.get();
   }
-  virtual std::string session_id() const { return session_id_; }
-  virtual std::string session_version() const { return session_version_; }
-  virtual SdpType GetType() const { return type_; }
-  virtual std::string type() const { return SdpTypeToString(type_); }
+  std::string session_id() const override { return session_id_; }
+  std::string session_version() const override { return session_version_; }
+  SdpType GetType() const override { return type_; }
+  std::string type() const override { return SdpTypeToString(type_); }
   
-  virtual bool AddCandidate(const IceCandidate* candidate);
-  virtual bool RemoveCandidate(const IceCandidate* candidate);
-  
-  
-  virtual size_t RemoveCandidates(const std::vector<Candidate>& candidates);
-  virtual size_t number_of_mediasections() const;
-  virtual const IceCandidateCollection* candidates(
-      size_t mediasection_index) const;
-  virtual bool ToString(std::string* out) const;
+  bool AddCandidate(const IceCandidate* candidate) override;
+  bool RemoveCandidate(const IceCandidate* candidate) override;
+
+  size_t number_of_mediasections() const override;
+  const IceCandidateCollection* candidates(
+      size_t mediasection_index) const override;
+  bool ToString(std::string* out) const override;
 
  private:
   std::unique_ptr<SessionDescription> description_;
   std::string session_id_;
   std::string session_version_;
-  SdpType type_;
+  const SdpType type_;
   std::vector<JsepCandidateCollection> candidate_collection_;
 
-  bool GetMediasectionIndex(const IceCandidate* candidate, size_t* index);
-  int GetMediasectionIndex(const Candidate& candidate);
+  bool IsValidMLineIndex(int index) const;
+  bool GetMediasectionIndex(const IceCandidate* candidate, size_t* index) const;
+  int GetMediasectionIndex(absl::string_view mid) const;
 };
 
 }  

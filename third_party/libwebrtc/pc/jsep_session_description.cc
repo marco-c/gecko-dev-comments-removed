@@ -10,7 +10,9 @@
 
 #include "api/jsep_session_description.h"
 
+#include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
@@ -41,6 +43,14 @@ namespace {
 
 constexpr char kDummyAddress[] = "0.0.0.0";
 constexpr int kDummyPort = 9;
+
+
+
+SdpType SdpTypeFromStringOrDie(const std::string& type) {
+  auto sdp_type = SdpTypeFromString(type);
+  RTC_CHECK(sdp_type.has_value());
+  return sdp_type.value();
+}
 
 
 
@@ -101,23 +111,7 @@ void UpdateConnectionAddress(
   }
   media_desc->set_connection_address(connection_addr);
 }
-
 }  
-
-
-
-SdpType SessionDescriptionInterface::GetType() const {
-  std::optional<SdpType> maybe_type = SdpTypeFromString(type());
-  if (maybe_type) {
-    return *maybe_type;
-  } else {
-    RTC_LOG(LS_WARNING) << "Default implementation of "
-                           "SessionDescriptionInterface::GetType does not "
-                           "recognize the result from type(), returning "
-                           "kOffer.";
-    return SdpType::kOffer;
-  }
-}
 
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       const std::string& sdp,
@@ -163,17 +157,8 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
 
 JsepSessionDescription::JsepSessionDescription(SdpType type) : type_(type) {}
 
-JsepSessionDescription::JsepSessionDescription(const std::string& type) {
-  std::optional<SdpType> maybe_type = SdpTypeFromString(type);
-  if (maybe_type) {
-    type_ = *maybe_type;
-  } else {
-    RTC_LOG(LS_WARNING)
-        << "JsepSessionDescription constructed with invalid type string: "
-        << type << ". Assuming it is an offer.";
-    type_ = SdpType::kOffer;
-  }
-}
+JsepSessionDescription::JsepSessionDescription(const std::string& type)
+    : JsepSessionDescription(SdpTypeFromStringOrDie(type)) {}
 
 JsepSessionDescription::JsepSessionDescription(
     SdpType type,
@@ -278,23 +263,6 @@ bool JsepSessionDescription::RemoveCandidate(const IceCandidate* candidate) {
   return true;
 }
 
-size_t JsepSessionDescription::RemoveCandidates(
-    const std::vector<Candidate>& candidates) {
-  size_t num_removed = 0;
-  for (auto& candidate : candidates) {
-    int mediasection_index = GetMediasectionIndex(candidate);
-    if (mediasection_index < 0) {
-      
-      continue;
-    }
-    num_removed += candidate_collection_[mediasection_index].remove(candidate);
-    UpdateConnectionAddress(
-        candidate_collection_[mediasection_index],
-        description_->contents()[mediasection_index].media_description());
-  }
-  return num_removed;
-}
-
 size_t JsepSessionDescription::number_of_mediasections() const {
   if (!description_)
     return 0;
@@ -316,51 +284,33 @@ bool JsepSessionDescription::ToString(std::string* out) const {
   return !out->empty();
 }
 
+bool JsepSessionDescription::IsValidMLineIndex(int index) const {
+  RTC_DCHECK(description_);
+  return index >= 0 &&
+         index < static_cast<int>(description_->contents().size());
+}
+
 bool JsepSessionDescription::GetMediasectionIndex(const IceCandidate* candidate,
-                                                  size_t* index) {
-  if (!candidate || !index) {
+                                                  size_t* index) const {
+  if (!candidate || !index || !description_) {
     return false;
   }
 
-  
-  
-  if (candidate->sdp_mid().empty() &&
-      (candidate->sdp_mline_index() < 0 ||
-       static_cast<size_t>(candidate->sdp_mline_index()) >=
-           description_->contents().size())) {
-    return false;
-  }
-
-  if (candidate->sdp_mline_index() >= 0)
-    *index = static_cast<size_t>(candidate->sdp_mline_index());
-  if (description_ && !candidate->sdp_mid().empty()) {
-    bool found = false;
+  auto mid = candidate->sdp_mid();
+  if (!mid.empty()) {
+    *index = GetMediasectionIndex(mid);
+  } else {
     
-    for (size_t i = 0; i < description_->contents().size(); ++i) {
-      if (candidate->sdp_mid() == description_->contents().at(i).mid()) {
-        *index = i;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      
-      
-      return false;
-    }
+    *index = static_cast<size_t>(candidate->sdp_mline_index());
   }
-  return true;
+  return IsValidMLineIndex(*index);
 }
 
-int JsepSessionDescription::GetMediasectionIndex(const Candidate& candidate) {
-  
-  const std::string& transport_name = candidate.transport_name();
-  for (size_t i = 0; i < description_->contents().size(); ++i) {
-    if (transport_name == description_->contents().at(i).mid()) {
-      return static_cast<int>(i);
-    }
-  }
-  return -1;
+int JsepSessionDescription::GetMediasectionIndex(absl::string_view mid) const {
+  const auto& contents = description_->contents();
+  auto it =
+      std::find_if(contents.begin(), contents.end(),
+                   [&](const auto& content) { return mid == content.mid(); });
+  return it == contents.end() ? -1 : std::distance(contents.begin(), it);
 }
-
 }  

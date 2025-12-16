@@ -222,10 +222,7 @@ class RTC_EXPORT SessionDescriptionInterface {
 
   
   
-  
-  virtual std::unique_ptr<SessionDescriptionInterface> Clone() const {
-    return nullptr;
-  }
+  virtual std::unique_ptr<SessionDescriptionInterface> Clone() const = 0;
 
   
   virtual SessionDescription* description() = 0;
@@ -238,9 +235,7 @@ class RTC_EXPORT SessionDescriptionInterface {
 
   
   
-  
-  
-  virtual SdpType GetType() const;
+  virtual SdpType GetType() const = 0;
 
   
   
