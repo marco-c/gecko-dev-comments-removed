@@ -871,14 +871,10 @@ function makeSearchResult(
 
 
 
-
-
-
 function makeVisitResult(
   queryContext,
   {
     title,
-    fallbackTitle,
     uri,
     iconUri,
     providerName,
@@ -893,10 +889,6 @@ function makeVisitResult(
 
   if (title != undefined) {
     payload.title = title;
-  }
-
-  if (fallbackTitle) {
-    payload.fallbackTitle = fallbackTitle;
   }
 
   if (
