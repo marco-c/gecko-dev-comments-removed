@@ -16411,24 +16411,6 @@ const char* Document::GetFullscreenError(CallerType aCallerType) {
   return nullptr;
 }
 
-
-
-static inline void PropagateFullscreenRequest(Document* aDoc,
-                                              Element* aElement) {
-  nsContentUtils::DispatchEventOnlyToChrome(
-      aDoc, aElement, u"MozDOMFullscreen:Entered"_ns, CanBubble::eYes,
-      Cancelable::eNo,  nullptr);
-}
-
-static bool ElementIsRemoteFrame(Element* aElement) {
-  MOZ_ASSERT(aElement);
-  RefPtr<nsFrameLoader> loader;
-  if (RefPtr<nsFrameLoaderOwner> loaderOwner = do_QueryObject(aElement)) {
-    loader = loaderOwner->GetFrameLoader();
-  }
-  return loader && loader->IsRemoteFrame();
-}
-
 bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
   Element* elem = aRequest.Element();
   
@@ -16437,19 +16419,7 @@ bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
   
   
   Element* fullscreenElement = GetUnretargetedFullscreenElement();
-  if (NS_WARN_IF(elem == fullscreenElement)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (ElementIsRemoteFrame(elem)) {
-      PropagateFullscreenRequest(this, elem);
-    }
+  if (elem == fullscreenElement) {
     aRequest.MayResolvePromise();
     return false;
   }
@@ -16777,16 +16747,10 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   
   
   
-  
-  
-  
-  
-  if (!aRequest->GetPromise() || !previousFullscreenDoc) {
-    MOZ_ASSERT(
-        (previousFullscreenDoc &&
-         ElementIsRemoteFrame(child->GetUnretargetedFullscreenElement())) ||
-        !previousFullscreenDoc);
-    PropagateFullscreenRequest(this, elem);
+  if (!previousFullscreenDoc) {
+    nsContentUtils::DispatchEventOnlyToChrome(
+        this, elem, u"MozDOMFullscreen:Entered"_ns, CanBubble::eYes,
+        Cancelable::eNo,  nullptr);
   }
 
   
