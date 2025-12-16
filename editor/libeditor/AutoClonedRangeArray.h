@@ -77,6 +77,25 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
 
   void EnsureOnlyEditableRanges(const dom::Element& aEditingHost);
 
+  enum class RangeInReplacedOrVoidElement : bool {
+    
+    
+    Collapse,
+    
+    Delete,
+  };
+
+  
+
+
+
+
+
+
+  bool AdjustRangesNotInReplacedNorVoidElements(
+      RangeInReplacedOrVoidElement aRangeInReplacedOrVoidElement,
+      const dom::Element& aEditingHost);
+
   
 
 

@@ -41,7 +41,8 @@
 #include "nsError.h"             
 #include "nsGkAtoms.h"           
 #include "nsHTMLTags.h"
-#include "nsIContentInlines.h"   
+#include "nsIContentInlines.h"  
+#include "nsIObjectLoadingContent.h"
 #include "nsLiteralString.h"     
 #include "nsNameSpaceManager.h"  
 #include "nsPrintfCString.h"     
@@ -650,6 +651,42 @@ bool HTMLEditUtils::IsMailCiteElement(const Element& aElement) {
   }
 
   return false;
+}
+
+bool HTMLEditUtils::IsReplacedElement(const Element& aElement) {
+  if (!aElement.IsHTMLElement()) {
+    
+    return false;
+  }
+  if (aElement.IsHTMLElement(nsGkAtoms::input)) {
+    return !aElement.AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                 nsGkAtoms::hidden, eIgnoreCase);
+  }
+  if (HTMLEditUtils::IsFormWidgetElement(aElement)) {
+    return true;
+  }
+  
+  
+  if (aElement.IsHTMLElement(nsGkAtoms::object)) {
+    const nsCOMPtr<nsIObjectLoadingContent> objectLoadingContent =
+        do_QueryInterface(const_cast<Element*>(&aElement));
+    uint32_t displayedType = nsIObjectLoadingContent::TYPE_FALLBACK;
+    if (MOZ_LIKELY(objectLoadingContent)) {
+      objectLoadingContent->GetDisplayedType(&displayedType);
+    }
+    return displayedType != nsIObjectLoadingContent::TYPE_FALLBACK;
+  }
+  return aElement.IsAnyOfHTMLElements(
+      nsGkAtoms::audio,
+      
+      
+      nsGkAtoms::br, nsGkAtoms::canvas, nsGkAtoms::embed, nsGkAtoms::iframe,
+      nsGkAtoms::img,
+      
+      
+      
+      
+      nsGkAtoms::optgroup, nsGkAtoms::option, nsGkAtoms::video);
 }
 
 bool HTMLEditUtils::IsFormWidgetElement(const nsIContent& aContent) {
@@ -1381,13 +1418,17 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
   if (
       
       
+      
+      
+      
+      
       !IsContainerNode(*aNode.AsContent()) ||
       
       
       IsNamedAnchorElement(*aNode.AsContent()) ||
       
       
-      IsFormWidgetElement(*aNode.AsContent())) {
+      IsReplacedElement(*aNode.AsElement())) {
     return false;
   }
 
