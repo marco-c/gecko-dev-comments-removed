@@ -994,7 +994,8 @@ void WaylandSurface::SetSize(DesktopIntSize aSize) {
 }
 
 void WaylandSurface::ApplyEGLWindowSize(LayoutDeviceIntSize aEGLWindowSize) {
-  WaylandSurfaceLock lock(this);
+  
+  WaylandSurfaceLock lock(this,  true);
 
   auto scale = GetScale();
   auto surfaceSize = GetScaledSize(mSize);
