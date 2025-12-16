@@ -3301,19 +3301,6 @@
 
 
 
-
-    setIsSplitViewActive(isActive, tabs) {
-      for (const tab of tabs) {
-        this.tabpanels.setSplitViewPanelActive(isActive, tab.linkedPanel);
-      }
-      this.tabpanels.isSplitViewActive = gBrowser.selectedTab.splitview;
-    }
-
-    
-
-
-
-
     #insertSplitViewFooter(tab) {
       const panelEl = document.getElementById(tab.linkedPanel);
       if (panelEl?.querySelector("split-view-footer")) {
