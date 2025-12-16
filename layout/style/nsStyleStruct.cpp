@@ -1257,7 +1257,7 @@ nsChangeHint nsStylePosition::CalcDifference(
       mPositionArea != aNewData.mPositionArea) {
     
     
-    hint |= nsChangeHint_NeedReflow;
+    hint |= nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
   }
 
   if (mAspectRatio != aNewData.mAspectRatio) {

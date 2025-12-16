@@ -1544,7 +1544,10 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  void MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty);
+  void MarkFixedFramesForReflow();
+  
+  
+  void MarkPositionedFrameForReflow(nsIFrame*);
 
   
 
