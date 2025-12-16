@@ -728,18 +728,16 @@ NS_IMETHODIMP DictionaryOriginReader::OnCacheEntryAvailable(
     return NS_OK;
   }
 
+  mOrigin->SetCacheEntry(aCacheEntry);
   AUTO_PROFILER_FLOW_MARKER("DictionaryOriginReader::VisitMetaData", NETWORK,
                             Flow::FromPointer(this));
   bool empty = false;
   aCacheEntry->GetIsEmpty(&empty);
-  if (empty) {
-    
-    mOrigin->SetCacheEntry(aCacheEntry);
-  } else {
+  if (!empty) {
     
     nsCOMPtr<nsICacheEntryMetaDataVisitor> metadata(mOrigin);
     aCacheEntry->VisitMetaData(metadata);
-  }
+  }  
 
   
   RefPtr<DictionaryOriginReader> safety(this);
@@ -906,6 +904,9 @@ nsresult DictionaryCache::RemoveEntry(nsIURI* aURI, const nsACString& aKey) {
 
 void DictionaryCache::Clear() {
   
+  
+  
+
   
   
   mDictionaryCache.Clear();
