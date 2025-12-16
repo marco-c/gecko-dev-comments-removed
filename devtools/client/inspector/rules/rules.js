@@ -135,167 +135,172 @@ const POSITION_TRY_CONTAINER_ID = "position-try-container";
 
 
 
-
-
-
-
-
-
-
-
-
-function CssRuleView(inspector, document, store) {
-  EventEmitter.decorate(this);
-
-  this.inspector = inspector;
-  this.cssProperties = inspector.cssProperties;
-  this.styleDocument = document;
-  this.styleWindow = this.styleDocument.defaultView;
-  this.store = store || {
-    expandedUnusedCustomCssPropertiesRuleActorIds: new Set(),
-  };
-
+class CssRuleView extends EventEmitter {
   
-  this.debounce = debounce;
 
-  
-  
-  this.childHasDragged = false;
 
-  this._outputParser = new OutputParser(document, this.cssProperties);
-  this._abortController = new this.styleWindow.AbortController();
 
-  this.addNewRule = this.addNewRule.bind(this);
-  this._onContextMenu = this._onContextMenu.bind(this);
-  this._onCopy = this._onCopy.bind(this);
-  this._onFilterStyles = this._onFilterStyles.bind(this);
-  this._onClearSearch = this._onClearSearch.bind(this);
-  this._onTogglePseudoClassPanel = this._onTogglePseudoClassPanel.bind(this);
-  this._onTogglePseudoClass = this._onTogglePseudoClass.bind(this);
-  this._onToggleClassPanel = this._onToggleClassPanel.bind(this);
-  this._onToggleLightColorSchemeSimulation =
-    this._onToggleLightColorSchemeSimulation.bind(this);
-  this._onToggleDarkColorSchemeSimulation =
-    this._onToggleDarkColorSchemeSimulation.bind(this);
-  this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
-  this.highlightProperty = this.highlightProperty.bind(this);
-  this.refreshPanel = this.refreshPanel.bind(this);
 
-  const doc = this.styleDocument;
-  
-  
-  
-  
-  this.styleDocument.addEventListener("click", this, { capture: true });
-  this.element = doc.getElementById("ruleview-container-focusable");
-  this.addRuleButton = doc.getElementById("ruleview-add-rule-button");
-  this.searchField = doc.getElementById("ruleview-searchbox");
-  this.searchClearButton = doc.getElementById("ruleview-searchinput-clear");
-  this.pseudoClassPanel = doc.getElementById("pseudo-class-panel");
-  this.pseudoClassToggle = doc.getElementById("pseudo-class-panel-toggle");
-  this.classPanel = doc.getElementById("ruleview-class-panel");
-  this.classToggle = doc.getElementById("class-panel-toggle");
-  this.colorSchemeLightSimulationButton = doc.getElementById(
-    "color-scheme-simulation-light-toggle"
-  );
-  this.colorSchemeDarkSimulationButton = doc.getElementById(
-    "color-scheme-simulation-dark-toggle"
-  );
-  this.printSimulationButton = doc.getElementById("print-simulation-toggle");
 
-  this._initSimulationFeatures();
 
-  this.searchClearButton.hidden = true;
 
-  this.onHighlighterShown = data =>
-    this.handleHighlighterEvent("highlighter-shown", data);
-  this.onHighlighterHidden = data =>
-    this.handleHighlighterEvent("highlighter-hidden", data);
-  this.inspector.highlighters.on("highlighter-shown", this.onHighlighterShown);
-  this.inspector.highlighters.on(
-    "highlighter-hidden",
-    this.onHighlighterHidden
-  );
 
-  this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
-  this._onShortcut = this._onShortcut.bind(this);
-  this.shortcuts.on("Escape", event => this._onShortcut("Escape", event));
-  this.shortcuts.on("Return", event => this._onShortcut("Return", event));
-  this.shortcuts.on("Space", event => this._onShortcut("Space", event));
-  this.shortcuts.on("CmdOrCtrl+F", event =>
-    this._onShortcut("CmdOrCtrl+F", event)
-  );
-  this.element.addEventListener("copy", this._onCopy);
-  this.element.addEventListener("contextmenu", this._onContextMenu);
-  this.addRuleButton.addEventListener("click", this.addNewRule);
-  this.searchField.addEventListener("input", this._onFilterStyles);
-  this.searchClearButton.addEventListener("click", this._onClearSearch);
-  this.pseudoClassToggle.addEventListener(
-    "click",
-    this._onTogglePseudoClassPanel
-  );
-  this.classToggle.addEventListener("click", this._onToggleClassPanel);
-  
-  this.pseudoClassPanel.addEventListener("change", this._onTogglePseudoClass);
 
-  if (flags.testing) {
+  constructor(inspector, document, store) {
+    super();
+
+    this.inspector = inspector;
+    this.cssProperties = inspector.cssProperties;
+    this.styleDocument = document;
+    this.styleWindow = this.styleDocument.defaultView;
+    this.store = store || {
+      expandedUnusedCustomCssPropertiesRuleActorIds: new Set(),
+    };
+
     
-    this.highlighters.addToView(this);
-  } else {
-    this.element.addEventListener(
-      "mousemove",
-      () => {
-        this.highlighters.addToView(this);
-      },
-      { once: true }
+    this.debounce = debounce;
+
+    
+    
+    this.childHasDragged = false;
+
+    this._outputParser = new OutputParser(document, this.cssProperties);
+    this._abortController = new this.styleWindow.AbortController();
+
+    this.addNewRule = this.addNewRule.bind(this);
+    this._onContextMenu = this._onContextMenu.bind(this);
+    this._onCopy = this._onCopy.bind(this);
+    this._onFilterStyles = this._onFilterStyles.bind(this);
+    this._onClearSearch = this._onClearSearch.bind(this);
+    this._onTogglePseudoClassPanel = this._onTogglePseudoClassPanel.bind(this);
+    this._onTogglePseudoClass = this._onTogglePseudoClass.bind(this);
+    this._onToggleClassPanel = this._onToggleClassPanel.bind(this);
+    this._onToggleLightColorSchemeSimulation =
+      this._onToggleLightColorSchemeSimulation.bind(this);
+    this._onToggleDarkColorSchemeSimulation =
+      this._onToggleDarkColorSchemeSimulation.bind(this);
+    this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
+    this.highlightProperty = this.highlightProperty.bind(this);
+    this.refreshPanel = this.refreshPanel.bind(this);
+
+    const doc = this.styleDocument;
+    
+    
+    
+    
+    this.styleDocument.addEventListener("click", this, { capture: true });
+    this.element = doc.getElementById("ruleview-container-focusable");
+    this.addRuleButton = doc.getElementById("ruleview-add-rule-button");
+    this.searchField = doc.getElementById("ruleview-searchbox");
+    this.searchClearButton = doc.getElementById("ruleview-searchinput-clear");
+    this.pseudoClassPanel = doc.getElementById("pseudo-class-panel");
+    this.pseudoClassToggle = doc.getElementById("pseudo-class-panel-toggle");
+    this.classPanel = doc.getElementById("ruleview-class-panel");
+    this.classToggle = doc.getElementById("class-panel-toggle");
+    this.colorSchemeLightSimulationButton = doc.getElementById(
+      "color-scheme-simulation-light-toggle"
     );
+    this.colorSchemeDarkSimulationButton = doc.getElementById(
+      "color-scheme-simulation-dark-toggle"
+    );
+    this.printSimulationButton = doc.getElementById("print-simulation-toggle");
+
+    this._initSimulationFeatures();
+
+    this.searchClearButton.hidden = true;
+
+    this.onHighlighterShown = data =>
+      this.handleHighlighterEvent("highlighter-shown", data);
+    this.onHighlighterHidden = data =>
+      this.handleHighlighterEvent("highlighter-hidden", data);
+    this.inspector.highlighters.on(
+      "highlighter-shown",
+      this.onHighlighterShown
+    );
+    this.inspector.highlighters.on(
+      "highlighter-hidden",
+      this.onHighlighterHidden
+    );
+
+    this.shortcuts = new KeyShortcuts({ window: this.styleWindow });
+    this._onShortcut = this._onShortcut.bind(this);
+    this.shortcuts.on("Escape", event => this._onShortcut("Escape", event));
+    this.shortcuts.on("Return", event => this._onShortcut("Return", event));
+    this.shortcuts.on("Space", event => this._onShortcut("Space", event));
+    this.shortcuts.on("CmdOrCtrl+F", event =>
+      this._onShortcut("CmdOrCtrl+F", event)
+    );
+    this.element.addEventListener("copy", this._onCopy);
+    this.element.addEventListener("contextmenu", this._onContextMenu);
+    this.addRuleButton.addEventListener("click", this.addNewRule);
+    this.searchField.addEventListener("input", this._onFilterStyles);
+    this.searchClearButton.addEventListener("click", this._onClearSearch);
+    this.pseudoClassToggle.addEventListener(
+      "click",
+      this._onTogglePseudoClassPanel
+    );
+    this.classToggle.addEventListener("click", this._onToggleClassPanel);
+    
+    this.pseudoClassPanel.addEventListener("change", this._onTogglePseudoClass);
+
+    if (flags.testing) {
+      
+      this.highlighters.addToView(this);
+    } else {
+      this.element.addEventListener(
+        "mousemove",
+        () => {
+          this.highlighters.addToView(this);
+        },
+        { once: true }
+      );
+    }
+
+    this._handlePrefChange = this._handlePrefChange.bind(this);
+    this._handleUAStylePrefChange = this._handleUAStylePrefChange.bind(this);
+    this._handleDefaultColorUnitPrefChange =
+      this._handleDefaultColorUnitPrefChange.bind(this);
+    this._handleDraggablePrefChange =
+      this._handleDraggablePrefChange.bind(this);
+    this._handleInplaceEditorFocusNextOnEnterPrefChange =
+      this._handleInplaceEditorFocusNextOnEnterPrefChange.bind(this);
+
+    this._prefObserver = new PrefObserver("devtools.");
+    this._prefObserver.on(PREF_UA_STYLES, this._handleUAStylePrefChange);
+    this._prefObserver.on(
+      PREF_DEFAULT_COLOR_UNIT,
+      this._handleDefaultColorUnitPrefChange
+    );
+    this._prefObserver.on(PREF_DRAGGABLE, this._handleDraggablePrefChange);
+    
+    this._handleDraggablePrefChange();
+
+    this._prefObserver.on(
+      PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER,
+      this._handleInplaceEditorFocusNextOnEnterPrefChange
+    );
+    
+    this._handleInplaceEditorFocusNextOnEnterPrefChange();
+
+    this.pseudoClassCheckboxes = this._createPseudoClassCheckboxes();
+    this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
+
+    
+    this.tooltips = new TooltipsOverlay(this);
+
+    this.cssRegisteredPropertiesByTarget = new Map();
+    this._elementsWithPendingClicks = new this.styleWindow.WeakSet();
   }
 
-  this._handlePrefChange = this._handlePrefChange.bind(this);
-  this._handleUAStylePrefChange = this._handleUAStylePrefChange.bind(this);
-  this._handleDefaultColorUnitPrefChange =
-    this._handleDefaultColorUnitPrefChange.bind(this);
-  this._handleDraggablePrefChange = this._handleDraggablePrefChange.bind(this);
-  this._handleInplaceEditorFocusNextOnEnterPrefChange =
-    this._handleInplaceEditorFocusNextOnEnterPrefChange.bind(this);
-
-  this._prefObserver = new PrefObserver("devtools.");
-  this._prefObserver.on(PREF_UA_STYLES, this._handleUAStylePrefChange);
-  this._prefObserver.on(
-    PREF_DEFAULT_COLOR_UNIT,
-    this._handleDefaultColorUnitPrefChange
-  );
-  this._prefObserver.on(PREF_DRAGGABLE, this._handleDraggablePrefChange);
   
-  this._handleDraggablePrefChange();
-
-  this._prefObserver.on(
-    PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER,
-    this._handleInplaceEditorFocusNextOnEnterPrefChange
-  );
-  
-  this._handleInplaceEditorFocusNextOnEnterPrefChange();
-
-  this.pseudoClassCheckboxes = this._createPseudoClassCheckboxes();
-  this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
+  _viewedElement = null;
 
   
-  this.tooltips = new TooltipsOverlay(this);
-
-  this.cssRegisteredPropertiesByTarget = new Map();
-  this._elementsWithPendingClicks = new this.styleWindow.WeakSet();
-}
-
-CssRuleView.prototype = {
-  
-  _viewedElement: null,
-
-  
-  _filterChangedTimeout: null,
+  _filterChangedTimeout = null;
 
   
   
-  _dummyElement: null,
+  _dummyElement = null;
 
   get popup() {
     if (!this._popup) {
@@ -306,7 +311,7 @@ CssRuleView.prototype = {
     }
 
     return this._popup;
-  },
+  }
 
   get classListPreviewer() {
     if (!this._classListPreviewer) {
@@ -317,7 +322,7 @@ CssRuleView.prototype = {
     }
 
     return this._classListPreviewer;
-  },
+  }
 
   get contextMenu() {
     if (!this._contextMenu) {
@@ -325,12 +330,12 @@ CssRuleView.prototype = {
     }
 
     return this._contextMenu;
-  },
+  }
 
   
   get dummyElement() {
     return this._dummyElement;
-  },
+  }
 
   
   get highlighters() {
@@ -340,20 +345,20 @@ CssRuleView.prototype = {
     }
 
     return this._highlighters;
-  },
+  }
 
   
   get searchValue() {
     return this.searchField.value.toLowerCase();
-  },
+  }
 
   get rules() {
     return this._elementStyle ? this._elementStyle.rules : [];
-  },
+  }
 
   get currentTarget() {
     return this.inspector.toolbox.target;
-  },
+  }
 
   
 
@@ -396,7 +401,7 @@ CssRuleView.prototype = {
         options
       );
     }
-  },
+  }
 
   isPanelVisible() {
     return (
@@ -406,7 +411,7 @@ CssRuleView.prototype = {
       (this.inspector.sidebar.getCurrentTabID() == "ruleview" ||
         this.inspector.isThreePaneModeEnabled)
     );
-  },
+  }
 
   
 
@@ -420,7 +425,7 @@ CssRuleView.prototype = {
     );
 
     return options?.selector === selector;
-  },
+  }
 
   
 
@@ -445,7 +450,7 @@ CssRuleView.prototype = {
         break;
       default:
     }
-  },
+  }
 
   
 
@@ -538,7 +543,7 @@ CssRuleView.prototype = {
         });
       }
     }
-  },
+  }
 
   
 
@@ -610,7 +615,7 @@ CssRuleView.prototype = {
         }
         break;
     }
-  },
+  }
 
   
 
@@ -640,7 +645,7 @@ CssRuleView.prototype = {
       this.colorSchemeDarkSimulationButton.setAttribute("disabled", true);
       console.warn("Color scheme simulation is disabled in RFP mode.");
     }
-  },
+  }
 
   
 
@@ -656,7 +661,7 @@ CssRuleView.prototype = {
 
   getNodeInfo(node) {
     return getNodeInfo(node, this._elementStyle);
-  },
+  }
 
   
 
@@ -680,7 +685,7 @@ CssRuleView.prototype = {
     );
 
     return compatibilityInfo;
-  },
+  }
 
   
 
@@ -698,7 +703,7 @@ CssRuleView.prototype = {
     event.preventDefault();
 
     this.contextMenu.show(event);
-  },
+  }
 
   
 
@@ -712,7 +717,7 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  },
+  }
 
   
 
@@ -748,7 +753,7 @@ CssRuleView.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   
 
@@ -763,7 +768,7 @@ CssRuleView.prototype = {
 
     this._focusNextUserAddedRule = true;
     this.pageStyle.addNewRule(element, pseudoClasses);
-  },
+  }
 
   
 
@@ -773,14 +778,14 @@ CssRuleView.prototype = {
 
   canAddNewRuleForSelectedNode() {
     return this._viewedElement && this.inspector.selection.isElementNode();
-  },
+  }
 
   
 
 
   refreshAddRuleButtonState() {
     this.addRuleButton.disabled = !this.canAddNewRuleForSelectedNode();
-  },
+  }
 
   
 
@@ -791,16 +796,16 @@ CssRuleView.prototype = {
       this.tooltips.isEditing ||
       !!this.element.querySelectorAll(".styleinspector-propertyeditor").length
     );
-  },
+  }
 
   _handleUAStylePrefChange() {
     this.showUserAgentStyles = Services.prefs.getBoolPref(PREF_UA_STYLES);
     this._handlePrefChange(PREF_UA_STYLES);
-  },
+  }
 
   _handleDefaultColorUnitPrefChange() {
     this._handlePrefChange(PREF_DEFAULT_COLOR_UNIT);
-  },
+  }
 
   _handleDraggablePrefChange() {
     this.draggablePropertiesEnabled = Services.prefs.getBoolPref(
@@ -811,7 +816,7 @@ CssRuleView.prototype = {
     
     
     this.emit("draggable-preference-updated");
-  },
+  }
 
   _handleInplaceEditorFocusNextOnEnterPrefChange() {
     this.inplaceEditorFocusNextOnEnter = Services.prefs.getBoolPref(
@@ -819,7 +824,7 @@ CssRuleView.prototype = {
       false
     );
     this._handlePrefChange(PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER);
-  },
+  }
 
   _handlePrefChange(pref) {
     
@@ -831,7 +836,7 @@ CssRuleView.prototype = {
     if (this._viewedElement && refreshOnPrefs.includes(pref)) {
       this.selectElement(this._viewedElement, true);
     }
-  },
+  }
 
   
 
@@ -843,7 +848,7 @@ CssRuleView.prototype = {
     this.searchField.value = value;
     this.searchField.focus();
     this._onFilterStyles();
-  },
+  }
 
   
 
@@ -868,7 +873,7 @@ CssRuleView.prototype = {
         FILTER_CHANGED_TIMEOUT
       );
     }
-  },
+  }
 
   
 
@@ -938,7 +943,7 @@ CssRuleView.prototype = {
     this.inspector.emit("ruleview-filtered");
 
     this._filterChangeTimeout = null;
-  },
+  }
 
   
 
@@ -951,7 +956,7 @@ CssRuleView.prototype = {
     }
 
     return false;
-  },
+  }
 
   destroy() {
     this.isDestroyed = true;
@@ -1060,7 +1065,7 @@ CssRuleView.prototype = {
       this._popup.destroy();
       this._popup = null;
     }
-  },
+  }
 
   
 
@@ -1069,14 +1074,14 @@ CssRuleView.prototype = {
 
   _startSelectingElement() {
     this.element.classList.add("non-interactive");
-  },
+  }
 
   
 
 
   _stopSelectingElement() {
     this.element.classList.remove("non-interactive");
-  },
+  }
 
   
 
@@ -1182,7 +1187,7 @@ CssRuleView.prototype = {
         }
         console.error(e);
       });
-  },
+  }
 
   
 
@@ -1204,7 +1209,7 @@ CssRuleView.prototype = {
     return Promise.all(promises).then(() => {
       return this._populate();
     });
-  },
+  }
 
   
 
@@ -1215,7 +1220,7 @@ CssRuleView.prototype = {
       checkbox.checked = false;
       checkbox.disabled = false;
     });
-  },
+  }
 
   
 
@@ -1244,7 +1249,7 @@ CssRuleView.prototype = {
     return Array.from(
       this.pseudoClassPanel.querySelectorAll("input[type=checkbox]")
     );
-  },
+  }
 
   
 
@@ -1265,7 +1270,7 @@ CssRuleView.prototype = {
       checkbox.disabled = false;
       checkbox.checked = pseudoClassLocks.includes(checkbox.value);
     });
-  },
+  }
 
   _populate() {
     const elementStyle = this._elementStyle;
@@ -1286,7 +1291,7 @@ CssRuleView.prototype = {
         }, console.error);
       })
       .catch(promiseWarn);
-  },
+  }
 
   
 
@@ -1301,14 +1306,14 @@ CssRuleView.prototype = {
       class: "devtools-sidepanel-no-result",
       textContent: l10n("rule.empty"),
     });
-  },
+  }
 
   
 
 
   _clearRules() {
     this.element.innerHTML = "";
-  },
+  }
 
   
 
@@ -1328,7 +1333,7 @@ CssRuleView.prototype = {
       this.pageStyle.off("stylesheet-updated", this.refreshPanel);
       this.pageStyle = null;
     }
-  },
+  }
 
   
 
@@ -1336,7 +1341,7 @@ CssRuleView.prototype = {
 
   _changed() {
     this.emit("ruleview-changed");
-  },
+  }
 
   
 
@@ -1347,7 +1352,7 @@ CssRuleView.prototype = {
     }
     this._selectedElementLabel = l10n("rule.selectedElement");
     return this._selectedElementLabel;
-  },
+  }
 
   
 
@@ -1358,7 +1363,7 @@ CssRuleView.prototype = {
     }
     this._pseudoElementLabel = l10n("rule.pseudoElement");
     return this._pseudoElementLabel;
-  },
+  }
 
   get showPseudoElements() {
     if (this._showPseudoElements === undefined) {
@@ -1367,7 +1372,7 @@ CssRuleView.prototype = {
       );
     }
     return this._showPseudoElements;
-  },
+  }
 
   
 
@@ -1428,7 +1433,7 @@ CssRuleView.prototype = {
     }
 
     return container;
-  },
+  }
 
   
 
@@ -1442,7 +1447,7 @@ CssRuleView.prototype = {
     );
     el.classList.add("registered-properties");
     return el;
-  },
+  }
 
   
 
@@ -1454,7 +1459,7 @@ CssRuleView.prototype = {
     return this.styleDocument.querySelector(
       `#${REGISTERED_PROPERTIES_CONTAINER_ID} [data-name="${registeredPropertyName}"]`
     );
-  },
+  }
 
   
 
@@ -1486,7 +1491,7 @@ CssRuleView.prototype = {
     }
 
     toggleButton.setAttribute("aria-expanded", !isOpen);
-  },
+  }
 
   
 
@@ -1665,7 +1670,7 @@ CssRuleView.prototype = {
     );
 
     return Promise.all(editorReadyPromises);
-  },
+  }
 
   
 
@@ -1693,7 +1698,7 @@ CssRuleView.prototype = {
     }
 
     return isHighlighted;
-  },
+  }
 
   
 
@@ -1732,7 +1737,7 @@ CssRuleView.prototype = {
     }
 
     return isSelectorHighlighted;
-  },
+  }
 
   
 
@@ -1763,7 +1768,7 @@ CssRuleView.prototype = {
     }
 
     return isHighlighted;
-  },
+  }
 
   
 
@@ -1784,7 +1789,7 @@ CssRuleView.prototype = {
     }
 
     return isStyleSheetHighlighted;
-  },
+  }
 
   
 
@@ -1811,7 +1816,7 @@ CssRuleView.prototype = {
     }
 
     return isPropertyHighlighted || isComputedHighlighted;
-  },
+  }
 
   
 
@@ -1830,7 +1835,7 @@ CssRuleView.prototype = {
     if (this._highlightProperty(editor.prop)) {
       this.searchField.classList.remove("devtools-style-searchbox-no-match");
     }
-  },
+  }
 
   
 
@@ -1856,7 +1861,7 @@ CssRuleView.prototype = {
       propertyValue,
       textProperty,
     });
-  },
+  }
 
   
 
@@ -1895,7 +1900,7 @@ CssRuleView.prototype = {
     }
 
     return isComputedHighlighted;
-  },
+  }
 
   
 
@@ -1974,7 +1979,7 @@ CssRuleView.prototype = {
     element.classList.add("ruleview-highlight");
 
     return true;
-  },
+  }
 
   
 
@@ -1990,7 +1995,7 @@ CssRuleView.prototype = {
     )) {
       computed.parentNode._textPropertyEditor.collapseForFilter();
     }
-  },
+  }
 
   
 
@@ -2002,7 +2007,7 @@ CssRuleView.prototype = {
     } else {
       this.hidePseudoClassPanel();
     }
-  },
+  }
 
   showPseudoClassPanel() {
     this.hideClassPanel();
@@ -2012,7 +2017,7 @@ CssRuleView.prototype = {
       checkbox.setAttribute("tabindex", "0");
     });
     this.pseudoClassPanel.hidden = false;
-  },
+  }
 
   hidePseudoClassPanel() {
     this.pseudoClassToggle.setAttribute("aria-pressed", "false");
@@ -2020,7 +2025,7 @@ CssRuleView.prototype = {
       checkbox.setAttribute("tabindex", "-1");
     });
     this.pseudoClassPanel.hidden = true;
-  },
+  }
 
   
 
@@ -2029,7 +2034,7 @@ CssRuleView.prototype = {
   _onTogglePseudoClass(event) {
     const target = event.target;
     this.inspector.togglePseudoClass(target.value);
-  },
+  }
 
   
 
@@ -2041,7 +2046,7 @@ CssRuleView.prototype = {
     } else {
       this.hideClassPanel();
     }
-  },
+  }
 
   showClassPanel() {
     this.hidePseudoClassPanel();
@@ -2050,12 +2055,12 @@ CssRuleView.prototype = {
     this.classPanel.hidden = false;
 
     this.classListPreviewer.focusAddClassField();
-  },
+  }
 
   hideClassPanel() {
     this.classToggle.setAttribute("aria-pressed", "false");
     this.classPanel.hidden = true;
-  },
+  }
 
   
 
@@ -2083,7 +2088,7 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
-  },
+  }
 
   async _onToggleLightColorSchemeSimulation() {
     const shouldSimulateLightScheme =
@@ -2104,7 +2109,7 @@ CssRuleView.prototype = {
     );
     
     this.refreshPanel();
-  },
+  }
 
   async _onToggleDarkColorSchemeSimulation() {
     const shouldSimulateDarkScheme =
@@ -2125,7 +2130,7 @@ CssRuleView.prototype = {
     );
     
     this.refreshPanel();
-  },
+  }
 
   async _onTogglePrintSimulation() {
     const enabled =
@@ -2138,7 +2143,7 @@ CssRuleView.prototype = {
     );
     
     this.refreshPanel();
-  },
+  }
 
   
 
@@ -2167,7 +2172,7 @@ CssRuleView.prototype = {
 
       setTimeout(this._flashMutationCallback, PROPERTY_FLASHING_DURATION);
     });
-  },
+  }
 
   
 
@@ -2201,7 +2206,7 @@ CssRuleView.prototype = {
     scrollBehavior = reducedMotion ? "auto" : scrollBehavior;
 
     elementToScrollTo.scrollIntoView({ behavior: scrollBehavior });
-  },
+  }
 
   
 
@@ -2214,7 +2219,7 @@ CssRuleView.prototype = {
       `[aria-controls="${PSEUDO_ELEMENTS_CONTAINER_ID}"]`
     );
     this._toggleContainerVisibility(toggle, container, true, true);
-  },
+  }
 
   
 
@@ -2314,7 +2319,7 @@ CssRuleView.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -2350,7 +2355,7 @@ CssRuleView.prototype = {
 
     this._highlightElementInRule(null, propertyEl, scrollBehavior);
     return true;
-  },
+  }
 
   
 
@@ -2368,7 +2373,7 @@ CssRuleView.prototype = {
     this._flashElement(element).then(() =>
       this.emitForTests("element-highlighted", element)
     );
-  },
+  }
 
   
 
@@ -2380,8 +2385,8 @@ CssRuleView.prototype = {
     return this.cssRegisteredPropertiesByTarget.get(
       this.inspector.selection.nodeFront.targetFront
     );
-  },
-};
+  }
+}
 
 class RuleViewTool {
   constructor(inspector, window) {
