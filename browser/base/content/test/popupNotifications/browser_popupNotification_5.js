@@ -105,10 +105,16 @@ var tests = [
     async onShown(popup) {
       this.complete = false;
 
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.org/",
+      });
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.com/",
+      });
 
       
       ok(false, "Should have removed the notification after navigation");

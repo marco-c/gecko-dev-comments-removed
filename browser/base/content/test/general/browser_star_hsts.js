@@ -26,9 +26,16 @@ add_task(async function test_star_redirect() {
 
   let tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser));
   
-  await promiseTabLoadEvent(tab, secureURL, secureURL);
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: secureURL,
+  });
   
-  await promiseTabLoadEvent(tab, unsecureURL, secureURL);
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: unsecureURL,
+    finalURI: secureURL,
+  });
 
   await promiseStarState(BookmarkingUI.STATUS_UNSTARRED);
 
@@ -61,25 +68,4 @@ function promiseStarState(aValue) {
       }
     })();
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function promiseTabLoadEvent(aTab, aURL, aFinalURL) {
-  if (!aFinalURL) {
-    aFinalURL = aURL;
-  }
-
-  info("Wait for load tab event");
-  BrowserTestUtils.startLoadingURIString(aTab.linkedBrowser, aURL);
-  return BrowserTestUtils.browserLoaded(aTab.linkedBrowser, false, aFinalURL);
 }

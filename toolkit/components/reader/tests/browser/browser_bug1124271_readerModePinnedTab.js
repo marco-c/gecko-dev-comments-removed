@@ -31,11 +31,15 @@ add_task(async function () {
 
   
   let url = TEST_PATH + "readerModeArticle.html";
-  await promiseTabLoadEvent(tab, url);
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: url,
+  });
   await TestUtils.waitForCondition(() => !readerButton.hidden);
 
+  let tabLoadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   readerButton.click();
-  await promiseTabLoadEvent(tab);
+  await tabLoadPromise;
 
   
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");

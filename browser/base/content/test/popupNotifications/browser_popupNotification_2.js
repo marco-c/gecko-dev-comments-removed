@@ -86,14 +86,23 @@ var tests = [
     },
     async onShown() {
       this.complete = false;
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.org/",
+      });
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.com/",
+      });
       
       this.complete = true;
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.org/",
+      });
     },
     onHidden() {
       ok(
@@ -124,15 +133,24 @@ var tests = [
     },
     async onShown() {
       this.complete = false;
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.org/",
+      });
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.com/",
+      });
       
       this.notification.options.timeout = Date.now() - 1;
       this.complete = true;
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.org/",
+      });
     },
     onHidden() {
       ok(
@@ -164,10 +182,16 @@ var tests = [
     async onShown(popup) {
       this.complete = false;
 
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
-      
-      await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.org/",
+      });
+      await BrowserTestUtils.loadURIString({
+        browser: gBrowser.selectedTab.linkedBrowser,
+        
+        uriString: "http://example.com/",
+      });
       
       this.complete = true;
       dismissNotification(popup);

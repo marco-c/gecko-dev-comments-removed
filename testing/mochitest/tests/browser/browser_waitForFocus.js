@@ -1,13 +1,5 @@
 const gBaseURL = "https://example.com/browser/testing/mochitest/tests/browser/";
 
-function promiseTabLoadEvent(tab, url) {
-  let promise = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url);
-  if (url) {
-    tab.linkedBrowser.loadURI(Services.io.newURI(url));
-  }
-  return promise;
-}
-
 
 add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser);
@@ -58,7 +50,10 @@ add_task(async function () {
   
   
   if (browser.contentWindow) {
-    await promiseTabLoadEvent(tab, gBaseURL + "waitForFocusPage.html");
+    await BrowserTestUtils.loadURIString({
+      browser: tab.linkedBrowser,
+      uriString: gBaseURL + "waitForFocusPage.html",
+    });
 
     await SimpleTest.promiseFocus(browser.contentWindow);
 

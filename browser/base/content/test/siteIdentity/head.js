@@ -19,40 +19,6 @@ function getIdentityMode(aWindow = window) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-function promiseTabLoadEvent(tab, url) {
-  info("Wait tab event: load");
-
-  function handle(loadedUrl) {
-    if (loadedUrl === "about:blank" || (url && loadedUrl !== url)) {
-      info(`Skipping spurious load event for ${loadedUrl}`);
-      return false;
-    }
-
-    info("Tab event received: load");
-    return true;
-  }
-
-  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
-
-  if (url) {
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
-  }
-
-  return loaded;
-}
-
-
 function isSecurityState(browser, expectedState) {
   let ui = browser.securityUI;
   if (!ui) {
@@ -395,31 +361,58 @@ async function assertMixedContentBlockingState(tabbrowser, states = {}) {
   }
 }
 
-async function loadBadCertPage(url) {
+async function loadBadCertPage(url, feltPrivacyV1) {
   const loaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+  const loadFlagsSkipCache =
+    Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_PROXY |
+    Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    url,
+    loadFlagsSkipCache
+  );
   await loaded;
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
-    const netErrorCard =
-      content.document.querySelector("net-error-card").wrappedJSObject;
-    await netErrorCard.getUpdateComplete();
-    await EventUtils.synthesizeMouseAtCenter(
-      netErrorCard.advancedButton,
-      {},
-      content
-    );
-    await ContentTaskUtils.waitForCondition(() => {
-      return (
-        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled
-      );
-    }, "Waiting for exception button");
-    netErrorCard.exceptionButton.scrollIntoView(true);
-    await EventUtils.synthesizeMouseAtCenter(
-      netErrorCard.exceptionButton,
-      {},
-      content
-    );
-  });
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [feltPrivacyV1],
+    async prefFeltPrivacyV1 => {
+      if (prefFeltPrivacyV1) {
+        const netErrorCard =
+          content.document.querySelector("net-error-card").wrappedJSObject;
+        await netErrorCard.getUpdateComplete();
+        EventUtils.synthesizeMouseAtCenter(
+          netErrorCard.advancedButton,
+          {},
+          content
+        );
+        await ContentTaskUtils.waitForCondition(() => {
+          return (
+            netErrorCard.exceptionButton &&
+            !netErrorCard.exceptionButton.disabled
+          );
+        }, "Waiting for exception button");
+        netErrorCard.exceptionButton.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(
+          netErrorCard.exceptionButton,
+          {},
+          content
+        );
+      } else {
+        const advancedButton =
+          content.document.getElementById("advancedButton");
+        advancedButton.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
+        const exceptionButton = content.document.getElementById(
+          "exceptionDialogButton"
+        );
+        await ContentTaskUtils.waitForCondition(() => {
+          return exceptionButton && !exceptionButton.disabled;
+        }, "Waiting for exception button");
+        exceptionButton.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(exceptionButton, {}, content);
+      }
+    }
+  );
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 }
 

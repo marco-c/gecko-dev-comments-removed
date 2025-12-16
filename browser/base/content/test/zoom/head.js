@@ -124,7 +124,10 @@ var FullZoomHelper = {
       let didLoad = false;
       let didZoom = false;
 
-      promiseTabLoadEvent(tab, url).then(() => {
+      BrowserTestUtils.loadURIString({
+        browser: tab.linkedBrowser,
+        uriString: url,
+      }).then(() => {
         didLoad = true;
         if (didZoom) {
           resolve();
@@ -185,39 +188,3 @@ var FullZoomHelper = {
     };
   },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function promiseTabLoadEvent(tab, url) {
-  console.info("Wait tab event: load");
-  if (url) {
-    console.info("Expecting load for: ", url);
-  }
-  function handle(loadedUrl) {
-    if (loadedUrl === "about:blank" || (url && loadedUrl !== url)) {
-      console.info(`Skipping spurious load event for ${loadedUrl}`);
-      return false;
-    }
-
-    console.info("Tab event received: load");
-    return true;
-  }
-
-  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
-
-  if (url) {
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
-  }
-
-  return loaded;
-}

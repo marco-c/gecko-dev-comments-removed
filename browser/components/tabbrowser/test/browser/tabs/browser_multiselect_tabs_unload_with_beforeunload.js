@@ -23,6 +23,8 @@ async function addBrowserTabs(numberOfTabs) {
   
   
   
+  
+  
   let tabs = [];
   for (let i = 0; i < numberOfTabs; i++) {
     tabs.push(await addTab(`http://mochi.test:8888/#${i}`));
@@ -58,10 +60,10 @@ function awaitAndCloseBeforeUnloadDialog(browser, doStayOnPage) {
 add_setup(async function () {
   
   
-  await promiseTabLoadEvent(
-    gBrowser.selectedTab,
-    "http://mochi.test:8888/#originalTab"
-  );
+  await BrowserTestUtils.loadURIString({
+    browser: gBrowser.selectedTab.linkedBrowser,
+    uriString: "http://mochi.test:8888/#originalTab",
+  });
   let originalTab = gBrowser.selectedTab;
   
   FirefoxViewHandler.openTab();

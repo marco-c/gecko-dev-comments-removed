@@ -1,40 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function promiseTabLoadEvent(tab, url) {
-  info("Wait tab event: load");
-
-  function handle(loadedUrl) {
-    if (loadedUrl === "about:blank" || (url && loadedUrl !== url)) {
-      info(`Skipping spurious load event for ${loadedUrl}`);
-      return false;
-    }
-
-    info("Tab event received: load");
-    return true;
-  }
-
-  let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
-
-  if (url) {
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
-  }
-
-  return loaded;
-}
-
 var gInvalidFormPopup =
   gBrowser.selectedBrowser.browsingContext.currentWindowGlobal
     .getActor("FormValidation")
@@ -97,7 +60,10 @@ async function openNewTab(uri, background) {
   if (!background) {
     gBrowser.selectedTab = tab;
   }
-  await promiseTabLoadEvent(tab, "data:text/html," + escape(uri));
+  await BrowserTestUtils.loadURIString({
+    browser: tab.linkedBrowser,
+    uriString: "data:text/html," + escape(uri),
+  });
   return browser;
 }
 

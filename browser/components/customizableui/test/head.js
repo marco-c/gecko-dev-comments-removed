@@ -393,21 +393,6 @@ function waitFor(aTimeout = 100) {
 
 
 
-function promiseTabLoadEvent(aTab, aURL) {
-  let browser = aTab.linkedBrowser;
-
-  BrowserTestUtils.startLoadingURIString(browser, aURL);
-  return BrowserTestUtils.browserLoaded(browser);
-}
-
-
-
-
-
-
-
-
-
 function promiseAttributeMutation(aNode, aAttribute, aFilterFn) {
   return new Promise(resolve => {
     info("waiting for mutation of attribute '" + aAttribute + "'.");

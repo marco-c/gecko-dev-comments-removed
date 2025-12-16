@@ -22,28 +22,6 @@ async function waitForWindowReadyForPopupNotifications(win) {
 
 
 
-
-
-
-
-
-
-
-
-
-function promiseTabLoadEvent(tab, url) {
-  let browser = tab.linkedBrowser;
-
-  if (url) {
-    BrowserTestUtils.startLoadingURIString(browser, url);
-  }
-
-  return BrowserTestUtils.browserLoaded(browser, false, url);
-}
-
-
-
-
 function setup() {
   
   BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/").then(
