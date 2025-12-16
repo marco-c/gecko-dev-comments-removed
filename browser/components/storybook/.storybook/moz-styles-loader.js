@@ -56,9 +56,30 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const path = require("path");
-const projectRoot = path.join(process.cwd(), "../../..");
-const rewriteChromeUri = require("./chrome-uri-utils.js");
+const projectRoot = path.resolve(__dirname, "../../../../");
+const { rewriteChromeUri, rewriteMozSrcUri } = require("./moz-uri-utils.js");
 
 
 
@@ -66,12 +87,14 @@ const rewriteChromeUri = require("./chrome-uri-utils.js");
 
 
 
-function getReferencedChromeUris(source) {
-  const chromeRegex = /chrome:\/\/.*?\.css/g;
+function getReferencedCssUris(source) {
+  const cssRegexes = [/chrome:\/\/.*?\.css/g, /moz-src:\/\/\/.*?\.css/g];
   const matches = new Set();
-  for (let match of source.matchAll(chromeRegex)) {
-    
-    matches.add(match[0]);
+  for (let regex of cssRegexes) {
+    for (let match of source.matchAll(regex)) {
+      
+      matches.add(match[0]);
+    }
   }
   return [...matches];
 }
@@ -83,24 +106,58 @@ function getReferencedChromeUris(source) {
 
 
 
+function resolveCssUri(cssUri, resourcePath) {
+  let localPath = "";
+  let dependencyPath = "";
 
-async function rewriteChromeUris(source) {
-  const chromeUriToLocalPath = new Map();
+  if (cssUri.startsWith("chrome://")) {
+    localPath = rewriteChromeUri(cssUri);
+    if (localPath) {
+      dependencyPath = path.join(projectRoot, localPath);
+    }
+  }
+  if (cssUri.startsWith("moz-src:///")) {
+    const absolutePath = rewriteMozSrcUri(cssUri);
+    if (absolutePath) {
+      localPath = path.relative(path.dirname(resourcePath), absolutePath);
+      
+      if (!localPath.startsWith(".")) {
+        localPath = `./${localPath}`;
+      }
+      dependencyPath = absolutePath;
+    }
+  }
+
+  return { localPath, dependencyPath };
+}
+
+
+
+
+
+
+
+
+
+async function rewriteCssUris(source) {
+  const cssUriToLocalPath = new Map();
   
-  let chromeDependencies = getReferencedChromeUris(source);
-  for (let chromeUri of chromeDependencies) {
-    let localRelativePath = rewriteChromeUri(chromeUri);
-    if (localRelativePath) {
-      localRelativePath = localRelativePath.replaceAll("\\", "/");
+  let cssDependencies = getReferencedCssUris(source);
+  for (let cssUri of cssDependencies) {
+    const { localPath, dependencyPath } = resolveCssUri(
+      cssUri,
+      this.resourcePath
+    );
+    if (localPath) {
       
-      chromeUriToLocalPath.set(chromeUri, localRelativePath);
+      cssUriToLocalPath.set(cssUri, localPath);
       
-      this.addMissingDependency(path.join(projectRoot, localRelativePath));
+      this.addMissingDependency(dependencyPath);
     }
   }
   
   let rewrittenSource = source;
-  for (let [chromeUri, localPath] of chromeUriToLocalPath.entries()) {
+  for (let [cssUri, localPath] of cssUriToLocalPath.entries()) {
     
     
     let cssImport = `__chrome_styles_loader__${path
@@ -112,10 +169,10 @@ async function rewriteChromeUris(source) {
       path.basename(this.resourcePath) == "moz-label.mjs" ||
       this.resourcePath.endsWith(".js")
     ) {
-      rewrittenSource = rewrittenSource.replaceAll(`"${chromeUri}"`, cssImport);
+      rewrittenSource = rewrittenSource.replaceAll(`"${cssUri}"`, cssImport);
     } else {
       rewrittenSource = rewrittenSource.replaceAll(
-        chromeUri,
+        cssUri,
         `\$\{${cssImport}\}`
       );
     }
@@ -134,12 +191,12 @@ async function rewriteChromeUris(source) {
 
 
 
-module.exports = async function chromeUriLoader(source) {
+module.exports = async function mozUriLoader(source) {
   
   const callback = this.async();
   
   
-  const newSource = await rewriteChromeUris.call(this, source);
+  const newSource = await rewriteCssUris.call(this, source);
   
   callback(null, newSource);
 };
