@@ -43,6 +43,10 @@ class JsepSessionDescription final : public SessionDescriptionInterface {
   JsepSessionDescription& operator=(const JsepSessionDescription&) = delete;
 
   
+  
+  
+  
+  
   bool Initialize(std::unique_ptr<SessionDescription> description,
                   const std::string& session_id,
                   const std::string& session_version);

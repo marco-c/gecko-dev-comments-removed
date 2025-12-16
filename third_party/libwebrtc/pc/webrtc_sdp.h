@@ -20,8 +20,10 @@
 #ifndef PC_WEBRTC_SDP_H_
 #define PC_WEBRTC_SDP_H_
 
+#include <memory>
 #include <string>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
@@ -54,9 +56,22 @@ RTC_EXPORT std::string SdpSerializeCandidate(const Candidate& candidate);
 
 
 
+
+
+
 bool SdpDeserialize(absl::string_view message,
                     JsepSessionDescription* jdesc,
                     SdpParseError* error);
+
+
+
+
+
+
+absl_nullable std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
+    SdpType sdp_type,
+    absl::string_view sdp,
+    SdpParseError* absl_nullable error = nullptr);
 
 
 

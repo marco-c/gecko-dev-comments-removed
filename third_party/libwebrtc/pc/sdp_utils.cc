@@ -31,15 +31,12 @@ std::unique_ptr<SessionDescriptionInterface> CloneSessionDescriptionAsType(
     const SessionDescriptionInterface* sdesc,
     SdpType type) {
   RTC_DCHECK(sdesc);
-  auto clone = std::make_unique<JsepSessionDescription>(type);
   if (sdesc->description()) {
-    clone->Initialize(sdesc->description()->Clone(), sdesc->session_id(),
-                      sdesc->session_version());
+    return CreateSessionDescription(type, sdesc->session_id(),
+                                    sdesc->session_version(),
+                                    sdesc->description()->Clone());
   }
-  
-  
-  
-  return std::move(clone);
+  return std::make_unique<JsepSessionDescription>(type);
 }
 
 bool SdpContentsAll(SdpContentPredicate pred, const SessionDescription* desc) {
