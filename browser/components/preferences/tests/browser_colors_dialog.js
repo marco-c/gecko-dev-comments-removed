@@ -38,26 +38,32 @@ add_task(async function testColorPicker() {
 
   const button = gBrowser.contentDocument.getElementById("colors");
 
+  const radiogroup = content.document.getElementById("contrastControlSettings");
   const radioOff = content.document.getElementById("contrastSettingsOff");
   const radioCustom = content.document.getElementById("contrastSettingsOn");
 
-  radioOff.focus();
+  
+  radiogroup.focus();
   Assert.equal(
-    radioOff,
+    radiogroup,
     gBrowser.contentDocument.activeElement,
     "Radio group for Custom Colors is focused"
   );
-  Assert.ok(button.buttonEl.disabled, "Manage Colors button is disabled");
+  Assert.equal(
+    radioOff,
+    radiogroup.querySelector("radio[focused='true']"),
+    "Radio group with option 'Off' is focused"
+  );
+  Assert.ok(button.disabled, "Manage Colors button is disabled");
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown");
   Assert.equal(
     radioCustom,
-    gBrowser.contentDocument.activeElement,
+    radiogroup.querySelector("radio[focused='true']"),
     "Radio group with option 'Custom' is focused"
   );
-  await new Promise(r => requestAnimationFrame(r));
-  Assert.ok(!button.buttonEl.disabled, "Manage Colors button is now enabled");
+  Assert.ok(!button.disabled, "Manage Colors button is now enabled");
 
   
   EventUtils.synthesizeKey("KEY_Tab");
