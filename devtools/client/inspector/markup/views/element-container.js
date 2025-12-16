@@ -9,7 +9,6 @@ const ElementEditor = require("resource://devtools/client/inspector/markup/views
 const {
   ELEMENT_NODE,
 } = require("resource://devtools/shared/dom-node-constants.js");
-const { extend } = require("resource://devtools/shared/extend.js");
 
 loader.lazyRequireGetter(
   this,
@@ -36,29 +35,25 @@ const PREVIEW_MAX_DIM_PREF = "devtools.inspector.imagePreviewTooltipSize";
 
 
 
+class MarkupElementContainer extends MarkupContainer {
+  
 
 
 
 
 
-function MarkupElementContainer(markupView, node) {
-  MarkupContainer.prototype.initialize.call(
-    this,
-    markupView,
-    node,
-    "elementcontainer"
-  );
+  constructor(markupView, node) {
+    super();
+    this.initialize(markupView, node, "elementcontainer");
 
-  if (node.nodeType === ELEMENT_NODE) {
-    this.editor = new ElementEditor(this, node);
-  } else {
-    throw new Error("Invalid node for MarkupElementContainer");
+    if (node.nodeType === ELEMENT_NODE) {
+      this.editor = new ElementEditor(this, node);
+    } else {
+      throw new Error("Invalid node for MarkupElementContainer");
+    }
+
+    this.tagLine.appendChild(this.editor.elt);
   }
-
-  this.tagLine.appendChild(this.editor.elt);
-}
-
-MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
   onContainerClick(event) {
     if (!event.target.hasAttribute("data-event")) {
       return;
@@ -66,7 +61,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
 
     event.target.setAttribute("aria-pressed", "true");
     this._buildEventTooltipContent(event.target);
-  },
+  }
 
   async _buildEventTooltipContent(target) {
     const tooltip = this.markup.eventDetailsTooltip;
@@ -122,7 +117,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     }
     tooltip.show(target);
     tooltip.focus();
-  },
+  }
 
   
 
@@ -160,7 +155,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     }.bind(this)();
 
     return this.tooltipDataPromise;
-  },
+  }
 
   
 
@@ -201,7 +196,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
       setBrokenImageTooltip(tooltip, this.markup.doc);
     }
     return true;
-  },
+  }
 
   copyImageDataUri() {
     
@@ -211,31 +206,31 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
         clipboardHelper.copyString(str);
       });
     });
-  },
+  }
 
   setInlineTextChild(inlineTextChild) {
     this.inlineTextChild = inlineTextChild;
     this.editor.updateTextEditor();
-  },
+  }
 
   clearInlineTextChild() {
     this.inlineTextChild = undefined;
     this.editor.updateTextEditor();
-  },
+  }
 
   
 
 
   addAttribute() {
     this.editor.newAttr.editMode();
-  },
+  }
 
   
 
 
   editAttribute(attrName) {
     this.editor.attrElements.get(attrName).editMode();
-  },
+  }
 
   
 
@@ -254,7 +249,7 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
         undoMods.apply();
       }
     );
-  },
-});
+  }
+}
 
 module.exports = MarkupElementContainer;
