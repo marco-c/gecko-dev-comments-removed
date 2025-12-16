@@ -83,16 +83,14 @@ async function hideAllPopups(win = window) {
 async function assertMessageInMenuSource(source, message, win = window) {
   let messageEl;
   if (source === MenuMessage.SOURCES.APP_MENU) {
-    messageEl = win.PanelUI.mainView.querySelector("fxa-menu-message");
+    messageEl = win.PanelUI.mainView.querySelector("menu-message");
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
-    messageEl = win.document.querySelector("#PanelUI-fxa fxa-menu-message");
+    messageEl = win.document.querySelector("#PanelUI-fxa menu-message");
   }
   await messageEl.updateComplete;
 
-  Assert.ok(messageEl, "Found the fxa-menu-message element.");
-  Assert.ok(
-    BrowserTestUtils.isVisible(messageEl, "fxa-menu-message is visible.")
-  );
+  Assert.ok(messageEl, "Found the menu-message element.");
+  Assert.ok(BrowserTestUtils.isVisible(messageEl, "menu-message is visible."));
 
   Assert.equal(
     messageEl.primaryText,
@@ -252,12 +250,12 @@ async function assertMessageInMenuSource(source, message, win = window) {
 function assertNoMessageInMenuSource(source, win = window) {
   let messageEl;
   if (source === MenuMessage.SOURCES.APP_MENU) {
-    messageEl = win.PanelUI.mainView.querySelector("fxa-menu-message");
+    messageEl = win.PanelUI.mainView.querySelector("menu-message");
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
-    messageEl = win.document.querySelector("#PanelUI-fxa fxa-menu-message");
+    messageEl = win.document.querySelector("#PanelUI-fxa menu-message");
   }
 
-  Assert.ok(!messageEl, "Should not have found an fxa-menu-message");
+  Assert.ok(!messageEl, "Should not have found an menu-message");
 
   if (source === MenuMessage.SOURCES.APP_MENU) {
     
@@ -346,8 +344,8 @@ async function reopenMenuSource(source, expectedMessage, win = window, taskFn) {
   
   
   Assert.ok(
-    !win.document.querySelector("fxa-menu-message"),
-    "Should not find any fxa-menu-message elements"
+    !win.document.querySelector("menu-message"),
+    "Should not find any menu-message elements"
   );
 }
 
@@ -610,8 +608,7 @@ add_task(async function test_show_fxa_cta_message_multiple_windows() {
         gTestFxAMessage,
         win3,
         async () => {
-          let win3Message =
-            win3.PanelUI.mainView.querySelector("fxa-menu-message");
+          let win3Message = win3.PanelUI.mainView.querySelector("menu-message");
           await win3Message.updateComplete;
           win3Message.closeButton.click();
           Assert.ok(
