@@ -2668,6 +2668,9 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 pref("browser.tabs.splitView.enabled", false);
 
 
+pref("browser.tabs.remoteSVGIconDecoding", false);
+
+
 
 pref("extensions.experiments.enabled", false);
 
