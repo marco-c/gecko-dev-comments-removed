@@ -335,6 +335,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     
     
     
+    
     void Remove() {
       return base_type::mArray.RemoveElementAt(base_type::mPosition - 1);
     }

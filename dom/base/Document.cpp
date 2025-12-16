@@ -13732,7 +13732,8 @@ void Document::FlushAutoFocusCandidates() {
 
   nsTObserverArray<nsWeakPtr>::ForwardIterator iter(mAutoFocusCandidates);
   while (iter.HasMore()) {
-    nsCOMPtr<Element> autoFocusElement = do_QueryReferent(iter.GetNext());
+    nsWeakPtr weakElement = iter.GetNext();
+    nsCOMPtr<Element> autoFocusElement = do_QueryReferent(weakElement);
     if (!autoFocusElement) {
       continue;
     }
@@ -13742,7 +13743,8 @@ void Document::FlushAutoFocusCandidates() {
     autoFocusElementDoc->FlushPendingNotifications(FlushType::Frames);
 
     
-    if (!mPresShell) {
+    
+    if (!mPresShell || mAutoFocusFired) {
       return;
     }
 
@@ -13756,7 +13758,7 @@ void Document::FlushAutoFocusCandidates() {
     
     
     if (!autoFocusElementDoc->IsCurrentActiveDocument()) {
-      iter.Remove();
+      mAutoFocusCandidates.RemoveElement(weakElement);
       continue;
     }
 
@@ -13786,7 +13788,7 @@ void Document::FlushAutoFocusCandidates() {
       continue;
     }
 
-    iter.Remove();
+    mAutoFocusCandidates.RemoveElement(weakElement);
 
     
     
