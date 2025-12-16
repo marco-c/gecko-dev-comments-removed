@@ -155,6 +155,9 @@
 #  include "mozilla/StaticPrefs_fuzzing.h"
 #endif
 
+#include "mozilla/dom/ReportDeliver.h"
+#include "mozilla/dom/ReportingHeader.h"
+
 namespace mozilla {
 
 using namespace dom;
@@ -4546,6 +4549,76 @@ bool nsHttpChannel::ShouldBypassProcessNotModified() {
   return false;
 }
 
+void nsHttpChannel::MaybeGenerateNELReport() {
+  if (!StaticPrefs::network_http_network_error_logging_enabled()) {
+    return;
+  }
+
+  nsCOMPtr<nsINetworkErrorReport> report;
+  if (nsCOMPtr<nsINetworkErrorLogging> nel =
+          components::NetworkErrorLogging::Service()) {
+    nel->GenerateNELReport(this, getter_AddRefs(report));
+  }
+
+  mReportedNEL = true;
+
+  
+  
+  
+  
+  
+  
+
+  if (!report) {
+    return;
+  }
+
+  nsCOMPtr<nsIScriptSecurityManager> ssm = nsContentUtils::GetSecurityManager();
+  if (!ssm) {
+    return;
+  }
+
+  nsCOMPtr<nsIPrincipal> channelPrincipal;
+  ssm->GetChannelResultPrincipal(this, getter_AddRefs(channelPrincipal));
+  if (!channelPrincipal) {
+    return;
+  }
+
+  nsAutoCString body;
+  nsAutoString group;
+  nsAutoString url;
+
+  report->GetBody(body);
+  report->GetGroup(group);
+  report->GetUrl(url);
+
+  nsAutoCString endpointURL;
+  ReportingHeader::GetEndpointForReportIncludeSubdomains(
+      group, channelPrincipal,  true, endpointURL);
+  if (endpointURL.IsEmpty()) {
+    return;
+  }
+
+  ReportDeliver::ReportData data;
+  data.mType = u"network-error"_ns;
+  data.mGroupName = group;
+  data.mURL = url;
+  data.mFailures = 0;
+  data.mCreationTime = TimeStamp::Now();
+
+  data.mPrincipal = channelPrincipal;
+  data.mEndpointURL = endpointURL;
+  data.mReportBodyJSON = body;
+  nsAutoCString userAgent;
+  
+  
+  (void)mRequestHead.GetHeader(nsHttp::User_Agent, userAgent);
+  data.mUserAgent = NS_ConvertUTF8toUTF16(userAgent);
+
+  
+  ReportDeliver::Fetch(data);
+}
+
 nsresult nsHttpChannel::ProcessNotModified(
     const std::function<nsresult(nsHttpChannel*, nsresult)>&
         aContinueProcessResponseFunc) {
@@ -4598,13 +4671,8 @@ nsresult nsHttpChannel::ProcessNotModified(
   rv = mCacheEntry->SetMetaDataElement("response-head", head.get());
   if (NS_FAILED(rv)) return rv;
 
-  if (StaticPrefs::network_http_network_error_logging_enabled() &&
-      LoadUsedNetwork() && !mReportedNEL) {
-    if (nsCOMPtr<nsINetworkErrorLogging> nel =
-            components::NetworkErrorLogging::Service()) {
-      nel->GenerateNELReport(this);
-    }
-    mReportedNEL = true;
+  if (LoadUsedNetwork() && !mReportedNEL) {
+    MaybeGenerateNELReport();
   }
 
   
@@ -7113,13 +7181,8 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
     return NS_OK;
   }
 
-  if (StaticPrefs::network_http_network_error_logging_enabled() &&
-      LoadUsedNetwork() && !mReportedNEL) {
-    if (nsCOMPtr<nsINetworkErrorLogging> nel =
-            components::NetworkErrorLogging::Service()) {
-      nel->GenerateNELReport(this);
-    }
-    mReportedNEL = true;
+  if (LoadUsedNetwork() && !mReportedNEL) {
+    MaybeGenerateNELReport();
   }
 
   
@@ -10310,13 +10373,8 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     mAuthRetryPending = false;
   }
 
-  if (StaticPrefs::network_http_network_error_logging_enabled() &&
-      LoadUsedNetwork() && !mReportedNEL) {
-    if (nsCOMPtr<nsINetworkErrorLogging> nel =
-            components::NetworkErrorLogging::Service()) {
-      nel->GenerateNELReport(this);
-    }
-    mReportedNEL = true;
+  if (LoadUsedNetwork() && !mReportedNEL) {
+    MaybeGenerateNELReport();
   }
 
   

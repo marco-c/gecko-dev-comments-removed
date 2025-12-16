@@ -845,6 +845,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void RecordOnStartTelemetry(nsresult aStatus, bool aIsNavigation);
 
+  void MaybeGenerateNELReport();
+
   
   
   nsCOMPtr<nsITimer> mNetworkTriggerTimer;
