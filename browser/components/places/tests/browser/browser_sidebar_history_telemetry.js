@@ -23,6 +23,11 @@ let gResponse = 1;
 })();
 
 add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.revamp", false]],
+  });
   await PlacesUtils.history.clear();
 
   
