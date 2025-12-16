@@ -634,6 +634,25 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
   }
   MOZ_DIAGNOSTIC_ASSERT(entry);
 
+  
+  
+  
+  
+  
+  
+  
+  if (mActiveEntry &&
+      aLoadState->GetNavigationType() == NavigationType::Replace) {
+    nsCOMPtr<nsIURI> uri = mActiveEntry->GetURIOrInheritedForAboutBlank();
+    nsCOMPtr<nsIURI> targetURI = entry->GetURIOrInheritedForAboutBlank();
+    bool sameOrigin =
+        NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+            targetURI, uri, false, false));
+    if (sameOrigin) {
+      entry->SetNavigationKey(mActiveEntry->Info().NavigationKey());
+    }
+  }
+
   UniquePtr<LoadingSessionHistoryInfo> loadingInfo;
   if (existingLoadingInfo) {
     loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(*existingLoadingInfo);
