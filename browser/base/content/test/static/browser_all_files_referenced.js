@@ -333,10 +333,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsHistorySource.sys.mjs",
-  },
-  
-  {
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   },
   
@@ -354,10 +350,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/services/InsightStore.sys.mjs",
-  },
-  
-  {
     file: "moz-src:///browser/components/aiwindow/models/prompts/AssistantPrompts.sys.mjs",
   },
   
@@ -368,10 +360,6 @@ var allowlist = [
   {
     file: "moz-src:///browser/components/aiwindow/models/InsightsManager.sys.mjs",
   },
-  
-  { file: "chrome://browser/content/aiwindow/ui/content/firstrun.html" },
-  { file: "chrome://browser/content/aiwindow/ui/content/firstrun.css" },
-  { file: "chrome://browser/content/aiwindow/ui/content/firstrun.js" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
