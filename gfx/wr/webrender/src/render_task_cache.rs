@@ -165,7 +165,7 @@ impl RenderTaskCache {
         size: DeviceIntSize,
         render_task: &mut RenderTask,
         entry: &mut RenderTaskCacheEntry,
-        gpu_cache: &mut GpuCache,
+        gpu_buffer: &mut GpuBufferBuilderF,
         texture_cache: &mut TextureCache,
     ) {
         
@@ -199,7 +199,7 @@ impl RenderTaskCache {
             None,
             entry.user_data.unwrap_or([0.0; 4]),
             DirtyRect::All,
-            gpu_cache,
+            gpu_buffer,
             None,
             render_task.uv_rect_kind(),
             Eviction::Auto,
@@ -309,7 +309,7 @@ impl RenderTaskCache {
         cache_entry.frame_id = self.frame_id;
 
         
-        if texture_cache.request(&cache_entry.handle, gpu_cache) {
+        if texture_cache.request(&cache_entry.handle, gpu_buffer_builder) {
             
             
             let render_task_id = f(rg_builder, gpu_buffer_builder, gpu_cache);
@@ -328,7 +328,7 @@ impl RenderTaskCache {
                 task_size,
                 render_task,
                 cache_entry,
-                gpu_cache,
+                gpu_buffer_builder,
                 texture_cache,
             );
         }

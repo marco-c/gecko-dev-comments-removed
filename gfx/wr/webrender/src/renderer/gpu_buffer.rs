@@ -88,6 +88,10 @@ impl GpuBufferAddress {
     }
 
     pub const INVALID: GpuBufferAddress = GpuBufferAddress { u: !0, v: !0 };
+
+    pub fn is_valid(&self) -> bool {
+        *self != Self::INVALID
+    }
 }
 
 impl GpuBufferBlockF {
@@ -216,7 +220,7 @@ pub struct GpuBufferWriter<'a, T> {
     buffer: &'a mut FrameVec<T>,
     deferred: &'a mut Vec<DeferredBlock>,
     index: usize,
-    block_count: usize,
+    max_block_count: usize,
 }
 
 impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
@@ -224,13 +228,13 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
         buffer: &'a mut FrameVec<T>,
         deferred: &'a mut Vec<DeferredBlock>,
         index: usize,
-        block_count: usize,
+        max_block_count: usize,
     ) -> Self {
         GpuBufferWriter {
             buffer,
             deferred,
             index,
-            block_count,
+            max_block_count,
         }
     }
 
@@ -242,23 +246,19 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
     
     
     pub fn push_render_task(&mut self, task_id: RenderTaskId) {
-        match task_id {
-            RenderTaskId::INVALID => {
-                self.buffer.push(T::default());
-            }
-            task_id => {
-                self.deferred.push(DeferredBlock {
-                    task_id,
-                    index: self.buffer.len(),
-                });
-                self.buffer.push(T::default());
-            }
+        if task_id != RenderTaskId::INVALID {
+            self.deferred.push(DeferredBlock {
+                task_id,
+                index: self.buffer.len(),
+            });
         }
+
+        self.buffer.push(T::default());
     }
 
     
     pub fn finish(self) -> GpuBufferAddress {
-        assert_eq!(self.buffer.len(), self.index + self.block_count);
+        assert!(self.buffer.len() <= self.index + self.max_block_count);
 
         GpuBufferAddress {
             u: (self.index % MAX_VERTEX_TEXTURE_WIDTH) as u16,
@@ -269,7 +269,7 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
 
 impl<'a, T> Drop for GpuBufferWriter<'a, T> {
     fn drop(&mut self) {
-        assert_eq!(self.buffer.len(), self.index + self.block_count, "Claimed block_count was not written");
+        assert!(self.buffer.len() <= self.index + self.max_block_count, "Attempt to write too many GpuBuffer blocks");
     }
 }
 
@@ -297,11 +297,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
     ) -> GpuBufferAddress {
         assert!(blocks.len() <= MAX_VERTEX_TEXTURE_WIDTH);
 
-        if (self.data.len() % MAX_VERTEX_TEXTURE_WIDTH) + blocks.len() > MAX_VERTEX_TEXTURE_WIDTH {
-            while self.data.len() % MAX_VERTEX_TEXTURE_WIDTH != 0 {
-                self.data.push(T::default());
-            }
-        }
+        ensure_row_capacity(&mut self.data, blocks.len());
 
         let index = self.data.len();
 
@@ -316,15 +312,11 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
     
     pub fn write_blocks(
         &mut self,
-        block_count: usize,
+        max_block_count: usize,
     ) -> GpuBufferWriter<T> {
-        assert!(block_count <= MAX_VERTEX_TEXTURE_WIDTH);
+        assert!(max_block_count <= MAX_VERTEX_TEXTURE_WIDTH);
 
-        if (self.data.len() % MAX_VERTEX_TEXTURE_WIDTH) + block_count > MAX_VERTEX_TEXTURE_WIDTH {
-            while self.data.len() % MAX_VERTEX_TEXTURE_WIDTH != 0 {
-                self.data.push(T::default());
-            }
-        }
+        ensure_row_capacity(&mut self.data, max_block_count);
 
         let index = self.data.len();
 
@@ -332,19 +324,33 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
             &mut self.data,
             &mut self.deferred,
             index,
-            block_count,
+            max_block_count,
         )
+    }
+
+    
+    
+    pub fn reserve_renderer_deferred_blocks(&mut self, block_count: usize) -> GpuBufferAddress {
+        ensure_row_capacity(&mut self.data, block_count);
+
+        let index = self.data.len();
+
+        self.data.reserve(block_count);
+        for _ in 0 ..block_count {
+            self.data.push(Default::default());
+        }
+
+        GpuBufferAddress {
+            u: (index % MAX_VERTEX_TEXTURE_WIDTH) as u16,
+            v: (index / MAX_VERTEX_TEXTURE_WIDTH) as u16,
+        }
     }
 
     pub fn finalize(
         mut self,
         render_tasks: &RenderTaskGraph,
     ) -> GpuBuffer<T> {
-        let required_len = (self.data.len() + MAX_VERTEX_TEXTURE_WIDTH-1) & !(MAX_VERTEX_TEXTURE_WIDTH-1);
-
-        for _ in 0 .. required_len - self.data.len() {
-            self.data.push(T::default());
-        }
+        finish_row(&mut self.data);
 
         let len = self.data.len();
         assert!(len % MAX_VERTEX_TEXTURE_WIDTH == 0);
@@ -385,6 +391,19 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
             size: DeviceIntSize::new(MAX_VERTEX_TEXTURE_WIDTH as i32, (len / MAX_VERTEX_TEXTURE_WIDTH) as i32),
             format: T::image_format(),
         }
+    }
+}
+
+fn ensure_row_capacity<T: Default>(data: &mut FrameVec<T>, cap: usize) {
+    if (data.len() % MAX_VERTEX_TEXTURE_WIDTH) + cap > MAX_VERTEX_TEXTURE_WIDTH {
+        finish_row(data);
+    }
+}
+
+fn finish_row<T: Default>(data: &mut FrameVec<T>) {
+    let required_len = (data.len() + MAX_VERTEX_TEXTURE_WIDTH-1) & !(MAX_VERTEX_TEXTURE_WIDTH-1);
+    for _ in 0 .. required_len - data.len() {
+        data.push(T::default());
     }
 }
 
