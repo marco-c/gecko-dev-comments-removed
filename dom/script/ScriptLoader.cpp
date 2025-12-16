@@ -4619,6 +4619,21 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
       if (policy != ReferrerPolicy::_empty) {
         aRequest->AsModuleRequest()->UpdateReferrerPolicy(policy);
       }
+
+#ifdef NIGHTLY_BUILD
+      if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
+        
+        
+        
+        nsAutoCString mimeType;
+        if (NS_SUCCEEDED(httpChannel->GetContentType(mimeType))) {
+          if (nsContentUtils::HasWasmMimeTypeEssence(
+                  NS_ConvertUTF8toUTF16(mimeType))) {
+            aRequest->AsModuleRequest()->SetHasWasmMimeTypeEssence();
+          }
+        }
+      }
+#endif
     }
 
     nsAutoCString sourceMapURL;
