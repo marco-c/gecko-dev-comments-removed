@@ -331,12 +331,6 @@ var allowlist = [
   {
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
   },
-
-  
-  {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsHistorySource.sys.mjs",
-  },
-
   
   {
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
@@ -352,10 +346,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/services/InsightStore.sys.mjs",
-  },
-  
-  {
     file: "moz-src:///browser/components/aiwindow/models/prompts/assistantPrompts.sys.mjs",
   },
   
@@ -364,16 +354,7 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/Insights.sys.mjs",
-  },
-  {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsConstants.sys.mjs",
-  },
-  {
-    file: "moz-src:///browser/components/aiwindow/models/prompts/insightsPrompts.sys.mjs",
-  },
-  {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsSchemas.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/InsightsManager.sys.mjs",
   },
 ];
 
