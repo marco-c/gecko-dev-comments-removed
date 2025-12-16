@@ -909,9 +909,9 @@ void ChannelSend::ProcessAndEncodeAudio(
 
   
   
-  audio_frame->UpdateProfileTimeStamp();
+  Timestamp post_task_time = env_.clock().CurrentTime();
   encoder_queue_->PostTask(
-      [this, audio_frame = std::move(audio_frame)]() mutable {
+      [this, post_task_time, audio_frame = std::move(audio_frame)]() mutable {
         RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
         if (!encoder_queue_is_active_.load()) {
           return;
@@ -919,8 +919,9 @@ void ChannelSend::ProcessAndEncodeAudio(
         
         
         
+        TimeDelta latency = post_task_time - env_.clock().CurrentTime();
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.Audio.EncodingTaskQueueLatencyMs",
-                                   audio_frame->ElapsedProfileTimeMs());
+                                   latency.ms());
 
         bool is_muted = InputMute();
         AudioFrameOperations::Mute(audio_frame.get(), previous_frame_muted_,

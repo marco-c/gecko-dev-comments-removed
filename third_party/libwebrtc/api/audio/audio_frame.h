@@ -117,17 +117,6 @@ class AudioFrame {
 
   
   
-  
-  
-  
-  void UpdateProfileTimeStamp();
-  
-  
-  
-  int64_t ElapsedProfileTimeMs() const;
-
-  
-  
   const int16_t* data() const;
 
   
@@ -189,12 +178,6 @@ class AudioFrame {
   size_t num_channels_ = 0;
   SpeechType speech_type_ = kUndefined;
   VADActivity vad_activity_ = kVadUnknown;
-  
-  
-  
-  
-  
-  int64_t profile_timestamp_ms_ = 0;
 
   
   
