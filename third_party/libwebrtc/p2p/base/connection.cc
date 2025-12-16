@@ -261,11 +261,7 @@ Connection::Connection(const Environment& env,
       delta_internal_unix_epoch_(Timestamp::Millis(TimeUTCMillis()) -
                                  time_created_),
       field_trials_(&kDefaultFieldTrials),
-      rtt_estimate_(kDefaultRttEstimateHalfTimeMs),
-      state_change_trampoline_(this),
-      destroyed_trampoline_(this),
-      ready_to_send_trampoline_(this),
-      nominated_trampoline_(this) {
+      rtt_estimate_(kDefaultRttEstimateHalfTimeMs) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_);
   RTC_LOG(LS_INFO) << ToString() << ": Connection created";
@@ -339,7 +335,7 @@ void Connection::set_write_state(WriteState value) {
   if (value != old_value) {
     RTC_LOG(LS_VERBOSE) << ToString() << ": set_write_state from: " << old_value
                         << " to " << value;
-    SignalStateChange(this);
+    NotifyStateChange(this);
   }
 }
 
@@ -367,7 +363,7 @@ void Connection::UpdateReceiving(Timestamp now) {
   RTC_LOG(LS_VERBOSE) << ToString() << ": set_receiving to " << receiving;
   receiving_ = receiving;
   receiving_unchanged_since_ = now;
-  SignalStateChange(this);
+  NotifyStateChange(this);
 }
 
 void Connection::set_state(IceCandidatePairState state) {
@@ -385,7 +381,7 @@ void Connection::set_connected(bool value) {
   connected_ = value;
   if (value != old_value) {
     RTC_LOG(LS_VERBOSE) << ToString() << ": Change connected_ to " << value;
-    SignalStateChange(this);
+    NotifyStateChange(this);
   }
 }
 
@@ -755,7 +751,7 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
     
     if (nomination > remote_nomination_) {
       set_remote_nomination(nomination);
-      SignalNominated(this);
+      NotifyNominated(this);
     }
   }
   
@@ -770,7 +766,7 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
       remote_candidate_.set_network_cost(network_cost);
       
       
-      SignalStateChange(this);
+      NotifyStateChange(this);
     }
   }
 
@@ -911,7 +907,7 @@ void Connection::set_remote_nomination(uint32_t remote_nomination) {
 
 void Connection::OnReadyToSend() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  SignalReadyToSend(this);
+  NotifyReadyToSend(this);
 }
 
 bool Connection::pruned() const {
@@ -948,9 +944,11 @@ bool Connection::Shutdown() {
   
   
   
-  auto destroyed_signals = SignalDestroyed;
-  SignalDestroyed.disconnect_all();
-  destroyed_signals(this);
+  
+  
+  
+  
+  NotifyDestroyed(this);
 
   LogCandidatePairConfig(IceCandidatePairConfigType::kDestroyed);
 
@@ -1794,7 +1792,7 @@ void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
         local_candidate_ = candidate;
         
         
-        SignalStateChange(this);
+        NotifyStateChange(this);
       }
       return;
     }
@@ -1830,7 +1828,7 @@ void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
 
   
   
-  SignalStateChange(this);
+  NotifyStateChange(this);
 }
 
 bool Connection::rtt_converged() const {
@@ -1873,7 +1871,7 @@ void Connection::SetLocalCandidateNetworkCost(uint16_t cost) {
   
   
   
-  SignalStateChange(this);
+  NotifyStateChange(this);
 }
 
 bool Connection::ShouldSendGoogPing(const StunMessage* message) {

@@ -159,22 +159,19 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   ConnectionInfo stats();
 
-  sigslot::signal1<Connection*> SignalStateChange;
   void SubscribeStateChange(
       absl::AnyInvocable<void(Connection* connection)> callback) {
-    state_change_trampoline_.Subscribe(std::move(callback));
+    state_change_callbacks_.AddReceiver(std::move(callback));
   }
-
   
   
-  sigslot::signal1<Connection*> SignalDestroyed;
   void SubscribeDestroyed(
       void* tag,
       absl::AnyInvocable<void(Connection* connection)> callback) {
-    destroyed_trampoline_.Subscribe(tag, std::move(callback));
+    destroyed_callbacks_.AddReceiver(tag, std::move(callback));
   }
   void UnsubscribeDestroyed(void* tag) {
-    destroyed_trampoline_.Unsubscribe(tag);
+    destroyed_callbacks_.RemoveReceivers(tag);
   }
 
   
@@ -193,12 +190,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
           received_packet_callback);
   void DeregisterReceivedPacketCallback();
 
-  sigslot::signal1<Connection*> SignalReadyToSend;
   void SubscribeReadyToSend(
       absl::AnyInvocable<void(Connection* connection)> callback) {
-    ready_to_send_trampoline_.Subscribe(std::move(callback));
+    ready_to_send_callbacks_.AddReceiver(std::move(callback));
   }
-
   
   void OnReadPacket(const ReceivedIpPacket& packet);
   [[deprecated("Pass a ReceivedIpPacket")]] void
@@ -343,12 +338,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   
   
-  sigslot::signal1<Connection*> SignalNominated;
   void SubscribeNominated(
       absl::AnyInvocable<void(Connection* connection)> callback) {
-    nominated_trampoline_.Subscribe(std::move(callback));
+    nominated_callbacks_.AddReceiver(std::move(callback));
   }
-
   IceCandidatePairState state() const;
 
   int num_pings_sent() const;
@@ -470,6 +463,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
     return Timestamp::Millis(time.us() / 1000);
   }
 
+  void NotifyNominatedForTesting(Connection* connection) {
+    NotifyNominated(connection);
+  }
+
  protected:
   
   class ConnectionRequest;
@@ -534,6 +531,19 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   
   bool ShouldSendGoogPing(const StunMessage* message)
       RTC_RUN_ON(network_thread_);
+  
+  void NotifyStateChange(Connection* connection) {
+    state_change_callbacks_.Send(connection);
+  }
+  void NotifyDestroyed(Connection* connection) {
+    destroyed_callbacks_.Send(connection);
+  }
+  void NotifyReadyToSend(Connection* connection) {
+    ready_to_send_callbacks_.Send(connection);
+  }
+  void NotifyNominated(Connection* connection) {
+    nominated_callbacks_.Send(connection);
+  }
 
   const Environment env_;
 
@@ -638,14 +648,11 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
       const StunMessage* msg,
       const StunRequest* original_request);
   DtlsStunPiggybackCallbacks dtls_stun_piggyback_callbacks_;
-  SignalTrampoline<Connection, &Connection::SignalStateChange>
-      state_change_trampoline_;
-  SignalTrampoline<Connection, &Connection::SignalDestroyed>
-      destroyed_trampoline_;
-  SignalTrampoline<Connection, &Connection::SignalReadyToSend>
-      ready_to_send_trampoline_;
-  SignalTrampoline<Connection, &Connection::SignalNominated>
-      nominated_trampoline_;
+
+  CallbackList<Connection*> state_change_callbacks_;
+  CallbackList<Connection*> destroyed_callbacks_;
+  CallbackList<Connection*> ready_to_send_callbacks_;
+  CallbackList<Connection*> nominated_callbacks_;
 };
 
 
