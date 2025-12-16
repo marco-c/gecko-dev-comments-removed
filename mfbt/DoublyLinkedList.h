@@ -97,6 +97,9 @@ struct GetDoublyLinkedListElement {
   static_assert(std::is_base_of<DoublyLinkedListElement<T>, T>::value,
                 "You need your own specialization of GetDoublyLinkedListElement"
                 " or use a separate Trait.");
+  static const DoublyLinkedListElement<T>& Get(const T* aThis) {
+    return *aThis;
+  }
   static DoublyLinkedListElement<T>& Get(T* aThis) { return *aThis; }
 };
 
@@ -117,7 +120,7 @@ class DoublyLinkedList final {
 
   bool isStateValid() const { return (mHead != nullptr) == (mTail != nullptr); }
 
-  bool ElementNotInList(T* aElm) {
+  bool ElementNotInList(const T* aElm) const {
     if (!ElementAccess::Get(aElm).mNext && !ElementAccess::Get(aElm).mPrev) {
       
       
@@ -129,7 +132,7 @@ class DoublyLinkedList final {
   }
 
  public:
-  DoublyLinkedList() : mHead(nullptr), mTail(nullptr) {}
+  constexpr DoublyLinkedList() : mHead(nullptr), mTail(nullptr) {}
 
   class Iterator final {
     T* mCurrent;
@@ -347,13 +350,13 @@ class DoublyLinkedList final {
 
 
 
-  Iterator find(const T& aElm) { return std::find(begin(), end(), aElm); }
+  Iterator find(const T& aElm) const { return std::find(begin(), end(), aElm); }
 
   
 
 
 
-  bool contains(const T& aElm) { return find(aElm) != Iterator(); }
+  bool contains(const T& aElm) const { return find(aElm) != Iterator(); }
 
   
 
@@ -361,7 +364,7 @@ class DoublyLinkedList final {
 
 
 
-  bool ElementProbablyInList(T* aElm) {
+  bool ElementProbablyInList(const T* aElm) const {
     if (isEmpty()) {
       return false;
     }
@@ -372,7 +375,7 @@ class DoublyLinkedList final {
 
 
 
-  bool ElementIsLinkedWell(T* aElm) {
+  bool ElementIsLinkedWell(const T* aElm) const {
     MOZ_ASSERT(aElm);
     if (!ElementProbablyInList(aElm)) {
       return false;
