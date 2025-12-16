@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Iterator.zip,
+  "function",
+  "The value of `typeof Iterator.zip` is 'function'"
+);
+
+reportCompare(0, 0);

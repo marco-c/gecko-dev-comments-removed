@@ -9,15 +9,37 @@
 
 
 
-const plainDate = new Temporal.PlainDate(1969, 7, 24);
-const plainDate2 = Temporal.PlainDate.from({ year: 1969, month: 10, day: 5 });
-TemporalHelpers.assertDuration(plainDate.until(plainDate2), 0, 0, 0,  73, 0, 0, 0, 0, 0, 0, "same year");
 
-const earlier = new Temporal.PlainDate(1969, 7, 24);
-const later = new Temporal.PlainDate(1996, 3, 3);
-TemporalHelpers.assertDuration(earlier.until(later), 0, 0, 0,  9719, 0, 0, 0, 0, 0, 0, "different year");
+const date = Temporal.PlainDate.from({year: 1969, monthCode: "M07", day: 24 });
+const date2 = Temporal.PlainDate.from({year: 1969, monthCode: "M10", day: 5 });
+TemporalHelpers.assertDuration(date2.until(date, { largestUnit: "days" }), 0, 0, 0,  -73, 0, 0, 0, 0, 0, 0, "same year");
 
-TemporalHelpers.assertDuration(plainDate.until({ year: 2019, month: 7, day: 24 }), 0, 0, 0,  18262, 0, 0, 0, 0, 0, 0, "option bag");
-TemporalHelpers.assertDuration(plainDate.until("2019-07-24"), 0, 0, 0,  18262, 0, 0, 0, 0, 0, 0, "string");
+const earlier = date;
+const later = Temporal.PlainDate.from({year: 1996, monthCode: "M03", day: 3 });
+var duration = later.until(earlier, { largestUnit: "days" });
+TemporalHelpers.assertDuration(duration, 0, 0, 0,  -9719, 0, 0, 0, 0, 0, 0, "different year");
+
+
+
+const date19971201 = Temporal.PlainDate.from({year: 1997, monthCode: "M12", day: 1 });
+const date20010618 = Temporal.PlainDate.from({year: 2001, monthCode: "M06", day: 18 });
+duration = date19971201.until(date20010618, { largestUnit: "years" });
+TemporalHelpers.assertDuration(duration, 3, 6, 0, 17, 0, 0, 0, 0, 0, 0, "3 years, 6 months, 17 days");
+
+
+const date20001201 = Temporal.PlainDate.from({year: 2000, monthCode: "M12", day: 1 });
+const date20010601 = Temporal.PlainDate.from({year: 2001, monthCode: "M06", day: 1 });
+duration = date20001201.until(date20010601, { largestUnit: "months" });
+TemporalHelpers.assertDuration(duration, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, "6 months");
+
+
+const date20000101 = Temporal.PlainDate.from({year: 2000, monthCode: "M01", day: 1 });
+const date20001007 = Temporal.PlainDate.from({year: 2000, monthCode: "M10", day: 7 });
+duration = date20000101.until(date20001007, { largestUnit: "weeks" });
+TemporalHelpers.assertDuration(duration, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, "40 weeks");
+
+
+duration = date20000101.until(date20001007, { largestUnit: "days" });
+TemporalHelpers.assertDuration(duration, 0, 0, 0, 280, 0, 0, 0, 0, 0, 0, "40 weeks");
 
 reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Iterator.zipKeyed({});
+});
+
+reportCompare(0, 0);

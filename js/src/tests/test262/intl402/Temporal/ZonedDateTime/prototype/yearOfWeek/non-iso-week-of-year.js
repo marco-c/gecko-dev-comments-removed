@@ -10,16 +10,30 @@
 
 
 
-assert.sameValue(
-  new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", "gregory").yearOfWeek,
-  undefined,
-  "Gregorian calendar does not provide week numbers"
-);
+const nonIsoCalendars = [
+  "buddhist",
+  "chinese",
+  "coptic",
+  "dangi",
+  "ethioaa",
+  "ethiopic",
+  "gregory",
+  "hebrew",
+  "indian",
+  "islamic-civil",
+  "islamic-tbla",
+  "islamic-umalqura",
+  "japanese",
+  "persian",
+  "roc"
+];
 
-assert.sameValue(
-  new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", "hebrew").yearOfWeek,
-  undefined,
-  "Hebrew calendar does not provide week numbers"
-);
+for (const calendar of nonIsoCalendars) {
+  assert.sameValue(
+    new Temporal.ZonedDateTime(1_704_112_496_987_654_321n, "UTC", calendar).yearOfWeek,
+    undefined,
+    `${calendar} does not provide week numbers`
+  );
+}
 
 reportCompare(0, 0);

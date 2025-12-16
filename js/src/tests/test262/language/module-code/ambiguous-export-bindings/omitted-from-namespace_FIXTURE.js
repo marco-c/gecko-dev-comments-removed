@@ -1,0 +1,6 @@
+
+
+
+
+export * from './omitted-from-namespace-1_FIXTURE.js';
+export * from './omitted-from-namespace-2_FIXTURE.js';

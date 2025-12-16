@@ -1,0 +1,61 @@
+
+
+
+
+
+
+
+
+
+
+const calendar = "buddhist";
+const options = { overflow: "reject" };
+
+
+
+
+const sampleYears = {
+  2515: [
+    31,
+    29,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ],
+  2516: [
+    31,
+    28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ]
+};
+
+for (var [year, daysInMonth] of Object.entries(sampleYears)) {
+  for (var month = 1; month < 13; month++) {
+    const date = Temporal.ZonedDateTime.from({
+      year,
+      month,
+      day: 1,
+      calendar, hour: 12, minute: 34, timeZone: "UTC"
+    });
+    assert.sameValue(date.daysInMonth, daysInMonth[month - 1], `${date}`);
+  }
+}
+
+
+reportCompare(0, 0);

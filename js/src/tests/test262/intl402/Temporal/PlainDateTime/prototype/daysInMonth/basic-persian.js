@@ -1,0 +1,60 @@
+
+
+
+
+
+
+
+
+
+
+const calendar = "persian";
+const options = { overflow: "reject" };
+
+
+
+const sampleYears = {
+  1350: [
+    31,
+    31,
+    31,
+    31,
+    31,
+    31,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+  ],
+  1351: [
+    31,
+    31,
+    31,
+    31,
+    31,
+    31,
+    30,
+    30,
+    30,
+    30,
+    30,
+    29,
+  ]
+};
+
+for (var [year, daysInMonth] of Object.entries(sampleYears)) {
+  for (var month = 1; month < daysInMonth.length; month++) {
+    const date = Temporal.PlainDateTime.from({
+      year,
+      month,
+      day: 1,
+      calendar, hour: 12, minute: 34
+    });
+    assert.sameValue(date.daysInMonth, daysInMonth[month - 1], `${date}`);
+  }
+}
+
+
+reportCompare(0, 0);
