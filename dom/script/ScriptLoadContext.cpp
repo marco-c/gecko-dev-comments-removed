@@ -150,6 +150,7 @@ bool ScriptLoadContext::HasScriptElement() const { return !!mScriptElement; }
 void ScriptLoadContext::GetInlineScriptText(nsAString& aText) const {
   MOZ_ASSERT(mIsInline);
   if (mSourceText.IsVoid()) {
+    
     mScriptElement->GetScriptText(aText);
   } else {
     aText.Append(mSourceText);

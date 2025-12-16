@@ -69,6 +69,8 @@ void ReportSinkTypeMismatchViolations(nsIContentSecurityPolicy* aCSP,
                                       const nsAString& aSinkGroup,
                                       const nsAString& aSource);
 
+bool CanSkipTrustedTypesEnforcement(const nsINode& aNode);
+
 
 
 
@@ -145,8 +147,7 @@ MOZ_CAN_RUN_SCRIPT const nsAString*
 GetTrustedTypesCompliantStringForTrustedScript(
     const nsAString& aInput, const nsAString& aSink,
     const nsAString& aSinkGroup, const nsINode& aNode,
-    nsIPrincipal* aPrincipalOrNull, Maybe<nsAutoString>& aResultHolder,
-    ErrorResult& aError);
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError);
 
 
 template <typename ExpectedType>
