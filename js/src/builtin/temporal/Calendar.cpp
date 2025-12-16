@@ -1339,9 +1339,24 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       MOZ_ASSERT(1 <= month && month <= 13);
 
       
+      
+      
+      
+      
+      
+      
+      int32_t constrainedDay = day;
+      if (overflow == TemporalOverflow::Reject) {
+        constexpr auto daysInMonth = CalendarDaysInMonth(CalendarId::Hebrew);
+        if (day > daysInMonth.first && day <= daysInMonth.second) {
+          constrainedDay = daysInMonth.first;
+        }
+      }
+
+      
       auto monthCode = MonthCode{std::min(month, 12)};
       auto date = CreateDateFromCodes(cx, calendarId, calendar, eraYear,
-                                      monthCode, day, overflow);
+                                      monthCode, constrainedDay, overflow);
       if (!date) {
         return nullptr;
       }
@@ -1350,6 +1365,18 @@ static UniqueICU4XDate CreateDateFrom(JSContext* cx, CalendarId calendarId,
       
       int32_t ordinal = OrdinalMonth(date.get());
       if (ordinal == month) {
+        
+        
+        if (constrainedDay < day) {
+          MOZ_ASSERT(overflow == TemporalOverflow::Reject);
+
+          if (day > CalendarDaysInMonth(calendarId, monthCode).second) {
+            ReportCalendarFieldOverflow(cx, "day", day);
+            return nullptr;
+          }
+          return CreateDateFromCodes(cx, calendarId, calendar, eraYear,
+                                     monthCode, day, overflow);
+        }
         return date;
       }
 
