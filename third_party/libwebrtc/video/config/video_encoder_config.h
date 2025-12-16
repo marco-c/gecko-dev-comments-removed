@@ -86,6 +86,11 @@ struct VideoStream {
   
   
   std::optional<Resolution> scale_resolution_down_to;
+
+  
+  
+  
+  std::optional<SdpVideoFormat> video_format;
 };
 
 class VideoEncoderConfig {
@@ -173,6 +178,8 @@ class VideoEncoderConfig {
   std::string ToString() const;
 
   bool HasScaleResolutionDownTo() const;
+
+  SdpVideoFormat GetSimulcastVideoFormat(size_t stream_index) const;
 
   
   VideoCodecType codec_type;

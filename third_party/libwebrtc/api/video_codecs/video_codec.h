@@ -143,6 +143,8 @@ class RTC_EXPORT VideoCodec {
 
   bool IsSinglecast() const { return numberOfSimulcastStreams <= 1; }
   bool IsSimulcast() const { return !IsSinglecast(); }
+  
+  bool IsMixedCodec() const;
 
   
   VideoCodecType codecType;
