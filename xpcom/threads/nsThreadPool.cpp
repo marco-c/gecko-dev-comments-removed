@@ -240,10 +240,6 @@ void nsThreadPool::ShutdownThread(nsIThread* aThread) {
   
   
   
-  
-  
-  
-  
   SchedulerGroup::Dispatch(
       NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
                         &nsIThread::AsyncShutdown),
