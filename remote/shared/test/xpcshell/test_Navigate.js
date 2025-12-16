@@ -30,6 +30,9 @@ const INITIAL_URI = Services.io.newURI("about:blank");
 const TARGET_URI = Services.io.newURI("http://foo.cheese/");
 const TARGET_URI_ERROR_PAGE = Services.io.newURI("doesnotexist://");
 const TARGET_URI_WITH_HASH = Services.io.newURI("http://foo.cheese/#foo");
+const TARGET_URI_FROM_NAVIGATION_COMMITTED = Services.io.newURI(
+  "http://foo.cheese/#bar"
+);
 
 function wait(time) {
   
@@ -694,19 +697,31 @@ add_task(async function test_ProgressListener_resolveWhenCommitted() {
   
   mockNavigationManager.emit("navigation-committed", {
     navigationId: navigationId2,
+    url: TARGET_URI_FROM_NAVIGATION_COMMITTED.spec,
   });
   ok(
     !(await hasPromiseResolved(navigated)),
     "Listener has not resolved after an unexpected navigation-committed"
   );
+  notEqual(
+    progressListener.targetURI.spec,
+    TARGET_URI_FROM_NAVIGATION_COMMITTED.spec,
+    "Expected target URI has not been set from unexpected navigation-committed"
+  );
 
   
   mockNavigationManager.emit("navigation-committed", {
     navigationId: navigationId1,
+    url: TARGET_URI_FROM_NAVIGATION_COMMITTED.spec,
   });
   ok(
     await hasPromiseResolved(navigated),
     "Listener has resolved after receiving the correct navigation-committed"
+  );
+  equal(
+    progressListener.targetURI.spec,
+    TARGET_URI_FROM_NAVIGATION_COMMITTED.spec,
+    "Expected target URI has been set from navigation-committed"
   );
 });
 
