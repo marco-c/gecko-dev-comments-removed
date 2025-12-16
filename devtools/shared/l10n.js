@@ -71,17 +71,18 @@ function getProperties(url) {
 
 
 
+class LocalizationHelper {
+  
 
 
 
 
 
-function LocalizationHelper(stringBundleName, strict = false) {
-  this.stringBundleName = stringBundleName;
-  this.strict = strict;
-}
 
-LocalizationHelper.prototype = {
+  constructor(stringBundleName, strict = false) {
+    this.stringBundleName = stringBundleName;
+    this.strict = strict;
+  }
   
 
 
@@ -100,7 +101,7 @@ LocalizationHelper.prototype = {
 
     console.error("No localization found for [" + name + "]");
     return name;
-  },
+  }
 
   
 
@@ -111,7 +112,7 @@ LocalizationHelper.prototype = {
 
   getFormatStr(name, ...args) {
     return sprintf(this.getStr(name), ...args);
-  },
+  }
 
   
 
@@ -128,7 +129,7 @@ LocalizationHelper.prototype = {
     });
 
     return this.getFormatStr(name, ...newArgs);
-  },
+  }
 
   
 
@@ -164,8 +165,8 @@ LocalizationHelper.prototype = {
     }
 
     return localized;
-  },
-};
+  }
+}
 
 function getPropertiesForNode(node) {
   const bundleEl = node.closest("[data-localization-bundle]");
@@ -228,37 +229,39 @@ function localizeMarkup(root) {
 
 
 
-function MultiLocalizationHelper(...stringBundleNames) {
-  const instances = stringBundleNames.map(bundle => {
-    
-    
-    return new LocalizationHelper(bundle, true);
-  });
-
-  
-  
-  
-  Object.getOwnPropertyNames(LocalizationHelper.prototype)
-    .map(name => ({
-      name,
-      descriptor: Object.getOwnPropertyDescriptor(
-        LocalizationHelper.prototype,
-        name
-      ),
-    }))
-    .filter(({ descriptor }) => descriptor.value instanceof Function)
-    .forEach(method => {
-      this[method.name] = (...args) => {
-        for (const l10n of instances) {
-          try {
-            return method.descriptor.value.apply(l10n, args);
-          } catch (e) {
-            
-          }
-        }
-        return null;
-      };
+class MultiLocalizationHelper {
+  constructor(...stringBundleNames) {
+    const instances = stringBundleNames.map(bundle => {
+      
+      
+      return new LocalizationHelper(bundle, true);
     });
+
+    
+    
+    
+    Object.getOwnPropertyNames(LocalizationHelper.prototype)
+      .map(name => ({
+        name,
+        descriptor: Object.getOwnPropertyDescriptor(
+          LocalizationHelper.prototype,
+          name
+        ),
+      }))
+      .filter(({ descriptor }) => descriptor.value instanceof Function)
+      .forEach(method => {
+        this[method.name] = (...args) => {
+          for (const l10n of instances) {
+            try {
+              return method.descriptor.value.apply(l10n, args);
+            } catch (e) {
+              
+            }
+          }
+          return null;
+        };
+      });
+  }
 }
 
 exports.LocalizationHelper = LocalizationHelper;
