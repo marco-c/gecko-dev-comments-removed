@@ -68,6 +68,17 @@ bool IsTurnChannelData(uint16_t msg_type) {
   return ((msg_type & 0xC000) == 0x4000);
 }
 
+
+template <typename Map, typename Key>
+Map::iterator FindByRawPtr(Map& map, Key* ptr) {
+  
+  std::unique_ptr<Key> uptr = absl::WrapUnique(ptr);
+  typename Map::iterator iter = map.find(uptr);
+  
+  uptr.release();
+  return iter;
+}
+
 }  
 
 int GetStunSuccessResponseTypeOrZero(const StunMessage& req) {
@@ -97,19 +108,12 @@ TurnServer::TurnServer(const Environment& env, TaskQueueBase* thread)
 
 TurnServer::~TurnServer() {
   RTC_DCHECK_RUN_ON(thread_);
-  for (auto& [socket, unused] : server_sockets_) {
-    delete socket;
-  }
-
-  for (auto& [socket, unused] : server_listen_sockets_) {
-    delete socket;
-  }
 }
 
 void TurnServer::AddInternalSocket(std::unique_ptr<AsyncPacketSocket> socket,
                                    ProtocolType protocol) {
   RTC_DCHECK_RUN_ON(thread_);
-  auto [it, inserted] = server_sockets_.emplace(socket.release(), protocol);
+  auto [it, inserted] = server_sockets_.emplace(std::move(socket), protocol);
   RTC_DCHECK(inserted);
   it->first->RegisterReceivedPacketCallback(
       [&](AsyncPacketSocket* socket, const ReceivedIpPacket& packet) {
@@ -124,7 +128,7 @@ void TurnServer::AddInternalServerSocket(
     std::unique_ptr<SSLAdapterFactory> ssl_adapter_factory) {
   RTC_DCHECK_RUN_ON(thread_);
   auto [iter, inserted] = server_listen_sockets_.emplace(
-      socket.release(),
+      std::move(socket),
       ServerSocketInfo{.proto = protocol,
                        .ssl_adapter_factory = std::move(ssl_adapter_factory)});
   RTC_DCHECK(inserted);
@@ -141,20 +145,15 @@ void TurnServer::SetExternalSocketFactory(PacketSocketFactory* factory,
 
 void TurnServer::OnNewInternalConnection(Socket* socket) {
   RTC_DCHECK_RUN_ON(thread_);
-  RTC_DCHECK(server_listen_sockets_.find(socket) !=
-             server_listen_sockets_.end());
-  AcceptConnection(socket);
-}
-
-void TurnServer::AcceptConnection(Socket* server_socket) {
-  RTC_DCHECK_RUN_ON(thread_);
+  auto iter = FindByRawPtr(server_listen_sockets_, socket);
+  RTC_DCHECK(iter != server_listen_sockets_.end());
 
   
   SocketAddress accept_addr;
   std::unique_ptr<Socket> accepted_socket =
-      absl::WrapUnique(server_socket->Accept(&accept_addr));
+      absl::WrapUnique(socket->Accept(&accept_addr));
   if (accepted_socket != nullptr) {
-    const ServerSocketInfo& info = server_listen_sockets_[server_socket];
+    const ServerSocketInfo& info = iter->second;
     if (info.ssl_adapter_factory) {
       std::unique_ptr<SSLAdapter> ssl_adapter = absl::WrapUnique(
           info.ssl_adapter_factory->CreateAdapter(accepted_socket.release()));
@@ -175,7 +174,10 @@ void TurnServer::AcceptConnection(Socket* server_socket) {
 
 void TurnServer::OnInternalSocketClose(AsyncPacketSocket* socket, int err) {
   RTC_DCHECK_RUN_ON(thread_);
-  DestroyInternalSocket(socket);
+  if (auto iter = FindByRawPtr(server_sockets_, socket);
+      iter != server_sockets_.end()) {
+    DestroyInternalSocket(iter);
+  }
 }
 
 void TurnServer::OnInternalPacket(AsyncPacketSocket* socket,
@@ -185,7 +187,7 @@ void TurnServer::OnInternalPacket(AsyncPacketSocket* socket,
   if (packet.payload().size() < TURN_CHANNEL_HEADER_SIZE) {
     return;
   }
-  auto iter = server_sockets_.find(socket);
+  auto iter = FindByRawPtr(server_sockets_, socket);
   RTC_DCHECK(iter != server_sockets_.end());
   TurnServerConnection conn(packet.source_address(), iter->second, socket);
   uint16_t msg_type = GetBE16(packet.payload().data());
@@ -508,32 +510,28 @@ void TurnServer::Send(TurnServerConnection* conn, const ByteBufferWriter& buf) {
 void TurnServer::DestroyAllocation(TurnServerAllocation* allocation) {
   
   AsyncPacketSocket* socket = allocation->conn()->socket();
-  auto iter = server_sockets_.find(socket);
+  auto iter = FindByRawPtr(server_sockets_, socket);
   
   
   
   
   if (iter != server_sockets_.end() && iter->second != PROTO_UDP) {
-    DestroyInternalSocket(socket);
+    DestroyInternalSocket(iter);
   }
 
   allocations_.erase(*(allocation->conn()));
 }
 
-void TurnServer::DestroyInternalSocket(AsyncPacketSocket* socket) {
-  auto iter = server_sockets_.find(socket);
-  if (iter != server_sockets_.end()) {
-    AsyncPacketSocket* server_socket = iter->first;
-    server_socket->UnsubscribeCloseEvent(this);
-    server_socket->DeregisterReceivedPacketCallback();
-    server_sockets_.erase(iter);
-    std::unique_ptr<AsyncPacketSocket> socket_to_delete =
-        absl::WrapUnique(server_socket);
-    
-    
-    
-    thread_->PostTask([socket_to_delete = std::move(socket_to_delete)] {});
-  }
+void TurnServer::DestroyInternalSocket(ServerSocketMap::iterator iter) {
+  RTC_DCHECK(iter != server_sockets_.end());
+  auto node = server_sockets_.extract(iter);
+  AsyncPacketSocket* server_socket = node.key().get();
+  server_socket->UnsubscribeCloseEvent(this);
+  server_socket->DeregisterReceivedPacketCallback();
+  
+  
+  
+  thread_->PostTask([node = std::move(node)] {});
 }
 
 TurnServerConnection::TurnServerConnection(const SocketAddress& src,

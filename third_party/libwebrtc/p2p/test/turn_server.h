@@ -270,6 +270,9 @@ class TurnServer : public sigslot::has_slots<> {
   }
 
  private:
+  using ServerSocketMap =
+      std::map<std::unique_ptr<AsyncPacketSocket>, ProtocolType>;
+
   
   
   
@@ -279,9 +282,6 @@ class TurnServer : public sigslot::has_slots<> {
                         const ReceivedIpPacket& packet) RTC_RUN_ON(thread_);
 
   void OnNewInternalConnection(Socket* socket);
-
-  
-  void AcceptConnection(Socket* server_socket) RTC_RUN_ON(thread_);
   void OnInternalSocketClose(AsyncPacketSocket* socket, int err);
 
   void HandleStunMessage(TurnServerConnection* conn,
@@ -325,7 +325,8 @@ class TurnServer : public sigslot::has_slots<> {
   void Send(TurnServerConnection* conn, const ByteBufferWriter& buf);
 
   void DestroyAllocation(TurnServerAllocation* allocation) RTC_RUN_ON(thread_);
-  void DestroyInternalSocket(AsyncPacketSocket* socket) RTC_RUN_ON(thread_);
+  void DestroyInternalSocket(ServerSocketMap::iterator iter)
+      RTC_RUN_ON(thread_);
 
   struct ServerSocketInfo {
     ProtocolType proto;
@@ -348,12 +349,8 @@ class TurnServer : public sigslot::has_slots<> {
   
   bool enable_permission_checks_ = true;
 
-  
-  
-  
-  std::map<AsyncPacketSocket*, ProtocolType> server_sockets_
-      RTC_GUARDED_BY(thread_);
-  std::map<Socket*, ServerSocketInfo> server_listen_sockets_
+  ServerSocketMap server_sockets_ RTC_GUARDED_BY(thread_);
+  std::map<std::unique_ptr<Socket>, ServerSocketInfo> server_listen_sockets_
       RTC_GUARDED_BY(thread_);
   std::unique_ptr<PacketSocketFactory> external_socket_factory_
       RTC_GUARDED_BY(thread_);
