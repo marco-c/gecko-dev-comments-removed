@@ -7896,30 +7896,6 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   nsCOMPtr<nsIChannel> failedChannel = mFailedChannel;
   nsCOMPtr<nsIURI> failedURI;
 
-  
-  
-  
-  
-  
-  
-  
-  bool isReplace =
-      mActiveEntry && mLoadingEntry && IsValidLoadType(mLoadType) &&
-      NavigationUtils::NavigationTypeFromLoadType(mLoadType)
-          .map([](auto type) { return type == NavigationType::Replace; })
-          .valueOr(false);
-  if (isReplace) {
-    nsCOMPtr<nsIURI> uri = mActiveEntry->GetURIOrInheritedForAboutBlank();
-    nsCOMPtr<nsIURI> targetURI =
-        mLoadingEntry->mInfo.GetURIOrInheritedForAboutBlank();
-    bool sameOrigin =
-        NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-            targetURI, uri, false, false));
-    if (sameOrigin) {
-      mLoadingEntry->mInfo.NavigationKey() = mActiveEntry->NavigationKey();
-    }
-  }
-
   if (mLoadType == LOAD_ERROR_PAGE) {
     
     
