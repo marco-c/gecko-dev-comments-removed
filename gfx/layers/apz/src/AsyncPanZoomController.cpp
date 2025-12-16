@@ -5531,19 +5531,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     LayersUpdateFlags aLayersUpdateFlags) {
   AssertOnUpdaterThread();
 
-  const FrameMetrics& aLayerMetrics = aScrollMetadata.GetMetrics();
-  ScreenMargin fixedLayerMargins;
-  
-  
-  
-  if (aLayerMetrics.IsRootContent()) {
-    if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-      fixedLayerMargins = treeManagerLocal->GetCompositorFixedLayerMargins();
-    }
-  }
-
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   bool isDefault = mScrollMetadata.IsDefault();
+
+  const FrameMetrics& aLayerMetrics = aScrollMetadata.GetMetrics();
 
   if ((aScrollMetadata == mLastContentPaintMetadata) && !isDefault) {
     
@@ -6139,7 +6130,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     
-    Metrics().RecalculateLayoutViewportOffset(fixedLayerMargins.bottom);
+    Metrics().RecalculateLayoutViewportOffset(
+        GetFixedLayerMargins(lock).bottom);
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     if (ShouldCancelAnimationForScrollUpdate(Nothing())) {
       CancelAnimation();
