@@ -283,7 +283,7 @@ struct AnchorPositioningUtils {
 
 
 
-  static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
+  static nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
 
   struct NearestScrollFrameInfo {
     const nsIFrame* mScrollContainer = nullptr;

@@ -1605,13 +1605,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     aKidFrame->UpdateOverflow();
   }();
 
-  
-  
-  aKidFrame->AddOrRemoveStateBits(
-      NS_FRAME_POSITION_VISIBILITY_HIDDEN,
-      isOverflowingCB && aKidFrame->StylePosition()->mPositionVisibility ==
-                             StylePositionVisibility::NO_OVERFLOW);
-
   if (currentFallbackIndex) {
     aKidFrame->SetOrUpdateDeletableProperty(
         nsIFrame::LastSuccessfulPositionFallback(), *currentFallbackIndex,
@@ -1625,6 +1618,16 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                  ToString(aKidFrame->GetRect()));
   }
 #endif
+  
+  
+  
+  
+  if (!aAnchorPosResolutionCache) {
+    aKidFrame->AddOrRemoveStateBits(
+        NS_FRAME_POSITION_VISIBILITY_HIDDEN,
+        isOverflowingCB && aKidFrame->StylePosition()->mPositionVisibility &
+                               StylePositionVisibility::NO_OVERFLOW);
+  }
 
   if (aOverflowAreas) {
     aOverflowAreas->UnionWith(aKidFrame->GetOverflowAreasRelativeToParent());
