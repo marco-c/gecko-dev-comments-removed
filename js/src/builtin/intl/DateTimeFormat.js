@@ -71,6 +71,21 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
   );
 
   
+  
+  
+  if (r.ca === "islamic") {
+    ReportWarning(JSMSG_ISLAMIC_FALLBACK);
+
+    
+    r.ca = "islamic-tbla";
+  } else if (r.ca === "islamic-rgsa") {
+    
+    
+    
+    r.ca = "islamic-tbla";
+  }
+
+  
   internalProps.locale = r.locale;
   internalProps.calendar = r.ca;
   internalProps.numberingSystem = r.nu;

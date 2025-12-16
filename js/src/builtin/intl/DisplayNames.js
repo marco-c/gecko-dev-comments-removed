@@ -76,6 +76,7 @@ function resolveDisplayNamesInternals(lazyDisplayNamesData) {
   }
 
   if (mozExtensions) {
+    
     internalProps.calendar = r.ca;
   }
 
