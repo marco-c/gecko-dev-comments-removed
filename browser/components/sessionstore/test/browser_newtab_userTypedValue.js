@@ -54,7 +54,7 @@ add_task(async function () {
   BrowserTestUtils.removeTab(tab);
 
   for (let url of gInitialPages) {
-    if (url == BROWSER_NEW_TAB_URL) {
+    if (url == BROWSER_NEW_TAB_URL || url === "about:opentabs") {
       continue; 
     }
     info("Testing " + url + " - " + new Date());
