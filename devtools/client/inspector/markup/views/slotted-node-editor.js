@@ -9,17 +9,16 @@ const INSPECTOR_L10N = new LocalizationHelper(
   "devtools/client/locales/inspector.properties"
 );
 
-function SlottedNodeEditor(container, node) {
-  this.container = container;
-  this.markup = this.container.markup;
-  this.buildMarkup();
-  this.tag.textContent = "<" + node.nodeName.toLowerCase() + ">";
+class SlottedNodeEditor {
+  constructor(container, node) {
+    this.container = container;
+    this.markup = this.container.markup;
+    this.buildMarkup();
+    this.tag.textContent = "<" + node.nodeName.toLowerCase() + ">";
 
-  
-  this.tag.setAttribute("tabindex", "-1");
-}
-
-SlottedNodeEditor.prototype = {
+    
+    this.tag.setAttribute("tabindex", "-1");
+  }
   buildMarkup() {
     const doc = this.markup.doc;
 
@@ -38,7 +37,7 @@ SlottedNodeEditor.prototype = {
     );
     this.revealLink.classList.add("reveal-link");
     this.elt.appendChild(this.revealLink);
-  },
+  }
 
   destroy() {
     
@@ -50,14 +49,14 @@ SlottedNodeEditor.prototype = {
     this.elt = null;
     this.tag = null;
     this.revealLink = null;
-  },
+  }
 
   
 
 
   getInfoAtNode() {
     return null;
-  },
-};
+  }
+}
 
 module.exports = SlottedNodeEditor;
