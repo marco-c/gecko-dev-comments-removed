@@ -53,6 +53,7 @@ class URIParams;
 [ptr] native Encoding(const mozilla::Encoding);
 [ref] native URIParams(mozilla::ipc::URIParams);
 interface nsIURIMutator;
+native MallocSizeOf(mozilla::MallocSizeOf);
 
 
 
@@ -315,6 +316,18 @@ interface nsIURI : nsISupports
 
 
     [noscript, notxpcom] void serialize(in URIParams aParams);
+
+    
+
+
+
+
+
+
+
+
+
+    [notxpcom, nostdcall] size_t SizeOfIncludingThis(in MallocSizeOf aMallocSizeOf);
 
     %{C++
     

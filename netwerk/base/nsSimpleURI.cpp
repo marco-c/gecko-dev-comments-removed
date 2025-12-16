@@ -61,7 +61,6 @@ NS_INTERFACE_TABLE_HEAD(nsSimpleURI)
   if (aIID.Equals(kThisSimpleURIImplementationCID)) {
     foundInterface = static_cast<nsIURI*>(this);
   } else
-    NS_INTERFACE_MAP_ENTRY(nsISizeOf)
 NS_INTERFACE_MAP_END
 
 
@@ -641,7 +640,9 @@ nsSimpleURI::GetAsciiHost(nsACString& result) {
 
 
 
-size_t nsSimpleURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+
+
+size_t nsSimpleURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   return aMallocSizeOf(this) +
          mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
 }
