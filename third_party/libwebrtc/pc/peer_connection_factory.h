@@ -102,16 +102,15 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
     return options_;
   }
 
-  const FieldTrialsView& field_trials() const {
-    return context_->env().field_trials();
-  }
+  const FieldTrialsView& field_trials() const { return env_.field_trials(); }
 
   MediaEngineInterface* media_engine() const;
   CodecVendor& CodecVendorForTesting() { return codec_vendor_; }
 
  protected:
   
-  PeerConnectionFactory(scoped_refptr<ConnectionContext> context,
+  PeerConnectionFactory(Environment env,
+                        scoped_refptr<ConnectionContext> context,
                         PeerConnectionFactoryDependencies* dependencies);
 
   
@@ -122,6 +121,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual ~PeerConnectionFactory();
 
  private:
+  Environment env_;
   Thread* network_thread() const { return context_->network_thread(); }
 
   std::unique_ptr<Call> CreateCall_w(

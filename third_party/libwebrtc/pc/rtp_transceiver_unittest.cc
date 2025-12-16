@@ -69,16 +69,13 @@ namespace {
 class RtpTransceiverTest : public testing::Test {
  public:
   RtpTransceiverTest()
-      : dependencies_(MakeDependencies()),
-        context_(
-            ConnectionContext::Create(CreateTestEnvironment(), &dependencies_)),
-        codec_lookup_helper_(context_.get()) {}
+      : env_(CreateTestEnvironment()),
+        dependencies_(MakeDependencies()),
+        context_(ConnectionContext::Create(env_, &dependencies_)),
+        codec_lookup_helper_(context_.get(), env_.field_trials()) {}
 
  protected:
-  
-  
-  
-  const Environment& env() const { return context_->env(); }
+  const Environment& env() const { return env_; }
   FakeMediaEngine* media_engine() {
     
     
@@ -102,6 +99,7 @@ class RtpTransceiverTest : public testing::Test {
     return d;
   }
 
+  Environment env_;
   PeerConnectionFactoryDependencies dependencies_;
   scoped_refptr<ConnectionContext> context_;
   FakeCodecLookupHelper codec_lookup_helper_;
@@ -195,8 +193,7 @@ class RtpTransceiverUnifiedPlanTest : public RtpTransceiverTest {
         RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
             Thread::Current(), Thread::Current(), std::move(receiver)),
         context(), codec_lookup_helper(),
-        media_engine()->voice().GetRtpHeaderExtensions(
-            &context()->env().field_trials()),
+        media_engine()->voice().GetRtpHeaderExtensions(&env().field_trials()),
          [] {});
   }
 

@@ -131,7 +131,7 @@ class CodecLookupHelperForPeerConnection : public CodecLookupHelper {
       : self_(self),
         codec_vendor_(self_->context()->media_engine(),
                       self_->context()->use_rtx(),
-                      self_->context()->env().field_trials()) {}
+                      self_->trials()) {}
 
   webrtc::PayloadTypeSuggester* PayloadTypeSuggester() override {
     return self_->transport_controller_s();
@@ -747,8 +747,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
   config.crypto_options = configuration.crypto_options;
 
   
-  config.crypto_options.ephemeral_key_exchange_cipher_groups.Update(
-      &context_->env().field_trials());
+  config.crypto_options.ephemeral_key_exchange_cipher_groups.Update(&trials());
   config.transport_observer = this;
   config.rtcp_handler = InitializeRtcpCallback();
   config.un_demuxable_packet_handler = InitializeUnDemuxablePacketHandler();
@@ -1143,8 +1142,7 @@ PeerConnection::AddTransceiver(webrtc::MediaType media_type,
   std::vector<Codec> codecs;
   
   
-  CodecVendor codec_vendor(context_->media_engine(), false,
-                           context_->env().field_trials());
+  CodecVendor codec_vendor(context_->media_engine(), false, trials());
   if (media_type == webrtc::MediaType::VIDEO) {
     codecs = codec_vendor.video_send_codecs().codecs();
   } else {
