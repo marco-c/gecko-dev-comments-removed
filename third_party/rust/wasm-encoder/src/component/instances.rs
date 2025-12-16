@@ -2,6 +2,7 @@ use super::CORE_INSTANCE_SORT;
 use crate::{
     encode_section, ComponentExportKind, ComponentSection, ComponentSectionId, Encode, ExportKind,
 };
+use alloc::vec::Vec;
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

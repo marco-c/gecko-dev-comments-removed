@@ -109,10 +109,7 @@ where
     
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        #[cfg(not(feature = "no-hash-maps"))]
         self.inner.reserve(additional);
-        #[cfg(feature = "no-hash-maps")]
-        let _ = additional;
     }
 
     

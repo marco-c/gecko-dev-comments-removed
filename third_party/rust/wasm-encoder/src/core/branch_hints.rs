@@ -1,5 +1,6 @@
 use crate::{CustomSection, Encode, Section, SectionId};
-use std::borrow::Cow;
+use alloc::borrow::Cow;
+use alloc::vec::Vec;
 
 
 

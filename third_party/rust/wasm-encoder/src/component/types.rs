@@ -3,6 +3,7 @@ use crate::{
     encode_section, Alias, ComponentExportKind, ComponentOuterAliasKind, ComponentSection,
     ComponentSectionId, ComponentTypeRef, CoreTypeEncoder, Encode, EntityType, ValType,
 };
+use alloc::vec::Vec;
 
 
 #[derive(Debug, Clone, Default)]
@@ -670,6 +671,23 @@ impl ComponentDefinedTypeEncoder<'_> {
     pub fn borrow(self, idx: u32) {
         self.0.push(0x68);
         idx.encode(self.0);
+    }
+
+    
+    pub fn future(self, payload: Option<ComponentValType>) {
+        self.0.push(0x67);
+        payload.encode(self.0);
+    }
+
+    
+    pub fn stream(self, payload: Option<ComponentValType>) {
+        self.0.push(0x66);
+        payload.encode(self.0);
+    }
+
+    
+    pub fn error_context(self) {
+        self.0.push(0x65);
     }
 }
 

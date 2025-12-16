@@ -1,4 +1,5 @@
 use crate::{encoding_size, Encode, Section, SectionId};
+use alloc::vec::Vec;
 
 
 

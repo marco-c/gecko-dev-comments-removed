@@ -505,6 +505,12 @@ pub enum ComponentDefinedType<'a> {
     Own(u32),
     
     Borrow(u32),
+    
+    Future(Option<ComponentValType>),
+    
+    Stream(Option<ComponentValType>),
+    
+    ErrorContext,
 }
 
 impl<'a> ComponentDefinedType<'a> {
@@ -544,6 +550,9 @@ impl<'a> ComponentDefinedType<'a> {
             },
             0x69 => ComponentDefinedType::Own(reader.read()?),
             0x68 => ComponentDefinedType::Borrow(reader.read()?),
+            0x67 => ComponentDefinedType::Future(reader.read()?),
+            0x66 => ComponentDefinedType::Stream(reader.read()?),
+            0x65 => ComponentDefinedType::ErrorContext,
             x => return reader.invalid_leading_byte(x, "component defined type"),
         })
     }

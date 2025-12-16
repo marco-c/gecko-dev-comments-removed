@@ -1,4 +1,5 @@
 use crate::{Encode, Section};
+use alloc::vec::Vec;
 
 
 

@@ -1,4 +1,5 @@
 use crate::{ComponentSection, ComponentSectionId, Encode, Module};
+use alloc::vec::Vec;
 
 
 

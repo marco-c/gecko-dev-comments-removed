@@ -180,6 +180,17 @@ impl<T: WasmModuleResources> FuncValidator<T> {
     
     
     
+    #[cfg(feature = "simd")]
+    pub fn simd_visitor<'this, 'a: 'this>(
+        &'this mut self,
+        offset: usize,
+    ) -> impl crate::VisitSimdOperator<'a, Output = Result<()>> + ModuleArity + 'this {
+        self.validator.with_resources_simd(&self.resources, offset)
+    }
+
+    
+    
+    
     
     
     

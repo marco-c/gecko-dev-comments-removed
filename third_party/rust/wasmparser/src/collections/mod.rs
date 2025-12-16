@@ -14,6 +14,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "hash-collections")]
 pub mod hash;
 pub mod index_map;
 pub mod index_set;

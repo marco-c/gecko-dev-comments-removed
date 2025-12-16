@@ -1,4 +1,6 @@
 use crate::{encode_section, Encode, Section, SectionId};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 
 #[derive(Debug, Clone)]
@@ -292,6 +294,14 @@ impl RefType {
             ty: AbstractHeapType::Exn,
         },
     };
+
+    
+    pub fn new_abstract(ty: AbstractHeapType, nullable: bool, shared: bool) -> Self {
+        Self {
+            nullable,
+            heap_type: HeapType::Abstract { shared, ty },
+        }
+    }
 
     
     pub fn nullable(mut self, nullable: bool) -> Self {

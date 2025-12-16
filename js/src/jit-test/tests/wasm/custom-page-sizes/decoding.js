@@ -77,10 +77,12 @@ function checkPageCount(pageSize, pageCount) {
     }
     if (pageCount <= maxPageCount(pageSize))
         check();
-    else if (pageCount > 0xffffffff)
+    else if (pageCount > 0xffffffff) {
         
-        assertErrorMessage(check, SyntaxError,
-                           /invalid u32 number/);
+        
+        assertErrorMessage(check, WebAssembly.CompileError,
+                           /expected maximum length/);
+    }
     else
         assertErrorMessage(check, WebAssembly.CompileError,
                            /maximum memory size too big/);

@@ -209,7 +209,7 @@ impl<'a> Expander<'a> {
         }
 
         
-        let id = gensym::gen(span);
+        let id = gensym::generate(span);
         self.to_prepend.push(ModuleField::Type(Type {
             span,
             id: Some(id),

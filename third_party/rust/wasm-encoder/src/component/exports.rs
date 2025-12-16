@@ -3,6 +3,7 @@ use super::{
     VALUE_SORT,
 };
 use crate::{encode_section, ComponentSection, ComponentSectionId, ComponentTypeRef, Encode};
+use alloc::vec::Vec;
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

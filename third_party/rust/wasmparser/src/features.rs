@@ -179,7 +179,7 @@ define_wasm_features! {
         /// The WebAssembly exception handling proposal.
         pub exceptions: EXCEPTIONS(1 << 13) = true;
         /// The WebAssembly memory64 proposal.
-        pub memory64: MEMORY64(1 << 14) = false;
+        pub memory64: MEMORY64(1 << 14) = true;
         /// The WebAssembly extended_const proposal.
         pub extended_const: EXTENDED_CONST(1 << 15) = true;
         /// The WebAssembly component model proposal.
@@ -229,15 +229,33 @@ define_wasm_features! {
         pub stack_switching: STACK_SWITCHING(1 << 27) = false;
         /// The WebAssembly [wide-arithmetic proposal](https://github.com/WebAssembly/wide-arithmetic).
         pub wide_arithmetic: WIDE_ARITHMETIC(1 << 28) = false;
+        /// Support for component model async lift/lower ABI, as well as streams, futures, and errors.
+        pub component_model_async: COMPONENT_MODEL_ASYNC(1 << 29) = false;
     }
 }
 
 impl WasmFeatures {
     
     
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "features")]
-    pub const WASM1: WasmFeatures = WasmFeatures::FLOATS.union(WasmFeatures::GC_TYPES);
+    pub const MVP: WasmFeatures = WasmFeatures::FLOATS.union(WasmFeatures::GC_TYPES);
 
+    
+    
+    
+    
+    #[cfg(feature = "features")]
+    pub const WASM1: WasmFeatures = WasmFeatures::MVP.union(WasmFeatures::MUTABLE_GLOBAL);
+
+    
+    
     
     
     #[cfg(feature = "features")]
@@ -245,11 +263,13 @@ impl WasmFeatures {
         .union(WasmFeatures::BULK_MEMORY)
         .union(WasmFeatures::REFERENCE_TYPES)
         .union(WasmFeatures::SIGN_EXTENSION)
-        .union(WasmFeatures::MUTABLE_GLOBAL)
         .union(WasmFeatures::SATURATING_FLOAT_TO_INT)
         .union(WasmFeatures::MULTI_VALUE)
         .union(WasmFeatures::SIMD);
 
+    
+    
+    
     
     
     
@@ -265,7 +285,8 @@ impl WasmFeatures {
         .union(WasmFeatures::MULTI_MEMORY)
         .union(WasmFeatures::RELAXED_SIMD)
         .union(WasmFeatures::THREADS)
-        .union(WasmFeatures::EXCEPTIONS);
+        .union(WasmFeatures::EXCEPTIONS)
+        .union(WasmFeatures::MEMORY64);
 }
 
 #[cfg(feature = "features")]
@@ -281,5 +302,43 @@ impl From<WasmFeatures> for WasmFeaturesInflated {
     #[inline]
     fn from(features: WasmFeatures) -> Self {
         features.inflate()
+    }
+}
+
+impl WasmFeatures {
+    
+    
+    #[cfg(feature = "validate")]
+    pub(crate) fn needs_type_canonicalization(&self) -> bool {
+        #[cfg(feature = "features")]
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            const FAST_VALIDATION_FEATURES: WasmFeatures = WasmFeatures::WASM2
+                .union(WasmFeatures::CUSTOM_PAGE_SIZES)
+                .union(WasmFeatures::EXTENDED_CONST)
+                .union(WasmFeatures::MEMORY64)
+                .union(WasmFeatures::MULTI_MEMORY)
+                .union(WasmFeatures::RELAXED_SIMD)
+                .union(WasmFeatures::TAIL_CALL)
+                .union(WasmFeatures::THREADS)
+                .union(WasmFeatures::WIDE_ARITHMETIC);
+            !FAST_VALIDATION_FEATURES.contains(*self)
+        }
+        #[cfg(not(feature = "features"))]
+        {
+            
+            
+            
+            true
+        }
     }
 }

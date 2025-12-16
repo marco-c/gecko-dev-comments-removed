@@ -233,11 +233,28 @@ impl<'a> Matches for WithRecGroup<&'a StructType> {
 
 impl Matches for WithRecGroup<FieldType> {
     fn matches(types: &TypeList, a: Self, b: Self) -> bool {
-        (b.mutable || !a.mutable)
+        
+        if !Matches::matches(
+            types,
+            WithRecGroup::map(a, |a| a.element_type),
+            WithRecGroup::map(b, |b| b.element_type),
+        ) {
+            return false;
+        }
+
+        
+        if !a.mutable && !b.mutable {
+            return true;
+        }
+
+        
+        
+        a.mutable
+            && b.mutable
             && Matches::matches(
                 types,
-                WithRecGroup::map(a, |a| a.element_type),
                 WithRecGroup::map(b, |b| b.element_type),
+                WithRecGroup::map(a, |a| a.element_type),
             )
     }
 }
