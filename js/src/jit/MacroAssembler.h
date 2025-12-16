@@ -2229,17 +2229,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  inline void canonicalizeDoubleNaN(FloatRegister reg);
+  inline void canonicalizeDouble(FloatRegister reg);
 
-  inline void canonicalizeFloatNaN(FloatRegister reg);
-
-  
-  
-  
-  
-  
-  
-  inline void canonicalizeDoubleZero(FloatRegister reg, FloatRegister scratch);
+  inline void canonicalizeFloat(FloatRegister reg);
 
  public:
   

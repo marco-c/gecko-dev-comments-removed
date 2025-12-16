@@ -1,3 +1,9 @@
+
+
+
+
+WasmI31refValues.push(-0);
+
 let InvalidI31Values = [
   null,
   Number.EPSILON,
@@ -5,8 +11,9 @@ let InvalidI31Values = [
   Number.MIN_SAFE_INTEGER,
   Number.MIN_VALUE,
   Number.MAX_VALUE,
+  Infinity,
+  -Infinity,
   Number.NaN,
-  -0,
   
   ...WasmI31refValues.map(n => new Number(n)),
   
@@ -95,16 +102,16 @@ for (let i of InvalidI31Values) {
 
 
 for (let i of WasmI31refValues) {
-  assertEq(refI31(i), i);
-  assertEq(refI31Identity(i), i);
+  assertEq(refI31(i), Object.is(i, -0) ? 0 : i);
+  assertEq(refI31Identity(i), Object.is(i, -0) ? 0 : i);
   assertEq(i31GetU(i), valueAsI31GetU(i));
-  assertEq(i31GetS(i), i);
+  assertEq(i31GetS(i), Object.is(i, -0) ? 0 : i);
 }
 
 
 for (let i of WasmI31refValues) {
   let adjusted = i | 0x80000000;
-  assertEq(refI31(adjusted), i);
+  assertEq(refI31(adjusted), Object.is(i, -0) ? 0 : i);
 }
 
 

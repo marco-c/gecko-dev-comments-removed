@@ -869,32 +869,18 @@ void MacroAssembler::branchFloat32NotInUInt64Range(Address src, Register temp,
 
 
 
-void MacroAssembler::canonicalizeFloatNaN(FloatRegister reg) {
+void MacroAssembler::canonicalizeFloat(FloatRegister reg) {
   Label notNaN;
   branchFloat(DoubleOrdered, reg, reg, &notNaN);
   loadConstantFloat32(float(JS::GenericNaN()), reg);
   bind(&notNaN);
 }
 
-void MacroAssembler::canonicalizeDoubleNaN(FloatRegister reg) {
+void MacroAssembler::canonicalizeDouble(FloatRegister reg) {
   Label notNaN;
   branchDouble(DoubleOrdered, reg, reg, &notNaN);
   loadConstantDouble(JS::GenericNaN(), reg);
   bind(&notNaN);
-}
-
-void MacroAssembler::canonicalizeDoubleZero(FloatRegister reg,
-                                            FloatRegister scratch) {
-  
-  
-  
-  
-  
-  
-  
-  
-  loadConstantDouble(1.0, scratch);
-  mulDouble(scratch, reg);
 }
 
 
