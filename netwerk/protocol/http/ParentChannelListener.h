@@ -51,7 +51,7 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   }
 
  private:
-  virtual ~ParentChannelListener();
+  ~ParentChannelListener();
 
   
   
