@@ -1338,6 +1338,9 @@ pref("network.captive-portal-service.enabled", true);
 pref("network.manage-offline-status", true);
 
 
+pref("network.lna.prompt.timeout", 300000); 
+
+
 pref("network.protocol-handler.external.mailto", true); 
 
 
