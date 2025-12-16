@@ -802,6 +802,17 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           
           
           
+          
+          int maxBps = KBPS(10000);
+          maxBps = MinIgnoreZero(maxBps, mPrefMaxBitrate);
+          maxBps = MinIgnoreZero(maxBps, mNegotiatedMaxBitrate);
+          maxBps = MinIgnoreZero(maxBps,
+                                 static_cast<int>(encodingConstraints.maxBr));
+          video_stream.max_bitrate_bps = maxBps;
+
+          
+          
+          
 
           mEncoderConfig.simulcast_layers.push_back(video_stream);
         }
