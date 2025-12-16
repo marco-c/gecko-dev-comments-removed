@@ -129,7 +129,7 @@ pub use debug::DebugRenderer;
 pub use shade::{PendingShadersToPrecache, Shaders, SharedShaders};
 pub use vertex::{desc, VertexArrayKind, MAX_VERTEX_TEXTURE_WIDTH};
 pub use gpu_buffer::{GpuBuffer, GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBufferBuilderI};
-pub use gpu_buffer::{GpuBufferAddress, GpuBufferBuilder, GpuBufferWriterF, GpuBufferBlockF};
+pub use gpu_buffer::{GpuBufferHandle, GpuBufferAddress, GpuBufferBuilder, GpuBufferWriterF, GpuBufferBlockF};
 
 
 
@@ -4965,7 +4965,7 @@ impl Renderer {
                 .external_images
                 .insert(DeferredResolveIndex(i as u32), texture);
 
-            let addr = deferred_resolve.address;
+            let addr = gpu_buffer.resolve_handle(deferred_resolve.handle);
             let index = addr.as_u32() as usize;
             gpu_buffer.data[index] = image.uv.to_array().into();
             gpu_buffer.data[index + 1] = [0f32; 4].into();
