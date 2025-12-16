@@ -33,16 +33,20 @@ enum nsCSSUnit : uint32_t {
                            
 
   
-  eCSSUnit_EM = 800,              
-  eCSSUnit_XHeight = 801,         
-                                  
-  eCSSUnit_Char = 802,            
-                                  
-  eCSSUnit_RootEM = 803,          
-  eCSSUnit_Ideographic = 804,     
-  eCSSUnit_CapHeight = 805,       
-  eCSSUnit_LineHeight = 806,      
-  eCSSUnit_RootLineHeight = 807,  
+  eCSSUnit_EM = 800,               
+  eCSSUnit_XHeight = 801,          
+                                   
+  eCSSUnit_Char = 802,             
+                                   
+  eCSSUnit_RootEM = 803,           
+  eCSSUnit_Ideographic = 804,      
+  eCSSUnit_CapHeight = 805,        
+  eCSSUnit_LineHeight = 806,       
+  eCSSUnit_RootLineHeight = 807,   
+  eCSSUnit_RootXHeight = 808,      
+  eCSSUnit_RootChar = 809,         
+  eCSSUnit_RootIdeographic = 810,  
+  eCSSUnit_RootCapHeight = 811,    
 
   
   eCSSUnit_Point = 900,       
