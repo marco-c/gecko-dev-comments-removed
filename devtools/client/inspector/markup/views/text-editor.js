@@ -35,6 +35,8 @@ loader.lazyRequireGetter(
 
 
 
+class TextEditor {
+  
 
 
 
@@ -42,18 +44,16 @@ loader.lazyRequireGetter(
 
 
 
-function TextEditor(container, node, type) {
-  this.container = container;
-  this.markup = this.container.markup;
-  this.node = node;
-  this._selected = false;
+  constructor(container, node, type) {
+    this.container = container;
+    this.markup = this.container.markup;
+    this.node = node;
+    this._selected = false;
 
-  this.showTextEditor = this.showTextEditor.bind(this);
+    this.showTextEditor = this.showTextEditor.bind(this);
 
-  this.buildMarkup(type);
-}
-
-TextEditor.prototype = {
+    this.buildMarkup(type);
+  }
   buildMarkup(type) {
     const doc = this.markup.doc;
 
@@ -70,17 +70,17 @@ TextEditor.prototype = {
         this.elt
       );
     });
-  },
+  }
 
   get ReactDOM() {
     
     
     return this.container.markup.inspector.ReactDOM;
-  },
+  }
 
   get selected() {
     return this._selected;
-  },
+  }
 
   set selected(value) {
     if (value === this._selected) {
@@ -88,7 +88,7 @@ TextEditor.prototype = {
     }
     this._selected = value;
     this.update();
-  },
+  }
 
   showTextEditor(element) {
     new InplaceEditor({
@@ -114,7 +114,7 @@ TextEditor.prototype = {
       stopOnReturn: true,
       trimOutput: false,
     });
-  },
+  }
 
   async update() {
     try {
@@ -126,18 +126,18 @@ TextEditor.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   destroy() {
     this.ReactDOM.unmountComponentAtNode(this.elt);
-  },
+  }
 
   
 
 
   getInfoAtNode() {
     return null;
-  },
-};
+  }
+}
 
 module.exports = TextEditor;
