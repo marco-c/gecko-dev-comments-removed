@@ -1,11 +1,32 @@
-export type GetProtocol = "default" | "openid4vp-v1-unsigned" | "openid4vp-v1-signed" | "openid4vp-v1-multisigned";
-export type CreateProtocol = "default" | "openid4vci";
+export type OpenIDPresentationProtocol =
+  | "openid4vp-v1-unsigned"
+  | "openid4vp-v1-signed"
+  | "openid4vp-v1-multisigned";
+export type OpenIDIssuanceProtocol = "openid4vci";
+export type GetProtocol = OpenIDPresentationProtocol | "org-iso-mdoc";
+export type CreateProtocol = OpenIDIssuanceProtocol;
 
 export type CredentialMediationRequirement =
   | "conditional"
   | "optional"
   | "required"
   | "silent";
+
+
+
+
+export interface MobileDocumentRequest {
+  
+
+
+
+  readonly encryptionInfo: string;
+  
+
+
+
+  readonly deviceRequest: string;
+}
 
 
 
@@ -134,4 +155,18 @@ export interface EventData {
 export interface SendMessageData {
   action: IframeActionType;
   options?: CredentialRequestOptions;
+}
+
+
+
+
+export interface DigitalCredentialStatic {
+  
+
+
+  userAgentAllowsProtocol(protocol: string): boolean;
+}
+
+declare global {
+  var DigitalCredential: DigitalCredentialStatic;
 }

@@ -17,6 +17,25 @@
 
 
 
+const GET_PROTOCOLS =  ([
+  "openid4vp-v1-unsigned",
+  "openid4vp-v1-signed",
+  "openid4vp-v1-multisigned",
+  "org-iso-mdoc",
+]);
+
+
+const CREATE_PROTOCOLS =  (["openid4vci"]);
+
+const SUPPORTED_GET_PROTOCOL = GET_PROTOCOLS.find(
+  (protocol) => DigitalCredential.userAgentAllowsProtocol(protocol)
+);
+const SUPPORTED_CREATE_PROTOCOL = CREATE_PROTOCOLS.find(
+  (protocol) => DigitalCredential.userAgentAllowsProtocol(protocol)
+);
+
+
+
 
 
 
@@ -37,6 +56,7 @@ function _makeOptionsInternal(requestsInputArray, mediation, requestMapping, sig
       throw new Error(`Unknown request type within array: ${request}`);
     }
   }
+  
   const result = { digital: { requests }, mediation };
   if (signal !== undefined) {
     result.signal = signal;
@@ -46,14 +66,13 @@ function _makeOptionsInternal(requestsInputArray, mediation, requestMapping, sig
 
 const allMappings = {
   get: {
+    "org-iso-mdoc": () => makeMDocRequest(),
     "openid4vp-v1-unsigned": () => makeOID4VPDict("openid4vp-v1-unsigned"),
     "openid4vp-v1-signed": () => makeOID4VPDict("openid4vp-v1-signed"),
     "openid4vp-v1-multisigned": () => makeOID4VPDict("openid4vp-v1-multisigned"),
-    "default": () => makeDigitalCredentialGetRequest(undefined, undefined),
   },
   create: {
     "openid4vci": () => makeOID4VCIDict(),
-    "default": () => makeDigitalCredentialCreateRequest(),
   },
 };
 
@@ -91,6 +110,7 @@ function _makeOptionsUnified(type, protocol, mediation, signal) {
   if (Array.isArray(protocol)) {
     if (protocol.length === 0) {
       
+      
       const result = { digital: { requests: [] }, mediation };
       if (signal !== undefined) {
         result.signal = signal;
@@ -101,6 +121,7 @@ function _makeOptionsUnified(type, protocol, mediation, signal) {
     return _makeOptionsInternal(protocol, mediation, mapping, signal);
   }
 
+  
   
   const result = { digital: { requests: [] }, mediation };
   if (signal !== undefined) {
@@ -116,7 +137,10 @@ function _makeOptionsUnified(type, protocol, mediation, signal) {
 
 
 export function makeGetOptions(config = {}) {
-  const { protocol = "default", mediation = "required", signal } = config;
+  const { protocol = SUPPORTED_GET_PROTOCOL, mediation = "required", signal } = config;
+  if (!protocol) {
+    throw new Error("No Protocol. Can't make get options.");
+  }
   return _makeOptionsUnified('get', protocol, mediation, signal);
 }
 
@@ -127,7 +151,10 @@ export function makeGetOptions(config = {}) {
 
 
 export function makeCreateOptions(config = {}) {
-  const { protocol = "default", mediation = "required", signal } = config;
+  const { protocol = SUPPORTED_CREATE_PROTOCOL, mediation = "required", signal } = config;
+  if (!protocol) {
+    throw new Error("No protocol. Can't make create options.");
+  }
   return _makeOptionsUnified('create', protocol, mediation, signal);
 }
 
@@ -176,6 +203,17 @@ function makeDigitalCredentialCreateRequest(protocol = "protocol", data = {}) {
 
 function makeOID4VCIDict() {
   return makeDigitalCredentialCreateRequest("openid4vci", {
+    
+  });
+}
+
+
+
+
+
+
+function makeMDocRequest() {
+  return makeDigitalCredentialGetRequest("org-iso-mdoc", {
     
   });
 }
