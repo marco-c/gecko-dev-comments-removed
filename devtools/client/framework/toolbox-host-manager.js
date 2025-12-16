@@ -54,41 +54,40 @@ const LAST_HOST = "devtools.toolbox.host";
 const PREVIOUS_HOST = "devtools.toolbox.previousHost";
 let ID_COUNTER = 1;
 
-function ToolboxHostManager(commands, hostType, hostOptions) {
-  this.commands = commands;
+class ToolboxHostManager {
+  constructor(commands, hostType, hostOptions) {
+    this.commands = commands;
 
-  
-  
-  this.currentTab = this.commands.descriptorFront.localTab;
+    
+    
+    this.currentTab = this.commands.descriptorFront.localTab;
 
-  
-  
-  
-  
-  this.hostPerTab = new Map();
+    
+    
+    
+    
+    this.hostPerTab = new Map();
 
-  this.frameId = ID_COUNTER++;
+    this.frameId = ID_COUNTER++;
 
-  if (!hostType) {
-    hostType = Services.prefs.getCharPref(LAST_HOST);
-    if (!Hosts[hostType]) {
-      
-      Services.prefs.clearUserPref(LAST_HOST);
+    if (!hostType) {
       hostType = Services.prefs.getCharPref(LAST_HOST);
+      if (!Hosts[hostType]) {
+        
+        Services.prefs.clearUserPref(LAST_HOST);
+        hostType = Services.prefs.getCharPref(LAST_HOST);
+      }
     }
+    this.eventController = new AbortController();
+    this.host = this.createHost(hostType, hostOptions);
+    this.hostType = hostType;
+    
+    
+    this.collectPendingMessages = null;
+    this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
+    this._onMessage = this._onMessage.bind(this);
+    Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
   }
-  this.eventController = new AbortController();
-  this.host = this.createHost(hostType, hostOptions);
-  this.hostType = hostType;
-  
-  
-  this.collectPendingMessages = null;
-  this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
-  this._onMessage = this._onMessage.bind(this);
-  Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
-}
-
-ToolboxHostManager.prototype = {
   
 
 
@@ -130,7 +129,7 @@ ToolboxHostManager.prototype = {
 
     this.setMinWidthWithZoom();
     return toolbox;
-  },
+  }
 
   setMinWidthWithZoom() {
     const zoomValue = parseFloat(Services.prefs.getCharPref(ZOOM_VALUE_PREF));
@@ -153,7 +152,7 @@ ToolboxHostManager.prototype = {
       this.host.frame.style.minWidth =
         WIDTH_CHEVRON_AND_MEATBALL * zoomValue + "px";
     }
-  },
+  }
 
   _onToolboxDestroyed() {
     
@@ -162,7 +161,7 @@ ToolboxHostManager.prototype = {
     DevToolsUtils.executeSoon(() => {
       this.destroy();
     });
-  },
+  }
 
   _onMessage(event) {
     if (!event.data) {
@@ -195,12 +194,12 @@ ToolboxHostManager.prototype = {
         this.host.setTitle(msg.title);
         break;
     }
-  },
+  }
 
   postMessage(data) {
     const window = this.host.frame.contentWindow;
     window.postMessage(data, "*");
-  },
+  }
 
   destroy() {
     Services.prefs.removeObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
@@ -216,7 +215,7 @@ ToolboxHostManager.prototype = {
     this.host = null;
     this.hostType = null;
     this.commands = null;
-  },
+  }
 
   
 
@@ -237,7 +236,7 @@ ToolboxHostManager.prototype = {
     }
     const newHost = new Hosts[hostType](this.currentTab, options);
     return newHost;
-  },
+  }
 
   
 
@@ -326,7 +325,7 @@ ToolboxHostManager.prototype = {
       name: "switched-host",
       hostType,
     });
-  },
+  }
 
   
 
@@ -374,7 +373,7 @@ ToolboxHostManager.prototype = {
       name: "switched-host-to-tab",
       browsingContextID: tabBrowsingContextID,
     });
-  },
+  }
 
   
 
@@ -383,6 +382,7 @@ ToolboxHostManager.prototype = {
 
   destroyHost() {
     return this.host.destroy();
-  },
-};
+  }
+}
+
 exports.ToolboxHostManager = ToolboxHostManager;
