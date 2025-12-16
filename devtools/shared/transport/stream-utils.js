@@ -60,49 +60,49 @@ function copyStream(input, output, length) {
   return copier.copy();
 }
 
-function StreamCopier(input, output, length) {
-  EventEmitter.decorate(this);
-  this._id = StreamCopier._nextId++;
-  this.input = input;
-  
-  this.baseAsyncOutput = output;
-  if (IOUtil.outputStreamIsBuffered(output)) {
-    this.output = output;
-  } else {
-    this.output = Cc[
-      "@mozilla.org/network/buffered-output-stream;1"
-    ].createInstance(Ci.nsIBufferedOutputStream);
-    this.output.init(output, BUFFER_SIZE);
+class StreamCopier {
+  static _nextId = 0;
+
+  constructor(input, output, length) {
+    EventEmitter.decorate(this);
+    this._id = StreamCopier._nextId++;
+    this.input = input;
+    
+    this.baseAsyncOutput = output;
+    if (IOUtil.outputStreamIsBuffered(output)) {
+      this.output = output;
+    } else {
+      this.output = Cc[
+        "@mozilla.org/network/buffered-output-stream;1"
+      ].createInstance(Ci.nsIBufferedOutputStream);
+      this.output.init(output, BUFFER_SIZE);
+    }
+    this._length = length;
+    this._amountLeft = length;
+    let _resolve;
+    let _reject;
+    this._deferred = new Promise((resolve, reject) => {
+      _resolve = resolve;
+      _reject = reject;
+    });
+    this._deferred.resolve = _resolve;
+    this._deferred.reject = _reject;
+
+    this._copy = this._copy.bind(this);
+    this._flush = this._flush.bind(this);
+    this._destroy = this._destroy.bind(this);
+
+    
+    
+    
+    
+    this.then = this._deferred.then.bind(this._deferred);
+    this.then(this._destroy, this._destroy);
+
+    
+    
+    this._streamReadyCallback = this._copy;
   }
-  this._length = length;
-  this._amountLeft = length;
-  let _resolve;
-  let _reject;
-  this._deferred = new Promise((resolve, reject) => {
-    _resolve = resolve;
-    _reject = reject;
-  });
-  this._deferred.resolve = _resolve;
-  this._deferred.reject = _reject;
-
-  this._copy = this._copy.bind(this);
-  this._flush = this._flush.bind(this);
-  this._destroy = this._destroy.bind(this);
-
-  
-  
-  
-  
-  this.then = this._deferred.then.bind(this._deferred);
-  this.then(this._destroy, this._destroy);
-
-  
-  
-  this._streamReadyCallback = this._copy;
-}
-StreamCopier._nextId = 0;
-
-StreamCopier.prototype = {
   copy() {
     
     
@@ -114,7 +114,7 @@ StreamCopier.prototype = {
       }
     });
     return this;
-  },
+  }
 
   _copy() {
     const bytesAvailable = this.input.available();
@@ -146,14 +146,14 @@ StreamCopier.prototype = {
 
     this._debug("Waiting for input stream");
     this.input.asyncWait(this, 0, 0, Services.tm.currentThread);
-  },
+  }
 
   _emitProgress() {
     this.emit("progress", {
       bytesSent: this._length - this._amountLeft,
       totalBytes: this._length,
     });
-  },
+  }
 
   _flush() {
     try {
@@ -172,7 +172,7 @@ StreamCopier.prototype = {
       throw e;
     }
     this._deferred.resolve();
-  },
+  }
 
   _destroy() {
     this._destroy = null;
@@ -180,24 +180,24 @@ StreamCopier.prototype = {
     this._flush = null;
     this.input = null;
     this.output = null;
-  },
+  }
 
   
   onInputStreamReady() {
     this._streamReadyCallback();
-  },
+  }
 
   
   onOutputStreamReady() {
     this._streamReadyCallback();
-  },
+  }
 
   _debug(msg) {
     
     
     dumpv("Copier: " + this._id + " " + msg);
-  },
-};
+  }
+}
 
 
 
