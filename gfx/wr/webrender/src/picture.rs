@@ -94,25 +94,23 @@
 
 
 
-use api::{MixBlendMode, PremultipliedColorF, SVGFE_GRAPH_MAX};
-use api::{FilterOpGraphPictureBufferId, RasterSpace};
+use api::{MixBlendMode, PremultipliedColorF, RasterSpace};
 use api::{DebugFlags, ColorF, PrimitiveFlags, SnapshotInfo};
 use api::units::*;
 use crate::prim_store::image::AdjustedImageSource;
 use crate::{command_buffer::PrimitiveCommand, render_task_graph::RenderTaskGraphBuilder, renderer::GpuBufferBuilderF};
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipNodeId, ClipTreeBuilder};
-use crate::profiler::add_text_marker;
 use crate::spatial_tree::{SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::composite::{tile_kind, CompositeState, CompositeTileSurface, CompositorKind, NativeTileId};
 use crate::composite::{CompositeTileDescriptor, CompositeTile};
 use crate::debug_colors;
 use euclid::{vec3, Scale, Vector2D, Box2D};
-use crate::internal_types::{FastHashMap, PlaneSplitter, FilterGraphOp, FilterGraphNode, Filter};
+use crate::internal_types::{FastHashMap, PlaneSplitter, Filter};
 use crate::internal_types::{PlaneSplitterIndex, PlaneSplitAnchor, TextureSource};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
 use crate::gpu_types::{BlurEdgeMode, BrushSegmentGpuData, ImageBrushPrimitiveData};
-
+use crate::svg_filter::{FilterGraphOp, FilterGraphNode, get_coverage_source_svgfe, get_coverage_target_svgfe};
 use plane_split::{Clipper, Polygon};
 use crate::prim_store::{PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
 use crate::prim_store::PrimitiveScratchBuffer;
@@ -142,7 +140,6 @@ use crate::tile_cache::{BackdropKind, BackdropSurface, Tile};
 use crate::tile_cache::{TileKey, SubSliceIndex};
 use crate::invalidation::InvalidationReason;
 use crate::tile_cache::MAX_SURFACE_SIZE;
-use core::time::Duration;
 
 pub use crate::invalidation::DirtyRegion;
 pub use crate::invalidation::dependency::ImageDependency;
@@ -344,7 +341,7 @@ impl PictureCompositeMode {
                 
                 
                 
-                self.get_coverage_target_svgfe(filters, surface_rect.cast_unit())
+                get_coverage_target_svgfe(filters, surface_rect.cast_unit())
             }
             _ => {
                 surface_rect
@@ -397,8 +394,8 @@ impl PictureCompositeMode {
             PictureCompositeMode::SVGFEGraph(ref filters) => {
                 
                 
-                let target_subregion = self.get_coverage_source_svgfe(filters, surface_rect.cast());
-                let source_subregion = self.get_coverage_target_svgfe(filters, surface_rect.cast());
+                let target_subregion = get_coverage_source_svgfe(filters, surface_rect.cast());
+                let source_subregion = get_coverage_target_svgfe(filters, surface_rect.cast());
                 target_subregion.union(&source_subregion)
             }
             _ => {
@@ -435,288 +432,6 @@ impl PictureCompositeMode {
             PictureCompositeMode::Filter(Filter::SrgbToLinear) => "Filter::SrgbToLinear",
             PictureCompositeMode::Filter(Filter::SVGGraphNode(..)) => "Filter::SVGGraphNode",
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_coverage_target_svgfe(
-        &self,
-        filters: &[(FilterGraphNode, FilterGraphOp)],
-        surface_rect: LayoutRect,
-    ) -> LayoutRect {
-
-        
-        
-        const BUFFER_LIMIT: usize = SVGFE_GRAPH_MAX;
-
-        
-        
-        let mut subregion_by_buffer_id: [LayoutRect; BUFFER_LIMIT] = [LayoutRect::zero(); BUFFER_LIMIT];
-        for (id, (node, op)) in filters.iter().enumerate() {
-            let full_subregion = node.subregion;
-            let mut used_subregion = LayoutRect::zero();
-            for input in &node.inputs {
-                match input.buffer_id {
-                    FilterOpGraphPictureBufferId::BufferId(id) => {
-                        assert!((id as usize) < BUFFER_LIMIT, "BUFFER_LIMIT must be the same in frame building and scene building");
-                        
-                        let input_subregion = subregion_by_buffer_id[id as usize];
-                        
-                        
-                        
-                        let input_subregion =
-                            LayoutRect::new(
-                                LayoutPoint::new(
-                                    input_subregion.min.x + input.target_padding.min.x,
-                                    input_subregion.min.y + input.target_padding.min.y,
-                                ),
-                                LayoutPoint::new(
-                                    input_subregion.max.x + input.target_padding.max.x,
-                                    input_subregion.max.y + input.target_padding.max.y,
-                                ),
-                            );
-                        used_subregion = used_subregion
-                            .union(&input_subregion);
-                    }
-                    FilterOpGraphPictureBufferId::None => {
-                        panic!("Unsupported BufferId type");
-                    }
-                }
-            }
-            
-            used_subregion = used_subregion
-                .intersection(&full_subregion)
-                .unwrap_or(LayoutRect::zero());
-            match op {
-                FilterGraphOp::SVGFEBlendColor => {}
-                FilterGraphOp::SVGFEBlendColorBurn => {}
-                FilterGraphOp::SVGFEBlendColorDodge => {}
-                FilterGraphOp::SVGFEBlendDarken => {}
-                FilterGraphOp::SVGFEBlendDifference => {}
-                FilterGraphOp::SVGFEBlendExclusion => {}
-                FilterGraphOp::SVGFEBlendHardLight => {}
-                FilterGraphOp::SVGFEBlendHue => {}
-                FilterGraphOp::SVGFEBlendLighten => {}
-                FilterGraphOp::SVGFEBlendLuminosity => {}
-                FilterGraphOp::SVGFEBlendMultiply => {}
-                FilterGraphOp::SVGFEBlendNormal => {}
-                FilterGraphOp::SVGFEBlendOverlay => {}
-                FilterGraphOp::SVGFEBlendSaturation => {}
-                FilterGraphOp::SVGFEBlendScreen => {}
-                FilterGraphOp::SVGFEBlendSoftLight => {}
-                FilterGraphOp::SVGFEColorMatrix { values } => {
-                    if values[19] > 0.0 {
-                        
-                        
-                        used_subregion = full_subregion;
-                        add_text_marker(
-                            "SVGFEColorMatrix",
-                            "SVGFEColorMatrix with non-zero alpha offset, using full subregion",
-                            Duration::from_millis(1));
-                    }
-                }
-                FilterGraphOp::SVGFEComponentTransfer => unreachable!(),
-                FilterGraphOp::SVGFEComponentTransferInterned{handle: _, creates_pixels} => {
-                    
-                    
-                    
-                    if *creates_pixels {
-                        used_subregion = full_subregion;
-                        add_text_marker(
-                            "SVGFEComponentTransfer",
-                            "SVGFEComponentTransfer with non-zero minimum alpha, using full subregion",
-                            Duration::from_millis(1));
-                    }
-                }
-                FilterGraphOp::SVGFECompositeArithmetic { k1, k2, k3, k4 } => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    if *k1 <= 0.0 &&
-                        *k2 <= 0.0 &&
-                        *k3 <= 0.0 {
-                        used_subregion = LayoutRect::zero();
-                    }
-                    
-                    
-                    if *k4 > 0.0 {
-                        used_subregion = full_subregion;
-                        add_text_marker(
-                            "SVGFECompositeArithmetic",
-                            "SVGFECompositeArithmetic with non-zero offset, using full subregion",
-                            Duration::from_millis(1));
-                    }
-                }
-                FilterGraphOp::SVGFECompositeATop => {}
-                FilterGraphOp::SVGFECompositeIn => {}
-                FilterGraphOp::SVGFECompositeLighter => {}
-                FilterGraphOp::SVGFECompositeOut => {}
-                FilterGraphOp::SVGFECompositeOver => {}
-                FilterGraphOp::SVGFECompositeXOR => {}
-                FilterGraphOp::SVGFEConvolveMatrixEdgeModeDuplicate{..} => {}
-                FilterGraphOp::SVGFEConvolveMatrixEdgeModeNone{..} => {}
-                FilterGraphOp::SVGFEConvolveMatrixEdgeModeWrap{..} => {}
-                FilterGraphOp::SVGFEDiffuseLightingDistant{..} => {}
-                FilterGraphOp::SVGFEDiffuseLightingPoint{..} => {}
-                FilterGraphOp::SVGFEDiffuseLightingSpot{..} => {}
-                FilterGraphOp::SVGFEDisplacementMap{..} => {}
-                FilterGraphOp::SVGFEDropShadow{..} => {}
-                FilterGraphOp::SVGFEFlood { color } => {
-                    
-                    
-                    if color.a > 0.0 {
-                        used_subregion = full_subregion;
-                    }
-                }
-                FilterGraphOp::SVGFEGaussianBlur{..} => {}
-                FilterGraphOp::SVGFEIdentity => {}
-                FilterGraphOp::SVGFEImage { sampling_filter: _sampling_filter, matrix: _matrix } => {
-                    
-                    used_subregion = full_subregion;
-                }
-                FilterGraphOp::SVGFEMorphologyDilate{..} => {}
-                FilterGraphOp::SVGFEMorphologyErode{..} => {}
-                FilterGraphOp::SVGFEOpacity { valuebinding: _valuebinding, value } => {
-                    
-                    if *value <= 0.0 {
-                        used_subregion = LayoutRect::zero();
-                    }
-                }
-                FilterGraphOp::SVGFESourceAlpha |
-                FilterGraphOp::SVGFESourceGraphic => {
-                    used_subregion = surface_rect;
-                }
-                FilterGraphOp::SVGFESpecularLightingDistant{..} => {}
-                FilterGraphOp::SVGFESpecularLightingPoint{..} => {}
-                FilterGraphOp::SVGFESpecularLightingSpot{..} => {}
-                FilterGraphOp::SVGFETile => {
-                    
-                    
-                    used_subregion = full_subregion;
-                }
-                FilterGraphOp::SVGFEToAlpha => {}
-                FilterGraphOp::SVGFETurbulenceWithFractalNoiseWithNoStitching{..} |
-                FilterGraphOp::SVGFETurbulenceWithFractalNoiseWithStitching{..} |
-                FilterGraphOp::SVGFETurbulenceWithTurbulenceNoiseWithNoStitching{..} |
-                FilterGraphOp::SVGFETurbulenceWithTurbulenceNoiseWithStitching{..} => {
-                    
-                    
-                    used_subregion = full_subregion;
-                }
-            }
-            
-            
-            assert!((id as usize) < BUFFER_LIMIT, "BUFFER_LIMIT must be the same in frame building and scene building");
-            subregion_by_buffer_id[id] = used_subregion;
-        }
-        subregion_by_buffer_id[filters.len() - 1]
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_coverage_source_svgfe(
-        &self,
-        filters: &[(FilterGraphNode, FilterGraphOp)],
-        surface_rect: LayoutRect,
-    ) -> LayoutRect {
-
-        
-        
-        const BUFFER_LIMIT: usize = SVGFE_GRAPH_MAX;
-
-        
-        
-        
-        
-        
-        
-        let mut source_subregion = LayoutRect::zero();
-        let mut subregion_by_buffer_id: [LayoutRect; BUFFER_LIMIT] =
-        [LayoutRect::zero(); BUFFER_LIMIT];
-        let final_buffer_id = filters.len() - 1;
-        assert!(final_buffer_id < BUFFER_LIMIT, "BUFFER_LIMIT must be the same in frame building and scene building");
-        subregion_by_buffer_id[final_buffer_id] = surface_rect;
-        for (node_buffer_id, (node, op)) in filters.iter().enumerate().rev() {
-            
-            
-            
-            assert!(node_buffer_id < BUFFER_LIMIT, "BUFFER_LIMIT must be the same in frame building and scene building");
-            let full_subregion = node.subregion;
-            let mut used_subregion =
-                subregion_by_buffer_id[node_buffer_id];
-            
-            
-            used_subregion = used_subregion
-                .intersection(&full_subregion)
-                .unwrap_or(LayoutRect::zero());
-            if !used_subregion.is_empty() {
-                for input in &node.inputs {
-                    let input_subregion = LayoutRect::new(
-                        LayoutPoint::new(
-                            used_subregion.min.x + input.source_padding.min.x,
-                            used_subregion.min.y + input.source_padding.min.y,
-                        ),
-                        LayoutPoint::new(
-                            used_subregion.max.x + input.source_padding.max.x,
-                            used_subregion.max.y + input.source_padding.max.y,
-                        ),
-                    );
-                    match input.buffer_id {
-                        FilterOpGraphPictureBufferId::BufferId(id) => {
-                            
-                            
-                            
-                            subregion_by_buffer_id[id as usize] =
-                                subregion_by_buffer_id[id as usize]
-                                .union(&input_subregion);
-                        }
-                        FilterOpGraphPictureBufferId::None => {}
-                    }
-                }
-            }
-            
-            
-            
-            match op {
-                FilterGraphOp::SVGFESourceAlpha |
-                FilterGraphOp::SVGFESourceGraphic => {
-                    source_subregion = source_subregion.union(&used_subregion);
-                }
-                _ => {}
-            }
-        }
-
-        
-        
-        source_subregion
     }
 }
 
