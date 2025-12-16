@@ -82,16 +82,27 @@ impl ColorInterpolationMethod {
     }
 
     
+    pub fn is_default(&self) -> bool {
+        self.space == ColorSpace::Oklab
+    }
+
+    
     
     pub fn best_interpolation_between(left: &AbsoluteColor, right: &AbsoluteColor) -> Self {
         
         
         
         if !left.is_legacy_syntax() || !right.is_legacy_syntax() {
-            Self::oklab()
+            Self::default()
         } else {
             Self::srgb()
         }
+    }
+}
+
+impl Default for ColorInterpolationMethod {
+    fn default() -> Self {
+        Self::oklab()
     }
 }
 
