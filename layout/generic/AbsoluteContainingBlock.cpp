@@ -1209,27 +1209,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                                      aAnchorPosResolutionCache,
                                      firstTryIndex == currentFallbackIndex);
     auto cb = [&]() {
-      if (isGrid) {
-        
-        const auto border = aDelegatingFrame->GetUsedBorder();
-        const nsPoint borderShift{border.left, border.top};
-        
-        return ContainingBlockRect{nsGridContainerFrame::GridItemCB(aKidFrame) +
-                                   borderShift};
-      }
-
-      auto positionArea = aKidFrame->StylePosition()->mPositionArea;
-      if (currentFallback && currentFallback->IsPositionArea()) {
-        MOZ_ASSERT(currentFallback->IsPositionArea());
-        positionArea = currentFallback->AsPositionArea();
-      }
-
       if (aAnchorPosResolutionCache) {
         const auto defaultAnchorInfo =
             AnchorPositioningUtils::ResolveAnchorPosRect(
                 aKidFrame, aDelegatingFrame, nullptr, false,
                 aAnchorPosResolutionCache);
         if (defaultAnchorInfo) {
+          auto positionArea = aKidFrame->StylePosition()->mPositionArea;
           if (!positionArea.IsNone()) {
             
             
@@ -1258,6 +1244,16 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
           }
           return ContainingBlockRect{aOriginalScrollableContainingBlockRect};
         }
+      }
+
+      if (isGrid) {
+        
+        
+        const auto border = aDelegatingFrame->GetUsedBorder();
+        const nsPoint borderShift{border.left, border.top};
+        
+        return ContainingBlockRect{nsGridContainerFrame::GridItemCB(aKidFrame) +
+                                   borderShift};
       }
 
       if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
