@@ -1469,6 +1469,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
                             mNavigation->mOngoingAPIMethodTracker);
       
       mAPIMethodTracker->CleanUp();
+      mNavigation->mOngoingNavigateEvent = nullptr;
     } else {
       
       
