@@ -53,6 +53,19 @@ extern bool ToAddressType(JSContext* cx, HandleValue value,
 
 extern const char* ToString(AddressType addressType);
 
+static constexpr unsigned PageSizeInBytes(PageSize sz) {
+  return 1U << static_cast<uint8_t>(sz);
+}
+
+static constexpr unsigned StandardPageSizeBytes =
+    PageSizeInBytes(PageSize::Standard);
+static_assert(StandardPageSizeBytes == 64 * 1024);
+
+
+
+static_assert((StandardPageSizeBytes * MaxMemory64PagesValidation) <=
+              (uint64_t(1) << 53) - 1);
+
 
 
 
@@ -83,15 +96,15 @@ struct Pages {
   
   
   static Pages fromByteLengthExact(size_t byteLength) {
-    MOZ_ASSERT(byteLength % StandardPageSize == 0);
-    return Pages(byteLength / StandardPageSize);
+    MOZ_ASSERT(byteLength % StandardPageSizeBytes == 0);
+    return Pages(byteLength / StandardPageSizeBytes);
   }
 
   
   
   bool hasByteLength() const {
     mozilla::CheckedInt<size_t> length(value_);
-    length *= StandardPageSize;
+    length *= StandardPageSizeBytes;
     return length.isValid();
   }
 
@@ -99,14 +112,14 @@ struct Pages {
   
   size_t byteLength() const {
     mozilla::CheckedInt<size_t> length(value_);
-    length *= StandardPageSize;
+    length *= StandardPageSizeBytes;
     return length.value();
   }
 
   
   uint64_t byteLength64() const {
     mozilla::CheckedInt<uint64_t> length(value_);
-    length *= StandardPageSize;
+    length *= StandardPageSizeBytes;
     return length.value();
   }
 
@@ -183,7 +196,7 @@ static const uint64_t HugeIndexRange = uint64_t(UINT32_MAX) + 1;
 
 static const uint64_t HugeOffsetGuardLimit = 1 << 25;
 
-static const uint64_t HugeUnalignedGuardPage = StandardPageSize;
+static const uint64_t HugeUnalignedGuardPage = StandardPageSizeBytes;
 
 
 static const uint64_t HugeMappedSize =
@@ -191,12 +204,12 @@ static const uint64_t HugeMappedSize =
 
 
 
-static_assert(HugeMappedSize % StandardPageSize == 0);
+static_assert(HugeMappedSize % StandardPageSizeBytes == 0);
 
 #endif
 
 
-static const size_t GuardSize = StandardPageSize;
+static const size_t GuardSize = StandardPageSizeBytes;
 
 
 

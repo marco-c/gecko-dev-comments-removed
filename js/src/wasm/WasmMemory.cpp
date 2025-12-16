@@ -291,7 +291,8 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
 
 
 
-static const size_t OffsetGuardLimit = StandardPageSize - MaxMemoryAccessSize;
+static const size_t OffsetGuardLimit =
+    StandardPageSizeBytes - MaxMemoryAccessSize;
 
 static_assert(MaxMemoryAccessSize < GuardSize,
               "Guard page handles partial out-of-bounds");
@@ -317,15 +318,15 @@ wasm::Pages wasm::MaxMemoryPages(AddressType t) {
   MOZ_ASSERT_IF(t == AddressType::I64, !IsHugeMemoryEnabled(t));
   size_t desired = MaxMemoryPagesValidation(t);
   constexpr size_t actual =
-      ArrayBufferObject::ByteLengthLimit / StandardPageSize;
+      ArrayBufferObject::ByteLengthLimit / StandardPageSizeBytes;
   return wasm::Pages(std::min(desired, actual));
 #else
   
   
   
   static_assert(ArrayBufferObject::ByteLengthLimit >=
-                INT32_MAX / StandardPageSize);
-  return wasm::Pages(INT32_MAX / StandardPageSize);
+                INT32_MAX / StandardPageSizeBytes);
+  return wasm::Pages(INT32_MAX / StandardPageSizeBytes);
 #endif
 }
 
@@ -351,7 +352,8 @@ Pages wasm::ClampedMaxPages(AddressType t, Pages initialPages,
     
     
     static const uint64_t OneGib = 1 << 30;
-    static const Pages OneGibPages = Pages(OneGib / wasm::StandardPageSize);
+    static const Pages OneGibPages =
+        Pages(OneGib / wasm::StandardPageSizeBytes);
 
     Pages clampedPages = std::max(OneGibPages, initialPages);
     clampedMaxPages = std::min(clampedPages, clampedMaxPages);
