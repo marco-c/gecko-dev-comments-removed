@@ -21,10 +21,7 @@ async function test_blankPage(
   header = "show" 
 ) {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.http.blank_page_with_error_response.enabled", false],
-      ["browser.urlbar.trustPanel.featureGate", false],
-    ],
+    set: [["browser.http.blank_page_with_error_response.enabled", false]],
   });
 
   let browser;
