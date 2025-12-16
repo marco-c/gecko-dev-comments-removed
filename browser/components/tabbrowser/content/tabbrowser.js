@@ -3238,7 +3238,7 @@
         return null;
       }
 
-      this.dispatchEvent(
+      this.tabContainer.dispatchEvent(
         new CustomEvent("SplitViewCreated", {
           bubbles: true,
         })
@@ -3265,6 +3265,7 @@
           )
         );
       }
+
       splitview.remove();
     }
 
@@ -3302,12 +3303,14 @@
 
     #insertSplitViewFooter(tab) {
       const panelEl = document.getElementById(tab.linkedPanel);
-      if (panelEl.querySelector("split-view-footer")) {
+      if (panelEl?.querySelector("split-view-footer")) {
         return;
       }
-      const footer = document.createXULElement("split-view-footer");
-      footer.setTab(tab);
-      panelEl.appendChild(footer);
+      if (panelEl) {
+        const footer = document.createXULElement("split-view-footer");
+        footer.setTab(tab);
+        panelEl.appendChild(footer);
+      }
     }
 
     openSplitViewMenu(anchorElement) {
@@ -10261,7 +10264,7 @@ var TabContextMenu = {
     let newTab = null;
     if (this.contextTabs.length < 2) {
       
-      newTab = gBrowser.addTrustedTab(BROWSER_NEW_TAB_URL);
+      newTab = gBrowser.addTrustedTab("about:opentabs");
       tabsToAdd = [this.contextTabs[0], newTab];
     }
 
