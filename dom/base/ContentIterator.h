@@ -41,6 +41,12 @@ class ContentIteratorBase {
 
   [[nodiscard]] virtual nsresult Init(nsINode* aRoot);
 
+  
+
+
+
+
+
   [[nodiscard]] virtual nsresult Init(dom::AbstractRange* aRange);
   [[nodiscard]] virtual nsresult Init(nsINode* aStartContainer,
                                       uint32_t aStartOffset,
@@ -251,9 +257,13 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
   
 
 
-  [[nodiscard]] virtual nsresult Init(nsINode* aRoot) override;
+  [[nodiscard]] nsresult Init(nsINode* aRoot) override;
 
-  [[nodiscard]] virtual nsresult Init(dom::AbstractRange* aRange) override;
+  
+
+
+
+  [[nodiscard]] nsresult Init(dom::AbstractRange* aRange) override;
 
   
 
@@ -276,15 +286,25 @@ class ContentSubtreeIterator final : public SafeContentIteratorBase {
 
 
 
+
+
+
+
+
   [[nodiscard]] nsresult InitWithAllowCrossShadowBoundary(
       dom::AbstractRange* aRange);
-  [[nodiscard]] virtual nsresult Init(nsINode* aStartContainer,
-                                      uint32_t aStartOffset,
-                                      nsINode* aEndContainer,
-                                      uint32_t aEndOffset) override;
-  [[nodiscard]] virtual nsresult Init(
-      const RawRangeBoundary& aStartBoundary,
-      const RawRangeBoundary& aEndBoundary) override;
+
+  [[nodiscard]] nsresult Init(nsINode* aStartContainer, uint32_t aStartOffset,
+                              nsINode* aEndContainer,
+                              uint32_t aEndOffset) override;
+  [[nodiscard]] nsresult Init(const RawRangeBoundary& aStartBoundary,
+                              const RawRangeBoundary& aEndBoundary) override;
+  [[nodiscard]] nsresult InitWithoutValidatingPoints(
+      const RawRangeBoundary& aStart, const RawRangeBoundary& aEnd) override {
+    
+    
+    return Init(aStart, aEnd);
+  }
 
   void Next() override;
   void Prev() override;
