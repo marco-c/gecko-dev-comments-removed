@@ -1741,10 +1741,18 @@ impl TileCacheInstance {
                 
                 
                 
-                frame_state.composite_state.destroy_native_tiles(
-                    old_tiles.values_mut(),
-                    frame_state.resource_cache,
-                );
+                if let CompositorKind::Native { .. } = frame_state.composite_state.compositor_kind {
+                    for tile in old_tiles.values_mut() {
+                        
+                        
+                        
+                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
+                            if let Some(id) = id.take() {
+                                frame_state.resource_cache.destroy_compositor_tile(id);
+                            }
+                        }
+                    }
+                }
             }
         }
 
