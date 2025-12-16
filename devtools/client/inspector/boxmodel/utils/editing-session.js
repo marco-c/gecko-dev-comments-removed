@@ -9,6 +9,8 @@
 
 
 
+class EditingSession {
+  
 
 
 
@@ -18,14 +20,13 @@
 
 
 
-function EditingSession({ inspector, doc, elementRules }) {
-  this._doc = doc;
-  this._inspector = inspector;
-  this._rules = elementRules;
-  this._modifications = new Map();
-}
 
-EditingSession.prototype = {
+  constructor({ inspector, doc, elementRules }) {
+    this._doc = doc;
+    this._inspector = inspector;
+    this._rules = elementRules;
+    this._modifications = new Map();
+  }
   
 
 
@@ -46,7 +47,7 @@ EditingSession.prototype = {
     const dummyStyle = this._element.style;
     dummyStyle.cssText = rule.cssText;
     return dummyStyle.getPropertyValue(property);
-  },
+  }
 
   
 
@@ -74,7 +75,7 @@ EditingSession.prototype = {
     }
     div.remove();
     return "";
-  },
+  }
 
   
 
@@ -92,7 +93,7 @@ EditingSession.prototype = {
     }
 
     return rule.declarations.findIndex(p => p.name === name);
-  },
+  }
 
   
 
@@ -137,7 +138,7 @@ EditingSession.prototype = {
 
       await modifications.apply();
     }
-  },
+  }
 
   
 
@@ -174,7 +175,7 @@ EditingSession.prototype = {
 
       await modifications.apply();
     }
-  },
+  }
 
   destroy() {
     this._modifications.clear();
@@ -184,7 +185,7 @@ EditingSession.prototype = {
     this._inspector = null;
     this._modifications = null;
     this._rules = null;
-  },
-};
+  }
+}
 
 module.exports = EditingSession;
