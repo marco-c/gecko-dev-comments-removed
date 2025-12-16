@@ -251,8 +251,9 @@ class EchoCanceller3Tester {
   
   void RunCaptureTransportVerificationTest() {
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
     aec3.SetBlockProcessorForTesting(
         std::make_unique<CaptureTransportVerificationProcessor>(num_bands_));
 
@@ -277,8 +278,9 @@ class EchoCanceller3Tester {
   
   void RunRenderTransportVerificationTest() {
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
     aec3.SetBlockProcessorForTesting(
         std::make_unique<RenderTransportVerificationProcessor>(num_bands_));
 
@@ -347,8 +349,9 @@ class EchoCanceller3Tester {
     }
 
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
     aec3.SetBlockProcessorForTesting(std::move(block_processor_mock));
 
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
@@ -428,8 +431,9 @@ class EchoCanceller3Tester {
     }
 
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
     aec3.SetBlockProcessorForTesting(std::move(block_processor_mock));
 
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
@@ -515,8 +519,9 @@ class EchoCanceller3Tester {
     }
 
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
     aec3.SetBlockProcessorForTesting(std::move(block_processor_mock));
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
          ++frame_index) {
@@ -556,8 +561,9 @@ class EchoCanceller3Tester {
   void RunRenderSwapQueueVerificationTest() {
     const EchoCanceller3Config config;
     EchoCanceller3 aec3(CreateEnvironment(), config,
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
     aec3.SetBlockProcessorForTesting(
         std::make_unique<RenderTransportVerificationProcessor>(num_bands_));
 
@@ -606,8 +612,9 @@ class EchoCanceller3Tester {
   
   void RunRenderPipelineSwapQueueOverrunReturnValueTest() {
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
-                        std::nullopt, sample_rate_hz_,
-                        1, 1);
+                        std::nullopt,
+                        nullptr,
+                        sample_rate_hz_, 1, 1);
 
     constexpr size_t kRenderTransferQueueSize = 30;
     for (size_t k = 0; k < 2; ++k) {
@@ -634,6 +641,7 @@ class EchoCanceller3Tester {
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
                         std::nullopt,
+                        nullptr,
                         aec3_sample_rate_hz, 1, 1);
     PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
 
@@ -649,6 +657,7 @@ class EchoCanceller3Tester {
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
     EchoCanceller3 aec3(CreateEnvironment(), EchoCanceller3Config(),
                         std::nullopt,
+                        nullptr,
                         aec3_sample_rate_hz, 1, 1);
     PopulateInputFrame(frame_length_, num_bands_, 0,
                        &capture_buffer_.split_bands_f(0)[0], 100);
@@ -972,6 +981,7 @@ TEST(EchoCanceller3, DetectionOfProperStereo) {
       kNumBlocksForSurroundConfig;
 
   EchoCanceller3 aec3(CreateEnvironment(), mono_config, multichannel_config,
+                      nullptr,
                       kSampleRateHz,
                       kNumChannels,
                       kNumChannels);
@@ -1020,6 +1030,7 @@ TEST(EchoCanceller3, DetectionOfProperStereoUsingThreshold) {
       kNumBlocksForSurroundConfig;
 
   EchoCanceller3 aec3(CreateEnvironment(), mono_config, multichannel_config,
+                      nullptr,
                       kSampleRateHz,
                       kNumChannels,
                       kNumChannels);
@@ -1067,6 +1078,7 @@ TEST(EchoCanceller3, DetectionOfProperStereoUsingHysteresis) {
       kNumBlocksForSurroundConfig;
 
   EchoCanceller3 aec3(CreateEnvironment(), mono_config, surround_config,
+                      nullptr,
                       kSampleRateHz,
                       kNumChannels,
                       kNumChannels);
@@ -1133,6 +1145,7 @@ TEST(EchoCanceller3, StereoContentDetectionForMonoSignals) {
                             1);
 
     EchoCanceller3 aec3(env, mono_config, multichannel_config,
+                        nullptr,
                         kSampleRateHz,
                         1,
                         1);
@@ -1150,6 +1163,59 @@ TEST(EchoCanceller3, StereoContentDetectionForMonoSignals) {
   }
 }
 
+TEST(EchoCanceller3, InjectedNeuralResidualEchoEstimatorIsUsed) {
+  class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
+   public:
+    NeuralResidualEchoEstimatorImpl() {}
+
+    void Estimate(ArrayView<const float> render,
+                  ArrayView<const std::array<float, 64>> capture,
+                  ArrayView<const std::array<float, 64>> linear_aec_output,
+                  ArrayView<const std::array<float, 65>> S2_linear,
+                  ArrayView<const std::array<float, 65>> Y2,
+                  ArrayView<const std::array<float, 65>> E2,
+                  ArrayView<std::array<float, 65>> R2,
+                  ArrayView<std::array<float, 65>> R2_unbounded) override {
+      residual_echo_estimate_requested_ = true;
+      for (auto& R2_ch : R2) {
+        R2_ch.fill(0.0f);
+      }
+      for (auto& R2_ch : R2_unbounded) {
+        R2_ch.fill(0.0f);
+      }
+    }
+    bool residual_echo_estimate_requested() const {
+      return residual_echo_estimate_requested_;
+    }
+
+   private:
+    bool residual_echo_estimate_requested_ = false;
+  };
+
+  constexpr int kSampleRateHz = 16000;
+  constexpr int kNumChannels = 1;
+  NeuralResidualEchoEstimatorImpl neural_residual_echo_estimator;
+  const Environment env = CreateEnvironment();
+  EchoCanceller3Config config;
+  AudioBuffer buffer(kSampleRateHz,
+                     kNumChannels,
+                     kSampleRateHz,
+                     kNumChannels,
+                     kSampleRateHz,
+                     kNumChannels);
+  EchoCanceller3 aec3(env, config, std::nullopt,
+                      &neural_residual_echo_estimator,
+                      kSampleRateHz,
+                      kNumChannels,
+                      kNumChannels);
+  constexpr int kNumFramesToProcess = 300;
+  for (int k = 0; k < kNumFramesToProcess; ++k) {
+    RunAecInSMono(buffer, aec3, k);
+  }
+  EXPECT_TRUE(
+      neural_residual_echo_estimator.residual_echo_estimate_requested());
+}
+
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 TEST(EchoCanceller3InputCheckDeathTest, WrongCaptureNumBandsCheckVerification) {
@@ -1164,7 +1230,8 @@ TEST(EchoCanceller3InputCheckDeathTest, WrongCaptureNumBandsCheckVerification) {
 TEST(EchoCanceller3InputCheckDeathTest, NullCaptureProcessingParameter) {
   EXPECT_DEATH(
       EchoCanceller3(CreateEnvironment(), EchoCanceller3Config(),
-                     std::nullopt, 16000, 1, 1)
+                     std::nullopt,
+                     nullptr, 16000, 1, 1)
           .ProcessCapture(nullptr, false),
       "");
 }
@@ -1176,7 +1243,8 @@ TEST(EchoCanceller3InputCheckDeathTest, DISABLED_WrongSampleRate) {
   ApmDataDumper data_dumper(0);
   EXPECT_DEATH(
       EchoCanceller3(CreateEnvironment(), EchoCanceller3Config(),
-                     std::nullopt, 8001, 1, 1),
+                     std::nullopt,
+                     nullptr, 8001, 1, 1),
       "");
 }
 

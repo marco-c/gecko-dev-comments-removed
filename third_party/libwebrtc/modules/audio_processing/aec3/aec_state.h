@@ -157,6 +157,10 @@ class AecState {
     return filter_analyzer_.FilterLengthBlocks();
   }
 
+  std::optional<DelayEstimate> ExternalDelayBlocks() const {
+    return delay_state_.ExternalDelayBlocks();
+  }
+
  private:
   static std::atomic<int> instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
@@ -201,7 +205,13 @@ class AecState {
 
     
     
-    bool ExternalDelayReported() const { return external_delay_reported_; }
+    bool ExternalDelayReported() const { return external_delay_.has_value(); }
+
+    
+    
+    std::optional<DelayEstimate> ExternalDelayBlocks() const {
+      return external_delay_;
+    }
 
     
     
@@ -220,7 +230,6 @@ class AecState {
 
    private:
     const int delay_headroom_blocks_;
-    bool external_delay_reported_ = false;
     std::vector<int> filter_delays_blocks_;
     int min_filter_delay_;
     std::optional<DelayEstimate> external_delay_;
