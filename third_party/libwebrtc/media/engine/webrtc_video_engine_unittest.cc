@@ -991,7 +991,8 @@ WebRtcVideoEngineTest::SetRecvParamsWithAllSupportedCodecs() {
 void WebRtcVideoEngineTest::ExpectRtpCapabilitySupport(const char* uri,
                                                        bool supported) const {
   const std::vector<RtpExtension> header_extensions =
-      GetDefaultEnabledRtpHeaderExtensions(engine_);
+      GetDefaultEnabledRtpHeaderExtensions(engine_,
+                                            nullptr);
   if (supported) {
     EXPECT_THAT(header_extensions, Contains(Field(&RtpExtension::uri, uri)));
   } else {

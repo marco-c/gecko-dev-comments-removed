@@ -120,8 +120,8 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   AudioDecoderFactory* decoder_factory() const override {
     return decoder_factory_.get();
   }
-  std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions()
-      const override;
+  std::vector<RtpHeaderExtensionCapability> GetRtpHeaderExtensions(
+      const webrtc::FieldTrialsView* field_trials) const override;
 
   
   
