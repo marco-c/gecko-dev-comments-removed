@@ -2085,13 +2085,7 @@ void PeerConnection::OnIceCandidatesRemoved(
     return;
   }
 
-  for (Candidate candidate : candidates) {  
-    
-    
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    candidate.set_transport_name(mid);
-#pragma clang diagnostic pop
+  for (const Candidate& candidate : candidates) {
     IceCandidate c(mid, -1, candidate);
     RunWithObserver([&](auto o) { o->OnIceCandidateRemoved(&c); });
   }
