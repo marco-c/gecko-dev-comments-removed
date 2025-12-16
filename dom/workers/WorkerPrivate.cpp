@@ -4774,6 +4774,7 @@ bool WorkerPrivate::FreezeInternal() {
       data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
   if (timeoutManager) {
     timeoutManager->Suspend();
+    timeoutManager->Freeze();
   }
 
   return true;
@@ -4794,21 +4795,22 @@ bool WorkerPrivate::ThawInternal() {
 
   
 
-  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
-    data->mChildWorkers[index]->Thaw(nullptr);
-  }
-
   data->mFrozen = false;
-
-  
-  if (data->mScope) {
-    data->mScope->MutableClientSourceRef().Thaw();
-  }
 
   auto* timeoutManager =
       data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
   if (timeoutManager) {
+    timeoutManager->Thaw();
     timeoutManager->Resume();
+  }
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->Thaw(nullptr);
+  }
+
+  
+  if (data->mScope) {
+    data->mScope->MutableClientSourceRef().Thaw();
   }
 
   return true;
