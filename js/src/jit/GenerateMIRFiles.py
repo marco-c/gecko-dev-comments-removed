@@ -235,7 +235,9 @@ def gen_mir_class(
         code += "    setGuard();\\\n"
     if movable:
         code += "    setMovable();\\\n"
-    if result:
+    
+    
+    if result and result != "None":
         code += f"    setResultType(MIRType::{result});\\\n"
     code += "  }\\\n public:\\\n"
     if arguments:
