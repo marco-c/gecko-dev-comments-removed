@@ -703,6 +703,7 @@ class nsIFrame : public nsQueryFrame {
   using Nothing = mozilla::Nothing;
   using OnNonvisible = mozilla::OnNonvisible;
   using ReflowInput = mozilla::ReflowInput;
+  using SizeComputationInput = mozilla::SizeComputationInput;
   using ReflowOutput = mozilla::ReflowOutput;
   using Visibility = mozilla::Visibility;
   using ContentRelevancy = mozilla::ContentRelevancy;
@@ -2976,7 +2977,7 @@ class nsIFrame : public nsQueryFrame {
     AspectRatioUsage mAspectRatioUsage = AspectRatioUsage::None;
   };
   virtual SizeComputationResult ComputeSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const SizeComputationInput& aSizingInput, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,
@@ -3010,7 +3011,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual mozilla::LogicalSize ComputeAutoSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const SizeComputationInput& aSizingInput, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,
@@ -3026,7 +3027,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   mozilla::LogicalSize ComputeAbsolutePosAutoSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const SizeComputationInput& aSizingInput, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,

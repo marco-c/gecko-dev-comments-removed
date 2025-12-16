@@ -131,17 +131,17 @@ nscoord nsFirstLetterFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 
 
 nsIFrame::SizeComputationResult nsFirstLetterFrame::ComputeSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const SizeComputationInput& aSizingInput, WritingMode aWM,
+    const LogicalSize& aCBSize, nscoord aAvailableISize,
+    const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
+    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   if (GetPrevInFlow()) {
     
     
     return {LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
             AspectRatioUsage::None};
   }
-  return nsContainerFrame::ComputeSize(aRenderingContext, aWM, aCBSize,
+  return nsContainerFrame::ComputeSize(aSizingInput, aWM, aCBSize,
                                        aAvailableISize, aMargin, aBorderPadding,
                                        aSizeOverrides, aFlags);
 }

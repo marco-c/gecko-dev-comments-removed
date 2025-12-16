@@ -1377,16 +1377,16 @@ nsTableFrame::IntrinsicISizeOffsets(nscoord aPercentageBasis) {
 
 
 nsIFrame::SizeComputationResult nsTableFrame::ComputeSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const SizeComputationInput& aSizingInput, WritingMode aWM,
+    const LogicalSize& aCBSize, nscoord aAvailableISize,
+    const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
+    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   
   MOZ_ASSERT(aWM == GetWritingMode(),
              "aWM should be the same as our writing mode!");
 
   auto result = nsContainerFrame::ComputeSize(
-      aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin, aBorderPadding,
+      aSizingInput, aWM, aCBSize, aAvailableISize, aMargin, aBorderPadding,
       aSizeOverrides, aFlags);
 
   
@@ -1402,7 +1402,8 @@ nsIFrame::SizeComputationResult nsTableFrame::ComputeSize(
   AutoMaybeDisableFontInflation an(this);
 
   
-  const IntrinsicSizeInput input(aRenderingContext, Some(aCBSize), Nothing());
+  const IntrinsicSizeInput input(aSizingInput.mRenderingContext, Some(aCBSize),
+                                 Nothing());
   nscoord minISize = GetMinISize(input);
   if (minISize > result.mLogicalSize.ISize(aWM)) {
     result.mLogicalSize.ISize(aWM) = minISize;
@@ -1442,15 +1443,16 @@ nscoord nsTableFrame::TableShrinkISizeToFit(gfxContext* aRenderingContext,
 
 
 LogicalSize nsTableFrame::ComputeAutoSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const SizeComputationInput& aSizingInput, WritingMode aWM,
+    const LogicalSize& aCBSize, nscoord aAvailableISize,
+    const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
+    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   
   nscoord cbBased =
       aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
-  return LogicalSize(aWM, TableShrinkISizeToFit(aRenderingContext, cbBased),
-                     NS_UNCONSTRAINEDSIZE);
+  return LogicalSize(
+      aWM, TableShrinkISizeToFit(aSizingInput.mRenderingContext, cbBased),
+      NS_UNCONSTRAINEDSIZE);
 }
 
 
