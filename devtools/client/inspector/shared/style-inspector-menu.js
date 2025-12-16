@@ -44,34 +44,32 @@ const PREF_ORIG_SOURCES = "devtools.source-map.client-service.enabled";
 
 
 
+class StyleInspectorMenu {
+  
 
 
 
 
 
-function StyleInspectorMenu(view, { isRuleView = false } = {}) {
-  this.view = view;
-  this.inspector = this.view.inspector;
-  this.styleWindow = this.view.styleWindow || this.view.doc.defaultView;
-  this.isRuleView = isRuleView;
+  constructor(view, { isRuleView = false } = {}) {
+    this.view = view;
+    this.inspector = this.view.inspector;
+    this.styleWindow = this.view.styleWindow || this.view.doc.defaultView;
+    this.isRuleView = isRuleView;
 
-  this._onCopy = this._onCopy.bind(this);
-  this._onCopyColor = this._onCopyColor.bind(this);
-  this._onCopyImageDataUrl = this._onCopyImageDataUrl.bind(this);
-  this._onCopyLocation = this._onCopyLocation.bind(this);
-  this._onCopyDeclaration = this._onCopyDeclaration.bind(this);
-  this._onCopyPropertyName = this._onCopyPropertyName.bind(this);
-  this._onCopyPropertyValue = this._onCopyPropertyValue.bind(this);
-  this._onCopyRule = this._onCopyRule.bind(this);
-  this._onCopySelector = this._onCopySelector.bind(this);
-  this._onCopyUrl = this._onCopyUrl.bind(this);
-  this._onSelectAll = this._onSelectAll.bind(this);
-  this._onToggleOrigSources = this._onToggleOrigSources.bind(this);
-}
-
-module.exports = StyleInspectorMenu;
-
-StyleInspectorMenu.prototype = {
+    this._onCopy = this._onCopy.bind(this);
+    this._onCopyColor = this._onCopyColor.bind(this);
+    this._onCopyImageDataUrl = this._onCopyImageDataUrl.bind(this);
+    this._onCopyLocation = this._onCopyLocation.bind(this);
+    this._onCopyDeclaration = this._onCopyDeclaration.bind(this);
+    this._onCopyPropertyName = this._onCopyPropertyName.bind(this);
+    this._onCopyPropertyValue = this._onCopyPropertyValue.bind(this);
+    this._onCopyRule = this._onCopyRule.bind(this);
+    this._onCopySelector = this._onCopySelector.bind(this);
+    this._onCopyUrl = this._onCopyUrl.bind(this);
+    this._onSelectAll = this._onSelectAll.bind(this);
+    this._onToggleOrigSources = this._onToggleOrigSources.bind(this);
+  }
   
 
 
@@ -85,7 +83,7 @@ StyleInspectorMenu.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   _openMenu({ target, screenX = 0, screenY = 0 } = {}) {
     this.currentTarget = target;
@@ -278,7 +276,7 @@ StyleInspectorMenu.prototype = {
 
     menu.popup(screenX, screenY, this.inspector.toolbox.doc);
     return menu;
-  },
+  }
 
   _hasTextSelected() {
     let hasTextSelected;
@@ -296,7 +294,7 @@ StyleInspectorMenu.prototype = {
     }
 
     return hasTextSelected;
-  },
+  }
 
   
 
@@ -304,7 +302,7 @@ StyleInspectorMenu.prototype = {
   _getClickedNodeInfo() {
     const node = this._getClickedNode();
     return this.view.getNodeInfo(node);
-  },
+  }
 
   
 
@@ -328,7 +326,7 @@ StyleInspectorMenu.prototype = {
 
     this._colorToCopy = colorNode.dataset.color;
     return true;
-  },
+  }
 
   
 
@@ -341,7 +339,7 @@ StyleInspectorMenu.prototype = {
       return false;
     }
     return nodeInfo.type == VIEW_NODE_IMAGE_URL_TYPE;
-  },
+  }
 
   
 
@@ -358,7 +356,7 @@ StyleInspectorMenu.prototype = {
     }
 
     return node.nodeType === node.TEXT_NODE ? node.parentElement : node;
-  },
+  }
 
   
 
@@ -373,21 +371,21 @@ StyleInspectorMenu.prototype = {
     } else {
       selection.selectAllChildren(this.view.element);
     }
-  },
+  }
 
   
 
 
   _onCopy() {
     this.view.copySelection(this.currentTarget);
-  },
+  }
 
   
 
 
   _onCopyColor() {
     clipboardHelper.copyString(this._colorToCopy);
-  },
+  }
 
   
 
@@ -398,7 +396,7 @@ StyleInspectorMenu.prototype = {
     }
 
     clipboardHelper.copyString(this._clickedNodeInfo.value.url);
-  },
+  }
 
   
 
@@ -422,7 +420,7 @@ StyleInspectorMenu.prototype = {
     }
 
     clipboardHelper.copyString(message);
-  },
+  }
 
   
 
@@ -433,7 +431,7 @@ StyleInspectorMenu.prototype = {
     }
 
     clipboardHelper.copyString(this._clickedNodeInfo.value);
-  },
+  }
 
   
 
@@ -445,7 +443,7 @@ StyleInspectorMenu.prototype = {
 
     const textProp = this._clickedNodeInfo.value.textProperty;
     clipboardHelper.copyString(textProp.stringifyProperty());
-  },
+  }
 
   
 
@@ -456,7 +454,7 @@ StyleInspectorMenu.prototype = {
     }
 
     clipboardHelper.copyString(this._clickedNodeInfo.value.property);
-  },
+  }
 
   
 
@@ -467,7 +465,7 @@ StyleInspectorMenu.prototype = {
     }
 
     clipboardHelper.copyString(this._clickedNodeInfo.value.value);
-  },
+  }
 
   
 
@@ -480,7 +478,7 @@ StyleInspectorMenu.prototype = {
       return;
     }
     clipboardHelper.copyString(rule.stringifyRule());
-  },
+  }
 
   
 
@@ -491,7 +489,7 @@ StyleInspectorMenu.prototype = {
     }
 
     clipboardHelper.copyString(this._clickedNodeInfo.value);
-  },
+  }
 
   
 
@@ -499,12 +497,14 @@ StyleInspectorMenu.prototype = {
   _onToggleOrigSources() {
     const isEnabled = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
     Services.prefs.setBoolPref(PREF_ORIG_SOURCES, !isEnabled);
-  },
+  }
 
   destroy() {
     this.currentTarget = null;
     this.view = null;
     this.inspector = null;
     this.styleWindow = null;
-  },
-};
+  }
+}
+
+module.exports = StyleInspectorMenu;
