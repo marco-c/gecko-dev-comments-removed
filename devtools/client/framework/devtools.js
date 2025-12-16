@@ -77,7 +77,7 @@ const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
 
 
 
-function DevTools() {
+class DevTools {
   
   
   
@@ -86,45 +86,45 @@ function DevTools() {
   
   
   
-  if (
-    Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT ||
-    !Cu.getRealmLocation(globalThis).startsWith(DEFAULT_SANDBOX_NAME)
-  ) {
-    throw new Error(
-      "This module should be loaded in the parent process only, in the shared global."
-    );
+  constructor() {
+    if (
+      Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT ||
+      !Cu.getRealmLocation(globalThis).startsWith(DEFAULT_SANDBOX_NAME)
+    ) {
+      throw new Error(
+        "This module should be loaded in the parent process only, in the shared global."
+      );
+    }
+
+    this._tools = new Map(); 
+    this._themes = new Map(); 
+    this._toolboxesPerCommands = new Map(); 
+    
+    this._creatingToolboxes = new Map(); 
+
+    EventEmitter.decorate(this);
+    this._telemetry = new Telemetry();
+
+    
+    this._commandsPromiseByWebExtId = new Map(); 
+
+    
+    this._onThemeChanged = this._onThemeChanged.bind(this);
+    addThemeObserver(this._onThemeChanged);
+
+    
+    
+    
+    this.registerDefaults();
+
+    
+    
+    DevToolsShim.register(this);
   }
 
-  this._tools = new Map(); 
-  this._themes = new Map(); 
-  this._toolboxesPerCommands = new Map(); 
-  
-  this._creatingToolboxes = new Map(); 
-
-  EventEmitter.decorate(this);
-  this._telemetry = new Telemetry();
-
-  
-  this._commandsPromiseByWebExtId = new Map(); 
-
-  
-  this._onThemeChanged = this._onThemeChanged.bind(this);
-  addThemeObserver(this._onThemeChanged);
-
   
   
-  
-  this.registerDefaults();
-
-  
-  
-  DevToolsShim.register(this);
-}
-
-DevTools.prototype = {
-  
-  
-  chromeWindowType: "navigator:browser",
+  chromeWindowType = "navigator:browser";
 
   registerDefaults() {
     
@@ -133,7 +133,7 @@ DevTools.prototype = {
     this.getDefaultThemes().forEach(definition =>
       this.registerTheme(definition)
     );
-  },
+  }
 
   unregisterDefaults() {
     for (const definition of this.getToolDefinitionArray()) {
@@ -142,7 +142,7 @@ DevTools.prototype = {
     for (const definition of this.getThemeDefinitionArray()) {
       this.unregisterTheme(definition.id);
     }
-  },
+  }
 
   
 
@@ -188,7 +188,7 @@ DevTools.prototype = {
     this._tools.set(toolId, toolDefinition);
 
     this.emit("tool-registered", toolId);
-  },
+  }
 
   
 
@@ -206,7 +206,7 @@ DevTools.prototype = {
     if (!isQuitApplication) {
       this.emit("tool-unregistered", toolId);
     }
-  },
+  }
 
   
 
@@ -215,11 +215,11 @@ DevTools.prototype = {
     const o1 = typeof d1.ordinal == "number" ? d1.ordinal : MAX_ORDINAL;
     const o2 = typeof d2.ordinal == "number" ? d2.ordinal : MAX_ORDINAL;
     return o1 - o2;
-  },
+  }
 
   getDefaultTools() {
     return DefaultTools.sort(this.ordinalSort);
-  },
+  }
 
   getAdditionalTools() {
     const tools = [];
@@ -229,11 +229,11 @@ DevTools.prototype = {
       }
     }
     return tools.sort(this.ordinalSort);
-  },
+  }
 
   getDefaultThemes() {
     return DefaultThemes.sort(this.ordinalSort);
-  },
+  }
 
   
 
@@ -255,7 +255,7 @@ DevTools.prototype = {
     const enabled = Services.prefs.getBoolPref(tool.visibilityswitch, true);
 
     return enabled ? tool : null;
-  },
+  }
 
   
 
@@ -274,7 +274,7 @@ DevTools.prototype = {
     }
 
     return tools;
-  },
+  }
 
   
 
@@ -294,7 +294,7 @@ DevTools.prototype = {
     }
 
     return definitions.sort(this.ordinalSort);
-  },
+  }
 
   
 
@@ -304,7 +304,7 @@ DevTools.prototype = {
 
   getTheme() {
     return getTheme();
-  },
+  }
 
   
 
@@ -313,14 +313,14 @@ DevTools.prototype = {
 
   getAutoTheme() {
     return getAutoTheme();
-  },
+  }
 
   
 
 
   _onThemeChanged() {
     this.emit("theme-changed", getTheme());
-  },
+  }
 
   
 
@@ -358,7 +358,7 @@ DevTools.prototype = {
     this._themes.set(themeId, themeDefinition);
 
     this.emit("theme-registered", themeId);
-  },
+  }
 
   
 
@@ -397,7 +397,7 @@ DevTools.prototype = {
     }
 
     this._themes.delete(themeId);
-  },
+  }
 
   
 
@@ -414,7 +414,7 @@ DevTools.prototype = {
       return null;
     }
     return theme;
-  },
+  }
 
   
 
@@ -432,7 +432,7 @@ DevTools.prototype = {
     }
 
     return themes;
-  },
+  }
 
   
 
@@ -450,7 +450,7 @@ DevTools.prototype = {
     }
 
     return definitions.sort(this.ordinalSort);
-  },
+  }
 
   
 
@@ -463,7 +463,7 @@ DevTools.prototype = {
       BrowserConsoleManager.getBrowserConsoleSessionState();
     state.browserToolbox =
       lazy.BrowserToolboxLauncher.getBrowserToolboxSessionState();
-  },
+  }
 
   
 
@@ -476,13 +476,13 @@ DevTools.prototype = {
     if (browserConsole && !BrowserConsoleManager.getBrowserConsole()) {
       await BrowserConsoleManager.toggleBrowserConsole();
     }
-  },
+  }
 
   
 
 
 
-  _firstShowToolbox: true,
+  _firstShowToolbox = true;
 
   
 
@@ -586,7 +586,7 @@ DevTools.prototype = {
     );
 
     return toolbox;
-  },
+  }
 
   
 
@@ -644,7 +644,7 @@ DevTools.prototype = {
       reason,
       hostOptions,
     });
-  },
+  }
 
   
 
@@ -681,7 +681,7 @@ DevTools.prototype = {
       },
       toolId,
     });
-  },
+  }
 
   
 
@@ -715,7 +715,7 @@ DevTools.prototype = {
       "first_panel",
       panelName
     );
-  },
+  }
 
   makeToolIdHumanReadable(toolId) {
     if (/^[0-9a-fA-F]{40}_temporary-addon/.test(toolId)) {
@@ -735,7 +735,7 @@ DevTools.prototype = {
     }
 
     return toolId;
-  },
+  }
 
   
 
@@ -764,7 +764,7 @@ DevTools.prototype = {
     this.emit("toolbox-ready", toolbox);
 
     return toolbox;
-  },
+  }
 
   
 
@@ -777,7 +777,7 @@ DevTools.prototype = {
 
   getToolboxForCommands(commands) {
     return this._toolboxesPerCommands.get(commands);
-  },
+  }
 
   
 
@@ -790,7 +790,7 @@ DevTools.prototype = {
       }
     }
     return null;
-  },
+  }
 
   
 
@@ -805,7 +805,7 @@ DevTools.prototype = {
     return this.getToolboxes().find(
       t => t.commands.descriptorFront.localTab === tab
     );
-  },
+  }
 
   
 
@@ -825,7 +825,7 @@ DevTools.prototype = {
       return;
     }
     await toolbox.destroy();
-  },
+  }
 
   
 
@@ -838,7 +838,7 @@ DevTools.prototype = {
 
   createCommandsForTabForWebExtension(tab) {
     return CommandsFactory.forTab(tab, { isWebExtension: true });
-  },
+  }
 
   
 
@@ -849,7 +849,7 @@ DevTools.prototype = {
       BrowserConsoleManager,
     } = require("resource://devtools/client/webconsole/browser-console-manager.js");
     BrowserConsoleManager.openBrowserConsoleOrFocus();
-  },
+  }
 
   
 
@@ -906,7 +906,7 @@ DevTools.prototype = {
     
     
     await inspector.once("inspector-updated");
-  },
+  }
 
   
 
@@ -940,7 +940,7 @@ DevTools.prototype = {
     const onSelected = a11yPanel.once("new-accessible-front-selected");
     a11yPanel.selectAccessibleForNode(nodeFront, "browser-context-menu");
     await onSelected;
-  },
+  }
 
   
 
@@ -978,7 +978,7 @@ DevTools.prototype = {
     
     
     
-  },
+  }
 
   
 
@@ -988,7 +988,7 @@ DevTools.prototype = {
 
   getToolboxes() {
     return Array.from(this._toolboxesPerCommands.values());
-  },
+  }
 
   
 
@@ -1002,7 +1002,7 @@ DevTools.prototype = {
     return this.getToolboxes().some(
       t => t.commands.descriptorFront.localTab === tab
     );
-  },
-};
+  }
+}
 
 const gDevTools = (exports.gDevTools = new DevTools());
