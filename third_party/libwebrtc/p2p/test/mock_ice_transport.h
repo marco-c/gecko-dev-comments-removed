@@ -31,8 +31,8 @@ namespace webrtc {
 class MockIceTransport : public IceTransportInternal {
  public:
   MockIceTransport() {
-    SignalReadyToSend(this);
-    SignalWritableState(this);
+    NotifyReadyToSend(this);
+    NotifyWritableState(this);
   }
 
   MOCK_METHOD(int,
@@ -82,12 +82,5 @@ class MockIceTransport : public IceTransportInternal {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::MockIceTransport;
-}  
-#endif  
 
 #endif  

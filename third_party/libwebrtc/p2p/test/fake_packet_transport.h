@@ -19,8 +19,10 @@
 #include "api/transport/ecn_marking.h"
 #include "api/units/timestamp.h"
 #include "p2p/base/packet_transport_internal.h"
+#include "rtc_base/async_packet_socket.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/received_packet.h"
+#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
@@ -104,7 +106,7 @@ class FakePacketTransport : public PacketTransportInternal {
   }
   void SetNetworkRoute(std::optional<NetworkRoute> network_route) {
     network_route_ = network_route;
-    SignalNetworkRouteChanged(network_route);
+    NotifyNetworkRouteChanged(network_route);
   }
 
   using PacketTransportInternal::NotifyOnClose;
@@ -117,9 +119,9 @@ class FakePacketTransport : public PacketTransportInternal {
     }
     writable_ = writable;
     if (writable_) {
-      SignalReadyToSend(this);
+      NotifyReadyToSend(this);
     }
-    SignalWritableState(this);
+    NotifyWritableState(this);
   }
 
   void set_receiving(bool receiving) {
@@ -127,7 +129,7 @@ class FakePacketTransport : public PacketTransportInternal {
       return;
     }
     receiving_ = receiving;
-    SignalReceivingState(this);
+    NotifyReceivingState(this);
   }
 
   void SendPacketInternal(const CopyOnWriteBuffer& packet,
@@ -154,12 +156,5 @@ class FakePacketTransport : public PacketTransportInternal {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FakePacketTransport;
-}  
-#endif  
 
 #endif  

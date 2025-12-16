@@ -14,13 +14,16 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "api/sequence_checker.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/callback_list.h"
 #include "rtc_base/network/received_packet.h"
+#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
+#include "rtc_base/sigslot_trampoline.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -69,6 +72,11 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
 
   
   sigslot::signal1<PacketTransportInternal*> SignalWritableState;
+  void SubscribeWritableState(
+      void* tag,
+      absl::AnyInvocable<void(PacketTransportInternal*)> callback);
+  void UnsubscribeWritableState(void* tag);
+  void NotifyWritableState(PacketTransportInternal* packet_transport);
 
   
   
@@ -76,9 +84,17 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   
   
   sigslot::signal1<PacketTransportInternal*> SignalReadyToSend;
+  void SubscribeReadyToSend(
+      void* tag,
+      absl::AnyInvocable<void(PacketTransportInternal*)> callback);
+  void UnsubscribeReadyToSend(void* tag);
+  void NotifyReadyToSend(PacketTransportInternal* packet_transport);
 
   
   sigslot::signal1<PacketTransportInternal*> SignalReceivingState;
+  void SubscribeReceivingState(
+      absl::AnyInvocable<void(PacketTransportInternal*)> callback);
+  void NotifyReceivingState(PacketTransportInternal* packet_transport);
 
   
   void RegisterReceivedPacketCallback(
@@ -94,6 +110,12 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
 
   
   sigslot::signal1<std::optional<NetworkRoute>> SignalNetworkRouteChanged;
+  void SubscribeNetworkRouteChanged(
+      void* tag,
+      absl::AnyInvocable<void(std::optional<NetworkRoute>)> callback);
+  void UnsubscribeNetworkRouteChanged(void* tag);
+  void NotifyNetworkRouteChanged(
+      std::optional<webrtc::NetworkRoute> network_route);
 
   
   void SetOnCloseCallback(absl::AnyInvocable<void() &&> callback);
@@ -111,16 +133,21 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   CallbackList<PacketTransportInternal*, const ReceivedIpPacket&>
       received_packet_callback_list_ RTC_GUARDED_BY(&network_checker_);
   absl::AnyInvocable<void() &&> on_close_;
+  SignalTrampoline<PacketTransportInternal,
+                   &PacketTransportInternal::SignalWritableState>
+      writable_state_trampoline_;
+  SignalTrampoline<PacketTransportInternal,
+                   &PacketTransportInternal::SignalReadyToSend>
+      ready_to_send_trampoline_;
+  SignalTrampoline<PacketTransportInternal,
+                   &PacketTransportInternal::SignalReceivingState>
+      receiving_state_trampoline_;
+  SignalTrampoline<PacketTransportInternal,
+                   &PacketTransportInternal::SignalNetworkRouteChanged>
+      network_route_changed_trampoline_;
 };
 
 }  
 
 
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::PacketTransportInternal;
-}  
 #endif  
-
-#endif
