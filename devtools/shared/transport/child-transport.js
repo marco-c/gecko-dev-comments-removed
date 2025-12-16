@@ -20,24 +20,21 @@ const flags = require("resource://devtools/shared/flags.js");
 
 
 
-function ChildDebuggerTransport(mm, prefix) {
-  this._mm = mm;
-  this._messageName = "debug:" + prefix + ":packet";
-}
 
 
 
 
+class ChildDebuggerTransport {
+  constructor(mm, prefix) {
+    this._mm = mm;
+    this._messageName = "debug:" + prefix + ":packet";
+  }
 
-
-ChildDebuggerTransport.prototype = {
-  constructor: ChildDebuggerTransport,
-
-  hooks: null,
+  hooks = null;
 
   _addListener() {
     this._mm.addMessageListener(this._messageName, this);
-  },
+  }
 
   _removeListener() {
     try {
@@ -50,22 +47,22 @@ ChildDebuggerTransport.prototype = {
       
       
     }
-  },
+  }
 
   ready() {
     this._addListener();
-  },
+  }
 
   close(options) {
     this._removeListener();
     if (this.hooks.onTransportClosed) {
       this.hooks.onTransportClosed(null, options);
     }
-  },
+  }
 
   receiveMessage({ data }) {
     this.hooks.onPacket(data);
-  },
+  }
 
   
 
@@ -84,7 +81,7 @@ ChildDebuggerTransport.prototype = {
       return false;
     }
     return true;
-  },
+  }
 
   pathToUnserializable(object) {
     for (const key in object) {
@@ -97,7 +94,7 @@ ChildDebuggerTransport.prototype = {
       }
     }
     return [];
-  },
+  }
 
   send(packet) {
     if (flags.testing && !this._canBeSerialized(packet)) {
@@ -118,11 +115,11 @@ ChildDebuggerTransport.prototype = {
       
       
     }
-  },
+  }
 
   startBulkSend() {
     throw new Error("Can't send bulk data to child processes.");
-  },
-};
+  }
+}
 
 exports.ChildDebuggerTransport = ChildDebuggerTransport;
