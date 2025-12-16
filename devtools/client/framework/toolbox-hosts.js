@@ -283,17 +283,18 @@ class RightHost extends SidebarHost {
 
 
 
-function WindowHost(hostTab, options) {
-  this._boundUnload = this._boundUnload.bind(this);
-  this.hostTab = hostTab;
-  this.options = options;
-  EventEmitter.decorate(this);
-}
+class WindowHost extends EventEmitter {
+  constructor(hostTab, options) {
+    super();
 
-WindowHost.prototype = {
-  type: "window",
+    this._boundUnload = this._boundUnload.bind(this);
+    this.hostTab = hostTab;
+    this.options = options;
+  }
 
-  WINDOW_URL: "chrome://devtools/content/framework/toolbox-window.xhtml",
+  type = "window";
+
+  WINDOW_URL = "chrome://devtools/content/framework/toolbox-window.xhtml";
 
   
 
@@ -359,7 +360,7 @@ WindowHost.prototype = {
 
       this._window = win;
     });
-  },
+  }
 
   
 
@@ -371,21 +372,21 @@ WindowHost.prototype = {
     this._window.removeEventListener("unload", this._boundUnload);
 
     this.emit("window-closed");
-  },
+  }
 
   
 
 
   raise() {
     this._window.focus();
-  },
+  }
 
   
 
 
   setTitle(title) {
     this._window.document.title = title;
-  },
+  }
 
   
 
@@ -399,19 +400,20 @@ WindowHost.prototype = {
     }
 
     return Promise.resolve(null);
-  },
-};
-
-
-
-
-function BrowserToolboxHost(hostTab, options) {
-  this.doc = options.doc;
-  EventEmitter.decorate(this);
+  }
 }
 
-BrowserToolboxHost.prototype = {
-  type: "browsertoolbox",
+
+
+
+class BrowserToolboxHost extends EventEmitter {
+  constructor(hostTab, options) {
+    super();
+
+    this.doc = options.doc;
+  }
+
+  type = "browsertoolbox";
 
   async create() {
     this.frame = createDevToolsFrame(
@@ -423,60 +425,60 @@ BrowserToolboxHost.prototype = {
     this.frame.docShellIsActive = true;
 
     return this.frame;
-  },
+  }
 
   
 
 
   raise() {
     this.doc.defaultView.focus();
-  },
+  }
 
   
 
 
   setTitle(title) {
     this.doc.title = title;
-  },
+  }
 
   
   destroy() {
     return Promise.resolve(null);
-  },
-};
-
-
-
-
-
-
-
-function PageHost(hostTab, options) {
-  this.frame = options.customIframe;
+  }
 }
 
-PageHost.prototype = {
-  type: "page",
+
+
+
+
+
+
+class PageHost {
+  constructor(hostTab, options) {
+    this.frame = options.customIframe;
+  }
+
+  type = "page";
 
   create() {
     return Promise.resolve(this.frame);
-  },
+  }
 
   
   raise() {
     
     
     focusTab(this.frame.ownerGlobal.gBrowser.getTabForBrowser(this.frame));
-  },
+  }
 
   
-  setTitle() {},
+  setTitle() {}
 
   
   destroy() {
     return Promise.resolve(null);
-  },
-};
+  }
+}
 
 
 
