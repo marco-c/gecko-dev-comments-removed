@@ -52,7 +52,12 @@ add_task(async function () {
   
   
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `h1`,
       declarations: [

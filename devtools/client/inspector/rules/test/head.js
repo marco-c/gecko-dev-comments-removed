@@ -1399,6 +1399,8 @@ function getSmallIncrementKey() {
 
 
 
+
+
 function checkRuleViewContent(view, expectedElements) {
   const elementsInView = _getRuleViewElements(view);
   is(
@@ -1429,7 +1431,11 @@ function checkRuleViewContent(view, expectedElements) {
     const selector = [
       ...elementInView.querySelectorAll(
         
-        ".ruleview-selectors-container .ruleview-selector, .ruleview-selectors-container.alternative-selector"
+        ".ruleview-selectors-container .ruleview-selector," +
+          
+          ".ruleview-selectors-container.alternative-selector," +
+          
+          `.ruleview-selectors-container.uneditable-selector`
       ),
     ]
       .map(selectorEl => {
@@ -1444,6 +1450,13 @@ function checkRuleViewContent(view, expectedElements) {
       selector,
       expectedElement.selector,
       `Expected selector for element #${i}`
+    );
+    is(
+      elementInView.querySelector(
+        `.ruleview-selectors-container:not(.uneditable-selector)`
+      ) !== null,
+      expectedElement.selectorEditable ?? true,
+      `Selector for element #${i} (${selector}) ${(expectedElement.selectorEditable ?? true) ? "is" : "isn't"} editable`
     );
 
     const ancestorData = elementInView.querySelector(
