@@ -155,9 +155,7 @@ class LIRGeneratorShared {
 
   
   
-  
-  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type,
-                                         int32_t offsetAdjustment = 0);
+  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type);
 
   inline LUse useRegisterForTypedLoad(MDefinition* mir, MIRType type);
 
@@ -307,10 +305,18 @@ class LIRGeneratorShared {
     return vreg;
   }
 
-  template <typename T>
-  void annotate(T* ins);
-  template <typename T>
-  void add(T* ins, MInstruction* mir = nullptr);
+  inline void annotate(LNode* ins);
+  inline void addUnchecked(LInstruction* ins, MInstruction* mir = nullptr);
+
+  
+  
+  
+  
+  template <size_t Temps>
+  void add(details::LInstructionFixedDefsTempsHelper<0, Temps>* ins,
+           MInstruction* mir = nullptr) {
+    addUnchecked(ins, mir);
+  }
 
   void lowerTypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block,
                           size_t lirIndex);
