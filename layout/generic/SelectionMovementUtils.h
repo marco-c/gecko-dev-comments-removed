@@ -25,12 +25,17 @@ namespace intl {
 class BidiEmbeddingLevel;
 }
 
-struct MOZ_STACK_CLASS PrimaryFrameData {
-  
+struct MOZ_STACK_CLASS FrameAndOffset {
+  [[nodiscard]] nsIContent* GetFrameContent() const {
+    return mFrame ? mFrame->GetContent() : nullptr;
+  }
+
   nsIFrame* mFrame = nullptr;
   
-  
   uint32_t mOffsetInFrameContent = 0;
+};
+
+struct MOZ_STACK_CLASS PrimaryFrameData : public FrameAndOffset {
   
   
   CaretAssociationHint mHint{0};  

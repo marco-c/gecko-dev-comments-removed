@@ -310,18 +310,22 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
   
   
   
-  int32_t startOffset = 0;
-  nsIFrame* startFrame =
-      mPresShell ? GetFrameForRangeStart(*GetSelection()->GetFirstRange(),
-                                         &startOffset)
-                 : nullptr;
-  int32_t endOffset = 0;
-  nsIFrame* endFrame =
+  const FrameAndOffset startFrameAndOffset =
+      mPresShell ? GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+                       *GetSelection()->GetFirstRange())
+                 : FrameAndOffset{};
+  nsCOMPtr<nsIContent> endContent;
+  const FrameAndOffset endFrameAndOffset =
       mPresShell
-          ? GetFrameForRangeEnd(*GetSelection()->GetLastRange(), &endOffset)
-          : nullptr;
+          ? GetLastVisibleLeafFrameOrUnselectableChildFrame(
+                *GetSelection()->GetLastRange(), getter_AddRefs(endContent))
+          : FrameAndOffset{};
 
-  if (!CompareTreePosition(startFrame, startOffset, endFrame, endOffset)) {
+  if (!CompareTreePosition(
+          startFrameAndOffset.mFrame,
+          static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent),
+          endFrameAndOffset.mFrame,
+          static_cast<int32_t>(endFrameAndOffset.mOffsetInFrameContent))) {
     
     HideCaretsAndDispatchCaretStateChangedEvent();
     return;
@@ -347,10 +351,22 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     return result;
   };
 
-  PositionChangedResult firstCaretResult =
-      updateSingleCaret(mCarets.GetFirst(), startFrame, startOffset);
+  PositionChangedResult firstCaretResult = updateSingleCaret(
+      mCarets.GetFirst(), startFrameAndOffset.mFrame,
+      static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent));
+  
+  
+  
+  
+  
+  
+  const uint32_t offsetInEndFrameContent =
+      endFrameAndOffset.GetFrameContent() == endContent
+          ? endFrameAndOffset.mOffsetInFrameContent
+          : endFrameAndOffset.GetFrameContent()->Length() + 1;
   PositionChangedResult secondCaretResult =
-      updateSingleCaret(mCarets.GetSecond(), endFrame, endOffset);
+      updateSingleCaret(mCarets.GetSecond(), endFrameAndOffset.mFrame,
+                        static_cast<int32_t>(offsetInEndFrameContent));
 
   mIsCaretPositionChanged =
       firstCaretResult == PositionChangedResult::Position ||
@@ -368,7 +384,8 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     
     
     if (StaticPrefs::layout_accessiblecaret_always_tilt()) {
-      UpdateCaretsForAlwaysTilt(startFrame, endFrame);
+      UpdateCaretsForAlwaysTilt(startFrameAndOffset.mFrame,
+                                endFrameAndOffset.mFrame);
     } else {
       UpdateCaretsForOverlappingTilt();
     }
@@ -1042,133 +1059,147 @@ void AccessibleCaretManager::LayoutFlusher::MaybeFlush(
   }
 }
 
-nsIFrame* AccessibleCaretManager::GetFrameForRangeStart(
-    nsRange& aRange, int32_t* aOutOffsetInFrameContent,
-    nsIContent** aOutContent ,
-    int32_t* aOutOffsetInContent ) const {
-  if (!mPresShell) {
-    return nullptr;
+static nsIFrame* GetChildFrameContainingOffset(
+    nsIFrame* aChildFrame, uint32_t aOffsetInChildFrameContent,
+    CaretAssociationHint aHint) {
+  nsIFrame* frameAtOffset = nullptr;
+  int32_t unused = 0;
+  if (NS_WARN_IF(NS_FAILED(aChildFrame->GetChildFrameContainingOffset(
+          static_cast<int32_t>(aOffsetInChildFrameContent),
+          aHint == CaretAssociationHint::After, &unused, &frameAtOffset)))) {
+    frameAtOffset = aChildFrame;
   }
-
-  MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
-  MOZ_ASSERT(aOutOffsetInFrameContent,
-             "aOutOffsetInFrameContent shouldn't be nullptr!");
-
-  nsIContent* const startContent =
-      nsIContent::FromNodeOrNull(aRange.GetStartContainer());
-  if (startContent && startContent->IsSelectable()) {
-    
-    
-    uint32_t outOffset = 0;
-    nsIFrame* const startFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        startContent, aRange.StartOffset(), CaretAssociationHint::After,
-        &outOffset);
-    if (startFrame) {
-      MOZ_DIAGNOSTIC_ASSERT(startFrame->GetContent());
-      *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-      if (aOutContent) {
-        *aOutContent = do_AddRef(startContent).take();
-      }
-      if (aOutOffsetInContent) {
-        *aOutOffsetInContent = static_cast<int32_t>(aRange.StartOffset());
-      }
-      return startFrame;
-    }
-  }
-
-  UnsafePreContentIterator iter;
-  if (NS_WARN_IF(NS_FAILED(iter.Init(&aRange)))) {
-    return nullptr;
-  }
-  for (; !iter.IsDone(); iter.Next()) {
-    nsIContent* const content = nsIContent::FromNode(iter.GetCurrentNode());
-    if (!content || !content->IsSelectable()) {
-      continue;
-    }
-    
-    
-    uint32_t outOffset = 0;
-    nsIFrame* const firstFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        content, 0, CaretAssociationHint::After, &outOffset);
-    if (NS_WARN_IF(!firstFrame)) {
-      continue;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(firstFrame->GetContent());
-    *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-    if (aOutContent) {
-      *aOutContent = do_AddRef(content).take();
-    }
-    if (aOutOffsetInContent) {
-      *aOutOffsetInContent = 0;
-    }
-    return firstFrame;
-  }
-  return nullptr;
+  return frameAtOffset;
 }
 
-nsIFrame* AccessibleCaretManager::GetFrameForRangeEnd(
-    nsRange& aRange, int32_t* aOutOffsetInFrameContent,
-    nsIContent** aOutContent ,
+FrameAndOffset
+AccessibleCaretManager::GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+    nsRange& aRange, nsIContent** aOutContent ,
     int32_t* aOutOffsetInContent ) const {
   if (!mPresShell) {
-    return nullptr;
+    return {};
   }
 
   MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
-  MOZ_ASSERT(aOutOffsetInFrameContent,
-             "aOutOffsetInFrameContent shouldn't be nullptr!");
 
-  nsIContent* const endContent =
-      nsIContent::FromNodeOrNull(aRange.GetEndContainer());
-  if (endContent && endContent->IsSelectable()) {
-    
-    
-    uint32_t outOffset = 0;
-    nsIFrame* const endFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        endContent, aRange.EndOffset(), CaretAssociationHint::Before,
-        &outOffset);
-    if (endFrame) {
-      MOZ_DIAGNOSTIC_ASSERT(endFrame->GetContent());
-      *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-      if (aOutContent) {
-        *aOutContent = do_AddRef(endContent).take();
-      }
-      if (aOutOffsetInContent) {
-        *aOutOffsetInContent = static_cast<int32_t>(aRange.EndOffset());
-      }
-      return endFrame;
-    }
+  
+  if (MOZ_UNLIKELY(aRange.Collapsed())) {
+    return {};
   }
 
-  UnsafePostContentIterator iter;
-  if (NS_WARN_IF(NS_FAILED(iter.Init(&aRange)))) {
-    return nullptr;
+  const RawRangeBoundary& shrunkenStart =
+      SelectionMovementUtils::GetFirstVisiblePointAtLeaf(aRange);
+  if (MOZ_UNLIKELY(!shrunkenStart.IsSet())) {
+    return {};
   }
-  iter.Last();
-  for (; !iter.IsDone(); iter.Prev()) {
-    nsIContent* const content = nsIContent::FromNode(iter.GetCurrentNode());
-    if (!content || !content->IsSelectable()) {
-      continue;
+  if (aOutContent) {
+    if (nsIContent* const outContent =
+            nsIContent::FromNode(shrunkenStart.GetContainer())) {
+      *aOutContent = do_AddRef(outContent).take();
     }
-    
-    
-    uint32_t outOffset = 0;
-    nsIFrame* const lastFrame = SelectionMovementUtils::GetFrameForNodeOffset(
-        content, content->Length(), CaretAssociationHint::Before, &outOffset);
-    if (NS_WARN_IF(!lastFrame)) {
-      continue;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(lastFrame->GetContent());
-    *aOutOffsetInFrameContent = static_cast<int32_t>(outOffset);
-    if (aOutContent) {
-      *aOutContent = do_AddRef(content).take();
-    }
-    if (aOutOffsetInContent) {
-      *aOutOffsetInContent = static_cast<int32_t>(content->Length());
-    }
-    return lastFrame;
   }
-  return nullptr;
+  if (aOutOffsetInContent) {
+    *aOutOffsetInContent = static_cast<int32_t>(
+        *shrunkenStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets));
+  }
+  if (nsIContent* const child = shrunkenStart.GetChildAtOffset()) {
+    if (nsIFrame* const childFrame = child->GetPrimaryFrame()) {
+      const uint32_t offsetInFrameContent = 0u;
+      nsIFrame* const childFrameAtOffset = GetChildFrameContainingOffset(
+          childFrame, offsetInFrameContent, CaretAssociationHint::After);
+      MOZ_ASSERT(childFrameAtOffset);
+      
+      
+      
+      
+      if (!childFrameAtOffset->IsInlineFrame() ||
+          childFrameAtOffset->IsSelfEmpty()) {
+        return {childFrameAtOffset, offsetInFrameContent};
+      }
+    }
+  }
+  nsIContent* const container =
+      nsIContent::FromNode(shrunkenStart.GetContainer());
+  if (MOZ_UNLIKELY(!container)) {
+    return {};
+  }
+  nsIFrame* const frame = container->GetPrimaryFrame();
+  if (MOZ_UNLIKELY(!frame)) {
+    return {};
+  }
+  MOZ_ASSERT(frame->IsSelectable());
+  const uint32_t offsetInFrameContent =
+      *shrunkenStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+  nsIFrame* const frameAtOffset = GetChildFrameContainingOffset(
+      frame, offsetInFrameContent, CaretAssociationHint::After);
+  MOZ_ASSERT(frameAtOffset);
+  return {frameAtOffset, offsetInFrameContent};
+}
+
+FrameAndOffset
+AccessibleCaretManager::GetLastVisibleLeafFrameOrUnselectableChildFrame(
+    nsRange& aRange, nsIContent** aOutContent ,
+    int32_t* aOutOffsetInContent ) const {
+  if (!mPresShell) {
+    return {};
+  }
+
+  MOZ_ASSERT(GetCaretMode() == CaretMode::Selection);
+
+  
+  if (MOZ_UNLIKELY(aRange.Collapsed())) {
+    return {};
+  }
+
+  const RawRangeBoundary& shrunkenEnd =
+      SelectionMovementUtils::GetLastVisiblePointAtLeaf(aRange);
+  if (MOZ_UNLIKELY(!shrunkenEnd.IsSet())) {
+    return {};
+  }
+  if (aOutContent) {
+    if (nsIContent* const outContent =
+            nsIContent::FromNode(shrunkenEnd.GetContainer())) {
+      *aOutContent = do_AddRef(outContent).take();
+    }
+  }
+  if (aOutOffsetInContent) {
+    *aOutOffsetInContent = static_cast<int32_t>(
+        *shrunkenEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets));
+  }
+  if (nsIContent* const previousSiblingOfChildAtOffset = shrunkenEnd.Ref()) {
+    if (nsIFrame* const childFrame =
+            previousSiblingOfChildAtOffset->GetPrimaryFrame()) {
+      const uint32_t offsetInChildFrameContent =
+          previousSiblingOfChildAtOffset->Length();
+      nsIFrame* const childFrameAtOffset = GetChildFrameContainingOffset(
+          childFrame, offsetInChildFrameContent, CaretAssociationHint::Before);
+      MOZ_ASSERT(childFrameAtOffset);
+      
+      
+      
+      
+      if (!childFrameAtOffset->IsInlineFrame() ||
+          childFrameAtOffset->IsSelfEmpty()) {
+        return {childFrameAtOffset, offsetInChildFrameContent};
+      }
+    }
+  }
+  nsIContent* const container =
+      nsIContent::FromNode(shrunkenEnd.GetContainer());
+  if (MOZ_UNLIKELY(!container)) {
+    return {};
+  }
+  nsIFrame* const frame = container->GetPrimaryFrame();
+  if (MOZ_UNLIKELY(!frame)) {
+    return {};
+  }
+  MOZ_ASSERT(frame->IsSelectable());
+  const uint32_t offsetInFrameContent =
+      *shrunkenEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+  nsIFrame* const frameAtOffset = GetChildFrameContainingOffset(
+      frame, offsetInFrameContent, CaretAssociationHint::Before);
+  MOZ_ASSERT(frameAtOffset);
+  return {frameAtOffset, offsetInFrameContent};
 }
 
 bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
@@ -1181,29 +1212,29 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   nsDirection dir =
       mActiveCaret == mCarets.GetFirst() ? eDirPrevious : eDirNext;
-  int32_t offsetInFrameContent = 0;
   nsCOMPtr<nsIContent> content;
   int32_t offsetInContent = 0;
-  nsIFrame* frame =
-      dir == eDirNext
-          ? GetFrameForRangeStart(*GetSelection()->GetFirstRange(),
-                                  &offsetInFrameContent,
-                                  getter_AddRefs(content), &offsetInContent)
-          : GetFrameForRangeEnd(*GetSelection()->GetLastRange(),
-                                &offsetInFrameContent, getter_AddRefs(content),
-                                &offsetInContent);
-  if (!frame) {
+  const FrameAndOffset frameAndOffset =
+      dir == eDirNext ? GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+                            *GetSelection()->GetFirstRange(),
+                            getter_AddRefs(content), &offsetInContent)
+                      : GetLastVisibleLeafFrameOrUnselectableChildFrame(
+                            *GetSelection()->GetLastRange(),
+                            getter_AddRefs(content), &offsetInContent);
+  if (!frameAndOffset.mFrame) {
     return false;
   }
 
   
   
-  NS_ASSERTION(offsetInFrameContent >= 0,
-               "offsetInFrameContent should not be negative");
+  NS_ASSERTION(static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent) >= 0,
+               "mOffsetInFrameContent should not be negative when casting to "
+               "signed integer");
   const Maybe<int32_t> cmpToInactiveCaretPos =
       nsContentUtils::ComparePoints_AllowNegativeOffsets(
-          aOffsets.content, aOffsets.StartOffset(), frame->GetContent(),
-          offsetInFrameContent);
+          aOffsets.content, aOffsets.StartOffset(),
+          frameAndOffset.GetFrameContent(),
+          static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent));
   if (NS_WARN_IF(!cmpToInactiveCaretPos)) {
     
     
@@ -1214,9 +1245,10 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   
   
   PeekOffsetStruct limit(
-      eSelectCluster, dir, offsetInFrameContent, nsPoint(0, 0),
+      eSelectCluster, dir,
+      static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent), nsPoint(0, 0),
       {PeekOffsetOption::JumpLines, PeekOffsetOption::StopAtScroller});
-  nsresult rv = frame->PeekOffset(&limit);
+  nsresult rv = frameAndOffset.mFrame->PeekOffset(&limit);
   if (NS_FAILED(rv)) {
     limit.mResultContent = content;
     limit.mContentOffset = offsetInContent;

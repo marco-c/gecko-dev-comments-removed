@@ -27,6 +27,7 @@ struct nsPoint;
 
 namespace mozilla {
 class PresShell;
+struct FrameAndOffset;  
 namespace dom {
 class Element;
 class Selection;
@@ -245,10 +246,14 @@ class AccessibleCaretManager {
 
 
 
-  nsIFrame* GetFrameForRangeStart(nsRange& aRange,
-                                  int32_t* aOutOffsetInFrameContent,
-                                  nsIContent** aOutContent = nullptr,
-                                  int32_t* aOutOffsetInContent = nullptr) const;
+
+
+
+
+
+  FrameAndOffset GetFirstVisibleLeafFrameOrUnselectableChildFrame(
+      nsRange& aRange, nsIContent** aOutContent = nullptr,
+      int32_t* aOutOffsetInContent = nullptr) const;
 
   
 
@@ -274,10 +279,14 @@ class AccessibleCaretManager {
 
 
 
-  nsIFrame* GetFrameForRangeEnd(nsRange& aRange,
-                                int32_t* aOutOffsetInFrameContent,
-                                nsIContent** aOutContent = nullptr,
-                                int32_t* aOutOffsetInContent = nullptr) const;
+
+
+
+
+
+  FrameAndOffset GetLastVisibleLeafFrameOrUnselectableChildFrame(
+      nsRange& aRange, nsIContent** aOutContent = nullptr,
+      int32_t* aOutOffsetInContent = nullptr) const;
 
   MOZ_CAN_RUN_SCRIPT nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
