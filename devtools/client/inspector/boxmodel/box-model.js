@@ -33,34 +33,34 @@ const NUMERIC = /^-?[\d\.]+$/;
 
 
 
+class BoxModel {
+  
 
 
 
 
 
-function BoxModel(inspector, window) {
-  this.document = window.document;
-  this.inspector = inspector;
-  this.store = inspector.store;
+  constructor(inspector, window) {
+    this.document = window.document;
+    this.inspector = inspector;
+    this.store = inspector.store;
 
-  this.store.injectReducer("boxModel", boxModelReducer);
+    this.store.injectReducer("boxModel", boxModelReducer);
 
-  this.updateBoxModel = this.updateBoxModel.bind(this);
+    this.updateBoxModel = this.updateBoxModel.bind(this);
 
-  this.onHideGeometryEditor = this.onHideGeometryEditor.bind(this);
-  this.onMarkupViewLeave = this.onMarkupViewLeave.bind(this);
-  this.onMarkupViewNodeHover = this.onMarkupViewNodeHover.bind(this);
-  this.onNewSelection = this.onNewSelection.bind(this);
-  this.onShowBoxModelEditor = this.onShowBoxModelEditor.bind(this);
-  this.onShowRulePreviewTooltip = this.onShowRulePreviewTooltip.bind(this);
-  this.onSidebarSelect = this.onSidebarSelect.bind(this);
-  this.onToggleGeometryEditor = this.onToggleGeometryEditor.bind(this);
+    this.onHideGeometryEditor = this.onHideGeometryEditor.bind(this);
+    this.onMarkupViewLeave = this.onMarkupViewLeave.bind(this);
+    this.onMarkupViewNodeHover = this.onMarkupViewNodeHover.bind(this);
+    this.onNewSelection = this.onNewSelection.bind(this);
+    this.onShowBoxModelEditor = this.onShowBoxModelEditor.bind(this);
+    this.onShowRulePreviewTooltip = this.onShowRulePreviewTooltip.bind(this);
+    this.onSidebarSelect = this.onSidebarSelect.bind(this);
+    this.onToggleGeometryEditor = this.onToggleGeometryEditor.bind(this);
 
-  this.inspector.selection.on("new-node-front", this.onNewSelection);
-  this.inspector.sidebar.on("select", this.onSidebarSelect);
-}
-
-BoxModel.prototype = {
+    this.inspector.selection.on("new-node-front", this.onNewSelection);
+    this.inspector.sidebar.on("select", this.onSidebarSelect);
+  }
   
 
 
@@ -85,7 +85,7 @@ BoxModel.prototype = {
     this._tooltip = null;
     this.document = null;
     this.inspector = null;
-  },
+  }
 
   get highlighters() {
     if (!this._highlighters) {
@@ -94,7 +94,7 @@ BoxModel.prototype = {
     }
 
     return this._highlighters;
-  },
+  }
 
   get rulePreviewTooltip() {
     if (!this._tooltip) {
@@ -102,7 +102,7 @@ BoxModel.prototype = {
     }
 
     return this._tooltip;
-  },
+  }
 
   
 
@@ -114,7 +114,7 @@ BoxModel.prototype = {
       onShowRulePreviewTooltip: this.onShowRulePreviewTooltip,
       onToggleGeometryEditor: this.onToggleGeometryEditor,
     };
-  },
+  }
 
   
 
@@ -126,7 +126,7 @@ BoxModel.prototype = {
       this.inspector.toolbox.currentToolId === "inspector" &&
       this.inspector.sidebar.getCurrentTabID() === "layoutview"
     );
-  },
+  }
 
   
 
@@ -138,21 +138,21 @@ BoxModel.prototype = {
       this.inspector.selection.isConnected() &&
       this.inspector.selection.isElementNode()
     );
-  },
+  }
 
   
 
 
   trackReflows() {
     this.inspector.on("reflow-in-selected-target", this.updateBoxModel);
-  },
+  }
 
   
 
 
   untrackReflows() {
     this.inspector.off("reflow-in-selected-target", this.updateBoxModel);
-  },
+  }
 
   
 
@@ -228,7 +228,7 @@ BoxModel.prototype = {
       });
 
     this._lastRequest = lastRequest;
-  },
+  }
 
   
 
@@ -242,7 +242,7 @@ BoxModel.prototype = {
       this._geometryEditorEventsAbortController.abort();
       this._geometryEditorEventsAbortController = null;
     }
-  },
+  }
 
   
 
@@ -259,7 +259,7 @@ BoxModel.prototype = {
 
     const nodeFront = this.inspector.selection.nodeFront;
     this.highlighters.showGeometryEditor(nodeFront);
-  },
+  }
 
   
 
@@ -267,7 +267,7 @@ BoxModel.prototype = {
 
   onMarkupViewNodeHover() {
     this.highlighters.hideGeometryEditor();
-  },
+  }
 
   
 
@@ -285,7 +285,7 @@ BoxModel.prototype = {
     }
 
     this.updateBoxModel("new-selection");
-  },
+  }
 
   
 
@@ -306,7 +306,7 @@ BoxModel.prototype = {
     if (!isHighlighted) {
       this.rulePreviewTooltip.show(target);
     }
-  },
+  }
 
   
 
@@ -374,7 +374,7 @@ BoxModel.prototype = {
       },
       event
     );
-  },
+  }
 
   
 
@@ -395,7 +395,7 @@ BoxModel.prototype = {
     }
 
     this.updateBoxModel();
-  },
+  }
 
   
 
@@ -435,11 +435,11 @@ BoxModel.prototype = {
       this._geometryEditorEventsAbortController.abort();
       this._geometryEditorEventsAbortController = null;
     }
-  },
+  }
 
   getCurrentInspectorFront() {
     return this.inspector.selection.nodeFront.inspectorFront;
-  },
-};
+  }
+}
 
 module.exports = BoxModel;
