@@ -40,6 +40,9 @@
     #tabs = [];
 
     
+    #activated = false;
+
+    
 
 
     get hasActiveTab() {
@@ -145,14 +148,18 @@
 
 
     #activate() {
-      gBrowser.showSplitViewPanels(this.#tabs);
       updateUrlbarButton.arm();
+      if (this.#activated) {
+        return;
+      }
+      gBrowser.showSplitViewPanels(this.#tabs);
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewActivate", {
           detail: { tabs: this.#tabs, splitview: this },
           bubbles: true,
         })
       );
+      this.#activated = true;
     }
 
     
@@ -167,6 +174,7 @@
           bubbles: true,
         })
       );
+      this.#activated = false;
     }
 
     
