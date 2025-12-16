@@ -2296,14 +2296,6 @@ pref("identity.mobilepromo.ios", "https://www.mozilla.org/firefox/ios/?utm_sourc
 
 
 
-#ifdef MOZ_DEV_EDITION
-  pref("identity.fxaccounts.migrateToDevEdition", true);
-#else
-  pref("identity.fxaccounts.migrateToDevEdition", false);
-#endif
-
-
-
 pref("identity.fxaccounts.commands.missed.fetch_interval", 86400);
 
 
