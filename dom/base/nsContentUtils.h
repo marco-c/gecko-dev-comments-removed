@@ -549,8 +549,8 @@ class nsContentUtils {
 
 
 
-  static nsIContent* GetCommonFlattenedTreeAncestorForSelection(
-      nsIContent* aContent1, nsIContent* aContent2);
+  static nsINode* GetCommonFlattenedTreeAncestorForSelection(nsINode* aNode1,
+                                                             nsINode* aNode2);
 
   
 
