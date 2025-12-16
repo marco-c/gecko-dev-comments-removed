@@ -10,7 +10,7 @@ class TestShutdownPingsSucced(TelemetryTestCase):
     """Test Firefox shutdown pings."""
 
     def tearDown(self):
-        super(TestShutdownPingsSucced, self).tearDown()
+        super().tearDown()
 
         
         

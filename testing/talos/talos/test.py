@@ -146,7 +146,7 @@ class TsBase(Test):
     ]
 
     def __init__(self, **kw):
-        super(TsBase, self).__init__(**kw)
+        super().__init__(**kw)
 
         
         

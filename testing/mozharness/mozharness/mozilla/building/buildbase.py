@@ -73,7 +73,7 @@ class MakeUploadOutputParser(OutputParser):
     tbpl_error_list = TBPL_UPLOAD_ERRORS
 
     def __init__(self, **kwargs):
-        super(MakeUploadOutputParser, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.tbpl_status = TBPL_SUCCESS
 
     def parse_single_line(self, line):
@@ -219,9 +219,7 @@ class BuildingConfig(BaseConfig):
 
         
         
-        all_config_dicts.extend(
-            super(BuildingConfig, self).get_cfgs_from_files(all_config_files, options)
-        )
+        all_config_dicts.extend(super().get_cfgs_from_files(all_config_files, options))
 
         
         if variant_cfg_file:
@@ -254,6 +252,7 @@ class BuildOptionParser:
         "fuzzing-tsan-tc": path_base + "%s_fuzzing_tsan_tc.py",
         "cross-debug": path_base + "%s_cross_debug.py",
         "cross-debug-searchfox": path_base + "%s_cross_debug_searchfox.py",
+        "cross-opt-searchfox": path_base + "%s_cross_opt_searchfox.py",
         "cross-noopt-debug": path_base + "%s_cross_noopt_debug.py",
         "cross-fuzzing-asan": path_base + "%s_cross_fuzzing_asan.py",
         "cross-fuzzing-debug": path_base + "%s_cross_fuzzing_debug.py",
@@ -515,7 +514,7 @@ class BuildScript(
         
         
         self.objdir = None
-        super(BuildScript, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         
         
         
@@ -602,7 +601,7 @@ items from that key's value."
 
         
         
-        env = copy.deepcopy(super(BuildScript, self).query_env(**kwargs))
+        env = copy.deepcopy(super().query_env(**kwargs))
 
         if self.query_is_nightly() or self.query_is_nightly_promotion():
             

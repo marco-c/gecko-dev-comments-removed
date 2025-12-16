@@ -123,7 +123,7 @@ class TestFissionAutostart(MarionetteTestCase):
             self.setUpSession()
 
     def setUp(self):
-        super(TestFissionAutostart, self).setUp()
+        super().setUp()
 
         
         
@@ -152,7 +152,7 @@ class TestFissionAutostart(MarionetteTestCase):
             )
         self.marionette.restart(in_app=False, clean=True)
 
-        super(TestFissionAutostart, self).tearDown()
+        super().tearDown()
 
     def test_runtime_changes(self):
         """Tests that changes to preferences during runtime do not have any

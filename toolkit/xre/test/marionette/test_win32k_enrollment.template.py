@@ -155,7 +155,7 @@ class TestWin32kAutostart(MarionetteTestCase):
             self.setUpSession()
 
     def setUp(self):
-        super(TestWin32kAutostart, self).setUp()
+        super().setUp()
 
         
         
@@ -201,4 +201,4 @@ class TestWin32kAutostart(MarionetteTestCase):
             self.marionette.instance.required_prefs[Prefs.WIN32K] = self.win32kRequired
         self.marionette.restart(in_app=False, clean=True)
 
-        super(TestWin32kAutostart, self).tearDown()
+        super().tearDown()

@@ -301,9 +301,7 @@ class MozbuildObject(ProcessExecutionMixin):
                     )
                     for a in args
                 )
-                return super(ReducedConfigureSandbox, self).depends_impl(
-                    *args, **kwargs
-                )
+                return super().depends_impl(*args, **kwargs)
 
         
         

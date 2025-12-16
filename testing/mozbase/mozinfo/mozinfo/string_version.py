@@ -14,7 +14,7 @@ class StringVersion(str):
     pat = re.compile(r"(\d+)|([^\d.]+)")
 
     def __init__(self, vstring):
-        super(StringVersion, self).__init__()
+        super().__init__()
 
         
         
