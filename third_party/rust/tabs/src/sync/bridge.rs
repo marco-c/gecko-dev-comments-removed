@@ -263,8 +263,7 @@ mod tests {
         let ours = serde_json::from_str::<serde_json::Value>(&out[0]).unwrap();
         
         
-        let expected_tabs: Vec<TabsRecordTab> =
-            my_tabs.into_iter().map(|t| t.to_record_tab()).collect();
+        let expected_tabs: Vec<TabsRecordTab> = my_tabs.into_iter().map(Into::into).collect();
         let expected = json!({
             "id": "my-device".to_string(),
             "payload": json!({
