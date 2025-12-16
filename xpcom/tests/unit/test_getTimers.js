@@ -38,7 +38,9 @@ if (AppConstants.platform == "win") {
   ignoredTimers.push("nsAnonTempFileRemover");
 }
 if (
-  Services.profiler.IsActive() &&
+  
+  
+  Services.profiler?.IsActive() &&
   !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
   Services.env.exists("MOZ_UPLOAD_DIR") &&
   Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
