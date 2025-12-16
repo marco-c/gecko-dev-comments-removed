@@ -21,7 +21,7 @@
 
 namespace mozilla::dom {
 
-MOZ_CONSTINIT static SVGAttrTearoffTable<SVGAnimatedLength, DOMSVGLength>
+constinit static SVGAttrTearoffTable<SVGAnimatedLength, DOMSVGLength>
     sBaseSVGLengthTearOffTable, sAnimSVGLengthTearOffTable;
 
 
