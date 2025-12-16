@@ -83,20 +83,20 @@ const TOOLTIP_VARIABLE_TYPE = "variable";
 
 
 
+class TooltipsOverlay {
+  
 
 
 
-function TooltipsOverlay(view) {
-  this.view = view;
-  this._instances = new Map();
+  constructor(view) {
+    this.view = view;
+    this._instances = new Map();
 
-  this._onNewSelection = this._onNewSelection.bind(this);
-  this.view.inspector.selection.on("new-node-front", this._onNewSelection);
+    this._onNewSelection = this._onNewSelection.bind(this);
+    this.view.inspector.selection.on("new-node-front", this._onNewSelection);
 
-  this.addToView();
-}
-
-TooltipsOverlay.prototype = {
+    this.addToView();
+  }
   get isEditing() {
     for (const [, tooltip] of this._instances) {
       if (typeof tooltip.isEditing == "function" && tooltip.isEditing()) {
@@ -104,7 +104,7 @@ TooltipsOverlay.prototype = {
       }
     }
     return false;
-  },
+  }
 
   
 
@@ -141,7 +141,7 @@ TooltipsOverlay.prototype = {
         );
       }
     }
-  },
+  }
 
   
 
@@ -207,7 +207,7 @@ TooltipsOverlay.prototype = {
     }
     this._instances.set(name, tooltip);
     return tooltip;
-  },
+  }
 
   
 
@@ -226,7 +226,7 @@ TooltipsOverlay.prototype = {
     this.compatibilityTooltipHelper.destroy();
 
     this._isStarted = false;
-  },
+  }
 
   
 
@@ -275,7 +275,7 @@ TooltipsOverlay.prototype = {
     }
 
     return tooltipType;
-  },
+  }
 
   _removePreviousInstances() {
     for (const tooltip of this._instances.values()) {
@@ -286,7 +286,7 @@ TooltipsOverlay.prototype = {
         tooltip.hide();
       }
     }
-  },
+  }
 
   
 
@@ -373,7 +373,7 @@ TooltipsOverlay.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -458,7 +458,7 @@ TooltipsOverlay.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -468,7 +468,7 @@ TooltipsOverlay.prototype = {
 
   sendOpenScalarToTelemetry(type) {
     Glean.devtoolsTooltip.shown[type].add(1);
-  },
+  }
 
   
 
@@ -505,7 +505,7 @@ TooltipsOverlay.prototype = {
       naturalWidth,
       naturalHeight,
     });
-  },
+  }
 
   
 
@@ -553,7 +553,7 @@ TooltipsOverlay.prototype = {
       naturalWidth,
       naturalHeight,
     });
-  },
+  }
 
   
 
@@ -569,13 +569,13 @@ TooltipsOverlay.prototype = {
       doc,
       tooltipParams
     );
-  },
+  }
 
   _onNewSelection() {
     for (const [, tooltip] of this._instances) {
       tooltip.hide();
     }
-  },
+  }
 
   
 
@@ -587,7 +587,7 @@ TooltipsOverlay.prototype = {
     this.view = null;
 
     this._isDestroyed = true;
-  },
-};
+  }
+}
 
 module.exports = TooltipsOverlay;
