@@ -70,8 +70,8 @@ add_task(async function validate_filename_method() {
   Assert.equal(checkFilename("簡単簡単簡単", 0), "簡単簡単簡単.png");
   Assert.equal(checkFilename(" happy\u061c\u2069.png", 0), "happy__.png");
   Assert.equal(
-    checkFilename("12345678".repeat(31) + "abcdefgh.png", 0),
-    "12345678".repeat(31) + "ab.png"
+    checkFilename("12345678".repeat(30) + "abcdefghijk.png", 0),
+    "12345678".repeat(30) + "abcdefgh.png"
   );
   Assert.equal(
     checkFilename("簡単".repeat(41) + ".png", 0),
@@ -79,16 +79,20 @@ add_task(async function validate_filename_method() {
   );
   Assert.equal(
     checkFilename("a" + "簡単".repeat(42) + ".png", 0),
-    "a" + "簡単".repeat(40) + "簡.png"
+    "a" + "簡単".repeat(41) + ".png"
   );
   Assert.equal(
-    checkFilename("a" + "簡単".repeat(56) + ".png", 0),
-    "a" + "簡単".repeat(40) + ".png"
+    checkFilename("ab" + "簡単".repeat(42) + ".png", 0),
+    "ab" + "簡単".repeat(41) + ".png"
+  );
+  Assert.equal(
+    checkFilename("abc" + "簡単".repeat(42) + ".png", 0),
+    "abc" + "簡単".repeat(40) + "簡.png"
   );
   Assert.equal(checkFilename("café.png", 0), "café.png");
   Assert.equal(
-    checkFilename("café".repeat(50) + ".png", 0),
-    "café".repeat(50) + ".png"
+    checkFilename("café".repeat(49) + "caf.png", 0),
+    "café".repeat(49) + "caf.png"
   );
   Assert.equal(
     checkFilename("café".repeat(51) + ".png", 0),
@@ -105,7 +109,7 @@ add_task(async function validate_filename_method() {
   );
   Assert.equal(
     checkFilename("\u{100001}\u{100002}".repeat(32) + ".png", 0),
-    "\u{100001}\u{100002}".repeat(30) + "\u{100001}.png"
+    "\u{100001}\u{100002}".repeat(31) + ".png"
   );
 
   Assert.equal(
@@ -114,11 +118,11 @@ add_task(async function validate_filename_method() {
   );
   Assert.equal(
     checkFilename("noextensionfile".repeat(17), 0),
-    "noextensionfile".repeat(16) + "noextensio.png"
+    "noextensionfile".repeat(16) + "noextens.png"
   );
   Assert.equal(
     checkFilename("noextensionfile".repeat(16) + "noextensionfil.", 0),
-    "noextensionfile".repeat(16) + "noextensio.png"
+    "noextensionfile".repeat(16) + "noextens.png"
   );
 
   Assert.equal(checkFilename("  first  .png  ", 0), "first .png");
@@ -150,17 +154,17 @@ add_task(async function validate_filename_method() {
   );
   Assert.equal(checkFilename("sixth.j  pe/*g", 0), "sixth.png");
 
-  let repeatStr = "12345678".repeat(31);
+  let repeatStr = "12345678".repeat(30);
   Assert.equal(
     checkFilename(
-      repeatStr + "seventh.png",
+      repeatStr + "seventeenth.png",
       mimeService.VALIDATE_DONT_TRUNCATE
     ),
-    repeatStr + "seventh.png"
+    repeatStr + "seventeenth.png"
   );
   Assert.equal(
-    checkFilename(repeatStr + "seventh.png", 0),
-    repeatStr + "se.png"
+    checkFilename(repeatStr + "seventeenth.png", 0),
+    repeatStr + "seventee.png"
   );
 
   
@@ -190,13 +194,13 @@ add_task(async function validate_filename_method() {
   ext = "lo#?n/ginvalid? ch\\ars";
   Assert.equal(
     checkFilename(repeatStr + ext, mimeService.VALIDATE_SANITIZE_ONLY),
-    repeatStr + "lo#_n_"
+    repeatStr + "lo#_n_gi"
   );
 
   ext = ".long/invalid#? ch\\ars";
   Assert.equal(
     checkFilename(repeatStr + ext, mimeService.VALIDATE_SANITIZE_ONLY),
-    repeatStr.substring(0, 232) + ".long_invalid#_ch_ars"
+    repeatStr.substring(0, 233) + ".long_invalid#_ch_ars"
   );
 
   Assert.equal(
@@ -288,7 +292,7 @@ add_task(async function validate_filename_method() {
       "text/unknown",
       mimeService.VALIDATE_SANITIZE_ONLY
     ),
-    "라이브9.9만 시청컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 .등-유산균-컬처렐-특가!",
+    "라이브9.9만 시청컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑.등-유산균-컬처렐-특가!",
     "very long filename with extension"
   );
 
@@ -310,7 +314,7 @@ add_task(async function validate_filename_method() {
       "text/unknown",
       mimeService.VALIDATE_SANITIZE_ONLY
     ),
-    "라이브99만 시청컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑백 2장24_102 000원 브랜드데",
+    "라이브99만 시청컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑백 2장컬처렐 다이제스티브 3박스 - 3박스 더 (뚱랑이 굿즈 증정) - 선물용 쇼핑백 2장24_102 000원 브랜",
     "very filename with extension only"
   );
 
@@ -394,7 +398,7 @@ add_task(async function validate_filename_method() {
       0
     ),
     "filename.local.download",
-    "filename.lnk with vowel separators"
+    "filename.local with vowel separators"
   );
 
   Assert.equal(

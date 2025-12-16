@@ -49,7 +49,7 @@ class nsLocalFile final : public nsILocalFileWin {
 
   
   
-  static bool CheckForReservedFileName(const nsString& aFileName);
+  static bool CheckForReservedFileName(const nsAString& aFileName);
 
   
 
