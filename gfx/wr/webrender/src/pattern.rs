@@ -2,9 +2,14 @@
 
 
 
-use api::{units::DeviceRect, ColorF};
+use api::{ColorF, units::DeviceRect};
 
-use crate::{clip::ClipStore, frame_builder::FrameBuilderConfig, render_task_graph::{RenderTaskGraphBuilder, RenderTaskId}, renderer::GpuBufferBuilder, scene::SceneProperties, spatial_tree::SpatialTree};
+use crate::clip::ClipStore;
+use crate::frame_builder::FrameBuilderConfig;
+use crate::render_task_graph::{RenderTaskGraphBuilder, RenderTaskId};
+use crate::renderer::GpuBufferBuilder;
+use crate::scene::SceneProperties;
+use crate::spatial_tree::SpatialTree;
 
 #[repr(u32)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
