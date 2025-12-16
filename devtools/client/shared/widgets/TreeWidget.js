@@ -11,46 +11,46 @@ const { KeyCodes } = require("resource://devtools/client/shared/keycodes.js");
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function TreeWidget(node, options = {}) {
-  EventEmitter.decorate(this);
-
-  this.document = node.ownerDocument;
-  this.window = this.document.defaultView;
-  this._parent = node;
-
-  this.emptyText = options.emptyText || "";
-  this.defaultType = options.defaultType;
-  this.sorted = options.sorted !== false;
-  this.contextMenuId = options.contextMenuId;
-
-  this.setupRoot();
-
-  this.placeholder = this.document.createElementNS(HTML_NS, "label");
-  this.placeholder.className = "tree-widget-empty-text";
-  this._parent.appendChild(this.placeholder);
-
-  if (this.emptyText) {
-    this.setPlaceholderText(this.emptyText);
-  }
+class TreeWidget extends EventEmitter {
   
-  this.attachments = new Map();
-}
 
-TreeWidget.prototype = {
-  _selectedLabel: null,
-  _selectedItem: null,
 
+
+
+
+
+
+
+
+
+
+  constructor(node, options = {}) {
+    super();
+
+    this.document = node.ownerDocument;
+    this.window = this.document.defaultView;
+    this._parent = node;
+
+    this.emptyText = options.emptyText || "";
+    this.defaultType = options.defaultType;
+    this.sorted = options.sorted !== false;
+    this.contextMenuId = options.contextMenuId;
+
+    this.setupRoot();
+
+    this.placeholder = this.document.createElementNS(HTML_NS, "label");
+    this.placeholder.className = "tree-widget-empty-text";
+    this._parent.appendChild(this.placeholder);
+
+    if (this.emptyText) {
+      this.setPlaceholderText(this.emptyText);
+    }
+    
+    this.attachments = new Map();
+  }
+
+  _selectedLabel = null;
+  _selectedItem = null;
   
 
 
@@ -83,7 +83,7 @@ TreeWidget.prototype = {
         this.attachments.get(JSON.stringify(ids))
       );
     }
-  },
+  }
 
   
 
@@ -93,7 +93,7 @@ TreeWidget.prototype = {
 
   get selectedItem() {
     return this._selectedItem;
-  },
+  }
 
   
 
@@ -113,12 +113,12 @@ TreeWidget.prototype = {
     }
 
     return true;
-  },
+  }
 
   destroy() {
     this.root.remove();
     this.root = null;
-  },
+  }
 
   
 
@@ -140,7 +140,7 @@ TreeWidget.prototype = {
 
     this.root.children.addEventListener("mousedown", e => this.onClick(e));
     this.root.children.addEventListener("keydown", e => this.onKeydown(e));
-  },
+  }
 
   
 
@@ -153,7 +153,7 @@ TreeWidget.prototype = {
     } else {
       this.placeholder.setAttribute("hidden", "true");
     }
-  },
+  }
 
   
 
@@ -163,7 +163,7 @@ TreeWidget.prototype = {
 
   selectItem(id) {
     this.selectedItem = id;
-  },
+  }
 
   
 
@@ -173,7 +173,7 @@ TreeWidget.prototype = {
     if (next) {
       this.selectedItem = next;
     }
-  },
+  }
 
   
 
@@ -183,7 +183,7 @@ TreeWidget.prototype = {
     if (prev) {
       this.selectedItem = prev;
     }
-  },
+  }
 
   
 
@@ -205,7 +205,7 @@ TreeWidget.prototype = {
       node = node.parentNode;
     }
     return null;
-  },
+  }
 
   
 
@@ -234,11 +234,11 @@ TreeWidget.prototype = {
       return JSON.parse(node.getAttribute("data-id"));
     }
     return null;
-  },
+  }
 
   clearSelection() {
     this.selectedItem = -1;
-  },
+  }
 
   
 
@@ -281,7 +281,7 @@ TreeWidget.prototype = {
     }
     
     this.setPlaceholderText("");
-  },
+  }
 
   
 
@@ -300,7 +300,7 @@ TreeWidget.prototype = {
       }
     }
     return true;
-  },
+  }
 
   
 
@@ -315,7 +315,7 @@ TreeWidget.prototype = {
     if (this.root.items.size == 0 && this.emptyText) {
       this.setPlaceholderText(this.emptyText);
     }
-  },
+  }
 
   
 
@@ -327,21 +327,21 @@ TreeWidget.prototype = {
     if (this.emptyText) {
       this.setPlaceholderText(this.emptyText);
     }
-  },
+  }
 
   
 
 
   expandAll() {
     this.root.expandAll();
-  },
+  }
 
   
 
 
   collapseAll() {
     this.root.collapseAll();
-  },
+  }
 
   
 
@@ -368,7 +368,7 @@ TreeWidget.prototype = {
       const ids = target.parentNode.getAttribute("data-id");
       this.selectedItem = JSON.parse(ids);
     }
-  },
+  }
 
   
 
@@ -407,7 +407,7 @@ TreeWidget.prototype = {
         return;
     }
     event.preventDefault();
-  },
+  }
 
   
 
@@ -421,14 +421,16 @@ TreeWidget.prototype = {
     } else if (bottom > height) {
       this._selectedLabel.scrollIntoView(false);
     }
-  },
-};
+  }
+}
 
 module.exports.TreeWidget = TreeWidget;
 
 
 
 
+class TreeItem {
+  
 
 
 
@@ -439,54 +441,53 @@ module.exports.TreeWidget = TreeWidget;
 
 
 
-function TreeItem(document, parent, label, type) {
-  this.document = document;
-  this.node = this.document.createElementNS(HTML_NS, "li");
-  this.node.setAttribute("tabindex", "0");
-  this.isRoot = !parent;
-  this.parent = parent;
-  if (this.parent) {
-    this.level = this.parent.level + 1;
-  }
-  if (label) {
-    this.label = this.document.createElementNS(HTML_NS, "div");
-    this.label.setAttribute("empty", "true");
-    this.label.setAttribute("level", this.level);
-    this.label.className = "tree-widget-item";
-    if (type) {
-      this.label.setAttribute("type", type);
+  constructor(document, parent, label, type) {
+    this.document = document;
+    this.node = this.document.createElementNS(HTML_NS, "li");
+    this.node.setAttribute("tabindex", "0");
+    this.isRoot = !parent;
+    this.parent = parent;
+    if (this.parent) {
+      this.level = this.parent.level + 1;
     }
-    if (typeof label == "string") {
-      this.label.textContent = label;
+    if (label) {
+      this.label = this.document.createElementNS(HTML_NS, "div");
+      this.label.setAttribute("empty", "true");
+      this.label.setAttribute("level", this.level);
+      this.label.className = "tree-widget-item";
+      if (type) {
+        this.label.setAttribute("type", type);
+      }
+      if (typeof label == "string") {
+        this.label.textContent = label;
+      } else {
+        this.label.appendChild(label);
+      }
+      this.node.appendChild(this.label);
+    }
+    this.children = this.document.createElementNS(HTML_NS, "ul");
+    if (this.isRoot) {
+      this.children.className = "tree-widget-container";
     } else {
-      this.label.appendChild(label);
+      this.children.className = "tree-widget-children";
     }
-    this.node.appendChild(this.label);
+    this.node.appendChild(this.children);
+    this.items = new Map();
   }
-  this.children = this.document.createElementNS(HTML_NS, "ul");
-  if (this.isRoot) {
-    this.children.className = "tree-widget-container";
-  } else {
-    this.children.className = "tree-widget-children";
-  }
-  this.node.appendChild(this.children);
-  this.items = new Map();
-}
 
-TreeItem.prototype = {
-  items: null,
+  items = null;
 
-  isSelected: false,
+  isSelected = false;
 
-  expanded: false,
+  expanded = false;
 
-  isRoot: false,
+  isRoot = false;
 
-  parent: null,
+  parent = null;
 
-  children: null,
+  children = null;
 
-  level: 0,
+  level = 0;
 
   
 
@@ -559,7 +560,7 @@ TreeItem.prototype = {
       this.label.removeAttribute("empty");
     }
     this.items.set(id, treeItem);
-  },
+  }
 
   
 
@@ -584,7 +585,7 @@ TreeItem.prototype = {
     } else if (!id) {
       this.destroy();
     }
-  },
+  }
 
   
 
@@ -607,7 +608,7 @@ TreeItem.prototype = {
       return label;
     }
     return null;
-  },
+  }
 
   
 
@@ -619,7 +620,7 @@ TreeItem.prototype = {
     for (const child of this.items.values()) {
       child.collapseAll();
     }
-  },
+  }
 
   
 
@@ -631,7 +632,7 @@ TreeItem.prototype = {
     for (const child of this.items.values()) {
       child.expandAll();
     }
-  },
+  }
 
   destroy() {
     this.children.remove();
@@ -639,5 +640,5 @@ TreeItem.prototype = {
     this.label = null;
     this.items = null;
     this.children = null;
-  },
-};
+  }
+}
