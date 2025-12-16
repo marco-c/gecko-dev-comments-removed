@@ -3660,7 +3660,12 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
       
       
 
-      originStateMetadata.mLastAccessTime = PR_Now();
+      
+      if (StaticPrefs::
+              dom_quotaManager_temporaryStorage_updateOriginAccessTime()) {
+        originStateMetadata.mLastAccessTime = PR_Now();
+      }
+
       originStateMetadata.mPersisted = true;
 
       QM_TRY(MOZ_TO_RESULT(
