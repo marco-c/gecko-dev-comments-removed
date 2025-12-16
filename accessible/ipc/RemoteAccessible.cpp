@@ -1713,11 +1713,23 @@ already_AddRefed<AccAttributes> RemoteAccessible::DefaultTextAttributes() {
   if (RequestDomainsIfInactive(CacheDomain::Text)) {
     return nullptr;
   }
-  RefPtr<const AccAttributes> attrs = GetCachedTextAttributes();
+
   RefPtr<AccAttributes> result = new AccAttributes();
-  if (attrs) {
-    attrs->CopyTo(result);
+  for (RemoteAccessible* parent = this; parent;
+       parent = parent->RemoteParent()) {
+    if (!parent->IsHyperText()) {
+      
+      
+      continue;
+    }
+
+    if (RefPtr<const AccAttributes> parentAttrs =
+            parent->GetCachedTextAttributes()) {
+      
+      parentAttrs->CopyTo(result, true);
+    }
   }
+
   return result.forget();
 }
 
@@ -2622,15 +2634,13 @@ void RemoteAccessible::Language(nsAString& aLocale) {
   }
 
   if (IsHyperText() || IsText()) {
-    if (auto attrs = GetCachedTextAttributes()) {
-      attrs->GetAttribute(nsGkAtoms::language, aLocale);
-    }
-    if (IsText() && aLocale.IsEmpty()) {
+    for (RemoteAccessible* parent = this; parent;
+         parent = parent->RemoteParent()) {
       
-      
-      if (RemoteAccessible* parent = RemoteParent()) {
-        if (auto attrs = parent->GetCachedTextAttributes()) {
-          attrs->GetAttribute(nsGkAtoms::language, aLocale);
+      if (RefPtr<const AccAttributes> attrs =
+              parent->GetCachedTextAttributes()) {
+        if (attrs->GetAttribute(nsGkAtoms::language, aLocale)) {
+          return;
         }
       }
     }

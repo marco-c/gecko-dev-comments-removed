@@ -3707,12 +3707,29 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         TextLeafPoint point(this, 0);
         RefPtr<AccAttributes> attrs = point.GetTextAttributesLocalAcc(
              false);
-        fields->SetAttribute(CacheKey::TextAttributes, std::move(attrs));
+        if (attrs->Count()) {
+          fields->SetAttribute(CacheKey::TextAttributes, std::move(attrs));
+        } else if (IsUpdatePush(CacheDomain::Text)) {
+          fields->SetAttribute(CacheKey::TextAttributes, DeleteEntry());
+        }
       }
     }
     if (HyperTextAccessible* ht = AsHyperText()) {
       RefPtr<AccAttributes> attrs = ht->DefaultTextAttributes();
-      fields->SetAttribute(CacheKey::TextAttributes, std::move(attrs));
+      LocalAccessible* parent = LocalParent();
+      if (HyperTextAccessible* htParent =
+              parent ? parent->AsHyperText() : nullptr) {
+        if (RefPtr<AccAttributes> parentAttrs =
+                htParent->DefaultTextAttributes()) {
+          
+          attrs->RemoveIdentical(parentAttrs);
+        }
+      }
+      if (attrs->Count()) {
+        fields->SetAttribute(CacheKey::TextAttributes, std::move(attrs));
+      } else if (IsUpdatePush(CacheDomain::Text)) {
+        fields->SetAttribute(CacheKey::TextAttributes, DeleteEntry());
+      }
     } else if (!IsText()) {
       
       

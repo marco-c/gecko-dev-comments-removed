@@ -224,6 +224,9 @@ class AccAttributes {
   void Update(AccAttributes* aOther);
 
   
+  void RemoveIdentical(const AccAttributes* aOther);
+
+  
 
 
 
@@ -236,7 +239,9 @@ class AccAttributes {
 
 
 
-  void CopyTo(AccAttributes* aDest) const;
+
+
+  void CopyTo(AccAttributes* aDest, bool aOnlyMissing = false) const;
 
   
   class Entry {
