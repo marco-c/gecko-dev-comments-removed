@@ -82,7 +82,7 @@ function test_accepted_languages() {
       
       Assert.equal(
         parseFloat(qualityValue).toFixed(decimalPlaces),
-        (1.0 - (1 / acceptedLanguagesLength) * i).toFixed(decimalPlaces)
+        Math.max(1.0 - i * 0.1, 0.1).toFixed(decimalPlaces)
       );
     }
   }

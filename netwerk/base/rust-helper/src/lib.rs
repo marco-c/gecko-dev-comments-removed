@@ -90,8 +90,6 @@ pub extern "C" fn rust_prepare_accept_languages(
             .filter(|token| !token.is_empty())
     };
 
-    let n = make_tokens().count();
-
     for (count_n, i_token) in make_tokens().enumerate() {
         
         if count_n != 0 {
@@ -107,22 +105,13 @@ pub extern "C" fn rust_prepare_accept_languages(
         }
 
         
-        let q = 1.0 - count_n as f32 / n as f32;
+        let q_val_max = 10;
+        let weight_of_decrement = 1;
+        let step = std::cmp::min(10, count_n); 
+        let q_val = std::cmp::max(q_val_max - step * weight_of_decrement, 1); 
 
-        let u: u32 = ((q + 0.005) * 100.0) as u32;
-        
-        if u < 100 {
-            
-            
-            
-            
-            if n < 10 || u % 10 == 0 {
-                let u = (u + 5) / 10;
-                o_accept_languages.append(&format!(";q=0.{}", u));
-            } else {
-                
-                o_accept_languages.append(&format!(";q=0.{:02}", u));
-            }
+        if count_n > 0 && q_val < 10 {
+            o_accept_languages.append(&format!(";q=0.{}", q_val));
         }
     }
 
