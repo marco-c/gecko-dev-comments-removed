@@ -32,8 +32,10 @@ namespace webrtc {
 
 
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 struct DataChannelInit {
   
   
@@ -71,7 +73,9 @@ struct DataChannelInit {
   
   std::optional<PriorityValue> priority;
 };
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
 
 

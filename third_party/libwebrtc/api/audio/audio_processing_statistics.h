@@ -20,8 +20,10 @@
 namespace webrtc {
 
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 struct RTC_EXPORT AudioProcessingStats {
   AudioProcessingStats();
   AudioProcessingStats(const AudioProcessingStats& other);
@@ -64,7 +66,9 @@ struct RTC_EXPORT AudioProcessingStats {
   
   std::optional<int32_t> delay_ms;
 };
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
 }  
 

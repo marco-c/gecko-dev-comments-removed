@@ -16,11 +16,15 @@ AudioProcessingStats::AudioProcessingStats() = default;
 
 
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 AudioProcessingStats::AudioProcessingStats(const AudioProcessingStats& other) =
     default;
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
 AudioProcessingStats::~AudioProcessingStats() = default;
 
