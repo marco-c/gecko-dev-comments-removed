@@ -4063,11 +4063,13 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  nsISelectionController* GetSelectionController() const;
+
+  
 
 
 
-  nsresult GetSelectionController(nsPresContext* aPresContext,
-                                  nsISelectionController** aSelCon) const;
+  int16_t GetDisplaySelection() const;
 
   
 
