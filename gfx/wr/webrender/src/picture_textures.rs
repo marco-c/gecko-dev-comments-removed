@@ -12,10 +12,7 @@ use crate::internal_types::{
     TextureSource, FrameStamp, FrameId,
 };
 use crate::profiler::{self, TransactionProfile};
-use crate::gpu_types::{ImageSource, UvRectKind};
 use crate::freelist::{FreeList, FreeListHandle, WeakFreeListHandle};
-use crate::renderer::{GpuBufferBuilderF, GpuBufferHandle};
-
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -36,30 +33,9 @@ use std::cmp;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PictureCacheEntry {
     
-    pub size: DeviceIntSize,
-    
-    
-    
-    
     pub last_access: FrameStamp,
     
-    pub uv_rect_handle: GpuBufferHandle,
-    
     pub texture_id: CacheTextureId,
-}
-
-impl PictureCacheEntry {
-    fn write_gpu_blocks(&mut self, gpu_buffer: &mut GpuBufferBuilderF) {
-        let origin = DeviceIntPoint::zero();
-        let image_source = ImageSource {
-            p0: origin.to_f32(),
-            p1: (origin + self.size).to_f32(),
-            uv_rect_kind: UvRectKind::Rect,
-            user_data: [0.0; 4],
-        };
-
-        self.uv_rect_handle = image_source.write_gpu_blocks(gpu_buffer);
-    }
 }
 
 
@@ -129,7 +105,6 @@ impl PictureTextures {
         &mut self,
         tile_size: DeviceIntSize,
         handle: &mut Option<PictureCacheTextureHandle>,
-        gpu_buffer: &mut GpuBufferBuilderF,
         next_texture_id: &mut CacheTextureId,
         pending_updates: &mut TextureUpdateList,
     ) {
@@ -154,15 +129,7 @@ impl PictureTextures {
             *handle = Some(new_handle);
         }
 
-        if let Some(handle) = handle {
-            
-            self.cache_entries
-                .get_opt_mut(handle)
-                .expect("BUG: handle must be valid now")
-                .write_gpu_blocks(gpu_buffer);
-        } else {
-            panic!("The handle should be valid picture cache handle now")
-        }
+        assert!(handle.is_some(), "The handle should be valid picture cache handle now");
     }
 
     pub fn get_or_allocate_tile(
@@ -216,9 +183,7 @@ impl PictureTextures {
         });
 
         let cache_entry = PictureCacheEntry {
-            size: tile_size,
             last_access: self.now,
-            uv_rect_handle: GpuBufferHandle::INVALID,
             texture_id,
         };
 
@@ -263,14 +228,13 @@ impl PictureTextures {
         }
     }
 
-    pub fn request(&mut self, handle: &PictureCacheTextureHandle, gpu_buffer: &mut GpuBufferBuilderF) -> bool {
+    pub fn request(&mut self, handle: &PictureCacheTextureHandle) -> bool {
         let entry = self.cache_entries.get_opt_mut(handle);
         let now = self.now;
         entry.map_or(true, |entry| {
             
             
             entry.last_access = now;
-            entry.write_gpu_blocks(gpu_buffer);
             false
         })
     }
