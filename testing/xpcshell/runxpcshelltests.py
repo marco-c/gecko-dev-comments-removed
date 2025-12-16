@@ -188,7 +188,7 @@ class XPCShellTestThread(Thread):
         if retry is None:
             
             
-            self.retry = os.environ.get("MOZ_AUTOMATION", 0) != 0
+            self.retry = os.environ.get("MOZ_AUTOMATION") is not None
         self.verbose = verbose
         self.usingTSan = usingTSan
         self.usingCrashReporter = usingCrashReporter

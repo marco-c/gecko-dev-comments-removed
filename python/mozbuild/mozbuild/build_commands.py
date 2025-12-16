@@ -157,10 +157,10 @@ def build(
     configure_args = mozconfig["configure_args"]
     doing_pgo = configure_args and "MOZ_PGO=1" in configure_args
     
-    verbose = verbose or bool(os.environ.get("MOZ_AUTOMATION", False))
+    verbose = verbose or bool(os.environ.get("MOZ_AUTOMATION"))
     
     
-    keep_going = keep_going or bool(os.environ.get("MOZ_AUTOMATION", False))
+    keep_going = keep_going or bool(os.environ.get("MOZ_AUTOMATION"))
     append_env = None
 
     
