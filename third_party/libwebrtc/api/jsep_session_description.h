@@ -29,6 +29,12 @@ class SessionDescription;
 
 class JsepSessionDescription final : public SessionDescriptionInterface {
  public:
+  
+  
+  
+  [[deprecated(
+      "JsepSessionDescription needs to be initialized with a valid description "
+      "object")]]
   explicit JsepSessionDescription(SdpType type);
   [[deprecated(
       "Use the CreateSessionDescription() method(s) to create an instance.")]]
@@ -47,6 +53,13 @@ class JsepSessionDescription final : public SessionDescriptionInterface {
   
   
   
+  
+  
+  
+  
+  [[deprecated(
+      "Use CreateSessionDescription() to construct SessionDescriptionInterface "
+      "objects.")]]
   bool Initialize(std::unique_ptr<SessionDescription> description,
                   const std::string& session_id,
                   const std::string& session_version);
@@ -61,10 +74,8 @@ class JsepSessionDescription final : public SessionDescriptionInterface {
   std::string session_version() const override { return session_version_; }
   SdpType GetType() const override { return type_; }
   std::string type() const override { return SdpTypeToString(type_); }
-  
   bool AddCandidate(const IceCandidate* candidate) override;
   bool RemoveCandidate(const IceCandidate* candidate) override;
-
   size_t number_of_mediasections() const override;
   const IceCandidateCollection* candidates(
       size_t mediasection_index) const override;
@@ -75,7 +86,7 @@ class JsepSessionDescription final : public SessionDescriptionInterface {
   std::string session_id_;
   std::string session_version_;
   const SdpType type_;
-  std::vector<JsepCandidateCollection> candidate_collection_;
+  std::vector<IceCandidateCollection> candidate_collection_;
 
   bool IsValidMLineIndex(int index) const;
   bool GetMediasectionIndex(const IceCandidate* candidate, size_t* index) const;

@@ -155,6 +155,9 @@ class IceCandidateCollection final {
   void add(IceCandidate* candidate);
 
   
+  void Append(IceCandidateCollection collection);
+
+  
   
   
   size_t remove(const IceCandidate* candidate);
@@ -313,6 +316,11 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     const std::string& session_id,
     const std::string& session_version,
     std::unique_ptr<SessionDescription> description);
+
+
+std::unique_ptr<SessionDescriptionInterface> CreateRollbackSessionDescription(
+    absl::string_view session_id = "",
+    absl::string_view session_version = "");
 
 
 class RTC_EXPORT CreateSessionDescriptionObserver : public RefCountInterface {

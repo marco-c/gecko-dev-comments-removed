@@ -3368,7 +3368,24 @@ bool SdpDeserialize(absl::string_view message,
     return false;
   }
 
+#if RTC_DCHECK_IS_ON
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (size_t i = 0u; i < jdesc->number_of_mediasections(); ++i) {
+    RTC_DCHECK(jdesc->candidates(i)->empty());
+  }
+#endif
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   jdesc->Initialize(std::move(desc), session_id, session_version);
+#pragma clang diagnostic pop
 
   for (const auto& candidate : candidates) {
     jdesc->AddCandidate(candidate.get());
