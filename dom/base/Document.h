@@ -3509,7 +3509,6 @@ class Document : public nsINode,
     return GetFuncStringContentList<nsCachableElementsByNameNodeList>(
         this, MatchNameAttribute, nullptr, UseExistingNameString, aName);
   }
-  MOZ_CAN_RUN_SCRIPT
   Document* Open(const mozilla::dom::Optional<nsAString>& ,
                  const mozilla::dom::Optional<nsAString>& ,
                  mozilla::ErrorResult& aError);

@@ -9942,19 +9942,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   if (aLoadState->LoadIsFromSessionHistory() &&
       (mLoadType & LOAD_CMD_HISTORY)) {
-    if (RefPtr window = GetActiveWindow()) {
-      if (RefPtr navigation = window->Navigation()) {
-        if (const LoadingSessionHistoryInfo* loadingInfo =
-                GetLoadingSessionHistoryInfo()) {
-          const SessionHistoryInfo* previousEntryForActivation =
-              loadingInfo->mTriggeringEntry.ptrOr(nullptr);
-          navigation->CreateNavigationActivationFrom(
-              previousEntryForActivation,
-              NavigationUtils::NavigationTypeFromLoadType(mLoadType));
-        }
-      }
-    }
-
     
     
     
@@ -12127,9 +12114,6 @@ nsresult nsDocShell::UpdateURLAndHistory(
     Document* aDocument, nsIURI* aNewURI, nsIStructuredCloneContainer* aData,
     NavigationHistoryBehavior aHistoryHandling, nsIURI* aCurrentURI,
     bool aEqualURIs) {
-  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "UpdateURLAndHistory {}",
-              aHistoryHandling);
-
   
   
   MOZ_ASSERT(aHistoryHandling != NavigationHistoryBehavior::Auto);
@@ -14617,9 +14601,12 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
                           return fmt::format(FMT_STRING("{}"), type);
                         })
                         .valueOr("none"));
-        navigation->CreateNavigationActivationFrom(
-            loadingEntry->mTriggeringEntry.ptrOr(nullptr),
-            loadingEntry->mTriggeringNavigationType);
+        if (loadingEntry->mTriggeringEntry &&
+            loadingEntry->mTriggeringNavigationType) {
+          navigation->CreateNavigationActivationFrom(
+              &*loadingEntry->mTriggeringEntry,
+              *loadingEntry->mTriggeringNavigationType);
+        }
       }
     }
   }

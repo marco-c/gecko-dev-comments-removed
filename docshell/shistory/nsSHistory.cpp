@@ -1258,9 +1258,7 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
 
   aEntry->SetFrameLoader(nullptr);
 
-  nsCOMPtr<nsISHistory> nsihistory = aEntry->GetShistory();
-  RefPtr<nsSHistory> shistory = static_cast<nsSHistory*>(nsihistory.get());
-
+  nsCOMPtr<nsISHistory> shistory = aEntry->GetShistory();
   int32_t indexOfHistoryLoad =
       shistory ? shistory->GetIndexOfEntry(aEntry) : -1;
 
@@ -1305,7 +1303,7 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
 
       if (aCanSave) {
         currentSHEntry->SetFrameLoader(currentFrameLoader);
-        aBrowsingContext->DeactivateDocuments();
+        (void)aBrowsingContext->SetIsInBFCache(true);
       }
     }
 
@@ -1351,7 +1349,7 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
       currentFrameLoader->Destroy();
     }
 
-    loadingBC->ReactivateDocuments(aEntry, currentSHEntry);
+    (void)loadingBC->SetIsInBFCache(false);
 
     
     
@@ -2410,7 +2408,7 @@ nsresult nsSHistory::LoadEntry(BrowsingContext* aSourceBrowsingContext,
     
     InitiateLoad(aSourceBrowsingContext, nextEntry, rootBC, aLoadType,
                  aLoadResults, aLoadCurrentEntry, aUserActivation,
-                 requestedOffset, prevEntry);
+                 requestedOffset);
     return NS_OK;
   }
 
@@ -2419,13 +2417,13 @@ nsresult nsSHistory::LoadEntry(BrowsingContext* aSourceBrowsingContext,
       prevEntry, nextEntry, rootBC,
       [self = RefPtr{this},
        sourceBrowsingContext = RefPtr{aSourceBrowsingContext}, aLoadType,
-       &aLoadResults, aLoadCurrentEntry, aUserActivation, requestedOffset,
-       prevEntry](nsISHEntry* aEntry, BrowsingContext* aParent) {
+       &aLoadResults, aLoadCurrentEntry, aUserActivation,
+       requestedOffset](nsISHEntry* aEntry, BrowsingContext* aParent) {
         
         aEntry->SetIsSubFrame(aParent->Id() != self->mRootBC);
         self->InitiateLoad(sourceBrowsingContext, aEntry, aParent, aLoadType,
                            aLoadResults, aLoadCurrentEntry, aUserActivation,
-                           requestedOffset, prevEntry);
+                           requestedOffset);
       });
   if (!differenceFound) {
     
@@ -2627,8 +2625,7 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
                               BrowsingContext* aFrameBC, long aLoadType,
                               nsTArray<LoadEntryResult>& aLoadResults,
                               bool aLoadCurrentEntry, bool aUserActivation,
-                              int32_t aOffset,
-                              nsISHEntry* aPreviousEntryForActivation) {
+                              int32_t aOffset) {
   MOZ_ASSERT(aFrameBC && aFrameEntry);
 
   LoadEntryResult* loadResult = aLoadResults.AppendElement();
@@ -2656,8 +2653,6 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
 
   loadState->SetSHEntry(aFrameEntry);
 
-  loadState->SetPreviousEntryForActivation(aPreviousEntryForActivation);
-
   
   
   
@@ -2673,10 +2668,8 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
 
   if (mozilla::SessionHistoryInParent()) {
     nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(aFrameEntry);
-    const LoadingSessionHistoryInfo* loadingInfo =
-        loadState->GetLoadingSessionHistoryInfo();
-    aFrameBC->Canonical()->AddLoadingSessionHistoryEntry(loadingInfo->mLoadId,
-                                                         she);
+    aFrameBC->Canonical()->AddLoadingSessionHistoryEntry(
+        loadState->GetLoadingSessionHistoryInfo()->mLoadId, she);
   }
 
   nsCOMPtr<nsIURI> originalURI = aFrameEntry->GetOriginalURI();
