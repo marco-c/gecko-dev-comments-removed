@@ -128,6 +128,8 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
   
   wasm::AddressType addressType_;
   
+  wasm::PageSize pageSize_;
+  
   wasm::Pages clampedMaxPages_;
   wasm::Pages sourceMaxPages_;
   size_t mappedSize_;  
@@ -141,11 +143,12 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
  protected:
   WasmSharedArrayRawBuffer(uint8_t* buffer, size_t length,
                            wasm::AddressType addressType,
-                           wasm::Pages clampedMaxPages,
+                           wasm::PageSize pageSize, wasm::Pages clampedMaxPages,
                            wasm::Pages sourceMaxPages, size_t mappedSize)
       : SharedArrayRawBuffer(WasmBuffer{}, buffer, length),
         growLock_(mutexid::SharedArrayGrow),
         addressType_(addressType),
+        pageSize_(pageSize),
         clampedMaxPages_(clampedMaxPages),
         sourceMaxPages_(sourceMaxPages),
         mappedSize_(mappedSize) {}
@@ -183,9 +186,10 @@ class WasmSharedArrayRawBuffer : public SharedArrayRawBuffer {
   }
 
   wasm::AddressType wasmAddressType() const { return addressType_; }
+  wasm::PageSize wasmPageSize() const { return pageSize_; }
 
   wasm::Pages volatileWasmPages() const {
-    return wasm::Pages::fromByteLengthExact(length_, wasm::PageSize::Standard);
+    return wasm::Pages::fromByteLengthExact(length_, wasmPageSize());
   }
 
   wasm::Pages wasmClampedMaxPages() const { return clampedMaxPages_; }
@@ -369,6 +373,10 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   wasm::AddressType wasmAddressType() const {
     return rawWasmBufferObject()->wasmAddressType();
+  }
+
+  wasm::PageSize wasmPageSize() const {
+    return rawWasmBufferObject()->wasmPageSize();
   }
 
   bool isWasm() const { return rawBufferObject()->isWasm(); }
