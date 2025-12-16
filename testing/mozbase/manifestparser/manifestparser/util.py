@@ -6,53 +6,24 @@ import ast
 import os
 
 
-
-
-
-if os.altsep and os.altsep != "/":
-    altsep_b = os.altsep.encode("ascii")
-if os.sep != "/":
-    sep_b = os.sep.encode("ascii")
-
-if os.sep != "/":
+def normsep(path):
+    """
+    Normalize path separators, by using forward slashes instead of whatever
+    :py:const:`os.sep` is.
+    """
+    if os.sep != "/":
+        
+        
+        if isinstance(path, bytes):
+            path = path.replace(os.sep.encode("ascii"), b"/")
+        else:
+            path = path.replace(os.sep, "/")
     if os.altsep and os.altsep != "/":
-
-        def normsep(path):
-            """
-            Normalize path separators, by using forward slashes instead of whatever
-            :py:const:`os.sep` is.
-            """
-            
-            
-            if isinstance(path, bytes):
-                path = path.replace(sep_b, b"/")
-                return path.replace(altsep_b, b"/")
-            else:
-                path = path.replace(os.sep, "/")
-                return path.replace(os.altsep, "/")
-
-    else:
-
-        def normsep(path):
-            if isinstance(path, bytes):
-                return path.replace(sep_b, b"/")
-            else:
-                return path.replace(os.sep, "/")
-
-else:
-    if os.altsep and os.altsep != "/":
-
-        def normsep(path):
-            if isinstance(path, bytes):
-                return path.replace(altsep_b, b"/")
-            else:
-                return path.replace(os.altsep, "/")
-            return path
-
-    else:
-
-        def normsep(path):
-            return path
+        if isinstance(path, bytes):
+            path = path.replace(os.altsep.encode("ascii"), b"/")
+        else:
+            path = path.replace(os.altsep, "/")
+    return path
 
 
 def evaluate_list_from_string(list_string):
