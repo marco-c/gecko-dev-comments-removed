@@ -7,6 +7,7 @@
 #include "mozilla/dom/CSSUnitValue.h"
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -58,8 +59,31 @@ void CSSUnitValue::GetUnit(nsCString& aRetVal) const { aRetVal = mUnit; }
 
 void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                          nsACString& aDest) const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool isValueOutOfRange =
+      aPropertyId.mId == eCSSProperty_perspective && mValue < 0;
+
+  if (isValueOutOfRange) {
+    aDest.Append("calc("_ns);
+  }
+
   aDest.AppendFloat(mValue);
   aDest.Append(mUnit);
+
+  if (isValueOutOfRange) {
+    aDest.Append(")"_ns);
+  }
 }
 
 CSSUnitValue& CSSStyleValue::GetAsCSSUnitValue() {
