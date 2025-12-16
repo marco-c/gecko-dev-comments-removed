@@ -206,12 +206,21 @@ class InactivePropertyHelper {
       
       
       {
-        invalidProperties: ["align-self", "justify-self", "place-self"],
+        invalidProperties: ["align-self", "place-self"],
         when: () =>
           !this.gridItem && !this.flexItem && !this.isAbsolutelyPositioned,
         fixId:
           "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix",
         msgId: "inactive-css-not-grid-or-flex-or-absolutely-positioned-item",
+      },
+      
+      
+      {
+        invalidProperties: ["justify-self"],
+        
+        when: () => !this.gridItem && !this.isAbsolutelyPositioned,
+        fixId: "inactive-css-not-grid-or-absolutely-positioned-item-fix",
+        msgId: "inactive-css-not-grid-or-absolutely-positioned-item",
       },
       
       {
