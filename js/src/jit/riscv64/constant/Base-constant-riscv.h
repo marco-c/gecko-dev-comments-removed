@@ -52,6 +52,8 @@ typedef unsigned char byte;
 
 const int kBaseOpcodeShift = 0;
 const int kBaseOpcodeBits = 7;
+const int kFunct6Shift = 26;
+const int kFunct6Bits = 6;
 const int kFunct7Shift = 25;
 const int kFunct7Bits = 7;
 const int kFunct5Shift = 27;
@@ -82,6 +84,7 @@ const int kImm11Shift = 2;
 const int kImm11Bits = 11;
 const int kShamtShift = 20;
 const int kShamtBits = 5;
+const uint32_t kShamtMask = (((1 << kShamtBits) - 1) << kShamtShift);
 const int kShamtWShift = 20;
 
 const int kShamtWBits = 6;
@@ -137,6 +140,7 @@ const uint32_t kBaseOpcodeMask = ((1 << kBaseOpcodeBits) - 1)
                                  << kBaseOpcodeShift;
 const uint32_t kFunct3Mask = ((1 << kFunct3Bits) - 1) << kFunct3Shift;
 const uint32_t kFunct5Mask = ((1 << kFunct5Bits) - 1) << kFunct5Shift;
+const uint32_t kFunct6Mask = ((1 << kFunct6Bits) - 1) << kFunct6Shift;
 const uint32_t kFunct7Mask = ((1 << kFunct7Bits) - 1) << kFunct7Shift;
 const uint32_t kFunct2Mask = 0b11 << kFunct7Shift;
 const uint32_t kRTypeMask = kBaseOpcodeMask | kFunct3Mask | kFunct7Mask;
@@ -255,11 +259,10 @@ const uint32_t kRvvNfMask = (((1 << kRvvNfBits) - 1) << kRvvNfShift);
 const int kNopByte = 0x00000013;
 
 enum BaseOpcode : uint32_t {
-  LOAD = 0b0000011,      
-  LOAD_FP = 0b0000111,   
-  MISC_MEM = 0b0001111,  
-  OP_IMM = 0b0010011,    
-  
+  LOAD = 0b0000011,       
+  LOAD_FP = 0b0000111,    
+  MISC_MEM = 0b0001111,   
+  OP_IMM = 0b0010011,     
   AUIPC = 0b0010111,      
   OP_IMM_32 = 0b0011011,  
   
@@ -558,6 +561,9 @@ class InstructionBase {
   inline int Funct7FieldRaw() const { return InstructionBits() & kFunct7Mask; }
 
   
+  inline int Funct6FieldRaw() const { return InstructionBits() & kFunct6Mask; }
+
+  
   inline int Funct3FieldRaw() const { return InstructionBits() & kFunct3Mask; }
 
   
@@ -787,7 +793,8 @@ class InstructionGetters : public T {
 
   inline int Shamt() const {
     
-    MOZ_ASSERT((this->InstructionBits() & kBaseOpcodeMask) == OP_IMM &&
+    MOZ_ASSERT(((this->InstructionBits() & kBaseOpcodeMask) == OP_IMM ||
+                (this->InstructionBits() & kBaseOpcodeMask) == OP_IMM_32) &&
                (this->Funct3Value() == 0b001 || this->Funct3Value() == 0b101));
     
     
