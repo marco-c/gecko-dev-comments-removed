@@ -23,7 +23,7 @@ namespace mozilla::dom {
 
 
 
-MOZ_CONSTINIT extern uint32_t
+constinit extern uint32_t
     gNumNormalOrHighPriorityQueuesHaveTaskScheduledMainThread;
 
 
