@@ -338,6 +338,11 @@ void SVGImageElement::DidAnimateAttribute(int32_t aNameSpaceID,
 void SVGImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                              size_t* aNodeSize) const {
   SVGElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
+
+  
+  
+  
+  
   if (mSrcURI) {
     *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }

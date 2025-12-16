@@ -431,6 +431,11 @@ void SVGFEImageElement::NotifyImageContentChanged() {
 void SVGFEImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                                size_t* aNodeSize) const {
   SVGElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
+
+  
+  
+  
+  
   if (mSrcURI) {
     *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }

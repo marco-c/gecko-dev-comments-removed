@@ -441,6 +441,10 @@ void Link::SetHrefAttribute(nsIURI* aURI) {
 size_t Link::SizeOfExcludingThis(mozilla::SizeOfState& aState) const {
   size_t n = 0;
 
+  
+  
+  
+  
   if (mCachedURI) {
     n += mCachedURI->SizeOfIncludingThis(aState.mMallocSizeOf);
   }

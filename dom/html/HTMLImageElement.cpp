@@ -1159,6 +1159,11 @@ FetchPriority HTMLImageElement::GetFetchPriorityForImage() const {
 void HTMLImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                               size_t* aNodeSize) const {
   nsGenericHTMLElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
+
+  
+  
+  
+  
   if (mSrcURI) {
     *aNodeSize += mSrcURI->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }
