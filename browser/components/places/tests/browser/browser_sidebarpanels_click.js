@@ -71,6 +71,9 @@ add_task(async function test_sidebarpanels_click() {
         visitDate: Date.now() * 1000,
         transition: PlacesUtils.history.TRANSITION_TYPED,
       });
+      
+      
+      await pushPref("sidebar.revamp", false);
     },
     prepare() {
       sidebar.contentDocument.getElementById("byvisited").doCommand();
@@ -84,7 +87,8 @@ add_task(async function test_sidebarpanels_click() {
       );
       is(tree.selectedNode.itemId, -1, "The selected node is not bookmarked");
     },
-    cleanup() {
+    async cleanup() {
+      await popPref();
       return PlacesUtils.history.clear();
     },
     sidebarName: HISTORY_SIDEBAR_ID,
