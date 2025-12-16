@@ -213,6 +213,20 @@ class RTC_EXPORT DesktopCaptureOptions {
   
   bool wgc_require_border() const { return wgc_require_border_; }
   void set_wgc_require_border(bool require) { wgc_require_border_ = require; }
+
+  
+  
+  
+  
+  
+  
+  
+  bool wgc_include_secondary_windows() const {
+    return wgc_include_secondary_windows_;
+  }
+  void set_wgc_include_secondary_windows(bool include) {
+    wgc_include_secondary_windows_ = include;
+  }
 #endif  
 #endif  
 
@@ -270,6 +284,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   bool allow_wgc_capturer_fallback_ = false;
   bool allow_wgc_zero_hertz_ = false;
   bool wgc_require_border_ = false;
+  bool wgc_include_secondary_windows_ = false;
 #endif
 #endif
 #if defined(WEBRTC_USE_X11)
