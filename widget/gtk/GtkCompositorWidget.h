@@ -79,6 +79,9 @@ class GtkCompositorWidget : public CompositorWidget,
   
   void SetRenderingSurface(const uintptr_t aXWindow) override;
 
+  
+  void SetEGLNativeWindowSize(const LayoutDeviceIntSize& aEGLWindowSize);
+
 #if defined(MOZ_X11)
   Window XWindow() const { return mProvider.GetXWindow(); }
 #endif
@@ -90,8 +93,6 @@ class GtkCompositorWidget : public CompositorWidget,
 
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
   void NotifyFullscreenChanged(bool aIsFullscreen) override;
-
-  GtkCompositorWidget* AsGtkCompositorWidget() override { return this; }
 
   UniquePtr<WaylandSurfaceLock> LockSurface();
 

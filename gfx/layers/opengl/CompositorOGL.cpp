@@ -742,6 +742,12 @@ Maybe<IntRect> CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
     MakeCurrent(ForceMakeCurrent);
 
     mWidgetSize = LayoutDeviceIntSize::FromUnknownSize(rect.Size());
+#ifdef MOZ_WAYLAND
+    if (mWidget && mWidget->AsGTK()) {
+      
+      mWidget->AsGTK()->SetEGLNativeWindowSize(mWidgetSize);
+    }
+#endif
   } else {
     MakeCurrent();
   }

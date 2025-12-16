@@ -75,6 +75,15 @@ class WaylandSurface final {
   void SetSize(DesktopIntSize aSize);
 
   
+  
+  
+  
+  
+  
+  
+  void ApplyEGLWindowSize(LayoutDeviceIntSize aEGLWindowSize);
+
+  
   bool IsMapped() const { return mIsMapped; }
 
   
@@ -278,9 +287,6 @@ class WaylandSurface final {
                  wl_surface* aParentWLSurface,
                  WaylandSurfaceLock* aParentWaylandSurfaceLock,
                  DesktopIntPoint aSubsurfacePosition, bool aSubsurfaceDesync);
-
-  void SetRenderingSizeLocked(const WaylandSurfaceLock& aProofOfLock,
-                              DesktopIntSize aSize);
 
   wl_surface* Lock(WaylandSurfaceLock* aWaylandSurfaceLock);
   void Unlock(struct wl_surface** aSurface,
