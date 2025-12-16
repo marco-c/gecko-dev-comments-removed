@@ -69,7 +69,7 @@ class Box {
 
   
   
-  ByteSlice ReadAsSlice();
+  ByteSlice ReadAsSlice() const;
 
  private:
   bool Contains(MediaByteRange aRange) const;
@@ -89,7 +89,7 @@ class Box {
 
 class MOZ_RAII BoxReader {
  public:
-  explicit BoxReader(Box& aBox)
+  explicit BoxReader(const Box& aBox)
       : mData(aBox.ReadAsSlice()), mReader(mData.mBytes, mData.mSize) {}
   BufferReader* operator->() { return &mReader; }
 
