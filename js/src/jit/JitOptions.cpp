@@ -271,7 +271,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(osrPcMismatchesBeforeRecompile, 6000);
 
   
-  SET_DEFAULT(smallFunctionMaxBytecodeLength, 130);
+  SET_DEFAULT(smallFunctionMaxBytecodeLength, 140);
 
   
   SET_DEFAULT(inliningEntryThreshold, 100);
