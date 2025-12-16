@@ -8027,8 +8027,7 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
                 &isObjectOrNull);
 
   
-  rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
-  lshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
+  andPtr(Imm32(int32_t(~wasm::AnyRef::TagMask)), src);
   storeValue(JSVAL_TYPE_STRING, src, dst);
   jump(&done);
 
