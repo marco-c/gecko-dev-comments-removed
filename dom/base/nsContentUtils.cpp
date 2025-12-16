@@ -8683,6 +8683,15 @@ bool nsContentUtils::HasCssMimeTypeEssence(const nsAString& aMimeType) {
   return false;
 }
 
+
+bool nsContentUtils::HasWasmMimeTypeEssence(const nsAString& aMimeType) {
+  nsString contentType, contentCharset;
+  if (MimeType::Parse(aMimeType, contentType, contentCharset)) {
+    return contentType.LowerCaseEqualsLiteral("application/wasm");
+  }
+  return false;
+}
+
 bool nsContentUtils::PrefetchPreloadEnabled(nsIDocShell* aDocShell) {
   
   
