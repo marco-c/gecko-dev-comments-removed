@@ -87,8 +87,6 @@ function assert_config(config, expected) {
 
   
   
-  
-  
 
   function assert_attrs(key, config, expected, prefix = "config") {
     
@@ -167,4 +165,12 @@ function assert_config(config, expected) {
   assert_elems("elements");
   assert_elems("removeElements");
   assert_elems("replaceWithChildrenElements");
+
+  if ("comments" in expected) {
+    assert_equals(config.comments, expected.comments, "comments should match");
+  }
+
+  if ("dataAttributes" in expected) {
+    assert_equals(config.dataAttributes, expected.dataAttributes, "dataAttributes should match");
+  }
 }
