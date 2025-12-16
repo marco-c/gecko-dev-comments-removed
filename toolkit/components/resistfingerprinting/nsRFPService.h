@@ -23,6 +23,7 @@
 #include "nsISupports.h"
 #include "nsIRFPService.h"
 #include "nsStringFwd.h"
+#include <queue>
 
 
 
@@ -78,6 +79,9 @@ class OriginAttributesPattern;
 namespace dom {
 class Document;
 enum class CanvasContextType : uint8_t;
+}  
+namespace gfx {
+class DataSourceSurface;
 }  
 
 enum KeyboardLang { EN = 0x01 };
@@ -509,6 +513,12 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   static Maybe<nsTArray<uint8_t>> GenerateKeyForServiceWorker(
       nsIURI* aFirstPartyURI, nsIPrincipal* aPrincipal,
       bool aForeignByAncestorContext);
+
+  static void PotentiallyDumpImage(nsIPrincipal* aPrincipal,
+                                   gfx::DataSourceSurface* aSurface);
+  static void PotentiallyDumpImage(nsIPrincipal* aPrincipal, uint8_t* aData,
+                                   uint32_t aWidth, uint32_t aHeight,
+                                   uint32_t aSize);
 
   
   static nsresult RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
