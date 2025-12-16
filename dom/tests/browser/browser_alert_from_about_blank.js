@@ -25,7 +25,7 @@ add_task(async function test_check_alert_from_blank() {
           
           
           
-          newWin.location = "/blank";
+          newWin.location = "about:blank?0";
           newWin.alert("Alert from the popup.");
           info("Button onclick: finished");
         });
