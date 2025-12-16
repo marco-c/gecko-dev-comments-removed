@@ -1853,7 +1853,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                   .append(", toggleSoftInput=")
                   .append(toggleSoftInput)
                   .append(")");
-              MozLog.d(LOGTAG, sb.toString());
+              MozLog.d(MOZLOGTAG, sb.toString());
             }
 
             
@@ -1889,7 +1889,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                     
                     mIsNewICCreated = true;
 
-                    toggleSoftInput( false, state);
+                    
+                    
+                    final boolean force =
+                        reason == GeckoSession.TextInputDelegate.RESTART_REASON_BLUR
+                            && state == SessionTextInput.EditableListener.IME_STATE_DISABLED;
+                    toggleSoftInput(force, state);
                   }
                 });
           }
