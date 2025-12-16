@@ -440,13 +440,14 @@ add_task(async function test_source_system() {
 
       
       
-      SearchUIUtils.loadSearchFromCommandLine(
+      SearchUIUtils.loadSearch({
         window,
-        "searchSuggestion",
-        false,
-        Services.scriptSecurityManager.getSystemPrincipal(),
-        gBrowser.selectedBrowser.policyContainer
-      );
+        searchText: "searchSuggestion",
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+        policyContainer: gBrowser.selectedBrowser.policyContainer,
+        sapSource: "system",
+      });
 
       await loadPromise;
       return tab;
