@@ -10846,6 +10846,18 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     inheritPrincipal = inheritAttrs && !uri->SchemeIs("data");
   }
 
+  
+  
+  
+  
+  const auto shouldSkipSyncLoadForSHRestore = [&] {
+    return aLoadState->LoadIsFromSessionHistory() &&
+           aLoadState->PrincipalToInherit() &&
+           !mBrowsingContext->Group()
+                ->UsesOriginAgentCluster(aLoadState->PrincipalToInherit())
+                .isSome();
+  };
+
   MOZ_ASSERT_IF(NS_IsAboutBlankAllowQueryAndFragment(uri) &&
                     aLoadState->PrincipalToInherit(),
                 inheritPrincipal);
@@ -10853,7 +10865,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   const bool isAboutBlankLoadOntoInitialAboutBlank =
       !aLoadState->IsInitialAboutBlankHandlingProhibited() &&
       IsAboutBlankLoadOntoInitialAboutBlank(uri,
-                                            aLoadState->PrincipalToInherit());
+                                            aLoadState->PrincipalToInherit()) &&
+      !shouldSkipSyncLoadForSHRestore();
 
   
   
