@@ -120,33 +120,14 @@ pub trait SpatialNodeContainer {
     fn get_snapping_info(
         &self,
         parent_index: Option<SpatialNodeIndex>
-    ) -> Option<(ScaleOffset, LayoutVector2D)> {
+    ) -> Option<ScaleOffset> {
         match parent_index {
             Some(parent_index) => {
                 let node_info = self.get_node_info(parent_index);
-
-                match node_info.snapping_transform {
-                    Some(snapping_transform) => {
-                        let content_offset = match node_info.node_type {
-                            SpatialNodeType::StickyFrame(ref info) => {
-                                info.previously_applied_offset
-                            }
-                            SpatialNodeType::ScrollFrame(ref info) => {
-                                info.external_scroll_offset
-                            }
-                            SpatialNodeType::ReferenceFrame(..) => {
-                                LayoutVector2D::zero()
-                            }
-                        };
-                        Some((snapping_transform, content_offset))
-                    }
-                    None => {
-                        None
-                    }
-                }
+                node_info.snapping_transform
             }
             None => {
-                Some((ScaleOffset::identity(), LayoutVector2D::zero()))
+                Some(ScaleOffset::identity())
             }
         }
     }
@@ -1420,32 +1401,21 @@ pub fn get_external_scroll_offset<S: SpatialNodeContainer>(
 }
 
 fn calculate_snapping_transform(
-    parent_info: Option<(ScaleOffset, LayoutVector2D)>,
+    parent_scale_offset: Option<ScaleOffset>,
     node_type: &SpatialNodeType,
 ) -> Option<ScaleOffset> {
     
     
     
     
-    let (parent_scale_offset, content_fract_offset) = match parent_info {
-        Some((transform, content_offset)) => {
-            (
-                transform,
-                LayoutVector2D::new(
-                    content_offset.x.fract(),
-                    content_offset.y.fract(),
-                )
-            )
-        }
+    let parent_scale_offset = match parent_scale_offset {
+        Some(transform) => transform,
         None => return None,
     };
 
     let scale_offset = match node_type {
         SpatialNodeType::ReferenceFrame(ref info) => {
-            
-            
-            
-            let origin_offset = info.origin_in_parent_reference_frame - content_fract_offset;
+            let origin_offset = info.origin_in_parent_reference_frame;
 
             match info.source_transform {
                 PropertyBinding::Value(ref value) => {
