@@ -42,6 +42,8 @@ class AsyncStunTCPSocket : public AsyncTCPSocketBase {
   
   
   size_t GetExpectedLength(const void* data, size_t len, int* pad_bytes);
+
+  const Environment env_;
 };
 
 }  
