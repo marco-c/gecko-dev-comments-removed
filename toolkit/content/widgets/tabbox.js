@@ -415,11 +415,16 @@
     set #isSplitViewActive(isActive) {
       this.toggleAttribute("splitview", isActive);
       this.splitViewSplitter.hidden = !isActive;
+      const selectedPanel = this.selectedPanel;
       if (isActive) {
         
         const firstPanel = document.getElementById(this.splitViewPanels[0]);
         firstPanel?.after(this.#splitViewSplitter);
       }
+
+      
+      
+      this.selectedPanel = selectedPanel;
     }
   }
 
