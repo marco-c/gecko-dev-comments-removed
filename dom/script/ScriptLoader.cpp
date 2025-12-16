@@ -2532,10 +2532,11 @@ nsresult ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest) {
     aRequest->GetScriptLoadContext()->MaybeCancelOffThreadScript();
   }
 
-  
-  
-  aRequest->ClearScriptSource();
-  if (aRequest->IsSerializedStencil()) {
+  if (aRequest->IsTextSource()) {
+    
+    
+    aRequest->ClearScriptText();
+  } else if (aRequest->IsSerializedStencil()) {
     
     
     
