@@ -74,19 +74,23 @@ class MozillaVersionCompareMixin:
             
             
             has_esr.add("self")
-            self = MozillaVersion(str(self)[:-3])  
+            self_version = MozillaVersion(
+                str(self)[:-3]
+            )  
+        else:
+            self_version = self
         if isinstance(other, LooseModernMozillaVersion) or isinstance(
-            self, LooseModernMozillaVersion
+            self_version, LooseModernMozillaVersion
         ):
             
             
             val = LooseVersion._cmp(
-                LooseModernMozillaVersion(str(self)),
+                LooseModernMozillaVersion(str(self_version)),
                 LooseModernMozillaVersion(str(other)),
             )
         else:
             
-            val = StrictVersion._cmp(self, other)
+            val = StrictVersion._cmp(self_version, other)
         if has_esr.isdisjoint(set(["other", "self"])) or has_esr.issuperset(
             set(["other", "self"])
         ):
