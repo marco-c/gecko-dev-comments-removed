@@ -400,6 +400,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
     mOngoingAPIMethodTracker->NotifyAboutCommittedToEntry(currentEntry);
   }
 
+  
   for (auto& entry : disposedEntries) {
     entry->ResetIndexForDisposal();
   }
@@ -418,19 +419,93 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
     event->SetTrusted(true);
     DispatchEvent(*event);
 
-    for (const auto& entry : disposedEntries) {
-      RefPtr<Event> event = NS_NewDOMEvent(entry, nullptr, nullptr);
-      event->InitEvent(u"dispose"_ns, false, false);
-      event->SetTrusted(true);
-      event->SetTarget(entry);
-      entry->DispatchEvent(*event);
+    for (RefPtr<NavigationHistoryEntry>& entry : disposedEntries) {
+      MOZ_KnownLive(entry)->FireDisposeEvent();
     }
   }
 }
 
 
-void Navigation::UpdateForReactivation(SessionHistoryInfo* aReactivatedEntry) {
+void Navigation::UpdateForReactivation(
+    Span<const SessionHistoryInfo> aNewSHEs,
+    const SessionHistoryInfo* aReactivatedEntry) {
   
+  if (HasEntriesAndEventsDisabled()) {
+    return;
+  }
+
+  LOG_FMTD(
+      "Reactivate {} {}", fmt::ptr(aReactivatedEntry),
+      fmt::join(
+          [currentEntry = RefPtr{GetCurrentEntry()}](auto& aEntries) {
+            nsTArray<nsCString> entries;
+            (void)TransformIfAbortOnErr(
+                aEntries, MakeBackInserter(entries), [](auto) { return true; },
+                [currentEntry](auto& entry) -> Result<nsCString, nsresult> {
+                  return nsPrintfCString(
+                      "%s%s", entry.NavigationKey().ToString().get(),
+                      currentEntry &&
+                              currentEntry->Key() == entry.NavigationKey()
+                          ? "*"
+                          : "");
+                });
+            return std::move(entries);
+          }(aNewSHEs),
+          ", "));
+
+  
+  nsTArray<RefPtr<NavigationHistoryEntry>> newNHEs;
+
+  
+  nsTArray<RefPtr<NavigationHistoryEntry>> oldNHEs = mEntries.Clone();
+
+  
+  for (const auto& newSHE : aNewSHEs) {
+    
+    RefPtr<NavigationHistoryEntry> newNHE;
+    if (ArrayIterator matchingOldNHE = std::find_if(
+            oldNHEs.begin(), oldNHEs.end(),
+            [newSHE](const auto& aNHE) { return aNHE->IsSameEntry(&newSHE); });
+        matchingOldNHE != oldNHEs.end()) {
+      
+      newNHE = *matchingOldNHE;
+      
+      
+      CheckedInt<int64_t> newIndex(newNHEs.Length());
+      newNHE->SetIndex(newIndex.value());
+
+      
+      oldNHEs.RemoveElementAt(matchingOldNHE);
+    } else {
+      
+      newNHE = MakeRefPtr<NavigationHistoryEntry>(GetOwnerGlobal(), &newSHE,
+                                                  newNHEs.Length());
+    }
+    
+    newNHEs.AppendElement(newNHE);
+  }
+
+  
+  mEntries = std::move(newNHEs);
+
+  
+  mCurrentEntryIndex = GetNavigationEntryIndex(*aReactivatedEntry);
+
+  
+  for (const auto& oldEntry : oldNHEs) {
+    oldEntry->ResetIndexForDisposal();
+  }
+
+  
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "UpdateForReactivation",
+      [oldEntries = std::move(oldNHEs)]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        
+        for (const RefPtr<NavigationHistoryEntry>& disposedNHE : oldEntries) {
+          
+          MOZ_KnownLive(disposedNHE)->FireDisposeEvent();
+        }
+      }));
 }
 
 
@@ -1273,7 +1348,7 @@ struct NavigationWaitForAllScope final : public nsISupports,
       return;
     }
     
-    nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell());
+    RefPtr<nsDocShell> docShell = nsDocShell::Cast(document->GetDocShell());
     Maybe<BrowsingContext&> navigable =
         ToMaybeRef(mNavigation->GetOwnerWindow()).andThen([](auto& aWindow) {
           return ToMaybeRef(aWindow.GetBrowsingContext());
@@ -1318,11 +1393,13 @@ struct NavigationWaitForAllScope final : public nsISupports,
           
           
           if (docShell) {
+            nsCOMPtr newURL = mDestination->GetURL();
+            nsCOMPtr currentURL = document->GetDocumentURI();
+            nsCOMPtr serializedData = mEvent->ClassicHistoryAPIState();
             docShell->UpdateURLAndHistory(
-                document, mDestination->GetURL(),
-                mEvent->ClassicHistoryAPIState(),
+                document, newURL, serializedData,
                 *NavigationUtils::NavigationHistoryBehavior(aNavigationType),
-                document->GetDocumentURI(),
+                currentURL,
                 Equals(mDestination->GetURL(), document->GetDocumentURI()));
           }
           break;
@@ -1331,8 +1408,9 @@ struct NavigationWaitForAllScope final : public nsISupports,
           
           
           if (docShell) {
-            mNavigation->UpdateEntriesForSameDocumentNavigation(
-                docShell->GetActiveSessionHistoryInfo(), aNavigationType);
+            MOZ_KnownLive(mNavigation)
+                ->UpdateEntriesForSameDocumentNavigation(
+                    docShell->GetActiveSessionHistoryInfo(), aNavigationType);
           }
           break;
         case NavigationType::Traverse:
@@ -1794,6 +1872,21 @@ NavigationHistoryEntry* Navigation::FindNavigationHistoryEntry(
 }
 
 
+Maybe<size_t> Navigation::GetNavigationEntryIndex(
+    const SessionHistoryInfo& aSessionHistoryInfo) const {
+  size_t index = 0;
+  for (const auto& navigationHistoryEntry : mEntries) {
+    if (navigationHistoryEntry->IsSameEntry(&aSessionHistoryInfo)) {
+      return Some(index);
+    }
+
+    index++;
+  }
+
+  return Nothing();
+}
+
+
  void Navigation::CleanUp(
     NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
   
@@ -2068,17 +2161,29 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
 
 
 void Navigation::CreateNavigationActivationFrom(
-    SessionHistoryInfo* aPreviousEntryForActivation,
-    NavigationType aNavigationType) {
+    const SessionHistoryInfo* aPreviousEntryForActivation,
+    Maybe<NavigationType> aNavigationType) {
   
   
-  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
-              "Creating NavigationActivation for from={}, type={}",
-              fmt::ptr(aPreviousEntryForActivation), aNavigationType);
-  RefPtr currentEntry = GetCurrentEntry();
-  if (!currentEntry) {
+  
+  
+  
+  RefPtr<NavigationHistoryEntry> currentEntry = GetCurrentEntry();
+  if (!aPreviousEntryForActivation || !aNavigationType || !currentEntry ||
+      (*aNavigationType != NavigationType::Reload &&
+       currentEntry->SessionHistoryInfo()->SharesDocumentWith(
+           *aPreviousEntryForActivation))) {
     return;
   }
+
+  NavigationType navigationType = *aNavigationType;
+
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
+              "Creating NavigationActivation for from={}, type={}",
+              fmt::ptr(aPreviousEntryForActivation), navigationType);
+
+  
+  
 
   
   
@@ -2096,7 +2201,7 @@ void Navigation::CreateNavigationActivationFrom(
                 "Found previous entry at {}",
                 fmt::ptr(possiblePreviousEntry->get()));
     oldEntry = *possiblePreviousEntry;
-  } else if (aNavigationType == NavigationType::Replace &&
+  } else if (navigationType == NavigationType::Replace &&
              !aPreviousEntryForActivation->IsTransient()) {
     
     
@@ -2118,6 +2223,11 @@ void Navigation::CreateNavigationActivationFrom(
       MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
                   "Created a new entry at {}", fmt::ptr(oldEntry.get()));
     }
+  } else {
+    LOG_FMTV("Didn't find previous entry id={}",
+             aPreviousEntryForActivation
+                 ? aPreviousEntryForActivation->NavigationId().ToString().get()
+                 : "");
   }
 
   
@@ -2125,8 +2235,16 @@ void Navigation::CreateNavigationActivationFrom(
   
   
   
-  mActivation = MakeRefPtr<NavigationActivation>(GetOwnerGlobal(), currentEntry,
-                                                 oldEntry, aNavigationType);
+  if (!mActivation) {
+    mActivation = MakeRefPtr<NavigationActivation>(
+        GetOwnerGlobal(), currentEntry, oldEntry, navigationType);
+  } else {
+    mActivation->SetNewEntry(currentEntry);
+    mActivation->SetNavigationType(navigationType);
+    if (oldEntry) {
+      mActivation->SetOldEntry(oldEntry);
+    }
+  }
 }
 
 

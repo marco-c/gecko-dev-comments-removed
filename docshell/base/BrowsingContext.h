@@ -257,8 +257,6 @@ struct EmbedderColorSchemes {
   /* The number of entries added to the session history because of this       \
    * browsing context. */                                                     \
   FIELD(HistoryEntryCount, uint32_t)                                          \
-  /* Don't use the getter of the field, but IsInBFCache() method */           \
-  FIELD(IsInBFCache, bool)                                                    \
   FIELD(HasRestoreData, bool)                                                 \
   FIELD(SessionStoreEpoch, uint32_t)                                          \
   /* Whether we can execute scripts in this BrowsingContext. Has no effect    \
@@ -463,7 +461,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   nsresult InternalLoad(nsDocShellLoadState* aLoadState);
 
   void Navigate(
-      nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
+      nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
+      ErrorResult& aRv,
       NavigationHistoryBehavior aHistoryHandling =
           NavigationHistoryBehavior::Auto,
       bool aNeedsCompletelyLoadedDocument = false,
@@ -1051,6 +1050,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   }
 
   bool IsInBFCache() const;
+  void DeactivateDocuments();
+
+  MOZ_CAN_RUN_SCRIPT
+  void ReactivateDocuments(
+      const Maybe<SessionHistoryInfo>& aReactivatedEntry,
+      const nsTArray<SessionHistoryInfo>& aNewSHEs,
+      const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation);
+
+  MOZ_CAN_RUN_SCRIPT
+  void UpdateForReactivation(
+      const Maybe<SessionHistoryInfo>& aReactivatedEntry,
+      const nsTArray<SessionHistoryInfo>& aNewSHEs,
+      const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation);
 
   bool AllowJavascript() const { return GetAllowJavascript(); }
   bool CanExecuteScripts() const { return mCanExecuteScripts; }
@@ -1096,12 +1108,15 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   static bool ShouldAddEntryForRefresh(nsIURI* aCurrentURI, nsIURI* aNewURI,
                                        bool aHasPostData);
 
+  void SetIsInBFCache(bool aIsInBFCache);
+
  private:
   
   
   
   already_AddRefed<nsDocShellLoadState> CheckURLAndCreateLoadState(
-      nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
+      nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, Document* aSourceDocument,
+      ErrorResult& aRv);
 
   bool AddSHEntryWouldIncreaseLength(SessionHistoryInfo* aCurrentEntry) const;
 
@@ -1448,9 +1463,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DidSet(FieldIndex<IDX_FullZoom>, float aOldValue);
   void DidSet(FieldIndex<IDX_TextZoom>, float aOldValue);
   void DidSet(FieldIndex<IDX_AuthorStyleDisabledDefault>);
-
-  bool CanSet(FieldIndex<IDX_IsInBFCache>, bool, ContentParent* aSource);
-  void DidSet(FieldIndex<IDX_IsInBFCache>);
 
   void DidSet(FieldIndex<IDX_IsSyntheticDocumentContainer>);
 

@@ -1196,6 +1196,7 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult UpdateURLAndHistory(
       mozilla::dom::Document* aDocument, nsIURI* aNewURI,
       nsIStructuredCloneContainer* aData,

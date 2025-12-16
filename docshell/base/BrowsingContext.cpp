@@ -1240,6 +1240,116 @@ bool BrowsingContext::IsInBFCache() const {
          mParentWindow->TopWindowContext()->GetWindowStateSaved();
 }
 
+void BrowsingContext::SetIsInBFCache(bool aIsInBFCache) {
+  MOZ_DIAGNOSTIC_ASSERT(mozilla::SessionHistoryInParent());
+  mIsInBFCache = aIsInBFCache;
+}
+
+void BrowsingContext::DeactivateDocuments() {
+  MOZ_RELEASE_ASSERT(mozilla::BFCacheInParent());
+  MOZ_DIAGNOSTIC_ASSERT(IsTop());
+
+  if (XRE_IsContentProcess() && mDocShell) {
+    nsDocShell::Cast(mDocShell)->MaybeDisconnectChildListenersOnPageHide();
+  }
+
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
+    if (shell) {
+      nsDocShell::Cast(shell)->FirePageHideShowNonRecursive(false);
+    }
+  });
+
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
+    if (shell) {
+      nsDocShell::Cast(shell)->ThawFreezeNonRecursive(false);
+      if (nsPresContext* pc = shell->GetPresContext()) {
+        pc->EventStateManager()->ResetHoverState();
+      }
+    }
+    aContext->mIsInBFCache = true;
+    Document* doc = aContext->GetDocument();
+    if (doc) {
+      
+      doc->NotifyActivityChanged();
+    }
+  });
+}
+
+static void GetSubframeReactivationData(
+    BrowsingContext* aBrowsingContext,
+    Maybe<SessionHistoryInfo>& aReactivatedEntry,
+    nsTArray<SessionHistoryInfo>& aNewSHEs,
+    Maybe<SessionHistoryInfo>& aPreviousEntryForActivation) {
+  
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
+              "We currently don't know how to reactivate subframes");
+}
+
+void BrowsingContext::ReactivateDocuments(
+    const Maybe<SessionHistoryInfo>& aReactivatedEntry,
+    const nsTArray<SessionHistoryInfo>& aNewSHEs,
+    const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation) {
+  UpdateCurrentTopByBrowserId(this);
+  PreOrderWalk(
+      [&](BrowsingContext* aContext) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+        aContext->mIsInBFCache = false;
+        nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
+        
+        
+        
+        if (shell) {
+          nsDocShell::Cast(shell)->ThawFreezeNonRecursive(true);
+        }
+
+        
+        
+        
+        if (aContext->IsTop()) {
+          aContext->UpdateForReactivation(aReactivatedEntry, aNewSHEs,
+                                          aPreviousEntryForActivation);
+        } else {
+          Maybe<SessionHistoryInfo> reactivatedEntry;
+          nsTArray<SessionHistoryInfo> newSHEs;
+          Maybe<SessionHistoryInfo> previousEntryForActivation;
+          GetSubframeReactivationData(aContext, reactivatedEntry, newSHEs,
+                                      previousEntryForActivation);
+          aContext->UpdateForReactivation(reactivatedEntry, newSHEs,
+                                          previousEntryForActivation);
+        }
+      });
+
+  PostOrderWalk([&](BrowsingContext* aContext) {
+    nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
+    if (shell) {
+      nsDocShell::Cast(shell)->FirePageHideShowNonRecursive(true);
+    }
+  });
+}
+
+
+void BrowsingContext::UpdateForReactivation(
+    const Maybe<SessionHistoryInfo>& aReactivatedEntry,
+    const nsTArray<SessionHistoryInfo>& aNewSHEs,
+    const Maybe<SessionHistoryInfo>& aPreviousEntryForActivation) {
+  if (RefPtr docShell = nsDocShell::Cast(GetDocShell());
+      docShell && aReactivatedEntry) {
+    if (RefPtr window = docShell->GetActiveWindow()) {
+      if (RefPtr navigation = window->Navigation()) {
+        
+        
+        
+        navigation->UpdateForReactivation(aNewSHEs, aReactivatedEntry.ptr());
+
+        navigation->CreateNavigationActivationFrom(
+            aPreviousEntryForActivation.ptrOr(nullptr),
+            Some(NavigationType::Traverse));
+      }
+    }
+  }
+}
+
 Span<RefPtr<BrowsingContext>> BrowsingContext::Children() const {
   if (WindowContext* current = mCurrentWindowContext) {
     return current->Children();
@@ -2351,6 +2461,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
 already_AddRefed<nsDocShellLoadState>
 BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
                                             nsIPrincipal& aSubjectPrincipal,
+                                            Document* aSourceDocument,
                                             ErrorResult& aRv) {
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   nsCOMPtr<nsIURI> sourceURI;
@@ -2378,40 +2489,21 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  nsCOMPtr<nsPIDOMWindowInner> incumbent =
-      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
-  nsCOMPtr<Document> doc = incumbent ? incumbent->GetDoc() : nullptr;
-
-  
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
 
-  if (!doc) {
+  if (!aSourceDocument) {
     
     loadState->SetTriggeringPrincipal(&aSubjectPrincipal);
     return loadState.forget();
   }
 
   nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
-  docOriginalURI = doc->GetOriginalURI();
-  docCurrentURI = doc->GetDocumentURI();
-  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
+  docOriginalURI = aSourceDocument->GetOriginalURI();
+  docCurrentURI = aSourceDocument->GetDocumentURI();
+  nsCOMPtr<nsIPrincipal> principal = aSourceDocument->NodePrincipal();
 
-  triggeringPrincipal = doc->NodePrincipal();
-  referrerPolicy = doc->GetReferrerPolicy();
+  triggeringPrincipal = aSourceDocument->NodePrincipal();
+  referrerPolicy = aSourceDocument->GetReferrerPolicy();
 
   bool urisEqual = false;
   if (docOriginalURI && docCurrentURI && principal) {
@@ -2423,20 +2515,21 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
     principal->CreateReferrerInfo(referrerPolicy, getter_AddRefs(referrerInfo));
   }
   loadState->SetTriggeringPrincipal(triggeringPrincipal);
-  loadState->SetTriggeringSandboxFlags(doc->GetSandboxFlags());
-  loadState->SetPolicyContainer(doc->GetPolicyContainer());
+  loadState->SetTriggeringSandboxFlags(aSourceDocument->GetSandboxFlags());
+  loadState->SetPolicyContainer(aSourceDocument->GetPolicyContainer());
   if (referrerInfo) {
     loadState->SetReferrerInfo(referrerInfo);
   }
   loadState->SetHasValidUserGestureActivation(
-      doc->HasValidTransientUserGestureActivation());
+      aSourceDocument->HasValidTransientUserGestureActivation());
 
   loadState->SetTextDirectiveUserActivation(
-      doc->ConsumeTextDirectiveUserActivation() ||
+      aSourceDocument->ConsumeTextDirectiveUserActivation() ||
       loadState->HasValidUserGestureActivation());
-  loadState->SetTriggeringWindowId(doc->InnerWindowID());
-  loadState->SetTriggeringStorageAccess(doc->UsingStorageAccess());
-  loadState->SetTriggeringClassificationFlags(doc->GetScriptTrackingFlags());
+  loadState->SetTriggeringWindowId(aSourceDocument->InnerWindowID());
+  loadState->SetTriggeringStorageAccess(aSourceDocument->UsingStorageAccess());
+  loadState->SetTriggeringClassificationFlags(
+      aSourceDocument->GetScriptTrackingFlags());
 
   return loadState.forget();
 }
@@ -2445,8 +2538,8 @@ BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
 
 
 void BrowsingContext::Navigate(
-    nsIURI* aURI, nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv,
-    NavigationHistoryBehavior aHistoryHandling,
+    nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
+    ErrorResult& aRv, NavigationHistoryBehavior aHistoryHandling,
     bool aNeedsCompletelyLoadedDocument,
     nsIStructuredCloneContainer* aNavigationAPIState,
     dom::NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
@@ -2463,7 +2556,7 @@ void BrowsingContext::Navigate(
   }
 
   RefPtr<nsDocShellLoadState> loadState =
-      CheckURLAndCreateLoadState(aURI, aSubjectPrincipal, aRv);
+      CheckURLAndCreateLoadState(aURI, aSubjectPrincipal, aSourceDocument, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -3449,73 +3542,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_UserAgentOverride>) {
       }
     }
   });
-}
-
-bool BrowsingContext::CanSet(FieldIndex<IDX_IsInBFCache>, bool,
-                             ContentParent* aSource) {
-  return IsTop() && !aSource && mozilla::BFCacheInParent();
-}
-
-void BrowsingContext::DidSet(FieldIndex<IDX_IsInBFCache>) {
-  MOZ_RELEASE_ASSERT(mozilla::BFCacheInParent());
-  MOZ_DIAGNOSTIC_ASSERT(IsTop());
-
-  const bool isInBFCache = GetIsInBFCache();
-  if (!isInBFCache) {
-    UpdateCurrentTopByBrowserId(this);
-    PreOrderWalk([&](BrowsingContext* aContext) {
-      aContext->mIsInBFCache = false;
-      nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
-      if (shell) {
-        nsDocShell::Cast(shell)->ThawFreezeNonRecursive(true);
-      }
-    });
-  }
-
-  if (isInBFCache && XRE_IsContentProcess() && mDocShell) {
-    nsDocShell::Cast(mDocShell)->MaybeDisconnectChildListenersOnPageHide();
-  }
-
-  if (isInBFCache) {
-    PreOrderWalk([&](BrowsingContext* aContext) {
-      nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
-      if (shell) {
-        nsDocShell::Cast(shell)->FirePageHideShowNonRecursive(false);
-      }
-    });
-  } else {
-    PostOrderWalk([&](BrowsingContext* aContext) {
-      nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
-      if (shell) {
-        nsDocShell::Cast(shell)->FirePageHideShowNonRecursive(true);
-      }
-    });
-  }
-
-  if (isInBFCache) {
-    PreOrderWalk([&](BrowsingContext* aContext) {
-      nsCOMPtr<nsIDocShell> shell = aContext->GetDocShell();
-      if (shell) {
-        nsDocShell::Cast(shell)->ThawFreezeNonRecursive(false);
-        if (nsPresContext* pc = shell->GetPresContext()) {
-          pc->EventStateManager()->ResetHoverState();
-        }
-      }
-      aContext->mIsInBFCache = true;
-      Document* doc = aContext->GetDocument();
-      if (doc) {
-        
-        doc->NotifyActivityChanged();
-      }
-    });
-
-    if (XRE_IsParentProcess()) {
-      if (mCurrentWindowContext &&
-          mCurrentWindowContext->Canonical()->Fullscreen()) {
-        mCurrentWindowContext->Canonical()->ExitTopChromeDocumentFullscreen();
-      }
-    }
-  }
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_IsSyntheticDocumentContainer>) {
