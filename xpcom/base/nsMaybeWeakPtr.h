@@ -11,6 +11,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsTArray.h"
 #include "nsCycleCollectionNoteChild.h"
+#include "xpcpublic.h"
 
 
 
@@ -80,6 +81,15 @@ class nsMaybeWeakPtrArray : public CopyableTArray<nsMaybeWeakPtr<T>> {
   nsresult AppendWeakElement(T* aElement, bool aOwnsWeak) {
     nsMaybeWeakPtr<T> ref;
     MOZ_TRY(SetMaybeWeakPtr(ref, aElement, aOwnsWeak));
+
+#if (defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && !defined(MOZ_THUNDERBIRD))
+    
+    
+    if (MaybeWeakArray::Contains(aElement)) {
+      xpc_DumpJSStack(true, true, false);
+      MOZ_DIAGNOSTIC_ASSERT(false, "Element already in array.");
+    }
+#endif
 
     MaybeWeakArray::AppendElement(ref);
     return NS_OK;
