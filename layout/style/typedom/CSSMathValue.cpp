@@ -13,6 +13,9 @@ namespace mozilla::dom {
 CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent)
     : CSSNumericValue(std::move(aParent)) {}
 
+CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent, ValueType aValueType)
+    : CSSNumericValue(std::move(aParent), aValueType) {}
+
 
 
 CSSMathOperator CSSMathValue::Operator() const { return CSSMathOperator::Sum; }
