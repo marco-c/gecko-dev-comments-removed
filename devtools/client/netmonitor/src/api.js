@@ -32,20 +32,19 @@ const {
 
 
 
-function NetMonitorAPI() {
-  EventEmitter.decorate(this);
+class NetMonitorAPI extends EventEmitter {
+  constructor() {
+    super();
 
-  
-  this.connector = new Connector();
+    
+    this.connector = new Connector();
 
-  
-  this._requestFinishedListeners = new Set();
+    
+    this._requestFinishedListeners = new Set();
 
-  
-  this.onPayloadReady = this.onPayloadReady.bind(this);
-}
-
-NetMonitorAPI.prototype = {
+    
+    this.onPayloadReady = this.onPayloadReady.bind(this);
+  }
   async connect(toolbox) {
     
     if (this.toolbox) {
@@ -73,7 +72,7 @@ NetMonitorAPI.prototype = {
     };
 
     await this.connector.connect(connection, this.actions, this.store.getState);
-  },
+  }
 
   
 
@@ -86,7 +85,7 @@ NetMonitorAPI.prototype = {
     if (this.harExportConnector) {
       this.harExportConnector.disconnect();
     }
-  },
+  }
 
   
 
@@ -105,7 +104,7 @@ NetMonitorAPI.prototype = {
     };
 
     return HarExporter.getHar(options);
-  },
+  }
 
   
 
@@ -148,14 +147,14 @@ NetMonitorAPI.prototype = {
         requestId: resource.actor,
       })
     );
-  },
+  }
 
   
 
 
   async fetchResponseContent(requestId) {
     return this.connector.requestData(requestId, "responseContent");
-  },
+  }
 
   
 
@@ -167,15 +166,15 @@ NetMonitorAPI.prototype = {
 
   addRequestFinishedListener(listener) {
     this._requestFinishedListeners.add(listener);
-  },
+  }
 
   removeRequestFinishedListener(listener) {
     this._requestFinishedListeners.delete(listener);
-  },
+  }
 
   hasRequestFinishedListeners() {
     return this._requestFinishedListeners.size > 0;
-  },
+  }
 
   
 
@@ -197,7 +196,7 @@ NetMonitorAPI.prototype = {
 
     await this.harExportConnectorReady;
     return this.harExportConnector;
-  },
+  }
 
   
 
@@ -211,7 +210,7 @@ NetMonitorAPI.prototype = {
     
     
     this.store.dispatch(Actions.sendCustomRequest(requestId));
-  },
-};
+  }
+}
 
 exports.NetMonitorAPI = NetMonitorAPI;
