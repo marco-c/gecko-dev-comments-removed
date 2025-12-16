@@ -19,6 +19,7 @@
 #include "api/array_view.h"
 #include "api/audio/neural_residual_echo_estimator.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/neural_feature_extractor.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/aec3/neural_residual_echo_estimator.pb.h"
@@ -54,11 +55,9 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
     virtual ~ModelRunner() = default;
 
     virtual int StepSize() const = 0;
-
-    
     virtual webrtc::ArrayView<float> GetInput(ModelInputEnum input_enum) = 0;
     virtual webrtc::ArrayView<const float> GetOutputEchoMask() = 0;
-    virtual audioproc::ReeModelMetadata GetMetadata() const = 0;
+    virtual const audioproc::ReeModelMetadata& GetMetadata() const = 0;
     virtual bool Invoke() = 0;
   };
 
@@ -86,6 +85,7 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
 
   
   const std::unique_ptr<ModelRunner> model_runner_;
+  std::unique_ptr<FeatureExtractor> feature_extractor_;
 
   
   
