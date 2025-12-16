@@ -152,18 +152,19 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   SequenceChecker worker_thread_checker_{SequenceChecker::kDetached};
 
   
-  scoped_refptr<AudioDeviceModule> adm_;
+  const bool minimized_remsampling_on_mobile_trial_enabled_;
+  const bool payload_types_in_transport_trial_enabled_;
+
+  
+  const scoped_refptr<AudioDeviceModule> adm_;
   scoped_refptr<AudioEncoderFactory> encoder_factory_;
   scoped_refptr<AudioDecoderFactory> decoder_factory_;
-  scoped_refptr<AudioMixer> audio_mixer_;
   
   scoped_refptr<AudioProcessing> apm_;
   
-  std::unique_ptr<AudioFrameProcessor> audio_frame_processor_;
-  
   scoped_refptr<AudioState> audio_state_;
-  std::vector<Codec> send_codecs_;
-  std::vector<Codec> recv_codecs_;
+  const std::vector<Codec> legacy_send_codecs_;
+  const std::vector<Codec> legacy_recv_codecs_;
   bool is_dumping_aec_ = false;
   bool initialized_ = false;
 
@@ -171,9 +172,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   size_t audio_jitter_buffer_max_packets_ = 200;
   bool audio_jitter_buffer_fast_accelerate_ = false;
   int audio_jitter_buffer_min_delay_ms_ = 0;
-
-  const bool minimized_remsampling_on_mobile_trial_enabled_;
-  const bool payload_types_in_transport_trial_enabled_;
 };
 
 class WebRtcVoiceSendChannel final : public MediaChannelUtil,
