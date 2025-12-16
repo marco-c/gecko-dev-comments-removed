@@ -14,8 +14,13 @@ namespace webrtc {
 
 AudioProcessingStats::AudioProcessingStats() = default;
 
+
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 AudioProcessingStats::AudioProcessingStats(const AudioProcessingStats& other) =
     default;
+#pragma clang diagnostic pop
 
 AudioProcessingStats::~AudioProcessingStats() = default;
 

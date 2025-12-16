@@ -118,9 +118,8 @@ class RTC_EXPORT RtpSenderInterface : public RefCountInterface,
   
   virtual scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor() const = 0;
 
-  
-  
-  virtual void SetEncoderToPacketizerFrameTransformer(
+  [[deprecated("Use SetFrameTransformer")]] virtual void
+  SetEncoderToPacketizerFrameTransformer(
       scoped_refptr<FrameTransformerInterface> frame_transformer) {
     SetFrameTransformer(std::move(frame_transformer));
   }

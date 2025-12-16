@@ -116,9 +116,8 @@ class RTC_EXPORT RtpReceiverInterface : public RefCountInterface,
   
   
   
-  
-  
-  virtual void SetDepacketizerToDecoderFrameTransformer(
+  [[deprecated("Use SetFrameTransformer")]] virtual void
+  SetDepacketizerToDecoderFrameTransformer(
       scoped_refptr<FrameTransformerInterface> frame_transformer) {
     SetFrameTransformer(std::move(frame_transformer));
   }

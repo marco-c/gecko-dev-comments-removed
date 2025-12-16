@@ -1132,8 +1132,8 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   
   
-  [[deprecated("Use IceCandidate version")]]
-  virtual bool RemoveIceCandidates(const std::vector<Candidate>& candidates);
+  [[deprecated("Use IceCandidate version")]] virtual bool RemoveIceCandidates(
+      const std::vector<Candidate>& candidates);
 
   
   

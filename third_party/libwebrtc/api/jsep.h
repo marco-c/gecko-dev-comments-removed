@@ -89,7 +89,6 @@ class RTC_EXPORT IceCandidate final {
   std::string ToString() const;
 
   
-  
   bool ToString(std::string* out) const {
     if (!out)
       return false;

@@ -48,7 +48,7 @@ enum PeerConnectionMetricsName {
 enum IceCandidatePairType {
   
   
-  kIceCandidatePairHostHost = 0,
+  kIceCandidatePairHostHost [[deprecated]] = 0,
   kIceCandidatePairHostSrflx = 1,
   kIceCandidatePairHostRelay = 2,
   kIceCandidatePairHostPrflx = 3,

@@ -32,7 +32,8 @@ class DtmfSenderObserverInterface {
   
   
   
-  virtual void OnToneChange(const std::string& ) {}
+  [[deprecated("Use OnToneChange with tone_buffer")]] virtual void OnToneChange(
+      const std::string& ) {}
 
  protected:
   virtual ~DtmfSenderObserverInterface() = default;
