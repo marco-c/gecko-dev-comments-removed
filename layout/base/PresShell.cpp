@@ -12545,7 +12545,7 @@ void PresShell::PaintSynchronously() {
     return;
   }
   RefPtr widget = GetOwnWidget();
-  if (NS_WARN_IF(!widget)) {
+  if (!widget) {
     
     
     return;
