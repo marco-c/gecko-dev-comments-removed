@@ -154,24 +154,15 @@ public:
 
     const char * getType() const override;
 
-    
-
-
-
-
-    virtual int32_t getRelatedYear(UErrorCode &status) const override;
-
-    
-
-
-
-
-    virtual void setRelatedYear(int32_t year) override;
-
 protected:
     
     
     
+
+    
+
+
+    int32_t getRelatedYearDifference() const override;
 
     
 
@@ -183,7 +174,7 @@ protected:
 
 
 
-    virtual void handleComputeFields(int32_t julianDay, UErrorCode &status) override;
+    virtual int32_t handleGetLimit(UCalendarDateFields field, ELimitType limitType) const override;
 
     DECLARE_OVERRIDE_SYSTEM_DEFAULT_CENTURY
 
@@ -191,9 +182,19 @@ protected:
 
 
 
-    virtual int32_t getJDEpochOffset() const override;
+    int32_t getJDEpochOffset() const override;
 
-    virtual bool isEra0CountingBackward() const override { return true; }
+    
+
+
+
+    int32_t extendedYearToEra(int32_t extendedYear) const override;
+
+    
+
+
+
+    int32_t extendedYearToYear(int32_t extendedYear) const override;
 public:
     
 
@@ -220,24 +221,6 @@ public:
 
     U_I18N_API static UClassID U_EXPORT2 getStaticClassID();  
 
-#if 0
-    
-    
-public:
-    
-    
-    
-    
-
-
-
-
-
-
-
-
-    static int32_t copticToJD(int32_t year, int32_t month, int32_t day);
-#endif
 };
 
 U_NAMESPACE_END
