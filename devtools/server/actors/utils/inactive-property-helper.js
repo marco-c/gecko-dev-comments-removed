@@ -188,7 +188,6 @@ class InactivePropertyHelper {
           "grid-row",
           "grid-row-end",
           "grid-row-start",
-          "justify-self",
         ],
         when: () => !this.gridItem && !this.isAbsPosGridElement(),
         fixId: "inactive-css-not-grid-item-fix-2",
@@ -196,11 +195,20 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: ["align-self", "place-self", "order"],
-        when: () =>
-          !this.gridItem && !this.flexItem && !this.isAbsPosGridElement(),
+        invalidProperties: ["order"],
+        when: () => !this.gridItem && !this.flexItem,
         fixId: "inactive-css-not-grid-or-flex-item-fix-3",
         msgId: "inactive-css-not-grid-or-flex-item",
+      },
+      
+      
+      {
+        invalidProperties: ["align-self", "justify-self", "place-self"],
+        when: () =>
+          !this.gridItem && !this.flexItem && !this.isAbsolutelyPositioned,
+        fixId:
+          "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix",
+        msgId: "inactive-css-not-grid-or-flex-or-absolutely-positioned-item",
       },
       
       {
