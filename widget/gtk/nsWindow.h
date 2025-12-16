@@ -108,14 +108,6 @@ struct _GdkEventTouchpadPinch;
 typedef struct _GdkEventTouchpadPinch GdkEventTouchpadPinch;
 #endif
 
-
-
-
-
-
-
-extern bool gUseStableRounding;
-
 #if !GTK_CHECK_VERSION(3, 22, 0)
 typedef enum {
   GDK_ANCHOR_FLIP_X = 1 << 0,
