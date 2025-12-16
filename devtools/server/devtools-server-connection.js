@@ -27,66 +27,66 @@ loader.lazyRequireGetter(
 
 
 
-
-
-
-
-
-
-
-
-
-function DevToolsServerConnection(prefix, transport, socketListener) {
-  this._prefix = prefix;
-  this._transport = transport;
-  this._transport.hooks = this;
-  this._nextID = 1;
-  this._socketListener = socketListener;
-
-  this._actorPool = new Pool(this, "server-connection");
-  this._extraPools = [this._actorPool];
-
-  
-  
-  
-  
-  
-  
-  
-  this._actorResponses = new Map();
-
+class DevToolsServerConnection {
   
 
 
 
 
 
-  this._forwardingPrefixes = new Map();
 
-  EventEmitter.decorate(this);
-}
-exports.DevToolsServerConnection = DevToolsServerConnection;
 
-DevToolsServerConnection.prototype = {
-  _prefix: null,
+
+
+  constructor(prefix, transport, socketListener) {
+    this._prefix = prefix;
+    this._transport = transport;
+    this._transport.hooks = this;
+    this._nextID = 1;
+    this._socketListener = socketListener;
+
+    this._actorPool = new Pool(this, "server-connection");
+    this._extraPools = [this._actorPool];
+
+    
+    
+    
+    
+    
+    
+    
+    this._actorResponses = new Map();
+
+    
+
+
+
+
+
+    this._forwardingPrefixes = new Map();
+
+    EventEmitter.decorate(this);
+  }
+
+  _prefix = null;
   get prefix() {
     return this._prefix;
-  },
+  }
 
-  _transport: null,
+  _transport = null;
   get transport() {
     return this._transport;
-  },
+  }
 
   close(options) {
     if (this._transport) {
       this._transport.close(options);
     }
-  },
+  }
 
   send(packet) {
     this.transport.send(packet);
-  },
+  }
 
   
 
@@ -95,18 +95,18 @@ DevToolsServerConnection.prototype = {
 
   startBulkSend(header) {
     return this.transport.startBulkSend(header);
-  },
+  }
 
   allocID(prefix) {
     return this.prefix + (prefix || "") + this._nextID++;
-  },
+  }
 
   
 
 
   addActorPool(actorPool) {
     this._extraPools.push(actorPool);
-  },
+  }
 
   
 
@@ -139,28 +139,28 @@ DevToolsServerConnection.prototype = {
     if (index > -1) {
       this._extraPools.splice(index, 1);
     }
-  },
+  }
 
   
 
 
   addActor(actor) {
     this._actorPool.manage(actor);
-  },
+  }
 
   
 
 
   removeActor(actor) {
     this._actorPool.unmanage(actor);
-  },
+  }
 
   
 
 
   unmanage(actor) {
     return this.removeActor(actor);
-  },
+  }
 
   
 
@@ -180,7 +180,7 @@ DevToolsServerConnection.prototype = {
     }
 
     return null;
-  },
+  }
 
   _getOrCreateActor(actorID) {
     try {
@@ -207,7 +207,7 @@ DevToolsServerConnection.prototype = {
       this.transport.send(this._unknownError(actorID, prefix, error));
     }
     return null;
-  },
+  }
 
   poolFor(actorID) {
     for (const pool of this._extraPools) {
@@ -216,7 +216,7 @@ DevToolsServerConnection.prototype = {
       }
     }
     return null;
-  },
+  }
 
   _unknownError(from, prefix, error) {
     const errorString = prefix + ": " + DevToolsUtils.safeErrorString(error);
@@ -230,7 +230,7 @@ DevToolsServerConnection.prototype = {
       error: "unknownError",
       message: errorString,
     };
-  },
+  }
 
   _queueResponse(from, type, responseOrPromise) {
     const pendingResponse =
@@ -266,7 +266,7 @@ DevToolsServerConnection.prototype = {
       });
 
     this._actorResponses.set(from, responsePromise);
-  },
+  }
 
   
 
@@ -277,7 +277,7 @@ DevToolsServerConnection.prototype = {
 
   isAcceptedBy(socketListener) {
     return this._socketListener === socketListener;
-  },
+  }
 
   
 
@@ -298,7 +298,7 @@ DevToolsServerConnection.prototype = {
 
   setForwarding(prefix, transport) {
     this._forwardingPrefixes.set(prefix, transport);
-  },
+  }
 
   
 
@@ -313,13 +313,13 @@ DevToolsServerConnection.prototype = {
     if (this.rootActor) {
       this.send(this.rootActor.forwardingCancelled(prefix));
     }
-  },
+  }
 
   sendActorEvent(actorID, eventName, event = {}) {
     event.from = actorID;
     event.type = eventName;
     this.send(event);
-  },
+  }
 
   
 
@@ -396,7 +396,7 @@ DevToolsServerConnection.prototype = {
     if (ret) {
       this._queueResponse(packet.to, packet.type, ret);
     }
-  },
+  }
 
   
 
@@ -467,7 +467,7 @@ DevToolsServerConnection.prototype = {
     if (ret) {
       this._queueResponse(actorKey, type, ret);
     }
-  },
+  }
 
   
 
@@ -504,7 +504,7 @@ DevToolsServerConnection.prototype = {
     this.rootActor = null;
     this._transport = null;
     DevToolsServer._connectionClosed(this);
-  },
+  }
 
   dumpPool(pool, output = [], dumpedPools) {
     const actorIds = [];
@@ -531,7 +531,7 @@ DevToolsServerConnection.prototype = {
     children.forEach(childPool =>
       this.dumpPool(childPool, output, dumpedPools)
     );
-  },
+  }
 
   
 
@@ -543,5 +543,7 @@ DevToolsServerConnection.prototype = {
     this._extraPools.forEach(pool => this.dumpPool(pool, output, dumpedPools));
 
     return output;
-  },
-};
+  }
+}
+
+exports.DevToolsServerConnection = DevToolsServerConnection;
