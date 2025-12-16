@@ -3996,7 +3996,8 @@ bool nsWindow::HasPendingInputEvent() {
 #ifdef cairo_copy_clip_rectangle_list
 #  error "Looks like we're including Mozilla's cairo instead of system cairo"
 #endif
-static bool ExtractExposeRegion(LayoutDeviceIntRegion& aRegion, cairo_t* cr) {
+bool nsWindow::ExtractExposeRegion(LayoutDeviceIntRegion& aRegion,
+                                   cairo_t* cr) {
   cairo_rectangle_list_t* rects = cairo_copy_clip_rectangle_list(cr);
   if (rects->status != CAIRO_STATUS_SUCCESS) {
     NS_WARNING("Failed to obtain cairo rectangle list.");
@@ -4005,6 +4006,8 @@ static bool ExtractExposeRegion(LayoutDeviceIntRegion& aRegion, cairo_t* cr) {
 
   for (int i = 0; i < rects->num_rectangles; i++) {
     const cairo_rectangle_t& r = rects->rectangles[i];
+    LOGVERBOSE("  expose region unscaled: [%d, %d] -> [%d x %d]", (int)r.x,
+               (int)r.y, (int)r.width, (int)r.height);
     aRegion.Or(aRegion,
                LayoutDeviceIntRect::Truncate((float)r.x, (float)r.y,
                                              (float)r.width, (float)r.height));
@@ -4109,11 +4112,6 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   
   
-  
-  GetPaintListener()->WillPaintWindow(this);
-
-  
-  
   if (mIsDestroyed) {
     LOG("quit, mIsDestroyed");
     return TRUE;
@@ -4137,10 +4135,9 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     layerManager->SetNeedsComposite(false);
   }
 
-  
-  
-  
   region.AndWith(LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
+  LOGVERBOSE("painted region scaled %s (client size scaled %s)",
+             ToString(region).c_str(), ToString(GetClientSize()).c_str());
   if (region.IsEmpty()) {
     LOG("quit, region.IsEmpty()");
     return TRUE;
@@ -4149,16 +4146,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   
   if (renderer->GetBackendType() == LayersBackend::LAYERS_WR) {
     LOG("redirect painting to OMTC rendering...");
-    listener->PaintWindow(this, region);
-
-    
-    
-    listener = GetPaintListener();
-    if (!listener) {
-      return TRUE;
-    }
-
-    listener->DidPaintWindow();
+    listener->PaintWindow(this);
     return TRUE;
   }
 
@@ -4191,25 +4179,16 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
 #endif  
 
-  {
-    if (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) {
-      if (GetTransparencyMode() == TransparencyMode::Transparent &&
-          mHasAlphaVisual) {
-        
-        
-        
-        dt->ClearRect(Rect(boundsRect));
-      }
-      AutoLayerManagerSetup setupLayerManager(this, ctx.ptrOr(nullptr));
-      listener->PaintWindow(this, region);
-
+  if (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) {
+    if (GetTransparencyMode() == TransparencyMode::Transparent &&
+        mHasAlphaVisual) {
       
       
-      listener = GetPaintListener();
-      if (!listener) {
-        return TRUE;
-      }
+      
+      dt->ClearRect(Rect(boundsRect));
     }
+    AutoLayerManagerSetup setupLayerManager(this, ctx.ptrOr(nullptr));
+    listener->PaintWindow(this);
   }
 
 #ifdef MOZ_X11
@@ -4219,12 +4198,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   EndRemoteDrawingInRegion(dt, region);
 
-  listener->DidPaintWindow();
-
   
-  cairo_region_t* dirtyArea = gdk_window_get_update_area(mGdkWindow);
-
-  if (dirtyArea) {
+  if (cairo_region_t* dirtyArea = gdk_window_get_update_area(mGdkWindow)) {
     gdk_window_invalidate_region(mGdkWindow, dirtyArea, false);
     cairo_region_destroy(dirtyArea);
     gdk_window_process_updates(mGdkWindow, false);
