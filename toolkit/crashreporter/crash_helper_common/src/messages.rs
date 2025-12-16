@@ -620,6 +620,15 @@ impl Message for UnregisterAuxvInfo {
 
 
 
+
+
+
+
+
+
+
+
+
 pub struct RegisterChildProcess {
     pub ipc_endpoint: AncillaryData,
 }
@@ -630,7 +639,7 @@ impl RegisterChildProcess {
     }
 
     fn payload_size(&self) -> usize {
-        0
+        1
     }
 }
 
@@ -648,7 +657,7 @@ impl Message for RegisterChildProcess {
     }
 
     fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
-        (Vec::<u8>::new(), Some(self.ipc_endpoint))
+        (vec![0], Some(self.ipc_endpoint))
     }
 
     fn decode(
