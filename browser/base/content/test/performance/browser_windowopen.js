@@ -17,6 +17,12 @@ const EXPECTED_REFLOWS = [
 
 ];
 
+add_setup(async function setup() {
+  SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 1]],
+  });
+});
+
 
 
 
