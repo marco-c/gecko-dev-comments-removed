@@ -30,13 +30,12 @@ var gTestTransports = {};
 
 
 
-function TestTransport(port) {
-  EventEmitter.decorate(this);
-  this.port = port;
-  gTestTransports[this.port] = this;
-}
-
-TestTransport.prototype = {
+class TestTransport {
+  constructor(port) {
+    EventEmitter.decorate(this);
+    this.port = port;
+    gTestTransports[this.port] = this;
+  }
   send(object, port) {
     log("Send to " + port + ":\n" + JSON.stringify(object, null, 2));
     if (!gTestTransports[port]) {
@@ -45,23 +44,22 @@ TestTransport.prototype = {
     }
     const message = JSON.stringify(object);
     gTestTransports[port].onPacketReceived(null, message);
-  },
+  }
 
   destroy() {
     delete gTestTransports[this.port];
-  },
+  }
 
   
-
   onPacketReceived(socket, message) {
     const object = JSON.parse(message);
     object.from = "localhost";
     log("Recv on " + this.port + ":\n" + JSON.stringify(object, null, 2));
     this.emit("message", object);
-  },
+  }
 
-  onStopListening() {},
-};
+  onStopListening() {}
+}
 
 
 discovery._factories.Transport = TestTransport;
