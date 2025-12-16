@@ -28,14 +28,17 @@ const store = createStore(reducers);
 
 
 
-function DomView(localStore) {
-  addEventListener("devtools/chrome/message", this.onMessage.bind(this), true);
+class DomView {
+  constructor(localStore) {
+    addEventListener(
+      "devtools/chrome/message",
+      this.onMessage.bind(this),
+      true
+    );
 
-  
-  this.store = localStore;
-}
-
-DomView.prototype = {
+    
+    this.store = localStore;
+  }
   initialize(rootGrip) {
     const content = document.querySelector("#content");
     const mainFrame = MainFrame({
@@ -52,7 +55,7 @@ DomView.prototype = {
     );
 
     this.mainFrame = ReactDOM.render(provider, content);
-  },
+  }
 
   onMessage(event) {
     const data = event.data;
@@ -61,8 +64,8 @@ DomView.prototype = {
     if (typeof this[method] == "function") {
       this[method](data.args);
     }
-  },
-};
+  }
+}
 
 
 
