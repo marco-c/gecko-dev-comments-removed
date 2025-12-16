@@ -17,7 +17,7 @@ import {
 } from "../../selectors/index";
 import actions from "../../actions/index";
 import { debugBtn } from "../shared/Button/CommandBarButton";
-import AccessibleImage from "../shared/AccessibleImage";
+import DebuggerImage from "../shared/DebuggerImage";
 
 const {
   stringifyFromElectronKey,
@@ -231,8 +231,8 @@ class CommandBar extends Component {
           : L10N.getStr("skipPausingTooltip.label"),
         onClick: toggleSkipPausing,
       },
-      React.createElement(AccessibleImage, {
-        className: skipPausing ? "enable-pausing" : "disable-pausing",
+      React.createElement(DebuggerImage, {
+        name: skipPausing ? "enable-pausing" : "disable-pausing",
       })
     );
   }
@@ -319,6 +319,17 @@ class CommandBar extends Component {
         tooltip: L10N.getStr("settings.showPausedOverlay.tooltip"),
         onClick: () =>
           this.props.togglePausedOverlay(!prefs.pausedOverlayEnabled),
+      }),
+      React.createElement(MenuItem, {
+        key: "debugger-settings-menu-item-toggle-auto-pretty-print",
+        className:
+          "menu-item debugger-settings-menu-item-toggle-auto-pretty-print",
+        checked: prefs.autoPrettyPrint,
+        label: L10N.getStr("settings.autoPrettyPrint.label"),
+        tooltip: L10N.getStr("settings.autoPrettyPrint.tooltip"),
+        onClick: () => {
+          prefs.autoPrettyPrint = !prefs.autoPrettyPrint;
+        },
       })
     );
   }
