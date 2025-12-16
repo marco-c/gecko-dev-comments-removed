@@ -29,8 +29,6 @@ user_pref("browser.search.region", "US");
 
 user_pref("browser.search.removeEngineInfobar.enabled", false);
 
-user_pref("browser.webapps.checkForUpdates", 0);
-
 
 
 user_pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
@@ -49,7 +47,6 @@ user_pref("extensions.getAddons.discovery.api_url", "data:;base64,eyJyZXN1bHRzIj
 user_pref("extensions.webextensions.warnings-as-errors", true);
 
 user_pref("general.useragent.updates.enabled", false);
-user_pref("hangmonitor.timeout", 0); 
 user_pref("media.gmp-manager.updateEnabled", false);
 
 user_pref("security.certerrors.mitm.priming.enabled", false);
@@ -61,11 +58,9 @@ user_pref("services.settings.server", "data:,#remote-settings-dummy/v1");
 
 user_pref("media.autoplay.default", 0); 
 user_pref("media.autoplay.blocking_policy", 0);
-user_pref("media.autoplay.ask-permission", false);
 user_pref("media.allowed-to-play.enabled", true);
 
 user_pref("media.block-autoplay-until-in-foreground", false);
-user_pref("toolkit.telemetry.coverage.endpoint.base", "http://localhost");
 
 user_pref("media.geckoview.autoplay.request", false);
 
@@ -73,7 +68,6 @@ user_pref("media.wakelock.audio.delay-releasing.ms", 0);
 
 
 user_pref("media.getdisplaymedia.screencapturekit.picker.enabled", false);
-user_pref("geo.provider.network.compare.url", "");
 user_pref("browser.region.network.url", "");
 
 user_pref("browser.tabs.unloadOnLowMemory", false);

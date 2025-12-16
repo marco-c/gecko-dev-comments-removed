@@ -18,18 +18,8 @@ user_pref("app.update.staging.enabled", false);
 
 
 user_pref("apz.content_response_timeout", 60000);
-user_pref("browser.EULA.override", true);
 
 user_pref("browser.bookmarks.max_backups", 0);
-user_pref("browser.console.showInPanel", true);
-
-
-user_pref("browser.contentHandlers.types.0.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.1.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.2.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.3.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.4.uri", "http://test1.example.org/rss?url=%s");
-user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?url=%s");
 
 
 user_pref("browser.download.panel.shown", true);
@@ -52,9 +42,6 @@ user_pref("browser.startup.page", 0);
 
 user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
 
-user_pref("browser.ui.layout.tablet", 0);
-
-user_pref("browser.uitour.pinnedTabUrl", "http://{server}/uitour-dummy/pinnedTab");
 user_pref("browser.uitour.url", "http://{server}/uitour-dummy/tour");
 
 
@@ -66,8 +53,6 @@ user_pref("browser.urlbar.suggest.searches", false);
 
 user_pref("browser.fixup.domainsuffixwhitelist.test", true);
 user_pref("browser.warnOnQuit", false);
-
-user_pref("browser.webapps.testing", true);
 user_pref("captivedetect.canonicalURL", "http://{server}/captive-detect/success.txt");
 
 user_pref("consoleservice.logcat", true);
@@ -99,8 +84,6 @@ user_pref("extensions.autoDisableScopes", 0);
 user_pref("extensions.blocklist.detailsURL", "http://{server}/extensions-dummy/blocklistDetailsURL");
 user_pref("extensions.blocklist.itemURL", "http://{server}/extensions-dummy/blocklistItemURL");
 
-user_pref("extensions.defaultProviders.enabled", true);
-
 user_pref("extensions.getAddons.cache.enabled", false);
 
 user_pref("extensions.getAddons.get.url", "http://{server}/extensions-dummy/repositoryGetURL");
@@ -118,7 +101,6 @@ user_pref("findbar.modalHighlight", false);
 
 user_pref("font.size.inflation.emPerLine", 0);
 user_pref("font.size.inflation.minTwips", 0);
-user_pref("general.useragent.updates.url", "https://example.com/0/%APP_ID%");
 
 
 user_pref("geo.provider.testing", true);
@@ -154,7 +136,6 @@ user_pref("media.preload.auto", 3);
 user_pref("media.preload.default", 2); 
 user_pref("media.preload.default.cellular", 2); 
 user_pref("media.suspend-background-video.enabled", false);
-user_pref("media.test.dumpDebugInfo", true);
 user_pref("media.volume_scale", "0.01");
 
 user_pref("media.webspeech.synth.test", true);
@@ -165,18 +146,11 @@ user_pref("network.manage-offline-status", false);
 
 
 
-user_pref("network.sntp.maxRetryCount", 1);
-
-user_pref("network.sntp.pools", "{server}");
-
-
-
 
 user_pref("places.database.lastMaintenance", 2147483647);
 
 
 user_pref("places.semanticHistory.featureGate", false);
-user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
 
 
 
@@ -186,7 +160,6 @@ user_pref("security.default_personal_cert", "Select Automatically");
 user_pref("security.notification_enable_delay", 0);
 
 user_pref("services.settings.server", "data:,#remote-settings-dummy/v1");
-user_pref("shell.checkDefaultClient", false);
 
 
 user_pref("signon.rememberSignons", false);

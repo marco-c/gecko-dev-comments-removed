@@ -64,10 +64,6 @@ user_pref("widget.gtk.theme-scrollbar-colors.enabled", false);
 
 
 user_pref("ui.scrollbarFadeDuration", 0);
-
-
-
-user_pref("nglayout.initialpaint.unsuppress_with_no_background", true);
 user_pref("media.block-autoplay-until-in-foreground", false);
 
 user_pref("layout.css.prefers-color-scheme.content-override", 1);
