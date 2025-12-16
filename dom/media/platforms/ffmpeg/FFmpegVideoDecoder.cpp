@@ -1927,6 +1927,37 @@ FFmpegVideoDecoder<LIBAV_VER>::ProcessFlush() {
   return FFmpegDataDecoder::ProcessFlush();
 }
 
+#ifdef MOZ_WIDGET_ANDROID
+Maybe<MediaDataDecoder::PropertyValue> FFmpegVideoDecoder<
+    LIBAV_VER>::GetDecodeProperty(MediaDataDecoder::PropertyName aName) const {
+  
+  
+  if (mCodecContext) {
+    if (const auto* codec = mCodecContext->codec) {
+      if (!(codec->capabilities & AV_CODEC_CAP_HARDWARE)) {
+        return MediaDataDecoder::GetDecodeProperty(aName);
+      }
+    }
+  }
+
+  
+  static constexpr uint32_t kNumOutputBuffers = 3;
+  
+  
+  static constexpr uint32_t kNumCurrentImages = 1;
+  switch (aName) {
+    case PropertyName::MaxNumVideoBuffers:
+      [[fallthrough]];
+    case PropertyName::MinNumVideoBuffers:
+      return Some(PropertyValue(kNumOutputBuffers));
+    case PropertyName::MaxNumCurrentImages:
+      return Some(PropertyValue(kNumCurrentImages));
+    default:
+      return MediaDataDecoder::GetDecodeProperty(aName);
+  }
+}
+#endif
+
 AVCodecID FFmpegVideoDecoder<LIBAV_VER>::GetCodecId(
     const nsACString& aMimeType) {
   if (MP4Decoder::IsH264(aMimeType)) {
