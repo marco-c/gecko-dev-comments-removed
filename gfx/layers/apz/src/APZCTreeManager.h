@@ -540,6 +540,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   virtual already_AddRefed<AsyncPanZoomController> NewAPZCInstance(
       LayersId aLayersId, GeckoContentController* aController);
 
+  void SetFixedLayerMarginsOnRootContentApzcs(
+      const RecursiveMutexAutoLock& aProofOfTreeLock) MOZ_REQUIRES(mTreeLock);
+
  public:
   
   virtual SampleTime GetFrameTime();
@@ -1132,6 +1135,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   friend class IAPZHitTester;
   UniquePtr<IAPZHitTester> mHitTester;
+
+  
+  nsTArray<AsyncPanZoomController*> mRootContentApzcs MOZ_GUARDED_BY(mTreeLock);
 
   
   

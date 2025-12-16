@@ -1937,6 +1937,8 @@ class AsyncPanZoomController {
     return mState == PINCHING || mState == ANIMATING_ZOOM;
   }
 
+  void SetFixedLayerMargins(const ScreenMargin& aMargins);
+
  private:
   
   TimeStamp mTouchStartTime;
@@ -1958,6 +1960,8 @@ class AsyncPanZoomController {
   Maybe<ParentLayerCoord> mMinimumVelocityDuringPan;
   
   ScrollSnapTargetIds mLastSnapTargetIds;
+  
+  ScreenMargin mCompositorFixedLayerMargins;
   
   CSSPoint mTestAsyncScrollOffset;
   
@@ -2053,6 +2057,9 @@ class AsyncPanZoomController {
   
   CSSPoint MaybeFillOutOverscrollGutter(
       const RecursiveMutexAutoLock& aProofOfLock);
+
+  ScreenMargin GetFixedLayerMargins(
+      const RecursiveMutexAutoLock& aProofOfLock) const;
 
   friend std::ostream& operator<<(
       std::ostream& aOut, const AsyncPanZoomController::PanZoomState& aState);
