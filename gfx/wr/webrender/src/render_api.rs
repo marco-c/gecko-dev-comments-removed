@@ -974,8 +974,6 @@ pub enum DebugCommand {
     
     SetBatchingLookback(u32),
     
-    InvalidateGpuCache,
-    
     
     SimulateLongSceneBuild(u32),
     
@@ -1490,8 +1488,6 @@ pub struct MemoryReport {
     
     
     pub clip_stores: usize,
-    pub gpu_cache_metadata: usize,
-    pub gpu_cache_cpu_mirror: usize,
     pub hit_testers: usize,
     pub fonts: usize,
     pub weak_fonts: usize,
@@ -1508,7 +1504,6 @@ pub struct MemoryReport {
     
     
     
-    pub gpu_cache_textures: usize,
     pub vertex_data_textures: usize,
     pub render_target_textures: usize,
     pub picture_tile_textures: usize,
