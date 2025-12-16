@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -60,7 +61,7 @@ struct RTC_EXPORT AsyncSocketPacketOptions {
   
   
   
-  bool ecn_1 = false;
+  bool ect_1 = false;
 
   
   
