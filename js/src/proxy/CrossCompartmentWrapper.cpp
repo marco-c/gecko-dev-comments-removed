@@ -509,6 +509,9 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
   AutoDisableProxyCheck adpc;
 
   
+  JS::AutoAssertNoGC nogc(cx);
+
+  
   
   
   MOZ_ASSERT_IF(origTarget != newTarget,
@@ -548,6 +551,10 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
   MOZ_ASSERT(!newTarget->is<FinalizationRecordObject>());
 
   AutoDisableProxyCheck adpc;
+
+  
+  
+  gc::AutoSuppressGC nogc(cx);
 
   
   Realm* wrealm = wobj->nonCCWRealm();
