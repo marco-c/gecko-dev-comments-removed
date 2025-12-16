@@ -507,7 +507,6 @@ size_t CacheIOThread::SizeOfExcludingThis(
     n += event.ShallowSizeOfExcludingThis(mallocSizeOf);
     
     
-    
   }
 
   return n;

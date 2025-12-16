@@ -11,7 +11,6 @@
 #include "CacheIndexIterator.h"
 #include "CacheIndexContextIterator.h"
 #include "nsThreadUtils.h"
-#include "nsISizeOf.h"
 #include "nsPrintfCString.h"
 #include "mozilla/DebugOnly.h"
 #include "prinrval.h"
@@ -3803,21 +3802,14 @@ size_t CacheIndex::SizeOfExcludingThisInternal(
   sLock.AssertCurrentThreadOwns();
 
   size_t n = 0;
-  nsCOMPtr<nsISizeOf> sizeOf;
 
   
   
   
 
-  sizeOf = do_QueryInterface(mCacheDirectory);
-  if (sizeOf) {
-    n += sizeOf->SizeOfIncludingThis(mallocSizeOf);
-  }
+  
 
-  sizeOf = do_QueryInterface(mUpdateTimer);
-  if (sizeOf) {
-    n += sizeOf->SizeOfIncludingThis(mallocSizeOf);
-  }
+  
 
   n += mallocSizeOf(mRWBuf);
   n += mallocSizeOf(mRWHash);

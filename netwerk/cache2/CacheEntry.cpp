@@ -22,7 +22,6 @@
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsISeekableStream.h"
-#include "nsISizeOf.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"
 #include "nsProxyRelease.h"
