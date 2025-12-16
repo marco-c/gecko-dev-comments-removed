@@ -248,34 +248,28 @@ add_task(async function test_modifyLogin_nsIProperyBag_metainfo_duplicate() {
 
 
 
-add_task(function test_searchLogins_metainfo() {
+add_task(async function test_searchLogins_metainfo() {
   
-  let logins = Services.logins.searchLogins(
-    newPropertyBag({
-      guid: gLoginMetaInfo1.guid,
-    })
-  );
+  let logins = await Services.logins.searchLoginsAsync({
+    guid: gLoginMetaInfo1.guid,
+  });
   Assert.equal(logins.length, 1);
   let foundLogin = logins[0].QueryInterface(Ci.nsILoginMetaInfo);
   assertMetaInfoEqual(foundLogin, gLoginMetaInfo1);
 
   
-  logins = Services.logins.searchLogins(
-    newPropertyBag({
-      timePasswordChanged: gLoginMetaInfo2.timePasswordChanged,
-    })
-  );
+  logins = await Services.logins.searchLoginsAsync({
+    timePasswordChanged: gLoginMetaInfo2.timePasswordChanged,
+  });
   Assert.equal(logins.length, 1);
   foundLogin = logins[0].QueryInterface(Ci.nsILoginMetaInfo);
   assertMetaInfoEqual(foundLogin, gLoginMetaInfo2);
 
   
-  logins = Services.logins.searchLogins(
-    newPropertyBag({
-      guid: gLoginMetaInfo3.guid,
-      timePasswordChanged: gLoginMetaInfo3.timePasswordChanged,
-    })
-  );
+  logins = await Services.logins.searchLoginsAsync({
+    guid: gLoginMetaInfo3.guid,
+    timePasswordChanged: gLoginMetaInfo3.timePasswordChanged,
+  });
   Assert.equal(logins.length, 1);
   foundLogin = logins[0].QueryInterface(Ci.nsILoginMetaInfo);
   assertMetaInfoEqual(foundLogin, gLoginMetaInfo3);

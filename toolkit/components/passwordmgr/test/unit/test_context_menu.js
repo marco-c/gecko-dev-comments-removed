@@ -255,7 +255,7 @@ async function runTestcase({ formOrigin, savedLogins, expectedItems }) {
   await Services.logins.addLogins(savedLogins);
 
   
-  let { fragment, document } = createLoginsFragment(
+  let { fragment, document } = await createLoginsFragment(
     formOrigin,
     DOCUMENT_CONTENT
   );
@@ -285,7 +285,7 @@ async function runTestcase({ formOrigin, savedLogins, expectedItems }) {
 
 
 
-function createLoginsFragment(url, content) {
+async function createLoginsFragment(url, content) {
   const CHROME_URL = "chrome://mock-chrome/content/";
 
   
@@ -302,13 +302,14 @@ function createLoginsFragment(url, content) {
   };
 
   let formOrigin = LoginHelper.getLoginOrigin(url);
+  let fragment = await LoginManagerContextMenu.addLoginsToMenu(
+    null,
+    browser,
+    formOrigin
+  );
   return {
     document,
-    fragment: LoginManagerContextMenu.addLoginsToMenu(
-      null,
-      browser,
-      formOrigin
-    ),
+    fragment,
   };
 }
 

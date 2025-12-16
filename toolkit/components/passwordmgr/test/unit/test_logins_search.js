@@ -35,13 +35,13 @@ function buildExpectedLogins(aQuery) {
 
 
 
-function checkSearchLogins(aQuery, aExpectedCount) {
+async function checkSearchLogins(aQuery, aExpectedCount) {
   info("Testing searchLogins for " + JSON.stringify(aQuery));
 
   let expectedLogins = buildExpectedLogins(aQuery);
   Assert.equal(expectedLogins.length, aExpectedCount);
 
-  let logins = Services.logins.searchLogins(newPropertyBag(aQuery));
+  let logins = await Services.logins.searchLoginsAsync(aQuery);
   LoginTestUtils.assertLoginListsEqual(logins, expectedLogins);
 }
 
@@ -58,7 +58,7 @@ function checkSearchLogins(aQuery, aExpectedCount) {
 
 
 
-function checkAllSearches(aQuery, aExpectedCount) {
+async function checkAllSearches(aQuery, aExpectedCount) {
   info("Testing all search functions for " + JSON.stringify(aQuery));
 
   let expectedLogins = buildExpectedLogins(aQuery);
@@ -77,7 +77,7 @@ function checkAllSearches(aQuery, aExpectedCount) {
   Assert.equal(count, expectedLogins.length);
 
   
-  checkSearchLogins(aQuery, aExpectedCount);
+  await checkSearchLogins(aQuery, aExpectedCount);
 }
 
 
@@ -92,48 +92,51 @@ add_setup(async () => {
 
 
 
-add_task(function test_search_all_basic() {
+add_task(async function test_search_all_basic() {
   
-  checkAllSearches({}, 28);
+  await checkAllSearches({}, 28);
 
   
-  checkAllSearches({ httpRealm: null }, 17);
-  checkAllSearches({ formActionOrigin: null }, 11);
+  await checkAllSearches({ httpRealm: null }, 17);
+  await checkAllSearches({ formActionOrigin: null }, 11);
 
   
-  checkAllSearches({ origin: "http://www4.example.com", httpRealm: null }, 3);
-  checkAllSearches(
+  await checkAllSearches(
+    { origin: "http://www4.example.com", httpRealm: null },
+    3
+  );
+  await checkAllSearches(
     { origin: "http://www2.example.org", formActionOrigin: null },
     2
   );
 
   
-  checkAllSearches({ origin: "http://www.example.com" }, 1);
-  checkAllSearches({ origin: "https://www.example.com" }, 1);
-  checkAllSearches({ origin: "https://example.com" }, 1);
-  checkAllSearches({ origin: "http://www3.example.com" }, 3);
+  await checkAllSearches({ origin: "http://www.example.com" }, 1);
+  await checkAllSearches({ origin: "https://www.example.com" }, 1);
+  await checkAllSearches({ origin: "https://example.com" }, 1);
+  await checkAllSearches({ origin: "http://www3.example.com" }, 3);
 
   
-  checkAllSearches({ formActionOrigin: "http://www.example.com" }, 2);
-  checkAllSearches({ formActionOrigin: "https://www.example.com" }, 2);
-  checkAllSearches({ formActionOrigin: "http://example.com" }, 1);
+  await checkAllSearches({ formActionOrigin: "http://www.example.com" }, 2);
+  await checkAllSearches({ formActionOrigin: "https://www.example.com" }, 2);
+  await checkAllSearches({ formActionOrigin: "http://example.com" }, 1);
 
   
-  checkAllSearches(
+  await checkAllSearches(
     {
       origin: "http://www3.example.com",
       formActionOrigin: "http://www.example.com",
     },
     1
   );
-  checkAllSearches(
+  await checkAllSearches(
     {
       origin: "http://www3.example.com",
       formActionOrigin: "https://www.example.com",
     },
     1
   );
-  checkAllSearches(
+  await checkAllSearches(
     {
       origin: "http://www3.example.com",
       formActionOrigin: "http://example.com",
@@ -142,20 +145,20 @@ add_task(function test_search_all_basic() {
   );
 
   
-  checkAllSearches({ httpRealm: "The HTTP Realm" }, 3);
-  checkAllSearches({ httpRealm: "ftp://ftp.example.org" }, 1);
-  checkAllSearches({ httpRealm: "The HTTP Realm Other" }, 2);
+  await checkAllSearches({ httpRealm: "The HTTP Realm" }, 3);
+  await checkAllSearches({ httpRealm: "ftp://ftp.example.org" }, 1);
+  await checkAllSearches({ httpRealm: "The HTTP Realm Other" }, 2);
 
   
-  checkAllSearches(
+  await checkAllSearches(
     { origin: "http://example.net", httpRealm: "The HTTP Realm" },
     1
   );
-  checkAllSearches(
+  await checkAllSearches(
     { origin: "http://example.net", httpRealm: "The HTTP Realm Other" },
     1
   );
-  checkAllSearches(
+  await checkAllSearches(
     { origin: "ftp://example.net", httpRealm: "ftp://example.net" },
     1
   );
@@ -164,18 +167,18 @@ add_task(function test_search_all_basic() {
 
 
 
-add_task(function test_searchLogins() {
-  checkSearchLogins({ usernameField: "form_field_username" }, 12);
-  checkSearchLogins({ passwordField: "form_field_password" }, 13);
+add_task(async function test_searchLogins() {
+  await checkSearchLogins({ usernameField: "form_field_username" }, 12);
+  await checkSearchLogins({ passwordField: "form_field_password" }, 13);
 
   
-  checkSearchLogins({ usernameField: "" }, 16);
+  await checkSearchLogins({ usernameField: "" }, 16);
 
   
-  checkSearchLogins({ httpRealm: null, usernameField: "" }, 5);
+  await checkSearchLogins({ httpRealm: null, usernameField: "" }, 5);
 
   
-  checkSearchLogins(
+  await checkSearchLogins(
     { origin: "http://www6.example.com", usernameField: "" },
     1
   );
@@ -184,9 +187,9 @@ add_task(function test_searchLogins() {
 
 
 
-add_task(function test_searchLogins_invalid() {
-  Assert.throws(
-    () => Services.logins.searchLogins(newPropertyBag({ username: "value" })),
+add_task(async function test_searchLogins_invalid() {
+  await Assert.rejects(
+    Services.logins.searchLoginsAsync({ foo: "value" }),
     /Unexpected field/
   );
 });
@@ -215,13 +218,13 @@ add_task(function test_search_all_full_case_sensitive() {
 
 
 
-add_task(function test_search_all_empty() {
+add_task(async function test_search_all_empty() {
   checkAllSearches({ origin: "http://nonexistent.example.com" }, 0);
   checkAllSearches(
     { formActionOrigin: "http://www.example.com", httpRealm: "The HTTP Realm" },
     0
   );
 
-  checkSearchLogins({ origin: "" }, 0);
-  checkSearchLogins({ id: "1000" }, 0);
+  await checkSearchLogins({ origin: "" }, 0);
+  await checkSearchLogins({ id: "1000" }, 0);
 });
