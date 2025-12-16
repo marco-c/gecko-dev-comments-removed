@@ -688,11 +688,13 @@ const { TranslationsDocument, LRUCache } = ChromeUtils.importESModule(
 
 
 
+
 async function createTranslationsDoc(
   html,
   {
     sourceLanguage = "en",
     targetLanguage = "es",
+    parserType = "text/html",
     mockedTranslatorPort,
     mockedReportVisibleChange,
   } = {}
@@ -706,12 +708,14 @@ async function createTranslationsDoc(
   });
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(html, "text/html");
+  const document = parser.parseFromString(html, parserType);
 
   
   
   
-  document.body.style.display = "block";
+  if (document.body) {
+    document.body.style.display = "block";
+  }
 
   let translationsDoc = null;
 
@@ -823,6 +827,12 @@ async function createTranslationsDoc(
 
     let didSimulateIntersectionObservation = false;
 
+    const getHTMLSource = () => {
+      return (
+        sourceDoc.body?.innerHTML ?? sourceDoc.documentElement?.outerHTML ?? ""
+      );
+    };
+
     try {
       await waitForCondition(async () => {
         await waitForCondition(
@@ -860,7 +870,7 @@ async function createTranslationsDoc(
           () => !translationsDoc.hasPendingCallbackOnEventLoop()
         );
 
-        const actualHtml = naivelyPrettify(sourceDoc.body.innerHTML);
+        const actualHtml = naivelyPrettify(getHTMLSource());
         const htmlMatches = expected.test(actualHtml);
 
         if (!htmlMatches && !didSimulateIntersectionObservation) {
@@ -893,7 +903,7 @@ async function createTranslationsDoc(
       console.error(error);
 
       
-      const actual = naivelyPrettify(sourceDoc.body.innerHTML);
+      const actual = naivelyPrettify(getHTMLSource());
       ok(
         false,
         `${message}\n\nExpected HTML:\n\n${
