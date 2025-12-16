@@ -91,10 +91,6 @@ class nsDeviceContext final {
 
   int32_t AppUnitsPerDevPixel() const { return mAppUnitsPerDevPixel; }
 
-  static int32_t ComputeAppUnitsPerDevPixelForWidgetScale(
-      mozilla::CSSToLayoutDeviceScale);
-  static int32_t ApplyFullZoomToAPD(int32_t aAppUnitsPerPixel, float aFullZoom);
-
   
 
 

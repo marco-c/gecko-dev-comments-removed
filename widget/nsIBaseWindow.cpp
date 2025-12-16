@@ -4,16 +4,11 @@
 
 
 #include "nsIBaseWindow.h"
-#include "nsDeviceContext.h"
 #include "mozilla/LookAndFeel.h"
 
 using namespace mozilla;
 
 CSSToLayoutDeviceScale nsIBaseWindow::UnscaledDevicePixelsPerCSSPixel() {
-  CSSToLayoutDeviceScale widgetScale(GetWidgetCSSToDeviceScale());
-  int32_t apd =
-      nsDeviceContext::ComputeAppUnitsPerDevPixelForWidgetScale(widgetScale);
-  apd = nsDeviceContext::ApplyFullZoomToAPD(
-      apd, LookAndFeel::SystemZoomSettings().mFullZoom);
-  return CSSToLayoutDeviceScale(double(AppUnitsPerCSSPixel()) / double(apd));
+  return CSSToLayoutDeviceScale(GetWidgetCSSToDeviceScale() *
+                                LookAndFeel::SystemZoomSettings().mFullZoom);
 }
