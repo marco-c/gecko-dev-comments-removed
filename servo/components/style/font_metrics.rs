@@ -6,7 +6,7 @@
 
 #![deny(missing_docs)]
 
-use crate::values::computed::Length;
+use crate::values::computed::{FontSize, Length};
 
 
 
@@ -41,6 +41,74 @@ impl Default for FontMetrics {
             script_percent_scale_down: None,
             script_script_percent_scale_down: None,
         }
+    }
+}
+
+impl FontMetrics {
+    
+    pub fn x_height_or_default(&self, reference_font_size: &FontSize) -> Length {
+        
+        
+        
+        
+        
+        
+        
+        
+        self.x_height
+            .unwrap_or_else(|| reference_font_size.used_size() * 0.5)
+    }
+
+    
+    pub fn zero_advance_measure_or_default(
+        &self,
+        reference_font_size: &FontSize,
+        upright: bool,
+    ) -> Length {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.zero_advance_measure.unwrap_or_else(|| {
+            if upright {
+                reference_font_size.used_size()
+            } else {
+                reference_font_size.used_size() * 0.5
+            }
+        })
+    }
+
+    
+    pub fn cap_height_or_default(&self) -> Length {
+        
+        
+        
+        
+        
+        
+        self.cap_height.unwrap_or_else(|| self.ascent)
+    }
+
+    
+    pub fn ic_width_or_default(&self, reference_font_size: &FontSize) -> Length {
+        
+        
+        
+        
+        
+        
+        
+        
+        self.ic_width
+            .unwrap_or_else(|| reference_font_size.used_size())
     }
 }
 

@@ -785,6 +785,18 @@ pub const FONT_MEDIUM_PX: f32 = 16.0;
 
 pub const FONT_MEDIUM_LINE_HEIGHT_PX: f32 = FONT_MEDIUM_PX * 1.2;
 
+
+pub const FONT_MEDIUM_EX_PX: f32 = FONT_MEDIUM_PX * 0.5;
+
+
+pub const FONT_MEDIUM_CAP_PX: f32 = FONT_MEDIUM_PX;
+
+
+pub const FONT_MEDIUM_CH_PX: f32 = FONT_MEDIUM_PX * 0.5;
+
+
+pub const FONT_MEDIUM_IC_PX: f32 = FONT_MEDIUM_PX;
+
 impl FontSizeKeyword {
     #[inline]
     fn to_length(&self, cx: &Context) -> NonNegativeLength {

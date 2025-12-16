@@ -12,7 +12,7 @@ use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::GeckoFontMetrics;
 use crate::parser::{Parse, ParserContext};
-use crate::values::computed::{self, CSSPixelLength, Context};
+use crate::values::computed::{self, CSSPixelLength, Context, FontSize};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
     GenericAnchorSizeFunction, GenericLengthOrNumber, GenericLengthPercentageOrNormal,
@@ -62,13 +62,25 @@ pub enum FontRelativeLength {
     Ex(CSSFloat),
     
     #[css(dimension)]
+    Rex(CSSFloat),
+    
+    #[css(dimension)]
     Ch(CSSFloat),
+    
+    #[css(dimension)]
+    Rch(CSSFloat),
     
     #[css(dimension)]
     Cap(CSSFloat),
     
     #[css(dimension)]
+    Rcap(CSSFloat),
+    
+    #[css(dimension)]
     Ic(CSSFloat),
+    
+    #[css(dimension)]
+    Ric(CSSFloat),
     
     #[css(dimension)]
     Rem(CSSFloat),
@@ -120,11 +132,19 @@ impl FontRelativeLength {
     
     pub const EX: &'static str = "ex";
     
+    pub const REX: &'static str = "rex";
+    
     pub const CH: &'static str = "ch";
+    
+    pub const RCH: &'static str = "rch";
     
     pub const CAP: &'static str = "cap";
     
+    pub const RCAP: &'static str = "rcap";
+    
     pub const IC: &'static str = "ic";
+    
+    pub const RIC: &'static str = "ric";
     
     pub const REM: &'static str = "rem";
     
@@ -137,9 +157,13 @@ impl FontRelativeLength {
         match *self {
             Self::Em(v)
             | Self::Ex(v)
+            | Self::Rex(v)
             | Self::Ch(v)
+            | Self::Rch(v)
             | Self::Cap(v)
+            | Self::Rcap(v)
             | Self::Ic(v)
+            | Self::Ric(v)
             | Self::Rem(v)
             | Self::Lh(v)
             | Self::Rlh(v) => v,
@@ -151,9 +175,13 @@ impl FontRelativeLength {
         match *self {
             Self::Em(_) => Self::EM,
             Self::Ex(_) => Self::EX,
+            Self::Rex(_) => Self::REX,
             Self::Ch(_) => Self::CH,
+            Self::Rch(_) => Self::RCH,
             Self::Cap(_) => Self::CAP,
+            Self::Rcap(_) => Self::RCAP,
             Self::Ic(_) => Self::IC,
+            Self::Ric(_) => Self::RIC,
             Self::Rem(_) => Self::REM,
             Self::Lh(_) => Self::LH,
             Self::Rlh(_) => Self::RLH,
@@ -173,9 +201,13 @@ impl FontRelativeLength {
         Ok(match (self, other) {
             (&Em(one), &Em(other)) => Em(op(one, other)),
             (&Ex(one), &Ex(other)) => Ex(op(one, other)),
+            (&Rex(one), &Rex(other)) => Rex(op(one, other)),
             (&Ch(one), &Ch(other)) => Ch(op(one, other)),
+            (&Rch(one), &Rch(other)) => Rch(op(one, other)),
             (&Cap(one), &Cap(other)) => Cap(op(one, other)),
+            (&Rcap(one), &Rcap(other)) => Rcap(op(one, other)),
             (&Ic(one), &Ic(other)) => Ic(op(one, other)),
+            (&Ric(one), &Ric(other)) => Ric(op(one, other)),
             (&Rem(one), &Rem(other)) => Rem(op(one, other)),
             (&Lh(one), &Lh(other)) => Lh(op(one, other)),
             (&Rlh(one), &Rlh(other)) => Rlh(op(one, other)),
@@ -183,7 +215,8 @@ impl FontRelativeLength {
             
             _ => unsafe {
                 match *self {
-                    Em(..) | Ex(..) | Ch(..) | Cap(..) | Ic(..) | Rem(..) | Lh(..) | Rlh(..) => {},
+                    Em(..) | Rem(..) | Ex(..) | Rex(..) | Ch(..) | Rch(..) | Cap(..) | Rcap(..)
+                    | Ic(..) | Ric(..) | Lh(..) | Rlh(..) => {},
                 }
                 debug_unreachable!("Forgot to handle unit in try_op()")
             },
@@ -194,9 +227,13 @@ impl FontRelativeLength {
         match self {
             Self::Em(x) => Self::Em(op(*x)),
             Self::Ex(x) => Self::Ex(op(*x)),
+            Self::Rex(x) => Self::Rex(op(*x)),
             Self::Ch(x) => Self::Ch(op(*x)),
+            Self::Rch(x) => Self::Rch(op(*x)),
             Self::Cap(x) => Self::Cap(op(*x)),
+            Self::Rcap(x) => Self::Rcap(op(*x)),
             Self::Ic(x) => Self::Ic(op(*x)),
+            Self::Ric(x) => Self::Ric(op(*x)),
             Self::Rem(x) => Self::Rem(op(*x)),
             Self::Lh(x) => Self::Lh(op(*x)),
             Self::Rlh(x) => Self::Rlh(op(*x)),
@@ -229,7 +266,14 @@ impl FontRelativeLength {
             Self::Cap(v) => v * metrics.mCapHeight.px(),
             Self::Ic(v) => v * metrics.mIcWidth.px(),
             
-            Self::Rem(_) | Self::Lh(_) | Self::Rlh(_) => return Err(()),
+            
+            Self::Lh(_)
+            | Self::Rlh(_)
+            | Self::Rem(_)
+            | Self::Rex(_)
+            | Self::Rch(_)
+            | Self::Rcap(_)
+            | Self::Ric(_) => return Err(()),
         })
     }
 
@@ -255,8 +299,72 @@ impl FontRelativeLength {
             context.query_font_metrics(base_size, orientation, flags)
         }
 
+        fn ex_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::Horizontal,
+                QueryFontMetricsFlags::empty(),
+            );
+            metrics.x_height_or_default(&reference_font_size)
+        }
+
+        fn ch_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            
+            
+            
+            
+            
+            
+            
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::MatchContextPreferHorizontal,
+                QueryFontMetricsFlags::NEEDS_CH,
+            );
+            metrics.zero_advance_measure_or_default(
+                &reference_font_size,
+                context.style().writing_mode.is_upright(),
+            )
+        }
+
+        fn cap_size(context: &Context, base_size: FontBaseSize) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::Horizontal,
+                QueryFontMetricsFlags::empty(),
+            );
+            metrics.cap_height_or_default()
+        }
+
+        fn ic_size(
+            context: &Context,
+            base_size: FontBaseSize,
+            reference_font_size: &FontSize,
+        ) -> computed::Length {
+            let metrics = query_font_metrics(
+                context,
+                base_size,
+                FontMetricsOrientation::MatchContextPreferVertical,
+                QueryFontMetricsFlags::NEEDS_IC,
+            );
+            metrics.ic_width_or_default(&reference_font_size)
+        }
+
         let reference_font_size = base_size.resolve(context);
         match *self {
+            
             Self::Em(length) => {
                 if context.for_non_inherited_property && base_size == FontBaseSize::CurrentStyle {
                     context
@@ -266,118 +374,6 @@ impl FontRelativeLength {
                 }
 
                 (reference_font_size.computed_size(), length)
-            },
-            Self::Ex(length) => {
-                
-                let metrics = query_font_metrics(
-                    context,
-                    base_size,
-                    FontMetricsOrientation::Horizontal,
-                    QueryFontMetricsFlags::empty(),
-                );
-                let reference_size = metrics.x_height.unwrap_or_else(|| {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    reference_font_size.used_size() * 0.5
-                });
-                (reference_size, length)
-            },
-            Self::Ch(length) => {
-                
-                
-                
-                
-                
-                
-                
-                let metrics = query_font_metrics(
-                    context,
-                    base_size,
-                    FontMetricsOrientation::MatchContextPreferHorizontal,
-                    QueryFontMetricsFlags::NEEDS_CH,
-                );
-                let reference_size = metrics.zero_advance_measure.unwrap_or_else(|| {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let wm = context.style().writing_mode;
-                    if wm.is_vertical() && wm.is_upright() {
-                        reference_font_size.used_size()
-                    } else {
-                        reference_font_size.used_size() * 0.5
-                    }
-                });
-                (reference_size, length)
-            },
-            Self::Cap(length) => {
-                let metrics = query_font_metrics(
-                    context,
-                    base_size,
-                    FontMetricsOrientation::Horizontal,
-                    QueryFontMetricsFlags::empty(),
-                );
-                let reference_size = metrics.cap_height.unwrap_or_else(|| {
-                    
-                    
-                    
-                    
-                    
-                    
-                    metrics.ascent
-                });
-                (reference_size, length)
-            },
-            Self::Ic(length) => {
-                let metrics = query_font_metrics(
-                    context,
-                    base_size,
-                    FontMetricsOrientation::MatchContextPreferVertical,
-                    QueryFontMetricsFlags::NEEDS_IC,
-                );
-                let reference_size = metrics.ic_width.unwrap_or_else(|| {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    reference_font_size.used_size()
-                });
-                (reference_size, length)
-            },
-            Self::Rem(length) => {
-                
-                
-                
-                
-                
-                
-                let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    reference_font_size.computed_size()
-                } else {
-                    context
-                        .device()
-                        .root_font_size()
-                        .zoom(context.builder.effective_zoom)
-                };
-                (reference_size, length)
             },
             Self::Lh(length) => {
                 
@@ -409,6 +405,73 @@ impl FontRelativeLength {
                             .set_line_height_dependency(line_height)
                     }
                     line_height.0
+                };
+                (reference_size, length)
+            },
+            Self::Ex(length) => (ex_size(context, base_size, &reference_font_size), length),
+            Self::Ch(length) => (ch_size(context, base_size, &reference_font_size), length),
+            Self::Cap(length) => (cap_size(context, base_size), length),
+            Self::Ic(length) => (ic_size(context, base_size, &reference_font_size), length),
+
+            
+            Self::Rex(length) => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ex_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ex()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            Self::Rch(length) => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ch_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ch()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            Self::Rcap(length) => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    cap_size(context, base_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_cap()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            Self::Ric(length) => {
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    ic_size(context, base_size, &reference_font_size)
+                } else {
+                    context
+                        .device()
+                        .root_font_metrics_ic()
+                        .zoom(context.builder.effective_zoom)
+                };
+                (reference_size, length)
+            },
+            Self::Rem(length) => {
+                
+                
+                
+                
+                
+                
+                let reference_size = if context.builder.is_root_element || context.in_media_query {
+                    reference_font_size.computed_size()
+                } else {
+                    context
+                        .device()
+                        .root_font_size()
+                        .zoom(context.builder.effective_zoom)
                 };
                 (reference_size, length)
             },
@@ -1082,9 +1145,13 @@ impl NoCalcLength {
             // font-relative
             "em" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Em(value)),
             "ex" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Ex(value)),
+            "rex" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Rex(value)),
             "ch" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Ch(value)),
+            "rch" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Rch(value)),
             "cap" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Cap(value)),
+            "rcap" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Rcap(value)),
             "ic" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Ic(value)),
+            "ric" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Ric(value)),
             "rem" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Rem(value)),
             "lh" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Lh(value)),
             "rlh" if context.allows_computational_dependence() => Self::FontRelative(FontRelativeLength::Rlh(value)),
@@ -1367,9 +1434,13 @@ impl PartialOrd for FontRelativeLength {
         match (self, other) {
             (&Em(ref one), &Em(ref other)) => one.partial_cmp(other),
             (&Ex(ref one), &Ex(ref other)) => one.partial_cmp(other),
+            (&Rex(ref one), &Rex(ref other)) => one.partial_cmp(other),
             (&Ch(ref one), &Ch(ref other)) => one.partial_cmp(other),
+            (&Rch(ref one), &Rch(ref other)) => one.partial_cmp(other),
             (&Cap(ref one), &Cap(ref other)) => one.partial_cmp(other),
+            (&Rcap(ref one), &Rcap(ref other)) => one.partial_cmp(other),
             (&Ic(ref one), &Ic(ref other)) => one.partial_cmp(other),
+            (&Ric(ref one), &Ric(ref other)) => one.partial_cmp(other),
             (&Rem(ref one), &Rem(ref other)) => one.partial_cmp(other),
             (&Lh(ref one), &Lh(ref other)) => one.partial_cmp(other),
             (&Rlh(ref one), &Rlh(ref other)) => one.partial_cmp(other),
@@ -1377,7 +1448,8 @@ impl PartialOrd for FontRelativeLength {
             
             _ => unsafe {
                 match *self {
-                    Em(..) | Ex(..) | Ch(..) | Cap(..) | Ic(..) | Rem(..) | Lh(..) | Rlh(..) => {},
+                    Em(..) | Ex(..) | Rex(..) | Ch(..) | Rch(..) | Cap(..) | Rcap(..) | Ic(..)
+                    | Ric(..) | Rem(..) | Lh(..) | Rlh(..) => {},
                 }
                 debug_unreachable!("Forgot an arm in partial_cmp?")
             },

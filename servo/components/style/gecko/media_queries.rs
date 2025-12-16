@@ -19,7 +19,8 @@ use crate::values::computed::font::GenericFontFamily;
 use crate::values::computed::{ColorScheme, Length, NonNegativeLength};
 use crate::values::specified::color::{ColorSchemeFlags, ForcedColors, SystemColor};
 use crate::values::specified::font::{
-    QueryFontMetricsFlags, FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX,
+    QueryFontMetricsFlags, FONT_MEDIUM_CAP_PX, FONT_MEDIUM_CH_PX, FONT_MEDIUM_EX_PX,
+    FONT_MEDIUM_IC_PX, FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX,
 };
 use crate::values::specified::ViewportVariant;
 use crate::values::{CustomIdent, KeyframesName};
@@ -51,6 +52,14 @@ pub struct Device {
     
     root_line_height: AtomicU32,
     
+    root_font_metrics_ex: AtomicU32,
+    
+    root_font_metrics_cap: AtomicU32,
+    
+    root_font_metrics_ch: AtomicU32,
+    
+    root_font_metrics_ic: AtomicU32,
+    
     
     
     
@@ -61,6 +70,9 @@ pub struct Device {
     
     
     used_root_line_height: AtomicBool,
+    
+    
+    used_root_font_metrics: AtomicBool,
     
     used_font_metrics: AtomicBool,
     
@@ -103,11 +115,17 @@ impl Device {
             default_values: ComputedValues::default_values(doc),
             root_font_size: AtomicU32::new(FONT_MEDIUM_PX.to_bits()),
             root_line_height: AtomicU32::new(FONT_MEDIUM_LINE_HEIGHT_PX.to_bits()),
+            root_font_metrics_ex: AtomicU32::new(FONT_MEDIUM_EX_PX.to_bits()),
+            root_font_metrics_cap: AtomicU32::new(FONT_MEDIUM_CAP_PX.to_bits()),
+            root_font_metrics_ch: AtomicU32::new(FONT_MEDIUM_CH_PX.to_bits()),
+            root_font_metrics_ic: AtomicU32::new(FONT_MEDIUM_IC_PX.to_bits()),
+
             
             
             body_text_color: AtomicUsize::new(prefs.mLightColors.mDefault as usize),
             used_root_font_size: AtomicBool::new(false),
             used_root_line_height: AtomicBool::new(false),
+            used_root_font_metrics: AtomicBool::new(false),
             used_font_metrics: AtomicBool::new(false),
             used_viewport_size: AtomicBool::new(false),
             used_dynamic_viewport_size: AtomicBool::new(false),
@@ -194,6 +212,66 @@ impl Device {
     }
 
     
+    pub fn root_font_metrics_ex(&self) -> Length {
+        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ex.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_ex(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ex.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
+    pub fn root_font_metrics_cap(&self) -> Length {
+        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        Length::new(f32::from_bits(
+            self.root_font_metrics_cap.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_cap(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_cap.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
+    pub fn root_font_metrics_ch(&self) -> Length {
+        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ch.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_ch(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ch.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
+    pub fn root_font_metrics_ic(&self) -> Length {
+        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ic.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_ic(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ic.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
     pub fn quirks_mode(&self) -> QuirksMode {
         self.document().mCompatMode.into()
     }
@@ -230,8 +308,11 @@ impl Device {
         font: &crate::properties::style_structs::Font,
         base_size: Length,
         flags: QueryFontMetricsFlags,
+        track_usage: bool,
     ) -> FontMetrics {
-        self.used_font_metrics.store(true, Ordering::Relaxed);
+        if track_usage {
+            self.used_font_metrics.store(true, Ordering::Relaxed);
+        }
         let pc = match self.pres_context() {
             Some(pc) => pc,
             None => return Default::default(),
@@ -309,6 +390,7 @@ impl Device {
         self.reset_computed_values();
         self.used_root_font_size.store(false, Ordering::Relaxed);
         self.used_root_line_height.store(false, Ordering::Relaxed);
+        self.used_root_font_metrics.store(false, Ordering::Relaxed);
         self.used_font_metrics.store(false, Ordering::Relaxed);
         self.used_viewport_size.store(false, Ordering::Relaxed);
         self.used_dynamic_viewport_size
@@ -323,6 +405,11 @@ impl Device {
     
     pub fn used_root_line_height(&self) -> bool {
         self.used_root_line_height.load(Ordering::Relaxed)
+    }
+
+    
+    pub fn used_root_font_metrics(&self) -> bool {
+        self.used_root_font_metrics.load(Ordering::Relaxed)
     }
 
     

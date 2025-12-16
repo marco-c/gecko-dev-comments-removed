@@ -172,6 +172,7 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
   PresShell* presShell = pc->PresShell();
 
   const bool usesMetricsFromStyle = pc->StyleSet()->UsesFontMetrics();
+  const bool usesRootMetricsFromStyle = pc->StyleSet()->UsesRootFontMetrics();
 
   
   
@@ -201,7 +202,18 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
           ScheduleReflow(presShell, f);
           alreadyScheduled = ReflowAlreadyScheduled::Yes;
         }
-        if (kind & FontUsageKind::FontMetrics) {
+
+        
+        
+        
+        
+        
+        
+        const bool shouldRestyleForFontMetrics =
+            (kind & FontUsageKind::FontMetrics) ||
+            (usesRootMetricsFromStyle && f->Style()->IsRootElementStyle());
+
+        if (shouldRestyleForFontMetrics) {
           MOZ_ASSERT(f->GetContent() && f->GetContent()->IsElement(),
                      "How could we target a non-element with selectors?");
           f->PresContext()->RestyleManager()->PostRestyleEvent(
