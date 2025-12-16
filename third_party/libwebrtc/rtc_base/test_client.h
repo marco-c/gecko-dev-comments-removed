@@ -16,15 +16,16 @@
 #include <optional>
 #include <vector>
 
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/fake_clock.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "test/wait_until.h"
 
 namespace webrtc {
 
@@ -43,7 +44,7 @@ class TestClient : public sigslot::has_slots<> {
   };
 
   
-  static const int kTimeoutMs = 5000;
+  static constexpr int kTimeoutMs = 5000;
 
   
   
@@ -51,8 +52,7 @@ class TestClient : public sigslot::has_slots<> {
   
   
   
-  TestClient(std::unique_ptr<AsyncPacketSocket> socket,
-             ThreadProcessingFakeClock* fake_clock);
+  TestClient(std::unique_ptr<AsyncPacketSocket> socket, ClockVariant clock);
   ~TestClient() override;
 
   TestClient(const TestClient&) = delete;
@@ -81,7 +81,7 @@ class TestClient : public sigslot::has_slots<> {
 
   
   
-  bool CheckNextPacket(const char* buf, size_t len, SocketAddress* addr);
+  bool CheckNextPacket(const char* buf, size_t size, SocketAddress* addr);
 
   
   bool CheckNoPacket();
@@ -96,7 +96,7 @@ class TestClient : public sigslot::has_slots<> {
 
  private:
   
-  static const int kNoPacketTimeoutMs = 1000;
+  static constexpr TimeDelta kNoPacketTimeout = TimeDelta::Seconds(1);
   
   Socket::ConnState GetState();
 
@@ -104,9 +104,8 @@ class TestClient : public sigslot::has_slots<> {
                 const ReceivedIpPacket& received_packet);
   void OnReadyToSend(AsyncPacketSocket* socket);
   bool CheckTimestamp(std::optional<Timestamp> packet_timestamp);
-  void AdvanceTime(int ms);
 
-  ThreadProcessingFakeClock* fake_clock_ = nullptr;
+  ClockVariant clock_;
   Mutex mutex_;
   std::unique_ptr<AsyncPacketSocket> socket_;
   std::vector<std::unique_ptr<Packet>> packets_;
@@ -115,13 +114,5 @@ class TestClient : public sigslot::has_slots<> {
 };
 
 }  
-
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::TestClient;
-}  
-#endif  
 
 #endif  
