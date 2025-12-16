@@ -360,6 +360,10 @@ var allowlist = [
   {
     file: "moz-src:///browser/components/aiwindow/models/InsightsManager.sys.mjs",
   },
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/InsightsDriftDetector.sys.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
