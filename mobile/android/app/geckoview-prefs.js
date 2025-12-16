@@ -10,9 +10,6 @@
 
 
 
-
-pref("accessibility.browsewithcaret_shortcut.enabled", false);
-
 pref("accessibility.typeaheadfind", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
 pref("accessibility.typeaheadfind.linksonly", false);
