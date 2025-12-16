@@ -2294,29 +2294,10 @@ class WalkerActor extends Actor {
         const removedActors = [];
         const addedActors = [];
         for (const removed of change.removedNodes) {
-          const removedActor = this.getNode(removed);
-          if (!removedActor) {
-            
-            
-            continue;
-          }
-          
-          this._orphaned.add(removedActor);
-          removedActors.push(removedActor.actorID);
+          this._onMutationsNode(removed, removedActors, "removed");
         }
         for (const added of change.addedNodes) {
-          const addedActor = this.getNode(added);
-          if (!addedActor) {
-            
-            
-            
-            continue;
-          }
-          
-          
-          
-          this._orphaned.delete(addedActor);
-          addedActors.push(addedActor.actorID);
+          this._onMutationsNode(added, addedActors, "added");
         }
 
         mutation.numChildren = targetActor.numChildren;
@@ -2329,6 +2310,57 @@ class WalkerActor extends Actor {
         }
       }
       this.queueMutation(mutation);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _onMutationsNode(node, actors, mutationType) {
+    if (mutationType !== "added" && mutationType !== "removed") {
+      console.error("Unknown mutation type", mutationType);
+      return;
+    }
+
+    const actor = this.getNode(node);
+    if (actor) {
+      actors.push(actor.actorID);
+      if (mutationType === "added") {
+        
+        
+        
+        this._orphaned.delete(actor);
+        return;
+      }
+      if (mutationType === "removed") {
+        
+        this._orphaned.add(actor);
+        return;
+      }
+    }
+
+    
+    
+    const filter = this.getDocumentWalkerFilter();
+    if (filter(node) !== nodeFilterConstants.FILTER_ACCEPT_CHILDREN) {
+      
+      
+      
+      return;
+    }
+
+    
+    
+    for (const child of this._rawChildren(node)) {
+      this._onMutationsNode(child, actors, mutationType);
     }
   }
 
