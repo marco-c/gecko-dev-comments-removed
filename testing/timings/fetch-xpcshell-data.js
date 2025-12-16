@@ -272,6 +272,11 @@ async function processJobsWithWorkers(jobs, targetDate = null) {
 }
 
 
+function shouldIncludeMessage(status) {
+  return status === "SKIP" || status.startsWith("FAIL");
+}
+
+
 function createDataTables(jobResults) {
   const tables = {
     jobNames: [],
@@ -388,7 +393,7 @@ function createDataTables(jobResults) {
           timestamps: [],
         };
         
-        if (timing.status === "SKIP") {
+        if (shouldIncludeMessage(timing.status)) {
           statusGroup.messageIds = [];
         }
         
@@ -405,7 +410,7 @@ function createDataTables(jobResults) {
       statusGroup.timestamps.push(timing.timestamp);
 
       
-      if (timing.status === "SKIP") {
+      if (shouldIncludeMessage(timing.status)) {
         const messageId = timing.message
           ? findStringIndex("messages", timing.message)
           : null;

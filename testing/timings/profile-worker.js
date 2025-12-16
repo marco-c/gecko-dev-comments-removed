@@ -8,6 +8,13 @@ const path = require("path");
 const zlib = require("zlib");
 
 
+function normalizeMessage(message) {
+  return message
+    ?.replace(/task_\d+/g, "task_id")
+    .replace(/\nRejection date: [^\n]+/g, "");
+}
+
+
 function extractParallelRanges(markers) {
   const parallelRanges = [];
 
@@ -150,6 +157,34 @@ function extractTestTimings(profile) {
     });
   }
 
+  
+  const failStringId = stringArray.indexOf("FAIL");
+  const errorStringId = stringArray.indexOf("ERROR");
+  const testStatusMarkers = [];
+
+  for (let i = 0; i < markers.length; i++) {
+    const nameId = markers.name[i];
+    if (nameId !== failStringId && nameId !== errorStringId) {
+      continue;
+    }
+    const data = markers.data[i];
+    if (!data || data.type !== "TestStatus" || !data.test) {
+      continue;
+    }
+
+    testStatusMarkers.push({
+      test: data.test,
+      nameId,
+      time: markers.startTime[i],
+      message: normalizeMessage(data.message),
+    });
+  }
+
+  
+  testStatusMarkers.sort(
+    (a, b) => a.test.localeCompare(b.test) || a.time - b.time
+  );
+
   const testStringId = stringArray.indexOf("test");
   const timings = [];
 
@@ -170,10 +205,13 @@ function extractTestTimings(profile) {
     
     if (data.type === "Test") {
       
-      testPath = data.test || data.name;
+      const fullTestId = data.test || data.name;
+      testPath = fullTestId;
       status = data.status || "UNKNOWN";
       
-      message = data.message ? data.message.replace(/\r\n/g, "\n") : null;
+      message = normalizeMessage(
+        data.message ? data.message.replace(/\r\n/g, "\n") : null
+      );
 
       
       if (status === "FAIL" && data.color === "green") {
@@ -193,6 +231,17 @@ function extractTestTimings(profile) {
           : "-SEQUENTIAL";
       }
       
+
+      
+      if (status.startsWith("FAIL")) {
+        const testStartTime = markers.startTime[i];
+        const statusMarker = testStatusMarkers.find(
+          m => m.test === fullTestId && m.time >= testStartTime
+        );
+        if (statusMarker && statusMarker.message) {
+          message = statusMarker.message;
+        }
+      }
 
       
       
