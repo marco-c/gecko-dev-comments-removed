@@ -48,22 +48,6 @@ class JsepSessionDescription final : public SessionDescriptionInterface {
   JsepSessionDescription(const JsepSessionDescription&) = delete;
   JsepSessionDescription& operator=(const JsepSessionDescription&) = delete;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  [[deprecated(
-      "Use CreateSessionDescription() to construct SessionDescriptionInterface "
-      "objects.")]]
-  bool Initialize(std::unique_ptr<SessionDescription> description,
-                  const std::string& session_id,
-                  const std::string& session_version);
-
   std::unique_ptr<SessionDescriptionInterface> Clone() const override;
 
   SessionDescription* description() override { return description_.get(); }
@@ -82,9 +66,9 @@ class JsepSessionDescription final : public SessionDescriptionInterface {
   bool ToString(std::string* out) const override;
 
  private:
-  std::unique_ptr<SessionDescription> description_;
-  std::string session_id_;
-  std::string session_version_;
+  const std::unique_ptr<SessionDescription> description_;
+  const std::string session_id_;
+  const std::string session_version_;
   const SdpType type_;
   std::vector<IceCandidateCollection> candidate_collection_;
 
