@@ -2,6 +2,12 @@
 
 
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.trustPanel.featureGate", false]],
+  });
+});
+
 add_task(async function test_displayURI_geo() {
   await BrowserTestUtils.withNewTab(
     "https://test1.example.com/",

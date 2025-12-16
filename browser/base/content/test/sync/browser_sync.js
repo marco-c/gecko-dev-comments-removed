@@ -31,7 +31,10 @@ add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["identity.fxaccounts.toolbar.accessed", true]],
+    set: [
+      ["browser.urlbar.trustPanel.featureGate", false],
+      ["identity.fxaccounts.toolbar.accessed", true],
+    ],
   });
 });
 
