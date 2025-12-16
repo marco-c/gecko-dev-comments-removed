@@ -34,6 +34,8 @@
 #include "api/candidate.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
+#include "api/sequence_checker.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -212,7 +214,61 @@ RTC_EXPORT std::optional<SdpType> SdpTypeFromString(
 
 
 
-class RTC_EXPORT SessionDescriptionInterface {
+
+
+
+
+
+
+class SessionDescriptionInternal {
+ public:
+  explicit SessionDescriptionInternal(
+      SdpType type,
+      absl_nullable std::unique_ptr<SessionDescription> description,
+      absl::string_view id,
+      absl::string_view version);
+
+  ~SessionDescriptionInternal();
+
+  
+  
+  
+  
+  void RelinquishThreadOwnership();
+
+ protected:
+  
+  SdpType sdp_type() const { return sdp_type_; }
+  absl::string_view id() const { return id_; }
+  absl::string_view version() const { return version_; }
+  const SessionDescription* description() const { return description_.get(); }
+  SessionDescription* description() { return description_.get(); }
+  size_t mediasection_count() const;
+
+ protected:
+  
+  
+  
+  SequenceChecker& sequence_checker() { return sequence_checker_; }
+
+ private:
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
+      SequenceChecker::kDetached};
+
+  const SdpType sdp_type_;
+  const std::string id_;
+  const std::string version_;
+  absl_nullable const std::unique_ptr<SessionDescription> description_;
+};
+
+
+
+
+
+
+
+class RTC_EXPORT SessionDescriptionInterface
+    : public SessionDescriptionInternal {
  public:
   
   static const char kOffer[];
@@ -227,21 +283,24 @@ class RTC_EXPORT SessionDescriptionInterface {
   virtual std::unique_ptr<SessionDescriptionInterface> Clone() const = 0;
 
   
-  virtual SessionDescription* description() = 0;
-  virtual const SessionDescription* description() const = 0;
+  virtual SessionDescription* description() {
+    return SessionDescriptionInternal::description();
+  }
+  virtual const SessionDescription* description() const {
+    return SessionDescriptionInternal::description();
+  }
 
   
   
-  virtual std::string session_id() const = 0;
-  virtual std::string session_version() const = 0;
+  virtual std::string session_id() const { return std::string(id()); }
+  virtual std::string session_version() const { return std::string(version()); }
 
   
   
-  virtual SdpType GetType() const = 0;
+  virtual SdpType GetType() const { return sdp_type(); }
 
   
-  
-  virtual std::string type() const = 0;
+  virtual std::string type() const { return SdpTypeToString(sdp_type()); }
 
   
   
@@ -261,7 +320,9 @@ class RTC_EXPORT SessionDescriptionInterface {
   virtual bool RemoveCandidate(const IceCandidate* candidate) = 0;
 
   
-  virtual size_t number_of_mediasections() const = 0;
+  virtual size_t number_of_mediasections() const {
+    return mediasection_count();
+  }
 
   
   
@@ -283,6 +344,13 @@ class RTC_EXPORT SessionDescriptionInterface {
     }
     sink.Append("--- END SDP ---\n");
   }
+
+ protected:
+  explicit SessionDescriptionInterface(
+      SdpType type,
+      std::unique_ptr<SessionDescription> description,
+      absl::string_view id,
+      absl::string_view version);
 };
 
 
