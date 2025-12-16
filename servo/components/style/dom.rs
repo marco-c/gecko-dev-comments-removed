@@ -87,6 +87,19 @@ pub struct DomDescendants<N> {
     scope: N,
 }
 
+impl<N> DomDescendants<N>
+where
+    N: TNode,
+{
+    
+    #[inline]
+    pub fn next_skipping_children(&mut self) -> Option<N> {
+        let prev = self.previous.take()?;
+        self.previous = prev.next_in_preorder_skipping_children(self.scope);
+        self.previous
+    }
+}
+
 impl<N> Iterator for DomDescendants<N>
 where
     N: TNode,
@@ -189,7 +202,15 @@ pub trait TNode: Sized + Copy + Clone + Debug + NodeInfo + PartialEq {
         if let Some(c) = self.first_child() {
             return Some(c);
         }
+        self.next_in_preorder_skipping_children(scoped_to)
+    }
 
+    
+    
+    
+    
+    #[inline]
+    fn next_in_preorder_skipping_children(&self, scoped_to: Self) -> Option<Self> {
         let mut current = *self;
         loop {
             if current == scoped_to {
@@ -462,6 +483,33 @@ pub trait TElement:
     
     fn is_xul_element(&self) -> bool {
         false
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn subtree_bloom_filter(&self) -> u64 {
+        u64::MAX
+    }
+
+    
+    fn bloom_may_have_hash(&self, bloom_hash: u64) -> bool {
+        let bloom = self.subtree_bloom_filter();
+        (bloom & bloom_hash) == bloom_hash
+    }
+
+    
+    
+    fn hash_for_bloom_filter(hash: u32) -> u64 {
+        let mut filter = 1u64;
+        filter |= 1u64 << (1 + (hash % 63)); 
+        filter |= 1u64 << (1 + ((hash >> 6) % 63)); 
+        filter
     }
 
     
