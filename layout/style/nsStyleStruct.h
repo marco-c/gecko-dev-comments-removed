@@ -392,12 +392,6 @@ struct AnchorPosResolutionParams {
   mozilla::StylePositionArea mPositionArea;
   
   mozilla::AnchorPosResolutionCache* const mCache;
-  
-  
-  bool mIAnchorCenter = false;
-  
-  
-  bool mBAnchorCenter = false;
 
   
   
@@ -784,11 +778,7 @@ struct AnchorResolvedInsetHelper {
     if (!aValue.HasAnchorPositioningFunction()) {
       
       
-      
-      
-      
-      if (aValue.IsAuto() && (!aParams.mBaseParams.mPositionArea.IsNone() ||
-                              SideUsesAnchorCenter(aSide, aParams))) {
+      if (aValue.IsAuto() && !aParams.mBaseParams.mPositionArea.IsNone()) {
         return AnchorResolvedInset::UniquelyOwning(
             new mozilla::StyleInset(mozilla::LengthPercentage::Zero()));
       }
@@ -801,9 +791,6 @@ struct AnchorResolvedInsetHelper {
   static AnchorResolvedInset Auto() {
     return AnchorResolvedInset::NonOwning(&AutoValue());
   }
-
-  static bool SideUsesAnchorCenter(
-      mozilla::Side aSide, const AnchorPosOffsetResolutionParams& aParams);
 
   static AnchorResolvedInset ResolveAnchor(
       const mozilla::StyleInset& aValue, mozilla::StylePhysicalSide aSide,

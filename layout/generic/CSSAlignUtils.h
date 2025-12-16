@@ -63,14 +63,11 @@ class CSSAlignUtils {
 
 
 
-
-
-
-  static nscoord AlignJustifySelf(
-      const StyleAlignFlags& aAlignment, LogicalAxis aAxis,
-      AlignJustifyFlags aFlags, nscoord aBaselineAdjust, nscoord aCBSize,
-      const ReflowInput& aRI, const LogicalSize& aChildSize,
-      const Maybe<LogicalRect>& aAnchorRect = Nothing());
+  static nscoord AlignJustifySelf(const StyleAlignFlags& aAlignment,
+                                  LogicalAxis aAxis, AlignJustifyFlags aFlags,
+                                  nscoord aBaselineAdjust, nscoord aCBSize,
+                                  const ReflowInput& aRI,
+                                  const LogicalSize& aChildSize);
 };
 
 }  

@@ -762,56 +762,9 @@ static nscoord OffsetToAlignedStaticPos(
   LogicalSize kidSizeInOwnWM =
       aKidSizeInAbsPosCBWM.ConvertTo(kidWM, aAbsPosCBWM);
   const LogicalAxis kidAxis = aAbsPosCBWM.ConvertAxisTo(aAbsPosCBAxis, kidWM);
-
-  
-  
-  Maybe<LogicalRect> insetModifiedAnchorRect;
-  if (alignConst == StyleAlignFlags::ANCHOR_CENTER &&
-      aKidReflowInput.mAnchorPosResolutionCache) {
-    const auto* referenceData =
-        aKidReflowInput.mAnchorPosResolutionCache->mReferenceData;
-    if (referenceData) {
-      const auto* cachedData =
-          referenceData->Lookup(referenceData->mDefaultAnchorName);
-      if (cachedData && *cachedData) {
-        const auto& data = cachedData->ref();
-        if (data.mOffsetData) {
-          nsSize containerSize = aAbsPosCBSize.GetPhysicalSize(aAbsPosCBWM);
-          nsRect anchorRect(data.mOffsetData->mOrigin, data.mSize);
-          LogicalRect logicalAnchorRect(kidWM, anchorRect, containerSize);
-          if (aNonAutoAlignParams) {
-            logicalAnchorRect.Start(kidAxis, kidWM) -=
-                aNonAutoAlignParams->mCurrentStartInset;
-          }
-          insetModifiedAnchorRect = Some(logicalAnchorRect);
-        }
-      }
-    }
-  }
-
   nscoord offset = CSSAlignUtils::AlignJustifySelf(
       alignConst, kidAxis, flags, baselineAdjust, alignAreaSizeInAxis,
-      aKidReflowInput, kidSizeInOwnWM, insetModifiedAnchorRect);
-
-  
-  
-  
-  
-  if ((!aNonAutoAlignParams || (safetyBits & StyleAlignFlags::SAFE)) &&
-      alignConst == StyleAlignFlags::ANCHOR_CENTER) {
-    const auto cbSize = aAbsPosCBSize.Size(aAbsPosCBAxis, aAbsPosCBWM);
-    const auto kidSize = aKidSizeInAbsPosCBWM.Size(aAbsPosCBAxis, aAbsPosCBWM);
-
-    if (aNonAutoAlignParams) {
-      const nscoord currentStartInset = aNonAutoAlignParams->mCurrentStartInset;
-      const nscoord finalStart = currentStartInset + offset;
-      const nscoord clampedStart =
-          CSSMinMax(finalStart, nscoord(0), cbSize - kidSize);
-      offset = clampedStart - currentStartInset;
-    } else {
-      offset = CSSMinMax(offset, nscoord(0), cbSize - kidSize);
-    }
-  }
+      aKidReflowInput, kidSizeInOwnWM);
 
   const auto rawAlignConst =
       (pcAxis == LogicalAxis::Inline)
@@ -1436,12 +1389,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       
-      if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign ||
-          kidReflowInput.mFlags.mIAnchorCenter) {
+      if (kidReflowInput.mFlags.mIOffsetsNeedCSSAlign) {
         margin.IStart(outerWM) = margin.IEnd(outerWM) = 0;
       }
-      if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign ||
-          kidReflowInput.mFlags.mBAnchorCenter) {
+      if (kidReflowInput.mFlags.mBOffsetsNeedCSSAlign) {
         margin.BStart(outerWM) = margin.BEnd(outerWM) = 0;
       }
 
@@ -1494,10 +1445,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       const auto* placeholderContainer =
           GetPlaceholderContainer(kidReflowInput.mFrame);
 
-      if (!iInsetAuto || kidReflowInput.mFlags.mIAnchorCenter) {
+      if (!iInsetAuto) {
         MOZ_ASSERT(
-            !kidReflowInput.mFlags.mIOffsetsNeedCSSAlign ||
-                kidReflowInput.mFlags.mIAnchorCenter,
+            !kidReflowInput.mFlags.mIOffsetsNeedCSSAlign,
             "Non-auto inline inset but requires CSS alignment for static "
             "position?");
         auto alignOffset = OffsetToAlignedStaticPos(
@@ -1514,9 +1464,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             cbSize.ISize(outerWM) -
             (offsets.IStart(outerWM) + kidMarginBox.ISize(outerWM));
       }
-      if (!bInsetAuto || kidReflowInput.mFlags.mBAnchorCenter) {
-        MOZ_ASSERT(!kidReflowInput.mFlags.mBOffsetsNeedCSSAlign ||
-                       kidReflowInput.mFlags.mBAnchorCenter,
+      if (!bInsetAuto) {
+        MOZ_ASSERT(!kidReflowInput.mFlags.mBOffsetsNeedCSSAlign,
                    "Non-auto block inset but requires CSS alignment for static "
                    "position?");
         auto alignOffset = OffsetToAlignedStaticPos(

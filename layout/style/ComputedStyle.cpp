@@ -448,17 +448,6 @@ bool ComputedStyle::HasAnchorPosReference() const {
   
   
   
-  const auto alignSelfValue = pos->mAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  const auto justifySelfValue =
-      pos->mJustifySelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  if (alignSelfValue == StyleAlignFlags::ANCHOR_CENTER ||
-      justifySelfValue == StyleAlignFlags::ANCHOR_CENTER) {
-    return true;
-  }
-
-  
-  
-  
   
   return pos->mOffset.Any([](const StyleInset& aInset) {
     return aInset.HasAnchorPositioningFunction();
