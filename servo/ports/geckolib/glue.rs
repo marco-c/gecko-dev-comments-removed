@@ -164,9 +164,7 @@ use style::values::computed::length_percentage::{
     AllowAnchorPosResolutionInCalcPercentage, Unpacked,
 };
 use style::values::computed::position::{AnchorFunction, PositionArea};
-use style::values::computed::{
-    self, ContentVisibility, Context, ToComputedValue,
-};
+use style::values::computed::{self, ContentVisibility, Context, ToComputedValue};
 use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
@@ -10859,7 +10857,8 @@ pub extern "C" fn Servo_ResolvePositionAreaSelfAlignment(
         PhysicalAxis::Horizontal => physical_area.first,
         PhysicalAxis::Vertical => physical_area.second,
     };
-    let Some(align) = area_keyword.to_self_alignment() else {
+    
+    let Some(align) = area_keyword.to_self_alignment(axis, cb_wm) else {
         debug_assert!(
             false,
             "ResolvePositionAreaSelfAlignment called on {:?}",

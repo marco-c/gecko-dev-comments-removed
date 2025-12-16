@@ -1180,7 +1180,10 @@ impl PositionAreaKeyword {
     
     
     
-    pub fn to_self_alignment(self) -> Option<AlignFlags> {
+    
+    
+    
+    pub fn to_self_alignment(self, axis: LogicalAxis, cb_wm: &WritingMode) -> Option<AlignFlags> {
         let track = self.track()?;
         Some(match track {
             
@@ -1190,10 +1193,24 @@ impl PositionAreaKeyword {
             
             
             _ => {
-                if track.start() {
-                    AlignFlags::END
+                debug_assert_eq!(self.group_type(), PositionAreaType::Physical);
+                if axis == LogicalAxis::Inline {
+                    
+                    
+                    
+                    if track.start() == cb_wm.intersects(WritingMode::INLINE_REVERSED) {
+                        AlignFlags::START
+                    } else {
+                        AlignFlags::END
+                    }
                 } else {
-                    AlignFlags::START
+                    
+                    
+                    if track.start() == cb_wm.is_vertical_rl() {
+                        AlignFlags::START
+                    } else {
+                        AlignFlags::END
+                    }
                 }
             },
         })
