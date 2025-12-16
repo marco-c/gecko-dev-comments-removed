@@ -168,6 +168,11 @@ class MediaExtendedMIMEType {
 
   
   
+  
+  size_t GetParameterCount() const;
+
+  
+  
   const nsCString& OriginalString() const { return mOriginalString; }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -207,6 +212,9 @@ class MediaExtendedMIMEType {
   int32_t mSamplerate = -1;  
   
   int32_t mBitrate = -1;  
+  
+  mutable size_t mNumParams = 0;          
+  mutable bool mNumParamsCached = false;  
 };
 
 Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(const nsAString& aType);
