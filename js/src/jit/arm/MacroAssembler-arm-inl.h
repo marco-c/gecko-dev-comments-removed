@@ -483,12 +483,6 @@ void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   as_mul(srcDest, srcDest, rhs);
 }
 
-void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
-  ScratchRegisterScope scratch(*this);
-  movePtr(rhs, scratch);
-  mulPtr(scratch, srcDest)
-}
-
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
   
   
