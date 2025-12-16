@@ -98,10 +98,13 @@ pub struct CacheEntry {
     
     pub user_data: [f32; 4],
     
-    
-    
-    
     pub last_access: FrameStamp,
+    
+    
+    
+    
+    
+    
     
     pub uv_rect_handle: GpuBufferHandle,
     
@@ -581,7 +584,7 @@ pub struct TextureCache {
     pub pending_updates: TextureUpdateList,
 
     
-    now: FrameStamp,
+    pub now: FrameStamp,
 
     
     
@@ -846,10 +849,12 @@ impl TextureCache {
             },
         };
         entry.map_or(true, |entry| {
-            
-            
-            entry.last_access = now;
-            entry.write_gpu_blocks(gpu_buffer);
+            if entry.last_access != now {
+                
+                
+                entry.last_access = now;
+                entry.write_gpu_blocks(gpu_buffer);
+            }
             false
         })
     }
@@ -941,6 +946,7 @@ impl TextureCache {
             dirty_rect = DirtyRect::All;
         }
 
+        let now = self.now;
         let entry = self.get_entry_opt_mut(handle)
             .expect("BUG: There must be an entry at this handle now");
 
@@ -949,7 +955,12 @@ impl TextureCache {
         entry.uv_rect_kind = uv_rect_kind;
 
         
-        entry.write_gpu_blocks(gpu_buffer);
+        
+        if entry.last_access != now || realloc {
+            entry.last_access = now;
+            
+            entry.write_gpu_blocks(gpu_buffer);
+        }
 
         
         
@@ -1025,6 +1036,12 @@ impl TextureCache {
     ) -> Option<(CacheTextureId, DeviceIntRect, Swizzle, GpuBufferHandle, [f32; 4])> {
         let entry = self.get_entry_opt(handle)?;
         let origin = entry.details.describe();
+        if entry.last_access != self.now {
+            
+            
+            
+            return None;
+        }
         Some((
             entry.texture_id,
             DeviceIntRect::from_origin_and_size(origin, entry.size),

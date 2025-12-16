@@ -15,7 +15,7 @@ use crate::profiler::{add_text_marker};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::filterdata::SFilterData;
 use crate::frame_builder::FrameBuilderConfig;
-use crate::gpu_types::{BorderInstance, ImageSource, UvRectKind, TransformPaletteId, BlurEdgeMode};
+use crate::gpu_types::{BorderInstance, UvRectKind, TransformPaletteId, BlurEdgeMode};
 use crate::internal_types::{CacheTextureId, FastHashMap, FilterGraphNode, FilterGraphOp, FilterGraphPictureReference, SVGFE_CONVOLVE_VALUES_LIMIT, TextureSource, Swizzle};
 use crate::picture::{ResolvedSurfaceTexture, MAX_SURFACE_SIZE};
 use crate::prim_store::ClipData;
@@ -1040,7 +1040,7 @@ pub struct RenderTask {
     
     pub uv_rect_handle: GpuBufferAddress,
     pub cache_handle: Option<RenderTaskCacheEntryHandle>,
-    uv_rect_kind: UvRectKind,
+    pub uv_rect_kind: UvRectKind,
 }
 
 impl RenderTask {
@@ -2753,39 +2753,6 @@ impl RenderTask {
 
     pub fn target_kind(&self) -> RenderTargetKind {
         self.kind.target_kind()
-    }
-
-    pub fn write_gpu_blocks(
-        &mut self,
-        target_rect: DeviceIntRect,
-        gpu_buffer: &mut GpuBufferBuilder,
-    ) {
-        profile_scope!("write_gpu_blocks");
-
-        self.kind.write_gpu_blocks(gpu_buffer);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if self.uv_rect_handle.is_valid() {
-            return;
-        }
-
-        let p0 = target_rect.min.to_f32();
-        let p1 = target_rect.max.to_f32();
-        let image_source = ImageSource {
-            p0,
-            p1,
-            user_data: [0.0; 4],
-            uv_rect_kind: self.uv_rect_kind,
-        };
-
-        self.uv_rect_handle = image_source.write_gpu_blocks(&mut gpu_buffer.f32).address_unchecked();
     }
 
     

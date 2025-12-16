@@ -9,6 +9,7 @@
 
 use api::units::*;
 use api::ImageFormat;
+use crate::gpu_types::ImageSource;
 use crate::internal_types::{TextureSource, CacheTextureId, FastHashMap, FastHashSet, FrameId};
 use crate::internal_types::size_of_frame_vec;
 use crate::render_task::{StaticRenderTaskSurface, RenderTaskLocation, RenderTask};
@@ -640,12 +641,13 @@ impl RenderTaskGraphBuilder {
                 None
             };
 
-            if let Some(cache_item) = cache_item {
-                
-                
-                
-                
+            if let Some(cache_item) = &cache_item {
                 task.uv_rect_handle = gpu_buffers.f32.resolve_handle(cache_item.uv_rect_handle);
+
+                
+                
+                
+                
                 if let RenderTaskLocation::CacheRequest { .. } = &task.location {
                     let source = cache_item.texture_id;
                     task.location = RenderTaskLocation::Static {
@@ -656,13 +658,24 @@ impl RenderTaskGraphBuilder {
             }
 
             
-            
             let target_rect = task.get_target_rect();
 
-            task.write_gpu_blocks(
-                target_rect,
-                gpu_buffers,
-            );
+            
+            if cache_item.is_none() {
+                let image_source = ImageSource {
+                    p0: target_rect.min.to_f32(),
+                    p1: target_rect.max.to_f32(),
+                    user_data: [0.0; 4],
+                    uv_rect_kind: task.uv_rect_kind,
+                };
+
+                let uv_rect_handle = image_source.write_gpu_blocks(&mut gpu_buffers.f32);
+                task.uv_rect_handle = gpu_buffers.f32.resolve_handle(uv_rect_handle);
+            }
+
+            
+            
+            task.kind.write_gpu_blocks(gpu_buffers);
 
             graph.task_data.push(
                 task.kind.write_task_data(target_rect)
@@ -740,6 +753,7 @@ impl RenderTaskGraph {
         }
 
         let uv_address = task.get_texture_address();
+        assert!(uv_address.is_valid());
 
         Some((uv_address, texture_source))
     }
