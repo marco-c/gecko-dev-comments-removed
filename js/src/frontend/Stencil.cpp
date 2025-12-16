@@ -4141,7 +4141,7 @@ size_t InitialStencilAndDelazifications::sizeOfExcludingThis(
     
     
     
-    size += initial_->sizeOfExcludingThis(mallocSizeOf);
+    size += initial_->sizeOfIncludingThis(mallocSizeOf);
   }
 
   size += delazifications_.sizeOfExcludingThis(mallocSizeOf);
@@ -4152,7 +4152,7 @@ size_t InitialStencilAndDelazifications::sizeOfExcludingThis(
     }
 
     
-    size += (*delazification).sizeOfExcludingThis(mallocSizeOf);
+    size += (*delazification).sizeOfIncludingThis(mallocSizeOf);
   }
 
   size += functionKeyToInitialScriptIndex_.sizeOfExcludingThis(mallocSizeOf);
