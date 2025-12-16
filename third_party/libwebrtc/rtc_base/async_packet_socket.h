@@ -23,6 +23,7 @@
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
+#include "rtc_base/sigslot_trampoline.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/no_unique_address.h"
@@ -87,7 +88,7 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
     STATE_CONNECTED
   };
 
-  AsyncPacketSocket() = default;
+  AsyncPacketSocket() : connect_trampoline_(this) {}
   ~AsyncPacketSocket() override;
 
   AsyncPacketSocket(const AsyncPacketSocket&) = delete;
@@ -149,6 +150,15 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   
   sigslot::signal1<AsyncPacketSocket*> SignalConnect;
+  void NotifyConnect(AsyncPacketSocket* socket) { SignalConnect(socket); }
+  void SubscribeConnect(absl::AnyInvocable<void(AsyncPacketSocket*)> callback) {
+    connect_trampoline_.Subscribe(std::move(callback));
+  }
+  void SubscribeConnect(void* tag,
+                        absl::AnyInvocable<void(AsyncPacketSocket*)> callback) {
+    connect_trampoline_.Subscribe(tag, std::move(callback));
+  }
+  void UnsubscribeConnect(void* tag) { connect_trampoline_.Unsubscribe(tag); }
 
   void NotifyClosedForTest(int err) { NotifyClosed(err); }
 
@@ -174,6 +184,8 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
       RTC_GUARDED_BY(&network_checker_);
   absl::AnyInvocable<void(AsyncPacketSocket*, const ReceivedIpPacket&)>
       received_packet_callback_ RTC_GUARDED_BY(&network_checker_);
+  SignalTrampoline<AsyncPacketSocket, &AsyncPacketSocket::SignalConnect>
+      connect_trampoline_;
 };
 
 
@@ -200,16 +212,5 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::AsyncListenSocket;
-using ::webrtc::AsyncPacketSocket;
-using ::webrtc::CopySocketInformationToPacketInfo;
-using ::webrtc::PacketTimeUpdateParams;
-using PacketOptions = ::webrtc::AsyncSocketPacketOptions;
-}  
-#endif  
 
 #endif
