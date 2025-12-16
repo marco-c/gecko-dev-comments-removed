@@ -54,10 +54,7 @@ requestLongerTimeout(2);
 add_setup(async function () {
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.trustPanel.featureGate", false],
-      ["dom.security.https_first", false],
-    ],
+    set: [["dom.security.https_first", false]],
   });
 
   

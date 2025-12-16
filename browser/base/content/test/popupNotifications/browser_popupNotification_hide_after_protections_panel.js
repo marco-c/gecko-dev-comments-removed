@@ -2,12 +2,6 @@
 
 
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.trustPanel.featureGate", false]],
-  });
-});
-
 add_task(async function test_hide_popup_with_protections_panel_showing() {
   await BrowserTestUtils.withNewTab(
     "https://test1.example.com/",

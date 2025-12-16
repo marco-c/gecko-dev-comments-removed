@@ -123,7 +123,6 @@ add_setup(async function () {
       ["test.wait300msAfterTabSwitch", true],
       
       ["browser.urlbar.scotchBonnet.enableOverride", false],
-      ["browser.urlbar.trustPanel.featureGate", false],
       ["browser.toolbars.keyboard_navigation", true],
       ["accessibility.tabfocus", 7],
       
