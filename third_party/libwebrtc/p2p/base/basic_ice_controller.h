@@ -26,6 +26,7 @@
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
+#include "p2p/base/p2p_transport_channel_ice_field_trials.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/network.h"
 #include "rtc_base/network_constants.h"
@@ -86,8 +87,8 @@ class BasicIceController : public IceControllerInterface {
   }
 
   int check_receiving_interval() const {
-    return std::max(MIN_CHECK_RECEIVING_INTERVAL,
-                    config_.receiving_timeout_or_default() / 10);
+    return std::max<int>(kMinCheckReceivingInterval.ms(),
+                         config_.receiving_timeout_or_default() / 10);
   }
 
   const Connection* FindOldestConnectionNeedingTriggeredCheck(int64_t now);
@@ -174,12 +175,5 @@ class BasicIceController : public IceControllerInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::BasicIceController;
-}  
-#endif  
 
 #endif  

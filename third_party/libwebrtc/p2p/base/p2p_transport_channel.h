@@ -484,7 +484,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   std::unique_ptr<BasicRegatheringController> regathering_controller_
       RTC_GUARDED_BY(network_thread_);
   Timestamp last_ping_sent_ RTC_GUARDED_BY(network_thread_) = Timestamp::Zero();
-  int weak_ping_interval_ RTC_GUARDED_BY(network_thread_) = WEAK_PING_INTERVAL;
+  int weak_ping_interval_ RTC_GUARDED_BY(network_thread_) =
+      kWeakPingInterval.ms();
   
   
   IceTransportStateInternal state_ RTC_GUARDED_BY(network_thread_) =

@@ -1468,16 +1468,16 @@ TEST_F(PortTest, TestConnectionDead) {
   Connection* conn = ch1.conn();
   ASSERT_NE(conn, nullptr);
   
-  conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
+  conn->UpdateState(after_created + kMinConnectionLifetime.ms() + 1);
   Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(ch1.conn() != nullptr);
   
-  conn->UpdateState(before_created + MIN_CONNECTION_LIFETIME - 1);
+  conn->UpdateState(before_created + kMinConnectionLifetime.ms() - 1);
   conn->Prune();
   Thread::Current()->ProcessMessages(0);
   EXPECT_TRUE(ch1.conn() != nullptr);
   
-  conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
+  conn->UpdateState(after_created + kMinConnectionLifetime.ms() + 1);
   EXPECT_THAT(WaitUntil([&] { return ch1.conn(); }, Eq(nullptr),
                         {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
               IsRtcOk());
@@ -1491,11 +1491,12 @@ TEST_F(PortTest, TestConnectionDead) {
   conn->ReceivedPing();
   int64_t after_last_receiving = TimeMillis();
   
-  conn->UpdateState(before_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT -
+  conn->UpdateState(before_last_receiving + kDeadConnectionReceiveTimeout.ms() -
                     1);
   Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
-  conn->UpdateState(after_last_receiving + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
+  conn->UpdateState(after_last_receiving + kDeadConnectionReceiveTimeout.ms() +
+                    1);
   EXPECT_THAT(WaitUntil([&] { return ch1.conn(); }, Eq(nullptr),
                         {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
               IsRtcOk());
@@ -1575,10 +1576,12 @@ TEST_F(PortTest, TestConnectionDeadOutstandingPing) {
   conn->Ping(send_ping_timestamp);
 
   
-  conn->UpdateState(send_ping_timestamp + DEAD_CONNECTION_RECEIVE_TIMEOUT - 1);
+  conn->UpdateState(send_ping_timestamp + kDeadConnectionReceiveTimeout.ms() -
+                    1);
   Thread::Current()->ProcessMessages(100);
   EXPECT_TRUE(ch1.conn() != nullptr);
-  conn->UpdateState(send_ping_timestamp + DEAD_CONNECTION_RECEIVE_TIMEOUT + 1);
+  conn->UpdateState(send_ping_timestamp + kDeadConnectionReceiveTimeout.ms() +
+                    1);
   EXPECT_THAT(WaitUntil([&] { return ch1.conn(); }, Eq(nullptr),
                         {.timeout = TimeDelta::Millis(kDefaultTimeout)}),
               IsRtcOk());
@@ -3140,11 +3143,11 @@ TEST_F(PortTest, TestWritableState) {
   
   
   
-  for (uint32_t i = 1; i <= CONNECTION_WRITE_CONNECT_FAILURES; ++i) {
+  for (uint32_t i = 1; i <= kConnectionWriteConnectFailures; ++i) {
     ch1.Ping(i);
   }
   int unreliable_timeout_delay =
-      CONNECTION_WRITE_CONNECT_TIMEOUT + kMaxExpectedSimulatedRtt;
+      kConnectionWriteConnectTimeout.ms() + kMaxExpectedSimulatedRtt;
   ch1.conn()->UpdateState(unreliable_timeout_delay);
   EXPECT_EQ(Connection::STATE_WRITE_UNRELIABLE, ch1.conn()->write_state());
 
@@ -3160,10 +3163,11 @@ TEST_F(PortTest, TestWritableState) {
               IsRtcOk());
   
   
-  for (uint32_t i = 1; i <= CONNECTION_WRITE_CONNECT_FAILURES; ++i) {
+  for (uint32_t i = 1; i <= kConnectionWriteConnectFailures; ++i) {
     ch1.Ping(unreliable_timeout_delay + i);
   }
-  ch1.conn()->UpdateState(unreliable_timeout_delay + CONNECTION_WRITE_TIMEOUT +
+  ch1.conn()->UpdateState(unreliable_timeout_delay +
+                          kConnectionWriteTimeout.ms() +
                           kMaxExpectedSimulatedRtt);
   EXPECT_EQ(Connection::STATE_WRITE_TIMEOUT, ch1.conn()->write_state());
 
@@ -3261,10 +3265,11 @@ TEST_F(PortTest, TestTimeoutForNeverWritable) {
   EXPECT_EQ(Connection::STATE_WRITE_INIT, ch1.conn()->write_state());
 
   
-  for (uint32_t i = 1; i <= CONNECTION_WRITE_CONNECT_FAILURES; ++i) {
+  for (uint32_t i = 1; i <= kConnectionWriteConnectFailures; ++i) {
     ch1.Ping(i);
   }
-  ch1.conn()->UpdateState(CONNECTION_WRITE_TIMEOUT + kMaxExpectedSimulatedRtt);
+  ch1.conn()->UpdateState(kConnectionWriteTimeout.ms() +
+                          kMaxExpectedSimulatedRtt);
   EXPECT_EQ(Connection::STATE_WRITE_TIMEOUT, ch1.conn()->write_state());
 }
 

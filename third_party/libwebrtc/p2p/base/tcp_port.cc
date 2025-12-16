@@ -354,7 +354,7 @@ TCPConnection::TCPConnection(const Environment& env,
       outgoing_(socket == nullptr),
       connection_pending_(false),
       pretending_to_be_writable_(false),
-      reconnection_timeout_(CONNECTION_WRITE_CONNECT_TIMEOUT) {
+      reconnection_timeout_(kConnectionWriteConnectTimeout.ms()) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK_EQ(port()->GetProtocol(),
                 PROTO_TCP);  

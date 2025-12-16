@@ -60,11 +60,9 @@ extern const char LOCAL_TLD[];
 
 
 
+inline constexpr TimeDelta kMinCheckReceivingInterval = TimeDelta::Millis(50);
 
-
-extern const int RECEIVING_TIMEOUT;
-
-extern const int MIN_CHECK_RECEIVING_INTERVAL;
+inline constexpr TimeDelta kReceivingTimeout = kMinCheckReceivingInterval * 50;
 
 
 
@@ -72,47 +70,40 @@ extern const int MIN_CHECK_RECEIVING_INTERVAL;
 
 
 inline constexpr TimeDelta kStrongPingInterval = TimeDelta::Millis(480);
-inline constexpr int STRONG_PING_INTERVAL = kStrongPingInterval.ms();
 
 
 
 
 inline constexpr TimeDelta kWeakPingInterval = TimeDelta::Millis(48);
-inline constexpr int WEAK_PING_INTERVAL = kWeakPingInterval.ms();
 
 
 
 
 inline constexpr TimeDelta kStrongAndStableWritableConnectionPingInterval =
     TimeDelta::Millis(2'500);
-inline constexpr int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL =
-    kStrongAndStableWritableConnectionPingInterval.ms();
 
 
 inline constexpr TimeDelta kWeakOrStabilizingWritableConnectionPingInterval =
     TimeDelta::Millis(900);
-inline constexpr int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL =
-    kWeakOrStabilizingWritableConnectionPingInterval.ms();
 
-extern const int BACKUP_CONNECTION_PING_INTERVAL;
+inline constexpr TimeDelta kBackupConnectionPingInterval =
+    TimeDelta::Seconds(25);
 
-extern const int RECEIVING_SWITCHING_DELAY;
+inline constexpr TimeDelta kReceivingSwitchingDelay = TimeDelta::Seconds(1);
 
-extern const int REGATHER_ON_FAILED_NETWORKS_INTERVAL;
+inline constexpr TimeDelta kRegatherOnFailedNetworksInterval =
+    TimeDelta::Seconds(5 * 60);
 
 inline constexpr TimeDelta kConnectionWriteConnectTimeout =
     TimeDelta::Seconds(5);
-inline constexpr int CONNECTION_WRITE_CONNECT_TIMEOUT =
-    kConnectionWriteConnectTimeout.ms();
 
-extern const uint32_t CONNECTION_WRITE_CONNECT_FAILURES;
+inline constexpr int kConnectionWriteConnectFailures = 5;  
 
 inline constexpr TimeDelta kConnectionWriteTimeout = TimeDelta::Seconds(15);
-inline constexpr int CONNECTION_WRITE_TIMEOUT = kConnectionWriteTimeout.ms();
 
-extern const int STUN_KEEPALIVE_INTERVAL;
+inline constexpr TimeDelta kStunKeepaliveInterval = TimeDelta::Seconds(10);
 
-inline constexpr int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
+inline constexpr int kMinPingsAtWeakPingInterval = 3;
 
 
 
@@ -124,14 +115,13 @@ inline constexpr TimeDelta kWeakConnectionReceiveTimeout =
 
 inline constexpr TimeDelta kDeadConnectionReceiveTimeout =
     TimeDelta::Seconds(30);
-inline constexpr int DEAD_CONNECTION_RECEIVE_TIMEOUT =
-    kDeadConnectionReceiveTimeout.ms();
 
-extern const int CONNECTION_RESPONSE_TIMEOUT;
+
+
+inline constexpr TimeDelta kConnectionResponseTimeout = TimeDelta::Seconds(60);
 
 
 inline constexpr TimeDelta kMinConnectionLifetime = TimeDelta::Seconds(10);
-inline constexpr int MIN_CONNECTION_LIFETIME = kMinConnectionLifetime.ms();
 
 
 
