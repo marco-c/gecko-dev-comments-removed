@@ -9,28 +9,27 @@ const nodeConstants = require("resource://devtools/shared/dom-node-constants.js"
 
 
 
-function ReadOnlyEditor(container, nodeFront) {
-  this.container = container;
-  this.markup = this.container.markup;
-  this.buildMarkup();
+class ReadOnlyEditor {
+  constructor(container, nodeFront) {
+    this.container = container;
+    this.markup = this.container.markup;
+    this.buildMarkup();
 
-  if (nodeFront.nodeType == nodeConstants.DOCUMENT_TYPE_NODE) {
-    this.elt.classList.add("comment", "doctype");
-    this.tag.textContent = nodeFront.doctypeString;
-  } else if (nodeFront.isShadowRoot) {
-    this.tag.textContent = `#shadow-root (${nodeFront.shadowRootMode})`;
-  } else {
-    this.tag.textContent = nodeFront.displayName;
-    if (nodeFront.isPseudoElement) {
-      this.tag.classList.add("pseudo", "force-color-on-flash");
+    if (nodeFront.nodeType == nodeConstants.DOCUMENT_TYPE_NODE) {
+      this.elt.classList.add("comment", "doctype");
+      this.tag.textContent = nodeFront.doctypeString;
+    } else if (nodeFront.isShadowRoot) {
+      this.tag.textContent = `#shadow-root (${nodeFront.shadowRootMode})`;
+    } else {
+      this.tag.textContent = nodeFront.displayName;
+      if (nodeFront.isPseudoElement) {
+        this.tag.classList.add("pseudo", "force-color-on-flash");
+      }
     }
+
+    
+    this.tag.setAttribute("tabindex", "-1");
   }
-
-  
-  this.tag.setAttribute("tabindex", "-1");
-}
-
-ReadOnlyEditor.prototype = {
   buildMarkup() {
     const doc = this.markup.doc;
 
@@ -40,7 +39,7 @@ ReadOnlyEditor.prototype = {
     this.tag = doc.createElement("span");
     this.tag.classList.add("tag");
     this.elt.appendChild(this.tag);
-  },
+  }
 
   destroy() {
     
@@ -51,7 +50,7 @@ ReadOnlyEditor.prototype = {
     this.elt.remove();
     this.elt = null;
     this.tag = null;
-  },
+  }
 
   
 
@@ -63,14 +62,14 @@ ReadOnlyEditor.prototype = {
       "overflow-causing-highlighted",
       showOverflowHighlight
     );
-  },
+  }
 
   
 
 
   getInfoAtNode() {
     return null;
-  },
-};
+  }
+}
 
 module.exports = ReadOnlyEditor;
