@@ -71,8 +71,16 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   
   
   
-  const bool isValueOutOfRange =
-      aPropertyId.mId == eCSSProperty_perspective && mValue < 0;
+  const bool isValueOutOfRange = [](NonCustomCSSPropertyId aId, double aValue) {
+    switch (aId) {
+      case eCSSProperty_perspective:
+      case eCSSProperty_column_width:
+        return aValue < 0;
+
+      default:
+        return false;
+    }
+  }(aPropertyId.mId, mValue);
 
   if (isValueOutOfRange) {
     aDest.Append("calc("_ns);
