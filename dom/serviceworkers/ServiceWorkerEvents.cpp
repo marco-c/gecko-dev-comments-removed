@@ -12,6 +12,7 @@
 #include "ServiceWorkerManager.h"
 #include "js/Conversions.h"
 #include "js/Exception.h"  
+#include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/ErrorResult.h"
@@ -32,6 +33,7 @@
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "mozilla/glean/DomPushMetrics.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentPolicyUtils.h"
@@ -1023,7 +1025,12 @@ nsresult ExtractBytesFromData(
 
 PushMessageData::PushMessageData(nsIGlobalObject* aOwner,
                                  nsTArray<uint8_t>&& aBytes)
-    : mOwner(aOwner), mBytes(std::move(aBytes)) {}
+    : mOwner(aOwner), mBytes(std::move(aBytes)) {
+  AutoJSAPI jsapi;
+  if (jsapi.Init(mOwner)) {
+    SetUseCounterIfDeclarative(jsapi.cx());
+  }
+}
 
 PushMessageData::~PushMessageData() = default;
 
@@ -1112,6 +1119,55 @@ uint8_t* PushMessageData::GetContentsCopy() {
   }
   memcpy(data, mBytes.Elements(), length);
   return reinterpret_cast<uint8_t*>(data);
+}
+
+
+
+void PushMessageData::SetUseCounterIfDeclarative(JSContext* aCx) {
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  JS::Rooted<JS::Value> message(aCx);
+  IgnoredErrorResult rv;
+  Json(aCx, &message, rv);
+  if (rv.Failed() || !message.isObject()) {
+    return;
+  }
+
+  
+  
+  JS::Rooted<JSObject*> messageObject(aCx, message.toObjectOrNull());
+  JS::Rooted<JS::Value> property(aCx);
+  if (!JS_GetProperty(aCx, messageObject, "web_push", &property)) {
+    rv.StealExceptionFromJSContext(aCx);
+    return;
+  }
+  if (!property.isNumber() || property.toNumber() != 8030) {
+    return;
+  }
+
+  glean::web_push::declarative.Add();
+
+  
+  
+  
+  if (!JS_GetProperty(aCx, messageObject, "mutable", &property)) {
+    rv.StealExceptionFromJSContext(aCx);
+    return;
+  }
+  if (!property.isBoolean() || !property.toBoolean()) {
+    return;
+  }
+
+  glean::web_push::declarative_mutable.Add();
 }
 
 PushEvent::PushEvent(EventTarget* aOwner) : ExtendableEvent(aOwner) {}
