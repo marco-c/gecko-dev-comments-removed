@@ -3691,18 +3691,15 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
 
 
 
-size_t nsStandardURL::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-  return mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
+size_t nsStandardURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+  return aMallocSizeOf(this) +
+         mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
          mDisplayHost.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
 
   
   
   
   
-}
-
-size_t nsStandardURL::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
 }  

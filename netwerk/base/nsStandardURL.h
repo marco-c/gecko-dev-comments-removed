@@ -133,7 +133,6 @@ class nsStandardURL : public nsIFileURL,
   NS_DECL_NSISENSITIVEINFOHIDDENURI
 
   
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   static void InitGlobalObjects();

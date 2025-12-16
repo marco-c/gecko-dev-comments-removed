@@ -20,10 +20,7 @@ class nsISizeOf : public nsISupports {
   
 
 
-  virtual size_t SizeOfExcludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const = 0;
 
-  
 
 
   virtual size_t SizeOfIncludingThis(

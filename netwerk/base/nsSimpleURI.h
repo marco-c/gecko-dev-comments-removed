@@ -48,7 +48,6 @@ class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
   
   
   
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
  protected:
