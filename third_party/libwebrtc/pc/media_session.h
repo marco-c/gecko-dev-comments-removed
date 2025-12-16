@@ -28,6 +28,7 @@
 #include "pc/codec_vendor.h"
 #include "pc/media_options.h"
 #include "pc/session_description.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/memory/always_valid_pointer.h"
 #include "rtc_base/unique_id_generator.h"
 
@@ -173,6 +174,10 @@ class MediaSessionDescriptionFactory {
     return ssrc_generator_.get();
   }
 
+  
+  const bool offer_rfc_8888_;
+  
+  const bool accept_offer_with_rfc_8888_;
   bool is_unified_plan_ = false;
   
   AlwaysValidPointer<UniqueRandomIdGenerator> const ssrc_generator_;
@@ -225,24 +230,5 @@ SctpDataContentDescription* GetFirstSctpDataContentDescription(
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::GetFirstAudioContent;
-using ::webrtc::GetFirstAudioContentDescription;
-using ::webrtc::GetFirstDataContent;
-using ::webrtc::GetFirstMediaContent;
-using ::webrtc::GetFirstSctpDataContentDescription;
-using ::webrtc::GetFirstVideoContent;
-using ::webrtc::GetFirstVideoContentDescription;
-using ::webrtc::IsAudioContent;
-using ::webrtc::IsDataContent;
-using ::webrtc::IsMediaContent;
-using ::webrtc::IsUnsupportedContent;
-using ::webrtc::IsVideoContent;
-using ::webrtc::MediaSessionDescriptionFactory;
-}  
-#endif  
 
 #endif  

@@ -1245,7 +1245,7 @@ TEST_F(RTCStatsIntegrationTest, ExperimentalPsnrStats) {
 }
 
 TEST_F(RTCStatsIntegrationTest, ExperimentalTransportCcfbStats) {
-  StartCall("WebRTC-RFC8888CongestionControlFeedback/Enabled/");
+  StartCall("WebRTC-RFC8888CongestionControlFeedback/Enabled,offer:true/");
 
   
   
