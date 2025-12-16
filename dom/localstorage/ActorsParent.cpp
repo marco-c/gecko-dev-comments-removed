@@ -2833,7 +2833,7 @@ using PrivateDatastoreHashtable =
 
 
 
-MOZ_CONSTINIT UniquePtr<PrivateDatastoreHashtable> gPrivateDatastores;
+constinit UniquePtr<PrivateDatastoreHashtable> gPrivateDatastores;
 
 using DatabaseArray = nsTArray<Database*>;
 
