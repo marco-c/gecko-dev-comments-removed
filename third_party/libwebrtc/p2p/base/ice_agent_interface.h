@@ -14,6 +14,7 @@
 #include <cstdint>
 
 #include "api/array_view.h"
+#include "api/units/timestamp.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/transport_description.h"
@@ -32,7 +33,10 @@ class IceAgentInterface {
   
   
   
-  virtual int64_t GetLastPingSentMs() const = 0;
+  virtual Timestamp GetLastPingSent() const = 0;
+  
+  
+  virtual int64_t GetLastPingSentMs() const { return GetLastPingSent().ms(); }
 
   
   virtual IceRole GetIceRole() const = 0;
@@ -80,12 +84,5 @@ class IceAgentInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::IceAgentInterface;
-}  
-#endif  
 
 #endif  

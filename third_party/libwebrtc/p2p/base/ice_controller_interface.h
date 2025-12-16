@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
@@ -129,7 +131,16 @@ class IceControllerInterface {
   virtual bool HasPingableConnection() const = 0;
 
   
-  virtual PingResult SelectConnectionToPing(int64_t last_ping_sent_ms) = 0;
+  
+  
+  virtual PingResult GetConnectionToPing(Timestamp last_ping_sent) {
+    return SelectConnectionToPing(last_ping_sent.ms());
+  }
+  
+  
+  virtual PingResult SelectConnectionToPing(int64_t last_ping_sent_ms) {
+    return GetConnectionToPing(Timestamp::Millis(last_ping_sent_ms));
+  }
 
   
   virtual bool GetUseCandidateAttr(const Connection* conn,
