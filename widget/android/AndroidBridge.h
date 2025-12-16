@@ -48,11 +48,6 @@ class AndroidBridge final {
   void GetIconForExtension(const nsACString& aFileExt, uint32_t aIconSize,
                            uint8_t* const aBuf);
 
-  
-  
-  
-  jobject GetGlobalContextRef(void);
-
   void GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInfo);
 
   void GetCurrentNetworkInformation(hal::NetworkInformation* aNetworkInfo);
