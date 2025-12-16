@@ -23,6 +23,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/timestamp_aligner.h"
 
@@ -154,7 +155,8 @@ class AudioDeviceBuffer {
   
 
   
-  SequenceChecker main_thread_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker main_thread_checker_{
+      SequenceChecker::kDetached};
 
   Mutex lock_;
 
