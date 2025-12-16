@@ -179,6 +179,7 @@
 #include "mozilla/dom/VRDisplayEventBinding.h"
 #include "mozilla/dom/VREventObserver.h"
 #include "mozilla/dom/VisualViewport.h"
+#include "mozilla/dom/WebCompatBinding.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
 #include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WebTaskSchedulerMainThread.h"
@@ -2142,6 +2143,67 @@ void nsGlobalWindowInner::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.SetParentTarget(GetParentTarget(), true);
 }
 
+
+
+
+
+MOZ_CAN_RUN_SCRIPT static bool IsCkEditor4EmptyFrame(Element& aEmbedder) {
+  if (!StaticPrefs::dom_about_blank_ckeditor_hack_enabled()) {
+    return false;
+  }
+  const nsAttrValue* classes = aEmbedder.GetClasses();
+  
+  
+  if (!classes ||
+      !classes->Contains(nsGkAtoms::cke_wysiwyg_frame, eCaseMatters)) {
+    return false;
+  }
+  if (!aEmbedder.IsHTMLElement(nsGkAtoms::iframe)) {
+    return false;
+  }
+  
+  if (const auto* src = aEmbedder.GetParsedAttr(nsGkAtoms::src);
+      !src || !src->IsEmptyString()) {
+    return false;
+  }
+  
+  
+  if (aEmbedder.NodePrincipal()->IsURIInPrefList(
+          "dom.about-blank-ckeditor-hack.disabled-domains")) {
+    return false;
+  }
+  
+  
+  RefPtr global = aEmbedder.GetOwnerGlobal();
+  if (!global || !global->GetGlobalJSObject()) {
+    return false;
+  }
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(global)) {
+    return false;
+  }
+  CkEditorProperty property;
+  JS::RootedValue v(jsapi.cx(), JS::ObjectValue(*global->GetGlobalJSObject()));
+  if (!property.Init(jsapi.cx(), v)) {
+    JS_ClearPendingException(jsapi.cx());
+    return false;
+  }
+  if (!StringBeginsWith(property.mCKEDITOR.mVersion, u"4."_ns)) {
+    return false;
+  }
+  aEmbedder.OwnerDoc()->WarnOnceAbout(
+      DeprecatedOperations::eCKEditor4CompatHack);
+  return true;
+}
+
+MOZ_CAN_RUN_SCRIPT static bool NeedsAsyncLoadEventForInitialDocument(
+    nsGlobalWindowInner& aInner, Element& aEmbedder) {
+  if (auto* doc = aInner.GetExtantDoc(); !doc || !doc->IsInitialDocument()) {
+    return false;
+  }
+  return IsCkEditor4EmptyFrame(aEmbedder);
+}
+
 void nsGlobalWindowInner::FireFrameLoadEvent() {
   
   
@@ -2154,8 +2216,13 @@ void nsGlobalWindowInner::FireFrameLoadEvent() {
   
   
   
-  RefPtr<Element> element = GetBrowsingContext()->GetEmbedderElement();
-  if (element) {
+  if (RefPtr<Element> element = GetBrowsingContext()->GetEmbedderElement()) {
+    if (NeedsAsyncLoadEventForInitialDocument(*this, *element)) {
+      (new AsyncEventDispatcher(element, eLoad, CanBubble::eNo))
+          ->PostDOMEvent();
+      return;
+    }
+
     nsEventStatus status = nsEventStatus_eIgnore;
     WidgetEvent event( true, eLoad);
     event.mFlags.mBubbles = false;
