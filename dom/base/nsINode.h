@@ -283,7 +283,7 @@ class nsMutationGuard {
 
 
 
-  bool Mutated(uint8_t aIgnoreCount) {
+  bool Mutated(uint8_t aIgnoreCount) const {
     return (sGeneration - mStartingGeneration) > aIgnoreCount;
   }
 
