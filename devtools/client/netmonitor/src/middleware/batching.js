@@ -98,28 +98,28 @@ function batchingMiddleware() {
 
 
 
-function DelayedTask(taskFn, delay) {
-  this._promise = new Promise((resolve, reject) => {
-    this.runTask = cancel => {
-      if (cancel) {
-        reject("Task cancelled");
-      } else {
-        taskFn();
-        resolve();
-      }
-      this.runTask = null;
-    };
-    this.timeout = setTimeout(this.runTask, delay);
-  }).catch(console.error);
-}
-
-DelayedTask.prototype = {
+class DelayedTask {
+  #promise;
+  constructor(taskFn, delay) {
+    this.#promise = new Promise((resolve, reject) => {
+      this.runTask = cancel => {
+        if (cancel) {
+          reject("Task cancelled");
+        } else {
+          taskFn();
+          resolve();
+        }
+        this.runTask = null;
+      };
+      this.timeout = setTimeout(this.runTask, delay);
+    }).catch(console.error);
+  }
   
 
 
   get promise() {
-    return this._promise;
-  },
+    return this.#promise;
+  }
 
   
 
@@ -129,7 +129,7 @@ DelayedTask.prototype = {
     if (this.runTask) {
       this.runTask(true);
     }
-  },
+  }
 
   
 
@@ -140,7 +140,7 @@ DelayedTask.prototype = {
     if (this.runTask) {
       this.runTask();
     }
-  },
-};
+  }
+}
 
 module.exports = batchingMiddleware;
