@@ -13990,11 +13990,13 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     this.focusCategory = this.focusCategory.bind(this);
     this.handleUpload = this.handleUpload.bind(this);
     this.handleBack = this.handleBack.bind(this);
+    this.handleWallpaperListEntered = this.handleWallpaperListEntered.bind(this);
     this.getRGBColors = this.getRGBColors.bind(this);
     this.prefersHighContrastQuery = null;
     this.prefersDarkQuery = null;
     this.categoryRef = []; 
     this.wallpaperRef = []; 
+    this.arrowButtonRef = external_React_default().createRef(); 
     this.customColorPickerRef = external_React_default().createRef(); 
     this.customColorInput = external_React_default().createRef(); 
     this.state = {
@@ -14107,7 +14109,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
     if (event.key === "Tab") {
       if (event.shiftKey) {
         event.preventDefault();
-        this.backToMenuButton?.focus();
+        this.arrowButtonRef.current?.focus();
       } else {
         event.preventDefault(); 
       }
@@ -14280,6 +14282,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
         this.focusCategory(this.state.focusedCategoryIndex);
       });
     });
+  }
+  handleWallpaperListEntered() {
+    this.arrowButtonRef.current?.focus();
   }
 
   
@@ -14517,16 +14522,15 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       in: !!activeCategory,
       timeout: 300,
       classNames: "wallpaper-list",
-      unmountOnExit: true
+      unmountOnExit: true,
+      onEntered: this.handleWallpaperListEntered
     }, external_React_default().createElement("section", {
       className: "category wallpaper-list ignore-color-mode"
     }, external_React_default().createElement("button", {
+      ref: this.arrowButtonRef,
       className: "arrow-button",
       "data-l10n-id": activeCategoryFluentID,
-      onClick: this.handleBack,
-      ref: el => {
-        this.backToMenuButton = el;
-      }
+      onClick: this.handleBack
     }), external_React_default().createElement("div", {
       role: "grid",
       "aria-label": "Wallpaper selection. Use arrow keys to navigate."
