@@ -867,17 +867,19 @@ static nscoord OffsetToAlignedStaticPos(
       
     } else if (kidSize <= overflowLimitRectEnd - overflowLimitRectStart) {
       
-      if (kidEnd < imcbEnd) {
-        offset += imcbEnd - kidEnd;
-      } else if (kidStart > imcbStart) {
-        offset -= kidStart - imcbStart;
-      } else {
+      if (kidStart <= imcbStart && kidEnd >= imcbEnd) {
         
         if (kidStart < overflowLimitRectStart) {
           offset += overflowLimitRectStart - kidStart;
         } else if (kidEnd > overflowLimitRectEnd) {
           offset -= kidEnd - overflowLimitRectEnd;
         }
+      } else if (kidEnd < imcbEnd && kidStart < imcbStart) {
+        
+        offset += std::min(imcbStart - kidStart, imcbEnd - kidEnd);
+      } else if (kidStart > imcbStart && kidEnd > imcbEnd) {
+        
+        offset -= std::min(kidEnd - imcbEnd, kidStart - imcbStart);
       }
     } else {
       
