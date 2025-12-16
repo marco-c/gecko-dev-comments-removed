@@ -629,6 +629,12 @@ class PeerConnection : public PeerConnectionInternal,
 
   bool CanAttemptDtlsStunPiggybacking();
 
+  
+  
+  
+  
+  void RunOnSignalingThread(absl::AnyInvocable<void() &&> task);
+
   const Environment env_;
   const scoped_refptr<ConnectionContext> context_;
   const PeerConnectionFactoryInterface::Options options_;
@@ -733,6 +739,39 @@ class PeerConnection : public PeerConnectionInternal,
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
 
   std::unique_ptr<CodecLookupHelper> codec_lookup_helper_;
+
+  template <const SessionDescriptionInterface* (SdpStateProvider::*accessor)()
+                const>
+  const SessionDescriptionInterface* HandleSessionDescriptionAccessor(
+      std::unique_ptr<SessionDescriptionInterface>& clone) const {
+    if (signaling_thread()->IsCurrent()) {
+      RTC_DCHECK_RUN_ON(signaling_thread());
+      return (sdp_handler_.get()->*accessor)();
+    }
+    signaling_thread()->BlockingCall([&] {
+      RTC_DCHECK_RUN_ON(signaling_thread());
+      const SessionDescriptionInterface* desc =
+          (sdp_handler_.get()->*accessor)();
+      clone = desc ? desc->Clone() : nullptr;
+    });
+    return clone.get();
+  }
+
+  
+  
+  
+  
+  mutable std::unique_ptr<SessionDescriptionInterface> local_description_clone_;
+  mutable std::unique_ptr<SessionDescriptionInterface>
+      remote_description_clone_;
+  mutable std::unique_ptr<SessionDescriptionInterface>
+      current_local_description_clone_;
+  mutable std::unique_ptr<SessionDescriptionInterface>
+      current_remote_description_clone_;
+  mutable std::unique_ptr<SessionDescriptionInterface>
+      pending_local_description_clone_;
+  mutable std::unique_ptr<SessionDescriptionInterface>
+      pending_remote_description_clone_;
 
   
   WeakPtrFactory<PeerConnection> weak_factory_;

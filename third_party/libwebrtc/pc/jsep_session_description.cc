@@ -169,6 +169,12 @@ size_t SessionDescriptionInternal::mediasection_count() const {
 }
 
 void SessionDescriptionInternal::RelinquishThreadOwnership() {
+  
+  
+  
+  
+  
+  
   sequence_checker_.Detach();
 }
 
@@ -203,22 +209,23 @@ JsepSessionDescription::~JsepSessionDescription() {}
 
 std::unique_ptr<SessionDescriptionInterface> JsepSessionDescription::Clone()
     const {
+  RTC_DCHECK_RUN_ON(sequence_checker());
   return std::make_unique<JsepSessionDescription>(
       sdp_type(), description() ? description()->Clone() : nullptr, id(),
       version(), CloneCandidateCollection(candidate_collection_));
 }
 
 bool JsepSessionDescription::AddCandidate(const IceCandidate* candidate) {
+  RTC_DCHECK_RUN_ON(sequence_checker());
   if (!candidate)
     return false;
-  size_t mediasection_index = 0;
-  if (!GetMediasectionIndex(candidate, &mediasection_index)) {
+  size_t index = 0;
+  if (!GetMediasectionIndex(candidate, &index)) {
     return false;
   }
-  const std::string& mediasection_mid =
-      description()->contents()[mediasection_index].mid();
+  ContentInfo& content = description()->contents()[index];
   const TransportInfo* transport_info =
-      description()->GetTransportInfoByName(mediasection_mid);
+      description()->GetTransportInfoByName(content.mid());
   if (!transport_info) {
     return false;
   }
@@ -236,40 +243,38 @@ bool JsepSessionDescription::AddCandidate(const IceCandidate* candidate) {
   
   
   RTC_DCHECK(candidate->sdp_mid().empty() ||
-             candidate->sdp_mid() == mediasection_mid)
-      << "sdp_mid='" << candidate->sdp_mid() << "' mediasection_mid='"
-      << mediasection_mid << "'";
+             candidate->sdp_mid() == content.mid())
+      << "sdp_mid='" << candidate->sdp_mid() << "' content.mid()='"
+      << content.mid() << "'";
   auto updated_candidate_wrapper = std::make_unique<IceCandidate>(
-      mediasection_mid, static_cast<int>(mediasection_index),
-      updated_candidate);
-  if (!candidate_collection_[mediasection_index].HasCandidate(
-          updated_candidate_wrapper.get())) {
-    candidate_collection_[mediasection_index].add(
-        std::move(updated_candidate_wrapper));
-    UpdateConnectionAddress(
-        candidate_collection_[mediasection_index],
-        description()->contents()[mediasection_index].media_description());
+      content.mid(), static_cast<int>(index), updated_candidate);
+  IceCandidateCollection& candidates = candidate_collection_[index];
+  if (!candidates.HasCandidate(updated_candidate_wrapper.get())) {
+    candidates.add(std::move(updated_candidate_wrapper));
+    UpdateConnectionAddress(candidates, content.media_description());
   }
 
   return true;
 }
 
 bool JsepSessionDescription::RemoveCandidate(const IceCandidate* candidate) {
-  size_t mediasection_index = 0u;
-  if (!GetMediasectionIndex(candidate, &mediasection_index)) {
+  RTC_DCHECK_RUN_ON(sequence_checker());
+  size_t index = 0u;
+  if (!GetMediasectionIndex(candidate, &index)) {
     return false;
   }
-  if (!candidate_collection_[mediasection_index].remove(candidate)) {
+  IceCandidateCollection& candidates = candidate_collection_[index];
+  if (!candidates.remove(candidate)) {
     return false;
   }
-  UpdateConnectionAddress(
-      candidate_collection_[mediasection_index],
-      description()->contents()[mediasection_index].media_description());
+  UpdateConnectionAddress(candidates,
+                          description()->contents()[index].media_description());
   return true;
 }
 
 const IceCandidateCollection* JsepSessionDescription::candidates(
     size_t mediasection_index) const {
+  RTC_DCHECK_RUN_ON(sequence_checker());
   if (mediasection_index >= candidate_collection_.size())
     return nullptr;
   return &candidate_collection_[mediasection_index];
