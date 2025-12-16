@@ -1,5 +1,4 @@
 #define MOZ_RUNINIT  __attribute__((annotate("moz_global_var")))
-#define MOZ_CONSTINIT [[clang::require_constant_initialization]]
 #define MOZ_GLOBAL_CLASS __attribute__((annotate("moz_global_class")))
 
 
