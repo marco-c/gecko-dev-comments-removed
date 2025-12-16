@@ -1945,7 +1945,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
   nsresult rv = CheckContentPolicy(
       loadingPrincipal, principal, aInfo.mURI, requestingNode, aInfo.mNonce,
       StylePreloadKind::None, aInfo.mCORSMode, aInfo.mIntegrity);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_FAILED(rv)) {
     
     
     
