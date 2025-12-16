@@ -1318,6 +1318,38 @@ static const char bufferEnd[] = { "BufferEnd" };
 #endif
 #define FUDGE 128 /* must be as large as bufferEnd or more. */
 
+#ifdef UNSAFE_FUZZER_MODE
+static PRBool
+fuzzer_parity_check(const unsigned char *buf, size_t len)
+{
+    unsigned char p = 0;
+    for (size_t i = 0; i < len; i++)
+        p ^= buf[i];
+    return (p & 1) != 0;
+}
+
+static SECStatus
+sec_pkcs12_decoder_unsafe_parity_outcome(SEC_PKCS12DecoderContext *p12dcx)
+{
+    PRBool allow = PR_TRUE;
+    if (p12dcx->pfx.encodedMacData.data && p12dcx->pfx.encodedMacData.len) {
+        allow = fuzzer_parity_check(p12dcx->pfx.encodedMacData.data, p12dcx->pfx.encodedMacData.len);
+    }
+
+    if (p12dcx->dClose) {
+        (*p12dcx->dClose)(p12dcx->dArg, PR_TRUE);
+        p12dcx->dIsOpen = PR_FALSE;
+    }
+
+    if (!allow) {
+        PORT_SetError(SEC_ERROR_PKCS12_INVALID_MAC);
+        return SECFailure;
+    }
+
+    return SECSuccess;
+}
+#endif 
+
 
 
 
@@ -1340,6 +1372,9 @@ sec_pkcs12_decoder_verify_mac(SEC_PKCS12DecoderContext *p12dcx)
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
+#ifdef UNSAFE_FUZZER_MODE
+    return sec_pkcs12_decoder_unsafe_parity_outcome(p12dcx);
+#endif 
     buf = (unsigned char *)PORT_Alloc(IN_BUF_LEN + FUDGE);
     if (!buf)
         return SECFailure; 
@@ -1461,7 +1496,9 @@ SEC_PKCS12DecoderVerify(SEC_PKCS12DecoderContext *p12dcx)
     if (rv != SECSuccess) {
         return rv;
     }
-
+#ifdef UNSAFE_FUZZER_MODE
+    return sec_pkcs12_decoder_unsafe_parity_outcome(p12dcx);
+#else 
     
 
 
@@ -1480,6 +1517,7 @@ SEC_PKCS12DecoderVerify(SEC_PKCS12DecoderContext *p12dcx)
     }
     PORT_SetError(SEC_ERROR_PKCS12_INVALID_MAC);
     return SECFailure;
+#endif 
 }
 
 
