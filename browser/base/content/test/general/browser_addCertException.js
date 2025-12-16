@@ -9,6 +9,12 @@
 
 
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.trustPanel.featureGate", false]],
+  });
+});
+
 add_task(async function () {
   for (let feltPrivacyEnabled of [true, false]) {
     await SpecialPowers.pushPrefEnv({

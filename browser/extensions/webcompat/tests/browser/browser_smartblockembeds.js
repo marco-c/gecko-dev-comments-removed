@@ -6,8 +6,8 @@
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["browser.urlbar.trustPanel.featureGate", false],
       ["test.wait300msAfterTabSwitch", true],
-
       
       
       [SEC_DELAY_PREF, 1000],
