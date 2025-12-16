@@ -345,6 +345,10 @@ var allowlist = [
   {
     file: "moz-src:///browser/components/aiwindow/models/ChatUtils.mjs",
   },
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/Utils.mjs",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
