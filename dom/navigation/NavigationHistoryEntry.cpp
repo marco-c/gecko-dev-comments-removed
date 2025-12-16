@@ -43,9 +43,11 @@ void NavigationHistoryEntry::GetUrl(nsAString& aResult) const {
   MOZ_DIAGNOSTIC_ASSERT(GetAssociatedDocument());
 
   if (!SameDocument()) {
-    auto referrerPolicy = GetAssociatedDocument()->ReferrerPolicy();
+    const auto referrerPolicy =
+        GetAssociatedDocument()->ReferrerPolicyUsedToFetchThisDocument();
     if (referrerPolicy == ReferrerPolicy::No_referrer ||
         referrerPolicy == ReferrerPolicy::Origin) {
+      aResult.SetIsVoid(true);
       return;
     }
   }
@@ -107,17 +109,23 @@ bool NavigationHistoryEntry::SameDocument() const {
 void NavigationHistoryEntry::GetState(JSContext* aCx,
                                       JS::MutableHandle<JS::Value> aResult,
                                       ErrorResult& aRv) const {
-  if (!mSHInfo) {
-    return;
-  }
-  RefPtr<nsIStructuredCloneContainer> state = mSHInfo->GetNavigationAPIState();
-  if (!state) {
-    aResult.setUndefined();
+  
+  aResult.setUndefined();
+  if (!HasActiveDocument()) {
     return;
   }
 
+  
+  RefPtr<nsIStructuredCloneContainer> state = mSHInfo->GetNavigationAPIState();
+  if (!state) {
+    return;
+  }
   nsresult rv = state->DeserializeToJsval(aCx, aResult);
   if (NS_FAILED(rv)) {
+    
+    
+    
+    
     
     aRv.Throw(rv);
   }
