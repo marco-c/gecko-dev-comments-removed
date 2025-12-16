@@ -109,7 +109,7 @@ use crate::composite::{tile_kind, CompositeState, CompositeTileSurface, Composit
 use crate::composite::{ExternalSurfaceDescriptor, ExternalSurfaceDependency, CompositeTileDescriptor, CompositeTile};
 use crate::composite::{CompositorTransformIndex, CompositorSurfaceKind};
 use crate::debug_colors;
-use euclid::{vec3, Point2D, Scale, Vector2D, Box2D};
+use euclid::{vec3, Scale, Vector2D, Box2D};
 use euclid::approxeq::ApproxEq;
 use crate::intern::ItemUid;
 use crate::internal_types::{FastHashMap, FastHashSet, PlaneSplitter, FilterGraphOp, FilterGraphNode, Filter, FrameId};
@@ -133,19 +133,27 @@ use crate::scene::SceneProperties;
 use crate::spatial_tree::CoordinateSystemId;
 use crate::surface::{SurfaceDescriptor, SurfaceTileDescriptor};
 use smallvec::SmallVec;
-use std::{mem, u8, marker, u32};
+use std::{mem, u8, u32};
 use std::fmt::{Display, Error, Formatter};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::hash_map::Entry;
 use std::ops::Range;
 use crate::picture_textures::PictureCacheTextureHandle;
 use crate::util::{MaxRect, VecHelper, MatrixHelpers, Recycler, ScaleOffset};
 use crate::filterdata::FilterDataHandle;
 use crate::tile_cache::{SliceDebugInfo, TileDebugInfo, DirtyTileDebugInfo};
+use crate::tile_cache::{TileKey, TileId, TileRect, TileOffset, SubSliceIndex};
+use crate::invalidation::InvalidationReason;
+use crate::tile_cache::{MAX_SURFACE_SIZE, MAX_COMPOSITOR_SURFACES};
+use crate::tile_cache::{TileDescriptor, PrimitiveDescriptor, PrimitiveDependencyIndex};
+use crate::tile_cache::{TILE_SIZE_SCROLLBAR_VERTICAL, TILE_SIZE_SCROLLBAR_HORIZONTAL};
 use crate::visibility::{PrimitiveVisibilityFlags, FrameVisibilityContext};
 use crate::visibility::{VisibilityState, FrameVisibilityState};
 use crate::scene_building::SliceFlags;
 use core::time::Duration;
+
+pub use crate::invalidation::DirtyRegion;
+
+use crate::invalidation::PrimitiveCompareResult;
 
 
 
@@ -250,49 +258,7 @@ impl<Src, Dst> From<CoordinateSpaceMapping<Src, Dst>> for TransformKey {
 }
 
 
-#[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
-pub struct TileCoordinate;
-
-
-pub type TileOffset = Point2D<i32, TileCoordinate>;
-pub type TileRect = Box2D<i32, TileCoordinate>;
-
-
-
-
-pub const MAX_COMPOSITOR_SURFACES: usize = 4;
-
-
-pub const TILE_SIZE_DEFAULT: DeviceIntSize = DeviceIntSize {
-    width: 1024,
-    height: 512,
-    _unit: marker::PhantomData,
-};
-
-
-pub const TILE_SIZE_SCROLLBAR_HORIZONTAL: DeviceIntSize = DeviceIntSize {
-    width: 1024,
-    height: 32,
-    _unit: marker::PhantomData,
-};
-
-
-pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
-    width: 32,
-    height: 1024,
-    _unit: marker::PhantomData,
-};
-
-
-
-
-pub const MAX_SURFACE_SIZE: usize = 4096;
-
 const MAX_COMPOSITOR_SURFACES_SIZE: f32 = 8192.0;
-
-
-
-static NEXT_TILE_ID: AtomicUsize = AtomicUsize::new(0);
 
 fn clamp(value: i32, low: i32, high: i32) -> i32 {
     value.max(low).min(high)
@@ -301,12 +267,6 @@ fn clamp(value: i32, low: i32, high: i32) -> i32 {
 fn clampf(value: f32, low: f32, high: f32) -> f32 {
     value.max(low).min(high)
 }
-
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct PrimitiveDependencyIndex(pub u32);
 
 
 #[derive(Debug)]
@@ -592,25 +552,6 @@ impl PrimitiveDependencyInfo {
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Hash)]
-pub struct TileId(pub usize);
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Hash, Eq)]
-pub struct TileKey {
-    
-    pub tile_offset: TileOffset,
-    
-    pub sub_slice_index: SubSliceIndex,
-}
-
-
-
 #[derive(Debug)]
 pub enum SurfaceTextureDescriptor {
     
@@ -692,83 +633,6 @@ impl TileSurface {
 }
 
 
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum CompareHelperResult<T> {
-    
-    Equal,
-    
-    Count {
-        prev_count: u8,
-        curr_count: u8,
-    },
-    
-    Sentinel,
-    
-    NotEqual {
-        prev: T,
-        curr: T,
-    },
-    
-    PredicateTrue {
-        curr: T
-    },
-}
-
-
-
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(u8)]
-pub enum PrimitiveCompareResult {
-    
-    Equal,
-    
-    Descriptor,
-    
-    Clip,
-    
-    Transform,
-    
-    Image,
-    
-    OpacityBinding,
-    
-    ColorBinding,
-}
-
-
-#[derive(Debug,Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum InvalidationReason {
-    
-    BackgroundColor,
-    
-    SurfaceOpacityChanged,
-    
-    NoTexture,
-    
-    NoSurface,
-    
-    PrimCount,
-    
-    Content,
-    
-    CompositorKindChanged,
-    
-    ValidRectChanged,
-    
-    ScaleChanged,
-    
-    SurfaceContentChanged,
-}
-
-
 pub struct Tile {
     
     pub tile_offset: TileOffset,
@@ -822,7 +686,7 @@ pub struct Tile {
 impl Tile {
     
     fn new(tile_offset: TileOffset) -> Self {
-        let id = TileId(NEXT_TILE_ID.fetch_add(1, Ordering::Relaxed));
+        let id = TileId(crate::tile_cache::next_tile_id());
 
         Tile {
             tile_offset,
@@ -1367,173 +1231,6 @@ impl Tile {
 }
 
 
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct PrimitiveDescriptor {
-    pub prim_uid: ItemUid,
-    pub prim_clip_box: PictureBox2D,
-    
-    pub dep_offset: u32,
-    pub dep_count: u32,
-}
-
-impl PartialEq for PrimitiveDescriptor {
-    fn eq(&self, other: &Self) -> bool {
-        const EPSILON: f32 = 0.001;
-
-        if self.prim_uid != other.prim_uid {
-            return false;
-        }
-
-        if !self.prim_clip_box.min.x.approx_eq_eps(&other.prim_clip_box.min.x, &EPSILON) {
-            return false;
-        }
-        if !self.prim_clip_box.min.y.approx_eq_eps(&other.prim_clip_box.min.y, &EPSILON) {
-            return false;
-        }
-        if !self.prim_clip_box.max.x.approx_eq_eps(&other.prim_clip_box.max.x, &EPSILON) {
-            return false;
-        }
-        if !self.prim_clip_box.max.y.approx_eq_eps(&other.prim_clip_box.max.y, &EPSILON) {
-            return false;
-        }
-
-        if self.dep_count != other.dep_count {
-            return false;
-        }
-
-        true
-    }
-}
-
-
-
-#[cfg_attr(any(feature="capture",feature="replay"), derive(Clone))]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TileDescriptor {
-    
-    
-    
-    prims: Vec<PrimitiveDescriptor>,
-
-    
-    pub local_valid_rect: PictureRect,
-
-    
-    
-    last_updated_frame_id: FrameId,
-
-    
-    dep_data: Vec<u8>,
-}
-
-impl TileDescriptor {
-    fn new() -> Self {
-        TileDescriptor {
-            local_valid_rect: PictureRect::zero(),
-            dep_data: Vec::new(),
-            prims: Vec::new(),
-            last_updated_frame_id: FrameId::INVALID,
-        }
-    }
-
-    
-    fn print(&self, pt: &mut dyn PrintTreePrinter) {
-        pt.new_level("current_descriptor".to_string());
-
-        pt.new_level("prims".to_string());
-        for prim in &self.prims {
-            pt.new_level(format!("prim uid={}", prim.prim_uid.get_uid()));
-            pt.add_item(format!("clip: p0={},{} p1={},{}",
-                prim.prim_clip_box.min.x,
-                prim.prim_clip_box.min.y,
-                prim.prim_clip_box.max.x,
-                prim.prim_clip_box.max.y,
-            ));
-            pt.end_level();
-        }
-        pt.end_level();
-
-        pt.end_level();
-    }
-
-    
-    
-    fn clear(&mut self) {
-        self.local_valid_rect = PictureRect::zero();
-        self.prims.clear();
-        self.dep_data.clear();
-    }
-}
-
-
-
-
-
-
-
-#[derive(Clone)]
-pub struct DirtyRegion {
-    
-    pub combined: VisRect,
-
-    
-    
-    pub visibility_spatial_node: SpatialNodeIndex,
-    
-    local_spatial_node: SpatialNodeIndex,
-}
-
-impl DirtyRegion {
-    
-    pub fn new(
-        visibility_spatial_node: SpatialNodeIndex,
-        local_spatial_node: SpatialNodeIndex,
-    ) -> Self {
-        DirtyRegion {
-            combined: VisRect::zero(),
-            visibility_spatial_node,
-            local_spatial_node,
-        }
-    }
-
-    
-    pub fn reset(
-        &mut self,
-        visibility_spatial_node: SpatialNodeIndex,
-        local_spatial_node: SpatialNodeIndex,
-    ) {
-        self.combined = VisRect::zero();
-        self.visibility_spatial_node = visibility_spatial_node;
-        self.local_spatial_node = local_spatial_node;
-    }
-
-    
-    
-    pub fn add_dirty_region(
-        &mut self,
-        rect_in_pic_space: PictureRect,
-        spatial_tree: &SpatialTree,
-    ) {
-        let map_pic_to_raster = SpaceMapper::new_with_target(
-            self.visibility_spatial_node,
-            self.local_spatial_node,
-            VisRect::max_rect(),
-            spatial_tree,
-        );
-
-        let raster_rect = map_pic_to_raster
-            .map(&rect_in_pic_space)
-            .expect("bug");
-
-        
-        self.combined = self.combined.union(&raster_rect);
-    }
-}
-
-
 
 #[derive(Debug, Copy, Clone)]
 pub enum BackdropKind {
@@ -1654,32 +1351,6 @@ pub struct TileCacheParams {
     
     
     pub yuv_image_surface_count: usize,
-}
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct SubSliceIndex(u8);
-
-impl SubSliceIndex {
-    pub const DEFAULT: SubSliceIndex = SubSliceIndex(0);
-
-    pub fn new(index: usize) -> Self {
-        SubSliceIndex(index as u8)
-    }
-
-    
-    
-    pub fn is_primary(&self) -> bool {
-        self.0 == 0
-    }
-
-    
-    pub fn as_usize(&self) -> usize {
-        self.0 as usize
-    }
 }
 
 
