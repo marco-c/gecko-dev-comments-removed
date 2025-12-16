@@ -27,6 +27,9 @@
 
 #include "mozilla/gtest/MozHelpers.h"
 
+
+[[maybe_unused]] constexpr auto algorithm_usage = std::max(1, 2);
+
 void ShouldAbort() {
   ZERO_GDB_SLEEP();
 
