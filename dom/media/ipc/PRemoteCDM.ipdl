@@ -18,6 +18,31 @@ using mozilla::dom::MediaKeyStatus from "mozilla/dom/MediaKeyStatusMapBinding.h"
 
 namespace mozilla {
 
+
+
+struct RemoteCDMKeyMessageIPDL
+{
+  nsString sessionId;
+  MediaKeyMessageType type;
+  uint8_t[] message;
+};
+
+
+
+struct RemoteCDMKeyStatusIPDL
+{
+  nsString sessionId;
+  CDMKeyInfo[] keyInfo;
+};
+
+
+
+struct RemoteCDMKeyExpirationIPDL
+{
+  nsString sessionId;
+  double expiredTimeMilliSecondsSinceEpoch;
+};
+
 struct RemoteCDMInitRequestIPDL
 {
   bool allowDistinctiveIdentifier;
@@ -46,7 +71,7 @@ struct RemoteCDMUpdateSessionRequestIPDL
 union RemoteCDMSessionResponseIPDL
 {
   MediaResult;
-  nsString;
+  RemoteCDMKeyMessageIPDL;
 };
 
 struct RemoteCDMProvisionRequestIPDL
@@ -59,31 +84,6 @@ union RemoteCDMProvisionResponseIPDL
 {
   MediaResult;
   uint8_t[];
-};
-
-
-
-struct RemoteCDMKeyMessageIPDL
-{
-  nsString sessionId;
-  MediaKeyMessageType type;
-  uint8_t[] message;
-};
-
-
-
-struct RemoteCDMKeyStatusIPDL
-{
-  nsString sessionId;
-  CDMKeyInfo[] keyInfo;
-};
-
-
-
-struct RemoteCDMKeyExpirationIPDL
-{
-  nsString sessionId;
-  double expiredTimeMilliSecondsSinceEpoch;
 };
 
 
