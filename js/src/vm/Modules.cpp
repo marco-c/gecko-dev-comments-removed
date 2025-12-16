@@ -299,6 +299,31 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
   return moduleObject;
 }
 
+JS_PUBLIC_API JSObject* JS::CompileWasmModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf) {
+  
+  
+  
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_WASM_COMPILE_ERROR,
+                           "Compilation of wasm modules not implemented.");
+
+  return nullptr;
+}
+
+JS_PUBLIC_API JSObject* JS::CompileWasmModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf) {
+  
+  
+  
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_WASM_COMPILE_ERROR,
+                           "Compilation of wasm modules not implemented.");
+  return nullptr;
+}
+
 JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
   JSRuntime* rt = module->zone()->runtimeFromMainThread();
   module->as<ModuleObject>().scriptSourceObject()->setPrivate(rt, value);
