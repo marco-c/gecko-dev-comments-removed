@@ -14420,15 +14420,7 @@ void Document::WarnOnceAbout(
     return;
   }
   mDeprecationWarnedAbout[static_cast<size_t>(aOperation)] = true;
-  
-  
-  
-  
-  
-  if (!IsAboutPage()) {
-    const_cast<Document*>(this)->SetUseCounter(
-        OperationToUseCounter(aOperation));
-  }
+  const_cast<Document*>(this)->SetUseCounter(OperationToUseCounter(aOperation));
   uint32_t flags =
       asError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(
