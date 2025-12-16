@@ -1536,10 +1536,7 @@ void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
 
   
   if (AppShutdown::GetCurrentShutdownPhase() == ShutdownPhase::NotInShutdown) {
-    RefPtr<MemoryTelemetry> telemetry = MemoryTelemetry::Get();
-    if (telemetry) {
-      telemetry->Poke();
-    }
+    MemoryTelemetry::Get().Poke();
   }
 
   

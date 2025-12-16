@@ -10,8 +10,10 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
+#include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsTArray.h"
+#include "nsWeakReference.h"
 
 #include <functional>
 
@@ -29,14 +31,13 @@ enum class ResponseRejectReason;
 
 
 
-class MemoryTelemetry final {
+class MemoryTelemetry final : public nsIObserver,
+                              public nsSupportsWeakReference {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MemoryTelemetry)
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
-  static RefPtr<MemoryTelemetry> Create();
-
-  
-  static RefPtr<MemoryTelemetry> Get();
+  static MemoryTelemetry& Get();
 
   nsresult GatherReports(
       const std::function<void()>& aCompletionCallback = nullptr);
@@ -55,7 +56,10 @@ class MemoryTelemetry final {
 
  private:
   MemoryTelemetry();
-  ~MemoryTelemetry();
+
+  ~MemoryTelemetry() = default;
+
+  void Init();
 
   static Result<uint32_t, nsresult> GetOpenTabsCount();
 
