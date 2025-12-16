@@ -960,6 +960,8 @@ pub enum DebugCommand {
     
     GetDebugFlags(Sender<DebugFlags>),
     
+    SetRenderCommandLog(bool),
+    
     SaveCapture(PathBuf, CaptureBits),
     
     LoadCapture(PathBuf, Option<(u32, u32)>, Sender<CapturedDocument>),

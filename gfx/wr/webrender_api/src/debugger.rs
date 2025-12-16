@@ -2,7 +2,7 @@
 
 
 
-use crate::{DebugFlags, PictureRect, DeviceRect};
+use crate::{DebugFlags, PictureRect, DeviceRect, RenderCommandInfo};
 use crate::image::ImageFormat;
 
 
@@ -33,15 +33,16 @@ pub struct InitProfileCountersMessage {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct UpdateProfileCountersMessage {
-    pub updates: Vec<ProfileCounterUpdate>,
+pub struct FrameLogMessage {
+    pub profile_counters: Option<Vec<ProfileCounterUpdate>>,
+    pub render_commands: Option<Vec<RenderCommandInfo>>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum DebuggerMessage {
     SetDebugFlags(SetDebugFlagsMessage),
     InitProfileCounters(InitProfileCountersMessage),
-    UpdateProfileCounters(UpdateProfileCountersMessage),
+    UpdateFrameLog(FrameLogMessage),
 }
 
 #[derive(Serialize, Deserialize)]
