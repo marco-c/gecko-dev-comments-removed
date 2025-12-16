@@ -207,9 +207,13 @@ cubeb_log_set(cubeb_log_level log_level, cubeb_log_callback log_callback)
   
   if (log_callback && log_level != CUBEB_LOG_DISABLED) {
     g_cubeb_log_callback = log_callback;
-    cubeb_async_logger::get().start();
+    if (log_level == CUBEB_LOG_VERBOSE) {
+      cubeb_async_logger::get().start();
+    }
   } else if (!log_callback || CUBEB_LOG_DISABLED) {
     g_cubeb_log_callback = cubeb_noop_log_callback;
+    
+    
     
     cubeb_async_logger::get().stop();
   } else {
