@@ -27,25 +27,27 @@ const TYPES = {
 
 
 
+
+
+
+
+
+
+function MarkupContainer() {}
+
+
+
+
+
+
 let markupContainerID = 0;
 
-
-
-
-
-
-
-
-
-
-
-
-class MarkupContainer {
+MarkupContainer.prototype = {
   
   get undo() {
     
     return this.markup.undo;
-  }
+  },
 
   
 
@@ -92,7 +94,7 @@ class MarkupContainer {
     if (node.isShadowRoot) {
       Glean.devtoolsShadowdom.shadowRootDisplayed.set(true);
     }
-  }
+  },
 
   buildMarkup() {
     this.elt = this.win.document.createElement("li");
@@ -128,11 +130,11 @@ class MarkupContainer {
     this.children.classList.add("children");
     this.children.setAttribute("role", "group");
     this.elt.appendChild(this.children);
-  }
+  },
 
   toString() {
     return "[MarkupContainer for " + this.node + "]";
-  }
+  },
 
   isPreviewable() {
     if (this.node.tagName && !this.node.isPseudoElement) {
@@ -145,7 +147,7 @@ class MarkupContainer {
     }
 
     return false;
-  }
+  },
 
   
 
@@ -158,36 +160,36 @@ class MarkupContainer {
     if (!this.node.isDisplayed || this.node.hidden) {
       this.elt.classList.add("not-displayed");
     }
-  }
+  },
 
   
 
 
 
-  _hasChildren = false;
+  _hasChildren: false,
 
   get hasChildren() {
     return this._hasChildren;
-  }
+  },
 
   set hasChildren(value) {
     this._hasChildren = value;
     this.updateExpander();
-  }
+  },
 
   
 
 
   get focusableElms() {
     return [...this.tagLine.querySelectorAll("[tabindex]")];
-  }
+  },
 
   
 
 
   get canFocus() {
     return this._canFocus;
-  }
+  },
 
   
 
@@ -207,7 +209,7 @@ class MarkupContainer {
       
       this.focusableElms.forEach(elm => elm.setAttribute("tabindex", "-1"));
     }
-  }
+  },
 
   
 
@@ -234,28 +236,28 @@ class MarkupContainer {
     if (parent) {
       doc.activeElement.blur();
     }
-  }
+  },
 
   
 
 
   get canExpand() {
     return this._hasChildren && !this.node.inlineTextChild;
-  }
+  },
 
   
 
 
   get mustExpand() {
     return this.node._parent === this.markup.walker.rootNode;
-  }
+  },
 
   
 
 
   get showExpander() {
     return this.canExpand && !this.mustExpand;
-  }
+  },
 
   updateExpander() {
     if (!this.expander) {
@@ -274,7 +276,7 @@ class MarkupContainer {
       
       this.tagLine.removeAttribute("aria-expanded");
     }
-  }
+  },
 
   
 
@@ -285,7 +287,7 @@ class MarkupContainer {
       "role",
       this.hasChildren ? "group" : "presentation"
     );
-  }
+  },
 
   
 
@@ -304,7 +306,7 @@ class MarkupContainer {
     if (childContainers) {
       childContainers.forEach(container => container.updateLevel());
     }
-  }
+  },
 
   
 
@@ -318,14 +320,14 @@ class MarkupContainer {
     return [...this.children.children]
       .filter(node => node.container)
       .map(node => node.container);
-  }
+  },
 
   
 
 
   get expanded() {
     return !this.elt.classList.contains("collapsed");
-  }
+  },
 
   setExpanded(value) {
     if (!this.expander) {
@@ -362,7 +364,7 @@ class MarkupContainer {
     if (this.node.isShadowRoot) {
       Glean.devtoolsShadowdom.shadowRootExpanded.set(true);
     }
-  }
+  },
 
   
 
@@ -397,7 +399,7 @@ class MarkupContainer {
       this.closeTagLine = line;
     }
     this.elt.appendChild(this.closeTagLine);
-  }
+  },
 
   
 
@@ -410,11 +412,11 @@ class MarkupContainer {
 
     this.elt.removeChild(this.closeTagLine);
     this.closeTagLine = undefined;
-  }
+  },
 
   parentContainer() {
     return this.elt.parentNode ? this.elt.parentNode.container : null;
-  }
+  },
 
   
 
@@ -428,10 +430,10 @@ class MarkupContainer {
       parent = parent.parentNode();
     }
     return level;
-  }
+  },
 
-  _isDragging = false;
-  _dragStartY = 0;
+  _isDragging: false,
+  _dragStartY: 0,
 
   set isDragging(isDragging) {
     const rootElt = this.markup.getContainer(this.markup._rootNode).elt;
@@ -450,11 +452,11 @@ class MarkupContainer {
       this.markup.doc.body.classList.remove("dragging");
       rootElt.setAttribute("aria-dropeffect", "none");
     }
-  }
+  },
 
   get isDragging() {
     return this._isDragging;
-  }
+  },
 
   
 
@@ -472,11 +474,11 @@ class MarkupContainer {
       this.node.parentNode() &&
       this.node.parentNode().tagName !== null
     );
-  }
+  },
 
   isSlotted() {
     return false;
-  }
+  },
 
   _onKeyDown(event) {
     const { target, keyCode, shiftKey } = event;
@@ -527,7 +529,7 @@ class MarkupContainer {
         return;
     }
     event.stopPropagation();
-  }
+  },
 
   _onMouseDown(event) {
     const { target, button, metaKey, ctrlKey } = event;
@@ -583,7 +585,7 @@ class MarkupContainer {
       this._dragStartY = event.pageY;
       this.markup._draggedContainer = this;
     }
-  }
+  },
 
   _onClick(event) {
     const { target } = event;
@@ -603,7 +605,7 @@ class MarkupContainer {
       closestLinkEl.dataset.link
     );
     event.stopPropagation();
-  }
+  },
 
   
 
@@ -617,7 +619,7 @@ class MarkupContainer {
     
     this.canFocus = false;
     this.markup.followAttributeLink(type, link);
-  }
+  },
 
   
 
@@ -639,7 +641,7 @@ class MarkupContainer {
       await walkerFront.insertBefore(this.node, parent, nextSibling);
       this.markup.emit("drop-completed");
     }
-  }
+  },
 
   
 
@@ -678,7 +680,7 @@ class MarkupContainer {
       const el = this.markup.doc.elementFromPoint(x, y);
       this.markup.indicateDropTarget(el);
     }
-  }
+  },
 
   cancelDragging() {
     if (!this.isDragging) {
@@ -688,7 +690,7 @@ class MarkupContainer {
     this._isPreDragging = false;
     this.isDragging = false;
     this.elt.style.removeProperty("top");
-  }
+  },
 
   
 
@@ -711,9 +713,9 @@ class MarkupContainer {
         });
       }, this.markup.CONTAINER_FLASHING_DURATION);
     }
-  }
+  },
 
-  _hovered = false;
+  _hovered: false,
 
   
 
@@ -739,23 +741,23 @@ class MarkupContainer {
           .classList.remove("tag-hover");
       }
     }
-  }
+  },
 
   
 
 
   get visible() {
     return this.elt.getBoundingClientRect().height > 0;
-  }
+  },
 
   
 
 
-  _selected = false;
+  _selected: false,
 
   get selected() {
     return this._selected;
-  }
+  },
 
   set selected(value) {
     this.tagState.classList.remove("flash-out");
@@ -774,7 +776,7 @@ class MarkupContainer {
       this.tagLine.removeAttribute("selected");
       this.tagState.classList.remove("theme-selected");
     }
-  }
+  },
 
   
 
@@ -808,7 +810,7 @@ class MarkupContainer {
     if (this.editor.update) {
       this.editor.update();
     }
-  }
+  },
 
   
 
@@ -829,7 +831,7 @@ class MarkupContainer {
         focusVisible: !fromMouseEvent,
       });
     }
-  }
+  },
 
   _onToggle(event) {
     event.stopPropagation();
@@ -845,7 +847,7 @@ class MarkupContainer {
     }
 
     this.expandContainer(event.altKey);
-  }
+  },
 
   
 
@@ -861,7 +863,7 @@ class MarkupContainer {
         applyToDescendants
       );
     }
-  }
+  },
 
   
 
@@ -895,7 +897,7 @@ class MarkupContainer {
     }
 
     this.editor.destroy();
-  }
-}
+  },
+};
 
 module.exports = MarkupContainer;
