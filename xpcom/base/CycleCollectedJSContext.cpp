@@ -986,6 +986,15 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
 
   
   
+  
+  
+  
+  
+  auto ignoreMicroTasks = mozilla::MakeScopeExit(
+      [&aMicroTask]() { aMicroTask.get().IgnoreJSMicroTask(); });
+
+  
+  
   mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
   if (profiler_is_active_and_unpaused() &&
       profiler_feature_active(ProfilerFeature::Flows)) {
@@ -1080,11 +1089,12 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
                   "promise callback" ,
                   dom::CallbackObject::eReportExceptions);
   if (!setup.GetContext()) {
-    
-    aMicroTask.get().IgnoreJSMicroTask();
-
     return;
   }
+
+  
+  
+  ignoreMicroTasks.release();
 
   
   
