@@ -5,6 +5,11 @@ const BLANK_PAGE =
   "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
 
 
+const { HttpServer } = ChromeUtils.importESModule(
+  "resource://testing-common/httpd.sys.mjs"
+);
+
+
 
 
 
@@ -67,19 +72,17 @@ async function html(strings, ...values) {
 
 
 
-function serveOnce(html) {
-  
-  const { HttpServer } = ChromeUtils.importESModule(
-    "resource://testing-common/httpd.sys.mjs"
-  );
+
+function serveOnce(html, statusCode = 200) {
   info("Create server");
   const server = new HttpServer();
 
   const { promise, resolve } = Promise.withResolvers();
 
-  server.registerPathHandler("/page.html", (_request, response) => {
+  server.registerPathHandler("/page.html", (request, response) => {
     info("Request received for: " + url);
     response.setHeader("Content-Type", "text/html");
+    response.setStatusLine(request.httpVersion, statusCode);
     response.write(html);
     resolve(server.stop());
   });
