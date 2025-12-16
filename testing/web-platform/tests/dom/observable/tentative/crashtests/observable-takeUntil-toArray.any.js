@@ -1,0 +1,8 @@
+
+promise_test(async () => {
+  return new Observable(() => {})
+      .takeUntil(new Observable(() => {})
+          .inspect({subscribe: () => { throw "KABOOM"; }}))
+      .toArray();
+}, "takeUntil correctly passes error on inner observable to outer observables");
+
