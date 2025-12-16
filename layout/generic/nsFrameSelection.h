@@ -695,13 +695,13 @@ class nsFrameSelection final {
 
   template <typename RangeType>
   MOZ_CAN_RUN_SCRIPT static mozilla::Result<RefPtr<RangeType>, nsresult>
-  CreateRangeExtendedToPreviousGraphemeClusterBoundary(
+  CreateRangeExtendedToPreviousCharacterBoundary(
       mozilla::PresShell& aPresShell,
       const mozilla::LimitersAndCaretData& aLimitersAndCaretData,
       const mozilla::dom::AbstractRange& aRange, nsDirection aRangeDirection) {
     return CreateRangeExtendedToSomewhere<RangeType>(
         aPresShell, aLimitersAndCaretData, aRange, aRangeDirection,
-        eDirPrevious, eSelectCluster, eLogical);
+        eDirPrevious, eSelectCharacter, eLogical);
   }
 
   

@@ -1459,10 +1459,9 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       
       
       
-      result = nsFrameSelection::
-          CreateRangeExtendedToPreviousGraphemeClusterBoundary<nsRange>(
-              *presShell, limitersAndCaretData, anchorFocusRange,
-              rangeDirection);
+      result = nsFrameSelection::CreateRangeExtendedToPreviousCharacterBoundary<
+          nsRange>(*presShell, limitersAndCaretData, anchorFocusRange,
+                   rangeDirection);
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
