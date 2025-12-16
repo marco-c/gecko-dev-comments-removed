@@ -1147,17 +1147,15 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     RefPtr<ComputedStyle> nextFallbackStyle;
     while (true) {
       nextFallback = &fallbacks[aIndex];
-      if (nextFallback->IsIdentAndOrTactic()) {
-        nextFallbackStyle = aPresContext->StyleSet()->ResolvePositionTry(
-            *aKidFrame->GetContent()->AsElement(), *aKidFrame->Style(),
-            nextFallback->AsIdentAndOrTactic());
-        if (!nextFallbackStyle) {
-          
-          
-          aIndex++;
-          if (aIndex >= fallbacks.Length()) {
-            return false;
-          }
+      nextFallbackStyle = aPresContext->StyleSet()->ResolvePositionTry(
+          *aKidFrame->GetContent()->AsElement(), *aKidFrame->Style(),
+          *nextFallback);
+      if (!nextFallbackStyle) {
+        
+        
+        aIndex++;
+        if (aIndex >= fallbacks.Length()) {
+          return false;
         }
       }
       break;

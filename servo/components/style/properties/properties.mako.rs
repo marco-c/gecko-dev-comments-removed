@@ -2488,7 +2488,7 @@ impl<'a> StyleBuilder<'a> {
     
     
     
-    pub fn for_animation(
+    pub fn for_derived_style(
         device: &'a Device,
         stylist: Option<&'a Stylist>,
         style_to_derive_from: &'a ComputedValues,
