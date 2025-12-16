@@ -37,8 +37,7 @@ add_task(async function openWithSearchSuggestionsShownFirst() {
   Assert.ok(!checkbox.disabled, "Checkbox should be enabled");
 
   
-  checkbox.checked = false;
-  checkbox.doCommand();
+  checkbox.click();
 
   
   Assert.ok(
@@ -52,6 +51,7 @@ add_task(async function openWithSearchSuggestionsShownFirst() {
 
   
   Services.prefs.clearUserPref(FIRST_PREF);
+  await checkbox.updateComplete;
 
   
   Assert.ok(
@@ -80,8 +80,7 @@ add_task(async function openWithHistoryShownFirst() {
   Assert.ok(!checkbox.disabled, "Checkbox should be enabled");
 
   
-  checkbox.checked = true;
-  checkbox.doCommand();
+  checkbox.click();
 
   
   Assert.ok(checkbox.checked, "Checkbox should remain checked");
@@ -95,6 +94,7 @@ add_task(async function openWithHistoryShownFirst() {
 
   
   Services.prefs.setBoolPref(FIRST_PREF, false);
+  await checkbox.updateComplete;
 
   
   Assert.ok(
@@ -137,6 +137,7 @@ add_task(async function superprefInteraction() {
 
     
     Services.prefs.setBoolPref(superiorPref, false);
+    await checkbox.updateComplete;
 
     
     Assert.ok(
@@ -156,6 +157,7 @@ add_task(async function superprefInteraction() {
 
     
     Services.prefs.setBoolPref(superiorPref, true);
+    await checkbox.updateComplete;
 
     
     Assert.ok(
@@ -175,6 +177,7 @@ add_task(async function superprefInteraction() {
 
     
     Services.prefs.setBoolPref(FIRST_PREF, false);
+    await checkbox.updateComplete;
 
     
     Assert.ok(
@@ -188,6 +191,7 @@ add_task(async function superprefInteraction() {
 
     
     Services.prefs.setBoolPref(superiorPref, false);
+    await checkbox.updateComplete;
 
     
     Assert.ok(
@@ -207,6 +211,7 @@ add_task(async function superprefInteraction() {
 
     
     Services.prefs.setBoolPref(superiorPref, true);
+    await checkbox.updateComplete;
 
     
     Assert.ok(
@@ -226,6 +231,7 @@ add_task(async function superprefInteraction() {
 
     
     Services.prefs.setBoolPref(FIRST_PREF, true);
+    await checkbox.updateComplete;
 
     
     Assert.ok(
