@@ -478,6 +478,12 @@ JS_PUBLIC_API bool js::AllowNewWrapper(JS::Compartment* target, JSObject* obj) {
 
   MOZ_ASSERT(obj->compartment() != target);
 
+  
+  
+  if (MOZ_UNLIKELY(obj->is<DebuggerInstanceObject>())) {
+    return true;
+  }
+
   if (target->nukedOutgoingWrappers ||
       obj->nonCCWRealm()->nukedIncomingWrappers) {
     return false;
