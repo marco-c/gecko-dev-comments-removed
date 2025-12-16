@@ -898,7 +898,7 @@ function makeVisitResult(
     url: uri,
   };
 
-  if (title) {
+  if (title != undefined) {
     payload.title = title;
   }
 
