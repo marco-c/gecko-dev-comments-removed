@@ -223,7 +223,7 @@ class NetworkEventActor extends Actor {
       resourceId: this._channelId,
       resourceType: NETWORK_EVENT,
       blockedReason,
-      extension: networkEventOptions.extension,
+      blockingExtension: networkEventOptions.blockingExtension,
       browsingContextID,
       cause,
       
@@ -658,7 +658,7 @@ class NetworkEventActor extends Actor {
 
 
 
-  addResponseContentComplete({ blockedReason, extension }) {
+  addResponseContentComplete({ blockedReason, blockingExtension }) {
     
     if (this.isDestroyed()) {
       return;
@@ -668,7 +668,7 @@ class NetworkEventActor extends Actor {
       lazy.NetworkUtils.NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE,
       {
         blockedReason,
-        extension,
+        blockingExtension,
       }
     );
   }
@@ -679,9 +679,7 @@ class NetworkEventActor extends Actor {
 
 
 
-  addResponseContent(content, data) {
-    const { blockedReason, extension } = data || {};
-
+  addResponseContent(content) {
     
     if (this.isDestroyed()) {
       return;
@@ -694,8 +692,6 @@ class NetworkEventActor extends Actor {
         mimeType: content.mimeType,
         contentSize: content.size,
         transferredSize: content.transferredSize,
-        blockedReason,
-        extension,
       }
     );
   }

@@ -38,19 +38,6 @@ function getURL() {
   return url;
 }
 
-function getAddonName() {
-  var url = document.documentURI;
-  var match = url.match(/&a=([^&]+)/);
-
-  
-  
-  if (!match) {
-    return "";
-  }
-
-  return decodeURIComponent(match[1]);
-}
-
 
 
 
@@ -85,7 +72,6 @@ function initPage() {
     deceptiveBlocked: "phishing",
     unwantedBlocked: "unwanted",
     harmfulBlocked: "harmful",
-    addonBlocked: "addon",
   };
   const error = errorMap[getErrorCode()];
   if (error === undefined) {
@@ -122,25 +108,6 @@ function initPage() {
       innerDescNoOverride: "safeb-blocked-harmful-page-error-desc-no-override",
       learnMore: "safeb-blocked-harmful-page-learn-more",
     },
-    addon: {
-      title: "safeb-blocked-addon-page-title",
-      shortDesc: "safeb-blocked-addon-page-short-desc",
-      innerDescOverride: [
-        "safeb-blocked-addon-page-error-desc-override",
-        "safeb-blocked-addon-page-error-desc2-override",
-        "",
-        "safeb-blocked-addon-page-error-desc3-override",
-        "safeb-blocked-addon-page-error-desc4-override",
-      ],
-      innerDescNoOverride: [
-        "safeb-blocked-addon-page-error-desc-override",
-        "safeb-blocked-addon-page-error-desc2-override",
-        "",
-        "safeb-blocked-addon-page-error-desc3-override",
-        "safeb-blocked-addon-page-error-desc4-override",
-      ],
-      learnMore: "safeb-blocked-addon-page-learn-more",
-    },
   };
 
   
@@ -159,35 +126,14 @@ function initPage() {
   } else {
     innerDescL10nID = messageIDs[error].innerDescOverride;
   }
-  if (error == "unwanted" || error == "harmful" || error == "addon") {
+  if (error == "unwanted" || error == "harmful") {
     document.getElementById("report_detection").remove();
   }
 
-  const descArgs = {
-    sitename: getHostString(),
-    addonName: getAddonName(),
-  };
-
   
-  if (Array.isArray(innerDescL10nID)) {
-    const template = innerDesc.cloneNode(true);
-
-    while (innerDesc.firstChild) {
-      innerDesc.firstChild.remove();
-    }
-
-    for (const id of innerDescL10nID) {
-      if (id === "") {
-        innerDesc.appendChild(document.createElement("br"));
-      }
-
-      const node = template.cloneNode(true);
-      document.l10n.setAttributes(node, id, descArgs);
-      innerDesc.appendChild(node);
-    }
-  } else {
-    document.l10n.setAttributes(innerDesc, innerDescL10nID, descArgs);
-  }
+  document.l10n.setAttributes(innerDesc, innerDescL10nID, {
+    sitename: getHostString(),
+  });
 
   
   let learnMore = document.getElementById("learn_more");
