@@ -199,6 +199,11 @@ add_task(async function testMemoryCache_SRIAfterSave() {
             ev("load:diskcache", "file_js_cache_large.js"),
             ev("load:fallback", "file_js_cache_large.js"),
             ev("load:source", "file_js_cache_large.js"),
+            
+            
+            
+            
+            
             ev("memorycache:saved", "file_js_cache_large.js"),
             ev("evaluate:classic", "file_js_cache_large.js"),
             ev("diskcache:noschedule"),
@@ -210,7 +215,8 @@ add_task(async function testMemoryCache_SRIAfterSave() {
           events: [
             ev("load:memorycache", "file_js_cache_large.js"),
             ev("evaluate:classic", "file_js_cache_large.js"),
-            ev("diskcache:noschedule"),
+            
+            ev("diskcache:saved", "file_js_cache_large.js", false),
           ],
         },
       ],
@@ -260,6 +266,7 @@ add_task(async function testMemoryCache_SRIAfterSave() {
             ev("load:diskcache", "file_js_cache_large.js"),
             ev("load:fallback", "file_js_cache_large.js"),
             ev("load:source", "file_js_cache_large.js"),
+            
             ev("memorycache:saved", "file_js_cache_large.js"),
             ev("evaluate:module", "file_js_cache_large.js"),
             ev("diskcache:noschedule"),
@@ -271,7 +278,7 @@ add_task(async function testMemoryCache_SRIAfterSave() {
           events: [
             ev("load:memorycache", "file_js_cache_large.js"),
             ev("evaluate:module", "file_js_cache_large.js"),
-            ev("diskcache:noschedule"),
+            ev("diskcache:saved", "file_js_cache_large.js", false),
           ],
         },
       ],
