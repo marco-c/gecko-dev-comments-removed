@@ -66,6 +66,8 @@ struct Matcher {
 
 using namespace mozilla::loader;
 
+struct CachedStencilRefAndTime;
+
 class ScriptPreloader : public nsIObserver,
                         public nsIMemoryReporter,
                         public nsIRunnable,
@@ -214,21 +216,6 @@ class ScriptPreloader : public nsIObserver,
       return mProcessTypes.isEmpty() ? ScriptStatus::Restored
                                      : ScriptStatus::Saved;
     }
-
-    
-    
-    
-    
-    
-    struct Comparator {
-      bool Equals(const CachedStencil* a, const CachedStencil* b) const {
-        return a->mLoadTime == b->mLoadTime;
-      }
-
-      bool LessThan(const CachedStencil* a, const CachedStencil* b) const {
-        return a->mLoadTime < b->mLoadTime;
-      }
-    };
 
     struct StatusMatcher final : public Matcher<CachedStencil*> {
       explicit StatusMatcher(ScriptStatus status) : mStatus(status) {}
@@ -386,6 +373,8 @@ class ScriptPreloader : public nsIObserver,
     
     MaybeOneOf<JS::TranscodeBuffer, nsTArray<uint8_t>> mXDRData;
   } JS_HAZ_NON_GC_POINTER;
+
+  friend struct CachedStencilRefAndTime;
 
   template <ScriptStatus status>
   static Matcher<CachedStencil*>* Match() {

@@ -679,6 +679,36 @@ void ScriptPreloader::PrepareCacheWrite() {
 
 
 
+struct CachedStencilRefAndTime {
+  using CachedStencil = ScriptPreloader::CachedStencil;
+  CachedStencil* mStencil;
+  TimeStamp mLoadTime;
+
+  explicit CachedStencilRefAndTime(CachedStencil* aStencil)
+      : mStencil(aStencil), mLoadTime(aStencil->mLoadTime) {}
+
+  
+  
+  
+  
+  
+  struct Comparator {
+    bool Equals(const CachedStencilRefAndTime& a,
+                const CachedStencilRefAndTime& b) const {
+      return a.mLoadTime == b.mLoadTime;
+    }
+
+    bool LessThan(const CachedStencilRefAndTime& a,
+                  const CachedStencilRefAndTime& b) const {
+      return a.mLoadTime < b.mLoadTime;
+    }
+  };
+} JS_HAZ_NON_GC_POINTER;
+
+
+
+
+
 
 
 
@@ -727,19 +757,20 @@ Result<Ok, nsresult> ScriptPreloader::WriteCache() {
     mMonitor.AssertNotCurrentThreadOwns();
     MonitorAutoLock mal(mMonitor);
 
-    nsTArray<CachedStencil*> scripts;
+    nsTArray<CachedStencilRefAndTime> scriptRefs;
     for (auto& script : IterHash(mScripts, Match<ScriptStatus::Saved>())) {
-      scripts.AppendElement(script);
+      scriptRefs.AppendElement(CachedStencilRefAndTime(script));
     }
 
     
     
     
-    scripts.Sort(CachedStencil::Comparator());
+    scriptRefs.Sort(CachedStencilRefAndTime::Comparator());
 
     OutputBuffer buf;
     size_t offset = 0;
-    for (auto script : scripts) {
+    for (auto& scriptRef : scriptRefs) {
+      auto* script = scriptRef.mStencil;
       script->mOffset = offset;
       MOZ_DIAGNOSTIC_ASSERT(
           JS::IsTranscodingBytecodeOffsetAligned(script->mOffset));
@@ -769,7 +800,8 @@ Result<Ok, nsresult> ScriptPreloader::WriteCache() {
       written += padding;
     }
 
-    for (auto script : scripts) {
+    for (auto& scriptRef : scriptRefs) {
+      auto* script = scriptRef.mStencil;
       MOZ_DIAGNOSTIC_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(written));
       MOZ_TRY(Write(fd, script->Range().begin().get(), script->mSize));
 
