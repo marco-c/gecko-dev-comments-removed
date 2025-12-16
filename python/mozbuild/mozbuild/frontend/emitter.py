@@ -253,8 +253,7 @@ class TreeMetadataEmitter(LoggingMixin):
             for o in lib.refs:
                 yield o
                 if isinstance(o, StaticLibrary):
-                    for q in recurse_refs(o):
-                        yield q
+                    yield from recurse_refs(o)
 
         
         
@@ -1223,8 +1222,7 @@ class TreeMetadataEmitter(LoggingMixin):
 
         
         
-        for o in self._emit_directory_traversal_from_context(context):
-            yield o
+        yield from self._emit_directory_traversal_from_context(context)
 
         for obj in self._process_xpidl(context):
             yield obj
