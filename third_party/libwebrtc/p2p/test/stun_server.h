@@ -11,10 +11,9 @@
 #ifndef P2P_TEST_STUN_SERVER_H_
 #define P2P_TEST_STUN_SERVER_H_
 
-#include <stddef.h>
-
 #include <memory>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/sequence_checker.h"
 #include "api/transport/stun.h"
@@ -30,7 +29,7 @@ const int STUN_SERVER_PORT = 3478;
 class StunServer {
  public:
   
-  explicit StunServer(AsyncUDPSocket* socket);
+  explicit StunServer(absl_nonnull std::unique_ptr<AsyncUDPSocket> socket);
   
   virtual ~StunServer();
 
@@ -65,13 +64,5 @@ class StunServer {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::STUN_SERVER_PORT;
-using ::webrtc::StunServer;
-}  
-#endif  
 
 #endif  
