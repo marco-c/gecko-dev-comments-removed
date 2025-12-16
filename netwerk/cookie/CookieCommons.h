@@ -175,9 +175,13 @@ class CookieCommons final {
       nsIPrincipal** aCookiePartitionedPrincipal);
 
   
-  
   static int64_t MaybeCapExpiry(int64_t aCurrentTimeInMSec,
                                 int64_t aExpiryInMSec);
+
+  
+  
+  static int64_t MaybeCapMaxAge(int64_t aCurrentTimeInMSec,
+                                int64_t aMaxAgeInSec);
 
   
   
