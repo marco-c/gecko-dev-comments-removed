@@ -188,15 +188,9 @@ def chunk_manifests(suite, platform, chunks, manifests):
         ]
 
     
-    chunked_manifests = [[] for _ in range(chunks)]
-    for index, key in enumerate(sorted(manifests)):
-        chunked_manifests[index % chunks].append(key)
-
     
-    
-    chunked_manifests.sort(key=lambda x: len(x))
-
-    
+    sorted_manifests = sorted(manifests)
+    chunked_manifests = [sorted_manifests[c::chunks] for c in range(chunks)]
     return chunked_manifests
 
 
