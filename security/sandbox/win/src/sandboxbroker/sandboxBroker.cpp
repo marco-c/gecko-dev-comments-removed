@@ -471,18 +471,35 @@ Result<Ok, mozilla::ipc::LaunchError> SandboxBroker::LaunchApp(
         "Setting the reduced set of flags should always succeed");
   }
 
+  sandbox::MitigationFlags delayedMitigations =
+      config->GetDelayedProcessMitigations();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!(config->GetProcessMitigations() &
+               sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32));
+  delayedMitigations |= sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
+
   
   constexpr sandbox::MitigationFlags kDynamicCodeFlags =
       sandbox::MITIGATION_DYNAMIC_CODE_DISABLE |
       sandbox::MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT;
-  sandbox::MitigationFlags delayedMitigations =
-      config->GetDelayedProcessMitigations();
   if ((delayedMitigations & kDynamicCodeFlags) &&
       ::GetModuleHandleW(L"MpDetours.dll")) {
     delayedMitigations &= ~kDynamicCodeFlags;
-    SANDBOX_SUCCEED_OR_CRASH(
-        config->SetDelayedProcessMitigations(delayedMitigations));
   }
+
+  SANDBOX_SUCCEED_OR_CRASH(
+      config->SetDelayedProcessMitigations(delayedMitigations));
 
   EnsureAppLockerAccess(config);
 
@@ -1108,8 +1125,7 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       sandbox::MITIGATION_DEP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
-      sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
-      sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
+      sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL;
 
 #if defined(_M_ARM64)
   
@@ -1430,8 +1446,7 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       sandbox::MITIGATION_NONSYSTEM_FONT_DISABLE |
       sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
-      sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
-      sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
+      sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL;
 
   if (StaticPrefs::security_sandbox_rdd_shadow_stack_enabled()) {
     mitigations |= sandbox::MITIGATION_CET_COMPAT_MODE;
@@ -1514,8 +1529,7 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
       sandbox::MITIGATION_NONSYSTEM_FONT_DISABLE |
       sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
-      sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
-      sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
+      sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL;
 
   if (StaticPrefs::security_sandbox_socket_shadow_stack_enabled()) {
     mitigations |= sandbox::MITIGATION_CET_COMPAT_MODE;
@@ -1587,7 +1601,6 @@ struct UtilitySandboxProps {
       sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL |
-      sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32 |
       sandbox::MITIGATION_CET_COMPAT_MODE;
 
   sandbox::MitigationFlags mExcludedInitialMitigations = 0;
