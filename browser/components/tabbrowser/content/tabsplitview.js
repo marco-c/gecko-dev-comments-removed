@@ -7,31 +7,6 @@
 
 
 {
-  ChromeUtils.defineESModuleGetters(this, {
-    DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
-  });
-
-  
-
-
-
-
-
-
-
-  const updateUrlbarButton = new DeferredTask(() => {
-    const { activeSplitView, selectedTab } = gBrowser;
-    const button = document.getElementById("split-view-button");
-    if (activeSplitView) {
-      const activeIndex = activeSplitView.tabs.indexOf(selectedTab);
-      button.hidden = false;
-      button.setAttribute("data-active-index", activeIndex);
-    } else {
-      button.hidden = true;
-      button.removeAttribute("data-active-index");
-    }
-  }, 0);
-
   class MozTabSplitViewWrapper extends MozXULElement {
     
     #tabChangeObserver;
@@ -141,10 +116,9 @@
 
     #activate() {
       gBrowser.showSplitViewPanels(this.#tabs);
-      updateUrlbarButton.arm();
-      this.container.dispatchEvent(
+      this.dispatchEvent(
         new CustomEvent("TabSplitViewActivate", {
-          detail: { tabs: this.#tabs, splitview: this },
+          detail: { tabs: this.#tabs },
           bubbles: true,
         })
       );
@@ -155,10 +129,9 @@
 
     #deactivate() {
       gBrowser.hideSplitViewPanels(this.#tabs);
-      updateUrlbarButton.arm();
-      this.container.dispatchEvent(
+      this.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
-          detail: { tabs: this.#tabs, splitview: this },
+          detail: { tabs: this.#tabs },
           bubbles: true,
         })
       );
@@ -207,7 +180,6 @@
       gBrowser.moveTabBefore(secondTab, firstTab);
       this.#tabs = [secondTab, firstTab];
       gBrowser.showSplitViewPanels(this.#tabs);
-      updateUrlbarButton.arm();
     }
 
     
