@@ -257,8 +257,6 @@ class OffThreadPromiseRuntimeState {
   
   JS::DispatchToEventLoopCallback dispatchToEventLoopCallback_;
   JS::DelayedDispatchToEventLoopCallback delayedDispatchToEventLoopCallback_;
-  JS::AsyncTaskStartedCallback asyncTaskStartedCallback_;
-  JS::AsyncTaskFinishedCallback asyncTaskFinishedCallback_;
   void* dispatchToEventLoopClosure_;
 
 #ifdef DEBUG
@@ -307,6 +305,7 @@ class OffThreadPromiseRuntimeState {
   
   
   HelperThreadLockData<ConditionVariable> allFailed_;
+  HelperThreadLockData<size_t> numFailed_;
 
   
   
@@ -342,17 +341,11 @@ class OffThreadPromiseRuntimeState {
   void operator=(const OffThreadPromiseRuntimeState&) = delete;
   OffThreadPromiseRuntimeState(const OffThreadPromiseRuntimeState&) = delete;
 
-  
-  void registerTask(JSContext* cx, OffThreadPromiseTask* task);
-  void unregisterTask(OffThreadPromiseTask* task);
-
  public:
   OffThreadPromiseRuntimeState();
   ~OffThreadPromiseRuntimeState();
-  void init(JS::DispatchToEventLoopCallback dispatchCallback,
-            JS::DelayedDispatchToEventLoopCallback delayedDispatchCallback,
-            JS::AsyncTaskStartedCallback asyncTaskStartedCallback,
-            JS::AsyncTaskFinishedCallback asyncTaskFinishedCallback,
+  void init(JS::DispatchToEventLoopCallback callback,
+            JS::DelayedDispatchToEventLoopCallback delayCallback,
             void* closure);
   void initInternalDispatchQueue();
   bool initialized() const;
@@ -368,9 +361,6 @@ class OffThreadPromiseRuntimeState {
   bool dispatchToEventLoop(js::UniquePtr<JS::Dispatchable>&& dispatchable);
   bool delayedDispatchToEventLoop(
       js::UniquePtr<JS::Dispatchable>&& dispatchable, uint32_t delay);
-
-  void cancelTasks(JSContext* cx);
-  void cancelTasks(AutoLockHelperThreadState& lock, JSContext* cx);
 
   
   void shutdown(JSContext* cx);

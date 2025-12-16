@@ -2999,7 +2999,6 @@ WorkerPrivate::WorkerPrivate(
 WorkerPrivate::~WorkerPrivate() {
   MOZ_DIAGNOSTIC_ASSERT(mTopLevelWorkerFinishedRunnableCount == 0);
   MOZ_DIAGNOSTIC_ASSERT(mWorkerFinishedRunnableCount == 0);
-  MOZ_DIAGNOSTIC_ASSERT(mPendingJSAsyncTasks.empty());
 
   mWorkerDebuggerEventTarget->ForgetWorkerPrivate(this);
 
@@ -5041,19 +5040,6 @@ nsresult WorkerPrivate::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mShutdownTasks.RemoveTask(aTask);
 }
 
-void WorkerPrivate::JSAsyncTaskStarted(JS::Dispatchable* aDispatchable) {
-  RefPtr<StrongWorkerRef> ref = StrongWorkerRef::Create(this, "JSAsyncTask");
-  MOZ_ASSERT_DEBUG_OR_FUZZING(ref);
-  if (NS_WARN_IF(!ref)) {
-    return;
-  }
-  MOZ_ALWAYS_TRUE(mPendingJSAsyncTasks.putNew(aDispatchable, std::move(ref)));
-}
-
-void WorkerPrivate::JSAsyncTaskFinished(JS::Dispatchable* aDispatchable) {
-  mPendingJSAsyncTasks.remove(aDispatchable);
-}
-
 void WorkerPrivate::RunShutdownTasks() {
   TargetShutdownTaskSet::TasksArray shutdownTasks;
 
@@ -5810,19 +5796,6 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
 
   if (aStatus >= Closing) {
     CancelAllTimeouts();
-
-    JSContext* cx = GetJSContext();
-    if (cx) {
-      
-      
-      
-      
-      
-      
-      
-      
-      JS::CancelAsyncTasks(cx);
-    }
   }
 
   if (aStatus == Closing && GlobalScope()) {

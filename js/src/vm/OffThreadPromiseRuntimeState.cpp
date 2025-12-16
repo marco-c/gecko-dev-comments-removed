@@ -63,7 +63,8 @@ bool OffThreadPromiseTask::init(JSContext* cx,
   OffThreadPromiseRuntimeState& state = runtime_->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
 
-  state.registerTask(cx, this);
+  state.numRegistered_++;
+  registered_ = true;
   return true;
 }
 
@@ -87,20 +88,14 @@ bool OffThreadPromiseTask::InitCancellable(
     return false;
   }
 
-  if (!state.cancellable().putNew(task.get())) {
+  OffThreadPromiseTask* rawTask = task.release();
+  if (!state.cancellable().putNew(rawTask)) {
+    state.numRegistered_--;
+    rawTask->registered_ = false;
     ReportOutOfMemory(cx);
-    
-    
     return false;
   }
-
-  
-  OffThreadPromiseTask* rawTask = task.release();
-
-  
-  
   rawTask->cancellable_ = true;
-
   return true;
 }
 
@@ -111,7 +106,12 @@ void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state) {
 void OffThreadPromiseTask::unregister(OffThreadPromiseRuntimeState& state,
                                       const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(registered_);
-  state.unregisterTask(this);
+  if (cancellable_) {
+    cancellable_ = false;
+    state.cancellable().remove(this);
+  }
+  state.numRegistered_--;
+  registered_ = false;
 }
 
 void OffThreadPromiseTask::run(JSContext* cx,
@@ -229,7 +229,8 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
   {
     
     JS::AutoSuppressGCAnalysis nogc;
-    if (state.dispatchToEventLoop(std::move(task))) {
+    if (state.dispatchToEventLoopCallback_(state.dispatchToEventLoopClosure_,
+                                           std::move(task))) {
       return;
     }
   }
@@ -247,8 +248,6 @@ void OffThreadPromiseTask::DispatchResolveAndDestroy(
 OffThreadPromiseRuntimeState::OffThreadPromiseRuntimeState()
     : dispatchToEventLoopCallback_(nullptr),
       delayedDispatchToEventLoopCallback_(nullptr),
-      asyncTaskStartedCallback_(nullptr),
-      asyncTaskFinishedCallback_(nullptr),
       dispatchToEventLoopClosure_(nullptr),
 #ifdef DEBUG
       forceQuitting_(false),
@@ -265,16 +264,12 @@ OffThreadPromiseRuntimeState::~OffThreadPromiseRuntimeState() {
 }
 
 void OffThreadPromiseRuntimeState::init(
-    JS::DispatchToEventLoopCallback dispatchCallback,
-    JS::DelayedDispatchToEventLoopCallback delayedDispatchCallback,
-    JS::AsyncTaskStartedCallback asyncTaskStartedCallback,
-    JS::AsyncTaskFinishedCallback asyncTaskFinishedCallback, void* closure) {
+    JS::DispatchToEventLoopCallback callback,
+    JS::DelayedDispatchToEventLoopCallback delayedCallback, void* closure) {
   MOZ_ASSERT(!initialized());
 
-  dispatchToEventLoopCallback_ = dispatchCallback;
-  delayedDispatchToEventLoopCallback_ = delayedDispatchCallback;
-  asyncTaskStartedCallback_ = asyncTaskStartedCallback;
-  asyncTaskFinishedCallback_ = asyncTaskFinishedCallback;
+  dispatchToEventLoopCallback_ = callback;
+  delayedDispatchToEventLoopCallback_ = delayedCallback;
   dispatchToEventLoopClosure_ = closure;
 
   MOZ_ASSERT(initialized());
@@ -290,46 +285,6 @@ bool OffThreadPromiseRuntimeState::delayedDispatchToEventLoop(
     js::UniquePtr<JS::Dispatchable>&& dispatchable, uint32_t delay) {
   return delayedDispatchToEventLoopCallback_(dispatchToEventLoopClosure_,
                                              std::move(dispatchable), delay);
-}
-
-void OffThreadPromiseRuntimeState::registerTask(JSContext* cx,
-                                                OffThreadPromiseTask* task) {
-  
-  numRegistered_++;
-
-  
-  task->registered_ = true;
-
-  if (!asyncTaskStartedCallback_) {
-    return;
-  }
-
-  
-  JS::AutoSuppressGCAnalysis nogc(cx);
-  asyncTaskStartedCallback_(dispatchToEventLoopClosure_, task);
-}
-
-void OffThreadPromiseRuntimeState::unregisterTask(OffThreadPromiseTask* task) {
-  
-  MOZ_ASSERT(numRegistered_ != 0);
-  numRegistered_--;
-
-  
-  task->registered_ = false;
-
-  
-  if (task->cancellable_) {
-    task->cancellable_ = false;
-    cancellable().remove(task);
-  }
-
-  if (!asyncTaskFinishedCallback_) {
-    return;
-  }
-
-  
-  JS::AutoSuppressGCAnalysis nogc;
-  asyncTaskFinishedCallback_(dispatchToEventLoopClosure_, task);
 }
 
 
@@ -425,8 +380,7 @@ bool OffThreadPromiseRuntimeState::usingInternalDispatchQueue() const {
 }
 
 void OffThreadPromiseRuntimeState::initInternalDispatchQueue() {
-  init(internalDispatchToEventLoop, internalDelayedDispatchToEventLoop, nullptr,
-       nullptr, this);
+  init(internalDispatchToEventLoop, internalDelayedDispatchToEventLoop, this);
   MOZ_ASSERT(usingInternalDispatchQueue());
 }
 
@@ -492,12 +446,12 @@ void OffThreadPromiseRuntimeState::stealFailedTask(JS::Dispatchable* task) {
   }
 }
 
-void OffThreadPromiseRuntimeState::cancelTasks(
-    js::AutoLockHelperThreadState& lock, JSContext* cx) {
-  MOZ_ASSERT(initialized());
+void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
   if (!initialized()) {
     return;
   }
+
+  AutoLockHelperThreadState lock;
 
   
   for (auto iter = cancellable().modIter(); !iter.done(); iter.next()) {
@@ -507,26 +461,6 @@ void OffThreadPromiseRuntimeState::cancelTasks(
 
     OffThreadPromiseTask::DestroyUndispatchedTask(task, *this, lock);
   }
-}
-
-void OffThreadPromiseRuntimeState::cancelTasks(JSContext* cx) {
-  if (!initialized()) {
-    return;
-  }
-
-  AutoLockHelperThreadState lock;
-  cancelTasks(lock, cx);
-}
-
-void OffThreadPromiseRuntimeState::shutdown(JSContext* cx) {
-  if (!initialized()) {
-    return;
-  }
-
-  AutoLockHelperThreadState lock;
-
-  
-  cancelTasks(lock, cx);
   MOZ_ASSERT(cancellable().empty());
 
   
@@ -602,11 +536,18 @@ js::PromiseObject* OffThreadPromiseTask::ExtractAndForget(
       task->runtime()->offThreadPromiseState.ref();
   MOZ_ASSERT(state.initialized());
   MOZ_ASSERT(task->registered_);
+
+  
+  
+  
+  state.numRegistered_--;
+  if (task->cancellable_) {
+    state.cancellable().remove(task);
+  }
+  task->registered_ = false;
+
   js::PromiseObject* promise = task->promise_;
-  
-  
-  task->unregister(state, lock);
-  
   js_delete(task);
+
   return promise;
 }
