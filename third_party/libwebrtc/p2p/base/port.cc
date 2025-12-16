@@ -154,6 +154,8 @@ Port::Port(const PortParametersRef& args,
   
   
   SignalCandidateReady.connect(this, &Port::SendCandidateReadyCallbackList);
+  SignalPortComplete.connect(this, &Port::SendPortCompleteCallbackList);
+  SignalPortError.connect(this, &Port::SendPortErrorCallbackList);
 }
 
 Port::~Port() {
@@ -311,7 +313,7 @@ bool Port::MaybeObfuscateAddress(const Candidate& c, bool is_final) {
 
 void Port::FinishAddingAddress(const Candidate& c, bool is_final) {
   candidates_.push_back(c);
-  SendCandidateReady(c);
+  SignalCandidateReady(this, c);
 
   PostAddAddress(is_final);
 }
@@ -320,6 +322,21 @@ void Port::PostAddAddress(bool is_final) {
   if (is_final) {
     SignalPortComplete(this);
   }
+}
+
+void Port::SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback) {
+  RTC_DCHECK_RUN_ON(thread_);
+  port_complete_callback_list_.AddReceiver(std::move(callback));
+}
+
+void Port::SendPortCompleteCallbackList(Port*) {
+  RTC_DCHECK_RUN_ON(thread_);
+  port_complete_callback_list_.Send(this);
+}
+
+void Port::SendPortErrorCallbackList(Port*) {
+  RTC_DCHECK_RUN_ON(thread_);
+  port_error_callback_list_.Send(this);
 }
 
 void Port::SubscribeCandidateError(
@@ -344,12 +361,9 @@ void Port::SendCandidateReadyCallbackList(Port*, const Candidate& candidate) {
   candidate_ready_callback_list_.Send(this, candidate);
 }
 
-void Port::SendCandidateReady(const Candidate& candidate) {
+void Port::SubscribePortError(absl::AnyInvocable<void(Port*)> callback) {
   RTC_DCHECK_RUN_ON(thread_);
-  
-  
-  
-  SignalCandidateReady(this, candidate);
+  port_error_callback_list_.AddReceiver(std::move(callback));
 }
 
 void Port::AddOrReplaceConnection(Connection* conn) {

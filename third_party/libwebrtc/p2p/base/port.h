@@ -270,8 +270,6 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   void SubscribeCandidateReadyCallback(
       absl::AnyInvocable<void(Port*, const Candidate&)> callback);
-
-  void SendCandidateReady(const Candidate& candidate);
   
   
   
@@ -285,9 +283,15 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
 
   
   
+  void SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback);
   sigslot::signal1<Port*> SignalPortComplete;
+
   
   
+  
+  
+  
+  void SubscribePortError(absl::AnyInvocable<void(Port*)> callback);
   
   
   
@@ -515,6 +519,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
       LocalNetworkAccessPermissionStatus status);
 
   void SendCandidateReadyCallbackList(Port*, const Candidate&);
+  void SendPortCompleteCallbackList(Port*);
+  void SendPortErrorCallbackList(Port*);
 
   const Environment env_;
   TaskQueueBase* const thread_;
@@ -566,6 +572,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
       candidate_error_callback_list_ RTC_GUARDED_BY(thread_);
   CallbackList<Port*, const Candidate&> candidate_ready_callback_list_
       RTC_GUARDED_BY(thread_);
+  CallbackList<Port*> port_complete_callback_list_ RTC_GUARDED_BY(thread_);
+  CallbackList<Port*> port_error_callback_list_ RTC_GUARDED_BY(thread_);
 
   absl::AnyInvocable<void()> role_conflict_callback_ RTC_GUARDED_BY(thread_);
 

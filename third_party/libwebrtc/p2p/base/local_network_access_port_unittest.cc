@@ -132,10 +132,12 @@ class LocalNetworkAccessPortTest
     };
 
     auto turn_port = TurnPort::Create(args, 0, 0);
-    turn_port->SignalPortComplete.connect(
-        this, &LocalNetworkAccessPortTest::OnPortComplete);
-    turn_port->SignalPortError.connect(
-        this, &LocalNetworkAccessPortTest::OnPortError);
+    
+    
+    
+    turn_port->SubscribePortComplete(
+        [this](Port* port) { OnPortComplete(port); });
+    turn_port->SubscribePortError([this](Port* port) { OnPortError(port); });
 
     return turn_port;
   }
@@ -155,10 +157,9 @@ class LocalNetworkAccessPortTest
 
     auto stun_port = StunPort::Create(
         params, 0, 0, {SocketAddress(server_address, 5000)}, std::nullopt);
-    stun_port->SignalPortComplete.connect(
-        this, &LocalNetworkAccessPortTest::OnPortComplete);
-    stun_port->SignalPortError.connect(
-        this, &LocalNetworkAccessPortTest::OnPortError);
+    stun_port->SubscribePortComplete(
+        [this](Port* port) { OnPortComplete(port); });
+    stun_port->SubscribePortError([this](Port* port) { OnPortError(port); });
 
     return stun_port;
   }
