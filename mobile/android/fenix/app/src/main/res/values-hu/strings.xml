@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Privát %s</string>
@@ -1058,6 +1065,8 @@
   <string name="restart_warning_dialog_title">Lecseréli az alkalmazásikont?</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Az alkalmazás bezáródhat. Csak koppintson a csillogó új ikonjára a %1$s újranyitásához.</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_and_shortcuts_removal_warning_dialog_body">Az ikon módosítása eltávolítja a Kezdőképernyőre mentett webhelyeket és indítókat. \n\nA %1$s bezárhatja. Koppintson az új ikonra az újranyitáshoz.</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Ikon módosítása</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -2748,14 +2757,16 @@
   <string name="preferences_addresses_sync_addresses_across_devices">Címek szinkronizálása az eszközök közt</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Címek szinkronizálása</string>
+  <!-- Content description navigating back from autofill settings screen. -->
+  <string name="autofill_settings_navigate_back_button_content_description">Vissza</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Kártya hozzáadása</string>
+  <!-- Content description for the "credit card feature" top bar back button -->
+  <string name="credit_cards_navigate_back_button_content_description">Navigálás visszafelé</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Kártya szerkesztése</string>
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Kártyaszám</string>
-  <!-- The header for the expiration date of a credit card -->
-  <string name="credit_cards_expiration_date">Lejárati dátum</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
   <string name="credit_cards_expiration_date_month">Lejárati dátum hónapja</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
