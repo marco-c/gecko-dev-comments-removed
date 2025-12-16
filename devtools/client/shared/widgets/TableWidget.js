@@ -54,105 +54,108 @@ Object.defineProperty(this, "EVENTS", {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function TableWidget(node, options = {}) {
-  EventEmitter.decorate(this);
-
-  this.document = node.ownerDocument;
-  this.window = this.document.defaultView;
-  this._parent = node;
-
-  const {
-    initialColumns,
-    emptyText,
-    uniqueId,
-    highlightUpdated,
-    removableColumns,
-    firstColumn,
-    wrapTextInElements,
-    cellContextMenuId,
-    l10n,
-  } = options;
-  this.emptyText = emptyText || "";
-  this.uniqueId = uniqueId || "name";
-  this.wrapTextInElements = wrapTextInElements || false;
-  this.firstColumn = firstColumn || "";
-  this.highlightUpdated = highlightUpdated || false;
-  this.removableColumns = removableColumns !== false;
-  this.cellContextMenuId = cellContextMenuId;
-  this.l10n = l10n;
-
-  this.tbody = this.document.createXULElement("hbox");
-  this.tbody.className = "table-widget-body theme-body";
-  this.tbody.setAttribute("flex", "1");
-  this.tbody.setAttribute("tabindex", "0");
-  this._parent.appendChild(this.tbody);
-  this.afterScroll = this.afterScroll.bind(this);
-  this.tbody.addEventListener("scroll", this.onScroll.bind(this));
+class TableWidget extends EventEmitter {
+  static EVENTS = EVENTS;
 
   
-  this.placeholder = this.document.createElement("div");
-  this.placeholder.className = "table-widget-empty-text";
-  this._parent.appendChild(this.placeholder);
-  this.setPlaceholder(this.emptyText);
 
-  this.items = new Map();
-  this.columns = new Map();
 
-  
-  
-  if (this.removableColumns) {
-    this.onPopupCommand = this.onPopupCommand.bind(this);
-    this.setupHeadersContextMenu();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(node, options = {}) {
+    super();
+
+    this.document = node.ownerDocument;
+    this.window = this.document.defaultView;
+    this._parent = node;
+
+    const {
+      initialColumns,
+      emptyText,
+      uniqueId,
+      highlightUpdated,
+      removableColumns,
+      firstColumn,
+      wrapTextInElements,
+      cellContextMenuId,
+      l10n,
+    } = options;
+    this.emptyText = emptyText || "";
+    this.uniqueId = uniqueId || "name";
+    this.wrapTextInElements = wrapTextInElements || false;
+    this.firstColumn = firstColumn || "";
+    this.highlightUpdated = highlightUpdated || false;
+    this.removableColumns = removableColumns !== false;
+    this.cellContextMenuId = cellContextMenuId;
+    this.l10n = l10n;
+
+    this.tbody = this.document.createXULElement("hbox");
+    this.tbody.className = "table-widget-body theme-body";
+    this.tbody.setAttribute("flex", "1");
+    this.tbody.setAttribute("tabindex", "0");
+    this._parent.appendChild(this.tbody);
+    this.afterScroll = this.afterScroll.bind(this);
+    this.tbody.addEventListener("scroll", this.onScroll.bind(this));
+
+    
+    this.placeholder = this.document.createElement("div");
+    this.placeholder.className = "table-widget-empty-text";
+    this._parent.appendChild(this.placeholder);
+    this.setPlaceholder(this.emptyText);
+
+    this.items = new Map();
+    this.columns = new Map();
+
+    
+    
+    if (this.removableColumns) {
+      this.onPopupCommand = this.onPopupCommand.bind(this);
+      this.setupHeadersContextMenu();
+    }
+
+    if (initialColumns) {
+      this.setColumns(initialColumns, uniqueId);
+    }
+
+    this.bindSelectedRow = id => {
+      this.selectedRow = id;
+    };
+    this.on(EVENTS.ROW_SELECTED, this.bindSelectedRow);
+
+    this.onChange = this.onChange.bind(this);
+    this.onEditorDestroyed = this.onEditorDestroyed.bind(this);
+    this.onEditorTab = this.onEditorTab.bind(this);
+    this.onKeydown = this.onKeydown.bind(this);
+    this.onMousedown = this.onMousedown.bind(this);
+    this.onRowRemoved = this.onRowRemoved.bind(this);
+
+    this.document.addEventListener("keydown", this.onKeydown);
+    this.document.addEventListener("mousedown", this.onMousedown);
   }
 
-  if (initialColumns) {
-    this.setColumns(initialColumns, uniqueId);
-  }
-
-  this.bindSelectedRow = id => {
-    this.selectedRow = id;
-  };
-  this.on(EVENTS.ROW_SELECTED, this.bindSelectedRow);
-
-  this.onChange = this.onChange.bind(this);
-  this.onEditorDestroyed = this.onEditorDestroyed.bind(this);
-  this.onEditorTab = this.onEditorTab.bind(this);
-  this.onKeydown = this.onKeydown.bind(this);
-  this.onMousedown = this.onMousedown.bind(this);
-  this.onRowRemoved = this.onRowRemoved.bind(this);
-
-  this.document.addEventListener("keydown", this.onKeydown);
-  this.document.addEventListener("mousedown", this.onMousedown);
-}
-
-TableWidget.prototype = {
-  items: null,
-  editBookmark: null,
-  scrollIntoViewOnUpdate: null,
-
+  items = null;
+  editBookmark = null;
+  scrollIntoViewOnUpdate = null;
   
 
 
   get hasScrollbar() {
     return this.tbody.scrollHeight > this.tbody.clientHeight;
-  },
+  }
 
   
 
@@ -162,7 +165,7 @@ TableWidget.prototype = {
       return this.menupopup.id;
     }
     return null;
-  },
+  }
 
   
 
@@ -176,7 +179,7 @@ TableWidget.prototype = {
         column.selectRow(null);
       }
     }
-  },
+  }
 
   
 
@@ -189,14 +192,14 @@ TableWidget.prototype = {
       this.columns.get(this.uniqueId) &&
       this.columns.get(this.uniqueId).selectedRow
     );
-  },
+  }
 
   
 
 
   get selectedRow() {
     return this.items.get(this.columns.get(this.uniqueId).selectedRow);
-  },
+  }
 
   
 
@@ -205,14 +208,14 @@ TableWidget.prototype = {
     for (const column of this.columns.values()) {
       column.selectRowAt(index);
     }
-  },
+  }
 
   
 
 
   get selectedIndex() {
     return this.columns.get(this.uniqueId).selectedIndex;
-  },
+  }
 
   
 
@@ -228,7 +231,7 @@ TableWidget.prototype = {
     }
 
     return -1;
-  },
+  }
 
   
 
@@ -245,7 +248,7 @@ TableWidget.prototype = {
     }
 
     return null;
-  },
+  }
 
   
 
@@ -273,7 +276,7 @@ TableWidget.prototype = {
 
     const columns = this._parent.querySelectorAll(".table-widget-column");
     return filter(columns);
-  },
+  }
 
   
 
@@ -310,7 +313,7 @@ TableWidget.prototype = {
         cell.style.height = `${maxHeight}px`;
       }
     }
-  },
+  }
 
   
 
@@ -353,11 +356,11 @@ TableWidget.prototype = {
     }
 
     this.syncRowHeight(change.items.uniqueKey);
-  },
+  }
 
   onEditorDestroyed() {
     this._editableFieldsEngine = null;
-  },
+  }
 
   
 
@@ -457,7 +460,7 @@ TableWidget.prototype = {
 
     
     event.preventDefault();
-  },
+  }
 
   
 
@@ -519,7 +522,7 @@ TableWidget.prototype = {
     }
 
     return cell;
-  },
+  }
 
   
 
@@ -544,7 +547,7 @@ TableWidget.prototype = {
     
     
     this.onEditorTargetLost();
-  },
+  }
 
   
 
@@ -557,7 +560,7 @@ TableWidget.prototype = {
     }
 
     editor.cancelEdit();
-  },
+  }
 
   
 
@@ -626,7 +629,7 @@ TableWidget.prototype = {
         this.emit(EVENTS.ROW_SELECTED, cell.getAttribute("data-id"));
         break;
     }
-  },
+  }
 
   
 
@@ -643,7 +646,7 @@ TableWidget.prototype = {
 
     
     this._editableFieldsEngine.blur();
-  },
+  }
 
   
 
@@ -688,7 +691,7 @@ TableWidget.prototype = {
 
       this.emit(EVENTS.FIELDS_EDITABLE, this._editableFieldsEngine);
     }
-  },
+  }
 
   destroy() {
     this.off(EVENTS.ROW_SELECTED, this.bindSelectedRow);
@@ -709,7 +712,7 @@ TableWidget.prototype = {
       this.menupopup.removeEventListener("command", this.onPopupCommand);
       this.menupopup.remove();
     }
-  },
+  }
 
   
 
@@ -736,7 +739,7 @@ TableWidget.prototype = {
     }
 
     this.l10n.setAttributes(this.placeholder, l10nID);
-  },
+  }
 
   
 
@@ -755,7 +758,7 @@ TableWidget.prototype = {
     this.menupopup.addEventListener("command", this.onPopupCommand);
     popupset.appendChild(this.menupopup);
     this.populateMenuPopup();
-  },
+  }
 
   
 
@@ -792,7 +795,7 @@ TableWidget.prototype = {
     if (checked.length == 2) {
       checked[checked.length - 1].setAttribute("disabled", "true");
     }
-  },
+  }
 
   
 
@@ -809,7 +812,7 @@ TableWidget.prototype = {
     } else if (disabled.length > 1) {
       disabled[disabled.length - 1].removeAttribute("disabled");
     }
-  },
+  }
 
   
 
@@ -877,7 +880,7 @@ TableWidget.prototype = {
     this.sortedOn = sortOn;
     this.sortBy(this.sortedOn);
     this.populateMenuPopup(privateColumns);
-  },
+  }
 
   
 
@@ -889,14 +892,14 @@ TableWidget.prototype = {
     }
 
     return this.selectedRow && item == this.selectedRow[this.uniqueId];
-  },
+  }
 
   
 
 
   selectRow(id) {
     this.selectedRow = id;
-  },
+  }
 
   
 
@@ -905,7 +908,7 @@ TableWidget.prototype = {
     for (const column of this.columns.values()) {
       column.selectNextRow();
     }
-  },
+  }
 
   
 
@@ -915,14 +918,14 @@ TableWidget.prototype = {
     for (const column of this.columns.values()) {
       column.selectPreviousRow();
     }
-  },
+  }
 
   
 
 
   clearSelection() {
     this.selectedIndex = -1;
-  },
+  }
 
   
 
@@ -967,7 +970,7 @@ TableWidget.prototype = {
 
     this.emit(EVENTS.ROW_EDIT, item[this.uniqueId]);
     this.syncRowHeight(item[this.uniqueId]);
-  },
+  }
 
   
 
@@ -994,7 +997,7 @@ TableWidget.prototype = {
     }
 
     this.emit(EVENTS.ROW_REMOVED, item);
-  },
+  }
 
   
 
@@ -1019,7 +1022,7 @@ TableWidget.prototype = {
       this.emit(EVENTS.ROW_UPDATED, item[this.uniqueId]);
       this.emit(EVENTS.ROW_EDIT, item[this.uniqueId]);
     }
-  },
+  }
 
   
 
@@ -1035,7 +1038,7 @@ TableWidget.prototype = {
     this.selectedRow = null;
 
     this.emit(EVENTS.TABLE_CLEARED, this);
-  },
+  }
 
   
 
@@ -1064,7 +1067,7 @@ TableWidget.prototype = {
         col.sort(sortedItems);
       }
     }
-  },
+  }
 
   
 
@@ -1105,7 +1108,7 @@ TableWidget.prototype = {
       }
     }
     this.emit(EVENTS.TABLE_FILTERED, itemsToHide);
-  },
+  }
 
   
 
@@ -1113,7 +1116,7 @@ TableWidget.prototype = {
   onScroll() {
     clearNamedTimeout("table-scroll");
     setNamedTimeout("table-scroll", AFTER_SCROLL_DELAY, this.afterScroll);
-  },
+  }
 
   
 
@@ -1124,89 +1127,88 @@ TableWidget.prototype = {
     if (this.tbody.scrollTop >= 0.9 * maxScrollTop) {
       this.emit("scroll-end");
     }
-  },
-};
-
-TableWidget.EVENTS = EVENTS;
+  }
+}
 
 module.exports.TableWidget = TableWidget;
 
 
 
 
-
-
-
-
-
-
-
-function Column(table, id, header) {
+class Column {
   
-  this._private = false;
 
-  this.tbody = table.tbody;
-  this.document = table.document;
-  this.window = table.window;
-  this.id = id;
-  this.uniqueId = table.uniqueId;
-  this.wrapTextInElements = table.wrapTextInElements;
-  this.table = table;
-  this.cells = [];
-  this.items = {};
 
-  this.highlightUpdated = table.highlightUpdated;
 
-  this.column = this.document.createElementNS(HTML_NS, "div");
-  this.column.id = id;
-  this.column.className = "table-widget-column";
-  this.tbody.appendChild(this.column);
 
-  this.splitter = this.document.createXULElement("splitter");
-  this.splitter.className = "devtools-side-splitter";
-  this.tbody.appendChild(this.splitter);
 
-  this.header = this.document.createXULElement("label");
-  this.header.className = "devtools-toolbar table-widget-column-header";
-  this.header.setAttribute("value", header);
-  this.column.appendChild(this.header);
-  if (table.headersContextMenu) {
-    this.header.setAttribute("context", table.headersContextMenu);
+
+
+  constructor(table, id, header) {
+    
+    this._private = false;
+
+    this.tbody = table.tbody;
+    this.document = table.document;
+    this.window = table.window;
+    this.id = id;
+    this.uniqueId = table.uniqueId;
+    this.wrapTextInElements = table.wrapTextInElements;
+    this.table = table;
+    this.cells = [];
+    this.items = {};
+
+    this.highlightUpdated = table.highlightUpdated;
+
+    this.column = this.document.createElementNS(HTML_NS, "div");
+    this.column.id = id;
+    this.column.className = "table-widget-column";
+    this.tbody.appendChild(this.column);
+
+    this.splitter = this.document.createXULElement("splitter");
+    this.splitter.className = "devtools-side-splitter";
+    this.tbody.appendChild(this.splitter);
+
+    this.header = this.document.createXULElement("label");
+    this.header.className = "devtools-toolbar table-widget-column-header";
+    this.header.setAttribute("value", header);
+    this.column.appendChild(this.header);
+    if (table.headersContextMenu) {
+      this.header.setAttribute("context", table.headersContextMenu);
+    }
+    this.toggleColumn = this.toggleColumn.bind(this);
+    this.table.on(EVENTS.HEADER_CONTEXT_MENU, this.toggleColumn);
+
+    this.onColumnSorted = this.onColumnSorted.bind(this);
+    this.table.on(EVENTS.COLUMN_SORTED, this.onColumnSorted);
+
+    this.onRowUpdated = this.onRowUpdated.bind(this);
+    this.table.on(EVENTS.ROW_UPDATED, this.onRowUpdated);
+
+    this.onTableFiltered = this.onTableFiltered.bind(this);
+    this.table.on(EVENTS.TABLE_FILTERED, this.onTableFiltered);
+
+    this.onClick = this.onClick.bind(this);
+    this.onMousedown = this.onMousedown.bind(this);
+    this.column.addEventListener("click", this.onClick);
+    this.column.addEventListener("mousedown", this.onMousedown);
   }
-  this.toggleColumn = this.toggleColumn.bind(this);
-  this.table.on(EVENTS.HEADER_CONTEXT_MENU, this.toggleColumn);
 
-  this.onColumnSorted = this.onColumnSorted.bind(this);
-  this.table.on(EVENTS.COLUMN_SORTED, this.onColumnSorted);
-
-  this.onRowUpdated = this.onRowUpdated.bind(this);
-  this.table.on(EVENTS.ROW_UPDATED, this.onRowUpdated);
-
-  this.onTableFiltered = this.onTableFiltered.bind(this);
-  this.table.on(EVENTS.TABLE_FILTERED, this.onTableFiltered);
-
-  this.onClick = this.onClick.bind(this);
-  this.onMousedown = this.onMousedown.bind(this);
-  this.column.addEventListener("click", this.onClick);
-  this.column.addEventListener("mousedown", this.onMousedown);
-}
-
-Column.prototype = {
   
   
   
   
   
   
-  items: null,
+  items = null;
 
   
   
-  _itemsDirty: null,
+  _itemsDirty = null;
 
-  selectedRow: null,
+  selectedRow = null;
 
-  cells: null,
+  cells = null;
 
   
 
@@ -1216,21 +1218,21 @@ Column.prototype = {
 
   get sorted() {
     return this._sortState || 0;
-  },
+  }
 
   
 
 
   get hidden() {
     return this.column.hidden;
-  },
+  }
 
   
 
 
   get private() {
     return this._private;
-  },
+  }
 
   
 
@@ -1240,7 +1242,7 @@ Column.prototype = {
 
   set private(state) {
     this._private = state;
-  },
+  }
 
   
 
@@ -1255,7 +1257,7 @@ Column.prototype = {
       );
     }
     this._sortState = value;
-  },
+  }
 
   
 
@@ -1265,11 +1267,11 @@ Column.prototype = {
       return -1;
     }
     return this.items[this.selectedRow];
-  },
+  }
 
   get cellNodes() {
     return [...this.column.querySelectorAll(".table-widget-cell")];
-  },
+  }
 
   get visibleCellNodes() {
     const editor = this.table._editableFieldsEngine;
@@ -1282,7 +1284,7 @@ Column.prototype = {
     });
 
     return nodes;
-  },
+  }
 
   
 
@@ -1300,7 +1302,7 @@ Column.prototype = {
       this.sorted = 2;
     }
     this.updateZebra();
-  },
+  }
 
   onTableFiltered(itemsToHide) {
     this._updateItems();
@@ -1314,7 +1316,7 @@ Column.prototype = {
       this.cells[this.items[id]].hidden = true;
     }
     this.updateZebra();
-  },
+  }
 
   
 
@@ -1358,7 +1360,7 @@ Column.prototype = {
     }
 
     this.updateZebra();
-  },
+  }
 
   destroy() {
     this.table.off(EVENTS.COLUMN_SORTED, this.onColumnSorted);
@@ -1374,7 +1376,7 @@ Column.prototype = {
     this.cells = null;
     this.items = null;
     this.selectedRow = null;
-  },
+  }
 
   
 
@@ -1393,7 +1395,7 @@ Column.prototype = {
     } else {
       this.selectedRow = null;
     }
-  },
+  }
 
   
 
@@ -1401,7 +1403,7 @@ Column.prototype = {
   selectRow(id) {
     this._updateItems();
     this.selectRowAt(this.items[id]);
-  },
+  }
 
   
 
@@ -1413,7 +1415,7 @@ Column.prototype = {
       index = 0;
     }
     this.selectRowAt(index);
-  },
+  }
 
   
 
@@ -1425,7 +1427,7 @@ Column.prototype = {
       index = this.cells.length - 1;
     }
     this.selectRowAt(index);
-  },
+  }
 
   
 
@@ -1472,7 +1474,7 @@ Column.prototype = {
 
     this.items[item[this.uniqueId]] = this.cells.length;
     return this.cells.push(new Cell(this, item)) - 1;
-  },
+  }
 
   
 
@@ -1484,7 +1486,7 @@ Column.prototype = {
     this.items[item[this.uniqueId]] = index;
     this.cells.splice(index, 0, new Cell(this, item, this.cells[index]));
     this.updateZebra();
-  },
+  }
 
   
 
@@ -1515,7 +1517,7 @@ Column.prototype = {
       this.column.hidden = true;
       this.splitter.remove();
     }
-  },
+  }
 
   
 
@@ -1534,7 +1536,7 @@ Column.prototype = {
     this.cells[index].destroy();
     this.cells.splice(index, 1);
     delete this.items[item[this.uniqueId]];
-  },
+  }
 
   
 
@@ -1548,7 +1550,7 @@ Column.prototype = {
     }
 
     this.cells[index].value = item[this.id];
-  },
+  }
 
   
 
@@ -1562,7 +1564,7 @@ Column.prototype = {
       this.items[this.cells[i].id] = i;
     }
     this._itemsDirty = false;
-  },
+  }
 
   
 
@@ -1574,7 +1576,7 @@ Column.prototype = {
     while (this.header.nextSibling) {
       this.header.nextSibling.remove();
     }
-  },
+  }
 
   
 
@@ -1629,7 +1631,7 @@ Column.prototype = {
     this._itemsDirty = false;
     this.updateZebra();
     return items;
-  },
+  }
 
   updateZebra() {
     this._updateItems();
@@ -1642,7 +1644,7 @@ Column.prototype = {
       const even = !(i % 2);
       cell.classList.toggle("even", even);
     }
-  },
+  }
 
   
 
@@ -1679,7 +1681,7 @@ Column.prototype = {
         }
       }
     }
-  },
+  }
 
   
 
@@ -1703,66 +1705,67 @@ Column.prototype = {
       const dataid = closest.getAttribute("data-id");
       this.table.emit(EVENTS.ROW_SELECTED, dataid);
     }
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Cell(column, item, nextCell) {
-  const document = column.document;
-
-  this.wrapTextInElements = column.wrapTextInElements;
-  this.label = document.createXULElement("label");
-  this.label.setAttribute("crop", "end");
-  this.label.className = "table-widget-cell";
-
-  if (nextCell) {
-    column.column.insertBefore(this.label, nextCell.label);
-  } else {
-    column.column.appendChild(this.label);
   }
-
-  if (column.table.cellContextMenuId) {
-    this.label.setAttribute("context", column.table.cellContextMenuId);
-    this.label.addEventListener("contextmenu", () => {
-      
-      
-      column.table.contextMenuRowId = this.id;
-    });
-  }
-
-  this.value = item[column.id];
-  this.id = item[column.uniqueId];
 }
 
-Cell.prototype = {
+
+
+
+class Cell {
+  
+
+
+
+
+
+
+
+
+
+
+  constructor(column, item, nextCell) {
+    const document = column.document;
+
+    this.wrapTextInElements = column.wrapTextInElements;
+    this.label = document.createXULElement("label");
+    this.label.setAttribute("crop", "end");
+    this.label.className = "table-widget-cell";
+
+    if (nextCell) {
+      column.column.insertBefore(this.label, nextCell.label);
+    } else {
+      column.column.appendChild(this.label);
+    }
+
+    if (column.table.cellContextMenuId) {
+      this.label.setAttribute("context", column.table.cellContextMenuId);
+      this.label.addEventListener("contextmenu", () => {
+        
+        
+        column.table.contextMenuRowId = this.id;
+      });
+    }
+
+    this.value = item[column.id];
+    this.id = item[column.uniqueId];
+  }
+
   set id(value) {
     this._id = value;
     this.label.setAttribute("data-id", value);
-  },
+  }
 
   get id() {
     return this._id;
-  },
+  }
 
   get hidden() {
     return this.label.hidden;
-  },
+  }
 
   set hidden(value) {
     this.label.hidden = value;
-  },
+  }
 
   set value(value) {
     this._value = value;
@@ -1783,15 +1786,15 @@ Cell.prototype = {
     } else {
       this.label.setAttribute("value", value + "");
     }
-  },
+  }
 
   get value() {
     return this._value;
-  },
+  }
 
   get classList() {
     return this.label.classList;
-  },
+  }
 
   
 
@@ -1810,78 +1813,79 @@ Cell.prototype = {
     };
     this.label.addEventListener("animationend", onAnimEnd);
     this.label.classList.add("flash-out");
-  },
+  }
 
   focus() {
     this.label.focus();
-  },
+  }
 
   scrollIntoView() {
     this.label.scrollIntoView(false);
-  },
+  }
 
   destroy() {
     this.label.remove();
     this.label = null;
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function EditableFieldsEngine(options) {
-  EventEmitter.decorate(this);
-
-  if (!Array.isArray(options.selectors)) {
-    options.selectors = [options.selectors];
   }
-
-  this.root = options.root;
-  this.selectors = options.selectors;
-  this.onTab = options.onTab;
-  this.onTriggerEvent = options.onTriggerEvent || "dblclick";
-  this.items = options.items;
-
-  this.edit = this.edit.bind(this);
-  this.cancelEdit = this.cancelEdit.bind(this);
-  this.destroy = this.destroy.bind(this);
-
-  this.onTrigger = this.onTrigger.bind(this);
-  this.root.addEventListener(this.onTriggerEvent, this.onTrigger);
 }
 
-EditableFieldsEngine.prototype = {
-  INPUT_ID: "inlineEditor",
+
+
+
+class EditableFieldsEngine extends EventEmitter {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(options) {
+    super();
+
+    if (!Array.isArray(options.selectors)) {
+      options.selectors = [options.selectors];
+    }
+
+    this.root = options.root;
+    this.selectors = options.selectors;
+    this.onTab = options.onTab;
+    this.onTriggerEvent = options.onTriggerEvent || "dblclick";
+    this.items = options.items;
+
+    this.edit = this.edit.bind(this);
+    this.cancelEdit = this.cancelEdit.bind(this);
+    this.destroy = this.destroy.bind(this);
+
+    this.onTrigger = this.onTrigger.bind(this);
+    this.root.addEventListener(this.onTriggerEvent, this.onTrigger);
+  }
+
+  INPUT_ID = "inlineEditor";
 
   get changePending() {
     return this.isEditing && this.textbox.value !== this.currentValue;
-  },
+  }
 
   get isEditing() {
     return this.root && !this.textbox.hidden;
-  },
+  }
 
   get textbox() {
     if (!this._textbox) {
@@ -1897,7 +1901,7 @@ EditableFieldsEngine.prototype = {
     }
 
     return this._textbox;
-  },
+  }
 
   
 
@@ -1907,7 +1911,7 @@ EditableFieldsEngine.prototype = {
 
   onTrigger({ target }) {
     this.edit(target);
-  },
+  }
 
   
 
@@ -1938,7 +1942,7 @@ EditableFieldsEngine.prototype = {
         }
         break;
     }
-  },
+  }
 
   
 
@@ -1981,7 +1985,7 @@ EditableFieldsEngine.prototype = {
 
     this.textbox.focus();
     this.textbox.select();
-  },
+  }
 
   completeEdit() {
     if (!this.isEditing) {
@@ -2012,7 +2016,7 @@ EditableFieldsEngine.prototype = {
 
       this.emit("change", data);
     }
-  },
+  }
 
   
 
@@ -2026,7 +2030,7 @@ EditableFieldsEngine.prototype = {
     }
 
     this.textbox.hidden = true;
-  },
+  }
 
   
 
@@ -2035,7 +2039,7 @@ EditableFieldsEngine.prototype = {
     if (this.isEditing) {
       this.completeEdit();
     }
-  },
+  }
 
   
 
@@ -2070,7 +2074,7 @@ EditableFieldsEngine.prototype = {
 
     
     destination.style.width = "100%";
-  },
+  }
 
   
 
@@ -2090,5 +2094,5 @@ EditableFieldsEngine.prototype = {
     this.currentTarget = this.currentValue = null;
 
     this.emit("destroyed");
-  },
-};
+  }
+}
