@@ -1940,4 +1940,13 @@ function IteratorChunks(chunkSize) {
 function IteratorWindows(windowSize, undersized) {
   return false;
 }
+
+
+
+
+
+
+function IteratorJoin(separator) {
+	return false;
+}
 #endif
