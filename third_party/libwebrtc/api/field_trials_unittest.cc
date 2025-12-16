@@ -182,11 +182,9 @@ TEST(FieldTrials, Immutable) {
   c.Set("Audio", "Enabled");
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-#ifndef NDEBUG
   
   
   EXPECT_DEATH(f.Set("Audio", "Enabled"), "");
-#endif
 #endif
 }
 
