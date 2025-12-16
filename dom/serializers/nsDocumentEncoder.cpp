@@ -1597,7 +1597,7 @@ already_AddRefed<nsIDocumentEncoder> do_createDocumentEncoder(
   return nullptr;
 }
 
-class nsHTMLCopyEncoder : public nsDocumentEncoder {
+class nsHTMLCopyEncoder final : public nsDocumentEncoder {
  private:
   class RangeNodeContext final : public nsDocumentEncoder::RangeNodeContext {
     bool IncludeInContext(nsINode& aNode) const final;
@@ -1638,13 +1638,11 @@ class nsHTMLCopyEncoder : public nsDocumentEncoder {
   static bool IsFirstNode(nsINode* aNode);
   static bool IsLastNode(nsINode* aNode);
 
-  bool mIsTextWidget;
+  bool mIsTextWidget{false};
 };
 
 nsHTMLCopyEncoder::nsHTMLCopyEncoder()
-    : nsDocumentEncoder{MakeUnique<nsHTMLCopyEncoder::RangeNodeContext>()} {
-  mIsTextWidget = false;
-}
+    : nsDocumentEncoder{MakeUnique<nsHTMLCopyEncoder::RangeNodeContext>()} {}
 
 nsHTMLCopyEncoder::~nsHTMLCopyEncoder() = default;
 
@@ -1661,12 +1659,12 @@ nsHTMLCopyEncoder::Init(Document* aDocument, const nsAString& aMimeType,
 
   
   
-  
-  
-  if (aMimeType.EqualsLiteral("text/plain")) {
-    mMimeType.AssignLiteral("text/plain");
+  MOZ_ASSERT(aMimeType.EqualsLiteral(kTextMime) ||
+             aMimeType.EqualsLiteral(kHTMLMime));
+  if (aMimeType.EqualsLiteral(kTextMime)) {
+    mMimeType.AssignLiteral(kTextMime);
   } else {
-    mMimeType.AssignLiteral("text/html");
+    mMimeType.AssignLiteral(kHTMLMime);
   }
 
   
@@ -1727,6 +1725,8 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
   
   
 
+  
+  
   
   if (!(mDocument && mDocument->IsHTMLDocument())) {
     mIsTextWidget = true;

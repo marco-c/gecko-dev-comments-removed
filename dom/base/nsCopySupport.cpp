@@ -83,18 +83,19 @@ static nsresult AppendImagePromise(nsITransferable* aTransferable,
                                    nsINode* aImageNode);
 #endif
 
-static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
-                                     Document& aDocument, Selection* aSelection,
-                                     uint32_t aAdditionalEncoderFlags,
-                                     bool& aEncodedAsTextHTMLResult,
-                                     nsAutoString& aSerializationResult) {
+static nsresult EncodeForTextPlain(nsIDocumentEncoder& aEncoder,
+                                   Document& aDocument, Selection* aSelection,
+                                   uint32_t aAdditionalEncoderFlags,
+                                   bool& aCanBeEncodedAsTextHTML,
+                                   nsAString& aSerializationResult) {
+  
   
   
   
   
   
   nsAutoString mimeType;
-  mimeType.AssignLiteral("text/unicode");
+  mimeType.AssignLiteral(kHTMLMime);
 
   
   uint32_t flags = aAdditionalEncoderFlags |
@@ -113,45 +114,51 @@ static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
   
   rv = aEncoder.GetMimeType(mimeType);
   NS_ENSURE_SUCCESS(rv, rv);
-  bool selForcedTextPlain = mimeType.EqualsLiteral(kTextMime);
-
-  nsAutoString buf;
-  rv = aEncoder.EncodeToString(buf);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = aEncoder.GetMimeType(mimeType);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
-  aEncodedAsTextHTMLResult = mimeType.EqualsLiteral(kHTMLMime);
-
-  if (selForcedTextPlain) {
+  
+  
+  
+  
+  
+  if (mimeType.EqualsLiteral(kTextMime)) {
     
-    aSerializationResult.Assign(buf);
-  } else {
-    
-    flags = nsIDocumentEncoder::OutputSelectionOnly |
-            nsIDocumentEncoder::OutputForPlainTextClipboardCopy |
-            nsIDocumentEncoder::OutputAbsoluteLinks |
-            nsIDocumentEncoder::SkipInvisibleContent |
-            nsIDocumentEncoder::OutputDropInvisibleBreak |
-            (aAdditionalEncoderFlags &
-             (nsIDocumentEncoder::OutputNoScriptContent |
-              nsIDocumentEncoder::OutputRubyAnnotation |
-              nsIDocumentEncoder::AllowCrossShadowBoundary));
-
-    mimeType.AssignLiteral(kTextMime);
-    rv = aEncoder.Init(&aDocument, mimeType, flags);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = aEncoder.SetSelection(aSelection);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = aEncoder.EncodeToString(aSerializationResult);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsAutoString buf;
+    rv = aEncoder.EncodeToString(buf);
+    if (NS_SUCCEEDED(rv)) {
+      
+      aSerializationResult.Assign(buf);
+    }
+    return rv;
   }
 
+  MOZ_ASSERT(mimeType.EqualsLiteral(kHTMLMime));
+  
+  
+  if (aDocument.IsHTMLDocument()) {
+    aCanBeEncodedAsTextHTML = true;
+  }
+
+  
+  flags = nsIDocumentEncoder::OutputSelectionOnly |
+          nsIDocumentEncoder::OutputForPlainTextClipboardCopy |
+          nsIDocumentEncoder::OutputAbsoluteLinks |
+          nsIDocumentEncoder::SkipInvisibleContent |
+          nsIDocumentEncoder::OutputDropInvisibleBreak |
+          (aAdditionalEncoderFlags &
+           (nsIDocumentEncoder::OutputNoScriptContent |
+            nsIDocumentEncoder::OutputRubyAnnotation |
+            nsIDocumentEncoder::AllowCrossShadowBoundary));
+
+  mimeType.AssignLiteral(kTextMime);
+  rv = aEncoder.Init(&aDocument, mimeType, flags);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aEncoder.SetSelection(aSelection);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aEncoder.EncodeToString(aSerializationResult);
   return rv;
 }
 
@@ -175,16 +182,11 @@ static nsresult EncodeAsTextHTMLWithContext(
 
 struct EncodedDocumentWithContext {
   
-  
-  
-  
-  bool mUnicodeEncodingIsTextHTML = false;
+  bool mCanBeEncodedAsTextHTML = false;
 
   
-  
-  nsAutoString mSerializationForTextUnicode;
+  nsAutoString mSerializationForTextPlain;
 
-  
   
   
   nsAutoString mSerializationForTextHTML;
@@ -208,17 +210,17 @@ static nsresult EncodeDocumentWithContext(
     EncodedDocumentWithContext& aEncodedDocumentWithContext) {
   nsCOMPtr<nsIDocumentEncoder> docEncoder = do_createHTMLCopyEncoder();
 
-  bool unicodeEncodingIsTextHTML{false};
-  nsAutoString serializationForTextUnicode;
-  nsresult rv = EncodeForTextUnicode(
+  bool canBeEncodedAsTextHTML{false};
+  nsAutoString serializationForTextPlain;
+  nsresult rv = EncodeForTextPlain(
       *docEncoder, aDocument, aSelection, aAdditionalEncoderFlags,
-      unicodeEncodingIsTextHTML, serializationForTextUnicode);
+      canBeEncodedAsTextHTML, serializationForTextPlain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoString serializationForTextHTML;
   nsAutoString htmlContextBuffer;
   nsAutoString htmlInfoBuffer;
-  if (unicodeEncodingIsTextHTML) {
+  if (canBeEncodedAsTextHTML) {
     
     
     rv = EncodeAsTextHTMLWithContext(
@@ -230,7 +232,7 @@ static nsresult EncodeDocumentWithContext(
   }
 
   aEncodedDocumentWithContext = {
-      unicodeEncodingIsTextHTML, std::move(serializationForTextUnicode),
+      canBeEncodedAsTextHTML, std::move(serializationForTextPlain),
       std::move(serializationForTextHTML), std::move(htmlContextBuffer),
       std::move(htmlInfoBuffer)};
 
@@ -247,7 +249,10 @@ static nsresult CreateTransferable(
 
   aTransferable->Init(aDocument.GetLoadContext());
   aTransferable->SetDataPrincipal(aDocument.NodePrincipal());
-  if (aEncodedDocumentWithContext.mUnicodeEncodingIsTextHTML) {
+  if (aEncodedDocumentWithContext.mCanBeEncodedAsTextHTML) {
+    
+    
+    
     
     
     nsCOMPtr<nsIFormatConverter> htmlConverter =
@@ -276,15 +281,14 @@ static nsresult CreateTransferable(
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
+    if (!aEncodedDocumentWithContext.mSerializationForTextPlain.IsEmpty()) {
       
       
       
       
-      
-      rv = AppendString(
-          aTransferable,
-          aEncodedDocumentWithContext.mSerializationForTextUnicode, kTextMime);
+      rv = AppendString(aTransferable,
+                        aEncodedDocumentWithContext.mSerializationForTextPlain,
+                        kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -309,11 +313,11 @@ static nsresult CreateTransferable(
       }
     }
   } else {
-    if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
+    if (!aEncodedDocumentWithContext.mSerializationForTextPlain.IsEmpty()) {
       
-      rv = AppendString(
-          aTransferable,
-          aEncodedDocumentWithContext.mSerializationForTextUnicode, kTextMime);
+      rv = AppendString(aTransferable,
+                        aEncodedDocumentWithContext.mSerializationForTextPlain,
+                        kTextMime);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
