@@ -120,6 +120,10 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
     return;
   }
 
+  if (nsCOMPtr<nsITimedChannel> timedChan = do_QueryInterface(chan)) {
+    timedChan->SetInitiatorType(u"ping"_ns);
+  }
+
   
   nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(httpChan);
   nsresult rv;
@@ -248,7 +252,8 @@ static void ForEachPing(nsIContent* aContent, ForEachPingCallback aCallback,
 
   
   
-  if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area)) {
+  if (!aContent->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area) &&
+      !aContent->IsSVGElement(nsGkAtoms::a)) {
     return;
   }
 
