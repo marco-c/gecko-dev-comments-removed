@@ -22,13 +22,11 @@
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "pc/media_factory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/crypto_random.h"
 #include "rtc_base/internal/default_socket_server.h"
 #include "rtc_base/network.h"
 #include "rtc_base/socket_factory.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 
@@ -140,8 +138,6 @@ ConnectionContext::ConnectionContext(
         });
   }
 
-  InitRandom(Time32());
-
   SocketFactory* socket_factory = dependencies->socket_factory;
   if (socket_factory == nullptr) {
     if (owned_socket_factory_) {
@@ -179,12 +175,27 @@ ConnectionContext::ConnectionContext(
     
     worker_thread_->BlockingCall([&] { media_engine_->Init(); });
   }
+
+  blocking_media_engine_destruction_ =
+      env.field_trials().IsEnabled("WebRTC-SynchronousDestructors");
 }
 
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   
-  worker_thread_->PostTask([media_engine = std::move(media_engine_)] {});
+  if (blocking_media_engine_destruction_) {
+    
+    
+    
+    
+    
+    
+    
+    
+    worker_thread_->BlockingCall([&] { media_engine_ = nullptr; });
+  } else {
+    worker_thread_->PostTask([media_engine = std::move(media_engine_)] {});
+  }
 
   
   

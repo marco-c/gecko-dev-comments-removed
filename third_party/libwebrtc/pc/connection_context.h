@@ -106,6 +106,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   std::unique_ptr<SocketFactory> owned_socket_factory_;
   std::unique_ptr<Thread> owned_network_thread_
       RTC_GUARDED_BY(signaling_thread_);
+  bool blocking_media_engine_destruction_;
   Thread* const network_thread_;
   AlwaysValidPointer<Thread> const worker_thread_;
   Thread* const signaling_thread_;
