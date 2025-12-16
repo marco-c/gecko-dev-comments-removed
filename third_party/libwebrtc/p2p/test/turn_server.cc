@@ -67,17 +67,6 @@ bool IsTurnChannelData(uint16_t msg_type) {
   return ((msg_type & 0xC000) == 0x4000);
 }
 
-
-template <typename Map, typename Key>
-Map::iterator FindByRawPtr(Map& map, Key* ptr) {
-  
-  std::unique_ptr<Key> uptr = absl::WrapUnique(ptr);
-  typename Map::iterator iter = map.find(uptr);
-  
-  uptr.release();
-  return iter;
-}
-
 }  
 
 int GetStunSuccessResponseTypeOrZero(const StunMessage& req) {
@@ -144,7 +133,7 @@ void TurnServer::SetExternalSocketFactory(PacketSocketFactory* factory,
 
 void TurnServer::OnNewInternalConnection(Socket* socket) {
   RTC_DCHECK_RUN_ON(thread_);
-  auto iter = FindByRawPtr(server_listen_sockets_, socket);
+  auto iter = server_listen_sockets_.find(socket);
   RTC_DCHECK(iter != server_listen_sockets_.end());
 
   
@@ -173,8 +162,7 @@ void TurnServer::OnNewInternalConnection(Socket* socket) {
 
 void TurnServer::OnInternalSocketClose(AsyncPacketSocket* socket, int err) {
   RTC_DCHECK_RUN_ON(thread_);
-  if (auto iter = FindByRawPtr(server_sockets_, socket);
-      iter != server_sockets_.end()) {
+  if (auto iter = server_sockets_.find(socket); iter != server_sockets_.end()) {
     DestroyInternalSocket(iter);
   }
 }
@@ -186,7 +174,7 @@ void TurnServer::OnInternalPacket(AsyncPacketSocket* socket,
   if (packet.payload().size() < TURN_CHANNEL_HEADER_SIZE) {
     return;
   }
-  auto iter = FindByRawPtr(server_sockets_, socket);
+  auto iter = server_sockets_.find(socket);
   RTC_DCHECK(iter != server_sockets_.end());
   TurnServerConnection conn(packet.source_address(), iter->second, socket);
   uint16_t msg_type = GetBE16(packet.payload().data());
@@ -510,7 +498,7 @@ void TurnServer::Send(TurnServerConnection* conn, const ByteBufferWriter& buf) {
 void TurnServer::DestroyAllocation(TurnServerAllocation* allocation) {
   
   AsyncPacketSocket* socket = allocation->conn()->socket();
-  auto iter = FindByRawPtr(server_sockets_, socket);
+  auto iter = server_sockets_.find(socket);
   
   
   

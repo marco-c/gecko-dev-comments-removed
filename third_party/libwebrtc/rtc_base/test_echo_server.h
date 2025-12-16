@@ -14,15 +14,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <list>
 #include <memory>
+#include <set>
 #include <utility>
 
-#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/environment/environment.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/async_tcp_socket.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/memory/less_unique_ptr.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
@@ -58,7 +59,7 @@ class TestEchoServer : public sigslot::has_slots<> {
           });
       packet_socket->SubscribeCloseEvent(
           this, [this](AsyncPacketSocket* s, int err) { OnClose(s, err); });
-      client_sockets_.push_back(packet_socket.release());
+      client_sockets_.insert(std::move(packet_socket));
     }
   }
   void OnPacket(AsyncPacketSocket* socket, const ReceivedIpPacket& packet) {
@@ -66,17 +67,20 @@ class TestEchoServer : public sigslot::has_slots<> {
     socket->Send(packet.payload().data(), packet.payload().size(), options);
   }
   void OnClose(AsyncPacketSocket* socket, int err) {
-    ClientList::iterator it = absl::c_find(client_sockets_, socket);
-    client_sockets_.erase(it);
     
     
-    Thread::Current()->PostTask([socket = absl::WrapUnique(socket)] {});
+    
+    auto iter = client_sockets_.find(socket);
+    RTC_CHECK(iter != client_sockets_.end());
+    
+    
+    auto node = client_sockets_.extract(iter);
+    Thread::Current()->PostTask([node = std::move(node)] {});
   }
 
-  typedef std::list<AsyncTCPSocket*> ClientList;
   const Environment env_;
   std::unique_ptr<Socket> server_socket_;
-  ClientList client_sockets_;
+  std::set<std::unique_ptr<AsyncTCPSocket>, less_unique_ptr> client_sockets_;
 };
 
 }  
