@@ -9,13 +9,9 @@ const {
 
 
 
-function DomDecorator() {}
 
 
-
-
-
-DomDecorator.prototype = {
+class DomDecorator {
   getRowClass(object) {
     if (object instanceof Property) {
       const value = object.value;
@@ -35,14 +31,14 @@ DomDecorator.prototype = {
     }
 
     return null;
-  },
+  }
 
   
 
 
 
-  getValueRep() {},
-};
+  getValueRep() {}
+}
 
 
 exports.DomDecorator = DomDecorator;
