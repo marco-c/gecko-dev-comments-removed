@@ -45,6 +45,14 @@ enum class ModuleType : uint32_t {
   CSS,
   Bytes,
 
+  
+  
+  
+  
+  
+  
+  JavaScriptOrWasm = JavaScript,
+
   Limit = Bytes,
 };
 
