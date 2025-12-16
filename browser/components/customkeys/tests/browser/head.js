@@ -17,6 +17,9 @@ const consts = {
   downloadsDisplay: (isMac && "⌘J") || (isLinux && "Ctrl+Shift+Y") || "Ctrl+J",
   
   newWindowDisplay: isMac ? "⌘N" : "Ctrl+N",
+  
+  backDisplay: isMac ? "⌘←" : "Alt+Left Arrow",
+  backArgs: ["KEY_ArrowLeft", { accelKey: isMac, altKey: !isMac }],
 
   
   
