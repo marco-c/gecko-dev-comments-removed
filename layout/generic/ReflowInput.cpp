@@ -1874,9 +1874,6 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
         size.mAspectRatioUsage == nsIFrame::AspectRatioUsage::ToComputeBSize;
   }
 
-  
-  
-
   LogicalMargin margin = ComputedLogicalMargin(cbwm);
   const LogicalMargin borderPadding = ComputedLogicalBorderPadding(cbwm);
 
@@ -1905,11 +1902,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   if (iStartIsAuto) {
     
     
-    
     if (iSizeIsAuto) {
-      
-      
-      
       offsets.IStart(cbwm) = NS_AUTOOFFSET;
     } else {
       offsets.IStart(cbwm) = aCBSize.ISize(cbwm) - offsets.IEnd(cbwm) -
@@ -1919,11 +1912,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   } else if (iEndIsAuto) {
     
     
-    
     if (iSizeIsAuto) {
-      
-      
-      
       offsets.IEnd(cbwm) = NS_AUTOOFFSET;
     } else {
       offsets.IEnd(cbwm) = aCBSize.ISize(cbwm) - offsets.IStart(cbwm) -
