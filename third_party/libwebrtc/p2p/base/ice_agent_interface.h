@@ -11,8 +11,6 @@
 #ifndef P2P_BASE_ICE_AGENT_INTERFACE_H_
 #define P2P_BASE_ICE_AGENT_INTERFACE_H_
 
-#include <cstdint>
-
 #include "api/array_view.h"
 #include "api/units/timestamp.h"
 #include "p2p/base/connection.h"
@@ -34,9 +32,6 @@ class IceAgentInterface {
   
   
   virtual Timestamp GetLastPingSent() const = 0;
-  
-  
-  virtual int64_t GetLastPingSentMs() const { return GetLastPingSent().ms(); }
 
   
   virtual IceRole GetIceRole() const = 0;

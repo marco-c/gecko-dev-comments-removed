@@ -11,7 +11,6 @@
 #ifndef P2P_BASE_ICE_CONTROLLER_INTERFACE_H_
 #define P2P_BASE_ICE_CONTROLLER_INTERFACE_H_
 
-#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -131,16 +130,7 @@ class IceControllerInterface {
   virtual bool HasPingableConnection() const = 0;
 
   
-  
-  
-  virtual PingResult GetConnectionToPing(Timestamp last_ping_sent) {
-    return SelectConnectionToPing(last_ping_sent.ms());
-  }
-  
-  
-  virtual PingResult SelectConnectionToPing(int64_t last_ping_sent_ms) {
-    return GetConnectionToPing(Timestamp::Millis(last_ping_sent_ms));
-  }
+  virtual PingResult GetConnectionToPing(Timestamp last_ping_sent) = 0;
 
   
   virtual bool GetUseCandidateAttr(const Connection* conn,
