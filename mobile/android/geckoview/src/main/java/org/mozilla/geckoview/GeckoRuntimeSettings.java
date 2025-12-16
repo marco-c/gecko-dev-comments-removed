@@ -577,22 +577,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
-    @Deprecated
-    @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
-    public @NonNull Builder setLnaBlockingEnabled(@NonNull final Boolean enabled) {
-      getSettings().setLnaBlockingEnabled(enabled);
-      return this;
-    }
-
-    
-
-
-
-
-
-
-
     public @NonNull Builder setLnaBlocking(@NonNull final Boolean enabled) {
       getSettings().setLnaBlocking(enabled);
       return this;
@@ -2139,36 +2123,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       return HTTPS_ONLY_PRIVATE;
     }
     return ALLOW_ALL;
-  }
-
-  
-
-
-
-
-
-
-
-
-  @Deprecated
-  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
-  public @NonNull GeckoRuntimeSettings setLnaBlockingEnabled(final boolean enabled) {
-    mLnaBlocking.commit(enabled);
-    return this;
-  }
-
-  
-
-
-
-
-
-
-  @Deprecated
-  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
-  public boolean getLnaBlockingEnabled() {
-    final Boolean lnaBlocking = mLnaBlocking.get();
-    return lnaBlocking != null ? lnaBlocking : false;
   }
 
   
