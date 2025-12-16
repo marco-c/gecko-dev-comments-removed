@@ -3224,7 +3224,11 @@ class nsIFrame : public nsQueryFrame {
       nsRectCornerRadii& aOutRadii) const;
 
   
-  nsSize OverflowClipMargin(mozilla::PhysicalAxes aClipAxes) const;
+  
+  
+  
+  nsMargin OverflowClipMargin(mozilla::PhysicalAxes aClipAxes,
+                              bool aAllowNegative = true) const;
 
   
   mozilla::PhysicalAxes ShouldApplyOverflowClipping(
