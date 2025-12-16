@@ -37,7 +37,7 @@ namespace webrtc {
 struct DataChannelInit {
   
   
-  [[deprecated]] bool reliable = false;
+  bool reliable = false;
 
   
   bool ordered = true;
