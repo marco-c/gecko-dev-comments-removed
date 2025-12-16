@@ -553,7 +553,7 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
       mIsMainThread(aMainThread == MAIN_THREAD),
       mUseHangMonitor(aMainThread == MAIN_THREAD),
       mIsUiThread(aOptions.isUiThread),
-      mIsAPoolThreadFree(nullptr),
+      mIsAPoolThreadFreePtr(nullptr),
       mCanInvokeJS(false),
       mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread,
                                aOptions.longTaskLength) {
@@ -721,7 +721,7 @@ nsThread::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
 
 NS_IMETHODIMP
 nsThread::GetRunningEventDelay(TimeDuration* aDelay, TimeStamp* aStart) {
-  if (mIsAPoolThreadFree && *mIsAPoolThreadFree) {
+  if (mIsAPoolThreadFreePtr && *mIsAPoolThreadFreePtr) {
     
     
     *aDelay = TimeDuration();

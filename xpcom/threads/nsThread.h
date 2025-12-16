@@ -204,7 +204,7 @@ class nsThread : public nsIThreadInternal,
   
   
   void SetPoolThreadFreePtr(mozilla::Atomic<bool, mozilla::Relaxed>* aPtr) {
-    mIsAPoolThreadFree = aPtr;
+    mIsAPoolThreadFreePtr = aPtr;
   }
 
   void SetScriptObserver(mozilla::CycleCollectedJSContext* aScriptObserver);
@@ -292,7 +292,7 @@ class nsThread : public nsIThreadInternal,
   const bool mIsMainThread;
   bool mUseHangMonitor;
   const bool mIsUiThread;
-  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFree;
+  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFreePtr;
 
   
   bool mCanInvokeJS;

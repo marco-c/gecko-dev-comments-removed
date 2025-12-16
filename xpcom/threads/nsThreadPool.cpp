@@ -220,6 +220,7 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
 
   mThreads.AppendObject(thread);
   if (mThreads.Count() >= (int32_t)mThreadLimit) {
+    MOZ_ASSERT(mMRUIdleThreads.isEmpty());
     mIsAPoolThreadFree = false;
   }
 
@@ -392,7 +393,8 @@ nsThreadPool::Run() {
           
           
           mIsAPoolThreadFree =
-              !mShutdown && (mThreads.Count() < (int32_t)mThreadLimit);
+              !mMRUIdleThreads.isEmpty() ||
+              (!mShutdown && mThreads.Count() < (int32_t)mThreadLimit);
         } else {
           current->SetRunningEventDelay(TimeDuration(), TimeStamp());
 
@@ -560,7 +562,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     
     name = mName;
     mShutdown = true;
-    mIsAPoolThreadFree = false;
+    mIsAPoolThreadFree = !mMRUIdleThreads.isEmpty();
     NotifyChangeToAllIdleThreads();
 
     
