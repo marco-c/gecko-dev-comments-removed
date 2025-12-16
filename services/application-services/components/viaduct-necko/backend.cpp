@@ -161,32 +161,52 @@ class ViaductResponseListener final : public nsIHttpHeaderVisitor,
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
-  explicit ViaductResponseListener(ViaductRequestGuard&& aGuard,
-                                   uint32_t aTimeoutSecs)
-      : mGuard(std::move(aGuard)), mChannel(nullptr) {
-    MOZ_LOG(gViaductLogger, LogLevel::Info,
-            ("TRACE: ViaductResponseListener constructor called with timeout: "
-             "%u seconds, guard valid: %s",
-             aTimeoutSecs, mGuard.IsValid() ? "true" : "false"));
-
-    
-    if (aTimeoutSecs > 0) {
-      MOZ_LOG(gViaductLogger, LogLevel::Debug,
-              ("Setting timeout timer for %u seconds", aTimeoutSecs));
-      nsresult rv =
-          NS_NewTimerWithCallback(getter_AddRefs(mTimeoutTimer), this,
-                                  aTimeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        MOZ_LOG(gViaductLogger, LogLevel::Error,
-                ("Failed to create timeout timer: 0x%08x",
-                 static_cast<uint32_t>(rv)));
-      }
+  
+  
+  
+  static already_AddRefed<ViaductResponseListener> Create(
+      ViaductRequestGuard&& aGuard, uint32_t aTimeoutSecs,
+      nsresult* aOutTimerRv = nullptr) {
+    RefPtr<ViaductResponseListener> listener =
+        new ViaductResponseListener(std::move(aGuard));
+    nsresult rv = listener->StartTimeoutTimer(aTimeoutSecs);
+    if (aOutTimerRv) {
+      *aOutTimerRv = rv;
     }
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+    return listener.forget();
   }
 
   void SetChannel(nsIChannel* aChannel) { mChannel = aChannel; }
 
  private:
+  explicit ViaductResponseListener(ViaductRequestGuard&& aGuard)
+      : mGuard(std::move(aGuard)), mChannel(nullptr) {
+    MOZ_LOG(gViaductLogger, LogLevel::Info,
+            ("TRACE: ViaductResponseListener constructor called, guard valid: "
+             "%s",
+             mGuard.IsValid() ? "true" : "false"));
+  }
+
+  nsresult StartTimeoutTimer(uint32_t aTimeoutSecs) {
+    if (aTimeoutSecs == 0) {
+      return NS_OK;
+    }
+    MOZ_LOG(gViaductLogger, LogLevel::Debug,
+            ("Setting timeout timer for %u seconds", aTimeoutSecs));
+    nsresult rv =
+        NS_NewTimerWithCallback(getter_AddRefs(mTimeoutTimer), this,
+                                aTimeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT);
+    if (NS_FAILED(rv)) {
+      MOZ_LOG(gViaductLogger, LogLevel::Error,
+              ("Failed to create timeout timer: 0x%08x",
+               static_cast<uint32_t>(rv)));
+    }
+    return rv;
+  }
+
   ~ViaductResponseListener() {
     MOZ_LOG(gViaductLogger, LogLevel::Info,
             ("TRACE: ViaductResponseListener destructor called"));
@@ -641,11 +661,17 @@ void viaduct_necko_backend_send_request(const ViaductRequest* request,
 
         
         
-        
+        nsresult timerRv;
         RefPtr<ViaductResponseListener> listener =
-            new ViaductResponseListener(std::move(guard), timeout);
+            ViaductResponseListener::Create(std::move(guard), timeout,
+                                            &timerRv);
+        if (!listener) {
+          MOZ_LOG(gViaductLogger, LogLevel::Error,
+                  ("Failed to create listener: timer creation failed 0x%08x",
+                   static_cast<uint32_t>(timerRv)));
+          return;
+        }
 
-        
         
         listener->SetChannel(channel);
 
