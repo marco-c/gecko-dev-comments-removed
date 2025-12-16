@@ -46,8 +46,15 @@ static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
       aOptions.axis() == layers::ScrollDirection::eHorizontal;
   double range =
       isHorizontal ? aScrollMeta->mRange.width : aScrollMeta->mRange.height;
+  
+  
+  if (range == 0.0) {
+    
+    
+    return nullptr;
+  }
   MOZ_ASSERT(
-      range > 0,
+      range > 0.0,
       "We don't expect to get a zero or negative range on the compositor");
 
   
