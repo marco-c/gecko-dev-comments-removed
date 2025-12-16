@@ -14,7 +14,6 @@
 #include <iterator>
 #include <memory>
 #include <optional>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -242,6 +241,7 @@ std::unique_ptr<PortAllocatorSession> PortAllocator::TakePooledSession(
   auto it =
       pooled_sessions_.begin() + std::distance(pooled_sessions_.cbegin(), cit);
   std::unique_ptr<PortAllocatorSession> ret = std::move(*it);
+  RTC_DCHECK(ret->pooled());
   ret->SetIceParameters(content_name, component, ice_ufrag, ice_pwd);
   ret->set_pooled(false);
   
@@ -257,9 +257,8 @@ const PortAllocatorSession* PortAllocator::GetPooledSession(
   auto it = FindPooledSession(ice_credentials);
   if (it == pooled_sessions_.end()) {
     return nullptr;
-  } else {
-    return it->get();
   }
+  return it->get();
 }
 
 std::vector<std::unique_ptr<PortAllocatorSession>>::const_iterator

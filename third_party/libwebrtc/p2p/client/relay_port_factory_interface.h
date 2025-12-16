@@ -15,6 +15,7 @@
 #include <string>
 
 #include "api/environment/environment.h"
+#include "api/local_network_access_permission.h"
 #include "api/packet_socket_factory.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
@@ -39,11 +40,14 @@ struct CreateRelayPortArgs {
   const RelayServerConfig* config;
   std::string username;
   std::string password;
+  std::string content_name;
   TurnCustomizer* turn_customizer = nullptr;
   
   
   
   int relative_priority = 0;
+  LocalNetworkAccessPermissionFactoryInterface* lna_permission_factory =
+      nullptr;
 };
 
 
@@ -64,13 +68,5 @@ class RelayPortFactoryInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::CreateRelayPortArgs;
-using ::webrtc::RelayPortFactoryInterface;
-}  
-#endif  
 
 #endif  
