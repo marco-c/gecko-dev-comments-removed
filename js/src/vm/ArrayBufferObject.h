@@ -39,7 +39,7 @@ struct MemoryDesc;
 
 
 
-void* MapBufferMemory(wasm::AddressType, size_t mappedSize,
+void* MapBufferMemory(wasm::AddressType, wasm::PageSize, size_t mappedSize,
                       size_t initialCommittedSize);
 
 

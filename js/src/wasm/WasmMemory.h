@@ -215,7 +215,7 @@ extern Pages ClampedMaxPages(AddressType t, Pages initialPages,
 
 extern size_t ComputeMappedSize(Pages clampedMaxPages);
 
-extern uint64_t GetMaxOffsetGuardLimit(bool hugeMemory);
+extern uint64_t GetMaxOffsetGuardLimit(bool hugeMemory, PageSize sz);
 
 
 

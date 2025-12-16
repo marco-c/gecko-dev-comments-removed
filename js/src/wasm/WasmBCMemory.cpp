@@ -102,8 +102,14 @@ void BaseCompiler::bceCheckLocal(MemoryAccessDesc* access, AccessCheck* check,
     return;
   }
 
-  uint64_t offsetGuardLimit =
-      GetMaxOffsetGuardLimit(codeMeta_.hugeMemoryEnabled(0));
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  if (codeMeta_.memories[0].pageSize() != PageSize::Standard) {
+    return;
+  }
+#endif
+
+  uint64_t offsetGuardLimit = GetMaxOffsetGuardLimit(
+      codeMeta_.hugeMemoryEnabled(0), codeMeta_.memories[0].pageSize());
 
   if ((bceSafe_ & (BCESet(1) << local)) &&
       access->offset64() < offsetGuardLimit) {
@@ -142,7 +148,8 @@ RegI32 BaseCompiler::popConstMemoryAccess<RegI32>(MemoryAccessDesc* access,
   uint32_t addr = addrTemp;
 
   uint64_t offsetGuardLimit = GetMaxOffsetGuardLimit(
-      codeMeta_.hugeMemoryEnabled(access->memoryIndex()));
+      codeMeta_.hugeMemoryEnabled(access->memoryIndex()),
+      codeMeta_.memories[access->memoryIndex()].pageSize());
 
   
   
@@ -179,7 +186,8 @@ RegI64 BaseCompiler::popConstMemoryAccess<RegI64>(MemoryAccessDesc* access,
   uint64_t addr = addrTemp;
 
   uint64_t offsetGuardLimit = GetMaxOffsetGuardLimit(
-      codeMeta_.hugeMemoryEnabled(access->memoryIndex()));
+      codeMeta_.hugeMemoryEnabled(access->memoryIndex()),
+      codeMeta_.memories[access->memoryIndex()].pageSize());
 
   mozilla::CheckedUint64 ea(addr);
   ea += access->offset64();
@@ -290,6 +298,7 @@ void BaseCompiler::branchTestLowZero(RegI64 ptr, Imm32 mask, Label* ok) {
 }
 
 void BaseCompiler::boundsCheck4GBOrLargerAccess(uint32_t memoryIndex,
+                                                unsigned byteSize,
                                                 RegPtr instance, RegI32 ptr,
                                                 Label* ok) {
 #ifdef JS_64BIT
@@ -309,7 +318,7 @@ void BaseCompiler::boundsCheck4GBOrLargerAccess(uint32_t memoryIndex,
   masm.move32To64ZeroExtend(ptr, ptr64);
 #  endif
 
-  boundsCheck4GBOrLargerAccess(memoryIndex, instance, ptr64, ok);
+  boundsCheck4GBOrLargerAccess(memoryIndex, byteSize, instance, ptr64, ok);
 
   
   
@@ -326,31 +335,34 @@ void BaseCompiler::boundsCheck4GBOrLargerAccess(uint32_t memoryIndex,
 }
 
 void BaseCompiler::boundsCheckBelow4GBAccess(uint32_t memoryIndex,
-                                             RegPtr instance, RegI32 ptr,
-                                             Label* ok) {
+                                             unsigned byteSize, RegPtr instance,
+                                             RegI32 ptr, Label* ok) {
   
   
-  masm.wasmBoundsCheck32(
-      Assembler::Below, ptr,
-      Address(instance, instanceOffsetOfBoundsCheckLimit(memoryIndex)), ok);
+  masm.wasmBoundsCheck32(Assembler::Below, ptr,
+                         Address(instance, instanceOffsetOfBoundsCheckLimit(
+                                               memoryIndex, byteSize)),
+                         ok);
 }
 
 void BaseCompiler::boundsCheck4GBOrLargerAccess(uint32_t memoryIndex,
+                                                unsigned byteSize,
                                                 RegPtr instance, RegI64 ptr,
                                                 Label* ok) {
   
-  masm.wasmBoundsCheck64(
-      Assembler::Below, ptr,
-      Address(instance, instanceOffsetOfBoundsCheckLimit(memoryIndex)), ok);
+  masm.wasmBoundsCheck64(Assembler::Below, ptr,
+                         Address(instance, instanceOffsetOfBoundsCheckLimit(
+                                               memoryIndex, byteSize)),
+                         ok);
 }
 
 void BaseCompiler::boundsCheckBelow4GBAccess(uint32_t memoryIndex,
-                                             RegPtr instance, RegI64 ptr,
-                                             Label* ok) {
+                                             unsigned byteSize, RegPtr instance,
+                                             RegI64 ptr, Label* ok) {
   
   
   
-  boundsCheck4GBOrLargerAccess(memoryIndex, instance, ptr, ok);
+  boundsCheck4GBOrLargerAccess(memoryIndex, byteSize, instance, ptr, ok);
 }
 
 
@@ -371,11 +383,14 @@ template <typename RegAddressType>
 void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
                                        AccessCheck* check, RegPtr instance,
                                        RegAddressType ptr) {
+#ifndef ENABLE_WASM_CUSTOM_PAGE_SIZES
   MOZ_ASSERT(codeMeta_.memories[access->memoryIndex()].pageSize() ==
              PageSize::Standard);
+#endif
 
   uint64_t offsetGuardLimit = GetMaxOffsetGuardLimit(
-      codeMeta_.hugeMemoryEnabled(access->memoryIndex()));
+      codeMeta_.hugeMemoryEnabled(access->memoryIndex()),
+      codeMeta_.memories[access->memoryIndex()].pageSize());
 
   
   if (access->offset64() >= offsetGuardLimit ||
@@ -417,6 +432,12 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
 
   
 
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  MOZ_ASSERT_IF(codeMeta_.memories[access->memoryIndex()].pageSize() !=
+                    PageSize::Standard,
+                !codeMeta_.hugeMemoryEnabled(access->memoryIndex()));
+#endif
+
   if (!codeMeta_.hugeMemoryEnabled(access->memoryIndex()) &&
       !check->omitBoundsCheck) {
     Label ok;
@@ -428,12 +449,15 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
         MaxMemoryBytes(codeMeta_.memories[access->memoryIndex()].addressType(),
                        codeMeta_.memories[access->memoryIndex()].pageSize()) >=
             0x100000000) {
-      boundsCheck4GBOrLargerAccess(access->memoryIndex(), instance, ptr, &ok);
+      boundsCheck4GBOrLargerAccess(access->memoryIndex(), access->byteSize(),
+                                   instance, ptr, &ok);
     } else {
-      boundsCheckBelow4GBAccess(access->memoryIndex(), instance, ptr, &ok);
+      boundsCheckBelow4GBAccess(access->memoryIndex(), access->byteSize(),
+                                instance, ptr, &ok);
     }
 #else
-    boundsCheckBelow4GBAccess(access->memoryIndex(), instance, ptr, &ok);
+    boundsCheckBelow4GBAccess(access->memoryIndex(), access->byteSize(),
+                              instance, ptr, &ok);
 #endif
     trap(Trap::OutOfBounds);
     masm.bind(&ok);

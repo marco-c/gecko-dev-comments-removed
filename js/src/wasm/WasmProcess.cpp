@@ -133,8 +133,8 @@ static const size_t MinVirtualMemoryLimitForHugeMemory =
 
 static bool sHugeMemoryEnabled32 = false;
 
-bool wasm::IsHugeMemoryEnabled(wasm::AddressType t) {
-  if (t == AddressType::I64) {
+bool wasm::IsHugeMemoryEnabled(wasm::AddressType t, wasm::PageSize sz) {
+  if (t == AddressType::I64 || sz != wasm::PageSize::Standard) {
     
     return false;
   }

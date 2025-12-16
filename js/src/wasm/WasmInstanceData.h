@@ -158,6 +158,16 @@ struct MemoryInstanceData {
   uintptr_t boundsCheckLimit;
 
   
+  
+  
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  uintptr_t boundsCheckLimit16;
+  uintptr_t boundsCheckLimit32;
+  uintptr_t boundsCheckLimit64;
+  uintptr_t boundsCheckLimit128;
+#endif
+
+  
   bool isShared;
 };
 
