@@ -17,6 +17,12 @@ namespace mozilla::dom {
 CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent)
     : CSSNumericValue(std::move(aParent)) {}
 
+CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
+                           const nsACString& aUnit)
+    : CSSNumericValue(std::move(aParent), ValueType::UnitValue),
+      mValue(aValue),
+      mUnit(aUnit) {}
+
 JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
   return CSSUnitValue_Binding::Wrap(aCx, this, aGivenProto);
@@ -25,18 +31,38 @@ JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
 
 
 
+
+
 already_AddRefed<CSSUnitValue> CSSUnitValue::Constructor(
     const GlobalObject& aGlobal, double aValue, const nsACString& aUnit,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+  
+  
+  
+  
+
+  
+
+  
+  
+
+  
+
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports(), aValue, aUnit);
 }
 
-double CSSUnitValue::Value() const { return 0; }
+double CSSUnitValue::Value() const { return mValue; }
 
-void CSSUnitValue::SetValue(double aArg) {}
+void CSSUnitValue::SetValue(double aArg) { mValue = aArg; }
 
-void CSSUnitValue::GetUnit(nsCString& aRetVal) const {}
+void CSSUnitValue::GetUnit(nsCString& aRetVal) const { aRetVal = mUnit; }
 
 
+
+CSSUnitValue& CSSStyleValue::GetAsCSSUnitValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::UnitValue);
+
+  return *static_cast<CSSUnitValue*>(this);
+}
 
 }  

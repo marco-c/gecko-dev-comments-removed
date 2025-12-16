@@ -27,11 +27,17 @@ namespace dom {
 
 class GlobalObject;
 class CSSKeywordValue;
+class CSSUnitValue;
 class CSSUnsupportedValue;
 
 class CSSStyleValue : public nsISupports, public nsWrapperCache {
  public:
-  enum class ValueType { Uninitialized, Unsupported, Keyword };
+  enum class ValueType {
+    Uninitialized,
+    UnsupportedValue,
+    KeywordValue,
+    UnitValue
+  };
 
   explicit CSSStyleValue(nsCOMPtr<nsISupports> aParent);
 
@@ -77,6 +83,11 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   
   CSSKeywordValue& GetAsCSSKeywordValue();
+
+  bool IsCSSUnitValue() const;
+
+  
+  CSSUnitValue& GetAsCSSUnitValue();
 
  protected:
   virtual ~CSSStyleValue() = default;

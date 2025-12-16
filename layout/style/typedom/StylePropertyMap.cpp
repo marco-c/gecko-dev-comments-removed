@@ -36,6 +36,8 @@ JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
 
 
 
+
+
 void StylePropertyMap::Set(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
@@ -76,14 +78,17 @@ void StylePropertyMap::Set(
   nsAutoCString cssText;
 
   switch (styleValue.GetValueType()) {
-    case CSSStyleValue::ValueType::Keyword: {
+    case CSSStyleValue::ValueType::UnitValue:
+      break;
+
+    case CSSStyleValue::ValueType::KeywordValue: {
       CSSKeywordValue& keywordValue = styleValue.GetAsCSSKeywordValue();
 
       keywordValue.ToCssTextWithProperty(propertyId, cssText);
       break;
     }
 
-    case CSSStyleValue::ValueType::Unsupported: {
+    case CSSStyleValue::ValueType::UnsupportedValue: {
       CSSUnsupportedValue& unsupportedValue =
           styleValue.GetAsCSSUnsupportedValue();
 

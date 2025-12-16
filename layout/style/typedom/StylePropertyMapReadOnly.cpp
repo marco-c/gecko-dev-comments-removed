@@ -112,6 +112,8 @@ JSObject* StylePropertyMapReadOnly::WrapObject(
 
 
 
+
+
 void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
                                    OwningUndefinedOrCSSStyleValue& aRetVal,
                                    ErrorResult& aRv) const {
@@ -175,6 +177,8 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
     aRetVal.SetUndefined();
   }
 }
+
+
 
 
 void StylePropertyMapReadOnly::GetAll(const nsACString& aProperty,
