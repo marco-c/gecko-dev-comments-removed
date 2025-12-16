@@ -95,7 +95,7 @@ class PageStyleActor extends Actor {
     this.selectedElement = null;
 
     
-    this.styleElements = new WeakMap();
+    this.styleSheetsByRootNode = new WeakMap();
 
     this.onFrameUnload = this.onFrameUnload.bind(this);
 
@@ -122,7 +122,7 @@ class PageStyleActor extends Actor {
     this.refMap = null;
     this.selectedElement = null;
     this.cssLogic = null;
-    this.styleElements = null;
+    this.styleSheetsByRootNode = null;
 
     this._observedRules = [];
   }
@@ -1219,7 +1219,7 @@ class PageStyleActor extends Actor {
 
 
   onFrameUnload() {
-    this.styleElements = new WeakMap();
+    this.styleSheetsByRootNode = new WeakMap();
   }
 
   _onStylesheetUpdated({ resourceId, updateKind, updates = {} }) {
@@ -1270,14 +1270,19 @@ class PageStyleActor extends Actor {
   async addNewRule(node, pseudoClasses) {
     let sheet = null;
     const doc = node.rawNode.ownerDocument;
+    const rootNode = node.rawNode.getRootNode();
+
     if (
-      this.styleElements.has(doc) &&
-      this.styleElements.get(doc).ownerNode?.isConnected
+      this.styleSheetsByRootNode.has(rootNode) &&
+      this.styleSheetsByRootNode.get(rootNode).ownerNode?.isConnected
     ) {
-      sheet = this.styleElements.get(doc);
+      sheet = this.styleSheetsByRootNode.get(rootNode);
     } else {
-      sheet = await this.styleSheetsManager.addStyleSheet(doc);
-      this.styleElements.set(doc, sheet);
+      sheet = await this.styleSheetsManager.addStyleSheet(
+        doc,
+        node.rawNode.containingShadowRoot || doc.documentElement
+      );
+      this.styleSheetsByRootNode.set(rootNode, sheet);
     }
 
     const cssRules = sheet.cssRules;

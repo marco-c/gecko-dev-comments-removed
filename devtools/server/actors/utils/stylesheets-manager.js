@@ -275,8 +275,9 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  async addStyleSheet(document, text, fileName) {
-    const parent = document.documentElement;
+
+
+  async addStyleSheet(document, parent, text, fileName) {
     const style = document.createElementNS(
       "http://www.w3.org/1999/xhtml",
       "style"
