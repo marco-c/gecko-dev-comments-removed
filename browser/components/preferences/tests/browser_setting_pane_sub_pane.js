@@ -82,6 +82,27 @@ describe("setting-pane", () => {
     ok(backButton, "There is a back button");
 
     
+
+
+
+
+    doc.dispatchEvent(
+      new CustomEvent("paneshown", {
+        bubbles: true,
+        cancelable: true,
+        detail: {
+          category: "paneTestSubPane",
+        },
+      })
+    );
+    const checkbox = pane.querySelector("moz-checkbox");
+    is(
+      doc.activeElement,
+      checkbox,
+      "First element on the page (moz-checkbox) should be focused after pane is shown"
+    );
+
+    
     paneLoaded = waitForPaneChange("privacy");
     EventUtils.synthesizeMouseAtCenter(backButton, {}, win);
     await paneLoaded;
