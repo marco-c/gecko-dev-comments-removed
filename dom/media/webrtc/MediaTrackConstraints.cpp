@@ -601,3 +601,5 @@ Maybe<VideoResizeModeEnum> MediaConstraintsHelper::GetResizeMode(
 }
 
 }  
+
+#undef LOG

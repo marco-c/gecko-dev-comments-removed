@@ -597,3 +597,7 @@ bool ADTSDemuxer::ADTSSniffer(const uint8_t* aData, const uint32_t aLength) {
 }
 
 }  
+
+#undef LOG
+#undef ADTSLOG
+#undef ADTSLOGV
