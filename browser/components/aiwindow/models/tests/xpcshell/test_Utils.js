@@ -3,7 +3,7 @@
 
 
 const { openAIEngine, renderPrompt } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.mjs"
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
 const { sinon } = ChromeUtils.importESModule(

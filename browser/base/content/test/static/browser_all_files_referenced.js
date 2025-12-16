@@ -343,11 +343,12 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/ChatUtils.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs",
   },
   
+  
   {
-    file: "moz-src:///browser/components/aiwindow/models/Utils.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   },
 ];
 
