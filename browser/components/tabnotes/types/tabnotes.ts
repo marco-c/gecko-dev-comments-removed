@@ -2,6 +2,8 @@
 
 
 
+type MozTabbrowserTab = EventTarget & { canonicalUrl: string };
+
 type CanonicalURLSource = "link" | "opengraph" | "jsonLd" | "fallback";
 type CanonicalURLSourceResults = {
   [source in CanonicalURLSource]: string | null;
@@ -21,6 +23,30 @@ interface TabNoteRecord {
   canonicalUrl: string;
   created: Temporal.Instant;
   text: string;
+}
+
+interface TabNoteCreatedEvent extends CustomEvent {
+  type: "TabNote:Created";
+  target: MozTabbrowserTab;
+  detail: {
+    note: TabNoteRecord;
+  };
+}
+
+interface TabNoteEditedEvent extends CustomEvent {
+  type: "TabNote:Edited";
+  target: MozTabbrowserTab;
+  detail: {
+    note: TabNoteRecord;
+  };
+}
+
+interface TabNoteRemovedEvent extends CustomEvent {
+  type: "TabNote:Removed";
+  target: MozTabbrowserTab;
+  detail: {
+    note: TabNoteRecord;
+  };
 }
 
 type TabbrowserWebProgressListener<

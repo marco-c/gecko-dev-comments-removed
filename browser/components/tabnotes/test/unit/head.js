@@ -5,30 +5,9 @@
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
+const { BrowserTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/BrowserTestUtils.sys.mjs"
+);
 const { TabNotes } = ChromeUtils.importESModule(
   "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs"
 );
-
-
-
-
-
-function observeTabNoteCreated(url) {
-  return TestUtils.topicObserved("TabNote:Created", (_, data) => data == url);
-}
-
-
-
-
-
-function observeTabNoteEdited(url) {
-  return TestUtils.topicObserved("TabNote:Edited", (_, data) => data == url);
-}
-
-
-
-
-
-function observeTabNoteRemoved(url) {
-  return TestUtils.topicObserved("TabNote:Removed", (_, data) => data == url);
-}
