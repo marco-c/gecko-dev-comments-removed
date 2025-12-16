@@ -1296,7 +1296,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   void ReloadChildFrames();
 
   
-  
   nsIFrame* GetFrameForStyle() const;
 
   
