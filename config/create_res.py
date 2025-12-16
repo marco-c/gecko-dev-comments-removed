@@ -54,14 +54,14 @@ def generate_res():
             cpu_arch_dict = {"x86_64": "_AMD64_", "x86": "_X86_", "aarch64": "_ARM64_"}
 
             
-            cpu_arch_ppd = cpu_arch_dict[buildconfig.substs["CPU_ARCH"]]
+            cpu_arch_ppd = cpu_arch_dict[buildconfig.substs["TARGET_CPU"]]
 
             command.extend(("-D", cpu_arch_ppd))
 
             if verbose:
                 print("Executing:", " ".join(command))
             with os.fdopen(fd, "wb") as fh:
-                retcode = subprocess.run(command, stdout=fh).returncode
+                retcode = subprocess.run(command, check=False, stdout=fh).returncode
                 if retcode:
                     
                     return retcode
@@ -87,7 +87,7 @@ def generate_res():
 
         if verbose:
             print("Executing:", " ".join(command))
-        retcode = subprocess.run(command).returncode
+        retcode = subprocess.run(command, check=False).returncode
         if retcode:
             
             return retcode

@@ -104,7 +104,7 @@ if OPERATING_MODE == "dev":
     log("Performing git repo update...")
     command = ["git", "symbolic-ref", "-q", "HEAD"]
 
-    r = subprocess.run(command)
+    r = subprocess.run(command, check=False)
     if r.returncode == 0:
         
         subprocess.check_call(["git", "pull", "origin"])
