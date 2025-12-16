@@ -366,6 +366,10 @@ var allowlist = [
   },
   
   {
+    file: "chrome://browser/content/aiwindow/firstrun.html",
+  },
+  
+  {
     file: "moz-src:///browser/components/aiwindow/models/InsightsDriftDetector.sys.mjs",
   },
   
