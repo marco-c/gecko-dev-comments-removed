@@ -3,10 +3,9 @@
 
 
 
-from copy import deepcopy
-
 from taskgraph import MAX_DEPENDENCIES
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.copy import deepcopy
 from taskgraph.util.treeherder import add_suffix
 
 
