@@ -152,6 +152,12 @@ class RTC_EXPORT VideoEncoder {
     }
   };
 
+  struct RTC_EXPORT Resolution {
+    Resolution(int width, int height) : width(width), height(height) {}
+    int width = 0;
+    int height = 0;
+  };
+
   
   struct RTC_EXPORT EncoderInfo {
     static constexpr uint8_t kMaxFramerateFraction =
@@ -266,6 +272,14 @@ class RTC_EXPORT VideoEncoder {
     
     
     std::optional<int> min_qp;
+
+    
+    
+    
+    
+    
+    
+    std::optional<Resolution> mapped_resolution;
   };
 
   struct RTC_EXPORT RateControlParameters {

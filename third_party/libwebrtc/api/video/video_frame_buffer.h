@@ -11,6 +11,7 @@
 #ifndef API_VIDEO_VIDEO_FRAME_BUFFER_H_
 #define API_VIDEO_VIDEO_FRAME_BUFFER_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -47,6 +48,11 @@ class NV12BufferInterface;
 
 class RTC_EXPORT VideoFrameBuffer : public RefCountInterface {
  public:
+  class RTC_EXPORT PreparedFrameHandler : public webrtc::RefCountInterface {
+   public:
+    virtual void OnFramePrepared(size_t frame_identifier) = 0;
+  };
+
   
   
   
@@ -127,6 +133,15 @@ class RTC_EXPORT VideoFrameBuffer : public RefCountInterface {
 
   
   virtual std::string storage_representation() const;
+
+  
+  
+  
+  virtual void PrepareMappedBufferAsync(
+      size_t width,
+      size_t height,
+      scoped_refptr<PreparedFrameHandler> handler,
+      size_t frame_identifier);
 
  protected:
   ~VideoFrameBuffer() override {}
