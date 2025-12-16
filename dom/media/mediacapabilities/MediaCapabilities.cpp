@@ -13,6 +13,7 @@
 #include "AllocationPolicy.h"
 #include "DecoderTraits.h"
 #include "MP4Decoder.h"
+#include "MediaCapabilitiesValidation.h"
 #include "MediaInfo.h"
 #include "MediaRecorder.h"
 #include "PDMFactory.h"
@@ -42,6 +43,7 @@ mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
   DDMOZ_LOG(sMediaCapabilitiesLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 namespace mozilla::dom {
+using mediacaps::IsValidMediaDecodingConfiguration;
 
 static bool
 MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
@@ -184,6 +186,7 @@ MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
     : mParent(aParent) {}
 
 
+
 already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv) {
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
@@ -193,14 +196,13 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
 
   
   
-  if (!aConfiguration.mVideo.WasPassed() &&
-      !aConfiguration.mAudio.WasPassed()) {
-    promise->MaybeRejectWithTypeError(
-        "'audio' or 'video' member of argument of "
-        "MediaCapabilities.decodingInfo");
+  if (auto configCheck = IsValidMediaDecodingConfiguration(aConfiguration);
+      configCheck.isErr()) {
+    RejectWithValidationResult(promise, configCheck.unwrapErr());
     return promise.forget();
   }
 
+  
   
   if (aConfiguration.mKeySystemConfiguration.WasPassed()) {
     
@@ -222,6 +224,7 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     }
   }
 
+  
   
   
   CreateMediaCapabilitiesDecodingInfo(aConfiguration, aRv, promise);
@@ -788,3 +791,4 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MediaCapabilities)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(MediaCapabilities, mParent)
 
 }  
+#undef LOG
