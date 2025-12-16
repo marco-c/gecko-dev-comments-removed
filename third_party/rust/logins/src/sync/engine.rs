@@ -144,7 +144,7 @@ impl LoginsSyncEngine {
                         match e {
                             
                             
-                            Error::InvalidLogin(InvalidLogin::IllegalOrigin { reason: _ }) => {
+                            Error::InvalidLogin(InvalidLogin::IllegalOrigin) => {
                                 warn!("logins-deserialize-error: {e}");
                             }
                             
