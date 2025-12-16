@@ -48,9 +48,7 @@ Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
     const Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
         aReason,
     const nsTArray<nsCString>& aTrackingFullHashes,
-    const Maybe<ContentBlockingNotifier::CanvasFingerprinter>&
-        aCanvasFingerprinter,
-    const Maybe<bool> aCanvasFingerprinterKnownText) {
+    const Maybe<CanvasFingerprintingEvent>& aCanvasFingerprintingEvent) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   uint32_t events = GetContentBlockingEventsInLog();
@@ -135,8 +133,7 @@ Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
                  "We don't expected to see blocked "
                  "STATE_ALLOWED_CANVAS_FINGERPRINTING");
       entry = RecordLogInternal(aOrigin, aType, blockedValue, Nothing(), {},
-                                aCanvasFingerprinter,
-                                aCanvasFingerprinterKnownText);
+                                aCanvasFingerprintingEvent);
 
       
       
@@ -435,9 +432,7 @@ ContentBlockingLog::OriginEntry* ContentBlockingLog::RecordLogInternal(
     const Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
         aReason,
     const nsTArray<nsCString>& aTrackingFullHashes,
-    const Maybe<ContentBlockingNotifier::CanvasFingerprinter>&
-        aCanvasFingerprinter,
-    const Maybe<bool> aCanvasFingerprinterKnownText) {
+    const Maybe<CanvasFingerprintingEvent>& aCanvasFingerprintingEvent) {
   DebugOnly<bool> isCookiesBlockedTracker =
       aType == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER ||
       aType == nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER;
@@ -461,8 +456,7 @@ ContentBlockingLog::OriginEntry* ContentBlockingLog::RecordLogInternal(
     if (!entry.mData->mLogs.IsEmpty()) {
       auto& last = entry.mData->mLogs.LastElement();
       if (last.mType == aType && last.mBlocked == aBlocked &&
-          last.mCanvasFingerprinter == aCanvasFingerprinter &&
-          last.mCanvasFingerprinterKnownText == aCanvasFingerprinterKnownText) {
+          last.mCanvasFingerprintingEvent == aCanvasFingerprintingEvent) {
         ++last.mRepeatCount;
         
         
@@ -483,9 +477,9 @@ ContentBlockingLog::OriginEntry* ContentBlockingLog::RecordLogInternal(
       
       entry.mData->mLogs.RemoveElementAt(0);
     }
-    entry.mData->mLogs.AppendElement(
-        LogEntry{aType, 1u, aBlocked, aReason, aTrackingFullHashes.Clone(),
-                 aCanvasFingerprinter, aCanvasFingerprinterKnownText});
+    entry.mData->mLogs.AppendElement(LogEntry{aType, 1u, aBlocked, aReason,
+                                              aTrackingFullHashes.Clone(),
+                                              aCanvasFingerprintingEvent});
 
     
     
@@ -522,9 +516,9 @@ ContentBlockingLog::OriginEntry* ContentBlockingLog::RecordLogInternal(
     MOZ_ASSERT(entry->mData->mHasSocialTrackerCookiesLoaded.isNothing());
     entry->mData->mHasSocialTrackerCookiesLoaded.emplace(aBlocked);
   } else {
-    entry->mData->mLogs.AppendElement(
-        LogEntry{aType, 1u, aBlocked, aReason, aTrackingFullHashes.Clone(),
-                 aCanvasFingerprinter, aCanvasFingerprinterKnownText});
+    entry->mData->mLogs.AppendElement(LogEntry{aType, 1u, aBlocked, aReason,
+                                               aTrackingFullHashes.Clone(),
+                                               aCanvasFingerprintingEvent});
 
     
     
