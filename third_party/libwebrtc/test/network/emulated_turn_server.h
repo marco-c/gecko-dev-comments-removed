@@ -16,6 +16,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "api/environment/environment.h"
 #include "api/test/network_emulation/network_emulation_interfaces.h"
 #include "api/test/network_emulation_manager.h"
 #include "api/transport/stun.h"
@@ -46,7 +47,8 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
   
   
   
-  EmulatedTURNServer(const EmulatedTURNServerConfig& config,
+  EmulatedTURNServer(const Environment& env,
+                     const EmulatedTURNServerConfig& config,
                      std::unique_ptr<Thread> thread,
                      EmulatedEndpoint* client,
                      EmulatedEndpoint* peer);
@@ -70,7 +72,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
                                      std::string(username), key);
   }
 
-  AsyncPacketSocket* CreatePeerSocket() { return Wrap(peer_); }
+  std::unique_ptr<AsyncPacketSocket> CreatePeerSocket() { return Wrap(peer_); }
 
   
   
@@ -95,7 +97,7 @@ class EmulatedTURNServer : public EmulatedTURNServerInterface,
 
   
   
-  AsyncPacketSocket* Wrap(EmulatedEndpoint* endpoint);
+  std::unique_ptr<AsyncPacketSocket> Wrap(EmulatedEndpoint* endpoint);
 };
 
 }  
