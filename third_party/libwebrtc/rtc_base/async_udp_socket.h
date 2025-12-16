@@ -16,6 +16,8 @@
 #include <memory>
 #include <optional>
 
+#include "absl/base/nullability.h"
+#include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/async_packet_socket.h"
@@ -34,6 +36,15 @@ class AsyncUDPSocket : public AsyncPacketSocket {
  public:
   
   
+  static absl_nullable std::unique_ptr<AsyncUDPSocket> Create(
+      const Environment& env,
+      const SocketAddress& bind_address,
+      SocketFactory& factory);
+
+  
+  
+  
+  
   
   static AsyncUDPSocket* Create(Socket* socket,
                                 const SocketAddress& bind_address);
@@ -41,6 +52,11 @@ class AsyncUDPSocket : public AsyncPacketSocket {
   
   static AsyncUDPSocket* Create(SocketFactory* factory,
                                 const SocketAddress& bind_address);
+
+  AsyncUDPSocket(const Environment& env,
+                 absl_nonnull std::unique_ptr<Socket> socket);
+  
+  
   explicit AsyncUDPSocket(Socket* socket);
   ~AsyncUDPSocket() = default;
 
@@ -77,12 +93,5 @@ class AsyncUDPSocket : public AsyncPacketSocket {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::AsyncUDPSocket;
-}  
-#endif  
 
 #endif  
