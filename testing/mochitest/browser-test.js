@@ -429,7 +429,7 @@ Tester.prototype = {
     aCallback();
   },
 
-  waitForWindowsState: function Tester_waitForWindowsState(aCallback) {
+  checkWindowsState: function Tester_checkWindowsState() {
     let timedOut = this.currentTest && this.currentTest.timedOut;
     
     let baseMsg = timedOut
@@ -479,18 +479,13 @@ Tester.prototype = {
       }
 
       
-      if (window.gBrowser) {
-        gBrowser.addTab("about:blank", {
-          skipAnimation: true,
-          triggeringPrincipal:
-            Services.scriptSecurityManager.getSystemPrincipal(),
-        });
-        gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
-        gBrowser.stop();
+      if (this.currentTest) {
+        this.currentTest.addResult(
+          new testMessage("checking for open sidebars")
+        );
+      } else {
+        this.structuredLogger.info("checking for open sidebars");
       }
-
-      
-      this.structuredLogger.info("checking for open sidebars");
       const sidebarContainer = document.getElementById("sidebar-box");
       if (!sidebarContainer.hidden) {
         window.SidebarController.hide({ dismissPanel: true });
@@ -504,7 +499,11 @@ Tester.prototype = {
     }
 
     
-    this.structuredLogger.info("checking window state");
+    if (this.currentTest) {
+      this.currentTest.addResult(new testMessage("checking window state"));
+    } else {
+      this.structuredLogger.info("checking window state");
+    }
     for (let win of Services.wm.getEnumerator(null)) {
       let type = win.document.documentElement.getAttribute("windowtype");
       if (
@@ -545,9 +544,6 @@ Tester.prototype = {
         win.close();
       }
     }
-
-    
-    this.SimpleTest.waitForFocus(aCallback);
   },
 
   finish: function Tester_finish() {
@@ -871,7 +867,10 @@ Tester.prototype = {
   },
 
   async nextTest() {
-    if (this.currentTest) {
+    
+    if (!this.currentTest) {
+      this.checkWindowsState();
+    } else {
       if (this._coverageCollector) {
         this._coverageCollector.recordTestCoverage(this.currentTest.path);
       }
@@ -1118,6 +1117,11 @@ Tester.prototype = {
       this.PromiseTestUtils.assertNoUncaughtRejections();
 
       await this.notifyProfilerOfTestEnd();
+
+      
+      
+      this.checkWindowsState();
+
       let time = Date.now() - this.lastStartTime;
 
       this.structuredLogger.testEnd(
@@ -1145,7 +1149,19 @@ Tester.prototype = {
     
     
     
-    this.waitForWindowsState(() => {
+    
+    if (window.gBrowser) {
+      gBrowser.addTab("about:blank", {
+        skipAnimation: true,
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+      });
+      gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
+      gBrowser.stop();
+    }
+
+    
+    this.SimpleTest.waitForFocus(() => {
       if (this.done) {
         if (this._coverageCollector) {
           this._coverageCollector.finalize();
