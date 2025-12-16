@@ -92,6 +92,21 @@ void HostRecordQueue::AddToEvictionQ(
   }
 }
 
+void HostRecordQueue::MoveToEvictionQueueTail(
+    nsHostRecord* aRec, const MutexAutoLock& aProofOfLock) {
+  bool inEvictionQ = mEvictionQ.contains(aRec);
+  if (!inEvictionQ) {
+    
+    
+    
+    
+    return;
+  }
+
+  aRec->remove();
+  mEvictionQ.insertBack(aRec);
+}
+
 void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec,
                                            const MutexAutoLock& aProofOfLock) {
   if (!aRec->isInList()) {
