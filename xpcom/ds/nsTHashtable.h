@@ -650,6 +650,15 @@ static void FixedSizeEntryMover(PLDHashTable*, const PLDHashEntryHdr* aFrom,
   memcpy(aTo, aFrom, N);
 }
 
+
+
+
+
+template <class EntryType, bool = EntryType::ALLOW_MEMMOVE>
+struct MOZ_NEEDS_MEMMOVABLE_TYPE CheckAllowMemmove : std::true_type {};
+template <class EntryType>
+struct CheckAllowMemmove<EntryType, false> : std::false_type {};
+
 }  
 }  
 
@@ -675,7 +684,9 @@ template <class EntryType>
   
   static const PLDHashTableOps sOps = {
       s_HashKey, s_MatchEntry,
-      EntryType::ALLOW_MEMMOVE
+      
+      
+      mozilla::detail::CheckAllowMemmove<EntryType>::value
           ? mozilla::detail::FixedSizeEntryMover<sizeof(EntryType)>
           : s_CopyEntry,
       
