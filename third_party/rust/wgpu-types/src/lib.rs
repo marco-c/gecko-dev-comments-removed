@@ -687,6 +687,11 @@ pub struct Limits {
     
     
     
+    
+    
+    
+    
+    
     pub max_non_sampler_bindings: u32,
 
     
@@ -1058,10 +1063,8 @@ impl Limits {
     pub const fn using_recommended_minimum_mesh_shader_values(self) -> Self {
         Self {
             
-            
-            
-            max_task_workgroup_total_count: 65536,
-            max_task_workgroups_per_dimension: 256,
+            max_task_workgroup_total_count: 1024,
+            max_task_workgroups_per_dimension: 1024,
             
             max_mesh_multiview_view_count: 0,
             
@@ -7972,6 +7975,20 @@ pub struct ShaderRuntimeChecks {
     
     
     pub force_loop_bounding: bool,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub ray_query_initialization_tracking: bool,
 }
 
 impl ShaderRuntimeChecks {
@@ -8004,6 +8021,7 @@ impl ShaderRuntimeChecks {
         Self {
             bounds_checks: all_checks,
             force_loop_bounding: all_checks,
+            ray_query_initialization_tracking: all_checks,
         }
     }
 }

@@ -488,11 +488,14 @@ impl super::Device {
     
     
     
+    
+    
     pub unsafe fn texture_from_raw(
         &self,
         vk_image: vk::Image,
         desc: &crate::TextureDescriptor,
         drop_callback: Option<crate::DropCallback>,
+        external_memory: Option<vk::DeviceMemory>,
     ) -> super::Texture {
         let mut raw_flags = vk::ImageCreateFlags::empty();
         let mut view_formats = vec![];
@@ -518,7 +521,7 @@ impl super::Device {
         super::Texture {
             raw: vk_image,
             drop_guard,
-            external_memory: None,
+            external_memory,
             block: None,
             format: desc.format,
             copy_size: desc.copy_extent(),
@@ -759,6 +762,7 @@ impl super::Device {
                 };
                 let needs_temp_options = !runtime_checks.bounds_checks
                     || !runtime_checks.force_loop_bounding
+                    || !runtime_checks.ray_query_initialization_tracking
                     || !binding_map.is_empty()
                     || naga_shader.debug_source.is_some()
                     || !stage.zero_initialize_workgroup_memory;
@@ -775,6 +779,9 @@ impl super::Device {
                     }
                     if !runtime_checks.force_loop_bounding {
                         temp_options.force_loop_bounding = false;
+                    }
+                    if !runtime_checks.ray_query_initialization_tracking {
+                        temp_options.ray_query_initialization_tracking = false;
                     }
                     if !binding_map.is_empty() {
                         temp_options.binding_map = binding_map.clone();

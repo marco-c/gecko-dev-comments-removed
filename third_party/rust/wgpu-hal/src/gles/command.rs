@@ -311,11 +311,10 @@ impl crate::CommandEncoder for super::CommandEncoder {
         let mut combined_usage = wgt::TextureUses::empty();
         for bar in barriers {
             
-            if !bar
-                .usage
-                .from
-                .contains(wgt::TextureUses::STORAGE_READ_WRITE)
-            {
+            
+            if !bar.usage.from.intersects(
+                wgt::TextureUses::STORAGE_READ_WRITE | wgt::TextureUses::STORAGE_WRITE_ONLY,
+            ) {
                 continue;
             }
             

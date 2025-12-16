@@ -345,6 +345,7 @@ pub struct Buffer {
     raw: Option<glow::Buffer>,
     target: BindTarget,
     size: wgt::BufferAddress,
+    
     map_flags: u32,
     data: Option<Arc<MaybeMutex<Vec<u8>>>>,
     offset_of_current_mapping: Arc<MaybeMutex<wgt::BufferAddress>>,

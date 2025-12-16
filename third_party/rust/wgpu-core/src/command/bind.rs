@@ -291,6 +291,7 @@ pub enum BinderError {
 
 #[derive(Debug)]
 struct LateBufferBinding {
+    binding_index: u32,
     shader_expect_size: wgt::BufferAddress,
     bound_size: wgt::BufferAddress,
 }
@@ -347,8 +348,11 @@ impl Binder {
         self.manager.update_expectations(&new.bind_group_layouts);
 
         
+
         for (payload, late_group) in self.payloads.iter_mut().zip(late_sized_buffer_groups) {
             payload.late_bindings_effective_count = late_group.shader_sizes.len();
+            
+            
             for (late_binding, &shader_expect_size) in payload
                 .late_buffer_bindings
                 .iter_mut()
@@ -356,11 +360,13 @@ impl Binder {
             {
                 late_binding.shader_expect_size = shader_expect_size;
             }
+            
             if late_group.shader_sizes.len() > payload.late_buffer_bindings.len() {
                 for &shader_expect_size in
                     late_group.shader_sizes[payload.late_buffer_bindings.len()..].iter()
                 {
                     payload.late_buffer_bindings.push(LateBufferBinding {
+                        binding_index: 0,
                         shader_expect_size,
                         bound_size: 0,
                     });
@@ -389,20 +395,27 @@ impl Binder {
 
         
         
-        for (late_binding, late_size) in payload
+
+        
+        
+        for (late_binding, late_info) in payload
             .late_buffer_bindings
             .iter_mut()
-            .zip(bind_group.late_buffer_binding_sizes.iter())
+            .zip(bind_group.late_buffer_binding_infos.iter())
         {
-            late_binding.bound_size = late_size.get();
+            late_binding.binding_index = late_info.binding_index;
+            late_binding.bound_size = late_info.size.get();
         }
-        if bind_group.late_buffer_binding_sizes.len() > payload.late_buffer_bindings.len() {
-            for late_size in
-                bind_group.late_buffer_binding_sizes[payload.late_buffer_bindings.len()..].iter()
+
+        
+        if bind_group.late_buffer_binding_infos.len() > payload.late_buffer_bindings.len() {
+            for late_info in
+                bind_group.late_buffer_binding_infos[payload.late_buffer_bindings.len()..].iter()
             {
                 payload.late_buffer_bindings.push(LateBufferBinding {
+                    binding_index: late_info.binding_index,
                     shader_expect_size: 0,
-                    bound_size: late_size.get(),
+                    bound_size: late_info.size.get(),
                 });
             }
         }
@@ -469,15 +482,13 @@ impl Binder {
     ) -> Result<(), LateMinBufferBindingSizeMismatch> {
         for group_index in self.manager.list_active() {
             let payload = &self.payloads[group_index];
-            for (compact_index, late_binding) in payload.late_buffer_bindings
-                [..payload.late_bindings_effective_count]
-                .iter()
-                .enumerate()
+            for late_binding in
+                &payload.late_buffer_bindings[..payload.late_bindings_effective_count]
             {
                 if late_binding.bound_size < late_binding.shader_expect_size {
                     return Err(LateMinBufferBindingSizeMismatch {
                         group_index: group_index as u32,
-                        compact_index,
+                        binding_index: late_binding.binding_index,
                         shader_size: late_binding.shader_expect_size,
                         bound_size: late_binding.bound_size,
                     });

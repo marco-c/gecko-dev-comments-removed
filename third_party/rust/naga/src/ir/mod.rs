@@ -450,6 +450,15 @@ pub enum BuiltIn {
     LineIndices,
     
     TriangleIndices,
+
+    
+    VertexCount,
+    
+    Vertices,
+    
+    PrimitiveCount,
+    
+    Primitives,
 }
 
 
@@ -2212,8 +2221,6 @@ pub enum Statement {
         fun: RayQueryFunction,
     },
     
-    MeshFunction(MeshFunction),
-    
     SubgroupBallot {
         
         
@@ -2569,7 +2576,7 @@ pub struct DocComments {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2583,7 +2590,7 @@ pub enum MeshOutputTopology {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
@@ -2603,29 +2610,8 @@ pub struct MeshStageInfo {
     pub vertex_output_type: Handle<Type>,
     
     pub primitive_output_type: Handle<Type>,
-}
-
-
-#[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
-pub enum MeshFunction {
     
-    SetMeshOutputs {
-        vertex_count: Handle<Expression>,
-        primitive_count: Handle<Expression>,
-    },
-    
-    SetVertex {
-        index: Handle<Expression>,
-        value: Handle<Expression>,
-    },
-    
-    SetPrimitive {
-        index: Handle<Expression>,
-        value: Handle<Expression>,
-    },
+    pub output_variable: Handle<GlobalVariable>,
 }
 
 
