@@ -23,6 +23,7 @@ import {
   kTextureViewDimensions,
   sampledAndStorageBindingEntries,
   texBindingTypeInfo,
+  IsValidTransientAttachmentUsage,
 } from '../../capability_info.js';
 import { GPUConst } from '../../constants.js';
 import { kPossibleStorageTextureFormats, kRegularTextureFormats } from '../../format_info.js';
@@ -199,6 +200,13 @@ g.test('texture_binding_must_have_correct_usage')
       .combine('usage', kTextureUsages)
       .unless(({ entry, usage }) => {
         const info = texBindingTypeInfo(entry);
+        
+        if (
+          usage === GPUConst.TextureUsage.TRANSIENT_ATTACHMENT &&
+          info.resource !== 'sampledTexMS'
+        ) {
+          return true;
+        }
         
         return usage === GPUConst.TextureUsage.STORAGE_BINDING && info.resource === 'sampledTexMS';
       })
@@ -781,6 +789,13 @@ g.test('storage_texture,usage')
       
       .combine('usage0', kTextureUsages)
       .combine('usage1', kTextureUsages)
+      .unless(({ usage0, usage1 }) => {
+        const usage = usage0 | usage1;
+        return (
+          (usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) !== 0 &&
+          !IsValidTransientAttachmentUsage(usage)
+        );
+      })
   )
   .fn(t => {
     const { usage0, usage1 } = t.params;
@@ -1212,6 +1227,13 @@ g.test('external_texture,texture_view,usage')
       
       .combine('usage0', kTextureUsages)
       .combine('usage1', kTextureUsages)
+      .unless(({ usage0, usage1 }) => {
+        const usage = usage0 | usage1;
+        return (
+          (usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) !== 0 &&
+          !IsValidTransientAttachmentUsage(usage)
+        );
+      })
   )
   .fn(t => {
     const { usage0, usage1 } = t.params;

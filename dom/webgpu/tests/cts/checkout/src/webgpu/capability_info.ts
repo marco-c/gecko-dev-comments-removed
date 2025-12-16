@@ -210,9 +210,17 @@ export const kTextureUsageInfo: {
   [GPUConst.TextureUsage.TEXTURE_BINDING]: {},
   [GPUConst.TextureUsage.STORAGE_BINDING]: {},
   [GPUConst.TextureUsage.RENDER_ATTACHMENT]: {},
+  [GPUConst.TextureUsage.TRANSIENT_ATTACHMENT]: {},
 };
 
 export const kTextureUsages = numericKeysOf<GPUTextureUsageFlags>(kTextureUsageInfo);
+
+
+export function IsValidTransientAttachmentUsage(usage: GPUTextureUsageFlags): boolean {
+  return (
+    usage === (GPUConst.TextureUsage.TRANSIENT_ATTACHMENT | GPUConst.TextureUsage.RENDER_ATTACHMENT)
+  );
+}
 
 
 
@@ -768,6 +776,7 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxComputeWorkgroupSizeY':                  [           ,       256,             128,                          ],
   'maxComputeWorkgroupSizeZ':                  [           ,        64,              64,                          ],
   'maxComputeWorkgroupsPerDimension':          [           ,     65535,           65535,                          ],
+  'maxImmediateSize':                          [           ,        64,              64,                          ],
 } as const];
 
 

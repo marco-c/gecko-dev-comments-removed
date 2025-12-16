@@ -17,6 +17,13 @@ const BufferUsage = {
 } as const;
 checkType<typeof GPUBufferUsage>(BufferUsage);
 
+declare global {
+  
+  interface GPUTextureUsage {
+    readonly TRANSIENT_ATTACHMENT: GPUFlagsConstant;
+  }
+}
+
 const TextureUsage = {
   COPY_SRC: 0x01,
   COPY_DST: 0x02,
@@ -25,6 +32,7 @@ const TextureUsage = {
   STORAGE_BINDING: 0x08,
   STORAGE: 0x08,
   RENDER_ATTACHMENT: 0x10,
+  TRANSIENT_ATTACHMENT: 0x20,
 } as const;
 checkType<typeof GPUTextureUsage>(TextureUsage);
 
