@@ -22,6 +22,14 @@ class CSSAlignUtils {
   
 
 
+  static StyleAlignFlags UsedAlignmentForAbsPos(nsIFrame* aFrame,
+                                                StyleAlignFlags aFlags,
+                                                LogicalAxis aLogicalAxis,
+                                                WritingMode aCBWM);
+
+  
+
+
   enum class AlignJustifyFlag {
     
     OverflowSafe,
