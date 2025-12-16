@@ -54,6 +54,14 @@ struct ParamTraits<nsILoadInfo::StoragePermissionState>
           nsILoadInfo::StoragePermissionState,
           nsILoadInfo::StoragePermissionState::NoStoragePermission,
           nsILoadInfo::StoragePermissionState::InactiveStoragePermission> {};
+
+
+template <>
+struct ParamTraits<mozilla::ContentBlockingNotifier::CanvasFingerprinter>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::ContentBlockingNotifier::CanvasFingerprinter,
+          mozilla::ContentBlockingNotifier::CanvasFingerprinter::eFingerprintJS,
+          mozilla::ContentBlockingNotifier::CanvasFingerprinter::eMaybe> {};
 }  
 
 #endif  

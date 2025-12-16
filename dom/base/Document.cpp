@@ -477,7 +477,6 @@ mozilla::LazyLogModule gPageCacheLog("PageCache");
 mozilla::LazyLogModule gSHIPBFCacheLog("SHIPBFCache");
 mozilla::LazyLogModule gTimeoutDeferralLog("TimeoutDefer");
 mozilla::LazyLogModule gUseCountersLog("UseCounters");
-static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
 
 namespace mozilla {
 
@@ -17592,134 +17591,35 @@ bool Document::ShouldResistFingerprinting(RFPTarget aTarget) const {
 
 void Document::RecordCanvasUsage(CanvasUsage& aUsage) {
   
-  
-  
-  const size_t kTrackedCanvasLimit = 15;
+  const size_t kTrackedCanvasLimit = 8;
   
   const uint64_t kTimeoutUsec = 3000 * 1000;
 
   uint64_t now = PR_Now();
+  if ((mCanvasUsage.Length() > kTrackedCanvasLimit) ||
+      ((now - mLastCanvasUsage) > kTimeoutUsec)) {
+    mCanvasUsage.ClearAndRetainStorage();
+  }
+
+  mCanvasUsage.AppendElement(aUsage);
+  mLastCanvasUsage = now;
 
   nsCString originNoSuffix;
-  nsCString uri;
   if (NS_FAILED(NodePrincipal()->GetOriginNoSuffix(originNoSuffix))) {
-    MOZ_LOG(gFingerprinterDetection, LogLevel::Error,
-            ("Document:: %p Could not get originsuffix", this));
     return;
   }
-  if (NS_FAILED(NodePrincipal()->GetSpec(uri))) {
-    MOZ_LOG(gFingerprinterDetection, LogLevel::Error,
-            ("Document:: %p Could not get uri", this));
-    return;
-  }
-  if (MOZ_LOG_TEST(gFingerprinterDetection, LogLevel::Debug)) {
-    nsAutoCString filename;
-    uint32_t lineNum = 0;
-    filename.AssignLiteral("<unknown>");
-    JSContext* cx = nsContentUtils::GetCurrentJSContext();
-    if (cx) {
-      JS::AutoFilename scriptFilename;
-      JS::ColumnNumberOneOrigin colOneOrigin;
-      if (JS::DescribeScriptedCaller(&scriptFilename, cx, &lineNum,
-                                     &colOneOrigin)) {
-        if (const char* file = scriptFilename.get()) {
-          filename = nsDependentCString(file);
-        }
-      }
-    }
 
-    MOZ_LOG(gFingerprinterDetection, LogLevel::Debug,
-            ("Document:: %p %s recording canvas usage of type %s on %s in %s",
-             this, originNoSuffix.get(),
-             CanvasUsageSourceToString(aUsage.mUsageSource).get(), uri.get(),
-             filename.get()));
-  }
-
-  
-  if (mCanvasUsageLastTimestamp != 0 &&
-      (now - mCanvasUsageLastTimestamp) > kTimeoutUsec) {
-    MOZ_LOG(
-        gFingerprinterDetection, LogLevel::Verbose,
-        ("Document:: %p %s clearing canvas array", this, originNoSuffix.get()));
-    mCanvasUsageData.Clear();
-  } else if (mCanvasUsageData.Length() > kTrackedCanvasLimit) {
-    MOZ_LOG(gFingerprinterDetection, LogLevel::Verbose,
-            ("Document:: %p %s removing oldest canvas "
-             "usage in array",
-             this, originNoSuffix.get()));
-    mCanvasUsageData.RemoveElementAt(0);
-  } else {
-    MOZ_LOG(gFingerprinterDetection, LogLevel::Verbose,
-            ("Document:: %p %s recorded canvas "
-             "usage of type %s in array, records: %zu",
-             this, originNoSuffix.get(),
-             CanvasUsageSourceToString(aUsage.mUsageSource).get(),
-             static_cast<size_t>(mCanvasUsageData.Length() + 1)));
-  }
-
-  
-  mCanvasUsageLastTimestamp = now;
-  mCanvasUsageData.AppendElement(aUsage);
-
-  nsIChannel* channel = GetChannel();
-  if (!channel) {
-    MOZ_LOG(
-        gFingerprinterDetection, LogLevel::Warning,
-        ("Document:: %p %s no channel available", this, originNoSuffix.get()));
-
-    
-    
-    auto shouldInheritFrom = [this](Document* aDoc) {
-      return aDoc && this->NodePrincipal() &&
-             (this->NodePrincipal()->Equals(aDoc->NodePrincipal()) ||
-              this->NodePrincipal()->GetIsNullPrincipal());
-    };
-
-    
-    Document* docToCheck = this;
-    while (docToCheck && !channel) {
-      if (docToCheck->mParentDocument &&
-          shouldInheritFrom(docToCheck->mParentDocument)) {
-        channel = docToCheck->mParentDocument->GetChannel();
-      }
-      docToCheck = docToCheck->mParentDocument;
-    }
-
-    docToCheck = this;
-    while (docToCheck && !channel) {
-      RefPtr<BrowsingContext> opener =
-          docToCheck->GetBrowsingContext()
-              ? docToCheck->GetBrowsingContext()->GetOpener()
-              : nullptr;
-      docToCheck = opener ? opener->GetDocument() : nullptr;
-
-      if (docToCheck && shouldInheritFrom(docToCheck)) {
-        channel = docToCheck->GetChannel();
-      }
-    }
-
-    if (!channel) {
-      MOZ_LOG(gFingerprinterDetection, LogLevel::Warning,
-              ("Document:: %p %s still could not find a channel", this,
-               originNoSuffix.get()));
-    }
-  }
-
-  nsRFPService::MaybeReportCanvasFingerprinter(mCanvasUsageData, channel, uri,
+  nsRFPService::MaybeReportCanvasFingerprinter(mCanvasUsage, GetChannel(),
                                                originNoSuffix);
 }
 
 void Document::RecordFontFingerprinting() {
-  nsCString uri;
   nsCString originNoSuffix;
   if (NS_FAILED(NodePrincipal()->GetOriginNoSuffix(originNoSuffix))) {
     return;
   }
-  if (NS_FAILED(NodePrincipal()->GetSpec(uri))) {
-    return;
-  }
 
-  nsRFPService::MaybeReportFontFingerprinter(GetChannel(), uri, originNoSuffix);
+  nsRFPService::MaybeReportFontFingerprinter(GetChannel(), originNoSuffix);
 }
 
 bool Document::IsInPrivateBrowsing() const { return mIsInPrivateBrowsing; }

@@ -17,8 +17,6 @@ using mozilla::services::GetObserverService;
 
 NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
 
-static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
-
 
 
 
@@ -119,14 +117,7 @@ void nsFontCache::DetectFontFingerprinting(const nsFont& aFont) {
   
   
 
-  if (aFont.family.families.list.IsEmpty()) {
-    return;
-  }
-
-  if (!MOZ_LOG_TEST(gFingerprinterDetection, mozilla::LogLevel::Info) &&
-      mReportedProbableFingerprinting) {
-    
-    
+  if (mReportedProbableFingerprinting || aFont.family.families.list.IsEmpty()) {
     return;
   }
 
@@ -152,39 +143,20 @@ void nsFontCache::DetectFontFingerprinting(const nsFont& aFont) {
   uint16_t fontsMissedRecently = 0;
 
   bool clearMissedFonts = false;
-  if (!mReportedProbableFingerprinting) {
-    for (auto iter = missedFonts->Iter(); !iter.Done(); iter.Next()) {
-      if (now - kFingerprintingLastNSec <= iter.Data()) {
-        if (++fontsMissedRecently > kFingerprintingCacheMissThreshold) {
-          mContext->Document()->RecordFontFingerprinting();
-          mReportedProbableFingerprinting = true;
-          clearMissedFonts = true;
-          break;
-        }
-      } else {
-        
-        iter.Remove();
+  for (auto iter = missedFonts->Iter(); !iter.Done(); iter.Next()) {
+    if (now - kFingerprintingLastNSec <= iter.Data()) {
+      if (++fontsMissedRecently > kFingerprintingCacheMissThreshold) {
+        mContext->Document()->RecordFontFingerprinting();
+        mReportedProbableFingerprinting = true;
+        clearMissedFonts = true;
+        break;
       }
-    }
-    if (mReportedProbableFingerprinting) {
+    } else {
       
-      
-      for (auto iter = missedFonts->Iter(); !iter.Done(); iter.Next()) {
-        MOZ_LOG(
-            gFingerprinterDetection, mozilla::LogLevel::Info,
-            ("Font Fingerprinting Tripped | Document %p | Font Family | %s",
-             mContext->Document(), NS_ConvertUTF16toUTF8(iter.Key()).get()));
-      }
+      iter.Remove();
     }
-  } else {
-    
-    
-    MOZ_LOG(gFingerprinterDetection, mozilla::LogLevel::Info,
-            ("Font Fingerprinting Tripped | Document %p | Font Family | %s",
-             mContext->Document(), NS_ConvertUTF16toUTF8(key).get()));
   }
-  if (!MOZ_LOG_TEST(gFingerprinterDetection, mozilla::LogLevel::Info) &&
-      clearMissedFonts) {
+  if (clearMissedFonts) {
     missedFonts->Clear();
   }
 }

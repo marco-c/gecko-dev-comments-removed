@@ -5744,10 +5744,8 @@ class Document : public nsINode,
 
   
   
-  
-  nsTArray<CanvasUsage> mCanvasUsageData;
-  
-  uint64_t mCanvasUsageLastTimestamp = 0;
+  nsTArray<CanvasUsage> mCanvasUsage;
+  uint64_t mLastCanvasUsage = 0;
 
   RefPtr<class FragmentDirective> mFragmentDirective;
   UniquePtr<RadioGroupContainer> mRadioGroupContainer;

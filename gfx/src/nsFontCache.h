@@ -54,11 +54,11 @@ class nsFontCache final : public nsIObserver {
 
   
   
-  static constexpr int32_t kFingerprintingCacheMissThreshold = 10;
+  static constexpr int32_t kFingerprintingCacheMissThreshold = 20;
   
   
   static constexpr PRTime kFingerprintingLastNSec =
-      PRTime(PR_USEC_PER_SEC) * 6;  
+      PRTime(PR_USEC_PER_SEC) * 3;  
 
   static_assert(kFingerprintingCacheMissThreshold < kMaxCacheEntries);
 
