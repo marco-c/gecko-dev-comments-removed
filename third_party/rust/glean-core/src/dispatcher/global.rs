@@ -58,7 +58,7 @@ pub fn launch(task: impl FnOnce() + Send + 'static) {
             
         }
         Err(_) => {
-            log::info!("Failed to launch a task on the queue. Discarding task.");
+            log::debug!("Failed to launch a task on the queue. Discarding task.");
         }
     }
 
@@ -127,7 +127,7 @@ pub fn shutdown() -> Result<(), DispatchError> {
 
 
 
-pub(crate) fn reset_dispatcher() {
+pub fn reset_dispatcher() {
     
     
     

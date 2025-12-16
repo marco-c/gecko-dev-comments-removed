@@ -333,8 +333,13 @@ impl PingType {
                 false
             }
             Some(ping) => {
-                const BUILTIN_PINGS: [&str; 4] =
-                    ["baseline", "metrics", "events", "deletion-request"];
+                const BUILTIN_PINGS: [&str; 5] = [
+                    "baseline",
+                    "metrics",
+                    "events",
+                    "health",
+                    "deletion-request",
+                ];
 
                 
                 

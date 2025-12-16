@@ -47,7 +47,7 @@ impl net::PingUploader for ReportingUploader {
 
 
 #[test]
-fn test_pre_post_init_health_pings_exist() {
+fn test_pre_init_health_ping_exist() {
     common::enable_test_logging();
 
     
@@ -79,7 +79,6 @@ fn test_pre_post_init_health_pings_exist() {
     let exception_uuid = &payload["metrics"]["uuid"]["glean.health_recovered_client_id"];
     assert_eq!(&JsonValue::Null, exception_uuid);
 
-    
-    
-    
+    let ping_client_id = &payload["client_info"]["client_id"];
+    assert_eq!(client_id, ping_client_id);
 }
