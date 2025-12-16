@@ -782,7 +782,7 @@ static nscoord OffsetToAlignedStaticPos(
 
   
   
-  Maybe<CSSAlignUtils::AnchorAlignInfo> anchorAlignInfo;
+  Maybe<LogicalRect> insetModifiedAnchorRect;
   if (alignConst == StyleAlignFlags::ANCHOR_CENTER &&
       aKidReflowInput.mAnchorPosResolutionCache) {
     const auto* referenceData =
@@ -793,23 +793,14 @@ static nscoord OffsetToAlignedStaticPos(
       if (cachedData && *cachedData) {
         const auto& data = cachedData->ref();
         if (data.mOffsetData) {
-          const nsSize containerSize =
-              aAbsPosCBSize.GetPhysicalSize(aAbsPosCBWM);
-          const nsRect anchorRect(data.mOffsetData->mOrigin, data.mSize);
-          const LogicalRect logicalAnchorRect{aAbsPosCBWM, anchorRect,
-                                              containerSize};
-          const auto axisInAbsPosCBWM =
-              kidWM.ConvertAxisTo(kidAxis, aAbsPosCBWM);
-          const auto anchorStart =
-              logicalAnchorRect.Start(axisInAbsPosCBWM, aAbsPosCBWM);
-          const auto anchorSize =
-              logicalAnchorRect.Size(axisInAbsPosCBWM, aAbsPosCBWM);
-          anchorAlignInfo =
-              Some(CSSAlignUtils::AnchorAlignInfo{anchorStart, anchorSize});
+          nsSize containerSize = aAbsPosCBSize.GetPhysicalSize(aAbsPosCBWM);
+          nsRect anchorRect(data.mOffsetData->mOrigin, data.mSize);
+          LogicalRect logicalAnchorRect(kidWM, anchorRect, containerSize);
           if (aNonAutoAlignParams) {
-            anchorAlignInfo->mAnchorStart -=
+            logicalAnchorRect.Start(kidAxis, kidWM) -=
                 aNonAutoAlignParams->mCurrentStartInset;
           }
+          insetModifiedAnchorRect = Some(logicalAnchorRect);
         }
       }
     }
@@ -817,7 +808,7 @@ static nscoord OffsetToAlignedStaticPos(
 
   nscoord offset = CSSAlignUtils::AlignJustifySelf(
       alignConst, kidAxis, flags, baselineAdjust, alignAreaSizeInAxis,
-      aKidReflowInput, kidSizeInOwnWM, anchorAlignInfo);
+      aKidReflowInput, kidSizeInOwnWM, insetModifiedAnchorRect);
 
   
   
@@ -867,13 +858,11 @@ static nscoord OffsetToAlignedStaticPos(
       
     } else if (kidSize <= overflowLimitRectEnd - overflowLimitRectStart) {
       
-      if (kidEnd < imcbEnd && kidStart < imcbStart) {
-        
-        offset += std::min(imcbStart - kidStart, imcbEnd - kidEnd);
-      } else if (kidStart > imcbStart && kidEnd > imcbEnd) {
-        
-        offset -= std::min(kidEnd - imcbEnd, kidStart - imcbStart);
-      } else if (kidStart >= imcbStart && kidEnd <= imcbEnd) {
+      if (kidEnd < imcbEnd) {
+        offset += imcbEnd - kidEnd;
+      } else if (kidStart > imcbStart) {
+        offset -= kidStart - imcbStart;
+      } else {
         
         if (kidStart < overflowLimitRectStart) {
           offset += overflowLimitRectStart - kidStart;

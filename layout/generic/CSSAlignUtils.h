@@ -50,14 +50,6 @@ class CSSAlignUtils {
 
 
 
-  struct AnchorAlignInfo {
-    nscoord mAnchorStart;
-    nscoord mAnchorSize;
-  };
-
-  
-
-
 
 
 
@@ -78,7 +70,7 @@ class CSSAlignUtils {
       const StyleAlignFlags& aAlignment, LogicalAxis aAxis,
       AlignJustifyFlags aFlags, nscoord aBaselineAdjust, nscoord aCBSize,
       const ReflowInput& aRI, const LogicalSize& aChildSize,
-      const Maybe<AnchorAlignInfo>& aAnchorRect = Nothing());
+      const Maybe<LogicalRect>& aAnchorRect = Nothing());
 };
 
 }  
