@@ -324,21 +324,32 @@ BOOL nsCocoaUtils::ShouldRestoreStateDueToLaunchAtLogin() {
   return NO;
 }
 
-void nsCocoaUtils::PrepareForNativeAppModalDialog() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+static bool sIsActivelyShowingAppModalDialog = false;
+
+bool nsCocoaUtils::PrepareForNativeAppModalDialog() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (sIsActivelyShowingAppModalDialog) {
+    return false;
+  }
+  sIsActivelyShowingAppModalDialog = true;
 
   if (!NSApp.active) {
     
     
     
-    return;
+    return true;
   }
 
   
   
   
   nsMenuBarX* hiddenWindowMenuBar = nsMenuUtilsX::GetHiddenWindowMenuBar();
-  if (!hiddenWindowMenuBar) return;
+  if (!hiddenWindowMenuBar) {
+    return true;
+  }
 
   
   
@@ -366,11 +377,19 @@ void nsCocoaUtils::PrepareForNativeAppModalDialog() {
   [NSApp setMainMenu:newMenuBar];
   [newMenuBar release];
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  return true;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(sIsActivelyShowingAppModalDialog = false);
 }
 
 void nsCocoaUtils::CleanUpAfterNativeAppModalDialog() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!sIsActivelyShowingAppModalDialog) {
+    return;
+  }
 
   
   
@@ -386,6 +405,8 @@ void nsCocoaUtils::CleanUpAfterNativeAppModalDialog() {
   } else {
     [WindowDelegate paintMenubarForWindow:mainWindow];
   }
+
+  sIsActivelyShowingAppModalDialog = false;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }

@@ -134,7 +134,9 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
   [viewController release];
 
   
-  nsCocoaUtils::PrepareForNativeAppModalDialog();
+  if (!nsCocoaUtils::PrepareForNativeAppModalDialog()) {
+    return NS_ERROR_FAILURE;
+  }
   int button = [panel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 

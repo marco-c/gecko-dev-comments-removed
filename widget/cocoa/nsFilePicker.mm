@@ -375,7 +375,9 @@ nsIFilePicker::ResultCode nsFilePicker::GetLocalFiles(
   }
 
   int result;
-  nsCocoaUtils::PrepareForNativeAppModalDialog();
+  if (!nsCocoaUtils::PrepareForNativeAppModalDialog()) {
+    return retVal;
+  }
   if (mFilters.Length() > 1) {
     
 
@@ -469,7 +471,9 @@ nsIFilePicker::ResultCode nsFilePicker::GetLocalFolder(nsIFile** outFile) {
   if (theDir) {
     [thePanel setDirectoryURL:[NSURL fileURLWithPath:theDir isDirectory:YES]];
   }
-  nsCocoaUtils::PrepareForNativeAppModalDialog();
+  if (!nsCocoaUtils::PrepareForNativeAppModalDialog()) {
+    return retVal;
+  }
   int result = [thePanel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
@@ -554,7 +558,9 @@ nsIFilePicker::ResultCode nsFilePicker::PutLocalFile(nsIFile** outFile) {
   }
 
   
-  nsCocoaUtils::PrepareForNativeAppModalDialog();
+  if (!nsCocoaUtils::PrepareForNativeAppModalDialog()) {
+    return retVal;
+  }
   [thePanel setNameFieldStringValue:defaultFilename];
   int result = [thePanel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
