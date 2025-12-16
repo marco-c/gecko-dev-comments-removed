@@ -1033,6 +1033,10 @@ void MacroAssembler::lookupMFBT(Register hashTable, Register hashCode,
   
 
   
+  branch32(Assembler::Equal, Address(hashTable, Table::offsetOfEntryCount()),
+           Imm32(0), missing);
+
+  
   
   Register hash1 = scratch5;
   computeHash1MFBT<Table>(hashTable, hashCode, hash1, scratch);
