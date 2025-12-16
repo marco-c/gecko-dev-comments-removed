@@ -40,9 +40,7 @@ AutoInitializeImageLib::AutoInitializeImageLib() {
   sImageLibInitialized = true;
 
   
-  nsresult rv = Preferences::SetBool("image.avif.enabled", true);
-  EXPECT_TRUE(rv == NS_OK);
-  rv = Preferences::SetBool("image.avif.sequence.enabled", true);
+  nsresult rv = Preferences::SetBool("image.avif.sequence.enabled", true);
   EXPECT_TRUE(rv == NS_OK);
 
 #ifdef MOZ_JXL
