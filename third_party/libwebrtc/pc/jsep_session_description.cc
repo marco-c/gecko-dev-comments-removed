@@ -46,14 +46,6 @@ constexpr int kDummyPort = 9;
 
 
 
-SdpType SdpTypeFromStringOrDie(const std::string& type) {
-  auto sdp_type = SdpTypeFromString(type);
-  RTC_CHECK(sdp_type.has_value());
-  return sdp_type.value();
-}
-
-
-
 void UpdateConnectionAddress(
     const JsepCandidateCollection& candidate_collection,
     MediaContentDescription* media_desc) {
@@ -159,9 +151,6 @@ std::unique_ptr<SessionDescriptionInterface> CreateRollbackSessionDescription(
 }
 
 JsepSessionDescription::JsepSessionDescription(SdpType type) : type_(type) {}
-
-JsepSessionDescription::JsepSessionDescription(const std::string& type)
-    : JsepSessionDescription(SdpTypeFromStringOrDie(type)) {}
 
 JsepSessionDescription::JsepSessionDescription(
     SdpType type,
