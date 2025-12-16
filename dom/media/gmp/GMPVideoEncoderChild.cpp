@@ -10,7 +10,6 @@
 #include "GMPContentChild.h"
 #include "GMPPlatform.h"
 #include "GMPVideoEncodedFrameImpl.h"
-#include "GMPVideoi420FrameImpl.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "runnable_utils.h"
 
@@ -68,7 +67,24 @@ void GMPVideoEncoderChild::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
     MOZ_CRASH("Encoded without any frame data!");
   }
 
+  mLatestEncodedTimestamp = frameData.mTimestamp();
+
   aEncodedFrame->Destroy();
+}
+
+void GMPVideoEncoderChild::MgrDecodedFrameDestroyed(
+    GMPVideoi420FrameImpl* aFrame) {
+  if (NS_WARN_IF(!mPlugin)) {
+    return;
+  }
+
+  
+  
+  
+  MOZ_ASSERT(mPlugin->GMPMessageLoop() == MessageLoop::current());
+  if (aFrame->Timestamp() > mLatestEncodedTimestamp) {
+    (void)SendDroppedFrame(aFrame->Timestamp());
+  }
 }
 
 void GMPVideoEncoderChild::Error(GMPErr aError) {
@@ -117,8 +133,10 @@ mozilla::ipc::IPCResult GMPVideoEncoderChild::RecvEncode(
     return IPC_FAIL(this, "!mVideoDecoder");
   }
 
+  
+  
   auto* f = new GMPVideoi420FrameImpl(aInputFrame, std::move(aInputShmem),
-                                      &mVideoHost);
+                                      &mVideoHost, HostReportPolicy::Destroyed);
 
   
   
