@@ -57,12 +57,6 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
   void SetError(int error) override;
 
  protected:
-  
-  
-  
-  static Socket* ConnectSocket(Socket* socket,
-                               const SocketAddress& bind_address,
-                               const SocketAddress& remote_address);
   int FlushOutBuffer();
   
   void AppendToOutBuffer(const void* pv, size_t cb);
@@ -87,12 +81,6 @@ class AsyncTCPSocketBase : public AsyncPacketSocket {
 
 class AsyncTCPSocket : public AsyncTCPSocketBase {
  public:
-  
-  
-  
-  static AsyncTCPSocket* Create(Socket* socket,
-                                const SocketAddress& bind_address,
-                                const SocketAddress& remote_address);
   explicit AsyncTCPSocket(Socket* socket);
   ~AsyncTCPSocket() override {}
 
@@ -123,14 +111,5 @@ class AsyncTcpListenSocket : public AsyncListenSocket {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::AsyncTcpListenSocket;
-using ::webrtc::AsyncTCPSocket;
-using ::webrtc::AsyncTCPSocketBase;
-}  
-#endif  
 
 #endif  

@@ -10,10 +10,7 @@
 
 #include "p2p/base/async_stun_tcp_socket.h"
 
-#include <errno.h>
-#include <stdint.h>
-#include <string.h>
-
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
 
@@ -43,18 +40,6 @@ static const size_t kTurnChannelDataHdrSize = 4;
 inline bool IsStunMessage(uint16_t msg_type) {
   
   return (msg_type & 0xC000) ? false : true;
-}
-
-
-
-
-
-AsyncStunTCPSocket* AsyncStunTCPSocket::Create(
-    Socket* socket,
-    const SocketAddress& bind_address,
-    const SocketAddress& remote_address) {
-  return new AsyncStunTCPSocket(
-      AsyncTCPSocketBase::ConnectSocket(socket, bind_address, remote_address));
 }
 
 AsyncStunTCPSocket::AsyncStunTCPSocket(Socket* socket)

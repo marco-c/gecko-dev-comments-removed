@@ -11,27 +11,18 @@
 #ifndef P2P_BASE_ASYNC_STUN_TCP_SOCKET_H_
 #define P2P_BASE_ASYNC_STUN_TCP_SOCKET_H_
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 
 #include "api/array_view.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/async_tcp_socket.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/socket_address.h"
 
 namespace webrtc {
 
 class AsyncStunTCPSocket : public AsyncTCPSocketBase {
  public:
-  
-  
-  
-  static AsyncStunTCPSocket* Create(Socket* socket,
-                                    const SocketAddress& bind_address,
-                                    const SocketAddress& remote_address);
-
   explicit AsyncStunTCPSocket(Socket* socket);
 
   AsyncStunTCPSocket(const AsyncStunTCPSocket&) = delete;
@@ -51,12 +42,5 @@ class AsyncStunTCPSocket : public AsyncTCPSocketBase {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::AsyncStunTCPSocket;
-}  
-#endif  
 
 #endif  
