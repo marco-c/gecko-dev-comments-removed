@@ -369,12 +369,6 @@ struct ReflowInput : public SizeComputationInput {
   nsSize ComputedSizeAsContainerIfConstrained() const;
 
   
-  nsRect ComputedPhysicalContentBoxRelativeToSelf() const {
-    auto bp = ComputedPhysicalBorderPadding();
-    return nsRect(nsPoint(bp.left, bp.top), ComputedPhysicalSize());
-  }
-
-  
   
   WritingMode GetCBWritingMode() const;
 
