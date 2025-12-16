@@ -1609,7 +1609,6 @@ def writeCLDRLanguageTagData(println, data, url):
 
 
 
-
 using namespace mozilla::intl::LanguageTagLimits;
 
 template <size_t Length, size_t TagLength, size_t SubtagLength>
@@ -2954,9 +2953,7 @@ def generateTzDataTestZones(tzdataDir, version, ignoreFactory, testDir):
     ) as f:
         println = partial(print, file=f)
 
-        println(
-            '// |reftest| shell-option(--enable-temporal) skip-if(!this.hasOwnProperty("Temporal"))'
-        )
+        println('// |reftest| skip-if(!this.hasOwnProperty("Temporal"))')
         println("")
         println(generatedFileWarning)
         println(tzdataVersionComment.format(version))
