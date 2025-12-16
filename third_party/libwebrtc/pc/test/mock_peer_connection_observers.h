@@ -350,42 +350,72 @@ class MockSetSessionDescriptionObserver : public SetSessionDescriptionObserver {
   std::string error_;
 };
 
-class FakeSetLocalDescriptionObserver
-    : public SetLocalDescriptionObserverInterface {
+
+
+
+
+
+
+
+
+
+class FakeDescriptionObserver {
  public:
-  bool called() const { return error_.has_value(); }
+  FakeDescriptionObserver() : thread_(Thread::Current()) {
+    RTC_DCHECK(thread_);
+  }
+
+  bool called() const {
+    RTC_DCHECK_RUN_ON(thread_);
+    return error_.has_value();
+  }
+
   RTCError& error() {
+    RTC_DCHECK_RUN_ON(thread_);
     RTC_DCHECK(error_.has_value());
     return *error_;
   }
 
-  
-  void OnSetLocalDescriptionComplete(RTCError error) override {
-    error_ = std::move(error);
+ protected:
+  void OnCallback(RTCError error) {
+    if (Thread::Current() == thread_) {
+      RTC_DCHECK_RUN_ON(thread_);
+      error_ = std::move(error);
+    } else {
+      thread_->PostTask([this, error = std::move(error)]() {
+        RTC_DCHECK_RUN_ON(thread_);
+        error_ = std::move(error);
+      });
+    }
   }
 
  private:
-  
-  std::optional<RTCError> error_;
+  Thread* const thread_;
+  std::optional<RTCError> error_ RTC_GUARDED_BY(thread_);
+};
+
+class FakeSetLocalDescriptionObserver
+    : public SetLocalDescriptionObserverInterface,
+      public FakeDescriptionObserver {
+ public:
+  FakeSetLocalDescriptionObserver() = default;
+
+ private:
+  void OnSetLocalDescriptionComplete(RTCError error) override {
+    OnCallback(std::move(error));
+  }
 };
 
 class FakeSetRemoteDescriptionObserver
-    : public SetRemoteDescriptionObserverInterface {
+    : public SetRemoteDescriptionObserverInterface,
+      public FakeDescriptionObserver {
  public:
-  bool called() const { return error_.has_value(); }
-  RTCError& error() {
-    RTC_DCHECK(error_.has_value());
-    return *error_;
-  }
-
-  
-  void OnSetRemoteDescriptionComplete(RTCError error) override {
-    error_ = std::move(error);
-  }
+  FakeSetRemoteDescriptionObserver() = default;
 
  private:
-  
-  std::optional<RTCError> error_;
+  void OnSetRemoteDescriptionComplete(RTCError error) override {
+    OnCallback(std::move(error));
+  }
 };
 
 class MockDataChannelObserver : public DataChannelObserver {
