@@ -2,7 +2,7 @@
 
 import { globalTestConfig } from '../framework/test_config.js';
 
-import { ErrorWithExtra, assert, objectEquals } from './util.js';
+import { ErrorWithExtra, assert, hasFeature, objectEquals } from './util.js';
 
 
 
@@ -164,7 +164,9 @@ export function getGPU(recorder) {
           Object.defineProperty(adapter, 'features', {
             enumerable: false,
             value: new Set(
-              adapter.features.has('core-features-and-limits') ? ['core-features-and-limits'] : []
+              hasFeature(adapter.features, 'core-features-and-limits') ?
+              ['core-features-and-limits'] :
+              []
             )
           });
         }
@@ -177,6 +179,7 @@ export function getGPU(recorder) {
         for (const [feature] of desc.requiredFeatures) {
           
           
+
           if (!adapter.features.has(feature)) {
             throw new TypeError(`requested feature ${feature} does not exist on adapter`);
           }

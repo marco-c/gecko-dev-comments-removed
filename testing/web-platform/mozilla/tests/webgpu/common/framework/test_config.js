@@ -1,6 +1,6 @@
 
 
-import { assert } from '../util/util.js';
+import { assert, hasFeature } from '../util/util.js';
 
 
 
@@ -90,7 +90,7 @@ export const globalTestConfig = {
 
 export function isCompatibilityDevice(device) {
   if (globalTestConfig.compatibility) {
-    assert(!device.features.has('core-features-and-limits'));
+    assert(!hasFeature(device.features, 'core-features-and-limits'));
   }
   return globalTestConfig.compatibility;
 }

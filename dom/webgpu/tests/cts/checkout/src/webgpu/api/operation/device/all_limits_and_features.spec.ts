@@ -103,6 +103,7 @@ changes to WebGPU do not break sites requesting everything.
 
     
     for (const feature of t.adapter.features) {
+      
       t.expect(t.device.features.has(feature), `device has feature: ${feature}`);
     }
   });

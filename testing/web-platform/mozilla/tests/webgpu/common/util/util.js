@@ -496,3 +496,12 @@ export function filterUniqueValueTestVariants(valueTestVariants) {
 export function makeValueTestVariant(base, variant) {
   return base * variant.mult + variant.add;
 }
+
+
+
+
+
+export function hasFeature(features, feature) {
+
+  return features.has(feature);
+}

@@ -103,6 +103,7 @@ fn((t) => {
 
   
   for (const feature of t.adapter.features) {
+
     t.expect(t.device.features.has(feature), `device has feature: ${feature}`);
   }
 });

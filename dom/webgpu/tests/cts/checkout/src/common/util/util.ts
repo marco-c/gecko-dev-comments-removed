@@ -496,3 +496,12 @@ export function filterUniqueValueTestVariants(valueTestVariants: ValueTestVarian
 export function makeValueTestVariant(base: number, variant: ValueTestVariant) {
   return base * variant.mult + variant.add;
 }
+
+
+
+
+
+export function hasFeature(features: GPUSupportedFeatures, feature: GPUFeatureName) {
+  
+  return features.has(feature);
+}
