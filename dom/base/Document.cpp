@@ -5736,6 +5736,22 @@ Document::AutoRunningExecCommandMarker::AutoRunningExecCommandMarker(
   }
 }
 
+
+
+
+
+
+static bool IsExecCommandPasteAllowed(Document* aDocument,
+                                      nsIPrincipal& aSubjectPrincipal) {
+  if (StaticPrefs::dom_execCommand_paste_enabled() && aDocument &&
+      aDocument->HasValidTransientUserGestureActivation()) {
+    return true;
+  }
+
+  return nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                                nsGkAtoms::clipboardRead);
+}
+
 bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
                            const TrustedHTMLOrString& aValue,
                            nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) {
@@ -5799,8 +5815,14 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
       return false;
     }
   } else if (commandData.IsPasteCommand()) {
-    if (!nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
-                                                nsGkAtoms::clipboardRead)) {
+    if (!IsExecCommandPasteAllowed(this, aSubjectPrincipal)) {
+      if (StaticPrefs::dom_execCommand_paste_enabled()) {
+        
+        
+        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
+                                        this, nsContentUtils::eDOM_PROPERTIES,
+                                        "ExecCommandPasteDeniedNotInputDriven");
+      }
       return false;
     }
   }
@@ -5975,8 +5997,7 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
   }
 
   if (commandData.IsPasteCommand() &&
-      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
-                                              nsGkAtoms::clipboardRead)) {
+      !IsExecCommandPasteAllowed(this, aSubjectPrincipal)) {
     return false;
   }
 
@@ -6195,8 +6216,8 @@ bool Document::QueryCommandSupported(const nsAString& aHTMLCommandName,
   
   
   
-  
   if (commandData.IsPasteCommand() &&
+      !StaticPrefs::dom_execCommand_paste_enabled() &&
       !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
                                               nsGkAtoms::clipboardRead)) {
     return false;
