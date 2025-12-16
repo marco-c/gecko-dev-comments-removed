@@ -13,7 +13,7 @@
 namespace webrtc {
 
 
-const char* const kSourceTimestamp = "WebRTC source stamp 2025-09-27T04:10:12";
+const char* const kSourceTimestamp = "WebRTC source stamp 2025-09-28T04:07:54";
 
 void LoadWebRTCVersionInRegister() {
   
