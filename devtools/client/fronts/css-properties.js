@@ -63,20 +63,21 @@ class CssPropertiesFront extends FrontClassWithSpec(cssPropertiesSpec) {
 
 
 
+class CssProperties {
+  
 
 
 
 
 
-function CssProperties(db) {
-  this.properties = db.properties;
 
-  this.isKnown = this.isKnown.bind(this);
-  this.isInherited = this.isInherited.bind(this);
-  this.supportsType = this.supportsType.bind(this);
-}
+  constructor(db) {
+    this.properties = db.properties;
 
-CssProperties.prototype = {
+    this.isKnown = this.isKnown.bind(this);
+    this.isInherited = this.isInherited.bind(this);
+    this.supportsType = this.supportsType.bind(this);
+  }
   
 
 
@@ -88,7 +89,7 @@ CssProperties.prototype = {
     
     property = property.startsWith("--") ? property : property.toLowerCase();
     return !!this.properties[property] || isCssVariable(property);
-  },
+  }
 
   
 
@@ -98,7 +99,7 @@ CssProperties.prototype = {
 
   isInherited(property) {
     return this.properties[property]?.isInherited;
-  },
+  }
 
   
 
@@ -114,7 +115,7 @@ CssProperties.prototype = {
       (this.properties[property].supports.includes(type) ||
         this.properties[property].supports.includes(id))
     );
-  },
+  }
 
   
 
@@ -124,7 +125,7 @@ CssProperties.prototype = {
 
   getValues(property) {
     return this.properties[property] ? this.properties[property].values : [];
-  },
+  }
 
   
 
@@ -133,7 +134,7 @@ CssProperties.prototype = {
 
   getNames() {
     return Object.keys(this.properties);
-  },
+  }
 
   
 
@@ -154,8 +155,8 @@ CssProperties.prototype = {
       return [name];
     }
     return [];
-  },
-};
+  }
+}
 
 
 
