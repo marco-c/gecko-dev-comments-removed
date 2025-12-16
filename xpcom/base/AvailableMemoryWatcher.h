@@ -17,6 +17,30 @@
 
 namespace mozilla {
 
+#if defined(XP_LINUX) && !defined(ANDROID)
+
+
+
+
+struct PSIInfo {
+  unsigned long some_avg10 = 0;
+  unsigned long some_avg60 = 0;
+  unsigned long some_avg300 = 0;
+  unsigned long some_total = 0;
+  unsigned long full_avg10 = 0;
+  unsigned long full_avg60 = 0;
+  unsigned long full_avg300 = 0;
+  unsigned long full_total = 0;
+};
+
+
+
+
+
+
+nsresult GetLastPSISnapshot(PSIInfo& aResult);
+#endif
+
 
 
 

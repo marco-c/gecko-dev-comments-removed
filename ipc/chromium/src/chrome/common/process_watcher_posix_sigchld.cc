@@ -31,6 +31,12 @@
 #  include "mozilla/ipc/ForkServiceChild.h"
 #endif
 
+#if defined(XP_LINUX) && !defined(ANDROID)
+#  include "mozilla/AvailableMemoryWatcher.h"
+#  include "mozilla/glean/XpcomMetrics.h"
+#  include "nsPrintfCString.h"
+#endif
+
 
 
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
@@ -99,6 +105,26 @@ static mozilla::StaticDataMutex<mozilla::StaticAutoPtr<nsTArray<PendingChild>>>
 static int gSignalPipe[2] = {-1, -1};
 static mozilla::Atomic<bool> gProcessWatcherShutdown;
 
+#if defined(XP_LINUX) && !defined(ANDROID)
+
+static void RecordContentProcessOOMKilled() {
+  
+  mozilla::PSIInfo psi;
+  nsresult rv = mozilla::GetLastPSISnapshot(psi);
+
+  if (NS_SUCCEEDED(rv)) {
+    
+    mozilla::glean::memory_watcher::process_oom_killed.Record(
+        mozilla::Some(mozilla::glean::memory_watcher::ProcessOomKilledExtra{
+            mozilla::Some(nsPrintfCString("%lu", psi.some_avg10)),
+            mozilla::Some(nsPrintfCString("%lu", psi.some_avg60)),
+            mozilla::Some(nsPrintfCString("%lu", psi.full_avg10)),
+            mozilla::Some(nsPrintfCString("%lu", psi.full_avg60)),
+        }));
+  }
+}
+#endif
+
 
 
 
@@ -133,6 +159,14 @@ static bool IsProcessDead(pid_t pid, BlockingWait aBlock) {
     case base::ProcessStatus::Killed:
       CHROMIUM_LOG(WARNING)
           << "process " << pid << " exited on signal " << info;
+#if defined(XP_LINUX) && !defined(ANDROID)
+      
+      if (info == SIGKILL) {
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("ContentProcessOOMTelemetry",
+                                   []() { RecordContentProcessOOMKilled(); }));
+      }
+#endif
       return true;
 
     case base::ProcessStatus::Error:
