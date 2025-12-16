@@ -169,7 +169,11 @@ class MOZ_STACK_CLASS WSScanResult final {
       return EditorLineBreakType(*BRElementPtr());
     }
     if (ReachedPreformattedLineBreak()) {
-      return EditorLineBreakType(*TextPtr(), *mOffset);
+      MOZ_ASSERT_IF(mDirection == ScanDirection::Backward, *mOffset > 0);
+      return EditorLineBreakType(*TextPtr(),
+                                 mDirection == ScanDirection::Forward
+                                     ? mOffset.valueOr(0)
+                                     : std::max(mOffset.valueOr(1), 1u) - 1);
     }
     MOZ_CRASH("Didn't reach a line break");
     return EditorLineBreakType(*BRElementPtr());
@@ -398,6 +402,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
     
     
     ReferHTMLDefaultStyle,
+    
+    StopAtComment,
   };
   using Options = EnumSet<Option>;
 
@@ -1087,10 +1093,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
+
     template <typename EditorDOMPointType, typename PT, typename CT>
     [[nodiscard]] static EditorDOMPointType GetInclusiveNextCharPoint(
         const EditorDOMPointBase<PT, CT>& aPoint,
-        ReferHTMLDefaultStyle aReferHTMLDefaultStyle,
+        Options aOptions,  
         IgnoreNonEditableNodes aIgnoreNonEditableNodes,
         const nsIContent* aFollowingLimiterContent = nullptr);
 
@@ -1099,18 +1107,19 @@ class MOZ_STACK_CLASS WSRunScanner final {
         const EditorDOMPointBase<PT, CT>& aPoint,
         IgnoreNonEditableNodes aIgnoreNonEditableNodes) const {
       return GetInclusiveNextCharPoint<EditorDOMPointType>(
-          aPoint, ShouldReferHTMLDefaultStyle(mOptions),
-          aIgnoreNonEditableNodes, GetEndReasonContent());
+          aPoint, mOptions, aIgnoreNonEditableNodes, GetEndReasonContent());
     }
 
     
 
 
 
+
+
     template <typename EditorDOMPointType, typename PT, typename CT>
     [[nodiscard]] static EditorDOMPointType GetPreviousCharPoint(
         const EditorDOMPointBase<PT, CT>& aPoint,
-        ReferHTMLDefaultStyle aReferHTMLDefaultStyle,
+        Options aOptions,  
         IgnoreNonEditableNodes aIgnoreNonEditableNodes,
         const nsIContent* aPrecedingLimiterContent = nullptr);
 
@@ -1119,11 +1128,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
         const EditorDOMPointBase<PT, CT>& aPoint,
         IgnoreNonEditableNodes aIgnoreNonEditableNodes) const {
       return GetPreviousCharPoint<EditorDOMPointType>(
-          aPoint, ShouldReferHTMLDefaultStyle(mOptions),
-          aIgnoreNonEditableNodes, GetStartReasonContent());
+          aPoint, mOptions, aIgnoreNonEditableNodes, GetStartReasonContent());
     }
 
     
+
+
 
 
 
@@ -1134,7 +1144,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
     [[nodiscard]] static EditorDOMPointType GetEndOfCollapsibleASCIIWhiteSpaces(
         const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
         nsIEditor::EDirection aDirectionToDelete,
-        ReferHTMLDefaultStyle aReferHTMLDefaultStyle,
+        Options aOptions,  
         IgnoreNonEditableNodes aIgnoreNonEditableNodes,
         const nsIContent* aFollowingLimiterContent = nullptr);
 
@@ -1144,12 +1154,13 @@ class MOZ_STACK_CLASS WSRunScanner final {
         nsIEditor::EDirection aDirectionToDelete,
         IgnoreNonEditableNodes aIgnoreNonEditableNodes) const {
       return GetEndOfCollapsibleASCIIWhiteSpaces<EditorDOMPointType>(
-          aPointAtASCIIWhiteSpace, aDirectionToDelete,
-          ShouldReferHTMLDefaultStyle(mOptions), aIgnoreNonEditableNodes,
-          GetEndReasonContent());
+          aPointAtASCIIWhiteSpace, aDirectionToDelete, mOptions,
+          aIgnoreNonEditableNodes, GetEndReasonContent());
     }
 
     
+
+
 
 
 
@@ -1161,7 +1172,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
     GetFirstASCIIWhiteSpacePointCollapsedTo(
         const EditorDOMPointInText& aPointAtASCIIWhiteSpace,
         nsIEditor::EDirection aDirectionToDelete,
-        ReferHTMLDefaultStyle aReferHTMLDefaultStyle,
+        Options aOptions,  
         IgnoreNonEditableNodes aIgnoreNonEditableNodes,
         const nsIContent* aPrecedingLimiterContent = nullptr);
 
@@ -1171,9 +1182,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
         nsIEditor::EDirection aDirectionToDelete,
         IgnoreNonEditableNodes aIgnoreNonEditableNodes) const {
       return GetFirstASCIIWhiteSpacePointCollapsedTo<EditorDOMPointType>(
-          aPointAtASCIIWhiteSpace, aDirectionToDelete,
-          ShouldReferHTMLDefaultStyle(mOptions), aIgnoreNonEditableNodes,
-          GetStartReasonContent());
+          aPointAtASCIIWhiteSpace, aDirectionToDelete, mOptions,
+          aIgnoreNonEditableNodes, GetStartReasonContent());
     }
 
     
