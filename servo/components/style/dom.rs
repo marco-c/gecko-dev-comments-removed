@@ -385,7 +385,15 @@ pub trait TShadowRoot: Sized + Copy + Clone + Debug + PartialEq {
 
 
 pub trait TElement:
-    Eq + PartialEq + Debug + Hash + Sized + Copy + Clone + SelectorsElement<Impl = SelectorImpl>
+    Eq
+    + PartialEq
+    + Debug
+    + Hash
+    + Sized
+    + Copy
+    + Clone
+    + SelectorsElement<Impl = SelectorImpl>
+    + AttributeProvider
 {
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
@@ -914,6 +922,22 @@ pub trait TElement:
     
     fn compute_layout_damage(_old: &ComputedValues, _new: &ComputedValues) -> RestyleDamage {
         Default::default()
+    }
+}
+
+
+pub trait AttributeProvider {
+    
+    fn get_attr(&self, attr: &LocalName) -> Option<String>;
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DummyAttributeProvider;
+
+impl AttributeProvider for DummyAttributeProvider {
+    fn get_attr(&self, _attr: &LocalName) -> Option<String> {
+        None
     }
 }
 
