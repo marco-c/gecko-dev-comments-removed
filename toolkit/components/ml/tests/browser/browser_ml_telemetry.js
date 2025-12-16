@@ -58,11 +58,52 @@ add_task(async function test_default_telemetry() {
   );
 
   {
+    info("Test the run_inference_success_flow event");
+    const inferenceFlowEvents =
+      Glean.firefoxAiRuntime.runInferenceSuccessFlow.testGetValue();
+    Assert.ok(
+      inferenceFlowEvents && !!inferenceFlowEvents.length,
+      "At least one run_inference_success_flow event was recorded"
+    );
+    const lastInferenceEvent = inferenceFlowEvents.at(-1);
+    const { extra: inferenceExtra } = lastInferenceEvent;
+
+    
+    const checkNumber = (key, isOptional = false) => {
+      const value = inferenceExtra[key];
+      if (isOptional && (value === null || value === undefined)) {
+        return; 
+      }
+      Assert.notEqual(value, null, `${key} should be present`);
+      const number = Number(value); 
+      Assert.ok(!Number.isNaN(number), `${key} should be a number`);
+      Assert.greaterOrEqual(number, 0, `${key} should be >= 0`);
+    };
+
+    
+    Assert.ok(inferenceExtra.flow_id, "flow_id should be present");
+
+    
+    checkNumber("tokenizing_time", true);
+    checkNumber("inference_time", true);
+    checkNumber("decoding_time", true);
+    checkNumber("input_tokens", true);
+    checkNumber("output_tokens", true);
+    checkNumber("time_to_first_token", true);
+    checkNumber("tokens_per_second", true);
+    checkNumber("time_per_output_token", true);
+  }
+
+  {
     info("Test the engine_run event");
     await engineInstance.lastResourceRequest;
     const value = Glean.firefoxAiRuntime.engineRun.testGetValue();
-    Assert.equal(value?.length, 1, "One engine_run event was recorded");
-    const [{ extra }] = value;
+    Assert.ok(
+      value && !!value.length,
+      "At least one engine_run event was recorded"
+    );
+    const lastEngineRunEvent = value.at(-1);
+    const { extra } = lastEngineRunEvent;
     const checkNumber = key => {
       const value = extra[key];
       Assert.notEqual(value, null, `${key} should be present`);
