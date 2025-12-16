@@ -15,15 +15,17 @@
 #include <memory>
 #include <string>
 #include <type_traits>
-#include <vector>
 
-#include "api/candidate.h"
 #include "api/jsep.h"
 #include "test/gmock.h"
 
 namespace webrtc {
 
-class MockSessionDescriptionInterface : public SessionDescriptionInterface {
+class [[deprecated(
+    "Use the SessionDescriptionInterface directly instead, including the "
+    "static Create() methods within the "
+    "interface.")]] MockSessionDescriptionInterface
+    : public SessionDescriptionInterface {
  public:
   MOCK_METHOD(std::unique_ptr<SessionDescriptionInterface>,
               Clone,
@@ -37,10 +39,6 @@ class MockSessionDescriptionInterface : public SessionDescriptionInterface {
   MOCK_METHOD(std::string, type, (), (const, override));
   MOCK_METHOD(bool, AddCandidate, (const IceCandidate*), (override));
   MOCK_METHOD(bool, RemoveCandidate, (const IceCandidate*), (override));
-  MOCK_METHOD(size_t,
-              RemoveCandidates,
-              (const std::vector<Candidate>&),
-              (override));
   MOCK_METHOD(size_t, number_of_mediasections, (), (const, override));
   MOCK_METHOD(const IceCandidateCollection*,
               candidates,
@@ -48,8 +46,6 @@ class MockSessionDescriptionInterface : public SessionDescriptionInterface {
               (const, override));
   MOCK_METHOD(bool, ToString, (std::string*), (const, override));
 };
-
-static_assert(!std::is_abstract_v<MockSessionDescriptionInterface>);
 
 }  
 
