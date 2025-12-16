@@ -1,0 +1,12 @@
+
+
+
+
+
+
+with Files("**"):
+    BUG_COMPONENT = ("Firefox", "General")
+
+MOZ_SRC_FILES += [
+    "prosemirror.bundle.mjs",
+]
