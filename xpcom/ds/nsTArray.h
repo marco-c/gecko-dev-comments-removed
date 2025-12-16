@@ -856,6 +856,8 @@ struct CompareWrapper<T, L, R, false> {
 
 }  
 
+enum class SortBoundsCheck { Enable, Disable };
+
 
 
 
@@ -2257,7 +2259,7 @@ class nsTArray_Impl
   
   
   
-  template <class Comparator>
+  template <SortBoundsCheck Check = SortBoundsCheck::Enable, class Comparator>
   void Sort(const Comparator& aComp) {
     static_assert(std::is_move_assignable_v<value_type>);
     static_assert(std::is_move_constructible_v<value_type>);
@@ -2266,13 +2268,20 @@ class nsTArray_Impl
     auto compFn = [&comp](const auto& left, const auto& right) {
       return comp.LessThan(left, right);
     };
-    std::sort(Elements(), Elements() + Length(), compFn);
+    if constexpr (Check == SortBoundsCheck::Enable) {
+      std::sort(begin(), end(), compFn);
+    } else {
+      std::sort(Elements(), Elements() + Length(), compFn);
+    }
     ::detail::AssertStrictWeakOrder(Elements(), Elements() + Length(), compFn);
   }
 
   
   
-  void Sort() { Sort(nsDefaultComparator<value_type, value_type>()); }
+  template <SortBoundsCheck Check = SortBoundsCheck::Enable>
+  void Sort() {
+    Sort(nsDefaultComparator<value_type, value_type>());
+  }
 
   
   
@@ -2283,7 +2292,7 @@ class nsTArray_Impl
   
   
   
-  template <class Comparator>
+  template <SortBoundsCheck Check = SortBoundsCheck::Enable, class Comparator>
   void StableSort(const Comparator& aComp) {
     static_assert(std::is_move_assignable_v<value_type>);
     static_assert(std::is_move_constructible_v<value_type>);
@@ -2293,12 +2302,17 @@ class nsTArray_Impl
     auto compFn = [&comp](const auto& lhs, const auto& rhs) {
       return comp.LessThan(lhs, rhs);
     };
-    std::stable_sort(Elements(), Elements() + Length(), compFn);
+    if constexpr (Check == SortBoundsCheck::Enable) {
+      std::stable_sort(begin(), end(), compFn);
+    } else {
+      std::stable_sort(Elements(), Elements() + Length(), compFn);
+    }
     ::detail::AssertStrictWeakOrder(Elements(), Elements() + Length(), compFn);
   }
 
   
   
+  template <SortBoundsCheck Check = SortBoundsCheck::Enable>
   void StableSort() {
     StableSort(nsDefaultComparator<value_type, value_type>());
   }
