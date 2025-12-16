@@ -24,6 +24,10 @@ SOURCES += [
     "nsUserCharacteristics.cpp",
 ]
 
+LOCAL_INCLUDES += [
+    "/gfx/thebes",
+]
+
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     LOCAL_INCLUDES += [
         "/xpcom/base",
@@ -41,6 +45,7 @@ EXPORTS += [
     "RFPTargets.inc",
 ]
 EXPORTS.mozilla += [
+    "nsRFPIPCUtils.h",
     "RelativeTimeline.h",
 ]
 EXPORTS.mozilla.gtest += ["nsUserCharacteristics.h"]

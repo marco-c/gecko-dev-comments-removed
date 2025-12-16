@@ -185,6 +185,30 @@ class CanvasUsage {
               CanvasFeatureUsage aFeatureUsage)
       : mSize(aSize), mType(aType), mFeatureUsage(aFeatureUsage) {}
 };
+struct CanvasFingerprintingEvent {
+  
+  CanvasFingerprinterAlias alias;
+  
+  
+  
+  uint32_t knownTextBitmask;
+  
+  uint8_t source;
+
+  CanvasFingerprintingEvent()
+      : alias(CanvasFingerprinterAlias::eNoneIdentified),
+        knownTextBitmask(0),
+        source(0) {}
+
+  CanvasFingerprintingEvent(CanvasFingerprinterAlias aAlias,
+                            uint32_t aKnownTextBitmask, uint8_t aSource)
+      : alias(aAlias), knownTextBitmask(aKnownTextBitmask), source(aSource) {}
+
+  bool operator==(const CanvasFingerprintingEvent& other) const {
+    return alias == other.alias && knownTextBitmask == other.knownTextBitmask &&
+           source == other.source;
+  }
+};
 
 
 
