@@ -25,11 +25,19 @@ using ::testing::StartsWith;
 using ::testing::StrEq;
 using ::testing::StrictMock;
 
+
+constexpr int kDefaultNumberOfPagesForTesting = 2;
 static const nsLiteralString sWinUserProfile = uR"(C:\Users\Moz User)"_ns;
 static const nsLiteralString sLocalAppData =
     uR"(C:\Users\Moz User\AppData\Local)"_ns;
+static const nsLiteralString sRoamingAppData =
+    uR"(C:\Users\Moz User\AppData\Roaming)"_ns;
 static const wchar_t* sWinUserFonts =
     LR"(C:\Users\Moz User\AppData\Local\Microsoft\Windows\Fonts\*)";
+static const wchar_t* sAdobeLiveTypeFonts =
+    LR"(C:\Users\Moz User\AppData\Roaming\ADOBE\CORESYNC\PLUGINS\LIVETYPE\R\*)";
+static const wchar_t* sAdobeUserOwnedFonts =
+    LR"(C:\Users\Moz User\AppData\Roaming\ADOBE\USER OWNED FONTS\*)";
 static const wchar_t* sTestRegKey = LR"(Software\MozFontsPathsTest)";
 static const wchar_t* sTestFailRegKey = LR"(Software\MozFontsPathsTestFail)";
 
@@ -112,6 +120,8 @@ class UserFontConfigHelperTest : public testing::Test {
   
   UserFontConfigHelperTest()
       : mWinUserFontCall(EXPECT_READONLY_EQ(sWinUserFonts)) {
+    EXPECT_READONLY_EQ(sAdobeLiveTypeFonts);
+    EXPECT_READONLY_EQ(sAdobeUserOwnedFonts);
     ::RegCreateKeyExW(HKEY_CURRENT_USER, sTestRegKey, 0, nullptr,
                       REG_OPTION_VOLATILE, KEY_ALL_ACCESS, nullptr,
                       &mTestUserFontKey, nullptr);
@@ -130,7 +140,7 @@ class UserFontConfigHelperTest : public testing::Test {
 
   void CreateHelperAndCallAddRules() {
     UserFontConfigHelper policyHelper(sTestRegKey, sWinUserProfile,
-                                      sLocalAppData);
+                                      sLocalAppData, sRoamingAppData);
     sandboxing::SizeTrackingConfig trackingPolicy(&mConfig,
                                                   mNumberOfStoragePages);
     policyHelper.AddRules(trackingPolicy);
@@ -140,14 +150,13 @@ class UserFontConfigHelperTest : public testing::Test {
   StrictMock<MockConfig> mConfig;
   const Expectation mWinUserFontCall;
   HKEY mTestUserFontKey = nullptr;
-  
-  int32_t mNumberOfStoragePages = 1;
+  int32_t mNumberOfStoragePages = kDefaultNumberOfPagesForTesting;
 };
 
-TEST_F(UserFontConfigHelperTest, WindowsDirRProgramDatauleAddedOnKeyFailure) {
+TEST_F(UserFontConfigHelperTest, WindowsDirRuleAddedOnKeyFailure) {
   
   UserFontConfigHelper policyHelper(sTestFailRegKey, sWinUserProfile,
-                                    sLocalAppData);
+                                    sLocalAppData, sRoamingAppData);
   sandboxing::SizeTrackingConfig trackingPolicy(&mConfig, 1);
   policyHelper.AddRules(trackingPolicy);
 }
@@ -213,9 +222,6 @@ TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirAddedAtEnd) {
   const auto* pdFont2 = LR"(C:\ProgramData\Fonts\FontFile2.ttf)";
   SetUpPaths({pdFont1, userFont1, pdFont2, userFont2, userFont3});
 
-  
-  mNumberOfStoragePages = 2;
-
   auto& userDirFont1 = EXPECT_READONLY_EQ(userFont1).After(mWinUserFontCall);
   auto& userDirFont2 = EXPECT_READONLY_EQ(userFont2).After(mWinUserFontCall);
   auto& userDirFont3 = EXPECT_READONLY_EQ(userFont3).After(mWinUserFontCall);
@@ -241,9 +247,6 @@ TEST_F(UserFontConfigHelperTest, SubKeyPathsOutsideUsersDirAddedAtEnd) {
                                    getter_Transfers(subKey), nullptr);
   ASSERT_EQ(lStatus, ERROR_SUCCESS);
   SetUpPathsInKey(subKey.get(), {pdFont2, userFont3});
-
-  
-  mNumberOfStoragePages = 2;
 
   auto& userDirFont1 = EXPECT_READONLY_EQ(userFont1).After(mWinUserFontCall);
   auto& userDirFont2 = EXPECT_READONLY_EQ(userFont2).After(mWinUserFontCall);
@@ -347,15 +350,18 @@ TEST_F(UserFontConfigHelperTest,
   CreateHelperAndCallAddRules();
 }
 
+auto RuleSize(const wchar_t* aRulePath) {
+  return (12 * sizeof(sandbox::PolicyOpcode)) +
+         ((wcslen(aRulePath) + 4) * sizeof(wchar_t) * 4);
+}
+
 std::wstring MakeLongFontPath(const wchar_t* aPrefix, const wchar_t* aSuffix) {
   static size_t sReqPathLen = []() {
     
-    size_t winUserFontSpace =
-        (12 * sizeof(sandbox::PolicyOpcode)) +
-        ((wcslen(sWinUserFonts) + 4) * sizeof(wchar_t) * 4);
-
     
-    size_t remainingSpace = 4096 - winUserFontSpace;
+    size_t remainingSpace =
+        (4096 * kDefaultNumberOfPagesForTesting) - RuleSize(sWinUserFonts) -
+        RuleSize(sAdobeLiveTypeFonts) - RuleSize(sAdobeUserOwnedFonts);
 
     
     size_t spacePerFontPath = remainingSpace / 3;
