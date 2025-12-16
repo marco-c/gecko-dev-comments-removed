@@ -7269,17 +7269,14 @@ LogicalSize nsIFrame::ComputeAbsolutePosAutoSize(
   };
 
   
-
+  const auto* parent = GetParent();
+  const auto parentWM = parent->GetWritingMode();
   
   
-  nsContainerFrame* contFrame = static_cast<nsContainerFrame*>(this);
-  const StylePositionArea posArea = stylePos->mPositionArea;
   const auto inlineSelfAlign =
-      contFrame->CSSAlignmentForAbsPosChildWithinContainingBlock(
-          aSizingInput, LogicalAxis::Inline, posArea, aCBSize);
+      stylePos->UsedSelfAlignment(aWM, LogicalAxis::Inline, parentWM, nullptr);
   const auto blockSelfAlign =
-      contFrame->CSSAlignmentForAbsPosChildWithinContainingBlock(
-          aSizingInput, LogicalAxis::Block, posArea, aCBSize);
+      stylePos->UsedSelfAlignment(aWM, LogicalAxis::Block, parentWM, nullptr);
   const auto iShouldStretch = shouldStretch(
       inlineSelfAlign, this, iStartOffsetIsAuto, iEndOffsetIsAuto);
   const auto bShouldStretch =

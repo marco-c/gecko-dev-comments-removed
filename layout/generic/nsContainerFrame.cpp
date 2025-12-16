@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include "AnchorPositioningUtils.h"
-#include "CSSAlignUtils.h"
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyle.h"
@@ -2458,6 +2457,45 @@ void nsContainerFrame::ConsiderChildOverflow(OverflowAreas& aOverflowAreas,
   }
 }
 
+
+static StyleAlignFlags MapCSSAlignment(StyleAlignFlags aFlags,
+                                       const ReflowInput& aChildRI,
+                                       LogicalAxis aLogicalAxis,
+                                       WritingMode aWM) {
+  
+  StyleAlignFlags alignmentFlags = aFlags & StyleAlignFlags::FLAG_BITS;
+  aFlags &= ~StyleAlignFlags::FLAG_BITS;
+
+  if (aFlags == StyleAlignFlags::NORMAL) {
+    
+    
+    
+    
+    
+    aFlags = aChildRI.mFrame->IsReplaced() ? StyleAlignFlags::START
+                                           : StyleAlignFlags::STRETCH;
+  } else if (aFlags == StyleAlignFlags::FLEX_START) {
+    aFlags = StyleAlignFlags::START;
+  } else if (aFlags == StyleAlignFlags::FLEX_END) {
+    aFlags = StyleAlignFlags::END;
+  } else if (aFlags == StyleAlignFlags::LEFT ||
+             aFlags == StyleAlignFlags::RIGHT) {
+    if (aLogicalAxis == LogicalAxis::Inline) {
+      const bool isLeft = (aFlags == StyleAlignFlags::LEFT);
+      aFlags = (isLeft == aWM.IsBidiLTR()) ? StyleAlignFlags::START
+                                           : StyleAlignFlags::END;
+    } else {
+      aFlags = StyleAlignFlags::START;
+    }
+  } else if (aFlags == StyleAlignFlags::BASELINE) {
+    aFlags = StyleAlignFlags::START;
+  } else if (aFlags == StyleAlignFlags::LAST_BASELINE) {
+    aFlags = StyleAlignFlags::END;
+  }
+
+  return (aFlags | alignmentFlags);
+}
+
 StyleAlignFlags nsContainerFrame::CSSAlignmentForAbsPosChild(
     const ReflowInput& aChildRI, LogicalAxis aLogicalAxis) const {
   MOZ_ASSERT(aChildRI.mFrame->IsAbsolutelyPositioned(),
@@ -2466,36 +2504,34 @@ StyleAlignFlags nsContainerFrame::CSSAlignmentForAbsPosChild(
   
   StyleAlignFlags alignment =
       aChildRI.mStylePosition->UsedSelfAlignment(aLogicalAxis, Style());
-  return CSSAlignUtils::UsedAlignmentForAbsPos(aChildRI.mFrame, alignment,
-                                               aLogicalAxis, GetWritingMode());
+  return MapCSSAlignment(alignment, aChildRI, aLogicalAxis, GetWritingMode());
 }
 
 StyleAlignFlags
 nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
-    const SizeComputationInput& aSizingInput, LogicalAxis aLogicalAxis,
+    const ReflowInput& aChildRI, LogicalAxis aLogicalAxis,
     const StylePositionArea& aResolvedPositionArea,
     const LogicalSize& aCBSize) const {
-  MOZ_ASSERT(aSizingInput.mFrame->IsAbsolutelyPositioned(),
+  MOZ_ASSERT(aChildRI.mFrame->IsAbsolutelyPositioned(),
              "This method should only be called for abspos children");
   
   
   StyleAlignFlags alignment =
-      aSizingInput.mFrame->StylePosition()->UsedSelfAlignment(aLogicalAxis,
-                                                              nullptr);
+      aChildRI.mStylePosition->UsedSelfAlignment(aLogicalAxis, nullptr);
 
   
   
   if (!aResolvedPositionArea.IsNone() && alignment == StyleAlignFlags::NORMAL) {
     const WritingMode cbWM = GetWritingMode();
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(
-        &aSizingInput,  true);
+        &aChildRI,  true);
     const auto anchorOffsetResolutionParams =
         AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
             anchorResolutionParams, &aCBSize);
 
     
     const auto singleAutoInset =
-        aSizingInput.mFrame->StylePosition()->GetSingleAutoInsetInAxis(
+        aChildRI.mStylePosition->GetSingleAutoInsetInAxis(
             aLogicalAxis, cbWM, anchorOffsetResolutionParams);
 
     
@@ -2522,8 +2558,7 @@ nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
     }
   }
 
-  return CSSAlignUtils::UsedAlignmentForAbsPos(aSizingInput.mFrame, alignment,
-                                               aLogicalAxis, GetWritingMode());
+  return MapCSSAlignment(alignment, aChildRI, aLogicalAxis, GetWritingMode());
 }
 
 nsOverflowContinuationTracker::nsOverflowContinuationTracker(

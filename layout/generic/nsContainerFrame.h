@@ -481,8 +481,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
   mozilla::StyleAlignFlags CSSAlignmentForAbsPosChildWithinContainingBlock(
-      const SizeComputationInput& aSizingInput,
-      mozilla::LogicalAxis aLogicalAxis,
+      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis,
       const mozilla::StylePositionArea& aResolvedPositionArea,
       const mozilla::LogicalSize& aContainingBlockSize) const;
 
