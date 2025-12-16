@@ -391,6 +391,14 @@ module.exports = {
               "Avoid literal values. Use variables (e.g. var(--font-size-small)) or inherit/unset/etc.",
           },
         ],
+        "csstools/use-logical": [
+          "always",
+          {
+            
+            except: [/^(min-|max-)?width/i, /^(min-|max-)?height/i],
+            severity: "error",
+          },
+        ],
       },
     },
     {
