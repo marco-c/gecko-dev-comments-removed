@@ -104,6 +104,12 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   void LoadFinished();
 
+#ifdef NIGHTLY_BUILD
+  void SetHasWasmMimeTypeEssence() { mHasWasmMimeTypeEssence = true; }
+
+  bool HasWasmMimeTypeEssence() { return mHasWasmMimeTypeEssence; }
+#endif
+
   void SetErroredLoadingImports() {
     MOZ_ASSERT(IsDynamicImport());
     MOZ_ASSERT(IsFetching() || IsCompiling());
@@ -119,6 +125,11 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   const bool mIsDynamicImport;
+
+#ifdef NIGHTLY_BUILD
+  
+  bool mHasWasmMimeTypeEssence = false;
+#endif
 
   
   
