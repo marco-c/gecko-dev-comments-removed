@@ -289,27 +289,6 @@ class DisplayPortUtils {
 
 
 
-
-
-
-  static nsIFrame* OneStepInAsyncScrollableAncestorChain(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-
-
-  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame,
-                                     nsIFrame* aLimitAncestor = nullptr);
-
-  
-
-
-
   static void SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
       nsIFrame* aFrame);
 
@@ -338,6 +317,51 @@ class DisplayPortUtils {
 
 
   static bool WillUseEmptyDisplayPortMargins(nsIContent* aContent);
+
+  
+
+
+
+
+
+
+  static nsIFrame* OneStepInAsyncScrollableAncestorChain(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsIFrame* GetASRAncestorFrame(nsIFrame* aFrame,
+                                       nsDisplayListBuilder* aBuilder);
+
+  
+
+
+
+
+
+
+
+
+  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame,
+                                     nsIFrame* aLimitAncestor = nullptr);
 
   
 

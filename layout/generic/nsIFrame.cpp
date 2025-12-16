@@ -4454,8 +4454,8 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
         MOZ_ASSERT(asr == nullptr);
         MOZ_ASSERT(aBuilder->IsInViewTransitionCapture());
       } else if ((asr ? asr->mFrame : nullptr) !=
-                 nsLayoutUtils::GetASRAncestorFrame(child->GetParent(),
-                                                    aBuilder)) {
+                 DisplayPortUtils::GetASRAncestorFrame(child->GetParent(),
+                                                       aBuilder)) {
         
         
         
