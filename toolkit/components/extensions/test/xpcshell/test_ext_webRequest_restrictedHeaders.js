@@ -2,6 +2,8 @@
 
 "use strict";
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
 AddonTestUtils.init(this);
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",

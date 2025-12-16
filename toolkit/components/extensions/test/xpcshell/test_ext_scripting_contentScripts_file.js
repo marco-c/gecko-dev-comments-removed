@@ -8,6 +8,8 @@ const FILE_DUMMY_URL = Services.io.newFileURI(
 
 ExtensionTestUtils.mockAppInfo();
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
 const makeExtension = ({ manifest: manifestProps, ...otherProps }) => {
   return ExtensionTestUtils.loadExtension({
     manifest: {

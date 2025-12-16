@@ -2,6 +2,8 @@
 
 "use strict";
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
 
 function background() {
   globalThis.onsecuritypolicyviolation = event => {

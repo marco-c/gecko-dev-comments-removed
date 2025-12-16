@@ -2,6 +2,8 @@
 
 "use strict";
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
 
 
 Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);

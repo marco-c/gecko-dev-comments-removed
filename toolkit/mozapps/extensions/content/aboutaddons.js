@@ -31,6 +31,12 @@ ChromeUtils.defineESModuleGetters(this, {
   recordListItemManageTelemetry: "chrome://global/content/ml/Utils.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "manifestV3enabled",
+  "extensions.manifestV3.enabled"
+);
+
 const UPDATES_RECENT_TIMESPAN = 2 * 24 * 3600000; 
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -1988,21 +1994,23 @@ class AddonPermissionsList extends HTMLElement {
     let optionalPerms = { ...(this.addon.optionalPermissions ?? empty) };
     let grantedPerms = await ExtensionPermissions.get(this.addon.id);
 
-    
-    
-    
-    let origins = [
-      ...(this.addon.optionalOriginsNormalized ?? []),
-      ...grantedPerms.origins.filter(o => !requiredPerms.origins.includes(o)),
-    ];
-    optionalPerms.origins = [...new Set(origins)];
+    if (manifestV3enabled) {
+      
+      
+      
+      let origins = [
+        ...(this.addon.optionalOriginsNormalized ?? []),
+        ...grantedPerms.origins.filter(o => !requiredPerms.origins.includes(o)),
+      ];
+      optionalPerms.origins = [...new Set(origins)];
+    }
 
     let permissions = Extension.formatPermissionStrings(
       {
         permissions: requiredPerms,
         optionalPermissions: optionalPerms,
       },
-      { buildOptionalOrigins: true }
+      { buildOptionalOrigins: manifestV3enabled }
     );
     let optionalEntries = [
       ...Object.entries(permissions.optionalPermissions),

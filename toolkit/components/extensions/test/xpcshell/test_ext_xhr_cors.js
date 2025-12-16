@@ -4,6 +4,8 @@
 
 
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
 const server = createHttpServer({
   hosts: ["example.com", "example.net", "example.org"],
 });

@@ -83,6 +83,8 @@ async function testAvailability({
 }
 
 add_setup(async () => {
+  Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
   
   
   Services.prefs.setBoolPref(
