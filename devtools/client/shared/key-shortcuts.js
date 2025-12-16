@@ -67,198 +67,197 @@ const ElectronKeysMapping = {
 
 
 
-
-
-
-
-
-
-function KeyShortcuts({ window, target }) {
-  this.window = window;
-  this.target = target || window;
-  this.keys = new Map();
-  this.eventEmitter = new EventEmitter();
-  this.target.addEventListener("keydown", this);
-}
-
-
-
-
-
-
-
-
-
-
-KeyShortcuts.parseElectronKey = function (str) {
+class KeyShortcuts {
   
-  
-  if (typeof str !== "string") {
-    console.error("Invalid key passed to parseElectronKey, stacktrace below");
-    console.trace();
 
-    return null;
+
+
+
+
+
+
+  constructor({ window, target }) {
+    this.window = window;
+    this.target = target || window;
+    this.keys = new Map();
+    this.eventEmitter = new EventEmitter();
+    this.target.addEventListener("keydown", this);
   }
+  
 
-  const modifiers = str.split("+");
-  let key = modifiers.pop();
 
-  const shortcut = {
-    ctrl: false,
-    meta: false,
-    alt: false,
-    shift: false,
+
+
+
+
+
+
+  static parseElectronKey(str) {
     
-    key: undefined,
     
-    keyCode: undefined,
-  };
-  for (const mod of modifiers) {
-    if (mod === "Alt") {
-      shortcut.alt = true;
-    } else if (["Command", "Cmd"].includes(mod)) {
-      shortcut.meta = true;
-    } else if (["CommandOrControl", "CmdOrCtrl"].includes(mod)) {
-      if (isOSX) {
-        shortcut.meta = true;
-      } else {
-        shortcut.ctrl = true;
-      }
-    } else if (["Control", "Ctrl"].includes(mod)) {
-      shortcut.ctrl = true;
-    } else if (mod === "Shift") {
-      shortcut.shift = true;
-    } else {
-      console.error("Unsupported modifier:", mod, "from key:", str);
+    if (typeof str !== "string") {
+      console.error("Invalid key passed to parseElectronKey, stacktrace below");
+      console.trace();
+
       return null;
     }
-  }
 
-  
-  
-  if (key === "Plus") {
-    key = "+";
-  }
+    const modifiers = str.split("+");
+    let key = modifiers.pop();
 
-  if (typeof key === "string" && key.length === 1) {
-    if (shortcut.alt) {
+    const shortcut = {
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
       
+      key: undefined,
       
-      
-      shortcut.keyCode = KeyCodes[`DOM_VK_${key.toUpperCase()}`];
-      shortcut.keyCodeString = key;
-    } else {
-      
-      shortcut.key = key.toLowerCase();
-    }
-  } else if (key in ElectronKeysMapping) {
-    
-    key = ElectronKeysMapping[key];
-    shortcut.keyCode = KeyCodes[key];
-    
-    shortcut.keyCodeString = key;
-    shortcut.key = key;
-  } else {
-    console.error("Unsupported key:", key);
-    return null;
-  }
-
-  return shortcut;
-};
-
-KeyShortcuts.stringifyShortcut = function (shortcut) {
-  if (shortcut === null) {
-    
-    return "";
-  }
-
-  const list = [];
-  if (shortcut.alt) {
-    list.push("Alt");
-  }
-  if (shortcut.ctrl) {
-    list.push("Ctrl");
-  }
-  if (shortcut.meta) {
-    list.push("Cmd");
-  }
-  if (shortcut.shift) {
-    list.push("Shift");
-  }
-  let key;
-  if (shortcut.key) {
-    key = shortcut.key.toUpperCase();
-  } else {
-    key = shortcut.keyCodeString;
-  }
-  list.push(key);
-  return list.join("+");
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-KeyShortcuts.stringifyFromElectronKey = function (electronKeyString) {
-  
-  const ctrlString = globalThis.L10N ? globalThis.L10N.getStr("ctrl") : "Ctrl";
-
-  if (isOSX) {
-    return electronKeyString
-      .replace(/Shift\+/g, "\u21E7")
-      .replace(/Command\+|Cmd\+/g, "\u2318")
-      .replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318")
-      .replace(/Alt\+/g, "\u2325");
-  }
-  return electronKeyString
-    .replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${ctrlString}+`)
-    .replace(/Shift\+/g, "Shift+");
-};
-
-
-
-
-KeyShortcuts.parseXulKey = function (modifiers, shortcut) {
-  modifiers = modifiers
-    .split(",")
-    .map(mod => {
-      if (mod == "alt") {
-        return "Alt";
-      } else if (mod == "shift") {
-        return "Shift";
-      } else if (mod == "accel") {
-        return "CmdOrCtrl";
+      keyCode: undefined,
+    };
+    for (const mod of modifiers) {
+      if (mod === "Alt") {
+        shortcut.alt = true;
+      } else if (["Command", "Cmd"].includes(mod)) {
+        shortcut.meta = true;
+      } else if (["CommandOrControl", "CmdOrCtrl"].includes(mod)) {
+        if (isOSX) {
+          shortcut.meta = true;
+        } else {
+          shortcut.ctrl = true;
+        }
+      } else if (["Control", "Ctrl"].includes(mod)) {
+        shortcut.ctrl = true;
+      } else if (mod === "Shift") {
+        shortcut.shift = true;
+      } else {
+        console.error("Unsupported modifier:", mod, "from key:", str);
+        return null;
       }
-      return mod;
-    })
-    .join("+");
+    }
 
-  if (shortcut.startsWith("VK_")) {
-    shortcut = shortcut.substr(3);
+    
+    
+    if (key === "Plus") {
+      key = "+";
+    }
+
+    if (typeof key === "string" && key.length === 1) {
+      if (shortcut.alt) {
+        
+        
+        
+        shortcut.keyCode = KeyCodes[`DOM_VK_${key.toUpperCase()}`];
+        shortcut.keyCodeString = key;
+      } else {
+        
+        shortcut.key = key.toLowerCase();
+      }
+    } else if (key in ElectronKeysMapping) {
+      
+      key = ElectronKeysMapping[key];
+      shortcut.keyCode = KeyCodes[key];
+      
+      shortcut.keyCodeString = key;
+      shortcut.key = key;
+    } else {
+      console.error("Unsupported key:", key);
+      return null;
+    }
+
+    return shortcut;
   }
+  static stringifyShortcut(shortcut) {
+    if (shortcut === null) {
+      
+      return "";
+    }
 
-  return modifiers + "+" + shortcut;
-};
+    const list = [];
+    if (shortcut.alt) {
+      list.push("Alt");
+    }
+    if (shortcut.ctrl) {
+      list.push("Ctrl");
+    }
+    if (shortcut.meta) {
+      list.push("Cmd");
+    }
+    if (shortcut.shift) {
+      list.push("Shift");
+    }
+    let key;
+    if (shortcut.key) {
+      key = shortcut.key.toUpperCase();
+    } else {
+      key = shortcut.keyCodeString;
+    }
+    list.push(key);
+    return list.join("+");
+  }
+  
 
-KeyShortcuts.prototype = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static stringifyFromElectronKey(electronKeyString) {
+    
+    const ctrlString = globalThis.L10N
+      ? globalThis.L10N.getStr("ctrl")
+      : "Ctrl";
+
+    if (isOSX) {
+      return electronKeyString
+        .replace(/Shift\+/g, "\u21E7")
+        .replace(/Command\+|Cmd\+/g, "\u2318")
+        .replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318")
+        .replace(/Alt\+/g, "\u2325");
+    }
+    return electronKeyString
+      .replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${ctrlString}+`)
+      .replace(/Shift\+/g, "Shift+");
+  }
+  
+
+
+  static parseXulKey(modifiers, shortcut) {
+    modifiers = modifiers
+      .split(",")
+      .map(mod => {
+        if (mod == "alt") {
+          return "Alt";
+        } else if (mod == "shift") {
+          return "Shift";
+        } else if (mod == "accel") {
+          return "CmdOrCtrl";
+        }
+        return mod;
+      })
+      .join("+");
+
+    if (shortcut.startsWith("VK_")) {
+      shortcut = shortcut.substr(3);
+    }
+
+    return modifiers + "+" + shortcut;
+  }
   destroy() {
     this.target.removeEventListener("keydown", this);
     this.keys.clear();
     this.eventEmitter.off();
-  },
+  }
 
   doesEventMatchShortcut(event, shortcut) {
     if (shortcut.meta != event.metaKey) {
@@ -305,7 +304,7 @@ KeyShortcuts.prototype = {
       (shortcut.key.match(/[0-9]/) &&
         event.keyCode == shortcut.key.charCodeAt(0))
     );
-  },
+  }
 
   handleEvent(event) {
     for (const [key, shortcut] of this.keys) {
@@ -313,7 +312,7 @@ KeyShortcuts.prototype = {
         this.eventEmitter.emit(key, event);
       }
     }
-  },
+  }
 
   on(key, listener) {
     if (typeof listener !== "function") {
@@ -330,11 +329,11 @@ KeyShortcuts.prototype = {
       this.keys.set(key, shortcut);
     }
     this.eventEmitter.on(key, listener);
-  },
+  }
 
   off(key, listener) {
     this.eventEmitter.off(key, listener);
-  },
-};
+  }
+}
 
 module.exports = KeyShortcuts;
