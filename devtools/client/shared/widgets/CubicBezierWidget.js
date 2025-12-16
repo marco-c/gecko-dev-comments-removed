@@ -40,41 +40,39 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
+class CubicBezier {
+  
 
 
-function CubicBezier(coordinates) {
-  if (!coordinates) {
-    throw new Error("No offsets were defined");
-  }
-
-  this.coordinates = coordinates.map(n => +n);
-
-  for (let i = 4; i--; ) {
-    const xy = this.coordinates[i];
-    if (isNaN(xy) || (!(i % 2) && (xy < 0 || xy > 1))) {
-      throw new Error(`Wrong coordinate at ${i}(${xy})`);
+  constructor(coordinates) {
+    if (!coordinates) {
+      throw new Error("No offsets were defined");
     }
+
+    this.coordinates = coordinates.map(n => +n);
+
+    for (let i = 4; i--; ) {
+      const xy = this.coordinates[i];
+      if (isNaN(xy) || (!(i % 2) && (xy < 0 || xy > 1))) {
+        throw new Error(`Wrong coordinate at ${i}(${xy})`);
+      }
+    }
+
+    this.coordinates.toString = function () {
+      return (
+        this.map(n => {
+          return (Math.round(n * 100) / 100 + "").replace(/^0\./, ".");
+        }) + ""
+      );
+    };
   }
-
-  this.coordinates.toString = function () {
-    return (
-      this.map(n => {
-        return (Math.round(n * 100) / 100 + "").replace(/^0\./, ".");
-      }) + ""
-    );
-  };
-}
-
-exports.CubicBezier = CubicBezier;
-
-CubicBezier.prototype = {
   get P1() {
     return this.coordinates.slice(0, 2);
-  },
+  }
 
   get P2() {
     return this.coordinates.slice(2);
-  },
+  }
 
   toString() {
     
@@ -83,35 +81,36 @@ CubicBezier.prototype = {
     );
 
     return predefName || "cubic-bezier(" + this.coordinates + ")";
-  },
-};
-
-
-
-
-
-
-
-
-function BezierCanvas(canvas, bezier, padding) {
-  this.canvas = canvas;
-  this.bezier = bezier;
-  this.padding = getPadding(padding);
-
-  
-  this.ctx = this.canvas.getContext("2d");
-  const p = this.padding;
-
-  this.ctx.scale(
-    canvas.width * (1 - p[1] - p[3]),
-    -canvas.height * (1 - p[0] - p[2])
-  );
-  this.ctx.translate(p[3] / (1 - p[1] - p[3]), -1 - p[0] / (1 - p[0] - p[2]));
+  }
 }
 
-exports.BezierCanvas = BezierCanvas;
+exports.CubicBezier = CubicBezier;
 
-BezierCanvas.prototype = {
+
+
+
+class BezierCanvas {
+  
+
+
+
+
+  constructor(canvas, bezier, padding) {
+    this.canvas = canvas;
+    this.bezier = bezier;
+    this.padding = getPadding(padding);
+
+    
+    this.ctx = this.canvas.getContext("2d");
+    const p = this.padding;
+
+    this.ctx.scale(
+      canvas.width * (1 - p[1] - p[3]),
+      -canvas.height * (1 - p[0] - p[2])
+    );
+    this.ctx.translate(p[3] / (1 - p[1] - p[3]), -1 - p[0] / (1 - p[0] - p[2]));
+  }
+
   
 
 
@@ -138,7 +137,7 @@ BezierCanvas.prototype = {
           "px",
       },
     ];
-  },
+  }
 
   
 
@@ -154,7 +153,7 @@ BezierCanvas.prototype = {
       (parseFloat(element.style.left) - p[3]) / (w + p[1] + p[3]),
       (h - parseFloat(element.style.top) - p[2]) / (h - p[0] - p[2]),
     ];
-  },
+  }
 
   
 
@@ -222,80 +221,77 @@ BezierCanvas.prototype = {
     this.ctx.bezierCurveTo(xy[0], xy[1], xy[2], xy[3], 1, 1);
     this.ctx.stroke();
     this.ctx.closePath();
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-function CubicBezierWidget(
-  parent,
-  coordinates = PRESETS["ease-in"]["ease-in-sine"]
-) {
-  EventEmitter.decorate(this);
-
-  this.parent = parent;
-  const { curve, p1, p2 } = this._initMarkup();
-
-  this.curveBoundingBox = curve.getBoundingClientRect();
-  this.curve = curve;
-  this.p1 = p1;
-  this.p2 = p2;
-
-  
-  this.bezierCanvas = new BezierCanvas(
-    this.curve,
-    new CubicBezier(coordinates),
-    [0.3, 0]
-  );
-  this.bezierCanvas.plot();
-
-  
-  const offsets = this.bezierCanvas.offsets;
-  this.p1.style.left = offsets[0].left;
-  this.p1.style.top = offsets[0].top;
-  this.p2.style.left = offsets[1].left;
-  this.p2.style.top = offsets[1].top;
-
-  this._onPointMouseDown = this._onPointMouseDown.bind(this);
-  this._onPointKeyDown = this._onPointKeyDown.bind(this);
-  this._onCurveClick = this._onCurveClick.bind(this);
-  this._onNewCoordinates = this._onNewCoordinates.bind(this);
-  this.onPrefersReducedMotionChange =
-    this.onPrefersReducedMotionChange.bind(this);
-
-  
-  this.presets = new CubicBezierPresetWidget(parent);
-
-  
-  
-  this.reducedMotion = parent.ownerGlobal.matchMedia(
-    "(prefers-reduced-motion)"
-  );
-  if (!this.reducedMotion.matches) {
-    this.timingPreview = new TimingFunctionPreviewWidget(parent);
   }
-
-  
-  
-  this.reducedMotion.addEventListener(
-    "change",
-    this.onPrefersReducedMotionChange
-  );
-
-  this._initEvents();
 }
 
-exports.CubicBezierWidget = CubicBezierWidget;
+exports.BezierCanvas = BezierCanvas;
 
-CubicBezierWidget.prototype = {
+
+
+
+
+
+
+
+class CubicBezierWidget extends EventEmitter {
+  
+
+
+
+  constructor(parent, coordinates = PRESETS["ease-in"]["ease-in-sine"]) {
+    super();
+
+    this.parent = parent;
+    const { curve, p1, p2 } = this._initMarkup();
+
+    this.curveBoundingBox = curve.getBoundingClientRect();
+    this.curve = curve;
+    this.p1 = p1;
+    this.p2 = p2;
+
+    
+    this.bezierCanvas = new BezierCanvas(
+      this.curve,
+      new CubicBezier(coordinates),
+      [0.3, 0]
+    );
+    this.bezierCanvas.plot();
+
+    
+    const offsets = this.bezierCanvas.offsets;
+    this.p1.style.left = offsets[0].left;
+    this.p1.style.top = offsets[0].top;
+    this.p2.style.left = offsets[1].left;
+    this.p2.style.top = offsets[1].top;
+
+    this._onPointMouseDown = this._onPointMouseDown.bind(this);
+    this._onPointKeyDown = this._onPointKeyDown.bind(this);
+    this._onCurveClick = this._onCurveClick.bind(this);
+    this._onNewCoordinates = this._onNewCoordinates.bind(this);
+    this.onPrefersReducedMotionChange =
+      this.onPrefersReducedMotionChange.bind(this);
+
+    
+    this.presets = new CubicBezierPresetWidget(parent);
+
+    
+    
+    this.reducedMotion = parent.ownerGlobal.matchMedia(
+      "(prefers-reduced-motion)"
+    );
+    if (!this.reducedMotion.matches) {
+      this.timingPreview = new TimingFunctionPreviewWidget(parent);
+    }
+
+    
+    
+    this.reducedMotion.addEventListener(
+      "change",
+      this.onPrefersReducedMotionChange
+    );
+
+    this._initEvents();
+  }
   _initMarkup() {
     const doc = this.parent.ownerDocument;
 
@@ -345,7 +341,7 @@ CubicBezierWidget.prototype = {
       p2,
       curve,
     };
-  },
+  }
 
   onPrefersReducedMotionChange(event) {
     
@@ -358,11 +354,11 @@ CubicBezierWidget.prototype = {
     } else if (!this.timingPreview) {
       this.timingPreview = new TimingFunctionPreviewWidget(this.parent);
     }
-  },
+  }
 
   _removeMarkup() {
     this.parent.querySelector(".display-wrap").remove();
-  },
+  }
 
   _initEvents() {
     this.p1.addEventListener("mousedown", this._onPointMouseDown);
@@ -374,7 +370,7 @@ CubicBezierWidget.prototype = {
     this.curve.addEventListener("click", this._onCurveClick);
 
     this.presets.on("new-coordinates", this._onNewCoordinates);
-  },
+  }
 
   _removeEvents() {
     this.p1.removeEventListener("mousedown", this._onPointMouseDown);
@@ -386,7 +382,7 @@ CubicBezierWidget.prototype = {
     this.curve.removeEventListener("click", this._onCurveClick);
 
     this.presets.off("new-coordinates", this._onNewCoordinates);
-  },
+  }
 
   _onPointMouseDown(event) {
     
@@ -419,7 +415,7 @@ CubicBezierWidget.prototype = {
       point.focus();
       doc.onmousemove = doc.onmouseup = null;
     };
-  },
+  }
 
   _onPointKeyDown(event) {
     const point = event.target;
@@ -450,7 +446,7 @@ CubicBezierWidget.prototype = {
 
       this._updateFromPoints();
     }
-  },
+  }
 
   _onCurveClick(event) {
     this.curveBoundingBox = this.curve.getBoundingClientRect();
@@ -479,11 +475,11 @@ CubicBezierWidget.prototype = {
     point.style.top = y + "px";
 
     this._updateFromPoints();
-  },
+  }
 
   _onNewCoordinates(coordinates) {
     this.coordinates = coordinates;
-  },
+  }
 
   
 
@@ -497,7 +493,7 @@ CubicBezierWidget.prototype = {
 
     this.presets.refreshMenu(coordinates);
     this._redraw(coordinates);
-  },
+  }
 
   
 
@@ -513,7 +509,7 @@ CubicBezierWidget.prototype = {
     if (this.timingPreview) {
       this.timingPreview.preview(this.bezierCanvas.bezier.toString());
     }
-  },
+  }
 
   
 
@@ -529,7 +525,7 @@ CubicBezierWidget.prototype = {
     this.p1.style.top = offsets[0].top;
     this.p2.style.left = offsets[1].left;
     this.p2.style.top = offsets[1].top;
-  },
+  }
 
   
 
@@ -549,7 +545,7 @@ CubicBezierWidget.prototype = {
 
     this.presets.refreshMenu(coordinates);
     this.coordinates = coordinates;
-  },
+  }
 
   destroy() {
     this._removeEvents();
@@ -569,41 +565,43 @@ CubicBezierWidget.prototype = {
     this.presets.destroy();
 
     this.curve = this.p1 = this.p2 = null;
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-function CubicBezierPresetWidget(parent) {
-  this.parent = parent;
-
-  const { presetPane, presets, categories } = this._initMarkup();
-  this.presetPane = presetPane;
-  this.presets = presets;
-  this.categories = categories;
-
-  this._activeCategory = null;
-  this._activePresetList = null;
-  this._activePreset = null;
-
-  this._onCategoryClick = this._onCategoryClick.bind(this);
-  this._onPresetClick = this._onPresetClick.bind(this);
-
-  EventEmitter.decorate(this);
-  this._initEvents();
+  }
 }
 
-exports.CubicBezierPresetWidget = CubicBezierPresetWidget;
+exports.CubicBezierWidget = CubicBezierWidget;
 
-CubicBezierPresetWidget.prototype = {
+
+
+
+
+
+
+
+class CubicBezierPresetWidget extends EventEmitter {
+  
+
+
+
+  constructor(parent) {
+    super();
+
+    this.parent = parent;
+
+    const { presetPane, presets, categories } = this._initMarkup();
+    this.presetPane = presetPane;
+    this.presets = presets;
+    this.categories = categories;
+
+    this._activeCategory = null;
+    this._activePresetList = null;
+    this._activePreset = null;
+
+    this._onCategoryClick = this._onCategoryClick.bind(this);
+    this._onPresetClick = this._onPresetClick.bind(this);
+
+    this._initEvents();
+  }
+
   
 
 
@@ -655,7 +653,7 @@ CubicBezierPresetWidget.prototype = {
       presets: allPresets,
       categories: allCategories,
     };
-  },
+  }
 
   _createCategory(categoryLabel) {
     const doc = this.parent.ownerDocument;
@@ -669,11 +667,11 @@ CubicBezierPresetWidget.prototype = {
     category.setAttribute("title", categoryDisplayLabel);
 
     return category;
-  },
+  }
 
   _normalizeCategoryLabel(categoryLabel) {
     return categoryLabel.replace("/-/g", " ");
-  },
+  }
 
   _createPresetList(categoryLabel) {
     const doc = this.parent.ownerDocument;
@@ -688,7 +686,7 @@ CubicBezierPresetWidget.prototype = {
     });
 
     return presetList;
-  },
+  }
 
   _createPreset(categoryLabel, presetLabel) {
     const doc = this.parent.ownerDocument;
@@ -720,11 +718,11 @@ CubicBezierPresetWidget.prototype = {
     preset.setAttribute("title", presetDisplayLabel);
 
     return preset;
-  },
+  }
 
   _normalizePresetLabel(categoryLabel, presetLabel) {
     return presetLabel.replace(categoryLabel + "-", "").replace("/-/g", " ");
-  },
+  }
 
   _initEvents() {
     for (const category of this.categories) {
@@ -734,7 +732,7 @@ CubicBezierPresetWidget.prototype = {
     for (const preset of this.presets) {
       preset.addEventListener("click", this._onPresetClick);
     }
-  },
+  }
 
   _removeEvents() {
     for (const category of this.categories) {
@@ -744,41 +742,41 @@ CubicBezierPresetWidget.prototype = {
     for (const preset of this.presets) {
       preset.removeEventListener("click", this._onPresetClick);
     }
-  },
+  }
 
   _onPresetClick(event) {
     this.emit("new-coordinates", event.currentTarget.coordinates);
     this.activePreset = event.currentTarget;
-  },
+  }
 
   _onCategoryClick(event) {
     this.activeCategory = event.target;
-  },
+  }
 
   _setActivePresetList(presetListId) {
     const presetList = this.presetPane.querySelector("#" + presetListId);
     swapClassName("active-preset-list", this._activePresetList, presetList);
     this._activePresetList = presetList;
-  },
+  }
 
   set activeCategory(category) {
     swapClassName("active-category", this._activeCategory, category);
     this._activeCategory = category;
     this._setActivePresetList("preset-category-" + category.id);
-  },
+  }
 
   get activeCategory() {
     return this._activeCategory;
-  },
+  }
 
   set activePreset(preset) {
     swapClassName("active-preset", this._activePreset, preset);
     this._activePreset = preset;
-  },
+  }
 
   get activePreset() {
     return this._activePreset;
-  },
+  }
 
   
 
@@ -816,29 +814,33 @@ CubicBezierPresetWidget.prototype = {
 
     this.activeCategory = category;
     this.activePreset = preset;
-  },
+  }
 
   destroy() {
     this._removeEvents();
     this.parent.querySelector(".preset-pane").remove();
-  },
-};
-
-
-
-
-
-
-
-function TimingFunctionPreviewWidget(parent) {
-  this.previousValue = null;
-
-  this.parent = parent;
-  this._initMarkup();
+  }
 }
 
-TimingFunctionPreviewWidget.prototype = {
-  PREVIEW_DURATION: 1000,
+exports.CubicBezierPresetWidget = CubicBezierPresetWidget;
+
+
+
+
+
+
+class TimingFunctionPreviewWidget {
+  
+
+
+  constructor(parent) {
+    this.previousValue = null;
+
+    this.parent = parent;
+    this._initMarkup();
+  }
+
+  PREVIEW_DURATION = 1000;
 
   _initMarkup() {
     const doc = this.parent.ownerDocument;
@@ -855,13 +857,13 @@ TimingFunctionPreviewWidget.prototype = {
     container.appendChild(scale);
 
     this.parent.appendChild(container);
-  },
+  }
 
   destroy() {
     this.dot.getAnimations().forEach(anim => anim.cancel());
     this.parent.querySelector(".timing-function-preview").remove();
     this.parent = this.dot = null;
-  },
+  }
 
   
 
@@ -881,7 +883,7 @@ TimingFunctionPreviewWidget.prototype = {
     }
 
     this.previousValue = value;
-  },
+  }
 
   
 
@@ -934,8 +936,8 @@ TimingFunctionPreviewWidget.prototype = {
         iterations: Infinity,
       }
     );
-  },
-};
+  }
+}
 
 
 
