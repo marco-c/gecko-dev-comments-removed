@@ -10,7 +10,9 @@ import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_PR
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -50,6 +52,9 @@ import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -6941,8 +6946,11 @@ public class GeckoSession {
 
 
 
+
+  @SuppressLint("BlockedPrivateApi")
   @UiThread
-   void getScreenToWindowManagerOffsetMatrix(@NonNull final Matrix matrix) {
+   void getScreenToWindowManagerOffsetMatrix(
+      @NonNull final Activity activity, @NonNull final Matrix matrix) {
     ThreadUtils.assertOnUiThread();
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -6951,6 +6959,31 @@ public class GeckoSession {
               GeckoAppShell.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
       final Rect currentWindowRect = wm.getCurrentWindowMetrics().getBounds();
       matrix.postTranslate(-currentWindowRect.left, -currentWindowRect.top);
+      return;
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      try {
+        
+        final Configuration config = activity.getResources().getConfiguration();
+        final Field windowConfigurationField =
+            Configuration.class.getDeclaredField("windowConfiguration");
+        windowConfigurationField.setAccessible(true);
+        final Object windowConfig = windowConfigurationField.get(config);
+        final Method getBoundsMethod;
+        if (activity.isInMultiWindowMode()) {
+          getBoundsMethod = windowConfig.getClass().getDeclaredMethod("getBounds");
+        } else {
+          getBoundsMethod = windowConfig.getClass().getDeclaredMethod("getAppBounds");
+        }
+        final Rect currentWindowRect = (Rect) getBoundsMethod.invoke(windowConfig);
+        matrix.postTranslate(-currentWindowRect.left, -currentWindowRect.top);
+      } catch (final NoSuchMethodException
+          | NoSuchFieldException
+          | IllegalAccessException
+          | InvocationTargetException e) {
+        Log.e(LOGTAG, "Could not convert from screen coordinate to window manager coordinate", e);
+      }
       return;
     }
 

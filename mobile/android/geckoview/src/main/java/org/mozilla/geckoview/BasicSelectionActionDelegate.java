@@ -482,7 +482,7 @@ public class BasicSelectionActionDelegate
 
     
     final Matrix matrix = new Matrix();
-    mSession.getScreenToWindowManagerOffsetMatrix(matrix);
+    mSession.getScreenToWindowManagerOffsetMatrix(mActivity, matrix);
     final RectF transformedRect = new RectF();
     matrix.mapRect(transformedRect, mSelection.screenRect);
     transformedRect.roundOut(outRect);
