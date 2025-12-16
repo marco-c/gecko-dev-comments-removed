@@ -16,7 +16,6 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/intl/WordBreaker.h"
@@ -474,35 +473,10 @@ nsresult nsClipboardCommand::DoCommand(const nsACString& aCommandName,
     return eCopy;
   }();
 
-  RefPtr<DataTransfer> dataTransfer;
-  if (ePaste == eventMessage) {
-    nsCOMPtr<nsIPrincipal> subjectPrincipal =
-        nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
-    MOZ_ASSERT(subjectPrincipal);
-
-    
-    
-    
-    
-    
-    
-    if (!nsContentUtils::PrincipalHasPermission(*subjectPrincipal,
-                                                nsGkAtoms::clipboardRead)) {
-      MOZ_DIAGNOSTIC_ASSERT(StaticPrefs::dom_execCommand_paste_enabled(),
-                            "How did we get here?");
-      
-      dataTransfer = DataTransfer::WaitForClipboardDataSnapshotAndCreate(
-          window, subjectPrincipal);
-      if (!dataTransfer) {
-        return NS_SUCCESS_DOM_NO_OPERATION;
-      }
-    }
-  }
-
   bool actionTaken = false;
-  nsCopySupport::FireClipboardEvent(
-      eventMessage, Some(nsIClipboard::kGlobalClipboard), presShell, nullptr,
-      dataTransfer, &actionTaken);
+  nsCopySupport::FireClipboardEvent(eventMessage,
+                                    Some(nsIClipboard::kGlobalClipboard),
+                                    presShell, nullptr, nullptr, &actionTaken);
 
   return actionTaken ? NS_OK : NS_SUCCESS_DOM_NO_OPERATION;
 }
