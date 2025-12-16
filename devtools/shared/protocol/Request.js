@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { extend } = require("resource://devtools/shared/extend.js");
 var {
   findPlaceholders,
   getPath,
@@ -17,29 +16,29 @@ var {
 
 
 
-
-
-
-
-
-
-
-
-var Request = function (type, template = {}) {
+class Request {
   
-  
-  
-  
-  
-  
-  
-  this.type = template.type || type;
 
-  this.template = template;
-  this.args = findPlaceholders(template, Arg);
-};
 
-Request.prototype = {
+
+
+
+
+
+  constructor(type, template = {}) {
+    
+    
+    
+    
+    
+    
+    
+    this.type = template.type || type;
+
+    this.template = template;
+    this.args = findPlaceholders(template, Arg);
+  }
+
   
 
 
@@ -86,7 +85,7 @@ Request.prototype = {
       }
     }
     return ret;
-  },
+  }
 
   
 
@@ -120,8 +119,8 @@ Request.prototype = {
       arg.read(getPath(packet, path), ctx, fnArgs, name);
     }
     return fnArgs;
-  },
-};
+  }
+}
 
 exports.Request = Request;
 
@@ -140,29 +139,29 @@ exports.Request = Request;
 
 
 
-
-
-
-
-
-
-var Arg = function (index, type) {
-  this.index = index;
+class Arg {
   
-  loader.lazyGetter(this, "type", function () {
-    return types.getType(type);
-  });
-};
 
-Arg.prototype = {
+
+
+
+
+  constructor(index, type) {
+    this.index = index;
+    
+    loader.lazyGetter(this, "type", function () {
+      return types.getType(type);
+    });
+  }
+
   write(arg, ctx) {
     return this.type.write(arg, ctx);
-  },
+  }
 
   read(v, ctx, outArgs) {
     outArgs[this.index] = this.type.read(v, ctx);
-  },
-};
+  }
+}
 
 
 exports.Arg = function (index, type) {
@@ -180,17 +179,17 @@ exports.Arg = function (index, type) {
 
 
 
+class Option extends Arg {
+  
 
 
 
 
 
+  constructor(index, type) {
+    super(index, type);
+  }
 
-var Option = function (index, type) {
-  Arg.call(this, index, type);
-};
-
-Option.prototype = extend(Arg.prototype, {
   write(arg, ctx, name) {
     
     if (arg == undefined || arg[name] == undefined) {
@@ -198,7 +197,8 @@ Option.prototype = extend(Arg.prototype, {
     }
     const v = arg[name];
     return this.type.write(v, ctx);
-  },
+  }
+
   read(v, ctx, outArgs, name) {
     if (outArgs[this.index] === undefined) {
       outArgs[this.index] = {};
@@ -207,8 +207,8 @@ Option.prototype = extend(Arg.prototype, {
       return;
     }
     outArgs[this.index][name] = this.type.read(v, ctx);
-  },
-});
+  }
+}
 
 
 exports.Option = function (index, type) {
