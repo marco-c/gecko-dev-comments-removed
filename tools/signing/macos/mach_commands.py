@@ -332,7 +332,10 @@ def macos_sign(
     
     
     
-    xattr_cmd = ["xattr", "-cr", app]
+    
+    xattr_cmd = (
+        ["xattr", "-c", app] if sys.platform == "linux" else ["xattr", "-cr", app]
+    )
     run(command_context, xattr_cmd, capture_output=not verbose_arg)
 
     
