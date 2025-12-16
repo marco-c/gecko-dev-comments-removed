@@ -22,24 +22,26 @@ loader.lazyGetter(this, "Pipe", () => {
 
 
 
-
-
-function LocalDebuggerTransport(other) {
-  this.other = other;
-  this.hooks = null;
-
-  
-  
-  this._serial = this.other ? this.other._serial : { count: 0 };
-  this.close = this.close.bind(this);
-}
-
-LocalDebuggerTransport.prototype = {
+class LocalDebuggerTransport {
   
 
 
 
-  isLocalTransport: true,
+  constructor(other) {
+    this.other = other;
+    this.hooks = null;
+
+    
+    
+    this._serial = this.other ? this.other._serial : { count: 0 };
+    this.close = this.close.bind(this);
+  }
+
+  
+
+
+
+  isLocalTransport = true;
 
   
 
@@ -75,7 +77,7 @@ LocalDebuggerTransport.prototype = {
         }, "LocalDebuggerTransport instance's this.other.hooks.onPacket")
       );
     }
-  },
+  }
 
   
 
@@ -191,7 +193,7 @@ LocalDebuggerTransport.prototype = {
         );
       });
     });
-  },
+  }
 
   
 
@@ -214,12 +216,12 @@ LocalDebuggerTransport.prototype = {
       }
       this.hooks = null;
     }
-  },
+  }
 
   
 
 
-  ready() {},
+  ready() {}
 
   
 
@@ -239,7 +241,7 @@ LocalDebuggerTransport.prototype = {
         this._deepFreeze(object[prop]);
       }
     }
-  },
-};
+  }
+}
 
 exports.LocalDebuggerTransport = LocalDebuggerTransport;
