@@ -716,6 +716,8 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
   *aApp = nullptr;
 
   
+#ifdef MOZ_ENABLE_DBUS
+  
   
   
   
@@ -777,6 +779,7 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
     mozApp.forget(aApp);
     return NS_OK;
   }
+#endif
 
   RefPtr<GAppInfo> app_info = dont_AddRef(g_app_info_get_default_for_uri_scheme(
       PromiseFlatCString(aURIScheme).get()));
