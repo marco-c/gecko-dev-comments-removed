@@ -312,108 +312,107 @@ const getRelativeRect = function (node, relativeTo) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function HTMLTooltip(
-  toolboxDoc,
-  {
-    className = "",
-    consumeOutsideClicks = true,
-    id = "",
-    isMenuTooltip = false,
-    type = "normal",
-    useXulWrapper = false,
-    noAutoHide = false,
-  } = {}
-) {
-  EventEmitter.decorate(this);
-
-  this.doc = toolboxDoc;
-  this.id = id;
-  this.className = className;
-  this.type = type;
-  this.noAutoHide = noAutoHide;
+class HTMLTooltip {
   
-  this.consumeOutsideClicks = this.noAutoHide ? false : consumeOutsideClicks;
-  this.isMenuTooltip = isMenuTooltip;
-  this.useXulWrapper = this._isXULPopupAvailable() && useXulWrapper;
-  this.preferredWidth = "auto";
-  this.preferredHeight = "auto";
 
-  
-  
-  this.topWindow = this._getTopWindow();
 
-  this._position = null;
 
-  this._onClick = this._onClick.bind(this);
-  this._onMouseup = this._onMouseup.bind(this);
-  this._onXulPanelHidden = this._onXulPanelHidden.bind(this);
 
-  this.container = this._createContainer();
-  if (this.useXulWrapper) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(
+    toolboxDoc,
+    {
+      className = "",
+      consumeOutsideClicks = true,
+      id = "",
+      isMenuTooltip = false,
+      type = "normal",
+      useXulWrapper = false,
+      noAutoHide = false,
+    } = {}
+  ) {
+    EventEmitter.decorate(this);
+
+    this.doc = toolboxDoc;
+    this.id = id;
+    this.className = className;
+    this.type = type;
+    this.noAutoHide = noAutoHide;
+    
+    this.consumeOutsideClicks = this.noAutoHide ? false : consumeOutsideClicks;
+    this.isMenuTooltip = isMenuTooltip;
+    this.useXulWrapper = this._isXULPopupAvailable() && useXulWrapper;
+    this.preferredWidth = "auto";
+    this.preferredHeight = "auto";
+
     
     
-    
-    
-    this.xulPanelWrapper = this._createXulPanelWrapper();
-    this.doc.documentElement.appendChild(this.xulPanelWrapper);
-    this.xulPanelWrapper.appendChild(this.container);
-  } else if (this._hasXULRootElement()) {
-    this.doc.documentElement.appendChild(this.container);
-  } else {
-    
-    this.doc.body.appendChild(this.container);
+    this.topWindow = this._getTopWindow();
+
+    this._position = null;
+
+    this._onClick = this._onClick.bind(this);
+    this._onMouseup = this._onMouseup.bind(this);
+    this._onXulPanelHidden = this._onXulPanelHidden.bind(this);
+
+    this.container = this._createContainer();
+    if (this.useXulWrapper) {
+      
+      
+      
+      
+      this.xulPanelWrapper = this._createXulPanelWrapper();
+      this.doc.documentElement.appendChild(this.xulPanelWrapper);
+      this.xulPanelWrapper.appendChild(this.container);
+    } else if (this._hasXULRootElement()) {
+      this.doc.documentElement.appendChild(this.container);
+    } else {
+      
+      this.doc.body.appendChild(this.container);
+    }
   }
-}
 
-module.exports.HTMLTooltip = HTMLTooltip;
-
-HTMLTooltip.prototype = {
   
 
 
   get panel() {
     return this.container.querySelector(".tooltip-panel");
-  },
+  }
 
   
 
 
   get arrow() {
     return this.container.querySelector(".tooltip-arrow");
-  },
+  }
 
   
 
 
   get position() {
     return this.isVisible() ? this._position : null;
-  },
+  }
 
   get toggle() {
     if (!this._toggle) {
@@ -421,7 +420,7 @@ HTMLTooltip.prototype = {
     }
 
     return this._toggle;
-  },
+  }
 
   
 
@@ -447,7 +446,7 @@ HTMLTooltip.prototype = {
   setContentSize({ width = "auto", height = "auto" } = {}) {
     this.preferredWidth = width;
     this.preferredHeight = height;
-  },
+  }
 
   
 
@@ -471,7 +470,7 @@ HTMLTooltip.prototype = {
     this.doc.l10n.resumeObserving();
 
     this.setContentSize(contentSizeOptions);
-  },
+  }
 
   
 
@@ -545,15 +544,15 @@ HTMLTooltip.prototype = {
     this.container.classList.add("tooltip-shown");
 
     this.emit("shown");
-  },
+  }
 
   startTogglingOnHover(baseNode, targetNodeCb, options) {
     this.toggle.start(baseNode, targetNodeCb, options);
-  },
+  }
 
   stopTogglingOnHover() {
     this.toggle.stop();
-  },
+  }
 
   _updateContainerBounds(anchor, { position, x = 0, y = 0 } = {}) {
     
@@ -672,7 +671,7 @@ HTMLTooltip.prototype = {
     this.panel.scrollTop = currentScrollTop;
 
     return { left, top };
-  },
+  }
 
   
 
@@ -761,7 +760,7 @@ HTMLTooltip.prototype = {
     }
 
     return { viewportRect, windowRect };
-  },
+  }
 
   _measureContainerSize() {
     const xulParent = this.container.parentNode;
@@ -784,7 +783,7 @@ HTMLTooltip.prototype = {
     }
 
     return { width, height };
-  },
+  }
 
   
 
@@ -830,12 +829,12 @@ HTMLTooltip.prototype = {
       this._focusedElement.focus();
       this._focusedElement = null;
     }
-  },
+  }
 
   removeEventListeners() {
     this.topWindow.removeEventListener("click", this._onClick, true);
     this.topWindow.removeEventListener("mouseup", this._onMouseup, true);
-  },
+  }
 
   
 
@@ -844,7 +843,7 @@ HTMLTooltip.prototype = {
 
   isVisible() {
     return this.container.classList.contains("tooltip-visible");
-  },
+  }
 
   
 
@@ -861,7 +860,7 @@ HTMLTooltip.prototype = {
       this._toggle.destroy();
       this._toggle = null;
     }
-  },
+  }
 
   _createContainer() {
     const container = this.doc.createElementNS(XHTML_NS, "div");
@@ -890,7 +889,7 @@ HTMLTooltip.prototype = {
       container.appendChild(arrow);
     }
     return container;
-  },
+  }
 
   _onClick(e) {
     if (this._isInTooltipContainer(e.target)) {
@@ -902,7 +901,7 @@ HTMLTooltip.prototype = {
       e.preventDefault();
       e.stopPropagation();
     }
-  },
+  }
 
   
 
@@ -916,7 +915,7 @@ HTMLTooltip.prototype = {
     }
 
     this.hide({ fromMouseup: true });
-  },
+  }
 
   _isInTooltipContainer(node) {
     
@@ -950,13 +949,13 @@ HTMLTooltip.prototype = {
     }
 
     return false;
-  },
+  }
 
   _onXulPanelHidden() {
     if (this.isVisible()) {
       this.hide();
     }
-  },
+  }
 
   
 
@@ -969,7 +968,7 @@ HTMLTooltip.prototype = {
       focusableElement.focus();
     }
     return !!focusableElement;
-  },
+  }
 
   
 
@@ -984,22 +983,22 @@ HTMLTooltip.prototype = {
       focusableElements[focusableElements.length - 1].focus();
     }
     return focusableElements.length !== 0;
-  },
+  }
 
   _getTopWindow() {
     return DevToolsUtils.getTopWindow(this.doc.defaultView);
-  },
+  }
 
   
 
 
   _hasXULRootElement() {
     return this.doc.documentElement.namespaceURI === XUL_NS;
-  },
+  }
 
   _isXULPopupAvailable() {
     return this.doc.nodePrincipal.isSystemPrincipal;
-  },
+  }
 
   _createXulPanelWrapper() {
     const panel = this.doc.createXULElement("panel");
@@ -1028,7 +1027,7 @@ HTMLTooltip.prototype = {
     panel.setAttribute("role", "presentation");
 
     return panel;
-  },
+  }
 
   _showXulWrapperAt(left, top) {
     this.xulPanelWrapper.addEventListener(
@@ -1038,7 +1037,7 @@ HTMLTooltip.prototype = {
     const onPanelShown = listenOnce(this.xulPanelWrapper, "popupshown");
     this.xulPanelWrapper.openPopupAtScreen(left, top, false);
     return onPanelShown;
-  },
+  }
 
   _moveXulWrapperTo(left, top) {
     
@@ -1049,7 +1048,7 @@ HTMLTooltip.prototype = {
         .marginTop
     );
     this.xulPanelWrapper.moveTo(left + margin, top + margin);
-  },
+  }
 
   _hideXulWrapper() {
     this.xulPanelWrapper.removeEventListener(
@@ -1065,7 +1064,7 @@ HTMLTooltip.prototype = {
     const onPanelHidden = listenOnce(this.xulPanelWrapper, "popuphidden");
     this.xulPanelWrapper.hidePopup();
     return onPanelHidden;
-  },
+  }
 
   
 
@@ -1085,5 +1084,7 @@ HTMLTooltip.prototype = {
       width,
       height,
     };
-  },
-};
+  }
+}
+
+module.exports.HTMLTooltip = HTMLTooltip;
