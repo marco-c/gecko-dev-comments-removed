@@ -197,7 +197,7 @@ class WaylandSurface final {
   
   
   static constexpr const double sNoScale = -1;
-  double GetScale();
+  double GetScale() const;
 
   
   
@@ -303,6 +303,10 @@ class WaylandSurface final {
 
   
   
+  LayoutDeviceIntSize GetScaledSize(const DesktopIntSize& aSize) const;
+
+  
+  
   void* mLoggingWidget = nullptr;
 
   
@@ -347,7 +351,7 @@ class WaylandSurface final {
   bool mSubsurfaceDesync = true;
 
   wl_subsurface* mSubsurface = nullptr;
-  DesktopIntPoint mSubsurfacePosition{-1, -1};
+  DesktopIntPoint mSubsurfacePosition;
 
   
   
