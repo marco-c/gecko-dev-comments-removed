@@ -39,6 +39,7 @@ namespace net {
 class HttpBackgroundChannelParent;
 class ParentChannelListener;
 class ChannelEventQueue;
+class CacheEntryWriteHandleParent;
 
 class HttpChannelParent final : public nsIInterfaceRequestor,
                                 public PHttpChannelParent,
@@ -82,6 +83,11 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   [[nodiscard]] nsresult OpenAlternativeOutputStream(
       const nsACString& type, int64_t predictedSize,
       nsIAsyncOutputStream** _retval);
+
+  [[nodiscard]] nsresult GetCacheEntryWriteHandle(
+      nsICacheEntryWriteHandle** _retval);
+
+  [[nodiscard]] CacheEntryWriteHandleParent* AllocCacheEntryWriteHandle();
 
   
   
