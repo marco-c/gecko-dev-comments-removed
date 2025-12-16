@@ -109,6 +109,12 @@ DocumentEventsListener.prototype = {
       return;
     }
 
+    if (!window.docShell) {
+      
+      
+      return;
+    }
+
     const time = this._getPerformanceTiming(window, "navigationStart");
 
     this.emit("dom-loading", {
