@@ -126,7 +126,6 @@
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "call/rtp_transport_controller_send_factory_interface.h"
 #include "media/base/media_config.h"
 
 
@@ -1469,8 +1468,6 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   std::unique_ptr<NetworkMonitorFactory> network_monitor_factory;
   std::unique_ptr<NetEqFactory> neteq_factory;
   std::unique_ptr<SctpTransportFactoryInterface> sctp_factory;
-  std::unique_ptr<RtpTransportControllerSendFactoryInterface>
-      transport_controller_send_factory;
   
   std::unique_ptr<Metronome> decode_metronome;
   
