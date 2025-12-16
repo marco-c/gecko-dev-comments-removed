@@ -5,6 +5,8 @@
 
 package org.mozilla.gecko;
 
+import android.content.ComponentName;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Looper;
 import android.os.Process;
@@ -13,6 +15,7 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +42,14 @@ import org.mozilla.geckoview.GeckoResult;
 
 
 public class GeckoJavaSampler {
+
   private static final String LOGTAG = "GeckoJavaSampler";
+
+  private static final String PROFILER_SERVICE_CLASS_NAME =
+      "org.mozilla.fenix.perf.ProfilerService";
+  private static final String PROFILER_SERVICE_ACTION = "mozilla.perf.action.START_PROFILING";
+  public static final String INTENT_PROFILER_STATE_CHANGED =
+      "org.mozilla.fenix.PROFILER_STATE_CHANGED";
 
   
 
@@ -584,8 +594,6 @@ public class GeckoJavaSampler {
         return;
       }
 
-      Log.i(LOGTAG, "Profiler starting. Calling thread: " + Thread.currentThread().getName());
-
       
       
       final int limitedEntryCount = Math.min(aEntryCount, 120000);
@@ -778,6 +786,32 @@ public class GeckoJavaSampler {
       sSamplingFuture.set(null);
       sMarkerStorage.stop();
     }
+  }
+
+  
+
+
+
+
+
+
+  @WrapForJNI
+  public static void notifyProfilerStateChanged(final boolean isActive) {
+    if (isActive) {
+      final ComponentName componentName =
+          new ComponentName(GeckoAppShell.getApplicationContext(), PROFILER_SERVICE_CLASS_NAME);
+      final Intent serviceIntent = new Intent();
+      serviceIntent.setComponent(componentName);
+      serviceIntent.setAction(PROFILER_SERVICE_ACTION);
+      ContextCompat.startForegroundService(GeckoAppShell.getApplicationContext(), serviceIntent);
+    }
+
+    final Intent intent = new Intent(INTENT_PROFILER_STATE_CHANGED);
+    intent.putExtra("isActive", isActive);
+    intent.setPackage(GeckoAppShell.getApplicationContext().getPackageName());
+    final String permission =
+        GeckoAppShell.getApplicationContext().getPackageName() + ".permission.PROFILER_INTERNAL";
+    GeckoAppShell.getApplicationContext().sendBroadcast(intent, permission);
   }
 
   @WrapForJNI(dispatchTo = "gecko", stubName = "StartProfiler")
