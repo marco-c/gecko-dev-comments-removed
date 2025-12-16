@@ -63,8 +63,8 @@ HarAutomation.prototype = {
   
 
   async startMonitoring() {
-    await this.toolbox.resourceCommand.watchResources(
-      [this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
+    await this.commands.resourceCommand.watchResources(
+      [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
       {
         onAvailable: resources => {
           

@@ -60,12 +60,6 @@ add_task(async function () {
 
 
 add_task(async function navigateFrameNotExpandedInMarkupView() {
-  if (!isFissionEnabled()) {
-    
-    
-    return;
-  }
-
   const { inspector } = await openInspectorForURL(TEST_ORG_URI);
   const { resourceCommand } = inspector.commands;
 
@@ -110,7 +104,7 @@ async function navigateIframeTo(inspector, url) {
   info("Navigate the test iframe to " + url);
 
   const { commands } = inspector;
-  const { resourceCommand } = inspector.toolbox;
+  const { resourceCommand } = inspector.commands;
   const onTargetProcessed = waitForTargetProcessed(commands, url);
 
   const { onResource: onNewRoot } = await resourceCommand.waitForNextResource(
@@ -132,10 +126,8 @@ async function navigateIframeTo(inspector, url) {
   info("Wait for pending children updates");
   await inspector.markup._waitForChildren();
 
-  if (isFissionEnabled()) {
-    info("Wait until the new target has been processed by TargetCommand");
-    await onTargetProcessed;
-  }
+  info("Wait until the new target has been processed by TargetCommand");
+  await onTargetProcessed;
 
   
   return newRootResult;

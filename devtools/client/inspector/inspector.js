@@ -254,7 +254,7 @@ class Inspector extends EventEmitter {
       onDestroyed: this.#onTargetDestroyed,
     });
 
-    const { TYPES } = this.toolbox.resourceCommand;
+    const { TYPES } = this.commands.resourceCommand;
     this.#watchedResources = [
       
       TYPES.CSS_CHANGE,
@@ -272,7 +272,7 @@ class Inspector extends EventEmitter {
       this.#watchedResources.push(TYPES.ROOT_NODE);
     }
 
-    await this.toolbox.resourceCommand.watchResources(this.#watchedResources, {
+    await this.commands.resourceCommand.watchResources(this.#watchedResources, {
       onAvailable: this.onResourceAvailable,
     });
 
@@ -370,7 +370,7 @@ class Inspector extends EventEmitter {
 
       if (
         resource.resourceType ===
-          this.toolbox.resourceCommand.TYPES.ROOT_NODE &&
+          this.commands.resourceCommand.TYPES.ROOT_NODE &&
         
         
         !resource.isDestroyed() &&
@@ -383,14 +383,16 @@ class Inspector extends EventEmitter {
       
       if (
         resource.resourceType ===
-          this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT &&
+          this.commands.resourceCommand.TYPES.DOCUMENT_EVENT &&
         resource.name === "will-navigate" &&
         isTopLevelTarget
       ) {
         this.#onWillNavigate();
       }
 
-      if (resource.resourceType === this.toolbox.resourceCommand.TYPES.REFLOW) {
+      if (
+        resource.resourceType === this.commands.resourceCommand.TYPES.REFLOW
+      ) {
         this.emit("reflow");
         if (resource.targetFront === this.selection?.nodeFront?.targetFront) {
           
@@ -1824,7 +1826,7 @@ class Inspector extends EventEmitter {
       onSelected: this.#onTargetSelected,
       onDestroyed: this.#onTargetDestroyed,
     });
-    const { resourceCommand } = this.toolbox;
+    const { resourceCommand } = this.commands;
     resourceCommand.unwatchResources(this.#watchedResources, {
       onAvailable: this.onResourceAvailable,
     });
