@@ -794,23 +794,12 @@ var SidebarController = {
     
     let contentArea = document.getElementById("tabbrowser-tabbox");
     let browser = document.getElementById("browser");
-    [...browser.children].forEach((node, i) => {
-      node.style.order = i + 1;
+    [...browser.children].forEach((node, i, children) => {
+      node.style.order = this._positionStart ? i + 1 : children.length - i;
     });
     let sidebarContainer = document.getElementById("sidebar-main");
     let sidebarMain = document.querySelector("sidebar-main");
-    if (!this._positionStart) {
-      
-      
-      
-      let mainOrdinal = this.sidebarContainer.style.order;
-      this.sidebarContainer.style.order = contentArea.style.order;
-      contentArea.style.order = mainOrdinal;
-      
-      let splitterOrdinal = this._splitter.style.order;
-      this._splitter.style.order = this._launcherSplitter.style.order;
-      this._launcherSplitter.style.order = splitterOrdinal;
-    }
+
     
     this._box.toggleAttribute("sidebar-positionend", !this._positionStart);
     sidebarMain.toggleAttribute("sidebar-positionend", !this._positionStart);
