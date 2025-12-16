@@ -2246,6 +2246,7 @@ pref("browser.ml.smartAssist.overrideNewTab", false);
 
 
 pref("browser.aiwindow.enabled", false);
+pref("browser.aiwindow.chatStore.loglevel", "Error");
 
 
 pref("security.mixed_content.block_active_content", true);
