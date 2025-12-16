@@ -72,6 +72,8 @@ user_pref("dom.reporting.enabled", true);
 
 user_pref("remote.experimental.enabled", true);
 
+user_pref("remote.bidi.dismiss_file_pickers.enabled", true);
+
 user_pref("security.OCSP.enabled", 0);
 
 user_pref("security.remote_settings.intermediates.enabled", false);
