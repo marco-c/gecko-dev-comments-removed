@@ -1329,9 +1329,12 @@ impl Animate for ArcSweep {
         use num_traits::FromPrimitive;
         
         
-        (*self as i32)
-            .animate(&(*other as i32), procedure)
-            .map(|v| ArcSweep::from_u8((v > 0) as u8).unwrap_or(ArcSweep::Ccw))
+        
+        let progress = procedure.weights().1 as f32 as f64;
+        let procedure = Procedure::Interpolate { progress };
+        (*self as i32 as f32)
+            .animate(&(*other as i32 as f32), procedure)
+            .map(|v| ArcSweep::from_u8((v > 0.) as u8).unwrap_or(ArcSweep::Ccw))
     }
 }
 
@@ -1375,9 +1378,12 @@ impl Animate for ArcSize {
         use num_traits::FromPrimitive;
         
         
-        (*self as i32)
-            .animate(&(*other as i32), procedure)
-            .map(|v| ArcSize::from_u8((v > 0) as u8).unwrap_or(ArcSize::Small))
+        
+        let progress = procedure.weights().1 as f32 as f64;
+        let procedure = Procedure::Interpolate { progress };
+        (*self as i32 as f32)
+            .animate(&(*other as i32 as f32), procedure)
+            .map(|v| ArcSize::from_u8((v > 0.) as u8).unwrap_or(ArcSize::Small))
     }
 }
 
