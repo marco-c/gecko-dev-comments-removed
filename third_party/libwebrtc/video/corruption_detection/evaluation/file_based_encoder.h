@@ -32,19 +32,8 @@ class FileBasedEncoder {
   
   
   
-  
-  
   virtual RTCErrorOr<std::string> Encode(const TestClip& clip,
-                                         DataRate bitrate) {
-    return Encode2(clip, bitrate);
-  }
-
-  
-  [[deprecated("Use above Encode instead")]]
-  virtual RTCErrorOr<std::string> Encode2(const TestClip& clip,
-                                          DataRate bitrate) {
-    return Encode(clip, bitrate);
-  }
+                                         DataRate bitrate) = 0;
 
   
   virtual VideoCodecType GetCodec() const = 0;
