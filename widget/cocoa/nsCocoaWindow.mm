@@ -154,8 +154,6 @@ static void RollUpPopups(nsIRollupListener::AllowAnimations aAllowAnimations =
 }
 
 extern nsIArray* gDraggedTransferables;
-extern bool gCreatedFileForFileURL;
-extern bool gCreatedFileForFilePromise;
 ChildView* ChildViewMouseTracker::sLastMouseEventView = nil;
 NSEvent* ChildViewMouseTracker::sLastMouseMoveEvent = nil;
 NSWindow* ChildViewMouseTracker::sWindowUnderMouse = nil;
@@ -3896,129 +3894,115 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
     
     NSDictionary* pasteboardOutputDict =
         nsClipboard::PasteboardDictFromTransferable(currentTransferable);
-    if (!pasteboardOutputDict) {
+    if (!pasteboardOutputDict || ![pasteboardOutputDict objectForKey:aType]) {
       return;
     }
 
-    
-    unsigned int typeCount = [pasteboardOutputDict count];
-    NSMutableArray* types = [NSMutableArray arrayWithCapacity:typeCount + 1];
-    [types addObjectsFromArray:[pasteboardOutputDict allKeys]];
-    [types addObject:[UTIHelper stringFromPboardType:kMozWildcardPboardType]];
-    for (unsigned int k = 0; k < typeCount; k++) {
-      NSString* curType = [types objectAtIndex:k];
-      if ([curType isEqualToString:[UTIHelper stringFromPboardType:
-                                                  NSPasteboardTypeString]] ||
-          [curType
-              isEqualToString:[UTIHelper
-                                  stringFromPboardType:kPublicUrlPboardType]] ||
-          [curType isEqualToString:[UTIHelper stringFromPboardType:
-                                                  kPublicUrlNamePboardType]] ||
-          ([curType
-               isEqualToString:[UTIHelper
-                                   stringFromPboardType:(NSString*)
-                                                            kUTTypeFileURL]] &&
-           ![[pasteboardOutputDict valueForKey:curType] isEqualToString:@""])) {
-        [aPasteboard setString:[pasteboardOutputDict valueForKey:curType]
-                       forType:curType];
-      } else if (([curType
-                      isEqualToString:[UTIHelper
-                                          stringFromPboardType:
-                                              (NSString*)kUTTypeFileURL]] &&
-                  !gCreatedFileForFileURL) ||
-                 ([curType
-                      isEqualToString:
+    if ([aType
+            isEqualToString:[UTIHelper
+                                stringFromPboardType:NSPasteboardTypeString]] ||
+        [aType
+            isEqualToString:[UTIHelper
+                                stringFromPboardType:kPublicUrlPboardType]] ||
+        [aType isEqualToString:
+                   [UTIHelper stringFromPboardType:kPublicUrlNamePboardType]] ||
+        ([aType isEqualToString:[UTIHelper
+                                    stringFromPboardType:(NSString*)
+                                                             kUTTypeFileURL]] &&
+         ![[pasteboardOutputDict valueForKey:aType] isEqualToString:@""])) {
+      [aPasteboard setString:[pasteboardOutputDict valueForKey:aType]
+                     forType:aType];
+    } else if ([aType
+                   isEqualToString:[UTIHelper stringFromPboardType:
+                                                  (NSString*)kUTTypeFileURL]] ||
+               [aType isEqualToString:
                           [UTIHelper
                               stringFromPboardType:
-                                  (NSString*)kPasteboardTypeFileURLPromise]] &&
-                  !gCreatedFileForFilePromise)) {
-        NSURL* url = GetPasteLocation(
-            aPasteboard,
-            [curType
+                                  (NSString*)kPasteboardTypeFileURLPromise]]) {
+      NSURL* url = GetPasteLocation(
+          aPasteboard,
+          [aType isEqualToString:[UTIHelper
+                                     stringFromPboardType:(NSString*)
+                                                              kUTTypeFileURL]]);
+      nsCOMPtr<nsILocalFileMac> macLocalFile;
+      if (NS_FAILED(NS_NewLocalFileWithCFURL((__bridge CFURLRef)url,
+                                             getter_AddRefs(macLocalFile)))) {
+        NS_ERROR("failed NS_NewLocalFileWithCFURL");
+        continue;
+      }
+
+      if (!gDraggedTransferables) {
+        continue;
+      }
+
+      uint32_t transferableCount;
+      nsresult rv = gDraggedTransferables->GetLength(&transferableCount);
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+
+      for (uint32_t i = 0; i < transferableCount; i++) {
+        nsCOMPtr<nsITransferable> item =
+            do_QueryElementAt(gDraggedTransferables, i);
+        if (!item) {
+          NS_ERROR("no transferable");
+          continue;
+        }
+
+        item->SetTransferData(kFilePromiseDirectoryMime, macLocalFile);
+
+        
+        
+        nsCOMPtr<nsISupports> fileDataPrimitive;
+        if (NS_FAILED(item->GetTransferData(
+                kFilePromiseMime, getter_AddRefs(fileDataPrimitive)))) {
+          continue;
+        }
+
+        if ([aType
                 isEqualToString:[UTIHelper
                                     stringFromPboardType:(NSString*)
-                                                             kUTTypeFileURL]]);
-        nsCOMPtr<nsILocalFileMac> macLocalFile;
-        if (NS_FAILED(NS_NewLocalFileWithCFURL((__bridge CFURLRef)url,
-                                               getter_AddRefs(macLocalFile)))) {
-          NS_ERROR("failed NS_NewLocalFileWithCFURL");
-          continue;
-        }
-
-        if (!gDraggedTransferables) {
-          continue;
-        }
-
-        uint32_t transferableCount;
-        nsresult rv = gDraggedTransferables->GetLength(&transferableCount);
-        if (NS_FAILED(rv)) {
-          continue;
-        }
-
-        for (uint32_t i = 0; i < transferableCount; i++) {
-          nsCOMPtr<nsITransferable> item =
-              do_QueryElementAt(gDraggedTransferables, i);
-          if (!item) {
-            NS_ERROR("no transferable");
-            continue;
-          }
-
-          item->SetTransferData(kFilePromiseDirectoryMime, macLocalFile);
-
+                                                             kUTTypeFileURL]]) {
           
           
-          nsCOMPtr<nsISupports> fileDataPrimitive;
-          if (NS_FAILED(item->GetTransferData(
-                  kFilePromiseMime, getter_AddRefs(fileDataPrimitive)))) {
+          nsCOMPtr<nsIFile> file = do_QueryInterface(fileDataPrimitive);
+          if (!file) {
             continue;
           }
-
-          if ([curType
-                  isEqualToString:[UTIHelper stringFromPboardType:
-                                                 (NSString*)kUTTypeFileURL]]) {
-            
-            
-            nsCOMPtr<nsIFile> file = do_QueryInterface(fileDataPrimitive);
-            if (!file) {
-              continue;
-            }
-            nsAutoCString finalPath;
-            file->GetNativePath(finalPath);
-            NSString* filePath =
-                [NSString stringWithUTF8String:(const char*)finalPath.get()];
-            [aPasteboard
-                setString:[[NSURL fileURLWithPath:filePath] absoluteString]
-                  forType:curType];
-            gCreatedFileForFileURL = true;
-          } else {
-            gCreatedFileForFilePromise = true;
-          }
+          nsAutoCString finalPath;
+          file->GetNativePath(finalPath);
+          NSString* filePath =
+              [NSString stringWithUTF8String:(const char*)finalPath.get()];
+          [aPasteboard
+              setString:[[NSURL fileURLWithPath:filePath] absoluteString]
+                forType:aType];
         }
-      } else if ([curType isEqualToString:[UTIHelper
-                                              stringFromPboardType:
-                                                  kUrlsWithTitlesPboardType]]) {
-        [aPasteboard setPropertyList:[pasteboardOutputDict valueForKey:curType]
-                             forType:curType];
-      } else if ([curType
-                     isEqualToString:[UTIHelper stringFromPboardType:
-                                                    NSPasteboardTypeHTML]]) {
-        [aPasteboard setString:(nsClipboard::WrapHtmlForSystemPasteboard(
-                                   [pasteboardOutputDict valueForKey:curType]))
-                       forType:curType];
-      } else if ([curType
-                     isEqualToString:[UTIHelper stringFromPboardType:
-                                                    NSPasteboardTypeTIFF]] ||
-                 [curType isEqualToString:[UTIHelper
-                                              stringFromPboardType:
-                                                  kMozCustomTypesPboardType]]) {
-        [aPasteboard setData:[pasteboardOutputDict valueForKey:curType]
-                     forType:curType];
-      } else if ([curType
-                     isEqualToString:[UTIHelper stringFromPboardType:
-                                                    kMozFileUrlsPboardType]]) {
-        [aPasteboard writeObjects:[pasteboardOutputDict valueForKey:curType]];
       }
+    } else if ([aType
+                   isEqualToString:[UTIHelper stringFromPboardType:
+                                                  kUrlsWithTitlesPboardType]]) {
+      [aPasteboard setPropertyList:[pasteboardOutputDict valueForKey:aType]
+                           forType:aType];
+    } else if ([aType isEqualToString:[UTIHelper stringFromPboardType:
+                                                     NSPasteboardTypeHTML]]) {
+      [aPasteboard setString:(nsClipboard::WrapHtmlForSystemPasteboard(
+                                 [pasteboardOutputDict valueForKey:aType]))
+                     forType:aType];
+    } else if ([aType isEqualToString:[UTIHelper stringFromPboardType:
+                                                     NSPasteboardTypeTIFF]]) {
+      [aPasteboard setData:[pasteboardOutputDict valueForKey:aType]
+                   forType:aType];
     }
+
+    [aPasteboard
+        setData:[pasteboardOutputDict
+                    valueForKey:[UTIHelper stringFromPboardType:
+                                               kMozCustomTypesPboardType]]
+        forType:[UTIHelper stringFromPboardType:kMozCustomTypesPboardType]];
+    [aPasteboard
+        writeObjects:[pasteboardOutputDict
+                         valueForKey:[UTIHelper stringFromPboardType:
+                                                    kMozFileUrlsPboardType]]];
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
