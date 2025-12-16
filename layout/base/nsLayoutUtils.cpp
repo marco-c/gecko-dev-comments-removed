@@ -9304,7 +9304,7 @@ static bool LineHasNonEmptyContent(nsLineBox* aLine) {
 }
 
 
-bool nsLayoutUtils::IsInvisibleBreak(nsINode* aNode,
+bool nsLayoutUtils::IsInvisibleBreak(const nsINode* aNode,
                                      nsIFrame** aNextLineFrame) {
   if (aNextLineFrame) {
     *aNextLineFrame = nullptr;

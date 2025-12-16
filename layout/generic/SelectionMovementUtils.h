@@ -30,6 +30,16 @@ struct MOZ_STACK_CLASS FrameAndOffset {
     return mFrame ? mFrame->GetContent() : nullptr;
   }
 
+  operator nsIFrame*() const { return mFrame; }
+
+  explicit operator bool() const { return !!mFrame; }
+  [[nodiscard]] bool operator!() const { return !mFrame; }
+
+  nsIFrame* operator->() const {
+    MOZ_ASSERT(mFrame);
+    return mFrame;
+  }
+
   nsIFrame* mFrame = nullptr;
   
   uint32_t mOffsetInFrameContent = 0;
@@ -89,11 +99,9 @@ class SelectionMovementUtils final {
 
 
 
-
-
-  static nsIFrame* GetFrameForNodeOffset(nsIContent* aNode, uint32_t aOffset,
-                                         CaretAssociationHint aHint,
-                                         uint32_t* aReturnOffset = nullptr);
+  static FrameAndOffset GetFrameForNodeOffset(const nsIContent* aNode,
+                                              uint32_t aOffset,
+                                              CaretAssociationHint aHint);
 
   
 

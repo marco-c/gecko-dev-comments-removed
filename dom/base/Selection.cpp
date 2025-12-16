@@ -3713,7 +3713,6 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
 
   nsINode* node = nullptr;
   uint32_t nodeOffset = 0;
-  nsIFrame* frame = nullptr;
 
   switch (aRegion) {
     case nsISelectionController::SELECTION_ANCHOR_REGION:
@@ -3732,12 +3731,14 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
 
   nsCOMPtr<nsIContent> content = do_QueryInterface(node);
   NS_ENSURE_TRUE(content.get(), nullptr);
-  uint32_t frameOffset = 0;
-  frame = SelectionMovementUtils::GetFrameForNodeOffset(
-      content, nodeOffset, mFrameSelection->GetHint(), &frameOffset);
-  if (!frame) return nullptr;
+  FrameAndOffset frameAndOffset = SelectionMovementUtils::GetFrameForNodeOffset(
+      content, nodeOffset, mFrameSelection->GetHint());
+  if (!frameAndOffset) {
+    return nullptr;
+  }
 
-  SelectionMovementUtils::AdjustFrameForLineStart(frame, frameOffset);
+  SelectionMovementUtils::AdjustFrameForLineStart(
+      frameAndOffset.mFrame, frameAndOffset.mOffsetInFrameContent);
 
   
   
@@ -3747,16 +3748,21 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   if (isText) {
     nsIFrame* childFrame = nullptr;
     int32_t frameOffset = 0;
-    nsresult rv = frame->GetChildFrameContainingOffset(
+    nsresult rv = frameAndOffset->GetChildFrameContainingOffset(
+        
+        
+        
         nodeOffset, mFrameSelection->GetHint() == CaretAssociationHint::After,
         &frameOffset, &childFrame);
     if (NS_FAILED(rv)) return nullptr;
     if (!childFrame) return nullptr;
 
-    frame = childFrame;
+    frameAndOffset.mFrame = childFrame;
 
     
-    rv = GetCachedFrameOffset(frame, nodeOffset, pt);
+    rv = GetCachedFrameOffset(
+        frameAndOffset.mFrame,
+        static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent), pt);
     if (NS_FAILED(rv)) return nullptr;
   }
 
@@ -3767,7 +3773,7 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   
   
   
-  const WritingMode wm = frame->GetWritingMode();
+  const WritingMode wm = frameAndOffset->GetWritingMode();
   
   auto GetInlinePosition = [&]() {
     if (isText) {
@@ -3779,20 +3785,20 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
     
     
     
-    return frame->ISize(wm);
+    return frameAndOffset->ISize(wm);
   };
 
   
   
   if (wm.IsVertical()) {
     aRect->y = GetInlinePosition();
-    aRect->SetWidth(frame->BSize(wm));
+    aRect->SetWidth(frameAndOffset->BSize(wm));
   } else {
     aRect->x = GetInlinePosition();
-    aRect->SetHeight(frame->BSize(wm));
+    aRect->SetHeight(frameAndOffset->BSize(wm));
   }
 
-  return frame;
+  return frameAndOffset;
 }
 
 NS_IMETHODIMP
@@ -4229,7 +4235,7 @@ void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
   
   const PrimaryFrameData frameForFocus =
       GetPrimaryFrameForCaretAtFocusNode(visual);
-  if (frameForFocus.mFrame) {
+  if (frameForFocus) {
     if (visual) {
       
       

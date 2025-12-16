@@ -3056,7 +3056,7 @@ class nsLayoutUtils {
 
 
 
-  static bool IsInvisibleBreak(nsINode* aNode,
+  static bool IsInvisibleBreak(const nsINode* aNode,
                                nsIFrame** aNextLineFrame = nullptr);
 
   static nsRect ComputeSVGOriginBox(mozilla::dom::SVGViewportElement*);
