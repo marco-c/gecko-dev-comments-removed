@@ -108,46 +108,6 @@ fn write_gpu_gradient_stops_header_and_colors(
 
 
 
-fn write_gpu_gradient_stops_linear(
-    stops: &[GradientStop],
-    kind: GradientKind,
-    extend_mode: ExtendMode,
-    writer: &mut GpuBufferWriterF,
-) -> bool {
-    let is_opaque = write_gpu_gradient_stops_header_and_colors(
-        stops,
-        kind,
-        extend_mode,
-        writer
-    );
-
-    for chunk in stops.chunks(4) {
-        let mut block = [0.0; 4];
-        let mut i = 0;
-        for stop in chunk {
-            block[i] = stop.offset;
-            i += 1;
-        }
-        writer.push_one(block);
-    }
-
-    is_opaque
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -245,30 +205,24 @@ fn write_gpu_gradient_stops_tree(
     return is_opaque;
 }
 
-fn gpu_gradient_stops_blocks(num_stops: usize, tree_traversal: bool) -> usize {
+fn gpu_gradient_stops_blocks(num_stops: usize) -> usize {
     let header_blocks = 1;
     let color_blocks = num_stops;
 
     
     
-    let mut offset_blocks = (num_stops + 3) / 4;
-
-    if tree_traversal {
-        
-        
-        let mut num_blocks_for_level = 1;
-        offset_blocks = 1;
-        while offset_blocks * 4 < num_stops {
-            num_blocks_for_level *= 5;
-            offset_blocks += num_blocks_for_level;
-        }
-
-        
-        
-        let num_blocks_for_last_level = num_blocks_for_level.min(num_stops / 5 + 1);
-        offset_blocks -= num_blocks_for_level;
-        offset_blocks += num_blocks_for_last_level;
+    let mut num_blocks_for_level = 1;
+    let mut offset_blocks = 1;
+    while offset_blocks * 4 < num_stops {
+        num_blocks_for_level *= 5;
+        offset_blocks += num_blocks_for_level;
     }
+
+    
+    
+    let num_blocks_for_last_level = num_blocks_for_level.min(num_stops / 5 + 1);
+    offset_blocks -= num_blocks_for_level;
+    offset_blocks += num_blocks_for_last_level;
 
     header_blocks + color_blocks + offset_blocks
 }
@@ -590,14 +544,14 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<LinearGradient>(), 72, "LinearGradient size changed");
-    assert_eq!(mem::size_of::<LinearGradientTemplate>(), 144, "LinearGradientTemplate size changed");
+    assert_eq!(mem::size_of::<LinearGradientTemplate>(), 136, "LinearGradientTemplate size changed");
     assert_eq!(mem::size_of::<LinearGradientKey>(), 96, "LinearGradientKey size changed");
 
     assert_eq!(mem::size_of::<RadialGradient>(), 72, "RadialGradient size changed");
-    assert_eq!(mem::size_of::<RadialGradientTemplate>(), 144, "RadialGradientTemplate size changed");
+    assert_eq!(mem::size_of::<RadialGradientTemplate>(), 136, "RadialGradientTemplate size changed");
     assert_eq!(mem::size_of::<RadialGradientKey>(), 96, "RadialGradientKey size changed");
 
     assert_eq!(mem::size_of::<ConicGradient>(), 72, "ConicGradient size changed");
-    assert_eq!(mem::size_of::<ConicGradientTemplate>(), 144, "ConicGradientTemplate size changed");
+    assert_eq!(mem::size_of::<ConicGradientTemplate>(), 136, "ConicGradientTemplate size changed");
     assert_eq!(mem::size_of::<ConicGradientKey>(), 96, "ConicGradientKey size changed");
 }

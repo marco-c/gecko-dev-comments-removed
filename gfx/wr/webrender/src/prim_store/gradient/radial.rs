@@ -17,7 +17,7 @@ use crate::scene_building::IsVisible;
 use crate::frame_builder::FrameBuildingState;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::prim_store::{BrushSegment, GradientTileRange, InternablePrimitive};
+use crate::prim_store::{BrushSegment, GradientTileRange, InternablePrimitive, VECS_PER_SEGMENT};
 use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, FloatKey};
@@ -30,7 +30,7 @@ use std::{hash, ops::{Deref, DerefMut}};
 use super::{
     stops_and_min_alpha, GradientStopKey, GradientGpuBlockBuilder,
     apply_gradient_local_clip, gpu_gradient_stops_blocks,
-    write_gpu_gradient_stops_linear, write_gpu_gradient_stops_tree,
+    write_gpu_gradient_stops_tree,
 };
 
 
@@ -228,27 +228,24 @@ impl RadialGradientTemplate {
         &mut self,
         frame_state: &mut FrameBuildingState,
     ) {
-        if let Some(mut request) =
-            frame_state.gpu_cache.request(&mut self.common.gpu_cache_handle) {
-            
-            request.push(PremultipliedColorF::WHITE);
-            request.push(PremultipliedColorF::WHITE);
-            request.push([
-                self.stretch_size.width,
-                self.stretch_size.height,
-                0.0,
-                0.0,
-            ]);
+        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + self.brush_segments.len() * VECS_PER_SEGMENT);
 
+        
+        writer.push_one(PremultipliedColorF::WHITE);
+        writer.push_one(PremultipliedColorF::WHITE);
+        writer.push_one([
+            self.stretch_size.width,
+            self.stretch_size.height,
+            0.0,
+            0.0,
+        ]);
+        
+        for segment in &self.brush_segments {
             
-            for segment in &self.brush_segments {
-                
-                request.write_segment(
-                    segment.local_rect,
-                    segment.extra_data,
-                );
-            }
+            writer.push_one(segment.local_rect);
+            writer.push_one(segment.extra_data);
         }
+        self.common.gpu_buffer_address = writer.finish();
 
         let task_size = self.task_size;
         let cache_key = RadialGradientCacheKey {
@@ -626,10 +623,10 @@ pub fn radial_gradient_pattern(
     params: &RadialGradientParams,
     extend_mode: ExtendMode,
     stops: &[GradientStop],
-    is_software: bool,
+    _is_software: bool,
     gpu_buffer_builder: &mut GpuBufferBuilder
 ) -> Pattern {
-    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len(), !is_software);
+    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len());
     let mut writer = gpu_buffer_builder.f32.write_blocks(num_blocks);
     writer.push_one([
         center.x,
@@ -644,17 +641,8 @@ pub fn radial_gradient_pattern(
         0.0,
     ]);
 
-    let is_opaque = if is_software {
-        
-        
-        
-        
-        write_gpu_gradient_stops_linear(stops, GradientKind::Radial, extend_mode, &mut writer)
-    } else {
-        
-        
-        write_gpu_gradient_stops_tree(stops, GradientKind::Radial, extend_mode, &mut writer)
-    };
+    let is_opaque = write_gpu_gradient_stops_tree(stops, GradientKind::Radial, extend_mode, &mut writer);
+
     let gradient_address = writer.finish();
 
     Pattern {
