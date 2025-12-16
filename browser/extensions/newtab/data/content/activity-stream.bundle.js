@@ -10691,7 +10691,7 @@ const PersonalizedCard = ({
   handleBlock,
   messageData
 }) => {
-  const wavingFox = "chrome://newtab/content/data/content/assets/waving-fox.svg";
+  const kitFox = "chrome://newtab/content/data/content/assets/kit.png";
   const onDismiss = (0,external_React_namespaceObject.useCallback)(() => {
     handleDismiss();
     handleBlock();
@@ -10717,7 +10717,7 @@ const PersonalizedCard = ({
   })), external_React_default().createElement("div", {
     className: "personalized-card-inner"
   }, external_React_default().createElement("img", {
-    src: wavingFox,
+    src: kitFox,
     alt: ""
   }), external_React_default().createElement("h2", null, messageData.content.cardTitle), external_React_default().createElement("p", null, messageData.content.cardMessage), external_React_default().createElement("div", {
     className: "personalized-card-cta-wrapper"
