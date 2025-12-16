@@ -68,8 +68,8 @@ static const char kURIListMime[] = "text/uri-list";
 
 static const char kKDEPasswordManagerHintMime[] = "x-kde-passwordManagerHint";
 
-MOZ_CONSTINIT ClipboardTargets nsRetrievalContext::sClipboardTargets;
-MOZ_CONSTINIT ClipboardTargets nsRetrievalContext::sPrimaryTargets;
+constinit ClipboardTargets nsRetrievalContext::sClipboardTargets;
+constinit ClipboardTargets nsRetrievalContext::sPrimaryTargets;
 
 
 static void clipboard_get_cb(GtkClipboard* aGtkClipboard,
