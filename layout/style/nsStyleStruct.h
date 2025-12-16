@@ -419,6 +419,12 @@ struct AnchorResolvedMarginHelper {
     if (aValue.HasAnchorPositioningFunction()) {
       return ResolveAnchor(aValue, aAxis, aParams);
     }
+    
+    
+    
+    if (aValue.IsAuto() && !aParams.mPositionArea.IsNone()) {
+      return Zero();
+    }
     return AnchorResolvedMargin::NonOwning(&aValue);
   }
 
