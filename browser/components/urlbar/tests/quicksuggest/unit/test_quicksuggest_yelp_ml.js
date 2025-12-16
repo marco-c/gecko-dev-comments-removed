@@ -559,7 +559,6 @@ function makeExpectedResult({
   source = "ml",
   provider = "yelp_intent",
   originalUrl = undefined,
-  displayUrl = undefined,
   
   
   suggestedIndex = -1,
@@ -570,7 +569,6 @@ function makeExpectedResult({
     source,
     provider,
     originalUrl,
-    displayUrl,
     suggestedIndex,
   });
 }

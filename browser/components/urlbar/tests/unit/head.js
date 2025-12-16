@@ -810,8 +810,6 @@ function makeSearchResult(
     isPrivateEngine,
   };
 
-  
-  
   if (uri) {
     payload.url = uri;
   }
