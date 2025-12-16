@@ -16732,6 +16732,12 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
     }
 
     Document* parent = child->GetInProcessParentDocument();
+
+    
+    
+    if (parent->GetUnretargetedFullscreenElement() == element) {
+      break;
+    }
     parent->SetFullscreenElement(*element);
     changed.AppendElement(parent);
     child = parent;
