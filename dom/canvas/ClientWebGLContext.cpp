@@ -5354,26 +5354,30 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
 
       if (extraction == CanvasUtils::ImageExtraction::Placeholder) {
         dom::GeneratePlaceholderCanvasData(range->size(), range->Elements());
-      } else if (extraction == CanvasUtils::ImageExtraction::Randomize) {
-        const auto pii = webgl::PackingInfoInfo::For(desc.pi);
-        
-        MOZ_ASSERT(pii.isSome());
+      } else {
+        RecordCanvasUsage(CanvasExtractionAPI::ReadPixels,
+                          CSSIntSize(width, height));
+        if (extraction == CanvasUtils::ImageExtraction::Randomize) {
+          const auto pii = webgl::PackingInfoInfo::For(desc.pi);
+          
+          MOZ_ASSERT(pii.isSome());
 
-        
-        
-        
-        
-        
-        
-        
-        constexpr uint8_t alphaChannelOffset = 0;
-        bool hasAlphaChannel =
-            format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
-            format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
-        nsRFPService::RandomizeElements(
-            GetCookieJarSettings(), PrincipalOrNull(), range->data(),
-            range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
-            alphaChannelOffset, hasAlphaChannel);
+          
+          
+          
+          
+          
+          
+          
+          constexpr uint8_t alphaChannelOffset = 0;
+          bool hasAlphaChannel =
+              format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
+              format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
+          nsRFPService::RandomizeElements(
+              GetCookieJarSettings(), PrincipalOrNull(), range->data(),
+              range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
+              alphaChannelOffset, hasAlphaChannel);
+        }
       }
     }
   });
