@@ -9,8 +9,8 @@ use crate::values::animated::{lists, Animate, Procedure};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::basic_shape::GenericShapeCommand;
 use crate::values::generics::basic_shape::{
-    ArcRadii, ArcSize, ArcSweep, ByTo, CommandEndPoint, ControlPoint, ControlReference,
-    CoordinatePair, RelativeControlPoint, ShapePosition,
+    ArcRadii, ArcSize, ArcSweep, AxisEndPoint, AxisPosition, CommandEndPoint, ControlPoint,
+    ControlReference, CoordinatePair, RelativeControlPoint, ShapePosition,
 };
 use crate::values::generics::position::GenericPosition;
 use crate::values::CSSFloat;
@@ -239,32 +239,28 @@ impl PathCommand {
                 }
                 Line { point }
             },
-            HLine { by_to, mut x } => {
-                if !by_to.is_abs() {
-                    x += state.pos.x;
-                }
-                state.pos.x = x;
+            HLine { mut x } => {
+                x = x.to_abs(state.pos.x);
+                state.pos.x = x.into();
                 if reduce {
                     state.last_command = *self;
                     PathCommand::Line {
                         point: CommandEndPoint::ToPosition(state.pos.into()),
                     }
                 } else {
-                    HLine { by_to: ByTo::To, x }
+                    HLine { x }
                 }
             },
-            VLine { by_to, mut y } => {
-                if !by_to.is_abs() {
-                    y += state.pos.y;
-                }
-                state.pos.y = y;
+            VLine { mut y } => {
+                y = y.to_abs(state.pos.y);
+                state.pos.y = y.into();
                 if reduce {
                     state.last_command = *self;
                     PathCommand::Line {
                         point: CommandEndPoint::ToPosition(state.pos.into()),
                     }
                 } else {
-                    VLine { by_to: ByTo::To, y }
+                    VLine { y }
                 }
             },
             CubicCurve {
@@ -466,15 +462,15 @@ impl PathCommand {
                 dest.write_char(' ')?;
                 CoordPair::from(point).to_css(dest)
             },
-            HLine { by_to, x } => {
-                dest.write_char(if by_to.is_abs() { 'H' } else { 'h' })?;
+            HLine { x } => {
+                dest.write_char(if x.is_abs() { 'H' } else { 'h' })?;
                 dest.write_char(' ')?;
-                x.to_css(dest)
+                CSSFloat::from(x).to_css(dest)
             },
-            VLine { by_to, y } => {
-                dest.write_char(if by_to.is_abs() { 'V' } else { 'v' })?;
+            VLine { y } => {
+                dest.write_char(if y.is_abs() { 'V' } else { 'v' })?;
                 dest.write_char(' ')?;
-                y.to_css(dest)
+                CSSFloat::from(y).to_css(dest)
             },
             SmoothCubic { point, control2 } => {
                 dest.write_char(if point.is_abs() { 'S' } else { 's' })?;
@@ -559,6 +555,19 @@ impl CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat> {
                     vertical: coord.y + state_pos.y,
                 };
                 CommandEndPoint::ToPosition(pos)
+            },
+        }
+    }
+}
+
+impl AxisEndPoint<CSSFloat> {
+    
+    pub fn to_abs(self, base: CSSFloat) -> AxisEndPoint<CSSFloat> {
+        
+        match self {
+            AxisEndPoint::ToPosition(_) => self,
+            AxisEndPoint::ByCoordinate(coord) => {
+                AxisEndPoint::ToPosition(AxisPosition::LengthPercent(coord + base))
             },
         }
     }
@@ -650,6 +659,19 @@ impl From<CoordPair> for ShapePosition<CSSFloat> {
     }
 }
 
+impl From<AxisEndPoint<CSSFloat>> for CSSFloat {
+    #[inline]
+    fn from(p: AxisEndPoint<CSSFloat>) -> Self {
+        match p {
+            AxisEndPoint::ToPosition(AxisPosition::LengthPercent(a)) => a,
+            AxisEndPoint::ToPosition(AxisPosition::Keyword(_)) => {
+                unreachable!("Invalid state: SVG path commands cannot contain a keyword.")
+            },
+            AxisEndPoint::ByCoordinate(a) => a,
+        }
+    }
+}
+
 impl ToCss for ShapePosition<CSSFloat> {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -721,23 +743,26 @@ impl<'a> PathParser<'a> {
             }
 
             let command = self.chars.next().unwrap();
-            let by_to = if command.is_ascii_uppercase() {
-                ByTo::To
-            } else {
-                ByTo::By
-            };
 
             skip_wsp(&mut self.chars);
             match command {
                 b'Z' | b'z' => self.parse_closepath(),
-                b'L' | b'l' => self.parse_lineto(by_to),
-                b'H' | b'h' => self.parse_h_lineto(by_to),
-                b'V' | b'v' => self.parse_v_lineto(by_to),
-                b'C' | b'c' => self.parse_curveto(by_to),
-                b'S' | b's' => self.parse_smooth_curveto(by_to),
-                b'Q' | b'q' => self.parse_quadratic_bezier_curveto(by_to),
-                b'T' | b't' => self.parse_smooth_quadratic_bezier_curveto(by_to),
-                b'A' | b'a' => self.parse_elliptical_arc(by_to),
+                b'L' => self.parse_line_abs(),
+                b'l' => self.parse_line_rel(),
+                b'H' => self.parse_h_line_abs(),
+                b'h' => self.parse_h_line_rel(),
+                b'V' => self.parse_v_line_abs(),
+                b'v' => self.parse_v_line_rel(),
+                b'C' => self.parse_curve_abs(),
+                b'c' => self.parse_curve_rel(),
+                b'S' => self.parse_smooth_curve_abs(),
+                b's' => self.parse_smooth_curve_rel(),
+                b'Q' => self.parse_quadratic_bezier_curve_abs(),
+                b'q' => self.parse_quadratic_bezier_curve_rel(),
+                b'T' => self.parse_smooth_quadratic_bezier_curve_abs(),
+                b't' => self.parse_smooth_quadratic_bezier_curve_rel(),
+                b'A' => self.parse_elliptical_arc_abs(),
+                b'a' => self.parse_elliptical_arc_rel(),
                 _ => return Err(()),
             }?;
         }
@@ -752,11 +777,10 @@ impl<'a> PathParser<'a> {
         };
 
         skip_wsp(&mut self.chars);
-        let by_to = if command == b'M' { ByTo::To } else { ByTo::By };
-        let point = if by_to == ByTo::To {
-            parse_command_point_abs(&mut self.chars)
+        let point = if command == b'M' {
+            parse_command_end_abs(&mut self.chars)
         } else {
-            parse_command_point_rel(&mut self.chars)
+            parse_command_end_rel(&mut self.chars)
         }?;
         self.path.push(PathCommand::Move { point });
 
@@ -769,7 +793,11 @@ impl<'a> PathParser<'a> {
 
         
         
-        self.parse_lineto(by_to)
+        if point.is_abs() {
+            self.parse_line_abs()
+        } else {
+            self.parse_line_rel()
+        }
     }
 
     
@@ -779,74 +807,116 @@ impl<'a> PathParser<'a> {
     }
 
     
-    fn parse_lineto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        if by_to.is_abs() {
-            parse_arguments!(self, Line, [ point => parse_command_point_abs ])
-        } else {
-            parse_arguments!(self, Line, [ point => parse_command_point_rel ])
-        }
+    fn parse_line_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, Line, [ point => parse_command_end_abs ])
     }
 
     
-    fn parse_h_lineto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        parse_arguments!(self, HLine, by_to: by_to, [ x => parse_number ])
+    fn parse_line_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, Line, [ point => parse_command_end_rel ])
     }
 
     
-    fn parse_v_lineto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        parse_arguments!(self, VLine, by_to: by_to, [ y => parse_number ])
+    fn parse_h_line_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, HLine, [ x => parse_axis_end_abs ])
     }
 
     
-    fn parse_curveto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        if by_to.is_abs() {
-            parse_arguments!(self, CubicCurve, [
-                control1 => parse_control_point, control2 => parse_control_point, point => parse_command_point_abs
-            ])
-        } else {
-            parse_arguments!(self, CubicCurve, [
-                control1 => parse_control_point, control2 => parse_control_point, point => parse_command_point_rel
-            ])
-        }
+    fn parse_h_line_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, HLine, [ x => parse_axis_end_rel ])
     }
 
     
-    fn parse_smooth_curveto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        if by_to.is_abs() {
-            parse_arguments!(self, SmoothCubic, [
-                control2 => parse_control_point, point => parse_command_point_abs
-            ])
-        } else {
-            parse_arguments!(self, SmoothCubic, [
-                control2 => parse_control_point, point => parse_command_point_rel
-            ])
-        }
+    fn parse_v_line_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, VLine, [ y => parse_axis_end_abs ])
     }
 
     
-    fn parse_quadratic_bezier_curveto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        if by_to.is_abs() {
-            parse_arguments!(self, QuadCurve, [
-                control1 => parse_control_point, point => parse_command_point_abs
-            ])
-        } else {
-            parse_arguments!(self, QuadCurve, [
-                control1 => parse_control_point, point => parse_command_point_rel
-            ])
-        }
+    fn parse_v_line_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, VLine, [ y => parse_axis_end_rel ])
     }
 
     
-    fn parse_smooth_quadratic_bezier_curveto(&mut self, by_to: ByTo) -> Result<(), ()> {
-        if by_to.is_abs() {
-            parse_arguments!(self, SmoothQuad, [ point => parse_command_point_abs ])
-        } else {
-            parse_arguments!(self, SmoothQuad, [ point => parse_command_point_rel ])
-        }
+    fn parse_curve_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, CubicCurve, [
+            control1 => parse_control_point, control2 => parse_control_point, point => parse_command_end_abs
+        ])
     }
 
     
-    fn parse_elliptical_arc(&mut self, by_to: ByTo) -> Result<(), ()> {
+    fn parse_curve_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, CubicCurve, [
+            control1 => parse_control_point, control2 => parse_control_point, point => parse_command_end_rel
+        ])
+    }
+
+    
+    fn parse_smooth_curve_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, SmoothCubic, [
+            control2 => parse_control_point, point => parse_command_end_abs
+        ])
+    }
+
+    
+    fn parse_smooth_curve_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, SmoothCubic, [
+            control2 => parse_control_point, point => parse_command_end_rel
+        ])
+    }
+
+    
+    fn parse_quadratic_bezier_curve_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, QuadCurve, [
+            control1 => parse_control_point, point => parse_command_end_abs
+        ])
+    }
+
+    
+    fn parse_quadratic_bezier_curve_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, QuadCurve, [
+            control1 => parse_control_point, point => parse_command_end_rel
+        ])
+    }
+
+    
+    fn parse_smooth_quadratic_bezier_curve_abs(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, SmoothQuad, [ point => parse_command_end_abs ])
+    }
+
+    
+    fn parse_smooth_quadratic_bezier_curve_rel(&mut self) -> Result<(), ()> {
+        parse_arguments!(self, SmoothQuad, [ point => parse_command_end_rel ])
+    }
+
+    
+    fn parse_elliptical_arc_abs(&mut self) -> Result<(), ()> {
+        let (parse_arc_size, parse_arc_sweep) = Self::arc_flag_parsers();
+        parse_arguments!(self, Arc, [
+            radii => parse_arc_radii,
+            rotate => parse_number,
+            arc_size => parse_arc_size,
+            arc_sweep => parse_arc_sweep,
+            point => parse_command_end_abs
+        ])
+    }
+
+    
+    fn parse_elliptical_arc_rel(&mut self) -> Result<(), ()> {
+        let (parse_arc_size, parse_arc_sweep) = Self::arc_flag_parsers();
+        parse_arguments!(self, Arc, [
+            radii => parse_arc_radii,
+            rotate => parse_number,
+            arc_size => parse_arc_size,
+            arc_sweep => parse_arc_sweep,
+            point => parse_command_end_rel
+        ])
+    }
+
+    
+    fn arc_flag_parsers() -> (
+        impl Fn(&mut Peekable<Cloned<slice::Iter<'_, u8>>>) -> Result<ArcSize, ()>,
+        impl Fn(&mut Peekable<Cloned<slice::Iter<'_, u8>>>) -> Result<ArcSweep, ()>,
+    ) {
         
         let parse_arc_size = |iter: &mut Peekable<Cloned<slice::Iter<u8>>>| match iter.next() {
             Some(c) if c == b'1' => Ok(ArcSize::Large),
@@ -858,23 +928,7 @@ impl<'a> PathParser<'a> {
             Some(c) if c == b'0' => Ok(ArcSweep::Ccw),
             _ => Err(()),
         };
-        if by_to.is_abs() {
-            parse_arguments!(self, Arc, [
-                radii => parse_arc,
-                rotate => parse_number,
-                arc_size => parse_arc_size,
-                arc_sweep => parse_arc_sweep,
-                point => parse_command_point_abs
-            ])
-        } else {
-            parse_arguments!(self, Arc, [
-                radii => parse_arc,
-                rotate => parse_number,
-                arc_size => parse_arc_size,
-                arc_sweep => parse_arc_sweep,
-                point => parse_command_point_rel
-            ])
-        }
+        (parse_arc_size, parse_arc_sweep)
     }
 }
 
@@ -887,7 +941,7 @@ fn parse_coord(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<CoordPair
 }
 
 
-fn parse_command_point_abs(
+fn parse_command_end_abs(
     iter: &mut Peekable<Cloned<slice::Iter<u8>>>,
 ) -> Result<CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>, ()> {
     let coord = parse_coord(iter)?;
@@ -895,7 +949,7 @@ fn parse_command_point_abs(
 }
 
 
-fn parse_command_point_rel(
+fn parse_command_end_rel(
     iter: &mut Peekable<Cloned<slice::Iter<u8>>>,
 ) -> Result<CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>, ()> {
     let coord = parse_coord(iter)?;
@@ -916,7 +970,24 @@ fn parse_control_point(
     }))
 }
 
-fn parse_arc(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<ArcRadii<CSSFloat>, ()> {
+
+fn parse_axis_end_abs(
+    iter: &mut Peekable<Cloned<slice::Iter<u8>>>,
+) -> Result<AxisEndPoint<f32>, ()> {
+    let value = parse_number(iter)?;
+    Ok(AxisEndPoint::ToPosition(AxisPosition::LengthPercent(value)))
+}
+
+
+fn parse_axis_end_rel(
+    iter: &mut Peekable<Cloned<slice::Iter<u8>>>,
+) -> Result<AxisEndPoint<f32>, ()> {
+    let value = parse_number(iter)?;
+    Ok(AxisEndPoint::ByCoordinate(value))
+}
+
+
+fn parse_arc_radii(iter: &mut Peekable<Cloned<slice::Iter<u8>>>) -> Result<ArcRadii<CSSFloat>, ()> {
     let coord = parse_coord(iter)?;
     Ok(ArcRadii {
         rx: coord.x,

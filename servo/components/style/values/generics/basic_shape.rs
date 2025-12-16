@@ -6,6 +6,7 @@
 
 
 use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
+use crate::values::computed::Percentage;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::{
     border::GenericBorderRadius,
@@ -221,6 +222,7 @@ pub enum GenericBasicShape<Angle, Position, LengthPercentage, BasicShapeRect> {
     PathOrShape(
         #[animation(field_bound)]
         #[css(field_bound)]
+        #[compute(field_bound)]
         GenericPathOrShapeFunction<Angle, Position, LengthPercentage>,
     ),
 }
@@ -415,7 +417,11 @@ pub enum GenericPathOrShapeFunction<Angle, Position, LengthPercentage> {
     
     Path(Path),
     
-    Shape(#[css(field_bound)] Shape<Angle, Position, LengthPercentage>),
+    Shape(
+        #[css(field_bound)]
+        #[compute(field_bound)]
+        Shape<Angle, Position, LengthPercentage>,
+    ),
 }
 
 
@@ -649,6 +655,7 @@ pub struct Shape<Angle, Position, LengthPercentage> {
     
     
     
+    #[compute(field_bound)]
     pub commands: crate::OwnedSlice<GenericShapeCommand<Angle, Position, LengthPercentage>>,
 }
 
@@ -768,9 +775,15 @@ pub enum GenericShapeCommand<Angle, Position, LengthPercentage> {
         point: CommandEndPoint<Position, LengthPercentage>,
     },
     
-    HLine { by_to: ByTo, x: LengthPercentage },
+    HLine {
+        #[compute(field_bound)]
+        x: AxisEndPoint<LengthPercentage>,
+    },
     
-    VLine { by_to: ByTo, y: LengthPercentage },
+    VLine {
+        #[compute(field_bound)]
+        y: AxisEndPoint<LengthPercentage>,
+    },
     
     CubicCurve {
         point: CommandEndPoint<Position, LengthPercentage>,
@@ -825,16 +838,12 @@ where
                 dest.write_str("line ")?;
                 point.to_css(dest)
             },
-            HLine { by_to, ref x } => {
+            HLine { ref x } => {
                 dest.write_str("hline ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 x.to_css(dest)
             },
-            VLine { by_to, ref y } => {
+            VLine { ref y } => {
                 dest.write_str("vline ")?;
-                by_to.to_css(dest)?;
-                dest.write_char(' ')?;
                 y.to_css(dest)
             },
             CubicCurve {
@@ -906,60 +915,13 @@ where
 
 
 
-#[derive(
-    Animate,
-    Clone,
-    ComputeSquaredDistance,
-    Copy,
-    Debug,
-    Deserialize,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    Serialize,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
-pub enum ByTo {
-    
-    By,
-    
-    To,
-}
-
-impl ByTo {
-    
-    #[inline]
-    pub fn is_abs(&self) -> bool {
-        matches!(self, ByTo::To)
-    }
-
-    
-    #[inline]
-    pub fn new(is_abs: bool) -> Self {
-        if is_abs {
-            Self::To
-        } else {
-            Self::By
-        }
-    }
-}
-
-
-
 
 #[allow(missing_docs)]
 #[derive(
     Animate,
     Clone,
-    Copy,
     ComputeSquaredDistance,
+    Copy,
     Debug,
     Deserialize,
     MallocSizeOf,
@@ -1002,6 +964,138 @@ impl<Position, LengthPercentage> CommandEndPoint<Position, LengthPercentage> {
                 dest.write_str("by ")?;
                 coord.to_css(dest)
             },
+        }
+    }
+}
+
+
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum AxisEndPoint<LengthPercentage> {
+    ToPosition(#[compute(field_bound)] AxisPosition<LengthPercentage>),
+    ByCoordinate(LengthPercentage),
+}
+
+impl<LengthPercentage> AxisEndPoint<LengthPercentage> {
+    
+    #[inline]
+    pub fn is_abs(&self) -> bool {
+        matches!(self, AxisEndPoint::ToPosition(_))
+    }
+}
+
+impl<LengthPercentage: ToCss> ToCss for AxisEndPoint<LengthPercentage> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if self.is_abs() {
+            dest.write_str("to ")?;
+        } else {
+            dest.write_str("by ")?;
+        }
+        match self {
+            AxisEndPoint::ToPosition(pos) => pos.to_css(dest),
+            AxisEndPoint::ByCoordinate(coord) => coord.to_css(dest),
+        }
+    }
+}
+
+
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum AxisPosition<LengthPercentage> {
+    LengthPercent(LengthPercentage),
+    Keyword(AxisPositionKeyword),
+}
+
+
+
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum AxisPositionKeyword {
+    Center,
+    Left,
+    Right,
+    Top,
+    Bottom,
+    XStart,
+    XEnd,
+    YStart,
+    YEnd,
+}
+
+impl AxisPositionKeyword {
+    
+    #[inline]
+    pub fn as_percentage(&self) -> Percentage {
+        match self {
+            Self::Center => Percentage(0.5),
+            Self::Left | Self::Top | Self::XStart | Self::YStart => Percentage(0.),
+            Self::Right | Self::Bottom | Self::XEnd | Self::YEnd => Percentage(1.),
         }
     }
 }
