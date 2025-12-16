@@ -753,33 +753,17 @@ void nsCocoaWindow::Invalidate(const LayoutDeviceIntRect& aRect) {
 
 #pragma mark -
 
-void nsCocoaWindow::WillPaintWindow() {
+void nsCocoaWindow::PaintWindow() {
   if (nsIWidgetListener* listener = GetPaintListener()) {
-    listener->WillPaintWindow(this);
+    listener->PaintWindow(this);
   }
 }
 
-bool nsCocoaWindow::PaintWindow(LayoutDeviceIntRegion aRegion) {
-  nsIWidgetListener* listener = GetPaintListener();
-  if (!listener) {
-    return false;
-  }
-
-  bool returnValue = listener->PaintWindow(this, aRegion);
-
-  listener = GetPaintListener();
-  if (listener) {
-    listener->DidPaintWindow();
-  }
-
-  return returnValue;
-}
-
-bool nsCocoaWindow::PaintWindowInDrawTarget(
+void nsCocoaWindow::PaintWindowInDrawTarget(
     gfx::DrawTarget* aDT, const LayoutDeviceIntRegion& aRegion,
     const gfx::IntSize& aSurfaceSize) {
   if (!aDT || !aDT->IsValid()) {
-    return false;
+    return;
   }
   gfxContext targetContext(aDT);
 
@@ -795,9 +779,8 @@ bool nsCocoaWindow::PaintWindowInDrawTarget(
   nsAutoRetainCocoaObject kungFuDeathGrip(mChildView);
   if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_NONE) {
     nsIWidget::AutoLayerManagerSetup setupLayerManager(this, &targetContext);
-    return PaintWindow(aRegion);
+    PaintWindow();
   }
-  return false;
 }
 
 void nsCocoaWindow::EnsureContentLayerForMainThreadPainting() {
@@ -843,7 +826,6 @@ void nsCocoaWindow::PaintWindowInContentLayer() {
 
 void nsCocoaWindow::HandleMainThreadCATransaction() {
   AUTO_PROFILER_MARKER("HandleMainThreadCATransaction", GRAPHICS);
-  WillPaintWindow();
 
   if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_NONE) {
     
@@ -854,7 +836,7 @@ void nsCocoaWindow::HandleMainThreadCATransaction() {
     
     
     
-    PaintWindow(LayoutDeviceIntRegion(GetClientBounds()));
+    PaintWindow();
   }
 
   {
@@ -4188,17 +4170,39 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
 
 - (BOOL)readSelectionFromPasteboard:(NSPasteboard*)pboard {
-  nsresult rv;
+  nsresult rv = NS_OK;
   nsCOMPtr<nsITransferable> trans =
       do_CreateInstance("@mozilla.org/widget/transferable;1", &rv);
-  if (NS_FAILED(rv)) return NO;
-  trans->Init(nullptr);
+  if (NS_FAILED(rv)) {
+    return NO;
+  }
 
+  trans->Init(nullptr);
   trans->AddDataFlavor(kTextMime);
   trans->AddDataFlavor(kHTMLMime);
 
-  rv = nsClipboard::TransferableFromPasteboard(trans, pboard);
-  if (NS_FAILED(rv)) return NO;
+  
+  bool hasTextData = false;
+  auto textDataOrError =
+      nsClipboard::GetDataFromPasteboard(nsLiteralCString(kTextMime), pboard);
+  if (!textDataOrError.isErr()) {
+    if (auto data = textDataOrError.inspect()) {
+      trans->SetTransferData(kTextMime, data);
+      hasTextData = true;
+    }
+  }
+
+  
+  
+  if (!hasTextData) {
+    auto htmlDataOrError =
+        nsClipboard::GetDataFromPasteboard(nsLiteralCString(kHTMLMime), pboard);
+    if (!htmlDataOrError.isErr()) {
+      if (auto data = htmlDataOrError.inspect()) {
+        trans->SetTransferData(kHTMLMime, data);
+      }
+    }
+  }
 
   NS_ENSURE_TRUE(mGeckoChild, false);
 
