@@ -16,27 +16,34 @@ const NET_STRINGS_URI = "devtools/client/locales/netmonitor.properties";
 
 exports.L10N = new LocalizationHelper(NET_STRINGS_URI);
 
-function getBlockedReasonString(blockedReason, blockingExtension) {
-  if (blockedReason && blockingExtension) {
+function getBlockedReasonString(blockedReason, extension) {
+  if (!blockedReason) {
+    return null;
+  }
+
+  if (extension?.blocking) {
+    return exports.L10N.getFormatStr(
+      "networkMenu.addonBlocked",
+      extension.blocking
+    );
+  }
+
+  if (extension?.blocked) {
     return exports.L10N.getFormatStr(
       "networkMenu.blockedby",
-      blockingExtension
+      extension.blocked
     );
   }
 
-  if (blockedReason) {
-    
-    if (typeof blockedReason == "string" && blockedReason.startsWith("NS_")) {
-      return blockedReason;
-    }
-
-    return (
-      BLOCKED_REASON_MESSAGES[blockedReason] ||
-      exports.L10N.getStr("networkMenu.blocked2")
-    );
+  
+  if (typeof blockedReason == "string" && blockedReason.startsWith("NS_")) {
+    return blockedReason;
   }
 
-  return null;
+  return (
+    BLOCKED_REASON_MESSAGES[blockedReason] ||
+    exports.L10N.getStr("networkMenu.blocked2")
+  );
 }
 
 exports.getBlockedReasonString = getBlockedReasonString;
