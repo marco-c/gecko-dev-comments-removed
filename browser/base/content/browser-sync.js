@@ -1195,10 +1195,14 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-setup-sync-container"
     );
-
     const fxaToolbarMenuButton = document.getElementById(
       "fxa-toolbar-menu-button"
     );
+    const syncSetupSeparator = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-set-up-sync-separator"
+    );
+
     let fxaAvatarLabelEl = document.getElementById("fxa-avatar-label");
 
     
@@ -1311,8 +1315,15 @@ var gSync = {
           if (this._shouldShowSyncOffIndicator()) {
             fxaToolbarMenuButton?.setAttribute("badge-status", "sync-disabled");
           }
-          
           syncSetupEl.removeAttribute("hidden");
+        }
+
+        if (state.hasSyncKeys) {
+          cadButtonEl.removeAttribute("hidden");
+          syncSetupSeparator.removeAttribute("hidden");
+        } else {
+          cadButtonEl.setAttribute("hidden", "true");
+          syncSetupSeparator.setAttribute("hidden", "true");
         }
 
         
