@@ -72,9 +72,13 @@ Maybe<ScrollTimeline::ScrollOffsets> ViewTimeline::ComputeOffsets(
   MOZ_ASSERT(mSubject);
   MOZ_ASSERT(aScrollContainerFrame);
 
+  
+  
+  
   const Element* subjectElement =
       mSubject->GetPseudoElement(PseudoStyleRequest(mSubjectPseudoType));
-  const nsIFrame* subject = subjectElement->GetPrimaryFrame();
+  const nsIFrame* subject =
+      subjectElement ? subjectElement->GetPrimaryFrame() : nullptr;
   if (!subject) {
     
     

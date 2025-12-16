@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_ScrollTimeline_h
 #define mozilla_dom_ScrollTimeline_h
 
-#include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/WritingModes.h"
@@ -156,25 +155,6 @@ class ScrollTimeline : public AnimationTimeline,
     return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
   }
 
-  enum class TimelineState : uint8_t {
-    
-    None,
-    
-    PendingRemove,
-  };
-  TimelineState ScheduleAnimations() {
-    MOZ_ASSERT(mState == TimelineState::None);
-
-    
-    
-    
-    TickState state;
-    Tick(state);
-    
-
-    return mState;
-  }
-
   void WillRefresh();
 
   
@@ -209,8 +189,6 @@ class ScrollTimeline : public AnimationTimeline,
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
-  void ResetState() { mState = TimelineState::None; }
-
  protected:
   virtual ~ScrollTimeline() { Teardown(); }
   ScrollTimeline() = delete;
@@ -234,14 +212,7 @@ class ScrollTimeline : public AnimationTimeline,
     if (isInList()) {
       remove();
     }
-    UnregisterFromScrollSource();
   }
-
-  
-  void RegisterWithScrollSource();
-
-  
-  void UnregisterFromScrollSource();
 
   const ScrollContainerFrame* GetScrollContainerFrame() const;
 
@@ -256,11 +227,6 @@ class ScrollTimeline : public AnimationTimeline,
   Scroller mSource;
   StyleScrollAxis mAxis;
 
-  
-  
-  
-  TimelineState mState = TimelineState::None;
-
   struct CurrentTimeData {
     
     
@@ -269,51 +235,6 @@ class ScrollTimeline : public AnimationTimeline,
     ScrollOffsets mOffsets;
   };
   Maybe<CurrentTimeData> mCachedCurrentTime;
-};
-
-
-
-
-
-
-
-
-class ProgressTimelineScheduler {
- public:
-  ProgressTimelineScheduler() { MOZ_COUNT_CTOR(ProgressTimelineScheduler); }
-  ~ProgressTimelineScheduler() { MOZ_COUNT_DTOR(ProgressTimelineScheduler); }
-
-  static ProgressTimelineScheduler* Get(
-      const Element* aElement, const PseudoStyleRequest& aPseudoRequest);
-  static ProgressTimelineScheduler& Ensure(
-      Element* aElement, const PseudoStyleRequest& aPseudoRequest);
-  static void Destroy(const Element* aElement,
-                      const PseudoStyleRequest& aPseudoRequest);
-
-  void AddTimeline(ScrollTimeline* aScrollTimeline) {
-    MOZ_ASSERT(!mIsInScheduling, "Do not mutate the hashset during scheduling");
-    (void)mTimelines.put(aScrollTimeline);
-  }
-  void RemoveTimeline(ScrollTimeline* aScrollTimeline) {
-    MOZ_ASSERT(!mIsInScheduling, "Do not mutate the hashset during scheduling");
-    mTimelines.remove(aScrollTimeline);
-  }
-
-  bool IsEmpty() const { return mTimelines.empty(); }
-  bool IsInScheduling() const { return mIsInScheduling; }
-
-  
-  
-  static void ScheduleAnimations(const Element* aElement,
-                                 const PseudoStyleRequest& aRequest);
-
- private:
-  
-  
-  
-  HashSet<ScrollTimeline*> mTimelines;
-  
-  bool mIsInScheduling = false;
 };
 
 }  
