@@ -597,18 +597,24 @@ def gradle_android_compile_all_tasks(build_config):
     ]
 
     
-    for app in ["", "Fenix", "Focus", "Klar"]:
+    tasks += [
+        f"compile{buildType}Sources",
+        f"compile{buildType}UnitTestSources",
+    ]
+
+    
+    for flavor in ["Focus", "Klar"]:
         tasks += [
-            f"compile{app}{buildType}Sources",
-            f"compile{app}{buildType}UnitTestSources",
+            f"compile{flavor}{buildType}Sources",
+            f"compile{flavor}{buildType}UnitTestSources",
         ]
 
     
     if buildType == "Debug":
-        for app in ["", "Fenix", "Focus", "Klar"]:
-            tasks += [
-                f"compile{app}{buildType}AndroidTestSources",
-            ]
+        tasks += [f"compile{buildType}AndroidTestSources"]
+
+        for flavor in ["Focus", "Klar"]:
+            tasks += [f"compile{flavor}{buildType}AndroidTestSources"]
 
         for app in ["Gecko", "System"]:
             tasks += [
