@@ -619,7 +619,6 @@ def autotest(
     
     command_context._set_log_level(verbose)
     command_context.activate_virtualenv()
-    dump_results = dump_results
 
     force_download = not dump_results
 
