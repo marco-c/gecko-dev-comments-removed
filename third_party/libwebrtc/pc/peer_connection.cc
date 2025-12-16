@@ -634,7 +634,7 @@ PeerConnection::PeerConnection(
         sdp_handler_->UpdateNegotiationNeeded();
       });
   
-  if (!IsUnifiedPlan()) {
+  if (!IsUnifiedPlan() && ConfiguredForMedia()) {
     rtp_manager_->transceivers()->Add(
         RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
             signaling_thread(), make_ref_counted<RtpTransceiver>(
