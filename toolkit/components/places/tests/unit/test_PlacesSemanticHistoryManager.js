@@ -8,6 +8,7 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   getPlacesSemanticHistoryManager:
     "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
@@ -220,10 +221,10 @@ add_task(async function test_canUseSemanticSearch_region_locale() {
       setPref: "invalid json", 
     },
     {
-      region: "US",
-      locale: "en", 
-      supported: false,
-      setPref: '[["US",["en-*"]]]',
+      region: "IT",
+      locale: "it", 
+      supported: true,
+      setPref: '[["IT",["it-*"]]]',
     },
     {
       region: "US",
@@ -354,6 +355,21 @@ add_task(async function test_removeDatabaseFilesOnStartup() {
     ),
     "Pref should have been reset."
   );
+});
+
+add_task(async function test_empty_region() {
+  
+  
+  let stub = sinon.stub(Region, "home").get(() => "");
+  let spy = sinon.spy(Region, "init");
+  let semanticManager = createPlacesSemanticHistoryManager();
+  Assert.ok(
+    !semanticManager.canUseSemanticSearch,
+    `Check semantic search disabled when region not set`
+  );
+  Assert.ok(spy.calledOnce, "Region.init should have been called");
+  spy.restore();
+  stub.restore();
 });
 
 add_task(async function test_chunksTelemetry() {
