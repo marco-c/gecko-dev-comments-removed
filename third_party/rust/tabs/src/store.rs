@@ -2,9 +2,8 @@
 
 
 
-use crate::storage::{ClientRemoteTabs, LocalTabsInfo, RemoteTab, TabsStorage};
+use crate::storage::{ClientRemoteTabs, RemoteTab, TabsStorage};
 use crate::{ApiResult, PendingCommand, RemoteCommand};
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -32,18 +31,8 @@ impl TabsStore {
         self.storage.lock().unwrap().close()
     }
 
-    
-    
     pub fn set_local_tabs(&self, local_state: Vec<RemoteTab>) {
-        self.set_local_tabs_info(LocalTabsInfo {
-            tabs: local_state,
-            tab_groups: HashMap::new(),
-            windows: HashMap::new(),
-        })
-    }
-
-    pub fn set_local_tabs_info(&self, info: LocalTabsInfo) {
-        self.storage.lock().unwrap().update_local_state(info);
+        self.storage.lock().unwrap().update_local_state(local_state);
     }
 
     
