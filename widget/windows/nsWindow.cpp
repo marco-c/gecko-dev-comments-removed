@@ -5546,14 +5546,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_NCLBUTTONDOWN: {
       
       
-      auto const hitTest =
-          ClientMarginHitTestPoint(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-
       
       
-      
-      
-      if (hitTest == HTCAPTION) {
+      if (wParam == HTCAPTION) {
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
         mDraggingWindowWithMouse = true;
       }
