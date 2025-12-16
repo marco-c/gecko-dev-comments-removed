@@ -25,7 +25,8 @@
 
 
 
-function _makeOptionsInternal(requestsInputArray, mediation, requestMapping) {
+
+function _makeOptionsInternal(requestsInputArray, mediation, requestMapping, signal) {
   const requests = [];
   for (const request of requestsInputArray) {
     const factoryFunction = requestMapping[request];
@@ -36,7 +37,11 @@ function _makeOptionsInternal(requestsInputArray, mediation, requestMapping) {
       throw new Error(`Unknown request type within array: ${request}`);
     }
   }
-  return { digital: { requests }, mediation };
+  const result = { digital: { requests }, mediation };
+  if (signal !== undefined) {
+    result.signal = signal;
+  }
+  return result;
 }
 
 const allMappings = {
@@ -62,7 +67,8 @@ const allMappings = {
 
 
 
-function _makeOptionsUnified(type, protocol, mediation) {
+
+function _makeOptionsUnified(type, protocol, mediation, signal) {
   
   const mapping = allMappings[type];
    
@@ -74,7 +80,7 @@ function _makeOptionsUnified(type, protocol, mediation) {
   if (typeof protocol === 'string') {
     if (protocol in mapping) {
       
-      return _makeOptionsInternal([protocol], mediation, mapping);
+      return _makeOptionsInternal([protocol], mediation, mapping, signal);
     } else {
       
       throw new Error(`Unknown request type string '${protocol}' provided for operation type '${type}'`);
@@ -85,14 +91,22 @@ function _makeOptionsUnified(type, protocol, mediation) {
   if (Array.isArray(protocol)) {
     if (protocol.length === 0) {
       
-      return { digital: { requests: [] }, mediation };
+      const result = { digital: { requests: [] }, mediation };
+      if (signal !== undefined) {
+        result.signal = signal;
+      }
+      return result;
     }
     
-    return _makeOptionsInternal(protocol, mediation, mapping);
+    return _makeOptionsInternal(protocol, mediation, mapping, signal);
   }
 
   
-  return { digital: { requests: [] }, mediation };
+  const result = { digital: { requests: [] }, mediation };
+  if (signal !== undefined) {
+    result.signal = signal;
+  }
+  return result;
 }
 
 
@@ -102,8 +116,8 @@ function _makeOptionsUnified(type, protocol, mediation) {
 
 
 export function makeGetOptions(config = {}) {
-  const { protocol = "default", mediation = "required" } = config;
-  return _makeOptionsUnified('get', protocol, mediation);
+  const { protocol = "default", mediation = "required", signal } = config;
+  return _makeOptionsUnified('get', protocol, mediation, signal);
 }
 
 
@@ -113,8 +127,8 @@ export function makeGetOptions(config = {}) {
 
 
 export function makeCreateOptions(config = {}) {
-  const { protocol = "default", mediation = "required" } = config;
-  return _makeOptionsUnified('create', protocol, mediation);
+  const { protocol = "default", mediation = "required", signal } = config;
+  return _makeOptionsUnified('create', protocol, mediation, signal);
 }
 
 
