@@ -30,6 +30,8 @@ class TestClientActivity(FOGTestCase):
         
         expected_pings = ["baseline", "usage-reporting"]
 
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
+
         
         
         
