@@ -12,6 +12,7 @@
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/Currency.h"
+#include "mozilla/intl/Locale.h"
 #include "mozilla/intl/MeasureUnitGenerated.h"
 #include "mozilla/intl/TimeZone.h"
 
@@ -23,15 +24,18 @@
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
-#include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/NumberingSystemsGenerated.h"
 #include "builtin/intl/SharedIntlData.h"
+#include "builtin/intl/StringAsciiChars.h"
 #include "ds/Sort.h"
 #include "js/Class.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"
 #include "js/GCVector.h"
 #include "js/PropertySpec.h"
+#include "js/Result.h"
+#include "js/StableStringChars.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSAtomUtils.h"  
 #include "vm/JSContext.h"
@@ -112,6 +116,103 @@ static void ReportBadKey(JSContext* cx, JSString* key) {
   }
 }
 
+static bool SameOrParentLocale(const JSLinearString* locale,
+                               const JSLinearString* otherLocale) {
+  
+  if (locale->length() == otherLocale->length()) {
+    return EqualStrings(locale, otherLocale);
+  }
+
+  
+  if (locale->length() < otherLocale->length()) {
+    return HasSubstringAt(otherLocale, locale, 0) &&
+           otherLocale->latin1OrTwoByteChar(locale->length()) == '-';
+  }
+
+  return false;
+}
+
+using SupportedLocaleKind = js::intl::SharedIntlData::SupportedLocaleKind;
+
+
+static JS::Result<JSLinearString*> BestAvailableLocale(
+    JSContext* cx, SupportedLocaleKind kind, Handle<JSLinearString*> locale,
+    Handle<JSLinearString*> defaultLocale) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  intl::SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
+
+  auto findLast = [](const auto* chars, size_t length) {
+    auto rbegin = std::make_reverse_iterator(chars + length);
+    auto rend = std::make_reverse_iterator(chars);
+    auto p = std::find(rbegin, rend, '-');
+
+    
+    
+    ptrdiff_t r = std::distance(chars, p.base());
+    MOZ_ASSERT(r == std::distance(p, rend));
+
+    
+    
+    
+    return r - 1;
+  };
+
+  
+  Rooted<JSLinearString*> candidate(cx, locale);
+
+  
+  while (true) {
+    
+    bool supported = false;
+    if (!sharedIntlData.isSupportedLocale(cx, kind, candidate, &supported)) {
+      return cx->alreadyReportedError();
+    }
+    if (supported) {
+      return candidate.get();
+    }
+
+    if (defaultLocale && SameOrParentLocale(candidate, defaultLocale)) {
+      return candidate.get();
+    }
+
+    
+    ptrdiff_t pos;
+    if (candidate->hasLatin1Chars()) {
+      JS::AutoCheckCannotGC nogc;
+      pos = findLast(candidate->latin1Chars(nogc), candidate->length());
+    } else {
+      JS::AutoCheckCannotGC nogc;
+      pos = findLast(candidate->twoByteChars(nogc), candidate->length());
+    }
+
+    if (pos < 0) {
+      return nullptr;
+    }
+
+    
+    size_t length = size_t(pos);
+    if (length >= 2 && candidate->latin1OrTwoByteChar(length - 2) == '-') {
+      length -= 2;
+    }
+
+    
+    candidate = NewDependentString(cx, candidate, 0, length);
+    if (!candidate) {
+      return cx->alreadyReportedError();
+    }
+  }
+}
+
 
 
 
@@ -120,9 +221,7 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 3);
 
-  using AvailableLocaleKind = js::intl::AvailableLocaleKind;
-
-  AvailableLocaleKind kind;
+  SupportedLocaleKind kind;
   {
     JSLinearString* typeStr = args[0].toString()->ensureLinear(cx);
     if (!typeStr) {
@@ -130,24 +229,24 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     if (StringEqualsLiteral(typeStr, "Collator")) {
-      kind = AvailableLocaleKind::Collator;
+      kind = SupportedLocaleKind::Collator;
     } else if (StringEqualsLiteral(typeStr, "DateTimeFormat")) {
-      kind = AvailableLocaleKind::DateTimeFormat;
+      kind = SupportedLocaleKind::DateTimeFormat;
     } else if (StringEqualsLiteral(typeStr, "DisplayNames")) {
-      kind = AvailableLocaleKind::DisplayNames;
+      kind = SupportedLocaleKind::DisplayNames;
     } else if (StringEqualsLiteral(typeStr, "DurationFormat")) {
-      kind = AvailableLocaleKind::DurationFormat;
+      kind = SupportedLocaleKind::DurationFormat;
     } else if (StringEqualsLiteral(typeStr, "ListFormat")) {
-      kind = AvailableLocaleKind::ListFormat;
+      kind = SupportedLocaleKind::ListFormat;
     } else if (StringEqualsLiteral(typeStr, "NumberFormat")) {
-      kind = AvailableLocaleKind::NumberFormat;
+      kind = SupportedLocaleKind::NumberFormat;
     } else if (StringEqualsLiteral(typeStr, "PluralRules")) {
-      kind = AvailableLocaleKind::PluralRules;
+      kind = SupportedLocaleKind::PluralRules;
     } else if (StringEqualsLiteral(typeStr, "RelativeTimeFormat")) {
-      kind = AvailableLocaleKind::RelativeTimeFormat;
+      kind = SupportedLocaleKind::RelativeTimeFormat;
     } else {
       MOZ_ASSERT(StringEqualsLiteral(typeStr, "Segmenter"));
-      kind = AvailableLocaleKind::Segmenter;
+      kind = SupportedLocaleKind::Segmenter;
     }
   }
 
@@ -155,6 +254,54 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
   if (!locale) {
     return false;
   }
+
+#ifdef DEBUG
+  {
+    MOZ_ASSERT(StringIsAscii(locale), "language tags are ASCII-only");
+
+    
+    mozilla::intl::Locale tag;
+
+    using ParserError = mozilla::intl::LocaleParser::ParserError;
+    mozilla::Result<mozilla::Ok, ParserError> parse_result = Ok();
+    {
+      intl::StringAsciiChars chars(locale);
+      if (!chars.init(cx)) {
+        return false;
+      }
+
+      parse_result = mozilla::intl::LocaleParser::TryParse(chars, tag);
+    }
+
+    if (parse_result.isErr()) {
+      MOZ_ASSERT(parse_result.unwrapErr() == ParserError::OutOfMemory,
+                 "locale is a structurally valid language tag");
+
+      intl::ReportInternalError(cx);
+      return false;
+    }
+
+    MOZ_ASSERT(!tag.GetUnicodeExtension(),
+               "locale must contain no Unicode extensions");
+
+    if (auto result = tag.Canonicalize(); result.isErr()) {
+      MOZ_ASSERT(
+          result.unwrapErr() !=
+          mozilla::intl::Locale::CanonicalizationError::DuplicateVariant);
+      intl::ReportInternalError(cx);
+      return false;
+    }
+
+    intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+    if (auto result = tag.ToString(buffer); result.isErr()) {
+      intl::ReportInternalError(cx, result.unwrapErr());
+      return false;
+    }
+
+    MOZ_ASSERT(StringEqualsAscii(locale, buffer.data(), buffer.length()),
+               "locale is a canonicalized language tag");
+  }
+#endif
 
   MOZ_ASSERT(args[2].isNull() || args[2].isString());
 
@@ -166,16 +313,132 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  Rooted<JSLinearString*> result(cx);
-  if (!intl::BestAvailableLocale(cx, kind, locale, defaultLocale, &result)) {
-    return false;
-  }
+  JSString* result;
+  JS_TRY_VAR_OR_RETURN_FALSE(
+      cx, result, BestAvailableLocale(cx, kind, locale, defaultLocale));
+
   if (result) {
     args.rval().setString(result);
   } else {
     args.rval().setUndefined();
   }
   return true;
+}
+
+JSLinearString* js::intl::ComputeDefaultLocale(JSContext* cx) {
+  const char* locale = cx->realm()->getLocale();
+  if (!locale) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  auto span = mozilla::MakeStringSpan(locale);
+
+  mozilla::intl::Locale tag;
+  bool canParseLocale =
+      mozilla::intl::LocaleParser::TryParse(span, tag).isOk() &&
+      tag.Canonicalize().isOk();
+
+  Rooted<JSLinearString*> candidate(cx);
+  if (!canParseLocale) {
+    candidate = NewStringCopyZ<CanGC>(cx, intl::LastDitchLocale());
+    if (!candidate) {
+      return nullptr;
+    }
+  } else {
+    
+    
+    
+    tag.ClearUnicodeExtension();
+
+    intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+    if (auto result = tag.ToString(buffer); result.isErr()) {
+      intl::ReportInternalError(cx, result.unwrapErr());
+      return nullptr;
+    }
+
+    candidate = buffer.toAsciiString(cx);
+    if (!candidate) {
+      return nullptr;
+    }
+
+    
+    
+    
+    for (const auto& mapping : js::intl::oldStyleLanguageTagMappings) {
+      const char* oldStyle = mapping.oldStyle;
+      const char* modernStyle = mapping.modernStyle;
+
+      if (StringEqualsAscii(candidate, oldStyle)) {
+        candidate = NewStringCopyZ<CanGC>(cx, modernStyle);
+        if (!candidate) {
+          return nullptr;
+        }
+        break;
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+
+  Rooted<JSLinearString*> supportedCollator(cx);
+  JS_TRY_VAR_OR_RETURN_NULL(
+      cx, supportedCollator,
+      BestAvailableLocale(cx, SupportedLocaleKind::Collator, candidate,
+                          nullptr));
+
+  Rooted<JSLinearString*> supportedDateTimeFormat(cx);
+  JS_TRY_VAR_OR_RETURN_NULL(
+      cx, supportedDateTimeFormat,
+      BestAvailableLocale(cx, SupportedLocaleKind::DateTimeFormat, candidate,
+                          nullptr));
+
+#ifdef DEBUG
+  
+  
+  
+  for (auto kind : {
+           SupportedLocaleKind::DisplayNames,
+           SupportedLocaleKind::DurationFormat,
+           SupportedLocaleKind::ListFormat,
+           SupportedLocaleKind::NumberFormat,
+           SupportedLocaleKind::PluralRules,
+           SupportedLocaleKind::RelativeTimeFormat,
+           SupportedLocaleKind::Segmenter,
+       }) {
+    JSLinearString* supported;
+    JS_TRY_VAR_OR_RETURN_NULL(
+        cx, supported, BestAvailableLocale(cx, kind, candidate, nullptr));
+
+    MOZ_ASSERT(!!supported == !!supportedDateTimeFormat);
+    MOZ_ASSERT_IF(supported, EqualStrings(supported, supportedDateTimeFormat));
+  }
+#endif
+
+  
+  
+  if (supportedCollator && supportedDateTimeFormat) {
+    
+    
+    
+    
+    
+    
+    
+    if (SameOrParentLocale(supportedCollator, supportedDateTimeFormat)) {
+      return supportedDateTimeFormat;
+    }
+    return supportedCollator;
+  }
+
+  
+  return NewStringCopyZ<CanGC>(cx, intl::LastDitchLocale());
 }
 
 using StringList = GCVector<JSLinearString*>;

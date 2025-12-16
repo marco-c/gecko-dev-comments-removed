@@ -31,18 +31,6 @@ class ArrayObject;
 
 namespace intl {
 
-enum class AvailableLocaleKind {
-  Collator,
-  DateTimeFormat,
-  DisplayNames,
-  DurationFormat,
-  ListFormat,
-  NumberFormat,
-  PluralRules,
-  RelativeTimeFormat,
-  Segmenter,
-};
-
 
 
 
@@ -285,13 +273,13 @@ class SharedIntlData {
   
   
   
-  LocaleSet availableLocales;
+  LocaleSet supportedLocales;
 
   
   
-  LocaleSet collatorAvailableLocales;
+  LocaleSet collatorSupportedLocales;
 
-  bool availableLocalesInitialized = false;
+  bool supportedLocalesInitialized = false;
 
   
   
@@ -305,21 +293,33 @@ class SharedIntlData {
   
 
 
-  bool ensureAvailableLocales(JSContext* cx);
+  bool ensureSupportedLocales(JSContext* cx);
 
  public:
+  enum class SupportedLocaleKind {
+    Collator,
+    DateTimeFormat,
+    DisplayNames,
+    DurationFormat,
+    ListFormat,
+    NumberFormat,
+    PluralRules,
+    RelativeTimeFormat,
+    Segmenter,
+  };
+
   
 
 
 
-  [[nodiscard]] bool isAvailableLocale(JSContext* cx, AvailableLocaleKind kind,
-                                       JS::Handle<JSLinearString*> locale,
-                                       bool* available);
+  [[nodiscard]] bool isSupportedLocale(JSContext* cx, SupportedLocaleKind kind,
+                                       JS::Handle<JSString*> locale,
+                                       bool* supported);
 
   
 
 
-  ArrayObject* availableLocalesOf(JSContext* cx, AvailableLocaleKind kind);
+  ArrayObject* availableLocalesOf(JSContext* cx, SupportedLocaleKind kind);
 
  private:
   
@@ -361,7 +361,7 @@ class SharedIntlData {
 
 
 
-  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSLinearString*> locale,
+  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSString*> locale,
                         bool* isUpperFirst);
 
  private:
@@ -380,7 +380,7 @@ class SharedIntlData {
   
 
 
-  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSLinearString*> locale,
+  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSString*> locale,
                            bool* ignorePunctuation);
 
  private:

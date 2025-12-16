@@ -163,6 +163,26 @@ function InitializeSegmenter(segmenter, locales, options) {
 
 
 
+
+
+function Intl_Segmenter_supportedLocalesOf(locales ) {
+  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
+
+  
+  var availableLocales = "Segmenter";
+
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
+
+  
+  return SupportedLocales(availableLocales, requestedLocales, options);
+}
+
+
+
+
+
+
 function Intl_Segmenter_segment(value) {
   
   var segmenter = this;

@@ -238,6 +238,28 @@ function InitializePluralRules(pluralRules, locales, options) {
 
 
 
+function Intl_PluralRules_supportedLocalesOf(locales ) {
+  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
+
+  
+  var availableLocales = "PluralRules";
+
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
+
+  
+  return SupportedLocales(availableLocales, requestedLocales, options);
+}
+
+
+
+
+
+
+
+
+
+
 function Intl_PluralRules_select(value) {
   
   var pluralRules = this;

@@ -204,6 +204,26 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
 
 
 
+function Intl_RelativeTimeFormat_supportedLocalesOf(locales ) {
+  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
+
+  
+  var availableLocales = "RelativeTimeFormat";
+
+  
+  var requestedLocales = CanonicalizeLocaleList(locales);
+
+  
+  return SupportedLocales(availableLocales, requestedLocales, options);
+}
+
+
+
+
+
+
+
+
 function Intl_RelativeTimeFormat_format(value, unit) {
   
   var relativeTimeFormat = this;

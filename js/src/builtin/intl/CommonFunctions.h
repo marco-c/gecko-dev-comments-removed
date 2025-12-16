@@ -96,6 +96,11 @@ extern const OldStyleLanguageTagMapping oldStyleLanguageTagMappings[5];
 
 extern JS::UniqueChars EncodeLocale(JSContext* cx, JSString* locale);
 
+using LocalesList = JS::StackGCVector<JSLinearString*>;
+
+bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
+                            JS::MutableHandle<LocalesList> result);
+
 
 
 
