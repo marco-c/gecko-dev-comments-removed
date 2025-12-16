@@ -547,10 +547,19 @@ class StyleRuleActor extends Actor {
           
           
           this.ruleClassName === PRES_HINTS ||
-          InspectorUtils.supports(
+          (InspectorUtils.supports(
             `${decl.name}:${decl.value}`,
             supportsOptions
-          );
+          ) &&
+            
+            
+            
+            
+            !(
+              decl.priority === "important" &&
+              (this.ruleClassName === "CSSPositionTryRule" ||
+                this.ruleClassName === "CSSKeyframesRule")
+            ));
         const inactiveCssData = getInactiveCssDataForProperty(
           el,
           style,
