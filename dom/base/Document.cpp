@@ -18184,7 +18184,8 @@ void Document::NotifyUserGestureActivation(
 
   
   
-  for (WindowContext* wc = currentWC; wc; wc = wc->GetParentWindowContext()) {
+  for (WindowContext* wc = currentWC->GetParentWindowContext(); wc;
+       wc = wc->GetParentWindowContext()) {
     wc->NotifyUserGestureActivation(aModifiers);
   }
 
@@ -18193,7 +18194,8 @@ void Document::NotifyUserGestureActivation(
   
   currentBC->PreOrderWalk([&](BrowsingContext* bc) {
     WindowContext* wc = bc->GetCurrentWindowContext();
-    if (!wc) {
+    
+    if (!wc || wc == currentWC) {
       return;
     }
 
