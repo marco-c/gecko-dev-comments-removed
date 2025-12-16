@@ -28,21 +28,20 @@ const SHADOW_ROOT_TAGNAME = "#shadow-root";
 
 
 
-
-
-
-function ArrowScrollBox(win, container) {
-  this.win = win;
-  this.doc = win.document;
-  this.container = container;
-  EventEmitter.decorate(this);
-  this.init();
-}
-
-ArrowScrollBox.prototype = {
+class ArrowScrollBox {
   
-  scrollBehavior: "smooth",
 
+
+
+  constructor(win, container) {
+    this.win = win;
+    this.doc = win.document;
+    this.container = container;
+    EventEmitter.decorate(this);
+    this.init();
+  }
+  
+  scrollBehavior = "smooth";
   
 
 
@@ -67,7 +66,7 @@ ArrowScrollBox.prototype = {
     
     this.inner.addEventListener("underflow", this.onUnderflow);
     this.inner.addEventListener("overflow", this.onOverflow);
-  },
+  }
 
   
 
@@ -77,7 +76,7 @@ ArrowScrollBox.prototype = {
 
   scrollToElement(element, block) {
     element.scrollIntoView({ block, behavior: this.scrollBehavior });
-  },
+  }
 
   
 
@@ -109,7 +108,7 @@ ArrowScrollBox.prototype = {
     container.addEventListener("mouseout", cancelHold);
     container.addEventListener("mouseup", handleClick);
     timer = window.setTimeout(repeated, SCROLL_REPEAT_MS);
-  },
+  }
 
   
 
@@ -122,7 +121,7 @@ ArrowScrollBox.prototype = {
 
     const element = this.inner.childNodes[0];
     this.scrollToElement(element, "start");
-  },
+  }
 
   
 
@@ -135,7 +134,7 @@ ArrowScrollBox.prototype = {
 
     const element = children[children.length - 1];
     this.scrollToElement(element, "start");
-  },
+  }
 
   
 
@@ -151,7 +150,7 @@ ArrowScrollBox.prototype = {
     };
 
     this.clickOrHold(scrollToStart);
-  },
+  }
 
   
 
@@ -167,7 +166,7 @@ ArrowScrollBox.prototype = {
     };
 
     this.clickOrHold(scrollToEnd);
-  },
+  }
 
   
 
@@ -187,7 +186,7 @@ ArrowScrollBox.prototype = {
     } else {
       this.endBtn.removeAttribute("disabled");
     }
-  },
+  }
 
   
 
@@ -196,7 +195,7 @@ ArrowScrollBox.prototype = {
     this.startBtn.style.visibility = "collapse";
     this.endBtn.style.visibility = "collapse";
     this.emit("underflow");
-  },
+  }
 
   
 
@@ -205,7 +204,7 @@ ArrowScrollBox.prototype = {
     this.startBtn.style.visibility = "visible";
     this.endBtn.style.visibility = "visible";
     this.emit("overflow");
-  },
+  }
 
   
 
@@ -220,7 +219,7 @@ ArrowScrollBox.prototype = {
     return (
       elementLeft < left - SCROLL_MARGIN && elementRight < right - SCROLL_MARGIN
     );
-  },
+  }
 
   
 
@@ -235,7 +234,7 @@ ArrowScrollBox.prototype = {
     return (
       elementLeft > left + SCROLL_MARGIN && elementRight > right + SCROLL_MARGIN
     );
-  },
+  }
 
   
 
@@ -246,7 +245,7 @@ ArrowScrollBox.prototype = {
 
     const predicate = this.elementLeftOfContainer;
     return this.findFirstWithBounds(elementsList, predicate);
-  },
+  }
 
   
 
@@ -255,7 +254,7 @@ ArrowScrollBox.prototype = {
   getLastInvisibleElement() {
     const predicate = this.elementRightOfContainer;
     return this.findFirstWithBounds(this.inner.childNodes, predicate);
-  },
+  }
 
   
 
@@ -280,7 +279,7 @@ ArrowScrollBox.prototype = {
     }
 
     return null;
-  },
+  }
 
   
 
@@ -315,7 +314,7 @@ ArrowScrollBox.prototype = {
       this.container
     );
     this.createElement("div", "toolbarbutton-icon", this.endBtn);
-  },
+  }
 
   
 
@@ -334,7 +333,7 @@ ArrowScrollBox.prototype = {
     }
 
     return el;
-  },
+  }
 
   
 
@@ -349,35 +348,33 @@ ArrowScrollBox.prototype = {
     
     this.inner.removeEventListener("underflow", this.onUnderflow);
     this.inner.removeEventListener("overflow", this.onOverflow);
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-function HTMLBreadcrumbs(inspector) {
-  this.inspector = inspector;
-  this.selection = this.inspector.selection;
-  this.win = this.inspector.panelWin;
-  this.doc = this.inspector.panelDoc;
-  this._init();
+  }
 }
 
-exports.HTMLBreadcrumbs = HTMLBreadcrumbs;
 
-HTMLBreadcrumbs.prototype = {
+
+
+
+
+
+
+
+
+
+class HTMLBreadcrumbs {
+  
+
+
+  constructor(inspector) {
+    this.inspector = inspector;
+    this.selection = this.inspector.selection;
+    this.win = this.inspector.panelWin;
+    this.doc = this.inspector.panelDoc;
+    this._init();
+  }
   get walker() {
     return this.inspector.walker;
-  },
+  }
 
   _init() {
     this.outer = this.doc.getElementById("inspector-breadcrumbs");
@@ -424,13 +421,13 @@ HTMLBreadcrumbs.prototype = {
     this.selection.on("attribute-changed", this.updateSelectors);
     this.inspector.on("markupmutation", this.updateWithMutations);
     this.update();
-  },
+  }
 
   initKeyShortcuts() {
     this.shortcuts = new KeyShortcuts({ window: this.win, target: this.outer });
     this.shortcuts.on("Right", this.handleShortcut);
     this.shortcuts.on("Left", this.handleShortcut);
-  },
+  }
 
   
 
@@ -459,7 +456,7 @@ HTMLBreadcrumbs.prototype = {
     }
 
     return text;
-  },
+  }
 
   
 
@@ -526,7 +523,7 @@ HTMLBreadcrumbs.prototype = {
     fragment.appendChild(pseudosLabel);
 
     return fragment;
-  },
+  }
 
   
 
@@ -543,7 +540,7 @@ HTMLBreadcrumbs.prototype = {
     } else if (event.type == "focus") {
       this.handleFocus(event);
     }
-  },
+  }
 
   
 
@@ -563,7 +560,7 @@ HTMLBreadcrumbs.prototype = {
     }
 
     this.outer.focus();
-  },
+  }
 
   
 
@@ -575,7 +572,7 @@ HTMLBreadcrumbs.prototype = {
     if (target.tagName == "button") {
       target.onBreadcrumbsClick();
     }
-  },
+  }
 
   
 
@@ -587,7 +584,7 @@ HTMLBreadcrumbs.prototype = {
     if (target.tagName == "button") {
       target.onBreadcrumbsHover();
     }
-  },
+  }
 
   
 
@@ -596,7 +593,7 @@ HTMLBreadcrumbs.prototype = {
     this.inspector.highlighters.hideHighlighterType(
       this.inspector.highlighters.TYPES.BOXMODEL
     );
-  },
+  }
 
   
 
@@ -633,7 +630,7 @@ HTMLBreadcrumbs.prototype = {
         reason: "breadcrumbs",
       });
     });
-  },
+  }
 
   
 
@@ -663,14 +660,14 @@ HTMLBreadcrumbs.prototype = {
     this.nodeHierarchy = null;
 
     this.isDestroyed = true;
-  },
+  }
 
   
 
 
   empty() {
     this.container.replaceChildren();
-  },
+  }
 
   
 
@@ -695,7 +692,7 @@ HTMLBreadcrumbs.prototype = {
       this.outer.removeAttribute("aria-activedescendant");
     }
     this.currentIndex = index;
-  },
+  }
 
   
 
@@ -710,7 +707,7 @@ HTMLBreadcrumbs.prototype = {
       }
     }
     return -1;
-  },
+  }
 
   
 
@@ -723,7 +720,7 @@ HTMLBreadcrumbs.prototype = {
       const toRemove = this.nodeHierarchy.pop();
       this.container.removeChild(toRemove.button);
     }
-  },
+  }
 
   
 
@@ -756,7 +753,7 @@ HTMLBreadcrumbs.prototype = {
     };
 
     return button;
-  },
+  }
 
   
 
@@ -785,7 +782,7 @@ HTMLBreadcrumbs.prototype = {
       node = node.parentOrHost();
     }
     this.container.appendChild(fragment, this.container.firstChild);
-  },
+  }
 
   
 
@@ -802,7 +799,7 @@ HTMLBreadcrumbs.prototype = {
       node = node.parentNode();
     }
     return -1;
-  },
+  }
 
   
 
@@ -813,7 +810,7 @@ HTMLBreadcrumbs.prototype = {
       const element = this.nodeHierarchy[this.currentIndex].button;
       this.arrowScrollBox.scrollToElement(element, "end");
     }
-  },
+  }
 
   
 
@@ -838,7 +835,7 @@ HTMLBreadcrumbs.prototype = {
 
       this.nodeHierarchy[i].currentPrettyPrintText = textOutput;
     }
-  },
+  }
 
   
 
@@ -861,7 +858,7 @@ HTMLBreadcrumbs.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -885,7 +882,7 @@ HTMLBreadcrumbs.prototype = {
       return attributeName === "class" || attributeName === "id";
     }
     return false;
-  },
+  }
 
   
 
@@ -896,7 +893,7 @@ HTMLBreadcrumbs.prototype = {
 
   updateWithMutations(mutations) {
     return this.update("markupmutation", mutations);
-  },
+  }
 
   
 
@@ -991,5 +988,7 @@ HTMLBreadcrumbs.prototype = {
         }
       }
     }, 0);
-  },
-};
+  }
+}
+
+exports.HTMLBreadcrumbs = HTMLBreadcrumbs;
