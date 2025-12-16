@@ -777,35 +777,45 @@ already_AddRefed<MediaDrmCryptoInfo> MediaDrmRemoteCDMParent::CreateCryptoInfo(
   
   nsTArray<size_t> plainSizes(cryptoObj.mPlainSizes.Length());
   nsTArray<size_t> encryptedSizes(cryptoObj.mEncryptedSizes.Length());
-  uint32_t totalSubSamplesSize = 0;
-  for (const auto& size : cryptoObj.mPlainSizes) {
-    plainSizes.AppendElement(size);
-    totalSubSamplesSize += size;
-  }
-  for (const auto& size : cryptoObj.mEncryptedSizes) {
-    encryptedSizes.AppendElement(size);
-    totalSubSamplesSize += size;
-  }
+  if (numSubSamples > 0) {
+    uint32_t totalSubSamplesSize = 0;
+    for (const auto& size : cryptoObj.mPlainSizes) {
+      plainSizes.AppendElement(size);
+      totalSubSamplesSize += size;
+    }
+    for (const auto& size : cryptoObj.mEncryptedSizes) {
+      encryptedSizes.AppendElement(size);
+      totalSubSamplesSize += size;
+    }
 
-  auto codecSpecificDataSize =
-      CheckedInt<size_t>(aSample->Size()) - totalSubSamplesSize;
-  if (!codecSpecificDataSize.isValid()) {
-    MOZ_ASSERT_UNREACHABLE("totalSubSamplesSize greater than sample size");
-    return nullptr;
-  }
-
-  
-  
-  if (codecSpecificDataSize.value() && !plainSizes.IsEmpty()) {
-    
-    
-    
-    auto newLeadingPlainSize = codecSpecificDataSize + plainSizes[0];
-    if (!newLeadingPlainSize.isValid()) {
-      MOZ_ASSERT_UNREACHABLE("newLeadingPlainSize overflowed");
+    auto codecSpecificDataSize =
+        CheckedInt<size_t>(aSample->Size()) - totalSubSamplesSize;
+    if (!codecSpecificDataSize.isValid()) {
+      MOZ_ASSERT_UNREACHABLE("totalSubSamplesSize greater than sample size");
       return nullptr;
     }
-    plainSizes[0] = newLeadingPlainSize.value();
+
+    
+    
+    if (codecSpecificDataSize.value() && !plainSizes.IsEmpty()) {
+      
+      
+      
+      auto newLeadingPlainSize = codecSpecificDataSize + plainSizes[0];
+      if (!newLeadingPlainSize.isValid()) {
+        MOZ_ASSERT_UNREACHABLE("newLeadingPlainSize overflowed");
+        return nullptr;
+      }
+      plainSizes[0] = newLeadingPlainSize.value();
+    }
+  } else {
+    
+    
+    
+    
+    numSubSamples = 1;
+    plainSizes.AppendElement(0);
+    encryptedSizes.AppendElement(aSample->Size());
   }
 
   const CopyableTArray<uint8_t>* srcIV;
