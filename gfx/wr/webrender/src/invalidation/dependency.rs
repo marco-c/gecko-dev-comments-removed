@@ -15,7 +15,7 @@ use crate::spatial_tree::{SpatialTree, SpatialNodeIndex, CoordinateSpaceMapping}
 use crate::internal_types::{FastHashMap, FastHashSet, FrameId};
 use crate::intern::ItemUid;
 use crate::resource_cache::{ResourceCache, ImageGeneration};
-use crate::tile_cache::{TileDescriptor, PrimitiveDescriptor, PrimitiveDependencyIndex};
+use crate::invalidation::cached_surface::{PrimitiveDependencyIndex, PrimitiveDescriptor, CachedSurfaceDescriptor};
 use peek_poke::{PeekPoke, peek_from_slice};
 use std::collections::hash_map::Entry;
 
@@ -291,7 +291,6 @@ impl SpatialNodeComparer {
 }
 
 
-
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub struct PrimitiveComparisonKey {
     pub prev_index: PrimitiveDependencyIndex,
@@ -312,8 +311,8 @@ pub struct PrimitiveComparer<'a> {
 
 impl<'a> PrimitiveComparer<'a> {
     pub fn new(
-        prev: &'a TileDescriptor,
-        curr: &'a TileDescriptor,
+        prev: &'a CachedSurfaceDescriptor,
+        curr: &'a CachedSurfaceDescriptor,
         resource_cache: &'a ResourceCache,
         spatial_node_comparer: &'a mut SpatialNodeComparer,
         opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,

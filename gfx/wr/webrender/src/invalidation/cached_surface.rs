@@ -23,14 +23,13 @@ use crate::print_tree::PrintTreePrinter;
 use crate::resource_cache::ResourceCache;
 use crate::space::SpaceMapper;
 use crate::spatial_tree::SpatialNodeIndex;
-use crate::tile_cache::{TileDescriptor, PrimitiveDescriptor, PrimitiveDependencyIndex};
 use crate::visibility::FrameVisibilityContext;
 use peek_poke::poke_into_vec;
 use std::mem;
 
 pub struct CachedSurface {
-    pub current_descriptor: TileDescriptor,
-    pub prev_descriptor: TileDescriptor,
+    pub current_descriptor: CachedSurfaceDescriptor,
+    pub prev_descriptor: CachedSurfaceDescriptor,
     pub is_valid: bool,
     pub local_valid_rect: PictureBox2D,
     pub local_dirty_rect: PictureRect,
@@ -44,8 +43,8 @@ pub struct CachedSurface {
 impl CachedSurface {
     pub fn new() -> Self {
         CachedSurface {
-            current_descriptor: TileDescriptor::new(),
-            prev_descriptor: TileDescriptor::new(),
+            current_descriptor: CachedSurfaceDescriptor::new(),
+            prev_descriptor: CachedSurfaceDescriptor::new(),
             is_valid: false,
             local_valid_rect: PictureBox2D::zero(),
             local_dirty_rect: PictureRect::zero(),
@@ -378,5 +377,120 @@ impl PrimitiveDependencyInfo {
             clips: smallvec::SmallVec::new(),
             spatial_nodes: smallvec::SmallVec::new(),
         }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveDescriptor {
+    pub prim_uid: ItemUid,
+    pub prim_clip_box: PictureBox2D,
+    
+    pub dep_offset: u32,
+    pub dep_count: u32,
+}
+
+impl PartialEq for PrimitiveDescriptor {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.001;
+
+        if self.prim_uid != other.prim_uid {
+            return false;
+        }
+
+        use euclid::approxeq::ApproxEq;
+        if !self.prim_clip_box.min.x.approx_eq_eps(&other.prim_clip_box.min.x, &EPSILON) {
+            return false;
+        }
+        if !self.prim_clip_box.min.y.approx_eq_eps(&other.prim_clip_box.min.y, &EPSILON) {
+            return false;
+        }
+        if !self.prim_clip_box.max.x.approx_eq_eps(&other.prim_clip_box.max.x, &EPSILON) {
+            return false;
+        }
+        if !self.prim_clip_box.max.y.approx_eq_eps(&other.prim_clip_box.max.y, &EPSILON) {
+            return false;
+        }
+
+        if self.dep_count != other.dep_count {
+            return false;
+        }
+
+        true
+    }
+}
+
+impl PartialEq<PrimitiveDescriptor> for (&ItemUid, &PictureBox2D) {
+    fn eq(&self, other: &PrimitiveDescriptor) -> bool {
+        self.0 == &other.prim_uid && self.1 == &other.prim_clip_box
+    }
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct PrimitiveDependencyIndex(pub u32);
+
+
+
+#[cfg_attr(any(feature="capture",feature="replay"), derive(Clone))]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct CachedSurfaceDescriptor {
+    
+    
+    
+    pub prims: Vec<PrimitiveDescriptor>,
+
+    
+    pub local_valid_rect: PictureRect,
+
+    
+    
+    pub last_updated_frame_id: FrameId,
+
+    
+    pub dep_data: Vec<u8>,
+}
+
+impl CachedSurfaceDescriptor {
+    pub fn new() -> Self {
+        CachedSurfaceDescriptor {
+            local_valid_rect: PictureRect::zero(),
+            dep_data: Vec::new(),
+            prims: Vec::new(),
+            last_updated_frame_id: FrameId::INVALID,
+        }
+    }
+
+    
+    pub fn print(&self, pt: &mut dyn crate::print_tree::PrintTreePrinter) {
+        pt.new_level("current_descriptor".to_string());
+
+        pt.new_level("prims".to_string());
+        for prim in &self.prims {
+            pt.new_level(format!("prim uid={}", prim.prim_uid.get_uid()));
+            pt.add_item(format!("clip: p0={},{} p1={},{}",
+                prim.prim_clip_box.min.x,
+                prim.prim_clip_box.min.y,
+                prim.prim_clip_box.max.x,
+                prim.prim_clip_box.max.y,
+            ));
+            pt.end_level();
+        }
+        pt.end_level();
+
+        pt.end_level();
+    }
+
+    
+    
+    pub fn clear(&mut self) {
+        self.local_valid_rect = PictureRect::zero();
+        self.prims.clear();
+        self.dep_data.clear();
     }
 }
