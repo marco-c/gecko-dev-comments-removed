@@ -263,7 +263,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   if (aError.Failed()) {
     return;
   }
-  mService = net::WebTransportEventService::GetOrCreate();
+
   
 
   
@@ -414,15 +414,6 @@ void WebTransport::ResolveWaitingConnection(
   
   
   mReliability = aReliability;
-  if (NS_IsMainThread()) {
-    nsPIDOMWindowInner* innerWindow = GetParentObject()->GetAsInnerWindow();
-    if (!!innerWindow) {
-      mInnerWindowID = innerWindow->WindowID();
-    }
-  } else {
-    WorkerPrivate* wp = GetCurrentThreadWorkerPrivate();
-    mInnerWindowID = wp->GetAncestorWindow()->WindowID();
-  }
 
   mChild->SendGetMaxDatagramSize()->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -441,19 +432,6 @@ void WebTransport::ResolveWaitingConnection(
 
   
   mDatagrams->SetChild(mChild);
-
-  
-  mChild->SendGetHttpChannelID()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr{this}](uint64_t&& aHttpChannelId) {
-        MOZ_ASSERT(self->mService);
-        self->mHttpChannelID = aHttpChannelId;
-        self->mService->WebTransportSessionCreated(self->mInnerWindowID,
-                                                   aHttpChannelId);
-      },
-      [](const mozilla::ipc::ResponseRejectReason& aReason) {
-        LOG(("WebTransport fetching the channel information failed "));
-      });
 }
 
 void WebTransport::RejectWaitingConnection(nsresult aRv) {
@@ -860,11 +838,6 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   
   mState = aCloseInfo ? WebTransportState::CLOSED : WebTransportState::FAILED;
-
-  
-  mService->WebTransportSessionClosed(
-      mInnerWindowID, mHttpChannelID, aCloseInfo->mCloseCode,
-      NS_ConvertUTF8toUTF16(aCloseInfo->mReason));
 
   
   AutoJSAPI jsapi;
