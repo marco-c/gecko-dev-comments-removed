@@ -1613,63 +1613,11 @@ impl PicturePrimitive {
             dirty_region_count += 1;
         }
 
-        
-        
-        let subpixel_mode = match self.raster_config {
-            Some(RasterConfig { ref composite_mode, .. }) => {
-                let subpixel_mode = match composite_mode {
-                    PictureCompositeMode::TileCache { slice_id } => {
-                        tile_caches[&slice_id].subpixel_mode
-                    }
-                    PictureCompositeMode::Blit(..) |
-                    PictureCompositeMode::ComponentTransferFilter(..) |
-                    PictureCompositeMode::Filter(..) |
-                    PictureCompositeMode::MixBlend(..) |
-                    PictureCompositeMode::IntermediateSurface |
-                    PictureCompositeMode::SVGFEGraph(..) => {
-                        
-                        
-                        
-                        
-                        SubpixelMode::Deny
-                    }
-                };
-
-                subpixel_mode
-            }
-            None => {
-                SubpixelMode::Allow
-            }
-        };
-
-        
-        let subpixel_mode = match (parent_subpixel_mode, subpixel_mode) {
-            (SubpixelMode::Allow, SubpixelMode::Allow) => {
-                
-                SubpixelMode::Allow
-            }
-            (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect, prohibited_rect }) => {
-                
-                SubpixelMode::Conditional {
-                    allowed_rect,
-                    prohibited_rect,
-                }
-            }
-            (SubpixelMode::Conditional { allowed_rect, prohibited_rect }, SubpixelMode::Allow) => {
-                
-                SubpixelMode::Conditional {
-                    allowed_rect,
-                    prohibited_rect,
-                }
-            }
-            (SubpixelMode::Conditional { .. }, SubpixelMode::Conditional { ..}) => {
-                unreachable!("bug: only top level picture caches have conditional subpixel");
-            }
-            (SubpixelMode::Deny, _) | (_, SubpixelMode::Deny) => {
-                
-                SubpixelMode::Deny
-            }
-        };
+        let subpixel_mode = compute_subpixel_mode(
+            &self.raster_config,
+            tile_caches,
+            parent_subpixel_mode
+        );
 
         let context = PictureContext {
             pic_index,
@@ -3027,6 +2975,73 @@ fn prepare_composite_mode(
             secondary_render_task_id,
         ]
     )
+}
+
+fn compute_subpixel_mode(
+    raster_config: &Option<RasterConfig>,
+    tile_caches: &FastHashMap<SliceId, Box<TileCacheInstance>>,
+    parent_subpixel_mode: SubpixelMode,
+) -> SubpixelMode {
+
+    
+    
+    let subpixel_mode = match raster_config {
+        Some(RasterConfig { ref composite_mode, .. }) => {
+            let subpixel_mode = match composite_mode {
+                PictureCompositeMode::TileCache { slice_id } => {
+                    tile_caches[&slice_id].subpixel_mode
+                }
+                PictureCompositeMode::Blit(..) |
+                PictureCompositeMode::ComponentTransferFilter(..) |
+                PictureCompositeMode::Filter(..) |
+                PictureCompositeMode::MixBlend(..) |
+                PictureCompositeMode::IntermediateSurface |
+                PictureCompositeMode::SVGFEGraph(..) => {
+                    
+                    
+                    
+                    
+                    SubpixelMode::Deny
+                }
+            };
+
+            subpixel_mode
+        }
+        None => {
+            SubpixelMode::Allow
+        }
+    };
+
+    
+    let subpixel_mode = match (parent_subpixel_mode, subpixel_mode) {
+        (SubpixelMode::Allow, SubpixelMode::Allow) => {
+            
+            SubpixelMode::Allow
+        }
+        (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect, prohibited_rect }) => {
+            
+            SubpixelMode::Conditional {
+                allowed_rect,
+                prohibited_rect,
+            }
+        }
+        (SubpixelMode::Conditional { allowed_rect, prohibited_rect }, SubpixelMode::Allow) => {
+            
+            SubpixelMode::Conditional {
+                allowed_rect,
+                prohibited_rect,
+            }
+        }
+        (SubpixelMode::Conditional { .. }, SubpixelMode::Conditional { ..}) => {
+            unreachable!("bug: only top level picture caches have conditional subpixel");
+        }
+        (SubpixelMode::Deny, _) | (_, SubpixelMode::Deny) => {
+            
+            SubpixelMode::Deny
+        }
+    };
+
+    subpixel_mode
 }
 
 #[test]
