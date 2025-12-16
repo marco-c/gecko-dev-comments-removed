@@ -63,7 +63,7 @@ static_assert(StandardPageSizeBytes == 64 * 1024);
 
 
 
-static_assert((StandardPageSizeBytes * MaxMemory64PagesValidation) <=
+static_assert((StandardPageSizeBytes * MaxMemory64StandardPagesValidation) <=
               (uint64_t(1) << 53) - 1);
 
 
@@ -166,11 +166,11 @@ struct Pages {
   constexpr auto operator<=>(const Pages& other) const {
     MOZ_RELEASE_ASSERT(other.pageSize_ == pageSize_);
     return pageCount_ <=> other.pageCount_;
-  };
+  }
   constexpr auto operator==(const Pages& other) const {
     MOZ_RELEASE_ASSERT(other.pageSize_ == pageSize_);
     return pageCount_ == other.pageCount_;
-  };
+  }
 };
 
 
@@ -184,9 +184,18 @@ static inline size_t MaxMemoryBytes(AddressType t, PageSize pageSize) {
 
 extern size_t MaxMemoryBoundsCheckLimit(AddressType t, PageSize pageSize);
 
-static inline uint64_t MaxMemoryPagesValidation(AddressType addressType) {
-  return addressType == AddressType::I32 ? MaxMemory32PagesValidation
-                                         : MaxMemory64PagesValidation;
+static inline uint64_t MaxMemoryPagesValidation(AddressType addressType,
+                                                PageSize pageSize) {
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  if (pageSize == PageSize::Tiny) {
+    return addressType == AddressType::I32 ? MaxMemory32TinyPagesValidation
+                                           : MaxMemory64TinyPagesValidation;
+  }
+#endif
+
+  MOZ_ASSERT(pageSize == PageSize::Standard);
+  return addressType == AddressType::I32 ? MaxMemory32StandardPagesValidation
+                                         : MaxMemory64StandardPagesValidation;
 }
 
 static inline uint64_t MaxTableElemsValidation(AddressType addressType) {
