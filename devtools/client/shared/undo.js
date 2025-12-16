@@ -10,28 +10,27 @@
 
 
 
+class UndoStack {
+  
 
 
 
-function UndoStack(maxUndo) {
-  this.maxUndo = maxUndo || 50;
-  this._stack = [];
-}
+  constructor(maxUndo) {
+    this.maxUndo = maxUndo || 50;
+    this._stack = [];
+  }
 
-exports.UndoStack = UndoStack;
-
-UndoStack.prototype = {
   
   
-  _index: 0,
+  _index = 0;
 
   
-  _batchDepth: 0,
+  _batchDepth = 0;
 
   destroy() {
     this.uninstallController();
     delete this._stack;
-  },
+  }
 
   
 
@@ -46,7 +45,7 @@ UndoStack.prototype = {
     if (this._batchDepth++ === 0) {
       this._batch = [];
     }
-  },
+  }
 
   
 
@@ -79,7 +78,7 @@ UndoStack.prototype = {
     this._stack.push(entry);
     this._index = this._stack.length;
     entry.do();
-  },
+  }
 
   
 
@@ -91,14 +90,14 @@ UndoStack.prototype = {
     this.startBatch();
     this._batch.push({ do: toDo, undo });
     this.endBatch();
-  },
+  }
 
   
 
 
   canUndo() {
     return this._index > 0;
-  },
+  }
 
   
 
@@ -111,14 +110,14 @@ UndoStack.prototype = {
     }
     this._stack[--this._index].undo();
     return true;
-  },
+  }
 
   
 
 
   canRedo() {
     return this._stack.length > this._index;
-  },
+  }
 
   
 
@@ -131,7 +130,7 @@ UndoStack.prototype = {
     }
     this._stack[this._index++].do();
     return true;
-  },
+  }
 
   
 
@@ -149,7 +148,7 @@ UndoStack.prototype = {
 
     this._controllerWindow = controllerWindow;
     controllers.appendController(this);
-  },
+  }
 
   
 
@@ -159,11 +158,11 @@ UndoStack.prototype = {
       return;
     }
     this._controllerWindow.controllers.removeController(this);
-  },
+  }
 
   supportsCommand(command) {
     return command == "cmd_undo" || command == "cmd_redo";
-  },
+  }
 
   isCommandEnabled(command) {
     switch (command) {
@@ -173,7 +172,7 @@ UndoStack.prototype = {
         return this.canRedo();
     }
     return false;
-  },
+  }
 
   doCommand(command) {
     switch (command) {
@@ -184,7 +183,9 @@ UndoStack.prototype = {
       default:
         return null;
     }
-  },
+  }
 
-  onEvent() {},
-};
+  onEvent() {}
+}
+
+exports.UndoStack = UndoStack;
