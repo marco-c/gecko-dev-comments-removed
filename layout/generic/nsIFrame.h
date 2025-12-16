@@ -4050,6 +4050,16 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
+  [[nodiscard]] bool ShouldPaintNormalSelection() const;
+
+  
+
+
+
   bool ShouldHaveLineIfEmpty() const;
 
   
@@ -4059,7 +4069,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   nsresult GetSelectionController(nsPresContext* aPresContext,
-                                  nsISelectionController** aSelCon);
+                                  nsISelectionController** aSelCon) const;
 
   
 

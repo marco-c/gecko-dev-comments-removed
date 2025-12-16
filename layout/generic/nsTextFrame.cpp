@@ -5237,8 +5237,9 @@ UniquePtr<SelectionDetails> nsTextFrame::GetSelectionDetails() {
       
       
       
-      IsSelectable() ? nsFrameSelection::IgnoreNormalSelection::No
-                     : nsFrameSelection::IgnoreNormalSelection::Yes);
+      ShouldPaintNormalSelection()
+          ? nsFrameSelection::IgnoreNormalSelection::No
+          : nsFrameSelection::IgnoreNormalSelection::Yes);
   for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     sd->mStart += mContentOffset;
     sd->mEnd += mContentOffset;

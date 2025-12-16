@@ -4903,6 +4903,24 @@ bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {
   return style != StyleUserSelect::None;
 }
 
+bool nsIFrame::ShouldPaintNormalSelection() const {
+  if (IsSelectable()) {
+    
+    
+    
+    return true;
+  }
+  
+  
+  nsCOMPtr<nsISelectionController> selCon;
+  GetSelectionController(PresContext(), getter_AddRefs(selCon));
+  int16_t displaySelection = nsISelectionController::SELECTION_OFF;
+  if (selCon) {
+    selCon->GetDisplaySelection(&displaySelection);
+  }
+  return displaySelection == nsISelectionController::SELECTION_ATTENTION;
+}
+
 bool nsIFrame::ShouldHaveLineIfEmpty() const {
   switch (Style()->GetPseudoType()) {
     case PseudoStyleType::NotPseudo:
@@ -9175,8 +9193,8 @@ bool nsIFrame::IsSelfEmpty() {
   return IsHiddenByContentVisibilityOfInFlowParentForLayout();
 }
 
-nsresult nsIFrame::GetSelectionController(nsPresContext* aPresContext,
-                                          nsISelectionController** aSelCon) {
+nsresult nsIFrame::GetSelectionController(
+    nsPresContext* aPresContext, nsISelectionController** aSelCon) const {
   if (!aPresContext || !aSelCon) {
     return NS_ERROR_INVALID_ARG;
   }
