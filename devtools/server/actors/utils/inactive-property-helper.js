@@ -97,6 +97,9 @@ const FIRST_LETTER_PSEUDO_ELEMENT_STYLING_SPEC_URL =
 const PLACEHOLDER_PSEUDO_ELEMENT_STYLING_SPEC_URL =
   "https://www.w3.org/TR/css-pseudo-4/#placeholder-pseudo";
 
+const AT_POSITION_TRY_MDN_URL =
+  "https://developer.mozilla.org/docs/Web/CSS/Reference/At-rules/@position-try";
+
 class InactivePropertyHelper {
   
 
@@ -787,6 +790,66 @@ class InactivePropertyHelper {
       fixId: "learn-more",
       learnMoreURL: CUE_PSEUDO_ELEMENT_STYLING_SPEC_URL,
     },
+    
+    {
+      
+      
+      
+      acceptedProperties: new Set([
+        "position-anchor",
+        "position-area",
+        
+        "top",
+        "left",
+        "bottom",
+        "right",
+        "inset-block-start",
+        "inset-block-end",
+        "inset-inline-start",
+        "inset-inline-end",
+        "inset-block",
+        "inset-inline",
+        "inset",
+        
+        "margin-top",
+        "margin-left",
+        "margin-bottom",
+        "margin-right",
+        "margin-block-start",
+        "margin-block-end",
+        "margin-inline-start",
+        "margin-inline-end",
+        "margin",
+        "margin-block",
+        "margin-inline",
+        "-moz-margin-start",
+        "-moz-margin-end",
+        
+        "width",
+        "height",
+        "min-width",
+        "min-height",
+        "max-width",
+        "max-height",
+        "block-size",
+        "inline-size",
+        "min-block-size",
+        "min-inline-size",
+        "max-block-size",
+        "max-inline-size",
+        
+        "align-self",
+        "justify-self",
+        "place-self",
+        "-webkit-align-self",
+      ]),
+      rejectCustomProperties: true,
+      when: () =>
+        ChromeUtils.getClassName(this.cssRule) === "CSSPositionTryRule",
+      msgId: "inactive-css-at-position-try-not-supported",
+      fixId: "learn-more",
+      learnMoreURL: AT_POSITION_TRY_MDN_URL,
+    },
   ];
 
   
@@ -851,8 +914,7 @@ class InactivePropertyHelper {
       } else if (validator.acceptedProperties) {
         isRuleConcerned =
           !validator.acceptedProperties.has(property) &&
-          
-          !property.startsWith("--");
+          (!property.startsWith("--") || validator.rejectCustomProperties);
       }
 
       if (!isRuleConcerned) {
