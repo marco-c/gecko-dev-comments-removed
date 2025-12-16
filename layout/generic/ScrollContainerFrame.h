@@ -862,6 +862,14 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool IsSmoothScroll(
       dom::ScrollBehavior aBehavior = dom::ScrollBehavior::Auto) const;
 
+  
+
+
+
+
+  ScrollMode ScrollModeForScrollBehavior(
+      dom::ScrollBehavior aBehavior = dom::ScrollBehavior::Auto) const;
+
   static nscoord GetNonOverlayScrollbarSize(const nsPresContext*,
                                             StyleScrollbarWidth);
 

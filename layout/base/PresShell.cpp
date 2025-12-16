@@ -3267,8 +3267,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     
     
     if (aScroll && sf) {
-      ScrollMode scrollMode =
-          sf->IsSmoothScroll() ? ScrollMode::SmoothMsd : ScrollMode::Instant;
+      ScrollMode scrollMode = sf->ScrollModeForScrollBehavior();
       
       sf->ScrollTo(nsPoint(0, 0), scrollMode);
     }
@@ -3458,7 +3457,6 @@ static WhereToScroll GetApplicableWhereToScroll(
 static ScrollMode GetScrollModeForScrollIntoView(
     const ScrollContainerFrame* aScrollContainerFrame,
     ScrollFlags aScrollFlags) {
-  ScrollMode scrollMode = ScrollMode::Instant;
   
   
   
@@ -3469,10 +3467,7 @@ static ScrollMode GetScrollModeForScrollIntoView(
   } else if (aScrollFlags & ScrollFlags::ScrollSmoothAuto) {
     behavior = ScrollBehavior::Auto;
   }
-  if (aScrollContainerFrame->IsSmoothScroll(behavior)) {
-    scrollMode = ScrollMode::SmoothMsd;
-  }
-  return scrollMode;
+  return aScrollContainerFrame->ScrollModeForScrollBehavior(behavior);
 }
 
 
