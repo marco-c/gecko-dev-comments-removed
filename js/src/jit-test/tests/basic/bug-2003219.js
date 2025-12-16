@@ -1,0 +1,13 @@
+var otherGlobal = newGlobal({newCompartment: true});
+var ccwRegex = otherGlobal.eval("/test/");
+
+
+Object.defineProperty(this, "lazy", {
+    get: function() {
+        otherGlobal.eval("nukeAllCCWs()");
+        return false;
+    },
+    configurable: true
+});
+
+help(ccwRegex);
