@@ -80,6 +80,15 @@ class ReportingHeader final : public nsIObserver,
                                    nsIPrincipal* aPrincipal,
                                    nsACString& aEndpointURI);
 
+  
+  
+  
+  
+  static void GetEndpointForReportIncludeSubdomains(const nsAString& aGroupName,
+                                                    nsIPrincipal* aPrincipal,
+                                                    bool aIncludeSubdomains,
+                                                    nsACString& aEndpointURI);
+
   static void RemoveEndpoint(const nsAString& aGroupName,
                              const nsACString& aEndpointURL,
                              const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
