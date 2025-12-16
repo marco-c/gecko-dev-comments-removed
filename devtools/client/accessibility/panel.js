@@ -42,25 +42,24 @@ const EVENTS = {
 
 
 
-function AccessibilityPanel(iframeWindow, toolbox, commands) {
-  this.panelWin = iframeWindow;
-  this._toolbox = toolbox;
-  this._commands = commands;
+class AccessibilityPanel {
+  constructor(iframeWindow, toolbox, commands) {
+    this.panelWin = iframeWindow;
+    this._toolbox = toolbox;
+    this._commands = commands;
 
-  this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
-  this.onNewAccessibleFrontSelected =
-    this.onNewAccessibleFrontSelected.bind(this);
-  this.onAccessibilityInspectorUpdated =
-    this.onAccessibilityInspectorUpdated.bind(this);
-  this.updateA11YServiceDurationTimer =
-    this.updateA11YServiceDurationTimer.bind(this);
-  this.forceUpdatePickerButton = this.forceUpdatePickerButton.bind(this);
-  this.onLifecycleEvent = this.onLifecycleEvent.bind(this);
+    this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
+    this.onNewAccessibleFrontSelected =
+      this.onNewAccessibleFrontSelected.bind(this);
+    this.onAccessibilityInspectorUpdated =
+      this.onAccessibilityInspectorUpdated.bind(this);
+    this.updateA11YServiceDurationTimer =
+      this.updateA11YServiceDurationTimer.bind(this);
+    this.forceUpdatePickerButton = this.forceUpdatePickerButton.bind(this);
+    this.onLifecycleEvent = this.onLifecycleEvent.bind(this);
 
-  EventEmitter.decorate(this);
-}
-
-AccessibilityPanel.prototype = {
+    EventEmitter.decorate(this);
+  }
   
 
 
@@ -120,7 +119,7 @@ AccessibilityPanel.prototype = {
 
     resolver(this);
     return this._opening;
-  },
+  }
 
   
 
@@ -140,20 +139,20 @@ AccessibilityPanel.prototype = {
     }
 
     return contexts;
-  },
+  }
 
   onLifecycleEvent() {
     this.updateA11YServiceDurationTimer();
     this.forceUpdatePickerButton();
-  },
+  }
 
   onNewAccessibleFrontSelected(selected) {
     this.emit("new-accessible-front-selected", selected);
-  },
+  }
 
   onAccessibilityInspectorUpdated() {
     this.emit("accessibility-inspector-updated");
-  },
+  }
 
   
 
@@ -170,14 +169,14 @@ AccessibilityPanel.prototype = {
     await onUpdated;
 
     this.emit("reloaded");
-  },
+  }
 
   
 
 
   onPanelVisibilityChange() {
     this._opening.then(() => this.refresh());
-  },
+  }
 
   refresh() {
     this.cancelPicker();
@@ -229,7 +228,7 @@ AccessibilityPanel.prototype = {
       highlightAccessible,
       unhighlightAccessible,
     });
-  },
+  }
 
   updateA11YServiceDurationTimer() {
     if (this.accessibilityProxy.enabled) {
@@ -240,11 +239,11 @@ AccessibilityPanel.prototype = {
       );
       this._timerID = null;
     }
-  },
+  }
 
   selectAccessible(accessibleFront) {
     this.postContentMessage("selectAccessible", accessibleFront);
-  },
+  }
 
   selectAccessibleForNode(nodeFront, reason) {
     if (reason) {
@@ -252,11 +251,11 @@ AccessibilityPanel.prototype = {
     }
 
     this.postContentMessage("selectNodeAccessible", nodeFront);
-  },
+  }
 
   highlightAccessible(accessibleFront) {
     this.postContentMessage("highlightAccessible", accessibleFront);
-  },
+  }
 
   postContentMessage(type, ...args) {
     const event = new this.panelWin.MessageEvent("devtools/chrome/message", {
@@ -266,11 +265,11 @@ AccessibilityPanel.prototype = {
     });
 
     this.panelWin.dispatchEvent(event);
-  },
+  }
 
   updatePickerButton() {
     this.picker && this.picker.updateButton();
-  },
+  }
 
   forceUpdatePickerButton() {
     
@@ -281,26 +280,26 @@ AccessibilityPanel.prototype = {
     this.updatePickerButton();
     
     this._toolbox.component.setToolboxButtons(this._toolbox.toolbarButtons);
-  },
+  }
 
   togglePicker() {
     this.picker && this.picker.toggle();
-  },
+  }
 
   cancelPicker() {
     this.picker && this.picker.cancel();
-  },
+  }
 
   stopPicker() {
     this.picker && this.picker.stop();
-  },
+  }
 
   
 
 
   get isVisible() {
     return this._toolbox.currentToolId === "accessibility";
-  },
+  }
 
   destroy() {
     if (this._destroyed) {
@@ -341,8 +340,8 @@ AccessibilityPanel.prototype = {
     this.panelWin.gTelemetry = null;
 
     this.emit("destroyed");
-  },
-};
+  }
+}
 
 
 exports.AccessibilityPanel = AccessibilityPanel;
