@@ -26,23 +26,24 @@ const FULLSCREEN_STYLE = {
 
 
 
-
-
-
-
-function Canvases(parentEl, debounceRate) {
-  EventEmitter.decorate(this);
-  this.container = createContainingDiv(parentEl);
-
+class Canvases extends EventEmitter {
   
-  this.main = createCanvas(this.container, "main");
-  
-  this.zoom = createCanvas(this.container, "zoom");
 
-  this.removeHandlers = handleResizes(this, debounceRate);
-}
 
-Canvases.prototype = {
+
+
+  constructor(parentEl, debounceRate) {
+    super();
+
+    this.container = createContainingDiv(parentEl);
+
+    
+    this.main = createCanvas(this.container, "main");
+    
+    this.zoom = createCanvas(this.container, "zoom");
+
+    this.removeHandlers = handleResizes(this, debounceRate);
+  }
   
 
 
@@ -52,8 +53,8 @@ Canvases.prototype = {
     this.removeHandlers();
     this.container.removeChild(this.main.canvas);
     this.container.removeChild(this.zoom.canvas);
-  },
-};
+  }
+}
 
 module.exports = Canvases;
 
