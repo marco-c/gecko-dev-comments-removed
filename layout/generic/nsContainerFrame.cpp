@@ -2550,11 +2550,14 @@ nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
                                                   : StyleAlignFlags::START;
       alignment |= StyleAlignFlags::UNSAFE;
     } else {
-      auto keyword = aLogicalAxis == LogicalAxis::Inline
-                         ? aResolvedPositionArea.first
-                         : aResolvedPositionArea.second;
       
-      Servo_ResolvePositionAreaSelfAlignment(&keyword, &alignment);
+      
+      const auto axis = ToStyleLogicalAxis(aLogicalAxis);
+      const auto cbSWM = cbWM.ToStyleWritingMode();
+      const auto selfWM =
+          aChildRI.mFrame->GetWritingMode().ToStyleWritingMode();
+      Servo_ResolvePositionAreaSelfAlignment(&aResolvedPositionArea, axis,
+                                             &cbSWM, &selfWM, &alignment);
     }
   }
 
