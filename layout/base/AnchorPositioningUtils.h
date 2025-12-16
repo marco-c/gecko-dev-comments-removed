@@ -33,16 +33,14 @@ struct AnchorPosInfo {
 
 class DistanceToNearestScrollContainer {
  public:
-  DistanceToNearestScrollContainer() : mDistance{kInvalid} {}
+  DistanceToNearestScrollContainer() = default;
   explicit DistanceToNearestScrollContainer(uint32_t aDistance)
       : mDistance{aDistance} {}
+
   bool Valid() const { return mDistance != kInvalid; }
-  bool operator==(const DistanceToNearestScrollContainer& aOther) const {
-    return mDistance == aOther.mDistance;
-  }
-  bool operator!=(const DistanceToNearestScrollContainer& aOther) const {
-    return !(*this == aOther);
-  }
+
+  bool operator==(const DistanceToNearestScrollContainer&) const = default;
+  bool operator!=(const DistanceToNearestScrollContainer&) const = default;
 
  private:
   
@@ -51,7 +49,7 @@ class DistanceToNearestScrollContainer {
   
   
   
-  uint32_t mDistance;
+  uint32_t mDistance = kInvalid;
 };
 
 struct AnchorPosOffsetData {

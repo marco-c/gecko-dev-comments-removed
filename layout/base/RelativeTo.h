@@ -38,9 +38,7 @@ struct RelativeTo {
   
   
   ViewportType mViewportType = ViewportType::Layout;
-  bool operator==(const RelativeTo& aOther) const {
-    return mFrame == aOther.mFrame && mViewportType == aOther.mViewportType;
-  }
+  bool operator==(const RelativeTo&) const = default;
   friend std::ostream& operator<<(std::ostream& aOs, const RelativeTo& aR) {
     return aOs << "{" << aR.mFrame << ", "
                << (aR.mViewportType == ViewportType::Visual ? "visual"
