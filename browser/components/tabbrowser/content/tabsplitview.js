@@ -39,6 +39,8 @@
     
     #tabs = [];
 
+    #storedPanelWidths = new WeakMap();
+
     
 
 
@@ -72,6 +74,7 @@
       this.ownerGlobal.addEventListener("TabSelect", this);
 
       this.#observeTabChanges();
+      this.#restorePanelWidths();
 
       if (this.hasActiveTab) {
         this.#activate();
@@ -93,6 +96,7 @@
       this.#tabChangeObserver?.disconnect();
       this.ownerGlobal.removeEventListener("TabSelect", this);
       this.#deactivate();
+      this.#resetPanelWidths();
       this.container.dispatchEvent(
         new CustomEvent("SplitViewRemoved", {
           bubbles: true,
@@ -144,6 +148,22 @@
     
 
 
+
+
+    get panels() {
+      const panels = [];
+      for (const { linkedPanel } of this.#tabs) {
+        const el = document.getElementById(linkedPanel);
+        if (el) {
+          panels.push(el);
+        }
+      }
+      return panels;
+    }
+
+    
+
+
     #activate() {
       updateUrlbarButton.arm();
       gBrowser.showSplitViewPanels(this.#tabs);
@@ -167,6 +187,34 @@
           bubbles: true,
         })
       );
+    }
+
+    
+
+
+
+    #resetPanelWidths() {
+      for (const panel of this.panels) {
+        const width = panel.getAttribute("width");
+        if (width) {
+          this.#storedPanelWidths.set(panel, width);
+          panel.removeAttribute("width");
+          panel.style.removeProperty("width");
+        }
+      }
+    }
+
+    
+
+
+    #restorePanelWidths() {
+      for (const panel of this.panels) {
+        const width = this.#storedPanelWidths.get(panel);
+        if (width) {
+          panel.setAttribute("width", width);
+          panel.style.setProperty("width", width + "px");
+        }
+      }
     }
 
     
