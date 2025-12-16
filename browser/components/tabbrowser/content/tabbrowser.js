@@ -388,6 +388,10 @@
     
     #activeSplitView = null;
 
+    get activeSplitView() {
+      return this.#activeSplitView;
+    }
+
     
 
 
@@ -3304,6 +3308,11 @@
       const footer = document.createXULElement("split-view-footer");
       footer.setTab(tab);
       panelEl.appendChild(footer);
+    }
+
+    openSplitViewMenu(anchorElement) {
+      const menu = document.getElementById("split-view-menu");
+      menu.openPopup(anchorElement, "after_start");
     }
 
     
@@ -7793,10 +7802,10 @@
           break;
         }
         case "TabSplitViewActivate":
-          this.#activeSplitView = aEvent.originalTarget;
+          this.#activeSplitView = aEvent.detail.splitview;
           break;
         case "TabSplitViewDeactivate":
-          if (this.#activeSplitView === aEvent.originalTarget) {
+          if (this.#activeSplitView === aEvent.detail.splitview) {
             this.#activeSplitView = null;
           }
           break;
