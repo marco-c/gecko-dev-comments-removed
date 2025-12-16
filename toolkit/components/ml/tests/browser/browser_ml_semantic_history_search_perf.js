@@ -2,6 +2,10 @@
 
 "use strict";
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 const UPDATE_TASK_LATENCY = "update-task-latency";
 const SEARCH_LATENCY = "search-latency";
 const INFERENCE_LATENCY = "inference-latency";
@@ -246,6 +250,13 @@ async function prepareSemanticSearchTest({
     Assert.ok(true);
     return { skip: true };
   }
+
+  
+  let canUseSemanticStub = sinon.stub(semanticManager, "canUseSemanticSearch");
+  canUseSemanticStub.get(() => true);
+  registerCleanupFunction(() => {
+    canUseSemanticStub.restore();
+  });
 
   semanticManager.embedder.options = CUSTOM_EMBEDDER_OPTIONS;
   await semanticManager.embedder.ensureEngine();
