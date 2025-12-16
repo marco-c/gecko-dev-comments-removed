@@ -91,6 +91,10 @@ const walkerSpec = generateActorSpec({
       type: "container-type-change",
       nodes: Arg(0, "array:domnode"),
     },
+    "anchor-name-change": {
+      type: "anchor-name-change",
+      nodes: Arg(0, "array:domnode"),
+    },
     
     
     
