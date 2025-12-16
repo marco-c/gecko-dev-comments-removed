@@ -85,10 +85,7 @@ class AsyncTCPSocket : public AsyncTCPSocketBase {
  public:
   AsyncTCPSocket(const Environment& env,
                  absl_nonnull std::unique_ptr<Socket> socket);
-  
-  
-  explicit AsyncTCPSocket(Socket* socket);
-  ~AsyncTCPSocket() override {}
+  ~AsyncTCPSocket() override = default;
 
   AsyncTCPSocket(const AsyncTCPSocket&) = delete;
   AsyncTCPSocket& operator=(const AsyncTCPSocket&) = delete;
