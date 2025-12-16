@@ -410,6 +410,12 @@ void DynamicsCompressorKernel::process(
 
         float attenuation = absInput <= 0.0001f ? 1 : shapedInput / absInput;
 
+        if (std::isnan(attenuation)) {
+          
+          
+          attenuation = 0;
+        }
+
         float attenuationDb =
             -WebAudioUtils::ConvertLinearToDecibels(attenuation, -1000.0f);
         attenuationDb = std::max(2.0f, attenuationDb);
