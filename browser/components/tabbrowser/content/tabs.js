@@ -34,8 +34,10 @@
       this.addEventListener("TabHoverEnd", this);
       this.addEventListener("TabGroupLabelHoverStart", this);
       this.addEventListener("TabGroupLabelHoverEnd", this);
-      this.addEventListener("TabGroupExpand", this);
-      this.addEventListener("TabGroupCollapse", this);
+      
+      
+      this.addEventListener("TabGroupExpand", this, true);
+      this.addEventListener("TabGroupCollapse", this, true);
       this.addEventListener("TabGroupAnimationComplete", this);
       this.addEventListener("TabGroupCreate", this);
       this.addEventListener("TabGroupRemoved", this);
@@ -388,7 +390,11 @@
     }
 
     on_TabGroupAnimationComplete(event) {
-      this.#animatingGroups.delete(event.target.id);
+      
+      
+      window.requestAnimationFrame(() => {
+        this.#animatingGroups.delete(event.target.id);
+      });
     }
 
     on_TabGroupCreate() {
