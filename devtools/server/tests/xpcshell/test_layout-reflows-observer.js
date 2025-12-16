@@ -41,10 +41,10 @@ class MockTargetActor extends EventEmitter {
   }
 }
 
-function MockWindow(docShell) {
-  this.docShell = docShell;
-}
-MockWindow.prototype = {
+class MockWindow {
+  constructor(docShell) {
+    this.docShell = docShell;
+  }
   QueryInterface() {
     const self = this;
     return {
@@ -56,23 +56,23 @@ MockWindow.prototype = {
         };
       },
     };
-  },
+  }
   setTimeout(cb) {
     
     
     return cb;
-  },
-  clearTimeout() {},
-};
-
-function MockDocShell() {
-  this.observer = null;
+  }
+  clearTimeout() {}
 }
-MockDocShell.prototype = {
+
+class MockDocShell {
+  constructor() {
+    this.observer = null;
+  }
   addWeakReflowObserver(observer) {
     this.observer = observer;
-  },
-  removeWeakReflowObserver() {},
+  }
+  removeWeakReflowObserver() {}
   get chromeEventHandler() {
     return {
       addEventListener: (type, cb) => {
@@ -86,13 +86,13 @@ MockDocShell.prototype = {
         }
       },
     };
-  },
+  }
   mockResize() {
     if (this.resizeCb) {
       this.resizeCb();
     }
-  },
-};
+  }
+}
 
 function run_test() {
   instancesOfObserversAreSharedBetweenWindows();
