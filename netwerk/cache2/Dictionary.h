@@ -78,7 +78,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   
   nsresult Prefetch(nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
-                    const std::function<void()>& aFunc);
+                    const std::function<void(nsresult)>& aFunc);
 
   const nsCString& GetHash() const { return mHash; }
 
@@ -117,7 +117,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   
   
-  void CallbackOnCacheRead(const std::function<void()>& aFunc) {
+  void CallbackOnCacheRead(const std::function<void(nsresult)>& aFunc) {
     
     mWaitingPrefetch.AppendElement(aFunc);
   }
@@ -125,6 +125,13 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   const nsACString& GetURI() const { return mURI; }
 
   const Vector<uint8_t>& GetDictionary() const { return mDictionaryData; }
+
+  
+  
+  void ClearDataForTesting() {
+    mDictionaryData.clear();
+    mDictionaryDataComplete = false;
+  }
 
   
   void AccumulateHash(const char* aBuf, int32_t aCount);
@@ -193,7 +200,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsCOMPtr<nsICryptoHash> mCrypto;
 
   
-  nsTArray<std::function<void()>> mWaitingPrefetch;
+  nsTArray<std::function<void(nsresult)>> mWaitingPrefetch;
 
   
   
@@ -349,6 +356,12 @@ class DictionaryCache final {
 
   
   void Clear();
+
+  
+  void CorruptHashForTesting(const nsACString& aURI);
+
+  
+  void ClearDictionaryDataForTesting(const nsACString& aURI);
 
   
   void GetDictionaryFor(
