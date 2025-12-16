@@ -59,28 +59,6 @@ bool H264IsSamePacketizationMode(const CodecParameterMap& left,
          H264GetPacketizationModeOrDefault(right);
 }
 
-std::string AV1GetTierOrDefault(const CodecParameterMap& params) {
-  
-  
-  return GetFmtpParameterOrDefault(params, kAv1FmtpTier, "0");
-}
-
-bool AV1IsSameTier(const CodecParameterMap& left,
-                   const CodecParameterMap& right) {
-  return AV1GetTierOrDefault(left) == AV1GetTierOrDefault(right);
-}
-
-std::string AV1GetLevelIdxOrDefault(const CodecParameterMap& params) {
-  
-  
-  return GetFmtpParameterOrDefault(params, kAv1FmtpLevelIdx, "5");
-}
-
-bool AV1IsSameLevelIdx(const CodecParameterMap& left,
-                       const CodecParameterMap& right) {
-  return AV1GetLevelIdxOrDefault(left) == AV1GetLevelIdxOrDefault(right);
-}
-
 #ifdef RTC_ENABLE_H265
 std::string GetH265TxModeOrDefault(const CodecParameterMap& params) {
   
@@ -113,9 +91,12 @@ bool IsSameCodecSpecific(const std::string& name1,
     case kVideoCodecVP9:
       return VP9IsSameProfile(params1, params2);
     case kVideoCodecAV1:
-      return AV1IsSameProfile(params1, params2) &&
-             AV1IsSameTier(params1, params2) &&
-             AV1IsSameLevelIdx(params1, params2);
+      
+      
+      
+      
+      
+      return AV1IsSameProfile(params1, params2);
 #ifdef RTC_ENABLE_H265
     case kVideoCodecH265:
       return H265IsSameProfile(params1, params2) &&
