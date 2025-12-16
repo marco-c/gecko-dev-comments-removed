@@ -2201,144 +2201,6 @@ bool Element::HasVisibleScrollbars() {
   return scrollFrame && !scrollFrame->GetScrollbarVisibility().isEmpty();
 }
 
-
-
-static uint64_t HashForBloomFilter63(const nsAtom* aAtom) {
-  if (!aAtom) {
-    return 1ULL;  
-  }
-  uint32_t hash = aAtom->hash();
-  uint64_t filter = 1ULL;
-  
-  filter |= 1ULL << (1 + (hash % 63));         
-  filter |= 1ULL << (1 + ((hash >> 6) % 63));  
-  return filter;
-}
-
-
-
-void Element::PropagateBloomFilterToParents() {
-  Element* toUpdate = this;
-  Element* parent = GetParentElement();
-
-  while (parent) {
-    uint64_t childBloom = toUpdate->mAttrs.GetSubtreeBloomFilter();
-    uint64_t parentBloom = parent->mAttrs.GetSubtreeBloomFilter();
-    uint64_t newBloom = parentBloom | childBloom;
-
-    if (newBloom == parentBloom) {
-      break;
-    }
-    parent->mAttrs.SetSubtreeBloomFilter(newBloom);
-    toUpdate = parent;
-    parent = toUpdate->GetParentElement();
-  }
-}
-
-
-
-static uint64_t HashClassesForBloom(const nsAttrValue* aValue) {
-  uint64_t filter = 1ULL;  
-  if (!aValue) {
-    return filter;
-  }
-
-  if (aValue->Type() == nsAttrValue::eAtomArray) {
-    const mozilla::AttrAtomArray* array = aValue->GetAtomArrayValue();
-    if (array) {
-      for (const RefPtr<nsAtom>& className : array->mArray) {
-        filter |= HashForBloomFilter63(className);
-      }
-    }
-  } else if (aValue->Type() == nsAttrValue::eAtom) {
-    filter |= HashForBloomFilter63(aValue->GetAtomValue());
-  }
-#ifdef DEBUG
-  else {
-    
-    nsAutoString value;
-    aValue->ToString(value);
-    bool isOnlyWhitespace = true;
-    for (uint32_t i = 0; i < value.Length(); i++) {
-      if (!nsContentUtils::IsHTMLWhitespace(value[i])) {
-        isOnlyWhitespace = false;
-        break;
-      }
-    }
-    MOZ_ASSERT(isOnlyWhitespace, "Expecting only empty strings here.");
-  }
-#endif
-
-  return filter;
-}
-
-#ifdef DEBUG
-
-
-void Element::VerifySubtreeBloomFilter() const {
-  uint64_t expectedBloom = 1ULL;
-
-  
-  uint32_t attrCount = GetAttrCount();
-  for (uint32_t i = 0; i < attrCount; i++) {
-    const nsAttrName* attrName = GetAttrNameAt(i);
-    MOZ_ASSERT(attrName, "Attribute name should not be null");
-    if (attrName->NamespaceEquals(kNameSpaceID_None)) {
-      nsAtom* localName = attrName->LocalName();
-      expectedBloom |= HashForBloomFilter63(localName);
-
-      if (!localName->IsAsciiLowercase()) {
-        Document* doc = OwnerDoc();
-        if (!IsHTMLElement() && doc->IsHTMLDocument()) {
-          RefPtr<nsAtom> lowercaseAttr(localName);
-          ToLowerCaseASCII(lowercaseAttr);
-          expectedBloom |= HashForBloomFilter63(lowercaseAttr);
-        }
-      }
-    }
-  }
-
-  
-  const nsAttrValue* classAttr = GetClasses();
-  expectedBloom |= HashClassesForBloom(classAttr);
-
-  
-  for (Element* child = GetFirstElementChild(); child;
-       child = child->GetNextElementSibling()) {
-    expectedBloom |= child->mAttrs.GetSubtreeBloomFilter();
-  }
-
-  uint64_t actualBloom = mAttrs.GetSubtreeBloomFilter();
-  
-  
-  
-  MOZ_ASSERT((actualBloom & expectedBloom) == expectedBloom,
-             "Bloom filter missing required bits");
-}
-#endif
-
-void Element::UpdateSubtreeBloomFilterForClass(const nsAttrValue* aClassValue) {
-  if (!aClassValue) {
-    return;
-  }
-  mAttrs.UpdateSubtreeBloomFilter(HashClassesForBloom(aClassValue));
-}
-
-void Element::UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute) {
-  MOZ_ASSERT(aAttribute, "Attribute should not be null");
-  mAttrs.UpdateSubtreeBloomFilter(HashForBloomFilter63(aAttribute));
-
-  
-  
-  
-  if (!aAttribute->IsAsciiLowercase() && !IsHTMLElement() &&
-      OwnerDoc()->IsHTMLDocument()) {
-    RefPtr<nsAtom> lowercaseAttr(aAttribute);
-    ToLowerCaseASCII(lowercaseAttr);
-    mAttrs.UpdateSubtreeBloomFilter(HashForBloomFilter63(lowercaseAttr));
-  }
-}
-
 nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_ASSERT(aParent.IsContent() || aParent.IsDocument(),
              "Must have content or document parent!");
@@ -2477,13 +2339,6 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_ASSERT(aParent.IsInComposedDoc() == IsInComposedDoc());
   MOZ_ASSERT(aParent.IsInShadowTree() == IsInShadowTree());
   MOZ_ASSERT(aParent.SubtreeRoot() == SubtreeRoot());
-
-#ifdef DEBUG
-  VerifySubtreeBloomFilter();
-#endif
-
-  
-  PropagateBloomFilterToParents();
   return NS_OK;
 }
 
@@ -3035,37 +2890,6 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                          });
 }
 
-nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                                 bool* aHadValue) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aLocalName, aValue, aHadValue));
-
-  if (aLocalName == nsGkAtoms::_class) {
-    UpdateSubtreeBloomFilterForClass(GetClasses());
-  }
-  UpdateSubtreeBloomFilterForAttribute(aLocalName);
-  PropagateBloomFilterToParents();
-
-  return NS_OK;
-}
-
-nsresult Element::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
-                                 nsAttrValue& aValue, bool* aHadValue) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aValue, aHadValue));
-
-  
-  
-  if (aName->NamespaceEquals(kNameSpaceID_None)) {
-    nsAtom* localName = aName->NameAtom();
-    if (localName == nsGkAtoms::_class) {
-      UpdateSubtreeBloomFilterForClass(GetClasses());
-    }
-    UpdateSubtreeBloomFilterForAttribute(localName);
-    PropagateBloomFilterToParents();
-  }
-
-  return NS_OK;
-}
-
 nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                           nsAtom* aValue, nsIPrincipal* aSubjectPrincipal,
                           bool aNotify) {
@@ -3191,7 +3015,7 @@ nsresult Element::SetAttrAndNotify(
       hadDirAuto = HasDirAuto();  
     }
 
-    MOZ_TRY(SetAndSwapAttr(aName, aParsedValue, &oldValueSet));
+    MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aParsedValue, &oldValueSet));
     if (IsAttributeMapped(aName) && !IsPendingMappedAttributeEvaluation()) {
       mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
       if (Document* doc = GetComposedDoc()) {
@@ -3202,7 +3026,7 @@ nsresult Element::SetAttrAndNotify(
     RefPtr<mozilla::dom::NodeInfo> ni =
         mNodeInfo->NodeInfoManager()->GetNodeInfo(aName, aPrefix, aNamespaceID,
                                                   ATTRIBUTE_NODE);
-    MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet));
+    MOZ_TRY(mAttrs.SetAndSwapAttr(ni, aParsedValue, &oldValueSet));
   }
 
   PostIdMaybeChange(aNamespaceID, aName, &valueForAfterSetAttr);

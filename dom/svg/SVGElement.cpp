@@ -284,11 +284,6 @@ void SVGElement::DidAnimateClass() {
   mClassAnimAttr->ParseAtomArray(src);
 
   
-  UpdateSubtreeBloomFilterForClass(mClassAnimAttr.get());
-  UpdateSubtreeBloomFilterForAttribute(nsGkAtoms::_class);
-  PropagateBloomFilterToParents();
-
-  
   
   if (presShell) {
     presShell->RestyleForAnimation(this, RestyleHint::RESTYLE_SELF);
