@@ -1983,6 +1983,11 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT bool TryAutoFocusCandidate(Element& aElement);
 
  public:
+  void SetAncestorOriginsList(nsTArray<nsString>&& aAncestorOriginsList);
+  Span<const nsString> GetAncestorOriginsList() const;
+  
+  already_AddRefed<DOMStringList> AncestorOrigins() const;
+
   
   
   void CleanupFullscreenState();
@@ -5311,6 +5316,8 @@ class Document : public nsINode,
 
  private:
   nsCString mContentType;
+
+  nsTArray<nsString> mAncestorOriginsList;
 
  protected:
   
