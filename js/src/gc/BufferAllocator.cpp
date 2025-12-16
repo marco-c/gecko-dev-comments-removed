@@ -1375,6 +1375,13 @@ void BufferAllocator::abortMajorSweeping(const AutoLock& lock) {
 
   clearAllocatedDuringCollectionState(lock);
 
+  if (minorState == State::Sweeping) {
+    
+    
+    
+    majorFinishedWhileMinorSweeping = true;
+  }
+
   for (BufferChunk* chunk : tenuredChunksToSweep.ref()) {
     MOZ_ASSERT(chunk->ownsFreeLists);
 
