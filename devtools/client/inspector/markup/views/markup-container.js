@@ -27,27 +27,25 @@ const TYPES = {
 
 
 
-
-
-
-
-
-
-function MarkupContainer() {}
-
-
-
-
-
-
 let markupContainerID = 0;
 
-MarkupContainer.prototype = {
+
+
+
+
+
+
+
+
+
+
+
+class MarkupContainer {
   
   get undo() {
     
     return this.markup.undo;
-  },
+  }
 
   
 
@@ -94,7 +92,7 @@ MarkupContainer.prototype = {
     if (node.isShadowRoot) {
       Glean.devtoolsShadowdom.shadowRootDisplayed.set(true);
     }
-  },
+  }
 
   buildMarkup() {
     this.elt = this.win.document.createElement("li");
@@ -130,11 +128,11 @@ MarkupContainer.prototype = {
     this.children.classList.add("children");
     this.children.setAttribute("role", "group");
     this.elt.appendChild(this.children);
-  },
+  }
 
   toString() {
     return "[MarkupContainer for " + this.node + "]";
-  },
+  }
 
   isPreviewable() {
     if (this.node.tagName && !this.node.isPseudoElement) {
@@ -147,7 +145,7 @@ MarkupContainer.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -160,36 +158,36 @@ MarkupContainer.prototype = {
     if (!this.node.isDisplayed || this.node.hidden) {
       this.elt.classList.add("not-displayed");
     }
-  },
+  }
 
   
 
 
 
-  _hasChildren: false,
+  _hasChildren = false;
 
   get hasChildren() {
     return this._hasChildren;
-  },
+  }
 
   set hasChildren(value) {
     this._hasChildren = value;
     this.updateExpander();
-  },
+  }
 
   
 
 
   get focusableElms() {
     return [...this.tagLine.querySelectorAll("[tabindex]")];
-  },
+  }
 
   
 
 
   get canFocus() {
     return this._canFocus;
-  },
+  }
 
   
 
@@ -209,7 +207,7 @@ MarkupContainer.prototype = {
       
       this.focusableElms.forEach(elm => elm.setAttribute("tabindex", "-1"));
     }
-  },
+  }
 
   
 
@@ -236,28 +234,28 @@ MarkupContainer.prototype = {
     if (parent) {
       doc.activeElement.blur();
     }
-  },
+  }
 
   
 
 
   get canExpand() {
     return this._hasChildren && !this.node.inlineTextChild;
-  },
+  }
 
   
 
 
   get mustExpand() {
     return this.node._parent === this.markup.walker.rootNode;
-  },
+  }
 
   
 
 
   get showExpander() {
     return this.canExpand && !this.mustExpand;
-  },
+  }
 
   updateExpander() {
     if (!this.expander) {
@@ -276,7 +274,7 @@ MarkupContainer.prototype = {
       
       this.tagLine.removeAttribute("aria-expanded");
     }
-  },
+  }
 
   
 
@@ -287,7 +285,7 @@ MarkupContainer.prototype = {
       "role",
       this.hasChildren ? "group" : "presentation"
     );
-  },
+  }
 
   
 
@@ -306,7 +304,7 @@ MarkupContainer.prototype = {
     if (childContainers) {
       childContainers.forEach(container => container.updateLevel());
     }
-  },
+  }
 
   
 
@@ -320,14 +318,14 @@ MarkupContainer.prototype = {
     return [...this.children.children]
       .filter(node => node.container)
       .map(node => node.container);
-  },
+  }
 
   
 
 
   get expanded() {
     return !this.elt.classList.contains("collapsed");
-  },
+  }
 
   setExpanded(value) {
     if (!this.expander) {
@@ -364,7 +362,7 @@ MarkupContainer.prototype = {
     if (this.node.isShadowRoot) {
       Glean.devtoolsShadowdom.shadowRootExpanded.set(true);
     }
-  },
+  }
 
   
 
@@ -399,7 +397,7 @@ MarkupContainer.prototype = {
       this.closeTagLine = line;
     }
     this.elt.appendChild(this.closeTagLine);
-  },
+  }
 
   
 
@@ -412,11 +410,11 @@ MarkupContainer.prototype = {
 
     this.elt.removeChild(this.closeTagLine);
     this.closeTagLine = undefined;
-  },
+  }
 
   parentContainer() {
     return this.elt.parentNode ? this.elt.parentNode.container : null;
-  },
+  }
 
   
 
@@ -430,10 +428,10 @@ MarkupContainer.prototype = {
       parent = parent.parentNode();
     }
     return level;
-  },
+  }
 
-  _isDragging: false,
-  _dragStartY: 0,
+  _isDragging = false;
+  _dragStartY = 0;
 
   set isDragging(isDragging) {
     const rootElt = this.markup.getContainer(this.markup._rootNode).elt;
@@ -452,11 +450,11 @@ MarkupContainer.prototype = {
       this.markup.doc.body.classList.remove("dragging");
       rootElt.setAttribute("aria-dropeffect", "none");
     }
-  },
+  }
 
   get isDragging() {
     return this._isDragging;
-  },
+  }
 
   
 
@@ -474,11 +472,11 @@ MarkupContainer.prototype = {
       this.node.parentNode() &&
       this.node.parentNode().tagName !== null
     );
-  },
+  }
 
   isSlotted() {
     return false;
-  },
+  }
 
   _onKeyDown(event) {
     const { target, keyCode, shiftKey } = event;
@@ -529,7 +527,7 @@ MarkupContainer.prototype = {
         return;
     }
     event.stopPropagation();
-  },
+  }
 
   _onMouseDown(event) {
     const { target, button, metaKey, ctrlKey } = event;
@@ -585,7 +583,7 @@ MarkupContainer.prototype = {
       this._dragStartY = event.pageY;
       this.markup._draggedContainer = this;
     }
-  },
+  }
 
   _onClick(event) {
     const { target } = event;
@@ -605,7 +603,7 @@ MarkupContainer.prototype = {
       closestLinkEl.dataset.link
     );
     event.stopPropagation();
-  },
+  }
 
   
 
@@ -619,7 +617,7 @@ MarkupContainer.prototype = {
     
     this.canFocus = false;
     this.markup.followAttributeLink(type, link);
-  },
+  }
 
   
 
@@ -641,7 +639,7 @@ MarkupContainer.prototype = {
       await walkerFront.insertBefore(this.node, parent, nextSibling);
       this.markup.emit("drop-completed");
     }
-  },
+  }
 
   
 
@@ -680,7 +678,7 @@ MarkupContainer.prototype = {
       const el = this.markup.doc.elementFromPoint(x, y);
       this.markup.indicateDropTarget(el);
     }
-  },
+  }
 
   cancelDragging() {
     if (!this.isDragging) {
@@ -690,7 +688,7 @@ MarkupContainer.prototype = {
     this._isPreDragging = false;
     this.isDragging = false;
     this.elt.style.removeProperty("top");
-  },
+  }
 
   
 
@@ -713,9 +711,9 @@ MarkupContainer.prototype = {
         });
       }, this.markup.CONTAINER_FLASHING_DURATION);
     }
-  },
+  }
 
-  _hovered: false,
+  _hovered = false;
 
   
 
@@ -741,23 +739,23 @@ MarkupContainer.prototype = {
           .classList.remove("tag-hover");
       }
     }
-  },
+  }
 
   
 
 
   get visible() {
     return this.elt.getBoundingClientRect().height > 0;
-  },
+  }
 
   
 
 
-  _selected: false,
+  _selected = false;
 
   get selected() {
     return this._selected;
-  },
+  }
 
   set selected(value) {
     this.tagState.classList.remove("flash-out");
@@ -776,7 +774,7 @@ MarkupContainer.prototype = {
       this.tagLine.removeAttribute("selected");
       this.tagState.classList.remove("theme-selected");
     }
-  },
+  }
 
   
 
@@ -810,7 +808,7 @@ MarkupContainer.prototype = {
     if (this.editor.update) {
       this.editor.update();
     }
-  },
+  }
 
   
 
@@ -831,7 +829,7 @@ MarkupContainer.prototype = {
         focusVisible: !fromMouseEvent,
       });
     }
-  },
+  }
 
   _onToggle(event) {
     event.stopPropagation();
@@ -847,7 +845,7 @@ MarkupContainer.prototype = {
     }
 
     this.expandContainer(event.altKey);
-  },
+  }
 
   
 
@@ -863,7 +861,7 @@ MarkupContainer.prototype = {
         applyToDescendants
       );
     }
-  },
+  }
 
   
 
@@ -897,7 +895,7 @@ MarkupContainer.prototype = {
     }
 
     this.editor.destroy();
-  },
-};
+  }
+}
 
 module.exports = MarkupContainer;
