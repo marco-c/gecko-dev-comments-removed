@@ -10702,12 +10702,17 @@ void MacroAssembler::checkForMatchMFBT(Register hashTable, Register hashIndex,
   addPtr(capacityOffset, entries);
 
   
-  
-  constexpr size_t EntrySize = sizeof(typename Table::Entry);
-  static_assert(mozilla::IsPowerOfTwo(EntrySize));
-  uint32_t shift = mozilla::FloorLog2(EntrySize);
-  lshiftPtr(Imm32(shift), hashIndex, scratch);
-
+  size_t EntrySize = sizeof(typename Table::Entry);
+  if (mozilla::IsPowerOfTwo(EntrySize)) {
+    uint32_t shift = mozilla::FloorLog2(EntrySize);
+    lshiftPtr(Imm32(shift), hashIndex, scratch);
+  } else {
+    
+    
+    
+    move32(hashIndex, scratch);
+    mulPtr(ImmWord(EntrySize), scratch);
+  }
   computeEffectiveAddress(BaseIndex(entries, scratch, Scale::TimesOne),
                           scratch);
 }
