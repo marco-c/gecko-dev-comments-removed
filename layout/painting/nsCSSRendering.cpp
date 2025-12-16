@@ -1940,7 +1940,7 @@ ImgDrawResult nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(
 }
 
 static bool IsOpaqueBorderEdge(const nsStyleBorder& aBorder,
-                               mozilla::Side aSide) {
+                               mozilla::Side aSide, const nsIFrame* aForFrame) {
   if (aBorder.GetComputedBorder().Side(aSide) == 0) {
     return true;
   }
@@ -1962,19 +1962,16 @@ static bool IsOpaqueBorderEdge(const nsStyleBorder& aBorder,
   if (!aBorder.mBorderImageSource.IsNone()) {
     return false;
   }
-
-  StyleColor color = aBorder.BorderColorFor(aSide);
-  
-  
-  return !color.MaybeTransparent();
+  return NS_GET_A(aBorder.BorderColorFor(aSide).CalcColor(aForFrame)) == 255;
 }
 
 
 
 
-static bool IsOpaqueBorder(const nsStyleBorder& aBorder) {
+static bool IsOpaqueBorder(const nsStyleBorder& aBorder,
+                           const nsIFrame* aForFrame) {
   for (const auto i : mozilla::AllPhysicalSides()) {
-    if (!IsOpaqueBorderEdge(aBorder, i)) {
+    if (!IsOpaqueBorderEdge(aBorder, i, aForFrame)) {
       return false;
     }
   }
@@ -2144,7 +2141,8 @@ void nsCSSRendering::GetImageLayerClip(
     haveRoundedCorners = GetRadii(aForFrame, aBorder, aBorderArea,
                                   clipBorderArea, aClipState->mRadii);
   }
-  bool isSolidBorder = aWillPaintBorder && IsOpaqueBorder(aBorder);
+  const bool isSolidBorder =
+      aWillPaintBorder && IsOpaqueBorder(aBorder, aForFrame);
   if (isSolidBorder && layerClip == StyleGeometryBox::BorderBox) {
     
     
