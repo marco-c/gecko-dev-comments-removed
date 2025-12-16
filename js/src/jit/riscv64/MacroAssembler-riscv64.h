@@ -117,8 +117,7 @@ class MacroAssemblerRiscv64 : public Assembler {
     nopAlign(alignment);
   }
 
-  
-  bool CalculateOffset(Label* L, int32_t* offset, OffsetSize bits);
+  bool CalculateOffset(Label* L, OffsetSize bits, int32_t* offset);
   int32_t GetOffset(int32_t offset, Label* L, OffsetSize bits);
 
   inline void GenPCRelativeJump(Register rd, int32_t imm32) {
@@ -168,11 +167,11 @@ class MacroAssemblerRiscv64 : public Assembler {
             JumpKind jumpKind = LongJump);
   void ma_b(Register lhs, Imm32 imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump);
-  void BranchAndLinkShort(Label* L);
-  void BranchAndLink(Label* label);
-  void BranchAndLinkShort(int32_t offset);
-  void BranchAndLinkShortHelper(int32_t offset, Label* L);
-  void BranchAndLinkLong(Label* L);
+  CodeOffset BranchAndLinkShort(Label* L);
+  CodeOffset BranchAndLink(Label* label);
+  CodeOffset BranchAndLinkShort(int32_t offset);
+  CodeOffset BranchAndLinkShortHelper(int32_t offset, Label* L);
+  CodeOffset BranchAndLinkLong(Label* L);
   void GenPCRelativeJumpAndLink(Register rd, int32_t imm32);
 
 #define DEFINE_INSTRUCTION(instr)                                           \
