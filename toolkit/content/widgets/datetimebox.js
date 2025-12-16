@@ -434,7 +434,7 @@ this.DateTimeBoxWidget = class {
   setPickerState(aIsOpen) {
     this.log("picker is now " + (aIsOpen ? "opened" : "closed"));
     this.mIsPickerOpen = aIsOpen;
-    this.mInputElement.setDateTimePickerState(aIsOpen);
+    this.mInputElement.setOpenState(aIsOpen);
     
     this.updateCalendarButtonState(this.mIsPickerOpen);
   }
