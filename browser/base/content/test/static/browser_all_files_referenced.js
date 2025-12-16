@@ -375,6 +375,10 @@ var allowlist = [
   
   {
     file: "moz-src:///browser/components/aiwindow/models/InsightsChatSource.sys.mjs",
+    
+  },
+  {
+    file: "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs",
   },
 ];
 
