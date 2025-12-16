@@ -969,6 +969,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
             creator->GetPolicyContainer();
         openWindowInfo->mCoepToInheritForAboutBlank =
             creator->GetEmbedderPolicy();
+        openWindowInfo->mBaseUriToInheritForAboutBlank = creator->GetBaseURI();
       }
 
       

@@ -877,9 +877,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   
-  virtual void SetInitialPrincipal(
-      nsIPrincipal* aNewWindowPrincipal, nsIPolicyContainer* aPolicyContainer,
-      const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCoep) = 0;
+  
+  virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) = 0;
 
   
   
