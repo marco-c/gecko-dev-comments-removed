@@ -324,7 +324,6 @@ if (typeof Mozilla == "undefined") {
 
 
 
-
   
 
 
@@ -753,20 +752,6 @@ if (typeof Mozilla == "undefined") {
   Mozilla.UITour.setSearchTerm = function (term) {
     _sendEvent("setSearchTerm", {
       term,
-    });
-  };
-
-  
-
-
-
-
-
-
-
-  Mozilla.UITour.openSearchPanel = function (callback) {
-    _sendEvent("openSearchPanel", {
-      callbackID: _waitForCallback(callback),
     });
   };
 
