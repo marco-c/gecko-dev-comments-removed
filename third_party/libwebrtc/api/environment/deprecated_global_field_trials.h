@@ -19,6 +19,9 @@ namespace webrtc {
 
 
 class DeprecatedGlobalFieldTrials : public FieldTrialsRegistry {
+ public:
+  static void Set(const char* field_trials);
+
  private:
   std::string GetValue(absl::string_view key) const override;
 };

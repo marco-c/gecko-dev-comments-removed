@@ -35,10 +35,6 @@ namespace field_trial {
 void InitFieldTrialsFromString(const char* trials_string);
 
 
-[[deprecated("Propagate and query FieldTrialsView interface")]]
-const char* GetFieldTrialString();
-
-
 
 [[deprecated("Use FieldTrials::Create to validate field trial string")]]
 bool FieldTrialsStringIsValid(absl::string_view trials_string);
