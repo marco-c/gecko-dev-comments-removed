@@ -1111,6 +1111,37 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
       case ValType::Ref: {
         
         MOZ_RELEASE_ASSERT(funcType.args()[i].refType().isExtern());
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        {
+          ScratchDoubleScope tmpD(masm);
+
+          Label notDouble;
+          masm.branchTestDouble(Assembler::NotEqual, scratchV, &notDouble);
+
+          
+          masm.unboxDouble(scratchV, scratchF);
+          masm.canonicalizeDoubleZero(scratchF, tmpD);
+
+          
+          
+          masm.boxDouble(scratchF, scratchV, tmpD);
+          masm.storeValue(scratchV, jitArgAddr);
+
+          masm.bind(&notDouble);
+        }
+
         masm.branchValueConvertsToWasmAnyRefInline(scratchV, scratchG, scratchF,
                                                    &next);
         masm.jump(&oolCall);

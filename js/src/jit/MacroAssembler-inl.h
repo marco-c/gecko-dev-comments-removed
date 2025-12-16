@@ -883,6 +883,20 @@ void MacroAssembler::canonicalizeDoubleNaN(FloatRegister reg) {
   bind(&notNaN);
 }
 
+void MacroAssembler::canonicalizeDoubleZero(FloatRegister reg,
+                                            FloatRegister scratch) {
+  
+  
+  
+  
+  
+  
+  
+  
+  loadConstantDouble(1.0, scratch);
+  mulDouble(scratch, reg);
+}
+
 
 
 
