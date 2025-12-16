@@ -2775,15 +2775,33 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     return;
   }
 
-  if (aRequest->IsModuleRequest() &&
-      aRequest->AsModuleRequest()->mModuleType != JS::ModuleType::JavaScript) {
-    LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: JSON module",
-         aRequest));
-    aRequest->MarkNotCacheable();
-    MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
-    MOZ_ASSERT_IF(aRequest->IsTextSource(),
-                  aRequest->HasNoSRIOrSRIAndSerializedStencil());
-    return;
+  if (aRequest->IsModuleRequest()) {
+    ModuleLoadRequest* moduleLoadRequest = aRequest->AsModuleRequest();
+    if (moduleLoadRequest->mModuleType == JS::ModuleType::JavaScriptOrWasm) {
+#ifdef NIGHTLY_BUILD
+      
+      
+      if (moduleLoadRequest->HasWasmMimeTypeEssence()) {
+        LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: wasm module",
+             aRequest));
+        aRequest->MarkNotCacheable();
+        
+        
+        MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
+        MOZ_ASSERT_IF(aRequest->IsTextSource(),
+                      aRequest->HasNoSRIOrSRIAndSerializedStencil());
+        return;
+      }
+#endif
+    } else {
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: synthetic module",
+           aRequest));
+      aRequest->MarkNotCacheable();
+      MOZ_ASSERT(!aRequest->getLoadedScript()->HasDiskCacheReference());
+      MOZ_ASSERT_IF(aRequest->IsTextSource(),
+                    aRequest->HasNoSRIOrSRIAndSerializedStencil());
+      return;
+    }
   }
 
   if (!aRequest->IsCachedStencil() && aRequest->ExpirationTime().IsExpired()) {
@@ -4630,6 +4648,11 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
           if (nsContentUtils::HasWasmMimeTypeEssence(
                   NS_ConvertUTF8toUTF16(mimeType))) {
             aRequest->AsModuleRequest()->SetHasWasmMimeTypeEssence();
+            
+            
+            
+            
+            aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
           }
         }
       }
