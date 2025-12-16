@@ -33,7 +33,8 @@ Http2Stream::Http2Stream(nsAHttpTransaction* httpTransaction,
 Http2Stream::~Http2Stream() {}
 
 void Http2Stream::CloseStream(nsresult reason) {
-  if (reason == NS_ERROR_NET_RESET) {
+  if (reason == NS_ERROR_NET_RESET &&
+      mTransaction->ConnectionInfo()->IsHttp3ProxyConnection()) {
     
     
     

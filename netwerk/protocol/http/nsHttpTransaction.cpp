@@ -3457,6 +3457,10 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
   }
 
   if (mConnection) {
+    if (mConnection->Version() != HttpVersion::v3_0) {
+      LOG(("Already have non-HTTP/3 conn:%p", mConnection.get()));
+      return;
+    }
     
     
     
