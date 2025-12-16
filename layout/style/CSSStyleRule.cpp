@@ -358,6 +358,9 @@ Element* CSSStyleRule::GetScopeRootFor(uint32_t aSelectorIndex,
 
 SelectorWarningKind ToWebIDLSelectorWarningKind(
     StyleSelectorWarningKind aKind) {
+  
+  
+  
   switch (aKind) {
     case StyleSelectorWarningKind::UnconstraintedRelativeSelector:
       return SelectorWarningKind::UnconstrainedHas;
