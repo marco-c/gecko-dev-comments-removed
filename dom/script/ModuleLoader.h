@@ -7,9 +7,8 @@
 #ifndef mozilla_dom_ModuleLoader_h
 #define mozilla_dom_ModuleLoader_h
 
+#include "ScriptLoader.h"
 #include "js/loader/ModuleLoaderBase.h"
-#include "js/loader/ScriptLoadRequest.h"
-#include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/ScriptLoadRequestType.h"
 
 class nsIURI;
@@ -28,6 +27,7 @@ class ModuleLoadRequest;
 namespace mozilla::dom {
 
 class ScriptLoader;
+class ScriptLoadContext;
 class SRIMetadata;
 
 
@@ -86,12 +86,15 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
   void ExecuteInlineModule(ModuleLoadRequest* aRequest);
 
  private:
-  nsresult CompileJavaScriptModule(JSContext* aCx, JS::CompileOptions& aOptions,
-                                   ModuleLoadRequest* aRequest,
-                                   JS::MutableHandle<JSObject*> aModuleOut);
+  nsresult CompileJavaScriptOrWasmModule(
+      JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+      JS::MutableHandle<JSObject*> aModuleOut);
   nsresult CompileJsonModule(JSContext* aCx, JS::CompileOptions& aOptions,
                              ModuleLoadRequest* aRequest,
                              JS::MutableHandle<JSObject*> aModuleOut);
+  nsresult CompileCssModule(JSContext* aCx, JS::CompileOptions& aOptions,
+                            ModuleLoadRequest* aRequest,
+                            JS::MutableHandle<JSObject*> aModuleOut);
 
  private:
   const Kind mKind;
