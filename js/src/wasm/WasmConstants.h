@@ -1133,7 +1133,7 @@ enum class FieldWideningOp { None, Signed, Unsigned };
 
 
 
-static const unsigned PageSize = 64 * 1024;
+static const unsigned StandardPageSize = 64 * 1024;
 
 
 
@@ -1166,7 +1166,7 @@ static const unsigned MaxArrayNewFixedElements = 10000;
 
 
 
-static_assert((PageSize * MaxMemory64PagesValidation) <=
+static_assert((StandardPageSize * MaxMemory64PagesValidation) <=
               (uint64_t(1) << 53) - 1);
 
 

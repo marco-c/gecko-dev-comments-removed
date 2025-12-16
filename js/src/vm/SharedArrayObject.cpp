@@ -156,7 +156,7 @@ bool WasmSharedArrayRawBuffer::wasmGrowToPagesInPlace(const Lock&,
   }
 
   size_t delta = newLength - length_;
-  MOZ_ASSERT(delta % wasm::PageSize == 0);
+  MOZ_ASSERT(delta % wasm::StandardPageSize == 0);
 
   uint8_t* dataEnd = dataPointerShared().unwrap() + length_;
   MOZ_ASSERT(uintptr_t(dataEnd) % gc::SystemPageSize() == 0);
@@ -178,8 +178,8 @@ void WasmSharedArrayRawBuffer::discard(size_t byteOffset, size_t byteLen) {
 
   
   
-  MOZ_ASSERT(byteOffset % wasm::PageSize == 0);
-  MOZ_ASSERT(byteLen % wasm::PageSize == 0);
+  MOZ_ASSERT(byteOffset % wasm::StandardPageSize == 0);
+  MOZ_ASSERT(byteLen % wasm::StandardPageSize == 0);
   MOZ_ASSERT(wasm::MemoryBoundsCheck(uint64_t(byteOffset), uint64_t(byteLen),
                                      volatileByteLength()));
 
@@ -213,12 +213,12 @@ void WasmSharedArrayRawBuffer::discard(size_t byteOffset, size_t byteLen) {
   
   
   
-  size_t numPages = byteLen / wasm::PageSize;
+  size_t numPages = byteLen / wasm::StandardPageSize;
   for (size_t i = 0; i < numPages; i++) {
-    AtomicOperations::memsetSafeWhenRacy(addr + (i * wasm::PageSize), 0,
-                                         wasm::PageSize);
-    DebugOnly<bool> result =
-        VirtualUnlock(addr.unwrap() + (i * wasm::PageSize), wasm::PageSize);
+    AtomicOperations::memsetSafeWhenRacy(addr + (i * wasm::StandardPageSize), 0,
+                                         wasm::StandardPageSize);
+    DebugOnly<bool> result = VirtualUnlock(
+        addr.unwrap() + (i * wasm::StandardPageSize), wasm::StandardPageSize);
     MOZ_ASSERT(!result);  
                           
   }
@@ -339,7 +339,7 @@ bool SharedArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
     uint64_t sourceMaxBytes = sourceMaxPages.byteLength64();
 
     MOZ_ASSERT(sourceMaxBytes <=
-               wasm::PageSize * wasm::MaxMemory64PagesValidation);
+               wasm::StandardPageSize * wasm::MaxMemory64PagesValidation);
     args.rval().setNumber(double(sourceMaxBytes));
 
     return true;
@@ -408,7 +408,7 @@ bool SharedArrayBufferObject::growImpl(JSContext* cx, const CallArgs& args) {
 
   if (buffer->isWasm()) {
     
-    if (newByteLength % wasm::PageSize != 0) {
+    if (newByteLength % wasm::StandardPageSize != 0) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_WASM_ARRAYBUFFER_PAGE_MULTIPLE);
       return false;

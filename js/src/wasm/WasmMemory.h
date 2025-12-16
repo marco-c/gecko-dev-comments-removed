@@ -83,15 +83,15 @@ struct Pages {
   
   
   static Pages fromByteLengthExact(size_t byteLength) {
-    MOZ_ASSERT(byteLength % PageSize == 0);
-    return Pages(byteLength / PageSize);
+    MOZ_ASSERT(byteLength % StandardPageSize == 0);
+    return Pages(byteLength / StandardPageSize);
   }
 
   
   
   bool hasByteLength() const {
     mozilla::CheckedInt<size_t> length(value_);
-    length *= PageSize;
+    length *= StandardPageSize;
     return length.isValid();
   }
 
@@ -99,14 +99,14 @@ struct Pages {
   
   size_t byteLength() const {
     mozilla::CheckedInt<size_t> length(value_);
-    length *= PageSize;
+    length *= StandardPageSize;
     return length.value();
   }
 
   
   uint64_t byteLength64() const {
     mozilla::CheckedInt<uint64_t> length(value_);
-    length *= PageSize;
+    length *= StandardPageSize;
     return length.value();
   }
 
@@ -183,7 +183,7 @@ static const uint64_t HugeIndexRange = uint64_t(UINT32_MAX) + 1;
 
 static const uint64_t HugeOffsetGuardLimit = 1 << 25;
 
-static const uint64_t HugeUnalignedGuardPage = PageSize;
+static const uint64_t HugeUnalignedGuardPage = StandardPageSize;
 
 
 static const uint64_t HugeMappedSize =
@@ -191,12 +191,12 @@ static const uint64_t HugeMappedSize =
 
 
 
-static_assert(HugeMappedSize % PageSize == 0);
+static_assert(HugeMappedSize % StandardPageSize == 0);
 
 #endif
 
 
-static const size_t GuardSize = PageSize;
+static const size_t GuardSize = StandardPageSize;
 
 
 
