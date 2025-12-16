@@ -11,8 +11,7 @@
 
 
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -36,7 +35,6 @@
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/fake_network.h"
 #include "rtc_base/firewall_socket_server.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/test_certificate_verifier.h"
@@ -223,11 +221,11 @@ TEST_P(PeerConnectionIntegrationTest,
   options.offer_to_receive_video = 1;
   caller()->SetOfferAnswerOptions(options);
   caller()->CreateAndSetAndSignalOffer();
-  bool wait_res = true;
+  bool wait_res = WaitUntil([&]() { return DtlsConnected(); },
+                            {.timeout = kDefaultTimeout});
   
   
   
-  WAIT_(DtlsConnected(), kDefaultTimeout.ms(), wait_res);
   ASSERT_FALSE(wait_res);
 
   EXPECT_GT(client_1_cert_verifier->call_count_, 0u);
@@ -256,15 +254,14 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
   
   
-  EXPECT_THAT(
-      WaitUntil(
-          [&] {
-            return callee()
-                ->OldGetStatsForTrack(remote_audio_track.get())
-                ->CaptureStartNtpTime();
-          },
-          ::testing::Gt(0), {.timeout = 2 * kMaxWaitForFrames}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil(
+                  [&] {
+                    return callee()
+                        ->OldGetStatsForTrack(remote_audio_track.get())
+                        ->CaptureStartNtpTime();
+                  },
+                  ::testing::Gt(0), {.timeout = 2 * kMaxWaitForFrames}),
+              IsRtcOk());
 }
 
 
