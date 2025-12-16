@@ -33,12 +33,13 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class GeolocationTest : BaseSessionTest() {
-    private val LOGTAG = "GeolocationTest"
     private val activityRule = ActivityScenarioRule(GeckoViewTestActivity::class.java)
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val logTag = "GeolocationTest"
     private lateinit var locManager: LocationManager
     private lateinit var mockGpsProvider: MockLocationProvider
     private lateinit var mockNetworkProvider: MockLocationProvider
+    private lateinit var mockFusedProvider: MockLocationProvider
 
     @get:Rule
     override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
@@ -52,6 +53,7 @@ class GeolocationTest : BaseSessionTest() {
             locManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             mockGpsProvider = sessionRule.MockLocationProvider(locManager, LocationManager.GPS_PROVIDER, 0.0, 0.0, true)
             mockNetworkProvider = sessionRule.MockLocationProvider(locManager, LocationManager.NETWORK_PROVIDER, 0.0, 0.0, true)
+            mockFusedProvider = sessionRule.MockLocationProvider(locManager, LocationManager.FUSED_PROVIDER, 0.0, 0.0, true)
         }
     }
 
@@ -63,6 +65,7 @@ class GeolocationTest : BaseSessionTest() {
             }
             mockGpsProvider.removeMockLocationProvider()
             mockNetworkProvider.removeMockLocationProvider()
+            mockFusedProvider.removeMockLocationProvider()
         } catch (e: Exception) {
         }
     }
@@ -234,7 +237,7 @@ class GeolocationTest : BaseSessionTest() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onResume(owner: LifecycleOwner) {
-                    Log.i(LOGTAG, "onResume Event")
+                    Log.i(logTag, "onResume Event")
                     actualResumeCount++
                     super.onResume(owner)
                     try {
@@ -268,14 +271,14 @@ class GeolocationTest : BaseSessionTest() {
                 }
 
                 override fun onPause(owner: LifecycleOwner) {
-                    Log.i(LOGTAG, "onPause Event")
+                    Log.i(logTag, "onPause Event")
                     actualPauseCount++
                     super.onPause(owner)
                     try {
                         mockGpsProvider.setMockLocation(afterPauseLat, afterPauseLon)
                         mockGpsProvider.postLocation()
                     } catch (e: Exception) {
-                        Log.w(LOGTAG, "onPause was called too late.")
+                        Log.w(logTag, "onPause was called too late.")
                         
                     }
                 }
@@ -323,6 +326,7 @@ class GeolocationTest : BaseSessionTest() {
         val handled = GeckoResult<Void>()
         var result = false
         Handler(Looper.getMainLooper()).postDelayed({
+            mainSession.setActive(true)
             val promise =
                 mainSession.evaluatePromiseJS(
                     """

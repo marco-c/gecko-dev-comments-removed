@@ -274,9 +274,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val sanitizedDefaultLargeKeepaliveFactor = 1
 
         
-
-
-
+        
         try {
             settings.setLargeKeepaliveFactor(128)
             prefValue = (sessionRule.getPrefs(largeKeepaliveFactorPref)[0] as Int)
@@ -1033,6 +1031,43 @@ class RuntimeSettingsTest : BaseSessionTest() {
             "The security.pki.crlite_channel preference should be set to the correct string",
             crlitePreference,
             equalTo(crliteChannel),
+        )
+    }
+
+    @Test
+    fun safeBrowsingV5Enabled() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+
+        
+        var defaultPrefValue =
+            (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
+
+        
+        
+        assertThat(
+            "Safe Browsing V5 enabled pref should match setting",
+            geckoRuntimeSettings.contentBlocking.safeBrowsingV5Enabled,
+            equalTo(defaultPrefValue),
+        )
+
+        
+        geckoRuntimeSettings.contentBlocking.setSafeBrowsingV5Enabled(!defaultPrefValue)
+
+        
+        assertThat(
+            "Safe Browsing V5 enabled pref should match setting",
+            geckoRuntimeSettings.contentBlocking.safeBrowsingV5Enabled,
+            equalTo(!defaultPrefValue),
+        )
+
+        
+        var enabled =
+            (sessionRule.getPrefs("browser.safebrowsing.provider.google5.enabled").get(0)) as Boolean
+
+        assertThat(
+            "Safe Browsing V5 enabled pref should match setting",
+            enabled,
+            equalTo(!defaultPrefValue),
         )
     }
 }
