@@ -25,6 +25,8 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
 
+static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
+
 namespace mozilla {
 
 namespace {
@@ -213,8 +215,6 @@ void ContentBlockingLog::ReportCanvasFingerprintingLog(
   }
 
   bool hasCanvasFingerprinter = false;
-  bool canvasFingerprinterKnownText = false;
-  Maybe<ContentBlockingNotifier::CanvasFingerprinter> canvasFingerprinter;
   for (const auto& originEntry : mLog) {
     if (!originEntry.mData) {
       continue;
@@ -224,55 +224,118 @@ void ContentBlockingLog::ReportCanvasFingerprintingLog(
       if (logEntry.mType !=
           nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING) {
         continue;
+      } else if (logEntry.mCanvasFingerprintingEvent.isSome() == false) {
+        
+        {
+          nsAutoCString firstPartyOrigin;
+          aFirstPartyPrincipal->GetOriginNoSuffix(firstPartyOrigin);
+          MOZ_LOG(gFingerprinterDetection, LogLevel::Error,
+                  ("ContentBlockingLog::ReportCanvasFingerprintingLog: "
+                   "logEntry has no CanvasFingerprintingEvent "
+                   "(firstPartyOrigin=%s)",
+                   firstPartyOrigin.get()));
+        }
+        continue;
+      }
+      hasCanvasFingerprinter = true;
+
+      auto canvasFingerprintingEvent =
+          logEntry.mCanvasFingerprintingEvent.value();
+
+      
+      
+      
+      
+      auto IncrementBySources =
+          [](const CanvasFingerprintingEvent canvasFingerprintingEvent,
+             glean::impl::DualLabeledCounterMetric metric,
+             const nsCString& key) {
+            for (uint64_t b = canvasFingerprintingEvent.sourcesBitmask; b;
+                 b &= (b - 1)) {
+              
+              
+              uint32_t singleSetBit_Source = b & (~b + 1);
+
+              nsAutoCString category;
+              category.AppendInt(singleSetBit_Source);
+
+              
+              
+
+              metric.Get(key, category).Add();
+            }
+            
+            
+            
+            MOZ_LOG(gFingerprinterDetection, LogLevel::Info,
+                    ("ContentBlockingLog::ReportCanvasFingerprintingLog: "
+                     "Incrementing for combined sources bitmask %" PRIu64,
+                     canvasFingerprintingEvent.sourcesBitmask));
+            nsAutoCString category;
+            category.AppendInt(canvasFingerprintingEvent.sourcesBitmask);
+            metric.Get(key, category).Add();
+          };
+
+      
+      
+      
+      if (!canvasFingerprintingEvent.knownTextBitmask) {
+        nsAutoCString key;
+        key.AppendLiteral("none");
+
+        IncrementBySources(
+            canvasFingerprintingEvent,
+            glean::contentblocking::
+                canvas_fingerprinting_type_text_by_source_per_tab2,
+            key);
+      } else {
+        
+        for (uint32_t b = canvasFingerprintingEvent.knownTextBitmask; b;
+             b &= (b - 1)) {
+          uint32_t singleSetBit_Text = b & (~b + 1);
+          uint32_t exponent = mozilla::CountTrailingZeroes32(singleSetBit_Text);
+
+          nsAutoCString key;
+          key.AppendInt(exponent);
+
+          IncrementBySources(
+              canvasFingerprintingEvent,
+              glean::contentblocking::
+                  canvas_fingerprinting_type_text_by_source_per_tab2,
+              key);
+        }
       }
 
       
       
-      if (!hasCanvasFingerprinter ||
-          (!canvasFingerprinterKnownText &&
-           *logEntry.mCanvasFingerprinterKnownText) ||
-          (!canvasFingerprinterKnownText && canvasFingerprinter.isNothing() &&
-           logEntry.mCanvasFingerprinter.isSome())) {
-        hasCanvasFingerprinter = true;
-        canvasFingerprinterKnownText = *logEntry.mCanvasFingerprinterKnownText;
-        canvasFingerprinter = logEntry.mCanvasFingerprinter;
-      }
+      
+      nsAutoCString key;
+      key.AppendInt(static_cast<uint32_t>(canvasFingerprintingEvent.alias));
+
+      IncrementBySources(
+          canvasFingerprintingEvent,
+          glean::contentblocking::
+              canvas_fingerprinting_type_alias_by_source_per_tab2,
+          key);
     }
   }
 
-  auto label =
-      glean::contentblocking::CanvasFingerprintingPerTabLabel::eUnknown;
-  auto labelMatched =
-      glean::contentblocking::CanvasFingerprintingPerTabLabel::eUnknownMatched;
-  if (hasCanvasFingerprinter && canvasFingerprinterKnownText) {
-    label = glean::contentblocking::CanvasFingerprintingPerTabLabel::eKnownText;
-    labelMatched = glean::contentblocking::CanvasFingerprintingPerTabLabel::
-        eKnownTextMatched;
-  }
+  
+  
+  
 
   if (!hasCanvasFingerprinter) {
-    glean::contentblocking::canvas_fingerprinting_per_tab.EnumGet(label)
-        .AccumulateSingleSample(0);
-    if (aShouldReport) {
-      glean::contentblocking::canvas_fingerprinting_per_tab
-          .EnumGet(labelMatched)
-          .AccumulateSingleSample(0);
-    }
+    
+    glean::contentblocking::canvas_fingerprinting_per_tab2
+        .EnumGet(
+            glean::contentblocking::CanvasFingerprintingPerTab2Label::eNotFound)
+        .Add();
   } else {
-    int32_t fingerprinter =
-        canvasFingerprinter.isSome() ? (*canvasFingerprinter + 1) : 0;
-    auto label =
-        canvasFingerprinterKnownText
-            ? glean::contentblocking::CanvasFingerprintingPerTabLabel::
-                  eKnownText
-            : glean::contentblocking::CanvasFingerprintingPerTabLabel::eUnknown;
-    glean::contentblocking::canvas_fingerprinting_per_tab.EnumGet(label)
-        .AccumulateSingleSample(fingerprinter);
-    if (aShouldReport) {
-      glean::contentblocking::canvas_fingerprinting_per_tab
-          .EnumGet(labelMatched)
-          .AccumulateSingleSample(fingerprinter);
-    }
+    
+    glean::contentblocking::canvas_fingerprinting_per_tab2
+        .EnumGet(
+            glean::contentblocking::CanvasFingerprintingPerTab2Label::eFound)
+        .Add();
   }
 }
 
