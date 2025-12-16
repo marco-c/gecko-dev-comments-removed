@@ -959,14 +959,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       activeDocsSandboxFlags = parentDoc->GetSandboxFlags();
 
       if (!aForceNoOpener) {
-        if (Document* entryDoc = GetEntryDocument()) {
-          openWindowInfo->mPolicyContainerToInheritForAboutBlank =
-              entryDoc->GetPolicyContainer();
-          openWindowInfo->mCoepToInheritForAboutBlank =
-              entryDoc->GetEmbedderPolicy();
-          openWindowInfo->mBaseUriToInheritForAboutBlank =
-              entryDoc->GetBaseURI();
-        }
+        openWindowInfo->mPolicyContainerToInheritForAboutBlank =
+            parentDoc->GetPolicyContainer();
+        openWindowInfo->mCoepToInheritForAboutBlank =
+            parentDoc->GetEmbedderPolicy();
       }
 
       

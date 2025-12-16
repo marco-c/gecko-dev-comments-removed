@@ -1759,7 +1759,8 @@ bool nsGlobalWindowOuter::WouldReuseInnerWindow(Document* aNewDocument) {
 }
 
 void nsGlobalWindowOuter::SetInitialPrincipal(
-    nsIPrincipal* aNewWindowPrincipal) {
+    nsIPrincipal* aNewWindowPrincipal, nsIPolicyContainer* aPolicyContainer,
+    const Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP) {
   
   
   
@@ -1771,28 +1772,30 @@ void nsGlobalWindowOuter::SetInitialPrincipal(
     aNewWindowPrincipal = nullptr;
   }
 
-  MOZ_ASSERT(mDoc, "Some document should've been eagerly created");
-
   
-  if (!mDoc->IsUncommittedInitialDocument()) return;
-  
-  if (mDoc->NodePrincipal() == aNewWindowPrincipal) return;
+  if (mDoc) {
+    
+    if (!mDoc->IsInitialDocument()) return;
+    
+    if (mDoc->NodePrincipal() == aNewWindowPrincipal) return;
 
 #ifdef DEBUG
-  
-  bool isNullPrincipal;
-  MOZ_ASSERT(NS_SUCCEEDED(
-                 mDoc->NodePrincipal()->GetIsNullPrincipal(&isNullPrincipal)) &&
-             isNullPrincipal);
+    
+    
+    
+    bool isNullPrincipal;
+    MOZ_ASSERT(NS_SUCCEEDED(mDoc->NodePrincipal()->GetIsNullPrincipal(
+                   &isNullPrincipal)) &&
+               isNullPrincipal);
 #endif
+  }
 
   
   
   nsDocShell::Cast(GetDocShell())
-      ->CreateAboutBlankDocumentViewer(
-          aNewWindowPrincipal, aNewWindowPrincipal, mDoc->GetPolicyContainer(),
-          mDoc->GetDocBaseURI(),
-           true, mDoc->GetEmbedderPolicy());
+      ->CreateAboutBlankDocumentViewer(aNewWindowPrincipal, aNewWindowPrincipal,
+                                       aPolicyContainer, nullptr,
+                                        true, aCOEP);
 
   if (mDoc) {
     MOZ_ASSERT(mDoc->IsInitialDocument(),
