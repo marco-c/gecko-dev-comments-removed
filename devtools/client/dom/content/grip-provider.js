@@ -11,16 +11,14 @@ const {
 } = require("resource://devtools/client/dom/content/reducers/grips.js");
 
 
-function GripProvider(grips, dispatch) {
-  this.grips = grips;
-  this.dispatch = dispatch;
-}
 
 
 
-
-
-GripProvider.prototype = {
+class GripProvider {
+  constructor(grips, dispatch) {
+    this.grips = grips;
+    this.dispatch = dispatch;
+  }
   
 
 
@@ -43,7 +41,7 @@ GripProvider.prototype = {
     }
 
     return props;
-  },
+  }
 
   hasChildren(object) {
     if (object instanceof Property) {
@@ -71,7 +69,7 @@ GripProvider.prototype = {
     }
 
     return null;
-  },
+  }
 
   getValue(object) {
     if (object instanceof Property) {
@@ -82,21 +80,21 @@ GripProvider.prototype = {
     }
 
     return object;
-  },
+  }
 
   getLabel(object) {
     return object instanceof Property ? object.name : null;
-  },
+  }
 
   getKey(object) {
     return object instanceof Property ? object.key : null;
-  },
+  }
 
   getType(object) {
     const grip = object?.getGrip ? object.getGrip() : object;
     return grip.class ? grip.class : "";
-  },
-};
+  }
+}
 
 
 exports.GripProvider = GripProvider;
