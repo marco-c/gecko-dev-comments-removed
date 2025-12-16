@@ -574,9 +574,6 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
     JSContext* cx, const ISODateTime& isoDateTime1,
     const ISODateTime& isoDateTime2, Handle<CalendarValue> calendar,
     const DifferenceSettings& settings, InternalDuration* result) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
-
   
   if (isoDateTime1 == isoDateTime2) {
     
@@ -585,6 +582,12 @@ bool js::temporal::DifferencePlainDateTimeWithRounding(
   }
 
   
+  if (!ISODateTimeWithinLimits(isoDateTime1) ||
+      !ISODateTimeWithinLimits(isoDateTime2)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
+    return false;
+  }
 
   
   InternalDuration diff;
@@ -622,9 +625,6 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
     JSContext* cx, const ISODateTime& isoDateTime1,
     const ISODateTime& isoDateTime2, Handle<CalendarValue> calendar,
     TemporalUnit unit, double* result) {
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime1));
-  MOZ_ASSERT(ISODateTimeWithinLimits(isoDateTime2));
-
   
   if (isoDateTime1 == isoDateTime2) {
     
@@ -633,6 +633,12 @@ bool js::temporal::DifferencePlainDateTimeWithTotal(
   }
 
   
+  if (!ISODateTimeWithinLimits(isoDateTime1) ||
+      !ISODateTimeWithinLimits(isoDateTime2)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TEMPORAL_PLAIN_DATE_TIME_INVALID);
+    return false;
+  }
 
   
   InternalDuration diff;
@@ -1726,7 +1732,7 @@ static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, temporalDateTime->calendar());
 
   
-  auto smallestUnit = TemporalUnit::Auto;
+  auto smallestUnit = TemporalUnit::Unset;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
   if (args.get(0).isString()) {
@@ -1735,11 +1741,15 @@ static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
     
     Rooted<JSString*> paramString(cx, args[0].toString());
     if (!GetTemporalUnitValuedOption(
-            cx, paramString, TemporalUnitKey::SmallestUnit,
-            TemporalUnitGroup::DayTime, &smallestUnit)) {
+            cx, paramString, TemporalUnitKey::SmallestUnit, &smallestUnit)) {
       return false;
     }
 
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::DayTime)) {
+      return false;
+    }
     MOZ_ASSERT(TemporalUnit::Day <= smallestUnit &&
                smallestUnit <= TemporalUnit::Nanosecond);
 
@@ -1764,17 +1774,21 @@ static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalUnitValuedOption(cx, roundTo, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::DayTime,
                                      &smallestUnit)) {
       return false;
     }
 
-    if (smallestUnit == TemporalUnit::Auto) {
+    if (smallestUnit == TemporalUnit::Unset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_MISSING_OPTION, "smallestUnit");
       return false;
     }
 
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::DayTime)) {
+      return false;
+    }
     MOZ_ASSERT(TemporalUnit::Day <= smallestUnit &&
                smallestUnit <= TemporalUnit::Nanosecond);
 
@@ -1896,9 +1910,15 @@ static bool PlainDateTime_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto smallestUnit = TemporalUnit::Auto;
+    auto smallestUnit = TemporalUnit::Unset;
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
