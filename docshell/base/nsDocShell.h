@@ -583,6 +583,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  
   bool VerifyDocumentViewer();
 
   void DestroyDocumentViewer();
