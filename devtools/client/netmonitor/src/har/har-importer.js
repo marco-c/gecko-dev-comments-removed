@@ -18,18 +18,17 @@ var guid = 0;
 
 
 
-var HarImporter = function (actions) {
-  this.actions = actions;
-};
-
-HarImporter.prototype = {
+class HarImporter {
+  constructor(actions) {
+    this.actions = actions;
+  }
   
 
 
   import(har) {
     const json = JSON.parse(har);
     this.doImport(json);
-  },
+  }
 
   doImport(har) {
     this.actions.clearRequests({ isExplicitClear: true });
@@ -159,8 +158,8 @@ HarImporter.prototype = {
         });
       }
     });
-  },
-};
+  }
+}
 
 
 exports.HarImporter = HarImporter;
