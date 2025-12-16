@@ -491,11 +491,8 @@ ContentBlockingLog::OriginEntry* ContentBlockingLog::RecordLogInternal(
     
     
     
-    if ((aType == nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING ||
-         aType == nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING) &&
-        !entry.mData->mHasSuspiciousFingerprintingActivity &&
-        nsRFPService::CheckSuspiciousFingerprintingActivity(
-            entry.mData->mLogs)) {
+    if (aType == nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING ||
+        aType == nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING) {
       entry.mData->mHasSuspiciousFingerprintingActivity = true;
     }
     return &entry;
@@ -533,10 +530,8 @@ ContentBlockingLog::OriginEntry* ContentBlockingLog::RecordLogInternal(
     
     
     
-    if ((aType == nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING ||
-         aType == nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING) &&
-        nsRFPService::CheckSuspiciousFingerprintingActivity(
-            entry->mData->mLogs)) {
+    if (aType == nsIWebProgressListener::STATE_ALLOWED_CANVAS_FINGERPRINTING ||
+        aType == nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING) {
       entry->mData->mHasSuspiciousFingerprintingActivity = true;
     }
   }
