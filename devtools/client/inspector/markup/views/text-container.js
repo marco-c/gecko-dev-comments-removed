@@ -7,38 +7,32 @@
 const nodeConstants = require("resource://devtools/shared/dom-node-constants.js");
 const TextEditor = require("resource://devtools/client/inspector/markup/views/text-editor.js");
 const MarkupContainer = require("resource://devtools/client/inspector/markup/views/markup-container.js");
-const { extend } = require("resource://devtools/shared/extend.js");
 
 
 
 
 
+class MarkupTextContainer extends MarkupContainer {
+  
 
 
 
 
 
+  constructor(markupView, node) {
+    super();
+    this.initialize(markupView, node, "textcontainer");
 
+    if (node.nodeType == nodeConstants.TEXT_NODE) {
+      this.editor = new TextEditor(this, node, "text");
+    } else if (node.nodeType == nodeConstants.COMMENT_NODE) {
+      this.editor = new TextEditor(this, node, "comment");
+    } else {
+      throw new Error("Invalid node for MarkupTextContainer");
+    }
 
-function MarkupTextContainer(markupView, node) {
-  MarkupContainer.prototype.initialize.call(
-    this,
-    markupView,
-    node,
-    "textcontainer"
-  );
-
-  if (node.nodeType == nodeConstants.TEXT_NODE) {
-    this.editor = new TextEditor(this, node, "text");
-  } else if (node.nodeType == nodeConstants.COMMENT_NODE) {
-    this.editor = new TextEditor(this, node, "comment");
-  } else {
-    throw new Error("Invalid node for MarkupTextContainer");
+    this.tagLine.appendChild(this.editor.elt);
   }
-
-  this.tagLine.appendChild(this.editor.elt);
 }
-
-MarkupTextContainer.prototype = extend(MarkupContainer.prototype, {});
 
 module.exports = MarkupTextContainer;
