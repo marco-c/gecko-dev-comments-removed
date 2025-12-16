@@ -18,6 +18,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/MaybeStorageBase.h"
 #include "mozilla/ThreadSafety.h"
 
 #if defined(XP_DARWIN)
@@ -40,19 +41,43 @@ OS_EXPORT OS_NOTHROW OS_NONNULL_ALL void os_unfair_lock_lock_with_options(
 
 
 
+
+
+
+
+
 struct MOZ_CAPABILITY("mutex") Mutex {
 #if defined(XP_WIN)
-  CRITICAL_SECTION mMutex;
+  
+  mozilla::detail::MaybeStorageBase<CRITICAL_SECTION> mMutex;
 #elif defined(XP_DARWIN)
-  os_unfair_lock mMutex;
+  os_unfair_lock mMutex = OS_UNFAIR_LOCK_INIT;
+#elif defined(XP_LINUX) && !defined(ANDROID)
+  pthread_mutex_t mMutex = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP;
 #else
-  pthread_mutex_t mMutex;
+  pthread_mutex_t mMutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+#ifdef MOZ_DEBUG
+  bool mInitialised = false;
+
+  
+  explicit constexpr Mutex(bool aInitialised) : mInitialised(aInitialised) {}
+#else
+  explicit constexpr Mutex(bool aIgnored) {}
 #endif
 
   
+  
+  constexpr Mutex() {}
+
+  
   inline bool Init() {
+#ifdef MOZ_DEBUG
+    mInitialised = true;
+#endif
 #if defined(XP_WIN)
-    if (!InitializeCriticalSectionAndSpinCount(&mMutex, 5000)) {
+    if (!InitializeCriticalSectionAndSpinCount(mMutex.addr(), 5000)) {
       return false;
     }
 #elif defined(XP_DARWIN)
@@ -77,8 +102,10 @@ struct MOZ_CAPABILITY("mutex") Mutex {
   }
 
   inline void Lock() MOZ_CAPABILITY_ACQUIRE() {
+    MOZ_ASSERT(mInitialised);
+
 #if defined(XP_WIN)
-    EnterCriticalSection(&mMutex);
+    EnterCriticalSection(mMutex.addr());
 #elif defined(XP_DARWIN)
     
     
@@ -98,8 +125,10 @@ struct MOZ_CAPABILITY("mutex") Mutex {
   [[nodiscard]] bool TryLock() MOZ_TRY_ACQUIRE(true);
 
   inline void Unlock() MOZ_CAPABILITY_RELEASE() {
+    MOZ_ASSERT(mInitialised);
+
 #if defined(XP_WIN)
-    LeaveCriticalSection(&mMutex);
+    LeaveCriticalSection(mMutex.addr());
 #elif defined(XP_DARWIN)
     os_unfair_lock_unlock(&mMutex);
 #else
@@ -124,6 +153,8 @@ struct MOZ_CAPABILITY("mutex") Mutex {
 struct MOZ_CAPABILITY("mutex") StaticMutex {
   SRWLOCK mMutex;
 
+  constexpr StaticMutex() : mMutex(SRWLOCK_INIT) {}
+
   inline void Lock() MOZ_CAPABILITY_ACQUIRE() {
     AcquireSRWLockExclusive(&mMutex);
   }
@@ -133,21 +164,10 @@ struct MOZ_CAPABILITY("mutex") StaticMutex {
   }
 };
 
-
-
-#  define STATIC_MUTEX_INIT SRWLOCK_INIT
-
 #else
-typedef Mutex StaticMutex;
-
-#  if defined(XP_DARWIN)
-#    define STATIC_MUTEX_INIT OS_UNFAIR_LOCK_INIT
-#  elif defined(XP_LINUX) && !defined(ANDROID)
-#    define STATIC_MUTEX_INIT PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP
-#  else
-#    define STATIC_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
-#  endif
-
+struct MOZ_CAPABILITY("mutex") StaticMutex : public Mutex {
+  constexpr StaticMutex() : Mutex(true) {}
+};
 #endif
 
 #ifdef XP_WIN

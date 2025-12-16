@@ -175,7 +175,7 @@ using namespace mozilla;
 
 
 
-MOZ_CONSTINIT static RefPtr<MallocProfilerCallbacks> sCallbacks;
+constinit static RefPtr<MallocProfilerCallbacks> sCallbacks;
 #endif
 
 
@@ -203,7 +203,7 @@ static Atomic<bool, MemoryOrdering::Relaxed> malloc_initialized;
 #endif
 
 
-MOZ_CONSTINIT StaticMutex gInitLock MOZ_UNANNOTATED;
+constinit StaticMutex gInitLock MOZ_UNANNOTATED;
 
 
 
@@ -1219,7 +1219,7 @@ class ArenaCollection {
   Atomic<bool> mIsDeferredPurgeEnabled;
 };
 
-MOZ_CONSTINIT static ArenaCollection gArenas;
+constinit static ArenaCollection gArenas;
 
 
 static Mutex huge_mtx;

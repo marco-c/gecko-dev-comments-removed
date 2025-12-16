@@ -10,7 +10,7 @@
 
 using namespace mozilla;
 
-MOZ_CONSTINIT BaseAlloc sBaseAlloc;
+constinit BaseAlloc sBaseAlloc;
 
 
 void BaseAlloc::Init() MOZ_REQUIRES(gInitLock) { mMutex.Init(); }
