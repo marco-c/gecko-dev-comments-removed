@@ -26,7 +26,7 @@ class TypedCodecVendor {
   
   
   TypedCodecVendor() {}
-  TypedCodecVendor(MediaEngineInterface* media_engine,
+  TypedCodecVendor(const MediaEngineInterface* media_engine,
                    MediaType type,
                    bool is_sender,
                    bool rtx_enabled,
@@ -43,12 +43,5 @@ class TypedCodecVendor {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::TypedCodecVendor;
-}  
-#endif  
 
 #endif  

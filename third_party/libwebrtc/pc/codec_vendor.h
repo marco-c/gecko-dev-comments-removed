@@ -42,7 +42,7 @@ namespace webrtc {
 
 class CodecVendor {
  public:
-  CodecVendor(MediaEngineInterface* media_engine,
+  CodecVendor(const MediaEngineInterface* media_engine,
               bool rtx_enabled,
               const FieldTrialsView& trials);
 
