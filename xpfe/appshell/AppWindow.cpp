@@ -745,8 +745,8 @@ nsresult AppWindow::MoveResize(const Maybe<DesktopPoint>& aPosition,
   return NS_OK;
 }
 
-NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
-                                bool aAlert) {
+nsresult AppWindow::CenterImpl(nsIAppWindow* aRelative, bool aScreen,
+                               bool aAlert, bool aAllowCenteringForSizeChange) {
   DesktopIntRect rect;
   bool screenCoordinates = false, windowCoordinates = false;
   nsresult result;
@@ -814,10 +814,18 @@ NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
   SetPositionDesktopPix(newPos.x, newPos.y);
 
   
-  if (GetSize() != ourDevSize) {
-    return Center(aRelative, aScreen, aAlert);
+  
+  if (GetSize() != ourDevSize && aAllowCenteringForSizeChange) {
+    return CenterImpl(aRelative, aScreen, aAlert,
+                       false);
   }
   return NS_OK;
+}
+
+NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
+                                bool aAlert) {
+  return CenterImpl(aRelative, aScreen, aAlert,
+                     true);
 }
 
 NS_IMETHODIMP AppWindow::GetParentWidget(nsIWidget** aParentWidget) {
