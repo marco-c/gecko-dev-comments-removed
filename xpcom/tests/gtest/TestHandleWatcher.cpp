@@ -30,7 +30,6 @@
 #include "nsTHashMap.h"
 #include "nsThreadUtils.h"
 
-
 namespace details {
 static nsCString MakeTargetName(const char* name) {
   const char* testName =
@@ -113,7 +112,7 @@ class TestHandleWatcher : public testing::Test {
 
 bool TestHandleWatcher::sIsLive = false;
 
-MOZ_CONSTINIT RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool;
+constinit RefPtr<mozilla::SharedThreadPool> TestHandleWatcher::sPool;
 
 
 
