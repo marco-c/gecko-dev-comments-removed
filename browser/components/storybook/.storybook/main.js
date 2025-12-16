@@ -38,6 +38,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
+    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
