@@ -25,34 +25,35 @@ const {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var HarBuilder = function (options) {
-  this._connector = options.connector;
-  this._id = options.id;
-  this._includeResponseBodies = options.includeResponseBodies;
-  this._items = options.items;
+class HarBuilder {
   
-  this._pageId = options.supportsMultiplePages ? 0 : options.id;
-  this._pageMap = [];
-  this._supportsMultiplePages = options.supportsMultiplePages;
-  this._url = this._connector.currentTarget.url;
-};
 
-HarBuilder.prototype = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(options) {
+    this._connector = options.connector;
+    this._id = options.id;
+    this._includeResponseBodies = options.includeResponseBodies;
+    this._items = options.items;
+    
+    this._pageId = options.supportsMultiplePages ? 0 : options.id;
+    this._pageMap = [];
+    this._supportsMultiplePages = options.supportsMultiplePages;
+    this._url = this._connector.currentTarget.url;
+  }
+
   
 
   
@@ -85,10 +86,9 @@ HarBuilder.prototype = {
     await Promise.all(this.promises);
 
     return harLog;
-  },
+  }
 
   
-
   buildPages(log) {
     if (this._supportsMultiplePages) {
       this.buildPagesFromTargetTitles(log);
@@ -98,7 +98,7 @@ HarBuilder.prototype = {
       log.pages.push(page);
       this._pageMap[this._id] = page;
     }
-  },
+  }
 
   buildPagesFromTargetTitles(log) {
     
@@ -120,7 +120,7 @@ HarBuilder.prototype = {
       const page = this.buildPage(request.url, request);
       log.pages.push(page);
     }
-  },
+  }
 
   buildPage(url, networkEvent) {
     const page = {};
@@ -138,7 +138,7 @@ HarBuilder.prototype = {
     this._pageId++;
 
     return page;
-  },
+  }
 
   getPage(log, entry) {
     const existingPage = log.pages.findLast(
@@ -152,7 +152,7 @@ HarBuilder.prototype = {
     }
 
     return existingPage;
-  },
+  }
 
   async buildEntry(log, networkEvent) {
     const entry = {};
@@ -206,7 +206,7 @@ HarBuilder.prototype = {
     entry.pageref = page.id;
 
     return entry;
-  },
+  }
 
   buildPageTimings() {
     
@@ -227,13 +227,12 @@ HarBuilder.prototype = {
     }
 
     return timings;
-  },
+  }
 
   async buildRequest(networkEvent) {
     
     
     
-
     let { id, requestHeaders } = networkEvent;
     if (!requestHeaders && this._connector.requestData) {
       requestHeaders = await this._connector.requestData(id, "requestHeaders");
@@ -262,7 +261,7 @@ HarBuilder.prototype = {
     }
 
     return request;
-  },
+  }
 
   
 
@@ -276,7 +275,7 @@ HarBuilder.prototype = {
     }
 
     return this.buildNameValuePairs(input.headers);
-  },
+  }
 
   appendHeadersPostData(input = [], networkEvent) {
     if (!networkEvent.requestPostData) {
@@ -291,7 +290,7 @@ HarBuilder.prototype = {
     });
 
     return input;
-  },
+  }
 
   buildCookies(input) {
     if (!input) {
@@ -299,7 +298,7 @@ HarBuilder.prototype = {
     }
 
     return this.buildNameValuePairs(input.cookies || input);
-  },
+  }
 
   buildNameValuePairs(entries) {
     const result = [];
@@ -321,7 +320,7 @@ HarBuilder.prototype = {
     });
 
     return result;
-  },
+  }
 
   async buildPostData(networkEvent) {
     
@@ -382,7 +381,7 @@ HarBuilder.prototype = {
     }
 
     return postData;
-  },
+  }
 
   async buildResponse(networkEvent) {
     
@@ -435,7 +434,7 @@ HarBuilder.prototype = {
     }
 
     return response;
-  },
+  }
 
   async buildContent(networkEvent) {
     const content = {
@@ -478,7 +477,7 @@ HarBuilder.prototype = {
     }
 
     return content;
-  },
+  }
 
   async buildCache(networkEvent) {
     const cache = {};
@@ -505,7 +504,7 @@ HarBuilder.prototype = {
     }
 
     return cache;
-  },
+  }
 
   buildCacheEntry(cacheEntry) {
     const cache = {};
@@ -518,7 +517,6 @@ HarBuilder.prototype = {
       
       
       
-
       cache.fetchCount = findKeys(cacheEntry, ["fetchCount"]);
 
       
@@ -533,10 +531,9 @@ HarBuilder.prototype = {
     }
 
     return cache;
-  },
+  }
 
   
-
   fetchData(string) {
     const promise = this._connector.getLongString(string).then(value => {
       return value;
@@ -547,8 +544,8 @@ HarBuilder.prototype = {
     this.promises.push(promise);
 
     return promise;
-  },
-};
+  }
+}
 
 
 
