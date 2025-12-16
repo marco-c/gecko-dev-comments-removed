@@ -131,7 +131,7 @@ static mozilla::LazyLogModule sGVSupportLog("GeckoViewSupport");
 
 
 
-MOZ_CONSTINIT static nsTArray<nsWindow*> gTopLevelWindows;
+constinit static nsTArray<nsWindow*> gTopLevelWindows;
 
 static const double kTouchResampleVsyncAdjustMs = 5.0;
 
