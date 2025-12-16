@@ -1037,8 +1037,8 @@ nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
   return nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
 }
 
-nsIFrame* DisplayPortUtils::GetASRAncestorFrame(
-    nsIFrame* aFrame, nsDisplayListBuilder* aBuilder) {
+FrameAndASRKind DisplayPortUtils::GetASRAncestorFrame(
+    FrameAndASRKind aFrameAndASRKind, nsDisplayListBuilder* aBuilder) {
   MOZ_ASSERT(aBuilder->IsPaintingToWindow());
   
   
@@ -1053,7 +1053,7 @@ nsIFrame* DisplayPortUtils::GetASRAncestorFrame(
   
   
 
-  for (nsIFrame* f = aFrame; f;
+  for (nsIFrame* f = aFrameAndASRKind.mFrame; f;
        f = nsLayoutUtils::GetCrossDocParentFrameInProcess(f)) {
     if (f->IsMenuPopupFrame()) {
       break;
@@ -1063,9 +1063,12 @@ nsIFrame* DisplayPortUtils::GetASRAncestorFrame(
     
     
     
-    if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(f)) {
-      if (scrollContainerFrame->IsMaybeAsynchronouslyScrolled()) {
-        return f;
+    if (f != aFrameAndASRKind.mFrame ||
+        aFrameAndASRKind.mASRKind == ActiveScrolledRoot::ASRKind::Scroll) {
+      if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(f)) {
+        if (scrollContainerFrame->IsMaybeAsynchronouslyScrolled()) {
+          return {f, ActiveScrolledRoot::ASRKind::Scroll};
+        }
       }
     }
 
@@ -1091,37 +1094,44 @@ nsIFrame* DisplayPortUtils::GetASRAncestorFrame(
     if (f->StyleDisplay()->mPosition == StylePositionProperty::Sticky) {
       auto* ssc = StickyScrollContainer::GetOrCreateForFrame(f);
       if (ssc && ssc->ScrollContainer()->IsMaybeAsynchronouslyScrolled()) {
-        return f->FirstContinuation();
+        return {f->FirstContinuation(), ActiveScrolledRoot::ASRKind::Sticky};
       }
     }
   }
-  return nullptr;
+  return FrameAndASRKind::default_value();
 }
 
-nsIFrame* DisplayPortUtils::OneStepInASRChain(
-    nsIFrame* aFrame, nsIFrame* aLimitAncestor ) {
+FrameAndASRKind DisplayPortUtils::OneStepInASRChain(
+    FrameAndASRKind aFrameAndASRKind,
+    nsIFrame* aLimitAncestor ) {
   
   
   
   
-  if (aFrame->IsMenuPopupFrame()) {
-    return nullptr;
+  if (aFrameAndASRKind.mFrame->IsMenuPopupFrame()) {
+    return FrameAndASRKind::default_value();
   }
-  nsIFrame* anchor = nullptr;
-  while ((anchor =
-              AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
-    MOZ_ASSERT_IF(aLimitAncestor,
-                  nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
-                      aLimitAncestor, anchor));
-    aFrame = anchor;
+  if (aFrameAndASRKind.mASRKind == ActiveScrolledRoot::ASRKind::Scroll) {
+    nsIFrame* frame = aFrameAndASRKind.mFrame;
+    nsIFrame* anchor = nullptr;
+    while ((anchor =
+                AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(frame))) {
+      MOZ_ASSERT_IF(
+          aLimitAncestor,
+          nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+              aLimitAncestor, anchor));
+      frame = anchor;
+    }
+    return {frame, ActiveScrolledRoot::ASRKind::Sticky};
   }
-  nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame);
+  nsIFrame* parent =
+      nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrameAndASRKind.mFrame);
   if (aLimitAncestor && parent &&
       (parent == aLimitAncestor ||
        parent->FirstContinuation() == aLimitAncestor->FirstContinuation())) {
-    return nullptr;
+    return FrameAndASRKind::default_value();
   }
-  return parent;
+  return {parent, ActiveScrolledRoot::ASRKind::Scroll};
 }
 
 
@@ -1153,11 +1163,6 @@ static bool ActivatePotentialStickyASR(nsIFrame* aFrame,
       aBuilder);
 }
 
-struct FrameAndASRKind {
-  nsIFrame* mFrame;
-  ActiveScrolledRoot::ASRKind mASRKind;
-};
-
 const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
     nsIFrame* aAnchor, nsIFrame* aLimitAncestor,
     const ActiveScrolledRoot* aASRofLimitAncestor,
@@ -1165,35 +1170,34 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
   MOZ_ASSERT(ScrollContainerFrame::ShouldActivateAllScrollFrames(
       aBuilder, aLimitAncestor));
 
-  MOZ_ASSERT((aASRofLimitAncestor ? aASRofLimitAncestor->mFrame : nullptr) ==
-             GetASRAncestorFrame(aLimitAncestor, aBuilder));
+  MOZ_ASSERT(
+      (aASRofLimitAncestor ? FrameAndASRKind{aASRofLimitAncestor->mFrame,
+                                             aASRofLimitAncestor->mKind}
+                           : FrameAndASRKind::default_value()) ==
+      GetASRAncestorFrame({aLimitAncestor, ActiveScrolledRoot::ASRKind::Scroll},
+                          aBuilder));
 
   MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
       aLimitAncestor, aAnchor));
 
   AutoTArray<FrameAndASRKind, 4> ASRframes;
-  nsIFrame* frame = aAnchor;
 
   
   
   
-  if (ActivatePotentialStickyASR(frame, aBuilder)) {
-    ASRframes.EmplaceBack(frame, ActiveScrolledRoot::ASRKind::Sticky);
-  }
-  frame = OneStepInASRChain(frame, aLimitAncestor);
-  while (frame && frame != aLimitAncestor &&
-         (!aLimitAncestor ||
-          frame->FirstContinuation() != aLimitAncestor->FirstContinuation())) {
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  FrameAndASRKind frameAndASRKind{aAnchor, ActiveScrolledRoot::ASRKind::Scroll};
+  frameAndASRKind = OneStepInASRChain(frameAndASRKind, aLimitAncestor);
+  while (frameAndASRKind.mFrame && frameAndASRKind.mFrame != aLimitAncestor &&
+         (!aLimitAncestor || frameAndASRKind.mFrame->FirstContinuation() !=
+                                 aLimitAncestor->FirstContinuation())) {
     
     
     
@@ -1206,16 +1210,32 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
     
     
     
-    if (ActivatePotentialScrollASR(frame, aBuilder)) {
-      ASRframes.EmplaceBack(frame, ActiveScrolledRoot::ASRKind::Scroll);
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+
+    switch (frameAndASRKind.mASRKind) {
+      case ActiveScrolledRoot::ASRKind::Scroll:
+        if (ActivatePotentialScrollASR(frameAndASRKind.mFrame, aBuilder)) {
+          ASRframes.EmplaceBack(frameAndASRKind);
+        }
+        break;
+
+      case ActiveScrolledRoot::ASRKind::Sticky:
+        if (ActivatePotentialStickyASR(frameAndASRKind.mFrame, aBuilder)) {
+          ASRframes.EmplaceBack(frameAndASRKind);
+        }
+        break;
     }
 
-    
-    if (ActivatePotentialStickyASR(frame, aBuilder)) {
-      ASRframes.EmplaceBack(frame, ActiveScrolledRoot::ASRKind::Sticky);
-    }
-
-    frame = OneStepInASRChain(frame, aLimitAncestor);
+    frameAndASRKind = OneStepInASRChain(frameAndASRKind, aLimitAncestor);
   }
 
   const ActiveScrolledRoot* asr = aASRofLimitAncestor;
@@ -1226,16 +1246,9 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
     MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
         aLimitAncestor, asrFrame.mFrame));
 
-#ifdef DEBUG
-    if (asr && (asr->mFrame == asrFrame.mFrame)) {
-      MOZ_ASSERT(asr->mKind == ActiveScrolledRoot::ASRKind::Sticky);
-      MOZ_ASSERT(asrFrame.mASRKind == ActiveScrolledRoot::ASRKind::Scroll);
-    } else {
-      MOZ_ASSERT(
-          (asr ? asr->mFrame : nullptr) ==
-          GetASRAncestorFrame(OneStepInASRChain(asrFrame.mFrame), aBuilder));
-    }
-#endif
+    MOZ_ASSERT((asr ? FrameAndASRKind{asr->mFrame, asr->mKind}
+                    : FrameAndASRKind::default_value()) ==
+               GetASRAncestorFrame(OneStepInASRChain(asrFrame), aBuilder));
 
     asr = (asrFrame.mASRKind == ActiveScrolledRoot::ASRKind::Scroll)
               ? aBuilder->GetOrCreateActiveScrolledRoot(

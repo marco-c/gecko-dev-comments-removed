@@ -124,6 +124,15 @@ struct DisplayPortMarginsPropertyData {
   bool mPainted;
 };
 
+struct FrameAndASRKind {
+  nsIFrame* mFrame;
+  ActiveScrolledRoot::ASRKind mASRKind;
+  bool operator==(const FrameAndASRKind&) const = default;
+  static FrameAndASRKind default_value() {
+    return {nullptr, ActiveScrolledRoot::ASRKind::Scroll};
+  }
+};
+
 class DisplayPortUtils {
  public:
   
@@ -345,11 +354,29 @@ class DisplayPortUtils {
 
 
 
+  
 
 
 
-  static nsIFrame* GetASRAncestorFrame(nsIFrame* aFrame,
-                                       nsDisplayListBuilder* aBuilder);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static FrameAndASRKind GetASRAncestorFrame(FrameAndASRKind aFrameAndASRKind,
+                                             nsDisplayListBuilder* aBuilder);
 
   
 
@@ -360,8 +387,8 @@ class DisplayPortUtils {
 
 
 
-  static nsIFrame* OneStepInASRChain(nsIFrame* aFrame,
-                                     nsIFrame* aLimitAncestor = nullptr);
+  static FrameAndASRKind OneStepInASRChain(FrameAndASRKind aFrameAndASRKind,
+                                           nsIFrame* aLimitAncestor = nullptr);
 
   
 

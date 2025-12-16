@@ -4453,9 +4453,11 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
       if (savedOutOfFlowData->mContainingBlockInViewTransitionCapture) {
         MOZ_ASSERT(asr == nullptr);
         MOZ_ASSERT(aBuilder->IsInViewTransitionCapture());
-      } else if ((asr ? asr->mFrame : nullptr) !=
-                 DisplayPortUtils::GetASRAncestorFrame(child->GetParent(),
-                                                       aBuilder)) {
+      } else if ((asr ? FrameAndASRKind{asr->mFrame, asr->mKind}
+                      : FrameAndASRKind::default_value()) !=
+                 DisplayPortUtils::GetASRAncestorFrame(
+                     {child->GetParent(), ActiveScrolledRoot::ASRKind::Scroll},
+                     aBuilder)) {
         
         
         
