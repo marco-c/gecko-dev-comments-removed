@@ -47,17 +47,50 @@ std::ostream& operator<<(std::ostream& aStream, const FrameMetrics& aMetrics) {
   return aStream;
 }
 
-void FrameMetrics::RecalculateLayoutViewportOffset() {
+CSSRect FrameMetrics::GetVisualViewportForLayoutViewportContainment(
+    ScreenCoord aFixedLayerBottomMargin) const {
+  const bool hasDynamicToolbar = GetCompositionSizeWithoutDynamicToolbar() !=
+                                 GetCompositionBounds().Size();
+  
+  
+  const bool isDynamicToolbarFullyVisible =
+      hasDynamicToolbar && aFixedLayerBottomMargin == 0;
+
+  return CSSRect(
+      GetVisualScrollOffset(),
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      isDynamicToolbarFullyVisible && IsSoftwareKeyboardVisible() &&
+              GetInteractiveWidget() == dom::InteractiveWidget::ResizesVisual
+          ? CalculateCompositedSizeInCssPixels(
+                ParentLayerRect(ParentLayerPoint(),
+                                mCompositionSizeWithoutDynamicToolbar),
+                mZoom)
+          : CalculateCompositedSizeInCssPixels());
+}
+
+void FrameMetrics::RecalculateLayoutViewportOffset(
+    ScreenCoord aFixedLayerBottomMargin) {
   
   
   if (!mIsRootContent) {
     mLayoutViewport.MoveTo(GetVisualScrollOffset());
     return;
   }
+
   
   
-  KeepLayoutViewportEnclosingVisualViewport(GetVisualViewport(),
-                                            mScrollableRect, mLayoutViewport);
+  KeepLayoutViewportEnclosingVisualViewport(
+      GetVisualViewportForLayoutViewportContainment(aFixedLayerBottomMargin),
+      mScrollableRect, mLayoutViewport);
 }
 
 

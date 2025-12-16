@@ -397,6 +397,15 @@ struct FrameMetrics {
                    CalculateCompositedSizeInCssPixels());
   }
 
+  
+  
+  
+  
+  
+  
+  CSSRect GetVisualViewportForLayoutViewportContainment(
+      ScreenCoord aFixedLayerBottomMargin = 0) const;
+
   void SetTransformToAncestorScale(
       const ParentLayerToScreenScale2D& aTransformToAncestorScale) {
     mTransformToAncestorScale = aTransformToAncestorScale;
@@ -472,7 +481,7 @@ struct FrameMetrics {
   
   
   
-  void RecalculateLayoutViewportOffset();
+  void RecalculateLayoutViewportOffset(ScreenCoord aFixedLayerBottomMargin = 0);
 
   void SetFixedLayerMargins(const ScreenMargin& aFixedLayerMargins) {
     mFixedLayerMargins = aFixedLayerMargins;
