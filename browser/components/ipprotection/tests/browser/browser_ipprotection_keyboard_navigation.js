@@ -24,7 +24,9 @@ async function expectFocusAfterKey(aKey, aFocus) {
 
 
 
+
 add_task(async function test_keyboard_navigation_in_panel() {
+  const openLinkStub = sinon.stub(window, "openWebLinkIn");
   let content = await openPanel({
     isSignedOut: false,
   });
@@ -81,5 +83,10 @@ add_task(async function test_keyboard_navigation_in_panel() {
     )
   );
 
-  await closePanel();
+  
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+  EventUtils.synthesizeKey("KEY_Enter", {}, window);
+  await panelHiddenPromise;
+  Assert.ok(openLinkStub.calledOnce, "help button should open a link");
+  openLinkStub.restore();
 });
