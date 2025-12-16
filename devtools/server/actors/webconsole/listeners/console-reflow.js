@@ -8,29 +8,25 @@
 
 
 
+class ConsoleReflowListener {
+  
 
 
 
 
 
+  constructor(window, listener) {
+    this.docshell = window.docShell;
+    this.listener = listener;
+    this.docshell.addWeakReflowObserver(this);
+  }
 
-
-
-function ConsoleReflowListener(window, listener) {
-  this.docshell = window.docShell;
-  this.listener = listener;
-  this.docshell.addWeakReflowObserver(this);
-}
-
-exports.ConsoleReflowListener = ConsoleReflowListener;
-
-ConsoleReflowListener.prototype = {
-  QueryInterface: ChromeUtils.generateQI([
+  QueryInterface = ChromeUtils.generateQI([
     "nsIReflowObserver",
     "nsISupportsWeakReference",
-  ]),
-  docshell: null,
-  listener: null,
+  ]);
+  docshell = null;
+  listener = null;
 
   
 
@@ -58,7 +54,7 @@ ConsoleReflowListener.prototype = {
       sourceLine: frame ? frame.lineNumber : null,
       functionName: frame ? frame.name : null,
     });
-  },
+  }
 
   
 
@@ -68,7 +64,7 @@ ConsoleReflowListener.prototype = {
 
   reflow(start, end) {
     this.sendReflow(start, end, false);
-  },
+  }
 
   
 
@@ -78,7 +74,7 @@ ConsoleReflowListener.prototype = {
 
   reflowInterruptible(start, end) {
     this.sendReflow(start, end, true);
-  },
+  }
 
   
 
@@ -86,5 +82,7 @@ ConsoleReflowListener.prototype = {
   destroy() {
     this.docshell.removeWeakReflowObserver(this);
     this.listener = this.docshell = null;
-  },
-};
+  }
+}
+
+exports.ConsoleReflowListener = ConsoleReflowListener;
