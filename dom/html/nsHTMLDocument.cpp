@@ -587,6 +587,10 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
         aRv.NoteJSContextException(aCx);
         return;
       }
+
+      if (v.isNullOrUndefined()) {
+        return;
+      }
     } else {
       
       
