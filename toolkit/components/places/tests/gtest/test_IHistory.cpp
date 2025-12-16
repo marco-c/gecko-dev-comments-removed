@@ -8,7 +8,6 @@
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
 #include "nsString.h"
-#include "mozilla/Attributes.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StackWalk.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -121,8 +120,8 @@ void test_wait_checkpoint() {
 
 
 namespace test_unvisited_does_not_notify {
-MOZ_CONSTINIT nsCOMPtr<nsIURI> testURI;
-MOZ_CONSTINIT RefPtr<mock_Link> testLink;
+constinit nsCOMPtr<nsIURI> testURI;
+constinit RefPtr<mock_Link> testLink;
 }  
 void test_unvisited_does_not_notify_part1() {
   using namespace test_unvisited_does_not_notify;
