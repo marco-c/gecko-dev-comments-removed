@@ -5,7 +5,10 @@
 use crate::{
     errors::IPCError,
     messages::{self, Message},
-    platform::windows::{create_manual_reset_event, get_last_error, OverlappedOperation},
+    platform::{
+        windows::{create_manual_reset_event, get_last_error, OverlappedOperation},
+        PlatformError,
+    },
     IntoRawAncillaryData, IO_TIMEOUT,
 };
 
@@ -20,9 +23,8 @@ use std::{
 };
 use windows_sys::Win32::{
     Foundation::{
-        DuplicateHandle, GetLastError, DUPLICATE_CLOSE_SOURCE, DUPLICATE_SAME_ACCESS,
-        ERROR_FILE_NOT_FOUND, ERROR_INVALID_MESSAGE, ERROR_PIPE_BUSY, FALSE, HANDLE,
-        INVALID_HANDLE_VALUE, WAIT_TIMEOUT,
+        DuplicateHandle, DUPLICATE_CLOSE_SOURCE, DUPLICATE_SAME_ACCESS, ERROR_FILE_NOT_FOUND,
+        ERROR_INVALID_MESSAGE, ERROR_PIPE_BUSY, FALSE, HANDLE, INVALID_HANDLE_VALUE,
     },
     Security::SECURITY_ATTRIBUTES,
     Storage::FileSystem::{
@@ -81,7 +83,7 @@ pub struct IPCConnector {
 
 impl IPCConnector {
     pub fn from_ancillary(handle: OwnedHandle) -> Result<IPCConnector, IPCError> {
-        let event = create_manual_reset_event()?;
+        let event = create_manual_reset_event().map_err(IPCError::CreationFailure)?;
 
         Ok(IPCConnector {
             handle: Rc::new(handle),
@@ -144,10 +146,10 @@ impl IPCConnector {
             let elapsed = now.elapsed();
 
             if elapsed >= timeout {
-                return Err(IPCError::System(WAIT_TIMEOUT)); 
+                return Err(IPCError::Timeout);
             }
 
-            let error = unsafe { GetLastError() };
+            let error = get_last_error();
 
             
             if (error == ERROR_FILE_NOT_FOUND) || (error == ERROR_PIPE_BUSY) {
@@ -158,14 +160,14 @@ impl IPCConnector {
                         (timeout - elapsed).as_millis() as u32,
                     )
                 };
-                let error = unsafe { GetLastError() };
+                let error = get_last_error();
 
                 
                 if (res == FALSE) && (error != ERROR_FILE_NOT_FOUND) {
-                    return Err(IPCError::System(error));
+                    return Err(IPCError::ConnectionFailure(error));
                 }
             } else {
-                return Err(IPCError::System(error));
+                return Err(IPCError::ConnectionFailure(error));
             }
         }
 
@@ -182,7 +184,7 @@ impl IPCConnector {
             )
         };
         if res == FALSE {
-            return Err(IPCError::System(unsafe { GetLastError() }));
+            return Err(IPCError::ConnectionFailure(get_last_error()));
         }
 
         
@@ -234,7 +236,9 @@ impl IPCConnector {
         let header = self.recv_header()?;
 
         if header.kind != T::kind() {
-            return Err(IPCError::ReceptionFailure(ERROR_INVALID_MESSAGE));
+            return Err(IPCError::ReceptionFailure(
+                crate::platform::PlatformError::IOError(ERROR_INVALID_MESSAGE),
+            ));
         }
 
         let (data, _) = self.recv(header.size)?;
@@ -252,11 +256,14 @@ impl IPCConnector {
             return Ok(());
         }
 
-        self.overlapped = Some(OverlappedOperation::sched_recv(
-            &self.handle,
-            self.event_raw_handle(),
-            HANDLE_SIZE + messages::HEADER_SIZE,
-        )?);
+        self.overlapped = Some(
+            OverlappedOperation::sched_recv(
+                &self.handle,
+                self.event_raw_handle(),
+                HANDLE_SIZE + messages::HEADER_SIZE,
+            )
+            .map_err(IPCError::ReceptionFailure)?,
+        );
         Ok(())
     }
 
@@ -264,14 +271,17 @@ impl IPCConnector {
         
         
         let overlapped = self.overlapped.take().unwrap();
-        let buffer = overlapped.collect_recv( false)?;
+        let buffer = overlapped
+            .collect_recv( false)
+            .map_err(IPCError::ReceptionFailure)?;
         let (data, _) = extract_buffer_and_handle(buffer)?;
         messages::Header::decode(data.as_ref()).map_err(IPCError::BadMessage)
     }
 
     fn send(&self, buff: &[u8], handle: Option<AncillaryData>) -> Result<(), IPCError> {
         let handle = if let Some(handle) = handle {
-            self.clone_handle(handle)?
+            self.clone_handle(handle)
+                .map_err(IPCError::TransmissionFailure)?
         } else {
             INVALID_ANCILLARY_DATA
         };
@@ -281,8 +291,12 @@ impl IPCConnector {
         buffer.extend(buff);
 
         let overlapped =
-            OverlappedOperation::sched_send(&self.handle, self.event_raw_handle(), buffer)?;
-        overlapped.complete_send( true)
+            OverlappedOperation::sched_send(&self.handle, self.event_raw_handle(), buffer)
+                .map_err(IPCError::TransmissionFailure)?;
+
+        overlapped
+            .complete_send( true)
+            .map_err(IPCError::TransmissionFailure)
     }
 
     pub fn recv(&self, expected_size: usize) -> Result<(Vec<u8>, Option<AncillaryData>), IPCError> {
@@ -290,8 +304,11 @@ impl IPCConnector {
             &self.handle,
             self.event_raw_handle(),
             HANDLE_SIZE + expected_size,
-        )?;
-        let buffer = overlapped.collect_recv( true)?;
+        )
+        .map_err(IPCError::ReceptionFailure)?;
+        let buffer = overlapped
+            .collect_recv( true)
+            .map_err(IPCError::ReceptionFailure)?;
         extract_buffer_and_handle(buffer)
     }
 
@@ -299,9 +316,9 @@ impl IPCConnector {
     
     
     
-    fn clone_handle(&self, handle: OwnedHandle) -> Result<HANDLE, IPCError> {
+    fn clone_handle(&self, handle: OwnedHandle) -> Result<HANDLE, PlatformError> {
         let Some(dst_process) = self.process.as_ref() else {
-            return Err(IPCError::MissingProcessHandle);
+            return Err(PlatformError::MissingProcessHandle);
         };
         let mut dst_handle: HANDLE = INVALID_ANCILLARY_DATA;
         let res = unsafe {
@@ -317,7 +334,7 @@ impl IPCConnector {
         };
 
         if res == 0 {
-            return Err(IPCError::CloneHandleFailed(Error::from_raw_os_error(
+            return Err(PlatformError::CloneHandleFailed(Error::from_raw_os_error(
                 get_last_error() as i32,
             )));
         }
