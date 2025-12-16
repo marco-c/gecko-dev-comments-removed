@@ -309,24 +309,6 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
 
 
 
-
-
-function Intl_DisplayNames_supportedLocalesOf(locales ) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  
-  var availableLocales = "DisplayNames";
-
-  
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-
-
-
 function Intl_DisplayNames_of(code) {
   
   var displayNames = this;

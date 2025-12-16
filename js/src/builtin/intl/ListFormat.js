@@ -178,24 +178,6 @@ function InitializeListFormat(listFormat, locales, options) {
 
 
 
-
-
-function Intl_ListFormat_supportedLocalesOf(locales ) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  
-  var availableLocales = "ListFormat";
-
-  
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-
-
-
 function StringListFromIterable(iterable, methodName) {
   
   if (iterable === undefined) {
