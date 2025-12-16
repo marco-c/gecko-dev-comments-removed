@@ -112,7 +112,6 @@ class FennecContext(RemoteContext):
         
         
         
-        global devices
         if device_serial in devices:
             device = devices[device_serial]
         else:

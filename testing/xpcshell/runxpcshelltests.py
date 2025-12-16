@@ -1934,7 +1934,6 @@ class XPCShellTests:
         """
         Run xpcshell tests.
         """
-        global gotSIGINT
 
         
         VERIFY_REPEAT = 10

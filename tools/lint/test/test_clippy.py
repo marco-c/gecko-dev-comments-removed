@@ -89,7 +89,6 @@ def test_fix_non_gkrust(lint, paths, create_temp_file):
     path = create_temp_file(contents, "non_gkrust_fixable.rs")
 
     
-    global fixed
     fixed_before = fixed
 
     
