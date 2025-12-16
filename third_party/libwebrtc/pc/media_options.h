@@ -113,19 +113,12 @@ struct MediaSessionOptions {
   
   
   bool use_obsolete_sctp_sdp = true;
+
+  
+  bool use_sctp_snap = false;
 };
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::kDefaultRtcpCname;
-using ::webrtc::MediaDescriptionOptions;
-using ::webrtc::MediaSessionOptions;
-using ::webrtc::SenderOptions;
-}  
-#endif  
 
 #endif  
