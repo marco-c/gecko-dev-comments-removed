@@ -21,6 +21,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
+#include "api/environment/environment.h"
 #include "api/packet_socket_factory.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -78,7 +79,7 @@ class TurnServerAllocation final {
   TurnServerAllocation(TurnServer* server_,
                        TaskQueueBase* thread,
                        const TurnServerConnection& conn,
-                       AsyncPacketSocket* server_socket,
+                       std::unique_ptr<AsyncPacketSocket> server_socket,
                        absl::string_view key);
   ~TurnServerAllocation();
 
@@ -183,7 +184,7 @@ class TurnServer : public sigslot::has_slots<> {
   typedef std::map<TurnServerConnection, std::unique_ptr<TurnServerAllocation>>
       AllocationMap;
 
-  explicit TurnServer(TaskQueueBase* thread);
+  TurnServer(const Environment& env, TaskQueueBase* thread);
   ~TurnServer() override;
 
   
@@ -244,13 +245,14 @@ class TurnServer : public sigslot::has_slots<> {
   }
 
   
-  void AddInternalSocket(AsyncPacketSocket* socket, ProtocolType proto);
+  void AddInternalSocket(std::unique_ptr<AsyncPacketSocket> socket,
+                         ProtocolType protocol);
   
   
   
   void AddInternalServerSocket(
-      Socket* socket,
-      ProtocolType proto,
+      std::unique_ptr<Socket> socket,
+      ProtocolType protocol,
       std::unique_ptr<SSLAdapterFactory> ssl_adapter_factory = nullptr);
   
   void SetExternalSocketFactory(PacketSocketFactory* factory,
@@ -325,14 +327,13 @@ class TurnServer : public sigslot::has_slots<> {
   void DestroyAllocation(TurnServerAllocation* allocation) RTC_RUN_ON(thread_);
   void DestroyInternalSocket(AsyncPacketSocket* socket) RTC_RUN_ON(thread_);
 
-  typedef std::map<AsyncPacketSocket*, ProtocolType> InternalSocketMap;
   struct ServerSocketInfo {
     ProtocolType proto;
     
     std::unique_ptr<SSLAdapterFactory> ssl_adapter_factory;
   };
-  typedef std::map<Socket*, ServerSocketInfo> ServerSocketMap;
 
+  const Environment env_;
   TaskQueueBase* const thread_;
   const std::string nonce_key_;
   std::string realm_ RTC_GUARDED_BY(thread_);
@@ -347,8 +348,13 @@ class TurnServer : public sigslot::has_slots<> {
   
   bool enable_permission_checks_ = true;
 
-  InternalSocketMap server_sockets_ RTC_GUARDED_BY(thread_);
-  ServerSocketMap server_listen_sockets_ RTC_GUARDED_BY(thread_);
+  
+  
+  
+  std::map<AsyncPacketSocket*, ProtocolType> server_sockets_
+      RTC_GUARDED_BY(thread_);
+  std::map<Socket*, ServerSocketInfo> server_listen_sockets_
+      RTC_GUARDED_BY(thread_);
   std::unique_ptr<PacketSocketFactory> external_socket_factory_
       RTC_GUARDED_BY(thread_);
   SocketAddress external_addr_ RTC_GUARDED_BY(thread_);
@@ -368,20 +374,5 @@ class TurnServer : public sigslot::has_slots<> {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::kMaxTurnChannelNumber;
-using ::webrtc::kMinTurnChannelNumber;
-using ::webrtc::StunMessageObserver;
-using ::webrtc::TURN_SERVER_PORT;
-using ::webrtc::TurnAuthInterface;
-using ::webrtc::TurnRedirectInterface;
-using ::webrtc::TurnServer;
-using ::webrtc::TurnServerAllocation;
-using ::webrtc::TurnServerConnection;
-}  
-#endif  
 
 #endif  
