@@ -42,7 +42,7 @@ NS_INTERFACE_MAP_END
 
 
 
-NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mCacheInfo)
+NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mCacheEntry)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(LoadedScript)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)
