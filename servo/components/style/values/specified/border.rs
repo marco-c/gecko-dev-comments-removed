@@ -100,6 +100,7 @@ impl BorderImageSlice {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed_value(derive_fields)]
 pub enum LineWidth {
     
     Thin,
@@ -168,6 +169,7 @@ impl ToComputedValue for LineWidth {
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[typed_value(derive_fields)]
 pub struct BorderSideWidth(LineWidth);
 
 impl BorderSideWidth {

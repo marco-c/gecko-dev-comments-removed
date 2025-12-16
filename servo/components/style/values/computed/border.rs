@@ -29,6 +29,7 @@ pub type LineWidth = Au;
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToTyped, From)]
 #[repr(transparent)]
+#[typed_value(derive_fields)]
 pub struct BorderSideWidth(pub Au);
 
 impl BorderSideWidth {
