@@ -96,10 +96,13 @@ struct FrameMetrics {
         mLayoutViewport(0, 0, 0, 0),
         mVisualDestination(0, 0),
         mVisualScrollUpdateType(eNone),
+        mInteractiveWidget(
+            dom::InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
         mIsRootContent(false),
         mIsScrollInfoLayer(false),
         mHasNonZeroDisplayPortMargins(false),
-        mMinimalDisplayPort(false) {}
+        mMinimalDisplayPort(false),
+        mIsSoftwareKeyboardVisible(false) {}
 
   
 
@@ -124,6 +127,7 @@ struct FrameMetrics {
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mVisualDestination == aOther.mVisualDestination &&
            mVisualScrollUpdateType == aOther.mVisualScrollUpdateType &&
+           mInteractiveWidget == aOther.mInteractiveWidget &&
            mIsRootContent == aOther.mIsRootContent &&
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
            mHasNonZeroDisplayPortMargins ==
@@ -131,7 +135,8 @@ struct FrameMetrics {
            mMinimalDisplayPort == aOther.mMinimalDisplayPort &&
            mFixedLayerMargins == aOther.mFixedLayerMargins &&
            mCompositionSizeWithoutDynamicToolbar ==
-               aOther.mCompositionSizeWithoutDynamicToolbar;
+               aOther.mCompositionSizeWithoutDynamicToolbar &&
+           mIsSoftwareKeyboardVisible == aOther.mIsSoftwareKeyboardVisible;
   }
 
   bool operator!=(const FrameMetrics& aOther) const {
@@ -438,6 +443,18 @@ struct FrameMetrics {
   }
   bool IsMinimalDisplayPort() const { return mMinimalDisplayPort; }
 
+  void SetIsSoftwareKeyboardVisible(bool aValue) {
+    mIsSoftwareKeyboardVisible = aValue;
+  }
+  bool IsSoftwareKeyboardVisible() const { return mIsSoftwareKeyboardVisible; }
+
+  void SetInteractiveWidget(dom::InteractiveWidget aInteractiveWidget) {
+    mInteractiveWidget = aInteractiveWidget;
+  }
+  dom::InteractiveWidget GetInteractiveWidget() const {
+    return mInteractiveWidget;
+  }
+
   void SetVisualDestination(const CSSPoint& aVisualDestination) {
     mVisualDestination = aVisualDestination;
   }
@@ -669,6 +686,12 @@ struct FrameMetrics {
   ParentLayerSize mCompositionSizeWithoutDynamicToolbar;
 
   
+  
+  
+  
+  dom::InteractiveWidget mInteractiveWidget;
+
+  
   bool mIsRootContent : 1;
 
   
@@ -685,6 +708,12 @@ struct FrameMetrics {
   
   
   bool mMinimalDisplayPort : 1;
+
+  
+  
+  
+  
+  bool mIsSoftwareKeyboardVisible : 1;
 
   
   
@@ -763,8 +792,6 @@ struct ScrollMetadata {
       : mScrollParentId(ScrollableLayerGuid::NULL_SCROLL_ID),
         mLineScrollAmount(0, 0),
         mPageScrollAmount(0, 0),
-        mInteractiveWidget(
-            dom::InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
         mIsLayersIdRoot(false),
         mIsAutoDirRootContentRTL(false),
         mForceDisableApz(false),
@@ -773,8 +800,7 @@ struct ScrollMetadata {
         mDidContentGetPainted(true),
         mForceMousewheelAutodir(false),
         mForceMousewheelAutodirHonourRoot(false),
-        mIsPaginatedPresentation(false),
-        mIsSoftwareKeyboardVisible(false) {}
+        mIsPaginatedPresentation(false) {}
 
   bool operator==(const ScrollMetadata& aOther) const {
     return mMetrics == aOther.mMetrics && mSnapInfo == aOther.mSnapInfo &&
@@ -782,7 +808,6 @@ struct ScrollMetadata {
            
            mLineScrollAmount == aOther.mLineScrollAmount &&
            mPageScrollAmount == aOther.mPageScrollAmount &&
-           mInteractiveWidget == aOther.mInteractiveWidget &&
            mIsLayersIdRoot == aOther.mIsLayersIdRoot &&
            mIsAutoDirRootContentRTL == aOther.mIsAutoDirRootContentRTL &&
            mForceDisableApz == aOther.mForceDisableApz &&
@@ -793,7 +818,6 @@ struct ScrollMetadata {
            mForceMousewheelAutodirHonourRoot ==
                aOther.mForceMousewheelAutodirHonourRoot &&
            mIsPaginatedPresentation == aOther.mIsPaginatedPresentation &&
-           mIsSoftwareKeyboardVisible == aOther.mIsSoftwareKeyboardVisible &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mOverflow == aOther.mOverflow &&
@@ -875,18 +899,6 @@ struct ScrollMetadata {
   }
   bool IsPaginatedPresentation() const { return mIsPaginatedPresentation; }
 
-  void SetIsSoftwareKeyboardVisible(bool aValue) {
-    mIsSoftwareKeyboardVisible = aValue;
-  }
-  bool IsSoftwareKeyboardVisible() const { return mIsSoftwareKeyboardVisible; }
-
-  void SetInteractiveWidget(dom::InteractiveWidget aInteractiveWidget) {
-    mInteractiveWidget = aInteractiveWidget;
-  }
-  dom::InteractiveWidget GetInteractiveWidget() const {
-    return mInteractiveWidget;
-  }
-
   bool DidContentGetPainted() const { return mDidContentGetPainted; }
 
  private:
@@ -960,12 +972,6 @@ struct ScrollMetadata {
 
   
   
-  
-  
-  dom::InteractiveWidget mInteractiveWidget;
-
-  
-  
   bool mIsLayersIdRoot : 1;
 
   
@@ -1012,12 +1018,6 @@ struct ScrollMetadata {
   
   
   bool mIsPaginatedPresentation : 1;
-
-  
-  
-  
-  
-  bool mIsSoftwareKeyboardVisible : 1;
 
   
   
