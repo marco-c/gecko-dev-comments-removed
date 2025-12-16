@@ -17,12 +17,11 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/ViewTransition.h"
-#include "nsAtomicContainerFrame.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsContainerFrame.h"
-#include "nsGkAtoms.h"
 #include "nsGridContainerFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsPlaceholderFrame.h"
@@ -261,6 +260,24 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     aOverflowAreas = nullptr;
   }
 
+  const auto scrollableContainingBlock = [&]() -> nsRect {
+    switch (aDelegatingFrame->Style()->GetPseudoType()) {
+      case PseudoStyleType::scrolledContent:
+      case PseudoStyleType::scrolledCanvas: {
+        
+        
+        
+        ScrollContainerFrame* sf = do_QueryFrame(aDelegatingFrame->GetParent());
+        
+        return sf->GetUnsnappedScrolledRectInternal(
+            aOverflowAreas->ScrollableOverflow(), aContainingBlock.Size());
+      }
+      default:
+        break;
+    }
+    return aContainingBlock;
+  }();
+
   nsReflowStatus reflowStatus;
   const bool reflowAll = aReflowInput.ShouldReflowAllKids();
   const bool cbWidthChanged = aFlags.contains(AbsPosReflowFlag::CBWidthChanged);
@@ -321,8 +338,8 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       
       nsReflowStatus kidStatus;
       ReflowAbsoluteFrame(aDelegatingFrame, aPresContext, aReflowInput,
-                          aContainingBlock, aFlags, kidFrame, kidStatus,
-                          aOverflowAreas,
+                          aContainingBlock, scrollableContainingBlock, aFlags,
+                          kidFrame, kidStatus, aOverflowAreas,
                           anchorPosResolutionCache.ptrOr(nullptr));
       MOZ_ASSERT(!kidStatus.IsInlineBreakBefore(),
                  "ShouldAvoidBreakInside should prevent this from happening");
@@ -1079,15 +1096,19 @@ struct AnchorShiftInfo {
 };
 
 struct ContainingBlockRect {
-  Maybe<AnchorShiftInfo> mAnchorShiftInfo = Nothing{};
-  nsRect mRect;
+  Maybe<AnchorShiftInfo> mAnchorShiftInfo;
+  nsRect mMaybeScrollableRect;
+  nsRect mFinalRect;
 
-  explicit ContainingBlockRect(const nsRect& aRect) : mRect{aRect} {}
+  explicit ContainingBlockRect(const nsRect& aRect)
+      : mMaybeScrollableRect{aRect}, mFinalRect{aRect} {}
   ContainingBlockRect(const nsPoint& aOffset,
                       const StylePositionArea& aResolvedArea,
-                      const nsRect& aRect)
+                      const nsRect& aMaybeScrollableRect,
+                      const nsRect& aFinalRect)
       : mAnchorShiftInfo{Some(AnchorShiftInfo{aOffset, aResolvedArea})},
-        mRect{aRect} {}
+        mMaybeScrollableRect{aMaybeScrollableRect},
+        mFinalRect{aFinalRect} {}
 
   StylePositionArea ResolvedPositionArea() const {
     return mAnchorShiftInfo
@@ -1096,72 +1117,13 @@ struct ContainingBlockRect {
   }
 };
 
-static nsRect GrowOverflowCheckRect(const nsRect& aOverflowCheckRect,
-                                    const nsRect& aKidRect,
-                                    const StylePositionArea& aPosArea) {
-  
-  
-  
-  
-  
-  
-  
-  auto result = aOverflowCheckRect;
-  if (aPosArea.first == StylePositionAreaKeyword::Left ||
-      aPosArea.first == StylePositionAreaKeyword::SpanLeft) {
-    
-    if (aKidRect.x < result.x) {
-      result.SetLeftEdge(aKidRect.x);
-    }
-  } else if (aPosArea.first == StylePositionAreaKeyword::Center) {
-    
-  } else if (aPosArea.first == StylePositionAreaKeyword::Right ||
-             aPosArea.first == StylePositionAreaKeyword::SpanRight) {
-    
-    if (aKidRect.XMost() > aOverflowCheckRect.XMost()) {
-      result.SetRightEdge(aKidRect.XMost());
-    }
-  } else if (aPosArea.first == StylePositionAreaKeyword::SpanAll) {
-    
-    if (aKidRect.x < aOverflowCheckRect.x) {
-      result.SetLeftEdge(aKidRect.x);
-    }
-    if (aKidRect.XMost() > aOverflowCheckRect.XMost()) {
-      result.SetRightEdge(aKidRect.XMost());
-    }
-  }
-  if (aPosArea.first == StylePositionAreaKeyword::Top ||
-      aPosArea.first == StylePositionAreaKeyword::SpanTop) {
-    
-    if (aKidRect.y < aOverflowCheckRect.y) {
-      result.SetTopEdge(aKidRect.y);
-    }
-  } else if (aPosArea.first == StylePositionAreaKeyword::Center) {
-    
-  } else if (aPosArea.first == StylePositionAreaKeyword::Bottom ||
-             aPosArea.first == StylePositionAreaKeyword::SpanBottom) {
-    
-    if (aKidRect.YMost() > aOverflowCheckRect.YMost()) {
-      result.SetBottomEdge(aKidRect.YMost());
-    }
-  } else if (aPosArea.first == StylePositionAreaKeyword::SpanAll) {
-    
-    if (aKidRect.y < aOverflowCheckRect.y) {
-      result.SetTopEdge(aKidRect.y);
-    }
-    if (aKidRect.YMost() > aOverflowCheckRect.YMost()) {
-      result.SetBottomEdge(aKidRect.YMost());
-    }
-  }
-  return result;
-}
-
 
 
 
 void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     nsContainerFrame* aDelegatingFrame, nsPresContext* aPresContext,
     const ReflowInput& aReflowInput, const nsRect& aOriginalContainingBlockRect,
+    const nsRect& aOriginalScrollableContainingBlockRect,
     AbsPosReflowFlags aFlags, nsIFrame* aKidFrame, nsReflowStatus& aStatus,
     OverflowAreas* aOverflowAreas,
     AnchorPosResolutionCache* aAnchorPosResolutionCache) {
@@ -1262,34 +1224,39 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         positionArea = currentFallback->AsPositionArea();
       }
 
-      if (!positionArea.IsNone() && aAnchorPosResolutionCache) {
+      if (aAnchorPosResolutionCache) {
         const auto defaultAnchorInfo =
             AnchorPositioningUtils::ResolveAnchorPosRect(
                 aKidFrame, aDelegatingFrame, nullptr, false,
                 aAnchorPosResolutionCache);
         if (defaultAnchorInfo) {
-          
-          
-          const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
-              aAnchorPosResolutionCache->mReferenceData
-                  ->CompensatingForScrollAxes(),
-              aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
-          
-          
-          
-          
-          
-          
-          const auto scrolledAnchorRect = defaultAnchorInfo->mRect - offset;
-          StylePositionArea resolvedPositionArea{};
-          const auto scrolledAnchorCb = AnchorPositioningUtils::
-              AdjustAbsoluteContainingBlockRectForPositionArea(
-                  scrolledAnchorRect + aOriginalContainingBlockRect.TopLeft(),
-                  aOriginalContainingBlockRect, aKidFrame->GetWritingMode(),
-                  aDelegatingFrame->GetWritingMode(), positionArea,
-                  &resolvedPositionArea);
-          return ContainingBlockRect{offset, resolvedPositionArea,
-                                     scrolledAnchorCb};
+          if (!positionArea.IsNone()) {
+            
+            
+            const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
+                aAnchorPosResolutionCache->mReferenceData
+                    ->CompensatingForScrollAxes(),
+                aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
+            
+            
+            
+            
+            
+            
+            const auto scrolledAnchorRect = defaultAnchorInfo->mRect - offset;
+            StylePositionArea resolvedPositionArea{};
+            const auto scrolledAnchorCb = AnchorPositioningUtils::
+                AdjustAbsoluteContainingBlockRectForPositionArea(
+                    scrolledAnchorRect + aOriginalContainingBlockRect.TopLeft(),
+                    aOriginalScrollableContainingBlockRect,
+                    aKidFrame->GetWritingMode(),
+                    aDelegatingFrame->GetWritingMode(), positionArea,
+                    &resolvedPositionArea);
+            return ContainingBlockRect{offset, resolvedPositionArea,
+                                       aOriginalScrollableContainingBlockRect,
+                                       scrolledAnchorCb};
+          }
+          return ContainingBlockRect{aOriginalScrollableContainingBlockRect};
         }
       }
 
@@ -1306,11 +1273,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }();
     if (aAnchorPosResolutionCache) {
       aAnchorPosResolutionCache->mReferenceData->mContainingBlockRect =
-          cb.mRect;
+          cb.mMaybeScrollableRect;
     }
     const WritingMode outerWM = aReflowInput.GetWritingMode();
     const WritingMode wm = aKidFrame->GetWritingMode();
-    const LogicalSize cbSize(outerWM, cb.mRect.Size());
+    const LogicalSize cbSize(outerWM, cb.mFinalRect.Size());
 
     ReflowInput::InitFlags initFlags;
     const bool staticPosIsCBOrigin = [&] {
@@ -1358,7 +1325,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         
         
         
-        (aKidFrame->GetLogicalRect(cb.mRect.Size()).BStart(wm) <=
+        (aKidFrame->GetLogicalRect(cb.mFinalRect.Size()).BStart(wm) <=
          aReflowInput.AvailableBSize());
 
     
@@ -1539,23 +1506,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       
-      r += cb.mRect.TopLeft();
+      r += cb.mFinalRect.TopLeft();
       if (cb.mAnchorShiftInfo) {
         
         r += cb.mAnchorShiftInfo->mOffset;
       }
 
       aKidFrame->SetRect(r);
-
-      
-      
-      
-      LogicalMargin insetModification{
-          outerWM, bStartInsetAuto ? 0 : offsets.BStart(outerWM),
-          iEndInsetAuto ? 0 : offsets.IEnd(outerWM),
-          bEndInsetAuto ? 0 : offsets.BEnd(outerWM),
-          iStartInsetAuto ? 0 : offsets.IStart(outerWM)};
-      cb.mRect.Deflate(insetModification.GetPhysicalMargin(outerWM));
     }
 
     aKidFrame->DidReflow(aPresContext, &kidReflowInput);
@@ -1596,22 +1553,11 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift = offset;
     }();
 
-    const auto fits = aStatus.IsComplete() && [&]() {
-      const auto overflowCheckRect = cb.mRect;
-      if (aAnchorPosResolutionCache) {
-        if (cb.mAnchorShiftInfo) {
-          aAnchorPosResolutionCache->mReferenceData->mContainingBlockRect =
-              GrowOverflowCheckRect(overflowCheckRect,
-                                    aKidFrame->GetNormalRect(),
-                                    cb.mAnchorShiftInfo->mResolvedArea);
-        }
-        return AnchorPositioningUtils::FitsInContainingBlock(
-            AnchorPositioningUtils::ContainingBlockInfo::ExplicitCBFrameSize(
-                aOriginalContainingBlockRect),
-            aKidFrame, aAnchorPosResolutionCache->mReferenceData);
-      }
-      return overflowCheckRect.Contains(aKidFrame->GetRect());
-    }();
+    
+    
+    
+    const auto fits = aStatus.IsComplete() && cb.mMaybeScrollableRect.Contains(
+                                                  aKidFrame->GetMarginRect());
     if (fallbacks.IsEmpty() || fits) {
       
       

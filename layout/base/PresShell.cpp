@@ -11693,10 +11693,7 @@ static bool CheckOverflow(nsIFrame* aPositioned,
   if (!hasFallbacks) {
     return false;
   }
-  const auto overflows = !AnchorPositioningUtils::FitsInContainingBlock(
-      AnchorPositioningUtils::ContainingBlockInfo::UseCBFrameSize(aPositioned),
-      aPositioned, &aData);
-  return hasFallbacks && overflows;
+  return !AnchorPositioningUtils::FitsInContainingBlock(aPositioned, aData);
 }
 
 
