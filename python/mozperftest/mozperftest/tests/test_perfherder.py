@@ -249,7 +249,7 @@ def test_perfherder_simple_names():
         assert "statistics" in subtest["name"]
 
     for entry, value in found_all.items():
-        assert found_all[entry], f"Failed finding metric simplification for {entry}"
+        assert value, f"Failed finding metric simplification for {entry}"
 
     
     assert (
@@ -321,7 +321,7 @@ def test_perfherder_names_simplified_with_no_exclusions():
             continue
 
     for entry, value in found_all.items():
-        assert found_all[entry], f"Failed finding metric simplification for {entry}"
+        assert value, f"Failed finding metric simplification for {entry}"
 
     
     

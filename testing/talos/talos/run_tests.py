@@ -73,20 +73,18 @@ def set_tp_preferences(test, browser_config):
         _pref_name = "talos.%s" % key
         if key in test:
             test["preferences"][_pref_name] = test.get(key)
-        else:
-            
-            if _pref_name in test["preferences"]:
-                del test["preferences"][_pref_name]
+        
+        elif _pref_name in test["preferences"]:
+            del test["preferences"][_pref_name]
 
     for key in CLI_options:
         value = test.get(key)
         _pref_name = "talos.%s" % key
         if value:
             test["preferences"][_pref_name] = value
-        else:
-            
-            if _pref_name in test["preferences"]:
-                del test["preferences"][_pref_name]
+        
+        elif _pref_name in test["preferences"]:
+            del test["preferences"][_pref_name]
 
 
 def setup_webserver(webserver):

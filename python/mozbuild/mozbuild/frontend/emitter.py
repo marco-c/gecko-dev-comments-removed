@@ -1565,18 +1565,17 @@ class TreeMetadataEmitter(LoggingMixin):
                                     % (var, f),
                                     context,
                                 )
-                        else:
-                            
-                            
-                            if f.target_basename in localized_generated_files:
-                                raise SandboxValidationError(
-                                    (
-                                        "Outputs of LOCALIZED_GENERATED_FILES cannot "
-                                        "be used in %s: %s"
-                                    )
-                                    % (var, f),
-                                    context,
+                        
+                        
+                        elif f.target_basename in localized_generated_files:
+                            raise SandboxValidationError(
+                                (
+                                    "Outputs of LOCALIZED_GENERATED_FILES cannot "
+                                    "be used in %s: %s"
                                 )
+                                % (var, f),
+                                context,
+                            )
 
             
             

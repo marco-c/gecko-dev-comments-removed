@@ -169,7 +169,6 @@ class TaskPool:
                 
                 
                 running -= finished
-        return None
 
 
 def get_cpu_count():

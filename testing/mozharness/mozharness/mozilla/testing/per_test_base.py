@@ -570,13 +570,12 @@ class SingleTestMixin:
                     if key in all_suites.keys()
                 )
                 self.info("Per-test suites: %s" % suites)
-            else:
-                
-                
-                
-                
-                if category in ["mochitest", "xpcshell", "reftest"]:
-                    suites = all_suites
+            
+            
+            
+            
+            elif category in ["mochitest", "xpcshell", "reftest"]:
+                suites = all_suites
         return suites
 
     def log_per_test_status(self, test_name, tbpl_status, log_level):

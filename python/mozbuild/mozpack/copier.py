@@ -2,12 +2,12 @@
 
 
 
-import concurrent.futures as futures
 import errno
 import os
 import stat
 import sys
 from collections import Counter, OrderedDict, defaultdict
+from concurrent import futures
 
 import mozpack.path as mozpath
 from mozpack.errors import errors

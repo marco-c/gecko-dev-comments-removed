@@ -239,8 +239,7 @@ class JitFrameDecorator(FrameDecorator):
         num_args = long(this_frame["numActualArgs_"])
         
         
-        if num_args > 10:
-            num_args = 10
+        num_args = min(num_args, 10)
         args_ptr = (this_frame + 1).cast(self.cache.Value.pointer())
         for i in range(num_args + 1):
             
@@ -341,7 +340,7 @@ class UnwinderState:
             return False
 
         
-        return base <= pc and pc < base + length
+        return base <= pc < base + length
 
     
     def check(self):

@@ -3,9 +3,9 @@
 
 
 
-import concurrent.futures as futures
 import logging
 import os
+from concurrent import futures
 
 from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.util.taskcluster import CONCURRENCY, cancel_task

@@ -1630,10 +1630,9 @@ def _generate_path_list(command_context, paths, verbose=True):
                     ):
                         
                         path_list.append(f_in_dir)
-        else:
-            
-            if os.path.isfile(f) and f.endswith(extensions):
-                path_list.append(f)
+        
+        elif os.path.isfile(f) and f.endswith(extensions):
+            path_list.append(f)
 
     return path_list
 

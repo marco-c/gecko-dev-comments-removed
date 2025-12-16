@@ -189,12 +189,11 @@ class PypiBasedTool:
                     "%s was updated to version %s. please"
                     " re-run your command." % (self.pypi_name, release)
                 )
+            
+            elif subcommand:
+                return tool.parser(subcommand)
             else:
-                
-                if subcommand:
-                    return tool.parser(subcommand)
-                else:
-                    return tool.parser()
+                return tool.parser()
         
         
         

@@ -30,7 +30,6 @@ class ConvertBugsToLinks(SphinxTransform):
         changed = True
         while changed:
             changed = self.textToReferences(check_if_paragraph, check_if_text)
-        return
 
     def textToReferences(self, check_if_paragraph, check_if_text):
         
@@ -60,4 +59,3 @@ class ConvertBugsToLinks(SphinxTransform):
 
 def setup(app):
     app.add_transform(ConvertBugsToLinks)
-    return
