@@ -55,14 +55,6 @@ std::unique_ptr<IceCandidate> IceCandidate::Create(absl::string_view mid,
   if (!ParseCandidate(sdp, &candidate, error, true)) {
     return nullptr;
   }
-  
-  
-  
-  
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  candidate.set_transport_name(mid);
-#pragma clang diagnostic pop
   return std::make_unique<IceCandidate>(mid, sdp_mline_index, candidate);
 }
 
