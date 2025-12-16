@@ -28,7 +28,7 @@ inline bool htmlaccelEnabled() {
   
   
   return false;
-#elif defined(__aarch64__) && defined(__LITTLE_ENDIAN__)
+#elif defined(__aarch64__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #  define MOZ_MAY_HAVE_HTMLACCEL 1
   return true;
 #elif defined(__x86_64__)
