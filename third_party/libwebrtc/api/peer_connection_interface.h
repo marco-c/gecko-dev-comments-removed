@@ -1227,10 +1227,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   virtual Thread* signaling_thread() const = 0;
 
-  
-  
-  virtual NetworkControllerInterface* GetNetworkController() = 0;
-
  protected:
   
   ~PeerConnectionInterface() override = default;
@@ -1387,9 +1383,6 @@ struct RTC_EXPORT PeerConnectionDependencies final {
   std::unique_ptr<RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<SSLCertificateVerifier> tls_cert_verifier;
   std::unique_ptr<VideoBitrateAllocatorFactory> video_bitrate_allocator_factory;
-  
-  
-  std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
 
   
   std::unique_ptr<LocalNetworkAccessPermissionFactoryInterface>
