@@ -43,7 +43,9 @@ namespace {
 
 
 
-constexpr size_t kMaxPendingFrames = 3;
+
+
+constexpr size_t kMaxPendingFrames = 2;
 
 std::optional<CorruptionDetectionFilterSettings> GetCorruptionFilterSettings(
     const EncodedImage& encoded_image,
@@ -204,6 +206,7 @@ FrameInstrumentationGeneratorImpl::OnEncodedImage(
       if (!is_key_frame) {
         return std::nullopt;
       }
+      
       return data;
     }
   }
