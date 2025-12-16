@@ -5301,11 +5301,18 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   nsPresContext* presContext =
       presShell ? presShell->GetPresContext() : nullptr;
 
+  FontVisibilityProvider* visProvider = nullptr;
+  if (presContext) {
+    visProvider = presContext;
+  } else {
+    visProvider = mOffscreenCanvas;
+  }
+
   
   
   RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
   if (fontGroup) {
-    if (fontGroup->GetFontVisibilityProvider() != presContext) {
+    if (fontGroup->GetFontVisibilityProvider() != visProvider) {
       fontGroup = nullptr;
     }
   }
@@ -5333,7 +5340,7 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
       const auto* sans =
           Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
       fontGroup = new gfxFontGroup(
-          presContext, sans->families, &style, language, explicitLanguage,
+          visProvider, sans->families, &style, language, explicitLanguage,
           presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
           devToCssSize, StyleFontVariantEmoji::Normal);
       if (fontGroup) {
