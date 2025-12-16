@@ -381,7 +381,7 @@ impl FontTransform {
             SubpixelDirection::Vertical
         } else {
             
-            SubpixelDirection::Mixed
+            SubpixelDirection::None
         }
     }
 }
@@ -1032,7 +1032,6 @@ pub enum SubpixelDirection {
     None = 0,
     Horizontal,
     Vertical,
-    Mixed,
 }
 
 impl SubpixelDirection {
@@ -1047,7 +1046,7 @@ impl SubpixelDirection {
 
     pub fn swap_xy(self) -> Self {
         match self {
-            SubpixelDirection::None | SubpixelDirection::Mixed => self,
+            SubpixelDirection::None => self,
             SubpixelDirection::Horizontal => SubpixelDirection::Vertical,
             SubpixelDirection::Vertical => SubpixelDirection::Horizontal,
         }
@@ -1114,7 +1113,6 @@ impl GlyphKey {
             SubpixelDirection::None => (0.0, 0.0),
             SubpixelDirection::Horizontal => (point.x, 0.0),
             SubpixelDirection::Vertical => (0.0, point.y),
-            SubpixelDirection::Mixed => (point.x, point.y),
         };
         let sox = SubpixelOffset::quantize(dx);
         let soy = SubpixelOffset::quantize(dy);
