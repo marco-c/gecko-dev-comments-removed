@@ -120,22 +120,12 @@ struct ScrollAxis final {
 
 
 
-
-
-
-
-
   explicit ScrollAxis(WhereToScroll aWhere = WhereToScroll::Nearest,
-                      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible,
-                      bool aOnlyIfPerceivedScrollableDirection = false)
-      : mWhereToScroll(aWhere),
-        mWhenToScroll(aWhen),
-        mOnlyIfPerceivedScrollableDirection(
-            aOnlyIfPerceivedScrollableDirection) {}
+                      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible)
+      : mWhereToScroll(aWhere), mWhenToScroll(aWhen) {}
 
   WhereToScroll mWhereToScroll;
   WhenToScroll mWhenToScroll;
-  bool mOnlyIfPerceivedScrollableDirection : 1;
 };
 
 enum class ScrollFlags : uint8_t {
