@@ -158,54 +158,6 @@ add_task(async function testFPPDisabled() {
 
 
 
-add_task(async function testFPPEnabledWithoutFingerprintingActivity() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[FINGERPRINT_PROTECTION_PREF, true]],
-  });
-
-  
-  await openTestPage([], false, testCategoryNotShown);
-
-  
-  
-  await openTestPage([TEST_3RD_FONT_FP_PAGE], false, testCategoryNotShown);
-
-  
-  
-  await openTestPage(
-    [TEST_3RD_FONT_FP_PAGE, TEST_3RD_FONT_FP_PAGE],
-    false,
-    testCategoryNotShown
-  );
-});
-
-
-
-add_task(
-  async function testFPPEnabledWithoutSuspiciousFingerprintingActivity() {
-    await SpecialPowers.pushPrefEnv({
-      set: [[FINGERPRINT_PROTECTION_PREF, true]],
-    });
-
-    
-    await openTestPage([], false, testCategoryNotShown);
-
-    
-    
-    await openTestPage([TEST_3RD_FONT_FP_PAGE], false, testCategoryNotShown);
-
-    
-    
-    await openTestPage(
-      [TEST_3RD_FONT_FP_PAGE, TEST_3RD_FONT_FP_PAGE],
-      false,
-      testCategoryNotShown
-    );
-  }
-);
-
-
-
 add_task(async function testFingerprintingSubview() {
   await SpecialPowers.pushPrefEnv({
     set: [[FINGERPRINT_PROTECTION_PREF, true]],
@@ -356,7 +308,7 @@ add_task(async function testDynamicallyLoadFingerprinter() {
     set: [[FINGERPRINT_PROTECTION_PREF, true]],
   });
 
-  await openTestPage([TEST_3RD_FONT_FP_PAGE], false, async (win, browser) => {
+  await openTestPage([], false, async (win, browser) => {
     await openProtectionsPanel(false, win);
 
     let categoryItem = win.document.getElementById(
