@@ -756,8 +756,19 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
 
     nsCOMPtr<nsIDocumentLoader> kungFuDeathGrip(this);
 
+    nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
     
-    if (IsBusy()) {
+    
+    
+    
+    
+    const bool forceInitialSyncLoad = doc &&
+                                      doc->InitialAboutBlankLoadCompleting() &&
+                                      !doc->IsExpectingEndLoad();
+    MOZ_ASSERT_IF(forceInitialSyncLoad, !mIsFlushingLayout);
+
+    
+    if (IsBusy() && !forceInitialSyncLoad) {
       return;
     }
 
@@ -792,8 +803,11 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
     
     
     
-    if (IsBusy() || (!mDocumentRequest && !mDocumentOpenedButNotLoaded &&
-                     !mIsLoadingJavascriptURI)) {
+    const bool hasActiveLoad = mDocumentRequest ||
+                               mDocumentOpenedButNotLoaded ||
+                               mIsLoadingJavascriptURI;
+    MOZ_ASSERT_IF(forceInitialSyncLoad, hasActiveLoad);
+    if ((IsBusy() && !forceInitialSyncLoad) || !hasActiveLoad) {
       return;
     }
 
