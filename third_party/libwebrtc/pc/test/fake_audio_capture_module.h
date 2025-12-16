@@ -225,6 +225,9 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   int frames_received_;
 
   
+  bool initialized_ = false;
+
+  
   
   mutable webrtc::Mutex mutex_;
   webrtc::SequenceChecker process_thread_checker_{
