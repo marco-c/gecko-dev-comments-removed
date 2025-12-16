@@ -4109,28 +4109,25 @@ nsresult ScriptLoader::OnStreamComplete(
 
         aRequest->getLoadedScript()->SetCacheEntryId(id);
       }
-    }
-
-    
-    
-    
-    if (aRequest->IsTextSource() &&
-        StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
-      uint32_t fetchCount;
-      if (NS_SUCCEEDED(cacheInfo->GetCacheTokenFetchCount(&fetchCount))) {
-        if (fetchCount < UINT8_MAX) {
-          aRequest->getLoadedScript()->mFetchCount = fetchCount;
-        } else {
-          aRequest->getLoadedScript()->mFetchCount = UINT8_MAX;
-        }
-      }
-
-      aRequest->getLoadedScript()->mCacheInfo = cacheInfo;
-      LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p", aRequest,
-           aRequest->getLoadedScript()->mCacheInfo.get()));
 
       
-      if (aRequest->getLoadedScript()->mCacheInfo) {
+      
+      
+      if (aRequest->IsTextSource() &&
+          StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
+        uint32_t fetchCount;
+        if (NS_SUCCEEDED(cacheInfo->GetCacheTokenFetchCount(&fetchCount))) {
+          if (fetchCount < UINT8_MAX) {
+            aRequest->getLoadedScript()->mFetchCount = fetchCount;
+          } else {
+            aRequest->getLoadedScript()->mFetchCount = UINT8_MAX;
+          }
+        }
+
+        aRequest->getLoadedScript()->mCacheInfo = cacheInfo;
+        LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p", aRequest,
+             aRequest->getLoadedScript()->mCacheInfo.get()));
+
         rv = SaveSRIHash(aRequest, aSRIDataVerifier);
       }
     }
