@@ -3055,8 +3055,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
     return NS_ERROR_FAILURE;
   }
 
-  const Element* root = mDocument->GetRootElement();
-  if (root && root->IsSVGElement(nsGkAtoms::svg)) {
+  if (mDocument->GetSVGRootElement()) {
     
     
     if (SVGFragmentIdentifier::ProcessFragmentIdentifier(mDocument,

@@ -33,9 +33,9 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
       : mIsDrawing(aSVGDocumentWrapper->mIsDrawing),
         
         
-        mPAR(aSVGContext, aSVGDocumentWrapper->GetRootSVGElem()),
+        mPAR(aSVGContext, aSVGDocumentWrapper->GetSVGRootElement()),
         
-        mTime(aSVGDocumentWrapper->GetRootSVGElem(), aAnimationTime) {
+        mTime(aSVGDocumentWrapper->GetSVGRootElement(), aAnimationTime) {
     MOZ_ASSERT(!mIsDrawing.SavedValue());
     MOZ_ASSERT(aSVGDocumentWrapper->GetDocument());
 

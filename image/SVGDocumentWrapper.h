@@ -51,7 +51,7 @@ class SVGDocumentWrapper final : public nsIStreamListener,
 
 
 
-  mozilla::dom::SVGSVGElement* GetRootSVGElem() const;
+  mozilla::dom::SVGSVGElement* GetSVGRootElement() const;
 
   
 

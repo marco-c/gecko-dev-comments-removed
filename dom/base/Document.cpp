@@ -9758,8 +9758,7 @@ Element* Document::GetTitleElement() {
     return nullptr;
   }
 
-  Element* root = GetRootElement();
-  if (root && root->IsSVGElement(nsGkAtoms::svg)) {
+  if (Element* root = GetSVGRootElement()) {
     
     for (nsIContent* child = root->GetFirstChild(); child;
          child = child->GetNextSibling()) {
