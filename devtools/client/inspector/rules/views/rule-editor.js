@@ -1231,12 +1231,22 @@ RuleEditor.prototype = {
       const response = await this.rule.domRule.modifySelector(element, value);
 
       
+      if (!element.actorID) {
+        return;
+      }
+
+      
       
       const applied = await elementStyle.pageStyle.getApplied(element, {
         inherited: true,
         matchedSelectors: true,
         filter: elementStyle.showUserAgentStyles ? "ua" : undefined,
       });
+
+      
+      if (!element.actorID) {
+        return;
+      }
 
       this.isEditing = false;
 

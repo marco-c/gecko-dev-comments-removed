@@ -599,7 +599,7 @@ class PageStyleActor extends Actor {
     
     
     this._observedRules = [];
-    this.selectedElement = node.rawNode;
+    this.selectedElement = node?.rawNode || null;
 
     if (!node) {
       return { entries: [] };
