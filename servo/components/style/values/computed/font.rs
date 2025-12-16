@@ -189,6 +189,12 @@ impl FontWeight {
     });
 
     
+    
+    pub const PREFER_BOLD_THRESHOLD: FontWeight = FontWeight(FontWeightFixedPoint {
+        value: 500 << FONT_WEIGHT_FRACTION_BITS,
+    });
+
+    
     pub fn normal() -> Self {
         Self::NORMAL
     }
