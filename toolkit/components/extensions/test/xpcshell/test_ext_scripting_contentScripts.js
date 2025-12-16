@@ -9,8 +9,6 @@ const BASE_URL = `http://localhost:${server.identity.primaryPort}/data`;
 
 ExtensionTestUtils.mockAppInfo();
 
-Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
-
 const makeExtension = ({ manifest: manifestProps, ...otherProps }) => {
   return ExtensionTestUtils.loadExtension({
     manifest: {

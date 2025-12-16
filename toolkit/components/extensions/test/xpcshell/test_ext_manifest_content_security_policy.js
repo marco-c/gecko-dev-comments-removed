@@ -2,7 +2,6 @@
 
 "use strict";
 
-Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 AddonTestUtils.init(this);
 
 add_task(async function test_manifest_csp() {
