@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
 <html>
   <head>
     <title>CSS Test: Sticky Positioning - left+right, overconstrained</title>
     <link rel="author" title="Corey Ford" href="mailto:cford@mozilla.com">
     <link rel="match" href="overconstrained-3-ref.html">
     <meta name="flags" content="dom">
-    <meta name="assert" content="Left+right-sticky with a wide element in an RTL container: should not act as left-sticky">
+    <meta name="assert" content="Left+right-sticky with a wide element in an RTL container: left inset should decrease">
     <style>
       #scroll {
         width: 100px;
