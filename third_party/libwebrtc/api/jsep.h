@@ -289,18 +289,6 @@ class RTC_EXPORT SessionDescriptionInterface {
 
 
 
-
-
-[[deprecated("Use version with SdpType argument")]] RTC_EXPORT
-    SessionDescriptionInterface*
-    CreateSessionDescription(const std::string& type,
-                             const std::string& sdp,
-                             SdpParseError* error);
-
-
-
-
-
 RTC_EXPORT std::unique_ptr<SessionDescriptionInterface>
 CreateSessionDescription(SdpType type, const std::string& sdp);
 RTC_EXPORT std::unique_ptr<SessionDescriptionInterface>
