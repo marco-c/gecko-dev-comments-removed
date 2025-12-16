@@ -22,6 +22,9 @@
 
 
 
+
+
+
 function _makeOptionsInternal(requestsInputArray, mediation, requestMapping) {
   const requests = [];
   for (const request of requestsInputArray) {
@@ -59,7 +62,7 @@ const allMappings = {
 
 
 
-function _makeOptionsUnified(type, requestsToUse, mediation) {
+function _makeOptionsUnified(type, protocol, mediation) {
   
   const mapping = allMappings[type];
    
@@ -68,27 +71,24 @@ function _makeOptionsUnified(type, requestsToUse, mediation) {
   }
 
   
-  const actualRequestsToUse = requestsToUse === undefined ? ["default"] : requestsToUse;
-
-  
-  if (typeof actualRequestsToUse === 'string') {
-    if (mapping[actualRequestsToUse]) {
+  if (typeof protocol === 'string') {
+    if (protocol in mapping) {
       
-      return _makeOptionsInternal([actualRequestsToUse], mediation, mapping);
+      return _makeOptionsInternal([protocol], mediation, mapping);
     } else {
       
-      throw new Error(`Unknown request type string '${actualRequestsToUse}' provided for operation type '${type}'`);
+      throw new Error(`Unknown request type string '${protocol}' provided for operation type '${type}'`);
     }
   }
 
   
-  if (Array.isArray(actualRequestsToUse)) {
-    if (actualRequestsToUse.length === 0) {
+  if (Array.isArray(protocol)) {
+    if (protocol.length === 0) {
       
       return { digital: { requests: [] }, mediation };
     }
     
-    return _makeOptionsInternal(actualRequestsToUse, mediation, mapping);
+    return _makeOptionsInternal(protocol, mediation, mapping);
   }
 
   
@@ -101,10 +101,9 @@ function _makeOptionsUnified(type, requestsToUse, mediation) {
 
 
 
-
-export function makeGetOptions(requestsToUse, mediation = "required") {
-  
-  return _makeOptionsUnified('get', requestsToUse, mediation);
+export function makeGetOptions(config = {}) {
+  const { protocol = "default", mediation = "required" } = config;
+  return _makeOptionsUnified('get', protocol, mediation);
 }
 
 
@@ -113,10 +112,9 @@ export function makeGetOptions(requestsToUse, mediation = "required") {
 
 
 
-
-export function makeCreateOptions(requestsToUse, mediation = "required") {
-  
-  return _makeOptionsUnified('create', requestsToUse, mediation);
+export function makeCreateOptions(config = {}) {
+  const { protocol = "default", mediation = "required" } = config;
+  return _makeOptionsUnified('create', protocol, mediation);
 }
 
 

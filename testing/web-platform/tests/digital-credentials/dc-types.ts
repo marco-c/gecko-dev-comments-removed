@@ -10,6 +10,34 @@ export type CredentialMediationRequirement =
 
 
 
+export interface MakeGetOptionsConfig {
+  
+
+
+  protocol?: GetProtocol | GetProtocol[];
+  
+
+
+  mediation?: CredentialMediationRequirement;
+}
+
+
+
+
+export interface MakeCreateOptionsConfig {
+  
+
+
+  protocol?: CreateProtocol | CreateProtocol[];
+  
+
+
+  mediation?: CredentialMediationRequirement;
+}
+
+
+
+
 export interface DigitalCredentialGetRequest {
   protocol: string;
   data: object;
