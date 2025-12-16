@@ -6,6 +6,7 @@
 
 #include "AnchorPositioningUtils.h"
 
+#include "DisplayPortUtils.h"
 #include "ScrollContainerFrame.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
@@ -15,6 +16,7 @@
 #include "mozilla/dom/Element.h"
 #include "nsCanvasFrame.h"
 #include "nsContainerFrame.h"
+#include "nsDisplayList.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
@@ -877,13 +879,20 @@ bool AnchorPositioningUtils::FitsInContainingBlock(
 }
 
 nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
-    nsIFrame* aFrame) {
+    nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
+    bool aSkipAsserts ) {
+#ifdef DEBUG
+  if (!aSkipAsserts) {
+    MOZ_ASSERT(!aBuilder || aBuilder->IsPaintingToWindow());
+    MOZ_ASSERT_IF(!aBuilder, aFrame->PresContext()->LayoutPhaseCount(
+                                 nsLayoutPhase::DisplayListBuilding) == 0);
+  }
+#endif
+
   if (!StaticPrefs::apz_async_scroll_css_anchor_pos_AtStartup()) {
     return nullptr;
   }
-  mozilla::PhysicalAxes axes = aFrame->GetAnchorPosCompensatingForScroll();
-  
-  
+  PhysicalAxes axes = aFrame->GetAnchorPosCompensatingForScroll();
   if (axes.isEmpty()) {
     return nullptr;
   }
@@ -902,7 +911,19 @@ nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
                     aFrame->GetParent(), anchor)) {
     return nullptr;
   }
-  return anchor;
+  if (!aBuilder) {
+    return anchor;
+  }
+  
+  
+  
+  
+  
+  
+  return DisplayPortUtils::ShouldAsyncScrollWithAnchor(aFrame, anchor, aBuilder,
+                                                       axes)
+             ? anchor
+             : nullptr;
 }
 
 static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,

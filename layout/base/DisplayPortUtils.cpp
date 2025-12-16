@@ -27,6 +27,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
+#include "nsIFrameInlines.h"
 
 namespace mozilla {
 
@@ -1024,8 +1025,8 @@ nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
     return nullptr;
   }
   nsIFrame* anchor = nullptr;
-  while ((anchor =
-              AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(aFrame))) {
+  while ((anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+              aFrame,  nullptr))) {
     aFrame = anchor;
   }
   if (aFrame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
@@ -1040,6 +1041,7 @@ nsIFrame* DisplayPortUtils::OneStepInAsyncScrollableAncestorChain(
 FrameAndASRKind DisplayPortUtils::GetASRAncestorFrame(
     FrameAndASRKind aFrameAndASRKind, nsDisplayListBuilder* aBuilder) {
   MOZ_ASSERT(aBuilder->IsPaintingToWindow());
+  
   
   
   
@@ -1080,8 +1082,8 @@ FrameAndASRKind DisplayPortUtils::GetASRAncestorFrame(
     
     
     
-    while (
-        (anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(f))) {
+    while ((anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+                f, aBuilder))) {
       f = anchor;
     }
 
@@ -1102,8 +1104,10 @@ FrameAndASRKind DisplayPortUtils::GetASRAncestorFrame(
 }
 
 FrameAndASRKind DisplayPortUtils::OneStepInASRChain(
-    FrameAndASRKind aFrameAndASRKind,
+    FrameAndASRKind aFrameAndASRKind, nsDisplayListBuilder* aBuilder,
     nsIFrame* aLimitAncestor ) {
+  MOZ_ASSERT(aBuilder->IsPaintingToWindow());
+  
   
   
   
@@ -1114,8 +1118,8 @@ FrameAndASRKind DisplayPortUtils::OneStepInASRChain(
   if (aFrameAndASRKind.mASRKind == ActiveScrolledRoot::ASRKind::Scroll) {
     nsIFrame* frame = aFrameAndASRKind.mFrame;
     nsIFrame* anchor = nullptr;
-    while ((anchor =
-                AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(frame))) {
+    while ((anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+                frame, aBuilder))) {
       MOZ_ASSERT_IF(
           aLimitAncestor,
           nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
@@ -1194,7 +1198,8 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
   
   
   FrameAndASRKind frameAndASRKind{aAnchor, ActiveScrolledRoot::ASRKind::Scroll};
-  frameAndASRKind = OneStepInASRChain(frameAndASRKind, aLimitAncestor);
+  frameAndASRKind =
+      OneStepInASRChain(frameAndASRKind, aBuilder, aLimitAncestor);
   while (frameAndASRKind.mFrame && frameAndASRKind.mFrame != aLimitAncestor &&
          (!aLimitAncestor || frameAndASRKind.mFrame->FirstContinuation() !=
                                  aLimitAncestor->FirstContinuation())) {
@@ -1235,7 +1240,8 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
         break;
     }
 
-    frameAndASRKind = OneStepInASRChain(frameAndASRKind, aLimitAncestor);
+    frameAndASRKind =
+        OneStepInASRChain(frameAndASRKind, aBuilder, aLimitAncestor);
   }
 
   const ActiveScrolledRoot* asr = aASRofLimitAncestor;
@@ -1246,9 +1252,10 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
     MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
         aLimitAncestor, asrFrame.mFrame));
 
-    MOZ_ASSERT((asr ? FrameAndASRKind{asr->mFrame, asr->mKind}
-                    : FrameAndASRKind::default_value()) ==
-               GetASRAncestorFrame(OneStepInASRChain(asrFrame), aBuilder));
+    MOZ_ASSERT(
+        (asr ? FrameAndASRKind{asr->mFrame, asr->mKind}
+             : FrameAndASRKind::default_value()) ==
+        GetASRAncestorFrame(OneStepInASRChain(asrFrame, aBuilder), aBuilder));
 
     asr = (asrFrame.mASRKind == ActiveScrolledRoot::ASRKind::Scroll)
               ? aBuilder->GetOrCreateActiveScrolledRoot(
@@ -1258,6 +1265,146 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
                     asr, asrFrame.mFrame);
   }
   return asr;
+}
+
+static bool CheckAxes(ScrollContainerFrame* aScrollFrame, PhysicalAxes aAxes) {
+  if (aAxes == kPhysicalAxesBoth) {
+    return true;
+  }
+  nsRect range = aScrollFrame->GetScrollRangeForUserInputEvents();
+  if (aAxes.contains(PhysicalAxis::Vertical)) {
+    MOZ_ASSERT(!aAxes.contains(PhysicalAxis::Horizontal));
+    if (range.width > 0) {
+      
+      return false;
+    }
+  }
+  if (aAxes.contains(PhysicalAxis::Horizontal)) {
+    MOZ_ASSERT(!aAxes.contains(PhysicalAxis::Vertical));
+    if (range.height > 0) {
+      
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool CheckForScrollFrameAndAxes(nsIFrame* aFrame, PhysicalAxes aAxes,
+                                       bool* aOutSawPotentialASR) {
+  ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(aFrame);
+  if (!scrollContainerFrame) {
+    return true;
+  }
+  *aOutSawPotentialASR = true;
+  return CheckAxes(scrollContainerFrame, aAxes);
+}
+
+
+static bool CheckForStickyAndAxes(nsIFrame* aFrame, PhysicalAxes aAxes,
+                                  bool* aOutSawPotentialASR) {
+  if (aFrame->StyleDisplay()->mPosition != StylePositionProperty::Sticky) {
+    return true;
+  }
+  auto* ssc = StickyScrollContainer::GetOrCreateForFrame(aFrame);
+  if (!ssc) {
+    return true;
+  }
+  *aOutSawPotentialASR = true;
+  return CheckAxes(ssc->ScrollContainer(), aAxes);
+}
+
+static bool ShouldAsyncScrollWithAnchorNotCached(nsIFrame* aFrame,
+                                                 nsIFrame* aAnchor,
+                                                 nsDisplayListBuilder* aBuilder,
+                                                 PhysicalAxes aAxes) {
+  
+  
+  if (aFrame->IsMenuPopupFrame()) {
+    return false;
+  }
+  nsIFrame* limitAncestor = aFrame->GetParent();
+  MOZ_ASSERT(limitAncestor);
+  
+  nsIFrame* frame = aAnchor;
+  bool firstIteration = true;
+  
+  
+  
+  
+  
+  bool sawPotentialASR = false;
+  while (frame && !frame->IsMenuPopupFrame() && frame != limitAncestor &&
+         (frame->FirstContinuation() != limitAncestor->FirstContinuation())) {
+    
+    
+
+    
+    
+    if (!firstIteration &&
+        !CheckForScrollFrameAndAxes(frame, aAxes, &sawPotentialASR)) {
+      return false;
+    }
+
+    
+    
+    
+    if (sawPotentialASR && !firstIteration && frame->IsTransformed()) {
+      return false;
+    }
+
+    nsIFrame* anchor = nullptr;
+    while ((anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+                frame, aBuilder))) {
+      MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+          limitAncestor, anchor));
+      frame = anchor;
+      
+      
+      
+    }
+
+    if (!CheckForStickyAndAxes(frame, aAxes, &sawPotentialASR)) {
+      return false;
+    }
+    
+    
+    
+    
+
+    frame = nsLayoutUtils::GetCrossDocParentFrameInProcess(frame);
+    firstIteration = false;
+  }
+  return true;
+}
+
+bool DisplayPortUtils::ShouldAsyncScrollWithAnchor(
+    nsIFrame* aFrame, nsIFrame* aAnchor, nsDisplayListBuilder* aBuilder,
+    PhysicalAxes aAxes) {
+  
+  
+  MOZ_ASSERT(aAnchor ==
+             AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+                 aFrame,  nullptr,  true));
+  MOZ_ASSERT(aFrame->IsAbsolutelyPositioned());
+  MOZ_ASSERT(aBuilder->IsPaintingToWindow());
+  MOZ_ASSERT(!aAxes.isEmpty());
+
+  
+  
+  
+  
+  bool wasPresent = true;
+  auto& entry = aBuilder->AsyncScrollsWithAnchorHashmap().LookupOrInsertWith(
+      aFrame, [&]() {
+        wasPresent = false;
+        return true;
+      });
+  if (!wasPresent) {
+    entry =
+        ShouldAsyncScrollWithAnchorNotCached(aFrame, aAnchor, aBuilder, aAxes);
+  }
+
+  return entry;
 }
 
 }  

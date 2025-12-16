@@ -1384,8 +1384,8 @@ static nsIFrame* GetNearestScrollableOrOverflowClipFrame(
     
     
     if (aFlags & nsLayoutUtils::SCROLLABLE_ONLY_ASYNC_SCROLLABLE) {
-      while (
-          (anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(f))) {
+      while ((anchor = AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+                  f,  nullptr))) {
         f = anchor;
       }
     }
