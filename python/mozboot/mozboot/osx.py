@@ -108,6 +108,7 @@ def ensure_command_line_tools():
     
     proc = subprocess.run(
         ["xcode-select", "--print-path"],
+        check=False,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
     )

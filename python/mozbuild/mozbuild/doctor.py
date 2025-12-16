@@ -140,6 +140,7 @@ def ssh(**kwargs) -> DoctorCheck:
         
         proc = subprocess.run(
             ["ssh", "hg.mozilla.org"],
+            check=False,
             encoding="utf-8",
             capture_output=True,
         )

@@ -49,7 +49,9 @@ def run(command_context, ide, no_interactive, args):
 
     if ide == "vscode":
         result = subprocess.run(
-            [sys.executable, "mach", "configure"], cwd=command_context.topsrcdir
+            [sys.executable, "mach", "configure"],
+            check=False,
+            cwd=command_context.topsrcdir,
         )
         if result.returncode:
             return result.returncode
@@ -59,6 +61,7 @@ def run(command_context, ide, no_interactive, args):
         
         result = subprocess.run(
             [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"],
+            check=False,
             cwd=command_context.topsrcdir,
         )
         if result.returncode:
@@ -68,7 +71,9 @@ def run(command_context, ide, no_interactive, args):
         
         
         result = subprocess.run(
-            [sys.executable, "mach", "build"], cwd=command_context.topsrcdir
+            [sys.executable, "mach", "build"],
+            check=False,
+            cwd=command_context.topsrcdir,
         )
         if result.returncode:
             return result.returncode
@@ -86,6 +91,7 @@ def run(command_context, ide, no_interactive, args):
         
         result = subprocess.run(
             [sys.executable, "mach", "build-backend", "-b", backend],
+            check=False,
             cwd=command_context.topsrcdir,
         )
         if result.returncode:
