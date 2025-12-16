@@ -283,16 +283,21 @@ class AsyncPanZoomController {
   
   
 
+  struct LayersUpdateFlags {
+    
+    
+    
+    bool mIsFirstPaint : 1;
+    
+    
+    bool mThisLayerTreeUpdated : 1;
+  };
   
 
 
 
-
-
-
-
   void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata,
-                           bool aIsFirstPaint, bool aThisLayerTreeUpdated);
+                           LayersUpdateFlags aLayersUpdateFlags);
 
   
 

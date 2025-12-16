@@ -5522,8 +5522,8 @@ void AsyncPanZoomController::FlushActiveCheckerboardReport() {
 }
 
 void AsyncPanZoomController::NotifyLayersUpdated(
-    const ScrollMetadata& aScrollMetadata, bool aIsFirstPaint,
-    bool aThisLayerTreeUpdated) {
+    const ScrollMetadata& aScrollMetadata,
+    LayersUpdateFlags aLayersUpdateFlags) {
   AssertOnUpdaterThread();
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
@@ -5566,15 +5566,16 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
   mScrollMetadata.SetScrollParentId(aScrollMetadata.GetScrollParentId());
   APZC_LOGV_FM(aLayerMetrics,
-               "%p got a NotifyLayersUpdated with aIsFirstPaint=%d, "
-               "aThisLayerTreeUpdated=%d",
-               this, aIsFirstPaint, aThisLayerTreeUpdated);
+               "%p got a NotifyLayersUpdated with mIsFirstPaint=%d, "
+               "mThisLayerTreeUpdated=%d",
+               this, aLayersUpdateFlags.mIsFirstPaint,
+               aLayersUpdateFlags.mThisLayerTreeUpdated);
 
   {  
     MutexAutoLock lock(mCheckerboardEventLock);
     if (mCheckerboardEvent && mCheckerboardEvent->IsRecordingTrace()) {
       std::string str;
-      if (aThisLayerTreeUpdated) {
+      if (aLayersUpdateFlags.mThisLayerTreeUpdated) {
         if (!aLayerMetrics.GetPaintRequestTime().IsNull()) {
           
           
@@ -5618,8 +5619,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   bool viewportSizeUpdated = false;
   bool needToReclampScroll = false;
 
-  if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault ||
-      Metrics().IsRootContent() != aLayerMetrics.IsRootContent()) {
+  if ((aLayersUpdateFlags.mIsFirstPaint &&
+       aLayersUpdateFlags.mThisLayerTreeUpdated) ||
+      isDefault || Metrics().IsRootContent() != aLayerMetrics.IsRootContent()) {
     if (Metrics().IsRootContent() && !aLayerMetrics.IsRootContent()) {
       
       SetZoomAnimationId(Nothing());
@@ -6009,7 +6011,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
   }
 
-  if (aIsFirstPaint || needToReclampScroll) {
+  if (aLayersUpdateFlags.mIsFirstPaint || needToReclampScroll) {
     
     
     ClampAndSetVisualScrollOffset(Metrics().GetVisualScrollOffset());
@@ -6148,7 +6150,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       }
     }
   }
-  if (aIsFirstPaint || needToReclampScroll) {
+  if (aLayersUpdateFlags.mIsFirstPaint || needToReclampScroll) {
     for (auto& sampledState : mSampledState) {
       sampledState.ClampVisualScrollOffset(Metrics());
     }
