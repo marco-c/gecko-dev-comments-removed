@@ -388,6 +388,7 @@ class DisplayPortUtils {
 
 
   static FrameAndASRKind OneStepInASRChain(FrameAndASRKind aFrameAndASRKind,
+                                           nsDisplayListBuilder* aBuilder,
                                            nsIFrame* aLimitAncestor = nullptr);
 
   
@@ -406,6 +407,14 @@ class DisplayPortUtils {
       nsIFrame* aAnchor, nsIFrame* aLimitAncestor,
       const ActiveScrolledRoot* aASRofLimitAncestor,
       nsDisplayListBuilder* aBuilder);
+
+  
+
+
+
+  static bool ShouldAsyncScrollWithAnchor(nsIFrame* aFrame, nsIFrame* aAnchor,
+                                          nsDisplayListBuilder* aBuilder,
+                                          PhysicalAxes aAxes);
 };
 
 }  
