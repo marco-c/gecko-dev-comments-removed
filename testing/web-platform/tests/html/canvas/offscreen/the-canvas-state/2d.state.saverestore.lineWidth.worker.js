@@ -20,8 +20,8 @@ test(t => {
   
   ctx.lineWidth = 0.5;
   old = ctx.lineWidth;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.lineWidth, old, "ctx.lineWidth", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.lineWidth = 0.5;
   old = ctx.lineWidth;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.lineWidth, old, "ctx.lineWidth", "old");
   ctx.restore();

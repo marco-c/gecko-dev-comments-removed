@@ -20,8 +20,8 @@ test(t => {
   
   ctx.shadowBlur = 5;
   old = ctx.shadowBlur;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.shadowBlur, old, "ctx.shadowBlur", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.shadowBlur = 5;
   old = ctx.shadowBlur;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.shadowBlur, old, "ctx.shadowBlur", "old");
   ctx.restore();

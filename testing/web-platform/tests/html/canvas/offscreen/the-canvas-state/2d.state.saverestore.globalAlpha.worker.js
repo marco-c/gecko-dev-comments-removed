@@ -20,8 +20,8 @@ test(t => {
   
   ctx.globalAlpha = 0.5;
   old = ctx.globalAlpha;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.globalAlpha = 0.5;
   old = ctx.globalAlpha;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
   ctx.restore();

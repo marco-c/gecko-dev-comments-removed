@@ -20,8 +20,8 @@ test(t => {
   
   ctx.globalCompositeOperation = "copy";
   old = ctx.globalCompositeOperation;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.globalCompositeOperation = "copy";
   old = ctx.globalCompositeOperation;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
   ctx.restore();

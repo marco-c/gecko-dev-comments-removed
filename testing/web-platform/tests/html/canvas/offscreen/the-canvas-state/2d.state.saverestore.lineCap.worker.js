@@ -20,8 +20,8 @@ test(t => {
   
   ctx.lineCap = "round";
   old = ctx.lineCap;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.lineCap = "round";
   old = ctx.lineCap;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.lineCap, old, "ctx.lineCap", "old");
   ctx.restore();

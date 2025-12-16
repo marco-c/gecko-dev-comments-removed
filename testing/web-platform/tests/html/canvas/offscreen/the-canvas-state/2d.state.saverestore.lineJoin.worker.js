@@ -20,8 +20,8 @@ test(t => {
   
   ctx.lineJoin = "round";
   old = ctx.lineJoin;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.lineJoin, old, "ctx.lineJoin", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.lineJoin = "round";
   old = ctx.lineJoin;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.lineJoin, old, "ctx.lineJoin", "old");
   ctx.restore();

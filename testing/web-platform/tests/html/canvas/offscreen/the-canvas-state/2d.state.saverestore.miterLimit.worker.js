@@ -20,8 +20,8 @@ test(t => {
   
   ctx.miterLimit = 0.5;
   old = ctx.miterLimit;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.miterLimit, old, "ctx.miterLimit", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.miterLimit = 0.5;
   old = ctx.miterLimit;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.miterLimit, old, "ctx.miterLimit", "old");
   ctx.restore();

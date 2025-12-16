@@ -20,8 +20,8 @@ test(t => {
   
   ctx.strokeStyle = "#ff0000";
   old = ctx.strokeStyle;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.strokeStyle, old, "ctx.strokeStyle", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.strokeStyle = "#ff0000";
   old = ctx.strokeStyle;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.strokeStyle, old, "ctx.strokeStyle", "old");
   ctx.restore();

@@ -20,8 +20,8 @@ test(t => {
   
   ctx.shadowOffsetY = 5;
   old = ctx.shadowOffsetY;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.shadowOffsetY, old, "ctx.shadowOffsetY", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.shadowOffsetY = 5;
   old = ctx.shadowOffsetY;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.shadowOffsetY, old, "ctx.shadowOffsetY", "old");
   ctx.restore();

@@ -20,8 +20,8 @@ test(t => {
   
   ctx.shadowColor = "#ff0000";
   old = ctx.shadowColor;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.shadowColor, old, "ctx.shadowColor", "old");
   ctx.restore();
@@ -41,8 +41,8 @@ test(t => {
   
   ctx.shadowColor = "#ff0000";
   old = ctx.shadowColor;
-      
-      
+  
+  
   ctx.save();
   _assertSame(ctx.shadowColor, old, "ctx.shadowColor", "old");
   ctx.restore();
