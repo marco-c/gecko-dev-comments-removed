@@ -6,7 +6,6 @@
 
 const ReadOnlyEditor = require("resource://devtools/client/inspector/markup/views/read-only-editor.js");
 const MarkupContainer = require("resource://devtools/client/inspector/markup/views/markup-container.js");
-const { extend } = require("resource://devtools/shared/extend.js");
 
 
 
@@ -14,23 +13,21 @@ const { extend } = require("resource://devtools/shared/extend.js");
 
 
 
+class MarkupReadOnlyContainer extends MarkupContainer {
+  
 
 
 
 
 
-function MarkupReadOnlyContainer(markupView, node) {
-  MarkupContainer.prototype.initialize.call(
-    this,
-    markupView,
-    node,
-    "readonlycontainer"
-  );
 
-  this.editor = new ReadOnlyEditor(this, node);
-  this.tagLine.appendChild(this.editor.elt);
+  constructor(markupView, node) {
+    super();
+    super.initialize(markupView, node, "readonlycontainer");
+
+    this.editor = new ReadOnlyEditor(this, node);
+    this.tagLine.appendChild(this.editor.elt);
+  }
 }
-
-MarkupReadOnlyContainer.prototype = extend(MarkupContainer.prototype, {});
 
 module.exports = MarkupReadOnlyContainer;
