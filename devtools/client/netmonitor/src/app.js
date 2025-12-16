@@ -45,13 +45,14 @@ const SearchDispatcher = require("resource://devtools/client/netmonitor/src/work
 
 
 
+class NetMonitorApp {
+  
 
 
-function NetMonitorApp(api) {
-  this.api = api;
-}
+  constructor(api) {
+    this.api = api;
+  }
 
-NetMonitorApp.prototype = {
   async bootstrap({ toolbox, document }) {
     
     this.mount = document.querySelector("#mount");
@@ -104,7 +105,7 @@ NetMonitorApp.prototype = {
       ),
       this.mount
     );
-  },
+  }
 
   
 
@@ -122,7 +123,7 @@ NetMonitorApp.prototype = {
 
     
     this.api.store.dispatch(START_IGNORE_ACTION);
-  },
+  }
 
   
 
@@ -162,7 +163,7 @@ NetMonitorApp.prototype = {
         this.api.on(EVENTS.REQUEST_ADDED, inspector);
       }
     });
-  },
-};
+  }
+}
 
 exports.NetMonitorApp = NetMonitorApp;
