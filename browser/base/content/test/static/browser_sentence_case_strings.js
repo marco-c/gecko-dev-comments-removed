@@ -22,7 +22,7 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
 
 
 
-const NAMES = new Set(["Mozilla", "Nightly", "Firefox"]);
+const NAMES = new Set(["Mozilla", "Nightly", "Firefox", "AI"]);
 const PHRASES = new Set(["Troubleshoot Mode…"]);
 
 let gCUITestUtils = new CustomizableUITestUtils(window);
