@@ -178,13 +178,18 @@ async function withProvider(result, callback) {
 
 function makeBestMatchResult(payloadExtra = {}) {
   return new UrlbarResult({
+    queryContext: { tokens: [] },
     type: UrlbarUtils.RESULT_TYPE.URL,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
-    ...UrlbarResult.payloadAndSimpleHighlights([], {
+    payload: {
       title: "Test best match",
       url: "https://example.com/best-match",
       ...payloadExtra,
-    }),
+    },
+    
+    
+    
+    highlights: {},
   });
 }
