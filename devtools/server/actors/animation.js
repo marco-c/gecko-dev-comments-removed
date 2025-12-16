@@ -88,6 +88,7 @@ class AnimationPlayerActor extends Actor {
 
     this.onAnimationMutation = this.onAnimationMutation.bind(this);
 
+    this.animationsActor = animationsActor;
     this.walker = animationsActor.walker;
     this.player = player;
     
@@ -120,7 +121,7 @@ class AnimationPlayerActor extends Actor {
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
-    this.player = this.observer = this.walker = null;
+    this.player = this.observer = this.walker = this.animationsActor = null;
 
     super.destroy();
   }
@@ -351,7 +352,10 @@ class AnimationPlayerActor extends Actor {
     
     
     return {
-      type: this.getType(),
+      
+      
+      
+      type: this.animationRemoved ? null : this.getType(),
       
       startTime: this.player.startTime,
       currentTime: this.player.currentTime,
@@ -464,6 +468,10 @@ class AnimationPlayerActor extends Actor {
     }
   }
 
+  onAnimationRemoved() {
+    this.animationRemoved = true;
+  }
+
   
 
 
@@ -474,6 +482,13 @@ class AnimationPlayerActor extends Actor {
     const properties = this.player.effect.getProperties().map(property => {
       return { name: property.property, values: property.values };
     });
+
+    
+    
+    
+    if (!this.node?.isConnected) {
+      return properties;
+    }
 
     const DOMWindowUtils = this.window.windowUtils;
 
@@ -745,6 +760,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
             type: "removed",
             player: this.actors[index],
           });
+          this.actors[index].onAnimationRemoved();
           this.actors.splice(index, 1);
         }
       }
@@ -777,6 +793,7 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
             type: "removed",
             player: this.actors[index],
           });
+          this.actors[index].onAnimationRemoved();
           this.actors.splice(index, 1);
         }
 
