@@ -10,10 +10,12 @@
 #ifndef API_FIELD_TRIALS_VIEW_H_
 #define API_FIELD_TRIALS_VIEW_H_
 
+#include <memory>
 #include <string>
 
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -38,6 +40,16 @@ class RTC_EXPORT FieldTrialsView {
 
   bool IsDisabled(absl::string_view key) const {
     return absl::StartsWith(Lookup(key), "Disabled");
+  }
+
+  
+  
+  
+  
+  
+  virtual std::unique_ptr<FieldTrialsView> CreateCopy() const {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
   }
 };
 
