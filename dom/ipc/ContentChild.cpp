@@ -1961,9 +1961,15 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
   RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
   openWindowInfo->mPrincipalToInheritForAboutBlank = aWindowInit.principal();
 
-  if (NS_WARN_IF(NS_FAILED(browserChild->Init( nullptr,
-                                              windowChild, openWindowInfo)))) {
-    return IPC_FAIL(browserChild, "BrowserChild::Init failed");
+  {
+    
+    
+    nsAutoScriptBlocker blockScripts;
+
+    if (NS_WARN_IF(NS_FAILED(browserChild->Init(
+             nullptr, windowChild, openWindowInfo)))) {
+      return IPC_FAIL(browserChild, "BrowserChild::Init failed");
+    }
   }
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
