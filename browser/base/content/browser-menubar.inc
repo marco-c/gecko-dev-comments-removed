@@ -17,6 +17,12 @@
                 <menuitem id="menu_newNavigator"
                           key="key_newNavigator"
                           command="cmd_newNavigator" data-l10n-id="menu-file-new-window"/>
+                <menuitem id="menu_newAIWindow"
+                          command="Tools:AIWindow"
+                          data-l10n-id="menu-file-new-ai-window"/>
+                <menuitem id="menu_newClassicWindow"
+                          command="Tools:ClassicWindow"
+                          data-l10n-id="menu-file-new-classic-window"/>
                 <menuitem id="menu_newPrivateWindow"
                           command="Tools:PrivateBrowsing"
                           key="key_privatebrowsing" data-l10n-id="menu-file-new-private-window"/>
@@ -322,7 +328,7 @@
     </menupopup>
   </menu>
 
-  <menu id="profiles-menu" data-l10n-id="menu-profiles" hidden="true">
+  <menu id="profiles-menu" data-l10n-id="menu-profiles-menu" hidden="true">
     <menupopup id="menu_ProfilesPopup">
       <!-- Profile list gets inserted here -->
       <menuitem id="menu_newProfile" class="menuitem-iconic" command="Profiles:CreateProfile" data-l10n-id="menu-profiles-new-profile" />
