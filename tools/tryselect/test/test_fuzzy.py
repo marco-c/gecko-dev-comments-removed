@@ -79,6 +79,11 @@ def test_query_paths_variants(monkeypatch, run_mach, capfd, variant):
         "2025-08-01", "%Y-%m-%d"
     )
     monkeypatch.setattr(datetime, "datetime", datetime_mock)
+    
+    monkeypatch.setattr(
+        "tryselect.tasks.cache_key",
+        lambda attr, *args: f"{attr}-test_query_paths_variants",
+    )
 
     if variant:
         variant = "-%s" % variant
