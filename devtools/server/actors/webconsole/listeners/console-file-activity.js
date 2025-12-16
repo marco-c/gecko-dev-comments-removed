@@ -7,34 +7,33 @@
 
 
 
-
-
-
-
-
-
-
-function ConsoleFileActivityListener(window, owner) {
-  this.window = window;
-  this.owner = owner;
-}
-exports.ConsoleFileActivityListener = ConsoleFileActivityListener;
-
-ConsoleFileActivityListener.prototype = {
+class ConsoleFileActivityListener {
   
 
 
 
 
 
-  _initialized: false,
 
-  _webProgress: null,
+  constructor(window, owner) {
+    this.window = window;
+    this.owner = owner;
+  }
 
-  QueryInterface: ChromeUtils.generateQI([
+  
+
+
+
+
+
+  _initialized = false;
+
+  _webProgress = null;
+
+  QueryInterface = ChromeUtils.generateQI([
     "nsIWebProgressListener",
     "nsISupportsWeakReference",
-  ]),
+  ]);
 
   
 
@@ -53,7 +52,7 @@ ConsoleFileActivityListener.prototype = {
     );
 
     this._initialized = true;
-  },
+  }
 
   
 
@@ -61,14 +60,14 @@ ConsoleFileActivityListener.prototype = {
 
   startMonitor() {
     this._init();
-  },
+  }
 
   
 
 
   stopMonitor() {
     this.destroy();
-  },
+  }
 
   onStateChange(progress, request, state, status) {
     if (!this.owner) {
@@ -76,7 +75,7 @@ ConsoleFileActivityListener.prototype = {
     }
 
     this._checkFileActivity(progress, request, state, status);
-  },
+  }
 
   
 
@@ -104,7 +103,7 @@ ConsoleFileActivityListener.prototype = {
     }
 
     this.owner.onFileActivity(uri.spec);
-  },
+  }
 
   
 
@@ -125,5 +124,7 @@ ConsoleFileActivityListener.prototype = {
     this._webProgress = null;
     this.window = null;
     this.owner = null;
-  },
-};
+  }
+}
+
+exports.ConsoleFileActivityListener = ConsoleFileActivityListener;
