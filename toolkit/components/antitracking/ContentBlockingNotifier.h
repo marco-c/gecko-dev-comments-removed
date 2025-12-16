@@ -41,27 +41,6 @@ class ContentBlockingNotifier final {
   
   
   
-  enum CanvasFingerprinter {
-    
-    eFingerprintJS,
-    
-    eAkamai,
-    
-    eVariant1,
-    eVariant2,
-    eVariant3,
-    eVariant4,
-    
-    
-    eMaybe
-  };
-
-  
-  
-  
-  
-  
-  
   
   
   
