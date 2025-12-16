@@ -1,0 +1,30 @@
+
+
+
+
+
+add_task(async () => {
+  Assert.ok(!Services.profiler.IsActive());
+
+  await Services.profiler.StartProfiler(100, 10, []);
+
+  Assert.ok(Services.profiler.IsActive());
+
+  await new Promise(resolve => do_timeout(100, resolve));
+
+  
+  var profileStr = Services.profiler.GetProfile();
+  Assert.greater(profileStr.length, 10);
+
+  
+  var profileObj = Services.profiler.getProfileData();
+  Assert.notEqual(profileObj, null);
+  Assert.notEqual(profileObj.threads, null);
+  Assert.greaterOrEqual(profileObj.threads.length, 1);
+  Assert.notEqual(profileObj.threads[0].samples, null);
+  
+  
+
+  await Services.profiler.StopProfiler();
+  Assert.ok(!Services.profiler.IsActive());
+});
