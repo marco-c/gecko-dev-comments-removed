@@ -105,6 +105,42 @@ class SelectionMovementUtils final {
 
 
 
+  [[nodiscard]] static RawRangeBoundary GetFirstVisiblePointAtLeaf(
+      const dom::AbstractRange& aRange);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] static RawRangeBoundary GetLastVisiblePointAtLeaf(
+      const dom::AbstractRange& aRange);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
