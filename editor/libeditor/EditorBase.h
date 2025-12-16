@@ -263,7 +263,8 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual nsresult GetPreferredIMEState(widget::IMEState* aState);
+  [[nodiscard]] virtual Result<widget::IMEState, nsresult>
+  GetPreferredIMEState() const = 0;
 
   
 
