@@ -41,7 +41,7 @@ struct SdpParseError;
 
 
 
-std::string SdpSerialize(const JsepSessionDescription& jdesc);
+std::string SdpSerialize(const SessionDescriptionInterface& jdesc);
 
 
 
