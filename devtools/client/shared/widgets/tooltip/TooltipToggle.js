@@ -15,20 +15,17 @@ const DEFAULT_TOGGLE_DELAY = 50;
 
 
 
-function TooltipToggle(tooltip) {
-  this.tooltip = tooltip;
-  this.win = tooltip.doc.defaultView;
+class TooltipToggle {
+  constructor(tooltip) {
+    this.tooltip = tooltip;
+    this.win = tooltip.doc.defaultView;
 
-  this._onMouseMove = this._onMouseMove.bind(this);
-  this._onMouseOut = this._onMouseOut.bind(this);
+    this._onMouseMove = this._onMouseMove.bind(this);
+    this._onMouseOut = this._onMouseOut.bind(this);
 
-  this._onTooltipMouseOver = this._onTooltipMouseOver.bind(this);
-  this._onTooltipMouseOut = this._onTooltipMouseOut.bind(this);
-}
-
-module.exports.TooltipToggle = TooltipToggle;
-
-TooltipToggle.prototype = {
+    this._onTooltipMouseOver = this._onTooltipMouseOver.bind(this);
+    this._onTooltipMouseOut = this._onTooltipMouseOut.bind(this);
+  }
   
 
 
@@ -92,7 +89,7 @@ TooltipToggle.prototype = {
     } else {
       target.classList.add("non-interactive-toggle");
     }
-  },
+  }
 
   
 
@@ -120,7 +117,7 @@ TooltipToggle.prototype = {
     this._baseNode = null;
     this._targetNodeCb = null;
     this._lastHovered = null;
-  },
+  }
 
   _onMouseMove(event) {
     if (event.target !== this._lastHovered) {
@@ -146,7 +143,7 @@ TooltipToggle.prototype = {
         );
       }, this._toggleDelay);
     }
-  },
+  }
 
   
 
@@ -162,7 +159,7 @@ TooltipToggle.prototype = {
     }
 
     return null;
-  },
+  }
 
   _onMouseOut(event) {
     
@@ -179,20 +176,22 @@ TooltipToggle.prototype = {
     this.toggleTimer = this.win.setTimeout(() => {
       this.tooltip.hide();
     }, this._toggleDelay);
-  },
+  }
 
   _onTooltipMouseOver() {
     this.win.clearTimeout(this.toggleTimer);
-  },
+  }
 
   _onTooltipMouseOut() {
     this.win.clearTimeout(this.toggleTimer);
     this.toggleTimer = this.win.setTimeout(() => {
       this.tooltip.hide();
     }, this._toggleDelay);
-  },
+  }
 
   destroy() {
     this.stop();
-  },
-};
+  }
+}
+
+module.exports.TooltipToggle = TooltipToggle;
