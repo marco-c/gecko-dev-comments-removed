@@ -220,6 +220,10 @@ class WalkerActor extends Actor {
     this.overflowCausingElementsMap = new Map();
 
     this.showAllAnonymousContent = options.showAllAnonymousContent;
+    
+    this.documentWalkerFilter = this.showAllAnonymousContent
+      ? allAnonymousContentTreeWalkerFilter
+      : standardTreeWalkerFilter;
 
     this.walkerSearch = new WalkerSearch(this);
 
@@ -349,16 +353,9 @@ class WalkerActor extends Actor {
     return "[WalkerActor " + this.actorID + "]";
   }
 
-  getDocumentWalkerFilter() {
-    
-    return this.showAllAnonymousContent
-      ? allAnonymousContentTreeWalkerFilter
-      : standardTreeWalkerFilter;
-  }
-
   getDocumentWalker(node, skipTo) {
     return new DocumentWalker(node, this.rootWin, {
-      filter: this.getDocumentWalkerFilter(),
+      filter: this.documentWalkerFilter,
       skipTo,
       showAnonymousContent: true,
     });
@@ -440,6 +437,7 @@ class WalkerActor extends Actor {
       this.layoutActor = null;
       this.targetActor = null;
       this.chromeEventHandler = null;
+      this.documentWalkerFilter = null;
 
       this.emit("destroyed");
     } catch (e) {
@@ -652,17 +650,14 @@ class WalkerActor extends Actor {
     for (let node of nodes) {
       if (!(node instanceof NodeActor)) {
         
-        
-        if (!this.showAllAnonymousContent) {
-          while (
-            node &&
-            standardTreeWalkerFilter(node) != nodeFilterConstants.FILTER_ACCEPT
-          ) {
-            node = this.rawParentNode(node);
-          }
-          if (!node) {
-            continue;
-          }
+        while (
+          node &&
+          this.documentWalkerFilter(node) != nodeFilterConstants.FILTER_ACCEPT
+        ) {
+          node = this.rawParentNode(node);
+        }
+        if (!node) {
+          continue;
         }
 
         node = this._getOrCreateNodeActor(node);
@@ -731,13 +726,13 @@ class WalkerActor extends Actor {
       return null;
     }
 
-    const filter = this.showAllAnonymousContent
-      ? allAnonymousContentTreeWalkerFilter
-      : standardTreeWalkerFilter;
     
     
     
-    if (filter(parentNode) === nodeFilterConstants.FILTER_ACCEPT_CHILDREN) {
+    if (
+      this.documentWalkerFilter(parentNode) ===
+      nodeFilterConstants.FILTER_ACCEPT_CHILDREN
+    ) {
       return this.rawParentNode(parentNode);
     }
 
@@ -933,9 +928,6 @@ class WalkerActor extends Actor {
 
 
   _rawChildren(rawNode, includeAssigned) {
-    const filter = this.showAllAnonymousContent
-      ? allAnonymousContentTreeWalkerFilter
-      : standardTreeWalkerFilter;
     const ret = [];
     const children = InspectorUtils.getChildrenForNode(
       rawNode,
@@ -943,7 +935,7 @@ class WalkerActor extends Actor {
       includeAssigned
     );
     for (const child of children) {
-      const filterResult = filter(child);
+      const filterResult = this.documentWalkerFilter(child);
       if (filterResult == nodeFilterConstants.FILTER_ACCEPT) {
         ret.push(child);
       } else if (filterResult == nodeFilterConstants.FILTER_ACCEPT_CHILDREN) {
@@ -2251,11 +2243,10 @@ class WalkerActor extends Actor {
   onMutations(mutations) {
     
     
-    const documentWalkerFilter = this.getDocumentWalkerFilter();
     if (
       mutations.every(
         mutation =>
-          documentWalkerFilter(mutation.target) ===
+          this.documentWalkerFilter(mutation.target) ===
           nodeFilterConstants.FILTER_SKIP
       )
     ) {
@@ -2349,8 +2340,10 @@ class WalkerActor extends Actor {
 
     
     
-    const filter = this.getDocumentWalkerFilter();
-    if (filter(node) !== nodeFilterConstants.FILTER_ACCEPT_CHILDREN) {
+    if (
+      this.documentWalkerFilter(node) !==
+      nodeFilterConstants.FILTER_ACCEPT_CHILDREN
+    ) {
       
       
       
@@ -2422,8 +2415,7 @@ class WalkerActor extends Actor {
     const root = event.target;
 
     
-    const documentWalkerFilter = this.getDocumentWalkerFilter();
-    if (documentWalkerFilter(root) === nodeFilterConstants.FILTER_SKIP) {
+    if (this.documentWalkerFilter(root) === nodeFilterConstants.FILTER_SKIP) {
       return;
     }
 
