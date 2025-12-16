@@ -56,18 +56,6 @@ RTC_EXPORT std::string SdpSerializeCandidate(const Candidate& candidate);
 
 
 
-[[deprecated(
-    "Instead, use the SdpDeserialize() method that requires an SdpType and "
-    "returns std::unique_ptr<SessionDescriptionInterface>.")]]
-bool SdpDeserialize(absl::string_view message,
-                    JsepSessionDescription* jdesc,
-                    SdpParseError* error);
-
-
-
-
-
-
 absl_nullable std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
     SdpType sdp_type,
     absl::string_view sdp,
