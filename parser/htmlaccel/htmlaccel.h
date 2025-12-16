@@ -35,11 +35,13 @@
 
 
 
+
+
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #  error "A little-endian target is required."
 #endif
 #if !(defined(__aarch64__) || defined(__SSSE3__))
-#  error "Must be targeting aarch64 or SSSE3."
+#  error "Must be targeting SSSE3 or above (notably AVX+BMI), or aarch64."
 #endif
 
 
@@ -52,6 +54,9 @@
 #if !(defined(__GNUC__) || defined(__clang__))
 #  error "A compiler that supports GCC-style portable SIMD is required."
 #endif
+
+
+
 
 
 
