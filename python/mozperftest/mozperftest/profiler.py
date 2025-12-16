@@ -2,9 +2,10 @@
 
 
 
+from mozperftest.system.geckoprofiler import GeckoProfiler
 from mozperftest.system.simpleperf import SimpleperfProfiler
 
-PROFILERS = {SimpleperfProfiler}
+PROFILERS = [SimpleperfProfiler, GeckoProfiler]
 
 
 class ProfilingMediator:
@@ -12,7 +13,6 @@ class ProfilingMediator:
 
     def __init__(self):
         self.active_profilers = []
-
         for profiler in PROFILERS:
             if profiler.is_enabled():
                 self.active_profilers.append(profiler.get_controller())
