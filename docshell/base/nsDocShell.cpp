@@ -6819,22 +6819,23 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
       
       
       
-      RefPtr<PolicyContainer> policyContainerToInherit = new PolicyContainer();
       if (aPolicyContainer) {
+        RefPtr<PolicyContainer> policyContainerToInherit =
+            new PolicyContainer();
         policyContainerToInherit->InitFromOther(
             PolicyContainer::Cast(aPolicyContainer));
+        blankDoc->SetPolicyContainer(policyContainerToInherit);
+        nsIContentSecurityPolicy* csp =
+            PolicyContainer::GetCSP(policyContainerToInherit);
+        if (!csp) {
+          csp = new nsCSPContext();
+          policyContainerToInherit->SetCSP(csp);
+        };
+        nsresult rv = csp->SetRequestContextWithDocument(blankDoc);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
-      blankDoc->SetPolicyContainer(policyContainerToInherit);
-      nsIContentSecurityPolicy* csp =
-          PolicyContainer::GetCSP(policyContainerToInherit);
-      if (!csp) {
-        csp = new nsCSPContext();
-        policyContainerToInherit->SetCSP(csp);
-      }
-
-      
-      MOZ_DIAGNOSTIC_ASSERT(
-          NS_SUCCEEDED(csp->SetRequestContextWithDocument(blankDoc)));
 
       blankDoc->SetInitialStatus(
           aIsInitialDocument ? Document::InitialStatus::IsInitialUncommitted
