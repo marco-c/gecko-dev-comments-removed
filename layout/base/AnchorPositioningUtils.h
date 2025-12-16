@@ -23,8 +23,6 @@ class CopyableTArray;
 
 namespace mozilla {
 
-class nsDisplayListBuilder;
-
 struct AnchorPosInfo {
   
   
@@ -318,11 +316,7 @@ struct AnchorPositioningUtils {
 
 
 
-
-
-  static nsIFrame* GetAnchorThatFrameScrollsWith(nsIFrame* aFrame,
-                                                 nsDisplayListBuilder* aBuilder,
-                                                 bool aSkipAsserts = false);
+  static nsIFrame* GetAnchorThatFrameScrollsWith(nsIFrame* aFrame);
 
   
   

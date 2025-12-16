@@ -18137,8 +18137,7 @@ FontFaceSet* Document::Fonts() {
   return mFontFaceSet;
 }
 
-void Document::ReportHasScrollLinkedEffect(
-    const TimeStamp& aTimeStamp, ReportToConsole aReportToConsole ) {
+void Document::ReportHasScrollLinkedEffect(const TimeStamp& aTimeStamp) {
   MOZ_ASSERT(!aTimeStamp.IsNull());
 
   if (!mLastScrollLinkedEffectDetectionTime.IsNull() &&
@@ -18146,8 +18145,7 @@ void Document::ReportHasScrollLinkedEffect(
     return;
   }
 
-  if (aReportToConsole == ReportToConsole::Yes &&
-      mLastScrollLinkedEffectDetectionTime.IsNull()) {
+  if (mLastScrollLinkedEffectDetectionTime.IsNull()) {
     
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Async Pan/Zoom"_ns, this,

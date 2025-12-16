@@ -1848,11 +1848,6 @@ class nsDisplayListBuilder {
   void SetIsDestroying() { mIsDestroying = true; }
   bool IsDestroying() const { return mIsDestroying; }
 
-  nsTHashMap<nsPtrHashKey<const nsIFrame>, bool>&
-  AsyncScrollsWithAnchorHashmap() {
-    return mAsyncScrollsWithAnchor;
-  }
-
  private:
   bool MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame, nsIFrame* aFrame,
                                     const nsRect& aVisibleRect,
@@ -1999,12 +1994,6 @@ class nsDisplayListBuilder {
   nsRect mCaretRect;
 
   Preserves3DContext mPreserves3DCtx;
-
-  
-  
-  
-  
-  nsTHashMap<nsPtrHashKey<const nsIFrame>, bool> mAsyncScrollsWithAnchor;
 
   uint8_t mBuildingPageNum = 0;
 
