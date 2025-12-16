@@ -107,7 +107,7 @@ class PageStyleActor extends Actor {
     this.styleSheetsManager.on("stylesheet-updated", this.#onStylesheetUpdated);
   }
 
-  #observedRules = [];
+  #observedRules = new Set();
 
   destroy() {
     if (!this.walker) {
@@ -122,7 +122,7 @@ class PageStyleActor extends Actor {
     this.cssLogic = null;
     this.styleSheetsByRootNode = null;
 
-    this.#observedRules = [];
+    this.#observedRules = null;
   }
 
   get ownerWindow() {
@@ -607,7 +607,7 @@ class PageStyleActor extends Actor {
     
     
     
-    this.#observedRules = [];
+    this.#observedRules.clear();
     this.selectedElement = node?.rawNode || null;
 
     if (!node) {
@@ -625,17 +625,20 @@ class PageStyleActor extends Actor {
       options
     );
 
-    const entryRules = new Set();
-    entries.forEach(entry => {
-      entryRules.add(entry.rule);
-    });
+    const promises = [];
+    for (const entry of entries) {
+      
+      
+      
+      this.#observedRules.add(entry.rule);
+      
+      
+      
+      
+      promises.push(entry.rule.getAuthoredCssText());
+    }
 
-    await Promise.all(entries.map(entry => entry.rule.getAuthoredCssText()));
-
-    
-    
-    
-    this.#observedRules = entryRules;
+    await Promise.all(promises);
 
     return { entries };
   }
