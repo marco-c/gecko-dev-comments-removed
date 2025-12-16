@@ -1026,9 +1026,7 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
   }
 
   
-  if (!aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack)) {
-    return;
-  }
+  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
   nsIGlobalObject* incumbentGlobal = nullptr;
 
