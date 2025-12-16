@@ -68,49 +68,49 @@ const INDENT_STR = " ".repeat(INDENT_SIZE);
 
 
 
-
-
-
-
-
-
-
-
-
-function RuleEditor(ruleView, rule, options = {}) {
-  EventEmitter.decorate(this);
-
-  this.ruleView = ruleView;
-  this.doc = this.ruleView.styleDocument;
-  this.toolbox = this.ruleView.inspector.toolbox;
-  this.telemetry = this.toolbox.telemetry;
-  this.rule = rule;
-  this.options = options;
-
-  this.isEditable = rule.isEditable();
+class RuleEditor extends EventEmitter {
   
-  
-  this.isEditing = false;
 
-  this._onNewProperty = this._onNewProperty.bind(this);
-  this._newPropertyDestroy = this._newPropertyDestroy.bind(this);
-  this._onSelectorDone = this._onSelectorDone.bind(this);
-  this._locationChanged = this._locationChanged.bind(this);
-  this.updateSourceLink = this.updateSourceLink.bind(this);
-  this._onToolChanged = this._onToolChanged.bind(this);
-  this._updateLocation = this._updateLocation.bind(this);
-  this._onSourceClick = this._onSourceClick.bind(this);
-  this._onShowUnusedCustomCssPropertiesButtonClick =
-    this._onShowUnusedCustomCssPropertiesButtonClick.bind(this);
 
-  this.rule.domRule.on("location-changed", this._locationChanged);
-  this.toolbox.on("tool-registered", this._onToolChanged);
-  this.toolbox.on("tool-unregistered", this._onToolChanged);
 
-  this._create();
-}
 
-RuleEditor.prototype = {
+
+
+
+
+
+  constructor(ruleView, rule, options = {}) {
+    super();
+
+    this.ruleView = ruleView;
+    this.doc = this.ruleView.styleDocument;
+    this.toolbox = this.ruleView.inspector.toolbox;
+    this.telemetry = this.toolbox.telemetry;
+    this.rule = rule;
+    this.options = options;
+
+    this.isEditable = rule.isEditable();
+    
+    
+    this.isEditing = false;
+
+    this._onNewProperty = this._onNewProperty.bind(this);
+    this._newPropertyDestroy = this._newPropertyDestroy.bind(this);
+    this._onSelectorDone = this._onSelectorDone.bind(this);
+    this._locationChanged = this._locationChanged.bind(this);
+    this.updateSourceLink = this.updateSourceLink.bind(this);
+    this._onToolChanged = this._onToolChanged.bind(this);
+    this._updateLocation = this._updateLocation.bind(this);
+    this._onSourceClick = this._onSourceClick.bind(this);
+    this._onShowUnusedCustomCssPropertiesButtonClick =
+      this._onShowUnusedCustomCssPropertiesButtonClick.bind(this);
+
+    this.rule.domRule.on("location-changed", this._locationChanged);
+    this.toolbox.on("tool-registered", this._onToolChanged);
+    this.toolbox.on("tool-unregistered", this._onToolChanged);
+
+    this._create();
+  }
   destroy() {
     for (const prop of this.rule.textProps) {
       prop.editor?.destroy();
@@ -129,7 +129,7 @@ RuleEditor.prototype = {
     if (this._unsubscribeSourceMap) {
       this._unsubscribeSourceMap();
     }
-  },
+  }
 
   get sourceMapURLService() {
     if (!this._sourceMapURLService) {
@@ -138,7 +138,7 @@ RuleEditor.prototype = {
     }
 
     return this._sourceMapURLService;
-  },
+  }
 
   get isSelectorEditable() {
     return (
@@ -147,14 +147,14 @@ RuleEditor.prototype = {
       this.rule.domRule.type !== CSSRule.KEYFRAME_RULE &&
       this.rule.domRule.className !== "CSSPositionTryRule"
     );
-  },
+  }
 
   get showSelectorHighlighterButton() {
     return (
       this.rule.domRule.type !== CSSRule.KEYFRAME_RULE &&
       this.rule.domRule.className !== "CSSPositionTryRule"
     );
-  },
+  }
 
   _create() {
     this.element = this.doc.createElement("div");
@@ -216,9 +216,7 @@ RuleEditor.prototype = {
 
           createChild(selectorContainer, "span", {
             class: "container-query-declaration",
-            textContent: `@container${
-              ancestorData.containerName ? " " + ancestorData.containerName : ""
-            }`,
+            textContent: `@container${ancestorData.containerName ? " " + ancestorData.containerName : ""}`,
           });
 
           const jumpToNodeButton = createChild(selectorContainer, "button", {
@@ -487,7 +485,7 @@ RuleEditor.prototype = {
         this.newProperty();
       });
     }
-  },
+  }
 
   
 
@@ -533,7 +531,7 @@ RuleEditor.prototype = {
     }
 
     return warningsContainer;
-  },
+  }
 
   
 
@@ -551,7 +549,7 @@ RuleEditor.prototype = {
     } else {
       this.source.setAttribute("unselectable", "true");
     }
-  },
+  }
 
   
 
@@ -559,7 +557,7 @@ RuleEditor.prototype = {
 
   _locationChanged() {
     this.updateSourceLink();
-  },
+  }
 
   _onSourceClick(e) {
     e.preventDefault();
@@ -575,7 +573,7 @@ RuleEditor.prototype = {
         this.rule.ruleColumn
       );
     }
-  },
+  }
 
   
 
@@ -615,7 +613,7 @@ RuleEditor.prototype = {
     sourceLabel.setAttribute("title", title);
     sourceLabel.setAttribute("href", displayURL);
     sourceLabel.textContent = sourceTextContent;
-  },
+  }
 
   updateSourceLink() {
     if (this.source) {
@@ -650,7 +648,7 @@ RuleEditor.prototype = {
     Promise.resolve().then(() => {
       this.emit("source-link-updated");
     });
-  },
+  }
 
   
 
@@ -760,7 +758,7 @@ RuleEditor.prototype = {
         }, 0);
       }
     }
-  },
+  }
 
   updateUnusedCssVariables() {
     if (
@@ -788,7 +786,7 @@ RuleEditor.prototype = {
     }
 
     this._updateShowUnusedCustomCssPropertiesButtonText();
-  },
+  }
 
   
 
@@ -829,7 +827,7 @@ RuleEditor.prototype = {
     }
 
     return editor;
-  },
+  }
 
   
 
@@ -854,7 +852,7 @@ RuleEditor.prototype = {
     }
 
     return unusedCssVariableDeclarations;
-  },
+  }
 
   
 
@@ -882,7 +880,7 @@ RuleEditor.prototype = {
     if (typeof this.options.onShowUnusedCustomCssProperties === "function") {
       this.options.onShowUnusedCustomCssProperties();
     }
-  },
+  }
 
   
 
@@ -905,7 +903,7 @@ RuleEditor.prototype = {
     ).replace("#1", unusedVariablesCount);
 
     this._showUnusedCustomCssPropertiesButton.replaceChildren(label);
-  },
+  }
 
   
 
@@ -929,7 +927,7 @@ RuleEditor.prototype = {
       this._showUnusedCustomCssPropertiesButton.remove();
     }
     this._showUnusedCustomCssPropertiesButton = null;
-  },
+  }
 
   
 
@@ -1009,7 +1007,7 @@ RuleEditor.prototype = {
     if (warningsContainer) {
       selectorContainer.append(warningsContainer);
     }
-  },
+  }
 
   
 
@@ -1051,7 +1049,7 @@ RuleEditor.prototype = {
     );
 
     return prop;
-  },
+  }
 
   
 
@@ -1092,7 +1090,7 @@ RuleEditor.prototype = {
     } else {
       this.newProperty();
     }
-  },
+  }
 
   
 
@@ -1148,7 +1146,7 @@ RuleEditor.prototype = {
       "paste",
       blurOnMultipleProperties(this.rule.cssProperties)
     );
-  },
+  }
 
   
 
@@ -1177,7 +1175,7 @@ RuleEditor.prototype = {
     this.editor.input.blur();
 
     this.telemetry.recordEvent("edit_rule", "ruleview");
-  },
+  }
 
   
 
@@ -1202,7 +1200,7 @@ RuleEditor.prototype = {
     if (this.multipleAddedProperties && this.multipleAddedProperties.length) {
       this.addProperties(this.multipleAddedProperties);
     }
-  },
+  }
 
   
 
@@ -1308,7 +1306,7 @@ RuleEditor.prototype = {
       this.isEditing = false;
       promiseWarn(err);
     }
-  },
+  }
 
   
 
@@ -1326,7 +1324,7 @@ RuleEditor.prototype = {
     } else {
       this.propertyList.click();
     }
-  },
-};
+  }
+}
 
 module.exports = RuleEditor;
