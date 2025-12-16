@@ -255,191 +255,191 @@ exports.BOOLEAN_CONFIGURATION_PREFS = BOOLEAN_CONFIGURATION_PREFS;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Toolbox({
-  commands,
-  selectedTool,
-  selectedToolOptions,
-  hostType,
-  contentWindow,
-  frameId,
-}) {
-  this._win = contentWindow;
-  this.frameId = frameId;
-  this.selection = new Selection();
-  this.telemetry = new Telemetry({ useSessionId: true });
-  
-  this.sessionId = this.telemetry.sessionId;
-
-  
-  
-  
-  
-  this.commands = commands;
-  this._descriptorFront = commands.descriptorFront;
-
-  
-  
-  this._webExtensions = new Map();
-
-  this._toolPanels = new Map();
-  this._inspectorExtensionSidebars = new Map();
-
-  this._netMonitorAPI = null;
-
-  
-  this.frameMap = new Map();
-  this.selectedFrameId = null;
-
-  
-  this._pausedTargets = new Set();
-
+class Toolbox extends EventEmitter {
   
 
 
 
 
 
-  this._windowHostShortcuts = null;
 
-  
-  this._visibleIframes = new Set();
 
-  this._toolRegistered = this._toolRegistered.bind(this);
-  this._toolUnregistered = this._toolUnregistered.bind(this);
-  this._refreshHostTitle = this._refreshHostTitle.bind(this);
-  this.toggleNoAutohide = this.toggleNoAutohide.bind(this);
-  this.toggleAlwaysOnTop = this.toggleAlwaysOnTop.bind(this);
-  this.disablePseudoLocale = () => this.changePseudoLocale("none");
-  this.enableAccentedPseudoLocale = () => this.changePseudoLocale("accented");
-  this.enableBidiPseudoLocale = () => this.changePseudoLocale("bidi");
-  this._updateFrames = this._updateFrames.bind(this);
-  this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
-  this.closeToolbox = this.closeToolbox.bind(this);
-  this.destroy = this.destroy.bind(this);
-  this._saveSplitConsoleHeight = this._saveSplitConsoleHeight.bind(this);
-  this._onFocus = this._onFocus.bind(this);
-  this._onBlur = this._onBlur.bind(this);
-  this._onBrowserMessage = this._onBrowserMessage.bind(this);
-  this._onTabsOrderUpdated = this._onTabsOrderUpdated.bind(this);
-  this._onToolbarFocus = this._onToolbarFocus.bind(this);
-  this._onToolbarArrowKeypress = this._onToolbarArrowKeypress.bind(this);
-  this._onPickerClick = this._onPickerClick.bind(this);
-  this._onPickerKeypress = this._onPickerKeypress.bind(this);
-  this._onPickerStarting = this._onPickerStarting.bind(this);
-  this._onPickerStarted = this._onPickerStarted.bind(this);
-  this._onPickerStopped = this._onPickerStopped.bind(this);
-  this._onPickerCanceled = this._onPickerCanceled.bind(this);
-  this._onPickerPicked = this._onPickerPicked.bind(this);
-  this._onPickerPreviewed = this._onPickerPreviewed.bind(this);
-  this._onInspectObject = this._onInspectObject.bind(this);
-  this._onNewSelectedNodeFront = this._onNewSelectedNodeFront.bind(this);
-  this._onToolSelected = this._onToolSelected.bind(this);
-  this._onContextMenu = this._onContextMenu.bind(this);
-  this._onMouseDown = this._onMouseDown.bind(this);
-  this.updateToolboxButtonsVisibility =
-    this.updateToolboxButtonsVisibility.bind(this);
-  this.updateToolboxButtons = this.updateToolboxButtons.bind(this);
-  this.selectTool = this.selectTool.bind(this);
-  this._pingTelemetrySelectTool = this._pingTelemetrySelectTool.bind(this);
-  this.toggleSplitConsole = this.toggleSplitConsole.bind(this);
-  this.toggleOptions = this.toggleOptions.bind(this);
-  this._onTargetAvailable = this._onTargetAvailable.bind(this);
-  this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-  this._onTargetSelected = this._onTargetSelected.bind(this);
-  this._onResourceAvailable = this._onResourceAvailable.bind(this);
-  this._onResourceUpdated = this._onResourceUpdated.bind(this);
-  this._onToolSelectedStopPicker = this._onToolSelectedStopPicker.bind(this);
 
-  
-  this._throttledSetToolboxButtons = throttle(
-    () => this.component?.setToolboxButtons(this.toolbarButtons),
-    500,
-    this
-  );
 
-  this._debounceUpdateFocusedState = debounce(
-    () => {
-      this.component?.setFocusedState(this._isToolboxFocused);
-    },
-    500,
-    this
-  );
 
-  if (!selectedTool) {
-    selectedTool = Services.prefs.getCharPref(this._prefs.LAST_TOOL);
+
+
+
+
+
+  constructor({
+    commands,
+    selectedTool,
+    selectedToolOptions,
+    hostType,
+    contentWindow,
+    frameId,
+  }) {
+    super();
+
+    this._win = contentWindow;
+    this.frameId = frameId;
+    this.selection = new Selection();
+    this.telemetry = new Telemetry({ useSessionId: true });
+    
+    this.sessionId = this.telemetry.sessionId;
+
+    
+    
+    
+    
+    this.commands = commands;
+    this._descriptorFront = commands.descriptorFront;
+
+    
+    
+    this._webExtensions = new Map();
+
+    this._toolPanels = new Map();
+    this._inspectorExtensionSidebars = new Map();
+
+    this._netMonitorAPI = null;
+
+    
+    this.frameMap = new Map();
+    this.selectedFrameId = null;
+
+    
+    this._pausedTargets = new Set();
+
+    
+
+
+
+
+
+    this._windowHostShortcuts = null;
+
+    
+    this._visibleIframes = new Set();
+
+    this._toolRegistered = this._toolRegistered.bind(this);
+    this._toolUnregistered = this._toolUnregistered.bind(this);
+    this._refreshHostTitle = this._refreshHostTitle.bind(this);
+    this.toggleNoAutohide = this.toggleNoAutohide.bind(this);
+    this.toggleAlwaysOnTop = this.toggleAlwaysOnTop.bind(this);
+    this.disablePseudoLocale = () => this.changePseudoLocale("none");
+    this.enableAccentedPseudoLocale = () => this.changePseudoLocale("accented");
+    this.enableBidiPseudoLocale = () => this.changePseudoLocale("bidi");
+    this._updateFrames = this._updateFrames.bind(this);
+    this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
+    this.closeToolbox = this.closeToolbox.bind(this);
+    this.destroy = this.destroy.bind(this);
+    this._saveSplitConsoleHeight = this._saveSplitConsoleHeight.bind(this);
+    this._onFocus = this._onFocus.bind(this);
+    this._onBlur = this._onBlur.bind(this);
+    this._onBrowserMessage = this._onBrowserMessage.bind(this);
+    this._onTabsOrderUpdated = this._onTabsOrderUpdated.bind(this);
+    this._onToolbarFocus = this._onToolbarFocus.bind(this);
+    this._onToolbarArrowKeypress = this._onToolbarArrowKeypress.bind(this);
+    this._onPickerClick = this._onPickerClick.bind(this);
+    this._onPickerKeypress = this._onPickerKeypress.bind(this);
+    this._onPickerStarting = this._onPickerStarting.bind(this);
+    this._onPickerStarted = this._onPickerStarted.bind(this);
+    this._onPickerStopped = this._onPickerStopped.bind(this);
+    this._onPickerCanceled = this._onPickerCanceled.bind(this);
+    this._onPickerPicked = this._onPickerPicked.bind(this);
+    this._onPickerPreviewed = this._onPickerPreviewed.bind(this);
+    this._onInspectObject = this._onInspectObject.bind(this);
+    this._onNewSelectedNodeFront = this._onNewSelectedNodeFront.bind(this);
+    this._onToolSelected = this._onToolSelected.bind(this);
+    this._onContextMenu = this._onContextMenu.bind(this);
+    this._onMouseDown = this._onMouseDown.bind(this);
+    this.updateToolboxButtonsVisibility =
+      this.updateToolboxButtonsVisibility.bind(this);
+    this.updateToolboxButtons = this.updateToolboxButtons.bind(this);
+    this.selectTool = this.selectTool.bind(this);
+    this._pingTelemetrySelectTool = this._pingTelemetrySelectTool.bind(this);
+    this.toggleSplitConsole = this.toggleSplitConsole.bind(this);
+    this.toggleOptions = this.toggleOptions.bind(this);
+    this._onTargetAvailable = this._onTargetAvailable.bind(this);
+    this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+    this._onTargetSelected = this._onTargetSelected.bind(this);
+    this._onResourceAvailable = this._onResourceAvailable.bind(this);
+    this._onResourceUpdated = this._onResourceUpdated.bind(this);
+    this._onToolSelectedStopPicker = this._onToolSelectedStopPicker.bind(this);
+
+    
+    this._throttledSetToolboxButtons = throttle(
+      () => this.component?.setToolboxButtons(this.toolbarButtons),
+      500,
+      this
+    );
+
+    this._debounceUpdateFocusedState = debounce(
+      () => {
+        this.component?.setFocusedState(this._isToolboxFocused);
+      },
+      500,
+      this
+    );
+
+    if (!selectedTool) {
+      selectedTool = Services.prefs.getCharPref(this._prefs.LAST_TOOL);
+    }
+    this._defaultToolId = selectedTool;
+    this._defaultToolOptions = selectedToolOptions;
+
+    this._hostType = hostType;
+
+    this.isOpen = new Promise(
+      function (resolve) {
+        this._resolveIsOpen = resolve;
+      }.bind(this)
+    );
+
+    this.on("host-changed", this._refreshHostTitle);
+    this.on("select", this._onToolSelected);
+
+    this.selection.on("new-node-front", this._onNewSelectedNodeFront);
+
+    gDevTools.on("tool-registered", this._toolRegistered);
+    gDevTools.on("tool-unregistered", this._toolUnregistered);
+
+    
+
+
+
+
+
+    loader.lazyGetter(this, "direction", () => {
+      const { documentElement } = this.doc;
+      const isRtl =
+        this.win.getComputedStyle(documentElement).direction === "rtl";
+      return isRtl ? "rtl" : "ltr";
+    });
   }
-  this._defaultToolId = selectedTool;
-  this._defaultToolOptions = selectedToolOptions;
-
-  this._hostType = hostType;
-
-  this.isOpen = new Promise(
-    function (resolve) {
-      this._resolveIsOpen = resolve;
-    }.bind(this)
-  );
-
-  EventEmitter.decorate(this);
-
-  this.on("host-changed", this._refreshHostTitle);
-  this.on("select", this._onToolSelected);
-
-  this.selection.on("new-node-front", this._onNewSelectedNodeFront);
-
-  gDevTools.on("tool-registered", this._toolRegistered);
-  gDevTools.on("tool-unregistered", this._toolUnregistered);
 
   
 
 
 
+  static HostType = {
+    BOTTOM: "bottom",
+    RIGHT: "right",
+    LEFT: "left",
+    WINDOW: "window",
+    BROWSERTOOLBOX: "browsertoolbox",
+    
+    
+    PAGE: "page",
+  };
 
+  _URL = "about:devtools-toolbox";
 
-  loader.lazyGetter(this, "direction", () => {
-    const { documentElement } = this.doc;
-    const isRtl =
-      this.win.getComputedStyle(documentElement).direction === "rtl";
-    return isRtl ? "rtl" : "ltr";
-  });
-}
-exports.Toolbox = Toolbox;
-
-
-
-
-
-Toolbox.HostType = {
-  BOTTOM: "bottom",
-  RIGHT: "right",
-  LEFT: "left",
-  WINDOW: "window",
-  BROWSERTOOLBOX: "browsertoolbox",
-  
-  
-  PAGE: "page",
-};
-
-Toolbox.prototype = {
-  _URL: "about:devtools-toolbox",
-
-  _prefs: {
+  _prefs = {
     LAST_TOOL: "devtools.toolbox.selectedTool",
-  },
+  };
 
   get nodePicker() {
     if (!this._nodePicker) {
@@ -453,36 +453,36 @@ Toolbox.prototype = {
     }
 
     return this._nodePicker;
-  },
+  }
 
   get store() {
     if (!this._store) {
       this._store = createToolboxStore();
     }
     return this._store;
-  },
+  }
 
   get currentToolId() {
     return this._currentToolId;
-  },
+  }
 
   set currentToolId(id) {
     this._currentToolId = id;
     this.component.setCurrentToolId(id);
-  },
+  }
 
   get defaultToolId() {
     return this._defaultToolId;
-  },
+  }
 
   get panelDefinitions() {
     return this._panelDefinitions;
-  },
+  }
 
   set panelDefinitions(definitions) {
     this._panelDefinitions = definitions;
     this._combineAndSortPanelDefinitions();
-  },
+  }
 
   get visibleAdditionalTools() {
     if (!this._visibleAdditionalTools) {
@@ -490,14 +490,14 @@ Toolbox.prototype = {
     }
 
     return this._visibleAdditionalTools;
-  },
+  }
 
   set visibleAdditionalTools(tools) {
     this._visibleAdditionalTools = tools;
     if (this.isReady) {
       this._combineAndSortPanelDefinitions();
     }
-  },
+  }
 
   
 
@@ -510,9 +510,9 @@ Toolbox.prototype = {
     ];
     definitions = sortPanelDefinitions(definitions);
     this.component.setPanelDefinitions(definitions);
-  },
+  }
 
-  lastUsedToolId: null,
+  lastUsedToolId = null;
 
   
 
@@ -522,14 +522,14 @@ Toolbox.prototype = {
 
   getToolPanels() {
     return new Map(this._toolPanels);
-  },
+  }
 
   
 
 
   getPanel(id) {
     return this._toolPanels.get(id);
-  },
+  }
 
   
 
@@ -555,7 +555,7 @@ Toolbox.prototype = {
         });
       }
     });
-  },
+  }
 
   
 
@@ -564,7 +564,7 @@ Toolbox.prototype = {
 
   getCurrentPanel() {
     return this._toolPanels.get(this.currentToolId);
-  },
+  }
 
   
 
@@ -574,11 +574,11 @@ Toolbox.prototype = {
 
   get target() {
     return this.commands.targetCommand.targetFront;
-  },
+  }
 
   get threadFront() {
     return this.commands.targetCommand.targetFront.threadFront;
-  },
+  }
 
   
 
@@ -586,14 +586,14 @@ Toolbox.prototype = {
 
   get hostType() {
     return this._hostType;
-  },
+  }
 
   
 
 
   get win() {
     return this._win;
-  },
+  }
 
   
 
@@ -602,25 +602,25 @@ Toolbox.prototype = {
 
   get topWindow() {
     return DevToolsUtils.getTopWindow(this.win);
-  },
+  }
 
   get topDoc() {
     return this.topWindow.document;
-  },
+  }
 
   
 
 
   get doc() {
     return this.win.document;
-  },
+  }
 
   
 
 
   get splitConsole() {
     return this._splitConsole;
-  },
+  }
 
   
 
@@ -635,7 +635,7 @@ Toolbox.prototype = {
       focusedWin ===
         this.doc.querySelector("#toolbox-panel-iframe-webconsole").contentWindow
     );
-  },
+  }
 
   
 
@@ -648,15 +648,15 @@ Toolbox.prototype = {
     }
 
     return this._splitConsoleEnabled;
-  },
+  }
 
   get isBrowserToolbox() {
     return this.hostType === Toolbox.HostType.BROWSERTOOLBOX;
-  },
+  }
 
   get isMultiProcessBrowserToolbox() {
     return this.isBrowserToolbox;
-  },
+  }
 
   
 
@@ -669,7 +669,7 @@ Toolbox.prototype = {
       
       this.commands.targetCommand.store.dispatch(selectTarget(targetActorID));
     }
-  },
+  }
 
   
 
@@ -685,7 +685,7 @@ Toolbox.prototype = {
     }
 
     return this.commands.client.getFrontByID(selectedTarget.actorID);
-  },
+  }
 
   
 
@@ -706,7 +706,7 @@ Toolbox.prototype = {
 
       dbg.selectThread(threadActorID);
     }
-  },
+  }
 
   
 
@@ -719,7 +719,7 @@ Toolbox.prototype = {
     } else if (resource.state == "resumed") {
       this._onTargetResumed(resource.targetFront);
     }
-  },
+  }
 
   
 
@@ -741,7 +741,7 @@ Toolbox.prototype = {
       const panel = await this.selectTool("jsdebugger");
       panel.showTracerSidebar();
     }
-  },
+  }
 
   
 
@@ -764,7 +764,7 @@ Toolbox.prototype = {
       profileCaptureResult,
       null
     );
-  },
+  }
 
   
 
@@ -803,7 +803,7 @@ Toolbox.prototype = {
       this._pausedTargets.add(targetFront);
       this.emit("toolbox-paused");
     }
-  },
+  }
 
   
 
@@ -818,7 +818,7 @@ Toolbox.prototype = {
         this.unhighlightTool("jsdebugger");
       }
     }
-  },
+  }
 
   
 
@@ -876,13 +876,13 @@ Toolbox.prototype = {
     ) {
       await this.switchHostToTab(targetFront.targetForm.browsingContextID);
     }
-  },
+  }
 
   async _onTargetSelected({ targetFront }) {
     this._updateFrames({ selected: targetFront.actorID });
     this.selectTarget(targetFront.actorID);
     this._refreshHostTitle();
-  },
+  }
 
   _onTargetDestroyed({ targetFront }) {
     removeTarget(this.store, targetFront);
@@ -921,7 +921,7 @@ Toolbox.prototype = {
         ],
       });
     }
-  },
+  }
 
   _onTargetThreadFrontResumeWrongOrder() {
     const box = this.getNotificationBox();
@@ -931,7 +931,7 @@ Toolbox.prototype = {
       "",
       box.PRIORITY_WARNING_HIGH
     );
-  },
+  }
 
   
 
@@ -1179,7 +1179,7 @@ Toolbox.prototype = {
         
       }
     }
-  },
+  }
 
   
 
@@ -1192,7 +1192,7 @@ Toolbox.prototype = {
       return null;
     }
     return this.win.docShell.chromeEventHandler;
-  },
+  }
 
   
 
@@ -1229,7 +1229,7 @@ Toolbox.prototype = {
       this._onContextMenu
     );
     this._chromeEventHandler.addEventListener("mousedown", this._onMouseDown);
-  },
+  }
 
   _removeChromeEventHandlerEvents() {
     if (!this._chromeEventHandler) {
@@ -1257,7 +1257,7 @@ Toolbox.prototype = {
     );
 
     this._chromeEventHandler = null;
-  },
+  }
 
   _addShortcuts() {
     
@@ -1318,7 +1318,7 @@ Toolbox.prototype = {
       
       ZoomKeys.register(this.win, this.shortcuts);
     }
-  },
+  }
 
   
 
@@ -1365,14 +1365,14 @@ Toolbox.prototype = {
         box.PRIORITY_CRITICAL_HIGH
       );
     }
-  },
+  }
 
   _removeShortcuts() {
     if (this.shortcuts) {
       this.shortcuts.destroy();
       this.shortcuts = null;
     }
-  },
+  }
 
   
 
@@ -1433,14 +1433,14 @@ Toolbox.prototype = {
     } else {
       shortcuts.on(L10N.getStr("toolbox.toggleToolbox.key"), this.closeToolbox);
     }
-  },
+  }
 
   _removeWindowHostShortcuts() {
     if (this._windowHostShortcuts) {
       this._windowHostShortcuts.destroy();
       this._windowHostShortcuts = null;
     }
-  },
+  }
 
   _onContextMenu(e) {
     
@@ -1470,7 +1470,7 @@ Toolbox.prototype = {
     if (isInInput) {
       this.openTextBoxContextMenu(e.screenX, e.screenY);
     }
-  },
+  }
 
   _onMouseDown(e) {
     const isMiddleClick = e.button === 1;
@@ -1481,7 +1481,7 @@ Toolbox.prototype = {
       
       e.preventDefault();
     }
-  },
+  }
 
   _getDebugTargetData() {
     const url = new URL(this.win.location);
@@ -1496,11 +1496,11 @@ Toolbox.prototype = {
       descriptorType: this._descriptorFront.descriptorType,
       descriptorName: this._descriptorFront.name,
     };
-  },
+  }
 
   isDebugTargetFenix() {
     return this._getDebugTargetData()?.runtimeInfo?.isFenix;
-  },
+  }
 
   
 
@@ -1508,27 +1508,27 @@ Toolbox.prototype = {
 
   get React() {
     return this.browserRequire("devtools/client/shared/vendor/react");
-  },
+  }
 
   get ReactDOM() {
     return this.browserRequire("devtools/client/shared/vendor/react-dom");
-  },
+  }
 
   get ReactRedux() {
     return this.browserRequire("devtools/client/shared/vendor/react-redux");
-  },
+  }
 
   get ToolboxController() {
     return this.browserRequire(
       "devtools/client/framework/components/ToolboxController"
     );
-  },
+  }
 
   get AppErrorBoundary() {
     return this.browserRequire(
       "resource://devtools/client/shared/components/AppErrorBoundary.js"
     );
-  },
+  }
 
   
 
@@ -1541,7 +1541,7 @@ Toolbox.prototype = {
     }
     this._sourceMapLoader = new SourceMapLoader(this.commands.targetCommand);
     return this._sourceMapLoader;
-  },
+  }
 
   
 
@@ -1559,7 +1559,7 @@ Toolbox.prototype = {
 
     this._parserWorker = new ParserDispatcher();
     return this._parserWorker;
-  },
+  }
 
   
 
@@ -1577,7 +1577,7 @@ Toolbox.prototype = {
       this.sourceMapLoader
     );
     return this._sourceMapURLService;
-  },
+  }
 
   
   _getTelemetryHostId() {
@@ -1597,7 +1597,7 @@ Toolbox.prototype = {
       default:
         return 9;
     }
-  },
+  }
 
   
   _getTelemetryHostString() {
@@ -1617,7 +1617,7 @@ Toolbox.prototype = {
       default:
         return "bottom";
     }
-  },
+  }
 
   _pingTelemetry() {
     Services.prefs.setBoolPref("devtools.everOpened", true);
@@ -1649,7 +1649,7 @@ Toolbox.prototype = {
       "host",
       this._getTelemetryHostString()
     );
-  },
+  }
 
   
 
@@ -1766,7 +1766,7 @@ Toolbox.prototype = {
     EventEmitter.decorate(button);
 
     return button;
-  },
+  }
 
   _splitConsoleOnKeypress(e) {
     if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE || !this.isSplitConsoleEnabled()) {
@@ -1794,7 +1794,7 @@ Toolbox.prototype = {
     ) {
       e.preventDefault();
     }
-  },
+  }
 
   
 
@@ -1815,12 +1815,12 @@ Toolbox.prototype = {
         event.preventDefault();
       }
     });
-  },
+  }
 
   _addWindowListeners() {
     this.win.addEventListener("unload", this.destroy);
     this.win.addEventListener("message", this._onBrowserMessage, true);
-  },
+  }
 
   _removeWindowListeners() {
     
@@ -1828,7 +1828,7 @@ Toolbox.prototype = {
       this.win.removeEventListener("unload", this.destroy);
       this.win.removeEventListener("message", this._onBrowserMessage, true);
     }
-  },
+  }
 
   
   _onBrowserMessage(event) {
@@ -1841,14 +1841,14 @@ Toolbox.prototype = {
     if (event.data?.name === "host-raised") {
       this.emit("host-raised");
     }
-  },
+  }
 
   _saveSplitConsoleHeight() {
     const height = parseInt(this.webconsolePanel.style.height, 10);
     if (!isNaN(height)) {
       Services.prefs.setIntPref(SPLITCONSOLE_HEIGHT_PREF, height);
     }
-  },
+  }
 
   
 
@@ -1887,7 +1887,7 @@ Toolbox.prototype = {
     this.webconsolePanel.style.height = openedConsolePanel
       ? ""
       : Services.prefs.getIntPref(SPLITCONSOLE_HEIGHT_PREF) + "px";
-  },
+  }
 
   
 
@@ -1906,7 +1906,7 @@ Toolbox.prototype = {
     ) {
       toolDefinition.onkey(this.getCurrentPanel(), this);
     }
-  },
+  }
 
   
 
@@ -1927,7 +1927,7 @@ Toolbox.prototype = {
       );
     }
     return this._notificationBox;
-  },
+  }
 
   
 
@@ -1963,7 +1963,7 @@ Toolbox.prototype = {
 
     this.component.setCurrentHostType(this.hostType);
     this.component.setHostTypes(hostTypes);
-  },
+  }
 
   postMessage(msg) {
     
@@ -1974,7 +1974,7 @@ Toolbox.prototype = {
       msg.frameId = this.frameId;
       this.topWindow.postMessage(msg, "*");
     }
-  },
+  }
 
   
 
@@ -1991,7 +1991,7 @@ Toolbox.prototype = {
       definition =>
         definition.isToolSupported(this) && definition.id !== "options"
     );
-  },
+  }
 
   async _setInitialMeatballState() {
     let disableAutohide, pseudoLocale;
@@ -2024,7 +2024,7 @@ Toolbox.prototype = {
       );
       this.component.setAlwaysOnTop(alwaysOnTop);
     }
-  },
+  }
 
   
 
@@ -2090,7 +2090,7 @@ Toolbox.prototype = {
     
     this._componentMount = this.doc.getElementById("toolbox-toolbar-mount");
     this._appBoundary = this.ReactDOM.render(element, this._componentMount);
-  },
+  }
 
   
 
@@ -2101,7 +2101,7 @@ Toolbox.prototype = {
 
   _onToolbarFocus(id) {
     this.component.setFocusedButton(id);
-  },
+  }
 
   
 
@@ -2166,7 +2166,7 @@ Toolbox.prototype = {
 
     event.preventDefault();
     event.stopPropagation();
-  },
+  }
 
   
 
@@ -2185,7 +2185,7 @@ Toolbox.prototype = {
     });
 
     this.component.setToolboxButtons(this.toolbarButtons);
-  },
+  }
 
   
 
@@ -2205,7 +2205,7 @@ Toolbox.prototype = {
     });
 
     return this.frameButton;
-  },
+  }
 
   
 
@@ -2222,7 +2222,7 @@ Toolbox.prototype = {
     this.updateErrorCountButton();
 
     return this.errorCountButton;
-  },
+  }
 
   
 
@@ -2244,7 +2244,7 @@ Toolbox.prototype = {
     } else {
       this.nodePicker.togglePicker(focus);
     }
-  },
+  }
 
   
 
@@ -2261,7 +2261,7 @@ Toolbox.prototype = {
       
       event.stopImmediatePropagation();
     }
-  },
+  }
 
   async _onPickerStarting() {
     if (this.isDestroying()) {
@@ -2273,11 +2273,11 @@ Toolbox.prototype = {
     
     this.getPanel("inspector").hideEyeDropper();
     this.on("select", this._onToolSelectedStopPicker);
-  },
+  }
 
   async _onPickerStarted() {
     this.doc.addEventListener("keypress", this._onPickerKeypress, true);
-  },
+  }
 
   _onPickerStopped() {
     if (this.isDestroying()) {
@@ -2287,11 +2287,11 @@ Toolbox.prototype = {
     this.off("select", this._onToolSelectedStopPicker);
     this.doc.removeEventListener("keypress", this._onPickerKeypress, true);
     this.pickerButton.isChecked = false;
-  },
+  }
 
   _onToolSelectedStopPicker() {
     this.nodePicker.stop({ canceled: true });
-  },
+  }
 
   
 
@@ -2301,15 +2301,15 @@ Toolbox.prototype = {
     if (this.hostType !== Toolbox.HostType.WINDOW) {
       this.win.focus();
     }
-  },
+  }
 
   _onPickerPicked(nodeFront) {
     this.selection.setNodeFront(nodeFront, { reason: "picker-node-picked" });
-  },
+  }
 
   _onPickerPreviewed(nodeFront) {
     this.selection.setNodeFront(nodeFront, { reason: "picker-node-previewed" });
-  },
+  }
 
   
 
@@ -2329,7 +2329,7 @@ Toolbox.prototype = {
 
     const ui = ResponsiveUIManager.getResponsiveUIForTab(localTab);
     await ui.setElementPickerState(state, pickerType);
-  },
+  }
 
   
 
@@ -2349,14 +2349,14 @@ Toolbox.prototype = {
     });
 
     return this.pickerButton;
-  },
+  }
 
   _getPickerAdditionalClassName() {
     if (this.isDebugTargetFenix()) {
       return "remote-fenix";
     }
     return null;
-  },
+  }
 
   
 
@@ -2385,7 +2385,7 @@ Toolbox.prototype = {
     return isMac
       ? L10N.getFormatStr(label, shortcut, shortcutMac)
       : L10N.getFormatStr(label, shortcut);
-  },
+  }
 
   async _listenAndApplyConfigurationPref() {
     this._onBooleanConfigurationPrefChange =
@@ -2426,7 +2426,7 @@ Toolbox.prototype = {
     await this.commands.threadConfigurationCommand.updateConfiguration(
       threadConfiguration
     );
-  },
+  }
 
   
 
@@ -2451,7 +2451,7 @@ Toolbox.prototype = {
 
     
     this.emitForTests("new-configuration-applied", prefName);
-  },
+  }
 
   
 
@@ -2461,7 +2461,7 @@ Toolbox.prototype = {
       button.isVisible = this._commandIsVisible(button);
     });
     this.component.setToolboxButtons(this.toolbarButtons);
-  },
+  }
 
   
 
@@ -2478,7 +2478,7 @@ Toolbox.prototype = {
       inspectorFront.destroyHighlighters();
       this.component.setToolboxButtons(this.toolbarButtons);
     }
-  },
+  }
 
   
 
@@ -2499,7 +2499,7 @@ Toolbox.prototype = {
       button.className = this._getPickerAdditionalClassName();
       button.disabled = null;
     }
-  },
+  }
 
   
 
@@ -2540,13 +2540,13 @@ Toolbox.prototype = {
     if (isVisible) {
       this.frameButton.isChecked = !selectedFrame.isTopLevel;
     }
-  },
+  }
 
   updateErrorCountButton() {
     this.errorCountButton.isVisible =
       this._commandIsVisible(this.errorCountButton) && this._errorCount > 0;
     this.errorCountButton.errorCount = this._errorCount;
-  },
+  }
 
   
 
@@ -2561,7 +2561,7 @@ Toolbox.prototype = {
     if (!this._splitConsoleEnabled && this.splitConsole) {
       this.closeSplitConsole();
     }
-  },
+  }
 
   
 
@@ -2582,7 +2582,7 @@ Toolbox.prototype = {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -2614,7 +2614,7 @@ Toolbox.prototype = {
     }
 
     deck.appendChild(panel);
-  },
+  }
 
   
 
@@ -2630,7 +2630,7 @@ Toolbox.prototype = {
     }
 
     return this._additionalToolDefinitions;
-  },
+  }
 
   
 
@@ -2643,7 +2643,7 @@ Toolbox.prototype = {
       return Array.from(this.additionalToolDefinitions.values());
     }
     return [];
-  },
+  }
 
   
 
@@ -2655,7 +2655,7 @@ Toolbox.prototype = {
     return this.visibleAdditionalTools.map(toolId =>
       this.additionalToolDefinitions.get(toolId)
     );
-  },
+  }
 
   
 
@@ -2667,7 +2667,7 @@ Toolbox.prototype = {
 
   hasAdditionalTool(toolId) {
     return this.additionalToolDefinitions.has(toolId);
-  },
+  }
 
   
 
@@ -2697,7 +2697,7 @@ Toolbox.prototype = {
     } else {
       this.once("ready", buildPanel);
     }
-  },
+  }
 
   
 
@@ -2705,7 +2705,7 @@ Toolbox.prototype = {
 
   get inspectorExtensionSidebars() {
     return this._inspectorExtensionSidebars;
-  },
+  }
 
   
 
@@ -2732,7 +2732,7 @@ Toolbox.prototype = {
     }
 
     inspector.addExtensionSidebar(id, options);
-  },
+  }
 
   
 
@@ -2763,7 +2763,7 @@ Toolbox.prototype = {
 
     const inspector = this.getPanel("inspector");
     inspector.removeExtensionSidebar(id);
-  },
+  }
 
   
 
@@ -2788,7 +2788,7 @@ Toolbox.prototype = {
       id => id !== toolId
     );
     this.unloadTool(toolId);
-  },
+  }
 
   
 
@@ -2917,7 +2917,7 @@ Toolbox.prototype = {
         iframe.addEventListener("DOMContentLoaded", callback);
       }
     });
-  },
+  }
 
   
 
@@ -2936,7 +2936,7 @@ Toolbox.prototype = {
       
       docEl.setAttribute("dir", this.direction);
     }
-  },
+  }
 
   
 
@@ -2970,7 +2970,7 @@ Toolbox.prototype = {
         this.setIframeVisible(iframe, visible);
       }
     });
-  },
+  }
 
   
 
@@ -3019,7 +3019,7 @@ Toolbox.prototype = {
 
     
     doc.dispatchEvent(new win.Event("visibilitychange"));
-  },
+  }
 
   
 
@@ -3096,7 +3096,7 @@ Toolbox.prototype = {
       this.emit(id + "-selected", panel);
       return panel;
     });
-  },
+  }
 
   _pingTelemetrySelectTool(id, reason) {
     const width = Math.ceil(this.win.outerWidth / 50) * 50;
@@ -3160,7 +3160,7 @@ Toolbox.prototype = {
     }
 
     this.telemetry.toolOpened(id, this);
-  },
+  }
 
   
 
@@ -3176,7 +3176,7 @@ Toolbox.prototype = {
     } else {
       iframe.blur();
     }
-  },
+  }
 
   
 
@@ -3186,7 +3186,7 @@ Toolbox.prototype = {
     if (consolePanel) {
       consolePanel.focusInput();
     }
-  },
+  }
 
   
 
@@ -3196,7 +3196,7 @@ Toolbox.prototype = {
     if (consolePanel) {
       consolePanel.hud.ui.disableAllNetworkMessages();
     }
-  },
+  }
 
   
 
@@ -3218,27 +3218,27 @@ Toolbox.prototype = {
     }
 
     this._lastFocusedElement = originalTarget;
-  },
+  }
 
   
   
-  _isToolboxFocused: false,
+  _isToolboxFocused = false;
 
   _onFocus({ originalTarget }) {
     this._isToolboxFocused = true;
     this._debounceUpdateFocusedState();
 
     this._updateLastFocusedElementForSplitConsole(originalTarget);
-  },
+  }
 
   _onBlur() {
     this._isToolboxFocused = false;
     this._debounceUpdateFocusedState();
-  },
+  }
 
   _onTabsOrderUpdated() {
     this._combineAndSortPanelDefinitions();
-  },
+  }
 
   
 
@@ -3282,7 +3282,7 @@ Toolbox.prototype = {
         this.focusConsoleInput();
       }
     });
-  },
+  }
 
   
 
@@ -3309,7 +3309,7 @@ Toolbox.prototype = {
       this._lastFocusedElement.focus();
     }
     return Promise.resolve();
-  },
+  }
 
   
 
@@ -3326,7 +3326,7 @@ Toolbox.prototype = {
     }
 
     return Promise.resolve();
-  },
+  }
 
   
 
@@ -3347,7 +3347,7 @@ Toolbox.prototype = {
     
     
     event.preventDefault();
-  },
+  }
 
   
 
@@ -3360,7 +3360,7 @@ Toolbox.prototype = {
         ? definitions[0]
         : definitions[index + 1];
     return this.selectTool(definition.id, "select_next_key");
-  },
+  }
 
   
 
@@ -3373,7 +3373,7 @@ Toolbox.prototype = {
         ? definitions[definitions.length - 1]
         : definitions[index - 1];
     return this.selectTool(definition.id, "select_prev_key");
-  },
+  }
 
   
 
@@ -3384,7 +3384,7 @@ Toolbox.prototype = {
 
   isHighlighted(id) {
     return this.component.state.highlightedTools.has(id);
-  },
+  }
 
   
 
@@ -3397,7 +3397,7 @@ Toolbox.prototype = {
       await this.isOpen;
     }
     this.component.highlightTool(id);
-  },
+  }
 
   
 
@@ -3410,7 +3410,7 @@ Toolbox.prototype = {
       await this.isOpen;
     }
     this.component.unhighlightTool(id);
-  },
+  }
 
   
 
@@ -3419,7 +3419,7 @@ Toolbox.prototype = {
     this.postMessage({ name: "raise-host" });
 
     return this.once("host-raised");
-  },
+  }
 
   
 
@@ -3468,7 +3468,7 @@ Toolbox.prototype = {
     }
     const delay = this.win.performance.now() - start;
     Glean.devtools.toolboxPageReloadDelay[toolId].accumulateSingleSample(delay);
-  },
+  }
 
   
 
@@ -3521,7 +3521,7 @@ Toolbox.prototype = {
       name: "set-host-title",
       title,
     });
-  },
+  }
 
   
 
@@ -3541,7 +3541,7 @@ Toolbox.prototype = {
       return url;
     }
     return parsedURL.pathname;
-  },
+  }
 
   
 
@@ -3556,7 +3556,7 @@ Toolbox.prototype = {
         this.commands.client.mainRoot.getFront("preference");
     }
     return this._preferenceFrontRequest;
-  },
+  }
 
   
 
@@ -3573,7 +3573,7 @@ Toolbox.prototype = {
     }
     this.component.setPseudoLocale(pseudoLocale);
     this._pseudoLocaleChanged = true;
-  },
+  }
 
   
 
@@ -3595,7 +3595,7 @@ Toolbox.prototype = {
       default:
         return "none";
     }
-  },
+  }
 
   async toggleNoAutohide() {
     const front = await this.preferenceFront;
@@ -3611,7 +3611,7 @@ Toolbox.prototype = {
       this.component.setDisableAutohide(toggledValue);
     }
     this._autohideHasBeenToggled = true;
-  },
+  }
 
   
 
@@ -3630,7 +3630,7 @@ Toolbox.prototype = {
     const addonId = this._descriptorFront.id;
     await this.destroy();
     gDevTools.showToolboxForWebExtension(addonId);
-  },
+  }
 
   async _isDisableAutohideEnabled() {
     if (
@@ -3642,7 +3642,7 @@ Toolbox.prototype = {
 
     const prefFront = await this.preferenceFront;
     return prefFront.getBoolPref(DISABLE_AUTOHIDE_PREF);
-  },
+  }
 
   async _listFrames() {
     if (
@@ -3660,7 +3660,7 @@ Toolbox.prototype = {
     } catch (e) {
       console.error("Error while listing frames", e);
     }
-  },
+  }
 
   
 
@@ -3688,7 +3688,7 @@ Toolbox.prototype = {
     
     
     this.commands.targetCommand.selectTarget(frameInfo.targetFront);
-  },
+  }
 
   
 
@@ -3718,7 +3718,7 @@ Toolbox.prototype = {
     }
     const highlighter = this.getHighlighter();
     return highlighter.highlight(nodeFront);
-  },
+  }
 
   
 
@@ -3835,7 +3835,7 @@ Toolbox.prototype = {
     } else {
       updateUiElements();
     }
-  },
+  }
 
   
 
@@ -3848,14 +3848,14 @@ Toolbox.prototype = {
     }
 
     return this.frameMap.get(this.selectedFrameId).isTopLevel;
-  },
+  }
 
   
 
 
   switchToPreviousHost() {
     return this.switchHost("previous");
-  },
+  }
 
   
 
@@ -3887,7 +3887,7 @@ Toolbox.prototype = {
     });
 
     return this.once("host-changed");
-  },
+  }
 
   
 
@@ -3906,7 +3906,7 @@ Toolbox.prototype = {
     });
 
     return this.once("switched-host-to-tab");
-  },
+  }
 
   _onSwitchedHost({ hostType }) {
     this._hostType = hostType;
@@ -3926,7 +3926,7 @@ Toolbox.prototype = {
     );
 
     this.component.setCurrentHostType(hostType);
-  },
+  }
 
   
 
@@ -3947,7 +3947,7 @@ Toolbox.prototype = {
     this.commands.targetCommand.selectTarget(target);
 
     this.emit("switched-host-to-tab");
-  },
+  }
 
   
 
@@ -3962,7 +3962,7 @@ Toolbox.prototype = {
 
   isToolRegistered(toolId) {
     return !!this.getToolDefinition(toolId);
-  },
+  }
 
   
 
@@ -3980,7 +3980,7 @@ Toolbox.prototype = {
       gDevTools.getToolDefinition(toolId) ||
       this.additionalToolDefinitions.get(toolId)
     );
-  },
+  }
 
   
 
@@ -4041,7 +4041,7 @@ Toolbox.prototype = {
         key.remove();
       }
     }
-  },
+  }
 
   
 
@@ -4072,7 +4072,7 @@ Toolbox.prototype = {
       
       this.emit("tool-registered", toolId);
     }
-  },
+  }
 
   
 
@@ -4086,7 +4086,7 @@ Toolbox.prototype = {
     
     
     this.emit("tool-unregistered", toolId);
-  },
+  }
 
   
 
@@ -4199,7 +4199,7 @@ Toolbox.prototype = {
         return _waitForHighlighterEvent("highlighter-hidden");
       }),
     };
-  },
+  }
 
   
 
@@ -4208,7 +4208,7 @@ Toolbox.prototype = {
 
   _safeAsyncAfterDestroy(fn) {
     return safeAsyncMethod(fn, () => !!this._destroyer);
-  },
+  }
 
   async _onNewSelectedNodeFront() {
     
@@ -4220,7 +4220,7 @@ Toolbox.prototype = {
     if (targetFrontActorID) {
       this.selectTarget(targetFrontActorID);
     }
-  },
+  }
 
   _onToolSelected() {
     this._refreshHostTitle();
@@ -4231,14 +4231,14 @@ Toolbox.prototype = {
 
     
     this.component.setToolboxButtons(this.toolbarButtons);
-  },
+  }
 
   
 
 
   _onInspectObject(packet) {
     this.inspectObjectActor(packet.objectActor, packet.inspectFromAnnotation);
-  },
+  }
 
   async inspectObjectActor(objectActor, inspectFromAnnotation) {
     const objectGrip = objectActor?.getGrip
@@ -4274,7 +4274,7 @@ Toolbox.prototype = {
       const panel = this.getPanel("webconsole");
       panel.hud.ui.inspectObjectActor(objectActor);
     }
-  },
+  }
 
   
 
@@ -4283,18 +4283,18 @@ Toolbox.prototype = {
 
   getNotificationBox() {
     return this.notificationBox;
-  },
+  }
 
   async closeToolbox() {
     await this.destroy();
-  },
+  }
 
   
 
 
   isDestroying() {
     return this._destroyer;
-  },
+  }
 
   
 
@@ -4313,7 +4313,7 @@ Toolbox.prototype = {
     this._destroyToolbox().then(destroyerResolve);
 
     return this._destroyer;
-  },
+  }
 
   async _destroyToolbox() {
     this.emit("destroy");
@@ -4549,7 +4549,7 @@ Toolbox.prototype = {
     await onceDestroyed;
 
     Services.obs.removeObserver(leakCheckObserver, topic);
-  },
+  }
 
   
 
@@ -4567,14 +4567,14 @@ Toolbox.prototype = {
     menu.once("close", () => this.emit("menu-close"));
 
     menu.popup(x, y, this.doc);
-  },
+  }
 
   
 
 
   getTextBoxContextMenu() {
     return this.topDoc.getElementById("toolbox-menu");
-  },
+  }
 
   
 
@@ -4599,7 +4599,7 @@ Toolbox.prototype = {
     if (this._pseudoLocaleChanged) {
       await preferenceFront.clearUserPref(PSEUDO_LOCALE_PREF);
     }
-  },
+  }
 
   
 
@@ -4611,19 +4611,19 @@ Toolbox.prototype = {
       this.harAutomation = new HarAutomation();
       await this.harAutomation.initialize(this);
     }
-  },
+  }
   destroyHarAutomation() {
     if (this.harAutomation) {
       this.harAutomation.destroy();
     }
-  },
+  }
 
   
 
 
   get gViewSourceUtils() {
     return this.win.gViewSourceUtils;
-  },
+  }
 
   
 
@@ -4640,7 +4640,7 @@ Toolbox.prototype = {
     
     
     return viewSource.viewSourceInStyleEditor(this, url, 1);
-  },
+  }
 
   
 
@@ -4665,7 +4665,7 @@ Toolbox.prototype = {
     }
 
     return viewSource.viewSourceInStyleEditor(this, url, line, column);
-  },
+  }
 
   
 
@@ -4694,7 +4694,7 @@ Toolbox.prototype = {
       line,
       column
     );
-  },
+  }
 
   async viewElementInInspector(objectGrip, reason) {
     
@@ -4704,7 +4704,7 @@ Toolbox.prototype = {
     if (nodeFound) {
       await this.selectTool("inspector", reason);
     }
-  },
+  }
 
   
 
@@ -4718,7 +4718,7 @@ Toolbox.prototype = {
     }
 
     return viewSource.viewSourceInDebugger(this, url, null, null, null, null);
-  },
+  }
 
   
 
@@ -4758,7 +4758,7 @@ Toolbox.prototype = {
       sourceId,
       reason
     );
-  },
+  }
 
   
 
@@ -4767,7 +4767,7 @@ Toolbox.prototype = {
 
   viewSource(sourceURL, sourceLine, sourceColumn) {
     return viewSource.viewSource(this, sourceURL, sourceLine, sourceColumn);
-  },
+  }
 
   
 
@@ -4793,7 +4793,7 @@ Toolbox.prototype = {
     await this._netMonitorAPI.connect(this);
 
     return this._netMonitorAPI;
-  },
+  }
 
   
 
@@ -4808,7 +4808,7 @@ Toolbox.prototype = {
     
     
     return har.log;
-  },
+  }
 
   
 
@@ -4821,7 +4821,7 @@ Toolbox.prototype = {
   async addRequestFinishedListener(listener) {
     const netMonitor = await this.getNetMonitorAPI();
     netMonitor.addRequestFinishedListener(listener);
-  },
+  }
 
   async removeRequestFinishedListener(listener) {
     const netMonitor = await this.getNetMonitorAPI();
@@ -4838,7 +4838,7 @@ Toolbox.prototype = {
       this._netMonitorAPI.destroy();
       this._netMonitorAPI = null;
     }
-  },
+  }
 
   
 
@@ -4851,7 +4851,7 @@ Toolbox.prototype = {
   async fetchResponseContent(requestId) {
     const netMonitor = await this.getNetMonitorAPI();
     return netMonitor.fetchResponseContent(requestId);
-  },
+  }
 
   
 
@@ -4869,7 +4869,7 @@ Toolbox.prototype = {
     return Array.from(this._webExtensions).map(([uuid, { name, pref }]) => {
       return { uuid, name, pref };
     });
-  },
+  }
 
   
 
@@ -4885,7 +4885,7 @@ Toolbox.prototype = {
     
     this._webExtensions.set(extensionUUID, { name, pref });
     this.emit("webextension-registered", extensionUUID);
-  },
+  }
 
   
 
@@ -4900,7 +4900,7 @@ Toolbox.prototype = {
     
     this._webExtensions.delete(extensionUUID);
     this.emit("webextension-unregistered", extensionUUID);
-  },
+  }
 
   
 
@@ -4912,7 +4912,7 @@ Toolbox.prototype = {
   isWebExtensionEnabled(extensionUUID) {
     const extInfo = this._webExtensions.get(extensionUUID);
     return extInfo && Services.prefs.getBoolPref(extInfo.pref, false);
-  },
+  }
 
   
 
@@ -4936,7 +4936,7 @@ Toolbox.prototype = {
     }
 
     return id;
-  },
+  }
 
   
 
@@ -4953,7 +4953,7 @@ Toolbox.prototype = {
       
       this.component.setDebugTargetData(this._getDebugTargetData());
     }
-  },
+  }
 
   _onResourceAvailable(resources) {
     let errors = this._errorCount || 0;
@@ -5039,7 +5039,7 @@ Toolbox.prototype = {
     }
 
     this.setErrorCount(errors);
-  },
+  }
 
   _onResourceUpdated(resources) {
     let errors = this._errorCount || 0;
@@ -5057,7 +5057,7 @@ Toolbox.prototype = {
     }
 
     this.setErrorCount(errors);
-  },
+  }
 
   
 
@@ -5075,5 +5075,7 @@ Toolbox.prototype = {
     
     this.updateErrorCountButton();
     this._throttledSetToolboxButtons();
-  },
-};
+  }
+}
+
+exports.Toolbox = Toolbox;
