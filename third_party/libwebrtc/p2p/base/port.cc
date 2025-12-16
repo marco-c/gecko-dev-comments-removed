@@ -133,7 +133,10 @@ Port::Port(const PortParametersRef& args,
       shared_socket_(shared_socket),
       network_cost_(args.network->GetCost(env_.field_trials())),
       role_conflict_callback_(nullptr),
-      weak_factory_(this) {
+      weak_factory_(this),
+      unknown_address_trampoline_(this),
+      read_packet_trampoline_(this),
+      sent_packet_trampoline_(this) {
   RTC_DCHECK_RUN_ON(thread_);
   RTC_DCHECK(factory_ != nullptr);
   
@@ -394,7 +397,7 @@ void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
   const SocketAddress& addr = packet.source_address();
   
   if (enable_port_packets_) {
-    SignalReadPacket(this, data, size, addr);
+    NotifyReadPacket(this, data, size, addr);
     return;
   }
 
@@ -415,7 +418,7 @@ void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
     
     
     
-    SignalUnknownAddress(this, addr, proto, msg.get(), remote_username, false);
+    NotifyUnknownAddress(this, addr, proto, msg.get(), remote_username, false);
     
     if (!MaybeIceRoleConflict(addr, msg.get(), remote_username)) {
       RTC_LOG(LS_INFO) << "Received conflicting role from the peer.";
@@ -1078,6 +1081,47 @@ void Port::NotifyRoleConflict() {
   } else {
     SignalRoleConflict(this);
   }
+}
+
+void Port::SubscribeUnknownAddress(absl::AnyInvocable<void(PortInterface*,
+                                                           const SocketAddress&,
+                                                           ProtocolType,
+                                                           IceMessage*,
+                                                           const std::string&,
+                                                           bool)> callback) {
+  unknown_address_trampoline_.Subscribe(std::move(callback));
+}
+
+void Port::NotifyUnknownAddress(PortInterface* port,
+                                const SocketAddress& address,
+                                ProtocolType proto,
+                                IceMessage* msg,
+                                const std::string& rf,
+                                bool port_muxed) {
+  SignalUnknownAddress(port, address, proto, msg, rf, port_muxed);
+}
+
+void Port::SubscribeReadPacket(
+    absl::AnyInvocable<
+        void(PortInterface*, const char*, size_t, const SocketAddress&)>
+        callback) {
+  read_packet_trampoline_.Subscribe(std::move(callback));
+}
+
+void Port::NotifyReadPacket(PortInterface* port,
+                            const char* data,
+                            size_t size,
+                            const SocketAddress& remote_address) {
+  SignalReadPacket(port, data, size, remote_address);
+}
+
+void Port::SubscribeSentPacket(
+    absl::AnyInvocable<void(const SentPacketInfo&)> callback) {
+  sent_packet_trampoline_.Subscribe(std::move(callback));
+}
+
+void Port::NotifySentPacket(const SentPacketInfo& packet) {
+  SignalSentPacket(packet);
 }
 
 }  
