@@ -40,8 +40,7 @@ add_task(async function () {
       }),
       makeBookmarkResult(context, {
         uri: `https://${host}/`,
-        
-        title: "",
+        title: host,
       }),
     ],
   });
@@ -70,8 +69,7 @@ add_task(async function () {
       }),
       makeBookmarkResult(context, {
         uri: `https://www.${host}/`,
-        
-        title: "",
+        title: `www.${host}`,
       }),
     ],
   });
