@@ -2472,29 +2472,30 @@ StyleAlignFlags nsContainerFrame::CSSAlignmentForAbsPosChild(
 
 StyleAlignFlags
 nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
-    const ReflowInput& aChildRI, LogicalAxis aLogicalAxis,
+    const SizeComputationInput& aSizingInput, LogicalAxis aLogicalAxis,
     const StylePositionArea& aResolvedPositionArea,
     const LogicalSize& aCBSize) const {
-  MOZ_ASSERT(aChildRI.mFrame->IsAbsolutelyPositioned(),
+  MOZ_ASSERT(aSizingInput.mFrame->IsAbsolutelyPositioned(),
              "This method should only be called for abspos children");
   
   
   StyleAlignFlags alignment =
-      aChildRI.mStylePosition->UsedSelfAlignment(aLogicalAxis, nullptr);
+      aSizingInput.mFrame->StylePosition()->UsedSelfAlignment(aLogicalAxis,
+                                                              nullptr);
 
   
   
   if (!aResolvedPositionArea.IsNone() && alignment == StyleAlignFlags::NORMAL) {
     const WritingMode cbWM = GetWritingMode();
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(
-        &aChildRI,  true);
+        &aSizingInput,  true);
     const auto anchorOffsetResolutionParams =
         AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
             anchorResolutionParams, &aCBSize);
 
     
     const auto singleAutoInset =
-        aChildRI.mStylePosition->GetSingleAutoInsetInAxis(
+        aSizingInput.mFrame->StylePosition()->GetSingleAutoInsetInAxis(
             aLogicalAxis, cbWM, anchorOffsetResolutionParams);
 
     
@@ -2518,13 +2519,13 @@ nsContainerFrame::CSSAlignmentForAbsPosChildWithinContainingBlock(
       const auto axis = ToStyleLogicalAxis(aLogicalAxis);
       const auto cbSWM = cbWM.ToStyleWritingMode();
       const auto selfWM =
-          aChildRI.mFrame->GetWritingMode().ToStyleWritingMode();
+          aSizingInput.mFrame->GetWritingMode().ToStyleWritingMode();
       Servo_ResolvePositionAreaSelfAlignment(&aResolvedPositionArea, axis,
                                              &cbSWM, &selfWM, &alignment);
     }
   }
 
-  return CSSAlignUtils::UsedAlignmentForAbsPos(aChildRI.mFrame, alignment,
+  return CSSAlignUtils::UsedAlignmentForAbsPos(aSizingInput.mFrame, alignment,
                                                aLogicalAxis, GetWritingMode());
 }
 
