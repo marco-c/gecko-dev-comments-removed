@@ -2286,7 +2286,6 @@ nsresult Database::MigrateV83Up() {
 }
 
 nsresult Database::MigrateV84Up() {
-  printf("Upgrading database.");
   
   nsresult rv = mMainConn->ExecuteSimpleSQL(
       "UPDATE moz_origins "
