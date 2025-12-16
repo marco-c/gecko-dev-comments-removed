@@ -1,5 +1,0 @@
-
-
-
-
-export * as foo from "./namespace-empty-module_FIXTURE.js";
