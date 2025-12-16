@@ -368,10 +368,6 @@ function makeMockContentAnalysis() {
   };
 }
 
-function whenTabLoaded(aTab, aCallback) {
-  promiseTabLoadEvent(aTab).then(aCallback);
-}
-
 
 
 

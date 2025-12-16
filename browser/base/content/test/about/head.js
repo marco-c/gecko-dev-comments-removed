@@ -104,10 +104,6 @@ function waitForCondition(condition, nextTest, errorMsg, retryTimes) {
   };
 }
 
-function whenTabLoaded(aTab, aCallback) {
-  promiseTabLoadEvent(aTab).then(aCallback);
-}
-
 
 
 

@@ -177,10 +177,6 @@ async function whenNewTabLoaded(aWindow, aCallback) {
   aCallback();
 }
 
-function whenTabLoaded(aTab, aCallback) {
-  promiseTabLoadEvent(aTab).then(aCallback);
-}
-
 
 
 
