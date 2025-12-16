@@ -24,7 +24,7 @@
 namespace mozilla {
 namespace webgl {
 
-MOZ_CONSTINIT  const ImageInfo ImageInfo::kUndefined;
+constinit  const ImageInfo ImageInfo::kUndefined;
 
 size_t ImageInfo::MemoryUsage() const {
   if (!IsDefined()) return 0;
