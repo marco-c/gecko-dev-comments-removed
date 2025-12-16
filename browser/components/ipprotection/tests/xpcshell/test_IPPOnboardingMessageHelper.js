@@ -11,7 +11,7 @@ const { ONBOARDING_PREF_FLAGS } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
 );
 const AUTOSTART_PREF = "browser.ipProtection.autoStartEnabled";
-const MODE_PREF = "browser.ipProtection.exceptionsMode";
+const PERM_NAME = "ipp-vpn";
 
 add_setup(async function () {
   await putServerInRemoteSettings();
@@ -59,34 +59,39 @@ add_task(async function test_IPPOnboardingMessage() {
     "IP Protection service should be active after starting"
   );
 
-  
+  let maskAfterVpn = IPPOnboardingMessage.readPrefMask();
   Assert.notStrictEqual(
-    IPPOnboardingMessage.readPrefMask() &
-      ONBOARDING_PREF_FLAGS.EVER_TURNED_ON_VPN,
+    maskAfterVpn & ONBOARDING_PREF_FLAGS.EVER_TURNED_ON_VPN,
     0,
     "Ever turned on VPN flag should be set"
   );
 
   
   Services.prefs.setBoolPref(AUTOSTART_PREF, true);
-  
-  Assert.notStrictEqual(
-    IPPOnboardingMessage.readPrefMask() &
-      ONBOARDING_PREF_FLAGS.EVER_TURNED_ON_AUTOSTART,
-    0,
-    "Ever turned on autostart flag should be set"
+  let maskAfterAutostart = IPPOnboardingMessage.readPrefMask();
+  Assert.strictEqual(
+    maskAfterAutostart,
+    maskAfterVpn | ONBOARDING_PREF_FLAGS.EVER_TURNED_ON_AUTOSTART,
+    "Autostart flag should be added to the mask"
   );
 
   
-  Services.prefs.setStringPref(MODE_PREF, "select");
-  
-  Assert.notStrictEqual(
-    IPPOnboardingMessage.readPrefMask() &
-      ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS,
-    0,
-    "Ever used site exceptions flag should be set"
+  const site = "https://www.example.com";
+  const principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(site);
+  const capability = Ci.nsIPermissionManager.DENY_ACTION;
+  Services.perms.addFromPrincipal(principal, PERM_NAME, capability);
+
+  let maskAfterSiteException = IPPOnboardingMessage.readPrefMask();
+  Assert.strictEqual(
+    maskAfterSiteException,
+    maskAfterAutostart | ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS,
+    "Site exceptions flag should be added to the mask"
   );
 
+  
+  Services.perms.removeByType(PERM_NAME);
   IPProtectionService.uninit();
+  IPPOnboardingMessage.uninit();
   sandbox.restore();
 });
