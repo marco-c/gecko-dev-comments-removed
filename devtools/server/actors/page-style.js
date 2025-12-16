@@ -582,11 +582,22 @@ class PageStyleActor extends Actor {
 
 
 
+  
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -607,7 +618,10 @@ class PageStyleActor extends Actor {
 
     const entries = this.getAppliedProps(
       node,
-      this.#getAllElementRules(node, undefined, options),
+      this.#getAllElementRules(node, {
+        skipPseudo: options.skipPseudo,
+        filter: options.filter,
+      }),
       options
     );
 
@@ -666,7 +680,12 @@ class PageStyleActor extends Actor {
 
 
 
-  #getAllElementRules(node, inherited, options) {
+
+
+
+
+
+  #getAllElementRules(node, { isInherited, skipPseudo, filter }) {
     const { bindingElement, pseudo } = CssLogic.getBindingElementAndPseudo(
       node.rawNode
     );
@@ -682,14 +701,14 @@ class PageStyleActor extends Actor {
         
         null
       );
-      const showElementStyles = !inherited && !pseudo;
+      const showElementStyles = !isInherited && !pseudo;
       const showInheritedStyles =
-        inherited && this.#hasInheritedProps(bindingElement.style);
+        isInherited && this.#hasInheritedProps(bindingElement.style);
 
       const rule = this.#getRuleItem(elementStyle, node.rawNode, {
         pseudoElement: null,
         isSystem: false,
-        inherited: false,
+        inherited: null,
       });
 
       
@@ -699,7 +718,10 @@ class PageStyleActor extends Actor {
 
       
       if (showInheritedStyles) {
-        rule.inherited = inherited;
+        
+        
+        
+        rule.inherited = node;
         rules.push(rule);
       }
     }
@@ -707,19 +729,22 @@ class PageStyleActor extends Actor {
     
     
     
-    this.#getElementRules(bindingElement, pseudo, inherited, options).forEach(
-      oneRule => {
-        
-        
-        
-        
-        oneRule.pseudoElement = null;
-        rules.push(oneRule);
-      }
-    );
+    this.#getElementRules(
+      bindingElement,
+      pseudo,
+      isInherited ? node : null,
+      filter
+    ).forEach(oneRule => {
+      
+      
+      
+      
+      oneRule.pseudoElement = null;
+      rules.push(oneRule);
+    });
 
     
-    if (options.skipPseudo) {
+    if (skipPseudo) {
       return rules;
     }
 
@@ -732,7 +757,7 @@ class PageStyleActor extends Actor {
 
     const relevantPseudoElements = [];
     for (const readPseudo of PSEUDO_ELEMENTS) {
-      if (!this.#pseudoIsRelevant(elementForPseudo, readPseudo, inherited)) {
+      if (!this.#pseudoIsRelevant(elementForPseudo, readPseudo, isInherited)) {
         continue;
       }
 
@@ -754,15 +779,15 @@ class PageStyleActor extends Actor {
       const pseudoRules = this.#getElementRules(
         elementForPseudo,
         readPseudo,
-        inherited,
-        options
+        isInherited ? node : null,
+        filter
       );
       
       
       
       if (
         SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
-        inherited
+        isInherited
       ) {
         rules.unshift(...pseudoRules);
       } else {
@@ -816,7 +841,15 @@ class PageStyleActor extends Actor {
   }
 
   
-  #pseudoIsRelevant(node, pseudo, inherited = false) {
+
+
+
+
+
+
+
+  
+  #pseudoIsRelevant(node, pseudo, isInherited = false) {
     switch (pseudo) {
       case "::after":
       case "::before":
@@ -825,22 +858,22 @@ class PageStyleActor extends Actor {
       case "::selection":
       case "::highlight":
       case "::target-text":
-        return !inherited;
+        return !isInherited;
       case "::marker":
-        return !inherited && this.#nodeIsListItem(node);
+        return !isInherited && this.#nodeIsListItem(node);
       case "::backdrop":
-        return !inherited && node.matches(":modal, :popover-open");
+        return !isInherited && node.matches(":modal, :popover-open");
       case "::cue":
-        return !inherited && node.nodeName == "VIDEO";
+        return !isInherited && node.nodeName == "VIDEO";
       case "::file-selector-button":
-        return !inherited && node.nodeName == "INPUT" && node.type == "file";
+        return !isInherited && node.nodeName == "INPUT" && node.type == "file";
       case "::details-content": {
         const isDetailsNode = node.nodeName == "DETAILS";
         if (!isDetailsNode) {
           return false;
         }
 
-        if (!inherited) {
+        if (!isInherited) {
           return true;
         }
 
@@ -868,20 +901,20 @@ class PageStyleActor extends Actor {
       }
       case "::placeholder":
       case "::-moz-placeholder":
-        return !inherited && this.#nodeIsTextfieldLike(node);
+        return !isInherited && this.#nodeIsTextfieldLike(node);
       case "::-moz-meter-bar":
-        return !inherited && node.nodeName == "METER";
+        return !isInherited && node.nodeName == "METER";
       case "::-moz-progress-bar":
-        return !inherited && node.nodeName == "PROGRESS";
+        return !isInherited && node.nodeName == "PROGRESS";
       case "::-moz-color-swatch":
-        return !inherited && node.nodeName == "INPUT" && node.type == "color";
+        return !isInherited && node.nodeName == "INPUT" && node.type == "color";
       case "::-moz-range-progress":
       case "::-moz-range-thumb":
       case "::-moz-range-track":
       case "::slider-fill":
       case "::slider-thumb":
       case "::slider-track":
-        return !inherited && node.nodeName == "INPUT" && node.type == "range";
+        return !isInherited && node.nodeName == "INPUT" && node.type == "range";
       case "::view-transition":
       case "::view-transition-group":
       case "::view-transition-image-pair":
@@ -907,7 +940,7 @@ class PageStyleActor extends Actor {
 
 
 
-  #getElementRules(node, pseudo, inherited, options) {
+  #getElementRules(node, pseudo, inherited, filter) {
     if (!Element.isInstance(node)) {
       return [];
     }
@@ -946,7 +979,7 @@ class PageStyleActor extends Actor {
         continue;
       }
 
-      if (isSystem && options.filter != SharedCssLogic.FILTER.UA) {
+      if (isSystem && filter != SharedCssLogic.FILTER.UA) {
         continue;
       }
 
@@ -990,18 +1023,14 @@ class PageStyleActor extends Actor {
 
 
   findEntryMatchingRule(nodeActor, matchingRule) {
-    const options = { matchedSelectors: true, inherited: true };
     let currentNodeActor = nodeActor;
     while (
       currentNodeActor &&
       currentNodeActor.rawNode.nodeType != Node.DOCUMENT_NODE
     ) {
-      for (const entry of this.#getAllElementRules(
-        currentNodeActor,
-        
-        nodeActor !== currentNodeActor ? currentNodeActor : null,
-        options
-      )) {
+      for (const entry of this.#getAllElementRules(currentNodeActor, {
+        isInherited: nodeActor !== currentNodeActor,
+      })) {
         if (entry.rule.rawRule === matchingRule) {
           return entry;
         }
@@ -1027,20 +1056,16 @@ class PageStyleActor extends Actor {
 
 
 
-
-
-
-
-
-
-
-
   getAppliedProps(node, entries, options) {
     if (options.inherited) {
       let parent = this.walker.parentNode(node);
       while (parent && parent.rawNode.nodeType != Node.DOCUMENT_NODE) {
         entries = entries.concat(
-          this.#getAllElementRules(parent, parent, options)
+          this.#getAllElementRules(parent, {
+            isInherited: true,
+            skipPseudo: options.skipPseudo,
+            filter: options.filter,
+          })
         );
         parent = this.walker.parentNode(parent);
       }
