@@ -9,6 +9,7 @@ use cssparser::ToCss as CssparserToCss;
 use cssparser::{serialize_string, ParseError, Parser, Token, UnicodeRange};
 use servo_arc::Arc;
 use std::fmt::{self, Write};
+use thin_vec::ThinVec;
 
 
 
@@ -599,6 +600,41 @@ pub mod specified {
 
 
 
+
+
+
+
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub enum NumericValue {
+    
+    
+    
+    
+    
+    Unit {
+        
+        value: f32,
+        
+        unit: CssString,
+    },
+
+    
+    
+    
+    
+    
+    Sum {
+        
+        values: ThinVec<NumericValue>,
+    },
+}
+
+
+
+
+
+
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub enum TypedValue {
@@ -608,6 +644,12 @@ pub enum TypedValue {
     
     
     Keyword(CssString),
+
+    
+    
+    
+    
+    Numeric(NumericValue),
 }
 
 
@@ -662,9 +704,9 @@ where
 
 impl ToTyped for Au {
     fn to_typed(&self) -> Option<TypedValue> {
-        
-        
-        None
+        let value = self.to_f32_px();
+        let unit = CssString::from("px");
+        Some(TypedValue::Numeric(NumericValue::Unit { value, unit }))
     }
 }
 

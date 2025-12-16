@@ -25,7 +25,9 @@ use smallvec::SmallVec;
 use std::cmp;
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss};
+use style_traits::{
+    CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, ToTyped, TypedValue,
+};
 
 
 #[derive(Clone, Copy, Debug, Parse)]
@@ -120,14 +122,25 @@ impl ToCss for Leaf {
     }
 }
 
+impl ToTyped for Leaf {
+    fn to_typed(&self) -> Option<TypedValue> {
+        
+        match *self {
+            Self::Length(ref l) => l.to_typed(),
+            _ => None,
+        }
+    }
+}
 
 
 
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem, ToTyped)]
 #[allow(missing_docs)]
+#[typed_value(derive_fields)]
 pub struct CalcLengthPercentage {
     #[css(skip)]
     pub clamping_mode: AllowedNumericType,
