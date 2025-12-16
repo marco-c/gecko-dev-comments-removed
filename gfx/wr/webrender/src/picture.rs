@@ -5324,8 +5324,16 @@ impl PicturePrimitive {
                             
                             match world_draw_rect {
                                 Some(world_draw_rect) => {
-                                    
-                                    if tile_cache.spatial_node_index == frame_context.root_spatial_node_index &&
+                                    let check_occluded_tiles = match frame_state.composite_state.compositor_kind {
+                                        CompositorKind::Layer { .. } => {
+                                            true
+                                        }
+                                        CompositorKind::Native { .. } | CompositorKind::Draw { .. } => {
+                                            
+                                            tile_cache.spatial_node_index == frame_context.root_spatial_node_index
+                                        }
+                                    };
+                                    if check_occluded_tiles &&
                                        frame_state.composite_state.occluders.is_tile_occluded(tile.z_id, world_draw_rect) {
                                         
                                         
