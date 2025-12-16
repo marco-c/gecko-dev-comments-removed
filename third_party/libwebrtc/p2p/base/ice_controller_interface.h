@@ -20,7 +20,6 @@
 #include "p2p/base/connection.h"
 #include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
-#include "p2p/base/p2p_transport_channel_ice_field_trials.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
@@ -82,6 +81,13 @@ class IceControllerInterface {
         : connection(conn ? std::optional<const Connection*>(conn)
                           : std::nullopt),
           recheck_delay_ms(_recheck_delay_ms) {}
+    PingResult(const Connection* conn, TimeDelta recheck_delay)
+        : connection(conn ? std::optional(conn) : std::nullopt),
+          recheck_delay_ms(recheck_delay.ms()) {}
+
+    TimeDelta recheck_delay() const {
+      return TimeDelta::Millis(recheck_delay_ms);
+    }
 
     
     const std::optional<const Connection*> connection;
@@ -150,13 +156,5 @@ class IceControllerInterface {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::IceControllerInterface;
-using ::webrtc::IceRecheckEvent;
-}  
-#endif  
 
 #endif  

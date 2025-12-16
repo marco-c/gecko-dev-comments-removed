@@ -124,10 +124,10 @@ RTCError VerifyCandidates(const Candidates& candidates);
 
 struct RTC_EXPORT IceConfig {
   
-  std::optional<int> receiving_timeout;
+  std::optional<TimeDelta> receiving_timeout;
   
   
-  std::optional<int> backup_connection_ping_interval;
+  std::optional<TimeDelta> backup_connection_ping_interval;
 
   ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
 
@@ -140,7 +140,7 @@ struct RTC_EXPORT IceConfig {
   bool prioritize_most_likely_candidate_pairs = false;
 
   
-  std::optional<int> stable_writable_connection_ping_interval;
+  std::optional<TimeDelta> stable_writable_connection_ping_interval;
 
   
   
@@ -155,12 +155,12 @@ struct RTC_EXPORT IceConfig {
 
   
   
-  std::optional<int> regather_on_failed_networks_interval;
+  std::optional<TimeDelta> regather_on_failed_networks_interval;
 
   
   
   
-  std::optional<int> receiving_switching_delay;
+  std::optional<TimeDelta> receiving_switching_delay;
 
   
   
@@ -170,25 +170,24 @@ struct RTC_EXPORT IceConfig {
   
   
   
-  std::optional<int> ice_check_interval_strong_connectivity;
+  std::optional<TimeDelta> ice_check_interval_strong_connectivity;
   
   
   
   
-  std::optional<int> ice_check_interval_weak_connectivity;
+  std::optional<TimeDelta> ice_check_interval_weak_connectivity;
   
   
   
   
   
   
-  
-  std::optional<int> ice_check_min_interval;
-  
+  std::optional<TimeDelta> ice_check_min_interval;
   
   
   
-  std::optional<int> ice_unwritable_timeout;
+  
+  std::optional<TimeDelta> ice_unwritable_timeout;
 
   
   
@@ -200,11 +199,11 @@ struct RTC_EXPORT IceConfig {
   
   
   
-  std::optional<int> ice_inactive_timeout;
+  std::optional<TimeDelta> ice_inactive_timeout;
 
   
   
-  std::optional<int> stun_keepalive_interval;
+  std::optional<TimeDelta> stun_keepalive_interval;
 
   std::optional<AdapterType> network_preference;
 
@@ -214,14 +213,14 @@ struct RTC_EXPORT IceConfig {
   bool dtls_handshake_in_stun = false;
 
   IceConfig();
-  IceConfig(int receiving_timeout_ms,
-            int backup_connection_ping_interval,
+  IceConfig(TimeDelta receiving_timeout,
+            TimeDelta backup_connection_ping_interval,
             ContinualGatheringPolicy gathering_policy,
             bool prioritize_most_likely_candidate_pairs,
-            int stable_writable_connection_ping_interval_ms,
+            TimeDelta stable_writable_connection_ping_interval,
             bool presume_writable_when_fully_relayed,
-            int regather_on_failed_networks_interval_ms,
-            int receiving_switching_delay_ms);
+            TimeDelta regather_on_failed_networks_interval,
+            TimeDelta receiving_switching_delay);
   
   
   
@@ -234,18 +233,18 @@ struct RTC_EXPORT IceConfig {
   
   
   
-  int receiving_timeout_or_default() const;
-  int backup_connection_ping_interval_or_default() const;
-  int stable_writable_connection_ping_interval_or_default() const;
-  int regather_on_failed_networks_interval_or_default() const;
-  int receiving_switching_delay_or_default() const;
-  int ice_check_interval_strong_connectivity_or_default() const;
-  int ice_check_interval_weak_connectivity_or_default() const;
-  int ice_check_min_interval_or_default() const;
-  int ice_unwritable_timeout_or_default() const;
+  TimeDelta receiving_timeout_or_default() const;
+  TimeDelta backup_connection_ping_interval_or_default() const;
+  TimeDelta stable_writable_connection_ping_interval_or_default() const;
+  TimeDelta regather_on_failed_networks_interval_or_default() const;
+  TimeDelta receiving_switching_delay_or_default() const;
+  TimeDelta ice_check_interval_strong_connectivity_or_default() const;
+  TimeDelta ice_check_interval_weak_connectivity_or_default() const;
+  TimeDelta ice_check_min_interval_or_default() const;
+  TimeDelta ice_unwritable_timeout_or_default() const;
   int ice_unwritable_min_checks_or_default() const;
-  int ice_inactive_timeout_or_default() const;
-  int stun_keepalive_interval_or_default() const;
+  TimeDelta ice_inactive_timeout_or_default() const;
+  TimeDelta stun_keepalive_interval_or_default() const;
 };
 
 

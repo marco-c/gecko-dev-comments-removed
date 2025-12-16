@@ -249,7 +249,7 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   
   
   virtual void SetStunKeepaliveIntervalForReadyPorts(
-      const std::optional<int>& ) {}
+      const std::optional<TimeDelta>& ) {}
   
   
   
@@ -396,7 +396,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
     return candidate_pool_size_;
   }
 
-  const std::optional<int>& stun_candidate_keepalive_interval() const {
+  const std::optional<TimeDelta>& stun_candidate_keepalive_interval() const {
     CheckRunOnValidThreadIfInitialized();
     return stun_candidate_keepalive_interval_;
   }
@@ -633,7 +633,7 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   
   TurnCustomizer* turn_customizer_ = nullptr;
 
-  std::optional<int> stun_candidate_keepalive_interval_;
+  std::optional<TimeDelta> stun_candidate_keepalive_interval_;
 
   
   
