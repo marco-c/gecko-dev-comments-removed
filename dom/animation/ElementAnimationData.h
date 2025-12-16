@@ -23,6 +23,7 @@ namespace dom {
 class Element;
 class CSSAnimation;
 class CSSTransition;
+class ProgressTimelineScheduler;
 class ScrollTimeline;
 class ViewTimeline;
 }  
@@ -46,14 +47,30 @@ class ElementAnimationData {
     
     
     
-    
-    
-    
-    
-    
-    
     UniquePtr<ScrollTimelineCollection> mScrollTimelines;
     UniquePtr<ViewTimelineCollection> mViewTimelines;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UniquePtr<dom::ProgressTimelineScheduler> mProgressTimelineScheduler;
 
     PerElementOrPseudoData();
     ~PerElementOrPseudoData();
@@ -67,10 +84,12 @@ class ElementAnimationData {
         dom::Element&, const PseudoStyleRequest&);
     ViewTimelineCollection& DoEnsureViewTimelines(dom::Element&,
                                                   const PseudoStyleRequest&);
+    dom::ProgressTimelineScheduler& DoEnsureProgressTimelineScheduler();
 
     bool IsEmpty() const {
       return !mEffectSet && !mAnimations && !mTransitions &&
-             !mScrollTimelines && !mViewTimelines;
+             !mScrollTimelines && !mViewTimelines &&
+             !mProgressTimelineScheduler;
     }
 
     void Traverse(nsCycleCollectionTraversalCallback&);
@@ -240,6 +259,25 @@ class ElementAnimationData {
       return *collection;
     }
     return data.DoEnsureViewTimelines(aOwner, aRequest);
+  }
+
+  dom::ProgressTimelineScheduler* GetProgressTimelineScheduler(
+      const PseudoStyleRequest& aRequest) const {
+    if (auto* data = GetData(aRequest)) {
+      return data->mProgressTimelineScheduler.get();
+    }
+    return nullptr;
+  }
+
+  void ClearProgressTimelineScheduler(const PseudoStyleRequest& aRequest);
+
+  dom::ProgressTimelineScheduler& EnsureProgressTimelineScheduler(
+      const PseudoStyleRequest& aRequest) {
+    auto& data = GetOrCreateData(aRequest);
+    if (auto* collection = data.mProgressTimelineScheduler.get()) {
+      return *collection;
+    }
+    return data.DoEnsureProgressTimelineScheduler();
   }
 
   ElementAnimationData() = default;

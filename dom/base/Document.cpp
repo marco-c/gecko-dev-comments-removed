@@ -2566,6 +2566,8 @@ Document::~Document() {
     mAnimationController->Disconnect();
   }
 
+  MOZ_ASSERT(mTimelines.isEmpty());
+
   mParentDocument = nullptr;
 
   
@@ -20827,7 +20829,9 @@ RadioGroupContainer& Document::OwnedRadioGroupContainer() {
 }
 
 void Document::UpdateHiddenByContentVisibilityForAnimations() {
-  mTimelinesController.UpdateHiddenByContentVisibility();
+  for (AnimationTimeline* timeline : Timelines()) {
+    timeline->UpdateHiddenByContentVisibility();
+  }
 }
 
 void Document::SetAllowDeclarativeShadowRoots(

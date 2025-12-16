@@ -15,7 +15,6 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/Try.h"
-#include "mozilla/dom/AnimationTimelinesController.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CustomEvent.h"
@@ -1375,7 +1374,9 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
     }
   }
   
-  aPO->mDocument->TimelinesController().TriggerAllPendingAnimationsNow();
+  for (DocumentTimeline* tl : aPO->mDocument->Timelines()) {
+    tl->TriggerAllPendingAnimationsNow();
+  }
   
   presShell->FlushPendingNotifications(FlushType::Layout);
   aPO->mDocument->UpdateRemoteFrameEffects();
