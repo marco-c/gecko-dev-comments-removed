@@ -590,10 +590,6 @@ impl ControlPoint<ShapePosition<CSSFloat>, CSSFloat> {
                 };
 
                 match point.reference {
-                    ControlReference::None if !end_point.is_abs() => {
-                        pos.horizontal += state_pos.x;
-                        pos.vertical += state_pos.y;
-                    },
                     ControlReference::Start => {
                         pos.horizontal += state_pos.x;
                         pos.vertical += state_pos.y;
@@ -839,42 +835,42 @@ impl<'a> PathParser<'a> {
     
     fn parse_curve_abs(&mut self) -> Result<(), ()> {
         parse_arguments!(self, CubicCurve, [
-            control1 => parse_control_point, control2 => parse_control_point, point => parse_command_end_abs
+            control1 => parse_control_point_abs, control2 => parse_control_point_abs, point => parse_command_end_abs
         ])
     }
 
     
     fn parse_curve_rel(&mut self) -> Result<(), ()> {
         parse_arguments!(self, CubicCurve, [
-            control1 => parse_control_point, control2 => parse_control_point, point => parse_command_end_rel
+            control1 => parse_control_point_rel, control2 => parse_control_point_rel, point => parse_command_end_rel
         ])
     }
 
     
     fn parse_smooth_curve_abs(&mut self) -> Result<(), ()> {
         parse_arguments!(self, SmoothCubic, [
-            control2 => parse_control_point, point => parse_command_end_abs
+            control2 => parse_control_point_abs, point => parse_command_end_abs
         ])
     }
 
     
     fn parse_smooth_curve_rel(&mut self) -> Result<(), ()> {
         parse_arguments!(self, SmoothCubic, [
-            control2 => parse_control_point, point => parse_command_end_rel
+            control2 => parse_control_point_rel, point => parse_command_end_rel
         ])
     }
 
     
     fn parse_quadratic_bezier_curve_abs(&mut self) -> Result<(), ()> {
         parse_arguments!(self, QuadCurve, [
-            control1 => parse_control_point, point => parse_command_end_abs
+            control1 => parse_control_point_abs, point => parse_command_end_abs
         ])
     }
 
     
     fn parse_quadratic_bezier_curve_rel(&mut self) -> Result<(), ()> {
         parse_arguments!(self, QuadCurve, [
-            control1 => parse_control_point, point => parse_command_end_rel
+            control1 => parse_control_point_rel, point => parse_command_end_rel
         ])
     }
 
@@ -957,16 +953,24 @@ fn parse_command_end_rel(
 }
 
 
-
-
-
-fn parse_control_point(
+fn parse_control_point_abs(
     iter: &mut Peekable<Cloned<slice::Iter<u8>>>,
 ) -> Result<ControlPoint<ShapePosition<CSSFloat>, CSSFloat>, ()> {
     let coord = parse_coord(iter)?;
     Ok(ControlPoint::Relative(RelativeControlPoint {
         coord,
-        reference: ControlReference::None,
+        reference: ControlReference::Origin,
+    }))
+}
+
+
+fn parse_control_point_rel(
+    iter: &mut Peekable<Cloned<slice::Iter<u8>>>,
+) -> Result<ControlPoint<ShapePosition<CSSFloat>, CSSFloat>, ()> {
+    let coord = parse_coord(iter)?;
+    Ok(ControlPoint::Relative(RelativeControlPoint {
+        coord,
+        reference: ControlReference::Start,
     }))
 }
 
