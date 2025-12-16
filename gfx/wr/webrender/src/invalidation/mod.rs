@@ -7,7 +7,7 @@
 
 
 
-pub mod dependency;
+pub mod compare;
 pub mod quadtree;
 pub mod cached_surface;
 
