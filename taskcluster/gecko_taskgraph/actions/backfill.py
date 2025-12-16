@@ -27,6 +27,14 @@ SYMBOL_REGEX = re.compile("^(.*)-[a-z0-9]{11}-bk$")
 GROUP_SYMBOL_REGEX = re.compile("^(.*)-bk$")
 
 
+
+ALLOWED_PERFTEST_BACKFILL_APPS = (
+    "firefox",
+    "geckoview",
+    "fenix",
+)
+
+
 def input_for_support_action(revision, task, times=1, retrigger=True):
     """Generate input for action to be scheduled.
 
@@ -114,6 +122,19 @@ def backfill_action(parameters, graph_config, input, task_group_id, task_id):
     https://taskcluster-taskgraph.readthedocs.io/en/latest/howto/create-actions.html#testing-actions
     """
     task = get_task_definition(task_id)
+
+    
+    task_label = task.get("metadata", {}).get("name", "")
+    is_browsertime = "browsertime" in task_label
+
+    if is_browsertime and not any(
+        app in task_label for app in ALLOWED_PERFTEST_BACKFILL_APPS
+    ):
+        logger.warning(
+            f"Skipping backfill for non-allowed raptor-browsertime task: {task_label}"
+        )
+        return
+
     pushes = get_pushes_from_params_input(parameters, input)
     failed = False
     input_for_action = input_for_support_action(
@@ -392,13 +413,17 @@ def filter_raptor_jobs(full_task_graph, label_to_taskid, project):
         exceptions = ("live", "profiling", "youtube-playback")
         if any(e in entry.attributes.get("raptor_try_name", "") for e in exceptions):
             continue
-        if "firefox" in entry.attributes.get(
-            "raptor_try_name", ""
-        ) and entry.attributes.get("test_platform", "").endswith("64-shippable-qr/opt"):
+        
+        raptor_try_name = entry.attributes.get("raptor_try_name", "")
+        if not any(app in raptor_try_name for app in ALLOWED_PERFTEST_BACKFILL_APPS):
+            continue
+        if "firefox" in raptor_try_name and entry.attributes.get(
+            "test_platform", ""
+        ).endswith("64-shippable-qr/opt"):
             
             if label not in label_to_taskid:
                 to_run.append(label)
-        if "geckoview" in entry.attributes.get("raptor_try_name", ""):
+        if "geckoview" in raptor_try_name:
             
             if label not in label_to_taskid:
                 to_run.append(label)
