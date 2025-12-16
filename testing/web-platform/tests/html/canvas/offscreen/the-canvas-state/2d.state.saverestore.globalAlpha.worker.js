@@ -10,42 +10,48 @@ test(t => {
   const canvas = new OffscreenCanvas(300, 150);
   const ctx = canvas.getContext('2d');
 
-  
-  var old = ctx.globalAlpha;
+  const old = ctx.globalAlpha;
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.restore();
   _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
+}, "save()/restore() restores globalAlpha, for a canvas of size (300, 150).");
 
-  
+test(t => {
+  const canvas = new OffscreenCanvas(300, 150);
+  const ctx = canvas.getContext('2d');
+
   ctx.globalAlpha = 0.5;
-  old = ctx.globalAlpha;
+  const old = ctx.globalAlpha;
   
   
   ctx.save();
   _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
   ctx.restore();
-}, "save()/restore() works for globalAlpha, with a canvas size of (300, 150)");
+}, "save() does not modify globalAlpha, for a canvas of size (300, 150).");
 
 test(t => {
   const canvas = new OffscreenCanvas(0, 0);
   const ctx = canvas.getContext('2d');
 
-  
-  var old = ctx.globalAlpha;
+  const old = ctx.globalAlpha;
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.restore();
   _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
+}, "save()/restore() restores globalAlpha, for a canvas of size (0, 0).");
 
-  
+test(t => {
+  const canvas = new OffscreenCanvas(0, 0);
+  const ctx = canvas.getContext('2d');
+
   ctx.globalAlpha = 0.5;
-  old = ctx.globalAlpha;
+  const old = ctx.globalAlpha;
   
   
   ctx.save();
   _assertSame(ctx.globalAlpha, old, "ctx.globalAlpha", "old");
   ctx.restore();
-}, "save()/restore() works for globalAlpha, with a canvas size of (0, 0)");
+}, "save() does not modify globalAlpha, for a canvas of size (0, 0).");
 
 done();

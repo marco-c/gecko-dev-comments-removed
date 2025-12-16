@@ -10,42 +10,48 @@ test(t => {
   const canvas = new OffscreenCanvas(300, 150);
   const ctx = canvas.getContext('2d');
 
-  
-  var old = ctx.shadowOffsetX;
+  const old = ctx.shadowOffsetX;
   ctx.save();
   ctx.shadowOffsetX = 5;
   ctx.restore();
   _assertSame(ctx.shadowOffsetX, old, "ctx.shadowOffsetX", "old");
+}, "save()/restore() restores shadowOffsetX, for a canvas of size (300, 150).");
 
-  
+test(t => {
+  const canvas = new OffscreenCanvas(300, 150);
+  const ctx = canvas.getContext('2d');
+
   ctx.shadowOffsetX = 5;
-  old = ctx.shadowOffsetX;
+  const old = ctx.shadowOffsetX;
   
   
   ctx.save();
   _assertSame(ctx.shadowOffsetX, old, "ctx.shadowOffsetX", "old");
   ctx.restore();
-}, "save()/restore() works for shadowOffsetX, with a canvas size of (300, 150)");
+}, "save() does not modify shadowOffsetX, for a canvas of size (300, 150).");
 
 test(t => {
   const canvas = new OffscreenCanvas(0, 0);
   const ctx = canvas.getContext('2d');
 
-  
-  var old = ctx.shadowOffsetX;
+  const old = ctx.shadowOffsetX;
   ctx.save();
   ctx.shadowOffsetX = 5;
   ctx.restore();
   _assertSame(ctx.shadowOffsetX, old, "ctx.shadowOffsetX", "old");
+}, "save()/restore() restores shadowOffsetX, for a canvas of size (0, 0).");
 
-  
+test(t => {
+  const canvas = new OffscreenCanvas(0, 0);
+  const ctx = canvas.getContext('2d');
+
   ctx.shadowOffsetX = 5;
-  old = ctx.shadowOffsetX;
+  const old = ctx.shadowOffsetX;
   
   
   ctx.save();
   _assertSame(ctx.shadowOffsetX, old, "ctx.shadowOffsetX", "old");
   ctx.restore();
-}, "save()/restore() works for shadowOffsetX, with a canvas size of (0, 0)");
+}, "save() does not modify shadowOffsetX, for a canvas of size (0, 0).");
 
 done();

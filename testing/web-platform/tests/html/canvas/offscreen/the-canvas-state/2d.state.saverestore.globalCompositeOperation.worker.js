@@ -10,42 +10,48 @@ test(t => {
   const canvas = new OffscreenCanvas(300, 150);
   const ctx = canvas.getContext('2d');
 
-  
-  var old = ctx.globalCompositeOperation;
+  const old = ctx.globalCompositeOperation;
   ctx.save();
   ctx.globalCompositeOperation = "copy";
   ctx.restore();
   _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
+}, "save()/restore() restores globalCompositeOperation, for a canvas of size (300, 150).");
 
-  
+test(t => {
+  const canvas = new OffscreenCanvas(300, 150);
+  const ctx = canvas.getContext('2d');
+
   ctx.globalCompositeOperation = "copy";
-  old = ctx.globalCompositeOperation;
+  const old = ctx.globalCompositeOperation;
   
   
   ctx.save();
   _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
   ctx.restore();
-}, "save()/restore() works for globalCompositeOperation, with a canvas size of (300, 150)");
+}, "save() does not modify globalCompositeOperation, for a canvas of size (300, 150).");
 
 test(t => {
   const canvas = new OffscreenCanvas(0, 0);
   const ctx = canvas.getContext('2d');
 
-  
-  var old = ctx.globalCompositeOperation;
+  const old = ctx.globalCompositeOperation;
   ctx.save();
   ctx.globalCompositeOperation = "copy";
   ctx.restore();
   _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
+}, "save()/restore() restores globalCompositeOperation, for a canvas of size (0, 0).");
 
-  
+test(t => {
+  const canvas = new OffscreenCanvas(0, 0);
+  const ctx = canvas.getContext('2d');
+
   ctx.globalCompositeOperation = "copy";
-  old = ctx.globalCompositeOperation;
+  const old = ctx.globalCompositeOperation;
   
   
   ctx.save();
   _assertSame(ctx.globalCompositeOperation, old, "ctx.globalCompositeOperation", "old");
   ctx.restore();
-}, "save()/restore() works for globalCompositeOperation, with a canvas size of (0, 0)");
+}, "save() does not modify globalCompositeOperation, for a canvas of size (0, 0).");
 
 done();
