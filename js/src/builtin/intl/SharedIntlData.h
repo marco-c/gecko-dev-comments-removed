@@ -361,7 +361,7 @@ class SharedIntlData {
 
 
 
-  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSString*> locale,
+  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSLinearString*> locale,
                         bool* isUpperFirst);
 
  private:
@@ -380,7 +380,7 @@ class SharedIntlData {
   
 
 
-  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSString*> locale,
+  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSLinearString*> locale,
                            bool* ignorePunctuation);
 
  private:
