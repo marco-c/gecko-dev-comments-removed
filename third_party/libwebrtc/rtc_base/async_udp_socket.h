@@ -41,23 +41,8 @@ class AsyncUDPSocket : public AsyncPacketSocket {
       const SocketAddress& bind_address,
       SocketFactory& factory);
 
-  
-  
-  
-  
-  
-  static AsyncUDPSocket* Create(Socket* socket,
-                                const SocketAddress& bind_address);
-  
-  
-  static AsyncUDPSocket* Create(SocketFactory* factory,
-                                const SocketAddress& bind_address);
-
   AsyncUDPSocket(const Environment& env,
                  absl_nonnull std::unique_ptr<Socket> socket);
-  
-  
-  explicit AsyncUDPSocket(Socket* socket);
   ~AsyncUDPSocket() = default;
 
   SocketAddress GetLocalAddress() const override;
