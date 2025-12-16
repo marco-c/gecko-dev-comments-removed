@@ -372,12 +372,6 @@ function whenTabLoaded(aTab, aCallback) {
   promiseTabLoadEvent(aTab).then(aCallback);
 }
 
-function promiseTabLoaded(aTab) {
-  return new Promise(resolve => {
-    whenTabLoaded(aTab, resolve);
-  });
-}
-
 
 
 
