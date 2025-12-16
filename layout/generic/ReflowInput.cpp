@@ -1188,7 +1188,18 @@ void ReflowInput::ComputeAbsPosInlineAutoMargin(nscoord aAvailMarginSpace,
                                                 WritingMode aContainingBlockWM,
                                                 bool aIsMarginIStartAuto,
                                                 bool aIsMarginIEndAuto,
+                                                bool aIsIAnchorCenter,
                                                 LogicalMargin& aMargin) {
+  if (aIsIAnchorCenter) {
+    
+    if (aIsMarginIStartAuto) {
+      aMargin.IStart(aContainingBlockWM) = 0;
+    }
+    if (aIsMarginIEndAuto) {
+      aMargin.IEnd(aContainingBlockWM) = 0;
+    }
+    return;
+  }
   if (aIsMarginIStartAuto) {
     if (aIsMarginIEndAuto) {
       if (aAvailMarginSpace < 0) {
@@ -1222,7 +1233,18 @@ void ReflowInput::ComputeAbsPosBlockAutoMargin(nscoord aAvailMarginSpace,
                                                WritingMode aContainingBlockWM,
                                                bool aIsMarginBStartAuto,
                                                bool aIsMarginBEndAuto,
+                                               bool aIsBAnchorCenter,
                                                LogicalMargin& aMargin) {
+  if (aIsBAnchorCenter) {
+    
+    if (aIsMarginBStartAuto) {
+      aMargin.BStart(aContainingBlockWM) = 0;
+    }
+    if (aIsMarginBEndAuto) {
+      aMargin.BEnd(aContainingBlockWM) = 0;
+    }
+    return;
+  }
   if (aIsMarginBStartAuto) {
     if (aIsMarginBEndAuto) {
       
