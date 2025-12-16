@@ -9,8 +9,6 @@
 #ifndef mozilla_Attributes_h
 #define mozilla_Attributes_h
 
-#include "mozilla/Compiler.h"
-
 
 
 
@@ -827,7 +825,6 @@
 
 
 
-
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -1079,19 +1076,6 @@
 #  define MOZ_EMPTY_BASES __declspec(empty_bases)
 #else
 #  define MOZ_EMPTY_BASES
-#endif
-
-
-
-
-#if defined(__cpp_constinit)
-#  define MOZ_CONSTINIT constinit
-#elif defined(__clang__)
-#  define MOZ_CONSTINIT [[clang::require_constant_initialization]]
-#elif MOZ_GCC_VERSION_AT_LEAST(10, 1, 0)
-#  define MOZ_CONSTINIT __constinit
-#else
-#  define MOZ_CONSTINIT
 #endif
 
 
