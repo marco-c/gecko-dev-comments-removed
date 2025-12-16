@@ -28,9 +28,6 @@ class AsyncStunTCPSocket : public AsyncTCPSocketBase {
  public:
   AsyncStunTCPSocket(const Environment& env,
                      absl_nonnull std::unique_ptr<Socket> socket);
-  
-  
-  explicit AsyncStunTCPSocket(Socket* socket);
 
   AsyncStunTCPSocket(const AsyncStunTCPSocket&) = delete;
   AsyncStunTCPSocket& operator=(const AsyncStunTCPSocket&) = delete;
