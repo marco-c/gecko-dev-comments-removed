@@ -68,7 +68,7 @@ def perfile_number_of_chunks(is_try, try_task_config, files_changed, type):
 
             if mozpackmatch(path, pattern):
                 gpu = False
-                if type == "test-verify-e10s" or type == "test-coverage-e10s":
+                if type in {"test-verify-e10s", "test-coverage-e10s"}:
                     
                     
                     gpu_dirs = [

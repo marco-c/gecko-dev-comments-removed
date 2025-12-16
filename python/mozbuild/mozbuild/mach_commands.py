@@ -682,7 +682,7 @@ def show_log(command_context, log_file=None):
         except OSError as os_error:
             
             
-            if os_error.errno == errno.EPIPE or os_error.errno == errno.EINVAL:
+            if os_error.errno in {errno.EPIPE, errno.EINVAL}:
                 
                 
                 

@@ -65,7 +65,7 @@ if system in ["Microsoft", "Windows"]:
 
     
     
-    if build_number in [22621, 19045]:
+    if build_number in {22621, 19045}:
         build_number = 2009
 
     os_version = f"{major}.{build_number}"

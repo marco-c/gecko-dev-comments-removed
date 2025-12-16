@@ -85,7 +85,7 @@ class RaptorTestCommand:
             if "MOZ_FETCHES_DIR" in str(value):
                 
                 continue
-            if arg == "t" or arg == "test":
+            if arg in {"t", "test"}:
                 
                 
                 continue

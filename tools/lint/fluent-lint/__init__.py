@@ -128,11 +128,8 @@ class Linter(visitor.Visitor):
             "node_can_be_resource_comment"
         ] and (
             
-            node_name == "Resource"
-            
-            or node_name == "Span"
-            
-            or node_name == "Comment"
+            node_name
+            in {"Resource", "Span", "Comment"}
         )
 
         if self.debug_print_json:

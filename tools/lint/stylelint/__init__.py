@@ -171,7 +171,7 @@ def run(cmd_args, config, fix):
 
     
     
-    if proc.returncode != 0 and proc.returncode != 2:
+    if proc.returncode not in {0, 2}:
         if proc.returncode == 78:
             print("Stylelint reported an issue with its configuration file.")
             print(errors)

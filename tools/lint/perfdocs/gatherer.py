@@ -94,7 +94,7 @@ class Gatherer:
 
             for file in files:
                 
-                if file == "config.yml" or file == "config.yaml":
+                if file in {"config.yml", "config.yaml"}:
                     matched["yml"] = file
                 elif file == "index.rst":
                     matched["rst"] = file

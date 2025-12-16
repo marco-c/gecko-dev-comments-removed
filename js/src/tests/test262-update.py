@@ -785,12 +785,7 @@ def fetch_pr_files(inDir, outDir, prNumber, strictTests):
                 assert pageUrl.startswith("https://api.github.com/")
 
                 
-                assert (
-                    rel == 'rel="prev"'
-                    or rel == 'rel="next"'
-                    or rel == 'rel="first"'
-                    or rel == 'rel="last"'
-                )
+                assert rel in {'rel="prev"', 'rel="next"', 'rel="first"', 'rel="last"'}
 
                 
                 if rel == 'rel="next"':

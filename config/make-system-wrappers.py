@@ -20,7 +20,7 @@ def gen_wrappers(unused, outdir, *header_list):
     for header in header_list:
         with FileAvoidWrite(os.path.join(outdir, header)) as f:
             includes = include_next_template.format(header=header)
-            if header == "wayland-util.h" or header == "pipewire/pipewire.h":
+            if header in {"wayland-util.h", "pipewire/pipewire.h"}:
                 
                 
                 

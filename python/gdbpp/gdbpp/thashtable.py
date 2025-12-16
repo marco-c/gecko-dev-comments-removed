@@ -90,7 +90,7 @@ class thashtable_printer:
             if f.is_base_class:
                 continue
             
-            if f.name == "mKeyHash" or f.name == "mData":
+            if f.name in {"mKeyHash", "mData"}:
                 continue
             
             self.key_field_name = f.name

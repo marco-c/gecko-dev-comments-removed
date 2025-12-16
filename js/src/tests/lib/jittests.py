@@ -508,7 +508,7 @@ def check_output(out, err, rc, timed_out, test, options):
         
         
         
-        if rc == 139 or rc == 138:
+        if rc in {139, 138}:
             return OutputStatus.OK
 
         
