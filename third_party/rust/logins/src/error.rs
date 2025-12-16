@@ -131,8 +131,8 @@ pub enum InvalidLogin {
     NoTarget,
     
     
-    #[error("Login has illegal origin")]
-    IllegalOrigin,
+    #[error("Login has illegal origin: {reason}")]
+    IllegalOrigin { reason: String },
     #[error("Login has illegal field: {field_info}")]
     IllegalFieldValue { field_info: String },
 }

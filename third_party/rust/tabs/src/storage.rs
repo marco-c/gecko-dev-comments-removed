@@ -3,18 +3,13 @@
 
 
 
-const URI_LENGTH_MAX: usize = 65536;
-
-const TAB_ENTRIES_LIMIT: usize = 5;
-
-
 
 
 const REMOTE_COMMAND_TTL_MS: u64 = 2 * 24 * 60 * 60 * 1000; 
 
 use crate::error::*;
 use crate::schema;
-use crate::sync::record::TabsRecord;
+use crate::sync::TabsRecord;
 use crate::DeviceType;
 use crate::{PendingCommand, RemoteCommand, Timestamp};
 use error_support::{error, info, trace, warn};
@@ -22,7 +17,6 @@ use rusqlite::{
     types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef},
     Connection, OpenFlags,
 };
-use serde_derive::{Deserialize, Serialize};
 use sql_support::open_database::{self, open_database_with_flags};
 use sql_support::ConnExt;
 use std::cell::RefCell;
@@ -30,32 +24,88 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use sync15::{RemoteClient, ServerTimestamp};
 pub type TabsDeviceType = crate::DeviceType;
-pub type RemoteTabRecord = RemoteTab;
 
 pub(crate) const TABS_CLIENT_TTL: u32 = 15_552_000; 
 const FAR_FUTURE: i64 = 4_102_405_200_000; 
-const MAX_PAYLOAD_SIZE: usize = 512 * 1024; 
-const MAX_TITLE_CHAR_LENGTH: usize = 512; 
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RemoteTab {
+#[derive(Clone, Debug, Default, uniffi::Record)]
+#[cfg_attr(test, derive(PartialEq, Eq))] 
+pub struct RemoteTabRecord {
     pub title: String,
     pub url_history: Vec<String>,
     pub icon: Option<String>,
     pub last_used: i64, 
+    #[uniffi(default = false)]
     pub inactive: bool,
+    #[uniffi(default = false)]
+    pub pinned: bool,
+    
+    #[uniffi(default = 0)]
+    pub index: u32,
+    #[uniffi(default = "")]
+    pub window_id: String,
+    #[uniffi(default = "")]
+    pub tab_group_id: String,
 }
+pub type RemoteTab = RemoteTabRecord;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, uniffi::Record)]
 pub struct ClientRemoteTabs {
-    
-    
     
     pub client_id: String,
     pub client_name: String,
     pub device_type: DeviceType,
+    
     pub last_modified: i64,
     pub remote_tabs: Vec<RemoteTab>,
+    pub tab_groups: HashMap<String, TabGroup>,
+    pub windows: HashMap<String, Window>,
+}
+
+#[derive(uniffi::Enum, Clone, Debug, Default)]
+#[repr(u8)]
+pub enum WindowType {
+    #[default]
+    Normal = 0,
+}
+
+impl From<u8> for WindowType {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => WindowType::Normal,
+            _ => {
+                warn!("Unknown window type {}, defaulting to Normal", value);
+                WindowType::Normal
+            }
+        }
+    }
+}
+
+#[derive(uniffi::Record, Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct Window {
+    pub id: String,
+    pub last_used: Timestamp,
+    pub index: u32,
+    pub window_type: WindowType,
+}
+
+
+#[derive(uniffi::Record, Debug, Clone)]
+#[cfg_attr(test, derive(Default))]
+pub struct TabGroup {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+    pub collapsed: bool,
+}
+
+
+#[derive(uniffi::Record, Debug, Clone, Default)]
+pub struct LocalTabsInfo {
+    pub tabs: Vec<RemoteTab>,
+    pub tab_groups: HashMap<String, TabGroup>,
+    pub windows: HashMap<String, Window>,
 }
 
 pub(crate) enum DbConnection {
@@ -77,7 +127,7 @@ pub(crate) enum DbConnection {
 
 
 pub struct TabsStorage {
-    local_tabs: RefCell<Option<Vec<RemoteTab>>>,
+    pub(crate) local_tabs: RefCell<Option<LocalTabsInfo>>,
     db_path: PathBuf,
     db_connection: DbConnection,
 }
@@ -166,53 +216,10 @@ impl TabsStorage {
         }
     }
 
-    pub fn update_local_state(&mut self, local_state: Vec<RemoteTab>) {
-        let num_tabs = local_state.len();
+    pub fn update_local_state(&mut self, local_state: LocalTabsInfo) {
+        let num_tabs = local_state.tabs.len();
         self.local_tabs.borrow_mut().replace(local_state);
         info!("update_local_state has {num_tabs} tab entries");
-    }
-
-    
-    
-    
-    pub fn prepare_local_tabs_for_upload(&self) -> Option<Vec<RemoteTab>> {
-        if let Some(local_tabs) = self.local_tabs.borrow().as_ref() {
-            let mut sanitized_tabs: Vec<RemoteTab> = local_tabs
-                .iter()
-                .cloned()
-                .filter_map(|mut tab| {
-                    if tab.url_history.is_empty() || !is_url_syncable(&tab.url_history[0]) {
-                        return None;
-                    }
-                    let mut sanitized_history = Vec::with_capacity(TAB_ENTRIES_LIMIT);
-                    for url in tab.url_history {
-                        if sanitized_history.len() == TAB_ENTRIES_LIMIT {
-                            break;
-                        }
-                        if is_url_syncable(&url) {
-                            sanitized_history.push(url);
-                        }
-                    }
-
-                    tab.url_history = sanitized_history;
-                    
-                    tab.title = slice_up_to(tab.title, MAX_TITLE_CHAR_LENGTH);
-                    Some(tab)
-                })
-                .collect();
-            
-            sanitized_tabs.sort_by(|a, b| b.last_used.cmp(&a.last_used));
-            trim_tabs_length(&mut sanitized_tabs, MAX_PAYLOAD_SIZE);
-            info!(
-                "prepare_local_tabs_for_upload found {} tabs",
-                sanitized_tabs.len()
-            );
-            return Some(sanitized_tabs);
-        }
-        
-        
-        warn!("prepare_local_tabs_for_upload - have no local tabs");
-        None
     }
 
     pub fn get_remote_tabs(&mut self) -> Option<Vec<ClientRemoteTabs>> {
@@ -263,8 +270,8 @@ impl TabsStorage {
             };
         for (record, last_modified) in records {
             let id = record.id.clone();
-            let crt = if let Some(remote_client) = remote_clients.get(&id) {
-                ClientRemoteTabs::from_record_with_remote_client(
+            if let Some(remote_client) = remote_clients.get(&id) {
+                crts.push(ClientRemoteTabs::from_record(
                     remote_client
                         .fxa_device_id
                         .as_ref()
@@ -273,20 +280,11 @@ impl TabsStorage {
                     last_modified,
                     remote_client,
                     record,
-                )
+                ));
             } else {
                 
-                
-                
-                
-                
-                info!(
-                    "Storing tabs from a client that doesn't appear in the devices list: {}",
-                    id,
-                );
-                ClientRemoteTabs::from_record(id, last_modified, record)
+                warn!("Dropping tabs from an unknown client: {id}");
             };
-            crts.push(crt);
         }
         
         
@@ -710,50 +708,8 @@ impl ToSql for CommandKind {
     }
 }
 
-
-
-fn trim_tabs_length(tabs: &mut Vec<RemoteTab>, payload_size_max_bytes: usize) {
-    if let Some(count) = payload_support::try_fit_items(tabs, payload_size_max_bytes).as_some() {
-        tabs.truncate(count.get());
-    }
-}
-
-
-
-
-
-pub fn slice_up_to(s: String, max_len: usize) -> String {
-    if max_len >= s.len() {
-        return s;
-    }
-
-    let ellipsis = '\u{2026}';
-    
-    let mut idx = max_len - ellipsis.len_utf8();
-    while !s.is_char_boundary(idx) {
-        idx -= 1;
-    }
-    let mut new_str = s[..idx].to_string();
-    new_str.push(ellipsis);
-    new_str
-}
-
-
-fn is_url_syncable(url: &str) -> bool {
-    url.len() <= URI_LENGTH_MAX
-        && !(url.starts_with("about:")
-            || url.starts_with("resource:")
-            || url.starts_with("chrome:")
-            || url.starts_with("wyciwyg:")
-            || url.starts_with("blob:")
-            || url.starts_with("file:")
-            || url.starts_with("moz-extension:")
-            || url.starts_with("data:"))
-}
-
 #[cfg(test)]
 mod tests {
-    use payload_support::compute_serialized_size;
     use std::time::Duration;
 
     use super::*;
@@ -765,16 +721,6 @@ mod tests {
                 url: url.to_string(),
             }
         }
-    }
-
-    #[test]
-    fn test_is_url_syncable() {
-        assert!(is_url_syncable("https://bobo.com"));
-        assert!(is_url_syncable("ftp://bobo.com"));
-        assert!(!is_url_syncable("about:blank"));
-        
-        assert!(is_url_syncable("aboutbobo.com"));
-        assert!(!is_url_syncable("file:///Users/eoger/bobo"));
     }
 
     #[test]
@@ -826,157 +772,6 @@ mod tests {
         assert!(retrieved_value4.is_none());
     }
 
-    #[test]
-    fn test_prepare_local_tabs_for_upload() {
-        error_support::init_for_tests();
-        let mut storage = TabsStorage::new_with_mem_path("test_prepare_local_tabs_for_upload");
-        assert_eq!(storage.prepare_local_tabs_for_upload(), None);
-        storage.update_local_state(vec![
-            RemoteTab {
-                url_history: vec!["about:blank".to_owned(), "https://foo.bar".to_owned()],
-                ..Default::default()
-            },
-            RemoteTab {
-                url_history: vec![
-                    "https://foo.bar".to_owned(),
-                    "about:blank".to_owned(),
-                    "about:blank".to_owned(),
-                    "about:blank".to_owned(),
-                    "about:blank".to_owned(),
-                    "about:blank".to_owned(),
-                    "about:blank".to_owned(),
-                    "about:blank".to_owned(),
-                ],
-                ..Default::default()
-            },
-            RemoteTab {
-                url_history: vec![
-                    "https://foo.bar".to_owned(),
-                    "about:blank".to_owned(),
-                    "https://foo2.bar".to_owned(),
-                    "https://foo3.bar".to_owned(),
-                    "https://foo4.bar".to_owned(),
-                    "https://foo5.bar".to_owned(),
-                    "https://foo6.bar".to_owned(),
-                ],
-                ..Default::default()
-            },
-            RemoteTab {
-                ..Default::default()
-            },
-        ]);
-        assert_eq!(
-            storage.prepare_local_tabs_for_upload(),
-            Some(vec![
-                RemoteTab {
-                    url_history: vec!["https://foo.bar".to_owned()],
-                    ..Default::default()
-                },
-                RemoteTab {
-                    url_history: vec![
-                        "https://foo.bar".to_owned(),
-                        "https://foo2.bar".to_owned(),
-                        "https://foo3.bar".to_owned(),
-                        "https://foo4.bar".to_owned(),
-                        "https://foo5.bar".to_owned()
-                    ],
-                    ..Default::default()
-                },
-            ])
-        );
-    }
-    #[test]
-    fn test_trimming_tab_title() {
-        error_support::init_for_tests();
-        let mut storage = TabsStorage::new_with_mem_path("test_prepare_local_tabs_for_upload");
-        assert_eq!(storage.prepare_local_tabs_for_upload(), None);
-        storage.update_local_state(vec![RemoteTab {
-            title: "a".repeat(MAX_TITLE_CHAR_LENGTH + 10), // Fill a string more than max
-            url_history: vec!["https://foo.bar".to_owned()],
-            ..Default::default()
-        }]);
-        let ellipsis_char = '\u{2026}';
-        let mut truncated_title = "a".repeat(MAX_TITLE_CHAR_LENGTH - ellipsis_char.len_utf8());
-        truncated_title.push(ellipsis_char);
-        assert_eq!(
-            storage.prepare_local_tabs_for_upload(),
-            Some(vec![
-                // title trimmed to 50 characters
-                RemoteTab {
-                    title: truncated_title, // title was trimmed to only max char length
-                    url_history: vec!["https://foo.bar".to_owned()],
-                    ..Default::default()
-                },
-            ])
-        );
-    }
-    #[test]
-    fn test_utf8_safe_title_trim() {
-        error_support::init_for_tests();
-        let mut storage = TabsStorage::new_with_mem_path("test_prepare_local_tabs_for_upload");
-        assert_eq!(storage.prepare_local_tabs_for_upload(), None);
-        storage.update_local_state(vec![
-            RemoteTab {
-                title: "😍".repeat(MAX_TITLE_CHAR_LENGTH + 10), // Fill a string more than max
-                url_history: vec!["https://foo.bar".to_owned()],
-                ..Default::default()
-            },
-            RemoteTab {
-                title: "を".repeat(MAX_TITLE_CHAR_LENGTH + 5), // Fill a string more than max
-                url_history: vec!["https://foo_jp.bar".to_owned()],
-                ..Default::default()
-            },
-        ]);
-        let ellipsis_char = '\u{2026}';
-        
-        let mut truncated_title = "😍".repeat(127);
-        
-        let mut truncated_jp_title = "を".repeat(169);
-        truncated_title.push(ellipsis_char);
-        truncated_jp_title.push(ellipsis_char);
-        let remote_tabs = storage.prepare_local_tabs_for_upload().unwrap();
-        assert_eq!(
-            remote_tabs,
-            vec![
-                RemoteTab {
-                    title: truncated_title, // title was trimmed to only max char length
-                    url_history: vec!["https://foo.bar".to_owned()],
-                    ..Default::default()
-                },
-                RemoteTab {
-                    title: truncated_jp_title, // title was trimmed to only max char length
-                    url_history: vec!["https://foo_jp.bar".to_owned()],
-                    ..Default::default()
-                },
-            ]
-        );
-        
-        assert!(remote_tabs[0].title.chars().count() <= MAX_TITLE_CHAR_LENGTH);
-        assert!(remote_tabs[1].title.chars().count() <= MAX_TITLE_CHAR_LENGTH);
-    }
-    #[test]
-    fn test_trim_tabs_length() {
-        error_support::init_for_tests();
-        let mut storage = TabsStorage::new_with_mem_path("test_prepare_local_tabs_for_upload");
-        assert_eq!(storage.prepare_local_tabs_for_upload(), None);
-        let mut too_many_tabs: Vec<RemoteTab> = Vec::new();
-        for n in 1..5000 {
-            too_many_tabs.push(RemoteTab {
-                title: "aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa" 
-                    .to_owned(),
-                url_history: vec![format!("https://foo{}.bar", n)],
-                ..Default::default()
-            });
-        }
-        let tabs_mem_size = compute_serialized_size(&too_many_tabs).unwrap();
-        
-        assert!(tabs_mem_size > MAX_PAYLOAD_SIZE);
-        
-        storage.update_local_state(too_many_tabs.clone());
-        
-        let tabs_to_upload = &storage.prepare_local_tabs_for_upload().unwrap();
-        assert!(compute_serialized_size(tabs_to_upload).unwrap() <= MAX_PAYLOAD_SIZE);
-    }
     
     struct TabsSQLRecord {
         guid: String,
@@ -992,19 +787,38 @@ mod tests {
         storage.open_or_create().unwrap();
         assert!(storage.open_if_exists().unwrap().is_some());
 
+        
+        let recent_clients = HashMap::from([
+            (
+                "device-1".to_string(),
+                RemoteClient {
+                    fxa_device_id: None,
+                    device_name: "my device".to_string(),
+                    device_type: sync15::DeviceType::Unknown,
+                },
+            ),
+            (
+                "device-outdated".to_string(),
+                RemoteClient {
+                    fxa_device_id: None,
+                    device_name: "device with no tabs".to_string(),
+                    device_type: DeviceType::Unknown,
+                },
+            ),
+        ]);
+        storage
+            .put_meta(
+                schema::REMOTE_CLIENTS_KEY,
+                &serde_json::to_string(&recent_clients).unwrap(),
+            )
+            .unwrap();
+
         let records = vec![
             TabsSQLRecord {
                 guid: "device-1".to_string(),
                 record: TabsRecord {
                     id: "device-1".to_string(),
-                    client_name: "Device #1".to_string(),
-                    tabs: vec![TabsRecordTab {
-                        title: "the title".to_string(),
-                        url_history: vec!["https://mozilla.org/".to_string()],
-                        icon: Some("https://mozilla.org/icon".to_string()),
-                        last_used: 1643764207000,
-                        ..Default::default()
-                    }],
+                    ..Default::default()
                 },
                 last_modified: 1643764207000,
             },
@@ -1013,13 +827,7 @@ mod tests {
                 record: TabsRecord {
                     id: "device-outdated".to_string(),
                     client_name: "Device outdated".to_string(),
-                    tabs: vec![TabsRecordTab {
-                        title: "the title".to_string(),
-                        url_history: vec!["https://mozilla.org/".to_string()],
-                        icon: Some("https://mozilla.org/icon".to_string()),
-                        last_used: 1643764207000,
-                        ..Default::default()
-                    }],
+                    ..Default::default()
                 },
                 last_modified: 1443764207000, // old
             },
@@ -1154,6 +962,7 @@ mod tests {
                         last_used: 1711929600015, // 4/1/2024
                         ..Default::default()
                     }],
+                    ..Default::default()
                 },
                 last_modified: 1711929600015, // 4/1/2024
             },
@@ -1188,10 +997,37 @@ mod tests {
                             ..Default::default()
                         },
                     ],
+                    ..Default::default()
                 },
                 last_modified: 1711929600015, // 4/1/2024
             },
         ];
+
+        
+        let recent_clients = HashMap::from([
+            (
+                "device-1".to_string(),
+                RemoteClient {
+                    fxa_device_id: None,
+                    device_name: "my device".to_string(),
+                    device_type: sync15::DeviceType::Unknown,
+                },
+            ),
+            (
+                "device-2".to_string(),
+                RemoteClient {
+                    fxa_device_id: None,
+                    device_name: "device with no tabs".to_string(),
+                    device_type: DeviceType::Unknown,
+                },
+            ),
+        ]);
+        storage
+            .put_meta(
+                schema::REMOTE_CLIENTS_KEY,
+                &serde_json::to_string(&recent_clients).unwrap(),
+            )
+            .unwrap();
 
         let db = storage.open_if_exists().unwrap().unwrap();
         for record in records {
@@ -1310,11 +1146,11 @@ mod tests {
         let new_records = vec![(
             TabsRecord {
                 id: "device-not-synced".to_string(),
-                client_name: "".to_string(),
                 tabs: vec![TabsRecordTab {
                     url_history: vec!["https://example2.com".to_string()],
                     ..Default::default()
                 }],
+                ..Default::default()
             },
             ServerTimestamp::from_millis(now.as_millis_i64()),
         )];
@@ -1385,7 +1221,6 @@ mod tests {
         let new_records = vec![(
             TabsRecord {
                 id: "device-recent".to_string(),
-                client_name: "".to_string(),
                 tabs: vec![
                     TabsRecordTab {
                         url_history: vec!["https://example99.com".to_string()],
@@ -1396,6 +1231,7 @@ mod tests {
                         ..Default::default()
                     },
                 ],
+                ..Default::default()
             },
             ServerTimestamp::default(),
         )];
@@ -1541,11 +1377,11 @@ mod tests {
         let new_records = vec![(
             TabsRecord {
                 id: "device-1".to_string(),
-                client_name: "".to_string(),
                 tabs: vec![TabsRecordTab {
                     url_history: vec!["https://example1.com".to_string()],
                     ..Default::default()
                 }],
+                ..Default::default()
             },
             ServerTimestamp::default(),
         )];

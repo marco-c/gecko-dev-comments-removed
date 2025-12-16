@@ -388,9 +388,9 @@ impl LoginEntry {
             password: sec_fields.password,
         }
     }
+
     
-    
-    fn validate_and_fixup_origin(origin: &str) -> Result<Option<String>> {
+    pub fn validate_and_fixup_origin(origin: &str) -> Result<Option<String>> {
         
         match Url::parse(origin) {
             Ok(mut u) => {
@@ -435,7 +435,10 @@ impl LoginEntry {
                     error_support::redact_url(origin)
                 );
                 
-                Err(InvalidLogin::IllegalOrigin.into())
+                Err(InvalidLogin::IllegalOrigin {
+                    reason: e.to_string(),
+                }
+                .into())
             }
         }
     }
@@ -858,6 +861,12 @@ mod tests {
                 Some((*output).into())
             );
         }
+
+        
+        for input in &[".", "example", "example.com"] {
+            assert!(LoginEntry::validate_and_fixup_origin(input).is_err());
+        }
+
         Ok(())
     }
 
@@ -1123,7 +1132,8 @@ mod tests {
             TestCase {
                 login: login_with_malformed_origin_parens,
                 should_err: true,
-                expected_err: "Invalid login: Login has illegal origin",
+                expected_err:
+                    "Invalid login: Login has illegal origin: relative URL without a base",
             },
             TestCase {
                 login: login_with_host_unicode,
