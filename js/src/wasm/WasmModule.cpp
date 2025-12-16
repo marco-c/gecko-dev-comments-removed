@@ -494,6 +494,19 @@ static bool CheckSharing(JSContext* cx, bool declaredShared, bool isShared) {
   return true;
 }
 
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+static bool CheckPageSize(JSContext* cx, PageSize declaredPageSize,
+                          PageSize actualPageSize) {
+  if (declaredPageSize != actualPageSize) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_IMP_PAGE_SIZE);
+    return false;
+  }
+
+  return true;
+}
+#endif
+
 
 
 
@@ -517,6 +530,14 @@ bool Module::instantiateMemories(
                                  ToString(memory->addressType()));
         return false;
       }
+
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+      
+      
+      if (!CheckPageSize(cx, desc.pageSize(), memory->pageSize())) {
+        return false;
+      }
+#endif
 
       if (!CheckLimits(cx, desc.initialPages(), desc.maximumPages(),
                        

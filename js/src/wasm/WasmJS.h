@@ -319,6 +319,7 @@ class WasmMemoryObject : public NativeObject {
   bool isHuge() const;
   bool movingGrowable() const;
   size_t boundsCheckLimit() const;
+  wasm::PageSize pageSize() const;
 
   
   WasmSharedArrayRawBuffer* sharedArrayRawBuffer() const;
