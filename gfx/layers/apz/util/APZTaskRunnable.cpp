@@ -22,7 +22,7 @@ APZTaskRunnable::Run() {
   
   
   const bool needsFlushCompleteNotification = mNeedsFlushCompleteNotification;
-  auto requests = std::move(mPendingRepaintRequestQueue);
+  auto requests = std::move(mPendingRequestQueue);
   mPendingRepaintRequestMap.clear();
   mNeedsFlushCompleteNotification = false;
   mRegisteredPresShellId = 0;
@@ -30,7 +30,18 @@ APZTaskRunnable::Run() {
 
   
   while (!requests.empty()) {
-    controller->RequestContentRepaint(requests.front());
+    struct RequestProcessor {
+      GeckoContentController* mController;
+      void operator()(const RepaintRequest& aRequest) {
+        mController->RequestContentRepaint(aRequest);
+      }
+      void operator()(const APZStateChangeRequest& aRequest) {
+        mController->NotifyAPZStateChange(aRequest.mGuid, aRequest.mChange,
+                                          aRequest.mArg,
+                                          aRequest.mInputBlockId);
+      }
+    };
+    requests.front().match(RequestProcessor{controller.get()});
     requests.pop_front();
   }
 
@@ -64,17 +75,40 @@ void APZTaskRunnable::QueueRequest(const RepaintRequest& aRequest) {
   
   
   if (lastDiscardableRequest != mPendingRepaintRequestMap.end()) {
-    for (auto it = mPendingRepaintRequestQueue.begin();
-         it != mPendingRepaintRequestQueue.end(); it++) {
-      if (RepaintRequestKey{it->GetScrollId(), it->GetScrollUpdateType()} ==
-          key) {
-        mPendingRepaintRequestQueue.erase(it);
-        break;
+    for (auto it = mPendingRequestQueue.begin();
+         it != mPendingRequestQueue.end(); it++) {
+      if (it->is<RepaintRequest>()) {
+        const RepaintRequest& request = it->as<RepaintRequest>();
+        if (RepaintRequestKey{request.GetScrollId(),
+                              request.GetScrollUpdateType()} == key) {
+          mPendingRequestQueue.erase(it);
+          break;
+        }
       }
     }
   }
   mPendingRepaintRequestMap.insert(key);
-  mPendingRepaintRequestQueue.push_back(aRequest);
+  mPendingRequestQueue.push_back(AsVariant(aRequest));
+}
+
+void APZTaskRunnable::QueueAPZStateChange(const ScrollableLayerGuid& aGuid,
+                                          const APZStateChange& aChange,
+                                          const int& aArg,
+                                          Maybe<uint64_t> aInputBlockId) {
+  
+  
+  if (IsTestControllingRefreshesEnabled()) {
+    
+    
+    RefPtr<GeckoContentController> controller = mController;
+    Run();
+    controller->NotifyAPZStateChange(aGuid, aChange, aArg, aInputBlockId);
+    return;
+  }
+  EnsureRegisterAsEarlyRunner();
+
+  mPendingRequestQueue.push_back(
+      AsVariant(APZStateChangeRequest{aGuid, aChange, aArg, aInputBlockId}));
 }
 
 void APZTaskRunnable::QueueFlushCompleteNotification() {
@@ -114,7 +148,7 @@ void APZTaskRunnable::EnsureRegisterAsEarlyRunner() {
   
   if (mRegisteredPresShellId) {
     mPendingRepaintRequestMap.clear();
-    mPendingRepaintRequestQueue.clear();
+    mPendingRequestQueue.clear();
     mNeedsFlushCompleteNotification = false;
   }
 

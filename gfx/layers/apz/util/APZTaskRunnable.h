@@ -11,6 +11,7 @@
 #include <unordered_set>
 
 #include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/GeckoContentControllerTypes.h"
 #include "mozilla/layers/RepaintRequest.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "nsThreadUtils.h"
@@ -22,6 +23,8 @@ class GeckoContentController;
 
 
 class APZTaskRunnable final : public Runnable {
+  using APZStateChange = GeckoContentController_APZStateChange;
+
  public:
   explicit APZTaskRunnable(GeckoContentController* aController)
       : Runnable("RepaintRequestRunnable"),
@@ -36,6 +39,9 @@ class APZTaskRunnable final : public Runnable {
       
       void
       QueueRequest(const RepaintRequest& aRequest);
+  void QueueAPZStateChange(const ScrollableLayerGuid& aGuid,
+                           const APZStateChange& aChange, const int& aArg,
+                           Maybe<uint64_t> aInputBlockId);
   void QueueFlushCompleteNotification();
   void Revoke() {
     mController = nullptr;
@@ -67,13 +73,20 @@ class APZTaskRunnable final : public Runnable {
       }
     };
   };
+  struct APZStateChangeRequest {
+    ScrollableLayerGuid mGuid;
+    APZStateChange mChange;
+    int mArg;
+    Maybe<uint64_t> mInputBlockId;
+  };
+  using Request = mozilla::Variant<RepaintRequest, APZStateChangeRequest>;
   using RepaintRequests =
       std::unordered_set<RepaintRequestKey, RepaintRequestKey::HashFn>;
   
   
   
   RepaintRequests mPendingRepaintRequestMap;
-  std::deque<RepaintRequest> mPendingRepaintRequestQueue;
+  std::deque<Request> mPendingRequestQueue;
   
   
   
