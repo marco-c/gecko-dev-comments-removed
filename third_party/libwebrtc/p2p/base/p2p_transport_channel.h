@@ -364,7 +364,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal,
   
   
   bool PrunePort(PortInterface* port);
-  void NotifyRoleConflict();
+  void NotifyRoleConflictInternal();
 
   void OnConnectionStateChange(Connection* connection);
   void OnReadPacket(Connection* connection, const ReceivedIpPacket& packet);

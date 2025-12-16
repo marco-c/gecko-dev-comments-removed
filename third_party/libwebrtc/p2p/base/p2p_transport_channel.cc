@@ -916,7 +916,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession* ,
 
   port->SubscribePortDestroyed(
       [this](PortInterface* port) { OnPortDestroyed(port); });
-  port->SubscribeRoleConflict([this]() { NotifyRoleConflict(); });
+  port->SubscribeRoleConflict([this] { NotifyRoleConflictInternal(); });
 
   
   
@@ -936,7 +936,7 @@ void P2PTransportChannel::OnCandidatesReady(
     const std::vector<Candidate>& candidates) {
   RTC_DCHECK_RUN_ON(network_thread_);
   for (size_t i = 0; i < candidates.size(); ++i) {
-    SignalCandidateGathered(this, candidates[i]);
+    NotifyCandidateGathered(this, candidates[i]);
   }
 }
 
@@ -1123,8 +1123,8 @@ void P2PTransportChannel::OnCandidateFilterChanged(uint32_t prev_filter,
   }
 }
 
-void P2PTransportChannel::NotifyRoleConflict() {
-  SignalRoleConflict(this);  
+void P2PTransportChannel::NotifyRoleConflictInternal() {
+  NotifyRoleConflict(this);  
                              
 }
 
@@ -1970,7 +1970,7 @@ void P2PTransportChannel::UpdateTransportState() {
     state_ = state;
     
     
-    SignalIceTransportStateChanged(this);
+    NotifyIceTransportStateChanged(this);
   }
 }
 
