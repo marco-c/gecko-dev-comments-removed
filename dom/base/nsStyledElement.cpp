@@ -154,8 +154,7 @@ nsresult nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc) {
     
     
     bool oldValueSet;
-    nsresult rv =
-        mAttrs.SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
+    nsresult rv = SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

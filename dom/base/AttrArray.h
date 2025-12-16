@@ -23,18 +23,36 @@
 namespace mozilla {
 class AttributeStyles;
 struct StyleLockedDeclarationBlock;
+
+namespace dom {
+class Element;
+class ElementInternals;
+}  
 }  
 
 class AttrArray {
   using BorrowedAttrInfo = mozilla::dom::BorrowedAttrInfo;
 
+  
+  friend class mozilla::dom::Element;
+  friend class mozilla::dom::ElementInternals;
+
  public:
-  AttrArray() = default;
-  ~AttrArray() = default;
+  AttrArray() {
+    
+    SetTaggedBloom(0x1ULL);
+  }
+  ~AttrArray() {
+    
+    
+    if (HasTaggedBloom()) {
+      mImpl.release();
+    }
+  }
 
   bool HasAttrs() const { return !!AttrCount(); }
 
-  uint32_t AttrCount() const { return mImpl ? mImpl->mAttrCount : 0; }
+  uint32_t AttrCount() const { return HasImpl() ? GetImpl()->mAttrCount : 0; }
 
   const nsAttrValue* GetAttr(const nsAtom* aLocalName) const;
 
@@ -48,14 +66,6 @@ class AttrArray {
   const nsAttrValue* GetAttr(const nsAString& aName,
                              nsCaseTreatment aCaseSensitive) const;
   const nsAttrValue* AttrAt(uint32_t aPos) const;
-  
-  
-  
-  
-  nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue);
-  nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue);
 
   
   
@@ -64,11 +74,11 @@ class AttrArray {
       already_AddRefed<mozilla::StyleLockedDeclarationBlock>);
 
   bool IsPendingMappedAttributeEvaluation() const {
-    return mImpl && mImpl->mMappedAttributeBits & 1;
+    return HasImpl() && GetImpl()->mMappedAttributeBits & 1;
   }
 
   mozilla::StyleLockedDeclarationBlock* GetMappedDeclarationBlock() const {
-    return mImpl ? mImpl->GetMappedDeclarationBlock() : nullptr;
+    return HasImpl() ? GetImpl()->GetMappedDeclarationBlock() : nullptr;
   }
 
   
@@ -103,7 +113,7 @@ class AttrArray {
   bool MarkAsPendingPresAttributeEvaluation() {
     
     
-    if (MOZ_UNLIKELY(!mImpl) && !GrowBy(1)) {
+    if (MOZ_UNLIKELY(!HasImpl()) && !GrowBy(1)) {
       return false;
     }
     InfallibleMarkAsPendingPresAttributeEvaluation();
@@ -112,8 +122,8 @@ class AttrArray {
 
   
   void InfallibleMarkAsPendingPresAttributeEvaluation() {
-    MOZ_ASSERT(mImpl);
-    mImpl->mMappedAttributeBits |= 1;
+    MOZ_ASSERT(HasImpl());
+    GetImpl()->mMappedAttributeBits |= 1;
   }
 
   
@@ -188,7 +198,17 @@ class AttrArray {
   bool GrowBy(uint32_t aGrowSize);
   bool GrowTo(uint32_t aCapacity);
 
-  void Clear() { mImpl.reset(); }
+  void Clear() {
+    
+    
+    if (HasTaggedBloom()) {
+      mImpl.release();
+    } else {
+      mImpl.reset();
+    }
+    
+    SetTaggedBloom(0x1ULL);
+  }
 
  private:
   
@@ -235,17 +255,133 @@ class AttrArray {
     uintptr_t mMappedAttributeBits = 0;
 
     
+    
+    
+    uint64_t mSubtreeBloomFilter;
+
+   public:
+    Impl() : mSubtreeBloomFilter(0xFFFFFFFFFFFFFFFFULL) {}
+
+    
     InternalAttr mBuffer[0];
   };
 
   mozilla::Span<InternalAttr> Attrs() {
-    return mImpl ? mImpl->Attrs() : mozilla::Span<InternalAttr>();
+    return HasImpl() ? GetImpl()->Attrs() : mozilla::Span<InternalAttr>();
   }
 
   mozilla::Span<const InternalAttr> Attrs() const {
-    return mImpl ? mImpl->Attrs() : mozilla::Span<const InternalAttr>();
+    return HasImpl() ? GetImpl()->Attrs() : mozilla::Span<const InternalAttr>();
   }
 
+  bool HasTaggedBloom() const {
+    return (reinterpret_cast<uintptr_t>(mImpl.get()) & 1) != 0;
+  }
+
+  bool HasImpl() const {
+    MOZ_ASSERT(mImpl.get() != nullptr);
+    return !HasTaggedBloom();
+  }
+
+  Impl* GetImpl() {
+    MOZ_ASSERT(HasImpl());
+    return mImpl.get();
+  }
+
+  const Impl* GetImpl() const {
+    MOZ_ASSERT(HasImpl());
+    return mImpl.get();
+  }
+
+  uint64_t GetTaggedBloom() const {
+    MOZ_ASSERT(HasTaggedBloom());
+    return reinterpret_cast<uint64_t>(mImpl.get());
+  }
+
+  void SetTaggedBloom(uint64_t aBloom) {
+    
+    if (HasTaggedBloom()) {
+      mImpl.release();
+    }
+    
+    
+    MOZ_ASSERT((aBloom & 1) != 0);
+    mImpl.reset(reinterpret_cast<Impl*>(static_cast<uintptr_t>(aBloom)));
+  }
+
+  void SetImpl(Impl* aImpl) {
+    MOZ_ASSERT(aImpl != nullptr &&
+               (reinterpret_cast<uintptr_t>(aImpl) & 1) == 0);
+    
+    
+    if (HasTaggedBloom()) {
+      mImpl.release();
+    }
+    mImpl.reset(aImpl);
+  }
+
+ public:
+  
+  void SetSubtreeBloomFilter(uint64_t aBloom) {
+    if (HasImpl()) {
+      GetImpl()->mSubtreeBloomFilter = aBloom;
+    } else {
+      SetTaggedBloom(aBloom);
+    }
+  }
+
+  
+  uint64_t GetSubtreeBloomFilter() const {
+    if (HasImpl()) {
+      return GetImpl()->mSubtreeBloomFilter;
+    } else if (HasTaggedBloom()) {
+      return GetTaggedBloom();
+    }
+    MOZ_ASSERT_UNREACHABLE("Bloom filter should never be nullptr");
+    return 0xFFFFFFFFFFFFFFFFULL;
+  }
+
+  
+  void UpdateSubtreeBloomFilter(uint64_t aHash) {
+    if (HasImpl()) {
+      GetImpl()->mSubtreeBloomFilter |= aHash;
+    } else {
+      uint64_t current = GetSubtreeBloomFilter();
+      SetTaggedBloom(current | aHash);
+    }
+  }
+
+  
+  bool BloomMayHave(uint64_t aHash) const {
+    uint64_t bloom = GetSubtreeBloomFilter();
+    return (bloom & aHash) == aHash;
+  }
+
+ private:
+  
+  
+  
+  
+  
+  
+  nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
+                          bool* aHadValue);
+  nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
+                          bool* aHadValue);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mozilla::BindgenUniquePtr<Impl> mImpl;
 };
 

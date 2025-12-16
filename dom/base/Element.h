@@ -1068,6 +1068,32 @@ class Element : public FragmentOrElement {
 
 
 
+  nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
+                          bool* aHadValue);
+
+  
+
+
+
+
+
+
+
+
+
+  nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
+                          bool* aHadValue);
+
+  
+
+
+
+
+
+
+
+
+
 
   const nsAttrName* GetAttrNameAt(uint32_t aIndex) const {
     return mAttrs.GetSafeAttrNameAt(aIndex);
@@ -2320,6 +2346,16 @@ class Element : public FragmentOrElement {
 
   MOZ_CAN_RUN_SCRIPT
   void FireBeforematchEvent(ErrorResult& aRv);
+
+  void PropagateBloomFilterToParents();
+  void UpdateSubtreeBloomFilterForClass(const nsAttrValue* aClassValue);
+  void UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute);
+  uint64_t GetSubtreeBloomFilter() const {
+    return mAttrs.GetSubtreeBloomFilter();
+  }
+#ifdef DEBUG
+  void VerifySubtreeBloomFilter() const;
+#endif
 
  protected:
   enum class ReparseAttributes { No, Yes };
