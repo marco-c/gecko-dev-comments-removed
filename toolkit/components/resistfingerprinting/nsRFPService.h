@@ -392,12 +392,6 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
 
   
   
-  
-  static bool CheckSuspiciousFingerprintingActivity(
-      nsTArray<ContentBlockingLog::LogEntry>& aLogs);
-
-  
-  
   static void GetMediaDeviceName(nsString& aName,
                                  mozilla::dom::MediaDeviceKind aKind);
 

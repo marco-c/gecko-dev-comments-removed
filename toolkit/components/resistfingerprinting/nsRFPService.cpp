@@ -156,8 +156,6 @@ MOZ_RUNINIT const RFPTargetSet kDefaultFingerprintingProtections = {
 #undef DESKTOP_DEFAULT
 
 
-static constexpr uint32_t kSuspiciousFingerprintingActivityThreshold = 1;
-
 
 
 
@@ -2103,48 +2101,6 @@ static void MaybeCurrentCaller(nsACString& aFilename, uint32_t& aLineNum,
       aChannel, false,
       nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING,
       aOriginNoSuffix);
-}
-
-
-bool nsRFPService::CheckSuspiciousFingerprintingActivity(
-    nsTArray<ContentBlockingLog::LogEntry>& aLogs) {
-  if (aLogs.Length() == 0) {
-    return false;
-  }
-
-  uint32_t cnt = 0;
-  
-  
-  bool foundCanvas = false;
-  bool foundFont = false;
-
-  
-  
-  for (auto& log : aLogs) {
-    
-    
-    if (log.mCanvasFingerprinter &&
-        (log.mCanvasFingerprinter.ref() ==
-             ContentBlockingNotifier::CanvasFingerprinter::eFingerprintJS ||
-         log.mCanvasFingerprinter.ref() ==
-             ContentBlockingNotifier::CanvasFingerprinter::eAkamai)) {
-      return true;
-    } else if (!foundCanvas && log.mType ==
-                                   nsIWebProgressListener::
-                                       STATE_ALLOWED_CANVAS_FINGERPRINTING) {
-      cnt++;
-      foundCanvas = true;
-    } else if (!foundFont &&
-               log.mType ==
-                   nsIWebProgressListener::STATE_ALLOWED_FONT_FINGERPRINTING) {
-      cnt++;
-      foundFont = true;
-    }
-  }
-
-  
-  
-  return cnt > kSuspiciousFingerprintingActivityThreshold;
 }
 
 
