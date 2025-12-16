@@ -284,11 +284,14 @@ struct NativeIterator : public NativeIteratorListNode {
     static constexpr uint32_t IndicesAvailable = 0x40;
 
     
+    static constexpr uint32_t OwnPropertiesOnly = 0x80;
+
+    
     
     
     
     static constexpr uint32_t NotReusable =
-        Active | HasUnvisitedPropertyDeletion;
+        Active | HasUnvisitedPropertyDeletion | OwnPropertiesOnly;
   };
 
   
@@ -327,7 +330,8 @@ struct NativeIterator : public NativeIteratorListNode {
   NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
                  Handle<JSObject*> objBeingIterated, HandleIdVector props,
                  bool supportsIndices, PropertyIndexVector* indices,
-                 uint32_t numShapes, uint32_t ownPropertyCount, bool* hadError);
+                 uint32_t numShapes, uint32_t ownPropertyCount,
+                 bool forObjectKeys, bool* hadError);
 
   JSObject* objectBeingIterated() const { return objectBeingIterated_; }
 
@@ -486,6 +490,8 @@ struct NativeIterator : public NativeIteratorListNode {
   bool indicesAvailable() const { return flags_ & Flags::IndicesAvailable; }
 
   bool indicesSupported() const { return flags_ & Flags::IndicesSupported; }
+
+  bool ownPropertiesOnly() const { return flags_ & Flags::OwnPropertiesOnly; }
 
   
   
@@ -708,10 +714,10 @@ PropertyIteratorObject* LookupInShapeIteratorCache(JSContext* cx,
 PropertyIteratorObject* GetIterator(JSContext* cx, HandleObject obj);
 PropertyIteratorObject* GetIteratorWithIndices(JSContext* cx, HandleObject obj);
 
-PropertyIteratorObject* GetIteratorUnregistered(JSContext* cx,
-                                                HandleObject obj);
-PropertyIteratorObject* GetIteratorWithIndicesUnregistered(JSContext* cx,
-                                                           HandleObject obj);
+PropertyIteratorObject* GetIteratorForObjectKeys(JSContext* cx,
+                                                 HandleObject obj);
+PropertyIteratorObject* GetIteratorWithIndicesForObjectKeys(JSContext* cx,
+                                                            HandleObject obj);
 
 PropertyIteratorObject* ValueToIterator(JSContext* cx, HandleValue vp);
 
