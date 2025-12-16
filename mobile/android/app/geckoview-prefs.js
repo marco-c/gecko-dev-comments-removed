@@ -111,6 +111,7 @@ pref("browser.meta_refresh_when_inactive.disabled", true);
 
 pref("browser.safebrowsing.downloads.enabled", false);
 
+pref("browser.safebrowsing.features.harmfuladdon.update", true);
 pref("browser.safebrowsing.features.cryptomining.update", true);
 pref("browser.safebrowsing.features.fingerprinting.update", true);
 pref("browser.safebrowsing.features.malware.update", true);
