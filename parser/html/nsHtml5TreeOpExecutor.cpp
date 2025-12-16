@@ -912,9 +912,7 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
     MOZ_ASSERT(sele->GetScriptDeferred() || sele->GetScriptAsync() ||
                sele->GetScriptIsModule() || sele->GetScriptIsImportMap() ||
                aScriptElement->AsElement()->HasAttr(nsGkAtoms::nomodule));
-    DebugOnly<bool> block = sele->AttemptToExecute();
-    MOZ_ASSERT(!block,
-               "Defer, async, module, importmap, or nomodule tried to block.");
+    sele->AttemptToExecute(nullptr );
     return;
   }
 
@@ -927,15 +925,10 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
   
   
   
-  bool block = sele->AttemptToExecute();
+  bool block = sele->AttemptToExecute(GetParser());
 
   
-  
-  if (block) {
-    if (mParser) {
-      GetParser()->BlockParser();
-    }
-  } else {
+  if (!block) {
     
 
     

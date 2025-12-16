@@ -216,16 +216,9 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
-  bool AttemptToExecute() {
-    mDoneAddingChildren = true;
-    bool block = MaybeProcessScript();
-    if (!mAlreadyStarted) {
-      
-      
-      LoseParserInsertedness();
-    }
-    return block;
-  }
+
+
+  bool AttemptToExecute(nsCOMPtr<nsIParser> aParser);
 
   
 
@@ -277,7 +270,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
-  virtual bool MaybeProcessScript() = 0;
+  virtual bool MaybeProcessScript(nsCOMPtr<nsIParser> aParser) = 0;
 
   
 

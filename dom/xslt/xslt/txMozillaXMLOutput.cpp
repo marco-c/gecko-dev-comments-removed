@@ -270,7 +270,7 @@ nsresult txMozillaXMLOutput::endElement() {
         {
           nsAutoMicroTask mt;
         }
-        bool block = sele->AttemptToExecute();
+        bool block = sele->AttemptToExecute(nullptr );
         
         
         if (block) {

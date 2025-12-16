@@ -642,17 +642,12 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
 
     
     
-    bool block = sele->AttemptToExecute();
-    if (mParser) {
-      if (block) {
-        GetParser()->BlockParser();
-      }
+    bool block = sele->AttemptToExecute(GetParser());
 
-      
-      
-      if (!mParser->IsParserEnabled()) {
-        block = true;
-      }
+    
+    
+    if (mParser && !mParser->IsParserEnabled()) {
+      block = true;
     }
 
     return block ? NS_ERROR_HTMLPARSER_BLOCK : NS_OK;

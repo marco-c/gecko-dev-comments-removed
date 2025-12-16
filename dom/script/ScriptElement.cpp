@@ -91,7 +91,7 @@ ScriptElement::ScriptEvaluated(nsresult aResult, nsIScriptElement* aElement,
 void ScriptElement::CharacterDataChanged(nsIContent* aContent,
                                          const CharacterDataChangeInfo& aInfo) {
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
-  MaybeProcessScript();
+  MaybeProcessScript(nullptr );
 }
 
 void ScriptElement::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
@@ -115,7 +115,7 @@ void ScriptElement::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   if (mParserCreated == NOT_FROM_PARSER && aModType == AttrModType::Addition) {
     auto* cont = GetAsContent();
     if (cont->IsInComposedDoc()) {
-      MaybeProcessScript();
+      MaybeProcessScript(nullptr );
     }
   }
 }
@@ -123,13 +123,13 @@ void ScriptElement::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
 void ScriptElement::ContentAppended(nsIContent* aFirstNewContent,
                                     const ContentAppendInfo& aInfo) {
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
-  MaybeProcessScript();
+  MaybeProcessScript(nullptr );
 }
 
 void ScriptElement::ContentInserted(nsIContent* aChild,
                                     const ContentInsertInfo& aInfo) {
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
-  MaybeProcessScript();
+  MaybeProcessScript(nullptr );
 }
 
 void ScriptElement::ContentWillBeRemoved(nsIContent* aChild,
@@ -137,7 +137,7 @@ void ScriptElement::ContentWillBeRemoved(nsIContent* aChild,
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
 }
 
-bool ScriptElement::MaybeProcessScript() {
+bool ScriptElement::MaybeProcessScript(nsCOMPtr<nsIParser> aParser) {
   nsIContent* cont = GetAsContent();
 
   NS_ASSERTION(cont->DebugGetSlots()->mMutationObservers.contains(this),
@@ -151,30 +151,58 @@ bool ScriptElement::MaybeProcessScript() {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!HasExternalScriptContent() && !mIsTrusted) {
-    if (!TrustedTypeUtils::CanSkipTrustedTypesEnforcement(
-            *GetAsContent()->AsElement())) {
-      
-      nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-          "ScriptElement::MaybeProcessScript",
-          [self = RefPtr<nsIScriptElement>(this)]()
-              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                nsString sourceText;
-                self->GetTrustedTypesCompliantInlineScriptText(sourceText);
-                ((ScriptElement*)self.get())->MaybeProcessScript(sourceText);
-              }));
-      return false;
+  if (HasExternalScriptContent() || mIsTrusted ||
+      TrustedTypeUtils::CanSkipTrustedTypesEnforcement(
+          *GetAsContent()->AsElement())) {
+    
+    
+    
+    
+    
+    bool block = MaybeProcessScript(VoidString());
+    if (block && aParser) {
+      aParser->BlockParser();
     }
+    return block;
   }
-  return MaybeProcessScript(VoidString());
+
+  
+  
+  if (nsContentUtils::IsSafeToRunScript()) {
+    
+    
+    bool block =
+        ([self = RefPtr<nsIScriptElement>(this)]()
+             MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+               nsString sourceText;
+               self->GetTrustedTypesCompliantInlineScriptText(sourceText);
+               return static_cast<ScriptElement*>(self.get())
+                   ->MaybeProcessScript(sourceText);
+             })();
+    if (block && aParser) {
+      aParser->BlockParser();
+    }
+    return block;
+  }
+
+  
+  
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "ScriptElement::MaybeProcessScript",
+      [self = RefPtr<nsIScriptElement>(this), aParser]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            nsString sourceText;
+            self->GetTrustedTypesCompliantInlineScriptText(sourceText);
+            bool block = static_cast<ScriptElement*>(self.get())
+                             ->MaybeProcessScript(sourceText);
+            if (!block && aParser) {
+              aParser->UnblockParser();
+            }
+          }));
+  if (aParser) {
+    aParser->BlockParser();
+  }
+  return true;
 }
 
 bool ScriptElement::MaybeProcessScript(const nsAString& aSourceText) {
