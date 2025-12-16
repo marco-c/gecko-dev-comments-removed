@@ -1381,6 +1381,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   static LayoutDeviceIntPoint sLastRefPoint;
+  static LayoutDeviceIntPoint sLastRefPointOfRawUpdate;
 
   
   LayoutDeviceIntPoint mGestureDownPoint;  

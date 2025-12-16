@@ -620,6 +620,8 @@ constinit AutoWeakFrame EventStateManager::sLastDragOverFrame{};
 LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint =
     LayoutDeviceIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
+LayoutDeviceIntPoint EventStateManager::sLastRefPointOfRawUpdate =
+    kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastScreenPoint = CSSIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sSynthCenteringPoint = kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastClientPoint = CSSIntPoint(0, 0);
@@ -5638,6 +5640,10 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
     return;
   }
 
+  const LayoutDeviceIntPoint& lastRefPoint =
+      aMouseEvent->mMessage == ePointerRawUpdate ? sLastRefPointOfRawUpdate
+                                                 : sLastRefPoint;
+
   
   
   
@@ -5651,14 +5657,14 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
     aMouseEvent->mLastRefPoint =
         GetWindowClientRectCenter(aMouseEvent->mWidget);
 
-  } else if (sLastRefPoint == kInvalidRefPoint) {
+  } else if (lastRefPoint == kInvalidRefPoint) {
     
     
     
     
     aMouseEvent->mLastRefPoint = aMouseEvent->mRefPoint;
   } else {
-    aMouseEvent->mLastRefPoint = sLastRefPoint;
+    aMouseEvent->mLastRefPoint = lastRefPoint;
   }
 }
 
@@ -5712,10 +5718,21 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
 
 void EventStateManager::UpdateLastPointerPosition(
     WidgetMouseEvent* aMouseEvent) {
-  if (aMouseEvent->mMessage != eMouseMove) {
+  if (aMouseEvent->IsSynthesized()) {
     return;
   }
-  sLastRefPoint = aMouseEvent->mRefPoint;
+  if (aMouseEvent->mMessage == eMouseMove) {
+    sLastRefPoint = aMouseEvent->mRefPoint;
+  } else if (aMouseEvent->mMessage == ePointerRawUpdate ||
+             
+             
+             
+             
+             
+             aMouseEvent->mMessage == ePointerMove) {
+    
+    sLastRefPointOfRawUpdate = aMouseEvent->mRefPoint;
+  }
 }
 
 void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
@@ -5799,7 +5816,7 @@ void EventStateManager::GenerateMouseEnterExit(WidgetMouseEvent* aMouseEvent) {
 
       
       
-      sLastRefPoint = kInvalidRefPoint;
+      sLastRefPoint = sLastRefPointOfRawUpdate = kInvalidRefPoint;
 
       NotifyMouseOut(aMouseEvent, nullptr);
       break;
@@ -5856,7 +5873,8 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     
     
-    sLastRefPoint = GetWindowClientRectCenter(aWidget);
+    sLastRefPoint = sLastRefPointOfRawUpdate =
+        GetWindowClientRectCenter(aWidget);
     aWidget->SynthesizeNativeMouseMove(
         sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
 
@@ -5881,7 +5899,8 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
       
       
       
-      sLastRefPoint = sPreLockScreenPoint - aWidget->WidgetToScreenOffset();
+      sLastRefPoint = sLastRefPointOfRawUpdate =
+          sPreLockScreenPoint - aWidget->WidgetToScreenOffset();
       
       
       
