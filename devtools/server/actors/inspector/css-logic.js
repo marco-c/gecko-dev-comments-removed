@@ -47,10 +47,6 @@ const COMPAREMODE = {
 };
 
 class CssLogic {
-  constructor() {
-    this._propertyInfos = {};
-  }
-
   
 
 
@@ -164,49 +160,53 @@ class CssLogic {
   static hasVisitedState = hasVisitedState;
 
   
+  matchId = 0;
+
+  
+  
+  passId = 0;
+
+  
   viewedElement = null;
   viewedDocument = null;
 
-  
-  _sheets = null;
+  #propertyInfos = {};
 
   
-  _sheetsCached = false;
+  #sheets = null;
 
   
-  _ruleCount = 0;
+  #sheetsCached = false;
+
+  #sheetIndex = 0;
 
   
-  _computedStyle = null;
+  #ruleCount = 0;
 
   
-  _sourceFilter = FILTER.USER;
+  #computedStyle = null;
 
   
-  
-  _passId = 0;
+  #sourceFilter = FILTER.USER;
+
+  #matchedRules = null;
+  #matchedSelectors = null;
 
   
-  _matchId = 0;
-
-  _matchedRules = null;
-  _matchedSelectors = null;
-
-  
-  _keyframesRules = null;
+  #keyframesRules = null;
 
   
 
 
   reset() {
-    this._propertyInfos = {};
-    this._ruleCount = 0;
-    this._sheetIndex = 0;
-    this._sheets = {};
-    this._sheetsCached = false;
-    this._matchedRules = null;
-    this._matchedSelectors = null;
-    this._keyframesRules = [];
+    this.#propertyInfos = {};
+    this.#ruleCount = 0;
+    this.#sheetIndex = 0;
+    this.#sheets = {};
+    this.#sheetsCached = false;
+    this.#matchedRules = null;
+    this.#matchedSelectors = null;
+    this.#keyframesRules = [];
   }
 
   
@@ -219,7 +219,7 @@ class CssLogic {
     if (!viewedElement) {
       this.viewedElement = null;
       this.viewedDocument = null;
-      this._computedStyle = null;
+      this.#computedStyle = null;
       this.reset();
       return;
     }
@@ -236,15 +236,15 @@ class CssLogic {
       this.viewedDocument = doc;
 
       
-      this._cacheSheets();
+      this.#cacheSheets();
     } else {
       
-      this._propertyInfos = {};
+      this.#propertyInfos = {};
     }
 
-    this._matchedRules = null;
-    this._matchedSelectors = null;
-    this._computedStyle = CssLogic.getComputedStyle(this.viewedElement);
+    this.#matchedRules = null;
+    this.#matchedSelectors = null;
+    this.#computedStyle = CssLogic.getComputedStyle(this.viewedElement);
   }
 
   
@@ -254,7 +254,7 @@ class CssLogic {
 
 
   get computedStyle() {
-    return this._computedStyle;
+    return this.#computedStyle;
   }
 
   
@@ -263,7 +263,7 @@ class CssLogic {
 
 
   get sourceFilter() {
-    return this._sourceFilter;
+    return this.#sourceFilter;
   }
 
   
@@ -274,8 +274,8 @@ class CssLogic {
 
 
   set sourceFilter(value) {
-    const oldValue = this._sourceFilter;
-    this._sourceFilter = value;
+    const oldValue = this.#sourceFilter;
+    this.#sourceFilter = value;
 
     let ruleCount = 0;
 
@@ -286,20 +286,20 @@ class CssLogic {
       }
     }, this);
 
-    this._ruleCount = ruleCount;
+    this.#ruleCount = ruleCount;
 
     
     
     const needFullUpdate = oldValue == FILTER.UA || value == FILTER.UA;
 
     if (needFullUpdate) {
-      this._matchedRules = null;
-      this._matchedSelectors = null;
-      this._propertyInfos = {};
+      this.#matchedRules = null;
+      this.#matchedSelectors = null;
+      this.#propertyInfos = {};
     } else {
       
-      for (const property in this._propertyInfos) {
-        this._propertyInfos[property].needRefilter = true;
+      for (const property in this.#propertyInfos) {
+        this.#propertyInfos[property].needRefilter = true;
       }
     }
   }
@@ -318,10 +318,10 @@ class CssLogic {
       return {};
     }
 
-    let info = this._propertyInfos[property];
+    let info = this.#propertyInfos[property];
     if (!info) {
       info = new CssPropertyInfo(this, property);
-      this._propertyInfos[property] = info;
+      this.#propertyInfos[property] = info;
     }
 
     return info;
@@ -332,8 +332,8 @@ class CssLogic {
 
 
 
-  _cacheSheets() {
-    this._passId++;
+  #cacheSheets() {
+    this.passId++;
     this.reset();
 
     
@@ -341,9 +341,9 @@ class CssLogic {
       this.viewedDocument,
       true
     );
-    Array.prototype.forEach.call(styleSheets, this._cacheSheet, this);
+    Array.prototype.forEach.call(styleSheets, this.#cacheSheet, this);
 
-    this._sheetsCached = true;
+    this.#sheetsCached = true;
   }
 
   
@@ -355,7 +355,7 @@ class CssLogic {
 
 
 
-  _cacheSheet(domSheet) {
+  #cacheSheet(domSheet) {
     if (domSheet.disabled) {
       return;
     }
@@ -366,9 +366,9 @@ class CssLogic {
     }
 
     
-    const cssSheet = this.getSheet(domSheet, this._sheetIndex++);
-    if (cssSheet._passId != this._passId) {
-      cssSheet._passId = this._passId;
+    const cssSheet = this.getSheet(domSheet, this.#sheetIndex++);
+    if (cssSheet.passId != this.passId) {
+      cssSheet.passId = this.passId;
 
       
       
@@ -380,9 +380,9 @@ class CssLogic {
             aDomRule.styleSheet &&
             this.mediaMatches(aDomRule)
           ) {
-            this._cacheSheet(aDomRule.styleSheet);
+            this.#cacheSheet(aDomRule.styleSheet);
           } else if (ruleClassName === "CSSKeyframesRule") {
-            this._keyframesRules.push(aDomRule);
+            this.#keyframesRules.push(aDomRule);
           }
 
           if (aDomRule.cssRules) {
@@ -401,8 +401,8 @@ class CssLogic {
 
 
   get sheets() {
-    if (!this._sheetsCached) {
-      this._cacheSheets();
+    if (!this.#sheetsCached) {
+      this.#cacheSheets();
     }
 
     const sheets = [];
@@ -421,10 +421,10 @@ class CssLogic {
 
 
   get keyframesRules() {
-    if (!this._sheetsCached) {
-      this._cacheSheets();
+    if (!this.#sheetsCached) {
+      this.#cacheSheets();
     }
-    return this._keyframesRules;
+    return this.#keyframesRules;
   }
 
   
@@ -449,8 +449,8 @@ class CssLogic {
     let sheet = null;
     let sheetFound = false;
 
-    if (cacheId in this._sheets) {
-      for (sheet of this._sheets[cacheId]) {
+    if (cacheId in this.#sheets) {
+      for (sheet of this.#sheets[cacheId]) {
         if (sheet.domSheet === domSheet) {
           if (index != -1) {
             sheet.index = index;
@@ -462,16 +462,16 @@ class CssLogic {
     }
 
     if (!sheetFound) {
-      if (!(cacheId in this._sheets)) {
-        this._sheets[cacheId] = [];
+      if (!(cacheId in this.#sheets)) {
+        this.#sheets[cacheId] = [];
       }
 
       sheet = new CssSheet(this, domSheet, index);
       if (sheet.sheetAllowed && sheet.authorSheet) {
-        this._ruleCount += sheet.ruleCount;
+        this.#ruleCount += sheet.ruleCount;
       }
 
-      this._sheets[cacheId].push(sheet);
+      this.#sheets[cacheId].push(sheet);
     }
 
     return sheet;
@@ -486,8 +486,8 @@ class CssLogic {
 
 
   forEachSheet(callback, scope) {
-    for (const cacheId in this._sheets) {
-      const sheets = this._sheets[cacheId];
+    for (const cacheId in this.#sheets) {
+      const sheets = this.#sheets[cacheId];
       for (let i = 0; i < sheets.length; i++) {
         
         try {
@@ -518,11 +518,11 @@ class CssLogic {
 
 
   get ruleCount() {
-    if (!this._sheetsCached) {
-      this._cacheSheets();
+    if (!this.#sheetsCached) {
+      this.#cacheSheets();
     }
 
-    return this._ruleCount;
+    return this.#ruleCount;
   }
 
   
@@ -542,43 +542,43 @@ class CssLogic {
 
 
   processMatchedSelectors(callback, scope) {
-    if (this._matchedSelectors) {
+    if (this.#matchedSelectors) {
       if (callback) {
-        this._passId++;
-        this._matchedSelectors.forEach(function (value) {
+        this.passId++;
+        this.#matchedSelectors.forEach(function (value) {
           callback.call(scope, value[0], value[1]);
-          value[0].cssRule._passId = this._passId;
+          value[0].cssRule.passId = this.passId;
         }, this);
       }
       return;
     }
 
-    if (!this._matchedRules) {
-      this._buildMatchedRules();
+    if (!this.#matchedRules) {
+      this.#buildMatchedRules();
     }
 
-    this._matchedSelectors = [];
-    this._passId++;
+    this.#matchedSelectors = [];
+    this.passId++;
 
-    for (const matchedRule of this._matchedRules) {
+    for (const matchedRule of this.#matchedRules) {
       const [rule, status, distance] = matchedRule;
 
       rule.selectors.forEach(function (selector) {
         if (
-          selector._matchId !== this._matchId &&
+          selector.matchId !== this.matchId &&
           (rule.domRule.declarationOrigin === "style-attribute" ||
             rule.domRule.declarationOrigin === "pres-hints" ||
             this.selectorMatchesElement(rule.domRule, selector.selectorIndex))
         ) {
-          selector._matchId = this._matchId;
-          this._matchedSelectors.push([selector, status, distance]);
+          selector.matchId = this.matchId;
+          this.#matchedSelectors.push([selector, status, distance]);
           if (callback) {
             callback.call(scope, selector, status, distance);
           }
         }
       }, this);
 
-      rule._passId = this._passId;
+      rule.passId = this.passId;
     }
   }
 
@@ -628,13 +628,13 @@ class CssLogic {
 
 
   hasMatchedSelectors(properties) {
-    if (!this._matchedRules) {
-      this._buildMatchedRules();
+    if (!this.#matchedRules) {
+      this.#buildMatchedRules();
     }
 
     const result = new Set();
 
-    for (const [rule, status] of this._matchedRules) {
+    for (const [rule, status] of this.#matchedRules) {
       
       let cssText;
       const getCssText = () => {
@@ -686,7 +686,7 @@ class CssLogic {
 
 
 
-  _buildMatchedRules() {
+  #buildMatchedRules() {
     let domRules;
     let element = this.viewedElement;
     const filter = this.sourceFilter;
@@ -699,9 +699,9 @@ class CssLogic {
     
     let distance = 0;
 
-    this._matchId++;
-    this._passId++;
-    this._matchedRules = [];
+    this.matchId++;
+    this.passId++;
+    this.#matchedRules = [];
 
     if (!element) {
       return;
@@ -742,16 +742,16 @@ class CssLogic {
               },
               element
             );
-            rule._matchId = this._matchId;
-            rule._passId = this._passId;
-            this._matchedRules.push([rule, status, distance]);
+            rule.matchId = this.matchId;
+            rule.passId = this.passId;
+            this.#matchedRules.push([rule, status, distance]);
 
             continue;
           }
           const sheet = this.getSheet(domRule.parentStyleSheet, -1);
-          if (sheet._passId !== this._passId) {
+          if (sheet.passId !== this.passId) {
             sheet.index = sheetIndex++;
-            sheet._passId = this._passId;
+            sheet.passId = this.passId;
           }
 
           if (filter === FILTER.USER && !sheet.authorSheet) {
@@ -759,13 +759,13 @@ class CssLogic {
           }
 
           const rule = sheet.getRule(domRule);
-          if (rule._passId === this._passId) {
+          if (rule.passId === this.passId) {
             continue;
           }
 
-          rule._matchId = this._matchId;
-          rule._passId = this._passId;
-          this._matchedRules.push([rule, status, distance]);
+          rule.matchId = this.matchId;
+          rule.passId = this.passId;
+          this.#matchedRules.push([rule, status, distance]);
         }
       }
 
@@ -806,28 +806,30 @@ class CssSheet {
 
 
   constructor(cssLogic, domSheet, index) {
-    this._cssLogic = cssLogic;
+    this.#cssLogic = cssLogic;
     this.domSheet = domSheet;
     this.index = this.authorSheet ? index : -100 * index;
-
-    
-    this._href = null;
-    
-    this._shortSource = null;
-
-    
-    this._sheetAllowed = null;
-
-    
-    this._rules = {};
-
-    this._ruleCount = -1;
   }
 
-  _passId = null;
-  _agentSheet = null;
-  _authorSheet = null;
-  _userSheet = null;
+  #cssLogic;
+  
+  #href = null;
+
+  
+  #shortSource = null;
+
+  
+  #rules = {};
+
+  
+  #sheetAllowed = null;
+
+  #ruleCount = -1;
+
+  passId = null;
+  #agentSheet = null;
+  #authorSheet = null;
+  #userSheet = null;
 
   
 
@@ -835,10 +837,10 @@ class CssSheet {
 
 
   get agentSheet() {
-    if (this._agentSheet === null) {
-      this._agentSheet = isAgentStylesheet(this.domSheet);
+    if (this.#agentSheet === null) {
+      this.#agentSheet = isAgentStylesheet(this.domSheet);
     }
-    return this._agentSheet;
+    return this.#agentSheet;
   }
 
   
@@ -847,10 +849,10 @@ class CssSheet {
 
 
   get authorSheet() {
-    if (this._authorSheet === null) {
-      this._authorSheet = isAuthorStylesheet(this.domSheet);
+    if (this.#authorSheet === null) {
+      this.#authorSheet = isAuthorStylesheet(this.domSheet);
     }
-    return this._authorSheet;
+    return this.#authorSheet;
   }
 
   
@@ -860,10 +862,10 @@ class CssSheet {
 
 
   get userSheet() {
-    if (this._userSheet === null) {
-      this._userSheet = isUserStylesheet(this.domSheet);
+    if (this.#userSheet === null) {
+      this.#userSheet = isUserStylesheet(this.domSheet);
     }
-    return this._userSheet;
+    return this.#userSheet;
   }
 
   
@@ -881,12 +883,12 @@ class CssSheet {
 
 
   get href() {
-    if (this._href) {
-      return this._href;
+    if (this.#href) {
+      return this.#href;
     }
 
-    this._href = CssLogic.href(this.domSheet);
-    return this._href;
+    this.#href = CssLogic.href(this.domSheet);
+    return this.#href;
   }
 
   
@@ -895,12 +897,12 @@ class CssSheet {
 
 
   get shortSource() {
-    if (this._shortSource) {
-      return this._shortSource;
+    if (this.#shortSource) {
+      return this.#shortSource;
     }
 
-    this._shortSource = shortSource(this.domSheet);
-    return this._shortSource;
+    this.#shortSource = shortSource(this.domSheet);
+    return this.#shortSource;
   }
 
   
@@ -910,21 +912,21 @@ class CssSheet {
 
 
   get sheetAllowed() {
-    if (this._sheetAllowed !== null) {
-      return this._sheetAllowed;
+    if (this.#sheetAllowed !== null) {
+      return this.#sheetAllowed;
     }
 
-    this._sheetAllowed = true;
+    this.#sheetAllowed = true;
 
-    const filter = this._cssLogic.sourceFilter;
+    const filter = this.#cssLogic.sourceFilter;
     if (filter === FILTER.USER && !this.authorSheet) {
-      this._sheetAllowed = false;
+      this.#sheetAllowed = false;
     }
     if (filter !== FILTER.USER && filter !== FILTER.UA) {
-      this._sheetAllowed = filter === this.href;
+      this.#sheetAllowed = filter === this.href;
     }
 
-    return this._sheetAllowed;
+    return this.#sheetAllowed;
   }
 
   
@@ -934,7 +936,7 @@ class CssSheet {
 
   get ruleCount() {
     try {
-      return this._ruleCount > -1 ? this._ruleCount : this.getCssRules().length;
+      return this.#ruleCount > -1 ? this.#ruleCount : this.getCssRules().length;
     } catch (e) {
       return 0;
     }
@@ -972,8 +974,8 @@ class CssSheet {
     let rule = null;
     let ruleFound = false;
 
-    if (cacheId in this._rules) {
-      for (rule of this._rules[cacheId]) {
+    if (cacheId in this.#rules) {
+      for (rule of this.#rules[cacheId]) {
         if (rule.domRule === domRule) {
           ruleFound = true;
           break;
@@ -982,12 +984,12 @@ class CssSheet {
     }
 
     if (!ruleFound) {
-      if (!(cacheId in this._rules)) {
-        this._rules[cacheId] = [];
+      if (!(cacheId in this.#rules)) {
+        this.#rules[cacheId] = [];
       }
 
       rule = new CssRule(this, domRule);
-      this._rules[cacheId].push(rule);
+      this.#rules[cacheId].push(rule);
     }
 
     return rule;
@@ -999,32 +1001,32 @@ class CssSheet {
 }
 
 class CssRule {
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Information about a single CSSStyleRule.
+   *
+   * @param {CSSStyleSheet|null} cssSheet the CssSheet object of the stylesheet that
+   * holds the CSSStyleRule. If the rule comes from element.style, set this
+   * argument to null.
+   * @param {CSSStyleRule|InspectorDeclaration} domRule the DOM CSSStyleRule for which you want
+   * to cache data. If the rule comes from element.style or presentational attributes, it
+   * will be an InspectorDeclaration (object of the form {style: element.style, declarationOrigin: string}).
+   * @param {Element} [element] If the rule comes from element.style, then this
+   * argument must point to the element.
+   * @constructor
+   */
   constructor(cssSheet, domRule, element) {
-    this._cssSheet = cssSheet;
+    this.#cssSheet = cssSheet;
     this.domRule = domRule;
 
-    if (this._cssSheet) {
-      
-      this._selectors = null;
+    if (this.#cssSheet) {
+      // parse domRule.selectorText on call to this.selectors
+      this.#selectors = null;
       this.line = InspectorUtils.getRelativeRuleLine(this.domRule);
       this.column = InspectorUtils.getRuleColumn(this.domRule);
-      this.href = this._cssSheet.href;
-      this.authorRule = this._cssSheet.authorSheet;
-      this.userRule = this._cssSheet.userSheet;
-      this.agentRule = this._cssSheet.agentSheet;
+      this.href = this.#cssSheet.href;
+      this.authorRule = this.#cssSheet.authorSheet;
+      this.userRule = this.#cssSheet.userSheet;
+      this.agentRule = this.#cssSheet.agentSheet;
     } else if (element) {
       let selector = "";
       if (domRule.declarationOrigin === "style-attribute") {
@@ -1033,7 +1035,7 @@ class CssRule {
         selector = "@element.attributesStyle";
       }
 
-      this._selectors = [new CssSelector(this, selector, 0)];
+      this.#selectors = [new CssSelector(this, selector, 0)];
       this.line = -1;
       this.href = "#";
       this.authorRule = true;
@@ -1043,7 +1045,10 @@ class CssRule {
     }
   }
 
-  _passId = null;
+  passId = null;
+
+  #cssSheet;
+  #selectors;
 
   
 
@@ -1052,7 +1057,7 @@ class CssRule {
 
 
   get sheetAllowed() {
-    return this._cssSheet ? this._cssSheet.sheetAllowed : true;
+    return this.#cssSheet ? this.#cssSheet.sheetAllowed : true;
   }
 
   
@@ -1062,7 +1067,7 @@ class CssRule {
 
 
   get sheetIndex() {
-    return this._cssSheet ? this._cssSheet.index : 0;
+    return this.#cssSheet ? this.#cssSheet.index : 0;
   }
 
   
@@ -1108,24 +1113,24 @@ class CssRule {
 
 
   get selectors() {
-    if (this._selectors) {
-      return this._selectors;
+    if (this.#selectors) {
+      return this.#selectors;
     }
 
     
-    this._selectors = [];
+    this.#selectors = [];
 
     if (!this.domRule.selectorText) {
-      return this._selectors;
+      return this.#selectors;
     }
 
     const selectors = CssLogic.getSelectors(this.domRule);
 
     for (let i = 0, len = selectors.length; i < len; i++) {
-      this._selectors.push(new CssSelector(this, selectors[i], i));
+      this.#selectors.push(new CssSelector(this, selectors[i], i));
     }
 
-    return this._selectors;
+    return this.#selectors;
   }
 
   toString() {
@@ -1147,11 +1152,12 @@ class CssSelector {
     this.cssRule = cssRule;
     this.text = selector;
     this.inlineStyle = cssRule.domRule?.declarationOrigin === "style-attribute";
-    this._specificity = null;
     this.selectorIndex = index;
   }
 
-  _matchId = null;
+  matchId = null;
+
+  #specificity = null;
 
   
 
@@ -1267,13 +1273,13 @@ class CssSelector {
       return 0;
     }
 
-    if (typeof this._specificity !== "number") {
-      this._specificity = this.cssRule.domRule.selectorSpecificityAt(
+    if (typeof this.#specificity !== "number") {
+      this.#specificity = this.cssRule.domRule.selectorSpecificityAt(
         this.selectorIndex
       );
     }
 
-    return this._specificity;
+    return this.#specificity;
   }
 
   toString() {
@@ -1296,16 +1302,18 @@ class CssPropertyInfo {
 
 
   constructor(cssLogic, property) {
-    this._cssLogic = cssLogic;
+    this.#cssLogic = cssLogic;
     this.property = property;
-    this._value = "";
-
-    
-    
-    
-    
-    this._matchedSelectors = null;
   }
+
+  
+  
+  
+  
+  #matchedSelectors = null;
+
+  #cssLogic;
+  #value = "";
 
   
 
@@ -1315,9 +1323,9 @@ class CssPropertyInfo {
 
 
   get value() {
-    if (!this._value && this._cssLogic.computedStyle) {
+    if (!this.#value && this.#cssLogic.computedStyle) {
       try {
-        this._value = this._cssLogic.computedStyle.getPropertyValue(
+        this.#value = this.#cssLogic.computedStyle.getPropertyValue(
           this.property
         );
       } catch (ex) {
@@ -1325,7 +1333,7 @@ class CssPropertyInfo {
         console.log(ex);
       }
     }
-    return this._value;
+    return this.#value;
   }
 
   
@@ -1337,13 +1345,13 @@ class CssPropertyInfo {
 
 
   get matchedSelectors() {
-    if (!this._matchedSelectors) {
-      this._findMatchedSelectors();
+    if (!this.#matchedSelectors) {
+      this.#findMatchedSelectors();
     } else if (this.needRefilter) {
-      this._refilterSelectors();
+      this.#refilterSelectors();
     }
 
-    return this._matchedSelectors;
+    return this.#matchedSelectors;
   }
 
   
@@ -1354,23 +1362,23 @@ class CssPropertyInfo {
 
 
 
-  _findMatchedSelectors() {
-    this._matchedSelectors = [];
+  #findMatchedSelectors() {
+    this.#matchedSelectors = [];
     this.needRefilter = false;
 
-    this._cssLogic.processMatchedSelectors(this._processMatchedSelector, this);
+    this.#cssLogic.processMatchedSelectors(this.#processMatchedSelector, this);
 
     
-    this._matchedSelectors.sort((selectorInfo1, selectorInfo2) =>
-      selectorInfo1.compareTo(selectorInfo2, this._matchedSelectors)
+    this.#matchedSelectors.sort((selectorInfo1, selectorInfo2) =>
+      selectorInfo1.compareTo(selectorInfo2, this.#matchedSelectors)
     );
 
     
     if (
-      this._matchedSelectors.length &&
-      this._matchedSelectors[0].status > STATUS.UNMATCHED
+      this.#matchedSelectors.length &&
+      this.#matchedSelectors[0].status > STATUS.UNMATCHED
     ) {
-      this._matchedSelectors[0].status = STATUS.BEST;
+      this.#matchedSelectors[0].status = STATUS.BEST;
     }
   }
 
@@ -1382,7 +1390,7 @@ class CssPropertyInfo {
 
 
 
-  _processMatchedSelector(selector, status, distance) {
+  #processMatchedSelector(selector, status, distance) {
     const cssRule = selector.cssRule;
     const value = cssRule.getPropertyValue(this.property);
     if (
@@ -1390,7 +1398,7 @@ class CssPropertyInfo {
       (status == STATUS.MATCHED ||
         (status == STATUS.PARENT_MATCH &&
           InspectorUtils.isInheritedProperty(
-            this._cssLogic.viewedDocument,
+            this.#cssLogic.viewedDocument,
             this.property
           )))
     ) {
@@ -1401,7 +1409,7 @@ class CssPropertyInfo {
         status,
         distance
       );
-      this._matchedSelectors.push(selectorInfo);
+      this.#matchedSelectors.push(selectorInfo);
     }
   }
 
@@ -1411,18 +1419,18 @@ class CssPropertyInfo {
 
 
 
-  _refilterSelectors() {
-    const passId = ++this._cssLogic._passId;
+  #refilterSelectors() {
+    const passId = ++this.#cssLogic.passId;
 
     const iterator = function (selectorInfo) {
       const cssRule = selectorInfo.selector.cssRule;
-      if (cssRule._passId != passId) {
-        cssRule._passId = passId;
+      if (cssRule.passId != passId) {
+        cssRule.passId = passId;
       }
     };
 
-    if (this._matchedSelectors) {
-      this._matchedSelectors.forEach(iterator);
+    if (this.#matchedSelectors) {
+      this.#matchedSelectors.forEach(iterator);
     }
 
     this.needRefilter = false;
@@ -1434,24 +1442,24 @@ class CssPropertyInfo {
 }
 
 class CssSelectorInfo {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * A class that holds information about a given CssSelector object.
+   *
+   * Instances of this class are given to CssHtmlTree in the array of matched
+   * selectors. Each such object represents a displayable row in the PropertyView
+   * objects. The information given by this object blends data coming from the
+   * CssSheet, CssRule and from the CssSelector that own this object.
+   *
+   * @param {CssSelector} selector The CssSelector object for which to
+   *        present information.
+   * @param {string} property The property for which information should
+   *        be retrieved.
+   * @param {string} value The property value from the CssRule that owns
+   *        the selector.
+   * @param {STATUS} status The selector match status.
+   * @param {number} distance See CssLogic.#buildMatchedRules for definition.
+   * @constructor
+   */
   constructor(selector, property, value, status, distance) {
     this.selector = selector;
     this.property = property;
@@ -1461,183 +1469,183 @@ class CssSelectorInfo {
     const priority = this.selector.cssRule.getPropertyPriority(this.property);
     this.important = priority === "important";
 
-    
+    // Array<string|CSSLayerBlockRule>
     this.parentLayers = [];
 
-    
+    // Go through all parent rules to populate this.parentLayers
     let rule = selector.cssRule.domRule;
     while (rule) {
       const className = ChromeUtils.getClassName(rule);
       if (className == "CSSLayerBlockRule") {
-        
-        
-        
+        // If the layer has a name, it's enough to uniquely identify it
+        // If the layer does not have a name. We put the actual rule here, so we'll
+        // be able to compare actual rule instances in `compareTo`
         this.parentLayers.push(rule.name || rule);
       } else if (className == "CSSImportRule" && rule.layerName !== null) {
-        
+        // Same reasoning for @import rule + layer
         this.parentLayers.push(rule.layerName || rule);
       }
 
-      
-      
+      // Get the parent rule (could be the parent stylesheet owner rule
+      // for `@import url(path/to/file.css) layer`)
       rule = rule.parentRule || rule.parentStyleSheet?.ownerRule;
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Retrieve the CssSelector source element, which is the source of the CssRule
+   * owning the selector. This is only available when the CssSelector comes from
+   * an element.style.
+   *
+   * @return {string} the source element selector.
+   */
   get sourceElement() {
     return this.selector.sourceElement;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the address of the CssSelector. This points to the address of the
+   * CssSheet owning this selector.
+   *
+   * @return {string} the address of the CssSelector.
+   */
   get href() {
     return this.selector.href;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check if the CssSelector comes from element.style or not.
+   *
+   * @return {boolean} true if the CssSelector comes from element.style, or
+   * false otherwise.
+   */
   get inlineStyle() {
     return this.selector.inlineStyle;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve specificity information for the current selector.
+   *
+   * @return {object} an object holding specificity information for the current
+   * selector.
+   */
   get specificity() {
     return this.selector.specificity;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the parent stylesheet index/position in the viewed document.
+   *
+   * @return {number} the parent stylesheet index/position in the viewed
+   * document.
+   */
   get sheetIndex() {
     return this.selector.sheetIndex;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check if the parent stylesheet is allowed by the CssLogic.sourceFilter.
+   *
+   * @return {boolean} true if the parent stylesheet is allowed by the current
+   * sourceFilter, or false otherwise.
+   */
   get sheetAllowed() {
     return this.selector.sheetAllowed;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the line of the parent CSSStyleRule in the parent CSSStyleSheet.
+   *
+   * @return {number} the line of the parent CSSStyleRule in the parent
+   * stylesheet.
+   */
   get ruleLine() {
     return this.selector.ruleLine;
   }
 
-  
-
-
-
-
-
+  /**
+   * Retrieve the column of the parent CSSStyleRule in the parent CSSStyleSheet.
+   *
+   * @return {number} the column of the parent CSSStyleRule in the parent
+   * stylesheet.
+   */
   get ruleColumn() {
     return this.selector.ruleColumn;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check if the selector comes from a browser-provided stylesheet.
+   *
+   * @return {boolean} true if the selector comes from a browser-provided
+   * stylesheet, or false otherwise.
+   */
   get agentRule() {
     return this.selector.agentRule;
   }
 
-  
-
-
-
-
-
+  /**
+   * Check if the selector comes from a webpage-provided stylesheet.
+   *
+   * @return {boolean} true if the selector comes from a webpage-provided
+   * stylesheet, or false otherwise.
+   */
   get authorRule() {
     return this.selector.authorRule;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Check if the selector comes from a user stylesheet (userChrome.css or
+   * userContent.css).
+   *
+   * @return {boolean} true if the selector comes from a webpage-provided
+   * stylesheet, or false otherwise.
+   */
   get userRule() {
     return this.selector.userRule;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Compare the current CssSelectorInfo instance to another instance.
+   * Since selectorInfos is computed from `InspectorUtils.getMatchingCSSRules`,
+   * it's already sorted for regular cases. We only need to handle important values.
+   *
+   * @param  {CssSelectorInfo} that
+   *         The instance to compare ourselves against.
+   * @param  {Array<CssSelectorInfo>} selectorInfos
+   *         The list of CssSelectorInfo we are currently ordering
+   * @return {number}
+   *         -1, 0, 1 depending on how that compares with this.
+   */
   compareTo(that, selectorInfos) {
     const originalOrder =
       selectorInfos.indexOf(this) < selectorInfos.indexOf(that) ? -1 : 1;
 
-    
+    // If both properties are not important, we can keep the original order
     if (!this.important && !that.important) {
       return originalOrder;
     }
 
-    
+    // If one of the property is important and the other is not, the important one wins
     if (this.important !== that.important) {
       return this.important ? -1 : 1;
     }
 
-    
+    // At this point, this and that are both important
 
     const thisIsInLayer = !!this.parentLayers.length;
     const thatIsInLayer = !!that.parentLayers.length;
 
-    
+    // If they're not in layers, we can keep the original rule order
     if (!thisIsInLayer && !thatIsInLayer) {
       return originalOrder;
     }
 
-    
+    // If one of the rule is the style attribute, it wins
     if (this.selector.inlineStyle || that.selector.inlineStyle) {
       return this.selector.inlineStyle ? -1 : 1;
     }
 
-    
+    // If one of the rule is not in a layer, then the rule in a layer wins.
     if (!thisIsInLayer || !thatIsInLayer) {
       return thisIsInLayer ? -1 : 1;
     }
@@ -1645,16 +1653,16 @@ class CssSelectorInfo {
     const inSameLayers =
       this.parentLayers.length === that.parentLayers.length &&
       this.parentLayers.every((layer, i) => layer === that.parentLayers[i]);
-    
+    // If both rules are in the same layer, we keep the original order
     if (inSameLayers) {
       return originalOrder;
     }
 
-    
-    
-    
-    
-    
+    // When comparing declarations that belong to different layers, then for
+    // important rules the declaration whose cascade layer is first wins.
+    // We get the rules in the most-specific to least-specific order, meaning we'll have
+    // rules in layers in the reverse order of the order of declarations of layers.
+    // We can reverse that again to get the order of declarations of layers.
     return originalOrder * -1;
   }
 
