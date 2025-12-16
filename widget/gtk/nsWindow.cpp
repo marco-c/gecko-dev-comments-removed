@@ -3376,6 +3376,8 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     gdk_window_get_frame_extents(aWin, &b);
     if (gtk_check_version(3, 24, 35) &&
         gdk_window_get_window_type(aWin) == GDK_WINDOW_TEMP) {
+      LOGVERBOSE(
+          "  GetFrameTitlebarBounds gtk 3.24.35 & GDK_WINDOW_TEMP workaround");
       
       
       
@@ -3387,6 +3389,7 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     auto result = DesktopIntRect(b.x, b.y, b.width, b.height);
     if (gtk_check_version(3, 24, 50)) {
       if (auto border = GetXWindowBorder(aWin)) {
+        LOGVERBOSE("  GetFrameTitlebarBounds gtk 3.24.50 workaround");
         
         
         
@@ -3406,16 +3409,20 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
       
       gdk_window_get_geometry(aWin, nullptr, nullptr, &b.width, &b.height);
       gdk_window_get_origin(aWin, &b.x, &b.y);
-      return DesktopIntRect(b.x, b.y, b.width, b.height);
+    } else {
+      gdk_window_get_position(aWin, &b.x, &b.y);
+      b.width = gdk_window_get_width(aWin);
+      b.height = gdk_window_get_height(aWin);
     }
-    gdk_window_get_position(aWin, &b.x, &b.y);
-    b.width = gdk_window_get_width(aWin);
-    b.height = gdk_window_get_height(aWin);
     return DesktopIntRect(b.x, b.y, b.width, b.height);
   };
 
   const auto toplevelBoundsWithTitlebar = GetFrameTitlebarBounds(toplevel);
   const auto toplevelBounds = GetBounds(toplevel);
+
+  LOGVERBOSE("  toplevelBoundsWithTitlebar %s",
+             ToString(toplevelBoundsWithTitlebar).c_str());
+  LOGVERBOSE("  toplevelBounds %s", ToString(toplevelBounds).c_str());
 
   
   DesktopIntRect finalBounds = [&] {
@@ -3428,9 +3435,10 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     bounds.height = std::max(bounds.height, toplevelBounds.height);
     return bounds;
   }();
-
+  LOGVERBOSE("  finalBounds %s", ToString(finalBounds).c_str());
   const bool decorated =
       IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
+  LOGVERBOSE("  decorated %d", decorated);
   if (!decorated) {
     mClientMargin = {};
   } else if (aMayChangeCsdMargin) {
@@ -3438,6 +3446,9 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
     const DesktopIntRect clientRectRelativeToFrame = [&] {
       auto topLevelBoundsRelativeToFrame = toplevelBounds;
       topLevelBoundsRelativeToFrame -= toplevelBoundsWithTitlebar.TopLeft();
+
+      LOGVERBOSE("  topLevelBoundsRelativeToFrame %s",
+                 ToString(topLevelBoundsRelativeToFrame).c_str());
       if (!mGdkWindow) {
         return topLevelBoundsRelativeToFrame;
       }
@@ -3447,12 +3458,16 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
         
         return topLevelBoundsRelativeToFrame;
       }
+      LOGVERBOSE("  gdkWindowBounds %s", ToString(gdkWindowBounds).c_str());
       
       return gdkWindowBounds + topLevelBoundsRelativeToFrame.TopLeft();
     }();
 
+    auto relative = clientRectRelativeToFrame;
+    LOGVERBOSE("  clientRectRelativeToFrame %s", ToString(relative).c_str());
     mClientMargin = DesktopIntRect(DesktopIntPoint(), finalBounds.Size()) -
                     clientRectRelativeToFrame;
+    LOGVERBOSE("  mClientMargin %s", ToString(mClientMargin).c_str());
     mClientMargin.EnsureAtLeast(DesktopIntMargin());
   } else {
     
