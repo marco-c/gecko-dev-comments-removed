@@ -17,23 +17,23 @@ const trace = {
 
 
 
-function HarCollector(options) {
-  this.commands = options.commands;
+class HarCollector {
+  constructor(options) {
+    this.commands = options.commands;
 
-  this.onResourceAvailable = this.onResourceAvailable.bind(this);
-  this.onResourceUpdated = this.onResourceUpdated.bind(this);
-  this.onRequestHeaders = this.onRequestHeaders.bind(this);
-  this.onRequestCookies = this.onRequestCookies.bind(this);
-  this.onRequestPostData = this.onRequestPostData.bind(this);
-  this.onResponseHeaders = this.onResponseHeaders.bind(this);
-  this.onResponseCookies = this.onResponseCookies.bind(this);
-  this.onResponseContent = this.onResponseContent.bind(this);
-  this.onEventTimings = this.onEventTimings.bind(this);
+    this.onResourceAvailable = this.onResourceAvailable.bind(this);
+    this.onResourceUpdated = this.onResourceUpdated.bind(this);
+    this.onRequestHeaders = this.onRequestHeaders.bind(this);
+    this.onRequestCookies = this.onRequestCookies.bind(this);
+    this.onRequestPostData = this.onRequestPostData.bind(this);
+    this.onResponseHeaders = this.onResponseHeaders.bind(this);
+    this.onResponseCookies = this.onResponseCookies.bind(this);
+    this.onResponseContent = this.onResponseContent.bind(this);
+    this.onEventTimings = this.onEventTimings.bind(this);
 
-  this.clear();
-}
+    this.clear();
+  }
 
-HarCollector.prototype = {
   
 
   async start() {
@@ -44,7 +44,7 @@ HarCollector.prototype = {
         onUpdated: this.onResourceUpdated,
       }
     );
-  },
+  }
 
   async stop() {
     await this.commands.resourceCommand.unwatchResources(
@@ -54,7 +54,7 @@ HarCollector.prototype = {
         onUpdated: this.onResourceUpdated,
       }
     );
-  },
+  }
 
   clear() {
     
@@ -64,7 +64,7 @@ HarCollector.prototype = {
     this.firstRequestStart = -1;
     this.lastRequestStart = -1;
     this.requests = [];
-  },
+  }
 
   waitForHarLoad() {
     
@@ -76,7 +76,7 @@ HarCollector.prototype = {
         resolve(this);
       });
     });
-  },
+  }
 
   waitForResponses() {
     trace.log("HarCollector.waitForResponses; " + this.requests.length);
@@ -108,7 +108,7 @@ HarCollector.prototype = {
       );
       return this.pageLoadDeferred;
     });
-  },
+  }
 
   
 
@@ -137,7 +137,7 @@ HarCollector.prototype = {
         resolve();
       }, timeout);
     });
-  },
+  }
 
   resetPageLoadTimeout() {
     
@@ -153,17 +153,17 @@ HarCollector.prototype = {
       this.pageLoadReject();
       this.pageLoadReject = null;
     }
-  },
+  }
 
   
 
   getFile(actorId) {
     return this.files.get(actorId);
-  },
+  }
 
   getItems() {
     return this.items;
-  },
+  }
 
   
 
@@ -204,7 +204,7 @@ HarCollector.prototype = {
       
       this.items.push(file);
     }
-  },
+  }
 
   onResourceUpdated(updates) {
     for (const { resource } of updates) {
@@ -296,7 +296,7 @@ HarCollector.prototype = {
         this.resetPageLoadTimeout();
       });
     }
-  },
+  }
 
   async getData(actor, method, callback) {
     const file = this.getFile(actor);
@@ -320,7 +320,7 @@ HarCollector.prototype = {
     );
     callback(response);
     return response;
-  },
+  }
 
   
 
@@ -333,7 +333,7 @@ HarCollector.prototype = {
     file.requestHeaders = response;
 
     this.getLongHeaders(response.headers);
-  },
+  }
 
   
 
@@ -346,7 +346,7 @@ HarCollector.prototype = {
     file.requestCookies = response;
 
     this.getLongHeaders(response.cookies);
-  },
+  }
 
   
 
@@ -367,7 +367,7 @@ HarCollector.prototype = {
         response.postData.text = value;
       });
     }
-  },
+  }
 
   
 
@@ -380,7 +380,7 @@ HarCollector.prototype = {
     file.responseHeaders = response;
 
     this.getLongHeaders(response.headers);
-  },
+  }
 
   
 
@@ -393,7 +393,7 @@ HarCollector.prototype = {
     file.responseCookies = response;
 
     this.getLongHeaders(response.cookies);
-  },
+  }
 
   
 
@@ -412,7 +412,7 @@ HarCollector.prototype = {
         response.content.text = value;
       });
     }
-  },
+  }
 
   
 
@@ -424,10 +424,9 @@ HarCollector.prototype = {
     const file = this.getFile(response.from);
     file.eventTimings = response;
     file.totalTime = response.totalTime;
-  },
+  }
 
   
-
   getLongHeaders(headers) {
     for (const header of headers) {
       if (typeof header.value == "object") {
@@ -440,7 +439,7 @@ HarCollector.prototype = {
         }
       }
     }
-  },
+  }
 
   
 
@@ -457,8 +456,8 @@ HarCollector.prototype = {
     const promise = getLongStringFullText(this.commands.client, stringGrip);
     this.requests.push(promise);
     return promise;
-  },
-};
+  }
+}
 
 
 
