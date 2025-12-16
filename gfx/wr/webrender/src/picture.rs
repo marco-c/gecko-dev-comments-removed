@@ -94,7 +94,7 @@
 
 
 
-use api::{PremultipliedColorF, RasterSpace};
+use api::RasterSpace;
 use api::{DebugFlags, ColorF, PrimitiveFlags, SnapshotInfo};
 use api::units::*;
 use crate::command_buffer::PrimitiveCommand;
@@ -109,8 +109,6 @@ use euclid::{vec3, Scale, Vector2D, Box2D};
 use crate::internal_types::{FastHashMap, PlaneSplitter, Filter};
 use crate::internal_types::{PlaneSplitterIndex, PlaneSplitAnchor, TextureSource};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
-use crate::gpu_types::{BrushSegmentGpuData, ImageBrushPrimitiveData};
-use crate::svg_filter::FilterGraphOp;
 use plane_split::{Clipper, Polygon};
 use crate::prim_store::{PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
 use crate::prim_store::PrimitiveScratchBuffer;
@@ -1376,108 +1374,24 @@ impl PicturePrimitive {
         }
     }
 
-    pub fn prepare_for_render(
+    pub fn write_gpu_blocks(
         &mut self,
         frame_state: &mut FrameBuildingState,
         data_stores: &mut DataStores,
-    ) -> bool {
+    ) {
         let raster_config = match self.raster_config {
             Some(ref mut raster_config) => raster_config,
             None => {
-                return true
+                return;
             }
         };
 
-        
-        
-        
-        
-        
-        
-
-        match raster_config.composite_mode {
-            PictureCompositeMode::TileCache { .. } => {}
-            PictureCompositeMode::Filter(Filter::Blur { .. }) => {}
-            PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
-                self.extra_gpu_data.resize(shadows.len(), GpuBufferAddress::INVALID);
-                for (shadow, extra_handle) in shadows.iter().zip(self.extra_gpu_data.iter_mut()) {
-                    let mut writer = frame_state.frame_gpu_data.f32.write_blocks(5);
-                    let surface = &frame_state.surfaces[raster_config.surface_index.0];
-                    let prim_rect = surface.clipped_local_rect.cast_unit();
-
-                    
-                    
-                    
-                    let (blur_inflation_x, blur_inflation_y) = surface.clamp_blur_radius(
-                        shadow.blur_radius,
-                        shadow.blur_radius,
-                    );
-
-                    let shadow_rect = prim_rect.inflate(
-                        blur_inflation_x * BLUR_SAMPLE_SCALE,
-                        blur_inflation_y * BLUR_SAMPLE_SCALE,
-                    ).translate(shadow.offset);
-
-                    
-                    writer.push(&ImageBrushPrimitiveData {
-                        color: shadow.color.premultiplied(),
-                        background_color: PremultipliedColorF::WHITE,
-                        stretch_size: shadow_rect.size(),
-                    });
-
-                    writer.push(&BrushSegmentGpuData {
-                        local_rect: shadow_rect,
-                        extra_data: [0.0; 4],
-                    });
-
-                    *extra_handle = writer.finish();
-                }
-            }
-            PictureCompositeMode::Filter(ref filter) => {
-                match *filter {
-                    Filter::ColorMatrix(ref m) => {
-                        if self.extra_gpu_data.is_empty() {
-                            self.extra_gpu_data.push(GpuBufferAddress::INVALID);
-                        }
-                        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(5);
-                        for i in 0..5 {
-                            writer.push_one([m[i*4], m[i*4+1], m[i*4+2], m[i*4+3]]);
-                        }
-                        self.extra_gpu_data[0] = writer.finish();
-                    }
-                    Filter::Flood(ref color) => {
-                        if self.extra_gpu_data.is_empty() {
-                            self.extra_gpu_data.push(GpuBufferAddress::INVALID);
-                        }
-                        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(1);
-                        writer.push_one(color.to_array());
-                        self.extra_gpu_data[0] = writer.finish();
-                    }
-                    _ => {}
-                }
-            }
-            PictureCompositeMode::ComponentTransferFilter(handle) => {
-                let filter_data = &mut data_stores.filter_data[handle];
-                filter_data.write_gpu_blocks(&mut frame_state.frame_gpu_data.f32);
-            }
-            PictureCompositeMode::MixBlend(..) |
-            PictureCompositeMode::Blit(_) |
-            PictureCompositeMode::IntermediateSurface => {}
-            PictureCompositeMode::SVGFEGraph(ref filters) => {
-                
-                for (_node, op) in filters {
-                    match op {
-                        FilterGraphOp::SVGFEComponentTransferInterned { handle, creates_pixels: _ } => {
-                            let filter_data = &mut data_stores.filter_data[*handle];
-                            filter_data.write_gpu_blocks(&mut frame_state.frame_gpu_data.f32);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-
-        true
+        raster_config.composite_mode.write_gpu_blocks(
+            &frame_state.surfaces[raster_config.surface_index.0],
+            &mut frame_state.frame_gpu_data,
+            data_stores,
+            &mut self.extra_gpu_data
+        );
     }
 
     #[cold]
