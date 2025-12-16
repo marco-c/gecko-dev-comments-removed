@@ -312,69 +312,23 @@ static const size_t MinOffsetGuardLimit = OffsetGuardLimit;
 static_assert(MaxInlineMemoryCopyLength < MinOffsetGuardLimit, "precondition");
 static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
 
-#ifdef JS_64BIT
 wasm::Pages wasm::MaxMemoryPages(AddressType t) {
+#ifdef JS_64BIT
   MOZ_ASSERT_IF(t == AddressType::I64, !IsHugeMemoryEnabled(t));
   size_t desired = MaxMemoryPagesValidation(t);
   constexpr size_t actual = ArrayBufferObject::ByteLengthLimit / PageSize;
   return wasm::Pages(std::min(desired, actual));
-}
-
-size_t wasm::MaxMemoryBoundsCheckLimit(AddressType t) {
-  return MaxMemoryPages(t).byteLength();
-}
-
 #else
-
-
-
-wasm::Pages wasm::MaxMemoryPages(AddressType t) {
+  
+  
+  
   static_assert(ArrayBufferObject::ByteLengthLimit >= INT32_MAX / PageSize);
   return wasm::Pages(INT32_MAX / PageSize);
+#endif
 }
-
-
-
 
 size_t wasm::MaxMemoryBoundsCheckLimit(AddressType t) {
-  size_t boundsCheckLimit = size_t(INT32_MAX) + 1;
-  MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
-  return boundsCheckLimit;
-}
-#endif
-
-
-
-
-static const uint64_t HighestValidARMImmediate = 0xff000000;
-
-
-
-
-
-
-bool wasm::IsValidARMImmediate(uint32_t i) {
-  bool valid = (IsPowerOfTwo(i) || (i & 0x00ffffff) == 0);
-
-  MOZ_ASSERT_IF(valid, i % PageSize == 0);
-
-  return valid;
-}
-
-uint64_t wasm::RoundUpToNextValidARMImmediate(uint64_t i) {
-  MOZ_ASSERT(i <= HighestValidARMImmediate);
-  static_assert(HighestValidARMImmediate == 0xff000000,
-                "algorithm relies on specific constant");
-
-  if (i <= 16 * 1024 * 1024) {
-    i = i ? mozilla::RoundUpPow2(i) : 0;
-  } else {
-    i = (i + 0x00ffffff) & ~0x00ffffff;
-  }
-
-  MOZ_ASSERT(IsValidARMImmediate(i));
-
-  return i;
+  return MaxMemoryBytes(t);
 }
 
 Pages wasm::ClampedMaxPages(AddressType t, Pages initialPages,
@@ -396,8 +350,6 @@ Pages wasm::ClampedMaxPages(AddressType t, Pages initialPages,
     
     static const uint64_t OneGib = 1 << 30;
     static const Pages OneGibPages = Pages(OneGib >> wasm::PageBits);
-    static_assert(HighestValidARMImmediate > OneGib,
-                  "computing mapped size on ARM requires clamped max size");
 
     Pages clampedPages = std::max(OneGibPages, initialPages);
     clampedMaxPages = std::min(clampedPages, clampedMaxPages);
@@ -422,31 +374,9 @@ size_t wasm::ComputeMappedSize(wasm::Pages clampedMaxPages) {
   
   size_t maxSize = clampedMaxPages.byteLength();
 
-  
-  
-  
-  
-  
-  uint64_t boundsCheckLimit = RoundUpToNextValidBoundsCheckImmediate(maxSize);
-  MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
-
-  MOZ_ASSERT(boundsCheckLimit % gc::SystemPageSize() == 0);
+  MOZ_ASSERT(maxSize % gc::SystemPageSize() == 0);
   MOZ_ASSERT(GuardSize % gc::SystemPageSize() == 0);
-  return boundsCheckLimit + GuardSize;
-}
+  maxSize += GuardSize;
 
-bool wasm::IsValidBoundsCheckImmediate(uint32_t i) {
-#ifdef JS_CODEGEN_ARM
-  return IsValidARMImmediate(i);
-#else
-  return true;
-#endif
-}
-
-uint64_t wasm::RoundUpToNextValidBoundsCheckImmediate(uint64_t i) {
-#ifdef JS_CODEGEN_ARM
-  return RoundUpToNextValidARMImmediate(i);
-#else
-  return i;
-#endif
+  return maxSize;
 }

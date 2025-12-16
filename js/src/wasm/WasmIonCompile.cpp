@@ -1589,12 +1589,11 @@ class FunctionCompiler {
     
     
     
-    static_assert(0x100000000 % PageSize == 0);
     bool mem32LimitIs64Bits =
         isMem32(memoryIndex) &&
-        !codeMeta().memories[memoryIndex].boundsCheckLimitIs32Bits() &&
-        MaxMemoryPages(codeMeta().memories[memoryIndex].addressType()) >=
-            Pages(0x100000000 / PageSize);
+        !codeMeta().memories[memoryIndex].boundsCheckLimitIsAlways32Bits() &&
+        MaxMemoryBytes(codeMeta().memories[memoryIndex].addressType()) >=
+            0x100000000;
 #else
     
     

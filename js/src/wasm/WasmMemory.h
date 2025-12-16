@@ -137,9 +137,6 @@ static inline size_t MaxMemoryBytes(AddressType t) {
 }
 
 
-
-
-
 extern size_t MaxMemoryBoundsCheckLimit(AddressType t);
 
 static inline uint64_t MaxMemoryPagesValidation(AddressType addressType) {
@@ -167,17 +164,8 @@ extern size_t ComputeMappedSize(Pages clampedMaxPages);
 extern uint64_t GetMaxOffsetGuardLimit(bool hugeMemory);
 
 
-extern bool IsValidBoundsCheckImmediate(uint32_t i);
-
-
-extern bool IsValidARMImmediate(uint32_t i);
-
-
 
 extern uint64_t RoundUpToNextValidBoundsCheckImmediate(uint64_t i);
-
-
-extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
 
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
 

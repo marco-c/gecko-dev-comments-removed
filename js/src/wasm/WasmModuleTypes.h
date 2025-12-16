@@ -827,8 +827,7 @@ struct MemoryDesc {
 
   
   
-  
-  bool boundsCheckLimitIs32Bits() const {
+  bool boundsCheckLimitIsAlways32Bits() const {
     return limits.maximum.isSome() &&
            limits.maximum.value() < (0x100000000 / PageSize);
   }
