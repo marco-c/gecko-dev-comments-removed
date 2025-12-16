@@ -30,8 +30,8 @@ StyleAlignFlags CSSAlignUtils::UsedAlignmentForAbsPos(nsIFrame* aFrame,
     
     
     
-    aFlags = aFrame->HasReplacedSizing() ? StyleAlignFlags::START
-                                         : StyleAlignFlags::STRETCH;
+    aFlags = aFrame->IsReplaced() ? StyleAlignFlags::START
+                                  : StyleAlignFlags::STRETCH;
   } else if (aFlags == StyleAlignFlags::FLEX_START) {
     aFlags = StyleAlignFlags::START;
   } else if (aFlags == StyleAlignFlags::FLEX_END) {
