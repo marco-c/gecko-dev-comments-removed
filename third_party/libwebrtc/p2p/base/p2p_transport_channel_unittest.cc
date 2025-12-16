@@ -131,7 +131,7 @@ constexpr TimeDelta kShortTimeout = TimeDelta::Seconds(1);
 constexpr int kOnlyLocalPorts = PORTALLOCATOR_DISABLE_STUN |
                                 PORTALLOCATOR_DISABLE_RELAY |
                                 PORTALLOCATOR_DISABLE_TCP;
-constexpr int LOW_RTT = 20;
+constexpr TimeDelta kLowRtt = TimeDelta::Millis(20);
 
 const SocketAddress kPublicAddrs[2] = {SocketAddress("11.11.11.11", 0),
                                        SocketAddress("22.22.22.22", 0)};
@@ -2761,7 +2761,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
   Connection* per_network_best_connection1 =
       GetConnection(ep1_ch1(), cellularIpv6[0], wifiIpv6[1]);
   ASSERT_NE(nullptr, per_network_best_connection1);
-  int64_t last_ping_sent1 = per_network_best_connection1->last_ping_sent();
+  Timestamp last_ping_sent1 = per_network_best_connection1->LastPingSent();
   int num_pings_sent1 = per_network_best_connection1->num_pings_sent();
   EXPECT_THAT(
       WaitUntil([&] { return per_network_best_connection1->num_pings_sent(); },
@@ -2770,13 +2770,12 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
       IsRtcOk());
   ASSERT_GT(per_network_best_connection1->num_pings_sent() - num_pings_sent1,
             0);
-  int64_t ping_interval1 =
-      (per_network_best_connection1->last_ping_sent() - last_ping_sent1) /
+  TimeDelta ping_interval1 =
+      (per_network_best_connection1->LastPingSent() - last_ping_sent1) /
       (per_network_best_connection1->num_pings_sent() - num_pings_sent1);
-  constexpr int SCHEDULING_DELAY = 200;
-  EXPECT_LT(
-      ping_interval1,
-      kWeakOrStabilizingWritableConnectionPingInterval.ms() + SCHEDULING_DELAY);
+  constexpr TimeDelta kSchedulingDelay = TimeDelta::Millis(200);
+  EXPECT_LT(ping_interval1, kWeakOrStabilizingWritableConnectionPingInterval +
+                                kSchedulingDelay);
 
   
   
@@ -3683,7 +3682,7 @@ class P2PTransportChannelPingTest : public ::testing::Test,
     Connection* conn = GetConnectionTo(channel, ip_addr, port);
 
     if (conn && writable) {
-      conn->ReceivedPingResponse(LOW_RTT, "id");  
+      conn->ReceivedPingResponse(kLowRtt, "id");  
     }
     return conn;
   }
@@ -3782,7 +3781,7 @@ class P2PTransportChannelPingTest : public ::testing::Test,
              last_selected_pair.remote_candidate().IsEquivalent(
                  conn->remote_candidate()) &&
              last_candidate_change_event_->last_data_received_ms ==
-                 conn->last_data_received() &&
+                 conn->LastDataReceived().ms() &&
              last_candidate_change_event_->reason == reason;
     }
   }
@@ -3859,7 +3858,7 @@ TEST_F(P2PTransportChannelPingTest, TestAllConnectionsPingedSufficiently) {
 
   
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_TRUE(WaitUntil(
       [&] {
         return conn1->num_pings_sent() >= kMinPingsAtWeakPingInterval &&
@@ -3873,8 +3872,8 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   ScopedFakeClock clock;
   const Environment env = CreateEnvironment();
   int RTT_RATIO = 4;
-  int SCHEDULING_RANGE = 200;
-  int RTT_RANGE = 10;
+  constexpr TimeDelta kSchedulingRange = TimeDelta::Millis(200);
+  constexpr TimeDelta kRttRange = TimeDelta::Millis(10);
 
   FakePortAllocator pa(env, ss());
   P2PTransportChannel ch(env, "TestChannel", 1, &pa);
@@ -3889,76 +3888,69 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
 
   
 
-  int64_t start = clock.TimeNanos();
+  Timestamp start = env.clock().CurrentTime();
   SIMULATED_WAIT(conn->num_pings_sent() >= kMinPingsAtWeakPingInterval,
                  kDefaultTimeout.ms(), clock);
-  int64_t ping_interval_ms = (clock.TimeNanos() - start) /
-                             kNumNanosecsPerMillisec /
-                             (kMinPingsAtWeakPingInterval - 1);
-  EXPECT_EQ(ping_interval_ms, kWeakPingInterval.ms());
+  TimeDelta ping_interval =
+      (env.clock().CurrentTime() - start) / (kMinPingsAtWeakPingInterval - 1);
+  EXPECT_EQ(ping_interval, kWeakPingInterval);
 
   
 
-  conn->ReceivedPingResponse(LOW_RTT, "id");
+  conn->ReceivedPingResponse(kLowRtt, "id");
   int ping_sent_before = conn->num_pings_sent();
-  start = clock.TimeNanos();
+  start = env.clock().CurrentTime();
   
   
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
                  kMediumTimeout.ms(), clock);
-  ping_interval_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
-  EXPECT_GE(ping_interval_ms,
-            kWeakOrStabilizingWritableConnectionPingInterval.ms());
-  EXPECT_LE(
-      ping_interval_ms,
-      kWeakOrStabilizingWritableConnectionPingInterval.ms() + SCHEDULING_RANGE);
+  ping_interval = env.clock().CurrentTime() - start;
+  EXPECT_GE(ping_interval, kWeakOrStabilizingWritableConnectionPingInterval);
+  EXPECT_LE(ping_interval, kWeakOrStabilizingWritableConnectionPingInterval +
+                               kSchedulingRange);
 
   
 
   
   
   for (int i = 0; i < RTT_RATIO; i++) {
-    conn->ReceivedPingResponse(LOW_RTT, "id");
+    conn->ReceivedPingResponse(kLowRtt, "id");
   }
   ping_sent_before = conn->num_pings_sent();
-  start = clock.TimeNanos();
+  start = env.clock().CurrentTime();
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
                  kMediumTimeout.ms(), clock);
-  ping_interval_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
-  EXPECT_GE(ping_interval_ms,
-            kStrongAndStableWritableConnectionPingInterval.ms());
-  EXPECT_LE(
-      ping_interval_ms,
-      kStrongAndStableWritableConnectionPingInterval.ms() + SCHEDULING_RANGE);
+  ping_interval = env.clock().CurrentTime() - start;
+  EXPECT_GE(ping_interval, kStrongAndStableWritableConnectionPingInterval);
+  EXPECT_LE(ping_interval,
+            kStrongAndStableWritableConnectionPingInterval + kSchedulingRange);
 
   
 
-  conn->ReceivedPingResponse(LOW_RTT, "id");
+  conn->ReceivedPingResponse(kLowRtt, "id");
   
-  conn->Ping(clock.TimeNanos() / kNumNanosecsPerMillisec);
-  start = clock.TimeNanos();
+  conn->Ping();
+  start = env.clock().CurrentTime();
   
-  SIMULATED_WAIT(!conn->stable(clock.TimeNanos() / kNumNanosecsPerMillisec),
-                 kMediumTimeout.ms(), clock);
-  int64_t duration_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
-  EXPECT_GE(duration_ms, 2 * conn->rtt() - RTT_RANGE);
-  EXPECT_LE(duration_ms, 2 * conn->rtt() + RTT_RANGE);
+  SIMULATED_WAIT(!conn->stable(env.clock().CurrentTime()), kMediumTimeout.ms(),
+                 clock);
+  TimeDelta duration = env.clock().CurrentTime() - start;
+  EXPECT_GE(duration, 2 * conn->Rtt() - kRttRange);
+  EXPECT_LE(duration, 2 * conn->Rtt() + kRttRange);
   
   ping_sent_before = conn->num_pings_sent();
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
                  kMediumTimeout.ms(), clock);
   
   
-  start = clock.TimeNanos();
+  start = env.clock().CurrentTime();
   ping_sent_before = conn->num_pings_sent();
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1,
                  kMediumTimeout.ms(), clock);
-  ping_interval_ms = (clock.TimeNanos() - start) / kNumNanosecsPerMillisec;
-  EXPECT_GE(ping_interval_ms,
-            kWeakOrStabilizingWritableConnectionPingInterval.ms());
-  EXPECT_LE(
-      ping_interval_ms,
-      kWeakOrStabilizingWritableConnectionPingInterval.ms() + SCHEDULING_RANGE);
+  ping_interval = env.clock().CurrentTime() - start;
+  EXPECT_GE(ping_interval, kWeakOrStabilizingWritableConnectionPingInterval);
+  EXPECT_LE(ping_interval, kWeakOrStabilizingWritableConnectionPingInterval +
+                               kSchedulingRange);
 }
 
 
@@ -4024,7 +4016,7 @@ TEST_F(P2PTransportChannelPingTest, TestNoTriggeredChecksWhenWritable) {
 
   EXPECT_EQ(conn2, FindNextPingableConnectionAndPingIt(&ch));
   EXPECT_EQ(conn1, FindNextPingableConnectionAndPingIt(&ch));
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   ASSERT_TRUE(conn1->writable());
   conn1->ReceivedPing();
 
@@ -4154,7 +4146,7 @@ TEST_F(P2PTransportChannelPingTest, ConnectionResurrection) {
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
   conn2->ReceivedPing();
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
 
   
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
@@ -4247,7 +4239,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   EXPECT_EQ(-1, last_sent_packet_id());
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4262,7 +4254,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4282,7 +4274,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   ASSERT_TRUE(conn3 != nullptr);
   
   EXPECT_EQ(conn2, ch.selected_connection());
-  conn3->ReceivedPingResponse(LOW_RTT, "id");  
+  conn3->ReceivedPingResponse(kLowRtt, "id");  
   
   
   NominateConnection(conn3);
@@ -4310,7 +4302,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   EXPECT_EQ(conn3, ch.selected_connection());
   reset_channel_ready_to_send();
   
-  conn4->ReceivedPingResponse(LOW_RTT, "id");
+  conn4->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn4),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4340,7 +4332,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
   ASSERT_TRUE(conn1 != nullptr);
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4352,7 +4344,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnNomination) {
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4386,7 +4378,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
   ASSERT_TRUE(conn1 != nullptr);
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4401,7 +4393,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSwitch) {
 
   const int before = conn2->num_pings_sent();
 
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4431,7 +4423,7 @@ TEST_F(P2PTransportChannelPingTest, TestPingOnSelected) {
   const int before = conn1->num_pings_sent();
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4468,7 +4460,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(conn1->stats().sent_ping_responses, 1u);
   EXPECT_NE(conn1, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4482,7 +4474,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ(conn1, ch.selected_connection());
   
   
-  conn2->ReceivedPingResponse(LOW_RTT, "id");  
+  conn2->ReceivedPingResponse(kLowRtt, "id");  
   NominateConnection(conn2);
   EXPECT_EQ(conn2, ch.selected_connection());
 
@@ -4494,7 +4486,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   EXPECT_EQ(conn3->stats().sent_ping_responses, 1u);
-  conn3->ReceivedPingResponse(LOW_RTT, "id");  
+  conn3->ReceivedPingResponse(kLowRtt, "id");  
   EXPECT_EQ(conn2, ch.selected_connection());
 
   
@@ -4508,7 +4500,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionFromUnknownAddress) {
   EXPECT_EQ(conn4->stats().sent_ping_responses, 1u);
   
   EXPECT_EQ(conn2, ch.selected_connection());
-  conn4->ReceivedPingResponse(LOW_RTT, "id");  
+  conn4->ReceivedPingResponse(kLowRtt, "id");  
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn4),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4541,7 +4533,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
       CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 10));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4553,11 +4545,11 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 1));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse(LOW_RTT, "id");  
+  conn2->ReceivedPingResponse(kLowRtt, "id");  
   conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
       "ABC", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(conn2, ch.selected_connection());
-  conn2->ReceivedPingResponse(LOW_RTT, "id");  
+  conn2->ReceivedPingResponse(kLowRtt, "id");  
 
   
   
@@ -4575,7 +4567,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   Connection* conn3 = WaitForConnectionTo(&ch, "3.3.3.3", 3);
   ASSERT_TRUE(conn3 != nullptr);
   EXPECT_NE(conn3, ch.selected_connection());  
-  conn3->ReceivedPingResponse(LOW_RTT, "id");  
+  conn3->ReceivedPingResponse(kLowRtt, "id");  
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn3),
                         {.timeout = kDefaultTimeout}),
               IsRtcOk());
@@ -4583,7 +4575,7 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBasedOnMediaReceived) {
   
   
   conn2->ReceivedPing();
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
       "XYZ", 3, env.clock().TimeInMicroseconds()));
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn3),
@@ -4633,7 +4625,7 @@ TEST_F(P2PTransportChannelPingTest,
   
   SIMULATED_WAIT(false, 1, clock);
   
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   conn2->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
       "ABC", 3, env.clock().TimeInMicroseconds()));
   EXPECT_EQ(1, reset_selected_candidate_pair_switches());
@@ -4840,7 +4832,7 @@ TEST_F(P2PTransportChannelPingTest,
   EXPECT_EQ(0, reset_selected_candidate_pair_switches());
 
   
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(
       WaitUntil([&] { return reset_selected_candidate_pair_switches(); }, Eq(1),
                 {.timeout = kDefaultTimeout, .clock = &clock}),
@@ -4851,7 +4843,7 @@ TEST_F(P2PTransportChannelPingTest,
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(
       WaitUntil([&] { return reset_selected_candidate_pair_switches(); }, Eq(1),
                 {.timeout = kDefaultTimeout, .clock = &clock}),
@@ -4900,9 +4892,9 @@ TEST_F(P2PTransportChannelPingTest, TestAddRemoteCandidateWithAddressReuse) {
 
   
   
-  EXPECT_EQ(0, conn2->last_ping_received());
+  EXPECT_EQ(conn2->LastPingReceived(), Timestamp::Zero());
   ReceivePingOnConnection(conn2, kIceUfrag[2], 1 );
-  EXPECT_GT(conn2->last_ping_received(), 0);
+  EXPECT_GT(conn2->LastPingReceived(), Timestamp::Zero());
 }
 
 
@@ -4921,7 +4913,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
 
   
   
@@ -4929,7 +4921,7 @@ TEST_F(P2PTransportChannelPingTest, TestDontPruneWhenWeak) {
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 10));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse(LOW_RTT, "id");  
+  conn2->ReceivedPingResponse(kLowRtt, "id");  
   NominateConnection(conn2);
   EXPECT_TRUE(WaitUntil([&] { return conn1->pruned(); },
                         {.timeout = kMediumTimeout, .clock = &clock}));
@@ -5005,7 +4997,7 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   
   EXPECT_EQ(IceTransportState::kChecking, ch.GetIceTransportState());
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_TRUE(WaitUntil([&] { return conn2->pruned(); },
                         {.timeout = kShortTimeout, .clock = &clock}));
   EXPECT_EQ(IceTransportStateInternal::STATE_COMPLETED, ch.GetState());
@@ -5038,7 +5030,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
@@ -5066,14 +5058,14 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
                         Eq(IceCandidatePairState::IN_PROGRESS),
                         {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn2),
                         {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
   EXPECT_EQ(IceTransportStateInternal::STATE_CONNECTING, ch.GetState());
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch.selected_connection(); }, Eq(conn1),
                         {.timeout = kDefaultTimeout, .clock = &clock}),
               IsRtcOk());
@@ -5134,7 +5126,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
       CreateUdpCandidate(IceCandidateType::kHost, "1.1.1.1", 1, 100));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1);
   ASSERT_TRUE(conn1 != nullptr);
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
 
   
@@ -5143,7 +5135,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
   ch.SetIceParameters(kIceParams[1]);
   ch.MaybeStartGathering();
   conn1->Prune();
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_TRUE(ch.allocator_session()->IsGettingPorts());
 
   
@@ -5152,7 +5144,7 @@ TEST_F(P2PTransportChannelPingTest, TestStopPortAllocatorSessions) {
       CreateUdpCandidate(IceCandidateType::kHost, "2.2.2.2", 2, 100));
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2);
   ASSERT_TRUE(conn2 != nullptr);
-  conn2->ReceivedPingResponse(LOW_RTT, "id");  
+  conn2->ReceivedPingResponse(kLowRtt, "id");  
   EXPECT_TRUE(!ch.allocator_session()->IsGettingPorts());
 }
 
@@ -5385,7 +5377,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest,
   ASSERT_TRUE(conn3 != nullptr);
   EXPECT_TRUE(conn3->local_candidate().is_local());
   EXPECT_TRUE(conn3->remote_candidate().is_relay());
-  conn3->ReceivedPingResponse(LOW_RTT, "id");
+  conn3->ReceivedPingResponse(kLowRtt, "id");
   ASSERT_TRUE(conn3->writable());
   conn3->ReceivedPing();
 
@@ -6524,7 +6516,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening0) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
   
   
   EXPECT_THAT(
@@ -6551,7 +6543,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampening) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
   
   SIMULATED_WAIT(conn1 == ch.selected_connection(), 100 - kMargin, clock);
   EXPECT_THAT(
@@ -6578,7 +6570,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningPingReceived) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
   conn1->ReceivedPing("id1");                  
   
   SIMULATED_WAIT(conn1 == ch.selected_connection(), 100 - kMargin, clock);
@@ -6608,7 +6600,7 @@ TEST_F(P2PTransportChannelPingTest, TestInitialSelectDampeningBoth) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   ASSERT_TRUE(conn1 != nullptr);
   EXPECT_EQ(nullptr, ch.selected_connection());
-  conn1->ReceivedPingResponse(LOW_RTT, "id");  
+  conn1->ReceivedPingResponse(kLowRtt, "id");  
   
   SIMULATED_WAIT(conn1 == ch.selected_connection(), 50 - kMargin, clock);
   
@@ -6712,12 +6704,12 @@ TEST_F(P2PTransportChannelPingTest, TestForgetLearnedState) {
   ASSERT_TRUE(conn2 != nullptr);
 
   
-  conn1->ReceivedPingResponse(LOW_RTT, "id");
+  conn1->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_THAT(WaitUntil([&] { return ch->selected_connection(); }, Eq(conn1),
                         {.timeout = kMediumTimeout}),
               IsRtcOk());
 
-  conn2->ReceivedPingResponse(LOW_RTT, "id");
+  conn2->ReceivedPingResponse(kLowRtt, "id");
   EXPECT_TRUE(conn2->writable());
 
   
