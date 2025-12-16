@@ -13,12 +13,12 @@ const { Pool } = require("devtools/shared/protocol");
 
 
 
-
-
-
-
-
 class LazyPool extends Pool {
+  
+
+
+
+
   constructor(conn) {
     super(conn);
   }
@@ -107,47 +107,47 @@ exports.createExtraActors = createExtraActors;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function LazyActor(factory, parent, pool) {
-  this._options = factory.options;
-  this._parentActor = parent;
-  this._name = factory.name;
-  this._pool = pool;
-
+class LazyActor {
   
-  this.typeName = factory.name;
-}
 
-LazyActor.prototype = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(factory, parent, pool) {
+    this._options = factory.options;
+    this._parentActor = parent;
+    this._name = factory.name;
+    this._pool = pool;
+
+    
+    this.typeName = factory.name;
+  }
   loadModule(id) {
     const options = this._options;
     try {
@@ -158,7 +158,7 @@ LazyActor.prototype = {
         `Unable to load actor module '${options.id}'\n${e.message}\n${e.stack}\n`
       );
     }
-  },
+  }
 
   getConstructor() {
     const options = this._options;
@@ -179,14 +179,14 @@ LazyActor.prototype = {
       );
     }
     return constructor;
-  },
+  }
 
   
 
 
   getParent() {
     return this.conn && this.conn.poolFor(this.actorID);
-  },
+  }
 
   
 
@@ -199,7 +199,7 @@ LazyActor.prototype = {
     if (parent) {
       parent.unmanage(this);
     }
-  },
+  }
 
   createActor() {
     
@@ -218,5 +218,5 @@ LazyActor.prototype = {
     this._pool.manage(instance);
 
     return instance;
-  },
-};
+  }
+}
