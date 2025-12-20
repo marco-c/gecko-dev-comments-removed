@@ -541,6 +541,16 @@ WebConsoleCommandsManager.register({
         
         
         for (let i = 0, len = nodes.length; i < len; i++) {
+          
+          
+          
+          
+          
+          
+          if (nodes[i].isNativeAnonymous) {
+            continue;
+          }
+
           result.push(nodes[i]);
         }
 
