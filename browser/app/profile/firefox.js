@@ -2670,7 +2670,11 @@ pref("browser.tabs.fadeOutExplicitlyUnloadedTabs", true);
 pref("browser.tabs.fadeOutUnloadedTabs", false);
 
 
-pref("browser.tabs.splitView.enabled", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.tabs.splitView.enabled", true);
+#else
+  pref("browser.tabs.splitView.enabled", false);
+#endif
 
 
 pref("browser.tabs.remoteSVGIconDecoding", false);
