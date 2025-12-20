@@ -262,6 +262,7 @@ static const char* gCallbackPrefsForSocketProcess[] = {
     "network.lna.address_space.public.override",
     "network.lna.websocket.enabled",
     "network.lna.local-network-to-localhost.skip-checks",
+    "network.socket.forcePort",
     nullptr,
 };
 
@@ -333,8 +334,13 @@ nsresult nsIOService::Init() {
 
   InitializeNetworkLinkService();
   InitializeProtocolProxyService();
-
   SetOffline(false);
+
+  
+  
+  
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      __func__, []() { RefPtr<nsIDNSService> dns = GetOrInitDNSService(); }));
 
   return NS_OK;
 }
