@@ -305,6 +305,12 @@ enum CanvasUsageSource : uint64_t {
   Worker_OffscreenCanvas_WebGPU_toBlob = 1llu << 36,
   Worker_OffscreenCanvas_WebGPU_getImageData = 1llu << 37,
 
+  
+  MainThread_Canvas_OffscreenCanvas2D_getImageData = 1llu << 38,
+  MainThread_Canvas_OffscreenCanvas2D_toBlob = 1llu << 39,
+
+  
+
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CanvasUsageSource);
 nsCString CanvasUsageSourceToString(CanvasUsageSource aSource);
