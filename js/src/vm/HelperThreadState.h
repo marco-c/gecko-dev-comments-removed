@@ -577,18 +577,7 @@ struct FreeDelazifyTask : public HelperThreadTask {
 };
 
 
-
-
-
-
-class SourceCompressionTask : public HelperThreadTask {
-  friend class HelperThread;
-  friend class ScriptSource;
-
-  
-  
-  JSRuntime* runtime_;
-
+class SourceCompressionTaskEntry {
   
   RefPtr<ScriptSource> source_;
 
@@ -599,19 +588,52 @@ class SourceCompressionTask : public HelperThreadTask {
   SharedImmutableString resultString_;
 
  public:
-  SourceCompressionTask(JSRuntime* rt, ScriptSource* source)
-      : runtime_(rt), source_(source) {
-    source->noteSourceCompressionTask();
-  }
-  virtual ~SourceCompressionTask() = default;
-
-  bool runtimeMatches(JSRuntime* runtime) const { return runtime == runtime_; }
+  explicit SourceCompressionTaskEntry(ScriptSource* source) : source_(source) {}
 
   bool shouldCancel() const {
     
     
     return source_->refs == 1;
   }
+
+  
+  
+  
+  template <typename CharT>
+  void workEncodingSpecific();
+
+  void runTask();
+  void complete();
+
+  struct PerformTaskWork;
+  friend struct PerformTaskWork;
+};
+
+
+
+
+
+
+class SourceCompressionTask final : public HelperThreadTask {
+  friend class HelperThread;
+  friend class ScriptSource;
+
+  
+  
+  JSRuntime* runtime_;
+
+  
+  Vector<SourceCompressionTaskEntry, 4, SystemAllocPolicy> entries_;
+
+ public:
+  SourceCompressionTask(JSRuntime* rt, ScriptSource* source) : runtime_(rt) {
+    static_assert(decltype(entries_)::InlineLength >= 1,
+                  "Appending one entry should be infallible");
+    MOZ_ALWAYS_TRUE(entries_.emplaceBack(source));
+  }
+  virtual ~SourceCompressionTask() = default;
+
+  bool runtimeMatches(JSRuntime* runtime) const { return runtime == runtime_; }
 
   void runTask();
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
@@ -620,16 +642,6 @@ class SourceCompressionTask : public HelperThreadTask {
   ThreadType threadType() override { return ThreadType::THREAD_TYPE_COMPRESS; }
 
   const char* getName() override { return "SourceCompressionTask"; }
-
- private:
-  struct PerformTaskWork;
-  friend struct PerformTaskWork;
-
-  
-  
-  
-  template <typename CharT>
-  void workEncodingSpecific();
 };
 
 
