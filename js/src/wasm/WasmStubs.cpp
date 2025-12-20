@@ -338,13 +338,6 @@ static bool FinishOffsets(MacroAssembler& masm, Offsets* offsets) {
   return !masm.oom();
 }
 
-static void AssertStackAlignment(MacroAssembler& masm, uint32_t alignment,
-                                 uint32_t addBeforeAssert = 0) {
-  MOZ_ASSERT(
-      (sizeof(Frame) + masm.framePushed() + addBeforeAssert) % alignment == 0);
-  masm.assertStackAlignment(alignment, addBeforeAssert);
-}
-
 template <class VectorT>
 static unsigned StackArgBytesHelper(const VectorT& args, ABIKind kind) {
   ABIArgIter<VectorT> iter(args, kind);
@@ -2003,7 +1996,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
       ComputeByteAlignment(sizeof(Frame), ABIStackAlignment);
   unsigned framePushed = AlignBytes(argOffset + argBytes, ABIStackAlignment);
   GenerateExitPrologue(masm, ExitReason::Fixed::ImportInterp,
-                        false,
+                        true,
                         frameAlignment,
                         framePushed, offsets);
 
@@ -2056,7 +2049,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   MOZ_ASSERT(i.done());
 
   
-  AssertStackAlignment(masm, ABIStackAlignment);
+  masm.assertStackAlignment(ABIStackAlignment);
   masm.call(SymbolicAddress::CallImport_General);
   masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
 
@@ -2125,7 +2118,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
 #endif
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::ImportInterp,
-                        false, offsets);
+                        true, offsets);
 
   return FinishOffsets(masm, offsets);
 }
