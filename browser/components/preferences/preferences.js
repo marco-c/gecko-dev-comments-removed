@@ -21,7 +21,6 @@
 
 
 
-
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -354,9 +353,6 @@ function init_all() {
     SettingPaneManager.registerPane(id, config);
   }
 
-  if (Services.prefs.getBoolPref("browser.translations.newSettingsUI.enable")) {
-    register_module("paneTranslations", gTranslationsPane);
-  }
   if (ExperimentAPI.labsEnabled) {
     
     
