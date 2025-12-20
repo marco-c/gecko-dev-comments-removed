@@ -1613,7 +1613,10 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) {
       
       
       if (mReplaceWithChildrenElements &&
-          mReplaceWithChildrenElements->Contains(*elementName)) {
+          mReplaceWithChildrenElements->Contains(*elementName) &&
+          
+          
+          !!child->GetParent()) {
         
         
         
