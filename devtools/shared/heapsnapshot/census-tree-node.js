@@ -38,113 +38,109 @@ function isSavedFrame(obj) {
 
 
 
-function CensusTreeNodeCache() {}
-CensusTreeNodeCache.prototype = null;
-
-
-
-
-
-
-
-
-
-function CensusTreeNodeCacheValue() {
+class CensusTreeNodeCache {
   
-  this.node = undefined;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static hashFrame(frame) {
+    
+    return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${frame.column},${frame.asyncCause}`;
+  }
+
   
-  this.children = undefined;
+
+
+
+
+
+
+
+
+
+
+  static hashNode(node) {
+    return isSavedFrame(node.name)
+      ? this.hashFrame(node.name)
+      : `NODE,${node.name}`;
+  }
+
+  
+
+
+
+
+
+
+  static insertFrame(cache, value) {
+    cache[this.hashFrame(value.node.name)] = value;
+  }
+
+  
+
+
+
+
+
+  static insertNode(cache, value) {
+    if (isSavedFrame(value.node.name)) {
+      this.insertFrame(cache, value);
+    } else {
+      cache[this.hashNode(value.node)] = value;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  static lookupFrame(cache, frame) {
+    return cache[this.hashFrame(frame)];
+  }
+
+  
+
+
+
+
+
+
+
+  static lookupNode(cache, node) {
+    return isSavedFrame(node.name)
+      ? this.lookupFrame(cache, node.name)
+      : cache[this.hashNode(node)];
+  }
 }
 
-CensusTreeNodeCacheValue.prototype = null;
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-CensusTreeNodeCache.hashFrame = function (frame) {
-  
-  return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${frame.column},${frame.asyncCause}`;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-CensusTreeNodeCache.hashNode = function (node) {
-  return isSavedFrame(node.name)
-    ? CensusTreeNodeCache.hashFrame(node.name)
-    : `NODE,${node.name}`;
-};
-
-
-
-
-
-
-
-
-CensusTreeNodeCache.insertFrame = function (cache, value) {
-  cache[CensusTreeNodeCache.hashFrame(value.node.name)] = value;
-};
-
-
-
-
-
-
-
-CensusTreeNodeCache.insertNode = function (cache, value) {
-  if (isSavedFrame(value.node.name)) {
-    CensusTreeNodeCache.insertFrame(cache, value);
-  } else {
-    cache[CensusTreeNodeCache.hashNode(value.node)] = value;
+class CensusTreeNodeCacheValue {
+  constructor() {
+    
+    this.node = undefined;
+    
+    this.children = undefined;
   }
-};
-
-
-
-
-
-
-
-
-
-CensusTreeNodeCache.lookupFrame = function (cache, frame) {
-  return cache[CensusTreeNodeCache.hashFrame(frame)];
-};
-
-
-
-
-
-
-
-
-
-CensusTreeNodeCache.lookupNode = function (cache, node) {
-  return isSavedFrame(node.name)
-    ? CensusTreeNodeCache.lookupFrame(cache, node.name)
-    : cache[CensusTreeNodeCache.hashNode(node)];
-};
+}
 
 
 
@@ -265,53 +261,133 @@ function makeCensusTreeNodeSubTree(breakdown, report, edge, cache, outParams) {
 
 
 
-function CensusTreeNodeVisitor() {
-  
-  this._root = null;
+class CensusTreeNodeVisitor extends Visitor {
+  constructor() {
+    super();
+    
+    this._root = null;
 
-  
-  
-  this._nodeStack = [];
+    
+    
+    this._nodeStack = [];
 
-  
-  
-  this._outParams = {
-    top: null,
-    bottom: null,
-  };
+    
+    
+    this._outParams = {
+      top: null,
+      bottom: null,
+    };
 
-  
-  
-  this._cacheStack = [new CensusTreeNodeCache()];
+    
+    
+    this._cacheStack = [new CensusTreeNodeCache()];
 
-  
-  this._index = -1;
-}
-
-CensusTreeNodeVisitor.prototype = Object.create(Visitor);
-
-
-
-
-
-
-
-CensusTreeNodeVisitor.prototype.enter = function (breakdown, report, edge) {
-  this._index++;
-
-  const cache = this._cacheStack[this._cacheStack.length - 1];
-  makeCensusTreeNodeSubTree(breakdown, report, edge, cache, this._outParams);
-  const { top, bottom } = this._outParams;
-
-  if (!this._root) {
-    this._root = bottom;
-  } else if (bottom) {
-    addChild(this._nodeStack[this._nodeStack.length - 1], bottom);
+    
+    this._index = -1;
   }
 
-  this._cacheStack.push(new CensusTreeNodeCache());
-  this._nodeStack.push(top);
-};
+  
+
+
+
+
+
+  enter(breakdown, report, edge) {
+    this._index++;
+
+    const cache = this._cacheStack[this._cacheStack.length - 1];
+    makeCensusTreeNodeSubTree(breakdown, report, edge, cache, this._outParams);
+    const { top, bottom } = this._outParams;
+
+    if (!this._root) {
+      this._root = bottom;
+    } else if (bottom) {
+      addChild(this._nodeStack[this._nodeStack.length - 1], bottom);
+    }
+
+    this._cacheStack.push(new CensusTreeNodeCache());
+    this._nodeStack.push(top);
+  }
+
+  
+
+
+
+
+
+
+  exit() {
+    
+    
+    
+    
+
+    function dfs(node, childrenCache) {
+      if (childrenCache) {
+        const childValues = values(childrenCache);
+        for (let i = 0, length = childValues.length; i < length; i++) {
+          dfs(childValues[i].node, childValues[i].children);
+        }
+      }
+
+      node.totalCount = node.count;
+      node.totalBytes = node.bytes;
+
+      if (node.children) {
+        
+        node.children = node.children.filter(isNonEmpty);
+
+        node.children.sort(compareByTotal);
+
+        for (let i = 0, length = node.children.length; i < length; i++) {
+          node.totalCount += node.children[i].totalCount;
+          node.totalBytes += node.children[i].totalBytes;
+        }
+      }
+    }
+
+    const top = this._nodeStack.pop();
+    const cache = this._cacheStack.pop();
+    dfs(top, cache);
+  }
+
+  
+
+
+  count(breakdown, report) {
+    const node = this._nodeStack[this._nodeStack.length - 1];
+    node.reportLeafIndex = this._index;
+
+    if (breakdown.count) {
+      node.count = report.count;
+    }
+
+    if (breakdown.bytes) {
+      node.bytes = report.bytes;
+    }
+  }
+
+  
+
+
+
+
+  root() {
+    if (!this._root) {
+      throw new Error(
+        "Attempt to get the root before walking the census report!"
+      );
+    }
+
+    if (this._nodeStack.length) {
+      throw new Error(
+        "Attempt to get the root while walking the census report!"
+      );
+    }
+
+    return this._root;
+  }
+}
 
 function values(cache) {
   return Object.keys(cache).map(k => cache[k]);
@@ -328,138 +404,63 @@ function isNonEmpty(node) {
 
 
 
-
-
-
-
-CensusTreeNodeVisitor.prototype.exit = function () {
-  
-  
-  
+class CensusTreeNode {
   
 
-  function dfs(node, childrenCache) {
-    if (childrenCache) {
-      const childValues = values(childrenCache);
-      for (let i = 0, length = childValues.length; i < length; i++) {
-        dfs(childValues[i].node, childValues[i].children);
-      }
-    }
 
-    node.totalCount = node.count;
-    node.totalBytes = node.bytes;
 
-    if (node.children) {
-      
-      node.children = node.children.filter(isNonEmpty);
+  constructor(name) {
+    
+    
+    this.name = name;
 
-      node.children.sort(compareByTotal);
+    
+    this.bytes = 0;
 
-      for (let i = 0, length = node.children.length; i < length; i++) {
-        node.totalCount += node.children[i].totalCount;
-        node.totalBytes += node.children[i].totalBytes;
-      }
-    }
+    
+    
+    this.totalBytes = 0;
+
+    
+    
+    this.count = 0;
+
+    
+    
+    this.totalCount = 0;
+
+    
+    this.children = undefined;
+
+    
+    this.id = ++censusTreeNodeIdCounter;
+
+    
+    
+    this.parent = undefined;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.reportLeafIndex = undefined;
   }
-
-  const top = this._nodeStack.pop();
-  const cache = this._cacheStack.pop();
-  dfs(top, cache);
-};
-
-
-
-
-CensusTreeNodeVisitor.prototype.count = function (breakdown, report) {
-  const node = this._nodeStack[this._nodeStack.length - 1];
-  node.reportLeafIndex = this._index;
-
-  if (breakdown.count) {
-    node.count = report.count;
-  }
-
-  if (breakdown.bytes) {
-    node.bytes = report.bytes;
-  }
-};
-
-
-
-
-
-
-CensusTreeNodeVisitor.prototype.root = function () {
-  if (!this._root) {
-    throw new Error(
-      "Attempt to get the root before walking the census report!"
-    );
-  }
-
-  if (this._nodeStack.length) {
-    throw new Error("Attempt to get the root while walking the census report!");
-  }
-
-  return this._root;
-};
-
-
-
-
-
-
-function CensusTreeNode(name) {
-  
-  
-  this.name = name;
-
-  
-  this.bytes = 0;
-
-  
-  
-  this.totalBytes = 0;
-
-  
-  
-  this.count = 0;
-
-  
-  
-  this.totalCount = 0;
-
-  
-  this.children = undefined;
-
-  
-  this.id = ++censusTreeNodeIdCounter;
-
-  
-  
-  this.parent = undefined;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  this.reportLeafIndex = undefined;
 }
-
-CensusTreeNode.prototype = null;
 
 
 
