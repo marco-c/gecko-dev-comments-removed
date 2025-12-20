@@ -43,19 +43,55 @@ using namespace mozilla::layout;
 AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const mozilla::SizeComputationInput* aSizingInput,
     bool aIgnorePositionArea) {
-  auto override = AutoResolutionOverrideParams{
-      aSizingInput->mFrame, aSizingInput->mAnchorPosResolutionCache};
-  if (aIgnorePositionArea) {
-    override.mPositionAreaInUse = false;
-  }
-  return {aSizingInput->mFrame, aSizingInput->mFrame->StyleDisplay()->mPosition,
-          aSizingInput->mAnchorPosResolutionCache, override};
+  const mozilla::StylePositionArea posArea =
+      aIgnorePositionArea
+          ? mozilla::StylePositionArea{}
+          : aSizingInput->mFrame->StylePosition()->mPositionArea;
+  bool inlineUsesAnchorCenter = false;
+  bool blockUsesAnchorCenter = false;
+
+  ComputeAnchorCenterUsage(aSizingInput->mFrame,
+                           aSizingInput->mAnchorPosResolutionCache,
+                           inlineUsesAnchorCenter, blockUsesAnchorCenter);
+
+  return {aSizingInput->mFrame,
+          aSizingInput->mFrame->StyleDisplay()->mPosition,
+          posArea,
+          aSizingInput->mAnchorPosResolutionCache,
+          inlineUsesAnchorCenter,
+          blockUsesAnchorCenter};
 }
 
 static bool CheckNextInFlowParenthood(nsIFrame* aFrame, nsIFrame* aParent) {
   nsIFrame* frameNext = aFrame->GetNextInFlow();
   nsIFrame* parentNext = aParent->GetNextInFlow();
   return frameNext && parentNext && frameNext->GetParent() == parentNext;
+}
+
+void ComputeAnchorCenterUsage(
+    const nsIFrame* aFrame,
+    mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache,
+    bool& aInlineUsesAnchorCenter, bool& aBlockUsesAnchorCenter) {
+  aInlineUsesAnchorCenter = false;
+  aBlockUsesAnchorCenter = false;
+  nsIFrame* parent = aFrame->GetParent();
+  if (!parent || !aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) ||
+      !aAnchorPosResolutionCache ||
+      !aAnchorPosResolutionCache->mDefaultAnchorCache.mAnchor) {
+    return;
+  }
+
+  const auto* stylePos = aFrame->StylePosition();
+
+  auto checkAxis = [&](LogicalAxis aAxis) {
+    StyleAlignFlags alignment =
+        stylePos->UsedSelfAlignment(aAxis, parent->Style());
+    return (alignment & ~StyleAlignFlags::FLAG_BITS) ==
+           StyleAlignFlags::ANCHOR_CENTER;
+  };
+
+  aInlineUsesAnchorCenter = checkAxis(LogicalAxis::Inline);
+  aBlockUsesAnchorCenter = checkAxis(LogicalAxis::Block);
 }
 
 
@@ -305,6 +341,7 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   mFlags.mDummyParentReflowInput = false;
   mFlags.mStaticPosIsCBOrigin = aFlags.contains(InitFlag::StaticPosIsCBOrigin);
   mFlags.mIOffsetsNeedCSSAlign = mFlags.mBOffsetsNeedCSSAlign = false;
+  mFlags.mIAnchorCenter = mFlags.mBAnchorCenter = false;
 
   
   
@@ -1144,7 +1181,18 @@ void ReflowInput::ComputeAbsPosInlineAutoMargin(nscoord aAvailMarginSpace,
                                                 WritingMode aContainingBlockWM,
                                                 bool aIsMarginIStartAuto,
                                                 bool aIsMarginIEndAuto,
+                                                bool aIsIAnchorCenter,
                                                 LogicalMargin& aMargin) {
+  if (aIsIAnchorCenter) {
+    
+    if (aIsMarginIStartAuto) {
+      aMargin.IStart(aContainingBlockWM) = 0;
+    }
+    if (aIsMarginIEndAuto) {
+      aMargin.IEnd(aContainingBlockWM) = 0;
+    }
+    return;
+  }
   if (aIsMarginIStartAuto) {
     if (aIsMarginIEndAuto) {
       if (aAvailMarginSpace < 0) {
@@ -1178,7 +1226,18 @@ void ReflowInput::ComputeAbsPosBlockAutoMargin(nscoord aAvailMarginSpace,
                                                WritingMode aContainingBlockWM,
                                                bool aIsMarginBStartAuto,
                                                bool aIsMarginBEndAuto,
+                                               bool aIsBAnchorCenter,
                                                LogicalMargin& aMargin) {
+  if (aIsBAnchorCenter) {
+    
+    if (aIsMarginBStartAuto) {
+      aMargin.BStart(aContainingBlockWM) = 0;
+    }
+    if (aIsMarginBEndAuto) {
+      aMargin.BEnd(aContainingBlockWM) = 0;
+    }
+    return;
+  }
   if (aIsMarginBStartAuto) {
     if (aIsMarginBEndAuto) {
       
@@ -1696,6 +1755,16 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   bool bStartIsAuto = bStartOffset->IsAuto();
   bool bEndIsAuto = bEndOffset->IsAuto();
 
+  mFlags.mIAnchorCenter = anchorResolutionParams.mBaseParams.mIAnchorCenter;
+  mFlags.mBAnchorCenter = anchorResolutionParams.mBaseParams.mBAnchorCenter;
+
+  
+  
+  const bool inlineBothInsetsAuto =
+      mFlags.mIAnchorCenter && iStartIsAuto && iEndIsAuto;
+  const bool blockBothInsetsAuto =
+      mFlags.mBAnchorCenter && bStartIsAuto && bEndIsAuto;
+
   
   
   
@@ -1781,7 +1850,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
         nsLayoutUtils::ComputeCBDependentValue(aCBSize.ISize(cbwm), iEndOffset);
   }
 
-  if (iStartIsAuto && iEndIsAuto) {
+  if (iStartIsAuto && iEndIsAuto && !inlineBothInsetsAuto) {
     if (cbwm.IsInlineReversed() !=
         hypotheticalPos.mWritingMode.IsInlineReversed()) {
       offsets.IEnd(cbwm) = hypotheticalPos.mIStart;
@@ -1805,7 +1874,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
         nsLayoutUtils::ComputeCBDependentValue(aCBSize.BSize(cbwm), bEndOffset);
   }
 
-  if (bStartIsAuto && bEndIsAuto) {
+  if (bStartIsAuto && bEndIsAuto && !blockBothInsetsAuto) {
     
     offsets.BStart(cbwm) = hypotheticalPos.mBStart;
     bStartIsAuto = false;
