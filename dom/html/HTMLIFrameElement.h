@@ -193,7 +193,6 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
   static const DOMTokenListSupportedToken sSupportedSandboxTokens[];
 
   void RefreshFeaturePolicy(bool aParseAllowAttribute);
-  void RefreshEmbedderReferrerPolicy(ReferrerPolicy aPolicy);
 
   
   

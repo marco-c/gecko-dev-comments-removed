@@ -58,7 +58,6 @@
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
 #include "nsSHistory.h"
-#include "nsScriptSecurityManager.h"
 #include "nsSecureBrowserUI.h"
 #include "nsQueryObject.h"
 #include "nsBrowserStatusFilter.h"
@@ -3751,89 +3750,6 @@ void CanonicalBrowsingContext::MaybeReconstructActiveEntryList() {
   if (mActiveEntry && !shistory->ContainsEntry(mActiveEntry)) {
     shistory->ReconstructContiguousEntryList();
   }
-}
-
-
-void CanonicalBrowsingContext::CreateRedactedAncestorOriginsList(
-    nsIPrincipal* aThisDocumentPrincipal) {
-  MOZ_DIAGNOSTIC_ASSERT(aThisDocumentPrincipal);
-  nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
-  
-  CanonicalBrowsingContext* parent = GetParent();
-  if (!parent) {
-    mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
-    return;
-  }
-  MOZ_DIAGNOSTIC_ASSERT(!parent->IsChrome());
-  
-  
-  const Span<const nsCOMPtr<nsIPrincipal>> parentAncestorOriginsList =
-      parent->GetPossiblyRedactedAncestorOriginsList();
-
-  
-  WindowGlobalParent* ancestorWGP = GetParentWindowContext();
-
-  
-  
-  
-  auto referrerPolicy = GetEmbedderFrameReferrerPolicy();
-
-  
-  bool masked = false;
-
-  if (referrerPolicy == ReferrerPolicy::No_referrer) {
-    
-    masked = true;
-  } else if (referrerPolicy == ReferrerPolicy::Same_origin &&
-             !ancestorWGP->DocumentPrincipal()->Equals(
-                 aThisDocumentPrincipal)) {
-    
-    
-    
-    masked = true;
-  }
-
-  if (masked) {
-    
-    ancestorPrincipals.AppendElement(nullptr);
-  } else {
-    
-    auto* principal = ancestorWGP->DocumentPrincipal();
-    
-    
-    ancestorPrincipals.AppendElement(
-        principal->GetIsNullPrincipal() ? nullptr : principal);
-  }
-
-  
-  for (const auto& ancestorOrigin : parentAncestorOriginsList) {
-    
-    if (masked && ancestorOrigin &&
-        ancestorOrigin->Equals(ancestorWGP->DocumentPrincipal())) {
-      
-      
-      ancestorPrincipals.AppendElement(nullptr);
-    } else {
-      
-      
-      ancestorPrincipals.AppendElement(ancestorOrigin);
-      masked = false;
-    }
-  }
-
-  
-  
-  mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
-}
-
-Span<const nsCOMPtr<nsIPrincipal>>
-CanonicalBrowsingContext::GetPossiblyRedactedAncestorOriginsList() const {
-  return mPossiblyRedactedAncestorOriginsList;
-}
-
-void CanonicalBrowsingContext::SetPossiblyRedactedAncestorOriginsList(
-    nsTArray<nsCOMPtr<nsIPrincipal>> aAncestorOriginsList) {
-  mPossiblyRedactedAncestorOriginsList = std::move(aAncestorOriginsList);
 }
 
 EntryList* CanonicalBrowsingContext::GetActiveEntries() {
