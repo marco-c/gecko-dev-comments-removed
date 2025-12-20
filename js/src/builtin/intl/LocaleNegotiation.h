@@ -16,6 +16,16 @@ namespace js::intl {
 
 enum class AvailableLocaleKind;
 
+using LocalesList = JS::StackGCVector<JSLinearString*>;
+
+
+
+
+
+
+bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
+                            JS::MutableHandle<LocalesList> result);
+
 
 
 
