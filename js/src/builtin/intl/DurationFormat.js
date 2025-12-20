@@ -522,24 +522,6 @@ function GetDurationUnitOptions(
 
 
 
-
-
-function Intl_DurationFormat_supportedLocalesOf(locales ) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  
-  var availableLocales = "DurationFormat";
-
-  
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-
-
-
 function Intl_DurationFormat_resolvedOptions() {
   
   var durationFormat = this;

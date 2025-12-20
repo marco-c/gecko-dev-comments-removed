@@ -251,26 +251,6 @@ function InitializeCollator(collator, locales, options) {
 
 
 
-
-
-function Intl_Collator_supportedLocalesOf(locales ) {
-  var options = ArgumentsLength() > 1 ? GetArgument(1) : undefined;
-
-  
-  var availableLocales = "Collator";
-
-  
-  var requestedLocales = CanonicalizeLocaleList(locales);
-
-  
-  return SupportedLocales(availableLocales, requestedLocales, options);
-}
-
-
-
-
-
-
 var collatorInternalProperties = {
   sortLocaleData: collatorSortLocaleData,
   searchLocaleData: collatorSearchLocaleData,
