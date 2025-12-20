@@ -7,20 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-#include <limits>
-#if __GLIBCXX__ <= 20070719
-#  ifndef __EXCEPTIONS
-#    define __EXCEPTIONS
-#  endif
-#endif
-
 #include "MOZIconHelper.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
