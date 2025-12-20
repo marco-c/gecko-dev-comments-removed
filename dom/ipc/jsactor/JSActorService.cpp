@@ -338,4 +338,19 @@ JSActorService::GetJSWindowActorProtocol(const nsACString& aName) {
   return mWindowActorDescriptors.Get(aName);
 }
 
+bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
+  if (mRemoteTypes.IsEmpty()) {
+    return true;
+  }
+
+  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
+  for (auto& remoteType : mRemoteTypes) {
+    
+    if (StringBeginsWith(remoteTypePrefix, remoteType)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  
