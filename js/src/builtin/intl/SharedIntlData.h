@@ -31,6 +31,18 @@ class ArrayObject;
 
 namespace intl {
 
+enum class AvailableLocaleKind {
+  Collator,
+  DateTimeFormat,
+  DisplayNames,
+  DurationFormat,
+  ListFormat,
+  NumberFormat,
+  PluralRules,
+  RelativeTimeFormat,
+  Segmenter,
+};
+
 
 
 
@@ -273,13 +285,13 @@ class SharedIntlData {
   
   
   
-  LocaleSet supportedLocales;
+  LocaleSet availableLocales;
 
   
   
-  LocaleSet collatorSupportedLocales;
+  LocaleSet collatorAvailableLocales;
 
-  bool supportedLocalesInitialized = false;
+  bool availableLocalesInitialized = false;
 
   
   
@@ -293,33 +305,21 @@ class SharedIntlData {
   
 
 
-  bool ensureSupportedLocales(JSContext* cx);
+  bool ensureAvailableLocales(JSContext* cx);
 
  public:
-  enum class SupportedLocaleKind {
-    Collator,
-    DateTimeFormat,
-    DisplayNames,
-    DurationFormat,
-    ListFormat,
-    NumberFormat,
-    PluralRules,
-    RelativeTimeFormat,
-    Segmenter,
-  };
-
   
 
 
 
-  [[nodiscard]] bool isSupportedLocale(JSContext* cx, SupportedLocaleKind kind,
-                                       JS::Handle<JSString*> locale,
-                                       bool* supported);
+  [[nodiscard]] bool isAvailableLocale(JSContext* cx, AvailableLocaleKind kind,
+                                       JS::Handle<JSLinearString*> locale,
+                                       bool* available);
 
   
 
 
-  ArrayObject* availableLocalesOf(JSContext* cx, SupportedLocaleKind kind);
+  ArrayObject* availableLocalesOf(JSContext* cx, AvailableLocaleKind kind);
 
  private:
   
