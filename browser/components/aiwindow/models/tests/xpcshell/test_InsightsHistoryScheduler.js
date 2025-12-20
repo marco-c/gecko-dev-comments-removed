@@ -1,4 +1,9 @@
-"use strict";
+
+
+
+
+do_get_profile();
+("use strict");
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"

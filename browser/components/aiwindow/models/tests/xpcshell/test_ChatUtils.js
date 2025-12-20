@@ -4,6 +4,8 @@
 
 
 
+do_get_profile();
+
 const {
   constructRealTimeInfoInjectionMessage,
   getLocalIsoTime,

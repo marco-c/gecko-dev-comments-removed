@@ -3,7 +3,8 @@
 
 
 
-"use strict";
+do_get_profile();
+("use strict");
 
 const { InsightsDriftDetector } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/InsightsDriftDetector.sys.mjs"
