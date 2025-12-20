@@ -1929,6 +1929,7 @@ add_task(async function test_boolint_enum() {
 
 
 
+
 function validate({ value, schema, expectedResult, options = undefined }) {
   let result = JsonSchemaValidator.validate(value, schema, options);
 
