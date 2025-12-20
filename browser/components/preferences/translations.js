@@ -30,6 +30,11 @@ const ALWAYS_LANGUAGE_ITEM_CLASS = "translations-always-language-item";
 
 const ALWAYS_LANGUAGE_REMOVE_BUTTON_CLASS = "translations-always-remove-button";
 
+
+const NEVER_LANGUAGE_ITEM_CLASS = "translations-never-language-item";
+
+const NEVER_LANGUAGE_REMOVE_BUTTON_CLASS = "translations-never-remove-button";
+
 const TranslationsSettings = {
   
 
@@ -78,6 +83,13 @@ const TranslationsSettings = {
 
 
 
+  neverLanguageTags: new Set(),
+
+  
+
+
+
+
   elements: null,
 
   
@@ -97,15 +109,29 @@ const TranslationsSettings = {
           await this.onAlwaysLanguageChosen(
              (event.target).value
           );
+        } else if (
+          event.target === this.elements?.neverTranslateLanguagesSelect
+        ) {
+          await this.onNeverLanguageChosen(
+             (event.target).value
+          );
         }
         break;
       case "click": {
         const target =  (event.target);
-        const removeButton =  (
+        const alwaysRemoveButton =  (
           target.closest?.(`.${ALWAYS_LANGUAGE_REMOVE_BUTTON_CLASS}`)
         );
-        if (removeButton?.dataset.langTag) {
-          this.removeAlwaysLanguage(removeButton.dataset.langTag);
+        if (alwaysRemoveButton?.dataset.langTag) {
+          this.removeAlwaysLanguage(alwaysRemoveButton.dataset.langTag);
+          break;
+        }
+
+        const neverRemoveButton =  (
+          target.closest?.(`.${NEVER_LANGUAGE_REMOVE_BUTTON_CLASS}`)
+        );
+        if (neverRemoveButton?.dataset.langTag) {
+          this.removeNeverLanguage(neverRemoveButton.dataset.langTag);
         }
         break;
       }
@@ -123,11 +149,12 @@ const TranslationsSettings = {
 
 
   observe(subject, topic, data) {
-    if (
-      topic === TOPIC_TRANSLATIONS_PREF_CHANGED &&
-      data === ALWAYS_TRANSLATE_LANGS_PREF
-    ) {
-      this.refreshAlwaysLanguages().catch(console.error);
+    if (topic === TOPIC_TRANSLATIONS_PREF_CHANGED) {
+      if (data === ALWAYS_TRANSLATE_LANGS_PREF) {
+        this.refreshAlwaysLanguages().catch(console.error);
+      } else if (data === NEVER_TRANSLATE_LANGS_PREF) {
+        this.refreshNeverLanguages().catch(console.error);
+      }
     }
   },
 
@@ -145,11 +172,13 @@ const TranslationsSettings = {
     if (this.initPromise) {
       await this.initPromise;
       await this.refreshAlwaysLanguages();
+      await this.refreshNeverLanguages();
       return;
     }
 
     if (this.initialized) {
       await this.refreshAlwaysLanguages();
+      await this.refreshNeverLanguages();
       return;
     }
 
@@ -210,7 +239,10 @@ const TranslationsSettings = {
     if (
       !this.elements?.alwaysTranslateLanguagesGroup ||
       !this.elements?.alwaysTranslateLanguagesSelect ||
-      !this.elements?.alwaysTranslateLanguagesNoneRow
+      !this.elements?.alwaysTranslateLanguagesNoneRow ||
+      !this.elements?.neverTranslateLanguagesGroup ||
+      !this.elements?.neverTranslateLanguagesSelect ||
+      !this.elements?.neverTranslateLanguagesNoneRow
     ) {
       return;
     }
@@ -223,21 +255,30 @@ const TranslationsSettings = {
     } catch (error) {
       console.error("Failed to initialize translations settings UI", error);
       this.elements.alwaysTranslateLanguagesSelect.disabled = true;
+      this.elements.neverTranslateLanguagesSelect.disabled = true;
       return;
     }
 
     this.elements.alwaysTranslateLanguagesSelect.disabled = false;
+    this.elements.neverTranslateLanguagesSelect.disabled = false;
     await this.buildAlwaysSelectOptions();
+    await this.buildNeverSelectOptions();
 
     this.elements.alwaysTranslateLanguagesSelect.addEventListener(
       "change",
       this
     );
     this.elements.alwaysTranslateLanguagesGroup.addEventListener("click", this);
+    this.elements.neverTranslateLanguagesSelect.addEventListener(
+      "change",
+      this
+    );
+    this.elements.neverTranslateLanguagesGroup.addEventListener("click", this);
     Services.obs.addObserver(this, TOPIC_TRANSLATIONS_PREF_CHANGED);
     window.addEventListener("unload", this);
 
     await this.refreshAlwaysLanguages();
+    await this.refreshNeverLanguages();
     this.initialized = true;
   },
 
@@ -259,12 +300,24 @@ const TranslationsSettings = {
       alwaysTranslateLanguagesNoneRow:  (
         document.getElementById("translationsAlwaysTranslateLanguagesNoneRow")
       ),
+      neverTranslateLanguagesGroup:  (
+        document.getElementById("translationsNeverTranslateLanguagesGroup")
+      ),
+      neverTranslateLanguagesSelect:  (
+        document.getElementById("translationsNeverTranslateLanguagesSelect")
+      ),
+      neverTranslateLanguagesNoneRow:  (
+        document.getElementById("translationsNeverTranslateLanguagesNoneRow")
+      ),
     };
 
     if (
       !elements.alwaysTranslateLanguagesGroup ||
       !elements.alwaysTranslateLanguagesSelect ||
-      !elements.alwaysTranslateLanguagesNoneRow
+      !elements.alwaysTranslateLanguagesNoneRow ||
+      !elements.neverTranslateLanguagesGroup ||
+      !elements.neverTranslateLanguagesSelect ||
+      !elements.neverTranslateLanguagesNoneRow
     ) {
       return;
     }
@@ -507,6 +560,183 @@ const TranslationsSettings = {
   
 
 
+
+
+  async onNeverLanguageChosen(langTag) {
+    if (!langTag) {
+      return;
+    }
+
+    TranslationsParent.addLangTagToPref(langTag, NEVER_TRANSLATE_LANGS_PREF);
+    TranslationsParent.removeLangTagFromPref(
+      langTag,
+      ALWAYS_TRANSLATE_LANGS_PREF
+    );
+    await this.resetNeverSelect();
+  },
+
+  
+
+
+
+
+  removeNeverLanguage(langTag) {
+    TranslationsParent.removeLangTagFromPref(
+      langTag,
+      NEVER_TRANSLATE_LANGS_PREF
+    );
+  },
+
+  
+
+
+  async resetNeverSelect() {
+    await this.resetSelect(
+      this.elements?.neverTranslateLanguagesSelect,
+      "translationsNeverTranslateLanguagesSelect"
+    );
+  },
+
+  
+
+
+  async refreshNeverLanguages() {
+    if (!this.elements?.neverTranslateLanguagesGroup) {
+      return;
+    }
+
+    const langTags = Array.from(
+      TranslationsParent.getNeverTranslateLanguages?.() ?? []
+    );
+    this.neverLanguageTags = new Set(langTags);
+
+    this.renderNeverLanguages(langTags);
+    await this.updateNeverSelectOptionState();
+  },
+
+  
+
+
+
+
+  renderNeverLanguages(langTags) {
+    const { neverTranslateLanguagesGroup, neverTranslateLanguagesNoneRow } =
+      this.elements;
+
+    for (const item of neverTranslateLanguagesGroup.querySelectorAll(
+      `.${NEVER_LANGUAGE_ITEM_CLASS}`
+    )) {
+      item.remove();
+    }
+
+    if (neverTranslateLanguagesNoneRow) {
+      const hasLanguages = Boolean(langTags.length);
+      neverTranslateLanguagesNoneRow.hidden = hasLanguages;
+
+      if (hasLanguages && neverTranslateLanguagesNoneRow.isConnected) {
+        neverTranslateLanguagesNoneRow.remove();
+      } else if (!hasLanguages && !neverTranslateLanguagesNoneRow.isConnected) {
+        neverTranslateLanguagesGroup.appendChild(
+          neverTranslateLanguagesNoneRow
+        );
+      }
+    }
+
+    const sortedLangTags = [...langTags].sort((langTagA, langTagB) => {
+      const labelA = this.formatLanguageLabel(langTagA) ?? langTagA;
+      const labelB = this.formatLanguageLabel(langTagB) ?? langTagB;
+      return labelA.localeCompare(labelB);
+    });
+
+    for (const langTag of sortedLangTags) {
+      const label = this.formatLanguageLabel(langTag);
+      if (!label) {
+        continue;
+      }
+
+      const removeButton = document.createElement("moz-button");
+      removeButton.setAttribute("slot", "actions-start");
+      removeButton.setAttribute("type", "icon ghost");
+      removeButton.setAttribute(
+        "iconsrc",
+        "chrome://global/skin/icons/delete.svg"
+      );
+      removeButton.classList.add(NEVER_LANGUAGE_REMOVE_BUTTON_CLASS);
+      removeButton.dataset.langTag = langTag;
+      removeButton.setAttribute("aria-label", label);
+
+      const item = document.createElement("moz-box-item");
+      item.classList.add(NEVER_LANGUAGE_ITEM_CLASS);
+      item.setAttribute("label", label);
+      item.dataset.langTag = langTag;
+      item.appendChild(removeButton);
+      if (
+        neverTranslateLanguagesNoneRow &&
+        neverTranslateLanguagesNoneRow.parentElement ===
+          neverTranslateLanguagesGroup
+      ) {
+        neverTranslateLanguagesGroup.insertBefore(
+          item,
+          neverTranslateLanguagesNoneRow
+        );
+      } else {
+        neverTranslateLanguagesGroup.appendChild(item);
+      }
+    }
+  },
+
+  
+
+
+  async buildNeverSelectOptions() {
+    const select = this.elements?.neverTranslateLanguagesSelect;
+    if (!select || !this.supportedLanguages?.sourceLanguages?.length) {
+      return;
+    }
+
+    const placeholder = select.querySelector('moz-option[value=""]');
+    for (const option of select.querySelectorAll("moz-option")) {
+      if (option !== placeholder) {
+        option.remove();
+      }
+    }
+
+    const sourceLanguages = [...this.supportedLanguages.sourceLanguages].sort(
+      (a, b) => a.displayName.localeCompare(b.displayName)
+    );
+    for (const { langTag, displayName } of sourceLanguages) {
+      const option = document.createElement("moz-option");
+      option.setAttribute("value", langTag);
+      option.setAttribute("label", displayName);
+      select.appendChild(option);
+    }
+
+    await this.resetNeverSelect();
+  },
+
+  
+
+
+  async updateNeverSelectOptionState() {
+    const select = this.elements?.neverTranslateLanguagesSelect;
+    if (!select) {
+      return;
+    }
+
+    for (const option of select.querySelectorAll("moz-option")) {
+      const value = option.getAttribute("value");
+      if (!value) {
+        continue;
+      }
+      option.disabled = this.neverLanguageTags.has(value);
+    }
+
+    await this.resetNeverSelect();
+  },
+
+  
+
+
   teardown() {
     try {
       Services.obs.removeObserver(this, TOPIC_TRANSLATIONS_PREF_CHANGED);
@@ -520,6 +750,14 @@ const TranslationsSettings = {
       this
     );
     this.elements?.alwaysTranslateLanguagesGroup?.removeEventListener(
+      "click",
+      this
+    );
+    this.elements?.neverTranslateLanguagesSelect?.removeEventListener(
+      "change",
+      this
+    );
+    this.elements?.neverTranslateLanguagesGroup?.removeEventListener(
       "click",
       this
     );
