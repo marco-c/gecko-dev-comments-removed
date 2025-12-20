@@ -12,6 +12,11 @@ const SELECTOR_WARNINGS = {
     
     learnMoreUrl: null,
   },
+  SiblingCombinatorAfterScope: {
+    l10nId: "css-selector-warning-sibling-combinator-after-scope",
+    
+    learnMoreUrl: null,
+  },
 };
 
 class CssSelectorWarningsTooltipHelper {
