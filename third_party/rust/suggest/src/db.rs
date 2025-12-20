@@ -123,7 +123,7 @@ impl SuggestDb {
     
     
     
-    pub fn write_scope(&self) -> Result<WriteScope> {
+    pub fn write_scope(&self) -> Result<WriteScope<'_>> {
         Ok(WriteScope {
             conn: self.conn.lock(),
             scope: self.interrupt_handle.begin_interrupt_scope()?,
