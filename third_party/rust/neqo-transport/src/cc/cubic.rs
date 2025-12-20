@@ -13,7 +13,7 @@ use std::{
 
 use neqo_common::qtrace;
 
-use crate::cc::classic_cc::WindowAdjustment;
+use crate::cc::{classic_cc::WindowAdjustment, CongestionEvent};
 
 
 
@@ -135,7 +135,8 @@ impl Cubic {
     
     
     
-    pub const BETA_USIZE_DIVIDEND: usize = 7;
+    
+    pub const BETA_USIZE_DIVISOR: usize = 100;
 
     
     
@@ -151,8 +152,18 @@ impl Cubic {
     
     
     
+    pub const BETA_USIZE_DIVIDEND: usize = 70;
+
     
-    pub const BETA_USIZE_DIVISOR: usize = 10;
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const BETA_USIZE_DIVIDEND_ECN: usize = 85;
 
     
     
@@ -385,6 +396,7 @@ impl WindowAdjustment for Cubic {
         curr_cwnd: usize,
         acked_bytes: usize,
         max_datagram_size: usize,
+        congestion_event: CongestionEvent,
     ) -> (usize, usize) {
         let curr_cwnd_f64 = convert_to_f64(curr_cwnd);
         
@@ -411,9 +423,14 @@ impl WindowAdjustment for Cubic {
 
         
         self.t_epoch = None;
+        let beta_dividend = if congestion_event == CongestionEvent::Ecn {
+            Self::BETA_USIZE_DIVIDEND_ECN
+        } else {
+            Self::BETA_USIZE_DIVIDEND
+        };
         (
-            curr_cwnd * Self::BETA_USIZE_DIVIDEND / Self::BETA_USIZE_DIVISOR,
-            acked_bytes * Self::BETA_USIZE_DIVIDEND / Self::BETA_USIZE_DIVISOR,
+            curr_cwnd * beta_dividend / Self::BETA_USIZE_DIVISOR,
+            acked_bytes * beta_dividend / Self::BETA_USIZE_DIVISOR,
         )
     }
 

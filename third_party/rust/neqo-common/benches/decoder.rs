@@ -4,7 +4,6 @@
 
 
 
-#![expect(clippy::unwrap_used, reason = "OK in a bench.")]
 #![expect(
     clippy::significant_drop_tightening,
     reason = "Inherent in codspeed criterion_group! macro."
@@ -14,20 +13,13 @@ use std::hint::black_box;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use neqo_common::Decoder;
-use neqo_crypto::{init, randomize};
 
-fn randomize_buffer(n: usize, mask: u8) -> Vec<u8> {
+
+fn fill_buffer(n: usize, mask: u8) -> Vec<u8> {
     let mut buf = vec![0; n];
-    
-    
-    for chunk in buf.chunks_mut(0x10000) {
-        randomize(chunk);
-    }
-    
-    
-    
-    for x in &mut buf[..] {
-        *x &= mask;
+    #[expect(clippy::cast_possible_truncation, reason = "% makes this safe")]
+    for (i, x) in buf.iter_mut().enumerate() {
+        *x = (i % 256) as u8 & mask;
     }
     buf
 }
@@ -35,7 +27,7 @@ fn randomize_buffer(n: usize, mask: u8) -> Vec<u8> {
 fn decoder(c: &mut Criterion, count: usize, mask: u8) {
     c.bench_function(&format!("decode {count} bytes, mask {mask:x}"), |b| {
         b.iter_batched_ref(
-            || randomize_buffer(count, mask),
+            || fill_buffer(count, mask),
             |buf| {
                 let mut dec = Decoder::new(&buf[..]);
                 while black_box(dec.decode_varint()).is_some() {
@@ -48,7 +40,6 @@ fn decoder(c: &mut Criterion, count: usize, mask: u8) {
 }
 
 fn benchmark_decoder(c: &mut Criterion) {
-    init().unwrap();
     for mask in [0xff, 0x7f, 0x3f] {
         for exponent in [12, 20] {
             decoder(c, 1 << exponent, mask);

@@ -22,7 +22,12 @@ use crate::Role;
 
 #[derive(Debug, Clone, Default)]
 pub struct Qlog {
-    inner: Rc<RefCell<Option<SharedStreamer>>>,
+    
+    
+    
+    
+    
+    inner: Option<Rc<RefCell<Option<SharedStreamer>>>>,
 }
 
 pub struct SharedStreamer {
@@ -51,8 +56,7 @@ impl Qlog {
             
             
             .create_new(true)
-            .open(&qlog_path)
-            .map_err(qlog::Error::IoError)?;
+            .open(&qlog_path)?;
 
         let streamer = QlogStreamer::new(
             qlog::QLOG_VERSION.to_string(),
@@ -72,14 +76,17 @@ impl Qlog {
     
     
     
+    
+    
+    
     pub fn enabled(mut streamer: QlogStreamer, qlog_path: PathBuf) -> Result<Self, qlog::Error> {
         streamer.start_log()?;
 
         Ok(Self {
-            inner: Rc::new(RefCell::new(Some(SharedStreamer {
+            inner: Some(Rc::new(RefCell::new(Some(SharedStreamer {
                 qlog_path,
                 streamer,
-            }))),
+            })))),
         })
     }
 
@@ -90,20 +97,7 @@ impl Qlog {
     }
 
     
-    pub fn add_event_with_instant<F>(&self, f: F, now: Instant)
-    where
-        F: FnOnce() -> Option<qlog::events::Event>,
-    {
-        self.add_event_with_stream(|s| {
-            if let Some(evt) = f() {
-                s.add_event_with_instant(evt, now)?;
-            }
-            Ok(())
-        });
-    }
-
-    
-    pub fn add_event_data_with_instant<F>(&self, f: F, now: Instant)
+    pub fn add_event_at<F>(&mut self, f: F, now: Instant)
     where
         F: FnOnce() -> Option<qlog::events::EventData>,
     {
@@ -117,15 +111,31 @@ impl Qlog {
 
     
     
-    pub fn add_event_with_stream<F>(&self, f: F)
+    pub fn add_event_with_stream<F>(&mut self, f: F)
     where
         F: FnOnce(&mut QlogStreamer) -> Result<(), qlog::Error>,
     {
-        if let Some(inner) = self.inner.borrow_mut().as_mut() {
-            if let Err(e) = f(&mut inner.streamer) {
-                log::error!("Qlog event generation failed with error {e}; closing qlog.");
-                *self.inner.borrow_mut() = None;
-            }
+        let Some(inner) = self.inner.as_mut() else {
+            return;
+        };
+
+        let mut borrow = inner.borrow_mut();
+
+        let Some(shared_streamer) = borrow.as_mut() else {
+            drop(borrow);
+            
+            self.inner = None;
+            return;
+        };
+
+        if let Err(e) = f(&mut shared_streamer.streamer) {
+            log::error!("Qlog event generation failed with error {e}; closing qlog.");
+            
+            *borrow = None;
+            
+            drop(borrow);
+            
+            self.inner = None;
         }
     }
 }
@@ -176,7 +186,6 @@ pub fn new_trace(role: Role) -> TraceSeq {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
-    use qlog::events::Event;
     use regex::Regex;
     use test_fixture::EXPECTED_LOG_HEADER;
 
@@ -198,9 +207,9 @@ mod test {
     }
 
     #[test]
-    fn add_event_with_instant() {
-        let (log, contents) = test_fixture::new_neqo_qlog();
-        log.add_event_with_instant(|| Some(Event::with_time(0.0, EV_DATA)), test_fixture::now());
+    fn add_event_at() {
+        let (mut log, contents) = test_fixture::new_neqo_qlog();
+        log.add_event_at(|| Some(EV_DATA), test_fixture::now());
         assert_eq!(
             Regex::new("\"time\":[0-9]+.[0-9]+,")
                 .unwrap()

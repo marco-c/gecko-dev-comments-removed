@@ -211,7 +211,6 @@ impl<'b> PartialEq<Decoder<'b>> for Decoder<'_> {
 }
 
 
-#[derive(Clone, PartialEq, Eq)]
 pub struct Encoder<B = Vec<u8>> {
     buf: B,
     
@@ -219,6 +218,23 @@ pub struct Encoder<B = Vec<u8>> {
     
     start: usize,
 }
+
+impl Clone for Encoder {
+    fn clone(&self) -> Self {
+        Self {
+            buf: self.as_ref().to_vec(),
+            start: 0,
+        }
+    }
+}
+
+impl<B: Buffer> PartialEq for Encoder<B> {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_ref() == other.as_ref()
+    }
+}
+
+impl<B: Buffer> Eq for Encoder<B> {}
 
 impl<B: Buffer> Encoder<B> {
     
@@ -414,6 +430,17 @@ impl Encoder<Vec<u8>> {
     
     
     
+    
+    pub fn skip(&mut self, n: usize) {
+        assert!(n <= self.len(), "Cannot skip beyond buffer length");
+        self.start += n;
+    }
+
+    
+    
+    
+    
+    
     #[must_use]
     pub const fn varint_len(v: u64) -> usize {
         match () {
@@ -504,8 +531,11 @@ impl From<&[u8]> for Encoder {
 }
 
 impl From<Encoder> for Vec<u8> {
-    fn from(buf: Encoder) -> Self {
-        buf.buf
+    fn from(mut enc: Encoder) -> Self {
+        if enc.start > 0 {
+            enc.buf.drain(..enc.start);
+        }
+        enc.buf
     }
 }
 
@@ -953,6 +983,7 @@ mod tests {
         let enc = Encoder::from_hex("010203");
         let buf = &[1, 2, 3];
         assert_eq!(enc.as_decoder(), Decoder::new(buf));
+        assert_ne!(enc.as_decoder(), Decoder::new(&[9, 9, 9]));
     }
 
     struct UintTestCase {
@@ -1104,13 +1135,27 @@ mod tests {
     }
 
     #[test]
+    fn truncate() {
+        let mut enc = Encoder::from_hex("0102030405");
+        enc.truncate(3);
+        assert_eq!(enc, Encoder::from_hex("010203"));
+    }
+
+    #[test]
+    fn with_capacity() {
+        let mut enc = Encoder::with_capacity(10);
+        enc.encode_byte(1);
+        assert_eq!(enc.as_ref(), &[1]);
+    }
+
+    #[test]
     fn buffer_write_zeroes() {
         fn check_write_zeroes<B: Buffer>(mut buf: B) {
             const NUM_BYTES: usize = 5;
 
             assert!(buf.is_empty());
-
             buf.pad_to(NUM_BYTES, 0);
+            assert!(!buf.is_empty());
 
             assert_eq!(buf.position(), NUM_BYTES);
             let written = &buf.as_slice()[..NUM_BYTES];
@@ -1124,6 +1169,25 @@ mod tests {
 
         let mut buf = [0; 16];
         check_write_zeroes(Cursor::new(&mut buf[..]));
+    }
+
+    #[test]
+    fn buffer_truncate() {
+        fn check_truncate<B: Buffer>(mut buf: B) {
+            buf.write_all(&[1, 2, 3, 4, 5]).unwrap();
+            assert_eq!(buf.position(), 5);
+            buf.truncate(3);
+            assert_eq!(buf.position(), 3);
+            assert_eq!(buf.as_slice(), &[1, 2, 3]);
+        }
+
+        check_truncate(Vec::<u8>::new());
+
+        let mut buf = Vec::<u8>::new();
+        check_truncate(&mut buf);
+
+        let mut buf = [0; 16];
+        check_truncate(Cursor::new(&mut buf[..]));
     }
 
     #[test]
@@ -1177,6 +1241,7 @@ mod tests {
         let mut enc = Encoder::new_borrowed_vec(&mut non_empty_vec);
         assert!(enc.is_empty());
         enc.encode_byte(5);
+        assert!(!enc.is_empty());
         assert_eq!(enc.len(), 1);
 
         assert_eq!(non_empty_vec.len(), 5);
@@ -1195,6 +1260,26 @@ mod tests {
         assert_eq!(Buffer::position(&buf), 0);
     }
 
+    #[test]
+    fn encoder_skip() {
+        let mut enc = Encoder::from_hex("010203040506");
+
+        enc.skip(2);
+        assert_eq!(enc.len(), 4);
+        assert_eq!(enc.as_ref(), &[0x03, 0x04, 0x05, 0x06]);
+
+        enc.skip(4);
+        assert_eq!(enc.len(), 0);
+        assert!(enc.is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "Cannot skip beyond buffer length")]
+    fn encoder_skip_too_much() {
+        let mut enc = Encoder::from_hex("0102");
+        enc.skip(3);
+    }
+
     
     
     #[test]
@@ -1207,5 +1292,43 @@ mod tests {
         assert_eq!(decoder.as_ref().len(), 3);
         assert_eq!(decoder.as_ref(), &[5, 6, 7]);
         assert_eq!(buffer, &[1, 2, 3, 4, 5, 6, 7]);
+    }
+
+    
+    #[test]
+    fn into_vec_respects_skip() {
+        let mut enc = Encoder::from_hex("010203040506");
+        enc.skip(2);
+        let v: Vec<u8> = enc.into();
+        assert_eq!(v, vec![0x03, 0x04, 0x05, 0x06]);
+    }
+
+    
+    #[test]
+    fn into_vec_without_skip() {
+        let enc = Encoder::from_hex("010203");
+        let v: Vec<u8> = enc.into();
+        assert_eq!(v, vec![0x01, 0x02, 0x03]);
+    }
+
+    #[test]
+    fn partial_eq_respects_skip() {
+        let mut enc1 = Encoder::from_hex("010203040506");
+        enc1.skip(2);
+        let enc2 = Encoder::from_hex("03040506");
+        assert_eq!(enc1, enc2);
+        assert_ne!(enc1, Encoder::from_hex("ffffff"));
+    }
+
+    
+    #[test]
+    fn clone_respects_skip() {
+        let mut enc = Encoder::from_hex("010203040506");
+        enc.skip(2);
+        let cloned = enc.clone();
+        assert_eq!(cloned.as_ref(), &[0x03, 0x04, 0x05, 0x06]);
+        assert_eq!(cloned.len(), 4);
+        let v: Vec<u8> = cloned.into();
+        assert_eq!(v, vec![0x03, 0x04, 0x05, 0x06]);
     }
 }

@@ -99,3 +99,11 @@ fn truncate() {
     let res = se.open(AAD, &sealed[0..(sealed.len() - 1)]);
     assert_bad_data(res);
 }
+
+#[test]
+fn truncate_header() {
+    let (se, _) = sealed();
+    
+    let res = se.open(AAD, &[1, 0, 0, 0, 0]);
+    assert_eq!(res.unwrap_err(), Error::SelfEncrypt);
+}

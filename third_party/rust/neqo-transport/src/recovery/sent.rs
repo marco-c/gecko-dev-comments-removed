@@ -76,6 +76,14 @@ impl Packet {
 
     
     #[must_use]
+    pub fn is_pmtud_probe(&self) -> bool {
+        self.tokens
+            .iter()
+            .any(|t| matches!(t, recovery::Token::PmtudProbe))
+    }
+
+    
+    #[must_use]
     pub const fn time_sent(&self) -> Instant {
         self.time_sent
     }

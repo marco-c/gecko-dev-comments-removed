@@ -95,6 +95,9 @@ impl HSettings {
 
     pub fn encode_frame_contents<B: Buffer>(&self, enc: &mut Encoder<B>) {
         enc.encode_vvec_with(|enc_inner| {
+            #[cfg(feature = "build-fuzzing-corpus")]
+            let start = enc_inner.len();
+
             for iter in &self.settings {
                 match iter.setting_type {
                     HSettingType::MaxHeaderListSize => {
@@ -129,6 +132,9 @@ impl HSettings {
                     }
                 }
             }
+
+            #[cfg(feature = "build-fuzzing-corpus")]
+            neqo_common::write_item_to_fuzzing_corpus("hsettings", &enc_inner.as_ref()[start..]);
         });
     }
 
@@ -136,6 +142,9 @@ impl HSettings {
     
     
     pub fn decode_frame_contents(&mut self, dec: &mut Decoder) -> Res<()> {
+        #[cfg(feature = "build-fuzzing-corpus")]
+        neqo_common::write_item_to_fuzzing_corpus("hsettings", dec.as_ref());
+
         while dec.remaining() > 0 {
             let t = dec.decode_varint();
             let v = dec.decode_varint();
@@ -383,5 +392,89 @@ mod tests {
             settings.decode_frame_contents(&mut dec),
             Err(Error::NotEnoughData)
         );
+    }
+
+    #[test]
+    fn datagram_settings() {
+        for setting in [SETTINGS_H3_DATAGRAM, SETTINGS_H3_DATAGRAM_DRAFT04] {
+            
+            let mut enc = Encoder::new();
+            enc.encode_varint(setting).encode_varint(1u64);
+            let mut s = HSettings::new(&[]);
+            s.decode_frame_contents(&mut enc.as_decoder()).unwrap();
+            assert_eq!(s.get(HSettingType::EnableH3Datagram), 1);
+
+            
+            enc = Encoder::new();
+            enc.encode_varint(setting).encode_varint(2u64);
+            let mut s = HSettings::new(&[]);
+            assert_eq!(
+                s.decode_frame_contents(&mut enc.as_decoder()),
+                Err(Error::HttpSettings)
+            );
+        }
+
+        
+        for (first, second, expected) in [
+            (SETTINGS_H3_DATAGRAM, SETTINGS_H3_DATAGRAM_DRAFT04, 1),
+            (SETTINGS_H3_DATAGRAM_DRAFT04, SETTINGS_H3_DATAGRAM, 0),
+        ] {
+            let mut enc = Encoder::new();
+            enc.encode_varint(first).encode_varint(expected);
+            enc.encode_varint(second).encode_varint(1 - expected);
+            let mut s = HSettings::new(&[]);
+            s.decode_frame_contents(&mut enc.as_decoder()).unwrap();
+            assert_eq!(s.get(HSettingType::EnableH3Datagram), expected);
+        }
+    }
+
+    fn make_0rtt_token(settings: &[(u64, u64)]) -> Vec<u8> {
+        let mut enc = Encoder::new();
+        enc.encode_varint(SETTINGS_ZERO_RTT_VERSION);
+        for (k, v) in settings {
+            enc.encode_varint(*k).encode_varint(*v);
+        }
+        enc.into()
+    }
+
+    #[test]
+    fn zero_rtt_checker() {
+        use neqo_crypto::{ZeroRttCheckResult, ZeroRttChecker as _};
+        use neqo_transport::ConnectionParameters;
+
+        use crate::Http3Parameters;
+
+        
+        let params = Http3Parameters::default()
+            .connection_parameters(ConnectionParameters::default().datagram_size(1200));
+        let checker = HttpZeroRttChecker::new(params);
+
+        
+        let token = make_0rtt_token(&[(SETTINGS_H3_DATAGRAM, 1)]);
+        assert_eq!(checker.check(&token), ZeroRttCheckResult::Accept);
+
+        
+        let token = make_0rtt_token(&[(SETTINGS_H3_DATAGRAM, 0)]);
+        assert_eq!(checker.check(&token), ZeroRttCheckResult::Accept);
+
+        
+        let token = make_0rtt_token(&[(SETTINGS_H3_DATAGRAM, 2)]);
+        assert_eq!(checker.check(&token), ZeroRttCheckResult::Fail);
+
+        
+        let token = make_0rtt_token(&[(SETTINGS_ENABLE_CONNECT_PROTOCOL, 1)]);
+        assert_eq!(checker.check(&token), ZeroRttCheckResult::Reject);
+
+        
+        let params = Http3Parameters::default().connect(true);
+        let checker = HttpZeroRttChecker::new(params);
+        let token = make_0rtt_token(&[(SETTINGS_ENABLE_CONNECT_PROTOCOL, 1)]);
+        assert_eq!(checker.check(&token), ZeroRttCheckResult::Accept);
+
+        
+        assert_eq!(checker.check(&token[1..]), ZeroRttCheckResult::Reject);
+
+        
+        assert_eq!(checker.check(&[]), ZeroRttCheckResult::Fail);
     }
 }

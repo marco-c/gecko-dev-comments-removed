@@ -67,4 +67,6 @@ pub enum Token {
     Datagram(DatagramTracking),
     
     EcnEct0,
+    
+    PmtudProbe,
 }

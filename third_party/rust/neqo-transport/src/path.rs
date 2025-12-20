@@ -44,7 +44,7 @@ pub type PathRef = Rc<RefCell<Path>>;
 
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Paths {
     
     #[expect(clippy::struct_field_names, reason = "This is the best name.")]
@@ -62,9 +62,24 @@ pub struct Paths {
 
     
     qlog: Qlog,
+
+    
+    pmtud: bool,
 }
 
 impl Paths {
+    #[must_use]
+    pub fn new(pmtud: bool) -> Self {
+        Self {
+            paths: Vec::new(),
+            primary: None,
+            migration_target: None,
+            to_retire: Vec::new(),
+            qlog: Qlog::disabled(),
+            pmtud,
+        }
+    }
+
     
     
     pub fn find_path(
@@ -264,6 +279,7 @@ impl Paths {
 
     
     
+    
     pub fn handle_migration(
         &mut self,
         path: &PathRef,
@@ -288,6 +304,10 @@ impl Paths {
             old_path.borrow_mut().probe(stats);
             
         }
+
+        if self.pmtud {
+            path.borrow_mut().pmtud_mut().start(now, stats);
+        }
     }
 
     
@@ -299,6 +319,7 @@ impl Paths {
             .or_else(|| self.primary.clone())
     }
 
+    
     
     
     #[must_use]
@@ -314,6 +335,9 @@ impl Paths {
                     .take_if(|target| Rc::ptr_eq(target, p))
                 {
                     drop(self.select_primary(&primary, now));
+                    if self.pmtud {
+                        primary.borrow_mut().pmtud_mut().start(now, stats);
+                    }
                     return true;
                 }
                 break;
@@ -991,7 +1015,7 @@ impl Path {
             );
             stats.rtt_init_guess = true;
             self.rtt.update(
-                &self.qlog,
+                &mut self.qlog,
                 now - sent.time_sent(),
                 Duration::new(0, 0),
                 RttSource::Guesstimate,

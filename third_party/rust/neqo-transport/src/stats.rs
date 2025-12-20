@@ -18,7 +18,7 @@ use enum_map::EnumMap;
 use neqo_common::{qdebug, Dscp, Ecn};
 use strum::IntoEnumIterator as _;
 
-use crate::{ecn, packet};
+use crate::{cc::CongestionEvent, ecn, packet};
 
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct FrameStats {
@@ -138,13 +138,12 @@ pub struct DatagramStats {
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct CongestionControlStats {
     
-    pub congestion_events_loss: usize,
-    
-    pub congestion_events_ecn: usize,
     
     
     
-    pub congestion_events_spurious: usize,
+    
+    
+    pub congestion_events: EnumMap<CongestionEvent, usize>,
     
     pub slow_start_exited: bool,
 }
@@ -277,8 +276,6 @@ pub struct Stats {
     
     pub pmtud_lost: usize,
     
-    pub pmtud_change: usize,
-    
     pub pmtud_iface_mtu: usize,
     
     pub pmtud_pmtu: usize,
@@ -388,20 +385,15 @@ impl Debug for Stats {
         writeln!(
             f,
             "  cc: ce_loss {} ce_ecn {} ce_spurious {}",
-            self.cc.congestion_events_loss,
-            self.cc.congestion_events_ecn,
-            self.cc.congestion_events_spurious,
+            self.cc.congestion_events[CongestionEvent::Loss],
+            self.cc.congestion_events[CongestionEvent::Ecn],
+            self.cc.congestion_events[CongestionEvent::Spurious],
         )?;
         writeln!(f, "  ss_exit: {}", self.cc.slow_start_exited)?;
         writeln!(
             f,
-            "  pmtud: {} sent {} acked {} lost {} change {} iface_mtu {} pmtu",
-            self.pmtud_tx,
-            self.pmtud_ack,
-            self.pmtud_lost,
-            self.pmtud_change,
-            self.pmtud_iface_mtu,
-            self.pmtud_pmtu
+            "  pmtud: {} sent {} acked {} lost {} iface_mtu {} pmtu",
+            self.pmtud_tx, self.pmtud_ack, self.pmtud_lost, self.pmtud_iface_mtu, self.pmtud_pmtu
         )?;
         writeln!(f, "  resumed: {}", self.resumed)?;
         writeln!(f, "  frames rx:")?;
