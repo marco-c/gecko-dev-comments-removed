@@ -262,8 +262,6 @@ nsAuthGSSAPI::nsAuthGSSAPI(pType package) : mServiceFlags(REQ_DEFAULT) {
 
   LOG(("entering nsAuthGSSAPI::nsAuthGSSAPI()\n"));
 
-  mComplete = false;
-
   if (!gssLibrary && NS_FAILED(gssInit())) return;
 
   mCtx = GSS_C_NO_CONTEXT;
@@ -309,6 +307,8 @@ void nsAuthGSSAPI::Reset() {
   }
   mCtx = GSS_C_NO_CONTEXT;
   mComplete = false;
+  mDelegationRequested = false;
+  mDelegationSupported = false;
 }
 
 
@@ -357,6 +357,7 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
                            void** outToken, uint32_t* outTokenLen) {
   OM_uint32 major_status, minor_status;
   OM_uint32 req_flags = 0;
+  OM_uint32 ret_flags = 0;
   gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
   gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
   gss_buffer_t in_token_ptr = GSS_C_NO_BUFFER;
@@ -371,7 +372,22 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
   
   if (mComplete) Reset();
 
-  if (mServiceFlags & REQ_DELEGATE) req_flags |= GSS_C_DELEG_FLAG;
+  
+  
+  
+  bool delegationConfigured = (mServiceFlags & REQ_DELEGATE) != 0;
+
+  if (delegationConfigured) {
+    if (!mDelegationRequested) {
+      
+      LOG(("First auth attempt without delegation"));
+      mDelegationRequested = true;
+    } else if (mDelegationSupported) {
+      
+      LOG(("Retrying auth with delegation - server supports it"));
+      req_flags |= GSS_C_DELEG_FLAG;
+    }
+  }
 
   if (mServiceFlags & REQ_MUTUAL_AUTH) req_flags |= GSS_C_MUTUAL_FLAG;
 
@@ -425,7 +441,7 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
     major_status = gss_init_sec_context_ptr(
         &minor_status, GSS_C_NO_CREDENTIAL, &mCtx, server, mMechOID, req_flags,
         GSS_C_INDEFINITE, GSS_C_NO_CHANNEL_BINDINGS, in_token_ptr, nullptr,
-        &output_token, nullptr, nullptr);
+        &output_token, &ret_flags, nullptr);
 
   if (GSS_ERROR(major_status)) {
     LogGssError(major_status, minor_status, "gss_init_sec_context() failed");
@@ -433,6 +449,27 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
     rv = NS_ERROR_FAILURE;
     goto end;
   }
+  
+  if (delegationConfigured && !mDelegationSupported &&
+      (ret_flags & GSS_C_DELEG_FLAG)) {
+    LOG(("Server supports delegation (GSS_C_DELEG_FLAG in ret_flags)"));
+
+    
+    
+    if (major_status == GSS_S_COMPLETE && !(req_flags & GSS_C_DELEG_FLAG)) {
+      LOG(("Restarting authentication to request delegation"));
+      Reset();
+
+      
+      
+      mDelegationRequested = true;
+      mDelegationSupported = true;
+
+      gss_release_name_ptr(&minor_status, &server);
+      return GetNextToken(inToken, inTokenLen, outToken, outTokenLen);
+    }
+  }
+
   if (major_status == GSS_S_COMPLETE) {
     
     
