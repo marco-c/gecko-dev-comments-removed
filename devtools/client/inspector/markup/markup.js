@@ -1311,7 +1311,7 @@ class MarkupView extends EventEmitter {
 
   _onCopy(evt) {
     
-    if (this._isInputOrTextarea(evt.target)) {
+    if (this._isInputOrTextareaOrInCodeMirrorEditor(evt.target)) {
       return;
     }
 
@@ -1453,7 +1453,7 @@ class MarkupView extends EventEmitter {
 
 
   _onShortcut(name, event) {
-    if (this._isInputOrTextarea(event.target)) {
+    if (this._isInputOrTextareaOrInCodeMirrorEditor(event.target)) {
       return;
     }
 
@@ -1479,9 +1479,17 @@ class MarkupView extends EventEmitter {
   
 
 
-  _isInputOrTextarea(element) {
+  _isInputOrTextareaOrInCodeMirrorEditor(element) {
     const name = element.tagName.toLowerCase();
-    return name === "input" || name === "textarea";
+    if (name === "input" || name === "textarea") {
+      return true;
+    }
+
+    if (element.closest(".cm-editor")) {
+      return true;
+    }
+
+    return false;
   }
 
   
