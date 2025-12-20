@@ -68,6 +68,12 @@ def test_os_version():
     assert platform_info.os_version == "11.20"
 
     
+    test_settings["platform"]["os"]["name"] = "macosx"
+    test_settings["platform"]["os"]["version"] = "1500"
+    platform_info = PlatformInfo(test_settings)
+    assert platform_info.os_version == "15.30"
+
+    
     test_settings["platform"]["os"]["name"] = "android"
     test_settings["platform"]["os"]["version"] = "14.0"
     platform_info = PlatformInfo(test_settings)
@@ -236,7 +242,12 @@ def test_runtimes():
     
     test_settings["runtime"] = {"xorigin": True, "1proc": True}
     platform_info = PlatformInfo(test_settings)
-    assert platform_info.test_variant == "xorigin+!e10s"
+    assert platform_info.test_variant == "!e10s+xorigin"
+
+    
+    test_settings["runtime"] = {"no-fission": True}
+    platform_info = PlatformInfo(test_settings)
+    assert platform_info.test_variant == "!fission"
 
 
 if __name__ == "__main__":
