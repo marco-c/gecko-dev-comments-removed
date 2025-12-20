@@ -1336,11 +1336,6 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-  static bool IsExperimentalMobileType(FormControlType);
-
-  
-
-
 
   static bool IsDateTimeInputType(FormControlType);
 
