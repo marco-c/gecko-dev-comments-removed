@@ -1943,10 +1943,15 @@ class RecursiveMakeBackend(MakeBackend):
         for source in sorted(webidls.all_preprocessed_sources()):
             basename = os.path.basename(source)
             rule = mk.create_rule([basename])
-            
-            
-            
-            rule.add_dependencies([source, "$(WEBIDL_PP_DEPS)"])
+            rule.add_dependencies(
+                [
+                    source,
+                    "backend.mk",
+                    "Makefile",
+                    "$(DEPTH)/config/autoconf.mk",
+                    "$(topsrcdir)/config/config.mk",
+                ]
+            )
             rule.add_commands(
                 [
                     
