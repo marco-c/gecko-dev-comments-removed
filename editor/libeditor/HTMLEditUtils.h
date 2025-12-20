@@ -2847,6 +2847,15 @@ class HTMLEditUtils final {
 
 
 
+  template <typename EditorLineBreakType, typename EditorDOMPointType>
+  static Maybe<EditorLineBreakType>
+  GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+      const EditorDOMPointType& aPoint, const Element& aEditingHost);
+
+  
+
+
+
 
 
 
