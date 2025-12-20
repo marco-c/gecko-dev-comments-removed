@@ -200,9 +200,7 @@ export class TestServiceWorker extends TestBaseWorker {
     const selfPathDir = selfPath.substring(0, selfPath.lastIndexOf('/'));
     
     const serviceWorkerURL = new URL(
-      
-      
-      `${location.origin}/_mozilla/webgpu/${suite}/webworker/${fileName}.as_worker.js`
+      `${selfPathDir}/../../../${suite}/webworker/${fileName}.as_worker.js`
     ).toString();
 
     
