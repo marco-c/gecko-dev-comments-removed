@@ -34,7 +34,7 @@ def add_hardened_sign_config(config, jobs):
 
         dep_job = get_primary_dependency(config, job)
         assert dep_job
-        project_level = release_level(config.params["project"])
+        project_level = release_level(config.params)
         is_shippable = dep_job.attributes.get("shippable", False)
         hardened_signing_type = "developer"
 
@@ -79,7 +79,7 @@ def add_provisioning_profile_config(config, jobs):
             
             and "macosx" in job["attributes"]["build_platform"]
             
-            and release_level(config.params["project"]) == "production"
+            and release_level(config.params) == "production"
             
             and dep_job.attributes.get("shippable", False)
         ):
