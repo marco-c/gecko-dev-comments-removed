@@ -16,3 +16,13 @@ if CONFIG["CC_TYPE"] in ("clang", "gcc"):
 
 if CONFIG["CC_TYPE"] == "gcc":
     CXXFLAGS += ["-Wno-attributes"]
+
+
+
+
+
+
+if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
+    CXXFLAGS += ["-Wdeprecated-this-capture"]
+    CXXFLAGS += ["-Wdeprecated-anon-enum-enum-conversion"]
+    CXXFLAGS += ["-Wdeprecated-enum-enum-conversion"]
