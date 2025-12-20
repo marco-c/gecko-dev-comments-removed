@@ -77,8 +77,8 @@ BEGIN_TEST(testGCRootsRemoved) {
 
   gSliceCallbackCount = 0;
   JS::SetGCSliceCallback(cx, RootsRemovedGCSliceCallback);
-  auto byebye =
-      mozilla::MakeScopeExit([=] { JS::SetGCSliceCallback(cx, nullptr); });
+  auto byebye = mozilla::MakeScopeExit(
+      [=, this] { JS::SetGCSliceCallback(cx, nullptr); });
 
   JS::RootedObject obj(cx, JS_NewPlainObject(cx));
   CHECK(obj);
@@ -253,7 +253,7 @@ BEGIN_TEST(testGCTree) {
   
   
   
-  auto byebye = mozilla::MakeScopeExit([=] {
+  auto byebye = mozilla::MakeScopeExit([=, this] {
     JS::SetGCSliceCallback(cx, nullptr);
     JS_SetGCCallback(cx, nullptr, nullptr);
   });
