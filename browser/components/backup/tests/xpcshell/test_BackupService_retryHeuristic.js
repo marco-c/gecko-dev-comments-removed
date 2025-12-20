@@ -6,6 +6,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   BackupError: "resource:///modules/backup/BackupError.mjs",
   ERRORS: "chrome://browser/content/backup/backup-constants.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
 const BACKUP_RETRY_LIMIT_PREF_NAME = "browser.backup.backup-retry-limit";
@@ -17,6 +18,81 @@ const MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME =
 const SCHEDULED_BACKUPS_ENABLED_PREF_NAME = "browser.backup.scheduled.enabled";
 const BACKUP_DEBUG_INFO_PREF_NAME = "browser.backup.backup-debug-info";
 const BACKUP_DEFAULT_LOCATION_PREF_NAME = "browser.backup.location";
+
+const RETRIES_FOR_TEST = 4;
+
+async function create_backup_failure_expected_calls(
+  bs,
+  callCount,
+  assertionMsg
+) {
+  assertionMsg = assertionMsg
+    ? assertionMsg
+    : `createBackup should be called ${callCount} times`;
+
+  let originalBackoffTime = BackupService.backoffSeconds();
+
+  bs.createBackupOnIdleDispatch({});
+
+  
+  if (callCount == bs.createBackup.callCount) {
+    Assert.equal(bs.createBackup.callCount, callCount, assertionMsg);
+
+    return;
+  }
+
+  
+  
+
+  await bsInProgressStateUpdate(bs, true);
+  await bsInProgressStateUpdate(bs, false);
+
+  
+  await TestUtils.waitForTick();
+
+  
+  
+  
+  if (callCount == RETRIES_FOR_TEST + 1) {
+    Assert.equal(
+      Glean.browserBackup.backupThrottled.testGetValue().length,
+      1,
+      "backupThrottled telemetry was sent"
+    );
+
+    Assert.ok(
+      Services.prefs.getBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME),
+      "Disable on idle is now enabled - no more retries allowed"
+    );
+  }
+  
+  else {
+    Assert.equal(
+      BackupService.backoffSeconds(),
+      2 * originalBackoffTime,
+      "Backoff time should have doubled"
+    );
+
+    Assert.ok(
+      !Services.prefs.getBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME),
+      "Disable on idle is disabled - which means that we can do more retries!"
+    );
+
+    Assert.equal(
+      Glean.browserBackup.backupThrottled.testGetValue(),
+      null,
+      "backupThrottled telemetry was not sent yet"
+    );
+  }
+
+  Assert.equal(bs.createBackup.callCount, callCount, assertionMsg);
+
+  Assert.equal(
+    Services.prefs.getIntPref(BACKUP_ERROR_CODE_PREF_NAME),
+    ERRORS.UNKNOWN,
+    "Error code has been set"
+  );
+}
 
 function bsInProgressStateUpdate(bs, isBackupInProgress) {
   
@@ -47,7 +123,7 @@ add_setup(async () => {
     TEST_PROFILE_PATH
   );
   Services.prefs.setBoolPref(SCHEDULED_BACKUPS_ENABLED_PREF_NAME, true);
-  Services.prefs.setIntPref(BACKUP_RETRY_LIMIT_PREF_NAME, 2);
+  Services.prefs.setIntPref(BACKUP_RETRY_LIMIT_PREF_NAME, RETRIES_FOR_TEST);
   Services.prefs.setBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME, false);
 
   setupProfile();
@@ -62,13 +138,13 @@ add_setup(async () => {
   });
 });
 
-add_task(async function test_retry_limit() {
+add_task(async function test_retries_no_backoff() {
   Services.fog.testResetFOG();
 
   let bs = new BackupService();
   let sandbox = sinon.createSandbox();
   
-  const createBackupFailureStub = sandbox
+  sandbox
     .stub(bs, "resolveArchiveDestFolderPath")
     .rejects(new BackupError("forced failure", ERRORS.UNKNOWN));
 
@@ -83,62 +159,53 @@ add_task(async function test_retry_limit() {
     
     Services.prefs.setIntPref(BACKUP_ERROR_CODE_PREF_NAME, ERRORS.NONE);
 
-    bs.createBackupOnIdleDispatch({});
-
     
-    await bsInProgressStateUpdate(bs, true);
     
-    await bsInProgressStateUpdate(bs, false);
-
-    
-    await new Promise(executeSoon);
-
-    Assert.equal(
-      bs.createBackup.callCount,
-      i + 1,
-      "createBackup was called on idle"
-    );
-    Assert.equal(
-      Services.prefs.getIntPref(BACKUP_ERROR_CODE_PREF_NAME),
-      ERRORS.UNKNOWN,
-      "Error code has been set"
+    Services.prefs.setStringPref(
+      BACKUP_DEBUG_INFO_PREF_NAME,
+      JSON.stringify({
+        lastBackupAttempt:
+          Math.floor(Date.now() / 1000) - (BackupService.backoffSeconds() + 1),
+        errorCode: ERRORS.UNKNOWN,
+        lastRunStep: 0,
+      })
     );
 
-    if (i < n) {
-      Assert.equal(
-        Glean.browserBackup.backupThrottled.testGetValue(),
-        null,
-        "backupThrottled telemetry was not sent yet"
-      );
-    } else {
-      
-      
-      Assert.equal(
-        Glean.browserBackup.backupThrottled.testGetValue().length,
-        1,
-        "backupThrottled telemetry was sent"
-      );
-    }
+    await create_backup_failure_expected_calls(bs, i + 1);
   }
   
-  const previousCalls = bs.createBackup.callCount;
-
-  bs.createBackupOnIdleDispatch({});
-
-  
-  await new Promise(executeSoon);
-
-  Assert.equal(
+  await create_backup_failure_expected_calls(
+    bs,
     bs.createBackup.callCount,
-    previousCalls,
-    "createBackup was not called again after hitting the retry limit"
-  );
-  Assert.ok(
-    Services.prefs.getBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME),
-    "Disable on idle has been enabled"
+    "createBackup was not called since we hit the retry limit"
   );
 
+  sandbox.restore();
+});
+
+add_task(async function test_exponential_backoff() {
   Services.fog.testResetFOG();
+
+  let bs = new BackupService();
+  let sandbox = sinon.createSandbox();
+  const createBackupFailureStub = sandbox
+    .stub(bs, "resolveArchiveDestFolderPath")
+    .rejects(new BackupError("forced failure", ERRORS.UNKNOWN));
+
+  sandbox.stub(ChromeUtils, "idleDispatch").callsFake(callback => callback());
+  sandbox.spy(bs, "createBackup");
+
+  Services.prefs.setIntPref(BACKUP_ERROR_CODE_PREF_NAME, ERRORS.NONE);
+  Services.prefs.setStringPref(
+    BACKUP_DEBUG_INFO_PREF_NAME,
+    JSON.stringify({
+      lastBackupAttempt:
+        Math.floor(Date.now() / 1000) - (BackupService.backoffSeconds() + 1),
+      errorCode: ERRORS.UNKNOWN,
+      lastRunStep: 0,
+    })
+  );
+
   Services.prefs.setIntPref(MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME, 0);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(
@@ -146,36 +213,12 @@ add_task(async function test_retry_limit() {
     );
   });
 
-  
-  
-  await new Promise(resolve => setTimeout(resolve, 10));
-
-  bs.createBackupOnIdleDispatch({});
+  await create_backup_failure_expected_calls(bs, 1);
 
   
-  await bsInProgressStateUpdate(bs, true);
-
-  Assert.equal(
-    bs.createBackup.callCount,
-    previousCalls + 1,
-    "createBackup was called again"
-  );
-
-  Assert.equal(
-    Glean.browserBackup.backupThrottled.testGetValue(),
-    null,
-    "backupThrottled telemetry was not sent after resuming backups"
-  );
-
-  
-  await bsInProgressStateUpdate(bs, false);
-
   
   createBackupFailureStub.restore();
 
-  
-
-  
   
   await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -184,18 +227,9 @@ add_task(async function test_retry_limit() {
     "testBackup_profile"
   );
 
-  
-  
-  
   await bs.createBackup({
     profilePath: testProfilePath,
   });
-
-  
-  Assert.ok(
-    !Services.prefs.getBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME),
-    "Retry on idle is enabled now"
-  );
 
   Assert.equal(
     Services.prefs.getIntPref(BACKUP_ERROR_CODE_PREF_NAME),
@@ -203,11 +237,16 @@ add_task(async function test_retry_limit() {
     "The error code is reset to NONE"
   );
 
+  Assert.equal(
+    60,
+    BackupService.backoffSeconds(),
+    "The exponential backoff is reset to 1 minute (60s)"
+  );
+
   Assert.ok(
     !Services.prefs.getStringPref(BACKUP_DEBUG_INFO_PREF_NAME, null),
     "Error debug info has been cleared"
   );
 
-  
   sandbox.restore();
 });
