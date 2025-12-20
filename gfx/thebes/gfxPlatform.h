@@ -692,6 +692,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+  static void ResetHardwareVsyncSource();
+
+  
+
+
+
   void UpdateForceSubpixelAAWherePossible();
 
   
