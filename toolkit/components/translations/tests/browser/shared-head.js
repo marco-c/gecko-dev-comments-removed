@@ -1,11 +1,11 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
-/**
- * @type {import("../../../ml/content/EngineProcess.sys.mjs")}
- */
+
+
+
 const { EngineProcess } = ChromeUtils.importESModule(
   "chrome://global/content/ml/EngineProcess.sys.mjs"
 );
@@ -16,18 +16,18 @@ const { TranslationsUtils } = ChromeUtils.importESModule(
   "chrome://global/content/translations/TranslationsUtils.mjs"
 );
 
-// This is a bit silly, but ml/tests/browser/head.js relies on this function:
-// https://searchfox.org/mozilla-central/rev/14f68f084d6a3bc438a3f973ed81d3a4dbab9629/toolkit/components/ml/tests/browser/head.js#23-25
-//
-// And it also pulls in the entirety of this file.
-// https://searchfox.org/mozilla-central/rev/14f68f084d6a3bc438a3f973ed81d3a4dbab9629/toolkit/components/ml/tests/browser/head.js#41-46
-//
-// So we can't have a naming conflict of a variable defined twice like this.
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1949530
+
+
+
+
+
+
+
+
 const { getInferenceProcessInfo: fetchInferenceProcessInfo } =
   ChromeUtils.importESModule("chrome://global/content/ml/Utils.sys.mjs");
 
-// Avoid about:blank's non-standard behavior.
+
 const BLANK_PAGE =
   "data:text/html;charset=utf-8,<!DOCTYPE html><title>Blank</title>Blank page";
 
@@ -36,20 +36,20 @@ const URL_ORG_PREFIX = "https://example.org/browser/";
 const CHROME_URL_PREFIX = "chrome://mochitests/content/browser/";
 const DIR_PATH = "toolkit/components/translations/tests/browser/";
 
-/**
- * @template D, T
- * @typedef {(
- *   fn: (selectors: Record<string, string>, data: D) => Promise<void>,
- *   data: T
- * ) => Promise<T>} RunInPageFn
- */
 
-/**
- * Use a utility function to make this easier to read.
- *
- * @param {string} path
- * @returns {string}
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 function _url(path) {
   return URL_COM_PREFIX + DIR_PATH + path;
 }
@@ -59,9 +59,9 @@ const SPANISH_PAGE_URL = _url("translations-tester-es.html");
 const SPANISH_PAGE_URL_2 = _url("translations-tester-es-2.html");
 const SPANISH_PAGE_SHORT_URL = _url("translations-tester-es-short.html");
 const SPANISH_PAGE_MISMATCH_URL = _url("translations-tester-es-mismatch.html");
-const SPANISH_PAGE_MISMATCH_SHORT_URL = _url("translations-tester-es-mismatch-short.html"); // prettier-ignore
-const SPANISH_PAGE_UNDECLARED_URL = _url("translations-tester-es-undeclared.html"); // prettier-ignore
-const SPANISH_PAGE_UNDECLARED_SHORT_URL = _url("translations-tester-es-undeclared-short.html"); // prettier-ignore
+const SPANISH_PAGE_MISMATCH_SHORT_URL = _url("translations-tester-es-mismatch-short.html"); 
+const SPANISH_PAGE_UNDECLARED_URL = _url("translations-tester-es-undeclared.html"); 
+const SPANISH_PAGE_UNDECLARED_SHORT_URL = _url("translations-tester-es-undeclared-short.html"); 
 const ENGLISH_PAGE_URL = _url("translations-tester-en.html");
 const FRENCH_PAGE_URL = _url("translations-tester-fr.html");
 const NO_LANGUAGE_URL = _url("translations-tester-no-tag.html");
@@ -90,17 +90,17 @@ const NEVER_TRANSLATE_LANGS_PREF =
   "browser.translations.neverTranslateLanguages";
 const USE_LEXICAL_SHORTLIST_PREF = "browser.translations.useLexicalShortlist";
 
-/**
- * Provide a uniform way to log actions. This abuses the Error stack to get the callers
- * of the action. This should help in test debugging.
- */
+
+
+
+
 function logAction(...params) {
   const error = new Error();
   const stackLines = error.stack.split("\n");
   const actionName = stackLines[1]?.split("@")[0] ?? "";
   const taskFileLocation = stackLines[2]?.split("@")[1] ?? "";
   if (taskFileLocation.includes("head.js")) {
-    // Only log actions that were done at the test level.
+    
     return;
   }
 
@@ -113,13 +113,13 @@ function logAction(...params) {
   );
 }
 
-/**
- * Generates a sorted list of Translation model file names for the given language pairs.
- *
- * @param {Array<{ fromLang: string, toLang: string }>} languagePairs - An array of language pair objects.
- *
- * @returns {string[]} A sorted array of translation model file names.
- */
+
+
+
+
+
+
+
 function languageModelNames(languagePairs) {
   return languagePairs
     .flatMap(({ fromLang, toLang }) => [
@@ -132,26 +132,26 @@ function languageModelNames(languagePairs) {
     .sort();
 }
 
-/**
- * Loads a new page in the given browser at the given URL.
- *
- * @param {object} browser
- * @param {string} url
- */
+
+
+
+
+
+
 async function loadNewPage(browser, url) {
   BrowserTestUtils.startLoadingURIString(browser, url);
   await BrowserTestUtils.browserLoaded(
     browser,
-    /* includeSubFrames */ false,
+     false,
     url
   );
 }
 
-/**
- * The mochitest runs in the parent process. This function opens up a new tab,
- * opens up about:translations, and passes the test requirements into the content process.
- *
- */
+
+
+
+
+
 async function openAboutTranslations({
   disabled,
   languagePairs = LANGUAGE_PAIRS,
@@ -160,7 +160,7 @@ async function openAboutTranslations({
 } = {}) {
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Enabled by default.
+      
       ["browser.translations.enable", !disabled],
       ["browser.translations.logLevel", "All"],
       ["browser.translations.mostRecentTargetLanguages", ""],
@@ -169,9 +169,9 @@ async function openAboutTranslations({
     ],
   });
 
-  /**
-   * Collect any relevant selectors for the page here.
-   */
+  
+
+
   const selectors = {
     pageHeader: "header#about-translations-header",
     mainUserInterface: "section#about-translations-main-user-interface",
@@ -187,11 +187,11 @@ async function openAboutTranslations({
       "moz-message-bar#about-translations-language-load-error-message",
   };
 
-  // Start the tab at a blank page.
+  
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     BLANK_PAGE,
-    true // waitForLoad
+    true 
   );
 
   const { removeMocks, remoteClients } = await createAndMockRemoteSettings({
@@ -199,17 +199,17 @@ async function openAboutTranslations({
     autoDownloadFromRemoteSettings,
   });
 
-  // Now load the about:translations page, since the actor could be mocked.
+  
   await loadNewPage(tab.linkedBrowser, "about:translations");
 
-  // Ensure the window always opens with a horizontal page layout.
-  // Divide everything by sqrt(2) to halve the overall content size.
+  
+  
   await ensureWindowSize(window, 1600 * Math.SQRT1_2, 900 * Math.SQRT1_2);
   FullZoom.setZoom(Math.SQRT1_2, tab.linkedBrowser);
 
-  /**
-   * @param {number} count - Count of the language pairs expected.
-   */
+  
+
+
   const resolveDownloads = async count => {
     await remoteClients.translationsWasm.resolvePendingDownloads(1);
     await remoteClients.translationModels.resolvePendingDownloads(
@@ -217,9 +217,9 @@ async function openAboutTranslations({
     );
   };
 
-  /**
-   * @param {number} count - Count of the language pairs expected.
-   */
+  
+
+
   const rejectDownloads = async count => {
     await remoteClients.translationsWasm.rejectPendingDownloads(1);
     await remoteClients.translationModels.rejectPendingDownloads(
@@ -230,9 +230,9 @@ async function openAboutTranslations({
   const runInPage = (callback, data = {}) => {
     return ContentTask.spawn(
       tab.linkedBrowser,
-      { selectors, contentData: data, callbackSource: callback.toString() }, // Data to inject.
+      { selectors, contentData: data, callbackSource: callback.toString() }, 
       function ({ selectors, contentData, callbackSource }) {
-        // eslint-disable-next-line no-eval
+        
         const contentCallback = eval(`(${callbackSource})`);
         return contentCallback(selectors, contentData);
       }
@@ -266,13 +266,13 @@ async function openAboutTranslations({
   };
 }
 
-/**
- * Naively prettify's html based on the opening and closing tags. This is not robust
- * for general usage, but should be adequate for these tests.
- *
- * @param {string} html
- * @returns {string}
- */
+
+
+
+
+
+
+
 function naivelyPrettify(html) {
   let result = "";
   let indent = 0;
@@ -296,16 +296,16 @@ function naivelyPrettify(html) {
       html[endIndex] === "\t" ||
       html[endIndex] === "n"
     ) {
-      // Skip whitespace.
-      // "   <div>foobar</div>"
-      //  ^^^
+      
+      
+      
       startIndex = endIndex;
       continue;
     }
 
-    // Find all of the text.
-    // "<div>foobar</div>"
-    //       ^^^^^^
+    
+    
+    
     while (endIndex < html.length && html[endIndex] !== "<") {
       endIndex++;
     }
@@ -314,21 +314,21 @@ function naivelyPrettify(html) {
 
     if (html[endIndex] === "<") {
       if (html[endIndex + 1] === "/") {
-        // "<div>foobar</div>"
-        //             ^
+        
+        
         while (endIndex < html.length && html[endIndex] !== ">") {
           endIndex++;
         }
         indent--;
         addText(endIndex + 1);
       } else {
-        // "<div>foobar</div>"
-        //  ^
+        
+        
         while (endIndex < html.length && html[endIndex] !== ">") {
           endIndex++;
         }
-        // "<div>foobar</div>"
-        //      ^
+        
+        
         addText(endIndex + 1);
         indent++;
       }
@@ -338,11 +338,11 @@ function naivelyPrettify(html) {
   return result.trim();
 }
 
-/**
- * Recursively transforms all child nodes to have uppercased text.
- *
- * @param {Node} node
- */
+
+
+
+
+
 function upperCaseNode(node) {
   if (typeof node.nodeValue === "string") {
     node.nodeValue = node.nodeValue.toUpperCase();
@@ -352,15 +352,15 @@ function upperCaseNode(node) {
   }
 }
 
-/**
- * Test utility class for translations settings UI tests.
- * Provides methods for interacting with and asserting the state of
- * the translations settings page in about:preferences.
- */
+
+
+
+
+
 class TranslationsSettingsTestUtils {
-  /**
-   * @param {Document} document - The settings document
-   */
+  
+
+
   constructor(document) {
     this.document = document;
   }
@@ -382,12 +382,12 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Opens the translations settings subpage and returns helpers.
-   *
-   * @param {Array} [lexicalShortlistPrefs]
-   * @returns {Promise<{cleanup: Function, remoteClients: object, translationsSettingsTestUtils: TranslationsSettingsTestUtils}>}
-   */
+  
+
+
+
+
+
   static async openTranslationsSettingsSubpage(lexicalShortlistPrefs = []) {
     const { cleanup, remoteClients, translationsSettingsTestUtils } =
       await setupAboutPreferences(LANGUAGE_PAIRS, {
@@ -423,12 +423,12 @@ class TranslationsSettingsTestUtils {
     ]);
   }
 
-  /**
-   * Returns origins sorted alphabetically while ignoring schemes.
-   *
-   * @param {string[]} origins
-   * @returns {string[]}
-   */
+  
+
+
+
+
+
   static sortOrigins(origins) {
     const stripScheme = origin =>
       origin.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
@@ -437,9 +437,9 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Static Events class for event name constants.
-   */
+  
+
+
   static Events = class Events {
     static AlwaysTranslateLanguagesRendered =
       "TranslationsSettingsTest:AlwaysTranslateLanguagesRendered";
@@ -492,20 +492,20 @@ class TranslationsSettingsTestUtils {
     static InitializationFailed =
       "TranslationsSettingsTest:InitializationFailed";
 
-    static DownloadButtonEnabled =
-      "TranslationsSettingsTest:DownloadButtonEnabled";
-    static DownloadButtonDisabled =
-      "TranslationsSettingsTest:DownloadButtonDisabled";
+    static DownloadLanguageButtonEnabled =
+      "TranslationsSettingsTest:DownloadLanguageButtonEnabled";
+    static DownloadLanguageButtonDisabled =
+      "TranslationsSettingsTest:DownloadLanguageButtonDisabled";
   };
 
-  /**
-   * Waits for a translations settings event to be dispatched.
-   *
-   * @param {string} eventName - The event name to wait for
-   * @param {object} options
-   * @param {object} [options.expectedDetail] - Expected detail properties
-   * @returns {Promise<CustomEvent>}
-   */
+  
+
+
+
+
+
+
+
   async waitForEvent(eventName, options = {}) {
     const { expectedDetail } = options;
 
@@ -528,16 +528,16 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts that specific events occur (or don't occur) during an action.
-   *
-   * @param {object} assertions
-   * @param {Array<[string, object?]>} assertions.expected - Events that must occur
-   * @param {Array<string>} [assertions.unexpected] - Events that must not occur
-   * @param {number} [assertions.timeout=10000] - Timeout in milliseconds
-   * @param {Function} callback - The action to perform
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
+
   async assertEvents(
     { expected = [], unexpected = [], timeout = 10000 },
     callback
@@ -662,31 +662,31 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Gets the translations setting pane element.
-   *
-   * @returns {HTMLElement|null}
-   */
+  
+
+
+
+
   getTranslationsPane() {
     return this.document.querySelector(
       'setting-pane[data-category="paneTranslations"]'
     );
   }
 
-  /**
-   * Gets the translations subpage back button element.
-   *
-   * @returns {HTMLElement|null}
-   */
+  
+
+
+
+
   getBackButton() {
     return this.getTranslationsPane()?.pageHeaderEl?.backButtonEl ?? null;
   }
 
-  /**
-   * Clicks the translations subpage back button and waits for the main pane.
-   *
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
   async clickBackButton() {
     const pane = this.getTranslationsPane();
     if (!pane) {
@@ -717,55 +717,55 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Gets the always-translate languages select element.
-   *
-   * @returns {HTMLSelectElement|null}
-   */
+  
+
+
+
+
   getAlwaysTranslateLanguagesSelect() {
     return this.document.getElementById(
       "translationsAlwaysTranslateLanguagesSelect"
     );
   }
 
-  /**
-   * Gets the always-translate languages add button.
-   *
-   * @returns {HTMLButtonElement|null}
-   */
+  
+
+
+
+
   getAlwaysTranslateLanguagesAddButton() {
     return this.document.getElementById(
       "translationsAlwaysTranslateLanguagesButton"
     );
   }
 
-  /**
-   * Gets the never-translate languages select element.
-   *
-   * @returns {HTMLSelectElement|null}
-   */
+  
+
+
+
+
   getNeverTranslateLanguagesSelect() {
     return this.document.getElementById(
       "translationsNeverTranslateLanguagesSelect"
     );
   }
 
-  /**
-   * Gets the never-translate languages add button.
-   *
-   * @returns {HTMLButtonElement|null}
-   */
+  
+
+
+
+
   getNeverTranslateLanguagesAddButton() {
     return this.document.getElementById(
       "translationsNeverTranslateLanguagesButton"
     );
   }
 
-  /**
-   * Gets the download languages select element.
-   *
-   * @returns {HTMLSelectElement|null}
-   */
+  
+
+
+
+
   getDownloadedLanguagesSelect() {
     return this.document.getElementById("translationsDownloadLanguagesSelect");
   }
@@ -774,29 +774,29 @@ class TranslationsSettingsTestUtils {
     return this.getDownloadedLanguagesSelect()?.value ?? "";
   }
 
-  /**
-   * Gets the download button element.
-   *
-   * @returns {HTMLButtonElement|null}
-   */
-  getDownloadButton() {
+  
+
+
+
+
+  getDownloadLanguageButton() {
     return this.document.getElementById("translationsDownloadLanguagesButton");
   }
 
-  /**
-   * Gets the download languages group element.
-   *
-   * @returns {HTMLElement|null}
-   */
+  
+
+
+
+
   getDownloadedLanguagesGroup() {
     return this.document.getElementById("translationsDownloadLanguagesGroup");
   }
 
-  /**
-   * Selects a language in the download dropdown.
-   *
-   * @param {string} langTag
-   */
+  
+
+
+
+
   async selectDownloadLanguage(langTag) {
     const dropdown = this.getDownloadedLanguagesSelect();
     dropdown.value = langTag;
@@ -830,7 +830,7 @@ class TranslationsSettingsTestUtils {
         .DownloadedLanguagesSelectOptionsUpdated
     );
 
-    await click(this.getDownloadButton(), `Start ${langTag} download`);
+    await click(this.getDownloadLanguageButton(), `Start ${langTag} download`);
     await Promise.all([started, renderInProgress, optionsUpdated]);
 
     const completed = this.waitForEvent(
@@ -858,15 +858,15 @@ class TranslationsSettingsTestUtils {
     await Promise.all([completed, renderComplete, optionsAfter]);
   }
 
-  /**
-   * Starts a download expected to fail and waits for the failure state.
-   *
-   * @param {object} options
-   * @param {string} options.langTag
-   * @param {object} options.remoteClients
-   * @param {string[]} [options.inProgressLanguages]
-   * @param {string[]} [options.failedLanguages]
-   */
+  
+
+
+
+
+
+
+
+
   async startDownloadFailure({
     langTag,
     remoteClients,
@@ -895,7 +895,7 @@ class TranslationsSettingsTestUtils {
     );
 
     await click(
-      this.getDownloadButton(),
+      this.getDownloadLanguageButton(),
       `Start ${langTag} download (expect failure)`
     );
     await Promise.all([started, renderInProgress, optionsUpdated]);
@@ -938,12 +938,12 @@ class TranslationsSettingsTestUtils {
     await Promise.all([failed, renderFailed, optionsAfterFail]);
   }
 
-  /**
-   * Waits for a language to appear in the download languages list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<Element>}
-   */
+  
+
+
+
+
+
   async waitForDownloadedLanguageItem(langTag) {
     return waitForCondition(
       () =>
@@ -954,15 +954,15 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts the current state of the downloaded languages list.
-   *
-   * @param {object} expected
-   * @param {string[]} [expected.languages] - Expected language tags
-   * @param {string[]} [expected.downloading] - Expected language tags that are downloading
-   * @param {number} [expected.count] - Expected count of languages
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
   async assertDownloadedLanguages({ languages, downloading, count }) {
     const items = this.document.querySelectorAll(
       ".translations-download-language-item"
@@ -998,13 +998,13 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Asserts the current order of the downloaded languages list.
-   *
-   * @param {object} expected
-   * @param {string[]} expected.languages - Expected language tags in order
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertDownloadedLanguagesOrder({ languages }) {
     const items = this.document.querySelectorAll(
       ".translations-download-language-item"
@@ -1017,13 +1017,13 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts the visibility state of the downloaded languages empty state.
-   *
-   * @param {object} expected
-   * @param {boolean} expected.visible - Whether empty state should be visible
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertDownloadedLanguagesEmptyState({ visible }) {
     const emptyRow = this.document.getElementById(
       "translationsDownloadLanguagesNoneRow"
@@ -1041,12 +1041,12 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Removes a language from the downloaded languages list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async removeDownloadedLanguage(langTag) {
     const removeButton = await waitForCondition(
       () => this.getDownloadDeleteIconButton(langTag),
@@ -1151,12 +1151,12 @@ class TranslationsSettingsTestUtils {
     await started;
   }
 
-  /**
-   * Adds a language to the always-translate list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async addAlwaysTranslateLanguage(langTag) {
     const dropdown = this.getAlwaysTranslateLanguagesSelect();
     dropdown.value = langTag;
@@ -1185,12 +1185,12 @@ class TranslationsSettingsTestUtils {
     await Promise.all([addedLanguage, addButtonDisabledPromise]);
   }
 
-  /**
-   * Removes a language from the always-translate list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async removeAlwaysTranslateLanguage(langTag) {
     const removeButton = this.document.querySelector(
       `[data-lang-tag="${langTag}"].translations-always-translate-remove-button`
@@ -1205,12 +1205,12 @@ class TranslationsSettingsTestUtils {
     await rendered;
   }
 
-  /**
-   * Waits for a language to appear in the always-translate languages list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<Element>}
-   */
+  
+
+
+
+
+
   async waitForAlwaysTranslateLanguageItem(langTag) {
     return TestUtils.waitForCondition(
       () =>
@@ -1221,14 +1221,14 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts the current state of the always-translate languages list.
-   *
-   * @param {object} expected
-   * @param {string[]} [expected.languages] - Expected language tags
-   * @param {number} [expected.count] - Expected count of languages
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
   async assertAlwaysTranslateLanguages({ languages, count }) {
     const items = this.document.querySelectorAll(
       ".translations-always-translate-language-item"
@@ -1254,13 +1254,13 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Asserts the current order of the always-translate languages list.
-   *
-   * @param {object} expected
-   * @param {string[]} expected.languages - Expected language tags in order
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertAlwaysTranslateLanguagesOrder({ languages }) {
     const items = this.document.querySelectorAll(
       ".translations-always-translate-language-item"
@@ -1273,13 +1273,13 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts the visibility state of the always-translate languages empty state.
-   *
-   * @param {object} expected
-   * @param {boolean} expected.visible - Whether empty state should be visible
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertAlwaysTranslateLanguagesEmptyState({ visible }) {
     const emptyRow = this.document.getElementById(
       "translationsAlwaysTranslateLanguagesNoneRow"
@@ -1297,12 +1297,12 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Adds a language to the never-translate list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async addNeverTranslateLanguage(langTag) {
     const dropdown = this.getNeverTranslateLanguagesSelect();
     dropdown.value = langTag;
@@ -1331,12 +1331,12 @@ class TranslationsSettingsTestUtils {
     await Promise.all([addedLanguage, addButtonDisabledPromise]);
   }
 
-  /**
-   * Removes a language from the never-translate list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async removeNeverTranslateLanguage(langTag) {
     const removeButton = this.document.querySelector(
       `[data-lang-tag="${langTag}"].translations-never-translate-remove-button`
@@ -1351,12 +1351,12 @@ class TranslationsSettingsTestUtils {
     await rendered;
   }
 
-  /**
-   * Waits for a language to appear in the never-translate languages list.
-   *
-   * @param {string} langTag
-   * @returns {Promise<Element>}
-   */
+  
+
+
+
+
+
   async waitForNeverTranslateLanguageItem(langTag) {
     return TestUtils.waitForCondition(
       () =>
@@ -1367,14 +1367,14 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts the current state of the never-translate languages list.
-   *
-   * @param {object} expected
-   * @param {string[]} [expected.languages] - Expected language tags
-   * @param {number} [expected.count] - Expected count of languages
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
   async assertNeverTranslateLanguages({ languages, count }) {
     const items = this.document.querySelectorAll(
       ".translations-never-translate-language-item"
@@ -1400,13 +1400,13 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Asserts the current order of the never-translate languages list.
-   *
-   * @param {object} expected
-   * @param {string[]} expected.languages - Expected language tags in order
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertNeverTranslateLanguagesOrder({ languages }) {
     const items = this.document.querySelectorAll(
       ".translations-never-translate-language-item"
@@ -1419,13 +1419,13 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Asserts the visibility state of the never-translate languages empty state.
-   *
-   * @param {object} expected
-   * @param {boolean} expected.visible - Whether empty state should be visible
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertNeverTranslateLanguagesEmptyState({ visible }) {
     const emptyRow = this.document.getElementById(
       "translationsNeverTranslateLanguagesNoneRow"
@@ -1443,21 +1443,21 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Gets the never-translate sites list element.
-   *
-   * @returns {HTMLElement|null}
-   */
+  
+
+
+
+
   getNeverTranslateSitesGroup() {
     return this.document.getElementById("translationsNeverTranslateSitesGroup");
   }
 
-  /**
-   * Waits for a site to appear in the never-translate sites list.
-   *
-   * @param {string} origin
-   * @returns {Promise<Element>}
-   */
+  
+
+
+
+
+
   async waitForNeverTranslateSiteItem(origin) {
     return waitForCondition(
       () =>
@@ -1468,12 +1468,12 @@ class TranslationsSettingsTestUtils {
     );
   }
 
-  /**
-   * Removes a site from the never-translate list.
-   *
-   * @param {string} origin
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async removeNeverTranslateSite(origin) {
     const removeButton = await waitForCondition(
       () =>
@@ -1489,14 +1489,14 @@ class TranslationsSettingsTestUtils {
     await rendered;
   }
 
-  /**
-   * Asserts the current state of the never-translate sites list.
-   *
-   * @param {object} expected
-   * @param {string[]} [expected.sites] - Expected site origins
-   * @param {number} [expected.count] - Expected count of sites
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
   async assertNeverTranslateSites({ sites, count }) {
     const items = this.document.querySelectorAll(
       ".translations-never-translate-site-item"
@@ -1516,13 +1516,13 @@ class TranslationsSettingsTestUtils {
     }
   }
 
-  /**
-   * Asserts the current order of the never-translate sites list.
-   *
-   * @param {object} expected
-   * @param {string[]} expected.sites - Expected site origins in order
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertNeverTranslateSitesOrder({ sites }) {
     const items = this.document.querySelectorAll(
       ".translations-never-translate-site-item"
@@ -1531,13 +1531,13 @@ class TranslationsSettingsTestUtils {
     Assert.deepEqual(actualSites, sites, "Never-translate sites order matches");
   }
 
-  /**
-   * Asserts the visibility state of the never-translate sites empty state.
-   *
-   * @param {object} expected
-   * @param {boolean} expected.visible - Whether empty state should be visible
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertNeverTranslateSitesEmptyState({ visible }) {
     const emptyRow = this.document.getElementById(
       "translationsNeverTranslateSitesNoneRow"
@@ -1556,12 +1556,12 @@ class TranslationsSettingsTestUtils {
   }
 }
 
-/**
- * Recursively transforms all child nodes to have diacriticized text. This is useful
- * to spot multiple translations.
- *
- * @param {Node} node
- */
+
+
+
+
+
+
 function diacriticizeNode(node) {
   if (typeof node.nodeValue === "string") {
     let result = "";
@@ -1579,16 +1579,16 @@ function diacriticizeNode(node) {
   }
 }
 
-/**
- * Creates a mocked message port for translations.
- *
- * @returns {MessagePort} This is mocked
- */
+
+
+
+
+
 function createMockedTranslatorPort(transformNode = upperCaseNode, delay = 0) {
   const parser = new DOMParser();
   const mockedPort = {
     async postMessage(message) {
-      // Make this response async.
+      
       await TestUtils.waitForTick();
 
       switch (message.type) {
@@ -1660,11 +1660,11 @@ class TranslationResolver {
   }
 }
 
-/**
- * Creates a mocked message port for translations.
- *
- * @returns {MessagePort} This is mocked
- */
+
+
+
+
+
 function createControlledTranslatorPort() {
   const parser = new DOMParser();
 
@@ -1750,7 +1750,7 @@ function createControlledTranslatorPort() {
 
           const { translationId } = message;
 
-          // Create a short debug version of the text.
+          
           let debugText = null;
 
           info(
@@ -1784,7 +1784,7 @@ function createControlledTranslatorPort() {
 
           const { cachedTranslation, translationId } = message;
 
-          // Create a short debug version of the text.
+          
           let debugText = cachedTranslation.trim().replaceAll("\n", "");
           if (debugText.length > 50) {
             debugText = debugText.slice(0, 50) + "...";
@@ -1821,7 +1821,7 @@ function createControlledTranslatorPort() {
 
           const { translationId, sourceText } = message;
 
-          // Create a short debug version of the text.
+          
           let debugText = sourceText.trim().replaceAll("\n", "");
           if (debugText.length > 50) {
             debugText = debugText.slice(0, 50) + "...";
@@ -1874,25 +1874,25 @@ function createControlledTranslatorPort() {
   return { mockedTranslatorPort, resolveRequests, collectPortData };
 }
 
-/**
- * @type {typeof import("../../content/translations-document.sys.mjs")}
- */
+
+
+
 const { TranslationsDocument, LRUCache } = ChromeUtils.importESModule(
   "chrome://global/content/translations/translations-document.sys.mjs"
 );
 
-/**
- * Creates a translated document from the provided HTML string.
- *
- * @param {string} html - The HTML source to translate.
- * @param {object} [options] - Optional configuration.
- * @param {string} [options.sourceLanguage="en"] - Source language code (default: "en").
- * @param {string} [options.targetLanguage="en"] - Target language code (default: "en").
- * @param {DOMParserSupportedType} [options.parserType="text/html"] - Parser type for the source content.
- * @param {(message: string) => Promise<string>} [options.mockedTranslatorPort] - Optional mock translation function.
- * @param {() => void} [options.mockedReportVisibleChange] - Optional callback for visibility reporting.
- * @returns {Promise<void>} Resolves when the document translation is complete.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 async function createTranslationsDoc(
   html,
   {
@@ -1914,9 +1914,9 @@ async function createTranslationsDoc(
   const parser = new DOMParser();
   const document = parser.parseFromString(html, parserType);
 
-  // For some reason, the document <body> here from the DOMParser is "display: flex" by
-  // default. Ensure that it is "display: block" instead, otherwise the children of the
-  // <body> will not be "display: inline".
+  
+  
+  
   if (document.body) {
     document.body.style.display = "block";
   }
@@ -1929,7 +1929,7 @@ async function createTranslationsDoc(
       document,
       sourceLanguage,
       targetLanguage,
-      0, // This is a fake innerWindowID
+      0, 
       mockedTranslatorPort ?? createMockedTranslatorPort(),
       () => {
         throw new Error("Cannot request a new port");
@@ -1943,65 +1943,65 @@ async function createTranslationsDoc(
     return translationsDoc;
   };
 
-  /**
-   * Converts a string of expected HTML output into a regex that we can
-   * use to match the actual HTML output.
-   *
-   * The expected HTML string may use double curly braces to escape a
-   * {{ regex literal }} within the HTML itself, which will be preserved
-   * in the final expression.
-   *
-   * For example, converts the HTML string:
-   * `
-   * <div>
-   *   M̅u̅t̅a̅t̅i̅o̅n̅ 5 o̅n̅ e̅l̅e̅m̅e̅n̅t̅ (id:{{ [1-5] }})
-   * </div>
-   * `
-   *
-   * Into the following regex:
-   *
-   * /^\s*<div>\s*M̅u̅t̅a̅t̅i̅o̅n̅ 5 o̅n̅ e̅l̅e̅m̅e̅n̅t̅ \(id:[1-5]\)\s*<\/div>\s*$/su
-   *
-   * Which allows us to match the actual HTML to the expected HTML
-   * regardless of whether the translation id was 1, 2, 3, 4, or 5.
-   *
-   * @param {string} html
-   * @returns {RegExp}
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   function expectedHtmlToRegex(html) {
-    // All characters that will need to be escaped with a backslash in the
-    // final regex if they are contained within the HTML string.
+    
+    
     const ESCAPABLE_CHARACTERS = /[.*+?^${}()|[\]\\]/g;
 
-    // Our own escape syntax to signify a {{ regex literal }} within the
-    // HTML string that should be preserved in its original form.
+    
+    
     const REGEX_LITERAL = /\{\{(.*?)\}\}/gsu;
 
-    // The same matcher as above, after escaping the curly braces with backslash.
+    
     const ESCAPED_REGEX_LITERAL = /\\\{\\\{.*?\\\}\\\}/su;
 
-    // Collect all regex literals that were escaped by using {{ literal }}
-    // syntax into a single array. We will place them back in at the end.
+    
+    
     const regexLiterals = [...html.matchAll(REGEX_LITERAL)].map(
       match => match[1]
     );
 
     let pattern = html
-      // Escape each character that needs it with a backslash.
+      
       .replaceAll(ESCAPABLE_CHARACTERS, "\\$&")
-      // Add a 0+ blank space matcher \s* before each opening angle bracket <
+      
       .replaceAll(/\s*</g, "\\s*<")
-      // Add a 0+ blank space matcher \s* after each closing angle bracket >
+      
       .replaceAll(/>\s*/g, ">\\s*")
-      // Collapse more than one blank space into a 1+ matcher
+      
       .replaceAll(/\s\s+/g, "\\s+")
-      // Replace a 1+ blank space matcher at the beginning with a 0+ matcher.
+      
       .replace(/^\\s\+/, "\\s*")
-      // Replace a 1+ blank space matcher at the end with a 0+ matcher.
+      
       .replace(/\\s\+$/, "\\s*");
 
-    // Go back through and replace each {{ regex literal }} that we preserved
-    // at the start with its captured content.
+    
+    
     for (const regexLiteral of regexLiterals) {
       pattern = pattern.replace(ESCAPED_REGEX_LITERAL, regexLiteral.trim());
     }
@@ -2009,17 +2009,17 @@ async function createTranslationsDoc(
     return new RegExp(`^${pattern}$`, "su");
   }
 
-  /**
-   * Test utility to check that the document matches the expected markup.
-   * If `html` is a string, the prettified innerHTML must match exactly.
-   * If `html` is a RegExp, the prettified innerHTML must satisfy the
-   * regular expression.
-   *
-   * @param {string} message
-   * @param {string} expectedHtml
-   * @param {Document} [sourceDoc]
-   * @param {() => void} [resolveRequests]
-   */
+  
+
+
+
+
+
+
+
+
+
+
   async function htmlMatches(
     message,
     expectedHtml,
@@ -2048,8 +2048,8 @@ async function createTranslationsDoc(
           translationsDoc.hasPendingTranslationRequests()
         ) {
           if (resolveRequests) {
-            // Since resolveRequests is defined, we must manually resolve
-            // them as the scheduler sends them until all are fulfilled.
+            
+            
             await waitForCondition(
               () =>
                 resolveRequests() ||
@@ -2058,9 +2058,9 @@ async function createTranslationsDoc(
               "Manually resolving requests as they come in..."
             );
           } else {
-            // Since resolveRequests is not defined, requests will resolve
-            // automatically when the scheduler sends them. We simply have
-            // to wait until they are all fulfilled.
+            
+            
+            
             await waitForCondition(
               () =>
                 !translationsDoc.hasPendingCallbackOnEventLoop() &&
@@ -2078,13 +2078,13 @@ async function createTranslationsDoc(
         const htmlMatches = expected.test(actualHtml);
 
         if (!htmlMatches && !didSimulateIntersectionObservation) {
-          // If all of the requests have been resolved, and the HTML doesn't match,
-          // then it may be because the request was never sent to the scheduler,
-          // so we need to manually simulate intersection observation.
-          //
-          // This is a valid case, and not a bug. For example, if an attribute is mutated,
-          // then it will not be scheduled for translation until it is observed.
-          // However, we should never have to do this more than one time.
+          
+          
+          
+          
+          
+          
+          
           didSimulateIntersectionObservation = true;
           translationsDoc.simulateIntersectionObservationForNonPendingNodes();
         }
@@ -2106,7 +2106,7 @@ async function createTranslationsDoc(
     } catch (error) {
       console.error(error);
 
-      // Provide a nice error message.
+      
       const actual = naivelyPrettify(getHTMLSource());
       ok(
         false,
@@ -2124,18 +2124,18 @@ async function createTranslationsDoc(
   return { htmlMatches, cleanup, translate, document };
 }
 
-/**
- * Perform a double requestAnimationFrame, which is used by the TranslationsDocument
- * to handle mutations.
- *
- * @param {Document} doc
- */
+
+
+
+
+
+
 function doubleRaf(doc) {
   return new Promise(resolve => {
     doc.ownerGlobal.requestAnimationFrame(() => {
       doc.ownerGlobal.requestAnimationFrame(() => {
         resolve(
-          // Wait for a tick to be after anything that resolves with a double rAF.
+          
           TestUtils.waitForTick()
         );
       });
@@ -2143,25 +2143,25 @@ function doubleRaf(doc) {
   });
 }
 
-/**
- * This mocked translator reports on the batching of calls by replacing the text
- * with a letter. Each call of the function moves the letter forward alphabetically.
- *
- * So consecutive calls would transform things like:
- *   "First translation" -> "aaaa aaaaaaaaa"
- *   "Second translation" -> "bbbbb bbbbbbbbb"
- *   "Third translation" -> "cccc ccccccccc"
- *
- * This can visually show what the translation batching behavior looks like.
- *
- * @returns {MessagePort} A mocked port.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 function createBatchedMockedTranslatorPort() {
   let letter = "a";
 
-  /**
-   * @param {Node} node
-   */
+  
+
+
   function transformNode(node) {
     if (typeof node.nodeValue === "string") {
       node.nodeValue = node.nodeValue.replace(/\w/g, letter);
@@ -2177,17 +2177,17 @@ function createBatchedMockedTranslatorPort() {
   });
 }
 
-/**
- * This mocked translator reorders Nodes to be in alphabetical order, and then
- * uppercases the text. This allows for testing the reordering behavior of the
- * translation engine.
- *
- * @returns {MessagePort} A mocked port.
- */
+
+
+
+
+
+
+
 function createdReorderingMockedTranslatorPort() {
-  /**
-   * @param {Node} node
-   */
+  
+
+
   function transformNode(node) {
     if (typeof node.nodeValue === "string") {
       node.nodeValue = node.nodeValue.toUpperCase();
@@ -2200,7 +2200,7 @@ function createdReorderingMockedTranslatorPort() {
       childNode.remove();
     }
     for (const childNode of nodes) {
-      // Re-append in sorted order.
+      
       node.appendChild(childNode);
       transformNode(childNode);
     }
@@ -2209,18 +2209,18 @@ function createdReorderingMockedTranslatorPort() {
   return createMockedTranslatorPort(transformNode);
 }
 
-/**
- * @returns {import("../../actors/TranslationsParent.sys.mjs").TranslationsParent}
- */
+
+
+
 function getTranslationsParent(win = window) {
   return TranslationsParent.getTranslationsActor(win.gBrowser.selectedBrowser);
 }
 
-/**
- * Closes all open panels and menu popups related to Translations.
- *
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
 async function closeAllOpenPanelsAndMenus(win) {
   await closeFullPagePanelSettingsMenuIfOpen(win);
   await closeFullPageTranslationsPanelIfOpen(win);
@@ -2229,12 +2229,12 @@ async function closeAllOpenPanelsAndMenus(win) {
   await closeContextMenuIfOpen(win);
 }
 
-/**
- * Closes the popup element with the given Id if it is open.
- *
- * @param {string} popupElementId
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
+
 async function closePopupIfOpen(popupElementId, win = window) {
   await waitForCondition(async () => {
     const popupElement = win.document.getElementById(popupElementId);
@@ -2255,20 +2255,20 @@ async function closePopupIfOpen(popupElementId, win = window) {
   });
 }
 
-/**
- * Closes the context menu if it is open.
- *
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
 async function closeContextMenuIfOpen(win) {
   await closePopupIfOpen("contentAreaContextMenu", win);
 }
 
-/**
- * Closes the full-page translations panel settings menu if it is open.
- *
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
 async function closeFullPagePanelSettingsMenuIfOpen(win) {
   await closePopupIfOpen(
     "full-page-translations-panel-settings-menupopup",
@@ -2276,36 +2276,36 @@ async function closeFullPagePanelSettingsMenuIfOpen(win) {
   );
 }
 
-/**
- * Closes the select translations panel settings menu if it is open.
- *
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
 async function closeSelectPanelSettingsMenuIfOpen(win) {
   await closePopupIfOpen("select-translations-panel-settings-menupopup", win);
 }
 
-/**
- * Closes the translations panel if it is open.
- *
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
 async function closeFullPageTranslationsPanelIfOpen(win) {
   await closePopupIfOpen("full-page-translations-panel", win);
 }
 
-/**
- * Closes the translations panel if it is open.
- *
- * @param {ChromeWindow} [win]
- */
+
+
+
+
+
 async function closeSelectTranslationsPanelIfOpen(win) {
   await closePopupIfOpen("select-translations-panel", win);
 }
 
-/**
- * This is for tests that don't need a browser page to run.
- */
+
+
+
 async function setupActorTest({
   languagePairs,
   prefs,
@@ -2313,7 +2313,7 @@ async function setupActorTest({
 }) {
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Enabled by default.
+      
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
       [USE_LEXICAL_SHORTLIST_PREF, false],
@@ -2326,11 +2326,11 @@ async function setupActorTest({
     autoDownloadFromRemoteSettings,
   });
 
-  // Create a new tab so each test gets a new actor, and doesn't re-use the old one.
+  
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     ENGLISH_PAGE_URL,
-    true // waitForLoad
+    true 
   );
 
   const actor = getTranslationsParent();
@@ -2349,19 +2349,19 @@ async function setupActorTest({
   };
 }
 
-/**
- * Creates and mocks remote settings for translations.
- *
- * @param {object} options - The options for creating and mocking remote settings.
- * @param {Array<{fromLang: string, toLang: string}>} [options.languagePairs=LANGUAGE_PAIRS]
- *  - The language pairs to be used.
- * @param {boolean} [options.useMockedTranslator=true]
- *  - Whether to use a mocked translator.
- * @param {boolean} [options.autoDownloadFromRemoteSettings=false]
- *  - Whether to automatically download from remote settings.
- *
- * @returns {Promise<object>} - An object containing the removeMocks function and remoteClients.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function createAndMockRemoteSettings({
   languagePairs = LANGUAGE_PAIRS,
   useMockedTranslator = true,
@@ -2381,8 +2381,8 @@ async function createAndMockRemoteSettings({
     ),
   };
 
-  // The TranslationsParent will pull the language pair values from the JSON dump
-  // of Remote Settings. Clear these before mocking the translations engine.
+  
+  
   TranslationsParent.clearCache();
   TranslationsPanelShared.clearLanguageListsCache();
 
@@ -2406,31 +2406,31 @@ async function createAndMockRemoteSettings({
   };
 }
 
-/**
- * Normalizes the backslashes or forward slashes in the given path
- * to be correct for the current operating system.
- *
- * @param {string} path - The path to normalize.
- *
- * @returns {string} - The normalized path.
- */
+
+
+
+
+
+
+
+
 function normalizePathForOS(path) {
   if (Services.appinfo.OS === "WINNT") {
-    // On Windows, replace forward slashes with backslashes
+    
     return path.replace(/\//g, "\\");
   }
 
-  // On Unix-like systems, replace backslashes with forward slashes
+  
   return path.replace(/\\/g, "/");
 }
 
-/**
- * Returns true if the given path exists, otherwise false.
- *
- * @param {string} path - The path to check.
- *
- * @returns {Promise<boolean>}
- */
+
+
+
+
+
+
+
 async function pathExists(path) {
   try {
     return await IOUtils.exists(path);
@@ -2439,13 +2439,13 @@ async function pathExists(path) {
   }
 }
 
-/**
- * Creates remote settings for the file system.
- *
- * @param {Array<{fromLang: string, toLang: string}>} languagePairs - The language pairs to be used.
- *
- * @returns {Promise<object>} - An object containing the removeMocks function and remoteClients.
- */
+
+
+
+
+
+
+
 async function createFileSystemRemoteSettings(languagePairs, architecture) {
   const { removeMocks, remoteClients } = await createAndMockRemoteSettings({
     languagePairs,
@@ -2511,56 +2511,56 @@ async function createFileSystemRemoteSettings(languagePairs, architecture) {
   };
 }
 
-/**
- * This class mocks the window's A11yUtils to count/capture arguments.
- *
- * This helps us ensure that the right calls are being made without
- * needing to handle whether the accessibility service is enabled in CI,
- * and also without needing to worry about if the call itself is broken
- * in the accessibility engine, since this is sometimes OS dependent.
- */
+
+
+
+
+
+
+
+
 class MockedA11yUtils {
-  /**
-   * Holds the parameters passed to any calls to announce.
-   *
-   * @type {Array<{ raw: string, id: string}>}
-   */
+  
+
+
+
+
   static announceCalls = [];
 
-  /**
-   * Mocks the A11yUtils object for the given window, replacing the real A11yUtils with the mock
-   * and returning a function that will restore the original A11yUtils when called.
-   *
-   * @param {object} window - The window for which to mock A11yUtils.
-   * @returns {Function} - A function to restore A11yUtils to the window.
-   */
+  
+
+
+
+
+
+
   static mockForWindow(window) {
     const realA11yUtils = window.A11yUtils;
     window.A11yUtils = MockedA11yUtils;
 
     return () => {
-      // Restore everything back to normal for this window.
+      
       MockedA11yUtils.announceCalls = [];
       window.A11yUtils = realA11yUtils;
     };
   }
 
-  /**
-   * A mocked call to A11yUtils.announce that captures the parameters.
-   *
-   * @param {{ raw: string, id: string }}
-   */
+  
+
+
+
+
   static announce({ id, raw }) {
     MockedA11yUtils.announceCalls.push({ id, raw });
   }
 
-  /**
-   * Asserts that the most recent A11yUtils announce call matches the expectations.
-   *
-   * @param {object} expectations
-   * @param {string} expectations.expectedCallNumber - The expected position in the announceCalls array.
-   * @param {object} expectations.expectedArgs - The expected arguments passed to the most recent announce call.
-   */
+  
+
+
+
+
+
+
   static assertMostRecentAnnounceCall({ expectedCallNumber, expectedArgs }) {
     is(
       MockedA11yUtils.announceCalls.length,
@@ -2583,15 +2583,15 @@ class MockedA11yUtils {
   }
 }
 
-/**
- * Ensures that the window size is within 50px of the given dimensions.
- *
- * @param {WindowProxy} win
- * @param {number} width
- * @param {number} height
- *
- * @returns {Promise<void>}
- */
+
+
+
+
+
+
+
+
+
 async function ensureWindowSize(win, width, height) {
   if (
     Math.abs(win.outerWidth - width) <= 1 &&
@@ -2628,7 +2628,7 @@ async function loadTestPage({
 }) {
   info(`Loading test page starting at url: ${page}`);
 
-  // If there are multiple windows, only do the first time setup on the main window.
+  
   const isFirstTimeSetup = win === window;
 
   let remoteClients = null;
@@ -2639,13 +2639,13 @@ async function loadTestPage({
   if (isFirstTimeSetup) {
     await ensureWindowSize(win, 1000, 600);
 
-    // Ensure no engine is being carried over from a previous test.
+    
     await EngineProcess.destroyTranslationsEngine();
 
     Services.fog.testResetFOG();
     await SpecialPowers.pushPrefEnv({
       set: [
-        // Enabled by default.
+        
         ["browser.translations.enable", true],
         ["browser.translations.logLevel", "All"],
         ["browser.translations.automaticallyPopup", true],
@@ -2653,9 +2653,9 @@ async function loadTestPage({
         ["browser.translations.neverTranslateLanguages", ""],
         ["browser.translations.mostRecentTargetLanguages", ""],
         [USE_LEXICAL_SHORTLIST_PREF, false],
-        // Bug 1893100 - This is needed to ensure that switching focus
-        // with tab works in tests independent of macOS settings that
-        // would otherwise disable keyboard navigation at the OS level.
+        
+        
+        
         ["accessibility.tabfocus_applies_to_xul", false],
         ...(prefs ?? []),
       ],
@@ -2699,20 +2699,20 @@ async function loadTestPage({
     });
   }
 
-  // Start the tab at a blank page.
+  
   const tab = await BrowserTestUtils.openNewForegroundTab(
     win.gBrowser,
     BLANK_PAGE,
-    true // waitForLoad
+    true 
   );
 
   if (contentEagerMode) {
     info("Triggering content-eager translations mode by opening the find bar.");
     await openFindBar(tab);
 
-    // We cannot access the TranslationsParent actor on BLANK_PAGE because the
-    // data scheme is disallowed for the TranslationsParent actor, so we will load
-    // our blank https:// page to ensure that the actor has registered its findBar.
+    
+    
+    
     await loadNewPage(tab.linkedBrowser, BLANK_PAGE_URL);
 
     const actor = getTranslationsParent(win);
@@ -2736,14 +2736,14 @@ async function loadTestPage({
     tab,
     remoteClients,
 
-    /**
-     * Resolves the downloads for the pending count of requested language pairs.
-     * This should be used when resolving downloads immediately after requesting them.
-     *
-     * @see {resolveBulkDownloads} for requesting multiple translations prior to resolving.
-     *
-     * @param {number} count - Count of the language pairs expected.
-     */
+    
+
+
+
+
+
+
+
     async resolveDownloads(count) {
       await remoteClients.translationsWasm.resolvePendingDownloads(1);
       await remoteClients.translationModels.resolvePendingDownloads(
@@ -2751,14 +2751,14 @@ async function loadTestPage({
       );
     },
 
-    /**
-     * Rejects the downloads for the pending count of requested language pairs.
-     * This should be used when rejecting downloads immediately after requesting them.
-     *
-     * @see {resolveBulkDownloads} for requesting multiple translations prior to rejecting.
-     *
-     * @param {number} count - Count of the language pairs expected.
-     */
+    
+
+
+
+
+
+
+
     async rejectDownloads(count) {
       await remoteClients.translationsWasm.rejectPendingDownloads(1);
       await remoteClients.translationModels.rejectPendingDownloads(
@@ -2766,17 +2766,17 @@ async function loadTestPage({
       );
     },
 
-    /**
-     * Resolves downloads for multiple pending translation requests.
-     *
-     * @see {resolveDownloads} for resolving downloads for just a single request.
-     *
-     * @param {object} expectations
-     * @param {number} expectations.expectedWasmDownloads
-     *  - The expected count of pending WASM binary download requests.
-     * @param {number} expectations.expectedLanguagePairDownloads
-     *  - The expected count of language-pair model-download requests.
-     */
+    
+
+
+
+
+
+
+
+
+
+
     async resolveBulkDownloads({
       expectedWasmDownloads,
       expectedLanguagePairDownloads,
@@ -2789,17 +2789,17 @@ async function loadTestPage({
       );
     },
 
-    /**
-     * Rejects downloads for multiple pending translation requests.
-     *
-     * @see {rejectDownloads} for rejecting downloads for just a single request.
-     *
-     * @param {object} expectations
-     * @param {number} expectations.expectedWasmDownloads
-     *  - The expected count of pending WASM binary download requests.
-     * @param {number} expectations.expectedLanguagePairDownloads
-     *  - The expected count of language-pair model-download requests.
-     */
+    
+
+
+
+
+
+
+
+
+
+
     async rejectBulkDownloads({
       expectedWasmDownloads,
       expectedLanguagePairDownloads,
@@ -2812,9 +2812,9 @@ async function loadTestPage({
       );
     },
 
-    /**
-     * @returns {Promise<void>}
-     */
+    
+
+
     async cleanup() {
       await closeAllOpenPanelsAndMenus();
       await loadBlankPage();
@@ -2835,26 +2835,26 @@ async function loadTestPage({
       ]);
     },
 
-    /**
-     * Runs a callback in the content page. The function's contents are serialized as
-     * a string, and run in the page. The `translations-test.mjs` module is made
-     * available to the page.
-     *
-     * @type {RunInPageFn}
-     */
+    
+
+
+
+
+
+
     runInPage(callback, data = {}) {
       return ContentTask.spawn(
         tab.linkedBrowser,
-        { contentData: data, callbackSource: callback.toString() }, // Data to inject.
+        { contentData: data, callbackSource: callback.toString() }, 
         function ({ contentData, callbackSource }) {
           const TranslationsTest = ChromeUtils.importESModule(
             "chrome://mochitests/content/browser/toolkit/components/translations/tests/browser/translations-test.mjs"
           );
 
-          // Pass in the values that get injected by the task runner.
+          
           TranslationsTest.setup({ Assert, ContentTaskUtils, content });
 
-          // eslint-disable-next-line no-eval
+          
           let contentCallback = eval(`(${callbackSource})`);
           return contentCallback(TranslationsTest, contentData);
         }
@@ -2863,12 +2863,12 @@ async function loadTestPage({
   };
 }
 
-/**
- * Captures any reported errors in the TranslationsParent.
- *
- * @param {Function} callback
- * @returns {Array<{ error: Error, args: any[] }>}
- */
+
+
+
+
+
+
 async function captureTranslationsError(callback) {
   const { reportError } = TranslationsParent;
 
@@ -2879,14 +2879,14 @@ async function captureTranslationsError(callback) {
 
   await callback();
 
-  // Restore the original function.
+  
   TranslationsParent.reportError = reportError;
   return errors;
 }
 
-/**
- * Opens the FindBar in the given tab for the current window.
- */
+
+
+
 async function openFindBar(tab, win = window) {
   info("Opening the find bar in the current tab.");
   const findBar = await win.gBrowser.getFindBar(tab);
@@ -2904,9 +2904,9 @@ async function openFindBar(tab, win = window) {
   await promise;
 }
 
-/**
- * Opens the FindBar in the given tab for the current window.
- */
+
+
+
 async function closeFindBar(tab, win = window) {
   info("Closing the find bar in the current tab.");
   const findBar = await win.gBrowser.getFindBar(tab);
@@ -2924,11 +2924,11 @@ async function closeFindBar(tab, win = window) {
   await promise;
 }
 
-/**
- * Load a test page and run
- *
- * @param {object} options - The options for `loadTestPage` plus a `runInPage` function.
- */
+
+
+
+
+
 async function autoTranslatePage(options) {
   const { prefs, languagePairs, ...otherOptions } = options;
   const fromLangs = languagePairs.map(language => language.fromLang).join(",");
@@ -2945,20 +2945,20 @@ async function autoTranslatePage(options) {
   await cleanup();
 }
 
-/**
- * @typedef {ReturnType<createAttachmentMock>} AttachmentMock
- */
 
-/**
- * @param {RemoteSettingsClient} client
- * @param {string} mockedCollectionName - The name of the mocked collection without
- *  the incrementing "id" part. This is provided so that attachments can be asserted
- *  as being of a certain version.
- * @param {boolean} autoDownloadFromRemoteSettings - Skip the manual download process,
- *  and automatically download the files. Normally it's preferrable to manually trigger
- *  the downloads to trigger the download behavior, but this flag lets you bypass this
- *  and automatically download the files.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 function createAttachmentMock(
   client,
   mockedCollectionName,
@@ -3026,15 +3026,15 @@ function createAttachmentMock(
       return true;
     };
 
-    // Wait for the expected downloads to start arriving and reject them as they do.
+    
     while (names.length < expectedDownloadCount) {
       await waitForPendingDownloads(names.length + 1);
       while (names.length < expectedDownloadCount && rejectNext()) {
-        // Keep rejecting until we reach the expected count.
+        
       }
     }
 
-    // Drain any retries until the queue stays empty for a short idle window.
+    
     let idleTicks = 0;
     const idleWindow = 20;
     while (idleTicks < idleWindow) {
@@ -3062,8 +3062,8 @@ function createAttachmentMock(
       await new Promise(resolve => setTimeout(resolve, 0));
       let download = pendingDownloads.shift();
       if (!download) {
-        // Uncomment the following to debug download issues:
-        // console.log(`No pending download:`, client.collectionName, names.length);
+        
+        
         continue;
       }
       console.log(`Handling download:`, client.collectionName);
@@ -3071,8 +3071,8 @@ function createAttachmentMock(
       names.push(download.record.name);
     }
 
-    // This next check is not guaranteed to catch an unexpected download, but wait
-    // at least one event loop tick to see if any more downloads were added.
+    
+    
     await new Promise(resolve => setTimeout(resolve, 0));
 
     if (pendingDownloads.length) {
@@ -3112,19 +3112,19 @@ function createAttachmentMock(
   };
 }
 
-/**
- * The count of records per mocked language pair in Remote Settings utilizing a shared-vocab config.
- */
+
+
+
 const RECORDS_PER_LANGUAGE_PAIR_SHARED_VOCAB = 3;
 
-/**
- * The count of records per mocked language pair in Remote Settings utilizing a split-vocab config.
- */
+
+
+
 const RECORDS_PER_LANGUAGE_PAIR_SPLIT_VOCAB = 4;
 
-/**
- * The count of files that are downloaded for a mocked language pair in Remote Settings.
- */
+
+
+
 function downloadedFilesPerLanguagePair(splitVocab = false) {
   const expectedRecords = splitVocab
     ? RECORDS_PER_LANGUAGE_PAIR_SPLIT_VOCAB
@@ -3178,17 +3178,17 @@ function createRecordsForLanguagePair(fromLang, toLang, splitVocab = false) {
       version: TranslationsParent.LANGUAGE_MODEL_MAJOR_VERSION_MAX + ".0",
       last_modified: Date.now(),
       schema: Date.now(),
-      attachment: JSON.parse(JSON.stringify(attachment)), // Making a deep copy
+      attachment: JSON.parse(JSON.stringify(attachment)), 
     });
   }
   return records;
 }
 
-/**
- * Creates a new WASM record for the Bergamot Translator to store in Remote Settings.
- *
- * @returns {WasmRecord}
- */
+
+
+
+
+
 function createWasmRecord() {
   return {
     id: crypto.randomUUID(),
@@ -3199,19 +3199,19 @@ function createWasmRecord() {
   };
 }
 
-/**
- * Increments each time a remote settings client is created to ensure a unique client
- * name for each test run.
- */
+
+
+
+
 let _remoteSettingsMockId = 0;
 
-/**
- * Creates a local RemoteSettingsClient for use within tests.
- *
- * @param {boolean} autoDownloadFromRemoteSettings
- * @param {object[]} langPairs
- * @returns {RemoteSettingsClient}
- */
+
+
+
+
+
+
+
 async function createTranslationModelsRemoteClient(
   autoDownloadFromRemoteSettings,
   langPairs
@@ -3239,12 +3239,12 @@ async function createTranslationModelsRemoteClient(
   );
 }
 
-/**
- * Creates a local RemoteSettingsClient for use within tests.
- *
- * @param {boolean} autoDownloadFromRemoteSettings
- * @returns {RemoteSettingsClient}
- */
+
+
+
+
+
+
 async function createTranslationsWasmRemoteClient(
   autoDownloadFromRemoteSettings
 ) {
@@ -3267,28 +3267,28 @@ async function createTranslationsWasmRemoteClient(
   );
 }
 
-/**
- * Modifies the client's Remote Settings database to create, update, and delete records, then emits
- * a "sync" event with the relevant changes for the Remote Settings client.
- *
- * Asserts that the list of records to create is disjoint from the list of records to delete.
- * If your test case needs to create a record and then delete it, do it in separate transactions.
- *
- * @param {RemoteSettingsClient} remoteSettingsClient - The Remote Settings client whose database will be modified.
- * @param {object} options
- * @param {TranslationModelRecord[]} [options.recordsToCreate]
- *  - A list of records to newly create or update. These records are automatically partitioned into
- *    either the created array or the updated array based on whether they exist in the database yet.
- * @param {TranslationModelRecord[]} [options.recordsToDelete]
- *  - A list of records to delete from the database. Asserts that all of these records exist in the
- *    database before deleting them.
- * @param {number} [options.expectedCreatedRecordsCount]
- *  - The expected count of records within the recordsToCreate parameter that are new to the database.
- * @param {number} [options.expectedUpdatedRecordsCount]
- *  - The expected count of records within the recordsToCreate parameter that are already in the database.
- * @param {number} [options.expectedDeletedRecordsCount]
- *  - The expected count of records within the recordsToDelete parameter that are already in the database.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function modifyRemoteSettingsRecords(
   remoteSettingsClient,
   {
@@ -3332,7 +3332,7 @@ async function modifyRemoteSettingsRecords(
   if (recordsToCreate.length) {
     info("Storing new and updated records in mocked Remote Settings database");
     await remoteSettingsClient.db.importChanges(
-      /* metadata */ {},
+       {},
       Date.now(),
       recordsToCreate
     );
@@ -3460,21 +3460,21 @@ function hitEnterKey(button, message) {
   );
 }
 
-/**
- * Similar to assertVisibility, but is asynchronous and attempts
- * to wait for the elements to match the expected states if they
- * do not already.
- *
- * @see assertVisibility
- *
- * @param {object} options
- * @param {string} options.message
- * @param {Record<string, Element[]>} options.visible
- * @param {Record<string, Element[]>} options.hidden
- */
+
+
+
+
+
+
+
+
+
+
+
+
 async function ensureVisibility({ message = null, visible = {}, hidden = {} }) {
   try {
-    // First wait for the condition to be met.
+    
     await waitForCondition(() => {
       for (const element of Object.values(visible)) {
         if (BrowserTestUtils.isHidden(element)) {
@@ -3489,20 +3489,20 @@ async function ensureVisibility({ message = null, visible = {}, hidden = {} }) {
       return true;
     });
   } catch (error) {
-    // Ignore, this will get caught below.
+    
   }
-  // Now report the conditions.
+  
   assertVisibility({ message, visible, hidden });
 }
 
-/**
- * Asserts that the provided elements are either visible or hidden.
- *
- * @param {object} options
- * @param {string} options.message
- * @param {Record<string, Element[]>} options.visible
- * @param {Record<string, Element[]>} options.hidden
- */
+
+
+
+
+
+
+
+
 function assertVisibility({ message = null, visible = {}, hidden = {} }) {
   if (message) {
     info(message);
@@ -3521,7 +3521,7 @@ async function setupAboutPreferences(
 ) {
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Enabled by default.
+      
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
       [USE_LEXICAL_SHORTLIST_PREF, false],
@@ -3538,7 +3538,7 @@ async function setupAboutPreferences(
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     BLANK_PAGE,
-    true // waitForLoad
+    true 
   );
 
   const { remoteClients, removeMocks } = await createAndMockRemoteSettings({
@@ -3575,11 +3575,11 @@ async function setupAboutPreferences(
   };
 }
 
-/**
- * Tests a callback function with the lexical shortlist preference enabled and disabled.
- *
- * @param {Function} callback - An async function to execute, receiving the preference settings as an argument.
- */
+
+
+
+
+
 async function testWithAndWithoutLexicalShortlist(callback) {
   for (const prefs of [
     [[USE_LEXICAL_SHORTLIST_PREF, true]],
@@ -3589,14 +3589,14 @@ async function testWithAndWithoutLexicalShortlist(callback) {
   }
 }
 
-/**
- * Waits for the "translations:model-records-changed" observer event to occur.
- *
- * @param {Function} [callback]
- *   - An optional function to execute before waiting for the "translations:pref-changed" observer event.
- * @returns {Promise<void>}
- *   - A promise that resolves when the "translations:model-records-changed" event is observed.
- */
+
+
+
+
+
+
+
+
 async function waitForTranslationModelRecordsChanged(callback) {
   const { promise, resolve } = Promise.withResolvers();
 
@@ -3651,7 +3651,7 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
   }
 
   return async () => {
-    // Reset back to the originals.
+    
     if (webLanguages) {
       await SpecialPowers.popPrefEnv();
     }
@@ -3673,9 +3673,9 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
   };
 }
 
-/**
- * Helpful test functions for translations telemetry
- */
+
+
+
 class TestTranslationsTelemetry {
   static #previousFlowId = null;
 
@@ -3683,16 +3683,16 @@ class TestTranslationsTelemetry {
     TestTranslationsTelemetry.#previousFlowId = null;
   }
 
-  /**
-   * Asserts qualities about a counter telemetry metric.
-   *
-   * @param {string} name - The name of the metric.
-   * @param {object} counter - The Glean counter object.
-   * @param {object} expectedCount - The expected value of the counter.
-   */
+  
+
+
+
+
+
+
   static async assertCounter(name, counter, expectedCount) {
-    // Ensures that glean metrics are collected from all child processes
-    // so that calls to testGetValue() are up to date.
+    
+    
     await Services.fog.testFlushAllChildren();
     const count = counter.testGetValue() ?? 0;
     is(
@@ -3702,12 +3702,12 @@ class TestTranslationsTelemetry {
     );
   }
 
-  /**
-   * Asserts that a counter with the given label matches the expected count for that label.
-   *
-   * @param {object} counter - The Glean counter object.
-   * @param {Array<Array<string | number>>} expectations - An array of string/number pairs for the label and expected count.
-   */
+  
+
+
+
+
+
   static async assertLabeledCounter(counter, expectations) {
     for (const [label, expectedCount] of expectations) {
       await Services.fog.testFlushAllChildren();
@@ -3720,18 +3720,18 @@ class TestTranslationsTelemetry {
     }
   }
 
-  /**
-   * Asserts qualities about an event telemetry metric.
-   *
-   * @param {object} event - The Glean event object.
-   * @param {object} expectations - The test expectations.
-   * @param {number} expectations.expectedEventCount - The expected count of events.
-   * @param {boolean} expectations.expectNewFlowId
-   * @param {Record<string, string | boolean | number | Function>} [expectations.assertForAllEvents]
-   * - A record of key-value pairs to assert against all events in this category.
-   * @param {Record<string, string | boolean | number | Function>} [expectations.assertForMostRecentEvent]
-   * - A record of key-value pairs to assert against the most recently recorded event in this category.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   static async assertEvent(
     event,
     {
@@ -3741,8 +3741,8 @@ class TestTranslationsTelemetry {
       assertForMostRecentEvent = {},
     }
   ) {
-    // Ensures that glean metrics are collected from all child processes
-    // so that calls to testGetValue() are up to date.
+    
+    
     await Services.fog.testFlushAllChildren();
     const events = event.testGetValue() ?? [];
     const eventCount = events.length;
@@ -3830,22 +3830,22 @@ class TestTranslationsTelemetry {
     }
   }
 
-  /**
-   * Asserts qualities about a rate telemetry metric.
-   *
-   * @param {string} name - The name of the metric.
-   * @param {object} rate - The Glean rate object.
-   * @param {object} expectations - The test expectations.
-   * @param {number} expectations.expectedNumerator - The expected value of the numerator.
-   * @param {number} expectations.expectedDenominator - The expected value of the denominator.
-   */
+  
+
+
+
+
+
+
+
+
   static async assertRate(
     name,
     rate,
     { expectedNumerator, expectedDenominator }
   ) {
-    // Ensures that glean metrics are collected from all child processes
-    // so that calls to testGetValue() are up to date.
+    
+    
     await Services.fog.testFlushAllChildren();
     const { numerator = 0, denominator = 0 } = rate.testGetValue() ?? {};
     is(
@@ -3860,12 +3860,12 @@ class TestTranslationsTelemetry {
     );
   }
 
-  /**
-   * Asserts that all TranslationsEngine performance events are expected and have valid data.
-   *
-   * @param {object} expectations - The test expectations.
-   * @param {number} expectations.expectedEventCount - The expected count of engine performance events.
-   */
+  
+
+
+
+
+
   static async assertTranslationsEnginePerformance({ expectedEventCount }) {
     info("Destroying the TranslationsEngine.");
     await EngineProcess.destroyTranslationsEngine();
@@ -3896,45 +3896,45 @@ class TestTranslationsTelemetry {
   }
 }
 
-/**
- * Provide longer defaults for the waitForCondition.
- *
- * @param {Function} callback
- * @param {string} message
- */
+
+
+
+
+
+
 function waitForCondition(callback, message) {
   const interval = 100;
-  // Use 4 times the defaults to guard against intermittents. Many of the tests rely on
-  // communication between the parent and child process, which is inherently async.
+  
+  
   const maxTries = 50 * 4;
   return TestUtils.waitForCondition(callback, message, interval, maxTries);
 }
 
-/**
- * Retrieves the always-translate language list as an array.
- *
- * @returns {Array<string>}
- */
+
+
+
+
+
 function getAlwaysTranslateLanguagesFromPref() {
   let langs = Services.prefs.getCharPref(ALWAYS_TRANSLATE_LANGS_PREF);
   return langs ? langs.split(",") : [];
 }
 
-/**
- * Retrieves the never-translate language list as an array.
- *
- * @returns {Array<string>}
- */
+
+
+
+
+
 function getNeverTranslateLanguagesFromPref() {
   let langs = Services.prefs.getCharPref(NEVER_TRANSLATE_LANGS_PREF);
   return langs ? langs.split(",") : [];
 }
 
-/**
- * Retrieves the never-translate site list as an array.
- *
- * @returns {Array<string>}
- */
+
+
+
+
+
 function getNeverTranslateSitesFromPerms() {
   let results = [];
   for (let perm of Services.perms.all) {
@@ -3949,13 +3949,13 @@ function getNeverTranslateSitesFromPerms() {
   return results;
 }
 
-/**
- * Opens a dialog window for about:preferences
- *
- * @param {string} dialogUrl - The URL of the dialog window
- * @param {Function} callback - The function to open the dialog via UI
- * @returns {object} The dialog window object
- */
+
+
+
+
+
+
+
 async function waitForOpenDialogWindow(dialogUrl, callback) {
   const dialogLoaded = promiseLoadSubDialog(dialogUrl);
   await callback();
@@ -3963,11 +3963,11 @@ async function waitForOpenDialogWindow(dialogUrl, callback) {
   return dialogWindow;
 }
 
-/**
- * Closes an open dialog window and waits for it to close.
- *
- * @param {object} dialogWindow
- */
+
+
+
+
+
 async function waitForCloseDialogWindow(dialogWindow) {
   const closePromise = BrowserTestUtils.waitForEvent(
     content.gSubDialog._dialogStack,
@@ -3977,7 +3977,7 @@ async function waitForCloseDialogWindow(dialogWindow) {
   await closePromise;
 }
 
-// Extracted from https://searchfox.org/mozilla-central/rev/40ef22080910c2e2c27d9e2120642376b1d8b8b2/browser/components/preferences/in-content/tests/head.js#41
+
 function promiseLoadSubDialog(aURL) {
   return new Promise(resolve => {
     content.gSubDialog._dialogStack.addEventListener(
@@ -3999,7 +3999,7 @@ function promiseLoadSubDialog(aURL) {
           "Check the proper URL is loaded"
         );
 
-        // Check visibility
+        
         isnot(
           aEvent.detail.dialog._overlay,
           null,
@@ -4010,7 +4010,7 @@ function promiseLoadSubDialog(aURL) {
           "The element is visible"
         );
 
-        // Check that stylesheets were injected
+        
         let expectedStyleSheetURLs =
           aEvent.detail.dialog._injectedStyleSheets.slice(0);
         for (let styleSheet of aEvent.detail.dialog._frame.contentDocument
@@ -4027,154 +4027,154 @@ function promiseLoadSubDialog(aURL) {
           "All expectedStyleSheetURLs should have been found"
         );
 
-        // Wait for the next event tick to make sure the remaining part of the
-        // testcase runs after the dialog gets ready for input.
+        
+        
         executeSoon(() => resolve(aEvent.detail.dialog._frame.contentWindow));
       }
     );
   });
 }
 
-/**
- * Loads the blank-page URL.
- *
- * This is useful for resetting the state during cleanup, and also
- * before starting a test, to further help ensure that there is no
- * unintentional state left over from test case.
- */
+
+
+
+
+
+
+
 async function loadBlankPage() {
   await loadNewPage(gBrowser.selectedBrowser, BLANK_PAGE);
 }
 
-/**
- * Destroys the Translations Engine process.
- */
+
+
+
 async function destroyTranslationsEngine() {
   await EngineProcess.destroyTranslationsEngine();
 }
 
 class AboutTranslationsTestUtils {
-  /**
-   * A collection of custom events that the about:translations document may dispatch.
-   */
+  
+
+
   static Events = class Events {
-    /**
-     * Event fired when the detected language updates.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static DetectedLanguageUpdated =
       "AboutTranslationsTest:DetectedLanguageUpdated";
 
-    /**
-     * Event fired when the swap-languages button becomes disabled.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static SwapLanguagesButtonDisabled =
       "AboutTranslationsTest:SwapLanguagesButtonDisabled";
 
-    /**
-     * Event fired when the swap-languages button becomes enabled.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static SwapLanguagesButtonEnabled =
       "AboutTranslationsTest:SwapLanguagesButtonEnabled";
 
-    /**
-     * Event fired when the translating placeholder message is shown.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static ShowTranslatingPlaceholder =
       "AboutTranslationsTest:ShowTranslatingPlaceholder";
 
-    /**
-     * Event fired after the URL has been updated from UI interactions.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static URLUpdatedFromUI = "AboutTranslationsTest:URLUpdatedFromUI";
 
-    /**
-     * Event fired when a translation is requested.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static TranslationRequested = "AboutTranslationsTest:TranslationRequested";
 
-    /**
-     * Event fired when a translation completes.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static TranslationComplete = "AboutTranslationsTest:TranslationComplete";
 
-    /**
-     * Event fired when the page layout changes.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static PageOrientationChanged =
       "AboutTranslationsTest:PageOrientationChanged";
 
-    /**
-     * Event fired when the source/target textarea heights change.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static TextAreaHeightsChanged =
       "AboutTranslationsTest:TextAreaHeightsChanged";
 
-    /**
-     * Event fired when the target text is cleared programmatically.
-     *
-     * @type {string}
-     */
+    
+
+
+
+
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
   };
 
-  /**
-   * A function that runs a closure in the content page.
-   *
-   * @type {RunInPageFn}
-   */
+  
+
+
+
+
   #runInPage;
 
-  /**
-   * A function that resolves download requests for tests.
-   *
-   * @type {(number) => Promise<void>}
-   */
+  
+
+
+
+
   #resolveDownloads;
 
-  /**
-   * A function that rejects download requests for tests.
-   *
-   * @type {(number) => Promise<void>}
-   */
+  
+
+
+
+
   #rejectDownloads;
 
-  /**
-   * Whether or not download requests should be resolved automatically,
-   * or manually resolved/rejected by the test code.
-   *
-   * @type {boolean}
-   */
+  
+
+
+
+
+
   #autoDownloadFromRemoteSettings;
 
-  /**
-   * @param {RunInPageFn} runInPage
-   *   A function that runs a closure in the content page.
-   * @param {(number) => Promise<void>} resolveDownloads
-   *   A function that resolves download requests for tests.
-   * @param {(number) => Promise<void>} rejectDownloads
-   *   A function that rejects download requests for tests.
-   * @param {boolean} autoDownloadFromRemoteSettings
-   *   Whether download requests should be resolved automatically
-   *   or manually resolved by the test code.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   constructor(
     runInPage,
     resolveDownloads,
@@ -4187,21 +4187,21 @@ class AboutTranslationsTestUtils {
     this.#autoDownloadFromRemoteSettings = autoDownloadFromRemoteSettings;
   }
 
-  /**
-   * Reports any error as a test failure.
-   * This will show up more nicely in the test logs.
-   *
-   * @param {Error} error
-   */
+  
+
+
+
+
+
   static #reportTestFailure(error) {
     ok(false, String(error));
   }
 
-  /**
-   * Waits for the about:translations page to fully initialize.
-   *
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
   async waitForReady() {
     try {
       await this.#runInPage(async () => {
@@ -4217,15 +4217,15 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Loads a fresh about:translations document with optional URL-hash parameters.
-   *
-   * @param {object}  [options={}]
-   * @param {string}  [options.sourceLanguage] - Value for the "src" hash parameter.
-   * @param {string}  [options.targetLanguage] - Value for the "trg" hash parameter.
-   * @param {string}  [options.sourceText]     - Value for the "text" hash parameter.
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
   async loadNewPage({ sourceLanguage, targetLanguage, sourceText } = {}) {
     const url = new URL("about:translations");
     const searchParams = new URLSearchParams();
@@ -4265,12 +4265,12 @@ class AboutTranslationsTestUtils {
     await this.waitForReady();
   }
 
-  /**
-   * Sets a new delay timer for the debounce on reacting to input.
-   *
-   * @param {number} ms - The delay milliseconds.
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
   async setDebounceDelay(ms) {
     logAction(ms);
     try {
@@ -4286,11 +4286,11 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Manually resolves pending RemoteSettings download requests during tests.
-   *
-   * @param {number} count
-   */
+  
+
+
+
+
   async resolveDownloads(count) {
     if (this.#autoDownloadFromRemoteSettings) {
       throw new Error(
@@ -4304,11 +4304,11 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Manually rejects pending RemoteSettings download requests during tests.
-   *
-   * @param {number} requestCount
-   */
+  
+
+
+
+
   async rejectDownloads(requestCount) {
     if (this.#autoDownloadFromRemoteSettings) {
       throw new Error(
@@ -4322,11 +4322,11 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Sets the source-language selector to the given value in the about:translations UI.
-   *
-   * @param {string} language
-   */
+  
+
+
+
+
   async setSourceLanguageSelectorValue(language) {
     logAction(language);
     try {
@@ -4345,11 +4345,11 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Sets the target-language selector to the given value in the about:translations UI.
-   *
-   * @param {string} language
-   */
+  
+
+
+
+
   async setTargetLanguageSelectorValue(language) {
     logAction(language);
     try {
@@ -4368,11 +4368,11 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Sets the source textarea value in the about:translations UI.
-   *
-   * @param {string} value
-   */
+  
+
+
+
+
   async setSourceTextAreaValue(value) {
     logAction(value);
     try {
@@ -4391,9 +4391,9 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Clicks the swap-languages button in the about:translations UI.
-   */
+  
+
+
   async clickSwapLanguagesButton() {
     logAction();
     try {
@@ -4408,13 +4408,13 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Waits for the specified AboutTranslations event to fire, then returns its detail payload.
-   * Rejects if the event doesn’t fire within three seconds.
-   *
-   * @param {string} eventName
-   * @returns {Promise<any>}
-   */
+  
+
+
+
+
+
+
   async waitForEvent(eventName) {
     const detail = await this.#runInPage(
       (_, { eventName }) => {
@@ -4447,22 +4447,22 @@ class AboutTranslationsTestUtils {
     return detail;
   }
 
-  /**
-   * Asserts that expected AboutTranslations events fire (with optional details)
-   * and that unexpected events do not fire during as a result of the given callback.
-   *
-   * @param {object} [options={}]
-   * @param {Array.<[string, any]>} [options.expected=[]] — An array of
-   *        `[eventName, expectedDetail?]` pairs. `expectedDetail` is optional;
-   *        if omitted, only the fact of the event firing is asserted.
-   * @param {Array.<string>} [options.unexpected=[]] — An array of event names
-   *        that should *not* fire during the execution of `callback`.
-   * @param {() => Promise<void>} callback — Async function to execute while
-   *        listening for events.
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   async assertEvents({ expected = [], unexpected = [] } = {}, callback) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     try {
@@ -4478,8 +4478,8 @@ class AboutTranslationsTestUtils {
             unexpectedEventMap[eventName] = true;
           })
           .catch(() => {
-            // The waitForEvent() timeout race triggered, which is okay
-            // since we didn't expect this event to fire anyway.
+            
+            
           });
       }
 
@@ -4508,25 +4508,25 @@ class AboutTranslationsTestUtils {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
 
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
   }
 
-  /**
-   * Asserts properties of the source textarea.
-   *
-   * @param {object} options
-   * @param {string}  [options.value]
-   * @param {boolean} [options.showsPlaceholder]
-   * @param {string}  [options.scriptDirection]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
   async assertSourceTextArea({
     value,
     showsPlaceholder,
     scriptDirection,
   } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     let pageResult = {};
@@ -4580,21 +4580,21 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts properties of the target textarea.
-   *
-   * @param {object} options
-   * @param {string}  [options.value]
-   * @param {boolean} [options.showsPlaceholder]
-   * @param {string}  [options.scriptDirection]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
   async assertTargetTextArea({
     value,
     showsPlaceholder,
     scriptDirection,
   } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     let pageResult = {};
@@ -4648,21 +4648,21 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts properties of the source-language selector.
-   *
-   * @param {object}   options
-   * @param {string}   [options.value]
-   * @param {string[]} [options.options]
-   * @param {string}   [options.detectedLanguage]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
   async assertSourceLanguageSelector({
     value,
     options,
     detectedLanguage,
   } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     let pageResult = {};
@@ -4726,16 +4726,16 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts properties of the target-language selector.
-   *
-   * @param {object}   options
-   * @param {string}   [options.value]
-   * @param {string[]} [options.options]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
   async assertTargetLanguageSelector({ value, options } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     let pageResult = {};
@@ -4785,21 +4785,21 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts properties of the detect-language option in the source-language selector.
-   *
-   * @param {object}  options
-   * @param {boolean} [options.isSelected]
-   * @param {boolean} [options.defaultValue]
-   * @param {string}  [options.language]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
   async assertDetectLanguageOption({
     isSelected,
     defaultValue,
     language,
   } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     if (language !== undefined && defaultValue) {
@@ -4874,15 +4874,15 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts properties of the the swap-languages button.
-   *
-   * @param {object} options
-   * @param {boolean} [options.enabled]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
   async assertSwapLanguagesButton({ enabled } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     let pageResult = {};
@@ -4913,13 +4913,13 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts that the target textarea shows the translating placeholder.
-   *
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
   async assertTranslatingPlaceholder() {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     let actualValue;
@@ -4941,23 +4941,23 @@ class AboutTranslationsTestUtils {
     );
   }
 
-  /**
-   * Asserts that a translation completes with expected text.
-   *
-   * @param {object} options
-   * @param {string} [options.sourceLanguage]   - Explicit source language.
-   * @param {string} [options.detectedLanguage] - Language detected when the selector is set to "detect".
-   * @param {string} options.targetLanguage
-   * @param {string} options.sourceText
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
+
   async assertTranslatedText({
     sourceLanguage,
     detectedLanguage,
     targetLanguage,
     sourceText,
   }) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     if (sourceLanguage !== undefined && detectedLanguage !== undefined) {
@@ -4978,9 +4978,9 @@ class AboutTranslationsTestUtils {
     const actualSourceLanguage = detectedLanguage ?? sourceLanguage;
     const expectedValue =
       actualSourceLanguage === targetLanguage
-        ? // Expect a passthrough translation if the source and target are the same.
+        ? 
           sourceText
-        : // Otherwise it will have a full translation with the mock translator.
+        : 
           `${sourceText.toUpperCase()} [${actualSourceLanguage} to ${targetLanguage}]`;
 
     let actualValue;
@@ -5002,31 +5002,31 @@ class AboutTranslationsTestUtils {
     );
   }
 
-  /**
-   * Asserts that the UI values and URL parameters all match
-   * the provided arguments.
-   *
-   * @param {object}  options
-   * @param {string} [options.sourceLanguage="detect"] - Expected value for the source-language selector and “src” URL parameter.
-   * @param {string} [options.targetLanguage=""]       - Expected value for the target-language selector and “trg” URL parameter.
-   * @param {string} [options.sourceText=""]           - Expected value for the source textarea and “text” URL parameter.
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
+
   async assertURLMatchesUI({
     sourceLanguage = "detect",
     targetLanguage = "",
     sourceText = "",
   } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     try {
-      // First verify that the UI controls contain the expected values.
+      
       await this.assertSourceLanguageSelector({ value: sourceLanguage });
       await this.assertTargetLanguageSelector({ value: targetLanguage });
       await this.assertSourceTextArea({ value: sourceText });
 
-      // Then inspect the URL from within the content page.
+      
       const { href, sourceParam, targetParam, textParam } =
         await this.#runInPage(() => {
           const { location } = content.window;
@@ -5043,7 +5043,7 @@ class AboutTranslationsTestUtils {
           };
         });
 
-      // Assert individual hash parameters.
+      
       is(
         sourceParam,
         sourceLanguage,
@@ -5087,21 +5087,21 @@ class AboutTranslationsTestUtils {
     }
   }
 
-  /**
-   * Asserts visibility of each element based on the provided options.
-   *
-   * @param {object}  options
-   * @param {boolean} [options.pageHeader=false]
-   * @param {boolean} [options.mainUserInterface=false]
-   * @param {boolean} [options.sourceLanguageSelector=false]
-   * @param {boolean} [options.targetLanguageSelector=false]
-   * @param {boolean} [options.swapLanguagesButton=false]
-   * @param {boolean} [options.sourceTextArea=false]
-   * @param {boolean} [options.targetTextArea=false]
-   * @param {boolean} [options.unsupportedInfoMessage=false]
-   * @param {boolean} [options.languageLoadErrorMessage=false]
-   * @returns {Promise<void>}
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async assertIsVisible({
     pageHeader = false,
     mainUserInterface = false,
@@ -5113,7 +5113,7 @@ class AboutTranslationsTestUtils {
     unsupportedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
-    // This helps the test visually render at each step without significantly slowing test speed.
+    
     await doubleRaf(document);
 
     try {
