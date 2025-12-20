@@ -250,7 +250,14 @@ class TextEditor final : public EditorBase,
 
 
 
-  dom::Text* GetTextNode() {
+  enum class IgnoreTextNodeCache : bool { No, Yes };
+  dom::Text* GetTextNode(
+      IgnoreTextNodeCache aIgnoreTextNodeCache = IgnoreTextNodeCache::No) {
+    if (aIgnoreTextNodeCache == IgnoreTextNodeCache::No) {
+      if (Text* const cachedTextNode = GetCachedTextNode()) {
+        return cachedTextNode;
+      }
+    }
     MOZ_DIAGNOSTIC_ASSERT(GetRoot());
     MOZ_DIAGNOSTIC_ASSERT(GetRoot()->GetFirstChild());
     MOZ_DIAGNOSTIC_ASSERT(GetRoot()->GetFirstChild()->IsText());
@@ -259,8 +266,9 @@ class TextEditor final : public EditorBase,
     }
     return GetRoot()->GetFirstChild()->GetAsText();
   }
-  const dom::Text* GetTextNode() const {
-    return const_cast<TextEditor*>(this)->GetTextNode();
+  const dom::Text* GetTextNode(IgnoreTextNodeCache aIgnoreTextNodeCache =
+                                   IgnoreTextNodeCache::No) const {
+    return const_cast<TextEditor*>(this)->GetTextNode(aIgnoreTextNodeCache);
   }
 
  protected:  

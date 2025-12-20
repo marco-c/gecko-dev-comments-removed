@@ -1127,6 +1127,11 @@ class EditorBase : public nsIEditor,
       return *mSelection;
     }
 
+    Text* GetCachedTextNode() const {
+      MOZ_ASSERT(mEditorBase.IsTextEditor());
+      return mTextNode;
+    }
+
     nsIPrincipal* GetPrincipal() const { return mPrincipal; }
     EditAction GetEditAction() const { return mEditAction; }
 
@@ -1223,14 +1228,7 @@ class EditorBase : public nsIEditor,
         mParentData->OnEditorDestroy();
       }
     }
-    void OnEditorInitialized() {
-      if (mEditorWasDestroyedDuringHandlingEditAction) {
-        mEditorWasReinitialized = true;
-      }
-      if (mParentData) {
-        mParentData->OnEditorInitialized();
-      }
-    }
+    void OnEditorInitialized();
     
 
 
@@ -1437,6 +1435,11 @@ class EditorBase : public nsIEditor,
     nsTArray<OwningNonNull<Selection>> mRetiredSelections;
 
     
+    
+    
+    RefPtr<Text> mTextNode;
+
+    
     bool mSelectionCreatedByDoubleclick{false};
 
     nsCOMPtr<nsIPrincipal> mPrincipal;
@@ -1592,6 +1595,22 @@ class EditorBase : public nsIEditor,
     MOZ_ASSERT(mEditActionData->SelectionRef().GetType() ==
                SelectionType::eNormal);
     return mEditActionData->SelectionRef();
+  }
+
+  
+  
+  
+  Text* GetCachedTextNode() {
+    MOZ_ASSERT(IsTextEditor());
+    return mEditActionData ? mEditActionData->GetCachedTextNode() : nullptr;
+  }
+
+  
+  
+  
+  const Text* GetCachedTextNode() const {
+    MOZ_ASSERT(IsTextEditor());
+    return const_cast<EditorBase*>(this)->GetCachedTextNode();
   }
 
   nsIPrincipal* GetEditActionPrincipal() const {
