@@ -1929,7 +1929,67 @@ function IteratorRange(start, end, optionOrStep) {
 
 
 function IteratorChunks(chunkSize) {
-  return false;
+  
+  var iterator = this;
+
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, iterator === null ? "null" : typeof iterator);
+  }
+
+  
+  
+
+  
+  
+  if (!Number_isInteger(chunkSize) || (chunkSize < 1 || chunkSize > (2 ** 32) - 1)) {
+    
+    
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowRangeError(JSMSG_INVALID_CHUNKSIZE);
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  
+
+  
+  
+  
+  
+  var result = NewIteratorHelper();
+  var generator = IteratorChunksGenerator(iterator, nextMethod, chunkSize);
+
+  
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_GENERATOR_SLOT,
+    generator
+  );
+  UnsafeSetReservedSlot(
+    result,
+    ITERATOR_HELPER_UNDERLYING_ITERATOR_SLOT,
+    iterator
+  );
+
+  
+  return result;
+}
+
+
+
+
+
+
+
+
+
+function* IteratorChunksGenerator(iterator, nextMethod, chunkSize) {
+  IteratorClose(iterator);
 }
 
 
