@@ -7,27 +7,6 @@
 
 
 
-function Intl_getCanonicalLocales(locales) {
-  
-  return CanonicalizeLocaleList(locales);
-}
-
-
-
-
-function Intl_supportedValuesOf(key) {
-  
-  key = ToString(key);
-
-  
-  return intl_SupportedValuesOf(key);
-}
-
-
-
-
-
-
 
 
 
