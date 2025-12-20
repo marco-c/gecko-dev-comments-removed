@@ -21,6 +21,11 @@ add_setup(async function () {
       ["network.predictor.enable-hover-on-ssl", true],
       
       ["network.http.debug-observations", true],
+      
+      [
+        "browser.newtabpage.activity-stream.discoverystream.imageProxy.enabled",
+        false,
+      ],
     ],
   });
 

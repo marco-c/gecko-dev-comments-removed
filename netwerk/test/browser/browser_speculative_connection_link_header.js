@@ -4,8 +4,16 @@
 
 Services.prefs.setBoolPref("network.http.debug-observations", true);
 
+Services.prefs.setBoolPref(
+  "browser.newtabpage.activity-stream.discoverystream.imageProxy.enabled",
+  false
+);
+
 registerCleanupFunction(function () {
   Services.prefs.clearUserPref("network.http.debug-observations");
+  Services.prefs.clearUserPref(
+    "browser.newtabpage.activity-stream.discoverystream.imageProxy.enabled"
+  );
 });
 
 
