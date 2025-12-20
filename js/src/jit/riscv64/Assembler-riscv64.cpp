@@ -67,11 +67,18 @@ void RVFlags::Init() {
     __has_include(<asm/hwprobe.h>)
   riscv_hwprobe probe[1] = {{RISCV_HWPROBE_KEY_IMA_EXT_0, 0}};
   if (syscall(__NR_riscv_hwprobe, probe, 1, 0, nullptr, 0) == 0) {
+    if (probe[0].value & RISCV_HWPROBE_EXT_ZBA) {
+      sZbaExtension = true;
+    }
     if (probe[0].value & RISCV_HWPROBE_EXT_ZBB) {
       sZbbExtension = true;
     }
   }
 #else
+  if (getenv("RISCV_EXT_ZBA")) {
+    
+    sZbaExtension = true;
+  }
   if (getenv("RISCV_EXT_ZBB")) {
     
     sZbbExtension = true;
