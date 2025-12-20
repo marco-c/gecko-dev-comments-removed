@@ -11571,26 +11571,17 @@ struct AffectedAnchorGroup {
   nsTArray<AffectedAnchor> mFrames;
 };
 
-static const nsIFrame* NearestScrollContainerOfAffectedAnchor(
-    const nsIFrame* aAnchor, const ScrollContainerFrame* aScrollContainer) {
-  const auto* scrollContainer =
-      AnchorPositioningUtils::GetNearestScrollFrame(aAnchor).mScrollContainer;
-  if (!scrollContainer) {
-    
-    return nullptr;
-  }
-  
-  
-  if (scrollContainer == aScrollContainer ||
-      nsLayoutUtils::IsProperAncestorFrame(aScrollContainer, scrollContainer)) {
-    return scrollContainer;
-  }
-  return nullptr;
-}
-
 static nsTArray<AffectedAnchorGroup> FindAnchorsAffectedByScroll(
     const nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>>& aAnchors,
     const ScrollContainerFrame* aScrollContainer) {
+  const auto AffectedByScrollContainer =
+      [](const nsIFrame* aFrame, const ScrollContainerFrame* aScrollContainer) {
+        MOZ_ASSERT(aFrame);
+        MOZ_ASSERT(aScrollContainer);
+        return aFrame == aScrollContainer ||
+               nsLayoutUtils::IsProperAncestorFrame(aScrollContainer, aFrame);
+      };
+
   nsTArray<AffectedAnchorGroup> affectedAnchors;
   
   
@@ -11600,8 +11591,14 @@ static nsTArray<AffectedAnchorGroup> FindAnchorsAffectedByScroll(
     Maybe<nsTArray<AffectedAnchor>> affected;
     for (const auto& frame : anchorFrames) {
       const auto* scrollContainer =
-          NearestScrollContainerOfAffectedAnchor(frame, aScrollContainer);
+          AnchorPositioningUtils::GetNearestScrollFrame(frame).mScrollContainer;
       if (!scrollContainer) {
+        
+        continue;
+      }
+      
+      
+      if (!AffectedByScrollContainer(scrollContainer, aScrollContainer)) {
         continue;
       }
       if (affected.isNothing()) {
@@ -11619,9 +11616,8 @@ static nsTArray<AffectedAnchorGroup> FindAnchorsAffectedByScroll(
 
 
 
-static Maybe<AffectedAnchor> FindScrollCompensatedAnchor(
+static Maybe<const AffectedAnchor&> FindScrollCompensatedAnchor(
     const PresShell* aPresShell,
-    const ScrollContainerFrame* aScrolledScrollContainer,
     const nsTArray<AffectedAnchorGroup>& aAffectedAnchors,
     const nsIFrame* aPositioned, const AnchorPosReferenceData& aReferenceData,
     const nsIFrame** aResolvedDefaultAnchor) {
@@ -11654,22 +11650,6 @@ static Maybe<AffectedAnchor> FindScrollCompensatedAnchor(
     return Nothing{};
   }
 
-  if (defaultAnchorName == nsGkAtoms::AnchorPosImplicitAnchor) {
-    
-    
-    const auto* anchor =
-        AnchorPositioningUtils::GetAnchorPosImplicitAnchor(aPositioned);
-    if (!anchor) {
-      return Nothing{};
-    }
-    const auto* scrollContainer = NearestScrollContainerOfAffectedAnchor(
-        anchor, aScrolledScrollContainer);
-    if (!scrollContainer) {
-      return Nothing{};
-    }
-    return Some(AffectedAnchor{anchor, scrollContainer});
-  }
-
   struct Comparator {
     bool Equals(const AffectedAnchor& aEntry, const nsIFrame* aFrame) const {
       return aEntry.mAnchor == aFrame;
@@ -11692,7 +11672,7 @@ static Maybe<AffectedAnchor> FindScrollCompensatedAnchor(
       break;
     }
     const auto& info = anchors.ElementAt(idx);
-    return Some(info);
+    return SomeRef(info);
   }
 
   return Nothing{};
@@ -11746,7 +11726,7 @@ static bool AnchorIsStickyOrChainedToScrollCompensatedAnchor(
 
 void PresShell::UpdateAnchorPosForScroll(
     const ScrollContainerFrame* aScrollContainer) {
-  if (mAnchorPosAnchors.IsEmpty() && mAnchorPosPositioned.IsEmpty()) {
+  if (mAnchorPosAnchors.IsEmpty()) {
     return;
   }
 
@@ -11757,7 +11737,10 @@ void PresShell::UpdateAnchorPosForScroll(
   
   nsTArray<AffectedAnchorGroup> affectedAnchors =
       FindAnchorsAffectedByScroll(mAnchorPosAnchors, aScrollContainer);
-  
+
+  if (affectedAnchors.IsEmpty()) {
+    return;
+  }
 
   
   for (auto* positioned : mAnchorPosPositioned) {
@@ -11767,9 +11750,8 @@ void PresShell::UpdateAnchorPosForScroll(
       continue;
     }
     const nsIFrame* defaultAnchor = nullptr;
-    const auto scrollDependency =
-        FindScrollCompensatedAnchor(this, aScrollContainer, affectedAnchors,
-                                    positioned, *referenceData, &defaultAnchor);
+    const auto scrollDependency = FindScrollCompensatedAnchor(
+        this, affectedAnchors, positioned, *referenceData, &defaultAnchor);
     const bool offsetChanged = [&]() {
       if (!scrollDependency) {
         return false;
