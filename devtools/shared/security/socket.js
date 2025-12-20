@@ -76,41 +76,41 @@ DevToolsUtils.defineLazyGetter(this, "socketTransportService", () => {
   );
 });
 
-var DebuggerSocket = {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-DebuggerSocket.connect = async function (settings) {
+class DebuggerSocket {
   
-  if (!settings.authenticator) {
-    settings.authenticator = new (Authenticators.get().Client)();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static async connect(settings) {
+    
+    if (!settings.authenticator) {
+      settings.authenticator = new (Authenticators.get().Client)();
+    }
+    _validateSettings(settings);
+    
+    const { host, port, authenticator } = settings;
+    const transport = await _getTransport(settings);
+    await authenticator.authenticate({
+      host,
+      port,
+      transport,
+    });
+    transport.connectionSettings = settings;
+    return transport;
   }
-  _validateSettings(settings);
-  
-  const { host, port, authenticator } = settings;
-  const transport = await _getTransport(settings);
-  await authenticator.authenticate({
-    host,
-    port,
-    transport,
-  });
-  transport.connectionSettings = settings;
-  return transport;
-};
-
+}
 
 
 
@@ -315,67 +315,68 @@ function _isInputAlive(input) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function SocketListener(devToolsServer, socketOptions) {
-  this._devToolsServer = devToolsServer;
-
+class SocketListener extends EventEmitter {
   
-  this._socketOptions = {
-    authenticator:
-      socketOptions.authenticator || new (Authenticators.get().Server)(),
-    discoverable: !!socketOptions.discoverable,
-    fromBrowserToolbox: !!socketOptions.fromBrowserToolbox,
-    portOrPath: socketOptions.portOrPath || null,
-    webSocket: !!socketOptions.webSocket,
-  };
 
-  EventEmitter.decorate(this);
-}
 
-SocketListener.prototype = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(devToolsServer, socketOptions) {
+    super();
+
+    this._devToolsServer = devToolsServer;
+
+    
+    this._socketOptions = {
+      authenticator:
+        socketOptions.authenticator || new (Authenticators.get().Server)(),
+      discoverable: !!socketOptions.discoverable,
+      fromBrowserToolbox: !!socketOptions.fromBrowserToolbox,
+      portOrPath: socketOptions.portOrPath || null,
+      webSocket: !!socketOptions.webSocket,
+    };
+  }
+
   get authenticator() {
     return this._socketOptions.authenticator;
-  },
+  }
 
   get discoverable() {
     return this._socketOptions.discoverable;
-  },
+  }
 
   get fromBrowserToolbox() {
     return this._socketOptions.fromBrowserToolbox;
-  },
+  }
 
   get portOrPath() {
     return this._socketOptions.portOrPath;
-  },
+  }
 
   get webSocket() {
     return this._socketOptions.webSocket;
-  },
+  }
 
   
 
@@ -387,7 +388,7 @@ SocketListener.prototype = {
     if (this.discoverable && !Number(this.portOrPath)) {
       throw new Error("Discovery only supported for TCP sockets.");
     }
-  },
+  }
 
   
 
@@ -437,7 +438,7 @@ SocketListener.prototype = {
         );
         this.close();
       });
-  },
+  }
 
   _advertise() {
     if (!this.discoverable || !this.port) {
@@ -451,13 +452,13 @@ SocketListener.prototype = {
     this.authenticator.augmentAdvertisement(this, advertisement);
 
     discovery.addService("devtools", advertisement);
-  },
+  }
 
   _createSocketInstance() {
     return Cc["@mozilla.org/network/server-socket;1"].createInstance(
       Ci.nsIServerSocket
     );
-  },
+  }
 
   
 
@@ -476,7 +477,7 @@ SocketListener.prototype = {
       });
     }
     this._devToolsServer.removeSocketListener(this);
-  },
+  }
 
   get host() {
     if (!this._socket) {
@@ -486,14 +487,14 @@ SocketListener.prototype = {
       return "127.0.0.1";
     }
     return "0.0.0.0";
-  },
+  }
 
   
 
 
   get isPortBased() {
     return !!Number(this.portOrPath);
-  },
+  }
 
   
 
@@ -504,55 +505,55 @@ SocketListener.prototype = {
       return null;
     }
     return this._socket.port;
-  },
+  }
 
   onAllowedConnection(transport) {
     dumpn("onAllowedConnection, transport: " + transport);
     this.emit("accepted", transport, this);
-  },
+  }
 
   
 
-  onSocketAccepted: DevToolsUtils.makeInfallible(function (
+  onSocketAccepted = DevToolsUtils.makeInfallible(function (
     socket,
     socketTransport
   ) {
     const connection = new ServerSocketConnection(this, socketTransport);
     connection.once("allowed", this.onAllowedConnection.bind(this));
-  }, "SocketListener.onSocketAccepted"),
+  }, "SocketListener.onSocketAccepted");
 
   onStopListening(socket, status) {
     dumpn("onStopListening, status: " + status);
-  },
-};
-
-
-
-
-
-function ServerSocketConnection(listener, socketTransport) {
-  this._listener = listener;
-  this._socketTransport = socketTransport;
-  this._handle();
-  EventEmitter.decorate(this);
+  }
 }
 
-ServerSocketConnection.prototype = {
+
+
+
+
+class ServerSocketConnection extends EventEmitter {
+  constructor(listener, socketTransport) {
+    super();
+
+    this._listener = listener;
+    this._socketTransport = socketTransport;
+    this._handle();
+  }
   get authentication() {
     return this._listener.authenticator.mode;
-  },
+  }
 
   get host() {
     return this._socketTransport.host;
-  },
+  }
 
   get port() {
     return this._socketTransport.port;
-  },
+  }
 
   get address() {
     return this.host + ":" + this.port;
-  },
+  }
 
   get client() {
     const client = {
@@ -560,7 +561,7 @@ ServerSocketConnection.prototype = {
       port: this.port,
     };
     return client;
-  },
+  }
 
   get server() {
     const server = {
@@ -568,7 +569,7 @@ ServerSocketConnection.prototype = {
       port: this._listener.port,
     };
     return server;
-  },
+  }
 
   
 
@@ -584,7 +585,7 @@ ServerSocketConnection.prototype = {
     } catch (e) {
       this.deny(e);
     }
-  },
+  }
 
   
 
@@ -613,7 +614,7 @@ ServerSocketConnection.prototype = {
       },
     };
     this._transport.ready();
-  },
+  }
 
   async _authenticate() {
     const result = await this._listener.authenticator.authenticate({
@@ -638,7 +639,7 @@ ServerSocketConnection.prototype = {
     
     
     throw Components.Exception("", Cr.NS_ERROR_CONNECTION_REFUSED);
-  },
+  }
 
   deny(result) {
     if (this._destroyed) {
@@ -660,7 +661,7 @@ ServerSocketConnection.prototype = {
     }
     this._socketTransport.close(result);
     this.destroy();
-  },
+  }
 
   allow() {
     if (this._destroyed) {
@@ -669,15 +670,15 @@ ServerSocketConnection.prototype = {
     dumpn("Debugging connection allowed on " + this.address);
     this.emit("allowed", this._transport);
     this.destroy();
-  },
+  }
 
   destroy() {
     this._destroyed = true;
     this._listener = null;
     this._socketTransport = null;
     this._transport = null;
-  },
-};
+  }
+}
 
 exports.DebuggerSocket = DebuggerSocket;
 exports.SocketListener = SocketListener;
