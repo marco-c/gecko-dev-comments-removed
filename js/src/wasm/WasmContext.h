@@ -20,8 +20,6 @@
 #define wasm_context_h
 
 #ifdef ENABLE_WASM_JSPI
-#  include "mozilla/DoublyLinkedList.h"
-
 #  include "gc/Barrier.h"
 #endif  
 
@@ -32,6 +30,9 @@ namespace js::wasm {
 #ifdef ENABLE_WASM_JSPI
 class SuspenderObject;
 class SuspenderObjectData;
+using SuspenderObjectSet =
+    HashSet<SuspenderObject*, PointerHasher<SuspenderObject*>,
+            SystemAllocPolicy>;
 #endif  
 
 
@@ -88,9 +89,9 @@ class Context {
   
   
   HeapPtr<SuspenderObject*> activeSuspender_;
-  mozilla::Atomic<uint32_t> suspendableStacksCount;
+
   
-  mozilla::DoublyLinkedList<SuspenderObjectData> suspendedStacks_;
+  SuspenderObjectSet suspenders_;
 #endif
 };
 
