@@ -208,11 +208,15 @@ internal class BookmarksMiddleware(
                                 return@also
                             }
                             scope.launch {
-                                preReductionState.createMovePairs()?.forEach {
-                                    val result = bookmarksStorage.updateNode(it.first, it.second)
-                                    if (result.isFailure) {
-                                        reportResultGlobally(BookmarksGlobalResultReport.SelectFolderFailed)
-                                    }
+                                val successes = preReductionState.createMovePairs()
+                                    ?.mapNotNull { item ->
+                                        bookmarksStorage.updateNode(item.first, item.second)
+                                            .takeIf { result ->
+                                                result.isSuccess
+                                            }
+                                }
+                                if (successes.isNullOrEmpty()) {
+                                    context.store.dispatch(SnackbarAction.SelectFolderFailed)
                                 }
                                 context.store.tryDispatchLoadFor(preReductionState.currentFolder.guid)
                             }
@@ -375,7 +379,25 @@ internal class BookmarksMiddleware(
                 context.store.tryDispatchLoadFolders()
                 saveBookmarkSortOrder(context.store.state.sortOrder)
             }
+            is SelectFolderAction.SearchQueryUpdated -> {
+                scope.launch {
+                    val state = context.store.state.bookmarksSelectFolderState
+                    val filteredFolders = state?.folders
+                        ?.filter {
+                            it.title.startsWith(
+                                state.searchQuery,
+                                ignoreCase = true,
+                            )
+                        }
+                    filteredFolders?.let {
+                        context.store.dispatch(SelectFolderAction.FilteredFoldersLoaded(it))
+                    }
+                }
+            }
+            SelectFolderAction.SearchClicked,
+            SelectFolderAction.SearchDismissed,
             is InitEditLoaded,
+            SnackbarAction.SelectFolderFailed,
             SnackbarAction.Undo,
             is OpenTabsConfirmationDialogAction.Present,
             OpenTabsConfirmationDialogAction.CancelTapped,
@@ -390,6 +412,7 @@ internal class BookmarksMiddleware(
             is AddFolderAction.FolderCreated,
             is AddFolderAction.TitleChanged,
             is SelectFolderAction.FoldersLoaded,
+            is SelectFolderAction.FilteredFoldersLoaded,
             is SelectFolderAction.ItemClicked,
             EditFolderAction.DeleteClicked,
             is ReceivedSyncSignInUpdate,
@@ -691,7 +714,10 @@ private suspend fun BookmarksStorage.hasDesktopBookmarks(): Boolean {
 
 private fun BookmarksState.createMovePairs() = bookmarksMultiselectMoveState?.let { moveState ->
     moveState.guidsToMove.map { guid ->
-        val bookmarkItem = bookmarkItems.first { it.guid == guid }
+        val bookmarkItem = bookmarkItems.firstOrNull { it.guid == guid }
+        if (bookmarkItem == null) {
+            return null
+        }
         guid to BookmarkInfo(
             moveState.destination,
             // Setting position to 'null' is treated as a 'move to the end' by the storage API.
