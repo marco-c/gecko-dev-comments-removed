@@ -5914,6 +5914,10 @@ nsresult XREMain::XRE_mainRun() {
   }
 #endif
 
+  
+  
+  cmdLine = nullptr;
+
   {
     rv = appStartup->Run();
     if (NS_FAILED(rv)) {

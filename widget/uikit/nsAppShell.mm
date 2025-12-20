@@ -11,8 +11,10 @@
 #include "mozilla/dom/Document.h"
 #include "nsIObserverService.h"
 #include "gfxPlatform.h"
+#include "nsAppRunner.h"
 #include "nsAppShell.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManager.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsObjCExceptions.h"
 #include "nsString.h"
@@ -28,6 +30,7 @@
 #include "mozilla/Hal.h"
 #include "HeadlessScreenHelper.h"
 #include "nsWindow.h"
+#include "nsXREDirProvider.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -37,6 +40,8 @@ nsAppShell* nsAppShell::gAppShell = NULL;
 #define ALOG(args...)    \
   fprintf(stderr, args); \
   fprintf(stderr, "\n")
+
+static void ApplicationWillTerminate(bool aCallExit);
 
 
 
@@ -58,7 +63,7 @@ nsAppShell* nsAppShell::gAppShell = NULL;
 
 - (void)applicationWillTerminate:(UIApplication*)application {
   ALOG("[AppShellDelegate applicationWillTerminate:]");
-  nsAppShell::gAppShell->WillTerminate();
+  ApplicationWillTerminate( false);
 }
 
 - (void)applicationDidBecomeActive:(UIApplication*)application {
@@ -85,9 +90,9 @@ nsAppShell::nsAppShell()
       mDelegate(NULL),
       mCFRunLoop(NULL),
       mCFRunLoopSource(NULL),
+      mUsingNativeEventLoop(false),
       mRunningEventLoop(false),
-      mTerminated(false),
-      mNotifiedWillTerminate(false) {
+      mTerminated(false) {
   gAppShell = this;
 }
 
@@ -113,6 +118,8 @@ nsAppShell::~nsAppShell() {
 
 
 nsresult nsAppShell::Init() {
+  mUsingNativeEventLoop = XRE_UseNativeEventProcessing();
+
   mAutoreleasePool = [[NSAutoreleasePool alloc] init];
 
   
@@ -151,7 +158,10 @@ nsresult nsAppShell::Init() {
       mozilla::services::GetObserverService();
   if (obsServ) {
     obsServ->AddObserver(this, "profile-after-change", false);
-    obsServ->AddObserver(this, "chrome-document-loaded", false);
+    obsServ->AddObserver(this, "quit-application-granted", false);
+    if (XRE_IsParentProcess()) {
+      obsServ->AddObserver(this, "chrome-document-loaded", false);
+    }
   }
 
   return rv;
@@ -170,6 +180,15 @@ NS_IMETHODIMP nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
     nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
     if (appStartup) {
       appStartup->EnterLastWindowClosingSurvivalArea();
+    }
+    removeObserver = true;
+  } else if (!strcmp(aTopic, "quit-application-granted")) {
+    
+    
+    
+    nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
+    if (appStartup) {
+      appStartup->ExitLastWindowClosingSurvivalArea();
     }
     removeObserver = true;
   } else if (!strcmp(aTopic, "chrome-document-loaded")) {
@@ -213,24 +232,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
 
 
 
-void nsAppShell::WillTerminate() {
-  mNotifiedWillTerminate = true;
-  if (mTerminated) return;
-  mTerminated = true;
-  
-  NS_ProcessPendingEvents(NS_GetCurrentThread());
-
-  
-  
-  nsBaseAppShell::Exit();
-}
-
-
-
-
 void nsAppShell::ScheduleNativeEventCallback() {
-  if (mTerminated) return;
-
   NS_ADDREF_THIS();
 
   
@@ -279,7 +281,7 @@ nsAppShell::Run(void) {
   ALOG("nsAppShell::Run");
 
   nsresult rv = NS_OK;
-  if (XRE_UseNativeEventProcessing()) {
+  if (mUsingNativeEventLoop) {
     char argv[1][4] = {"app"};
     UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
     
@@ -295,5 +297,52 @@ nsAppShell::Exit(void) {
   if (mTerminated) return NS_OK;
 
   mTerminated = true;
+
+  if (mUsingNativeEventLoop) {
+    
+    
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+      ApplicationWillTerminate(true);
+    });
+    return NS_OK;
+  }
+
   return nsBaseAppShell::Exit();
+}
+
+static bool gNotifiedWillTerminate = false;
+
+static void ApplicationWillTerminate(bool aCallExit) {
+  if (std::exchange(gNotifiedWillTerminate, true)) {
+    return;
+  }
+
+  
+  
+  if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
+    
+    
+    bool userAllowedQuit;
+    appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+
+    appStartup->DestroyHiddenWindow();
+  }
+
+  gDirServiceProvider->DoShutdown();
+
+  WriteConsoleLog();
+
+  
+  
+  nsIServiceManager* servMgr = nsComponentManagerImpl::gComponentManager;
+  NS_ShutdownXPCOM(servMgr);
+
+  
+  
+  NS_LogTerm();
+
+  if (aCallExit) {
+    _exit(0);
+  }
 }
