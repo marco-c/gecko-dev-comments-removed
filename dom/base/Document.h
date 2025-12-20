@@ -2507,6 +2507,9 @@ class Document : public nsINode,
   virtual void Destroy();
 
   
+  void CloseAnyAssociatedDocumentPiPWindows();
+
+  
 
 
 

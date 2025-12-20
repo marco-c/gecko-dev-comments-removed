@@ -553,8 +553,8 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   
   
   bool unused = false;
-  uint32_t chromeFlags =
-      CalculateChromeFlagsForContent(aFeatures, aModifiers, &unused);
+  uint32_t chromeFlags = CalculateChromeFlagsForContent(aFeatures, aModifiers,
+                                                        aCalledFromJS, &unused);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -804,8 +804,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   } else {
     MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
                           "content caller must provide content parent");
-    chromeFlags =
-        CalculateChromeFlagsForContent(features, aModifiers, &isPopupRequested);
+    chromeFlags = CalculateChromeFlagsForContent(
+        features, aModifiers, aCalledFromJS, &isPopupRequested);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -1890,10 +1890,18 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures) {
 
 
 
+
+
+
 uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     const WindowFeatures& aFeatures,
     const mozilla::dom::UserActivation::Modifiers& aModifiers,
-    bool* aIsPopupRequested) {
+    bool aCalledFromJS, bool* aIsPopupRequested) {
+  if (!aCalledFromJS &&
+      aFeatures.GetBoolWithDefault("pictureinpicture", false)) {
+    return nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE;
+  }
+
   if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures)) {
     
     
@@ -2661,6 +2669,12 @@ int32_t nsWindowWatcher::GetWindowOpenLocation(
         return nsIBrowserDOMWindow::OPEN_NEWWINDOW;
       }
     }
+  }
+
+  if ((aChromeFlags &
+       nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) ==
+      nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) {
+    return nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   }
 #endif
 

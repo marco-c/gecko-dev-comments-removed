@@ -12,6 +12,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentPictureInPicture.h"
 #include "mozilla/dom/UserActivationIPCUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/PermissionDelegateIPCUtils.h"
@@ -614,6 +615,44 @@ bool WindowContext::HasValidTransientUserGestureActivation() {
          (TimeStamp::Now() - mLastActivationTimestamp) <= timeout;
 }
 
+template <typename F>
+static void ConsumeUserGestureActivationBetweenPiP(BrowsingContext* aTop,
+                                                   F&& aCallback) {
+  
+  
+  if (aTop->GetIsDocumentPiP()) {
+    
+    
+    RefPtr<BrowsingContext> opener = aTop->GetOpener();
+    if (!opener) {
+      return;
+    }
+    opener->GetBrowsingContext()->PreOrderWalk(aCallback);
+  } else {
+    
+    nsPIDOMWindowOuter* outer = aTop->GetDOMWindow();
+    NS_ENSURE_TRUE_VOID(outer);
+    nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
+    NS_ENSURE_TRUE_VOID(inner);
+    DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
+    if (!dpip) {
+      return;
+    }
+    nsGlobalWindowInner* pip = dpip->GetWindow();
+    if (!pip) {
+      return;
+    }
+
+    
+    
+    BrowsingContext* pipBC = pip->GetBrowsingContext();
+    NS_ENSURE_TRUE_VOID(pipBC);
+    WindowContext* pipWC = pipBC->GetCurrentWindowContext();
+    NS_ENSURE_TRUE_VOID(pipWC);
+    pipBC->PreOrderWalk(aCallback);
+  }
+}
+
 
 bool WindowContext::ConsumeTransientUserGestureActivation() {
   MOZ_ASSERT(IsInProcess());
@@ -631,7 +670,7 @@ bool WindowContext::ConsumeTransientUserGestureActivation() {
 
   
   
-  top->PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+  auto callback = [&](BrowsingContext* aBrowsingContext) {
     
     
     WindowContext* windowContext = aBrowsingContext->GetCurrentWindowContext();
@@ -650,7 +689,10 @@ bool WindowContext::ConsumeTransientUserGestureActivation() {
       (void)windowContext->SetUserActivationStateAndModifiers(
           stateAndModifiers.GetRawData());
     }
-  });
+  };
+  top->PreOrderWalk(callback);
+
+  ConsumeUserGestureActivationBetweenPiP(top, callback);
 
   return true;
 }

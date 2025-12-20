@@ -10929,6 +10929,19 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                                             aLoadState->PrincipalToInherit()) &&
       !shouldSkipSyncLoadForSHRestore();
 
+  if (!isAboutBlankLoadOntoInitialAboutBlank) {
+    
+    if (Document* doc = GetExtantDocument()) {
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "Close PIP window on navigate", [doc = RefPtr(doc)]() {
+            doc->CloseAnyAssociatedDocumentPiPWindows();
+          }));
+    }
+    if (GetBrowsingContext()->GetIsDocumentPiP()) {
+      return NS_OK;
+    }
+  }
+
   
   
   

@@ -293,7 +293,10 @@ struct EmbedderColorSchemes {
   FIELD(IPAddressSpace, nsILoadInfo::IPAddressSpace)                          \
   /* This is true if we should redirect to an error page when inserting *     \
    * meta tags flagging adult content into our documents */                   \
-  FIELD(ParentalControlsEnabled, bool)
+  FIELD(ParentalControlsEnabled, bool)                                        \
+  /* If true, this traversable is a Document Picture-in-Picture and           \
+     is subject to certain restrictions */                                    \
+  FIELD(IsDocumentPiP, bool)
 
 
 
@@ -1485,6 +1488,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return XRE_IsParentProcess();
   }
 
+  bool CanSet(FieldIndex<IDX_IsDocumentPiP>, bool, ContentParent*) {
+    return IsTop();
+  }
+
   
   
   
@@ -1505,6 +1512,14 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DidSet(FieldIndex<IDX_IsUnderHiddenEmbedderElement>, bool aOldValue);
 
   void DidSet(FieldIndex<IDX_ForceOffline>, bool aOldValue);
+
+  void DidSet(FieldIndex<IDX_IsDocumentPiP>, bool aWasPiP) {
+    if (GetIsDocumentPiP() && !aWasPiP) {
+      SetDisplayMode(DisplayMode::Picture_in_picture, IgnoreErrors());
+    } else if (!GetIsDocumentPiP() && aWasPiP) {
+      MOZ_ASSERT_UNREACHABLE("BrowsingContext should never leave PiP mode");
+    }
+  }
 
   
   

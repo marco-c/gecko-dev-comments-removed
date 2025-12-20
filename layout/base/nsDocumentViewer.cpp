@@ -1149,6 +1149,11 @@ nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
     return NS_OK;
   }
 
+  if (bc->GetIsDocumentPiP()) {
+    
+    return NS_OK;
+  }
+
   
   
   
