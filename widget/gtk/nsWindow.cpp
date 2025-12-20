@@ -3362,8 +3362,22 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
   LOGVERBOSE("  toplevelBounds %s", ToString(toplevelBounds).c_str());
 
   
-  const auto systemDecorationOffset =
-      toplevelBounds.TopLeft() - toplevelBoundsWithTitlebar.TopLeft();
+  const auto systemDecorationOffset = [&] {
+    auto offset =
+        toplevelBounds.TopLeft() - toplevelBoundsWithTitlebar.TopLeft();
+    
+    
+    
+    offset.x =
+        std::max(std::min(int32_t(offset.x), toplevelBoundsWithTitlebar.width -
+                                                 toplevelBounds.width),
+                 0);
+    offset.y =
+        std::max(std::min(int32_t(offset.y), toplevelBoundsWithTitlebar.height -
+                                                 toplevelBounds.height),
+                 0);
+    return offset;
+  }();
 
   
   mClientArea = GetBounds(mGdkWindow);
