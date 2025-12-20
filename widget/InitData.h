@@ -75,7 +75,9 @@ enum class TransparencyMode : uint8_t {
 enum class PiPType : uint8_t {
   NoPiP,
   
-  MediaPiP
+  MediaPiP,
+  
+  DocumentPiP
 };
 
 

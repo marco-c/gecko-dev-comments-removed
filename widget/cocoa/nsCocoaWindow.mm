@@ -5263,7 +5263,8 @@ void nsCocoaWindow::Show(bool aState) {
 
       
       
-      if (mAlwaysOnTop || mIsAlert) {
+      
+      if ((mAlwaysOnTop && mPiPType != PiPType::DocumentPiP) || mIsAlert) {
         [mWindow orderFront:nil];
       } else {
         [mWindow makeKeyAndOrderFront:nil];

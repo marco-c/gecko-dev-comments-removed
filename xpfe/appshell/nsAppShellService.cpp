@@ -526,6 +526,12 @@ nsresult nsAppShellService::JustCreateTopWindow(
   }
 #endif
 
+  if (widgetInitData.mWindowType == widget::WindowType::TopLevel &&
+      (aChromeMask & nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) ==
+          nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) {
+    widgetInitData.mPiPType = mozilla::widget::PiPType::DocumentPiP;
+  }
+
   
   
   MOZ_ASSERT_IF(aChromeMask & nsIWebBrowserChrome::CHROME_ALERT,

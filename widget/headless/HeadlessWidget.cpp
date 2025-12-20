@@ -169,7 +169,8 @@ void HeadlessWidget::Show(bool aState) {
   
   
   
-  if (aState && !mAlwaysOnTop &&
+  
+  if (aState && (!mAlwaysOnTop || mPiPType == PiPType::DocumentPiP) &&
       (mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog)) {
     RaiseWindow();
