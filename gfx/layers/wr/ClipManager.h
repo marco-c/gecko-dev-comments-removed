@@ -100,8 +100,11 @@ class ClipManager {
   
   
   
-  using ClipIdMap = std::unordered_map<const DisplayItemClipChain*,
-                                       AutoTArray<wr::WrClipId, 4>>;
+  struct ClipChainCacheEntry {
+    Maybe<wr::WrClipChainId> mWrChainID;
+  };
+  using ClipIdMap =
+      std::unordered_map<const DisplayItemClipChain*, ClipChainCacheEntry>;
   std::stack<ClipIdMap> mCacheStack;
 
   
