@@ -301,7 +301,7 @@ export class AuthenticatedSafe extends PkiObject implements IAuthenticatedSafe {
             
 
             
-            await cmsEncrypted.encrypt(currentParameters);
+            await cmsEncrypted.encrypt(currentParameters, crypto);
             
 
             

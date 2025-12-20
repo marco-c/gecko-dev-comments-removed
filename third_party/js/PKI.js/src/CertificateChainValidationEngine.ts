@@ -229,7 +229,7 @@ export class CertificateChainValidationEngine {
           return [certificate];
         }
       }
-      catch (ex) {
+      catch {
         
       }
     }
@@ -314,13 +314,13 @@ export class CertificateChainValidationEngine {
     }
 
     
-    for (let i = 0; i < result.length; i++) {
+    for (let i = result.length - 1; i >= 0; i--) {
       try {
         const verificationResult = await certificate.verify(result[i], crypto);
         if (verificationResult === false)
           result.splice(i, 1);
       }
-      catch (ex) {
+      catch {
         result.splice(i, 1); 
       }
     }
@@ -475,7 +475,7 @@ export class CertificateChainValidationEngine {
               break;
             }
           }
-          catch (ex) {
+          catch {
             
           }
         }
@@ -813,7 +813,7 @@ export class CertificateChainValidationEngine {
     
 
     
-    for (let i = 0; i < result.length; i++) {
+    for (let i = result.length - 1; i >= 0; i--) {
       let found = false;
 
       for (let j = 0; j < (result[i]).length; j++) {
@@ -832,7 +832,6 @@ export class CertificateChainValidationEngine {
 
       if (!found) {
         result.splice(i, 1);
-        i = 0;
       }
     }
 

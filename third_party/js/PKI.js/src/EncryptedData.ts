@@ -264,7 +264,7 @@ export class EncryptedData extends PkiObject implements IEncryptedData {
 
 
 
-  public async encrypt(parameters: EncryptedDataEncryptParams): Promise<void> {
+  public async encrypt(parameters: EncryptedDataEncryptParams, crypto = common.getCrypto(true)): Promise<void> {
     
     ArgumentError.assert(parameters, "parameters", "object");
     
@@ -276,7 +276,7 @@ export class EncryptedData extends PkiObject implements IEncryptedData {
     };
     
 
-    this.encryptedContentInfo = await common.getCrypto(true).encryptEncryptedContentInfo(encryptParams);
+    this.encryptedContentInfo = await crypto.encryptEncryptedContentInfo(encryptParams);
   }
 
   

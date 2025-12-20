@@ -76,7 +76,7 @@ export class OtherKeyAttribute extends PkiObject implements IOtherKeyAttribute {
 
 
 
-  public static compareWithDefault<T>(memberName: string, memberValue: T): memberValue is T {
+  public static compareWithDefault<T extends object>(memberName: string, memberValue: T): memberValue is T {
     switch (memberName) {
       case KEY_ATTR_ID:
         return (typeof memberValue === "string" && memberValue === EMPTY_STRING);

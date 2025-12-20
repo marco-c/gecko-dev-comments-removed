@@ -598,7 +598,7 @@ export class SignedData extends PkiObject implements ISignedData {
             continue;
           }
 
-          const digest = await crypto.digest({ name: "sha-1" }, certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHexView);
+          const digest = await crypto.digest({ name: "sha-1" }, certificate.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHexView as BufferSource);
           if (pvutils.isEqualBuffer(digest, keyId)) {
             signerCert = certificate;
             break;
@@ -635,9 +635,9 @@ export class SignedData extends PkiObject implements ISignedData {
         let tstInfo: TSTInfo;
 
         try {
-          tstInfo = TSTInfo.fromBER(this.encapContentInfo.eContent.valueBlock.valueHexView);
+          tstInfo = TSTInfo.fromBER(this.encapContentInfo.eContent.valueBlock.valueHexView as BufferSource);
         }
-        catch (ex) {
+        catch {
           throw new SignedDataVerifyError({
             date: checkDate,
             code: 15,
@@ -652,7 +652,7 @@ export class SignedData extends PkiObject implements ISignedData {
 
         
         checkDate = tstInfo.genTime;
-        timestampSerial = tstInfo.serialNumber.valueBlock.valueHexView.slice();
+        timestampSerial = tstInfo.serialNumber.valueBlock.valueHexView.slice().buffer;
         
 
         
@@ -765,7 +765,7 @@ export class SignedData extends PkiObject implements ISignedData {
           data = eContent.getValue();
         }
         else
-          data = eContent.valueBlock.valueBeforeDecodeView;
+          data = eContent.valueBlock.valueBeforeDecodeView.slice().buffer;
       }
       else 
       {
@@ -847,7 +847,11 @@ export class SignedData extends PkiObject implements ISignedData {
       }
       
 
-      const verifyResult = await crypto.verifyWithPublicKey(data, signerInfo.signature, signerCert.subjectPublicKeyInfo, signerCert.signatureAlgorithm, shaAlgorithm);
+      
+      
+      const verifyResult = signerInfo.signatureAlgorithm.algorithmId === "1.2.840.113549.1.1.1"
+        ? await crypto.verifyWithPublicKey(data, signerInfo.signature, signerCert.subjectPublicKeyInfo, signerInfo.signatureAlgorithm, shaAlgorithm)
+        : await crypto.verifyWithPublicKey(data, signerInfo.signature, signerCert.subjectPublicKeyInfo, signerInfo.signatureAlgorithm);
 
       
 
@@ -893,9 +897,18 @@ export class SignedData extends PkiObject implements ISignedData {
     
     if (!privateKey)
       throw new Error("Need to provide a private key for signing");
+
+    const signerInfo = this.signerInfos[signerIndex];
+    if (!signerInfo) {
+      throw new RangeError("SignerInfo index is out of range");
+    }
+
     
 
     
+    if (!signerInfo.signedAttrs?.attributes.length && "hash" in privateKey.algorithm && "hash" in privateKey.algorithm && privateKey.algorithm.hash) {
+      hashAlgorithm = (privateKey.algorithm.hash as Algorithm).name;
+    }
     const hashAlgorithmOID = crypto.getOIDByAlgorithm({ name: hashAlgorithm }, true, "hashAlgorithm");
     
 
@@ -907,10 +920,6 @@ export class SignedData extends PkiObject implements ISignedData {
       }));
     }
 
-    const signerInfo = this.signerInfos[signerIndex];
-    if (!signerInfo) {
-      throw new RangeError("SignerInfo index is out of range");
-    }
     signerInfo.digestAlgorithm = new AlgorithmIdentifier({
       algorithmId: hashAlgorithmOID,
       algorithmParams: new asn1js.Null()
@@ -945,7 +954,7 @@ export class SignedData extends PkiObject implements ISignedData {
           data = eContent.getValue();
         }
         else
-          data = eContent.valueBlock.valueBeforeDecodeView;
+          data = eContent.valueBlock.valueBeforeDecodeView.slice().buffer;
       }
       else 
       {

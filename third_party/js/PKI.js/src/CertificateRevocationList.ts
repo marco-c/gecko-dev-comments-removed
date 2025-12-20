@@ -509,7 +509,7 @@ export class CertificateRevocationList extends PkiObject implements ICertificate
     
 
     
-    const signature = await crypto.signWithPrivateKey(this.tbsView, privateKey, parameters as any);
+    const signature = await crypto.signWithPrivateKey(this.tbsView as BufferSource, privateKey, parameters as any);
     this.signatureValue = new asn1js.BitString({ valueHex: signature });
     
   }
@@ -555,7 +555,7 @@ export class CertificateRevocationList extends PkiObject implements ICertificate
     }
     
 
-    return crypto.verifyWithPublicKey(this.tbsView, this.signatureValue, subjectPublicKeyInfo, this.signatureAlgorithm);
+    return crypto.verifyWithPublicKey(this.tbsView as BufferSource, this.signatureValue, subjectPublicKeyInfo, this.signatureAlgorithm);
   }
 
 }

@@ -153,17 +153,17 @@ export class CertBag extends PkiObject implements ICertBag {
       case id_CertBag_X509Certificate: 
         {
           try {
-            this.parsedValue = Certificate.fromBER(certValueHex);
+            this.parsedValue = Certificate.fromBER(certValueHex as BufferSource);
           }
-          catch (ex) 
+          catch 
           {
-            AttributeCertificateV2.fromBER(certValueHex);
+            AttributeCertificateV2.fromBER(certValueHex as BufferSource);
           }
         }
         break;
       case id_CertBag_AttributeCertificate: 
         {
-          this.parsedValue = AttributeCertificateV2.fromBER(certValueHex);
+          this.parsedValue = AttributeCertificateV2.fromBER(certValueHex as BufferSource);
         }
         break;
       case id_CertBag_SDSICertificate: 

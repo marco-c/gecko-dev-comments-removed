@@ -26,6 +26,6 @@ export interface SchemaConstructor {
 
 
 
-export interface SchemaParameters<N extends Record<string, any> = {  }> {
+export interface SchemaParameters<N extends Record<string, any> = object> {
   names?: SchemaNames & N;
 }

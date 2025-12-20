@@ -50,9 +50,7 @@ export interface PFXParsedValue {
 }
 
 export type MakeInternalValuesParams =
-  {
-    
-  }
+  object
   |
   {
     iterations: number;

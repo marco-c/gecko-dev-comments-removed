@@ -25,7 +25,7 @@ export interface IPublicKeyInfo {
   
 
 
-  parsedKey?: ECPublicKey | RSAPublicKey;
+  parsedKey?: ECPublicKey | RSAPublicKey | undefined;
 }
 export type PublicKeyInfoParameters = PkiObjectParameters & Partial<IPublicKeyInfo> & { json?: JsonWebKey; };
 
@@ -62,7 +62,7 @@ export class PublicKeyInfo extends PkiObject implements IPublicKeyInfo {
                   schema: this.subjectPublicKey.valueBlock.valueHexView
                 });
               }
-              catch (ex) {
+              catch {
                 
               } 
             }
@@ -75,7 +75,7 @@ export class PublicKeyInfo extends PkiObject implements IPublicKeyInfo {
               try {
                 this._parsedKey = new RSAPublicKey({ schema: publicKeyASN1.result });
               }
-              catch (ex) {
+              catch {
                 
               } 
             }
@@ -262,7 +262,7 @@ export class PublicKeyInfo extends PkiObject implements IPublicKeyInfo {
       try {
         this.fromSchema(asn1.result);
       }
-      catch (exception) {
+      catch {
         throw new Error("Error during initializing object from schema");
       }
     } catch (e) {

@@ -96,6 +96,7 @@ export type TimeStampReqParameters = PkiObjectParameters & Partial<ITimeStampReq
 
 
 
+
 export class TimeStampReq extends PkiObject implements ITimeStampReq {
 
   public static override CLASS_NAME = "TimeStampReq";
