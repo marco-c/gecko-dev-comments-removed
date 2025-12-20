@@ -411,6 +411,20 @@ let interfaceNamesInGlobalScope = [
   
   { name: "DocumentFragment", insecureContext: true },
   
+  {
+    name: "DocumentPictureInPicture",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "DocumentPictureInPictureEvent",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
   { name: "DocumentTimeline", insecureContext: true },
   
   { name: "DocumentType", insecureContext: true },
@@ -1746,6 +1760,13 @@ let interfaceNamesInGlobalScope = [
   { name: "devicePixelRatio", insecureContext: true },
   
   { name: "document", insecureContext: true },
+  
+  {
+    name: "documentPictureInPicture",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
   
   { name: "dump", insecureContext: true },
   
