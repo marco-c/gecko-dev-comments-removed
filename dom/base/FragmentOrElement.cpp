@@ -148,9 +148,8 @@ nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   return nullptr;
 }
 
-void nsIContent::UnbindFromTree(nsINode* aNewParent,
-                                const BatchRemovalState* aBatchState) {
-  UnbindContext context(*this, aBatchState);
+void nsIContent::UnbindFromTree(nsINode* aNewParent) {
+  UnbindContext context(*this);
   context.SetIsMove(aNewParent != nullptr);
   UnbindFromTree(context);
 }
@@ -1232,28 +1231,28 @@ class ContentUnbinder : public Runnable {
   ~ContentUnbinder() { Run(); }
 
   void UnbindSubtree(nsIContent* aNode) {
-    if (!aNode->HasChildren()) {
-      return;
-    }
     if (aNode->NodeType() != nsINode::ELEMENT_NODE &&
         aNode->NodeType() != nsINode::DOCUMENT_FRAGMENT_NODE) {
       return;
     }
-    auto* container = static_cast<FragmentOrElement*>(aNode);
-    
-    container->InvalidateChildNodes();
-    BatchRemovalState state{};
-    while (nsCOMPtr<nsIContent> child = container->GetLastChild()) {
+    FragmentOrElement* container = static_cast<FragmentOrElement*>(aNode);
+    if (container->HasChildren()) {
       
-      
-      
-      
-      
-      
-      container->DisconnectChild(child);
-      UnbindSubtree(child);
-      child->UnbindFromTree( nullptr, &state);
-      state.mIsFirst = false;
+      container->InvalidateChildNodes();
+
+      while (container->HasChildren()) {
+        
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIContent> child = container->GetLastChild();
+        container->DisconnectChild(child);
+        UnbindSubtree(child);
+        child->UnbindFromTree();
+      }
     }
   }
 
@@ -1330,15 +1329,14 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   if (tmp->UnoptimizableCCNode() || !nsCCUncollectableMarker::sGeneration) {
     
     nsAutoScriptBlocker scriptBlocker;
-    BatchRemovalState state{};
-    while (nsCOMPtr<nsIContent> child = tmp->GetLastChild()) {
+    while (tmp->HasChildren()) {
       
       
       
       
+      nsCOMPtr<nsIContent> child = tmp->GetLastChild();
       tmp->DisconnectChild(child);
       child->UnbindFromTree();
-      state.mIsFirst = false;
     }
   } else if (!tmp->GetParent() && tmp->HasChildren()) {
     ContentUnbinder::Append(tmp);

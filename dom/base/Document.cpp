@@ -2854,15 +2854,14 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   nsINode::Unlink(tmp);
 
-  BatchRemovalState state{};
-  while (nsCOMPtr<nsIContent> child = tmp->GetLastChild()) {
+  while (tmp->HasChildren()) {
     
     
     
     
+    nsCOMPtr<nsIContent> child = tmp->GetLastChild();
     tmp->DisconnectChild(child);
-    child->UnbindFromTree(nullptr, &state);
-    state.mIsFirst = false;
+    child->UnbindFromTree();
   }
 
   tmp->UnlinkOriginalDocumentIfStatic();
