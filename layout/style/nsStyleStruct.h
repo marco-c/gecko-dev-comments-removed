@@ -380,10 +380,9 @@ using AnchorResolvedMargin =
 struct AnchorPosResolutionParams {
   struct AutoResolutionOverrideParams {
     
+    bool mHAnchorCenter = false;
     
-    bool mIAnchorCenter = false;
-    
-    bool mBAnchorCenter = false;
+    bool mVAnchorCenter = false;
     
     bool mPositionAreaInUse = false;
 
@@ -392,10 +391,7 @@ struct AnchorPosResolutionParams {
         const nsIFrame* aFrame,
         const mozilla::AnchorPosResolutionCache* aCache);
 
-    bool OverriddenToZero(mozilla::StylePhysicalAxis aAxis,
-                          const nsIFrame* aFrame) const;
-    bool OverriddenToZero(mozilla::Side aSide, const nsIFrame* aFrame) const;
-    bool OverriddenToZero(mozilla::LogicalAxis aAxis) const;
+    bool OverriddenToZero(mozilla::StylePhysicalAxis aAxis) const;
   };
   
   
@@ -437,8 +433,7 @@ struct AnchorResolvedMarginHelper {
       return AnchorResolvedMargin::NonOwning(&aValue);
     }();
     if (resolved->IsAuto() &&
-        aParams.mAutoResolutionOverrideParams.OverriddenToZero(
-            aAxis, aParams.mFrame)) {
+        aParams.mAutoResolutionOverrideParams.OverriddenToZero(aAxis)) {
       return Zero();
     }
     return resolved;
@@ -814,7 +809,7 @@ struct AnchorResolvedInsetHelper {
     }();
     if (resolved->IsAuto() &&
         aParams.mBaseParams.mAutoResolutionOverrideParams.OverriddenToZero(
-            aSide, aParams.mBaseParams.mFrame)) {
+            mozilla::ToStylePhysicalAxis(aSide))) {
       return AnchorResolvedInset::NonOwning(&ZeroValue());
     }
     return resolved;
