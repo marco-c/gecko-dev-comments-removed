@@ -132,7 +132,7 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
   
   
 
-  popFrame();
+  popFrame(false);
   MOZ_ASSERT(!done() || unwoundCallerFP_);
 }
 
@@ -172,25 +172,7 @@ bool WasmFrameIter::done() const {
 
 void WasmFrameIter::operator++() {
   MOZ_ASSERT(!done());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (isLeavingFrames_) {
-    if (activation_->isWasmTrapping()) {
-      activation_->finishWasmTrap();
-    }
-    activation_->setWasmExitFP(fp_);
-  }
-
-  popFrame();
+  popFrame(isLeavingFrames_);
 }
 
 static inline void AssertJitExitFrame(const void* fp,
@@ -208,9 +190,11 @@ static inline void AssertDirectJitCall(const void* fp) {
   AssertJitExitFrame(fp, jit::ExitFrameType::DirectWasmJitCall);
 }
 
-void WasmFrameIter::popFrame() {
+void WasmFrameIter::popFrame(bool isLeavingFrame) {
   
   if (enableInlinedFrames_ && inlinedCallerOffsets_.size() > 0) {
+    
+    
     
     MOZ_ASSERT(!code_->debugEnabled());
 
@@ -244,6 +228,22 @@ void WasmFrameIter::popFrame() {
   currentFrameStackSwitched_ = false;
 #endif
 
+  
+#ifdef ENABLE_WASM_JSPI
+  wasm::SuspenderObject* currentSuspender = nullptr;
+#endif
+  if (isLeavingFrame) {
+    MOZ_ASSERT(activation_->hasWasmExitFP());
+#ifdef ENABLE_WASM_JSPI
+    currentSuspender = activation_->wasmExitSuspender();
+#endif
+
+    
+    if (activation_->isWasmTrapping()) {
+      activation_->finishWasmTrap(false);
+    }
+  }
+
   if (!code_) {
     
     
@@ -264,7 +264,7 @@ void WasmFrameIter::popFrame() {
     unwoundCallerFPIsJSJit_ = true;
     unwoundAddressOfReturnAddress_ = fp_->addressOfReturnAddress();
 
-    if (isLeavingFrames_) {
+    if (isLeavingFrame) {
       activation_->setJSExitFP(unwoundCallerFP_);
     }
 
@@ -297,10 +297,10 @@ void WasmFrameIter::popFrame() {
     lineOrBytecode_ = UINT32_MAX;
     inlinedCallerOffsets_ = BytecodeOffsetSpan();
 
-    if (isLeavingFrames_) {
+    if (isLeavingFrame) {
       
       
-      activation_->setWasmExitFP(nullptr);
+      activation_->setWasmExitFP(nullptr, nullptr);
     }
 
     MOZ_ASSERT(done());
@@ -332,7 +332,7 @@ void WasmFrameIter::popFrame() {
     lineOrBytecode_ = UINT32_MAX;
     inlinedCallerOffsets_ = BytecodeOffsetSpan();
 
-    if (isLeavingFrames_) {
+    if (isLeavingFrame) {
       activation_->setJSExitFP(unwoundCallerFP());
     }
 
@@ -360,6 +360,28 @@ void WasmFrameIter::popFrame() {
       FuncIndexForLineOrBytecode(*code_, site.lineOrBytecode(), *codeRange);
   inlinedCallerOffsets_ = site.inlinedCallerOffsetsSpan();
   failedUnwindSignatureMismatch_ = false;
+
+  if (isLeavingFrame) {
+#ifdef ENABLE_WASM_JSPI
+    wasm::SuspenderObject* newSuspender = currentSuspender;
+    
+    if (currentFrameStackSwitched_) {
+      newSuspender =
+          activation_->cx()->wasm().findSuspenderForStackAddress(fp_);
+    }
+
+    
+    
+    if (newSuspender != currentSuspender) {
+      currentSuspender->unwind(activation_->cx());
+    }
+#else
+    wasm::SuspenderObject* newSuspender = nullptr;
+#endif
+    
+    
+    activation_->setWasmExitFP(prevFP, newSuspender);
+  }
 
   MOZ_ASSERT(!done());
 }

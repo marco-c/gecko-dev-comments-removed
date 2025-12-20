@@ -100,7 +100,11 @@ class WasmFrameIter {
   
   bool unwoundCallerFPIsJSJit_ = false;
 
-  void popFrame();
+  
+  
+  
+  
+  void popFrame(bool isLeavingFrame);
 
  public:
   

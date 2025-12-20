@@ -527,25 +527,6 @@ static JitActivation* CallingActivation(JSContext* cx) {
   return act->asJit();
 }
 
-template <typename Fn, typename... Ts>
-static bool ForwardToMainStack(Fn fn, JSContext* cx, Ts... args) {
-#ifdef ENABLE_WASM_JSPI
-  if (IsSuspendableStackActive(cx)) {
-    struct InvokeContext {
-      bool (*fn)(JSContext*, Ts...);
-      JSContext* cx;
-      std::tuple<Ts...> args;
-      static bool Run(InvokeContext* data) {
-        return data->fn(data->cx, std::get<Ts>(data->args)...);
-      }
-    } data = {fn, cx, std::make_tuple(args...)};
-    return CallOnMainStack(
-        cx, reinterpret_cast<CallOnMainStackFn>(InvokeContext::Run), &data);
-  }
-#endif
-  return fn(cx, args...);
-}
-
 static bool WasmHandleDebugTrap() {
   JSContext* cx = TlsContext.get();  
   JitActivation* activation = CallingActivation(cx);
@@ -797,6 +778,12 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
   MOZ_ASSERT(cx->activation()->asJit()->hasWasmExitFP());
   MOZ_ASSERT(rfe->kind == ExceptionResumeKind::EntryFrame);
 
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  MOZ_ASSERT(!cx->wasm().onSuspendableStack());
+#endif
+
   
   
   
@@ -859,11 +846,22 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
             (uint8_t*)(rfe->framePointer - tryNote->landingPadFramePushed());
         rfe->target = codeBlock->base() + tryNote->landingPadEntryPoint();
 
+#ifdef ENABLE_WASM_JSPI
+        wasm::SuspenderObject* destSuspender = activation->wasmExitSuspender();
+        if (destSuspender) {
+          destSuspender->enter(cx);
+        }
+#endif
+
+        
         
         if (activation->isWasmTrapping()) {
-          activation->finishWasmTrap();
+          
+          activation->finishWasmTrap(false);
+        } else {
+          
+          activation->setWasmExitFP(nullptr, nullptr);
         }
-        activation->setWasmExitFP(nullptr);
         return;
       }
     }
@@ -878,8 +876,7 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
     
     
     if (cx->isExceptionPending()) {
-      if (!ForwardToMainStack(DebugAPI::onExceptionUnwind, cx,
-                              AbstractFramePtr(frame))) {
+      if (!DebugAPI::onExceptionUnwind(cx, AbstractFramePtr(frame))) {
         if (cx->isPropagatingForcedReturn()) {
           cx->clearPropagatingForcedReturn();
           
@@ -892,9 +889,8 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
       }
     }
 
-    bool ok =
-        ForwardToMainStack(DebugAPI::onLeaveFrame, cx, AbstractFramePtr(frame),
-                           (const jsbytecode*)nullptr, false);
+    bool ok = DebugAPI::onLeaveFrame(cx, AbstractFramePtr(frame),
+                                     (const jsbytecode*)nullptr, false);
     if (ok) {
       
       
@@ -920,10 +916,13 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 }
 
 static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
-  jit::HandleException(rfe);
   
   
   JSContext* cx = TlsContext.get();
+#ifdef ENABLE_WASM_JSPI
+  MOZ_ASSERT(!cx->wasm().onSuspendableStack());
+#endif
+  jit::HandleException(rfe);
   return cx->runtime()->jitRuntime()->getExceptionTailReturnValueCheck().value;
 }
 
@@ -936,7 +935,9 @@ static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
   }
 
   void* resumePC = activation->wasmTrapData().resumePC;
-  activation->finishWasmTrap();
+  activation->finishWasmTrap(true);
+  
+  
   return resumePC;
 }
 
@@ -949,6 +950,9 @@ static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
 static void* WasmHandleTrap() {
   JSContext* cx = TlsContext.get();  
   JitActivation* activation = CallingActivation(cx);
+#ifdef ENABLE_WASM_JSPI
+  MOZ_ASSERT(!cx->wasm().onSuspendableStack());
+#endif
 
   switch (activation->wasmTrapData().trap) {
     case Trap::Unreachable: {

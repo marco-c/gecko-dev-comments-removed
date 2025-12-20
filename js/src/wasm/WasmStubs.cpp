@@ -2719,24 +2719,70 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
 
   
   
-  Register preAlignStackPointer = ABINonVolatileReg;
-  masm.moveStackPtrTo(preAlignStackPointer);
+  
+  
+  masm.loadPtr(
+      Address(FramePointer, wasm::FrameWithInstances::calleeInstanceOffset()),
+      InstanceReg);
+
+  
+  
+  
+  Register originalStackPointer = ABINonArgReg3;
+  masm.moveStackPtrTo(originalStackPointer);
+
+#ifdef ENABLE_WASM_JSPI
+  GenerateExitPrologueMainStackSwitch(masm, InstanceReg, ABINonArgReg0,
+                                      ABINonArgReg1, ABINonArgReg2);
+#endif
+
+  
+  
+  
+  
   masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
+  masm.reserveStack(ABIStackAlignment);
+  masm.storePtr(originalStackPointer, Address(masm.getStackPointer(), 0));
+
+  
+  
   if (ShadowStackSpace) {
     masm.subFromStackPtr(Imm32(ShadowStackSpace));
   }
 
+  
   masm.assertStackAlignment(ABIStackAlignment);
   masm.call(SymbolicAddress::HandleTrap);
 
   
+  
+  
   masm.branchTestPtr(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
+
+  
+  if (ShadowStackSpace) {
+    masm.addToStackPtr(Imm32(ShadowStackSpace));
+  }
+
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
+  LoadActivation(masm, InstanceReg, ABINonArgReturnReg0);
+  GenerateExitEpilogueMainStackReturn(masm, InstanceReg, ABINonArgReturnReg0,
+                                      ABINonArgReturnReg1);
+#endif
+
+  
+  
+  
+  masm.loadPtr(Address(masm.getStackPointer(), 0), ABINonArgReturnReg0);
+  masm.moveToStackPtr(ABINonArgReturnReg0);
 
   
   
   
   
-  masm.moveToStackPtr(preAlignStackPointer);
   masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
   masm.PopRegsInMask(RegsToPreserve);
 #ifdef JS_CODEGEN_ARM64
