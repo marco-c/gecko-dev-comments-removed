@@ -24,19 +24,111 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
+const DEFAULT_HOMEPAGE_URL = "about:home";
+const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
+
 Preferences.addAll([
-  { id: "browser.startup.homepage", type: "wstring" },
+  { id: "browser.startup.homepage", type: "string" },
   { id: "pref.browser.homepage.disable_button.current_page", type: "bool" },
   { id: "pref.browser.homepage.disable_button.bookmark_page", type: "bool" },
-  { id: "pref.browser.homepage.disable_button.restore_default", type: "bool" },
+  {
+    id: "pref.browser.homepage.disable_button.restore_default",
+    type: "bool",
+  },
   { id: "browser.newtabpage.enabled", type: "bool" },
 ]);
+
+if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
+  
+  Preferences.addSetting(
+     ({
+      id: "homepageNewWindows",
+      pref: "browser.startup.homepage",
+      useCustomHomepage: false,
+      get(prefVal) {
+        if (this.useCustomHomepage) {
+          return "custom";
+        }
+        switch (prefVal) {
+          case DEFAULT_HOMEPAGE_URL:
+            return "home";
+          case BLANK_HOMEPAGE_URL:
+            return "blank";
+          
+          
+          default:
+            return "custom";
+        }
+      },
+      set(inputVal, _, setting) {
+        let wasCustomHomepage = this.useCustomHomepage;
+        this.useCustomHomepage = inputVal == "custom";
+        if (wasCustomHomepage != this.useCustomHomepage) {
+          setting.onChange();
+        }
+        switch (inputVal) {
+          case "home":
+            return DEFAULT_HOMEPAGE_URL;
+          case "blank":
+            return BLANK_HOMEPAGE_URL;
+          case "custom":
+            
+            return setting.pref.value;
+          default:
+            throw new Error("No handler for this value");
+        }
+      },
+    })
+  );
+
+  
+  Preferences.addSetting({
+    id: "homepageGoToCustomHomepageUrlPanel",
+    deps: ["homepageNewWindows"],
+    visible: ({ homepageNewWindows }) => {
+      return homepageNewWindows.value == "custom";
+    },
+    onUserClick: () => {
+      
+    },
+  });
+
+  
+  Preferences.addSetting({
+    id: "homepageNewTabs",
+    pref: "browser.newtabpage.enabled",
+    get(prefVal) {
+      return prefVal.toString();
+    },
+    set(inputVal) {
+      return inputVal === "true";
+    },
+  });
+
+  
+  Preferences.addSetting({
+    id: "homepageRestoreDefaults",
+    pref: "pref.browser.homepage.disable_button.restore_default",
+    deps: ["homepageNewWindows", "homepageNewTabs"],
+    disabled: ({ homepageNewWindows, homepageNewTabs }) => {
+      return (
+        homepageNewWindows.value === "home" && homepageNewTabs.value === "true"
+      );
+    },
+    onUserClick: (e, { homepageNewWindows, homepageNewTabs }) => {
+      e.preventDefault();
+
+      
+      
+      homepageNewWindows.value = "home";
+      homepageNewTabs.value = "true";
+    },
+  });
+}
 
 const HOMEPAGE_OVERRIDE_KEY = "homepage_override";
 const URL_OVERRIDES_TYPE = "url_overrides";
 const NEW_TAB_KEY = "newTabURL";
-
-const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
 
 
@@ -149,6 +241,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     id: "showWeather",
     pref: "browser.newtabpage.activity-stream.system.showWeather",
   });
+
   Preferences.addSetting({
     id: "weather",
     pref: "browser.newtabpage.activity-stream.showWeather",
@@ -161,6 +254,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     id: "widgetsEnabled",
     pref: "browser.newtabpage.activity-stream.widgets.system.enabled",
   });
+
   Preferences.addSetting({
     id: "widgets",
     pref: "browser.newtabpage.activity-stream.widgets.enabled",
@@ -173,6 +267,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     id: "listsEnabled",
     pref: "browser.newtabpage.activity-stream.widgets.system.lists.enabled",
   });
+
   Preferences.addSetting({
     id: "lists",
     pref: "browser.newtabpage.activity-stream.widgets.lists.enabled",
@@ -185,6 +280,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     id: "timerEnabled",
     pref: "browser.newtabpage.activity-stream.widgets.system.focusTimer.enabled",
   });
+
   Preferences.addSetting({
     id: "timer",
     pref: "browser.newtabpage.activity-stream.widgets.focusTimer.enabled",
@@ -944,6 +1040,7 @@ var gHomePane = {
   },
 
   init() {
+    initSettingGroup("homepage");
     initSettingGroup("home");
 
     
