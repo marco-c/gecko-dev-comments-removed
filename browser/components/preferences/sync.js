@@ -225,8 +225,36 @@ var SyncHelpers = new (class SyncHelpers {
     );
     this.replaceTabWithUrl(url);
   }
-})();
 
+  
+
+
+
+
+
+
+
+  async reSignIn(entrypoint) {
+    const url = await FxAccounts.config.promiseConnectAccountURI(entrypoint);
+    this.replaceTabWithUrl(url);
+  }
+
+  async verifyFirefoxAccount() {
+    return this.reSignIn("preferences-reverify");
+  }
+
+  
+
+
+
+
+
+  unlinkFirefoxAccount(confirm) {
+    window.browsingContext.topChromeWindow.gSync.disconnect({
+      confirm,
+    });
+  }
+})();
 
 Preferences.addSetting({
   id: "uiStateUpdate",
@@ -235,6 +263,170 @@ Preferences.addSetting({
     return () => Weave.Svc.Obs.remove(UIState.ON_UPDATE, emitChange);
   },
 });
+
+
+
+
+Preferences.addSetting({
+  id: "noFxaAccountGroup",
+  deps: ["uiStateUpdate"],
+  visible() {
+    return SyncHelpers.uiStateStatus == UIState.STATUS_NOT_CONFIGURED;
+  },
+});
+Preferences.addSetting({
+  id: "noFxaAccount",
+});
+Preferences.addSetting({
+  id: "noFxaSignIn",
+  onUserClick: () => {
+    SyncHelpers.signIn();
+  },
+});
+
+
+Preferences.addSetting({
+  id: "fxaSignedInGroup",
+  deps: ["uiStateUpdate"],
+  visible() {
+    return SyncHelpers.uiStateStatus == UIState.STATUS_SIGNED_IN;
+  },
+});
+Preferences.addSetting({
+  id: "fxaLoginVerified",
+  deps: ["uiStateUpdate"],
+  _failedAvatarURLs: new Set(),
+  getControlConfig(config, _, setting) {
+    let state = SyncHelpers.uiState;
+
+    if (state.displayName) {
+      config.l10nId = "sync-account-signed-in-display-name";
+      config.l10nArgs = {
+        name: state.displayName,
+        email: state.email || "",
+      };
+    } else {
+      config.l10nId = "sync-account-signed-in";
+      config.l10nArgs = {
+        email: state.email || "",
+      };
+    }
+
+    
+    if (this._failedAvatarURLs.has(state.avatarURL)) {
+      config.iconSrc = "chrome://browser/skin/fxa/avatar-color.svg";
+      return config;
+    }
+
+    if (state.avatarURL && !state.avatarIsDefault) {
+      config.iconSrc = state.avatarURL;
+      let img = new Image();
+      img.onerror = () => {
+        this._failedAvatarURLs.add(state.avatarURL);
+        setting.onChange();
+      };
+      img.src = state.avatarURL;
+    }
+    return config;
+  },
+});
+Preferences.addSetting(
+  class extends Preferences.AsyncSetting {
+    static id = "verifiedManage";
+
+    setup() {
+      Weave.Svc.Obs.add(UIState.ON_UPDATE, this.emitChange);
+      return () => Weave.Svc.Obs.remove(UIState.ON_UPDATE, this.emitChange);
+    }
+
+    
+    
+    async getControlConfig() {
+      let href = await FxAccounts.config.promiseManageURI(
+        SyncHelpers.getEntryPoint()
+      );
+      return {
+        controlAttrs: {
+          href: href ?? "https://accounts.firefox.com/settings",
+        },
+      };
+    }
+  }
+);
+
+Preferences.addSetting({
+  id: "fxaUnlinkButton",
+  onUserClick: () => {
+    SyncHelpers.unlinkFirefoxAccount(true);
+  },
+});
+
+
+Preferences.addSetting({
+  id: "fxaUnverifiedGroup",
+  deps: ["uiStateUpdate"],
+  visible() {
+    return SyncHelpers.uiStateStatus == UIState.STATUS_NOT_VERIFIED;
+  },
+});
+Preferences.addSetting({
+  id: "fxaLoginUnverified",
+  deps: ["uiStateUpdate"],
+  getControlConfig(config) {
+    let state = SyncHelpers.uiState;
+    config.l10nArgs = {
+      email: state.email || "",
+    };
+    return config;
+  },
+});
+Preferences.addSetting({
+  id: "verifyFxaAccount",
+  onUserClick: () => {
+    SyncHelpers.verifyFirefoxAccount();
+  },
+});
+Preferences.addSetting({
+  id: "unverifiedUnlinkFxaAccount",
+  onUserClick: () => {
+    
+    SyncHelpers.unlinkFirefoxAccount(false);
+  },
+});
+
+
+Preferences.addSetting({
+  id: "fxaLoginRejectedGroup",
+  deps: ["uiStateUpdate"],
+  visible() {
+    return SyncHelpers.uiStateStatus == UIState.STATUS_LOGIN_FAILED;
+  },
+});
+Preferences.addSetting({
+  id: "fxaLoginRejected",
+  deps: ["uiStateUpdate"],
+  getControlConfig(config) {
+    let state = SyncHelpers.uiState;
+    config.l10nArgs = {
+      email: state.email || "",
+    };
+    return config;
+  },
+});
+Preferences.addSetting({
+  id: "rejectReSignIn",
+  onUserClick: () => {
+    SyncHelpers.reSignIn(SyncHelpers.getEntryPoint());
+  },
+});
+Preferences.addSetting({
+  id: "rejectUnlinkFxaAccount",
+  onUserClick: () => {
+    SyncHelpers.unlinkFirefoxAccount(true);
+  },
+});
+
+
 
 
 Preferences.addSetting({
@@ -505,6 +697,7 @@ var gSyncPane = {
 
   _init() {
     initSettingGroup("sync");
+    initSettingGroup("account");
 
     Weave.Svc.Obs.add(UIState.ON_UPDATE, this.updateWeavePrefs, this);
 
@@ -631,22 +824,20 @@ var gSyncPane = {
       return false;
     });
     setEventListener("fxaUnlinkButton", "command", function () {
-      gSyncPane.unlinkFirefoxAccount(true);
+      SyncHelpers.unlinkFirefoxAccount(true);
     });
-    setEventListener(
-      "verifyFxaAccount",
-      "command",
-      gSyncPane.verifyFirefoxAccount
+    setEventListener("verifyFxaAccount", "command", () =>
+      SyncHelpers.verifyFirefoxAccount()
     );
     setEventListener("unverifiedUnlinkFxaAccount", "command", function () {
       
-      gSyncPane.unlinkFirefoxAccount(false);
+      SyncHelpers.unlinkFirefoxAccount(false);
     });
     setEventListener("rejectReSignIn", "command", function () {
-      gSyncPane.reSignIn(SyncHelpers.getEntryPoint());
+      SyncHelpers.reSignIn(SyncHelpers.getEntryPoint());
     });
     setEventListener("rejectUnlinkFxaAccount", "command", function () {
-      gSyncPane.unlinkFirefoxAccount(true);
+      SyncHelpers.unlinkFirefoxAccount(true);
     });
     setEventListener("fxaSyncComputerName", "keypress", function (e) {
       if (e.keyCode == KeyEvent.DOM_VK_RETURN) {
@@ -815,15 +1006,15 @@ var gSyncPane = {
   },
 
   
-
-
-
-
-
-
-  async reSignIn(entrypoint) {
-    const url = await FxAccounts.config.promiseConnectAccountURI(entrypoint);
-    SyncHelpers.replaceTabWithUrl(url);
+  replaceTabWithUrl(url) {
+    
+    let browser = window.docShell.chromeEventHandler;
+    
+    browser.loadURI(Services.io.newURI(url), {
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
+        {}
+      ),
+    });
   },
 
   clickOrSpaceOrEnterPressed(event) {
@@ -851,17 +1042,6 @@ var gSyncPane = {
       
       event.preventDefault();
     }
-  },
-
-  async verifyFirefoxAccount() {
-    return this.reSignIn("preferences-reverify");
-  },
-
-  
-  unlinkFirefoxAccount(confirm) {
-    window.browsingContext.topChromeWindow.gSync.disconnect({
-      confirm,
-    });
   },
 
   pairAnotherDevice() {
