@@ -700,9 +700,13 @@ bool FetchUtil::StreamResponseToJS(JSContext* aCx, JS::Handle<JSObject*> aObj,
       break;
   }
 
+  
+  
+  ErrorResult result;
   nsAutoCString mimeType;
-  nsAutoCString mixedCaseMimeType;  
-  response->GetMimeType(mimeType, mixedCaseMimeType);
+  response->GetInternalHeaders()->Get("Content-Type"_ns, mimeType, result);
+  MOZ_ALWAYS_TRUE(!result.Failed());
+  ToLowerCase(mimeType);
 
   if (!mimeType.EqualsASCII(requiredMimeType)) {
     JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
