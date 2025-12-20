@@ -982,17 +982,11 @@ function makeCalculatorResult(queryContext, { value }) {
 
 
 
-
-
-
-
 function makeGlobalActionsResult({
   actionsResults,
   query,
   inputLength,
   showOnboardingLabel = false,
-  providesSearchMode = false,
-  engine,
 }) {
   const payload = {
     actionsResults,
@@ -1001,8 +995,6 @@ function makeGlobalActionsResult({
     input: query,
     inputLength,
     showOnboardingLabel,
-    providesSearchMode,
-    engine,
   };
 
   return new UrlbarResult({
