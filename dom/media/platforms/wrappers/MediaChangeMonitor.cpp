@@ -337,9 +337,14 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
         aSample->mKeyframe || !mSPS.IsEmpty()
             ? H265::ExtractHVCCExtraData(aSample)
             : nullptr;
+    if (!extraData || extraData->IsEmpty()) {
+      
+      extraData = aSample->mExtraData;
+    }
     
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
     if ((!extraData || extraData->IsEmpty()) && curConfig.unwrap().HasSPS()) {
+      LOG("No SPS in sample. Use existing config");
       return NS_OK;
     }
 
