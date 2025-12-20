@@ -794,6 +794,20 @@ class Accessible {
 
   virtual bool HasPrimaryAction() const = 0;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  virtual bool HasCustomActions() const = 0;
+
  protected:
   
 
