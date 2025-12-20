@@ -11,7 +11,6 @@
 #include "gc/GC.h"
 #include "jit/CacheIR.h"
 #include "jit/CacheIRAOT.h"
-#include "jit/CacheIRCloner.h"
 #include "jit/CacheIRSpewer.h"
 #include "jit/CacheIRWriter.h"
 #include "jit/JitFrames.h"
@@ -20,8 +19,8 @@
 #include "jit/Linker.h"
 #include "jit/MoveEmitter.h"
 #include "jit/RegExpStubConstants.h"
-#include "jit/ShapeList.h"
 #include "jit/SharedICHelpers.h"
+#include "jit/StubFolding.h"
 #include "jit/VMFunctions.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/friend/DOMProxy.h"       
@@ -35,7 +34,6 @@
 #include "jit/MacroAssembler-inl.h"
 #include "jit/SharedICHelpers-inl.h"
 #include "jit/VMFunctionList-inl.h"
-#include "vm/List-inl.h"
 
 using namespace js;
 using namespace js::jit;
@@ -2036,327 +2034,6 @@ static void ResetEnteredCounts(const ICEntry* icEntry) {
   }
 }
 
-bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
-                              JSScript* script, ICScript* icScript) {
-  ICEntry* icEntry = icScript->icEntryForStub(fallback);
-  ICStub* entryStub = icEntry->firstStub();
-
-  
-  if (entryStub == fallback) {
-    return true;
-  }
-  ICCacheIRStub* firstStub = entryStub->toCacheIRStub();
-  if (firstStub->next()->isFallback()) {
-    return true;
-  }
-
-  const uint8_t* firstStubData = firstStub->stubDataStart();
-  const CacheIRStubInfo* stubInfo = firstStub->stubInfo();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  uint32_t numActive = 0;
-  Maybe<uint32_t> foldableFieldOffset;
-  RootedValueVector shapeList(cx);
-
-  
-  
-  
-  auto addShape = [&shapeList, cx](uintptr_t rawShape) -> bool {
-    Shape* shape = reinterpret_cast<Shape*>(rawShape);
-    
-    if (shape->realm() != cx->realm()) {
-      return false;
-    }
-
-    gc::ReadBarrier(shape);
-
-    if (!shapeList.append(PrivateValue(shape))) {
-      cx->recoverFromOutOfMemory();
-      return false;
-    }
-    return true;
-  };
-
-  for (ICCacheIRStub* other = firstStub->nextCacheIR(); other;
-       other = other->nextCacheIR()) {
-    
-    if (other->stubInfo() != stubInfo) {
-      return true;
-    }
-    const uint8_t* otherStubData = other->stubDataStart();
-
-    if (other->enteredCount() > 0) {
-      numActive++;
-    }
-
-    uint32_t fieldIndex = 0;
-    size_t offset = 0;
-    while (stubInfo->fieldType(fieldIndex) != StubField::Type::Limit) {
-      StubField::Type fieldType = stubInfo->fieldType(fieldIndex);
-
-      if (StubField::sizeIsWord(fieldType)) {
-        uintptr_t firstRaw = stubInfo->getStubRawWord(firstStubData, offset);
-        uintptr_t otherRaw = stubInfo->getStubRawWord(otherStubData, offset);
-
-        if (firstRaw != otherRaw) {
-          if (fieldType != StubField::Type::WeakShape) {
-            
-            
-            return true;
-          }
-          if (foldableFieldOffset.isNothing()) {
-            
-            foldableFieldOffset.emplace(offset);
-            if (!addShape(firstRaw) || !addShape(otherRaw)) {
-              return true;
-            }
-          } else if (*foldableFieldOffset == offset) {
-            
-            if (!addShape(otherRaw)) {
-              return true;
-            }
-          } else {
-            
-            return true;
-          }
-        }
-      } else {
-        MOZ_ASSERT(StubField::sizeIsInt64(fieldType));
-
-        
-        if (stubInfo->getStubRawInt64(firstStubData, offset) !=
-            stubInfo->getStubRawInt64(otherStubData, offset)) {
-          return true;
-        }
-      }
-
-      offset += StubField::sizeInBytes(fieldType);
-      fieldIndex++;
-    }
-
-    
-    MOZ_ASSERT(foldableFieldOffset.isSome());
-  }
-
-  if (numActive == 0) {
-    return true;
-  }
-
-  
-  CacheIRWriter writer(cx);
-  CacheIRReader reader(stubInfo);
-  CacheIRCloner cloner(firstStub);
-
-  
-  CacheKind cacheKind = stubInfo->kind();
-  for (uint32_t i = 0; i < NumInputsForCacheKind(cacheKind); i++) {
-    writer.setInputOperandId(i);
-  }
-
-  bool success = false;
-  while (reader.more()) {
-    CacheOp op = reader.readOp();
-    switch (op) {
-      case CacheOp::GuardShape: {
-        auto [objId, shapeOffset] = reader.argsForGuardShape();
-        if (shapeOffset == *foldableFieldOffset) {
-          
-          
-          
-          
-          gc::AutoSuppressGC suppressGC(cx);
-
-          Rooted<ShapeListObject*> shapeObj(cx, ShapeListObject::create(cx));
-          if (!shapeObj) {
-            return false;
-          }
-          for (uint32_t i = 0; i < shapeList.length(); i++) {
-            if (!shapeObj->append(cx, shapeList[i])) {
-              return false;
-            }
-
-            MOZ_ASSERT(static_cast<Shape*>(shapeList[i].toPrivate())->realm() ==
-                       shapeObj->realm());
-          }
-
-          writer.guardMultipleShapes(objId, shapeObj);
-          success = true;
-        } else {
-          WeakHeapPtr<Shape*>& ptr =
-              stubInfo->getStubField<StubField::Type::WeakShape>(firstStub,
-                                                                 shapeOffset);
-          writer.guardShape(objId, ptr.unbarrieredGet());
-        }
-        break;
-      }
-      default:
-        cloner.cloneOp(op, reader, writer);
-        break;
-    }
-  }
-  if (!success) {
-    
-    
-    return true;
-  }
-
-  
-  fallback->discardStubs(cx->zone(), icEntry);
-
-  ICAttachResult result = AttachBaselineCacheIRStub(
-      cx, writer, cacheKind, script, icScript, fallback, "StubFold");
-  if (result == ICAttachResult::OOM) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-  MOZ_ASSERT(result == ICAttachResult::Attached);
-
-  JitSpew(JitSpew_StubFolding,
-          "Folded stub at offset %u (icScript: %p) with %zu shapes (%s:%u:%u)",
-          fallback->pcOffset(), icScript, shapeList.length(),
-          script->filename(), script->lineno(),
-          script->column().oneOriginValue());
-
-  fallback->setMayHaveFoldedStub();
-  return true;
-}
-
-static bool AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
-                            ICScript* icScript, ICFallbackStub* fallback) {
-  ICEntry* icEntry = icScript->icEntryForStub(fallback);
-  ICStub* entryStub = icEntry->firstStub();
-
-  
-  if (entryStub == fallback) {
-    return false;
-  }
-  ICCacheIRStub* stub = entryStub->toCacheIRStub();
-  if (!stub->next()->isFallback()) {
-    return false;
-  }
-
-  const CacheIRStubInfo* stubInfo = stub->stubInfo();
-  const uint8_t* stubData = stub->stubDataStart();
-
-  Maybe<uint32_t> shapeFieldOffset;
-  RootedValue newShape(cx);
-  Rooted<ShapeListObject*> foldedShapes(cx);
-
-  CacheIRReader stubReader(stubInfo);
-  CacheIRReader newReader(writer);
-  while (newReader.more() && stubReader.more()) {
-    CacheOp newOp = newReader.readOp();
-    CacheOp stubOp = stubReader.readOp();
-    switch (stubOp) {
-      case CacheOp::GuardMultipleShapes: {
-        
-        if (newOp != CacheOp::GuardShape) {
-          return false;
-        }
-
-        
-        if (newReader.objOperandId() != stubReader.objOperandId()) {
-          return false;
-        }
-
-        
-        uint32_t newShapeOffset = newReader.stubOffset();
-        uint32_t stubShapesOffset = stubReader.stubOffset();
-        if (newShapeOffset != stubShapesOffset) {
-          return false;
-        }
-        MOZ_ASSERT(shapeFieldOffset.isNothing());
-        shapeFieldOffset.emplace(newShapeOffset);
-
-        
-        StubField shapeField =
-            writer.readStubField(newShapeOffset, StubField::Type::WeakShape);
-        Shape* shape = reinterpret_cast<Shape*>(shapeField.asWord());
-        newShape = PrivateValue(shape);
-
-        
-        JSObject* shapeList = stubInfo->getStubField<StubField::Type::JSObject>(
-            stub, stubShapesOffset);
-        foldedShapes = &shapeList->as<ShapeListObject>();
-        MOZ_ASSERT(foldedShapes->compartment() == shape->compartment());
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Realm* shapesRealm = foldedShapes->realm();
-        MOZ_ASSERT_IF(!foldedShapes->isEmpty(),
-                      foldedShapes->getUnbarriered(0)->realm() == shapesRealm);
-        if (shapesRealm != shape->realm()) {
-          return false;
-        }
-
-        break;
-      }
-      default: {
-        
-        if (newOp != stubOp) {
-          return false;
-        }
-
-        
-        uint32_t argLength = CacheIROpInfos[size_t(newOp)].argLength;
-        for (uint32_t i = 0; i < argLength; i++) {
-          if (newReader.readByte() != stubReader.readByte()) {
-            return false;
-          }
-        }
-      }
-    }
-  }
-
-  if (shapeFieldOffset.isNothing()) {
-    
-    
-    return false;
-  }
-
-  
-  if (!writer.stubDataEqualsIgnoring(stubData, *shapeFieldOffset)) {
-    return false;
-  }
-
-  
-  
-  if (foldedShapes->length() == ShapeListObject::MaxLength) {
-    MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
-    fallback->state().forceTransition();
-    fallback->discardStubs(cx->zone(), icEntry);
-    return false;
-  }
-
-  if (!foldedShapes->append(cx, newShape)) {
-    cx->recoverFromOutOfMemory();
-    return false;
-  }
-
-  JitSpew(JitSpew_StubFolding, "ShapeListObject %p: new length: %u",
-          foldedShapes.get(), foldedShapes->length());
-
-  return true;
-}
-
 #ifdef ENABLE_JS_AOT_ICS
 void DumpNonAOTICStubAndQuit(CacheKind kind, const CacheIRWriter& writer) {
   
@@ -4040,8 +3717,7 @@ bool BaselineCacheIRCompiler::emitNewFunctionCloneResult(
 }
 
 bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
-    ObjOperandId iterId, ObjOperandId calleeId, CompletionKind kind,
-    uint32_t calleeNargs) {
+    ObjOperandId iterId, ObjOperandId calleeId, uint32_t calleeNargs) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Register iter = allocator.useRegister(masm, iterId);
   Register callee = allocator.useRegister(masm, calleeId);
@@ -4067,17 +3743,15 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
 
   masm.callJit(code);
 
-  if (kind != CompletionKind::Throw) {
-    
-    Label success;
-    masm.branchTestObject(Assembler::Equal, JSReturnOperand, &success);
+  
+  Label success;
+  masm.branchTestObject(Assembler::Equal, JSReturnOperand, &success);
 
-    masm.Push(Imm32(int32_t(CheckIsObjectKind::IteratorReturn)));
-    using Fn = bool (*)(JSContext*, CheckIsObjectKind);
-    callVM<Fn, ThrowCheckIsObject>(masm);
+  masm.Push(Imm32(int32_t(CheckIsObjectKind::IteratorReturn)));
+  using Fn = bool (*)(JSContext*, CheckIsObjectKind);
+  callVM<Fn, ThrowCheckIsObject>(masm);
 
-    masm.bind(&success);
-  }
+  masm.bind(&success);
 
   stubFrame.leave(masm);
   return true;

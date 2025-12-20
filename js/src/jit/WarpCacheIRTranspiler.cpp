@@ -7139,7 +7139,6 @@ bool WarpCacheIRTranspiler::emitNewFunctionCloneResult(uint32_t canonicalOffset,
 
 bool WarpCacheIRTranspiler::emitCloseIterScriptedResult(ObjOperandId iterId,
                                                         ObjOperandId calleeId,
-                                                        CompletionKind kind,
                                                         uint32_t calleeNargs) {
   MDefinition* iter = getOperand(iterId);
   MDefinition* callee = getOperand(calleeId);
@@ -7159,9 +7158,6 @@ bool WarpCacheIRTranspiler::emitCloseIterScriptedResult(ObjOperandId iterId,
     return false;
   }
   addEffectful(call);
-  if (kind == CompletionKind::Throw) {
-    return resumeAfter(call);
-  }
 
   
   
