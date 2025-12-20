@@ -640,12 +640,21 @@ int32_t HyperTextAccessibleBase::CaretLineNumber() {
     return -1;
   }
 
-  TextLeafPoint firstPointInThis = TextLeafPoint(Acc(), 0);
-  int32_t lineNumber = 1;
-  for (TextLeafPoint line = point; line && firstPointInThis < line;
+  
+  TextLeafPoint line = TextLeafPoint(Acc(), 0);
+  int32_t lineNumber = 0;
+  for (; line && line < point;
        line = line.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_START,
-                                eDirPrevious)) {
-    lineNumber++;
+                                eDirNext)) {
+    ++lineNumber;
+  }
+  
+  
+  
+  if (line == point && !point.mIsEndOfLineInsertionPoint &&
+      point.mOffset <
+          static_cast<int32_t>(nsAccUtils::TextLength(point.mAcc))) {
+    ++lineNumber;
   }
 
   return lineNumber;

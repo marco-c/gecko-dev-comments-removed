@@ -716,7 +716,7 @@ ij
     let moved = waitForEvent(EVENT_TEXT_CARET_MOVED, docAcc);
     docAcc.caretOffset = 1;
     await moved;
-    testAttrs(docAcc, { "line-number": "1" }, true, true);
+    testAttrs(docAcc, { "line-number": "1" }, true);
     info("Moving caret to c");
     const blockquote = findAccessibleChildByID(docAcc, "blockquote", [
       nsIAccessibleText,
@@ -760,14 +760,14 @@ ij
     moved = waitForEvent(EVENT_TEXT_CARET_MOVED, docAcc);
     docAcc.caretOffset = 5;
     await moved;
-    testAttrs(docAcc, { "line-number": "5" }, true, true);
+    testAttrs(docAcc, { "line-number": "5" }, true);
     info("moving caret to end");
     moved = waitForEvent(EVENT_TEXT_CARET_MOVED, docAcc);
     
     
     docAcc.caretOffset = docAcc.characterCount;
     await moved;
-    testAttrs(docAcc, { "line-number": "5" }, true, true);
+    testAttrs(docAcc, { "line-number": "5" }, true);
   },
   {
     
