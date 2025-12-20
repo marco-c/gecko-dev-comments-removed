@@ -291,45 +291,62 @@ def metadata_for_app(app, aab=False):
     return Android metadata including launch `activity_name`, `package_name`, 'subcommand'.
     to reduce special-casing throughout the code base"""
     metadata = namedtuple("metadata", ["activity_name", "package_name", "subcommand"])
-    if not app:
-        app = "org.mozilla.geckoview.test_runner"
-    package_name = app
+    package_name = None
     activity_name = None
-    subcommand = None
+    install_apk = None
+    install_aab = None
 
-    if app in {"org.mozilla.fenix.release", "org.mozilla.firefox"}:
-        package_name = "org.mozilla.firefox"
-        activity_name = "org.mozilla.firefox.App"
-        subcommand = "installFenixRelease"
-    elif app in {"org.mozilla.fenix.nightly", "fenix.nightly"}:
-        
-        package_name = "org.mozilla.fenix"
-        activity_name = "org.mozilla.fenix.App"
-    elif "fennec" in app or "firefox" in app:
-        activity_name = "org.mozilla.gecko.BrowserApp"
-    elif app == "org.mozilla.geckoview.test":
-        subcommand = "install-geckoview-test"
-    elif app == "org.mozilla.geckoview.test_runner":
+    
+    if not app or app in {"test_runner", "org.mozilla.geckoview.test_runner"}:
+        package_name = "org.mozilla.geckoview.test_runner"
         activity_name = "org.mozilla.geckoview.test_runner.TestRunnerActivity"
-        subcommand = (
-            "install-geckoview-test_runner-aab"
-            if aab
-            else "install-geckoview-test_runner"
-        )
-    elif app == "org.mozilla.geckoview_example":
+        install_apk = "install-geckoview-test_runner"
+        install_aab = "install-geckoview-test_runner-aab"
+
+    
+    elif app in {"geckoview.test", "org.mozilla.geckoview.test"}:
+        install_apk = "install-geckoview-test"
+
+    
+    elif app in {"geckoview_example", "org.mozilla.geckoview_example"}:
+        package_name = "org.mozilla.geckoview_example"
         activity_name = "org.mozilla.geckoview_example.GeckoViewActivity"
-        subcommand = (
-            "install-geckoview_example-aab" if aab else "install-geckoview_example"
-        )
-    elif "fenix" in app:
+        install_apk = "install-geckoview_example"
+        install_aab = "install-geckoview_example-aab"
+
+    
+    
+    
+    elif app in {"fenix", "fenix.debug", "org.mozilla.fenix.debug"}:
         package_name = "org.mozilla.fenix.debug"
         activity_name = "org.mozilla.fenix.IntentReceiverActivity"
-        subcommand = "install-fenix"
-    elif "focus" in app:
+        install_apk = "install-fenix"
+    elif app in {"fenix.nightly", "org.mozilla.fenix"}:
+        package_name = "org.mozilla.fenix"
+        activity_name = "org.mozilla.fenix.IntentReceiverActivity"
+        install_apk = "install-fenix-nightly"
+    elif app in {"fenix.beta", "org.mozilla.firefox_beta"}:
+        package_name = "org.mozilla.firefox_beta"
+        activity_name = "org.mozilla.fenix.IntentReceiverActivity"
+        install_apk = "install-fenix-beta"
+    elif app in {"fenix.release", "org.mozilla.firefox"}:
+        package_name = "org.mozilla.firefox"
+        activity_name = "org.mozilla.fenix.IntentReceiverActivity"
+        install_apk = "install-fenix-release"
+
+    
+    elif app in {"focus", "focus-android", "focus.debug", "org.mozilla.focus.debug"}:
         package_name = "org.mozilla.focus.debug"
         activity_name = "org.mozilla.focus.activity.IntentReceiverActivity"
-        subcommand = "install-focus"
-    return metadata(activity_name, package_name, subcommand)
+        install_apk = "install-focus"
+
+    if aab:
+        
+        if not install_aab:
+            raise Exception("I don't know how to use AABs for this app")
+        return metadata(activity_name, package_name, install_aab)
+    else:
+        return metadata(activity_name, package_name, install_apk)
 
 
 def get_android_device(build_obj, device_serial=None, verbose=False):
