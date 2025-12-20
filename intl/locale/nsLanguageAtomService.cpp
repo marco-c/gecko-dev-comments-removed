@@ -202,6 +202,12 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
     if (result.isOk() && loc.Canonicalize().isOk()) {
       
       if (loc.Script().Missing()) {
+        
+        
+        if (loc.Language().EqualTo("en")) {
+          return nsGkAtoms::x_western;
+        }
+
         if (loc.AddLikelySubtags().isErr()) {
           
           return nsGkAtoms::Unicode;
