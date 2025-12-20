@@ -480,7 +480,7 @@ class MarkupContainer {
 
   _onKeyDown(event) {
     const { target, keyCode, shiftKey } = event;
-    const isInput = this.markup._isInputOrTextarea(target);
+    const isInput = this.markup.isInputOrTextareaOrInCodeMirrorEditor(target);
 
     
     
