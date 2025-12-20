@@ -106,9 +106,30 @@ add_task(async function test_tab_quickwrite_keeps_old_tabs() {
   let { server, engine } = await prepareServer();
 
   
+  const id = "fake-guid-99";
+
+  
+  
+  
+  
+  let observeClientsFinished = (_subject, _topic, data) => {
+    if (data == "clients") {
+      engine.service.clientsEngine.fxAccounts.device._deviceListCache = {
+        devices: [],
+      };
+      
+      engine.service.clientsEngine._store._remoteClients = {};
+      engine.service.clientsEngine._store._remoteClients[id] = {
+        id,
+        fxaDeviceId: id,
+      };
+    }
+  };
+  Services.obs.addObserver(observeClientsFinished, "weave:engine:sync:finish");
+
+  
   await Service.sync({ engines: ["tabs"] });
 
-  const id = "fake-guid-99";
   let remoteRecord = encryptPayload({
     id,
     clientName: "not local",
@@ -125,21 +146,13 @@ add_task(async function test_tab_quickwrite_keeps_old_tabs() {
   let collection = server.getCollection("username", "tabs");
   collection.insert(id, remoteRecord);
 
+  
+  
+  engine.setLastSync(0);
   await Service.sync({ engines: ["tabs"] });
 
   
   Assert.equal(collection.count(), 2, "starting with 2 tab records");
-
-  
-  engine.service.clientsEngine.fxAccounts.device._deviceListCache = {
-    devices: [],
-  };
-  
-  engine.service.clientsEngine._store._remoteClients = {};
-  engine.service.clientsEngine._store._remoteClients[id] = {
-    id,
-    fxaDeviceId: id,
-  };
 
   let clients = await engine.getAllClients();
   Assert.equal(clients.length, 1);
@@ -153,6 +166,11 @@ add_task(async function test_tab_quickwrite_keeps_old_tabs() {
   Assert.equal(clients.length, 1);
 
   engine.service.clientsEngine._store._remoteClients = {};
+
+  Services.obs.removeObserver(
+    observeClientsFinished,
+    "weave:engine:sync:finish"
+  );
 
   await promiseStopServer(server);
 });
