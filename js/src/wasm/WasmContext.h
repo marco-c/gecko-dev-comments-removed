@@ -30,26 +30,8 @@
 namespace js::wasm {
 
 #ifdef ENABLE_WASM_JSPI
-
 class SuspenderObject;
 class SuspenderObjectData;
-
-class SuspenderContext {
- private:
-  HeapPtr<SuspenderObject*> activeSuspender_;
-  
-  mozilla::DoublyLinkedList<SuspenderObjectData> suspendedStacks_;
-
- public:
-  SuspenderContext();
-  ~SuspenderContext();
-  SuspenderObject* activeSuspender();
-  void setActiveSuspender(SuspenderObject* obj);
-  void trace(JSTracer* trc);
-  void traceRoots(JSTracer* trc);
-
-  friend class SuspenderObject;
-};
 #endif  
 
 
@@ -58,6 +40,7 @@ class SuspenderContext {
 class Context {
  public:
   Context();
+  ~Context();
 
   static constexpr size_t offsetOfStackLimit() {
     return offsetof(Context, stackLimit);
@@ -71,8 +54,14 @@ class Context {
   void initStackLimit(JSContext* cx);
 
 #ifdef ENABLE_WASM_JSPI
+  SuspenderObject* activeSuspender();
+  void setActiveSuspender(SuspenderObject* obj);
+
   void enterSuspendableStack(JS::NativeStackLimit newStackLimit);
   void leaveSuspendableStack(JSContext* cx);
+
+  void trace(JSTracer* trc);
+  void traceRoots(JSTracer* trc);
 #endif
 
   
@@ -86,11 +75,13 @@ class Context {
   JS::NativeStackLimit stackLimit;
 
 #ifdef ENABLE_WASM_JSPI
+  HeapPtr<SuspenderObject*> activeSuspender_;
   
   
   int32_t onSuspendableStack;
   mozilla::Atomic<uint32_t> suspendableStacksCount;
-  SuspenderContext promiseIntegration;
+  
+  mozilla::DoublyLinkedList<SuspenderObjectData> suspendedStacks_;
 #endif
 };
 
