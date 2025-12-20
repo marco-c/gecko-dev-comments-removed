@@ -7867,6 +7867,12 @@ void ScrollContainerFrame::ScheduleScrollAnimations() {
   const auto [element, request] =
       AnimationUtils::GetElementPseudoPair(elementOrPseudo);
   ProgressTimelineScheduler::ScheduleAnimations(element, request);
+
+  
+  
+  
+  
+  
 }
 
 nsSize ScrollContainerFrame::GetSizeForWindowInnerSize() const {
