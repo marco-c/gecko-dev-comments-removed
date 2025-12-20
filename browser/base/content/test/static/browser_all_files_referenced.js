@@ -370,7 +370,7 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsDriftDetector.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/InsightsHistoryScheduler.sys.mjs",
   },
   
   {
