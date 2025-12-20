@@ -1,0 +1,20 @@
+
+
+
+
+
+#ifndef mozilla_gtest_ipc_TestUtilityProcess_h
+#define mozilla_gtest_ipc_TestUtilityProcess_h
+
+#include "gtest/gtest.h"
+
+namespace mozilla::gtest::ipc {
+
+class TestUtilityProcess : public ::testing::Test {
+ protected:
+  static void SetUpTestSuite();
+};
+
+}  
+
+#endif  
