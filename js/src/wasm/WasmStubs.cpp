@@ -2874,10 +2874,6 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   return FinishOffsets(masm, offsets);
 }
 
-static const LiveRegisterSet AllAllocatableRegs =
-    LiveRegisterSet(GeneralRegisterSet(Registers::AllocatableMask),
-                    FloatRegisterSet(FloatRegisters::AllMask));
-
 
 
 
@@ -2890,9 +2886,6 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
 
   GenerateExitPrologue(masm, ExitReason::Fixed::DebugStub,
                         false, 0, 0, offsets);
-
-  
-  masm.PushRegsInMask(AllAllocatableRegs);
 
   uint32_t framePushed = masm.framePushed();
 
@@ -2921,12 +2914,11 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 #ifndef JS_CODEGEN_ARM64
-  masm.Pop(scratch);
+  masm.pop(scratch);
   masm.moveToStackPtr(scratch);
 #endif
 
   masm.setFramePushed(framePushed);
-  masm.PopRegsInMask(AllAllocatableRegs);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::DebugStub,
                         false, offsets);
@@ -2950,9 +2942,6 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
 
   GenerateExitPrologue(masm, ExitReason::Fixed::RequestTierUp,
                         false, 0, 0, offsets);
-
-  
-  masm.PushRegsInMask(AllAllocatableRegs);
 
   uint32_t framePushed = masm.framePushed();
 
@@ -3007,12 +2996,11 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 #ifndef JS_CODEGEN_ARM64
-  masm.Pop(scratch);
+  masm.pop(scratch);
   masm.moveToStackPtr(scratch);
 #endif
 
   masm.setFramePushed(framePushed);
-  masm.PopRegsInMask(AllAllocatableRegs);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::RequestTierUp,
                         false, offsets);

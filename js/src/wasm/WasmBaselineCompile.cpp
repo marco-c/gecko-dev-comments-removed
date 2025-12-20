@@ -833,6 +833,11 @@ bool BaseCompiler::endFunction() {
 
 void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   MOZ_ASSERT(!deadCode_);
+
+  
+  
+  MOZ_ASSERT(!hasLiveRegsOnStk());
+
 #ifndef RABALDR_PIN_INSTANCE
   fr.loadInstancePtr(InstanceReg);
 #endif
@@ -1199,6 +1204,10 @@ Maybe<CodeOffset> BaseCompiler::addHotnessCheck() {
   
 
   AutoCreatedBy acb(masm, "BC::addHotnessCheck");
+
+  
+  
+  MOZ_ASSERT(!hasLiveRegsOnStk());
 
 #ifdef RABALDR_PIN_INSTANCE
   Register instance(InstanceReg);
@@ -4048,8 +4057,12 @@ bool BaseCompiler::emitLoop() {
     }
     masm.nopAlign(CodeAlignment);
     masm.bind(&controlItem(0).label);
+
+    
+    
     
     sync();
+
     if (!addInterruptCheck()) {
       return false;
     }
@@ -10502,6 +10515,9 @@ bool BaseCompiler::emitBody() {
       
       if (debugEnabled && op.shouldHaveBreakpoint() && !deadCode_) {
         if (previousBreakablePoint_ != masm.currentOffset()) {
+          
+          
+          
           
           
           

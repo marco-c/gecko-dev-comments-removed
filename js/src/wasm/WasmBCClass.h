@@ -647,6 +647,9 @@ struct BaseCompiler final {
   inline size_t countMemRefsOnStk();
 
   
+  inline bool hasLiveRegsOnStk();
+
+  
   void showStack(const char* who) const;
 #endif
 
