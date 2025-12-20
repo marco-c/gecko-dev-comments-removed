@@ -22,16 +22,9 @@ static void* zlib_alloc(void* cx, uInt items, uInt size) {
 
 static void zlib_free(void* cx, void* addr) { js_free(addr); }
 
-Compressor::Compressor(const unsigned char* inp, size_t inplen)
-    : inp(inp),
-      inplen(inplen),
-      initialized(false),
-      finished(false),
-      currentChunkSize(0) {
-  MOZ_ASSERT(inplen > 0, "data to compress can't be empty");
-
+Compressor::Compressor() {
   zs.opaque = nullptr;
-  zs.next_in = (Bytef*)inp;
+  zs.next_in = nullptr;
   zs.avail_in = 0;
   zs.next_out = nullptr;
   zs.avail_out = 0;
@@ -44,9 +37,6 @@ Compressor::Compressor(const unsigned char* inp, size_t inplen)
   zs.data_type = 0;
   zs.adler = 0;
   zs.reserved = 0;
-
-  
-  outbytes = sizeof(CompressedDataHeader);
 }
 
 Compressor::~Compressor() {
@@ -66,9 +56,8 @@ Compressor::~Compressor() {
 static const int WindowBits = -15;
 
 bool Compressor::init() {
-  if (inplen >= UINT32_MAX) {
-    return false;
-  }
+  MOZ_ASSERT(!initialized);
+
   
   
   
@@ -86,6 +75,42 @@ bool Compressor::init() {
     return false;
   }
   initialized = true;
+  return true;
+}
+
+bool Compressor::setInput(const unsigned char* input, size_t inputLength) {
+  MOZ_ASSERT(initialized);
+
+  if (inputLength >= UINT32_MAX) {
+    return false;
+  }
+  MOZ_ASSERT(inputLength > 0, "data to compress can't be empty");
+
+  inp = input;
+  inplen = inputLength;
+
+  
+  outbytes = sizeof(CompressedDataHeader);
+
+  zs.next_in = (Bytef*)inp;
+  zs.avail_in = 0;
+  zs.next_out = nullptr;
+  zs.avail_out = 0;
+
+  
+  
+  if (isFirstInput) {
+    MOZ_ASSERT(currentChunkSize == 0);
+    MOZ_ASSERT(chunkOffsets.empty());
+    MOZ_ASSERT(!finished);
+    isFirstInput = false;
+  } else {
+    currentChunkSize = 0;
+    chunkOffsets.clear();
+    finished = false;
+    int ret = deflateReset(&zs);
+    MOZ_RELEASE_ASSERT(ret == Z_OK);
+  }
   return true;
 }
 

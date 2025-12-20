@@ -31,15 +31,20 @@ class Compressor {
   static constexpr size_t MAX_INPUT_SIZE = 2 * 1024;
 
   z_stream zs;
-  const unsigned char* inp;
-  size_t inplen;
-  size_t outbytes;
-  bool initialized;
-  bool finished;
+  const unsigned char* inp = nullptr;
+  size_t inplen = 0;
+  size_t outbytes = 0;
+  bool finished = false;
+
+  
+  bool initialized = false;
+
+  
+  bool isFirstInput = true;
 
   
   
-  uint32_t currentChunkSize;
+  uint32_t currentChunkSize = 0;
 
   
   
@@ -48,9 +53,19 @@ class Compressor {
  public:
   enum Status { MOREOUTPUT, DONE, CONTINUE, OOM };
 
-  Compressor(const unsigned char* inp, size_t inplen);
+  Compressor();
   ~Compressor();
-  bool init();
+
+  Compressor(const Compressor&) = delete;
+  void operator=(const Compressor&) = delete;
+
+  
+  [[nodiscard]] bool init();
+
+  
+  
+  [[nodiscard]] bool setInput(const unsigned char* input, size_t inputLength);
+
   void setOutput(unsigned char* out, size_t outlen);
   
   Status compressMore();

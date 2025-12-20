@@ -52,6 +52,7 @@ class JSTracer;
 
 namespace js {
 
+class Compressor;
 struct DelazifyTask;
 struct FreeDelazifyTask;
 struct PromiseHelperTask;
@@ -600,9 +601,9 @@ class SourceCompressionTaskEntry {
   
   
   template <typename CharT>
-  void workEncodingSpecific();
+  void workEncodingSpecific(Compressor& comp);
 
-  void runTask();
+  void runTask(Compressor& comp);
   void complete();
 
   struct PerformTaskWork;
