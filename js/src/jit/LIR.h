@@ -557,12 +557,15 @@ class LDefinition {
     GENERAL,  
     INT32,    
     OBJECT,   
-    SLOTS,  
-            
-    WASM_ANYREF,   
-    FLOAT32,       
-    DOUBLE,        
-    SIMD128,       
+    SLOTS,    
+    WASM_ANYREF,       
+    WASM_STRUCT_DATA,  
+                       
+    WASM_ARRAY_DATA,   
+                       
+    FLOAT32,           
+    DOUBLE,            
+    SIMD128,           
     STACKRESULTS,  
 #ifdef JS_NUNBOX32
     
@@ -700,10 +703,13 @@ class LDefinition {
 #endif
       case MIRType::Slots:
       case MIRType::Elements:
-      case MIRType::WasmArrayData:
         return LDefinition::SLOTS;
       case MIRType::WasmAnyRef:
         return LDefinition::WASM_ANYREF;
+      case MIRType::WasmStructData:
+        return LDefinition::WASM_STRUCT_DATA;
+      case MIRType::WasmArrayData:
+        return LDefinition::WASM_ARRAY_DATA;
       case MIRType::Pointer:
       case MIRType::IntPtr:
         return LDefinition::GENERAL;
@@ -751,6 +757,8 @@ inline LStackSlot::Width LStackSlot::width(LDefinition::Type type) {
     case LDefinition::OBJECT:
     case LDefinition::SLOTS:
     case LDefinition::WASM_ANYREF:
+    case LDefinition::WASM_STRUCT_DATA:
+    case LDefinition::WASM_ARRAY_DATA:
 #endif
 #ifdef JS_NUNBOX32
     case LDefinition::TYPE:
@@ -764,6 +772,8 @@ inline LStackSlot::Width LStackSlot::width(LDefinition::Type type) {
     case LDefinition::OBJECT:
     case LDefinition::SLOTS:
     case LDefinition::WASM_ANYREF:
+    case LDefinition::WASM_STRUCT_DATA:
+    case LDefinition::WASM_ARRAY_DATA:
 #endif
 #ifdef JS_PUNBOX64
     case LDefinition::BOX:
@@ -1641,7 +1651,6 @@ class LSafepoint : public TempObject {
 
   
   LiveGeneralRegisterSet slotsOrElementsRegs_;
-
   
   SlotList slotsOrElementsSlots_;
 
@@ -1649,6 +1658,16 @@ class LSafepoint : public TempObject {
   LiveGeneralRegisterSet wasmAnyRefRegs_;
   
   SlotList wasmAnyRefSlots_;
+
+  
+  LiveGeneralRegisterSet wasmStructDataRegs_;
+  
+  SlotList wasmStructDataSlots_;
+
+  
+  LiveGeneralRegisterSet wasmArrayDataRegs_;
+  
+  SlotList wasmArrayDataSlots_;
 
   
   WasmSafepointKind wasmSafepointKind_;
@@ -1671,11 +1690,14 @@ class LSafepoint : public TempObject {
  public:
   void assertInvariants() {
     
+    
 #ifndef JS_NUNBOX32
     MOZ_ASSERT((valueRegs().bits() & ~liveRegs().gprs().bits()) == 0);
 #endif
     MOZ_ASSERT((gcRegs().bits() & ~liveRegs().gprs().bits()) == 0);
     MOZ_ASSERT((wasmAnyRefRegs().bits() & ~liveRegs().gprs().bits()) == 0);
+    MOZ_ASSERT((wasmStructDataRegs().bits() & ~liveRegs().gprs().bits()) == 0);
+    MOZ_ASSERT((wasmArrayDataRegs().bits() & ~liveRegs().gprs().bits()) == 0);
   }
 
   explicit LSafepoint(TempAllocator& alloc)
@@ -1689,6 +1711,8 @@ class LSafepoint : public TempObject {
 #endif
         slotsOrElementsSlots_(alloc),
         wasmAnyRefSlots_(alloc),
+        wasmStructDataSlots_(alloc),
+        wasmArrayDataSlots_(alloc),
         wasmSafepointKind_(WasmSafepointKind::LirCall),
         framePushedAtStackMapBase_(0) {
     assertInvariants();
@@ -1735,6 +1759,49 @@ class LSafepoint : public TempObject {
     assertInvariants();
     return true;
   }
+
+  SlotList& wasmStructDataSlots() { return wasmStructDataSlots_; }
+  LiveGeneralRegisterSet wasmStructDataRegs() const {
+    return wasmStructDataRegs_;
+  }
+  [[nodiscard]] bool addWasmStructDataSlot(bool stack, uint32_t slot) {
+    bool result = wasmStructDataSlots_.append(SlotEntry(stack, slot));
+    if (result) {
+      assertInvariants();
+    }
+    return result;
+  }
+  [[nodiscard]] bool addWasmStructDataPointer(LAllocation alloc) {
+    if (alloc.isMemory()) {
+      return addWasmStructDataSlot(alloc.isStackSlot(), alloc.memorySlot());
+    }
+    MOZ_ASSERT(alloc.isGeneralReg());
+    wasmStructDataRegs_.addUnchecked(alloc.toGeneralReg()->reg());
+    assertInvariants();
+    return true;
+  }
+
+  SlotList& wasmArrayDataSlots() { return wasmArrayDataSlots_; }
+  LiveGeneralRegisterSet wasmArrayDataRegs() const {
+    return wasmArrayDataRegs_;
+  }
+  [[nodiscard]] bool addWasmArrayDataSlot(bool stack, uint32_t slot) {
+    bool result = wasmArrayDataSlots_.append(SlotEntry(stack, slot));
+    if (result) {
+      assertInvariants();
+    }
+    return result;
+  }
+  [[nodiscard]] bool addWasmArrayDataPointer(LAllocation alloc) {
+    if (alloc.isMemory()) {
+      return addWasmArrayDataSlot(alloc.isStackSlot(), alloc.memorySlot());
+    }
+    MOZ_ASSERT(alloc.isGeneralReg());
+    wasmArrayDataRegs_.addUnchecked(alloc.toGeneralReg()->reg());
+    assertInvariants();
+    return true;
+  }
+
   bool hasSlotsOrElementsPointer(LAllocation alloc) const {
     if (alloc.isGeneralReg()) {
       return slotsOrElementsRegs().has(alloc.toGeneralReg()->reg());
@@ -2030,6 +2097,8 @@ bool LDefinition::isSafepointGCType(LNode* ins) const {
     case LDefinition::OBJECT:
     case LDefinition::SLOTS:
     case LDefinition::WASM_ANYREF:
+    case LDefinition::WASM_STRUCT_DATA:
+    case LDefinition::WASM_ARRAY_DATA:
 #ifdef JS_NUNBOX32
     case LDefinition::TYPE:
     case LDefinition::PAYLOAD:

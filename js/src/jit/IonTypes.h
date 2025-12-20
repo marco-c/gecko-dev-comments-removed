@@ -511,14 +511,15 @@ enum class MIRType : uint8_t {
   MagicUninitializedLexical,  
   
   Value,
-  None,           
-  Slots,          
-  Elements,       
-  Pointer,        
-  WasmAnyRef,     
-  WasmArrayData,  
-  StackResults,   
-  Shape,          
+  None,            
+  Slots,           
+  Elements,        
+  Pointer,         
+  WasmAnyRef,      
+  WasmStructData,  
+  WasmArrayData,   
+  StackResults,    
+  Shape,           
   Last = Shape
 };
 
@@ -661,6 +662,8 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "Pointer";
     case MIRType::WasmAnyRef:
       return "WasmAnyRef";
+    case MIRType::WasmStructData:
+      return "WasmStructData";
     case MIRType::WasmArrayData:
       return "WasmArrayData";
     case MIRType::StackResults:

@@ -153,8 +153,12 @@ struct StackMap final {
     AnyRef = 1,
 
     
+    StructDataPointer = 2,
+
     
-    ArrayDataPointer = 2,
+    
+    
+    ArrayDataPointer = 3,
 
     Limit,
   };
@@ -210,6 +214,8 @@ struct StackMap final {
   inline void set(uint32_t index, Kind kind) {
     MOZ_ASSERT(index < header.numMappedWords);
     MOZ_ASSERT(kind < Kind::Limit);
+    
+    MOZ_ASSERT(get(index) == (Kind)0);
     uint32_t wordIndex = index / mappedWordsPerBitmapElem;
     uint32_t wordOffset = index % mappedWordsPerBitmapElem * bitsPerMappedWord;
     bitmap[wordIndex] |= (kind << wordOffset);
