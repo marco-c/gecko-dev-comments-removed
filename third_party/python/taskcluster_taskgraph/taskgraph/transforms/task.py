@@ -649,7 +649,7 @@ def build_docker_worker_payload(config, task, task_def):
     if "max-run-time" in worker:
         payload["maxRunTime"] = worker["max-run-time"]
 
-    run_task = payload.get("command", [""])[0].endswith("run-task")
+    run_task = os.path.basename(payload.get("command", [""])[0]).startswith("run-task")
 
     
     
