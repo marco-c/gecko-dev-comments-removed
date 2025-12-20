@@ -3318,6 +3318,7 @@ pref("devtools.popup.disable_autohide", false);
 
 
 pref("first-startup.timeout", 30000);
+pref("first-startup.category-tasks-enabled", true);
 
 
 

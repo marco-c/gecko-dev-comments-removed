@@ -7,6 +7,7 @@ const { updateAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"
 );
 
+const CATEGORY_NAME = "first-startup-new-profile";
 const PREF_TIMEOUT = "first-startup.timeout";
 
 add_setup(function test_setup() {
@@ -15,6 +16,10 @@ add_setup(function test_setup() {
 
   
   Services.fog.initializeFOG();
+
+  
+  
+  Services.catMan.deleteCategory(CATEGORY_NAME);
 });
 
 add_task(async function test_success() {
