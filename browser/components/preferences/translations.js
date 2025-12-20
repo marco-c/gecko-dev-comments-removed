@@ -969,7 +969,7 @@ const TranslationsSettings = {
 
       const removeButton = document.createElement("moz-button");
       removeButton.setAttribute("slot", "actions-start");
-      removeButton.setAttribute("type", "icon ghost");
+      removeButton.setAttribute("type", "icon");
       removeButton.setAttribute(
         "iconsrc",
         "chrome://global/skin/icons/delete.svg"
@@ -1254,7 +1254,7 @@ const TranslationsSettings = {
 
       const removeButton = document.createElement("moz-button");
       removeButton.setAttribute("slot", "actions-start");
-      removeButton.setAttribute("type", "icon ghost");
+      removeButton.setAttribute("type", "icon");
       removeButton.setAttribute(
         "iconsrc",
         "chrome://global/skin/icons/delete.svg"
@@ -1416,7 +1416,7 @@ const TranslationsSettings = {
     for (const origin of sortedOrigins) {
       const removeButton = document.createElement("moz-button");
       removeButton.setAttribute("slot", "actions-start");
-      removeButton.setAttribute("type", "icon ghost");
+      removeButton.setAttribute("type", "icon");
       removeButton.setAttribute(
         "iconsrc",
         "chrome://global/skin/icons/delete.svg"
@@ -1603,6 +1603,22 @@ const TranslationsSettings = {
   
 
 
+
+
+
+  setIconButtonGhostState(button, isGhost) {
+    if (!button) {
+      return;
+    }
+    const type = isGhost ? "icon ghost" : "icon";
+    if (button.getAttribute("type") !== type) {
+      button.setAttribute("type", type);
+    }
+  },
+
+  
+
+
   resetDownloadSelect() {
     if (this.elements?.downloadLanguagesSelect) {
       this.elements.downloadLanguagesSelect.value = "";
@@ -1670,12 +1686,13 @@ const TranslationsSettings = {
   async createDeleteConfirmationItem(langTag, item) {
     const warningButton = document.createElement("moz-button");
     warningButton.setAttribute("slot", "actions-start");
-    warningButton.setAttribute("type", "icon ghost");
+    warningButton.setAttribute("type", "icon");
     warningButton.setAttribute("iconsrc", DOWNLOAD_WARNING_ICON);
     warningButton.style.pointerEvents = "none";
     warningButton.style.color = "var(--icon-color-warning)";
     warningButton.classList.add(DOWNLOAD_LANGUAGE_REMOVE_BUTTON_CLASS);
     warningButton.dataset.langTag = langTag;
+    this.setIconButtonGhostState(warningButton, true);
 
     const sizeLabel = this.formatLanguageSize(langTag) ?? "0";
     const languageLabel = this.formatLanguageLabel(langTag) ?? langTag;
@@ -1726,12 +1743,13 @@ const TranslationsSettings = {
   async createFailedDownloadItem(langTag, item) {
     const errorButton = document.createElement("moz-button");
     errorButton.setAttribute("slot", "actions-start");
-    errorButton.setAttribute("type", "icon ghost");
+    errorButton.setAttribute("type", "icon");
     errorButton.setAttribute("iconsrc", DOWNLOAD_ERROR_ICON);
     errorButton.style.pointerEvents = "none";
     errorButton.style.color = "var(--text-color-error)";
     errorButton.classList.add(DOWNLOAD_LANGUAGE_REMOVE_BUTTON_CLASS);
     errorButton.dataset.langTag = langTag;
+    this.setIconButtonGhostState(errorButton, true);
 
     const sizeLabel = this.formatLanguageSize(langTag) ?? "0";
     const languageLabel = this.formatLanguageLabel(langTag) ?? langTag;
@@ -1785,7 +1803,7 @@ const TranslationsSettings = {
 
     const removeButton = document.createElement("moz-button");
     removeButton.setAttribute("slot", "actions-start");
-    removeButton.setAttribute("type", "icon ghost");
+    removeButton.setAttribute("type", "icon");
     removeButton.setAttribute(
       "iconsrc",
       isDownloading ? DOWNLOAD_LOADING_ICON : DOWNLOAD_DELETE_ICON
@@ -1796,6 +1814,11 @@ const TranslationsSettings = {
     if (isDownloading) {
       removeButton.style.pointerEvents = "none";
     }
+    this.setIconButtonGhostState(
+      removeButton,
+      isDownloading ||
+        removeButton.getAttribute("iconsrc") === DOWNLOAD_LOADING_ICON
+    );
 
     item.setAttribute("label", label);
     if (isDownloading) {
