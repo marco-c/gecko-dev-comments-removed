@@ -394,7 +394,7 @@ static bool InvokeInterruptCallbacks(JSContext* cx) {
   return stop;
 }
 
-static bool HandleInterrupt(JSContext* cx, bool invokeCallback) {
+static bool HandleInterrupt(JSContext* cx, bool invokeCallback, bool oomStackTrace) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
 
   cx->runtime()->gc.gcIfRequested();
@@ -402,6 +402,12 @@ static bool HandleInterrupt(JSContext* cx, bool invokeCallback) {
   
   
   jit::AttachFinishedCompilations(cx);
+
+  if (oomStackTrace) {
+    
+    
+    cx->captureOOMStackTrace();
+  }
 
   
   if (!invokeCallback) {
@@ -482,9 +488,23 @@ bool JSContext::handleInterrupt() {
     bool invokeCallback =
         hasPendingInterrupt(InterruptReason::CallbackUrgent) ||
         hasPendingInterrupt(InterruptReason::CallbackCanWait);
+    bool oomStackTrace = hasPendingInterrupt(InterruptReason::OOMStackTrace);
     interruptBits_ = 0;
     resetJitStackLimit();
-    return HandleInterrupt(this, invokeCallback);
+    return HandleInterrupt(this, invokeCallback, oomStackTrace);
+  }
+  return true;
+}
+
+bool JSContext::handleInterruptNoCallbacks() {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
+  if (hasAnyPendingInterrupt() || jitStackLimit == JS::NativeStackLimitMin) {
+    bool oomStackTrace = hasPendingInterrupt(InterruptReason::OOMStackTrace);
+    clearPendingInterrupt(js::InterruptReason::OOMStackTrace);
+    if (!hasAnyPendingInterrupt()) {
+      resetJitStackLimit();
+    }
+    return HandleInterrupt(this, false, oomStackTrace);
   }
   return true;
 }

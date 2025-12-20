@@ -258,6 +258,17 @@ MOZ_ALWAYS_INLINE bool CallNativeImpl(JSContext* cx, NativeImpl impl,
   return ok;
 }
 
+
+
+
+
+MOZ_ALWAYS_INLINE bool CheckForOOMStackTraceInterrupt(JSContext* cx) {
+  if (MOZ_UNLIKELY(cx->hasPendingInterrupt(InterruptReason::OOMStackTrace))) {
+    return cx->handleInterruptNoCallbacks();
+  }
+  return true;
+}
+
 MOZ_ALWAYS_INLINE bool CheckForInterrupt(JSContext* cx) {
   MOZ_ASSERT(!cx->isExceptionPending());
   
