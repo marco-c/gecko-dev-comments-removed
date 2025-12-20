@@ -76,7 +76,9 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   void MaybeSlotHostChild(nsIContent&);
   
   
-  void MaybeUnslotHostChild(nsIContent&);
+  
+  
+  void MaybeUnslotHostChild(nsIContent&, bool aInBatch);
 
   
   Element* Host() const {

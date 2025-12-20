@@ -251,17 +251,15 @@ inline void nsIContent::HandleShadowDOMRelatedInsertionSteps(bool aHadParent) {
   }
 }
 
-inline void nsIContent::HandleShadowDOMRelatedRemovalSteps(bool aNullParent) {
+inline void nsIContent::HandleShadowDOMRelatedRemovalSteps(bool aNullParent,
+                                                           bool aInBatch) {
   using mozilla::dom::Element;
   using mozilla::dom::ShadowRoot;
 
   if (aNullParent) {
-    
-    
-    
-    if (Element* parentElement = Element::FromNodeOrNull(mParent)) {
+    if (Element* parentElement = Element::FromNode(mParent)) {
       if (ShadowRoot* shadow = parentElement->GetShadowRoot()) {
-        shadow->MaybeUnslotHostChild(*this);
+        shadow->MaybeUnslotHostChild(*this, aInBatch);
       }
       HandleInsertionToOrRemovalFromSlot();
     }

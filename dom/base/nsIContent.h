@@ -114,7 +114,8 @@ class nsIContent : public nsINode {
 
 
   virtual void UnbindFromTree(UnbindContext&) = 0;
-  void UnbindFromTree(nsINode* aNewParent = nullptr);
+  void UnbindFromTree(nsINode* aNewParent = nullptr,
+                      const BatchRemovalState* aBatchState = nullptr);
 
   enum {
     
@@ -387,7 +388,8 @@ class nsIContent : public nsINode {
   
   
   
-  inline void HandleShadowDOMRelatedRemovalSteps(bool aNullParent);
+  inline void HandleShadowDOMRelatedRemovalSteps(bool aNullParent,
+                                                 bool aInBatch);
 
  public:
   
