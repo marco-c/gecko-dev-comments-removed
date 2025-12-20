@@ -305,7 +305,6 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   mFlags.mDummyParentReflowInput = false;
   mFlags.mStaticPosIsCBOrigin = aFlags.contains(InitFlag::StaticPosIsCBOrigin);
   mFlags.mIOffsetsNeedCSSAlign = mFlags.mBOffsetsNeedCSSAlign = false;
-  mFlags.mIAnchorCenter = mFlags.mBAnchorCenter = false;
 
   
   
@@ -1145,18 +1144,7 @@ void ReflowInput::ComputeAbsPosInlineAutoMargin(nscoord aAvailMarginSpace,
                                                 WritingMode aContainingBlockWM,
                                                 bool aIsMarginIStartAuto,
                                                 bool aIsMarginIEndAuto,
-                                                bool aIsIAnchorCenter,
                                                 LogicalMargin& aMargin) {
-  if (aIsIAnchorCenter) {
-    
-    if (aIsMarginIStartAuto) {
-      aMargin.IStart(aContainingBlockWM) = 0;
-    }
-    if (aIsMarginIEndAuto) {
-      aMargin.IEnd(aContainingBlockWM) = 0;
-    }
-    return;
-  }
   if (aIsMarginIStartAuto) {
     if (aIsMarginIEndAuto) {
       if (aAvailMarginSpace < 0) {
@@ -1190,18 +1178,7 @@ void ReflowInput::ComputeAbsPosBlockAutoMargin(nscoord aAvailMarginSpace,
                                                WritingMode aContainingBlockWM,
                                                bool aIsMarginBStartAuto,
                                                bool aIsMarginBEndAuto,
-                                               bool aIsBAnchorCenter,
                                                LogicalMargin& aMargin) {
-  if (aIsBAnchorCenter) {
-    
-    if (aIsMarginBStartAuto) {
-      aMargin.BStart(aContainingBlockWM) = 0;
-    }
-    if (aIsMarginBEndAuto) {
-      aMargin.BEnd(aContainingBlockWM) = 0;
-    }
-    return;
-  }
   if (aIsMarginBStartAuto) {
     if (aIsMarginBEndAuto) {
       
@@ -1720,19 +1697,6 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   bool bEndIsAuto = bEndOffset->IsAuto();
 
   
-  mFlags.mIAnchorCenter = anchorResolutionParams.mBaseParams
-                              .mAutoResolutionOverrideParams.mIAnchorCenter;
-  mFlags.mBAnchorCenter = anchorResolutionParams.mBaseParams
-                              .mAutoResolutionOverrideParams.mBAnchorCenter;
-
-  
-  
-  const bool inlineBothInsetsAuto =
-      mFlags.mIAnchorCenter && iStartIsAuto && iEndIsAuto;
-  const bool blockBothInsetsAuto =
-      mFlags.mBAnchorCenter && bStartIsAuto && bEndIsAuto;
-
-  
   
   
   nsHypotheticalPosition hypotheticalPos;
@@ -1817,7 +1781,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
         nsLayoutUtils::ComputeCBDependentValue(aCBSize.ISize(cbwm), iEndOffset);
   }
 
-  if (iStartIsAuto && iEndIsAuto && !inlineBothInsetsAuto) {
+  if (iStartIsAuto && iEndIsAuto) {
     if (cbwm.IsInlineReversed() !=
         hypotheticalPos.mWritingMode.IsInlineReversed()) {
       offsets.IEnd(cbwm) = hypotheticalPos.mIStart;
@@ -1841,7 +1805,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
         nsLayoutUtils::ComputeCBDependentValue(aCBSize.BSize(cbwm), bEndOffset);
   }
 
-  if (bStartIsAuto && bEndIsAuto && !blockBothInsetsAuto) {
+  if (bStartIsAuto && bEndIsAuto) {
     
     offsets.BStart(cbwm) = hypotheticalPos.mBStart;
     bStartIsAuto = false;
