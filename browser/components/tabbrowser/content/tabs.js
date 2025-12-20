@@ -1066,6 +1066,15 @@
       return this.hasAttribute("movingtab");
     }
 
+    isContainerVerticalPinnedGrid(tab) {
+      return (
+        tab.pinned &&
+        this.verticalMode &&
+        this.hasAttribute("expanded") &&
+        !this.expandOnHover
+      );
+    }
+
     
 
 

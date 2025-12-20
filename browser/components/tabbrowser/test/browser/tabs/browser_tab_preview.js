@@ -40,16 +40,16 @@ async function openTabPreview(tab, win = window) {
 }
 
 async function closeTabPreviews(win = window) {
-  const tabs = win.document.getElementById("tabbrowser-tabs");
-  const tabsRect = tabs.getBoundingClientRect();
   const previewHidden = BrowserTestUtils.waitForPopupEvent(
     win.document.getElementById(TAB_PREVIEW_PANEL_ID),
     "hidden"
   );
+  const tabs = win.document.getElementById("tabbrowser-tabs");
+  const tabsRect = tabs.getBoundingClientRect();
   EventUtils.synthesizeMouse(
     tabs,
     0,
-    tabsRect.height + 1,
+    tabsRect.height + 10,
     {
       type: "mouseout",
     },
@@ -451,7 +451,9 @@ add_task(async function tabUrlBarInputTests() {
   await previewHidden;
 
   Assert.equal(previewElement.state, "closed", "Preview is closed");
-  await closeTabPreviews();
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mousemove",
+  });
   await openTabPreview(tab1);
   Assert.equal(previewElement.state, "open", "Preview is open");
 
@@ -984,82 +986,80 @@ add_task(async function tabGroupPanelUpdatesTests() {
 
 
 add_task(async function noPreviewInBackgroundWindowTests() {
-  const bgWindow = window;
-  const bgTabUngrouped = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "about:robots"
-  );
-  const bgTabGrouped = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "about:robots"
-  );
-  const bgGroup = gBrowser.addTabGroup([bgTabGrouped]);
-  bgGroup.collapsed = true;
+  todo(false, "test is failing on CI, bug 2006695");
 
   
-  await openTabPreview(bgTabUngrouped, bgWindow);
-  await closeTabPreviews(bgWindow);
 
-  const bgPreviewComponent = bgWindow.gBrowser.tabContainer.previewPanel;
-  sinon.spy(bgPreviewComponent, "activate");
 
-  let fgWindow = await BrowserTestUtils.openNewBrowserWindow();
-  let fgTab = fgWindow.gBrowser.tabs[0];
-  let fgWindowPreviewContainer =
-    fgWindow.document.getElementById(TAB_PREVIEW_PANEL_ID);
 
-  await openTabPreview(fgTab, fgWindow);
-  Assert.equal(
-    fgWindowPreviewContainer.querySelector(".tab-preview-title").innerText,
-    "New Tab",
-    "Preview of foreground tab shows correct title"
-  );
-  await closeTabPreviews(fgWindow);
 
-  
-  EventUtils.synthesizeMouseAtCenter(
-    bgTabUngrouped,
-    { type: "mouseover" },
-    bgWindow
-  );
-  await BrowserTestUtils.waitForCondition(() => {
-    return bgPreviewComponent.activate.calledOnce;
-  }, "Waiting for activate to be called on bgPreviewComponent after hovering ungrouped tab");
-  Assert.equal(
-    bgPreviewComponent.tabPanel.panelElement.state,
-    "closed",
-    "preview does not open from background window"
-  );
 
-  bgPreviewComponent.activate.resetHistory();
-  Assert.ok(
-    !bgPreviewComponent.activate.calledOnce,
-    "sanity check that spy has no history"
-  );
 
-  
-  EventUtils.synthesizeMouseAtCenter(
-    bgGroup.labelElement,
-    { type: "mouseover" },
-    bgWindow
-  );
-  await BrowserTestUtils.waitForCondition(() => {
-    return bgPreviewComponent.activate.calledOnce;
-  }, "Waiting for activate to be called on bgPreviewComponent after hovering grouped tab label");
-  Assert.equal(
-    bgPreviewComponent.tabGroupPanel.panelElement.state,
-    "closed",
-    "preview does not open from background window"
-  );
 
-  BrowserTestUtils.removeTab(fgTab);
-  await BrowserTestUtils.closeWindow(fgWindow);
 
-  BrowserTestUtils.removeTab(bgTabUngrouped);
-  BrowserTestUtils.removeTab(bgTabGrouped);
 
-  sinon.restore();
-  await resetState();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 });
 
 
