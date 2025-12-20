@@ -2249,10 +2249,13 @@ pref("browser.ml.smartAssist.model", "");
 pref("browser.ml.smartAssist.overrideNewTab", false);
 
 
-pref("browser.aiwindow.enabled", false);
+pref("browser.aiwindow.apiKey", '');
 pref("browser.aiwindow.chatStore.loglevel", "Error");
+pref("browser.aiwindow.enabled", false);
+pref("browser.aiwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
 pref("browser.aiwindow.insights", false);
 pref("browser.aiwindow.insightsLogLevel", "Warn");
+pref("browser.aiwindow.model", "");
 
 
 pref("security.mixed_content.block_active_content", true);
