@@ -294,10 +294,11 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
           
           
           MDefinition* def = (*i)->consumer()->toDefinition();
-          MOZ_ASSERT(def->op() == MDefinition::Opcode::StoreDynamicSlot ||
-                     def->op() == MDefinition::Opcode::LoadDynamicSlot ||
-                     def->op() ==
-                         MDefinition::Opcode::LoadDynamicSlotFromOffset);
+          MOZ_ASSERT(
+              def->op() == MDefinition::Opcode::StoreDynamicSlot ||
+              def->op() == MDefinition::Opcode::LoadDynamicSlot ||
+              def->op() == MDefinition::Opcode::StoreDynamicSlotFromOffset ||
+              def->op() == MDefinition::Opcode::LoadDynamicSlotFromOffset);
         }
 #endif
         break;
