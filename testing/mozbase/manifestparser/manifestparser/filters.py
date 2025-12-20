@@ -11,7 +11,6 @@ possible to define custom filters if the built-in ones are not enough.
 import functools
 import itertools
 import os
-from bisect import bisect_left
 from collections import defaultdict
 from collections.abc import MutableSequence
 
@@ -350,49 +349,33 @@ class chunk_by_runtime(InstanceFilter):
         
         runtimes = [(self.runtimes[m], m) for m in manifests if m in self.runtimes]
 
-        if len(runtimes) != len(self.runtimes):
-            
-            times = [r[0] for r in runtimes]
-            
-            
-            avg = round(sum(times) / len(times), 2) if times else 0
-
-            missing = sorted([m for m in manifests if m not in self.runtimes])
-            self.logger.debug(
-                "Applying average runtime of {}s to the following missing manifests:\n{}".format(
-                    avg, "  " + "\n  ".join(missing)
-                )
+        
+        times = [r[0] for r in runtimes]
+        
+        
+        avg = round(sum(times) / len(times), 2) if times else 0
+        missing = sorted([m for m in manifests if m not in self.runtimes])
+        self.logger.debug(
+            "Applying average runtime of {}s to the following missing manifests:\n{}".format(
+                avg, "  " + "\n  ".join(missing)
             )
-            runtimes.extend([(avg, m) for m in missing])
+        )
+        runtimes.extend([(avg, m) for m in missing])
 
         
         chunks = [[0, []] for i in range(self.total_chunks)]
-
-        def key(x):
-            return (x[0], len(x[1]))
 
         
         for runtime, manifest in sorted(runtimes, reverse=True):
             
             
-            chunk0 = chunks[0]
-            chunk0[0] += runtime
-            chunk0[1].append(manifest)
+            chunks.sort(key=lambda x: (x[0], len(x[1]), x[1]))
+            chunks[0][0] += runtime
+            chunks[0][1].append(manifest)
 
-            
-            insertion_point = bisect_left(chunks, key(chunk0), lo=1, key=key)
-
-            
-            
-            
-            
-            
-            
-            
-            for i in range(insertion_point - 1):
-                chunks[i] = chunks[i + 1]
-            chunks[insertion_point - 1] = chunk0
-
+        
+        
+        chunks.sort(key=lambda x: (x[0], len(x[1])))
         return chunks
 
     def __call__(self, tests, values, strict=False):
