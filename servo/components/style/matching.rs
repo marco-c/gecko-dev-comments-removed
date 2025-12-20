@@ -28,7 +28,6 @@ use crate::style_resolver::{PseudoElementResolution, ResolvedElementStyles};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
-use crate::values::computed::font::QueryFontMetricsFlags;
 use servo_arc::{Arc, ArcBorrow};
 
 
@@ -868,8 +867,7 @@ trait PrivateMatchMethods: TElement {
             let old_justify_items = old_values.get_position().clone_justify_items();
             let new_justify_items = new_values.get_position().clone_justify_items();
 
-            let was_legacy_justify_items =
-                old_justify_items.computed.contains(AlignFlags::LEGACY);
+            let was_legacy_justify_items = old_justify_items.computed.contains(AlignFlags::LEGACY);
 
             let is_legacy_justify_items = new_justify_items.computed.contains(AlignFlags::LEGACY);
 
@@ -985,17 +983,17 @@ pub trait MatchMethods: TElement {
                     .0
             });
 
+            
+            
             if is_root {
                 debug_assert!(self.owner_doc_matches_for_testing(device));
+                device.set_root_style(new_primary_style);
 
                 
                 if old_font_size != Some(new_font_size) {
                     let size = new_font_size.computed_size();
                     device.set_root_font_size(new_primary_style.effective_zoom.unzoom(size.px()));
                     if device.used_root_font_size() {
-                        
-                        
-                        
                         restyle_requirement = ChildRestyleRequirement::MustCascadeDescendants;
                     }
                 }
@@ -1013,43 +1011,9 @@ pub trait MatchMethods: TElement {
                 }
 
                 
-                let new_font_metrics = device.query_font_metrics(
-                    new_primary_style.writing_mode.is_upright(),
-                    &new_primary_style.get_font(),
-                    new_font_size.computed_size(),
-                    QueryFontMetricsFlags::USE_USER_FONT_SET
-                        | QueryFontMetricsFlags::NEEDS_CH
-                        | QueryFontMetricsFlags::NEEDS_IC,
-                     false,
-                );
-                let mut root_font_metrics_changed = false;
-                root_font_metrics_changed |= device.set_root_font_metrics_ex(
-                    new_primary_style
-                        .effective_zoom
-                        .unzoom(new_font_metrics.x_height_or_default(&new_font_size).px()),
-                );
-                root_font_metrics_changed |= device.set_root_font_metrics_ch(
-                    new_primary_style.effective_zoom.unzoom(
-                        new_font_metrics
-                            .zero_advance_measure_or_default(
-                                &new_font_size,
-                                new_primary_style.writing_mode.is_upright(),
-                            )
-                            .px(),
-                    ),
-                );
-                root_font_metrics_changed |= device.set_root_font_metrics_cap(
-                    new_primary_style
-                        .effective_zoom
-                        .unzoom(new_font_metrics.cap_height_or_default().px()),
-                );
-                root_font_metrics_changed |= device.set_root_font_metrics_ic(
-                    new_primary_style
-                        .effective_zoom
-                        .unzoom(new_font_metrics.ic_width_or_default(&new_font_size).px()),
-                );
-
-                if device.used_root_font_metrics() && root_font_metrics_changed {
+                
+                
+                if device.used_root_font_metrics() && device.update_root_font_metrics() {
                     restyle_requirement = ChildRestyleRequirement::MustCascadeDescendants;
                 }
             }

@@ -27,10 +27,16 @@ use crate::values::{CustomIdent, KeyframesName};
 use app_units::{Au, AU_PER_PX};
 use euclid::default::Size2D;
 use euclid::{Scale, SideOffsets2D};
+use parking_lot::RwLock;
 use servo_arc::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
-use std::{cmp, fmt};
+use std::{cmp, fmt, mem};
 use style_traits::{CSSPixel, DevicePixel};
+
+
+
+
+
 
 
 
@@ -41,12 +47,7 @@ pub struct Device {
     default_values: Arc<ComputedValues>,
     
     
-    
-    
-    
-    
-    
-    
+    root_style: RwLock<Arc<ComputedValues>>,
     
     root_font_size: AtomicU32,
     
@@ -72,7 +73,8 @@ pub struct Device {
     used_root_line_height: AtomicBool,
     
     
-    used_root_font_metrics: AtomicBool,
+    
+    used_root_font_metrics: RwLock<bool>,
     
     used_font_metrics: AtomicBool,
     
@@ -110,9 +112,12 @@ impl Device {
         assert!(!document.is_null());
         let doc = unsafe { &*document };
         let prefs = unsafe { &*bindings::Gecko_GetPrefSheetPrefs(doc) };
+        let default_values = ComputedValues::default_values(doc);
+        let root_style = RwLock::new(Arc::clone(&default_values));
         Device {
             document,
-            default_values: ComputedValues::default_values(doc),
+            default_values: default_values,
+            root_style: root_style,
             root_font_size: AtomicU32::new(FONT_MEDIUM_PX.to_bits()),
             root_line_height: AtomicU32::new(FONT_MEDIUM_LINE_HEIGHT_PX.to_bits()),
             root_font_metrics_ex: AtomicU32::new(FONT_MEDIUM_EX_PX.to_bits()),
@@ -125,7 +130,7 @@ impl Device {
             body_text_color: AtomicUsize::new(prefs.mLightColors.mDefault as usize),
             used_root_font_size: AtomicBool::new(false),
             used_root_line_height: AtomicBool::new(false),
-            used_root_font_metrics: AtomicBool::new(false),
+            used_root_font_metrics: RwLock::new(false),
             used_font_metrics: AtomicBool::new(false),
             used_viewport_size: AtomicBool::new(false),
             used_dynamic_viewport_size: AtomicBool::new(false),
@@ -187,6 +192,12 @@ impl Device {
     }
 
     
+    
+    pub fn set_root_style(&self, style: &Arc<ComputedValues>) {
+        *self.root_style.write() = style.clone();
+    }
+
+    
     pub fn root_font_size(&self) -> Length {
         self.used_root_font_size.store(true, Ordering::Relaxed);
         Length::new(f32::from_bits(self.root_font_size.load(Ordering::Relaxed)))
@@ -213,7 +224,7 @@ impl Device {
 
     
     pub fn root_font_metrics_ex(&self) -> Length {
-        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        self.ensure_root_font_metrics_updated();
         Length::new(f32::from_bits(
             self.root_font_metrics_ex.load(Ordering::Relaxed),
         ))
@@ -228,7 +239,7 @@ impl Device {
 
     
     pub fn root_font_metrics_cap(&self) -> Length {
-        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        self.ensure_root_font_metrics_updated();
         Length::new(f32::from_bits(
             self.root_font_metrics_cap.load(Ordering::Relaxed),
         ))
@@ -243,7 +254,7 @@ impl Device {
 
     
     pub fn root_font_metrics_ch(&self) -> Length {
-        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        self.ensure_root_font_metrics_updated();
         Length::new(f32::from_bits(
             self.root_font_metrics_ch.load(Ordering::Relaxed),
         ))
@@ -258,7 +269,7 @@ impl Device {
 
     
     pub fn root_font_metrics_ic(&self) -> Length {
-        self.used_root_font_metrics.store(true, Ordering::Relaxed);
+        self.ensure_root_font_metrics_updated();
         Length::new(f32::from_bits(
             self.root_font_metrics_ic.load(Ordering::Relaxed),
         ))
@@ -350,6 +361,55 @@ impl Device {
         }
     }
 
+    fn ensure_root_font_metrics_updated(&self) {
+        let mut guard = self.used_root_font_metrics.write();
+        let previously_computed = mem::replace(&mut *guard, true);
+        if !previously_computed {
+            self.update_root_font_metrics();
+        }
+    }
+
+    
+    
+    pub fn update_root_font_metrics(&self) -> bool {
+        let root_style = self.root_style.read();
+        let root_effective_zoom = (*root_style).effective_zoom;
+        let root_font_size = (*root_style).get_font().clone_font_size().computed_size();
+
+        let root_font_metrics = self.query_font_metrics(
+            (*root_style).writing_mode.is_upright(),
+            &(*root_style).get_font(),
+            root_font_size,
+            QueryFontMetricsFlags::USE_USER_FONT_SET
+                | QueryFontMetricsFlags::NEEDS_CH
+                | QueryFontMetricsFlags::NEEDS_IC,
+             false,
+        );
+
+        let mut root_font_metrics_changed = false;
+        root_font_metrics_changed |= self.set_root_font_metrics_ex(
+            root_effective_zoom.unzoom(root_font_metrics.x_height_or_default(root_font_size).px()),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_ch(
+            root_effective_zoom.unzoom(
+                root_font_metrics
+                    .zero_advance_measure_or_default(
+                        root_font_size,
+                        (*root_style).writing_mode.is_upright(),
+                    )
+                    .px(),
+            ),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_cap(
+            root_effective_zoom.unzoom(root_font_metrics.cap_height_or_default().px()),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_ic(
+            root_effective_zoom.unzoom(root_font_metrics.ic_width_or_default(root_font_size).px()),
+        );
+
+        root_font_metrics_changed
+    }
+
     
     pub fn body_text_color(&self) -> AbsoluteColor {
         convert_nscolor_to_absolute_color(self.body_text_color.load(Ordering::Relaxed) as u32)
@@ -390,7 +450,7 @@ impl Device {
         self.reset_computed_values();
         self.used_root_font_size.store(false, Ordering::Relaxed);
         self.used_root_line_height.store(false, Ordering::Relaxed);
-        self.used_root_font_metrics.store(false, Ordering::Relaxed);
+        self.used_root_font_metrics = RwLock::new(false);
         self.used_font_metrics.store(false, Ordering::Relaxed);
         self.used_viewport_size.store(false, Ordering::Relaxed);
         self.used_dynamic_viewport_size
@@ -409,7 +469,7 @@ impl Device {
 
     
     pub fn used_root_font_metrics(&self) -> bool {
-        self.used_root_font_metrics.load(Ordering::Relaxed)
+        *self.used_root_font_metrics.read()
     }
 
     
