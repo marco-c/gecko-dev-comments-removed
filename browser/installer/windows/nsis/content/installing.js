@@ -12,11 +12,16 @@ var PROGRESS_BAR_INTERVAL_MS = 250;
 window.attachEvent("onload", function () {
   
   var direction = external.getTextDirection();
-  document.body.style.direction = direction;
+  document.getElementById("text_column").style.direction = direction;
+  document.getElementById("installing").style.direction = direction;
 
   
   var label = document.getElementById("label");
   label.innerText = external.getUIString("installing_label");
+  document.getElementById("header").innerText =
+    external.getUIString("installing_header");
+  document.getElementById("content").innerText =
+    external.getUIString("installing_content");
 
   
   setInterval(function () {

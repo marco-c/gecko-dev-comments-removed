@@ -8,6 +8,7 @@ window.attachEvent("onload", function () {
   var profileRefreshForm = document.getElementById("profileRefreshForm");
   profileRefreshForm.style.direction = direction;
   var checkboxLabel = document.getElementById("checkboxLabel");
+  checkboxLabel.className += " checkboxLabel-" + direction;
 
   
   document.getElementById("header").innerText =
