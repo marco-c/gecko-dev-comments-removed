@@ -1775,8 +1775,6 @@ pref("extensions.eventPages.enabled", true);
 
 
 pref("extensions.manifestV2.actionsPopupURLRestricted", false);
-
-pref("extensions.manifestV3.enabled", true);
 #ifndef MOZ_WEBEXT_WEBIDL_ENABLED
   
   pref("extensions.backgroundServiceWorker.enabled", false, locked);
