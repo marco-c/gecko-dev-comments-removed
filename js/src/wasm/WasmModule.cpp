@@ -1032,15 +1032,6 @@ bool Module::instantiate(JSContext* cx, ImportValues& imports,
         }
       }
     }
-
-    
-    if (JS::Prefs::warn_asmjs_deprecation() && codeMeta().isAsmJS()) {
-      if (!js::WarnNumberASCII(cx, JSMSG_USE_ASM_DEPRECATED)) {
-        if (cx->isExceptionPending()) {
-          cx->clearPendingException();
-        }
-      }
-    }
   }
 
   if (cx->options().testWasmAwaitTier2() &&
