@@ -49,8 +49,7 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   NS_DECL_NSIDNSLISTENER
 
   DnsAndConnectSocket(nsHttpConnectionInfo* ci, nsAHttpTransaction* trans,
-                      uint32_t caps, bool speculative, bool isFromPredictor,
-                      bool urgentStart);
+                      uint32_t caps, bool speculative, bool urgentStart);
 
   [[nodiscard]] nsresult Init(ConnectionEntry* ent);
   void Abandon();
@@ -235,11 +234,6 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   
   
   bool mUrgentStart;
-
-  
-  
-  
-  bool mIsFromPredictor;
 
   bool mAllow1918 = true;
 

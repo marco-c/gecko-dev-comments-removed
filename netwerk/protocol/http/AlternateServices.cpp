@@ -1393,12 +1393,6 @@ AltSvcOverride::GetParallelSpeculativeConnectLimit(
 }
 
 NS_IMETHODIMP
-AltSvcOverride::GetIsFromPredictor(bool* isFromPredictor) {
-  *isFromPredictor = false;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 AltSvcOverride::GetAllow1918(bool* allow) {
   
   
