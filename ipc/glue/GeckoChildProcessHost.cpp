@@ -131,7 +131,7 @@ namespace ipc {
 
 struct LaunchResults {
   base::ProcessHandle mHandle = 0;
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
   task_t mChildTask = MACH_PORT_NULL;
 #endif
 #ifdef XP_IOS
@@ -388,7 +388,7 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
 #endif
       mHandleLock("mozilla.ipc.GeckoChildProcessHost.mHandleLock"),
       mChildProcessHandle(0),
-#if defined(XP_DARWIN)
+#if defined(XP_MACOSX)
       mChildTask(MACH_PORT_NULL),
 #endif
 #if defined(MOZ_SANDBOX) && defined(XP_MACOSX)
@@ -425,7 +425,7 @@ GeckoChildProcessHost::~GeckoChildProcessHost() {
 
   {
     mozilla::AutoWriteLock hLock(mHandleLock);
-#if defined(XP_DARWIN)
+#if defined(XP_MACOSX)
     if (mChildTask != MACH_PORT_NULL) {
       mach_port_deallocate(mach_task_self(), mChildTask);
     }
@@ -462,7 +462,7 @@ base::ProcessId GeckoChildProcessHost::GetChildProcessId() {
   return base::GetProcId(mChildProcessHandle);
 }
 
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
 task_t GeckoChildProcessHost::GetChildTask() {
   mozilla::AutoReadLock handleLock(mHandleLock);
   return mChildTask;
@@ -776,7 +776,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
                     
                     aResults.mHandle = 0;
 
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
                     this->mChildTask = aResults.mChildTask;
 #endif
 #ifdef XP_IOS
@@ -789,7 +789,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
                     if (mNodeChannel) {
                       mNodeChannel->SetOtherPid(
                           base::GetProcId(this->mChildProcessHandle));
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
                       mNodeChannel->SetMachTaskPort(this->mChildTask);
 #endif
                     }
@@ -1518,20 +1518,9 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
           
           
           
-          self->mResults.mChildTask =
-              xpc_dictionary_copy_mach_send(reply, "task");
           pid_t pid =
               static_cast<pid_t>(xpc_dictionary_get_int64(reply, "pid"));
-          CHROMIUM_LOG(INFO) << "ExtensionKit process started, task: "
-                             << self->mResults.mChildTask << ", pid: " << pid;
-
-          pid_t taskPid;
-          kern_return_t kr = pid_for_task(self->mResults.mChildTask, &taskPid);
-          if (kr != KERN_SUCCESS || pid != taskPid) {
-            CHROMIUM_LOG(ERROR) << "Could not validate child task matches pid";
-            promise->Reject(LaunchError("pid_for_task mismatch"), __func__);
-            return;
-          }
+          CHROMIUM_LOG(INFO) << "ExtensionKit process started, pid: " << pid;
 
           self->mResults.mHandle = pid;
           promise->Resolve(std::move(self->mResults), __func__);

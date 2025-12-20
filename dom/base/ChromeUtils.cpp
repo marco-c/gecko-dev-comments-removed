@@ -1861,7 +1861,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                                                          
              std::move(utilityActors),
              0  
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
             ,
              aGeckoProcess->GetChildTask()
 #endif  
@@ -1965,7 +1965,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
          std::move(windows),
          nsTArray<UtilityInfo>(),
          contentParent->ChildID()
-#ifdef XP_DARWIN
+#ifdef XP_MACOSX
             ,
          contentParent->Process()->GetChildTask()
 #endif  

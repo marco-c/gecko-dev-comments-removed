@@ -139,7 +139,6 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
   
   auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
   xpc_dictionary_set_int64(reply.get(), "pid", getpid());
-  xpc_dictionary_set_mach_send(reply.get(), "task", mach_task_self());
   xpc_connection_send_message(xpc_dictionary_get_remote_connection(aEvent),
                               reply.get());
 
