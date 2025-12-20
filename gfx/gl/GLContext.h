@@ -811,8 +811,14 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   }
 
   void InvalidateFramebuffer(GLenum target) {
+#ifdef XP_IOS
+    
+    constexpr auto ATTACHMENTS = make_array(GLenum{LOCAL_GL_COLOR_ATTACHMENT0});
+#else
     constexpr auto ATTACHMENTS = make_array(GLenum{LOCAL_GL_COLOR_ATTACHMENT0},
                                             LOCAL_GL_DEPTH_STENCIL_ATTACHMENT);
+#endif
+
     fInvalidateFramebuffer(target, ATTACHMENTS.size(), ATTACHMENTS.data());
   }
 
@@ -899,7 +905,18 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
  public:
   void fBufferData(GLenum target, GLsizeiptr size, const GLvoid* data,
                    GLenum usage) {
-    raw_fBufferData(target, size, data, usage);
+    if (WorkAroundDriverBugs() && target == LOCAL_GL_ARRAY_BUFFER &&
+        mVertexBufferExtraPadding) {
+      
+      
+      raw_fBufferData(target, size + *mVertexBufferExtraPadding, nullptr,
+                      usage);
+      if (data) {
+        fBufferSubData(target, 0, size, data);
+      }
+    } else {
+      raw_fBufferData(target, size, data, usage);
+    }
 
     
     if (WorkAroundDriverBugs() && !data && Vendor() == GLVendor::NVIDIA) {
@@ -3913,6 +3930,9 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   bool mNeedsTextureSizeChecks = false;
   bool mNeedsFlushBeforeDeleteFB = false;
   bool mTextureAllocCrashesOnMapFailure = false;
+  
+  
+  Maybe<GLint> mVertexBufferExtraPadding;
   const bool mWorkAroundDriverBugs;
   mutable uint64_t mSyncGLCallCount = 0;
 
