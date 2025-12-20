@@ -32,8 +32,8 @@
 #include "SigProc_FIX.h"
 
 
-static opus_int16 A_fb1_20 = 5394 << 1;
-static opus_int16 A_fb1_21 = -24290; 
+static const opus_int16 A_fb1_20 = 5394 << 1;
+static const opus_int16 A_fb1_21 = -24290; 
 
 
 void silk_ana_filt_bank_1(

@@ -129,14 +129,8 @@ static OPUS_INLINE void limit_warped_coefs(
 }
 
 
-#if 0 && defined(__mips_dsp) && __mips == 32
-#include "mips/noise_shape_analysis_FIX_mipsr1.h"
-#endif
 
 
-
-
-#ifndef OVERRIDE_silk_noise_shape_analysis_FIX
 void silk_noise_shape_analysis_FIX(
     silk_encoder_state_FIX          *psEnc,                                 
     silk_encoder_control_FIX        *psEncCtrl,                             
@@ -404,4 +398,3 @@ void silk_noise_shape_analysis_FIX(
     }
     RESTORE_STACK;
 }
-#endif 

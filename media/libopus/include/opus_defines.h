@@ -175,27 +175,31 @@ extern "C" {
 
 #define OPUS_SET_OSCE_BWE_REQUEST 4054
 #define OPUS_GET_OSCE_BWE_REQUEST 4055
+#define OPUS_SET_QEXT_REQUEST 4056
+#define OPUS_GET_QEXT_REQUEST 4057
+#define OPUS_SET_IGNORE_EXTENSIONS_REQUEST 4058
+#define OPUS_GET_IGNORE_EXTENSIONS_REQUEST 4059
 
 
 #define OPUS_HAVE_OPUS_PROJECTION_H
 
 
-#define __opus_check_int(x) (((void)((x) == (opus_int32)0)), (opus_int32)(x))
+#define opus_check_int(x) (((void)((x) == (opus_int32)0)), (opus_int32)(x))
 
 #ifdef DISABLE_PTR_CHECK
 
 
-#define __opus_check_int_ptr(ptr) (ptr)
-#define __opus_check_uint_ptr(ptr) (ptr)
-#define __opus_check_uint8_ptr(ptr) (ptr)
-#define __opus_check_val16_ptr(ptr) (ptr)
-#define __opus_check_void_ptr(ptr) (ptr)
+#define opus_check_int_ptr(ptr) (ptr)
+#define opus_check_uint_ptr(ptr) (ptr)
+#define opus_check_uint8_ptr(ptr) (ptr)
+#define opus_check_val16_ptr(ptr) (ptr)
+#define opus_check_void_ptr(ptr) (ptr)
 #else
-#define __opus_check_int_ptr(ptr) ((ptr) + ((ptr) - (opus_int32*)(ptr)))
-#define __opus_check_uint_ptr(ptr) ((ptr) + ((ptr) - (opus_uint32*)(ptr)))
-#define __opus_check_uint8_ptr(ptr) ((ptr) + ((ptr) - (opus_uint8*)(ptr)))
-#define __opus_check_val16_ptr(ptr) ((ptr) + ((ptr) - (opus_val16*)(ptr)))
-#define __opus_check_void_ptr(x) ((void)((void *)0 == (x)), (x))
+#define opus_check_int_ptr(ptr) ((ptr) + ((ptr) - (opus_int32*)(ptr)))
+#define opus_check_uint_ptr(ptr) ((ptr) + ((ptr) - (opus_uint32*)(ptr)))
+#define opus_check_uint8_ptr(ptr) ((ptr) + ((ptr) - (opus_uint8*)(ptr)))
+#define opus_check_val16_ptr(ptr) ((ptr) + ((ptr) - (opus_val16*)(ptr)))
+#define opus_check_void_ptr(x) ((void)((void *)0 == (x)), (x))
 #endif
 
 
@@ -216,6 +220,10 @@ extern "C" {
 
 
 #define OPUS_APPLICATION_RESTRICTED_LOWDELAY 2051
+
+#define OPUS_APPLICATION_RESTRICTED_SILK     2052
+
+#define OPUS_APPLICATION_RESTRICTED_CELT     2053
 
 #define OPUS_SIGNAL_VOICE                    3001 /**< Signal being encoded is voice */
 #define OPUS_SIGNAL_MUSIC                    3002 /**< Signal being encoded is music */
@@ -269,13 +277,13 @@ extern "C" {
 
 
 
-#define OPUS_SET_COMPLEXITY(x) OPUS_SET_COMPLEXITY_REQUEST, __opus_check_int(x)
+#define OPUS_SET_COMPLEXITY(x) OPUS_SET_COMPLEXITY_REQUEST, opus_check_int(x)
 
 
 
 
 
-#define OPUS_GET_COMPLEXITY(x) OPUS_GET_COMPLEXITY_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_COMPLEXITY(x) OPUS_GET_COMPLEXITY_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -288,7 +296,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_BITRATE(x) OPUS_SET_BITRATE_REQUEST, __opus_check_int(x)
+#define OPUS_SET_BITRATE(x) OPUS_SET_BITRATE_REQUEST, opus_check_int(x)
 
 
 
@@ -296,7 +304,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_BITRATE(x) OPUS_GET_BITRATE_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_BITRATE(x) OPUS_GET_BITRATE_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -311,7 +319,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_VBR(x) OPUS_SET_VBR_REQUEST, __opus_check_int(x)
+#define OPUS_SET_VBR(x) OPUS_SET_VBR_REQUEST, opus_check_int(x)
 
 
 
@@ -322,7 +330,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_VBR(x) OPUS_GET_VBR_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_VBR(x) OPUS_GET_VBR_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -340,7 +348,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_VBR_CONSTRAINT(x) OPUS_SET_VBR_CONSTRAINT_REQUEST, __opus_check_int(x)
+#define OPUS_SET_VBR_CONSTRAINT(x) OPUS_SET_VBR_CONSTRAINT_REQUEST, opus_check_int(x)
 
 
 
@@ -350,7 +358,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_VBR_CONSTRAINT(x) OPUS_GET_VBR_CONSTRAINT_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_VBR_CONSTRAINT(x) OPUS_GET_VBR_CONSTRAINT_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -365,7 +373,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_FORCE_CHANNELS(x) OPUS_SET_FORCE_CHANNELS_REQUEST, __opus_check_int(x)
+#define OPUS_SET_FORCE_CHANNELS(x) OPUS_SET_FORCE_CHANNELS_REQUEST, opus_check_int(x)
 
 
 
@@ -375,7 +383,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_FORCE_CHANNELS(x) OPUS_GET_FORCE_CHANNELS_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_FORCE_CHANNELS(x) OPUS_GET_FORCE_CHANNELS_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -393,7 +401,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_MAX_BANDWIDTH(x) OPUS_SET_MAX_BANDWIDTH_REQUEST, __opus_check_int(x)
+#define OPUS_SET_MAX_BANDWIDTH(x) OPUS_SET_MAX_BANDWIDTH_REQUEST, opus_check_int(x)
 
 
 
@@ -406,7 +414,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_MAX_BANDWIDTH(x) OPUS_GET_MAX_BANDWIDTH_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_MAX_BANDWIDTH(x) OPUS_GET_MAX_BANDWIDTH_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -425,7 +433,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_BANDWIDTH(x) OPUS_SET_BANDWIDTH_REQUEST, __opus_check_int(x)
+#define OPUS_SET_BANDWIDTH(x) OPUS_SET_BANDWIDTH_REQUEST, opus_check_int(x)
 
 
 
@@ -437,7 +445,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_SIGNAL(x) OPUS_SET_SIGNAL_REQUEST, __opus_check_int(x)
+#define OPUS_SET_SIGNAL(x) OPUS_SET_SIGNAL_REQUEST, opus_check_int(x)
 
 
 
@@ -447,7 +455,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_SIGNAL(x) OPUS_GET_SIGNAL_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_SIGNAL(x) OPUS_GET_SIGNAL_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -464,7 +472,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_APPLICATION(x) OPUS_SET_APPLICATION_REQUEST, __opus_check_int(x)
+#define OPUS_SET_APPLICATION(x) OPUS_SET_APPLICATION_REQUEST, opus_check_int(x)
 
 
 
@@ -478,7 +486,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_APPLICATION(x) OPUS_GET_APPLICATION_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_APPLICATION(x) OPUS_GET_APPLICATION_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -493,7 +501,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_LOOKAHEAD(x) OPUS_GET_LOOKAHEAD_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_LOOKAHEAD(x) OPUS_GET_LOOKAHEAD_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -505,7 +513,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_INBAND_FEC(x) OPUS_SET_INBAND_FEC_REQUEST, __opus_check_int(x)
+#define OPUS_SET_INBAND_FEC(x) OPUS_SET_INBAND_FEC_REQUEST, opus_check_int(x)
 
 
 
@@ -515,7 +523,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_INBAND_FEC(x) OPUS_GET_INBAND_FEC_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_INBAND_FEC(x) OPUS_GET_INBAND_FEC_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -524,13 +532,13 @@ extern "C" {
 
 
 
-#define OPUS_SET_PACKET_LOSS_PERC(x) OPUS_SET_PACKET_LOSS_PERC_REQUEST, __opus_check_int(x)
+#define OPUS_SET_PACKET_LOSS_PERC(x) OPUS_SET_PACKET_LOSS_PERC_REQUEST, opus_check_int(x)
 
 
 
 
 
-#define OPUS_GET_PACKET_LOSS_PERC(x) OPUS_GET_PACKET_LOSS_PERC_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_PACKET_LOSS_PERC(x) OPUS_GET_PACKET_LOSS_PERC_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -541,7 +549,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_DTX(x) OPUS_SET_DTX_REQUEST, __opus_check_int(x)
+#define OPUS_SET_DTX(x) OPUS_SET_DTX_REQUEST, opus_check_int(x)
 
 
 
@@ -550,7 +558,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_DTX(x) OPUS_GET_DTX_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_DTX(x) OPUS_GET_DTX_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -569,13 +577,13 @@ extern "C" {
 
 
 
-#define OPUS_SET_LSB_DEPTH(x) OPUS_SET_LSB_DEPTH_REQUEST, __opus_check_int(x)
+#define OPUS_SET_LSB_DEPTH(x) OPUS_SET_LSB_DEPTH_REQUEST, opus_check_int(x)
 
 
 
 
 
-#define OPUS_GET_LSB_DEPTH(x) OPUS_GET_LSB_DEPTH_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_LSB_DEPTH(x) OPUS_GET_LSB_DEPTH_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -600,7 +608,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_EXPERT_FRAME_DURATION(x) OPUS_SET_EXPERT_FRAME_DURATION_REQUEST, __opus_check_int(x)
+#define OPUS_SET_EXPERT_FRAME_DURATION(x) OPUS_SET_EXPERT_FRAME_DURATION_REQUEST, opus_check_int(x)
 
 
 
@@ -617,7 +625,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_EXPERT_FRAME_DURATION(x) OPUS_GET_EXPERT_FRAME_DURATION_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_EXPERT_FRAME_DURATION(x) OPUS_GET_EXPERT_FRAME_DURATION_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -628,7 +636,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_PREDICTION_DISABLED(x) OPUS_SET_PREDICTION_DISABLED_REQUEST, __opus_check_int(x)
+#define OPUS_SET_PREDICTION_DISABLED(x) OPUS_SET_PREDICTION_DISABLED_REQUEST, opus_check_int(x)
 
 
 
@@ -637,19 +645,26 @@ extern "C" {
 
 
 
-#define OPUS_GET_PREDICTION_DISABLED(x) OPUS_GET_PREDICTION_DISABLED_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_PREDICTION_DISABLED(x) OPUS_GET_PREDICTION_DISABLED_REQUEST, opus_check_int_ptr(x)
 
 
 
-#define OPUS_SET_DRED_DURATION(x) OPUS_SET_DRED_DURATION_REQUEST, __opus_check_int(x)
+#define OPUS_SET_DRED_DURATION(x) OPUS_SET_DRED_DURATION_REQUEST, opus_check_int(x)
 
 
-#define OPUS_GET_DRED_DURATION(x) OPUS_GET_DRED_DURATION_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_DRED_DURATION(x) OPUS_GET_DRED_DURATION_REQUEST, opus_check_int_ptr(x)
 
 
 
-#define OPUS_SET_DNN_BLOB(data, len) OPUS_SET_DNN_BLOB_REQUEST, __opus_check_void_ptr(data), __opus_check_int(len)
+#define OPUS_SET_DNN_BLOB(data, len) OPUS_SET_DNN_BLOB_REQUEST, opus_check_void_ptr(data), opus_check_int(len)
 
+
+
+
+#define OPUS_SET_QEXT(x) OPUS_SET_QEXT_REQUEST, opus_check_int(x)
+
+
+#define OPUS_GET_QEXT(x) OPUS_GET_QEXT_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -702,7 +717,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_FINAL_RANGE(x) OPUS_GET_FINAL_RANGE_REQUEST, __opus_check_uint_ptr(x)
+#define OPUS_GET_FINAL_RANGE(x) OPUS_GET_FINAL_RANGE_REQUEST, opus_check_uint_ptr(x)
 
 
 
@@ -716,7 +731,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_BANDWIDTH(x) OPUS_GET_BANDWIDTH_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_BANDWIDTH(x) OPUS_GET_BANDWIDTH_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -724,7 +739,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_SAMPLE_RATE(x) OPUS_GET_SAMPLE_RATE_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_SAMPLE_RATE(x) OPUS_GET_SAMPLE_RATE_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -739,7 +754,7 @@ extern "C" {
 
 
 
-#define OPUS_SET_PHASE_INVERSION_DISABLED(x) OPUS_SET_PHASE_INVERSION_DISABLED_REQUEST, __opus_check_int(x)
+#define OPUS_SET_PHASE_INVERSION_DISABLED(x) OPUS_SET_PHASE_INVERSION_DISABLED_REQUEST, opus_check_int(x)
 
 
 
@@ -748,7 +763,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_PHASE_INVERSION_DISABLED(x) OPUS_GET_PHASE_INVERSION_DISABLED_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_PHASE_INVERSION_DISABLED(x) OPUS_GET_PHASE_INVERSION_DISABLED_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -758,7 +773,7 @@ extern "C" {
 
 
 
-#define OPUS_GET_IN_DTX(x) OPUS_GET_IN_DTX_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_IN_DTX(x) OPUS_GET_IN_DTX_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -777,17 +792,17 @@ extern "C" {
 
 
 
-#define OPUS_SET_GAIN(x) OPUS_SET_GAIN_REQUEST, __opus_check_int(x)
+#define OPUS_SET_GAIN(x) OPUS_SET_GAIN_REQUEST, opus_check_int(x)
 
 
 
 
-#define OPUS_GET_GAIN(x) OPUS_GET_GAIN_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_GAIN(x) OPUS_GET_GAIN_REQUEST, opus_check_int_ptr(x)
 
 
 
 
-#define OPUS_GET_LAST_PACKET_DURATION(x) OPUS_GET_LAST_PACKET_DURATION_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_LAST_PACKET_DURATION(x) OPUS_GET_LAST_PACKET_DURATION_REQUEST, opus_check_int_ptr(x)
 
 
 
@@ -799,20 +814,27 @@ extern "C" {
 
 
 
-#define OPUS_GET_PITCH(x) OPUS_GET_PITCH_REQUEST, __opus_check_int_ptr(x)
+#define OPUS_GET_PITCH(x) OPUS_GET_PITCH_REQUEST, opus_check_int_ptr(x)
 
 
 
 
 
 
- #define OPUS_SET_OSCE_BWE(x) OPUS_SET_OSCE_BWE_REQUEST, __opus_check_int(x)
+ #define OPUS_SET_OSCE_BWE(x) OPUS_SET_OSCE_BWE_REQUEST, opus_check_int(x)
 
 
 
 
- #define OPUS_GET_OSCE_BWE(x) OPUS_GET_OSCE_BWE_REQUEST, __opus_check_int_ptr(x)
+ #define OPUS_GET_OSCE_BWE(x) OPUS_GET_OSCE_BWE_REQUEST, opus_check_int_ptr(x)
 
+
+
+
+#define OPUS_SET_IGNORE_EXTENSIONS(x) OPUS_SET_IGNORE_EXTENSIONS_REQUEST, opus_check_int(x)
+
+
+#define OPUS_GET_IGNORE_EXTENSIONS(x) OPUS_GET_IGNORE_EXTENSIONS_REQUEST, opus_check_int_ptr(x)
 
 
 
