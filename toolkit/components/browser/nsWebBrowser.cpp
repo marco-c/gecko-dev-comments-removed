@@ -112,12 +112,6 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   RefPtr<nsDocShell> docShell =
       nsDocShell::Create(aBrowsingContext, outerWindowId);
   if (NS_WARN_IF(!docShell)) {
-    if (aInitialWindowChild) {
-      
-      
-      
-      MOZ_CRASH("Failed to create docshell.");
-    }
     return nullptr;
   }
   browser->SetDocShell(docShell);
@@ -148,14 +142,6 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   nsresult rv = docShell->InitWindow(docShellParentWidget, 0, 0, 0, 0,
                                      aOpenWindowInfo, aInitialWindowChild);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    if (aInitialWindowChild) {
-      
-      
-      
-      
-      CrashReporter::AppendAppNotesToCrashReport(nsPrintfCString("rv=%u.", rv));
-      MOZ_CRASH("Failed to initialize docshell, check app notes.");
-    }
     return nullptr;
   }
 
