@@ -504,12 +504,6 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
       mSelectionController = do_GetWeakReference(selectionController);
 
       
-      
-      if (RefPtr startNode = returnRange->GetStartContainer()) {
-        startNode->QueueAncestorRevealingAlgorithm();
-      }
-
-      
       if (selection) {
         selection->RemoveAllRanges(IgnoreErrors());
         selection->AddRangeAndSelectFramesAndNotifyListeners(*returnRange,
@@ -529,15 +523,28 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
       
       
       if (selectionController) {
-        
-        
         SetSelectionModeAndRepaint(nsISelectionController::SELECTION_ATTENTION);
-        selectionController->ScrollSelectionIntoView(
-            SelectionType::eNormal,
-            nsISelectionController::SELECTION_WHOLE_SELECTION,
-            ScrollAxis(WhereToScroll::Center), ScrollAxis(), ScrollFlags::None,
-            SelectionScrollMode::SyncFlush);
       }
+
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "AncestorRevealingAlgorithm",
+          [self = RefPtr{this}, returnRange = RefPtr{returnRange},
+           selectionController = nsCOMPtr{selectionController}]()
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+                
+                
+                if (RefPtr startNode = returnRange->GetStartContainer()) {
+                  startNode->AncestorRevealingAlgorithm(IgnoreErrors());
+                }
+                
+                if (selectionController) {
+                  selectionController->ScrollSelectionIntoView(
+                      SelectionType::eNormal,
+                      nsISelectionController::SELECTION_WHOLE_SELECTION,
+                      ScrollAxis(WhereToScroll::Center), ScrollAxis(),
+                      ScrollFlags::None, SelectionScrollMode::SyncFlush);
+                }
+              }));
 
       SetCurrentWindow(window);
       *aResult = hasWrapped ? FIND_WRAPPED : FIND_FOUND;
