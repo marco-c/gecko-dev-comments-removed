@@ -7851,28 +7851,10 @@ void ScrollContainerFrame::AppendScrollUpdate(
 }
 
 void ScrollContainerFrame::ScheduleScrollAnimations() {
-  nsIContent* content = GetContent();
-  MOZ_ASSERT(content && content->IsElement(),
-             "The ScrollContainerFrame should have the element.");
-
-  const Element* elementOrPseudo = content->AsElement();
-  PseudoStyleType pseudo = elementOrPseudo->GetPseudoElementType();
-  if (pseudo != PseudoStyleType::NotPseudo &&
-      !AnimationUtils::IsSupportedPseudoForAnimations(pseudo)) {
-    
-    
-    return;
-  }
-
-  const auto [element, request] =
-      AnimationUtils::GetElementPseudoPair(elementOrPseudo);
-  ProgressTimelineScheduler::ScheduleAnimations(element, request);
-
+  auto* rd = PresContext()->RefreshDriver();
+  MOZ_ASSERT(rd);
   
-  
-  
-  
-  
+  rd->EnsureAnimationUpdate();
 }
 
 nsSize ScrollContainerFrame::GetSizeForWindowInnerSize() const {

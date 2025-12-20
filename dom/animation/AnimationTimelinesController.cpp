@@ -29,10 +29,10 @@ void AnimationTimelinesController::WillRefresh() {
 
   
   
-  
-
-
-
+  for (ScrollTimeline* tl :
+       ToTArray<AutoTArray<RefPtr<ScrollTimeline>, 32>>(mScrollTimelines)) {
+    tl->WillRefresh();
+  }
 }
 
 void AnimationTimelinesController::UpdateLastRefreshDriverTime() {
@@ -56,11 +56,9 @@ void AnimationTimelinesController::UpdateHiddenByContentVisibility() {
     timeline->UpdateHiddenByContentVisibility();
   }
 
-  
-  
-  
-
-
+  for (AnimationTimeline* timeline : mScrollTimelines) {
+    timeline->UpdateHiddenByContentVisibility();
+  }
 }
 
 }  

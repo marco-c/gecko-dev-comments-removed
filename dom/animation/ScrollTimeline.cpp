@@ -51,8 +51,6 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
       mAxis(aAxis) {
   MOZ_ASSERT(aDocument);
 
-  RegisterWithScrollSource();
-
   mDocument->TimelinesController().AddScrollTimeline(*this);
 }
 
@@ -126,43 +124,18 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
                                        aStyleTimeline.GetAxis());
 }
 
-
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
-  
-  if (!mSource || !mSource.mElement->GetPrimaryFrame()) {
+  if (!mCachedCurrentTime) {
     return nullptr;
   }
 
-  
-  const ScrollContainerFrame* scrollContainerFrame = GetScrollContainerFrame();
-  if (!scrollContainerFrame) {
-    return nullptr;
-  }
-
-  const auto orientation = Axis();
-
-  
-  
-  if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
-          orientation)) {
-    return nullptr;
-  }
-
-  const bool isHorizontal = orientation == layers::ScrollDirection::eHorizontal;
-  const nsPoint& scrollPosition = scrollContainerFrame->GetScrollPosition();
-  const Maybe<ScrollOffsets>& offsets =
-      ComputeOffsets(scrollContainerFrame, orientation);
-  if (!offsets) {
-    return nullptr;
-  }
-
+  const CurrentTimeData& data = mCachedCurrentTime.ref();
   
   
   
-  nscoord position =
-      std::abs(isHorizontal ? scrollPosition.x : scrollPosition.y);
-  double progress = static_cast<double>(position - offsets->mStart) /
-                    static_cast<double>(offsets->mEnd - offsets->mStart);
+  double progress =
+      static_cast<double>(std::abs(data.mPosition) - data.mOffsets.mStart) /
+      static_cast<double>(data.mOffsets.mEnd - data.mOffsets.mStart);
   return TimeDuration::FromMilliseconds(progress *
                                         PROGRESS_TIMELINE_DURATION_MILLISEC);
 }
@@ -289,43 +262,6 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
       offsets.value()});
 }
 
-void ScrollTimeline::RegisterWithScrollSource() {
-  if (!mSource) {
-    return;
-  }
-
-  auto& scheduler = ProgressTimelineScheduler::Ensure(
-      mSource.mElement, PseudoStyleRequest(mSource.mPseudoType));
-  scheduler.AddTimeline(this);
-}
-
-void ScrollTimeline::UnregisterFromScrollSource() {
-  if (!mSource) {
-    return;
-  }
-
-  auto* scheduler = ProgressTimelineScheduler::Get(
-      mSource.mElement, PseudoStyleRequest(mSource.mPseudoType));
-  if (!scheduler) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (scheduler->IsInScheduling()) {
-    mState = TimelineState::PendingRemove;
-    return;
-  }
-
-  scheduler->RemoveTimeline(this);
-  if (scheduler->IsEmpty()) {
-    ProgressTimelineScheduler::Destroy(mSource.mElement,
-                                       PseudoStyleRequest(mSource.mPseudoType));
-  }
-}
-
 const ScrollContainerFrame* ScrollTimeline::GetScrollContainerFrame() const {
   if (!mSource) {
     return nullptr;
@@ -348,102 +284,36 @@ const ScrollContainerFrame* ScrollTimeline::GetScrollContainerFrame() const {
   return nullptr;
 }
 
+static nsRefreshDriver* GetRefreshDriver(Document* aDocument) {
+  nsPresContext* presContext = aDocument->GetPresContext();
+  if (MOZ_UNLIKELY(!presContext)) {
+    return nullptr;
+  }
+  return presContext->RefreshDriver();
+}
+
 void ScrollTimeline::NotifyAnimationUpdated(Animation& aAnimation) {
   AnimationTimeline::NotifyAnimationUpdated(aAnimation);
 
-  
-  
-  
-
-
-
-
-
-
-
+  if (!mAnimationOrder.isEmpty()) {
+    if (auto* rd = GetRefreshDriver(mDocument)) {
+      MOZ_ASSERT(isInList(),
+                 "We should not register with the refresh driver if we are not"
+                 " in the document's list of timelines");
+      rd->EnsureAnimationUpdate();
+    }
+  }
 }
 
 void ScrollTimeline::NotifyAnimationContentVisibilityChanged(
     Animation* aAnimation, bool aIsVisible) {
   AnimationTimeline::NotifyAnimationContentVisibilityChanged(aAnimation,
                                                              aIsVisible);
-  if (mAnimationOrder.isEmpty()) {
-    UnregisterFromScrollSource();
-  } else {
-    RegisterWithScrollSource();
-  }
-
-  
-  
-  
-
-
-
-
-
-}
-
-
-
-
- ProgressTimelineScheduler* ProgressTimelineScheduler::Get(
-    const Element* aElement, const PseudoStyleRequest& aPseudoRequest) {
-  MOZ_ASSERT(aElement);
-  auto* data = aElement->GetAnimationData();
-  if (!data) {
-    return nullptr;
-  }
-
-  return data->GetProgressTimelineScheduler(aPseudoRequest);
-}
-
- ProgressTimelineScheduler& ProgressTimelineScheduler::Ensure(
-    Element* aElement, const PseudoStyleRequest& aPseudoRequest) {
-  MOZ_ASSERT(aElement);
-  return aElement->EnsureAnimationData().EnsureProgressTimelineScheduler(
-      aPseudoRequest);
-}
-
-
-void ProgressTimelineScheduler::Destroy(
-    const Element* aElement, const PseudoStyleRequest& aPseudoRequest) {
-  auto* data = aElement->GetAnimationData();
-  MOZ_ASSERT(data);
-  data->ClearProgressTimelineScheduler(aPseudoRequest);
-}
-
-
-void ProgressTimelineScheduler::ScheduleAnimations(
-    const Element* aElement, const PseudoStyleRequest& aRequest) {
-  auto* scheduler = Get(aElement, aRequest);
-  if (!scheduler) {
-    return;
-  }
-
-  
-  
-  nsTArray<ScrollTimeline*> timelinesToBeRemoved;
-
-  scheduler->mIsInScheduling = true;
-  for (auto iter = scheduler->mTimelines.iter(); !iter.done(); iter.next()) {
-    auto* timeline = iter.get();
-    const auto state = timeline->ScheduleAnimations();
-    if (state == ScrollTimeline::TimelineState::PendingRemove) {
-      timelinesToBeRemoved.AppendElement(timeline);
-    }
-  }
-  MOZ_ASSERT(Get(aElement, aRequest), "Make sure the scheduler still exists");
-  scheduler->mIsInScheduling = false;
-
-  
-  
-  for (auto* timeline : timelinesToBeRemoved) {
-    timeline->ResetState();
-    scheduler->RemoveTimeline(timeline);
-  }
-
-  if (scheduler->IsEmpty()) {
-    ProgressTimelineScheduler::Destroy(aElement, aRequest);
+  if (auto* rd = GetRefreshDriver(mDocument)) {
+    MOZ_ASSERT(isInList(),
+               "We should not register with the refresh driver if we are not"
+               " in the document's list of timelines");
+    rd->EnsureAnimationUpdate();
   }
 }
 
