@@ -146,6 +146,7 @@ async function expectRegeneration(taskFn, msg) {
   
   
   Services.prefs.setBoolPref("browser.backup.scheduled.enabled", true);
+  Services.prefs.setBoolPref("browser.backup.archive.enabled", true);
   
   
   sandbox.stub(bs, "onIdle").returns();
@@ -623,6 +624,22 @@ add_task(async function test_newtab_link_blocked() {
   await expectRegeneration(async () => {
     NewTabUtils.activityStreamLinks.blockURL("https://example.com");
   }, "Saw regeneration on the blocking of a newtab link");
+});
+
+
+
+
+
+add_task(async function test_sanitizeOnShutdown_regeneration() {
+  await expectRegeneration(() => {
+    Services.prefs.setBoolPref("privacy.sanitize.sanitizeOnShutdown", true);
+  }, "Saw a regeneration when sanitizeOnShutdown was enabled");
+
+  await expectRegeneration(() => {
+    Services.prefs.setBoolPref("privacy.sanitize.sanitizeOnShutdown", false);
+  }, "Saw a regeneration when sanitizeOnShutdown was disabled");
+
+  Services.prefs.clearUserPref("privacy.sanitize.sanitizeOnShutdown");
 });
 
 
