@@ -674,6 +674,7 @@ impl NeqoHttp3Conn {
 
         
         if stats.packets_rx != 0 {
+            
             if let Ok(loss) =
                 i64::try_from((stats.lost * PRECISION_FACTOR_USIZE) / stats.packets_tx)
             {
@@ -682,6 +683,13 @@ impl NeqoHttp3Conn {
                 let msg = "Failed to convert ratio to i64 for use with glean";
                 qwarn!("{msg}");
                 debug_assert!(false, "{msg}");
+            }
+
+            
+            if stats.cc.slow_start_exited {
+                glean::http_3_slow_start_exited.get("exited").add(1);
+            } else {
+                glean::http_3_slow_start_exited.get("not_exited").add(1);
             }
         }
 
