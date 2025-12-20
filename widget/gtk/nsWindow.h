@@ -961,11 +961,6 @@ class nsWindow final : public nsIWidget {
 
   
   
-  
-  GdkPoint mPopupPosition{};
-
-  
-  
   RefPtr<nsWindow> mWaylandToplevel;
 
   
