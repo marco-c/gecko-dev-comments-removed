@@ -87,6 +87,7 @@ var gPermissionManager = {
 
 
 
+
   async init(params) {
     if (!this._isObserving) {
       Services.obs.addObserver(this, "perm-changed");
@@ -106,6 +107,7 @@ var gPermissionManager = {
     this._btnAllow = document.getElementById("btnAllow");
     this._btnHttpsOnlyOff = document.getElementById("btnHttpsOnlyOff");
     this._btnHttpsOnlyOffTmp = document.getElementById("btnHttpsOnlyOffTmp");
+    this._btnAdd = document.getElementById("btnAdd");
 
     this._capabilityFilter = params.capabilityFilter;
 
@@ -120,7 +122,8 @@ var gPermissionManager = {
       params.blockVisible ||
       params.sessionVisible ||
       params.allowVisible ||
-      params.disableETPVisible;
+      params.disableETPVisible ||
+      params.addVisible;
 
     this._urlField = document.getElementById("url");
     this._urlField.value = params.prefilledHost;
@@ -145,6 +148,7 @@ var gPermissionManager = {
       params.sessionVisible && this._type == "https-only-load-insecure"
     );
     document.getElementById("btnAllow").hidden = !params.allowVisible;
+    document.getElementById("btnAdd").hidden = !params.addVisible;
 
     this.onHostInput(this._urlField);
 
@@ -236,6 +240,10 @@ var gPermissionManager = {
             Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION
           );
           break;
+        case "btnAdd":
+          
+          
+          gPermissionManager.addPermission(Ci.nsIPermissionManager.DENY_ACTION);
       }
     });
   },
@@ -559,6 +567,8 @@ var gPermissionManager = {
         document.getElementById("btnHttpsOnlyOff").click();
       } else if (!document.getElementById("btnDisableETP").hidden) {
         document.getElementById("btnDisableETP").click();
+      } else if (!document.getElementById("btnAdd").hidden) {
+        document.getElementById("btnAdd").click();
       }
     }
   },
@@ -574,6 +584,7 @@ var gPermissionManager = {
     this._btnDisableETP.disabled =
       this._btnDisableETP.hidden || !siteField.value;
     this._btnAllow.disabled = this._btnAllow.hidden || !siteField.value;
+    this._btnAdd.disabled = this._btnAdd.hidden || !siteField.value;
   },
 
   _setRemoveButtonState() {

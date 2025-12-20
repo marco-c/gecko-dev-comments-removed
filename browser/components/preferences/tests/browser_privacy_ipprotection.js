@@ -12,6 +12,8 @@ const AUTOSTART_FEATURE_ENABLED_PREF =
   "browser.ipProtection.features.autoStart";
 const AUTOSTART_PREF = "browser.ipProtection.autoStartEnabled";
 const AUTOSTART_PRIVATE_PREF = "browser.ipProtection.autoStartPrivateEnabled";
+const ONBOARDING_MESSAGE_MASK_PREF =
+  "browser.ipProtection.onboardingMessageMask";
 
 const SECTION_ID = "dataIPProtectionGroup";
 
@@ -31,6 +33,17 @@ async function setupVpnPrefs({
       [AUTOSTART_PRIVATE_PREF, autostartprivate],
     ],
   });
+}
+
+function testSettingsGroupVisible(browser, sectionId) {
+  let section = browser.contentDocument.getElementById(sectionId);
+  let settingGroup = section.querySelector(
+    `setting-group[groupid="ipprotection"]`
+  );
+  is_element_visible(section, "#dataIPProtectionGroup is shown");
+  is_element_visible(settingGroup, "ipprotection setting group is shown");
+
+  return settingGroup;
 }
 
 
@@ -58,8 +71,7 @@ add_task(
     await BrowserTestUtils.withNewTab(
       { gBrowser, url: "about:preferences#privacy" },
       async function (browser) {
-        let section = browser.contentDocument.getElementById(SECTION_ID);
-        is_element_visible(section, "#dataIPProtectionGroup is shown");
+        testSettingsGroupVisible(browser, SECTION_ID);
       }
     );
   }
@@ -72,13 +84,7 @@ add_task(async function test_exceptions_settings() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:preferences#privacy" },
     async function (browser) {
-      let section = browser.contentDocument.getElementById(SECTION_ID);
-      let settingGroup = section.querySelector(
-        `setting-group[groupid="ipprotection"]`
-      );
-      is_element_visible(section, "#dataIPProtectionGroup is shown");
-      is_element_visible(settingGroup, "ipprotection setting group is shown");
-
+      let settingGroup = testSettingsGroupVisible(browser, SECTION_ID);
       let siteExceptionsGroup = settingGroup?.querySelector(
         "#ipProtectionExceptions"
       );
@@ -96,6 +102,106 @@ add_task(async function test_exceptions_settings() {
 });
 
 
+
+add_task(async function test_exclusions_add_button() {
+  const PERM_NAME = "ipp-vpn";
+  await setupVpnPrefs({ feature: "beta", siteExceptions: true });
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async function (browser) {
+      let settingGroup = testSettingsGroupVisible(browser, SECTION_ID);
+      let siteExceptionsGroup = settingGroup?.querySelector(
+        "#ipProtectionExceptions"
+      );
+      let exceptionAllListButton = siteExceptionsGroup?.querySelector(
+        "#ipProtectionExceptionAllListButton"
+      );
+      is_element_visible(
+        exceptionAllListButton,
+        "Button for list of exclusions is shown"
+      );
+
+      
+      Services.perms.removeByType(PERM_NAME);
+
+      
+      let promiseSubDialogLoaded = promiseLoadSubDialog(
+        "chrome://browser/content/preferences/dialogs/permissions.xhtml"
+      );
+
+      exceptionAllListButton.click();
+
+      const win = await promiseSubDialogLoaded;
+
+      let addButton = win.document.getElementById("btnAdd");
+      Assert.ok(addButton, "Add button exists");
+      Assert.ok(BrowserTestUtils.isVisible(addButton), "Add button is visible");
+      Assert.ok(addButton.disabled, "Add button is disabled");
+
+      
+      let permissionsBox = win.document.getElementById("permissionsBox");
+      let siteListUpdatedPromise = BrowserTestUtils.waitForMutationCondition(
+        permissionsBox,
+        { subtree: true, childList: true },
+        () => {
+          return permissionsBox.children.length;
+        }
+      );
+
+      
+      let urlField = win.document.getElementById("url");
+      Assert.ok(urlField, "Dialog url field exists");
+      const site1 = "https://example.com";
+      urlField.focus();
+
+      EventUtils.sendString(site1, win);
+      Assert.ok(!addButton.disabled, "Add button is enabled");
+
+      addButton.click();
+
+      await siteListUpdatedPromise;
+
+      permissionsBox = win.document.getElementById("permissionsBox");
+      Assert.equal(
+        permissionsBox.children.length,
+        1,
+        "Should have 1 site listed as an exclusion"
+      );
+
+      let shownSite1 = permissionsBox.children[0];
+      Assert.equal(
+        shownSite1.getAttribute("origin"),
+        site1,
+        "Should match inputted site in the list of sites"
+      );
+
+      
+      let saveButton = win.document.querySelector("dialog").getButton("accept");
+      Assert.ok(saveButton, "Save button is shown");
+
+      saveButton.click();
+
+      let exclusions = Services.perms.getAllByTypes([PERM_NAME]);
+      Assert.equal(
+        exclusions.length,
+        1,
+        "Should have 1 exclusion after pressing the Add button"
+      );
+      Assert.equal(
+        exclusions[0]?.principal.siteOrigin,
+        site1,
+        "Should match the inputted site"
+      );
+
+      
+      Services.perms.removeByType(PERM_NAME);
+      Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+    }
+  );
+});
+
+
 add_task(async function test_autostart_checkboxes() {
   await setupVpnPrefs({
     feature: "beta",
@@ -107,13 +213,7 @@ add_task(async function test_autostart_checkboxes() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:preferences#privacy" },
     async function (browser) {
-      let section = browser.contentDocument.getElementById(SECTION_ID);
-      let settingGroup = section.querySelector(
-        `setting-group[groupid="ipprotection"]`
-      );
-      is_element_visible(section, "#dataIPProtectionGroup is shown");
-      is_element_visible(settingGroup, "ipprotection setting group is shown");
-
+      let settingGroup = testSettingsGroupVisible(browser, SECTION_ID);
       let autoStartSettings = settingGroup?.querySelector(
         "#ipProtectionAutoStart"
       );
@@ -150,13 +250,7 @@ add_task(async function test_additional_links() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:preferences#privacy" },
     async function (browser) {
-      let section = browser.contentDocument.getElementById(SECTION_ID);
-      let settingGroup = section.querySelector(
-        `setting-group[groupid="ipprotection"]`
-      );
-      is_element_visible(section, "#dataIPProtectionGroup is shown");
-      is_element_visible(settingGroup, "ipprotection setting group is shown");
-
+      let settingGroup = testSettingsGroupVisible(browser, SECTION_ID);
       let additionalLinks = settingGroup?.querySelector(
         "#ipProtectionAdditionalLinks"
       );
