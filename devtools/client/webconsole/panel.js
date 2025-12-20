@@ -9,25 +9,21 @@ loader.lazyRequireGetter(
   "WebConsole",
   "resource://devtools/client/webconsole/webconsole.js"
 );
-loader.lazyGetter(this, "EventEmitter", () =>
-  require("resource://devtools/shared/event-emitter.js")
-);
+const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
 
 
 
-function WebConsolePanel(iframeWindow, toolbox, commands) {
-  this._frameWindow = iframeWindow;
-  this._toolbox = toolbox;
-  this._commands = commands;
-  EventEmitter.decorate(this);
-}
+class WebConsolePanel extends EventEmitter {
+  constructor(iframeWindow, toolbox, commands) {
+    super();
 
-exports.WebConsolePanel = WebConsolePanel;
+    this._frameWindow = iframeWindow;
+    this._toolbox = toolbox;
+    this._commands = commands;
+  }
 
-WebConsolePanel.prototype = {
-  hud: null,
-
+  hud = null;
   
 
 
@@ -35,7 +31,7 @@ WebConsolePanel.prototype = {
 
   focusInput() {
     this.hud.jsterm.focus();
-  },
+  }
 
   
 
@@ -86,11 +82,11 @@ WebConsolePanel.prototype = {
     }
 
     return this;
-  },
+  }
 
   get currentTarget() {
     return this._toolbox.target;
-  },
+  }
 
   destroy() {
     if (!this._toolbox) {
@@ -101,5 +97,7 @@ WebConsolePanel.prototype = {
     this._frameWindow = null;
     this._toolbox = null;
     this.emit("destroyed");
-  },
-};
+  }
+}
+
+exports.WebConsolePanel = WebConsolePanel;
