@@ -916,9 +916,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   Label L;
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.branchPtr(Assembler::Equal, scratch, ImmWord(0), &L);
-  masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  const CodeOffset retAddr = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), retAddr);
   masm.bind(&L);
 #else
   MOZ_CRASH("BaseCompiler platform hook: insertBreakablePoint");
@@ -1153,9 +1152,10 @@ class OutOfLineRequestTierUp : public OutOfLineCode {
     }
 #endif
     
-    masm->call(Address(InstanceReg, Instance::offsetOfRequestTierUpStub()));
+    const CodeOffset retAddr =
+        masm->call(Address(InstanceReg, Instance::offsetOfRequestTierUpStub()));
     masm->append(CallSiteDesc(lastOpcodeOffset_, CallSiteKind::RequestTierUp),
-                 CodeOffset(masm->currentOffset()));
+                 retAddr);
     
 #ifndef RABALDR_PIN_INSTANCE
     if (Register(instance_) != InstanceReg) {
@@ -1999,7 +1999,6 @@ void BaseCompiler::popStackResultsAfterWasmCall(const StackResultsLoc& results,
 
 void BaseCompiler::pushBuiltinCallResult(const FunctionCall& call,
                                          MIRType type) {
-  MOZ_ASSERT(call.abiKind == ABIKind::System);
   switch (type) {
     case MIRType::Int32: {
       RegI32 rv = captureReturnedI32();
@@ -5783,7 +5782,7 @@ bool BaseCompiler::emitUnaryMathBuiltinCall(SymbolicAddress callee,
   uint32_t numArgs = signature.length();
   size_t stackSpace = stackConsumed(numArgs);
 
-  FunctionCall baselineCall(ABIKind::System, RestoreState::None);
+  FunctionCall baselineCall(ABIForBuiltin(callee), RestoreState::None);
   beginCall(baselineCall);
 
   if (!emitCallArgs(signature, NoCallResults(), &baselineCall,
@@ -5828,7 +5827,7 @@ bool BaseCompiler::emitDivOrModI64BuiltinCall(SymbolicAddress callee,
     checkDivideSignedOverflow(rhs, srcDest, &done, ZeroOnOverflow(true));
   }
 
-  masm.setupWasmABICall();
+  masm.setupWasmABICall(callee);
   masm.passABIArg(srcDest.high);
   masm.passABIArg(srcDest.low);
   masm.passABIArg(rhs.high);
@@ -5857,7 +5856,7 @@ bool BaseCompiler::emitConvertInt64ToFloatingCallout(SymbolicAddress callee,
 
   FunctionCall call(ABIKind::Wasm, RestoreState::None);
 
-  masm.setupWasmABICall();
+  masm.setupWasmABICall(callee);
 #  ifdef JS_PUNBOX64
   MOZ_CRASH("BaseCompiler platform hook: emitConvertInt64ToFloatingCallout");
 #  else
@@ -5907,7 +5906,7 @@ bool BaseCompiler::emitConvertFloatingToInt64Callout(SymbolicAddress callee,
 
   FunctionCall call(ABIKind::Wasm, RestoreState::None);
 
-  masm.setupWasmABICall();
+  masm.setupWasmABICall(callee);
   masm.passABIArg(doubleInput, ABIType::Float64);
   CodeOffset raOffset = masm.callWithABI(
       bytecodeOffset(), callee, mozilla::Some(fr.getInstancePtrOffset()));
@@ -6534,7 +6533,8 @@ bool BaseCompiler::emitInstanceCall(const SymbolicAddressSignature& builtin) {
   uint32_t numNonInstanceArgs = builtin.numArgs - 1 ;
   size_t stackSpace = stackConsumed(numNonInstanceArgs);
 
-  FunctionCall baselineCall(ABIKind::System, RestoreState::PinnedRegs);
+  FunctionCall baselineCall(ABIForBuiltin(builtin.identity),
+                            RestoreState::PinnedRegs);
   beginCall(baselineCall);
 
   ABIArg instanceArg = reservePointerArgument(&baselineCall);

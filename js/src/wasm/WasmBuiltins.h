@@ -309,6 +309,18 @@ bool IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 bool NeedsBuiltinThunk(SymbolicAddress sym);
 
 
+inline jit::ABIKind ABIForBuiltin(SymbolicAddress sym) {
+  
+  
+  if (NeedsBuiltinThunk(sym)) {
+    return jit::ABIKind::Wasm;
+  }
+
+  
+  return jit::ABIKind::System;
+}
+
+
 
 
 

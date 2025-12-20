@@ -156,10 +156,6 @@ struct FunctionCall {
     MOZ_ASSERT_IF(abiKind == ABIKind::System,
                   restoreState == RestoreState::None ||
                       restoreState == RestoreState::PinnedRegs);
-    
-    MOZ_ASSERT_IF(abiKind == ABIKind::Wasm,
-                  restoreState == RestoreState::None ||
-                      restoreState == RestoreState::All);
     if (abiKind == ABIKind::System) {
       
 #if defined(JS_CODEGEN_ARM)

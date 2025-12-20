@@ -166,7 +166,8 @@ void ABIResultIter::settlePrev() {
 #ifdef WASM_CODEGEN_DEBUG
 template <class Closure>
 static void GenPrint(DebugChannel channel, MacroAssembler& masm,
-                     const Maybe<Register>& taken, Closure passArgAndCall) {
+                     const Maybe<Register>& taken, SymbolicAddress builtin,
+                     Closure passArgAndCall) {
   if (!IsCodegenDebugEnabled(channel)) {
     return;
   }
@@ -185,7 +186,7 @@ static void GenPrint(DebugChannel channel, MacroAssembler& masm,
                "codegen debug checks require a jit context");
 #  ifdef JS_CODEGEN_ARM64
     if (IsCompilingWasm()) {
-      masm.setupWasmABICall();
+      masm.setupWasmABICall(builtin);
     } else {
       
       masm.setupUnalignedABICall(temp);
@@ -206,52 +207,55 @@ static void GenPrintf(DebugChannel channel, MacroAssembler& masm,
   UniqueChars str = JS_vsmprintf(fmt, ap);
   va_end(ap);
 
-  GenPrint(channel, masm, Nothing(), [&](bool inWasm, Register temp) {
-    
-    
-    
-    
-    
-    const char* text = str.release();
+  GenPrint(channel, masm, Nothing(), SymbolicAddress::PrintText,
+           [&](bool inWasm, Register temp) {
+             
+             
+             
+             
+             
+             const char* text = str.release();
 
-    masm.movePtr(ImmPtr((void*)text, ImmPtr::NoCheckToken()), temp);
-    masm.passABIArg(temp);
-    if (inWasm) {
-      masm.callDebugWithABI(SymbolicAddress::PrintText);
-    } else {
-      using Fn = void (*)(const char* output);
-      masm.callWithABI<Fn, PrintText>(ABIType::General,
-                                      CheckUnsafeCallWithABI::DontCheckOther);
-    }
-  });
+             masm.movePtr(ImmPtr((void*)text, ImmPtr::NoCheckToken()), temp);
+             masm.passABIArg(temp);
+             if (inWasm) {
+               masm.callDebugWithABI(SymbolicAddress::PrintText);
+             } else {
+               using Fn = void (*)(const char* output);
+               masm.callWithABI<Fn, PrintText>(
+                   ABIType::General, CheckUnsafeCallWithABI::DontCheckOther);
+             }
+           });
 }
 
 static void GenPrintIsize(DebugChannel channel, MacroAssembler& masm,
                           const Register& src) {
-  GenPrint(channel, masm, Some(src), [&](bool inWasm, Register _temp) {
-    masm.passABIArg(src);
-    if (inWasm) {
-      masm.callDebugWithABI(SymbolicAddress::PrintI32);
-    } else {
-      using Fn = void (*)(int32_t val);
-      masm.callWithABI<Fn, PrintI32>(ABIType::General,
-                                     CheckUnsafeCallWithABI::DontCheckOther);
-    }
-  });
+  GenPrint(channel, masm, Some(src), SymbolicAddress::PrintI32,
+           [&](bool inWasm, Register _temp) {
+             masm.passABIArg(src);
+             if (inWasm) {
+               masm.callDebugWithABI(SymbolicAddress::PrintI32);
+             } else {
+               using Fn = void (*)(int32_t val);
+               masm.callWithABI<Fn, PrintI32>(
+                   ABIType::General, CheckUnsafeCallWithABI::DontCheckOther);
+             }
+           });
 }
 
 static void GenPrintPtr(DebugChannel channel, MacroAssembler& masm,
                         const Register& src) {
-  GenPrint(channel, masm, Some(src), [&](bool inWasm, Register _temp) {
-    masm.passABIArg(src);
-    if (inWasm) {
-      masm.callDebugWithABI(SymbolicAddress::PrintPtr);
-    } else {
-      using Fn = void (*)(uint8_t* val);
-      masm.callWithABI<Fn, PrintPtr>(ABIType::General,
-                                     CheckUnsafeCallWithABI::DontCheckOther);
-    }
-  });
+  GenPrint(channel, masm, Some(src), SymbolicAddress::PrintPtr,
+           [&](bool inWasm, Register _temp) {
+             masm.passABIArg(src);
+             if (inWasm) {
+               masm.callDebugWithABI(SymbolicAddress::PrintPtr);
+             } else {
+               using Fn = void (*)(uint8_t* val);
+               masm.callWithABI<Fn, PrintPtr>(
+                   ABIType::General, CheckUnsafeCallWithABI::DontCheckOther);
+             }
+           });
 }
 
 static void GenPrintI64(DebugChannel channel, MacroAssembler& masm,
@@ -269,30 +273,32 @@ static void GenPrintI64(DebugChannel channel, MacroAssembler& masm,
 
 static void GenPrintF32(DebugChannel channel, MacroAssembler& masm,
                         const FloatRegister& src) {
-  GenPrint(channel, masm, Nothing(), [&](bool inWasm, Register temp) {
-    masm.passABIArg(src, ABIType::Float32);
-    if (inWasm) {
-      masm.callDebugWithABI(SymbolicAddress::PrintF32);
-    } else {
-      using Fn = void (*)(float val);
-      masm.callWithABI<Fn, PrintF32>(ABIType::General,
-                                     CheckUnsafeCallWithABI::DontCheckOther);
-    }
-  });
+  GenPrint(channel, masm, Nothing(), SymbolicAddress::PrintF32,
+           [&](bool inWasm, Register temp) {
+             masm.passABIArg(src, ABIType::Float32);
+             if (inWasm) {
+               masm.callDebugWithABI(SymbolicAddress::PrintF32);
+             } else {
+               using Fn = void (*)(float val);
+               masm.callWithABI<Fn, PrintF32>(
+                   ABIType::General, CheckUnsafeCallWithABI::DontCheckOther);
+             }
+           });
 }
 
 static void GenPrintF64(DebugChannel channel, MacroAssembler& masm,
                         const FloatRegister& src) {
-  GenPrint(channel, masm, Nothing(), [&](bool inWasm, Register temp) {
-    masm.passABIArg(src, ABIType::Float64);
-    if (inWasm) {
-      masm.callDebugWithABI(SymbolicAddress::PrintF64);
-    } else {
-      using Fn = void (*)(double val);
-      masm.callWithABI<Fn, PrintF64>(ABIType::General,
-                                     CheckUnsafeCallWithABI::DontCheckOther);
-    }
-  });
+  GenPrint(channel, masm, Nothing(), SymbolicAddress::PrintF64,
+           [&](bool inWasm, Register temp) {
+             masm.passABIArg(src, ABIType::Float64);
+             if (inWasm) {
+               masm.callDebugWithABI(SymbolicAddress::PrintF64);
+             } else {
+               using Fn = void (*)(double val);
+               masm.callWithABI<Fn, PrintF64>(
+                   ABIType::General, CheckUnsafeCallWithABI::DontCheckOther);
+             }
+           });
 }
 
 #  ifdef ENABLE_WASM_SIMD
@@ -1302,7 +1308,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
     
     
-    jit::ABIArgIter<MIRTypeVector> argsIter(coerceArgTypes, ABIKind::System);
+    jit::ABIArgIter<MIRTypeVector> argsIter(
+        coerceArgTypes, ABIForBuiltin(SymbolicAddress::CoerceInPlace_JitEntry));
 
     
     if (argsIter->kind() == ABIArg::GPR) {
@@ -2505,16 +2512,9 @@ struct ABIFunctionArgs {
   }
 };
 
-bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
-                                ABIFunctionType abiType, ExitReason exitReason,
-                                void* funcPtr, CallableOffsets* offsets) {
-  
-  
-  
-  
-  
-  MOZ_ASSERT(abiKind == ABIKind::System || abiKind == ABIKind::Wasm);
-
+bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType,
+                                ExitReason exitReason, void* funcPtr,
+                                CallableOffsets* offsets) {
   AssertExpectedSP(masm);
   masm.setFramePushed(0);
 
@@ -2532,7 +2532,7 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
 
   
   
-  ABIArgIter selfArgs(args, abiKind);
+  ABIArgIter selfArgs(args, ABIKind::Wasm);
   ABIArgIter callArgs(args, ABIKind::System);
 
   
@@ -2551,7 +2551,7 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
 #ifdef JS_CODEGEN_ARM
       
       
-      if (abiKind == ABIKind::Wasm && !ARMFlags::UseHardFpABI() &&
+      if (!ARMFlags::UseHardFpABI() &&
           IsFloatingPointType(selfArgs.mirType())) {
         FloatRegister input = selfArgs->fpu();
         if (selfArgs.mirType() == MIRType::Float32) {
@@ -2584,26 +2584,21 @@ bool wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIKind abiKind,
 #elif defined(JS_CODEGEN_X86)
   
   
-  if (abiKind == ABIKind::Wasm) {
-    
-    Operand op(esp, 0);
-    MIRType retType = ToMIRType(ABIType(
-        std::underlying_type_t<ABIFunctionType>(abiType) & ABITypeArgMask));
-    if (retType == MIRType::Float32) {
-      masm.fstp32(op);
-      masm.loadFloat32(op, ReturnFloat32Reg);
-    } else if (retType == MIRType::Double) {
-      masm.fstp(op);
-      masm.loadDouble(op, ReturnDoubleReg);
-    }
+  Operand op(esp, 0);
+  MIRType retType = ToMIRType(ABIType(
+      std::underlying_type_t<ABIFunctionType>(abiType) & ABITypeArgMask));
+  if (retType == MIRType::Float32) {
+    masm.fstp32(op);
+    masm.loadFloat32(op, ReturnFloat32Reg);
+  } else if (retType == MIRType::Double) {
+    masm.fstp(op);
+    masm.loadDouble(op, ReturnDoubleReg);
   }
 #elif defined(JS_CODEGEN_ARM)
   
-  
   MIRType retType = ToMIRType(ABIType(
       std::underlying_type_t<ABIFunctionType>(abiType) & ABITypeArgMask));
-  if (abiKind == ABIKind::Wasm && !ARMFlags::UseHardFpABI() &&
-      IsFloatingPointType(retType)) {
+  if (!ARMFlags::UseHardFpABI() && IsFloatingPointType(retType)) {
     masm.ma_vxfer(r0, r1, d0);
   }
 #endif

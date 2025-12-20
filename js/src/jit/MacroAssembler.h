@@ -772,7 +772,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void setupWasmABICall();
+  void setupWasmABICall(wasm::SymbolicAddress builtin);
 
   
   
@@ -831,8 +831,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void callWithABINoProfiler(const Address& fun, ABIType result) PER_ARCH;
 
   
-  void callWithABIPost(uint32_t stackAdjust, ABIType result,
-                       bool callFromWasm = false) PER_ARCH;
+  void callWithABIPost(uint32_t stackAdjust, ABIType result) PER_ARCH;
 
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   
