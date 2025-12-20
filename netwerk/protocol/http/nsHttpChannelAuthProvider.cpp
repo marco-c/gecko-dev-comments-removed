@@ -825,9 +825,9 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
   
   
   
-  RefPtr<nsHttpAuthEntry> entry;
+  nsHttpAuthEntry* entry = nullptr;
   (void)authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
-                                         entry);
+                                         &entry);
 
   
   
@@ -1385,9 +1385,9 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(
   }
 
   nsHttpAuthCache* authCache = gHttpHandler->AuthCache(mIsPrivate);
-  RefPtr<nsHttpAuthEntry> entry;
+  nsHttpAuthEntry* entry = nullptr;
   (void)authCache->GetAuthEntryForDomain(scheme, host, port, realm, suffix,
-                                         entry);
+                                         &entry);
 
   nsCOMPtr<nsISupports> sessionStateGrip;
   if (entry) sessionStateGrip = entry->mMetaData;
@@ -1570,7 +1570,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     nsHttpAuthCache* authCache, const nsHttpAtom& header,
     const nsACString& scheme, const nsACString& host, int32_t port,
     const nsACString& path, nsHttpAuthIdentity& ident) {
-  RefPtr<nsHttpAuthEntry> entry;
+  nsHttpAuthEntry* entry = nullptr;
   nsresult rv;
 
   
@@ -1601,7 +1601,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     GetOriginAttributesSuffix(chan, suffix);
   }
 
-  rv = authCache->GetAuthEntryForPath(scheme, host, port, path, suffix, entry);
+  rv = authCache->GetAuthEntryForPath(scheme, host, port, path, suffix, &entry);
   if (NS_SUCCEEDED(rv)) {
     
     
