@@ -1239,11 +1239,7 @@ class MOZ_RAII AutoSetBypassCSPForDebugger {
   ~AutoSetBypassCSPForDebugger() { cx->bypassCSPForDebugger = oldValue; }
 };
 
-enum UnsafeABIStrictness {
-  NoExceptions,
-  AllowPendingExceptions,
-  AllowThrownExceptions
-};
+enum UnsafeABIStrictness { NoExceptions, AllowPendingExceptions };
 
 
 
