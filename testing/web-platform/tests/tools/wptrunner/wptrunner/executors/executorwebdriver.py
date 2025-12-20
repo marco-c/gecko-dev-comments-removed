@@ -1274,6 +1274,16 @@ class WebDriverTestharnessExecutor(TestharnessExecutor):
         protocol.base.set_window(test_window)
         
         protocol.base.execute_script(self.window_loaded_script, asynchronous=True)
+
+        
+        
+        
+        
+        
+        
+        selector = protocol.base.execute_script('return document.documentElement;')
+        protocol.click.element(selector)
+
         return test_window
 
 
