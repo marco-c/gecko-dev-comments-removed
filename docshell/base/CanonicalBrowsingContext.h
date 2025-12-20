@@ -342,6 +342,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     return mContainerFeaturePolicyInfo;
   }
 
+  void SetEmbedderFrameReferrerPolicy(ReferrerPolicy aPolicy) {
+    mEmbedderFrameReferrerPolicy = aPolicy;
+  }
+
+  ReferrerPolicy GetEmbedderFrameReferrerPolicy() const {
+    return mEmbedderFrameReferrerPolicy;
+  }
+
   void SetRestoreData(SessionStoreRestoreData* aData, ErrorResult& aError);
   void ClearRestoreState();
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void RequestRestoreTabContent(
@@ -454,6 +462,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   already_AddRefed<net::DocumentLoadListener> GetCurrentLoad();
+
+  
+  void CreateRedactedAncestorOriginsList(nsIPrincipal* aThisDocumentPrincipal);
+
+  Span<const nsCOMPtr<nsIPrincipal>> GetPossiblyRedactedAncestorOriginsList()
+      const;
+  void SetPossiblyRedactedAncestorOriginsList(
+      nsTArray<nsCOMPtr<nsIPrincipal>> aAncestorOriginsList);
 
  protected:
   
@@ -641,6 +657,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   RefPtr<nsBrowserStatusFilter> mStatusFilter;
 
   Maybe<FeaturePolicyInfo> mContainerFeaturePolicyInfo;
+  ReferrerPolicy mEmbedderFrameReferrerPolicy = ReferrerPolicy::_empty;
 
   friend class BrowserSessionStore;
   WeakPtr<SessionStoreFormData>& GetSessionStoreFormDataRef() {
@@ -676,6 +693,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool mFullyDiscarded = false;
 
   nsTArray<std::function<void(uint64_t)>> mFullyDiscardedListeners;
+
+  nsTArray<nsCOMPtr<nsIPrincipal>> mPossiblyRedactedAncestorOriginsList;
 };
 
 }  
