@@ -455,26 +455,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   nsLoadFlags LoadFlags();
 
-  
-  RefPtr<imgRequestProxy> mCurrentRequest;
-  RefPtr<imgRequestProxy> mPendingRequest;
-  uint8_t mCurrentRequestFlags = 0;
-  uint8_t mPendingRequestFlags = 0;
-
-  enum {
-    
-    REQUEST_IS_TRACKED = 1 << 0,
-    
-    
-    REQUEST_IS_IMAGESET = 1 << 1,
-  };
-
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> mCurrentURI;
-
  private:
   
 
@@ -507,6 +487,23 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   void MaybeForceSyncDecoding(bool aPrepareNextRequest,
                               nsIFrame* aFrame = nullptr);
 
+ protected:
+  void QueueImageTask(nsIURI* aURI, nsIPrincipal* aSrcTriggeringPrincipal,
+                      bool aForceAsync, bool aAlwaysLoad, bool aNotify);
+  void QueueImageTask(nsIURI* aURI, bool aAlwaysLoad, bool aNotify) {
+    QueueImageTask(aURI, nullptr, false, aAlwaysLoad, aNotify);
+  }
+
+  void ClearImageLoadTask();
+
+  virtual void LoadSelectedImage(bool aAlwaysLoad, bool aStopLazyLoading) = 0;
+
+  RefPtr<ImageLoadTask> mPendingImageLoadTask;
+
+  RefPtr<imgRequestProxy> mCurrentRequest;
+  RefPtr<imgRequestProxy> mPendingRequest;
+
+ private:
   
 
 
@@ -525,10 +522,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   nsTArray<RefPtr<ScriptedImageObserver>> mScriptedObservers;
 
   
-
-
-
-  nsTArray<RefPtr<mozilla::dom::Promise>> mDecodePromises;
+  
+  
+  
+  nsCOMPtr<nsIURI> mCurrentURI;
 
   mozilla::TimeStamp mMostRecentRequestChange;
 
@@ -536,9 +533,15 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
+  nsTArray<RefPtr<mozilla::dom::Promise>> mDecodePromises;
+
+  
 
 
-  size_t mOutstandingDecodePromises;
+
+
+
+  size_t mOutstandingDecodePromises = 0;
 
   
 
@@ -547,44 +550,42 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  uint32_t mRequestGeneration;
+  uint32_t mRequestGeneration = 0;
 
  protected:
-  void QueueImageTask(nsIURI* aURI, nsIPrincipal* aSrcTriggeringPrincipal,
-                      bool aForceAsync, bool aAlwaysLoad, bool aNotify);
-  void QueueImageTask(nsIURI* aURI, bool aAlwaysLoad, bool aNotify) {
-    QueueImageTask(aURI, nullptr, false, aAlwaysLoad, aNotify);
-  }
-
-  void ClearImageLoadTask();
-
-  virtual void LoadSelectedImage(bool aAlwaysLoad, bool aStopLazyLoading) = 0;
-
-  RefPtr<ImageLoadTask> mPendingImageLoadTask;
-
-  bool mLoadingEnabled : 1;
+  bool mLoadingEnabled : 1 = true;
   
 
 
 
 
 
-  bool mUseUrgentStartForChannel : 1;
+  bool mUseUrgentStartForChannel : 1 = false;
 
   
-  bool mLazyLoading : 1;
+  bool mLazyLoading : 1 = false;
 
   
-  bool mSyncDecodingHint : 1;
+  bool mSyncDecodingHint : 1 = false;
 
   
-  bool mInDocResponsiveContent : 1;
+  bool mInDocResponsiveContent : 1 = false;
 
  private:
   
   
-  bool mCurrentRequestRegistered;
-  bool mPendingRequestRegistered;
+  bool mCurrentRequestRegistered = false;
+  bool mPendingRequestRegistered = false;
+
+  enum {
+    
+    REQUEST_IS_TRACKED = 1 << 0,
+    
+    
+    REQUEST_IS_IMAGESET = 1 << 1,
+  };
+  uint8_t mCurrentRequestFlags = 0;
+  uint8_t mPendingRequestFlags = 0;
 };
 
 #endif  
