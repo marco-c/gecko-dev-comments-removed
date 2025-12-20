@@ -571,6 +571,8 @@ export var BrowserUtils = {
 
 
 
+
+
   callModulesFromCategory(
     {
       categoryName,
@@ -613,15 +615,25 @@ export var BrowserUtils = {
       }
     };
 
+    let allTasks = [];
+
     for (let listener of lazy.CatManListenerManager.getListeners(
       categoryName
     )) {
       if (idleDispatch) {
-        ChromeUtils.idleDispatch(() => callSingleListener(listener));
+        allTasks.push(
+          new Promise(resolve => {
+            ChromeUtils.idleDispatch(() => {
+              resolve(callSingleListener(listener));
+            });
+          })
+        );
       } else {
-        callSingleListener(listener);
+        allTasks.push(callSingleListener(listener));
       }
     }
+
+    return Promise.allSettled(allTasks);
   },
 
   
