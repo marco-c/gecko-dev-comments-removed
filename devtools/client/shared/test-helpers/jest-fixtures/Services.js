@@ -30,40 +30,40 @@ const PREFIX = "Services.prefs:";
 
 
 
-
-
-
-
-
-function PrefBranch(parent, name, fullName) {
-  this._parent = parent;
-  this._name = name;
-  this._fullName = fullName;
-  this._observers = {};
-  this._children = {};
-
+class PrefBranch {
   
-  this._defaultValue = null;
-  this._hasUserValue = false;
-  this._userValue = null;
-  this._type = PREF_INVALID;
-}
 
-PrefBranch.prototype = {
-  PREF_INVALID,
-  PREF_STRING,
-  PREF_INT,
-  PREF_BOOL,
+
+
+
+
+  constructor(parent, name, fullName) {
+    this._parent = parent;
+    this._name = name;
+    this._fullName = fullName;
+    this._observers = {};
+    this._children = {};
+
+    
+    this._defaultValue = null;
+    this._hasUserValue = false;
+    this._userValue = null;
+    this._type = PREF_INVALID;
+  }
+  PREF_INVALID = PREF_INVALID;
+  PREF_STRING = PREF_STRING;
+  PREF_INT = PREF_INT;
+  PREF_BOOL = PREF_BOOL;
 
   
   get root() {
     return this._fullName;
-  },
+  }
 
   
   getPrefType(prefName) {
     return this._findPref(prefName)._type;
-  },
+  }
 
   
   getBoolPref(prefName, defaultValue) {
@@ -79,7 +79,7 @@ PrefBranch.prototype = {
       }
       throw e;
     }
-  },
+  }
 
   
   setBoolPref(prefName, value) {
@@ -91,7 +91,7 @@ PrefBranch.prototype = {
       throw new Error(`${prefName} does not have bool type`);
     }
     thePref._set(value);
-  },
+  }
 
   
   getCharPref(prefName, defaultValue) {
@@ -107,12 +107,12 @@ PrefBranch.prototype = {
       }
       throw e;
     }
-  },
+  }
 
   
   getStringPref() {
     return this.getCharPref.apply(this, arguments);
-  },
+  }
 
   
   setCharPref(prefName, value) {
@@ -124,12 +124,12 @@ PrefBranch.prototype = {
       throw new Error(`${prefName} does not have string type`);
     }
     thePref._set(value);
-  },
+  }
 
   
   setStringPref() {
     return this.setCharPref.apply(this, arguments);
-  },
+  }
 
   
   getIntPref(prefName, defaultValue) {
@@ -145,7 +145,7 @@ PrefBranch.prototype = {
       }
       throw e;
     }
-  },
+  }
 
   
   setIntPref(prefName, value) {
@@ -157,19 +157,19 @@ PrefBranch.prototype = {
       throw new Error(`${prefName} does not have int type`);
     }
     thePref._set(value);
-  },
+  }
 
   
   clearUserPref(prefName) {
     const thePref = this._findPref(prefName);
     thePref._clearUserValue();
-  },
+  }
 
   
   prefHasUserValue(prefName) {
     const thePref = this._findPref(prefName);
     return thePref._hasUserValue;
-  },
+  }
 
   
   addObserver(domain, observer, holdWeak) {
@@ -181,7 +181,7 @@ PrefBranch.prototype = {
       this._observers[domain] = [];
     }
     this._observers[domain].push(observer);
-  },
+  }
 
   
   removeObserver(domain, observer) {
@@ -192,7 +192,7 @@ PrefBranch.prototype = {
     if (index >= 0) {
       this._observers[domain].splice(index, 1);
     }
-  },
+  }
 
   
   savePrefFile(file) {
@@ -200,7 +200,7 @@ PrefBranch.prototype = {
       throw new Error("shim prefs only supports null file in savePrefFile");
     }
     
-  },
+  }
 
   
   getBranch(prefRoot) {
@@ -213,7 +213,7 @@ PrefBranch.prototype = {
     
     
     return this._findPref(prefRoot);
-  },
+  }
 
   
 
@@ -227,7 +227,7 @@ PrefBranch.prototype = {
       return this._userValue;
     }
     return this._defaultValue;
-  },
+  }
 
   
 
@@ -242,7 +242,7 @@ PrefBranch.prototype = {
       this._hasUserValue = true;
       this._saveAndNotify();
     }
-  },
+  }
 
   
 
@@ -257,7 +257,7 @@ PrefBranch.prototype = {
         this._saveAndNotify();
       }
     }
-  },
+  }
 
   
 
@@ -269,7 +269,7 @@ PrefBranch.prototype = {
       this._hasUserValue = false;
       this._saveAndNotify();
     }
-  },
+  }
 
   
 
@@ -285,7 +285,7 @@ PrefBranch.prototype = {
 
     localStorage.setItem(PREFIX + this._fullName, JSON.stringify(store));
     this._parent._notify(this._name);
-  },
+  }
 
   
 
@@ -313,7 +313,7 @@ PrefBranch.prototype = {
     
     
     this._parent._notify(this._name);
-  },
+  }
 
   
 
@@ -335,7 +335,7 @@ PrefBranch.prototype = {
     }
 
     return branch;
-  },
+  }
 
   
 
@@ -377,7 +377,7 @@ PrefBranch.prototype = {
     if (this._parent) {
       this._parent._notify(`${this._name}.${relativeName}`);
     }
-  },
+  }
 
   
 
@@ -398,7 +398,7 @@ PrefBranch.prototype = {
       parent = parent._children[branch];
     }
     return parent;
-  },
+  }
 
   
 
@@ -449,7 +449,7 @@ PrefBranch.prototype = {
     }
 
     return branch;
-  },
+  }
 
   getKeyName(keyName) {
     if (keyName.startsWith(PREFIX)) {
@@ -457,7 +457,7 @@ PrefBranch.prototype = {
     }
 
     return keyName;
-  },
+  }
 
   
 
@@ -487,7 +487,7 @@ PrefBranch.prototype = {
       const thePref = this._findPref(key);
       thePref._storageUpdated(type, userValue, hasUserValue, defaultValue);
     }
-  },
+  }
 
   
 
@@ -522,8 +522,8 @@ PrefBranch.prototype = {
 
     this._onStorageChange = this._onStorageChange.bind(this);
     window.addEventListener("storage", this._onStorageChange);
-  },
-};
+  }
+}
 
 const Services = {
   _prefs: null,
