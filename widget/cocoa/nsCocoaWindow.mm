@@ -6545,7 +6545,7 @@ void nsCocoaWindow::ReportMoveEvent() {
 
   
   if (IsVisible()) {
-    NotifyWindowMoved(mBounds.x, mBounds.y);
+    NotifyWindowMoved(mBounds.TopLeft());
   }
 
   mInReportMoveEvent = false;

@@ -2514,7 +2514,7 @@ void nsWindow::DoResize(double aX, double aY, double aWidth, double aHeight,
   }
 
   if (needPositionDispatch) {
-    NotifyWindowMoved(mBounds.x, mBounds.y);
+    NotifyWindowMoved(mBounds.TopLeft());
   }
 
   
