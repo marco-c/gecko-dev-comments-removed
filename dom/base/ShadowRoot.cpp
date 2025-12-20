@@ -184,7 +184,7 @@ void ShadowRoot::Unbind() {
     OwnerDoc()->RemoveComposedDocShadowRoot(*this);
   }
 
-  UnbindContext context(*this);
+  UnbindContext context(*this,  nullptr);
   for (nsIContent* child = GetFirstChild(); child;
        child = child->GetNextSibling()) {
     child->UnbindFromTree(context);
@@ -824,7 +824,7 @@ nsINode* ShadowRoot::CreateElementAndAppendChildAt(nsINode& aParentNode,
   return aParentNode.AppendChild(*node, rv);
 }
 
-void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild) {
+void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild, bool aInBatch) {
   
   MOZ_ASSERT(!GetHost() || aChild.GetParent() == GetHost());
 
@@ -837,15 +837,19 @@ void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild) {
                         "How did aChild end up assigned to a slot?");
   
   
-  if (slot->AssignedNodes().Length() == 1 && slot->HasChildren()) {
+  if ((aInBatch || slot->AssignedNodes().Length() == 1) &&
+      slot->HasChildren()) {
     InvalidateStyleAndLayoutOnSubtree(slot);
   }
 
-  slot->RemoveAssignedNode(aChild);
   slot->EnqueueSlotChangeEvent();
-
-  if (mIsDetailsShadowTree && aChild.IsHTMLElement(nsGkAtoms::summary)) {
-    MaybeReassignMainSummary(SummaryChangeReason::Deletion);
+  if (aInBatch) {
+    slot->ClearAssignedNodes();
+  } else {
+    slot->RemoveAssignedNode(aChild);
+    if (mIsDetailsShadowTree && aChild.IsHTMLElement(nsGkAtoms::summary)) {
+      MaybeReassignMainSummary(SummaryChangeReason::Deletion);
+    }
   }
 }
 

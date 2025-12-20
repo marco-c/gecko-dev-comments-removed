@@ -2527,7 +2527,7 @@ void nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify,
 
   
   InvalidateChildNodes();
-  aKid->UnbindFromTree(aNewParent);
+  aKid->UnbindFromTree(aNewParent, aState);
 }
 
 
