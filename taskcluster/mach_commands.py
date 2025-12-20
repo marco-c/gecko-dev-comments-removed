@@ -14,10 +14,15 @@ import traceback
 from functools import partial
 
 import gecko_taskgraph.main
+from gecko_taskgraph.files_changed import get_locally_changed_files
 from gecko_taskgraph.main import commands as taskgraph_commands
 from mach.decorators import Command, CommandArgument, SubCommand
 from mach.util import strtobool
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
+
+
+
+get_locally_changed_files.preload(os.getcwd())
 
 
 def setup_logging(command_context, quiet=False, verbose=True):
