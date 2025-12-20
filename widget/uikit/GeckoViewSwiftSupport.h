@@ -52,6 +52,8 @@
                 message:(id)message
                callback:(id<EventCallback>)callback;
 - (BOOL)hasListener:(NSString*)type;
+
+- (void)activate;
 @end
 
 @protocol GeckoViewWindow <NSObject>
