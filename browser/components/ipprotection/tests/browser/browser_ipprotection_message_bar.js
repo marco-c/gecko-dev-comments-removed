@@ -13,7 +13,7 @@ const { ERRORS } = ChromeUtils.importESModule(
 
 add_task(async function test_generic_error() {
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
     error: "",
   });
 
@@ -28,7 +28,7 @@ add_task(async function test_generic_error() {
   );
 
   await setPanelState({
-    isSignedIn: true,
+    isSignedOut: false,
     error: ERRORS.GENERIC,
   });
   await messageBarLoadedPromise;
@@ -52,10 +52,53 @@ add_task(async function test_generic_error() {
 
 
 
+add_task(async function test_warning_message() {
+  let content = await openPanel({
+    isSignedOut: false,
+    error: "",
+  });
+
+  let messageBar = content.shadowRoot.querySelector("ipprotection-message-bar");
+
+  Assert.ok(!messageBar, "Message bar should not be present");
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  await setPanelState({
+    isSignedOut: false,
+    error: "",
+    bandwidthWarning: true,
+  });
+  await messageBarLoadedPromise;
+
+  messageBar = content.shadowRoot.querySelector("ipprotection-message-bar");
+
+  Assert.ok(messageBar, "Message bar should be present");
+  Assert.ok(
+    messageBar.mozMessageBarEl,
+    "Wrapped moz-message-bar should be present"
+  );
+  Assert.equal(messageBar.type, "warning", "Message bar should be warning");
+  Assert.equal(
+    messageBar.messageId,
+    "ipprotection-message-bandwidth-warning",
+    "Warning message id should match"
+  );
+
+  await closePanel();
+});
+
+
+
+
 
 add_task(async function test_dismiss() {
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
     error: "",
   });
 
@@ -71,7 +114,7 @@ add_task(async function test_dismiss() {
 
   
   await setPanelState({
-    isSignedIn: true,
+    isSignedOut: false,
     error: ERRORS.GENERIC,
   });
   await messageBarLoadedPromise;
