@@ -692,18 +692,104 @@ class JS_PUBLIC_API Dispatchable {
 
 
 
-
-
-
 typedef bool (*DispatchToEventLoopCallback)(
     void* closure, js::UniquePtr<Dispatchable>&& dispatchable);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 typedef bool (*DelayedDispatchToEventLoopCallback)(
     void* closure, js::UniquePtr<Dispatchable>&& dispatchable, uint32_t delay);
 
-extern JS_PUBLIC_API void InitDispatchsToEventLoop(
-    JSContext* cx, DispatchToEventLoopCallback callback,
-    DelayedDispatchToEventLoopCallback delayedCallback, void* closure);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*AsyncTaskStartedCallback)(void* closure,
+                                         Dispatchable* dispatchable);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*AsyncTaskFinishedCallback)(void* closure,
+                                          Dispatchable* dispatchable);
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void InitAsyncTaskCallbacks(
+    JSContext* cx, DispatchToEventLoopCallback dispatchCallback,
+    DelayedDispatchToEventLoopCallback delayedDispatchCallback,
+    AsyncTaskStartedCallback asyncTaskStartedCallback,
+    AsyncTaskFinishedCallback asyncTaskFinishedCallback, void* closure);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void CancelAsyncTasks(JSContext* cx);
+
+
+
+
+
+
 
 
 
