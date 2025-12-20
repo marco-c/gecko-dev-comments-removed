@@ -3429,56 +3429,38 @@ void nsWindow::RecomputeBoundsX11(bool aMayChangeCsdMargin) {
   LOGVERBOSE("  toplevelBounds %s", ToString(toplevelBounds).c_str());
 
   
-  DesktopIntRect finalBounds = [&] {
-    auto bounds = toplevelBoundsWithTitlebar;
+  const auto systemDecorationOffset =
+      toplevelBounds.TopLeft() - toplevelBoundsWithTitlebar.TopLeft();
+
+  
+  mClientArea = GetBounds(mGdkWindow);
+  
+  mClientArea.MoveBy(systemDecorationOffset);
+  LOGVERBOSE("  mClientArea %s", ToString(mClientArea).c_str());
+
+  if (mClientArea.X() < 0 || mClientArea.Y() < 0 || mClientArea.Width() <= 1 ||
+      mClientArea.Height() <= 1) {
     
     
-    
-    
-    bounds.width = std::max(bounds.width, toplevelBounds.width);
-    bounds.height = std::max(bounds.height, toplevelBounds.height);
-    return bounds;
-  }();
-  LOGVERBOSE("  finalBounds %s", ToString(finalBounds).c_str());
+    mClientArea = DesktopIntRect(systemDecorationOffset, toplevelBounds.Size());
+  }
+
   const bool decorated =
       IsTopLevelWidget() && mSizeMode != nsSizeMode_Fullscreen && !mUndecorated;
-  LOGVERBOSE("  decorated %d", decorated);
   if (!decorated) {
     mClientMargin = {};
   } else if (aMayChangeCsdMargin) {
-    
-    const DesktopIntRect clientRectRelativeToFrame = [&] {
-      auto topLevelBoundsRelativeToFrame = toplevelBounds;
-      topLevelBoundsRelativeToFrame -= toplevelBoundsWithTitlebar.TopLeft();
-
-      LOGVERBOSE("  topLevelBoundsRelativeToFrame %s",
-                 ToString(topLevelBoundsRelativeToFrame).c_str());
-      if (!mGdkWindow) {
-        return topLevelBoundsRelativeToFrame;
-      }
-      auto gdkWindowBounds = GetBounds(mGdkWindow);
-      if (gdkWindowBounds.X() < 0 || gdkWindowBounds.Y() < 0 ||
-          gdkWindowBounds.Width() <= 1 || gdkWindowBounds.Height() <= 1) {
-        
-        return topLevelBoundsRelativeToFrame;
-      }
-      LOGVERBOSE("  gdkWindowBounds %s", ToString(gdkWindowBounds).c_str());
-      
-      return gdkWindowBounds + topLevelBoundsRelativeToFrame.TopLeft();
-    }();
-
-    auto relative = clientRectRelativeToFrame;
-    LOGVERBOSE("  clientRectRelativeToFrame %s", ToString(relative).c_str());
-    mClientMargin = DesktopIntRect(DesktopIntPoint(), finalBounds.Size()) -
-                    clientRectRelativeToFrame;
-    LOGVERBOSE("  mClientMargin %s", ToString(mClientMargin).c_str());
+    mClientMargin =
+        DesktopIntRect(DesktopIntPoint(), toplevelBoundsWithTitlebar.Size()) -
+        mClientArea;
     mClientMargin.EnsureAtLeast(DesktopIntMargin());
   } else {
     
   }
 
-  mClientArea = finalBounds;
-  mClientArea.Deflate(mClientMargin);
+  
+  
+  mClientArea.MoveBy(toplevelBoundsWithTitlebar.TopLeft());
 }
 #endif
 #ifdef MOZ_WAYLAND
