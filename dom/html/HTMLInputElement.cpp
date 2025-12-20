@@ -23,7 +23,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
 #include "mozilla/ServoCSSParser.h"
-#include "mozilla/ServoComputedData.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_signon.h"
 #include "mozilla/TextControlState.h"
@@ -803,16 +802,6 @@ nsresult HTMLInputElement::InitColorPicker() {
   if (IsPickerBlocked(doc)) {
     return NS_OK;
   }
-
-  
-  
-  
-#ifndef ANDROID
-  if (StaticPrefs::dom_forms_html_color_picker_enabled()) {
-    OpenColorPicker();
-    return NS_OK;
-  }
-#endif
 
   
   nsAutoString title;
@@ -2057,46 +2046,6 @@ Decimal HTMLInputElement::GetStepBase() const {
   return kDefaultStepBase;
 }
 
-void HTMLInputElement::GetColor(InputPickerColor& aValue) {
-  MOZ_ASSERT(mType == FormControlType::InputColor,
-             "getColor is only for type=color.");
-
-  nsAutoString value;
-  GetValue(value, CallerType::System);
-
-  StyleAbsoluteColor color =
-      MaybeComputeColor(OwnerDoc(), value).valueOr(StyleAbsoluteColor::BLACK);
-  aValue.mComponent1 = color.components._0;
-  aValue.mComponent2 = color.components._1;
-  aValue.mComponent3 = color.components._2;
-  
-  
-}
-
-void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
-  MOZ_ASSERT(mType == FormControlType::InputColor,
-             "setUserInputColor is only for type=color.");
-
-  
-  
-  nsAutoString serialized;
-  SerializeColorForHTMLCompatibility(
-      StyleAbsoluteColor{
-          .components =
-              StyleColorComponents{
-                  ._0 = aValue.mComponent1,
-                  ._1 = aValue.mComponent2,
-                  ._2 = aValue.mComponent3,
-              },
-          .alpha = 1,
-          .color_space = StyleColorSpace::Srgb,
-      },
-      serialized);
-
-  
-  SetUserInput(serialized, *NodePrincipal());
-}
-
 Decimal HTMLInputElement::GetValueIfStepped(int32_t aStep,
                                             StepCallerType aCallerType,
                                             ErrorResult& aRv) {
@@ -2359,7 +2308,7 @@ void HTMLInputElement::OpenDateTimePicker(const DateTimeValue& aInitialValue) {
   }
 
   mDateTimeInputBoxValue = MakeUnique<DateTimeValue>(aInitialValue);
-  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this,
+  nsContentUtils::DispatchChromeEvent(OwnerDoc(), static_cast<Element*>(this),
                                       u"MozOpenDateTimePicker"_ns,
                                       CanBubble::eYes, Cancelable::eYes);
 }
@@ -2369,23 +2318,13 @@ void HTMLInputElement::CloseDateTimePicker() {
     return;
   }
 
-  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this,
+  nsContentUtils::DispatchChromeEvent(OwnerDoc(), static_cast<Element*>(this),
                                       u"MozCloseDateTimePicker"_ns,
                                       CanBubble::eYes, Cancelable::eYes);
 }
 
 void HTMLInputElement::SetOpenState(bool aIsOpen) {
   SetStates(ElementState::OPEN, aIsOpen);
-}
-
-void HTMLInputElement::OpenColorPicker() {
-  if (NS_WARN_IF(mType != FormControlType::InputColor)) {
-    return;
-  }
-
-  nsContentUtils::DispatchChromeEvent(OwnerDoc(), this,
-                                      u"MozOpenColorPicker"_ns, CanBubble::eYes,
-                                      Cancelable::eYes);
 }
 
 void HTMLInputElement::SetFocusState(bool aIsFocused) {

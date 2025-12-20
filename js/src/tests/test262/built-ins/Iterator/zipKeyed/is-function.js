@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Iterator.zipKeyed,
+  "function",
+  "The value of `typeof Iterator.zipKeyed` is 'function'"
+);
+
+reportCompare(0, 0);

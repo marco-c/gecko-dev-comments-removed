@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+let ss = (new Intl.Segmenter()).segment("123")[Symbol.iterator].name;
+assert.sameValue("[Symbol.iterator]", ss);
+
+reportCompare(0, 0);

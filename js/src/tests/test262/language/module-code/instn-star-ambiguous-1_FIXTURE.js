@@ -1,6 +1,0 @@
-
-
-
-
-export var first = null;
-export var both = null;

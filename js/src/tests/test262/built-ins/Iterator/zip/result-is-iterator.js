@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var iter = Iterator.zip([]);
+assert(iter instanceof Iterator, "Iterator.zip([]) must return an Iterator");
+
+assert.sameValue(
+  Object.getPrototypeOf(iter),
+  getWellKnownIntrinsicObject("%IteratorHelperPrototype%"),
+  "[[Prototype]] is %IteratorHelperPrototype%"
+);
+
+reportCompare(0, 0);
