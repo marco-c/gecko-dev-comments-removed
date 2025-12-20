@@ -362,10 +362,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/InsightsManager.sys.mjs",
-  },
-  
-  {
     file: "chrome://browser/content/aiwindow/firstrun.html",
   },
   
