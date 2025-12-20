@@ -314,7 +314,8 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
 
   
   
-  RefPtr<nsINode> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
+  RefPtr<nsINode> hideUntil =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
 
   
   
@@ -492,7 +493,8 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
 
   
   
-  RefPtr<nsINode> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
+  RefPtr<nsINode> hideUntil =
+      GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
 
   
   

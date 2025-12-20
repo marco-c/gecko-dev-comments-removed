@@ -270,6 +270,7 @@ class NodeFilter;
 class NodeInfo;
 class NodeIterator;
 enum class OrientationType : uint8_t;
+enum class PopoverAttributeState : uint8_t;
 class ProcessingInstruction;
 class Promise;
 class ScriptLoader;
@@ -3585,10 +3586,22 @@ class Document : public nsINode,
                                        Nullable<Wireframe>&);
 
   
+  MOZ_CAN_RUN_SCRIPT void CloseEntirePopoverList(PopoverAttributeState aMode,
+                                                 bool aFocusPreviousElement,
+                                                 bool aFireEvents);
+
+  
   
   MOZ_CAN_RUN_SCRIPT void HideAllPopoversUntil(nsINode& aEndpoint,
                                                bool aFocusPreviousElement,
                                                bool aFireEvents);
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(PopoverAttributeState aMode,
+                                                nsINode& aEndpoint,
+                                                bool aFocusPreviousElement,
+                                                bool aFireEvents);
 
   
   
@@ -3600,16 +3613,13 @@ class Document : public nsINode,
   
   
   
-  nsTArray<Element*> AutoPopoverList() const;
+  
+  nsTArray<Element*> PopoverListOf(PopoverAttributeState aMode) const;
 
   
   
   
-  Element* GetTopmostAutoPopover() const;
-
-  
-  void AddToAutoPopoverList(Element&);
-  void RemoveFromAutoPopoverList(Element&);
+  Element* GetTopmostPopoverOf(PopoverAttributeState aMode) const;
 
   void AddPopoverToTopLayer(Element&);
   void RemovePopoverFromTopLayer(Element&);

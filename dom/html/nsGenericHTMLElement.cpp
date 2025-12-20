@@ -3404,77 +3404,200 @@ void nsGenericHTMLElement::ShowPopover(const ShowPopoverOptions& aOptions,
   return ShowPopoverInternal(MOZ_KnownLive(source), aRv);
 }
 
+
 void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
                                                ErrorResult& aRv) {
+  
+  
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, nullptr, aRv)) {
     return;
   }
+
+  
   RefPtr<Document> document = OwnerDoc();
 
+  
   MOZ_ASSERT(!GetPopoverData() || !GetPopoverData()->GetInvoker());
+
+  
   MOZ_ASSERT(!OwnerDoc()->TopLayerContains(*this));
 
-  bool wasShowingOrHiding = GetPopoverData()->IsShowingOrHiding();
+  
+  bool nestedShow = GetPopoverData()->IsShowingOrHiding();
+
+  
+  bool fireEvents = !nestedShow;
+
+  
   GetPopoverData()->SetIsShowingOrHiding(true);
+
+  
   auto cleanupShowingFlag = MakeScopeExit([&]() {
+    
+    
     if (auto* popoverData = GetPopoverData()) {
-      popoverData->SetIsShowingOrHiding(wasShowingOrHiding);
+      popoverData->SetIsShowingOrHiding(nestedShow);
     }
   });
 
   
+  
+  
+  
+  
   if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns, aSource)) {
     return;
   }
+
+  
+  
+  
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
     return;
   }
 
+  
   bool shouldRestoreFocus = false;
+
+  
+  auto originalType = GetPopoverAttributeState();
+
+  
+  PopoverAttributeState stackToAppendTo = PopoverAttributeState::None;
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+
   nsWeakPtr originallyFocusedElement;
-  if (IsAutoPopover()) {
-    auto originalState = GetPopoverAttributeState();
-    RefPtr<nsINode> ancestor = GetTopmostPopoverAncestor(aSource, true);
+
+  
+  if (originalType == PopoverAttributeState::Auto) {
+    
+    
+    
+
+    
+    
+    
+    RefPtr<nsINode> ancestor =
+        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, aSource, true);
+
+    
     if (!ancestor) {
       ancestor = document;
     }
-    document->HideAllPopoversUntil(*ancestor, false,
-                                    !wasShowingOrHiding);
-    if (GetPopoverAttributeState() != originalState) {
+
+    
+    
+    document->HideAllPopoversUntil(*ancestor, false, fireEvents);
+
+    
+    stackToAppendTo = PopoverAttributeState::Auto;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (originalType == PopoverAttributeState::Auto) {
+    
+    MOZ_ASSERT(stackToAppendTo != PopoverAttributeState::None);
+
+    
+    
+    if (originalType != GetPopoverAttributeState()) {
+      
+      
       aRv.ThrowInvalidStateError(
           "The value of the popover attribute was changed while hiding the "
           "popover.");
+      
       return;
     }
 
     
     
-    if (!IsAutoPopover() ||
-        !CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
+    
+    if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
       return;
     }
 
-    shouldRestoreFocus = !document->GetTopmostAutoPopover();
     
     
-    if (nsIContent* unretargetedFocus =
-            document->GetUnretargetedFocusedContent()) {
-      originallyFocusedElement =
-          do_GetWeakReference(unretargetedFocus->AsElement());
-    }
+    
+    shouldRestoreFocus =
+        !document->GetTopmostPopoverOf(PopoverAttributeState::Auto);
 
+    
+    if (stackToAppendTo == PopoverAttributeState::Auto) {
+      
+      
+      MOZ_ASSERT(
+          !document->PopoverListOf(PopoverAttributeState::Auto).Contains(this));
+
+      
+      GetPopoverData()->SetOpenedInMode(PopoverAttributeState::Auto);
+    } else {
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT_UNREACHABLE("stackToAppendTo was not Auto!");
+    }
+    
+    
+    
+    
+    
+    
     if (StaticPrefs::dom_closewatcher_enabled()) {
       GetPopoverData()->EnsureCloseWatcher(this);
     }
   }
 
+  
+  
+  if (nsIContent* unretargetedFocus =
+          document->GetUnretargetedFocusedContent()) {
+    originallyFocusedElement =
+        do_GetWeakReference(unretargetedFocus->AsElement());
+  }
+
+  
   document->AddPopoverToTopLayer(*this);
 
   PopoverPseudoStateUpdate(true, true);
 
   {
     auto* popoverData = GetPopoverData();
+    
+    popoverData->SetOpenedInMode(GetPopoverAttributeState());
+    
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
+    
     popoverData->SetInvoker(aSource);
     if (aSource && aSource->IsHTMLElement()) {
       aSource->SetAssociatedPopover(*this);
@@ -3483,13 +3606,21 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
 
   
   FocusPopover();
+
+  
+  
+  
   if (shouldRestoreFocus &&
       GetPopoverAttributeState() != PopoverAttributeState::None) {
     GetPopoverData()->SetPreviouslyFocusedElement(originallyFocusedElement);
   }
 
   
+  
   QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
+
+  
+  
 }
 
 void nsGenericHTMLElement::HidePopoverWithoutRunningScript() {
