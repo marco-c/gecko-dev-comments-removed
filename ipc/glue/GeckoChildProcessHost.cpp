@@ -121,6 +121,11 @@ static bool ShouldHaveDirectoryService() {
   return GeckoProcessType_Default == XRE_GetProcessType();
 }
 
+#ifdef XP_IOS
+
+extern char** environ;
+#endif
+
 namespace mozilla {
 namespace ipc {
 
@@ -345,6 +350,7 @@ class IosProcessLauncher : public PosixProcessLauncher {
       : PosixProcessLauncher(aHost, std::move(aExtraOpts)) {}
 
  protected:
+  virtual Result<Ok, LaunchError> DoSetup() override;
   virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
 
   DarwinObjectPtr<xpc_object_t> mBootstrapMessage;
@@ -1357,6 +1363,38 @@ RefPtr<ProcessLaunchPromise> PosixProcessLauncher::DoLaunch() {
 #endif  
 
 #ifdef XP_IOS
+Result<Ok, LaunchError> IosProcessLauncher::DoSetup() {
+  Result<Ok, LaunchError> aError = PosixProcessLauncher::DoSetup();
+  if (aError.isErr()) {
+    return aError;
+  }
+
+  
+  
+  
+  for (char** envp = environ; *envp != 0; ++envp) {
+    
+    if (strncmp(*envp, "MOZ_", 4) != 0) {
+      continue;
+    }
+
+    std::string_view env{*envp};
+    size_t eqIdx = env.find('=');
+    if (eqIdx == std::string_view::npos) {
+      continue;
+    }
+
+    std::string key{env.substr(0, eqIdx)};
+    if (mLaunchOptions->env_map.count(key)) {
+      
+      continue;
+    }
+
+    mLaunchOptions->env_map[key] = env.substr(eqIdx + 1);
+  }
+  return Ok();
+}
+
 RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
   ExtensionKitProcess::Kind kind = ExtensionKitProcess::Kind::WebContent;
   if (mProcessType == GeckoProcessType_GPU) {
