@@ -25,7 +25,6 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
 add_task(async function test_privacy_update() {
   
   const PREFS = {
-    "network.predictor.enabled": true,
     "network.prefetch-next": true,
     "network.http.speculative-parallel-limit": 10,
     "network.dns.disablePrefetch": false,

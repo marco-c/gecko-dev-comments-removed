@@ -29,7 +29,6 @@ add_task(async function test_privacy() {
   
   const SETTINGS = {
     "network.networkPredictionEnabled": {
-      "network.predictor.enabled": true,
       "network.prefetch-next": true,
       
       

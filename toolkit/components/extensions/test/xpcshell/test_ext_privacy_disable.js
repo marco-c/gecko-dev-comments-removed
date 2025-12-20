@@ -49,7 +49,6 @@ add_task(async function test_disable() {
 
   
   const PREFS = {
-    "network.predictor.enabled": true,
     "network.prefetch-next": true,
     "network.http.speculative-parallel-limit": 10,
     "network.dns.disablePrefetch": false,
