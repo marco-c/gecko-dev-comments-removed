@@ -790,6 +790,8 @@ class HTMLInputElement final : public TextControlElement,
 
   void SetOpenState(bool aIsOpen);
 
+  void OpenColorPicker();
+
   
 
 
@@ -810,6 +812,16 @@ class HTMLInputElement final : public TextControlElement,
   double GetStepBaseAsDouble() { return GetStepBase().toDouble(); }
   double GetMinimumAsDouble() { return GetMinimum().toDouble(); }
   double GetMaximumAsDouble() { return GetMaximum().toDouble(); }
+
+  
+
+
+  void GetColor(InputPickerColor& aValue);
+
+  
+
+
+  void SetUserInputColor(const InputPickerColor& aValue);
 
   void StartNumberControlSpinnerSpin();
   enum SpinnerStopState { eAllowDispatchingEvents, eDisallowDispatchingEvents };
