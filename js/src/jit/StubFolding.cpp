@@ -50,6 +50,7 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   
   
   
+  
 
   uint32_t numActive = 0;
   mozilla::Maybe<uint32_t> foldableShapeOffset;
@@ -242,6 +243,7 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   
   
   
+  
   CacheIRWriter writer(cx);
   CacheIRReader reader(stubInfo);
   CacheIRCloner cloner(firstStub);
@@ -311,6 +313,34 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
           writer.guardMultipleShapes(objId, shapeObj);
         }
         shapeSuccess = true;
+        break;
+      }
+      case CacheOp::LoadFixedSlotResult: {
+        auto [objId, offsetOffset] = reader.argsForLoadFixedSlotResult();
+        if (!hasSlotOffsets || offsetOffset != *foldableOffsetOffset) {
+          
+          uint32_t offset = stubInfo->getStubRawWord(firstStub, offsetOffset);
+          writer.loadFixedSlotResult(objId, offset);
+          break;
+        }
+
+        MOZ_ASSERT(offsetId.isSome());
+        writer.loadFixedSlotFromOffsetResult(objId, offsetId.value());
+        offsetSuccess = true;
+        break;
+      }
+      case CacheOp::LoadDynamicSlotResult: {
+        auto [objId, offsetOffset] = reader.argsForLoadDynamicSlotResult();
+        if (!hasSlotOffsets || offsetOffset != *foldableOffsetOffset) {
+          
+          uint32_t offset = stubInfo->getStubRawWord(firstStub, offsetOffset);
+          writer.loadDynamicSlotResult(objId, offset);
+          break;
+        }
+
+        MOZ_ASSERT(offsetId.isSome());
+        writer.loadDynamicSlotFromOffsetResult(objId, offsetId.value());
+        offsetSuccess = true;
         break;
       }
       default:
@@ -530,6 +560,36 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
         if (shapesRealm != shape->realm()) {
           return false;
         }
+
+        
+        stubReader.skip();
+        break;
+      }
+      case CacheOp::LoadFixedSlotFromOffsetResult:
+      case CacheOp::LoadDynamicSlotFromOffsetResult: {
+        
+        
+        if (stubOp == CacheOp::LoadFixedSlotFromOffsetResult &&
+            newOp != CacheOp::LoadFixedSlotResult) {
+          return false;
+        }
+        if (stubOp == CacheOp::LoadDynamicSlotFromOffsetResult &&
+            newOp != CacheOp::LoadDynamicSlotResult) {
+          return false;
+        }
+
+        
+        if (newReader.objOperandId() != stubReader.objOperandId()) {
+          return false;
+        }
+
+        MOZ_ASSERT(offsetFieldOffset.isNothing());
+        offsetFieldOffset.emplace(newReader.stubOffset());
+
+        
+        StubField offsetField =
+            writer.readStubField(*offsetFieldOffset, StubField::Type::RawInt32);
+        newOffset = PrivateUint32Value(offsetField.asWord());
 
         
         stubReader.skip();
