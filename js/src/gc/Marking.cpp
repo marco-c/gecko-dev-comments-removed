@@ -1214,7 +1214,12 @@ bool js::GCMarker::mark(T* thing) {
   }
 
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    if (IsOwnedByOtherRuntime(runtime(), thing)) {
+    
+    
+    
+    if (IsOwnedByOtherRuntime(runtime(), thing) ||
+        (markColor() == MarkColor::Gray &&
+         !thing->zone()->isGCMarkingOrVerifyingPreBarriers())) {
       return false;
     }
   }
