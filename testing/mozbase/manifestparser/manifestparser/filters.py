@@ -16,7 +16,7 @@ from collections.abc import MutableSequence
 
 from .expression import ParseError, parse
 from .logger import Logger
-from .util import normsep
+from .util import normsep, norm_needed
 
 
 
@@ -333,17 +333,30 @@ class chunk_by_runtime(InstanceFilter):
         self.runtimes = {normsep(m): r for m, r in runtimes.items()}
         self.logger = Logger()
 
-    @classmethod
-    def get_manifest(cls, test):
-        manifest = normsep(test.get("ancestor_manifest", ""))
+    
+    
+    if norm_needed:
 
-        
-        
-        
-        
-        if not manifest or "/" not in manifest:
-            manifest = normsep(test["manifest_relpath"])
-        return manifest
+        @staticmethod
+        def get_manifest(test):
+            manifest = normsep(test.get("ancestor_manifest", ""))
+
+            
+            
+            
+            
+            if not manifest or "/" not in manifest:
+                manifest = normsep(test["manifest_relpath"])
+            return manifest
+
+    else:
+
+        @staticmethod
+        def get_manifest(test):
+            manifest = test.get("ancestor_manifest")
+            return (
+                manifest if manifest and "/" in manifest else test["manifest_relpath"]
+            )
 
     def get_chunked_manifests(self, manifests):
         
