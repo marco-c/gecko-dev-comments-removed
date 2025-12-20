@@ -725,16 +725,6 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   return IPC_OK();
 }
 
-::mozilla::ipc::IPCResult WebTransportParent::RecvGetHttpChannelID(
-    GetHttpChannelIDResolver&& aResolver) {
-  LOG(("WebTransportParent Channel ID"));
-  MOZ_ASSERT(mWebTransport);
-  uint64_t aHttpChannelId;
-  mWebTransport->GetHttpChannelID(&aHttpChannelId);
-  aResolver(aHttpChannelId);
-  return IPC_OK();
-}
-
 
 
 
