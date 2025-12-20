@@ -173,8 +173,7 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
   
   
   
-  sNativeHTTPSSupported = StaticPrefs::network_dns_native_https_query_win10() ||
-                          mozilla::IsWin11OrLater();
+  sNativeHTTPSSupported = mozilla::IsWin11OrLater();
 #elif defined(MOZ_WIDGET_ANDROID)
   
   sNativeHTTPSSupported = jni::GetAPIVersion() >= 29;
@@ -430,6 +429,13 @@ bool nsHostResolver::IsNativeHTTPSEnabled() {
   if (!StaticPrefs::network_dns_native_https_query()) {
     return false;
   }
+#ifdef XP_WIN
+  if (StaticPrefs::network_dns_native_https_query_win10()) {
+    
+    
+    return true;
+  }
+#endif
   return sNativeHTTPSSupported;
 }
 
