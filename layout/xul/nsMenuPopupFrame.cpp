@@ -2505,22 +2505,21 @@ void nsMenuPopupFrame::CheckForAnchorChange(nsRect& aRect) {
   }
 }
 
-bool nsMenuPopupFrame::WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
+void nsMenuPopupFrame::WindowMoved(nsIWidget* aWidget,
+                                   const LayoutDeviceIntPoint& aPoint,
                                    ByMoveToRect aByMoveToRect) {
   MOZ_ASSERT(aWidget == mWidget);
 
   if (!IsVisibleOrShowing()) {
-    return true;
+    return;
   }
-
-  LayoutDeviceIntPoint point(aX, aY);
 
   
   
   LayoutDeviceIntRect curDevBounds = CalcWidgetBounds();
-  if (curDevBounds.TopLeft() == point &&
+  if (curDevBounds.TopLeft() == aPoint &&
       aWidget->GetClientOffset() == GetLastClientOffset()) {
-    return true;
+    return;
   }
 
   
@@ -2532,46 +2531,43 @@ bool nsMenuPopupFrame::WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
       aByMoveToRect == ByMoveToRect::No) {
     SetPopupPosition(true);
   } else {
-    CSSPoint cssPos = point / PresContext()->CSSToDevPixelScale();
+    CSSPoint cssPos = aPoint / PresContext()->CSSToDevPixelScale();
     MoveTo(cssPos, false, aByMoveToRect == ByMoveToRect::Yes);
   }
-  return true;
 }
 
-bool nsMenuPopupFrame::WindowResized(nsIWidget* aWidget, int32_t aWidth,
-                                     int32_t aHeight) {
+void nsMenuPopupFrame::WindowResized(nsIWidget* aWidget,
+                                     const LayoutDeviceIntSize& aSize) {
   MOZ_ASSERT(aWidget == mWidget);
   if (!IsVisibleOrShowing()) {
-    return true;
+    return;
   }
 
-  LayoutDeviceIntSize size(aWidth, aHeight);
   const LayoutDeviceIntRect curDevBounds = CalcWidgetBounds();
   
-  if (curDevBounds.Size() == size) {
-    return true;
+  if (curDevBounds.Size() == aSize) {
+    return;
   }
 
   RefPtr<Element> popup = &PopupElement();
 
   
   if (!popup->HasAttr(nsGkAtoms::width) || !popup->HasAttr(nsGkAtoms::height)) {
-    return true;
+    return;
   }
 
   
   
   nsPresContext* presContext = PresContext();
 
-  CSSIntSize newCSS(presContext->DevPixelsToIntCSSPixels(size.width),
-                    presContext->DevPixelsToIntCSSPixels(size.height));
+  CSSIntSize newCSS(presContext->DevPixelsToIntCSSPixels(aSize.width),
+                    presContext->DevPixelsToIntCSSPixels(aSize.height));
 
   nsAutoString width, height;
   width.AppendInt(newCSS.width);
   height.AppendInt(newCSS.height);
   popup->SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, true);
   popup->SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
-  return true;
 }
 
 bool nsMenuPopupFrame::RequestWindowClose(nsIWidget* aWidget) {

@@ -59,19 +59,14 @@ class nsIWidgetListener {
 
 
   enum class ByMoveToRect : bool { No, Yes };
-  virtual bool WindowMoved(nsIWidget* aWidget, int32_t aX, int32_t aY,
-                           ByMoveToRect) {
-    return false;
-  }
+  virtual void WindowMoved(nsIWidget*, const mozilla::LayoutDeviceIntPoint&,
+                           ByMoveToRect) {}
 
   
 
 
 
-  virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
-                             int32_t aHeight) {
-    return false;
-  }
+  virtual void WindowResized(nsIWidget*, const mozilla::LayoutDeviceIntSize&) {}
 
   
 

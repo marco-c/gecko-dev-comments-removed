@@ -578,7 +578,7 @@ class nsWindow final : public nsIWidget {
 
 
   void OnDestroy() override;
-  bool OnResize(const LayoutDeviceIntSize& aSize);
+  void OnResize(const LayoutDeviceIntSize& aSize);
   void OnSizeModeChange();
   bool OnGesture(WPARAM wParam, LPARAM lParam);
   bool OnTouch(WPARAM wParam, LPARAM lParam);
