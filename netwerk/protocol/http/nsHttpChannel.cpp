@@ -649,22 +649,6 @@ nsresult nsHttpChannel::PrepareToConnect() {
       mURI, mLoadInfo->GetExternalContentPolicyType(), &mRequestHead, IsHTTPS(),
       this, nsHttpChannel::StaticSuspend,
       [self = RefPtr(this)](bool aNeedsResume, DictionaryCacheEntry* aDict) {
-        
-        if (self->mDictionaryDisabledForRetry) {
-          LOG_DICTIONARIES(("Dictionary disabled for retry, skipping [this=%p]",
-                            self.get()));
-          if (self->mUsingDictionary) {
-            self->mDictDecompress->UseCompleted();
-            self->mUsingDictionary = false;
-          }
-          self->mDictDecompress = nullptr;
-          if (aNeedsResume) {
-            self->Resume();
-          }
-          
-          
-          return false;
-        }
         self->mDictDecompress = aDict;
         if (aNeedsResume) {
           LOG_DICTIONARIES(("Resuming after getting Dictionary headers"));
@@ -705,37 +689,6 @@ nsresult nsHttpChannel::PrepareToConnect() {
                     self->mUsingDictionary = false;
                   }
                   self->mDictDecompress = nullptr;
-
-                  
-                  
-                  
-                  
-                  if (aResult == NS_ERROR_CORRUPTED_CONTENT) {
-                    LOG(
-                        ("nsHttpChannel::Prefetch hash mismatch, setting up "
-                         "retry [this=%p]",
-                         self.get()));
-                    
-                    
-                    nsresult rv =
-                        self->RedirectToNewChannelForDictionaryRetry();
-                    if (NS_SUCCEEDED(rv)) {
-                      
-                      
-                      
-                      if (self->mSuspendedForDictionary) {
-                        self->mSuspendedForDictionary = false;
-                        self->Resume();
-                      }
-                      return;
-                    }
-                    
-                    LOG(
-                        ("nsHttpChannel::Prefetch redirect setup failed "
-                         "[this=%p rv=0x%" PRIx32 "]",
-                         self.get(), static_cast<uint32_t>(rv)));
-                  }
-
                   if (self->mSuspendedForDictionary) {
                     self->mSuspendedForDictionary = false;
                     self->Cancel(aResult);
@@ -2362,14 +2315,6 @@ void nsHttpChannel::SetCachedContentType() {
 nsresult nsHttpChannel::CallOnStartRequest() {
   LOG(("nsHttpChannel::CallOnStartRequest [this=%p]", this));
 
-  
-  
-  if (mDictionaryRetryPending) {
-    LOG(("CallOnStartRequest skipped due to pending dictionary retry [this=%p]",
-         this));
-    return NS_OK;
-  }
-
   MOZ_RELEASE_ASSERT(!LoadRequireCORSPreflight() || LoadIsCorsPreflightDone(),
                      "CORS preflight must have been finished by the time we "
                      "call OnStartRequest");
@@ -3947,26 +3892,29 @@ void nsHttpChannel::HandleAsyncRedirectToUnstrippedURI() {
     }
   }
 }
-nsresult nsHttpChannel::RedirectToNewChannelInternal(
-    uint32_t redirectFlags,
-    std::function<nsresult(nsHttpChannel*)> setupCallback) {
-  LOG(("nsHttpChannel::RedirectToNewChannelInternal [this=%p, flags=0x%x]",
-       this, redirectFlags));
+nsresult nsHttpChannel::RedirectToNewChannelForAuthRetry() {
+  LOG(("nsHttpChannel::RedirectToNewChannelForAuthRetry %p", this));
+  nsresult rv = NS_OK;
 
-  nsCOMPtr<nsILoadInfo> redirectLoadInfo =
-      CloneLoadInfoForRedirect(mURI, redirectFlags);
+  nsCOMPtr<nsILoadInfo> redirectLoadInfo = CloneLoadInfoForRedirect(
+      mURI, nsIChannelEventSink::REDIRECT_INTERNAL |
+                nsIChannelEventSink::REDIRECT_AUTH_RETRY);
 
   nsCOMPtr<nsIIOService> ioService;
-  nsresult rv = gHttpHandler->GetIOService(getter_AddRefs(ioService));
+
+  rv = gHttpHandler->GetIOService(getter_AddRefs(ioService));
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIChannel> newChannel;
   rv = gHttpHandler->NewProxiedChannel(mURI, mProxyInfo, mProxyResolveFlags,
                                        mProxyURI, mLoadInfo,
                                        getter_AddRefs(newChannel));
+
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = SetupReplacementChannel(mURI, newChannel, true, redirectFlags);
+  rv = SetupReplacementChannel(mURI, newChannel, true,
+                               nsIChannelEventSink::REDIRECT_INTERNAL |
+                                   nsIChannelEventSink::REDIRECT_AUTH_RETRY);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -3986,60 +3934,39 @@ nsresult nsHttpChannel::RedirectToNewChannelInternal(
 
   RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(newChannel);
 
-  rv = setupCallback(httpChannelImpl);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mRedirectChannel = newChannel;
-
-  rv = gHttpHandler->AsyncOnChannelRedirect(this, newChannel, redirectFlags);
-
-  if (NS_SUCCEEDED(rv)) {
-    rv = WaitForRedirectCallback();
-  }
-
-  if (NS_FAILED(rv)) {
-    AutoRedirectVetoNotifier notifier(this, rv);
-    mRedirectChannel = nullptr;
-  }
-
-  return rv;
-}
-
-nsresult nsHttpChannel::SetupChannelForAuthRetry() {
   MOZ_ASSERT(mAuthProvider);
-  mAuthProvider = std::move(mAuthProvider);
+  httpChannelImpl->mAuthProvider = std::move(mAuthProvider);
 
-  mProxyInfo = mProxyInfo;
+  httpChannelImpl->mProxyInfo = mProxyInfo;
 
   if ((mCaps & NS_HTTP_STICKY_CONNECTION) ||
       mTransaction->HasStickyConnection()) {
     mConnectionInfo = mTransaction->GetConnInfo();
 
-    mTransactionSticky = mTransaction;
+    httpChannelImpl->mTransactionSticky = mTransaction;
 
     if (mTransaction->Http2Disabled()) {
-      mCaps |= NS_HTTP_DISALLOW_SPDY;
+      httpChannelImpl->mCaps |= NS_HTTP_DISALLOW_SPDY;
     }
     if (mTransaction->Http3Disabled()) {
-      mCaps |= NS_HTTP_DISALLOW_HTTP3;
+      httpChannelImpl->mCaps |= NS_HTTP_DISALLOW_HTTP3;
     }
   }
-  mCaps |= NS_HTTP_STICKY_CONNECTION;
+  
+  httpChannelImpl->mCaps |= NS_HTTP_STICKY_CONNECTION;
 
   if (LoadAuthConnectionRestartable()) {
-    mCaps |= NS_HTTP_CONNECTION_RESTARTABLE;
+    httpChannelImpl->mCaps |= NS_HTTP_CONNECTION_RESTARTABLE;
   } else {
-    mCaps &= ~NS_HTTP_CONNECTION_RESTARTABLE;
+    httpChannelImpl->mCaps &= ~NS_HTTP_CONNECTION_RESTARTABLE;
   }
 
   MOZ_ASSERT(mConnectionInfo);
-  mConnectionInfo = mConnectionInfo->Clone();
+  httpChannelImpl->mConnectionInfo = mConnectionInfo->Clone();
 
   
-  
-  StoreAuthRedirectedChannel(true);
+  httpChannelImpl->StoreAuthRedirectedChannel(true);
 
-  
   
   
   
@@ -4050,48 +3977,27 @@ nsresult nsHttpChannel::SetupChannelForAuthRetry() {
   
   nsAutoCString authVal;
   if (NS_SUCCEEDED(GetRequestHeader("Proxy-Authorization"_ns, authVal))) {
-    SetRequestHeader("Proxy-Authorization"_ns, authVal, false);
+    httpChannelImpl->SetRequestHeader("Proxy-Authorization"_ns, authVal, false);
   }
   if (NS_SUCCEEDED(GetRequestHeader("Authorization"_ns, authVal))) {
-    SetRequestHeader("Authorization"_ns, authVal, false);
+    httpChannelImpl->SetRequestHeader("Authorization"_ns, authVal, false);
   }
 
-  SetBlockAuthPrompt(LoadBlockAuthPrompt());
+  httpChannelImpl->SetBlockAuthPrompt(LoadBlockAuthPrompt());
+  mRedirectChannel = newChannel;
 
-  return NS_OK;
-}
-
-nsresult nsHttpChannel::RedirectToNewChannelForAuthRetry() {
-  LOG(("nsHttpChannel::RedirectToNewChannelForAuthRetry %p", this));
-
-  return RedirectToNewChannelInternal(
+  rv = gHttpHandler->AsyncOnChannelRedirect(
+      this, newChannel,
       nsIChannelEventSink::REDIRECT_INTERNAL |
-          nsIChannelEventSink::REDIRECT_AUTH_RETRY,
-      [this](nsHttpChannel* httpChannelImpl) -> nsresult {
-        return httpChannelImpl->SetupChannelForAuthRetry();
-      });
-}
+          nsIChannelEventSink::REDIRECT_AUTH_RETRY);
 
-nsresult nsHttpChannel::RedirectToNewChannelForDictionaryRetry() {
-  LOG(("nsHttpChannel::RedirectToNewChannelForDictionaryRetry [this=%p]",
-       this));
+  if (NS_SUCCEEDED(rv)) rv = WaitForRedirectCallback();
 
   
-  if (!mRequestHead.IsSafeMethod()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mDictionaryRetryPending = true;
-
-  nsresult rv = RedirectToNewChannelInternal(
-      nsIChannelEventSink::REDIRECT_INTERNAL,
-      [](nsHttpChannel* httpChannelImpl) -> nsresult {
-        httpChannelImpl->mDictionaryDisabledForRetry = true;
-        return NS_OK;
-      });
 
   if (NS_FAILED(rv)) {
-    mDictionaryRetryPending = false;
+    AutoRedirectVetoNotifier notifier(this, rv);
+    mRedirectChannel = nullptr;
   }
 
   return rv;
@@ -10451,28 +10357,6 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     mAuthRetryPending = false;
   }
 
-  
-  if (mDictionaryRetryPending) {
-    nsresult rv = OpenRedirectChannel(aStatus);
-    LOG(("Opening redirect channel for dictionary retry %x",
-         static_cast<uint32_t>(rv)));
-    if (NS_FAILED(rv)) {
-      if (mListener) {
-        MOZ_ASSERT(!LoadOnStartRequestCalled(),
-                   "We should not call OnStartRequest twice.");
-        if (!LoadOnStartRequestCalled()) {
-          nsCOMPtr<nsIStreamListener> listener(mListener);
-          StoreOnStartRequestCalled(true);
-          listener->OnStartRequest(this);
-        }
-      } else {
-        StoreOnStartRequestCalled(true);
-        NS_WARNING("OnStartRequest skipped because of null listener");
-      }
-    }
-    mDictionaryRetryPending = false;
-  }
-
   if (LoadUsedNetwork() && !mReportedNEL) {
     MaybeGenerateNELReport();
   }
@@ -10585,8 +10469,7 @@ nsHttpChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
   
   if (mCanceled) return mStatus;
 
-  if (mAuthRetryPending || mDictionaryRetryPending ||
-      WRONG_RACING_RESPONSE_SOURCE(request) ||
+  if (mAuthRetryPending || WRONG_RACING_RESPONSE_SOURCE(request) ||
       (request == mTransactionPump && LoadTransactionReplaced())) {
     uint32_t n;
     return input->ReadSegments(NS_DiscardSegment, nullptr, count, &n);
@@ -11364,11 +11247,8 @@ nsHttpChannel::OnRedirectVerifyCallback(nsresult result) {
     
     
     
-    bool keepRedirectChannel =
-        (StaticPrefs::network_auth_use_redirect_for_retries() &&
-         mAuthRetryPending) ||
-        mDictionaryRetryPending;
-    if (!keepRedirectChannel) {
+    if (!StaticPrefs::network_auth_use_redirect_for_retries() ||
+        !mAuthRetryPending) {
       mRedirectChannel = nullptr;
     }
   }

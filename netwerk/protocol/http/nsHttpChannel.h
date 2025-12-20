@@ -547,24 +547,13 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult RedirectToInterceptedChannel();
 
   
-  [[nodiscard]] nsresult SetupChannelForAuthRetry();
-
-  
   [[nodiscard]] nsresult RedirectToNewChannelForAuthRetry();
-
-  
-  [[nodiscard]] nsresult RedirectToNewChannelForDictionaryRetry();
 
   
   
   void SetCachedContentType();
 
  private:
-  
-  
-  [[nodiscard]] nsresult RedirectToNewChannelInternal(
-      uint32_t redirectFlags,
-      std::function<nsresult(nsHttpChannel*)> setupCallback);
   
   
   
@@ -933,10 +922,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mUsingDictionary{false};  
   bool mShouldSuspendForDictionary{false};
   bool mSuspendedForDictionary{false};
-  
-  bool mDictionaryDisabledForRetry{false};
-  
-  bool mDictionaryRetryPending{false};
 
  protected:
   virtual void DoNotifyListenerCleanup() override;
