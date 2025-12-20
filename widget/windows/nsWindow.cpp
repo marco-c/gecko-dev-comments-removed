@@ -1525,7 +1525,7 @@ bool nsWindow::ShouldAssociateWithWinAppSDK() const {
   
   
   
-  return IsTopLevelWidget() && !mIsPIPWindow;
+  return IsTopLevelWidget() && mPiPType == PiPType::NoPiP;
 }
 
 bool nsWindow::AssociateWithNativeWindow() {
@@ -2805,7 +2805,7 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     
     
     metrics.mOffset.top = metrics.mCaptionHeight;
-  } else if (mIsPIPWindow &&
+  } else if (mPiPType == PiPType::MediaPiP &&
              !StaticPrefs::widget_windows_pip_decorations_enabled()) {
     metrics.mOffset = metrics.DefaultMargins();
   } else {

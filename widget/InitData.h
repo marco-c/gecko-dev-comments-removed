@@ -72,6 +72,13 @@ enum class TransparencyMode : uint8_t {
 };
 
 
+enum class PiPType : uint8_t {
+  NoPiP,
+  
+  MediaPiP
+};
+
+
 
 struct InitData {
   WindowType mWindowType = WindowType::TopLevel;
@@ -89,8 +96,7 @@ struct InitData {
   
   bool mHasRemoteContent = false;
   bool mAlwaysOnTop = false;
-  
-  bool mPIPWindow = false;
+  PiPType mPiPType = PiPType::NoPiP;
   
   bool mResizable = false;
   bool mIsPrivate = false;

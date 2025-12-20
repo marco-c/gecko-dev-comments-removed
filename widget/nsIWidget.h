@@ -1415,8 +1415,6 @@ class nsIWidget : public nsSupportsWeakReference {
   void FreeShutdownObserver();
   void FreeLocalesChangedObserver();
 
-  bool IsPIPWindow() const { return mIsPIPWindow; };
-
  public:
   
 
@@ -2441,8 +2439,7 @@ class nsIWidget : public nsSupportsWeakReference {
   
   bool mCurrentPanGestureBelongsToSwipe;
 
-  
-  bool mIsPIPWindow : 1;
+  mozilla::widget::PiPType mPiPType;
 
   struct InitialZoomConstraints {
     InitialZoomConstraints(const uint32_t& aPresShellID,
