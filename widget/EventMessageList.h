@@ -395,10 +395,6 @@ NS_EVENT_MESSAGE(eSMILRepeatEvent)
 NS_EVENT_MESSAGE(eAudioProcess)
 NS_EVENT_MESSAGE(eAudioComplete)
 
-
-NS_EVENT_MESSAGE(eBeforeScriptExecute)
-NS_EVENT_MESSAGE(eAfterScriptExecute)
-
 NS_EVENT_MESSAGE(eBeforePrint)
 NS_EVENT_MESSAGE(eAfterPrint)
 
@@ -507,6 +503,9 @@ NS_EVENT_MESSAGE(eEncrypted)
 NS_EVENT_MESSAGE(eWaitingForKey)
 
 NS_EVENT_MESSAGE(eScrollend)
+
+
+NS_EVENT_MESSAGE(eMozOrientationChange)
 
 #ifdef UNDEF_NS_EVENT_MESSAGE_FIRST_LAST
 #  undef UNDEF_NS_EVENT_MESSAGE_FIRST_LAST

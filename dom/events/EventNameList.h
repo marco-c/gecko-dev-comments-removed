@@ -269,11 +269,6 @@ EVENT(cut, eCut, EventNameType_HTMLXUL | EventNameType_SVGGraphic,
 EVENT(paste, ePaste, EventNameType_HTMLXUL | EventNameType_SVGGraphic,
       eClipboardEventClass)
 
-EVENT(beforescriptexecute, eBeforeScriptExecute, EventNameType_HTMLXUL,
-      eBasicEventClass)
-EVENT(afterscriptexecute, eAfterScriptExecute, EventNameType_HTMLXUL,
-      eBasicEventClass)
-
 FORWARDED_EVENT(blur, eBlur, EventNameType_HTMLXUL, eFocusEventClass)
 ERROR_EVENT(error, eLoadError, EventNameType_All, eBasicEventClass)
 FORWARDED_EVENT(focus, eFocus, EventNameType_HTMLXUL, eFocusEventClass)
@@ -546,6 +541,9 @@ NON_IDL_EVENT(audioprocess, eAudioProcess, EventNameType_None, eBasicEventClass)
 NON_IDL_EVENT(complete, eAudioComplete, EventNameType_None, eBasicEventClass)
 
 EVENT(scrollend, eScrollend, EventNameType_All, eBasicEventClass)
+
+EVENT(mozorientationchange, eMozOrientationChange, EventNameType_All,
+      eBasicEventClass)
 
 #ifdef DEFINED_FORWARDED_EVENT
 #  undef DEFINED_FORWARDED_EVENT
