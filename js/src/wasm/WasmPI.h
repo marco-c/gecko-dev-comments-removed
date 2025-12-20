@@ -115,10 +115,19 @@ class Context;
 static const uint32_t SuspenderObjectDataSlot = 0;
 
 enum SuspenderState {
+  
   Initial,
+  
+  
   Moribund,
+  
   Active,
+  
+  
   Suspended,
+  
+  
+  CalledOnMain,
 };
 
 class SuspenderObjectData {
@@ -147,38 +156,64 @@ class SuspenderObjectData {
 
   SuspenderState state_;
 
-  
-  Context* suspendedBy_;
-
  public:
   explicit SuspenderObjectData(void* stackMemory);
 
   inline SuspenderState state() const { return state_; }
   void setState(SuspenderState state) { state_ = state; }
 
-  inline bool traceable() const {
+  
+  bool isTraceable() const {
     return state_ == SuspenderState::Active ||
-           state_ == SuspenderState::Suspended;
+           state_ == SuspenderState::Suspended ||
+           state_ == SuspenderState::CalledOnMain;
   }
-  inline bool hasStackEntry() const { return suspendedBy_ != nullptr; }
-  inline Context* suspendedBy() const { return suspendedBy_; }
-  void setSuspendedBy(Context* suspendedBy) { suspendedBy_ = suspendedBy; }
+  bool isMoribund() const { return state_ == SuspenderState::Moribund; }
+  bool isActive() const { return state_ == SuspenderState::Active; }
+  bool isSuspended() const { return state_ == SuspenderState::Suspended; }
+  bool isCalledOnMain() const { return state_ == SuspenderState::CalledOnMain; }
 
   bool hasFramePointer(void* fp) const {
+    MOZ_ASSERT(!isMoribund());
     return (uintptr_t)stackMemory_ <= (uintptr_t)fp &&
            (uintptr_t)fp <
                (uintptr_t)stackMemory_ + SuspendableStackPlusRedZoneSize;
   }
 
-  inline void* stackMemory() const { return stackMemory_; }
-  inline void* mainFP() const { return mainFP_; }
-  inline void* mainSP() const { return mainSP_; }
-  inline void* mainExitFP() const { return mainExitFP_; }
-  inline void* suspendableFP() const { return suspendableFP_; }
-  inline void* suspendableSP() const { return suspendableSP_; }
-  inline void* suspendableExitFP() const { return suspendableExitFP_; }
-  inline void* suspendedReturnAddress() const {
+  void* stackMemory() const {
+    MOZ_ASSERT(!isMoribund());
+    return stackMemory_;
+  }
+
+  void* mainFP() const {
+    MOZ_ASSERT(isActive());
+    return mainFP_;
+  }
+  void* mainSP() const {
+    MOZ_ASSERT(isActive());
+    return mainSP_;
+  }
+  void* mainExitFP() const {
+    MOZ_ASSERT(isSuspended());
+    return mainExitFP_;
+  }
+  void* suspendableFP() const {
+    MOZ_ASSERT(isSuspended());
+    return suspendableFP_;
+  }
+  void* suspendableSP() const {
+    MOZ_ASSERT(isSuspended());
+    return suspendableSP_;
+  }
+  void* suspendedReturnAddress() const {
+    MOZ_ASSERT(isSuspended());
     return suspendedReturnAddress_;
+  }
+  void* suspendableExitFP() const {
+    
+    
+    MOZ_ASSERT(isTraceable());
+    return suspendableExitFP_;
   }
 
   void releaseStackMemory();
@@ -273,6 +308,7 @@ class SuspenderObject : public NativeObject {
   void setMoribund(JSContext* cx);
   void setActive(JSContext* cx);
   void setSuspended(JSContext* cx);
+  void setCalledOnMain(JSContext* cx);
 
   void enter(JSContext* cx);
   void suspend(JSContext* cx);
