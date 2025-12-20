@@ -75,7 +75,8 @@ class nsHtml5SpeculativeLoad {
   inline void InitImage(nsHtml5String aUrl, nsHtml5String aCrossOrigin,
                         nsHtml5String aMedia, nsHtml5String aReferrerPolicy,
                         nsHtml5String aSrcset, nsHtml5String aSizes,
-                        bool aLinkPreload, nsHtml5String aFetchPriority) {
+                        bool aLinkPreload, nsHtml5String aFetchPriority,
+                        nsHtml5String aType) {
     MOZ_ASSERT(mOpCode == eSpeculativeLoadUninitialized,
                "Trying to reinitialize a speculative load!");
     mOpCode = eSpeculativeLoadImage;
@@ -93,6 +94,7 @@ class nsHtml5SpeculativeLoad {
         mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity);
     mIsLinkPreload = aLinkPreload;
     aFetchPriority.ToString(mFetchPriority);
+    aType.ToString(mNonceOrType);
   }
 
   inline void InitFont(nsHtml5String aUrl, nsHtml5String aCrossOrigin,
@@ -184,7 +186,7 @@ class nsHtml5SpeculativeLoad {
         mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity);
     aCrossOrigin.ToString(mCrossOrigin);
     aMedia.ToString(mMedia);
-    aNonce.ToString(mNonce);
+    aNonce.ToString(mNonceOrType);
     aFetchPriority.ToString(mFetchPriority);
     aIntegrity.ToString(mReferrerPolicyOrIntegrity);
     nsAutoString referrerPolicy;
@@ -210,7 +212,7 @@ class nsHtml5SpeculativeLoad {
     mCrossOrigin.SetIsVoid(true);
     mMedia.SetIsVoid(true);
     mReferrerPolicyOrIntegrity.SetIsVoid(true);
-    mNonce.SetIsVoid(true);
+    mNonceOrType.SetIsVoid(true);
     mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity.SetIsVoid(
         true);
   }
@@ -233,7 +235,7 @@ class nsHtml5SpeculativeLoad {
     mReferrerPolicyOrIntegrity.Assign(
         nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
             referrerPolicy));
-    aNonce.ToString(mNonce);
+    aNonce.ToString(mNonceOrType);
     aIntegrity.ToString(
         mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity);
     mIsLinkPreload = aLinkPreload;
@@ -413,7 +415,8 @@ class nsHtml5SpeculativeLoad {
 
 
 
-  nsString mNonce;
+
+  nsString mNonceOrType;
   
 
 

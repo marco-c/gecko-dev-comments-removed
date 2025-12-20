@@ -262,7 +262,7 @@ class nsHtml5TreeOpExecutor final
                     const nsAString& aMedia, const nsAString& aSrcset,
                     const nsAString& aSizes,
                     const nsAString& aImageReferrerPolicy, bool aLinkPreload,
-                    const nsAString& aFetchPriority);
+                    const nsAString& aFetchPriority, const nsAString& aType);
 
   void PreloadOpenPicture();
 
@@ -316,6 +316,11 @@ class nsHtml5TreeOpExecutor final
 
 
   bool ShouldPreloadURI(nsIURI* aURI);
+
+  
+
+
+  bool ImageTypeSupports(const nsAString& aType);
 
   ReferrerPolicy GetPreloadReferrerPolicy(const nsAString& aReferrerPolicy);
 
