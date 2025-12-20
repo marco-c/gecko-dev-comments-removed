@@ -489,7 +489,7 @@ add_task(async function test_pwOnlyOldLoginMatchesUPForm() {
   
   
   let oldTimeMS = new Date("2009-11-15").getTime();
-  Services.logins.modifyLogin(
+  await Services.logins.modifyLoginAsync(
     login2,
     LoginHelper.newPropertyBag({
       timeCreated: oldTimeMS,

@@ -36,24 +36,23 @@ async function checkLoginInvalid(aLoginInfo, aExpectedError) {
   await Services.logins.addLoginAsync(testLogin);
 
   
-  Assert.throws(
-    () => Services.logins.modifyLogin(testLogin, aLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(testLogin, aLoginInfo),
     aExpectedError
   );
-  Assert.throws(
-    () =>
-      Services.logins.modifyLogin(
-        testLogin,
-        newPropertyBag({
-          origin: aLoginInfo.origin,
-          formActionOrigin: aLoginInfo.formActionOrigin,
-          httpRealm: aLoginInfo.httpRealm,
-          username: aLoginInfo.username,
-          password: aLoginInfo.password,
-          usernameField: aLoginInfo.usernameField,
-          passwordField: aLoginInfo.passwordField,
-        })
-      ),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(
+      testLogin,
+      newPropertyBag({
+        origin: aLoginInfo.origin,
+        formActionOrigin: aLoginInfo.formActionOrigin,
+        httpRealm: aLoginInfo.httpRealm,
+        username: aLoginInfo.username,
+        password: aLoginInfo.password,
+        usernameField: aLoginInfo.usernameField,
+        passwordField: aLoginInfo.passwordField,
+      })
+    ),
     aExpectedError
   );
 
@@ -306,24 +305,24 @@ add_task(async function test_modifyLogin_nsILoginInfo() {
   let differentLoginInfo = TestData.authLogin();
 
   
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, updatedLoginInfo),
     /No matching logins/
   );
 
   
   await Services.logins.addLoginAsync(loginInfo);
-  Services.logins.modifyLogin(loginInfo, updatedLoginInfo);
+  await Services.logins.modifyLoginAsync(loginInfo, updatedLoginInfo);
 
   
   await LoginTestUtils.checkLogins([updatedLoginInfo]);
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, updatedLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, updatedLoginInfo),
     /No matching logins/
   );
 
   
-  Services.logins.modifyLogin(updatedLoginInfo, differentLoginInfo);
+  await Services.logins.modifyLoginAsync(updatedLoginInfo, differentLoginInfo);
   await LoginTestUtils.checkLogins([differentLoginInfo]);
 
   
@@ -331,8 +330,8 @@ add_task(async function test_modifyLogin_nsILoginInfo() {
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, differentLoginInfo),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, differentLoginInfo),
     /already exists/
   );
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
@@ -363,15 +362,15 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
   });
 
   
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, newPropertyBag()),
     /No matching logins/
   );
 
   
   
   await Services.logins.addLoginAsync(loginInfo);
-  Services.logins.modifyLogin(
+  await Services.logins.modifyLoginAsync(
     loginInfo,
     newPropertyBag({
       username: "new username",
@@ -383,28 +382,30 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
 
   
   await LoginTestUtils.checkLogins([updatedLoginInfo]);
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, newPropertyBag()),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, newPropertyBag()),
     /No matching logins/
   );
 
   
-  Services.logins.modifyLogin(updatedLoginInfo, newPropertyBag());
+  await Services.logins.modifyLoginAsync(updatedLoginInfo, newPropertyBag());
 
   
-  Assert.throws(
-    () =>
-      Services.logins.modifyLogin(
-        loginInfo,
-        newPropertyBag({
-          usernameField: null,
-        })
-      ),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(
+      loginInfo,
+      newPropertyBag({
+        usernameField: null,
+      })
+    ),
     /No matching logins/
   );
 
   
-  Services.logins.modifyLogin(updatedLoginInfo, differentLoginProperties);
+  await Services.logins.modifyLoginAsync(
+    updatedLoginInfo,
+    differentLoginProperties
+  );
   await LoginTestUtils.checkLogins([differentLoginInfo]);
 
   
@@ -412,8 +413,8 @@ add_task(async function test_modifyLogin_nsIProperyBag() {
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   
-  Assert.throws(
-    () => Services.logins.modifyLogin(loginInfo, differentLoginProperties),
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(loginInfo, differentLoginProperties),
     /already exists/
   );
   await LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);

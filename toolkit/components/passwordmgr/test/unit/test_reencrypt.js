@@ -12,7 +12,6 @@ function assertMigrationCount() {
   if (!migrationValue) {
     return;
   }
-  console.log(migrationValue);
   const migrationStartedEvents = migrationValue.filter(
     ({ extra }) => extra.value === "started"
   );
@@ -88,7 +87,10 @@ add_task(async function test_reencrypt_mixed_mechanism() {
   Services.prefs.setIntPref("security.sdr.mechanism", 0);
 
   
-  Services.logins.modifyLogin(EXPECTED_LOGINS[0], EXPECTED_LOGINS[0].clone());
+  await Services.logins.modifyLoginAsync(
+    EXPECTED_LOGINS[0],
+    EXPECTED_LOGINS[0].clone()
+  );
 
   Services.prefs.setIntPref("security.sdr.mechanism", 1);
 
@@ -103,7 +105,7 @@ add_task(async function test_reencrypt_mixed_mechanism() {
 });
 
 add_task(async function test_reencrypt_race() {
-  const reencryptionPromise = Services.logins.reencryptAllLogins();
+  const reencryptionPromise = reencryptAllLogins();
 
   const newLogins = EXPECTED_LOGINS.slice();
 
@@ -112,12 +114,23 @@ add_task(async function test_reencrypt_race() {
 
   newLogins[0] = EXPECTED_LOGINS[1].clone();
   newLogins[0].password = "different password";
-  await Services.logins.modifyLogin(EXPECTED_LOGINS[1], newLogins[0]);
+  await Services.logins.modifyLoginAsync(EXPECTED_LOGINS[1], newLogins[0]);
 
   await reencryptionPromise;
 
   await LoginTestUtils.checkLogins(
     newLogins,
     "In case of other racing login modifications, they should prevail"
+  );
+});
+
+add_task(async function test_reencrypt_no_logins_present() {
+  Services.logins.removeAllLogins();
+
+  await reencryptAllLogins();
+
+  await LoginTestUtils.checkLogins(
+    [],
+    "The reencryption should go through without problems if no logins are present at all"
   );
 });
