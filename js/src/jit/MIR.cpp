@@ -570,6 +570,10 @@ const MDefinition* MDefinition::skipObjectGuards() const {
       result = result->toGuardMultipleShapes()->object();
       continue;
     }
+    if (result->isGuardMultipleShapesToOffset()) {
+      result = result->toGuardMultipleShapesToOffset()->object();
+      continue;
+    }
     if (result->isGuardNullProto()) {
       result = result->toGuardNullProto()->object();
       continue;
@@ -7304,6 +7308,10 @@ AliasSet MGuardMultipleShapes::getAliasSet() const {
   
   
   
+  return AliasSet::Load(AliasSet::ObjectFields);
+}
+
+AliasSet MGuardMultipleShapesToOffset::getAliasSet() const {
   return AliasSet::Load(AliasSet::ObjectFields);
 }
 

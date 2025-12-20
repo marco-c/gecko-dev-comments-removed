@@ -53,7 +53,9 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
 
   uint32_t numActive = 0;
   mozilla::Maybe<uint32_t> foldableShapeOffset;
+  mozilla::Maybe<uint32_t> foldableOffsetOffset;
   GCVector<Value, 8> shapeList(cx);
+  GCVector<Value, 8> offsetList(cx);
 
   
   
@@ -70,6 +72,30 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     gc::ReadBarrier(shape);
 
     if (!shapeList.append(PrivateValue(shape))) {
+      cx->recoverFromOutOfMemory();
+      return false;
+    }
+    return true;
+  };
+
+  
+  
+  
+  
+  auto lazyAddOffset = [&offsetList, &shapeList, cx](uintptr_t slotOffset) {
+    Value v = PrivateUint32Value(static_cast<uint32_t>(slotOffset));
+    if (offsetList.length() == 1) {
+      if (v == offsetList[0]) return true;
+
+      while (offsetList.length() + 1 < shapeList.length()) {
+        if (!offsetList.append(offsetList[0])) {
+          cx->recoverFromOutOfMemory();
+          return false;
+        }
+      }
+    }
+
+    if (!offsetList.append(v)) {
       cx->recoverFromOutOfMemory();
       return false;
     }
@@ -95,6 +121,8 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   }
 #endif
 
+  
+  
   
   for (ICCacheIRStub* other = firstStub->nextCacheIR(); other;
        other = other->nextCacheIR()) {
@@ -144,6 +172,14 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
 
       
       foldableShapeOffset.emplace(offset);
+
+      
+      offset += StubField::sizeInBytes(fieldType);
+      fieldIndex++;
+      if (stubInfo->fieldType(fieldIndex) == StubField::Type::RawInt32) {
+        foldableOffsetOffset.emplace(offset);
+      }
+
       break;
     }
   }
@@ -172,6 +208,14 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
         if (!addShape(raw)) {
           return true;
         }
+      } else if (foldableOffsetOffset.isSome() &&
+                 offset == *foldableOffsetOffset) {
+        
+        MOZ_ASSERT(fieldType == StubField::Type::RawInt32);
+        uintptr_t raw = stubInfo->getStubRawWord(stubData, offset);
+        if (!lazyAddOffset(raw)) {
+          return true;
+        }
       } else {
         
         if (StubField::sizeIsInt64(fieldType)) {
@@ -195,9 +239,13 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
 
   
   
+  
+  
+  
   CacheIRWriter writer(cx);
   CacheIRReader reader(stubInfo);
   CacheIRCloner cloner(firstStub);
+  bool hasSlotOffsets = offsetList.length() > 1;
 
   
   CacheKind cacheKind = stubInfo->kind();
@@ -210,11 +258,17 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   {
     gc::AutoSuppressGC suppressGC(cx);
 
-    shapeObj.set(ShapeListObject::create(cx));
+    if (!hasSlotOffsets) {
+      shapeObj.set(ShapeListObject::create(cx));
+    } else {
+      shapeObj.set(ShapeListWithOffsetsObject::create(cx));
+    }
 
     if (!shapeObj) {
       return false;
     }
+
+    MOZ_ASSERT_IF(hasSlotOffsets, shapeList.length() == offsetList.length());
 
     for (uint32_t i = 0; i < shapeList.length(); i++) {
       if (!shapeObj->append(cx, shapeList[i])) {
@@ -222,12 +276,21 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
         return false;
       }
 
+      if (hasSlotOffsets) {
+        if (!shapeObj->append(cx, offsetList[i])) {
+          cx->recoverFromOutOfMemory();
+          return false;
+        }
+      }
+
       MOZ_ASSERT(static_cast<Shape*>(shapeList[i].toPrivate())->realm() ==
                  shapeObj->realm());
     }
   }
 
+  mozilla::Maybe<Int32OperandId> offsetId;
   bool shapeSuccess = false;
+  bool offsetSuccess = false;
   while (reader.more()) {
     CacheOp op = reader.readOp();
     switch (op) {
@@ -242,7 +305,11 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
           break;
         }
 
-        writer.guardMultipleShapes(objId, shapeObj);
+        if (hasSlotOffsets) {
+          offsetId.emplace(writer.guardMultipleShapesToOffset(objId, shapeObj));
+        } else {
+          writer.guardMultipleShapes(objId, shapeObj);
+        }
         shapeSuccess = true;
         break;
       }
@@ -257,6 +324,20 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
     
     JitSpew(JitSpew_StubFolding,
             "Foldable shape field at offset %u was not a GuardShape "
+            "(icScript: %p) with %zu shapes (%s:%u:%u)",
+            fallback->pcOffset(), icScript, shapeList.length(),
+            script->filename(), script->lineno(),
+            script->column().oneOriginValue());
+    return true;
+  }
+
+  if (hasSlotOffsets && !offsetSuccess) {
+    
+    
+    
+    JitSpew(JitSpew_StubFolding,
+            "Failed to fold GuardShape into GuardMultipleShapesToOffset at "
+            "offset %u "
             "(icScript: %p) with %zu shapes (%s:%u:%u)",
             fallback->pcOffset(), icScript, shapeList.length(),
             script->filename(), script->lineno(),
@@ -336,7 +417,9 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
   const uint8_t* stubData = stub->stubDataStart();
 
   mozilla::Maybe<uint32_t> shapeFieldOffset;
+  mozilla::Maybe<uint32_t> offsetFieldOffset;
   RootedValue newShape(cx);
+  RootedValue newOffset(cx);
   Rooted<ListObject*> shapeList(cx);
 
   CacheIRReader stubReader(stubInfo);
@@ -398,6 +481,61 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
 
         break;
       }
+      case CacheOp::GuardMultipleShapesToOffset: {
+        
+        if (newOp != CacheOp::GuardShape) {
+          return false;
+        }
+        
+        if (newReader.objOperandId() != stubReader.objOperandId()) {
+          return false;
+        }
+
+        
+        uint32_t newShapeOffset = newReader.stubOffset();
+        uint32_t stubShapesOffset = stubReader.stubOffset();
+        if (newShapeOffset != stubShapesOffset) {
+          return false;
+        }
+
+        MOZ_ASSERT(shapeList == nullptr);
+        shapeFieldOffset.emplace(newShapeOffset);
+
+        
+        StubField shapeField =
+            writer.readStubField(newShapeOffset, StubField::Type::WeakShape);
+        Shape* shape = reinterpret_cast<Shape*>(shapeField.asWord());
+        newShape = PrivateValue(shape);
+
+        
+        JSObject* obj = stubInfo->getStubField<StubField::Type::JSObject>(
+            stub, stubShapesOffset);
+        shapeList = &obj->as<ShapeListWithOffsetsObject>();
+        MOZ_ASSERT(shapeList->compartment() == shape->compartment());
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Realm* shapesRealm = shapeList->realm();
+        MOZ_ASSERT_IF(
+            !shapeList->isEmpty(),
+            shapeList->as<ShapeListWithOffsetsObject>().getShape(0)->realm() ==
+                shapesRealm);
+        if (shapesRealm != shape->realm()) {
+          return false;
+        }
+
+        
+        stubReader.skip();
+        break;
+      }
       default: {
         
         if (newOp != stubOp) {
@@ -421,28 +559,40 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
     return false;
   }
 
-  if (!writer.stubDataEqualsIgnoring(stubData, *shapeFieldOffset)) {
+  if (!writer.stubDataEqualsIgnoringShapeAndOffset(stubData, *shapeFieldOffset,
+                                                   offsetFieldOffset)) {
     return false;
   }
 
-  ShapeListObject* obj = &shapeList->as<ShapeListObject>();
+  
+  uint32_t numShapes = offsetFieldOffset.isNothing() ? shapeList->length()
+                                                     : shapeList->length() / 2;
 
   
   
-  if (obj->length() == ShapeListObject::MaxLength) {
+  if (numShapes == ShapeListObject::MaxLength) {
     MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
     fallback->state().forceTransition();
     fallback->discardStubs(cx->zone(), icEntry);
     return false;
   }
 
-  if (!obj->append(cx, newShape)) {
+  if (!shapeList->append(cx, newShape)) {
     cx->recoverFromOutOfMemory();
     return false;
   }
 
-  JitSpew(JitSpew_StubFolding, "ShapeListObject %p: new length: %u",
-          shapeList.get(), shapeList->length());
+  if (offsetFieldOffset.isSome()) {
+    if (!shapeList->append(cx, newOffset)) {
+      
+      shapeList->shrinkElements(cx, shapeList->length() - 1);
+      cx->recoverFromOutOfMemory();
+      return false;
+    }
+  }
 
+  JitSpew(JitSpew_StubFolding, "ShapeList%sObject %p: new length: %u",
+          offsetFieldOffset.isNothing() ? "" : "WithOffset", shapeList.get(),
+          shapeList->length());
   return true;
 }
