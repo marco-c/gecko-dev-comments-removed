@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import comtypes.automation
 import comtypes.client
 import psutil
-from comtypes import COMError, IServiceProvider
+from comtypes import GUID, COMError, IServiceProvider
 
 CHILDID_SELF = 0
 COWAIT_DEFAULT = 0
@@ -23,6 +23,7 @@ EVENT_OBJECT_FOCUS = 0x8005
 EVENT_SYSTEM_SCROLLINGSTART = 0x12
 GA_ROOT = 2
 NAVRELATION_EMBEDS = 0x1009
+OBJID_CARET = -8
 OBJID_CLIENT = -4
 RPC_S_CALLPENDING = -2147417835
 WINEVENT_OUTOFCONTEXT = 0
@@ -98,6 +99,24 @@ uiaClient = comtypes.CoCreateInstance(
     interface=uiaMod.IUIAutomation,
     clsctx=comtypes.CLSCTX_INPROC_SERVER,
 )
+
+
+
+uiaCoreMod = comtypes.client.GetModule(("{930299ce-9965-4dec-b0f4-a54848d4b667}",))
+uiaReg = comtypes.CoCreateInstance(
+    uiaCoreMod.CUIAutomationRegistrar._reg_clsid_,
+    interface=uiaCoreMod.IUIAutomationRegistrar,
+)
+uiaAccessibleActionsPropertyId = uiaReg.RegisterProperty(
+    byref(
+        uiaCoreMod.UIAutomationPropertyInfo(
+            GUID("{8C787AC3-0405-4C94-AC09-7A56A173F7EF}"),
+            "AccessibleActions",
+            uiaCoreMod.UIAutomationType_ElementArray,
+        )
+    )
+)
+del uiaReg, uiaCoreMod
 
 _threadLocal = threading.local()
 

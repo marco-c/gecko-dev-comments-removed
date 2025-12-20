@@ -26,6 +26,10 @@ namespace a11y {
 class Accessible;
 enum class RelationType;
 
+struct UiaRegistrations {
+  PROPERTYID mAccessibleActions = 0;
+};
+
 
 
 
@@ -209,6 +213,15 @@ class uiaRawElmProvider : public IAccessibleEx,
 };
 
 SAFEARRAY* AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs);
+
+
+
+
+
+
+
+
+const UiaRegistrations& GetUiaRegistrations();
 
 }  
 }  

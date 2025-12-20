@@ -12,6 +12,18 @@ function testUiaRelationArray(id, prop, targets) {
   );
 }
 
+function testCustomUiaRelationArray(id, prop, targets) {
+  return isUiaElementArray(
+    `
+      findUiaByDomId(doc, "${id}")
+      .GetCurrentPropertyValue(uia${prop}PropertyId)
+      .QueryInterface(IUIAutomationElementArray)
+    `,
+    targets,
+    `${id} has correct ${prop} targets`
+  );
+}
+
 
 
 
@@ -137,6 +149,27 @@ addUiaTask(
       )),
       "noLabel has no LabeledBy"
     );
+  },
+  
+  { uiaEnabled: true, uiaDisabled: false }
+);
+
+
+
+
+addUiaTask(
+  `
+<dialog aria-actions="btn" id="dlg" onclick="" open>
+  Dialog with its own click listener
+  <form method="dialog">
+    <button id="btn">Close</button>
+  </form>
+</dialog>
+  `,
+  async function testActions() {
+    await definePyVar("doc", `getDocUia()`);
+    await testCustomUiaRelationArray("dlg", "AccessibleActions", ["btn"]);
+    await testCustomUiaRelationArray("btn", "AccessibleActions", []);
   },
   
   { uiaEnabled: true, uiaDisabled: false }
