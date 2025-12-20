@@ -87,33 +87,35 @@ const PACKET_HEADER_MAX = 200;
 
 
 
-
-
-
-
-function DebuggerTransport(input, output) {
-  this._input = input;
-  this._scriptableInput = new ScriptableInputStream(input);
-  this._output = output;
-
+class DebuggerTransport {
   
-  
-  this._incomingHeader = "";
-  
-  this._incoming = null;
-  
-  this._outgoing = [];
 
-  this.hooks = null;
-  this.active = false;
 
-  this._incomingEnabled = true;
-  this._outgoingEnabled = true;
 
-  this.close = this.close.bind(this);
-}
 
-DebuggerTransport.prototype = {
+
+  constructor(input, output) {
+    this._input = input;
+    this._scriptableInput = new ScriptableInputStream(input);
+    this._output = output;
+
+    
+    
+    this._incomingHeader = "";
+    
+    this._incoming = null;
+    
+    this._outgoing = [];
+
+    this.hooks = null;
+    this.active = false;
+
+    this._incomingEnabled = true;
+    this._outgoingEnabled = true;
+
+    this.close = this.close.bind(this);
+  }
+
   
 
 
@@ -127,7 +129,7 @@ DebuggerTransport.prototype = {
     packet.object = object;
     this._outgoing.push(packet);
     this._flushOutgoing();
-  },
+  }
 
   
 
@@ -188,7 +190,7 @@ DebuggerTransport.prototype = {
     this._outgoing.push(packet);
     this._flushOutgoing();
     return packet.streamReadyForWriting;
-  },
+  }
 
   
 
@@ -213,14 +215,14 @@ DebuggerTransport.prototype = {
     } else {
       dumpn("Transport closed.");
     }
-  },
+  }
 
   
 
 
   get _currentOutgoing() {
     return this._outgoing[0];
-  },
+  }
 
   
 
@@ -240,7 +242,7 @@ DebuggerTransport.prototype = {
       const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
       this._output.asyncWait(this, 0, 0, threadManager.currentThread);
     }
-  },
+  }
 
   
 
@@ -249,7 +251,7 @@ DebuggerTransport.prototype = {
 
   pauseOutgoing() {
     this._outgoingEnabled = false;
-  },
+  }
 
   
 
@@ -257,7 +259,7 @@ DebuggerTransport.prototype = {
   resumeOutgoing() {
     this._outgoingEnabled = true;
     this._flushOutgoing();
-  },
+  }
 
   
   
@@ -265,7 +267,7 @@ DebuggerTransport.prototype = {
 
 
 
-  onOutputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
+  onOutputStreamReady = DevToolsUtils.makeInfallible(function (stream) {
     if (!this._outgoingEnabled || this._outgoing.length === 0) {
       return;
     }
@@ -281,7 +283,7 @@ DebuggerTransport.prototype = {
     }
 
     this._flushOutgoing();
-  }, "DebuggerTransport.prototype.onOutputStreamReady"),
+  }, "DebuggerTransport.prototype.onOutputStreamReady");
 
   
 
@@ -291,7 +293,7 @@ DebuggerTransport.prototype = {
       this._currentOutgoing.destroy();
       this._outgoing.shift();
     }
-  },
+  }
 
   
 
@@ -301,7 +303,7 @@ DebuggerTransport.prototype = {
       packet.destroy();
     }
     this._outgoing = [];
-  },
+  }
 
   
 
@@ -311,7 +313,7 @@ DebuggerTransport.prototype = {
   ready() {
     this.active = true;
     this._waitForIncoming();
-  },
+  }
 
   
 
@@ -322,7 +324,7 @@ DebuggerTransport.prototype = {
       const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
       this._input.asyncWait(this, 0, 0, threadManager.currentThread);
     }
-  },
+  }
 
   
 
@@ -331,7 +333,7 @@ DebuggerTransport.prototype = {
 
   pauseIncoming() {
     this._incomingEnabled = false;
-  },
+  }
 
   
 
@@ -340,13 +342,13 @@ DebuggerTransport.prototype = {
     this._incomingEnabled = true;
     this._flushIncoming();
     this._waitForIncoming();
-  },
+  }
 
   
   
 
 
-  onInputStreamReady: DevToolsUtils.makeInfallible(function (stream) {
+  onInputStreamReady = DevToolsUtils.makeInfallible(function (stream) {
     try {
       while (
         stream.available() &&
@@ -363,7 +365,7 @@ DebuggerTransport.prototype = {
         throw e;
       }
     }
-  }, "DebuggerTransport.prototype.onInputStreamReady"),
+  }, "DebuggerTransport.prototype.onInputStreamReady");
 
   
 
@@ -427,7 +429,7 @@ DebuggerTransport.prototype = {
     
     this._flushIncoming();
     return true;
-  },
+  }
 
   
 
@@ -461,7 +463,7 @@ DebuggerTransport.prototype = {
 
     
     return false;
-  },
+  }
 
   
 
@@ -474,7 +476,7 @@ DebuggerTransport.prototype = {
       dumpn("Got: " + this._incoming);
     }
     this._destroyIncoming();
-  },
+  }
 
   
 
@@ -489,7 +491,7 @@ DebuggerTransport.prototype = {
         }
       }, "DebuggerTransport instance's this.hooks.onPacket")
     );
-  },
+  }
 
   
 
@@ -506,7 +508,7 @@ DebuggerTransport.prototype = {
         }
       }, "DebuggerTransport instance's this.hooks.onBulkPacket")
     );
-  },
+  }
 
   
 
@@ -518,7 +520,7 @@ DebuggerTransport.prototype = {
     }
     this._incomingHeader = "";
     this._incoming = null;
-  },
-};
+  }
+}
 
 exports.DebuggerTransport = DebuggerTransport;
