@@ -3228,11 +3228,13 @@ void nsIFrame::BuildDisplayListForStackingContext(
   const bool combines3DTransformWithAncestors =
       (extend3DContext || isTransformed) && Combines3DTransformWithAncestors();
 
-  Maybe<nsDisplayListBuilder::AutoPreserves3DContext> autoPreserves3DContext;
+  UniquePtr<nsDisplayListBuilder::AutoPreserves3DContext>
+      autoPreserves3DContext;
   if (extend3DContext && !combines3DTransformWithAncestors) {
     
     
-    autoPreserves3DContext.emplace(aBuilder);
+    autoPreserves3DContext =
+        MakeUnique<nsDisplayListBuilder::AutoPreserves3DContext>(aBuilder);
     
     
     aBuilder->SavePreserves3DRect();
