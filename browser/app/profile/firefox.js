@@ -887,7 +887,11 @@ pref("browser.search.serpMetricsRecordedCounter", 0);
 
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
+#ifdef NIGHTLY_BUILD
+pref("browser.search.widget.new", true);
+#else
 pref("browser.search.widget.new", false);
+#endif
 
 
 
