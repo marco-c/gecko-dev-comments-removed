@@ -607,18 +607,6 @@ include(
 
 
 
-awk = check_prog("AWK", ("gawk", "mawk", "nawk", "awk"), paths=prefer_mozillabuild_path)
-
-
-
-
-@depends(awk)
-def awk_for_old_configure(value):
-    return value
-
-
-
-
 option(env="MAKE", nargs=1, help="Path to GNU make")
 
 
