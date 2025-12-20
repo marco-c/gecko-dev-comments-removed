@@ -4,6 +4,17 @@ const TEST_URLS = [
   "",
 ];
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.discoverystream.imageProxy.enabled",
+        false,
+      ],
+    ],
+  });
+});
+
 
 
 
