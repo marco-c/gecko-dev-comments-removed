@@ -5924,6 +5924,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
     storePtr(getStackPointer(), t);
   }
 
+  template <typename T>
+  void loadStackPtrFromPrivateValue(T t) {
+    loadStackPtr(t);
+  }
+  template <typename T>
+  void storeStackPtrToPrivateValue(T t) {
+    storeStackPtr(t);
+  }
+
   
   
   

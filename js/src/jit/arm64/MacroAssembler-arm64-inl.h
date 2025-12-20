@@ -4265,6 +4265,16 @@ void MacroAssemblerCompat::storeStackPtr(const Address& dest) {
   }
 }
 
+void MacroAssemblerCompat::loadStackPtrFromPrivateValue(const Address& src) {
+  
+  loadStackPtr(src);
+}
+
+void MacroAssemblerCompat::storeStackPtrToPrivateValue(const Address& dest) {
+  
+  storeStackPtr(dest);
+}
+
 void MacroAssemblerCompat::branchTestStackPtr(Condition cond, Imm32 rhs,
                                               Label* label) {
   if (sp.Is(GetStackPointer64())) {
