@@ -1,52 +1,33 @@
 "use strict";
 
 let h2Port;
+let trrServer;
 
-function setup() {
-  h2Port = Services.env.get("MOZHTTP2_PORT");
-  Assert.notEqual(h2Port, null);
-  Assert.notEqual(h2Port, "");
-
+add_setup(async function setup() {
   
   do_get_profile();
 
-  Services.prefs.setBoolPref("network.http.http2.enabled", true);
-  
-  Services.prefs.setCharPref("network.trr.bootstrapAddr", "127.0.0.1");
+  trrServer = new TRRServer();
+  await trrServer.start();
+  h2Port = trrServer.port();
 
-  
-  Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
-
-  
-  Services.prefs.setBoolPref("network.trr.wait-for-portal", false);
-  
-  Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  trr_test_setup();
 
   
   
   Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
 
-  
-  
-  const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-
-  
-  
-  addCertFromFile(certdb, "../unit/http2-ca.pem", "CTu,u,u");
-}
-
-setup();
-registerCleanupFunction(() => {
-  trr_clear_prefs();
+  registerCleanupFunction(async () => {
+    trr_clear_prefs();
+    await trrServer.stop();
+  });
 });
 
-function run_test() {
+add_task(function run_test() {
   Services.prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/doh"
   );
   Services.prefs.setIntPref("network.trr.mode", 2); 
   run_test_in_child("child_dns_by_type_resolve.js");
-}
+});
