@@ -3858,12 +3858,7 @@ class Document : public nsINode,
   
   void SendPageUseCounters();
 
-  void RecordASMJSExecutionTime();
-
   void SetUseCounter(UseCounter aUseCounter) {
-    if (aUseCounter == eUseCounter_custom_JS_use_asm) {
-      RecordASMJSExecutionTime();
-    }
     mUseCounters[aUseCounter] = true;
   }
 
@@ -5348,9 +5343,6 @@ class Document : public nsINode,
   
   
   nsCOMPtr<nsIChannel> mFailedChannel;
-
-  
-  nsCOMPtr<nsITimer> mASMJSExecutionTimer;
 
   
   
