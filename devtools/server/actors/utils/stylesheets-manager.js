@@ -728,6 +728,31 @@ class StyleSheetsManager extends EventEmitter {
           line: InspectorUtils.getRelativeRuleLine(rule),
           column: InspectorUtils.getRuleColumn(rule),
         });
+      } else if (className === "CSSCustomMediaRule") {
+        const customMediaQuery = [];
+        if (typeof rule.query === "boolean") {
+          customMediaQuery.push({
+            text: rule.query.toString(),
+            matches: rule.query === true,
+          });
+        } else {
+          
+          for (let i = 0, len = rule.query.length; i < len; i++) {
+            customMediaQuery.push({
+              text: rule.query[i],
+              
+              
+              matches: true,
+            });
+          }
+        }
+        atRules.push({
+          type: "custom-media",
+          customMediaName: rule.name,
+          customMediaQuery,
+          line: InspectorUtils.getRelativeRuleLine(rule),
+          column: InspectorUtils.getRuleColumn(rule),
+        });
       }
     }
     return {

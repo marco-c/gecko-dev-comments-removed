@@ -42,6 +42,8 @@ add_task(async function () {
   await pushPref("layout.css.properties-and-values.enabled", true);
   
   await pushPref("layout.css.anchor-positioning.enabled", true);
+  
+  await pushPref("layout.css.custom-media.enabled", true);
 
   const { ui } = await openStyleEditorForURL(TESTCASE_URI);
 
@@ -91,7 +93,7 @@ async function testInlineAtRulesEditor(ui, editor) {
   is(sidebar.hidden, false, "sidebar is showing on editor with @media");
 
   const entries = sidebar.querySelectorAll(".at-rule-label");
-  is(entries.length, 8, "8 at-rules displayed in sidebar");
+  is(entries.length, 14, "14 at-rules displayed in sidebar");
 
   await testRule({
     ui,
@@ -165,6 +167,70 @@ async function testInlineAtRulesEditor(ui, editor) {
     line: 36,
     type: "position-try",
     positionTryName: "--pt-custom-bottom",
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[8],
+    line: 42,
+    type: "custom-media",
+    customMediaName: "--mobile-breakpoint",
+    customMediaQuery: [
+      { text: "(width < 320px) and (height < 1420px)" },
+      { text: ", " },
+      { text: "not print" },
+    ],
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[9],
+    line: 43,
+    type: "custom-media",
+    customMediaName: "--enabled",
+    customMediaQuery: [{ text: "true" }],
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[10],
+    line: 44,
+    type: "custom-media",
+    customMediaName: "--disabled",
+    customMediaQuery: [{ text: "false", matches: false }],
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[11],
+    line: 49,
+    type: "media",
+    conditionText: "(--mobile-breakpoint)",
+    matches: false,
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[12],
+    line: 53,
+    type: "media",
+    conditionText: "(--enabled)",
+    matches: false,
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[13],
+    line: 57,
+    type: "media",
+    conditionText: "(--disabled)",
+    matches: false,
   });
 }
 
@@ -302,6 +368,12 @@ async function testMediaRuleAdded(ui, editor) {
 
 
 
+
+
+
+
+
+
 async function testRule({
   ui,
   editor,
@@ -311,6 +383,8 @@ async function testRule({
   layerName,
   positionTryName,
   propertyName,
+  customMediaName,
+  customMediaQuery,
   line,
   type = "media",
 }) {
@@ -323,11 +397,52 @@ async function testRule({
   } else if (type === "position-try") {
     name = positionTryName;
   }
-  is(
-    atTypeEl.textContent,
-    `@${type}\u00A0${name ? `${name}\u00A0` : ""}`,
-    "label for at-rule type is correct"
-  );
+
+  if (type === "custom-media") {
+    const atTypeChilNodes = Array.from(atTypeEl.childNodes);
+    is(
+      atTypeChilNodes.shift().textContent,
+      `@custom-media\u00A0`,
+      "label for @custom-media is correct"
+    );
+    is(
+      atTypeChilNodes.shift().textContent,
+      `${customMediaName} `,
+      "name for @custom-media is correct"
+    );
+    is(
+      atTypeChilNodes.length,
+      customMediaQuery.length,
+      `Got expected number of children of @custom-media (got ${JSON.stringify(atTypeChilNodes.map(n => n.textContent))})`
+    );
+    for (let i = 0; i < atTypeChilNodes.length; i++) {
+      const node = atTypeChilNodes[i];
+      is(
+        node.textContent,
+        customMediaQuery[i].text,
+        `Got expected text for part #${i} of @custom-media`
+      );
+      if (customMediaQuery[i].matches ?? true) {
+        ok(
+          
+          !node.classList ||
+            !node.classList.contains("media-condition-unmatched"),
+          `Text for part #${i} of @custom-media ("${node.textContent}") does not have unmatching class`
+        );
+      } else {
+        ok(
+          node.classList.contains("media-condition-unmatched"),
+          `Text for part #${i} of @custom-media ("${node.textContent}") has expected unmatching class`
+        );
+      }
+    }
+  } else {
+    is(
+      atTypeEl.textContent,
+      `@${type}\u00A0${name ? `${name}\u00A0` : ""}`,
+      "label for at-rule type is correct"
+    );
+  }
 
   const cond = rule.querySelector(".at-rule-condition");
   is(
