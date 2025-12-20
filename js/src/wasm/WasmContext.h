@@ -45,16 +45,16 @@ class Context {
   static constexpr size_t offsetOfStackLimit() {
     return offsetof(Context, stackLimit);
   }
-#ifdef ENABLE_WASM_JSPI
-  static constexpr size_t offsetOfOnSuspendableStack() {
-    return offsetof(Context, onSuspendableStack);
-  }
-#endif
 
   void initStackLimit(JSContext* cx);
 
 #ifdef ENABLE_WASM_JSPI
-  SuspenderObject* activeSuspender();
+  static constexpr size_t offsetOfActiveSuspender() {
+    return offsetof(Context, activeSuspender_);
+  }
+
+  SuspenderObject* activeSuspender() { return activeSuspender_; }
+  bool onSuspendableStack() const { return activeSuspender_ != nullptr; }
 
   void enterSuspendableStack(SuspenderObject* suspender,
                              JS::NativeStackLimit newStackLimit);
@@ -75,10 +75,9 @@ class Context {
   JS::NativeStackLimit stackLimit;
 
 #ifdef ENABLE_WASM_JSPI
+  
+  
   HeapPtr<SuspenderObject*> activeSuspender_;
-  
-  
-  int32_t onSuspendableStack;
   mozilla::Atomic<uint32_t> suspendableStacksCount;
   
   mozilla::DoublyLinkedList<SuspenderObjectData> suspendedStacks_;
