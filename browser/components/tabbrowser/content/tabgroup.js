@@ -478,15 +478,6 @@
     
 
 
-    get tabsAndSplitViews() {
-      return Array.from(this.children).filter(
-        node => node.matches("tab") || node.tagName == "tab-split-view-wrapper"
-      );
-    }
-
-    
-
-
 
     isTabVisibleInGroup(tab) {
       if (this.isBeingDragged) {
