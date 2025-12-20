@@ -392,8 +392,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
     bool mHFlip = false;
     bool mVFlip = false;
     bool mConstrainedByLayout = false;
-    
-    mozilla::LayoutDeviceIntPoint mClientOffset;
     nsPoint mViewPoint;
   };
 
@@ -421,10 +419,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   mozilla::CSSIntRect GetScreenAnchorRect() const {
     return mozilla::CSSRect::FromAppUnitsRounded(mScreenRect);
-  }
-
-  mozilla::LayoutDeviceIntPoint GetLastClientOffset() const {
-    return mLastClientOffset;
   }
 
   mozilla::LayoutDeviceIntRect CalcWidgetBounds() const;
@@ -619,11 +613,6 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   
   
   nscoord mAlignmentOffset = 0;
-
-  
-  
-  
-  mozilla::LayoutDeviceIntPoint mLastClientOffset;
 
   
   uint64_t mAPZFocusSequenceNumber = 0;

@@ -1752,17 +1752,6 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
   
   
   result.mViewPoint = result.mUsedRect.TopLeft() - rootScreenRect.TopLeft();
-
-  
-  
-  
-  
-  if (mPopupType == PopupType::Panel && widget) {
-    result.mClientOffset = widget->GetClientOffset();
-    result.mViewPoint +=
-        LayoutDeviceIntPoint::ToAppUnits(result.mClientOffset, a2d);
-  }
-
   return result;
 }
 
@@ -1813,7 +1802,6 @@ void nsMenuPopupFrame::PerformMove(const Rects& aRects) {
   }
 
   mAlignmentOffset = aRects.mAlignmentOffset;
-  mLastClientOffset = aRects.mClientOffset;
   mHFlip = aRects.mHFlip;
   mVFlip = aRects.mVFlip;
   mConstrainedByLayout = aRects.mConstrainedByLayout;
@@ -2277,7 +2265,6 @@ void nsMenuPopupFrame::DestroyWidgetIfNeeded() {
 
 void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
                               bool aByMoveToRect) {
-  nsIWidget* widget = GetWidget();
   nsPoint appUnitsPos = CSSPixel::ToAppUnits(aPos);
 
   const bool rtl = IsDirectionRTL();
@@ -2298,8 +2285,7 @@ void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,
     appUnitsPos.y -= margin.top;
   }
 
-  if (mScreenRect.TopLeft() == appUnitsPos &&
-      (!widget || widget->GetClientOffset() == mLastClientOffset)) {
+  if (mScreenRect.TopLeft() == appUnitsPos) {
     return;
   }
 
@@ -2517,8 +2503,7 @@ void nsMenuPopupFrame::WindowMoved(nsIWidget* aWidget,
   
   
   LayoutDeviceIntRect curDevBounds = CalcWidgetBounds();
-  if (curDevBounds.TopLeft() == aPoint &&
-      aWidget->GetClientOffset() == GetLastClientOffset()) {
+  if (curDevBounds.TopLeft() == aPoint) {
     return;
   }
 

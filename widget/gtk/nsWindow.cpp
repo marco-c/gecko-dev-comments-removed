@@ -2326,19 +2326,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
     mWaylandApplyPopupPositionBeforeShow = false;
   }
 
-  
-  
-  if (!mClientMargin.IsAllZero()) {
-    gfxCriticalNoteOnce << "Invalid non-zero margin for WaylandPopup!";
-    if (aMove) {
-      gtk_window_move(GTK_WINDOW(mShell), mLastMoveRequest.x,
-                      mLastMoveRequest.y);
-    }
-    if (aResize) {
-      gtk_window_resize(GTK_WINDOW(mShell), mLastSizeRequest.width,
-                        mLastSizeRequest.height);
-    }
-  }
+  MOZ_ASSERT(mClientMargin.IsAllZero());
 
   if (mWaitingForMoveToRectCallback) {
     LOG("  waiting for move to rect, scheduling");
