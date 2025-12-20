@@ -21,6 +21,7 @@ import functools
 import inspect
 import logging
 import os
+import re
 import sys
 import textwrap
 import time
@@ -996,9 +997,10 @@ class BuildReader:
             <variable name>, <key>, <value>)`. The `key` will only be
             defined if the variable is an object, otherwise it is `None`.
         """
-
         if isinstance(variables, str):
             variables = [variables]
+
+        variables_matcher = re.compile("|".join(variables))
 
         def assigned_variable(node):
             
@@ -1080,12 +1082,17 @@ class BuildReader:
             mozbuild_paths = self.all_mozbuild_paths()
 
         for p in mozbuild_paths:
-            assignments[:] = []
             full = os.path.join(self.config.topsrcdir, p)
 
-            with open(full, "rb") as fh:
+            with open(full) as fh:
                 source = fh.read()
 
+            
+            
+            if not re.search(variables_matcher, source):
+                continue
+
+            assignments[:] = []
             tree = ast.parse(source, full)
             Visitor().visit(tree)
 
