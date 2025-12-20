@@ -161,6 +161,13 @@ class WasmArrayObject : public WasmGcObject,
   }
 
   
+  
+  template <typename T>
+  T* inlineArrayElements() {
+    return offsetToPointer<T>(offsetOfInlineArrayData());
+  }
+
+  
   static inline gc::AllocKind allocKindForOOL();
   static inline gc::AllocKind allocKindForIL(uint32_t storageBytes);
   inline gc::AllocKind allocKind() const;
@@ -200,9 +207,12 @@ class WasmArrayObject : public WasmGcObject,
 
   size_t sizeOfExcludingThis() const;
 
+  
+  
+  
   using DataHeader = uintptr_t;
-  static const DataHeader DataIsIL = 0;
-  static const DataHeader DataIsOOL = 1;
+  static const DataHeader DataIsIL = 0x37;
+  static const DataHeader DataIsOOL = 0x71;
 
   
   
@@ -253,17 +263,27 @@ class WasmArrayObject : public WasmGcObject,
   
   static void obj_trace(JSTracer* trc, JSObject* object);
   static void obj_finalize(JS::GCContext* gcx, JSObject* object);
-  static size_t obj_moved(JSObject* obj, JSObject* old);
+  static size_t obj_moved(JSObject* objNew, JSObject* objOld);
 
   void storeVal(const wasm::Val& val, uint32_t itemIndex);
   void fillVal(const wasm::Val& val, uint32_t itemIndex, uint32_t len);
 
-  static DataHeader* dataHeaderFromDataPointer(const uint8_t* data) {
+  static inline DataHeader* dataHeaderFromDataPointer(const uint8_t* data) {
     MOZ_ASSERT(data);
-    return (DataHeader*)data - 1;
+    DataHeader* header = (DataHeader*)data;
+    header--;
+    MOZ_ASSERT(*header == DataIsIL || *header == DataIsOOL);
+    return header;
   }
   DataHeader* dataHeader() const {
     return WasmArrayObject::dataHeaderFromDataPointer(data_);
+  }
+
+  static inline uint8_t* dataHeaderToDataPointer(const DataHeader* header) {
+    MOZ_ASSERT(header);
+    MOZ_ASSERT(*header == DataIsIL || *header == DataIsOOL);
+    header++;
+    return (uint8_t*)header;
   }
 
   static bool isDataInline(uint8_t* data) {
@@ -399,7 +419,7 @@ class WasmStructObject : public WasmGcObject,
   
   static void obj_trace(JSTracer* trc, JSObject* object);
   static void obj_finalize(JS::GCContext* gcx, JSObject* object);
-  static size_t obj_moved(JSObject* obj, JSObject* old);
+  static size_t obj_moved(JSObject* objNew, JSObject* objOld);
 
   void storeVal(const wasm::Val& val, uint32_t fieldIndex);
 };
@@ -507,9 +527,8 @@ class MOZ_RAII StableWasmArrayObjectElements {
         
         MOZ_CRASH();
       }
-      std::copy(array->inlineStorage(),
-                array->inlineStorage() + array->numElements_ * sizeof(T),
-                ownElements_->begin());
+      const T* src = array->inlineArrayElements<T>();
+      std::copy(src, src + array->numElements_, ownElements_->begin());
       elements_ = ownElements_->begin();
     } else {
       elements_ = reinterpret_cast<T*>(array->data_);

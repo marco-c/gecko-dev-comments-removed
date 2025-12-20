@@ -3271,7 +3271,7 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
 }
 
 void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
-                                      uint8_t* nextPC) {
+                                      uint8_t* nextPC, Nursery& nursery) {
   const StackMap* map = code().lookupStackMap(nextPC);
   if (!map) {
     return;
@@ -3281,19 +3281,53 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
 
   
   
-  for (uint32_t i = 0; i < map->header.numMappedWords; i++) {
-    if (map->get(i) != StackMap::Kind::ArrayDataPointer) {
-      continue;
-    }
+  
+  
+  
 
-    uint8_t** addressOfArrayDataPointer = (uint8_t**)&stackWords[i];
-    if (WasmArrayObject::isDataInline(*addressOfArrayDataPointer)) {
-      WasmArrayObject* oldArray =
-          WasmArrayObject::fromInlineDataPointer(*addressOfArrayDataPointer);
-      WasmArrayObject* newArray =
-          (WasmArrayObject*)gc::MaybeForwarded(oldArray);
-      *addressOfArrayDataPointer =
-          WasmArrayObject::addressOfInlineData(newArray);
+  for (uint32_t i = 0; i < map->header.numMappedWords; i++) {
+    StackMap::Kind kind = map->get(i);
+
+    switch (kind) {
+      case StackMap::Kind::ArrayDataPointer: {
+        
+        uint8_t* oldDataPointer = (uint8_t*)stackWords[i];
+        if (WasmArrayObject::isDataInline(oldDataPointer)) {
+          
+          
+          
+          WasmArrayObject* oldArray =
+              WasmArrayObject::fromInlineDataPointer(oldDataPointer);
+          WasmArrayObject* newArray =
+              (WasmArrayObject*)gc::MaybeForwarded(oldArray);
+          if (newArray != oldArray) {
+            stackWords[i] =
+                uintptr_t(WasmArrayObject::addressOfInlineData(newArray));
+            MOZ_ASSERT(WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
+          }
+        } else {
+          WasmArrayObject::DataHeader* oldHeader =
+              WasmArrayObject::dataHeaderFromDataPointer(oldDataPointer);
+          WasmArrayObject::DataHeader* newHeader = oldHeader;
+          nursery.forwardBufferPointer((uintptr_t*)&newHeader);
+          if (newHeader != oldHeader) {
+            stackWords[i] =
+                uintptr_t(WasmArrayObject::dataHeaderToDataPointer(newHeader));
+            MOZ_ASSERT(!WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
+          }
+        }
+        break;
+      }
+
+      case StackMap::Kind::StructDataPointer: {
+        
+        nursery.forwardBufferPointer(&stackWords[i]);
+        break;
+      }
+
+      default: {
+        break;
+      }
     }
   }
 }

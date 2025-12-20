@@ -287,37 +287,80 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
 }
 
 
-size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
+size_t WasmArrayObject::obj_moved(JSObject* objNew, JSObject* objOld) {
   
-  WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
-  WasmArrayObject& oldArrayObj = old->as<WasmArrayObject>();
-  if (oldArrayObj.isDataInline()) {
-    
-    
-    arrayObj.data_ = WasmArrayObject::addressOfInlineData(&arrayObj);
-  }
-  MOZ_ASSERT(arrayObj.isDataInline() == oldArrayObj.isDataInline());
+  
+  
+  
+  MOZ_ASSERT(objNew != objOld);
 
-  if (IsInsideNursery(old)) {
-    Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
+  WasmArrayObject& arrayNew = objNew->as<WasmArrayObject>();
+  WasmArrayObject& arrayOld = objOld->as<WasmArrayObject>();
+
+  const TypeDef* typeDefNew = &arrayNew.typeDef();
+  mozilla::DebugOnly<const TypeDef*> typeDefOld = &arrayOld.typeDef();
+  MOZ_ASSERT(typeDefNew->isArrayType());
+  MOZ_ASSERT(typeDefOld == typeDefNew);
+
+  
+  
+  MOZ_ASSERT(arrayNew.data_ == arrayOld.data_);
+
+  if (arrayOld.isDataInline()) {
     
-    if (!arrayObj.isDataInline()) {
-      const TypeDef& typeDef = arrayObj.typeDef();
-      MOZ_ASSERT(typeDef.isArrayType());
-      
-      
-      size_t trailerSize = calcStorageBytesUnchecked(
-          typeDef.arrayType().elementType().size(), arrayObj.numElements_);
-      
-      MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
-      uint8_t* outlineAlloc =
-          (uint8_t*)dataHeaderFromDataPointer(arrayObj.data_);
-      uint8_t* prior = outlineAlloc;
-      nursery.maybeMoveBufferOnPromotion(&outlineAlloc, obj, trailerSize);
-      if (outlineAlloc != prior) {
-        arrayObj.data_ = (uint8_t*)(((DataHeader*)outlineAlloc) + 1);
-      }
-    }
+    
+    arrayNew.data_ = WasmArrayObject::addressOfInlineData(&arrayNew);
+    MOZ_ASSERT(arrayNew.isDataInline());
+    return 0;
+  }
+
+  
+  
+  
+
+  bool newIsInNursery = IsInsideNursery(objNew);
+  bool oldIsInNursery = IsInsideNursery(objOld);
+
+  
+  if (!oldIsInNursery && !newIsInNursery) {
+    
+    
+    return 0;
+  }
+
+  
+  MOZ_RELEASE_ASSERT(oldIsInNursery);
+
+  
+  
+  
+  
+
+  
+  
+  size_t oolBlockSize = calcStorageBytesUnchecked(
+      typeDefNew->arrayType().elementType().size(), arrayNew.numElements_);
+  
+  MOZ_RELEASE_ASSERT(oolBlockSize <= size_t(MaxArrayPayloadBytes) +
+                                         sizeof(WasmArrayObject::DataHeader));
+
+  
+  
+  
+  DataHeader* oolHeaderOld = dataHeaderFromDataPointer(arrayNew.data_);
+  DataHeader* oolHeaderNew = oolHeaderOld;
+  Nursery& nursery = objNew->runtimeFromMainThread()->gc.nursery();
+  nursery.maybeMoveBufferOnPromotion(&oolHeaderNew, objNew, oolBlockSize);
+
+  if (oolHeaderNew != oolHeaderOld) {
+    
+    
+    arrayNew.data_ = dataHeaderToDataPointer(oolHeaderNew);
+    
+    
+    
+    nursery.setForwardingPointerWhileTenuring(oolHeaderOld, oolHeaderNew,
+                                              false);
   }
 
   return 0;
@@ -443,20 +486,60 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
 }
 
 
-size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
+size_t WasmStructObject::obj_moved(JSObject* objNew, JSObject* objOld) {
   
-  if (IsInsideNursery(old)) {
-    Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
-    WasmStructObject& structObj = obj->as<WasmStructObject>();
-    const TypeDef& typeDef = structObj.typeDef();
-    MOZ_ASSERT(typeDef.isStructType());
-    uint32_t totalBytes = typeDef.structType().size_;
-    uint32_t inlineBytes, outlineBytes;
-    WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
-    MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
-    MOZ_ASSERT(outlineBytes > 0);
-    nursery.maybeMoveBufferOnPromotion(&structObj.outlineData_, obj,
-                                       outlineBytes);
+  
+  MOZ_ASSERT(objNew != objOld);
+
+  WasmStructObject& structNew = objNew->as<WasmStructObject>();
+  WasmStructObject& structOld = objOld->as<WasmStructObject>();
+  MOZ_ASSERT(structNew.outlineData_ && structOld.outlineData_);
+
+  const TypeDef* typeDefNew = &structNew.typeDef();
+  mozilla::DebugOnly<const TypeDef*> typeDefOld = &structOld.typeDef();
+  MOZ_ASSERT(typeDefNew->isStructType());
+  MOZ_ASSERT(typeDefOld == typeDefNew);
+
+  
+  
+  MOZ_ASSERT(structNew.outlineData_ == structOld.outlineData_);
+
+  bool newIsInNursery = IsInsideNursery(objNew);
+  bool oldIsInNursery = IsInsideNursery(objOld);
+
+  
+  if (!oldIsInNursery && !newIsInNursery) {
+    
+    
+    return 0;
+  }
+
+  
+  MOZ_RELEASE_ASSERT(oldIsInNursery);
+
+  
+  
+  
+  
+
+  uint32_t totalBytes = typeDefNew->structType().size_;
+  uint32_t inlineBytes, outlineBytes;
+  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+  MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
+  MOZ_ASSERT(outlineBytes > 0);
+
+  
+  
+  Nursery& nursery = structNew.runtimeFromMainThread()->gc.nursery();
+  nursery.maybeMoveBufferOnPromotion(&structNew.outlineData_, objNew,
+                                     outlineBytes);
+  
+  
+  
+  if (structOld.outlineData_ != structNew.outlineData_) {
+    nursery.setForwardingPointerWhileTenuring(structOld.outlineData_,
+                                              structNew.outlineData_,
+                                              false);
   }
 
   return 0;
