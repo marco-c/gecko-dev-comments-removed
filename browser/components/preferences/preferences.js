@@ -223,40 +223,12 @@ var SettingPaneManager = {
   },
 };
 
-var SettingGroupManager = {
-  
-  _data: new Map(),
-
-  
-
-
-  get(id) {
-    if (!this._data.has(id)) {
-      throw new Error(`Setting group "${id}" not found`);
-    }
-    return this._data.get(id);
-  },
-
-  
-
-
-
-  registerGroup(id, config) {
-    if (this._data.has(id)) {
-      throw new Error(`Setting group "${id}" already registered`);
-    }
-    this._data.set(id, config);
-  },
-
-  
-
-
-  registerGroups(groupConfigs) {
-    for (let id in groupConfigs) {
-      this.registerGroup(id, groupConfigs[id]);
-    }
-  },
-};
+var SettingGroupManager = ChromeUtils.importESModule(
+  "chrome://browser/content/preferences/config/SettingGroupManager.mjs",
+  {
+    global: "current",
+  }
+).SettingGroupManager;
 
 
 
