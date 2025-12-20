@@ -145,6 +145,10 @@
       return Array.from(this.children).filter(node => node.matches("tab"));
     }
 
+    get visible() {
+      return this.tabs.every(tab => tab.visible);
+    }
+
     
 
 
