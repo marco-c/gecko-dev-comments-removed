@@ -20,7 +20,6 @@
 #define wasm_type_def_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/HashTable.h"
 
 #include "js/RefCounted.h"
@@ -29,6 +28,7 @@
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmSerialize.h"
+#include "wasm/WasmStructLayout.h"
 #include "wasm/WasmUtility.h"
 #include "wasm/WasmValType.h"
 
@@ -298,7 +298,7 @@ struct FieldType {
 
 using FieldTypeVector = Vector<FieldType, 0, SystemAllocPolicy>;
 
-using FieldOffsetVector = Vector<uint32_t, 2, SystemAllocPolicy>;
+using FieldAccessPathVector = Vector<FieldAccessPath, 2, SystemAllocPolicy>;
 using InlineTraceOffsetVector = Vector<uint32_t, 2, SystemAllocPolicy>;
 using OutlineTraceOffsetVector = Vector<uint32_t, 0, SystemAllocPolicy>;
 
@@ -307,23 +307,55 @@ class StructType {
   
   FieldTypeVector fields_;
   
-  uint32_t size_;
-  
-  FieldOffsetVector fieldOffsets_;
+  FieldAccessPathVector fieldAccessPaths_;
+
   
   
   InlineTraceOffsetVector inlineTraceOffsets_;
   
   
   OutlineTraceOffsetVector outlineTraceOffsets_;
+
+  
+  
+  uint32_t totalSizeOOL_;
+  
+  
+  uint32_t oolPointerOffset_;
+
+  
+  
+  uint32_t totalSizeIL_;
+  
+  
+  uint8_t payloadOffsetIL_;
+
+  
+  
+  
+  gc::AllocKind allocKind_;
+
   
   bool isDefaultable_;
 
- public:
-  StructType() : size_(0), isDefaultable_(false) {}
+  static const uint32_t InvalidOffset = 0xFFFFFFFF;
+
+  StructType()
+      : totalSizeOOL_(0),
+        oolPointerOffset_(InvalidOffset),
+        totalSizeIL_(0),
+        payloadOffsetIL_(0),
+        allocKind_(gc::AllocKind::INVALID),
+        isDefaultable_(false) {}
 
   explicit StructType(FieldTypeVector&& fields)
-      : fields_(std::move(fields)), size_(0) {
+      : fields_(std::move(fields)),
+        totalSizeOOL_(0),
+        oolPointerOffset_(InvalidOffset),
+        totalSizeIL_(0),
+        payloadOffsetIL_(0),
+        allocKind_(gc::AllocKind::INVALID),
+        isDefaultable_(false) {
     MOZ_ASSERT(fields_.length() <= MaxStructFields);
   }
 
@@ -334,9 +366,7 @@ class StructType {
 
   bool isDefaultable() const { return isDefaultable_; }
 
-  uint32_t fieldOffset(uint32_t fieldIndex) const {
-    return fieldOffsets_[fieldIndex];
-  }
+  bool hasOOL() const { return totalSizeOOL_ > 0; }
 
   HashNumber hash(const RecGroup* recGroup) const {
     HashNumber hn = 0;
@@ -389,35 +419,6 @@ class StructType {
 };
 
 using StructTypeVector = Vector<StructType, 0, SystemAllocPolicy>;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class StructLayout {
-  mozilla::CheckedInt32 sizeSoFar = 0;
-  uint32_t structAlignment = 1;
-
- public:
-  
-  mozilla::CheckedInt32 addField(StorageType type);
-
-  
-  
-  mozilla::CheckedInt32 close();
-};
 
 
 

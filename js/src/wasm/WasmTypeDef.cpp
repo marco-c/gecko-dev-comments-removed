@@ -32,6 +32,8 @@
 #include "wasm/WasmGcObject.h"
 #include "wasm/WasmJS.h"
 
+#include "gc/ObjectKind-inl.h"
+
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
@@ -269,113 +271,73 @@ size_t FuncType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
 
 
 
-static inline CheckedInt32 RoundUpToAlignment(CheckedInt32 address,
-                                              uint32_t align) {
-  MOZ_ASSERT(IsPowerOfTwo(align));
-
-  
-  
-  
-  
-  
-  
-  
-
-  return ((address + (align - 1)) / align) * align;
-}
-
-CheckedInt32 StructLayout::addField(StorageType type) {
-  uint32_t fieldSize = type.size();
-  uint32_t fieldAlignment = type.alignmentInStruct();
-
-  
-  
-  
-  MOZ_ASSERT(fieldSize >= 1 && fieldSize <= 16);
-  MOZ_ASSERT((fieldSize & (fieldSize - 1)) == 0);  
-  MOZ_ASSERT(fieldAlignment == fieldSize);         
-
-  
-  structAlignment = std::max(structAlignment, fieldAlignment);
-
-  
-  CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldAlignment);
-  if (!offset.isValid()) {
-    return offset;
-  }
-
-  
-  sizeSoFar = offset + fieldSize;
-  if (!sizeSoFar.isValid()) {
-    return sizeSoFar;
-  }
-
-  
-  MOZ_ASSERT(offset / 16 == (offset + fieldSize - 1) / 16);
-  return offset;
-}
-
-CheckedInt32 StructLayout::close() {
-  CheckedInt32 size = RoundUpToAlignment(sizeSoFar, structAlignment);
-  
-  
-  
-  
-  
-  
-  if (structAlignment < sizeof(uintptr_t)) {
-    size = RoundUpToAlignment(size, sizeof(uintptr_t));
-  }
-  return size;
-}
-
 bool StructType::init() {
-  bool isDefaultable = true;
+  isDefaultable_ = true;
 
-  StructLayout layout;
-  for (FieldType& field : fields_) {
-    CheckedInt32 offset = layout.addField(field.type);
-    if (!offset.isValid()) {
-      return false;
-    }
+  
+  static_assert((sizeof(WasmStructObject) % sizeof(uintptr_t)) == 0);
 
-    
-    if (!fieldOffsets_.append(offset.value())) {
-      return false;
-    }
-
-    
-    if (!field.type.isDefaultable()) {
-      isDefaultable = false;
-    }
-
-    
-    if (!field.type.isRefRepr()) {
-      continue;
-    }
-
-    bool isOutline;
-    uint32_t adjustedOffset;
-    WasmStructObject::fieldOffsetToAreaAndOffset(field.type, offset.value(),
-                                                 &isOutline, &adjustedOffset);
-    if (isOutline) {
-      if (!outlineTraceOffsets_.append(adjustedOffset)) {
-        return false;
-      }
-    } else {
-      if (!inlineTraceOffsets_.append(adjustedOffset)) {
-        return false;
-      }
-    }
-  }
-
-  CheckedInt32 size = layout.close();
-  if (!size.isValid()) {
+  MOZ_ASSERT(fieldAccessPaths_.empty() && outlineTraceOffsets_.empty() &&
+             inlineTraceOffsets_.empty());
+  if (!fieldAccessPaths_.reserve(fields_.length())) {
     return false;
   }
 
-  size_ = size.value();
-  isDefaultable_ = isDefaultable;
+  
+  
+  static_assert(WasmStructObject_Size_ASSUMED <
+                (1 << (8 * sizeof(StructType::payloadOffsetIL_))));
+  payloadOffsetIL_ = WasmStructObject_Size_ASSUMED;
+
+  StructLayout layout;
+  if (!layout.init(payloadOffsetIL_, WasmStructObject_MaxInlineBytes_ASSUMED)) {
+    return false;
+  }
+
+  for (FieldType& field : fields_) {
+    
+    FieldAccessPath path;
+    if (!layout.addField(field.type.size(), &path)) {
+      return false;
+    }
+
+    
+    fieldAccessPaths_.infallibleAppend(path);
+
+    
+    if (!field.type.isDefaultable()) {
+      isDefaultable_ = false;
+    }
+
+    
+    if (field.type.isRefRepr()) {
+      if (path.hasOOL()) {
+        if (!outlineTraceOffsets_.append(path.oolOffset())) {
+          return false;
+        }
+      } else {
+        if (!inlineTraceOffsets_.append(path.ilOffset())) {
+          return false;
+        }
+      }
+    }
+  }
+
+  if (layout.hasOOL()) {
+    totalSizeOOL_ = layout.totalSizeOOL();
+    FieldAccessPath oolPointerPath = layout.oolPointerPath();
+    MOZ_ASSERT(!oolPointerPath.hasOOL());
+    oolPointerOffset_ = oolPointerPath.ilOffset();
+  } else {
+    totalSizeOOL_ = 0;
+    oolPointerOffset_ = StructType::InvalidOffset;
+  }
+
+  totalSizeIL_ = layout.totalSizeIL();
+  
+  allocKind_ = gc::GetGCObjectKindForBytes(totalSizeIL_);
+  
+
   return true;
 }
 

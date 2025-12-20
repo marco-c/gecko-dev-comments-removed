@@ -52,15 +52,15 @@ struct TypeDefInstanceData {
       : typeDef(nullptr),
         superTypeVector(nullptr),
         shape(nullptr),
-        clasp(nullptr),
-        allocKind(gc::AllocKind::LIMIT),
-        unused(0) {}
+        clasp(nullptr) {
+    memset(&cached, 0, sizeof(cached));
+    cached.strukt.allocKind = gc::AllocKind::INVALID;
+  }
 
   
   
   const wasm::TypeDef* typeDef;
 
-  
   
   
   const wasm::SuperTypeVector* superTypeVector;
@@ -69,25 +69,28 @@ struct TypeDefInstanceData {
   
   GCPtr<Shape*> shape;
   const JSClass* clasp;
-  
-  gc::AllocKind allocKind;
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   union {
-    uint32_t structTypeSize;
-    uint32_t arrayElemSize;
-    uint32_t unused;
-  };
+    struct {
+      
+      
+      uint32_t payloadOffsetIL;
+      uint32_t totalSizeIL;
+      uint32_t totalSizeOOL;
+      uint32_t oolPointerOffset;
+      
+      
+      gc::AllocKind allocKind;
+    } strukt;
+    struct {
+      
+      
+      uint32_t elemSize;
+    } array;
+  } cached;
 
   static constexpr size_t offsetOfShape() {
     return offsetof(TypeDefInstanceData, shape);
@@ -96,7 +99,7 @@ struct TypeDefInstanceData {
     return offsetof(TypeDefInstanceData, superTypeVector);
   }
   static constexpr size_t offsetOfArrayElemSize() {
-    return offsetof(TypeDefInstanceData, arrayElemSize);
+    return offsetof(TypeDefInstanceData, cached.array.elemSize);
   }
 };
 

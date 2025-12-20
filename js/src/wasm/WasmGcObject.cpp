@@ -127,12 +127,14 @@ bool WasmGcObject::lookUpProperty(JSContext* cx, Handle<WasmGcObject*> obj,
       if (!IdIsIndex(id, &index)) {
         return false;
       }
+      MOZ_ASSERT(structType.fields_.length() ==
+                 structType.fieldAccessPaths_.length());
       if (index >= structType.fields_.length()) {
         JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                  JSMSG_WASM_OUT_OF_BOUNDS);
         return false;
       }
-      offset->set(structType.fieldOffset(index));
+      offset->set(index);
       *type = structType.fields_[index].type;
       return true;
     }
@@ -191,14 +193,12 @@ bool WasmGcObject::loadValue(JSContext* cx, Handle<WasmGcObject*> obj, jsid id,
 
   if (obj->is<WasmStructObject>()) {
     
-    
     WasmStructObject& structObj = obj->as<WasmStructObject>();
-    
     MOZ_RELEASE_ASSERT(structObj.kind() == TypeDefKind::Struct);
-    MOZ_RELEASE_ASSERT(offset.get() + type.size() <=
-                       structObj.typeDef().structType().size_);
-    return ToJSValue(cx, structObj.fieldOffsetToAddress(type, offset.get()),
-                     type, vp);
+    
+    
+    
+    return ToJSValue(cx, structObj.fieldIndexToAddress(offset.get()), type, vp);
   }
 
   MOZ_ASSERT(obj->is<WasmArrayObject>());
@@ -414,52 +414,47 @@ const JSClass WasmArrayObject::class_ = {
 
 
 
-const JSClass* js::WasmStructObject::classForTypeDef(
-    const wasm::TypeDef* typeDef) {
-  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
-  size_t nbytes = typeDef->structType().size_;
-  return nbytes > WasmStructObject_MaxInlineBytes
-             ? &WasmStructObject::classOutline_
-             : &WasmStructObject::classInline_;
-}
-
-
-js::gc::AllocKind js::WasmStructObject::allocKindForTypeDef(
-    const wasm::TypeDef* typeDef) {
-  MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
-  size_t nbytes = typeDef->structType().size_;
-
-  
-  
-  
-  
-  if (nbytes > WasmStructObject_MaxInlineBytes) {
-    nbytes = WasmStructObject_MaxInlineBytes;
-  }
-
-  
-  nbytes = sizeOfIncludingInlineData(nbytes);
-
-  return gc::GetGCObjectKindForBytes(nbytes);
-}
-
-
 size_t js::WasmStructObject::sizeOfExcludingThis() const {
-  if (!outlineData_ || !gc::IsBufferAlloc(outlineData_)) {
+  if (!hasOOLPointer()) {
+    return 0;
+  }
+  const uint8_t* oolPointer = getOOLPointer();
+  if (!gc::IsBufferAlloc((void*)oolPointer)) {
     return 0;
   }
 
-  return gc::GetAllocSize(zone(), outlineData_);
+  return gc::GetAllocSize(zone(), oolPointer);
 }
+
 
 bool WasmStructObject::getField(JSContext* cx, uint32_t index,
                                 MutableHandle<Value> val) {
   const StructType& resultType = typeDef().structType();
   MOZ_ASSERT(index <= resultType.fields_.length());
   const FieldType& field = resultType.fields_[index];
-  uint32_t fieldOffset = resultType.fieldOffset(index);
   StorageType ty = field.type.storageType();
-  return ToJSValue(cx, fieldOffsetToAddress(ty, fieldOffset), ty, val);
+  return ToJSValue(cx, fieldIndexToAddress(index), ty, val);
+}
+
+
+uint8_t* WasmStructObject::fieldIndexToAddress(uint32_t fieldIndex) {
+  const wasm::SuperTypeVector* stv = superTypeVector_;
+  const wasm::TypeDef* typeDef = stv->typeDef();
+  MOZ_ASSERT(typeDef->superTypeVector() == stv);
+  const wasm::StructType& structType = typeDef->structType();
+  const wasm::FieldAccessPathVector& fieldAccessPaths =
+      structType.fieldAccessPaths_;
+  MOZ_RELEASE_ASSERT(fieldIndex < fieldAccessPaths.length());
+  wasm::FieldAccessPath path = fieldAccessPaths[fieldIndex];
+  uint32_t ilOffset = path.ilOffset();
+  MOZ_RELEASE_ASSERT(ilOffset != wasm::StructType::InvalidOffset);
+  if (MOZ_LIKELY(!path.hasOOL())) {
+    return (uint8_t*)this + ilOffset;
+  }
+  uint8_t* oolBlock = *(uint8_t**)((uint8_t*)this + ilOffset);
+  uint32_t oolOffset = path.oolOffset();
+  MOZ_RELEASE_ASSERT(oolOffset != wasm::StructType::InvalidOffset);
+  return oolBlock + oolOffset;
 }
 
 
@@ -468,18 +463,16 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
 
   const auto& structType = structObj.typeDef().structType();
   for (uint32_t offset : structType.inlineTraceOffsets_) {
-    AnyRef* fieldPtr =
-        reinterpret_cast<AnyRef*>(structObj.inlineData() + offset);
+    AnyRef* fieldPtr = reinterpret_cast<AnyRef*>((uint8_t*)&structObj + offset);
     TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
   }
-
-  if (structObj.outlineData_) {
-    TraceBufferEdge(trc, &structObj, &structObj.outlineData_,
+  if (MOZ_UNLIKELY(structType.totalSizeOOL_ > 0)) {
+    uint8_t** addressOfOOLPtr = structObj.addressOfOOLPointer();
+    TraceBufferEdge(trc, &structObj, addressOfOOLPtr,
                     "WasmStructObject outline data");
-
+    uint8_t* oolBase = *addressOfOOLPtr;
     for (uint32_t offset : structType.outlineTraceOffsets_) {
-      AnyRef* fieldPtr =
-          reinterpret_cast<AnyRef*>(structObj.outlineData_ + offset);
+      AnyRef* fieldPtr = reinterpret_cast<AnyRef*>(oolBase + offset);
       TraceManuallyBarrieredEdge(trc, fieldPtr, "wasm-struct-field");
     }
   }
@@ -493,16 +486,17 @@ size_t WasmStructObject::obj_moved(JSObject* objNew, JSObject* objOld) {
 
   WasmStructObject& structNew = objNew->as<WasmStructObject>();
   WasmStructObject& structOld = objOld->as<WasmStructObject>();
-  MOZ_ASSERT(structNew.outlineData_ && structOld.outlineData_);
+  MOZ_ASSERT(structNew.hasOOLPointer() && structOld.hasOOLPointer());
 
   const TypeDef* typeDefNew = &structNew.typeDef();
   mozilla::DebugOnly<const TypeDef*> typeDefOld = &structOld.typeDef();
+  MOZ_ASSERT(typeDefNew == typeDefOld);
   MOZ_ASSERT(typeDefNew->isStructType());
   MOZ_ASSERT(typeDefOld == typeDefNew);
 
   
   
-  MOZ_ASSERT(structNew.outlineData_ == structOld.outlineData_);
+  MOZ_ASSERT(structNew.getOOLPointer() == structOld.getOOLPointer());
 
   bool newIsInNursery = IsInsideNursery(objNew);
   bool oldIsInNursery = IsInsideNursery(objOld);
@@ -522,23 +516,28 @@ size_t WasmStructObject::obj_moved(JSObject* objNew, JSObject* objOld) {
   
   
 
-  uint32_t totalBytes = typeDefNew->structType().size_;
-  uint32_t inlineBytes, outlineBytes;
-  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
-  MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
+  const StructType& structType = typeDefNew->structType();
+  uint32_t outlineBytes = structType.totalSizeOOL_;
+  
+  MOZ_ASSERT((outlineBytes > 0) == structNew.hasOOLPointer());
+  
+  
   MOZ_ASSERT(outlineBytes > 0);
 
   
   
   Nursery& nursery = structNew.runtimeFromMainThread()->gc.nursery();
-  nursery.maybeMoveBufferOnPromotion(&structNew.outlineData_, objNew,
+  uint8_t** addressOfOOLPointerNew = structNew.addressOfOOLPointer();
+  nursery.maybeMoveBufferOnPromotion(addressOfOOLPointerNew, objNew,
                                      outlineBytes);
+
   
   
   
-  if (structOld.outlineData_ != structNew.outlineData_) {
-    nursery.setForwardingPointerWhileTenuring(structOld.outlineData_,
-                                              structNew.outlineData_,
+  uint8_t* oolPointerOld = structOld.getOOLPointer();
+  uint8_t* oolPointerNew = structNew.getOOLPointer();
+  if (oolPointerOld != oolPointerNew) {
+    nursery.setForwardingPointerWhileTenuring(oolPointerOld, oolPointerNew,
                                               false);
   }
 
@@ -547,21 +546,10 @@ size_t WasmStructObject::obj_moved(JSObject* objNew, JSObject* objOld) {
 
 void WasmStructObject::storeVal(const Val& val, uint32_t fieldIndex) {
   const StructType& structType = typeDef().structType();
-  StorageType fieldType = structType.fields_[fieldIndex].type;
-  uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
-
   MOZ_ASSERT(fieldIndex < structType.fields_.length());
-  bool areaIsOutline;
-  uint32_t areaOffset;
-  fieldOffsetToAreaAndOffset(fieldType, fieldOffset, &areaIsOutline,
-                             &areaOffset);
 
-  uint8_t* data;
-  if (areaIsOutline) {
-    data = outlineData_ + areaOffset;
-  } else {
-    data = inlineData() + areaOffset;
-  }
+  StorageType fieldType = structType.fields_[fieldIndex].type;
+  uint8_t* data = fieldIndexToAddress(fieldIndex);
 
   WriteValTo(val, fieldType, data);
 }

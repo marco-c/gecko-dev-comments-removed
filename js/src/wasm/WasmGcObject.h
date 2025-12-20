@@ -78,7 +78,6 @@ class WasmGcObject : public JSObject {
   
   
   
-  
   class PropOffset {
     uint32_t u32_;
 
@@ -322,46 +321,39 @@ static_assert((WasmArrayObject::offsetOfInlineStorage() % 8) == 0);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class WasmStructObject : public WasmGcObject,
                          public TrailingArray<WasmStructObject> {
  public:
   static const JSClass classInline_;
   static const JSClass classOutline_;
 
-  
-  
-  
-  
-  uint8_t* outlineData_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint8_t* inlineData() {
-    return offsetToPointer<uint8_t>(offsetOfInlineData());
-  }
-
-  
-  
-  static inline constexpr size_t sizeOfIncludingInlineData(
-      size_t sizeOfInlineData) {
-    size_t n = sizeof(WasmStructObject) + sizeOfInlineData;
-    MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
-    return n;
+  static const JSClass* classFromOOLness(bool needsOOLstorage) {
+    return needsOOLstorage ? &classOutline_ : &classInline_;
   }
 
   size_t sizeOfExcludingThis() const;
-
-  static const JSClass* classForTypeDef(const wasm::TypeDef* typeDef);
-  static js::gc::AllocKind allocKindForTypeDef(const wasm::TypeDef* typeDef);
 
   
   
@@ -382,60 +374,59 @@ class WasmStructObject : public WasmGcObject,
       gc::AllocSite* allocSite, js::gc::Heap initialHeap);
 
   
-  
-  static inline void getDataByteSizes(uint32_t totalBytes,
-                                      uint32_t* inlineBytes,
-                                      uint32_t* outlineBytes);
+  uint8_t* fieldIndexToAddress(uint32_t fieldIndex);
 
   
   
-  static inline bool requiresOutlineBytes(uint32_t totalBytes);
+  bool hasOOLPointer() const;
+  
+  uint8_t** addressOfOOLPointer() const;
+  uint8_t* getOOLPointer() const;
+  void setOOLPointer(uint8_t* newOOLpointer);
 
   
   
-  
-  static inline void fieldOffsetToAreaAndOffset(wasm::StorageType fieldType,
-                                                uint32_t fieldOffset,
-                                                bool* areaIsOutline,
-                                                uint32_t* areaOffset);
-
-  
-  
-  inline uint8_t* fieldOffsetToAddress(wasm::StorageType fieldType,
-                                       uint32_t fieldOffset);
+  uint8_t** addressOfOOLPointer(
+      const wasm::TypeDefInstanceData* typeDefData) const;
+  void setOOLPointer(const wasm::TypeDefInstanceData* typeDefData,
+                     uint8_t* newOOLpointer);
 
   
   bool getField(JSContext* cx, uint32_t index, MutableHandle<Value> val);
 
   
-  static const uint32_t inlineDataAlignment = 8;
-  static constexpr size_t offsetOfOutlineData() {
-    return offsetof(WasmStructObject, outlineData_);
-  }
-  static constexpr size_t offsetOfInlineData() {
-    return AlignBytes(sizeof(WasmStructObject), inlineDataAlignment);
-  }
-
-  
   static void obj_trace(JSTracer* trc, JSObject* object);
-  static void obj_finalize(JS::GCContext* gcx, JSObject* object);
   static size_t obj_moved(JSObject* objNew, JSObject* objOld);
 
   void storeVal(const wasm::Val& val, uint32_t fieldIndex);
 };
 
-static_assert((WasmStructObject::offsetOfInlineData() % 8) == 0);
+
+
+static_assert(sizeof(WasmStructObject) == 16);
 
 
 
 
+static_assert((sizeof(WasmStructObject) % 8) == 0);
 
 const size_t WasmStructObject_MaxInlineBytes =
-    ((JSObject::MAX_BYTE_SIZE - sizeof(WasmStructObject)) / 16) * 16;
+    ((JSObject::MAX_BYTE_SIZE - sizeof(WasmStructObject)) / 8) * 8;
+
+static_assert((WasmStructObject_MaxInlineBytes % 8) == 0);
+
+
+
+
+
+
+static_assert(wasm::WasmStructObject_Size_ASSUMED == sizeof(WasmStructObject));
+static_assert(wasm::WasmStructObject_MaxInlineBytes_ASSUMED ==
+              WasmStructObject_MaxInlineBytes);
+
 const size_t WasmArrayObject_MaxInlineBytes =
     ((JSObject::MAX_BYTE_SIZE - sizeof(WasmArrayObject)) / 16) * 16;
 
-static_assert((WasmStructObject_MaxInlineBytes % 16) == 0);
 static_assert((WasmArrayObject_MaxInlineBytes % 16) == 0);
 
 
@@ -453,51 +444,47 @@ inline constexpr uint32_t WasmArrayObject::maxInlineElementsForElemSize(
   return result;
 }
 
-
-inline void WasmStructObject::getDataByteSizes(uint32_t totalBytes,
-                                               uint32_t* inlineBytes,
-                                               uint32_t* outlineBytes) {
-  if (MOZ_UNLIKELY(totalBytes > WasmStructObject_MaxInlineBytes)) {
-    *inlineBytes = WasmStructObject_MaxInlineBytes;
-    *outlineBytes = totalBytes - WasmStructObject_MaxInlineBytes;
-  } else {
-    *inlineBytes = totalBytes;
-    *outlineBytes = 0;
-  }
+inline bool WasmStructObject::hasOOLPointer() const {
+  const wasm::SuperTypeVector* stv = superTypeVector_;
+  const wasm::TypeDef* typeDef = stv->typeDef();
+  MOZ_ASSERT(typeDef->superTypeVector() == stv);
+  const wasm::StructType& structType = typeDef->structType();
+  uint32_t offset = structType.oolPointerOffset_;
+  return offset != wasm::StructType::InvalidOffset;
 }
 
-
-inline bool WasmStructObject::requiresOutlineBytes(uint32_t totalBytes) {
-  uint32_t inlineBytes, outlineBytes;
-  WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
-  return outlineBytes > 0;
+inline uint8_t** WasmStructObject::addressOfOOLPointer() const {
+  const wasm::SuperTypeVector* stv = superTypeVector_;
+  const wasm::TypeDef* typeDef = stv->typeDef();
+  MOZ_ASSERT(typeDef->superTypeVector() == stv);
+  const wasm::StructType& structType = typeDef->structType();
+  uint32_t offset = structType.oolPointerOffset_;
+  MOZ_RELEASE_ASSERT(offset != wasm::StructType::InvalidOffset);
+  return (uint8_t**)((uint8_t*)this + offset);
 }
 
+inline uint8_t* WasmStructObject::getOOLPointer() const {
+  return *addressOfOOLPointer();
+}
 
-inline void WasmStructObject::fieldOffsetToAreaAndOffset(
-    wasm::StorageType fieldType, uint32_t fieldOffset, bool* areaIsOutline,
-    uint32_t* areaOffset) {
-  if (fieldOffset < WasmStructObject_MaxInlineBytes) {
-    *areaIsOutline = false;
-    *areaOffset = fieldOffset;
-  } else {
-    *areaIsOutline = true;
-    *areaOffset = fieldOffset - WasmStructObject_MaxInlineBytes;
-  }
+inline void WasmStructObject::setOOLPointer(uint8_t* newOOLpointer) {
+  *addressOfOOLPointer() = newOOLpointer;
+}
+
+inline uint8_t** WasmStructObject::addressOfOOLPointer(
+    const wasm::TypeDefInstanceData* typeDefData) const {
+  uint32_t offset = typeDefData->cached.strukt.oolPointerOffset;
+  MOZ_RELEASE_ASSERT(offset != wasm::StructType::InvalidOffset);
+  uint8_t** addr = (uint8_t**)((uint8_t*)this + offset);
   
   
-  MOZ_RELEASE_ASSERT(
-      (fieldOffset < WasmStructObject_MaxInlineBytes) ==
-      ((fieldOffset + fieldType.size() - 1) < WasmStructObject_MaxInlineBytes));
+  MOZ_ASSERT(addr == addressOfOOLPointer());
+  return addr;
 }
 
-inline uint8_t* WasmStructObject::fieldOffsetToAddress(
-    wasm::StorageType fieldType, uint32_t fieldOffset) {
-  bool areaIsOutline;
-  uint32_t areaOffset;
-  fieldOffsetToAreaAndOffset(fieldType, fieldOffset, &areaIsOutline,
-                             &areaOffset);
-  return (areaIsOutline ? outlineData_ : inlineData()) + areaOffset;
+inline void WasmStructObject::setOOLPointer(
+    const wasm::TypeDefInstanceData* typeDefData, uint8_t* newOOLpointer) {
+  *addressOfOOLPointer(typeDefData) = newOOLpointer;
 }
 
 

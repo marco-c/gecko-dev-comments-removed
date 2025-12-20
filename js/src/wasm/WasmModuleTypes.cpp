@@ -31,6 +31,69 @@ using mozilla::CheckedInt32;
 using mozilla::MallocSizeOf;
 
 
+
+
+static CheckedInt32 RoundUpToAlignment(CheckedInt32 address, uint32_t align) {
+  MOZ_ASSERT(mozilla::IsPowerOfTwo(align));
+
+  
+  
+  
+  
+  
+  
+  
+
+  return ((address + (align - 1)) / align) * align;
+}
+
+class TagLayout {
+  mozilla::CheckedInt32 sizeSoFar = 0;
+  uint32_t tagAlignment = 1;
+
+ public:
+  
+  mozilla::CheckedInt32 addField(StorageType type) {
+    uint32_t fieldSize = type.size();
+    uint32_t fieldAlignment = type.alignmentInStruct();
+
+    MOZ_ASSERT(fieldSize >= 1 && fieldSize <= 16);
+    MOZ_ASSERT((fieldSize & (fieldSize - 1)) == 0);  
+    MOZ_ASSERT(fieldAlignment == fieldSize);         
+
+    
+    tagAlignment = std::max(tagAlignment, fieldAlignment);
+
+    
+    CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldAlignment);
+    if (!offset.isValid()) {
+      return offset;
+    }
+
+    
+    sizeSoFar = offset + fieldSize;
+    if (!sizeSoFar.isValid()) {
+      return sizeSoFar;
+    }
+
+    return offset;
+  }
+
+  
+  
+  mozilla::CheckedInt32 close() {
+    CheckedInt32 size = RoundUpToAlignment(sizeSoFar, tagAlignment);
+    
+    if (tagAlignment < sizeof(uintptr_t)) {
+      size = RoundUpToAlignment(size, sizeof(uintptr_t));
+    }
+    return size;
+  }
+};
+
+
+
+
 CacheableName CacheableName::fromUTF8Chars(UniqueChars&& utf8Chars) {
   size_t length = strlen(utf8Chars.get());
   UTF8Bytes bytes;
@@ -136,7 +199,7 @@ bool TagType::initialize(const SharedTypeDef& funcType) {
     return false;
   }
 
-  StructLayout layout;
+  TagLayout layout;
   for (size_t i = 0; i < args.length(); i++) {
     CheckedInt32 offset = layout.addField(StorageType(args[i].packed()));
     if (!offset.isValid()) {

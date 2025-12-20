@@ -2475,42 +2475,49 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
         typeDef.kind() == TypeDefKind::Array) {
       
       
-      const JSClass* clasp;
-      gc::AllocKind allocKind;
-
       if (typeDef.kind() == TypeDefKind::Struct) {
-        clasp = WasmStructObject::classForTypeDef(&typeDef);
-        allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
-        allocKind = gc::GetFinalizedAllocKindForClass(allocKind, clasp);
+        const StructType& structType = typeDef.structType();
+        bool needsOOLstorage = structType.hasOOL();
+        typeDefData->clasp =
+            WasmStructObject::classFromOOLness(needsOOLstorage);
       } else {
-        clasp = &WasmArrayObject::class_;
-        allocKind = gc::AllocKind::INVALID;
+        typeDefData->clasp = &WasmArrayObject::class_;
       }
 
       
       const ObjectFlags objectFlags = {ObjectFlag::NotExtensible};
-      typeDefData->shape =
-          WasmGCShape::getShape(cx, clasp, cx->realm(), TaggedProto(),
-                                &typeDef.recGroup(), objectFlags);
+      typeDefData->shape = WasmGCShape::getShape(
+          cx, typeDefData->clasp, cx->realm(), TaggedProto(),
+          &typeDef.recGroup(), objectFlags);
       if (!typeDefData->shape) {
         return false;
       }
 
-      typeDefData->clasp = clasp;
-      typeDefData->allocKind = allocKind;
-
       
       
       
       
-      MOZ_ASSERT(typeDefData->unused == 0);
       if (typeDef.kind() == TypeDefKind::Struct) {
-        typeDefData->structTypeSize = typeDef.structType().size_;
+        const StructType& structType = typeDef.structType();
+        typeDefData->cached.strukt.payloadOffsetIL =
+            structType.payloadOffsetIL_;
+        typeDefData->cached.strukt.totalSizeIL = structType.totalSizeIL_;
+        typeDefData->cached.strukt.totalSizeOOL = structType.totalSizeOOL_;
+        typeDefData->cached.strukt.oolPointerOffset =
+            structType.oolPointerOffset_;
+        typeDefData->cached.strukt.allocKind =
+            gc::GetFinalizedAllocKindForClass(structType.allocKind_,
+                                              typeDefData->clasp);
+        MOZ_ASSERT(!IsFinalizedKind(typeDefData->cached.strukt.allocKind));
         
-        MOZ_ASSERT((typeDefData->structTypeSize % sizeof(uintptr_t)) == 0);
+        
+        MOZ_ASSERT(
+            (typeDefData->cached.strukt.totalSizeIL % sizeof(uintptr_t)) == 0);
+        MOZ_ASSERT(
+            (typeDefData->cached.strukt.totalSizeOOL % sizeof(uintptr_t)) == 0);
       } else {
         uint32_t arrayElemSize = typeDef.arrayType().elementType().size();
-        typeDefData->arrayElemSize = arrayElemSize;
+        typeDefData->cached.array.elemSize = arrayElemSize;
         MOZ_ASSERT(arrayElemSize == 16 || arrayElemSize == 8 ||
                    arrayElemSize == 4 || arrayElemSize == 2 ||
                    arrayElemSize == 1);
@@ -4016,9 +4023,8 @@ WasmStructObject* Instance::constantStructNewDefault(JSContext* cx,
   TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
   const wasm::TypeDef* typeDef = typeDefData->typeDef;
   MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Struct);
-  uint32_t totalBytes = typeDef->structType().size_;
 
-  bool needsOOL = WasmStructObject::requiresOutlineBytes(totalBytes);
+  bool needsOOL = typeDef->structType().hasOOL();
   return needsOOL ? WasmStructObject::createStructOOL<true>(
                         cx, typeDefData, nullptr, gc::Heap::Tenured)
                   : WasmStructObject::createStructIL<true>(

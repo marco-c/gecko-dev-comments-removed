@@ -5133,22 +5133,18 @@ class FunctionCompiler {
       uint32_t fieldIndex, MDefinition* structObject, MDefinition* value,
       WasmPreBarrierKind preBarrierKind) {
     StorageType fieldType = structType.fields_[fieldIndex].type;
-    uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
+    FieldAccessPath path = structType.fieldAccessPaths_[fieldIndex];
+    uint32_t areaOffset = path.hasOOL() ? path.oolOffset() : path.ilOffset();
 
-    bool areaIsOutline;
-    uint32_t areaOffset;
-    WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
-                                                 &areaIsOutline, &areaOffset);
-
-    
     
     
     MDefinition* base;
     bool needsTrapInfo;
-    if (areaIsOutline) {
+    if (path.hasOOL()) {
+      
+      
       auto* loadDataPointer = MWasmLoadField::New(
-          alloc(), structObject, nullptr,
-          WasmStructObject::offsetOfOutlineData(), mozilla::Nothing(),
+          alloc(), structObject, nullptr, path.ilOffset(), mozilla::Nothing(),
           MIRType::WasmStructData, MWideningOp::None,
           AliasSet::Load(AliasSet::WasmStructOutlineDataPointer),
           mozilla::Some(trapSiteDesc()));
@@ -5161,14 +5157,12 @@ class FunctionCompiler {
     } else {
       base = structObject;
       needsTrapInfo = true;
-      areaOffset += WasmStructObject::offsetOfInlineData();
     }
-    
     
 
     
     
-    AliasSet::Flag fieldAliasSet = areaIsOutline
+    AliasSet::Flag fieldAliasSet = path.hasOOL()
                                        ? AliasSet::WasmStructOutlineDataArea
                                        : AliasSet::WasmStructInlineDataArea;
 
@@ -5185,22 +5179,18 @@ class FunctionCompiler {
       const StructType& structType, uint32_t fieldIndex,
       FieldWideningOp wideningOp, MDefinition* structObject) {
     StorageType fieldType = structType.fields_[fieldIndex].type;
-    uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
+    FieldAccessPath path = structType.fieldAccessPaths_[fieldIndex];
+    uint32_t areaOffset = path.hasOOL() ? path.oolOffset() : path.ilOffset();
 
-    bool areaIsOutline;
-    uint32_t areaOffset;
-    WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
-                                                 &areaIsOutline, &areaOffset);
-
-    
     
     
     MDefinition* base;
     bool needsTrapInfo;
-    if (areaIsOutline) {
+    if (path.hasOOL()) {
+      
+      
       auto* loadDataPointer = MWasmLoadField::New(
-          alloc(), structObject, nullptr,
-          WasmStructObject::offsetOfOutlineData(), mozilla::Nothing(),
+          alloc(), structObject, nullptr, path.ilOffset(), mozilla::Nothing(),
           MIRType::WasmStructData, MWideningOp::None,
           AliasSet::Load(AliasSet::WasmStructOutlineDataPointer),
           mozilla::Some(trapSiteDesc()));
@@ -5213,14 +5203,12 @@ class FunctionCompiler {
     } else {
       base = structObject;
       needsTrapInfo = true;
-      areaOffset += WasmStructObject::offsetOfInlineData();
     }
-    
     
 
     
     
-    AliasSet::Flag fieldAliasSet = areaIsOutline
+    AliasSet::Flag fieldAliasSet = path.hasOOL()
                                        ? AliasSet::WasmStructOutlineDataArea
                                        : AliasSet::WasmStructInlineDataArea;
 

@@ -7739,9 +7739,9 @@ bool BaseCompiler::emitStructAlloc(uint32_t typeIndex, RegRef* object,
                                    uint32_t allocSiteIndex) {
   const TypeDef& typeDef = (*codeMeta_.types)[typeIndex];
   const StructType& structType = typeDef.structType();
-  gc::AllocKind allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
+  gc::AllocKind allocKind = structType.allocKind_;
 
-  *isOutlineStruct = WasmStructObject::requiresOutlineBytes(structType.size_);
+  *isOutlineStruct = structType.hasOOL();
 
   
   
@@ -7865,12 +7865,7 @@ bool BaseCompiler::emitStructNew() {
   while (fieldIndex-- > 0) {
     const FieldType& field = structType.fields_[fieldIndex];
     StorageType type = field.type;
-    uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
-
-    bool areaIsOutline;
-    uint32_t areaOffset;
-    WasmStructObject::fieldOffsetToAreaAndOffset(type, fieldOffset,
-                                                 &areaIsOutline, &areaOffset);
+    FieldAccessPath path = structType.fieldAccessPaths_[fieldIndex];
 
     
     if (type.isRefRepr()) {
@@ -7882,22 +7877,21 @@ bool BaseCompiler::emitStructNew() {
       freePtr(RegPtr(PreBarrierReg));
     }
 
-    if (areaIsOutline) {
+    if (path.hasOOL()) {
       
-      masm.loadPtr(Address(object, WasmStructObject::offsetOfOutlineData()),
-                   outlineBase);
+      
+      
+      masm.loadPtr(Address(object, path.ilOffset()), outlineBase);
 
       
-      if (!emitGcStructSet<NoNullCheck>(object, outlineBase, areaOffset, type,
-                                        value, PreBarrierKind::None)) {
+      if (!emitGcStructSet<NoNullCheck>(object, outlineBase, path.oolOffset(),
+                                        type, value, PreBarrierKind::None)) {
         return false;
       }
     } else {
       
-      if (!emitGcStructSet<NoNullCheck>(
-              object, RegPtr(object),
-              WasmStructObject::offsetOfInlineData() + areaOffset, type, value,
-              PreBarrierKind::None)) {
+      if (!emitGcStructSet<NoNullCheck>(object, RegPtr(object), path.ilOffset(),
+                                        type, value, PreBarrierKind::None)) {
         return false;
       }
     }
@@ -7955,31 +7949,26 @@ bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
   }
 
   const StructType& structType = (*codeMeta_.types)[typeIndex].structType();
-
-  
-  StorageType fieldType = structType.fields_[fieldIndex].type;
-  uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
-
-  bool areaIsOutline;
-  uint32_t areaOffset;
-  WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
-                                               &areaIsOutline, &areaOffset);
+  const FieldType& structField = structType.fields_[fieldIndex];
+  StorageType fieldType = structField.type;
+  FieldAccessPath path = structType.fieldAccessPaths_[fieldIndex];
 
   RegRef object = popRef();
-  if (areaIsOutline) {
+  if (path.hasOOL()) {
+    
+    
     RegPtr outlineBase = needPtr();
-    FaultingCodeOffset fco = masm.loadPtr(
-        Address(object, WasmStructObject::offsetOfOutlineData()), outlineBase);
+    FaultingCodeOffset fco =
+        masm.loadPtr(Address(object, path.ilOffset()), outlineBase);
     SignalNullCheck::emitTrapSite(this, fco, TrapMachineInsnForLoadWord());
     
     emitGcGet<Address, NoNullCheck>(fieldType, wideningOp,
-                                    Address(outlineBase, areaOffset));
+                                    Address(outlineBase, path.oolOffset()));
     freePtr(outlineBase);
   } else {
     
-    emitGcGet<Address, SignalNullCheck>(
-        fieldType, wideningOp,
-        Address(object, WasmStructObject::offsetOfInlineData() + areaOffset));
+    emitGcGet<Address, SignalNullCheck>(fieldType, wideningOp,
+                                        Address(object, path.ilOffset()));
   }
   freeRef(object);
 
@@ -8000,52 +7989,48 @@ bool BaseCompiler::emitStructSet() {
 
   const StructType& structType = (*codeMeta_.types)[typeIndex].structType();
   const FieldType& structField = structType.fields_[fieldIndex];
-
-  
-  StorageType fieldType = structType.fields_[fieldIndex].type;
-  uint32_t fieldOffset = structType.fieldOffset(fieldIndex);
-
-  bool areaIsOutline;
-  uint32_t areaOffset;
-  WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
-                                               &areaIsOutline, &areaOffset);
+  StorageType fieldType = structField.type;
+  FieldAccessPath path = structType.fieldAccessPaths_[fieldIndex];
 
   
   
-  if (structField.type.isRefRepr()) {
+  if (fieldType.isRefRepr()) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
-  RegPtr outlineBase = areaIsOutline ? needPtr() : RegPtr();
+  
+  RegPtr outlineBase = path.hasOOL() ? needPtr() : RegPtr();
   AnyReg value = popAny();
   RegRef object = popRef();
 
   
-  if (structField.type.isRefRepr()) {
+  if (fieldType.isRefRepr()) {
     freePtr(RegPtr(PreBarrierReg));
   }
 
-  
-  if (areaIsOutline) {
-    FaultingCodeOffset fco = masm.loadPtr(
-        Address(object, WasmStructObject::offsetOfOutlineData()), outlineBase);
+  if (path.hasOOL()) {
+    
+    
+    
+    FaultingCodeOffset fco =
+        masm.loadPtr(Address(object, path.ilOffset()), outlineBase);
     SignalNullCheck::emitTrapSite(this, fco, TrapMachineInsnForLoadWord());
-    if (!emitGcStructSet<NoNullCheck>(object, outlineBase, areaOffset,
+    
+    if (!emitGcStructSet<NoNullCheck>(object, outlineBase, path.oolOffset(),
                                       fieldType, value,
                                       PreBarrierKind::Normal)) {
       return false;
     }
   } else {
     
-    if (!emitGcStructSet<SignalNullCheck>(
-            object, RegPtr(object),
-            WasmStructObject::offsetOfInlineData() + areaOffset, fieldType,
-            value, PreBarrierKind::Normal)) {
+    if (!emitGcStructSet<SignalNullCheck>(object, RegPtr(object),
+                                          path.ilOffset(), fieldType, value,
+                                          PreBarrierKind::Normal)) {
       return false;
     }
   }
 
-  if (areaIsOutline) {
+  if (path.hasOOL()) {
     freePtr(outlineBase);
   }
   freeRef(object);
