@@ -13,54 +13,52 @@ const {
 
 
 
-function Visitor() {}
+class Visitor {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  enter() {}
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  exit() {}
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  count() {}
+}
 exports.Visitor = Visitor;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Visitor.prototype.enter = function () {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Visitor.prototype.exit = function () {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Visitor.prototype.count = function () {};
 
 
 
@@ -193,141 +191,6 @@ function isMap(obj) {
   return Object.prototype.toString.call(obj) === "[object Map]";
 }
 
-
-
-
-
-
-
-
-function DiffVisitor(otherCensus) {
-  
-  this._otherCensus = otherCensus;
-
-  
-  this._totalBytes = 0;
-  this._totalCount = 0;
-
-  
-  
-  this._otherCensusStack = [];
-
-  
-  this._edgesVisited = [new Set()];
-
-  
-  this._results = null;
-
-  
-  
-  this._resultsStack = [];
-}
-
-DiffVisitor.prototype = Object.create(Visitor.prototype);
-
-
-
-
-DiffVisitor.prototype._get = function (report, edge) {
-  if (!report) {
-    return undefined;
-  }
-  return isMap(report) ? report.get(edge) : report[edge];
-};
-
-
-
-
-
-DiffVisitor.prototype._set = function (report, edge, val) {
-  if (isMap(report)) {
-    report.set(edge, val);
-  } else {
-    report[edge] = val;
-  }
-};
-
-
-
-
-DiffVisitor.prototype.enter = function (breakdown, report, edge) {
-  const newResults = breakdown.by === "allocationStack" ? new Map() : {};
-  let newOther;
-
-  if (!this._results) {
-    
-    this._results = newResults;
-    newOther = this._otherCensus;
-  } else {
-    const topResults = this._resultsStack[this._resultsStack.length - 1];
-    this._set(topResults, edge, newResults);
-
-    const topOther = this._otherCensusStack[this._otherCensusStack.length - 1];
-    newOther = this._get(topOther, edge);
-  }
-
-  this._resultsStack.push(newResults);
-  this._otherCensusStack.push(newOther);
-
-  const visited = this._edgesVisited[this._edgesVisited.length - 1];
-  visited.add(edge);
-  this._edgesVisited.push(new Set());
-};
-
-
-
-
-DiffVisitor.prototype.exit = function (breakdown) {
-  
-  
-  const other = this._otherCensusStack[this._otherCensusStack.length - 1];
-  if (other) {
-    const visited = this._edgesVisited[this._edgesVisited.length - 1];
-    const unvisited = getReportEdges(breakdown, other)
-      .map(e => e.edge)
-      .filter(e => !visited.has(e));
-    const results = this._resultsStack[this._resultsStack.length - 1];
-    for (const edg of unvisited) {
-      this._set(results, edg, this._get(other, edg));
-    }
-  }
-
-  this._otherCensusStack.pop();
-  this._resultsStack.pop();
-  this._edgesVisited.pop();
-};
-
-
-
-
-DiffVisitor.prototype.count = function (breakdown, report) {
-  const other = this._otherCensusStack[this._otherCensusStack.length - 1];
-  const results = this._resultsStack[this._resultsStack.length - 1];
-
-  if (breakdown.count) {
-    this._totalCount += report.count;
-  }
-  if (breakdown.bytes) {
-    this._totalBytes += report.bytes;
-  }
-
-  if (other) {
-    if (breakdown.count) {
-      results.count = other.count - report.count;
-    }
-    if (breakdown.bytes) {
-      results.bytes = other.bytes - report.bytes;
-    }
-  } else {
-    if (breakdown.count) {
-      results.count = -report.count;
-    }
-    if (breakdown.bytes) {
-      results.bytes = -report.bytes;
-    }
-  }
-};
-
 const basisTotalBytes = (exports.basisTotalBytes = Symbol("basisTotalBytes"));
 const basisTotalCount = (exports.basisTotalCount = Symbol("basisTotalCount"));
 
@@ -335,23 +198,157 @@ const basisTotalCount = (exports.basisTotalCount = Symbol("basisTotalCount"));
 
 
 
+class DiffVisitor extends Visitor {
+  
 
 
 
-DiffVisitor.prototype.results = function () {
-  if (!this._results) {
-    throw new Error("Attempt to get results before computing diff!");
+  constructor(otherCensus) {
+    super();
+
+    
+    this._otherCensus = otherCensus;
+
+    
+    this._totalBytes = 0;
+    this._totalCount = 0;
+
+    
+    
+    this._otherCensusStack = [];
+
+    
+    this._edgesVisited = [new Set()];
+
+    
+    this._results = null;
+
+    
+    
+    this._resultsStack = [];
+  }
+  
+
+
+  _get(report, edge) {
+    if (!report) {
+      return undefined;
+    }
+    return isMap(report) ? report.get(edge) : report[edge];
+  }
+  
+
+
+
+  _set(report, edge, val) {
+    if (isMap(report)) {
+      report.set(edge, val);
+    } else {
+      report[edge] = val;
+    }
+  }
+  
+
+
+  enter(breakdown, report, edge) {
+    const newResults = breakdown.by === "allocationStack" ? new Map() : {};
+    let newOther;
+
+    if (!this._results) {
+      
+      this._results = newResults;
+      newOther = this._otherCensus;
+    } else {
+      const topResults = this._resultsStack[this._resultsStack.length - 1];
+      this._set(topResults, edge, newResults);
+
+      const topOther =
+        this._otherCensusStack[this._otherCensusStack.length - 1];
+      newOther = this._get(topOther, edge);
+    }
+
+    this._resultsStack.push(newResults);
+    this._otherCensusStack.push(newOther);
+
+    const visited = this._edgesVisited[this._edgesVisited.length - 1];
+    visited.add(edge);
+    this._edgesVisited.push(new Set());
+  }
+  
+
+
+  exit(breakdown) {
+    
+    
+    const other = this._otherCensusStack[this._otherCensusStack.length - 1];
+    if (other) {
+      const visited = this._edgesVisited[this._edgesVisited.length - 1];
+      const unvisited = getReportEdges(breakdown, other)
+        .map(e => e.edge)
+        .filter(e => !visited.has(e));
+      const results = this._resultsStack[this._resultsStack.length - 1];
+      for (const edg of unvisited) {
+        this._set(results, edg, this._get(other, edg));
+      }
+    }
+
+    this._otherCensusStack.pop();
+    this._resultsStack.pop();
+    this._edgesVisited.pop();
+  }
+  
+
+
+  count(breakdown, report) {
+    const other = this._otherCensusStack[this._otherCensusStack.length - 1];
+    const results = this._resultsStack[this._resultsStack.length - 1];
+
+    if (breakdown.count) {
+      this._totalCount += report.count;
+    }
+    if (breakdown.bytes) {
+      this._totalBytes += report.bytes;
+    }
+
+    if (other) {
+      if (breakdown.count) {
+        results.count = other.count - report.count;
+      }
+      if (breakdown.bytes) {
+        results.bytes = other.bytes - report.bytes;
+      }
+    } else {
+      if (breakdown.count) {
+        results.count = -report.count;
+      }
+      if (breakdown.bytes) {
+        results.bytes = -report.bytes;
+      }
+    }
   }
 
-  if (this._resultsStack.length) {
-    throw new Error("Attempt to get results while still computing diff!");
+  
+
+
+
+
+
+
+  results() {
+    if (!this._results) {
+      throw new Error("Attempt to get results before computing diff!");
+    }
+
+    if (this._resultsStack.length) {
+      throw new Error("Attempt to get results while still computing diff!");
+    }
+
+    this._results[basisTotalBytes] = this._totalBytes;
+    this._results[basisTotalCount] = this._totalCount;
+
+    return this._results;
   }
-
-  this._results[basisTotalBytes] = this._totalBytes;
-  this._results[basisTotalCount] = this._totalCount;
-
-  return this._results;
-};
+}
 
 
 
@@ -436,33 +433,33 @@ exports.countToBucketBreakdown = function (breakdown) {
 
 
 
-function GetLeavesVisitor(targetIndices) {
-  this._index = -1;
-  this._targetIndices = targetIndices;
-  this._leaves = [];
+class GetLeavesVisitor extends Visitor {
+  constructor(targetIndices) {
+    super();
+
+    this._index = -1;
+    this._targetIndices = targetIndices;
+    this._leaves = [];
+  }
+  
+
+
+  enter(breakdown, report) {
+    this._index++;
+    if (this._targetIndices.has(this._index)) {
+      this._leaves.push(report);
+    }
+  }
+  
+
+
+  leaves() {
+    if (this._index === -1) {
+      throw new Error("Attempt to call `leaves` before traversing report!");
+    }
+    return this._leaves;
+  }
 }
-
-GetLeavesVisitor.prototype = Object.create(Visitor.prototype);
-
-
-
-
-GetLeavesVisitor.prototype.enter = function (breakdown, report) {
-  this._index++;
-  if (this._targetIndices.has(this._index)) {
-    this._leaves.push(report);
-  }
-};
-
-
-
-
-GetLeavesVisitor.prototype.leaves = function () {
-  if (this._index === -1) {
-    throw new Error("Attempt to call `leaves` before traversing report!");
-  }
-  return this._leaves;
-};
 
 
 
