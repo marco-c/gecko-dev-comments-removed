@@ -1391,12 +1391,14 @@ void GCRuntime::sweepMisc() {
 }
 
 void GCRuntime::sweepCompressionTasks() {
-  JSRuntime* runtime = rt;
+  
+  
+  rt->pendingCompressions().eraseIf(
+      [&](const auto& entry) { return entry.shouldCancel(); });
 
   
   AutoLockHelperThreadState lock;
-  AttachFinishedCompressions(runtime, lock);
-  SweepPendingCompressions(lock);
+  AttachFinishedCompressions(rt, lock);
 }
 
 void GCRuntime::sweepWeakMaps() {

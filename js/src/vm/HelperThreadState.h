@@ -180,9 +180,6 @@ class GlobalHelperThreadState {
   FreeDelazifyTaskVector freeDelazifyTaskVector_;
 
   
-  SourceCompressionTaskVector compressionPendingList_;
-
-  
   SourceCompressionTaskVector compressionWorklist_;
 
   
@@ -352,11 +349,6 @@ class GlobalHelperThreadState {
     return freeDelazifyTaskVector_;
   }
 
-  SourceCompressionTaskVector& compressionPendingList(
-      const AutoLockHelperThreadState&) {
-    return compressionPendingList_;
-  }
-
   SourceCompressionTaskVector& compressionWorklist(
       const AutoLockHelperThreadState&) {
     return compressionWorklist_;
@@ -438,12 +430,10 @@ class GlobalHelperThreadState {
  public:
   
   enum class ScheduleCompressionTask { GC, API };
-  void startHandlingCompressionTasks(ScheduleCompressionTask schedule,
-                                     JSRuntime* maybeRuntime,
-                                     const AutoLockHelperThreadState& lock);
+  void createAndSubmitCompressionTasks(ScheduleCompressionTask schedule,
+                                       JSRuntime* rt);
 
-  void runPendingSourceCompressions(JSRuntime* runtime,
-                                    AutoLockHelperThreadState& lock);
+  void runPendingSourceCompressions(JSRuntime* runtime);
 
   void trace(JSTracer* trc);
 
@@ -591,12 +581,6 @@ struct FreeDelazifyTask : public HelperThreadTask {
 
 
 
-
-
-
-
-
-
 class SourceCompressionTask : public HelperThreadTask {
   friend class HelperThread;
   friend class ScriptSource;
@@ -604,9 +588,6 @@ class SourceCompressionTask : public HelperThreadTask {
   
   
   JSRuntime* runtime_;
-
-  
-  uint64_t majorGCNumber_;
 
   
   RefPtr<ScriptSource> source_;
@@ -618,20 +599,13 @@ class SourceCompressionTask : public HelperThreadTask {
   SharedImmutableString resultString_;
 
  public:
-  
   SourceCompressionTask(JSRuntime* rt, ScriptSource* source)
-      : runtime_(rt), majorGCNumber_(rt->gc.majorGCCount()), source_(source) {
+      : runtime_(rt), source_(source) {
     source->noteSourceCompressionTask();
   }
   virtual ~SourceCompressionTask() = default;
 
   bool runtimeMatches(JSRuntime* runtime) const { return runtime == runtime_; }
-  bool shouldStart() const {
-    
-    
-    
-    return !shouldCancel() && runtime_->gc.majorGCCount() > majorGCNumber_ + 1;
-  }
 
   bool shouldCancel() const {
     

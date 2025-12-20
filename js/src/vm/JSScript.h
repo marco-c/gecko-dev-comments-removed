@@ -392,6 +392,7 @@ class ScriptSource {
   
   
 
+  friend class PendingSourceCompressionEntry;
   friend class SourceCompressionTask;
   friend bool SynchronouslyCompressSource(JSContext* cx,
                                           JS::Handle<BaseScript*> script);
@@ -1441,6 +1442,37 @@ class alignas(uintptr_t) PrivateScriptData final
   
   PrivateScriptData(const PrivateScriptData&) = delete;
   PrivateScriptData& operator=(const PrivateScriptData&) = delete;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+class PendingSourceCompressionEntry {
+  
+  uint64_t majorGCNumber_;
+
+  
+  RefPtr<ScriptSource> source_;
+
+ public:
+  PendingSourceCompressionEntry(JSRuntime* rt, ScriptSource* source);
+
+  ScriptSource* source() const { return source_.get(); }
+  uint64_t majorGCNumber() const { return majorGCNumber_; }
+  bool shouldCancel() const {
+    
+    
+    
+    return source_->refs == 1;
+  }
 };
 
 
