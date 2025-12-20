@@ -1210,54 +1210,68 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
                                      aAnchorPosResolutionCache,
                                      firstTryIndex == currentFallbackIndex);
     auto cb = [&]() {
-      if (aAnchorPosResolutionCache) {
-        const auto defaultAnchorInfo =
-            AnchorPositioningUtils::ResolveAnchorPosRect(
-                aKidFrame, aDelegatingFrame, nullptr, false,
-                aAnchorPosResolutionCache);
-        if (defaultAnchorInfo) {
-          auto positionArea = aKidFrame->StylePosition()->mPositionArea;
-          if (!positionArea.IsNone()) {
-            
-            
-            const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
-                aAnchorPosResolutionCache->mReferenceData
-                    ->CompensatingForScrollAxes(),
-                aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
-            
-            
-            
-            
-            
-            
-            const auto scrolledAnchorRect = defaultAnchorInfo->mRect - offset;
-            StylePositionArea resolvedPositionArea{};
-            const auto scrolledAnchorCb = AnchorPositioningUtils::
-                AdjustAbsoluteContainingBlockRectForPositionArea(
-                    scrolledAnchorRect + aOriginalContainingBlockRect.TopLeft(),
-                    aOriginalScrollableContainingBlockRect,
-                    aKidFrame->GetWritingMode(),
-                    aDelegatingFrame->GetWritingMode(), positionArea,
-                    &resolvedPositionArea);
-            return ContainingBlockRect{
-                offset, resolvedPositionArea,
-                aOriginalScrollableContainingBlockRect,
-                
-                
-                scrolledAnchorCb + offset};
-          }
-          return ContainingBlockRect{aOriginalScrollableContainingBlockRect};
+      
+      
+      nsRect containingBlock = aOriginalContainingBlockRect;
+      const auto defaultAnchorInfo = [&]() -> Maybe<AnchorPosInfo> {
+        if (!aAnchorPosResolutionCache) {
+          return Nothing{};
         }
+        return AnchorPositioningUtils::ResolveAnchorPosRect(
+            aKidFrame, aDelegatingFrame, nullptr, false,
+            aAnchorPosResolutionCache);
+      }();
+      if (defaultAnchorInfo) {
+        
+        
+        
+        containingBlock = aOriginalScrollableContainingBlockRect;
       }
 
+      
+      
       if (isGrid) {
-        
-        
         const auto border = aDelegatingFrame->GetUsedBorder();
         const nsPoint borderShift{border.left, border.top};
         
-        return ContainingBlockRect{nsGridContainerFrame::GridItemCB(aKidFrame) +
-                                   borderShift};
+        containingBlock =
+            nsGridContainerFrame::GridItemCB(aKidFrame) + borderShift;
+        if (!defaultAnchorInfo) {
+          return ContainingBlockRect{containingBlock};
+        }
+      }
+      
+      if (defaultAnchorInfo) {
+        auto positionArea = aKidFrame->StylePosition()->mPositionArea;
+        if (!positionArea.IsNone()) {
+          
+          
+          const auto offset = AnchorPositioningUtils::GetScrollOffsetFor(
+              aAnchorPosResolutionCache->mReferenceData
+                  ->CompensatingForScrollAxes(),
+              aKidFrame, aAnchorPosResolutionCache->mDefaultAnchorCache);
+          
+          
+          
+          
+          
+          
+          const auto scrolledAnchorRect = defaultAnchorInfo->mRect - offset;
+          StylePositionArea resolvedPositionArea{};
+          const auto scrolledAnchorCb = AnchorPositioningUtils::
+              AdjustAbsoluteContainingBlockRectForPositionArea(
+                  scrolledAnchorRect + aOriginalContainingBlockRect.TopLeft(),
+                  containingBlock, aKidFrame->GetWritingMode(),
+                  aDelegatingFrame->GetWritingMode(), positionArea,
+                  &resolvedPositionArea);
+          return ContainingBlockRect{
+              offset, resolvedPositionArea,
+              aOriginalScrollableContainingBlockRect,
+              
+              
+              scrolledAnchorCb + offset};
+        }
+        return ContainingBlockRect{containingBlock};
       }
 
       if (ViewportFrame* viewport = do_QueryFrame(aDelegatingFrame)) {
@@ -1269,7 +1283,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
             dom::ViewTransition::SnapshotContainingBlockRect(
                 viewport->PresContext())};
       }
-      return ContainingBlockRect{aOriginalContainingBlockRect};
+      return ContainingBlockRect{containingBlock};
     }();
     if (aAnchorPosResolutionCache) {
       const auto& originalCb = cb.mMaybeScrollableRect;
