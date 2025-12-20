@@ -670,7 +670,7 @@ class CssLogic {
         
         if (
           
-          (rule.getPropertyValue(property) ||
+          (rule.isPropertyAssigned(property) ||
             
             (property.startsWith("--") &&
               
@@ -1119,6 +1119,16 @@ class CssRule {
 
 
 
+  isPropertyAssigned(property) {
+    return this.getStyle().hasLonghandProperty(property);
+  }
+
+  
+
+
+
+
+
 
   getPropertyPriority(property) {
     return this.getStyle().getPropertyPriority(property);
@@ -1410,9 +1420,8 @@ class CssPropertyInfo {
 
   #processMatchedSelector(selector, status, distance) {
     const cssRule = selector.cssRule;
-    const value = cssRule.getPropertyValue(this.property);
     if (
-      value &&
+      cssRule.isPropertyAssigned(this.property) &&
       (status == STATUS.MATCHED ||
         (status == STATUS.PARENT_MATCH &&
           InspectorUtils.isInheritedProperty(
@@ -1423,7 +1432,11 @@ class CssPropertyInfo {
       const selectorInfo = new CssSelectorInfo(
         selector,
         this.property,
-        value,
+        
+        
+        
+        
+        cssRule.getPropertyValue(this.property),
         status,
         distance
       );
