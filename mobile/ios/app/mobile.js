@@ -5,7 +5,13 @@
 
 
 pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml");
-pref("gfx.webrender.software", true);
+
+
+#if TARGET_OS_SIMULATOR
+  pref("gfx.webrender.software", true);
+#endif
+
+
 pref("security.sandbox.content.level", 1);
 
 
