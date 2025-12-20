@@ -1244,7 +1244,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
         if (LOAD_TYPE_HAS_FLAGS(aLoadType,
                                 nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
           
-          int32_t index = shistory->GetIndexForReplace();
+          int32_t index = shistory->GetTargetIndexForHistoryOperation();
 
           
           
@@ -1613,9 +1613,7 @@ Maybe<int32_t> CanonicalBrowsingContext::HistoryGo(
     return Nothing();
   }
 
-  CheckedInt<int32_t> index = shistory->GetRequestedIndex() >= 0
-                                  ? shistory->GetRequestedIndex()
-                                  : shistory->Index();
+  CheckedInt<int32_t> index = shistory->GetTargetIndexForHistoryOperation();
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("HistoryGo(%d->%d) epoch %" PRIu64 "/id %" PRIu64, aOffset,
            (index + aOffset).value(), aHistoryEpoch,
@@ -1716,10 +1714,12 @@ void CanonicalBrowsingContext::NavigationTraverse(
         return true;
       });
 
+  
   if (!targetEntry) {
     return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
 
+  
   if (targetEntry == mActiveEntry) {
     return aResolver(NS_OK);
   }
@@ -1736,8 +1736,16 @@ void CanonicalBrowsingContext::NavigationTraverse(
   }
 
   int32_t offset = targetIndex - activeIndex;
-  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Performing traversal by {}",
-              offset);
+
+  int32_t requestedIndex = shistory->GetTargetIndexForHistoryOperation();
+  
+  if (requestedIndex == targetIndex) {
+    return aResolver(NS_OK);
+  }
+
+  
+  
+  shistory->InternalSetRequestedIndex(-1);
 
   HistoryGo(offset, aHistoryEpoch, false, aUserActivation, aCheckForCancelation,
             aContentId, std::move(aResolver));

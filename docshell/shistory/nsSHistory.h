@@ -202,7 +202,8 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     }
   }
 
-  int32_t GetIndexForReplace() {
+  int32_t GetTargetIndexForHistoryOperation() {
+    
     
     
     
