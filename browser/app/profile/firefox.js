@@ -2376,6 +2376,9 @@ pref("browser.translation.neverForLanguages", "");
 pref("browser.translations.enable", true);
 
 
+pref("browser.translations.newSettingsUI.enable", false);
+
+
 
 pref("browser.translations.select.enable", true);
 
