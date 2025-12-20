@@ -1866,8 +1866,10 @@ impl Device {
         
         
         
-        let supports_render_target_partial_update =
-            !is_mali_midgard(&renderer_name) && !is_mali_bifrost(&renderer_name);
+        
+        let supports_render_target_partial_update = !is_mali_midgard(&renderer_name)
+            && !is_mali_bifrost(&renderer_name)
+            && !renderer_name.starts_with("PowerVR D-Series");
 
         let supports_shader_storage_object = match gl.get_type() {
             
