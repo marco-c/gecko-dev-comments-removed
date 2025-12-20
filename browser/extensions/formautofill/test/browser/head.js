@@ -345,9 +345,7 @@ function getDisplayedPopupItems(
   } = browser;
   const listItemElems = itemsBox.querySelectorAll(selector);
 
-  return [...listItemElems].filter(
-    item => item.getAttribute("collapsed") != "true"
-  );
+  return [...listItemElems].filter(item => !item.hasAttribute("collapsed"));
 }
 
 async function sleep(ms = 500) {
@@ -1219,7 +1217,10 @@ async function verifyPreviewResult(browser, section, expectedSection) {
       if (content.HTMLSelectElement.isInstance(element)) {
         if (obj.expected) {
           for (let idx = 0; idx < element.options.length; idx++) {
-            if (element.options[idx].value == obj.expected) {
+            if (
+              element.options[idx].value == obj.expected &&
+              element.previewValue == element.options[idx].text
+            ) {
               obj.expected = element.options[idx].text;
               break;
             }
