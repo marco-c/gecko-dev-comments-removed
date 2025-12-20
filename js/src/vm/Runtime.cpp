@@ -394,7 +394,8 @@ static bool InvokeInterruptCallbacks(JSContext* cx) {
   return stop;
 }
 
-static bool HandleInterrupt(JSContext* cx, bool invokeCallback, bool oomStackTrace) {
+static bool HandleInterrupt(JSContext* cx, bool invokeCallback,
+                            bool oomStackTrace) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
 
   cx->runtime()->gc.gcIfRequested();
@@ -409,6 +410,7 @@ static bool HandleInterrupt(JSContext* cx, bool invokeCallback, bool oomStackTra
     cx->captureOOMStackTrace();
   }
 
+  
   
   if (!invokeCallback) {
     return true;
