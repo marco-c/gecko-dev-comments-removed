@@ -162,7 +162,6 @@ static constexpr Register IntArgReg4 = a4;
 static constexpr Register IntArgReg5 = a5;
 static constexpr Register IntArgReg6 = a6;
 static constexpr Register IntArgReg7 = a7;
-static constexpr Register HeapReg = s7;
 
 
 
@@ -191,12 +190,9 @@ static constexpr Register ABINonArgReg2 = t2;
 static constexpr Register ABINonArgReg3 = t3;
 
 
-
 static constexpr Register ABINonArgReturnReg0 = t0;
 static constexpr Register ABINonArgReturnReg1 = t1;
 static constexpr Register ABINonVolatileReg = s0;
-
-
 
 
 static constexpr Register ABINonArgReturnVolatileReg = ra;
@@ -208,8 +204,8 @@ static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::f21,
 
 
 
-
 static constexpr Register InstanceReg = s4;
+static constexpr Register HeapReg = s7;
 
 
 

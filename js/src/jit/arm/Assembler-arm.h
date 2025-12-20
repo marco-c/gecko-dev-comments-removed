@@ -89,7 +89,6 @@ static constexpr Register IntArgReg0 = r0;
 static constexpr Register IntArgReg1 = r1;
 static constexpr Register IntArgReg2 = r2;
 static constexpr Register IntArgReg3 = r3;
-static constexpr Register HeapReg = r10;
 static constexpr Register CallTempNonArgRegs[] = {r5, r6, r7, r8};
 static const uint32_t NumCallTempNonArgRegs = std::size(CallTempNonArgRegs);
 
@@ -178,20 +177,17 @@ static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::d8,
                                                   VFPRegister::Double};
 
 
-
 static constexpr Register ABINonArgReturnReg0 = r4;
 static constexpr Register ABINonArgReturnReg1 = r5;
 static constexpr Register ABINonVolatileReg = r6;
-
-
 
 
 static constexpr Register ABINonArgReturnVolatileReg = lr;
 
 
 
-
 static constexpr Register InstanceReg = r9;
+static constexpr Register HeapReg = r10;
 
 
 

@@ -97,7 +97,6 @@ struct ScratchRegisterScope : public AutoRegisterScope {
 };
 
 static constexpr Register ReturnReg = rax;
-static constexpr Register HeapReg = r15;
 static constexpr Register64 ReturnReg64(rax);
 static constexpr FloatRegister ReturnFloat32Reg =
     FloatRegister(X86Encoding::xmm0, FloatRegisters::Single);
@@ -209,20 +208,17 @@ static constexpr FloatRegister ABINonArgDoubleReg =
     FloatRegister(X86Encoding::xmm8, FloatRegisters::Double);
 
 
-
 static constexpr Register ABINonArgReturnReg0 = r10;
 static constexpr Register ABINonArgReturnReg1 = r12;
 static constexpr Register ABINonVolatileReg = r13;
-
-
 
 
 static constexpr Register ABINonArgReturnVolatileReg = r10;
 
 
 
-
 static constexpr Register InstanceReg = r14;
+static constexpr Register HeapReg = r15;
 
 
 

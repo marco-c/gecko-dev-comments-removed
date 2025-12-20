@@ -127,7 +127,6 @@ static constexpr Register IntArgReg4{Registers::a4};
 static constexpr Register IntArgReg5{Registers::a5};
 static constexpr Register IntArgReg6{Registers::a6};
 static constexpr Register IntArgReg7{Registers::a7};
-static constexpr Register HeapReg{Registers::s7};
 
 
 
@@ -156,12 +155,9 @@ static constexpr Register ABINonArgReg2{Registers::t2};
 static constexpr Register ABINonArgReg3{Registers::t3};
 
 
-
 static constexpr Register ABINonArgReturnReg0{Registers::t0};
 static constexpr Register ABINonArgReturnReg1{Registers::t1};
 static constexpr Register ABINonVolatileReg{Registers::s1};
-
-
 
 
 static constexpr Register ABINonArgReturnVolatileReg{Registers::t0};
@@ -177,8 +173,8 @@ static constexpr Register WasmTableCallIndexReg{ABINonArgReg3};
 
 
 
-
 static constexpr Register InstanceReg{Registers::s4};
+static constexpr Register HeapReg{Registers::s7};
 
 static constexpr Register WasmJitEntryReturnScratch{Registers::t1};
 

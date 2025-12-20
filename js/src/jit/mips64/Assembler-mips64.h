@@ -44,16 +44,12 @@ static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::f21,
                                                   FloatRegisters::Double};
 
 
-
 static constexpr Register ABINonArgReturnReg0 = t4;
 static constexpr Register ABINonArgReturnReg1 = t5;
 static constexpr Register ABINonVolatileReg = s0;
 
 
-
-
 static constexpr Register ABINonArgReturnVolatileReg = t4;
-
 
 
 

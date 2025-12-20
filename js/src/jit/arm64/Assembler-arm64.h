@@ -358,7 +358,6 @@ static constexpr Register IntArgReg4{Registers::x4};
 static constexpr Register IntArgReg5{Registers::x5};
 static constexpr Register IntArgReg6{Registers::x6};
 static constexpr Register IntArgReg7{Registers::x7};
-static constexpr Register HeapReg{Registers::x21};
 
 
 #define DEFINE_UNSIZED_REGISTERS(N) \
@@ -692,20 +691,17 @@ static constexpr FloatRegister ABINonArgDoubleReg = {FloatRegisters::s16,
                                                      FloatRegisters::Single};
 
 
-
 static constexpr Register ABINonArgReturnReg0 = r8;
 static constexpr Register ABINonArgReturnReg1 = r9;
 static constexpr Register ABINonVolatileReg{Registers::x19};
 
 
-
-
-static constexpr Register ABINonArgReturnVolatileReg = lr;
-
+static constexpr Register ABINonArgReturnVolatileReg = r8;
 
 
 
 static constexpr Register InstanceReg{Registers::x23};
+static constexpr Register HeapReg{Registers::x21};
 
 
 
