@@ -4417,6 +4417,8 @@ static void GetAnimationsUnsortedForSubtree(
       GetAnimationsUnsorted(element, PseudoStyleRequest::Before(), aAnimations);
       GetAnimationsUnsorted(element, PseudoStyleRequest::After(), aAnimations);
       GetAnimationsUnsorted(element, PseudoStyleRequest::Marker(), aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::Backdrop(),
+                            aAnimations);
     }
   }
 
@@ -4477,6 +4479,9 @@ void Element::GetAnimationsWithoutFlush(
   } else if (IsGeneratedContentContainerForMarker()) {
     elem = GetParentElement();
     pseudoRequest.mType = PseudoStyleType::marker;
+  } else if (IsGeneratedContentContainerForBackdrop()) {
+    elem = GetParentElement();
+    pseudoRequest.mType = PseudoStyleType::backdrop;
   }
 
   if (!elem) {
@@ -4486,6 +4491,7 @@ void Element::GetAnimationsWithoutFlush(
   
   if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::before ||
                              pseudoRequest.mType == PseudoStyleType::after ||
+                             pseudoRequest.mType == PseudoStyleType::backdrop ||
                              pseudoRequest.mType == PseudoStyleType::marker)) {
     
     
@@ -4511,7 +4517,8 @@ void Element::CloneAnimationsFrom(const Element& aOther) {
   
   for (PseudoStyleType pseudoType :
        {PseudoStyleType::NotPseudo, PseudoStyleType::before,
-        PseudoStyleType::after, PseudoStyleType::marker}) {
+        PseudoStyleType::after, PseudoStyleType::marker,
+        PseudoStyleType::backdrop}) {
     
     
     const PseudoStyleRequest request(pseudoType);
@@ -4915,6 +4922,8 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
       return nsLayoutUtils::GetAfterPseudo(this);
     case PseudoStyleType::marker:
       return nsLayoutUtils::GetMarkerPseudo(this);
+    case PseudoStyleType::backdrop:
+      return nsLayoutUtils::GetBackdropPseudo(this);
     case PseudoStyleType::viewTransition:
     case PseudoStyleType::viewTransitionGroup:
     case PseudoStyleType::viewTransitionImagePair:

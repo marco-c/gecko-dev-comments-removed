@@ -251,6 +251,8 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   nsIContent* videoControlsDiv = GetVideoControls();
+  const nsSize containerSize =
+      aReflowInput.ComputedSizeAsContainerIfConstrained();
 
   
   
@@ -264,8 +266,6 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     ReflowInput kidReflowInput(aPresContext, aReflowInput, child,
                                availableSize);
     ReflowOutput kidDesiredSize(myWM);
-    const nsSize containerSize =
-        aReflowInput.ComputedSizeAsContainerIfConstrained();
 
     if (child->GetContent() == mPosterImage) {
       
@@ -323,7 +323,8 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         }
       }
     } else {
-      NS_ERROR("Unexpected extra child frame in nsVideoFrame; skipping");
+      
+      MOZ_ASSERT(child->IsPlaceholderFrame());
     }
   }
 

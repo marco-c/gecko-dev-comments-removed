@@ -1715,6 +1715,12 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   
+  bool IsGeneratedContentContainerForBackdrop() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbackdrop;
+  }
+
+  
 
 
 

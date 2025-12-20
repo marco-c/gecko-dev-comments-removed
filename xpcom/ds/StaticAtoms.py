@@ -59,6 +59,7 @@ STATIC_ATOMS = [
     Atom("mozgeneratedcontentafter", "_moz_generated_content_after"),
     Atom("mozgeneratedcontentmarker", "_moz_generated_content_marker"),
     Atom("mozgeneratedcontentimage", "_moz_generated_content_image"),
+    Atom("mozgeneratedcontentbackdrop", "_moz_generated_content_backdrop"),
     Atom("mozquote", "_moz_quote"),
     Atom("mozsignature", "moz-signature"),  
     Atom("_moz_bullet_font", "-moz-bullet-font"),
@@ -2219,6 +2220,7 @@ STATIC_ATOMS = [
     Atom("pseudoProperty", "PseudoProperty"),  
     Atom("manualNACProperty", "ManualNACProperty"),  
     Atom("markerPseudoProperty", "markerPseudoProperty"),  
+    Atom("backdropPseudoProperty", "backdropPseudoProperty"),  
     
     Atom("Japanese", "ja"),
     Atom("Chinese", "zh-CN"),

@@ -106,8 +106,12 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
       !mOutOfFlowFrame->IsMenuPopupFrame() &&
+      mOutOfFlowFrame->Style()->GetPseudoType() != PseudoStyleType::backdrop &&
       !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
       !mOutOfFlowFrame->GetWritingMode().IsOrthogonalTo(GetWritingMode())) {
     

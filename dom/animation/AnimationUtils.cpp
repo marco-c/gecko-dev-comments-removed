@@ -117,6 +117,11 @@ AnimationUtils::GetElementPseudoPair(const Element* aElementOrPseudo) {
             PseudoStyleRequest::Marker()};
   }
 
+  if (aElementOrPseudo->IsGeneratedContentContainerForBackdrop()) {
+    return {aElementOrPseudo->GetParent()->AsElement(),
+            PseudoStyleRequest::Backdrop()};
+  }
+
   const PseudoStyleType type = aElementOrPseudo->GetPseudoElementType();
   if (PseudoStyle::IsViewTransitionPseudoElement(type)) {
     

@@ -45,7 +45,6 @@ enum class FrameChildListID {
   Float,
   Marker,
   PushedFloats,
-  Backdrop,
   
   
   NoReflowPrincipal,

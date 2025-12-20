@@ -270,27 +270,7 @@ class RestyleManager {
     
     
     
-    void Put(nsIContent* aContent, ComputedStyle* aComputedStyle) {
-      MOZ_ASSERT(aContent);
-      PseudoStyleType pseudoType = aComputedStyle->GetPseudoType();
-      if (pseudoType == PseudoStyleType::NotPseudo ||
-          PseudoStyle::IsViewTransitionPseudoElement(pseudoType)) {
-        mContents.AppendElement(aContent->AsElement());
-      } else if (pseudoType == PseudoStyleType::before) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
-                   nsGkAtoms::mozgeneratedcontentbefore);
-        mBeforeContents.AppendElement(aContent->GetParent()->AsElement());
-      } else if (pseudoType == PseudoStyleType::after) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
-                   nsGkAtoms::mozgeneratedcontentafter);
-        mAfterContents.AppendElement(aContent->GetParent()->AsElement());
-      } else if (pseudoType == PseudoStyleType::marker) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
-                   nsGkAtoms::mozgeneratedcontentmarker);
-        mMarkerContents.AppendElement(aContent->GetParent()->AsElement());
-      }
-    }
-
+    void Put(nsIContent* aContent, ComputedStyle* aComputedStyle);
     void StopAnimationsForElementsWithoutFrames();
 
    private:
@@ -306,10 +286,7 @@ class RestyleManager {
     
     
     
-    nsTArray<RefPtr<Element>> mContents;
-    nsTArray<RefPtr<Element>> mBeforeContents;
-    nsTArray<RefPtr<Element>> mAfterContents;
-    nsTArray<RefPtr<Element>> mMarkerContents;
+    nsTArray<std::pair<RefPtr<Element>, PseudoStyleType>> mContents;
   };
 
   

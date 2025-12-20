@@ -85,6 +85,13 @@ class AnimationUtils {
                                     const PseudoStyleRequest& aPseudoRequest =
                                         PseudoStyleRequest::NotPseudo());
 
+  static bool StoresAnimationsInParent(PseudoStyleType aType) {
+    return aType == PseudoStyleType::before ||
+           aType == PseudoStyleType::after ||
+           aType == PseudoStyleType::marker ||
+           aType == PseudoStyleType::backdrop;
+  }
+
   
 
 
@@ -92,8 +99,7 @@ class AnimationUtils {
   static bool IsSupportedPseudoForAnimations(PseudoStyleType aType) {
     
     return PseudoStyle::IsViewTransitionPseudoElement(aType) ||
-           aType == PseudoStyleType::before ||
-           aType == PseudoStyleType::after || aType == PseudoStyleType::marker;
+           StoresAnimationsInParent(aType);
   }
   static bool IsSupportedPseudoForAnimations(
       const PseudoStyleRequest& aRequest) {

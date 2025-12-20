@@ -57,7 +57,7 @@ pub struct PtNameAndClassSelector(thin_vec::ThinVec<Atom>);
 impl PtNameAndClassSelector {
     
     pub fn from_name(name: Atom) -> Self {
-        Self(thin_vec![name])
+        Self(thin_vec::thin_vec![name])
     }
 
     
@@ -142,7 +142,7 @@ impl PtNameAndClassSelector {
 
         
         
-        let mut result = thin_vec![name.unwrap_or(atom!("*"))];
+        let mut result = thin_vec::thin_vec![name.unwrap_or(atom!("*"))];
         result.append(&mut classes);
 
         Ok(Self(result))
@@ -272,7 +272,7 @@ impl PseudoElement {
     
     #[inline]
     pub fn animations_stored_in_parent(&self) -> bool {
-        matches!(*self, Self::Before | Self::After | Self::Marker)
+        matches!(*self, Self::Before | Self::After | Self::Marker | Self::Backdrop)
     }
 
     

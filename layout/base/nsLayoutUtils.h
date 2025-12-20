@@ -293,6 +293,12 @@ class nsLayoutUtils {
 
   static nsIFrame* GetMarkerFrame(const nsIContent* aContent);
 
+  
+
+
+  static mozilla::dom::Element* GetBackdropPseudo(const nsIContent* aContent);
+  static nsIFrame* GetBackdropFrame(const nsIContent* aContent);
+
 #ifdef ACCESSIBILITY
   
 
