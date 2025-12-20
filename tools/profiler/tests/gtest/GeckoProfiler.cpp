@@ -2285,77 +2285,6 @@ TEST(GeckoProfiler, Pause)
   }}.join();
 }
 
-
-class MockClassOfService final : public nsIClassOfService {
- public:
-  NS_DECL_ISUPPORTS
-
-  explicit MockClassOfService(uint32_t aClassFlags, bool aIncremental = false,
-                              nsIClassOfService::FetchPriority aFetchPriority =
-                                  nsIClassOfService::FETCHPRIORITY_UNSET)
-      : mClassFlags(aClassFlags),
-        mIncremental(aIncremental),
-        mFetchPriority(aFetchPriority) {}
-
-  NS_IMETHOD GetClassFlags(uint32_t* aFlags) override {
-    *aFlags = mClassFlags;
-    return NS_OK;
-  }
-
-  NS_IMETHOD SetClassFlags(uint32_t aFlags) override {
-    mClassFlags = aFlags;
-    return NS_OK;
-  }
-
-  NS_IMETHOD ClearClassFlags(uint32_t aFlags) override {
-    mClassFlags &= ~aFlags;
-    return NS_OK;
-  }
-
-  NS_IMETHOD AddClassFlags(uint32_t aFlags) override {
-    mClassFlags |= aFlags;
-    return NS_OK;
-  }
-
-  NS_IMETHOD GetIncremental(bool* aIncremental) override {
-    *aIncremental = mIncremental;
-    return NS_OK;
-  }
-
-  NS_IMETHOD SetIncremental(bool aIncremental) override {
-    mIncremental = aIncremental;
-    return NS_OK;
-  }
-
-  NS_IMETHOD GetFetchPriority(
-      nsIClassOfService::FetchPriority* aFetchPriority) override {
-    *aFetchPriority = mFetchPriority;
-    return NS_OK;
-  }
-
-  NS_IMETHOD SetFetchPriority(
-      nsIClassOfService::FetchPriority aFetchPriority) override {
-    mFetchPriority = aFetchPriority;
-    return NS_OK;
-  }
-
-  NS_IMETHOD SetClassOfService(mozilla::net::ClassOfService s) override {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  NS_IMETHOD_(void)
-  SetFetchPriorityDOM(mozilla::dom::FetchPriority aPriority) override {}
-
- private:
-  ~MockClassOfService() = default;
-
-  uint32_t mClassFlags;
-  bool mIncremental;
-  nsIClassOfService::FetchPriority mFetchPriority;
-};
-
-NS_IMPL_ISUPPORTS(MockClassOfService, nsIClassOfService)
-
 TEST(GeckoProfiler, Markers)
 {
   uint32_t features = ProfilerFeature::StackWalk;
@@ -2581,8 +2510,6 @@ TEST(GeckoProfiler, Markers)
   ASSERT_TRUE(
       NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), "http://mozilla.org/"_ns)));
   
-  RefPtr<MockClassOfService> classOfService1 =
-      new MockClassOfService(nsIClassOfService::Leader);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2596,7 +2523,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheHit,
        78,
        false,
-       classOfService1,
+       nsIClassOfService::Leader,
        NS_OK
       
       
@@ -2610,8 +2537,6 @@ TEST(GeckoProfiler, Markers)
       
   );
 
-  RefPtr<MockClassOfService> classOfService2 =
-      new MockClassOfService(nsIClassOfService::Follower);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2625,7 +2550,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
-       classOfService2,
+       nsIClassOfService::Follower,
        NS_BINDING_ABORTED,
        nullptr,
       
@@ -2645,8 +2570,6 @@ TEST(GeckoProfiler, Markers)
   nsCOMPtr<nsIURI> redirectURI;
   ASSERT_TRUE(NS_SUCCEEDED(
       NS_NewURI(getter_AddRefs(redirectURI), "http://example.com/"_ns)));
-  RefPtr<MockClassOfService> classOfService3 =
-      new MockClassOfService(nsIClassOfService::Speculative);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2660,7 +2583,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
-       classOfService3,
+       nsIClassOfService::Speculative,
        NS_ERROR_UNEXPECTED,
        nullptr,
       
@@ -2679,8 +2602,6 @@ TEST(GeckoProfiler, Markers)
       nsIChannelEventSink::REDIRECT_TEMPORARY,
        103);
 
-  RefPtr<MockClassOfService> classOfService4 =
-      new MockClassOfService(nsIClassOfService::Background);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2694,7 +2615,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
-       classOfService4,
+       nsIClassOfService::Background,
        NS_ERROR_DOCSHELL_DYING,
        nullptr,
       
@@ -2713,8 +2634,6 @@ TEST(GeckoProfiler, Markers)
       nsIChannelEventSink::REDIRECT_PERMANENT,
        104);
 
-  RefPtr<MockClassOfService> classOfService5 = new MockClassOfService(
-      nsIClassOfService::Unblocked | nsIClassOfService::TailForbidden);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2728,7 +2647,8 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
-       classOfService5,
+       nsIClassOfService::Unblocked |
+          nsIClassOfService::TailForbidden,
        NS_ERROR_DOM_CORP_FAILED,
        nullptr,
       
@@ -2746,9 +2666,6 @@ TEST(GeckoProfiler, Markers)
        nsIChannelEventSink::REDIRECT_INTERNAL,
        105);
 
-  RefPtr<MockClassOfService> classOfService6 = new MockClassOfService(
-      nsIClassOfService::Unblocked | nsIClassOfService::Throttleable |
-      nsIClassOfService::TailForbidden);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2762,7 +2679,8 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
        78,
        false,
-       classOfService6,
+       nsIClassOfService::Unblocked |
+          nsIClassOfService::Throttleable | nsIClassOfService::TailForbidden,
        NS_ERROR_BLOCKED_BY_POLICY,
        nullptr,
       
@@ -2780,9 +2698,6 @@ TEST(GeckoProfiler, Markers)
        nsIChannelEventSink::REDIRECT_INTERNAL |
           nsIChannelEventSink::REDIRECT_STS_UPGRADE,
        106);
-
-  RefPtr<MockClassOfService> classOfService7 =
-      new MockClassOfService(nsIClassOfService::Tail);
   profiler_add_network_marker(
        uri,
        "GET"_ns,
@@ -2796,7 +2711,7 @@ TEST(GeckoProfiler, Markers)
       nsICacheInfoChannel::kCacheUnresolved,
        78,
        true,
-       classOfService7,
+       nsIClassOfService::Tail,
        NS_BINDING_REDIRECTED
       
       
@@ -2809,26 +2724,6 @@ TEST(GeckoProfiler, Markers)
       
       
   );
-
-  
-  RefPtr<MockClassOfService> classOfService8 =
-      new MockClassOfService(nsIClassOfService::Leader,  true,
-                             nsIClassOfService::FETCHPRIORITY_HIGH);
-  profiler_add_network_marker(
-       uri,
-       "GET"_ns,
-       34,
-       8,
-       net::NetworkLoadType::LOAD_START,
-       ts1,
-       ts2,
-       56,
-      
-      nsICacheInfoChannel::kCacheHit,
-       78,
-       false,
-       classOfService8,
-       NS_OK);
 
   EXPECT_TRUE(profiler_add_marker_impl(
       "Text in main thread with stack", geckoprofiler::category::OTHER,
@@ -2929,7 +2824,6 @@ TEST(GeckoProfiler, Markers)
     S_NetworkMarkerPayload_redirect_internal,
     S_NetworkMarkerPayload_redirect_internal_sts,
     S_NetworkMarkerPayload_private_browsing,
-    S_NetworkMarkerPayload_priorityHeader,
 
     S_TextWithStack,
     S_TextToMTWithStack,
@@ -3410,30 +3304,6 @@ TEST(GeckoProfiler, Markers)
                   EXPECT_TRUE(payload["isHttpToHttpsRedirect"].isNull());
                   EXPECT_TRUE(payload["redirectId"].isNull());
                   EXPECT_TRUE(payload["contentType"].isNull());
-
-                } else if (nameString == "Load 8: http://mozilla.org/") {
-                  EXPECT_EQ(state, S_NetworkMarkerPayload_priorityHeader);
-                  state = State(S_NetworkMarkerPayload_priorityHeader + 1);
-                  EXPECT_EQ(typeString, "Network");
-                  EXPECT_EQ_JSON(payload["startTime"], Double, ts1Double);
-                  EXPECT_EQ_JSON(payload["endTime"], Double, ts2Double);
-                  EXPECT_EQ_JSON(payload["id"], Int64, 8);
-                  EXPECT_EQ_JSON(payload["URI"], String, "http://mozilla.org/");
-                  EXPECT_EQ_JSON(payload["requestMethod"], String, "GET");
-                  EXPECT_EQ_JSON(payload["pri"], Int64, 34);
-                  EXPECT_EQ_JSON(payload["count"], Int64, 56);
-                  EXPECT_EQ_JSON(payload["cache"], String, "Hit");
-                  EXPECT_TRUE(payload["isPrivateBrowsing"].isNull());
-                  EXPECT_EQ_JSON(payload["classOfService"], String, "Leader");
-                  EXPECT_EQ_JSON(payload["requestStatus"], String, "NS_OK");
-                  EXPECT_TRUE(payload["RedirectURI"].isNull());
-                  EXPECT_TRUE(payload["redirectType"].isNull());
-                  EXPECT_TRUE(payload["isHttpToHttpsRedirect"].isNull());
-                  EXPECT_TRUE(payload["redirectId"].isNull());
-                  EXPECT_TRUE(payload["contentType"].isNull());
-                  EXPECT_FALSE(payload["priorityHeader"].isNull());
-                  EXPECT_EQ_JSON(payload["priorityHeader"], String, "u=4, i");
-
                 } else if (nameString == "Text in main thread with stack") {
                   EXPECT_EQ(state, S_TextWithStack);
                   state = State(S_TextWithStack + 1);
