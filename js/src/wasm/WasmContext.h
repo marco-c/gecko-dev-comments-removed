@@ -56,9 +56,8 @@ class Context {
   SuspenderObject* activeSuspender() { return activeSuspender_; }
   bool onSuspendableStack() const { return activeSuspender_ != nullptr; }
 
-  void enterSuspendableStack(SuspenderObject* suspender,
-                             JS::NativeStackLimit newStackLimit);
-  void leaveSuspendableStack(JSContext* cx);
+  void enterSuspendableStack(SuspenderObject* suspender);
+  void leaveSuspendableStack();
 
   void trace(JSTracer* trc);
   void traceRoots(JSTracer* trc);
@@ -73,8 +72,19 @@ class Context {
   
   
   JS::NativeStackLimit stackLimit;
+  
+  
+  JS::NativeStackLimit mainStackLimit;
 
 #ifdef ENABLE_WASM_JSPI
+#  if defined(_WIN32)
+  
+  
+  
+  void* tibStackBase_ = nullptr;
+  void* tibStackLimit_ = nullptr;
+#  endif
+
   
   
   HeapPtr<SuspenderObject*> activeSuspender_;
