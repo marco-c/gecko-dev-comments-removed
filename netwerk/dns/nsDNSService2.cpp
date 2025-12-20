@@ -45,8 +45,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 
-#include "DNSLogging.h"
-
 using namespace mozilla;
 using namespace mozilla::net;
 
@@ -534,7 +532,6 @@ void nsDNSAsyncRequest::OnResolveHostComplete(nsHostResolver* resolver,
     }
   }
 
-  LOG(("OnResolveHostComplete: %s", mHost.get()));
   mListener->OnLookupComplete(this, rec, status);
   mListener = nullptr;
 }
@@ -666,15 +663,11 @@ NS_IMPL_ISUPPORTS(DNSServiceWrapper, nsIDNSService, nsPIDNSService)
 already_AddRefed<nsIDNSService> DNSServiceWrapper::GetSingleton() {
   if (!gDNSServiceWrapper) {
     gDNSServiceWrapper = new DNSServiceWrapper();
-    
-    MutexAutoLock lock(gDNSServiceWrapper->mLock);
     gDNSServiceWrapper->mDNSServiceInUse = ChildDNSService::GetSingleton();
     if (gDNSServiceWrapper->mDNSServiceInUse) {
       ClearOnShutdown(&gDNSServiceWrapper);
       nsDNSPrefetch::Initialize(gDNSServiceWrapper);
     } else {
-      MutexAutoUnlock unlock(
-          gDNSServiceWrapper->mLock);  
       gDNSServiceWrapper = nullptr;
     }
   }
@@ -720,21 +713,13 @@ NS_IMPL_ISUPPORTS_INHERITED(nsDNSService, DNSServiceBase, nsIDNSService,
 static StaticRefPtr<nsDNSService> gDNSService;
 static Atomic<bool> gInited(false);
 
-
 already_AddRefed<nsIDNSService> GetOrInitDNSService() {
   if (gInited) {
     return nsDNSService::GetXPCOMSingleton();
   }
 
   nsCOMPtr<nsIDNSService> dns = nullptr;
-  auto initTask = [&dns]() {
-    
-    if (gInited) {
-      dns = nsDNSService::GetXPCOMSingleton();
-      return;
-    }
-    dns = do_GetService(NS_DNSSERVICE_CID);
-  };
+  auto initTask = [&dns]() { dns = do_GetService(NS_DNSSERVICE_CID); };
   if (!NS_IsMainThread()) {
     
     RefPtr<nsIThread> mainThread = do_GetMainThread();
@@ -823,7 +808,6 @@ void nsDNSService::ReadPrefs(const char* name) {
     }
   }
   if (!name || !strcmp(name, kPrefIPv4OnlyDomains)) {
-    MutexAutoLock lock(mLock);
     Preferences::GetCString(kPrefIPv4OnlyDomains, mIPv4OnlyDomains);
   }
   if (!name || !strcmp(name, kPrefDnsLocalDomains)) {
@@ -858,6 +842,7 @@ void nsDNSService::ReadPrefs(const char* name) {
 
 NS_IMETHODIMP
 nsDNSService::Init() {
+  MOZ_ASSERT(!mResolver);
   MOZ_ASSERT(NS_IsMainThread());
 
   ReadPrefs(nullptr);
@@ -875,7 +860,6 @@ nsDNSService::Init() {
   if (NS_SUCCEEDED(rv)) {
     
     MutexAutoLock lock(mLock);
-    MOZ_ASSERT(!mResolver);
     mResolver = res;
   }
 
@@ -901,12 +885,7 @@ nsDNSService::Init() {
       do_GetService("@mozilla.org/network/oblivious-http-service;1"));
 
   mTrrService = new TRRService();
-  bool httpsEnabled;
-  {
-    MutexAutoLock lock(mLock);
-    httpsEnabled = mResolver->IsNativeHTTPSEnabled();
-  }
-  if (NS_FAILED(mTrrService->Init(httpsEnabled))) {
+  if (NS_FAILED(mTrrService->Init(mResolver->IsNativeHTTPSEnabled()))) {
     mTrrService = nullptr;
   }
 
@@ -1144,7 +1123,6 @@ nsDNSService::AsyncResolve(const nsACString& aHostname,
                            nsICancelable** result) {
   OriginAttributes attrs;
 
-  LOG(("DNSService::AsyncResolve %s", PromiseFlatCString(aHostname).get()));
   if (aArgc == 1) {
     if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
       return NS_ERROR_INVALID_ARG;
@@ -1542,14 +1520,14 @@ nsresult nsDNSService::GetTRRDomainKey(nsACString& aTRRDomain) {
   return NS_OK;
 }
 
-size_t nsDNSService::SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+size_t nsDNSService::SizeOfIncludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) const {
   
   
   
   
 
   size_t n = mallocSizeOf(this);
-  MutexAutoLock lock(mLock);
   n += mResolver ? mResolver->SizeOfIncludingThis(mallocSizeOf) : 0;
   n += mIPv4OnlyDomains.SizeOfExcludingThisIfUnshared(mallocSizeOf);
   n += mLocalDomains.SizeOfExcludingThis(mallocSizeOf);
