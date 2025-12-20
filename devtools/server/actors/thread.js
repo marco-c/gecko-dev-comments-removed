@@ -2367,15 +2367,15 @@ exports.ThreadActor = ThreadActor;
 
 
 
+class PauseActor {
+  
 
 
-function PauseActor(pool) {
-  this.pool = pool;
+  constructor(pool) {
+    this.pool = pool;
+  }
+  typeName = "pause";
 }
-
-PauseActor.prototype = {
-  typeName: "pause",
-};
 
 
 
