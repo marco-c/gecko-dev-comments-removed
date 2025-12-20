@@ -1073,8 +1073,12 @@ bool Sanitizer::AllowElement(
        !elementAttributes.mRemoveAttributes->IsEmpty())) {
     
     
-    LogLocalizedString("SanitizerAllowElementIgnored", {},
-                       nsIScriptError::warningFlag);
+    if (auto* win = mGlobal->GetAsInnerWindow()) {
+      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                      "Sanitizer"_ns, win->GetDoc(),
+                                      nsContentUtils::eSECURITY_PROPERTIES,
+                                      "SanitizerAllowElementIgnored2");
+    }
 
     
     return false;
@@ -1970,48 +1974,6 @@ void Sanitizer::SanitizeDefaultConfigAttributes(
       --count;
       i = count;  
     }
-  }
-}
-
-
-
-void Sanitizer::LogLocalizedString(const char* aName,
-                                   const nsTArray<nsString>& aParams,
-                                   uint32_t aFlags) {
-  uint64_t innerWindowID = 0;
-  bool isPrivateBrowsing = true;
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
-  if (window && window->GetDoc()) {
-    auto* doc = window->GetDoc();
-    innerWindowID = doc->InnerWindowID();
-    isPrivateBrowsing = doc->IsInPrivateBrowsing();
-  }
-  nsAutoString logMsg;
-  nsContentUtils::FormatLocalizedString(nsContentUtils::eSECURITY_PROPERTIES,
-                                        aName, aParams, logMsg);
-  LogMessage(logMsg, aFlags, innerWindowID, isPrivateBrowsing);
-}
-
-
-void Sanitizer::LogMessage(const nsAString& aMessage, uint32_t aFlags,
-                           uint64_t aInnerWindowID, bool aFromPrivateWindow) {
-  
-  nsString message;
-  message.AppendLiteral(u"Sanitizer: ");
-  message.Append(aMessage);
-
-  
-  constexpr auto category = "Sanitizer"_ns;
-
-  if (aInnerWindowID > 0) {
-    
-    nsContentUtils::ReportToConsoleByWindowID(message, aFlags, category,
-                                              aInnerWindowID);
-  } else {
-    
-    nsContentUtils::LogSimpleConsoleError(message, category, aFromPrivateWindow,
-                                          true ,
-                                          aFlags);
   }
 }
 

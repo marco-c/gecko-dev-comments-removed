@@ -99,25 +99,6 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
                                        StaticAtomSet* aElementAttributes,
                                        bool aSafe);
 
-  
-
-
-
-
-
-  void LogLocalizedString(const char* aName, const nsTArray<nsString>& aParams,
-                          uint32_t aFlags);
-
-  
-
-
-
-
-
-
-  static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
-                         uint64_t aInnerWindowID, bool aFromPrivateWindow);
-
   void AssertIsValid();
 
   void AssertNoLists() {
