@@ -13,6 +13,13 @@ namespace mozilla {
 NS_IMPL_CYCLE_COLLECTION(ScrollTimelineAnimationTracker, mPendingSet, mDocument)
 
 void ScrollTimelineAnimationTracker::TriggerPendingAnimations() {
+  
+  
+  
+  
+  
+  mDocument->TimelinesController().TrySampleScrollTimelines();
+
   for (RefPtr<dom::Animation>& animation :
        ToTArray<AutoTArray<RefPtr<dom::Animation>, 32>>(mPendingSet)) {
     MOZ_ASSERT(animation->GetTimeline() &&

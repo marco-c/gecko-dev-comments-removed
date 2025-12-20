@@ -189,6 +189,8 @@ class ScrollTimeline : public AnimationTimeline,
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
+  void UpdateCachedCurrentTime();
+
  protected:
   virtual ~ScrollTimeline();
   ScrollTimeline() = delete;
@@ -202,8 +204,6 @@ class ScrollTimeline : public AnimationTimeline,
   virtual Maybe<ScrollOffsets> ComputeOffsets(
       const ScrollContainerFrame* aScrollFrame,
       layers::ScrollDirection aOrientation) const;
-
-  void UpdateCachedCurrentTime();
 
   
   
