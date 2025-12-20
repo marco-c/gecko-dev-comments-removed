@@ -28,11 +28,6 @@ add_setup(async function () {
       
       
       ["network.dns.disableIPv6", true],
-      
-      [
-        "browser.newtabpage.activity-stream.discoverystream.imageProxy.enabled",
-        false,
-      ],
     ],
   });
 
