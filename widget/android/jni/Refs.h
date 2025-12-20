@@ -55,8 +55,6 @@ class Ref {
   friend class Ref;
 
   using Self = Ref<Cls, Type>;
-  using bool_type = void (Self::*)() const;
-  void non_null_reference() const {}
 
   
   
@@ -170,9 +168,7 @@ class Ref {
   }
 
   
-  operator bool_type() const {
-    return mInstance ? &Self::non_null_reference : nullptr;
-  }
+  explicit operator bool() const { return !!mInstance; }
 
   
   
