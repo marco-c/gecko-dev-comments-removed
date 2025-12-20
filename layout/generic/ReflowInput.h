@@ -514,11 +514,6 @@ struct ReflowInput : public SizeComputationInput {
 
     
     
-    bool mIAnchorCenter : 1;
-    bool mBAnchorCenter : 1;
-
-    
-    
     
     
     
@@ -830,7 +825,6 @@ struct ReflowInput : public SizeComputationInput {
                                            WritingMode aContainingBlockWM,
                                            bool aIsMarginBStartAuto,
                                            bool aIsMarginBEndAuto,
-                                           bool aIsIAnchorCenter,
                                            LogicalMargin& aMargin);
 
   
@@ -840,7 +834,6 @@ struct ReflowInput : public SizeComputationInput {
                                             WritingMode aContainingBlockWM,
                                             bool aIsMarginIStartAuto,
                                             bool aIsMarginIEndAuto,
-                                            bool aIsBAnchorCenter,
                                             LogicalMargin& aMargin);
 
  protected:
