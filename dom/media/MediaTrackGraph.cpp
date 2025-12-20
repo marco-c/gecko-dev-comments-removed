@@ -400,8 +400,7 @@ bool MediaTrackGraphImpl::AudioTrackPresent() {
 void MediaTrackGraphImpl::CheckDriver() {
   MOZ_ASSERT(OnGraphThread());
   
-  
-  if (!mRealtime || Switching()) {
+  if (!mRealtime) {
     return;
   }
 
@@ -455,7 +454,10 @@ void MediaTrackGraphImpl::CheckDriver() {
   
   
   
-  if (primaryOutputChannelCount != audioCallbackDriver->OutputChannelCount()) {
+  if (primaryOutputChannelCount != audioCallbackDriver->OutputChannelCount() ||
+      inputDevice != audioCallbackDriver->InputDeviceID() ||
+      inputChannelCount != audioCallbackDriver->InputChannelCount() ||
+      inputPreference != audioCallbackDriver->InputDevicePreference()) {
     AudioCallbackDriver* driver = new AudioCallbackDriver(
         this, CurrentDriver(), mSampleRate, primaryOutputChannelCount,
         inputChannelCount, PrimaryOutputDeviceID(), inputDevice,
@@ -769,27 +771,18 @@ void MediaTrackGraphImpl::OpenAudioInputImpl(DeviceInputTrack* aTrack) {
 
   if (aTrack->AsNativeInputTrack()) {
     
-    AudioCallbackDriver* driver = new AudioCallbackDriver(
-        this, CurrentDriver(), mSampleRate, PrimaryOutputChannelCount(),
-        AudioInputChannelCount(aTrack->mDeviceId), PrimaryOutputDeviceID(),
-        aTrack->mDeviceId, AudioInputDevicePreference(aTrack->mDeviceId),
-        Some(aTrack->UpdateRequestedProcessingParams()));
-    LOG(LogLevel::Debug,
-        ("%p OpenAudioInputImpl: starting new AudioCallbackDriver(input) %p",
-         this, driver));
-    SwitchAtNextIteration(driver);
-  } else {
-    NonNativeInputTrack* nonNative = aTrack->AsNonNativeInputTrack();
-    MOZ_ASSERT(nonNative);
     
-    nonNative->StartAudio(MakeRefPtr<AudioInputSource>(
-        MakeRefPtr<AudioInputSourceListener>(nonNative),
-        nonNative->GenerateSourceId(), nonNative->mDeviceId,
-        AudioInputChannelCount(nonNative->mDeviceId),
-        AudioInputDevicePreference(nonNative->mDeviceId) ==
-            AudioInputType::Voice,
-        nonNative->mPrincipalHandle, nonNative->mSampleRate, GraphRate()));
+    return;
   }
+  NonNativeInputTrack* nonNative = aTrack->AsNonNativeInputTrack();
+  MOZ_ASSERT(nonNative);
+  
+  nonNative->StartAudio(MakeRefPtr<AudioInputSource>(
+      MakeRefPtr<AudioInputSourceListener>(nonNative),
+      nonNative->GenerateSourceId(), nonNative->mDeviceId,
+      AudioInputChannelCount(nonNative->mDeviceId),
+      AudioInputDevicePreference(nonNative->mDeviceId) == AudioInputType::Voice,
+      nonNative->mPrincipalHandle, nonNative->mSampleRate, GraphRate()));
 }
 
 void MediaTrackGraphImpl::OpenAudioInput(DeviceInputTrack* aTrack) {
@@ -832,30 +825,8 @@ void MediaTrackGraphImpl::CloseAudioInputImpl(DeviceInputTrack* aTrack) {
   MOZ_ASSERT(aTrack->AsNativeInputTrack());
 
   mDeviceInputTrackManagerGraphThread.Remove(aTrack);
-
   
   
-  bool audioTrackPresent = AudioTrackPresent();
-
-  GraphDriver* driver;
-  if (audioTrackPresent) {
-    
-    LOG(LogLevel::Debug,
-        ("%p: CloseInput: output present (AudioCallback)", this));
-
-    driver = new AudioCallbackDriver(
-        this, CurrentDriver(), mSampleRate, PrimaryOutputChannelCount(),
-        AudioInputChannelCount(aTrack->mDeviceId), PrimaryOutputDeviceID(),
-        nullptr, AudioInputDevicePreference(aTrack->mDeviceId),
-        Some(aTrack->UpdateRequestedProcessingParams()));
-    SwitchAtNextIteration(driver);
-  } else if (CurrentDriver()->AsAudioCallbackDriver()) {
-    LOG(LogLevel::Debug,
-        ("%p: CloseInput: no output present (SystemClockCallback)", this));
-
-    driver = new SystemClockDriver(this, CurrentDriver(), mSampleRate);
-    SwitchAtNextIteration(driver);
-  }  
 }
 
 void MediaTrackGraphImpl::UnregisterAllAudioOutputs(MediaTrack* aTrack) {
@@ -1083,79 +1054,39 @@ void MediaTrackGraphImpl::ReevaluateInputDevice(CubebUtils::AudioDeviceID aID) {
         ("%p: No DeviceInputTrack for this device. Ignore", this));
     return;
   }
-
-  bool needToSwitch = false;
-
-  if (NonNativeInputTrack* nonNative = track->AsNonNativeInputTrack()) {
-    if (nonNative->NumberOfChannels() != AudioInputChannelCount(aID)) {
-      LOG(LogLevel::Debug,
-          ("%p: %u-channel non-native input device %p (track %p) is "
-           "re-configured to %d-channel",
-           this, nonNative->NumberOfChannels(), aID, track,
-           AudioInputChannelCount(aID)));
-      needToSwitch = true;
-    }
-    if (nonNative->DevicePreference() != AudioInputDevicePreference(aID)) {
-      LOG(LogLevel::Debug,
-          ("%p: %s-type non-native input device %p (track %p) is re-configured "
-           "to %s-type",
-           this, GetAudioInputTypeString(nonNative->DevicePreference()), aID,
-           track, GetAudioInputTypeString(AudioInputDevicePreference(aID))));
-      needToSwitch = true;
-    }
-
-    if (needToSwitch) {
-      nonNative->StopAudio();
-      nonNative->StartAudio(MakeRefPtr<AudioInputSource>(
-          MakeRefPtr<AudioInputSourceListener>(nonNative),
-          nonNative->GenerateSourceId(), aID, AudioInputChannelCount(aID),
-          AudioInputDevicePreference(aID) == AudioInputType::Voice,
-          nonNative->mPrincipalHandle, nonNative->mSampleRate, GraphRate()));
-    }
-
+  if (track->AsNativeInputTrack()) {
+    
+    
     return;
   }
+  bool needToSwitch = false;
 
-  MOZ_ASSERT(track->AsNativeInputTrack());
-
-  if (AudioCallbackDriver* audioCallbackDriver =
-          CurrentDriver()->AsAudioCallbackDriver()) {
-    if (audioCallbackDriver->InputChannelCount() !=
-        AudioInputChannelCount(aID)) {
-      LOG(LogLevel::Debug,
-          ("%p: ReevaluateInputDevice: %u-channel AudioCallbackDriver %p is "
-           "re-configured to %d-channel",
-           this, audioCallbackDriver->InputChannelCount(), audioCallbackDriver,
-           AudioInputChannelCount(aID)));
-      needToSwitch = true;
-    }
-    if (audioCallbackDriver->InputDevicePreference() !=
-        AudioInputDevicePreference(aID)) {
-      LOG(LogLevel::Debug,
-          ("%p: ReevaluateInputDevice: %s-type AudioCallbackDriver %p is "
-           "re-configured to %s-type",
-           this,
-           GetAudioInputTypeString(
-               audioCallbackDriver->InputDevicePreference()),
-           audioCallbackDriver,
-           GetAudioInputTypeString(AudioInputDevicePreference(aID))));
-      needToSwitch = true;
-    }
-  } else if (Switching() && NextDriver()->AsAudioCallbackDriver()) {
-    
-    
-    
-    
+  NonNativeInputTrack* nonNative = track->AsNonNativeInputTrack();
+  MOZ_ASSERT(nonNative);
+  if (nonNative->NumberOfChannels() != AudioInputChannelCount(aID)) {
+    LOG(LogLevel::Debug,
+        ("%p: %u-channel non-native input device %p (track %p) is "
+         "re-configured to %d-channel",
+         this, nonNative->NumberOfChannels(), aID, track,
+         AudioInputChannelCount(aID)));
+    needToSwitch = true;
+  }
+  if (nonNative->DevicePreference() != AudioInputDevicePreference(aID)) {
+    LOG(LogLevel::Debug,
+        ("%p: %s-type non-native input device %p (track %p) is re-configured "
+         "to %s-type",
+         this, GetAudioInputTypeString(nonNative->DevicePreference()), aID,
+         track, GetAudioInputTypeString(AudioInputDevicePreference(aID))));
     needToSwitch = true;
   }
 
   if (needToSwitch) {
-    AudioCallbackDriver* newDriver = new AudioCallbackDriver(
-        this, CurrentDriver(), mSampleRate, PrimaryOutputChannelCount(),
-        AudioInputChannelCount(aID), PrimaryOutputDeviceID(), aID,
-        AudioInputDevicePreference(aID),
-        Some(track->UpdateRequestedProcessingParams()));
-    SwitchAtNextIteration(newDriver);
+    nonNative->StopAudio();
+    nonNative->StartAudio(MakeRefPtr<AudioInputSource>(
+        MakeRefPtr<AudioInputSourceListener>(nonNative),
+        nonNative->GenerateSourceId(), aID, AudioInputChannelCount(aID),
+        AudioInputDevicePreference(aID) == AudioInputType::Voice,
+        nonNative->mPrincipalHandle, nonNative->mSampleRate, GraphRate()));
   }
 }
 

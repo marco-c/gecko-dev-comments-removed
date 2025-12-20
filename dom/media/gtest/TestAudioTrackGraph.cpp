@@ -2960,6 +2960,8 @@ TEST(TestAudioTrackGraph, PlatformProcessing)
 
   
   EXPECT_CALL(*listener, RequestedInputChannelCount).WillRepeatedly(Return(2));
+  
+  
   DispatchFunction([&] {
     track->QueueControlMessageWithNoShutdown(
         [&] { graph->ReevaluateInputDevice(device); });
