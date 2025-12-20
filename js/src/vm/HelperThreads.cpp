@@ -1614,6 +1614,20 @@ void GlobalHelperThreadState::createAndSubmitCompressionTasks(
   
   Vector<UniquePtr<SourceCompressionTask>, 8, SystemAllocPolicy> tasksToSubmit;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr size_t MaxBatchLength = 300'000;
+  SourceCompressionTask* currentBatch = nullptr;
+  size_t currentBatchLength = 0;
+
   rt->pendingCompressions().eraseIf([&](const auto& entry) {
     MOZ_ASSERT(entry.source()->hasUncompressedSource());
 
@@ -1632,10 +1646,27 @@ void GlobalHelperThreadState::createAndSubmitCompressionTasks(
 
     
     
+    size_t length = entry.source()->length();
+    if (currentBatch && currentBatchLength + length <= MaxBatchLength) {
+      if (!currentBatch->addEntry(entry.source())) {
+        return false;
+      }
+      currentBatchLength += length;
+      return true;
+    }
+
+    
+    
     
     auto ownedTask = MakeUnique<SourceCompressionTask>(rt, entry.source());
+    SourceCompressionTask* task = ownedTask.get();
     if (!ownedTask || !tasksToSubmit.append(std::move(ownedTask))) {
       return false;
+    }
+    
+    if (!currentBatch || length < currentBatchLength) {
+      currentBatch = task;
+      currentBatchLength = length;
     }
     return true;
   });
