@@ -58,7 +58,7 @@ class DateTimeTestHelper {
       });
     }
     this.panel = await shown;
-    this.frame = this.panel.querySelector("#inputPickerPopupFrame");
+    this.frame = this.panel.querySelector("#dateTimePopupFrame");
   }
 
   promisePickerClosed() {
