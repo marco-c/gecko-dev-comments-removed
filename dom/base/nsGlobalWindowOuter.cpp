@@ -4225,6 +4225,12 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
 
   
   
+  if (GetBrowsingContext()->Top()->GetIsDocumentPiP()) {
+    return NS_OK;
+  }
+
+  
+  
   
   nsCOMPtr<nsIDocShellTreeItem> rootItem;
   mDocShell->GetInProcessRootTreeItem(getter_AddRefs(rootItem));

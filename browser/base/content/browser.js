@@ -2216,15 +2216,18 @@ var XULBrowserWindow = {
     );
 
     
-    
-    
-    
-    gURLBar.setURI({
-      uri: aLocationURI,
-      dueToTabSwitch: aIsSimulated,
-      dueToSessionRestore: isSessionRestore,
-      isSameDocument,
-    });
+    if (!window.browsingContext.isDocumentPiP) {
+      
+      
+      
+      
+      gURLBar.setURI({
+        uri: aLocationURI,
+        dueToTabSwitch: aIsSimulated,
+        dueToSessionRestore: isSessionRestore,
+        isSameDocument,
+      });
+    }
 
     BookmarkingUI.onLocationChange();
     
@@ -2540,6 +2543,13 @@ var XULBrowserWindow = {
     if (uriOverride) {
       uri = uriOverride;
       aState |= Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
+    }
+
+    if (window.browsingContext.isDocumentPiP) {
+      gURLBar.setURI({
+        uri,
+        isSameDocument: true,
+      });
     }
 
     try {

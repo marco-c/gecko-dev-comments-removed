@@ -2320,8 +2320,8 @@ void AppWindow::SetContentScrollbarVisibility(bool aVisible) {
 }
 
 void AppWindow::ApplyChromeFlags() {
-  nsCOMPtr<dom::Element> window = GetWindowDOMElement();
-  if (!window) {
+  nsCOMPtr<dom::Element> root = GetWindowDOMElement();
+  if (!root) {
     return;
   }
 
@@ -2362,7 +2362,19 @@ void AppWindow::ApplyChromeFlags() {
   
   
   IgnoredErrorResult rv;
-  window->SetAttribute(u"chromehidden"_ns, newvalue, rv);
+  root->SetAttribute(u"chromehidden"_ns, newvalue, rv);
+
+  
+  if ((mChromeFlags &
+       nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) ==
+      nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) {
+    nsCOMPtr<mozIDOMWindowProxy> windowProxy;
+    GetWindowDOMWindow(getter_AddRefs(windowProxy));
+    if (nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryInterface(windowProxy)) {
+      nsresult rv = window->GetBrowsingContext()->SetIsDocumentPiP(true);
+      NS_ENSURE_SUCCESS_VOID(rv);
+    }
+  }
 }
 
 NS_IMETHODIMP

@@ -13,14 +13,31 @@
 add_task(async function closing_pip_sends_exactly_one_DOMWindowClosed() {
   const [tab, chromePiP] = await newTabWithPiP();
 
-  let closeCount = 0;
-  chromePiP.addEventListener("DOMWindowClose", () => closeCount++);
+  
+  
+  
+  await SpecialPowers.spawn(chromePiP.gBrowser.selectedBrowser, [], () => {
+    content.opener.closeCount = 0;
+    SpecialPowers.addChromeEventListener(
+      "DOMWindowClose",
+      () => content.opener.closeCount++,
+      true,
+      false
+    );
+  });
 
+  
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.documentPictureInPicture.window.close();
   });
   await BrowserTestUtils.windowClosed(chromePiP);
 
+  const closeCount = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [],
+    () => content.closeCount
+  );
   is(closeCount, 1, "Received a single DOMWindowClosed");
+
   BrowserTestUtils.removeTab(tab);
 });
