@@ -1232,28 +1232,28 @@ class ContentUnbinder : public Runnable {
   ~ContentUnbinder() { Run(); }
 
   void UnbindSubtree(nsIContent* aNode) {
+    if (!aNode->HasChildren()) {
+      return;
+    }
     if (aNode->NodeType() != nsINode::ELEMENT_NODE &&
         aNode->NodeType() != nsINode::DOCUMENT_FRAGMENT_NODE) {
       return;
     }
-    FragmentOrElement* container = static_cast<FragmentOrElement*>(aNode);
-    if (container->HasChildren()) {
+    auto* container = static_cast<FragmentOrElement*>(aNode);
+    
+    container->InvalidateChildNodes();
+    BatchRemovalState state{};
+    while (nsCOMPtr<nsIContent> child = container->GetLastChild()) {
       
-      container->InvalidateChildNodes();
-
-      while (container->HasChildren()) {
-        
-        
-        
-        
-        
-        
-        
-        nsCOMPtr<nsIContent> child = container->GetLastChild();
-        container->DisconnectChild(child);
-        UnbindSubtree(child);
-        child->UnbindFromTree();
-      }
+      
+      
+      
+      
+      
+      container->DisconnectChild(child);
+      UnbindSubtree(child);
+      child->UnbindFromTree( nullptr, &state);
+      state.mIsFirst = false;
     }
   }
 
@@ -1330,14 +1330,15 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   if (tmp->UnoptimizableCCNode() || !nsCCUncollectableMarker::sGeneration) {
     
     nsAutoScriptBlocker scriptBlocker;
-    while (tmp->HasChildren()) {
+    BatchRemovalState state{};
+    while (nsCOMPtr<nsIContent> child = tmp->GetLastChild()) {
       
       
       
       
-      nsCOMPtr<nsIContent> child = tmp->GetLastChild();
       tmp->DisconnectChild(child);
-      child->UnbindFromTree();
+      child->UnbindFromTree( nullptr, &state);
+      state.mIsFirst = false;
     }
   } else if (!tmp->GetParent() && tmp->HasChildren()) {
     ContentUnbinder::Append(tmp);

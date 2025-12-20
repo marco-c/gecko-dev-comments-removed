@@ -251,6 +251,9 @@ enum class BatchRemovalOrder {
 };
 
 struct BatchRemovalState {
+  
+  
+  
   bool mIsFirst = true;
 };
 
