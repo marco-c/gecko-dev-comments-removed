@@ -228,6 +228,7 @@ enum CanvasFingerprinterAlias {
   eSignifyd = 5,
   eClaydar = 6,
   eForter = 7,
+
   
   eVariant1 = 8,
   eVariant2 = 9,
@@ -237,7 +238,10 @@ enum CanvasFingerprinterAlias {
   eVariant6 = 13,
   eVariant7 = 14,
   eVariant8 = 15,
-  eLastAlias = eVariant8
+
+  eClientGear = 16,
+  eImperva = 17,
+  eLastAlias = eImperva
 };
 
 enum CanvasExtractionAPI : uint8_t {
