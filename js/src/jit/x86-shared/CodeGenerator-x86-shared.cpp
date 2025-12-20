@@ -848,22 +848,22 @@ void CodeGenerator::visitMulI(LMulI* ins) {
 
     if (mul->canBeNegativeZero()) {
       
-      auto* ool = new (
-          alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
-        Register result = ToRegister(ins->output());
-        Operand lhsCopy = ToOperand(ins->lhsCopy());
-        Operand rhs = ToOperand(ins->rhs());
-        MOZ_ASSERT_IF(lhsCopy.kind() == Operand::REG,
-                      lhsCopy.reg() != result.code());
+      auto* ool =
+          new (alloc()) LambdaOutOfLineCode([=, this](OutOfLineCode& ool) {
+            Register result = ToRegister(ins->output());
+            Operand lhsCopy = ToOperand(ins->lhsCopy());
+            Operand rhs = ToOperand(ins->rhs());
+            MOZ_ASSERT_IF(lhsCopy.kind() == Operand::REG,
+                          lhsCopy.reg() != result.code());
 
-        
-        masm.movl(lhsCopy, result);
-        masm.orl(rhs, result);
-        bailoutIf(Assembler::Signed, ins->snapshot());
+            
+            masm.movl(lhsCopy, result);
+            masm.orl(rhs, result);
+            bailoutIf(Assembler::Signed, ins->snapshot());
 
-        masm.mov(ImmWord(0), result);
-        masm.jmp(ool.rejoin());
-      });
+            masm.mov(ImmWord(0), result);
+            masm.jmp(ool.rejoin());
+          });
       addOutOfLineCode(ool, mul);
 
       masm.test32(lhs, lhs);
