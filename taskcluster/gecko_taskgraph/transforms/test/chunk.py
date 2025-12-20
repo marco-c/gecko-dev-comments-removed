@@ -126,6 +126,7 @@ def set_test_manifests(config, tasks):
             remaining_manifests = []
 
             
+            found_wpt = False
             for m in input_paths:
                 if m.startswith("testing/web-platform/tests/"):
                     found_subsuite = [
@@ -141,7 +142,10 @@ def set_test_manifests(config, tasks):
                         if not isinstance(loader, DefaultLoader):
                             task["chunks"] = "dynamic"
                         yield task
+                    found_wpt = True
                     break
+            if found_wpt:
+                continue
 
             
             
