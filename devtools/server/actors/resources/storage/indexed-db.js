@@ -76,16 +76,17 @@ const ILLEGAL_CHAR_REGEX = new RegExp(illegalFileNameCharacters, "g");
 
 
 
+class IndexMetadata {
+  
 
 
 
-function IndexMetadata(index) {
-  this._name = index.name;
-  this._keyPath = index.keyPath;
-  this._unique = index.unique;
-  this._multiEntry = index.multiEntry;
-}
-IndexMetadata.prototype = {
+  constructor(index) {
+    this._name = index.name;
+    this._keyPath = index.keyPath;
+    this._unique = index.unique;
+    this._multiEntry = index.multiEntry;
+  }
   toObject() {
     return {
       name: this._name,
@@ -93,40 +94,41 @@ IndexMetadata.prototype = {
       unique: this._unique,
       multiEntry: this._multiEntry,
     };
-  },
-};
-
-
-
-
-
-
-
-function ObjectStoreMetadata(objectStore) {
-  this._name = objectStore.name;
-  this._keyPath = objectStore.keyPath;
-  this._autoIncrement = objectStore.autoIncrement;
-  this._indexes = [];
-
-  for (let i = 0; i < objectStore.indexNames.length; i++) {
-    const index = objectStore.index(objectStore.indexNames[i]);
-
-    const newIndex = {
-      keypath: index.keyPath,
-      multiEntry: index.multiEntry,
-      name: index.name,
-      objectStore: {
-        autoIncrement: index.objectStore.autoIncrement,
-        indexNames: [...index.objectStore.indexNames],
-        keyPath: index.objectStore.keyPath,
-        name: index.objectStore.name,
-      },
-    };
-
-    this._indexes.push([newIndex, new IndexMetadata(index)]);
   }
 }
-ObjectStoreMetadata.prototype = {
+
+
+
+
+class ObjectStoreMetadata {
+  
+
+
+
+  constructor(objectStore) {
+    this._name = objectStore.name;
+    this._keyPath = objectStore.keyPath;
+    this._autoIncrement = objectStore.autoIncrement;
+    this._indexes = [];
+
+    for (let i = 0; i < objectStore.indexNames.length; i++) {
+      const index = objectStore.index(objectStore.indexNames[i]);
+
+      const newIndex = {
+        keypath: index.keyPath,
+        multiEntry: index.multiEntry,
+        name: index.name,
+        objectStore: {
+          autoIncrement: index.objectStore.autoIncrement,
+          indexNames: [...index.objectStore.indexNames],
+          keyPath: index.objectStore.keyPath,
+          name: index.objectStore.name,
+        },
+      };
+
+      this._indexes.push([newIndex, new IndexMetadata(index)]);
+    }
+  }
   toObject() {
     return {
       name: this._name,
@@ -136,44 +138,45 @@ ObjectStoreMetadata.prototype = {
         [...this._indexes.values()].map(index => index.toObject())
       ),
     };
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-function DatabaseMetadata(origin, db, storage) {
-  this._origin = origin;
-  this._name = db.name;
-  this._version = db.version;
-  this._objectStores = [];
-  this.storage = storage;
-
-  if (db.objectStoreNames.length) {
-    const transaction = db.transaction(db.objectStoreNames, "readonly");
-
-    for (let i = 0; i < transaction.objectStoreNames.length; i++) {
-      const objectStore = transaction.objectStore(
-        transaction.objectStoreNames[i]
-      );
-      this._objectStores.push([
-        transaction.objectStoreNames[i],
-        new ObjectStoreMetadata(objectStore),
-      ]);
-    }
   }
 }
-DatabaseMetadata.prototype = {
+
+
+
+
+class DatabaseMetadata {
+  
+
+
+
+
+
+
+
+  constructor(origin, db, storage) {
+    this._origin = origin;
+    this._name = db.name;
+    this._version = db.version;
+    this._objectStores = [];
+    this.storage = storage;
+
+    if (db.objectStoreNames.length) {
+      const transaction = db.transaction(db.objectStoreNames, "readonly");
+
+      for (let i = 0; i < transaction.objectStoreNames.length; i++) {
+        const objectStore = transaction.objectStore(
+          transaction.objectStoreNames[i]
+        );
+        this._objectStores.push([
+          transaction.objectStoreNames[i],
+          new ObjectStoreMetadata(objectStore),
+        ]);
+      }
+    }
+  }
   get objectStores() {
     return this._objectStores;
-  },
+  }
 
   toObject() {
     return {
@@ -184,8 +187,8 @@ DatabaseMetadata.prototype = {
       version: this._version,
       objectStores: this._objectStores.size,
     };
-  },
-};
+  }
+}
 
 class IndexedDBStorageActor extends BaseStorageActor {
   constructor(storageActor) {
