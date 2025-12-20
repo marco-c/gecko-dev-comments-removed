@@ -140,6 +140,34 @@ exports.getChildDocShells = getChildDocShells;
 
 
 
+
+
+
+function getAllSameProcessGlobalsFromBrowsingContext(browsingContext) {
+  const windows = [];
+  const topBrowsingContext = browsingContext.top;
+  for (const bc of topBrowsingContext.getAllBrowsingContextsInSubtree()) {
+    
+    if (!bc.docShell) {
+      continue;
+    }
+    try {
+      windows.push(bc.docShell.domWindow);
+    } catch (e) {
+      
+      
+      
+      
+    }
+  }
+
+  return windows;
+}
+
+
+
+
+
 function getInnerId(window) {
   return window.windowGlobalChild.innerWindowId;
 }
@@ -300,13 +328,16 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       this._shouldAddNewGlobalAsDebuggee.bind(this);
 
     this.makeDebugger = makeDebugger.bind(null, {
-      findDebuggees: () => {
+      findDebuggees: (dbg, includeAllSameProcessGlobals) => {
         const result = [];
         const inspectUAWidgets = Services.prefs.getBoolPref(
           "devtools.inspector.showAllAnonymousContent",
           false
         );
-        for (const win of this.windows) {
+        const windows = includeAllSameProcessGlobals
+          ? getAllSameProcessGlobalsFromBrowsingContext(this.browsingContext)
+          : this.windows;
+        for (const win of windows) {
           result.push(win);
           
           

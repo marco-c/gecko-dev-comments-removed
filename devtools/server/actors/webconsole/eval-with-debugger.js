@@ -456,7 +456,16 @@ function makeSideeffectFreeDebugger(targetActorDbg) {
   
   
   
-  for (const global of targetActorDbg.findDebuggees()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  const globals = targetActorDbg.findDebuggees(true);
+  for (const global of globals) {
     try {
       dbg.addDebuggee(global);
     } catch (e) {
