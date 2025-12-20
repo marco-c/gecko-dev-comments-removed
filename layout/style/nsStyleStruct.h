@@ -378,21 +378,35 @@ using AnchorResolvedMargin =
 
 
 struct AnchorPosResolutionParams {
+  struct AutoResolutionOverrideParams {
+    
+    
+    bool mIAnchorCenter = false;
+    
+    bool mBAnchorCenter = false;
+    
+    bool mPositionAreaInUse = false;
+
+    AutoResolutionOverrideParams() = default;
+    AutoResolutionOverrideParams(
+        const nsIFrame* aFrame,
+        const mozilla::AnchorPosResolutionCache* aCache);
+
+    bool OverriddenToZero(mozilla::StylePhysicalAxis aAxis,
+                          const nsIFrame* aFrame) const;
+    bool OverriddenToZero(mozilla::Side aSide, const nsIFrame* aFrame) const;
+    bool OverriddenToZero(mozilla::LogicalAxis aAxis) const;
+  };
   
   
   const nsIFrame* mFrame;
   
   mozilla::StylePositionProperty mPosition;
   
-  mozilla::StylePositionArea mPositionArea;
-  
   mozilla::AnchorPosResolutionCache* const mCache;
   
   
-  bool mIAnchorCenter = false;
-  
-  
-  bool mBAnchorCenter = false;
+  AutoResolutionOverrideParams mAutoResolutionOverrideParams;
 
   
   
@@ -416,16 +430,18 @@ struct AnchorResolvedMarginHelper {
   static AnchorResolvedMargin FromUnresolved(
       const mozilla::StyleMargin& aValue, mozilla::StylePhysicalAxis aAxis,
       const AnchorPosResolutionParams& aParams) {
-    if (aValue.HasAnchorPositioningFunction()) {
-      return ResolveAnchor(aValue, aAxis, aParams);
-    }
-    
-    
-    
-    if (aValue.IsAuto() && !aParams.mPositionArea.IsNone()) {
+    auto resolved = [&]() {
+      if (aValue.HasAnchorPositioningFunction()) {
+        return ResolveAnchor(aValue, aAxis, aParams);
+      }
+      return AnchorResolvedMargin::NonOwning(&aValue);
+    }();
+    if (resolved->IsAuto() &&
+        aParams.mAutoResolutionOverrideParams.OverriddenToZero(
+            aAxis, aParams.mFrame)) {
       return Zero();
     }
-    return AnchorResolvedMargin::NonOwning(&aValue);
+    return resolved;
   }
 
  private:
@@ -780,33 +796,34 @@ struct AnchorResolvedInsetHelper {
     return value;
   }
 
+  static const mozilla::StyleInset& ZeroValue() {
+    static const auto value = mozilla::StyleInset::LengthPercentage(
+        mozilla::StyleLengthPercentage::Zero());
+    return value;
+  }
+
   static AnchorResolvedInset FromUnresolved(
       const mozilla::StyleInset& aValue, mozilla::Side aSide,
       const AnchorPosOffsetResolutionParams& aParams) {
-    if (aValue.HasAnchorPositioningFunction()) {
-      return ResolveAnchor(aValue, mozilla::ToStylePhysicalSide(aSide),
-                           aParams);
+    auto resolved = [&]() {
+      if (aValue.HasAnchorPositioningFunction()) {
+        return ResolveAnchor(aValue, mozilla::ToStylePhysicalSide(aSide),
+                             aParams);
+      }
+      return AnchorResolvedInset::NonOwning(&aValue);
+    }();
+    if (resolved->IsAuto() &&
+        aParams.mBaseParams.mAutoResolutionOverrideParams.OverriddenToZero(
+            aSide, aParams.mBaseParams.mFrame)) {
+      return AnchorResolvedInset::NonOwning(&ZeroValue());
     }
-    
-    
-    
-    
-    
-    if (aValue.IsAuto() && (!aParams.mBaseParams.mPositionArea.IsNone() ||
-                            SideUsesAnchorCenter(aSide, aParams))) {
-      return AnchorResolvedInset::UniquelyOwning(
-          new mozilla::StyleInset(mozilla::LengthPercentage::Zero()));
-    }
-    return AnchorResolvedInset::NonOwning(&aValue);
+    return resolved;
   }
 
  private:
   static AnchorResolvedInset Auto() {
     return AnchorResolvedInset::NonOwning(&AutoValue());
   }
-
-  static bool SideUsesAnchorCenter(
-      mozilla::Side aSide, const AnchorPosOffsetResolutionParams& aParams);
 
   static AnchorResolvedInset ResolveAnchor(
       const mozilla::StyleInset& aValue, mozilla::StylePhysicalSide aSide,
