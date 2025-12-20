@@ -14,7 +14,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "SpecialSystemDirectory.h"
 
-#ifdef XP_UNIX  
+#if defined(XP_UNIX) && !defined(XP_IOS)  
 #  include "mozilla/Preferences.h"
 #  include <fcntl.h>
 #  include <unistd.h>

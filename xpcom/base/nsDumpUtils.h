@@ -27,7 +27,7 @@
 #  define LOG(...)
 #endif
 
-#ifdef XP_UNIX  
+#if defined(XP_UNIX) && !defined(XP_IOS)  
 
 
 
