@@ -51,25 +51,25 @@ loader.lazyRequireGetter(
 
 
 
-function Memory(parent, frameCache = new StackFrameCache()) {
-  EventEmitter.decorate(this);
+class Memory extends EventEmitter {
+  constructor(parent, frameCache = new StackFrameCache()) {
+    super();
 
-  this.parent = parent;
-  this._mgr = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
-    Ci.nsIMemoryReporterManager
-  );
-  this.state = "detached";
-  this._dbg = null;
-  this._frameCache = frameCache;
+    this.parent = parent;
+    this._mgr = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
+      Ci.nsIMemoryReporterManager
+    );
+    this.state = "detached";
+    this._dbg = null;
+    this._frameCache = frameCache;
 
-  this._onGarbageCollection = this._onGarbageCollection.bind(this);
-  this._emitAllocations = this._emitAllocations.bind(this);
-  this._onWindowReady = this._onWindowReady.bind(this);
+    this._onGarbageCollection = this._onGarbageCollection.bind(this);
+    this._emitAllocations = this._emitAllocations.bind(this);
+    this._onWindowReady = this._onWindowReady.bind(this);
 
-  this.parent.on("window-ready", this._onWindowReady);
-}
+    this.parent.on("window-ready", this._onWindowReady);
+  }
 
-Memory.prototype = {
   destroy() {
     this.parent.off("window-ready", this._onWindowReady);
 
@@ -77,14 +77,14 @@ Memory.prototype = {
     if (this.state === "attached") {
       this.detach();
     }
-  },
+  }
 
   get dbg() {
     if (!this._dbg) {
       this._dbg = this.parent.makeDebugger();
     }
     return this._dbg;
-  },
+  }
 
   
 
@@ -103,12 +103,12 @@ Memory.prototype = {
     this.dbg.memory.onGarbageCollection = this._onGarbageCollection.bind(this);
     this.state = "attached";
     return this.state;
-  },
+  }
 
   
 
 
-  detach: expectState(
+  detach = expectState(
     "attached",
     function () {
       this._clearDebuggees();
@@ -118,14 +118,14 @@ Memory.prototype = {
       return this.state;
     },
     "detaching from the debugger"
-  ),
+  );
 
   
 
 
   getState() {
     return this.state;
-  },
+  }
 
   _clearDebuggees() {
     if (this._dbg) {
@@ -135,13 +135,13 @@ Memory.prototype = {
       this._clearFrames();
       this.dbg.removeAllDebuggees();
     }
-  },
+  }
 
   _clearFrames() {
     if (this.isRecordingAllocations()) {
       this._frameCache.clearFrames();
     }
-  },
+  }
 
   
 
@@ -154,7 +154,7 @@ Memory.prototype = {
       }
       this.dbg.addDebuggees();
     }
-  },
+  }
 
   
 
@@ -162,7 +162,7 @@ Memory.prototype = {
 
   isRecordingAllocations() {
     return this.dbg.memory.trackingAllocationSites;
-  },
+  }
 
   
 
@@ -172,7 +172,7 @@ Memory.prototype = {
 
 
 
-  saveHeapSnapshot: expectState(
+  saveHeapSnapshot = expectState(
     "attached",
     function (boundaries = null) {
       
@@ -190,19 +190,19 @@ Memory.prototype = {
       return ChromeUtils.saveHeapSnapshotGetId(boundaries);
     },
     "saveHeapSnapshot"
-  ),
+  );
 
   
 
 
 
-  takeCensus: expectState(
+  takeCensus = expectState(
     "attached",
     function () {
       return this.dbg.memory.takeCensus();
     },
     "taking census"
-  ),
+  );
 
   
 
@@ -219,7 +219,7 @@ Memory.prototype = {
 
 
 
-  startRecordingAllocations: expectState(
+  startRecordingAllocations = expectState(
     "attached",
     function (options = {}) {
       if (this.isRecordingAllocations()) {
@@ -253,12 +253,12 @@ Memory.prototype = {
       return this._getCurrentTime();
     },
     "starting recording allocations"
-  ),
+  );
 
   
 
 
-  stopRecordingAllocations: expectState(
+  stopRecordingAllocations = expectState(
     "attached",
     function () {
       if (!this.isRecordingAllocations()) {
@@ -275,13 +275,13 @@ Memory.prototype = {
       return this._getCurrentTime();
     },
     "stopping recording allocations"
-  ),
+  );
 
   
 
 
 
-  getAllocationsSettings: expectState(
+  getAllocationsSettings = expectState(
     "attached",
     function () {
       return {
@@ -290,7 +290,7 @@ Memory.prototype = {
       };
     },
     "getting allocations settings"
-  ),
+  );
 
   
 
@@ -348,7 +348,7 @@ Memory.prototype = {
 
 
 
-  getAllocations: expectState(
+  getAllocations = expectState(
     "attached",
     function () {
       if (this.dbg.memory.allocationsLogOverflowed) {
@@ -390,7 +390,7 @@ Memory.prototype = {
       return this._frameCache.updateFramePacket(packet);
     },
     "getting allocations"
-  ),
+  );
 
   
 
@@ -399,7 +399,7 @@ Memory.prototype = {
     for (let i = 0; i < 3; i++) {
       Cu.forceGC();
     }
-  },
+  }
 
   
 
@@ -408,7 +408,7 @@ Memory.prototype = {
 
   forceCycleCollection() {
     Cu.forceCC();
-  },
+  }
 
   
 
@@ -456,11 +456,11 @@ Memory.prototype = {
     }
 
     return result;
-  },
+  }
 
   residentUnique() {
     return this._mgr.residentUnique;
-  },
+  }
 
   
 
@@ -474,7 +474,7 @@ Memory.prototype = {
       this._poller.disarm();
       this._emitAllocations();
     }
-  },
+  }
 
   
 
@@ -485,7 +485,7 @@ Memory.prototype = {
   _emitAllocations() {
     this.emit("allocations", this.getAllocations());
     this._poller.arm();
-  },
+  }
 
   
 
@@ -500,7 +500,7 @@ Memory.prototype = {
     
     
     return ChromeUtils.now();
-  },
-};
+  }
+}
 
 exports.Memory = Memory;
