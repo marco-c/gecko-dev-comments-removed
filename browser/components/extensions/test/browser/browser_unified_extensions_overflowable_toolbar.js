@@ -19,7 +19,7 @@ const DEFAULT_WIDGET_IDS = [
   "library-button",
   "zoom-controls",
   "search-container",
-  "sidebar-button",
+  "print-button",
 ];
 
 
@@ -31,6 +31,10 @@ const OVERFLOWED_DEFAULT_WIDGET_IDS = DEFAULT_WIDGET_IDS.slice(
 const OVERFLOWED_EXTENSIONS_LIST_ID = "overflowed-extensions-list";
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", false]],
+  });
+
   
   
   

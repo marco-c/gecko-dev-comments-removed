@@ -10,6 +10,12 @@ registerCleanupFunction(async function asyncCleanup() {
   await resetCustomization();
 });
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", false]],
+  });
+});
+
 
 
 

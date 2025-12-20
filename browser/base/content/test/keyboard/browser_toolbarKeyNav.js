@@ -131,6 +131,7 @@ add_setup(async function () {
       
       
       ["browser.taskbarTabs.enabled", false],
+      ["browser.search.widget.new", false],
     ],
   });
   resetToolbarWithoutDevEditionButtons();
