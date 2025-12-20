@@ -333,41 +333,63 @@ add_task(async function test_fetch_weather_with_geolocation() {
       },
     },
     {
+      
+      geolocation: {
+        country_code: "SG",
+        region_code: null,
+        region: null,
+        city: "Singapore",
+      },
+      expected: {
+        country: "SG",
+        region: "Singapore", 
+        city: "Singapore",
+      },
+    },
+    {
+      
+      geolocation: {
+        country_code: "MC",
+        city: "Monaco",
+      },
+      expected: {
+        country: "MC",
+        region: "Monaco", 
+        city: "Monaco",
+      },
+    },
+    {
       geolocation: {
         country_code: "TestCountry",
       },
-      expected: {
-        country: "TestCountry",
-      },
+      
+      expected: false,
     },
     {
       geolocation: {
         region_code: "TestRegionCode",
       },
-      expected: {
-        region: "TestRegionCode",
-      },
+      
+      expected: false,
     },
     {
       geolocation: {
         region: "TestRegion",
       },
-      expected: {
-        region: "TestRegion",
-        city: "TestRegion",
-      },
+      
+      expected: false,
     },
     {
       geolocation: {
         city: "TestCity",
       },
-      expected: {
-        city: "TestCity",
-      },
+      
+      expected: false,
     },
     {
       geolocation: {},
-      expected: {},
+      
+      expected: false,
     },
     {
       geolocation: null,
