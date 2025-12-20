@@ -87,6 +87,7 @@ const HIGHLIGHT_PSEUDO_ELEMENTS = [
 const REGEXP_HIGHLIGHT_PSEUDO_ELEMENTS = new RegExp(
   `${HIGHLIGHT_PSEUDO_ELEMENTS.join("|")}`
 );
+const REGEXP_UPPERCASE_CHAR = /[A-Z]/;
 
 const FIRST_LINE_PSEUDO_ELEMENT_STYLING_SPEC_URL =
   "https://www.w3.org/TR/css-pseudo-4/#first-line-styling";
@@ -801,57 +802,14 @@ class InactivePropertyHelper {
     },
     
     {
-      
-      
-      
-      acceptedProperties: new Set([
-        "position-anchor",
-        "position-area",
-        
-        "top",
-        "left",
-        "bottom",
-        "right",
-        "inset-block-start",
-        "inset-block-end",
-        "inset-inline-start",
-        "inset-inline-end",
-        "inset-block",
-        "inset-inline",
-        "inset",
-        
-        "margin-top",
-        "margin-left",
-        "margin-bottom",
-        "margin-right",
-        "margin-block-start",
-        "margin-block-end",
-        "margin-inline-start",
-        "margin-inline-end",
-        "margin",
-        "margin-block",
-        "margin-inline",
-        "-moz-margin-start",
-        "-moz-margin-end",
-        
-        "width",
-        "height",
-        "min-width",
-        "min-height",
-        "max-width",
-        "max-height",
-        "block-size",
-        "inline-size",
-        "min-block-size",
-        "min-inline-size",
-        "max-block-size",
-        "max-inline-size",
-        
-        "align-self",
-        "justify-self",
-        "place-self",
-        "-webkit-align-self",
-      ]),
+      acceptedProperties: new Set(
+        Object.keys(globalThis.CSSPositionTryDescriptors.prototype).filter(
+          
+          
+          
+          p => !REGEXP_UPPERCASE_CHAR.test(p)
+        )
+      ),
       rejectCustomProperties: true,
       when: () =>
         ChromeUtils.getClassName(this.cssRule) === "CSSPositionTryRule",
