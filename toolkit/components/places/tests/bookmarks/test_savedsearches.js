@@ -95,14 +95,16 @@ add_task(async function test_savedsearches_bookmarks() {
       Assert.equal(item.bookmarkGuid, bookmark.guid);
 
       
-      
-      
-      
-      
+      let newBookmark = await PlacesUtils.bookmarks.insert({
+        parentGuid: PlacesUtils.bookmarks.menuGuid,
+        title: searchTerm + "blah",
+        url: "http://" + searchTerm + ".com",
+      });
+      Assert.equal(node.childCount, 2);
 
       
-      
-      
+      await PlacesUtils.bookmarks.remove(newBookmark);
+      Assert.equal(node.childCount, 1);
 
       
       await PlacesUtils.bookmarks.insert({
