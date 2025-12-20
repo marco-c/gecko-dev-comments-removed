@@ -5,6 +5,7 @@
 
 
 use super::{Component, ComponentName, Multiplier};
+use crate::derives::*;
 use std::fmt::{self, Debug, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -21,7 +22,7 @@ bitflags! {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum DataType {
     
     Length,
