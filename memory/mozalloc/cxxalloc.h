@@ -45,7 +45,7 @@ MOZALLOC_EXPORT_NEW void* operator new[](size_t size) noexcept(false) {
 
 MOZALLOC_EXPORT_NEW void* operator new[](size_t size,
                                          const std::nothrow_t&) noexcept(true) {
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 
 
 
@@ -55,7 +55,7 @@ MOZALLOC_EXPORT_NEW void* operator new[](size_t size,
 
   return malloc_impl(size);
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 #  pragma GCC diagnostic pop
 #endif
 }
