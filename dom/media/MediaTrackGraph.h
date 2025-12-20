@@ -1278,6 +1278,10 @@ class MediaTrackGraph {
 
   NativeInputTrack* GetNativeInputTrackMainThread();
 
+  
+
+  int ProcessingParamsGeneration() { return ++mProcessingParamsGeneration; }
+
  protected:
   explicit MediaTrackGraph(TrackRate aSampleRate,
                            CubebUtils::AudioDeviceID aPrimaryOutputDeviceID)
@@ -1306,6 +1310,10 @@ class MediaTrackGraph {
 
 
   const CubebUtils::AudioDeviceID mPrimaryOutputDeviceID;
+
+  
+
+  int mProcessingParamsGeneration = 0;
 };
 
 inline void MediaTrack::AssertOnGraphThread() const {
