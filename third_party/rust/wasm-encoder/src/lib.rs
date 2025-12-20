@@ -68,7 +68,8 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![no_std]
 #![deny(missing_docs, missing_debug_implementations)]
 
@@ -158,20 +159,6 @@ impl Encode for i64 {
     fn encode(&self, sink: &mut Vec<u8>) {
         let (value, pos) = leb128fmt::encode_s64(*self).unwrap();
         sink.extend_from_slice(&value[..pos]);
-    }
-}
-
-impl Encode for f32 {
-    fn encode(&self, sink: &mut Vec<u8>) {
-        let bits = self.to_bits();
-        sink.extend(bits.to_le_bytes())
-    }
-}
-
-impl Encode for f64 {
-    fn encode(&self, sink: &mut Vec<u8>) {
-        let bits = self.to_bits();
-        sink.extend(bits.to_le_bytes())
     }
 }
 

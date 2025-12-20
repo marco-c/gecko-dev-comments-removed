@@ -1,4 +1,4 @@
-use crate::{encode_section, Encode, Section, SectionId};
+use crate::{Encode, Section, SectionId, encode_section};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
@@ -22,6 +22,10 @@ pub struct CompositeType {
     
     
     pub shared: bool,
+    
+    pub descriptor: Option<u32>,
+    
+    pub describes: Option<u32>,
 }
 
 
@@ -362,6 +366,8 @@ pub enum HeapType {
 
     
     Concrete(u32),
+    
+    Exact(u32),
 }
 
 impl HeapType {
@@ -402,6 +408,11 @@ impl Encode for HeapType {
             
             
             HeapType::Concrete(i) => i64::from(*i).encode(sink),
+            
+            HeapType::Exact(i) => {
+                sink.push(0x62);
+                u32::from(*i).encode(sink)
+            }
         }
     }
 }
@@ -529,7 +540,7 @@ impl TypeSection {
 
     
     #[must_use = "the encoder must be used to encode the type"]
-    pub fn ty(&mut self) -> CoreTypeEncoder {
+    pub fn ty(&mut self) -> CoreTypeEncoder<'_> {
         self.num_added += 1;
         CoreTypeEncoder {
             bytes: &mut self.bytes,
@@ -635,6 +646,11 @@ impl<'a> CoreTypeEncoder<'a> {
         }
     }
 
+    
+    pub fn cont(mut self, ty: &ContType) {
+        self.encode_cont(ty)
+    }
+
     fn encode_cont(&mut self, ty: &ContType) {
         self.bytes.push(0x5d);
         i64::from(ty.0).encode(self.bytes);
@@ -663,6 +679,14 @@ impl<'a> CoreTypeEncoder<'a> {
         }
         if ty.composite_type.shared {
             self.bytes.push(0x65);
+        }
+        if let Some(index) = ty.composite_type.describes {
+            self.bytes.push(0x4c);
+            index.encode(self.bytes);
+        }
+        if let Some(index) = ty.composite_type.descriptor {
+            self.bytes.push(0x4d);
+            index.encode(self.bytes);
         }
         match &ty.composite_type.inner {
             CompositeInnerType::Func(ty) => {
@@ -710,6 +734,8 @@ mod tests {
             composite_type: CompositeType {
                 inner: CompositeInnerType::Func(FuncType::new([], [])),
                 shared: false,
+                descriptor: None,
+                describes: None,
             },
         });
 

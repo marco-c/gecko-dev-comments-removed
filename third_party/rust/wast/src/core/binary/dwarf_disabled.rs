@@ -1,8 +1,8 @@
 
 
 
-use crate::core::binary::{EncodeOptions, Encoder, Names, RecOrType};
 use crate::core::Local;
+use crate::core::binary::{EncodeOptions, Encoder, Names, RecOrType};
 use crate::token::Span;
 
 pub struct Dwarf<'a> {

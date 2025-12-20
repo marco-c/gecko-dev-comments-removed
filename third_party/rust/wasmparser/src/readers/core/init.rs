@@ -50,7 +50,12 @@ impl<'a> ConstExpr<'a> {
 impl<'a> FromReader<'a> for ConstExpr<'a> {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
         
-        let reader = reader.skip(|r| r.skip_const_expr())?;
+        let reader = reader.skip(|reader| {
+            let mut ops = OperatorsReader::new(reader.clone());
+            ops.skip_const_expr()?;
+            *reader = ops.get_binary_reader();
+            Ok(())
+        })?;
         Ok(ConstExpr { reader })
     }
 }

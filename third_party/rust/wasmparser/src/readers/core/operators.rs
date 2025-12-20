@@ -16,6 +16,7 @@
 use crate::limits::{MAX_WASM_CATCHES, MAX_WASM_HANDLERS};
 use crate::prelude::*;
 use crate::{BinaryReader, BinaryReaderError, FromReader, Result, ValType};
+use core::{fmt, mem};
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -110,6 +111,105 @@ impl PartialEq<Self> for BrTable<'_> {
 }
 
 impl Eq for BrTable<'_> {}
+
+impl<'a> BrTable<'a> {
+    
+    
+    pub fn len(&self) -> u32 {
+        self.cnt
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    
+    pub fn default(&self) -> u32 {
+        self.default
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn targets(&self) -> BrTableTargets<'_> {
+        BrTableTargets {
+            reader: self.reader.clone(),
+            remaining: self.cnt,
+        }
+    }
+}
+
+
+
+
+
+
+
+
+pub struct BrTableTargets<'a> {
+    reader: crate::BinaryReader<'a>,
+    remaining: u32,
+}
+
+impl<'a> Iterator for BrTableTargets<'a> {
+    type Item = Result<u32>;
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = usize::try_from(self.remaining).unwrap_or_else(|error| {
+            panic!("could not convert remaining `u32` into `usize`: {error}")
+        });
+        (remaining, Some(remaining))
+    }
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.remaining == 0 {
+            if !self.reader.eof() {
+                return Some(Err(BinaryReaderError::new(
+                    "trailing data in br_table",
+                    self.reader.original_position(),
+                )));
+            }
+            return None;
+        }
+        self.remaining -= 1;
+        Some(self.reader.read_var_u32())
+    }
+}
+
+impl fmt::Debug for BrTable<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f = f.debug_struct("BrTable");
+        f.field("count", &self.cnt);
+        f.field("default", &self.default);
+        match self.targets().collect::<Result<Vec<_>>>() {
+            Ok(targets) => {
+                f.field("targets", &targets);
+            }
+            Err(_) => {
+                f.field("reader", &self.reader);
+            }
+        }
+        f.finish()
+    }
+}
 
 
 
@@ -231,14 +331,130 @@ macro_rules! define_operator {
 crate::for_each_operator!(define_operator);
 
 
+
+
+
+
+
+pub trait FrameStack {
+    
+    fn current_frame(&self) -> Option<FrameKind>;
+}
+
+
+#[derive(Debug, Default, Clone)]
+pub struct ControlStack {
+    
+    frames: Vec<FrameKind>,
+    
+    top: Option<FrameKind>,
+}
+
+impl ControlStack {
+    
+    pub fn clear(&mut self) {
+        self.frames.clear();
+        self.top = None;
+    }
+
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.top.is_none()
+    }
+
+    
+    #[inline]
+    pub fn push(&mut self, frame: FrameKind) {
+        if let Some(old_top) = self.top.replace(frame) {
+            self.frames.push(old_top);
+        }
+    }
+
+    
+    pub fn pop(&mut self) -> Option<FrameKind> {
+        mem::replace(&mut self.top, self.frames.pop())
+    }
+
+    
+    #[inline]
+    pub fn last(&self) -> Option<FrameKind> {
+        self.top
+    }
+}
+
+
+struct FrameStackAdapter<'a, T> {
+    stack: &'a mut ControlStack,
+    visitor: &'a mut T,
+}
+
+impl<T> FrameStack for FrameStackAdapter<'_, T> {
+    fn current_frame(&self) -> Option<FrameKind> {
+        self.stack.last()
+    }
+}
+
+struct SingleFrameAdapter<'a, T> {
+    current_frame: FrameKind,
+    visitor: &'a mut T,
+}
+
+impl<T> FrameStack for SingleFrameAdapter<'_, T> {
+    fn current_frame(&self) -> Option<FrameKind> {
+        Some(self.current_frame)
+    }
+}
+
+
+
+
+
 #[derive(Clone)]
 pub struct OperatorsReader<'a> {
     reader: BinaryReader<'a>,
+    stack: ControlStack,
 }
 
+
+
+
+
+
+
+#[derive(Default)]
+pub struct OperatorsReaderAllocations(ControlStack);
+
 impl<'a> OperatorsReader<'a> {
-    pub(crate) fn new(reader: BinaryReader<'a>) -> OperatorsReader<'a> {
-        OperatorsReader { reader }
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(reader: BinaryReader<'a>) -> Self {
+        Self::new_with_allocs(reader, Default::default())
+    }
+
+    
+    
+    
+    pub fn new_with_allocs(
+        reader: BinaryReader<'a>,
+        mut allocs: OperatorsReaderAllocations,
+    ) -> Self {
+        allocs.0.clear();
+        allocs.0.push(FrameKind::Block);
+        Self {
+            reader,
+            stack: allocs.0,
+        }
+    }
+
+    
+    pub fn get_binary_reader(&self) -> BinaryReader<'a> {
+        self.reader.clone()
     }
 
     
@@ -253,20 +469,90 @@ impl<'a> OperatorsReader<'a> {
 
     
     
-    
-    pub fn ensure_end(&self) -> Result<()> {
-        if self.eof() {
-            return Ok(());
-        }
-        Err(BinaryReaderError::new(
-            "unexpected data at the end of operators",
-            self.reader.original_position(),
-        ))
+    pub fn is_end_then_eof(&self) -> bool {
+        self.reader.is_end_then_eof()
     }
 
     
+    
+    
+    
+    
+    
+    pub fn into_allocations(self) -> OperatorsReaderAllocations {
+        OperatorsReaderAllocations(self.stack)
+    }
+
+    
+    
+    
+    
+    
+    
     pub fn read(&mut self) -> Result<Operator<'a>> {
-        self.reader.read_operator()
+        self.visit_operator(&mut OperatorFactory)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn visit_operator<T>(&mut self, visitor: &mut T) -> Result<<T as VisitOperator<'a>>::Output>
+    where
+        T: VisitOperator<'a>,
+    {
+        self.reader.visit_operator(&mut FrameStackAdapter {
+            stack: &mut self.stack,
+            visitor,
+        })
+    }
+
+    
+    pub fn read_with_offset(&mut self) -> Result<(Operator<'a>, usize)> {
+        let pos = self.reader.original_position();
+        Ok((self.read()?, pos))
     }
 
     
@@ -277,31 +563,34 @@ impl<'a> OperatorsReader<'a> {
         }
     }
 
-    
-    pub fn read_with_offset(&mut self) -> Result<(Operator<'a>, usize)> {
-        let pos = self.reader.original_position();
-        Ok((self.read()?, pos))
+    pub(crate) fn skip_const_expr(&mut self) -> Result<()> {
+        
+        loop {
+            if let Operator::End = self.read()? {
+                if self.current_frame().is_some() {
+                    bail!(
+                        self.original_position(),
+                        "control frames remain at end of expression"
+                    );
+                }
+                return Ok(());
+            }
+        }
     }
 
     
     
     
-    pub fn visit_operator<T>(&mut self, visitor: &mut T) -> Result<<T as VisitOperator<'a>>::Output>
-    where
-        T: VisitOperator<'a>,
-    {
-        self.reader.visit_operator(visitor)
+    
+    
+    pub fn finish(&self) -> Result<()> {
+        self.reader.finish_expression(self)
     }
+}
 
-    
-    pub fn get_binary_reader(&self) -> BinaryReader<'a> {
-        self.reader.clone()
-    }
-
-    
-    
-    pub fn is_end_then_eof(&self) -> bool {
-        self.reader.is_end_then_eof()
+impl<'a> FrameStack for OperatorsReader<'a> {
+    fn current_frame(&self) -> Option<FrameKind> {
+        self.stack.last()
     }
 }
 
@@ -343,6 +632,14 @@ pub struct OperatorsIterator<'a> {
     err: bool,
 }
 
+impl<'a> OperatorsIterator<'a> {
+    
+    
+    pub fn into_allocations(self) -> OperatorsReaderAllocations {
+        self.reader.into_allocations()
+    }
+}
+
 impl<'a> Iterator for OperatorsIterator<'a> {
     type Item = Result<Operator<'a>>;
 
@@ -360,6 +657,14 @@ impl<'a> Iterator for OperatorsIterator<'a> {
 pub struct OperatorsIteratorWithOffsets<'a> {
     reader: OperatorsReader<'a>,
     err: bool,
+}
+
+impl<'a> OperatorsIteratorWithOffsets<'a> {
+    
+    
+    pub fn into_allocations(self) -> OperatorsReaderAllocations {
+        self.reader.into_allocations()
+    }
 }
 
 impl<'a> Iterator for OperatorsIteratorWithOffsets<'a> {
@@ -647,6 +952,154 @@ impl<'a> FromReader<'a> for Handle {
                 tag: reader.read_var_u32()?,
             },
             x => return reader.invalid_leading_byte(x, "on clause"),
+        })
+    }
+}
+
+
+struct OperatorFactory;
+
+macro_rules! define_visit_operator {
+    ($(@$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident ($($ann:tt)*))*) => {
+        $(
+            fn $visit(&mut self $($(,$arg: $argty)*)?) -> Operator<'a> {
+                Operator::$op $({ $($arg),* })?
+            }
+        )*
+    }
+}
+
+impl<'a> VisitOperator<'a> for OperatorFactory {
+    type Output = Operator<'a>;
+
+    #[cfg(feature = "simd")]
+    fn simd_visitor(&mut self) -> Option<&mut dyn VisitSimdOperator<'a, Output = Self::Output>> {
+        Some(self)
+    }
+
+    crate::for_each_visit_operator!(define_visit_operator);
+}
+
+#[cfg(feature = "simd")]
+impl<'a> VisitSimdOperator<'a> for OperatorFactory {
+    crate::for_each_visit_simd_operator!(define_visit_operator);
+}
+
+macro_rules! define_visit_operator_stack_adapter {
+    ($(@$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident ($($ann:tt)*))*) => {
+        $(
+            fn $visit(&mut self $($(,$arg: $argty)*)?) -> T::Output {
+                define_visit_operator_stack_adapter!(@visit self $visit $($($arg,)*)?)
+            }
+        )*
+    };
+
+    (@visit $self:ident visit_block $($rest:tt)*) => {{
+	    $self.stack.push(FrameKind::Block);
+	    $self.visitor.visit_block( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_loop $($rest:tt)*) => {{
+	    $self.stack.push(FrameKind::Loop);
+	    $self.visitor.visit_loop( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_if $($rest:tt)*) => {{
+	    $self.stack.push(FrameKind::If);
+	    $self.visitor.visit_if( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_else $($rest:tt)*) => {{
+	    $self.stack.pop();
+	    $self.stack.push(FrameKind::Else);
+	    $self.visitor.visit_else( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_try $($rest:tt)*) => {{
+	    $self.stack.push(FrameKind::LegacyTry);
+	    $self.visitor.visit_try( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_catch $($rest:tt)*) => {{
+	    $self.stack.pop();
+	    $self.stack.push(FrameKind::LegacyCatch);
+	    $self.visitor.visit_catch( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_catch_all $($rest:tt)*) => {{
+	    $self.stack.pop();
+	    $self.stack.push(FrameKind::LegacyCatchAll);
+	    $self.visitor.visit_catch_all( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_try_table $($rest:tt)*) => {{
+	    $self.stack.push(FrameKind::TryTable);
+	    $self.visitor.visit_try_table( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_delegate $($rest:tt)*) => {{
+	    $self.stack.pop();
+	    $self.visitor.visit_delegate( $($rest)* )
+    }};
+
+    (@visit $self:ident visit_end $($rest:tt)*) => {{
+	    $self.stack.pop();
+	    $self.visitor.visit_end( $($rest)* )
+    }};
+
+    (@visit $self:ident $visit:ident $($rest:tt)*) => {
+	$self.visitor.$visit( $($rest)* )
+    };
+}
+
+impl<'a, T: VisitOperator<'a>> VisitOperator<'a> for FrameStackAdapter<'_, T> {
+    type Output = T::Output;
+
+    #[cfg(feature = "simd")]
+    fn simd_visitor(&mut self) -> Option<&mut dyn VisitSimdOperator<'a, Output = Self::Output>> {
+        self.visitor.simd_visitor()
+    }
+
+    crate::for_each_visit_operator!(define_visit_operator_stack_adapter);
+}
+
+macro_rules! define_passthrough_visit_operator {
+    ($(@$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident ($($ann:tt)*))*) => {
+        $(
+            fn $visit(&mut self $($(,$arg: $argty)*)?) -> T::Output {
+		self.visitor.$visit( $($($arg,)*)? )
+            }
+        )*
+    };
+}
+
+impl<'a, T: VisitOperator<'a>> VisitOperator<'a> for SingleFrameAdapter<'_, T> {
+    type Output = T::Output;
+
+    #[cfg(feature = "simd")]
+    fn simd_visitor(&mut self) -> Option<&mut dyn VisitSimdOperator<'a, Output = Self::Output>> {
+        self.visitor.simd_visitor()
+    }
+
+    crate::for_each_visit_operator!(define_passthrough_visit_operator);
+}
+
+impl<'a> BinaryReader<'a> {
+    
+    
+    
+    
+    
+    
+    pub fn peek_operator<T: FrameStack>(&self, stack: &T) -> Result<Operator<'a>> {
+        self.clone().visit_operator(&mut SingleFrameAdapter {
+            current_frame: stack.current_frame().ok_or_else(|| {
+                format_err!(
+                    self.original_position(),
+                    "operators remaining after end of function body or expression"
+                )
+            })?,
+            visitor: &mut OperatorFactory,
         })
     }
 }

@@ -13,9 +13,9 @@
 
 
 use crate::{
-    types::{CoreTypeId, RecGroupId, TypeList},
     ArrayType, CompositeInnerType, CompositeType, ContType, FieldType, FuncType, RefType,
     StorageType, StructType, SubType, ValType,
+    types::{CoreTypeId, RecGroupId, TypeList},
 };
 
 

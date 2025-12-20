@@ -33,6 +33,8 @@ pub enum ExternalKind {
     Global,
     
     Tag,
+    
+    FuncExact,
 }
 
 
@@ -50,7 +52,15 @@ impl<'a> FromReader<'a> for Export<'a> {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
         Ok(Export {
             name: reader.read_string()?,
-            kind: reader.read()?,
+            kind: match reader.read()? {
+                ExternalKind::FuncExact => {
+                    bail!(
+                        reader.original_position(),
+                        "Exact type is not allowed in the exports",
+                    );
+                }
+                x => x,
+            },
             index: reader.read_var_u32()?,
         })
     }

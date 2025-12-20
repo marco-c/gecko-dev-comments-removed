@@ -17,6 +17,7 @@ pub enum ComponentName<'a> {
     CoreGlobals(NameMap<'a>),
     CoreMemories(NameMap<'a>),
     CoreTables(NameMap<'a>),
+    CoreTags(NameMap<'a>),
     CoreModules(NameMap<'a>),
     CoreInstances(NameMap<'a>),
     CoreTypes(NameMap<'a>),
@@ -44,7 +45,7 @@ impl<'a> Subsection<'a> for ComponentName<'a> {
         let offset = reader.original_position();
         Ok(match id {
             0 => {
-                let name = reader.read_string()?;
+                let name = reader.read_unlimited_string()?;
                 if !reader.eof() {
                     return Err(BinaryReaderError::new(
                         "trailing data at the end of a name",
@@ -63,6 +64,7 @@ impl<'a> Subsection<'a> for ComponentName<'a> {
                         0x01 => ComponentName::CoreTables,
                         0x02 => ComponentName::CoreMemories,
                         0x03 => ComponentName::CoreGlobals,
+                        0x04 => ComponentName::CoreTags,
                         0x10 => ComponentName::CoreTypes,
                         0x11 => ComponentName::CoreModules,
                         0x12 => ComponentName::CoreInstances,

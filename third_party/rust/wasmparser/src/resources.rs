@@ -14,8 +14,8 @@
 
 
 use crate::{
-    types::CoreTypeId, BinaryReaderError, FuncType, GlobalType, HeapType, MemoryType, RefType,
-    SubType, TableType, ValType, WasmFeatures,
+    BinaryReaderError, FuncType, GlobalType, HeapType, MemoryType, RefType, SubType, TableType,
+    ValType, WasmFeatures, types::CoreTypeId,
 };
 
 
@@ -129,6 +129,9 @@ pub trait WasmModuleResources {
     
     
     fn is_function_referenced(&self, idx: u32) -> bool;
+
+    
+    fn has_function_exact_type(&self, idx: u32) -> bool;
 }
 
 impl<T> WasmModuleResources for &'_ T
@@ -182,6 +185,9 @@ where
     }
     fn is_function_referenced(&self, idx: u32) -> bool {
         T::is_function_referenced(self, idx)
+    }
+    fn has_function_exact_type(&self, idx: u32) -> bool {
+        T::has_function_exact_type(self, idx)
     }
 }
 
@@ -251,5 +257,9 @@ where
 
     fn is_function_referenced(&self, idx: u32) -> bool {
         T::is_function_referenced(self, idx)
+    }
+
+    fn has_function_exact_type(&self, idx: u32) -> bool {
+        T::has_function_exact_type(self, idx)
     }
 }

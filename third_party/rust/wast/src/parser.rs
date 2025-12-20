@@ -62,9 +62,9 @@
 
 
 
+use crate::Error;
 use crate::lexer::{Float, Integer, Lexer, Token, TokenKind};
 use crate::token::Span;
-use crate::Error;
 use bumpalo::Bump;
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
@@ -429,7 +429,7 @@ impl ParseBuffer<'_> {
             match token.kind {
                 
                 TokenKind::Whitespace | TokenKind::LineComment | TokenKind::BlockComment => {
-                    continue
+                    continue;
                 }
 
                 
@@ -1388,7 +1388,7 @@ impl<'a> Cursor<'a> {
     }
 }
 
-impl Lookahead1<'_> {
+impl<'a> Lookahead1<'a> {
     
     
     
@@ -1400,6 +1400,11 @@ impl Lookahead1<'_> {
             self.attempts.push(T::display());
             false
         })
+    }
+
+    
+    pub fn parser(&self) -> Parser<'a> {
+        self.parser
     }
 
     
@@ -1429,7 +1434,7 @@ impl Lookahead1<'_> {
             }
             _ => {
                 let join = self.attempts.join(", ");
-                let message = format!("unexpected token, expected one of: {}", join);
+                let message = format!("unexpected token, expected one of: {join}");
                 self.parser.error(&message)
             }
         }

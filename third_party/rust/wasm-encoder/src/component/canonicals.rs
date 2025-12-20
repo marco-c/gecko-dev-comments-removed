@@ -1,4 +1,4 @@
-use crate::{encode_section, ComponentSection, ComponentSectionId, ComponentValType, Encode};
+use crate::{ComponentSection, ComponentSectionId, ComponentValType, Encode, encode_section};
 use alloc::vec::Vec;
 
 
@@ -27,6 +27,10 @@ pub enum CanonicalOption {
     
     
     Callback(u32),
+    
+    CoreType(u32),
+    
+    Gc,
 }
 
 impl Encode for CanonicalOption {
@@ -53,6 +57,13 @@ impl Encode for CanonicalOption {
             Self::Callback(idx) => {
                 sink.push(0x07);
                 idx.encode(sink);
+            }
+            Self::CoreType(idx) => {
+                sink.push(0x08);
+                idx.encode(sink);
+            }
+            Self::Gc => {
+                sink.push(0x09);
             }
         }
     }
@@ -101,14 +112,10 @@ impl CanonicalFunctionSection {
         O: IntoIterator<Item = CanonicalOption>,
         O::IntoIter: ExactSizeIterator,
     {
-        let options = options.into_iter();
         self.bytes.push(0x00);
         self.bytes.push(0x00);
         core_func_index.encode(&mut self.bytes);
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         type_index.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -120,14 +127,10 @@ impl CanonicalFunctionSection {
         O: IntoIterator<Item = CanonicalOption>,
         O::IntoIter: ExactSizeIterator,
     {
-        let options = options.into_iter();
         self.bytes.push(0x01);
         self.bytes.push(0x00);
         func_index.encode(&mut self.bytes);
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -150,6 +153,14 @@ impl CanonicalFunctionSection {
     }
 
     
+    pub fn resource_drop_async(&mut self, ty_index: u32) -> &mut Self {
+        self.bytes.push(0x07);
+        ty_index.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
     
     pub fn resource_rep(&mut self, ty_index: u32) -> &mut Self {
         self.bytes.push(0x04);
@@ -160,8 +171,8 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn thread_spawn(&mut self, ty_index: u32) -> &mut Self {
-        self.bytes.push(0x05);
+    pub fn thread_spawn_ref(&mut self, ty_index: u32) -> &mut Self {
+        self.bytes.push(0x40);
         ty_index.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -169,8 +180,18 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn thread_hw_concurrency(&mut self) -> &mut Self {
-        self.bytes.push(0x06);
+    pub fn thread_spawn_indirect(&mut self, ty_index: u32, table_index: u32) -> &mut Self {
+        self.bytes.push(0x41);
+        ty_index.encode(&mut self.bytes);
+        table_index.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_available_parallelism(&mut self) -> &mut Self {
+        self.bytes.push(0x42);
         self.num_added += 1;
         self
     }
@@ -179,7 +200,7 @@ impl CanonicalFunctionSection {
     
     
     
-    pub fn task_backpressure(&mut self) -> &mut Self {
+    pub fn backpressure_set(&mut self) -> &mut Self {
         self.bytes.push(0x08);
         self.num_added += 1;
         self
@@ -187,41 +208,56 @@ impl CanonicalFunctionSection {
 
     
     
+    pub fn backpressure_inc(&mut self) -> &mut Self {
+        self.bytes.push(0x24);
+        self.num_added += 1;
+        self
+    }
+
     
-    pub fn task_return(&mut self, ty: Option<impl Into<ComponentValType>>) -> &mut Self {
+    
+    pub fn backpressure_dec(&mut self) -> &mut Self {
+        self.bytes.push(0x25);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    
+    pub fn task_return<O>(&mut self, ty: Option<ComponentValType>, options: O) -> &mut Self
+    where
+        O: IntoIterator<Item = CanonicalOption>,
+        O::IntoIter: ExactSizeIterator,
+    {
         self.bytes.push(0x09);
-        if let Some(ty) = ty {
-            self.bytes.push(0x00);
-            ty.into().encode(&mut self.bytes);
-        } else {
-            self.bytes.push(0x01);
-            0_usize.encode(&mut self.bytes);
-        }
+        crate::encode_resultlist(&mut self.bytes, ty);
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
 
     
+    pub fn task_cancel(&mut self) -> &mut Self {
+        self.bytes.push(0x05);
+        self.num_added += 1;
+        self
+    }
+
     
-    
-    
-    pub fn task_wait(&mut self, async_: bool, memory: u32) -> &mut Self {
+    pub fn context_get(&mut self, i: u32) -> &mut Self {
         self.bytes.push(0x0a);
-        self.bytes.push(if async_ { 1 } else { 0 });
-        memory.encode(&mut self.bytes);
+        self.bytes.push(0x7f);
+        i.encode(&mut self.bytes);
         self.num_added += 1;
         self
     }
 
     
-    
-    
-    
-    
-    pub fn task_poll(&mut self, async_: bool, memory: u32) -> &mut Self {
+    pub fn context_set(&mut self, i: u32) -> &mut Self {
         self.bytes.push(0x0b);
-        self.bytes.push(if async_ { 1 } else { 0 });
-        memory.encode(&mut self.bytes);
+        self.bytes.push(0x7f);
+        i.encode(&mut self.bytes);
         self.num_added += 1;
         self
     }
@@ -230,9 +266,9 @@ impl CanonicalFunctionSection {
     
     
     
-    pub fn task_yield(&mut self, async_: bool) -> &mut Self {
+    pub fn thread_yield(&mut self, cancellable: bool) -> &mut Self {
         self.bytes.push(0x0c);
-        self.bytes.push(if async_ { 1 } else { 0 });
+        self.bytes.push(if cancellable { 1 } else { 0 });
         self.num_added += 1;
         self
     }
@@ -240,6 +276,14 @@ impl CanonicalFunctionSection {
     
     pub fn subtask_drop(&mut self) -> &mut Self {
         self.bytes.push(0x0d);
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn subtask_cancel(&mut self, async_: bool) -> &mut Self {
+        self.bytes.push(0x06);
+        self.bytes.push(if async_ { 1 } else { 0 });
         self.num_added += 1;
         self
     }
@@ -261,11 +305,7 @@ impl CanonicalFunctionSection {
     {
         self.bytes.push(0x0f);
         ty.encode(&mut self.bytes);
-        let options = options.into_iter();
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -278,11 +318,7 @@ impl CanonicalFunctionSection {
     {
         self.bytes.push(0x10);
         ty.encode(&mut self.bytes);
-        let options = options.into_iter();
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -309,7 +345,7 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn stream_close_readable(&mut self, ty: u32) -> &mut Self {
+    pub fn stream_drop_readable(&mut self, ty: u32) -> &mut Self {
         self.bytes.push(0x13);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
@@ -318,7 +354,7 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn stream_close_writable(&mut self, ty: u32) -> &mut Self {
+    pub fn stream_drop_writable(&mut self, ty: u32) -> &mut Self {
         self.bytes.push(0x14);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
@@ -342,11 +378,7 @@ impl CanonicalFunctionSection {
     {
         self.bytes.push(0x16);
         ty.encode(&mut self.bytes);
-        let options = options.into_iter();
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -359,11 +391,7 @@ impl CanonicalFunctionSection {
     {
         self.bytes.push(0x17);
         ty.encode(&mut self.bytes);
-        let options = options.into_iter();
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -390,7 +418,7 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn future_close_readable(&mut self, ty: u32) -> &mut Self {
+    pub fn future_drop_readable(&mut self, ty: u32) -> &mut Self {
         self.bytes.push(0x1a);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
@@ -399,7 +427,7 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn future_close_writable(&mut self, ty: u32) -> &mut Self {
+    pub fn future_drop_writable(&mut self, ty: u32) -> &mut Self {
         self.bytes.push(0x1b);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
@@ -414,11 +442,7 @@ impl CanonicalFunctionSection {
         O::IntoIter: ExactSizeIterator,
     {
         self.bytes.push(0x1c);
-        let options = options.into_iter();
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -434,11 +458,7 @@ impl CanonicalFunctionSection {
         O::IntoIter: ExactSizeIterator,
     {
         self.bytes.push(0x1d);
-        let options = options.into_iter();
-        options.len().encode(&mut self.bytes);
-        for option in options {
-            option.encode(&mut self.bytes);
-        }
+        self.encode_options(options);
         self.num_added += 1;
         self
     }
@@ -447,6 +467,116 @@ impl CanonicalFunctionSection {
     pub fn error_context_drop(&mut self) -> &mut Self {
         self.bytes.push(0x1e);
         self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn waitable_set_new(&mut self) -> &mut Self {
+        self.bytes.push(0x1f);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn waitable_set_wait(&mut self, async_: bool, memory: u32) -> &mut Self {
+        self.bytes.push(0x20);
+        self.bytes.push(if async_ { 1 } else { 0 });
+        memory.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn waitable_set_poll(&mut self, async_: bool, memory: u32) -> &mut Self {
+        self.bytes.push(0x21);
+        self.bytes.push(if async_ { 1 } else { 0 });
+        memory.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn waitable_set_drop(&mut self) -> &mut Self {
+        self.bytes.push(0x22);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn waitable_join(&mut self) -> &mut Self {
+        self.bytes.push(0x23);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_index(&mut self) -> &mut Self {
+        self.bytes.push(0x26);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_new_indirect(&mut self, ty_index: u32, table_index: u32) -> &mut Self {
+        self.bytes.push(0x27);
+        ty_index.encode(&mut self.bytes);
+        table_index.encode(&mut self.bytes);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_switch_to(&mut self, cancellable: bool) -> &mut Self {
+        self.bytes.push(0x28);
+        self.bytes.push(if cancellable { 1 } else { 0 });
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_suspend(&mut self, cancellable: bool) -> &mut Self {
+        self.bytes.push(0x29);
+        self.bytes.push(if cancellable { 1 } else { 0 });
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_resume_later(&mut self) -> &mut Self {
+        self.bytes.push(0x2a);
+        self.num_added += 1;
+        self
+    }
+
+    
+    
+    pub fn thread_yield_to(&mut self, cancellable: bool) -> &mut Self {
+        self.bytes.push(0x2b);
+        self.bytes.push(if cancellable { 1 } else { 0 });
+        self.num_added += 1;
+        self
+    }
+
+    fn encode_options<O>(&mut self, options: O) -> &mut Self
+    where
+        O: IntoIterator<Item = CanonicalOption>,
+        O::IntoIter: ExactSizeIterator,
+    {
+        let options = options.into_iter();
+        options.len().encode(&mut self.bytes);
+        for option in options {
+            option.encode(&mut self.bytes);
+        }
         self
     }
 }

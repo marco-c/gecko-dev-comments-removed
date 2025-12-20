@@ -1,8 +1,6 @@
 use crate::limits::MAX_WASM_CANONICAL_OPTIONS;
 use crate::prelude::*;
-use crate::{
-    BinaryReader, BinaryReaderError, ComponentValType, FromReader, Result, SectionLimited,
-};
+use crate::{BinaryReader, ComponentValType, FromReader, Result, SectionLimited};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,6 +28,10 @@ pub enum CanonicalOption {
     
     
     Callback(u32),
+    
+    CoreType(u32),
+    
+    Gc,
 }
 
 
@@ -62,54 +64,70 @@ pub enum CanonicalFunction {
         resource: u32,
     },
     
+    ResourceDropAsync {
+        
+        resource: u32,
+    },
+    
     
     ResourceRep {
         
         resource: u32,
     },
     
-    ThreadSpawn {
+    ThreadSpawnRef {
         
         func_ty_index: u32,
     },
     
     
-    ThreadHwConcurrency,
+    ThreadSpawnIndirect {
+        
+        func_ty_index: u32,
+        
+        table_index: u32,
+    },
     
     
-    TaskBackpressure,
+    ThreadAvailableParallelism,
+    
+    
+    BackpressureSet,
+    
+    
+    BackpressureInc,
+    
+    
+    BackpressureDec,
     
     
     
     TaskReturn {
         
         result: Option<ComponentValType>,
+        
+        options: Box<[CanonicalOption]>,
     },
     
+    TaskCancel,
     
-    TaskWait {
+    ContextGet(u32),
+    
+    ContextSet(u32),
+    
+    
+    ThreadYield {
         
-        async_: bool,
-        
-        memory: u32,
-    },
-    
-    
-    
-    TaskPoll {
-        
-        async_: bool,
-        
-        memory: u32,
-    },
-    
-    
-    TaskYield {
-        
-        async_: bool,
+        cancellable: bool,
     },
     
     SubtaskDrop,
+    
+    SubtaskCancel {
+        
+        
+        async_: bool,
+    },
     
     StreamNew {
         
@@ -151,13 +169,13 @@ pub enum CanonicalFunction {
     },
     
     
-    StreamCloseReadable {
+    StreamDropReadable {
         
         ty: u32,
     },
     
     
-    StreamCloseWritable {
+    StreamDropWritable {
         
         ty: u32,
     },
@@ -202,13 +220,13 @@ pub enum CanonicalFunction {
     },
     
     
-    FutureCloseReadable {
+    FutureDropReadable {
         
         ty: u32,
     },
     
     
-    FutureCloseWritable {
+    FutureDropWritable {
         
         ty: u32,
     },
@@ -228,6 +246,54 @@ pub enum CanonicalFunction {
     },
     
     ErrorContextDrop,
+    
+    WaitableSetNew,
+    
+    WaitableSetWait {
+        
+        
+        cancellable: bool,
+        
+        memory: u32,
+    },
+    
+    WaitableSetPoll {
+        
+        
+        cancellable: bool,
+        
+        memory: u32,
+    },
+    
+    WaitableSetDrop,
+    
+    WaitableJoin,
+    
+    ThreadIndex,
+    
+    ThreadNewIndirect {
+        
+        func_ty_index: u32,
+        
+        table_index: u32,
+    },
+    
+    ThreadSwitchTo {
+        
+        cancellable: bool,
+    },
+    
+    ThreadSuspend {
+        
+        cancellable: bool,
+    },
+    
+    ThreadResumeLater,
+    
+    ThreadYieldTo {
+        
+        cancellable: bool,
+    },
 }
 
 
@@ -237,26 +303,17 @@ impl<'a> FromReader<'a> for CanonicalFunction {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<CanonicalFunction> {
         Ok(match reader.read_u8()? {
             0x00 => match reader.read_u8()? {
-                0x00 => {
-                    let core_func_index = reader.read_var_u32()?;
-                    let options = reader
-                        .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                        .collect::<Result<_>>()?;
-                    let type_index = reader.read_var_u32()?;
-                    CanonicalFunction::Lift {
-                        core_func_index,
-                        options,
-                        type_index,
-                    }
-                }
+                0x00 => CanonicalFunction::Lift {
+                    core_func_index: reader.read_var_u32()?,
+                    options: read_opts(reader)?,
+                    type_index: reader.read_var_u32()?,
+                },
                 x => return reader.invalid_leading_byte(x, "canonical function lift"),
             },
             0x01 => match reader.read_u8()? {
                 0x00 => CanonicalFunction::Lower {
                     func_index: reader.read_var_u32()?,
-                    options: reader
-                        .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                        .collect::<Result<_>>()?,
+                    options: read_opts(reader)?,
                 },
                 x => return reader.invalid_leading_byte(x, "canonical function lower"),
             },
@@ -266,54 +323,39 @@ impl<'a> FromReader<'a> for CanonicalFunction {
             0x03 => CanonicalFunction::ResourceDrop {
                 resource: reader.read()?,
             },
+            0x07 => CanonicalFunction::ResourceDropAsync {
+                resource: reader.read()?,
+            },
             0x04 => CanonicalFunction::ResourceRep {
                 resource: reader.read()?,
             },
-            0x05 => CanonicalFunction::ThreadSpawn {
-                func_ty_index: reader.read()?,
-            },
-            0x06 => CanonicalFunction::ThreadHwConcurrency,
-            0x08 => CanonicalFunction::TaskBackpressure,
+            0x08 => CanonicalFunction::BackpressureSet,
+            0x24 => CanonicalFunction::BackpressureInc,
+            0x25 => CanonicalFunction::BackpressureDec,
             0x09 => CanonicalFunction::TaskReturn {
-                result: match reader.read_u8()? {
-                    0x00 => Some(reader.read()?),
-                    0x01 => {
-                        if reader.read_u8()? == 0 {
-                            None
-                        } else {
-                            return Err(BinaryReaderError::new(
-                                "named results not allowed for `task.return` intrinsic",
-                                reader.original_position() - 2,
-                            ));
-                        }
-                    }
-                    x => return reader.invalid_leading_byte(x, "`task.return` result"),
-                },
+                result: crate::read_resultlist(reader)?,
+                options: read_opts(reader)?,
             },
-            0x0a => CanonicalFunction::TaskWait {
-                async_: reader.read()?,
-                memory: reader.read()?,
+            0x0a => match reader.read_u8()? {
+                0x7f => CanonicalFunction::ContextGet(reader.read_var_u32()?),
+                x => return reader.invalid_leading_byte(x, "context.get intrinsic type"),
             },
-            0x0b => CanonicalFunction::TaskPoll {
-                async_: reader.read()?,
-                memory: reader.read()?,
+            0x0b => match reader.read_u8()? {
+                0x7f => CanonicalFunction::ContextSet(reader.read_var_u32()?),
+                x => return reader.invalid_leading_byte(x, "context.set intrinsic type"),
             },
-            0x0c => CanonicalFunction::TaskYield {
-                async_: reader.read()?,
+            0x0c => CanonicalFunction::ThreadYield {
+                cancellable: reader.read()?,
             },
             0x0d => CanonicalFunction::SubtaskDrop,
             0x0e => CanonicalFunction::StreamNew { ty: reader.read()? },
             0x0f => CanonicalFunction::StreamRead {
                 ty: reader.read()?,
-                options: reader
-                    .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                    .collect::<Result<_>>()?,
+                options: read_opts(reader)?,
             },
             0x10 => CanonicalFunction::StreamWrite {
                 ty: reader.read()?,
-                options: reader
-                    .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                    .collect::<Result<_>>()?,
+                options: read_opts(reader)?,
             },
             0x11 => CanonicalFunction::StreamCancelRead {
                 ty: reader.read()?,
@@ -323,20 +365,16 @@ impl<'a> FromReader<'a> for CanonicalFunction {
                 ty: reader.read()?,
                 async_: reader.read()?,
             },
-            0x13 => CanonicalFunction::StreamCloseReadable { ty: reader.read()? },
-            0x14 => CanonicalFunction::StreamCloseWritable { ty: reader.read()? },
+            0x13 => CanonicalFunction::StreamDropReadable { ty: reader.read()? },
+            0x14 => CanonicalFunction::StreamDropWritable { ty: reader.read()? },
             0x15 => CanonicalFunction::FutureNew { ty: reader.read()? },
             0x16 => CanonicalFunction::FutureRead {
                 ty: reader.read()?,
-                options: reader
-                    .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                    .collect::<Result<_>>()?,
+                options: read_opts(reader)?,
             },
             0x17 => CanonicalFunction::FutureWrite {
                 ty: reader.read()?,
-                options: reader
-                    .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                    .collect::<Result<_>>()?,
+                options: read_opts(reader)?,
             },
             0x18 => CanonicalFunction::FutureCancelRead {
                 ty: reader.read()?,
@@ -346,22 +384,63 @@ impl<'a> FromReader<'a> for CanonicalFunction {
                 ty: reader.read()?,
                 async_: reader.read()?,
             },
-            0x1a => CanonicalFunction::FutureCloseReadable { ty: reader.read()? },
-            0x1b => CanonicalFunction::FutureCloseWritable { ty: reader.read()? },
+            0x1a => CanonicalFunction::FutureDropReadable { ty: reader.read()? },
+            0x1b => CanonicalFunction::FutureDropWritable { ty: reader.read()? },
             0x1c => CanonicalFunction::ErrorContextNew {
-                options: reader
-                    .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                    .collect::<Result<_>>()?,
+                options: read_opts(reader)?,
             },
             0x1d => CanonicalFunction::ErrorContextDebugMessage {
-                options: reader
-                    .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
-                    .collect::<Result<_>>()?,
+                options: read_opts(reader)?,
             },
             0x1e => CanonicalFunction::ErrorContextDrop,
+
+            0x1f => CanonicalFunction::WaitableSetNew,
+            0x20 => CanonicalFunction::WaitableSetWait {
+                cancellable: reader.read()?,
+                memory: reader.read()?,
+            },
+            0x21 => CanonicalFunction::WaitableSetPoll {
+                cancellable: reader.read()?,
+                memory: reader.read()?,
+            },
+            0x22 => CanonicalFunction::WaitableSetDrop,
+            0x23 => CanonicalFunction::WaitableJoin,
+            0x26 => CanonicalFunction::ThreadIndex,
+            0x27 => CanonicalFunction::ThreadNewIndirect {
+                func_ty_index: reader.read()?,
+                table_index: reader.read()?,
+            },
+            0x28 => CanonicalFunction::ThreadSwitchTo {
+                cancellable: reader.read()?,
+            },
+            0x29 => CanonicalFunction::ThreadSuspend {
+                cancellable: reader.read()?,
+            },
+            0x2a => CanonicalFunction::ThreadResumeLater,
+            0x2b => CanonicalFunction::ThreadYieldTo {
+                cancellable: reader.read()?,
+            },
+            0x06 => CanonicalFunction::SubtaskCancel {
+                async_: reader.read()?,
+            },
+            0x05 => CanonicalFunction::TaskCancel,
+            0x40 => CanonicalFunction::ThreadSpawnRef {
+                func_ty_index: reader.read()?,
+            },
+            0x41 => CanonicalFunction::ThreadSpawnIndirect {
+                func_ty_index: reader.read()?,
+                table_index: reader.read()?,
+            },
+            0x42 => CanonicalFunction::ThreadAvailableParallelism,
             x => return reader.invalid_leading_byte(x, "canonical function"),
         })
     }
+}
+
+fn read_opts(reader: &mut BinaryReader<'_>) -> Result<Box<[CanonicalOption]>> {
+    reader
+        .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
+        .collect::<Result<_>>()
 }
 
 impl<'a> FromReader<'a> for CanonicalOption {
@@ -375,6 +454,8 @@ impl<'a> FromReader<'a> for CanonicalOption {
             0x05 => CanonicalOption::PostReturn(reader.read_var_u32()?),
             0x06 => CanonicalOption::Async,
             0x07 => CanonicalOption::Callback(reader.read_var_u32()?),
+            0x08 => CanonicalOption::CoreType(reader.read_var_u32()?),
+            0x09 => CanonicalOption::Gc,
             x => return reader.invalid_leading_byte(x, "canonical option"),
         })
     }
