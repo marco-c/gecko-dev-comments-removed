@@ -9,18 +9,7 @@
 
 
 
-ChromeUtils.defineESModuleGetters(this, {
-  SearchbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
-});
-
 add_setup(async function () {
-  SearchbarTestUtils.init(this);
-  SpecialPowers.pushPrefEnv({
-    set: [["browser.search.widget.new", true]],
-  });
-  await gCUITestUtils.addSearchBar();
-  registerCleanupFunction(() => gCUITestUtils.removeSearchBar());
-
   await SearchTestUtils.updateRemoteSettingsConfig([
     { identifier: "engine1" },
     { identifier: "engine2" },
