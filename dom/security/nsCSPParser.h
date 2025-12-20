@@ -56,6 +56,12 @@ class nsCSPParser {
                                                  bool aDeliveredViaMetaTag,
                                                  bool aSuppressLogMessages);
 
+  
+
+
+
+  static bool isValidBase64Value(const nsAString& aValue);
+
  private:
   nsCSPParser(policyTokens& aTokens, nsIURI* aSelfURI,
               nsCSPContext* aCSPContext, bool aDeliveredViaMetaTag,

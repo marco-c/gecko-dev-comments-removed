@@ -8,6 +8,7 @@
 
 #include "hasht.h"
 #include "mozilla/Logging.h"
+#include "nsCSPParser.h"
 #include "nsICryptoHash.h"
 
 static mozilla::LogModule* GetSriMetadataLog() {
@@ -38,23 +39,34 @@ SRIMetadata::SRIMetadata(const nsACString& aToken)
   
   mAlgorithm = Substring(aToken, 0, hyphen);
   uint32_t hashStart = hyphen + 1;
+  uint32_t hashEnd = aToken.Length();
   if (hashStart >= aToken.Length()) {
     SRIMETADATAERROR(("SRIMetadata::SRIMetadata, invalid (missing digest)"));
     return;  
   }
+
   int32_t question = aToken.FindChar('?');
-  if (question == -1) {
-    mHashes.AppendElement(
-        Substring(aToken, hashStart, aToken.Length() - hashStart));
-  } else {
+  if (question != -1) {
     MOZ_ASSERT(question > 0);
     if (static_cast<uint32_t>(question) <= hashStart) {
       SRIMETADATAERROR(
           ("SRIMetadata::SRIMetadata, invalid (options w/o digest)"));
       return;  
     }
-    mHashes.AppendElement(Substring(aToken, hashStart, question - hashStart));
+    hashEnd = question;
   }
+
+  
+  
+  
+  if (!nsCSPParser::isValidBase64Value(NS_ConvertUTF8toUTF16(
+          Substring(aToken, hashStart, hashEnd - hashStart)))) {
+    SRIMETADATAERROR(
+        ("SRIMetadata::SRIMetadata, invalid (digest not in base64 format)"));
+    return;  
+  }
+
+  mHashes.AppendElement(Substring(aToken, hashStart, hashEnd - hashStart));
 
   if (mAlgorithm.EqualsLiteral("sha256")) {
     mAlgorithmType = nsICryptoHash::SHA256;
