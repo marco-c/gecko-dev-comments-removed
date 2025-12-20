@@ -315,6 +315,9 @@ class LoadedScript : public nsIMemoryReporter {
 
   
 
+  void SetTookLongInPreviousRuns() { mTookLongInPreviousRuns = true; }
+  bool TookLongInPreviousRuns() const { return mTookLongInPreviousRuns; }
+
   
 
 
@@ -404,6 +407,14 @@ class LoadedScript : public nsIMemoryReporter {
   
   
   uint64_t mIsDirty : 1;
+
+  
+  
+  
+  
+  
+  
+  uint64_t mTookLongInPreviousRuns : 1;
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;
@@ -562,6 +573,13 @@ class LoadedScriptDelegate {
     GetLoadedScript()->SetStencil(aStencil);
   }
   void ClearStencil() { GetLoadedScript()->ClearStencil(); }
+
+  void SetTookLongInPreviousRuns() {
+    GetLoadedScript()->SetTookLongInPreviousRuns();
+  }
+  bool TookLongInPreviousRuns() const {
+    return GetLoadedScript()->TookLongInPreviousRuns();
+  }
 };
 
 class ClassicScript final : public LoadedScript {

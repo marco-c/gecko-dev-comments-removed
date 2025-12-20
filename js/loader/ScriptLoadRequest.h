@@ -268,6 +268,9 @@ class ScriptLoadRequest : public nsISupports,
   bool HasDirtyCache() const { return mHasDirtyCache_; }
   void SetHasDirtyCache() { mHasDirtyCache_ = true; }
 
+  bool HadPostponed() const { return mHadPostponed_; }
+  void SetHadPostponed() { mHadPostponed_ = true; }
+
  public:
   
 
@@ -292,6 +295,9 @@ class ScriptLoadRequest : public nsISupports,
   
   
   bool mHasDirtyCache_ : 1;
+
+  
+  bool mHadPostponed_ : 1;
 
   enum class CachingPlan : uint8_t {
     
