@@ -19,16 +19,24 @@ pub enum IPCServerState {
 
 #[derive(PartialEq)]
 enum IPCEndpoint {
-    Parent, 
-
-    Child, 
+    
+    Parent,
+    
+    Child,
     #[allow(dead_code)]
-    External, 
+    
+    External,
 }
 
 struct IPCConnection {
+    
     connector: Rc<IPCConnector>,
+    
     endpoint: IPCEndpoint,
+    #[allow(dead_code)]
+    
+    
+    pid: Option<Pid>,
 }
 
 pub(crate) struct IPCServer {
@@ -40,7 +48,11 @@ pub(crate) struct IPCServer {
 }
 
 impl IPCServer {
-    pub(crate) fn new(listener: IPCListener, connector: IPCConnector) -> Result<IPCServer> {
+    pub(crate) fn new(
+        client_pid: Pid,
+        listener: IPCListener,
+        connector: IPCConnector,
+    ) -> Result<IPCServer> {
         let connector = Rc::new(connector);
         let mut queue = IPCQueue::new(listener)?;
         queue.add_connector(&connector)?;
@@ -51,6 +63,7 @@ impl IPCServer {
             IPCConnection {
                 connector,
                 endpoint: IPCEndpoint::Parent,
+                pid: Some(client_pid),
             },
         );
 
@@ -68,6 +81,7 @@ impl IPCServer {
                         IPCConnection {
                             connector,
                             endpoint: IPCEndpoint::External,
+                            pid: None,
                         },
                     );
                 }
@@ -76,7 +90,7 @@ impl IPCServer {
                         self.handle_message(key, &header, payload, ancillary_data, generator)
                     {
                         log::error!(
-                            "Error {error} when handling a message of kind {:?}",
+                            "Error {error:#} when handling a message of kind {:?}",
                             header.kind
                         );
                     }
@@ -128,9 +142,14 @@ impl IPCServer {
                 messages::Kind::RegisterChildProcess => {
                     let message = messages::RegisterChildProcess::decode(&data, ancillary_data)?;
                     let connector = IPCConnector::from_ancillary(message.ipc_endpoint)?;
-                    connector.send_message(messages::ChildProcessRegistered::new(
+                    connector.send_message(messages::ChildProcessRendezVous::new(
                         process::id() as Pid
                     ))?;
+                    let reply = connector.recv_reply::<messages::ChildProcessRendezVousReply>()?;
+
+                    if !reply.dumpable {
+                        bail!("Child process {} is not dumpable", reply.child_pid);
+                    }
 
                     let connector = Rc::new(connector);
                     self.queue.add_connector(&connector)?;
@@ -139,6 +158,7 @@ impl IPCServer {
                         IPCConnection {
                             connector,
                             endpoint: IPCEndpoint::Child,
+                            pid: Some(reply.child_pid),
                         },
                     );
                 }
@@ -163,8 +183,14 @@ impl IPCServer {
                 #[cfg(target_os = "windows")]
                 messages::Kind::WindowsErrorReporting => {
                     let message =
-                        messages::WindowsErrorReportingMinidump::decode(data, ancillary_data)?;
-                    generator.generate_wer_minidump(message);
+                        messages::WindowsErrorReportingMinidump::decode(&data, ancillary_data)?;
+                    let res = generator.generate_wer_minidump(message);
+                    match res {
+                        Ok(_) => {}
+                        Err(error) => log::error!(
+                            "Could not generate a minidump requested via WER, error: {error:?}"
+                        ),
+                    }
                     connector.send_message(messages::WindowsErrorReportingMinidumpReply::new())?;
                 }
                 kind => {

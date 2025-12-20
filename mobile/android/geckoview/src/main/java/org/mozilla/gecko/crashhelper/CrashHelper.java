@@ -43,10 +43,8 @@ public final class CrashHelper extends Service {
   private static class CrashHelperBinder extends ICrashHelper.Stub {
     @Override
     public boolean start(
-        final int clientPid,
         final ParcelFileDescriptor breakpadFd,
         final String minidumpPath,
-        final ParcelFileDescriptor listenFd,
         final ParcelFileDescriptor serverFd) {
       
       
@@ -57,7 +55,7 @@ public final class CrashHelper extends Service {
       
       
       CrashHelper.crash_generator(
-          clientPid, breakpadFd.detachFd(), minidumpPath, listenFd.detachFd(), serverFd.detachFd());
+          Process.myPid(), breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
 
       return false;
     }
@@ -71,17 +69,14 @@ public final class CrashHelper extends Service {
   public static ServiceConnection createConnection(
       final ParcelFileDescriptor breakpadFd,
       final String minidumpPath,
-      final ParcelFileDescriptor listenFd,
       final ParcelFileDescriptor serverFd) {
     class CrashHelperConnection implements ServiceConnection {
       public CrashHelperConnection(
           final ParcelFileDescriptor breakpadFd,
           final String minidumpPath,
-          final ParcelFileDescriptor listenFd,
           final ParcelFileDescriptor serverFd) {
         mBreakpadFd = breakpadFd;
         mMinidumpPath = minidumpPath;
-        mListenFd = listenFd;
         mServerFd = serverFd;
       }
 
@@ -89,7 +84,7 @@ public final class CrashHelper extends Service {
       public void onServiceConnected(final ComponentName name, final IBinder service) {
         final ICrashHelper helper = ICrashHelper.Stub.asInterface(service);
         try {
-          helper.start(Process.myPid(), mBreakpadFd, mMinidumpPath, mListenFd, mServerFd);
+          helper.start(mBreakpadFd, mMinidumpPath, mServerFd);
         } catch (final DeadObjectException e) {
           
           
@@ -107,24 +102,21 @@ public final class CrashHelper extends Service {
 
       ParcelFileDescriptor mBreakpadFd;
       String mMinidumpPath;
-      ParcelFileDescriptor mListenFd;
       ParcelFileDescriptor mServerFd;
     }
 
-    return new CrashHelperConnection(breakpadFd, minidumpPath, listenFd, serverFd);
+    return new CrashHelperConnection(breakpadFd, minidumpPath, serverFd);
   }
 
   public static final class Pipes {
     public final ParcelFileDescriptor mBreakpadClient;
     public final ParcelFileDescriptor mBreakpadServer;
-    public final ParcelFileDescriptor mListener;
     public final ParcelFileDescriptor mClient;
     public final ParcelFileDescriptor mServer;
 
     public Pipes(
         final FileDescriptor breakpadClientFd,
         final FileDescriptor breakpadServerFd,
-        final FileDescriptor listenerFd,
         final FileDescriptor clientFd,
         final FileDescriptor serverFd)
         throws IOException {
@@ -132,10 +124,6 @@ public final class CrashHelper extends Service {
       mBreakpadServer = ParcelFileDescriptor.dup(breakpadServerFd);
       if (!CrashHelper.set_breakpad_opts(mBreakpadServer.getFd())) {
         throw new IOException("Could not set the proper options on the Breakpad socket");
-      }
-      mListener = ParcelFileDescriptor.dup(listenerFd);
-      if (!CrashHelper.bind_and_listen(mListener.getFd())) {
-        throw new IOException("Could not listen on incoming connections");
       }
       mClient = ParcelFileDescriptor.dup(clientFd);
       mServer = ParcelFileDescriptor.dup(serverFd);
@@ -163,14 +151,11 @@ public final class CrashHelper extends Service {
           0,
           breakpad_client_fd,
           breakpad_server_fd);
-      final FileDescriptor listener_fd =
-          Os.socket(OsConstants.AF_UNIX, OsConstants.SOCK_SEQPACKET, 0);
       final FileDescriptor client_fd = new FileDescriptor();
       final FileDescriptor server_fd = new FileDescriptor();
       Os.socketpair(OsConstants.AF_UNIX, OsConstants.SOCK_SEQPACKET, 0, client_fd, server_fd);
 
-      final Pipes pipes =
-          new Pipes(breakpad_client_fd, breakpad_server_fd, listener_fd, client_fd, server_fd);
+      final Pipes pipes = new Pipes(breakpad_client_fd, breakpad_server_fd, client_fd, server_fd);
 
       
       
@@ -178,7 +163,6 @@ public final class CrashHelper extends Service {
       
       Os.close(breakpad_client_fd);
       Os.close(breakpad_server_fd);
-      Os.close(listener_fd);
       Os.close(client_fd);
       Os.close(server_fd);
       return pipes;
@@ -193,9 +177,7 @@ public final class CrashHelper extends Service {
   
 
   protected static native void crash_generator(
-      int clientPid, int breakpadFd, String minidumpPath, int listenFd, int serverFd);
+      int clientPid, int breakpadFd, String minidumpPath, int serverFd);
 
   protected static native boolean set_breakpad_opts(int breakpadFd);
-
-  protected static native boolean bind_and_listen(int listenFd);
 }

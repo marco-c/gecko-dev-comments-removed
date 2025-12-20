@@ -20,7 +20,8 @@ impl CrashHelperClient {
         })
     }
 
-    pub(crate) fn prepare_for_minidump(_crash_helper_pid: Pid) {
+    pub(crate) fn prepare_for_minidump(_crash_helper_pid: Pid) -> bool {
         
+        true
     }
 }
