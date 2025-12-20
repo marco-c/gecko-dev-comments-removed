@@ -30,6 +30,7 @@
 #include "wasm/WasmConstants.h"       
 #include "wasm/WasmFrame.h"           
 #include "wasm/WasmFrameIter.h"  
+#include "wasm/WasmPI.h"         
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSTracer;
@@ -52,6 +53,12 @@ class JitActivation : public Activation {
 
   
   uint32_t encodedWasmExitReason_;
+#ifdef ENABLE_WASM_JSPI
+  
+  
+  
+  JS::Rooted<wasm::SuspenderObject*> wasmExitSuspender_;
+#endif
 
   JitActivation* prevJitActivation_;
 
@@ -107,6 +114,8 @@ class JitActivation : public Activation {
  public:
   explicit JitActivation(JSContext* cx);
   ~JitActivation();
+
+  void trace(JSTracer* trc);
 
   bool isProfiling() const {
     
@@ -174,8 +183,6 @@ class JitActivation : public Activation {
   
   void removeRematerializedFrame(uint8_t* top);
 
-  void traceRematerializedFrames(JSTracer* trc);
-
   
   bool registerIonFrameRecovery(RInstructionResults&& results);
 
@@ -185,8 +192,6 @@ class JitActivation : public Activation {
   
   
   void removeIonFrameRecovery(JitFrameLayout* fp);
-
-  void traceIonRecovery(JSTracer* trc);
 
   
   const BailoutFrameInfo* bailoutData() const { return bailoutData_; }
@@ -235,6 +240,16 @@ class JitActivation : public Activation {
   static size_t offsetOfEncodedWasmExitReason() {
     return offsetof(JitActivation, encodedWasmExitReason_);
   }
+#ifdef ENABLE_WASM_JSPI
+  wasm::SuspenderObject* wasmExitSuspender() const {
+    MOZ_ASSERT(hasWasmExitFP());
+    return wasmExitSuspender_;
+  }
+  static size_t offsetOfWasmExitSuspender() {
+    return offsetof(JitActivation, wasmExitSuspender_) +
+           Rooted<wasm::SuspenderObject*>::offsetOfPtr();
+  }
+#endif
 
   void startWasmTrap(wasm::Trap trap, const wasm::TrapSite& trapSite,
                      const wasm::RegisterState& state);

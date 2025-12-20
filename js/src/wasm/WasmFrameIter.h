@@ -350,14 +350,111 @@ class ProfilingFrameIterator {
 
 
 
+void LoadActivation(jit::MacroAssembler& masm, jit::Register instance,
+                    jit::Register dest);
 void SetExitFP(jit::MacroAssembler& masm, ExitReason reason,
-               jit::Register scratch);
-void ClearExitFP(jit::MacroAssembler& masm, jit::Register scratch);
+               jit::Register activation, jit::Register scratch);
+void ClearExitFP(jit::MacroAssembler& masm, jit::Register activation);
 
-void GenerateExitPrologue(jit::MacroAssembler& masm, unsigned framePushed,
-                          ExitReason reason, CallableOffsets* offsets);
-void GenerateExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
-                          ExitReason reason, CallableOffsets* offsets);
+#ifdef ENABLE_WASM_JSPI
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void GenerateExitPrologueMainStackSwitch(jit::MacroAssembler& masm,
+                                         jit::Register instance,
+                                         jit::Register scratch1,
+                                         jit::Register scratch2,
+                                         jit::Register scratch3);
+
+
+
+
+
+
+void GenerateExitEpilogueMainStackReturn(jit::MacroAssembler& masm,
+                                         jit::Register instance,
+                                         jit::Register activationAndScratch1,
+                                         jit::Register scratch2);
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void GenerateExitPrologue(jit::MacroAssembler& masm, ExitReason reason,
+                          bool switchToMainStack, unsigned framePushedPreSwitch,
+                          unsigned framePushedPostSwitch,
+                          CallableOffsets* offsets);
+
+
+void GenerateExitEpilogue(jit::MacroAssembler& masm, ExitReason reason,
+                          bool switchToMainStack, CallableOffsets* offsets);
 
 
 

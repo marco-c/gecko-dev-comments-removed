@@ -19,6 +19,7 @@
 #include "wasm/WasmFrameIter.h"
 
 #include "jit/JitFrames.h"
+#include "jit/JitRuntime.h"
 #include "jit/shared/IonAssemblerBuffer.h"  
 #include "js/ColumnNumber.h"  
 #include "vm/JitActivation.h"  
@@ -33,6 +34,15 @@
 
 #include "jit/MacroAssembler-inl.h"
 #include "wasm/WasmInstance-inl.h"
+
+#ifdef XP_WIN
+
+
+
+#  include <winternl.h>  
+
+#  include "util/WindowsWrapper.h"
+#endif
 
 using namespace js;
 using namespace js::jit;
@@ -528,35 +538,38 @@ static const unsigned PoppedFPJitEntry = 4;
 #  error "Unknown architecture!"
 #endif
 
-static void LoadActivation(MacroAssembler& masm, const Register& dest) {
+void wasm::LoadActivation(MacroAssembler& masm, Register instance,
+                          Register dest) {
   
-  masm.loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCx()), dest);
+  masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), dest);
   masm.loadPtr(Address(dest, JSContext::offsetOfActivation()), dest);
 }
 
 void wasm::SetExitFP(MacroAssembler& masm, ExitReason reason,
-                     Register scratch) {
+                     Register activation, Register scratch) {
   MOZ_ASSERT(!reason.isNone());
+  MOZ_ASSERT(activation != scratch);
 
-  LoadActivation(masm, scratch);
-
+  
   masm.store32(
       Imm32(reason.encode()),
-      Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
+      Address(activation, JitActivation::offsetOfEncodedWasmExitReason()));
 
-  masm.orPtr(Imm32(ExitFPTag), FramePointer);
-  masm.storePtr(FramePointer,
-                Address(scratch, JitActivation::offsetOfPackedExitFP()));
-  masm.andPtr(Imm32(int32_t(~ExitFPTag)), FramePointer);
+  
+  
+  masm.orPtr(Imm32(ExitFPTag), FramePointer, scratch);
+
+  
+  masm.storePtr(scratch,
+                Address(activation, JitActivation::offsetOfPackedExitFP()));
 }
 
-void wasm::ClearExitFP(MacroAssembler& masm, Register scratch) {
-  LoadActivation(masm, scratch);
+void wasm::ClearExitFP(MacroAssembler& masm, Register activation) {
   masm.storePtr(ImmWord(0x0),
-                Address(scratch, JitActivation::offsetOfPackedExitFP()));
+                Address(activation, JitActivation::offsetOfPackedExitFP()));
   masm.store32(
       Imm32(0x0),
-      Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
+      Address(activation, JitActivation::offsetOfEncodedWasmExitReason()));
 }
 
 static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
@@ -654,15 +667,11 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
 }
 
 static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
-                                     ExitReason reason, uint32_t* ret) {
+                                     uint32_t* ret) {
   AutoCreatedBy acb(masm, "GenerateCallableEpilogue");
 
   if (framePushed) {
     masm.freeStack(framePushed);
-  }
-
-  if (!reason.isNone()) {
-    ClearExitFP(masm, ABINonArgReturnVolatileReg);
   }
 
   DebugOnly<uint32_t> poppedFP{};
@@ -759,7 +768,7 @@ void wasm::GenerateMinimalPrologue(MacroAssembler& masm, uint32_t* entry) {
 
 void wasm::GenerateMinimalEpilogue(MacroAssembler& masm, uint32_t* ret) {
   MOZ_ASSERT(masm.framePushed() == 0);
-  GenerateCallableEpilogue(masm, 0, ExitReason::None(), ret);
+  GenerateCallableEpilogue(masm, 0, ret);
 }
 
 void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
@@ -946,30 +955,249 @@ void wasm::GenerateFunctionEpilogue(MacroAssembler& masm, unsigned framePushed,
                                     FuncOffsets* offsets) {
   
   MOZ_ASSERT(masm.framePushed() == framePushed);
-  GenerateCallableEpilogue(masm, framePushed, ExitReason::None(),
-                           &offsets->ret);
+  GenerateCallableEpilogue(masm, framePushed, &offsets->ret);
   MOZ_ASSERT(masm.framePushed() == 0);
 }
 
-void wasm::GenerateExitPrologue(MacroAssembler& masm, unsigned framePushed,
-                                ExitReason reason, CallableOffsets* offsets) {
-  masm.haltingAlign(CodeAlignment);
+#ifdef ENABLE_WASM_JSPI
+void wasm::GenerateExitPrologueMainStackSwitch(MacroAssembler& masm,
+                                               Register instance,
+                                               Register scratch1,
+                                               Register scratch2,
+                                               Register scratch3) {
+  
+  masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), scratch1);
 
+  
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfActiveSuspender()),
+               scratch2);
+
+  
+  
+  Label alreadyOnSystemStack;
+  masm.branchTestPtr(Assembler::Zero, scratch2, scratch2,
+                     &alreadyOnSystemStack);
+
+  
+  
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfMainStackLimit()),
+               scratch3);
+  masm.storePtr(scratch3,
+                Address(scratch1, JSContext::offsetOfWasm() +
+                                      wasm::Context::offsetOfStackLimit()));
+
+  
+  masm.storePtr(
+      ImmWord(0),
+      Address(scratch1, JSContext::offsetOfWasm() +
+                            wasm::Context::offsetOfActiveSuspender()));
+
+  
+  
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfActivation()), scratch3);
+  masm.storePtr(scratch2,
+                Address(scratch3, JitActivation::offsetOfWasmExitSuspender()));
+
+  
+  masm.storeValue(JS::Int32Value(wasm::SuspenderState::CalledOnMain),
+                  Address(scratch2, SuspenderObject::offsetOfState()));
+
+  
+  
+  
+  
+  
+  masm.loadStackPtrFromPrivateValue(
+      Address(scratch2, wasm::SuspenderObject::offsetOfMainSP()));
+
+  
+  
+#  ifdef DEBUG
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfRuntime()), scratch3);
+  masm.loadPtr(Address(scratch3, JSRuntime::offsetOfJitRuntime()), scratch3);
+  masm.store32(Imm32(0),
+               Address(scratch3, JitRuntime::offsetOfDisallowArbitraryCode()));
+#  endif
+
+  
+  
+#  ifdef _WIN32
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfTib()),
+               scratch2);
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfTibStackBase()),
+               scratch3);
+  masm.storePtr(scratch3, Address(scratch2, offsetof(_NT_TIB, StackBase)));
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfTibStackLimit()),
+               scratch3);
+  masm.storePtr(scratch3, Address(scratch2, offsetof(_NT_TIB, StackLimit)));
+#  endif
+
+  masm.bind(&alreadyOnSystemStack);
+}
+
+void wasm::GenerateExitEpilogueMainStackReturn(MacroAssembler& masm,
+                                               Register instance,
+                                               Register activationAndScratch1,
+                                               Register scratch2) {
+  
+  Register scratch1 = activationAndScratch1;
+
+  
+  masm.loadPtr(Address(scratch1, JitActivation::offsetOfWasmExitSuspender()),
+               scratch2);
+
+  
+  
+  Label originallyOnSystemStack;
+  masm.branchTestPtr(Assembler::Zero, scratch2, scratch2,
+                     &originallyOnSystemStack);
+
+  
+  masm.storePtr(ImmWord(0),
+                Address(scratch1, JitActivation::offsetOfWasmExitSuspender()));
+
+  
+  masm.storeValue(JS::Int32Value(wasm::SuspenderState::Active),
+                  Address(scratch2, SuspenderObject::offsetOfState()));
+
+  
+  
+  masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), scratch1);
+
+  
+  masm.storePtr(
+      scratch2,
+      Address(scratch1, JSContext::offsetOfWasm() +
+                            wasm::Context::offsetOfActiveSuspender()));
+
+  
+  
+  
+  masm.loadPrivate(Address(scratch2, SuspenderObject::offsetOfStackMemory()),
+                   scratch2);
+  masm.addPtr(Imm32(SuspendableRedZoneSize), scratch2);
+  masm.storePtr(scratch2,
+                Address(scratch1, JSContext::offsetOfWasm() +
+                                      wasm::Context::offsetOfStackLimit()));
+
+  
+  
+  
+#  ifdef _WIN32
+  
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfTib()),
+               scratch2);
+
+  
+  
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfActiveSuspender()),
+               scratch1);
+  masm.loadPtr(Address(scratch1, wasm::SuspenderObject::offsetOfStackMemory()),
+               scratch1);
+  masm.storePtr(scratch1, Address(scratch2, offsetof(_NT_TIB, StackBase)));
+
+  
+  masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), scratch1);
+
+  
+  
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfWasm() +
+                                     wasm::Context::offsetOfActiveSuspender()),
+               scratch1);
+  masm.loadPtr(Address(scratch1, wasm::SuspenderObject::offsetOfStackMemory()),
+               scratch1);
+  masm.addPtr(Imm32(SuspendableStackPlusRedZoneSize), scratch1);
+  masm.storePtr(scratch1, Address(scratch2, offsetof(_NT_TIB, StackBase)));
+
+  
+  masm.loadPtr(Address(instance, wasm::Instance::offsetOfCx()), scratch1);
+#  endif
+
+  
+  
+#  ifdef DEBUG
+  masm.loadPtr(Address(scratch1, JSContext::offsetOfRuntime()), scratch1);
+  masm.loadPtr(Address(scratch1, JSRuntime::offsetOfJitRuntime()), scratch1);
+  masm.store32(Imm32(1),
+               Address(scratch1, JitRuntime::offsetOfDisallowArbitraryCode()));
+#  endif
+
+  masm.bind(&originallyOnSystemStack);
+}
+#endif  
+
+void wasm::GenerateExitPrologue(MacroAssembler& masm, ExitReason reason,
+                                bool switchToMainStack,
+                                unsigned framePushedPreSwitch,
+                                unsigned framePushedPostSwitch,
+                                CallableOffsets* offsets) {
+  MOZ_ASSERT(masm.framePushed() == 0);
+
+  masm.haltingAlign(CodeAlignment);
   GenerateCallablePrologue(masm, &offsets->begin);
 
-  
-  
-  SetExitFP(masm, reason, ABINonArgReturnVolatileReg);
+  Register scratch1 = ABINonArgReg0;
+  Register scratch2 = ABINonArgReg1;
+#ifdef ENABLE_WASM_JSPI
+  Register scratch3 = ABINonArgReg2;
+#endif
 
-  MOZ_ASSERT(masm.framePushed() == 0);
-  masm.reserveStack(framePushed);
+  
+  
+  LoadActivation(masm, InstanceReg, scratch1);
+  SetExitFP(masm, reason, scratch1, scratch2);
+
+#ifdef ENABLE_WASM_JSPI
+  if (switchToMainStack) {
+    masm.reserveStack(framePushedPreSwitch);
+
+    GenerateExitPrologueMainStackSwitch(masm, InstanceReg, scratch1, scratch2,
+                                        scratch3);
+
+    
+    masm.setFramePushed(0);
+    masm.reserveStack(framePushedPostSwitch);
+  } else {
+    masm.reserveStack(framePushedPreSwitch + framePushedPostSwitch);
+  }
+#else
+  masm.reserveStack(framePushedPreSwitch + framePushedPostSwitch);
+#endif  
 }
 
-void wasm::GenerateExitEpilogue(MacroAssembler& masm, unsigned framePushed,
-                                ExitReason reason, CallableOffsets* offsets) {
+void wasm::GenerateExitEpilogue(MacroAssembler& masm, ExitReason reason,
+                                bool switchToMainStack,
+                                CallableOffsets* offsets) {
+  Register scratch1 = ABINonArgReturnReg0;
+#if ENABLE_WASM_JSPI
+  Register scratch2 = ABINonArgReturnReg1;
+#endif
+
+  LoadActivation(masm, InstanceReg, scratch1);
+  ClearExitFP(masm, scratch1);
+
+#ifdef ENABLE_WASM_JSPI
   
-  MOZ_ASSERT(masm.framePushed() == framePushed);
-  GenerateCallableEpilogue(masm, framePushed, reason, &offsets->ret);
+  
+  
+  if (switchToMainStack) {
+    GenerateExitEpilogueMainStackReturn(masm, InstanceReg, scratch1, scratch2);
+  }
+#endif  
+
+  
+  
+  masm.moveToStackPtr(FramePointer);
+  masm.setFramePushed(0);
+
+  GenerateCallableEpilogue(masm,  0, &offsets->ret);
   MOZ_ASSERT(masm.framePushed() == 0);
 }
 
@@ -980,7 +1208,7 @@ static void AssertNoWasmExitFPInJitExit(MacroAssembler& masm) {
   
 #ifdef DEBUG
   Register scratch = ABINonArgReturnReg0;
-  LoadActivation(masm, scratch);
+  LoadActivation(masm, InstanceReg, scratch);
 
   Label ok;
   masm.branchTestPtr(Assembler::Zero,
@@ -1032,8 +1260,7 @@ void wasm::GenerateJitExitEpilogue(MacroAssembler& masm,
   
   MOZ_ASSERT(masm.framePushed() == 0);
   AssertNoWasmExitFPInJitExit(masm);
-  GenerateCallableEpilogue(masm,  0, ExitReason::None(),
-                           &offsets->ret);
+  GenerateCallableEpilogue(masm,  0, &offsets->ret);
   MOZ_ASSERT(masm.framePushed() == 0);
 }
 

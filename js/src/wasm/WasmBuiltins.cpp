@@ -1930,6 +1930,23 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
   MOZ_CRASH("unexpected symbolic address");
 }
 
+static bool NeedsDynamicSwitchToMainStack(SymbolicAddress sym) {
+  MOZ_ASSERT(NeedsBuiltinThunk(sym));
+  switch (sym) {
+#if ENABLE_WASM_JSPI
+    
+    
+    case SymbolicAddress::UpdateSuspenderState:
+    case SymbolicAddress::CurrentSuspender:
+      return false;
+#endif
+
+    
+    default:
+      return true;
+  }
+}
+
 
 
 
@@ -2147,7 +2164,8 @@ bool wasm::EnsureBuiltinThunksInitialized(
     MOZ_ASSERT(ABIForBuiltin(sym) == ABIKind::Wasm);
 
     CallableOffsets offsets;
-    if (!GenerateBuiltinThunk(masm, abiType, exitReason, funcPtr, &offsets)) {
+    if (!GenerateBuiltinThunk(masm, abiType, NeedsDynamicSwitchToMainStack(sym),
+                              exitReason, funcPtr, &offsets)) {
       return false;
     }
     if (!thunks->codeRanges.emplaceBack(CodeRange::BuiltinThunk, offsets)) {
@@ -2175,7 +2193,8 @@ bool wasm::EnsureBuiltinThunksInitialized(
     ExitReason exitReason = ExitReason::Fixed::BuiltinNative;
 
     CallableOffsets offsets;
-    if (!GenerateBuiltinThunk(masm, abiType, exitReason, funcPtr, &offsets)) {
+    if (!GenerateBuiltinThunk(masm, abiType,  true,
+                              exitReason, funcPtr, &offsets)) {
       return false;
     }
     if (!thunks->codeRanges.emplaceBack(CodeRange::BuiltinThunk, offsets)) {
