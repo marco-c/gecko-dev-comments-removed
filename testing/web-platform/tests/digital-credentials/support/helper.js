@@ -16,24 +16,6 @@
 
 
 
-const GET_PROTOCOLS =  ([
-  "openid4vp-v1-unsigned",
-  "openid4vp-v1-signed",
-  "openid4vp-v1-multisigned",
-  "org-iso-mdoc",
-]);
-
-
-const CREATE_PROTOCOLS =  (["openid4vci"]);
-
-const SUPPORTED_GET_PROTOCOL = GET_PROTOCOLS.find((protocol) =>
-  DigitalCredential.userAgentAllowsProtocol(protocol)
-);
-const SUPPORTED_CREATE_PROTOCOL = CREATE_PROTOCOLS.find((protocol) =>
-  DigitalCredential.userAgentAllowsProtocol(protocol)
-);
-
-
 const CANONICAL_REQUEST_OBJECTS = {
   openid4vci: {
     
@@ -174,8 +156,9 @@ function makeCredentialOptionsFromConfig(config, mapping) {
 
 
 export function makeGetOptions(config = {}) {
+  
   const configWithDefaults = {
-    protocol: SUPPORTED_GET_PROTOCOL,
+    protocol: ["openid4vp-v1-unsigned", "org-iso-mdoc"],
     ...config,
   };
 
@@ -191,8 +174,9 @@ export function makeGetOptions(config = {}) {
 
 
 export function makeCreateOptions(config = {}) {
+  
   const configWithDefaults = {
-    protocol: SUPPORTED_CREATE_PROTOCOL,
+    protocol: "openid4vci",
     ...config,
   };
 
