@@ -687,7 +687,7 @@ class Instruction {
       
       
       
-      if (Mask(LogicalImmediateMask & LogicalOpMask) == ANDS) {
+      if (Mask(static_cast<Instr>(LogicalImmediateMask) & LogicalOpMask) == ANDS) {
         return Reg31IsZeroRegister;
       } else {
         return Reg31IsStackPointer;
