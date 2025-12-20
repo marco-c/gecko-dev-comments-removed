@@ -300,23 +300,23 @@ nsWebBrowserFind::SetMatchDiacritics(bool aMatchDiacritics) {
   return NS_OK;
 }
 
-void nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
-                                             nsRange* aRange) {
+already_AddRefed<Selection> nsWebBrowserFind::UpdateSelection(
+    nsPIDOMWindowOuter* aWindow, nsRange* aRange) {
   RefPtr<Document> doc = aWindow->GetDoc();
   if (!doc) {
-    return;
+    return nullptr;
   }
 
   PresShell* presShell = doc->GetPresShell();
   if (!presShell) {
-    return;
+    return nullptr;
   }
 
   nsCOMPtr<nsIContent> content =
       nsIContent::FromNodeOrNull(aRange->GetStartContainer());
   nsIFrame* const frameForStartContainer = content->GetPrimaryFrame();
   if (!frameForStartContainer) {
-    return;
+    return nullptr;
   }
 
   
@@ -326,7 +326,7 @@ void nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
     if (!content->IsInNativeAnonymousSubtree()) {
       nsIFrame* f = content->GetPrimaryFrame();
       if (!f) {
-        return;
+        return nullptr;
       }
       if (f->IsTextInputFrame()) {
         tcFrame = f;
@@ -341,7 +341,7 @@ void nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
   RefPtr<Selection> selection =
       selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
   if (!selection) {
-    return;
+    return nullptr;
   }
   selection->RemoveAllRanges(IgnoreErrors());
   selection->AddRangeAndSelectFramesAndNotifyListeners(*aRange, IgnoreErrors());
@@ -356,18 +356,7 @@ void nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
                     nsIFocusManager::FLAG_NOSCROLL, getter_AddRefs(result));
     }
   }
-
-  
-  
-
-  
-  
-  
-  
-  selCon->ScrollSelectionIntoView(
-      SelectionType::eNormal, nsISelectionController::SELECTION_WHOLE_SELECTION,
-      ScrollAxis(WhereToScroll::Center), ScrollAxis(), ScrollFlags::None,
-      SelectionScrollMode::SyncFlush);
+  return selection.forget();
 }
 
 nsresult nsWebBrowserFind::SetRangeAroundDocument(nsRange* aSearchRange,
@@ -633,15 +622,28 @@ nsresult nsWebBrowserFind::SearchInFrame(nsPIDOMWindowOuter* aWindow,
 
   if (NS_SUCCEEDED(rv) && foundRange) {
     *aDidFind = true;
-    
-    
-    if (RefPtr startNode = foundRange->GetStartContainer()) {
-      startNode->QueueAncestorRevealingAlgorithm();
-    }
     sel->RemoveAllRanges(IgnoreErrors());
-    
-    
-    SetSelectionAndScroll(aWindow, foundRange);
+    RefPtr<Selection> scrollSelection = UpdateSelection(aWindow, foundRange);
+
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "nsWebBrowserFind::RevealAndScroll",
+        [foundRange = RefPtr{foundRange},
+         scrollSelection = RefPtr{scrollSelection}]()
+            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+              
+              
+              if (RefPtr startNode = foundRange->GetStartContainer()) {
+                startNode->AncestorRevealingAlgorithm(IgnoreErrors());
+              }
+
+              
+              if (scrollSelection) {
+                scrollSelection->ScrollIntoView(
+                    nsISelectionController::SELECTION_WHOLE_SELECTION,
+                    ScrollAxis(WhereToScroll::Center), ScrollAxis(),
+                    ScrollFlags::None, SelectionScrollMode::SyncFlush);
+              }
+            }));
   }
 
   return rv;
