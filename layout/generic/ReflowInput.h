@@ -982,9 +982,4 @@ struct ReflowInput : public SizeComputationInput {
 
 }  
 
-void ComputeAnchorCenterUsage(
-    const nsIFrame* aFrame,
-    mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache,
-    bool& aInlineUsesAnchorCenter, bool& aBlockUsesAnchorCenter);
-
 #endif  

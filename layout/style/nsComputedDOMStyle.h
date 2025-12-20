@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* DOM object returned from element.getComputedStyle() */
 
 #ifndef nsComputedDOMStyle_h__
 #define nsComputedDOMStyle_h__
@@ -25,7 +25,7 @@
 #include "nsStyleStructList.h"
 #include "nscore.h"
 
-
+// XXX Avoid including this here by moving function bodies to the cpp file
 #include "mozilla/dom/Element.h"
 
 namespace mozilla {
@@ -34,10 +34,10 @@ enum class FlushType : uint8_t;
 namespace dom {
 class DocGroup;
 class Element;
-}  
+}  // namespace dom
 class PresShell;
 struct ComputedGridTrackInfo;
-}  
+}  // namespace mozilla
 
 struct ComputedStyleMap;
 struct nsCSSKTableEntry;
@@ -50,7 +50,7 @@ class nsStyleGradient;
 class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                                  public nsStubMutationObserver {
  private:
-  
+  // Convenience typedefs:
   template <typename T>
   using Span = mozilla::Span<T>;
   using KTableEntry = nsCSSKTableEntry;
@@ -81,11 +81,11 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                      nsACString& aPropName) final;
 
   enum class StyleType : uint8_t {
-    DefaultOnly,  
-    All           
+    DefaultOnly,  // Only includes UA and user sheets
+    All           // Includes all stylesheets
   };
 
-  
+  // In some cases, for legacy reasons, we forcefully return an empty style.
   enum class AlwaysReturnEmptyStyle : bool { No, Yes };
 
   nsComputedDOMStyle(Element*, PseudoStyleRequest&&, Document*, StyleType,
@@ -109,7 +109,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   static already_AddRefed<const ComputedStyle>
   GetUnanimatedComputedStyleNoFlush(Element*, const PseudoStyleRequest&);
 
-  
+  // Helper for nsDOMWindowUtils::GetVisitedDependentComputedStyle
   void SetExposeVisitedStyle(bool aExpose) {
     NS_ASSERTION(aExpose != mExposeVisitedStyle, "should always be changing");
     mExposeVisitedStyle = aExpose;
@@ -121,9 +121,9 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                        nsTArray<nsCString>& aImageURLs,
                        mozilla::ErrorResult& aRv) final;
 
-  
-  
-  
+  // nsDOMCSSDeclaration abstract methods which should never be called
+  // on a nsComputedDOMStyle object, but must be defined to avoid
+  // compile errors.
   mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
       Operation aOperation, mozilla::DeclarationBlock** aCreated) final;
   virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock*,
@@ -139,7 +139,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   static void RegisterPrefChangeCallbacks();
   static void UnregisterPrefChangeCallbacks();
 
-  
+  // nsIMutationObserver
   NS_DECL_NSIMUTATIONOBSERVER_PARENTCHAINCHANGED
 
  private:
@@ -161,11 +161,11 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   nsMargin GetAdjustedValuesForBoxSizing();
 
-  
+  // This indicates error by leaving mComputedStyle null.
   void UpdateCurrentStyleSources(NonCustomCSSPropertyId);
   void ClearCurrentStyleSources();
 
-  
+  // Helper functions called by UpdateCurrentStyleSources.
   void ClearComputedStyle();
   void SetResolvedComputedStyle(RefPtr<const ComputedStyle>,
                                 uint64_t aGeneration);
@@ -182,10 +182,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   FOR_EACH_STYLE_STRUCT(COMPUTED_STYLE_ACCESSOR, COMPUTED_STYLE_ACCESSOR)
 #undef COMPUTED_STYLE_ACCESSOR
 
-  
-
-
-
+  /**
+   * A method to get a percentage base for a percentage value.  Returns true
+   * if a percentage base value was determined, false otherwise.
+   */
   typedef bool (nsComputedDOMStyle::*PercentageBaseGetter)(nscoord&);
 
   already_AddRefed<CSSValue> GetOffsetWidthFor(mozilla::Side);
@@ -217,12 +217,12 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   bool ShouldHonorMinSizeAutoInAxis(mozilla::PhysicalAxis aAxis);
 
-  
+  /* Properties queryable as CSSValues.
+   * To avoid a name conflict with nsIDOM*CSS2Properties, these are all
+   * DoGetXXX instead of GetXXX.
+   */
 
-
-
-
-  
+  /* Box properties */
 
   already_AddRefed<CSSValue> DoGetWidth();
   already_AddRefed<CSSValue> DoGetHeight();
@@ -235,39 +235,39 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetRight();
   already_AddRefed<CSSValue> DoGetBottom();
 
-  
+  /* Font properties */
   already_AddRefed<CSSValue> DoGetMozOsxFontSmoothing();
 
-  
+  /* Grid properties */
   already_AddRefed<CSSValue> DoGetGridTemplateColumns();
   already_AddRefed<CSSValue> DoGetGridTemplateRows();
 
-  
+  /* StyleImageLayer properties */
   already_AddRefed<CSSValue> DoGetImageLayerPosition(
       const nsStyleImageLayers& aLayers);
 
-  
+  /* Padding properties */
   already_AddRefed<CSSValue> DoGetPaddingTop();
   already_AddRefed<CSSValue> DoGetPaddingBottom();
   already_AddRefed<CSSValue> DoGetPaddingLeft();
   already_AddRefed<CSSValue> DoGetPaddingRight();
 
-  
+  /* Margin Properties */
   already_AddRefed<CSSValue> DoGetMarginTop();
   already_AddRefed<CSSValue> DoGetMarginBottom();
   already_AddRefed<CSSValue> DoGetMarginLeft();
   already_AddRefed<CSSValue> DoGetMarginRight();
 
-  
+  /* Display properties */
   already_AddRefed<CSSValue> DoGetTransform();
   already_AddRefed<CSSValue> DoGetTransformOrigin();
   already_AddRefed<CSSValue> DoGetPerspectiveOrigin();
 
-  
-  
+  // For working around a MSVC bug. See related comment in
+  // GenerateComputedDOMStyleGenerated.py.
   already_AddRefed<CSSValue> DummyGetter();
 
-  
+  /* Helper functions */
   void SetValueToPosition(const mozilla::Position& aPosition,
                           nsDOMCSSValueList* aValueList);
 
@@ -298,90 +298,90 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   bool GetFrameBorderRectWidth(nscoord& aWidth);
   bool GetFrameBorderRectHeight(nscoord& aHeight);
 
-  
-  
+  // Find out if we can safely skip flushing (i.e. pending restyles do not
+  // affect our element).
   bool NeedsToFlushStyle(NonCustomCSSPropertyId) const;
-  
-  
+  // Find out if we need to flush layout of the document, depending on the
+  // property that was requested.
   bool NeedsToFlushLayout(NonCustomCSSPropertyId) const;
-  
-  
-  
+  // Find out if we need to flush layout of the document due to container
+  // query being made before relevant query containers are reflowed at least
+  // once.
   bool NeedsToFlushLayoutForContainerQuery() const;
-  
-  
+  // Flushes the given document, which must be our document, and potentially the
+  // mElement's document.
   void Flush(Document&, mozilla::FlushType);
   nsIFrame* GetOuterFrame() const;
 
   static ComputedStyleMap* GetComputedStyleMap();
 
-  
-  
-  
+  // We don't really have a good immutable representation of "presentation".
+  // Given the way GetComputedStyle is currently used, we should just grab the
+  // presshell, if any, from the document.
   mozilla::WeakPtr<mozilla::dom::Document> mDocumentWeak;
   RefPtr<Element> mElement;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Strong reference to the ComputedStyle we access data from.  This can be
+   * either a ComputedStyle we resolved ourselves or a ComputedStyle we got
+   * from our frame.
+   *
+   * If we got the ComputedStyle from the frame, we clear out mComputedStyle
+   * in ClearCurrentStyleSources.  If we resolved one ourselves, then
+   * ClearCurrentStyleSources leaves it in mComputedStyle for use the next
+   * time this nsComputedDOMStyle object is queried.  UpdateCurrentStyleSources
+   * in this case will check that the ComputedStyle is still valid to be used,
+   * by checking whether flush styles results in any restyles having been
+   * processed.
+   */
   RefPtr<const ComputedStyle> mComputedStyle;
 
-  
-
-
-
-
+  /*
+   * While computing style data, the primary frame for mContent --- named
+   * "outer" because we should use it to compute positioning data.  Null
+   * otherwise.
+   */
   nsIFrame* mOuterFrame;
-  
-
-
-
-
+  /*
+   * While computing style data, the "inner frame" for mContent --- the frame
+   * which we should use to compute margin, border, padding and content data.
+   * Null otherwise.
+   */
   nsIFrame* mInnerFrame;
-  
-
-
-
+  /*
+   * While computing style data, the presshell we're working with.  Null
+   * otherwise.
+   */
   mozilla::PresShell* mPresShell;
 
-  
-
-
-
+  /*
+   * The pseudo style request which packs PseudoStyleType and the function
+   * parameter if any.
+   */
   PseudoStyleRequest mPseudo;
 
-  
+  /* The kind of styles we should be returning. */
   StyleType mStyleType;
 
-  
-
+  /* Whether for legacy reasons we return an empty style (when an unknown
+   * pseudo-element is specified) */
   AlwaysReturnEmptyStyle mAlwaysReturnEmpty;
 
-  
-
-
-
-
+  /**
+   * The nsComputedDOMStyle generation at the time we last resolved a style
+   * context and stored it in mComputedStyle, and the pres shell we got the
+   * style from. Should only be used together.
+   */
   uint64_t mComputedStyleGeneration = 0;
 
   uint32_t mPresShellId = 0;
 
   bool mExposeVisitedStyle = false;
 
-  
-
-
-
+  /**
+   * Whether we resolved a ComputedStyle last time we called
+   * UpdateCurrentStyleSources.  Initially false.
+   */
   bool mResolvedComputedStyle = false;
 
 #ifdef DEBUG
@@ -400,9 +400,12 @@ already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const nsComputedDOMStyle* aComputedDOMStyle) {
+  // TODO(dshin): Fix this up.
+  AutoResolutionOverrideParams overrides;
+  overrides.mPositionAreaInUse =
+      !aComputedDOMStyle->StylePosition()->mPositionArea.IsNone();
   return {aComputedDOMStyle->mOuterFrame,
-          aComputedDOMStyle->StyleDisplay()->mPosition,
-          aComputedDOMStyle->StylePosition()->mPositionArea};
+          aComputedDOMStyle->StyleDisplay()->mPosition, nullptr, overrides};
 }
 
-#endif 
+#endif /* nsComputedDOMStyle_h__ */
