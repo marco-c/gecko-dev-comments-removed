@@ -252,14 +252,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                      const nsRect& aContainingBlock,
                                      AbsPosReflowFlags aFlags,
                                      OverflowAreas* aOverflowAreas) {
-  
-  
-  
-  if (aDelegatingFrame->IsPageContentFrame()) {
-    MOZ_ASSERT(mChildListID == FrameChildListID::Fixed);
-    aOverflowAreas = nullptr;
-  }
-
   const auto scrollableContainingBlock = [&]() -> nsRect {
     switch (aDelegatingFrame->Style()->GetPseudoType()) {
       case PseudoStyleType::scrolledContent:
@@ -785,12 +777,14 @@ static nscoord OffsetToAlignedStaticPos(
   Maybe<CSSAlignUtils::AnchorAlignInfo> anchorAlignInfo;
   if (alignConst == StyleAlignFlags::ANCHOR_CENTER &&
       aKidReflowInput.mAnchorPosResolutionCache) {
-    const auto* referenceData =
+    auto* referenceData =
         aKidReflowInput.mAnchorPosResolutionCache->mReferenceData;
     if (referenceData) {
       const auto* cachedData =
           referenceData->Lookup(referenceData->mDefaultAnchorName);
       if (cachedData && *cachedData) {
+        referenceData->AdjustCompensatingForScroll(
+            aAbsPosCBWM.PhysicalAxis(aAbsPosCBAxis));
         const auto& data = cachedData->ref();
         if (data.mOffsetData) {
           const nsSize containerSize =
