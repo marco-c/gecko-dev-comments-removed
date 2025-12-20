@@ -53,64 +53,68 @@ loader.lazyRequireGetter(
 
 
 
-function DevToolsClient(transport) {
-  this._transport = transport;
-  this._transport.hooks = this;
+class DevToolsClient extends EventEmitter {
+  constructor(transport) {
+    super();
 
-  this._pendingRequests = new Map();
-  this._activeRequests = new Map();
-  this._eventsEnabled = true;
+    this._transport = transport;
+    this._transport.hooks = this;
 
-  this.traits = {};
+    this._pendingRequests = new Map();
+    this._activeRequests = new Map();
+    this._eventsEnabled = true;
 
-  this.request = this.request.bind(this);
+    this.traits = {};
 
-  
-
-
-
-  this.mainRoot = null;
-  this.expectReply("root", async packet => {
-    if (packet.error) {
-      console.error("Error when waiting for root actor", packet);
-      return;
-    }
-
-    this.mainRoot = createRootFront(this, packet);
+    this.request = this.request.bind(this);
 
     
-    
-    
-    
-    try {
-      await this.mainRoot.connect({
-        frontendVersion: AppConstants.MOZ_APP_VERSION,
-      });
-    } catch (e) {
-      
-      
-      if (!e.message.includes("unrecognizedPacketType")) {
-        throw e;
+
+
+
+    this.mainRoot = null;
+    this.expectReply("root", async packet => {
+      if (packet.error) {
+        console.error("Error when waiting for root actor", packet);
+        return;
       }
-    }
 
-    this.emit("connected", packet.applicationType, packet.traits);
-  });
-}
+      this.mainRoot = createRootFront(this, packet);
 
+      
+      
+      
+      
+      try {
+        await this.mainRoot.connect({
+          frontendVersion: AppConstants.MOZ_APP_VERSION,
+        });
+      } catch (e) {
+        
+        
+        if (!e.message.includes("unrecognizedPacketType")) {
+          throw e;
+        }
+      }
 
-DevToolsClient.socketConnect = function (options) {
+      this.emit("connected", packet.applicationType, packet.traits);
+    });
+  }
+
   
-  return DebuggerSocket.connect(options);
-};
-DevToolsUtils.defineLazyGetter(DevToolsClient, "Authenticators", () => {
-  return Authentication.Authenticators;
-});
-DevToolsUtils.defineLazyGetter(DevToolsClient, "AuthenticationResult", () => {
-  return Authentication.AuthenticationResult;
-});
+  static socketConnect(options) {
+    
+    return DebuggerSocket.connect(options);
+  }
 
-DevToolsClient.prototype = {
+  static get Authenticators() {
+    return Authentication.Authenticators;
+  }
+
+  static get AuthenticationResult() {
+    return Authentication.AuthenticationResult;
+  }
+
   
 
 
@@ -130,7 +134,7 @@ DevToolsClient.prototype = {
 
       this._transport.ready();
     });
-  },
+  }
 
   
 
@@ -159,7 +163,7 @@ DevToolsClient.prototype = {
     }
 
     return this._closePromise;
-  },
+  }
 
   
 
@@ -267,7 +271,7 @@ DevToolsClient.prototype = {
     request.catch = promise.catch.bind(promise);
 
     return request;
-  },
+  }
 
   
 
@@ -385,7 +389,7 @@ DevToolsClient.prototype = {
     this._sendOrQueueRequest(request);
 
     return request;
-  },
+  }
 
   
 
@@ -397,7 +401,7 @@ DevToolsClient.prototype = {
     } else {
       this._queueRequest(request);
     }
-  },
+  }
 
   
 
@@ -417,7 +421,7 @@ DevToolsClient.prototype = {
     this._transport.startBulkSend(request.request).then((...args) => {
       request.emit("bulk-send-ready", ...args);
     });
-  },
+  }
 
   
 
@@ -428,7 +432,7 @@ DevToolsClient.prototype = {
     const queue = this._pendingRequests.get(actor) || [];
     queue.push(request);
     this._pendingRequests.set(actor, queue);
-  },
+  }
 
   
 
@@ -446,7 +450,7 @@ DevToolsClient.prototype = {
       this._pendingRequests.delete(actor);
     }
     this._sendRequest(request);
-  },
+  }
 
   
 
@@ -471,7 +475,7 @@ DevToolsClient.prototype = {
     }
 
     this._activeRequests.set(actor, request);
-  },
+  }
 
   
 
@@ -548,7 +552,7 @@ DevToolsClient.prototype = {
         emitReply();
       }
     }
-  },
+  }
 
   
 
@@ -625,7 +629,7 @@ DevToolsClient.prototype = {
     this._attemptNextRequest(actor);
 
     activeRequest.emit("bulk-reply", packet);
-  },
+  }
 
   
 
@@ -663,7 +667,7 @@ DevToolsClient.prototype = {
     for (const pool of this._pools) {
       pool.destroy();
     }
-  },
+  }
 
   
 
@@ -729,7 +733,7 @@ DevToolsClient.prototype = {
         front.baseFrontClassDestroy();
       }
     }
-  },
+  }
 
   
 
@@ -795,7 +799,7 @@ DevToolsClient.prototype = {
         
         return this.waitForRequestsToSettle({ ignoreOrphanedFronts });
       });
-  },
+  }
 
   getAllFronts() {
     
@@ -816,26 +820,25 @@ DevToolsClient.prototype = {
       }
     }
     return fronts;
-  },
+  }
 
   
 
 
-  __pools: null,
   get _pools() {
     if (this.__pools) {
       return this.__pools;
     }
     this.__pools = new Set();
     return this.__pools;
-  },
+  }
 
   addActorPool(pool) {
     this._pools.add(pool);
-  },
+  }
   removeActorPool(pool) {
     this._pools.delete(pool);
-  },
+  }
 
   
 
@@ -845,7 +848,7 @@ DevToolsClient.prototype = {
   getFrontByID(actorID) {
     const pool = this.poolFor(actorID);
     return pool ? pool.getActorByID(actorID) : null;
-  },
+  }
 
   poolFor(actorID) {
     for (const pool of this._pools) {
@@ -854,7 +857,7 @@ DevToolsClient.prototype = {
       }
     }
     return null;
-  },
+  }
 
   
 
@@ -871,11 +874,11 @@ DevToolsClient.prototype = {
     }
 
     return new ObjectFront(this, threadFront.targetFront, parentFront, grip);
-  },
+  }
 
   get transport() {
     return this._transport;
-  },
+  }
 
   
 
@@ -883,7 +886,7 @@ DevToolsClient.prototype = {
 
   get isLocalClient() {
     return !!this._transport.isLocalTransport;
-  },
+  }
 
   dumpPools() {
     for (const pool of this._pools) {
@@ -891,10 +894,8 @@ DevToolsClient.prototype = {
         ...pool.__poolMap.keys(),
       ]);
     }
-  },
-};
-
-EventEmitter.decorate(DevToolsClient.prototype);
+  }
+}
 
 class Request extends EventEmitter {
   constructor(request) {
