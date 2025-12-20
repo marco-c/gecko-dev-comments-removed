@@ -1279,18 +1279,18 @@ void RenderThread::InitDeviceTask() {
   
   SingletonGL();
 
-  if (mShaders) {
-    
-    
-    PostResumeShaderWarmupRunnable();
-  }
-
   const auto maxDurationMs = 3 * 1000;
   const auto end = TimeStamp::Now();
   const auto durationMs = static_cast<uint32_t>((end - start).ToMilliseconds());
   if (durationMs > maxDurationMs) {
     gfxCriticalNoteOnce << "RenderThread::InitDeviceTask is slow: "
                         << durationMs;
+  }
+}
+
+void RenderThread::BeginShaderWarmupIfNeeded() {
+  if (mShaders) {
+    PostResumeShaderWarmupRunnable();
   }
 }
 

@@ -191,6 +191,10 @@ class NewRenderer : public RendererEvent {
     }
 
     aRenderThread.AddRenderer(aWindowId, std::move(renderer));
+
+    
+    
+    aRenderThread.BeginShaderWarmupIfNeeded();
   }
 
   const char* Name() override { return "NewRenderer"; }
