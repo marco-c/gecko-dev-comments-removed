@@ -1090,7 +1090,6 @@ function* IteratorConcatGenerator(iterables) {
   }
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -1670,6 +1669,7 @@ function IteratorCloseAllForException(iters) {
   
 }
 
+#ifdef NIGHTLY_BUILD
 
 
 
