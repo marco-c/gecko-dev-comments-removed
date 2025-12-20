@@ -422,13 +422,10 @@ class MOZ_STACK_CLASS Locale final {
 
 
   void SetVariants(VariantsVector&& aVariants) {
-#ifdef DEBUG
-    
-    auto isValidVariant = [](const auto& variant) {
-      return IsStructurallyValidVariantTag(variant.Span());
-    };
-#endif
-    MOZ_ASSERT(std::all_of(aVariants.begin(), aVariants.end(), isValidVariant));
+    MOZ_ASSERT(std::all_of(
+        aVariants.begin(), aVariants.end(), [](const auto& variant) {
+          return IsStructurallyValidVariantTag(variant.Span());
+        }));
     mVariants = std::move(aVariants);
   }
 
