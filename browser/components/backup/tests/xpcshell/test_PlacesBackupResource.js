@@ -3,9 +3,6 @@
 
 "use strict";
 
-const { BookmarkJSONUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/BookmarkJSONUtils.sys.mjs"
-);
 const { PlacesBackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/PlacesBackupResource.sys.mjs"
 );
@@ -170,7 +167,6 @@ add_task(async function test_backup_no_saved_history() {
   );
   let sandbox = sinon.createSandbox();
 
-  let placesBackupResource = new PlacesBackupResource();
   let sourcePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "PlacesBackupResource-source-test"
@@ -193,22 +189,13 @@ add_task(async function test_backup_no_saved_history() {
   Services.prefs.setBoolPref(HISTORY_ENABLED_PREF, false);
   Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF, false);
 
-  let manifestEntry = await placesBackupResource.backup(
-    stagingPath,
-    sourcePath
-  );
-  Assert.deepEqual(
-    manifestEntry,
-    { bookmarksOnly: true },
-    "Should have gotten back a ManifestEntry indicating that we only copied " +
-      "bookmarks"
+  Assert.ok(
+    !PlacesBackupResource.canBackupResource,
+    "Cannot backup places when history is disabled"
   );
 
-  Assert.ok(
-    fakeConnection.backup.notCalled,
-    "No sqlite connections should have been made with remember history disabled"
-  );
-  await assertFilesExist(stagingPath, [{ path: "bookmarks.jsonlz4" }]);
+  
+  
   
   Assert.equal(
     Glean.browserBackup.placesTime.testGetValue(),
@@ -223,29 +210,20 @@ add_task(async function test_backup_no_saved_history() {
   assertHistogramMeasurementQuantity(placesTimeHistogram, 0);
   assertHistogramMeasurementQuantity(faviconsTimeHistogram, 0);
 
-  await IOUtils.remove(PathUtils.join(stagingPath, "bookmarks.jsonlz4"));
-
   
-
 
 
   Services.prefs.setBoolPref(HISTORY_ENABLED_PREF, true);
   Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF, true);
-
-  fakeConnection.backup.resetHistory();
-  manifestEntry = await placesBackupResource.backup(stagingPath, sourcePath);
-  Assert.deepEqual(
-    manifestEntry,
-    { bookmarksOnly: true },
-    "Should have gotten back a ManifestEntry indicating that we only copied " +
-      "bookmarks"
-  );
+  Services.prefs.setBoolPref(HISTORY_CLEARED_ON_SHUTDOWN_PREF, true);
 
   Assert.ok(
-    fakeConnection.backup.notCalled,
-    "No sqlite connections should have been made with sanitize shutdown enabled"
+    !PlacesBackupResource.canBackupResource,
+    "Cannot backup places when sanitizeOnShutdown and history cleared on shutdown are enabled"
   );
-  await assertFilesExist(stagingPath, [{ path: "bookmarks.jsonlz4" }]);
+
+  
+  
   
   Assert.equal(
     Glean.browserBackup.placesTime.testGetValue(),
@@ -266,8 +244,8 @@ add_task(async function test_backup_no_saved_history() {
   sandbox.restore();
   Services.prefs.clearUserPref(HISTORY_ENABLED_PREF);
   Services.prefs.clearUserPref(SANITIZE_ON_SHUTDOWN_PREF);
+  Services.prefs.clearUserPref(HISTORY_CLEARED_ON_SHUTDOWN_PREF);
 });
-
 
 
 
@@ -282,7 +260,6 @@ add_task(async function test_backup_private_browsing() {
   );
   let sandbox = sinon.createSandbox();
 
-  let placesBackupResource = new PlacesBackupResource();
   let sourcePath = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "PlacesBackupResource-source-test"
@@ -299,22 +276,13 @@ add_task(async function test_backup_private_browsing() {
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
   sandbox.stub(PrivateBrowsingUtils, "permanentPrivateBrowsing").value(true);
 
-  let manifestEntry = await placesBackupResource.backup(
-    stagingPath,
-    sourcePath
-  );
-  Assert.deepEqual(
-    manifestEntry,
-    { bookmarksOnly: true },
-    "Should have gotten back a ManifestEntry indicating that we only copied " +
-      "bookmarks"
+  Assert.ok(
+    !PlacesBackupResource.canBackupResource,
+    "Cannot backup places when permanent private browsing is enabled"
   );
 
-  Assert.ok(
-    fakeConnection.backup.notCalled,
-    "No sqlite connections should have been made with permanent private browsing enabled"
-  );
-  await assertFilesExist(stagingPath, [{ path: "bookmarks.jsonlz4" }]);
+  
+  
   
   Assert.equal(
     Glean.browserBackup.placesTime.testGetValue(),
@@ -377,61 +345,31 @@ add_task(async function test_recover() {
 
 
 
-
-add_task(async function test_recover_bookmarks_only() {
-  let sandbox = sinon.createSandbox();
-  let placesBackupResource = new PlacesBackupResource();
-  let recoveryPath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "PlacesBackupResource-recovery-test"
-  );
-  let destProfilePath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "PlacesBackupResource-test-profile"
-  );
-  let bookmarksImportStub = sandbox
-    .stub(BookmarkJSONUtils, "importFromFile")
-    .resolves(true);
-
-  await createTestFiles(recoveryPath, [{ path: "bookmarks.jsonlz4" }]);
-
-  
-  let postRecoveryEntry = await placesBackupResource.recover(
-    { bookmarksOnly: true },
-    recoveryPath,
-    destProfilePath
-  );
-
-  let expectedBookmarksPath = PathUtils.join(recoveryPath, "bookmarks.jsonlz4");
-
-  
-  Assert.deepEqual(
-    postRecoveryEntry,
-    { bookmarksBackupPath: expectedBookmarksPath },
-    "PlacesBackupResource.recover should return the expected post recovery entry"
-  );
-
-  
-  for (let placesFile of [
-    "places.sqlite",
-    "favicons.sqlite",
-    "bookmarks.jsonlz4",
-  ]) {
-    Assert.ok(
-      !(await IOUtils.exists(PathUtils.join(destProfilePath, placesFile))),
-      `${placesFile} should not exist in the new profile`
-    );
-  }
-
-  
-  await placesBackupResource.postRecovery(postRecoveryEntry);
+add_task(async function test_canBackupResource() {
   Assert.ok(
-    bookmarksImportStub.calledOnce,
-    "BookmarkJSONUtils.importFromFile was called in the postRecovery step"
+    PlacesBackupResource.canBackupResource,
+    "Should be able to backup by default"
   );
 
-  await maybeRemovePath(recoveryPath);
-  await maybeRemovePath(destProfilePath);
+  Services.prefs.setBoolPref(HISTORY_ENABLED_PREF, false);
+  Assert.ok(
+    !PlacesBackupResource.canBackupResource,
+    "Cannot backup when history is disabled"
+  );
+  Services.prefs.clearUserPref(HISTORY_ENABLED_PREF);
 
-  sandbox.restore();
+  Assert.ok(
+    PlacesBackupResource.canBackupResource,
+    "Should be able to backup after clearing pref"
+  );
+
+  Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF, true);
+  Services.prefs.setBoolPref(HISTORY_CLEARED_ON_SHUTDOWN_PREF, true);
+  Assert.ok(
+    !PlacesBackupResource.canBackupResource,
+    "Cannot backup when sanitizeOnShutdown and history cleared on shutdown are enabled"
+  );
+
+  Services.prefs.clearUserPref(SANITIZE_ON_SHUTDOWN_PREF);
+  Services.prefs.clearUserPref(HISTORY_CLEARED_ON_SHUTDOWN_PREF);
 });

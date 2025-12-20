@@ -17,7 +17,7 @@ const { SearchUtils } = ChromeUtils.importESModule(
 add_task(async function test_measure() {
   Services.fog.testResetFOG();
 
-  const EXPECTED_PREFERENCES_KILOBYTES_SIZE = 415;
+  const EXPECTED_PREFERENCES_KILOBYTES_SIZE = 55;
   const tempDir = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "PreferencesBackupResource-measure-test"
@@ -25,8 +25,6 @@ add_task(async function test_measure() {
   const mockFiles = [
     { path: "prefs.js", sizeInKB: 20 },
     { path: "xulstore.json", sizeInKB: 1 },
-    { path: "permissions.sqlite", sizeInKB: 100 },
-    { path: "content-prefs.sqlite", sizeInKB: 260 },
     { path: "containers.json", sizeInKB: 1 },
     { path: "handlers.json", sizeInKB: 1 },
     { path: "search.json.mozlz4", sizeInKB: 1 },
@@ -92,14 +90,6 @@ add_task(async function test_backup() {
   
   
   
-  await createTestFiles(sourcePath, [
-    { path: "permissions.sqlite" },
-    { path: "content-prefs.sqlite" },
-  ]);
-
-  
-  
-  
   
   let fakeConnection = {
     backup: sandbox.stub().resolves(true),
@@ -120,148 +110,15 @@ add_task(async function test_backup() {
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
 
-  
-  
   Assert.ok(
-    fakeConnection.backup.calledTwice,
-    "Called backup the expected number of times for all connections"
-  );
-  Assert.ok(
-    fakeConnection.backup.firstCall.calledWith(
-      PathUtils.join(stagingPath, "permissions.sqlite")
-    ),
-    "Called backup on the permissions.sqlite Sqlite connection"
-  );
-  Assert.ok(
-    fakeConnection.backup.secondCall.calledWith(
-      PathUtils.join(stagingPath, "content-prefs.sqlite")
-    ),
-    "Called backup on the content-prefs.sqlite Sqlite connection"
+    fakeConnection.backup.notCalled,
+    "No sqlite connections should have been made"
   );
 
   
   Assert.ok(
     await IOUtils.exists(PathUtils.join(stagingPath, "prefs.js")),
     "prefs.js should exist in the staging folder"
-  );
-
-  await maybeRemovePath(stagingPath);
-  await maybeRemovePath(sourcePath);
-
-  sandbox.restore();
-});
-
-
-
-
-
-
-add_task(async function test_backup_no_saved_history() {
-  let preferencesBackupResource = new PreferencesBackupResource();
-  let sourcePath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "PreferencesBackupResource-source-test"
-  );
-  let stagingPath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "PreferencesBackupResource-staging-test"
-  );
-
-  let sandbox = sinon.createSandbox();
-  let fakeConnection = {
-    backup: sandbox.stub().resolves(true),
-    close: sandbox.stub().resolves(true),
-  };
-  sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
-
-  
-  Services.prefs.setBoolPref(HISTORY_ENABLED_PREF, false);
-  Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF, false);
-
-  let manifestEntry = await preferencesBackupResource.backup(
-    stagingPath,
-    sourcePath
-  );
-  Assert.deepEqual(
-    manifestEntry,
-    { profilePath: sourcePath },
-    "PreferencesBackupResource.backup should return the original profile path " +
-      "in its ManifestEntry"
-  );
-
-  Assert.ok(
-    fakeConnection.backup.notCalled,
-    "No sqlite connections should have been made with remember history disabled"
-  );
-
-  
-  
-  Services.prefs.setBoolPref(HISTORY_ENABLED_PREF, true);
-  Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF, true);
-
-  fakeConnection.backup.resetHistory();
-  manifestEntry = await preferencesBackupResource.backup(
-    stagingPath,
-    sourcePath
-  );
-  Assert.deepEqual(
-    manifestEntry,
-    { profilePath: sourcePath },
-    "PreferencesBackupResource.backup should return the original profile path " +
-      "in its ManifestEntry"
-  );
-
-  Assert.ok(
-    fakeConnection.backup.notCalled,
-    "No sqlite connections should have been made with sanitize shutdown enabled"
-  );
-
-  await maybeRemovePath(stagingPath);
-  await maybeRemovePath(sourcePath);
-
-  sandbox.restore();
-  Services.prefs.clearUserPref(HISTORY_ENABLED_PREF);
-  Services.prefs.clearUserPref(SANITIZE_ON_SHUTDOWN_PREF);
-});
-
-
-
-
-
-add_task(async function test_backup_private_browsing() {
-  let sandbox = sinon.createSandbox();
-
-  let preferencesBackupResource = new PreferencesBackupResource();
-  let sourcePath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "PreferencesBackupResource-source-test"
-  );
-  let stagingPath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "PreferencesBackupResource-staging-test"
-  );
-
-  let fakeConnection = {
-    backup: sandbox.stub().resolves(true),
-    close: sandbox.stub().resolves(true),
-  };
-  sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
-  sandbox.stub(PrivateBrowsingUtils, "permanentPrivateBrowsing").value(true);
-
-  let manifestEntry = await preferencesBackupResource.backup(
-    stagingPath,
-    sourcePath
-  );
-  Assert.deepEqual(
-    manifestEntry,
-    { profilePath: sourcePath },
-    "PreferencesBackupResource.backup should return the original profile path " +
-      "in its ManifestEntry"
-  );
-
-  Assert.ok(
-    fakeConnection.backup.notCalled,
-    "No sqlite connections should have been made with permanent private browsing enabled"
   );
 
   await maybeRemovePath(stagingPath);
@@ -322,8 +179,6 @@ add_task(async function test_recover() {
   const simpleCopyFiles = [
     { path: "prefs.js" },
     { path: "xulstore.json" },
-    { path: "permissions.sqlite" },
-    { path: "content-prefs.sqlite" },
     { path: "containers.json" },
     { path: "handlers.json" },
     { path: "user.js" },
