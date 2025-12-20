@@ -33,11 +33,24 @@ class StatusHandler:
         self.log_level_counts = defaultdict(int)
         
         self.no_tests_run_count = 0
+        
+        
+        self.tests_with_counted_crash = set()
 
     def __call__(self, data):
         action = data["action"]
         known_intermittent = data.get("known_intermittent", [])
-        self.action_counts[action] += 1
+
+        
+        if action == "crash":
+            test_name = data.get("test")
+            
+            if test_name is None or test_name not in self.tests_with_counted_crash:
+                self.action_counts["crash"] += 1
+                if test_name is not None:
+                    self.tests_with_counted_crash.add(test_name)
+        else:
+            self.action_counts[action] += 1
 
         if action == "log":
             if data["level"] == "ERROR" and data["message"] == "No tests ran":
@@ -54,6 +67,10 @@ class StatusHandler:
                 
                 if status in known_intermittent:
                     self.known_intermittent_statuses[status] += 1
+
+        
+        if action == "test_end":
+            self.tests_with_counted_crash.discard(data.get("test"))
 
         if action == "assertion_count":
             if data["count"] < data["min_expected"]:
