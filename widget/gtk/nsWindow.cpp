@@ -5634,19 +5634,23 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     return result;
   }();
 
+  const bool fullscreenChanging =
+      mSizeMode != oldSizeMode && (mSizeMode == nsSizeMode_Fullscreen ||
+                                   oldSizeMode == nsSizeMode_Fullscreen);
+
   if (mSizeMode != oldSizeMode || mIsTiled != oldIsTiled) {
-    RecomputeBounds( false);
+    
+    
+    
+    RecomputeBounds( fullscreenChanging);
   }
   if (mSizeMode != oldSizeMode) {
     if (mWidgetListener) {
       mWidgetListener->SizeModeChanged(mSizeMode);
     }
-    if (mSizeMode == nsSizeMode_Fullscreen ||
-        oldSizeMode == nsSizeMode_Fullscreen) {
-      if (mCompositorWidgetDelegate) {
-        mCompositorWidgetDelegate->NotifyFullscreenChanged(
-            mSizeMode == nsSizeMode_Fullscreen);
-      }
+    if (fullscreenChanging && mCompositorWidgetDelegate) {
+      mCompositorWidgetDelegate->NotifyFullscreenChanged(mSizeMode ==
+                                                         nsSizeMode_Fullscreen);
     }
   }
 }
