@@ -436,24 +436,26 @@ bool ComputedStyle::HasAnchorPosReference() const {
     
     
     
-    
     return true;
   }
 
-  if (!pos->mPositionArea.IsNone()) {
-    
-    return true;
-  }
+  if (pos->mPositionAnchor.IsAuto()) {
+    if (!pos->mPositionArea.IsNone()) {
+      
+      return true;
+    }
 
-  
-  
-  
-  const auto alignSelfValue = pos->mAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  const auto justifySelfValue =
-      pos->mJustifySelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  if (alignSelfValue == StyleAlignFlags::ANCHOR_CENTER ||
-      justifySelfValue == StyleAlignFlags::ANCHOR_CENTER) {
-    return true;
+    
+    
+    
+    const auto alignSelfValue =
+        pos->mAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
+    const auto justifySelfValue =
+        pos->mJustifySelf._0 & ~StyleAlignFlags::FLAG_BITS;
+    if (alignSelfValue == StyleAlignFlags::ANCHOR_CENTER ||
+        justifySelfValue == StyleAlignFlags::ANCHOR_CENTER) {
+      return true;
+    }
   }
 
   

@@ -3261,6 +3261,9 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsTArray<AnchorPosAnchorChange> mLazyAnchorPosAnchorChanges;
 
+  
+  
+  
   nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
   nsTArray<nsIFrame*> mAnchorPosPositioned;
 
