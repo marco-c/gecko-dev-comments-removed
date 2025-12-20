@@ -34,7 +34,7 @@ ALL_FLAVORS = {
     "mochitest": {
         "suite": "plain",
         "aliases": ("plain", "mochitest"),
-        "enabled_apps": ("firefox", "android"),
+        "enabled_apps": ("firefox", "android", "ios"),
         "extra_args": {
             "flavor": "plain",
         },
@@ -998,7 +998,7 @@ class MochitestArguments(ArgumentContainer):
         """Validate generic options."""
 
         
-        if parser.app != "android":
+        if parser.app not in ("android", "ios"):
             if options.app is None:
                 if build_obj:
                     from mozbuild.base import BinaryNotFoundException
@@ -1431,9 +1431,112 @@ class AndroidArguments(ArgumentContainer):
         return options
 
 
+class IosArguments(ArgumentContainer):
+    """Ios specific arguments."""
+
+    args = [
+        [
+            ["--no-install"],
+            {
+                "action": "store_true",
+                "default": False,
+                "help": "Skip the installation of the app.",
+            },
+        ],
+        
+        [
+            ["--remote-webserver"],
+            {
+                "dest": "remoteWebServer",
+                "default": None,
+                "help": "IP address of the remote web server.",
+            },
+        ],
+        [
+            ["--http-port"],
+            {
+                "dest": "httpPort",
+                "default": DEFAULT_PORTS["http"],
+                "help": "http port of the remote web server.",
+                "suppress": True,
+            },
+        ],
+        [
+            ["--ssl-port"],
+            {
+                "dest": "sslPort",
+                "default": DEFAULT_PORTS["https"],
+                "help": "ssl port of the remote web server.",
+                "suppress": True,
+            },
+        ],
+        [
+            ["--remoteTestRoot"],
+            {
+                "dest": "remoteTestRoot",
+                "default": None,
+                "help": "Remote directory to use as test root "
+                "(eg. /data/local/tmp/test_root).",
+                "suppress": True,
+            },
+        ],
+    ]
+
+    defaults = {
+        
+        "extensionsToExclude": [],
+        
+        "extensionsToInstall": [os.path.join(here, "mochijar")],
+        "logFile": "mochitest.log",
+        "utilityPath": None,
+    }
+
+    def validate(self, parser, options, context):
+        """Validate iOS options."""
+
+        if build_obj:
+            options.log_mach = "-"
+
+            objdir_xpi_stage = os.path.join(build_obj.distdir, "xpi-stage")
+            if os.path.isdir(objdir_xpi_stage):
+                options.extensionsToInstall = [
+                    os.path.join(objdir_xpi_stage, "mochijar"),
+                    os.path.join(objdir_xpi_stage, "specialpowers"),
+                ]
+
+        if options.remoteWebServer is None:
+            options.remoteWebServer = moznetwork.get_ip()
+
+        options.webServer = options.remoteWebServer
+
+        if options.app is None:
+            options.app = "org.mozilla.ios.GeckoTestBrowser"
+
+        if build_obj and "MOZ_HOST_BIN" in os.environ:
+            options.xrePath = os.environ["MOZ_HOST_BIN"]
+
+        
+        if options.xrePath is None:
+            options.xrePath = options.utilityPath
+
+        if build_obj:
+            options.topsrcdir = build_obj.topsrcdir
+
+        if options.pidFile != "":
+            f = open(options.pidFile, "w")
+            f.write("%s" % os.getpid())
+            f.close()
+
+        
+        
+        options.remoteappname = options.app
+        return options
+
+
 container_map = {
     "generic": [MochitestArguments],
     "android": [MochitestArguments, AndroidArguments],
+    "ios": [MochitestArguments, IosArguments],
 }
 
 
@@ -1476,6 +1579,8 @@ class MochitestArgumentParser(ArgumentParser):
         if not self.app and build_obj:
             if conditions.is_android(build_obj):
                 self.app = "android"
+            if conditions.is_ios(build_obj):
+                self.app = "ios"
         if not self.app:
             
             
