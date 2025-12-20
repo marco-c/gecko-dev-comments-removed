@@ -49,9 +49,8 @@
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"
-#include "js/RegExpFlags.h"  
-#include "js/Stack.h"        
-#include "util/DifferentialTesting.h"
+#include "js/RegExpFlags.h"      
+#include "js/Stack.h"            
 #include "util/StringBuilder.h"  
 #include "vm/BytecodeUtil.h"
 #include "vm/FunctionFlags.h"          
@@ -3835,8 +3834,7 @@ static inline bool IsUseAsmDirective(const TokenPos& pos,
 }
 
 template <typename Unit>
-bool Parser<SyntaxParseHandler, Unit>::asmJS(TokenPos directivePos,
-                                             ListNodeType list) {
+bool Parser<SyntaxParseHandler, Unit>::asmJS(ListNodeType list) {
   
   
   
@@ -3848,8 +3846,7 @@ bool Parser<SyntaxParseHandler, Unit>::asmJS(TokenPos directivePos,
 }
 
 template <typename Unit>
-bool Parser<FullParseHandler, Unit>::asmJS(TokenPos directivePos,
-                                           ListNodeType list) {
+bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
   
   disableSyntaxParser();
 
@@ -3881,18 +3878,6 @@ bool Parser<FullParseHandler, Unit>::asmJS(TokenPos directivePos,
   if (!CompileAsmJS(this->fc_, this->parserAtoms(), *this, list, &validated)) {
     return false;
   }
-
-  
-  
-  
-  if (!js::SupportDifferentialTesting() &&
-      JS::Prefs::warn_asmjs_deprecation()) {
-    if (!warningAt(directivePos.begin, JSMSG_USE_ASM_DEPRECATED)) {
-      return false;
-    }
-  }
-
-  
   if (!validated) {
     pc_->newDirectives->setAsmJS();
     return false;
@@ -3902,9 +3887,8 @@ bool Parser<FullParseHandler, Unit>::asmJS(TokenPos directivePos,
 }
 
 template <class ParseHandler, typename Unit>
-inline bool GeneralParser<ParseHandler, Unit>::asmJS(TokenPos directivePos,
-                                                     ListNodeType list) {
-  return asFinalParser()->asmJS(directivePos, list);
+inline bool GeneralParser<ParseHandler, Unit>::asmJS(ListNodeType list) {
+  return asFinalParser()->asmJS(list);
 }
 
 
@@ -4019,7 +4003,7 @@ bool GeneralParser<ParseHandler, Unit>::maybeParseDirective(
     }
   } else if (IsUseAsmDirective(directivePos, directive)) {
     if (pc_->isFunctionBox()) {
-      return asmJS(directivePos, list);
+      return asmJS(list);
     }
     return warningAt(directivePos.begin, JSMSG_USE_ASM_DIRECTIVE_FAIL);
   }
