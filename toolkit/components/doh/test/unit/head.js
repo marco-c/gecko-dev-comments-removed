@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 const { NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
 );
@@ -11,7 +13,7 @@ const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
 
-let h2Port, trrServer1, trrServer2, trrList;
+let trrServer, trrServer1, trrServer2, trrList;
 let DNSLookup, LookupAggregator, TRRRacer;
 
 function readFile(file) {
@@ -42,19 +44,18 @@ async function ensureNoTelemetry() {
   );
 }
 
-function setup() {
-  h2Port = Services.env.get("MOZHTTP2_PORT");
-  Assert.notEqual(h2Port, null);
-  Assert.notEqual(h2Port, "");
-
+async function setup() {
   
   do_get_profile();
+
+  trrServer = new TRRServer();
+  await trrServer.start();
 
   Services.prefs.setBoolPref("network.http.http2.enabled", true);
 
   
-  trrServer1 = `https://foo.example.com:${h2Port}/doh?responseIP=1.1.1.1`;
-  trrServer2 = `https://foo.example.com:${h2Port}/doh?responseIP=2.2.2.2`;
+  trrServer1 = `https://foo.example.com:${trrServer.port()}/doh?responseIP=1.1.1.1`;
+  trrServer2 = `https://foo.example.com:${trrServer.port()}/doh?responseIP=2.2.2.2`;
   trrList = [trrServer1, trrServer2];
   
   Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
@@ -89,10 +90,14 @@ function setup() {
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("network.http.http2.enabled");
     Services.prefs.clearUserPref("network.dns.native-is-localhost");
 
     Services.telemetry.canRecordExtended = oldCanRecord;
+
+    if (trrServer) {
+      await trrServer.stop();
+    }
   });
 }
