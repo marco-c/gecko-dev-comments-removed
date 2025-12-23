@@ -388,8 +388,7 @@ class nsIContent : public nsINode {
   
   
   
-  inline void HandleShadowDOMRelatedRemovalSteps(bool aNullParent,
-                                                 bool aInBatch);
+  inline void HandleShadowDOMRelatedRemovalSteps(bool aNullParent);
 
  public:
   

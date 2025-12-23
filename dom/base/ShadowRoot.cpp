@@ -824,7 +824,7 @@ nsINode* ShadowRoot::CreateElementAndAppendChildAt(nsINode& aParentNode,
   return aParentNode.AppendChild(*node, rv);
 }
 
-void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild, bool aInBatch) {
+void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild) {
   
   MOZ_ASSERT(!GetHost() || aChild.GetParent() == GetHost());
 
@@ -837,19 +837,14 @@ void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild, bool aInBatch) {
                         "How did aChild end up assigned to a slot?");
   
   
-  if ((aInBatch || slot->AssignedNodes().Length() == 1) &&
-      slot->HasChildren()) {
+  if (slot->AssignedNodes().Length() == 1 && slot->HasChildren()) {
     InvalidateStyleAndLayoutOnSubtree(slot);
   }
 
   slot->EnqueueSlotChangeEvent();
-  if (aInBatch) {
-    slot->ClearAssignedNodes();
-  } else {
-    slot->RemoveAssignedNode(aChild);
-    if (mIsDetailsShadowTree && aChild.IsHTMLElement(nsGkAtoms::summary)) {
-      MaybeReassignMainSummary(SummaryChangeReason::Deletion);
-    }
+  slot->RemoveAssignedNode(aChild);
+  if (mIsDetailsShadowTree && aChild.IsHTMLElement(nsGkAtoms::summary)) {
+    MaybeReassignMainSummary(SummaryChangeReason::Deletion);
   }
 }
 
