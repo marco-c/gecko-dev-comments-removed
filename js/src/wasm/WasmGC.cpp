@@ -261,14 +261,14 @@ void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
                                     Register otherScratch, Register setValue,
                                     Label* skipBarrier) {
   
-  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
-                                     skipBarrier);
-
-  
   if (object) {
     masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch,
                                  skipBarrier);
   }
+
+  
+  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
+                                     skipBarrier);
 }
 
 void wasm::CheckWholeCellLastElementCache(MacroAssembler& masm,
