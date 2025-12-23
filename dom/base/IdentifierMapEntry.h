@@ -127,12 +127,15 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
 
 
-  Element* GetIdElement() const { return mIdContentList->SafeElementAt(0); }
+  Element* GetIdElement() const {
+    auto span = mIdContentList.AsSpan();
+    return span.IsEmpty() ? nullptr : span[0];
+  }
 
   
 
 
-  const nsTArray<Element*>& GetIdElements() const { return mIdContentList; }
+  Span<Element* const> GetIdElements() const { return mIdContentList.AsSpan(); }
 
   
 
