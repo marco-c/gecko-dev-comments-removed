@@ -140,7 +140,6 @@ function promiseWaitForEvent(
 
 
 
-
 function promiseWaitForFocus(aWindow) {
   return new Promise(resolve => {
     waitForFocus(resolve, aWindow);

@@ -442,7 +442,6 @@ function openLibrary(aLeftPaneRoot) {
 
 
 
-
 function promiseDownloadHasProgress(aDownload, progress) {
   return new Promise(resolve => {
     

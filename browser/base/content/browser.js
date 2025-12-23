@@ -3414,6 +3414,7 @@ function hrefAndLinkNodeForClickEvent(event) {
 
 
 
+
 function contentAreaClick(event, isPanelClick) {
   if (!event.isTrusted || event.defaultPrevented || event.button != 0) {
     return;

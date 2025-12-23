@@ -21,7 +21,6 @@ const PAGE_3 = "http://example.net";
 
 
 
-
 async function assertShowingMultipleUI(browser, expected) {
   let showingMultiple = await SpecialPowers.spawn(browser, [], async () => {
     return (
@@ -42,7 +41,6 @@ async function assertShowingMultipleUI(browser, expected) {
 function snapshotCount(snapshot) {
   return Object.values(snapshot.values).reduce((a, b) => a + b, 0);
 }
-
 
 
 

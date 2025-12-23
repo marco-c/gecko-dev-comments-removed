@@ -331,7 +331,6 @@ var FullZoom = {
 
 
 
-
   updateCommands: async function FullZoom_updateCommands(
     forceResetEnabled = false
   ) {

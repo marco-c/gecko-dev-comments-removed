@@ -20,7 +20,6 @@ const TEST_PAGE_URL =
 
 
 
-
 async function waitForCommandEnabledState(expectedState) {
   const COMMAND_MAP = {
     enlarge: "cmd_fullZoomEnlarge",
