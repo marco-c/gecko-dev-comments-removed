@@ -44,7 +44,6 @@ async function openContextMenu(
 
 
 
-
 async function closeContextMenu(contextMenu) {
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(
     contextMenu,

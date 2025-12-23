@@ -26,7 +26,6 @@ const TEST_ADDITIONAL_TEXT_2 = "some other additional text";
 
 
 
-
 async function hangAndWaitForReport(expectTestAnnotation) {
   let hangPromise = TestUtils.topicObserved("bhr-thread-hang", subject => {
     let hang = subject.QueryInterface(Ci.nsIHangDetails);

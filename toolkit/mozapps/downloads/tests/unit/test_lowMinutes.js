@@ -20,6 +20,7 @@ const { DownloadUtils } = ChromeUtils.importESModule(
 
 
 
+
 var _ = function () {
   print(Array.from(arguments).join(" "));
 };

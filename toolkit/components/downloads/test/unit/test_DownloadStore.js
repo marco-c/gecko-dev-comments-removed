@@ -27,7 +27,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
-
 function promiseNewListAndStore(aStorePath) {
   return promiseNewList().then(function (aList) {
     let path = aStorePath || getTempFile(TEST_STORE_FILE_NAME).path;

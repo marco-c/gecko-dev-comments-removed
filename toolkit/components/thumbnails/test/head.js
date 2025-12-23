@@ -193,7 +193,6 @@ function bgCaptureIfMissing(aURL, aOptions) {
 
 
 
-
 function bgCaptureWithMethod(aMethodName, aURL, aOptions = {}) {
   
   
