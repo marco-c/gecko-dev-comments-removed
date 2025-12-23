@@ -400,7 +400,11 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: ["clear"],
-        when: () => !this.isBlockLevel(),
+        when: () =>
+          !this.isBlockLevel() &&
+          
+          
+          this.localName != "br",
         fixId: "inactive-css-not-block-fix",
         msgId: "inactive-css-not-block",
       },
