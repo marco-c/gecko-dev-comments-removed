@@ -8,6 +8,9 @@
 #include "MediaTrackGraph.h"
 #include "nsContentUtils.h"
 
+extern mozilla::LazyLogModule gMediaStreamTrackLog;
+#define LOG(type, msg) MOZ_LOG(gMediaStreamTrackLog, type, msg)
+
 namespace mozilla::dom {
 
 RefPtr<GenericPromise> AudioStreamTrack::AddAudioOutput(
@@ -36,6 +39,85 @@ void AudioStreamTrack::SetAudioOutputVolume(void* aKey, float aVolume) {
   mTrack->SetAudioOutputVolume(aKey, aVolume);
 }
 
+already_AddRefed<MediaInputPort> AudioStreamTrack::AddConsumerPort(
+    ProcessedMediaTrack* aTrack) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mTrack == Ended());
+
+  if (!mTrack || !aTrack || aTrack->IsDestroyed()) {
+    LOG(LogLevel::Warning,
+        ("AudioStreamTrack %p cannot forward contents: track ended or "
+         "data/destination track ended/destroyed",
+         this));
+    return nullptr;
+  }
+
+  MOZ_ASSERT(!mTrack->IsDestroyed());
+  if (mTrack->Graph() == aTrack->Graph()) {
+    return ForwardTrackContentsTo(aTrack);
+  }
+
+  LOG(LogLevel::Verbose,
+      ("AudioStreamTrack %p forwarding cross-graph contents from track %p "
+       "(graph %p) to track %p (graph %p)",
+       this, mTrack.get(), mTrack->Graph(), aTrack, aTrack->Graph()));
+
+  
+  
+  MediaTrackGraph* rcvrGraph = aTrack->Graph();
+
+  
+  for (auto& conn : mCrossGraphs) {
+    if (conn.mPort->mReceiver->Graph() == rcvrGraph) {
+      conn.mRefCount++;
+      LOG(LogLevel::Verbose,
+          ("AudioStreamTrack %p reusing cross-graph port "
+           "to graph %p (rate %u), refcount now %zu",
+           this, rcvrGraph, rcvrGraph->GraphRate(), conn.mRefCount));
+      return aTrack->AllocateInputPort(conn.mPort->mReceiver);
+    }
+  }
+
+  
+  LOG(LogLevel::Verbose,
+      ("AudioStreamTrack %p creating cross-graph port to graph %p (rate %u)",
+       this, rcvrGraph, rcvrGraph->GraphRate()));
+  CrossGraphConnection* conn = mCrossGraphs.AppendElement(
+      CrossGraphConnection(CrossGraphPort::Connect(RefPtr{this}, rcvrGraph)));
+  return aTrack->AllocateInputPort(conn->mPort->mReceiver);
+}
+
+void AudioStreamTrack::RemoveConsumerPort(MediaInputPort* aPort) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!aPort) {
+    return;
+  }
+
+  MediaTrackGraph* receiverGraph = aPort->Graph();
+
+  
+  for (size_t i = 0; i < mCrossGraphs.Length(); ++i) {
+    auto& conn = mCrossGraphs[i];
+    if (conn.mPort->mReceiver->Graph() == receiverGraph) {
+      MOZ_ASSERT(conn.mRefCount > 0);
+      --conn.mRefCount;
+      LOG(LogLevel::Verbose,
+          ("AudioStreamTrack %p decrementing cross-graph port refcount to "
+           "graph %p (rate %u), refcount now %zu",
+           this, receiverGraph, receiverGraph->GraphRate(), conn.mRefCount));
+      if (conn.mRefCount == 0) {
+        LOG(LogLevel::Verbose,
+            ("AudioStreamTrack %p removing cross-graph forwarding to graph %p "
+             "(rate %u)",
+             this, receiverGraph, receiverGraph->GraphRate()));
+        mCrossGraphs.UnorderedRemoveElementAt(i);
+      }
+      return;
+    }
+  }
+}
+
 void AudioStreamTrack::GetLabel(nsAString& aLabel, CallerType aCallerType) {
   MediaStreamTrack::GetLabel(aLabel, aCallerType);
 }
@@ -44,4 +126,31 @@ already_AddRefed<MediaStreamTrack> AudioStreamTrack::Clone() {
   return MediaStreamTrack::CloneInternal<AudioStreamTrack>();
 }
 
+void AudioStreamTrack::SetReadyState(MediaStreamTrackState aState) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mCrossGraphs.IsEmpty() && aState == MediaStreamTrackState::Ended) {
+    MOZ_ASSERT(!Ended());
+    LOG(LogLevel::Verbose,
+        ("AudioStreamTrack %p ending, destroying %zu cross-graph ports", this,
+         mCrossGraphs.Length()));
+    mCrossGraphs.Clear();
+  }
+
+  MediaStreamTrack::SetReadyState(aState);
+}
+
 }  
+
+#undef LOG

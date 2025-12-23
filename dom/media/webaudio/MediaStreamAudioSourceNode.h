@@ -75,7 +75,7 @@ class MediaStreamAudioSourceNode
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   
-  void AttachToTrack(const RefPtr<MediaStreamTrack>& aTrack, ErrorResult& aRv);
+  void AttachToTrack(AudioStreamTrack* aTrack);
 
   
   void DetachFromTrack();
@@ -137,7 +137,7 @@ class MediaStreamAudioSourceNode
   RefPtr<DOMMediaStream> mInputStream;
 
   
-  RefPtr<MediaStreamTrack> mInputTrack;
+  RefPtr<AudioStreamTrack> mInputTrack;
   RefPtr<TrackListener> mListener;
 };
 

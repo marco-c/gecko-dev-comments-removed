@@ -37,9 +37,29 @@ class AudioStreamTrack : public MediaStreamTrack {
   void SetAudioOutputVolume(void* aKey, float aVolume);
 
   
+  
+  
+  already_AddRefed<MediaInputPort> AddConsumerPort(ProcessedMediaTrack* aTrack);
+  void RemoveConsumerPort(MediaInputPort* aPort);
+
+  
   void GetKind(nsAString& aKind) override { aKind.AssignLiteral("audio"); }
 
   void GetLabel(nsAString& aLabel, CallerType aCallerType) override;
+
+ protected:
+  void SetReadyState(MediaStreamTrackState aState) override;
+
+ private:
+  
+  struct CrossGraphConnection {
+    UniquePtr<CrossGraphPort> mPort;
+    size_t mRefCount;
+
+    explicit CrossGraphConnection(UniquePtr<CrossGraphPort> aPort)
+        : mPort(std::move(aPort)), mRefCount(1) {}
+  };
+  nsTArray<CrossGraphConnection> mCrossGraphs;
 };
 
 }  

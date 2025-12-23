@@ -25,10 +25,6 @@ namespace mozilla {
 
 
 
-
-
-
-
 class CrossGraphTransmitter : public ProcessedMediaTrack {
  public:
   CrossGraphTransmitter(TrackRate aSampleRate,
