@@ -4201,10 +4201,6 @@ function _checkDataTransferItems(aDataTransfer, aExpectedDragData) {
 
 
 
-
-
-
-
 async function synthesizePlainDragAndCancel(
   aParams,
   aExpectedDataTransferItems

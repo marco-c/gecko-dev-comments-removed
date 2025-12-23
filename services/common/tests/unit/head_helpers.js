@@ -91,6 +91,7 @@ function do_check_throws_message(aFunc, aResult) {
 
 
 
+
 var _ = function () {
   print(Array.from(arguments).join(" "));
 };
