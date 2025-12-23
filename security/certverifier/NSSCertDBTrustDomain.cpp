@@ -779,9 +779,8 @@ Result NSSCertDBTrustDomain::CheckRevocation(
     }
   }
 
-  Result ocspResult = CheckRevocationByOCSP(
-      certID, time, validityDuration, aiaLocation, crliteCoversCertificate,
-      crliteResult, stapledOCSPResponse);
+  Result ocspResult = CheckRevocationByOCSP(certID, time, validityDuration,
+                                            aiaLocation, stapledOCSPResponse);
 
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("NSSCertDBTrustDomain: end of CheckRevocation"));
@@ -868,8 +867,7 @@ Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
 
 Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
     const CertID& certID, Time time, Duration validityDuration,
-    const nsCString& aiaLocation, const bool crliteCoversCertificate,
-    const Result crliteResult,
+    const nsCString& aiaLocation,
      const Input* stapledOCSPResponse) {
   const uint16_t maxOCSPLifetimeInDays = 10;
   
@@ -1047,7 +1045,7 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
     
     return SynchronousCheckRevocationWithServer(
         certID, aiaLocation, time, maxOCSPLifetimeInDays, cachedResponseResult,
-        stapledOCSPResponseResult, crliteCoversCertificate, crliteResult);
+        stapledOCSPResponseResult);
   }
 
   return HandleOCSPFailure(cachedResponseResult, stapledOCSPResponseResult,
@@ -1057,8 +1055,7 @@ Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
 Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
     const CertID& certID, const nsCString& aiaLocation, Time time,
     uint16_t maxOCSPLifetimeInDays, const Result cachedResponseResult,
-    const Result stapledOCSPResponseResult, const bool crliteCoversCertificate,
-    const Result crliteResult) {
+    const Result stapledOCSPResponseResult) {
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
@@ -1095,14 +1092,6 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
       return cacheRV;
     }
 
-    if (crliteCoversCertificate &&
-        crliteResult == Result::ERROR_REVOKED_CERTIFICATE) {
-      
-      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
-          .Get("CRLiteRevOCSPFail"_ns)
-          .Add(1);
-    }
-
     return HandleOCSPFailure(cachedResponseResult, stapledOCSPResponseResult,
                              rv);
   }
@@ -1114,34 +1103,6 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
   rv = VerifyAndMaybeCacheEncodedOCSPResponse(certID, time,
                                               maxOCSPLifetimeInDays, response,
                                               ResponseIsFromNetwork, expired);
-
-  
-  
-  
-  
-  
-  
-  if (crliteCoversCertificate &&
-      crliteResult == Result::ERROR_REVOKED_CERTIFICATE) {
-    if (rv == Success) {
-      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
-          .Get("CRLiteRevOCSPOk"_ns)
-          .Add(1);
-    } else if (rv == Result::ERROR_REVOKED_CERTIFICATE) {
-      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
-          .Get("CRLiteRevOCSPRev"_ns)
-          .Add(1);
-    } else if (rv == Result::ERROR_OCSP_UNKNOWN_CERT) {
-      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
-          .Get("CRLiteRevOCSPUnk"_ns)
-          .Add(1);
-    } else {
-      mozilla::glean::cert_verifier::crlite_vs_ocsp_result
-          .Get("CRLiteRevOCSPSoft"_ns)
-          .Add(1);
-    }
-  }
-
   if (rv == Success || mOCSPFetching == RevocationCheckRequired) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("NSSCertDBTrustDomain: returning after "

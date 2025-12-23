@@ -116,16 +116,14 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
  public:
   typedef mozilla::pkix::Result Result;
 
-  enum OCSPFetching {
-    NeverFetchOCSP = 0,
-    FetchOCSPForDVSoftFail = 1,
-    FetchOCSPForDVHardFail = 2,
-    FetchOCSPForEV = 3,
-    LocalOnlyOCSPForEV = 4,
+  enum RevocationCheckMode {
+    RevocationCheckLocalOnly = 0,
+    RevocationCheckMayFetch = 1,
+    RevocationCheckRequired = 2,
   };
 
   NSSCertDBTrustDomain(
-      SECTrustType certDBTrustType, OCSPFetching ocspFetching,
+      SECTrustType certDBTrustType, RevocationCheckMode ocspFetching,
       OCSPCache& ocspCache, SignatureCache* signatureCache,
       TrustCache* trustCache, void* pinArg,
       mozilla::TimeDuration ocspTimeoutSoft,
@@ -194,8 +192,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
       mozilla::pkix::Duration validityDuration,
        const mozilla::pkix::Input* stapledOCSPResponse,
-       const mozilla::pkix::Input* aiaExtension,
-       const mozilla::pkix::Input* sctExtension) override;
+       const mozilla::pkix::Input* aiaExtension) override;
 
   virtual Result IsChainValid(
       const mozilla::pkix::DERArray& certChain, mozilla::pkix::Time time,
@@ -253,26 +250,21 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
 
   Result CheckRevocationByCRLite(const mozilla::pkix::CertID& certID,
                                  mozilla::pkix::Time time,
-                                 const mozilla::pkix::Input* sctExtension,
                                   bool& crliteCoversCertificate);
 
   Result CheckRevocationByOCSP(
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
       mozilla::pkix::Duration validityDuration, const nsCString& aiaLocation,
-      const bool crliteCoversCertificate, const Result crliteResult,
-       const mozilla::pkix::Input* stapledOCSPResponse,
-       bool& softFailure);
+       const mozilla::pkix::Input* stapledOCSPResponse);
 
   Result SynchronousCheckRevocationWithServer(
       const mozilla::pkix::CertID& certID, const nsCString& aiaLocation,
       mozilla::pkix::Time time, uint16_t maxOCSPLifetimeInDays,
-      const Result cachedResponseResult, const Result stapledOCSPResponseResult,
-      const bool crliteFilterCoversCertificate, const Result crliteResult,
-       bool& softFailure);
+      const Result cachedResponseResult,
+      const Result stapledOCSPResponseResult);
   Result HandleOCSPFailure(const Result cachedResponseResult,
                            const Result stapledOCSPResponseResult,
-                           const Result error,
-                            bool& softFailure);
+                           const Result error);
 
   bool ShouldSkipSelfSignedNonTrustAnchor(mozilla::pkix::Input certDER);
   Result CheckCandidates(IssuerChecker& checker,
@@ -281,7 +273,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
                          bool& keepGoing);
 
   const SECTrustType mCertDBTrustType;
-  const OCSPFetching mOCSPFetching;
+  const RevocationCheckMode mOCSPFetching;
   OCSPCache& mOCSPCache;            
   SignatureCache* mSignatureCache;  
   TrustCache* mTrustCache;          
