@@ -268,10 +268,10 @@ static Directionality ComputeAutoDirectionality(Element* aElement,
 
 
 Directionality ComputeAutoDirectionFromAssignedNodes(
-    HTMLSlotElement* aSlot, Span<const RefPtr<nsINode>> aAssignedNodes,
+    HTMLSlotElement* aSlot, const nsTArray<RefPtr<nsINode>>& assignedNodes,
     bool aNotify) {
   
-  for (const RefPtr<nsINode>& assignedNode : aAssignedNodes) {
+  for (const RefPtr<nsINode>& assignedNode : assignedNodes) {
     
     Directionality childDirection = Directionality::Unset;
 
@@ -316,7 +316,7 @@ static Directionality ComputeAutoDirectionality(Element* aElement,
   
   
   if (auto* slot = HTMLSlotElement::FromNode(aElement)) {
-    const Span assignedNodes = slot->AssignedNodes();
+    const nsTArray<RefPtr<nsINode>>& assignedNodes = slot->AssignedNodes();
     if (!assignedNodes.IsEmpty()) {
       MOZ_ASSERT(slot->IsInShadowTree());
       return ComputeAutoDirectionFromAssignedNodes(slot, assignedNodes,

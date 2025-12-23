@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_TreeOrderedArray_h
 #define mozilla_dom_TreeOrderedArray_h
 
-#include "FastFrontRemovableArray.h"
+#include "nsTArray.h"
 
 class nsINode;
 template <typename T>
@@ -17,9 +17,7 @@ namespace mozilla::dom {
 
 
 template <typename NodePointer>
-class TreeOrderedArray : public FastFrontRemovableArray<NodePointer, 1> {
-  using Base = FastFrontRemovableArray<NodePointer, 1>;
-
+class TreeOrderedArray {
   template <typename T>
   struct RawTypeExtractor {};
 
@@ -36,6 +34,10 @@ class TreeOrderedArray : public FastFrontRemovableArray<NodePointer, 1> {
   using Node = typename RawTypeExtractor<NodePointer>::type;
 
  public:
+  operator const nsTArray<NodePointer>&() const { return mList; }
+  const nsTArray<NodePointer>& AsList() const { return mList; }
+  const nsTArray<NodePointer>* operator->() const { return &mList; }
+
   
   
   
@@ -47,7 +49,14 @@ class TreeOrderedArray : public FastFrontRemovableArray<NodePointer, 1> {
   
   
   inline size_t Insert(Node&, nsINode* aCommonAncestor = nullptr);
-  bool RemoveElement(Node& aNode) { return Base::RemoveElement(&aNode); }
+
+  bool RemoveElement(Node& aNode) { return mList.RemoveElement(&aNode); }
+  void RemoveElementAt(size_t aIndex) { mList.RemoveElementAt(aIndex); }
+
+  void Clear() { mList.Clear(); }
+
+ private:
+  AutoTArray<NodePointer, 1> mList;
 };
 
 }  

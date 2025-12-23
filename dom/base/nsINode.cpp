@@ -3385,11 +3385,16 @@ inline static Element* FindMatchingElementWithId(
       aRoot.IsInUncomposedDoc() || aRoot.IsInShadowTree(),
       "Don't call me if the root is not in the document or in a shadow tree");
 
-  Span elements = aContainingDocOrShadowRoot.GetAllElementsForId(aId);
+  const nsTArray<Element*>* elements =
+      aContainingDocOrShadowRoot.GetAllElementsForId(aId);
+  if (!elements) {
+    
+    return nullptr;
+  }
 
   
   
-  for (Element* element : elements) {
+  for (Element* element : *elements) {
     if (MOZ_UNLIKELY(element == &aRoot)) {
       continue;
     }
