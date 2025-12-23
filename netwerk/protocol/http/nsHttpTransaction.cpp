@@ -815,9 +815,6 @@ nsresult nsHttpTransaction::WritePipeSegment(nsIOutputStream* stream,
   if (trans->mTransactionDone) return NS_BASE_STREAM_CLOSED;  
 
   
-  trans->SetResponseStart(TimeStamp::Now(), true);
-
-  
   MOZ_ASSERT(trans->mWriter);
   if (!trans->mWriter) {
     return NS_ERROR_UNEXPECTED;
@@ -2074,6 +2071,14 @@ nsresult nsHttpTransaction::ParseLineSegment(char* segment, uint32_t len) {
     mLineBuf.Truncate();
     
     uint16_t status = mResponseHead->Status();
+
+    
+    auto now = TimeStamp::Now();
+    SetResponseStart(now, true);  
+    if (status / 100 != 1) {
+      SetFinalResponseHeadersStart(now, true);
+    }
+
     if (status == 103 &&
         (StaticPrefs::network_early_hints_over_http_v1_1_enabled() ||
          mResponseHead->Version() != HttpVersion::v1_1)) {
@@ -2903,6 +2908,15 @@ void nsHttpTransaction::SetResponseEnd(mozilla::TimeStamp timeStamp,
   mTimings.responseEnd = timeStamp;
 }
 
+void nsHttpTransaction::SetFinalResponseHeadersStart(
+    mozilla::TimeStamp timeStamp, bool onlyIfNull) {
+  mozilla::MutexAutoLock lock(mLock);
+  if (onlyIfNull && !mTimings.finalResponseHeadersStart.IsNull()) {
+    return;
+  }
+  mTimings.finalResponseHeadersStart = timeStamp;
+}
+
 mozilla::TimeStamp nsHttpTransaction::GetDomainLookupStart() {
   mozilla::MutexAutoLock lock(mLock);
   return mTimings.domainLookupStart;
@@ -2946,6 +2960,11 @@ mozilla::TimeStamp nsHttpTransaction::GetResponseStart() {
 mozilla::TimeStamp nsHttpTransaction::GetResponseEnd() {
   mozilla::MutexAutoLock lock(mLock);
   return mTimings.responseEnd;
+}
+
+mozilla::TimeStamp nsHttpTransaction::GetFinalResponseHeadersStart() {
+  mozilla::MutexAutoLock lock(mLock);
+  return mTimings.finalResponseHeadersStart;
 }
 
 
