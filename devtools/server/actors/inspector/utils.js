@@ -146,11 +146,11 @@ function isInXULDocument(el) {
 
 function standardTreeWalkerFilter(node) {
   
-  
   if (
     node.nodeName === "_moz_generated_content_marker" ||
     node.nodeName === "_moz_generated_content_before" ||
-    node.nodeName === "_moz_generated_content_after"
+    node.nodeName === "_moz_generated_content_after" ||
+    node.nodeName === "_moz_generated_content_backdrop"
   ) {
     return nodeFilterConstants.FILTER_ACCEPT;
   }
