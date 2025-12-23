@@ -17,7 +17,6 @@
 #include "mozilla/glean/AntitrackingMetrics.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/net/CaptivePortalService.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
@@ -2086,28 +2085,6 @@ LNAPermission nsHttpChannel::UpdateLocalNetworkAccessPermissions(
   }
 
   MOZ_ASSERT(mLoadInfo->TriggeringPrincipal(), "need triggering principal");
-
-  
-  
-  
-  bool isSameOrigin = false;
-  nsresult rv =
-      mLoadInfo->TriggeringPrincipal()->IsSameOrigin(mURI, &isSameOrigin);
-  if (NS_SUCCEEDED(rv) && isSameOrigin) {
-    userPerms = LNAPermission::Granted;
-    return userPerms;
-  }
-
-  
-  nsCOMPtr<nsICaptivePortalService> cps = CaptivePortalService::GetSingleton();
-  if (cps) {
-    int32_t state = cps->State();
-    if (state == nsICaptivePortalService::LOCKED_PORTAL &&
-        aPermissionType == LOCAL_NETWORK_PERMISSION_KEY) {
-      userPerms = LNAPermission::Granted;
-      return userPerms;
-    }
-  }
 
   
   if (nsContentUtils::IsExactSitePermAllow(mLoadInfo->TriggeringPrincipal(),
