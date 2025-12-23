@@ -400,12 +400,13 @@ static OPUS_INLINE void silk_LBRR_encode_FLP(
     SAVE_STACK;
 
     
-
-    ALLOC(sNSQ_LBRR, 1, silk_nsq_state);
-    
     
     
     if( psEnc->sCmn.LBRR_enabled && psEnc->sCmn.speech_activity_Q8 > SILK_FIX_CONST( LBRR_SPEECH_ACTIVITY_THRES, 8 ) ) {
+        
+
+        ALLOC(sNSQ_LBRR, 1, silk_nsq_state);
+
         psEnc->sCmn.LBRR_flags[ psEnc->sCmn.nFramesEncoded ] = 1;
 
         
