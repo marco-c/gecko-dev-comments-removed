@@ -181,6 +181,8 @@ task_description_schema = Schema(
         
         Optional("run-on-hg-branches"): optionally_keyed_by("project", [str]),
         
+        Optional("run-on-git-branches"): [str],
+        
         
         Required("shipping-phase"): Any(
             None,
@@ -2357,6 +2359,12 @@ def build_task(config, tasks):
         )
         attributes["run_on_repo_type"] = task.get("run-on-repo-type", ["git", "hg"])
         attributes["run_on_projects"] = task.get("run-on-projects", ["all"])
+
+        
+        
+        if task.get("run-on-git-branches"):
+            attributes["run_on_git_branches"] = task["run-on-git-branches"]
+
         attributes["always_target"] = task["always-target"]
         
         

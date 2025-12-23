@@ -94,6 +94,8 @@ test_description_schema = Schema(
         
         Optional("run-on-repo-type"): job_description_schema["run-on-repo-type"],
         
+        Optional("run-on-git-branches"): job_description_schema["run-on-git-branches"],
+        
         
         
         Optional("built-projects-only"): bool,
