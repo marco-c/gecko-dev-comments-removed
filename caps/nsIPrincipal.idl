@@ -360,7 +360,7 @@ interface nsIPrincipal : nsISupports
 
 
 
-    readonly attribute ACString exposablePrePath;
+    readonly attribute AUTF8String exposablePrePath;
 
     
 
@@ -368,7 +368,7 @@ interface nsIPrincipal : nsISupports
 
 
 
-    readonly attribute ACString exposableSpec;
+    readonly attribute AUTF8String exposableSpec;
 
     
 
