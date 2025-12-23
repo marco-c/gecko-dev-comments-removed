@@ -2087,6 +2087,17 @@ LNAPermission nsHttpChannel::UpdateLocalNetworkAccessPermissions(
   MOZ_ASSERT(mLoadInfo->TriggeringPrincipal(), "need triggering principal");
 
   
+  
+  
+  bool isSameOrigin = false;
+  nsresult rv =
+      mLoadInfo->TriggeringPrincipal()->IsSameOrigin(mURI, &isSameOrigin);
+  if (NS_SUCCEEDED(rv) && isSameOrigin) {
+    userPerms = LNAPermission::Granted;
+    return userPerms;
+  }
+
+  
   if (nsContentUtils::IsExactSitePermAllow(mLoadInfo->TriggeringPrincipal(),
                                            aPermissionType)) {
     userPerms = LNAPermission::Granted;
