@@ -326,12 +326,6 @@ if CONFIG["MOZ_VTUNE"]:
 if CONFIG["JS_HAS_INTL_API"]:
     DIRS += ["builtin/intl", "builtin/temporal"]
 
-
-
-
-if CONFIG["CC_TYPE"] == "clang":
-    CXXFLAGS += ["-fstandalone-debug"]
-
 CXXFLAGS += CONFIG["MOZ_ZLIB_CFLAGS"]
 
 
