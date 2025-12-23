@@ -10,10 +10,17 @@ const webTransportEventService = Cc[
 
 class WebTransportWatcher {
   constructor() {
-    this.windowIds = new Set();
+    this.windowIds = new Map();
     this.abortController = new AbortController();
     this.onWindowReady = this.onWindowReady.bind(this);
     this.onWindowDestroy = this.onWindowDestroy.bind(this);
+  }
+
+  static createResource(wtMessageType, eventParams) {
+    return {
+      wtMessageType,
+      ...eventParams,
+    };
   }
 
   watch(targetActor, { onAvailable }) {
@@ -47,14 +54,18 @@ class WebTransportWatcher {
 
   startListening(innerWindowId) {
     if (!this.windowIds.has(innerWindowId)) {
-      this.windowIds.add(innerWindowId);
-      webTransportEventService.addListener(innerWindowId, this);
+      const listener = {
+        
+        webTransportSessionCreated: () => {},
+        webTransportSessionClosed: () => {},
+      };
+      this.windowIds.set(innerWindowId, listener);
+      webTransportEventService.addListener(innerWindowId, listener);
     }
   }
 
   stopListening(innerWindowId) {
     if (this.windowIds.has(innerWindowId)) {
-      this.windowIds.delete(innerWindowId);
       if (!webTransportEventService.hasListenerFor(innerWindowId)) {
         
         console.warn(
@@ -62,7 +73,11 @@ class WebTransportWatcher {
         );
         return;
       }
-      webTransportEventService.removeListener(innerWindowId, this);
+      webTransportEventService.removeListener(
+        innerWindowId,
+        this.windowIds.get(innerWindowId)
+      );
+      this.windowIds.delete(innerWindowId);
     }
   }
 
@@ -72,8 +87,6 @@ class WebTransportWatcher {
       this.stopListening(id);
     }
   }
-
-  
 }
 
 module.exports = WebTransportWatcher;
