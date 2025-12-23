@@ -291,6 +291,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     
+    
     error_help.set_help(
         f"There are modified or untracked files under {args.target_path}.\n"
         f"Please cleanup the repo under {args.target_path} before running {script_name}"
@@ -387,7 +388,7 @@ if __name__ == "__main__":
         print("-------")
         error_help.set_help(
             f"Vendoring the newly cherry-picked git commit ({args.commit_sha}) has failed.\n"
-            "The mercurial repo is in an unknown state.  This failure is\n"
+            "The Mozilla repo is in an unknown state.  This failure is\n"
             "rare and thus makes it difficult to provide definitive guidance.\n"
             "In essence, the current failing command is:\n"
             f"./mach python {args.script_path}/vendor_and_commit.py \\\n"
@@ -457,24 +458,27 @@ if __name__ == "__main__":
         else:
             cmd = "hg status --change tip --exclude '**/README.*'"
         stdout_lines = run_shell(cmd)  
-        print(f"Mercurial changes:\n{stdout_lines}")
-        hg_file_change_cnt = len(stdout_lines)
+        print(f"Mozilla repo changes:\n{stdout_lines}")
+        mozilla_file_change_cnt = len(stdout_lines)
 
         
         
-        git_paths_changed = filter_git_changes(args.repo_path, args.commit_sha, None)
-        print(f"github changes:\n{git_paths_changed}")
-        git_file_change_cnt = len(git_paths_changed)
+        libwebrtc_paths_changed = filter_git_changes(
+            args.repo_path, args.commit_sha, None
+        )
+        print(f"Libwebrtc repo changes:\n{libwebrtc_paths_changed}")
+        libwebrtc_file_change_cnt = len(libwebrtc_paths_changed)
 
         error_help.set_help(
             f"Vendoring the cherry-pick of commit {args.commit_sha} has failed due to mismatched\n"
-            f"changed file counts between mercurial ({hg_file_change_cnt}) and git ({git_file_change_cnt}).\n"
+            f"changed file counts between the Mozilla repo ({mozilla_file_change_cnt}) "
+            f"and the libwebrtc repo ({libwebrtc_file_change_cnt}).\n"
             "This may be because the mozilla patch-stack was not verified after\n"
             "running restore_patch_stack.py.  After reconciling the changes in\n"
-            f"the newly committed mercurial patch, please re-run {script_name} to complete\n"
+            f"the newly committed patch, please re-run {script_name} to complete\n"
             "the cherry-pick processing."
         )
-        if hg_file_change_cnt != git_file_change_cnt:
+        if mozilla_file_change_cnt != libwebrtc_file_change_cnt:
             sys.exit(1)
         error_help.set_help(None)
 
