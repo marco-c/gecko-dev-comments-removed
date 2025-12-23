@@ -442,8 +442,9 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  void DisplayAbsoluteContinuations(nsDisplayListBuilder* aBuilder,
-                                    const nsDisplayListSet& aLists);
+
+  void DisplayPushedAbsoluteFrames(nsDisplayListBuilder* aBuilder,
+                                   const nsDisplayListSet& aLists);
 
   
 
