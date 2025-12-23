@@ -127,10 +127,22 @@ add_task(
 
     sandbox.restore();
 
-    
-    await addon.uninstall();
-
     await nimbusFeatureCleanup();
+    info(
+      "Simulated browser restart while newtabTrainhopAddon nimbus feature is unenrolled"
+    );
+    mockAboutNewTabUninit();
+    await AddonTestUtils.promiseRestartManager();
+    AboutNewTab.init();
+
+    
+    assertNewTabResourceMapping();
+    await AboutNewTabResourceMapping.updateTrainhopAddonState();
+    await asyncAssertNewTabAddon({
+      locationName: BUILTIN_LOCATION_NAME,
+      version: BUILTIN_ADDON_VERSION,
+    });
+
     assertTrainhopAddonVersionPref("");
     Services.prefs.clearUserPref(PREF_CATEGORY_TASKS);
   }
