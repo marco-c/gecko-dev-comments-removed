@@ -2,15 +2,6 @@
 
 "use strict";
 
-
-
-
-
-
-
-const is146AndUp =
-  Services.vc.compare(AppConstants.MOZ_APP_VERSION, "146.0a1") >= 0;
-
 ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   NewTabActorRegistry: "resource://newtab/lib/NewTabActorRegistry.sys.mjs",
@@ -26,6 +17,10 @@ const { AttributionParent } = ChromeUtils.importESModule(
 
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
+);
+
+const { DAPSender } = ChromeUtils.importESModule(
+  "resource://gre/modules/DAPSender.sys.mjs"
 );
 
 let sandbox;
@@ -75,17 +70,6 @@ async function dispatchAttributionEvent(browser, detail) {
 
 add_setup(async function () {
   
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
-  
   await SpecialPowers.pushPrefEnv({
     set: [
       [
@@ -102,16 +86,6 @@ add_setup(async function () {
   });
 
   sandbox = sinon.createSandbox();
-
-  
-
-
-
-
-
-  const { DAPSender } = ChromeUtils.importESModule(
-    "resource://gre/modules/DAPSender.sys.mjs"
-  );
 
   dapStub = sandbox.stub(DAPSender, "sendDAPMeasurement");
   conversionStub = sandbox.stub(
@@ -153,17 +127,6 @@ async function resetTestState() {
 
 
 add_task(async function test_parent_calls_onAttributionConversion() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
   dapStub.resetHistory();
 
@@ -210,17 +173,6 @@ add_task(async function test_parent_calls_onAttributionConversion() {
 
 
 add_task(async function test_parent_blocks_non_allowlisted_origin() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   const partnerId = "expedia";
@@ -242,17 +194,6 @@ add_task(async function test_parent_blocks_non_allowlisted_origin() {
 
 
 add_task(async function test_parent_blocks_invalid_conversion_extra_keys() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -276,17 +217,6 @@ add_task(async function test_parent_blocks_invalid_conversion_extra_keys() {
 
 
 add_task(async function test_parent_blocks_non_object_conversion() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -311,17 +241,6 @@ add_task(async function test_parent_blocks_non_object_conversion() {
 
 
 add_task(async function test_parent_blocks_missing_detail() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -345,17 +264,6 @@ add_task(async function test_parent_blocks_missing_detail() {
 
 
 add_task(async function test_remote_settings_sync_and_handler() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   const mockClient = {
@@ -390,17 +298,6 @@ add_task(async function test_remote_settings_sync_and_handler() {
 
 
 add_task(async function test_onSync_updates_allowlist() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
@@ -436,17 +333,6 @@ add_task(async function test_onSync_updates_allowlist() {
 
 
 add_task(async function test_didDestroy_removes_listener() {
-  
-
-
-
-
-
-  if (!is146AndUp) {
-    Assert.ok(true, "Skipping test for train-hop compatibility.");
-    return;
-  }
-
   await resetTestState();
 
   const mockClient = {
