@@ -4718,8 +4718,11 @@ nsresult HTMLEditor::SelectAllInternal() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   CommitComposition();
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+  const RefPtr<Document> doc = GetDocument();
+  if (NS_WARN_IF(!doc)) {
+    
+    
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   auto GetBodyElementIfElementIsParentOfHTMLBody =
@@ -4734,9 +4737,9 @@ nsresult HTMLEditor::SelectAllInternal() {
                : const_cast<Element*>(&aElement);
   };
 
-  nsCOMPtr<nsIContent> selectionRootContent =
+  const nsCOMPtr<nsIContent> selectionRootContent =
       [&]() MOZ_CAN_RUN_SCRIPT -> nsIContent* {
-    RefPtr<Element> elementToBeSelected = [&]() -> Element* {
+    const RefPtr<Element> elementForComputingSelectionRoot = [&]() -> Element* {
       
       
       if (SelectionRef().RangeCount()) {
@@ -4757,17 +4760,21 @@ nsresult HTMLEditor::SelectAllInternal() {
         return focusedElement;
       }
       
-      Element* bodyOrDocumentElement = GetRoot();
-      NS_WARNING_ASSERTION(bodyOrDocumentElement,
-                           "There was no element in the document");
-      return bodyOrDocumentElement;
+      
+      if (Element* const bodyElement = GetBodyElement()) {
+        return bodyElement;
+      }
+      return doc->GetDocumentElement();
     }();
+    if (MOZ_UNLIKELY(!elementForComputingSelectionRoot)) {
+      return nullptr;
+    }
 
     
     
     RefPtr<PresShell> presShell = GetPresShell();
     nsIContent* computedSelectionRootContent =
-        elementToBeSelected->GetSelectionRootContent(
+        elementForComputingSelectionRoot->GetSelectionRootContent(
             presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
             nsINode::AllowCrossShadowBoundary::No);
     if (NS_WARN_IF(!computedSelectionRootContent)) {
@@ -4779,8 +4786,14 @@ nsresult HTMLEditor::SelectAllInternal() {
     return GetBodyElementIfElementIsParentOfHTMLBody(
         *computedSelectionRootContent->AsElement());
   }();
-  if (NS_WARN_IF(!selectionRootContent)) {
-    return NS_ERROR_FAILURE;
+  if (MOZ_UNLIKELY(!selectionRootContent)) {
+    
+    
+    
+    
+    
+    
+    return NS_OK;
   }
 
   Maybe<Selection::AutoUserInitiated> userSelection;
