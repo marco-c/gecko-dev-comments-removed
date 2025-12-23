@@ -771,8 +771,8 @@ bool BaselineInterpreterCodeGen::emitNextIC() {
   saveInterpreterPCReg();
   masm.loadPtr(frame.addressOfInterpreterICEntry(), ICStubReg);
   masm.loadPtr(Address(ICStubReg, ICEntry::offsetOfFirstStub()), ICStubReg);
-  masm.call(Address(ICStubReg, ICStub::offsetOfStubCode()));
-  uint32_t returnOffset = masm.currentOffset();
+  uint32_t returnOffset =
+      masm.call(Address(ICStubReg, ICStub::offsetOfStubCode())).offset();
   restoreInterpreterPCReg();
 
   
@@ -4021,8 +4021,8 @@ bool BaselineCompilerCodeGen::emit_SetAliasedVar() {
   
 
   Label skipBarrier;
-  masm.branchPtrInNurseryChunk(Assembler::Equal, objReg, temp, &skipBarrier);
   masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, temp, &skipBarrier);
+  masm.branchPtrInNurseryChunk(Assembler::Equal, objReg, temp, &skipBarrier);
 
   
   masm.call(&postBarrierSlot_);  
@@ -4088,9 +4088,9 @@ bool BaselineInterpreterCodeGen::emit_SetAliasedVar() {
 
   
   Label skipBarrier;
-  masm.branchPtrInNurseryChunk(Assembler::Equal, env, scratch1, &skipBarrier);
   masm.branchValueIsNurseryCell(Assembler::NotEqual, R2, scratch1,
                                 &skipBarrier);
+  masm.branchPtrInNurseryChunk(Assembler::Equal, env, scratch1, &skipBarrier);
   {
     
     masm.movePtr(env, R2.scratchReg());
@@ -4434,8 +4434,8 @@ bool BaselineCompilerCodeGen::emitFormalArgAccess(JSOp op) {
 
     Label skipBarrier;
 
-    masm.branchPtrInNurseryChunk(Assembler::Equal, reg, temp, &skipBarrier);
     masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, temp, &skipBarrier);
+    masm.branchPtrInNurseryChunk(Assembler::Equal, reg, temp, &skipBarrier);
 
     masm.call(&postBarrierSlot_);
 
@@ -4486,8 +4486,8 @@ bool BaselineInterpreterCodeGen::emitFormalArgAccess(JSOp op) {
       masm.loadPtr(frame.addressOfArgsObj(), reg);
 
       Register temp = R1.scratchReg();
-      masm.branchPtrInNurseryChunk(Assembler::Equal, reg, temp, &done);
       masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, temp, &done);
+      masm.branchPtrInNurseryChunk(Assembler::Equal, reg, temp, &done);
 
       masm.call(&postBarrierSlot_);
     }
@@ -6422,14 +6422,14 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   
   Label genStart, returnTarget;
 #ifdef JS_USE_LINK_REGISTER
-  masm.call(&genStart);
+  const CodeOffset retAddr = masm.call(&genStart);
 #else
   masm.callAndPushReturnAddress(&genStart);
+  const CodeOffset retAddr = CodeOffset(masm.currentOffset());
 #endif
 
   
-  if (!handler.recordCallRetAddr(RetAddrEntry::Kind::IC,
-                                 masm.currentOffset())) {
+  if (!handler.recordCallRetAddr(RetAddrEntry::Kind::IC, retAddr.offset())) {
     return false;
   }
 
@@ -6737,8 +6737,8 @@ bool BaselineCodeGen<Handler>::emit_InitHomeObject() {
   masm.storeValue(R0, addr);
 
   Label skipBarrier;
-  masm.branchPtrInNurseryChunk(Assembler::Equal, func, temp, &skipBarrier);
   masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, temp, &skipBarrier);
+  masm.branchPtrInNurseryChunk(Assembler::Equal, func, temp, &skipBarrier);
   masm.call(&postBarrierSlot_);
   masm.bind(&skipBarrier);
 

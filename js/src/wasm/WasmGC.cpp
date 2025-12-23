@@ -261,14 +261,14 @@ void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
                                     Register otherScratch, Register setValue,
                                     Label* skipBarrier) {
   
+  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
+                                     skipBarrier);
+
+  
   if (object) {
     masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch,
                                  skipBarrier);
   }
-
-  
-  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
-                                     skipBarrier);
 }
 
 void wasm::CheckWholeCellLastElementCache(MacroAssembler& masm,
@@ -312,11 +312,13 @@ bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
   
   return true;
 #  elif defined(JS_CODEGEN_RISCV64)
-  const uint32_t* insn = (const uint32_t*)nextPC;
+  const uint32_t* insn = reinterpret_cast<const uint32_t*>(nextPC);
   return (((uintptr_t(insn) & 3) == 0) &&
           ((insn[-1] == 0x00006037 && insn[-2] == 0x00100073) ||  
-           ((insn[-1] & kBaseOpcodeMask) == JALR) ||
-           ((insn[-1] & kBaseOpcodeMask) == JAL) ||
+           ((insn[-1] & kBaseOpcodeMask) == JALR) ||              
+           ((insn[-1] & kBaseOpcodeMask) == JAL) ||               
+           ((insn[-2] & kBaseOpcodeMask) == JAL &&
+            insn[-1] == 0x00000013 ) ||  
            (insn[-1] == 0x00100073 &&
             (insn[-2] & kITypeMask) == RO_CSRRWI)));  
 #  else
