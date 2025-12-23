@@ -85,7 +85,6 @@ function captureFrameImageData(video) {
 
 
 
-
 async function assertVideosMatch(video1, video2) {
   let video1Frame = captureFrameImageData(video1);
   let video2Frame = captureFrameImageData(video2);
@@ -137,7 +136,6 @@ async function assertVideosMatch(video1, video2) {
 
 
 
-
 async function withNewClone(video, asyncFn) {
   let clone = video.cloneNode();
   clone.id = "clone";
@@ -151,7 +149,6 @@ async function withNewClone(video, asyncFn) {
     clone.remove();
   }
 }
-
 
 
 
@@ -180,13 +177,11 @@ async function setVideoSrc(video, src) {
 
 
 
-
 function waitForEventOnce(target, event) {
   return new Promise(resolve => {
     target.addEventListener(event, resolve, { once: true });
   });
 }
-
 
 
 

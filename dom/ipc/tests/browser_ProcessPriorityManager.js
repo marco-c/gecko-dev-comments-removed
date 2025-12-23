@@ -82,7 +82,6 @@ class TabPriorityWatcher {
 
 
 
-
   async waitForPriorityChange(childID, expectedPriority) {
     await TestUtils.waitForCondition(() => {
       let currentPriority = this.priorityMap.get(childID);
@@ -109,7 +108,6 @@ class TabPriorityWatcher {
 
 
 
-
   async ensureNoPriorityChange(childID) {
     this.noChangeChildIDs.set(childID, []);
     
@@ -124,7 +122,6 @@ class TabPriorityWatcher {
   }
 
   
-
 
 
 
@@ -228,7 +225,6 @@ registerCleanupFunction(() => {
   gTabPriorityWatcher.destroy();
   gTabPriorityWatcher = null;
 });
-
 
 
 
