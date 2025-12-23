@@ -1030,7 +1030,7 @@ class CssRule {
    * will be an InspectorDeclaration (object of the form {style: element.style, declarationOrigin: string}).
    * @param {Element} [element] If the rule comes from element.style, then this
    * argument must point to the element.
-   * @constructor
+   * @class
    */
   constructor(cssSheet, domRule, element) {
     this.#cssSheet = cssSheet;
@@ -1489,7 +1489,6 @@ class CssSelectorInfo {
    *        the selector.
    * @param {STATUS} status The selector match status.
    * @param {number} distance See CssLogic.#buildMatchedRules for definition.
-   * @constructor
    */
   constructor(selector, property, value, status, distance) {
     this.selector = selector;
