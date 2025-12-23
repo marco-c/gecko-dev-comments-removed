@@ -349,10 +349,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
-  },
-  
-  {
     file: "chrome://browser/content/aiwindow/firstrun.html",
   },
   
