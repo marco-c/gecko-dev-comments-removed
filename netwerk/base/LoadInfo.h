@@ -42,6 +42,7 @@ namespace net {
 class EarlyHintPreloader;
 class LoadInfoArgs;
 class LoadInfo;
+class WebTransportSessionProxy;
 }  
 
 namespace ipc {
@@ -459,8 +460,10 @@ class LoadInfo final : public nsILoadInfo {
 
   
   
+  
   friend class ::nsDocShell;
   friend class mozilla::net::EarlyHintPreloader;
+  friend class mozilla::net::WebTransportSessionProxy;
   void UpdateBrowsingContextID(uint64_t aBrowsingContextID) {
     mBrowsingContextID = aBrowsingContextID;
   }
