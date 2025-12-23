@@ -29,31 +29,11 @@ function checkForPrompt(prefVal) {
       promptFired = true;
       return doc.defaultView.CONFIRM_RESTART_PROMPT_RESTART_NOW;
     };
-
     
-    let checkbox = gBrowser.contentWindow.document.querySelector(
-      "setting-group[groupid='history'] #privateBrowsingAutoStart"
-    );
-
-    ok(checkbox, "the privateBrowsingAutoStart checkbox should exist");
-    is_element_visible(
-      checkbox,
-      "the privateBrowsingAutoStart checkbox should be visible"
-    );
-
-    
-    if (checkbox.checked === prefVal) {
-      return;
-    }
-
-    
-    checkbox.scrollIntoView();
-
-    
-    await EventUtils.synthesizeMouseAtCenter(
-      checkbox,
-      {},
-      checkbox.ownerGlobal
+    await updateCheckBox(
+      gBrowser.contentWindow,
+      "privateBrowsingAutoStart",
+      prefVal
     );
 
     
