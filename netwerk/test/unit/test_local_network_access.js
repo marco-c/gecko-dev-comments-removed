@@ -11,7 +11,7 @@ const override = Cc["@mozilla.org/network/native-dns-override;1"].getService(
   Ci.nsINativeDNSResolverOverride
 );
 
-function makeChannel(url) {
+function makeChannel(url, triggeringPrincipalURI = null) {
   let uri2 = NetUtil.newURI(url);
   
   
@@ -19,9 +19,29 @@ function makeChannel(url) {
     uri2,
     {}
   );
+
+  
+  
+  var triggeringPrincipal;
+  if (triggeringPrincipalURI) {
+    let triggeringURI = NetUtil.newURI(triggeringPrincipalURI);
+    triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+      triggeringURI,
+      {}
+    );
+  } else {
+    
+    let triggeringURI = NetUtil.newURI("https://public.example.com");
+    triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+      triggeringURI,
+      {}
+    );
+  }
+
   return NetUtil.newChannel({
     uri: url,
     loadingPrincipal: principal,
+    triggeringPrincipal,
     securityFlags: Ci.nsILoadInfo.SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT,
     contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
   }).QueryInterface(Ci.nsIHttpChannel);
@@ -679,4 +699,102 @@ add_task(async function lna_local_network_to_localhost_skip_checks() {
   Services.prefs.clearUserPref(
     "network.lna.local-network-to-localhost.skip-checks"
   );
+});
+
+
+add_task(async function lna_same_origin_skip_checks() {
+  
+  Services.prefs.setBoolPref(
+    "network.lna.local-network-to-localhost.skip-checks",
+    false
+  );
+
+  
+  const sameOriginTestCases = [
+    
+    [
+      H1_URL,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      "same origin localhost to localhost from Public should be allowed",
+    ],
+    [
+      H1_URL,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Private,
+      Cr.NS_OK,
+      "same origin localhost to localhost from Private should be allowed",
+    ],
+    [
+      H2_URL,
+      H2_URL + "/test_lna",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      "same origin localhost to localhost (H2) from Public should be allowed",
+    ],
+    [
+      H2_URL,
+      H2_URL + "/test_lna",
+      Ci.nsILoadInfo.Private,
+      Cr.NS_OK,
+      "same origin localhost to localhost (H2) from Private should be allowed",
+    ],
+
+    
+    
+    [
+      null,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      "cross origin to localhost from Public should be blocked",
+    ],
+    
+    
+
+    
+    [
+      H1_URL,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Local,
+      Cr.NS_OK,
+      "same origin localhost to localhost from Local should be allowed",
+    ],
+  ];
+
+  for (let [
+    triggeringOriginURI,
+    targetURL,
+    parentSpace,
+    expectedStatus,
+    description,
+  ] of sameOriginTestCases) {
+    info(`Testing same origin check: ${description}`);
+
+    
+    Services.prefs.setBoolPref("network.localhost.prompt.testing.allow", false);
+
+    
+    let chan = makeChannel(targetURL, triggeringOriginURI);
+    chan.loadInfo.parentIpAddressSpace = parentSpace;
+
+    let expectFailure = expectedStatus !== Cr.NS_OK ? CL_EXPECT_FAILURE : 0;
+
+    await new Promise(resolve => {
+      chan.asyncOpen(new ChannelListener(resolve, null, expectFailure));
+    });
+
+    Assert.equal(
+      chan.status,
+      expectedStatus,
+      `Status should match for: ${description}`
+    );
+    if (expectedStatus === Cr.NS_OK) {
+      Assert.equal(
+        chan.protocolVersion,
+        targetURL.startsWith(H2_URL) ? "h2" : "http/1.1"
+      );
+    }
+  }
 });
