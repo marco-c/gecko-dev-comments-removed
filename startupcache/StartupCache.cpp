@@ -88,8 +88,11 @@ static const uint8_t MAGIC[] = "startupcache0002";
 
 static const size_t STARTUP_CACHE_RESERVE_CAPACITY = 450;
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+
 
 static const size_t STARTUP_CACHE_MAX_CAPACITY = 5000;
+#endif
 
 
 static uint8_t STARTUP_CACHE_WRITE_TIMEOUT = 60;
