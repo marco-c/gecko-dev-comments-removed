@@ -2903,7 +2903,7 @@ void nsBlockFrame::ReparentFloats(nsIFrame* aFirstFrame,
   aOldParent->CollectFloats(aFirstFrame, list, aReparentSiblings);
   if (list.NotEmpty()) {
     for (nsIFrame* f : list) {
-      MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
+      MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW),
                  "CollectFloats should've removed that bit");
       ReparentFrame(f, aOldParent, this);
     }
@@ -2979,8 +2979,8 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool needToRecoverState = false;
   
   bool reflowedFloat =
-      HasFloats() &&
-      GetFloats()->FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
+      HasFloats() && GetFloats()->FirstChild()->HasAnyStateBits(
+                         NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
   bool lastLineMovedUp = false;
   
   UsedClear inlineFloatClearType = aState.mTrailingClearFromPIF;
@@ -5306,7 +5306,7 @@ static bool CheckPlaceholderInLine(nsIFrame* aBlock, nsLineBox* aLine,
   }
   NS_ASSERTION(!aFloat->GetPrevContinuation(),
                "float in a line should never be a continuation");
-  NS_ASSERTION(!aFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
+  NS_ASSERTION(!aFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW),
                "float in a line should never be a pushed float");
   nsIFrame* ph = aFloat->FirstInFlow()->GetPlaceholderFrame();
   for (nsIFrame* f = ph; f; f = f->GetParent()) {
@@ -5702,7 +5702,7 @@ void nsBlockFrame::PushLines(BlockReflowState& aState,
     if (floats.NotEmpty()) {
 #ifdef DEBUG
       for (nsIFrame* f : floats) {
-        MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
+        MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW),
                    "CollectFloats should've removed that bit");
       }
 #endif
@@ -5831,7 +5831,7 @@ bool nsBlockFrame::DrainOverflowLines() {
         for (nsIFrame* f : oofs.mList) {
           nsIFrame* nif = f->GetNextInFlow();
           for (; nif && nif->GetParent() == this; nif = nif->GetNextInFlow()) {
-            MOZ_ASSERT(nif->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT));
+            MOZ_ASSERT(nif->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW));
             RemoveFloat(nif);
             pushedFloats.AppendFrame(nullptr, nif);
           }
@@ -5879,7 +5879,7 @@ bool nsBlockFrame::DrainSelfOverflowList() {
     if (oofs.mList.NotEmpty()) {
 #ifdef DEBUG
       for (nsIFrame* f : oofs.mList) {
-        MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
+        MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW),
                    "CollectFloats should've removed that bit");
       }
 #endif
@@ -5943,7 +5943,7 @@ void nsBlockFrame::DrainSelfPushedFloats() {
     
     nsIFrame* insertionPrevSibling = nullptr; 
     for (nsIFrame* f = floats ? floats->FirstChild() : nullptr;
-         f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
+         f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
          f = f->GetNextSibling()) {
       insertionPrevSibling = f;
     }
@@ -7444,7 +7444,7 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowState& aState,
   nsFrameList* floats = GetFloats();
   nsIFrame* f = floats ? floats->FirstChild() : nullptr;
   nsIFrame* prev = nullptr;
-  while (f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+  while (f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
     MOZ_ASSERT(prev == f->GetPrevSibling());
     
     
@@ -7603,14 +7603,14 @@ bool nsBlockFrame::HasPushedFloatsFromPrevContinuation() const {
   if (const nsFrameList* floats = GetFloats()) {
     
     
-    if (floats->FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+    if (floats->FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
       return true;
     }
 #ifdef DEBUG
     
     
     for (nsIFrame* f : *floats) {
-      NS_ASSERTION(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
+      NS_ASSERTION(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW),
                    "pushed floats must be at the beginning of the float list");
     }
 #endif
@@ -7761,7 +7761,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayOverflowContainers(aBuilder, aLists);
     DisplayAbsoluteContinuations(aBuilder, aLists);
     for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
-      if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+      if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
         BuildDisplayListForChild(aBuilder, f, aLists);
       }
     }
@@ -8310,7 +8310,7 @@ void nsBlockFrame::DoCollectFloats(nsIFrame* aFrame, nsFrameList& aList,
         RemoveFloat(outOfFlowFrame);
         
         
-        outOfFlowFrame->RemoveStateBits(NS_FRAME_IS_PUSHED_FLOAT);
+        outOfFlowFrame->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
         aList.AppendFrame(nullptr, outOfFlowFrame);
         outOfFlowFrame = outOfFlowFrame->GetNextInFlow();
         
@@ -8354,7 +8354,7 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
   bool hasHiddenFloats = false;
   uint32_t i = 0;
   for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
-    if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+    if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
       continue;
     }
     
