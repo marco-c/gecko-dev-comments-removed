@@ -118,6 +118,12 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableCacheIR, false);
 
   
+  SET_DEFAULT(disableStubFolding, false);
+
+  
+  SET_DEFAULT(disableStubFoldingLoadsAndStores, false);
+
+  
   SET_DEFAULT(disableSink, true);
 
   
