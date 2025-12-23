@@ -10,12 +10,15 @@ from pathlib import Path
 
 from fetch_github_repo import fetch_repo
 from run_operations import (
+    RepoType,
     check_repo_status,
     detect_repo_type,
     get_last_line,
     run_git,
     run_shell,
 )
+
+repo_type = detect_repo_type()
 
 
 
@@ -31,12 +34,6 @@ def restore_patch_stack(
     state_directory,
     tar_name,
 ):
-    
-    repo_type = detect_repo_type()
-    if repo_type is None:
-        print("Unable to detect repo (git or hg)")
-        sys.exit(1)
-
     
     stdout_lines = check_repo_status(repo_type)
     if len(stdout_lines) != 0:
@@ -100,6 +97,11 @@ def restore_patch_stack(
 
 
 if __name__ == "__main__":
+    
+    if repo_type is None or not isinstance(repo_type, RepoType):
+        print("Unable to detect repo (git or hg)")
+        sys.exit(1)
+
     default_patch_dir = "third_party/libwebrtc/moz-patch-stack"
     default_state_dir = ".moz-fast-forward"
     default_tar_name = "moz-libwebrtc.tar.gz"
