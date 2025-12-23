@@ -9655,25 +9655,24 @@ void nsCSSFrameConstructor::ProcessChildren(
   AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
                                 itemsToConstruct, pageNameTracker);
 
-  
-  
-  
-  
-  
-  auto* styleParentFrame =
-      nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
-  ComputedStyle* parentStyle = styleParentFrame->Style();
-  if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
-      !aContent->IsInNativeAnonymousSubtree()) {
-    CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                               *parentStyle, PseudoStyleType::backdrop,
-                               itemsToConstruct);
-  }
-
   nsBlockFrame* listItem = nullptr;
   bool isOutsideMarker = false;
   if (!aPossiblyLeafFrame->IsLeaf()) {
+    
+    
+    
+    
+    
+    auto* styleParentFrame =
+        nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
+    ComputedStyle* parentStyle = styleParentFrame->Style();
     if (aCanHaveGeneratedContent) {
+      if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
+          !aContent->IsInNativeAnonymousSubtree()) {
+        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                                   *parentStyle, PseudoStyleType::backdrop,
+                                   itemsToConstruct);
+      }
       if (parentStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
           !styleParentFrame->IsFieldSetFrame()) {
