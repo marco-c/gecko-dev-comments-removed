@@ -14,15 +14,6 @@
 #include "nsUGenCategory.h"
 #include "harfbuzz/hb.h"
 
-struct nsCharProps2 {
-  
-  
-  
-  unsigned char mIdType : 2;
-};
-
-const nsCharProps2& GetCharProps2(uint32_t aCh);
-
 namespace mozilla {
 
 namespace unicode {

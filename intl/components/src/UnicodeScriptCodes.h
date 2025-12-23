@@ -38,9 +38,6 @@
 
 
 
-
-
-
 #ifndef intl_components_UnicodeScriptCodes_h_
 #define intl_components_UnicodeScriptCodes_h_
 
