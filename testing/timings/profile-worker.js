@@ -375,6 +375,16 @@ async function processJob(job) {
   const resourceUsage = extractResourceUsage(profile);
 
   
+  
+  let commitId = null;
+  if (profile.meta.sourceURL) {
+    const match = profile.meta.sourceURL.match(/\/rev\/([a-f0-9]+)$/i);
+    if (match) {
+      commitId = match[1];
+    }
+  }
+
+  
   const startTime =
     typeof job.start_time === "string"
       ? Math.floor(new Date(job.start_time).getTime() / 1000)
@@ -388,6 +398,7 @@ async function processJob(job) {
     startTime,
     timings,
     resourceUsage,
+    commitId,
   };
 }
 
