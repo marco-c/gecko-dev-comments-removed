@@ -162,7 +162,7 @@ add_task(async function test_captivePortalTab_noLnaPrompt() {
 
 
 
-add_task(async function test_regularTab_hasLnaPrompt() {
+add_task(async function test_regularTab_noLnaPrompt_duringCaptivePortal() {
   await portalDetected();
 
   let canonicalURL = `http://127.0.0.1:${gHttpServer.identity.primaryPort}/`;
@@ -178,26 +178,8 @@ add_task(async function test_regularTab_hasLnaPrompt() {
   
   ok(
     !tab.linkedBrowser.browsingContext.isCaptivePortalTab,
-    "New tab should not have isCaptivePortalTab flag set"
+    "Regular tab should not have isCaptivePortalTab flag set"
   );
-
-  
-  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
-
-  
-  let lnaPrompt = PopupNotifications.getNotification(
-    "local-network",
-    tab.linkedBrowser
-  );
-  ok(
-    lnaPrompt,
-    "Should show LNA prompt for regular tab accessing local network"
-  );
-
-  
-  let popupNotification = lnaPrompt?.owner?.panel?.childNodes?.[0];
-  ok(popupNotification, "Notification popup is available");
-  popupNotification.button.doCommand();
 
   
   await BrowserTestUtils.waitForCondition(
@@ -213,6 +195,16 @@ add_task(async function test_regularTab_hasLnaPrompt() {
     return content.document.body.textContent;
   });
   is(bodyText, "hello", "Page should display the fetch response");
+
+  
+  let lnaPrompt = PopupNotifications.getNotification(
+    "local-network",
+    tab.linkedBrowser
+  );
+  ok(
+    !lnaPrompt,
+    "Should not show local network LNA prompt for regular tab during captive portal"
+  );
 
   
   BrowserTestUtils.removeTab(tab);
