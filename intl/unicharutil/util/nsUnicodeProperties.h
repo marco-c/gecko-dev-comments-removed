@@ -45,8 +45,6 @@ enum PairedBracketType {
 };
 
 
-
-
 enum IdentifierType {
   IDTYPE_RESTRICTED = 0,
   IDTYPE_ALLOWED = 1,
@@ -152,7 +150,8 @@ inline VerticalOrientation GetVerticalOrientation(uint32_t aCh) {
 }
 
 inline IdentifierType GetIdentifierType(uint32_t aCh) {
-  return IdentifierType(GetCharProps2(aCh).mIdType);
+  return IdentifierType(intl::UnicodeProperties::GetIntPropertyValue(
+      aCh, intl::UnicodeProperties::IntProperty::IdentifierStatus));
 }
 
 uint32_t GetFullWidth(uint32_t aCh);
