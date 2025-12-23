@@ -1906,23 +1906,30 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   if (!info) {
     return false;
   }
-  if (info->mCompensatesForScroll && cache) {
+  if (cache) {
     
     
-    const auto axis = [aPropSide]() {
-      switch (aPropSide) {
-        case StylePhysicalSide::Left:
-        case StylePhysicalSide::Right:
-          return PhysicalAxis::Horizontal;
-        case StylePhysicalSide::Top:
-        case StylePhysicalSide::Bottom:
-          break;
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unhandled side?");
-      }
-      return PhysicalAxis::Vertical;
-    }();
-    cache->mReferenceData->AdjustCompensatingForScroll(axis);
+    if (info->mCompensatesForScroll) {
+      const auto axis = [aPropSide]() {
+        switch (aPropSide) {
+          case StylePhysicalSide::Left:
+          case StylePhysicalSide::Right:
+            return PhysicalAxis::Horizontal;
+          case StylePhysicalSide::Top:
+          case StylePhysicalSide::Bottom:
+            break;
+          default:
+            MOZ_ASSERT_UNREACHABLE("Unhandled side?");
+        }
+        return PhysicalAxis::Vertical;
+      }();
+      cache->mReferenceData->AdjustCompensatingForScroll(axis);
+      
+      
+      
+      cache->mReferenceData->mScrollCompensatedSides |=
+          SideToSideBit(ToSide(aPropSide));
+    }
   }
   
   

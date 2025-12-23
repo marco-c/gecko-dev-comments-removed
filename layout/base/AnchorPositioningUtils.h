@@ -95,6 +95,8 @@ class AnchorPosReferenceData {
     mozilla::PhysicalAxes mCompensatingForScroll;
     nsPoint mDefaultScrollShift;
     nsRect mAdjustedContainingBlock;
+    SideBits mScrollCompensatedSides;
+    nsMargin mInsets;
   };
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
@@ -130,13 +132,19 @@ class AnchorPosReferenceData {
     auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
     auto defaultScrollShift = std::exchange(mDefaultScrollShift, {});
     auto adjustedContainingBlock = std::exchange(mAdjustedContainingBlock, {});
-    return {compensatingForScroll, defaultScrollShift, adjustedContainingBlock};
+    auto containingBlockSidesAttachedToAnchor =
+        std::exchange(mScrollCompensatedSides, SideBits::eNone);
+    auto insets = std::exchange(mInsets, nsMargin{});
+    return {compensatingForScroll, defaultScrollShift, adjustedContainingBlock,
+            containingBlockSidesAttachedToAnchor, insets};
   }
 
   void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
     mCompensatingForScroll = aBackup.mCompensatingForScroll;
     mDefaultScrollShift = aBackup.mDefaultScrollShift;
     mAdjustedContainingBlock = aBackup.mAdjustedContainingBlock;
+    mScrollCompensatedSides = aBackup.mScrollCompensatedSides;
+    mInsets = aBackup.mInsets;
   }
 
   
@@ -154,6 +162,25 @@ class AnchorPosReferenceData {
   
   
   RefPtr<const nsAtom> mDefaultAnchorName;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SideBits mScrollCompensatedSides = SideBits::eNone;
+  
+  
+  nsMargin mInsets;
 
  private:
   ResolutionMap mMap;
