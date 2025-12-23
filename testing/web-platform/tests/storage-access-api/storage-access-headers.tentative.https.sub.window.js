@@ -15,6 +15,12 @@ const nested_path = '/storage-access-api/resources/nested-handle-storage-access-
 const retry_path = '/storage-access-api/resources/handle-headers-retry.py';
 const non_retry_path = '/storage-access-api/resources/handle-headers-non-retry.py';
 
+async function areCrossSiteCookiesAllowedByDefault() {
+  const url = `${cross_site}/storage-access-api/resources/script-with-cookie-header.py?script=${responder_script}`;
+  const frame = await CreateFrame(url);
+  return FrameHasStorageAccess(frame);
+}
+
 function makeURL(key, domain, path, params) {
     const request_params = new URLSearchParams(params);
     request_params.append('key', key);
@@ -70,7 +76,6 @@ function assertHeaderValuesMatch(actual_headers, expected_headers) {
 function addCommonCleanupCallback(test) {
     test.add_cleanup(async () => {
         await test_driver.delete_all_cookies();
-        await MaybeSetStorageAccess("*", "*", "allowed");
       });
 }
 
@@ -82,407 +87,416 @@ function redirectedKey(key) {
     return key + 'redirected';
 }
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
+(async function() {
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-    await fetch(makeURL(key, cross_site, non_retry_path),
-                {credentials: 'omit', mode: 'no-cors'});
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': undefined});
-}, "Sec-Fetch-Storage-Access is omitted when credentials are omitted");
+        await fetch(makeURL(key, cross_site, non_retry_path),
+                    {credentials: 'omit', mode: 'no-cors'});
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': undefined});
+    }, "Sec-Fetch-Storage-Access is omitted when credentials are omitted");
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-    await sendReadableHeaderRequest(makeURL(key, cross_site, non_retry_path));
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['none']});
-}, "Sec-Fetch-Storage-Access is `none` when unpartitioned cookies are unavailable.");
+        await grantStorageAccessForEmbedSite(t, cross_site);
+        const load_header_iframe = await CreateFrame(makeURL(key, cross_site,
+                                        non_retry_path,
+                                        [['load', ''],
+                                            ['script', responder_script]]));
+        assert_true(await FrameHasStorageAccess(load_header_iframe),
+                    "frame should have storage access because of the `load` header");
+    }, "Activate-Storage-Access `load` header grants storage access to frame.");
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-    
-    await grantStorageAccessForEmbedSite(t, cross_site);
-    
-    
-    
-    await sendReadableHeaderRequest(makeURL(key, cross_site, non_retry_path));
-    const headers = await sendRetrieveRequest(key);
-    
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
-                                      'origin': [https_origin]});
-}, "Sec-Fetch-Storage-Access is `inactive` when unpartitioned cookies are available but not in use.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    await SetFirstPartyCookie(cross_site);
-    addCommonCleanupCallback(t);
-
-    await grantStorageAccessForEmbedSite(t, cross_site);
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                              https_origin]]));
-    
-    const headers = await sendRetrieveRequest(key);
-    
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
-                                      'origin': [https_origin], 'cookie': undefined});
-    
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    
-    assertHeaderValuesMatch(retried_headers, {
-    'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-}, "Sec-Fetch-Storage-Access is `active` after a valid retry with matching explicit allowed-origin.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    await SetFirstPartyCookie(cross_site);
-    addCommonCleanupCallback(t);
-
-    await grantStorageAccessForEmbedSite(t, cross_site);
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin','*']]));
-    
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {
-        'sec-fetch-storage-access': ['inactive'],
-        'origin': [https_origin],
-        'cookie': undefined
-    });
-    
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assertHeaderValuesMatch(retried_headers, {
-        'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-}, "Sec-Fetch-Storage-Access is active after retry with wildcard `allowed-origin` value.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
-
-    await grantStorageAccessForEmbedSite(t, cross_site);
-    await sendReadableHeaderRequest(
-                            makeURL(key, cross_site, retry_path,
-                                    [['retry-allowed-origin', '']]));
-
-    
-    
-    
-    
-    
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assert_equals(retried_headers, undefined);
-    
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive']});
-}, "'Activate-Storage-Access: retry' is a no-op on a request without an `allowed-origin` value.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
-
-    await grantStorageAccessForEmbedSite(t, cross_site);
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                              same_site]]));
-    
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assert_equals(retried_headers, undefined);
-    
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive']});
-}, "'Activate-Storage-Access: retry' is a no-op on a request from an origin that does not match its `allowed-origin` value.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
-
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                              https_origin]]));
-    
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assert_equals(retried_headers, undefined);
-    
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['none'],
-                                      'origin': undefined});
-}, "Activate-Storage-Access `retry` is a no-op on a request with a `none` Storage Access status.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
-
-    await grantStorageAccessForEmbedSite(t, cross_site);
-    const load_header_iframe = await CreateFrame(makeURL(key, cross_site,
-                                       non_retry_path,
-                                       [['load', ''],
-                                        ['script', responder_script]]));
-    assert_true(await FrameHasStorageAccess(load_header_iframe),
-                "frame should have storage access because of the `load` header");
-}, "Activate-Storage-Access `load` header grants storage access to frame.");
-
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
-
-    const iframe = await CreateFrame(makeURL(key, cross_site,
-                                       non_retry_path,
-                                       [['script', responder_script]]));
-    t.add_cleanup(async () => {
+        const iframe = await CreateFrame(makeURL(key, cross_site,
+                                        non_retry_path,
+                                        [['script', responder_script]]));
+        t.add_cleanup(async () => {
+            await SetPermissionInFrame(iframe,
+                [{ name: 'storage-access' }, 'prompt']);
+        });
         await SetPermissionInFrame(iframe,
-            [{ name: 'storage-access' }, 'prompt']);
-    });
-    await SetPermissionInFrame(iframe,
-                [{ name: 'storage-access' }, 'granted']);
-    await RequestStorageAccessInFrame(iframe);
-    
-    
-    const nested_iframe = await CreateFrameHelper((frame) => {
+                    [{ name: 'storage-access' }, 'granted']);
+        await RequestStorageAccessInFrame(iframe);
         
-        frame.src = makeURL(key + 'load', cross_site, non_retry_path,
-                            [['load', ''], ['script', responder_script]]);
-        iframe.appendChild(frame);
-      }, false);
-    
-    assert_true(await FrameHasStorageAccess(nested_iframe));
-}, "Activate-Storage-Access `load` is honored for `active` cases.");
+        
+        const nested_iframe = await CreateFrameHelper((frame) => {
+            
+            frame.src = makeURL(key + 'load', cross_site, non_retry_path,
+                                [['load', ''], ['script', responder_script]]);
+            iframe.appendChild(frame);
+        }, false);
+        
+        assert_true(await FrameHasStorageAccess(nested_iframe));
+    }, "Activate-Storage-Access `load` is honored for `active` cases.");
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    addCommonCleanupCallback(t);
+    if (await areCrossSiteCookiesAllowedByDefault()) {
+        promise_test(async (t) => {
+            const key = '{{uuid()}}';
+            await SetFirstPartyCookie(cross_site);
+            addCommonCleanupCallback(t);
 
-    const load_header_iframe = await CreateFrame(makeURL(key, cross_site,
-                                       non_retry_path,
-                                       [['load', ''],
-                                        ['script', responder_script]]));
-    assert_false(await FrameHasStorageAccess(load_header_iframe),
-                "frame should not have received storage access.");
-}, "Activate-Storage-Access `load` header is a no-op for requests without storage access.");
+            await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                    [['retry-allowed-origin',
+                                                    https_origin]]));
 
-promise_test(async t => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess('*', '*', 'blocked');
-    addCommonCleanupCallback(t);
+            
+            
+            
+            assert_equals(await sendRetrieveRequest(key), undefined);
+            assertHeaderValuesMatch(await sendRetrieveRequest(activeKey(key)), {
+                'sec-fetch-storage-access': ['active'],
+                'origin': undefined,
+                'cookie': ['cookie=unpartitioned'],
+            });
+        }, "Sec-Fetch-Storage-Access is `active` by default for cross-site requests.");
 
-    const iframe_params = new URLSearchParams([['script',
-                                                'embedded_responder.js']]);
-    const iframe = await CreateFrame(cross_site + nested_path + '?' +
-                                     iframe_params.toString());
+        return;
+    }
 
-    
-    const nested_url_params = new URLSearchParams([['key', key]]);
-    const nested_url = https_origin + non_retry_path + '?' +
-                       nested_url_params.toString();
-    await NoCorsFetchFromFrame(iframe, nested_url);
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
-                                      'origin': [cross_site]});
-}, "Sec-Fetch-Storage-Access is `inactive` for ABA case.");
+        await sendReadableHeaderRequest(makeURL(key, cross_site, non_retry_path));
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['none']});
+    }, "Sec-Fetch-Storage-Access is `none` when unpartitioned cookies are unavailable.");
 
-promise_test(async t => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess('*', '*', 'blocked');
-    await SetFirstPartyCookie(https_origin);
-    addCommonCleanupCallback(t);
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
 
-    const iframe_params = new URLSearchParams([['script',
-                                                'embedded_responder.js']]);
-    const iframe = await CreateFrame(cross_site + nested_path + '?' +
-                                     iframe_params.toString());
+        
+        await grantStorageAccessForEmbedSite(t, cross_site);
+        
+        
+        
+        await sendReadableHeaderRequest(makeURL(key, cross_site, non_retry_path));
+        const headers = await sendRetrieveRequest(key);
+        
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
+                                        'origin': [https_origin]});
+    }, "Sec-Fetch-Storage-Access is `inactive` when unpartitioned cookies are available but not in use.");
 
-    const nested_url_params = new URLSearchParams([
-                                    ['key', key],
-                                    ['retry-allowed-origin', cross_site]]);
-    const nested_url = https_origin + retry_path +
-                       '?' + nested_url_params.toString();
-    await NoCorsFetchFromFrame(iframe, nested_url);
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {
-        'sec-fetch-storage-access': ['inactive'],
-        'origin': [cross_site],
-        'cookie': undefined
-    });
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(cross_site);
+        addCommonCleanupCallback(t);
 
-    
-    
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assertHeaderValuesMatch(retried_headers, {
+        await grantStorageAccessForEmbedSite(t, cross_site);
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                https_origin]]));
+        
+        const headers = await sendRetrieveRequest(key);
+        
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
+                                        'origin': [https_origin], 'cookie': undefined});
+        
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        
+        assertHeaderValuesMatch(retried_headers, {
         'sec-fetch-storage-access': ['active'],
-        'origin': [cross_site],
-        'cookie': ['cookie=unpartitioned']
-    });
-}, "Storage Access can be activated for ABA cases by retrying.");
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+    }, "Sec-Fetch-Storage-Access is `active` after a valid retry with matching explicit allowed-origin.");
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    await SetFirstPartyCookie(cross_site);
-    addCommonCleanupCallback(t);
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(cross_site);
+        addCommonCleanupCallback(t);
 
-    await grantStorageAccessForEmbedSite(t, cross_site);
+        await grantStorageAccessForEmbedSite(t, cross_site);
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin','*']]));
+        
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {
+            'sec-fetch-storage-access': ['inactive'],
+            'origin': [https_origin],
+            'cookie': undefined
+        });
+        
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assertHeaderValuesMatch(retried_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+    }, "Sec-Fetch-Storage-Access is active after retry with wildcard `allowed-origin` value.");
 
-    
-    
-    const redirect_url = makeURL(key,
-                                 cross_site,
-                                 retry_path,
-                                 [['redirected', '']]);
-    
-    
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                                https_origin],
-                                             ['once-active-redirect-location',
-                                                redirect_url]]));
-    
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
-                                      'origin': [https_origin], 'cookie': undefined});
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assertHeaderValuesMatch(retried_headers, {
-        'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-    
-    const redirected_headers = await sendRetrieveRequest(redirectedKey(activeKey(key)));
-    assertHeaderValuesMatch(redirected_headers, {
-        'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-}, "Sec-Fetch-Storage-Access maintains value on same-origin redirect.");
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    await SetFirstPartyCookie(cross_site);
-    addCommonCleanupCallback(t);
+        await grantStorageAccessForEmbedSite(t, cross_site);
+        await sendReadableHeaderRequest(
+                                makeURL(key, cross_site, retry_path,
+                                        [['retry-allowed-origin', '']]));
 
-    await grantStorageAccessForEmbedSite(t, cross_site);
+        
+        
+        
+        
+        
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assert_equals(retried_headers, undefined);
+        
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive']});
+    }, "'Activate-Storage-Access: retry' is a no-op on a request without an `allowed-origin` value.");
 
-    
-    
-    const redirect_url = makeURL(key, alt_cross_site, retry_path,
-                                 [['redirected', '']]);
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                                https_origin],
-                                             ['once-active-redirect-location',
-                                                redirect_url]]));
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {
-        'sec-fetch-storage-access': ['inactive'],
-        'origin': [https_origin],
-        'cookie': undefined
-    });
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assertHeaderValuesMatch(retried_headers, {
-        'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-    
-    const redirected_headers = await sendRetrieveRequest(redirectedKey(key));
-    assertHeaderValuesMatch(redirected_headers, {
-        'sec-fetch-storage-access': ['inactive'],
-        'origin': ['null'],
-        'cookie': undefined
-    });
-}, "Sec-Fetch-Storage-Access is not 'active' after cross-origin same-site redirection.");
+        await grantStorageAccessForEmbedSite(t, cross_site);
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                same_site]]));
+        
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assert_equals(retried_headers, undefined);
+        
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive']});
+    }, "'Activate-Storage-Access: retry' is a no-op on a request from an origin that does not match its `allowed-origin` value.");
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    await SetFirstPartyCookie(cross_site);
-    addCommonCleanupCallback(t);
-    await grantStorageAccessForEmbedSite(t, cross_site);
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-    
-    
-    const redirect_url = makeURL(key, https_origin, retry_path,
-                                 [['redirected', '']]);
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                                https_origin],
-                                             ['once-active-redirect-location',
-                                                redirect_url]]));
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                https_origin]]));
+        
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assert_equals(retried_headers, undefined);
+        
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['none'],
+                                        'origin': undefined});
+    }, "Activate-Storage-Access `retry` is a no-op on a request with a `none` Storage Access status.");
 
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {
-        'sec-fetch-storage-access': ['inactive'],
-        'origin': [https_origin],
-        'cookie': undefined
-    });
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assertHeaderValuesMatch(retried_headers, {
-        'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-    
-    const redirected_headers = await sendRetrieveRequest(redirectedKey(key));
-    
-    
-    assertHeaderValuesMatch(redirected_headers, {
-        'sec-fetch-storage-access': undefined,
-        'origin': ['null'],
-        'cookie': undefined
-    });
-}, "Sec-Fetch-Storage-Access loses value on a cross-site redirection.");
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
 
-promise_test(async (t) => {
-    const key = '{{uuid()}}';
-    await MaybeSetStorageAccess("*", "*", "blocked");
-    await SetFirstPartyCookie(cross_site);
-    addCommonCleanupCallback(t);
-    await grantStorageAccessForEmbedSite(t, cross_site);
+        const load_header_iframe = await CreateFrame(makeURL(key, cross_site,
+                                        non_retry_path,
+                                        [['load', ''],
+                                            ['script', responder_script]]));
+        assert_false(await FrameHasStorageAccess(load_header_iframe),
+                    "frame should not have received storage access.");
+    }, "Activate-Storage-Access `load` header is a no-op for requests without storage access.");
 
-    
-    
-    const redirect_url = makeURL(key, https_origin, retry_path, [['redirected', '']]);
-     
-     
-    await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
-                                            [['retry-allowed-origin',
-                                                https_origin],
-                                             ['redirect-location',
-                                                redirect_url]]));
-    
-    
-    const redirected_headers = await sendRetrieveRequest(redirectedKey(key));
-    assert_equals(redirected_headers, undefined);
-    
-    const headers = await sendRetrieveRequest(key);
-    assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
-                                      'origin': [https_origin],
-                                      'cookie': undefined});
-    const retried_headers = await sendRetrieveRequest(activeKey(key));
-    assertHeaderValuesMatch(retried_headers, {
-        'sec-fetch-storage-access': ['active'],
-        'origin': [https_origin],
-        'cookie': ['cookie=unpartitioned']
-    });
-}, "Activate-Storage-Access retry is handled before any redirects are followed.");
+    promise_test(async t => {
+        const key = '{{uuid()}}';
+        addCommonCleanupCallback(t);
+
+        const iframe_params = new URLSearchParams([['script',
+                                                    'embedded_responder.js']]);
+        const iframe = await CreateFrame(cross_site + nested_path + '?' +
+                                        iframe_params.toString());
+
+        
+        const nested_url_params = new URLSearchParams([['key', key]]);
+        const nested_url = https_origin + non_retry_path + '?' +
+                        nested_url_params.toString();
+        await NoCorsFetchFromFrame(iframe, nested_url);
+
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
+                                        'origin': [cross_site]});
+    }, "Sec-Fetch-Storage-Access is `inactive` for ABA case.");
+
+    promise_test(async t => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(https_origin);
+        addCommonCleanupCallback(t);
+
+        const iframe_params = new URLSearchParams([['script',
+                                                    'embedded_responder.js']]);
+        const iframe = await CreateFrame(cross_site + nested_path + '?' +
+                                        iframe_params.toString());
+
+        const nested_url_params = new URLSearchParams([
+                                        ['key', key],
+                                        ['retry-allowed-origin', cross_site]]);
+        const nested_url = https_origin + retry_path +
+                        '?' + nested_url_params.toString();
+        await NoCorsFetchFromFrame(iframe, nested_url);
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {
+            'sec-fetch-storage-access': ['inactive'],
+            'origin': [cross_site],
+            'cookie': undefined
+        });
+
+        
+        
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assertHeaderValuesMatch(retried_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [cross_site],
+            'cookie': ['cookie=unpartitioned']
+        });
+    }, "Storage Access can be activated for ABA cases by retrying.");
+
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(cross_site);
+        addCommonCleanupCallback(t);
+
+        await grantStorageAccessForEmbedSite(t, cross_site);
+
+        
+        
+        const redirect_url = makeURL(key,
+                                    cross_site,
+                                    retry_path,
+                                    [['redirected', '']]);
+        
+        
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                    https_origin],
+                                                ['once-active-redirect-location',
+                                                    redirect_url]]));
+        
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
+                                        'origin': [https_origin], 'cookie': undefined});
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assertHeaderValuesMatch(retried_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+        
+        const redirected_headers = await sendRetrieveRequest(redirectedKey(activeKey(key)));
+        assertHeaderValuesMatch(redirected_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+    }, "Sec-Fetch-Storage-Access maintains value on same-origin redirect.");
+
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(cross_site);
+        addCommonCleanupCallback(t);
+
+        await grantStorageAccessForEmbedSite(t, cross_site);
+
+        
+        
+        const redirect_url = makeURL(key, alt_cross_site, retry_path,
+                                    [['redirected', '']]);
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                    https_origin],
+                                                ['once-active-redirect-location',
+                                                    redirect_url]]));
+
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {
+            'sec-fetch-storage-access': ['inactive'],
+            'origin': [https_origin],
+            'cookie': undefined
+        });
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assertHeaderValuesMatch(retried_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+        
+        const redirected_headers = await sendRetrieveRequest(redirectedKey(key));
+        assertHeaderValuesMatch(redirected_headers, {
+            'sec-fetch-storage-access': ['inactive'],
+            'origin': ['null'],
+            'cookie': undefined
+        });
+    }, "Sec-Fetch-Storage-Access is not 'active' after cross-origin same-site redirection.");
+
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(cross_site);
+        addCommonCleanupCallback(t);
+        await grantStorageAccessForEmbedSite(t, cross_site);
+
+        
+        
+        const redirect_url = makeURL(key, https_origin, retry_path,
+                                    [['redirected', '']]);
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                    https_origin],
+                                                ['once-active-redirect-location',
+                                                    redirect_url]]));
+
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {
+            'sec-fetch-storage-access': ['inactive'],
+            'origin': [https_origin],
+            'cookie': undefined
+        });
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assertHeaderValuesMatch(retried_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+        
+        const redirected_headers = await sendRetrieveRequest(redirectedKey(key));
+        
+        
+        assertHeaderValuesMatch(redirected_headers, {
+            'sec-fetch-storage-access': undefined,
+            'origin': ['null'],
+            'cookie': undefined
+        });
+    }, "Sec-Fetch-Storage-Access loses value on a cross-site redirection.");
+
+    promise_test(async (t) => {
+        const key = '{{uuid()}}';
+        await SetFirstPartyCookie(cross_site);
+        addCommonCleanupCallback(t);
+        await grantStorageAccessForEmbedSite(t, cross_site);
+
+        
+        
+        const redirect_url = makeURL(key, https_origin, retry_path, [['redirected', '']]);
+        
+        
+        await sendReadableHeaderRequest(makeURL(key, cross_site, retry_path,
+                                                [['retry-allowed-origin',
+                                                    https_origin],
+                                                ['redirect-location',
+                                                    redirect_url]]));
+        
+        
+        const redirected_headers = await sendRetrieveRequest(redirectedKey(key));
+        assert_equals(redirected_headers, undefined);
+        
+        const headers = await sendRetrieveRequest(key);
+        assertHeaderValuesMatch(headers, {'sec-fetch-storage-access': ['inactive'],
+                                        'origin': [https_origin],
+                                        'cookie': undefined});
+        const retried_headers = await sendRetrieveRequest(activeKey(key));
+        assertHeaderValuesMatch(retried_headers, {
+            'sec-fetch-storage-access': ['active'],
+            'origin': [https_origin],
+            'cookie': ['cookie=unpartitioned']
+        });
+    }, "Activate-Storage-Access retry is handled before any redirects are followed.");
+})();

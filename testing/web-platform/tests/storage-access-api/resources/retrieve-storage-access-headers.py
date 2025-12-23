@@ -1,4 +1,5 @@
-import hashlib
+import importlib
+header_helpers = importlib.import_module("storage-access-api.resources.header-helpers")
 
 def main(request, response):
   if b'key' in request.GET:
@@ -8,7 +9,7 @@ def main(request, response):
     return (400, [], b'')
 
   
-  stash_key = hashlib.md5(key).hexdigest()
+  stash_key = header_helpers.make_stash_key(key, request.GET)
 
   
   headers = request.server.stash.take(stash_key)
