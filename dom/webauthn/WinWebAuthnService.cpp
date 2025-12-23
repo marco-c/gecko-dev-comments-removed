@@ -529,7 +529,9 @@ WinWebAuthnService::MakeCredential(uint64_t aTransactionId,
         nsTArray<uint8_t> prfEvalFirst;
         nsTArray<uint8_t> prfEvalSecond;
         WEBAUTHN_HMAC_SECRET_SALT prfGlobalEval = {0};
+        PWEBAUTHN_HMAC_SECRET_SALT pPrfGlobalEval = NULL;
         if (requestedPrf) {
+          pPrfGlobalEval = &prfGlobalEval;
           rv = aArgs->GetPrfEvalFirst(prfEvalFirst);
           if (rv == NS_OK) {
             prfGlobalEval.cbFirst = prfEvalFirst.Length();
@@ -652,7 +654,7 @@ WinWebAuthnService::MakeCredential(uint64_t aTransactionId,
             NULL,                   
             0,                      
             NULL,                   
-            &prfGlobalEval,         
+            pPrfGlobalEval,         
             (DWORD)hints.Length(),  
             hints.Elements(),       
         };
