@@ -93,14 +93,11 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 #[inline]
 fn elements_with_id<'a, 'le>(
-    array: *const structs::nsTArray<*mut RawGeckoElement>,
+    array: structs::RustSpan<*const RawGeckoElement>,
 ) -> &'a [GeckoElement<'le>] {
     unsafe {
-        if array.is_null() {
-            return &[];
-        }
-
-        let elements: &[*mut RawGeckoElement] = &**array;
+        let elements: &[*const RawGeckoElement] =
+            std::slice::from_raw_parts(array.begin, array.length);
 
         
         
@@ -289,14 +286,14 @@ impl<'ln> GeckoNode<'ln> {
     }
 
     fn flags_atomic_for(flags: &Cell<u32>) -> &AtomicU32 {
-        const_assert!(std::mem::size_of::<Cell<u32>>() == std::mem::size_of::<AtomicU32>());
-        const_assert!(std::mem::align_of::<Cell<u32>>() == std::mem::align_of::<AtomicU32>());
+        const_assert!(mem::size_of::<Cell<u32>>() == mem::size_of::<AtomicU32>());
+        const_assert!(mem::align_of::<Cell<u32>>() == mem::align_of::<AtomicU32>());
 
         
         
         
         
-        unsafe { std::mem::transmute::<&Cell<u32>, &AtomicU32>(flags) }
+        unsafe { mem::transmute::<&Cell<u32>, &AtomicU32>(flags) }
     }
 
     #[inline]
@@ -592,7 +589,7 @@ pub enum GeckoChildrenIterator<'a> {
     
     Current(Option<GeckoNode<'a>>),
     
-    GeckoIterator(std::mem::ManuallyDrop<structs::StyleChildrenIterator>),
+    GeckoIterator(mem::ManuallyDrop<structs::StyleChildrenIterator>),
 }
 
 impl<'a> Drop for GeckoChildrenIterator<'a> {
@@ -1071,10 +1068,10 @@ impl<'le> TElement for GeckoElement<'le> {
             || self.may_have_anonymous_children()
         {
             unsafe {
-                let mut iter = std::mem::MaybeUninit::<structs::StyleChildrenIterator>::uninit();
+                let mut iter = mem::MaybeUninit::<structs::StyleChildrenIterator>::uninit();
                 bindings::Gecko_ConstructStyleChildrenIterator(self.0, iter.as_mut_ptr());
                 return LayoutIterator(GeckoChildrenIterator::GeckoIterator(
-                    std::mem::ManuallyDrop::new(iter.assume_init()),
+                    mem::ManuallyDrop::new(iter.assume_init()),
                 ));
             }
         }
@@ -1143,38 +1140,23 @@ impl<'le> TElement for GeckoElement<'le> {
         if !self.is_html_slot_element() || !self.as_node().is_in_shadow_tree() {
             return &[];
         }
-
-        let slot: &structs::HTMLSlotElement = unsafe { mem::transmute(self.0) };
-
         if cfg!(debug_assertions) {
+            let slot: &structs::HTMLSlotElement = unsafe { mem::transmute(self.0) };
             let base: &RawGeckoElement = &slot._base._base._base;
             assert_eq!(base as *const _, self.0 as *const _, "Bad cast");
         }
-
-        
-        
-        
-        
-        
-        
-        let assigned_nodes: &[structs::RefPtr<structs::nsINode>] = if !cfg!(target_os = "android") {
-            debug_assert_eq!(
-                unsafe { bindings::Gecko_GetAssignedNodes(self.0) },
-                &slot.mAssignedNodes as *const _,
-            );
-
-            &*slot.mAssignedNodes
-        } else {
-            unsafe { &**bindings::Gecko_GetAssignedNodes(self.0) }
-        };
-
-        debug_assert_eq!(
-            mem::size_of::<structs::RefPtr<structs::nsINode>>(),
-            mem::size_of::<Self::ConcreteNode>(),
-            "Bad cast!"
-        );
-
-        unsafe { mem::transmute(assigned_nodes) }
+        unsafe {
+            let nodes = bindings::Gecko_GetAssignedNodes(self.0);
+            let nodes: &[*const RawGeckoNode] =
+                std::slice::from_raw_parts(nodes.begin, nodes.length);
+            
+            
+            #[allow(dead_code)]
+            unsafe fn static_assert() {
+                mem::transmute::<*mut RawGeckoNode, GeckoNode<'static>>(0xbadc0de as *mut _);
+            }
+            mem::transmute(nodes)
+        }
     }
 
     #[inline]

@@ -102,10 +102,12 @@ class DocumentOrShadowRoot {
 
 
 
-  const nsTArray<Element*>* GetAllElementsForId(
+  Span<Element* const> GetAllElementsForId(
       const IdentifierMapEntry::DependentAtomOrString& aElementId) const {
-    IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aElementId);
-    return entry ? &entry->GetIdElements() : nullptr;
+    if (IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aElementId)) {
+      return entry->GetIdElements();
+    }
+    return {};
   }
 
   already_AddRefed<nsContentList> GetElementsByTagName(

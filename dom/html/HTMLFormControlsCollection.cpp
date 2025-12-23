@@ -86,14 +86,14 @@ void HTMLFormControlsCollection::DropFormReference() {
 
 void HTMLFormControlsCollection::Clear() {
   
-  for (nsGenericHTMLFormElement* element : Reversed(mElements.AsList())) {
+  for (nsGenericHTMLFormElement* element : mElements.AsSpan()) {
     nsCOMPtr<nsIFormControl> formControl = nsIFormControl::FromNode(element);
     MOZ_ASSERT(formControl);
     formControl->ClearForm(false, false);
   }
   mElements.Clear();
 
-  for (nsGenericHTMLFormElement* element : Reversed(mNotInElements.AsList())) {
+  for (nsGenericHTMLFormElement* element : mNotInElements.AsSpan()) {
     nsCOMPtr<nsIFormControl> formControl = nsIFormControl::FromNode(element);
     MOZ_ASSERT(formControl);
     formControl->ClearForm(false, false);
@@ -131,7 +131,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(HTMLFormControlsCollection)
 
 
 
-uint32_t HTMLFormControlsCollection::Length() { return mElements->Length(); }
+uint32_t HTMLFormControlsCollection::Length() { return mElements.Length(); }
 
 nsISupports* HTMLFormControlsCollection::NamedItemInternal(
     const nsAString& aName) {
@@ -154,7 +154,7 @@ nsresult HTMLFormControlsCollection::IndexOfContent(nsIContent* aContent,
   
 
   NS_ENSURE_ARG_POINTER(aIndex);
-  *aIndex = mElements->IndexOf(aContent);
+  *aIndex = mElements.IndexOf(aContent);
   return NS_OK;
 }
 
@@ -171,17 +171,14 @@ nsresult HTMLFormControlsCollection::RemoveElementFromTable(
 
 nsresult HTMLFormControlsCollection::GetSortedControls(
     nsTArray<RefPtr<nsGenericHTMLFormElement>>& aControls) const {
-#ifdef DEBUG
-  HTMLFormElement::AssertDocumentOrder(mElements, mForm);
-  HTMLFormElement::AssertDocumentOrder(mNotInElements, mForm);
-#endif
-
   aControls.Clear();
 
   
   
-  uint32_t elementsLen = mElements->Length();
-  uint32_t notInElementsLen = mNotInElements->Length();
+  auto elements = mElements.AsSpan();
+  auto notInElements = mNotInElements.AsSpan();
+  uint32_t elementsLen = elements.Length();
+  uint32_t notInElementsLen = notInElements.Length();
   aControls.SetCapacity(elementsLen + notInElementsLen);
 
   uint32_t elementsIdx = 0;
@@ -196,8 +193,7 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
       
       
       
-      aControls.AppendElements(mNotInElements->Elements() + notInElementsIdx,
-                               notInElementsLen - notInElementsIdx);
+      aControls.AppendElements(notInElements.From(notInElementsIdx));
       break;
     }
     
@@ -207,25 +203,22 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
       
       
       
-      aControls.AppendElements(mElements->Elements() + elementsIdx,
-                               elementsLen - elementsIdx);
+      aControls.AppendElements(elements.From(elementsIdx));
       break;
     }
     
-    NS_ASSERTION(mElements->ElementAt(elementsIdx) &&
-                     mNotInElements->ElementAt(notInElementsIdx),
+    NS_ASSERTION(elements[elementsIdx] && notInElements[notInElementsIdx],
                  "Should have remaining elements");
     
     
     nsGenericHTMLFormElement* elementToAdd;
     if (nsContentUtils::CompareTreePosition<TreeKind::DOM>(
-            mElements->ElementAt(elementsIdx),
-            mNotInElements->ElementAt(notInElementsIdx), mForm,
+            elements[elementsIdx], notInElements[notInElementsIdx], mForm,
             &indexCache) < 0) {
-      elementToAdd = mElements->ElementAt(elementsIdx);
+      elementToAdd = elements[elementsIdx];
       ++elementsIdx;
     } else {
-      elementToAdd = mNotInElements->ElementAt(notInElementsIdx);
+      elementToAdd = notInElements[notInElementsIdx];
       ++notInElementsIdx;
     }
     
@@ -236,15 +229,11 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
 
   NS_ASSERTION(aControls.Length() == elementsLen + notInElementsLen,
                "Not all form controls were added to the sorted list");
-#ifdef DEBUG
-  HTMLFormElement::AssertDocumentOrder(aControls, mForm);
-#endif
-
   return NS_OK;
 }
 
 Element* HTMLFormControlsCollection::GetElementAt(uint32_t aIndex) {
-  return mElements->SafeElementAt(aIndex, nullptr);
+  return mElements.SafeElementAt(aIndex, nullptr);
 }
 
 
