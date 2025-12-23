@@ -47,6 +47,7 @@ class MemoryFront extends FrontClassWithSpec(memorySpec) {
 
 
 
+
   async saveHeapSnapshot(options = {}) {
     const snapshotId = await super.saveHeapSnapshot(options.boundaries);
 

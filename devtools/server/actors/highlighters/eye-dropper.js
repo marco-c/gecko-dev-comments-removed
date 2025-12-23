@@ -245,6 +245,7 @@ class EyeDropper {
 
 
 
+
   async updateScreenshot(screenshot) {
     const rootElement = this.getElement("eye-dropper-root");
 

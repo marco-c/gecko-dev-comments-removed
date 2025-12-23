@@ -177,6 +177,7 @@ const webconsoleSpecPrototype = {
 
 
 
+
     autocomplete: {
       request: {
         text: Arg(0, "string"),
