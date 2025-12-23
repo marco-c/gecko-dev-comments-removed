@@ -25,7 +25,7 @@ async function openTaskbarTabWindow(aTab = null) {
   const userContextId = 0;
 
   const registry = new TaskbarTabsRegistry();
-  const taskbarTab = registry.findOrCreateTaskbarTab(url, userContextId);
+  const taskbarTab = createTaskbarTab(registry, url, userContextId);
   const windowManager = new TaskbarTabsWindowManager();
 
   const windowPromise = BrowserTestUtils.waitForNewWindow();
@@ -37,4 +37,31 @@ async function openTaskbarTabWindow(aTab = null) {
   }
 
   return await windowPromise;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createTaskbarTab(aRegistry, ...args) {
+  let result = aRegistry.findOrCreateTaskbarTab(...args);
+  function check({ taskbarTab, created }) {
+    Assert.ok(created, "Created taskbar tab did not exist before");
+    return taskbarTab;
+  }
+
+  if (result.then) {
+    return result.then(check);
+  }
+
+  return check(result);
 }
