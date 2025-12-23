@@ -1619,7 +1619,9 @@ bool HTMLFormElement::IsLastActiveElement(
     const nsGenericHTMLFormElement* aElement) const {
   MOZ_ASSERT(aElement, "Unexpected call");
 
-  for (auto* element : Reversed(mControls->mElements.AsSpan())) {
+  
+  Span elements = mControls->mElements.AsSpan();
+  for (auto* element : Reversed(elements)) {
     const auto* fc = nsIFormControl::FromNode(element);
     MOZ_ASSERT(fc);
     
@@ -1744,7 +1746,7 @@ int32_t HTMLFormElement::IndexOfContent(nsIContent* aContent) {
 }
 
 void HTMLFormElement::Clear() {
-  for (HTMLImageElement* image : Reversed(mImageElements.AsSpan())) {
+  for (HTMLImageElement* image : mImageElements.AsSpan()) {
     image->ClearForm(false);
   }
   mImageElements.Clear();
