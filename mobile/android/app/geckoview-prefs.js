@@ -296,16 +296,6 @@ pref("media.eme.require-app-approval", true);
 pref("media.geckoview.autoplay.request", true);
 
 
-pref("media.gmp-gmpopenh264.autoupdate", false);
-
-
-pref("media.gmp-gmpopenh264.enabled", true);
-pref("media.gmp-gmpopenh264.visible", true);
-
-
-pref("media.gmp-provider.enabled", true);
-
-
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
