@@ -68,6 +68,6 @@
 #  endif
 #endif  
         
-#include "config_override.h"
+#include "config_components.h"
 
 #endif  
