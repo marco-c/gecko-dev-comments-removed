@@ -499,6 +499,15 @@ function promiseSanitizationComplete() {
   return TestUtils.topicObserved("sanitizer-sanitization-complete");
 }
 
+function settingsRedesignHistoryEnabled() {
+  return (
+    Services.prefs.getBoolPref(
+      "browser.settings-redesign.history2.enabled",
+      false
+    ) || Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
+  );
+}
+
 
 
 
@@ -651,9 +660,15 @@ ClearHistoryDialogHelper.prototype = {
     
     
     if (this._mode != "browser") {
-      await openPreferencesViaOpenPreferencesAPI("privacy", {
-        leaveOpen: true,
-      });
+      if (this._mode == "clearOnShutdown" && settingsRedesignHistoryEnabled()) {
+        await openPreferencesViaOpenPreferencesAPI("history", {
+          leaveOpen: true,
+        });
+      } else {
+        await openPreferencesViaOpenPreferencesAPI("privacy", {
+          leaveOpen: true,
+        });
+      }
       let tabWindow = gBrowser.selectedBrowser.contentWindow;
       let clearDialogOpenButtonId = this._mode + "Button";
       
