@@ -27,6 +27,20 @@ add_task(async function test_get_page_content_basic() {
   const { url, GetPageContent, cleanup } = await setupGetPageContentTest(html);
 
   
+  
+  window.document.documentElement.setAttribute("ai-window", "true");
+
+  
+  const { AIWindow } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
+  );
+  info("Is AI Window: " + AIWindow.isAIWindowActive(window));
+  info(
+    "Window has ai-window attribute: " +
+      window.document.documentElement.hasAttribute("ai-window")
+  );
+
+  
   const allowedUrls = new Set([url]);
 
   
