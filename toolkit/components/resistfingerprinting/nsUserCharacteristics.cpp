@@ -72,6 +72,13 @@
 #  include "mozilla/widget/GSettings.h"
 #endif
 
+
+#include <cfenv>
+#if defined(_MSC_VER)
+#  include <float.h>
+#  include <intrin.h>
+#endif
+
 using namespace mozilla;
 
 static LazyLogModule gUserCharacteristicsLog("UserCharacteristics");
@@ -701,8 +708,126 @@ void PopulateProcessorCount() {
   glean::characteristics::processor_count.Set(processorCount);
 }
 
+
+
+
+
+
+
+
+static nsCString GetFPUControlState() {
+  nsCString result;
+
+  
+  int std_mode = std::fegetround();
+  const char* mode_str = "unknown";
+  switch (std_mode) {
+    case FE_TONEAREST:
+      mode_str = "0";
+      break;
+    case FE_DOWNWARD:
+      mode_str = "1";
+      break;
+    case FE_UPWARD:
+      mode_str = "2";
+      break;
+    case FE_TOWARDZERO:
+      mode_str = "3";
+      break;
+  }
+  result.AppendLiteral("std:");
+  result.Append(mode_str);
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+    defined(_M_IX86)
+  
+
+  
+  uint16_t x87_cw = 0;
+#  ifdef _MSC_VER
+  x87_cw = static_cast<uint16_t>(_control87(0, 0));
+#  else
+  __asm__ __volatile__("fstcw %0" : "=m"(x87_cw));
+#  endif
+
+  
+  int x87_round = (x87_cw >> 10) & 0x3;
+  result.AppendLiteral(";x87:");
+  result.AppendInt(x87_round);
+
+  
+  int precision = (x87_cw >> 8) & 0x3;
+  const char* prec_str = "unknown";
+  switch (precision) {
+    case 0:
+      prec_str = "single";
+      break;
+    case 1:
+      prec_str = "reserved";
+      break;
+    case 2:
+      prec_str = "double";
+      break;
+    case 3:
+      prec_str = "extended";
+      break;
+  }
+
+    
+#  if defined(__x86_64__) || defined(_M_X64) || defined(__SSE__)
+  uint32_t mxcsr = 0;
+#    ifdef _MSC_VER
+  mxcsr = _mm_getcsr();
+#    else
+  __asm__ __volatile__("stmxcsr %0" : "=m"(mxcsr));
+#    endif
+
+  
+  int sse_round = (mxcsr >> 13) & 0x3;
+  result.AppendLiteral(";sse:");
+  result.AppendInt(sse_round);
+#  else
+  
+  result.AppendLiteral(";sse:na");
+#  endif
+
+  result.AppendLiteral(";prec:");
+  result.Append(prec_str);
+
+#elif defined(__aarch64__)
+  
+  uint64_t fpcr = 0;
+  __asm__ __volatile__("mrs %0, fpcr" : "=r"(fpcr));
+
+  
+  int arm_round = (fpcr >> 22) & 0x3;
+  result.AppendLiteral(";arm:");
+  result.AppendInt(arm_round);
+
+#elif defined(__arm__)
+  
+  uint32_t fpscr = 0;
+  __asm__ __volatile__("vmrs %0, fpscr" : "=r"(fpscr));
+
+  
+  int arm_round = (fpscr >> 22) & 0x3;
+  result.AppendLiteral(";arm:");
+  result.AppendInt(arm_round);
+
+#else
+  
+  result.AppendLiteral(";arch:other");
+#endif
+
+  return result;
+}
+
 void PopulateMisc(bool worksInGtest) {
   if (worksInGtest) {
+    
+    nsCString fpuState = GetFPUControlState();
+    glean::characteristics::fpu_control_state.Set(fpuState);
+
     glean::characteristics::max_touch_points.Set(testing::MaxTouchPoints());
     nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
     if (gfxInfo) {
@@ -801,7 +926,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 
 
 
-const int kSubmissionSchema = 29;
+const int kSubmissionSchema = 30;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
