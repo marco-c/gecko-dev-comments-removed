@@ -967,7 +967,7 @@ const libraryTracker = {
     
     
     for (let window of Services.wm.getEnumerator("")) {
-      if (window.document.readyState === "complete") {
+      if (windowTracker.isBrowserWindowInitialized(window)) {
         if (this.isLibraryWindow(window)) {
           this.notify(window);
         }

@@ -1498,6 +1498,16 @@ class WindowTrackerBase extends EventEmitter {
     });
   }
 
+  
+  
+  isBrowserWindowInitialized(window) {
+    const { readyState, isUncommittedInitialDocument } = window.document;
+    return readyState === "complete" && !isUncommittedInitialDocument;
+  }
+
+  
+  
+  
   isBrowserWindow(window) {
     let { documentElement } = window.document;
 
@@ -1525,7 +1535,7 @@ class WindowTrackerBase extends EventEmitter {
 
     for (let window of Services.wm.getEnumerator("")) {
       let ok = includeIncomplete;
-      if (window.document.readyState === "complete") {
+      if (this.isBrowserWindowInitialized(window)) {
         ok = this.isBrowserWindow(window);
       }
 
@@ -1621,12 +1631,11 @@ class WindowTrackerBase extends EventEmitter {
     if (
       window &&
       !window.closed &&
-      (window.document.readyState !== "complete" ||
-        this.isBrowserWindow(window))
+      
+      
+      (!this.isBrowserWindowInitialized(window) || this.isBrowserWindow(window))
     ) {
       if (!context || context.canAccessWindow(window)) {
-        
-        
         return window;
       }
     }
@@ -1661,7 +1670,7 @@ class WindowTrackerBase extends EventEmitter {
     this._openListeners.add(listener);
 
     for (let window of this.browserWindows(true)) {
-      if (window.document.readyState !== "complete") {
+      if (!this.isBrowserWindowInitialized(window)) {
         window.addEventListener("load", this);
       }
     }
