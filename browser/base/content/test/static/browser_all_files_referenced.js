@@ -337,10 +337,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
-  },
-  
-  {
     file: "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs",
   },
   
