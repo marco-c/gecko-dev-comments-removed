@@ -1997,67 +1997,91 @@ Element* Element::GetAttrAssociatedElementForBindings(nsAtom* aAttr) const {
   return GetAttrAssociatedElementInternal(aAttr, true);
 }
 
-void Element::GetAttrAssociatedElements(
+Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
+    nsAtom* aAttr, bool aForBindings) {
+  
+  nsTArray<RefPtr<Element>> elements;
+  auto& [explicitlySetAttrElements, _] =
+      ExtendedDOMSlots()->mAttrElementsMap.LookupOrInsert(aAttr);
+
+  if (explicitlySetAttrElements) {
+    
+    for (const nsWeakPtr& weakEl : *explicitlySetAttrElements) {
+      
+      
+      if (RefPtr<Element> attrEl = do_QueryReferent(weakEl)) {
+        
+        
+        if (!HasSharedRoot(attrEl)) {
+          continue;
+        }
+        
+        elements.AppendElement(std::move(attrEl));
+      }
+    }
+  } else {
+    
+    
+    const nsAttrValue* value = GetParsedAttr(aAttr);
+    
+    if (!value || value->GetAtomCount() == 0) {
+      return Nothing();
+    }
+
+    MOZ_ASSERT(value->Type() == nsAttrValue::eAtomArray ||
+                   value->Type() == nsAttrValue::eAtom,
+               "Attribute used for accessible relations must be parsed.");
+    
+    
+    for (uint32_t i = 0; i < value->GetAtomCount(); i++) {
+      
+      
+      
+      
+      if (auto* candidate = GetElementByIdInDocOrSubtree(
+              value->AtomAt(static_cast<int32_t>(i)))) {
+        
+        elements.AppendElement(candidate);
+      }
+    }
+  }
+  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return Some(std::move(elements));
+  }
+
+  
+  nsTArray<RefPtr<Element>> resolvedElements;
+  
+  for (const RefPtr<Element> element : elements) {
+    
+    
+    if (Element* resolvedCandidate = element->ResolveReferenceTarget()) {
+      
+      if (aForBindings) {
+        
+        resolvedElements.AppendElement(element);
+      } else {
+        
+        resolvedElements.AppendElement(resolvedCandidate);
+      }
+    }
+  }
+  return Some(std::move(resolvedElements));
+}
+
+void Element::GetAttrAssociatedElementsForBindings(
     nsAtom* aAttr, bool* aUseCachedValue,
     Nullable<nsTArray<RefPtr<Element>>>& aElements) {
   MOZ_ASSERT(aElements.IsNull());
 
-  auto& [explicitlySetAttrElements, cachedAttrElements] =
+  
+  
+  
+  Maybe<nsTArray<RefPtr<Element>>> elements =
+      GetAttrAssociatedElementsInternal(aAttr, true);
+
+  auto& [_, cachedAttrElements] =
       ExtendedDOMSlots()->mAttrElementsMap.LookupOrInsert(aAttr);
-
-  
-  auto getAttrAssociatedElements =
-      [&, &explicitlySetAttrElements =
-              explicitlySetAttrElements]() -> Maybe<nsTArray<RefPtr<Element>>> {
-    nsTArray<RefPtr<Element>> elements;
-
-    if (explicitlySetAttrElements) {
-      
-      for (const nsWeakPtr& weakEl : *explicitlySetAttrElements) {
-        
-        
-        if (nsCOMPtr<Element> attrEl = do_QueryReferent(weakEl)) {
-          
-          
-          if (!HasSharedRoot(attrEl)) {
-            continue;
-          }
-          
-          elements.AppendElement(attrEl);
-        }
-      }
-    } else {
-      
-      
-      
-      const nsAttrValue* value = GetParsedAttr(aAttr);
-      
-      if (!value) {
-        return Nothing();
-      }
-
-      
-      MOZ_ASSERT(value->Type() == nsAttrValue::eAtomArray ||
-                     value->Type() == nsAttrValue::eAtom,
-                 "Attribute used for attr associated elements must be parsed");
-      for (uint32_t i = 0; i < value->GetAtomCount(); i++) {
-        
-        if (auto* candidate = GetElementByIdInDocOrSubtree(
-                value->AtomAt(static_cast<int32_t>(i)))) {
-          
-          elements.AppendElement(candidate);
-        }
-      }
-    }
-
-    return Some(std::move(elements));
-  };
-
-  
-  
-  
-  auto elements = getAttrAssociatedElements();
-
   if (elements && elements == cachedAttrElements) {
     
     
@@ -3339,13 +3363,15 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
   if (aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::_class || aAttribute == nsGkAtoms::part ||
+        aAttribute == nsGkAtoms::aria_actions ||
         aAttribute == nsGkAtoms::aria_controls ||
         aAttribute == nsGkAtoms::aria_describedby ||
         aAttribute == nsGkAtoms::aria_details ||
         aAttribute == nsGkAtoms::aria_errormessage ||
         aAttribute == nsGkAtoms::aria_flowto ||
         aAttribute == nsGkAtoms::aria_labelledby ||
-        aAttribute == nsGkAtoms::aria_owns) {
+        aAttribute == nsGkAtoms::aria_owns || aAttribute == nsGkAtoms::_for ||
+        aAttribute == nsGkAtoms::headers) {
       aResult.ParseAtomArray(aValue);
       return true;
     }

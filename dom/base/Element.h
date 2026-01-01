@@ -269,15 +269,16 @@ class TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString;
     ExplicitlySetAttrElement(nsGkAtoms::attr, aElement);         \
   }
 
-#define REFLECT_NULLABLE_ELEMENTS_ATTR(method, attr)                        \
-  void Get##method(bool* aUseCachedValue,                                   \
-                   Nullable<nsTArray<RefPtr<Element>>>& aElements) {        \
-    GetAttrAssociatedElements(nsGkAtoms::attr, aUseCachedValue, aElements); \
-  }                                                                         \
-                                                                            \
-  void Set##method(                                                         \
-      const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {        \
-    ExplicitlySetAttrElements(nsGkAtoms::attr, aElements);                  \
+#define REFLECT_NULLABLE_ELEMENTS_ATTR(method, attr)                       \
+  void Get##method(bool* aUseCachedValue,                                  \
+                   Nullable<nsTArray<RefPtr<Element>>>& aElements) {       \
+    GetAttrAssociatedElementsForBindings(nsGkAtoms::attr, aUseCachedValue, \
+                                         aElements);                       \
+  }                                                                        \
+                                                                           \
+  void Set##method(                                                        \
+      const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {       \
+    ExplicitlySetAttrElements(nsGkAtoms::attr, aElements);                 \
   }
 
 class Element : public FragmentOrElement {
@@ -1373,7 +1374,17 @@ class Element : public FragmentOrElement {
 
   Element* GetAttrAssociatedElementForBindings(nsAtom* aAttr) const;
 
-  void GetAttrAssociatedElements(
+  
+
+
+
+  Maybe<nsTArray<RefPtr<Element>>> GetAttrAssociatedElementsInternal(
+      nsAtom* aAttr, bool aForBindings = false);
+  
+
+
+
+  void GetAttrAssociatedElementsForBindings(
       nsAtom* aAttr, bool* aUseCachedValue,
       Nullable<nsTArray<RefPtr<Element>>>& aElements);
 
