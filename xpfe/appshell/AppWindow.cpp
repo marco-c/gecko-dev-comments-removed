@@ -1082,31 +1082,6 @@ NS_IMETHODIMP AppWindow::ForceRoundedDimensions() {
   return NS_OK;
 }
 
-void AppWindow::OnChromeLoaded() {
-  nsresult rv = EnsureContentTreeOwner();
-
-  if (NS_SUCCEEDED(rv)) {
-    mChromeLoaded = true;
-    ApplyChromeFlags();
-    SyncAttributesToWidget();
-    if (RefPtr ps = GetPresShell()) {
-      
-      ps->SyncWindowPropertiesIfNeeded();
-    }
-    if (mWindow) {
-      SizeShell();
-      if (mShowAfterLoad) {
-        SetVisibility(true);
-      }
-      AddTooltipSupport();
-    }
-    
-    
-    
-  }
-  mPersistentAttributesMask += AllPersistentAttributes();
-}
-
 bool AppWindow::NeedsTooltipListener() {
   nsCOMPtr<dom::Element> docShellElement = GetWindowDOMElement();
   if (!docShellElement || docShellElement->IsXULElement()) {
@@ -3035,6 +3010,63 @@ void AppWindow::PersistentAttributesDirty(PersistentAttributes aAttributes,
 
 void AppWindow::FirePersistenceTimer() { SavePersistentAttributes(); }
 
+void AppWindow::OnChromeLoaded() {
+  MOZ_ASSERT(!mChromeLoaded);
+
+  mChromeLoaded = true;
+  mLockedUntilChromeLoad = false;
+
+#ifdef USE_NATIVE_MENUS
+  
+  
+  
+  
+  if (!gfxPlatform::IsHeadless()) {
+    if (RefPtr<Document> menubarDoc = mDocShell->GetExtantDocument()) {
+      if (mIsHiddenWindow || !sWaitingForHiddenWindowToLoadNativeMenus) {
+        BeginLoadNativeMenus(menubarDoc, mWindow);
+      } else {
+        sLoadNativeMenusListeners.EmplaceBack(menubarDoc, mWindow);
+      }
+    }
+  }
+#endif  
+
+  nsresult rv = EnsureContentTreeOwner();
+
+  if (NS_SUCCEEDED(rv)) {
+    ApplyChromeFlags();
+    SyncAttributesToWidget();
+    if (RefPtr ps = GetPresShell()) {
+      
+      ps->SyncWindowPropertiesIfNeeded();
+    }
+    if (mWindow) {
+      SizeShell();
+      if (mShowAfterLoad) {
+        SetVisibility(true);
+      }
+      AddTooltipSupport();
+    }
+    
+    
+    
+  }
+  mPersistentAttributesMask += AllPersistentAttributes();
+}
+
+NS_IMETHODIMP
+AppWindow::ShowInitialViewer() {
+  NS_ENSURE_FALSE(mChromeLoaded, NS_ERROR_UNEXPECTED);
+
+  MOZ_ASSERT(mDocShell->GetDocument()->IsUncommittedInitialDocument(),
+             "This method is for showing the initial document, not the result "
+             "of a some navigation");
+
+  OnChromeLoaded();
+  return NS_OK;
+}
+
 
 
 
@@ -3067,25 +3099,6 @@ AppWindow::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
     nsPIDOMWindowOuter* rootPWin = eventPWin->GetPrivateRoot();
     if (eventPWin != rootPWin) return NS_OK;
   }
-
-  mChromeLoaded = true;
-  mLockedUntilChromeLoad = false;
-
-#ifdef USE_NATIVE_MENUS
-  
-  
-  
-  
-  if (!gfxPlatform::IsHeadless()) {
-    if (RefPtr<Document> menubarDoc = mDocShell->GetExtantDocument()) {
-      if (mIsHiddenWindow || !sWaitingForHiddenWindowToLoadNativeMenus) {
-        BeginLoadNativeMenus(menubarDoc, mWindow);
-      } else {
-        sLoadNativeMenusListeners.EmplaceBack(menubarDoc, mWindow);
-      }
-    }
-  }
-#endif  
 
   OnChromeLoaded();
 
