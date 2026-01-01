@@ -17,10 +17,6 @@ pref("accessibility.typeaheadfind.timeout", 5000);
 
 pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
 
-#ifdef MOZ_UPDATER
-  pref("app.update.channel", "@MOZ_UPDATE_CHANNEL@");
-#endif
-
 
 pref("app.update.timerFirstInterval", 30000); 
 pref("app.update.timerMinimumDelay", 30); 
