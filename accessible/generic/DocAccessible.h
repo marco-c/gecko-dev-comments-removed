@@ -329,7 +329,7 @@ class DocAccessible : public HyperTextAccessible,
   
 
 
-  bool IsDependentID(dom::Element* aElement, const nsAString& aID) const {
+  bool IsDependentID(dom::Element* aElement, nsAtom* aID) const {
     return GetRelProviders(aElement, aID);
   }
 
@@ -756,7 +756,7 @@ class DocAccessible : public HyperTextAccessible,
   };
 
   typedef nsTArray<mozilla::UniquePtr<AttrRelProvider>> AttrRelProviders;
-  typedef nsClassHashtable<nsStringHashKey, AttrRelProviders>
+  typedef nsClassHashtable<nsAtomHashKey, AttrRelProviders>
       DependentIDsHashtable;
 
   
@@ -764,11 +764,10 @@ class DocAccessible : public HyperTextAccessible,
 
 
 
-  AttrRelProviders* GetRelProviders(dom::Element* aElement,
-                                    const nsAString& aID) const;
+  AttrRelProviders* GetRelProviders(dom::Element* aElement, nsAtom* aID) const;
   AttrRelProviders* GetOrCreateRelProviders(dom::Element* aElement,
-                                            const nsAString& aID);
-  void RemoveRelProvidersIfEmpty(dom::Element* aElement, const nsAString& aID);
+                                            nsAtom* aID);
+  void RemoveRelProvidersIfEmpty(dom::Element* aElement, nsAtom* aID);
 
   
 
