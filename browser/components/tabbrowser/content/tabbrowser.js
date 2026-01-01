@@ -9833,9 +9833,17 @@ var TabContextMenu = {
     let contextAddNote = document.getElementById("context_addNote");
     let contextUpdateNote = document.getElementById("context_updateNote");
     if (gBrowser._tabNotesEnabled) {
+      
+      
+      let multiselectingDiverseUrls =
+        this.multiselected &&
+        !this.contextTabs.every(
+          t => t.canonicalUrl === this.contextTabs[0].canonicalUrl
+        );
+
       contextAddNote.disabled =
-        this.multiselected || !this.TabNotes.isEligible(this.contextTab);
-      contextUpdateNote.disabled = this.multiselected;
+        multiselectingDiverseUrls || !this.TabNotes.isEligible(this.contextTab);
+      contextUpdateNote.disabled = multiselectingDiverseUrls;
 
       this.TabNotes.has(this.contextTab).then(hasNote => {
         contextAddNote.hidden = hasNote;
