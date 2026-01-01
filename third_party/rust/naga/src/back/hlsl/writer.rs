@@ -441,7 +441,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                             _ => false,
                         })
                 {
-                    log::info!(
+                    log::debug!(
                         "Skipping function {:?} (name {:?}) because global {:?} is inaccessible",
                         handle,
                         function.name,
@@ -945,7 +945,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         if let Some(ref binding) = global.binding {
             if let Err(err) = self.options.resolve_resource_binding(binding) {
-                log::info!(
+                log::debug!(
                     "Skipping global {:?} (name {:?}) for being inaccessible: {}",
                     handle,
                     global.name,
@@ -1003,7 +1003,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 self.write_type(module, global.ty)?;
                 register
             }
-            crate::AddressSpace::PushConstant => {
+            crate::AddressSpace::Immediate => {
                 
                 write!(self.out, "ConstantBuffer<")?;
                 "b"
@@ -1012,7 +1012,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         
         
-        if global.space == crate::AddressSpace::PushConstant {
+        if global.space == crate::AddressSpace::Immediate {
             self.write_global_type(module, global.ty)?;
 
             
@@ -1029,7 +1029,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
         
         
-        if global.space == crate::AddressSpace::PushConstant {
+        if global.space == crate::AddressSpace::Immediate {
             match module.types[global.ty].inner {
                 TypeInner::Struct { .. } => {}
                 _ => {
@@ -1041,9 +1041,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
 
             let target = self
                 .options
-                .push_constants_target
+                .immediates_target
                 .as_ref()
-                .expect("No bind target was defined for the push constants block");
+                .expect("No bind target was defined for the immediates block");
             write!(self.out, ": register(b{}", target.register)?;
             if target.space != 0 {
                 write!(self.out, ", space{}", target.space)?;
@@ -1187,7 +1187,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         {
             Ok(bindings) => bindings,
             Err(err) => {
-                log::info!(
+                log::debug!(
                     "Skipping global {:?} (name {:?}) for being inaccessible: {}",
                     handle,
                     global.name,
@@ -3085,7 +3085,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                                 crate::AddressSpace::Function
                                 | crate::AddressSpace::Private
                                 | crate::AddressSpace::WorkGroup
-                                | crate::AddressSpace::PushConstant
+                                | crate::AddressSpace::Immediate
                                 | crate::AddressSpace::TaskPayload,
                             )
                             | None => true,

@@ -282,6 +282,21 @@ fn create_global_window_class() -> Result<CString, crate::InstanceError> {
     let name = CString::from_vec_with_nul(name.into_bytes()).unwrap();
 
     
+    
+    let already_exists = unsafe {
+        let mut wc = mem::zeroed::<WindowsAndMessaging::WNDCLASSEXA>();
+        WindowsAndMessaging::GetClassInfoExA(
+            Some(instance.into()),
+            PCSTR(name.as_ptr().cast()),
+            &mut wc,
+        )
+        .is_ok()
+    };
+    if already_exists {
+        return Ok(name);
+    }
+
+    
     unsafe extern "system" fn wnd_proc(
         window: Foundation::HWND,
         msg: u32,

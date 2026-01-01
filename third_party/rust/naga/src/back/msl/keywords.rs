@@ -1,12 +1,13 @@
-use crate::proc::KeywordSet;
+use crate::proc::{concrete_int_scalars, vector_size_str, vector_sizes, KeywordSet};
 use crate::racy_lock::RacyLock;
+use alloc::{format, string::String, vec::Vec};
 
 
 
 
 
 
-pub const RESERVED: &[&str] = &[
+const RESERVED: &[&str] = &[
     
     "assert", 
     
@@ -346,6 +347,7 @@ pub const RESERVED: &[&str] = &[
     super::writer::MODF_FUNCTION,
     super::writer::ABS_FUNCTION,
     super::writer::DIV_FUNCTION,
+    
     super::writer::MOD_FUNCTION,
     super::writer::NEG_FUNCTION,
     super::writer::F2I32_FUNCTION,
@@ -362,5 +364,28 @@ pub const RESERVED: &[&str] = &[
 
 
 
+static DOT_FUNCTION_NAMES: RacyLock<Vec<String>> = RacyLock::new(|| {
+    let mut names = Vec::new();
+    for scalar in concrete_int_scalars().map(crate::Scalar::to_msl_name) {
+        for size_suffix in vector_sizes().map(vector_size_str) {
+            let fun_name = format!(
+                "{}_{}{}",
+                super::writer::DOT_FUNCTION_PREFIX,
+                scalar,
+                size_suffix
+            );
+            names.push(fun_name);
+        }
+    }
+    names
+});
 
-pub static RESERVED_SET: RacyLock<KeywordSet> = RacyLock::new(|| KeywordSet::from_iter(RESERVED));
+
+
+
+
+pub static RESERVED_SET: RacyLock<KeywordSet> = RacyLock::new(|| {
+    let mut set = KeywordSet::from_iter(RESERVED);
+    set.extend(DOT_FUNCTION_NAMES.iter().map(String::as_str));
+    set
+});

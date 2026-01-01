@@ -18,9 +18,7 @@ use serde::Serialize;
 use wgt::error::{ErrorType, WebGpuError};
 
 use crate::{
-    device::{
-        bgl, Device, DeviceError, MissingDownlevelFlags, MissingFeatures, SHADER_STAGE_COUNT,
-    },
+    device::{bgl, Device, DeviceError, MissingDownlevelFlags, MissingFeatures},
     id::{BindGroupLayoutId, BufferId, ExternalTextureId, SamplerId, TextureViewId, TlasId},
     init_tracker::{BufferInitTrackerAction, TextureInitTrackerAction},
     pipeline::{ComputePipeline, RenderPipeline},
@@ -168,7 +166,7 @@ pub enum CreateBindGroupError {
     #[error("Binding declared as a single item, but bind group is using it as an array")]
     SingleBindingExpected,
     #[error("Effective buffer binding size {size} for storage buffers is expected to align to {alignment}, but size is {size}")]
-    UnalignedEffectiveBufferBindingSizeForStorage { alignment: u8, size: u64 },
+    UnalignedEffectiveBufferBindingSizeForStorage { alignment: u32, size: u64 },
     #[error("Buffer offset {0} does not respect device's requested `{1}` limit {2}")]
     UnalignedBufferOffset(wgt::BufferAddress, &'static str, u32),
     #[error(
@@ -777,24 +775,16 @@ pub enum CreatePipelineLayoutError {
     #[error(transparent)]
     Device(#[from] DeviceError),
     #[error(
-        "Push constant at index {index} has range bound {bound} not aligned to {}",
-        wgt::PUSH_CONSTANT_ALIGNMENT
+        "Immediate data has range bound {size} which is not aligned to IMMEDIATE_DATA_ALIGNMENT ({})",
+        wgt::IMMEDIATE_DATA_ALIGNMENT
     )]
-    MisalignedPushConstantRange { index: usize, bound: u32 },
+    MisalignedImmediateSize { size: u32 },
     #[error(transparent)]
     MissingFeatures(#[from] MissingFeatures),
-    #[error("Push constant range (index {index}) provides for stage(s) {provided:?} but there exists another range that provides stage(s) {intersected:?}. Each stage may only be provided by one range")]
-    MoreThanOnePushConstantRangePerStage {
-        index: usize,
-        provided: wgt::ShaderStages,
-        intersected: wgt::ShaderStages,
-    },
-    #[error("Push constant at index {index} has range {}..{} which exceeds device push constant size limit 0..{max}", range.start, range.end)]
-    PushConstantRangeTooLarge {
-        index: usize,
-        range: Range<u32>,
-        max: u32,
-    },
+    #[error(
+        "Immediate data has size {size} which exceeds device immediate data size limit 0..{max}"
+    )]
+    ImmediateRangeTooLarge { size: u32, max: u32 },
     #[error(transparent)]
     TooManyBindings(BindingTypeMaxCountError),
     #[error("Bind group layout count {actual} exceeds device bind group limit {max}")]
@@ -810,9 +800,8 @@ impl WebGpuError for CreatePipelineLayoutError {
             Self::MissingFeatures(e) => e,
             Self::InvalidResource(e) => e,
             Self::TooManyBindings(e) => e,
-            Self::MisalignedPushConstantRange { .. }
-            | Self::MoreThanOnePushConstantRangePerStage { .. }
-            | Self::PushConstantRangeTooLarge { .. }
+            Self::MisalignedImmediateSize { .. }
+            | Self::ImmediateRangeTooLarge { .. }
             | Self::TooManyGroups { .. } => return ErrorType::Validation,
         };
         e.webgpu_error_type()
@@ -821,36 +810,21 @@ impl WebGpuError for CreatePipelineLayoutError {
 
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
-pub enum PushConstantUploadError {
-    #[error("Provided push constant with indices {offset}..{end_offset} overruns matching push constant range at index {idx}, with stage(s) {:?} and indices {:?}", range.stages, range.range)]
+pub enum ImmediateUploadError {
+    #[error("Provided immediate data written to offset {offset}..{end_offset} overruns the immediate data range with a size of {size}")]
     TooLarge {
         offset: u32,
         end_offset: u32,
-        idx: usize,
-        range: wgt::PushConstantRange,
+        size: u32,
     },
-    #[error("Provided push constant is for stage(s) {actual:?}, stage with a partial match found at index {idx} with stage(s) {matched:?}, however push constants must be complete matches")]
-    PartialRangeMatch {
-        actual: wgt::ShaderStages,
-        idx: usize,
-        matched: wgt::ShaderStages,
-    },
-    #[error("Provided push constant is for stage(s) {actual:?}, but intersects a push constant range (at index {idx}) with stage(s) {missing:?}. Push constants must provide the stages for all ranges they intersect")]
-    MissingStages {
-        actual: wgt::ShaderStages,
-        idx: usize,
-        missing: wgt::ShaderStages,
-    },
-    #[error("Provided push constant is for stage(s) {actual:?}, however the pipeline layout has no push constant range for the stage(s) {unmatched:?}")]
-    UnmatchedStages {
-        actual: wgt::ShaderStages,
-        unmatched: wgt::ShaderStages,
-    },
-    #[error("Provided push constant offset {0} does not respect `PUSH_CONSTANT_ALIGNMENT`")]
+    #[error(
+        "Provided immediate data offset {0} does not respect `IMMEDIATE_DATA_ALIGNMENT` ({ida})",
+        ida = wgt::IMMEDIATE_DATA_ALIGNMENT
+    )]
     Unaligned(u32),
 }
 
-impl WebGpuError for PushConstantUploadError {
+impl WebGpuError for ImmediateUploadError {
     fn webgpu_error_type(&self) -> ErrorType {
         ErrorType::Validation
     }
@@ -883,9 +857,7 @@ where
     
     
     
-    
-    
-    pub push_constant_ranges: Cow<'a, [wgt::PushConstantRange]>,
+    pub immediate_size: u32,
 }
 
 /// cbindgen:ignore
@@ -899,7 +871,7 @@ pub struct PipelineLayout {
     
     pub(crate) label: String,
     pub(crate) bind_group_layouts: ArrayVec<Arc<BindGroupLayout>, { hal::MAX_BIND_GROUPS }>,
-    pub(crate) push_constant_ranges: ArrayVec<wgt::PushConstantRange, { SHADER_STAGE_COUNT }>,
+    pub(crate) immediate_size: u32,
 }
 
 impl Drop for PipelineLayout {
@@ -926,78 +898,24 @@ impl PipelineLayout {
     }
 
     
-    pub(crate) fn validate_push_constant_ranges(
+    pub(crate) fn validate_immediates_ranges(
         &self,
-        stages: wgt::ShaderStages,
         offset: u32,
         end_offset: u32,
-    ) -> Result<(), PushConstantUploadError> {
+    ) -> Result<(), ImmediateUploadError> {
         
         
         
 
-        if offset % wgt::PUSH_CONSTANT_ALIGNMENT != 0 {
-            return Err(PushConstantUploadError::Unaligned(offset));
+        if offset % wgt::IMMEDIATE_DATA_ALIGNMENT != 0 {
+            return Err(ImmediateUploadError::Unaligned(offset));
         }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let mut used_stages = wgt::ShaderStages::NONE;
-        for (idx, range) in self.push_constant_ranges.iter().enumerate() {
-            
-            if stages.contains(range.stages) {
-                if !(range.range.start <= offset && end_offset <= range.range.end) {
-                    return Err(PushConstantUploadError::TooLarge {
-                        offset,
-                        end_offset,
-                        idx,
-                        range: range.clone(),
-                    });
-                }
-                used_stages |= range.stages;
-            } else if stages.intersects(range.stages) {
-                
-                
-                return Err(PushConstantUploadError::PartialRangeMatch {
-                    actual: stages,
-                    idx,
-                    matched: range.stages,
-                });
-            }
-
-            
-            if offset < range.range.end && range.range.start < end_offset {
-                
-                if !stages.contains(range.stages) {
-                    return Err(PushConstantUploadError::MissingStages {
-                        actual: stages,
-                        idx,
-                        missing: stages,
-                    });
-                }
-            }
-        }
-        if used_stages != stages {
-            return Err(PushConstantUploadError::UnmatchedStages {
-                actual: stages,
-                unmatched: stages - used_stages,
+        if end_offset > self.immediate_size {
+            return Err(ImmediateUploadError::TooLarge {
+                offset,
+                end_offset,
+                size: self.immediate_size,
             });
         }
         Ok(())
@@ -1015,7 +933,15 @@ crate::impl_storage_item!(PipelineLayout);
 pub struct BufferBinding<B = BufferId> {
     pub buffer: B,
     pub offset: wgt::BufferAddress,
-    pub size: Option<wgt::BufferSize>,
+
+    
+    
+    
+    
+    
+    
+    
+    pub size: Option<wgt::BufferAddress>,
 }
 
 pub type ResolvedBufferBinding = BufferBinding<Arc<Buffer>>;

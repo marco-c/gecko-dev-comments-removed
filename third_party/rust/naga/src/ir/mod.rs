@@ -370,7 +370,7 @@ pub enum AddressSpace {
     
     
     
-    PushConstant,
+    Immediate,
     
     TaskPayload,
 }
