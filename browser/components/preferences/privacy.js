@@ -269,10 +269,6 @@ Preferences.addAll([
   { id: "network.http.windows-sso.enabled", type: "bool" },
 
   
-  { id: "browser.urlbar.quickactions.showPrefs", type: "bool" },
-  { id: "browser.urlbar.suggest.quickactions", type: "bool" },
-
-  
   { id: "cookiebanners.ui.desktop.enabled", type: "bool" },
   { id: "cookiebanners.service.mode.privateBrowsing", type: "int" },
 
