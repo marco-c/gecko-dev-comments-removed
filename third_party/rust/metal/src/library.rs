@@ -578,6 +578,12 @@ impl LibraryRef {
     }
 
     
+    
+    
+    
+    
+    
+    
     pub fn get_function(
         &self,
         name: &str,

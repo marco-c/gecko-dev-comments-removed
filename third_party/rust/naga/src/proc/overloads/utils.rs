@@ -10,17 +10,6 @@ use crate::proc::TypeResolution;
 use alloc::vec::Vec;
 
 
-pub fn vector_sizes() -> impl Iterator<Item = ir::VectorSize> + Clone {
-    static SIZES: [ir::VectorSize; 3] = [
-        ir::VectorSize::Bi,
-        ir::VectorSize::Tri,
-        ir::VectorSize::Quad,
-    ];
-
-    SIZES.iter().cloned()
-}
-
-
 
 
 
@@ -38,20 +27,6 @@ pub fn float_scalars() -> impl Iterator<Item = ir::Scalar> + Clone {
 
 pub fn float_scalars_unimplemented_abstract() -> impl Iterator<Item = ir::Scalar> + Clone {
     [ir::Scalar::F32, ir::Scalar::F16, ir::Scalar::F64].into_iter()
-}
-
-
-
-
-
-pub fn concrete_int_scalars() -> impl Iterator<Item = ir::Scalar> {
-    [
-        ir::Scalar::I32,
-        ir::Scalar::U32,
-        ir::Scalar::I64,
-        ir::Scalar::U64,
-    ]
-    .into_iter()
 }
 
 

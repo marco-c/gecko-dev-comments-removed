@@ -18,7 +18,7 @@ pub enum ComputeCommand<R: ReferenceType> {
     SetPipeline(R::ComputePipeline),
 
     
-    SetPushConstant {
+    SetImmediate {
         
         
         offset: u32,

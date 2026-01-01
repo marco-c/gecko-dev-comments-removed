@@ -709,6 +709,27 @@ pub fn replay_render_pass(
     src_pass: &RecordedRenderPass,
     error_buf: &mut crate::error::OwnedErrorBuffer,
 ) {
+    
+    
+    
+    
+    
+    for attachment in &src_pass.color_attachments {
+        if let Some(attachment) = attachment {
+            assert!(!matches!(attachment.load_op, wgt::LoadOp::DontCare(_)));
+        }
+    }
+    if let Some(ref attachment) = src_pass.depth_stencil_attachment {
+        assert!(!matches!(
+            attachment.depth.load_op,
+            Some(wgt::LoadOp::DontCare(_))
+        ));
+        assert!(!matches!(
+            attachment.stencil.load_op,
+            Some(wgt::LoadOp::DontCare(_))
+        ));
+    }
+
     let (mut dst_pass, err) = global.command_encoder_begin_render_pass(
         id,
         &wgc::command::RenderPassDescriptor {

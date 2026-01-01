@@ -507,7 +507,7 @@ pub struct Options {
     
     
     
-    pub push_constants_target: Option<BindTarget>,
+    pub immediates_target: Option<BindTarget>,
 
     
     pub sampler_heap_target: SamplerHeapBindTargets,
@@ -554,7 +554,7 @@ impl Default for Options {
             special_constants_binding: None,
             sampler_heap_target: SamplerHeapBindTargets::default(),
             sampler_buffer_binding_map: alloc::collections::BTreeMap::default(),
-            push_constants_target: None,
+            immediates_target: None,
             dynamic_storage_buffer_offsets_targets: alloc::collections::BTreeMap::new(),
             external_texture_binding_map: ExternalTextureBindingMap::default(),
             zero_initialize_workgroup_memory: true,
