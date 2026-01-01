@@ -89,16 +89,19 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         {AV_CODEC_ID_VP8, gfx::gfxVars::UseVP8HwDecode()},
 #  endif
 
+#  if defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)
     
     
-#  if (defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)) || \
-      defined(MOZ_WIDGET_ANDROID)
 #    if LIBAVCODEC_VERSION_MAJOR >= 55
         {AV_CODEC_ID_HEVC, gfx::gfxVars::UseHEVCHwDecode()},
 #    endif
         {AV_CODEC_ID_H264, gfx::gfxVars::UseH264HwDecode()},
 #  endif
 #  ifdef MOZ_WIDGET_ANDROID
+        
+        
+        {AV_CODEC_ID_HEVC, true},
+        {AV_CODEC_ID_H264, true},
         {AV_CODEC_ID_AAC, true},
 #  endif
     };
@@ -261,7 +264,28 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       supports += media::DecodeSupport::SoftwareDecode;
     }
     if (IsHWDecodingSupported(codecId)) {
+#ifdef MOZ_WIDGET_ANDROID
+      
+      
+      
+      switch (codecId) {
+        case AV_CODEC_ID_H264:
+          supports += gfx::gfxVars::UseH264HwDecode()
+                          ? media::DecodeSupport::HardwareDecode
+                          : media::DecodeSupport::SoftwareDecode;
+          break;
+        case AV_CODEC_ID_HEVC:
+          supports += gfx::gfxVars::UseHEVCHwDecode()
+                          ? media::DecodeSupport::HardwareDecode
+                          : media::DecodeSupport::SoftwareDecode;
+          break;
+        default:
+          supports += media::DecodeSupport::HardwareDecode;
+          break;
+      }
+#else
       supports += media::DecodeSupport::HardwareDecode;
+#endif
     }
 
 #ifdef XP_WIN

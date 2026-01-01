@@ -30,9 +30,10 @@ namespace mozilla {
 
 template <int V>
  void FFmpegEncoderModule<V>::Init(FFmpegLibWrapper* aLib) {
-#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
-     defined(MOZ_WIDGET_ANDROID)) &&               \
-    defined(MOZ_USE_HWDECODE) && !defined(MOZ_FFVPX_AUDIOONLY)
+#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK) ||                \
+     defined(MOZ_WIDGET_ANDROID)) &&                              \
+    defined(MOZ_USE_HWDECODE) && !defined(MOZ_FFVPX_AUDIOONLY) && \
+    LIBAVCODEC_VERSION_MAJOR >= 58
 #  ifdef XP_WIN
   if (!XRE_IsGPUProcess())
 #  else
@@ -61,22 +62,22 @@ template <int V>
 #  if LIBAVCODEC_VERSION_MAJOR >= 59
       {AV_CODEC_ID_AV1, gfx::gfxVars::UseAV1HwEncode()},
 #  endif
-#  if LIBAVCODEC_VERSION_MAJOR >= 55
       {AV_CODEC_ID_VP9, gfx::gfxVars::UseVP9HwEncode()},
-#  endif
-#  if (defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)) && \
-      LIBAVCODEC_VERSION_MAJOR >= 54
+#  if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
       {AV_CODEC_ID_VP8, gfx::gfxVars::UseVP8HwEncode()},
 #  endif
 
-  
-  
-#  if (defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)) || \
-      defined(MOZ_WIDGET_ANDROID)
-#    if LIBAVCODEC_VERSION_MAJOR >= 55
+#  if defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)
+      
+      
       {AV_CODEC_ID_HEVC, gfx::gfxVars::UseHEVCHwEncode()},
-#    endif
       {AV_CODEC_ID_H264, gfx::gfxVars::UseH264HwEncode()},
+#  endif
+#  if defined(MOZ_WIDGET_ANDROID)
+      
+      
+      {AV_CODEC_ID_HEVC, true},
+      {AV_CODEC_ID_H264, true},
 #  endif
   };
 
@@ -144,6 +145,11 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
   if (id == AV_CODEC_ID_NONE) {
     return EncodeSupportSet{};
   }
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+  if (id == AV_CODEC_ID_HEVC && !StaticPrefs::media_hevc_enabled()) {
+    return EncodeSupportSet{};
+  }
+#endif
   EncodeSupportSet supports;
 #ifdef MOZ_USE_HWDECODE
   if (StaticPrefs::media_ffvpx_hw_enabled()) {
@@ -151,7 +157,28 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
     
     auto hwCodecs = sSupportedHWCodecs.Lock();
     if (hwCodecs->Contains(static_cast<uint32_t>(id))) {
+#  ifdef MOZ_WIDGET_ANDROID
+      
+      
+      
+      switch (id) {
+        case AV_CODEC_ID_H264:
+          supports += gfx::gfxVars::UseH264HwEncode()
+                          ? EncodeSupport::HardwareEncode
+                          : EncodeSupport::SoftwareEncode;
+          break;
+        case AV_CODEC_ID_HEVC:
+          supports += gfx::gfxVars::UseHEVCHwEncode()
+                          ? EncodeSupport::HardwareEncode
+                          : EncodeSupport::SoftwareEncode;
+          break;
+        default:
+          supports += EncodeSupport::HardwareEncode;
+          break;
+      }
+#  else
       supports += EncodeSupport::HardwareEncode;
+#  endif
     }
   }
 #endif
@@ -166,14 +193,14 @@ already_AddRefed<MediaDataEncoder> FFmpegEncoderModule<V>::CreateVideoEncoder(
     const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) const {
   AVCodecID codecId = GetFFmpegEncoderCodecId<V>(aConfig.mCodec);
   if (codecId == AV_CODEC_ID_NONE) {
-    FFMPEGV_LOG("No ffmpeg encoder for %s", GetCodecTypeString(aConfig.mCodec));
+    FFMPEGV_LOG("No ffmpeg encoder for %s", EnumValueToString(aConfig.mCodec));
     return nullptr;
   }
 
   RefPtr<MediaDataEncoder> encoder =
       new FFmpegVideoEncoder<V>(mLib, codecId, aTaskQueue, aConfig);
   FFMPEGV_LOG("ffmpeg %s encoder: %s has been created",
-              GetCodecTypeString(aConfig.mCodec),
+              EnumValueToString(aConfig.mCodec),
               encoder->GetDescriptionName().get());
   return encoder.forget();
 }
@@ -183,14 +210,14 @@ already_AddRefed<MediaDataEncoder> FFmpegEncoderModule<V>::CreateAudioEncoder(
     const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) const {
   AVCodecID codecId = GetFFmpegEncoderCodecId<V>(aConfig.mCodec);
   if (codecId == AV_CODEC_ID_NONE) {
-    FFMPEGV_LOG("No ffmpeg encoder for %s", GetCodecTypeString(aConfig.mCodec));
+    FFMPEGV_LOG("No ffmpeg encoder for %s", EnumValueToString(aConfig.mCodec));
     return nullptr;
   }
 
   RefPtr<MediaDataEncoder> encoder =
       new FFmpegAudioEncoder<V>(mLib, codecId, aTaskQueue, aConfig);
   FFMPEGA_LOG("ffmpeg %s encoder: %s has been created",
-              GetCodecTypeString(aConfig.mCodec),
+              EnumValueToString(aConfig.mCodec),
               encoder->GetDescriptionName().get());
   return encoder.forget();
 }
