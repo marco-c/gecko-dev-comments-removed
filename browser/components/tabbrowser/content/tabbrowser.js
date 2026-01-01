@@ -6026,6 +6026,10 @@
         aOtherTab.dispatchEvent(event);
       }
 
+      
+      aOurTab.hasTabNote = aOtherTab.hasTabNote;
+      aOurTab.canonicalUrl = aOtherTab.canonicalUrl;
+
       if (otherBrowser.isDistinctProductPageVisit) {
         ourBrowser.isDistinctProductPageVisit = true;
       }
