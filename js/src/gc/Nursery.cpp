@@ -80,7 +80,7 @@ struct NurseryChunk : public ChunkBase {
 
   
   
-  [[nodiscard]] bool markPagesInUseHard(size_t endOffset);
+  [[nodiscard]] bool markPagesInUseHard(size_t startOffset, size_t endOffset);
 
   uintptr_t start() const { return uintptr_t(&data); }
   uintptr_t end() const { return uintptr_t(this) + ChunkSize; }
@@ -178,12 +178,14 @@ inline void js::NurseryChunk::markPagesUnusedHard(size_t startOffset) {
   MarkPagesUnusedHard(reinterpret_cast<void*>(start), length);
 }
 
-inline bool js::NurseryChunk::markPagesInUseHard(size_t endOffset) {
-  MOZ_ASSERT(endOffset >= NurseryChunkHeaderSize);
-  MOZ_ASSERT(endOffset >= SystemPageSize());
+inline bool js::NurseryChunk::markPagesInUseHard(size_t startOffset,
+                                                 size_t endOffset) {
+  MOZ_ASSERT(startOffset >= NurseryChunkHeaderSize);
+  MOZ_ASSERT(startOffset >= SystemPageSize());
+  MOZ_ASSERT(startOffset < endOffset);
   MOZ_ASSERT(endOffset <= ChunkSize);
-  uintptr_t start = uintptr_t(this) + SystemPageSize();
-  size_t length = endOffset - SystemPageSize();
+  uintptr_t start = uintptr_t(this) + startOffset;
+  size_t length = endOffset - startOffset;
   return MarkPagesInUseHard(reinterpret_cast<void*>(start), length);
 }
 
@@ -651,14 +653,9 @@ void js::Nursery::enterZealMode() {
   AutoEnterOOMUnsafeRegion oomUnsafe;
 
   if (isSubChunkMode()) {
-    {
-      if (!chunk(0).markPagesInUseHard(ChunkSize)) {
-        oomUnsafe.crash("Out of memory trying to extend chunk for zeal mode");
-      }
+    if (!chunk(0).markPagesInUseHard(capacity_, ChunkSize)) {
+      oomUnsafe.crash("Out of memory trying to extend chunk for zeal mode");
     }
-
-    
-    
     chunk(0).poisonRange(capacity_, ChunkSize, JS_FRESH_NURSERY_PATTERN,
                          MemCheckKind::MakeUndefined);
   }
@@ -2408,7 +2405,7 @@ bool js::Nursery::Space::commitSubChunkRegion(size_t oldCapacity,
   size_t newChunkEnd = std::min(newCapacity, ChunkSize);
 
   
-  if (!chunks_[0]->markPagesInUseHard(newChunkEnd)) {
+  if (!chunks_[0]->markPagesInUseHard(oldCapacity, newChunkEnd)) {
     
     return false;
   }
@@ -2434,7 +2431,7 @@ void js::Nursery::freeChunksFrom(Space& space, const unsigned firstFreeChunk) {
     
     
     MOZ_ASSERT(space.currentChunk_ == 0);
-    if (!space.chunks_[0]->markPagesInUseHard(ChunkSize)) {
+    if (!space.chunks_[0]->markPagesInUseHard(capacity_, ChunkSize)) {
       
       UnmapPages(space.chunks_[0], ChunkSize);
       firstChunkToDecommit = 1;
