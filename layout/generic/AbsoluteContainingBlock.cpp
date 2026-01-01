@@ -1176,8 +1176,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   AutoNoisyIndenter indent(nsBlockFrame::gNoisy);
 #endif  
 
+  const WritingMode outerWM = aReflowInput.GetWritingMode();
+  const WritingMode wm = aKidFrame->GetWritingMode();
+
   const bool isGrid = aFlags.contains(AbsPosReflowFlag::IsGridContainerCB);
-  
   auto fallbacks =
       aKidFrame->StylePosition()->mPositionTryFallbacks._0.AsSpan();
   Maybe<uint32_t> currentFallbackIndex;
@@ -1185,6 +1187,31 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   RefPtr<ComputedStyle> currentFallbackStyle;
   RefPtr<ComputedStyle> firstTryStyle;
   Maybe<uint32_t> firstTryIndex;
+  
+  
+  
+  
+  Maybe<uint32_t> bestIndex;
+  nscoord bestSize = -1;
+  
+  
+  bool finalizing = false;
+
+  auto tryOrder = aKidFrame->StylePosition()->mPositionTryOrder;
+  
+  
+  switch (tryOrder) {
+    case StylePositionTryOrder::MostInlineSize:
+      tryOrder = outerWM.IsVertical() ? StylePositionTryOrder::MostHeight
+                                      : StylePositionTryOrder::MostWidth;
+      break;
+    case StylePositionTryOrder::MostBlockSize:
+      tryOrder = outerWM.IsVertical() ? StylePositionTryOrder::MostWidth
+                                      : StylePositionTryOrder::MostHeight;
+      break;
+    default:
+      break;
+  }
 
   
   
@@ -1355,8 +1382,6 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       aAnchorPosResolutionCache->mReferenceData->mAdjustedContainingBlock =
           cb.mFinalRect;
     }
-    const WritingMode outerWM = aReflowInput.GetWritingMode();
-    const WritingMode wm = aKidFrame->GetWritingMode();
     const LogicalSize cbSize(outerWM, cb.mFinalRect.Size());
 
     ReflowInput::InitFlags initFlags;
@@ -1658,7 +1683,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     
     const auto fits = aStatus.IsComplete() && FitsInContainingBlock();
-    if (fallbacks.IsEmpty() || fits) {
+    if (fallbacks.IsEmpty() || finalizing ||
+        (fits && (tryOrder == StylePositionTryOrder::Normal ||
+                  currentFallbackIndex == firstTryIndex))) {
       
       
       isOverflowingCB = !fits;
@@ -1669,9 +1696,36 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       break;
     }
 
+    if (fits) {
+      auto imcbSize = cb.mFinalRect.Size();
+      imcbSize -= nsSize{insets.LeftRight(), insets.TopBottom()};
+      switch (tryOrder) {
+        case StylePositionTryOrder::MostWidth:
+          if (imcbSize.Width() > bestSize) {
+            bestSize = imcbSize.Width();
+            bestIndex = currentFallbackIndex;
+          }
+          break;
+        case StylePositionTryOrder::MostHeight:
+          if (imcbSize.Height() > bestSize) {
+            bestSize = imcbSize.Height();
+            bestIndex = currentFallbackIndex;
+          }
+          break;
+        default:
+          MOZ_ASSERT_UNREACHABLE("unexpected try-order value");
+          break;
+      }
+    }
+
     if (!TryAdvanceFallback()) {
       
-      break;
+      if (bestSize >= 0) {
+        finalizing = true;
+        SeekFallbackTo(bestIndex);
+      } else {
+        break;
+      }
     }
 
     
