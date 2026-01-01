@@ -479,11 +479,10 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
     bool HasInvisibleParentAndShouldBeSkipped(nsINode& aNode) const;
 
     nsresult SerializeNodePartiallyContainedInRange(
-        nsINode& aNode, nsIContent& aContent,
-        const StartAndEndContent& aStartAndEndContent, const nsRange& aRange,
-        int32_t aDepth);
+        nsIContent& aContent, const StartAndEndContent& aStartAndEndContent,
+        const nsRange& aRange, int32_t aDepth);
 
-    nsresult SerializeTextNode(nsINode& aNode, const nsIContent& aContent,
+    nsresult SerializeTextNode(nsIContent& aContent,
                                const StartAndEndContent& aStartAndEndContent,
                                const nsRange& aRange) const;
 
@@ -1095,8 +1094,7 @@ nsDocumentEncoder::RangeSerializer::GetStartAndEndContentForRecursionLevel(
 }
 
 nsresult nsDocumentEncoder::RangeSerializer::SerializeTextNode(
-    nsINode& aNode, const nsIContent& aContent,
-    const StartAndEndContent& aStartAndEndContent,
+    nsIContent& aContent, const StartAndEndContent& aStartAndEndContent,
     const nsRange& aRange) const {
   const int32_t startOffset = (aStartAndEndContent.mStart == &aContent)
                                   ? ShadowDOMSelectionHelpers::StartOffset(
@@ -1106,7 +1104,7 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeTextNode(
                                 ? ShadowDOMSelectionHelpers::EndOffset(
                                       &aRange, mAllowCrossShadowBoundary)
                                 : -1;
-  return mNodeSerializer.SerializeTextNode(aNode, startOffset, endOffset);
+  return mNodeSerializer.SerializeTextNode(aContent, startOffset, endOffset);
 }
 
 nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeNodes(
@@ -1134,8 +1132,8 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeNodes(
         aNode, NodeSerializer::SerializeRoot::eYes);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
-    rv = SerializeNodePartiallyContainedInRange(
-        *aNode, *content, startAndEndContent, *aRange, aDepth);
+    rv = SerializeNodePartiallyContainedInRange(*content, startAndEndContent,
+                                                *aRange, aDepth);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1145,19 +1143,18 @@ nsresult nsDocumentEncoder::RangeSerializer::SerializeRangeNodes(
 
 nsresult
 nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
-    nsINode& aNode, nsIContent& aContent,
-    const StartAndEndContent& aStartAndEndContent, const nsRange& aRange,
-    const int32_t aDepth) {
+    nsIContent& aContent, const StartAndEndContent& aStartAndEndContent,
+    const nsRange& aRange, const int32_t aDepth) {
   
   
   
-  if (IsTextNode(&aNode)) {
-    nsresult rv =
-        SerializeTextNode(aNode, aContent, aStartAndEndContent, aRange);
+  if (IsTextNode(&aContent)) {
+    nsresult rv = SerializeTextNode(aContent, aStartAndEndContent, aRange);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
-    if (&aNode != mClosestCommonInclusiveAncestorOfRange) {
-      if (mRangeContextSerializer.mRangeNodeContext.IncludeInContext(aNode)) {
+    if (&aContent != mClosestCommonInclusiveAncestorOfRange) {
+      if (mRangeContextSerializer.mRangeNodeContext.IncludeInContext(
+              aContent)) {
         
         
         mHaltRangeHint = true;
@@ -1170,7 +1167,7 @@ nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
       }
 
       
-      nsresult rv = mNodeSerializer.SerializeNodeStart(aNode, 0, -1);
+      nsresult rv = mNodeSerializer.SerializeNodeStart(aContent, 0, -1);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -1214,7 +1211,7 @@ nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
       
       const nsINode* endContainer = ShadowDOMSelectionHelpers::GetEndContainer(
           &aRange, mAllowCrossShadowBoundary);
-      if (&aNode != endContainer) {
+      if (&aContent != endContainer) {
         MOZ_ASSERT(*endOffset != UINT32_MAX);
         endOffset.ref()++;
       }
@@ -1226,8 +1223,8 @@ nsDocumentEncoder::RangeSerializer::SerializeNodePartiallyContainedInRange(
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    if (&aNode != mClosestCommonInclusiveAncestorOfRange) {
-      nsresult rv = mNodeSerializer.SerializeNodeEnd(aNode);
+    if (&aContent != mClosestCommonInclusiveAncestorOfRange) {
+      nsresult rv = mNodeSerializer.SerializeNodeEnd(aContent);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
