@@ -942,6 +942,12 @@ child:
 
 
 
+    async TransparencyChanged(bool transparent);
+
+    
+
+
+
     async SafeAreaInsetsChanged(LayoutDeviceIntMargin aSafeAreaInsets);
 
     
