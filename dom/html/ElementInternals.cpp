@@ -149,7 +149,7 @@ void ElementInternals::SetFormValue(
 }
 
 
-HTMLFormElement* ElementInternals::GetForm(ErrorResult& aRv) const {
+Element* ElementInternals::GetFormForBindings(ErrorResult& aRv) const {
   MOZ_ASSERT(mTarget);
 
   if (!mTarget->IsFormAssociatedElement()) {
@@ -157,7 +157,8 @@ HTMLFormElement* ElementInternals::GetForm(ErrorResult& aRv) const {
         "Target element is not a form-associated custom element");
     return nullptr;
   }
-  return GetForm();
+
+  return GetFormForBindings();
 }
 
 
@@ -361,6 +362,10 @@ CustomStateSet* ElementInternals::States() {
   }
   return mCustomStateSet;
 }
+
+Element* ElementInternals::GetFormForBindings() const {
+  return GetFormInternal();
+};
 
 void ElementInternals::SetForm(HTMLFormElement* aForm) { mForm = aForm; }
 

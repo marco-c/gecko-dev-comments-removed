@@ -1388,6 +1388,46 @@ class Element : public FragmentOrElement {
       nsAtom* aAttr, bool* aUseCachedValue,
       Nullable<nsTArray<RefPtr<Element>>>& aElements);
 
+  typedef bool (*AttrTargetObserver)(Element* aOldElement, Element* aNewElement,
+                                     Element* thisElement);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Element* AddAttrAssociatedElementObserver(nsAtom* aAttr,
+                                            AttrTargetObserver aObserver);
+  void RemoveAttrAssociatedElementObserver(nsAtom* aAttr,
+                                           AttrTargetObserver aObserver);
+  bool AttrAssociatedElementUpdated(nsAtom* aAttr);
+
+ protected:
+  void IDREFAttributeValueChanged(nsAtom* aAttr, const nsAttrValue* aValue);
+
+ private:
+  FragmentOrElement::nsExtendedDOMSlots::AttrElementObserverData*
+  GetAttrElementObserverData(nsAtom* aAttr);
+  void DeleteAttrAssociatedElementObserverData(nsAtom* aAttr);
+  void AddDocOrShadowObserversForAttrAssociatedElement(
+      DocumentOrShadowRoot& aContainingDocOrShadow, nsAtom* aAttr);
+  void RemoveDocOrShadowObserversForAttrAssociatedElement(
+      DocumentOrShadowRoot& aContainingDocOrShadow, nsAtom* aAttr);
+  void BindAttrAssociatedElementObservers(
+      DocumentOrShadowRoot& aContainingDocOrShadow);
+  void UnbindAttrAssociatedElementObservers(
+      DocumentOrShadowRoot& aContainingDocOrShadow);
+
+ public:
   
 
 
@@ -1561,6 +1601,7 @@ class Element : public FragmentOrElement {
   }
 
   Element* ResolveReferenceTarget() const;
+  Element* RetargetReferenceTargetForBindings(Element* aElement) const;
 
   const Maybe<float> GetLastRememberedBSize() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();

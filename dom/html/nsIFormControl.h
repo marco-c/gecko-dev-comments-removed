@@ -114,7 +114,13 @@ class nsIFormControl : public nsISupports {
 
 
 
-  virtual mozilla::dom::HTMLFormElement* GetForm() const = 0;
+  virtual mozilla::dom::Element* GetFormForBindings() const = 0;
+
+  
+
+
+
+  virtual mozilla::dom::HTMLFormElement* GetFormInternal() const = 0;
 
   
 
@@ -285,7 +291,7 @@ bool nsIFormControl::IsConceptButton() const {
 }
 
 bool nsIFormControl::IsButtonControl() const {
-  return IsConceptButton() && (!GetForm() || !IsSubmitControl());
+  return IsConceptButton() && (!GetFormInternal() || !IsSubmitControl());
 }
 
 bool nsIFormControl::AllowDraggableChildren() const {

@@ -1937,7 +1937,7 @@ MOZ_CAN_RUN_SCRIPT static void GetActionHint(const IMEState& aState,
   
   bool willSubmit = false;
   bool isLastElement = false;
-  HTMLFormElement* formElement = inputElement->GetForm();
+  HTMLFormElement* formElement = inputElement->GetFormInternal();
   
   if (formElement) {
     if (formElement->IsLastActiveElement(inputElement)) {

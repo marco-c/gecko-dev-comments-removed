@@ -31,7 +31,8 @@ class HTMLLabelElement final : public nsGenericHTMLElement {
   
   virtual bool IsInteractiveHTMLContent() const override { return true; }
 
-  HTMLFormElement* GetForm() const;
+  Element* GetFormForBindings() const;
+  HTMLFormElement* GetFormInternal() const;
   void GetHtmlFor(nsString& aHtmlFor) {
     GetHTMLAttr(nsGkAtoms::_for, aHtmlFor);
   }
