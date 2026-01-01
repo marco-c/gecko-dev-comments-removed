@@ -1892,4 +1892,19 @@ var browserTests = [
     "<span style=\"display:block\">abc</span><div><span style=\"display:block\">def</span></div><span style=\"display:block\">ghi</span>",
     [true],
     {"formatblock":[false,false,"",false,false,"div"]}],
+
+
+
+
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["formatblock","p"]],
+    ['<p> <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> </p>',
+     
+     ' <p><span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></p> ',
+     '<p><span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></p>'],
+    [true],
+    {}],
 ]
