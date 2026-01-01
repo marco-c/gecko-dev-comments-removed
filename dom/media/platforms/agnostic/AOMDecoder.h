@@ -40,6 +40,9 @@ class AOMDecoder final : public MediaDataDecoder,
   static bool IsAV1(const nsACString& aMimeType);
 
   
+  static bool IsMainProfile(const MediaByteBuffer* aBox);
+
+  
   static bool IsKeyframe(Span<const uint8_t> aBuffer);
 
   
