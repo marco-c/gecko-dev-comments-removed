@@ -62,7 +62,7 @@ struct NumType
   typedef Type type;
   
 
-  typedef typename std::conditional<std::is_integral<Type>::value,
+  typedef typename std::conditional<std::is_integral<Type>::value && sizeof (Type) <= sizeof(int),
 				     typename std::conditional<std::is_signed<Type>::value, signed, unsigned>::type,
 				     Type>::type WideType;
 
@@ -118,6 +118,8 @@ typedef NumType<true, uint16_t> HBUINT16;
 typedef NumType<true, int16_t>  HBINT16;	
 typedef NumType<true, uint32_t> HBUINT32;	
 typedef NumType<true, int32_t>  HBINT32;	
+typedef NumType<true, uint64_t> HBUINT64;	
+typedef NumType<true, int64_t>  HBINT64;	
 
 
 typedef NumType<true, uint32_t, 3> HBUINT24;	
@@ -126,6 +128,8 @@ typedef NumType<false, uint16_t> HBUINT16LE;
 typedef NumType<false, int16_t>  HBINT16LE;	
 typedef NumType<false, uint32_t> HBUINT32LE;	
 typedef NumType<false, int32_t>  HBINT32LE;	
+typedef NumType<false, uint64_t> HBUINT64LE;	
+typedef NumType<false, int64_t>  HBINT64LE;	
 
 typedef NumType<true,  float>  HBFLOAT32BE;	
 typedef NumType<true,  double> HBFLOAT64BE;	
@@ -522,16 +526,9 @@ struct OffsetTo : Offset<OffsetType, has_null>
     return_trace (sanitize_shallow (c, base) &&
 		  hb_barrier () &&
 		  (this->is_null () ||
-		   c->dispatch (StructAtOffset<Type> (base, *this), std::forward<Ts> (ds)...) ||
-		   neuter (c)));
+		   c->dispatch (StructAtOffset<Type> (base, *this), std::forward<Ts> (ds)...)));
   }
 
-  
-  bool neuter (hb_sanitize_context_t *c) const
-  {
-    if (!has_null) return false;
-    return c->try_set (this, 0);
-  }
   DEFINE_SIZE_STATIC (sizeof (OffsetType));
 };
 
@@ -1718,6 +1715,9 @@ struct TupleValues
   }
 
   template <typename T>
+#ifndef HB_OPTIMIZE_SIZE
+  HB_ALWAYS_INLINE
+#endif
   static bool decompile (const HBUINT8 *&p ,
 			 hb_vector_t<T> &values ,
 			 const HBUINT8 *end,
@@ -1746,8 +1746,8 @@ struct TupleValues
 
       if ((control & VALUES_SIZE_MASK) == VALUES_ARE_ZEROS)
       {
-        for (; i < stop; i++)
-          values.arrayZ[i] = 0;
+	hb_memset (&values.arrayZ[i], 0, (stop - i) * sizeof (T));
+	i = stop;
       }
       else if ((control & VALUES_SIZE_MASK) ==  VALUES_ARE_WORDS)
       {
@@ -1806,7 +1806,7 @@ struct TupleValues
   {
     iter_t (const unsigned char *p_, unsigned len_)
 	    : p (p_), endp (p_ + len_)
-    { if (ensure_run ()) read_value (); }
+    { if (likely (ensure_run ())) read_value (); }
 
     private:
     const unsigned char *p;
@@ -1815,10 +1815,14 @@ struct TupleValues
     signed run_count = 0;
     unsigned width = 0;
 
+    HB_ALWAYS_INLINE
     bool ensure_run ()
     {
       if (likely (run_count > 0)) return true;
-
+      return _ensure_run ();
+    }
+    bool _ensure_run ()
+    {
       if (unlikely (p >= endp))
       {
         run_count = 0;
@@ -1908,10 +1912,15 @@ struct TupleValues
     signed run_count = 0;
     unsigned width = 0;
 
+    HB_ALWAYS_INLINE
     bool ensure_run ()
     {
-      if (run_count > 0) return true;
+      if (likely (run_count > 0)) return true;
+      return _ensure_run ();
+    }
 
+    bool _ensure_run ()
+    {
       if (unlikely (p >= end))
       {
         run_count = 0;
@@ -2035,7 +2044,10 @@ struct TupleValues
       }
 
 #ifndef HB_OPTIMIZE_SIZE
-      if (scale == 1.0f)
+      
+      
+      
+      if (false && scale == 1.0f)
         _add_to<false> (out);
       else
 #endif

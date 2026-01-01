@@ -38,10 +38,10 @@ IGNORED_SYMBOLS = [
 
 IGNORED_SYMBOLS += [
     "rust_eh_personality",
-    "_ZN3std9panicking11EMPTY_PANIC.*",  
-    "_ZN3std3sys3pal4unix4args3imp15ARGV_INIT_ARRAY.*",  
-    "_ZN3std3sys4args4unix3imp15ARGV_INIT_ARRAY.*",  
-    "_ZN17compiler_builtins.*",  
+    "_.*3std9panicking11EMPTY_PANIC.*",  
+    "_.*3std3sys3pal4unix4args3imp15ARGV_INIT_ARRAY.*",  
+    "_.*3std3sys4args4unix3imp15ARGV_INIT_ARRAY.*",  
+    "_.*17compiler_builtins.*",  
     ".*__rustc.*",  
     '_hb_harfrust_.*_rs',
 ]
