@@ -167,6 +167,12 @@ def assert_all_task_statuses(objdir, acceptable_statuses, always_executed_tasks=
             
             
             ":geckoview:generateDebugAssets",
+            
+            
+            
+            
+            ":fenix:generateSafeArgsDebug",
+            ":fenix:suppressUselessCastInSafeArgs",
         ]
 
     build_metrics = get_test_run_build_metrics(objdir)
