@@ -2791,16 +2791,6 @@ class nsDisplayItem {
 
 
 
-
-
-
-  virtual bool ShouldUseBlobRenderingForFallback() const { return true; }
-
-  
-
-
-
-
   virtual RetainedDisplayList* GetSameCoordinateSystemChildren() const {
     return nullptr;
   }
@@ -4515,10 +4505,6 @@ class nsDisplayThemedBackground : public nsPaintedDisplayItem {
       layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
 
-  bool ShouldUseBlobRenderingForFallback() const override {
-    return !XRE_IsParentProcess();
-  }
-
   
 
 
@@ -4844,12 +4830,6 @@ class nsDisplayOutline final : public nsPaintedDisplayItem {
   MOZ_COUNTED_DTOR_FINAL(nsDisplayOutline)
 
   NS_DISPLAY_DECL_NAME("Outline", TYPE_OUTLINE)
-
-  bool ShouldUseBlobRenderingForFallback() const override {
-    MOZ_ASSERT(IsThemedOutline(),
-               "The only fallback path we have is for themed outlines");
-    return !XRE_IsParentProcess();
-  }
 
   bool CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
