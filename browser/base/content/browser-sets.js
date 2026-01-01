@@ -230,10 +230,6 @@ document.addEventListener(
           case "Tools:AIWindow":
             OpenBrowserWindow({ aiWindow: true });
             break;
-          case "Tools:ChatsHistory":
-            
-            
-            break;
           case "Tools:Sanitize":
             Sanitizer.showUI(window);
             break;
