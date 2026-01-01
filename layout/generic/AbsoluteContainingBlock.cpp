@@ -1183,15 +1183,27 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   Maybe<uint32_t> currentFallbackIndex;
   const StylePositionTryFallbacksItem* currentFallback = nullptr;
   RefPtr<ComputedStyle> currentFallbackStyle;
+  RefPtr<ComputedStyle> firstTryStyle;
+  Maybe<uint32_t> firstTryIndex;
 
-  auto SeekFallbackTo = [&](uint32_t aIndex) -> bool {
-    if (aIndex >= fallbacks.Length()) {
+  
+  
+  auto SeekFallbackTo = [&](Maybe<uint32_t> aIndex) -> bool {
+    if (!aIndex) {
+      currentFallbackIndex = Nothing();
+      currentFallback = nullptr;
+      currentFallbackStyle = nullptr;
+      return true;
+    }
+    uint32_t index = *aIndex;
+    if (index >= fallbacks.Length()) {
       return false;
     }
+
     const StylePositionTryFallbacksItem* nextFallback;
     RefPtr<ComputedStyle> nextFallbackStyle;
     while (true) {
-      nextFallback = &fallbacks[aIndex];
+      nextFallback = &fallbacks[index];
       nextFallbackStyle = aPresContext->StyleSet()->ResolvePositionTry(
           *aKidFrame->GetContent()->AsElement(), *aKidFrame->Style(),
           *nextFallback);
@@ -1200,35 +1212,47 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       }
       
       
-      aIndex++;
-      if (aIndex >= fallbacks.Length()) {
+      index++;
+      if (index >= fallbacks.Length()) {
         return false;
       }
     }
-    currentFallbackIndex = Some(aIndex);
+    currentFallbackIndex = Some(index);
     currentFallback = nextFallback;
     currentFallbackStyle = std::move(nextFallbackStyle);
     return true;
   };
 
+  
+  
+  
+  
+  
   auto TryAdvanceFallback = [&]() -> bool {
     if (fallbacks.IsEmpty()) {
       return false;
     }
+    if (firstTryIndex && currentFallbackIndex == firstTryIndex) {
+      return SeekFallbackTo(Nothing());
+    }
     uint32_t nextFallbackIndex =
         currentFallbackIndex ? *currentFallbackIndex + 1 : 0;
-    return SeekFallbackTo(nextFallbackIndex);
+    if (firstTryIndex && nextFallbackIndex == *firstTryIndex) {
+      ++nextFallbackIndex;
+    }
+    return SeekFallbackTo(Some(nextFallbackIndex));
   };
 
-  Maybe<uint32_t> firstTryIndex;
   Maybe<nsPoint> firstTryNormalPosition;
-  const auto* lastSuccessfulPosition =
-      aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
-  if (lastSuccessfulPosition) {
-    if (!SeekFallbackTo(lastSuccessfulPosition->mIndex)) {
-      aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
-    } else {
+  if (auto* lastSuccessfulPosition =
+          aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback())) {
+    if (SeekFallbackTo(Some(lastSuccessfulPosition->mIndex))) {
+      
+      
       firstTryIndex = Some(lastSuccessfulPosition->mIndex);
+      firstTryStyle = currentFallbackStyle;
+    } else {
+      aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
     }
   }
 
@@ -1639,6 +1663,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       isOverflowingCB = !fits;
       fallback.CommitCurrentFallback();
+      if (currentFallbackIndex == Nothing()) {
+        aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+      }
       break;
     }
 
@@ -1659,6 +1686,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     }
     
     
+    
+    currentFallbackIndex = firstTryIndex;
+    currentFallbackStyle = firstTryStyle;
     const auto normalPosition = *firstTryNormalPosition;
     const auto oldNormalPosition = aKidFrame->GetNormalPosition();
     if (normalPosition != oldNormalPosition) {

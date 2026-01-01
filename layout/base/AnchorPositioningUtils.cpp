@@ -986,9 +986,6 @@ static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,
   if (!needsRetry) {
     return false;
   }
-  
-  
-  aPositioned->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
   aPresShell->MarkPositionedFrameForReflow(aPositioned);
   return true;
 }
