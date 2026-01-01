@@ -7,12 +7,12 @@
 
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.backup.archive.enabled", false]],
-  });
-
   await openPreferencesViaOpenPreferencesAPI("paneSync", {
     leaveOpen: true,
+  });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.backup.archive.enabled", false]],
   });
 
   ok(

@@ -48,7 +48,6 @@ add_task(async function testMigrationForDeleteOnClose() {
   );
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-
   
   let dh = new ClearHistoryDialogHelper({ mode: "clearOnShutdown" });
   dh.onload = function () {
