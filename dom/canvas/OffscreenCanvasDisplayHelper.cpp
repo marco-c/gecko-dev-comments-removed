@@ -122,18 +122,20 @@ RefPtr<layers::ImageContainer> OffscreenCanvasDisplayHelper::GetImageContainer()
 void OffscreenCanvasDisplayHelper::UpdateContext(
     OffscreenCanvas* aOffscreenCanvas, RefPtr<ThreadSafeWorkerRef>&& aWorkerRef,
     CanvasContextType aType, const Maybe<mozilla::ipc::ActorId>& aChildId) {
-  RefPtr<layers::ImageContainer> imageContainer =
-      MakeRefPtr<layers::ImageContainer>(
-          layers::ImageUsageType::OffscreenCanvas,
-          layers::ImageContainer::ASYNCHRONOUS);
-
   MutexAutoLock lock(mMutex);
+
+  
+  
+  if (!mImageContainer) {
+    mImageContainer = MakeRefPtr<layers::ImageContainer>(
+        layers::ImageUsageType::OffscreenCanvas,
+        layers::ImageContainer::ASYNCHRONOUS);
+  }
 
   mOffscreenCanvas = aOffscreenCanvas;
   mWorkerRef = std::move(aWorkerRef);
   mType = aType;
   mContextChildId = aChildId;
-  mImageContainer = std::move(imageContainer);
 
   if (aChildId) {
     mContextManagerId = Some(gfx::CanvasManagerChild::Get()->Id());
