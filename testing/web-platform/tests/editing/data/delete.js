@@ -3506,6 +3506,16 @@ var browserTests = [
     "<p>abc</p>",
     [true],
     {}],
+["<p>abc<br> </p> <p>{}<br></p>",
+    [["delete",""]],
+    "<p>abc</p>",
+    [true],
+    {}],
+["<div style=white-space:pre><p>abc</p> <p>{}<br></p></div>",
+    [["delete",""]],
+    "<div style=\"white-space:pre\"><p>abc</p> </div>",
+    [true],
+    {}],
 
 
 
