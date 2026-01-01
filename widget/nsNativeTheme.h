@@ -46,11 +46,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
     eScrollbarButton_Bottom = 1 << 1
   };
 
-  enum TreeSortDirection {
-    eTreeSortDirection_Descending,
-    eTreeSortDirection_Natural,
-    eTreeSortDirection_Ascending
-  };
   
   static mozilla::dom::ElementState GetContentState(
       nsIFrame* aFrame, mozilla::StyleAppearance aAppearance);
@@ -73,54 +68,9 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
 
   bool IsButtonTypeMenu(nsIFrame* aFrame);
 
-  
-  bool IsSelectedTab(nsIFrame* aFrame) {
-    return CheckBooleanAttr(aFrame, nsGkAtoms::visuallyselected);
-  }
-
-  bool IsNextToSelectedTab(nsIFrame* aFrame, int32_t aOffset);
-
-  bool IsBeforeSelectedTab(nsIFrame* aFrame) {
-    return IsNextToSelectedTab(aFrame, -1);
-  }
-
-  bool IsAfterSelectedTab(nsIFrame* aFrame) {
-    return IsNextToSelectedTab(aFrame, 1);
-  }
-
-  bool IsLeftToSelectedTab(nsIFrame* aFrame) {
-    return IsFrameRTL(aFrame) ? IsAfterSelectedTab(aFrame)
-                              : IsBeforeSelectedTab(aFrame);
-  }
-
-  bool IsRightToSelectedTab(nsIFrame* aFrame) {
-    return IsFrameRTL(aFrame) ? IsBeforeSelectedTab(aFrame)
-                              : IsAfterSelectedTab(aFrame);
-  }
-
-  
-  bool IsCheckedButton(nsIFrame* aFrame) {
-    return CheckBooleanAttr(aFrame, nsGkAtoms::checked);
-  }
-
-  bool IsSelectedButton(nsIFrame* aFrame) {
-    return CheckBooleanAttr(aFrame, nsGkAtoms::checked) ||
-           CheckBooleanAttr(aFrame, nsGkAtoms::selected);
-  }
-
   bool IsOpenButton(nsIFrame* aFrame) {
     return CheckBooleanAttr(aFrame, nsGkAtoms::open);
   }
-
-  bool IsPressedButton(nsIFrame* aFrame);
-
-  
-  TreeSortDirection GetTreeSortDirection(nsIFrame* aFrame);
-  bool IsLastTreeHeaderCell(nsIFrame* aFrame);
-
-  
-  bool IsBottomTab(nsIFrame* aFrame);
-  bool IsFirstTab(nsIFrame* aFrame);
 
   
   bool IsVerticalProgress(nsIFrame* aFrame);
@@ -128,17 +78,7 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   
   bool IsVerticalMeter(nsIFrame* aFrame);
 
-  
-  bool IsReadOnly(nsIFrame* aFrame) {
-    return CheckBooleanAttr(aFrame, nsGkAtoms::readonly);
-  }
-
-  
-  bool IsSubmenu(nsIFrame* aFrame, bool* aLeftOfParent);
-
   static bool CheckBooleanAttr(nsIFrame* aFrame, nsAtom* aAtom);
-  static int32_t CheckIntAttr(nsIFrame* aFrame, nsAtom* aAtom,
-                              int32_t defaultValue);
 
   
   static double GetProgressValue(nsIFrame* aFrame);
