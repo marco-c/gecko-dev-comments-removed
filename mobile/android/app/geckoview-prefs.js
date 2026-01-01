@@ -257,11 +257,6 @@ pref("formhelper.autozoom", true);
 
 pref("geckoview.console.enabled", false);
 
-#ifdef NIGHTLY_BUILD
-  
-  pref("geckoview.shopping.mock_test_response", false);
-#endif
-
 pref("image.cache.size", 1048576); 
 
 
