@@ -4112,6 +4112,20 @@ class AboutTranslationsTestUtils {
 
 
 
+    static CopyButtonEnabled = "AboutTranslationsTest:CopyButtonEnabled";
+
+    
+
+
+
+
+    static CopyButtonDisabled = "AboutTranslationsTest:CopyButtonDisabled";
+
+    
+
+
+
+
     static PageOrientationChanged =
       "AboutTranslationsTest:PageOrientationChanged";
 
