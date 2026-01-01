@@ -4224,6 +4224,13 @@ class AboutTranslationsTestUtils {
 
 
 
+    static ClearSourceText = "AboutTranslationsTest:ClearSourceText";
+
+    
+
+
+
+
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
   };
 
@@ -5238,20 +5245,39 @@ class AboutTranslationsTestUtils {
       tabIndex: actualTabIndex,
     } = await this.getSourceClearButtonState();
 
-    ok(exists, "Expected source clear button to be present.");
+    ok(exists, "Expected clear button to be present.");
 
     if (visible) {
-      ok(!hidden, "Expected source clear button to be visible.");
+      ok(!hidden, "Expected clear button to be visible.");
     } else {
-      ok(hidden, "Expected source clear button to be hidden.");
+      ok(hidden, "Expected clear button to be hidden.");
     }
 
     if (tabIndex !== undefined) {
       is(
         actualTabIndex,
         tabIndex,
-        `Expected source clear button tabindex to be "${tabIndex}".`
+        `Expected clear button tabindex to be "${tabIndex}".`
       );
+    }
+  }
+
+  
+
+
+
+
+  async clickClearButton() {
+    await doubleRaf(document);
+    try {
+      await this.#runInPage(selectors => {
+        const clearButton = content.document.querySelector(
+          selectors.clearButton
+        );
+        clearButton.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
     }
   }
 
@@ -5575,11 +5601,7 @@ class AboutTranslationsTestUtils {
         visibilityMap.sourceSectionTextArea,
         "source textarea"
       );
-      assertVisibility(
-        clearButton,
-        visibilityMap.clearButton,
-        "source clear button"
-      );
+      assertVisibility(clearButton, visibilityMap.clearButton, "clear button");
       assertVisibility(
         targetSectionTextArea,
         visibilityMap.targetSectionTextArea,
