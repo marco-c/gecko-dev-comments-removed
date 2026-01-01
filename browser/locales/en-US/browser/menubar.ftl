@@ -223,6 +223,13 @@ menu-history-undo-window-menu =
 menu-history-search =
     .label = Search History
 
+# Chat History
+
+menu-history-chats =
+    .label = Chats
+menu-history-chats-recent =
+    .label = Recent Chats
+
 ## Bookmarks Menu
 
 menu-bookmarks-menu =
@@ -248,8 +255,9 @@ menu-bookmarks-mobile =
 
 ## Profiles Menu
 
-menu-profiles =
+menu-profiles-menu =
     .label = Profiles
+    .accesskey = P
 menu-profiles-manage-profiles =
     .label = Manage Profiles
 menu-profiles-new-profile =
