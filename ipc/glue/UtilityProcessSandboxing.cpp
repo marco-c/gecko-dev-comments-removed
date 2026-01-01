@@ -42,15 +42,6 @@ bool IsUtilitySandboxEnabled(const char* envVar, SandboxingKind aKind) {
   }
 #endif
 
-#ifndef MOZ_NO_SMART_CARDS
-  
-  
-  
-  if (aKind == SandboxingKind::PKCS11_MODULE) {
-    return false;
-  }
-#endif  
-
   if (envVar == nullptr) {
     return true;
   }

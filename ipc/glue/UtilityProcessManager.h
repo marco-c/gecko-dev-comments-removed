@@ -15,10 +15,6 @@
 
 #include "mozilla/PRemoteMediaManagerChild.h"
 
-#ifndef MOZ_NO_SMART_CARDS
-#  include "mozilla/psm/PKCS11ModuleParent.h"
-#endif  
-
 namespace mozilla {
 
 class MemoryReportingProcess;
@@ -57,10 +53,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   using WinFileDialogPromise = LaunchPromise<widget::filedialog::ProcessProxy>;
 #endif
 
-#ifndef MOZ_NO_SMART_CARDS
-  using PKCS11ModulePromise = LaunchPromise<RefPtr<psm::PKCS11ModuleParent>>;
-#endif  
-
   static RefPtr<UtilityProcessManager> GetSingleton();
 
   static RefPtr<UtilityProcessManager> GetIfExists();
@@ -90,10 +82,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   
   RefPtr<WinFileDialogPromise> CreateWinFileDialogActor();
 #endif
-
-#ifndef MOZ_NO_SMART_CARDS
-  RefPtr<PKCS11ModulePromise> StartPKCS11Module();
-#endif  
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
 
