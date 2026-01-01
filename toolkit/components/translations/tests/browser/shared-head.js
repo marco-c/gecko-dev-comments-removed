@@ -210,6 +210,7 @@ async function openAboutTranslations({
     swapLanguagesButton: "moz-button#about-translations-swap-languages-button",
     sourceSectionTextArea: "textarea#about-translations-source-textarea",
     targetSectionTextArea: "textarea#about-translations-target-textarea",
+    clearButton: "moz-button#about-translations-clear-button",
     copyButton: "moz-button#about-translations-copy-button",
     unsupportedInfoMessage:
       "moz-message-bar#about-translations-unsupported-info-message",
@@ -4191,6 +4192,22 @@ class AboutTranslationsTestUtils {
 
 
 
+    static SourceTextClearButtonShown =
+      "AboutTranslationsTest:SourceTextClearButtonShown";
+
+    
+
+
+
+
+    static SourceTextClearButtonHidden =
+      "AboutTranslationsTest:SourceTextClearButtonHidden";
+
+    
+
+
+
+
     static PageOrientationChanged =
       "AboutTranslationsTest:PageOrientationChanged";
 
@@ -5183,6 +5200,66 @@ class AboutTranslationsTestUtils {
 
 
 
+  async getSourceClearButtonState() {
+    await doubleRaf(document);
+
+    try {
+      return await this.#runInPage(selectors => {
+        const button = content.document.querySelector(selectors.clearButton);
+        return {
+          exists: !!button,
+          hidden: button?.hasAttribute("hidden") ?? true,
+          tabIndex: button?.getAttribute("tabindex") ?? null,
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    return {
+      exists: false,
+      hidden: true,
+      tabIndex: null,
+    };
+  }
+
+  
+
+
+
+
+
+
+
+  async assertSourceClearButton({ visible = false, tabIndex = "-1" } = {}) {
+    const {
+      exists,
+      hidden,
+      tabIndex: actualTabIndex,
+    } = await this.getSourceClearButtonState();
+
+    ok(exists, "Expected source clear button to be present.");
+
+    if (visible) {
+      ok(!hidden, "Expected source clear button to be visible.");
+    } else {
+      ok(hidden, "Expected source clear button to be hidden.");
+    }
+
+    if (tabIndex !== undefined) {
+      is(
+        actualTabIndex,
+        tabIndex,
+        `Expected source clear button tabindex to be "${tabIndex}".`
+      );
+    }
+  }
+
+  
+
+
+
+
   async getTargetTextAreaValue() {
     await doubleRaf(document);
     try {
@@ -5388,11 +5465,14 @@ class AboutTranslationsTestUtils {
 
 
 
+
+
   async assertIsVisible({
     pageHeader = false,
     mainUserInterface = false,
     sourceLanguageSelector = false,
     targetLanguageSelector = false,
+    clearButton = undefined,
     copyButton = false,
     swapLanguagesButton = false,
     sourceSectionTextArea = false,
@@ -5404,6 +5484,16 @@ class AboutTranslationsTestUtils {
     await doubleRaf(document);
 
     try {
+      if (clearButton === undefined) {
+        const sourceTextAreaValue = await this.#runInPage(selectors => {
+          const sourceTextArea = content.document.querySelector(
+            selectors.sourceSectionTextArea
+          );
+          return sourceTextArea?.value ?? "";
+        });
+        clearButton = Boolean(sourceTextAreaValue.trim());
+      }
+
       const visibilityMap = await this.#runInPage(selectors => {
         const { document, window } = content;
         const isElementVisible = selector => {
@@ -5420,6 +5510,7 @@ class AboutTranslationsTestUtils {
           const { display, visibility } = computedStyle;
           return !(display === "none" || visibility === "hidden");
         };
+
         return {
           pageHeader: isElementVisible(selectors.pageHeader),
           mainUserInterface: isElementVisible(selectors.mainUserInterface),
@@ -5429,6 +5520,7 @@ class AboutTranslationsTestUtils {
           targetLanguageSelector: isElementVisible(
             selectors.targetLanguageSelector
           ),
+          clearButton: isElementVisible(selectors.clearButton),
           copyButton: isElementVisible(selectors.copyButton),
           swapLanguagesButton: isElementVisible(selectors.swapLanguagesButton),
           sourceSectionTextArea: isElementVisible(
@@ -5482,6 +5574,11 @@ class AboutTranslationsTestUtils {
         sourceSectionTextArea,
         visibilityMap.sourceSectionTextArea,
         "source textarea"
+      );
+      assertVisibility(
+        clearButton,
+        visibilityMap.clearButton,
+        "source clear button"
       );
       assertVisibility(
         targetSectionTextArea,
