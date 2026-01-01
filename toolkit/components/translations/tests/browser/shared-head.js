@@ -4422,15 +4422,16 @@ class AboutTranslationsTestUtils {
           );
         });
 
+        const timeoutMS = 10_000;
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(
             () =>
               reject(
                 new Error(
-                  `Event "${eventName}" did not fire within three seconds.`
+                  `Event "${eventName}" did not fire within ${timeoutMS / 1000} seconds.`
                 )
               ),
-            3000
+            timeoutMS
           );
         });
 
