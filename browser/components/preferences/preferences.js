@@ -1,25 +1,25 @@
+/* - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// Import globals from the files imported by the .xul files.
+/* import-globals-from main.js */
+/* import-globals-from home.js */
+/* import-globals-from search.js */
+/* import-globals-from containers.js */
+/* import-globals-from privacy.js */
+/* import-globals-from sync.js */
+/* import-globals-from experimental.js */
+/* import-globals-from moreFromMozilla.js */
+/* import-globals-from findInPage.js */
+/* import-globals-from /browser/base/content/utilityOverlay.js */
+/* import-globals-from /toolkit/content/preferencesBindings.js */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/** @import MozButton from "chrome://global/content/elements/moz-button.mjs" */
+/** @import {SettingConfig, SettingEmitChange} from "chrome://global/content/preferences/Setting.mjs" */
+/** @import {SettingControlConfig} from "chrome://browser/content/preferences/widgets/setting-control.mjs" */
+/** @import {SettingGroup} from "chrome://browser/content/preferences/widgets/setting-group.mjs" */
+/** @import {SettingPane, SettingPaneConfig} from "chrome://browser/content/preferences/widgets/setting-pane.mjs" */
 
 "use strict";
 
@@ -33,7 +33,7 @@ var { Downloads } = ChromeUtils.importESModule(
 var { Integration } = ChromeUtils.importESModule(
   "resource://gre/modules/Integration.sys.mjs"
 );
-
+/* global DownloadIntegration */
 Integration.downloads.defineESModuleGetter(
   this,
   "DownloadIntegration",
@@ -125,19 +125,19 @@ ChromeUtils.defineLazyGetter(this, "gSubDialog", function () {
         "chrome://browser/skin/preferences/preferences.css",
       ],
       resizeCallback: async ({ title, frame }) => {
-        
+        // Search within main document and highlight matched keyword.
         await gSearchResultsPane.searchWithinNode(
           title,
           gSearchResultsPane.query
         );
 
-        
+        // Search within sub-dialog document and highlight matched keyword.
         await gSearchResultsPane.searchWithinNode(
           frame.contentDocument.firstElementChild,
           gSearchResultsPane.query
         );
 
-        
+        // Creating tooltips for all the instances found
         for (let node of gSearchResultsPane.listSearchTooltips) {
           if (!node.tooltipNode) {
             gSearchResultsPane.createSearchTooltip(
@@ -151,7 +151,7 @@ ChromeUtils.defineLazyGetter(this, "gSubDialog", function () {
   });
 });
 
-
+/** @type {Record<string, boolean>} */
 const srdSectionPrefs = {};
 XPCOMUtils.defineLazyPreferenceGetter(
   srdSectionPrefs,
@@ -160,9 +160,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-
-
-
+/**
+ * @param {string} section
+ */
 function srdSectionEnabled(section) {
   if (!(section in srdSectionPrefs)) {
     XPCOMUtils.defineLazyPreferenceGetter(
@@ -176,12 +176,12 @@ function srdSectionEnabled(section) {
 }
 
 var SettingPaneManager = {
-  
+  /** @type {Map<string, SettingPaneConfig>} */
   _data: new Map(),
 
-  
-
-
+  /**
+   * @param {string} id
+   */
   get(id) {
     if (!this._data.has(id)) {
       throw new Error(`Setting pane "${id}" not found`);
@@ -189,17 +189,17 @@ var SettingPaneManager = {
     return this._data.get(id);
   },
 
-  
-
-
-
+  /**
+   * @param {string} id
+   * @param {SettingPaneConfig} config
+   */
   registerPane(id, config) {
     if (this._data.has(id)) {
       throw new Error(`Setting pane "${id}" already registered`);
     }
     this._data.set(id, config);
     let subPane = friendlyPrefCategoryNameToInternalName(id);
-    let settingPane =  (
+    let settingPane = /** @type {SettingPane} */ (
       document.createElement("setting-pane")
     );
     settingPane.name = subPane;
@@ -213,9 +213,9 @@ var SettingPaneManager = {
     });
   },
 
-  
-
-
+  /**
+   * @param {Record<string, SettingPaneConfig>} paneConfigs
+   */
   registerPanes(paneConfigs) {
     for (let id in paneConfigs) {
       this.registerPane(id, paneConfigs[id]);
@@ -230,12 +230,12 @@ var SettingGroupManager = ChromeUtils.importESModule(
   }
 ).SettingGroupManager;
 
-
-
-
-
-
-
+/**
+ * Register initial config-based setting panes here. If you need to register a
+ * pane elsewhere, use {@link SettingPaneManager['registerPane']}.
+ *
+ * @type {Record<string, SettingPaneConfig>}
+ */
 const CONFIG_PANES = Object.freeze({
   containers2: {
     parent: "general",
@@ -287,11 +287,6 @@ const CONFIG_PANES = Object.freeze({
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
     visible: () => srdSectionEnabled("aiFeatures"),
   },
-  history: {
-    parent: "privacy",
-    l10nId: "history-header2",
-    groupIds: ["historyAdvanced"],
-  },
 });
 
 var gLastCategory = { category: undefined, subcategory: undefined };
@@ -311,13 +306,13 @@ function register_module(categoryName, categoryObject) {
       this._initted = true;
       let template = document.getElementById("template-" + categoryName);
       if (template) {
-        
+        // Replace the template element with the nodes inside of it.
         template.replaceWith(template.content);
 
-        
-        
-        
-        
+        // We've inserted elements that rely on 'preference' attributes.
+        // So we need to update those by reading from the prefs.
+        // The bindings will do this using idle dispatch and avoid
+        // repeated runs if called multiple times before the task runs.
         Preferences.queueUpdateOfAllElements();
       }
 
@@ -336,8 +331,8 @@ document.addEventListener("DOMContentLoaded", init_all, { once: true });
 function init_all() {
   Preferences.forceEnableInstantApply();
 
-  
-  
+  // Asks Preferences to queue an update of the attribute values of
+  // the entire document.
   Preferences.queueUpdateOfAllElements();
 
   register_module("paneGeneral", gMainPane);
@@ -351,8 +346,8 @@ function init_all() {
   }
 
   if (ExperimentAPI.labsEnabled) {
-    
-    
+    // Set hidden based on previous load's hidden value or if Nimbus is
+    // disabled.
     document.getElementById("category-experimental").hidden =
       Services.prefs.getBoolPref(
         "browser.preferences.experimental.hidden",
@@ -370,9 +365,9 @@ function init_all() {
       NimbusFeatures.moreFromMozilla.getVariable("template");
     register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
   }
-  
-  
-  
+  // The Sync category needs to be the last of the "real" categories
+  // registered and inititalized since many tests wait for the
+  // "sync-pane-loaded" observer notification before starting the test.
   if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     document.getElementById("category-sync").hidden = false;
     register_module("paneSync", gSyncPane);
@@ -405,7 +400,7 @@ function init_all() {
     document.getElementById("addonsButton").addEventListener("click", e => {
       e.preventDefault();
       if (e.button >= 2) {
-        
+        // Ignore right clicks.
         return;
       }
       let mainWindow = window.browsingContext.topChromeWindow;
@@ -425,12 +420,12 @@ function onHashChange() {
   gotoPref(null, "Hash");
 }
 
-
-
-
-
-
-
+/**
+ * @param {string} [aCategory] The pane to show, defaults to the hash of URL or general
+ * @param {"Click"|"Initial"|"Hash"} [aShowReason]
+ *   What triggered the navigation. Defaults to "Click" if aCategory is provided,
+ *   otherwise "Initial".
+ */
 async function gotoPref(
   aCategory,
   aShowReason = aCategory ? "Click" : "Initial"
@@ -442,8 +437,8 @@ async function gotoPref(
   let category = aCategory || hash.substring(1) || kDefaultCategoryInternalName;
 
   let breakIndex = category.indexOf("-");
-  
-  
+  // Subcategories allow for selecting smaller sections of the preferences
+  // until proper search support is enabled (bug 1353954).
   let subcategory = breakIndex != -1 && category.substring(breakIndex + 1);
   if (subcategory) {
     category = category.substring(0, breakIndex);
@@ -454,15 +449,15 @@ async function gotoPref(
     gSearchResultsPane.searchInput.value = "";
     gSearchResultsPane.removeAllSearchIndicators(window, true);
   } else if (!gSearchResultsPane.searchInput.value) {
-    
-    
+    // Something tried to send us to the search results pane without
+    // a query string. Default to the General pane instead.
     category = kDefaultCategoryInternalName;
     document.location.hash = kDefaultCategory;
     gSearchResultsPane.query = null;
   }
 
-  
-  
+  // Updating the hash (below) or changing the selected category
+  // will re-enter gotoPref.
   if (gLastCategory.category == category && !subcategory) {
     return;
   }
@@ -470,12 +465,12 @@ async function gotoPref(
   let item;
   let unknownCategory = false;
   if (category != "paneSearchResults") {
-    
+    // Hide second level headers in normal view
     for (let element of document.querySelectorAll(".search-header")) {
       element.hidden = true;
     }
 
-    item =  (
+    item = /** @type {HTMLElement} */ (
       categories.querySelector(".category[value=" + CSS.escape(category) + "]")
     );
     if (!item || item.hidden) {
@@ -492,28 +487,28 @@ async function gotoPref(
     subcategory
   ) {
     let friendlyName = internalPrefCategoryNameToFriendlyName(category);
-    
-    
-    
+    // Overwrite the hash, unless there is no hash and we're switching to the
+    // default category, e.g. by using the 'back' button after navigating to
+    // a different category.
 
-    
-    
-    
+    // Note: Bug 1983388 - If there is an element in the DOM that has the same
+    // ID as the `friendlyName`, then focus will be lost when navigating the
+    // category navigation via keyboard when that `friendlyName` category is selected.
     if (
       !(!document.location.hash && category == kDefaultCategoryInternalName)
     ) {
       document.location.hash = friendlyName;
     }
   }
-  
-  
+  // Need to set the gLastCategory before setting categories.selectedItem since
+  // the categories 'select' event will re-enter the gotoPref codepath.
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
   if (item) {
-    
+    // @ts-ignore MozElements.RichListBox
     categories.selectedItem = item;
   } else {
-    
+    // @ts-ignore MozElements.RichListBox
     categories.clearSelection();
   }
   window.history.replaceState(category, document.title);
@@ -532,8 +527,8 @@ async function gotoPref(
     await new Promise(r =>
       document.addEventListener("L10nMutationsFinished", r, { once: true })
     );
-    
-    
+    // Bail out of this goToPref if the category
+    // or subcategory changed during async operation.
     if (
       gLastCategory.category !== category ||
       gLastCategory.subcategory !== subcategory
@@ -548,25 +543,25 @@ async function gotoPref(
     document.querySelector(".main-content").scrollTop = 0;
   }
 
-  
-  
-  
-  
+  // Check to see if the category module wants to do any special
+  // handling of the subcategory - for example, opening a SubDialog.
+  //
+  // If not, just do a normal spotlight on the subcategory.
   let categoryModule = gCategoryModules.get(category);
   if (!categoryModule.handleSubcategory?.(subcategory)) {
     spotlight(subcategory, category);
   }
 
-  
-  
-  
-  
-  
-  
+  // Handle any visibility changes that are controlled by pref logic.
+  //
+  // Take caution when trying to flip the hidden state to true since the
+  // element might show up unexpectedly on different pages in about:preferences.
+  //
+  // See Bug 1999032 to remove this in favor of config-based prefs.
   categoryModule.handlePrefControlledSection?.();
 
-  
-  let gleanId =  (
+  // Record which category is shown
+  let gleanId = /** @type {"showClick" | "showHash" | "showInitial"} */ (
     "show" + aShowReason
   );
   Glean.aboutpreferences[gleanId].record({ value: category });
@@ -582,18 +577,18 @@ async function gotoPref(
   );
 }
 
-
-
-
-
+/**
+ * @param {string} aQuery
+ * @param {string} aAttribute
+ */
 function search(aQuery, aAttribute) {
   let mainPrefPane = document.getElementById("mainPrefPane");
-  let elements =  (
+  let elements = /** @type {HTMLElement[]} */ (
     Array.from(mainPrefPane.children)
   );
   for (let element of elements) {
-    
-    
+    // If the "data-hidden-from-search" is "true", the
+    // element will not get considered during search.
     if (
       element.getAttribute("data-hidden-from-search") != "true" ||
       element.getAttribute("data-subpanel") == "true"
@@ -646,19 +641,19 @@ function friendlyPrefCategoryNameToInternalName(aName) {
   return "pane" + aName.substring(0, 1).toUpperCase() + aName.substr(1);
 }
 
-
+// This function is duplicated inside of utilityOverlay.js's openPreferences.
 function internalPrefCategoryNameToFriendlyName(aName) {
   return (aName || "").replace(/^pane./, function (toReplace) {
     return toReplace[4].toLowerCase();
   });
 }
 
-
-
-
-
-
-
+// Put up a confirm dialog with "ok to restart", "revert without restarting"
+// and "restart later" buttons and returns the index of the button chosen.
+// We can choose not to display the "restart later", or "revert" buttons,
+// altough the later still lets us revert by using the escape key.
+//
+// The constants are useful to interpret the return value of the function.
 const CONFIRM_RESTART_PROMPT_RESTART_NOW = 0;
 const CONFIRM_RESTART_PROMPT_CANCEL = 1;
 const CONFIRM_RESTART_PROMPT_RESTART_LATER = 2;
@@ -686,11 +681,11 @@ async function confirmRestartPrompt(
     { id: "restart-later" },
   ]);
 
-  
+  // Set up the first (index 0) button:
   let buttonFlags =
     Services.prompt.BUTTON_POS_0 * Services.prompt.BUTTON_TITLE_IS_STRING;
 
-  
+  // Set up the second (index 1) button:
   if (aWantRevertAsCancelButton) {
     buttonFlags +=
       Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_IS_STRING;
@@ -700,7 +695,7 @@ async function confirmRestartPrompt(
       Services.prompt.BUTTON_POS_1 * Services.prompt.BUTTON_TITLE_CANCEL;
   }
 
-  
+  // Set up the third (index 2) button:
   if (aWantRestartLaterButton) {
     buttonFlags +=
       Services.prompt.BUTTON_POS_2 * Services.prompt.BUTTON_TITLE_IS_STRING;
@@ -737,8 +732,8 @@ async function confirmRestartPrompt(
 
   let buttonIndex = button.get("buttonNumClicked");
 
-  
-  
+  // If we have the second confirmation dialog for restart, see if the user
+  // cancels out at that point.
   if (buttonIndex == CONFIRM_RESTART_PROMPT_RESTART_NOW) {
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
       Ci.nsISupportsPRBool
@@ -755,8 +750,8 @@ async function confirmRestartPrompt(
   return buttonIndex;
 }
 
-
-
+// This function is used to append search keywords found
+// in the related subdialog to the button that will activate the subdialog.
 function appendSearchKeywords(aId, keywords) {
   let element = document.getElementById(aId);
   let searchKeywords = element.getAttribute("searchkeywords");
@@ -770,12 +765,12 @@ async function ensureScrollPadding() {
   let stickyContainer = document.querySelector(".sticky-container");
   let height = await window.browsingContext.topChromeWindow
     .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(console.error); 
+    .catch(console.error); // Can reject if the window goes away.
 
-  
-  
-  
-  
+  // Make it a bit more, to ensure focus rectangles etc. don't get cut off.
+  // This being 8px causes us to end up with 90px if the policies container
+  // is not visible (the common case), which matches the CSS and thus won't
+  // cause a style change, repaint, or other changes.
   height += 8;
   stickyContainer
     .closest(".main-content")
