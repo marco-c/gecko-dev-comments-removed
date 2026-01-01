@@ -2,8 +2,6 @@
 
 
 
-import { HeadlessShell } from "../shell/HeadlessShell.sys.mjs";
-
 
 
 
@@ -204,11 +202,9 @@ Preferences.addAll([
   
   { id: "privacy.donottrackheader.enabled", type: "bool" },
   { id: "privacy.globalprivacycontrol.functionality.enabled", type: "bool" },
+
+  
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
-  {
-    id: "browser.preferences.config_warning.donottrackheader.dismissed",
-    type: "bool",
-  },
 
   
   { id: "browser.ipProtection.enabled", type: "bool" },
@@ -1532,56 +1528,14 @@ Preferences.addSetting({
   },
 });
 Preferences.addSetting({
-  id: "relayFeature",
-  pref: "signon.firefoxRelay.feature",
-});
-Preferences.addSetting({
-  id: "relayIntegration",
-  deps: ["savePasswords", "relayFeature"],
-  visible: () => {
-    return FirefoxRelay.isAvailable;
-  },
-  disabled: ({ savePasswords, relayFeature }) => {
-    return !savePasswords.value || relayFeature.pref.locked;
-  },
-  get() {
-    return FirefoxRelay.isAvailable && !FirefoxRelay.isDisabled;
-  },
-  set(checked) {
-    if (checked) {
-      FirefoxRelay.markAsAvailable();
-    } else {
-      FirefoxRelay.markAsDisabled();
-    }
-  },
-  onUserChange(checked) {
-    if (checked) {
-      Glean.relayIntegration.enabledPrefChange.record();
-    } else {
-      Glean.relayIntegration.disabledPrefChange.record();
-    }
-  },
-});
-Preferences.addSetting({
   id: "dntHeaderEnabled",
   pref: "privacy.donottrackheader.enabled",
 });
 Preferences.addSetting({
   id: "dntRemoval",
-  pref: "browser.preferences.config_warning.donottrackheader.dismissed",
   deps: ["dntHeaderEnabled"],
-  visible: ({ dntHeaderEnabled }, setting) => {
-    return dntHeaderEnabled.value && !setting.value;
-  },
-  onUserClick: (event, _deps, setting) => {
-    let dismissButton = event.target?.shadowRoot?.querySelector(".close");
-    if (
-      dismissButton?.shadowRoot &&
-      event.originalTarget &&
-      dismissButton.shadowRoot.contains(event.originalTarget)
-    ) {
-      setting.value = true;
-    }
+  visible: ({ dntHeaderEnabled }) => {
+    return dntHeaderEnabled.value;
   },
 });
 
@@ -2178,15 +2132,13 @@ Preferences.addSetting({
     return privateBrowsingAutoStart.locked && privateBrowsingAutoStart.value;
   },
   getControlConfig(config, { privateBrowsingAutoStart }, setting) {
-    let l10nId = undefined;
-    if (!srdSectionEnabled("history2")) {
-      if (setting.value == "remember") {
-        l10nId = "history-remember-description3";
-      } else if (setting.value == "dontremember") {
-        l10nId = "history-dontremember-description3";
-      } else if (setting.value == "custom") {
-        l10nId = "history-custom-description3";
-      }
+    let l10nId = null;
+    if (setting.value == "remember") {
+      l10nId = "history-remember-description3";
+    } else if (setting.value == "dontremember") {
+      l10nId = "history-dontremember-description3";
+    } else if (setting.value == "custom") {
+      l10nId = "history-custom-description3";
     }
 
     let dontRememberOption = config.options.find(
@@ -2205,14 +2157,6 @@ Preferences.addSetting({
       ...config,
       l10nId,
     };
-  },
-});
-
-Preferences.addSetting({
-  id: "customHistoryButton",
-  onUserClick(e) {
-    e.preventDefault();
-    gotoPref("paneHistory");
   },
 });
 
@@ -3783,17 +3727,14 @@ var gPrivacyPane = {
 
   init() {
     initSettingGroup("nonTechnicalPrivacy");
-    initSettingGroup("nonTechnicalPrivacy2");
     initSettingGroup("securityPrivacyStatus");
     initSettingGroup("securityPrivacyWarnings");
     initSettingGroup("httpsOnly");
     initSettingGroup("browsingProtection");
     initSettingGroup("cookiesAndSiteData");
-    initSettingGroup("cookiesAndSiteData2");
     initSettingGroup("certificates");
     initSettingGroup("ipprotection");
     initSettingGroup("history");
-    initSettingGroup("history2");
     initSettingGroup("permissions");
     initSettingGroup("dnsOverHttps");
     initSettingGroup("dnsOverHttpsAdvanced");
