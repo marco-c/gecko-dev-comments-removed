@@ -996,6 +996,19 @@ async function populateAudioDeviceProperties() {
   };
 }
 
+async function populateTimezoneWeb() {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return {
+      timezoneWeb: timezone || "",
+    };
+  } catch (e) {
+    return {
+      timezoneWeb: "",
+    };
+  }
+}
+
 
 
 function getCanvasSources() {
@@ -1063,6 +1076,7 @@ async function startPopulating() {
     populateCSSQueries,
     populateNavigatorProperties,
     populateAudioDeviceProperties,
+    populateTimezoneWeb,
   ];
   
   
