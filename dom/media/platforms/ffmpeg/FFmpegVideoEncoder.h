@@ -39,6 +39,7 @@ class FFmpegVideoEncoder<LIBAV_VER> : public FFmpegDataEncoder<LIBAV_VER> {
   virtual ~FFmpegVideoEncoder() = default;
   
   virtual MediaResult InitEncoder() override;
+  bool ShouldTryHardware() const;
   MediaResult InitEncoderInternal(bool aHardware);
 #if LIBAVCODEC_VERSION_MAJOR >= 58
   Result<EncodedData, MediaResult> EncodeInputWithModernAPIs(

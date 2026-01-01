@@ -317,9 +317,20 @@ bool FFmpegVideoEncoder<LIBAV_VER>::SvcEnabled() const {
   return mConfig.mScalabilityMode != ScalabilityMode::None;
 }
 
+bool FFmpegVideoEncoder<LIBAV_VER>::ShouldTryHardware() const {
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  if (mCodecID == AV_CODEC_ID_H264 || mCodecID == AV_CODEC_ID_HEVC) {
+    return true;
+  }
+#endif
+  return mConfig.mHardwarePreference != HardwarePreference::RequireSoftware;
+}
+
 MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoder() {
   MediaResult result(NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
-  if (mConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
+  if (ShouldTryHardware()) {
     result = InitEncoderInternal( true);
   }
   
