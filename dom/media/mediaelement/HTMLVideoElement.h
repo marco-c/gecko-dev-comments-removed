@@ -18,6 +18,10 @@ namespace mozilla {
 
 class FrameStatistics;
 
+namespace gfx {
+class DataSourceSurface;
+}
+
 namespace dom {
 
 class WakeLock;
@@ -55,6 +59,8 @@ class HTMLVideoElement final : public HTMLMediaElement {
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
 
   nsresult Clone(NodeInfo*, nsINode** aResult) const override;
+
+  nsresult CopyInnerTo(Element* aDest);
 
   void UnbindFromTree(UnbindContext&) override;
 
@@ -166,6 +172,12 @@ class HTMLVideoElement final : public HTMLMediaElement {
       RefPtr<HTMLVideoElement> aVisualCloneTarget,
       RefPtr<Promise> aVisualCloneTargetPromise = nullptr);
   bool SetVisualCloneSource(RefPtr<HTMLVideoElement> aVisualCloneSource);
+
+  
+  
+  
+  static already_AddRefed<gfx::DataSourceSurface> CopyImage(
+      layers::Image* aImage);
 
   
   

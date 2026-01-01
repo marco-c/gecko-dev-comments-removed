@@ -30,6 +30,7 @@
 #include "mozilla/dom/VideoStreamTrack.h"
 #include "mozilla/dom/WakeLock.h"
 #include "mozilla/dom/power/PowerManagerService.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
@@ -70,6 +71,64 @@ nsresult HTMLVideoElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
   nsresult rv = const_cast<HTMLVideoElement*>(this)->CopyInnerTo(it);
   if (NS_SUCCEEDED(rv)) {
     kungFuDeathGrip.swap(*aResult);
+  }
+  return rv;
+}
+
+nsresult HTMLVideoElement::CopyInnerTo(Element* aDest) {
+  nsresult rv = HTMLMediaElement::CopyInnerTo(aDest);
+  NS_ENSURE_SUCCESS(rv, rv);
+  HTMLVideoElement* dest = static_cast<HTMLVideoElement*>(aDest);
+
+  
+  
+  
+  
+  
+  
+  if (aDest->OwnerDoc()->IsStaticDocument() && mVideoFrameContainer) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AutoTArray<ImageContainer::OwningImage, 10> images;
+    mVideoFrameContainer->GetImageContainer()->GetCurrentImages(&images);
+    if (images.IsEmpty()) {
+      LOG("no video images, printing with a suspended video decoder?");
+      return rv;
+    }
+
+    
+    
+    
+    
+    VideoFrameContainer* const dstVideo = dest->GetVideoFrameContainer();
+    NS_ENSURE_TRUE(dstVideo, rv);
+
+    
+    
+    RefPtr<gfx::DataSourceSurface> dstSurface(CopyImage(images[0].mImage));
+    if (!dstSurface) {
+      MOZ_LOG(gMediaElementLog, LogLevel::Error,
+              ("failed to copy video image"));
+      return rv;
+    }
+    RefPtr<layers::SourceSurfaceImage> dstImage =
+        MakeAndAddRef<layers::SourceSurfaceImage>(dstSurface.get());
+
+    dstVideo->SetCurrentFrame(dstImage->GetSize(), dstImage, TimeStamp(),
+                              media::TimeUnit::Invalid(),
+                              media::TimeUnit::Invalid());
   }
   return rv;
 }
@@ -490,6 +549,32 @@ bool HTMLVideoElement::SetVisualCloneSource(
     return true;
   }
   return false;
+}
+
+
+already_AddRefed<gfx::DataSourceSurface> HTMLVideoElement::CopyImage(
+    layers::Image* aImage) {
+  RefPtr<gfx::SourceSurface> surface = aImage->GetAsSourceSurface();
+  if (!surface) {
+    return nullptr;
+  }
+
+  RefPtr<gfx::DataSourceSurface> data = surface->GetDataSurface();
+  if (!data) {
+    return nullptr;
+  }
+
+  gfx::DataSourceSurface::ScopedMap read(data, gfx::DataSourceSurface::READ);
+  if (!read.IsMapped()) {
+    return nullptr;
+  }
+
+  RefPtr<gfx::DataSourceSurface> copy = gfx::CreateDataSourceSurfaceFromData(
+      data->GetSize(), data->GetFormat(), read.GetData(), read.GetStride());
+
+  MOZ_ASSERT_IF(copy, data->GetSize() == copy->GetSize());
+  MOZ_ASSERT_IF(copy, data->GetFormat() == copy->GetFormat());
+  return copy.forget();
 }
 
 
