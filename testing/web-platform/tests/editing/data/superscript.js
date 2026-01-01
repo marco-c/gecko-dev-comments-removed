@@ -439,5 +439,13 @@ var browserTests = [
     [["stylewithcss","false"],["superscript",""]],
     "foo[bar]<br>",
     [true,true],
-    {"stylewithcss":[false,true,"",false,false,""],"superscript":[false,true,"",false,false,""]}]
+    {"stylewithcss":[false,true,"",false,false,""],"superscript":[false,true,"",false,false,""]}],
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","false"],["superscript",""]],
+    ' <span contenteditable="false">A</span><sup> ; </sup><span contenteditable="false">B</span><sup> ; </sup><span contenteditable="false">C</span> ',
+    [true,true],
+    {}],
 ]

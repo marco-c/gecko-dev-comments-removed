@@ -1072,4 +1072,12 @@ var browserTests = [
     "abc<i><b>def</b></i>ghi",
     [true,true],
     {}],
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","false"],["bold",""]],
+    ' <span contenteditable="false">A</span><b> ; </b><span contenteditable="false">B</span><b> ; </b><span contenteditable="false">C</span> ',
+    [true,true],
+    {}],
 ]

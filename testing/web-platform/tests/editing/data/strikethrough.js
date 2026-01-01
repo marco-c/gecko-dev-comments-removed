@@ -768,4 +768,12 @@ var browserTests = [
      "abc<span style=\"text-decoration-line:underline\">[def]</span>ghi"],
     [true,true],
     {}],
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","false"],["strikethrough",""]],
+    ' <span contenteditable="false">A</span><strike> ; </strike><span contenteditable="false">B</span><strike> ; </strike><span contenteditable="false">C</span> ',
+    [true,true],
+    {}],
 ]

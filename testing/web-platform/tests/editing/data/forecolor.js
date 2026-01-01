@@ -834,4 +834,12 @@ var browserTests = [
     "a<span style=\"color:rgba(0, 0, 0, 0)\">b</span>c",
     [true,true,true,true],
     {}],
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","false"],["foreColor","#ff0000"]],
+    ' <span contenteditable="false">A</span><font color="#ff0000"> ; </font><span contenteditable="false">B</span><font color="#ff0000"> ; </font><span contenteditable="false">C</span> ',
+    [true,true],
+    {}],
 ]

@@ -1488,4 +1488,20 @@ var browserTests = [
      "justifycenter":[false,true,"center",false,true,"center"],
      "justifyfull":[false,false,"center",false,false,"center"],
      "justifyright":[false,false,"center",false,false,"center"]}],
+
+
+
+
+
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","true"],["defaultparagraphseparator","div"],["justifycenter",""]],
+    ['<div style="text-align:center"> <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> </div>',
+     
+     ' <div style="text-align:center"><span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+     '<div style="text-align:center"><span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div>'],
+    [true,true,true],
+    {}],
 ]

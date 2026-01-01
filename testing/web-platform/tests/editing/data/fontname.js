@@ -750,4 +750,12 @@ var browserTests = [
    "<font color=\"#ff0000\">ab<font face=\"monospace\">[c]</font></font>",
    [true,true],
    {}],
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","false"],["fontname","sans-serif"]],
+    ' <span contenteditable="false">A</span><font face="sans-serif"> ; </font><span contenteditable="false">B</span><font face="sans-serif"> ; </font><span contenteditable="false">C</span> ',
+    [true,true],
+    {}],
 ]

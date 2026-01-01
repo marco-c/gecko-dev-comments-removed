@@ -1164,5 +1164,21 @@ var browserTests = [
     [["defaultparagraphseparator","p"],["justifyfull",""]],
     "<div align=\"justify\"><p>foo</p> <p>[bar]</p> <p>baz</p></div>",
     [true,true],
-    {"defaultparagraphseparator":[false,false,"div",false,false,"p"],"justifyfull":[false,false,"left",false,true,"justify"]}]
+    {"defaultparagraphseparator":[false,false,"div",false,false,"p"],"justifyfull":[false,false,"left",false,true,"justify"]}],
+
+
+
+
+
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","true"],["defaultparagraphseparator","div"],["justifyfull",""]],
+    ['<div style="text-align:justify"> <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> </div>',
+     
+     ' <div style="text-align:justify"><span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+     '<div style="text-align:justify"><span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div>'],
+    [true,true,true],
+    {}],
 ]

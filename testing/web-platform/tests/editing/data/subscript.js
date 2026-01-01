@@ -428,4 +428,12 @@ var browserTests = [
     "foo<sub>[bar]</sub>baz",
     [true,true],
     {"stylewithcss":[false,true,"",false,false,""],"subscript":[false,false,"",false,true,""]}],
+
+
+
+['{ <span contenteditable="false">A</span> ; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span> }',
+    [["stylewithcss","false"],["subscript",""]],
+    ' <span contenteditable="false">A</span><sub> ; </sub><span contenteditable="false">B</span><sub> ; </sub><span contenteditable="false">C</span> ',
+    [true,true],
+    {}],
 ]
