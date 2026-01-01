@@ -152,18 +152,47 @@ async function loadNewPage(browser, url) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function openAboutTranslations({
   disabled,
   languagePairs = LANGUAGE_PAIRS,
   prefs,
   autoDownloadFromRemoteSettings = false,
+  copyButtonResetDelay,
+  requireManualCopyButtonReset,
 } = {}) {
+  if (
+    copyButtonResetDelay !== undefined &&
+    requireManualCopyButtonReset !== undefined
+  ) {
+    throw new Error(
+      "copyButtonResetDelay and requireManualCopyButtonReset cannot both be defined."
+    );
+  }
   await SpecialPowers.pushPrefEnv({
     set: [
       
       ["browser.translations.enable", !disabled],
       ["browser.translations.logLevel", "All"],
       ["browser.translations.mostRecentTargetLanguages", ""],
+      ["dom.events.testing.asyncClipboard", true],
       [USE_LEXICAL_SHORTLIST_PREF, false],
       ...(prefs ?? []),
     ],
@@ -247,13 +276,33 @@ async function openAboutTranslations({
     autoDownloadFromRemoteSettings
   );
 
+  let originalCopyButtonResetDelay;
+
   if (!disabled) {
     await aboutTranslationsTestUtils.waitForReady();
+
+    if (requireManualCopyButtonReset !== undefined) {
+      await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(
+        requireManualCopyButtonReset
+      );
+    } else if (copyButtonResetDelay !== undefined) {
+      originalCopyButtonResetDelay =
+        await aboutTranslationsTestUtils.getCopyButtonResetDelay();
+      await aboutTranslationsTestUtils.setCopyButtonResetDelay(
+        copyButtonResetDelay
+      );
+    }
   }
 
   return {
     aboutTranslationsTestUtils,
     async cleanup() {
+      await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(false);
+      if (originalCopyButtonResetDelay) {
+        await aboutTranslationsTestUtils.setCopyButtonResetDelay(
+          originalCopyButtonResetDelay
+        );
+      }
       await loadBlankPage();
       BrowserTestUtils.removeTab(tab);
 
@@ -4050,6 +4099,8 @@ async function destroyTranslationsEngine() {
 }
 
 class AboutTranslationsTestUtils {
+  static AnyEventDetail = Symbol("AboutTranslationsTestUtils.AnyEventDetail");
+
   
 
 
@@ -4120,6 +4171,20 @@ class AboutTranslationsTestUtils {
 
 
     static CopyButtonDisabled = "AboutTranslationsTest:CopyButtonDisabled";
+
+    
+
+
+
+
+    static CopyButtonShowCopied = "AboutTranslationsTest:CopyButtonShowCopied";
+
+    
+
+
+
+
+    static CopyButtonReset = "AboutTranslationsTest:CopyButtonReset";
 
     
 
@@ -4404,6 +4469,85 @@ class AboutTranslationsTestUtils {
   
 
 
+
+
+  async setCopyButtonResetDelay(ms) {
+    try {
+      await this.#runInPage(
+        (_, { delayMs }) => {
+          const { window } = content;
+          Cu.waiveXrays(window).COPY_BUTTON_RESET_DELAY = delayMs;
+        },
+        { delayMs: ms }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+
+
+  async getCopyButtonResetDelay() {
+    try {
+      return await this.#runInPage(() => {
+        const { window } = content;
+        return Cu.waiveXrays(window).COPY_BUTTON_RESET_DELAY;
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    return NaN;
+  }
+
+  
+
+
+
+
+
+
+
+  async setManualCopyButtonResetEnabled(enabled) {
+    logAction(enabled);
+    try {
+      await this.#runInPage(
+        (_, { enabled }) => {
+          const { window } = content;
+          Cu.waiveXrays(window).testManualCopyButtonReset = enabled;
+        },
+        { enabled }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+  async resetCopyButton() {
+    logAction();
+    try {
+      await this.#runInPage(() => {
+        const { window } = content;
+        const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
+        if (!aboutTranslations) {
+          throw new Error("aboutTranslations instance is unavailable.");
+        }
+        aboutTranslations.testResetCopyButton();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
   async clickSwapLanguagesButton() {
     logAction();
     try {
@@ -4411,6 +4555,21 @@ class AboutTranslationsTestUtils {
         const button = content.document.querySelector(
           selectors.swapLanguagesButton
         );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  
+
+
+  async clickCopyButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(selectors.copyButton);
         button.click();
       });
     } catch (error) {
@@ -4498,6 +4657,9 @@ class AboutTranslationsTestUtils {
 
       for (const [eventName, expectedDetail] of expected) {
         const actualDetail = await expectedEventWaiters[eventName];
+        if (expectedDetail === AboutTranslationsTestUtils.AnyEventDetail) {
+          continue;
+        }
         is(
           JSON.stringify(actualDetail ?? {}),
           JSON.stringify(expectedDetail ?? {}),
@@ -4929,27 +5091,54 @@ class AboutTranslationsTestUtils {
 
 
 
-
-
-
-  async assertCopyButton({ visible = true, enabled = false } = {}) {
+  async getCopyButtonState() {
     await doubleRaf(document);
 
-    let pageResult = {};
     try {
-      pageResult = await this.#runInPage(selectors => {
+      return await this.#runInPage(selectors => {
         const { document } = content;
         const button = document.querySelector(selectors.copyButton);
         return {
           exists: !!button,
           isDisabled: button?.hasAttribute("disabled") ?? true,
+          isCopied: button?.classList.contains("copied") ?? false,
+          l10nId: button?.getAttribute("data-l10n-id") ?? "",
         };
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
 
-    const { exists, isDisabled } = pageResult;
+    return {
+      exists: false,
+      isDisabled: true,
+      isCopied: false,
+      l10nId: "",
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async assertCopyButton({
+    visible = true,
+    enabled = false,
+    copied,
+    l10nId,
+  } = {}) {
+    const {
+      exists,
+      isDisabled,
+      isCopied,
+      l10nId: actualL10nId,
+    } = await this.getCopyButtonState();
 
     ok(exists, "Expected copy button to be present.");
 
@@ -4971,6 +5160,42 @@ class AboutTranslationsTestUtils {
         ok(isDisabled, "Expected copy button to be disabled.");
       }
     }
+
+    if (copied !== undefined) {
+      if (copied) {
+        ok(isCopied, "Expected copy button to show the copied state.");
+      } else {
+        ok(!isCopied, "Expected copy button to show the default state.");
+      }
+    }
+
+    if (l10nId !== undefined) {
+      is(
+        actualL10nId,
+        l10nId,
+        `Expected copy button to use the "${l10nId}" localization id.`
+      );
+    }
+  }
+
+  
+
+
+
+
+  async getTargetTextAreaValue() {
+    await doubleRaf(document);
+    try {
+      return await this.#runInPage(selectors => {
+        const textarea = content.document.querySelector(
+          selectors.targetSectionTextArea
+        );
+        return textarea?.value ?? "";
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+    return "";
   }
 
   
