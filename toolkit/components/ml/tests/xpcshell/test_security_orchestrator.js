@@ -13,11 +13,15 @@
 
 
 
-const { SecurityOrchestrator } = ChromeUtils.importESModule(
-  "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs"
-);
+
+const { SecurityOrchestrator, getSecurityOrchestrator } =
+  ChromeUtils.importESModule(
+    "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs"
+  );
 
 const PREF_SECURITY_ENABLED = "browser.ml.security.enabled";
+
+const TEST_SESSION_ID = "test-session";
 
 
 let orchestrator = null;
@@ -26,8 +30,9 @@ function setup() {
   Services.prefs.clearUserPref(PREF_SECURITY_ENABLED);
 }
 
-function teardown() {
+async function teardown() {
   Services.prefs.clearUserPref(PREF_SECURITY_ENABLED);
+  await SecurityOrchestrator.resetForTesting();
   orchestrator = null;
 }
 
@@ -42,17 +47,18 @@ function teardown() {
 add_task(async function test_initialization_creates_session() {
   setup();
 
-  orchestrator = await SecurityOrchestrator.create("test-session");
-  const ledger = orchestrator.getSessionLedger();
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
 
   Assert.ok(ledger, "Should return session ledger");
   Assert.equal(ledger.tabCount(), 0, "Should start with no tabs");
   Assert.ok(
-    orchestrator.getSessionLedger(),
+    orchestrator.getSessionLedger(TEST_SESSION_ID),
     "Should be able to get session ledger"
   );
 
-  teardown();
+  await teardown();
 });
 
 
@@ -67,11 +73,12 @@ add_task(async function test_pref_switch_disabled_allows_everything() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, false);
 
-  orchestrator = await SecurityOrchestrator.create("test-session");
-  const ledger = orchestrator.getSessionLedger();
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1"); 
 
-  const decision = await orchestrator.evaluate({
+  const decision = await orchestrator.evaluate(TEST_SESSION_ID, {
     phase: "tool.execution",
     action: {
       type: "tool.call",
@@ -92,7 +99,7 @@ add_task(async function test_pref_switch_disabled_allows_everything() {
     "Pref switch OFF: should allow everything (pass-through)"
   );
 
-  teardown();
+  await teardown();
 });
 
 
@@ -107,11 +114,12 @@ add_task(async function test_pref_switch_enabled_enforces_policies() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
 
-  orchestrator = await SecurityOrchestrator.create("test-session");
-  const ledger = orchestrator.getSessionLedger();
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1");
 
-  const decision = await orchestrator.evaluate({
+  const decision = await orchestrator.evaluate(TEST_SESSION_ID, {
     phase: "tool.execution",
     action: {
       type: "tool.call",
@@ -129,7 +137,7 @@ add_task(async function test_pref_switch_enabled_enforces_policies() {
   Assert.equal(decision.effect, "deny", "Pref switch ON: should enforce");
   Assert.equal(decision.code, "UNSEEN_LINK", "Should deny unseen links");
 
-  teardown();
+  await teardown();
 });
 
 
@@ -144,8 +152,9 @@ add_task(async function test_pref_switch_runtime_change() {
   setup();
 
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
-  orchestrator = await SecurityOrchestrator.create("test-session");
-  const ledger = orchestrator.getSessionLedger();
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1");
 
   const envelope = {
@@ -164,21 +173,21 @@ add_task(async function test_pref_switch_runtime_change() {
   };
 
   
-  let decision = await orchestrator.evaluate(envelope);
+  let decision = await orchestrator.evaluate(TEST_SESSION_ID, envelope);
   Assert.equal(decision.effect, "deny", "Should deny when enabled");
 
   
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, false);
 
   
-  decision = await orchestrator.evaluate(envelope);
+  decision = await orchestrator.evaluate(TEST_SESSION_ID, envelope);
   Assert.equal(
     decision.effect,
     "allow",
     "Should allow immediately after runtime disable"
   );
 
-  teardown();
+  await teardown();
 });
 
 
@@ -189,29 +198,43 @@ add_task(async function test_pref_switch_runtime_change() {
 
 
 
-add_task(async function test_invalid_envelope_fails_closed() {
+add_task(async function test_invalid_envelope_throws() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
-  orchestrator = await SecurityOrchestrator.create("test-session");
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
 
-  const invalidEnvelopes = [
-    null,
-    { action: { type: "test" }, context: {} }, 
-    { phase: "test", context: {} }, 
-    { phase: "test", action: { type: "test" } }, 
-  ];
+  await Assert.rejects(
+    orchestrator.evaluate(TEST_SESSION_ID, null),
+    /Security envelope is null or invalid/,
+    "Null envelope should throw"
+  );
 
-  for (const envelope of invalidEnvelopes) {
-    const decision = await orchestrator.evaluate(envelope);
-    Assert.equal(
-      decision.effect,
-      "deny",
-      "Invalid envelope should fail closed (deny)"
-    );
-    Assert.equal(decision.code, "INVALID_REQUEST", "Should have correct code");
-  }
+  await Assert.rejects(
+    orchestrator.evaluate(TEST_SESSION_ID, {
+      action: { type: "test" },
+      context: {},
+    }),
+    /Security envelope missing required fields/,
+    "Missing phase should throw"
+  );
 
-  teardown();
+  await Assert.rejects(
+    orchestrator.evaluate(TEST_SESSION_ID, { phase: "test", context: {} }),
+    /Security envelope missing required fields/,
+    "Missing action should throw"
+  );
+
+  await Assert.rejects(
+    orchestrator.evaluate(TEST_SESSION_ID, {
+      phase: "test",
+      action: { type: "test" },
+    }),
+    /Security envelope missing required fields/,
+    "Missing context should throw"
+  );
+
+  await teardown();
 });
 
 
@@ -225,12 +248,13 @@ add_task(async function test_invalid_envelope_fails_closed() {
 add_task(async function test_policy_allows_seeded_url() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
-  orchestrator = await SecurityOrchestrator.create("test-session");
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
 
-  const ledger = orchestrator.getSessionLedger();
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1").add("https://example.com");
 
-  const decision = await orchestrator.evaluate({
+  const decision = await orchestrator.evaluate(TEST_SESSION_ID, {
     phase: "tool.execution",
     action: {
       type: "tool.call",
@@ -247,7 +271,7 @@ add_task(async function test_policy_allows_seeded_url() {
 
   Assert.equal(decision.effect, "allow", "Should allow seeded URL");
 
-  teardown();
+  await teardown();
 });
 
 
@@ -261,12 +285,13 @@ add_task(async function test_policy_allows_seeded_url() {
 add_task(async function test_policy_denies_unseen_url() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
-  orchestrator = await SecurityOrchestrator.create("test-session");
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
 
-  const ledger = orchestrator.getSessionLedger();
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1"); 
 
-  const decision = await orchestrator.evaluate({
+  const decision = await orchestrator.evaluate(TEST_SESSION_ID, {
     phase: "tool.execution",
     action: {
       type: "tool.call",
@@ -290,7 +315,7 @@ add_task(async function test_policy_denies_unseen_url() {
     "Should identify policy"
   );
 
-  teardown();
+  await teardown();
 });
 
 
@@ -304,12 +329,13 @@ add_task(async function test_policy_denies_unseen_url() {
 add_task(async function test_policy_denies_if_any_url_unseen() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
-  orchestrator = await SecurityOrchestrator.create("test-session");
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
 
-  const ledger = orchestrator.getSessionLedger();
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1").add("https://example.com");
 
-  const decision = await orchestrator.evaluate({
+  const decision = await orchestrator.evaluate(TEST_SESSION_ID, {
     phase: "tool.execution",
     action: {
       type: "tool.call",
@@ -333,7 +359,7 @@ add_task(async function test_policy_denies_if_any_url_unseen() {
     "Should deny if ANY URL unseen (all-or-nothing)"
   );
 
-  teardown();
+  await teardown();
 });
 
 
@@ -347,12 +373,13 @@ add_task(async function test_policy_denies_if_any_url_unseen() {
 add_task(async function test_malformed_url_fails_closed() {
   setup();
   Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
-  orchestrator = await SecurityOrchestrator.create("test-session");
+  orchestrator = await getSecurityOrchestrator();
+  orchestrator.registerSession(TEST_SESSION_ID);
 
-  const ledger = orchestrator.getSessionLedger();
+  const ledger = orchestrator.getSessionLedger(TEST_SESSION_ID);
   ledger.forTab("tab-1");
 
-  const decision = await orchestrator.evaluate({
+  const decision = await orchestrator.evaluate(TEST_SESSION_ID, {
     phase: "tool.execution",
     action: {
       type: "tool.call",
@@ -376,5 +403,172 @@ add_task(async function test_malformed_url_fails_closed() {
   
   Assert.equal(decision.code, "UNSEEN_LINK", "Should have UNSEEN_LINK code");
 
-  teardown();
+  await teardown();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_unknown_session_throws() {
+  setup();
+  Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
+  orchestrator = await getSecurityOrchestrator();
+  
+
+  await Assert.rejects(
+    orchestrator.evaluate("unknown-session", {
+      phase: "tool.execution",
+      action: {
+        type: "tool.call",
+        tool: "get_page_content",
+        urls: ["https://example.com"],
+        tabId: "tab-1",
+      },
+      context: {
+        currentTabId: "tab-1",
+        mentionedTabIds: [],
+        requestId: "test-123",
+      },
+    }),
+    /Session unknown-session is not registered/,
+    "Unknown session should throw"
+  );
+
+  await teardown();
+});
+
+
+
+
+
+
+
+
+
+add_task(async function test_register_session_idempotent() {
+  setup();
+  orchestrator = await getSecurityOrchestrator();
+
+  orchestrator.registerSession(TEST_SESSION_ID);
+  const ledger1 = orchestrator.getSessionLedger(TEST_SESSION_ID);
+  ledger1.forTab("tab-1").add("https://example.com");
+
+  
+  orchestrator.registerSession(TEST_SESSION_ID);
+  const ledger2 = orchestrator.getSessionLedger(TEST_SESSION_ID);
+
+  Assert.equal(ledger1, ledger2, "Should return same ledger instance");
+  Assert.ok(
+    ledger2.forTab("tab-1").has("https://example.com"),
+    "Ledger data should be preserved"
+  );
+
+  await teardown();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_cleanup_session_removes_ledger() {
+  setup();
+  orchestrator = await getSecurityOrchestrator();
+
+  orchestrator.registerSession(TEST_SESSION_ID);
+  Assert.ok(
+    orchestrator.getSessionLedger(TEST_SESSION_ID),
+    "Ledger should exist"
+  );
+
+  orchestrator.cleanupSession(TEST_SESSION_ID);
+  Assert.equal(
+    orchestrator.getSessionLedger(TEST_SESSION_ID),
+    undefined,
+    "Ledger should be removed after cleanup"
+  );
+
+  await teardown();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_cleanup_session_idempotent() {
+  setup();
+  orchestrator = await getSecurityOrchestrator();
+
+  
+  orchestrator.cleanupSession("non-existent-session");
+  orchestrator.cleanupSession("non-existent-session");
+
+  
+  orchestrator.registerSession(TEST_SESSION_ID);
+  orchestrator.cleanupSession(TEST_SESSION_ID);
+  orchestrator.cleanupSession(TEST_SESSION_ID);
+
+  await teardown();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_register_session_rejects_invalid_id() {
+  setup();
+  orchestrator = await getSecurityOrchestrator();
+
+  const invalidIds = [null, undefined, "", 123, {}, []];
+
+  for (const invalidId of invalidIds) {
+    Assert.throws(
+      () => orchestrator.registerSession(invalidId),
+      /registerSession requires a non-empty string sessionId/,
+      `Should reject invalid sessionId: ${JSON.stringify(invalidId)}`
+    );
+  }
+
+  await teardown();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_get_stats_returns_session_count() {
+  setup();
+  orchestrator = await getSecurityOrchestrator();
+
+  let stats = orchestrator.getStats();
+  Assert.equal(stats.sessionCount, 0, "Should start with 0 sessions");
+
+  orchestrator.registerSession("session-1");
+  orchestrator.registerSession("session-2");
+
+  stats = orchestrator.getStats();
+  Assert.equal(stats.sessionCount, 2, "Should have 2 sessions");
+  Assert.ok(stats.sessionStats["session-1"], "Should have stats for session-1");
+  Assert.ok(stats.sessionStats["session-2"], "Should have stats for session-2");
+
+  orchestrator.cleanupSession("session-1");
+  stats = orchestrator.getStats();
+  Assert.equal(stats.sessionCount, 1, "Should have 1 session after cleanup");
+
+  await teardown();
 });
