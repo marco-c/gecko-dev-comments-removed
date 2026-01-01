@@ -22,7 +22,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLCollectionBinding.h"
-#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/NodeInfoInlines.h"
 #include "mozilla/dom/NodeListBinding.h"
 #include "nsCCUncollectableMarker.h"
@@ -884,10 +883,6 @@ bool nsContentList::MatchSelf(nsIContent* aContent) {
   return false;
 }
 
-nsINode* nsContentList::GetNextNode(nsINode* aCurrent) {
-  return aCurrent->GetNextNode(mRootNode);
-}
-
 void nsContentList::PopulateSelf(uint32_t aNeededLength,
                                  uint32_t aExpectedElementsIfDirty) {
   if (!mRootNode) {
@@ -913,7 +908,7 @@ void nsContentList::PopulateSelf(uint32_t aNeededLength,
     
     nsINode* cur = count ? mElements[count - 1].get() : mRootNode;
     do {
-      cur = GetNextNode(cur);
+      cur = cur->GetNextNode(mRootNode);
       if (!cur) {
         break;
       }
@@ -1098,50 +1093,17 @@ JSObject* nsCacheableFuncStringHTMLCollection::WrapObject(
 
 
 
-nsLabelsNodeList::nsLabelsNodeList(nsGenericHTMLElement* aLabeledElement,
-                                   nsINode* aSubtreeRoot,
-                                   nsContentListMatchFunc aMatchFunc,
-                                   nsContentListDestroyFunc aDestroyFunc)
-    : nsContentList(aSubtreeRoot, aMatchFunc, aDestroyFunc, aLabeledElement) {
-  WatchLabeledDescendantsOfNearestAncestorLabel(aLabeledElement);
-  if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(aSubtreeRoot)) {
-    shadow->Host()->AddReferenceTargetChangeObserver(ResetRootsCallback, this);
-  }
-  mRoots.AppendElement(aSubtreeRoot);
-  ResetRoots();
-}
-
-nsLabelsNodeList::~nsLabelsNodeList() {
-  for (nsINode* root : mRoots) {
-    root->RemoveMutationObserver(this);
-    if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(root)) {
-      Element* host = shadow->GetHost();
-      if (host) {
-        host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
-      }
-    }
-  }
-}
-
 JSObject* nsLabelsNodeList::WrapObject(JSContext* cx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return NodeList_Binding::Wrap(cx, this, aGivenProto);
-}
-
-bool nsLabelsNodeList::NodeIsInScope(nsINode* aNode) {
-  for (nsINode* root : mRoots) {
-    if (nsContentUtils::IsInSameAnonymousTree(root, aNode)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void nsLabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                                         nsAtom* aAttribute, AttrModType,
                                         const nsAttrValue* aOldValue) {
   MOZ_ASSERT(aElement, "Must have a content node to work with");
-  if (mState == State::Dirty || !NodeIsInScope(aElement)) {
+  if (mState == State::Dirty ||
+      !nsContentUtils::IsInSameAnonymousTree(mRootNode, aElement)) {
     return;
   }
 
@@ -1160,7 +1122,9 @@ void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent,
   nsIContent* container = aFirstNewContent->GetParent();
   
   
-  if (mState != State::Dirty && NodeIsInScope(container)) {
+  
+  if (mState != State::Dirty &&
+      nsContentUtils::IsInSameAnonymousTree(mRootNode, container)) {
     SetDirty();
     return;
   }
@@ -1170,7 +1134,9 @@ void nsLabelsNodeList::ContentInserted(nsIContent* aChild,
                                        const ContentInsertInfo&) {
   
   
-  if (mState != State::Dirty && NodeIsInScope(aChild)) {
+  
+  if (mState != State::Dirty &&
+      nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild)) {
     SetDirty();
     return;
   }
@@ -1180,182 +1146,34 @@ void nsLabelsNodeList::ContentWillBeRemoved(nsIContent* aChild,
                                             const ContentRemoveInfo&) {
   
   
-  if (mState != State::Dirty && NodeIsInScope(aChild)) {
+  if (mState != State::Dirty &&
+      nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild)) {
     SetDirty();
     return;
   }
 }
 
-void nsLabelsNodeList::NodeWillBeDestroyed(nsINode* aNode) {
-  if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(aNode)) {
-    if (Element* host = shadow->GetHost()) {
-      host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
-    }
-  }
-  mRoots.RemoveElement(aNode);
-}
-
-
-bool nsLabelsNodeList::ResetRootsCallback(void* aData) {
-  nsLabelsNodeList* list = (nsLabelsNodeList*)aData;
-  list->ResetRoots();
-  return true;
-}
-
-
-bool nsLabelsNodeList::SetDirtyCallback(void* aData) {
-  nsLabelsNodeList* list = (nsLabelsNodeList*)aData;
-  list->SetDirty();
-  return true;
-}
-
-void nsLabelsNodeList::WatchLabeledDescendantsOfNearestAncestorLabel(
-    Element* labeledHost) {
-  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+void nsLabelsNodeList::MaybeResetRoot(nsINode* aRootNode) {
+  MOZ_ASSERT(aRootNode, "Must have root");
+  if (mRootNode == aRootNode) {
     return;
   }
-  MOZ_ASSERT(labeledHost);
-  Element* parentElement = labeledHost->GetParentElement();
-  while (parentElement) {
-    if (HTMLLabelElement* label = HTMLLabelElement::FromNode(parentElement)) {
-      
-      
-      if (Element* labeledElement = label->GetControlForBindings()) {
-        if (labeledElement != labeledHost) {
-          
-          
-          
-          labeledElement->AddReferenceTargetChangeObserver(SetDirtyCallback,
-                                                           this);
-        }
-      }
-      return;
-    }
-    parentElement = parentElement->GetParentElement();
-  }
-}
 
-void nsLabelsNodeList::ResetRoots() {
   MOZ_ASSERT(mIsLiveList, "nsLabelsNodeList is always a live list");
-
-  nsGenericHTMLElement* labeledElement =
-      static_cast<nsGenericHTMLElement*>(mData);
-  MOZ_ASSERT(labeledElement, "Must have labeled element");
-
-  nsTArray<nsINode*> newRoots;
-
-  Element* labeledElementOrHost = labeledElement;
-  bool labeledElementOrHostIsInShadowTree = false;
-  ShadowRoot* shadowRoot = labeledElement->GetContainingShadow();
-  while (shadowRoot) {
-    newRoots.AppendElement(shadowRoot);
-    
-    
-    if (shadowRoot->GetReferenceTargetElement() != labeledElementOrHost) {
-      labeledElementOrHostIsInShadowTree = true;
-      break;
-    }
-    labeledElementOrHost = shadowRoot->Host();
-    WatchLabeledDescendantsOfNearestAncestorLabel(labeledElementOrHost);
-    shadowRoot = labeledElementOrHost->GetContainingShadow();
+  if (mRootNode) {
+    mRootNode->RemoveMutationObserver(this);
   }
-
-  
-  
-  if (!labeledElementOrHostIsInShadowTree) {
-    
-    
-    DocumentOrShadowRoot* doc = labeledElementOrHost->GetUncomposedDoc();
-    if (doc) {
-      newRoots.AppendElement(&doc->AsNode());
-    } else if (newRoots.IsEmpty()) {
-      newRoots.AppendElement(labeledElementOrHost->SubtreeRoot());
-    }
-  }
-
-  if (newRoots == mRoots) {
-    return;
-  }
-  MOZ_ASSERT(!newRoots.IsEmpty(), "Must have at least one root");
-
-  for (nsINode* root : mRoots) {
-    if (!newRoots.Contains(root)) {
-      root->RemoveMutationObserver(this);
-    }
-
-    
-    
-    if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(root)) {
-      Element* host = shadow->GetHost();
-      if (host) {
-        host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
-      }
-    }
-  }
-  for (nsINode* root : newRoots) {
-    if (!mRoots.Contains(root)) {
-      root->AddMutationObserver(this);
-    }
-  }
-
-  mRoots = std::move(newRoots);
-  mRootNode = mRoots.LastElement();
-
-  if (labeledElementOrHostIsInShadowTree) {
-    ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(mRootNode);
-    MOZ_ASSERT(shadow);
-    shadow->Host()->AddReferenceTargetChangeObserver(ResetRootsCallback, this);
-  }
-  labeledElementOrHost->AddReferenceTargetChangeObserver(ResetRootsCallback,
-                                                         this);
-
+  mRootNode = aRootNode;
+  mRootNode->AddMutationObserver(this);
   SetDirty();
-}
-
-nsINode* nsLabelsNodeList::GetNextNode(nsINode* aCurrent) {
-  nsGenericHTMLElement* labeledElement = (nsGenericHTMLElement*)mData;
-  MOZ_ASSERT(labeledElement, "Must have labeled element");
-  MOZ_ASSERT(mRootNode, "Must have root node");
-
-  nsINode* next = nullptr;
-
-  
-  
-  
-  if (aCurrent->IsElement()) {
-    Element* curElement = aCurrent->AsElement();
-    ShadowRoot* curShadow = curElement->GetShadowRoot();
-    if (curShadow && curElement->ResolveReferenceTarget() == labeledElement) {
-      next = curShadow->GetFirstChild();
-    }
-  }
-  if (next) {
-    return next;
-  }
-
-  
-  next = aCurrent->GetNextNode();
-  if (next) {
-    return next;
-  }
-
-  
-  
-  
-  nsINode* cur = aCurrent;
-  while (!next) {
-    ShadowRoot* shadow = cur->GetContainingShadow();
-    if (!shadow || shadow->GetReferenceTargetElement() == cur) {
-      break;
-    }
-    cur = shadow->Host();
-    next = cur->GetNextNode();
-  }
-  return next;
 }
 
 void nsLabelsNodeList::PopulateSelf(uint32_t aNeededLength,
                                     uint32_t aExpectedElementsIfDirty) {
+  if (!mRootNode) {
+    return;
+  }
+
   
   nsINode* cur = mRootNode;
   if (mElements.IsEmpty() && cur->IsElement() && Match(cur->AsElement())) {
@@ -1364,18 +1182,4 @@ void nsLabelsNodeList::PopulateSelf(uint32_t aNeededLength,
   }
 
   nsContentList::PopulateSelf(aNeededLength, aExpectedElementsIfDirty);
-}
-
-void nsLabelsNodeList::LastRelease() {
-  for (nsINode* root : mRoots) {
-    root->RemoveMutationObserver(this);
-    if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(root)) {
-      if (Element* host = shadow->GetHost()) {
-        host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
-      }
-    }
-  }
-  mRoots.Clear();
-
-  nsContentList::LastRelease();
 }

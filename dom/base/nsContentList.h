@@ -200,7 +200,7 @@ struct nsContentListKey {
 
 class nsContentList : public nsBaseContentList,
                       public nsIHTMLCollection,
-                      public nsStubMultiMutationObserver {
+                      public nsStubMutationObserver {
  protected:
   enum class State : uint8_t {
     
@@ -387,8 +387,6 @@ class nsContentList : public nsBaseContentList,
 
 
   bool MatchSelf(nsIContent* aContent);
-
-  virtual nsINode* GetNextNode(nsINode* aCurrent);
 
   
 
@@ -621,15 +619,14 @@ class nsCacheableFuncStringHTMLCollection
 
 class nsLabelsNodeList final : public nsContentList {
  public:
-  nsLabelsNodeList(nsGenericHTMLElement* aLabeledElement, nsINode* aSubtreeRoot,
-                   nsContentListMatchFunc aMatchFunc,
-                   nsContentListDestroyFunc aDestroyFunc);
+  nsLabelsNodeList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
+                   nsContentListDestroyFunc aDestroyFunc, void* aData)
+      : nsContentList(aRootNode, aFunc, aDestroyFunc, aData) {}
 
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
   JSObject* WrapObject(JSContext* cx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -638,14 +635,9 @@ class nsLabelsNodeList final : public nsContentList {
 
 
 
-  void ResetRoots();
 
-  void LastRelease() override;
 
- protected:
-  virtual ~nsLabelsNodeList();
-
-  nsINode* GetNextNode(nsINode* aCurrent) override;
+  void MaybeResetRoot(nsINode* aRootNode);
 
  private:
   
@@ -659,28 +651,5 @@ class nsLabelsNodeList final : public nsContentList {
 
   void PopulateSelf(uint32_t aNeededLength,
                     uint32_t aExpectedElementsIfDirty = 0) override;
-
-  bool NodeIsInScope(nsINode* aNode);
-
-  static bool ResetRootsCallback(void* aData);
-  static bool SetDirtyCallback(void* aData);
-
-  void WatchLabeledDescendantsOfNearestAncestorLabel(Element* labeledHost);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsTArray<nsINode*> mRoots;
 };
 #endif  

@@ -189,8 +189,7 @@ class HTMLTextAreaElement final : public TextControlElement,
     SetHTMLBoolAttr(nsGkAtoms::disabled, aDisabled, aError);
   }
   
-  using nsGenericHTMLFormControlElementWithState::GetFormForBindings;
-  using nsGenericHTMLFormControlElementWithState::GetFormInternal;
+  using nsGenericHTMLFormControlElementWithState::GetForm;
   int32_t MaxLength() const { return GetIntAttr(nsGkAtoms::maxlength, -1); }
   int32_t UsedMaxLength() const final { return MaxLength(); }
   void SetMaxLength(int32_t aMaxLength, ErrorResult& aError) {

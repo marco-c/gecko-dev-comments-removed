@@ -349,7 +349,7 @@ void HTMLFormElement::RequestSubmit(nsGenericHTMLElement* aSubmitter,
 
     
     
-    if (fc->GetFormInternal() != this) {
+    if (fc->GetForm() != this) {
       aRv.ThrowNotFoundError("The submitter is not owned by this form.");
       return;
     }
@@ -403,13 +403,11 @@ static void MarkOrphans(Span<T*> aArray) {
   }
 }
 
-static void CollectOrphans(
-    nsINode* aRemovalRoot,
-    TreeOrderedArray<nsGenericHTMLFormElement*, TreeKind::ShadowIncludingDOM>&
-        aArray
+static void CollectOrphans(nsINode* aRemovalRoot,
+                           TreeOrderedArray<nsGenericHTMLFormElement*>& aArray
 #ifdef DEBUG
-    ,
-    HTMLFormElement* aThisForm
+                           ,
+                           HTMLFormElement* aThisForm
 #endif
 ) {
   
@@ -443,7 +441,7 @@ static void CollectOrphans(
     if (!removed) {
       const auto* fc = nsIFormControl::FromNode(node);
       MOZ_ASSERT(fc);
-      HTMLFormElement* form = fc->GetFormInternal();
+      HTMLFormElement* form = fc->GetForm();
       NS_ASSERTION(form == aThisForm, "How did that happen?");
     }
 #endif 
@@ -482,7 +480,7 @@ static void CollectOrphans(nsINode* aRemovalRoot,
 
 #ifdef DEBUG
     if (!removed) {
-      HTMLFormElement* form = node->GetFormInternal();
+      HTMLFormElement* form = node->GetForm();
       NS_ASSERTION(form == aThisForm, "How did that happen?");
     }
 #endif 
@@ -1134,9 +1132,8 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   
   
   bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(fc);
-  TreeOrderedArray<nsGenericHTMLFormElement*, TreeKind::ShadowIncludingDOM>&
-      controlList =
-          childInElements ? mControls->mElements : mControls->mNotInElements;
+  TreeOrderedArray<nsGenericHTMLFormElement*>& controlList =
+      childInElements ? mControls->mElements : mControls->mNotInElements;
 
   const size_t insertedIndex = controlList.Insert(*aChild, this);
   const bool lastElement = controlList.Length() == insertedIndex + 1;
@@ -1238,9 +1235,8 @@ nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
   
   
   bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(fc);
-  TreeOrderedArray<nsGenericHTMLFormElement*, TreeKind::ShadowIncludingDOM>&
-      controls =
-          childInElements ? mControls->mElements : mControls->mNotInElements;
+  TreeOrderedArray<nsGenericHTMLFormElement*>& controls =
+      childInElements ? mControls->mElements : mControls->mNotInElements;
 
   
   

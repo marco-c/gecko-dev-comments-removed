@@ -681,8 +681,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   static bool MatchLabelsElement(Element* aElement, int32_t aNamespaceID,
                                  nsAtom* aAtom, void* aData);
 
-  already_AddRefed<nsINodeList> LabelsForBindings();
-  already_AddRefed<nsINodeList> LabelsInternal();
+  already_AddRefed<nsINodeList> Labels();
 
   static bool LegacyTouchAPIEnabled(JSContext* aCx, JSObject* aObj);
 
@@ -1126,21 +1125,20 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
 
 
-
-  Element* AddFormAttributeObserver();
-
-  
-
-
-  void RemoveFormAttributeObserver();
+  Element* AddFormIdObserver();
 
   
 
 
+  void RemoveFormIdObserver();
+
+  
 
 
-  static bool FormAttributeUpdated(Element* aOldElement, Element* aNewElement,
-                                   Element* thisElement);
+
+
+  static bool FormIdUpdated(Element* aOldElement, Element* aNewElement,
+                            void* aData);
 
   
   bool IsElementDisabledForEvents(mozilla::WidgetEvent* aEvent,
@@ -1204,8 +1202,7 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
 
   
   mozilla::dom::HTMLFieldSetElement* GetFieldSet() override;
-  mozilla::dom::Element* GetFormForBindings() const override;
-  mozilla::dom::HTMLFormElement* GetFormInternal() const override;
+  mozilla::dom::HTMLFormElement* GetForm() const override { return mForm; }
   void SetForm(mozilla::dom::HTMLFormElement* aForm) override;
   void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) override;
 
@@ -1220,6 +1217,7 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   bool DoesReadWriteApply() const override;
   void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
                        bool aBindToTree) override;
+  mozilla::dom::HTMLFormElement* GetFormInternal() const override;
   mozilla::dom::HTMLFieldSetElement* GetFieldSetInternal() const override;
   void SetFieldSetInternal(
       mozilla::dom::HTMLFieldSetElement* aFieldset) override;
@@ -1268,9 +1266,8 @@ class nsGenericHTMLFormControlElementWithState
                       nsAttrValue& aResult) override;
 
   
-  mozilla::dom::Element* GetPopoverTargetElementForBindings() const;
-  mozilla::dom::Element* GetPopoverTargetElementInternal() const;
-  void SetPopoverTargetElementForBindings(mozilla::dom::Element*);
+  mozilla::dom::Element* GetPopoverTargetElement() const;
+  void SetPopoverTargetElement(mozilla::dom::Element*);
   void GetPopoverTargetAction(nsAString& aValue) const {
     GetHTMLEnumAttr(nsGkAtoms::popovertargetaction, aValue);
   }

@@ -427,7 +427,7 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
   
   nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
   if (slots && slots->mLabelsList) {
-    slots->mLabelsList->ResetRoots();
+    slots->mLabelsList->MaybeResetRoot(SubtreeRoot());
   }
 
   return rv;
@@ -475,7 +475,7 @@ void nsGenericHTMLElement::UnbindFromTree(UnbindContext& aContext) {
   
   nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
   if (slots && slots->mLabelsList) {
-    slots->mLabelsList->ResetRoots();
+    slots->mLabelsList->MaybeResetRoot(SubtreeRoot());
   }
 }
 
@@ -1742,21 +1742,17 @@ bool nsGenericHTMLElement::MatchLabelsElement(Element* aElement,
                                               int32_t aNamespaceID,
                                               nsAtom* aAtom, void* aData) {
   HTMLLabelElement* element = HTMLLabelElement::FromNode(aElement);
-  return element && element->GetLabeledElementInternal() == aData;
+  return element && element->GetControl() == aData;
 }
 
-already_AddRefed<nsINodeList> nsGenericHTMLElement::LabelsForBindings() {
-  return LabelsInternal();
-}
-
-already_AddRefed<nsINodeList> nsGenericHTMLElement::LabelsInternal() {
+already_AddRefed<nsINodeList> nsGenericHTMLElement::Labels() {
   MOZ_ASSERT(IsLabelable(),
              "Labels() only allow labelable elements to use it.");
   nsExtendedDOMSlots* slots = ExtendedDOMSlots();
 
   if (!slots->mLabelsList) {
     slots->mLabelsList =
-        new nsLabelsNodeList(this, SubtreeRoot(), MatchLabelsElement, nullptr);
+        new nsLabelsNodeList(SubtreeRoot(), MatchLabelsElement, nullptr, this);
   }
 
   RefPtr<nsLabelsNodeList> labels = slots->mLabelsList;
@@ -1872,7 +1868,7 @@ void nsGenericHTMLFormElement::UnbindFromTree(UnbindContext& aContext) {
     
     if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
                                         nsGkAtoms::form)) {
-      RemoveFormAttributeObserver();
+      RemoveFormIdObserver();
     }
   }
 
@@ -1915,6 +1911,17 @@ void nsGenericHTMLFormElement::BeforeSetAttr(int32_t aNameSpaceID,
 
       form->RemoveElement(this, false);
     }
+
+    if (aName == nsGkAtoms::form) {
+      
+      
+      if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
+                                          nsGkAtoms::form)) {
+        
+        
+        RemoveFormIdObserver();
+      }
+    }
   }
 
   return nsGenericHTMLElement::BeforeSetAttr(aNameSpaceID, aName, aValue,
@@ -1956,22 +1963,18 @@ void nsGenericHTMLFormElement::AfterSetAttr(
     }
 
     if (aName == nsGkAtoms::form) {
-      bool hadOldValue = aOldValue && !aOldValue->GetAtomValue()->IsEmpty();
-      bool hasNewValue = aValue && !aValue->GetAtomValue()->IsEmpty();
-      if (hadOldValue || hasNewValue) {
-        if (!hadOldValue && hasNewValue) {
-          AddFormAttributeObserver();
+      
+      DocumentOrShadowRoot* docOrShadow =
+          GetUncomposedDocOrConnectedShadowRoot();
+      if (docOrShadow) {
+        Element* formIdElement = nullptr;
+        if (aValue && !aValue->IsEmptyString()) {
+          formIdElement = AddFormIdObserver();
         }
 
         
-        IDREFAttributeValueChanged(aName, aValue);
-
-        if (hadOldValue && !hasNewValue) {
-          RemoveFormAttributeObserver();
-        }
-      } else if (aValue && aValue->GetAtomValue()->IsEmpty()) {
         
-        ClearForm(true, false);
+        UpdateFormOwner(false, formIdElement);
       }
     }
   }
@@ -1987,33 +1990,45 @@ void nsGenericHTMLFormElement::ForgetFieldSet(nsIContent* aFieldset) {
   }
 }
 
-Element* nsGenericHTMLFormElement::AddFormAttributeObserver() {
+Element* nsGenericHTMLFormElement::AddFormIdObserver() {
   MOZ_ASSERT(IsFormAssociatedElement());
+
+  nsAutoString formId;
+  DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
+  GetAttr(nsGkAtoms::form, formId);
+  NS_ASSERTION(!formId.IsEmpty(),
+               "@form value should not be the empty string!");
+  RefPtr<nsAtom> atom = NS_Atomize(formId);
+
+  return docOrShadow->AddIDTargetObserver(atom, FormIdUpdated, this, false);
+}
+
+void nsGenericHTMLFormElement::RemoveFormIdObserver() {
+  MOZ_ASSERT(IsFormAssociatedElement());
+
+  DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
+  if (!docOrShadow) {
+    return;
+  }
 
   nsAutoString formId;
   GetAttr(nsGkAtoms::form, formId);
   NS_ASSERTION(!formId.IsEmpty(),
                "@form value should not be the empty string!");
+  RefPtr<nsAtom> atom = NS_Atomize(formId);
 
-  return AddAttrAssociatedElementObserver(nsGkAtoms::form,
-                                          FormAttributeUpdated);
-}
-
-void nsGenericHTMLFormElement::RemoveFormAttributeObserver() {
-  MOZ_ASSERT(IsFormAssociatedElement());
-
-  RemoveAttrAssociatedElementObserver(nsGkAtoms::form, FormAttributeUpdated);
+  docOrShadow->RemoveIDTargetObserver(atom, FormIdUpdated, this, false);
 }
 
 
-bool nsGenericHTMLFormElement::FormAttributeUpdated(Element* aOldElement,
-                                                    Element* aNewElement,
-                                                    Element* thisElement) {
-  NS_ASSERTION(thisElement->IsHTMLElement(),
-               "thisElement should be an HTML element");
-
+bool nsGenericHTMLFormElement::FormIdUpdated(Element* aOldElement,
+                                             Element* aNewElement,
+                                             void* aData) {
   nsGenericHTMLFormElement* element =
-      static_cast<nsGenericHTMLFormElement*>(thisElement);
+      static_cast<nsGenericHTMLFormElement*>(aData);
+
+  NS_ASSERTION(element->IsHTMLElement(), "aData should be an HTML element");
+
   element->UpdateFormOwner(false, aNewElement);
 
   return true;
@@ -2104,22 +2119,19 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
         Element* element = nullptr;
 
         if (aBindToTree) {
-          element = AddFormAttributeObserver();
+          element = AddFormIdObserver();
         } else {
           element = aFormIdElement;
         }
 
-        NS_ASSERTION(
-            !IsInComposedDoc() ||
-                element == GetAttrAssociatedElementInternal(nsGkAtoms::form),
-            "element should be equals to the current element "
-            "associated via @form!");
+        NS_ASSERTION(!IsInComposedDoc() ||
+                         element == GetUncomposedDocOrConnectedShadowRoot()
+                                        ->GetElementById(formId),
+                     "element should be equals to the current element "
+                     "associated with the id in @form!");
 
         if (element && element->IsHTMLElement(nsGkAtoms::form) &&
-            element->GetClosestNativeAnonymousSubtreeRoot() ==
-                GetClosestNativeAnonymousSubtreeRoot() &&
-            (StaticPrefs::dom_shadowdom_referenceTarget_enabled() ||
-             element->GetContainingShadow() == GetContainingShadow())) {
+            nsContentUtils::IsInSameAnonymousTree(this, element)) {
           form = static_cast<HTMLFormElement*>(element);
           SetFormInternal(form, aBindToTree);
         }
@@ -2627,14 +2639,6 @@ HTMLFieldSetElement* nsGenericHTMLFormControlElement::GetFieldSet() {
   return GetFieldSetInternal();
 }
 
-mozilla::dom::Element* nsGenericHTMLFormControlElement::GetFormForBindings()
-    const {
-  if (!mForm) {
-    return nullptr;
-  }
-  return RetargetReferenceTargetForBindings(mForm);
-}
-
 void nsGenericHTMLFormControlElement::SetForm(HTMLFormElement* aForm) {
   MOZ_ASSERT(aForm, "Don't pass null here");
   NS_ASSERTION(!mForm,
@@ -2849,19 +2853,12 @@ bool nsGenericHTMLFormControlElementWithState::ParseAttribute(
 }
 
 mozilla::dom::Element*
-nsGenericHTMLFormControlElementWithState::GetPopoverTargetElementForBindings()
-    const {
-  return GetAttrAssociatedElementForBindings(nsGkAtoms::popovertarget);
+nsGenericHTMLFormControlElementWithState::GetPopoverTargetElement() const {
+  return GetAttrAssociatedElement(nsGkAtoms::popovertarget);
 }
 
-mozilla::dom::Element*
-nsGenericHTMLFormControlElementWithState::GetPopoverTargetElementInternal()
-    const {
-  return GetAttrAssociatedElementInternal(nsGkAtoms::popovertarget);
-}
-
-void nsGenericHTMLFormControlElementWithState::
-    SetPopoverTargetElementForBindings(mozilla::dom::Element* aElement) {
+void nsGenericHTMLFormControlElementWithState::SetPopoverTargetElement(
+    mozilla::dom::Element* aElement) {
   ExplicitlySetAttrElement(nsGkAtoms::popovertarget, aElement);
 }
 

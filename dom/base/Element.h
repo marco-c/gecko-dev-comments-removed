@@ -260,25 +260,24 @@ class TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString;
     SetOrRemoveNullableStringAttr(nsGkAtoms::attr, aValue, aRv); \
   }
 
-#define REFLECT_NULLABLE_ELEMENT_ATTR(method, attr)              \
-  Element* Get##method() const {                                 \
-    return GetAttrAssociatedElementForBindings(nsGkAtoms::attr); \
-  }                                                              \
-                                                                 \
-  void Set##method(Element* aElement) {                          \
-    ExplicitlySetAttrElement(nsGkAtoms::attr, aElement);         \
+#define REFLECT_NULLABLE_ELEMENT_ATTR(method, attr)      \
+  Element* Get##method() const {                         \
+    return GetAttrAssociatedElement(nsGkAtoms::attr);    \
+  }                                                      \
+                                                         \
+  void Set##method(Element* aElement) {                  \
+    ExplicitlySetAttrElement(nsGkAtoms::attr, aElement); \
   }
 
-#define REFLECT_NULLABLE_ELEMENTS_ATTR(method, attr)                       \
-  void Get##method(bool* aUseCachedValue,                                  \
-                   Nullable<nsTArray<RefPtr<Element>>>& aElements) {       \
-    GetAttrAssociatedElementsForBindings(nsGkAtoms::attr, aUseCachedValue, \
-                                         aElements);                       \
-  }                                                                        \
-                                                                           \
-  void Set##method(                                                        \
-      const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {       \
-    ExplicitlySetAttrElements(nsGkAtoms::attr, aElements);                 \
+#define REFLECT_NULLABLE_ELEMENTS_ATTR(method, attr)                        \
+  void Get##method(bool* aUseCachedValue,                                   \
+                   Nullable<nsTArray<RefPtr<Element>>>& aElements) {        \
+    GetAttrAssociatedElements(nsGkAtoms::attr, aUseCachedValue, aElements); \
+  }                                                                         \
+                                                                            \
+  void Set##method(                                                         \
+      const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {        \
+    ExplicitlySetAttrElements(nsGkAtoms::attr, aElements);                  \
   }
 
 class Element : public FragmentOrElement {
@@ -1366,68 +1365,11 @@ class Element : public FragmentOrElement {
 
 
 
-  Element* GetAttrAssociatedElementInternal(nsAtom* aAttr,
-                                            bool aForBindings = false) const;
-  
-
-
-
-  Element* GetAttrAssociatedElementForBindings(nsAtom* aAttr) const;
-
-  
-
-
-
-  Maybe<nsTArray<RefPtr<Element>>> GetAttrAssociatedElementsInternal(
-      nsAtom* aAttr, bool aForBindings = false);
-  
-
-
-
-  void GetAttrAssociatedElementsForBindings(
+  Element* GetAttrAssociatedElement(nsAtom* aAttr) const;
+  void GetAttrAssociatedElements(
       nsAtom* aAttr, bool* aUseCachedValue,
       Nullable<nsTArray<RefPtr<Element>>>& aElements);
 
-  typedef bool (*AttrTargetObserver)(Element* aOldElement, Element* aNewElement,
-                                     Element* thisElement);
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Element* AddAttrAssociatedElementObserver(nsAtom* aAttr,
-                                            AttrTargetObserver aObserver);
-  void RemoveAttrAssociatedElementObserver(nsAtom* aAttr,
-                                           AttrTargetObserver aObserver);
-  bool AttrAssociatedElementUpdated(nsAtom* aAttr);
-
- protected:
-  void IDREFAttributeValueChanged(nsAtom* aAttr, const nsAttrValue* aValue);
-
- private:
-  FragmentOrElement::nsExtendedDOMSlots::AttrElementObserverData*
-  GetAttrElementObserverData(nsAtom* aAttr);
-  void DeleteAttrAssociatedElementObserverData(nsAtom* aAttr);
-  void AddDocOrShadowObserversForAttrAssociatedElement(
-      DocumentOrShadowRoot& aContainingDocOrShadow, nsAtom* aAttr);
-  void RemoveDocOrShadowObserversForAttrAssociatedElement(
-      DocumentOrShadowRoot& aContainingDocOrShadow, nsAtom* aAttr);
-  void BindAttrAssociatedElementObservers(
-      DocumentOrShadowRoot& aContainingDocOrShadow);
-  void UnbindAttrAssociatedElementObservers(
-      DocumentOrShadowRoot& aContainingDocOrShadow);
-
- public:
   
 
 
@@ -1457,47 +1399,8 @@ class Element : public FragmentOrElement {
 
 
 
-  Maybe<nsTArray<RefPtr<dom::Element>>> GetExplicitlySetAttrElements(
-      nsAtom* aAttr) const;
-
-  
-
-
-
-
-
-
-  typedef bool (*ReferenceTargetChangeObserver)(void* aData);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void AddReferenceTargetChangeObserver(ReferenceTargetChangeObserver aObserver,
-                                        void* aData);
-  void RemoveReferenceTargetChangeObserver(
-      ReferenceTargetChangeObserver aObserver, void* aData);
-  
-
-
-
-  void NotifyReferenceTargetChanged();
+  void GetExplicitlySetAttrElements(nsAtom* aAttr,
+                                    nsTArray<Element*>& aElements) const;
 
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;
@@ -1608,7 +1511,7 @@ class Element : public FragmentOrElement {
       SlotAssignmentMode aSlotAssignmentMode = SlotAssignmentMode::Named,
       ShadowRootClonable aClonable = ShadowRootClonable::No,
       ShadowRootSerializable aSerializable = ShadowRootSerializable::No,
-      const nsAString& aReferenceTarget = VoidString());
+      const nsAString& aReferenceTarget = EmptyString());
 
   
   enum class NotifyUAWidgetSetup : bool { No, Yes };
@@ -1638,9 +1541,6 @@ class Element : public FragmentOrElement {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
     return slots ? slots->mShadowRoot.get() : nullptr;
   }
-
-  Element* ResolveReferenceTarget() const;
-  Element* RetargetReferenceTargetForBindings(Element* aElement) const;
 
   const Maybe<float> GetLastRememberedBSize() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
