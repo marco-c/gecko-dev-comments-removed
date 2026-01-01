@@ -2628,11 +2628,11 @@ bool nsRefreshDriver::PaintIfNeeded() {
   {
     PaintTelemetry::AutoRecordPaint record;
     ps->SyncWindowPropertiesIfNeeded();
-    ps->PaintSynchronously();
     
     if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
       pm->PaintPopups(this);
     }
+    ps->PaintSynchronously();
   }
   return true;
 }
