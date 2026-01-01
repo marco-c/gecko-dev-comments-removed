@@ -682,6 +682,13 @@ async function testFileAccessWindowsOnly() {
   let tests = [];
 
   let extDir = GetPerUserExtensionDir();
+  
+  
+  
+  
+  
+  
+  await IOUtils.makeDirectory(extDir.path);
   tests.push({
     desc: "per-user extensions dir",
     ok: true,

@@ -1184,8 +1184,13 @@ nsresult nsXREDirProvider::GetSysUserExtensionsDirectory(nsIFile** aFile) {
   rv = AppendSysUserExtensionPath(localDir);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = EnsureDirectoryExists(localDir);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+  
+  
+  
 
   localDir.forget(aFile);
   return NS_OK;
