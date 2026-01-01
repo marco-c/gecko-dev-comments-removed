@@ -71,10 +71,6 @@
       this.pinnedTabsContainer = document.getElementById(
         "pinned-tabs-container"
       );
-      this.pinnedTabsContainer.setAttribute(
-        "orient",
-        this.getAttribute("orient")
-      );
 
       
       
@@ -249,13 +245,20 @@
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-      if (name == "orient") {
+      if (name != "orient") {
+        return;
+      }
+
+      if (this.overflowing) {
         
         this.removeAttribute("overflow");
-        this.#updateTabMinWidth();
-        this.#updateTabMinHeight();
-        this.pinnedTabsContainer?.setAttribute("orient", newValue);
       }
+
+      this.#updateTabMinWidth();
+      this.#updateTabMinHeight();
+
+      this.pinnedTabsContainer.setAttribute("orient", newValue);
+
       super.attributeChangedCallback(name, oldValue, newValue);
     }
 
