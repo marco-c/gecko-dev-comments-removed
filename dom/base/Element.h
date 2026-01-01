@@ -1460,6 +1460,45 @@ class Element : public FragmentOrElement {
   Maybe<nsTArray<RefPtr<dom::Element>>> GetExplicitlySetAttrElements(
       nsAtom* aAttr) const;
 
+  
+
+
+
+
+
+
+  typedef bool (*ReferenceTargetChangeObserver)(void* aData);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void AddReferenceTargetChangeObserver(ReferenceTargetChangeObserver aObserver,
+                                        void* aData);
+  void RemoveReferenceTargetChangeObserver(
+      ReferenceTargetChangeObserver aObserver, void* aData);
+  
+
+
+
+  void NotifyReferenceTargetChanged();
+
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;
     auto raw = GetProperty(nsGkAtoms::pseudoProperty, &rv);
