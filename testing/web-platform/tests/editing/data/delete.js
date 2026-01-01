@@ -3506,4 +3506,29 @@ var browserTests = [
     "<p>abc</p>",
     [true],
     {}],
+
+
+
+
+[' <div><span contenteditable="false">A</span></div><div><br></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [["delete",""]],
+    ' <div><span contenteditable="false">A</span></div><div>&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [true],
+    {}],
+[' <div><span contenteditable="false">A</span></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [["delete",""]],
+    ' <div><span contenteditable="false">A</span>&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [true],
+    {}],
+[' <span contenteditable="false">A</span><div><br></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [["delete",""]],
+    ' <span contenteditable="false">A</span><div>&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [true],
+    {}],
+[' <span contenteditable="false">A</span><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [["delete",""]],
+    
+    '<div>&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> ',
+    [true],
+    {}],
 ]
