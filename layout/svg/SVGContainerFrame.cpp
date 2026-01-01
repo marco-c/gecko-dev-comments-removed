@@ -187,10 +187,13 @@ void SVGDisplayContainerFrame::RemoveFrame(DestroyContext& aContext,
   
   
   
+  
+  
   SchedulePaint();
   if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     PresContext()->RestyleManager()->PostRestyleEvent(
         mContent->AsElement(), RestyleHint{0}, nsChangeHint_UpdateOverflow);
+    PresShell()->SynthesizeMouseMove(false);
   }
 
   SVGContainerFrame::RemoveFrame(aContext, aListID, aOldFrame);
