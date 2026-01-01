@@ -41,7 +41,7 @@ add_setup(() => {
       ],
     },
     
-    "/v1/buckets/main/collections/some-cid/changeset?_expected=222&_since=%22333%22":
+    "/v1/buckets/main/collections/some-cid/changeset?_expected=222&_since=333":
       {
         timestamp: 222,
         metadata: {

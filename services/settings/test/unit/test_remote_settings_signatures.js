@@ -441,7 +441,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   const twoItemsResponses = {
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=3000&_since=%221000%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=3000&_since=1000":
       [RESPONSE_TWO_ADDED],
   };
   registerHandlers(twoItemsResponses);
@@ -482,7 +482,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   const oneAddedOneRemovedResponses = {
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=4000&_since=%223000%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=4000&_since=3000":
       [RESPONSE_ONE_ADDED_ONE_REMOVED],
   };
   registerHandlers(oneAddedOneRemovedResponses);
@@ -520,7 +520,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   const noOpResponses = {
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=4100&_since=%224000%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=4100&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
   };
   registerHandlers(noOpResponses);
@@ -581,7 +581,7 @@ add_task(async function test_check_synchronization_with_signatures() {
     
     
     
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000&_since=%224000%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE_BAD_SIG],
     
     
@@ -639,7 +639,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   const badSigGoodOldResponses = {
     
     
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000&_since=%224000%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE_BAD_SIG],
     
     
@@ -691,7 +691,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   const badLocalContentGoodSigResponses = {
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000&_since=%223900%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000&_since=3900":
       [RESPONSE_COMPLETE_BAD_SIG],
     "GET:/v1/buckets/main/collections/signed/changeset?_expected=5000": [
       RESPONSE_COMPLETE_INITIAL,
@@ -824,7 +824,7 @@ add_task(async function test_check_synchronization_with_signatures() {
     }),
   };
   const allBadSigResponses = {
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=6000&_since=%224000%22":
+    "GET:/v1/buckets/main/collections/signed/changeset?_expected=6000&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE_BAD_SIG_6000],
     "GET:/v1/buckets/main/collections/signed/changeset?_expected=6000": [
       RESPONSE_ONLY_RECORD4_BAD_SIG,
