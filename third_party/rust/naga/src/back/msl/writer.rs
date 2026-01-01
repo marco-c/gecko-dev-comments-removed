@@ -19,7 +19,7 @@ use crate::{
     back::{self, get_entry_points, Baked},
     common,
     proc::{
-        self, concrete_int_scalars,
+        self,
         index::{self, BoundsCheck},
         ExternalTextureNameKey, NameKey, TypeResolution,
     },
@@ -55,7 +55,6 @@ pub(crate) const MODF_FUNCTION: &str = "naga_modf";
 pub(crate) const FREXP_FUNCTION: &str = "naga_frexp";
 pub(crate) const ABS_FUNCTION: &str = "naga_abs";
 pub(crate) const DIV_FUNCTION: &str = "naga_div";
-pub(crate) const DOT_FUNCTION_PREFIX: &str = "naga_dot";
 pub(crate) const MOD_FUNCTION: &str = "naga_mod";
 pub(crate) const NEG_FUNCTION: &str = "naga_neg";
 pub(crate) const F2I32_FUNCTION: &str = "naga_f2i32";
@@ -489,7 +488,7 @@ pub struct Writer<W> {
 }
 
 impl crate::Scalar {
-    pub(super) fn to_msl_name(self) -> &'static str {
+    fn to_msl_name(self) -> &'static str {
         use crate::ScalarKind as Sk;
         match self {
             Self {
@@ -594,7 +593,7 @@ impl crate::AddressSpace {
             | Self::Storage { .. }
             | Self::Private
             | Self::WorkGroup
-            | Self::Immediate
+            | Self::PushConstant
             | Self::Handle
             | Self::TaskPayload => true,
             Self::Function => false,
@@ -613,7 +612,7 @@ impl crate::AddressSpace {
             
             Self::Private | Self::WorkGroup => false,
             
-            Self::Uniform | Self::Immediate => false,
+            Self::Uniform | Self::PushConstant => false,
             
             Self::Handle | Self::Function => false,
         }
@@ -622,7 +621,7 @@ impl crate::AddressSpace {
     const fn to_msl_name(self) -> Option<&'static str> {
         match self {
             Self::Handle => None,
-            Self::Uniform | Self::Immediate => Some("constant"),
+            Self::Uniform | Self::PushConstant => Some("constant"),
             Self::Storage { .. } => Some("device"),
             Self::Private | Self::Function => Some("thread"),
             Self::WorkGroup => Some("threadgroup"),
@@ -2335,28 +2334,26 @@ impl<W: Write> Writer<W> {
                         crate::TypeInner::Vector {
                             scalar:
                                 crate::Scalar {
-                                    
                                     kind: crate::ScalarKind::Float,
                                     ..
                                 },
                             ..
                         } => "dot",
-                        crate::TypeInner::Vector {
-                            size,
-                            scalar:
-                                scalar @ crate::Scalar {
-                                    kind: crate::ScalarKind::Sint | crate::ScalarKind::Uint,
-                                    ..
+                        crate::TypeInner::Vector { size, .. } => {
+                            return self.put_dot_product(
+                                arg,
+                                arg1.unwrap(),
+                                size as usize,
+                                |writer, arg, index| {
+                                    
+                                    
+                                    
+                                    writer.put_expression(arg, context, true)?;
+                                    
+                                    write!(writer.out, ".{}", back::COMPONENTS[index])?;
+                                    Ok(())
                                 },
-                        } => {
-                            
-                            let fun_name = self.get_dot_wrapper_function_helper_name(scalar, size);
-                            write!(self.out, "{fun_name}(")?;
-                            self.put_expression(arg, context, true)?;
-                            write!(self.out, ", ")?;
-                            self.put_expression(arg1.unwrap(), context, true)?;
-                            write!(self.out, ")")?;
-                            return Ok(());
+                            );
                         }
                         _ => unreachable!(
                             "Correct TypeInner for dot product should be already validated"
@@ -3373,15 +3370,26 @@ impl<W: Write> Writer<W> {
             } = *expr
             {
                 match fun {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
+                    crate::MathFunction::Dot => {
+                        
+                        
+                        
+                        
+                        
+
+                        
+                        
+                        let inner = context.resolve_type(expr_handle);
+                        if let crate::TypeInner::Scalar(scalar) = *inner {
+                            match scalar.kind {
+                                crate::ScalarKind::Sint | crate::ScalarKind::Uint => {
+                                    self.need_bake_expressions.insert(arg);
+                                    self.need_bake_expressions.insert(arg1.unwrap());
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
                     crate::MathFunction::Dot4U8Packed | crate::MathFunction::Dot4I8Packed => {
                         self.need_bake_expressions.insert(arg);
                         self.need_bake_expressions.insert(arg1.unwrap());
@@ -5798,24 +5806,6 @@ template <typename A>
         Ok(())
     }
 
-    
-    
-    
-    
-    
-    fn get_dot_wrapper_function_helper_name(
-        &self,
-        scalar: crate::Scalar,
-        size: crate::VectorSize,
-    ) -> String {
-        
-        debug_assert!(concrete_int_scalars().any(|s| s == scalar));
-
-        let type_name = scalar.to_msl_name();
-        let size_suffix = common::vector_size_str(size);
-        format!("{DOT_FUNCTION_PREFIX}_{type_name}{size_suffix}")
-    }
-
     #[allow(clippy::too_many_arguments)]
     fn write_wrapped_math_function(
         &mut self,
@@ -5871,45 +5861,6 @@ template <typename A>
                 writeln!(self.out, "}}")?;
                 writeln!(self.out)?;
             }
-
-            crate::MathFunction::Dot => match *arg_ty {
-                crate::TypeInner::Vector { size, scalar }
-                    if matches!(
-                        scalar.kind,
-                        crate::ScalarKind::Sint | crate::ScalarKind::Uint
-                    ) =>
-                {
-                    
-                    let wrapped = WrappedFunction::Math {
-                        fun,
-                        arg_ty: (Some(size), scalar),
-                    };
-                    if !self.wrapped_functions.insert(wrapped) {
-                        return Ok(());
-                    }
-
-                    let mut vec_ty = String::new();
-                    put_numeric_type(&mut vec_ty, scalar, &[size])?;
-                    let mut ret_ty = String::new();
-                    put_numeric_type(&mut ret_ty, scalar, &[])?;
-
-                    let fun_name = self.get_dot_wrapper_function_helper_name(scalar, size);
-
-                    
-                    writeln!(self.out, "{ret_ty} {fun_name}({vec_ty} a, {vec_ty} b) {{")?;
-                    let level = back::Level(1);
-                    write!(self.out, "{level}return ")?;
-                    self.put_dot_product("a", "b", size as usize, |writer, name, index| {
-                        write!(writer.out, "{name}.{}", back::COMPONENTS[index])?;
-                        Ok(())
-                    })?;
-                    writeln!(self.out, ";")?;
-                    writeln!(self.out, "}}")?;
-                    writeln!(self.out)?;
-                }
-                _ => {}
-            },
-
             _ => {}
         }
         Ok(())
@@ -6732,8 +6683,8 @@ template <typename A>
                                 break;
                             }
                         }
-                        crate::AddressSpace::Immediate => {
-                            if let Err(e) = options.resolve_immediates(ep) {
+                        crate::AddressSpace::PushConstant => {
+                            if let Err(e) = options.resolve_push_constants(ep) {
                                 ep_error = Some(e);
                                 break;
                             }
@@ -7140,11 +7091,9 @@ template <typename A>
                                         }
                                     }
                                     crate::ImageClass::Storage { .. } => {
-                                        if options.lang_version < (3, 0) {
-                                            return Err(Error::UnsupportedArrayOf(
-                                                "read-write textures".to_string(),
-                                            ));
-                                        }
+                                        return Err(Error::UnsupportedArrayOf(
+                                            "read-write textures".to_string(),
+                                        ));
                                     }
                                     crate::ImageClass::External => {
                                         return Err(Error::UnsupportedArrayOf(
@@ -7164,7 +7113,7 @@ template <typename A>
 
                 
                 let resolved = match var.space {
-                    crate::AddressSpace::Immediate => options.resolve_immediates(ep).ok(),
+                    crate::AddressSpace::PushConstant => options.resolve_push_constants(ep).ok(),
                     crate::AddressSpace::WorkGroup => None,
                     _ => options
                         .resolve_resource_binding(ep, var.binding.as_ref().unwrap())

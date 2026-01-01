@@ -1,13 +1,13 @@
+/*! Presentation.
 
+## Lifecycle
 
-
-
-
-
-
-
-
-
+Whenever a submission detects the use of any surface texture, it adds it to the device
+tracker for the duration of the submission (temporarily, while recording).
+It's added with `UNINITIALIZED` state and transitioned into `empty()` state.
+When this texture is presented, we remove it from the device tracker as well as
+extract it from the hub.
+!*/
 
 use alloc::{sync::Arc, vec::Vec};
 use core::mem::ManuallyDrop;
@@ -293,11 +293,7 @@ impl Surface {
             .take()
             .ok_or(SurfaceError::AlreadyAcquired)?;
 
-        let mut exclusive_snatch_guard = device.snatchable_lock.write();
-        let inner = texture.inner.snatch(&mut exclusive_snatch_guard);
-        drop(exclusive_snatch_guard);
-
-        let result = match inner {
+        let result = match texture.inner.snatch(&mut device.snatchable_lock.write()) {
             None => return Err(SurfaceError::TextureDestroyed),
             Some(resource::TextureInner::Surface { raw }) => {
                 let raw_surface = self.raw(device.backend()).unwrap();
@@ -341,11 +337,7 @@ impl Surface {
             .take()
             .ok_or(SurfaceError::AlreadyAcquired)?;
 
-        let mut exclusive_snatch_guard = device.snatchable_lock.write();
-        let inner = texture.inner.snatch(&mut exclusive_snatch_guard);
-        drop(exclusive_snatch_guard);
-
-        match inner {
+        match texture.inner.snatch(&mut device.snatchable_lock.write()) {
             None => return Err(SurfaceError::TextureDestroyed),
             Some(resource::TextureInner::Surface { raw }) => {
                 let raw_surface = self.raw(device.backend()).unwrap();

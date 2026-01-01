@@ -53,7 +53,7 @@ impl Dispatch {
             struct OffsetPc {{
                 inner: u32,
             }}
-            var<immediate> offset: OffsetPc;
+            var<push_constant> offset: OffsetPc;
 
             @compute @workgroup_size(1)
             fn main() {{
@@ -96,7 +96,7 @@ impl Dispatch {
         let module = panic!("Indirect validation requires the wgsl feature flag to be enabled!");
 
         let info = crate::device::create_validator(
-            wgt::Features::IMMEDIATES,
+            wgt::Features::PUSH_CONSTANTS,
             wgt::DownlevelFlags::empty(),
             naga::valid::ValidationFlags::all(),
         )
@@ -177,7 +177,10 @@ impl Dispatch {
                 dst_bind_group_layout.as_ref(),
                 src_bind_group_layout.as_ref(),
             ],
-            immediate_size: 4,
+            push_constant_ranges: &[wgt::PushConstantRange {
+                stages: wgt::ShaderStages::COMPUTE,
+                range: 0..4,
+            }],
         };
         let pipeline_layout = unsafe {
             device

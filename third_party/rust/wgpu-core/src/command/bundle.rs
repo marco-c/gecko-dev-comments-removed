@@ -101,10 +101,13 @@ use crate::command::ArcReferences;
 use crate::{
     binding_model::{BindError, BindGroup, PipelineLayout},
     command::{
-        bind::Binder, BasePass, BindGroupStateChange, ColorAttachmentError, DrawError,
-        IdReferences, MapPassErr, PassErrorScope, RenderCommand, RenderCommandError, StateChange,
+        BasePass, BindGroupStateChange, ColorAttachmentError, DrawError, IdReferences, MapPassErr,
+        PassErrorScope, RenderCommand, RenderCommandError, StateChange,
     },
-    device::{AttachmentData, Device, DeviceError, MissingDownlevelFlags, RenderPassContext},
+    device::{
+        AttachmentData, Device, DeviceError, MissingDownlevelFlags, RenderPassContext,
+        SHADER_STAGE_COUNT,
+    },
     hub::Hub,
     id,
     init_tracker::{BufferInitTrackerAction, MemoryInitKind, TextureInitTrackerAction},
@@ -277,6 +280,7 @@ impl RenderBundleEncoder {
         let mut state = State {
             trackers: RenderBundleScope::new(),
             pipeline: None,
+            bind: (0..hal::MAX_BIND_GROUPS).map(|_| None).collect(),
             vertex: Default::default(),
             index: None,
             flat_dynamic_offsets: Vec::new(),
@@ -285,7 +289,6 @@ impl RenderBundleEncoder {
             buffer_memory_init_actions: Vec::new(),
             texture_memory_init_actions: Vec::new(),
             next_dynamic_offset: 0,
-            binder: Binder::new(),
         };
 
         let indices = &state.device.tracker_indices;
@@ -351,13 +354,14 @@ impl RenderBundleEncoder {
                     set_vertex_buffer(&mut state, &buffer_guard, slot, buffer, offset, size)
                         .map_pass_err(scope)?;
                 }
-                &RenderCommand::SetImmediate {
+                &RenderCommand::SetPushConstant {
+                    stages,
                     offset,
                     size_bytes,
                     values_offset,
                 } => {
-                    let scope = PassErrorScope::SetImmediate;
-                    set_immediates(&mut state, offset, size_bytes, values_offset)
+                    let scope = PassErrorScope::SetPushConstant;
+                    set_push_constant(&mut state, stages, offset, size_bytes, values_offset)
                         .map_pass_err(scope)?;
                 }
                 &RenderCommand::Draw {
@@ -372,6 +376,7 @@ impl RenderBundleEncoder {
                     };
                     draw(
                         &mut state,
+                        &base.dynamic_offsets,
                         vertex_count,
                         instance_count,
                         first_vertex,
@@ -392,6 +397,7 @@ impl RenderBundleEncoder {
                     };
                     draw_indexed(
                         &mut state,
+                        &base.dynamic_offsets,
                         index_count,
                         instance_count,
                         first_index,
@@ -409,8 +415,14 @@ impl RenderBundleEncoder {
                         kind: DrawKind::Draw,
                         family: DrawCommandFamily::DrawMeshTasks,
                     };
-                    draw_mesh_tasks(&mut state, group_count_x, group_count_y, group_count_z)
-                        .map_pass_err(scope)?;
+                    draw_mesh_tasks(
+                        &mut state,
+                        &base.dynamic_offsets,
+                        group_count_x,
+                        group_count_y,
+                        group_count_z,
+                    )
+                    .map_pass_err(scope)?;
                 }
                 &RenderCommand::DrawIndirect {
                     buffer,
@@ -424,8 +436,15 @@ impl RenderBundleEncoder {
                         kind: DrawKind::DrawIndirect,
                         family,
                     };
-                    multi_draw_indirect(&mut state, &buffer_guard, buffer, offset, family)
-                        .map_pass_err(scope)?;
+                    multi_draw_indirect(
+                        &mut state,
+                        &base.dynamic_offsets,
+                        &buffer_guard,
+                        buffer,
+                        offset,
+                        family,
+                    )
+                    .map_pass_err(scope)?;
                 }
                 &RenderCommand::DrawIndirect {
                     count,
@@ -479,7 +498,7 @@ impl RenderBundleEncoder {
                 commands,
                 dynamic_offsets: flat_dynamic_offsets,
                 string_data: self.base.string_data,
-                immediates_data: self.base.immediates_data,
+                push_constant_data: self.base.push_constant_data,
             },
             is_depth_read_only: self.is_depth_read_only,
             is_stencil_read_only: self.is_stencil_read_only,
@@ -551,13 +570,18 @@ fn set_bind_group(
 
     bind_group.validate_dynamic_bindings(index, offsets)?;
 
-    unsafe { state.trackers.merge_bind_group(&bind_group.used)? };
-    let bind_group = state.trackers.bind_groups.insert_single(bind_group);
-
     state
-        .binder
-        .assign_group(index as usize, bind_group, offsets);
+        .buffer_memory_init_actions
+        .extend_from_slice(&bind_group.used_buffer_ranges);
+    state
+        .texture_memory_init_actions
+        .extend_from_slice(&bind_group.used_texture_ranges);
 
+    state.set_bind_group(index, &bind_group, offsets_range);
+    unsafe { state.trackers.merge_bind_group(&bind_group.used)? };
+    state.trackers.bind_groups.insert_single(bind_group);
+    
+    
     Ok(())
 }
 
@@ -591,15 +615,12 @@ fn set_pipeline(
         .push(ArcRenderCommand::SetPipeline(pipeline.clone()));
 
     
-    if let Some(cmd) = pipeline_state.zero_immediates() {
-        state.commands.push(cmd);
+    if let Some(iter) = pipeline_state.zero_push_constants() {
+        state.commands.extend(iter)
     }
 
+    state.invalidate_bind_groups(&pipeline_state, &pipeline.layout);
     state.pipeline = Some(pipeline_state);
-
-    state
-        .binder
-        .change_pipeline_layout(&pipeline.layout, &pipeline.late_sized_buffer_groups);
 
     state.trackers.render_pipelines.insert_single(pipeline);
     Ok(())
@@ -688,8 +709,9 @@ fn set_vertex_buffer(
     Ok(())
 }
 
-fn set_immediates(
+fn set_push_constant(
     state: &mut State,
+    stages: wgt::ShaderStages,
     offset: u32,
     size_bytes: u32,
     values_offset: Option<u32>,
@@ -701,9 +723,10 @@ fn set_immediates(
     pipeline_state
         .pipeline
         .layout
-        .validate_immediates_ranges(offset, end_offset)?;
+        .validate_push_constant_ranges(stages, offset, end_offset)?;
 
-    state.commands.push(ArcRenderCommand::SetImmediate {
+    state.commands.push(ArcRenderCommand::SetPushConstant {
+        stages,
         offset,
         size_bytes,
         values_offset,
@@ -713,13 +736,14 @@ fn set_immediates(
 
 fn draw(
     state: &mut State,
+    dynamic_offsets: &[u32],
     vertex_count: u32,
     instance_count: u32,
     first_vertex: u32,
     first_instance: u32,
 ) -> Result<(), RenderBundleErrorInner> {
-    state.is_ready()?;
     let pipeline = state.pipeline()?;
+    let used_bind_groups = pipeline.used_bind_groups;
 
     let vertex_limits = super::VertexLimits::new(state.vertex_buffer_sizes(), &pipeline.steps);
     vertex_limits.validate_vertex_limit(first_vertex, vertex_count)?;
@@ -727,7 +751,7 @@ fn draw(
 
     if instance_count > 0 && vertex_count > 0 {
         state.flush_vertices();
-        state.flush_bindings();
+        state.flush_binds(used_bind_groups, dynamic_offsets);
         state.commands.push(ArcRenderCommand::Draw {
             vertex_count,
             instance_count,
@@ -740,15 +764,15 @@ fn draw(
 
 fn draw_indexed(
     state: &mut State,
+    dynamic_offsets: &[u32],
     index_count: u32,
     instance_count: u32,
     first_index: u32,
     base_vertex: i32,
     first_instance: u32,
 ) -> Result<(), RenderBundleErrorInner> {
-    state.is_ready()?;
     let pipeline = state.pipeline()?;
-
+    let used_bind_groups = pipeline.used_bind_groups;
     let index = match state.index {
         Some(ref index) => index,
         None => return Err(DrawError::MissingIndexBuffer.into()),
@@ -770,7 +794,7 @@ fn draw_indexed(
     if instance_count > 0 && index_count > 0 {
         state.flush_index();
         state.flush_vertices();
-        state.flush_bindings();
+        state.flush_binds(used_bind_groups, dynamic_offsets);
         state.commands.push(ArcRenderCommand::DrawIndexed {
             index_count,
             instance_count,
@@ -784,14 +808,16 @@ fn draw_indexed(
 
 fn draw_mesh_tasks(
     state: &mut State,
+    dynamic_offsets: &[u32],
     group_count_x: u32,
     group_count_y: u32,
     group_count_z: u32,
 ) -> Result<(), RenderBundleErrorInner> {
-    state.is_ready()?;
+    let pipeline = state.pipeline()?;
+    let used_bind_groups = pipeline.used_bind_groups;
 
-    let groups_size_limit = state.device.limits.max_task_mesh_workgroups_per_dimension;
-    let max_groups = state.device.limits.max_task_mesh_workgroup_total_count;
+    let groups_size_limit = state.device.limits.max_task_workgroups_per_dimension;
+    let max_groups = state.device.limits.max_task_workgroup_total_count;
     if group_count_x > groups_size_limit
         || group_count_y > groups_size_limit
         || group_count_z > groups_size_limit
@@ -805,7 +831,7 @@ fn draw_mesh_tasks(
     }
 
     if group_count_x > 0 && group_count_y > 0 && group_count_z > 0 {
-        state.flush_bindings();
+        state.flush_binds(used_bind_groups, dynamic_offsets);
         state.commands.push(ArcRenderCommand::DrawMeshTasks {
             group_count_x,
             group_count_y,
@@ -817,17 +843,18 @@ fn draw_mesh_tasks(
 
 fn multi_draw_indirect(
     state: &mut State,
+    dynamic_offsets: &[u32],
     buffer_guard: &crate::storage::Storage<Fallible<Buffer>>,
     buffer_id: id::Id<id::markers::Buffer>,
     offset: u64,
     family: DrawCommandFamily,
 ) -> Result<(), RenderBundleErrorInner> {
-    state.is_ready()?;
     state
         .device
         .require_downlevel_flags(wgt::DownlevelFlags::INDIRECT_EXECUTION)?;
 
     let pipeline = state.pipeline()?;
+    let used_bind_groups = pipeline.used_bind_groups;
 
     let buffer = buffer_guard.get(buffer_id).get()?;
 
@@ -866,7 +893,7 @@ fn multi_draw_indirect(
     state.trackers.buffers.merge_single(&buffer, buffer_uses)?;
 
     state.flush_vertices();
-    state.flush_bindings();
+    state.flush_binds(used_bind_groups, dynamic_offsets);
     state.commands.push(ArcRenderCommand::DrawIndirect {
         buffer,
         offset,
@@ -1028,7 +1055,8 @@ impl RenderBundle {
                     let bb = hal::BufferBinding::new_unchecked(buffer, *offset, *size);
                     unsafe { raw.set_vertex_buffer(*slot, bb) };
                 }
-                Cmd::SetImmediate {
+                Cmd::SetPushConstant {
+                    stages,
                     offset,
                     size_bytes,
                     values_offset,
@@ -1037,19 +1065,27 @@ impl RenderBundle {
 
                     if let Some(values_offset) = *values_offset {
                         let values_end_offset =
-                            (values_offset + size_bytes / wgt::IMMEDIATE_DATA_ALIGNMENT) as usize;
-                        let data_slice =
-                            &self.base.immediates_data[(values_offset as usize)..values_end_offset];
+                            (values_offset + size_bytes / wgt::PUSH_CONSTANT_ALIGNMENT) as usize;
+                        let data_slice = &self.base.push_constant_data
+                            [(values_offset as usize)..values_end_offset];
 
-                        unsafe { raw.set_immediates(pipeline_layout.raw(), *offset, data_slice) }
+                        unsafe {
+                            raw.set_push_constants(
+                                pipeline_layout.raw(),
+                                *stages,
+                                *offset,
+                                data_slice,
+                            )
+                        }
                     } else {
-                        super::immediates_clear(
+                        super::push_constant_clear(
                             *offset,
                             *size_bytes,
                             |clear_offset, clear_data| {
                                 unsafe {
-                                    raw.set_immediates(
+                                    raw.set_push_constants(
                                         pipeline_layout.raw(),
+                                        *stages,
                                         clear_offset,
                                         clear_data,
                                     )
@@ -1279,6 +1315,21 @@ impl VertexState {
 }
 
 
+#[derive(Debug)]
+struct BindState {
+    
+    bind_group: Arc<BindGroup>,
+
+    
+    
+    dynamic_offsets: Range<usize>,
+
+    
+    
+    is_dirty: bool,
+}
+
+
 struct PipelineState {
     
     pipeline: Arc<RenderPipeline>,
@@ -1288,7 +1339,11 @@ struct PipelineState {
     steps: Vec<VertexStep>,
 
     
-    immediate_size: u32,
+    
+    push_constant_ranges: ArrayVec<wgt::PushConstantRange, { SHADER_STAGE_COUNT }>,
+
+    
+    used_bind_groups: usize,
 }
 
 impl PipelineState {
@@ -1296,22 +1351,36 @@ impl PipelineState {
         Self {
             pipeline: pipeline.clone(),
             steps: pipeline.vertex_steps.to_vec(),
-            immediate_size: pipeline.layout.immediate_size,
+            push_constant_ranges: pipeline
+                .layout
+                .push_constant_ranges
+                .iter()
+                .cloned()
+                .collect(),
+            used_bind_groups: pipeline.layout.bind_group_layouts.len(),
         }
     }
 
     
     
-    fn zero_immediates(&self) -> Option<ArcRenderCommand> {
-        if self.immediate_size == 0 {
-            return None;
-        }
+    fn zero_push_constants(&self) -> Option<impl Iterator<Item = ArcRenderCommand>> {
+        if !self.push_constant_ranges.is_empty() {
+            let nonoverlapping_ranges =
+                super::bind::compute_nonoverlapping_ranges(&self.push_constant_ranges);
 
-        Some(ArcRenderCommand::SetImmediate {
-            offset: 0,
-            size_bytes: self.immediate_size,
-            values_offset: None,
-        })
+            Some(
+                nonoverlapping_ranges
+                    .into_iter()
+                    .map(|range| ArcRenderCommand::SetPushConstant {
+                        stages: range.stages,
+                        offset: range.range.start,
+                        size_bytes: range.range.end - range.range.start,
+                        values_offset: None, 
+                    }),
+            )
+        } else {
+            None
+        }
     }
 }
 
@@ -1333,6 +1402,9 @@ struct State {
     pipeline: Option<PipelineState>,
 
     
+    bind: ArrayVec<Option<BindState>, { hal::MAX_BIND_GROUPS }>,
+
+    
     vertex: [Option<VertexState>; hal::MAX_VERTEX_BUFFERS],
 
     
@@ -1352,7 +1424,6 @@ struct State {
     buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
     texture_memory_init_actions: Vec<TextureInitTrackerAction>,
     next_dynamic_offset: usize,
-    binder: Binder,
 }
 
 impl State {
@@ -1361,6 +1432,86 @@ impl State {
         self.pipeline
             .as_ref()
             .ok_or(DrawError::MissingPipeline(pass::MissingPipeline).into())
+    }
+
+    
+    fn invalidate_bind_group_from(&mut self, index: usize) {
+        for contents in self.bind[index..].iter_mut().flatten() {
+            contents.is_dirty = true;
+        }
+    }
+
+    fn set_bind_group(
+        &mut self,
+        slot: u32,
+        bind_group: &Arc<BindGroup>,
+        dynamic_offsets: Range<usize>,
+    ) {
+        
+        
+        
+        if dynamic_offsets.is_empty() {
+            if let Some(ref contents) = self.bind[slot as usize] {
+                if contents.bind_group.is_equal(bind_group) {
+                    return;
+                }
+            }
+        }
+
+        
+        self.bind[slot as usize] = Some(BindState {
+            bind_group: bind_group.clone(),
+            dynamic_offsets,
+            is_dirty: true,
+        });
+
+        
+        
+        self.invalidate_bind_group_from(slot as usize + 1);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn invalidate_bind_groups(&mut self, new: &PipelineState, layout: &PipelineLayout) {
+        match self.pipeline {
+            None => {
+                
+                self.invalidate_bind_group_from(0);
+            }
+            Some(ref old) => {
+                if old.pipeline.is_equal(&new.pipeline) {
+                    
+                    
+                    return;
+                }
+
+                
+                if old.push_constant_ranges != new.push_constant_ranges {
+                    self.invalidate_bind_group_from(0);
+                } else {
+                    let first_changed = self.bind.iter().zip(&layout.bind_group_layouts).position(
+                        |(entry, layout)| match *entry {
+                            Some(ref contents) => !contents.bind_group.layout.is_equal(layout),
+                            None => false,
+                        },
+                    );
+                    if let Some(slot) = first_changed {
+                        self.invalidate_bind_group_from(slot);
+                    }
+                }
+            }
+        }
     }
 
     
@@ -1406,43 +1557,36 @@ impl State {
     }
 
     
-    
-    
-    fn is_ready(&mut self) -> Result<(), DrawError> {
-        if let Some(pipeline) = self.pipeline.as_ref() {
-            self.binder
-                .check_compatibility(pipeline.pipeline.as_ref())?;
-            self.binder.check_late_buffer_bindings()?;
-            Ok(())
-        } else {
-            Err(DrawError::MissingPipeline(pass::MissingPipeline))
-        }
-    }
-
-    
-    
-    
-    fn flush_bindings(&mut self) {
-        let range = self.binder.take_rebind_range();
-        let entries = self.binder.entries(range);
-
-        self.commands.extend(entries.map(|(i, entry)| {
-            let bind_group = entry.group.as_ref().unwrap();
-
-            self.buffer_memory_init_actions
-                .extend_from_slice(&bind_group.used_buffer_ranges);
-            self.texture_memory_init_actions
-                .extend_from_slice(&bind_group.used_texture_ranges);
-
-            self.flat_dynamic_offsets
-                .extend_from_slice(&entry.dynamic_offsets);
-
-            ArcRenderCommand::SetBindGroup {
-                index: i.try_into().unwrap(),
-                bind_group: Some(bind_group.clone()),
-                num_dynamic_offsets: entry.dynamic_offsets.len(),
+    fn flush_binds(&mut self, used_bind_groups: usize, dynamic_offsets: &[wgt::DynamicOffset]) {
+        
+        for contents in self.bind[..used_bind_groups].iter().flatten() {
+            if contents.is_dirty {
+                self.flat_dynamic_offsets
+                    .extend_from_slice(&dynamic_offsets[contents.dynamic_offsets.clone()]);
             }
-        }));
+        }
+
+        
+        
+        let commands = self.bind[..used_bind_groups]
+            .iter_mut()
+            .enumerate()
+            .flat_map(|(i, entry)| {
+                if let Some(ref mut contents) = *entry {
+                    if contents.is_dirty {
+                        contents.is_dirty = false;
+                        let offsets = &contents.dynamic_offsets;
+                        return Some(ArcRenderCommand::SetBindGroup {
+                            index: i.try_into().unwrap(),
+                            bind_group: Some(contents.bind_group.clone()),
+                            num_dynamic_offsets: offsets.end - offsets.start,
+                        });
+                    }
+                }
+                None
+            });
+
+        self.commands.extend(commands);
     }
 
     fn vertex_buffer_sizes(&self) -> impl Iterator<Item = Option<wgt::BufferAddress>> + '_ {
@@ -1603,34 +1747,36 @@ pub mod bundle_ffi {
     
     
     
-    pub unsafe fn wgpu_render_bundle_set_immediates(
+    pub unsafe fn wgpu_render_bundle_set_push_constants(
         pass: &mut RenderBundleEncoder,
+        stages: wgt::ShaderStages,
         offset: u32,
         size_bytes: u32,
         data: *const u8,
     ) {
         assert_eq!(
-            offset & (wgt::IMMEDIATE_DATA_ALIGNMENT - 1),
+            offset & (wgt::PUSH_CONSTANT_ALIGNMENT - 1),
             0,
-            "Immediate data offset must be aligned to 4 bytes."
+            "Push constant offset must be aligned to 4 bytes."
         );
         assert_eq!(
-            size_bytes & (wgt::IMMEDIATE_DATA_ALIGNMENT - 1),
+            size_bytes & (wgt::PUSH_CONSTANT_ALIGNMENT - 1),
             0,
-            "Immediate data size must be aligned to 4 bytes."
+            "Push constant size must be aligned to 4 bytes."
         );
         let data_slice = unsafe { slice::from_raw_parts(data, size_bytes as usize) };
-        let value_offset = pass.base.immediates_data.len().try_into().expect(
-            "Ran out of immediate data space. Don't set 4gb of immediates per RenderBundle.",
+        let value_offset = pass.base.push_constant_data.len().try_into().expect(
+            "Ran out of push constant space. Don't set 4gb of push constants per RenderBundle.",
         );
 
-        pass.base.immediates_data.extend(
+        pass.base.push_constant_data.extend(
             data_slice
-                .chunks_exact(wgt::IMMEDIATE_DATA_ALIGNMENT as usize)
+                .chunks_exact(wgt::PUSH_CONSTANT_ALIGNMENT as usize)
                 .map(|arr| u32::from_ne_bytes([arr[0], arr[1], arr[2], arr[3]])),
         );
 
-        pass.base.commands.push(RenderCommand::SetImmediate {
+        pass.base.commands.push(RenderCommand::SetPushConstant {
+            stages,
             offset,
             size_bytes,
             values_offset: Some(value_offset),

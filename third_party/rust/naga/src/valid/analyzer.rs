@@ -552,33 +552,29 @@ impl FunctionInfo {
                         ..
                     } => {
                         
+                        let sto = super::Capabilities::STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING;
+                        let uni = super::Capabilities::UNIFORM_BUFFER_ARRAY_NON_UNIFORM_INDEXING;
+                        let st_sb = super::Capabilities::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING;
+                        let sampler = super::Capabilities::SAMPLER_NON_UNIFORM_INDEXING;
+
+                        
                         let array_element_ty =
                             &resolve_context.types[array_element_ty_handle].inner;
 
                         needed_caps |= match *array_element_ty {
                             
                             crate::TypeInner::Image { class, .. } => match class {
-                                crate::ImageClass::Storage { .. } => {
-                                    super::Capabilities::STORAGE_TEXTURE_BINDING_ARRAY_NON_UNIFORM_INDEXING
-                                }
-                                _ => {
-                                    super::Capabilities::TEXTURE_AND_SAMPLER_BINDING_ARRAY_NON_UNIFORM_INDEXING
-                                }
+                                crate::ImageClass::Storage { .. } => sto,
+                                _ => st_sb,
                             },
-                            crate::TypeInner::Sampler { .. } => {
-                                super::Capabilities::TEXTURE_AND_SAMPLER_BINDING_ARRAY_NON_UNIFORM_INDEXING
-                            }
+                            crate::TypeInner::Sampler { .. } => sampler,
                             
                             _ => {
                                 if let E::GlobalVariable(global_handle) = expression_arena[base] {
                                     let global = &resolve_context.global_vars[global_handle];
                                     match global.space {
-                                        crate::AddressSpace::Uniform => {
-                                            super::Capabilities::BUFFER_BINDING_ARRAY_NON_UNIFORM_INDEXING
-                                        }
-                                        crate::AddressSpace::Storage { .. } => {
-                                            super::Capabilities::STORAGE_BUFFER_BINDING_ARRAY_NON_UNIFORM_INDEXING
-                                        }
+                                        crate::AddressSpace::Uniform => uni,
+                                        crate::AddressSpace::Storage { .. } => st_sb,
                                         _ => unreachable!(),
                                     }
                                 } else {
@@ -658,7 +654,7 @@ impl FunctionInfo {
                     
                     As::WorkGroup | As::TaskPayload => true,
                     
-                    As::Uniform | As::Immediate => true,
+                    As::Uniform | As::PushConstant => true,
                     
                     As::Storage { access } => !access.contains(crate::StorageAccess::STORE),
                     As::Handle => false,

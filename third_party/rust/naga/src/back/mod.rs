@@ -215,10 +215,6 @@ impl FunctionCtx<'_> {
                     external_texture_key,
                 )
             }
-            
-            
-            #[expect(clippy::allow_attributes)]
-            #[allow(clippy::panic)]
             FunctionType::EntryPoint(_) => {
                 panic!("External textures cannot be used as arguments to entry points")
             }

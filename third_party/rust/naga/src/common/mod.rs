@@ -9,4 +9,10 @@ pub use diagnostic_debug::{DiagnosticDebug, ForDebug, ForDebugWithTypes};
 pub use diagnostic_display::DiagnosticDisplay;
 
 
-pub use super::proc::vector_size_str;
+pub const fn vector_size_str(size: crate::VectorSize) -> &'static str {
+    match size {
+        crate::VectorSize::Bi => "2",
+        crate::VectorSize::Tri => "3",
+        crate::VectorSize::Quad => "4",
+    }
+}

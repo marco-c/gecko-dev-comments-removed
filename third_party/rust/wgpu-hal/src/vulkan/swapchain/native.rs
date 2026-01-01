@@ -498,7 +498,8 @@ impl Swapchain for NativeSwapchain {
             texture: crate::vulkan::Texture {
                 raw: self.images[index as usize],
                 drop_guard: None,
-                memory: crate::vulkan::TextureMemory::External,
+                block: None,
+                external_memory: None,
                 format: self.config.format,
                 copy_size: crate::CopyExtent {
                     width: self.config.extent.width,
@@ -594,7 +595,7 @@ impl Swapchain for NativeSwapchain {
             
             
             #[cfg(not(target_os = "android"))]
-            log::debug!("Suboptimal present of frame {}", texture.index);
+            log::warn!("Suboptimal present of frame {}", texture.index);
         }
         Ok(())
     }

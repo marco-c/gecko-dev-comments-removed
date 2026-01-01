@@ -161,7 +161,6 @@ impl Layouter {
         self.layouts.clear();
     }
 
-    #[expect(rustdoc::private_intra_doc_links)]
     
     
     

@@ -160,12 +160,6 @@ impl crate::Instance for Instance {
                         driver: String::new(),
                         driver_info: String::new(),
                         backend: wgt::Backend::Metal,
-                        
-                        
-                        
-                        
-                        subgroup_min_size: 4,
-                        subgroup_max_size: 64,
                         transient_saves_memory: shared.private_caps.supports_memoryless_storage,
                     },
                     features: shared.private_caps.features(),
@@ -202,11 +196,10 @@ bitflags!(
     }
 );
 
-
-
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct PrivateCapabilities {
+    family_check: bool,
     msl_version: MTLLanguageVersion,
     fragment_rw_storage: bool,
     read_write_texture_tier: MTLReadWriteTextureTier,
@@ -214,7 +207,8 @@ struct PrivateCapabilities {
     msaa_apple3: bool,
     msaa_apple7: bool,
     resource_heaps: bool,
-    argument_buffers: Option<MTLArgumentBuffersTier>,
+    argument_buffers: MTLArgumentBuffersTier,
+    shared_textures: bool,
     mutable_comparison_samplers: bool,
     sampler_clamp_to_border: bool,
     indirect_draw_dispatch: bool,
@@ -267,7 +261,6 @@ struct PrivateCapabilities {
     format_rgba32float_color_write: bool,
     format_rgba32float_all: bool,
     format_depth16unorm: bool,
-    format_depth16unorm_filter: bool,
     format_depth32float_filter: bool,
     format_depth32float_none: bool,
     format_bgr10a2_all: bool,
@@ -279,11 +272,6 @@ struct PrivateCapabilities {
     max_binding_array_elements: ResourceIndex,
     max_sampler_binding_array_elements: ResourceIndex,
     buffer_alignment: u64,
-
-    
-    
-    
-    
     max_buffer_size: u64,
     max_texture_size: u64,
     max_texture_3d_size: u64,
@@ -311,13 +299,10 @@ struct PrivateCapabilities {
     timestamp_query_support: TimestampQuerySupport,
     supports_simd_scoped_operations: bool,
     int64: bool,
-    int64_atomics_min_max: bool,
     int64_atomics: bool,
     float_atomics: bool,
     supports_shared_event: bool,
     mesh_shaders: bool,
-    max_mesh_task_workgroup_count: u32,
-    max_task_payload_size: u32,
     supported_vertex_amplification_factor: u32,
     shader_barycentrics: bool,
     supports_memoryless_storage: bool,
@@ -346,7 +331,7 @@ impl Default for Settings {
 }
 
 struct AdapterShared {
-    device: metal::Device,
+    device: Mutex<metal::Device>,
     disabilities: PrivateDisabilities,
     private_caps: PrivateCapabilities,
     settings: Settings,
@@ -364,7 +349,7 @@ impl AdapterShared {
         Self {
             disabilities: PrivateDisabilities::new(&device),
             private_caps,
-            device,
+            device: Mutex::new(device),
             settings: Settings::default(),
             presentation_timer: time::PresentationTimer::new(),
         }
@@ -406,6 +391,9 @@ pub struct Surface {
     render_layer: Mutex<metal::MetalLayer>,
     swapchain_format: RwLock<Option<wgt::TextureFormat>>,
     extent: RwLock<wgt::Extent3d>,
+    
+    
+    pub present_with_transaction: bool,
 }
 
 unsafe impl Send for Surface {}
@@ -415,8 +403,6 @@ unsafe impl Sync for Surface {}
 pub struct SurfaceTexture {
     texture: Texture,
     drawable: metal::MetalDrawable,
-    
-    
     present_with_transaction: bool,
 }
 
@@ -693,7 +679,7 @@ struct BindGroupLayoutInfo {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-struct ImmediateDataInfo {
+struct PushConstantsInfo {
     count: u32,
     buffer_index: ResourceIndex,
 }
@@ -701,9 +687,9 @@ struct ImmediateDataInfo {
 #[derive(Debug)]
 pub struct PipelineLayout {
     bind_group_infos: ArrayVec<BindGroupLayoutInfo, { crate::MAX_BIND_GROUPS }>,
-    immediates_infos: MultiStageData<Option<ImmediateDataInfo>>,
+    push_constants_infos: MultiStageData<Option<PushConstantsInfo>>,
     total_counters: MultiStageResourceCounters,
-    total_immediates: u32,
+    total_push_constants: u32,
     per_stage_map: MultiStageResources,
 }
 
@@ -846,7 +832,7 @@ impl crate::DynShaderModule for ShaderModule {}
 struct PipelineStageInfo {
     #[allow(dead_code)]
     library: Option<metal::Library>,
-    immediates: Option<ImmediateDataInfo>,
+    push_constants: Option<PushConstantsInfo>,
 
     
     
@@ -870,7 +856,7 @@ struct PipelineStageInfo {
 
 impl PipelineStageInfo {
     fn clear(&mut self) {
-        self.immediates = None;
+        self.push_constants = None;
         self.sizes_slot = None;
         self.sized_bindings.clear();
         self.vertex_buffer_mappings.clear();
@@ -880,7 +866,7 @@ impl PipelineStageInfo {
     }
 
     fn assign_from(&mut self, other: &Self) {
-        self.immediates = other.immediates;
+        self.push_constants = other.push_constants;
         self.sizes_slot = other.sizes_slot;
         self.sized_bindings.clear();
         self.sized_bindings.extend_from_slice(&other.sized_bindings);
@@ -1017,7 +1003,7 @@ struct CommandState {
 
     vertex_buffer_size_map: FastHashMap<u64, wgt::BufferSize>,
 
-    immediates: Vec<u32>,
+    push_constants: Vec<u32>,
 
     
     pending_timer_queries: Vec<(QuerySet, u32)>,
@@ -1063,11 +1049,3 @@ impl crate::DynPipelineCache for PipelineCache {}
 pub struct AccelerationStructure;
 
 impl crate::DynAccelerationStructure for AccelerationStructure {}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OsType {
-    Macos,
-    Ios,
-    Tvos,
-    VisionOs,
-}

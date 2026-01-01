@@ -45,7 +45,10 @@ pub enum RenderCommand<R: ReferenceType> {
     
     
     
-    SetImmediate {
+    SetPushConstant {
+        
+        stages: wgt::ShaderStages,
+
         
         
         offset: u32,

@@ -1,6 +1,5 @@
 use alloc::{vec, vec::Vec};
 
-use arrayvec::ArrayVec;
 use spirv::Word;
 
 use crate::{Handle, UniqueArena};
@@ -35,7 +34,7 @@ pub(super) fn string_to_byte_chunks(input: &str, limit: usize) -> Vec<&[u8]> {
     let mut start: usize = 0;
     let mut words = vec![];
     while offset < input.len() {
-        offset = input.floor_char_boundary_polyfill(offset + limit);
+        offset = input.floor_char_boundary(offset + limit);
         
         
         #[allow(clippy::sliced_string_as_bytes)]
@@ -54,8 +53,8 @@ pub(super) const fn map_storage_class(space: crate::AddressSpace) -> spirv::Stor
         crate::AddressSpace::Storage { .. } => spirv::StorageClass::StorageBuffer,
         crate::AddressSpace::Uniform => spirv::StorageClass::Uniform,
         crate::AddressSpace::WorkGroup => spirv::StorageClass::Workgroup,
-        crate::AddressSpace::Immediate => spirv::StorageClass::PushConstant,
-        crate::AddressSpace::TaskPayload => spirv::StorageClass::TaskPayloadWorkgroupEXT,
+        crate::AddressSpace::PushConstant => spirv::StorageClass::PushConstant,
+        crate::AddressSpace::TaskPayload => unreachable!(),
     }
 }
 
@@ -99,7 +98,7 @@ pub fn global_needs_wrapper(ir_module: &crate::Module, var: &crate::GlobalVariab
     match var.space {
         crate::AddressSpace::Uniform
         | crate::AddressSpace::Storage { .. }
-        | crate::AddressSpace::Immediate => {}
+        | crate::AddressSpace::PushConstant => {}
         _ => return false,
     };
     match ir_module.types[var.ty].inner {
@@ -124,45 +123,33 @@ pub fn global_needs_wrapper(ir_module: &crate::Module, var: &crate::GlobalVariab
 }
 
 
-
 trait U8Internal {
-    fn is_utf8_char_boundary_polyfill(&self) -> bool;
+    fn is_utf8_char_boundary(&self) -> bool;
 }
 
 impl U8Internal for u8 {
-    fn is_utf8_char_boundary_polyfill(&self) -> bool {
+    fn is_utf8_char_boundary(&self) -> bool {
         
         (*self as i8) >= -0x40
     }
 }
 
 trait StrUnstable {
-    fn floor_char_boundary_polyfill(&self, index: usize) -> usize;
+    fn floor_char_boundary(&self, index: usize) -> usize;
 }
 
 impl StrUnstable for str {
-    fn floor_char_boundary_polyfill(&self, index: usize) -> usize {
+    fn floor_char_boundary(&self, index: usize) -> usize {
         if index >= self.len() {
             self.len()
         } else {
             let lower_bound = index.saturating_sub(3);
             let new_index = self.as_bytes()[lower_bound..=index]
                 .iter()
-                .rposition(|b| b.is_utf8_char_boundary_polyfill());
+                .rposition(|b| b.is_utf8_char_boundary());
 
             
             unsafe { lower_bound + new_index.unwrap_unchecked() }
         }
     }
-}
-
-pub enum BindingDecorations {
-    BuiltIn(spirv::BuiltIn, ArrayVec<spirv::Decoration, 2>),
-    Location {
-        location: u32,
-        others: ArrayVec<spirv::Decoration, 5>,
-        
-        blend_src: Option<Word>,
-    },
-    None,
 }

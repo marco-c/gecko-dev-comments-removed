@@ -319,7 +319,6 @@ struct PrivateCapabilities {
     can_present: bool,
     non_coherent_map_mask: wgt::BufferAddress,
     multi_draw_indirect: bool,
-    max_draw_indirect_count: u32,
 
     
     
@@ -388,12 +387,6 @@ struct PrivateCapabilities {
     
     
     multiview_instance_index_limit: u32,
-
-    
-    
-    
-    
-    scratch_buffer_alignment: u32,
 }
 
 bitflags::bitflags!(
@@ -512,7 +505,8 @@ impl Drop for DeviceShared {
 }
 
 pub struct Device {
-    mem_allocator: Mutex<gpu_allocator::vulkan::Allocator>,
+    shared: Arc<DeviceShared>,
+    mem_allocator: Mutex<gpu_alloc::GpuAllocator<vk::DeviceMemory>>,
     desc_allocator:
         Mutex<gpu_descriptor::DescriptorAllocator<vk::DescriptorPool, vk::DescriptorSet>>,
     valid_ash_memory_types: u32,
@@ -520,13 +514,11 @@ pub struct Device {
     #[cfg(feature = "renderdoc")]
     render_doc: crate::auxil::renderdoc::RenderDoc,
     counters: Arc<wgt::HalCounters>,
-    
-    
-    shared: Arc<DeviceShared>,
 }
 
 impl Drop for Device {
     fn drop(&mut self) {
+        unsafe { self.mem_allocator.lock().cleanup(&*self.shared) };
         unsafe { self.desc_allocator.lock().cleanup(&*self.shared) };
     }
 }
@@ -627,7 +619,7 @@ impl Drop for Queue {
 }
 #[derive(Debug)]
 enum BufferMemoryBacking {
-    Managed(gpu_allocator::vulkan::Allocation),
+    Managed(gpu_alloc::MemoryBlock<vk::DeviceMemory>),
     VulkanMemory {
         memory: vk::DeviceMemory,
         offset: u64,
@@ -635,10 +627,10 @@ enum BufferMemoryBacking {
     },
 }
 impl BufferMemoryBacking {
-    fn memory(&self) -> vk::DeviceMemory {
+    fn memory(&self) -> &vk::DeviceMemory {
         match self {
-            Self::Managed(m) => unsafe { m.memory() },
-            Self::VulkanMemory { memory, .. } => *memory,
+            Self::Managed(m) => m.memory(),
+            Self::VulkanMemory { memory, .. } => memory,
         }
     }
     fn offset(&self) -> u64 {
@@ -657,7 +649,7 @@ impl BufferMemoryBacking {
 #[derive(Debug)]
 pub struct Buffer {
     raw: vk::Buffer,
-    allocation: Option<Mutex<BufferMemoryBacking>>,
+    block: Option<Mutex<BufferMemoryBacking>>,
 }
 impl Buffer {
     
@@ -667,7 +659,7 @@ impl Buffer {
     pub unsafe fn from_raw(vk_buffer: vk::Buffer) -> Self {
         Self {
             raw: vk_buffer,
-            allocation: None,
+            block: None,
         }
     }
     
@@ -682,7 +674,7 @@ impl Buffer {
     ) -> Self {
         Self {
             raw: vk_buffer,
-            allocation: Some(Mutex::new(BufferMemoryBacking::VulkanMemory {
+            block: Some(Mutex::new(BufferMemoryBacking::VulkanMemory {
                 memory,
                 offset,
                 size,
@@ -697,28 +689,17 @@ impl crate::DynBuffer for Buffer {}
 pub struct AccelerationStructure {
     raw: vk::AccelerationStructureKHR,
     buffer: vk::Buffer,
-    allocation: gpu_allocator::vulkan::Allocation,
+    block: Mutex<gpu_alloc::MemoryBlock<vk::DeviceMemory>>,
     compacted_size_query: Option<vk::QueryPool>,
 }
 
 impl crate::DynAccelerationStructure for AccelerationStructure {}
 
 #[derive(Debug)]
-pub enum TextureMemory {
-    
-    Allocation(gpu_allocator::vulkan::Allocation),
-
-    
-    Dedicated(vk::DeviceMemory),
-
-    
-    External,
-}
-
-#[derive(Debug)]
 pub struct Texture {
     raw: vk::Image,
-    memory: TextureMemory,
+    external_memory: Option<vk::DeviceMemory>,
+    block: Option<gpu_alloc::MemoryBlock<vk::DeviceMemory>>,
     format: wgt::TextureFormat,
     copy_size: crate::CopyExtent,
     identity: ResourceIdentity<vk::Image>,
@@ -741,9 +722,8 @@ impl Texture {
     
     
     
-    
-    pub unsafe fn memory(&self) -> &TextureMemory {
-        &self.memory
+    pub unsafe fn external_memory(&self) -> Option<vk::DeviceMemory> {
+        self.external_memory
     }
 }
 

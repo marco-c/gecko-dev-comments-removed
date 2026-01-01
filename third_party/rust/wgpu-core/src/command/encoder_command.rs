@@ -35,7 +35,7 @@ pub struct IdReferences;
 
 
 
-#[cfg(any(feature = "trace", feature = "replay"))]
+#[cfg(feature = "serde")]
 #[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct PointerReferences;
@@ -59,7 +59,7 @@ impl ReferenceType for IdReferences {
     type Tlas = id::TlasId;
 }
 
-#[cfg(any(feature = "trace", feature = "replay"))]
+#[cfg(feature = "serde")]
 impl ReferenceType for PointerReferences {
     type Buffer = id::PointerId<id::markers::Buffer>;
     type Surface = id::PointerId<id::markers::Surface>;

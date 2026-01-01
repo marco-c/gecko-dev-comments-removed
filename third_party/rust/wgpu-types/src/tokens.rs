@@ -1,5 +1,3 @@
-use crate::link_to_wgpu_item;
-
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct ExperimentalFeatures {
@@ -9,7 +7,7 @@ pub struct ExperimentalFeatures {
 impl ExperimentalFeatures {
     
     
-    #[doc = link_to_wgpu_item!(struct Features)]
+    
     pub const fn disabled() -> Self {
         Self { enabled: false }
     }
@@ -32,7 +30,7 @@ impl ExperimentalFeatures {
     
     
     
-    #[doc = link_to_wgpu_item!(struct Features)]
+    
     
     pub const unsafe fn enabled() -> Self {
         Self { enabled: true }
@@ -41,34 +39,5 @@ impl ExperimentalFeatures {
     
     pub const fn is_enabled(&self) -> bool {
         self.enabled
-    }
-}
-
-
-#[derive(Debug, Default, Copy, Clone, Hash, PartialEq, Eq)]
-pub struct LoadOpDontCare {
-    
-    
-    _private: (),
-}
-
-impl LoadOpDontCare {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub const unsafe fn enabled() -> Self {
-        Self { _private: () }
     }
 }

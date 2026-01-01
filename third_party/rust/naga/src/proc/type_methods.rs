@@ -4,7 +4,6 @@
 
 
 
-
 use crate::{ir, valid::MAX_TYPE_SIZE};
 
 use super::TypeResolution;
@@ -96,31 +95,6 @@ impl crate::Scalar {
     pub const fn to_inner_atomic(self) -> crate::TypeInner {
         crate::TypeInner::Atomic(self)
     }
-}
-
-
-
-
-
-pub fn concrete_int_scalars() -> impl Iterator<Item = ir::Scalar> {
-    [
-        ir::Scalar::I32,
-        ir::Scalar::U32,
-        ir::Scalar::I64,
-        ir::Scalar::U64,
-    ]
-    .into_iter()
-}
-
-
-pub fn vector_sizes() -> impl Iterator<Item = ir::VectorSize> + Clone {
-    static SIZES: [ir::VectorSize; 3] = [
-        ir::VectorSize::Bi,
-        ir::VectorSize::Tri,
-        ir::VectorSize::Quad,
-    ];
-
-    SIZES.iter().cloned()
 }
 
 const POINTER_SPAN: u32 = 4;
@@ -636,14 +610,5 @@ pub fn min_max_float_representable_by(
             crate::Literal::F64(u64::max_float()),
         ),
         _ => unreachable!(),
-    }
-}
-
-
-pub const fn vector_size_str(size: crate::VectorSize) -> &'static str {
-    match size {
-        crate::VectorSize::Bi => "2",
-        crate::VectorSize::Tri => "3",
-        crate::VectorSize::Quad => "4",
     }
 }
