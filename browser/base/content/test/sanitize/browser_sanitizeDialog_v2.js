@@ -301,26 +301,30 @@ add_task(async function test_pref_remembering() {
   dh.open();
   await dh.promiseClosed;
 
-  
-  
-  
-  dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-  dh.onload = function () {
-    this.checkPrefCheckbox("cookiesAndStorage", true);
-    this.checkPrefCheckbox("siteSettings", false);
-    this.checkPrefCheckbox("cache", false);
+  if (!settingsRedesignHistoryEnabled()) {
+    
+    
+    
+    dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
+    dh.onload = function () {
+      this.checkPrefCheckbox("cookiesAndStorage", true);
+      this.checkPrefCheckbox("siteSettings", false);
+      this.checkPrefCheckbox("cache", false);
 
-    this.acceptDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
+      this.acceptDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
+  }
 
   
   dh = new ClearHistoryDialogHelper({ mode: "browser" });
   dh.onload = function () {
     this.validateCheckbox("cookiesAndStorage", true);
     this.validateCheckbox("siteSettings", false);
-    this.validateCheckbox("cache", false);
+    if (!settingsRedesignHistoryEnabled()) {
+      this.validateCheckbox("cache", false);
+    }
 
     this.cancelDialog();
   };
@@ -767,111 +771,113 @@ add_task(async function test_clear_on_shutdown() {
   await SiteDataTestUtils.clear();
 });
 
-add_task(async function testClearHistoryCheckboxStatesAfterMigration() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.cpd.history", false],
-      ["privacy.cpd.formdata", true],
-      ["privacy.cpd.cookies", true],
-      ["privacy.cpd.offlineApps", false],
-      ["privacy.cpd.sessions", false],
-      ["privacy.cpd.siteSettings", false],
-      ["privacy.cpd.cache", true],
-      
-      ["privacy.clearHistory.cookiesAndStorage", false],
-      
-      
-      ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", false],
-      ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
-    ],
+if (!settingsRedesignHistoryEnabled()) {
+  add_task(async function testClearHistoryCheckboxStatesAfterMigration() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["privacy.cpd.history", false],
+        ["privacy.cpd.formdata", true],
+        ["privacy.cpd.cookies", true],
+        ["privacy.cpd.offlineApps", false],
+        ["privacy.cpd.sessions", false],
+        ["privacy.cpd.siteSettings", false],
+        ["privacy.cpd.cache", true],
+        
+        ["privacy.clearHistory.cookiesAndStorage", false],
+        
+        
+        ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", false],
+        ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
+      ],
+    });
+
+    let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
+    dh.onload = function () {
+      this.validateCheckbox("cookiesAndStorage", true);
+      this.validateCheckbox("browsingHistoryAndDownloads", false);
+      this.validateCheckbox("formdata", true);
+      this.validateCheckbox("cache", true);
+      this.validateCheckbox("siteSettings", false);
+
+      this.checkPrefCheckbox("siteSettings", true);
+      this.checkPrefCheckbox("cookiesAndStorage", false);
+      this.acceptDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
+
+    is(
+      Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
+      true,
+      "Migration is complete for cpd branch"
+    );
+
+    
+    dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
+    dh.onload = function () {
+      this.validateCheckbox("siteSettings", true);
+      this.validateCheckbox("cookiesAndStorage", false);
+      this.cancelDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
   });
 
-  let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-  dh.onload = function () {
-    this.validateCheckbox("cookiesAndStorage", true);
-    this.validateCheckbox("browsingHistoryAndDownloads", false);
-    this.validateCheckbox("formdata", true);
-    this.validateCheckbox("cache", true);
-    this.validateCheckbox("siteSettings", false);
+  add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["privacy.cpd.history", false],
+        ["privacy.cpd.formdata", true],
+        ["privacy.cpd.cookies", true],
+        ["privacy.cpd.offlineApps", false],
+        ["privacy.cpd.sessions", false],
+        ["privacy.cpd.siteSettings", true],
+        ["privacy.cpd.cache", true],
+        
+        ["privacy.clearHistory.cookiesAndStorage", false],
+        ["privacy.clearHistory.siteSettings", false],
+        ["privacy.clearHistory.cache", false],
+        
+        ["privacy.clearHistory.historyFormDataAndDownloads", true],
+        
+        ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", true],
+        ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
+      ],
+    });
 
-    this.checkPrefCheckbox("siteSettings", true);
-    this.checkPrefCheckbox("cookiesAndStorage", false);
-    this.acceptDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
-
-  is(
-    Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
-    true,
-    "Migration is complete for cpd branch"
-  );
-
-  
-  dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-  dh.onload = function () {
-    this.validateCheckbox("siteSettings", true);
-    this.validateCheckbox("cookiesAndStorage", false);
-    this.cancelDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
-});
-
-add_task(async function testClearHistoryCheckboxStatesAfterMigration3() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.cpd.history", false],
-      ["privacy.cpd.formdata", true],
-      ["privacy.cpd.cookies", true],
-      ["privacy.cpd.offlineApps", false],
-      ["privacy.cpd.sessions", false],
-      ["privacy.cpd.siteSettings", true],
-      ["privacy.cpd.cache", true],
+    let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
+    dh.onload = function () {
       
-      ["privacy.clearHistory.cookiesAndStorage", false],
-      ["privacy.clearHistory.siteSettings", false],
-      ["privacy.clearHistory.cache", false],
+      this.validateCheckbox("cookiesAndStorage", false);
+      this.validateCheckbox("siteSettings", false);
+      this.validateCheckbox("cache", false);
+
       
-      ["privacy.clearHistory.historyFormDataAndDownloads", true],
+      this.validateCheckbox("browsingHistoryAndDownloads", true);
+      this.validateCheckbox("formdata", true);
+
       
-      ["privacy.sanitize.cpd.hasMigratedToNewPrefs2", true],
-      ["privacy.sanitize.cpd.hasMigratedToNewPrefs3", false],
-    ],
+      this.checkPrefCheckbox("siteSettings", true);
+      this.checkPrefCheckbox("browsingHistoryAndDownloads", false);
+      this.acceptDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
+
+    is(
+      Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
+      true,
+      "Migration is complete for cpd branch"
+    );
+
+    
+    dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
+    dh.onload = function () {
+      this.validateCheckbox("siteSettings", true);
+      this.validateCheckbox("browsingHistoryAndDownloads", false);
+      this.cancelDialog();
+    };
+    dh.open();
+    await dh.promiseClosed;
   });
-
-  let dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-  dh.onload = function () {
-    
-    this.validateCheckbox("cookiesAndStorage", false);
-    this.validateCheckbox("siteSettings", false);
-    this.validateCheckbox("cache", false);
-
-    
-    this.validateCheckbox("browsingHistoryAndDownloads", true);
-    this.validateCheckbox("formdata", true);
-
-    
-    this.checkPrefCheckbox("siteSettings", true);
-    this.checkPrefCheckbox("browsingHistoryAndDownloads", false);
-    this.acceptDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
-
-  is(
-    Services.prefs.getBoolPref("privacy.sanitize.cpd.hasMigratedToNewPrefs3"),
-    true,
-    "Migration is complete for cpd branch"
-  );
-
-  
-  dh = new ClearHistoryDialogHelper({ mode: "clearHistory" });
-  dh.onload = function () {
-    this.validateCheckbox("siteSettings", true);
-    this.validateCheckbox("browsingHistoryAndDownloads", false);
-    this.cancelDialog();
-  };
-  dh.open();
-  await dh.promiseClosed;
-});
+}
