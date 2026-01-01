@@ -216,8 +216,9 @@ export const kTextureUsageInfo: {
 export const kTextureUsages = numericKeysOf<GPUTextureUsageFlags>(kTextureUsageInfo);
 
 
-export function IsValidTransientAttachmentUsage(usage: GPUTextureUsageFlags): boolean {
+export function IsValidTextureUsageCombination(usage: GPUTextureUsageFlags): boolean {
   return (
+    (usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) === 0 ||
     usage === (GPUConst.TextureUsage.TRANSIENT_ATTACHMENT | GPUConst.TextureUsage.RENDER_ATTACHMENT)
   );
 }
@@ -402,12 +403,12 @@ export const kPerStageBindingLimits: {
 } =
    {
   'uniformBuf':          { class: 'uniformBuf', maxLimits: { COMPUTE: 'maxUniformBuffersPerShaderStage', FRAGMENT: 'maxUniformBuffersPerShaderStage', VERTEX: 'maxUniformBuffersPerShaderStage' } },
-  'storageBuf':          { class: 'storageBuf', maxLimits: { COMPUTE: 'maxStorageBuffersPerShaderStage', FRAGMENT: 'maxStorageBuffersPerShaderStage', VERTEX: 'maxStorageBuffersPerShaderStage' } },
+  'storageBuf':          { class: 'storageBuf', maxLimits: { COMPUTE: 'maxStorageBuffersPerShaderStage', FRAGMENT: 'maxStorageBuffersInFragmentStage', VERTEX: 'maxStorageBuffersInVertexStage' } },
   'sampler':             { class: 'sampler',    maxLimits: { COMPUTE: 'maxSamplersPerShaderStage', FRAGMENT: 'maxSamplersPerShaderStage', VERTEX: 'maxSamplersPerShaderStage' } },
   'sampledTex':          { class: 'sampledTex', maxLimits: { COMPUTE: 'maxSampledTexturesPerShaderStage', FRAGMENT: 'maxSampledTexturesPerShaderStage', VERTEX: 'maxSampledTexturesPerShaderStage' } },
-  'readonlyStorageTex':  { class: 'readonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesPerShaderStage', VERTEX: 'maxStorageTexturesPerShaderStage' } },
-  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesPerShaderStage', VERTEX: 'maxStorageTexturesPerShaderStage' } },
-  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesPerShaderStage', VERTEX: 'maxStorageTexturesPerShaderStage'} },
+  'readonlyStorageTex':  { class: 'readonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } },
+  'writeonlyStorageTex': { class: 'writeonlyStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage' } },
+  'readwriteStorageTex': { class: 'readwriteStorageTex', maxLimits: { COMPUTE: 'maxStorageTexturesPerShaderStage', FRAGMENT: 'maxStorageTexturesInFragmentStage', VERTEX: 'maxStorageTexturesInVertexStage'} },
 };
 
 
@@ -738,7 +739,7 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
                                                [  'maximum',          ,                ,     kMaxUnsignedLongValue] as const, {
   'maxTextureDimension1D':                     [           ,      8192,            4096,                          ],
   'maxTextureDimension2D':                     [           ,      8192,            4096,                          ],
-  'maxTextureDimension3D':                     [           ,      2048,            1024,                          ],
+  'maxTextureDimension3D':                     [           ,      2048,            2048,                          ],
   'maxTextureArrayLayers':                     [           ,       256,             256,                          ],
 
   'maxBindGroups':                             [           ,         4,               4,                          ],
@@ -776,16 +777,7 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxComputeWorkgroupSizeY':                  [           ,       256,             128,                          ],
   'maxComputeWorkgroupSizeZ':                  [           ,        64,              64,                          ],
   'maxComputeWorkgroupsPerDimension':          [           ,     65535,           65535,                          ],
-  'maxImmediateSize':                          [           ,        64,              64,                          ],
 } as const];
-
-
-const kCompatOnlyLimits = [
-  'maxStorageTexturesInFragmentStage',
-  'maxStorageTexturesInVertexStage',
-  'maxStorageBuffersInFragmentStage',
-  'maxStorageBuffersInVertexStage',
-] as const;
 
 
 
@@ -824,14 +816,7 @@ export const kLimitClasses = Object.fromEntries(
 );
 
 export function getDefaultLimits(featureLevel: FeatureLevel) {
-  return Object.fromEntries(
-    Object.entries(kLimitInfos[featureLevel]).filter(([k]) => {
-      
-      return featureLevel === 'core'
-        ? !kCompatOnlyLimits.includes(k as (typeof kCompatOnlyLimits)[number])
-        : true;
-    })
-  ) as typeof kLimitInfoCore;
+  return kLimitInfos[featureLevel];
 }
 
 

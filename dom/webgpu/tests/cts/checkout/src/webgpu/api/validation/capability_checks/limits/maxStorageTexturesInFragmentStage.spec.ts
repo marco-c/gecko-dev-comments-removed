@@ -25,10 +25,7 @@ const kExtraLimits: LimitsRequest = {
   maxBindGroups: 'adapterLimit',
 };
 
-export const { g, description } = makeLimitTestGroup(limit, {
-  
-  limitOptional: true,
-});
+export const { g, description } = makeLimitTestGroup(limit);
 
 function createBindGroupLayout(
   device: GPUDevice,

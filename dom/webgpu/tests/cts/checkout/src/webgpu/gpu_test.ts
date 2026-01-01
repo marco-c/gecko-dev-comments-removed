@@ -677,6 +677,15 @@ export class GPUTestBase extends Fixture<GPUTestSubcaseBatchState> {
   }
 
   
+  skipIfTransientAttachmentNotSupported() {
+    const isTransientAttachmentSupported = 'TRANSIENT_ATTACHMENT' in GPUTextureUsage;
+    this.skipIf(
+      !isTransientAttachmentSupported,
+      'GPUTextureUsage TRANSIENT_ATTACHMENT is not supported'
+    );
+  }
+
+  
 
 
 

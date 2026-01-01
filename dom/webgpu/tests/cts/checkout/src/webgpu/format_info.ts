@@ -2469,6 +2469,21 @@ export function isTextureFormatPossiblyMultisampled(format: GPUTextureFormat) {
 
 
 
+export function isTextureFormatPossiblyResolvable(format: GPUTextureFormat) {
+  if (format === 'rg11b10ufloat') {
+    return true;
+  }
+  if (isTextureFormatTier1EnablesResolve(format)) {
+    return true;
+  }
+  const info = kTextureFormatInfo[format];
+  return !!info.colorRender?.resolve;
+}
+
+
+
+
+
 export function isTextureFormatPossiblyStorageReadable(format: GPUTextureFormat) {
   return (
     !!kTextureFormatInfo[format].color?.storage ||

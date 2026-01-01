@@ -2469,6 +2469,21 @@ export function isTextureFormatPossiblyMultisampled(format) {
 
 
 
+export function isTextureFormatPossiblyResolvable(format) {
+  if (format === 'rg11b10ufloat') {
+    return true;
+  }
+  if (isTextureFormatTier1EnablesResolve(format)) {
+    return true;
+  }
+  const info = kTextureFormatInfo[format];
+  return !!info.colorRender?.resolve;
+}
+
+
+
+
+
 export function isTextureFormatPossiblyStorageReadable(format) {
   return (
     !!kTextureFormatInfo[format].color?.storage ||
