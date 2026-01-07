@@ -17,24 +17,6 @@ registerCleanupFunction(async () => {
 
 
 
-async function getContextMenu(triggerNode, contextMenuId) {
-  let win = triggerNode.ownerGlobal;
-  triggerNode.scrollIntoView({ behavior: "instant" });
-  const contextMenu = win.document.getElementById(contextMenuId);
-  const contextMenuShown = BrowserTestUtils.waitForPopupEvent(
-    contextMenu,
-    "shown"
-  );
-
-  EventUtils.synthesizeMouseAtCenter(
-    triggerNode,
-    { type: "contextmenu", button: 2 },
-    win
-  );
-  await contextMenuShown;
-  return contextMenu;
-}
-
 let activateTabContextMenuItem = async (
   selectedTab,
   menuItemSelector,
@@ -91,12 +73,6 @@ let activateTabContextMenuItem = async (
 
 
 
-async function closeContextMenu(contextMenu) {
-  let menuHidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");
-  contextMenu.hidePopup();
-  await menuHidden;
-}
-
 async function openTabNoteMenuByAddNote(tab) {
   let tabNotePanel = document.getElementById("tabNotePanel");
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabNotePanel, "shown");
@@ -105,19 +81,16 @@ async function openTabNoteMenuByAddNote(tab) {
   return tabNotePanel;
 }
 
+
+
+
+
 async function openTabNoteMenuByEditNote(tab) {
   let tabNotePanel = document.getElementById("tabNotePanel");
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabNotePanel, "shown");
   activateTabContextMenuItem(tab, "#context_editNote", "#context_updateNote");
   await panelShown;
   return tabNotePanel;
-}
-
-async function closeTabNoteMenu() {
-  let tabNotePanel = document.getElementById("tabNotePanel");
-  let menuHidden = BrowserTestUtils.waitForPopupEvent(tabNotePanel, "hidden");
-  tabNotePanel.hidePopup();
-  return menuHidden;
 }
 
 add_task(async function test_tabContextMenu_prefDisabled() {

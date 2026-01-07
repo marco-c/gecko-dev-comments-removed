@@ -88,6 +88,8 @@
     #cancelButton;
     #saveButton;
     #overflowIndicator;
+    
+    #telemetrySource = null;
 
     connectedCallback() {
       if (this.#initialized) {
@@ -145,6 +147,7 @@
     on_popuphidden() {
       this.#currentTab = null;
       this.#noteField.value = "";
+      this.#telemetrySource = null;
     }
 
     get createMode() {
@@ -211,11 +214,16 @@
     
 
 
-    openPanel(tab) {
+
+
+
+
+    openPanel(tab, options = {}) {
       if (!TabNotes.isEligible(tab)) {
         return;
       }
       this.#currentTab = tab;
+      this.#telemetrySource = options.telemetrySource;
 
       this.#updatePanel();
 
@@ -246,7 +254,9 @@
       let note = this.#noteField.value;
 
       if (TabNotes.isEligible(this.#currentTab) && note.length) {
-        TabNotes.set(this.#currentTab, note);
+        TabNotes.set(this.#currentTab, note, {
+          telemetrySource: this.#telemetrySource,
+        });
       }
 
       this.#panel.hidePopup();
