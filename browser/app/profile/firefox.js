@@ -2913,7 +2913,7 @@ pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
 
 
 pref("browser.privatebrowsing.felt-privacy-v1", false);
-pref("security.certerrors.felt-privacy-v1", true);
+pref("security.certerrors.felt-privacy-v1", false);
 
 
 
