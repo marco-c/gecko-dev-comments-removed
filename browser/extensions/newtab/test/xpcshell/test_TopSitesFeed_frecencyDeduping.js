@@ -47,6 +47,7 @@ function getTopSitesFeedForTest(sandbox, { frecent = [], contile = [] } = {}) {
     },
     cache: frecent,
   };
+  feed.frecencyBoostProvider.frecentCache = feed.frecentCache;
 
   feed._contile = {
     sov: true,
@@ -77,7 +78,9 @@ function getTopSitesFeedForTest(sandbox, { frecent = [], contile = [] } = {}) {
     ],
   ]);
 
-  sandbox.stub(feed, "_frecencyBoostedSponsors").value(frecencyBoostedSponsors);
+  sandbox
+    .stub(feed.frecencyBoostProvider, "_frecencyBoostedSponsors")
+    .value(frecencyBoostedSponsors);
 
   
   
