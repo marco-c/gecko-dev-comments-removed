@@ -2,7 +2,6 @@
 
 
 
-#include <stdlib.h>
 #include <windows.h>
 #include <softpub.h>
 #include <wintrust.h>

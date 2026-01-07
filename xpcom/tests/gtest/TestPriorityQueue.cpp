@@ -5,7 +5,6 @@
 
 
 #include "nsTPriorityQueue.h"
-#include <stdlib.h>
 #include "gtest/gtest.h"
 
 template <class T, class Compare>

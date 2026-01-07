@@ -7,9 +7,7 @@
 #include "BufferUnrotate.h"
 
 #include <algorithm>  
-#include <cstdlib>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 namespace mozilla {

@@ -4,7 +4,6 @@
 
 
 
-#include <stdlib.h>
 #include "nsString.h"
 #include "nsReadableUtils.h"
 #include "UTFStrings.h"
