@@ -56,8 +56,6 @@ def register(graph_config):
     Args:
         graph_config: The graph configuration object.
     """
-    from taskgraph.optimize.base import registry
-
     from gecko_taskgraph import (  
         filter_tasks,
         morph,
@@ -68,11 +66,6 @@ def register(graph_config):
         dependencies,  
     )
     from gecko_taskgraph.util.verify import verifications
-
-    
-    
-    
-    del registry["skip-unless-changed"]
 
     register_mozilla_taskgraph(graph_config)
     register_android_taskgraph(graph_config)

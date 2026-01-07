@@ -12,7 +12,6 @@ from mozbuild.util import memoize
 from taskgraph.optimize.base import OptimizationStrategy, register_strategy
 from taskgraph.optimize.strategies import IndexSearch
 from taskgraph.util.parameterization import resolve_timestamps
-from taskgraph.util.path import match as match_path
 
 from gecko_taskgraph.optimize.mozlint import SkipUnlessMozlint
 
@@ -73,41 +72,6 @@ class SkipUnlessHasRelevantTests(OptimizationStrategy):
                     )
                     return False
         return True
-
-
-
-
-
-
-
-@register_strategy("skip-unless-changed")
-class SkipUnlessChanged(OptimizationStrategy):
-    @memoize
-    def _match_path(self, path, pattern):
-        return match_path(path, pattern)
-
-    def check(self, files_changed, patterns):
-        """Optimized check using memoized path matching"""
-        
-        
-        return any(
-            self._match_path(path, pattern)
-            for path in files_changed
-            for pattern in patterns
-        )
-
-    def should_remove_task(self, task, params, file_patterns):
-        
-        if params.get("repository_type") == "hg" and params.get("pushlog_id") == -1:
-            return False
-
-        changed = self.check(params["files_changed"], file_patterns)
-        if not changed:
-            logger.debug(
-                f'no files found matching a pattern in `skip-unless-changed` for "{task.label}"'
-            )
-            return True
-        return False
 
 
 register_strategy("skip-unless-mozlint", args=("tools/lint",))(SkipUnlessMozlint)
