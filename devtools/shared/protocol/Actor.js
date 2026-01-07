@@ -141,7 +141,14 @@ class Actor extends Pool {
       lineNumber: error.lineNumber,
       columnNumber: error.columnNumber,
       
-      stack: error.stack,
+      
+      
+      
+      
+      stack:
+        error == "out of memory"
+          ? ChromeUtils.getLastOOMStackTrace()
+          : error.stack,
     });
   }
 
