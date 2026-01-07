@@ -40,6 +40,9 @@ class AnnexB {
       mozilla::MediaRawData* aSample, bool aAddSPS = true);
 
   
+  static RefPtr<MediaByteBuffer> ExtractExtraDataForAVCC(
+      const Span<const uint8_t>& aSpan);
+  
   
   static bool ConvertSampleToAVCC(
       mozilla::MediaRawData* aSample,
@@ -66,7 +69,7 @@ class AnnexB {
   
   static bool IsHVCC(const mozilla::MediaRawData* aSample);
   
-  static bool IsAnnexB(const mozilla::MediaRawData* aSample);
+  static bool IsAnnexB(const Span<const uint8_t>& aSpan);
 
   
   
@@ -78,6 +81,10 @@ class AnnexB {
                               const nsTArray<NAL_TYPES>& aTypes);
 
  private:
+  static size_t FindNalType(const Span<const uint8_t>& aSpan,
+                            const nsTArray<AnnexB::NALEntry>& aNalEntries,
+                            NAL_TYPES aType, size_t aStartIndex);
+
   
   static mozilla::Result<mozilla::Ok, nsresult> ConvertSPSOrPPS(
       mozilla::BufferReader& aReader, uint8_t aCount,

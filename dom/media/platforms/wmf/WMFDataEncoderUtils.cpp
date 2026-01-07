@@ -67,7 +67,8 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
           supports += EncodeSupport::HardwareEncode;
         }
       } else {
-        WMF_ENC_LOG("HW encoder is disabled for %s", aConfig.CodecString());
+        WMF_ENC_LOG("HW encoder is disabled for %s",
+                    EnumValueToString(aConfig.mCodec));
       }
     }
     if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware) {
@@ -95,28 +96,14 @@ EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
 
 static already_AddRefed<MediaByteBuffer> ParseH264Parameters(
     const nsTArray<uint8_t>& aHeader, const bool aAsAnnexB) {
+  if (!aAsAnnexB) {
+    return AnnexB::ExtractExtraDataForAVCC(aHeader).forget();
+  }
   size_t length = aHeader.Length();
   auto annexB = MakeRefPtr<MediaByteBuffer>(length);
   PodCopy(annexB->Elements(), aHeader.Elements(), length);
   annexB->SetLength(length);
-  if (aAsAnnexB) {
-    return annexB.forget();
-  }
-
-  
-  nsTArray<AnnexB::NALEntry> paramSets;
-  AnnexB::ParseNALEntries(
-      Span<const uint8_t>(annexB->Elements(), annexB->Length()), paramSets);
-
-  auto avcc = MakeRefPtr<MediaByteBuffer>();
-  AnnexB::NALEntry& sps = paramSets.ElementAt(0);
-  AnnexB::NALEntry& pps = paramSets.ElementAt(1);
-  const uint8_t* spsPtr = annexB->Elements() + sps.mOffset;
-  H264::WriteExtraData(
-      avcc, spsPtr[1], spsPtr[2], spsPtr[3],
-      Span<const uint8_t>(spsPtr, sps.mSize),
-      Span<const uint8_t>(annexB->Elements() + pps.mOffset, pps.mSize));
-  return avcc.forget();
+  return annexB.forget();
 }
 
 static uint32_t GetProfile(H264_PROFILE aProfileLevel) {
@@ -235,13 +222,26 @@ already_AddRefed<IMFMediaType> CreateOutputType(EncoderConfig& aConfig) {
 
   if (aConfig.mCodecSpecific.is<H264Specific>()) {
     MOZ_ASSERT(aConfig.mCodec == CodecType::H264);
-    hr = FAILED(type->SetUINT32(
+    hr = type->SetUINT32(
         MF_MT_MPEG2_PROFILE,
-        GetProfile(aConfig.mCodecSpecific.as<H264Specific>().mProfile)));
-    if (hr) {
+        GetProfile(aConfig.mCodecSpecific.as<H264Specific>().mProfile));
+    if (FAILED(hr)) {
       WMF_ENC_LOG("Create output type set profile error: %lx", hr);
       return nullptr;
     }
+  }
+
+  
+  
+  
+  uint32_t interval = SaturatingCast<uint32_t>(aConfig.mKeyframeInterval);
+  if (interval > 0) {
+    hr = type->SetUINT32(MF_MT_MAX_KEYFRAME_SPACING, interval);
+    if (FAILED(hr)) {
+      WMF_ENC_LOG("Create output type set keyframe interval error: %lx", hr);
+      return nullptr;
+    }
+    WMF_ENC_LOG("Set MAX_KEYFRAME_SPACING to %u", interval);
   }
 
   return type.forget();
