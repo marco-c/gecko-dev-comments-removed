@@ -78,7 +78,7 @@ add_task(async function test_help_panel_cloning() {
           appMenuHelpItem.getAttribute("oncommand"),
           "oncommand was properly cloned."
         );
-      } else if (attr == "command") {
+      } else if (attr == "disabled") {
         
         Assert.equal(
           helpMenuPopupItem.hasAttribute(attr),
