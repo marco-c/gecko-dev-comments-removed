@@ -24,8 +24,8 @@ using namespace dom;
 
 using AncestorType = HTMLEditUtils::AncestorType;
 using AncestorTypes = HTMLEditUtils::AncestorTypes;
-using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
-using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
+using LeafNodeType = HTMLEditUtils::LeafNodeType;
+using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
 template WSRunScanner::TextFragmentData::TextFragmentData(Options,
                                                           const EditorDOMPoint&,
@@ -245,10 +245,18 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
           ? BlockInlineCheck::UseHTMLDefaultStyle
           : BlockInlineCheck::Auto;
   
-  const LeafNodeOptions leafNodeOptions = ToLeafNodeOptions(aOptions);
+  const auto leafNodeTypes = [&]() -> LeafNodeTypes {
+    auto types = aOptions.contains(Option::OnlyEditableNodes)
+                     ? LeafNodeTypes{LeafNodeType::LeafNodeOrNonEditableNode}
+                     : LeafNodeTypes{LeafNodeType::OnlyLeafNode};
+    if (aOptions.contains(Option::StopAtComment)) {
+      types += LeafNodeType::TreatCommentAsLeafNode;
+    }
+    return types;
+  }();
   nsIContent* previousLeafContentOrBlock =
       HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          aPoint, leafNodeOptions, blockInlineCheck, &aAncestorLimiter);
+          aPoint, leafNodeTypes, blockInlineCheck, &aAncestorLimiter);
   if (!previousLeafContentOrBlock) {
     
     return BoundaryData(
@@ -266,35 +274,16 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
                         WSType::OtherBlockBoundary);
   }
 
-  if (previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
+  if (!previousLeafContentOrBlock->IsText() ||
+      (aOptions.contains(Option::OnlyEditableNodes) &&
+       HTMLEditUtils::IsSimplyEditableNode(*previousLeafContentOrBlock) !=
+           HTMLEditUtils::IsSimplyEditableNode(aAncestorLimiter))) {
     
-    return BoundaryData(aPoint, *previousLeafContentOrBlock, WSType::BRElement);
-  }
-
-  if (aOptions.contains(Option::OnlyEditableNodes) &&
-      HTMLEditUtils::IsSimplyEditableNode(*previousLeafContentOrBlock) !=
-          HTMLEditUtils::IsSimplyEditableNode(aAncestorLimiter)) {
     
     return BoundaryData(aPoint, *previousLeafContentOrBlock,
-                        WSType::SpecialContent);
-  }
-
-  if (previousLeafContentOrBlock->IsElement() &&
-      HTMLEditUtils::IsInlineContent(
-          *previousLeafContentOrBlock,
-          UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) &&
-      HTMLEditUtils::IsContainerNode(*previousLeafContentOrBlock) &&
-      !HTMLEditUtils::IsReplacedElement(
-          *previousLeafContentOrBlock->AsElement())) {
-    
-    return BoundaryData(aPoint, *previousLeafContentOrBlock,
-                        WSType::EmptyInlineContainerElement);
-  }
-
-  if (!previousLeafContentOrBlock->IsText()) {
-    
-    return BoundaryData(aPoint, *previousLeafContentOrBlock,
-                        WSType::SpecialContent);
+                        previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                            ? WSType::BRElement
+                            : WSType::SpecialContent);
   }
 
   if (!previousLeafContentOrBlock->AsText()->TextLength()) {
@@ -418,10 +407,18 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
           : BlockInlineCheck::Auto;
 
   
-  const LeafNodeOptions leafNodeOptions = ToLeafNodeOptions(aOptions);
+  const auto leafNodeTypes = [&]() -> LeafNodeTypes {
+    auto types = aOptions.contains(Option::OnlyEditableNodes)
+                     ? LeafNodeTypes{LeafNodeType::LeafNodeOrNonEditableNode}
+                     : LeafNodeTypes{LeafNodeType::OnlyLeafNode};
+    if (aOptions.contains(Option::StopAtComment)) {
+      types += LeafNodeType::TreatCommentAsLeafNode;
+    }
+    return types;
+  }();
   nsIContent* nextLeafContentOrBlock =
       HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          aPoint, leafNodeOptions, blockInlineCheck, &aAncestorLimiter);
+          aPoint, leafNodeTypes, blockInlineCheck, &aAncestorLimiter);
   if (!nextLeafContentOrBlock) {
     
     return BoundaryData(
@@ -441,34 +438,17 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
                         WSType::OtherBlockBoundary);
   }
 
-  if (nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
+  if (!nextLeafContentOrBlock->IsText() ||
+      (aOptions.contains(Option::OnlyEditableNodes) &&
+       HTMLEditUtils::IsSimplyEditableNode(*nextLeafContentOrBlock) !=
+           HTMLEditUtils::IsSimplyEditableNode(aAncestorLimiter))) {
     
-    return BoundaryData(aPoint, *nextLeafContentOrBlock, WSType::BRElement);
-  }
-
-  if (aOptions.contains(Option::OnlyEditableNodes) &&
-      HTMLEditUtils::IsSimplyEditableNode(*nextLeafContentOrBlock) !=
-          HTMLEditUtils::IsSimplyEditableNode(aAncestorLimiter)) {
+    
     
     return BoundaryData(aPoint, *nextLeafContentOrBlock,
-                        WSType::SpecialContent);
-  }
-
-  if (nextLeafContentOrBlock->IsElement() &&
-      HTMLEditUtils::IsInlineContent(
-          *nextLeafContentOrBlock,
-          UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) &&
-      HTMLEditUtils::IsContainerNode(*nextLeafContentOrBlock) &&
-      !HTMLEditUtils::IsReplacedElement(*nextLeafContentOrBlock->AsElement())) {
-    
-    return BoundaryData(aPoint, *nextLeafContentOrBlock,
-                        WSType::EmptyInlineContainerElement);
-  }
-
-  if (!nextLeafContentOrBlock->IsText()) {
-    
-    return BoundaryData(aPoint, *nextLeafContentOrBlock,
-                        WSType::SpecialContent);
+                        nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                            ? WSType::BRElement
+                            : WSType::SpecialContent);
   }
 
   if (!nextLeafContentOrBlock->AsText()->DataBuffer().GetLength()) {
@@ -619,19 +599,9 @@ WSRunScanner::TextFragmentData::VisibleWhiteSpacesDataRef() const {
     
     
     const bool mayHaveInvisibleLeadingSpace =
-        !StartsFromNonCollapsibleCharacters() && !StartsFromSpecialContent() &&
-        !(StartsFromEmptyInlineContainerElement() &&
-          
-          
-          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(
-              *GetStartReasonContent()));
+        !StartsFromNonCollapsibleCharacters() && !StartsFromSpecialContent();
     const bool mayHaveInvisibleTrailingWhiteSpace =
         !EndsByNonCollapsibleCharacters() && !EndsBySpecialContent() &&
-        !(EndsByEmptyInlineContainerElement() &&
-          
-          
-          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(
-              *GetEndReasonContent())) &&
         !EndsByBRElement() && !EndsByInvisiblePreformattedLineBreak();
 
     if (!mayHaveInvisibleLeadingSpace && !mayHaveInvisibleTrailingWhiteSpace) {
@@ -901,26 +871,21 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
       aOptions.contains(Option::ReferHTMLDefaultStyle)
           ? BlockInlineCheck::UseHTMLDefaultStyle
           : BlockInlineCheck::Auto;
-  const LeafNodeOptions leafNodeOptions =
-      ToLeafNodeOptions(aOptions) + LeafNodeOption::TreatChildBlockAsLeafNode;
   const EditorRawDOMPoint point = [&]() MOZ_NEVER_INLINE_DEBUG {
-    if (!aPoint.CanContainerHaveChildren()) {
-      return aPoint.template To<EditorRawDOMPoint>();
-    }
-    nsIContent* const child =
-        aPoint.GetPreviousSiblingOfChild()
-            ? HTMLEditUtils::GetNextSibling(
-                  *aPoint.GetPreviousSiblingOfChild(), leafNodeOptions,
-                  UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck))
-            : HTMLEditUtils::GetFirstChild(
-                  *aPoint.GetContainer(), leafNodeOptions,
-                  UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck));
+    nsIContent* const child = [&]() -> nsIContent* {
+      nsIContent* child =
+          aPoint.CanContainerHaveChildren() ? aPoint.GetChild() : nullptr;
+      
+      while (child && child->IsComment() &&
+             !aOptions.contains(Option::StopAtComment)) {
+        child = child->GetNextSibling();
+      }
+      return child;
+    }();
     if (!child ||
         HTMLEditUtils::IsBlockElement(
             *child, UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
-          !HTMLEditUtils::IsContainerNode(*child)) &&
-         HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*child))) {
+        HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*child)) {
       return aPoint.template To<EditorRawDOMPoint>();
     }
     if (!child->HasChildNodes()) {
@@ -934,16 +899,14 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
     
     
     nsIContent* const leafContent = HTMLEditUtils::GetFirstLeafContent(
-        *child, leafNodeOptions, blockInlineCheck);
+        *child, {LeafNodeType::LeafNodeOrChildBlock}, blockInlineCheck);
     if (!leafContent) {
       return EditorRawDOMPoint(child, 0);
     }
     if (HTMLEditUtils::IsBlockElement(
             *leafContent,
             UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
-          !HTMLEditUtils::IsContainerNode(*leafContent)) &&
-         HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*leafContent))) {
+        HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*leafContent)) {
       return EditorRawDOMPoint();
     }
     return EditorRawDOMPoint(leafContent, 0);
@@ -980,14 +943,24 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
     return EditorDOMPointType();
   }
 
+  const auto leafNodeTypes = [&]() -> LeafNodeTypes {
+    auto types = aIgnoreNonEditableNodes == IgnoreNonEditableNodes::Yes
+                     ? LeafNodeTypes(LeafNodeType::LeafNodeOrNonEditableNode,
+                                     LeafNodeType::LeafNodeOrChildBlock)
+                     : LeafNodeTypes(LeafNodeType::LeafNodeOrChildBlock);
+    if (aOptions.contains(Option::StopAtComment)) {
+      types += LeafNodeType::TreatCommentAsLeafNode;
+    }
+    return types;
+  }();
   for (nsIContent* nextContent =
            HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-               *point.ContainerAs<nsIContent>(), leafNodeOptions,
+               *point.ContainerAs<nsIContent>(), leafNodeTypes,
                blockInlineCheck,
                editableBlockElementOrInlineEditingHostOrNonEditableRootElement);
        nextContent;
        nextContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-           *nextContent, leafNodeOptions, blockInlineCheck,
+           *nextContent, leafNodeTypes, blockInlineCheck,
            editableBlockElementOrInlineEditingHostOrNonEditableRootElement)) {
     if (!nextContent->IsText() ||
         (aIgnoreNonEditableNodes == IgnoreNonEditableNodes::Yes &&
@@ -996,9 +969,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetInclusiveNextCharPoint(
           HTMLEditUtils::IsBlockElement(
               *nextContent,
               UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-          ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
-            !HTMLEditUtils::IsContainerNode(*nextContent)) &&
-           HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent))) {
+          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*nextContent)) {
         break;  
       }
       continue;
@@ -1025,27 +996,23 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
       aOptions.contains(Option::ReferHTMLDefaultStyle)
           ? BlockInlineCheck::UseHTMLDefaultStyle
           : BlockInlineCheck::Auto;
-  const LeafNodeOptions leafNodeOptions =
-      ToLeafNodeOptions(aOptions) + LeafNodeOption::TreatChildBlockAsLeafNode;
   const EditorRawDOMPoint point = [&]() MOZ_NEVER_INLINE_DEBUG {
-    if (!aPoint.CanContainerHaveChildren()) {
-      return aPoint.template To<EditorRawDOMPoint>();
-    }
-    nsIContent* const previousChild =
-        aPoint.GetChild()
-            ? HTMLEditUtils::GetPreviousSibling(
-                  *aPoint.GetChild(), leafNodeOptions,
-                  UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck))
-            : HTMLEditUtils::GetLastChild(
-                  *aPoint.GetContainer(), leafNodeOptions,
-                  UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck));
+    nsIContent* const previousChild = [&]() -> nsIContent* {
+      nsIContent* previousChild = aPoint.CanContainerHaveChildren()
+                                      ? aPoint.GetPreviousSiblingOfChild()
+                                      : nullptr;
+      
+      while (previousChild && previousChild->IsComment() &&
+             !aOptions.contains(Option::StopAtComment)) {
+        previousChild = previousChild->GetPreviousSibling();
+      }
+      return previousChild;
+    }();
     if (!previousChild ||
         HTMLEditUtils::IsBlockElement(
             *previousChild,
             UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
-          !HTMLEditUtils::IsContainerNode(*previousChild)) &&
-         HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousChild))) {
+        HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousChild)) {
       return aPoint.template To<EditorRawDOMPoint>();
     }
     if (!previousChild->HasChildren()) {
@@ -1060,16 +1027,14 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
     
     
     nsIContent* const leafContent = HTMLEditUtils::GetLastLeafContent(
-        *previousChild, leafNodeOptions, blockInlineCheck);
+        *previousChild, {LeafNodeType::LeafNodeOrChildBlock}, blockInlineCheck);
     if (!leafContent) {
       return EditorRawDOMPoint::AtEndOf(*previousChild);
     }
     if (HTMLEditUtils::IsBlockElement(
             *leafContent,
             UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-        ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
-          !HTMLEditUtils::IsContainerNode(*leafContent)) &&
-         HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*leafContent))) {
+        HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*leafContent)) {
       return EditorRawDOMPoint();
     }
     return EditorRawDOMPoint::AtEndOf(*leafContent);
@@ -1107,16 +1072,25 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
     return EditorDOMPointType();
   }
 
+  const auto leafNodeTypes = [&]() -> LeafNodeTypes {
+    auto types = aIgnoreNonEditableNodes == IgnoreNonEditableNodes::Yes
+                     ? LeafNodeTypes(LeafNodeType::LeafNodeOrNonEditableNode,
+                                     LeafNodeType::LeafNodeOrChildBlock)
+                     : LeafNodeTypes(LeafNodeType::LeafNodeOrChildBlock);
+    if (aOptions.contains(Option::StopAtComment)) {
+      types += LeafNodeType::TreatCommentAsLeafNode;
+    }
+    return types;
+  }();
   for (
       nsIContent* previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-              *point.ContainerAs<nsIContent>(), leafNodeOptions,
-              blockInlineCheck,
+              *point.ContainerAs<nsIContent>(), leafNodeTypes, blockInlineCheck,
               editableBlockElementOrInlineEditingHostOrNonEditableRootElement);
       previousContent;
       previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-              *previousContent, leafNodeOptions, blockInlineCheck,
+              *previousContent, leafNodeTypes, blockInlineCheck,
               editableBlockElementOrInlineEditingHostOrNonEditableRootElement)) {
     if (!previousContent->IsText() ||
         (aIgnoreNonEditableNodes == IgnoreNonEditableNodes::Yes &&
@@ -1125,9 +1099,7 @@ EditorDOMPointType WSRunScanner::TextFragmentData::GetPreviousCharPoint(
           HTMLEditUtils::IsBlockElement(
               *previousContent,
               UseComputedDisplayOutsideStyleIfAuto(blockInlineCheck)) ||
-          ((!aOptions.contains(Option::IgnoreEmptyInlineContainers) ||
-            !HTMLEditUtils::IsContainerNode(*previousContent)) &&
-           HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousContent))) {
+          HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*previousContent)) {
         break;  
       }
       continue;
@@ -1426,10 +1398,7 @@ EditorDOMPointInText WSRunScanner::TextFragmentData::
   const VisibleWhiteSpacesData& visibleWhiteSpaces =
       VisibleWhiteSpacesDataRef();
   if (!visibleWhiteSpaces.StartsFromNonCollapsibleCharacters() &&
-      !visibleWhiteSpaces.StartsFromSpecialContent() &&
-      !(visibleWhiteSpaces.StartsFromEmptyInlineContainerElement() &&
-        HTMLEditUtils::IsVisibleElementEvenIfLeafNode(
-            *GetStartReasonContent()))) {
+      !visibleWhiteSpaces.StartsFromSpecialContent()) {
     return EditorDOMPointInText();
   }
   return atPreviousChar;
@@ -1487,9 +1456,6 @@ EditorDOMPointInText WSRunScanner::TextFragmentData::
       VisibleWhiteSpacesDataRef();
   if (!visibleWhiteSpaces.EndsByNonCollapsibleCharacters() &&
       !visibleWhiteSpaces.EndsBySpecialContent() &&
-      !(visibleWhiteSpaces.EndsByEmptyInlineContainerElement() &&
-        HTMLEditUtils::IsVisibleElementEvenIfLeafNode(
-            *GetEndReasonContent())) &&
       !visibleWhiteSpaces.EndsByBRElement()) {
     return EditorDOMPointInText();
   }

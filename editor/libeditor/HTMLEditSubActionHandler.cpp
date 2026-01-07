@@ -78,10 +78,11 @@ extern LazyLogModule gTextInputLog;
 using namespace dom;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using EmptyCheckOptions = HTMLEditUtils::EmptyCheckOptions;
-using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
-using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
+using LeafNodeType = HTMLEditUtils::LeafNodeType;
+using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 using WalkTextOption = HTMLEditUtils::WalkTextOption;
 using WalkTreeDirection = HTMLEditUtils::WalkTreeDirection;
+using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
 
 
@@ -786,7 +787,7 @@ nsresult HTMLEditor::EnsureCaretNotAfterInvisibleBRElement(
     return NS_OK;
   }
 
-  nsIContent* previousBRElement = HTMLEditUtils::GetPreviousLeafContent(
+  nsIContent* previousBRElement = HTMLEditUtils::GetPreviousContent(
       atSelectionStart, {}, BlockInlineCheck::UseComputedDisplayStyle,
       &aEditingHost);
   if (!previousBRElement || !previousBRElement->IsHTMLElement(nsGkAtoms::br) ||
@@ -925,8 +926,8 @@ nsresult HTMLEditor::ReflectPaddingBRElementForEmptyEditor() {
   
   
   
-  nsIContent* firstLeafChild =
-      HTMLEditUtils::GetFirstLeafContent(*mRootElement, {});
+  nsIContent* firstLeafChild = HTMLEditUtils::GetFirstLeafContent(
+      *mRootElement, {LeafNodeType::OnlyLeafNode});
   if (firstLeafChild &&
       EditorUtils::IsPaddingBRElementForEmptyEditor(*firstLeafChild)) {
     mPaddingBRElementForEmptyEditor =
@@ -2565,8 +2566,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       
       nsIContent* previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-              newCaretPosition,
-              {LeafNodeOption::TreatNonEditableNodeAsLeafNode},
+              newCaretPosition, {LeafNodeType::LeafNodeOrNonEditableNode},
               BlockInlineCheck::UseComputedDisplayStyle,
               editableBlockElementOrInlineEditingHost);
       if (previousContent &&
@@ -2584,7 +2584,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       else if (nsIContent* nextContent =
                    HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
                        newCaretPosition,
-                       {LeafNodeOption::TreatNonEditableNodeAsLeafNode},
+                       {LeafNodeType::LeafNodeOrNonEditableNode},
                        BlockInlineCheck::UseComputedDisplayStyle,
                        editableBlockElementOrInlineEditingHost)) {
         if (HTMLEditUtils::IsSimplyEditableNode(*nextContent) &&
@@ -3212,9 +3212,9 @@ HTMLEditor::AutoListElementCreator::WrapContentNodesIntoNewListElements(
   
   
   if (aArrayOfContents.Length() == 1) {
-    if (Element* const deepestDivBlockquoteOrListElement =
+    if (Element* deepestDivBlockquoteOrListElement =
             HTMLEditUtils::GetInclusiveDeepestFirstChildWhichHasOneChild(
-                aArrayOfContents[0], {LeafNodeOption::IgnoreNonEditableNode},
+                aArrayOfContents[0], {WalkTreeOption::IgnoreNonEditableNode},
                 BlockInlineCheck::UseHTMLDefaultStyle, nsGkAtoms::div,
                 nsGkAtoms::blockquote, nsGkAtoms::ul, nsGkAtoms::ol,
                 nsGkAtoms::dl)) {
@@ -4184,8 +4184,8 @@ HTMLEditor::FormatBlockContainerWithTransaction(
       
       
       
-      if (nsCOMPtr<nsIContent> brContent = HTMLEditUtils::GetNextLeafContent(
-              pointToInsertBlock, {LeafNodeOption::IgnoreNonEditableNode},
+      if (nsCOMPtr<nsIContent> brContent = HTMLEditUtils::GetNextContent(
+              pointToInsertBlock, {WalkTreeOption::IgnoreNonEditableNode},
               BlockInlineCheck::UseComputedDisplayOutsideStyle,
               &aEditingHost)) {
         if (brContent && brContent->IsHTMLElement(nsGkAtoms::br)) {
@@ -4233,13 +4233,11 @@ HTMLEditor::FormatBlockContainerWithTransaction(
     }
 
     
-    if (nsCOMPtr<nsIContent> maybeBRContent =
-            HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-                pointToInsertBlock,
-                {LeafNodeOption::IgnoreNonEditableNode,
-                 LeafNodeOption::TreatChildBlockAsLeafNode},
-                BlockInlineCheck::UseComputedDisplayOutsideStyle,
-                &aEditingHost)) {
+    if (nsCOMPtr<nsIContent> maybeBRContent = HTMLEditUtils::GetNextContent(
+            pointToInsertBlock,
+            {WalkTreeOption::IgnoreNonEditableNode,
+             WalkTreeOption::StopAtBlockBoundary},
+            BlockInlineCheck::UseComputedDisplayOutsideStyle, &aEditingHost)) {
       if (maybeBRContent->IsHTMLElement(nsGkAtoms::br)) {
         AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
         nsresult rv = DeleteNodeWithTransaction(*maybeBRContent);
@@ -4429,10 +4427,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::IndentListChildWithTransaction(
   
   
   if (nsIContent* const nextEditableSibling = HTMLEditUtils::GetNextSibling(
-          aContentMovingToSubList,
-          {LeafNodeOption::IgnoreInvisibleText,
-           LeafNodeOption::IgnoreNonEditableNode},
-          BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+          aContentMovingToSubList, {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+                                    WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsListElement(*nextEditableSibling) &&
         aPointInListElement.GetContainer()->NodeInfo()->NameAtom() ==
             nextEditableSibling->NodeInfo()->NameAtom() &&
@@ -4454,9 +4450,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::IndentListChildWithTransaction(
   if (const nsCOMPtr<nsIContent> previousEditableSibling =
           HTMLEditUtils::GetPreviousSibling(
               aContentMovingToSubList,
-              {LeafNodeOption::IgnoreInvisibleText,
-               LeafNodeOption::IgnoreNonEditableNode},
-              BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+              {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+               WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsListElement(*previousEditableSibling) &&
         aPointInListElement.GetContainer()->NodeInfo()->NameAtom() ==
             previousEditableSibling->NodeInfo()->NameAtom() &&
@@ -4479,9 +4474,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::IndentListChildWithTransaction(
   nsIContent* previousEditableSibling =
       *aSubListElement ? HTMLEditUtils::GetPreviousSibling(
                              aContentMovingToSubList,
-                             {LeafNodeOption::IgnoreInvisibleText,
-                              LeafNodeOption::IgnoreNonEditableNode},
-                             BlockInlineCheck::UseComputedDisplayOutsideStyle)
+                             {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+                              WalkTreeOption::IgnoreNonEditableNode})
                        : nullptr;
   if (!*aSubListElement || (previousEditableSibling &&
                             previousEditableSibling != *aSubListElement)) {
@@ -5187,11 +5181,10 @@ nsresult HTMLEditor::HandleHTMLIndentAroundRanges(
       }
       
       
-      nsIContent* const previousEditableSibling =
+      nsIContent* previousEditableSibling =
           subListElement
               ? HTMLEditUtils::GetPreviousSibling(
-                    *listItem, {LeafNodeOption::IgnoreNonEditableNode},
-                    BlockInlineCheck::UseComputedDisplayOutsideStyle)
+                    *listItem, {WalkTreeOption::IgnoreNonEditableNode})
               : nullptr;
       if (!subListElement || (previousEditableSibling &&
                               previousEditableSibling != subListElement)) {
@@ -7105,9 +7098,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AlignBlockContentsWithDivElement(
   
   
   const nsCOMPtr<nsIContent> firstEditableContent =
-      HTMLEditUtils::GetFirstChild(
-          aBlockElement, {LeafNodeOption::IgnoreNonEditableNode},
-          BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      HTMLEditUtils::GetFirstChild(aBlockElement,
+                                   {WalkTreeOption::IgnoreNonEditableNode});
   if (!firstEditableContent) {
     
     return EditorDOMPoint();
@@ -7116,8 +7108,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AlignBlockContentsWithDivElement(
   
   
   const nsCOMPtr<nsIContent> lastEditableContent = HTMLEditUtils::GetLastChild(
-      aBlockElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      aBlockElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (firstEditableContent == lastEditableContent &&
       firstEditableContent->IsHTMLElement(nsGkAtoms::div)) {
     
@@ -7240,7 +7231,7 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
         
         if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
                 *prevVisibleThingOfEndPoint.ElementPtr(),
-                {LeafNodeOption::TreatChildBlockAsLeafNode},
+                {LeafNodeType::LeafNodeOrChildBlock},
                 BlockInlineCheck::UseHTMLDefaultStyle)) {
           newRange.SetEnd(EditorRawDOMPoint::After(*child));
         }
@@ -7249,8 +7240,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
                  prevVisibleThingOfEndPoint
                      .ReachedInlineEditingHostBoundary()) {
         
-        if (nsIContent* const child = HTMLEditUtils::GetPreviousLeafContent(
-                endPoint, {LeafNodeOption::IgnoreNonEditableNode},
+        if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
+                endPoint, {WalkTreeOption::IgnoreNonEditableNode},
                 BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
           newRange.SetEnd(EditorRawDOMPoint::After(*child));
         }
@@ -7281,7 +7272,7 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
         
         if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
                 *nextVisibleThingOfStartPoint.ElementPtr(),
-                {LeafNodeOption::TreatChildBlockAsLeafNode},
+                {LeafNodeType::LeafNodeOrChildBlock},
                 BlockInlineCheck::UseHTMLDefaultStyle)) {
           newRange.SetStart(EditorRawDOMPoint(child));
         }
@@ -7290,8 +7281,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
                  nextVisibleThingOfStartPoint
                      .ReachedInlineEditingHostBoundary()) {
         
-        if (nsIContent* const child = HTMLEditUtils::GetNextLeafContent(
-                startPoint, {LeafNodeOption::IgnoreNonEditableNode},
+        if (nsIContent* child = HTMLEditUtils::GetNextContent(
+                startPoint, {WalkTreeOption::IgnoreNonEditableNode},
                 BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
           newRange.SetStart(EditorRawDOMPoint(child));
         }
@@ -8325,23 +8316,19 @@ HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction(
   if (aBRElementNextToSplitPoint == BRElementNextToSplitPoint::Delete) {
     
     
-    if (nsCOMPtr<nsIContent> maybeBRContent =
-            HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-                splitPoint,
-                {LeafNodeOption::IgnoreNonEditableNode,
-                 LeafNodeOption::TreatChildBlockAsLeafNode},
-                BlockInlineCheck::UseComputedDisplayOutsideStyle,
-                &aEditingHost)) {
+    if (nsCOMPtr<nsIContent> maybeBRContent = HTMLEditUtils::GetNextContent(
+            splitPoint,
+            {WalkTreeOption::IgnoreNonEditableNode,
+             WalkTreeOption::StopAtBlockBoundary},
+            BlockInlineCheck::UseComputedDisplayOutsideStyle, &aEditingHost)) {
       if (maybeBRContent->IsHTMLElement(nsGkAtoms::br) &&
           splitPoint.GetChild()) {
         
         
         
-        if (nsIContent* const nextEditableSibling =
-                HTMLEditUtils::GetNextSibling(
-                    *splitPoint.GetChild(),
-                    {LeafNodeOption::IgnoreNonEditableNode},
-                    BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+        if (nsIContent* nextEditableSibling = HTMLEditUtils::GetNextSibling(
+                *splitPoint.GetChild(),
+                {WalkTreeOption::IgnoreNonEditableNode})) {
           if (!HTMLEditUtils::IsBlockElement(
                   *nextEditableSibling,
                   BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
@@ -8428,18 +8415,16 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
   }
 
   
-  const nsCOMPtr<nsIContent> lastEditableChildOfLeftContent =
-      HTMLEditUtils::GetLastChild(
-          aNodeLeft, {LeafNodeOption::IgnoreNonEditableNode},
-          BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  nsCOMPtr<nsIContent> lastEditableChildOfLeftContent =
+      HTMLEditUtils::GetLastChild(aNodeLeft,
+                                  {WalkTreeOption::IgnoreNonEditableNode});
   if (MOZ_UNLIKELY(NS_WARN_IF(!lastEditableChildOfLeftContent))) {
     return NS_ERROR_FAILURE;
   }
 
-  const nsCOMPtr<nsIContent> firstEditableChildOfRightContent =
-      HTMLEditUtils::GetFirstChild(
-          aNodeRight, {LeafNodeOption::IgnoreNonEditableNode},
-          BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  nsCOMPtr<nsIContent> firstEditableChildOfRightContent =
+      HTMLEditUtils::GetFirstChild(aNodeRight,
+                                   {WalkTreeOption::IgnoreNonEditableNode});
   if (NS_WARN_IF(!firstEditableChildOfRightContent)) {
     return NS_ERROR_FAILURE;
   }
@@ -8814,10 +8799,10 @@ void HTMLEditor::SetSelectionInterlinePosition() {
   
   if (Element* editingHost = ComputeEditingHost()) {
     if (nsIContent* previousEditableContentInBlock =
-            HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+            HTMLEditUtils::GetPreviousContent(
                 atCaret,
-                {LeafNodeOption::IgnoreNonEditableNode,
-                 LeafNodeOption::TreatChildBlockAsLeafNode},
+                {WalkTreeOption::IgnoreNonEditableNode,
+                 WalkTreeOption::StopAtBlockBoundary},
                 BlockInlineCheck::UseComputedDisplayStyle, editingHost)) {
       if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br)) {
         DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
@@ -8839,10 +8824,9 @@ void HTMLEditor::SetSelectionInterlinePosition() {
   
   
   
-  if (nsIContent* const previousEditableContentInBlockAtCaret =
+  if (nsIContent* previousEditableContentInBlockAtCaret =
           HTMLEditUtils::GetPreviousSibling(
-              *atCaret.GetChild(), {LeafNodeOption::IgnoreNonEditableNode},
-              BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+              *atCaret.GetChild(), {WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsBlockElement(
             *previousEditableContentInBlockAtCaret,
             BlockInlineCheck::UseComputedDisplayStyle)) {
@@ -8859,10 +8843,9 @@ void HTMLEditor::SetSelectionInterlinePosition() {
   
   
   
-  if (nsIContent* const nextEditableContentInBlockAtCaret =
+  if (nsIContent* nextEditableContentInBlockAtCaret =
           HTMLEditUtils::GetNextSibling(
-              *atCaret.GetChild(), {LeafNodeOption::IgnoreNonEditableNode},
-              BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
+              *atCaret.GetChild(), {WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsBlockElement(
             *nextEditableContentInBlockAtCaret,
             BlockInlineCheck::UseComputedDisplayStyle)) {
@@ -8962,8 +8945,8 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   }
 
   if (nsCOMPtr<nsIContent> previousEditableContent =
-          HTMLEditUtils::GetPreviousLeafContent(
-              point, {LeafNodeOption::IgnoreNonEditableNode},
+          HTMLEditUtils::GetPreviousContent(
+              point, {WalkTreeOption::IgnoreNonEditableNode},
               BlockInlineCheck::UseComputedDisplayStyle, editingHost)) {
     
     
@@ -9012,10 +8995,10 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
       
       
       else if (nsIContent* nextEditableContentInBlock =
-                   HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+                   HTMLEditUtils::GetNextContent(
                        *previousEditableContent,
-                       {LeafNodeOption::IgnoreNonEditableNode,
-                        LeafNodeOption::TreatChildBlockAsLeafNode},
+                       {WalkTreeOption::IgnoreNonEditableNode,
+                        WalkTreeOption::StopAtBlockBoundary},
                        BlockInlineCheck::UseComputedDisplayStyle,
                        editingHost)) {
         if (EditorUtils::IsPaddingBRElementForEmptyLastLine(
@@ -9036,10 +9019,10 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   
   
   if (nsIContent* const previousEditableContentInBlock =
-          HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+          HTMLEditUtils::GetPreviousContent(
               point,
-              {LeafNodeOption::IgnoreNonEditableNode,
-               LeafNodeOption::TreatChildBlockAsLeafNode},
+              {WalkTreeOption::IgnoreNonEditableNode,
+               WalkTreeOption::StopAtBlockBoundary},
               BlockInlineCheck::UseComputedDisplayStyle, editingHost)) {
     if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br) ||
         previousEditableContentInBlock->IsText() ||
@@ -9051,12 +9034,11 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
 
   
   
-  if (nsIContent* nextEditableContentInBlock =
-          HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-              point,
-              {LeafNodeOption::IgnoreNonEditableNode,
-               LeafNodeOption::TreatChildBlockAsLeafNode},
-              BlockInlineCheck::UseComputedDisplayStyle, editingHost)) {
+  if (nsIContent* nextEditableContentInBlock = HTMLEditUtils::GetNextContent(
+          point,
+          {WalkTreeOption::IgnoreNonEditableNode,
+           WalkTreeOption::StopAtBlockBoundary},
+          BlockInlineCheck::UseComputedDisplayStyle, editingHost)) {
     if (nextEditableContentInBlock->IsText() ||
         nextEditableContentInBlock->IsAnyOfHTMLElements(
             nsGkAtoms::br, nsGkAtoms::img, nsGkAtoms::hr)) {
@@ -9353,11 +9335,9 @@ nsresult HTMLEditor::LiftUpListItemElement(
   
   
   const bool isFirstListItem = HTMLEditUtils::IsFirstChild(
-      aListItemElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
   const bool isLastListItem = HTMLEditUtils::IsLastChild(
-      aListItemElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
 
   Element* leftListElement = aListItemElement.GetParentElement();
   if (NS_WARN_IF(!leftListElement)) {
@@ -9939,9 +9919,8 @@ HTMLEditor::EnsureHardLineBeginsWithFirstChildOf(
     Element& aRemovingContainerElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsIContent* const firstEditableChild = HTMLEditUtils::GetFirstChild(
-      aRemovingContainerElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  nsIContent* firstEditableChild = HTMLEditUtils::GetFirstChild(
+      aRemovingContainerElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (!firstEditableChild) {
     return CreateElementResult::NotHandled();
   }
@@ -9952,9 +9931,8 @@ HTMLEditor::EnsureHardLineBeginsWithFirstChildOf(
     return CreateElementResult::NotHandled();
   }
 
-  nsIContent* const previousEditableContent = HTMLEditUtils::GetPreviousSibling(
-      aRemovingContainerElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  nsIContent* previousEditableContent = HTMLEditUtils::GetPreviousSibling(
+      aRemovingContainerElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (!previousEditableContent) {
     return CreateElementResult::NotHandled();
   }
@@ -9986,9 +9964,8 @@ HTMLEditor::EnsureHardLineEndsWithLastChildOf(
     Element& aRemovingContainerElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsIContent* const firstEditableContent = HTMLEditUtils::GetLastChild(
-      aRemovingContainerElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  nsIContent* firstEditableContent = HTMLEditUtils::GetLastChild(
+      aRemovingContainerElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (!firstEditableContent) {
     return CreateElementResult::NotHandled();
   }
@@ -9999,9 +9976,8 @@ HTMLEditor::EnsureHardLineEndsWithLastChildOf(
     return CreateElementResult::NotHandled();
   }
 
-  nsIContent* const nextEditableContent = HTMLEditUtils::GetPreviousSibling(
-      aRemovingContainerElement, {LeafNodeOption::IgnoreNonEditableNode},
-      BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  nsIContent* nextEditableContent = HTMLEditUtils::GetPreviousSibling(
+      aRemovingContainerElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (!nextEditableContent) {
     return CreateElementResult::NotHandled();
   }
@@ -10499,11 +10475,10 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
       
       
       
-      nsIContent* const previousEditableContent =
+      nsIContent* previousEditableContent =
           createdListElement
               ? HTMLEditUtils::GetPreviousSibling(
-                    content, {LeafNodeOption::IgnoreNonEditableNode},
-                    BlockInlineCheck::UseComputedDisplayOutsideStyle)
+                    content, {WalkTreeOption::IgnoreNonEditableNode})
               : nullptr;
       if (!createdListElement ||
           (previousEditableContent &&
@@ -10607,11 +10582,10 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
       }
       
       
-      nsIContent* const previousEditableContent =
+      nsIContent* previousEditableContent =
           createdListElement
               ? HTMLEditUtils::GetPreviousSibling(
-                    *listItemElement, {LeafNodeOption::IgnoreNonEditableNode},
-                    BlockInlineCheck::UseComputedDisplayOutsideStyle)
+                    *listItemElement, {WalkTreeOption::IgnoreNonEditableNode})
               : nullptr;
       if (!createdListElement ||
           (previousEditableContent &&
