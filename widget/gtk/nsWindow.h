@@ -194,6 +194,7 @@ class nsWindow final : public nsIWidget {
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
   void SetModal(bool aModal) override;
   bool IsVisible() const override;
+  bool IsMapped() const override;
   void ConstrainPosition(DesktopIntPoint&) override;
   void SetSizeConstraints(const SizeConstraints&) override;
   void LockAspectRatio(bool aShouldLock) override;
@@ -530,6 +531,8 @@ class nsWindow final : public nsIWidget {
   LayoutDeviceIntSize GetMoveToRectPopupSize() override;
 #endif
 
+  void ResumeCompositorImpl();
+
   bool ApplyEnterLeaveMutterWorkaround();
 
   void NotifyOcclusionState(mozilla::widget::OcclusionState aState) override;
@@ -574,6 +577,8 @@ class nsWindow final : public nsIWidget {
   bool DoTitlebarAction(mozilla::LookAndFeel::TitlebarEvent aEvent,
                         GdkEventButton* aButtonEvent);
 
+  void WaylandStartVsync();
+  void WaylandStopVsync();
   void DestroyChildWindows();
   GtkWidget* GetToplevelWidget() const;
   nsWindow* GetContainerWindow() const;
@@ -711,7 +716,7 @@ class nsWindow final : public nsIWidget {
 
   
   
-  bool mIsMapped;
+  mozilla::Atomic<bool, mozilla::Relaxed> mIsMapped;
   
   mozilla::Atomic<bool, mozilla::Relaxed> mIsDestroyed;
   
@@ -865,6 +870,8 @@ class nsWindow final : public nsIWidget {
   bool DragInProgress(void);
 
   void DispatchMissedButtonReleases(GdkEventCrossing* aGdkEvent);
+
+  void ConfigureCompositor();
 
   bool IsAlwaysUndecoratedWindow() const;
 

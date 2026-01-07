@@ -730,6 +730,14 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
+
+
+  virtual bool IsMapped() const { return true; }
+
+  
+
+
+
   virtual void ConstrainPosition(DesktopIntPoint&) {}
 
   

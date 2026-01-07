@@ -11,6 +11,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsWindow.h"
+#include "mozilla/ScopeExit.h"
 #include "WidgetUtilsGtk.h"
 
 #ifdef MOZ_WAYLAND
@@ -41,7 +42,9 @@ namespace widget {
 using namespace mozilla::layers;
 
 WindowSurfaceProvider::WindowSurfaceProvider()
-    : mWindowSurface(nullptr)
+    : mWindowSurface(nullptr),
+      mMutex("WindowSurfaceProvider"),
+      mWindowSurfaceValid(false)
 #ifdef MOZ_X11
       ,
       mXDepth(0),
@@ -63,10 +66,12 @@ WindowSurfaceProvider::~WindowSurfaceProvider() {
 
 #ifdef MOZ_WAYLAND
 bool WindowSurfaceProvider::Initialize(RefPtr<nsWindow> aWidget) {
+  mWindowSurfaceValid = false;
   mWidget = std::move(aWidget);
   return true;
 }
 bool WindowSurfaceProvider::Initialize(GtkCompositorWidget* aCompositorWidget) {
+  mWindowSurfaceValid = false;
   mCompositorWidget = aCompositorWidget;
   mWidget = static_cast<nsWindow*>(aCompositorWidget->RealWidget());
   return true;
@@ -74,6 +79,8 @@ bool WindowSurfaceProvider::Initialize(GtkCompositorWidget* aCompositorWidget) {
 #endif
 #ifdef MOZ_X11
 bool WindowSurfaceProvider::Initialize(Window aWindow) {
+  mWindowSurfaceValid = false;
+
   
   XWindowAttributes windowAttrs;
   if (!XGetWindowAttributes(DefaultXDisplay(), aWindow, &windowAttrs)) {
@@ -89,6 +96,8 @@ bool WindowSurfaceProvider::Initialize(Window aWindow) {
 #endif
 
 void WindowSurfaceProvider::CleanupResources() {
+  MutexAutoLock lock(mMutex);
+  mWindowSurfaceValid = false;
 #ifdef MOZ_WAYLAND
   mWidget = nullptr;
 #endif
@@ -137,11 +146,29 @@ RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
   MOZ_RELEASE_ASSERT(false);
 }
 
+
+
+
+MOZ_PUSH_IGNORE_THREAD_SAFETY
+
 already_AddRefed<gfx::DrawTarget>
 WindowSurfaceProvider::StartRemoteDrawingInRegion(
     const LayoutDeviceIntRegion& aInvalidRegion) {
   if (aInvalidRegion.IsEmpty()) {
     return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  mMutex.Lock();
+  auto unlockMutex = MakeScopeExit([&] { mMutex.Unlock(); });
+
+  if (!mWindowSurfaceValid) {
+    mWindowSurface = nullptr;
+    mWindowSurfaceValid = true;
   }
 
   if (!mWindowSurface) {
@@ -163,13 +190,37 @@ WindowSurfaceProvider::StartRemoteDrawingInRegion(
     dt = mWindowSurface->Lock(aInvalidRegion);
   }
 #endif
+  if (dt) {
+    
+    unlockMutex.release();
+  }
+
   return dt.forget();
 }
 
 void WindowSurfaceProvider::EndRemoteDrawingInRegion(
     gfx::DrawTarget* aDrawTarget, const LayoutDeviceIntRegion& aInvalidRegion) {
+  
+  mMutex.AssertCurrentThreadOwns();
+  auto unlockMutex = MakeScopeExit([&] { mMutex.Unlock(); });
+
+  
+  if (!mWindowSurface || !mWindowSurfaceValid) {
+    return;
+  }
+#if defined(MOZ_WAYLAND)
+  if (GdkIsWaylandDisplay()) {
+    
+    
+    if (!mWidget || !mWidget->IsMapped()) {
+      return;
+    }
+  }
+#endif
   mWindowSurface->Commit(aInvalidRegion);
 }
+
+MOZ_POP_THREAD_SAFETY
 
 }  
 }  
