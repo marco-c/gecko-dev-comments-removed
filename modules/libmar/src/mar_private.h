@@ -54,8 +54,11 @@ static_assert(sizeof(BLOCKSIZE) < (SIGNATURE_BLOCK_OFFSET + sizeof(uint32_t)),
 
 #ifdef XP_WIN
 #  include <winsock2.h>
+#  ifdef __MINGW32__
 
 
+#    include <stdio.h>
+#  endif
 #  define ftello _ftelli64
 #  define fseeko _fseeki64
 #else

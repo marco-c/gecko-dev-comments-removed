@@ -14,6 +14,7 @@
 
 
 
+#  include <stdio.h>
 #  include <shellapi.h>
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int);
 
