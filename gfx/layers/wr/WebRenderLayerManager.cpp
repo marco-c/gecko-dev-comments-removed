@@ -268,9 +268,8 @@ bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
 
   mDisplayItemCache.SkipWaitingForPartialDisplayList();
 
-  
-  const bool throttle = mWidget->IsMapped();
-  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId(throttle);
+  mLatestTransactionId =
+      mTransactionIdAllocator->GetTransactionId( true);
 
   if (aFlags & EndTransactionFlags::END_NO_COMPOSITE &&
       !mWebRenderCommandBuilder.NeedsEmptyTransaction()) {
@@ -421,9 +420,8 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   
   ClearAndNotifyOfFullTransactionPendingScrollInfoUpdate();
 
-  
-  const bool throttle = mWidget->IsMapped() && !aRenderOffscreen;
-  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId(throttle);
+  mLatestTransactionId = mTransactionIdAllocator->GetTransactionId(
+       !aRenderOffscreen);
 
   
   
