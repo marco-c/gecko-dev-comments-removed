@@ -110,8 +110,8 @@ void RTCEncodedVideoFrame::InitMetadata() {
 
   
   
-  if (!videoFrame.GetRid().empty()) {
-    mRid = Some(videoFrame.GetRid().c_str());
+  if (videoFrame.Rid().has_value() && !videoFrame.Rid()->empty()) {
+    mRid = Some(videoFrame.Rid()->c_str());
   }
 }
 
