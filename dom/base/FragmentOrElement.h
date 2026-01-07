@@ -23,6 +23,7 @@
 #include "nsIContent.h"                    
 #include "nsIHTMLCollection.h"
 #include "nsIWeakReferenceUtils.h"
+#include "nsTHashSet.h"
 
 class ContentUnbinder;
 class nsContentList;
@@ -285,6 +286,29 @@ class FragmentOrElement : public nsIContent {
     nsTHashMap<RefPtr<nsAtom>, std::pair<Maybe<nsTArray<nsWeakPtr>>,
                                          Maybe<nsTArray<RefPtr<Element>>>>>
         mAttrElementsMap;
+
+    typedef bool (*AttrTargetObserver)(Element* aOldElement,
+                                       Element* aNewelement,
+                                       Element* aThisElement);
+    struct AttrElementObserverCallbackData {
+      nsWeakPtr mElement;
+      RefPtr<nsAtom> mAttr;
+    };
+    struct AttrElementObserverData {
+      
+      
+      nsWeakPtr mLastKnownAttrElement;  
+
+      
+      
+      
+      RefPtr<nsAtom> mLastKnownAttrValue;  
+      nsTHashSet<AttrTargetObserver> mObservers;
+
+      
+      UniquePtr<AttrElementObserverCallbackData> mCallbackData;
+    };
+    nsTHashMap<RefPtr<nsAtom>, AttrElementObserverData> mAttrElementObserverMap;
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots {
