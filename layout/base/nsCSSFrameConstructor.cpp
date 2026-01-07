@@ -1159,14 +1159,13 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
     } else {
       containingBlock->SetInitialChildList(aChildListID, std::move(aFrameList));
     }
-  } else if (childList.IsEmpty() || aChildListID == FrameChildListID::Fixed ||
+  } else if (aChildListID == FrameChildListID::Fixed ||
              aChildListID == FrameChildListID::Absolute) {
     
     
     mFrameConstructor->AppendFrames(containingBlock, aChildListID,
                                     std::move(aFrameList));
   } else {
-    MOZ_ASSERT(aChildListID == FrameChildListID::Float);
     
     
     
@@ -1175,22 +1174,24 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
     
     
     nsIFrame* lastChild = childList.LastChild();
-    lastChild = lastChild->GetPlaceholderFrame();
 
     
     
     
     nsIFrame* firstNewFrame = aFrameList.FirstChild();
-    firstNewFrame = firstNewFrame->GetPlaceholderFrame();
 
     
     AutoTArray<const nsIFrame*, 20> firstNewFrameAncestors;
-    const nsIFrame* notCommonAncestor = nsLayoutUtils::FillAncestors(
-        firstNewFrame, containingBlock, &firstNewFrameAncestors);
+    const nsIFrame* notCommonAncestor = nullptr;
+    if (lastChild) {
+      notCommonAncestor = nsLayoutUtils::FillAncestors(
+          firstNewFrame, containingBlock, &firstNewFrameAncestors);
+    }
 
-    if (nsLayoutUtils::CompareTreePosition(
-            lastChild, firstNewFrame, firstNewFrameAncestors,
-            notCommonAncestor ? containingBlock : nullptr) < 0) {
+    if (!lastChild || nsLayoutUtils::CompareTreePosition(
+                          lastChild, firstNewFrame, firstNewFrameAncestors,
+                          notCommonAncestor ? containingBlock : nullptr) < 0) {
+      
       
       mFrameConstructor->AppendFrames(containingBlock, aChildListID,
                                       std::move(aFrameList));
@@ -1198,8 +1199,9 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
       
       
       AutoTArray<nsIFrame*, 128> children;
-      for (nsIFrame* f : childList) {
-        children.AppendElement(f->GetPlaceholderFrame());
+      for (nsIFrame* f = childList.FirstChild(); f != lastChild;
+           f = f->GetNextSibling()) {
+        children.AppendElement(f);
       }
 
       nsIFrame* insertionPoint = nullptr;
