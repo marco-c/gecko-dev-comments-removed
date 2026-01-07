@@ -50,26 +50,22 @@ enum {
 
 
 
-
-
-
 struct nsGlyphCode {
   union {
     char16_t code[2];
     uint32_t glyphID;
   };
-  int8_t font;
-
-  bool IsGlyphID() const { return font == -1; }
+  bool isGlyphID = true;
 
   int32_t Length() const {
-    return (IsGlyphID() || code[1] == char16_t('\0') ? 1 : 2);
+    return (isGlyphID || code[1] == char16_t('\0') ? 1 : 2);
   }
-  bool Exists() const { return IsGlyphID() ? glyphID != 0 : code[0] != 0; }
+  bool Exists() const { return isGlyphID ? glyphID != 0 : code[0] != 0; }
   bool operator==(const nsGlyphCode& other) const {
-    return (other.font == font && ((IsGlyphID() && other.glyphID == glyphID) ||
-                                   (!IsGlyphID() && other.code[0] == code[0] &&
-                                    other.code[1] == code[1])));
+    return (other.isGlyphID == isGlyphID &&
+            (isGlyphID
+                 ? other.glyphID == glyphID
+                 : (other.code[0] == code[0] && other.code[1] == code[1])));
   }
   bool operator!=(const nsGlyphCode&) const = default;
 };
