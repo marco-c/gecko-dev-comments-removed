@@ -9,10 +9,32 @@ if (!window.smartblockDisqusShimInitialized) {
   window.smartblockDisqusShimInitialized = true;
 
   
+
+
+
+
+
+  function getDisqusEmbedScriptURL() {
+    for (const script of document.querySelectorAll("script[src]")) {
+      try {
+        const url = new URL(script.src);
+        if (
+          url.protocol === "https:" &&
+          url.hostname.endsWith(".disqus.com") &&
+          url.pathname === "/embed.js"
+        ) {
+          return url.href;
+        }
+      } catch {
+        
+      }
+    }
+    return undefined;
+  }
+
   
-  let scriptURL = document.querySelector(
-    'script[src*=".disqus.com/embed.js"]'
-  )?.src;
+  
+  const scriptURL = getDisqusEmbedScriptURL();
   if (scriptURL) {
     embedHelperLib.initEmbedShim({
       shimId: "DisqusEmbed",
