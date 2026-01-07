@@ -200,6 +200,12 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
          "deadlock:EncryptedClientHelloServer\n"
          
          "deadlock:nsDOMWindowUtils::CompareCanvases\n"
+         
+         
+         
+         
+         
+         "deadlock:libgallium-*.so\n"
 
 
 
