@@ -10685,18 +10685,51 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
   return true;
 }
 
-bool nsDocShell::IsAboutBlankLoadOntoInitialAboutBlank(
-    nsIURI* aURI, nsIPrincipal* aPrincipalToInherit) {
+bool nsDocShell::ShouldDoInitialAboutBlankSyncLoad(
+    nsIURI* aURI, nsDocShellLoadState* aLoadState,
+    nsIPrincipal* aPrincipalToInherit) {
   MOZ_ASSERT(mDocumentViewer);
-  bool ret = !mHasStartedLoadingOtherThanInitialBlankURI &&
-             mDocumentViewer->GetDocument()->IsUncommittedInitialDocument() &&
-             NS_IsAboutBlankAllowQueryAndFragment(aURI);
-  if (ret && !aPrincipalToInherit) {
+
+  if (!NS_IsAboutBlankAllowQueryAndFragment(aURI)) {
+    return false;
+  }
+
+  if (aLoadState->IsInitialAboutBlankHandlingProhibited()) {
+    return false;
+  }
+
+  if (mHasStartedLoadingOtherThanInitialBlankURI ||
+      !mDocumentViewer->GetDocument()->IsUncommittedInitialDocument()) {
+    return false;
+  }
+
+  if (!aPrincipalToInherit) {
     MOZ_ASSERT(
         mDocumentViewer->GetDocument()->NodePrincipal()->GetIsNullPrincipal(),
         "Load looks like first load but does not want principal inheritance.");
+  } else {
+    if (XRE_IsContentProcess() &&
+        !ValidatePrincipalCouldPotentiallyBeLoadedBy(
+            aPrincipalToInherit, ContentChild::GetSingleton()->GetRemoteType(),
+            {})) {
+      
+      
+      return false;
+    }
+
+    
+    
+    
+    
+    if (aLoadState->LoadIsFromSessionHistory() &&
+        !mBrowsingContext->Group()
+             ->UsesOriginAgentCluster(aPrincipalToInherit)
+             .isSome()) {
+      return false;
+    }
   }
-  return ret;
+
+  return true;
 }
 
 void nsDocShell::UnsuppressPaintingIfNoNavigationAwayFromAboutBlank(
@@ -10977,29 +11010,14 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     inheritPrincipal = inheritAttrs && !uri->SchemeIs("data");
   }
 
-  
-  
-  
-  
-  const auto shouldSkipSyncLoadForSHRestore = [&] {
-    return aLoadState->LoadIsFromSessionHistory() &&
-           aLoadState->PrincipalToInherit() &&
-           !mBrowsingContext->Group()
-                ->UsesOriginAgentCluster(aLoadState->PrincipalToInherit())
-                .isSome();
-  };
-
   MOZ_ASSERT_IF(NS_IsAboutBlankAllowQueryAndFragment(uri) &&
                     aLoadState->PrincipalToInherit(),
                 inheritPrincipal);
   
-  const bool isAboutBlankLoadOntoInitialAboutBlank =
-      !aLoadState->IsInitialAboutBlankHandlingProhibited() &&
-      IsAboutBlankLoadOntoInitialAboutBlank(uri,
-                                            aLoadState->PrincipalToInherit()) &&
-      !shouldSkipSyncLoadForSHRestore();
+  const bool doInitialSyncLoad = ShouldDoInitialAboutBlankSyncLoad(
+      uri, aLoadState, aLoadState->PrincipalToInherit());
 
-  if (!isAboutBlankLoadOntoInitialAboutBlank) {
+  if (!doInitialSyncLoad) {
     
     if (Document* doc = GetExtantDocument()) {
       NS_DispatchToMainThread(NS_NewRunnableFunction(
@@ -11017,8 +11035,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   if (aLoadState->GetLoadingSessionHistoryInfo()) {
     SetLoadingSessionHistoryInfo(*aLoadState->GetLoadingSessionHistoryInfo());
-  } else if (isAboutBlankLoadOntoInitialAboutBlank &&
-             mozilla::SessionHistoryInParent()) {
+  } else if (doInitialSyncLoad && mozilla::SessionHistoryInParent()) {
     
     
     UniquePtr<SessionHistoryInfo> entry = MakeUnique<SessionHistoryInfo>(
@@ -11148,7 +11165,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   }
   RefPtr<WindowContext> context = mBrowsingContext->GetCurrentWindowContext();
 
-  if (isAboutBlankLoadOntoInitialAboutBlank) {
+  if (doInitialSyncLoad) {
     
     
     return CompleteInitialAboutBlankLoad(aLoadState, loadInfo);
@@ -11232,8 +11249,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       mBrowsingContext, uriModified, Some(isEmbeddingBlockedError));
 
   nsCOMPtr<nsIChannel> channel;
-  if (DocumentChannel::CanUseDocumentChannel(uri) &&
-      !isAboutBlankLoadOntoInitialAboutBlank) {
+  if (DocumentChannel::CanUseDocumentChannel(uri)) {
     channel = DocumentChannel::CreateForDocument(
         aLoadState, loadInfo, loadFlags, this, cacheKey, uriModified,
         isEmbeddingBlockedError);
