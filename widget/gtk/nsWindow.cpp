@@ -4230,6 +4230,10 @@ void nsWindow::SchedulePendingBounds() {
 void nsWindow::MaybeRecomputeBounds() {
   LOG("MaybeRecomputeBounds %d", mPendingBoundsChange);
   if (mPendingBoundsChange) {
+    
+    
+    
+    gtk_container_check_resize(GTK_CONTAINER(mShell));
     RecomputeBounds();
   }
 }
