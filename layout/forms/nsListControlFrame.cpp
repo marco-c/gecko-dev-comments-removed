@@ -79,22 +79,6 @@ void nsListControlFrame::Destroy(DestroyContext& aContext) {
   ScrollContainerFrame::Destroy(aContext);
 }
 
-void nsListControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                          const nsDisplayListSet& aLists) {
-  
-
-  
-  
-  
-  if (aBuilder->IsBackgroundOnly()) {
-    return;
-  }
-
-  DO_GLOBAL_REFLOW_COUNT_DSP("nsListControlFrame");
-
-  ScrollContainerFrame::BuildDisplayList(aBuilder, aLists);
-}
-
 HTMLOptionElement* nsListControlFrame::GetCurrentOption() const {
   return mEventListener->GetCurrentOption();
 }
@@ -103,66 +87,7 @@ bool nsListControlFrame::IsFocused() const {
   return Select().State().HasState(ElementState::FOCUS);
 }
 
-
-
-
-
-
-
-
-void nsListControlFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
-  if (!IsFocused()) {
-    return;
-  }
-
-  nsIFrame* containerFrame = GetOptionsContainer();
-  if (!containerFrame) {
-    return;
-  }
-
-  nsIFrame* childframe = nullptr;
-  nsCOMPtr<nsIContent> focusedContent = GetCurrentOption();
-  if (focusedContent) {
-    childframe = focusedContent->GetPrimaryFrame();
-  }
-
-  nsRect fRect;
-  if (childframe) {
-    
-    fRect = childframe->GetRect();
-    
-    fRect.MoveBy(childframe->GetParent()->GetOffsetTo(this));
-  } else {
-    float inflation = nsLayoutUtils::FontSizeInflationFor(this);
-    fRect.x = fRect.y = 0;
-    if (GetWritingMode().IsVertical()) {
-      fRect.width = GetScrollPortRect().width;
-      fRect.height = CalcFallbackRowBSize(inflation);
-    } else {
-      fRect.width = CalcFallbackRowBSize(inflation);
-      fRect.height = GetScrollPortRect().height;
-    }
-    fRect.MoveBy(containerFrame->GetOffsetTo(this));
-  }
-  fRect += aPt;
-
-  const auto* domOpt = HTMLOptionElement::FromNodeOrNull(focusedContent);
-  const bool isSelected = domOpt && domOpt->Selected();
-
-  
-  nscolor color =
-      LookAndFeel::Color(isSelected ? LookAndFeel::ColorID::Selecteditemtext
-                                    : LookAndFeel::ColorID::Selecteditem,
-                         this);
-
-  nsCSSRendering::PaintFocus(PresContext(), aDrawTarget, fRect, color);
-}
-
-void nsListControlFrame::InvalidateFocus() {
-  if (nsIFrame* containerFrame = GetOptionsContainer()) {
-    containerFrame->InvalidateFrame();
-  }
-}
+void nsListControlFrame::InvalidateFocus() { InvalidateFrame(); }
 
 NS_QUERYFRAME_HEAD(nsListControlFrame)
   NS_QUERYFRAME_ENTRY(nsISelectControlFrame)
@@ -216,7 +141,8 @@ nscoord nsListControlFrame::CalcBSizeOfARow() {
   
   nscoord rowBSize(0);
   if (GetContainSizeAxes().mBContained ||
-      !GetMaxRowBSize(GetOptionsContainer(), GetWritingMode(), &rowBSize)) {
+      !GetMaxRowBSize(GetContentInsertionFrame(), GetWritingMode(),
+                      &rowBSize)) {
     
     
     
@@ -326,6 +252,8 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
 
   ScrollContainerFrame::Reflow(aPresContext, aDesiredSize, state, aStatus);
 
+  mBSizeOfARow = CalcBSizeOfARow();
+
   if (!mMightNeedSecondPass) {
     NS_ASSERTION(!autoBSize || BSizeOfARow() == oldBSizeOfARow,
                  "How did our BSize of a row change if nothing was dirty?");
@@ -333,8 +261,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
                      usingContainBSize,
                  "How do we not need a second pass during initial reflow at "
                  "auto BSize?");
-    NS_ASSERTION(!IsScrollbarUpdateSuppressed(),
-                 "Shouldn't be suppressing if we don't need a second pass!");
     if (!autoBSize || usingContainBSize) {
       
       
@@ -357,12 +283,9 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  if (!IsScrollbarUpdateSuppressed()) {
-    
+  if (mBSizeOfARow == oldBSizeOfARow) {
     return;
   }
-
-  SetSuppressScrollbarUpdate(false);
 
   
   
@@ -389,11 +312,6 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
 
 bool nsListControlFrame::ShouldPropagateComputedBSizeToScrolledContent() const {
   return true;
-}
-
-
-nsContainerFrame* nsListControlFrame::GetContentInsertionFrame() {
-  return GetOptionsContainer()->GetContentInsertionFrame();
 }
 
 
