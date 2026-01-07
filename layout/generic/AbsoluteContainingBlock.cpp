@@ -137,15 +137,15 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
   
   
   
-  nsIFrame* child = mPushedAbsoluteFrames.FirstChild();
-  while (child) {
-    nsIFrame* next = child->GetNextInFlow();
+  for (auto iter = mPushedAbsoluteFrames.begin();
+       iter != mPushedAbsoluteFrames.end();) {
+    
+    nsIFrame* const child = *iter++;
     if (!child->GetPrevInFlow() ||
         child->GetPrevInFlow()->GetParent() != aDelegatingFrame) {
       mPushedAbsoluteFrames.RemoveFrame(child);
       mAbsoluteFrames.AppendFrame(nullptr, child);
     }
-    child = next;
   }
 
   
