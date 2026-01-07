@@ -5,7 +5,6 @@
 
 
 #include <limits.h>
-#include <stdio.h>
 
 #include "nsError.h"
 #include "nsProxyRelease.h"

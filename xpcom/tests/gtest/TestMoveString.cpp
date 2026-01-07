@@ -4,7 +4,6 @@
 
 
 
-#include <stdio.h>
 #include <stdlib.h>
 #include "nsASCIIMask.h"
 #include "nsString.h"

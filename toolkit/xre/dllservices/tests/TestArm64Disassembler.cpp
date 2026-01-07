@@ -4,8 +4,6 @@
 
 
 
-#include <cstdio>
-
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/interceptor/Arm64.h"

@@ -5,7 +5,6 @@
 
 
 #import <Cocoa/Cocoa.h>
-#include <stdio.h>
 #include <unistd.h>
 #include "mozilla/Sprintf.h"
 #include "progressui.h"

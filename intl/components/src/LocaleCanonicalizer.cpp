@@ -3,7 +3,6 @@
 
 
 #include "mozilla/intl/LocaleCanonicalizer.h"
-#include <cstdio>
 #include "unicode/uloc.h"
 
 namespace mozilla::intl {

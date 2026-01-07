@@ -4,7 +4,6 @@
 
 
 #include "nsNativeDragSource.h"
-#include <stdio.h>
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "nsToolkit.h"

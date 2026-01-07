@@ -3,7 +3,6 @@
 
 
 
-#include <stdio.h>
 #include "nsIDragService.h"
 #include "nsWidgetsCID.h"
 #include "nsNativeDragTarget.h"

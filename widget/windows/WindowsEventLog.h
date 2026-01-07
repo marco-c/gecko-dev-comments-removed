@@ -11,7 +11,6 @@
 
 
 
-#include <stdio.h>
 #include <windows.h>
 
 #include "mozilla/Attributes.h"
