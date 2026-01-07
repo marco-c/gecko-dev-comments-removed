@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:expandtab:shiftwidth=2:tabstop=2:
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef __MOZ_CONTAINER_H__
 #define __MOZ_CONTAINER_H__
@@ -15,16 +15,16 @@
 #include <gtk/gtk.h>
 #include <functional>
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * MozContainer
+ *
+ * This class serves two purposes in the nsIWidget implementation.
+ *
+ *   - It provides objects to receive signals from GTK for events on native
+ *     windows.
+ *
+ *   - It provides GdkWindow to draw content.
+ */
 
 #define MOZ_CONTAINER_TYPE (moz_container_get_type())
 #define MOZ_CONTAINER(obj) \
@@ -46,7 +46,7 @@ typedef struct _MozContainer MozContainer;
 typedef struct _MozContainerClass MozContainerClass;
 
 struct _MozContainer {
-  GtkContainer container;
+  GtkWidget widget;
   gboolean destroyed;
 #ifdef MOZ_WAYLAND
   MozContainerWayland* wl;
@@ -54,7 +54,7 @@ struct _MozContainer {
 };
 
 struct _MozContainerClass {
-  GtkContainerClass parent_class;
+  GtkWidgetClass parent_class;
 };
 
 namespace mozilla::widget {
@@ -70,4 +70,4 @@ void moz_container_class_init(MozContainerClass* klass);
 class nsWindow;
 nsWindow* moz_container_get_nsWindow(MozContainer* container);
 
-#endif 
+#endif /* __MOZ_CONTAINER_H__ */
