@@ -755,7 +755,7 @@ impl super::Adapter {
             max_immediate_size: super::MAX_IMMEDIATES as u32 * 4,
             min_uniform_buffer_offset_alignment,
             min_storage_buffer_offset_alignment,
-            max_inter_stage_shader_components: {
+            max_inter_stage_shader_variables: {
                 
                 
                 
@@ -763,9 +763,9 @@ impl super::Adapter {
                     unsafe { gl.get_parameter_i32(glow::MAX_VARYING_COMPONENTS) } as u32;
                 if max_varying_components == 0 {
                     
-                    60
+                    15
                 } else {
-                    max_varying_components
+                    max_varying_components / 4
                 }
             },
             max_color_attachments,
@@ -895,6 +895,7 @@ impl super::Adapter {
                     raw_tlas_instance_size: 0,
                     ray_tracing_scratch_buffer_alignment: 0,
                 },
+                cooperative_matrix_properties: Vec::new(),
             },
         })
     }

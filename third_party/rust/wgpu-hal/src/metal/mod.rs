@@ -113,7 +113,7 @@ impl Instance {
 impl crate::Instance for Instance {
     type A = Api;
 
-    unsafe fn init(_desc: &crate::InstanceDescriptor) -> Result<Self, crate::InstanceError> {
+    unsafe fn init(_desc: &crate::InstanceDescriptor<'_>) -> Result<Self, crate::InstanceError> {
         profiling::scope!("Init Metal Backend");
         
         
@@ -310,6 +310,7 @@ struct PrivateCapabilities {
     has_unified_memory: Option<bool>,
     timestamp_query_support: TimestampQuerySupport,
     supports_simd_scoped_operations: bool,
+    supports_cooperative_matrix: bool,
     int64: bool,
     int64_atomics_min_max: bool,
     int64_atomics: bool,

@@ -8,10 +8,22 @@ use crate::{Backend, DownlevelFlags};
 
 
 
+pub trait WgpuHasDisplayHandle:
+    raw_window_handle::HasDisplayHandle + core::fmt::Debug + Send + Sync + 'static
+{
+}
+impl<T: raw_window_handle::HasDisplayHandle + core::fmt::Debug + Send + Sync + 'static>
+    WgpuHasDisplayHandle for T
+{
+}
 
 
 
-#[derive(Clone, Debug, Default)]
+
+
+
+
+#[derive(Debug, Default)]
 pub struct InstanceDescriptor {
     
     
@@ -35,6 +47,21 @@ pub struct InstanceDescriptor {
     pub memory_budget_thresholds: MemoryBudgetThresholds,
     
     pub backend_options: crate::BackendOptions,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub display: Option<alloc::boxed::Box<dyn WgpuHasDisplayHandle>>,
 }
 
 impl InstanceDescriptor {
@@ -59,6 +86,16 @@ impl InstanceDescriptor {
             flags,
             memory_budget_thresholds: MemoryBudgetThresholds::default(),
             backend_options,
+            display: None,
+        }
+    }
+
+    
+    #[must_use]
+    pub fn with_display_handle(self, display: alloc::boxed::Box<dyn WgpuHasDisplayHandle>) -> Self {
+        Self {
+            display: Some(display),
+            ..self
         }
     }
 }

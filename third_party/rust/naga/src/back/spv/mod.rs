@@ -353,6 +353,36 @@ impl NumericType {
 }
 
 
+#[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
+enum CooperativeType {
+    Matrix {
+        columns: crate::CooperativeSize,
+        rows: crate::CooperativeSize,
+        scalar: crate::Scalar,
+        role: crate::CooperativeRole,
+    },
+}
+
+impl CooperativeType {
+    const fn from_inner(inner: &crate::TypeInner) -> Option<Self> {
+        match *inner {
+            crate::TypeInner::CooperativeMatrix {
+                columns,
+                rows,
+                scalar,
+                role,
+            } => Some(Self::Matrix {
+                columns,
+                rows,
+                scalar,
+                role,
+            }),
+            _ => None,
+        }
+    }
+}
+
+
 
 
 
@@ -401,6 +431,7 @@ impl NumericType {
 enum LocalType {
     
     Numeric(NumericType),
+    Cooperative(CooperativeType),
     Pointer {
         base: Word,
         class: spirv::StorageClass,
@@ -474,6 +505,7 @@ enum Dimension {
     Scalar,
     Vector,
     Matrix,
+    CooperativeMatrix,
 }
 
 

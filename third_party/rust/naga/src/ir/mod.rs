@@ -501,6 +501,17 @@ impl From<VectorSize> for u32 {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum CooperativeSize {
+    Eight = 8,
+    Sixteen = 16,
+}
+
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum ScalarKind {
     
     Sint,
@@ -520,6 +531,18 @@ pub enum ScalarKind {
     
     
     AbstractFloat,
+}
+
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum CooperativeRole {
+    A,
+    B,
+    C,
 }
 
 
@@ -769,6 +792,14 @@ pub enum TypeInner {
         columns: VectorSize,
         rows: VectorSize,
         scalar: Scalar,
+    },
+    
+    
+    CooperativeMatrix {
+        columns: CooperativeSize,
+        rows: CooperativeSize,
+        scalar: Scalar,
+        role: CooperativeRole,
     },
     
     Atomic(Scalar),
@@ -1468,6 +1499,16 @@ bitflags::bitflags! {
     }
 }
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct CooperativeData {
+    pub pointer: Handle<Expression>,
+    pub stride: Handle<Expression>,
+    pub row_major: bool,
+}
+
 
 
 
@@ -1812,6 +1853,20 @@ pub enum Expression {
     
     
     SubgroupOperationResult { ty: Handle<Type> },
+
+    
+    CooperativeLoad {
+        columns: CooperativeSize,
+        rows: CooperativeSize,
+        role: CooperativeRole,
+        data: CooperativeData,
+    },
+    
+    CooperativeMultiplyAdd {
+        a: Handle<Expression>,
+        b: Handle<Expression>,
+        c: Handle<Expression>,
+    },
 }
 
 
@@ -2252,6 +2307,11 @@ pub enum Statement {
         
         
         result: Handle<Expression>,
+    },
+    
+    CooperativeStore {
+        target: Handle<Expression>,
+        data: CooperativeData,
     },
 }
 

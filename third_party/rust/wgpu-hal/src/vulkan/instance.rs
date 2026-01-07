@@ -567,7 +567,7 @@ impl super::Instance {
     
     
     pub unsafe fn init_with_callback(
-        desc: &crate::InstanceDescriptor,
+        desc: &crate::InstanceDescriptor<'_>,
         callback: Option<Box<super::CreateInstanceCallback>>,
     ) -> Result<Self, crate::InstanceError> {
         profiling::scope!("Init Vulkan Backend");
@@ -870,7 +870,7 @@ impl Drop for super::InstanceShared {
 impl crate::Instance for super::Instance {
     type A = super::Api;
 
-    unsafe fn init(desc: &crate::InstanceDescriptor) -> Result<Self, crate::InstanceError> {
+    unsafe fn init(desc: &crate::InstanceDescriptor<'_>) -> Result<Self, crate::InstanceError> {
         unsafe { Self::init_with_callback(desc, None) }
     }
 

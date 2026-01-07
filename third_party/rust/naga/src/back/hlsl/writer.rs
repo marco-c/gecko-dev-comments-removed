@@ -2756,6 +2756,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 }
                 writeln!(self.out, ");")?;
             }
+            Statement::CooperativeStore { .. } => unimplemented!(),
         }
 
         Ok(())
@@ -4285,7 +4286,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 }
             }
             
-            Expression::RayQueryVertexPositions { .. } => unreachable!(),
+            Expression::RayQueryVertexPositions { .. }
+            | Expression::CooperativeLoad { .. }
+            | Expression::CooperativeMultiplyAdd { .. } => {
+                unreachable!()
+            }
             
             Expression::CallResult(_)
             | Expression::AtomicResult { .. }

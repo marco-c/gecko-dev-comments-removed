@@ -89,12 +89,19 @@ pub struct Instance {
     supported_backends: Backends,
 
     pub flags: wgt::InstanceFlags,
+
+    
+    
+    
+    
+    
+    display: Option<Box<dyn wgt::WgpuHasDisplayHandle>>,
 }
 
 impl Instance {
     pub fn new(
         name: &str,
-        instance_desc: &wgt::InstanceDescriptor,
+        mut instance_desc: wgt::InstanceDescriptor,
         telemetry: Option<hal::Telemetry>,
     ) -> Self {
         let mut this = Self {
@@ -103,18 +110,22 @@ impl Instance {
             requested_backends: instance_desc.backends,
             supported_backends: Backends::empty(),
             flags: instance_desc.flags,
+            
+            
+            
+            display: instance_desc.display.take(),
         };
 
         #[cfg(vulkan)]
-        this.try_add_hal(hal::api::Vulkan, instance_desc, telemetry);
+        this.try_add_hal(hal::api::Vulkan, &instance_desc, telemetry);
         #[cfg(metal)]
-        this.try_add_hal(hal::api::Metal, instance_desc, telemetry);
+        this.try_add_hal(hal::api::Metal, &instance_desc, telemetry);
         #[cfg(dx12)]
-        this.try_add_hal(hal::api::Dx12, instance_desc, telemetry);
+        this.try_add_hal(hal::api::Dx12, &instance_desc, telemetry);
         #[cfg(gles)]
-        this.try_add_hal(hal::api::Gles, instance_desc, telemetry);
+        this.try_add_hal(hal::api::Gles, &instance_desc, telemetry);
         #[cfg(feature = "noop")]
-        this.try_add_hal(hal::api::Noop, instance_desc, telemetry);
+        this.try_add_hal(hal::api::Noop, &instance_desc, telemetry);
 
         this
     }
@@ -135,15 +146,25 @@ impl Instance {
             return;
         }
 
+        
+        assert!(instance_desc.display.is_none());
+
         let hal_desc = hal::InstanceDescriptor {
             name: "wgpu",
             flags: self.flags,
             memory_budget_thresholds: instance_desc.memory_budget_thresholds,
             backend_options: instance_desc.backend_options.clone(),
             telemetry,
+            
+            
+            display: self.display.as_ref().map(|hdh| {
+                hdh.display_handle()
+                    .expect("Implementation did not provide a DisplayHandle")
+            }),
         };
 
         use hal::Instance as _;
+        
         match unsafe { A::Instance::init(&hal_desc) } {
             Ok(instance) => {
                 log::debug!("Instance::new: created {:?} backend", A::VARIANT);
@@ -170,6 +191,7 @@ impl Instance {
             requested_backends: A::VARIANT.into(),
             supported_backends: A::VARIANT.into(),
             flags: wgt::InstanceFlags::default(),
+            display: None, 
         }
     }
 
@@ -208,13 +230,23 @@ impl Instance {
     
     
     
-    #[cfg(feature = "raw-window-handle")]
     pub unsafe fn create_surface(
         &self,
         display_handle: raw_window_handle::RawDisplayHandle,
         window_handle: raw_window_handle::RawWindowHandle,
     ) -> Result<Surface, CreateSurfaceError> {
         profiling::scope!("Instance::create_surface");
+
+        if let Some(instance_display_handle) = &self.display {
+            if instance_display_handle
+                .display_handle()
+                .expect("Implementation did not provide a DisplayHandle")
+                .as_raw()
+                != display_handle
+            {
+                return Err(CreateSurfaceError::MismatchingDisplayHandle);
+            }
+        }
 
         let mut errors = HashMap::default();
         let mut surface_per_backend = HashMap::default();
@@ -684,6 +716,10 @@ impl Adapter {
         unsafe { self.raw.adapter.get_presentation_timestamp() }
     }
 
+    pub fn cooperative_matrix_properties(&self) -> Vec<wgt::CooperativeMatrixProperties> {
+        self.raw.capabilities.cooperative_matrix_properties.clone()
+    }
+
     pub fn get_texture_format_features(
         &self,
         format: wgt::TextureFormat,
@@ -894,6 +930,8 @@ pub enum CreateSurfaceError {
     BackendNotEnabled(Backend),
     #[error("Failed to create surface for any enabled backend: {0:?}")]
     FailedToCreateSurfaceForAnyBackend(HashMap<Backend, hal::InstanceError>),
+    #[error("The display handle used to create this Instance does not match the one used to create a surface on it")]
+    MismatchingDisplayHandle,
 }
 
 impl Global {
@@ -914,7 +952,6 @@ impl Global {
     
     
     
-    #[cfg(feature = "raw-window-handle")]
     pub unsafe fn instance_create_surface(
         &self,
         display_handle: raw_window_handle::RawDisplayHandle,
@@ -1112,6 +1149,14 @@ impl Global {
     ) -> wgt::PresentationTimestamp {
         let adapter = self.hub.adapters.get(adapter_id);
         adapter.get_presentation_timestamp()
+    }
+
+    pub fn adapter_cooperative_matrix_properties(
+        &self,
+        adapter_id: AdapterId,
+    ) -> Vec<wgt::CooperativeMatrixProperties> {
+        let adapter = self.hub.adapters.get(adapter_id);
+        adapter.cooperative_matrix_properties()
     }
 
     pub fn adapter_drop(&self, adapter_id: AdapterId) {

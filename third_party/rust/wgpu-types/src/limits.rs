@@ -46,7 +46,6 @@ macro_rules! with_limits {
         $macro_name!(max_vertex_buffer_array_stride, Ordering::Less);
         $macro_name!(min_uniform_buffer_offset_alignment, Ordering::Greater);
         $macro_name!(min_storage_buffer_offset_alignment, Ordering::Greater);
-        $macro_name!(max_inter_stage_shader_components, Ordering::Less);
         $macro_name!(max_color_attachments, Ordering::Less);
         $macro_name!(max_color_attachment_bytes_per_sample, Ordering::Less);
         $macro_name!(max_compute_workgroup_storage_size, Ordering::Less);
@@ -183,15 +182,16 @@ pub struct Limits {
     
     
     
+    
+    pub max_inter_stage_shader_variables: u32,
+    
+    
+    
     pub min_uniform_buffer_offset_alignment: u32,
     
     
     
     pub min_storage_buffer_offset_alignment: u32,
-    
-    
-    
-    pub max_inter_stage_shader_components: u32,
     
     pub max_color_attachments: u32,
     
@@ -383,9 +383,9 @@ impl Limits {
             max_buffer_size: 256 << 20, 
             max_vertex_attributes: 16,
             max_vertex_buffer_array_stride: 2048,
+            max_inter_stage_shader_variables: 16,
             min_uniform_buffer_offset_alignment: 256,
             min_storage_buffer_offset_alignment: 256,
-            max_inter_stage_shader_components: 60,
             max_color_attachments: 8,
             max_color_attachment_bytes_per_sample: 32,
             max_compute_workgroup_storage_size: 16384,
@@ -487,6 +487,7 @@ impl Limits {
             max_texture_dimension_3d: 256,
             max_storage_buffers_per_shader_stage: 4,
             max_uniform_buffer_binding_size: 16 << 10, 
+            max_inter_stage_shader_variables: 15,
             max_color_attachments: 4,
             
             max_compute_workgroup_storage_size: 16352,
@@ -573,7 +574,7 @@ impl Limits {
             max_compute_workgroups_per_dimension: 0,
 
             
-            max_inter_stage_shader_components: 31,
+            max_inter_stage_shader_variables: 15,
 
             
             ..Self::downlevel_defaults()

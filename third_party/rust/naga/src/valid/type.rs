@@ -418,6 +418,30 @@ impl super::Validator {
                 type_info.immediates_compatibility = immediates_compatibility;
                 type_info
             }
+            Ti::CooperativeMatrix {
+                columns: _,
+                rows: _,
+                scalar,
+                role: _,
+            } => {
+                self.require_type_capability(Capabilities::COOPERATIVE_MATRIX)?;
+                
+                if scalar.kind != crate::ScalarKind::Float
+                    || (scalar.width != 2 && scalar.width != 4)
+                {
+                    return Err(TypeError::MatrixElementNotFloat);
+                }
+                TypeInfo::new(
+                    TypeFlags::DATA
+                        | TypeFlags::SIZED
+                        | TypeFlags::COPY
+                        | TypeFlags::HOST_SHAREABLE
+                        | TypeFlags::ARGUMENT
+                        | TypeFlags::CONSTRUCTIBLE
+                        | TypeFlags::CREATION_RESOLVED,
+                    Alignment::from_width(scalar.width),
+                )
+            }
             Ti::Atomic(scalar) => {
                 match scalar {
                     crate::Scalar {
