@@ -1296,7 +1296,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     return SeekFallbackTo(Some(nextFallbackIndex));
   };
 
-  Maybe<nsPoint> firstTryNormalPosition;
+  Maybe<nsRect> firstTryNormalRect;
   if (auto* lastSuccessfulPosition =
           aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback())) {
     if (SeekFallbackTo(Some(lastSuccessfulPosition->mIndex))) {
@@ -1660,9 +1660,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     aKidFrame->DidReflow(aPresContext, &kidReflowInput);
 
     [&]() {
-      const auto position = aKidFrame->GetPosition();
-      if (!firstTryNormalPosition) {
-        firstTryNormalPosition = Some(position);
+      const auto rect = aKidFrame->GetRect();
+      if (!firstTryNormalRect) {
+        firstTryNormalRect = Some(rect);
       }
       if (!aAnchorPosResolutionCache) {
         return;
@@ -1685,9 +1685,10 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       
       
       
-      aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(), position);
+      aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(),
+                             rect.TopLeft());
       if (offset != nsPoint{}) {
-        aKidFrame->SetPosition(position - offset);
+        aKidFrame->SetPosition(rect.TopLeft() - offset);
         
         
         aKidFrame->UpdateOverflow();
@@ -1747,11 +1748,22 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     if (!TryAdvanceFallback()) {
       
       if (bestSize >= 0) {
-        finalizing = true;
         SeekFallbackTo(bestIndex);
       } else {
-        break;
+        
+        
+        
+        
+        if (isOverflowingCB && firstTryNormalRect &&
+            firstTryNormalRect->Size() != aKidFrame->GetSize()) {
+          SeekFallbackTo(firstTryIndex);
+        } else {
+          break;
+        }
       }
+      
+      
+      finalizing = true;
     }
 
     
@@ -1760,7 +1772,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   } while (true);
 
   [&]() {
-    if (!isOverflowingCB || !firstTryNormalPosition) {
+    if (!isOverflowingCB || !firstTryNormalRect) {
       return;
     }
     
@@ -1768,45 +1780,42 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     
     currentFallbackIndex = firstTryIndex;
     currentFallbackStyle = firstTryStyle;
-    const auto normalPosition = *firstTryNormalPosition;
+    const auto normalRect = *firstTryNormalRect;
     const auto oldNormalPosition = aKidFrame->GetNormalPosition();
-    if (normalPosition != oldNormalPosition) {
+    if (normalRect.TopLeft() != oldNormalPosition) {
       aKidFrame->SetProperty(nsIFrame::NormalPositionProperty(),
-                             normalPosition);
+                             normalRect.TopLeft());
     }
-    auto position = normalPosition;
+    auto rect = normalRect;
     if (aAnchorPosResolutionCache) {
-      position -=
-          aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift;
+      rect.MoveBy(
+          -aAnchorPosResolutionCache->mReferenceData->mDefaultScrollShift);
     }
 
     if (isOverflowingCB &&
         !aKidFrame->StylePosition()->mPositionArea.IsNone()) {
       
       
-      nsSize size = aKidFrame->GetSize();
-      if (size.width <= aOriginalContainingBlockRect.width &&
-          size.height <= aOriginalContainingBlockRect.height) {
-        if (position.x < aOriginalContainingBlockRect.x) {
-          position.x = aOriginalContainingBlockRect.x;
-        } else if (position.x + size.width >
-                   aOriginalContainingBlockRect.XMost()) {
-          position.x = aOriginalContainingBlockRect.XMost() - size.width;
+      if (rect.width <= aOriginalContainingBlockRect.width &&
+          rect.height <= aOriginalContainingBlockRect.height) {
+        if (rect.x < aOriginalContainingBlockRect.x) {
+          rect.x = aOriginalContainingBlockRect.x;
+        } else if (rect.XMost() > aOriginalContainingBlockRect.XMost()) {
+          rect.x = aOriginalContainingBlockRect.XMost() - rect.width;
         }
-        if (position.y < aOriginalContainingBlockRect.y) {
-          position.y = aOriginalContainingBlockRect.y;
-        } else if (position.y + size.height >
-                   aOriginalContainingBlockRect.YMost()) {
-          position.y = aOriginalContainingBlockRect.YMost() - size.height;
+        if (rect.y < aOriginalContainingBlockRect.y) {
+          rect.y = aOriginalContainingBlockRect.y;
+        } else if (rect.YMost() > aOriginalContainingBlockRect.YMost()) {
+          rect.y = aOriginalContainingBlockRect.YMost() - rect.height;
         }
       }
     }
 
     const auto oldPosition = aKidFrame->GetPosition();
-    if (position == oldPosition) {
+    if (rect.TopLeft() == oldPosition) {
       return;
     }
-    aKidFrame->SetPosition(position);
+    aKidFrame->SetPosition(rect.TopLeft());
     aKidFrame->UpdateOverflow();
   }();
 
