@@ -6276,7 +6276,7 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
 
     
     UrlpPattern pattern;
-    UrlpOptions options;
+    UrlpOptions options{};
     if (!urlp_parse_pattern_from_string(&matchVal, &mSpec, options, &pattern)) {
       LOG_DICTIONARIES(
           ("Failed to parse dictionary pattern %s", matchVal.get()));
