@@ -223,8 +223,10 @@ class Inspector extends EventEmitter {
     await this.#fluentL10n.init(["devtools/client/compatibility.ftl"]);
 
     
-    this.panelDoc.getElementById("inspector-main-content").style.visibility =
-      "visible";
+    
+    this.panelDoc
+      .getElementById("inspector-main-content")
+      .classList.add("initialized");
 
     
     
