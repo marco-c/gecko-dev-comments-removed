@@ -597,7 +597,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
     } else if (!rec->mResolving) {
       result =
           FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags, af,
-                          aOriginAttributes.IsPrivateBrowsing(), status);
+                          aOriginAttributes.IsPrivateBrowsing(), status, lock);
       
       
       
@@ -687,6 +687,8 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
     LOG(("  Negative cache entry for host [%s].\n",
          nsPromiseFlatCString(aHost).get()));
     aStatus = NS_ERROR_UNKNOWN_HOST;
+  } else if (StaticPrefs::network_dns_mru_to_tail()) {
+    mQueue.MoveToEvictionQueueTail(aRec, aLock);
   }
 
   return result.forget();
@@ -713,7 +715,8 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromIPLiteral(
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
     nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
     const nsACString& aOriginSuffix, uint16_t aType,
-    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus) {
+    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus,
+    const MutexAutoLock& aLock) {
   RefPtr<nsHostRecord> result = nullptr;
   
   
