@@ -404,9 +404,11 @@ export class LimitTestsImpl extends GPUTestBase {
     this._adapter = await gpu.requestAdapter();
     const limit = this.limit;
     
+    
+    
     this.skipIf(
       this._adapter?.limits[limit] === undefined && !!this.limitTestParams.limitOptional ||
-      getDefaultLimitsForCTS()[limit] === undefined,
+      !(limit in getDefaultLimitsForCTS()),
       `${limit} is missing but optional for now`
     );
     this.defaultLimit = getDefaultLimitForAdapter(this.adapter, limit);

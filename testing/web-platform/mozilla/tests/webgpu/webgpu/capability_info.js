@@ -12,7 +12,12 @@ import {
 
 '../common/util/data_tables.js';
 import { assertTypeTrue } from '../common/util/types.js';
-import { hasFeature, unreachable } from '../common/util/util.js';
+import {
+  assert,
+  combinationsOfOneOrTwoUsages,
+  hasFeature,
+  unreachable } from
+'../common/util/util.js';
 
 import { GPUConst, kMaxUnsignedLongValue, kMaxUnsignedLongLongValue } from './constants.js';
 
@@ -202,26 +207,61 @@ export const kTextureUsageCopyInfo =
 export const kTextureUsageCopy = keysOf(kTextureUsageCopyInfo);
 
 
-export const kTextureUsageInfo =
+
+const kTextureUsageInfo =
+
+
+
+
 
 {
-  [GPUConst.TextureUsage.COPY_SRC]: {},
-  [GPUConst.TextureUsage.COPY_DST]: {},
-  [GPUConst.TextureUsage.TEXTURE_BINDING]: {},
-  [GPUConst.TextureUsage.STORAGE_BINDING]: {},
-  [GPUConst.TextureUsage.RENDER_ATTACHMENT]: {},
-  [GPUConst.TextureUsage.TRANSIENT_ATTACHMENT]: {}
+  [GPUConst.TextureUsage.COPY_SRC]: { typeErrorForConfigure: false },
+  [GPUConst.TextureUsage.COPY_DST]: { typeErrorForConfigure: false },
+  [GPUConst.TextureUsage.TEXTURE_BINDING]: { typeErrorForConfigure: false },
+  [GPUConst.TextureUsage.STORAGE_BINDING]: { typeErrorForConfigure: false },
+  [GPUConst.TextureUsage.RENDER_ATTACHMENT]: { typeErrorForConfigure: false },
+  [GPUConst.TextureUsage.TRANSIENT_ATTACHMENT]: { typeErrorForConfigure: true }
 };
 
 export const kTextureUsages = numericKeysOf(kTextureUsageInfo);
 
+const kAllTextureUsages = kTextureUsages.reduce((acc, usage) => acc | usage, 0);
 
-export function IsValidTextureUsageCombination(usage) {
-  return (
-    (usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) === 0 ||
-    usage === (GPUConst.TextureUsage.TRANSIENT_ATTACHMENT | GPUConst.TextureUsage.RENDER_ATTACHMENT));
 
+export const kSomeBogusTextureUsage = 0x4000_0000;
+assert((kSomeBogusTextureUsage & kAllTextureUsages) === 0);
+
+
+
+
+
+export function isValidTextureUsageCombination(usage) {
+  if (usage === 0) return false;
+
+  if (usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) {
+    return (
+      usage === (
+      GPUConst.TextureUsage.TRANSIENT_ATTACHMENT | GPUConst.TextureUsage.RENDER_ATTACHMENT));
+
+  }
+
+  return (usage & ~kAllTextureUsages) === 0;
 }
+
+
+export function usageIsTypeErrorForConfigure(usage) {
+  for (const bit of kTextureUsages) {
+    if ((usage & bit) !== 0 && kTextureUsageInfo[bit].typeErrorForConfigure) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+export const kValidCombinationsOfOneOrTwoTextureUsages = combinationsOfOneOrTwoUsages(
+  kTextureUsages
+).filter(isValidTextureUsageCombination);
 
 
 
@@ -777,6 +817,10 @@ const [kLimitInfoKeys, kLimitInfoDefaults, kLimitInfoData] =
   'maxComputeWorkgroupSizeY': [, 256, 128],
   'maxComputeWorkgroupSizeZ': [, 64, 64],
   'maxComputeWorkgroupsPerDimension': [, 65535, 65535]
+  
+  
+  
+  
 }];
 
 
@@ -933,4 +977,5 @@ export const kKnownWGSLLanguageFeatures = [
 'unrestricted_pointer_parameters',
 'pointer_composite_access',
 'uniform_buffer_standard_layout',
-'subgroup_id'];
+'subgroup_id',
+'subgroup_uniformity'];

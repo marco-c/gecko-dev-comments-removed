@@ -677,6 +677,7 @@ export class GPUTestBase extends Fixture {
   }
 
   
+  
   skipIfTransientAttachmentNotSupported() {
     const isTransientAttachmentSupported = ('TRANSIENT_ATTACHMENT' in GPUTextureUsage);
     this.skipIf(
