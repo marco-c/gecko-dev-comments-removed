@@ -965,8 +965,7 @@
       }
 
       dragData.translatePos = translate;
-
-      tabs = tabs.filter(t => !movingTabsSet.has(t) || t == draggedTab);
+      tabs = dragData.dropIndexSearchArray;
 
       
 
@@ -1372,10 +1371,7 @@
 
       
       
-      for (let item of tabs) {
-        if (item == draggedTab) {
-          continue;
-        }
+      for (let item of dragData.unmovingTabStripItems) {
         let shift = getTabShift(item, newDropElementIndex);
         let transform = shift ? `${translateAxis}(${shift}px)` : "";
         item = elementToMove(item);
@@ -1558,12 +1554,10 @@
 
       
       
-      for (let tab of tabs) {
-        if (tab != draggedTab) {
-          let [shiftX, shiftY] = getTabShift(tab, newIndex);
-          tab.style.transform =
-            shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : "";
-        }
+      for (let tab of dragData.unmovingTabStripItems) {
+        let [shiftX, shiftY] = getTabShift(tab, newIndex);
+        tab.style.transform =
+          shiftX || shiftY ? `translate(${shiftX}px, ${shiftY}px)` : "";
       }
     }
 
