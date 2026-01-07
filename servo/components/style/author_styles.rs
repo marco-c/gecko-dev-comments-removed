@@ -5,13 +5,16 @@
 
 
 
+use crate::derives::*;
 use crate::dom::TElement;
 use crate::shared_lock::SharedRwLockReadGuard;
 use crate::stylesheet_set::AuthorStylesheetSet;
 use crate::stylesheets::StylesheetInDocument;
 use crate::stylist::CascadeData;
+use crate::stylist::CascadeDataDifference;
 use crate::stylist::Stylist;
 use servo_arc::Arc;
+use std::sync::LazyLock;
 
 
 
@@ -30,9 +33,8 @@ where
 
 pub use self::GenericAuthorStyles as AuthorStyles;
 
-lazy_static! {
-    static ref EMPTY_CASCADE_DATA: Arc<CascadeData> = Arc::new_leaked(CascadeData::new());
-}
+static EMPTY_CASCADE_DATA: LazyLock<Arc<CascadeData>> =
+    LazyLock::new(|| Arc::new_leaked(CascadeData::new()));
 
 impl<S> GenericAuthorStyles<S>
 where
@@ -52,7 +54,11 @@ where
     
     
     #[inline]
-    pub fn flush<E>(&mut self, stylist: &mut Stylist, guard: &SharedRwLockReadGuard)
+    pub fn flush<E>(
+        &mut self,
+        stylist: &mut Stylist,
+        guard: &SharedRwLockReadGuard,
+    ) -> CascadeDataDifference
     where
         E: TElement,
     {
@@ -60,9 +66,12 @@ where
             .stylesheets
             .flush::<E>( None,  None);
 
-        let result = stylist.rebuild_author_data(&self.data, flusher.sheets, guard);
+        let mut difference = CascadeDataDifference::default();
+        let result =
+            stylist.rebuild_author_data(&self.data, flusher.sheets, guard, &mut difference);
         if let Ok(Some(new_data)) = result {
             self.data = new_data;
         }
+        difference
     }
 }

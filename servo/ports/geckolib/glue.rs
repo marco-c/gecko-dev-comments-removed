@@ -1819,36 +1819,6 @@ pub extern "C" fn Servo_AuthorStyles_IsDirty(styles: &AuthorStyles) -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_AuthorStyles_Flush(
-    styles: &mut AuthorStyles,
-    document_set: &PerDocumentStyleData,
-) {
-    
-    if !styles.stylesheets.dirty() {
-        return;
-    }
-
-    let global_style_data = &*GLOBAL_STYLE_DATA;
-    let guard = global_style_data.shared_lock.read();
-
-    let mut document_data = document_set.borrow_mut();
-
-    
-    
-    styles.flush::<GeckoElement>(&mut document_data.stylist, &guard);
-}
-
-#[no_mangle]
-pub extern "C" fn Servo_StyleSet_RemoveUniqueEntriesFromAuthorStylesCache(
-    document_set: &PerDocumentStyleData,
-) {
-    let mut document_data = document_set.borrow_mut();
-    document_data
-        .stylist
-        .remove_unique_author_data_cache_entries();
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn Servo_DeclarationBlock_SizeOfIncludingThis(
     malloc_size_of: GeckoMallocSizeOf,
     malloc_enclosing_size_of: GeckoMallocSizeOf,
@@ -2008,18 +1978,46 @@ pub unsafe extern "C" fn Servo_StyleSet_FlushStyleSheets(
     raw_data: &PerDocumentStyleData,
     doc_element: Option<&RawGeckoElement>,
     snapshots: *const ServoElementSnapshotTable,
+    non_document_styles: &mut nsTArray<&mut AuthorStyles>,
 ) {
     let global_style_data = &*GLOBAL_STYLE_DATA;
     let guard = global_style_data.shared_lock.read();
     let mut data = raw_data.borrow_mut();
     let doc_element = doc_element.map(GeckoElement);
 
-    let have_invalidations = data.flush_stylesheets(&guard, doc_element, snapshots.as_ref());
+    let mut doc_flush_result = data.flush_stylesheets(&guard, doc_element, snapshots.as_ref());
+    if !non_document_styles.is_empty() {
+        for author_styles in non_document_styles {
+            
+            
+            let difference = author_styles.flush::<GeckoElement>(&mut data.stylist, &guard);
+            
+            
+            doc_flush_result.difference.merge_with(difference);
+        }
+        data.stylist.remove_unique_author_data_cache_entries();
+    }
 
-    if have_invalidations && doc_element.is_some() {
-        
-        
-        bindings::Gecko_NoteDirtySubtreeForInvalidation(doc_element.unwrap().0);
+    
+    
+    if let Some(doc_element) = doc_element {
+        let changed_position_try_names = &doc_flush_result.difference.changed_position_try_names;
+        if !changed_position_try_names.is_empty() {
+            style::invalidation::stylesheets::invalidate_position_try(
+                doc_element,
+                &changed_position_try_names,
+                &mut |e, _data| unsafe {
+                    bindings::Gecko_InvalidatePositionTry(e.0);
+                },
+                &mut |_| {},
+            );
+        }
+
+        if doc_flush_result.had_invalidations {
+            
+            
+            bindings::Gecko_NoteDirtySubtreeForInvalidation(doc_element.0);
+        }
     }
 }
 
