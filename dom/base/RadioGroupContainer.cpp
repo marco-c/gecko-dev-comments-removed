@@ -24,7 +24,7 @@ struct nsRadioGroupStruct {
 
 
   RefPtr<HTMLInputElement> mSelectedRadioButton;
-  TreeOrderedArray<RefPtr<HTMLInputElement>, TreeKind::DOM> mRadioButtons;
+  TreeOrderedArray<RefPtr<HTMLInputElement>> mRadioButtons;
   uint32_t mRequiredRadioCount;
   bool mGroupSuffersFromValueMissing;
 };

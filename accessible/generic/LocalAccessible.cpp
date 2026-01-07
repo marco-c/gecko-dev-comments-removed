@@ -2301,7 +2301,7 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (mContent->IsHTMLElement()) {
         
         if (auto* control = nsIFormControl::FromNode(mContent)) {
-          if (dom::HTMLFormElement* form = control->GetFormInternal()) {
+          if (dom::HTMLFormElement* form = control->GetForm()) {
             return Relation(mDoc, form->GetDefaultSubmitElement());
           }
         }
@@ -4131,7 +4131,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         
         if (dom::HTMLLabelElement* labelEl =
                 dom::HTMLLabelElement::FromNode(mContent)) {
-          rel.AppendTarget(mDoc, labelEl->GetLabeledElementInternal());
+          rel.AppendTarget(mDoc, labelEl->GetControl());
         }
       } else if (data.mType == RelationType::DETAILS) {
         if (relAtom == nsGkAtoms::aria_details) {

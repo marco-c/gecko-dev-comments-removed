@@ -99,15 +99,13 @@ class HTMLFormControlsCollection final : public nsIHTMLCollection,
   
   
   
-  TreeOrderedArray<nsGenericHTMLFormElement*, TreeKind::ShadowIncludingDOM>
-      mElements;
+  TreeOrderedArray<nsGenericHTMLFormElement*> mElements;
 
   
   
   
   
-  TreeOrderedArray<nsGenericHTMLFormElement*, TreeKind::ShadowIncludingDOM>
-      mNotInElements;
+  TreeOrderedArray<nsGenericHTMLFormElement*> mNotInElements;
 
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(HTMLFormControlsCollection)
 
