@@ -547,20 +547,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  static void MapTableVAlignAttributeInto(mozilla::MappedDeclarationsBuilder&);
-
-  
-
-
-
-  static void MapTableHAlignAttributeInto(mozilla::MappedDeclarationsBuilder&);
-
-  
-
-
-
-  static void MapTableCellHAlignAttributeInto(
-      mozilla::MappedDeclarationsBuilder&);
+  static void MapVAlignAttributeInto(mozilla::MappedDeclarationsBuilder&);
 
   
 
