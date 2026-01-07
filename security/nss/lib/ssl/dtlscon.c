@@ -943,12 +943,31 @@ dtls_TimerActive(sslSocket *ss, dtlsTimer *timer)
     return timer->cb != NULL;
 }
 
+
 static SECStatus
 dtls_StartRetransmitTimer(sslSocket *ss)
 {
+    dtlsTimer *timer = ss->ssl3.hs.rtTimer;
+    PRUint32 timeout = DTLS_RETRANSMIT_INITIAL_MS;
+
+    if (dtls_TimerActive(ss, timer)) {
+        SSL_TRC(10, ("%d: SSL3[%d]: %s dtls timer %s is already active, restarting. New timeout is %d",
+                     SSL_GETPID(), ss->fd, SSL_ROLE(ss),
+                     timer->label, timeout));
+        
+        
+        
+        
+        
+        (void)dtls_RestartTimer(ss, timer);
+        ss->ssl3.hs.rtRetries = 0;
+        timer->timeout = timeout;
+        return SECSuccess;
+    }
+
     ss->ssl3.hs.rtRetries = 0;
-    return dtls_StartTimer(ss, ss->ssl3.hs.rtTimer,
-                           DTLS_RETRANSMIT_INITIAL_MS,
+    return dtls_StartTimer(ss, timer,
+                           timeout,
                            dtls_RetransmitTimerExpiredCb);
 }
 
