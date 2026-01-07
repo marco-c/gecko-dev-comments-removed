@@ -33,17 +33,7 @@ class HostRecordQueue final {
   void AddToEvictionQ(
       nsHostRecord* aRec, uint32_t aMaxCacheEntries,
       nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB,
-      const MutexAutoLock& aProofOfLock, bool aSkipCheck = false);
-
-  void MaybeAddToEvictionQ(
-      nsHostRecord* aRec, uint32_t aMaxCacheEntries,
-      nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB,
       const MutexAutoLock& aProofOfLock);
-
-  
-  void MoveToEvictionQueueTail(nsHostRecord* aRec,
-                               const MutexAutoLock& aProofOfLock);
-
   
   
   void MaybeRenewHostRecord(nsHostRecord* aRec,
