@@ -68,14 +68,6 @@ function channelOpenPromise(chan, flags) {
 }
 
 async function H3CoalescingTest(host1, host2) {
-  
-  
-  
-  
-  
-  
-  Services.prefs.setBoolPref("network.http.http3.pmtud", false);
-
   Services.prefs.setCharPref(
     "network.http.http3.alt-svc-mapping-for-testing",
     `${host1};h3=:${h3Port}`
