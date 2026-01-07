@@ -38,15 +38,18 @@ chai.use(chaiAssertions);
 const overrider = new GlobalOverrider();
 
 
-
-if (typeof HTMLDialogElement !== "undefined") {
-  HTMLDialogElement.prototype.showModal = function () {
-    this.open = true;
-  };
-  HTMLDialogElement.prototype.close = function () {
-    this.open = false;
-  };
+if (typeof window.HTMLDialogElement === "undefined") {
+  window.HTMLDialogElement = function () {};
+  window.HTMLDialogElement.prototype = Object.create(HTMLElement.prototype);
 }
+
+
+window.HTMLDialogElement.prototype.showModal = function () {
+  this.open = true;
+};
+window.HTMLDialogElement.prototype.close = function () {
+  this.open = false;
+};
 
 const RemoteSettings = name => ({
   get: () => {
