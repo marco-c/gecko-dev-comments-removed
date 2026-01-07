@@ -31,7 +31,41 @@ enum class ExceptionStackBehavior : bool {
 
 extern JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API bool JS_IsThrowingOutOfMemory(JSContext* cx);
+
+
+
+
 
 extern JS_PUBLIC_API bool JS_GetPendingException(JSContext* cx,
                                                  JS::MutableHandleValue vp);
