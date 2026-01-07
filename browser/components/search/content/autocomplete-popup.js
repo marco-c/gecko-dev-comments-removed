@@ -6,7 +6,8 @@
 
 
 {
-  ChromeUtils.defineESModuleGetters(this, {
+  const lazy = {};
+  ChromeUtils.defineESModuleGetters(lazy, {
     BrowserSearchTelemetry:
       "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
     BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
@@ -101,7 +102,9 @@
       this._searchOneOffsContainer = this.querySelector(".search-one-offs");
       this._searchbarEngine = this.querySelector(".search-panel-header");
       this._searchbarEngineName = this.querySelector(".searchbar-engine-name");
-      this._oneOffButtons = new SearchOneOffs(this._searchOneOffsContainer);
+      this._oneOffButtons = new lazy.SearchOneOffs(
+        this._searchOneOffsContainer
+      );
       this._searchbar = document.getElementById("searchbar");
     }
 
@@ -191,7 +194,7 @@
       }
 
       
-      BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
+      lazy.BrowserSearchTelemetry.recordSearchSuggestionSelectionMethod(
         aEvent,
         this.selectedIndex
       );
@@ -200,7 +203,7 @@
       let search = this.input.controller.getValueAt(this.selectedIndex);
 
       
-      let where = BrowserUtils.whereToOpenLink(aEvent, false, true);
+      let where = lazy.BrowserUtils.whereToOpenLink(aEvent, false, true);
       let params = {};
 
       
