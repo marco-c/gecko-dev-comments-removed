@@ -7160,8 +7160,10 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
   
   
   
-  if (!HTMLEditUtils::IsFirstChild(*mEmptyInclusiveAncestorBlockElement,
-                                   {WalkTreeOption::IgnoreNonEditableNode})) {
+  if (!HTMLEditUtils::IsFirstChild(
+          *mEmptyInclusiveAncestorBlockElement,
+          {LeafNodeOption::IgnoreNonEditableNode},
+          BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
     return CreateLineBreakResult::NotHandled();
   }
 
