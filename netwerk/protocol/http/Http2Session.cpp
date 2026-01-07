@@ -1703,21 +1703,8 @@ nsresult Http2Session::ResponseHeadersComplete() {
   }
 
   
-  if (didFirstSetAllRecvd) {
-    RefPtr<nsAHttpTransaction> trans = mInputFrameDataStream->Transaction();
-    nsHttpTransaction* httpTrans =
-        trans ? trans->QueryHttpTransaction() : nullptr;
-    auto now = TimeStamp::Now();
-    if (httpTrans) {
-      
-      httpTrans->SetResponseStart(now, true);
-    }
-
-    if ((httpResponseCode / 100) == 1) {
-      mInputFrameDataStream->UnsetAllHeadersReceived();
-    } else if (httpTrans) {  
-      httpTrans->SetFinalResponseHeadersStart(now, true);
-    }
+  if (((httpResponseCode / 100) == 1) && didFirstSetAllRecvd) {
+    mInputFrameDataStream->UnsetAllHeadersReceived();
   }
 
   ChangeDownstreamState(PROCESSING_COMPLETE_HEADERS);
