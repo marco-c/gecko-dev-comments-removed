@@ -1,11 +1,11 @@
 
 
 
-function run_test() {
-  const { StructuredLogger } = ChromeUtils.importESModule(
-    "resource://testing-common/StructuredLog.sys.mjs"
-  );
+const { StructuredLogger } = ChromeUtils.importESModule(
+  "resource://testing-common/StructuredLog.sys.mjs"
+);
 
+add_task(function test_StructuredLogger() {
   let testBuffer = [];
 
   let appendBuffer = function (msg) {
@@ -144,4 +144,61 @@ function run_test() {
   assertLastMsg({
     action: "suite_end",
   });
-}
+});
+
+add_task(function test_StructuredLogger_with_dumpScope() {
+  let testBuffer = [];
+  let appendBuffer2 = msg => {
+    testBuffer.push(msg);
+  };
+
+  let assertSeenMsg = (expected, checkExtra) => {
+    const { action, message, level, extra } = testBuffer.shift();
+    deepEqual({ action, message, level }, expected);
+    ok(checkExtra(extra), `Extra: ${uneval(extra)}`);
+  };
+
+  
+  let logger2 = new StructuredLogger("test_dump", appendBuffer2, globalThis);
+  const extraNotCloneable = { notCloneable: () => {} };
+  logger2.info("Test non-cloneable", extraNotCloneable);
+
+  assertSeenMsg(
+    {
+      action: "log",
+      message:
+        "Failed to cloneInto: Error: Permission denied to pass a Function via structured clone",
+      level: "ERROR",
+    },
+    extra => extra === undefined
+  );
+
+  testBuffer[0].message = testBuffer[0].message.replace(/time:\d+/, "time:123");
+  assertSeenMsg(
+    {
+      action: "log",
+      message: `Tried to clone: ({action:"log", time:123, thread:null, pid:null, source:"test_dump", level:"INFO", message:"Test non-cloneable", extra:{notCloneable:() => {}}})`,
+      level: "WARNING",
+    },
+    extra => extra === undefined
+  );
+
+  assertSeenMsg(
+    { action: "log", message: "Test non-cloneable", level: "INFO" },
+    extra => extra === extraNotCloneable
+  );
+
+  
+  const extraCloneable = { cloneable: "Yes I am" };
+  logger2.info("Test cloneable", extraCloneable);
+
+  assertSeenMsg(
+    { action: "log", message: "Test cloneable", level: "INFO" },
+    extra => {
+      deepEqual(extra, extraCloneable);
+      return extra !== extraCloneable;
+    }
+  );
+
+  equal(testBuffer.length, 0, "No messages unaccounted for");
+});
