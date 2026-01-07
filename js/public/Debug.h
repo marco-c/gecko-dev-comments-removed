@@ -29,6 +29,8 @@ class Debugger;
 extern JS_PUBLIC_API bool JS_DefineDebuggerObject(JSContext* cx,
                                                   JS::HandleObject obj);
 
+extern JS_PUBLIC_API const char* JS_GetLastOOMStackTrace(JSContext* cx);
+
 
 
 
