@@ -78,6 +78,13 @@ add_task(async function test_help_panel_cloning() {
           appMenuHelpItem.getAttribute("oncommand"),
           "oncommand was properly cloned."
         );
+      } else if (attr == "command") {
+        
+        Assert.equal(
+          helpMenuPopupItem.hasAttribute(attr),
+          appMenuHelpItem.hasAttribute(attr),
+          `${attr} property was cloned.`
+        );
       } else {
         Assert.equal(
           helpMenuPopupItem.getAttribute(attr),
