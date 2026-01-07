@@ -242,8 +242,7 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
 
     
     
-    nsAutoString id;
-    if (nsCoreUtils::GetID(aContent, id) && !id.IsEmpty()) {
+    if (nsAtom* id = aContent->GetID()) {
       return aDocument->IsDependentID(aContent->AsElement(), id);
     }
   }
