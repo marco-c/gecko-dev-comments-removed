@@ -2192,29 +2192,25 @@ void gfxFcPlatformFontList::GetFontList(nsAtom* aLangGroup,
   
   
   
-  bool serif = false, sansSerif = false, monospace = false, math = false;
-  if (aGenericFamily.IsEmpty()) {
-    serif = sansSerif = monospace = math = true;
-  } else if (aGenericFamily.LowerCaseEqualsLiteral("serif")) {
+  bool serif = false, sansSerif = false, monospace = false;
+  if (aGenericFamily.IsEmpty())
+    serif = sansSerif = monospace = true;
+  else if (aGenericFamily.LowerCaseEqualsLiteral("serif"))
     serif = true;
-  } else if (aGenericFamily.LowerCaseEqualsLiteral("sans-serif")) {
+  else if (aGenericFamily.LowerCaseEqualsLiteral("sans-serif"))
     sansSerif = true;
-  } else if (aGenericFamily.LowerCaseEqualsLiteral("monospace")) {
+  else if (aGenericFamily.LowerCaseEqualsLiteral("monospace"))
     monospace = true;
-  } else if (StaticPrefs::mathml_font_family_math_enabled() &&
-             aGenericFamily.LowerCaseEqualsLiteral("math")) {
-    math = true;
-  } else if (aGenericFamily.LowerCaseEqualsLiteral("cursive") ||
-             aGenericFamily.LowerCaseEqualsLiteral("fantasy")) {
+  else if (aGenericFamily.LowerCaseEqualsLiteral("cursive") ||
+           aGenericFamily.LowerCaseEqualsLiteral("fantasy") ||
+           aGenericFamily.LowerCaseEqualsLiteral("math"))
     serif = sansSerif = true;
-  } else {
+  else
     MOZ_ASSERT_UNREACHABLE("unexpected CSS generic font family");
-  }
 
   
   
   
-  if (math) aListOfFonts.InsertElementAt(0, u"math"_ns);
   if (monospace) aListOfFonts.InsertElementAt(0, u"monospace"_ns);
   if (sansSerif) aListOfFonts.InsertElementAt(0, u"sans-serif"_ns);
   if (serif) aListOfFonts.InsertElementAt(0, u"serif"_ns);
@@ -2571,9 +2567,7 @@ void gfxFcPlatformFontList::AddGenericFonts(
     if (!fontlistValue.IsEmpty()) {
       if (!fontlistValue.EqualsLiteral("serif") &&
           !fontlistValue.EqualsLiteral("sans-serif") &&
-          !fontlistValue.EqualsLiteral("monospace") &&
-          !(StaticPrefs::mathml_font_family_math_enabled() &&
-            fontlistValue.EqualsLiteral("math"))) {
+          !fontlistValue.EqualsLiteral("monospace")) {
         usePrefFontList = true;
       } else {
         
@@ -2785,34 +2779,16 @@ struct MozLangGroupData {
 };
 
 const MozLangGroupData MozLangGroups[] = {
-    
-  {nsGkAtoms::x_western, "en"},
-  {nsGkAtoms::x_cyrillic, "ru"},
-  {nsGkAtoms::x_devanagari, "hi"},
-  {nsGkAtoms::x_tamil, "ta"},
-  {nsGkAtoms::x_armn, "hy"},
-  {nsGkAtoms::x_beng, "bn"},
-  {nsGkAtoms::x_cans, "iu"},
-  {nsGkAtoms::x_ethi, "am"},
-  {nsGkAtoms::x_geor, "ka"},
-  {nsGkAtoms::x_gujr, "gu"},
-  {nsGkAtoms::x_guru, "pa"},
-  {nsGkAtoms::x_khmr, "km"},
-  {nsGkAtoms::x_knda, "kn"},
-  
-  
-  
-  
-  {nsGkAtoms::x_math, "und-zmth"},
-  {nsGkAtoms::x_mlym, "ml"},
-  {nsGkAtoms::x_orya, "or"},
-  {nsGkAtoms::x_sinh, "si"},
-  {nsGkAtoms::x_tamil, "ta"},
-  {nsGkAtoms::x_telu, "te"},
-  {nsGkAtoms::x_tibt, "bo"},
-  {nsGkAtoms::Unicode, 0}
-    
-};
+    {nsGkAtoms::x_western, "en"},    {nsGkAtoms::x_cyrillic, "ru"},
+    {nsGkAtoms::x_devanagari, "hi"}, {nsGkAtoms::x_tamil, "ta"},
+    {nsGkAtoms::x_armn, "hy"},       {nsGkAtoms::x_beng, "bn"},
+    {nsGkAtoms::x_cans, "iu"},       {nsGkAtoms::x_ethi, "am"},
+    {nsGkAtoms::x_geor, "ka"},       {nsGkAtoms::x_gujr, "gu"},
+    {nsGkAtoms::x_guru, "pa"},       {nsGkAtoms::x_khmr, "km"},
+    {nsGkAtoms::x_knda, "kn"},       {nsGkAtoms::x_mlym, "ml"},
+    {nsGkAtoms::x_orya, "or"},       {nsGkAtoms::x_sinh, "si"},
+    {nsGkAtoms::x_tamil, "ta"},      {nsGkAtoms::x_telu, "te"},
+    {nsGkAtoms::x_tibt, "bo"},       {nsGkAtoms::Unicode, 0}};
 
 bool gfxFcPlatformFontList::TryLangForGroup(const nsACString& aOSLang,
                                             nsAtom* aLangGroup,
@@ -2856,14 +2832,11 @@ void gfxFcPlatformFontList::GetSampleLangForGroup(nsAtom* aLanguage,
   
   const MozLangGroupData* mozLangGroup = nullptr;
 
-  if (aLanguage != nsGkAtoms::x_math ||
-      StaticPrefs::mathml_font_family_math_enabled()) {
-    
-    for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
-      if (aLanguage == MozLangGroups[i].mozLangGroup) {
-        mozLangGroup = &MozLangGroups[i];
-        break;
-      }
+  
+  for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
+    if (aLanguage == MozLangGroups[i].mozLangGroup) {
+      mozLangGroup = &MozLangGroups[i];
+      break;
     }
   }
 
