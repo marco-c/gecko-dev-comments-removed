@@ -495,11 +495,6 @@ bool nsNativeThemeGTK::ThemeSupportsWidget(nsPresContext* aPresContext,
   return false;
 }
 
-bool nsNativeThemeGTK::WidgetIsContainer(StyleAppearance aAppearance) {
-  
-  return true;
-}
-
 bool nsNativeThemeGTK::ThemeDrawsFocusForWidget(nsIFrame* aFrame,
                                                 StyleAppearance aAppearance) {
   if (IsWidgetNonNative(aFrame, aAppearance) != NonNative::No) {
