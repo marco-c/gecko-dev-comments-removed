@@ -60,10 +60,11 @@ extern mozilla::LazyLogModule gWidgetPopupLog;
 extern mozilla::LazyLogModule gWidgetVsync;
 extern mozilla::LazyLogModule gWidgetWaylandLog;
 
-#  define LOG(str, ...)                               \
-    MOZ_LOG(IsPopup() ? gWidgetPopupLog : gWidgetLog, \
-            mozilla::LogLevel::Debug,                 \
-            ("%s: " str, GetDebugTag().get(), ##__VA_ARGS__))
+#  define LOG_WIN(win, str, ...)                           \
+    MOZ_LOG(win->IsPopup() ? gWidgetPopupLog : gWidgetLog, \
+            mozilla::LogLevel::Debug,                      \
+            ("%s: " str, win->GetDebugTag().get(), ##__VA_ARGS__))
+#  define LOG(...) LOG_WIN(this, __VA_ARGS__)
 #  define LOGVERBOSE(str, ...)                        \
     MOZ_LOG(IsPopup() ? gWidgetPopupLog : gWidgetLog, \
             mozilla::LogLevel::Verbose,               \
@@ -88,6 +89,7 @@ extern mozilla::LazyLogModule gWidgetWaylandLog;
 #else
 
 #  define LOG(...)
+#  define LOG_WIN(...)
 #  define LOGVERBOSE(...)
 #  define LOGW(...)
 #  define LOGDRAG(...)
@@ -224,12 +226,33 @@ class nsWindow final : public nsIWidget {
   
   
   void RecomputeBounds(bool aScaleChange = false);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct Bounds {
+    
+    DesktopIntRect mClientArea;
+    
+    
+    DesktopIntMargin mClientMargin;
+
+    static Bounds Compute(const nsWindow*);
 #ifdef MOZ_X11
-  void RecomputeBoundsX11();
+    static Bounds ComputeX11(const nsWindow*);
 #endif
 #ifdef MOZ_WAYLAND
-  void RecomputeBoundsWayland();
+    static Bounds ComputeWayland(const nsWindow*);
 #endif
+  };
   void SchedulePendingBounds();
   void MaybeRecomputeBounds();
 
@@ -436,7 +459,7 @@ class nsWindow final : public nsIWidget {
 
   
   gint GdkCeiledScaleFactor();
-  double FractionalScaleFactor();
+  double FractionalScaleFactor() const;
 
   LayoutDeviceIntPoint ToLayoutDevicePixels(const DesktopIntPoint&);
   LayoutDeviceIntSize ToLayoutDevicePixels(const DesktopIntSize&);
@@ -639,26 +662,8 @@ class nsWindow final : public nsIWidget {
   DesktopIntPoint mLastMoveRequest;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  DesktopIntMargin mClientMargin{};
-
-  
-  
-  DesktopIntRect mClientArea{};
+  DesktopIntRect mClientArea;
+  DesktopIntMargin mClientMargin;
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;

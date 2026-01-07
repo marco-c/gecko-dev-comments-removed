@@ -3299,10 +3299,10 @@ LayoutDeviceIntCoord GetXWindowBorder(GdkWindow* aWin) {
 
 
 #ifdef MOZ_X11
-void nsWindow::RecomputeBoundsX11() {
-  LOG("RecomputeBoundsX11()");
+auto nsWindow::Bounds::ComputeX11(const nsWindow* aWindow) -> Bounds {
+  LOG_WIN(aWindow, "Bounds::ComputeX11()");
 
-  auto* toplevel = GetToplevelGdkWindow();
+  auto* toplevel = aWindow->GetToplevelGdkWindow();
 
   
   auto GetFrameTitlebarBounds = [&](GdkWindow* aWin) {
@@ -3310,12 +3310,13 @@ void nsWindow::RecomputeBoundsX11() {
     gdk_window_get_frame_extents(aWin, &b);
     if (gtk_check_version(3, 24, 35) &&
         gdk_window_get_window_type(aWin) == GDK_WINDOW_TEMP) {
-      LOGVERBOSE(
+      LOG_WIN(
+          aWindow,
           "  GetFrameTitlebarBounds gtk 3.24.35 & GDK_WINDOW_TEMP workaround");
       
       
       
-      double scale = FractionalScaleFactor();
+      double scale = aWindow->FractionalScaleFactor();
       return DesktopIntRect(int(round(b.x / scale)), int(round(b.y / scale)),
                             int(round(b.width / scale)),
                             int(round(b.height / scale)));
@@ -3323,11 +3324,11 @@ void nsWindow::RecomputeBoundsX11() {
     auto result = DesktopIntRect(b.x, b.y, b.width, b.height);
     if (gtk_check_version(3, 24, 50)) {
       if (auto border = GetXWindowBorder(aWin)) {
-        LOGVERBOSE("  GetFrameTitlebarBounds gtk 3.24.50 workaround");
+        LOG_WIN(aWindow, "  GetFrameTitlebarBounds gtk 3.24.50 workaround");
         
         
         
-        double scale = FractionalScaleFactor();
+        double scale = aWindow->FractionalScaleFactor();
         result.width += 2 * border / scale;
         result.height += 2 * border / scale;
       }
@@ -3338,7 +3339,7 @@ void nsWindow::RecomputeBoundsX11() {
   
   auto GetBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
-    if (IsTopLevelWidget() && aWin == toplevel) {
+    if (aWindow->IsTopLevelWidget() && aWin == toplevel) {
       
       
       gdk_window_get_geometry(aWin, nullptr, nullptr, &b.width, &b.height);
@@ -3352,11 +3353,11 @@ void nsWindow::RecomputeBoundsX11() {
   };
 
   const auto toplevelBoundsWithTitlebar = GetFrameTitlebarBounds(toplevel);
-  const auto toplevelBounds = GetBounds(toplevel);
+  LOG_WIN(aWindow, "  toplevelBoundsWithTitlebar %s",
+          ToString(toplevelBoundsWithTitlebar).c_str());
 
-  LOGVERBOSE("  toplevelBoundsWithTitlebar %s",
-             ToString(toplevelBoundsWithTitlebar).c_str());
-  LOGVERBOSE("  toplevelBounds %s", ToString(toplevelBounds).c_str());
+  const auto toplevelBounds = GetBounds(toplevel);
+  LOG_WIN(aWindow, "  toplevelBounds %s", ToString(toplevelBounds).c_str());
 
   
   const auto systemDecorationOffset = [&] {
@@ -3376,31 +3377,35 @@ void nsWindow::RecomputeBoundsX11() {
     return offset;
   }();
 
+  Bounds result;
   
-  mClientArea = GetBounds(mGdkWindow);
+  result.mClientArea = GetBounds(aWindow->GetGdkWindow());
   
-  mClientArea.MoveBy(systemDecorationOffset);
-  LOGVERBOSE("  mClientArea %s", ToString(mClientArea).c_str());
+  result.mClientArea.MoveBy(systemDecorationOffset);
+  LOG_WIN(aWindow, "  mClientArea %s", ToString(result.mClientArea).c_str());
 
-  if (mClientArea.X() < 0 || mClientArea.Y() < 0 || mClientArea.Width() <= 1 ||
-      mClientArea.Height() <= 1) {
+  if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
+      result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
     
     
-    mClientArea = DesktopIntRect(systemDecorationOffset, toplevelBounds.Size());
+    result.mClientArea =
+        DesktopIntRect(systemDecorationOffset, toplevelBounds.Size());
   }
 
-  mClientMargin =
+  result.mClientMargin =
       DesktopIntRect(DesktopIntPoint(), toplevelBoundsWithTitlebar.Size()) -
-      mClientArea;
-  mClientMargin.EnsureAtLeast(DesktopIntMargin());
+      result.mClientArea;
+  result.mClientMargin.EnsureAtLeast(DesktopIntMargin());
 
   
   
-  mClientArea.MoveBy(toplevelBoundsWithTitlebar.TopLeft());
+  result.mClientArea.MoveBy(toplevelBoundsWithTitlebar.TopLeft());
+  return result;
 }
 #endif
 #ifdef MOZ_WAYLAND
-void nsWindow::RecomputeBoundsWayland() {
+auto nsWindow::Bounds::ComputeWayland(const nsWindow* aWindow) -> Bounds {
+  LOG_WIN(aWindow, "Bounds::ComputeWayland()");
   auto GetBounds = [&](GdkWindow* aWin) {
     GdkRectangle b{0};
     gdk_window_get_position(aWin, &b.x, &b.y);
@@ -3409,26 +3414,40 @@ void nsWindow::RecomputeBoundsWayland() {
     return DesktopIntRect(b.x, b.y, b.width, b.height);
   };
 
-  const auto toplevelBounds = GetBounds(GetToplevelGdkWindow());
-  mClientArea = GetBounds(mGdkWindow);
+  const auto toplevelBounds = GetBounds(aWindow->GetToplevelGdkWindow());
+  LOG_WIN(aWindow, "  toplevelBounds %s", ToString(toplevelBounds).c_str());
+  Bounds result;
+  result.mClientArea = GetBounds(aWindow->GetGdkWindow());
+  LOG_WIN(aWindow, "  bounds %s", ToString(result.mClientArea).c_str());
 
-  LOG("RecomputeBoundsWayland() GetBounds(mGdkWindow) [%d,%d] -> [%d x %d] "
-      "GetBounds(mShell) [%d,%d] -> [%d x %d]",
-      mClientArea.x, mClientArea.y, mClientArea.width, mClientArea.height,
-      toplevelBounds.x, toplevelBounds.y, toplevelBounds.width,
-      toplevelBounds.height);
-
-  if (mClientArea.X() < 0 || mClientArea.Y() < 0 || mClientArea.Width() <= 1 ||
-      mClientArea.Height() <= 1) {
+  if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
+      result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
     
-    mClientArea = toplevelBounds;
+    result.mClientArea = toplevelBounds;
   }
 
-  mClientMargin =
-      DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) - mClientArea;
-  mClientMargin.EnsureAtLeast(DesktopIntMargin());
+  result.mClientMargin =
+      DesktopIntRect(DesktopIntPoint(), toplevelBounds.Size()) -
+      result.mClientArea;
+  result.mClientMargin.EnsureAtLeast(DesktopIntMargin());
+  return result;
 }
 #endif
+
+auto nsWindow::Bounds::Compute(const nsWindow* aWindow) -> Bounds {
+#ifdef MOZ_X11
+  if (GdkIsX11Display()) {
+    return ComputeX11(aWindow);
+  }
+#endif
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    return ComputeWayland(aWindow);
+  }
+#endif
+  MOZ_ASSERT_UNREACHABLE("How?");
+  return {};
+}
 
 void nsWindow::RecomputeBounds(bool aScaleChange) {
   LOG("RecomputeBounds() scale change %d", aScaleChange);
@@ -3439,19 +3458,11 @@ void nsWindow::RecomputeBounds(bool aScaleChange) {
     return;
   }
 
-  const auto oldClientArea = mClientArea;
   const auto oldMargin = mClientMargin;
-
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    RecomputeBoundsX11();
-  }
-#endif
-#ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    RecomputeBoundsWayland();
-  }
-#endif
+  const auto oldClientArea = mClientArea;
+  const auto newBounds = Bounds::Compute(this);
+  mClientArea = newBounds.mClientArea;
+  mClientMargin = newBounds.mClientMargin;
 
   if (IsPopup()) {
     
@@ -9066,7 +9077,7 @@ gint nsWindow::GdkCeiledScaleFactor() {
   return ScreenHelperGTK::GetGTKMonitorScaleFactor();
 }
 
-double nsWindow::FractionalScaleFactor() {
+double nsWindow::FractionalScaleFactor() const {
 #ifdef MOZ_WAYLAND
   if (mSurface) {
     auto scale = mSurface->GetScale();
