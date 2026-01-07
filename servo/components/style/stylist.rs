@@ -21,7 +21,7 @@ use crate::invalidation::element::invalidation_map::{
 use crate::invalidation::media_queries::{
     EffectiveMediaQueryResults, MediaListKey, ToMediaListKey,
 };
-use crate::invalidation::stylesheets::RuleChangeKind;
+use crate::invalidation::stylesheets::{RuleChangeKind, StylesheetInvalidationSet};
 use crate::media_queries::Device;
 use crate::properties::{
     self, AnimationDeclarations, CascadeMode, ComputedValues, FirstLineReparenting,
@@ -34,9 +34,7 @@ use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_collector::RuleCollector;
 use crate::rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
 use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet, SelectorMap, SelectorMapEntry};
-use crate::selector_parser::{
-    NonTSPseudoClass, PerPseudoElementMap, PseudoElement, SelectorImpl, SnapshotMap,
-};
+use crate::selector_parser::{NonTSPseudoClass, PerPseudoElementMap, PseudoElement, SelectorImpl};
 use crate::shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use crate::sharing::{RevalidationResult, ScopeRevalidationResult};
 use crate::stylesheet_set::{DataValidity, DocumentStylesheetSet, SheetRebuildKind};
@@ -49,14 +47,10 @@ use crate::stylesheets::scope_rule::{
     collect_scope_roots, element_is_outside_of_scope, scope_selector_list_is_trivial,
     ImplicitScopeRoot, ScopeRootCandidate, ScopeSubjectMap, ScopeTarget,
 };
-#[cfg(feature = "gecko")]
 use crate::stylesheets::{
-    CounterStyleRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule,
-    PagePseudoClassFlags, PositionTryRule,
-};
-use crate::stylesheets::{
-    CssRule, CssRuleRef, EffectiveRulesIterator, Origin, OriginSet, PageRule, PerOrigin,
-    PerOriginIter, StylesheetContents, StylesheetInDocument,
+    CounterStyleRule, CssRule, CssRuleRef, EffectiveRulesIterator, FontFaceRule,
+    FontFeatureValuesRule, FontPaletteValuesRule, Origin, OriginSet, PagePseudoClassFlags,
+    PageRule, PerOrigin, PerOriginIter, PositionTryRule, StylesheetContents, StylesheetInDocument,
 };
 use crate::stylesheets::{CustomMediaEvaluator, CustomMediaMap};
 use crate::values::specified::position::PositionTryFallbacksItem;
@@ -118,16 +112,7 @@ impl Hash for StylesheetContentsPtr {
 type StyleSheetContentList = Vec<StylesheetContentsPtr>;
 
 
-#[derive(Default)]
-pub struct DocumentFlushResult {
-    
-    pub difference: CascadeDataDifference,
-    
-    pub had_invalidations: bool,
-}
-
-
-#[derive(Default)]
+#[derive(Default, Debug, MallocSizeOf)]
 pub struct CascadeDataDifference {
     
     pub changed_position_try_names: PrecomputedHashSet<Atom>,
@@ -138,6 +123,11 @@ impl CascadeDataDifference {
     pub fn merge_with(&mut self, other: Self) {
         self.changed_position_try_names
             .extend(other.changed_position_try_names.into_iter())
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.changed_position_try_names.is_empty()
     }
 
     fn update(&mut self, old_data: &PositionTryMap, new_data: &PositionTryMap) {
@@ -500,12 +490,12 @@ impl DocumentCascadeData {
         quirks_mode: QuirksMode,
         mut flusher: DocumentStylesheetFlusher<'a, S>,
         guards: &StylesheetGuards,
-    ) -> Result<CascadeDataDifference, AllocErr>
+        difference: &mut CascadeDataDifference,
+    ) -> Result<(), AllocErr>
     where
         S: StylesheetInDocument + PartialEq + 'static,
     {
         
-        let mut difference = CascadeDataDifference::default();
         {
             let origin_flusher = flusher.flush_origin(Origin::UserAgent);
             
@@ -518,7 +508,7 @@ impl DocumentCascadeData {
                     origin_flusher,
                     guards.ua_or_user,
                     &self.user_agent,
-                    &mut difference,
+                    difference,
                 )?;
                 if let Some(new_data) = new_data {
                     self.user_agent = new_data;
@@ -535,7 +525,7 @@ impl DocumentCascadeData {
             quirks_mode,
             flusher.flush_origin(Origin::User),
             guards.ua_or_user,
-            &mut difference,
+            difference,
         )?;
 
         
@@ -544,10 +534,10 @@ impl DocumentCascadeData {
             quirks_mode,
             flusher.flush_origin(Origin::Author),
             guards.author,
-            &mut difference,
+            difference,
         )?;
 
-        Ok(difference)
+        Ok(())
     }
 
     
@@ -1040,39 +1030,29 @@ impl Stylist {
 
     
     
-    pub fn flush<E>(
-        &mut self,
-        guards: &StylesheetGuards,
-        document_element: Option<E>,
-        snapshots: Option<&SnapshotMap>,
-    ) -> DocumentFlushResult
-    where
-        E: TElement,
-    {
+    pub fn flush(&mut self, guards: &StylesheetGuards) -> StylesheetInvalidationSet {
         if !self.stylesheets.has_changed() {
-            return DocumentFlushResult::default();
+            return Default::default();
         }
 
         self.num_rebuilds += 1;
 
-        let flusher = self.stylesheets.flush(document_element, snapshots);
+        let (flusher, mut invalidations) = self.stylesheets.flush();
 
-        let had_invalidations = flusher.had_invalidations();
-
-        let difference = self
-            .cascade_data
-            .rebuild(&self.device, self.quirks_mode, flusher, guards)
+        self.cascade_data
+            .rebuild(
+                &self.device,
+                self.quirks_mode,
+                flusher,
+                guards,
+                &mut invalidations.cascade_data_difference,
+            )
             .unwrap_or_else(|_| {
                 warn!("OOM in Stylist::flush");
-                CascadeDataDifference::default()
             });
 
         self.rebuild_initial_values_for_custom_properties();
-
-        DocumentFlushResult {
-            difference,
-            had_invalidations,
-        }
+        invalidations
     }
 
     

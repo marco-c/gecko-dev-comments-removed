@@ -18,8 +18,11 @@ use crate::selector_map::PrecomputedHashSet;
 use crate::selector_parser::{SelectorImpl, Snapshot, SnapshotMap};
 use crate::shared_lock::SharedRwLockReadGuard;
 use crate::simple_buckets_map::SimpleBucketsMap;
-use crate::stylesheets::{CssRule, CssRuleRef, CustomMediaMap, StylesheetInDocument};
-use crate::stylesheets::{EffectiveRules, EffectiveRulesIterator};
+use crate::stylesheets::{
+    CssRule, CssRuleRef, CustomMediaMap, EffectiveRules, EffectiveRulesIterator,
+    StylesheetInDocument,
+};
+use crate::stylist::CascadeDataDifference;
 use crate::values::specified::position::PositionTryFallbacksItem;
 use crate::values::AtomIdent;
 use crate::Atom;
@@ -39,6 +42,8 @@ pub enum RuleChangeKind {
     Removal,
     
     StyleRuleDeclarations,
+    
+    PositionTryDeclarations,
 }
 
 
@@ -105,7 +110,10 @@ impl InvalidationKind {
 #[derive(Debug, Default, MallocSizeOf)]
 pub struct StylesheetInvalidationSet {
     buckets: SimpleBucketsMap<InvalidationKind>,
-    fully_invalid: bool,
+    style_fully_invalid: bool,
+    
+    
+    pub cascade_data_difference: CascadeDataDifference,
 }
 
 impl StylesheetInvalidationSet {
@@ -117,18 +125,10 @@ impl StylesheetInvalidationSet {
     
     pub fn invalidate_fully(&mut self) {
         debug!("StylesheetInvalidationSet::invalidate_fully");
-        self.clear();
-        self.fully_invalid = true;
+        self.buckets.clear();
+        self.style_fully_invalid = true;
     }
 
-    fn shrink_if_needed(&mut self) {
-        if self.fully_invalid {
-            return;
-        }
-        self.buckets.shrink_if_needed();
-    }
-
-    
     
     
     pub fn collect_invalidations_for<S>(
@@ -141,7 +141,7 @@ impl StylesheetInvalidationSet {
         S: StylesheetInDocument,
     {
         debug!("StylesheetInvalidationSet::collect_invalidations_for");
-        if self.fully_invalid {
+        if self.style_fully_invalid {
             debug!(" > Fully invalid already");
             return;
         }
@@ -167,12 +167,10 @@ impl StylesheetInvalidationSet {
                 
                 &[],
             );
-            if self.fully_invalid {
+            if self.style_fully_invalid {
                 break;
             }
         }
-
-        self.shrink_if_needed();
 
         debug!(
             " > resulting class invalidations: {:?}",
@@ -183,33 +181,14 @@ impl StylesheetInvalidationSet {
             " > resulting local name invalidations: {:?}",
             self.buckets.local_names
         );
-        debug!(" > fully_invalid: {}", self.fully_invalid);
-    }
-
-    
-    
-    
-    
-    pub fn flush<E>(&mut self, document_element: Option<E>, snapshots: Option<&SnapshotMap>) -> bool
-    where
-        E: TElement,
-    {
-        debug!(
-            "Stylist::flush({:?}, snapshots: {})",
-            document_element,
-            snapshots.is_some()
-        );
-        let have_invalidations = match document_element {
-            Some(e) => self.process_invalidations(e, snapshots),
-            None => false,
-        };
-        self.clear();
-        have_invalidations
+        debug!(" > style_fully_invalid: {}", self.style_fully_invalid);
     }
 
     
     pub fn is_empty(&self) -> bool {
-        !self.fully_invalid && self.buckets.is_empty()
+        !self.style_fully_invalid
+            && self.buckets.is_empty()
+            && self.cascade_data_difference.is_empty()
     }
 
     fn invalidation_kind_for<E>(
@@ -221,7 +200,7 @@ impl StylesheetInvalidationSet {
     where
         E: TElement,
     {
-        debug_assert!(!self.fully_invalid);
+        debug_assert!(!self.style_fully_invalid);
 
         let mut kind = InvalidationKind::None;
 
@@ -269,38 +248,36 @@ impl StylesheetInvalidationSet {
     }
 
     
-    pub fn clear(&mut self) {
-        self.buckets.clear();
-        self.fully_invalid = false;
-        debug_assert!(self.is_empty());
-    }
-
-    fn process_invalidations<E>(&self, element: E, snapshots: Option<&SnapshotMap>) -> bool
+    
+    pub fn process_style<E>(&self, root: E, snapshots: Option<&SnapshotMap>) -> bool
     where
         E: TElement,
     {
-        debug!("Stylist::process_invalidations({:?}, {:?})", element, self);
+        debug!(
+            "StylesheetInvalidationSet::process_style({root:?}, snapshots: {})",
+            snapshots.is_some()
+        );
 
         {
-            let mut data = match element.mutate_data() {
+            let mut data = match root.mutate_data() {
                 Some(data) => data,
                 None => return false,
             };
 
-            if self.fully_invalid {
-                debug!("process_invalidations: fully_invalid({:?})", element);
+            if self.style_fully_invalid {
+                debug!("process_invalidations: fully_invalid({:?})", root);
                 data.hint.insert(RestyleHint::restyle_subtree());
                 return true;
             }
         }
 
-        if self.is_empty() {
+        if self.buckets.is_empty() {
             debug!("process_invalidations: empty invalidation set");
             return false;
         }
 
-        let quirks_mode = element.as_node().owner_doc().quirks_mode();
-        self.process_invalidations_in_subtree(element, snapshots, quirks_mode)
+        let quirks_mode = root.as_node().owner_doc().quirks_mode();
+        self.process_invalidations_in_subtree(root, snapshots, quirks_mode)
     }
 
     
@@ -539,10 +516,6 @@ impl StylesheetInvalidationSet {
         S: StylesheetInDocument,
     {
         debug!("StylesheetInvalidationSet::rule_changed");
-        if self.fully_invalid {
-            return;
-        }
-
         if !stylesheet.enabled() || !stylesheet.is_effective_for_device(device, custom_media, guard)
         {
             debug!(" > Stylesheet was not effective");
@@ -554,6 +527,24 @@ impl StylesheetInvalidationSet {
             .any(|r| !EffectiveRules::is_effective(guard, device, quirks_mode, custom_media, r))
         {
             debug!(" > Ancestor rules not effective");
+            return;
+        }
+
+        if change_kind == RuleChangeKind::PositionTryDeclarations {
+            
+            
+            match *rule {
+                CssRule::PositionTry(ref pt) => {
+                    self.cascade_data_difference
+                        .changed_position_try_names
+                        .insert(pt.read_with(guard).name.0.clone());
+                },
+                _ => debug_assert!(false, "how did position-try decls change on anything else?"),
+            }
+            return;
+        }
+
+        if self.style_fully_invalid {
             return;
         }
 
@@ -570,7 +561,7 @@ impl StylesheetInvalidationSet {
             is_generic_change,
             ancestors,
         );
-        if self.fully_invalid {
+        if self.style_fully_invalid {
             return;
         }
 
@@ -597,7 +588,7 @@ impl StylesheetInvalidationSet {
                 
                 &[],
             );
-            if self.fully_invalid {
+            if self.style_fully_invalid {
                 break;
             }
         }
@@ -615,7 +606,7 @@ impl StylesheetInvalidationSet {
     ) {
         use crate::stylesheets::CssRule::*;
         debug!("StylesheetInvalidationSet::collect_invalidations_for_rule");
-        debug_assert!(!self.fully_invalid, "Not worth being here!");
+        debug_assert!(!self.style_fully_invalid, "Not worth being here!");
 
         match *rule {
             Style(ref lock) => {
@@ -631,7 +622,7 @@ impl StylesheetInvalidationSet {
                 let style_rule = lock.read_with(guard);
                 for selector in style_rule.selectors.slice() {
                     self.collect_invalidations(selector, quirks_mode);
-                    if self.fully_invalid {
+                    if self.style_fully_invalid {
                         return;
                     }
                 }
