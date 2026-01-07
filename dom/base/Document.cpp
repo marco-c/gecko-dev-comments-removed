@@ -18402,7 +18402,10 @@ static void PropagateUserGestureActivationBetweenPiP(
     
     
     nsPIDOMWindowOuter* outer = currentBC->Top()->GetDOMWindow();
-    NS_ENSURE_TRUE_VOID(outer);
+    if (!outer) {
+      
+      return;
+    }
     nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
     NS_ENSURE_TRUE_VOID(inner);
     DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
