@@ -23,7 +23,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
-#include "nsCOMPtr.h"
 #include "nsCSSRendering.h"
 #include "nsContentUtils.h"
 #include "nsDeviceContext.h"
@@ -97,16 +96,10 @@ class nsGlyphTable {
       gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) = 0;
 
  protected:
-  nsGlyphTable() : mCharCache(0), mFlags(gfx::ShapedTextFlags()) {}
-  explicit nsGlyphTable(gfx::ShapedTextFlags aFlags)
-      : mCharCache(0), mFlags(aFlags) {}
-
   
   
   
-  char16_t mCharCache;
-
-  gfx::ShapedTextFlags mFlags;
+  char16_t mCharCache = 0;
 };
 
 
@@ -174,9 +167,7 @@ static const UnicodeConstruction gUnicodeTableConstructions[] = {
 
 class nsUnicodeTable final : public nsGlyphTable {
  public:
-  nsUnicodeTable() { MOZ_COUNT_CTOR(nsUnicodeTable); }
-
-  MOZ_COUNTED_DTOR(nsUnicodeTable)
+  constexpr nsUnicodeTable() = default;
 
   const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const override {
     MOZ_ASSERT_UNREACHABLE();
@@ -218,6 +209,10 @@ class nsUnicodeTable final : public nsGlyphTable {
       gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) override;
 
  private:
+  
+  void* operator new(size_t) = delete;
+  void* operator new[](size_t) = delete;
+
   struct UnicodeConstructionComparator {
     int operator()(const UnicodeConstruction& aValue) const {
       if (mTarget < aValue[0]) {
@@ -232,8 +227,10 @@ class nsUnicodeTable final : public nsGlyphTable {
         : mTarget(aTarget) {}
     const char16_t mTarget;
   };
-  size_t mCachedIndex;
+  size_t mCachedIndex = 0;
 };
+
+static constinit nsUnicodeTable gUnicodeTable;
 
 
 nsGlyphCode nsUnicodeTable::ElementAt(DrawTarget* ,
@@ -272,7 +269,7 @@ already_AddRefed<gfxTextRun> nsUnicodeTable::MakeTextRun(
   NS_ASSERTION(!aGlyph.isGlyphID,
                "nsUnicodeTable can only access glyphs by code point");
   return aFontGroup->MakeTextRun(&aGlyph.code, 1, aDrawTarget,
-                                 aAppUnitsPerDevPixel, mFlags,
+                                 aAppUnitsPerDevPixel, gfx::ShapedTextFlags(),
                                  nsTextFrameUtils::Flags(), nullptr);
 }
 
@@ -321,12 +318,13 @@ class nsOpenTypeTable final : public nsGlyphTable {
   RefPtr<gfxFont> mFont;
   nsCString mFontFamilyName;
   uint32_t mGlyphID;
+  gfx::ShapedTextFlags mFlags;
 
   nsOpenTypeTable(gfxFont* aFont, gfx::ShapedTextFlags aFlags)
-      : nsGlyphTable(aFlags),
-        mFont(aFont),
+      : mFont(aFont),
         mFontFamilyName(aFont->GetFontEntry()->FamilyName()),
-        mGlyphID(0) {
+        mGlyphID(0),
+        mFlags(aFlags) {
     MOZ_COUNT_CTOR(nsOpenTypeTable);
   }
 
@@ -441,96 +439,6 @@ already_AddRefed<gfxTextRun> nsOpenTypeTable::MakeTextRun(
 
 
 
-
-
-
-
-class nsGlyphTableList final : public nsIObserver {
- public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
-
-  nsUnicodeTable mUnicodeTable;
-
-  nsGlyphTableList() {}
-
-  nsresult Initialize();
-  nsresult Finalize();
-
- private:
-  ~nsGlyphTableList() = default;
-};
-
-NS_IMPL_ISUPPORTS(nsGlyphTableList, nsIObserver)
-
-
-
-static nsGlyphTableList* gGlyphTableList = nullptr;
-
-static bool gGlyphTableInitialized = false;
-
-
-NS_IMETHODIMP
-nsGlyphTableList::Observe(nsISupports* aSubject, const char* aTopic,
-                          const char16_t* someData) {
-  Finalize();
-  return NS_OK;
-}
-
-
-nsresult nsGlyphTableList::Initialize() {
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (!obs) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-
-nsresult nsGlyphTableList::Finalize() {
-  
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs) {
-    rv = obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
-  } else {
-    rv = NS_ERROR_FAILURE;
-  }
-
-  gGlyphTableInitialized = false;
-  
-  NS_IF_RELEASE(gGlyphTableList);
-  return rv;
-}
-
-
-
-static nsresult InitCharGlobals() {
-  NS_ASSERTION(!gGlyphTableInitialized, "Error -- already initialized");
-  gGlyphTableInitialized = true;
-
-  
-  nsresult rv = NS_ERROR_OUT_OF_MEMORY;
-  auto glyphTableList = MakeRefPtr<nsGlyphTableList>();
-  if (glyphTableList) {
-    rv = glyphTableList->Initialize();
-  }
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  
-  
-  glyphTableList.forget(&gGlyphTableList);
-  return rv;
-}
-
-
-
-
 nsMathMLChar::~nsMathMLChar() { MOZ_COUNT_DTOR(nsMathMLChar); }
 
 ComputedStyle* nsMathMLChar::GetComputedStyle() const {
@@ -544,16 +452,13 @@ void nsMathMLChar::SetComputedStyle(ComputedStyle* aComputedStyle) {
 }
 
 void nsMathMLChar::SetData(nsString& aData) {
-  if (!gGlyphTableInitialized) {
-    InitCharGlobals();
-  }
   mData = aData;
   
   
   mDirection = NS_STRETCH_DIRECTION_UNSUPPORTED;
   mBoundingMetrics = nsBoundingMetrics();
   
-  if (gGlyphTableList && (1 == mData.Length())) {
+  if (1 == mData.Length()) {
     mDirection = nsMathMLOperators::GetStretchyDirection(mData);
     
     
@@ -758,7 +663,7 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
     
     
     const bool shouldSetFont = [&] {
-      if (aGlyphTable == &gGlyphTableList->mUnicodeTable) {
+      if (aGlyphTable == &gUnicodeTable) {
         return true;
       }
 
@@ -1034,7 +939,7 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
 
   
   
-  if (aGlyphTable == &gGlyphTableList->mUnicodeTable) {
+  if (aGlyphTable == &gUnicodeTable) {
     gfxFont* unicodeFont = nullptr;
     for (int32_t i = 0; i < 4; i++) {
       if (!textRun[i]) {
@@ -1189,20 +1094,19 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
 
   
   UniquePtr<nsOpenTypeTable> openTypeTable;
-  nsGlyphTable* glyphTable;
-  if (aFamily.IsGeneric()) {
-    
-    glyphTable = &gGlyphTableList->mUnicodeTable;
-  } else {
-    
-    RefPtr<gfxFont> font = fontGroup->GetFirstValidFont();
-    openTypeTable = nsOpenTypeTable::Create(font, aFlags);
-    if (openTypeTable) {
-      glyphTable = openTypeTable.get();
-    } else {
-      glyphTable = &gGlyphTableList->mUnicodeTable;
+  auto glyphTable = [&aFamily, &fontGroup, &openTypeTable,
+                     &aFlags]() -> nsGlyphTable* {
+    if (!aFamily.IsGeneric()) {
+      
+      RefPtr<gfxFont> font = fontGroup->GetFirstValidFont();
+      openTypeTable = nsOpenTypeTable::Create(font, aFlags);
+      if (openTypeTable) {
+        return openTypeTable.get();
+      }
     }
-  }
+    
+    return &gUnicodeTable;
+  }();
 
   if (!openTypeTable) {
     
@@ -1216,8 +1120,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
   
   
   const StyleFontFamilyList& familyList =
-      glyphTable == &gGlyphTableList->mUnicodeTable ? context->mFamilyList
-                                                    : family;
+      glyphTable == &gUnicodeTable ? context->mFamilyList : family;
 
   return (context->mTryVariants &&
           context->TryVariants(glyphTable, &fontGroup, familyList, aRtl)) ||
