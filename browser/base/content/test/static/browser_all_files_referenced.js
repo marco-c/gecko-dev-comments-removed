@@ -203,9 +203,6 @@ var allowlist = [
   { file: "resource://gre/greprefs.js" },
 
   
-  { file: "resource://gre/res/fonts/mathfontUnicode.properties" },
-
-  
   { file: "resource://gre/localization/en-US/toolkit/global/cspErrors.ftl" },
 
   
