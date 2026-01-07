@@ -10,8 +10,8 @@ do_get_profile();
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
-const { InsightsManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/InsightsManager.sys.mjs"
+const { MemoriesManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs"
 );
 const {
   CATEGORIES,
@@ -19,28 +19,28 @@ const {
   HISTORY: SOURCE_HISTORY,
   CONVERSATION: SOURCE_CONVERSATION,
 } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/InsightsConstants.sys.mjs"
+  "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
 );
-const { getFormattedInsightAttributeList } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Insights.sys.mjs"
+const { getFormattedMemoryAttributeList } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs"
 );
-const { InsightStore } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/services/InsightStore.sys.mjs"
+const { MemoryStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
 );
 
 
 
 
 const TEST_MESSAGE = "Remember I like coffee.";
-const TEST_INSIGHTS = [
+const TEST_MEMORIES = [
   {
-    insight_summary: "Loves drinking coffee",
+    memory_summary: "Loves drinking coffee",
     category: "Food & Drink",
     intent: "Plan / Organize",
     score: 3,
   },
   {
-    insight_summary: "Buys dog food online",
+    memory_summary: "Buys dog food online",
     category: "Pets & Animals",
     intent: "Buy / Acquire",
     score: 4,
@@ -61,20 +61,20 @@ const MODEL = "fake-model";
 
 
 
-async function deleteAllInsights() {
-  const insights = await InsightStore.getInsights({ includeSoftDeleted: true });
-  for (const insight of insights) {
-    await InsightStore.hardDeleteInsight(insight.id);
+async function deleteAllMemories() {
+  const memories = await MemoryStore.getMemories({ includeSoftDeleted: true });
+  for (const memory of memories) {
+    await MemoryStore.hardDeleteMemory(memory.id);
   }
 }
 
 
 
 
-async function addInsights() {
-  await deleteAllInsights();
-  for (const insight of TEST_INSIGHTS) {
-    await InsightStore.addInsight(insight);
+async function addMemories() {
+  await deleteAllMemories();
+  for (const memory of TEST_MEMORIES) {
+    await MemoryStore.addMemory(memory);
   }
 }
 
@@ -122,7 +122,7 @@ add_task(async function test_getAggregatedBrowserHistory() {
 
   
   const [domainItems, titleItems, searchItems] =
-    await InsightsManager.getAggregatedBrowserHistory();
+    await MemoriesManager.getAggregatedBrowserHistory();
   Assert.ok(Array.isArray(domainItems), "Domain items should be an array");
   Assert.ok(Array.isArray(titleItems), "Title items should be an array");
   Assert.ok(Array.isArray(searchItems), "Search items should be an array");
@@ -154,219 +154,219 @@ add_task(async function test_getAggregatedBrowserHistory() {
 
 
 
-add_task(async function test_getAllInsights() {
-  await addInsights();
+add_task(async function test_getAllMemories() {
+  await addMemories();
 
-  const insights = await InsightsManager.getAllInsights();
+  const memories = await MemoriesManager.getAllMemories();
 
   
   Assert.equal(
-    insights.length,
-    TEST_INSIGHTS.length,
-    "Should retrieve all stored insights."
+    memories.length,
+    TEST_MEMORIES.length,
+    "Should retrieve all stored memories."
   );
 
   
-  const testInsightsSummaries = TEST_INSIGHTS.map(
-    insight => insight.insight_summary
+  const testMemoriesSummaries = TEST_MEMORIES.map(
+    memory => memory.memory_summary
   );
-  const retrievedInsightsSummaries = insights.map(
-    insight => insight.insight_summary
+  const retrievedMemoriesSummaries = memories.map(
+    memory => memory.memory_summary
   );
-  retrievedInsightsSummaries.forEach(insightSummary => {
+  retrievedMemoriesSummaries.forEach(memorySummary => {
     Assert.ok(
-      testInsightsSummaries.includes(insightSummary),
-      `Insight summary "${insightSummary}" should be in the test insights.`
+      testMemoriesSummaries.includes(memorySummary),
+      `Memory summary "${memorySummary}" should be in the test memories.`
     );
   });
 
-  await deleteAllInsights();
+  await deleteAllMemories();
 });
 
 
 
 
-add_task(async function test_softDeleteInsightById() {
-  await addInsights();
+add_task(async function test_softDeleteMemoryById() {
+  await addMemories();
 
   
-  const insightsBeforeSoftDelete = await InsightsManager.getAllInsights();
+  const memoriesBeforeSoftDelete = await MemoriesManager.getAllMemories();
 
   
-  const insightBeforeSoftDelete = insightsBeforeSoftDelete[0];
+  const memoryBeforeSoftDelete = memoriesBeforeSoftDelete[0];
 
   
   Assert.equal(
-    insightBeforeSoftDelete.is_deleted,
+    memoryBeforeSoftDelete.is_deleted,
     false,
-    "Insight should not be soft deleted initially."
+    "Memory should not be soft deleted initially."
   );
 
   
-  const insightAfterSoftDelete = await InsightsManager.softDeleteInsightById(
-    insightBeforeSoftDelete.id
+  const memoryAfterSoftDelete = await MemoriesManager.softDeleteMemoryById(
+    memoryBeforeSoftDelete.id
   );
 
   
   Assert.equal(
-    insightAfterSoftDelete.is_deleted,
+    memoryAfterSoftDelete.is_deleted,
     true,
-    "Insight should be soft deleted after calling softDeleteInsightById."
+    "Memory should be soft deleted after calling softDeleteMemoryById."
   );
 
   
-  const insightsAfterSoftDelete = await InsightsManager.getAllInsights({
+  const memoriesAfterSoftDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
-  const softDeletedInsights = insightsAfterSoftDelete.filter(
-    insight => insight.is_deleted
+  const softDeletedMemories = memoriesAfterSoftDelete.filter(
+    memory => memory.is_deleted
   );
   Assert.equal(
-    softDeletedInsights.length,
+    softDeletedMemories.length,
     1,
-    "There should be one soft deleted insight."
+    "There should be one soft deleted memory."
   );
 
-  await deleteAllInsights();
+  await deleteAllMemories();
 });
 
 
 
 
-add_task(async function test_softDeleteInsightById_not_found() {
-  await addInsights();
+add_task(async function test_softDeleteMemoryById_not_found() {
+  await addMemories();
 
   
-  const insightsBeforeSoftDelete = await InsightsManager.getAllInsights({
+  const memoriesBeforeSoftDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
 
   
-  const softDeletedInsightsBefore = insightsBeforeSoftDelete.filter(
-    insight => insight.is_deleted
+  const softDeletedMemoriesBefore = memoriesBeforeSoftDelete.filter(
+    memory => memory.is_deleted
   );
   Assert.equal(
-    softDeletedInsightsBefore.length,
+    softDeletedMemoriesBefore.length,
     0,
-    "There should be no soft deleted insights initially."
+    "There should be no soft deleted memories initially."
   );
 
   
-  const insightAfterSoftDelete =
-    await InsightsManager.softDeleteInsightById("non-existent-id");
+  const memoryAfterSoftDelete =
+    await MemoriesManager.softDeleteMemoryById("non-existent-id");
 
   
   Assert.equal(
-    insightAfterSoftDelete,
+    memoryAfterSoftDelete,
     null,
-    "softDeleteInsightById should return null for non-existent insight ID."
+    "softDeleteMemoryById should return null for non-existent memory ID."
   );
 
   
-  const insightsAfterSoftDelete = await InsightsManager.getAllInsights({
+  const memoriesAfterSoftDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
-  const softDeletedInsightsAfter = insightsAfterSoftDelete.filter(
-    insight => insight.is_deleted
+  const softDeletedMemoriesAfter = memoriesAfterSoftDelete.filter(
+    memory => memory.is_deleted
   );
   Assert.equal(
-    softDeletedInsightsAfter.length,
+    softDeletedMemoriesAfter.length,
     0,
-    "There should be no soft deleted insights after attempting to delete a non-existent insight."
+    "There should be no soft deleted memories after attempting to delete a non-existent memory."
   );
 
-  await deleteAllInsights();
+  await deleteAllMemories();
 });
 
 
 
 
-add_task(async function test_hardDeleteInsightById() {
-  await addInsights();
+add_task(async function test_hardDeleteMemoryById() {
+  await addMemories();
 
   
-  const insightsBeforeHardDelete = await InsightsManager.getAllInsights({
+  const memoriesBeforeHardDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
 
   
-  const insightBeforeHardDelete = insightsBeforeHardDelete[0];
+  const memoryBeforeHardDelete = memoriesBeforeHardDelete[0];
 
   
-  const deletionResult = await InsightsManager.hardDeleteInsightById(
-    insightBeforeHardDelete.id
+  const deletionResult = await MemoriesManager.hardDeleteMemoryById(
+    memoryBeforeHardDelete.id
   );
 
   
   Assert.ok(
     deletionResult,
-    "hardDeleteInsightById should return true on successful deletion."
+    "hardDeleteMemoryById should return true on successful deletion."
   );
 
   
-  const insightsAfterHardDelete = await InsightsManager.getAllInsights({
+  const memoriesAfterHardDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
   Assert.equal(
-    insightsAfterHardDelete.length,
-    insightsBeforeHardDelete.length - 1,
-    "There should be one fewer insight after hard deletion."
+    memoriesAfterHardDelete.length,
+    memoriesBeforeHardDelete.length - 1,
+    "There should be one fewer memory after hard deletion."
   );
 
-  await deleteAllInsights();
+  await deleteAllMemories();
 });
 
 
 
 
-add_task(async function test_hardDeleteInsightById_not_found() {
-  await addInsights();
+add_task(async function test_hardDeleteMemoryById_not_found() {
+  await addMemories();
 
   
-  const insightsBeforeHardDelete = await InsightsManager.getAllInsights({
+  const memoriesBeforeHardDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
 
   
   const deletionResult =
-    await InsightsManager.hardDeleteInsightById("non-existent-id");
+    await MemoriesManager.hardDeleteMemoryById("non-existent-id");
 
   
   Assert.ok(
     !deletionResult,
-    "hardDeleteInsightById should return false for non-existent insight ID."
+    "hardDeleteMemoryById should return false for non-existent memory ID."
   );
 
   
-  const insightsAfterHardDelete = await InsightsManager.getAllInsights({
+  const memoriesAfterHardDelete = await MemoriesManager.getAllMemories({
     includeSoftDeleted: true,
   });
   Assert.equal(
-    insightsAfterHardDelete.length,
-    insightsBeforeHardDelete.length,
-    "Insight count before and after failed hard deletion should be the same."
+    memoriesAfterHardDelete.length,
+    memoriesBeforeHardDelete.length,
+    "Memory count before and after failed hard deletion should be the same."
   );
 
-  await deleteAllInsights();
+  await deleteAllMemories();
 });
 
 
 
 
-add_task(async function test_buildMessageInsightClassificationPrompt() {
+add_task(async function test_buildMessageMemoryClassificationPrompt() {
   const prompt =
-    await InsightsManager.buildMessageInsightClassificationPrompt(TEST_MESSAGE);
+    await MemoriesManager.buildMessageMemoryClassificationPrompt(TEST_MESSAGE);
 
   Assert.ok(
     prompt.includes(TEST_MESSAGE),
     "Prompt should include the original message."
   );
   Assert.ok(
-    prompt.includes(getFormattedInsightAttributeList(CATEGORIES)),
+    prompt.includes(getFormattedMemoryAttributeList(CATEGORIES)),
     "Prompt should include formatted categories."
   );
   Assert.ok(
-    prompt.includes(getFormattedInsightAttributeList(INTENTS)),
+    prompt.includes(getFormattedMemoryAttributeList(INTENTS)),
     "Prompt should include formatted intents."
   );
 });
@@ -374,7 +374,7 @@ add_task(async function test_buildMessageInsightClassificationPrompt() {
 
 
 
-add_task(async function test_insightClassifyMessage_happy_path() {
+add_task(async function test_memoryClassifyMessage_happy_path() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
@@ -389,10 +389,10 @@ add_task(async function test_insightClassifyMessage_happy_path() {
     };
 
     const stub = sb
-      .stub(InsightsManager, "ensureOpenAIEngine")
+      .stub(MemoriesManager, "ensureOpenAIEngine")
       .returns(fakeEngine);
     const messageClassification =
-      await InsightsManager.insightClassifyMessage(TEST_MESSAGE);
+      await MemoriesManager.memoryClassifyMessage(TEST_MESSAGE);
     
     Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
 
@@ -425,7 +425,7 @@ add_task(async function test_insightClassifyMessage_happy_path() {
 
 
 
-add_task(async function test_insightClassifyMessage_sad_path_empty_output() {
+add_task(async function test_memoryClassifyMessage_sad_path_empty_output() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
@@ -437,10 +437,10 @@ add_task(async function test_insightClassifyMessage_sad_path_empty_output() {
     };
 
     const stub = sb
-      .stub(InsightsManager, "ensureOpenAIEngine")
+      .stub(MemoriesManager, "ensureOpenAIEngine")
       .returns(fakeEngine);
     const messageClassification =
-      await InsightsManager.insightClassifyMessage(TEST_MESSAGE);
+      await MemoriesManager.memoryClassifyMessage(TEST_MESSAGE);
     
     Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
 
@@ -473,7 +473,7 @@ add_task(async function test_insightClassifyMessage_sad_path_empty_output() {
 
 
 
-add_task(async function test_insightClassifyMessage_sad_path_bad_schema() {
+add_task(async function test_memoryClassifyMessage_sad_path_bad_schema() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
@@ -487,10 +487,10 @@ add_task(async function test_insightClassifyMessage_sad_path_bad_schema() {
     };
 
     const stub = sb
-      .stub(InsightsManager, "ensureOpenAIEngine")
+      .stub(MemoriesManager, "ensureOpenAIEngine")
       .returns(fakeEngine);
     const messageClassification =
-      await InsightsManager.insightClassifyMessage(TEST_MESSAGE);
+      await MemoriesManager.memoryClassifyMessage(TEST_MESSAGE);
     
     Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
 
@@ -523,9 +523,9 @@ add_task(async function test_insightClassifyMessage_sad_path_bad_schema() {
 
 
 
-add_task(async function test_getRelevantInsights_happy_path() {
+add_task(async function test_getRelevantMemories_happy_path() {
   
-  await addInsights();
+  await addMemories();
 
   const sb = sinon.createSandbox();
   try {
@@ -541,28 +541,28 @@ add_task(async function test_getRelevantInsights_happy_path() {
     };
 
     const stub = sb
-      .stub(InsightsManager, "ensureOpenAIEngine")
+      .stub(MemoriesManager, "ensureOpenAIEngine")
       .returns(fakeEngine);
-    const relevantInsights =
-      await InsightsManager.getRelevantInsights(TEST_MESSAGE);
+    const relevantMemories =
+      await MemoriesManager.getRelevantMemories(TEST_MESSAGE);
     
     Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
 
     
-    Assert.ok(Array.isArray(relevantInsights), "Result should be an array.");
+    Assert.ok(Array.isArray(relevantMemories), "Result should be an array.");
     Assert.equal(
-      relevantInsights.length,
+      relevantMemories.length,
       1,
-      "Result should contain one relevant insight."
+      "Result should contain one relevant memory."
     );
     Assert.equal(
-      relevantInsights[0].insight_summary,
+      relevantMemories[0].memory_summary,
       "Loves drinking coffee",
-      "Relevant insight summary should match."
+      "Relevant memory summary should match."
     );
 
     
-    await deleteAllInsights();
+    await deleteAllMemories();
   } finally {
     sb.restore();
   }
@@ -575,16 +575,16 @@ add_task(async function test_getRelevantInsights_happy_path() {
 
 
 add_task(
-  async function test_getRelevantInsights_sad_path_no_existing_insights() {
-    const relevantInsights =
-      await InsightsManager.getRelevantInsights(TEST_MESSAGE);
+  async function test_getRelevantMemories_sad_path_no_existing_memories() {
+    const relevantMemories =
+      await MemoriesManager.getRelevantMemories(TEST_MESSAGE);
 
     
-    Assert.ok(Array.isArray(relevantInsights), "Result should be an array.");
+    Assert.ok(Array.isArray(relevantMemories), "Result should be an array.");
     Assert.equal(
-      relevantInsights.length,
+      relevantMemories.length,
       0,
-      "Result should be an empty array when there are no existing insights."
+      "Result should be an empty array when there are no existing memories."
     );
   }
 );
@@ -593,9 +593,9 @@ add_task(
 
 
 add_task(
-  async function test_getRelevantInsights_sad_path_null_classification() {
+  async function test_getRelevantMemories_sad_path_null_classification() {
     
-    await addInsights();
+    await addMemories();
 
     const sb = sinon.createSandbox();
     try {
@@ -611,23 +611,23 @@ add_task(
       };
 
       const stub = sb
-        .stub(InsightsManager, "ensureOpenAIEngine")
+        .stub(MemoriesManager, "ensureOpenAIEngine")
         .returns(fakeEngine);
-      const relevantInsights =
-        await InsightsManager.getRelevantInsights(TEST_MESSAGE);
+      const relevantMemories =
+        await MemoriesManager.getRelevantMemories(TEST_MESSAGE);
       
       Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
 
       
-      Assert.ok(Array.isArray(relevantInsights), "Result should be an array.");
+      Assert.ok(Array.isArray(relevantMemories), "Result should be an array.");
       Assert.equal(
-        relevantInsights.length,
+        relevantMemories.length,
         0,
         "Result should be an empty array when category is null."
       );
 
       
-      await deleteAllInsights();
+      await deleteAllMemories();
     } finally {
       sb.restore();
     }
@@ -638,9 +638,9 @@ add_task(
 
 
 add_task(
-  async function test_getRelevantInsights_sad_path_no_insights_in_message_category() {
+  async function test_getRelevantMemories_sad_path_no_memories_in_message_category() {
     
-    await addInsights();
+    await addMemories();
 
     const sb = sinon.createSandbox();
     try {
@@ -656,23 +656,23 @@ add_task(
       };
 
       const stub = sb
-        .stub(InsightsManager, "ensureOpenAIEngine")
+        .stub(MemoriesManager, "ensureOpenAIEngine")
         .returns(fakeEngine);
-      const relevantInsights =
-        await InsightsManager.getRelevantInsights(TEST_MESSAGE);
+      const relevantMemories =
+        await MemoriesManager.getRelevantMemories(TEST_MESSAGE);
       
       Assert.ok(stub.calledOnce, "ensureOpenAIEngine should be called once");
 
       
-      Assert.ok(Array.isArray(relevantInsights), "Result should be an array.");
+      Assert.ok(Array.isArray(relevantMemories), "Result should be an array.");
       Assert.equal(
-        relevantInsights.length,
+        relevantMemories.length,
         0,
-        "Result should be an empty array when no insights match the message category."
+        "Result should be an empty array when no memories match the message category."
       );
 
       
-      await deleteAllInsights();
+      await deleteAllMemories();
     } finally {
       sb.restore();
     }
@@ -682,21 +682,21 @@ add_task(
 
 
 
-add_task(async function test_saveInsights_history_updates_meta() {
+add_task(async function test_saveMemories_history_updates_meta() {
   const sb = sinon.createSandbox();
   try {
     const now = Date.now();
 
-    const generatedInsights = [
+    const generatedMemories = [
       {
-        insight_summary: "foo",
+        memory_summary: "foo",
         category: "A",
         intent: "X",
         score: 1,
         updated_at: now - 1000,
       },
       {
-        insight_summary: "bar",
+        memory_summary: "bar",
         category: "B",
         intent: "Y",
         score: 2,
@@ -704,38 +704,38 @@ add_task(async function test_saveInsights_history_updates_meta() {
       },
     ];
 
-    const storedInsights = generatedInsights.map((generatedInsight, idx) => ({
+    const storedMemories = generatedMemories.map((generatedMemory, idx) => ({
       id: `id-${idx}`,
-      ...generatedInsight,
+      ...generatedMemory,
     }));
 
-    const addInsightStub = sb
-      .stub(InsightStore, "addInsight")
+    const addMemoryStub = sb
+      .stub(MemoryStore, "addMemory")
       .callsFake(async partial => {
         
-        return storedInsights.find(
-          s => s.insight_summary === partial.insight_summary
+        return storedMemories.find(
+          s => s.memory_summary === partial.memory_summary
         );
       });
 
-    const updateMetaStub = sb.stub(InsightStore, "updateMeta").resolves();
+    const updateMetaStub = sb.stub(MemoryStore, "updateMeta").resolves();
 
-    const { persistedInsights, newTimestampMs } =
-      await InsightsManager.saveInsights(
-        generatedInsights,
+    const { persistedMemories, newTimestampMs } =
+      await MemoriesManager.saveMemories(
+        generatedMemories,
         SOURCE_HISTORY,
         now
       );
 
     Assert.equal(
-      addInsightStub.callCount,
-      generatedInsights.length,
-      "addInsight should be called once per generated insight"
+      addMemoryStub.callCount,
+      generatedMemories.length,
+      "addMemory should be called once per generated memory"
     );
     Assert.deepEqual(
-      persistedInsights.map(i => i.id),
-      storedInsights.map(i => i.id),
-      "Persisted insights should match stored insights"
+      persistedMemories.map(i => i.id),
+      storedMemories.map(i => i.id),
+      "Persisted memories should match stored memories"
     );
 
     Assert.ok(
@@ -744,17 +744,17 @@ add_task(async function test_saveInsights_history_updates_meta() {
     );
     const metaArg = updateMetaStub.firstCall.args[0];
     Assert.ok(
-      "last_history_insight_ts" in metaArg,
-      "updateMeta should update last_history_insight_ts for history source"
+      "last_history_memory_ts" in metaArg,
+      "updateMeta should update last_history_memory_ts for history source"
     );
     Assert.equal(
-      metaArg.last_history_insight_ts,
-      storedInsights[1].updated_at,
-      "last_history_insight_ts should be set to max(updated_at) among persisted insights"
+      metaArg.last_history_memory_ts,
+      storedMemories[1].updated_at,
+      "last_history_memory_ts should be set to max(updated_at) among persisted memories"
     );
     Assert.equal(
       newTimestampMs,
-      storedInsights[1].updated_at,
+      storedMemories[1].updated_at,
       "Returned newTimestampMs should match the updated meta timestamp"
     );
   } finally {
@@ -765,43 +765,43 @@ add_task(async function test_saveInsights_history_updates_meta() {
 
 
 
-add_task(async function test_saveInsights_conversation_updates_meta() {
+add_task(async function test_saveMemories_conversation_updates_meta() {
   const sb = sinon.createSandbox();
   try {
     const now = Date.now();
 
-    const generatedInsights = [
+    const generatedMemories = [
       {
-        insight_summary: "chat-insight",
+        memory_summary: "chat-memory",
         category: "Chat",
         intent: "Talk",
         score: 1,
         updated_at: now,
       },
     ];
-    const storedInsight = { id: "chat-1", ...generatedInsights[0] };
+    const storedMemory = { id: "chat-1", ...generatedMemories[0] };
 
-    const addInsightStub = sb
-      .stub(InsightStore, "addInsight")
-      .resolves(storedInsight);
-    const updateMetaStub = sb.stub(InsightStore, "updateMeta").resolves();
+    const addMemoryStub = sb
+      .stub(MemoryStore, "addMemory")
+      .resolves(storedMemory);
+    const updateMetaStub = sb.stub(MemoryStore, "updateMeta").resolves();
 
-    const { persistedInsights, newTimestampMs } =
-      await InsightsManager.saveInsights(
-        generatedInsights,
+    const { persistedMemories, newTimestampMs } =
+      await MemoriesManager.saveMemories(
+        generatedMemories,
         SOURCE_CONVERSATION,
         now
       );
 
     Assert.equal(
-      addInsightStub.callCount,
+      addMemoryStub.callCount,
       1,
-      "addInsight should be called once for conversation insight"
+      "addMemory should be called once for conversation memory"
     );
     Assert.equal(
-      persistedInsights[0].id,
-      storedInsight.id,
-      "Persisted insight should match stored insight"
+      persistedMemories[0].id,
+      storedMemory.id,
+      "Persisted memory should match stored memory"
     );
 
     Assert.ok(
@@ -810,17 +810,17 @@ add_task(async function test_saveInsights_conversation_updates_meta() {
     );
     const metaArg = updateMetaStub.firstCall.args[0];
     Assert.ok(
-      "last_chat_insight_ts" in metaArg,
-      "updateMeta should update last_chat_insight_ts for conversation source"
+      "last_chat_memory_ts" in metaArg,
+      "updateMeta should update last_chat_memory_ts for conversation source"
     );
     Assert.equal(
-      metaArg.last_chat_insight_ts,
-      storedInsight.updated_at,
-      "last_chat_insight_ts should be set to insight.updated_at"
+      metaArg.last_chat_memory_ts,
+      storedMemory.updated_at,
+      "last_chat_memory_ts should be set to memory.updated_at"
     );
     Assert.equal(
       newTimestampMs,
-      storedInsight.updated_at,
+      storedMemory.updated_at,
       "Returned newTimestampMs should match the updated meta timestamp"
     );
   } finally {
@@ -831,42 +831,42 @@ add_task(async function test_saveInsights_conversation_updates_meta() {
 
 
 
-add_task(async function test_getLastHistoryInsightTimestamp_reads_meta() {
+add_task(async function test_getLastHistoryMemoryTimestamp_reads_meta() {
   const ts = Date.now() - 12345;
 
   
-  await InsightStore.updateMeta({
-    last_history_insight_ts: ts,
+  await MemoryStore.updateMeta({
+    last_history_memory_ts: ts,
   });
 
   
-  const readTs = await InsightsManager.getLastHistoryInsightTimestamp();
+  const readTs = await MemoriesManager.getLastHistoryMemoryTimestamp();
 
   Assert.equal(
     readTs,
     ts,
-    "getLastHistoryInsightTimestamp should return last_history_insight_ts from InsightStore meta"
+    "getLastHistoryMemoryTimestamp should return last_history_memory_ts from MemoryStore meta"
   );
 });
 
 
 
 
-add_task(async function test_getLastConversationInsightTimestamp_reads_meta() {
+add_task(async function test_getLastConversationMemoryTimestamp_reads_meta() {
   const ts = Date.now() - 54321;
 
   
-  await InsightStore.updateMeta({
-    last_chat_insight_ts: ts,
+  await MemoryStore.updateMeta({
+    last_chat_memory_ts: ts,
   });
 
   
-  const readTs = await InsightsManager.getLastConversationInsightTimestamp();
+  const readTs = await MemoriesManager.getLastConversationMemoryTimestamp();
 
   Assert.equal(
     readTs,
     ts,
-    "getLastConversationInsightTimestamp should return last_chat_insight_ts from InsightStore meta"
+    "getLastConversationMemoryTimestamp should return last_chat_memory_ts from MemoryStore meta"
   );
 });
 
@@ -874,20 +874,20 @@ add_task(async function test_getLastConversationInsightTimestamp_reads_meta() {
 
 
 add_task(
-  async function test_historyTimestampUpdatedAfterHistoryInsightsGenerationPass() {
+  async function test_historyTimestampUpdatedAfterHistoryMemoriesGenerationPass() {
     const sb = sinon.createSandbox();
 
-    const lastHistoryInsightsUpdateTs =
-      await InsightsManager.getLastHistoryInsightTimestamp();
-    const lastConversationInsightsUpdateTs =
-      await InsightsManager.getLastConversationInsightTimestamp();
+    const lastHistoryMemoriesUpdateTs =
+      await MemoriesManager.getLastHistoryMemoryTimestamp();
+    const lastConversationMemoriesUpdateTs =
+      await MemoriesManager.getLastConversationMemoryTimestamp();
 
     try {
       const aggregateBrowserHistoryStub = sb
-        .stub(InsightsManager, "getAggregatedBrowserHistory")
+        .stub(MemoriesManager, "getAggregatedBrowserHistory")
         .resolves([[], [], []]);
       const fakeEngine = sb
-        .stub(InsightsManager, "ensureOpenAIEngine")
+        .stub(MemoriesManager, "ensureOpenAIEngine")
         .resolves({
           run() {
             return {
@@ -896,7 +896,7 @@ add_task(
     "why": "User has recently searched for Firefox history and visited mozilla.org.",
     "category": "Internet & Telecom",
     "intent": "Research / Learn",
-    "insight_summary": "Searches for Firefox information",
+    "memory_summary": "Searches for Firefox information",
     "score": 7,
     "evidence": [
       {
@@ -913,7 +913,7 @@ add_task(
     "why": "User buys dog food online regularly from multiple sources.",
     "category": "Pets & Animals",
     "intent": "Buy / Acquire",
-    "insight_summary": "Purchases dog food online",
+    "memory_summary": "Purchases dog food online",
     "score": -1,
     "evidence": [
       {
@@ -927,26 +927,26 @@ add_task(
           },
         });
 
-      await InsightsManager.generateInsightsFromBrowsingHistory();
+      await MemoriesManager.generateMemoriesFromBrowsingHistory();
 
       Assert.ok(
         aggregateBrowserHistoryStub.calledOnce,
-        "getAggregatedBrowserHistory should be called once during insight generation"
+        "getAggregatedBrowserHistory should be called once during memory generation"
       );
       Assert.ok(
         fakeEngine.calledOnce,
-        "ensureOpenAIEngine should be called once during insight generation"
+        "ensureOpenAIEngine should be called once during memory generation"
       );
 
       Assert.greater(
-        await InsightsManager.getLastHistoryInsightTimestamp(),
-        lastHistoryInsightsUpdateTs,
-        "Last history insight timestamp should be updated after history generation pass"
+        await MemoriesManager.getLastHistoryMemoryTimestamp(),
+        lastHistoryMemoriesUpdateTs,
+        "Last history memory timestamp should be updated after history generation pass"
       );
       Assert.equal(
-        await InsightsManager.getLastConversationInsightTimestamp(),
-        lastConversationInsightsUpdateTs,
-        "Last conversation insight timestamp should remain unchanged after history generation pass"
+        await MemoriesManager.getLastConversationMemoryTimestamp(),
+        lastConversationMemoriesUpdateTs,
+        "Last conversation memory timestamp should remain unchanged after history generation pass"
       );
     } finally {
       sb.restore();
@@ -958,21 +958,21 @@ add_task(
 
 
 add_task(
-  async function test_conversationTimestampUpdatedAfterConversationInsightsGenerationPass() {
+  async function test_conversationTimestampUpdatedAfterConversationMemoriesGenerationPass() {
     const sb = sinon.createSandbox();
 
-    const lastConversationInsightsUpdateTs =
-      await InsightsManager.getLastConversationInsightTimestamp();
-    const lastHistoryInsightsUpdateTs =
-      await InsightsManager.getLastHistoryInsightTimestamp();
+    const lastConversationMemoriesUpdateTs =
+      await MemoriesManager.getLastConversationMemoryTimestamp();
+    const lastHistoryMemoriesUpdateTs =
+      await MemoriesManager.getLastHistoryMemoryTimestamp();
 
     try {
       const getRecentChatsStub = sb
-        .stub(InsightsManager, "_getRecentChats")
+        .stub(MemoriesManager, "_getRecentChats")
         .resolves([]);
 
       const fakeEngine = sb
-        .stub(InsightsManager, "ensureOpenAIEngine")
+        .stub(MemoriesManager, "ensureOpenAIEngine")
         .resolves({
           run() {
             return {
@@ -981,7 +981,7 @@ add_task(
     "why": "User has recently searched for Firefox history and visited mozilla.org.",
     "category": "Internet & Telecom",
     "intent": "Research / Learn",
-    "insight_summary": "Searches for Firefox information",
+    "memory_summary": "Searches for Firefox information",
     "score": 7,
     "evidence": [
       {
@@ -998,7 +998,7 @@ add_task(
     "why": "User buys dog food online regularly from multiple sources.",
     "category": "Pets & Animals",
     "intent": "Buy / Acquire",
-    "insight_summary": "Purchases dog food online",
+    "memory_summary": "Purchases dog food online",
     "score": -1,
     "evidence": [
       {
@@ -1012,26 +1012,26 @@ add_task(
           },
         });
 
-      await InsightsManager.generateInsightsFromConversationHistory();
+      await MemoriesManager.generateMemoriesFromConversationHistory();
 
       Assert.ok(
         getRecentChatsStub.calledOnce,
-        "getRecentChats should be called once during insight generation"
+        "getRecentChats should be called once during memory generation"
       );
       Assert.ok(
         fakeEngine.calledOnce,
-        "ensureOpenAIEngine should be called once during insight generation"
+        "ensureOpenAIEngine should be called once during memory generation"
       );
 
       Assert.greater(
-        await InsightsManager.getLastConversationInsightTimestamp(),
-        lastConversationInsightsUpdateTs,
-        "Last conversation insight timestamp should be updated after conversation generation pass"
+        await MemoriesManager.getLastConversationMemoryTimestamp(),
+        lastConversationMemoriesUpdateTs,
+        "Last conversation memory timestamp should be updated after conversation generation pass"
       );
       Assert.equal(
-        await InsightsManager.getLastHistoryInsightTimestamp(),
-        lastHistoryInsightsUpdateTs,
-        "Last history insight timestamp should remain unchanged after conversation generation pass"
+        await MemoriesManager.getLastHistoryMemoryTimestamp(),
+        lastHistoryMemoriesUpdateTs,
+        "Last history memory timestamp should remain unchanged after conversation generation pass"
       );
     } finally {
       sb.restore();
