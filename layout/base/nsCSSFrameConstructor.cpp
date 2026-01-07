@@ -4995,7 +4995,7 @@ static bool ShouldSuppressFrameInSelect(const nsIContent* aParent,
   }
 
   
-  if (aChild.IsHTMLElement(nsGkAtoms::option)) {
+  if (aChild.IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::hr)) {
     return false;
   }
 
