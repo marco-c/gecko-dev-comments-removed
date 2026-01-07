@@ -235,26 +235,7 @@ already_AddRefed<Element> nsXULElement::CreateFromPrototype(
   }
 
   nsXULElement* element = FromNode(baseElement);
-
-  if (aPrototype->mHasIdAttribute) {
-    element->SetHasID();
-  }
-  if (aPrototype->mHasClassAttribute) {
-    element->SetMayHaveClass();
-  }
-  if (aPrototype->mHasStyleAttribute) {
-    element->SetMayHaveStyle();
-  }
-
   element->MakeHeavyweight(aPrototype);
-
-  
-  
-  
-  for (const auto& attribute : aPrototype->mAttributes) {
-    element->AddListenerForAttributeIfNeeded(attribute.mName);
-  }
-
   return baseElement.forget();
 }
 
@@ -517,12 +498,6 @@ void nsXULElement::AddListenerForAttributeIfNeeded(nsAtom* aLocalName) {
     nsAutoString value;
     GetAttr(aLocalName, value);
     SetEventHandler(aLocalName, value, true);
-  }
-}
-
-void nsXULElement::AddListenerForAttributeIfNeeded(const nsAttrName& aName) {
-  if (aName.IsAtom()) {
-    AddListenerForAttributeIfNeeded(aName.Atom());
   }
 }
 
@@ -1020,37 +995,12 @@ nsresult nsXULElement::AddPopupListener(nsAtom* aName) {
 
 
 nsresult nsXULElement::MakeHeavyweight(nsXULPrototypeElement* aPrototype) {
-  if (!aPrototype) {
-    return NS_OK;
-  }
-
-  size_t i;
-  nsresult rv;
-  for (i = 0; i < aPrototype->mAttributes.Length(); ++i) {
-    nsXULPrototypeAttribute* protoattr = &aPrototype->mAttributes[i];
-    nsAttrValue attrValue;
-
-    
-    if (protoattr->mValue.Type() == nsAttrValue::eCSSDeclaration) {
-      DeclarationBlock* decl = protoattr->mValue.GetCSSDeclarationValue();
-      RefPtr<DeclarationBlock> declClone = decl->Clone();
-
-      nsString stringValue;
-      protoattr->mValue.ToString(stringValue);
-
-      attrValue.SetTo(declClone.forget(), &stringValue);
-    } else {
-      attrValue.SetTo(protoattr->mValue);
-    }
-
-    bool oldValueSet;
-    
-    if (protoattr->mName.IsAtom()) {
-      rv = SetAndSwapAttr(protoattr->mName.Atom(), attrValue, &oldValueSet);
-    } else {
-      rv = SetAndSwapAttr(protoattr->mName.NodeInfo(), attrValue, &oldValueSet);
-    }
-    NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(aPrototype);
+  for (const auto& protoattr : aPrototype->mAttributes) {
+    nsAttrValue value(protoattr.mValue);
+    MOZ_TRY(SetParsedAttr(
+        protoattr.mName.NamespaceID(), protoattr.mName.LocalName(),
+        protoattr.mName.GetPrefix(), value,  false));
   }
   return NS_OK;
 }
@@ -1378,7 +1328,6 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
   }
 
   if (mAttributes[aPos].mName.Equals(nsGkAtoms::id) && !aValue.IsEmpty()) {
-    mHasIdAttribute = true;
     
     
     
@@ -1396,13 +1345,11 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
 
     return NS_OK;
   } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::_class)) {
-    mHasClassAttribute = true;
     
     mAttributes[aPos].mValue.ParseAtomArray(aValue);
 
     return NS_OK;
   } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::style)) {
-    mHasStyleAttribute = true;
     
 
     
@@ -1419,6 +1366,7 @@ nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
         aValue, data, eCompatibility_FullStandards, nullptr,
         StyleCssRuleType::Style);
     if (declaration) {
+      declaration->SetImmutable();
       mAttributes[aPos].mValue.SetTo(declaration.forget(), &aValue);
 
       return NS_OK;

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsXULPrototypeDocument.h"
 
@@ -36,10 +36,10 @@ using mozilla::dom::DestroyProtoAndIfaceCache;
 
 uint32_t nsXULPrototypeDocument::gRefCnt;
 
-
-
-
-
+//----------------------------------------------------------------------
+//
+// ctors, dtors, n' stuff
+//
 
 nsXULPrototypeDocument::nsXULPrototypeDocument()
     : mRoot(nullptr), mLoaded(false), mCCGeneration(0), mWasL10nCached(false) {
@@ -90,10 +90,10 @@ NS_NewXULPrototypeDocument(nsXULPrototypeDocument** aResult) {
   return rv;
 }
 
-
-
-
-
+//----------------------------------------------------------------------
+//
+// nsISerializable methods
+//
 
 NS_IMETHODIMP
 nsXULPrototypeDocument::Read(nsIObjectInputStream* aStream) {
@@ -104,7 +104,7 @@ nsXULPrototypeDocument::Read(nsIObjectInputStream* aStream) {
   }
   mURI = do_QueryInterface(supports);
 
-  
+  // nsIPrincipal mNodeInfoManager->mPrincipal
   nsAutoCString JSON;
   rv = aStream->ReadCString(JSON);
   if (NS_FAILED(rv)) {
@@ -112,7 +112,7 @@ nsXULPrototypeDocument::Read(nsIObjectInputStream* aStream) {
   }
   nsCOMPtr<nsIPrincipal> principal = mozilla::BasePrincipal::FromJSON(JSON);
 
-  
+  // Better safe than sorry....
   mNodeInfoManager->SetDocumentPrincipal(principal);
 
   rv = aStream->ReadBoolean(&mWasL10nCached);
@@ -122,7 +122,7 @@ nsXULPrototypeDocument::Read(nsIObjectInputStream* aStream) {
 
   mRoot = new nsXULPrototypeElement();
 
-  
+  // mozilla::dom::NodeInfo table
   nsTArray<RefPtr<mozilla::dom::NodeInfo>> nodeInfos;
 
   uint32_t count, i;
@@ -157,9 +157,9 @@ nsXULPrototypeDocument::Read(nsIObjectInputStream* aStream) {
     }
 
     RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-    
-    
-    
+    // Using UINT16_MAX here as we don't know which nodeinfos will be
+    // used for attributes and which for elements. And that doesn't really
+    // matter.
     rv = mNodeInfoManager->GetNodeInfo(localName, prefix, namespaceURI,
                                        UINT16_MAX, getter_AddRefs(nodeInfo));
     if (NS_FAILED(rv)) {
@@ -168,7 +168,7 @@ nsXULPrototypeDocument::Read(nsIObjectInputStream* aStream) {
     nodeInfos.AppendElement(nodeInfo);
   }
 
-  
+  // Document contents
   uint32_t type;
   while (NS_SUCCEEDED(rv)) {
     rv = aStream->Read32(&type);
@@ -210,7 +210,7 @@ static void GetNodeInfos(nsXULPrototypeElement* aPrototype,
     aArray.AppendElement(aPrototype->mNodeInfo);
   }
 
-  
+  // Search attributes
   for (nsXULPrototypeAttribute& attr : aPrototype->mAttributes) {
     RefPtr<mozilla::dom::NodeInfo> ni;
     nsAttrName* name = &attr.mName;
@@ -226,7 +226,7 @@ static void GetNodeInfos(nsXULPrototypeElement* aPrototype,
     }
   }
 
-  
+  // Search children
   for (nsXULPrototypeNode* child : aPrototype->mChildren) {
     if (child->mType == nsXULPrototypeNode::eType_Element) {
       GetNodeInfos(static_cast<nsXULPrototypeElement*>(child), aArray);
@@ -240,7 +240,7 @@ nsXULPrototypeDocument::Write(nsIObjectOutputStream* aStream) {
 
   rv = aStream->WriteCompoundObject(mURI, NS_GET_IID(nsIURI), true);
 
-  
+  // nsIPrincipal mNodeInfoManager->mPrincipal
   nsAutoCString JSON;
   mozilla::BasePrincipal::Cast(mNodeInfoManager->DocumentPrincipal())
       ->ToJSON(JSON);
@@ -250,7 +250,7 @@ nsXULPrototypeDocument::Write(nsIObjectOutputStream* aStream) {
   }
 
 #ifdef DEBUG
-  
+  // XXX Worrisome if we're caching things without system principal.
   if (!mNodeInfoManager->DocumentPrincipal()->IsSystemPrincipal()) {
     NS_WARNING("Serializing document without system principal");
   }
@@ -261,7 +261,7 @@ nsXULPrototypeDocument::Write(nsIObjectOutputStream* aStream) {
     rv = tmp;
   }
 
-  
+  // mozilla::dom::NodeInfo table
   nsTArray<RefPtr<mozilla::dom::NodeInfo>> nodeInfos;
   if (mRoot) {
     GetNodeInfos(mRoot, nodeInfos);
@@ -306,7 +306,7 @@ nsXULPrototypeDocument::Write(nsIObjectOutputStream* aStream) {
     }
   }
 
-  
+  // Now serialize the document contents
   uint32_t count = mProcessingInstructions.Length();
   for (i = 0; i < count; ++i) {
     nsXULPrototypePI* pi = mProcessingInstructions[i];
@@ -326,8 +326,8 @@ nsXULPrototypeDocument::Write(nsIObjectOutputStream* aStream) {
   return rv;
 }
 
-
-
+//----------------------------------------------------------------------
+//
 
 nsresult nsXULPrototypeDocument::InitPrincipal(nsIURI* aURI,
                                                nsIPrincipal* aPrincipal) {
@@ -354,8 +354,8 @@ void nsXULPrototypeDocument::SetRootElement(nsXULPrototypeElement* aElement) {
 nsresult nsXULPrototypeDocument::AddProcessingInstruction(
     nsXULPrototypePI* aPI) {
   MOZ_ASSERT(aPI, "null ptr");
-  
-  
+  // XXX(Bug 1631371) Check if this should use a fallible operation as it
+  // pretended earlier, or change the return type to void.
   mProcessingInstructions.AppendElement(aPI);
   return NS_OK;
 }
@@ -389,8 +389,8 @@ nsresult nsXULPrototypeDocument::AwaitLoadDone(Callback&& aCallback,
   *aResult = mLoaded;
 
   if (!mLoaded) {
-    
-    
+    // XXX(Bug 1631371) Check if this should use a fallible operation as it
+    // pretended earlier, or change the return type to void.
     mPrototypeWaiters.AppendElement(std::move(aCallback));
   }
 
@@ -398,10 +398,10 @@ nsresult nsXULPrototypeDocument::AwaitLoadDone(Callback&& aCallback,
 }
 
 nsresult nsXULPrototypeDocument::NotifyLoadDone() {
-  
-  
-  
-  
+  // Call back to each XUL document that raced to start the same
+  // prototype document load, lost the race, but hit the XUL
+  // prototype cache because the winner filled the cache with
+  // the not-yet-loaded prototype object.
 
   mLoaded = true;
 
@@ -420,16 +420,13 @@ void nsXULPrototypeDocument::SetIsL10nCached(bool aIsCached) {
 
 void nsXULPrototypeDocument::RebuildPrototypeFromElement(
     nsXULPrototypeElement* aPrototype, Element* aElement, bool aDeep) {
-  aPrototype->mHasIdAttribute = aElement->HasID();
-  aPrototype->mHasClassAttribute = aElement->MayHaveClass();
-  aPrototype->mHasStyleAttribute = aElement->MayHaveStyle();
   NodeInfo* oldNodeInfo = aElement->NodeInfo();
   RefPtr<NodeInfo> newNodeInfo = mNodeInfoManager->GetNodeInfo(
       oldNodeInfo->NameAtom(), oldNodeInfo->GetPrefixAtom(),
       oldNodeInfo->NamespaceID(), nsINode::ELEMENT_NODE);
   aPrototype->mNodeInfo = newNodeInfo;
 
-  
+  // First replace the prototype attributes with the new ones from this element.
   aPrototype->mAttributes.Clear();
 
   uint32_t count = aElement->GetAttrCount();
@@ -448,19 +445,22 @@ void nsXULPrototypeDocument::RebuildPrototypeFromElement(
       protoAttr->mName.SetTo(newNodeInfo);
     }
     protoAttr->mValue.SetTo(*attr.mValue);
-
+    if (protoAttr->mValue.Type() == nsAttrValue::eCSSDeclaration) {
+      // Ensure declarations get copied-on-write if needed.
+      protoAttr->mValue.GetCSSDeclarationValue()->SetImmutable();
+    }
     protoAttr++;
   }
 
-  
-  
+  // Make sure the mIsAtom is correct in case this prototype element has been
+  // completely rebuilt.
   CustomElementData* ceData = aElement->GetCustomElementData();
   nsAtom* isAtom = ceData ? ceData->GetIs(aElement) : nullptr;
   aPrototype->mIsAtom = isAtom;
 
   if (aDeep) {
-    
-    
+    // We have to rebuild the prototype children from this element.
+    // First release the tree under this element.
     aPrototype->ReleaseSubtree();
 
     RefPtr<nsXULPrototypeNode>* children =
