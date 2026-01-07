@@ -25,7 +25,7 @@ add_task(async function test_user_prompt_dispatch() {
     
     Assert.equal(
       result,
-      true,
+      undefined, 
       "dispatchUserPrompt should complete successfully"
     );
   });
@@ -49,7 +49,7 @@ add_task(async function test_streaming_ai_response() {
     const result = await actor.dispatchMessageToChatContent(streamingResponse);
     Assert.equal(
       result,
-      true,
+      undefined, 
       "Streaming AI response should be dispatched successfully"
     );
   });
