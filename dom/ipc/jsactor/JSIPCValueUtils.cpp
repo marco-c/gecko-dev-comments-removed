@@ -60,6 +60,14 @@ bool JSActorSupportsTypedSend(const nsACString& aName) {
   
   
   
+  
+  if (aName == "DevToolsProcess" || aName == "BrowserToolboxDevToolsProcess") {
+    return false;
+  }
+
+  
+  
+  
   return aName != "SpecialPowers" && aName != "MarionetteCommands";
 }
 
