@@ -5486,13 +5486,13 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
     }
   }
 
-  if (aGridRI.mFrame->IsAbsoluteContainer()) {
+  if (auto* absCB = aGridRI.mFrame->GetAbsoluteContainingBlock();
+      absCB && absCB->PrepareAbsoluteFrames(aGridRI.mFrame)) {
     
     
     
     
-    const nsFrameList& children =
-        aGridRI.mFrame->GetChildList(aGridRI.mFrame->GetAbsoluteListID());
+    const nsFrameList& children = absCB->GetChildList();
     const int32_t offsetToColZero = int32_t(mExplicitGridOffsetCol) - 1;
     const int32_t offsetToRowZero = int32_t(mExplicitGridOffsetRow) - 1;
     
@@ -9308,6 +9308,7 @@ void nsGridContainerFrame::ReflowAbsoluteChildren(
     nsReflowStatus& aStatus) {
   WritingMode wm = aGridRI.mReflowInput->GetWritingMode();
   auto* absoluteContainer = GetAbsoluteContainingBlock();
+  
   
   if (!absoluteContainer || !absoluteContainer->HasAbsoluteFrames()) {
     return;
