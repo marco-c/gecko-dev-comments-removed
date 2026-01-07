@@ -56,7 +56,7 @@ static void NormalizeDefaultFont(nsFont& aFont, float aFontSizeInflation) {
 }
 
 
-static const nsGlyphCode kNullGlyph = {{{0, 0}}, 0};
+static const nsGlyphCode kNullGlyph = {{{0, 0}}, false};
 
 
 
@@ -126,9 +126,6 @@ class nsGlyphTable {
 
 
 
-
-
-
 #define NS_TABLE_STATE_ERROR -1
 #define NS_TABLE_STATE_EMPTY 0
 #define NS_TABLE_STATE_READY 1
@@ -158,19 +155,17 @@ static nsresult LoadProperties(const nsACString& aName,
 class nsPropertiesTable final : public nsGlyphTable {
  public:
   explicit nsPropertiesTable(const nsACString& aPrimaryFontName)
-      : mState(NS_TABLE_STATE_EMPTY) {
+      : mPrimaryFontName(aPrimaryFontName), mState(NS_TABLE_STATE_EMPTY) {
     MOZ_COUNT_CTOR(nsPropertiesTable);
-    mGlyphCodeFonts.AppendElement(aPrimaryFontName);
   }
 
   MOZ_COUNTED_DTOR(nsPropertiesTable)
 
-  const nsCString& PrimaryFontName() const { return mGlyphCodeFonts[0]; }
+  const nsCString& PrimaryFontName() const { return mPrimaryFontName; }
 
   const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const override {
-    NS_ASSERTION(!aGlyphCode.IsGlyphID(),
-                 "nsPropertiesTable can only access glyphs by code point");
-    return mGlyphCodeFonts[aGlyphCode.font];
+    MOZ_ASSERT_UNREACHABLE();
+    return VoidCString();
   }
 
   virtual nsGlyphCode ElementAt(DrawTarget* aDrawTarget,
@@ -208,10 +203,7 @@ class nsPropertiesTable final : public nsGlyphTable {
       gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) override;
 
  private:
-  
-  
-  
-  nsTArray<nsCString> mGlyphCodeFonts;
+  nsCString mPrimaryFontName;
 
   
   int32_t mState;
@@ -220,16 +212,6 @@ class nsPropertiesTable final : public nsGlyphTable {
   
   nsCOMPtr<nsIPersistentProperties> mGlyphProperties;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -266,20 +248,6 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
       return kNullGlyph;
     }
     mState = NS_TABLE_STATE_READY;
-
-    
-    nsAutoCString key;
-    nsAutoString value;
-    for (int32_t i = 1;; i++) {
-      key.AssignLiteral("external.");
-      key.AppendInt(i, 10);
-      rv = mGlyphProperties->GetStringProperty(key, value);
-      if (NS_FAILED(rv)) {
-        break;
-      }
-      Clean(value);
-      mGlyphCodeFonts.AppendElement(NS_ConvertUTF16toUTF8(value));
-    }
   }
 
   
@@ -297,13 +265,6 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
     Clean(value);
     
     
-    
-    
-    
-    
-    
-    
-    
     nsAutoString buffer;
     int32_t length = value.Length();
     int32_t i = 0;  
@@ -319,36 +280,20 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
         code = char16_t('\0');
       }
       buffer.Append(code);
-
-      
-      
-      char16_t font = 0;
-      if (i + 1 < length && value[i] == char16_t('@') &&
-          value[i + 1] >= char16_t('0') && value[i + 1] <= char16_t('9')) {
-        ++i;
-        font = value[i] - '0';
-        ++i;
-        if (font >= mGlyphCodeFonts.Length()) {
-          NS_ERROR("Nonexistent font referenced in glyph table");
-          return kNullGlyph;
-        }
-      }
-      buffer.Append(font);
     }
     
     mGlyphCache.Assign(buffer);
     mCharCache = aChar;
   }
 
-  
-  uint32_t index = 3 * aPosition;
-  if (index + 2 >= mGlyphCache.Length()) {
+  uint32_t index = 2 * aPosition;
+  if (index + 1 >= mGlyphCache.Length()) {
     return kNullGlyph;
   }
   nsGlyphCode ch;
   ch.code[0] = mGlyphCache.CharAt(index);
   ch.code[1] = mGlyphCache.CharAt(index + 1);
-  ch.font = mGlyphCache.CharAt(index + 2);
+  ch.isGlyphID = false;
   return ch.code[0] == char16_t(0xFFFD) ? kNullGlyph : ch;
 }
 
@@ -356,7 +301,7 @@ nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
 already_AddRefed<gfxTextRun> nsPropertiesTable::MakeTextRun(
     DrawTarget* aDrawTarget, int32_t aAppUnitsPerDevPixel,
     gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) {
-  NS_ASSERTION(!aGlyph.IsGlyphID(),
+  NS_ASSERTION(!aGlyph.isGlyphID,
                "nsPropertiesTable can only access glyphs by code point");
   return aFontGroup->MakeTextRun(aGlyph.code, aGlyph.Length(), aDrawTarget,
                                  aAppUnitsPerDevPixel, mFlags,
@@ -384,7 +329,7 @@ class nsOpenTypeTable final : public nsGlyphTable {
                           bool aVertical) override;
 
   const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const override {
-    NS_ASSERTION(aGlyphCode.IsGlyphID(),
+    NS_ASSERTION(aGlyphCode.isGlyphID,
                  "nsOpenTypeTable can only access glyphs by id");
     return mFontFamilyName;
   }
@@ -462,7 +407,7 @@ nsGlyphCode nsOpenTypeTable::ElementAt(DrawTarget* aDrawTarget,
   }
   nsGlyphCode glyph;
   glyph.glyphID = glyphID;
-  glyph.font = -1;
+  glyph.isGlyphID = true;
   return glyph;
 }
 
@@ -481,7 +426,7 @@ nsGlyphCode nsOpenTypeTable::BigOf(DrawTarget* aDrawTarget,
 
   nsGlyphCode glyph;
   glyph.glyphID = glyphID;
-  glyph.font = -1;
+  glyph.isGlyphID = true;
   return glyph;
 }
 
@@ -504,7 +449,7 @@ bool nsOpenTypeTable::HasPartsOf(DrawTarget* aDrawTarget,
 already_AddRefed<gfxTextRun> nsOpenTypeTable::MakeTextRun(
     DrawTarget* aDrawTarget, int32_t aAppUnitsPerDevPixel,
     gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) {
-  NS_ASSERTION(aGlyph.IsGlyphID(),
+  NS_ASSERTION(aGlyph.isGlyphID,
                "nsOpenTypeTable can only access glyphs by id");
 
   gfxTextRunFactory::Parameters params = {
@@ -830,13 +775,13 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
                                  nsFont& aFont,
                                  RefPtr<gfxFontGroup>* aFontGroup) {
   StyleFontFamilyList glyphCodeFont;
-  if (aGlyphCode.font) {
+  if (aGlyphCode.isGlyphID) {
     glyphCodeFont = StyleFontFamilyList::WithOneUnquotedFamily(
         aGlyphTable->FontNameFor(aGlyphCode));
   }
 
   const StyleFontFamilyList& familyList =
-      aGlyphCode.font ? glyphCodeFont : aDefaultFamilyList;
+      aGlyphCode.isGlyphID ? glyphCodeFont : aDefaultFamilyList;
 
   if (!*aFontGroup || aFont.family.families != familyList) {
     nsFont font = aFont;
@@ -976,7 +921,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     NS_ASSERTION(isVertical, "Stretching should be in the vertical direction");
     ch = aGlyphTable->BigOf(mDrawTarget, oneDevPixel, *aFontGroup, uchar,
                             isVertical, 0);
-    if (ch.IsGlyphID()) {
+    if (ch.isGlyphID) {
       RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
       
       
@@ -1005,7 +950,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     RefPtr<gfxTextRun> textRun =
         aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
     nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
-    if (ch.IsGlyphID()) {
+    if (ch.isGlyphID) {
       RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
       if (mathFont) {
         
