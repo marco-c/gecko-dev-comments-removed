@@ -1691,15 +1691,13 @@ void MacroAssemblerLOONG64::ma_mod_mask(Register src, Register dest,
   
   ma_b(hold, hold, &done, NotSigned, ShortJump);
 
-  
-  
   if (negZero != nullptr) {
     
-    ma_b(hold, hold, negZero, Zero);
-    as_sub_w(dest, zero, dest);
-  } else {
-    as_sub_w(dest, zero, dest);
+    ma_b(dest, dest, negZero, Zero);
   }
+  
+  
+  as_sub_w(dest, zero, dest);
 
   bind(&done);
 }

@@ -6626,15 +6626,13 @@ void MacroAssemblerRiscv64::ma_mod_mask(Register src, Register dest,
   
   ma_b(hold, hold, &done, NotSigned, ShortJump);
 
-  
-  
   if (negZero != nullptr) {
     
-    ma_b(hold, hold, negZero, Zero);
-    negw(dest, dest);
-  } else {
-    negw(dest, dest);
+    ma_b(dest, dest, negZero, Zero);
   }
+  
+  
+  negw(dest, dest);
 
   bind(&done);
 }

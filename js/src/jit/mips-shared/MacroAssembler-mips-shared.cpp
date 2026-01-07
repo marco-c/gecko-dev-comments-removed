@@ -461,15 +461,13 @@ void MacroAssemblerMIPSShared::ma_mod_mask(Register src, Register dest,
   
   ma_b(hold, hold, &done, NotSigned, ShortJump);
 
-  
-  
   if (negZero != nullptr) {
     
-    ma_b(hold, hold, negZero, Zero);
-    ma_negu(dest, dest);
-  } else {
-    ma_negu(dest, dest);
+    ma_b(dest, dest, negZero, Zero);
   }
+  
+  
+  ma_negu(dest, dest);
 
   bind(&done);
 }
@@ -1845,9 +1843,9 @@ CodeOffset MacroAssembler::call(wasm::SymbolicAddress target) {
   return call(CallReg);
 }
 
-void MacroAssembler::call(const Address& addr) {
+CodeOffset MacroAssembler::call(const Address& addr) {
   loadPtr(addr, CallReg);
-  call(CallReg);
+  return call(CallReg);
 }
 
 void MacroAssembler::call(ImmWord target) { call(ImmPtr((void*)target.value)); }
