@@ -52,6 +52,11 @@ class MOZ_STACK_CLASS WSScanResult final {
     
     NonCollapsibleCharacters,
     
+    
+    
+    
+    EmptyInlineContainerElement,
+    
     SpecialContent,
     
     BRElement,
@@ -81,6 +86,8 @@ class MOZ_STACK_CLASS WSScanResult final {
         return aStream << "WSType::CollapsibleWhiteSpaces";
       case WSType::NonCollapsibleCharacters:
         return aStream << "WSType::NonCollapsibleCharacters";
+      case WSType::EmptyInlineContainerElement:
+        return aStream << "WSType::EmptyInlineContainerElement";
       case WSType::SpecialContent:
         return aStream << "WSType::SpecialContent";
       case WSType::BRElement:
@@ -182,11 +189,20 @@ class MOZ_STACK_CLASS WSScanResult final {
   
 
 
-  bool IsContentEditable() const { return mContent && mContent->IsEditable(); }
+  [[nodiscard]] bool ContentIsEditable() const {
+    return mContent && HTMLEditUtils::IsSimplyEditableNode(*mContent);
+  }
 
-  [[nodiscard]] bool IsContentEditableRoot() const {
-    return mContent && mContent->IsElement() &&
-           HTMLEditUtils::ElementIsEditableRoot(*mContent->AsElement());
+  
+
+
+  [[nodiscard]] bool ContentIsRemovable() const {
+    return mContent && HTMLEditUtils::IsRemovableNode(*mContent);
+  }
+
+  [[nodiscard]] bool ContentIsEditableRoot() const {
+    return ContentIsElement() &&
+           HTMLEditUtils::ElementIsEditableRoot(*ElementPtr());
   }
 
   
@@ -261,7 +277,94 @@ class MOZ_STACK_CLASS WSScanResult final {
 
 
 
-  bool ReachedSpecialContent() const {
+
+  [[nodiscard]] constexpr bool ReachedEmptyInlineContainerElement() const {
+    return mReason == WSType::EmptyInlineContainerElement;
+  }
+  
+
+
+
+
+  [[nodiscard]] bool ReachedEditableEmptyInlineContainerElement() const {
+    return ReachedEmptyInlineContainerElement() && ContentIsEditable();
+  }
+  
+
+
+
+
+  [[nodiscard]] bool ReachedRemovableEmptyInlineContainerElement() const {
+    return ReachedEmptyInlineContainerElement() && ContentIsRemovable();
+  }
+
+  
+
+
+  [[nodiscard]] bool ReachedVisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedEmptyInlineContainerElement() &&
+           HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*ElementPtr()) &&
+           !HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
+               *ElementPtr(), aAncestorLimiterToCheckDisplayNone);
+  }
+  
+
+
+
+  [[nodiscard]] bool ReachedEditableEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedVisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsEditable();
+  }
+  
+
+
+
+  [[nodiscard]] bool ReachedRemovableEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedVisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsRemovable();
+  }
+
+  
+
+
+  [[nodiscard]] bool ReachedInvisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedEmptyInlineContainerElement() &&
+           (!HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*ElementPtr()) ||
+            HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
+                *ElementPtr(), aAncestorLimiterToCheckDisplayNone));
+  }
+  
+
+
+
+  [[nodiscard]] bool ReachedEditableInvisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedInvisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsEditable();
+  }
+  
+
+
+
+  [[nodiscard]] bool ReachedRemovableInvisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedEditableInvisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsRemovable();
+  }
+
+  
+
+
+
+  [[nodiscard]] constexpr bool ReachedSpecialContent() const {
     return mReason == WSType::SpecialContent;
   }
 
@@ -397,7 +500,7 @@ class MOZ_STACK_CLASS WSScanResult final {
  private:
   nsCOMPtr<nsIContent> mContent;
   Maybe<uint32_t> mOffset;
-  WSType mReason;
+  WSType mReason = WSType::NotInitialized;
   ScanDirection mDirection = ScanDirection::Backward;
 };
 
@@ -681,8 +784,11 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool StartsFromNonCollapsibleCharacters() const {
       return mLeftWSType == WSType::NonCollapsibleCharacters;
     }
-    bool StartsFromSpecialContent() const {
+    [[nodiscard]] constexpr bool StartsFromSpecialContent() const {
       return mLeftWSType == WSType::SpecialContent;
+    }
+    [[nodiscard]] constexpr bool StartsFromEmptyInlineContainerElement() const {
+      return mLeftWSType == WSType::EmptyInlineContainerElement;
     }
     bool StartsFromPreformattedLineBreak() const {
       return mLeftWSType == WSType::PreformattedLineBreak;
@@ -698,8 +804,11 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool EndsByTrailingWhiteSpaces() const {
       return mRightWSType == WSType::TrailingWhiteSpaces;
     }
-    bool EndsBySpecialContent() const {
+    [[nodiscard]] constexpr bool EndsBySpecialContent() const {
       return mRightWSType == WSType::SpecialContent;
+    }
+    [[nodiscard]] constexpr bool EndsByEmptyInlineContainerElement() const {
+      return mRightWSType == WSType::EmptyInlineContainerElement;
     }
     bool EndsByBRElement() const { return mRightWSType == WSType::BRElement; }
     bool EndsByPreformattedLineBreak() const {
@@ -908,8 +1017,11 @@ class MOZ_STACK_CLASS WSRunScanner final {
       bool IsNonCollapsibleCharacters() const {
         return mReason == WSType::NonCollapsibleCharacters;
       }
-      bool IsSpecialContent() const {
+      [[nodiscard]] constexpr bool IsSpecialContent() const {
         return mReason == WSType::SpecialContent;
+      }
+      [[nodiscard]] constexpr bool IsEmptyInlineContainerElement() const {
+        return mReason == WSType::EmptyInlineContainerElement;
       }
       bool IsBRElement() const { return mReason == WSType::BRElement; }
       bool IsPreformattedLineBreak() const {
@@ -958,6 +1070,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
       nsCOMPtr<nsIContent> mReasonContent;
       EditorDOMPoint mPoint;
+      
       
       
       
@@ -1026,7 +1139,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool StartsFromNonCollapsibleCharacters() const {
       return mStart.IsNonCollapsibleCharacters();
     }
-    bool StartsFromSpecialContent() const { return mStart.IsSpecialContent(); }
+    [[nodiscard]] bool StartsFromSpecialContent() const {
+      return mStart.IsSpecialContent();
+    }
+    [[nodiscard]] bool StartsFromEmptyInlineContainerElement() const {
+      return mStart.IsEmptyInlineContainerElement();
+    }
     bool StartsFromBRElement() const { return mStart.IsBRElement(); }
     bool StartsFromVisibleBRElement() const {
       return StartsFromBRElement() &&
@@ -1053,7 +1171,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool EndsByNonCollapsibleCharacters() const {
       return mEnd.IsNonCollapsibleCharacters();
     }
-    bool EndsBySpecialContent() const { return mEnd.IsSpecialContent(); }
+    [[nodiscard]] bool EndsBySpecialContent() const {
+      return mEnd.IsSpecialContent();
+    }
+    [[nodiscard]] bool EndsByEmptyInlineContainerElement() const {
+      return mEnd.IsEmptyInlineContainerElement();
+    }
     bool EndsByBRElement() const { return mEnd.IsBRElement(); }
     bool EndsByVisibleBRElement() const {
       return EndsByBRElement() &&

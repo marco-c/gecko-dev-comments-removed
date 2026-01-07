@@ -36,6 +36,7 @@ void WSScanResult::AssertIfInvalidData(const WSRunScanner& aScanner) const {
              mReason == WSType::CollapsibleWhiteSpaces ||
              mReason == WSType::BRElement ||
              mReason == WSType::PreformattedLineBreak ||
+             mReason == WSType::EmptyInlineContainerElement ||
              mReason == WSType::SpecialContent ||
              mReason == WSType::CurrentBlockBoundary ||
              mReason == WSType::OtherBlockBoundary ||
@@ -73,11 +74,27 @@ void WSScanResult::AssertIfInvalidData(const WSRunScanner& aScanner) const {
   MOZ_ASSERT_IF(mReason == WSType::PreformattedLineBreak,
                 EditorUtils::IsNewLinePreformatted(*mContent));
   MOZ_ASSERT_IF(
+      mReason == WSType::EmptyInlineContainerElement,
+      HTMLEditUtils::IsEmptyInlineContainer(
+          *mContent,
+          {HTMLEditUtils::EmptyCheckOption::TreatSingleBRElementAsVisible,
+           HTMLEditUtils::EmptyCheckOption::TreatBlockAsVisible},
+          aScanner.ReferredHTMLDefaultStyle()
+              ? BlockInlineCheck::UseHTMLDefaultStyle
+              : BlockInlineCheck::UseComputedDisplayOutsideStyle));
+  MOZ_ASSERT_IF(
       mReason == WSType::SpecialContent,
       (mContent->IsText() && !mContent->IsEditable()) ||
           (!mContent->IsHTMLElement(nsGkAtoms::br) &&
            !HTMLEditUtils::IsBlockElement(
                *mContent,
+               aScanner.ReferredHTMLDefaultStyle()
+                   ? BlockInlineCheck::UseHTMLDefaultStyle
+                   : BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
+           !HTMLEditUtils::IsEmptyInlineContainer(
+               *mContent,
+               {HTMLEditUtils::EmptyCheckOption::TreatSingleBRElementAsVisible,
+                HTMLEditUtils::EmptyCheckOption::TreatBlockAsVisible},
                aScanner.ReferredHTMLDefaultStyle()
                    ? BlockInlineCheck::UseHTMLDefaultStyle
                    : BlockInlineCheck::UseComputedDisplayOutsideStyle)));
@@ -208,6 +225,9 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     return WSScanResult::Error();
   }
 
+  MOZ_ASSERT_IF(!ScanOptions().contains(Option::StopAtComment),
+                !Comment::FromNodeOrNull(
+                    TextFragmentDataAtStartRef().GetStartReasonContent()));
   switch (TextFragmentDataAtStartRef().StartRawReason()) {
     case WSType::CollapsibleWhiteSpaces:
     case WSType::NonCollapsibleCharacters:
@@ -219,29 +239,6 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
       return WSScanResult(*this, WSScanResult::ScanDirection::Backward,
                           TextFragmentDataAtStartRef().StartRef(),
                           TextFragmentDataAtStartRef().StartRawReason());
-    case WSType::SpecialContent: {
-      const Comment* comment = Comment::FromNode(
-          TextFragmentDataAtStartRef().GetStartReasonContent());
-      if (!comment) {
-        break;
-      }
-      
-      
-      while (true) {
-        const EditorRawDOMPoint atComment(comment);
-        WSRunScanner scanner(ScanOptions(), atComment,
-                             mTextFragmentDataAtStart.GetAncestorLimiter());
-        if (scanner.TextFragmentDataAtStartRef().StartRawReason() ==
-            WSType::SpecialContent) {
-          if ((comment = Comment::FromNode(scanner.TextFragmentDataAtStartRef()
-                                               .GetStartReasonContent()))) {
-            
-            continue;
-          }
-        }
-        return scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(atComment);
-      }
-    }
     default:
       break;
   }
@@ -325,6 +322,9 @@ WSScanResult WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
     return WSScanResult::Error();
   }
 
+  MOZ_ASSERT_IF(!ScanOptions().contains(Option::StopAtComment),
+                !Comment::FromNodeOrNull(
+                    TextFragmentDataAtStartRef().GetEndReasonContent()));
   switch (TextFragmentDataAtStartRef().EndRawReason()) {
     case WSType::CollapsibleWhiteSpaces:
     case WSType::NonCollapsibleCharacters:
@@ -337,31 +337,6 @@ WSScanResult WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
       return WSScanResult(*this, WSScanResult::ScanDirection::Forward,
                           TextFragmentDataAtStartRef().EndRef(),
                           TextFragmentDataAtStartRef().EndRawReason());
-    case WSType::SpecialContent: {
-      const Comment* comment =
-          Comment::FromNode(TextFragmentDataAtStartRef().GetEndReasonContent());
-      if (!comment) {
-        break;
-      }
-      
-      
-      while (true) {
-        const EditorRawDOMPoint afterComment =
-            EditorRawDOMPoint::After(*comment);
-        WSRunScanner scanner(ScanOptions(), afterComment,
-                             mTextFragmentDataAtStart.GetAncestorLimiter());
-        if (scanner.TextFragmentDataAtStartRef().EndRawReason() ==
-            WSType::SpecialContent) {
-          if ((comment = Comment::FromNode(scanner.TextFragmentDataAtStartRef()
-                                               .GetEndReasonContent()))) {
-            
-            continue;
-          }
-        }
-        return scanner.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
-            afterComment);
-      }
-    }
     default:
       break;
   }
@@ -1072,6 +1047,7 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
     if (textFragmentDataAtStart.EndsByVisibleBRElement()) {
       startContent = textFragmentDataAtStart.EndReasonBRElementPtr();
     } else if (textFragmentDataAtStart.EndsBySpecialContent() ||
+               textFragmentDataAtStart.EndsByEmptyInlineContainerElement() ||
                (textFragmentDataAtStart.EndsByOtherBlockElement() &&
                 !HTMLEditUtils::IsContainerNode(
                     *textFragmentDataAtStart
@@ -1094,6 +1070,7 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
     if (textFragmentDataAtEnd.StartsFromVisibleBRElement()) {
       endContent = textFragmentDataAtEnd.StartReasonBRElementPtr();
     } else if (textFragmentDataAtEnd.StartsFromSpecialContent() ||
+               textFragmentDataAtEnd.EndsByEmptyInlineContainerElement() ||
                (textFragmentDataAtEnd.StartsFromOtherBlockElement() &&
                 !HTMLEditUtils::IsContainerNode(
                     *textFragmentDataAtEnd
