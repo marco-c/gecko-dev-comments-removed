@@ -8,18 +8,18 @@ do_get_profile();
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
-const { MemoriesHistoryScheduler } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistoryScheduler.sys.mjs"
+const { InsightsHistoryScheduler } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/InsightsHistoryScheduler.sys.mjs"
 );
-const { MemoriesDriftDetector } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/memories/MemoriesDriftDetector.sys.mjs"
+const { InsightsDriftDetector } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/InsightsDriftDetector.sys.mjs"
 );
-const { MemoriesManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs"
+const { InsightsManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/InsightsManager.sys.mjs"
 );
 
-const { PREF_GENERATE_MEMORIES } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
+const { PREF_GENERATE_INSIGHTS } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/InsightsConstants.sys.mjs"
 );
 
 
@@ -37,20 +37,20 @@ async function addTestVisits(count) {
 }
 
 registerCleanupFunction(async () => {
-  Services.prefs.clearUserPref(PREF_GENERATE_MEMORIES);
+  Services.prefs.clearUserPref(PREF_GENERATE_INSIGHTS);
   await PlacesUtils.history.clear();
 });
 
 
 add_task(async function test_scheduler_runs_when_drift_triggers() {
-  Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES, true);
+  Services.prefs.setBoolPref(PREF_GENERATE_INSIGHTS, true);
 
   const generateStub = sinon
-    .stub(MemoriesManager, "generateMemoriesFromBrowsingHistory")
+    .stub(InsightsManager, "generateInsightsFromBrowsingHistory")
     .resolves();
 
   const driftStub = sinon
-    .stub(MemoriesDriftDetector, "computeHistoryDriftAndTrigger")
+    .stub(InsightsDriftDetector, "computeHistoryDriftAndTrigger")
     .resolves({
       baselineMetrics: [{ sessionId: 1, jsScore: 0.1, avgSurprisal: 1.0 }],
       deltaMetrics: [{ sessionId: 2, jsScore: 0.9, avgSurprisal: 3.0 }],
@@ -63,7 +63,7 @@ add_task(async function test_scheduler_runs_when_drift_triggers() {
     });
 
   try {
-    let scheduler = MemoriesHistoryScheduler.maybeInit();
+    let scheduler = InsightsHistoryScheduler.maybeInit();
 
     
     scheduler.setPagesVisitedForTesting(100);
@@ -80,14 +80,14 @@ add_task(async function test_scheduler_runs_when_drift_triggers() {
 
 
 add_task(async function test_scheduler_skips_when_drift_not_triggered() {
-  Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES, true);
+  Services.prefs.setBoolPref(PREF_GENERATE_INSIGHTS, true);
 
   const generateStub = sinon
-    .stub(MemoriesManager, "generateMemoriesFromBrowsingHistory")
+    .stub(InsightsManager, "generateInsightsFromBrowsingHistory")
     .resolves();
 
   const driftStub = sinon
-    .stub(MemoriesDriftDetector, "computeHistoryDriftAndTrigger")
+    .stub(InsightsDriftDetector, "computeHistoryDriftAndTrigger")
     .resolves({
       baselineMetrics: [{ sessionId: 1, jsScore: 0.1, avgSurprisal: 1.0 }],
       deltaMetrics: [{ sessionId: 2, jsScore: 0.2, avgSurprisal: 1.2 }],
@@ -100,7 +100,7 @@ add_task(async function test_scheduler_skips_when_drift_not_triggered() {
     });
 
   try {
-    let scheduler = MemoriesHistoryScheduler.maybeInit();
+    let scheduler = InsightsHistoryScheduler.maybeInit();
     await addTestVisits(60);
     await scheduler.runNowForTesting();
     sinon.assert.notCalled(generateStub);
@@ -112,14 +112,14 @@ add_task(async function test_scheduler_skips_when_drift_not_triggered() {
 
 
 add_task(async function test_scheduler_runs_on_first_run_with_small_history() {
-  Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES, true);
+  Services.prefs.setBoolPref(PREF_GENERATE_INSIGHTS, true);
 
   const generateStub = sinon
-    .stub(MemoriesManager, "generateMemoriesFromBrowsingHistory")
+    .stub(InsightsManager, "generateInsightsFromBrowsingHistory")
     .resolves();
 
   const driftStub = sinon
-    .stub(MemoriesDriftDetector, "computeHistoryDriftAndTrigger")
+    .stub(InsightsDriftDetector, "computeHistoryDriftAndTrigger")
     .resolves({
       baselineMetrics: [],
       deltaMetrics: [],
@@ -132,11 +132,11 @@ add_task(async function test_scheduler_runs_on_first_run_with_small_history() {
     });
 
   const lastTsStub = sinon
-    .stub(MemoriesManager, "getLastHistoryMemoryTimestamp")
+    .stub(InsightsManager, "getLastHistoryInsightTimestamp")
     .resolves(0);
 
   try {
-    let scheduler = MemoriesHistoryScheduler.maybeInit();
+    let scheduler = InsightsHistoryScheduler.maybeInit();
     Assert.ok(scheduler, "Scheduler should be initialized when pref is true");
 
     

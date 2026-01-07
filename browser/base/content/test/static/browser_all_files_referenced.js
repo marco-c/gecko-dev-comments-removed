@@ -337,18 +337,16 @@ var allowlist = [
     file: "chrome://browser/content/aiwindow/firstrun.html",
   },
   
-  
   {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistoryScheduler.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/InsightsHistoryScheduler.sys.mjs",
   },
   
   {
     file: "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs",
   },
   
-  
   {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesConversationScheduler.sys.mjs",
+    file: "moz-src:///browser/components/aiwindow/models/InsightsConversationScheduler.sys.mjs",
   },
   
   {
