@@ -493,7 +493,11 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
   if (!aContent.IsHTMLElement()) {
     return true;
   }
-  
+  nsIFrame* const primaryFrame = aContent.GetPrimaryFrame();
+  if (primaryFrame && aContent.IsInComposedDoc() &&
+      HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(aContent)) {
+    return false;
+  }
   if (HTMLEditUtils::IsBlockElement(
           aContent, BlockInlineCheck::UseComputedDisplayStyle)) {
     return true;
@@ -511,17 +515,18 @@ bool HTMLEditUtils::IsVisibleElementEvenIfLeafNode(const nsIContent& aContent) {
           HTMLInputElement::FromNode(&aContent)) {
     return inputElement->ControlType() != FormControlType::InputHidden;
   }
-  
-  
-  
-  
-  
-  
-  
-  if (aContent.GetPrimaryFrame() &&
-      !aContent.GetPrimaryFrame()->GetSize().IsEmpty()) {
-    return true;
+  if (primaryFrame) {
+    
+    
+    if (!primaryFrame->IsSubtreeDirty() || !primaryFrame->IsInlineFrame()) {
+      return !primaryFrame->GetSize().IsEmpty();
+    }
+    
+    
+    return !primaryFrame->IsSelfEmpty();
   }
+  
+  
   
   return false;
 }
