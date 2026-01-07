@@ -5,6 +5,7 @@
 """
 Module to handle Gecko profiling.
 """
+
 import json
 import os
 import tempfile
@@ -115,32 +116,30 @@ class GeckoProfile(RaptorProfiling):
                 LOG.error("No profiles collected")
             return
 
-        symbolicator = ProfileSymbolicator(
-            {
-                
-                "enableTracing": 0,
-                
-                "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
-                
-                "maxCacheEntries": 2000000,
-                
-                
-                "prefetchInterval": 12,
-                
-                "prefetchThreshold": 48,
-                
-                
-                "prefetchMaxSymbolsPerLib": 3,
-                
-                "defaultApp": "FIREFOX",
-                "defaultOs": "WINDOWS",
-                
-                
-                
-                
-                "symbolPaths": self.symbol_paths,
-            }
-        )
+        symbolicator = ProfileSymbolicator({
+            
+            "enableTracing": 0,
+            
+            "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
+            
+            "maxCacheEntries": 2000000,
+            
+            
+            "prefetchInterval": 12,
+            
+            "prefetchThreshold": 48,
+            
+            
+            "prefetchMaxSymbolsPerLib": 3,
+            
+            "defaultApp": "FIREFOX",
+            "defaultOs": "WINDOWS",
+            
+            
+            
+            
+            "symbolPaths": self.symbol_paths,
+        })
 
         if self.raptor_config.get("symbols_path") is not None:
             if mozfile.is_url(self.raptor_config["symbols_path"]):

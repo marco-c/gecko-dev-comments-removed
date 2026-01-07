@@ -5,6 +5,7 @@
 """
 Set up a browser environment before running a test.
 """
+
 import json
 import os
 import shutil
@@ -51,8 +52,14 @@ class FFSetup:
 
     def __init__(self, browser_config, test_config):
         self.browser_config, self.test_config = browser_config, test_config
-        self._tmp_dir = tempfile.mkdtemp()
         self.env = None
+
+        if "MOZ_AUTOMATION" in os.environ:
+            
+            self._tmp_dir = os.path.join(os.environ["TASK_WORKDIR"], "temp")
+        else:
+            self._tmp_dir = tempfile.mkdtemp()
+
         
         
         self.profile_dir = os.path.join(self._tmp_dir, "profile")
@@ -133,12 +140,10 @@ class FFSetup:
         
         preferences = self.browser_config.get("preferences", {}).copy()
         if self.test_config.get("preferences"):
-            test_prefs = dict(
-                [
-                    (i, utils.parse_pref(j))
-                    for i, j in self.test_config["preferences"].items()
-                ]
-            )
+            test_prefs = dict([
+                (i, utils.parse_pref(j))
+                for i, j in self.test_config["preferences"].items()
+            ])
             preferences.update(test_prefs)
 
         for name, value in preferences.items():
@@ -210,7 +215,7 @@ class FFSetup:
     def _init_gecko_profile(self):
         upload_dir = os.getenv("MOZ_UPLOAD_DIR")
         if self.test_config.get("gecko_profile") and not upload_dir:
-            LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not" " set")
+            LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not set")
         if upload_dir and self.test_config.get("gecko_profile"):
             self.gecko_profile = GeckoProfile(
                 upload_dir, self.browser_config, self.test_config

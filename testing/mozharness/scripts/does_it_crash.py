@@ -2,10 +2,11 @@
 
 
 
-""" does_it_crash.py
+"""does_it_crash.py
 
-    Runs a thing to see if it crashes within a set period.
+Runs a thing to see if it crashes within a set period.
 """
+
 import os
 import signal
 import subprocess

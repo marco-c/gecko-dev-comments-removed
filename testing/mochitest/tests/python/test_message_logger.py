@@ -119,17 +119,15 @@ def test_buffering_on(get_message_logger, assert_actions):
 
     
     ml.fake_message("test_end", status="FAIL")
-    assert_actions(
-        [
-            "log",  
-            "test_status",
-            "log",
-            "test_status",
-            "log",
-            "log",  
-            "test_end",
-        ]
-    )
+    assert_actions([
+        "log",  
+        "test_status",
+        "log",
+        "test_status",
+        "log",
+        "log",  
+        "test_end",
+    ])
 
     
     ml.fake_message("buffering_on")

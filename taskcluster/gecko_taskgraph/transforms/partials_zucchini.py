@@ -4,6 +4,7 @@
 """
 Transform the partials task into an actual task description.
 """
+
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
@@ -78,15 +79,13 @@ def make_task_description(config, tasks):
         task["worker"]["env"]["TO_MAR_TASK_ID"] = {
             "task-reference": f"<{dep_task.kind}>"
         }
-        extra_params.extend(
-            [
-                f"--arch={architecture(build_platform)}",
-                f"--locale={build_locale}",
-                
-                
-                f"--to_mar_url=https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/$TO_MAR_TASK_ID/artifacts/{to_mar_path}",
-            ]
-        )
+        extra_params.extend([
+            f"--arch={architecture(build_platform)}",
+            f"--locale={build_locale}",
+            
+            
+            f"--to_mar_url=https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/$TO_MAR_TASK_ID/artifacts/{to_mar_path}",
+        ])
         
         task["run"]["command"] += " " + " ".join(extra_params)
 

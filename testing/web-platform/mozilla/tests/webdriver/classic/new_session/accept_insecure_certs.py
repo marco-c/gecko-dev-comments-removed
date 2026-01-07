@@ -10,7 +10,6 @@ pytestmark = pytest.mark.asyncio
 async def test_accept_insecure_certs(
     configuration, url, create_custom_profile, geckodriver, accept_insecure_certs
 ):
-
     
     
     custom_profile = create_custom_profile(clone=False)

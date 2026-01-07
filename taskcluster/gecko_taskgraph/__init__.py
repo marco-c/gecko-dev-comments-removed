@@ -32,16 +32,14 @@ tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozill
 
 
 
-schema.EXCEPTED_SCHEMA_IDENTIFIERS.extend(
-    [
-        "test_name",
-        "json_location",
-        "video_location",
-        "profile_name",
-        "target_path",
-        "try_task_config",
-    ]
-)
+schema.EXCEPTED_SCHEMA_IDENTIFIERS.extend([
+    "test_name",
+    "json_location",
+    "video_location",
+    "profile_name",
+    "target_path",
+    "try_task_config",
+])
 
 
 

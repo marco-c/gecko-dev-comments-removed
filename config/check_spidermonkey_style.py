@@ -54,63 +54,61 @@ ignored_js_src_dirs = [
 ]
 
 
-included_inclnames_to_ignore = set(
-    [
-        "ffi.h",  
-        "devtools/Instruments.h",  
-        "diplomat_runtime.hpp",  
-        "double-conversion/double-conversion.h",  
-        "frontend/ReservedWordsGenerated.h",  
-        "gc/StatsPhasesGenerated.h",  
-        "gc/StatsPhasesGenerated.inc",  
-        "icu4x/Calendar.hpp",  
-        "icu4x/Date.hpp",  
-        "icu4x/GraphemeClusterSegmenter.hpp",  
-        "icu4x/IsoDate.hpp",  
-        "icu4x/Locale.hpp",  
-        "icu4x/SentenceSegmenter.hpp",  
-        "icu4x/WordSegmenter.hpp",  
-        "jit/ABIFunctionTypeGenerated.h",  
-        "jit/AtomicOperationsGenerated.h",  
-        "jit/CacheIROpsGenerated.h",  
-        "jit/CacheIRAOTGenerated.h",  
-        "jit/LIROpsGenerated.h",  
-        "jit/MIROpsGenerated.h",  
-        "js/PrefsGenerated.h",  
-        "js/ProfilingCategoryList.h",  
-        "mozilla/glue/Debug.h",  
-        "jscustomallocator.h",  
-        "js-config.h",  
-        "fdlibm.h",  
-        "FuzzerDefs.h",  
-        "FuzzingInterface.h",  
-        "mozmemory.h",  
-        "mozmemory_stall.h",  
-        "pratom.h",  
-        "prcvar.h",  
-        "prerror.h",  
-        "prinit.h",  
-        "prio.h",  
-        "private/pprio.h",  
-        "prlink.h",  
-        "prlock.h",  
-        "prprf.h",  
-        "prthread.h",  
-        "prtypes.h",  
-        "selfhosted.out.h",  
-        "shellmoduleloader.out.h",  
-        "unicode/locid.h",  
-        "unicode/uchar.h",  
-        "unicode/uniset.h",  
-        "unicode/unistr.h",  
-        "unicode/utypes.h",  
-        "vtune/VTuneWrapper.h",  
-        "wasm/WasmBuiltinModuleGenerated.h",  
-        "zydis/ZydisAPI.h",  
-        "xsum/xsum.h",  
-        "fmt/format.h",  
-    ]
-)
+included_inclnames_to_ignore = set([
+    "ffi.h",  
+    "devtools/Instruments.h",  
+    "diplomat_runtime.hpp",  
+    "double-conversion/double-conversion.h",  
+    "frontend/ReservedWordsGenerated.h",  
+    "gc/StatsPhasesGenerated.h",  
+    "gc/StatsPhasesGenerated.inc",  
+    "icu4x/Calendar.hpp",  
+    "icu4x/Date.hpp",  
+    "icu4x/GraphemeClusterSegmenter.hpp",  
+    "icu4x/IsoDate.hpp",  
+    "icu4x/Locale.hpp",  
+    "icu4x/SentenceSegmenter.hpp",  
+    "icu4x/WordSegmenter.hpp",  
+    "jit/ABIFunctionTypeGenerated.h",  
+    "jit/AtomicOperationsGenerated.h",  
+    "jit/CacheIROpsGenerated.h",  
+    "jit/CacheIRAOTGenerated.h",  
+    "jit/LIROpsGenerated.h",  
+    "jit/MIROpsGenerated.h",  
+    "js/PrefsGenerated.h",  
+    "js/ProfilingCategoryList.h",  
+    "mozilla/glue/Debug.h",  
+    "jscustomallocator.h",  
+    "js-config.h",  
+    "fdlibm.h",  
+    "FuzzerDefs.h",  
+    "FuzzingInterface.h",  
+    "mozmemory.h",  
+    "mozmemory_stall.h",  
+    "pratom.h",  
+    "prcvar.h",  
+    "prerror.h",  
+    "prinit.h",  
+    "prio.h",  
+    "private/pprio.h",  
+    "prlink.h",  
+    "prlock.h",  
+    "prprf.h",  
+    "prthread.h",  
+    "prtypes.h",  
+    "selfhosted.out.h",  
+    "shellmoduleloader.out.h",  
+    "unicode/locid.h",  
+    "unicode/uchar.h",  
+    "unicode/uniset.h",  
+    "unicode/unistr.h",  
+    "unicode/utypes.h",  
+    "vtune/VTuneWrapper.h",  
+    "wasm/WasmBuiltinModuleGenerated.h",  
+    "zydis/ZydisAPI.h",  
+    "xsum/xsum.h",  
+    "fmt/format.h",  
+])
 
 
 
@@ -126,19 +124,17 @@ deprecated_inclnames_in_header_excludes = {
 
 
 
-oddly_ordered_inclnames = set(
-    [
-        "ctypes/typedefs.h",  
-        
-        "frontend/ReservedWordsGenerated.h",
-        "gc/StatsPhasesGenerated.h",  
-        "gc/StatsPhasesGenerated.inc",  
-        "psapi.h",  
-        "machine/endian.h",  
-        "process.h",  
-        "util/WindowsWrapper.h",  
-    ]
-)
+oddly_ordered_inclnames = set([
+    "ctypes/typedefs.h",  
+    
+    "frontend/ReservedWordsGenerated.h",
+    "gc/StatsPhasesGenerated.h",  
+    "gc/StatsPhasesGenerated.inc",  
+    "psapi.h",  
+    "machine/endian.h",  
+    "process.h",  
+    "util/WindowsWrapper.h",  
+])
 
 
 
@@ -217,9 +213,7 @@ js/src/tests/style/BadIncludesOrder-inl.h:28:29: error:
             -> tests/style/HeaderCycleB1-inl.h
       -> tests/style/HeaderCycleB4-inl.h
 
-""".splitlines(
-    True
-)
+""".splitlines(True)
 
 actual_output = []
 
@@ -381,9 +375,7 @@ def check_style(enable_fixup):
 def module_name(name):
     """Strip the trailing .cpp, .h, or -inl.h from a filename."""
 
-    return (
-        name.replace("-inl.h", "").replace(".h", "").replace(".cpp", "")
-    )  
+    return name.replace("-inl.h", "").replace(".h", "").replace(".cpp", "")  
 
 
 def is_module_header(enclosing_inclname, header_inclname):

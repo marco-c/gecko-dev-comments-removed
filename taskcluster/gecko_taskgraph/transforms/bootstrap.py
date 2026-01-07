@@ -11,21 +11,19 @@ from gecko_taskgraph.transforms.task import task_description_schema
 
 transforms = TransformSequence()
 
-bootstrap_schema = Schema(
-    {
-        
-        Required("name"): str,
-        
-        
-        
-        Required("image"): Any(str, {"in-tree": str}),
-        
-        Required("pre-commands"): [str],
-        
-        Optional("task-from"): str,
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+bootstrap_schema = Schema({
+    
+    Required("name"): str,
+    
+    
+    
+    Required("image"): Any(str, {"in-tree": str}),
+    
+    Required("pre-commands"): [str],
+    
+    Optional("task-from"): str,
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 transforms.add_validate(bootstrap_schema)

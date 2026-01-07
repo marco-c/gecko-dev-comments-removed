@@ -2,9 +2,7 @@
 
 
 
-"""multil10n.py
-
-"""
+"""multil10n.py"""
 
 import os
 import sys

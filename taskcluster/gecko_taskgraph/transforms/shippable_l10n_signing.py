@@ -59,24 +59,20 @@ def define_upstream_artifacts(config, jobs):
             if dep_job.kind.endswith(("-mac-notarization", "-mac-signing")):
                 
                 upstream_task_type = "scriptworker"
-            upstream_artifacts.append(
-                {
-                    "taskId": {"task-reference": f"<{dep_job.kind}>"},
-                    "taskType": upstream_task_type,
-                    
-                    
-                    
-                    
-                    "paths": sorted(
-                        {
-                            path_template.format(locale=locale)
-                            for locale in dep_job.attributes.get("chunk_locales", [])
-                            for path_template in spec["artifacts"]
-                        }
-                    ),
-                    "formats": spec["formats"],
-                }
-            )
+            upstream_artifacts.append({
+                "taskId": {"task-reference": f"<{dep_job.kind}>"},
+                "taskType": upstream_task_type,
+                
+                
+                
+                
+                "paths": sorted({
+                    path_template.format(locale=locale)
+                    for locale in dep_job.attributes.get("chunk_locales", [])
+                    for path_template in spec["artifacts"]
+                }),
+                "formats": spec["formats"],
+            })
 
         job["upstream-artifacts"] = upstream_artifacts
 

@@ -79,7 +79,7 @@ def create_tar_from_files(fp, files):
             
             
             if ti.mode & (stat.S_ISUID | stat.S_ISGID):
-                raise ValueError("cannot add file with setuid or setgid set: " "%s" % f)
+                raise ValueError("cannot add file with setuid or setgid set: %s" % f)
 
             
             ti.uid = 0

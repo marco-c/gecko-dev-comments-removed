@@ -5,6 +5,7 @@
 """
 module to handle Gecko profiling.
 """
+
 import json
 import os
 import tempfile
@@ -100,18 +101,16 @@ class GeckoProfile:
         
         
         
-        env.update(
-            {
-                "MOZ_PROFILER_STARTUP": "1",
-                
-                
-                "MOZ_PROFILER_STARTUP_NO_BASE": "1",
-                "MOZ_PROFILER_STARTUP_INTERVAL": str(self.option("interval")),
-                "MOZ_PROFILER_STARTUP_ENTRIES": str(self.option("entries")),
-                "MOZ_PROFILER_STARTUP_FEATURES": str(self.option("features")),
-                "MOZ_PROFILER_STARTUP_FILTERS": str(self.option("threads")),
-            }
-        )
+        env.update({
+            "MOZ_PROFILER_STARTUP": "1",
+            
+            
+            "MOZ_PROFILER_STARTUP_NO_BASE": "1",
+            "MOZ_PROFILER_STARTUP_INTERVAL": str(self.option("interval")),
+            "MOZ_PROFILER_STARTUP_ENTRIES": str(self.option("entries")),
+            "MOZ_PROFILER_STARTUP_FEATURES": str(self.option("features")),
+            "MOZ_PROFILER_STARTUP_FILTERS": str(self.option("threads")),
+        })
 
     def _save_gecko_profile(
         self, cycle, symbolicator, missing_symbols_zip, profile_path
@@ -143,32 +142,30 @@ class GeckoProfile:
 
         :param cycle: the number of the cycle of the test currently run.
         """
-        symbolicator = ProfileSymbolicator(
-            {
-                
-                "enableTracing": 0,
-                
-                "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
-                
-                "maxCacheEntries": 2000000,
-                
-                
-                "prefetchInterval": 12,
-                
-                "prefetchThreshold": 48,
-                
-                
-                "prefetchMaxSymbolsPerLib": 3,
-                
-                "defaultApp": "FIREFOX",
-                "defaultOs": "WINDOWS",
-                
-                
-                
-                
-                "symbolPaths": self.symbol_paths,
-            }
-        )
+        symbolicator = ProfileSymbolicator({
+            
+            "enableTracing": 0,
+            
+            "remoteSymbolServer": "https://symbolication.services.mozilla.com/symbolicate/v4",
+            
+            "maxCacheEntries": 2000000,
+            
+            
+            "prefetchInterval": 12,
+            
+            "prefetchThreshold": 48,
+            
+            
+            "prefetchMaxSymbolsPerLib": 3,
+            
+            "defaultApp": "FIREFOX",
+            "defaultOs": "WINDOWS",
+            
+            
+            
+            
+            "symbolPaths": self.symbol_paths,
+        })
 
         if self.browser_config["symbols_path"]:
             if mozfile.is_url(self.browser_config["symbols_path"]):

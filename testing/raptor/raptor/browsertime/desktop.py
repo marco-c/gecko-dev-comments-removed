@@ -49,9 +49,11 @@ class BrowsertimeDesktop(PerftestDesktop, Browsertime):
 
         
         
-        chrome_args.extend(
-            ["--no-first-run", "--no-experiments", "--disable-site-isolation-trials"]
-        )
+        chrome_args.extend([
+            "--no-first-run",
+            "--no-experiments",
+            "--disable-site-isolation-trials",
+        ])
 
         
         chrome_args += ["--enable-benchmarking"]

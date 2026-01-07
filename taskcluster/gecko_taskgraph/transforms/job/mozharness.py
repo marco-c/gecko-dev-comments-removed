@@ -25,72 +25,70 @@ from gecko_taskgraph.transforms.job.common import (
 )
 from gecko_taskgraph.util.attributes import is_try
 
-mozharness_run_schema = Schema(
-    {
-        Required("using"): "mozharness",
-        
-        
-        Required("script"): str,
-        
-        
-        Optional("config-paths"): [str],
-        
-        
-        
-        Required("config"): [str],
-        
-        Optional("actions"): [
-            Match("^[a-z0-9-]+$", "actions must be `-` seperated alphanumeric strings")
-        ],
-        
-        Optional("options"): [
-            Match(
-                "^[a-z0-9-]+(=[^ ]+)?$",
-                "options must be `-` seperated alphanumeric strings (with optional argument)",
-            )
-        ],
-        
-        Optional("custom-build-variant-cfg"): str,
-        
-        Optional("extra-config"): dict,
-        
-        
-        Required("tooltool-downloads"): Any(
-            False,
-            "public",
-            "internal",
-        ),
-        
-        
-        
-        
-        
-        Required("secrets"): Any(bool, [str]),
-        
-        
-        Required("taskcluster-proxy"): bool,
-        
-        
-        Required("keep-artifacts"): bool,
-        
-        Optional("job-script"): str,
-        Required("requires-signed-builds"): bool,
-        
-        Optional("use-caches"): Any(bool, [str]),
-        
-        
-        Required("use-simple-package"): bool,
-        
-        
-        Required("use-magic-mh-args"): bool,
-        
-        
-        Required("comm-checkout"): bool,
-        
-        Optional("workdir"): str,
-        Optional("run-as-root"): bool,
-    }
-)
+mozharness_run_schema = Schema({
+    Required("using"): "mozharness",
+    
+    
+    Required("script"): str,
+    
+    
+    Optional("config-paths"): [str],
+    
+    
+    
+    Required("config"): [str],
+    
+    Optional("actions"): [
+        Match("^[a-z0-9-]+$", "actions must be `-` seperated alphanumeric strings")
+    ],
+    
+    Optional("options"): [
+        Match(
+            "^[a-z0-9-]+(=[^ ]+)?$",
+            "options must be `-` seperated alphanumeric strings (with optional argument)",
+        )
+    ],
+    
+    Optional("custom-build-variant-cfg"): str,
+    
+    Optional("extra-config"): dict,
+    
+    
+    Required("tooltool-downloads"): Any(
+        False,
+        "public",
+        "internal",
+    ),
+    
+    
+    
+    
+    
+    Required("secrets"): Any(bool, [str]),
+    
+    
+    Required("taskcluster-proxy"): bool,
+    
+    
+    Required("keep-artifacts"): bool,
+    
+    Optional("job-script"): str,
+    Required("requires-signed-builds"): bool,
+    
+    Optional("use-caches"): Any(bool, [str]),
+    
+    
+    Required("use-simple-package"): bool,
+    
+    
+    Required("use-magic-mh-args"): bool,
+    
+    
+    Required("comm-checkout"): bool,
+    
+    Optional("workdir"): str,
+    Optional("run-as-root"): bool,
+})
 
 
 mozharness_defaults = {
@@ -133,27 +131,23 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     
     worker.setdefault("docker-image", {"in-tree": "debian12-amd64-build"})
 
-    worker.setdefault("artifacts", []).append(
-        {
-            "name": "public/logs",
-            "path": "{workdir}/logs/".format(**run),
-            "type": "directory",
-            "expires-after": get_expiration(config, "medium"),
-        }
-    )
+    worker.setdefault("artifacts", []).append({
+        "name": "public/logs",
+        "path": "{workdir}/logs/".format(**run),
+        "type": "directory",
+        "expires-after": get_expiration(config, "medium"),
+    })
     worker["taskcluster-proxy"] = run.pop("taskcluster-proxy", None)
     docker_worker_add_artifacts(config, job, taskdesc)
 
     env = worker.setdefault("env", {})
-    env.update(
-        {
-            "WORKSPACE": "{workdir}/workspace".format(**run),
-            "MOZHARNESS_CONFIG": " ".join(run.pop("config")),
-            "MOZHARNESS_SCRIPT": run.pop("script"),
-            "MH_BRANCH": config.params["project"],
-            "PYTHONUNBUFFERED": "1",
-        }
-    )
+    env.update({
+        "WORKSPACE": "{workdir}/workspace".format(**run),
+        "MOZHARNESS_CONFIG": " ".join(run.pop("config")),
+        "MOZHARNESS_SCRIPT": run.pop("script"),
+        "MH_BRANCH": config.params["project"],
+        "PYTHONUNBUFFERED": "1",
+    })
 
     worker.setdefault("required-volumes", []).append(env["WORKSPACE"])
 
@@ -233,24 +227,20 @@ def mozharness_on_generic_worker(config, job, taskdesc):
 
     setup_secrets(config, job, taskdesc)
 
-    taskdesc["worker"].setdefault("artifacts", []).append(
-        {
-            "name": "public/logs",
-            "path": "logs",
-            "type": "directory",
-            "expires-after": get_expiration(config, "medium"),
-        }
-    )
+    taskdesc["worker"].setdefault("artifacts", []).append({
+        "name": "public/logs",
+        "path": "logs",
+        "type": "directory",
+        "expires-after": get_expiration(config, "medium"),
+    })
 
     if not worker.get("skip-artifacts", False):
         generic_worker_add_artifacts(config, job, taskdesc)
 
     env = worker.setdefault("env", {})
-    env.update(
-        {
-            "MH_BRANCH": config.params["project"],
-        }
-    )
+    env.update({
+        "MH_BRANCH": config.params["project"],
+    })
     if run.pop("use-simple-package"):
         env.update({"MOZ_SIMPLE_PACKAGE_NAME": "target"})
 
@@ -336,21 +326,18 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         return
 
     if taskdesc.get("use-sccache"):
-        worker["command"] = (
-            [
-                
-                
-                dedent(
-                    """\
+        worker["command"] = [
+            
+            
+            dedent(
+                """\
             :: sccache currently uses the full compiler commandline as input to the
             :: cache hash key, so create a symlink to the task dir and build from
             :: the symlink dir to get consistent paths.
             if exist z:\\build rmdir z:\\build"""
-                ),
-                r"mklink /d z:\build %cd%",
-                
-                r"icacls z:\build /grant *S-1-1-0:D /L",
-                r"cd /d z:\build",
-            ]
-            + worker["command"]
-        )
+            ),
+            r"mklink /d z:\build %cd%",
+            
+            r"icacls z:\build /grant *S-1-1-0:D /L",
+            r"cd /d z:\build",
+        ] + worker["command"]

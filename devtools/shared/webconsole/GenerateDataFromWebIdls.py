@@ -19,29 +19,25 @@ import buildconfig
 
 
 
-PURE_INTERFACE_ALLOWLIST = set(
-    [
-        "Document",
-        "Node",
-        "DOMTokenList",
-        "Element",
-        "Performance",
-        "URLSearchParams",
-        "FormData",
-        "Headers",
-    ]
-)
+PURE_INTERFACE_ALLOWLIST = set([
+    "Document",
+    "Node",
+    "DOMTokenList",
+    "Element",
+    "Performance",
+    "URLSearchParams",
+    "FormData",
+    "Headers",
+])
 
 
-DEPRECATED_INTERFACE__EXCLUDE_LIST = set(
-    [
-        "External",
-        "TestExampleInterface",
-        "TestInterface",
-        "TestJSImplInterface",
-        "TestingDeprecatedInterface",
-    ]
-)
+DEPRECATED_INTERFACE__EXCLUDE_LIST = set([
+    "External",
+    "TestExampleInterface",
+    "TestInterface",
+    "TestJSImplInterface",
+    "TestingDeprecatedInterface",
+])
 
 FILE_TEMPLATE = """\
 /* This Source Code Form is subject to the terms of the Mozilla Public

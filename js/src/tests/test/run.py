@@ -51,28 +51,35 @@ class TestExport(unittest.TestCase):
             subprocess.check_call(["git", "-C", cloneDir, "checkout", "-b", branch])
             
             
-            subprocess.check_call(
-                ["git", "-C", cloneDir, "rm", "test/language/export/escaped-from.js"]
-            )
+            subprocess.check_call([
+                "git",
+                "-C",
+                cloneDir,
+                "rm",
+                "test/language/export/escaped-from.js",
+            ])
             
-            subprocess.check_call(
-                [
-                    "git",
-                    "-C",
-                    cloneDir,
-                    "mv",
-                    "test/language/export/escaped-default.js",
-                    "test/language/export/escaped-foobarbaz.js",
-                ]
-            )
+            subprocess.check_call([
+                "git",
+                "-C",
+                cloneDir,
+                "mv",
+                "test/language/export/escaped-default.js",
+                "test/language/export/escaped-foobarbaz.js",
+            ])
             
             fixturesDir = os.path.join(testDir, "fixtures", "import", "files")
             shutil.copytree(fixturesDir, os.path.join(cloneDir, "test", "temp42"))
             
             subprocess.check_call(["git", "-C", cloneDir, "add", "."])
-            subprocess.check_call(
-                ["git", "-C", cloneDir, "commit", "-m", '"local foo"']
-            )
+            subprocess.check_call([
+                "git",
+                "-C",
+                cloneDir,
+                "commit",
+                "-m",
+                '"local foo"',
+            ])
 
             
             print(

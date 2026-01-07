@@ -17,22 +17,20 @@ from gecko_taskgraph.transforms.l10n import parse_locales_file
 
 transforms = TransformSequence()
 
-split_by_locale_schema = Schema(
-    {
-        
-        
-        Required("locales-file"): str,
-        
-        
-        Optional("locale-file-platform"): str,
-        
-        
-        
-        
-        Optional("properties-with-locale"): [str],
-        Extra: object,
-    }
-)
+split_by_locale_schema = Schema({
+    
+    
+    Required("locales-file"): str,
+    
+    
+    Optional("locale-file-platform"): str,
+    
+    
+    
+    
+    Optional("properties-with-locale"): [str],
+    Extra: object,
+})
 
 
 transforms.add_validate(split_by_locale_schema)

@@ -71,11 +71,9 @@ class Daemon:
         defines = dict(self.config_environment.acdefines)
         
         
-        defines.update(
-            {
-                "AB_CD": "en-US",
-            }
-        )
+        defines.update({
+            "AB_CD": "en-US",
+        })
         return defines
 
     @mozbuild.util.memoized_property
@@ -143,14 +141,10 @@ class Daemon:
         data = self.client.getSubscription("topsrcdir")
         if data:
             for dat in data:
-                files |= set(
-                    [
-                        mozpath.normpath(
-                            mozpath.join(self.config_environment.topsrcdir, f)
-                        )
-                        for f in dat.get("files", [])
-                    ]
-                )
+                files |= set([
+                    mozpath.normpath(mozpath.join(self.config_environment.topsrcdir, f))
+                    for f in dat.get("files", [])
+                ])
 
         return files
 

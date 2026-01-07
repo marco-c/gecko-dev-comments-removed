@@ -17,16 +17,14 @@ import yaml
 
 
 
-SUPPORT_FILES = set(
-    [
-        "browser.js",
-        "shell.js",
-        "template.js",
-        "user.js",
-        "js-test-driver-begin.js",
-        "js-test-driver-end.js",
-    ]
-)
+SUPPORT_FILES = set([
+    "browser.js",
+    "shell.js",
+    "template.js",
+    "user.js",
+    "js-test-driver-begin.js",
+    "js-test-driver-end.js",
+])
 
 
 

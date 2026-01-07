@@ -101,20 +101,18 @@ class Sandbox(dict):
     """
 
     
-    BUILTINS = ReadOnlyDict(
-        {
-            
-            "None": None,
-            "False": False,
-            "True": True,
-            "sorted": alphabetical_sorted,
-            "int": int,
-            "len": len,
-            "range": range,
-            "set": set,
-            "tuple": tuple,
-        }
-    )
+    BUILTINS = ReadOnlyDict({
+        
+        "None": None,
+        "False": False,
+        "True": True,
+        "sorted": alphabetical_sorted,
+        "int": int,
+        "len": len,
+        "range": range,
+        "set": set,
+        "tuple": tuple,
+    })
 
     def __init__(self, context, finder=default_finder):
         """Initialize a Sandbox ready for execution."""

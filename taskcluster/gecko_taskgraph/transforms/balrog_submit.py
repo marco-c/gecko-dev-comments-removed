@@ -14,27 +14,25 @@ from voluptuous import Optional, Required
 from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 
-balrog_description_schema = Schema(
-    {
-        
-        Required("label"): str,
-        Optional(
-            "update-no-wnp",
-            description="Whether the parallel `-No-WNP` blob should be updated as well.",
-        ): optionally_keyed_by("release-type", bool),
-        
-        
-        
-        Optional("treeherder"): task_description_schema["treeherder"],
-        Optional("attributes"): task_description_schema["attributes"],
-        Optional("dependencies"): task_description_schema["dependencies"],
-        Optional("task-from"): task_description_schema["task-from"],
-        
-        Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    }
-)
+balrog_description_schema = Schema({
+    
+    Required("label"): str,
+    Optional(
+        "update-no-wnp",
+        description="Whether the parallel `-No-WNP` blob should be updated as well.",
+    ): optionally_keyed_by("release-type", bool),
+    
+    
+    
+    Optional("treeherder"): task_description_schema["treeherder"],
+    Optional("attributes"): task_description_schema["attributes"],
+    Optional("dependencies"): task_description_schema["dependencies"],
+    Optional("task-from"): task_description_schema["task-from"],
+    
+    Optional("shipping-product"): task_description_schema["shipping-product"],
+    Optional("shipping-phase"): task_description_schema["shipping-phase"],
+    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+})
 
 
 transforms = TransformSequence()
