@@ -15740,9 +15740,20 @@ class BaseContent extends (external_React_default()).PureComponent {
         if (hash === "#customize-topics") {
           this.toggleSectionsMgmtPanel();
         }
+      } else if (this.props.App.customizeMenuVisible) {
+        this.closeCustomizationMenu();
       }
     };
-    this._onHashChange();
+
+    
+    
+    
+    
+    
+    const isReload = globalThis.performance?.getEntriesByType("navigation")[0]?.type === "reload";
+    if (!isReload) {
+      this._onHashChange();
+    }
     globalThis.addEventListener("hashchange", this._onHashChange);
   }
   componentDidUpdate(prevProps) {
