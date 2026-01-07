@@ -1053,8 +1053,13 @@ class ScrollContainerFrame : public nsContainerFrame,
   ScrollContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                        nsIFrame::ClassID aID, bool aIsRoot);
   ~ScrollContainerFrame();
+  void SetSuppressScrollbarUpdate(bool aSuppress) {
+    mSuppressScrollbarUpdate = aSuppress;
+  }
   bool GuessHScrollbarNeeded(const ScrollReflowInput& aState);
   bool GuessVScrollbarNeeded(const ScrollReflowInput& aState);
+
+  bool IsScrollbarUpdateSuppressed() const { return mSuppressScrollbarUpdate; }
 
   
   
@@ -1444,6 +1449,10 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool mDidHistoryRestore : 1;
   
   bool mIsRoot : 1;
+  
+  
+  
+  bool mSuppressScrollbarUpdate : 1;
   
   
   

@@ -49,6 +49,13 @@ nsresult NS_NewAttributeContent(nsNodeInfoManager* aNodeInfoManager,
                                 int32_t aNameSpaceID, nsAtom* aAttrName,
                                 nsAtom* aFallback, nsIContent** aResult);
 
+
+
+
+
+nsContainerFrame* NS_NewSelectsAreaFrame(mozilla::PresShell* aPresShell,
+                                         mozilla::ComputedStyle* aStyle);
+
 nsIFrame* NS_NewBRFrame(mozilla::PresShell* aPresShell,
                         mozilla::ComputedStyle* aStyle);
 

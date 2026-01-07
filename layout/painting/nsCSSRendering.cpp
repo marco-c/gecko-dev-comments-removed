@@ -1042,12 +1042,11 @@ void nsCSSRendering::PaintNonThemedOutline(nsPresContext* aPresContext,
   PrintAsStringNewline();
 }
 
-nsCSSBorderRenderer nsCSSRendering::GetBorderRendererForFocus(
-    nsIFrame* aForFrame, DrawTarget* aDrawTarget, const nsRect& aFocusRect,
-    nscolor aColor) {
-  auto* pc = aForFrame->PresContext();
+void nsCSSRendering::PaintFocus(nsPresContext* aPresContext,
+                                DrawTarget* aDrawTarget,
+                                const nsRect& aFocusRect, nscolor aColor) {
   nscoord oneCSSPixel = nsPresContext::CSSPixelsToAppUnits(1);
-  nscoord oneDevPixel = pc->DevPixelsToAppUnits(1);
+  nscoord oneDevPixel = aPresContext->DevPixelsToAppUnits(1);
 
   Rect focusRect(NSRectToRect(aFocusRect, oneDevPixel));
 
@@ -1067,9 +1066,15 @@ nsCSSBorderRenderer nsCSSRendering::GetBorderRendererForFocus(
   
   
   
-  return nsCSSBorderRenderer(pc, aDrawTarget, focusRect, focusRect, focusStyles,
-                             focusWidths, focusRadii, focusColors,
-                             !aForFrame->BackfaceIsHidden(), Nothing());
+  
+  
+  
+  nsCSSBorderRenderer br(aPresContext, aDrawTarget, focusRect, focusRect,
+                         focusStyles, focusWidths, focusRadii, focusColors,
+                         true, Nothing());
+  br.DrawBorders();
+
+  PrintAsStringNewline();
 }
 
 

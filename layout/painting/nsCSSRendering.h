@@ -247,9 +247,8 @@ struct nsCSSRendering {
 
 
 
-  static nsCSSBorderRenderer GetBorderRendererForFocus(nsIFrame*, DrawTarget*,
-                                                       const nsRect& aFocusRect,
-                                                       nscolor aColor);
+  static void PaintFocus(nsPresContext* aPresContext, DrawTarget* aDrawTarget,
+                         const nsRect& aFocusRect, nscolor aColor);
 
   
 
