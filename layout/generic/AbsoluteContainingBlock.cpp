@@ -865,7 +865,9 @@ static nscoord OffsetToAlignedStaticPos(
           ? aKidReflowInput.mStylePosition->mJustifySelf._0
           : aKidReflowInput.mStylePosition->mAlignSelf._0;
   if (aNonAutoAlignParams && !safetyBits &&
-      rawAlignConst != StyleAlignFlags::AUTO) {
+      (rawAlignConst != StyleAlignFlags::AUTO ||
+       alignConst == StyleAlignFlags::ANCHOR_CENTER)) {
+    
     
     
     
