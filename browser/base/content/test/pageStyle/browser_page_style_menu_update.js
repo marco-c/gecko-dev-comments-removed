@@ -24,7 +24,7 @@ add_task(async function () {
 
   
   
-  let selected = menupopup.querySelector("menuitem[checked='true']");
+  let selected = menupopup.querySelector("menuitem[checked]");
   is(
     selected.getAttribute("label"),
     "6",
@@ -38,7 +38,7 @@ add_task(async function () {
   gPageStyleMenu.fillPopup(menupopup);
   
   
-  selected = menupopup.querySelector("menuitem[checked='true']");
+  selected = menupopup.querySelector("menuitem[checked]");
   is(
     selected.getAttribute("label"),
     "1",

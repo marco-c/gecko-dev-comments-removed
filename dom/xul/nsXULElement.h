@@ -358,11 +358,6 @@ class nsXULElement : public nsStyledElement {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsXULElement, nsStyledElement)
 
   
-  
-  
-  bool IsDisabled() const = delete;
-
-  
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult PreHandleEvent(mozilla::EventChainVisitor& aVisitor) override;
@@ -526,7 +521,6 @@ class nsXULElement : public nsStyledElement {
 
   bool SupportsAccessKey() const;
   void RegUnRegAccessKey(bool aDoReg) override;
-  bool BoolAttrIsTrue(nsAtom* aName) const;
 
   friend nsXULElement* NS_NewBasicXULElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

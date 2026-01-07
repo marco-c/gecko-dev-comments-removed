@@ -91,8 +91,6 @@ class XULButtonElement : public nsXULElement {
   XULPopupElement* GetMenuPopupContent() const;
   int32_t MenuOpenCloseDelay() const;
 
-  bool IsDisabled() const { return GetXULBoolAttr(nsGkAtoms::disabled); }
-
  private:
   XULMenuBarElement* GetMenuBar() const;
   void Blurred();
@@ -112,7 +110,9 @@ class XULButtonElement : public nsXULElement {
   bool mIsHandlingKeyEvent = false;
 
   
-  const bool mIsAlwaysMenu;
+  const bool mIsAlwaysMenu : 1;
+  
+  const bool mCheckable : 1;
   RefPtr<nsXULMenuCommandEvent> mDelayedMenuCommandEvent;
   nsCOMPtr<nsITimer> mMenuOpenTimer;
   nsCOMPtr<nsITimer> mMenuBlinkTimer;

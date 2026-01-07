@@ -69,14 +69,10 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
 
   
   
-  bool isEnabled;
-  if (mCommandElement) {
-    isEnabled = !mCommandElement->AttrValueIs(
-        kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true, eCaseMatters);
-  } else {
-    isEnabled = !mContent->AsElement()->AttrValueIs(
-        kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true, eCaseMatters);
-  }
+  const bool isEnabled =
+      mCommandElement
+          ? !mCommandElement->GetBoolAttr(nsGkAtoms::disabled)
+          : !mContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
 
   
   if (mType == eSeparatorMenuItemType) {
@@ -88,8 +84,7 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
                                                       action:nil
                                                keyEquivalent:@""];
 
-    mIsChecked = mContent->AsElement()->AttrValueIs(
-        kNameSpaceID_None, nsGkAtoms::checked, nsGkAtoms::_true, eCaseMatters);
+    mIsChecked = mContent->AsElement()->GetBoolAttr(nsGkAtoms::checked);
 
     mNativeMenuItem.enabled = isEnabled;
     mNativeMenuItem.state =
@@ -168,13 +163,7 @@ nsresult nsMenuItemX::SetChecked(bool aIsChecked) {
 
   
   
-  if (mIsChecked) {
-    mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::checked,
-                                   u"true"_ns, true);
-  } else {
-    mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::checked,
-                                     true);
-  }
+  mContent->AsElement()->SetBoolAttr(nsGkAtoms::checked, mIsChecked);
 
   
   mNativeMenuItem.state =
@@ -243,7 +232,7 @@ nsresult nsMenuItemX::DispatchDOMEvent(const nsString& eventName,
 void nsMenuItemX::UncheckRadioSiblings(nsIContent* aCheckedContent) {
   nsAutoString myGroupName;
   aCheckedContent->AsElement()->GetAttr(nsGkAtoms::name, myGroupName);
-  if (!myGroupName.Length()) {  
+  if (myGroupName.IsEmpty()) {  
     return;
   }
 
@@ -259,8 +248,8 @@ void nsMenuItemX::UncheckRadioSiblings(nsIContent* aCheckedContent) {
       
       if (sibling->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
                                             myGroupName, eCaseMatters)) {
-        sibling->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::checked,
-                                      u"false"_ns, true);
+        sibling->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::checked,
+                                        true);
       }
     }
   }
@@ -361,10 +350,9 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
     if (aAttribute == nsGkAtoms::checked) {
       
       
+      
       if (mType == eRadioMenuItemType &&
-          mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                             nsGkAtoms::checked,
-                                             nsGkAtoms::_true, eCaseMatters)) {
+          mContent->AsElement()->GetBoolAttr(nsGkAtoms::checked)) {
         UncheckRadioSiblings(mContent);
       }
       mMenuParent->SetRebuild(true);
@@ -392,33 +380,24 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
     } else if (aAttribute == nsGkAtoms::key) {
       SetKeyEquiv();
     } else if (aAttribute == nsGkAtoms::disabled) {
-      mNativeMenuItem.enabled = !aContent->AsElement()->AttrValueIs(
-          kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
-          eCaseMatters);
+      mNativeMenuItem.enabled =
+          !aContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
     }
   } else if (aContent == mCommandElement) {
     
     
     if (aAttribute == nsGkAtoms::disabled) {
       
-      nsAutoString commandDisabled;
-      nsAutoString menuDisabled;
-      aContent->AsElement()->GetAttr(nsGkAtoms::disabled, commandDisabled);
-      mContent->AsElement()->GetAttr(nsGkAtoms::disabled, menuDisabled);
-      if (!commandDisabled.Equals(menuDisabled)) {
-        
-        if (commandDisabled.IsEmpty()) {
-          mContent->AsElement()->UnsetAttr(kNameSpaceID_None,
-                                           nsGkAtoms::disabled, true);
-        } else {
-          mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::disabled,
-                                         commandDisabled, true);
-        }
+      const bool commandDisabled =
+          mCommandElement->GetBoolAttr(nsGkAtoms::disabled);
+      const bool menuDisabled =
+          mContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
+      if (commandDisabled != menuDisabled) {
+        mContent->AsElement()->SetBoolAttr(nsGkAtoms::disabled,
+                                           commandDisabled);
       }
       
-      mNativeMenuItem.enabled = !aContent->AsElement()->AttrValueIs(
-          kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
-          eCaseMatters);
+      mNativeMenuItem.enabled = !commandDisabled;
     }
   } else if (aContent == mImageElement && aAttribute == nsGkAtoms::srcset) {
     SetupIcon();

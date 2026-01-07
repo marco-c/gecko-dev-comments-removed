@@ -228,7 +228,7 @@ async function acceptNextProtocolPermissionDialog(browser) {
   let dialogEl = getDialogElementFromSubDialog(dialog);
 
   
-  dialogEl.setAttribute("buttondisabledaccept", "false");
+  dialogEl.removeAttribute("buttondisabledaccept");
   dialogEl.acceptDialog();
 
   await dialogWindowClosePromise;

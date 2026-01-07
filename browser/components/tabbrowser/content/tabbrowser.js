@@ -5819,7 +5819,7 @@
       
       
       
-      if (node.getAttribute("disabled") == "true") {
+      if (node.hasAttribute("disabled")) {
         return;
       } 
 
@@ -9689,7 +9689,7 @@ var TabContextMenu = {
     let closedCount = SessionStore.getLastClosedTabCount(window);
     document
       .getElementById("History:UndoCloseTab")
-      .setAttribute("disabled", closedCount == 0);
+      .toggleAttribute("disabled", closedCount == 0);
     document.l10n.setArgs(document.getElementById("context_undoCloseTab"), {
       tabCount: closedCount,
     });

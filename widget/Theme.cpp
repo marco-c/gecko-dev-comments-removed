@@ -1548,18 +1548,8 @@ nsITheme::Transparency Theme::GetWidgetTransparency(
 
 bool Theme::WidgetAttributeChangeRequiresRepaint(StyleAppearance aAppearance,
                                                  nsAtom* aAttribute) {
-  
-  
-  
-  
-  return aAttribute == nsGkAtoms::disabled ||
-         aAttribute == nsGkAtoms::checked ||
-         aAttribute == nsGkAtoms::selected ||
-         aAttribute == nsGkAtoms::visuallyselected ||
-         aAttribute == nsGkAtoms::menuactive ||
-         aAttribute == nsGkAtoms::sortDirection ||
-         aAttribute == nsGkAtoms::focused ||
-         aAttribute == nsGkAtoms::_default || aAttribute == nsGkAtoms::open;
+  return aAttribute == nsGkAtoms::_default ||  
+         aAttribute == nsGkAtoms::open;        
 }
 
 bool Theme::WidgetAppearanceDependsOnWindowFocus(StyleAppearance aAppearance) {

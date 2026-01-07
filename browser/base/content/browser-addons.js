@@ -442,12 +442,7 @@ customElements.define(
       let disabled = !allowed;
       
       
-      
-      if (disabled) {
-        this.setAttribute("mainactiondisabled", "true");
-      } else {
-        this.removeAttribute("mainactiondisabled");
-      }
+      this.toggleAttribute("mainactiondisabled", disabled);
 
       
       
@@ -2831,7 +2826,7 @@ var gUnifiedExtensions = {
     if (forBrowserAction) {
       let area = CustomizableUI.getPlacementOfWidget(widgetId).area;
       let inToolbar = area != CustomizableUI.AREA_ADDONS;
-      pinButton.setAttribute("checked", inToolbar);
+      pinButton.toggleAttribute("checked", inToolbar);
 
       const placement = CustomizableUI.getPlacementOfWidget(widgetId);
       const notInPanel = placement?.area !== CustomizableUI.AREA_ADDONS;
@@ -2918,14 +2913,14 @@ var gUnifiedExtensions = {
   },
 
   async onPinToToolbarChange(menu, event) {
-    let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
+    let shouldPinToToolbar = event.target.hasAttribute("checked");
     
     
     
     
     
     
-    event.target.setAttribute("checked", !shouldPinToToolbar);
+    event.target.toggleAttribute("checked", !shouldPinToToolbar);
 
     let widgetId = this._getWidgetId(menu);
     if (!widgetId) {

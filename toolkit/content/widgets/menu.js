@@ -24,7 +24,7 @@
 
       
       get selected() {
-        return this.getAttribute("selected") == "true";
+        return this.hasAttribute("selected");
       }
 
       
