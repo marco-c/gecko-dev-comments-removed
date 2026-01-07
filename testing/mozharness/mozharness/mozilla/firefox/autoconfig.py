@@ -1,4 +1,4 @@
-"""This module helps modifying Firefox with autoconfig files."""
+""" This module helps modifying Firefox with autoconfig files."""
 
 
 

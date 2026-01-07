@@ -2,7 +2,8 @@
 
 
 
-"""Mercurial VCS support."""
+"""Mercurial VCS support.
+"""
 
 import hashlib
 import os
@@ -381,7 +382,7 @@ class MercurialVCS(ScriptMixin, LogMixin, TransferMixin):
         
         if not share_base:
             raise VCSException(
-                "vcs share base not defined; refusing to operate sub-optimally"
+                "vcs share base not defined; " "refusing to operate sub-optimally"
             )
 
         if not self.robustcheckout_path:

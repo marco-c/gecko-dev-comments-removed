@@ -208,39 +208,43 @@ def check_mozglue_order(binary):
 
 def check_networking(binary):
     retcode = 0
-    networking_functions = set([
-        
-        "recv",
-        "send",
-        
-        
-        "gethostbyname",
-        "gethostbyaddr",
-        "gethostent",
-        "sethostent",
-        "endhostent",
-        "gethostent_r",
-        "gethostbyname2",
-        "gethostbyaddr_r",
-        "gethostbyname_r",
-        "gethostbyname2_r",
-        "getservent",
-        "getservbyname",
-        "getservbyport",
-        "setservent",
-        "getprotoent",
-        "getprotobyname",
-        "getprotobynumber",
-        "setprotoent",
-        "endprotoent",
-    ])
+    networking_functions = set(
+        [
+            
+            "recv",
+            "send",
+            
+            
+            "gethostbyname",
+            "gethostbyaddr",
+            "gethostent",
+            "sethostent",
+            "endhostent",
+            "gethostent_r",
+            "gethostbyname2",
+            "gethostbyaddr_r",
+            "gethostbyname_r",
+            "gethostbyname2_r",
+            "getservent",
+            "getservbyname",
+            "getservbyport",
+            "setservent",
+            "getprotoent",
+            "getprotobyname",
+            "getprotobynumber",
+            "setprotoent",
+            "endprotoent",
+        ]
+    )
     
     
-    socket_functions = set([
-        "connect",
-        "accept",
-        "listen",
-    ])
+    socket_functions = set(
+        [
+            "connect",
+            "accept",
+            "listen",
+        ]
+    )
 
     if PLATFORM == "WINNT":
         networking_functions |= socket_functions

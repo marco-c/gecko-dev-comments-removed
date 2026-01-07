@@ -2,7 +2,8 @@
 
 
 
-"""Support for fetching secrets from the secrets API"""
+"""Support for fetching secrets from the secrets API
+"""
 
 import json
 import os

@@ -1,12 +1,11 @@
 
 
 
-"""Installs dependencies at runtime to simplify deployment.
+""" Installs dependencies at runtime to simplify deployment.
 
 This module tries to make sure we have all dependencies installed on
 all our environments.
 """
-
 import os
 import subprocess
 import sys
@@ -44,17 +43,19 @@ def install_reqs():
                     if req.strip() != "" and not req.startswith("#")
                 ]
                 for req in reqs:
-                    subprocess.check_call([
-                        sys.executable,
-                        "-m",
-                        "pip",
-                        "install",
-                        "--no-cache-dir",
-                        "--isolated",
-                        "--find-links",
-                        "https://pypi.pub.build.mozilla.org/pub/",
-                        req,
-                    ])
+                    subprocess.check_call(
+                        [
+                            sys.executable,
+                            "-m",
+                            "pip",
+                            "install",
+                            "--no-cache-dir",
+                            "--isolated",
+                            "--find-links",
+                            "https://pypi.pub.build.mozilla.org/pub/",
+                            req,
+                        ]
+                    )
 
         return True
 

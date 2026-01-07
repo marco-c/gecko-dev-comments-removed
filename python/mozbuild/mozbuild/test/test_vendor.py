@@ -32,14 +32,16 @@ def test_up_to_date_vendor():
         
         
         
-        subprocess.check_call([
-            "diff",
-            "-r",
-            os.path.join(topsrcdir, os.path.join("third_party", "python")),
-            os.path.join(work_dir, os.path.join("third_party", "python")),
-            "--exclude=__pycache__",
-            "--strip-trailing-cr",
-        ])
+        subprocess.check_call(
+            [
+                "diff",
+                "-r",
+                os.path.join(topsrcdir, os.path.join("third_party", "python")),
+                os.path.join(work_dir, os.path.join("third_party", "python")),
+                "--exclude=__pycache__",
+                "--strip-trailing-cr",
+            ]
+        )
 
 
 if __name__ == "__main__":

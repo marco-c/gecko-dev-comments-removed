@@ -290,18 +290,22 @@ def extract_unittests_from_args(args, environ, manifest_path):
     active_tests = mp.active_tests(exists=False, disabled=False, **environ)
     suffix = ".exe" if mozinfo.isWin else ""
     if binary_path:
-        tests.extend([
-            (
-                os.path.join(binary_path, test["relpath"] + suffix),
-                int(test.get("requesttimeoutfactor", 1)),
-            )
-            for test in active_tests
-        ])
+        tests.extend(
+            [
+                (
+                    os.path.join(binary_path, test["relpath"] + suffix),
+                    int(test.get("requesttimeoutfactor", 1)),
+                )
+                for test in active_tests
+            ]
+        )
     else:
-        tests.extend([
-            (test["path"] + suffix, int(test.get("requesttimeoutfactor", 1)))
-            for test in active_tests
-        ])
+        tests.extend(
+            [
+                (test["path"] + suffix, int(test.get("requesttimeoutfactor", 1)))
+                for test in active_tests
+            ]
+        )
 
     
     errors = False

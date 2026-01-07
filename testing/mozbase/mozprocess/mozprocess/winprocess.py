@@ -384,9 +384,7 @@ SetInformationJobObject.errcheck = ErrCheckBool
 
 
 CreateJobObjectProto = WINFUNCTYPE(
-    HANDLE,
-    LPVOID,
-    LPCWSTR,  
+    HANDLE, LPVOID, LPCWSTR  
 )
 
 CreateJobObjectFlags = ((1, "lpJobAttributes", None), (1, "lpName", None))
@@ -399,9 +397,7 @@ CreateJobObject.errcheck = ErrCheckHandle
 
 
 AssignProcessToJobObjectProto = WINFUNCTYPE(
-    BOOL,
-    HANDLE,
-    HANDLE,  
+    BOOL, HANDLE, HANDLE  
 )
 AssignProcessToJobObjectFlags = ((1, "hJob"), (1, "hProcess"))
 AssignProcessToJobObject = AssignProcessToJobObjectProto(
@@ -459,9 +455,7 @@ ResumeThread.errcheck = ErrCheckResumeThread
 
 
 TerminateProcessProto = WINFUNCTYPE(
-    BOOL,
-    HANDLE,
-    UINT,  
+    BOOL, HANDLE, UINT  
 )
 TerminateProcessFlags = ((1, "hProcess"), (1, "uExitCode", 127))
 TerminateProcess = TerminateProcessProto(
@@ -472,9 +466,7 @@ TerminateProcess.errcheck = ErrCheckBool
 
 
 TerminateJobObjectProto = WINFUNCTYPE(
-    BOOL,
-    HANDLE,
-    UINT,  
+    BOOL, HANDLE, UINT  
 )
 TerminateJobObjectFlags = ((1, "hJob"), (1, "uExitCode", 127))
 TerminateJobObject = TerminateJobObjectProto(

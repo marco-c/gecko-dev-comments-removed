@@ -10,24 +10,26 @@ from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 
-mach_schema = Schema({
-    Required("using"): "mach",
-    
-    Required("mach"): taskref_or_string,
-    
-    
-    Optional("sparse-profile"): Any(str, None),
-    
-    
-    Required("comm-checkout"): bool,
-    
-    
-    Optional("prepend-env"): {str: str},
-    
-    Optional("workdir"): str,
-    
-    Optional("use-caches"): Any(bool, [str]),
-})
+mach_schema = Schema(
+    {
+        Required("using"): "mach",
+        
+        Required("mach"): taskref_or_string,
+        
+        
+        Optional("sparse-profile"): Any(str, None),
+        
+        
+        Required("comm-checkout"): bool,
+        
+        
+        Optional("prepend-env"): {str: str},
+        
+        Optional("workdir"): str,
+        
+        Optional("use-caches"): Any(bool, [str]),
+    }
+)
 
 
 defaults = {

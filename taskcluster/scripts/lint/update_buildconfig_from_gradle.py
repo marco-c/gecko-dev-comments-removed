@@ -35,9 +35,9 @@ def _get_upstream_deps_per_gradle_project(gradle_root, existing_build_config):
     
     
     cmd = list(_DEFAULT_GRADLE_COMMAND)
-    cmd.extend([
-        f"{gradle_project}:dependencies" for gradle_project in sorted(gradle_projects)
-    ])
+    cmd.extend(
+        [f"{gradle_project}:dependencies" for gradle_project in sorted(gradle_projects)]
+    )
 
     
     

@@ -74,150 +74,152 @@ def _compute_geckoview_version(app_version, moz_build_date):
 
 
 
-task_description_schema = Schema({
-    
-    Required("label"): str,
-    
-    Required("description"): str,
-    
-    Optional("attributes"): {str: object},
-    
-    Optional("task-from"): str,
-    
-    
-    
-    Optional("dependencies"): {
-        All(
-            str,
-            NotIn(
-                ["self", "decision"],
-                "Can't use 'self` or 'decision' as depdency names.",
+task_description_schema = Schema(
+    {
+        
+        Required("label"): str,
+        
+        Required("description"): str,
+        
+        Optional("attributes"): {str: object},
+        
+        Optional("task-from"): str,
+        
+        
+        
+        Optional("dependencies"): {
+            All(
+                str,
+                NotIn(
+                    ["self", "decision"],
+                    "Can't use 'self` or 'decision' as depdency names.",
+                ),
+            ): object,
+        },
+        
+        Optional("soft-dependencies"): [str],
+        
+        Optional("if-dependencies"): [str],
+        Optional("requires"): Any("all-completed", "all-resolved"),
+        
+        
+        Optional("expires-after"): str,
+        Optional("deadline-after"): str,
+        Optional("expiration-policy"): str,
+        
+        
+        Optional("routes"): [str],
+        
+        
+        
+        
+        
+        Optional("scopes"): [str],
+        
+        Optional("tags"): {str: str},
+        
+        Optional("extra"): {str: object},
+        
+        
+        
+        
+        Optional("treeherder"): {
+            
+            "symbol": str,
+            
+            "kind": Any("build", "test", "other"),
+            
+            "tier": int,
+            
+            
+            
+            "platform": Match("^[A-Za-z0-9_-]{1,50}/[A-Za-z0-9_-]{1,50}$"),
+        },
+        
+        
+        Optional("index"): {
+            
+            "product": str,
+            
+            "job-name": str,
+            
+            "type": Any(
+                "generic",
+                "l10n",
+                "shippable",
+                "shippable-l10n",
+                "android-shippable",
+                "android-shippable-with-multi-l10n",
+                "shippable-with-multi-l10n",
             ),
-        ): object,
-    },
-    
-    Optional("soft-dependencies"): [str],
-    
-    Optional("if-dependencies"): [str],
-    Optional("requires"): Any("all-completed", "all-resolved"),
-    
-    
-    Optional("expires-after"): str,
-    Optional("deadline-after"): str,
-    Optional("expiration-policy"): str,
-    
-    
-    Optional("routes"): [str],
-    
-    
-    
-    
-    
-    Optional("scopes"): [str],
-    
-    Optional("tags"): {str: str},
-    
-    Optional("extra"): {str: object},
-    
-    
-    
-    
-    Optional("treeherder"): {
-        
-        "symbol": str,
-        
-        "kind": Any("build", "test", "other"),
-        
-        "tier": int,
+            
+            
+            
+            
+            "rank": Any(
+                
+                
+                
+                "by-tier",
+                
+                
+                int,
+                
+                
+                
+                "build_date",
+            ),
+        },
         
         
         
-        "platform": Match("^[A-Za-z0-9_-]{1,50}/[A-Za-z0-9_-]{1,50}$"),
-    },
-    
-    
-    Optional("index"): {
+        Optional("run-on-repo-type"): [Any("git", "hg")],
         
-        "product": str,
         
-        "job-name": str,
         
-        "type": Any(
-            "generic",
-            "l10n",
-            "shippable",
-            "shippable-l10n",
-            "android-shippable",
-            "android-shippable-with-multi-l10n",
-            "shippable-with-multi-l10n",
+        Optional("run-on-projects"): optionally_keyed_by("build-platform", [str]),
+        
+        Optional("run-on-hg-branches"): optionally_keyed_by("project", [str]),
+        
+        Optional("run-on-git-branches"): [str],
+        
+        
+        Required("shipping-phase"): Any(
+            None,
+            "build",
+            "promote",
+            "push",
+            "ship",
         ),
         
         
+        Required("shipping-product"): Any(None, str),
         
         
-        "rank": Any(
-            
-            
-            
-            "by-tier",
-            
-            
-            int,
-            
-            
-            
-            "build_date",
-        ),
-    },
-    
-    
-    
-    Optional("run-on-repo-type"): [Any("git", "hg")],
-    
-    
-    
-    Optional("run-on-projects"): optionally_keyed_by("build-platform", [str]),
-    
-    Optional("run-on-hg-branches"): optionally_keyed_by("project", [str]),
-    
-    Optional("run-on-git-branches"): [str],
-    
-    
-    Required("shipping-phase"): Any(
-        None,
-        "build",
-        "promote",
-        "push",
-        "ship",
-    ),
-    
-    
-    Required("shipping-product"): Any(None, str),
-    
-    
-    
-    
-    
-    Required("always-target"): bool,
-    
-    
-    Required("optimization"): OptimizationSchema,
-    
-    
-    
-    "worker-type": str,
-    
-    Required("use-sccache"): bool,
-    
-    Optional("worker"): {
-        Required("implementation"): str,
-        Extra: object,
-    },
-    
-    Optional("priority"): str,
-    
-    Optional("retries"): int,
-})
+        
+        
+        
+        Required("always-target"): bool,
+        
+        
+        Required("optimization"): OptimizationSchema,
+        
+        
+        
+        "worker-type": str,
+        
+        Required("use-sccache"): bool,
+        
+        Optional("worker"): {
+            Required("implementation"): str,
+            Extra: object,
+        },
+        
+        Optional("priority"): str,
+        
+        Optional("retries"): int,
+    }
+)
 
 TC_TREEHERDER_SCHEMA_URL = (
     "https://github.com/taskcluster/taskcluster-treeherder/"
@@ -226,7 +228,7 @@ TC_TREEHERDER_SCHEMA_URL = (
 
 
 UNKNOWN_GROUP_NAME = (
-    "Treeherder group {} (from {}) has no name; add it to taskcluster/config.yml"
+    "Treeherder group {} (from {}) has no name; " "add it to taskcluster/config.yml"
 )
 
 V2_ROUTE_TEMPLATES = [
@@ -655,8 +657,7 @@ def build_docker_worker_payload(config, task, task_def):
         
         
         Required("command"): Any(
-            [taskref_or_string],
-            [[taskref_or_string]],  
+            [taskref_or_string], [[taskref_or_string]]  
         ),
         
         
@@ -818,10 +819,12 @@ def build_generic_worker_payload(config, task, task_def):
 
     if worker.get("os-groups"):
         task_def["payload"]["osGroups"] = worker["os-groups"]
-        task_def["scopes"].extend([
-            "generic-worker:os-group:{}/{}".format(task["worker-type"], group)
-            for group in worker["os-groups"]
-        ])
+        task_def["scopes"].extend(
+            [
+                "generic-worker:os-group:{}/{}".format(task["worker-type"], group)
+                for group in worker["os-groups"]
+            ]
+        )
 
     if worker.get("chain-of-trust"):
         features["chainOfTrust"] = True
@@ -1120,10 +1123,12 @@ def build_balrog_payload(config, task, task_def):
         worker["balrog-action"] == "submit-locale"
         or worker["balrog-action"] == "v2-submit-locale"
     ):
-        task_def["payload"].update({
-            "upstreamArtifacts": worker["upstream-artifacts"],
-            "suffixes": worker["suffixes"],
-        })
+        task_def["payload"].update(
+            {
+                "upstreamArtifacts": worker["upstream-artifacts"],
+                "suffixes": worker["suffixes"],
+            }
+        )
     else:
         for prop in (
             "archive-domain",
@@ -1146,11 +1151,13 @@ def build_balrog_payload(config, task, task_def):
                         "beta-number": beta_number,
                     },
                 )
-        task_def["payload"].update({
-            "build_number": release_config["build_number"],
-            "product": worker["product"],
-            "version": release_config["version"],
-        })
+        task_def["payload"].update(
+            {
+                "build_number": release_config["build_number"],
+                "product": worker["product"],
+                "version": release_config["version"],
+            }
+        )
         for prop in (
             "blob-suffix",
             "complete-mar-filename-pattern",
@@ -1163,25 +1170,29 @@ def build_balrog_payload(config, task, task_def):
             worker["balrog-action"] == "submit-toplevel"
             or worker["balrog-action"] == "v2-submit-toplevel"
         ):
-            task_def["payload"].update({
-                "app_version": release_config["appVersion"],
-                "archive_domain": worker["archive-domain"],
-                "channel_names": worker["channel-names"],
-                "download_domain": worker["download-domain"],
-                "partial_versions": release_config.get("partial_versions", ""),
-                "platforms": worker["platforms"],
-                "rules_to_update": worker["rules-to-update"],
-                "require_mirrors": worker["require-mirrors"],
-                "update_line": worker["update-line"],
-            })
+            task_def["payload"].update(
+                {
+                    "app_version": release_config["appVersion"],
+                    "archive_domain": worker["archive-domain"],
+                    "channel_names": worker["channel-names"],
+                    "download_domain": worker["download-domain"],
+                    "partial_versions": release_config.get("partial_versions", ""),
+                    "platforms": worker["platforms"],
+                    "rules_to_update": worker["rules-to-update"],
+                    "require_mirrors": worker["require-mirrors"],
+                    "update_line": worker["update-line"],
+                }
+            )
         else:  
-            task_def["payload"].update({
-                "publish_rules": worker["publish-rules"],
-                "release_eta": worker.get(
-                    "release-eta", config.params.get("release_eta")
-                )
-                or "",
-            })
+            task_def["payload"].update(
+                {
+                    "publish_rules": worker["publish-rules"],
+                    "release_eta": worker.get(
+                        "release-eta", config.params.get("release_eta")
+                    )
+                    or "",
+                }
+            )
             if worker.get("force-fallback-mapping-update"):
                 task_def["payload"]["force_fallback_mapping_update"] = worker[
                     "force-fallback-mapping-update"
@@ -1418,9 +1429,11 @@ def build_treescript_payload(config, task, task_def):
         version = release_config["version"].replace(".", "_")
         buildnum = release_config["build_number"]
         if "buildN" in worker["tags"]:
-            tag_names.extend([
-                f"{product}_{version}_BUILD{buildnum}",
-            ])
+            tag_names.extend(
+                [
+                    f"{product}_{version}_BUILD{buildnum}",
+                ]
+            )
         if "release" in worker["tags"]:
             tag_names.extend([f"{product}_{version}_RELEASE"])
         tag_info = {
@@ -1650,9 +1663,11 @@ def build_landoscript_payload(config, task, task_def):
         version = release_config["version"].replace(".", "_")
         buildnum = release_config["build_number"]
         if "buildN" in worker["tags"]:
-            tag_names.extend([
-                f"{product}_{version}_BUILD{buildnum}",
-            ])
+            tag_names.extend(
+                [
+                    f"{product}_{version}_BUILD{buildnum}",
+                ]
+            )
         if "release" in worker["tags"]:
             tag_names.extend([f"{product}_{version}_RELEASE"])
         tag_info = {
@@ -2288,14 +2303,16 @@ def build_task(config, tasks):
         tags = task.get("tags", {})
         attributes = task.get("attributes", {})
 
-        tags.update({
-            "createdForUser": config.params["owner"],
-            "kind": config.kind,
-            "label": task["label"],
-            "retrigger": "true" if attributes.get("retrigger", False) else "false",
-            "project": config.params["project"],
-            "trust-domain": config.graph_config["trust-domain"],
-        })
+        tags.update(
+            {
+                "createdForUser": config.params["owner"],
+                "kind": config.kind,
+                "label": task["label"],
+                "retrigger": "true" if attributes.get("retrigger", False) else "false",
+                "project": config.params["project"],
+                "trust-domain": config.graph_config["trust-domain"],
+            }
+        )
 
         task_def = {
             "provisionerId": provisioner_id,
@@ -2388,13 +2405,15 @@ def build_task(config, tasks):
             payload = task_def.get("payload")
             if payload:
                 env = payload.setdefault("env", {})
-                env.update({
-                    "MOZ_AUTOMATION": "1",
-                    "MOZ_BUILD_DATE": config.params["moz_build_date"],
-                    "MOZ_SCM_LEVEL": config.params["level"],
-                    "MOZ_SOURCE_CHANGESET": get_branch_rev(config),
-                    "MOZ_SOURCE_REPO": get_branch_repo(config),
-                })
+                env.update(
+                    {
+                        "MOZ_AUTOMATION": "1",
+                        "MOZ_BUILD_DATE": config.params["moz_build_date"],
+                        "MOZ_SCM_LEVEL": config.params["level"],
+                        "MOZ_SOURCE_CHANGESET": get_branch_rev(config),
+                        "MOZ_SOURCE_REPO": get_branch_repo(config),
+                    }
+                )
 
         dependencies = task.get("dependencies", {})
         if_dependencies = task.get("if-dependencies", [])

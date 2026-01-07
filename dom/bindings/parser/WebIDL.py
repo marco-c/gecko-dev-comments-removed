@@ -2,7 +2,7 @@
 
 
 
-"""A WebIDL parser."""
+""" A WebIDL parser. """
 
 import copy
 import math
@@ -720,12 +720,14 @@ class IDLPartialInterfaceOrNamespace(IDLObject):
                             self._nonPartialInterfaceOrNamespace.location,
                         ],
                     )
-                member.addExtendedAttributes([
-                    IDLExtendedAttribute(
-                        self._nonPartialInterfaceOrNamespace.location,
-                        ("SecureContext",),
-                    )
-                ])
+                member.addExtendedAttributes(
+                    [
+                        IDLExtendedAttribute(
+                            self._nonPartialInterfaceOrNamespace.location,
+                            ("SecureContext",),
+                        )
+                    ]
+                )
         
         
         
@@ -1011,7 +1013,8 @@ class IDLInterfaceMixin(IDLInterfaceOrInterfaceMixinOrNamespace):
             if member.isAttr():
                 if member.inherit:
                     raise WebIDLError(
-                        "Interface mixin member cannot include an inherited attribute",
+                        "Interface mixin member cannot include "
+                        "an inherited attribute",
                         [member.location, self.location],
                     )
                 if member.isStatic():
@@ -1507,7 +1510,9 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                         self.reflectedHTMLAttributesReturningFrozenArray.slotIndex,
                         self.reflectedHTMLAttributesReturningFrozenArray.totalMembersInSlots,
                     )
-                    self.reflectedHTMLAttributesReturningFrozenArray.totalMembersInSlots += 1
+                    self.reflectedHTMLAttributesReturningFrozenArray.totalMembersInSlots += (
+                        1
+                    )
                 else:
                     member.slotIndices[self.identifier.name] = self.totalMembersInSlots
                     self.totalMembersInSlots += 1
@@ -1792,7 +1797,8 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                         )
                     if member.isIdentifierLess():
                         raise WebIDLError(
-                            "[Alias] must not be used on an identifierless operation",
+                            "[Alias] must not be used on an "
+                            "identifierless operation",
                             [member.location],
                         )
                     if member.isLegacyUnforgeable():
@@ -2073,9 +2079,9 @@ class IDLInterface(IDLInterfaceOrNamespace):
 
             
             
-            method.addExtendedAttributes([
-                IDLExtendedAttribute(self.location, ("Throws",))
-            ])
+            method.addExtendedAttributes(
+                [IDLExtendedAttribute(self.location, ("Throws",))]
+            )
 
             
             
@@ -2507,7 +2513,8 @@ class IDLDictionary(IDLObjectWithScope):
                     )
             else:
                 raise WebIDLError(
-                    "[%s] extended attribute not allowed on dictionaries" % identifier,
+                    "[%s] extended attribute not allowed on "
+                    "dictionaries" % identifier,
                     [attr.location],
                 )
 
@@ -3243,7 +3250,8 @@ class IDLObservableArrayType(IDLParametrizedType):
             )
         if self.inner.isSequence():
             raise WebIDLError(
-                "The inner type of an ObservableArray type must not be a sequence type",
+                "The inner type of an ObservableArray type must not "
+                "be a sequence type",
                 [self.location, self.inner.location],
             )
         if self.inner.isRecord():
@@ -3342,7 +3350,8 @@ class IDLUnionType(IDLType):
                     )
                 if self.hasDictionaryType():
                     raise WebIDLError(
-                        "Can't have a nullable type and a dictionary type in a union",
+                        "Can't have a nullable type and a "
+                        "dictionary type in a union",
                         [
                             self._dictionaryType.location,
                             self.flatMemberTypes[i].location,
@@ -3355,7 +3364,8 @@ class IDLUnionType(IDLType):
             if self.flatMemberTypes[i].isDictionary():
                 if self.hasNullableType:
                     raise WebIDLError(
-                        "Can't have a nullable type and a dictionary type in a union",
+                        "Can't have a nullable type and a "
+                        "dictionary type in a union",
                         [nullableType.location, self.flatMemberTypes[i].location],
                     )
                 self._dictionaryType = self.flatMemberTypes[i]
@@ -4264,10 +4274,9 @@ class IDLBuiltinType(IDLType):
                         "[LegacyNullToEmptyString] must take no identifier argument",
                         [attribute.location],
                     )
-                ret = self.withLegacyNullToEmptyString([
-                    self.location,
-                    attribute.location,
-                ])
+                ret = self.withLegacyNullToEmptyString(
+                    [self.location, attribute.location]
+                )
             elif identifier == "AllowShared":
                 if not attribute.noArguments():
                     raise WebIDLError(
@@ -4967,33 +4976,35 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
         
         method.addExtendedAttributes([IDLExtendedAttribute(self.location, ("Throws",))])
         if chromeOnly:
-            method.addExtendedAttributes([
-                IDLExtendedAttribute(self.location, ("ChromeOnly",))
-            ])
+            method.addExtendedAttributes(
+                [IDLExtendedAttribute(self.location, ("ChromeOnly",))]
+            )
         if isPure:
-            method.addExtendedAttributes([
-                IDLExtendedAttribute(self.location, ("Pure",))
-            ])
+            method.addExtendedAttributes(
+                [IDLExtendedAttribute(self.location, ("Pure",))]
+            )
         
         
         if affectsNothing:
-            method.addExtendedAttributes([
-                IDLExtendedAttribute(self.location, ("DependsOn", "Everything")),
-                IDLExtendedAttribute(self.location, ("Affects", "Nothing")),
-            ])
+            method.addExtendedAttributes(
+                [
+                    IDLExtendedAttribute(self.location, ("DependsOn", "Everything")),
+                    IDLExtendedAttribute(self.location, ("Affects", "Nothing")),
+                ]
+            )
         if newObject:
-            method.addExtendedAttributes([
-                IDLExtendedAttribute(self.location, ("NewObject",))
-            ])
+            method.addExtendedAttributes(
+                [IDLExtendedAttribute(self.location, ("NewObject",))]
+            )
         if isIteratorAlias:
             if not self.isAsyncIterable():
-                method.addExtendedAttributes([
-                    IDLExtendedAttribute(self.location, ("Alias", "@@iterator"))
-                ])
+                method.addExtendedAttributes(
+                    [IDLExtendedAttribute(self.location, ("Alias", "@@iterator"))]
+                )
             else:
-                method.addExtendedAttributes([
-                    IDLExtendedAttribute(self.location, ("Alias", "@@asyncIterator"))
-                ])
+                method.addExtendedAttributes(
+                    [IDLExtendedAttribute(self.location, ("Alias", "@@asyncIterator"))]
+                )
         members.append(method)
 
     def resolve(self, parentScope):
@@ -5892,7 +5903,8 @@ class IDLAttribute(IDLInterfaceMember):
                 )
             if self.type.isPromise():
                 raise WebIDLError(
-                    "[LegacyLenientSetter] is not allowed on Promise-typed attributes",
+                    "[LegacyLenientSetter] is not allowed on "
+                    "Promise-typed attributes",
                     [attr.location, self.location],
                 )
             if self.isStatic():
@@ -5981,7 +5993,8 @@ class IDLAttribute(IDLInterfaceMember):
                 and not self.readonly
             ):
                 raise WebIDLError(
-                    "[DependsOn=%s] only allowed on readonly attributes" % attr.value(),
+                    "[DependsOn=%s] only allowed on "
+                    "readonly attributes" % attr.value(),
                     [attr.location, self.location],
                 )
             self._setDependsOn(attr.value())
@@ -6104,9 +6117,9 @@ class IDLAttribute(IDLInterfaceMember):
                         "please file a bug to add support" % key,
                         [self.location],
                     )
-                method.addExtendedAttributes([
-                    IDLExtendedAttribute(self.location, (key,))
-                ])
+                method.addExtendedAttributes(
+                    [IDLExtendedAttribute(self.location, (key,))]
+                )
             elif key not in attributeOnlyExtAttrs:
                 raise WebIDLError(
                     "[%s] is currently unsupported in "
@@ -6347,7 +6360,8 @@ class IDLCallback(IDLObjectWithScope):
             elif attr.identifier() == "LegacyTreatNonObjectAsNull":
                 if self._isConstructor:
                     raise WebIDLError(
-                        "[LegacyTreatNonObjectAsNull] is not supported on constructors",
+                        "[LegacyTreatNonObjectAsNull] is not supported "
+                        "on constructors",
                         [self.location],
                     )
                 self._treatNonObjectAsNull = True
@@ -7094,7 +7108,8 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
 
             if self.signatures()[0][0] != BuiltinTypes[IDLBuiltinType.Types.object]:
                 raise WebIDLError(
-                    "The return type of the default toJSON operation must be 'object'",
+                    "The return type of the default toJSON "
+                    "operation must be 'object'",
                     [attr.location, self.location],
                 )
         elif (
@@ -7208,9 +7223,9 @@ class IDLConstructor(IDLMethod):
         self._initExtendedAttrs = []
         
         
-        self.addExtendedAttributes([
-            IDLExtendedAttribute(self.location, ("NewObject",))
-        ])
+        self.addExtendedAttributes(
+            [IDLExtendedAttribute(self.location, ("NewObject",))]
+        )
 
 
 class IDLIncludesStatement(IDLObject):
@@ -7767,7 +7782,7 @@ class Parser(Tokenizer):
                 
                 *(nonPartialConstructorArgs),
                 members=[],
-                isKnownNonPartial=False,
+                isKnownNonPartial=False
             )
 
         partialObject = None
@@ -9442,9 +9457,9 @@ class Parser(Tokenizer):
                     isKnownNonPartial=True,
                     classNameOverride=classNameOverride,
                 )
-                itr_iface.addExtendedAttributes([
-                    simpleExtendedAttr("LegacyNoInterfaceObject")
-                ])
+                itr_iface.addExtendedAttributes(
+                    [simpleExtendedAttr("LegacyNoInterfaceObject")]
+                )
                 
                 
                 

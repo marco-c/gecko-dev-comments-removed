@@ -5,6 +5,7 @@
 Transform the repackage task into an actual task description.
 """
 
+
 import copy
 
 from taskgraph.transforms.base import TransformSequence
@@ -28,37 +29,39 @@ PACKAGE_FORMATS = copy.deepcopy(PACKAGE_FORMATS_VANILLA)
 PACKAGE_FORMATS["installer-stub"]["inputs"]["package"] = "target-stub{archive_format}"
 PACKAGE_FORMATS["installer-stub"]["args"].extend(["--package-name", "{package-name}"])
 
-packaging_description_schema = Schema({
-    
-    Optional("label"): str,
-    
-    Optional("routes"): [str],
-    
-    Optional("extra"): task_description_schema["extra"],
-    
-    Optional("shipping-product"): task_description_schema["shipping-product"],
-    Optional("shipping-phase"): task_description_schema["shipping-phase"],
-    Required("package-formats"): optionally_keyed_by(
-        "build-platform", "build-type", [str]
-    ),
-    
-    Required("mozharness"): {
+packaging_description_schema = Schema(
+    {
         
-        Required("config"): optionally_keyed_by("build-platform", [str]),
+        Optional("label"): str,
         
+        Optional("routes"): [str],
         
-        Optional("config-paths"): [str],
+        Optional("extra"): task_description_schema["extra"],
         
+        Optional("shipping-product"): task_description_schema["shipping-product"],
+        Optional("shipping-phase"): task_description_schema["shipping-phase"],
+        Required("package-formats"): optionally_keyed_by(
+            "build-platform", "build-type", [str]
+        ),
         
-        Optional("comm-checkout"): bool,
-    },
-    
-    Optional("priority"): task_description_schema["priority"],
-    Optional("task-from"): task_description_schema["task-from"],
-    Optional("attributes"): task_description_schema["attributes"],
-    Optional("dependencies"): task_description_schema["dependencies"],
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+        Required("mozharness"): {
+            
+            Required("config"): optionally_keyed_by("build-platform", [str]),
+            
+            
+            Optional("config-paths"): [str],
+            
+            
+            Optional("comm-checkout"): bool,
+        },
+        
+        Optional("priority"): task_description_schema["priority"],
+        Optional("task-from"): task_description_schema["task-from"],
+        Optional("attributes"): task_description_schema["attributes"],
+        Optional("dependencies"): task_description_schema["dependencies"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    }
+)
 
 transforms = TransformSequence()
 
@@ -162,15 +165,17 @@ def make_job_description(config, jobs):
             repackage_config.append(command)
 
         run = job.get("mozharness", {})
-        run.update({
-            "using": "mozharness",
-            "script": "mozharness/scripts/repackage.py",
-            "job-script": "taskcluster/scripts/builder/repackage.sh",
-            "actions": ["setup", "repackage"],
-            "extra-config": {
-                "repackage_config": repackage_config,
-            },
-        })
+        run.update(
+            {
+                "using": "mozharness",
+                "script": "mozharness/scripts/repackage.py",
+                "job-script": "taskcluster/scripts/builder/repackage.sh",
+                "actions": ["setup", "repackage"],
+                "extra-config": {
+                    "repackage_config": repackage_config,
+                },
+            }
+        )
 
         worker = {
             "chain-of-trust": True,
@@ -227,11 +232,13 @@ def make_job_description(config, jobs):
         if job.get("priority"):
             task["priority"] = job["priority"]
         if build_platform.startswith("macosx"):
-            task.setdefault("fetches", {}).setdefault("toolchain", []).extend([
-                "linux64-libdmg",
-                "linux64-hfsplus",
-                "linux64-node",
-            ])
+            task.setdefault("fetches", {}).setdefault("toolchain", []).extend(
+                [
+                    "linux64-libdmg",
+                    "linux64-hfsplus",
+                    "linux64-node",
+                ]
+            )
         yield task
 
 
@@ -263,13 +270,15 @@ def _generate_download_config(
             f"{locale_path}setup.exe",
         ]
         if build_platform.startswith("win32") and repack_stub_installer:
-            download_config.extend([
-                {
-                    "artifact": f"{locale_path}target-stub.zip",
-                    "extract": False,
-                },
-                f"{locale_path}setup-stub.exe",
-            ])
+            download_config.extend(
+                [
+                    {
+                        "artifact": f"{locale_path}target-stub.zip",
+                        "extract": False,
+                    },
+                    f"{locale_path}setup-stub.exe",
+                ]
+            )
         return {signing_task: download_config}
 
     raise NotImplementedError(f'Unsupported build_platform: "{build_platform}"')
@@ -294,13 +303,15 @@ def _generate_task_output_files(task, worker_implementation, repackage_config, p
 
     output_files = []
     for config in repackage_config:
-        output_files.append({
-            "type": "file",
-            "path": "{}outputs/{}{}".format(
-                local_prefix, partner_output_path, config["output"]
-            ),
-            "name": "{}/{}{}".format(
-                artifact_prefix, partner_output_path, config["output"]
-            ),
-        })
+        output_files.append(
+            {
+                "type": "file",
+                "path": "{}outputs/{}{}".format(
+                    local_prefix, partner_output_path, config["output"]
+                ),
+                "name": "{}/{}{}".format(
+                    artifact_prefix, partner_output_path, config["output"]
+                ),
+            }
+        )
     return output_files

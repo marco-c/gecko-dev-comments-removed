@@ -39,17 +39,21 @@ def write_secret_to_file(
 
 def fetch_secret_from_taskcluster(name):
     try:
-        secrets = taskcluster.Secrets({
-            
-            "baseUrl": "http://taskcluster/secrets/v1",
-        })
+        secrets = taskcluster.Secrets(
+            {
+                
+                "baseUrl": "http://taskcluster/secrets/v1",
+            }
+        )
     except taskcluster.exceptions.TaskclusterFailure:
         
-        secrets = taskcluster.Secrets({
-            "rootUrl": os.environ.get(
-                "TASKCLUSTER_PROXY_URL", "https://taskcluster.net"
-            ),
-        })
+        secrets = taskcluster.Secrets(
+            {
+                "rootUrl": os.environ.get(
+                    "TASKCLUSTER_PROXY_URL", "https://taskcluster.net"
+                ),
+            }
+        )
 
     return secrets.get(name)
 

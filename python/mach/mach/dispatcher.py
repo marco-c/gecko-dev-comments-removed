@@ -145,10 +145,9 @@ class CommandAction(argparse.Action):
         
         if handler.subcommand_handlers and args:
             
-            if set(args[: args.index("--")] if "--" in args else args).intersection((
-                "help",
-                "--help",
-            )):
+            if set(args[: args.index("--")] if "--" in args else args).intersection(
+                ("help", "--help")
+            ):
                 self._handle_subcommand_help(parser, handler, args)
                 sys.exit(0)
             

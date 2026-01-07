@@ -3,7 +3,7 @@
 
 
 """Parses a given application.ini file and outputs the corresponding
-StaticXREAppData structure as a C++ header file"""
+   StaticXREAppData structure as a C++ header file"""
 
 import configparser
 import sys

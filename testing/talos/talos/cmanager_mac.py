@@ -3,7 +3,6 @@
 
 
 """CounterManager for Mac OSX"""
-
 import subprocess
 import sys
 

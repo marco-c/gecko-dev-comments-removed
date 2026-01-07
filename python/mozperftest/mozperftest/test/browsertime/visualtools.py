@@ -1,8 +1,8 @@
 
 
 
-"""Collects visualmetrics dependencies."""
-
+""" Collects visualmetrics dependencies.
+"""
 import contextlib
 import os
 import subprocess

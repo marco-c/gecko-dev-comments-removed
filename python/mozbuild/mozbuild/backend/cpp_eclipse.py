@@ -210,16 +210,18 @@ class CppEclipseBackend(CommonBackend):
         self._write_noindex()
 
         try:
-            subprocess.check_call([
-                "eclipse",
-                "-application",
-                "-nosplash",
-                "org.eclipse.cdt.managedbuilder.core.headlessbuild",
-                "-data",
-                self._workspace_dir,
-                "-importAll",
-                self._project_dir,
-            ])
+            subprocess.check_call(
+                [
+                    "eclipse",
+                    "-application",
+                    "-nosplash",
+                    "org.eclipse.cdt.managedbuilder.core.headlessbuild",
+                    "-data",
+                    self._workspace_dir,
+                    "-importAll",
+                    self._project_dir,
+                ]
+            )
         except OSError as e:
             
             

@@ -129,11 +129,13 @@ def add_command_arguments(config, tasks):
         
         task["worker"]["env"]["UPSTREAM_TASKIDS"] = {
             
-            "task-reference": " ".join([
-                f"<{dep}>"
-                for dep in task["dependencies"]
-                if ("signing" in dep or "notarization" in dep)
-            ])
+            "task-reference": " ".join(
+                [
+                    f"<{dep}>"
+                    for dep in task["dependencies"]
+                    if ("signing" in dep or "notarization" in dep)
+                ]
+            )
         }
 
         
@@ -156,9 +158,11 @@ def add_macos_signing_artifacts(config, tasks):
         assert build_dep, f"repackage job {task['name']} has no build dependency"
         for path, artifact in build_dep.task["payload"]["artifacts"].items():
             if path.startswith("public/build/security/"):
-                task["worker"].setdefault("artifacts", []).append({
-                    "name": path,
-                    "path": artifact["path"],
-                    "type": "file",
-                })
+                task["worker"].setdefault("artifacts", []).append(
+                    {
+                        "name": path,
+                        "path": artifact["path"],
+                        "type": "file",
+                    }
+                )
         yield task

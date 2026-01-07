@@ -2,7 +2,8 @@
 
 
 
-"""Generic VCS support."""
+"""Generic VCS support.
+"""
 
 import os
 import sys

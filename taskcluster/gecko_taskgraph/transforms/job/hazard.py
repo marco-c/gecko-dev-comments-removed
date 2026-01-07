@@ -5,6 +5,7 @@
 Support for running hazard jobs via dedicated scripts
 """
 
+
 from taskgraph.util.schema import Schema
 from voluptuous import Any, Optional, Required
 
@@ -15,21 +16,23 @@ from gecko_taskgraph.transforms.job.common import (
     setup_secrets,
 )
 
-haz_run_schema = Schema({
-    Required("using"): "hazard",
-    
-    Required("command"): str,
-    
-    Optional("mozconfig"): str,
-    
-    
-    
-    
-    
-    Optional("secrets"): Any(bool, [str]),
-    
-    Optional("workdir"): str,
-})
+haz_run_schema = Schema(
+    {
+        Required("using"): "hazard",
+        
+        Required("command"): str,
+        
+        Optional("mozconfig"): str,
+        
+        
+        
+        
+        
+        Optional("secrets"): Any(bool, [str]),
+        
+        Optional("workdir"): str,
+    }
+)
 
 
 @run_job_using("docker-worker", "hazard", schema=haz_run_schema)
@@ -47,10 +50,12 @@ def docker_worker_hazard(config, job, taskdesc):
     setup_secrets(config, job, taskdesc)
 
     env = worker["env"]
-    env.update({
-        "MOZ_BUILD_DATE": config.params["moz_build_date"],
-        "MOZ_SCM_LEVEL": config.params["level"],
-    })
+    env.update(
+        {
+            "MOZ_BUILD_DATE": config.params["moz_build_date"],
+            "MOZ_SCM_LEVEL": config.params["level"],
+        }
+    )
 
     
     if run.get("mozconfig"):

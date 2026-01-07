@@ -165,17 +165,21 @@ def generate_JSON_definitions(output, *filenames):
         if category not in event_definitions:
             event_definitions[category] = OrderedDict()
 
-        event_definitions[category][event.name] = OrderedDict({
-            "methods": event.methods,
-            "objects": event.objects,
-            "extra_keys": event.extra_keys,
-            "record_on_release": (True if event.dataset_short == "opt-out" else False),
-            
-            
-            "expires": event.expiry_version,
-            "expired": False,
-            "products": event.products,
-        })
+        event_definitions[category][event.name] = OrderedDict(
+            {
+                "methods": event.methods,
+                "objects": event.objects,
+                "extra_keys": event.extra_keys,
+                "record_on_release": (
+                    True if event.dataset_short == "opt-out" else False
+                ),
+                
+                
+                "expires": event.expiry_version,
+                "expired": False,
+                "products": event.products,
+            }
+        )
 
     json.dump(event_definitions, output, sort_keys=True)
 

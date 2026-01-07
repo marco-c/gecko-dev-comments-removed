@@ -186,10 +186,12 @@ class _SphinxManager:
         
         
         if app.srcdir == self.topsrcdir:
-            indexes = set([
-                os.path.normpath(os.path.join(p, "index"))
-                for p in toplevel_trees.keys()
-            ])
+            indexes = set(
+                [
+                    os.path.normpath(os.path.join(p, "index"))
+                    for p in toplevel_trees.keys()
+                ]
+            )
             
             cats = "\n".join(CATEGORIES.values()).split("\n")
             

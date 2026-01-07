@@ -12,11 +12,13 @@ class TestPingSubmitted(MarionetteTestCase):
 
         self.marionette.set_context(self.marionette.CONTEXT_CHROME)
 
-        self.marionette.enforce_gecko_prefs({
-            "datareporting.healthreport.uploadEnabled": True,
-            "telemetry.fog.test.localhost_port": 3000,
-            "browser.search.log": True,
-        })
+        self.marionette.enforce_gecko_prefs(
+            {
+                "datareporting.healthreport.uploadEnabled": True,
+                "telemetry.fog.test.localhost_port": 3000,
+                "browser.search.log": True,
+            }
+        )
         
         
         

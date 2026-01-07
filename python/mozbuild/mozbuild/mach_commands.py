@@ -127,34 +127,36 @@ def _cargo_config_yaml_schema():
         else:
             raise ValueError
 
-    return Schema({
-        
-        
-        Required("command"): All(str, starts_with_cargo),
-        
-        
-        "continue_on_error": Boolean,
-        
-        
-        "requires_export": Boolean,
-        
-        
-        
-        
-        "cargo_build_flags": [str],
-        
-        
-        
-        "cargo_extra_flags": [str],
-        
-        
-        
-        
-        
-        
-        
-        
-    })
+    return Schema(
+        {
+            
+            
+            Required("command"): All(str, starts_with_cargo),
+            
+            
+            "continue_on_error": Boolean,
+            
+            
+            "requires_export": Boolean,
+            
+            
+            
+            
+            "cargo_build_flags": [str],
+            
+            
+            
+            "cargo_extra_flags": [str],
+            
+            
+            
+            
+            
+            
+            
+            
+        }
+    )
 
 
 @Command(
@@ -485,9 +487,8 @@ CLOBBER_CHOICES = {"objdir", "python", "gradle", "artifacts"}
     "what",
     default=["objdir", "python"],
     nargs="*",
-    help="Target to clobber, must be one of {{{}}} (default objdir and python).".format(
-        ", ".join(CLOBBER_CHOICES)
-    ),
+    help="Target to clobber, must be one of {{{}}} (default "
+    "objdir and python).".format(", ".join(CLOBBER_CHOICES)),
 )
 @CommandArgument("--full", action="store_true", help="Perform a full clobber")
 def clobber(command_context, what, full=False):
@@ -716,14 +717,16 @@ def handle_log_file(command_context, log_file):
             start_time = created
             command_context.log_manager.terminal_handler.formatter.start_time = created
         if "line" in params:
-            record = logging.makeLogRecord({
-                "created": created,
-                "name": command_context._logger.name,
-                "levelno": logging.INFO,
-                "msg": "{line}",
-                "params": params,
-                "action": action,
-            })
+            record = logging.makeLogRecord(
+                {
+                    "created": created,
+                    "name": command_context._logger.name,
+                    "levelno": logging.INFO,
+                    "msg": "{line}",
+                    "params": params,
+                    "action": action,
+                }
+            )
             command_context._logger.handle(record)
 
 
@@ -1579,7 +1582,8 @@ def _get_android_run_parser():
         "--no-wait",
         action="store_true",
         default=False,
-        help="Do not wait for application to start before returning (default: False)",
+        help="Do not wait for application to start before returning "
+        "(default: False)",
     )
     group.add_argument(
         "--enable-fission",
@@ -1678,6 +1682,7 @@ def _get_jsshell_run_parser():
 
 
 def _get_desktop_run_parser():
+
     parser = ForwardingArgumentParser()
     group = parser.add_argument_group("Compiled Program Environment Options")
     group.add_argument("--packaged", action="store_true", help="Run a packaged build.")
@@ -1731,7 +1736,8 @@ def _get_desktop_run_parser():
     group.add_argument(
         "--temp-profile",
         action="store_true",
-        help="Run the program using a new temporary profile created inside the objdir.",
+        help="Run the program using a new temporary profile created inside "
+        "the objdir.",
     )
     group.add_argument(
         "--macos-open",
@@ -3091,7 +3097,8 @@ def repackage_msi(
     "--unsigned",
     default=False,
     action="store_true",
-    help="Support `Add-AppxPackage ... -AllowUnsigned` on Windows 11.(Default: false)",
+    help="Support `Add-AppxPackage ... -AllowUnsigned` on Windows 11."
+    "(Default: false)",
 )
 def repackage_msix(
     command_context,
@@ -3534,7 +3541,8 @@ def repackage_snap_install(command_context, snap_file, snap_name, sudo=None):
             logging.ERROR,
             "repackage-snap-install-no-sudo",
             {},
-            "Couldn't find a command to run snap as root; please use the --sudo option",
+            "Couldn't find a command to run snap as root; please use the"
+            " --sudo option",
         )
 
     if not snap_file:

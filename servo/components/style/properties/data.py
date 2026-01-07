@@ -33,65 +33,69 @@ ALL_AXES = [(axis, False) for axis in PHYSICAL_AXES] + [
 SYSTEM_FONT_LONGHANDS = """font_family font_size font_style
                            font_stretch font_weight""".split()
 
-PRIORITARY_PROPERTIES = set([
-    
-    
-    "writing-mode",
-    "direction",
-    "text-orientation",
-    
-    
-    
-    
-    
-    
-    "-x-text-scale",
-    
-    "-x-lang",
-    
-    
-    "-moz-min-font-size-ratio",
-    
-    "math-depth",
-    
-    
-    "font-size",
-    "font-size-adjust",
-    "font-weight",
-    "font-stretch",
-    "font-style",
-    "font-family",
-    
-    "color-scheme",
-    
-    "forced-color-adjust",
-    
-    "zoom",
-    
-    "line-height",
-])
+PRIORITARY_PROPERTIES = set(
+    [
+        
+        
+        "writing-mode",
+        "direction",
+        "text-orientation",
+        
+        
+        
+        
+        
+        
+        "-x-text-scale",
+        
+        "-x-lang",
+        
+        
+        "-moz-min-font-size-ratio",
+        
+        "math-depth",
+        
+        
+        "font-size",
+        "font-size-adjust",
+        "font-weight",
+        "font-stretch",
+        "font-style",
+        "font-family",
+        
+        "color-scheme",
+        
+        "forced-color-adjust",
+        
+        "zoom",
+        
+        "line-height",
+    ]
+)
 
-VISITED_DEPENDENT_PROPERTIES = set([
-    "column-rule-color",
-    "text-emphasis-color",
-    "-webkit-text-fill-color",
-    "-webkit-text-stroke-color",
-    "text-decoration-color",
-    "fill",
-    "stroke",
-    "caret-color",
-    "background-color",
-    "border-top-color",
-    "border-right-color",
-    "border-bottom-color",
-    "border-left-color",
-    "border-block-start-color",
-    "border-inline-end-color",
-    "border-block-end-color",
-    "border-inline-start-color",
-    "outline-color",
-    "color",
-])
+VISITED_DEPENDENT_PROPERTIES = set(
+    [
+        "column-rule-color",
+        "text-emphasis-color",
+        "-webkit-text-fill-color",
+        "-webkit-text-stroke-color",
+        "text-decoration-color",
+        "fill",
+        "stroke",
+        "caret-color",
+        "background-color",
+        "border-top-color",
+        "border-right-color",
+        "border-bottom-color",
+        "border-left-color",
+        "border-block-start-color",
+        "border-inline-end-color",
+        "border-block-end-color",
+        "border-inline-start-color",
+        "outline-color",
+        "color",
+    ]
+)
 
 
 STYLE_RULE = 1 << 0
@@ -942,32 +946,36 @@ class PropertyRestrictions:
     
     @staticmethod
     def svg_text_properties():
-        props = set([
-            "fill",
-            "fill-opacity",
-            "fill-rule",
-            "paint-order",
-            "stroke",
-            "stroke-dasharray",
-            "stroke-dashoffset",
-            "stroke-linecap",
-            "stroke-linejoin",
-            "stroke-miterlimit",
-            "stroke-opacity",
-            "stroke-width",
-            "text-rendering",
-            "vector-effect",
-        ])
+        props = set(
+            [
+                "fill",
+                "fill-opacity",
+                "fill-rule",
+                "paint-order",
+                "stroke",
+                "stroke-dasharray",
+                "stroke-dashoffset",
+                "stroke-linecap",
+                "stroke-linejoin",
+                "stroke-miterlimit",
+                "stroke-opacity",
+                "stroke-width",
+                "text-rendering",
+                "vector-effect",
+            ]
+        )
         return props
 
     @staticmethod
     def webkit_text_properties():
-        props = set([
-            
-            "-webkit-text-stroke-width",
-            "-webkit-text-fill-color",
-            "-webkit-text-stroke-color",
-        ])
+        props = set(
+            [
+                
+                "-webkit-text-stroke-width",
+                "-webkit-text-fill-color",
+                "-webkit-text-stroke-color",
+            ]
+        )
         return props
 
     

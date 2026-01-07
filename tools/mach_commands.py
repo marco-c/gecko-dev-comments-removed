@@ -176,13 +176,15 @@ class PypiBasedTool:
                 print(release)
                 
                 
-                subprocess.check_call([
-                    cmd.virtualenv_manager.python_path,
-                    "-m",
-                    "pip",
-                    "install",
-                    f"{self.pypi_name}=={release}",
-                ])
+                subprocess.check_call(
+                    [
+                        cmd.virtualenv_manager.python_path,
+                        "-m",
+                        "pip",
+                        "install",
+                        f"{self.pypi_name}=={release}",
+                    ]
+                )
                 print(
                     "%s was updated to version %s. please"
                     " re-run your command." % (self.pypi_name, release)

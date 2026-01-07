@@ -252,12 +252,14 @@ def run_tests(tests, summary):
     
     
     embedded_version = (
-        subprocess.check_output([
-            OPTIONS.gdb_executable,
-            "--batch",
-            "--ex",
-            "python import sys; print(sys.hexversion)",
-        ])
+        subprocess.check_output(
+            [
+                OPTIONS.gdb_executable,
+                "--batch",
+                "--ex",
+                "python import sys; print(sys.hexversion)",
+            ]
+        )
         .decode("ascii")
         .strip()
     )

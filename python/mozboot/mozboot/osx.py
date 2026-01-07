@@ -215,22 +215,18 @@ class OSXBootstrapper(OSXAndroidBootstrapper, BaseBootstrapper):
 
         
         if b"homebrew/cask-versions" not in known_taps:
-            subprocess.check_output([
-                to_optional_str(self.brew),
-                "tap",
-                "homebrew/cask-versions",
-            ])
+            subprocess.check_output(
+                [to_optional_str(self.brew), "tap", "homebrew/cask-versions"]
+            )
 
         
         
         
         
         if b"caskroom/versions" in known_taps:
-            subprocess.check_output([
-                to_optional_str(self.brew),
-                "untap",
-                "caskroom/versions",
-            ])
+            subprocess.check_output(
+                [to_optional_str(self.brew), "untap", "caskroom/versions"]
+            )
 
         self._ensure_homebrew_packages(casks, is_for_cask=True)
 

@@ -569,13 +569,15 @@ def gradle(command_context, args, verbose=False, gradle_path=None, topsrcdir=Non
 
     env = os.environ.copy()
 
-    env.update({
-        "GRADLE_OPTS": "-Dfile.encoding=utf-8",
-        "JAVA_HOME": java_home,
-        "JAVA_TOOL_OPTIONS": "-Dfile.encoding=utf-8",
-        
-        "GRADLE_MACH_PYTHON": sys.executable,
-    })
+    env.update(
+        {
+            "GRADLE_OPTS": "-Dfile.encoding=utf-8",
+            "JAVA_HOME": java_home,
+            "JAVA_TOOL_OPTIONS": "-Dfile.encoding=utf-8",
+            
+            "GRADLE_MACH_PYTHON": sys.executable,
+        }
+    )
     
     
     android_sdk_root = command_context.substs.get("ANDROID_SDK_ROOT", "")

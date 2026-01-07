@@ -36,34 +36,36 @@ IMAGE_BUILDER_IMAGE = (
 
 transforms = TransformSequence()
 
-docker_image_schema = Schema({
-    
-    Required("name"): str,
-    
-    Optional("parent"): str,
-    
-    Required("symbol"): str,
-    
-    
-    Optional("task-from"): str,
-    
-    Optional("args"): {str: str},
-    
-    
-    Optional("definition"): str,
-    
-    Optional("packages"): [str],
-    Optional("arch"): str,
-    Optional(
-        "index",
-        description="information for indexing this build so its artifacts can be discovered",
-    ): task_description_schema["index"],
-    Optional(
-        "cache",
-        description="Whether this image should be cached based on inputs.",
-    ): bool,
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+docker_image_schema = Schema(
+    {
+        
+        Required("name"): str,
+        
+        Optional("parent"): str,
+        
+        Required("symbol"): str,
+        
+        
+        Optional("task-from"): str,
+        
+        Optional("args"): {str: str},
+        
+        
+        Optional("definition"): str,
+        
+        Optional("packages"): [str],
+        Optional("arch"): str,
+        Optional(
+            "index",
+            description="information for indexing this build so its artifacts can be discovered",
+        ): task_description_schema["index"],
+        Optional(
+            "cache",
+            description="Whether this image should be cached based on inputs.",
+        ): bool,
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    }
+)
 
 
 transforms.add_validate(docker_image_schema)

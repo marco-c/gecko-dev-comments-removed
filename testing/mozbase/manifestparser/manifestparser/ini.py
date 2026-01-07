@@ -106,9 +106,9 @@ def read_ini(
 
             if strict:
                 
-                assert section not in section_names, (
-                    "Section '%s' already found in '%s'" % (section, section_names)
-                )
+                assert (
+                    section not in section_names
+                ), "Section '%s' already found in '%s'" % (section, section_names)
 
             section_names.add(section)
             current_section = {}
@@ -121,7 +121,7 @@ def read_ini(
             raise IniParseError(
                 fp,
                 linenum,
-                f"Expected a comment or section, instead found '{stripped}'",
+                "Expected a comment or section, " f"instead found '{stripped}'",
             )
 
         
@@ -149,9 +149,9 @@ def read_ini(
 
                 
                 if key:
-                    assert key not in current_section, (
-                        f"Found duplicate key {key} in section {section}"
-                    )
+                    assert (
+                        key not in current_section
+                    ), f"Found duplicate key {key} in section {section}"
 
                 if strict:
                     

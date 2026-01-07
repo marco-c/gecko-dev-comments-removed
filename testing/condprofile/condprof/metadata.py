@@ -1,8 +1,8 @@
 
 
 
-"""Manages a metadata file."""
-
+""" Manages a metadata file.
+"""
 import datetime
 import json
 import os

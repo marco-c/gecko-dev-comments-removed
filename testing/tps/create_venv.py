@@ -133,11 +133,9 @@ def main():
     activate(target)
 
     
-    subprocess.check_call([
-        os.path.join(target, python_env),
-        os.path.join(here, "setup.py"),
-        "install",
-    ])
+    subprocess.check_call(
+        [os.path.join(target, python_env), os.path.join(here, "setup.py"), "install"]
+    )
 
     
     

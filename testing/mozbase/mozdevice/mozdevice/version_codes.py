@@ -9,7 +9,6 @@ See https://developer.android.com/reference/android/os/Build.VERSION_CODES.html.
 """
 
 
-
 CUR_DEVELOPMENT = 10000
 
 

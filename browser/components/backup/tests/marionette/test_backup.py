@@ -21,17 +21,19 @@ class BackupTest(MarionetteTestCase):
         
         
         
-        self.marionette.enforce_gecko_prefs({
-            "browser.backup.enabled": True,
-            "browser.backup.log": True,
-            "browser.backup.archive.enabled": True,
-            "browser.backup.restore.enabled": True,
-            "browser.backup.archive.overridePlatformCheck": True,
-            "browser.backup.restore.overridePlatformCheck": True,
-            
-            
-            "browser.sessionstore.resume_from_crash": True,
-        })
+        self.marionette.enforce_gecko_prefs(
+            {
+                "browser.backup.enabled": True,
+                "browser.backup.log": True,
+                "browser.backup.archive.enabled": True,
+                "browser.backup.restore.enabled": True,
+                "browser.backup.archive.overridePlatformCheck": True,
+                "browser.backup.restore.overridePlatformCheck": True,
+                
+                
+                "browser.sessionstore.resume_from_crash": True,
+            }
+        )
 
         self.marionette.set_context("chrome")
 

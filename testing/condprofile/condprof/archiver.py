@@ -1,8 +1,8 @@
 
 
 
-"""Helper to create tarballs."""
-
+"""Helper to create tarballs.
+"""
 import copy
 import glob
 import os

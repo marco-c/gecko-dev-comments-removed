@@ -33,25 +33,27 @@ logger = logging.getLogger(__name__)
 transforms = TransformSequence()
 
 
-beetmover_description_schema = Schema({
-    
-    Required("attributes"): {str: object},
-    
-    Optional("label"): str,
-    
-    
-    
-    Optional("treeherder"): task_description_schema["treeherder"],
-    Required("description"): str,
-    Required("worker-type"): optionally_keyed_by("release-level", str),
-    Required("run-on-projects"): [],
-    
-    Optional("locale"): str,
-    Optional("shipping-phase"): task_description_schema["shipping-phase"],
-    Optional("task-from"): task_description_schema["task-from"],
-    Optional("dependencies"): task_description_schema["dependencies"],
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+beetmover_description_schema = Schema(
+    {
+        
+        Required("attributes"): {str: object},
+        
+        Optional("label"): str,
+        
+        
+        
+        Optional("treeherder"): task_description_schema["treeherder"],
+        Required("description"): str,
+        Required("worker-type"): optionally_keyed_by("release-level", str),
+        Required("run-on-projects"): [],
+        
+        Optional("locale"): str,
+        Optional("shipping-phase"): task_description_schema["shipping-phase"],
+        Optional("task-from"): task_description_schema["task-from"],
+        Optional("dependencies"): task_description_schema["dependencies"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    }
+)
 
 
 @transforms.add

@@ -818,12 +818,12 @@ class IPGResultsHandler:
         for measure in cut_results:
             if "watt" in measure.lower() and "limit" not in measure.lower():
                 
-                watt_usage[replace_measure_name(measure) + "-avg"] = sum([
-                    float(val) for val in cut_results[measure]
-                ]) / len(cut_results[measure])
-                watt_usage[replace_measure_name(measure) + "-max"] = max([
-                    float(val) for val in cut_results[measure]
-                ])
+                watt_usage[replace_measure_name(measure) + "-avg"] = sum(
+                    [float(val) for val in cut_results[measure]]
+                ) / len(cut_results[measure])
+                watt_usage[replace_measure_name(measure) + "-max"] = max(
+                    [float(val) for val in cut_results[measure]]
+                )
 
         
         average_utilization = {}
@@ -841,9 +841,9 @@ class IPGResultsHandler:
                 utilized_name = "gpu"
 
             
-            average_utilization[utilized_name] = sum([
-                float(val) for val in cut_results[utilization]
-            ]) / len(cut_results[utilization])
+            average_utilization[utilized_name] = sum(
+                [float(val) for val in cut_results[utilization]]
+            ) / len(cut_results[utilization])
 
         
         frequency_info = {"cpu": {}, "gpu": {}}
@@ -861,17 +861,17 @@ class IPGResultsHandler:
                 fmeasure_name = "gpu"
             
 
-            frequency_info[fmeasure_name]["favg"] = sum([
-                float(val) for val in cut_results[frequency_measure]
-            ]) / len(cut_results[frequency_measure])
+            frequency_info[fmeasure_name]["favg"] = sum(
+                [float(val) for val in cut_results[frequency_measure]]
+            ) / len(cut_results[frequency_measure])
 
-            frequency_info[fmeasure_name]["fmax"] = max([
-                float(val) for val in cut_results[frequency_measure]
-            ])
+            frequency_info[fmeasure_name]["fmax"] = max(
+                [float(val) for val in cut_results[frequency_measure]]
+            )
 
-            frequency_info[fmeasure_name]["fmin"] = min([
-                float(val) for val in cut_results[frequency_measure]
-            ])
+            frequency_info[fmeasure_name]["fmin"] = min(
+                [float(val) for val in cut_results[frequency_measure]]
+            )
 
         summarized_results = {
             "utilization": {

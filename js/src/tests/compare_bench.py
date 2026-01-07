@@ -1,5 +1,6 @@
 
-"""usage: %progname candidate_path baseline_path"""
+"""usage: %progname candidate_path baseline_path
+"""
 
 import json
 import optparse

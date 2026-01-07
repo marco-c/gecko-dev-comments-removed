@@ -3,7 +3,7 @@
 
 
 
-"""bouncer_check.py
+""" bouncer_check.py
 
 A script to check HTTP statuses of Bouncer products to be shipped.
 """

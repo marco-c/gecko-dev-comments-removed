@@ -160,9 +160,9 @@ class ProxyRunner(Layer):
         if metadata.flavor == "mobile-browser":
             command.extend(["--tool=%s" % "mitmproxy-android"])
             command.extend(["--binary=android"])
-            command.extend([
-                f"--app={get_pretty_app_name(self.get_arg('android-app-name'))}"
-            ])
+            command.extend(
+                [f"--app={get_pretty_app_name(self.get_arg('android-app-name'))}"]
+            )
         else:
             command.extend(["--tool=%s" % "mitmproxy"])
             

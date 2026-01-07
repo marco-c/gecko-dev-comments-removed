@@ -30,83 +30,87 @@ from gecko_taskgraph.util.workertypes import worker_type_implementation
 logger = logging.getLogger(__name__)
 
 
-job_description_schema = Schema({
-    
-    
-    
-    Optional("name"): str,
-    Optional("label"): str,
-    
-    
-    
-    Required("description"): task_description_schema["description"],
-    Optional("attributes"): task_description_schema["attributes"],
-    Optional("task-from"): task_description_schema["task-from"],
-    Optional("dependencies"): task_description_schema["dependencies"],
-    Optional("if-dependencies"): task_description_schema["if-dependencies"],
-    Optional("soft-dependencies"): task_description_schema["soft-dependencies"],
-    Optional("if-dependencies"): task_description_schema["if-dependencies"],
-    Optional("requires"): task_description_schema["requires"],
-    Optional("expires-after"): task_description_schema["expires-after"],
-    Optional("expiration-policy"): task_description_schema["expiration-policy"],
-    Optional("routes"): task_description_schema["routes"],
-    Optional("scopes"): task_description_schema["scopes"],
-    Optional("tags"): task_description_schema["tags"],
-    Optional("extra"): task_description_schema["extra"],
-    Optional("treeherder"): task_description_schema["treeherder"],
-    Optional("index"): task_description_schema["index"],
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-    Optional("run-on-projects"): task_description_schema["run-on-projects"],
-    Optional("run-on-git-branches"): task_description_schema["run-on-git-branches"],
-    Optional("shipping-phase"): task_description_schema["shipping-phase"],
-    Optional("shipping-product"): task_description_schema["shipping-product"],
-    Optional("always-target"): task_description_schema["always-target"],
-    Exclusive("optimization", "optimization"): task_description_schema["optimization"],
-    Optional("use-sccache"): task_description_schema["use-sccache"],
-    Optional("use-python"): Any("system", "default", Coerce(Version)),
-    
-    Optional("use-uv"): bool,
-    Optional("priority"): task_description_schema["priority"],
-    
-    
-    
-    
-    Exclusive("when", "optimization"): Any(
-        None,
-        {
-            
-            
-            
-            Optional("files-changed"): [str],
-        },
-    ),
-    
-    Optional("fetches"): {
-        str: [
-            str,
-            {
-                Required("artifact"): str,
-                Optional("dest"): str,
-                Optional("extract"): bool,
-                Optional("verify-hash"): bool,
-            },
+job_description_schema = Schema(
+    {
+        
+        
+        
+        Optional("name"): str,
+        Optional("label"): str,
+        
+        
+        
+        Required("description"): task_description_schema["description"],
+        Optional("attributes"): task_description_schema["attributes"],
+        Optional("task-from"): task_description_schema["task-from"],
+        Optional("dependencies"): task_description_schema["dependencies"],
+        Optional("if-dependencies"): task_description_schema["if-dependencies"],
+        Optional("soft-dependencies"): task_description_schema["soft-dependencies"],
+        Optional("if-dependencies"): task_description_schema["if-dependencies"],
+        Optional("requires"): task_description_schema["requires"],
+        Optional("expires-after"): task_description_schema["expires-after"],
+        Optional("expiration-policy"): task_description_schema["expiration-policy"],
+        Optional("routes"): task_description_schema["routes"],
+        Optional("scopes"): task_description_schema["scopes"],
+        Optional("tags"): task_description_schema["tags"],
+        Optional("extra"): task_description_schema["extra"],
+        Optional("treeherder"): task_description_schema["treeherder"],
+        Optional("index"): task_description_schema["index"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+        Optional("run-on-projects"): task_description_schema["run-on-projects"],
+        Optional("run-on-git-branches"): task_description_schema["run-on-git-branches"],
+        Optional("shipping-phase"): task_description_schema["shipping-phase"],
+        Optional("shipping-product"): task_description_schema["shipping-product"],
+        Optional("always-target"): task_description_schema["always-target"],
+        Exclusive("optimization", "optimization"): task_description_schema[
+            "optimization"
         ],
-    },
-    
-    "run": {
+        Optional("use-sccache"): task_description_schema["use-sccache"],
+        Optional("use-python"): Any("system", "default", Coerce(Version)),
         
-        "using": str,
-        
-        Optional("workdir"): str,
+        Optional("use-uv"): bool,
+        Optional("priority"): task_description_schema["priority"],
         
         
-        Extra: object,
-    },
-    Required("worker-type"): task_description_schema["worker-type"],
-    
-    
-    Optional("worker"): dict,
-})
+        
+        
+        Exclusive("when", "optimization"): Any(
+            None,
+            {
+                
+                
+                
+                Optional("files-changed"): [str],
+            },
+        ),
+        
+        Optional("fetches"): {
+            str: [
+                str,
+                {
+                    Required("artifact"): str,
+                    Optional("dest"): str,
+                    Optional("extract"): bool,
+                    Optional("verify-hash"): bool,
+                },
+            ],
+        },
+        
+        "run": {
+            
+            "using": str,
+            
+            Optional("workdir"): str,
+            
+            
+            Extra: object,
+        },
+        Required("worker-type"): task_description_schema["worker-type"],
+        
+        
+        Optional("worker"): dict,
+    }
+)
 
 transforms = TransformSequence()
 transforms.add_validate(job_description_schema)
@@ -261,11 +265,13 @@ def add_perfherder_fetch_content_artifact(config, jobs):
             if worker.get("implementation") == "docker-worker"
             else "./perf/perfherder-data-fetch-content.json"
         )
-        artifacts.append({
-            "type": "file",
-            "name": "public/fetch/perfherder-data-fetch-content.json",
-            "path": perfherder_fetch_content_json_path,
-        })
+        artifacts.append(
+            {
+                "type": "file",
+                "name": "public/fetch/perfherder-data-fetch-content.json",
+                "path": perfherder_fetch_content_json_path,
+            }
+        )
         env["PERFHERDER_FETCH_CONTENT_JSON_PATH"] = perfherder_fetch_content_json_path
 
         yield job
@@ -339,11 +345,13 @@ def use_fetches(config, jobs):
                     path = artifact_names[label]
 
                     dependencies[label] = label
-                    job_fetches.append({
-                        "artifact": path,
-                        "task": f"<{label}>",
-                        "extract": should_extract.get(label, True),
-                    })
+                    job_fetches.append(
+                        {
+                            "artifact": path,
+                            "task": f"<{label}>",
+                            "extract": should_extract.get(label, True),
+                        }
+                    )
 
                     if kind == "toolchain" and fetch_name.endswith("-sccache"):
                         has_sccache = True

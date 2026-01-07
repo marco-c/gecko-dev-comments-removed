@@ -2,7 +2,8 @@
 
 
 
-"""Generic ways to parallelize jobs."""
+"""Generic ways to parallelize jobs.
+"""
 
 
 

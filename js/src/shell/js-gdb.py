@@ -2,7 +2,7 @@
 
 
 
-"""GDB Python customization auto-loader for JS shell binary"""
+""" GDB Python customization auto-loader for JS shell binary """
 
 
 

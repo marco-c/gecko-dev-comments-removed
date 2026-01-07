@@ -20,42 +20,44 @@ from gecko_taskgraph.util.scriptworker import (
 
 transforms = TransformSequence()
 
-signing_description_schema = Schema({
-    
-    
-    Required("upstream-artifacts"): [
-        {
-            
-            Required("taskId"): taskref_or_string,
-            
-            Required("taskType"): str,
-            
-            Required("paths"): [str],
-            
-            Required("formats"): [str],
-        }
-    ],
-    
-    Optional("attributes"): {str: object},
-    
-    Optional("label"): str,
-    
-    
-    
-    Optional("treeherder"): task_description_schema["treeherder"],
-    
-    Optional("routes"): [str],
-    Optional("shipping-phase"): task_description_schema["shipping-phase"],
-    Optional("shipping-product"): task_description_schema["shipping-product"],
-    Required("dependencies"): task_description_schema["dependencies"],
-    Optional("extra"): {str: object},
-    
-    Optional("repacks-per-chunk"): int,
-    
-    Optional("priority"): task_description_schema["priority"],
-    Optional("task-from"): task_description_schema["task-from"],
-    Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
-})
+signing_description_schema = Schema(
+    {
+        
+        
+        Required("upstream-artifacts"): [
+            {
+                
+                Required("taskId"): taskref_or_string,
+                
+                Required("taskType"): str,
+                
+                Required("paths"): [str],
+                
+                Required("formats"): [str],
+            }
+        ],
+        
+        Optional("attributes"): {str: object},
+        
+        Optional("label"): str,
+        
+        
+        
+        Optional("treeherder"): task_description_schema["treeherder"],
+        
+        Optional("routes"): [str],
+        Optional("shipping-phase"): task_description_schema["shipping-phase"],
+        Optional("shipping-product"): task_description_schema["shipping-product"],
+        Required("dependencies"): task_description_schema["dependencies"],
+        Optional("extra"): {str: object},
+        
+        Optional("repacks-per-chunk"): int,
+        
+        Optional("priority"): task_description_schema["priority"],
+        Optional("task-from"): task_description_schema["task-from"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
+    }
+)
 
 
 def get_locales_description(attributes, default):

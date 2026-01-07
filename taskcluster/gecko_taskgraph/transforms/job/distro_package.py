@@ -5,6 +5,7 @@
 Support for running spidermonkey jobs via dedicated scripts
 """
 
+
 import os
 import re
 
@@ -25,42 +26,48 @@ source_definition = {
     Required("sha256"): str,
 }
 
-common_schema = Schema({
-    
-    
-    Required(Any("dsc", "tarball")): source_definition,
-    
-    
-    
-    Optional("name"): str,
-    
-    Optional("patch"): str,
-    
-    Optional("pre-build-command"): str,
-    
-    Optional("arch"): str,
-    
-    Optional("packages"): [str],
-    
-    
-    
-    
-    Optional("resolver"): Any("apt-get", "aptitude"),
-    
-    Required("workdir"): str,
-})
+common_schema = Schema(
+    {
+        
+        
+        Required(Any("dsc", "tarball")): source_definition,
+        
+        
+        
+        Optional("name"): str,
+        
+        Optional("patch"): str,
+        
+        Optional("pre-build-command"): str,
+        
+        Optional("arch"): str,
+        
+        Optional("packages"): [str],
+        
+        
+        
+        
+        Optional("resolver"): Any("apt-get", "aptitude"),
+        
+        Required("workdir"): str,
+    }
+)
 
-debian_schema = common_schema.extend({
-    Required("using"): "debian-package",
-    
-    Required("dist"): str,
-})
+debian_schema = common_schema.extend(
+    {
+        Required("using"): "debian-package",
+        
+        Required("dist"): str,
+    }
+)
 
-ubuntu_schema = common_schema.extend({
-    Required("using"): "ubuntu-package",
-    
-    Required("dist"): str,
-})
+ubuntu_schema = common_schema.extend(
+    {
+        Required("using"): "ubuntu-package",
+        
+        Required("dist"): str,
+    }
+)
 
 
 def common_package(config, job, taskdesc, distro, version):
@@ -92,7 +99,8 @@ def common_package(config, job, taskdesc, distro, version):
     elif "tarball" in run:
         src = run["tarball"]
         unpack = (
-            "mkdir {package} && tar -C {package} -axf {src_file} --strip-components=1"
+            "mkdir {package} && "
+            "tar -C {package} -axf {src_file} --strip-components=1"
         )
         package_re = SOURCE_PACKAGE_RE
     else:
@@ -150,8 +158,7 @@ def common_package(config, job, taskdesc, distro, version):
         "/usr/local/sbin/setup_packages.sh $TASKCLUSTER_ROOT_URL $PACKAGES && "
         "apt-get update && "
         
-        "apt-get dist-upgrade && "
-        "cd /tmp && "
+        "apt-get dist-upgrade && " "cd /tmp && "
         
         "(dget -d -u {src_url} || exit 100) && "
         'echo "{src_sha256}  {src_file}" | sha256sum -c && '

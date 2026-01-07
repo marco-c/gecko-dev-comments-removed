@@ -317,9 +317,9 @@ def format_header():
 
 def run_fzf(cmd, tasks):
     env = dict(os.environ)
-    env.update({
-        "PYTHONPATH": os.pathsep.join([p for p in sys.path if "requests" in p])
-    })
+    env.update(
+        {"PYTHONPATH": os.pathsep.join([p for p in sys.path if "requests" in p])}
+    )
     
     
     

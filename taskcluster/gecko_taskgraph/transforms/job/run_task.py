@@ -19,44 +19,46 @@ from gecko_taskgraph.transforms.job import run_job_using
 from gecko_taskgraph.transforms.job.common import add_tooltool, support_vcs_checkout
 from gecko_taskgraph.transforms.task import taskref_or_string
 
-run_task_schema = Schema({
-    Required("using"): "run-task",
-    
-    Optional("use-caches"): Any(bool, [str]),
-    
-    Required("checkout"): bool,
-    Optional(
-        "cwd",
-        description="Path to run command in. If a checkout is present, the path "
-        "to the checkout will be interpolated with the key `checkout`",
-    ): str,
-    
-    
-    Required("sparse-profile"): Any(str, None),
-    
-    Optional("sparse-profile-prefix"): str,
-    
-    Optional("shallow-clone"): bool,
-    
-    
-    Required("comm-checkout"): bool,
-    
-    
-    
-    Required("command"): Any([taskref_or_string], taskref_or_string),
-    
-    Optional("workdir"): str,
-    
-    
-    
-    Required("tooltool-downloads"): Any(
-        False,
-        "public",
-        "internal",
-    ),
-    
-    Optional("run-as-root"): bool,
-})
+run_task_schema = Schema(
+    {
+        Required("using"): "run-task",
+        
+        Optional("use-caches"): Any(bool, [str]),
+        
+        Required("checkout"): bool,
+        Optional(
+            "cwd",
+            description="Path to run command in. If a checkout is present, the path "
+            "to the checkout will be interpolated with the key `checkout`",
+        ): str,
+        
+        
+        Required("sparse-profile"): Any(str, None),
+        
+        Optional("sparse-profile-prefix"): str,
+        
+        Optional("shallow-clone"): bool,
+        
+        
+        Required("comm-checkout"): bool,
+        
+        
+        
+        Required("command"): Any([taskref_or_string], taskref_or_string),
+        
+        Optional("workdir"): str,
+        
+        
+        
+        Required("tooltool-downloads"): Any(
+            False,
+            "public",
+            "internal",
+        ),
+        
+        Optional("run-as-root"): bool,
+    }
+)
 
 
 def common_setup(config, job, taskdesc, command):
@@ -182,31 +184,37 @@ def generic_worker_run_task(config, job, taskdesc):
     run_task_bin = (
         "run-task-git" if config.params["repository_type"] == "git" else "run-task-hg"
     )
-    worker["mounts"].append({
-        "content": {
-            "url": script_url(config, run_task_bin),
-        },
-        "file": "./run-task",
-    })
+    worker["mounts"].append(
+        {
+            "content": {
+                "url": script_url(config, run_task_bin),
+            },
+            "file": "./run-task",
+        }
+    )
 
     if (
         job.get("fetches")
         or job.get("use-uv")
         or job.get("use-python", "system") != "system"
     ):
-        worker["mounts"].append({
-            "content": {
-                "url": script_url(config, "fetch-content"),
-            },
-            "file": "./fetch-content",
-        })
+        worker["mounts"].append(
+            {
+                "content": {
+                    "url": script_url(config, "fetch-content"),
+                },
+                "file": "./fetch-content",
+            }
+        )
     if run.get("checkout"):
-        worker["mounts"].append({
-            "content": {
-                "url": script_url(config, "robustcheckout.py"),
-            },
-            "file": "./robustcheckout.py",
-        })
+        worker["mounts"].append(
+            {
+                "content": {
+                    "url": script_url(config, "robustcheckout.py"),
+                },
+                "file": "./robustcheckout.py",
+            }
+        )
 
     run_command = run["command"]
 

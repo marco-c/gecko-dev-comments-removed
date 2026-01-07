@@ -2,7 +2,8 @@
 
 
 
-"""Code to integration with automation."""
+"""Code to integration with automation.
+"""
 
 try:
     import simplejson as json

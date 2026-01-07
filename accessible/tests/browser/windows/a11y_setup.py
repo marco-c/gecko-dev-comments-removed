@@ -2,7 +2,8 @@
 
 
 
-"""Python environment for Windows a11y browser tests."""
+"""Python environment for Windows a11y browser tests.
+"""
 
 import ctypes
 import os

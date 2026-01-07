@@ -1,8 +1,8 @@
 
 
 
-"""Drives an android device."""
-
+""" Drives an android device.
+"""
 import os
 import posixpath
 import tempfile
