@@ -455,6 +455,25 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   already_AddRefed<net::DocumentLoadListener> GetCurrentLoad();
 
+  
+  void CreateRedactedAncestorOriginsList(
+      nsIPrincipal* aThisDocumentPrincipal,
+      ReferrerPolicy aFrameReferrerPolicyAttribute);
+
+  Span<const nsCOMPtr<nsIPrincipal>> GetPossiblyRedactedAncestorOriginsList()
+      const;
+  void SetPossiblyRedactedAncestorOriginsList(
+      nsTArray<nsCOMPtr<nsIPrincipal>> aAncestorOriginsList);
+
+  void SetEmbedderFrameReferrerPolicy(ReferrerPolicy aPolicy);
+
+  
+  
+  
+  ReferrerPolicy GetEmbedderFrameReferrerPolicy() const {
+    return mEmbedderFrameReferrerPolicy;
+  }
+
  protected:
   
   void CanonicalDiscard();
@@ -674,8 +693,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   uint32_t mPendingDiscards = 0;
 
   bool mFullyDiscarded = false;
+  
+  
+  ReferrerPolicy mEmbedderFrameReferrerPolicy = ReferrerPolicy::_empty;
 
   nsTArray<std::function<void(uint64_t)>> mFullyDiscardedListeners;
+
+  
+  nsTArray<nsCOMPtr<nsIPrincipal>> mPossiblyRedactedAncestorOriginsList;
 };
 
 }  

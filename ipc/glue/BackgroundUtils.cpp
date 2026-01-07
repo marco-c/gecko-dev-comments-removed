@@ -612,7 +612,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       aLoadInfo->GetIsOriginTrialCoepCredentiallessEnabledForTopLevel(),
       unstrippedURI, interceptionInfoArg, aLoadInfo->GetIsNewWindowTarget(),
       aLoadInfo->GetUserNavigationInvolvement(),
-      aLoadInfo->GetContainerFeaturePolicyInfo());
+      aLoadInfo->GetContainerFeaturePolicyInfo(), {});
 
   return NS_OK;
 }
@@ -762,6 +762,18 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
     if (parentBC) {
       LoadInfo::ComputeAncestors(parentBC->Canonical(), ancestorPrincipals,
                                  ancestorBrowsingContextIDs);
+    }
+  } else {
+    
+    
+    for (const auto& principalInfo : loadInfoArgs.ancestorOrigins()) {
+      if (principalInfo.isNothing()) {
+        ancestorPrincipals.AppendElement(nullptr);
+      } else {
+        auto principal = PrincipalInfoToPrincipal(principalInfo.value());
+        
+        ancestorPrincipals.AppendElement(principal.unwrapOr(nullptr));
+      }
     }
   }
 

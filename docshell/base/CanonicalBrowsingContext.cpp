@@ -3752,6 +3752,100 @@ void CanonicalBrowsingContext::MaybeReconstructActiveEntryList() {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+void CanonicalBrowsingContext::CreateRedactedAncestorOriginsList(
+    nsIPrincipal* aThisDocumentPrincipal,
+    ReferrerPolicy aFrameReferrerPolicyAttribute) {
+  MOZ_DIAGNOSTIC_ASSERT(aThisDocumentPrincipal);
+  nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
+  
+  CanonicalBrowsingContext* parent = GetParent();
+  if (!parent) {
+    mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
+    return;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(!parent->IsChrome());
+  
+  
+  const Span<const nsCOMPtr<nsIPrincipal>> parentAncestorOriginsList =
+      parent->GetPossiblyRedactedAncestorOriginsList();
+
+  
+  WindowGlobalParent* ancestorWGP = GetParentWindowContext();
+
+  
+  
+  
+  auto referrerPolicy = aFrameReferrerPolicyAttribute;
+
+  
+  bool masked = false;
+
+  if (referrerPolicy == ReferrerPolicy::No_referrer) {
+    
+    masked = true;
+  } else if (referrerPolicy == ReferrerPolicy::Same_origin &&
+             !ancestorWGP->DocumentPrincipal()->Equals(
+                 aThisDocumentPrincipal)) {
+    
+    
+    
+    masked = true;
+  }
+
+  if (masked) {
+    
+    ancestorPrincipals.AppendElement(nullptr);
+  } else {
+    
+    auto* principal = ancestorWGP->DocumentPrincipal();
+    
+    
+    ancestorPrincipals.AppendElement(
+        principal->GetIsNullPrincipal() ? nullptr : principal);
+  }
+
+  
+  for (const auto& ancestorOrigin : parentAncestorOriginsList) {
+    
+    if (masked && ancestorOrigin &&
+        ancestorOrigin->Equals(ancestorWGP->DocumentPrincipal())) {
+      
+      
+      ancestorPrincipals.AppendElement(nullptr);
+    } else {
+      
+      
+      ancestorPrincipals.AppendElement(ancestorOrigin);
+      masked = false;
+    }
+  }
+
+  
+  
+  mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
+}
+
+Span<const nsCOMPtr<nsIPrincipal>>
+CanonicalBrowsingContext::GetPossiblyRedactedAncestorOriginsList() const {
+  return mPossiblyRedactedAncestorOriginsList;
+}
+
+void CanonicalBrowsingContext::SetPossiblyRedactedAncestorOriginsList(
+    nsTArray<nsCOMPtr<nsIPrincipal>> aAncestorOriginsList) {
+  mPossiblyRedactedAncestorOriginsList = std::move(aAncestorOriginsList);
+}
+
 EntryList* CanonicalBrowsingContext::GetActiveEntries() {
   if (!mActiveEntryList) {
     auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
@@ -3760,6 +3854,11 @@ EntryList* CanonicalBrowsingContext::GetActiveEntries() {
     }
   }
   return mActiveEntryList;
+}
+
+void CanonicalBrowsingContext::SetEmbedderFrameReferrerPolicy(
+    ReferrerPolicy aPolicy) {
+  mEmbedderFrameReferrerPolicy = aPolicy;
 }
 
 already_AddRefed<net::DocumentLoadListener>
