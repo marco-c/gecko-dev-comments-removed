@@ -4,10 +4,10 @@
 "use strict";
 
 const { IPPNimbusHelper } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPNimbusHelper.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs"
 );
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 do_get_profile();

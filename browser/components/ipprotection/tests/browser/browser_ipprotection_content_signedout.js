@@ -11,11 +11,12 @@ const { sinon } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPProtectionWidget: "resource:///modules/ipprotection/IPProtection.sys.mjs",
+  IPProtectionWidget:
+    "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPProtectionPanel:
-    "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
@@ -38,7 +39,7 @@ add_task(async function test_signed_out_content() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  content.state.isSignedIn = false;
+  content.state.isSignedOut = true;
   content.requestUpdate();
   await content.updateComplete;
 
@@ -90,7 +91,7 @@ add_task(async function test_signin_button() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  content.state.isSignedIn = false;
+  content.state.isSignedOut = true;
   content.requestUpdate();
   await content.updateComplete;
 

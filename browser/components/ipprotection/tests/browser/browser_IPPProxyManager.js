@@ -5,7 +5,7 @@
 "use strict";
 
 const { IPProtectionServerlist } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
+  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 
@@ -125,7 +125,7 @@ add_task(async function test_IPPProxyManager_handleProxyErrorEvent() {
 
 add_task(async function test_IPPProxyManager_bug_1999946() {
   const { IPPChannelFilter } = ChromeUtils.importESModule(
-    "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs"
+    "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs"
   );
 
   
