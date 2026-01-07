@@ -409,6 +409,9 @@ CHILD_PROCESSES += [
     DllBlocklistEntry("TmUmEvt64.dll", ALL_VERSIONS),
     DllBlocklistEntry("tmmon.dll", ALL_VERSIONS),
     DllBlocklistEntry("TmUmEvt.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("fcagff.dll", ALL_VERSIONS),
 ]
 
 GPU_PROCESSES += [
