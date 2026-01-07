@@ -5666,82 +5666,9 @@ void nsCSSFrameConstructor::AppendFramesToParent(
                std::move(aFrameList));
 }
 
-
-
-
-
-
-bool nsCSSFrameConstructor::IsValidSibling(nsIFrame* aSibling,
-                                           nsIContent* aContent,
-                                           Maybe<StyleDisplay>& aDisplay) {
-  StyleDisplay siblingDisplay = aSibling->GetDisplay();
-  if (StyleDisplay::TableColumnGroup == siblingDisplay ||
-      StyleDisplay::TableColumn == siblingDisplay ||
-      StyleDisplay::TableCaption == siblingDisplay ||
-      StyleDisplay::TableHeaderGroup == siblingDisplay ||
-      StyleDisplay::TableRowGroup == siblingDisplay ||
-      StyleDisplay::TableFooterGroup == siblingDisplay) {
-    
-    
-    if (aDisplay.isNothing()) {
-      if (aContent->IsComment() || aContent->IsProcessingInstruction()) {
-        
-        
-        return false;
-      }
-      
-      RefPtr<ComputedStyle> computedStyle = ResolveComputedStyle(aContent);
-      const nsStyleDisplay* display = computedStyle->StyleDisplay();
-      aDisplay.emplace(display->mDisplay);
-    }
-
-    StyleDisplay display = aDisplay.value();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if ((siblingDisplay == StyleDisplay::TableCaption) !=
-        (display == StyleDisplay::TableCaption)) {
-      
-      return false;
-    }
-
-    if ((siblingDisplay == StyleDisplay::TableColumnGroup ||
-         siblingDisplay == StyleDisplay::TableColumn) !=
-        (display == StyleDisplay::TableColumnGroup ||
-         display == StyleDisplay::TableColumn)) {
-      
-      
-      return false;
-    }
-    
-    
-    
-  }
-
-  return true;
-}
-
-
-
-
 template <nsCSSFrameConstructor::SiblingDirection aDirection>
 nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
-    FlattenedChildIterator& aIter, nsIContent* aTargetContent,
-    Maybe<StyleDisplay>& aTargetContentDisplay) {
-  auto adjust = [&](nsIFrame* aPotentialSiblingFrame) -> nsIFrame* {
-    return AdjustSiblingFrame(aPotentialSiblingFrame, aTargetContent,
-                              aTargetContentDisplay, aDirection);
-  };
-
+    FlattenedChildIterator& aIter) {
   auto nextDomSibling = [](FlattenedChildIterator& aIter) -> nsIContent* {
     return aDirection == SiblingDirection::Forward ? aIter.GetNextChild()
                                                    : aIter.GetPreviousChild();
@@ -5788,39 +5715,37 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
     if (nsIFrame* primaryFrame = sibling->GetPrimaryFrame()) {
       
       
-      if (primaryFrame->GetContent() == sibling) {
-        if (nsIFrame* frame = adjust(primaryFrame)) {
-          return frame;
-        }
+      
+      
+      
+      
+      
+      if (primaryFrame->GetContent() == sibling &&
+          !primaryFrame->IsRenderedLegend()) [[likely]] {
+        return primaryFrame;
       }
     }
 
     if (IsDisplayContents(sibling)) {
-      if (nsIFrame* frame = adjust(getNearPseudo(sibling))) {
+      if (nsIFrame* frame = getNearPseudo(sibling)) {
         return frame;
       }
 
       const bool startFromBeginning = aDirection == SiblingDirection::Forward;
       FlattenedChildIterator iter(sibling, startFromBeginning);
-      nsIFrame* sibling = FindSiblingInternal<aDirection>(
-          iter, aTargetContent, aTargetContentDisplay);
+      nsIFrame* sibling = FindSiblingInternal<aDirection>(iter);
       if (sibling) {
         return sibling;
       }
     }
   }
 
-  return adjust(getFarPseudo(aIter.Parent()));
+  return getFarPseudo(aIter.Parent());
 }
 
 nsIFrame* nsCSSFrameConstructor::AdjustSiblingFrame(
-    nsIFrame* aSibling, nsIContent* aTargetContent,
-    Maybe<StyleDisplay>& aTargetContentDisplay, SiblingDirection aDirection) {
+    nsIFrame* aSibling, SiblingDirection aDirection) {
   if (!aSibling) {
-    return nullptr;
-  }
-
-  if (aSibling->IsRenderedLegend()) {
     return nullptr;
   }
 
@@ -5842,33 +5767,26 @@ nsIFrame* nsCSSFrameConstructor::AdjustSiblingFrame(
     aSibling = aSibling->GetTailContinuation();
   }
 
-  if (!IsValidSibling(aSibling, aTargetContent, aTargetContentDisplay)) {
-    return nullptr;
-  }
-
   return aSibling;
 }
 
 nsIFrame* nsCSSFrameConstructor::FindPreviousSibling(
-    const FlattenedChildIterator& aIter,
-    Maybe<StyleDisplay>& aTargetContentDisplay) {
-  return FindSibling<SiblingDirection::Backward>(aIter, aTargetContentDisplay);
+    const FlattenedChildIterator& aIter) {
+  return AdjustSiblingFrame(FindSibling<SiblingDirection::Backward>(aIter),
+                            SiblingDirection::Backward);
 }
 
 nsIFrame* nsCSSFrameConstructor::FindNextSibling(
-    const FlattenedChildIterator& aIter,
-    Maybe<StyleDisplay>& aTargetContentDisplay) {
-  return FindSibling<SiblingDirection::Forward>(aIter, aTargetContentDisplay);
+    const FlattenedChildIterator& aIter) {
+  return AdjustSiblingFrame(FindSibling<SiblingDirection::Forward>(aIter),
+                            SiblingDirection::Forward);
 }
 
 template <nsCSSFrameConstructor::SiblingDirection aDirection>
 nsIFrame* nsCSSFrameConstructor::FindSibling(
-    const FlattenedChildIterator& aIter,
-    Maybe<StyleDisplay>& aTargetContentDisplay) {
-  nsIContent* targetContent = aIter.Get();
+    const FlattenedChildIterator& aIter) {
   FlattenedChildIterator siblingIter = aIter;
-  nsIFrame* sibling = FindSiblingInternal<aDirection>(
-      siblingIter, targetContent, aTargetContentDisplay);
+  nsIFrame* sibling = FindSiblingInternal<aDirection>(siblingIter);
   if (sibling) {
     return sibling;
   }
@@ -5883,8 +5801,7 @@ nsIFrame* nsCSSFrameConstructor::FindSibling(
 
     FlattenedChildIterator iter(parent);
     iter.Seek(current);
-    sibling = FindSiblingInternal<aDirection>(iter, targetContent,
-                                              aTargetContentDisplay);
+    sibling = FindSiblingInternal<aDirection>(iter);
     if (sibling) {
       return sibling;
     }
@@ -5895,29 +5812,8 @@ nsIFrame* nsCSSFrameConstructor::FindSibling(
   return nullptr;
 }
 
-
-static nsContainerFrame* GetAdjustedParentFrame(nsContainerFrame* aParentFrame,
-                                                nsIContent* aChildContent) {
-  MOZ_ASSERT(!aParentFrame->IsTableWrapperFrame(), "Shouldn't be happening!");
-
-  nsContainerFrame* newParent = nullptr;
-  if (aParentFrame->IsFieldSetFrame()) {
-    
-    
-    if (!aChildContent->IsHTMLElement(nsGkAtoms::legend)) {
-      newParent = static_cast<nsFieldSetFrame*>(aParentFrame)->GetInner();
-      if (newParent) {
-        newParent = newParent->GetContentInsertionFrame();
-      }
-    }
-  }
-  return newParent ? newParent : aParentFrame;
-}
-
 nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
-    InsertionPoint* aInsertion, nsIContent* aChild, bool* aIsAppend,
-    bool* aIsRangeInsertSafe, nsIContent* aStartSkipChild,
-    nsIContent* aEndSkipChild) {
+    InsertionPoint* aInsertion, nsIContent* aChild, bool* aIsAppend) {
   MOZ_ASSERT(aInsertion->mParentFrame, "Must have parent frame to start with");
 
   *aIsAppend = false;
@@ -5928,11 +5824,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
     
     
     
-    if (aStartSkipChild) {
-      iter.Seek(aStartSkipChild);
-    } else {
-      iter.Seek(aChild);
-    }
+    iter.Seek(aChild);
   } else {
     
     iter.GetNextChild();
@@ -5943,8 +5835,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
 
   
   
-  Maybe<StyleDisplay> childDisplay;
-  nsIFrame* prevSibling = FindPreviousSibling(iter, childDisplay);
+  nsIFrame* prevSibling = FindPreviousSibling(iter);
 
   
   
@@ -5952,33 +5843,25 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
   if (prevSibling) {
     aInsertion->mParentFrame =
         prevSibling->GetParent()->GetContentInsertionFrame();
+    *aIsAppend =
+        !::GetInsertNextSibling(aInsertion->mParentFrame, prevSibling) &&
+        !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(
+            aInsertion->mParentFrame) &&
+        !IsWrapperPseudo(aInsertion->mParentFrame);
+  } else if (nsIFrame* nextSibling = FindNextSibling(iter)) {
+    
+    aInsertion->mParentFrame =
+        nextSibling->GetParent()->GetContentInsertionFrame();
   } else {
     
-    
-    
-    if (aEndSkipChild) {
-      iter.Seek(aEndSkipChild);
-      iter.GetPreviousChild();
-    }
-    if (nsIFrame* nextSibling = FindNextSibling(iter, childDisplay)) {
-      aInsertion->mParentFrame =
-          nextSibling->GetParent()->GetContentInsertionFrame();
-    } else {
-      
-      *aIsAppend = true;
+    *aIsAppend = true;
 
-      
-      aInsertion->mParentFrame =
-          ::GetAdjustedParentFrame(aInsertion->mParentFrame, aChild);
+    aInsertion->mParentFrame =
+        ::ContinuationToAppendTo(aInsertion->mParentFrame);
 
-      aInsertion->mParentFrame =
-          ::ContinuationToAppendTo(aInsertion->mParentFrame);
-
-      prevSibling = ::FindAppendPrevSibling(aInsertion->mParentFrame, nullptr);
-    }
+    prevSibling = ::FindAppendPrevSibling(aInsertion->mParentFrame, nullptr);
   }
 
-  *aIsRangeInsertSafe = childDisplay.isNothing();
   return prevSibling;
 }
 
@@ -6100,13 +5983,13 @@ void nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(
 
 
 
-void nsCSSFrameConstructor::ConstructLazily(Operation aOperation,
-                                            nsIContent* aChild) {
-  MOZ_ASSERT(aChild->GetParent());
+void nsCSSFrameConstructor::ConstructLazily(nsIContent* aStartChild,
+                                            nsIContent* aEndChild) {
+  MOZ_ASSERT(aStartChild->GetParent());
 
   
   
-  Element* parent = aChild->GetFlattenedTreeParentElement();
+  Element* parent = aStartChild->GetFlattenedTreeParentElement();
   if (!parent) {
     
     return;
@@ -6122,24 +6005,15 @@ void nsCSSFrameConstructor::ConstructLazily(Operation aOperation,
   }
 
   
-  if (aOperation == CONTENTINSERT) {
-    NS_ASSERTION(!aChild->GetPrimaryFrame() ||
-                     aChild->GetPrimaryFrame()->GetContent() != aChild,
+  for (nsIContent* child = aStartChild; child != aEndChild;
+       child = child->GetNextSibling()) {
+    NS_ASSERTION(!child->GetPrimaryFrame() ||
+                     child->GetPrimaryFrame()->GetContent() != child,
                  
                  
                  
                  "setting NEEDS_FRAME on a node that already has a frame?");
-    aChild->SetFlags(NODE_NEEDS_FRAME);
-  } else {  
-    for (nsIContent* child = aChild; child; child = child->GetNextSibling()) {
-      NS_ASSERTION(!child->GetPrimaryFrame() ||
-                       child->GetPrimaryFrame()->GetContent() != child,
-                   
-                   
-                   
-                   "setting NEEDS_FRAME on a node that already has a frame?");
-      child->SetFlags(NODE_NEEDS_FRAME);
-    }
+    child->SetFlags(NODE_NEEDS_FRAME);
   }
 
   CheckBitsForLazyFrameConstruction(parent);
@@ -6159,12 +6033,6 @@ void nsCSSFrameConstructor::IssueSingleInsertNofications(
     
     ContentRangeInserted(child, child->GetNextSibling(), aInsertionKind);
   }
-}
-
-bool nsCSSFrameConstructor::InsertionPoint::IsMultiple() const {
-  
-  
-  return mParentFrame && mParentFrame->IsFieldSetFrame();
 }
 
 nsCSSFrameConstructor::InsertionPoint
@@ -6199,14 +6067,7 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aStartChild,
 
   
   
-  
-  InsertionPoint ip = GetInsertionPoint(aStartChild);
-  if (ip.IsMultiple()) {
-    IssueSingleInsertNofications(aStartChild, aEndChild, aInsertionKind);
-    return {};
-  }
-
-  return ip;
+  return GetInsertionPoint(aStartChild);
 }
 
 bool nsCSSFrameConstructor::MaybeRecreateForFrameset(nsIFrame* aParentFrame,
@@ -6284,25 +6145,6 @@ void nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
   }
 }
 
-nsIFrame* nsCSSFrameConstructor::FindNextSiblingForAppend(
-    const InsertionPoint& aInsertion) {
-  auto SlowPath = [&]() -> nsIFrame* {
-    FlattenedChildIterator iter(aInsertion.mContainer,
-                                 false);
-    iter.GetPreviousChild();  
-    Maybe<StyleDisplay> unused;
-    return FindNextSibling(iter, unused);
-  };
-
-  if (!IsDisplayContents(aInsertion.mContainer) &&
-      !nsLayoutUtils::GetAfterFrame(aInsertion.mContainer)) {
-    MOZ_ASSERT(!SlowPath());
-    return nullptr;
-  }
-
-  return SlowPath();
-}
-
 
 static bool ParentIsWrapperAnonBox(nsIFrame* aParent) {
   nsIFrame* maybeAnonBox = aParent;
@@ -6315,288 +6157,7 @@ static bool ParentIsWrapperAnonBox(nsIFrame* aParent) {
 
 void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
                                             InsertionKind aInsertionKind) {
-  AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentAppended",
-                          LAYOUT_FrameConstruction);
-  AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
-
-#ifdef DEBUG
-  if (gNoisyContentUpdates) {
-    printf(
-        "nsCSSFrameConstructor::ContentAppended container=%p "
-        "first-child=%p lazy=%d\n",
-        aFirstNewContent->GetParent(), aFirstNewContent,
-        aInsertionKind == InsertionKind::Async);
-    if (gReallyNoisyContentUpdates && aFirstNewContent->GetParent()) {
-      aFirstNewContent->GetParent()->List(stdout, 0);
-    }
-  }
-
-  for (nsIContent* child = aFirstNewContent; child;
-       child = child->GetNextSibling()) {
-    
-    
-    MOZ_ASSERT(
-        !child->GetPrimaryFrame() ||
-            child->GetPrimaryFrame()->GetContent() != child,
-        "asked to construct a frame for a node that already has a frame");
-  }
-#endif
-
-  LAYOUT_PHASE_TEMP_EXIT();
-  InsertionPoint insertion =
-      GetRangeInsertionPoint(aFirstNewContent, nullptr, aInsertionKind);
-  nsContainerFrame*& parentFrame = insertion.mParentFrame;
-  LAYOUT_PHASE_TEMP_REENTER();
-  if (!parentFrame) {
-    
-    
-    
-    
-    if (aInsertionKind == InsertionKind::Async) {
-      LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-    }
-    return;
-  }
-
-  if (aInsertionKind == InsertionKind::Async) {
-    ConstructLazily(CONTENTAPPEND, aFirstNewContent);
-    LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-    return;
-  }
-
-  LAYOUT_PHASE_TEMP_EXIT();
-  if (MaybeRecreateForFrameset(parentFrame, aFirstNewContent, nullptr)) {
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
-  LAYOUT_PHASE_TEMP_REENTER();
-
-  if (parentFrame->IsLeaf()) {
-    
-    
-    ClearLazyBits(aFirstNewContent, nullptr);
-    return;
-  }
-
-  LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeInsertionParent(parentFrame)) {
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
-  LAYOUT_PHASE_TEMP_REENTER();
-
-#ifdef DEBUG
-  if (gNoisyContentUpdates && IsFramePartOfIBSplit(parentFrame)) {
-    printf("nsCSSFrameConstructor::ContentAppended: parentFrame=");
-    parentFrame->ListTag(stdout);
-    printf(" is ib-split\n");
-  }
-#endif
-
-  
-  
-  MOZ_ASSERT(!parentFrame->IsFieldSetFrame(),
-             "Parent frame should not be fieldset!");
-
-  nsIFrame* nextSibling = FindNextSiblingForAppend(insertion);
-  if (nextSibling) {
-    parentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
-  } else {
-    parentFrame = ::ContinuationToAppendTo(parentFrame);
-  }
-
-  nsContainerFrame* containingBlock = GetFloatContainingBlock(parentFrame);
-
-  
-  const bool haveFirstLetterStyle =
-      containingBlock && HasFirstLetterStyle(containingBlock);
-
-  const bool haveFirstLineStyle =
-      containingBlock && ShouldHaveFirstLineStyle(containingBlock->GetContent(),
-                                                  containingBlock->Style());
-
-  if (haveFirstLetterStyle) {
-    AutoWeakFrame wf(nextSibling);
-
-    
-    RemoveLetterFrames(mPresShell, containingBlock);
-
-    
-    
-    
-    if (nextSibling && !wf) {
-      nextSibling = FindNextSiblingForAppend(insertion);
-      if (nextSibling) {
-        parentFrame = nextSibling->GetParent()->GetContentInsertionFrame();
-        containingBlock = GetFloatContainingBlock(parentFrame);
-      }
-    }
-  }
-
-  
-  nsFrameConstructorState state(
-      mPresShell, GetAbsoluteContainingBlock(parentFrame, FIXED_POS),
-      GetAbsoluteContainingBlock(parentFrame, ABS_POS), containingBlock);
-
-  if (mPresShell->GetPresContext()->IsPaginated()) {
-    
-    
-    
-    
-    
-    
-    
-    state.mAutoPageNameValue = parentFrame->GetAutoPageValue();
-#ifdef DEBUG
-    parentFrame->mWasVisitedByAutoFrameConstructionPageName = true;
-#endif
-  }
-
-  LayoutFrameType frameType = parentFrame->Type();
-
-  RefPtr<ComputedStyle> parentStyle =
-      ResolveComputedStyle(insertion.mContainer);
-  FlattenedChildIterator iter(insertion.mContainer);
-  const bool haveNoShadowDOM =
-      !iter.ShadowDOMInvolved() || !iter.GetNextChild();
-
-  AutoFrameConstructionItemList items(this);
-  if (aFirstNewContent->GetPreviousSibling() &&
-      GetParentType(frameType) == eTypeBlock && haveNoShadowDOM) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    AddTextItemIfNeeded(state, *parentStyle, insertion,
-                        aFirstNewContent->GetPreviousSibling(), items);
-  }
-  for (nsIContent* child = aFirstNewContent; child;
-       child = child->GetNextSibling()) {
-    AddFrameConstructionItems(state, child, false, *parentStyle, insertion,
-                              items);
-  }
-
-  nsIFrame* prevSibling = ::FindAppendPrevSibling(parentFrame, nextSibling);
-
-  
-  
-  
-  
-  LAYOUT_PHASE_TEMP_EXIT();
-  if (WipeContainingBlock(state, containingBlock, parentFrame, items, true,
-                          prevSibling)) {
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
-  LAYOUT_PHASE_TEMP_REENTER();
-
-  
-  
-  
-  if (parentFrame->IsBlockFrameOrSubclass() && !haveFirstLetterStyle &&
-      !haveFirstLineStyle && !IsFramePartOfIBSplit(parentFrame)) {
-    items.SetLineBoundaryAtStart(!prevSibling ||
-                                 !prevSibling->IsInlineOutside() ||
-                                 prevSibling->IsBrFrame());
-    
-    
-    
-    
-    items.SetLineBoundaryAtEnd(!nextSibling || !nextSibling->IsInlineOutside());
-  }
-  
-  
-  items.SetParentHasNoShadowDOM(haveNoShadowDOM);
-
-  nsFrameConstructorSaveState floatSaveState;
-  state.MaybePushFloatContainingBlock(parentFrame, floatSaveState);
-
-  nsFrameList frameList;
-  ConstructFramesFromItemList(state, items, parentFrame,
-                              ParentIsWrapperAnonBox(parentFrame), frameList);
-
-  for (nsIContent* child = aFirstNewContent; child;
-       child = child->GetNextSibling()) {
-    
-    
-    
-    
-    
-    InvalidateCanvasIfNeeded(mPresShell, child);
-  }
-
-  
-  
-  nsFrameList captionList;
-  if (LayoutFrameType::Table == frameType) {
-    
-    
-    
-    
-    
-    
-    PullOutCaptionFrames(frameList, captionList);
-  }
-
-  if (haveFirstLineStyle && parentFrame == containingBlock) {
-    
-    
-    AppendFirstLineFrames(state, containingBlock->GetContent(), containingBlock,
-                          frameList);
-    
-    
-  } else if (parentFrame->Style()->IsInFirstLineSubtree()) {
-    
-    
-    CheckForFirstLineInsertion(parentFrame, frameList);
-    CheckForFirstLineInsertion(parentFrame, captionList);
-  }
-
-  
-  
-  
-  if (captionList.NotEmpty()) {  
-    NS_ASSERTION(LayoutFrameType::Table == frameType, "how did that happen?");
-    nsContainerFrame* outerTable = parentFrame->GetParent();
-    captionList.ApplySetParent(outerTable);
-    AppendFrames(outerTable, FrameChildListID::Principal,
-                 std::move(captionList));
-  }
-
-  LAYOUT_PHASE_TEMP_EXIT();
-  if (MaybeRecreateForColumnSpan(state, parentFrame, frameList, prevSibling)) {
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
-  LAYOUT_PHASE_TEMP_REENTER();
-
-  if (frameList.NotEmpty()) {  
-    AppendFramesToParent(state, parentFrame, frameList, prevSibling);
-  }
-
-  
-  if (haveFirstLetterStyle) {
-    RecoverLetterFrames(containingBlock);
-  }
-
-#ifdef DEBUG
-  if (gReallyNoisyContentUpdates) {
-    printf("nsCSSFrameConstructor::ContentAppended: resulting frame model:\n");
-    parentFrame->List(stdout);
-  }
-#endif
-
-#ifdef ACCESSIBILITY
-  if (nsAccessibilityService* accService = GetAccService()) {
-    accService->ContentRangeInserted(mPresShell, aFirstNewContent, nullptr);
-  }
-#endif
+  return ContentRangeInserted(aFirstNewContent, nullptr, aInsertionKind);
 }
 
 void nsCSSFrameConstructor::ContentInserted(nsIContent* aChild,
@@ -6609,11 +6170,22 @@ void nsCSSFrameConstructor::ContentInserted(nsIContent* aChild,
 
 
 
-
-
-
-
-
+static nsIFrame* FindCaptionPrevSibling(nsTableWrapperFrame* aTable,
+                                        nsIContent* aCaptionContent) {
+  nsIFrame* prevSibling = aTable->InnerTableFrame();
+  if (nsIFrame* firstCaption = prevSibling->GetNextSibling()) {
+    nsContentUtils::NodeIndexCache cache;
+    for (auto* caption = firstCaption; caption;
+         caption = caption->GetNextSibling()) {
+      if (nsContentUtils::CompareTreePosition<TreeKind::Flat>(
+              caption->GetContent(), aCaptionContent, nullptr, &cache) >= 0) {
+        break;
+      }
+      prevSibling = caption;
+    }
+  }
+  return prevSibling;
+}
 
 
 
@@ -6652,18 +6224,14 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
        child = child->GetNextSibling()) {
     
     
-    NS_ASSERTION(
+    MOZ_ASSERT(
         !child->GetPrimaryFrame() ||
             child->GetPrimaryFrame()->GetContent() != child,
         "asked to construct a frame for a node that already has a frame");
   }
 #endif
 
-  bool isSingleInsert = (aStartChild->GetNextSibling() == aEndChild);
-  NS_ASSERTION(isSingleInsert || aInsertionKind == InsertionKind::Sync,
-               "range insert shouldn't be lazy");
-  NS_ASSERTION(isSingleInsert || aEndChild,
-               "range should not include all nodes after aStartChild");
+  const bool isSingleInsert = (aStartChild->GetNextSibling() == aEndChild);
 
   
   
@@ -6732,23 +6300,14 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   }
 
   if (aInsertionKind == InsertionKind::Async) {
-    ConstructLazily(CONTENTINSERT, aStartChild);
+    ConstructLazily(aStartChild, aEndChild);
     LazilyStyleNewChildRange(aStartChild, aEndChild);
     return;
   }
 
-  bool isAppend, isRangeInsertSafe;
-  nsIFrame* prevSibling = GetInsertionPrevSibling(
-      &insertion, aStartChild, &isAppend, &isRangeInsertSafe);
-
-  
-  if (!isSingleInsert && !isRangeInsertSafe) {
-    
-    LAYOUT_PHASE_TEMP_EXIT();
-    IssueSingleInsertNofications(aStartChild, aEndChild, InsertionKind::Sync);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
+  bool isAppend;
+  nsIFrame* prevSibling =
+      GetInsertionPrevSibling(&insertion, aStartChild, &isAppend);
 
   LayoutFrameType frameType = insertion.mParentFrame->Type();
   LAYOUT_PHASE_TEMP_EXIT();
@@ -6758,32 +6317,6 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     return;
   }
   LAYOUT_PHASE_TEMP_REENTER();
-
-  
-  
-  NS_ASSERTION(isSingleInsert || frameType != LayoutFrameType::FieldSet,
-               "Unexpected parent");
-  
-  
-  
-  
-  
-  
-  
-  if (GetFieldSetFrameFor(insertion.mParentFrame) &&
-      aStartChild->NodeInfo()->NameAtom() == nsGkAtoms::legend) {
-    
-    
-    
-    
-    
-    
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(insertion.mParentFrame->GetContent(),
-                             InsertionKind::Async);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
-  }
 
   
   if (insertion.mParentFrame->IsLeaf()) {
@@ -6854,11 +6387,10 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
       
       
       
-      prevSibling = GetInsertionPrevSibling(&insertion, aStartChild, &isAppend,
-                                            &isRangeInsertSafe);
+      prevSibling = GetInsertionPrevSibling(&insertion, aStartChild, &isAppend);
 
       
-      if (!isSingleInsert && !isRangeInsertSafe) {
+      if (!isSingleInsert) {
         
         RecoverLetterFrames(state.mFloatedList.mContainingBlock);
 
@@ -6938,16 +6470,12 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
                         aStartChild->GetPreviousSibling(), items);
   }
 
-  if (isSingleInsert) {
-    AddFrameConstructionItems(state, aStartChild,
-                              aStartChild->IsRootOfNativeAnonymousSubtree(),
+  const bool suppressWhiteSpaceOptimizations =
+      isSingleInsert && aStartChild->IsRootOfNativeAnonymousSubtree();
+  for (nsIContent* child = aStartChild; child != aEndChild;
+       child = child->GetNextSibling()) {
+    AddFrameConstructionItems(state, child, suppressWhiteSpaceOptimizations,
                               *parentStyle, insertion, items);
-  } else {
-    for (nsIContent* child = aStartChild; child != aEndChild;
-         child = child->GetNextSibling()) {
-      AddFrameConstructionItems(state, child, false, *parentStyle, insertion,
-                                items);
-    }
   }
 
   if (aEndChild && parentType == eTypeBlock && haveNoShadowDOM) {
@@ -6962,7 +6490,6 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   
   
   
-  
   LAYOUT_PHASE_TEMP_EXIT();
   if (WipeContainingBlock(state, containingBlock, insertion.mParentFrame, items,
                           isAppend, prevSibling)) {
@@ -6970,6 +6497,25 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     return;
   }
   LAYOUT_PHASE_TEMP_REENTER();
+
+  
+  
+  
+  if (insertion.mParentFrame->IsBlockFrameOrSubclass() &&
+      !haveFirstLetterStyle && !haveFirstLineStyle &&
+      !IsFramePartOfIBSplit(insertion.mParentFrame)) {
+    items.SetLineBoundaryAtStart(!prevSibling ||
+                                 !prevSibling->IsInlineOutside() ||
+                                 prevSibling->IsBrFrame());
+    auto* nextSibling =
+        ::GetInsertNextSibling(insertion.mParentFrame, prevSibling);
+    items.SetLineBoundaryAtEnd(!nextSibling ||
+                               !nextSibling->IsInlineOutside() ||
+                               nextSibling->IsBrFrame());
+  }
+  
+  
+  items.SetParentHasNoShadowDOM(haveNoShadowDOM);
 
   nsFrameConstructorSaveState floatSaveState;
   state.MaybePushFloatContainingBlock(insertion.mParentFrame, floatSaveState);
@@ -7034,29 +6580,9 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     
     
     
-    bool captionIsAppend;
-    nsIFrame* captionPrevSibling = nullptr;
-
-    
-    bool ignored;
-    InsertionPoint captionInsertion = insertion;
-    if (isSingleInsert) {
-      captionPrevSibling = GetInsertionPrevSibling(
-          &captionInsertion, aStartChild, &captionIsAppend, &ignored);
-    } else {
-      nsIContent* firstCaption = captionList.FirstChild()->GetContent();
-      
-      
-      
-      captionPrevSibling = GetInsertionPrevSibling(
-          &captionInsertion, firstCaption, &captionIsAppend, &ignored,
-          aStartChild, aEndChild);
-    }
-
-    nsContainerFrame* outerTable =
-        captionInsertion.mParentFrame->IsTableFrame()
-            ? captionInsertion.mParentFrame->GetParent()
-            : captionInsertion.mParentFrame;
+    nsContainerFrame* outerTable = insertion.mParentFrame->IsTableFrame()
+                                       ? insertion.mParentFrame->GetParent()
+                                       : insertion.mParentFrame;
 
     
     
@@ -7065,17 +6591,11 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
                "Pseudo frame construction failure; "
                "a caption can be only a child of a table wrapper frame");
 
-    
-    
-    
-    
-    if (!captionPrevSibling || captionPrevSibling->GetParent() != outerTable) {
-      captionPrevSibling =
-          static_cast<nsTableWrapperFrame*>(outerTable)->InnerTableFrame();
-    }
-
+    nsIFrame* captionPrevSibling =
+        FindCaptionPrevSibling(static_cast<nsTableWrapperFrame*>(outerTable),
+                               captionList.FirstChild()->GetContent());
     captionList.ApplySetParent(outerTable);
-    if (captionIsAppend) {
+    if (!captionPrevSibling->GetNextSibling()) {
       AppendFrames(outerTable, FrameChildListID::Principal,
                    std::move(captionList));
     } else {
@@ -10834,8 +10354,8 @@ bool nsCSSFrameConstructor::MaybeRecreateForColumnSpan(
   }
 
   MOZ_ASSERT(!IsFramePartOfIBSplit(aParentFrame),
-             "We should have wiped aParentFrame in WipeContainingBlock if it's "
-             "part of IB split!");
+             "We should have wiped aParentFrame in "
+             "WipeContainingBlock if it's part of IB split!");
 
   nsIFrame* nextSibling = ::GetInsertNextSibling(aParentFrame, aPrevSibling);
   if (!nextSibling && IsLastContinuationForColumnContent(aParentFrame)) {
@@ -11472,12 +10992,9 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
 
             okToDrop = (nextSibling && !IsTablePseudo(nextSibling)) ||
                        (!nextSibling && !IsTablePseudo(aFrame));
-          }
-#ifdef DEBUG
-          else {
+          } else {
             NS_ASSERTION(!IsTablePseudo(aFrame), "How did that happen?");
           }
-#endif
         } else {
           okToDrop = (spaceEndIter.item().DesiredParentType() == parentType);
         }

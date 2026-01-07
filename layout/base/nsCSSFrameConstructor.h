@@ -17,7 +17,6 @@
 #include "mozilla/ContainStyleScopeManager.h"
 #include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
@@ -100,11 +99,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   mozilla::ViewportFrame* ConstructRootFrame();
 
  private:
-  enum Operation { CONTENTAPPEND, CONTENTINSERT };
-
   
   
-  void ConstructLazily(Operation aOperation, nsIContent* aChild);
+  
+  void ConstructLazily(nsIContent* aStartChild, nsIContent* aEndChild);
 
 #ifdef DEBUG
   void CheckBitsForLazyFrameConstruction(nsIContent* aParent);
@@ -140,12 +138,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
     nsIContent* mContainer;
-
-    
-
-
-
-    bool IsMultiple() const;
   };
 
   
@@ -1920,9 +1912,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  
-  
-  
   bool WipeContainingBlock(nsFrameConstructorState& aState,
                            nsIFrame* aContainingBlock, nsIFrame* aFrame,
                            FrameConstructionItemList& aItems, bool aIsAppend,
@@ -2028,14 +2017,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                   nsFrameList& aFrameList);
 
   
-
-
-
-
-
-  nsIFrame* FindNextSiblingForAppend(const InsertionPoint&);
-
-  
   enum class SiblingDirection {
     Forward,
     Backward,
@@ -2052,46 +2033,25 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-
-
   template <SiblingDirection>
-  nsIFrame* FindSibling(
-      const mozilla::dom::FlattenedChildIterator& aIter,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  nsIFrame* FindSibling(const mozilla::dom::FlattenedChildIterator& aIter);
 
   
   
   
   template <SiblingDirection>
-  nsIFrame* FindSiblingInternal(
-      mozilla::dom::FlattenedChildIterator&, nsIContent* aTargetContent,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  nsIFrame* FindSiblingInternal(mozilla::dom::FlattenedChildIterator&);
 
   
-  nsIFrame* FindNextSibling(
-      const mozilla::dom::FlattenedChildIterator& aIter,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  nsIFrame* FindNextSibling(const mozilla::dom::FlattenedChildIterator& aIter);
   
   nsIFrame* FindPreviousSibling(
-      const mozilla::dom::FlattenedChildIterator& aIter,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+      const mozilla::dom::FlattenedChildIterator& aIter);
 
   
   
-  
-  
-  nsIFrame* AdjustSiblingFrame(
-      nsIFrame* aSibling, nsIContent* aTargetContent,
-      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay,
-      SiblingDirection aDirection);
+  nsIFrame* AdjustSiblingFrame(nsIFrame* aSibling, SiblingDirection);
 
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -2099,17 +2059,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   nsIFrame* GetInsertionPrevSibling(InsertionPoint* aInsertion,  
-                                    nsIContent* aChild, bool* aIsAppend,
-                                    bool* aIsRangeInsertSafe,
-                                    nsIContent* aStartSkipChild = nullptr,
-                                    nsIContent* aEndSkipChild = nullptr);
-
-  
-  
-  
-  
-  bool IsValidSibling(nsIFrame* aSibling, nsIContent* aContent,
-                      mozilla::Maybe<mozilla::StyleDisplay>& aDisplay);
+                                    nsIContent* aChild, bool* aIsAppend);
 
   void QuotesDirty();
   void CountersDirty();

@@ -87,6 +87,13 @@ class nsFieldSetFrame final : public nsContainerFrame {
 
   nsContainerFrame* GetInner() const;
 
+  nsContainerFrame* GetContentInsertionFrame() override {
+    if (auto* inner = GetInner()) {
+      return inner->GetContentInsertionFrame();
+    }
+    return this;
+  }
+
   
 
 

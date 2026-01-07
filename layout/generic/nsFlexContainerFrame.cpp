@@ -5195,27 +5195,12 @@ void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
 nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(
     nsIFrame* aFrame) {
   
-  auto GetFlexContainerFrame = [](nsIFrame* aFrame) {
+  auto GetFlexContainerFrame = [](nsIFrame* aFrame) -> nsFlexContainerFrame* {
     
-    
-    nsFlexContainerFrame* flexFrame = nullptr;
-
-    if (aFrame) {
-      nsIFrame* inner = aFrame;
-      if (MOZ_UNLIKELY(aFrame->IsFieldSetFrame())) {
-        inner = static_cast<nsFieldSetFrame*>(aFrame)->GetInner();
-      }
-      
-      
-      
-      nsIFrame* insertionFrame =
-          inner ? inner->GetContentInsertionFrame() : nullptr;
-      nsIFrame* possibleFlexFrame = insertionFrame ? insertionFrame : aFrame;
-      flexFrame = possibleFlexFrame->IsFlexContainerFrame()
-                      ? static_cast<nsFlexContainerFrame*>(possibleFlexFrame)
-                      : nullptr;
+    if (!aFrame) {
+      return nullptr;
     }
-    return flexFrame;
+    return do_QueryFrame(aFrame->GetContentInsertionFrame());
   };
 
   nsFlexContainerFrame* flexFrame = GetFlexContainerFrame(aFrame);
