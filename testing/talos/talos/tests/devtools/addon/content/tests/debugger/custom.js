@@ -195,7 +195,7 @@ async function testProjectSearch(dbg) {
   
   await waitUntil(() => {
     return !dbg.win.document.querySelector(
-      ".project-text-search .search-field .loader.spin"
+      ".project-text-search .search-field .dbg-img-loader.spin"
     );
   });
   await dbg.actions.closeActiveSearch();
