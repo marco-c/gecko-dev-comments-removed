@@ -102,6 +102,10 @@ struct IntersectionOutput {
   const nsRect mRootBounds;
   const nsRect mTargetRect;
   const Maybe<nsRect> mIntersectionRect;
+  
+  
+  
+  const bool mPreservesAxisAlignedRectangles;
 
   bool Intersects() const { return mIntersectionRect.isSome(); }
 };
@@ -151,8 +155,7 @@ class DOMIntersectionObserver final : public nsISupports,
 
   void TakeRecords(nsTArray<RefPtr<DOMIntersectionObserverEntry>>& aRetVal);
 
-  static StyleRect<LengthPercentage> LazyLoadingRootMargin();
-
+  static IntersectionInput ComputeInputForIframeThrottling(const Document&);
   static IntersectionInput ComputeInput(
       const Document& aDocument, const nsINode* aRoot,
       const StyleRect<LengthPercentage>* aRootMargin,
@@ -166,6 +169,9 @@ class DOMIntersectionObserver final : public nsISupports,
   };
   static IntersectionOutput Intersect(
       const IntersectionInput&, const Element&, BoxToUse = BoxToUse::Border,
+      IsForProximityToViewport = IsForProximityToViewport::No);
+  static IntersectionOutput Intersect(
+      const IntersectionInput&, nsIFrame*, BoxToUse = BoxToUse::Border,
       IsForProximityToViewport = IsForProximityToViewport::No);
   
   static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);

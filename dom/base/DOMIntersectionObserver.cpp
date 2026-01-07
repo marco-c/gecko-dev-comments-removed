@@ -210,13 +210,12 @@ static LengthPercentage PrefMargin(float aValue, bool aIsPercentage) {
                        : LengthPercentage::FromPixels(aValue);
 }
 
-IntersectionObserverMargin DOMIntersectionObserver::LazyLoadingRootMargin() {
+static IntersectionObserverMargin LazyLoadingMargin() {
   IntersectionObserverMargin margin;
-#define SET_MARGIN(side_, side_lower_)                                 \
-  margin.Get(eSide##side_) = PrefMargin(                               \
-      StaticPrefs::dom_image_lazy_loading_root_margin_##side_lower_(), \
-      StaticPrefs::                                                    \
-          dom_image_lazy_loading_root_margin_##side_lower_##_percentage());
+#define SET_MARGIN(side_, side_lower_)                      \
+  margin.Get(eSide##side_) = PrefMargin(                    \
+      StaticPrefs::dom_lazy_loading_margin_##side_lower_(), \
+      StaticPrefs::dom_lazy_loading_margin_##side_lower_##_percentage());
   SET_MARGIN(Top, top);
   SET_MARGIN(Right, right);
   SET_MARGIN(Bottom, bottom);
@@ -236,7 +235,10 @@ DOMIntersectionObserver::CreateLazyLoadObserver(Document& aDocument) {
   RefPtr<DOMIntersectionObserver> observer =
       new DOMIntersectionObserver(aDocument, LazyLoadCallback);
   observer->mThresholds.AppendElement(0.0f);
-  observer->mRootMargin = LazyLoadingRootMargin();
+  auto* margin = StaticPrefs::dom_lazy_loading_margin_is_scroll()
+                     ? &observer->mScrollMargin
+                     : &observer->mRootMargin;
+  *margin = LazyLoadingMargin();
   return observer.forget();
 }
 
@@ -657,6 +659,16 @@ static Maybe<OopIframeMetrics> GetOopIframeMetrics(
           *remoteDocumentVisibleRect,
           rootPresShell->GetPresContext()->AppUnitsPerDevPixel()),
   });
+}
+
+IntersectionInput DOMIntersectionObserver::ComputeInputForIframeThrottling(
+    const Document& aEmbedderDocument) {
+  auto margin = LazyLoadingMargin();
+  
+  const bool useScroll = StaticPrefs::dom_lazy_loading_margin_is_scroll();
+  return ComputeInput(aEmbedderDocument,  nullptr,
+                       useScroll ? nullptr : &margin,
+                       useScroll ? &margin : nullptr);
 }
 
 
