@@ -13,7 +13,7 @@ from mach.site import PythonVirtualenv
 from mach.util import get_state_dir
 
 
-MINIMUM_RUST_VERSION = "1.82.0"
+MINIMUM_RUST_VERSION = "1.87.0"
 
 
 def get_tools_dir(srcdir=False):
