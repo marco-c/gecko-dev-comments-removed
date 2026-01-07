@@ -8,6 +8,7 @@ import os
 from collections import OrderedDict, defaultdict
 
 import mozpack.path as mozpath
+from mozshellutil import quote as shell_quote
 
 from mozbuild.backend.common import CommonBackend
 from mozbuild.frontend.data import (
@@ -17,7 +18,6 @@ from mozbuild.frontend.data import (
     Sources,
     VariablePassthru,
 )
-from mozbuild.shellutil import quote as shell_quote
 from mozbuild.util import expand_variables
 
 

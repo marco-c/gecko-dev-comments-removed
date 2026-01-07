@@ -2484,11 +2484,11 @@ def _run_desktop(
         
         
         if debugger_args:
-            from mozbuild import shellutil
+            import mozshellutil
 
             try:
-                debugger_args = shellutil.split(debugger_args)
-            except shellutil.MetaCharacterException as e:
+                debugger_args = mozshellutil.split(debugger_args)
+            except mozshellutil.MetaCharacterException as e:
                 print(
                     "The --debugger-args you passed require a real shell to parse them."
                 )
@@ -3983,11 +3983,11 @@ def _prepend_debugger_args(args, debugger, debugger_args):
     
     
     if debugger_args:
-        from mozbuild import shellutil
+        import mozshellutil
 
         try:
-            debugger_args = shellutil.split(debugger_args)
-        except shellutil.MetaCharacterException as e:
+            debugger_args = mozshellutil.split(debugger_args)
+        except mozshellutil.MetaCharacterException as e:
             print("The --debugger_args you passed require a real shell to parse them.")
             print("(We can't handle the %r character.)" % e.char)
             return None

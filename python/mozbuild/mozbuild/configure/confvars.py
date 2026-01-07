@@ -2,7 +2,7 @@
 
 
 
-import mozbuild.shellutil
+import mozshellutil
 
 
 class ConfVarsSyntaxError(SyntaxError):
@@ -55,8 +55,8 @@ def parse(path):
 
             
             try:
-                values = mozbuild.shellutil.split(tail)
-            except mozbuild.shellutil.MetaCharacterException as e:
+                values = mozshellutil.split(tail)
+            except mozshellutil.MetaCharacterException as e:
                 raise ConfVarsSyntaxError(
                     f"Unquoted, non-escaped special character '{e.char}'",
                     path,
