@@ -7,6 +7,7 @@
 
 
 
+use crate::derives::*;
 use crate::logical_geometry::{LogicalAxis, LogicalSide, PhysicalSide, WritingMode};
 use crate::parser::{Parse, ParserContext};
 use crate::selector_map::PrecomputedHashMap;
@@ -25,7 +26,7 @@ use crate::values::specified::align::AlignFlags;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage, NonNegativeNumber};
 use crate::values::DashedIdent;
 use crate::{Atom, Zero};
-use cssparser::Parser;
+use cssparser::{match_ignore_ascii_case, Parser};
 use num_traits::FromPrimitive;
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
@@ -1379,9 +1380,20 @@ impl PositionArea {
     
     pub fn to_physical(mut self, cb_wm: WritingMode, self_wm: WritingMode) -> Self {
         self.make_missing_second_explicit();
-        self.first = self.first.to_physical(cb_wm, self_wm, LogicalAxis::Block);
-        self.second = self.second.to_physical(cb_wm, self_wm, LogicalAxis::Inline);
-        self.canonicalize_order();
+        
+        
+        
+        
+        
+        if self.first.axis() == PositionAreaAxis::None &&
+            self.second.axis() == PositionAreaAxis::None &&
+            !cb_wm.is_vertical() {
+          std::mem::swap(&mut self.first, &mut self.second);
+        } else {
+          self.first = self.first.to_physical(cb_wm, self_wm, LogicalAxis::Block);
+          self.second = self.second.to_physical(cb_wm, self_wm, LogicalAxis::Inline);
+          self.canonicalize_order();
+        }
         self
     }
 
