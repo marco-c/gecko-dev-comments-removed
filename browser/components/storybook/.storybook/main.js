@@ -40,8 +40,6 @@ module.exports = {
     
     `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
     
-    `${projectRoot}/browser/components/multilineeditor/**/*.stories.mjs`,
-    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
@@ -90,7 +88,6 @@ module.exports = {
     
     config.resolve.alias = {
       browser: `${projectRoot}/browser`,
-      third_party: `${projectRoot}/third_party`,
       toolkit: `${projectRoot}/toolkit`,
       "toolkit-widgets": `${projectRoot}/toolkit/content/widgets/`,
       "lit.all.mjs": `${projectRoot}/toolkit/content/widgets/vendor/lit.all.mjs`,
