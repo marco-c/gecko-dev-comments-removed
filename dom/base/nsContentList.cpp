@@ -1,14 +1,14 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * nsBaseContentList is a basic list of content nodes; nsContentList
+ * is a commonly used NodeList implementation (used for
+ * getElementsByTagName, some properties on HTMLDocument/Document, etc).
+ */
 
 #include "nsContentList.h"
 
@@ -22,6 +22,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLCollectionBinding.h"
+#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/NodeInfoInlines.h"
 #include "mozilla/dom/NodeListBinding.h"
 #include "nsCCUncollectableMarker.h"
@@ -74,7 +75,7 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(nsBaseContentList)
   return nsCCUncollectableMarker::sGeneration && tmp->HasKnownLiveWrapper();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
-
+// QueryInterface implementation for nsBaseContentList
 NS_INTERFACE_TABLE_HEAD(nsBaseContentList)
   NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
   NS_INTERFACE_TABLE(nsBaseContentList, nsINodeList)
@@ -163,8 +164,8 @@ class nsContentList::HashEntry : public PLDHashEntryHdr {
   using KeyType = const nsContentListKey*;
   using KeyTypePointer = KeyType;
 
-  
-  
+  // Note that this is creating a blank entry, so you'll have to manually
+  // initialize it after it has been inserted into the hash table.
   explicit HashEntry(KeyTypePointer aKey) : mContentList(nullptr) {}
 
   HashEntry(HashEntry&& aEnt) : mContentList(std::move(aEnt.mContentList)) {}
@@ -201,7 +202,7 @@ class nsContentList::HashEntry : public PLDHashEntryHdr {
       "before mContentList is destroyed") mContentList;
 };
 
-
+// Hashtable for storing nsContentLists
 static StaticAutoPtr<nsTHashtable<nsContentList::HashEntry>>
     gContentListHashTable;
 
@@ -219,20 +220,20 @@ already_AddRefed<nsContentList> NS_GetContentList(nsINode* aRootNode,
     return list.forget();
   }
 
-  
+  // Initialize the hashtable if needed.
   if (!gContentListHashTable) {
     gContentListHashTable = new nsTHashtable<nsContentList::HashEntry>();
   }
 
-  
+  // First we look in our hashtable.  Then we create a content list if needed
   auto entry = gContentListHashTable->PutEntry(&hashKey, fallible);
   if (entry) {
     list = entry->GetContentList();
   }
 
   if (!list) {
-    
-    
+    // We need to create a ContentList and add it to our new entry, if
+    // we have an entry
     RefPtr<nsAtom> xmlAtom = NS_Atomize(aTagname);
     RefPtr<nsAtom> htmlAtom;
     if (aMatchNameSpaceId == kNameSpaceID_Unknown) {
@@ -266,8 +267,8 @@ class nsCacheableFuncStringContentList::HashEntry : public PLDHashEntryHdr {
   using KeyType = const nsFuncStringCacheKey*;
   using KeyTypePointer = KeyType;
 
-  
-  
+  // Note that this is creating a blank entry, so you'll have to manually
+  // initialize it after it has been inserted into the hash table.
   explicit HashEntry(KeyTypePointer aKey) : mContentList(nullptr) {}
 
   HashEntry(HashEntry&& aEnt) : mContentList(std::move(aEnt.mContentList)) {}
@@ -307,7 +308,7 @@ class nsCacheableFuncStringContentList::HashEntry : public PLDHashEntryHdr {
       "before mContentList is destroyed") mContentList;
 };
 
-
+// Hashtable for storing nsCacheableFuncStringContentList
 static StaticAutoPtr<nsTHashtable<nsCacheableFuncStringContentList::HashEntry>>
     gFuncStringContentListHashTable;
 
@@ -321,14 +322,14 @@ already_AddRefed<nsContentList> GetFuncStringContentList(
 
   RefPtr<nsCacheableFuncStringContentList> list;
 
-  
+  // Initialize the hashtable if needed.
   if (!gFuncStringContentListHashTable) {
     gFuncStringContentListHashTable =
         new nsTHashtable<nsCacheableFuncStringContentList::HashEntry>();
   }
 
   nsCacheableFuncStringContentList::HashEntry* entry = nullptr;
-  
+  // First we look in our hashtable.  Then we create a content list if needed
   if (gFuncStringContentListHashTable) {
     nsFuncStringCacheKey hashKey(aRootNode, aFunc, aString);
 
@@ -342,8 +343,8 @@ already_AddRefed<nsContentList> GetFuncStringContentList(
   }
 
   if (!list) {
-    
-    
+    // We need to create a ContentList and add it to our new entry, if
+    // we have an entry
     list =
         new ListType(aRootNode, aFunc, aDestroyFunc, aDataAllocator, aString);
     if (entry) {
@@ -351,12 +352,12 @@ already_AddRefed<nsContentList> GetFuncStringContentList(
     }
   }
 
-  
+  // Don't cache these lists globally
 
   return list.forget();
 }
 
-
+// Explicit instantiations to avoid link errors
 template already_AddRefed<nsContentList>
 GetFuncStringContentList<nsCachableElementsByNameNodeList>(
     nsINode* aRootNode, nsContentListMatchFunc aFunc,
@@ -370,8 +371,8 @@ GetFuncStringContentList<nsCacheableFuncStringHTMLCollection>(
     nsFuncStringContentListDataAllocator aDataAllocator,
     const nsAString& aString);
 
-
-
+//-----------------------------------------------------
+// nsContentList implementation
 
 nsContentList::nsContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
                              nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom,
@@ -396,17 +397,17 @@ nsContentList::nsContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
   } else {
     mMatchAll = false;
   }
-  
+  // This is aLiveList instead of mIsLiveList to avoid Valgrind errors.
   if (aLiveList) {
     SetEnabledCallbacks(nsIMutationObserver::kNodeWillBeDestroyed);
     mRootNode->AddMutationObserver(this);
   }
 
-  
-  
-  
-  
-  
+  // We only need to flush if we're in an non-HTML document, since the
+  // HTML5 parser doesn't need flushing.  Further, if we're not in a
+  // document at all right now (in the GetUncomposedDoc() sense), we're
+  // not parser-created and don't need to be flushing stuff under us
+  // to get our kids right.
   Document* doc = mRootNode->GetUncomposedDoc();
   mFlushesNeeded = doc && !doc->IsHTMLDocument();
 }
@@ -433,17 +434,17 @@ nsContentList::nsContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
       mIsLiveList(aLiveList),
       mInHashtable(false) {
   NS_ASSERTION(mRootNode, "Must have root");
-  
+  // This is aLiveList instead of mIsLiveList to avoid Valgrind errors.
   if (aLiveList) {
     SetEnabledCallbacks(nsIMutationObserver::kNodeWillBeDestroyed);
     mRootNode->AddMutationObserver(this);
   }
 
-  
-  
-  
-  
-  
+  // We only need to flush if we're in an non-HTML document, since the
+  // HTML5 parser doesn't need flushing.  Further, if we're not in a
+  // document at all right now (in the GetUncomposedDoc() sense), we're
+  // not parser-created and don't need to be flushing stuff under us
+  // to get our kids right.
   Document* doc = mRootNode->GetUncomposedDoc();
   mFlushesNeeded = doc && !doc->IsHTMLDocument();
 }
@@ -455,7 +456,7 @@ nsContentList::~nsContentList() {
   }
 
   if (mDestroyFunc) {
-    
+    // Clean up mData
     (*mDestroyFunc)(mData);
   }
 }
@@ -476,10 +477,10 @@ uint32_t nsContentList::Length(bool aDoFlush) {
 
 nsIContent* nsContentList::Item(uint32_t aIndex, bool aDoFlush) {
   if (mRootNode && aDoFlush && mFlushesNeeded) {
-    
+    // XXX sXBL/XBL2 issue
     Document* doc = mRootNode->GetUncomposedDoc();
     if (doc) {
-      
+      // Flush pending content changes Bug 4891.
       doc->FlushPendingNotifications(FlushType::ContentAndNotify);
     }
   }
@@ -519,8 +520,8 @@ inline void nsContentList::InsertElementInNamedItemsCache(
     }
 
     nsAtom* name = info.mValue->GetAtomValue();
-    
-    
+    // NOTE: LookupOrInsert makes sure we keep the first element we find for a
+    // given name.
     mNamedItemsCache->LookupOrInsert(name, el);
   }
 }
@@ -564,9 +565,9 @@ void nsContentList::EnsureNamedItemsCacheValid(bool aDoFlush) {
 
   MOZ_ASSERT(!mNamedItemsCache);
 
-  
-  
-  
+  // https://dom.spec.whatwg.org/#dom-htmlcollection-nameditem-key
+  // XXX: Blink/WebKit don't follow the spec here, and searches first-by-id,
+  // then by name.
   for (const nsCOMPtr<nsIContent>& content : mElements) {
     InsertElementInNamedItemsCache(*content);
   }
@@ -585,7 +586,7 @@ Element* nsContentList::NamedItem(const nsAString& aName, bool aDoFlush) {
     return nullptr;
   }
 
-  
+  // Typically IDs and names are atomized
   RefPtr<nsAtom> name = NS_Atomize(aName);
   NS_ENSURE_TRUE(name, nullptr);
 
@@ -608,10 +609,10 @@ void nsContentList::GetSupportedNames(nsTArray<nsString>& aNames) {
 
     nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(content);
     if (el) {
-      
-      
-      
-      
+      // XXXbz should we be checking for particular tags here?  How
+      // stable is this part of the spec?
+      // Note: nsINode::HasName means the name is exposed on the document,
+      // which is false for options, so we don't check it here.
       const nsAttrValue* val = el->GetParsedAttr(nsGkAtoms::name);
       if (val && val->Type() == nsAttrValue::eAtom) {
         nsAtom* name = val->GetAtomValue();
@@ -641,13 +642,13 @@ int32_t nsContentList::IndexOf(nsIContent* aContent) {
 }
 
 void nsContentList::NodeWillBeDestroyed(nsINode* aNode) {
-  
+  // We shouldn't do anything useful from now on
 
   RemoveFromCaches();
   mRootNode = nullptr;
 
-  
-  
+  // We will get no more updates, so we can never know we're up to
+  // date
   SetDirty();
 }
 
@@ -676,30 +677,30 @@ void nsContentList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   if (mState == State::Dirty ||
       !MayContainRelevantNodes(aElement->GetParentNode()) ||
       !nsContentUtils::IsInSameAnonymousTree(mRootNode, aElement)) {
-    
+    // Either we're already dirty or aElement will never match us.
     return;
   }
 
   InvalidateNamedItemsCacheForAttributeChange(aNameSpaceID, aAttribute);
 
   if (!mFunc || !mFuncMayDependOnAttr) {
-    
-    
+    // aElement might be relevant but the attribute change doesn't affect
+    // whether we match it.
     return;
   }
 
   if (Match(aElement)) {
     if (mElements.IndexOf(aElement) == mElements.NoIndex) {
-      
-      
-      
+      // We match aElement now, and it's not in our list already.  Just dirty
+      // ourselves; this is simpler than trying to figure out where to insert
+      // aElement.
       SetDirty();
     }
   } else {
-    
-    
-    
-    
+    // We no longer match aElement.  Remove it from our list.  If it's
+    // already not there, this is a no-op (though a potentially
+    // expensive one).  Either way, no change of mState is required
+    // here.
     if (mElements.RemoveElement(aElement)) {
       InvalidateNamedItemsCacheForDeletion(*aElement);
     }
@@ -711,16 +712,16 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
   nsIContent* container = aFirstNewContent->GetParent();
   MOZ_ASSERT(container, "Can't get at the new content if no container!");
 
-  
-
-
-
-
-
-
-
-
-
+  /*
+   * If the state is State::Dirty then we have no useful information in our list
+   * and we want to put off doing work as much as possible.
+   *
+   * Also, if container is anonymous from our point of view, we know that we
+   * can't possibly be matching any of the kids.
+   *
+   * Optimize out also the common case when just one new node is appended and
+   * it doesn't match us.
+   */
   if (mState == State::Dirty ||
       !nsContentUtils::IsInSameAnonymousTree(mRootNode, container) ||
       !MayContainRelevantNodes(container) ||
@@ -730,14 +731,14 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
     return;
   }
 
-  
-
-
-
-
-
-
-
+  /*
+   * We want to handle the case of ContentAppended by sometimes
+   * appending the content to our list, not just setting state to
+   * State::Dirty, since most of our ContentAppended notifications
+   * should come during pageload and be at the end of the document.
+   * Do a bit of work to see whether we could just append to what we
+   * already have.
+   */
 
   uint32_t ourCount = mElements.Length();
   const bool appendingToList = [&] {
@@ -752,12 +753,12 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
   }();
 
   if (!appendingToList) {
-    
-    
+    // The new stuff is somewhere in the middle of our list; check
+    // whether we need to invalidate
     for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
       if (MatchSelf(cur)) {
-        
-        
+        // Uh-oh.  We're gonna have to add elements into the middle
+        // of our list. That's not worth the effort.
         SetDirty();
         break;
       }
@@ -767,20 +768,20 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
     return;
   }
 
-  
-
-
-
-
-
+  /*
+   * At this point we know we could append.  If we're not up to
+   * date, however, that would be a bad idea -- it could miss some
+   * content that we never picked up due to being lazy.  Further, we
+   * may never get asked for this content... so don't grab it yet.
+   */
   if (mState == State::Lazy) {
     return;
   }
 
-  
-
-
-
+  /*
+   * We're up to date.  That means someone's actively using us; we
+   * may as well grab this content....
+   */
   if (mDeep) {
     for (nsIContent* cur = aFirstNewContent; cur;
          cur = cur->GetNextNode(container)) {
@@ -803,9 +804,9 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent,
 
 void nsContentList::ContentInserted(nsIContent* aChild,
                                     const ContentInsertInfo&) {
-  
-  
-  
+  // Note that aChild->GetParentNode() can be null here if we are inserting into
+  // the document itself; any attempted optimizations to this method should deal
+  // with that.
   if (mState != State::Dirty &&
       MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
@@ -883,6 +884,10 @@ bool nsContentList::MatchSelf(nsIContent* aContent) {
   return false;
 }
 
+nsINode* nsContentList::GetNextNode(nsINode* aCurrent) {
+  return aCurrent->GetNextNode(mRootNode);
+}
+
 void nsContentList::PopulateSelf(uint32_t aNeededLength,
                                  uint32_t aExpectedElementsIfDirty) {
   if (!mRootNode) {
@@ -895,7 +900,7 @@ void nsContentList::PopulateSelf(uint32_t aNeededLength,
   NS_ASSERTION(mState != State::Dirty || count == aExpectedElementsIfDirty,
                "Reset() not called when setting state to State::Dirty?");
 
-  if (count >= aNeededLength)  
+  if (count >= aNeededLength)  // We're all set
     return;
 
   uint32_t elementsToAppend = aNeededLength - count;
@@ -904,16 +909,16 @@ void nsContentList::PopulateSelf(uint32_t aNeededLength,
 #endif
 
   if (mDeep) {
-    
-    
+    // If we already have nodes start searching at the last one, otherwise
+    // start searching at the root.
     nsINode* cur = count ? mElements[count - 1].get() : mRootNode;
     do {
-      cur = cur->GetNextNode(mRootNode);
+      cur = GetNextNode(cur);
       if (!cur) {
         break;
       }
       if (cur->IsElement() && Match(cur->AsElement())) {
-        
+        // Append AsElement() to get nsIContent instead of nsINode
         mElements.AppendElement(cur->AsElement());
         --elementsToAppend;
       }
@@ -945,12 +950,12 @@ void nsContentList::PopulateSelf(uint32_t aNeededLength,
 
 void nsContentList::RemoveFromHashtable() {
   if (mFunc) {
-    
-    
-    
+    // nsCacheableFuncStringContentList can be in a hash table without being
+    // in gContentListHashTable, but it will have been removed from the hash
+    // table in its dtor before it runs the nsContentList dtor.
     MOZ_RELEASE_ASSERT(!mInHashtable);
 
-    
+    // This can't be in gContentListHashTable.
     return;
   }
 
@@ -971,9 +976,9 @@ void nsContentList::RemoveFromHashtable() {
 
 void nsContentList::BringSelfUpToDate(bool aDoFlush) {
   if (mFlushesNeeded && mRootNode && aDoFlush) {
-    
+    // XXX sXBL/XBL2 issue
     if (Document* doc = mRootNode->GetUncomposedDoc()) {
-      
+      // Flush pending content changes Bug 4891.
       doc->FlushPendingNotifications(FlushType::ContentAndNotify);
     }
   }
@@ -1021,8 +1026,8 @@ void nsContentList::AssertInSync() {
     return;
   }
 
-  
-  
+  // XXX This code will need to change if nsContentLists can ever match
+  // elements that are outside of the document element.
   nsIContent* root = mRootNode->IsDocument()
                          ? mRootNode->AsDocument()->GetRootElement()
                          : mRootNode->AsContent();
@@ -1060,8 +1065,8 @@ void nsContentList::AssertInSync() {
 }
 #endif
 
-
-
+//-----------------------------------------------------
+// nsCachableElementsByNameNodeList
 
 JSObject* nsCachableElementsByNameNodeList::WrapObject(
     JSContext* cx, JS::Handle<JSObject*> aGivenProto) {
@@ -1071,8 +1076,8 @@ JSObject* nsCachableElementsByNameNodeList::WrapObject(
 void nsCachableElementsByNameNodeList::AttributeChanged(
     Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
     AttrModType aModType, const nsAttrValue* aOldValue) {
-  
-  
+  // No need to rebuild the list if the changed attribute is not the name
+  // attribute.
   if (aAttribute != nsGkAtoms::name) {
     InvalidateNamedItemsCacheForAttributeChange(aNameSpaceID, aAttribute);
     return;
@@ -1082,34 +1087,67 @@ void nsCachableElementsByNameNodeList::AttributeChanged(
       aElement, aNameSpaceID, aAttribute, aModType, aOldValue);
 }
 
-
-
+//-----------------------------------------------------
+// nsCacheableFuncStringHTMLCollection
 
 JSObject* nsCacheableFuncStringHTMLCollection::WrapObject(
     JSContext* cx, JS::Handle<JSObject*> aGivenProto) {
   return HTMLCollection_Binding::Wrap(cx, this, aGivenProto);
 }
 
+//-----------------------------------------------------
+// nsLabelsNodeList
 
+nsLabelsNodeList::nsLabelsNodeList(nsGenericHTMLElement* aLabeledElement,
+                                   nsINode* aSubtreeRoot,
+                                   nsContentListMatchFunc aMatchFunc,
+                                   nsContentListDestroyFunc aDestroyFunc)
+    : nsContentList(aSubtreeRoot, aMatchFunc, aDestroyFunc, aLabeledElement) {
+  WatchLabeledDescendantsOfNearestAncestorLabel(aLabeledElement);
+  if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(aSubtreeRoot)) {
+    shadow->Host()->AddReferenceTargetChangeObserver(ResetRootsCallback, this);
+  }
+  mRoots.AppendElement(aSubtreeRoot);
+  ResetRoots();
+}
 
+nsLabelsNodeList::~nsLabelsNodeList() {
+  for (nsINode* root : mRoots) {
+    root->RemoveMutationObserver(this);
+    if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(root)) {
+      Element* host = shadow->GetHost();
+      if (host) {
+        host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
+      }
+    }
+  }
+}
 
 JSObject* nsLabelsNodeList::WrapObject(JSContext* cx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return NodeList_Binding::Wrap(cx, this, aGivenProto);
 }
 
+bool nsLabelsNodeList::NodeIsInScope(nsINode* aNode) {
+  for (nsINode* root : mRoots) {
+    if (nsContentUtils::IsInSameAnonymousTree(root, aNode)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void nsLabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                                         nsAtom* aAttribute, AttrModType,
                                         const nsAttrValue* aOldValue) {
   MOZ_ASSERT(aElement, "Must have a content node to work with");
-  if (mState == State::Dirty ||
-      !nsContentUtils::IsInSameAnonymousTree(mRootNode, aElement)) {
+  if (mState == State::Dirty || !NodeIsInScope(aElement)) {
     return;
   }
 
   InvalidateNamedItemsCacheForAttributeChange(aNameSpaceID, aAttribute);
 
-  
+  // We need to handle input type changes to or from "hidden".
   if (aElement->IsHTMLElement(nsGkAtoms::input) &&
       aAttribute == nsGkAtoms::type && aNameSpaceID == kNameSpaceID_None) {
     SetDirty();
@@ -1120,11 +1158,9 @@ void nsLabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
 void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent,
                                        const ContentAppendInfo&) {
   nsIContent* container = aFirstNewContent->GetParent();
-  
-  
-  
-  if (mState != State::Dirty &&
-      nsContentUtils::IsInSameAnonymousTree(mRootNode, container)) {
+  // If a labelable element is moved to outside or inside of nested associated
+  // labels, we're gonna have to modify the content list.
+  if (mState != State::Dirty && NodeIsInScope(container)) {
     SetDirty();
     return;
   }
@@ -1132,11 +1168,9 @@ void nsLabelsNodeList::ContentAppended(nsIContent* aFirstNewContent,
 
 void nsLabelsNodeList::ContentInserted(nsIContent* aChild,
                                        const ContentInsertInfo&) {
-  
-  
-  
-  if (mState != State::Dirty &&
-      nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild)) {
+  // If a labelable element is moved to outside or inside of nested associated
+  // labels, we're gonna have to modify the content list.
+  if (mState != State::Dirty && NodeIsInScope(aChild)) {
     SetDirty();
     return;
   }
@@ -1144,37 +1178,185 @@ void nsLabelsNodeList::ContentInserted(nsIContent* aChild,
 
 void nsLabelsNodeList::ContentWillBeRemoved(nsIContent* aChild,
                                             const ContentRemoveInfo&) {
-  
-  
-  if (mState != State::Dirty &&
-      nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild)) {
+  // If a labelable element is removed, we're gonna have to clean the content
+  // list.
+  if (mState != State::Dirty && NodeIsInScope(aChild)) {
     SetDirty();
     return;
   }
 }
 
-void nsLabelsNodeList::MaybeResetRoot(nsINode* aRootNode) {
-  MOZ_ASSERT(aRootNode, "Must have root");
-  if (mRootNode == aRootNode) {
+void nsLabelsNodeList::NodeWillBeDestroyed(nsINode* aNode) {
+  if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(aNode)) {
+    if (Element* host = shadow->GetHost()) {
+      host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
+    }
+  }
+  mRoots.RemoveElement(aNode);
+}
+
+// static
+bool nsLabelsNodeList::ResetRootsCallback(void* aData) {
+  nsLabelsNodeList* list = (nsLabelsNodeList*)aData;
+  list->ResetRoots();
+  return true;
+}
+
+// static
+bool nsLabelsNodeList::SetDirtyCallback(void* aData) {
+  nsLabelsNodeList* list = (nsLabelsNodeList*)aData;
+  list->SetDirty();
+  return true;
+}
+
+void nsLabelsNodeList::WatchLabeledDescendantsOfNearestAncestorLabel(
+    Element* labeledHost) {
+  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
     return;
   }
-
-  MOZ_ASSERT(mIsLiveList, "nsLabelsNodeList is always a live list");
-  if (mRootNode) {
-    mRootNode->RemoveMutationObserver(this);
+  MOZ_ASSERT(labeledHost);
+  Element* parentElement = labeledHost->GetParentElement();
+  while (parentElement) {
+    if (HTMLLabelElement* label = HTMLLabelElement::FromNode(parentElement)) {
+      // Use GetControlForBindings() to get the element in the same scope as the
+      // label, instead of the deep labeled element.
+      if (Element* labeledElement = label->GetControlForBindings()) {
+        if (labeledElement != labeledHost) {
+          // If the labeled element's reference target changes such that it's no
+          // longer labelable, our labeled element might become the target for
+          // the ancestor label.
+          labeledElement->AddReferenceTargetChangeObserver(SetDirtyCallback,
+                                                           this);
+        }
+      }
+      return;
+    }
+    parentElement = parentElement->GetParentElement();
   }
-  mRootNode = aRootNode;
-  mRootNode->AddMutationObserver(this);
+}
+
+void nsLabelsNodeList::ResetRoots() {
+  MOZ_ASSERT(mIsLiveList, "nsLabelsNodeList is always a live list");
+
+  nsGenericHTMLElement* labeledElement =
+      static_cast<nsGenericHTMLElement*>(mData);
+  MOZ_ASSERT(labeledElement, "Must have labeled element");
+
+  nsTArray<nsINode*> newRoots;
+
+  Element* labeledElementOrHost = labeledElement;
+  bool labeledElementOrHostIsInShadowTree = false;
+  ShadowRoot* shadowRoot = labeledElement->GetContainingShadow();
+  while (shadowRoot) {
+    newRoots.AppendElement(shadowRoot);
+    // If reference target is not enabled, GetReferenceTargetElement() will
+    // always return nullptr.
+    if (shadowRoot->GetReferenceTargetElement() != labeledElementOrHost) {
+      labeledElementOrHostIsInShadowTree = true;
+      break;
+    }
+    labeledElementOrHost = shadowRoot->Host();
+    WatchLabeledDescendantsOfNearestAncestorLabel(labeledElementOrHost);
+    shadowRoot = labeledElementOrHost->GetContainingShadow();
+  }
+
+  // If the outermost labeled element or host is in a shadow tree, its
+  // containing shadow root is already in newRoots.
+  if (!labeledElementOrHostIsInShadowTree) {
+    // `labeledHost` is either `labeledElement`, or the shadow host which has
+    // `labeledElement` as its resolved reference target.
+    DocumentOrShadowRoot* doc = labeledElementOrHost->GetUncomposedDoc();
+    if (doc) {
+      newRoots.AppendElement(&doc->AsNode());
+    } else if (newRoots.IsEmpty()) {
+      newRoots.AppendElement(labeledElementOrHost->SubtreeRoot());
+    }
+  }
+
+  if (newRoots == mRoots) {
+    return;
+  }
+  MOZ_ASSERT(!newRoots.IsEmpty(), "Must have at least one root");
+
+  for (nsINode* root : mRoots) {
+    if (!newRoots.Contains(root)) {
+      root->RemoveMutationObserver(this);
+    }
+
+    // Only the outermost shadow root should have this as a
+    // ReferenceTargetChangedObserver, to avoid duplicated notifications.
+    if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(root)) {
+      Element* host = shadow->GetHost();
+      if (host) {
+        host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
+      }
+    }
+  }
+  for (nsINode* root : newRoots) {
+    if (!mRoots.Contains(root)) {
+      root->AddMutationObserver(this);
+    }
+  }
+
+  mRoots = std::move(newRoots);
+  mRootNode = mRoots.LastElement();
+
+  if (labeledElementOrHostIsInShadowTree) {
+    ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(mRootNode);
+    MOZ_ASSERT(shadow);
+    shadow->Host()->AddReferenceTargetChangeObserver(ResetRootsCallback, this);
+  }
+  labeledElementOrHost->AddReferenceTargetChangeObserver(ResetRootsCallback,
+                                                         this);
+
   SetDirty();
+}
+
+nsINode* nsLabelsNodeList::GetNextNode(nsINode* aCurrent) {
+  nsGenericHTMLElement* labeledElement = (nsGenericHTMLElement*)mData;
+  MOZ_ASSERT(labeledElement, "Must have labeled element");
+  MOZ_ASSERT(mRootNode, "Must have root node");
+
+  nsINode* next = nullptr;
+
+  // If aCurrent's resolved reference target is the labeled element, descend
+  // into aCurrent's shadow root, if it has one. (Otherwise, ignore shadow
+  // roots.)
+  if (aCurrent->IsElement()) {
+    Element* curElement = aCurrent->AsElement();
+    ShadowRoot* curShadow = curElement->GetShadowRoot();
+    if (curShadow && curElement->ResolveReferenceTarget() == labeledElement) {
+      next = curShadow->GetFirstChild();
+    }
+  }
+  if (next) {
+    return next;
+  }
+
+  // Default case: just get the next node in the current tree.
+  next = aCurrent->GetNextNode();
+  if (next) {
+    return next;
+  }
+
+  // If we descended into a shadow tree, back out of it until we find an
+  // adjacent node, or hit a shadow root which doesn't have the current element
+  // as its reference target.
+  nsINode* cur = aCurrent;
+  while (!next) {
+    ShadowRoot* shadow = cur->GetContainingShadow();
+    if (!shadow || shadow->GetReferenceTargetElement() == cur) {
+      break;
+    }
+    cur = shadow->Host();
+    next = cur->GetNextNode();
+  }
+  return next;
 }
 
 void nsLabelsNodeList::PopulateSelf(uint32_t aNeededLength,
                                     uint32_t aExpectedElementsIfDirty) {
-  if (!mRootNode) {
-    return;
-  }
-
-  
+  // Start searching at the root.
   nsINode* cur = mRootNode;
   if (mElements.IsEmpty() && cur->IsElement() && Match(cur->AsElement())) {
     mElements.AppendElement(cur->AsElement());
@@ -1182,4 +1364,18 @@ void nsLabelsNodeList::PopulateSelf(uint32_t aNeededLength,
   }
 
   nsContentList::PopulateSelf(aNeededLength, aExpectedElementsIfDirty);
+}
+
+void nsLabelsNodeList::LastRelease() {
+  for (nsINode* root : mRoots) {
+    root->RemoveMutationObserver(this);
+    if (ShadowRoot* shadow = ShadowRoot::FromNodeOrNull(root)) {
+      if (Element* host = shadow->GetHost()) {
+        host->RemoveReferenceTargetChangeObserver(ResetRootsCallback, this);
+      }
+    }
+  }
+  mRoots.Clear();
+
+  nsContentList::LastRelease();
 }

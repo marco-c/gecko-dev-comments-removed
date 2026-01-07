@@ -4132,7 +4132,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         
         if (dom::HTMLLabelElement* labelEl =
                 dom::HTMLLabelElement::FromNode(mContent)) {
-          rel.AppendTarget(mDoc, labelEl->GetControl());
+          rel.AppendTarget(mDoc, labelEl->GetLabeledElementInternal());
         }
       } else if (data.mType == RelationType::DETAILS) {
         if (relAtom == nsGkAtoms::aria_details) {

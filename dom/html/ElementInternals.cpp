@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ElementInternals.h"
 
@@ -72,7 +72,7 @@ JSObject* ElementInternals::WrapObject(JSContext* aCx,
   return ElementInternals_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-shadowroot
 ShadowRoot* ElementInternals::GetShadowRoot() const {
   MOZ_ASSERT(mTarget);
 
@@ -84,29 +84,29 @@ ShadowRoot* ElementInternals::GetShadowRoot() const {
   return shadowRoot;
 }
 
-
+// https://html.spec.whatwg.org/commit-snapshots/912a3fe1f29649ccf8229de56f604b3c07ffd242/#dom-elementinternals-setformvalue
 void ElementInternals::SetFormValue(
     const Nullable<FileOrUSVStringOrFormData>& aValue,
     const Optional<Nullable<FileOrUSVStringOrFormData>>& aState,
     ErrorResult& aRv) {
   MOZ_ASSERT(mTarget);
 
-  
-
-
-
-
+  /**
+   * 1. Let element be this's target element.
+   * 2. If element is not a form-associated custom element, then throw a
+   *    "NotSupportedError" DOMException.
+   */
   if (!mTarget->IsFormAssociatedElement()) {
     aRv.ThrowNotSupportedError(
         "Target element is not a form-associated custom element");
     return;
   }
 
-  
-
-
-
-
+  /**
+   * 3. Set target element's submission value to value if value is not a
+   *    FormData object, or to a clone of the entry list associated with value
+   *    otherwise.
+   */
   mSubmissionValue.SetNull();
   if (!aValue.IsNull()) {
     const FileOrUSVStringOrFormData& value = aValue.Value();
@@ -120,20 +120,20 @@ void ElementInternals::SetFormValue(
     }
   }
 
-  
-
-
-
+  /**
+   * 4. If the state argument of the function is omitted, set element's state to
+   *    its submission value.
+   */
   if (!aState.WasPassed()) {
     mState = mSubmissionValue;
     return;
   }
 
-  
-
-
-
-
+  /**
+   * 5. Otherwise, if state is a FormData object, set element's state to clone
+   *    of the entry list associated with state.
+   * 6. Otherwise, set element's state to state.
+   */
   mState.SetNull();
   if (!aState.Value().IsNull()) {
     const FileOrUSVStringOrFormData& state = aState.Value().Value();
@@ -148,7 +148,7 @@ void ElementInternals::SetFormValue(
   }
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-form
 Element* ElementInternals::GetFormForBindings(ErrorResult& aRv) const {
   MOZ_ASSERT(mTarget);
 
@@ -161,27 +161,27 @@ Element* ElementInternals::GetFormForBindings(ErrorResult& aRv) const {
   return GetFormForBindings();
 }
 
-
+// https://html.spec.whatwg.org/commit-snapshots/3ad5159be8f27e110a70cefadcb50fc45ec21b05/#dom-elementinternals-setvalidity
 void ElementInternals::SetValidity(
     const ValidityStateFlags& aFlags, const Optional<nsAString>& aMessage,
     const Optional<NonNull<nsGenericHTMLElement>>& aAnchor, ErrorResult& aRv) {
   MOZ_ASSERT(mTarget);
 
-  
-
-
-
-
+  /**
+   * 1. Let element be this's target element.
+   * 2. If element is not a form-associated custom element, then throw a
+   *    "NotSupportedError" DOMException.
+   */
   if (!mTarget->IsFormAssociatedElement()) {
     aRv.ThrowNotSupportedError(
         "Target element is not a form-associated custom element");
     return;
   }
 
-  
-
-
-
+  /**
+   * 3. If flags contains one or more true values and message is not given or is
+   *    the empty string, then throw a TypeError.
+   */
   if ((aFlags.mBadInput || aFlags.mCustomError || aFlags.mPatternMismatch ||
        aFlags.mRangeOverflow || aFlags.mRangeUnderflow ||
        aFlags.mStepMismatch || aFlags.mTooLong || aFlags.mTooShort ||
@@ -191,10 +191,10 @@ void ElementInternals::SetValidity(
     return;
   }
 
-  
-
-
-
+  /**
+   * 4. For each entry flag → value of flags, set element's validity flag with
+   *    the name flag to value.
+   */
   SetValidityState(VALIDITY_STATE_VALUE_MISSING, aFlags.mValueMissing);
   SetValidityState(VALIDITY_STATE_TYPE_MISMATCH, aFlags.mTypeMismatch);
   SetValidityState(VALIDITY_STATE_PATTERN_MISMATCH, aFlags.mPatternMismatch);
@@ -207,28 +207,28 @@ void ElementInternals::SetValidity(
   SetValidityState(VALIDITY_STATE_CUSTOM_ERROR, aFlags.mCustomError);
   mTarget->UpdateValidityElementStates(true);
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * 5. Set element's validation message to the empty string if message is not
+   *    given or all of element's validity flags are false, or to message
+   *    otherwise.
+   * 6. If element's customError validity flag is true, then set element's
+   *    custom validity error message to element's validation message.
+   *    Otherwise, set element's custom validity error message to the empty
+   *    string.
+   */
   mValidationMessage =
       (!aMessage.WasPassed() || IsValid()) ? EmptyString() : aMessage.Value();
 
-  
-
-
-
-
-
+  /**
+   * 7. Set element's validation anchor to null if anchor is not given.
+   *    Otherwise, if anchor is not a shadow-including descendant of element,
+   *    then throw a "NotFoundError" DOMException. Otherwise, set element's
+   *    validation anchor to anchor.
+   */
   nsGenericHTMLElement* anchor =
       aAnchor.WasPassed() ? &aAnchor.Value() : nullptr;
-  
-  
+  // TODO: maybe create something like IsShadowIncludingDescendantOf if there
+  //       are other places also need such check.
   if (anchor && (anchor == mTarget ||
                  !anchor->IsShadowIncludingInclusiveDescendantOf(mTarget))) {
     aRv.ThrowNotFoundError(
@@ -239,7 +239,7 @@ void ElementInternals::SetValidity(
   mValidationAnchor = anchor;
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-willvalidate
 bool ElementInternals::GetWillValidate(ErrorResult& aRv) const {
   MOZ_ASSERT(mTarget);
 
@@ -251,7 +251,7 @@ bool ElementInternals::GetWillValidate(ErrorResult& aRv) const {
   return WillValidate();
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-validity
 ValidityState* ElementInternals::GetValidity(ErrorResult& aRv) {
   MOZ_ASSERT(mTarget);
 
@@ -263,7 +263,7 @@ ValidityState* ElementInternals::GetValidity(ErrorResult& aRv) {
   return Validity();
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-validationmessage
 void ElementInternals::GetValidationMessage(nsAString& aValidationMessage,
                                             ErrorResult& aRv) const {
   MOZ_ASSERT(mTarget);
@@ -276,7 +276,7 @@ void ElementInternals::GetValidationMessage(nsAString& aValidationMessage,
   aValidationMessage = mValidationMessage;
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-checkvalidity
 bool ElementInternals::CheckValidity(ErrorResult& aRv) {
   MOZ_ASSERT(mTarget);
 
@@ -288,7 +288,7 @@ bool ElementInternals::CheckValidity(ErrorResult& aRv) {
   return nsIConstraintValidation::CheckValidity(*mTarget);
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-reportvalidity
 bool ElementInternals::ReportValidity(ErrorResult& aRv) {
   MOZ_ASSERT(mTarget);
 
@@ -322,8 +322,8 @@ bool ElementInternals::ReportValidity(ErrorResult& aRv) {
   RefPtr<CustomEvent> event =
       NS_NewDOMCustomEvent(mTarget->OwnerDoc(), nullptr, nullptr);
   event->InitCustomEvent(jsapi.cx(), u"MozInvalidForm"_ns,
-                          true,
-                          true, detail);
+                         /* CanBubble */ true,
+                         /* Cancelable */ true, detail);
   event->SetTrusted(true);
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
   mTarget->DispatchEvent(*event);
@@ -331,7 +331,7 @@ bool ElementInternals::ReportValidity(ErrorResult& aRv) {
   return false;
 }
 
-
+// https://html.spec.whatwg.org/#dom-elementinternals-labels
 already_AddRefed<nsINodeList> ElementInternals::GetLabels(
     ErrorResult& aRv) const {
   MOZ_ASSERT(mTarget);
@@ -341,7 +341,7 @@ already_AddRefed<nsINodeList> ElementInternals::GetLabels(
         "Target element is not a form-associated custom element");
     return nullptr;
   }
-  return mTarget->Labels();
+  return mTarget->LabelsInternal();
 }
 
 nsGenericHTMLElement* ElementInternals::GetValidationAnchor(
@@ -391,14 +391,14 @@ NS_IMETHODIMP ElementInternals::SubmitNamesValues(FormData* aFormData) {
 
   MOZ_ASSERT(mTarget->IsFormAssociatedElement());
 
-  
+  // https://html.spec.whatwg.org/#face-entry-construction
   if (!mSubmissionValue.IsNull()) {
     if (mSubmissionValue.Value().IsFormData()) {
       aFormData->Append(mSubmissionValue.Value().GetAsFormData());
       return NS_OK;
     }
 
-    
+    // Get the name
     nsAutoString name;
     if (!mTarget->GetAttr(nsGkAtoms::name, name) || name.IsEmpty()) {
       return NS_OK;
@@ -432,7 +432,7 @@ void ElementInternals::UpdateBarredFromConstraintValidation() {
 
 void ElementInternals::Unlink() {
   if (mForm) {
-    
+    // Don't notify, since we're being destroyed in any case.
     ClearForm(true, true);
     MOZ_DIAGNOSTIC_ASSERT(!mForm);
   }
@@ -524,19 +524,19 @@ void ElementInternals::InitializeControlNumber() {
 }
 
 void ElementInternals::SetAttrElement(nsAtom* aAttr, Element* aElement) {
-  
-  
-  
-  
-  
-  
+  // Accessibility requires that no other attribute changes occur between
+  // AttrElementWillChange and AttrElementChanged. Scripts could cause
+  // this, so don't let them run here. We do this even if accessibility isn't
+  // running so that the JS behavior is consistent regardless of accessibility.
+  // Otherwise, JS might be able to use this difference to determine whether
+  // accessibility is running, which would be a privacy concern.
   nsAutoScriptBlocker scriptBlocker;
 
 #ifdef ACCESSIBILITY
-  
-  
-  
-  
+  // If the target has this attribute defined then it overrides the defaults
+  // defined here in the Internals instance. In that case we don't need to
+  // notify the change to a11y since the attribute hasn't changed, just the
+  // underlying default. We can set accService to null and not notify.
   nsAccessibilityService* accService =
       !mTarget->HasAttr(aAttr) ? GetAccService() : nullptr;
   if (accService) {
@@ -571,12 +571,12 @@ void ElementInternals::SetAttrElements(
 #ifdef ACCESSIBILITY
   nsAccessibilityService* accService = GetAccService();
 #endif
-  
-  
-  
-  
-  
-  
+  // Accessibility requires that no other attribute changes occur between
+  // AttrElementWillChange and AttrElementChanged. Scripts could cause
+  // this, so don't let them run here. We do this even if accessibility isn't
+  // running so that the JS behavior is consistent regardless of accessibility.
+  // Otherwise, JS might be able to use this difference to determine whether
+  // accessibility is running, which would be a privacy concern.
   nsAutoScriptBlocker scriptBlocker;
 #ifdef ACCESSIBILITY
   if (accService) {
@@ -622,9 +622,9 @@ void ElementInternals::GetAttrElements(
     CopyableTArray<RefPtr<Element>> elements;
 
     for (const nsWeakPtr& weakEl : attrElements) {
-      
+      // For each attrElement in reflectedTarget's explicitly set attr-elements:
       if (RefPtr<Element> attrEl = do_QueryReferent(weakEl)) {
-        
+        // Append attrElement to elements.
         elements.AppendElement(std::move(attrEl));
       }
     }
@@ -632,30 +632,30 @@ void ElementInternals::GetAttrElements(
     return elements;
   };
 
-  
-  
-  
-  
+  // https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#attr-associated-elements
+  // Getter steps:
+  // 1. Let elements be the result of running this's get the attr-associated
+  // elements.
   auto elements = getAttrAssociatedElements();
 
   if (elements == cachedAttrElements) {
-    
-    
-    
+    // 2. If the contents of elements is equal to the contents of this's cached
+    // attr-associated elements, then return this's cached attr-associated
+    // elements object.
     MOZ_ASSERT(!*aUseCachedValue);
     *aUseCachedValue = true;
     return;
   }
 
-  
-  
-  
-  
-  
-  
+  // 3. Let elementsAsFrozenArray be elements, converted to a FrozenArray<T>?.
+  //    (the binding code takes aElements and returns it as a FrozenArray)
+  // 5. Set this's cached attr-associated elements object to
+  // elementsAsFrozenArray.
+  //    (the binding code stores the attr-associated elements object in a slot)
+  // 6. Return elementsAsFrozenArray.
   aElements.SetValue(elements.Clone());
 
-  
+  // 4. Set this's cached attr-associated elements to elements.
   cachedAttrElements = std::move(elements);
 }
 
@@ -677,4 +677,4 @@ Maybe<nsTArray<RefPtr<Element>>> ElementInternals::GetAttrElements(
   return Some(std::move(elements));
 }
 
-}  
+}  // namespace mozilla::dom

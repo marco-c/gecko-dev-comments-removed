@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCoreUtils.h"
 
@@ -50,13 +50,13 @@ using mozilla::dom::XULTreeElement;
 
 using mozilla::a11y::nsAccUtils;
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsCoreUtils
+////////////////////////////////////////////////////////////////////////////////
 
 bool nsCoreUtils::IsLabelWithControl(nsIContent* aContent) {
   dom::HTMLLabelElement* label = dom::HTMLLabelElement::FromNode(aContent);
-  if (label && label->GetControl()) return true;
+  if (label && label->GetLabeledElementInternal()) return true;
 
   return false;
 }
@@ -86,10 +86,10 @@ void nsCoreUtils::DispatchClickEvent(XULTreeElement* aTree, int32_t aRowIndex,
     return;
   }
 
-  
+  // Ensure row is visible.
   aTree->EnsureRowIsVisible(aRowIndex);
 
-  
+  // Calculate x and y coordinates.
   nsresult rv;
   nsIntRect rect =
       aTree->GetCoordsForCellItem(aRowIndex, aColumn, aPseudoElt, rv);
@@ -101,7 +101,7 @@ void nsCoreUtils::DispatchClickEvent(XULTreeElement* aTree, int32_t aRowIndex,
   int32_t tcX = (int32_t)treeBodyRect->X();
   int32_t tcY = (int32_t)treeBodyRect->Y();
 
-  
+  // Dispatch mouse events.
   AutoWeakFrame tcFrame = tcElm->GetPrimaryFrame();
   nsIFrame* rootFrame = presShell->GetRootFrame();
 
@@ -114,10 +114,10 @@ void nsCoreUtils::DispatchClickEvent(XULTreeElement* aTree, int32_t aRowIndex,
   int32_t cnvdY = presContext->CSSPixelsToDevPixels(tcY + int32_t(rect.y) + 1) +
                   presContext->AppUnitsToDevPixels(offset.y);
 
-  
+  // This isn't needed once bug 1924790 is fixed.
   tcElm->OwnerDoc()->NotifyUserGestureActivation();
 
-  
+  // XUL is just desktop, so there is no real reason for senfing touch events.
   DispatchMouseEvent(eMouseDown, cnvdX, cnvdY, tcElm, tcFrame, presShell,
                      rootWidget);
 
@@ -156,7 +156,7 @@ void nsCoreUtils::DispatchTouchEvent(EventMessage aMessage, int32_t aX,
 
   WidgetTouchEvent event(true, aMessage, aRootWidget);
 
-  
+  // XXX: Touch has an identifier of -1 to hint that it is synthesized.
   RefPtr<dom::Touch> t = new dom::Touch(-1, LayoutDeviceIntPoint(aX, aY),
                                         LayoutDeviceIntPoint(1, 1), 0.0f, 1.0f);
   t->SetTouchTarget(aContent);
@@ -166,9 +166,9 @@ void nsCoreUtils::DispatchTouchEvent(EventMessage aMessage, int32_t aX,
 }
 
 uint32_t nsCoreUtils::GetAccessKeyFor(nsIContent* aContent) {
-  
-  
-  
+  // Accesskeys are registered by @accesskey attribute only. At first check
+  // whether it is presented on the given element to avoid the slow
+  // EventStateManager::GetRegisteredAccessKey() method.
   if (!aContent->IsElement() || !aContent->AsElement()->HasAttr(
                                     kNameSpaceID_None, nsGkAtoms::accesskey)) {
     return 0;
@@ -196,9 +196,9 @@ nsINode* nsCoreUtils::GetDOMNodeFromDOMPoint(nsINode* aNode, uint32_t aOffset) {
     uint32_t childCount = aNode->GetChildCount();
     NS_ASSERTION(aOffset <= childCount, "Wrong offset of the DOM point!");
 
-    
-    
-    
+    // The offset can be after last child of container node that means DOM point
+    // is placed immediately after the last child. In this case use the DOM node
+    // from the given DOM point is used as result node.
     if (aOffset != childCount) return aNode->GetChildAt_Deprecated(aOffset);
   }
 
@@ -348,9 +348,9 @@ bool nsCoreUtils::IsRootDocument(Document* aDocument) {
 bool nsCoreUtils::IsTopLevelContentDocInProcess(Document* aDocumentNode) {
   mozilla::dom::BrowsingContext* bc = aDocumentNode->GetBrowsingContext();
   return bc->IsContent() && (
-                                
+                                // Tab document.
                                 bc->IsTop() ||
-                                
+                                // Out-of-process iframe.
                                 !bc->GetParent()->IsInProcess());
 }
 
@@ -418,7 +418,7 @@ void nsCoreUtils::GetLanguageFor(nsIContent* aContent, nsIContent* aRootContent,
 }
 
 XULTreeElement* nsCoreUtils::GetTree(nsIContent* aContent) {
-  
+  // Find DOMNode's parents recursively until reach the <tree> tag
   nsIContent* currentContent = aContent;
   while (currentContent) {
     if (currentContent->NodeInfo()->Equals(nsGkAtoms::tree, kNameSpaceID_XUL)) {
@@ -585,21 +585,21 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     return false;
   }
   if (!element->HasServoData() || Servo_Element_IsDisplayNone(element)) {
-    
+    // Out of the flat tree or in a display: none subtree.
     return false;
   }
 
-  
-  
+  // If we aren't display: contents or option/optgroup we can't create an
+  // accessible without frame. Our select combobox code relies on the latter.
   if (!element->IsDisplayContents() &&
       !element->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup)) {
     return false;
   }
 
-  
-  
-  
-  
+  // Even if we're display: contents or optgroups, we might not be able to
+  // create an accessible if we're in a content-visibility: hidden subtree.
+  //
+  // To check that, find the closest ancestor element with a frame.
   for (nsINode* ancestor = element->GetFlattenedTreeParentNode();
        ancestor && ancestor->IsContent();
        ancestor = ancestor->GetFlattenedTreeParentNode()) {
@@ -663,11 +663,11 @@ bool nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame) {
       !aFrame->HasAnyStateBits(TEXT_END_OF_LINE)) {
     return false;
   }
-  
-  
-  
-  
-  
+  // Normally, accessibility calls nsIFrame::GetRenderedText with
+  // TrailingWhitespace::NoTrim. Using TrailingWhitespace::Trim instead trims 0
+  // width whitespace before a hard line break, resulting in an empty string if
+  // that is all the frame contains. Note that TrailingWhitespace::Trim does
+  // *not* trim whitespace before a soft line break (wrapped line).
   nsIFrame::RenderedText text = aFrame->GetRenderedText(
       0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
       nsIFrame::TrailingWhitespace::Trim);
@@ -695,7 +695,7 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     }
 
     if (anchorName && entry.GetKey() != anchorName) {
-      
+      // Multiple anchors referenced.
       return nullptr;
     }
 
@@ -718,15 +718,15 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
   if (styleDisp->HasAnchorName()) {
     for (auto& name : styleDisp->mAnchorName.AsSpan()) {
       for (nsIFrame* frame : aPresShell->GetAnchorPosPositioned()) {
-        
-        
-        
+        // Bug 1990069: We need to iterate over all positioned frames in doc and
+        // check their referenced anchors because we don't store reverse mapping
+        // from anchor to positioned frame.
         const auto* referencedAnchors =
             frame->GetProperty(nsIFrame::AnchorPosReferences());
         if (!referencedAnchors) {
-          
-          
-          
+          // Depending on where we are in the reflow, this property may or may
+          // not be set. If it isn't set, a future reflow will set it, so we can
+          // just skip this frame for now.
           continue;
         }
         const auto* data = referencedAnchors->Lookup(name.AsAtom());
@@ -734,7 +734,7 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
           if (aAnchorFrame ==
               aPresShell->GetAnchorPosAnchor(name.AsAtom(), frame)) {
             if (positionedFrame) {
-              
+              // Multiple positioned frames reference this anchor.
               return nullptr;
             }
             positionedFrame = frame;
