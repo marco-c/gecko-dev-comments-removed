@@ -53,10 +53,7 @@ class StyleSheetsActor extends Actor {
 
   getTraits() {
     return {
-      traits: {
-        
-        hasGetStyleSheetIndentation: true,
-      },
+      traits: {},
     };
   }
 
