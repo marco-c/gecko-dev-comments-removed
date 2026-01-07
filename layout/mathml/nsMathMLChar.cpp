@@ -73,6 +73,7 @@ static const nsGlyphCode kNullGlyph = {{0}, false};
 class nsGlyphTable {
  public:
   virtual ~nsGlyphTable() = default;
+  virtual bool IsUnicodeTable() const { return false; }
 
   virtual const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const = 0;
 
@@ -170,6 +171,8 @@ class nsUnicodeTable final : public nsGlyphTable {
   constexpr nsUnicodeTable() { MOZ_COUNT_CTOR(nsUnicodeTable); }
 
   MOZ_COUNTED_DTOR(nsUnicodeTable)
+
+  bool IsUnicodeTable() const final { return true; };
 
   const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const override {
     MOZ_ASSERT_UNREACHABLE();
@@ -661,7 +664,7 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
     
     
     const bool shouldSetFont = [&] {
-      if (aGlyphTable == &gUnicodeTable) {
+      if (aGlyphTable && aGlyphTable->IsUnicodeTable()) {
         return true;
       }
 
@@ -937,7 +940,7 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
 
   
   
-  if (aGlyphTable == &gUnicodeTable) {
+  if (aGlyphTable->IsUnicodeTable()) {
     gfxFont* unicodeFont = nullptr;
     for (int32_t i = 0; i < 4; i++) {
       if (!textRun[i]) {
@@ -1105,6 +1108,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
     
     return &gUnicodeTable;
   }();
+  MOZ_ASSERT(glyphTable);
 
   if (!openTypeTable) {
     
@@ -1118,7 +1122,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
   
   
   const StyleFontFamilyList& familyList =
-      glyphTable == &gUnicodeTable ? context->mFamilyList : family;
+      glyphTable->IsUnicodeTable() ? context->mFamilyList : family;
 
   return (context->mTryVariants &&
           context->TryVariants(glyphTable, &fontGroup, familyList, aRtl)) ||
