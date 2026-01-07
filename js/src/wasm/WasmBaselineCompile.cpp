@@ -7338,6 +7338,13 @@ bool BaseCompiler::emitPostBarrierEdgePrecise(const Maybe<RegRef>& object,
                                               RegPtr valueAddr,
                                               RegRef prevValue, RegRef value) {
   
+  
+  
+  
+  
+  MOZ_ASSERT(object.isNothing());
+
+  
   if (object) {
     pushRef(*object);
   }

@@ -405,6 +405,11 @@ extern bool ToJSValue(JSContext* cx, const void* src, ValType type,
                       CoercionLevel level = CoercionLevel::Spec);
 template <typename Debug = NoDebug>
 extern bool ToJSValueMayGC(ValType type);
+
+#ifdef DEBUG
+void AssertEdgeSourceNotInsideNursery(void* vp);
+#endif
+
 }  
 
 template <>
@@ -421,6 +426,13 @@ struct InternalBarrierMethods<wasm::AnyRef> {
                                             const wasm::AnyRef prev,
                                             const wasm::AnyRef next) {
     
+    
+    
+#ifdef DEBUG
+    AssertEdgeSourceNotInsideNursery(vp);
+#endif
+
+    
     gc::StoreBuffer* sb;
     if (next.isGCThing() && (sb = next.toGCThing()->storeBuffer())) {
       
@@ -430,7 +442,7 @@ struct InternalBarrierMethods<wasm::AnyRef> {
       if (prev.isGCThing() && prev.toGCThing()->storeBuffer()) {
         return;
       }
-      sb->putWasmAnyRef(vp);
+      sb->putWasmAnyRefEdgeFromTenured(vp);
       return;
     }
     
