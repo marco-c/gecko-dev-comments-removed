@@ -1532,7 +1532,8 @@ void PointerEventHandler::DispatchGotOrLostPointerCaptureEvent(
       aIsGotCapture ? ePointerGotCapture : ePointerLostCapture,
       aPointerEvent->mWidget);
 
-  localEvent.AssignPointerEventData(*aPointerEvent, true);
+  localEvent.AssignPointerEventData(*aPointerEvent,  true,
+                                     false);
   DebugOnly<nsresult> rv = presShell->HandleEventWithTarget(
       &localEvent, aCaptureTarget->GetPrimaryFrame(), aCaptureTarget, &status);
 
