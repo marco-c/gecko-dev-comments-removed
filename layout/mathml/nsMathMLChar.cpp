@@ -12,7 +12,6 @@
 #include "gfxMathTable.h"
 #include "gfxTextRun.h"
 #include "gfxUtils.h"
-#include "mozilla/BinarySearch.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
@@ -32,6 +31,7 @@
 #include "nsIFrame.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsIPersistentProperties2.h"
 #include "nsLayoutUtils.h"
 #include "nsMathMLOperators.h"
 #include "nsNetUtil.h"
@@ -56,7 +56,7 @@ static void NormalizeDefaultFont(nsFont& aFont, float aFontSizeInflation) {
 }
 
 
-static const nsGlyphCode kNullGlyph = {{0}, false};
+static const nsGlyphCode kNullGlyph = {{{0, 0}}, 0};
 
 
 
@@ -120,67 +120,57 @@ class nsGlyphTable {
 
 
 
-typedef char16_t const UnicodeConstruction[7];
-
-static const UnicodeConstruction gUnicodeTableConstructions[] = {
-  { 0x0028, 0x239B, 0x0000, 0x239D, 0x239C, 0x0028, 0x0000 },
-  { 0x0029, 0x239E, 0x0000, 0x23A0, 0x239F, 0x0029, 0x0000 },
-  { 0x003D, 0x0000, 0x0000, 0x0000, 0x003D, 0x003D, 0x0000 },
-  { 0x005B, 0x23A1, 0x0000, 0x23A3, 0x23A2, 0x005B, 0x0000 },
-  { 0x005D, 0x23A4, 0x0000, 0x23A6, 0x23A5, 0x005D, 0x0000 },
-  { 0x005F, 0x0000, 0x0000, 0x0000, 0x0332, 0x0332, 0x0000 },
-  { 0x007B, 0x23A7, 0x23A8, 0x23A9, 0x23AA, 0x007B, 0x0000 },
-  { 0x007C, 0x0000, 0x0000, 0x0000, 0x007C, 0x007C, 0x0000 },
-  { 0x007D, 0x23AB, 0x23AC, 0x23AD, 0x23AA, 0x007D, 0x0000 },
-  { 0x00AF, 0x0000, 0x0000, 0x0000, 0x0305, 0x00AF, 0x0000 },
-  { 0x0332, 0x0000, 0x0000, 0x0000, 0x0332, 0x0332, 0x0000 },
-  { 0x2016, 0x0000, 0x0000, 0x0000, 0x2016, 0x2016, 0x0000 },
-  { 0x203E, 0x0000, 0x0000, 0x0000, 0x0305, 0x00AF, 0x0000 },
-  { 0x2190, 0x2190, 0x0000, 0x0000, 0x23AF, 0x2190, 0x27F5 },
-  { 0x2191, 0x2191, 0x0000, 0x0000, 0x23D0, 0x2191, 0x0000 },
-  { 0x2192, 0x0000, 0x0000, 0x2192, 0x23AF, 0x2192, 0x27F6 },
-  { 0x2193, 0x0000, 0x0000, 0x2193, 0x23D0, 0x2193, 0x0000 },
-  { 0x2194, 0x2190, 0x0000, 0x2192, 0x23AF, 0x2194, 0x27F7 },
-  { 0x2195, 0x2191, 0x0000, 0x2193, 0x23D0, 0x2195, 0x0000 },
-  { 0x21A4, 0x2190, 0x0000, 0x22A3, 0x23AF, 0x21AA, 0x27FB },
-  { 0x21A6, 0x22A2, 0x0000, 0x2192, 0x23AF, 0x21A6, 0x27FC },
-  { 0x21BC, 0x21BC, 0x0000, 0x0000, 0x23AF, 0x21BC, 0x0000 },
-  { 0x21BD, 0x21BD, 0x0000, 0x0000, 0x23AF, 0x21BD, 0x0000 },
-  { 0x21C0, 0x0000, 0x0000, 0x21C0, 0x23AF, 0x21C0, 0x0000 },
-  { 0x21C1, 0x0000, 0x0000, 0x21C1, 0x23AF, 0x21C1, 0x0000 },
-  { 0x21D0, 0x0000, 0x0000, 0x0000, 0x0000, 0x21D0, 0x27F8 },
-  { 0x21D2, 0x0000, 0x0000, 0x0000, 0x0000, 0x21D2, 0x27F9 },
-  { 0x21D4, 0x0000, 0x0000, 0x0000, 0x0000, 0x21D4, 0x27FA },
-  { 0x2223, 0x0000, 0x0000, 0x0000, 0x2223, 0x2223, 0x0000 },
-  { 0x2225, 0x0000, 0x0000, 0x0000, 0x2225, 0x2225, 0x0000 },
-  { 0x222B, 0x2320, 0x0000, 0x2321, 0x23AE, 0x222B, 0x0000 },
-  { 0x2308, 0x23A1, 0x0000, 0x0000, 0x23A2, 0x2308, 0x0000 },
-  { 0x2309, 0x23A4, 0x0000, 0x0000, 0x23A5, 0x2309, 0x0000 },
-  { 0x230A, 0x0000, 0x0000, 0x23A3, 0x23A2, 0x230A, 0x0000 },
-  { 0x230B, 0x0000, 0x0000, 0x23A6, 0x23A5, 0x230B, 0x0000 },
-  { 0x23B0, 0x23A7, 0x0000, 0x23AD, 0x23AA, 0x23B0, 0x0000 },
-  { 0x23B1, 0x23AB, 0x0000, 0x23A9, 0x23AA, 0x23B1, 0x0000 },
-  { 0x27F5, 0x2190, 0x0000, 0x0000, 0x23AF, 0x27F5, 0x0000 },
-  { 0x27F6, 0x0000, 0x0000, 0x2192, 0x23AF, 0x27F6, 0x0000 },
-  { 0x27F7, 0x2190, 0x0000, 0x2192, 0x23AF, 0x27F7, 0x0000 },
-  { 0x294E, 0x21BC, 0x0000, 0x21C0, 0x23AF, 0x294E, 0x0000 },
-  { 0x2950, 0x21BD, 0x0000, 0x21C1, 0x23AF, 0x2950, 0x0000 },
-  { 0x295A, 0x21BC, 0x0000, 0x22A3, 0x23AF, 0x295A, 0x0000 },
-  { 0x295B, 0x22A2, 0x0000, 0x21C0, 0x23AF, 0x295B, 0x0000 },
-  { 0x295E, 0x21BD, 0x0000, 0x22A3, 0x23AF, 0x295E, 0x0000 },
-  { 0x295F, 0x22A2, 0x0000, 0x21C1, 0x23AF, 0x295F, 0x0000 },
-};
 
 
-class nsUnicodeTable final : public nsGlyphTable {
+
+
+
+
+
+
+
+#define NS_TABLE_STATE_ERROR -1
+#define NS_TABLE_STATE_EMPTY 0
+#define NS_TABLE_STATE_READY 1
+
+
+static void Clean(nsString& aValue) {
+  
+  int32_t comment = aValue.RFindChar('#');
+  if (comment > 0) {
+    aValue.Truncate(comment);
+  }
+  aValue.CompressWhitespace();
+}
+
+
+static nsresult LoadProperties(const nsACString& aName,
+                               nsCOMPtr<nsIPersistentProperties>& aProperties) {
+  nsAutoCString uriStr;
+  uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
+  uriStr.Append(aName);
+  uriStr.StripWhitespace();  
+  uriStr.AppendLiteral(".properties");
+  return NS_LoadPersistentPropertiesFromURISpec(getter_AddRefs(aProperties),
+                                                uriStr);
+}
+
+class nsPropertiesTable final : public nsGlyphTable {
  public:
-  nsUnicodeTable() { MOZ_COUNT_CTOR(nsUnicodeTable); }
+  explicit nsPropertiesTable(const nsACString& aPrimaryFontName)
+      : mState(NS_TABLE_STATE_EMPTY) {
+    MOZ_COUNT_CTOR(nsPropertiesTable);
+    mGlyphCodeFonts.AppendElement(aPrimaryFontName);
+  }
 
-  MOZ_COUNTED_DTOR(nsUnicodeTable)
+  MOZ_COUNTED_DTOR(nsPropertiesTable)
+
+  const nsCString& PrimaryFontName() const { return mGlyphCodeFonts[0]; }
 
   const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const override {
-    MOZ_ASSERT_UNREACHABLE();
-    return VoidCString();
+    NS_ASSERTION(!aGlyphCode.IsGlyphID(),
+                 "nsPropertiesTable can only access glyphs by code point");
+    return mGlyphCodeFonts[aGlyphCode.font];
   }
 
   virtual nsGlyphCode ElementAt(DrawTarget* aDrawTarget,
@@ -218,60 +208,157 @@ class nsUnicodeTable final : public nsGlyphTable {
       gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) override;
 
  private:
-  struct UnicodeConstructionComparator {
-    int operator()(const UnicodeConstruction& aValue) const {
-      if (mTarget < aValue[0]) {
-        return -1;
-      }
-      if (mTarget > aValue[0]) {
-        return 1;
-      }
-      return 0;
-    }
-    explicit UnicodeConstructionComparator(char16_t aTarget)
-        : mTarget(aTarget) {}
-    const char16_t mTarget;
-  };
-  size_t mCachedIndex;
+  
+  
+  
+  nsTArray<nsCString> mGlyphCodeFonts;
+
+  
+  int32_t mState;
+
+  
+  
+  nsCOMPtr<nsIPersistentProperties> mGlyphProperties;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsString mGlyphCache;
 };
 
 
-nsGlyphCode nsUnicodeTable::ElementAt(DrawTarget* ,
-                                      int32_t ,
-                                      gfxFontGroup* ,
-                                      char16_t aChar, bool ,
-                                      uint32_t aPosition) {
+nsGlyphCode nsPropertiesTable::ElementAt(DrawTarget* ,
+                                         int32_t ,
+                                         gfxFontGroup* ,
+                                         char16_t aChar, bool ,
+                                         uint32_t aPosition) {
+  if (mState == NS_TABLE_STATE_ERROR) {
+    return kNullGlyph;
+  }
   
-  if (mCharCache != aChar) {
-    size_t match;
-    if (!BinarySearchIf(gUnicodeTableConstructions, 0,
-                        std::size(gUnicodeTableConstructions),
-                        UnicodeConstructionComparator(aChar), &match)) {
+  if (mState == NS_TABLE_STATE_EMPTY) {
+    nsresult rv = LoadProperties(PrimaryFontName(), mGlyphProperties);
+#ifdef DEBUG
+    nsAutoCString uriStr;
+    uriStr.AssignLiteral("resource://gre/res/fonts/mathfont");
+    uriStr.Append(PrimaryFontName());
+    uriStr.StripWhitespace();  
+    uriStr.AppendLiteral(".properties");
+    printf("Loading %s ... %s\n", uriStr.get(),
+           (NS_FAILED(rv)) ? "Failed" : "Done");
+#endif
+    if (NS_FAILED(rv)) {
+      mState = NS_TABLE_STATE_ERROR;  
       return kNullGlyph;
     }
+    mState = NS_TABLE_STATE_READY;
+
     
-    mCachedIndex = match;
+    nsAutoCString key;
+    nsAutoString value;
+    for (int32_t i = 1;; i++) {
+      key.AssignLiteral("external.");
+      key.AppendInt(i, 10);
+      rv = mGlyphProperties->GetStringProperty(key, value);
+      if (NS_FAILED(rv)) {
+        break;
+      }
+      Clean(value);
+      mGlyphCodeFonts.AppendElement(NS_ConvertUTF16toUTF8(value));
+    }
+  }
+
+  
+  if (mCharCache != aChar) {
+    
+    
+    char key[10];
+    SprintfLiteral(key, "\\u%04X", aChar);
+    nsAutoString value;
+    nsresult rv =
+        mGlyphProperties->GetStringProperty(nsDependentCString(key), value);
+    if (NS_FAILED(rv)) {
+      return kNullGlyph;
+    }
+    Clean(value);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsAutoString buffer;
+    int32_t length = value.Length();
+    int32_t i = 0;  
+    while (i < length) {
+      char16_t code = value[i];
+      ++i;
+      buffer.Append(code);
+      
+      if (i < length && NS_IS_HIGH_SURROGATE(code)) {
+        code = value[i];
+        ++i;
+      } else {
+        code = char16_t('\0');
+      }
+      buffer.Append(code);
+
+      
+      
+      char16_t font = 0;
+      if (i + 1 < length && value[i] == char16_t('@') &&
+          value[i + 1] >= char16_t('0') && value[i + 1] <= char16_t('9')) {
+        ++i;
+        font = value[i] - '0';
+        ++i;
+        if (font >= mGlyphCodeFonts.Length()) {
+          NS_ERROR("Nonexistent font referenced in glyph table");
+          return kNullGlyph;
+        }
+      }
+      buffer.Append(font);
+    }
+    
+    mGlyphCache.Assign(buffer);
     mCharCache = aChar;
   }
 
-  const UnicodeConstruction& construction =
-      gUnicodeTableConstructions[mCachedIndex];
-  if (aPosition + 1 >= std::size(construction)) {
+  
+  uint32_t index = 3 * aPosition;
+  if (index + 2 >= mGlyphCache.Length()) {
     return kNullGlyph;
   }
   nsGlyphCode ch;
-  ch.code = construction[aPosition + 1];
-  ch.isGlyphID = false;
-  return ch.code == char16_t(0xFFFD) ? kNullGlyph : ch;
+  ch.code[0] = mGlyphCache.CharAt(index);
+  ch.code[1] = mGlyphCache.CharAt(index + 1);
+  ch.font = mGlyphCache.CharAt(index + 2);
+  return ch.code[0] == char16_t(0xFFFD) ? kNullGlyph : ch;
 }
 
 
-already_AddRefed<gfxTextRun> nsUnicodeTable::MakeTextRun(
+already_AddRefed<gfxTextRun> nsPropertiesTable::MakeTextRun(
     DrawTarget* aDrawTarget, int32_t aAppUnitsPerDevPixel,
     gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) {
-  NS_ASSERTION(!aGlyph.isGlyphID,
-               "nsUnicodeTable can only access glyphs by code point");
-  return aFontGroup->MakeTextRun(&aGlyph.code, 1, aDrawTarget,
+  NS_ASSERTION(!aGlyph.IsGlyphID(),
+               "nsPropertiesTable can only access glyphs by code point");
+  return aFontGroup->MakeTextRun(aGlyph.code, aGlyph.Length(), aDrawTarget,
                                  aAppUnitsPerDevPixel, mFlags,
                                  nsTextFrameUtils::Flags(), nullptr);
 }
@@ -297,7 +384,7 @@ class nsOpenTypeTable final : public nsGlyphTable {
                           bool aVertical) override;
 
   const nsCString& FontNameFor(const nsGlyphCode& aGlyphCode) const override {
-    NS_ASSERTION(aGlyphCode.isGlyphID,
+    NS_ASSERTION(aGlyphCode.IsGlyphID(),
                  "nsOpenTypeTable can only access glyphs by id");
     return mFontFamilyName;
   }
@@ -375,7 +462,7 @@ nsGlyphCode nsOpenTypeTable::ElementAt(DrawTarget* aDrawTarget,
   }
   nsGlyphCode glyph;
   glyph.glyphID = glyphID;
-  glyph.isGlyphID = true;
+  glyph.font = -1;
   return glyph;
 }
 
@@ -394,7 +481,7 @@ nsGlyphCode nsOpenTypeTable::BigOf(DrawTarget* aDrawTarget,
 
   nsGlyphCode glyph;
   glyph.glyphID = glyphID;
-  glyph.isGlyphID = true;
+  glyph.font = -1;
   return glyph;
 }
 
@@ -417,7 +504,7 @@ bool nsOpenTypeTable::HasPartsOf(DrawTarget* aDrawTarget,
 already_AddRefed<gfxTextRun> nsOpenTypeTable::MakeTextRun(
     DrawTarget* aDrawTarget, int32_t aAppUnitsPerDevPixel,
     gfxFontGroup* aFontGroup, const nsGlyphCode& aGlyph) {
-  NS_ASSERTION(aGlyph.isGlyphID,
+  NS_ASSERTION(aGlyph.IsGlyphID(),
                "nsOpenTypeTable can only access glyphs by id");
 
   gfxTextRunFactory::Parameters params = {
@@ -450,15 +537,22 @@ class nsGlyphTableList final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  nsUnicodeTable mUnicodeTable;
+  nsPropertiesTable mUnicodeTable;
 
-  nsGlyphTableList() {}
+  nsGlyphTableList() : mUnicodeTable("Unicode"_ns) {}
 
   nsresult Initialize();
   nsresult Finalize();
 
  private:
   ~nsGlyphTableList() = default;
+
+  nsPropertiesTable* PropertiesTableAt(int32_t aIndex) {
+    return &mPropertiesTableList.ElementAt(aIndex);
+  }
+  int32_t PropertiesTableCount() { return mPropertiesTableList.Length(); }
+  
+  nsTArray<nsPropertiesTable> mPropertiesTableList;
 };
 
 NS_IMPL_ISUPPORTS(nsGlyphTableList, nsIObserver)
@@ -736,13 +830,13 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
                                  nsFont& aFont,
                                  RefPtr<gfxFontGroup>* aFontGroup) {
   StyleFontFamilyList glyphCodeFont;
-  if (aGlyphCode.isGlyphID) {
+  if (aGlyphCode.font) {
     glyphCodeFont = StyleFontFamilyList::WithOneUnquotedFamily(
         aGlyphTable->FontNameFor(aGlyphCode));
   }
 
   const StyleFontFamilyList& familyList =
-      aGlyphCode.isGlyphID ? glyphCodeFont : aDefaultFamilyList;
+      aGlyphCode.font ? glyphCodeFont : aDefaultFamilyList;
 
   if (!*aFontGroup || aFont.family.families != familyList) {
     nsFont font = aFont;
@@ -845,7 +939,7 @@ class nsMathMLChar::StretchEnumContext {
   bool mTryParts;
 
  private:
-  bool mUnicodeTableTried = false;
+  AutoTArray<nsGlyphTable*, 16> mTablesTried;
   bool& mGlyphFound;
 };
 
@@ -882,7 +976,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     NS_ASSERTION(isVertical, "Stretching should be in the vertical direction");
     ch = aGlyphTable->BigOf(mDrawTarget, oneDevPixel, *aFontGroup, uchar,
                             isVertical, 0);
-    if (ch.isGlyphID) {
+    if (ch.IsGlyphID()) {
       RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
       
       
@@ -911,7 +1005,7 @@ bool nsMathMLChar::StretchEnumContext::TryVariants(
     RefPtr<gfxTextRun> textRun =
         aGlyphTable->MakeTextRun(mDrawTarget, oneDevPixel, *aFontGroup, ch);
     nsBoundingMetrics bm = MeasureTextRun(mDrawTarget, textRun.get());
-    if (ch.isGlyphID) {
+    if (ch.IsGlyphID()) {
       RefPtr<gfxFont> mathFont = aFontGroup->get()->GetFirstMathFont();
       if (mathFont) {
         
@@ -1205,11 +1299,12 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
   }
 
   if (!openTypeTable) {
-    
-    if (context->mUnicodeTableTried) {
-      return false;
+    if (context->mTablesTried.Contains(glyphTable)) {
+      return false;  
     }
-    context->mUnicodeTableTried = true;
+
+    
+    context->mTablesTried.AppendElement(glyphTable);
   }
 
   
