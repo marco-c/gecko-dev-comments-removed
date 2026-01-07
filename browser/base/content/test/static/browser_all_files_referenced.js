@@ -337,11 +337,23 @@ var allowlist = [
   },
   
   {
+    file: "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs",
+  },
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/prompts/AssistantPrompts.sys.mjs",
+  },
+  
+  {
     file: "chrome://browser/content/aiwindow/firstrun.html",
   },
   
   {
     file: "moz-src:///browser/components/aiwindow/models/InsightsHistoryScheduler.sys.mjs",
+  },
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/InsightsChatSource.sys.mjs",
   },
   
   {
