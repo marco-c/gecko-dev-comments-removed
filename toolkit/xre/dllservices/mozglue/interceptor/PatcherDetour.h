@@ -1069,19 +1069,13 @@ class WindowsDllDetourPatcher final
         
         origBytes += 1;
       } else if (*origBytes == 0x83) {
-        uint8_t mod = static_cast<uint8_t>(origBytes[1]) & kMaskMod;
-        uint8_t rm = static_cast<uint8_t>(origBytes[1]) & kMaskRm;
-        if (mod == kModReg) {
-          
-          origBytes += 3;
-        } else if (mod == kModDisp8 && rm != kRmNeedSib) {
-          
-          origBytes += 4;
-        } else {
-          
-          MOZ_ASSERT_UNREACHABLE("Unrecognized bit opcode sequence");
+        
+        int len = CountModRmSib(origBytes + 1);
+        if (len < 0) {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
+        COPY_CODES(len + 2);  
       } else if (*origBytes == 0x68) {
         
         origBytes += 5;
@@ -1304,16 +1298,14 @@ class WindowsDllDetourPatcher final
         if (*origBytes == 0x81 && (origBytes[1] & 0xf8) == 0xe8) {
           
           COPY_CODES(6);
-        } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0xe8) {
+        } else if (*origBytes == 0x83) {
           
-          COPY_CODES(3);
-        } else if (*origBytes == 0x83 &&
-                   (origBytes[1] & (kMaskMod | kMaskReg)) == kModReg) {
-          
-          COPY_CODES(3);
-        } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0x60) {
-          
-          COPY_CODES(5);
+          int len = CountModRmSib(origBytes + 1);
+          if (len < 0) {
+            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+            return;
+          }
+          COPY_CODES(len + 2);  
         } else if (*origBytes == 0x2b && (origBytes[1] & kMaskMod) == kModReg) {
           
           COPY_CODES(2);
@@ -1541,9 +1533,14 @@ class WindowsDllDetourPatcher final
         
         
         COPY_CODES(2);
-      } else if (*origBytes == 0x83 && (origBytes[1] & kMaskMod) == kModReg) {
+      } else if (*origBytes == 0x83) {
         
-        COPY_CODES(3);
+        int len = CountModRmSib(origBytes + 1);
+        if (len < 0) {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+          return;
+        }
+        COPY_CODES(len + 2);  
       } else if (*origBytes == 0xc3) {
         
         COPY_CODES(1);
@@ -1645,9 +1642,6 @@ class WindowsDllDetourPatcher final
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-      } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0x60) {
-        
-        COPY_CODES(5);
       } else if (*origBytes == 0xc6) {
         
         int len = CountModRmSib(origBytes + 1);
