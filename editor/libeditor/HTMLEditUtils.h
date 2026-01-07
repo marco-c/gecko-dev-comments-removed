@@ -1129,19 +1129,6 @@ class HTMLEditUtils final {
                                               aFoundLinkElement);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
   enum class WalkTreeOption {
     IgnoreNonEditableNode,     
     IgnoreDataNodeExceptText,  
@@ -1149,71 +1136,6 @@ class HTMLEditUtils final {
     StopAtBlockBoundary,       
   };
   using WalkTreeOptions = EnumSet<WalkTreeOption>;
-  static nsIContent* GetPreviousContent(
-      const nsINode& aNode, const WalkTreeOptions& aOptions,
-      BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr) {
-    if (&aNode == aAncestorLimiter ||
-        (aAncestorLimiter &&
-         !aNode.IsInclusiveDescendantOf(aAncestorLimiter))) {
-      return nullptr;
-    }
-    return HTMLEditUtils::GetAdjacentContent(aNode, WalkTreeDirection::Backward,
-                                             aOptions, aBlockInlineCheck,
-                                             aAncestorLimiter);
-  }
-  static nsIContent* GetNextContent(const nsINode& aNode,
-                                    const WalkTreeOptions& aOptions,
-                                    BlockInlineCheck aBlockInlineCheck,
-                                    const Element* aAncestorLimiter = nullptr) {
-    if (&aNode == aAncestorLimiter ||
-        (aAncestorLimiter &&
-         !aNode.IsInclusiveDescendantOf(aAncestorLimiter))) {
-      return nullptr;
-    }
-    return HTMLEditUtils::GetAdjacentContent(aNode, WalkTreeDirection::Forward,
-                                             aOptions, aBlockInlineCheck,
-                                             aAncestorLimiter);
-  }
-
-  
-
-
-  template <typename PT, typename CT>
-  static nsIContent* GetPreviousContent(
-      const EditorDOMPointBase<PT, CT>& aPoint, const WalkTreeOptions& aOptions,
-      BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  static nsIContent* GetNextContent(const EditorDOMPointBase<PT, CT>& aPoint,
-                                    const WalkTreeOptions& aOptions,
-                                    BlockInlineCheck aBlockInlineCheck,
-                                    const Element* aAncestorLimiter = nullptr);
-
   
 
 
@@ -1367,15 +1289,15 @@ class HTMLEditUtils final {
 
     nsIContent* editableContent = nullptr;
     if (aWalkTreeDirection == WalkTreeDirection::Backward) {
-      editableContent = HTMLEditUtils::GetPreviousContent(
-          aPoint, {WalkTreeOption::IgnoreNonEditableNode},
+      editableContent = HTMLEditUtils::GetPreviousLeafContent(
+          aPoint, {LeafNodeOption::IgnoreNonEditableNode},
           BlockInlineCheck::Auto, &aEditingHost);
       if (!editableContent) {
         return nullptr;  
       }
     } else {
-      editableContent = HTMLEditUtils::GetNextContent(
-          aPoint, {WalkTreeOption::IgnoreNonEditableNode},
+      editableContent = HTMLEditUtils::GetNextLeafContent(
+          aPoint, {LeafNodeOption::IgnoreNonEditableNode},
           BlockInlineCheck::Auto, &aEditingHost);
       if (NS_WARN_IF(!editableContent)) {
         
@@ -1392,15 +1314,15 @@ class HTMLEditUtils final {
            !editableContent->IsHTMLElement(nsGkAtoms::br) &&
            !HTMLEditUtils::IsImageElement(*editableContent)) {
       if (aWalkTreeDirection == WalkTreeDirection::Backward) {
-        editableContent = HTMLEditUtils::GetPreviousContent(
-            *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
+        editableContent = HTMLEditUtils::GetPreviousLeafContent(
+            *editableContent, {LeafNodeOption::IgnoreNonEditableNode},
             BlockInlineCheck::Auto, &aEditingHost);
         if (NS_WARN_IF(!editableContent)) {
           return nullptr;
         }
       } else {
-        editableContent = HTMLEditUtils::GetNextContent(
-            *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
+        editableContent = HTMLEditUtils::GetNextLeafContent(
+            *editableContent, {LeafNodeOption::IgnoreNonEditableNode},
             BlockInlineCheck::Auto, &aEditingHost);
         if (NS_WARN_IF(!editableContent)) {
           return nullptr;
@@ -1489,6 +1411,101 @@ class HTMLEditUtils final {
       const nsINode& aNode, const LeafNodeOptions& aOptions,
       BlockInlineCheck aBlockInlineCheck = BlockInlineCheck::Unused);
 
+ private:
+  enum class StopAtBlockSibling : bool { No, Yes };
+  static nsIContent* GetNextLeafContentOrNextBlockElementImpl(
+      const nsIContent& aStartContent, StopAtBlockSibling aStopAtBlockSibling,
+      const LeafNodeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter);
+  template <typename PT, typename CT>
+  static nsIContent* GetNextLeafContentOrNextBlockElementImpl(
+      const EditorDOMPointBase<PT, CT>& aStartPoint,
+      StopAtBlockSibling aStopAtBlockSibling, const LeafNodeOptions& aOptions,
+      BlockInlineCheck aBlockInlineCheck, const Element* aAncestorLimiter);
+  static nsIContent* GetPreviousLeafContentOrPreviousBlockElementImpl(
+      const nsIContent& aStartContent, StopAtBlockSibling aStopAtBlockSibling,
+      const LeafNodeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter);
+  template <typename PT, typename CT>
+  static nsIContent* GetPreviousLeafContentOrPreviousBlockElementImpl(
+      const EditorDOMPointBase<PT, CT>& aStartPoint,
+      StopAtBlockSibling aStopAtBlockSibling, const LeafNodeOptions& aOptions,
+      BlockInlineCheck aBlockInlineCheck, const Element* aAncestorLimiter);
+
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsIContent* GetNextLeafContent(
+      const nsIContent& aStartContent, const LeafNodeOptions& aOptions,
+      BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
+    return GetNextLeafContentOrNextBlockElementImpl(
+        aStartContent, StopAtBlockSibling::No, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
+
+  
+
+
+
+  template <typename PT, typename CT>
+  static nsIContent* GetNextLeafContent(
+      const EditorDOMPointBase<PT, CT>& aStartPoint,
+      const LeafNodeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
+    return GetNextLeafContentOrNextBlockElementImpl(
+        aStartPoint, StopAtBlockSibling::No, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsIContent* GetPreviousLeafContent(
+      const nsIContent& aStartContent, const LeafNodeOptions& aOptions,
+      BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
+    return GetPreviousLeafContentOrPreviousBlockElementImpl(
+        aStartContent, StopAtBlockSibling::No, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
+
+  
+
+
+
+  template <typename PT, typename CT>
+  static nsIContent* GetPreviousLeafContent(
+      const EditorDOMPointBase<PT, CT>& aStartPoint,
+      const LeafNodeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
+      const Element* aAncestorLimiter = nullptr) {
+    return GetPreviousLeafContentOrPreviousBlockElementImpl(
+        aStartPoint, StopAtBlockSibling::No, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
+
   
 
 
@@ -1501,7 +1518,11 @@ class HTMLEditUtils final {
   static nsIContent* GetNextLeafContentOrNextBlockElement(
       const nsIContent& aStartContent, const LeafNodeOptions& aOptions,
       BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
+      const Element* aAncestorLimiter = nullptr) {
+    return GetNextLeafContentOrNextBlockElementImpl(
+        aStartContent, StopAtBlockSibling::Yes, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
 
   
 
@@ -1511,7 +1532,11 @@ class HTMLEditUtils final {
   static nsIContent* GetNextLeafContentOrNextBlockElement(
       const EditorDOMPointBase<PT, CT>& aStartPoint,
       const LeafNodeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
+      const Element* aAncestorLimiter = nullptr) {
+    return GetNextLeafContentOrNextBlockElementImpl(
+        aStartPoint, StopAtBlockSibling::Yes, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
 
   
 
@@ -1526,7 +1551,11 @@ class HTMLEditUtils final {
   static nsIContent* GetPreviousLeafContentOrPreviousBlockElement(
       const nsIContent& aStartContent, const LeafNodeOptions& aOptions,
       BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
+      const Element* aAncestorLimiter = nullptr) {
+    return GetPreviousLeafContentOrPreviousBlockElementImpl(
+        aStartContent, StopAtBlockSibling::Yes, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
 
   
 
@@ -1536,7 +1565,11 @@ class HTMLEditUtils final {
   static nsIContent* GetPreviousLeafContentOrPreviousBlockElement(
       const EditorDOMPointBase<PT, CT>& aStartPoint,
       const LeafNodeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
+      const Element* aAncestorLimiter = nullptr) {
+    return GetPreviousLeafContentOrPreviousBlockElementImpl(
+        aStartPoint, StopAtBlockSibling::Yes, aOptions, aBlockInlineCheck,
+        aAncestorLimiter);
+  }
 
   
 
@@ -2035,11 +2068,9 @@ class HTMLEditUtils final {
   static Maybe<EditorLineBreakType> GetFirstLineBreak(
       const dom::Element& aElement) {
     for (nsIContent* content = HTMLEditUtils::GetFirstLeafContent(aElement, {});
-         content; content = HTMLEditUtils::GetNextContent(
-                      *content,
-                      {WalkTreeOption::IgnoreDataNodeExceptText,
-                       WalkTreeOption::IgnoreWhiteSpaceOnlyText},
-                      BlockInlineCheck::Unused, &aElement)) {
+         content; content = HTMLEditUtils::GetNextLeafContent(
+                      *content, {LeafNodeOption::IgnoreInvisibleText},
+                      BlockInlineCheck::Auto, &aElement)) {
       if (auto* brElement = dom::HTMLBRElement::FromNode(*content)) {
         return Some(EditorLineBreakType(*brElement));
       }
@@ -2869,18 +2900,6 @@ class HTMLEditUtils final {
     }
     return count;
   }
-
-  
-
-
-  static nsIContent* GetAdjacentLeafContent(
-      const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
-      const WalkTreeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
-  static nsIContent* GetAdjacentContent(
-      const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
-      const WalkTreeOptions& aOptions, BlockInlineCheck aBlockInlineCheck,
-      const Element* aAncestorLimiter = nullptr);
 
   
 
