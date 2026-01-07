@@ -57,7 +57,7 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
 
 #ifdef MOZ_WIDGET_GTK
   
-  bool IsVAAPIAvailable();
+  bool IsVAAPIAvailable() const;
 #endif
 
   
