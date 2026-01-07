@@ -198,7 +198,7 @@ let propNameAllowlist = [
 
   
   
-  { propName: /--color-[a-z]+(-alpha)?-\d+/, isFromDevTools: false },
+  { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },
 ];
 
 
