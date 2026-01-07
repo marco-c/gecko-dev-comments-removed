@@ -1511,7 +1511,7 @@ class Element : public FragmentOrElement {
       SlotAssignmentMode aSlotAssignmentMode = SlotAssignmentMode::Named,
       ShadowRootClonable aClonable = ShadowRootClonable::No,
       ShadowRootSerializable aSerializable = ShadowRootSerializable::No,
-      const nsAString& aReferenceTarget = EmptyString());
+      const nsAString& aReferenceTarget = VoidString());
 
   
   enum class NotifyUAWidgetSetup : bool { No, Yes };
