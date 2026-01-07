@@ -2,7 +2,7 @@
 
 
 
-__version__ = "3.4.0"
+__version__ = "3.5.0"
 
 from marionette_driver import (
     addons,
