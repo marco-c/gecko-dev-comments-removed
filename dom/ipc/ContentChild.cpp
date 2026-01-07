@@ -1170,6 +1170,8 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   NS_ENSURE_TRUE(browsingContext->GetDOMWindow(), NS_ERROR_ABORT);
+  NS_ENSURE_TRUE(browsingContext->GetDOMWindow()->GetExtantDoc(),
+                 NS_ERROR_ABORT);
   browsingContext->GetDOMWindow()->SetInitialPrincipal(
       aOpenWindowInfo->PrincipalToInheritForAboutBlank());
 
