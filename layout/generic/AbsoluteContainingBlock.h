@@ -195,6 +195,15 @@ class AbsoluteContainingBlock {
   void StealFrame(nsIFrame* aFrame);
 
   
+
+
+
+
+
+
+  void DrainPushedChildList(const nsIFrame* aDelegatingFrame);
+
+  
   nsFrameList mAbsoluteFrames;
 
   

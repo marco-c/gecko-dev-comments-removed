@@ -110,6 +110,27 @@ nsFrameList AbsoluteContainingBlock::StealPushedChildList() {
   return std::move(mPushedAbsoluteFrames);
 }
 
+void AbsoluteContainingBlock::DrainPushedChildList(
+    const nsIFrame* aDelegatingFrame) {
+  MOZ_ASSERT(aDelegatingFrame->GetAbsoluteContainingBlock() == this,
+             "aDelegatingFrame's absCB should be us!");
+
+  
+  
+  
+  
+  for (auto iter = mPushedAbsoluteFrames.begin();
+       iter != mPushedAbsoluteFrames.end();) {
+    
+    nsIFrame* const child = *iter++;
+    if (!child->GetPrevInFlow() ||
+        child->GetPrevInFlow()->GetParent() != aDelegatingFrame) {
+      mPushedAbsoluteFrames.RemoveFrame(child);
+      mAbsoluteFrames.AppendFrame(nullptr, child);
+    }
+  }
+}
+
 bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     nsContainerFrame* aDelegatingFrame) {
   if (!aDelegatingFrame->PresContext()
@@ -133,20 +154,7 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     }
   }
 
-  
-  
-  
-  
-  for (auto iter = mPushedAbsoluteFrames.begin();
-       iter != mPushedAbsoluteFrames.end();) {
-    
-    nsIFrame* const child = *iter++;
-    if (!child->GetPrevInFlow() ||
-        child->GetPrevInFlow()->GetParent() != aDelegatingFrame) {
-      mPushedAbsoluteFrames.RemoveFrame(child);
-      mAbsoluteFrames.AppendFrame(nullptr, child);
-    }
-  }
+  DrainPushedChildList(aDelegatingFrame);
 
   
   
