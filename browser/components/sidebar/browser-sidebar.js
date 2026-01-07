@@ -1764,8 +1764,6 @@ var SidebarController = {
     sidebar.label = label;
 
     const updateAttributes = el => {
-      
-      
       el.style.setProperty("--webextension-menuitem-image", sidebar.icon);
       el.setAttribute("label", sidebar.label);
     };
