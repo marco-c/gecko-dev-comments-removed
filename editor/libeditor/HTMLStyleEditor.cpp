@@ -64,8 +64,6 @@ using namespace dom;
 using EditablePointOption = HTMLEditUtils::EditablePointOption;
 using EditablePointOptions = HTMLEditUtils::EditablePointOptions;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
-using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
 template nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
@@ -2394,7 +2392,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   
   
   nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafContent(
-      *unwrappedSplitNodeResult.GetNextContent(), {LeafNodeType::OnlyLeafNode});
+      *unwrappedSplitNodeResult.GetNextContent(), {});
   EditorDOMPoint atStartOfNextNode(
       firstLeafChildOfNextNode ? firstLeafChildOfNextNode
                                : unwrappedSplitNodeResult.GetNextContent(),
@@ -2484,8 +2482,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   
   
   nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafContent(
-      *unwrappedSplitResultAtStartOfNextNode.GetPreviousContent(),
-      {LeafNodeType::OnlyLeafNode});
+      *unwrappedSplitResultAtStartOfNextNode.GetPreviousContent(), {});
   pointToPutCaret.Set(
       firstLeafChildOfPreviousNode
           ? firstLeafChildOfPreviousNode

@@ -78,8 +78,8 @@ extern LazyLogModule gTextInputLog;
 using namespace dom;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using EmptyCheckOptions = HTMLEditUtils::EmptyCheckOptions;
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
-using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
+using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
 using WalkTextOption = HTMLEditUtils::WalkTextOption;
 using WalkTreeDirection = HTMLEditUtils::WalkTreeDirection;
 using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
@@ -926,8 +926,8 @@ nsresult HTMLEditor::ReflectPaddingBRElementForEmptyEditor() {
   
   
   
-  nsIContent* firstLeafChild = HTMLEditUtils::GetFirstLeafContent(
-      *mRootElement, {LeafNodeType::OnlyLeafNode});
+  nsIContent* firstLeafChild =
+      HTMLEditUtils::GetFirstLeafContent(*mRootElement, {});
   if (firstLeafChild &&
       EditorUtils::IsPaddingBRElementForEmptyEditor(*firstLeafChild)) {
     mPaddingBRElementForEmptyEditor =
@@ -2566,7 +2566,8 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       
       nsIContent* previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-              newCaretPosition, {LeafNodeType::LeafNodeOrNonEditableNode},
+              newCaretPosition,
+              {LeafNodeOption::TreatNonEditableNodeAsLeafNode},
               BlockInlineCheck::UseComputedDisplayStyle,
               editableBlockElementOrInlineEditingHost);
       if (previousContent &&
@@ -2584,7 +2585,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       else if (nsIContent* nextContent =
                    HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
                        newCaretPosition,
-                       {LeafNodeType::LeafNodeOrNonEditableNode},
+                       {LeafNodeOption::TreatNonEditableNodeAsLeafNode},
                        BlockInlineCheck::UseComputedDisplayStyle,
                        editableBlockElementOrInlineEditingHost)) {
         if (HTMLEditUtils::IsSimplyEditableNode(*nextContent) &&
@@ -7231,7 +7232,7 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
         
         if (nsIContent* child = HTMLEditUtils::GetLastLeafContent(
                 *prevVisibleThingOfEndPoint.ElementPtr(),
-                {LeafNodeType::LeafNodeOrChildBlock},
+                {LeafNodeOption::TreatChildBlockAsLeafNode},
                 BlockInlineCheck::UseHTMLDefaultStyle)) {
           newRange.SetEnd(EditorRawDOMPoint::After(*child));
         }
@@ -7272,7 +7273,7 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
         
         if (nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
                 *nextVisibleThingOfStartPoint.ElementPtr(),
-                {LeafNodeType::LeafNodeOrChildBlock},
+                {LeafNodeOption::TreatChildBlockAsLeafNode},
                 BlockInlineCheck::UseHTMLDefaultStyle)) {
           newRange.SetStart(EditorRawDOMPoint(child));
         }

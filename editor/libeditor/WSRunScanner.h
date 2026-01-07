@@ -526,6 +526,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
     ReferHTMLDefaultStyle,
     
     StopAtComment,
+    
+    IgnoreEmptyInlineContainers,
+    
+    
+    
+    
+    
+    IgnoreInvisibleInlines,
   };
   using Options = EnumSet<Option>;
 
@@ -552,6 +560,32 @@ class MOZ_STACK_CLASS WSRunScanner final {
         aOptions.contains(Option::ReferHTMLDefaultStyle));
   }
 
+ private:
+  [[nodiscard]] static HTMLEditUtils::LeafNodeOptions ToLeafNodeOptions(
+      const Options& aOptions) {
+    using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+    using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
+    auto types =
+        aOptions.contains(Option::OnlyEditableNodes)
+            ? LeafNodeOptions{LeafNodeOption::TreatNonEditableNodeAsLeafNode}
+            : LeafNodeOptions{};
+    if (aOptions.contains(Option::StopAtComment)) {
+      types += LeafNodeOption::TreatCommentAsLeafNode;
+    }
+    if (aOptions.contains(Option::IgnoreInvisibleInlines)) {
+      types +=
+          LeafNodeOptions{LeafNodeOption::IgnoreInvisibleEmptyInlineContainers,
+                          LeafNodeOption::IgnoreInvisibleInlineVoidElements,
+                          LeafNodeOption::IgnoreInvisibleText};
+    }
+    if (aOptions.contains(Option::IgnoreEmptyInlineContainers)) {
+      types += LeafNodeOptions{LeafNodeOption::IgnoreAnyEmptyInlineContainers,
+                               LeafNodeOption::IgnoreEmptyText};
+    }
+    return types;
+  }
+
+ public:
   template <typename EditorDOMPointType>
   WSRunScanner(Options aOptions,  
                const EditorDOMPointType& aScanStartPoint,
