@@ -1639,8 +1639,8 @@ void GlobalHelperThreadState::createAndSubmitCompressionTasks(
 
     
     
-    if (schedule == ScheduleCompressionTask::GC &&
-        rt->gc.majorGCCount() <= entry.majorGCNumber() + 1) {
+    if (schedule == ScheduleCompressionTask::NonShrinkingGC &&
+        rt->gc.majorGCCount() <= entry.majorGCNumber() + 3) {
       return false;
     }
 
@@ -1722,9 +1722,13 @@ void GlobalHelperThreadState::runPendingSourceCompressions(JSRuntime* runtime) {
   AttachFinishedCompressions(runtime, lock);
 }
 
-void js::StartOffThreadCompressionsOnGC(JSRuntime* runtime) {
-  HelperThreadState().createAndSubmitCompressionTasks(
-      GlobalHelperThreadState::ScheduleCompressionTask::GC, runtime);
+void js::StartOffThreadCompressionsOnGC(JSRuntime* runtime,
+                                        bool isShrinkingGC) {
+  auto schedule =
+      isShrinkingGC
+          ? GlobalHelperThreadState::ScheduleCompressionTask::ShrinkingGC
+          : GlobalHelperThreadState::ScheduleCompressionTask::NonShrinkingGC;
+  HelperThreadState().createAndSubmitCompressionTasks(schedule, runtime);
 }
 
 template <typename T>

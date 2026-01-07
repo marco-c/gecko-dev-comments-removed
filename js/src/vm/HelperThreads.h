@@ -307,7 +307,7 @@ void WaitForAllHelperThreads(AutoLockHelperThreadState& lock);
 
 
 
-void StartOffThreadCompressionsOnGC(JSRuntime* rt);
+void StartOffThreadCompressionsOnGC(JSRuntime* rt, bool isShrinkingGC);
 
 
 
