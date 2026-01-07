@@ -395,7 +395,7 @@ void nsTableCellFrame::AlignChildWithinCell(
     nscoord aMaxAscent, ForceAlignTopForTableCell aForceAlignTop) {
   MOZ_ASSERT(aForceAlignTop != ForceAlignTopForTableCell::Yes ||
                  PresContext()->IsPaginated(),
-             "We shouldn't force table-cells to do 'vertical-align:top' if "
+             "We shouldn't force table-cells to do top alignment if "
              "we're not in printing!");
 
   nsIFrame* const inner = Inner();
@@ -414,11 +414,11 @@ void nsTableCellFrame::AlignChildWithinCell(
   LogicalPoint kidPosition = paddingRect.Origin(innerWM);
 
   
-  const auto verticalAlign = aForceAlignTop == ForceAlignTopForTableCell::Yes
-                                 ? StyleVerticalAlignKeyword::Top
-                                 : GetVerticalAlign();
-  switch (verticalAlign) {
-    case StyleVerticalAlignKeyword::Baseline:
+  const auto alignment = aForceAlignTop == ForceAlignTopForTableCell::Yes
+                             ? TableCellAlignment::Top
+                             : GetTableCellAlignment();
+  switch (alignment) {
+    case TableCellAlignment::Baseline:
       if (auto baseline = GetCellBaseline()) {
         
         
@@ -428,12 +428,12 @@ void nsTableCellFrame::AlignChildWithinCell(
       }
       
       [[fallthrough]];
-    case StyleVerticalAlignKeyword::Top:
+    case TableCellAlignment::Top:
       
       
       break;
 
-    case StyleVerticalAlignKeyword::Bottom:
+    case TableCellAlignment::Bottom:
       
       
       kidPosition.B(innerWM) =
@@ -441,7 +441,7 @@ void nsTableCellFrame::AlignChildWithinCell(
       break;
 
     default:
-    case StyleVerticalAlignKeyword::Middle:
+    case TableCellAlignment::Middle:
       
       
       kidPosition.B(innerWM) =
@@ -486,17 +486,22 @@ bool nsTableCellFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
 
 
 
-StyleVerticalAlignKeyword nsTableCellFrame::GetVerticalAlign() const {
+TableCellAlignment nsTableCellFrame::GetTableCellAlignment() const {
   const StyleVerticalAlign& verticalAlign = StyleDisplay()->mVerticalAlign;
   if (verticalAlign.IsKeyword()) {
     auto value = verticalAlign.AsKeyword();
-    if (value == StyleVerticalAlignKeyword::Top ||
-        value == StyleVerticalAlignKeyword::Middle ||
-        value == StyleVerticalAlignKeyword::Bottom) {
-      return value;
+    switch (value) {
+      case StyleVerticalAlignKeyword::Top:
+        return TableCellAlignment::Top;
+      case StyleVerticalAlignKeyword::Middle:
+        return TableCellAlignment::Middle;
+      case StyleVerticalAlignKeyword::Bottom:
+        return TableCellAlignment::Bottom;
+      default:
+        break;
     }
   }
-  return StyleVerticalAlignKeyword::Baseline;
+  return TableCellAlignment::Baseline;
 }
 
 static bool CellHasVisibleContent(nsTableFrame* aTableFrame,

@@ -20,6 +20,13 @@ class PresShell;
 class ScrollContainerFrame;
 }  
 
+enum class TableCellAlignment : uint8_t {
+  Top,
+  Middle,
+  Bottom,
+  Baseline,
+};
+
 
 
 
@@ -131,12 +138,10 @@ class nsTableCellFrame : public nsContainerFrame,
   
 
 
+  virtual TableCellAlignment GetTableCellAlignment() const;
 
-
-  virtual mozilla::StyleVerticalAlignKeyword GetVerticalAlign() const;
-
-  bool HasVerticalAlignBaseline() const {
-    return GetVerticalAlign() == mozilla::StyleVerticalAlignKeyword::Baseline &&
+  bool HasTableCellAlignmentBaseline() const {
+    return GetTableCellAlignment() == TableCellAlignment::Baseline &&
            !GetContentEmpty();
   }
 
