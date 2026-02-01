@@ -496,7 +496,10 @@ document.addEventListener(
             event.target,
             TabContextMenu.contextTab.linkedBrowser.currentURI,
             TabContextMenu.contextTab.linkedBrowser.contentTitle,
-            TabContextMenu.contextTab.multiselected
+            {
+              multiselected: TabContextMenu.contextTab.multiselected,
+              contextMenuType: "tab",
+            }
           );
           break;
         case "context_reopenInContainerPopupMenu":
@@ -604,6 +607,10 @@ document.addEventListener(
         case "tabbrowser-tab-tooltip":
         case "bhTooltip":
           event.target.removeAttribute("position");
+          break;
+        case "tabContextMenu":
+          
+          gSync._resetSendTabExposureTracking();
           break;
       }
     });
