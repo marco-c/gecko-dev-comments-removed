@@ -23,6 +23,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsTHashMap.h"
 #include "nsHashKeys.h"
+#include "mozilla/net/urlpattern_glue.h"
 
 class nsICacheStorage;
 class nsIIOService;
@@ -190,6 +191,9 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   
   
   
+
+  
+  Maybe<UrlpPattern> mCachedPattern;
 
   
   nsCString mHash;
