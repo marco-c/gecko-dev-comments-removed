@@ -22,8 +22,12 @@ const { decorate_task } = NormandyTestUtils;
 
 
 decorate_task(
-  NormandyTestUtils.withStub(Normandy, "finishInit"),
-  NormandyTestUtils.withStub(NormandyMigrations, "applyAll"),
+  NormandyTestUtils.withStub(Normandy, "finishInit", {
+    returnValue: Promise.resolve(),
+  }),
+  NormandyTestUtils.withStub(NormandyMigrations, "applyAll", {
+    returnValue: Promise.resolve(),
+  }),
   NormandyTestUtils.withMockPreferences(),
   async function test_normandy_init_applies_startup_prefs_synchronously({
     mockPreferences,
@@ -62,8 +66,12 @@ decorate_task(
 
 
 decorate_task(
-  NormandyTestUtils.withStub(Normandy, "finishInit"),
-  NormandyTestUtils.withStub(NormandyMigrations, "applyAll"),
+  NormandyTestUtils.withStub(Normandy, "finishInit", {
+    returnValue: Promise.resolve(),
+  }),
+  NormandyTestUtils.withStub(NormandyMigrations, "applyAll", {
+    returnValue: Promise.resolve(),
+  }),
   async function test_normandy_init_applies_startup_prefs_synchronously({
     applyAllStub,
   }) {
@@ -72,7 +80,7 @@ decorate_task(
     Normandy.uiAvailableNotificationObserved = mockUiAvailableDeferred;
 
     let applyAllDeferred = Promise.withResolvers();
-    applyAllStub.returns(applyAllStub);
+    applyAllStub.returns(applyAllDeferred.promise);
 
     let promiseResolvedCount = 0;
     mockUiAvailableDeferred.promise.then(() => promiseResolvedCount++);
