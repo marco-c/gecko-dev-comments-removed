@@ -2233,6 +2233,7 @@ var XULBrowserWindow = {
     
     if (!isSameDocument) {
       updateBookmarkToolbarVisibility();
+      AIWindow.updateImmersiveView(gBrowser.currentURI, window);
     }
 
     let closeOpenPanels = selector => {
