@@ -2458,6 +2458,13 @@ bool AsyncPanZoomController::CanScroll(const ParentLayerPoint& aDelta) const {
          mY.CanScroll(ParentLayerCoord(aDelta.y));
 }
 
+bool AsyncPanZoomController::CanScrollOrOverscroll(
+    const ParentLayerPoint& aDelta) const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  return CanScroll(aDelta) || (mX.OverscrollBehaviorAllowsOverscrollEffect() ||
+                               mY.OverscrollBehaviorAllowsOverscrollEffect());
+}
+
 bool AsyncPanZoomController::CanScrollWithWheel(
     const ParentLayerPoint& aDelta) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
@@ -2568,7 +2575,12 @@ void AsyncPanZoomController::DoDelayedRequestContentRepaint() {
 
 void AsyncPanZoomController::DoDelayedTransformEndNotification(
     PanZoomState aOldState) {
+  
+  MOZ_ASSERT(mNotificationBlockers == 0);
   if (!IsDestroyed() && IsDelayedTransformEndSet()) {
+    
+    
+    
     DispatchStateChangeNotification(aOldState, NOTHING);
   }
   SetDelayedTransformEnd(false);
@@ -2813,6 +2825,9 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   APZC_LOG_DETAIL("got a pan-begin in state %s\n", this,
                   ToString(mState).c_str());
 
+  
+  StateChangeNotificationBlocker blocker(this);
+
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   GetCurrentPanGestureBlock()->GetOverscrollHandoffChain()->CancelAnimations(
       ExcludeOverscroll);
@@ -2834,7 +2849,35 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   }
 
   
+  
+  
+  
+  
+  bool couldScroll = CanScrollOrOverscroll(ViewAs<ParentLayerPixel>(
+      aEvent.mPanDisplacement,
+      PixelCastJustification::ScreenIsParentLayerForRoot));
+
+#ifdef DEBUG
+  CSSPoint scrollOffsetBefore;
+  CSSPoint overscrollBefore;
+  {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    scrollOffsetBefore = Metrics().GetVisualScrollOffset();
+    overscrollBefore = GetOverscrollAmount() / Metrics().GetZoom();
+  }
+#endif
+
+  
   OnPan(aEvent, FingersOnTouchpad::Yes);
+
+  if (!couldScroll && mState != OVERSCROLL_ANIMATION) {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    MOZ_ASSERT(FuzzyEqualsPoint(Metrics().GetVisualScrollOffset(),
+                                scrollOffsetBefore));
+    MOZ_ASSERT(FuzzyEqualsPoint(GetOverscrollAmount() / Metrics().GetZoom(),
+                                overscrollBefore));
+    SetState(NOTHING);
+  }
 
   return nsEventStatus_eConsumeNoDefault;
 }
@@ -3122,6 +3165,9 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
     
     RefPtr<GeckoContentController> controller = GetGeckoContentController();
     if (controller) {
+      
+      
+      MOZ_ASSERT(mNotificationBlockers == 0);
       SetDelayedTransformEnd(true);
       controller->PostDelayedTask(
           NewRunnableMethod<PanZoomState>(
@@ -6672,7 +6718,14 @@ void AsyncPanZoomController::SetState(PanZoomState aNewState) {
   if (IsTransformingState(aNewState) && IsDelayedTransformEndSet()) {
     MOZ_ASSERT(!IsTransformingState(mState));
     SetDelayedTransformEnd(false);
-    DispatchStateChangeNotification(PANNING, NOTHING);
+    
+    
+    
+    if (RefPtr<GeckoContentController> controller =
+            GetGeckoContentController()) {
+      controller->NotifyAPZStateChange(GetGuid(),
+                                       APZStateChange::eTransformEnd);
+    }
   }
 
   PanZoomState oldState = SetStateNoContentControllerDispatch(aNewState);
