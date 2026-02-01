@@ -10,7 +10,10 @@ add_setup(async function () {
   await PlacesUtils.history.clear();
   
   for (let i = 0; i < 5; i++) {
-    await PlacesTestUtils.addVisits("http://example.com/");
+    await PlacesTestUtils.addVisits({
+      url: "http://example.com/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
   }
 
   await updateTopSites(

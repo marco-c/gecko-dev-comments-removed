@@ -115,7 +115,10 @@ add_task(async function heuristicDeduplication() {
   });
 
   for (let [url, expectBestMatch] of scenarios) {
-    await PlacesTestUtils.addVisits(url);
+    await PlacesTestUtils.addVisits({
+      url,
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    });
 
     
     let context = createContext(SUGGESTION_SEARCH_STRING, {
