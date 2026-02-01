@@ -11622,13 +11622,6 @@ interface nsIUserCharacteristicsPageService extends nsISupports {
 
 
 
-interface nsISearchSubmission extends nsISupports {
-  readonly postData: nsIInputStream;
-  readonly uri: nsIURI;
-}
-
-
-
 interface nsIToolkitShellService extends nsISupports {
   isDefaultApplication(): boolean;
 }
@@ -16216,7 +16209,6 @@ interface nsIXPCComponents_Interfaces {
   nsIRFPService: nsJSIID<nsIRFPService>;
   nsIRFPTargetSetIDL: nsJSIID<nsIRFPTargetSetIDL>;
   nsIUserCharacteristicsPageService: nsJSIID<nsIUserCharacteristicsPageService>;
-  nsISearchSubmission: nsJSIID<nsISearchSubmission>;
   nsIToolkitShellService: nsJSIID<nsIToolkitShellService>;
   nsITerminatorTest: nsJSIID<nsITerminatorTest>;
   nsIXULStore: nsJSIID<nsIXULStore>;
