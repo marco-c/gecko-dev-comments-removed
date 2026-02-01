@@ -175,6 +175,12 @@ void BadPersistenceType() { MOZ_CRASH("Bad persistence type value!"); }
 
 }  
 
+bool IsTemporaryPersistenceType(const PersistenceType aPersistenceType) {
+  return std::find(std::begin(kTemporaryPersistenceTypes),
+                   std::end(kTemporaryPersistenceTypes),
+                   aPersistenceType) != std::end(kTemporaryPersistenceTypes);
+}
+
 bool IsValidPersistenceType(const PersistenceType aPersistenceType) {
   switch (aPersistenceType) {
     case PERSISTENCE_TYPE_PERSISTENT:
