@@ -1730,7 +1730,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   RootedTuple<PromiseReactionRecord*, Value, Value, Value, JSObject*,
-              JSFunction*, JSObject*, JSObject*>
+              JSFunction*, JSObject*, JSObject*, JSObject*>
       roots(cx);
   RootedField<PromiseReactionRecord*, 0> reaction(roots);
   RootedField<Value, 1> handlerArg(roots, handlerArg_);
@@ -1842,7 +1842,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
-  RootedField<JSObject*, 6> promise(roots, reaction->promise());
+  RootedField<JSObject*, 4> promise(roots, reaction->promise());
   if (promise) {
     if (promise->is<PromiseObject>()) {
       if (!cx->compartment()->wrap(cx, &promise)) {
@@ -1876,7 +1876,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     
     
     
-    RootedObject globalRepresentative(cx, &cx->global()->getObjectPrototype());
+    RootedField<JSObject*, 6> globalRepresentative(
+        roots, &cx->global()->getObjectPrototype());
 
     
     
@@ -1886,8 +1887,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     {
       AutoRealm ar(cx, reaction);
 
-      RootedObject stack(
-          cx,
+      RootedField<JSObject*, 7> stack(
+          roots,
           JS::MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(promise));
       if (!cx->compartment()->wrap(cx, &stack)) {
         return false;
@@ -1897,7 +1898,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
       if (!reaction->getHostDefinedData().isObject()) {
         
         
-        RootedObject hostGlobal(cx);
+        RootedField<JSObject*, 8> hostGlobal(roots);
         if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostGlobal)) {
           return false;
         }
@@ -1929,7 +1930,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     return EnqueueJob(cx, &reactionVal.toObject());
   }
 
-  RootedField<JSObject*, 7> hostDefinedData(roots);
+  RootedField<JSObject*, 6> hostDefinedData(roots);
   if (JSObject* hostDefined = reaction->getAndClearHostDefinedData()) {
     hostDefined = CheckedUnwrapStatic(hostDefined);
     MOZ_ASSERT(hostDefined);
