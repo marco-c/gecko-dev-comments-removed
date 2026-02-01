@@ -565,7 +565,7 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
     
     specifiedBSize = bsizeStyleCoord->ToLength();
     if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
-        position->mBoxSizing == StyleBoxSizing::Content) {
+        position->mBoxSizing == StyleBoxSizing::ContentBox) {
       specifiedBSize +=
           aCellFrame->GetLogicalUsedBorderAndPadding(aWM).BStartEnd(aWM);
     }

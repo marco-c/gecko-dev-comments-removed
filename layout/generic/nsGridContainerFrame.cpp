@@ -201,7 +201,7 @@ struct BoxSizingAdjustment {
       return mValue.ref();
     }
 
-    if (mStyle.StylePosition()->mBoxSizing != StyleBoxSizing::Border) {
+    if (mStyle.StylePosition()->mBoxSizing != StyleBoxSizing::BorderBox) {
       
       mValue.emplace(mWM);
       return mValue.ref();

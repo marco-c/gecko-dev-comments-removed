@@ -4201,11 +4201,12 @@ static nscoord GetBSizePercentBasisAdjustment(StyleBoxSizing aBoxSizing,
                                               bool aHorizontalAxis,
                                               bool aResolvesAgainstPaddingBox) {
   nscoord adjustment = 0;
-  if (aBoxSizing == StyleBoxSizing::Border) {
+  if (aBoxSizing == StyleBoxSizing::BorderBox) {
     const auto& border = aFrame->StyleBorder()->GetComputedBorder();
     adjustment -= aHorizontalAxis ? border.TopBottom() : border.LeftRight();
   }
-  if ((aBoxSizing == StyleBoxSizing::Border) == !aResolvesAgainstPaddingBox) {
+  if ((aBoxSizing == StyleBoxSizing::BorderBox) ==
+      !aResolvesAgainstPaddingBox) {
     const auto& stylePadding = aFrame->StylePadding()->mPadding;
     const LengthPercentage& paddingStart =
         stylePadding.Get(aHorizontalAxis ? eSideTop : eSideLeft);
@@ -4241,7 +4242,7 @@ static nscoord GetDefiniteSizeTakenByBoxSizing(
     StyleBoxSizing aBoxSizing, nsIFrame* aFrame, bool aIsInlineAxis,
     bool aIgnorePadding, const Maybe<LogicalSize>& aPercentageBasis) {
   nscoord sizeTakenByBoxSizing = 0;
-  if (MOZ_UNLIKELY(aBoxSizing == StyleBoxSizing::Border)) {
+  if (MOZ_UNLIKELY(aBoxSizing == StyleBoxSizing::BorderBox)) {
     const bool isHorizontalAxis =
         aIsInlineAxis == !aFrame->GetWritingMode().IsVertical();
     const nsStyleBorder* styleBorder = aFrame->StyleBorder();
@@ -4430,12 +4431,12 @@ static nscoord AddIntrinsicSizeOffset(
   
   
   nscoord result;
-  if (aBoxSizing == StyleBoxSizing::Border) {
+  if (aBoxSizing == StyleBoxSizing::BorderBox) {
     contentBoxToBoxSizingDiff = padding + aOffsets.border;
     boxSizingToMarginDiff = aOffsets.margin;
     result = NSCoordSaturatingAdd(aContentSize, contentBoxToBoxSizingDiff);
   } else {
-    MOZ_ASSERT(aBoxSizing == StyleBoxSizing::Content);
+    MOZ_ASSERT(aBoxSizing == StyleBoxSizing::ContentBox);
     contentBoxToBoxSizingDiff = 0;
     boxSizingToMarginDiff = padding + aOffsets.border + aOffsets.margin;
     result = aContentSize;
@@ -4745,7 +4746,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
           : aFrame->IntrinsicBSizeOffsets(pmPercentageBasis);
 
   auto GetContentEdgeToBoxSizing = [&](const StyleBoxSizing aBoxSizing) {
-    if (aBoxSizing == StyleBoxSizing::Content) {
+    if (aBoxSizing == StyleBoxSizing::ContentBox) {
       return LogicalSize(childWM);
     }
     nsIFrame::IntrinsicSizeOffsetData offsetInOtherAxis =
@@ -4791,7 +4792,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
     
     
     
-    boxSizing = StyleBoxSizing::Content;
+    boxSizing = StyleBoxSizing::ContentBox;
   } else if (!styleISize->ConvertsToLength() &&
              !(styleISize->IsFitContentFunction() &&
                styleISize->AsFitContentFunction().ConvertsToLength()) &&

@@ -1691,7 +1691,7 @@ class nsLayoutUtils {
                  "We don't handle situations with unconstrained "
                  "aSizeToFill; caller should handle that!");
     nscoord stretchSize = aSizeToFill - aMargin;
-    if (aBoxSizing == mozilla::StyleBoxSizing::Content) {
+    if (aBoxSizing == mozilla::StyleBoxSizing::ContentBox) {
       stretchSize -= aBorderPadding;
     }
     return std::max(0, stretchSize);
@@ -1701,7 +1701,7 @@ class nsLayoutUtils {
                                                       nscoord aMargin,
                                                       nscoord aBorderPadding) {
     return ComputeStretchBSize(aSizeToFill, aMargin, aBorderPadding,
-                               mozilla::StyleBoxSizing::Content);
+                               mozilla::StyleBoxSizing::ContentBox);
   }
   
   

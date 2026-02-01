@@ -305,7 +305,7 @@ StyleSizeOverrides nsTableWrapperFrame::ComputeSizeOverridesForInnerTable(
 
   const auto wm = aTableFrame->GetWritingMode();
   LogicalSize areaOccupied(wm, 0, aBSizeOccupiedByCaption);
-  if (aTableFrame->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
+  if (aTableFrame->StylePosition()->mBoxSizing == StyleBoxSizing::ContentBox) {
     
     
     

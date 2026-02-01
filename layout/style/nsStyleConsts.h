@@ -55,7 +55,7 @@ enum class StyleBoxPack : uint8_t {
 };
 
 
-enum class StyleBoxSizing : uint8_t { Content, Border };
+enum class StyleBoxSizing : uint8_t { ContentBox, BorderBox };
 
 
 enum class StyleBoxShadowType : uint8_t {
