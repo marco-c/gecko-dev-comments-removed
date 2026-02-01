@@ -1778,17 +1778,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
 
         rv = ResumeRecv();  
       }
-      
-      
-      if ((mState != HttpConnectionState::SETTING_UP_TUNNEL) && !mSpdySession) {
-        nsHttpTransaction* trans =
-            mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
-        
-        if (!trans ||
-            (!trans->IsWebsocketUpgrade() && !trans->IsForWebTransport())) {
-          mRequestDone = true;
-        }
-      }
+
       again = false;
     } else if (writeAttempts >= maxWriteAttempts) {
       LOG(("  yield for other transactions\n"));
