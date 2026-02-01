@@ -10,8 +10,6 @@
 #include "mozilla/MacroArgs.h"  
 #include "mozilla/SIMD.h"       
 
-#include "jslibmath.h"  
-
 #include "builtin/Array.h"      
 #include "builtin/MapObject.h"  
                                 
@@ -45,8 +43,8 @@
 
 #include "js/experimental/JitInfo.h"
 
-#include "proxy/Proxy.h"  
-
+#include "proxy/Proxy.h"          
+#include "util/PortableMath.h"    
 #include "vm/ArgumentsObject.h"   
 #include "vm/Interpreter.h"       
 #include "vm/NativeObject.h"      

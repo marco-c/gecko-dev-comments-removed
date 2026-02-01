@@ -9,8 +9,6 @@
 #include "mozilla/Maybe.h"  
 #include "mozilla/Try.h"    
 
-#include "jslibmath.h"
-
 #include "builtin/Math.h"
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseNode.h"
@@ -18,7 +16,8 @@
 #include "frontend/Parser-macros.h"  
 #include "frontend/ParserAtom.h"     
 #include "js/Conversions.h"
-#include "js/Stack.h"            
+#include "js/Stack.h"  
+#include "util/PortableMath.h"
 #include "util/StringBuilder.h"  
 
 using namespace js;

@@ -15,8 +15,6 @@
 #include <array>
 #include <utility>
 
-#include "jslibmath.h"
-
 #include "builtin/Math.h"
 #include "builtin/Number.h"
 #include "builtin/RegExp.h"
@@ -32,6 +30,7 @@
 #include "js/Conversions.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/ScalarType.h"            
+#include "util/PortableMath.h"
 #include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/BigIntType.h"

@@ -11,11 +11,10 @@
 
 #include "mozilla/CheckedArithmetic.h"
 
-#include "jslibmath.h"
-
 #include "builtin/Math.h"
 #include "builtin/Number.h"
 #include "js/friend/ErrorMessages.h"  
+#include "util/PortableMath.h"
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"  
 #include "vm/JSAtomUtils.h"   
