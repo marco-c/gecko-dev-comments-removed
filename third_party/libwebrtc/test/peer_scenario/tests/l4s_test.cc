@@ -611,10 +611,11 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithScream) {
 
   SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
-  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1300));
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1600));
   
   
-  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(3800));
+  
+  EXPECT_LE(available_bwe, DataRate::KilobitsPerSec(2600));
 }
 
 TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msEcnWithScream) {
@@ -628,10 +629,8 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msEcnWithScream) {
 
   SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
-  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1400));
-  
-  
-  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(3000));
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1500));
+  EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(2100));
 }
 
 TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithGoogCC) {

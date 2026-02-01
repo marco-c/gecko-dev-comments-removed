@@ -56,8 +56,6 @@ struct ScreamV2Parameters {
   
   FieldTrialParameter<double> backoff_scale_factor_close_to_ref_window_i;
 
-  FieldTrialParameter<int> number_of_rtts_between_ref_window_i_updates;
-
   
   
   FieldTrialParameter<int>
@@ -96,6 +94,13 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<bool> use_all_packets_when_calculating_queue_delay;
+
+  
+  
+  FieldTrialParameter<TimeDelta> periodic_padding_interval;
+
+  
+  FieldTrialParameter<TimeDelta> periodic_padding_duration;
 };
 
 }  
