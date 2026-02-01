@@ -160,7 +160,7 @@ class nsPresContext : public nsISupports,
   
 
 
-  nsresult Init(nsDeviceContext* aDeviceContext);
+  void Init(nsDeviceContext*);
 
   
 
