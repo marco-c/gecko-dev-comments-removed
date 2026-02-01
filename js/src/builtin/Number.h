@@ -4,8 +4,8 @@
 
 
 
-#ifndef jsnum_h
-#define jsnum_h
+#ifndef builtin_Number_h
+#define builtin_Number_h
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Range.h"
@@ -434,6 +434,19 @@ template <typename ArrayLength>
   }
 
   return ToIntegerIndexSlow(cx, value, length, result);
+}
+
+static inline size_t ToIntegerIndex(intptr_t index, size_t length) {
+  static_assert(std::is_same_v<size_t, uintptr_t>,
+                "expect size_t being equal to uintptr_t");
+
+  if (index >= 0) {
+    return std::min(size_t(index), length);
+  }
+  if (mozilla::Abs(index) <= length) {
+    return length - mozilla::Abs(index);
+  }
+  return 0;
 }
 
 } 

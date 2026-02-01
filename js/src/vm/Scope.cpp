@@ -8,8 +8,7 @@
 
 #include <new>
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ParserAtom.h"  
 #include "frontend/ScriptIndex.h"  

@@ -20,9 +20,8 @@
 #include <string.h>  
 #include <utility>   
 
-#include "jsnum.h"  
-
 #include "builtin/Array.h"      
+#include "builtin/Number.h"     
 #include "debugger/Debugger.h"  
 #include "debugger/DebugScript.h"
 #include "debugger/Environment.h"       

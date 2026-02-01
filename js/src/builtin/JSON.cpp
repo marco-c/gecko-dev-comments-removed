@@ -13,11 +13,11 @@
 
 #include <algorithm>
 
-#include "jsnum.h"
 #include "jstypes.h"
 
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
+#include "builtin/Number.h"
 #include "builtin/ParseRecordObject.h"
 #include "builtin/RawJSONObject.h"
 #include "js/friend/ErrorMessages.h"  
@@ -42,6 +42,7 @@
 #include "vm/NumberObject.h"  
 #include "vm/PlainObject.h"   
 #include "vm/StringObject.h"  
+
 #include "builtin/Array-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSAtomUtils-inl.h"  

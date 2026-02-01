@@ -15,11 +15,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "jsnum.h"
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 
 #include "builtin/intl/DateTimeFormat.h"
+#include "builtin/Number.h"
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/Duration.h"
 #include "builtin/temporal/Int96.h"
@@ -368,10 +368,10 @@ InstantObject* js::temporal::CreateTemporalInstant(
   }
 
   
-  object->setFixedSlot(InstantObject::SECONDS_SLOT,
-                       NumberValue(epochNanoseconds.seconds));
-  object->setFixedSlot(InstantObject::NANOSECONDS_SLOT,
-                       Int32Value(epochNanoseconds.nanoseconds));
+  object->initFixedSlot(InstantObject::SECONDS_SLOT,
+                        NumberValue(epochNanoseconds.seconds));
+  object->initFixedSlot(InstantObject::NANOSECONDS_SLOT,
+                        Int32Value(epochNanoseconds.nanoseconds));
 
   
   return object;
@@ -398,10 +398,10 @@ static InstantObject* CreateTemporalInstant(JSContext* cx, const CallArgs& args,
 
   
   auto epochNs = ToEpochNanoseconds(epochNanoseconds);
-  object->setFixedSlot(InstantObject::SECONDS_SLOT,
-                       NumberValue(epochNs.seconds));
-  object->setFixedSlot(InstantObject::NANOSECONDS_SLOT,
-                       Int32Value(epochNs.nanoseconds));
+  object->initFixedSlot(InstantObject::SECONDS_SLOT,
+                        NumberValue(epochNs.seconds));
+  object->initFixedSlot(InstantObject::NANOSECONDS_SLOT,
+                        Int32Value(epochNs.nanoseconds));
 
   
   return object;
@@ -952,7 +952,7 @@ static bool Instant_round(JSContext* cx, const CallArgs& args) {
   auto epochNs = args.thisv().toObject().as<InstantObject>().epochNanoseconds();
 
   
-  auto smallestUnit = TemporalUnit::Auto;
+  auto smallestUnit = TemporalUnit::Unset;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
   if (args.get(0).isString()) {
@@ -960,9 +960,14 @@ static bool Instant_round(JSContext* cx, const CallArgs& args) {
 
     
     Rooted<JSString*> paramString(cx, args[0].toString());
-    if (!GetTemporalUnitValuedOption(cx, paramString,
-                                     TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(
+            cx, paramString, TemporalUnitKey::SmallestUnit, &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
@@ -987,12 +992,19 @@ static bool Instant_round(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
       return false;
     }
-    if (smallestUnit == TemporalUnit::Auto) {
+
+    if (smallestUnit == TemporalUnit::Unset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_MISSING_OPTION, "smallestUnit");
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
@@ -1084,9 +1096,22 @@ static bool Instant_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto smallestUnit = TemporalUnit::Auto;
+    auto smallestUnit = TemporalUnit::Unset;
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
+      return false;
+    }
+
+    
+    Rooted<Value> timeZoneValue(cx);
+    if (!GetProperty(cx, options, options, cx->names().timeZone,
+                     &timeZoneValue)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
@@ -1099,14 +1124,8 @@ static bool Instant_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    Rooted<Value> value(cx);
-    if (!GetProperty(cx, options, options, cx->names().timeZone, &value)) {
-      return false;
-    }
-
-    
-    if (!value.isUndefined()) {
-      if (!ToTemporalTimeZone(cx, value, &timeZone)) {
+    if (!timeZoneValue.isUndefined()) {
+      if (!ToTemporalTimeZone(cx, timeZoneValue, &timeZone)) {
         return false;
       }
     }

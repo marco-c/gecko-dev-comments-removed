@@ -99,8 +99,7 @@
 #include <memory>
 #include <type_traits>  
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "gc/GCEnum.h"
 #include "js/BigInt.h"
 #include "js/friend/ErrorMessages.h"  

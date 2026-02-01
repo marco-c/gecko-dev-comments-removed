@@ -10,8 +10,7 @@
 
 #include <memory>  
 
-#include "jsnum.h"  
-
+#include "builtin/Number.h"  
 #include "frontend/CompilationStencil.h"
 #include "js/GCAPI.h"            
 #include "js/Printer.h"          

@@ -8,7 +8,7 @@
 
 
 
-#include "jsnum.h"
+#include "builtin/Number.h"
 
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"

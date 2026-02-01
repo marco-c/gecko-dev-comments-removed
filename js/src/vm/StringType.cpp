@@ -21,9 +21,9 @@
 #include <type_traits>  
 
 #include "jsfriendapi.h"
-#include "jsnum.h"
 
 #include "builtin/Boolean.h"
+#include "builtin/Number.h"
 #include "gc/AllocKind.h"
 #include "gc/MaybeRooted.h"
 #include "gc/Nursery.h"

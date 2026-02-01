@@ -10,17 +10,15 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Range.h"       
 #include "mozilla/RangedPtr.h"   
-
-#include "mozilla/Sprintf.h"    
+#include "mozilla/Sprintf.h"     
 #include "mozilla/TextUtils.h"  
 
 #include <stddef.h>  
 #include <stdint.h>  
 #include <utility>   
 
-#include "jsnum.h"  
-
-#include "builtin/Array.h"              
+#include "builtin/Array.h"  
+#include "builtin/Number.h"  
 #include "builtin/ParseRecordObject.h"  
 #include "ds/IdValuePair.h"             
 #include "gc/GCEnum.h"                  

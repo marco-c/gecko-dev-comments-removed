@@ -13,16 +13,16 @@
 #include "jslibmath.h"  
 #include "jsmath.h"     
                         
-#include "jsnum.h"      
-                        
 
-#include "builtin/Array.h"             
-#include "builtin/MapObject.h"         
-                                       
-#include "builtin/Object.h"            
-#include "builtin/RegExp.h"            
-                                       
-#include "builtin/Sorting.h"           
+#include "builtin/Array.h"      
+#include "builtin/MapObject.h"  
+                                
+#include "builtin/Number.h"   
+                              
+#include "builtin/Object.h"   
+#include "builtin/RegExp.h"   
+                              
+#include "builtin/Sorting.h"  
 #include "builtin/TestingFunctions.h"  
 #include "builtin/WeakMapObject.h"     
 #include "builtin/WeakSetObject.h"     

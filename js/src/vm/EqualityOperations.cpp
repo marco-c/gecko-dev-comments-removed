@@ -8,10 +8,10 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsnum.h"    
 #include "jstypes.h"  
 
-#include "js/Context.h"   
+#include "builtin/Number.h"  
+#include "js/Context.h"      
 #include "js/Equality.h"  
 #include "js/Result.h"    
 #include "js/RootingAPI.h"  

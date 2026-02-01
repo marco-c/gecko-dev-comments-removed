@@ -5,8 +5,7 @@
 
 
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "jsapi-tests/tests.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"

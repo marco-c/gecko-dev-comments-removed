@@ -13,10 +13,10 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jsnum.h"             
 #include "NamespaceImports.h"  
 
 #include "builtin/Array.h"         
+#include "builtin/Number.h"        
 #include "debugger/Debugger.h"     
 #include "debugger/DebugScript.h"  
 #include "debugger/Source.h"       

@@ -12,11 +12,11 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "jsnum.h"
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 
 #include "builtin/intl/DateTimeFormat.h"
+#include "builtin/Number.h"
 #include "builtin/temporal/Duration.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/Temporal.h"
@@ -274,7 +274,7 @@ static PlainTimeObject* CreateTemporalTime(JSContext* cx, const CallArgs& args,
 
   
   auto packedTime = PackedTime::pack(time);
-  object->setFixedSlot(
+  object->initFixedSlot(
       PlainTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
@@ -297,7 +297,7 @@ PlainTimeObject* js::temporal::CreateTemporalTime(JSContext* cx,
 
   
   auto packedTime = PackedTime::pack(time);
-  object->setFixedSlot(
+  object->initFixedSlot(
       PlainTimeObject::PACKED_TIME_SLOT,
       DoubleValue(mozilla::BitwiseCast<double>(packedTime.value)));
 
@@ -802,6 +802,7 @@ TimeRecord js::temporal::RoundTime(const Time& time, Increment increment,
       result = &nanosecond;
       break;
 
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -1347,7 +1348,7 @@ static bool PlainTime_round(JSContext* cx, const CallArgs& args) {
   auto time = temporalTime->time();
 
   
-  auto smallestUnit = TemporalUnit::Auto;
+  auto smallestUnit = TemporalUnit::Unset;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
   if (args.get(0).isString()) {
@@ -1355,9 +1356,14 @@ static bool PlainTime_round(JSContext* cx, const CallArgs& args) {
 
     
     Rooted<JSString*> paramString(cx, args[0].toString());
-    if (!GetTemporalUnitValuedOption(cx, paramString,
-                                     TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+    if (!GetTemporalUnitValuedOption(
+            cx, paramString, TemporalUnitKey::SmallestUnit, &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
@@ -1382,13 +1388,19 @@ static bool PlainTime_round(JSContext* cx, const CallArgs& args) {
 
     
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
       return false;
     }
 
-    if (smallestUnit == TemporalUnit::Auto) {
+    if (smallestUnit == TemporalUnit::Unset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_MISSING_OPTION, "smallestUnit");
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 
@@ -1480,9 +1492,15 @@ static bool PlainTime_toString(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto smallestUnit = TemporalUnit::Auto;
+    auto smallestUnit = TemporalUnit::Unset;
     if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                     TemporalUnitGroup::Time, &smallestUnit)) {
+                                     &smallestUnit)) {
+      return false;
+    }
+
+    
+    if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                   smallestUnit, TemporalUnitGroup::Time)) {
       return false;
     }
 

@@ -8,8 +8,7 @@
 
 #include "mozilla/Try.h"  
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseContext.h"
