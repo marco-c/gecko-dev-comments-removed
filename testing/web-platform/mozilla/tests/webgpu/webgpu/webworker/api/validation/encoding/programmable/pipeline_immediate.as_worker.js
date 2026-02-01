@@ -1,0 +1,6 @@
+
+
+import { g } from '../../../../../api/validation/encoding/programmable/pipeline_immediate.spec.js';
+import { wrapTestGroupForWorker } from '../../../../../../common/runtime/helper/wrap_for_worker.js';
+
+wrapTestGroupForWorker(g);

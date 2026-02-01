@@ -518,3 +518,23 @@ export function combinationsOfOneOrTwoUsages(usages: readonly number[]) {
   }
   return combinations;
 }
+
+
+
+
+
+
+
+
+
+
+
+export function supportsImmediateData(gpu: GPU): boolean {
+  return (
+    'setImmediates' in GPURenderPassEncoder.prototype ||
+    'setImmediates' in GPUComputePassEncoder.prototype ||
+    'setImmediates' in GPURenderBundleEncoder.prototype ||
+    'maxImmediateSize' in GPUSupportedLimits.prototype ||
+    gpu.wgslLanguageFeatures.has('immediate_address_space')
+  );
+}

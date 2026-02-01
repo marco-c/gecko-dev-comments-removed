@@ -151,6 +151,10 @@ const kConcreteCases = {
   wxyz_bga_xy: { wgsl: 'let r : vec2<T> = v.wxyz.bga.xy;', ok: (width) => width > 3 },
 
   
+  xy_0: { wgsl: 'let r = v.xy[0];', result_width: 1, ok: true },
+  xy_3: { wgsl: 'let r = v.xy[3];', ok: false },
+
+  
   xq: { wgsl: 'let r : vec2<T> = v.xq;', ok: false },
   py: { wgsl: 'let r : vec2<T> = v.py;', ok: false },
 
@@ -357,6 +361,10 @@ const kAbstractCases = {
     result_width: 2,
     ok: (width) => width > 3
   },
+
+  
+  xy_0: { wgsl: 'const r = V.xy[0];', result_width: 1, ok: true },
+  xy_3: { wgsl: 'const r = V.xy[3];', ok: false },
 
   
   xq: { wgsl: 'const r = V.xq;', ok: false },
