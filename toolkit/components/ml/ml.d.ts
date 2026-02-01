@@ -30,8 +30,8 @@ export type EngineStatus =
 type UntypedEngineRequest = {
   args: unknown;
   options: {};
-  streamerOptions: {};
-  telemetryOptions: {};
+  streamerOptions?: {};
+  telemetryOptions?: {};
 };
 
 export type EngineRequests = EnsureAllFeatures<{
@@ -52,8 +52,8 @@ export type EngineRequests = EnsureAllFeatures<{
 
 
     options: {};
-    streamerOptions: {};
-    telemetryOptions: {};
+    streamerOptions?: {};
+    telemetryOptions?: {};
   };
 
   "suggest-NER": {
@@ -65,8 +65,8 @@ export type EngineRequests = EnsureAllFeatures<{
 
 
     options: {};
-    streamerOptions: {};
-    telemetryOptions: {};
+    streamerOptions?: {};
+    telemetryOptions?: {};
   };
 }>;
 
