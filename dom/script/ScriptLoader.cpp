@@ -39,6 +39,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"  
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -2864,18 +2865,49 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   
   
   
+  size_t sourceLength;
+  if (aRequest->IsCachedStencil()) {
+    sourceLength = JS::GetScriptSourceLength(aRequest->GetStencil());
+  } else {
+    MOZ_ASSERT(aRequest->IsTextSource());
+    sourceLength = aRequest->ReceivedScriptTextLength();
+  }
   if (strategy.mHasSourceLengthMin) {
-    size_t sourceLength;
-    if (aRequest->IsCachedStencil()) {
-      sourceLength = JS::GetScriptSourceLength(aRequest->GetStencil());
-    } else {
-      MOZ_ASSERT(aRequest->IsTextSource());
-      sourceLength = aRequest->ReceivedScriptTextLength();
-    }
     if (sourceLength < strategy.mSourceLengthMin) {
       LOG(
           ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: Script is too "
            "small.",
+           aRequest));
+      aRequest->MarkSkippedDiskCaching();
+      aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t expectedDiskCacheSize = sourceLength * 3;
+  int32_t diskCacheMaxSizeInKb =
+      StaticPrefs::browser_cache_disk_max_entry_size();
+  
+  if (diskCacheMaxSizeInKb > 0) {
+    if (expectedDiskCacheSize > size_t(diskCacheMaxSizeInKb) * 1024) {
+      LOG(
+          ("ScriptLoadRequest (%p): Bytecode-cache: Skip disk: Script is too "
+           "large.",
            aRequest));
       aRequest->MarkSkippedDiskCaching();
       aRequest->getLoadedScript()->DropDiskCacheReferenceAndSRI();
