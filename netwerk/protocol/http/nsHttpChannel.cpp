@@ -8830,19 +8830,35 @@ nsresult nsHttpChannel::ProcessLNAActions() {
 
   if (LNAPermission::Granted == permissionUpdateResult) {
     
+    mLNAPromptAction.AssignLiteral("auto_allow");
     return OnPermissionPromptResult(true, permissionKey);
   }
 
   if (LNAPermission::Denied == permissionUpdateResult) {
     
+    mLNAPromptAction.AssignLiteral("auto_deny");
     return OnPermissionPromptResult(false, permissionKey);
   }
 
   
   
-  auto permissionPromptCallback = [self = RefPtr{this}](
-                                      bool aPermissionGranted,
-                                      const nsACString& aType) -> void {
+  auto permissionPromptCallback =
+      [self = RefPtr{this}](bool aPermissionGranted, const nsACString& aType,
+                            bool aPromptShown) -> void {
+    
+    if (aPromptShown) {
+      if (aPermissionGranted) {
+        self->mLNAPromptAction.AssignLiteral("prompt_allow");
+      } else {
+        self->mLNAPromptAction.AssignLiteral("prompt_deny");
+      }
+    } else {
+      if (aPermissionGranted) {
+        self->mLNAPromptAction.AssignLiteral("auto_allow");
+      } else {
+        self->mLNAPromptAction.AssignLiteral("auto_deny");
+      }
+    }
     self->OnPermissionPromptResult(aPermissionGranted, aType);
   };
 
@@ -9212,13 +9228,6 @@ void nsHttpChannel::MaybeUpdateDocumentIPAddressSpaceFromCache() {
 nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
                                                  const nsACString& aType) {
   mWaitingForLNAPermission = false;
-
-  
-  if (aGranted) {
-    mLNAPromptAction.AssignLiteral("allow");
-  } else {
-    mLNAPromptAction.AssignLiteral("deny");
-  }
 
   if (aGranted) {
     LOG(
