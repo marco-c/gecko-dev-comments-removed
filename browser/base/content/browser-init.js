@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { CustomKeys } = ChromeUtils.importESModule(
   "resource:///modules/CustomKeys.sys.mjs"
@@ -20,46 +20,13 @@ var gBrowserInit = {
   _firstContentWindowPaintDeferred: Promise.withResolvers(),
   idleTasksFinished: Promise.withResolvers(),
 
-  
-
-
-
-  _translationsEnabledStateObserver: {
-    observe(_subject, topic, data) {
-      if (topic !== "translations:enabled-state-changed") {
-        console.warn(`received unexpected topic: ${topic}`);
-        return;
-      }
-
-      
-      XULBrowserWindow._updateElementsForContentType();
-
-      if (data === "enabled") {
-        
-        
-        
-        for (const tab of gBrowser.tabs) {
-          try {
-            
-            tab.linkedBrowser?.browsingContext?.currentWindowGlobal?.getActor(
-              "Translations"
-            );
-          } catch {
-            
-            
-          }
-        }
-      }
-    },
-  },
-
   _setupFirstContentWindowPaintPromise() {
     let lastTransactionId = window.windowUtils.lastTransactionId;
     let layerTreeListener = () => {
       if (this.getTabToAdopt()) {
-        
-        
-        
+        // Need to wait until we finish adopting the tab, or we might end
+        // up focusing the initial browser and then losing focus when it
+        // gets swapped out for the tab to adopt.
         return;
       }
       removeEventListener("MozLayerTreeReady", layerTreeListener);
@@ -82,11 +49,11 @@ var gBrowserInit = {
     if (window.arguments && window.XULElement.isInstance(window.arguments[0])) {
       this._tabToAdopt = window.arguments[0];
 
-      
+      // Clear the reference of the tab being adopted from the arguments.
       window.arguments[0] = null;
     } else {
-      
-      
+      // There was no tab to adopt in the arguments, set _tabToAdopt to null
+      // to avoid checking it again.
       this._tabToAdopt = null;
     }
 
@@ -97,8 +64,8 @@ var gBrowserInit = {
     this._tabToAdopt = null;
   },
 
-  
-  
+  // Used to check if the new window is still adopting an existing tab as its first tab
+  // (e.g. from the WebExtensions internals).
   isAdoptingTab() {
     return !!this.getTabToAdopt();
   },
@@ -108,10 +75,10 @@ var gBrowserInit = {
 
     updateBookmarkToolbarVisibility();
 
-    
+    // Set a sane starting width/height for all resolutions on new profiles.
     if (ChromeUtils.shouldResistFingerprinting("RoundWindowSize", null)) {
-      
-      
+      // When the fingerprinting resistance is enabled, making sure that we don't
+      // have a maximum window to interfere with generating rounded window dimensions.
       document.documentElement.setAttribute("sizemode", "normal");
     } else if (!document.documentElement.hasAttribute("width")) {
       const TARGET_WIDTH = 1280;
@@ -140,8 +107,8 @@ var gBrowserInit = {
         toolbarMenubar.setAttribute("data-l10n-attrs", "toolbarname");
       }
     }
-    
-    
+    // If opening a Taskbar Tab or AI window, add an attribute to the top-level element
+    // to inform window styling.
     if (window.arguments?.[1] instanceof Ci.nsIPropertyBag2) {
       let extraOptions = window.arguments[1];
       if (extraOptions.hasKey("taskbartab")) {
@@ -158,11 +125,11 @@ var gBrowserInit = {
       }
     }
 
-    
-    
+    // Run menubar initialization first, to avoid CustomTitlebar code picking
+    // up mutations from it and causing a reflow.
     AutoHideMenubar.init();
-    
-    
+    // Update the customtitlebar attribute so the window can be sized
+    // correctly.
     window.TabBarVisibility.update();
     CustomTitlebar.init();
 
@@ -177,13 +144,13 @@ var gBrowserInit = {
       document.documentElement.setAttribute("icon", "main-window");
     }
 
-    
-    
+    // Call this after we set attributes that might change toolbars' computed
+    // text color.
     ToolbarIconColor.init(window);
   },
 
   onDOMContentLoaded() {
-    
+    // All of this needs setting up before we create the first remote browser.
     window.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow).XULBrowserWindow = window.XULBrowserWindow;
@@ -208,8 +175,8 @@ var gBrowserInit = {
 
     gURLBar.initPlaceHolder();
 
-    
-    
+    // Hack to ensure that the various initial pages favicon is loaded
+    // instantaneously, to avoid flickering and improve perceived performance.
     this._callWithURIToLoad(uriToLoad => {
       let url = URL.parse(uriToLoad);
       if (!url) {
@@ -227,8 +194,8 @@ var gBrowserInit = {
 
     gUnifiedExtensions.init();
 
-    
-    
+    // Setting the focus will cause a style flush, it's preferable to call anything
+    // that will modify the DOM from within this function before this call.
     this._setInitialFocus();
 
     this.domContentLoaded = true;
@@ -249,62 +216,54 @@ var gBrowserInit = {
       "TranslationsParent:OfferTranslation",
       FullPageTranslationsPanel
     );
-    gBrowser.tabContainer.addEventListener("TabSelect", () => {
-      
-      
-      
-      if (!TranslationsParent.AIFeature.isEnabled) {
-        FullPageTranslationsPanel.buttonElements.button.hidden = true;
-      }
-    });
     gBrowser.addTabsProgressListener(FullPageTranslationsPanel);
 
     window.addEventListener("AppCommand", HandleAppCommandEvent, true);
 
-    
-    
-    
-    
+    // These routines add message listeners. They must run before
+    // loading the frame script to ensure that we don't miss any
+    // message sent between when the frame script is loaded and when
+    // the listener is registered.
     CaptivePortalWatcher.init();
     ZoomUI.init(window);
 
     if (!gMultiProcessBrowser) {
-      
+      // There is a Content:Click message manually sent from content.
       gBrowser.tabpanels.addEventListener("click", contentAreaClick, {
         capture: true,
         mozSystemGroup: true,
       });
     }
 
-    
+    // hook up UI through progress listener
     gBrowser.addProgressListener(window.XULBrowserWindow);
     gBrowser.addTabsProgressListener(window.TabsProgressListener);
 
     SidebarController.init();
 
-    
-    
+    // We do this in onload because we want to ensure the button's state
+    // doesn't flicker as the window is being shown.
     DownloadsButton.init();
 
-    
-    
-    
-    
+    // Certain kinds of automigration rely on this notification to complete
+    // their tasks BEFORE the browser window is shown. SessionStore uses it to
+    // restore tabs into windows AFTER important parts like gMultiProcessBrowser
+    // have been initialized.
     Services.obs.notifyObservers(window, "browser-window-before-show");
 
     if (
       !window.toolbar.visible ||
       window.document.documentElement.hasAttribute("taskbartab")
     ) {
-      
+      // adjust browser UI for popups
       gURLBar.readOnly = true;
     }
 
-    
+    // Misc. inits.
     gUIDensity.init();
     Win10TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
-    
+    // Initialize private browsing UI only if window is private
     if (PrivateBrowsingUtils.isWindowPrivate(window)) {
       PrivateBrowsingUI.init(window);
     }
@@ -315,11 +274,11 @@ var gBrowserInit = {
     }
     CustomKeys.initWindow(window);
 
-    
+    // Update UI if browser is under remote control.
     gRemoteControl.updateVisualCue();
 
-    
-    
+    // If we are given a tab to swap in, take care of it before first paint to
+    // avoid an about:blank flash.
     let tabToAdopt = this.getTabToAdopt();
     if (tabToAdopt) {
       let evt = new CustomEvent("before-initial-tab-adopted", {
@@ -327,19 +286,19 @@ var gBrowserInit = {
       });
       gBrowser.tabpanels.dispatchEvent(evt);
 
-      
+      // Stop the about:blank load
       gBrowser.stop();
 
-      
+      // Remove the speculative focus from the urlbar to let the url be formatted.
       gURLBar.removeAttribute("focused");
 
       let swapBrowsers = () => {
         if (gBrowser.isTabGroupLabel(tabToAdopt)) {
-          
+          // TODO bug 1967937: Merge this case with the tab group case below.
           gBrowser.adoptTabGroup(tabToAdopt.group, { elementIndex: 0 });
           gBrowser.removeTab(gBrowser.selectedTab);
         } else if (gBrowser.isTabGroup(tabToAdopt)) {
-          
+          // Via gBrowser.replaceGroupWithWindow
           let tempBlankTab = gBrowser.selectedTab;
           gBrowser.adoptTabGroup(tabToAdopt, { tabIndex: 0, selectTab: true });
           gBrowser.removeTab(tempBlankTab);
@@ -358,7 +317,7 @@ var gBrowserInit = {
           gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToAdopt);
         }
 
-        
+        // Clear the reference to the tab once its adoption has been completed.
         this._clearTabToAdopt();
       };
       if (
@@ -367,21 +326,21 @@ var gBrowserInit = {
       ) {
         swapBrowsers();
       } else {
-        
-        
-        
+        // For remote browsers, wait for the paint event, otherwise the tabs
+        // are not yet ready and focus gets confused because the browser swaps
+        // out while tabs are switching.
         addEventListener("MozAfterPaint", swapBrowsers, { once: true });
       }
     }
 
-    
+    // Wait until chrome is painted before executing code not critical to making the window visible
     this._boundDelayedStartup = this._delayedStartup.bind(this);
     window.addEventListener("MozAfterPaint", this._boundDelayedStartup);
 
     if (!PrivateBrowsingUtils.enabled) {
       document.getElementById("Tools:PrivateBrowsing").hidden = true;
-      
-      
+      // Setting disabled doesn't disable the shortcut, so we just remove
+      // the keybinding.
       document.getElementById("key_privatebrowsing").remove();
     }
 
@@ -460,11 +419,6 @@ var gBrowserInit = {
     Services.obs.addObserver(gXPInstallObserver, "addon-install-confirmation");
     Services.obs.addObserver(gKeywordURIFixup, "keyword-uri-fixup");
     Services.obs.addObserver(gLocaleChangeObserver, "intl:app-locales-changed");
-    TranslationsParent.ensurePrefObservers();
-    Services.obs.addObserver(
-      this._translationsEnabledStateObserver,
-      "translations:enabled-state-changed"
-    );
 
     BrowserOffline.init();
 
@@ -476,9 +430,9 @@ var gBrowserInit = {
       window
     );
 
-    
-    
-    
+    // Initialize the full zoom setting.
+    // We do this before the session restore service gets initialized so we can
+    // apply full zoom settings to tabs restored by the session restore service.
     FullZoom.init();
     PanelUI.init(shouldSuppressPopupNotifications);
 
@@ -501,7 +455,7 @@ var gBrowserInit = {
       );
     }
 
-    
+    // BiDi UI
     gBidiUI = isBidiEnabled();
     if (gBidiUI) {
       document.getElementById("documentDirection-separator").hidden = false;
@@ -510,8 +464,8 @@ var gBrowserInit = {
       document.getElementById("textfieldDirection-swap").hidden = false;
     }
 
-    
-    
+    // Setup click-and-hold gestures access to the session history
+    // menus if global click-and-hold isn't turned on
     if (!Services.prefs.getBoolPref("ui.click_hold_context_menus", false)) {
       SetClickAndHoldHandlers();
     }
@@ -541,9 +495,9 @@ var gBrowserInit = {
     ctrlTab.readPref();
     Services.prefs.addObserver(ctrlTab.prefName, ctrlTab);
 
-    
-    
-    
+    // The object handling the downloads indicator is initialized here in the
+    // delayed startup function, but the actual indicator element is not loaded
+    // unless there are downloads to be displayed.
     DownloadsButton.initializeIndicator();
 
     if (AppConstants.platform != "macosx") {
@@ -582,12 +536,12 @@ var gBrowserInit = {
     gNavToolbox.addEventListener("aftercustomization", CustomizationHandler);
 
     SessionStore.promiseInitialized.then(() => {
-      
+      // Bail out if the window has been closed in the meantime.
       if (window.closed) {
         return;
       }
 
-      
+      // Enable the Restore Last Session command if needed
       gRestoreLastSessionObserver.init();
 
       SidebarController.startDelayedLoad();
@@ -596,7 +550,7 @@ var gBrowserInit = {
     });
 
     if (BrowserHandler.kiosk) {
-      
+      // We don't modify popup windows for kiosk mode
       if (!gURLBar.readOnly) {
         window.fullScreen = true;
       }
@@ -622,7 +576,7 @@ var gBrowserInit = {
             .getTabBrowser()
             ?.getNotificationBox(browser);
 
-          
+          // Prevent duplicate notifications
           if (
             notificationBox &&
             !notificationBox.getNotificationWithValue("filepicker-blocked")
@@ -693,7 +647,7 @@ var gBrowserInit = {
             window
           );
 
-          
+          // Add button if it doesn't exist
           if (!CustomizableUI.getPlacementOfWidget("managed-bookmarks")) {
             CustomizableUI.addWidgetToArea(
               "managed-bookmarks",
@@ -719,13 +673,13 @@ var gBrowserInit = {
     Glean.browserTimings.startupTimeline.delayedStartupFinished.set(
       Services.telemetry.msSinceProcessStart()
     );
-    
+    // We've announced that delayed startup has finished. Do not add code past this point.
   },
 
-  
-
-
-
+  /**
+   * Resolved on the first MozLayerTreeReady and next MozAfterPaint in the
+   * parent process.
+   */
   get firstContentWindowPaintPromise() {
     return this._firstContentWindowPaintDeferred.promise;
   },
@@ -733,12 +687,12 @@ var gBrowserInit = {
   _setInitialFocus() {
     let initiallyFocusedElement = document.commandDispatcher.focusedElement;
 
-    
-    
-    
-    
-    
-    
+    // To prevent startup flicker, the urlbar has the 'focused' attribute set
+    // by default. If we are not sure the urlbar will be focused in this
+    // window, we need to remove the attribute before first paint.
+    // TODO (bug 1629956): The urlbar having the 'focused' attribute by default
+    // isn't a useful optimization anymore since UrlbarInput needs layout
+    // information to focus the urlbar properly.
     let shouldRemoveFocusedAttribute = true;
 
     this._callWithURIToLoad(uriToLoad => {
@@ -752,17 +706,17 @@ var gBrowserInit = {
         return;
       }
 
-      
-      
-      
-      
+      // If the initial browser is remote, in order to optimize for first paint,
+      // we'll defer switching focus to that browser until it has painted.
+      // Otherwise use a regular promise to guarantee that mutationobserver
+      // microtasks that could affect focusability have run.
       let promise = gBrowser.selectedBrowser.isRemoteBrowser
         ? this.firstContentWindowPaintPromise
         : Promise.resolve();
 
       promise.then(() => {
-        
-        
+        // If focus didn't move while we were waiting, we're okay to move to
+        // the browser.
         if (
           document.commandDispatcher.focusedElement == initiallyFocusedElement
         ) {
@@ -771,9 +725,9 @@ var gBrowserInit = {
       });
     });
 
-    
-    
-    
+    // Delay removing the attribute using requestAnimationFrame to avoid
+    // invalidating styles multiple times in a row if uriToLoadPromise
+    // resolves before first paint.
     if (shouldRemoveFocusedAttribute) {
       window.requestAnimationFrame(() => {
         if (shouldRemoveFocusedAttribute) {
@@ -786,21 +740,21 @@ var gBrowserInit = {
   _handleURIToLoad() {
     this._callWithURIToLoad(uriToLoad => {
       if (!uriToLoad) {
-        
-        
+        // We don't check whether window.arguments[5] (userContextId) is set
+        // because tabbrowser.js takes care of that for the initial tab.
         return;
       }
 
-      
-      
+      // We don't check if uriToLoad is a XULElement because this case has
+      // already been handled before first paint, and the argument cleared.
       if (Array.isArray(uriToLoad)) {
-        
-        
+        // This function throws for certain malformed URIs, so use exception handling
+        // so that we don't disrupt startup
         try {
           gBrowser.loadTabs(uriToLoad, {
             inBackground: false,
             replace: true,
-            
+            // See below for the semantics of window.arguments. Only the minimum is supported.
             userContextId: window.arguments[5],
             triggeringPrincipal:
               window.arguments[8] ||
@@ -811,17 +765,17 @@ var gBrowserInit = {
           });
         } catch (e) {}
       } else if (window.arguments.length >= 3) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // window.arguments[1]: extraOptions (nsIPropertyBag)
+        //                 [2]: referrerInfo (nsIReferrerInfo)
+        //                 [3]: postData (nsIInputStream)
+        //                 [4]: allowThirdPartyFixup (bool)
+        //                 [5]: userContextId (int)
+        //                 [6]: originPrincipal (nsIPrincipal)
+        //                 [7]: originStoragePrincipal (nsIPrincipal)
+        //                 [8]: triggeringPrincipal (nsIPrincipal)
+        //                 [9]: allowInheritPrincipal (bool)
+        //                 [10]: policyContainer (nsIPolicyContainer)
+        //                 [11]: nsOpenWindowInfo
         let userContextId =
           window.arguments[5] != undefined
             ? window.arguments[5]
@@ -893,13 +847,13 @@ var gBrowserInit = {
             postData: window.arguments[3] || null,
             allowThirdPartyFixup: window.arguments[4] || false,
             userContextId,
-            
-            
+            // pass the origin principal (if any) and force its use to create
+            // an initial about:blank viewer if present:
             originPrincipal: window.arguments[6],
             originStoragePrincipal: window.arguments[7],
             triggeringPrincipal: window.arguments[8],
-            
-            
+            // TODO fix allowInheritPrincipal to default to false.
+            // Default to true unless explicitly set to false because of bug 1475201.
             allowInheritPrincipal: window.arguments[9] !== false,
             policyContainer: window.arguments[10],
             forceAboutBlankViewerInCurrent: !!window.arguments[6],
@@ -917,8 +871,8 @@ var gBrowserInit = {
 
         window.focus();
       } else {
-        
-        
+        // Note: loadOneOrMoreURIs *must not* be called if window.arguments.length >= 3.
+        // Such callers expect that window.arguments[0] is handled as a single URI.
         loadOneOrMoreURIs(
           uriToLoad,
           Services.scriptSecurityManager.getSystemPrincipal(),
@@ -928,18 +882,18 @@ var gBrowserInit = {
     });
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Use this function as an entry point to schedule tasks that
+   * need to run once per window after startup, and can be scheduled
+   * by using an idle callback.
+   *
+   * The functions scheduled here will fire from idle callbacks
+   * once every window has finished being restored by session
+   * restore, and after the equivalent only-once tasks
+   * have run (from _scheduleStartupIdleTasks in BrowserGlue.sys.mjs).
+   */
   _schedulePerWindowIdleTasks() {
-    
+    // Bail out if the window has been closed in the meantime.
     if (window.closed) {
       return;
     }
@@ -953,12 +907,12 @@ var gBrowserInit = {
     }
 
     scheduleIdleTask(() => {
-      
+      // Initialize the Sync UI
       gSync.init();
     });
 
     scheduleIdleTask(() => {
-      
+      // Read prefers-reduced-motion setting
       let reduceMotionQuery = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       );
@@ -970,10 +924,10 @@ var gBrowserInit = {
     });
 
     scheduleIdleTask(() => {
-      
+      // setup simple gestures support
       gGestureSupport.init(true);
 
-      
+      // setup history swipe animation
       gHistorySwipeAnimation.init();
     });
 
@@ -983,11 +937,11 @@ var gBrowserInit = {
 
     scheduleIdleTask(
       () => {
-        
-        
-        
-        
-        
+        // Initialize the download manager some time after the app starts so that
+        // auto-resume downloads begin (such as after crashing or quitting with
+        // active downloads) and speeds up the first-load of the download manager UI.
+        // If the user manually opens the download manager before the timeout, the
+        // downloads will start right away, and initializing again won't hurt.
         try {
           DownloadsCommon.initializeAllDataLinks();
           ChromeUtils.importESModule(
@@ -1025,9 +979,9 @@ var gBrowserInit = {
       await gProfiles.init();
     });
 
-    
-    
-    
+    // This should always go last, since the idle tasks (except for the ones with
+    // timeouts) should execute in order. Note that this observer notification is
+    // not guaranteed to fire, since the window could close before we get here.
     scheduleIdleTask(() => {
       this.idleTasksFinished.resolve();
       Services.obs.notifyObservers(
@@ -1037,16 +991,16 @@ var gBrowserInit = {
     });
   },
 
-  
-  
+  // Returns the URI(s) to load at startup if it is immediately known, or a
+  // promise resolving to the URI to load.
   get uriToLoadPromise() {
     delete this.uriToLoadPromise;
     return (this.uriToLoadPromise = (function () {
-      
-      
-      
-      
-      
+      // window.arguments[0]: URI to load (string), or an nsIArray of
+      //                      nsISupportsStrings to load, or a xul:tab of
+      //                      a tabbrowser, which will be replaced by this
+      //                      window (for this case, all other arguments are
+      //                      ignored).
       let uri = window.arguments?.[0];
       if (!uri || window.XULElement.isInstance(uri)) {
         return null;
@@ -1054,13 +1008,13 @@ var gBrowserInit = {
 
       let defaultArgs = BrowserHandler.defaultArgs;
 
-      
+      // If the given URI is different from the homepage, we want to load it.
       if (uri != defaultArgs) {
         AboutNewTab.noteNonDefaultStartup();
 
         if (uri instanceof Ci.nsIArray) {
-          
-          
+          // Transform the nsIArray of nsISupportsString's into a JS Array of
+          // JS strings.
           return Array.from(
             uri.enumerate(Ci.nsISupportsString),
             supportStr => supportStr.data
@@ -1071,8 +1025,8 @@ var gBrowserInit = {
         return uri;
       }
 
-      
-      
+      // The URI appears to be the the homepage. We want to load it only if
+      // session restore isn't about to override the homepage.
       let willOverride = SessionStartup.willOverrideHomepage;
       if (typeof willOverride == "boolean") {
         return willOverride ? null : uri;
@@ -1083,8 +1037,8 @@ var gBrowserInit = {
     })());
   },
 
-  
-  
+  // Calls the given callback with the URI to load at startup.
+  // Synchronously if possible, or after uriToLoadPromise resolves otherwise.
   _callWithURIToLoad(callback) {
     let uriToLoad = this.uriToLoadPromise;
     if (uriToLoad && uriToLoad.then) {
@@ -1101,15 +1055,15 @@ var gBrowserInit = {
 
     ToolbarIconColor.uninit(window);
 
-    
-    
-    
+    // In certain scenarios it's possible for unload to be fired before onload,
+    // (e.g. if the window is being closed after browser.js loads but before the
+    // load completes). In that case, there's nothing to do here.
     if (!this._loadHandled) {
       return;
     }
 
-    
-    
+    // First clean up services initialized in gBrowserInit.onLoad (or those whose
+    // uninit methods don't depend on the services having been initialized).
 
     CombinedStopReload.uninit();
 
@@ -1146,15 +1100,15 @@ var gBrowserInit = {
     }
     CustomKeys.uninitWindow(window);
 
-    
+    // Bug 1952900 to allow switching to unload category without leaking
     ChromeUtils.importESModule(
       "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
     ).LinkPreview.teardown(window);
 
     FirefoxViewHandler.uninit();
 
-    
-    
+    // Now either cancel delayedStartup, or clean up the services initialized from
+    // it.
     if (this._boundDelayedStartup) {
       this._cancelDelayedStartup();
     } else {
@@ -1209,16 +1163,12 @@ var gBrowserInit = {
         gLocaleChangeObserver,
         "intl:app-locales-changed"
       );
-      Services.obs.removeObserver(
-        this._translationsEnabledStateObserver,
-        "translations:enabled-state-changed"
-      );
 
       BrowserOffline.uninit();
       PanelUI.uninit();
     }
 
-    
+    // Final window teardown, do this last.
     gBrowser.destroy();
     window.XULBrowserWindow = null;
     window.docShell.treeOwner
