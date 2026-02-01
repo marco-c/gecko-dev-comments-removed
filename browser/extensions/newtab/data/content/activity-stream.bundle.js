@@ -13070,6 +13070,72 @@ function EditableTimerFields({
 
 
 
+function WeatherForecast() {
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const weatherData = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather);
+  const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
+  const showDetailedView = prefs["weather.display"] === "detailed";
+  if (!showDetailedView || !weatherData?.initialized) {
+    return null;
+  }
+  return React.createElement("article", {
+    className: "weather-forecast-widget"
+  }, React.createElement("div", {
+    className: "city-wrapper"
+  }, React.createElement("h3", null, weatherData.locationData.city)), React.createElement("div", {
+    className: "current-weather-wrapper"
+  }, React.createElement("div", {
+    className: "weather-icon-column"
+  }, React.createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  })), React.createElement("div", {
+    className: "weather-info-column"
+  }, React.createElement("span", {
+    className: "temperature-unit"
+  }, WEATHER_SUGGESTION.current_conditions.temperature[prefs["weather.temperatureUnits"]], "\xB0", prefs["weather.temperatureUnits"]), React.createElement("span", {
+    className: "temperature-description"
+  }, WEATHER_SUGGESTION.current_conditions.summary)), React.createElement("div", {
+    className: "high-low-column"
+  }, React.createElement("span", {
+    className: "high-temperature"
+  }, React.createElement("span", {
+    className: "arrow-icon arrow-up"
+  }), WEATHER_SUGGESTION.forecast.high[prefs["weather.temperatureUnits"]], "\xB0"), React.createElement("span", {
+    className: "low-temperature"
+  }, React.createElement("span", {
+    className: "arrow-icon arrow-down"
+  }), WEATHER_SUGGESTION.forecast.low[prefs["weather.temperatureUnits"]], "\xB0"))), React.createElement("hr", null), React.createElement("div", {
+    className: "forecast-row"
+  }, React.createElement("p", {
+    className: "today-forecast"
+  }, "Today's forecast"), React.createElement("ul", {
+    className: "forecast-row-items"
+  }, React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), React.createElement("span", null, "7:00")), React.createElement("li", null, React.createElement("span", null, "80\xB0"), React.createElement("span", {
+    className: `weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`
+  }), React.createElement("span", null, "7:00")))), React.createElement("div", {
+    className: "weather-forecast-footer"
+  }, React.createElement("a", {
+    href: "#",
+    className: "full-forecast"
+  }, "See full forecast"), React.createElement("span", {
+    className: "sponsored-text"
+  }, "Accuweather Sponsored")));
+}
+
+;
+
+
+
+
+
 
 function WidgetsFeatureHighlight({
   handleDismiss,
@@ -13117,10 +13183,13 @@ function WidgetsFeatureHighlight({
 
 
 
+
 const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
+const PREF_WIDGETS_WEATHER_FORECAST_ENABLED = "widgets.weatherForecast.enabled";
+const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
 
@@ -13162,10 +13231,13 @@ function Widgets() {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
+  const nimbusWeatherForecastEnabled = prefs.widgetsConfig?.weatherForecastEnabled;
   const nimbusListsTrainhopEnabled = prefs.trainhopConfig?.widgets?.listsEnabled;
   const nimbusTimerTrainhopEnabled = prefs.trainhopConfig?.widgets?.timerEnabled;
+  const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
   const listsEnabled = (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
+  const weatherForecastEnabled = (nimbusWeatherForecastTrainhopEnabled || nimbusWeatherForecastEnabled || prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED]) && prefs[PREF_WIDGETS_WEATHER_FORECAST_ENABLED];
 
   
   const prevTimerEnabledRef = (0,external_React_namespaceObject.useRef)(timerEnabled);
@@ -13221,7 +13293,7 @@ function Widgets() {
       dispatch(actionCreators.SetPref(prefName, true));
     }
   }
-  if (!(listsEnabled || timerEnabled)) {
+  if (!(listsEnabled || timerEnabled || weatherForecastEnabled)) {
     return null;
   }
   return external_React_default().createElement("div", {
@@ -13257,6 +13329,10 @@ function Widgets() {
     handleUserInteraction: handleUserInteraction,
     isMaximized: isMaximized
   }), timerEnabled && external_React_default().createElement(FocusTimer, {
+    dispatch: dispatch,
+    handleUserInteraction: handleUserInteraction,
+    isMaximized: isMaximized
+  }), weatherForecastEnabled && external_React_default().createElement(WeatherForecast, {
     dispatch: dispatch,
     handleUserInteraction: handleUserInteraction,
     isMaximized: isMaximized
