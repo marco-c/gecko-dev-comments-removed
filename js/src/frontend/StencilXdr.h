@@ -42,12 +42,8 @@ struct SharedDataContainer;
 template <typename DataT>
 struct CanCopyDataToDisk {
   
-#ifdef __cpp_lib_has_unique_object_representations
   static constexpr bool unique_repr =
       std::has_unique_object_representations<DataT>();
-#else
-  static constexpr bool unique_repr = true;
-#endif
 
   
   
