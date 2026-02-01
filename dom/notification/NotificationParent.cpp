@@ -218,7 +218,8 @@ nsresult NotificationParent::FireClickEvent() {
 
 
 
-mozilla::ipc::IPCResult NotificationParent::RecvShow(ShowResolver&& aResolver) {
+mozilla::ipc::IPCResult NotificationParent::RecvShow(Maybe<IPCImage>&& aIcon,
+                                                     ShowResolver&& aResolver) {
   MOZ_ASSERT(mId.IsEmpty(), "ID should not be given for a new notification");
 
   mResolver.emplace(std::move(aResolver));
@@ -240,7 +241,8 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(ShowResolver&& aResolver) {
   
   
   
-  nsresult rv = Show();
+  
+  nsresult rv = Show(std::move(aIcon));
   
   
   if (NS_FAILED(rv) && mResolver) {
@@ -251,7 +253,7 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(ShowResolver&& aResolver) {
   return IPC_OK();
 }
 
-nsresult NotificationParent::Show() {
+nsresult NotificationParent::Show(Maybe<IPCImage>&& aIcon) {
   
   
   
@@ -289,6 +291,13 @@ nsresult NotificationParent::Show() {
                       options.lang(), options.dataSerialized(), principal,
                       principal->GetIsInPrivateBrowsing(), requireInteraction,
                       options.silent(), options.vibrate()));
+
+  if (aIcon) {
+    if (nsCOMPtr<imgIContainer> image =
+            nsContentUtils::IPCImageToImage(*aIcon)) {
+      alert->SetImage(image);
+    }
+  }
 
   nsTArray<RefPtr<nsIAlertAction>> actions;
   MOZ_ASSERT(options.actions().Length() <= kMaxActions);
