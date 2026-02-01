@@ -59,10 +59,22 @@ class RTC_LOCKABLE SequenceChecker
   
   
   
-  explicit SequenceChecker(InitialState initial_state = kAttached)
+  explicit SequenceChecker(InitialState initial_state = kDetached)
       : Impl(initial_state) {}
   explicit SequenceChecker(TaskQueueBase* attached_queue)
       : Impl(attached_queue) {}
+
+  
+  
+  
+  
+  
+  
+  SequenceChecker(SequenceChecker&& o) = default;
+
+  SequenceChecker(const SequenceChecker&) = delete;
+  SequenceChecker& operator=(const SequenceChecker&) = delete;
+  SequenceChecker& operator=(SequenceChecker&&) = delete;
 
   
   bool IsCurrent() const { return Impl::IsCurrent(); }
