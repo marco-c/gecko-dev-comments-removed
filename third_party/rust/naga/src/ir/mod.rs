@@ -412,7 +412,7 @@ pub enum BuiltIn {
     
     PrimitiveIndex,
     
-    Barycentric,
+    Barycentric { perspective: bool },
     
     SampleIndex,
     
@@ -588,6 +588,9 @@ pub enum Interpolation {
     Linear,
     
     Flat,
+    
+    
+    PerVertex,
 }
 
 

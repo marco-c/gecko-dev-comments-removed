@@ -619,6 +619,11 @@ impl super::PrivateCapabilities {
             MTLLanguageVersion::V1_0
         };
 
+        
+        
+        
+        
+        
         Self {
             msl_version,
             
@@ -723,7 +728,7 @@ impl super::PrivateCapabilities {
             format_bgr10a2_all: Self::supports_any(device, BGR10A2_ALL),
             format_bgr10a2_no_write: !Self::supports_any(device, BGR10A2_ALL),
             max_buffers_per_stage: 31,
-            max_vertex_buffers: 31.min(crate::MAX_VERTEX_BUFFERS as u32),
+            max_vertex_buffers: 31.min(crate::MAX_VERTEX_BUFFERS as u32), 
             max_textures_per_stage: if os_type == super::OsType::Macos
                 || (family_check && device.supports_family(MTLGPUFamily::Apple6))
             {

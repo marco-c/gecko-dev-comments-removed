@@ -116,6 +116,10 @@ pub struct HirExpr {
 
 #[derive(Debug, Clone)]
 pub enum HirExprKind {
+    
+    Sequence {
+        exprs: Vec<Handle<HirExpr>>,
+    },
     Access {
         base: Handle<HirExpr>,
         index: Handle<HirExpr>,

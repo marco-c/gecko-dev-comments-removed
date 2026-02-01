@@ -336,6 +336,7 @@ pub struct BindGroupLayoutEntry {
     
     
     
+    
     #[cfg_attr(feature = "serde", serde(default))]
     pub count: Option<NonZeroU32>,
 }

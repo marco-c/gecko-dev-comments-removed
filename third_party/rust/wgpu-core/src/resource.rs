@@ -2327,7 +2327,7 @@ impl Blas {
                             
                             
                             #[expect(clippy::single_range_in_vec_init)]
-                            self.device.raw().flush_mapped_ranges(
+                            self.device.raw().invalidate_mapped_ranges(
                                 compaction_buffer,
                                 &[0..size_of::<wgpu_types::BufferAddress>() as wgt::BufferAddress],
                             );
