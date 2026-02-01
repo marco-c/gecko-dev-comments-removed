@@ -8844,8 +8844,7 @@ var gCSSProperties = {
       "sub",
       "super",
       "top",
-      
-      
+      "center",
       "bottom",
       "15%",
       "3px",

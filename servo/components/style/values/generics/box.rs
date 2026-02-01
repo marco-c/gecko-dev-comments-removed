@@ -41,8 +41,7 @@ pub enum BaselineShiftKeyword {
     
     Top,
     
-    
-    
+    Center,
     
     Bottom,
 }
