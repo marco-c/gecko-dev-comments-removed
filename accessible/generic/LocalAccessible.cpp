@@ -1757,7 +1757,7 @@ void LocalAccessible::Value(nsString& aValue) const {
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
 
   
-  if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
+  if (IsTextField() || (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
       (IsGeneric() && IsEditableRoot())) {
     TextLeafRange::FromAccessible(const_cast<LocalAccessible*>(this))
         .GetFlattenedText(aValue);
