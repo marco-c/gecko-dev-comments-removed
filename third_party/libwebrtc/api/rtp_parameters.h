@@ -755,6 +755,12 @@ struct RTC_EXPORT RtpParameters {
            degradation_preference == o.degradation_preference;
   }
   bool operator!=(const RtpParameters& o) const { return !(*this == o); }
+
+  
+  
+  
+  
+  bool IsMixedCodec() const;
 };
 
 }  
