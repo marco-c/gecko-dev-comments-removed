@@ -32,7 +32,7 @@ function ensureInferenceEnabled() {
     return;
   }
   throw new ExtensionError(
-    `Trial ML is only available when "${PREF_EXTENSIONS_ML_ENABLED}" and ${PREF_BROWSER_ML_ENABLE}" preferences are set to true.`
+    `Trial ML API is disabled. This API is only available when "${PREF_EXTENSIONS_ML_ENABLED}" and ${PREF_BROWSER_ML_ENABLE}" preferences are set to true.`
   );
 }
 
@@ -142,8 +142,6 @@ class TrialML extends ExtensionAPI {
 
 
   getAPI(context) {
-    ensureInferenceEnabled();
-
     return {
       trial: {
         ml: {
@@ -155,6 +153,8 @@ class TrialML extends ExtensionAPI {
 
 
           createEngine: async request => {
+            ensureInferenceEnabled();
+
             if (!SUPPORTED_TASKS.includes(request.taskName)) {
               throw new ExtensionError(`Unsupported task ${request.taskName}`);
             }
@@ -176,6 +176,8 @@ class TrialML extends ExtensionAPI {
 
 
           runEngine: async request => {
+            ensureInferenceEnabled();
+
             if (this.#engine?.engineStatus === "closed") {
               
               try {
@@ -192,6 +194,8 @@ class TrialML extends ExtensionAPI {
 
 
           deleteCachedModels: async () => {
+            ensureInferenceEnabled();
+
             await modelHub.deleteFilesByEngine({
               engineId: this.#pipelineId,
               deletedBy: "webextensions-api",
@@ -209,6 +213,10 @@ class TrialML extends ExtensionAPI {
             name: "trial.ml.onProgress",
             register: fire => {
               const callback = (_evtName, progressData) => {
+                
+                
+                
+                
                 fire.async(progressData);
               };
               this.extension.on(ENGINE_EVENT, callback);
