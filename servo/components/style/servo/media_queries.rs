@@ -7,6 +7,7 @@
 use crate::color::AbsoluteColor;
 use crate::context::QuirksMode;
 use crate::custom_properties::CssEnvironment;
+use crate::derives::*;
 use crate::font_metrics::FontMetrics;
 use crate::logical_geometry::WritingMode;
 use crate::media_queries::MediaType;
@@ -20,7 +21,8 @@ use crate::values::computed::{
 };
 use crate::values::specified::color::{ColorSchemeFlags, ForcedColors};
 use crate::values::specified::font::{
-    QueryFontMetricsFlags, FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX,
+    QueryFontMetricsFlags, FONT_MEDIUM_CAP_PX, FONT_MEDIUM_CH_PX, FONT_MEDIUM_EX_PX,
+    FONT_MEDIUM_IC_PX, FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX,
 };
 use crate::values::specified::ViewportVariant;
 use crate::values::KeyframesName;
@@ -28,8 +30,10 @@ use app_units::{Au, AU_PER_PX};
 use euclid::default::Size2D as UntypedSize2D;
 use euclid::{Scale, SideOffsets2D, Size2D};
 use mime::Mime;
+use parking_lot::RwLock;
 use servo_arc::Arc;
 use std::fmt::Debug;
+use std::mem;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use style_traits::{CSSPixel, DevicePixel};
 
@@ -52,6 +56,12 @@ pub trait FontMetricsProvider: Debug + Sync {
 
 
 
+
+
+
+
+
+
 #[derive(Debug, MallocSizeOf)]
 pub struct Device {
     
@@ -66,17 +76,26 @@ pub struct Device {
 
     
     
-    
-    
-    
-    
-    
+    #[ignore_malloc_size_of = "Arc"]
+    root_style: RwLock<Arc<ComputedValues>>,
     
     #[ignore_malloc_size_of = "Pure stack type"]
     root_font_size: AtomicU32,
     
     #[ignore_malloc_size_of = "Pure stack type"]
     root_line_height: AtomicU32,
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    root_font_metrics_ex: AtomicU32,
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    root_font_metrics_cap: AtomicU32,
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    root_font_metrics_ch: AtomicU32,
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    root_font_metrics_ic: AtomicU32,
     
     
     #[ignore_malloc_size_of = "Pure stack type"]
@@ -85,6 +104,11 @@ pub struct Device {
     
     #[ignore_malloc_size_of = "Pure stack type"]
     used_root_line_height: AtomicBool,
+    
+    
+    
+    #[ignore_malloc_size_of = "Pure stack type"]
+    used_root_font_metrics: RwLock<bool>,
     
     used_font_metrics: AtomicBool,
     
@@ -115,15 +139,24 @@ impl Device {
         default_computed_values: Arc<ComputedValues>,
         prefers_color_scheme: PrefersColorScheme,
     ) -> Device {
+        let default_values =
+            ComputedValues::initial_values_with_font_override(Font::initial_values());
+        let root_style = RwLock::new(Arc::clone(&default_values));
         Device {
             media_type,
             viewport_size,
             device_pixel_ratio,
             quirks_mode,
+            root_style,
             root_font_size: AtomicU32::new(FONT_MEDIUM_PX.to_bits()),
             root_line_height: AtomicU32::new(FONT_MEDIUM_LINE_HEIGHT_PX.to_bits()),
+            root_font_metrics_ex: AtomicU32::new(FONT_MEDIUM_EX_PX.to_bits()),
+            root_font_metrics_cap: AtomicU32::new(FONT_MEDIUM_CAP_PX.to_bits()),
+            root_font_metrics_ch: AtomicU32::new(FONT_MEDIUM_CH_PX.to_bits()),
+            root_font_metrics_ic: AtomicU32::new(FONT_MEDIUM_IC_PX.to_bits()),
             used_root_font_size: AtomicBool::new(false),
             used_root_line_height: AtomicBool::new(false),
+            used_root_font_metrics: RwLock::new(false),
             used_font_metrics: AtomicBool::new(false),
             used_viewport_units: AtomicBool::new(false),
             prefers_color_scheme,
@@ -142,6 +175,12 @@ impl Device {
     
     pub fn default_computed_values(&self) -> &ComputedValues {
         &self.default_computed_values
+    }
+
+    
+    
+    pub fn set_root_style(&self, style: &Arc<ComputedValues>) {
+        *self.root_style.write() = style.clone();
     }
 
     
@@ -167,6 +206,66 @@ impl Device {
     pub fn set_root_line_height(&self, size: f32) {
         self.root_line_height
             .store(size.to_bits(), Ordering::Relaxed);
+    }
+
+    
+    pub fn root_font_metrics_ex(&self) -> Length {
+        self.ensure_root_font_metrics_updated();
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ex.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_ex(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ex.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
+    pub fn root_font_metrics_cap(&self) -> Length {
+        self.ensure_root_font_metrics_updated();
+        Length::new(f32::from_bits(
+            self.root_font_metrics_cap.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_cap(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_cap.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
+    pub fn root_font_metrics_ch(&self) -> Length {
+        self.ensure_root_font_metrics_updated();
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ch.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_ch(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ch.swap(size, Ordering::Relaxed);
+        previous != size
+    }
+
+    
+    pub fn root_font_metrics_ic(&self) -> Length {
+        self.ensure_root_font_metrics_updated();
+        Length::new(f32::from_bits(
+            self.root_font_metrics_ic.load(Ordering::Relaxed),
+        ))
+    }
+
+    
+    pub fn set_root_font_metrics_ic(&self, size: f32) -> bool {
+        let size = size.to_bits();
+        let previous = self.root_font_metrics_ic.swap(size, Ordering::Relaxed);
+        previous != size
     }
 
     
@@ -221,8 +320,27 @@ impl Device {
     }
 
     
+    pub fn used_root_font_metrics(&self) -> bool {
+        *self.used_root_font_metrics.read()
+    }
+
+    
     pub fn used_font_metrics(&self) -> bool {
         self.used_font_metrics.load(Ordering::Relaxed)
+    }
+
+    
+    pub fn viewport_size(&self) -> Size2D<f32, CSSPixel> {
+        self.viewport_size
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_viewport_size(&mut self, viewport_size: Size2D<f32, CSSPixel>) {
+        self.viewport_size = viewport_size;
     }
 
     
@@ -267,6 +385,18 @@ impl Device {
     }
 
     
+    
+    
+    
+    
+    pub fn set_device_pixel_ratio(
+        &mut self,
+        device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
+    ) {
+        self.device_pixel_ratio = device_pixel_ratio;
+    }
+
+    
     pub fn scrollbar_inline_size(&self) -> CSSPixelLength {
         
         CSSPixelLength::new(0.0)
@@ -279,10 +409,62 @@ impl Device {
         font: &Font,
         base_size: CSSPixelLength,
         flags: QueryFontMetricsFlags,
+        track_usage: bool,
     ) -> FontMetrics {
-        self.used_font_metrics.store(true, Ordering::Relaxed);
+        if track_usage {
+            self.used_font_metrics.store(true, Ordering::Relaxed);
+        }
         self.font_metrics_provider
             .query_font_metrics(vertical, font, base_size, flags)
+    }
+
+    fn ensure_root_font_metrics_updated(&self) {
+        let mut guard = self.used_root_font_metrics.write();
+        let previously_computed = mem::replace(&mut *guard, true);
+        if !previously_computed {
+            self.update_root_font_metrics();
+        }
+    }
+
+    
+    
+    pub fn update_root_font_metrics(&self) -> bool {
+        let root_style = self.root_style.read();
+        let root_effective_zoom = (*root_style).effective_zoom;
+        let root_font_size = (*root_style).get_font().clone_font_size().computed_size();
+
+        let root_font_metrics = self.query_font_metrics(
+            (*root_style).writing_mode.is_upright(),
+            &(*root_style).get_font(),
+            root_font_size,
+            QueryFontMetricsFlags::USE_USER_FONT_SET
+                | QueryFontMetricsFlags::NEEDS_CH
+                | QueryFontMetricsFlags::NEEDS_IC,
+             false,
+        );
+
+        let mut root_font_metrics_changed = false;
+        root_font_metrics_changed |= self.set_root_font_metrics_ex(
+            root_effective_zoom.unzoom(root_font_metrics.x_height_or_default(root_font_size).px()),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_ch(
+            root_effective_zoom.unzoom(
+                root_font_metrics
+                    .zero_advance_measure_or_default(
+                        root_font_size,
+                        (*root_style).writing_mode.is_upright(),
+                    )
+                    .px(),
+            ),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_cap(
+            root_effective_zoom.unzoom(root_font_metrics.cap_height_or_default().px()),
+        );
+        root_font_metrics_changed |= self.set_root_font_metrics_ic(
+            root_effective_zoom.unzoom(root_font_metrics.ic_width_or_default(root_font_size).px()),
+        );
+
+        root_font_metrics_changed
     }
 
     
@@ -303,6 +485,15 @@ impl Device {
     
     pub fn default_color(&self) -> AbsoluteColor {
         AbsoluteColor::BLACK
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_color_scheme(&mut self, new_color_scheme: PrefersColorScheme) {
+        self.prefers_color_scheme = new_color_scheme;
     }
 
     
