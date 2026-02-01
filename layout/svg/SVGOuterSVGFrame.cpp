@@ -374,7 +374,7 @@ void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
       nsPresContext::AppUnitsToFloatCSSPixels(aReflowInput.ComputedWidth()),
       nsPresContext::AppUnitsToFloatCSSPixels(aReflowInput.ComputedHeight()));
 
-  uint32_t changeBits = 0;
+  EnumSet<ChangeFlags> changeBits;
   if (newViewportSize != svgElem->GetViewportSize()) {
     
     
@@ -403,17 +403,17 @@ void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
         child->MarkSubtreeDirty();
       }
     }
-    changeBits |= COORD_CONTEXT_CHANGED;
+    changeBits += ChangeFlags::CoordContextChanged;
     svgElem->SetViewportSize(newViewportSize);
   }
   if (mIsRootContent && !mIsInIframe) {
     const auto oldZoom = mFullZoom;
     mFullZoom = ComputeFullZoom();
     if (oldZoom != mFullZoom) {
-      changeBits |= FULL_ZOOM_CHANGED;
+      changeBits += ChangeFlags::FullZoomChanged;
     }
   }
-  if (changeBits && !HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+  if (!changeBits.isEmpty() && !HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     NotifyViewportOrTransformChanged(changeBits);
   }
 
@@ -513,8 +513,9 @@ nsresult SVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
       SVGUtils::NotifyChildrenOfSVGChange(
           PrincipalChildList().FirstChild(),
           aAttribute == nsGkAtoms::viewBox
-              ? TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED
-              : TRANSFORM_CHANGED);
+              ? EnumSet<ChangeFlags>(ChangeFlags::TransformChanged,
+                                     ChangeFlags::CoordContextChanged)
+              : ChangeFlags::TransformChanged);
 
       if (aAttribute != nsGkAtoms::transform) {
         static_cast<SVGSVGElement*>(GetContent())
@@ -577,48 +578,49 @@ void SVGOuterSVGFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 
 
-void SVGOuterSVGFrame::NotifyViewportOrTransformChanged(uint32_t aFlags) {
-  MOZ_ASSERT(aFlags && !(aFlags & ~(COORD_CONTEXT_CHANGED | TRANSFORM_CHANGED |
-                                    FULL_ZOOM_CHANGED)),
-             "Unexpected aFlags value");
-
+void SVGOuterSVGFrame::NotifyViewportOrTransformChanged(
+    EnumSet<ChangeFlags> aFlags) {
   auto* content = static_cast<SVGSVGElement*>(GetContent());
-  if (aFlags & COORD_CONTEXT_CHANGED) {
+  if (aFlags.contains(ChangeFlags::CoordContextChanged)) {
     if (content->HasViewBox()) {
       
       
       
-      aFlags = TRANSFORM_CHANGED;
+      aFlags = ChangeFlags::TransformChanged;
     } else if (content->ShouldSynthesizeViewBox()) {
       
       
       
-      aFlags |= TRANSFORM_CHANGED;
+      aFlags += ChangeFlags::TransformChanged;
     } else if (mCanvasTM && mCanvasTM->IsSingular()) {
       
       
       
       
-      aFlags |= TRANSFORM_CHANGED;
+      aFlags += ChangeFlags::TransformChanged;
     }
   }
 
-  bool haveNonFulLZoomTransformChange = (aFlags & TRANSFORM_CHANGED);
+  bool haveNonFullZoomTransformChange =
+      aFlags.contains(ChangeFlags::TransformChanged);
 
-  if (aFlags & FULL_ZOOM_CHANGED) {
+  if (aFlags.contains(ChangeFlags::FullZoomChanged)) {
     
-    aFlags = (aFlags & ~FULL_ZOOM_CHANGED) | TRANSFORM_CHANGED;
+    aFlags -= ChangeFlags::FullZoomChanged;
+    aFlags += ChangeFlags::TransformChanged;
   }
 
-  if (aFlags & TRANSFORM_CHANGED) {
+  if (aFlags.contains(ChangeFlags::TransformChanged)) {
     
     mCanvasTM = nullptr;
 
-    if (haveNonFulLZoomTransformChange &&
+    if (haveNonFullZoomTransformChange &&
         !HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-      uint32_t flags = HasAnyStateBits(NS_FRAME_IN_REFLOW)
-                           ? SVGSVGElement::eDuringReflow
-                           : 0;
+      SVGViewportElement::ChildrenOnlyTransformChangedFlags flags;
+      if (HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
+        flags +=
+            SVGViewportElement::ChildrenOnlyTransformChangedFlag::DuringReflow;
+      }
       content->ChildrenOnlyTransformChanged(flags);
     }
   }

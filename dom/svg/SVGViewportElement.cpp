@@ -115,7 +115,8 @@ void SVGViewportElement::UpdateHasChildrenOnlyTransform() {
        static_cast<SVGSVGElement*>(this)->IsScaledOrTranslated());
 }
 
-void SVGViewportElement::ChildrenOnlyTransformChanged(uint32_t aFlags) {
+void SVGViewportElement::ChildrenOnlyTransformChanged(
+    ChildrenOnlyTransformChangedFlags aFlags) {
   
   MOZ_ASSERT(!GetPrimaryFrame()->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
              "Non-display SVG frames don't maintain overflow rects");
@@ -142,7 +143,7 @@ void SVGViewportElement::ChildrenOnlyTransformChanged(uint32_t aFlags) {
   
   
   if ((changeHint & nsChangeHint_ReconstructFrame) ||
-      !(aFlags & eDuringReflow)) {
+      !aFlags.contains(ChildrenOnlyTransformChangedFlag::DuringReflow)) {
     nsLayoutUtils::PostRestyleEvent(this, RestyleHint{0}, changeHint);
   }
 }

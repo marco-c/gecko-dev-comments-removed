@@ -82,7 +82,10 @@ class SVGViewportElement : public SVGGraphicsElement {
 
   void UpdateHasChildrenOnlyTransform();
 
-  enum ChildrenOnlyTransformChangedFlags { eDuringReflow = 1 };
+  enum class ChildrenOnlyTransformChangedFlag { DuringReflow };
+
+  using ChildrenOnlyTransformChangedFlags =
+      EnumSet<ChildrenOnlyTransformChangedFlag>;
 
   
 
@@ -94,7 +97,8 @@ class SVGViewportElement : public SVGGraphicsElement {
 
 
 
-  void ChildrenOnlyTransformChanged(uint32_t aFlags = 0);
+  void ChildrenOnlyTransformChanged(
+      ChildrenOnlyTransformChangedFlags aFlags = {});
 
   gfx::Matrix GetViewBoxTransform() const;
 
