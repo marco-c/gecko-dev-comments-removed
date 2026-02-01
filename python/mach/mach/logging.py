@@ -21,10 +21,18 @@ IS_WINDOWS = sys.platform.startswith("win")
 
 
 
+THIRD_PARTY_WARNING = 15
+SUPPRESSED_WARNING = 16
+assert logging.DEBUG < THIRD_PARTY_WARNING < SUPPRESSED_WARNING < logging.INFO
+
+
+
 
 BUILD_ERROR = 35
 assert logging.WARNING < BUILD_ERROR < logging.ERROR
 
+logging.addLevelName(THIRD_PARTY_WARNING, "THIRD_PARTY_WARNING")
+logging.addLevelName(SUPPRESSED_WARNING, "SUPPRESSED_WARNING")
 logging.addLevelName(BUILD_ERROR, "BUILD_ERROR")
 
 if IS_WINDOWS:
@@ -86,6 +94,8 @@ def format_level(level, terminal=None):
     levels = {
         logging.NOTSET: ("N", "bright_white"),
         logging.DEBUG: ("D", "blue"),
+        THIRD_PARTY_WARNING: ("TPW", "yellow"),
+        SUPPRESSED_WARNING: ("SW", "yellow"),
         logging.INFO: (None, None),
         logging.WARNING: ("W", "yellow"),
         BUILD_ERROR: ("E", "red"),
