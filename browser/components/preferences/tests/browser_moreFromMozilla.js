@@ -3,20 +3,11 @@
 
 "use strict";
 
-const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
-  "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
-);
-
 let { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
 
 const TOTAL_PROMO_CARDS_COUNT = 6;
-
-async function clearPolicies() {
-  
-  await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
-}
 
 
 
