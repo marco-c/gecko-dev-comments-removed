@@ -2973,6 +2973,12 @@ class nsContentUtils {
   
 
 
+  static nsresult GetAsciiHostOrIPv6WithBrackets(nsIURI* aURI,
+                                                 nsACString& aHost);
+
+  
+
+
 
 
   static void CallOnAllRemoteChildren(
