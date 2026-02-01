@@ -27,11 +27,9 @@ enum class ImagePlacement {
 
 class ToastNotification;
 
-class ToastNotificationHandler final
-    : public nsIAlertNotificationImageListener {
+class ToastNotificationHandler final : public nsISupports {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIALERTNOTIFICATIONIMAGELISTENER
 
   ToastNotificationHandler(
       ToastNotification* backend, const nsAString& aAumid,
@@ -115,7 +113,6 @@ class ToastNotificationHandler final
   nsString mAumid;
   nsString mWindowsTag;
 
-  nsCOMPtr<nsICancelable> mImageRequest;
   nsCOMPtr<nsIFile> mImageFile;
   nsString mImageUri;
   bool mHasImage;
@@ -143,9 +140,13 @@ class ToastNotificationHandler final
 
   nsresult TryShowAlert();
   bool ShowAlert();
-  nsresult AsyncSaveImage(imgIRequest* aRequest);
+  nsresult AsyncSaveImage(imgIContainer* aImage);
   nsresult OnWriteImageSuccess();
+  
   void SendFinished();
+  
+  
+  void HandleCloseFromSystem();
 
   bool CreateWindowsNotificationFromXml(ComPtr<IXmlDocument>& aToastXml);
   ComPtr<IXmlDocument> CreateToastXmlDocument();
