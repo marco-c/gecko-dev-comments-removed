@@ -8,43 +8,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef PC_WEBRTC_SDP_H_
 #define PC_WEBRTC_SDP_H_
 
-#include <memory>
-#include <string>
-
-#include "absl/base/nullability.h"
-#include "absl/strings/string_view.h"
-#include "api/jsep.h"
-
-namespace webrtc {
-
-
-
-
-
-std::string SdpSerialize(const SessionDescriptionInterface& jdesc);
-
-
-
-
-
-
-absl_nullable std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
-    SdpType sdp_type,
-    absl::string_view sdp,
-    SdpParseError* absl_nullable error = nullptr);
-
-}  
+#include "api/webrtc_sdp.h"  
 
 #endif  
