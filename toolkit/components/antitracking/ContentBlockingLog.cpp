@@ -215,12 +215,6 @@ void ContentBlockingLog::ReportCanvasFingerprintingLog(
   }
 
   bool hasCanvasFingerprinter = false;
-
-  
-  
-  nsTHashSet<nsCString> seenTextSourceCombos;
-  nsTHashSet<nsCString> seenAliasSourceCombos;
-
   for (const auto& originEntry : mLog) {
     if (!originEntry.mData) {
       continue;
@@ -251,19 +245,49 @@ void ContentBlockingLog::ReportCanvasFingerprintingLog(
       
       
       
-      if (!canvasFingerprintingEvent.knownTextBitmask) {
-        nsAutoCString key, category;
-        key.AppendLiteral("none");
-        category.AppendInt(canvasFingerprintingEvent.sourcesBitmask);
+      
+      auto IncrementBySources =
+          [](const CanvasFingerprintingEvent canvasFingerprintingEvent,
+             glean::impl::DualLabeledCounterMetric metric,
+             const nsCString& key) {
+            for (uint64_t b = canvasFingerprintingEvent.sourcesBitmask; b;
+                 b &= (b - 1)) {
+              
+              
+              uint32_t singleSetBit_Source = b & (~b + 1);
 
-        nsAutoCString comboKey(key + ":"_ns + category);
-        if (!seenTextSourceCombos.Contains(comboKey)) {
-          seenTextSourceCombos.Insert(comboKey);
-          glean::contentblocking::
-              canvas_fingerprinting_type_text_by_source_per_tab2
-                  .Get(key, category)
-                  .Add();
-        }
+              nsAutoCString category;
+              category.AppendInt(singleSetBit_Source);
+
+              
+              
+
+              metric.Get(key, category).Add();
+            }
+            
+            
+            
+            MOZ_LOG(gFingerprinterDetection, LogLevel::Info,
+                    ("ContentBlockingLog::ReportCanvasFingerprintingLog: "
+                     "Incrementing for combined sources bitmask %" PRIu64,
+                     canvasFingerprintingEvent.sourcesBitmask));
+            nsAutoCString category;
+            category.AppendInt(canvasFingerprintingEvent.sourcesBitmask);
+            metric.Get(key, category).Add();
+          };
+
+      
+      
+      
+      if (!canvasFingerprintingEvent.knownTextBitmask) {
+        nsAutoCString key;
+        key.AppendLiteral("none");
+
+        IncrementBySources(
+            canvasFingerprintingEvent,
+            glean::contentblocking::
+                canvas_fingerprinting_type_text_by_source_per_tab2,
+            key);
       } else {
         
         for (uint32_t b = canvasFingerprintingEvent.knownTextBitmask; b;
@@ -271,38 +295,28 @@ void ContentBlockingLog::ReportCanvasFingerprintingLog(
           uint32_t singleSetBit_Text = b & (~b + 1);
           uint32_t exponent = mozilla::CountTrailingZeroes32(singleSetBit_Text);
 
-          nsAutoCString key, category;
+          nsAutoCString key;
           key.AppendInt(exponent);
-          category.AppendInt(canvasFingerprintingEvent.sourcesBitmask);
 
-          nsAutoCString comboKey(key + ":"_ns + category);
-          if (!seenTextSourceCombos.Contains(comboKey)) {
-            seenTextSourceCombos.Insert(comboKey);
-            glean::contentblocking::
-                canvas_fingerprinting_type_text_by_source_per_tab2
-                    .Get(key, category)
-                    .Add();
-          }
+          IncrementBySources(
+              canvasFingerprintingEvent,
+              glean::contentblocking::
+                  canvas_fingerprinting_type_text_by_source_per_tab2,
+              key);
         }
       }
 
       
       
       
-      {
-        nsAutoCString key, category;
-        key.AppendInt(static_cast<uint32_t>(canvasFingerprintingEvent.alias));
-        category.AppendInt(canvasFingerprintingEvent.sourcesBitmask);
+      nsAutoCString key;
+      key.AppendInt(static_cast<uint32_t>(canvasFingerprintingEvent.alias));
 
-        nsAutoCString comboKey(key + ":"_ns + category);
-        if (!seenAliasSourceCombos.Contains(comboKey)) {
-          seenAliasSourceCombos.Insert(comboKey);
+      IncrementBySources(
+          canvasFingerprintingEvent,
           glean::contentblocking::
-              canvas_fingerprinting_type_alias_by_source_per_tab2
-                  .Get(key, category)
-                  .Add();
-        }
-      }
+              canvas_fingerprinting_type_alias_by_source_per_tab2,
+          key);
     }
   }
 
