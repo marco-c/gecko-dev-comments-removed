@@ -572,6 +572,16 @@ DictionaryCacheEntry::OnStopRequest(nsIRequest* request, nsresult result) {
   }
 
   
+  if (mReplacement) {
+    DICTIONARY_LOG(("Unsuspending %zu replacement channels",
+                    mReplacement->mWaitingPrefetch.Length()));
+    for (auto& lambda : mReplacement->mWaitingPrefetch) {
+      (lambda)(result);
+    }
+    mReplacement->mWaitingPrefetch.Clear();
+  }
+
+  
   RefPtr<DictionaryCacheEntry> self;
   if (mReplacement) {
     DICTIONARY_LOG(("Replacing entry %p with %p for %s", this,

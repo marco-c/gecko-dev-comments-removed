@@ -2434,8 +2434,12 @@ nsresult nsHttpChannel::CallOnStartRequest() {
       
       
       StoreHasAppliedConversion(false);
-      rv = DoApplyContentConversions(mListener, getter_AddRefs(listener),
-                                     nullptr);
+      
+      
+      
+      
+      rv = DoApplyContentConversionsInternal(
+          mListener, getter_AddRefs(listener), true, nullptr);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -2448,6 +2452,14 @@ nsresult nsHttpChannel::CallOnStartRequest() {
         mCompressListener = listener;
 
         StoreHasAppliedConversion(true);
+      } else {
+        
+        
+        LOG_DICTIONARIES(
+            ("FATAL: Failed to install decompressor for %s at "
+             "CallOnStartRequest",
+             contentEncoding.get()));
+        return NS_ERROR_INVALID_CONTENT_ENCODING;
       }
     }
   }
@@ -3574,6 +3586,13 @@ nsresult nsHttpChannel::ContinueProcessResponse4(nsresult rv) {
 
     MaybeCreateCacheEntryWhenRCWN();
 
+    if (mCacheEntry) {
+      rv = UpdateExpirationTime();
+      if (NS_FAILED(rv)) {
+        LOG(("ContinueProcessResponse4 UpdateExpirationTime failed [rv=%x]\n",
+             static_cast<uint32_t>(rv)));
+      }
+    }
     rv = InitCacheEntry();
     if (NS_FAILED(rv)) {
       LOG(
@@ -3624,16 +3643,6 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
 
   UpdateInhibitPersistentCachingFlag();
 
-  MaybeCreateCacheEntryWhenRCWN();
-
-  
-  
-  
-  if (mCacheEntry) {
-    rv = InitCacheEntry();
-    if (NS_FAILED(rv)) CloseCacheEntry(true);
-  }
-
   
   
   
@@ -3642,15 +3651,30 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   
   
   
-  bool isDictionaryCompressed = false;
+  mIsDictionaryCompressed = false;
   nsAutoCString contentEncoding;
   (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
-  
   if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
-    isDictionaryCompressed = true;
+    mIsDictionaryCompressed = true;
+  } else if (contentEncoding.Find("dcb") != -1 ||
+             contentEncoding.Find("dcz") != -1) {
+    
+    
+    
+    LOG_DICTIONARIES(("Rejecting response with unsupported multi-encoding: %s",
+                      contentEncoding.get()));
+    Cancel(NS_ERROR_INVALID_CONTENT_ENCODING);
+    return NS_ERROR_INVALID_CONTENT_ENCODING;
   }
 
   if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
+    
+    
+    rv = UpdateExpirationTime();
+    if (NS_FAILED(rv)) {
+      LOG(("UpdateExpirationTime failed in ContinueProcessNormal"));
+    }
+
     
     
     
@@ -3669,12 +3693,12 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
       }
     }
 
-    if (isDictionaryCompressed || mDictSaving) {
-      LOG(("Decompressing before saving into cache [channel=%p]", this));
-      rv = DoInstallCacheListener(isDictionaryCompressed, &dictionary, 0);
-    }
+    
+    
+    
+    
   } else {
-    if (isDictionaryCompressed) {
+    if (mIsDictionaryCompressed) {
       
       
       LOG_DICTIONARIES(
@@ -3696,9 +3720,68 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
         StoreHasAppliedConversion(true);
       } else {
         LOG_DICTIONARIES(("Didn't install decompressor without cache tee"));
+        
+        
+        if (mIsDictionaryCompressed) {
+          LOG_DICTIONARIES(
+              ("FATAL: Failed to install decompressor for "
+               "dictionary-compressed content"));
+          Cancel(NS_ERROR_INVALID_CONTENT_ENCODING);
+          return NS_ERROR_INVALID_CONTENT_ENCODING;
+        }
       }
     }
   }  
+
+  
+  
+  
+  
+  return ContinueProcessNormal2(rv);
+}
+
+nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
+  if (mSuspendCount) {
+    LOG_DICTIONARIES(
+        ("*** Suspended %s in ContinueProcessNormal for dictionary "
+         "replacement!  [this=%p]\n",
+         mSpec.get(), this));
+    LOG(("Waiting until resume to finish processing response [this=%p]\n",
+         this));
+    mCallOnResume = [rv](nsHttpChannel* self) {
+      (void)self->ContinueProcessNormal2(rv);
+      return NS_OK;
+    };
+    return NS_OK;
+  }
+
+  if (NS_FAILED(rv) && !mCanceled) {
+    
+    Cancel(rv);
+    return CallOnStartRequest();
+  }
+
+  MaybeCreateCacheEntryWhenRCWN();
+
+  
+  
+  
+  if (mCacheEntry) {
+    rv = InitCacheEntry();
+    if (NS_FAILED(rv)) CloseCacheEntry(true);
+  }
+
+  
+  if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
+    if (mIsDictionaryCompressed || mDictSaving) {
+      LOG(("Decompressing before saving into cache [channel=%p]", this));
+      rv = DoInstallCacheListener(mIsDictionaryCompressed || mDictSaving, 0);
+      if (NS_FAILED(rv)) {
+        LOG_DICTIONARIES(
+            ("DoInstallCacheListener FAILED: %x", static_cast<uint32_t>(rv)));
+      }
+    }
+  }
 
   
   if (LoadResuming()) {
@@ -3743,7 +3826,7 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
 
   
   
-  if (!isDictionaryCompressed && !mDictSaving) {
+  if (!mIsDictionaryCompressed && !mDictSaving) {
     
     if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
       rv = InstallCacheListener();
@@ -6095,11 +6178,13 @@ nsresult nsHttpChannel::InitCacheEntry() {
     }
 
     StoreCacheEntryIsWriteOnly(true);
-  }
 
-  
-  rv = UpdateExpirationTime();
-  if (NS_FAILED(rv)) return rv;
+    
+    
+    
+    rv = UpdateExpirationTime();
+    if (NS_FAILED(rv)) return rv;
+  }
 
   
   mCacheEntry->SetMetaDataElement("strongly-framed", "0");
@@ -6316,7 +6401,7 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     if (mDictSaving) {
       if (mDictSaving->ShouldSuspendUntilCacheRead()) {
         LOG_DICTIONARIES(("Suspending %p to wait for cache read", this));
-        mTransactionPump->Suspend();
+        Suspend();
         mDictSaving->CallbackOnCacheRead([self = RefPtr(this)](nsresult) {
           LOG_DICTIONARIES(("Resuming %p after cache read", self.get()));
           self->Resume();
@@ -6376,7 +6461,7 @@ nsresult nsHttpChannel::FinalizeCacheEntry() {
 }
 
 nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
-  return DoInstallCacheListener(false, nullptr, offset);
+  return DoInstallCacheListener(false, offset);
 }
 
 
@@ -6388,8 +6473,7 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
 
 
 
-nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
-                                               nsACString* aDictionary,
+nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
                                                int64_t offset) {
   nsresult rv;
 
@@ -6471,7 +6555,7 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
 
   
   
-  if (aDictionary || aIsDictionaryCompressed) {
+  if (aSaveDecompressed) {
     nsCOMPtr<nsIStreamListener> listener;
     
     SetApplyConversion(true);
@@ -6500,6 +6584,22 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
 
     } else {
       LOG_DICTIONARIES(("Didn't install decompressor before tee"));
+      
+      
+      if (aSaveDecompressed) {
+        nsAutoCString contentEncoding;
+        (void)mResponseHead->GetHeader(nsHttp::Content_Encoding,
+                                       contentEncoding);
+
+        LOG_DICTIONARIES(
+            ("FATAL: Failed to install decompressor before cache tee. "
+             "Content-Encoding='%s'",
+             contentEncoding.get()));
+
+        
+        LOG_DICTIONARIES(("Forcing Content-Encoding to empty"));
+        (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
+      }
     }
     
     
@@ -6510,6 +6610,18 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aIsDictionaryCompressed,
     }
   }
 
+#ifdef DEBUG
+  
+  nsAutoCString verifyEncoding;
+  (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, verifyEncoding);
+  MOZ_ASSERT(!verifyEncoding.Equals("dcb") && !verifyEncoding.Equals("dcz"),
+             "Content-Encoding should have been cleared for dcb/dcz");
+  if (aSaveDecompressed) {
+    MOZ_ASSERT(
+        verifyEncoding.IsEmpty(),
+        "Content-Encoding should have been cleared for dictionary resources");
+  }
+#endif
   return NS_OK;
 }
 
@@ -7293,7 +7405,7 @@ nsHttpChannel::Suspend() {
 
   PROFILER_MARKER("nsHttpChannel::Suspend", NETWORK, {}, FlowMarker,
                   Flow::FromPointer(this));
-  LOG(("nsHttpChannel::SuspendInternal [this=%p]\n", this));
+  LOG(("nsHttpChannel::Suspend [this=%p]\n", this));
   LogCallingScriptLocation(this);
 
   ++mSuspendCount;
