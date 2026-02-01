@@ -2,6 +2,9 @@
 
 
 
+#ifndef TOOLKIT_MOZAPPS_UPDATE_COMMON_UPDATEHELPER_H_
+#define TOOLKIT_MOZAPPS_UPDATE_COMMON_UPDATEHELPER_H_
+
 #ifdef MOZ_MAINTENANCE_SERVICE
 BOOL StartServiceUpdate(LPCWSTR installDir);
 DWORD LaunchServiceSoftwareUpdateCommand(int argc, LPCWSTR* argv);
@@ -37,3 +40,5 @@ void RemoveSecureOutputFiles(LPCWSTR patchDirPath);
 #  define TEST_ONLY_FALLBACK_KEY_PATH \
     BASE_SERVICE_REG_KEY L"\\3932ecacee736d366d6436db0f55bce4"
 #endif
+
+#endif  

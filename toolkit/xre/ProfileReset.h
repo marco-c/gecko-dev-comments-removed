@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_XRE_PROFILERESET_H_
+#define TOOLKIT_XRE_PROFILERESET_H_
+
 #include "nsToolkitProfileService.h"
 #include "nsIFile.h"
 #include "nsIThread.h"
@@ -82,3 +85,5 @@ class ProfileResetCleanupAsyncTask : public mozilla::Runnable {
   nsCOMPtr<nsIFile> mTargetDir;
   nsString mLeafName;
 };
+
+#endif  

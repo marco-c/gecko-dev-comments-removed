@@ -4,6 +4,9 @@
 
 
 
+#ifndef TOOLKIT_MOZAPPS_EXTENSIONS_ADDONCONTENTPOLICY_H_
+#define TOOLKIT_MOZAPPS_EXTENSIONS_ADDONCONTENTPOLICY_H_
+
 #include "nsIAddonPolicyService.h"
 
 class AddonContentPolicy : public nsIAddonContentPolicy {
@@ -16,3 +19,5 @@ class AddonContentPolicy : public nsIAddonContentPolicy {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIADDONCONTENTPOLICY
 };
+
+#endif  

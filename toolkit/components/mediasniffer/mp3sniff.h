@@ -2,6 +2,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_MEDIASNIFFER_MP3SNIFF_H_
+#define TOOLKIT_COMPONENTS_MEDIASNIFFER_MP3SNIFF_H_
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -13,3 +16,5 @@ int mp3_sniff(const uint8_t* buf, long length);
 #ifdef __cplusplus
 }
 #endif
+
+#endif  

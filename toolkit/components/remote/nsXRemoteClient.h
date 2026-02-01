@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_REMOTE_NSXREMOTECLIENT_H_
+#define TOOLKIT_COMPONENTS_REMOTE_NSXREMOTECLIENT_H_
+
 #include <X11/X.h>
 #include <X11/Xlib.h>
 
@@ -46,3 +49,5 @@ class nsXRemoteClient : public nsRemoteClient {
   bool mInitialized;
   nsACString& mStartupToken;
 };
+
+#endif  

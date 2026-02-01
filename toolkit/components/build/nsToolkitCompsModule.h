@@ -2,9 +2,14 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_BUILD_NSTOOLKITCOMPSMODULE_H_
+#define TOOLKIT_COMPONENTS_BUILD_NSTOOLKITCOMPSMODULE_H_
+
 #include "nscore.h"
 #include "nsID.h"
 
 class nsISupports;
 
 nsresult nsUrlClassifierDBServiceConstructor(const nsIID& aIID, void** aResult);
+
+#endif  

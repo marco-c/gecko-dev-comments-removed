@@ -2,6 +2,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_CTYPES_TESTS_JSCTYPES_TEST_FINALIZER_H_
+#define TOOLKIT_COMPONENTS_CTYPES_TESTS_JSCTYPES_TEST_FINALIZER_H_
+
 #include "jsctypes-test.h"
 #include "mozilla/Types.h"
 
@@ -55,3 +58,5 @@ EXPORT_CDECL(void) test_finalizer_rel_size_t_set_errno(size_t i);
 EXPORT_CDECL(void) reset_errno();
 
 MOZ_END_EXTERN_C
+
+#endif  

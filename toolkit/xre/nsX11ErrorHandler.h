@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_XRE_NSX11ERRORHANDLER_H_
+#define TOOLKIT_XRE_NSX11ERRORHANDLER_H_
+
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>
 #  include "X11UndefineNone.h"  
@@ -18,3 +21,5 @@ void CleanupX11ErrorHandler();
 
 extern "C" int X11Error(Display* display, XErrorEvent* event);
 #endif
+
+#endif  

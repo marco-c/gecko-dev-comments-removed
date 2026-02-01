@@ -9,6 +9,9 @@
 
 
 
+#ifndef TOOLKIT_MOZAPPS_UPDATE_UPDATER_CRCTABLE_H_
+#define TOOLKIT_MOZAPPS_UPDATE_UPDATER_CRCTABLE_H_
+
 unsigned int BZ2_crc32Table[256] = {
 
     
@@ -69,3 +72,5 @@ unsigned int BZ2_crc32Table[256] = {
 
 
 
+
+#endif  

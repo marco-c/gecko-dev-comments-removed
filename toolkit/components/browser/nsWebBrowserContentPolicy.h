@@ -4,6 +4,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_BROWSER_NSWEBBROWSERCONTENTPOLICY_H_
+#define TOOLKIT_COMPONENTS_BROWSER_NSWEBBROWSERCONTENTPOLICY_H_
+
 #include "nsIContentPolicy.h"
 
 
@@ -23,3 +26,5 @@ class nsWebBrowserContentPolicy : public nsIContentPolicy {
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTPOLICY
 };
+
+#endif  

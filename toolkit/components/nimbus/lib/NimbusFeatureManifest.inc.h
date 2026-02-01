@@ -2,6 +2,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_NIMBUS_LIB_NIMBUSFEATUREMANIFEST_INC_H_
+#define TOOLKIT_COMPONENTS_NIMBUS_LIB_NIMBUSFEATUREMANIFEST_INC_H_
+
 Maybe<nsCString> GetNimbusFallbackPrefName(const nsACString& aFeatureId,
                                            const nsACString& aVariable) {
   nsAutoCString manifestKey;
@@ -16,3 +19,5 @@ Maybe<nsCString> GetNimbusFallbackPrefName(const nsACString& aFeatureId,
   }
   return Nothing{};
 }
+
+#endif  

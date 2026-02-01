@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_MOZINTL_MOZINTLHELPER_H_
+#define TOOLKIT_COMPONENTS_MOZINTL_MOZINTLHELPER_H_
+
 #include "mozIMozIntlHelper.h"
 
 namespace mozilla {
@@ -19,3 +22,5 @@ class MozIntlHelper final : public mozIMozIntlHelper {
 };
 
 }  
+
+#endif  

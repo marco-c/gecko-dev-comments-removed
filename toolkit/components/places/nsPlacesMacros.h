@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_PLACES_NSPLACESMACROS_H_
+#define TOOLKIT_COMPONENTS_PLACES_NSPLACESMACROS_H_
+
 #define PLACES_FACTORY_SINGLETON_IMPLEMENTATION(_className, _sInstance)     \
   _className* _className::_sInstance = nullptr;                             \
                                                                             \
@@ -28,3 +31,5 @@
     }                                                                       \
     return ret.forget();                                                    \
   }
+
+#endif  

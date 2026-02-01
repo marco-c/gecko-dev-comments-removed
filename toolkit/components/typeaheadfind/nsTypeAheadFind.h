@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_TYPEAHEADFIND_NSTYPEAHEADFIND_H_
+#define TOOLKIT_COMPONENTS_TYPEAHEADFIND_NSTYPEAHEADFIND_H_
+
 #include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/WeakPtr.h"
 #include "nsComponentManagerUtils.h"
@@ -136,3 +139,5 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   nsWeakPtr mSelectionController;
   
 };
+
+#endif  

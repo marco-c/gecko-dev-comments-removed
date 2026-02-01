@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_CTYPES_TESTS_JSCTYPES_TEST_ERRNO_H_
+#define TOOLKIT_COMPONENTS_CTYPES_TESTS_JSCTYPES_TEST_ERRNO_H_
+
 #include "mozilla/Types.h"
 
 #define EXPORT_CDECL(type) MOZ_EXPORT type
@@ -18,3 +21,5 @@ EXPORT_CDECL(int) get_last_error();
 #endif  
 
 MOZ_END_EXTERN_C
+
+#endif  

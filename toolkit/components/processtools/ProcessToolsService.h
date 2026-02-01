@@ -3,6 +3,11 @@
 
 
 
+#ifndef TOOLKIT_COMPONENTS_PROCESSTOOLS_PROCESSTOOLSSERVICE_H_
+#define TOOLKIT_COMPONENTS_PROCESSTOOLS_PROCESSTOOLSSERVICE_H_
+
 #include "nsIProcessToolsService.h"
 
 already_AddRefed<nsIProcessToolsService> GetProcessToolsService();
+
+#endif  

@@ -4,6 +4,9 @@
 
 
 
+#ifndef TOOLKIT_SYSTEM_WINDOWSDHCPCLIENT_NSWINDOWSDHCPCLIENT_H_
+#define TOOLKIT_SYSTEM_WINDOWSDHCPCLIENT_NSWINDOWSDHCPCLIENT_H_
+
 #include "nsIDHCPClient.h"
 #include "nsNetCID.h"
 #include "WindowsNetworkFunctionsWrapper.h"
@@ -32,3 +35,5 @@ class nsWindowsDHCPClient final : public nsIDHCPClient {
 }  
 }  
 }  
+
+#endif  
