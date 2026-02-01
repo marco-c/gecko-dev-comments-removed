@@ -1,15 +1,15 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
+/* globals browser, InterventionHelpers, module, onMessageFromTab */
 
-
-
-
-
-
+// To grant shims access to bundled logo images without risking
+// exposing our moz-extension URL, we have the shim request them via
+// nonsense URLs which we then redirect to the actual files (but only
+// on tabs where a shim using a given logo happens to be active).
 const LogosBaseURL = "https://smartblock.firefox.etp/";
 
 const loggingPrefValue = browser.aboutConfigPrefs.getPref(
@@ -132,15 +132,15 @@ class Shim {
 
     this._preprocessOptions();
 
-    
+    // Don't register content scripts individually during startup.
     this.ready = this._onEnabledStateChanged({
       alsoToggleContentScripts: false,
     });
   }
 
   _preprocessOptions() {
-    
-    
+    // options may be any value, but can optionally be gated for specified
+    // platform/branches, if in the format `{value, branches, platform}`
     this.options = {};
     for (const [k, v] of Object.entries(this._options)) {
       if (v?.value) {
@@ -281,7 +281,7 @@ class Shim {
     let modified = false;
     const matches = this.matches.map(m => m.patterns).flat();
     if (matches.length) {
-      
+      // ensure requests shimmed in both PB and non-PB modes
       await browser.trackingProtection.shim(this.id, matches);
       modified = true;
     }
@@ -512,12 +512,12 @@ class Shims {
       this._checkSmartblockEmbedsEnabledPref();
     }, this.SMARTBLOCK_EMBEDS_ENABLED_PREF);
 
-    
-    
-    
-    
-    
-    
+    // NOTE: Methods that uses the prefs should await
+    //       _haveCheckedEnabledPrefsPromise, in order to make sure the
+    //       prefs are all read.
+    //       Methods that potentially clears the resource cache should check
+    //       _haveCheckedEnabledPrefs, in order to avoid clearing the
+    //       resource cache during the startup.
     this._haveCheckedEnabledPrefs = false;
     this._haveCheckedEnabledPrefsPromise = Promise.all([
       this._checkEnabledPref(),
@@ -527,7 +527,7 @@ class Shims {
       this._haveCheckedEnabledPrefs = true;
     });
 
-    
+    // handles unblock message coming in from protections panel
     browser.trackingProtection.onSmartBlockEmbedUnblock.addListener(
       async (tabId, shimId, hostname) => {
         const shim = this.shims.get(shimId);
@@ -538,7 +538,7 @@ class Shims {
         const isPB = (await browser.tabs.get(tabId)).incognito;
         await shim.onUserOptIn(hostname, isPB);
 
-        
+        // send request to shim to remove placeholders and replace with original embeds
         await browser.tabs.sendMessage(tabId, {
           shimId,
           topic: "smartblock:unblock-embed",
@@ -546,7 +546,7 @@ class Shims {
       }
     );
 
-    
+    // handles reblock message coming in from protections panel
     browser.trackingProtection.onSmartBlockEmbedReblock.addListener(
       async (tabId, shimId, hostname) => {
         const shim = this.shims.get(shimId);
@@ -557,13 +557,13 @@ class Shims {
         const isPB = (await browser.tabs.get(tabId)).incognito;
         await shim.onUserOptOut(hostname, isPB);
 
-        
-        
+        // a browser reload is required to reload the shim in the case where the shim gets unloaded
+        // i.e. after user unblocks, then closes and revisits the page while shim is still allowed
         browser.tabs.reload(tabId);
       }
     );
 
-    
+    // handles data clearing on private browsing mode end
     browser.trackingProtection.onPrivateSessionEnd.addListener(() => {
       for (const shim of this.shims.values()) {
         shim.clearUserOptIns(true);
@@ -654,11 +654,11 @@ class Shims {
       }
     }
 
-    
+    // Batch-register the content scripts during startup to improve IPC performance.
     this._registerContentScriptsForShims();
 
-    
-    
+    // Register onBeforeRequest listener which handles storage access requests
+    // on matching redirects.
     let redirectTargetUrls = Array.from(shims.values())
       .filter(
         shim => !shim.isMissingFiles && shim.requestStorageAccessForRedirect
@@ -666,7 +666,7 @@ class Shims {
       .flatMap(shim => shim.requestStorageAccessForRedirect)
       .map(([, dstUrl]) => dstUrl);
 
-    
+    // Unique target urls.
     redirectTargetUrls = Array.from(new Set(redirectTargetUrls));
 
     if (redirectTargetUrls.length) {
@@ -807,7 +807,7 @@ class Shims {
       return;
     }
 
-    
+    // resolveReady may change while we're updating
     const resolveReady = this._resolveReady;
     this._enabled = enabled;
 
@@ -862,9 +862,9 @@ class Shims {
   }) {
     debug("Detected redirect", { srcUrl, dstUrl, tabId });
 
-    
-    
-    
+    // Check if a shim needs to request storage access for this redirect. This
+    // handler is called when the *source url* matches a shims redirect pattern,
+    // but we still need to check if the *destination url* matches.
     const matchingShims = Array.from(this.shims.values()).filter(shim => {
       const { enabled, requestStorageAccessForRedirect } = shim;
 
@@ -879,13 +879,13 @@ class Shims {
       );
     });
 
-    
+    // For each matching shim, find out if its enabled in regard to dFPI state.
     const bugNumbers = new Set();
     let isDFPIActive = null;
     await Promise.all(
       matchingShims.map(async shim => {
         if (shim.onlyIfDFPIActive) {
-          
+          // Only get the dFPI state for the first shim which requires it.
           if (isDFPIActive === null) {
             const tabIsPB = (await browser.tabs.get(tabId)).incognito;
             isDFPIActive =
@@ -899,13 +899,13 @@ class Shims {
       })
     );
 
-    
-    
+    // If there is no shim which needs storage access for this redirect src/dst
+    // pair, resume it.
     if (!bugNumbers.size) {
       return;
     }
 
-    
+    // Inject the helper to call requestStorageAccessForOrigin on the document.
     await browser.tabs.executeScript(tabId, {
       file: "/lib/requestStorageAccess_helper.js",
       runAt: "document_start",
@@ -916,12 +916,12 @@ class Shims {
       .join(", ");
     const warning = `Firefox calls the Storage Access API for ${dstUrl} on behalf of ${srcUrl}. See the following bugs for details: ${bugUrls}`;
 
-    
-    
+    // Request storage access for the origin of the destination url of the
+    // redirect.
     const { origin: requestStorageAccessOrigin } = new URL(dstUrl);
 
-    
-    
+    // Wait for the requestStorageAccess request to finish before resuming the
+    // redirect.
     const { success } = await browser.tabs.sendMessage(tabId, {
       requestStorageAccessOrigin,
       warning,
@@ -940,14 +940,15 @@ class Shims {
     const { id, url } = tab;
     const { shimId, message } = payload;
 
-    
+    // Ignore unknown messages (for instance, from about:compat).
     if (
       message !== "getOptions" &&
       message !== "optIn" &&
       message !== "embedClicked" &&
       message !== "smartblockEmbedReplaced" &&
       message !== "smartblockGetFluentString" &&
-      message !== "checkFacebookLoginStatus"
+      message !== "checkFacebookLoginStatus" &&
+      message !== "shouldShowEmbedContentInPlaceholders"
     ) {
       return undefined;
     }
@@ -956,9 +957,9 @@ class Shims {
       throw new Error("not allowed");
     }
 
-    
-    
-    
+    // Important! It is entirely possible for sites to spoof
+    // these messages, due to shims allowing web pages to
+    // communicate with the extension.
 
     const shim = this.shims.get(shimId);
     if (!shim?.needsShimHelpers?.includes(message)) {
@@ -1003,15 +1004,20 @@ class Shims {
         new URL(url).hostname
       );
     } else if (message === "checkFacebookLoginStatus") {
-      
-      
+      // Verify that the user is logged in to Facebook by checking the c_user
+      // cookie.
       let cookie = await browser.cookies.get({
         url: "https://www.facebook.com",
         name: "c_user",
       });
 
-      
+      // If the cookie is found, the user is logged in to Facebook.
       return cookie != null;
+    } else if (message === "shouldShowEmbedContentInPlaceholders") {
+      // Only show embed content in placeholders if the Sanitizer API is available.
+      // setHTML is available in Firefox 148+.
+      // TODO(Bug 2010092): Remove when `documentElement.setHTML` becomes available in esr.
+      return true;
     }
 
     return undefined;
@@ -1143,7 +1149,7 @@ class Shims {
     return { requestHeaders };
   }
 
-  
+  // eslint-disable-next-line complexity
   async _ensureShimForRequestOnTab(details) {
     await this._haveCheckedEnabledPrefsPromise;
 
@@ -1151,18 +1157,18 @@ class Shims {
       return undefined;
     }
 
-    
-    
-    
+    // We only ever reach this point if a request is for a URL which ought to
+    // be shimmed. We never get here if a request is blocked, and we only
+    // unblock requests if at least one shim matches it.
 
     const { frameId, originUrl, requestId, tabId, type, url } = details;
 
-    
+    // Ignore requests unrelated to tabs
     if (tabId < 0) {
       return undefined;
     }
 
-    
+    // We need to base our checks not on the frame's host, but the tab's.
     const topHost = new URL((await browser.tabs.get(tabId)).url).hostname;
     const isPB = (await browser.tabs.get(details.tabId)).incognito;
     const unblocked = await browser.trackingProtection.wasRequestUnblocked(
@@ -1191,8 +1197,8 @@ class Shims {
         }
       }
 
-      
-      
+      // Do not apply the shim if it is only meant to apply when strict mode ETP
+      // (content blocking) was going to block the request.
       if (!unblocked && shim.onlyIfBlockedByETP) {
         continue;
       }
@@ -1201,15 +1207,15 @@ class Shims {
         continue;
       }
 
-      
+      // If this URL and content type isn't meant for this shim, don't apply it.
       match = shim.isTriggeredByURLAndType(url, type);
       if (match) {
         if (!unblocked && match.onlyIfBlockedByETP) {
           continue;
         }
 
-        
-        
+        // If the user has already opted in for this shim, all requests it covers
+        // should be allowed; no need for a shim anymore.
         if (shim.hasUserOptedInAlready(topHost, isPB)) {
           warn(
             `Allowing tracking ${type} ${url} on tab ${tabId} frame ${frameId} due to opt-in`
@@ -1225,17 +1231,17 @@ class Shims {
     let runFirst = false;
 
     if (shimToApply) {
-      
-      
-      
+      // Note that sites may request the same shim twice, but because the requests
+      // may differ enough for some to fail (CSP/CORS/etc), we always let the request
+      // complete via local redirect. Shims should gracefully handle this as well.
 
       const { target } = match;
       const { bug, file, id, name } = shimToApply;
 
-      
-      
-      
-      
+      // Determine whether we should inject helper scripts into the page.
+      // webExposedShimHelpers is an optional list of helpers to provide
+      // directly to the website (see script injection below). If not used shims
+      // should pass an empty array to disable this functionality.
       const needsShimHelpers =
         shimToApply.webExposedShimHelpers || shimToApply.needsShimHelpers;
 
@@ -1274,7 +1280,7 @@ class Shims {
         } catch (_) {}
       }
 
-      
+      // For scripts, we also set up any needed shim helpers.
       if (type === "script" && needsShimHelpers?.length) {
         try {
           await browser.tabs.executeScript(tabId, {
@@ -1306,13 +1312,13 @@ class Shims {
         return { redirectUrl: redirect };
       }
 
-      
-      
+      // If any shims matched the request to replace it, then redirect to the local
+      // file bundled with SmartBlock, so the request never hits the network.
       return { redirectUrl: browser.runtime.getURL(`shims/${redirect}`) };
     }
 
-    
-    
+    // Sanity check: if no shims end up handling this request,
+    // yet it was meant to be blocked by ETP, then block it now.
     if (unblocked) {
       error(`unexpected: ${url} not shimmed on tab ${tabId} frame ${frameId}`);
       return { cancel: true };
@@ -1338,9 +1344,9 @@ class Shims {
 
       shim._contentScriptRegistrations = [];
       for (const options of shim.contentScripts) {
-        
-        
-        
+        // Some shims includes more than one script (e.g. Blogger one contains
+        // a content script to be run on document_start and one to be run
+        // on document_end.
         const id = `SmartBlock shim for ${shim.id}: ${JSON.stringify(options)}`;
         shim._contentScriptRegistrations.push(id);
         contentScriptsToRegister.push(

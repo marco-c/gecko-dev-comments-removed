@@ -16,6 +16,7 @@ const embedHelperLib = (() => {
   let prevRanShims = new Set();
   let originalEmbedContainers = [];
   let embedPlaceholders = [];
+  let modifiedContainers = [];
   let observerTimeout;
   let newEmbedObserver;
 
@@ -44,9 +45,18 @@ const embedHelperLib = (() => {
       }
 
       
-      embedPlaceholders.forEach((p, idx) => {
-        p.replaceWith(originalEmbedContainers[idx]);
+      embedPlaceholders.forEach((placeholder, idx) => {
+        const modifiedContainer = modifiedContainers[idx];
+        const originalContainer = originalEmbedContainers[idx];
+
+        
+        modifiedContainer.replaceWith(originalContainer);
       });
+
+      
+      embedPlaceholders = [];
+      modifiedContainers = [];
+      originalEmbedContainers = [];
 
       
       let scriptElement = document.createElement("script");
@@ -71,6 +81,13 @@ const embedHelperLib = (() => {
 
   async function createShimPlaceholders(embedContainers, SHIM_INFO) {
     const { shimId, embedSelector, embedLogoURL, isTestShim } = SHIM_INFO;
+
+    
+    
+    const shouldShowEmbedContent = await sendMessageToAddon(
+      "shouldShowEmbedContentInPlaceholders",
+      shimId
+    );
 
     const [titleString, descriptionString, buttonString] =
       await sendMessageToAddon("smartblockGetFluentString", shimId);
@@ -190,11 +207,165 @@ const embedHelperLib = (() => {
         });
 
       
-      embedPlaceholders.push(placeholderDiv);
+      let replacementElement;
+
+      if (shouldShowEmbedContent) {
+        
+        
+        const safeContentContainer = document.createElement("div");
+
+        
+        safeContentContainer.style.cssText = `
+          margin-top: 12px;
+          padding: 12px;
+          background-color: light-dark(rgb(248, 248, 248), rgb(42, 42, 46));
+          border-radius: 4px;
+          font-size: 14px;
+          line-height: 1.5;
+          color: light-dark(rgb(43, 42, 51), rgb(251, 251, 254));
+          font-family: system-ui, -apple-system, sans-serif;
+        `;
+
+        
+        
+        
+        
+        const sanitizer = new Sanitizer({
+          replaceWithChildrenElements: [
+            "abbr",
+            "address",
+            "article",
+            "aside",
+            "b",
+            "bdi",
+            "bdo",
+            "blockquote",
+            "body",
+            "caption",
+            "cite",
+            "code",
+            "col",
+            "colgroup",
+            "data",
+            "dd",
+            "del",
+            "dfn",
+            "div",
+            "dl",
+            "dt",
+            "em",
+            "figcaption",
+            "figure",
+            "footer",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "head",
+            "header",
+            "hgroup",
+            "hr",
+            "html",
+            "i",
+            "ins",
+            "kbd",
+            "li",
+            "main",
+            "mark",
+            "menu",
+            "nav",
+            "ol",
+            "p",
+            "pre",
+            "q",
+            "rp",
+            "rt",
+            "ruby",
+            "s",
+            "samp",
+            "search",
+            "section",
+            "small",
+            "span",
+            "strong",
+            "sub",
+            "sup",
+            "table",
+            "tbody",
+            "td",
+            "tfoot",
+            "th",
+            "thead",
+            "time",
+            "title",
+            "tr",
+            "u",
+            "ul",
+            "var",
+            "wbr",
+          ],
+        });
+
+        
+        const contentDiv = document.createElement("div");
+        contentDiv.setHTML(originalContainer.innerHTML, { sanitizer });
+
+        
+        
+        contentDiv.querySelectorAll("a[href]").forEach(link => {
+          try {
+            const url = new URL(link.href, document.baseURI);
+            if (url.protocol !== "https:") {
+              link.removeAttribute("href");
+            }
+          } catch {
+            link.removeAttribute("href");
+          }
+        });
+
+        
+        contentDiv.querySelectorAll("a[href]").forEach(link => {
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.style.cssText = `
+            color: light-dark(rgb(0, 97, 224), rgb(0, 221, 255));
+            text-decoration: underline;
+            cursor: pointer;
+          `;
+        });
+
+        
+        const explanationDiv = document.createElement("div");
+        explanationDiv.textContent = "Content from blocked embed:";
+        explanationDiv.style.cssText = `
+          font-size: 12px;
+          font-weight: 600;
+          color: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
+          margin-bottom: 8px;
+        `;
+        safeContentContainer.appendChild(explanationDiv);
+        safeContentContainer.appendChild(contentDiv);
+
+        
+        const wrapperDiv = document.createElement("div");
+        wrapperDiv.appendChild(placeholderDiv);
+        wrapperDiv.appendChild(safeContentContainer);
+
+        replacementElement = wrapperDiv;
+      } else {
+        
+        replacementElement = placeholderDiv;
+      }
+
+      
+      embedPlaceholders.push(replacementElement);
+      modifiedContainers.push(replacementElement);
       originalEmbedContainers.push(originalContainer);
 
       
-      originalContainer.replaceWith(placeholderDiv);
+      originalContainer.replaceWith(replacementElement);
 
       sendMessageToAddon("smartblockEmbedReplaced", shimId);
     });
