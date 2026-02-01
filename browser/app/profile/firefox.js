@@ -2700,6 +2700,8 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
   pref("browser.tabs.splitView.enabled", false);
 #endif
 
+pref("browser.tabs.splitview.hasUsed", false);
+
 
 pref("browser.tabs.remoteSVGIconDecoding", true);
 
