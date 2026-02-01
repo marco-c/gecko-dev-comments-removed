@@ -191,6 +191,10 @@ pub enum RawBindingType {
     ExternalTexture,
 }
 
+
+
+
+
 #[repr(C)]
 pub struct BindGroupLayoutEntry<'a> {
     binding: u32,
