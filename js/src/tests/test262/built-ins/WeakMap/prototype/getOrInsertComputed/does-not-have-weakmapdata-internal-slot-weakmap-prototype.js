@@ -13,7 +13,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   WeakMap.prototype.getOrInsertComputed.call(WeakMap.prototype, {}, () => 1);
 });

@@ -33,7 +33,6 @@ FEATURE_CHECK_NEEDED = {
     "Error.isError": "!Error.isError",  
     "iterator-sequencing": "!Iterator.concat",  
     "Math.sumPrecise": "!Math.sumPrecise",  
-    "upsert": "!Map.prototype.getOrInsertComputed",  
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  
 }
 RELEASE_OR_BETA = set(["legacy-regexp"])

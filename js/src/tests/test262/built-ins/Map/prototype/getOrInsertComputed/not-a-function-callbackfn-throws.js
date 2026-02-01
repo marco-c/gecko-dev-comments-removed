@@ -13,7 +13,6 @@
 
 
 
-
 var m = new Map();
 
 assert.throws(TypeError, function () {

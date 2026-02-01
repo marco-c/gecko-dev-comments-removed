@@ -13,7 +13,6 @@
 
 
 
-
 var s = new WeakMap();
 
 assert.throws(TypeError, function() {

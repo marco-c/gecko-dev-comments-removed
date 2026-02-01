@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(Map.prototype.getOrInsert, "name", {
   value: "getOrInsert",
   writable: false,

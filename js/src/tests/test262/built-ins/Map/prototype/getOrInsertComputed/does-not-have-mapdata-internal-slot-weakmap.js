@@ -14,7 +14,6 @@
 
 
 
-
 var weakmap = new WeakMap();
 assert.throws(TypeError, function() {
   Map.prototype.getOrInsertComputed.call(weakmap, 1, () => 1);

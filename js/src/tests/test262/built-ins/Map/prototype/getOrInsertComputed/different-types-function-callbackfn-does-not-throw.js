@@ -13,7 +13,6 @@
 
 
 
-
 var m = new Map();
 
 assert.sameValue(m.getOrInsertComputed(1, function () { return 1; }), 1);

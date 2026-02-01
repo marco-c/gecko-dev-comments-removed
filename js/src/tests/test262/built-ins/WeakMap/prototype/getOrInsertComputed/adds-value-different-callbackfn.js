@@ -12,7 +12,6 @@
 
 
 
-
 var bar = {};
 var baz = {};
 var foo = {};

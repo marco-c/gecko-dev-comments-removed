@@ -13,7 +13,6 @@
 
 
 
-
 var bar = {};
 var m = new WeakMap();
 

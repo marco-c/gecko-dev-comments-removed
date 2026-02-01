@@ -18,7 +18,6 @@
 
 
 
-
 var map = new Map();
 map.getOrInsertComputed(-0, () => 42);
 assert.sameValue(map.get(0), 42);

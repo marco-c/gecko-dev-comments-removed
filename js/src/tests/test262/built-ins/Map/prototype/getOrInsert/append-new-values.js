@@ -17,7 +17,6 @@
 
 
 
-
 var s = Symbol(2);
 var map = new Map([[4, 4], ['foo3', 3], [s, 2]]);
 

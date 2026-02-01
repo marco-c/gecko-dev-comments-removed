@@ -14,7 +14,6 @@
 
 
 
-
 const obj1 = {};
 const obj2 = {};
 const obj3 = {};

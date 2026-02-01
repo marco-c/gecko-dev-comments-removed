@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(WeakMap.prototype.getOrInsert),
   false,

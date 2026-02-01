@@ -14,7 +14,6 @@
 
 
 
-
 var map = new Map();
 
 map.getOrInsert('bar', 0);

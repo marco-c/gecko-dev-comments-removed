@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   typeof Map.prototype.getOrInsert,
   'function',

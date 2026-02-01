@@ -14,7 +14,6 @@
 
 
 
-
 var set = new Set();
 assert.throws(TypeError, function () {
   Map.prototype.getOrInsertComputed.call(set, 1, () => 1);

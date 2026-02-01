@@ -15,7 +15,6 @@
 
 
 
-
 var log = [];
 var invalidKeys = [1, false, undefined, 'string', null];
 

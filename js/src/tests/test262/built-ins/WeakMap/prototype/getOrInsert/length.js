@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(WeakMap.prototype.getOrInsert, "length", {
   value: 2,
   writable: false,

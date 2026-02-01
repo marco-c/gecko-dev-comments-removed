@@ -14,7 +14,6 @@
 
 
 
-
 var map = new Map();
 
 assert.throws(Error, function() {

@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(isConstructor(Map.prototype.getOrInsertComputed), false, 'isConstructor(Map.prototype.getOrInsertComputed) must return false');
 
 var m = new Map();

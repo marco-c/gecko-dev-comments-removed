@@ -15,7 +15,6 @@
 
 
 
-
 var map = new Map();
 var item = 'bar';
 assert.sameValue(map.getOrInsertComputed(item, () => 0), 0);

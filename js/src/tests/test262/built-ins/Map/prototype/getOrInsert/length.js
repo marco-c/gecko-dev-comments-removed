@@ -12,7 +12,6 @@
 
 
 
-
 verifyProperty(Map.prototype.getOrInsert, "length", {
   value: 2,
   writable: false,
