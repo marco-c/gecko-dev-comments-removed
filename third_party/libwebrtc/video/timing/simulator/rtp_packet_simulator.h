@@ -31,7 +31,7 @@ class RtpPacketSimulator {
   
   
   RtpPacketReceived SimulateRtpPacketReceived(
-      const LoggedRtpPacketIncoming& logged_packet) const;
+      const LoggedRtpPacket& logged_packet) const;
 
  private:
   const Environment env_;
