@@ -9,6 +9,7 @@
 
 #include "TableArea.h"
 #include "celldata.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsRect.h"
 #include "nsTArray.h"
@@ -201,13 +202,12 @@ class nsTableCellMap {
 
 
   void InsertGroupCellMap(nsCellMap* aPrevMap, nsCellMap& aNewMap);
-  void DeleteIEndBEndBorders();
 
   nsTableFrame& mTableFrame;
   AutoTArray<nsColInfo, 8> mCols;
-  nsCellMap* mFirstMap;
+  nsCellMap* mFirstMap = nullptr;
   
-  BCInfo* mBCInfo;
+  mozilla::UniquePtr<BCInfo> mBCInfo;
 };
 
 
