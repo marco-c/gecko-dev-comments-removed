@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLmtableFrame_h___
-#define nsMathMLmtableFrame_h___
+#ifndef nsMathMLmtableFrame_h_
+#define nsMathMLmtableFrame_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsBlockFrame.h"

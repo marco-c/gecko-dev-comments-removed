@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsTableColFrame_h__
-#define nsTableColFrame_h__
+#ifndef nsTableColFrame_h_
+#define nsTableColFrame_h_
 
 #include "celldata.h"
 #include "mozilla/WritingModes.h"

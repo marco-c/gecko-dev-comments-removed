@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsBidiPresUtils_h___
-#define nsBidiPresUtils_h___
+#ifndef nsBidiPresUtils_h_
+#define nsBidiPresUtils_h_
 
 #include "gfxContext.h"
 #include "mozilla/intl/BidiClass.h"

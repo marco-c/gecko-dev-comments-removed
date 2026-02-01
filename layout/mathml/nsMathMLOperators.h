@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLOperators_h___
-#define nsMathMLOperators_h___
+#ifndef nsMathMLOperators_h_
+#define nsMathMLOperators_h_
 
 #include <stdint.h>
 

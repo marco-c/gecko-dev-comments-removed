@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsITableCellLayout_h__
-#define nsITableCellLayout_h__
+#ifndef nsITableCellLayout_h_
+#define nsITableCellLayout_h_
 
 #include "nsQueryFrame.h"
 

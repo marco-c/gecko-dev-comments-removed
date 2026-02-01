@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsSplittableFrame_h___
-#define nsSplittableFrame_h___
+#ifndef nsSplittableFrame_h_
+#define nsSplittableFrame_h_
 
 #include "nsIFrame.h"
 

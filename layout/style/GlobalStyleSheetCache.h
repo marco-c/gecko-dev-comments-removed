@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_GlobalStyleSheetCache_h__
-#define mozilla_GlobalStyleSheetCache_h__
+#ifndef mozilla_GlobalStyleSheetCache_h_
+#define mozilla_GlobalStyleSheetCache_h_
 
 #include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/MemoryReporting.h"

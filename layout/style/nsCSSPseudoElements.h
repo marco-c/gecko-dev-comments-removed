@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCSSPseudoElements_h___
-#define nsCSSPseudoElements_h___
+#ifndef nsCSSPseudoElements_h_
+#define nsCSSPseudoElements_h_
 
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/PseudoStyleType.h"

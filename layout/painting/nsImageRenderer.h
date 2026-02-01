@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsImageRenderer_h__
-#define nsImageRenderer_h__
+#ifndef nsImageRenderer_h_
+#define nsImageRenderer_h_
 
 #include "Units.h"
 #include "mozilla/AspectRatio.h"

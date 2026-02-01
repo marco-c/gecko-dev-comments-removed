@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsGridContainerFrame_h___
-#define nsGridContainerFrame_h___
+#ifndef nsGridContainerFrame_h_
+#define nsGridContainerFrame_h_
 
 #include "mozilla/CSSOrderAwareFrameIterator.h"
 #include "mozilla/HashTable.h"

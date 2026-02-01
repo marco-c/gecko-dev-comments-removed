@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFieldSetFrame_h___
-#define nsFieldSetFrame_h___
+#ifndef nsFieldSetFrame_h_
+#define nsFieldSetFrame_h_
 
 #include "ImgDrawResult.h"
 #include "nsContainerFrame.h"

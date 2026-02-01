@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLChar_h___
-#define nsMathMLChar_h___
+#ifndef nsMathMLChar_h_
+#define nsMathMLChar_h_
 
 #include "gfxTextRun.h"
 #include "nsBoundingMetrics.h"

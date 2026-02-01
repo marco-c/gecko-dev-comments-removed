@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsTableWrapperFrame_h__
-#define nsTableWrapperFrame_h__
+#ifndef nsTableWrapperFrame_h_
+#define nsTableWrapperFrame_h_
 
 #include "LayoutConstants.h"
 #include "mozilla/Maybe.h"

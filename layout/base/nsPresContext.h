@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsPresContext_h___
-#define nsPresContext_h___
+#ifndef nsPresContext_h_
+#define nsPresContext_h_
 
 #include "FontVisibilityProvider.h"
 #include "Units.h"

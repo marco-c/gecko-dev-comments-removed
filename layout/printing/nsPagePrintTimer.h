@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPagePrintTimer_h___
-#define nsPagePrintTimer_h___
+#ifndef nsPagePrintTimer_h_
+#define nsPagePrintTimer_h_
 
 
 #include "mozilla/OwningNonNull.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTreeStyleCache_h__
-#define nsTreeStyleCache_h__
+#ifndef nsTreeStyleCache_h_
+#define nsTreeStyleCache_h_
 
 #include "mozilla/AtomArray.h"
 #include "mozilla/ComputedStyle.h"

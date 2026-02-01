@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsTableCellFrame_h__
-#define nsTableCellFrame_h__
+#ifndef nsTableCellFrame_h_
+#define nsTableCellFrame_h_
 
 #include "celldata.h"
 #include "mozilla/ComputedStyle.h"

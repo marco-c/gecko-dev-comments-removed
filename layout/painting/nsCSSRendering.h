@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCSSRendering_h___
-#define nsCSSRendering_h___
+#ifndef nsCSSRendering_h_
+#define nsCSSRendering_h_
 
 #include "gfxBlur.h"
 #include "gfxContext.h"

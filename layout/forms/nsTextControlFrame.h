@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTextControlFrame_h___
-#define nsTextControlFrame_h___
+#ifndef nsTextControlFrame_h_
+#define nsTextControlFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/TextControlElement.h"

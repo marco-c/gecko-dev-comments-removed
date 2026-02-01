@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsChangeHint_h___
-#define nsChangeHint_h___
+#ifndef nsChangeHint_h_
+#define nsChangeHint_h_
 
 #include "mozilla/Assertions.h"
 

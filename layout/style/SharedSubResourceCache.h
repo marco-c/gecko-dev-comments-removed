@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SharedSubResourceCache_h__
-#define mozilla_SharedSubResourceCache_h__
+#ifndef mozilla_SharedSubResourceCache_h_
+#define mozilla_SharedSubResourceCache_h_
 
 
 

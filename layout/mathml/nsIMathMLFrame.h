@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIMathMLFrame_h___
-#define nsIMathMLFrame_h___
+#ifndef nsIMathMLFrame_h_
+#define nsIMathMLFrame_h_
 
 #include "nsMathMLOperators.h"
 #include "nsQueryFrame.h"

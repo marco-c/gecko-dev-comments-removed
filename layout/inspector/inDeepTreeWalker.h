@@ -4,8 +4,8 @@
 
 
 
-#ifndef __inDeepTreeWalker_h___
-#define __inDeepTreeWalker_h___
+#ifndef _inDeepTreeWalker_h_
+#define _inDeepTreeWalker_h_
 
 #include "inIDeepTreeWalker.h"
 #include "nsCOMPtr.h"

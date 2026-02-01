@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsStyleUtil_h___
-#define nsStyleUtil_h___
+#ifndef nsStyleUtil_h_
+#define nsStyleUtil_h_
 
 #include "NonCustomCSSPropertyId.h"
 #include "nsCRT.h"
@@ -46,7 +46,7 @@ class nsStyleUtil {
   
   
   static void AppendQuotedCSSString(const nsACString& aString,
-                                   nsACString& aResult, char aQuoteChar = '"');
+                                    nsACString& aResult, char aQuoteChar = '"');
 
   
   

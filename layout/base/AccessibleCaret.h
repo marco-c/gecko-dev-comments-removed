@@ -4,8 +4,8 @@
 
 
 
-#ifndef AccessibleCaret_h__
-#define AccessibleCaret_h__
+#ifndef AccessibleCaret_h_
+#define AccessibleCaret_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"

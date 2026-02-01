@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsICSSLoaderObserver_h___
-#define nsICSSLoaderObserver_h___
+#ifndef nsICSSLoaderObserver_h_
+#define nsICSSLoaderObserver_h_
 
 #include "nsISupports.h"
 

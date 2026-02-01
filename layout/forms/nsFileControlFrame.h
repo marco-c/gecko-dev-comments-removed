@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFileControlFrame_h___
-#define nsFileControlFrame_h___
+#ifndef nsFileControlFrame_h_
+#define nsFileControlFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "nsBlockFrame.h"

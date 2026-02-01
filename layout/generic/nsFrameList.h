@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFrameList_h___
-#define nsFrameList_h___
+#ifndef nsFrameList_h_
+#define nsFrameList_h_
 
 #include <stdio.h> 
 

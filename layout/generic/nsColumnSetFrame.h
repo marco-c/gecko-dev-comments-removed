@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsColumnSetFrame_h___
-#define nsColumnSetFrame_h___
+#ifndef nsColumnSetFrame_h_
+#define nsColumnSetFrame_h_
 
 
 

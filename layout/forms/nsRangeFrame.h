@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsRangeFrame_h___
-#define nsRangeFrame_h___
+#ifndef nsRangeFrame_h_
+#define nsRangeFrame_h_
 
 #include "mozilla/Decimal.h"
 #include "mozilla/EventForwards.h"

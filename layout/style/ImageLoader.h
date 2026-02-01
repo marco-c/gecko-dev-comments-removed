@@ -7,8 +7,8 @@
 
 
 
-#ifndef mozilla_css_ImageLoader_h___
-#define mozilla_css_ImageLoader_h___
+#ifndef mozilla_css_ImageLoader_h_
+#define mozilla_css_ImageLoader_h_
 
 #include "mozilla/CORSMode.h"
 #include "nsClassHashtable.h"

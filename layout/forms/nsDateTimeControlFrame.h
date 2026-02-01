@@ -13,8 +13,8 @@
 
 
 
-#ifndef nsDateTimeControlFrame_h__
-#define nsDateTimeControlFrame_h__
+#ifndef nsDateTimeControlFrame_h_
+#define nsDateTimeControlFrame_h_
 
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"

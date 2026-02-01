@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsROCSSPrimitiveValue_h___
-#define nsROCSSPrimitiveValue_h___
+#ifndef nsROCSSPrimitiveValue_h_
+#define nsROCSSPrimitiveValue_h_
 
 #include "CSSValue.h"
 #include "nsCoord.h"

@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsIntervalSet_h___
-#define nsIntervalSet_h___
+#ifndef nsIntervalSet_h_
+#define nsIntervalSet_h_
 
 #include "nsCoord.h"
 

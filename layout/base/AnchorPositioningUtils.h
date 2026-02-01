@@ -4,8 +4,8 @@
 
 
 
-#ifndef AnchorPositioningUtils_h__
-#define AnchorPositioningUtils_h__
+#ifndef AnchorPositioningUtils_h_
+#define AnchorPositioningUtils_h_
 
 #include "WritingModes.h"
 #include "mozilla/Maybe.h"

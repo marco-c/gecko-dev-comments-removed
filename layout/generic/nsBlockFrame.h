@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsBlockFrame_h___
-#define nsBlockFrame_h___
+#ifndef nsBlockFrame_h_
+#define nsBlockFrame_h_
 
 #include "mozilla/IntrinsicISizesCache.h"
 #include "nsCSSPseudoElements.h"

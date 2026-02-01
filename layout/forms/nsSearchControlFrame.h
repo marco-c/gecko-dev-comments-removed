@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSearchControlFrame_h__
-#define nsSearchControlFrame_h__
+#ifndef nsSearchControlFrame_h_
+#define nsSearchControlFrame_h_
 
 #include "nsTextControlFrame.h"
 

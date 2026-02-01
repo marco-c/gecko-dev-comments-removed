@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsProgressFrame_h___
-#define nsProgressFrame_h___
+#ifndef nsProgressFrame_h_
+#define nsProgressFrame_h_
 
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"

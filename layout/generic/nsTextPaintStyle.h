@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTextPaintStyle_h__
-#define nsTextPaintStyle_h__
+#ifndef nsTextPaintStyle_h_
+#define nsTextPaintStyle_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedStyle.h"

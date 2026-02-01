@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPageContentFrame_h___
-#define nsPageContentFrame_h___
+#ifndef nsPageContentFrame_h_
+#define nsPageContentFrame_h_
 
 #include "mozilla/ViewportFrame.h"
 

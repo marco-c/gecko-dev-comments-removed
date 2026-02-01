@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsComputedDOMStyle_h__
-#define nsComputedDOMStyle_h__
+#ifndef nsComputedDOMStyle_h_
+#define nsComputedDOMStyle_h_
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PseudoStyleType.h"

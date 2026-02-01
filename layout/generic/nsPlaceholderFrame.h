@@ -32,8 +32,8 @@
 
 
 
-#ifndef nsPlaceholderFrame_h___
-#define nsPlaceholderFrame_h___
+#ifndef nsPlaceholderFrame_h_
+#define nsPlaceholderFrame_h_
 
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"

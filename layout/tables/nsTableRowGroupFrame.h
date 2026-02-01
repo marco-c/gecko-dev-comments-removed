@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsTableRowGroupFrame_h__
-#define nsTableRowGroupFrame_h__
+#ifndef nsTableRowGroupFrame_h_
+#define nsTableRowGroupFrame_h_
 
 #include "mozilla/WritingModes.h"
 #include "nsAtom.h"

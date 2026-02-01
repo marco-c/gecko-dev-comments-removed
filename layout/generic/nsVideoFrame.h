@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsVideoFrame_h___
-#define nsVideoFrame_h___
+#ifndef nsVideoFrame_h_
+#define nsVideoFrame_h_
 
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"

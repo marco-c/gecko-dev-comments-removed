@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCheckboxRadioFrame_h___
-#define nsCheckboxRadioFrame_h___
+#ifndef nsCheckboxRadioFrame_h_
+#define nsCheckboxRadioFrame_h_
 
 #include "nsAtomicContainerFrame.h"
 #include "nsDisplayList.h"

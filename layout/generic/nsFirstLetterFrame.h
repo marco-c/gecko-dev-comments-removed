@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFirstLetterFrame_h__
-#define nsFirstLetterFrame_h__
+#ifndef nsFirstLetterFrame_h_
+#define nsFirstLetterFrame_h_
 
 
 

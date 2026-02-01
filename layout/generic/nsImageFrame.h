@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsImageFrame_h___
-#define nsImageFrame_h___
+#ifndef nsImageFrame_h_
+#define nsImageFrame_h_
 
 #include "imgIContainer.h"
 #include "imgINotificationObserver.h"

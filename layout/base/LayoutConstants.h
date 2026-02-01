@@ -6,8 +6,8 @@
 
 
 
-#ifndef LayoutConstants_h___
-#define LayoutConstants_h___
+#ifndef LayoutConstants_h_
+#define LayoutConstants_h_
 
 #include "Units.h"
 #include "mozilla/EnumSet.h"

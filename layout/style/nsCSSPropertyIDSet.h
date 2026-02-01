@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSSPropertyIDSet_h__
-#define nsCSSPropertyIDSet_h__
+#ifndef nsCSSPropertyIDSet_h_
+#define nsCSSPropertyIDSet_h_
 
 #include <limits.h>  
 

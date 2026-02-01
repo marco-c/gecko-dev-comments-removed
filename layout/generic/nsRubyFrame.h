@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsRubyFrame_h___
-#define nsRubyFrame_h___
+#ifndef nsRubyFrame_h_
+#define nsRubyFrame_h_
 
 #include "RubyUtils.h"
 #include "nsInlineFrame.h"

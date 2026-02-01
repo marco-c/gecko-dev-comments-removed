@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsGenConList_h___
-#define nsGenConList_h___
+#ifndef nsGenConList_h_
+#define nsGenConList_h_
 
 #include <functional>
 

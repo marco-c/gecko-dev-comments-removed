@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIReflowCallback_h___
-#define nsIReflowCallback_h___
+#ifndef nsIReflowCallback_h_
+#define nsIReflowCallback_h_
 
 
 

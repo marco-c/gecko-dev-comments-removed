@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintData_h___
-#define nsPrintData_h___
+#ifndef nsPrintData_h_
+#define nsPrintData_h_
 
 
 #include "nsCOMArray.h"

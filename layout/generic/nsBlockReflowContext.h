@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsBlockReflowContext_h___
-#define nsBlockReflowContext_h___
+#ifndef nsBlockReflowContext_h_
+#define nsBlockReflowContext_h_
 
 #include "mozilla/ReflowOutput.h"
 

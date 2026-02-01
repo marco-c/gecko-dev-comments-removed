@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLmencloseFrame_h___
-#define nsMathMLmencloseFrame_h___
+#ifndef nsMathMLmencloseFrame_h_
+#define nsMathMLmencloseFrame_h_
 
 #include "mozilla/EnumSet.h"
 #include "nsMathMLChar.h"

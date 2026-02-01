@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIPercentBSizeObserver_h___
-#define nsIPercentBSizeObserver_h___
+#ifndef nsIPercentBSizeObserver_h_
+#define nsIPercentBSizeObserver_h_
 
 #include "nsQueryFrame.h"
 

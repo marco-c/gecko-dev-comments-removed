@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsLayoutStatics_h__
-#define nsLayoutStatics_h__
+#ifndef nsLayoutStatics_h_
+#define nsLayoutStatics_h_
 
 #include "MainThreadUtils.h"
 #include "nsDebug.h"

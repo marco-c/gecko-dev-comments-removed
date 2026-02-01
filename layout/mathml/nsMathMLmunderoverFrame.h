@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLmunderoverFrame_h___
-#define nsMathMLmunderoverFrame_h___
+#ifndef nsMathMLmunderoverFrame_h_
+#define nsMathMLmunderoverFrame_h_
 
 #include "nsIReflowCallback.h"
 #include "nsMathMLContainerFrame.h"

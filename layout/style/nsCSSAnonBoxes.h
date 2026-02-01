@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCSSAnonBoxes_h___
-#define nsCSSAnonBoxes_h___
+#ifndef nsCSSAnonBoxes_h_
+#define nsCSSAnonBoxes_h_
 
 #include "mozilla/PseudoStyleType.h"
 #include "nsAtom.h"

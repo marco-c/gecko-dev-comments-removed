@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsColorControlFrame_h___
-#define nsColorControlFrame_h___
+#ifndef nsColorControlFrame_h_
+#define nsColorControlFrame_h_
 
 #include "ButtonControlFrame.h"
 #include "nsCOMPtr.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsBlockDebugFlags_h__
-#define nsBlockDebugFlags_h__
+#ifndef nsBlockDebugFlags_h_
+#define nsBlockDebugFlags_h_
 
 #undef NOISY_FIRST_LETTER  // enables debug output for first-letter specific
                            

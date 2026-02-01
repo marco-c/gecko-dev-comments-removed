@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsCSSFrameConstructor_h___
-#define nsCSSFrameConstructor_h___
+#ifndef nsCSSFrameConstructor_h_
+#define nsCSSFrameConstructor_h_
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/Attributes.h"

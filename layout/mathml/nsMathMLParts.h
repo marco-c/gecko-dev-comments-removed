@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLParts_h___
-#define nsMathMLParts_h___
+#ifndef nsMathMLParts_h_
+#define nsMathMLParts_h_
 
 #include "nsISupports.h"
 #include "nscore.h"

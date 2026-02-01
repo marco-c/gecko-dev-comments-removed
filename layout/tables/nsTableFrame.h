@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsTableFrame_h__
-#define nsTableFrame_h__
+#ifndef nsTableFrame_h_
+#define nsTableFrame_h_
 
 #include "TableArea.h"
 #include "celldata.h"

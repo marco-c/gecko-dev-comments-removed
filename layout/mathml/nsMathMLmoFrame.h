@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLmoFrame_h___
-#define nsMathMLmoFrame_h___
+#ifndef nsMathMLmoFrame_h_
+#define nsMathMLmoFrame_h_
 
 #include "nsMathMLChar.h"
 #include "nsMathMLTokenFrame.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLmspaceFrame_h___
-#define nsMathMLmspaceFrame_h___
+#ifndef nsMathMLmspaceFrame_h_
+#define nsMathMLmspaceFrame_h_
 
 #include "nsCSSValue.h"
 #include "nsMathMLContainerFrame.h"

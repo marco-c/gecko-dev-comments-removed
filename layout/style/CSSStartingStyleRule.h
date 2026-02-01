@@ -4,8 +4,8 @@
 
 
 
-#ifndef CSSStaringStyleRule_h___
-#define CSSStaringStyleRule_h___
+#ifndef CSSStaringStyleRule_h_
+#define CSSStaringStyleRule_h_
 
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/css/GroupRule.h"

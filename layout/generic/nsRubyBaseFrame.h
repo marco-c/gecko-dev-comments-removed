@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsRubyBaseFrame_h___
-#define nsRubyBaseFrame_h___
+#ifndef nsRubyBaseFrame_h_
+#define nsRubyBaseFrame_h_
 
 #include "nsRubyContentFrame.h"
 

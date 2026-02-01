@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLFrame_h___
-#define nsMathMLFrame_h___
+#ifndef nsMathMLFrame_h_
+#define nsMathMLFrame_h_
 
 #include "nsBoundingMetrics.h"
 #include "nsFontMetrics.h"

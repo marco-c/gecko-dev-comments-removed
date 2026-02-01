@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsStyleChangeList_h___
-#define nsStyleChangeList_h___
+#ifndef nsStyleChangeList_h_
+#define nsStyleChangeList_h_
 
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"

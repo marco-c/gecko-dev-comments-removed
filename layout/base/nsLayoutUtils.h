@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsLayoutUtils_h__
-#define nsLayoutUtils_h__
+#ifndef nsLayoutUtils_h_
+#define nsLayoutUtils_h_
 
 #include <algorithm>
 #include <limits>

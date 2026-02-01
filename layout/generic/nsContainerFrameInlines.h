@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsContainerFrameInlines_h___
-#define nsContainerFrameInlines_h___
+#ifndef nsContainerFrameInlines_h_
+#define nsContainerFrameInlines_h_
 
 #include "nsContainerFrame.h"
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSSRenderingGradients_h__
-#define nsCSSRenderingGradients_h__
+#ifndef nsCSSRenderingGradients_h_
+#define nsCSSRenderingGradients_h_
 
 #include "Units.h"
 #include "gfxRect.h"

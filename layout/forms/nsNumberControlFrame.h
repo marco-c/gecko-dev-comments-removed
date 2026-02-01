@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsNumberControlFrame_h__
-#define nsNumberControlFrame_h__
+#ifndef nsNumberControlFrame_h_
+#define nsNumberControlFrame_h_
 
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"

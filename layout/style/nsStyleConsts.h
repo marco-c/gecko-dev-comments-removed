@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsStyleConsts_h___
-#define nsStyleConsts_h___
+#ifndef nsStyleConsts_h_
+#define nsStyleConsts_h_
 
 #include <inttypes.h>
 

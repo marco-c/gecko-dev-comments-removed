@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrintObject_h___
-#define nsPrintObject_h___
+#ifndef nsPrintObject_h_
+#define nsPrintObject_h_
 
 #include "mozilla/UniquePtr.h"
 

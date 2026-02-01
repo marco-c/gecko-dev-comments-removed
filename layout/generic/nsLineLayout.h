@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsLineLayout_h___
-#define nsLineLayout_h___
+#ifndef nsLineLayout_h_
+#define nsLineLayout_h_
 
 #include "BlockReflowState.h"
 #include "JustificationUtils.h"

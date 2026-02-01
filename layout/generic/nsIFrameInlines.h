@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIFrameInlines_h___
-#define nsIFrameInlines_h___
+#ifndef nsIFrameInlines_h_
+#define nsIFrameInlines_h_
 
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/dom/ElementInlines.h"

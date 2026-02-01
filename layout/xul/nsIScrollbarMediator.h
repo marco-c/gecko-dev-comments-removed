@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIScrollbarMediator_h___
-#define nsIScrollbarMediator_h___
+#ifndef nsIScrollbarMediator_h_
+#define nsIScrollbarMediator_h_
 
 #include "mozilla/ScrollTypes.h"
 #include "nsCoord.h"

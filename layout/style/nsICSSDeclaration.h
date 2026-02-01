@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsICSSDeclaration_h__
-#define nsICSSDeclaration_h__
+#ifndef nsICSSDeclaration_h_
+#define nsICSSDeclaration_h_
 
 
 

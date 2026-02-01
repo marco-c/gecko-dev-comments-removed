@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_DisplayPortUtils_h__
-#define mozilla_DisplayPortUtils_h__
+#ifndef mozilla_DisplayPortUtils_h_
+#define mozilla_DisplayPortUtils_h_
 
 #include <cstdint>
 #include <iosfwd>

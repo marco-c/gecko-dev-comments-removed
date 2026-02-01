@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsCSSProps_h___
-#define nsCSSProps_h___
+#ifndef nsCSSProps_h_
+#define nsCSSProps_h_
 
 #include <ostream>
 

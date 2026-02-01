@@ -8,8 +8,8 @@
 
 
 
-#ifndef nsXULPopupManager_h__
-#define nsXULPopupManager_h__
+#ifndef nsXULPopupManager_h_
+#define nsXULPopupManager_h_
 
 #include "Units.h"
 #include "mozilla/Attributes.h"

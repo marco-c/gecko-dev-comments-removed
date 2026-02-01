@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsComboboxControlFrame_h___
-#define nsComboboxControlFrame_h___
+#ifndef nsComboboxControlFrame_h_
+#define nsComboboxControlFrame_h_
 
 #include "ButtonControlFrame.h"
 #include "mozilla/Attributes.h"

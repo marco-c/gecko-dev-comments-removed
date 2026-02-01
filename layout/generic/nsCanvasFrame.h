@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCanvasFrame_h___
-#define nsCanvasFrame_h___
+#ifndef nsCanvasFrame_h_
+#define nsCanvasFrame_h_
 
 #include "mozilla/EventForwards.h"
 #include "nsContainerFrame.h"

@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsLeafFrame_h___
-#define nsLeafFrame_h___
+#ifndef nsLeafFrame_h_
+#define nsLeafFrame_h_
 
 #include "nsDisplayList.h"
 #include "nsIFrame.h"

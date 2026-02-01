@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsContentDLF_h__
-#define nsContentDLF_h__
+#ifndef nsContentDLF_h_
+#define nsContentDLF_h_
 
 #include "nsIDocumentLoaderFactory.h"
 #include "nsMimeTypes.h"

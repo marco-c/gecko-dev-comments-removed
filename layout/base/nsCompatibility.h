@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCompatibility_h___
-#define nsCompatibility_h___
+#ifndef nsCompatibility_h_
+#define nsCompatibility_h_
 
 enum nsCompatibility {
   eCompatibility_FullStandards = 1,

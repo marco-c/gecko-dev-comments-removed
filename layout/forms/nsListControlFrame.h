@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsListControlFrame_h___
-#define nsListControlFrame_h___
+#ifndef nsListControlFrame_h_
+#define nsListControlFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ScrollContainerFrame.h"

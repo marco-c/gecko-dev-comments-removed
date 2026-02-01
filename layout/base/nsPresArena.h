@@ -7,10 +7,8 @@
 
 
 
-#ifndef nsPresArena_h___
-#define nsPresArena_h___
-
-#include <stdint.h>
+#ifndef nsPresArena_h_
+#define nsPresArena_h_
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"

@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsDOMCSSValueList_h___
-#define nsDOMCSSValueList_h___
+#ifndef nsDOMCSSValueList_h_
+#define nsDOMCSSValueList_h_
 
 #include "CSSValue.h"
 #include "nsTArray.h"

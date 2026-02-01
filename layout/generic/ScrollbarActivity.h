@@ -4,8 +4,8 @@
 
 
 
-#ifndef ScrollbarActivity_h___
-#define ScrollbarActivity_h___
+#ifndef ScrollbarActivity_h_
+#define ScrollbarActivity_h_
 
 #include "mozilla/Assertions.h"
 #include "nsCOMPtr.h"

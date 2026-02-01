@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsInlineFrame_h___
-#define nsInlineFrame_h___
+#ifndef nsInlineFrame_h_
+#define nsInlineFrame_h_
 
 #include "nsContainerFrame.h"
 

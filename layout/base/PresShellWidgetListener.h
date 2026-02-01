@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_PresShellWidgetListener_h__
-#define mozilla_PresShellWidgetListener_h__
+#ifndef mozilla_PresShellWidgetListener_h_
+#define mozilla_PresShellWidgetListener_h_
 
 #include "Units.h"
 #include "mozilla/Attributes.h"

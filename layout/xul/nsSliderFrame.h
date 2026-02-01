@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSliderFrame_h__
-#define nsSliderFrame_h__
+#ifndef nsSliderFrame_h_
+#define nsSliderFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "nsAtom.h"

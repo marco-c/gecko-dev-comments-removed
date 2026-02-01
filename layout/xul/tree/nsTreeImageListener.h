@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTreeImageListener_h__
-#define nsTreeImageListener_h__
+#ifndef nsTreeImageListener_h_
+#define nsTreeImageListener_h_
 
 #include "nsCOMPtr.h"
 #include "nsString.h"

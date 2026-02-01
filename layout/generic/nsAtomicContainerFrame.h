@@ -7,8 +7,8 @@
 
 
 
-#ifndef nsAtomicContainerFrame_h___
-#define nsAtomicContainerFrame_h___
+#ifndef nsAtomicContainerFrame_h_
+#define nsAtomicContainerFrame_h_
 
 #include "nsContainerFrame.h"
 

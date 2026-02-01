@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLmrootFrame_h___
-#define nsMathMLmrootFrame_h___
+#ifndef nsMathMLmrootFrame_h_
+#define nsMathMLmrootFrame_h_
 
 #include "nsMathMLChar.h"
 #include "nsMathMLContainerFrame.h"

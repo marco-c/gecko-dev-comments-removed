@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCaret_h__
-#define nsCaret_h__
+#ifndef nsCaret_h_
+#define nsCaret_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SelectionMovementUtils.h"

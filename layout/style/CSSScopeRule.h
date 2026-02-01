@@ -4,8 +4,8 @@
 
 
 
-#ifndef CSSScopeRule_h___
-#define CSSScopeRule_h___
+#ifndef CSSScopeRule_h_
+#define CSSScopeRule_h_
 
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/css/GroupRule.h"

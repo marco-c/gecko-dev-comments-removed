@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIPopupContainer_h___
-#define nsIPopupContainer_h___
+#ifndef nsIPopupContainer_h_
+#define nsIPopupContainer_h_
 
 #include "nsQueryFrame.h"
 class nsIContent;

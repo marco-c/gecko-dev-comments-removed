@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_SharedStyleSheetCache_h__
-#define mozilla_SharedStyleSheetCache_h__
+#ifndef mozilla_SharedStyleSheetCache_h_
+#define mozilla_SharedStyleSheetCache_h_
 
 
 

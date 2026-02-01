@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsIFrame_h___
-#define nsIFrame_h___
+#ifndef nsIFrame_h_
+#define nsIFrame_h_
 
 #ifndef MOZILLA_INTERNAL_API
 #error This header/class should only be used within Mozilla code. It should not be used by extensions.

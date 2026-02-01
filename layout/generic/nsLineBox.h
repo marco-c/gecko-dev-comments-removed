@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsLineBox_h___
-#define nsLineBox_h___
+#ifndef nsLineBox_h_
+#define nsLineBox_h_
 
 #include <algorithm>
 

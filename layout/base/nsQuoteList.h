@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsQuoteList_h___
-#define nsQuoteList_h___
+#ifndef nsQuoteList_h_
+#define nsQuoteList_h_
 
 #include "nsGenConList.h"
 

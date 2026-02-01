@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDirection_h___
-#define nsDirection_h___
+#ifndef nsDirection_h_
+#define nsDirection_h_
 
 #include <ostream>
 

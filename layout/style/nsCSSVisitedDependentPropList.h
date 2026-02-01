@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCSSVisitedDependentPropList_h__
-#define nsCSSVisitedDependentPropList_h__
+#ifndef nsCSSVisitedDependentPropList_h_
+#define nsCSSVisitedDependentPropList_h_
 
 
 

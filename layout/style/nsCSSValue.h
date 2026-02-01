@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsCSSValue_h___
-#define nsCSSValue_h___
+#ifndef nsCSSValue_h_
+#define nsCSSValue_h_
 
 #include "nsCoord.h"
 

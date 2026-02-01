@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsHTMLParts_h___
-#define nsHTMLParts_h___
+#ifndef nsHTMLParts_h_
+#define nsHTMLParts_h_
 
 #include "nsFrameState.h"
 #include "nsISupports.h"

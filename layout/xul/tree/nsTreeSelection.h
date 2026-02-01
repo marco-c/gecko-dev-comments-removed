@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTreeSelection_h__
-#define nsTreeSelection_h__
+#ifndef nsTreeSelection_h_
+#define nsTreeSelection_h_
 
 #include "XULTreeElement.h"
 #include "nsCycleCollectionParticipant.h"

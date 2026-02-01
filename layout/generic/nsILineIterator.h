@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsILineIterator_h___
-#define nsILineIterator_h___
+#ifndef nsILineIterator_h_
+#define nsILineIterator_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Result.h"
@@ -73,7 +73,7 @@ class nsILineIterator {
 
 
 
-  virtual int32_t FindLineContaining(nsIFrame* aFrame,
+  virtual int32_t FindLineContaining(const nsIFrame* aFrame,
                                      int32_t aStartLine = 0) = 0;
 
   

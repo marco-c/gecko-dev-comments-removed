@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsCellMap_h__
-#define nsCellMap_h__
+#ifndef nsCellMap_h_
+#define nsCellMap_h_
 
 #include <algorithm>
 

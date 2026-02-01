@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsRubyTextContainerFrame_h___
-#define nsRubyTextContainerFrame_h___
+#ifndef nsRubyTextContainerFrame_h_
+#define nsRubyTextContainerFrame_h_
 
 #include "nsBlockFrame.h"
 

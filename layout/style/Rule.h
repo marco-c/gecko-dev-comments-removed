@@ -6,8 +6,8 @@
 
 
 
-#ifndef mozilla_css_Rule_h___
-#define mozilla_css_Rule_h___
+#ifndef mozilla_css_Rule_h_
+#define mozilla_css_Rule_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleSheet.h"

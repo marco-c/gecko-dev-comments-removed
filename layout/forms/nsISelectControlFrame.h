@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsISelectControlFrame_h___
-#define nsISelectControlFrame_h___
+#ifndef nsISelectControlFrame_h_
+#define nsISelectControlFrame_h_
 
 #include "nsQueryFrame.h"
 

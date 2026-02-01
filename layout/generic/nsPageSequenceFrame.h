@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPageSequenceFrame_h___
-#define nsPageSequenceFrame_h___
+#ifndef nsPageSequenceFrame_h_
+#define nsPageSequenceFrame_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"

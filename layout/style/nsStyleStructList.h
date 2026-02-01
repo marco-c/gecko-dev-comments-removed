@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsStyleStructList_h__
-#define nsStyleStructList_h__
+#ifndef nsStyleStructList_h_
+#define nsStyleStructList_h_
 
 
 

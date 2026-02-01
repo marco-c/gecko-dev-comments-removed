@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLAtoms_h___
-#define nsMathMLAtoms_h___
+#ifndef nsMathMLAtoms_h_
+#define nsMathMLAtoms_h_
 
 #include "nsGkAtoms.h"
 

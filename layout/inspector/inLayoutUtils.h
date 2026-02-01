@@ -4,8 +4,8 @@
 
 
 
-#ifndef __inLayoutUtils_h__
-#define __inLayoutUtils_h__
+#ifndef _inLayoutUtils_h_
+#define _inLayoutUtils_h_
 
 class nsINode;
 

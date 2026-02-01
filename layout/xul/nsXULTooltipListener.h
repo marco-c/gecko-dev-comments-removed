@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsXULTooltipListener_h__
-#define nsXULTooltipListener_h__
+#ifndef nsXULTooltipListener_h_
+#define nsXULTooltipListener_h_
 
 #include "Units.h"
 #include "nsCOMPtr.h"

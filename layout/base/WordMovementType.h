@@ -4,8 +4,8 @@
 
 
 
-#ifndef WordMovementType_h___
-#define WordMovementType_h___
+#ifndef WordMovementType_h_
+#define WordMovementType_h_
 
 namespace mozilla {
 

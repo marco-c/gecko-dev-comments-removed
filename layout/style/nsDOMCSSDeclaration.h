@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsDOMCSSDeclaration_h___
-#define nsDOMCSSDeclaration_h___
+#ifndef nsDOMCSSDeclaration_h_
+#define nsDOMCSSDeclaration_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"

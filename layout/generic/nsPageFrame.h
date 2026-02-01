@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPageFrame_h___
-#define nsPageFrame_h___
+#ifndef nsPageFrame_h_
+#define nsPageFrame_h_
 
 #include "nsContainerFrame.h"
 #include "nsLeafFrame.h"

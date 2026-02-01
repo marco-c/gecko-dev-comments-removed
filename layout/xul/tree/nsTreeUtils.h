@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTreeUtils_h__
-#define nsTreeUtils_h__
+#ifndef nsTreeUtils_h_
+#define nsTreeUtils_h_
 
 #include "mozilla/AtomArray.h"
 #include "nsError.h"

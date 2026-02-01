@@ -4,8 +4,8 @@
 
 
 
-#ifndef InspectorCSSParser_h___
-#define InspectorCSSParser_h___
+#ifndef InspectorCSSParser_h_
+#define InspectorCSSParser_h_
 
 #include "mozilla/dom/InspectorUtilsBinding.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"

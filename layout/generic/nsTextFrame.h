@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTextFrame_h__
-#define nsTextFrame_h__
+#ifndef nsTextFrame_h_
+#define nsTextFrame_h_
 
 #include "JustificationUtils.h"
 #include "gfxSkipChars.h"

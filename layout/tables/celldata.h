@@ -2,8 +2,8 @@
 
 
 
-#ifndef CellData_h__
-#define CellData_h__
+#ifndef CellData_h_
+#define CellData_h_
 
 #include <stdint.h>
 

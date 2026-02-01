@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsMathMLContainerFrame_h___
-#define nsMathMLContainerFrame_h___
+#ifndef nsMathMLContainerFrame_h_
+#define nsMathMLContainerFrame_h_
 
 #include "mozilla/Likely.h"
 #include "nsBlockFrame.h"

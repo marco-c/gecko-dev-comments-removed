@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsFrameSelection_h___
-#define nsFrameSelection_h___
+#ifndef nsFrameSelection_h_
+#define nsFrameSelection_h_
 
 #include <stdint.h>
 

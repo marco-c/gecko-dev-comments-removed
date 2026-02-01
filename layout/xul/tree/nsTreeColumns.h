@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsTreeColumns_h__
-#define nsTreeColumns_h__
+#ifndef nsTreeColumns_h_
+#define nsTreeColumns_h_
 
 #include "mozilla/RefPtr.h"
 #include "nsCoord.h"

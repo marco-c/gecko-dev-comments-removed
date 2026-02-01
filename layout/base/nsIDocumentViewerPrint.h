@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIDocumentViewerPrint_h___
-#define nsIDocumentViewerPrint_h___
+#ifndef nsIDocumentViewerPrint_h_
+#define nsIDocumentViewerPrint_h_
 
 #include "nsISupports.h"
 
