@@ -842,6 +842,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   
   
   if (level <= 2 || aFileProcess) {
+    policy->RemoveAllDenyRules();
     policy->AddTree(rdonly, "/");
     
     

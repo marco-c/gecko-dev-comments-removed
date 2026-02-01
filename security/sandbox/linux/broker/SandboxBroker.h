@@ -107,6 +107,9 @@ class SandboxBroker final : private SandboxBrokerCommon,
     void AddAncestors(const char* aPath, int aPerms = MAY_ACCESS);
     
     
+    void RemoveAllDenyRules();
+    
+    
     void AddPath(int aPerms, const char* aPath) {
       AddPath(aPerms, aPath,
               (aPerms & MAY_CREATE) ? AddAlways : AddIfExistsNow);
