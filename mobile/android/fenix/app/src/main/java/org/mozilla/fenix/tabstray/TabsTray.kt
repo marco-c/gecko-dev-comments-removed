@@ -15,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +33,6 @@ import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.storage.sync.TabEntry
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -140,7 +140,7 @@ fun TabsTray(
     onInactiveTabsCFRDismiss: () -> Unit,
     onUnlockPbmClick: () -> Unit,
 ) {
-    val tabsTrayState by tabsTrayStore.observeAsState(initialValue = tabsTrayStore.state) { it }
+    val tabsTrayState by tabsTrayStore.stateFlow.collectAsState()
     val pagerState = rememberPagerState(
         initialPage = Page.pageToPosition(page = tabsTrayState.selectedPage, enhancementsEnabled = false),
         pageCount = { Page.entries.size },
@@ -220,7 +220,6 @@ fun TabsTray(
             HorizontalPager(
                 modifier = Modifier.fillMaxSize(),
                 state = pagerState,
-                beyondViewportPageCount = 2,
                 userScrollEnabled = false,
             ) { position ->
                 when (Page.positionToPage(position = position, enhancementsEnabled = false)) {
@@ -276,6 +275,10 @@ fun TabsTray(
                             syncedTabs = tabsTrayState.syncedTabs,
                             onTabClick = onSyncedTabClick,
                             onTabClose = onSyncedTabClose,
+                            expandedState = tabsTrayState.expandedSyncedTabs,
+                            onSectionExpansionToggled = { index ->
+                                tabsTrayStore.dispatch(TabsTrayAction.SyncedTabsHeaderToggled(index))
+                            },
                         )
                     }
                 }
