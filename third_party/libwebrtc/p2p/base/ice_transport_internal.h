@@ -382,7 +382,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   
   
-  sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
   void NotifyRoleConflict(IceTransportInternal* transport) {
     SignalRoleConflict(transport);
   }
@@ -390,7 +389,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   
-  sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
   void NotifyIceTransportStateChanged(IceTransportInternal* transport) {
     SignalIceTransportStateChanged(transport);
   }
@@ -398,12 +396,18 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   
+  
+  
   sigslot::signal1<IceTransportInternal*> SignalDestroyed;
   void NotifyDestroyed(IceTransportInternal* transport) {
     SignalDestroyed(transport);
   }
   void SubscribeDestroyed(
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
+  void SubscribeDestroyed(
+      void* tag,
+      absl::AnyInvocable<void(IceTransportInternal*)> callback);
+  void UnsubscribeDestroyed(void* tag);
 
   
   
@@ -454,6 +458,10 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       candidate_pair_change_callback_;
 
  private:
+  
+  sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
+  sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
+
   CallbackList<IceTransportInternal*, const Candidate&>
       candidate_gathered_callbacks_;
   SignalTrampoline<IceTransportInternal,
