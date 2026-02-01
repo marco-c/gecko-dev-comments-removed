@@ -3247,6 +3247,9 @@ pref("devtools.webconsole.input.editorOnboarding", true);
 pref("devtools.webconsole.groupSimilarMessages", true);
 
 
+pref("devtools.webconsole.codemirrorNext", false);
+
+
 pref("devtools.browserconsole.enableNetworkMonitoring", false);
 
 
