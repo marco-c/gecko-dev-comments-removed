@@ -119,7 +119,7 @@
         TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
         UrlbarProviderOpenTabs:
           "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
-        FaviconUtils: "moz-src:///browser/modules/FaviconUtils.sys.mjs",
+        FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
       });
       ChromeUtils.defineLazyGetter(this, "tabLocalization", () => {
         return new Localization(
@@ -10419,7 +10419,9 @@ var TabContextMenu = {
 
   deleteTabNotes() {
     for (let tab of this.contextTabs) {
-      this.TabNotes.delete(tab);
+      this.TabNotes.delete(tab, {
+        telemetrySource: this.TabNotes.TELEMETRY_SOURCE.TAB_CONTEXT_MENU,
+      });
     }
   },
 };
