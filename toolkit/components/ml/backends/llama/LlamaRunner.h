@@ -47,6 +47,9 @@
 #include "mozilla/EventQueue.h"
 #include "nsDeque.h"
 #include "mozilla/dom/Blob.h"
+#include "mozilla/dom/WorkerRef.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/GlobalTeardownObserver.h"
 
 namespace mozilla::dom {
 
@@ -181,13 +184,18 @@ using LlamaBackend = ::mozilla::llama::LlamaBackend;
 
 
 
-class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper {
+
+
+
+
+class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper,
+                                public GlobalTeardownObserver {
  public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(LlamaStreamSource)
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(LlamaStreamSource,
                                            UnderlyingSourceAlgorithmsWrapper)
-  LlamaStreamSource(RefPtr<LlamaBackend> aBackend,
+  LlamaStreamSource(nsIGlobalObject* aGlobal, RefPtr<LlamaBackend> aBackend,
                     const LlamaChatOptions& aOptions);
 
   MOZ_CAN_RUN_SCRIPT
@@ -202,8 +210,13 @@ class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper {
   
   void SetControllerStream(RefPtr<ReadableStream> aStream);
 
+  void DisconnectFromOwner() override;
+
  private:
   ~LlamaStreamSource();
+
+  
+  void ShutdownWorkerThread();
 
   RefPtr<LlamaBackend> mBackend;
   const LlamaChatOptions mChatOptions;
@@ -220,6 +233,13 @@ class LlamaStreamSource final : public UnderlyingSourceAlgorithmsWrapper {
 
   
   RefPtr<ReadableStream> mControllerStream;
+
+  
+  
+  
+  
+  
+  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
 };
 
 class MetadataCallback;
