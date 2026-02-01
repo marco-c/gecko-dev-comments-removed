@@ -228,6 +228,17 @@ static inline ValueOperand ToValue(const LBoxAllocation& a) {
 #endif
 }
 
+static inline ValueOperand ToValue(const LBoxDefinition& a) {
+#if defined(JS_NUNBOX32)
+  return ValueOperand(ToRegister(a.pointerType()),
+                      ToRegister(a.pointerPayload()));
+#elif defined(JS_PUNBOX64)
+  return ValueOperand(ToRegister(a.pointer()));
+#else
+#  error "Unknown"
+#endif
+}
+
 
 Address CodeGeneratorShared::AddressOfPassedArg(uint32_t slot) const {
   MOZ_ASSERT(masm.framePushed() == frameSize());
@@ -312,11 +323,10 @@ Address CodeGeneratorShared::ToAddress(const LInt64Allocation& a) const {
 
 Address CodeGeneratorShared::ToAddress(Register elements,
                                        const LAllocation* index,
-                                       Scalar::Type type,
-                                       int32_t offsetAdjustment) {
+                                       Scalar::Type type) {
   int32_t idx = ToInt32(index);
   int32_t offset;
-  MOZ_ALWAYS_TRUE(ArrayOffsetFitsInInt32(idx, type, offsetAdjustment, &offset));
+  MOZ_ALWAYS_TRUE(ArrayOffsetFitsInInt32(idx, type, &offset));
   return Address(elements, offset);
 }
 
