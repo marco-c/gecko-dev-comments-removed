@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHttpNegotiateAuth_h_
-#define nsHttpNegotiateAuth_h_
+#ifndef nsHttpNegotiateAuth_h__
+#define nsHttpNegotiateAuth_h__
 
 #include "nsIHttpAuthenticator.h"
 #include "nsIURI.h"

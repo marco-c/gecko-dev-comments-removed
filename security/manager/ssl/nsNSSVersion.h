@@ -3,8 +3,8 @@
 
 
 
-#ifndef NS_NSSVERSION_H_
-#define NS_NSSVERSION_H_
+#ifndef _NS_NSSVERSION_H_
+#define _NS_NSSVERSION_H_
 
 #include "nsINSSVersion.h"
 

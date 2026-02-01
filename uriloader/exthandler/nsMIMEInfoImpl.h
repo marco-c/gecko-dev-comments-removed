@@ -3,8 +3,8 @@
 
 
 
-#ifndef _nsmimeinfoimpl_h_
-#define _nsmimeinfoimpl_h_
+#ifndef __nsmimeinfoimpl_h___
+#define __nsmimeinfoimpl_h___
 
 #include "nsIMIMEInfo.h"
 #include "nsAtom.h"

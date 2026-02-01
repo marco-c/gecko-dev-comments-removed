@@ -4,8 +4,8 @@
 
 
 
-#ifndef DomainPolicy_h_
-#define DomainPolicy_h_
+#ifndef DomainPolicy_h__
+#define DomainPolicy_h__
 
 #include "nsIDomainPolicy.h"
 #include "nsTHashSet.h"

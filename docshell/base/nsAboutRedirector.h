@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsAboutRedirector_h_
-#define nsAboutRedirector_h_
+#ifndef nsAboutRedirector_h__
+#define nsAboutRedirector_h__
 
 #include "nsIAboutModule.h"
 

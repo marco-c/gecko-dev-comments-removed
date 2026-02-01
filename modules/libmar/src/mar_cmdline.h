@@ -2,8 +2,8 @@
 
 
 
-#ifndef MAR_CMDLINE_H_
-#define MAR_CMDLINE_H_
+#ifndef MAR_CMDLINE_H__
+#define MAR_CMDLINE_H__
 
 
 

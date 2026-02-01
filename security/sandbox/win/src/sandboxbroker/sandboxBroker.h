@@ -4,8 +4,8 @@
 
 
 
-#ifndef SECURITY_SANDBOX_SANDBOXBROKER_H_
-#define SECURITY_SANDBOX_SANDBOXBROKER_H_
+#ifndef __SECURITY_SANDBOX_SANDBOXBROKER_H__
+#define __SECURITY_SANDBOX_SANDBOXBROKER_H__
 
 #include <stdint.h>
 #include <windows.h>

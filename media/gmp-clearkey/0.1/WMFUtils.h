@@ -14,8 +14,8 @@
 
 
 
-#ifndef WMFUtils_h_
-#define WMFUtils_h_
+#ifndef __WMFUtils_h__
+#define __WMFUtils_h__
 
 #include <assert.h>
 #include <mfapi.h>

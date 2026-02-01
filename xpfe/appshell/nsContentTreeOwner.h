@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsContentTreeOwner_h_
-#define nsContentTreeOwner_h_
+#ifndef nsContentTreeOwner_h__
+#define nsContentTreeOwner_h__
 
 
 #include "nsCOMPtr.h"

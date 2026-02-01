@@ -4,8 +4,8 @@
 
 
 
-#ifndef GeckoViewInputStream_h_
-#define GeckoViewInputStream_h_
+#ifndef GeckoViewInputStream_h__
+#define GeckoViewInputStream_h__
 
 #include "mozilla/java/GeckoViewInputStreamWrappers.h"
 #include "mozilla/java/ContentInputStreamWrappers.h"

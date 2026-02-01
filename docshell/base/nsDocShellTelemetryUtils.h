@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDocShellTelemetryUtils_h_
-#define nsDocShellTelemetryUtils_h_
+#ifndef nsDocShellTelemetryUtils_h__
+#define nsDocShellTelemetryUtils_h__
 
 #include "nsLiteralString.h"
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef GeckoViewExternalAppService_h_
-#define GeckoViewExternalAppService_h_
+#ifndef GeckoViewExternalAppService_h__
+#define GeckoViewExternalAppService_h__
 
 #include "nsIExternalHelperAppService.h"
 #include "mozilla/StaticPtr.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef GeckoViewStreamListener_h_
-#define GeckoViewStreamListener_h_
+#ifndef GeckoViewStreamListener_h__
+#define GeckoViewStreamListener_h__
 
 #include "nsIStreamListener.h"
 #include "nsIInterfaceRequestor.h"

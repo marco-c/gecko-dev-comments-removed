@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsJARINPUTSTREAM_h_
-#define nsJARINPUTSTREAM_h_
+#ifndef nsJARINPUTSTREAM_h__
+#define nsJARINPUTSTREAM_h__
 
 #include "nsIInputStream.h"
 #include "nsJAR.h"

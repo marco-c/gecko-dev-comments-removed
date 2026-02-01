@@ -3,8 +3,8 @@
 
 
 
-#ifndef PreloadService_h_
-#define PreloadService_h_
+#ifndef PreloadService_h__
+#define PreloadService_h__
 
 #include "nsIContentPolicy.h"
 #include "nsIURI.h"

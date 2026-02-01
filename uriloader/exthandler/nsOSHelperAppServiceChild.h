@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsOSHelperAppServiceChild_h_
-#define nsOSHelperAppServiceChild_h_
+#ifndef nsOSHelperAppServiceChild_h__
+#define nsOSHelperAppServiceChild_h__
 
 #include "nsExternalHelperAppService.h"
 

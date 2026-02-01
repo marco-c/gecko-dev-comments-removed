@@ -4,8 +4,8 @@
 
 
 
-#ifndef _nsLocalHandlerAppImpl_h_
-#define _nsLocalHandlerAppImpl_h_
+#ifndef __nsLocalHandlerAppImpl_h__
+#define __nsLocalHandlerAppImpl_h__
 
 #include "nsString.h"
 #include "nsIMIMEInfo.h"

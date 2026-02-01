@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsExternalHelperAppService_h_
-#define nsExternalHelperAppService_h_
+#ifndef nsExternalHelperAppService_h__
+#define nsExternalHelperAppService_h__
 
 #include "mozilla/Logging.h"
 #include "prtime.h"

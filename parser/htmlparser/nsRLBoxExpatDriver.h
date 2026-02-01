@@ -3,8 +3,8 @@
 
 
 
-#ifndef NS_RLBOX_EXPAT_DRIVER_
-#define NS_RLBOX_EXPAT_DRIVER_
+#ifndef NS_RLBOX_EXPAT_DRIVER__
+#define NS_RLBOX_EXPAT_DRIVER__
 
 #include "mozilla/RLBoxSandboxPool.h"
 #include "mozilla/StaticPtr.h"

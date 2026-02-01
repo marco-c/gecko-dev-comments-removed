@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsScriptSecurityManager_h_
-#define nsScriptSecurityManager_h_
+#ifndef nsScriptSecurityManager_h__
+#define nsScriptSecurityManager_h__
 
 #include "nsIScriptSecurityManager.h"
 

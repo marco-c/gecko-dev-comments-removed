@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDSURIContentListener_h_
-#define nsDSURIContentListener_h_
+#ifndef nsDSURIContentListener_h__
+#define nsDSURIContentListener_h__
 
 #include "nsCOMPtr.h"
 #include "nsIURIContentListener.h"

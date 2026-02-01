@@ -2,8 +2,8 @@
 
 
 
-#ifndef PreloaderBase_h_
-#define PreloaderBase_h_
+#ifndef PreloaderBase_h__
+#define PreloaderBase_h__
 
 #include "mozilla/Maybe.h"
 #include "mozilla/PreloadHashKey.h"

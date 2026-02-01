@@ -4,8 +4,8 @@
 
 
 
-#ifndef _nsContentHandlerAppImpl_h_
-#define _nsContentHandlerAppImpl_h_
+#ifndef __nsContentHandlerAppImpl_h__
+#define __nsContentHandlerAppImpl_h__
 
 #include <contentaction/contentaction.h>
 #include "nsString.h"

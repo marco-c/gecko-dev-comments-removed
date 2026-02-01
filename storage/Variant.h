@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_storage_Variant_h_
-#define mozilla_storage_Variant_h_
+#ifndef mozilla_storage_Variant_h__
+#define mozilla_storage_Variant_h__
 
 #include "nsIInterfaceRequestor.h"
 #include "nsIVariant.h"

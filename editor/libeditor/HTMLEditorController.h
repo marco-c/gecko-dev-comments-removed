@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_HTMLEditorController_h_
-#define mozilla_HTMLEditorController_h_
+#ifndef mozilla_HTMLEditorController_h__
+#define mozilla_HTMLEditorController_h__
 
 #include "nscore.h"  
 

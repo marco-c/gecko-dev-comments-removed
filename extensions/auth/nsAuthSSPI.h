@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAuthSSPI_h_
-#define nsAuthSSPI_h_
+#ifndef nsAuthSSPI_h__
+#define nsAuthSSPI_h__
 
 #include "nsAuth.h"
 #include "nsIAuthModule.h"

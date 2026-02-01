@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsJSPrincipals_h_
-#define nsJSPrincipals_h_
+#ifndef nsJSPrincipals_h__
+#define nsJSPrincipals_h__
 
 #include "js/Principals.h"
 #include "nsIPrincipal.h"

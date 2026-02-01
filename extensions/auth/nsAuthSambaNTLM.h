@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAuthSambaNTLM_h_
-#define nsAuthSambaNTLM_h_
+#ifndef nsAuthSambaNTLM_h__
+#define nsAuthSambaNTLM_h__
 
 #include "nsIAuthModule.h"
 #include "nsString.h"

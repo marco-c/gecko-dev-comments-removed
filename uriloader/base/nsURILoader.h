@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsURILoader_h_
-#define nsURILoader_h_
+#ifndef nsURILoader_h__
+#define nsURILoader_h__
 
 #include "nsCURILoader.h"
 #include "nsISupportsUtils.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef GeckoViewContentChannel_h_
-#define GeckoViewContentChannel_h_
+#ifndef GeckoViewContentChannel_h__
+#define GeckoViewContentChannel_h__
 
 #include "nsBaseChannel.h"
 

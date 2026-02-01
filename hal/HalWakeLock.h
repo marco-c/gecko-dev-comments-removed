@@ -3,8 +3,8 @@
 
 
 
-#ifndef HAL_WAKELOCK_H_
-#define HAL_WAKELOCK_H_
+#ifndef __HAL_WAKELOCK_H_
+#define __HAL_WAKELOCK_H_
 
 namespace mozilla {
 namespace hal {

@@ -3,8 +3,8 @@
 
 
 
-#ifndef NS_IPARSER_
-#define NS_IPARSER_
+#ifndef NS_IPARSER___
+#define NS_IPARSER___
 
 
 

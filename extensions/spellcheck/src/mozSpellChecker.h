@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozSpellChecker_h_
-#define mozSpellChecker_h_
+#ifndef mozSpellChecker_h__
+#define mozSpellChecker_h__
 
 #include "mozilla/MozPromise.h"
 #include "nsCOMPtr.h"

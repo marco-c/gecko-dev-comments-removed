@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsJARURI_h_
-#define nsJARURI_h_
+#ifndef nsJARURI_h__
+#define nsJARURI_h__
 
 #include "nsIJARURI.h"
 #include "nsISerializable.h"

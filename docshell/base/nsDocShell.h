@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDocShell_h_
-#define nsDocShell_h_
+#ifndef nsDocShell_h__
+#define nsDocShell_h__
 
 #include "Units.h"
 #include "mozilla/Encoding.h"

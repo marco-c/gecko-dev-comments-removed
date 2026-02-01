@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_net_GeckoViewContentChannelChild_h_
-#define mozilla_net_GeckoViewContentChannelChild_h_
+#ifndef mozilla_net_GeckoViewContentChannelChild_h__
+#define mozilla_net_GeckoViewContentChannelChild_h__
 
 #include "nsBaseChannel.h"
 #include "nsIChildChannel.h"

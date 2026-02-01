@@ -7,8 +7,8 @@
 
 
 
-#ifndef FuzzingInterface_h_
-#define FuzzingInterface_h_
+#ifndef FuzzingInterface_h__
+#define FuzzingInterface_h__
 
 #include <fstream>
 

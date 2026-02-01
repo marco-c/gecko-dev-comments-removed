@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAuthGSSAPI_h_
-#define nsAuthGSSAPI_h_
+#ifndef nsAuthGSSAPI_h__
+#define nsAuthGSSAPI_h__
 
 #include "nsAuth.h"
 #include "nsIAuthModule.h"

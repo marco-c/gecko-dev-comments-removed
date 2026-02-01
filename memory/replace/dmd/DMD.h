@@ -4,8 +4,8 @@
 
 
 
-#ifndef DMD_h_
-#define DMD_h_
+#ifndef DMD_h___
+#define DMD_h___
 
 #include <stdarg.h>
 #include <string.h>

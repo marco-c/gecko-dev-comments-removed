@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_devtools_ZeroCopyNSIOutputStream_
-#define mozilla_devtools_ZeroCopyNSIOutputStream_
+#ifndef mozilla_devtools_ZeroCopyNSIOutputStream__
+#define mozilla_devtools_ZeroCopyNSIOutputStream__
 
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/stubs/common.h>

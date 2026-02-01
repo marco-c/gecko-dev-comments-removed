@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsRefreshTimer_h_
-#define nsRefreshTimer_h_
+#ifndef nsRefreshTimer_h__
+#define nsRefreshTimer_h__
 
 #include "nsINamed.h"
 #include "nsITimer.h"

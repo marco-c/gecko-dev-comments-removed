@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsChromeProtocolHandler_h_
-#define nsChromeProtocolHandler_h_
+#ifndef nsChromeProtocolHandler_h___
+#define nsChromeProtocolHandler_h___
 
 #include "nsIProtocolHandler.h"
 #include "nsWeakReference.h"

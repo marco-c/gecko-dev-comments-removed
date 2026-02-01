@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_AppWindow_h_
-#define mozilla_AppWindow_h_
+#ifndef mozilla_AppWindow_h__
+#define mozilla_AppWindow_h__
 
 
 #include "nsChromeTreeOwner.h"

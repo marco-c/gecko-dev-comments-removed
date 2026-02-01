@@ -8,8 +8,8 @@
 
 
 
-#ifndef FuzzingInterfaceStream_h_
-#define FuzzingInterfaceStream_h_
+#ifndef FuzzingInterfaceStream_h__
+#define FuzzingInterfaceStream_h__
 
 #ifdef JS_STANDALONE
 #  error "FuzzingInterfaceStream.h cannot be used in JS standalone builds."

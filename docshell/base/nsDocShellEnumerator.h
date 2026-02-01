@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDocShellEnumerator_h_
-#define nsDocShellEnumerator_h_
+#ifndef nsDocShellEnumerator_h___
+#define nsDocShellEnumerator_h___
 
 #include "nsTArray.h"
 

@@ -7,8 +7,8 @@
 
 
 
-#ifndef RustFuzzingTargets_h_
-#define RustFuzzingTargets_h_
+#ifndef RustFuzzingTargets_h__
+#define RustFuzzingTargets_h__
 
 #include <stddef.h>
 #include <stdint.h>

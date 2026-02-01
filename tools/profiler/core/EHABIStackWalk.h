@@ -10,8 +10,8 @@
 
 
 
-#ifndef mozilla_EHABIStackWalk_h_
-#define mozilla_EHABIStackWalk_h_
+#ifndef mozilla_EHABIStackWalk_h__
+#define mozilla_EHABIStackWalk_h__
 
 #include <stddef.h>
 #include <ucontext.h>

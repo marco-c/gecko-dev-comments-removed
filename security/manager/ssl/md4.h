@@ -3,8 +3,8 @@
 
 
 
-#ifndef md4_h_
-#define md4_h_
+#ifndef md4_h__
+#define md4_h__
 
 #ifdef __cplusplus
 extern "C" {

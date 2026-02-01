@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDocLoader_h_
-#define nsDocLoader_h_
+#ifndef nsDocLoader_h__
+#define nsDocLoader_h__
 
 #include "nsIDocumentLoader.h"
 #include "nsIWebProgress.h"

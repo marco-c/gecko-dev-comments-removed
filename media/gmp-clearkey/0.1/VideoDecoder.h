@@ -14,8 +14,8 @@
 
 
 
-#ifndef VideoDecoder_h_
-#define VideoDecoder_h_
+#ifndef __VideoDecoder_h__
+#define __VideoDecoder_h__
 
 
 

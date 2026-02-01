@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_MessageManagerFuzzer_h_
-#define mozilla_dom_MessageManagerFuzzer_h_
+#ifndef mozilla_dom_MessageManagerFuzzer_h__
+#define mozilla_dom_MessageManagerFuzzer_h__
 
 #include "jspubtd.h"
 #include "nsAString.h"

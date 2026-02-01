@@ -9,8 +9,8 @@
 
 
 
-#ifndef FuzzerTestHarness_h_
-#define FuzzerTestHarness_h_
+#ifndef FuzzerTestHarness_h__
+#define FuzzerTestHarness_h__
 
 #include "mozilla/Attributes.h"
 #include "mozilla/IntegerPrintfMacros.h"

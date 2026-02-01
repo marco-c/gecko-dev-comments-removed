@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_CryptoTask_h
-#define mozilla_CryptoTask_h
+#ifndef mozilla__CryptoTask_h
+#define mozilla__CryptoTask_h
 
 #include "nsThreadUtils.h"
 

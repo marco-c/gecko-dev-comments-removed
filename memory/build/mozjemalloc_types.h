@@ -33,8 +33,8 @@
 
 
 
-#ifndef JEMALLOC_TYPES_H_
-#define JEMALLOC_TYPES_H_
+#ifndef _JEMALLOC_TYPES_H_
+#define _JEMALLOC_TYPES_H_
 
 #include <stdint.h>
 

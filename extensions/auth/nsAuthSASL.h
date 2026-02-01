@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAuthSASL_h_
-#define nsAuthSASL_h_
+#ifndef nsAuthSASL_h__
+#define nsAuthSASL_h__
 
 #include "nsIAuthModule.h"
 #include "nsString.h"

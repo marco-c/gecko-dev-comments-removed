@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsScannerString_h_
-#define nsScannerString_h_
+#ifndef nsScannerString_h___
+#define nsScannerString_h___
 
 #include "nsString.h"
 #include "nsUnicharUtils.h"  

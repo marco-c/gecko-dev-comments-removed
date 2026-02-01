@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsChromeTreeOwner_h_
-#define nsChromeTreeOwner_h_
+#ifndef nsChromeTreeOwner_h__
+#define nsChromeTreeOwner_h__
 
 
 #include "nsCOMPtr.h"
