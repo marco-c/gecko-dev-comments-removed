@@ -97,10 +97,6 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
           mRequestHandle->GetRequest()
               ->AsModuleRequest()
               ->SetHasWasmMimeTypeEssence();
-          loadContext->mRequest->SetWasmBytes();
-          if (!loadContext->mRequest->WasmBytes().append(aString, aStringLen)) {
-            return NS_ERROR_OUT_OF_MEMORY;
-          }
         }
       }
     }
@@ -196,21 +192,18 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   Document* parentDoc = mWorkerRef->Private()->GetDocument();
 
   
-  if (!loadContext->mRequest->IsWasmBytes()) {
-    
-    loadContext->mRequest->SetTextSource(loadContext);
+  loadContext->mRequest->SetTextSource(loadContext);
 
-    
-    
-    rv = mDecoder->DecodeRawData(loadContext->mRequest, aString, aStringLen,
-                                  true);
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  rv = mDecoder->DecodeRawData(loadContext->mRequest, aString, aStringLen,
+                                true);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    if (!loadContext->mRequest->ScriptTextLength()) {
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, "DOM"_ns, parentDoc,
-          nsContentUtils::eDOM_PROPERTIES, "EmptyWorkerSourceWarning");
-    }
+  if (!loadContext->mRequest->ScriptTextLength()) {
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
+                                    parentDoc, nsContentUtils::eDOM_PROPERTIES,
+                                    "EmptyWorkerSourceWarning");
   }
 
   

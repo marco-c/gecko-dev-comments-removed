@@ -215,20 +215,6 @@ NS_IMETHODIMP FetchCompleteRunnable::RunOnWorkletThread() {
   ModuleLoadRequest* request = moduleLoader->GetRequest(mURI);
   MOZ_ASSERT(request);
 
-#ifdef NIGHTLY_BUILD
-  
-  
-  
-  if (mHasWasmMimeTypeEssence) {
-    request->SetHasWasmMimeTypeEssence();
-    request->SetWasmBytes();
-    request->SetBaseURL(mURI);
-    request->OnFetchComplete(mResult);
-    moduleLoader->RemoveRequest(mURI);
-    return NS_OK;
-  }
-#endif
-
   
   request->SetTextSource(request->mLoadContext.get());
 
@@ -240,6 +226,15 @@ NS_IMETHODIMP FetchCompleteRunnable::RunOnWorkletThread() {
                                 true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  if (mHasWasmMimeTypeEssence) {
+    request->SetHasWasmMimeTypeEssence();
+  }
+#endif
 
   request->SetBaseURL(mURI);
   request->OnFetchComplete(mResult);

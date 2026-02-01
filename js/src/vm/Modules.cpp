@@ -305,7 +305,7 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
 
 JS_PUBLIC_API JSObject* JS::CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
+    SourceText<mozilla::Utf8Unit>& srcBuf) {
   
   
   
@@ -313,6 +313,18 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModule(
                            JSMSG_WASM_COMPILE_ERROR,
                            "Compilation of wasm modules not implemented.");
 
+  return nullptr;
+}
+
+JS_PUBLIC_API JSObject* JS::CompileWasmModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf) {
+  
+  
+  
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_WASM_COMPILE_ERROR,
+                           "Compilation of wasm modules not implemented.");
   return nullptr;
 }
 

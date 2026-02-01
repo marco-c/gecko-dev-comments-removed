@@ -132,13 +132,7 @@ class LoadedScript : public nsIMemoryReporter {
     
     
     
-    eCachedStencil,
-
-    
-    
-    
-    
-    eWasmBytes,
+    eCachedStencil
   };
 
   
@@ -158,7 +152,6 @@ class LoadedScript : public nsIMemoryReporter {
     return mDataType == DataType::eSerializedStencil;
   }
   bool IsCachedStencil() const { return mDataType == DataType::eCachedStencil; }
-  bool IsWasmBytes() const { return mDataType == DataType::eWasmBytes; }
 
   
 
@@ -184,12 +177,6 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eCachedStencil;
   }
 
-  void SetWasmBytes() {
-    MOZ_ASSERT(IsUnknownDataType());
-    mDataType = DataType::eWasmBytes;
-    mScriptData.emplace(VariantType<ScriptTextBuffer<uint8_t>>());
-  }
-
   bool IsUTF16Text() const {
     return mScriptData->is<ScriptTextBuffer<char16_t>>();
   }
@@ -210,11 +197,6 @@ class LoadedScript : public nsIMemoryReporter {
     return mScriptData->as<ScriptTextBuffer<Unit>>();
   }
 
-  ScriptTextBuffer<uint8_t>& WasmBytes() {
-    MOZ_ASSERT(IsWasmBytes());
-    return mScriptData->as<ScriptTextBuffer<uint8_t>>();
-  }
-
   size_t ScriptTextLength() const {
     MOZ_ASSERT(IsTextSource());
     return IsUTF16Text() ? ScriptText<char16_t>().length()
@@ -232,13 +214,9 @@ class LoadedScript : public nsIMemoryReporter {
                          : ScriptText<Utf8Unit>().clearAndFree();
   }
 
-  size_t ReceivedScriptTextLength() const {
-    MOZ_ASSERT(IsTextSource());
-    return mReceivedScriptTextLength;
-  }
+  size_t ReceivedScriptTextLength() const { return mReceivedScriptTextLength; }
 
   void SetReceivedScriptTextLength(size_t aLength) {
-    MOZ_ASSERT(IsTextSource());
     mReceivedScriptTextLength = aLength;
   }
 
@@ -446,9 +424,8 @@ class LoadedScript : public nsIMemoryReporter {
 
  public:
   
-  
-  mozilla::Maybe<Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>,
-                         ScriptTextBuffer<uint8_t>>>
+  mozilla::Maybe<
+      Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
       mScriptData;
 
   
@@ -525,15 +502,12 @@ class LoadedScriptDelegate {
     return GetLoadedScript()->IsSerializedStencil();
   }
   bool IsCachedStencil() const { return GetLoadedScript()->IsCachedStencil(); }
-  bool IsWasmBytes() const { return GetLoadedScript()->IsWasmBytes(); }
 
   void SetUnknownDataType() { GetLoadedScript()->SetUnknownDataType(); }
 
   void SetTextSource(LoadContextBase* maybeLoadContext) {
     GetLoadedScript()->SetTextSource(maybeLoadContext);
   }
-
-  void SetWasmBytes() { GetLoadedScript()->SetWasmBytes(); }
 
   void SetSerializedStencil() { GetLoadedScript()->SetSerializedStencil(); }
 
@@ -549,11 +523,6 @@ class LoadedScriptDelegate {
   ScriptTextBuffer<Unit>& ScriptText() {
     LoadedScript* loader = GetLoadedScript();
     return loader->ScriptText<Unit>();
-  }
-
-  ScriptTextBuffer<uint8_t>& WasmBytes() {
-    LoadedScript* loader = GetLoadedScript();
-    return loader->WasmBytes();
   }
 
   size_t ScriptTextLength() const {
