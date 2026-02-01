@@ -60,17 +60,21 @@ MFBT_API void vprintf_stderr(const char* aFmt, va_list aArgs)
 MFBT_API void fprintf_stderr(FILE* aFile, const char* aFmt, ...)
     MOZ_FORMAT_PRINTF(2, 3);
 
-
-
-
-
-
-
-MFBT_API void print_stderr(std::stringstream& aStr);
-MFBT_API void fprint_stderr(FILE* aFile, std::stringstream& aStr);
-
 #ifdef __cplusplus
 }
 #endif  
 
-#endif  
+#ifdef __cplusplus
+
+
+
+
+
+
+MFBT_API void print_stderr(std::stringstream&);
+MFBT_API void fprint_stderr(FILE*, std::stringstream&);
+MFBT_API void print_stderr(const std::string&);
+MFBT_API void fprint_stderr(FILE*, const std::string&);
+#endif
+
+#endif

@@ -15,7 +15,6 @@
 #include "ErrorList.h"  
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Debug.h"
 #include "mozilla/RefPtr.h"
 
 #include "mozilla/dom/Element.h"
