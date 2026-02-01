@@ -258,14 +258,15 @@ class SVGIntegrationUtils final {
 
 
 
-  enum {
-    FLAG_SYNC_DECODE_IMAGES = 0x01,
+  enum class DecodeFlag {
+    SyncDecodeImages,
   };
+  using DecodeFlags = EnumSet<DecodeFlag>;
 
   static already_AddRefed<gfxDrawable> DrawableFromPaintServer(
       nsIFrame* aFrame, nsIFrame* aTarget, const nsSize& aPaintServerSize,
       const gfx::IntSize& aRenderSize, const DrawTarget* aDrawTarget,
-      const gfxMatrix& aContextMatrix, uint32_t aFlags);
+      const gfxMatrix& aContextMatrix, DecodeFlags aFlags);
 
   
 
