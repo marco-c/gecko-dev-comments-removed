@@ -354,10 +354,6 @@ var allowlist = [
   },
   
   {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
-  },
-  
-  {
     file: "chrome://browser/content/aiwindow/components/website-chip-container.mjs",
   },
 ];
