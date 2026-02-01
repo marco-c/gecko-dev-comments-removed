@@ -112,10 +112,6 @@ enum class StreamCaptureBehavior : uint8_t {
 
 
 
-enum class AudioOutputConfig : bool { NotNeeded = false, Needed = true };
-
-
-
 
 enum MediaPreloadAttrValue : uint8_t {
   PRELOAD_ATTR_NONE,      
@@ -757,9 +753,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   already_AddRefed<DOMMediaStream> MozCaptureStreamUntilEnded(ErrorResult& aRv);
 
-  already_AddRefed<DOMMediaStream> CaptureStream(ErrorResult& aRv);
-
-  bool MozAudioCaptured() const;
+  bool MozAudioCaptured() const { return mAudioCaptured; }
 
   void MozGetMetadata(JSContext* aCx, JS::MutableHandle<JSObject*> aResult,
                       ErrorResult& aRv);
@@ -1047,13 +1041,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-
-
-
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(
       StreamCaptureBehavior aFinishBehavior,
-      StreamCaptureType aStreamCaptureType,
-      AudioOutputConfig aAudioOutputConfig, MediaTrackGraph* aGraph);
+      StreamCaptureType aStreamCaptureType, MediaTrackGraph* aGraph);
 
   
 
@@ -1977,25 +1967,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void MaybeMarkSHEntryAsUserInteracted();
 
-  
-  bool ShouldHaveTrackSources() const;
-
 #ifdef MOZ_WMF_CDM
   
   bool mIsUsingWMFCDM = false;
 #endif
 
   Maybe<DelayedScheduler<AwakeTimeStamp>> mAudioWakelockReleaseScheduler;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  AudioOutputConfig mAudioOutputConfig = AudioOutputConfig::Needed;
 };
 
 
