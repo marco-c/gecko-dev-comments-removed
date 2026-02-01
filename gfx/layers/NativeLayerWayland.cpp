@@ -1204,9 +1204,12 @@ void NativeLayerWaylandRender::NotifySurfaceReady() {
 
   WaylandSurfaceLock lock(mSurface);
 
-  MOZ_DIAGNOSTIC_ASSERT(!mFrontBuffer);
-  MOZ_DIAGNOSTIC_ASSERT(mInProgressBuffer);
+  
+  if (!mInProgressBuffer) {
+    return;
+  }
 
+  MOZ_DIAGNOSTIC_ASSERT(!mFrontBuffer);
   mFrontBuffer = std::move(mInProgressBuffer);
   if (mSurfacePoolHandle->gl()) {
     auto* buffer = mFrontBuffer->AsWaylandBufferDMABUF();
