@@ -3,6 +3,9 @@
 
 
 
+#ifndef TOOLS_FUZZING_INTERFACE_HARNESS_FUZZERRUNNER_H_
+#define TOOLS_FUZZING_INTERFACE_HARNESS_FUZZERRUNNER_H_
+
 #include "FuzzerRegistry.h"
 
 namespace mozilla {
@@ -22,3 +25,5 @@ class FuzzerRunner {
 extern FuzzerRunner* fuzzerRunner;
 
 }  
+
+#endif  
