@@ -44,6 +44,8 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/FlowMarkers.h"
+
 
 #include "DNSLogging.h"
 
@@ -507,7 +509,10 @@ class nsDNSAsyncRequest final : public nsResolveHostCallback,
   uint16_t mAF = 0;
 
  private:
-  virtual ~nsDNSAsyncRequest() = default;
+  virtual ~nsDNSAsyncRequest() {
+    PROFILER_MARKER(__FUNCTION__, NETWORK, {}, TerminatingFlowMarker,
+                    Flow::FromPointer(this));
+  }
 };
 
 NS_IMPL_ISUPPORTS(nsDNSAsyncRequest, nsICancelable)
@@ -515,6 +520,8 @@ NS_IMPL_ISUPPORTS(nsDNSAsyncRequest, nsICancelable)
 void nsDNSAsyncRequest::OnResolveHostComplete(nsHostResolver* resolver,
                                               nsHostRecord* hostRecord,
                                               nsresult status) {
+  AUTO_PROFILER_FLOW_MARKER("nsDNSAsyncRequest::OnResolveHostComplete", NETWORK,
+                            Flow::FromPointer(this));
   
   
   
@@ -1082,6 +1089,9 @@ nsresult nsDNSService::AsyncResolveInternal(
   if (!req) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
+
+  AUTO_PROFILER_FLOW_MARKER("nsDNSAsyncRequest|AsyncResolveInternal", NETWORK,
+                            Flow::FromPointer(req.get()));
 
   if (type == RESOLVE_TYPE_HTTPSSVC && mHasMockHTTPSRRDomainSet) {
     MutexAutoLock lock(mLock);
