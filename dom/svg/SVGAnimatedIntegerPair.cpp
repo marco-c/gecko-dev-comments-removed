@@ -57,12 +57,16 @@ class MOZ_RAII AutoChangeIntegerPairNotifier {
   bool mDoSetAttr;
 };
 
-constinit static SVGAttrTearoffTable<SVGAnimatedIntegerPair,
-                                     SVGAnimatedIntegerPair::DOMAnimatedInteger>
-    sSVGFirstAnimatedIntegerTearoffTable;
-constinit static SVGAttrTearoffTable<SVGAnimatedIntegerPair,
-                                     SVGAnimatedIntegerPair::DOMAnimatedInteger>
-    sSVGSecondAnimatedIntegerTearoffTable;
+
+
+
+
+
+constinit static EnumeratedArray<
+    SVGAnimatedIntegerPairWhichOne,
+    SVGAttrTearoffTable<SVGAnimatedIntegerPair,
+                        SVGAnimatedIntegerPair::DOMAnimatedInteger>>
+    sSVGAnimatedIntegerTearoffTables;
 
 
 
@@ -154,29 +158,19 @@ already_AddRefed<DOMSVGAnimatedInteger>
 SVGAnimatedIntegerPair::ToDOMAnimatedInteger(WhichOneOfPair aWhichOneOfPair,
                                              SVGElement* aSVGElement) {
   RefPtr<DOMAnimatedInteger> domAnimatedInteger =
-      aWhichOneOfPair == WhichOneOfPair::First
-          ? sSVGFirstAnimatedIntegerTearoffTable.GetTearoff(this)
-          : sSVGSecondAnimatedIntegerTearoffTable.GetTearoff(this);
+      sSVGAnimatedIntegerTearoffTables[aWhichOneOfPair].GetTearoff(this);
   if (!domAnimatedInteger) {
     domAnimatedInteger =
         new DOMAnimatedInteger(this, aWhichOneOfPair, aSVGElement);
-    if (aWhichOneOfPair == WhichOneOfPair::First) {
-      sSVGFirstAnimatedIntegerTearoffTable.AddTearoff(this, domAnimatedInteger);
-    } else {
-      sSVGSecondAnimatedIntegerTearoffTable.AddTearoff(this,
-                                                       domAnimatedInteger);
-    }
+    sSVGAnimatedIntegerTearoffTables[aWhichOneOfPair].AddTearoff(
+        this, domAnimatedInteger);
   }
 
   return domAnimatedInteger.forget();
 }
 
 SVGAnimatedIntegerPair::DOMAnimatedInteger::~DOMAnimatedInteger() {
-  if (mWhichOneOfPair == WhichOneOfPair::First) {
-    sSVGFirstAnimatedIntegerTearoffTable.RemoveTearoff(mVal);
-  } else {
-    sSVGSecondAnimatedIntegerTearoffTable.RemoveTearoff(mVal);
-  }
+  sSVGAnimatedIntegerTearoffTables[mWhichOneOfPair].RemoveTearoff(mVal);
 }
 
 UniquePtr<SMILAttr> SVGAnimatedIntegerPair::ToSMILAttr(
