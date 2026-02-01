@@ -18,6 +18,8 @@ use crate::vector::Vector2D;
 
 #[cfg(feature = "bytemuck")]
 use bytemuck::{Pod, Zeroable};
+#[cfg(feature = "malloc_size_of")]
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use num_traits::{Float, NumCast};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -27,7 +29,6 @@ use core::cmp::PartialOrd;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::ops::{Add, Div, DivAssign, Mul, MulAssign, Range, Sub};
-
 
 
 
@@ -77,6 +78,13 @@ impl<T: Hash, U> Hash for Rect<T, U> {
     fn hash<H: Hasher>(&self, h: &mut H) {
         self.origin.hash(h);
         self.size.hash(h);
+    }
+}
+
+#[cfg(feature = "malloc_size_of")]
+impl<T: MallocSizeOf, U> MallocSizeOf for Rect<T, U> {
+    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        self.origin.size_of(ops) + self.size.size_of(ops)
     }
 }
 
@@ -333,6 +341,8 @@ where
     
     
     
+    
+    
     pub fn from_points<I>(points: I) -> Self
     where
         I: IntoIterator,
@@ -509,11 +519,19 @@ impl<T: NumCast + Copy, U> Rect<T, U> {
     
     
     
+    
+    
+    
+    
     #[inline]
     pub fn cast<NewT: NumCast>(&self) -> Rect<NewT, U> {
         Rect::new(self.origin.cast(), self.size.cast())
     }
 
+    
+    
+    
+    
     
     
     
@@ -614,15 +632,11 @@ impl<T: Floor + Ceil + Round + Add<T, Output = T> + Sub<T, Output = T>, U> Rect<
     
     
     
-    
-    
     #[must_use]
     pub fn round(&self) -> Self {
         self.to_box2d().round().to_rect()
     }
 
-    
-    
     
     
     
@@ -642,8 +656,6 @@ impl<T: Floor + Ceil + Round + Add<T, Output = T> + Sub<T, Output = T>, U> Rect<
     
     
     
-    
-    
     #[must_use]
     pub fn round_out(&self) -> Self {
         self.to_box2d().round_out().to_rect()
@@ -656,6 +668,15 @@ where
 {
     fn from(size: Size2D<T, U>) -> Self {
         Self::from_size(size)
+    }
+}
+
+impl<T, U> From<Box2D<T, U>> for Rect<T, U>
+where
+    T: Copy + Sub<T, Output = T>,
+{
+    fn from(b: Box2D<T, U>) -> Self {
+        b.to_rect()
     }
 }
 
@@ -904,7 +925,7 @@ mod tests {
                 }
                 y += 0.1;
             }
-            x += 0.1
+            x += 0.1;
         }
     }
 

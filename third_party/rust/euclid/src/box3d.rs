@@ -17,6 +17,8 @@ use crate::vector::Vector3D;
 
 #[cfg(feature = "bytemuck")]
 use bytemuck::{Pod, Zeroable};
+#[cfg(feature = "malloc_size_of")]
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use num_traits::{Float, NumCast};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -71,11 +73,31 @@ impl<T: fmt::Debug, U> fmt::Debug for Box3D<T, U> {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, T, U> arbitrary::Arbitrary<'a> for Box3D<T, U>
+where
+    T: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Box3D::new(
+            arbitrary::Arbitrary::arbitrary(u)?,
+            arbitrary::Arbitrary::arbitrary(u)?,
+        ))
+    }
+}
+
 #[cfg(feature = "bytemuck")]
 unsafe impl<T: Zeroable, U> Zeroable for Box3D<T, U> {}
 
 #[cfg(feature = "bytemuck")]
 unsafe impl<T: Pod, U: 'static> Pod for Box3D<T, U> {}
+
+#[cfg(feature = "malloc_size_of")]
+impl<T: MallocSizeOf, U> MallocSizeOf for Box3D<T, U> {
+    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        self.min.size_of(ops) + self.max.size_of(ops)
+    }
+}
 
 impl<T, U> Box3D<T, U> {
     
@@ -145,6 +167,29 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn contains(&self, other: Point3D<T, U>) -> bool {
         (self.min.x <= other.x)
@@ -155,6 +200,28 @@ where
             & (other.z < self.max.z)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]
@@ -313,6 +380,53 @@ where
     T: Copy + Zero + PartialOrd,
 {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn from_points<I>(points: I) -> Self
     where
         I: IntoIterator,
@@ -329,22 +443,22 @@ where
         for point in points {
             let p = point.borrow();
             if p.x < min_x {
-                min_x = p.x
+                min_x = p.x;
             }
             if p.x > max_x {
-                max_x = p.x
+                max_x = p.x;
             }
             if p.y < min_y {
-                min_y = p.y
+                min_y = p.y;
             }
             if p.y > max_y {
-                max_y = p.y
+                max_y = p.y;
             }
             if p.z < min_z {
-                min_z = p.z
+                min_z = p.z;
             }
             if p.z > max_z {
-                max_z = p.z
+                max_z = p.z;
             }
         }
 
@@ -544,11 +658,19 @@ impl<T: NumCast + Copy, U> Box3D<T, U> {
     
     
     
+    
+    
+    
+    
     #[inline]
     pub fn cast<NewT: NumCast>(&self) -> Box3D<NewT, U> {
         Box3D::new(self.min.cast(), self.max.cast())
     }
 
+    
+    
+    
+    
     
     
     

@@ -19,6 +19,8 @@ use crate::vector::{vec2, Vector2D};
 
 #[cfg(feature = "bytemuck")]
 use bytemuck::{Pod, Zeroable};
+#[cfg(feature = "malloc_size_of")]
+use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use num_traits::{Float, NumCast};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -28,7 +30,6 @@ use core::cmp::PartialOrd;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::ops::{Add, Div, DivAssign, Mul, MulAssign, Range, Sub};
-
 
 
 
@@ -101,6 +102,19 @@ impl<T: fmt::Debug, U> fmt::Debug for Box2D<T, U> {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a, T, U> arbitrary::Arbitrary<'a> for Box2D<T, U>
+where
+    T: arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Box2D::new(
+            arbitrary::Arbitrary::arbitrary(u)?,
+            arbitrary::Arbitrary::arbitrary(u)?,
+        ))
+    }
+}
+
 #[cfg(feature = "bytemuck")]
 unsafe impl<T: Zeroable, U> Zeroable for Box2D<T, U> {}
 
@@ -139,6 +153,13 @@ impl<T, U> Box2D<T, U> {
     }
 }
 
+#[cfg(feature = "malloc_size_of")]
+impl<T: MallocSizeOf, U> MallocSizeOf for Box2D<T, U> {
+    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        self.min.size_of(ops) + self.max.size_of(ops)
+    }
+}
+
 impl<T, U> Box2D<T, U>
 where
     T: PartialOrd,
@@ -171,12 +192,52 @@ where
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn contains(&self, p: Point2D<T, U>) -> bool {
         
         (self.min.x <= p.x) & (p.x < self.max.x) & (self.min.y <= p.y) & (p.y < self.max.y)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[inline]
@@ -347,6 +408,52 @@ where
     T: Copy + Zero + PartialOrd,
 {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn from_points<I>(points: I) -> Self
     where
         I: IntoIterator,
@@ -363,16 +470,16 @@ where
         for point in points {
             let p = point.borrow();
             if p.x < min_x {
-                min_x = p.x
+                min_x = p.x;
             }
             if p.x > max_x {
-                max_x = p.x
+                max_x = p.x;
             }
             if p.y < min_y {
-                min_y = p.y
+                min_y = p.y;
             }
             if p.y > max_y {
-                max_y = p.y
+                max_y = p.y;
             }
         }
 
@@ -541,11 +648,19 @@ impl<T: NumCast + Copy, U> Box2D<T, U> {
     
     
     
+    
+    
+    
+    
     #[inline]
     pub fn cast<NewT: NumCast>(&self) -> Box2D<NewT, U> {
         Box2D::new(self.min.cast(), self.max.cast())
     }
 
+    
+    
+    
+    
     
     
     
@@ -669,6 +784,15 @@ where
 {
     fn from(b: Size2D<T, U>) -> Self {
         Self::from_size(b)
+    }
+}
+
+impl<T, U> From<Rect<T, U>> for Box2D<T, U>
+where
+    T: Copy + Add<T, Output = T>,
+{
+    fn from(r: Rect<T, U>) -> Self {
+        r.to_box2d()
     }
 }
 
