@@ -354,8 +354,7 @@ struct AnchorPositioningUtils {
 
   
   
-  static bool TriggerLayoutOnOverflow(PresShell* aPresShell,
-                                      bool aEvaluateAllFallbacksIfNeeded);
+  static bool TriggerLayoutOnOverflow(PresShell*, bool aFirstIteration);
 };
 
 }  
