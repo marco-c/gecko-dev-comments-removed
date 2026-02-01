@@ -76,6 +76,7 @@ class Assembler : public DecodedFrameIdCallback,
   
   void OnDecodedFrameId(int64_t frame_id) override;
 
+ private:
   
   
   bool SendRtp(ArrayView<const uint8_t>, const PacketOptions&) override {
@@ -89,7 +90,6 @@ class Assembler : public DecodedFrameIdCallback,
   
   void OnCompleteFrame(std::unique_ptr<EncodedFrame> encoded_frame) override;
 
- private:
   
   SequenceChecker sequence_checker_;
   const Environment env_;
