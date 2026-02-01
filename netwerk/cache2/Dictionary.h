@@ -383,9 +383,6 @@ class DictionaryCache final {
  private:
   void RemoveOriginForInternal(const nsACString& aKey);
 
-  static void OnDisabledOriginsChanged(const char* aPref, void* aClosure);
-  bool IsOriginDisabled(const nsACString& aOrigin);
-
   static StaticRefPtr<nsICacheStorage> sCacheStorage;
 
   
@@ -395,9 +392,6 @@ class DictionaryCache final {
   
   
   nsTHashMap<nsCStringHashKey, RefPtr<DictionaryOrigin>> mDictionaryCache;
-
-  
-  nsTArray<nsCString> mDisabledOrigins;
 };
 
 }  

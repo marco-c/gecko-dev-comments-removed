@@ -843,10 +843,10 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   }
   
   
-  if (!rv && (!nsCRT::strcasecmp(enc, HTTP_GZIP_TYPE) ||
-              !nsCRT::strcasecmp(enc, HTTP_DEFLATE_TYPE) ||
-              !nsCRT::strcasecmp(enc, HTTP_X_GZIP_TYPE) ||
-              !nsCRT::strcasecmp(enc, HTTP_X_DEFLATE_TYPE))) {
+  if (!rv &&
+      (!nsCRT::strcasecmp(enc, "gzip") || !nsCRT::strcasecmp(enc, "deflate") ||
+       !nsCRT::strcasecmp(enc, "x-gzip") ||
+       !nsCRT::strcasecmp(enc, "x-deflate"))) {
     rv = true;
   }
   LOG(("nsHttpHandler::IsAceptableEncoding %s https=%d %d\n", enc, isSecure,

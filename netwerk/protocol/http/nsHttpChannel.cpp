@@ -27,7 +27,6 @@
 #include "nsHttpChannel.h"
 #include "nsHttpChannelAuthProvider.h"
 #include "nsHttpHandler.h"
-#include "nsHTTPCompressConv.h"
 #include "nsIStreamConverter.h"
 #include "nsString.h"
 #include "nsICacheStorageService.h"
@@ -2425,8 +2424,7 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
     
     
-    if (contentEncoding.LowerCaseEqualsASCII(HTTP_BROTLI_DICTIONARY_TYPE) ||
-        contentEncoding.LowerCaseEqualsASCII(HTTP_ZSTD_DICTIONARY_TYPE)) {
+    if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
       LOG_DICTIONARIES(
           ("Still had %s encoding at CallOnStartRequest, converting",
            contentEncoding.get()));
@@ -3656,13 +3654,10 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   mIsDictionaryCompressed = false;
   nsAutoCString contentEncoding;
   (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
-  if (contentEncoding.LowerCaseEqualsASCII(HTTP_BROTLI_DICTIONARY_TYPE) ||
-      contentEncoding.LowerCaseEqualsASCII(HTTP_ZSTD_DICTIONARY_TYPE)) {
+  if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
     mIsDictionaryCompressed = true;
-  } else if (contentEncoding.LowerCaseFindASCII(HTTP_BROTLI_DICTIONARY_TYPE) !=
-                 -1 ||
-             contentEncoding.LowerCaseFindASCII(HTTP_ZSTD_DICTIONARY_TYPE) !=
-                 -1) {
+  } else if (contentEncoding.Find("dcb") != -1 ||
+             contentEncoding.Find("dcz") != -1) {
     
     
     
@@ -3777,32 +3772,6 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
   }
 
   
-  
-  
-  
-  
-  if (mDictDecompress && mUsingDictionary && mShouldSuspendForDictionary &&
-      !mDictDecompress->DictionaryReady()) {
-    LOG_DICTIONARIES(
-        ("nsHttpChannel::ContinueProcessNormal2 [this=%p] Suspending before "
-         "creating decompressor, waiting for dictionary",
-         this));
-    Suspend();
-    mSuspendedForDictionary = true;
-    
-    mCallOnResume = [](nsHttpChannel* self) {
-      return self->ContinueProcessNormal3();
-    };
-    return NS_OK;
-  }
-
-  return ContinueProcessNormal3();
-}
-
-nsresult nsHttpChannel::ContinueProcessNormal3() {
-  nsresult rv = NS_OK;
-
-  
   if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
     if (mIsDictionaryCompressed || mDictSaving) {
       LOG(("Decompressing before saving into cache [channel=%p]", this));
@@ -3810,10 +3779,6 @@ nsresult nsHttpChannel::ContinueProcessNormal3() {
       if (NS_FAILED(rv)) {
         LOG_DICTIONARIES(
             ("DoInstallCacheListener FAILED: %x", static_cast<uint32_t>(rv)));
-        
-        
-        
-        CloseCacheEntry(true);
       }
     }
   }
@@ -3842,6 +3807,18 @@ nsresult nsHttpChannel::ContinueProcessNormal3() {
         Cancel(NS_ERROR_ENTITY_CHANGED);
       }
     }
+  }
+
+  
+  
+  if (mDictDecompress && mUsingDictionary && mShouldSuspendForDictionary &&
+      !mDictDecompress->DictionaryReady()) {
+    LOG(
+        ("nsHttpChannel::ContinueProcessNormal [this=%p] Suspending the "
+         "transaction, waiting for dictionary",
+         this));
+    Suspend();
+    mSuspendedForDictionary = true;
   }
 
   rv = CallOnStartRequest();
@@ -6416,13 +6393,8 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     uint32_t expTime = 0;
     (void)GetCacheTokenExpirationTime(&expTime);
 
-    nsresult addResult = dicts->AddEntry(mURI, key, matchVal, matchDestItems,
-                                         matchIdVal, Some(hash), aModified,
-                                         expTime, getter_AddRefs(mDictSaving));
-    if (NS_FAILED(addResult)) {
-      LOG_DICTIONARIES(("AddEntry failed (origin may be disabled)"));
-      return false;
-    }
+    dicts->AddEntry(mURI, key, matchVal, matchDestItems, matchIdVal, Some(hash),
+                    aModified, expTime, getter_AddRefs(mDictSaving));
     
     
     
@@ -6643,10 +6615,8 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
   
   nsAutoCString verifyEncoding;
   (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, verifyEncoding);
-  MOZ_ASSERT(
-      !verifyEncoding.LowerCaseEqualsASCII(HTTP_BROTLI_DICTIONARY_TYPE) &&
-          !verifyEncoding.LowerCaseEqualsASCII(HTTP_ZSTD_DICTIONARY_TYPE),
-      "Content-Encoding should have been cleared for dcb/dcz");
+  MOZ_ASSERT(!verifyEncoding.Equals("dcb") && !verifyEncoding.Equals("dcz"),
+             "Content-Encoding should have been cleared for dcb/dcz");
   if (aSaveDecompressed) {
     MOZ_ASSERT(
         verifyEncoding.IsEmpty(),
