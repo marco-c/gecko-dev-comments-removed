@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla__ipdltest_TestBasicParent_h
-#define mozilla__ipdltest_TestBasicParent_h
+#ifndef mozilla_ipdltest_TestBasicParent_h
+#define mozilla_ipdltest_TestBasicParent_h
 
 #include "mozilla/_ipdltest/PTestBasicParent.h"
 

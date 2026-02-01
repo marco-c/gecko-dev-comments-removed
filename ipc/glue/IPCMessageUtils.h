@@ -4,8 +4,8 @@
 
 
 
-#ifndef __IPC_GLUE_IPCMESSAGEUTILS_H__
-#define __IPC_GLUE_IPCMESSAGEUTILS_H__
+#ifndef IPC_GLUE_IPCMESSAGEUTILS_H_
+#define IPC_GLUE_IPCMESSAGEUTILS_H_
 
 #include <cstdint>
 #include "chrome/common/ipc_message.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ipc_backgroundparent_h__
-#define mozilla_ipc_backgroundparent_h__
+#ifndef mozilla_ipc_backgroundparent_h_
+#define mozilla_ipc_backgroundparent_h_
 
 #include "base/process.h"
 #include "mozilla/dom/ContentParent.h"

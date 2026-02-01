@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_ipc_glue_UtilityProcessParent_h__
-#define _include_ipc_glue_UtilityProcessParent_h__
+#ifndef _include_ipc_glue_UtilityProcessParent_h_
+#define _include_ipc_glue_UtilityProcessParent_h_
 #include "mozilla/ipc/PUtilityProcessParent.h"
 #include "mozilla/ipc/CrashReporterHelper.h"
 #include "mozilla/ipc/UtilityProcessHost.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef BASE_WIN_UTIL_H__
-#define BASE_WIN_UTIL_H__
+#ifndef BASE_WIN_UTIL_H_
+#define BASE_WIN_UTIL_H_
 
 #include <windows.h>
 #include <aclapi.h>

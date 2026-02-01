@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_ipc_glue_UtilityProcessImpl_h__
-#define _include_ipc_glue_UtilityProcessImpl_h__
+#ifndef _include_ipc_glue_UtilityProcessImpl_h_
+#define _include_ipc_glue_UtilityProcessImpl_h_
 #include "mozilla/ipc/ProcessChild.h"
 
 #if defined(XP_WIN)

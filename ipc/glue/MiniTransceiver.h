@@ -3,8 +3,8 @@
 
 
 
-#ifndef __MINITRANSCEIVER_H_
-#define __MINITRANSCEIVER_H_
+#ifndef MINITRANSCEIVER_H_
+#define MINITRANSCEIVER_H_
 
 #include "chrome/common/ipc_message.h"
 

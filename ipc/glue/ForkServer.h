@@ -3,8 +3,8 @@
 
 
 
-#ifndef __FORKSERVER_H_
-#define __FORKSERVER_H_
+#ifndef FORKSERVER_H_
+#define FORKSERVER_H_
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"

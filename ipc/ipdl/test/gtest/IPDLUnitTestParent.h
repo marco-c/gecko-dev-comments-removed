@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla__ipdltest_IPDLUnitTestParent_h
-#define mozilla__ipdltest_IPDLUnitTestParent_h
+#ifndef mozilla_ipdltest_IPDLUnitTestParent_h
+#define mozilla_ipdltest_IPDLUnitTestParent_h
 
 #include "mozilla/_ipdltest/PIPDLUnitTestParent.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"

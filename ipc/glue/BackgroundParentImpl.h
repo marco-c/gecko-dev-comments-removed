@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ipc_backgroundparentimpl_h__
-#define mozilla_ipc_backgroundparentimpl_h__
+#ifndef mozilla_ipc_backgroundparentimpl_h_
+#define mozilla_ipc_backgroundparentimpl_h_
 
 #include "mozilla/ipc/PBackgroundParent.h"
 

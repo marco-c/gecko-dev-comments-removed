@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ipc_backgroundutils_h__
-#define mozilla_ipc_backgroundutils_h__
+#ifndef mozilla_ipc_backgroundutils_h_
+#define mozilla_ipc_backgroundutils_h_
 
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/OriginAttributes.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __IPC_GLUE_GECKOCHILDPROCESSHOST_H__
-#define __IPC_GLUE_GECKOCHILDPROCESSHOST_H__
+#ifndef IPC_GLUE_GECKOCHILDPROCESSHOST_H_
+#define IPC_GLUE_GECKOCHILDPROCESSHOST_H_
 
 #include "base/file_path.h"
 #include "base/process_util.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_ipc_glue_UtilityMediaServiceChild_h__
-#define _include_ipc_glue_UtilityMediaServiceChild_h__
+#ifndef _include_ipc_glue_UtilityMediaServiceChild_h_
+#define _include_ipc_glue_UtilityMediaServiceChild_h_
 
 #include "mozilla/ProcInfo.h"
 #include "mozilla/ProfilerMarkers.h"

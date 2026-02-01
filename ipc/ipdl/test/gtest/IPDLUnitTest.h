@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla__ipdltest_IPDLUnitTest_h
-#define mozilla__ipdltest_IPDLUnitTest_h
+#ifndef mozilla_ipdltest_IPDLUnitTest_h
+#define mozilla_ipdltest_IPDLUnitTest_h
 
 #include "mozilla/_ipdltest/IPDLUnitTestChild.h"
 #include "mozilla/_ipdltest/IPDLUnitTestParent.h"

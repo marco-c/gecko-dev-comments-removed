@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ipc_backgroundchildimpl_h__
-#define mozilla_ipc_backgroundchildimpl_h__
+#ifndef mozilla_ipc_backgroundchildimpl_h_
+#define mozilla_ipc_backgroundchildimpl_h_
 
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/UniquePtr.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef CHROME_COMMON_IPC_MESSAGE_H__
-#define CHROME_COMMON_IPC_MESSAGE_H__
+#ifndef CHROME_COMMON_IPC_MESSAGE_H_
+#define CHROME_COMMON_IPC_MESSAGE_H_
 
 #include "base/basictypes.h"
 #include "base/pickle.h"

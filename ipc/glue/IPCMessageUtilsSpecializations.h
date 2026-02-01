@@ -4,11 +4,10 @@
 
 
 
-#ifndef __IPC_GLUE_IPCMESSAGEUTILSSPECIALIZATIONS_H__
-#define __IPC_GLUE_IPCMESSAGEUTILSSPECIALIZATIONS_H__
+#ifndef IPC_GLUE_IPCMESSAGEUTILSSPECIALIZATIONS_H_
+#define IPC_GLUE_IPCMESSAGEUTILSSPECIALIZATIONS_H_
 
 #include <cstdint>
-#include <cstdlib>
 #include <limits>
 #include <set>
 #include <type_traits>

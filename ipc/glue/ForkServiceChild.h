@@ -3,8 +3,8 @@
 
 
 
-#ifndef __FORKSERVICE_CHILD_H_
-#define __FORKSERVICE_CHILD_H_
+#ifndef FORKSERVICE_CHILD_H_
+#define FORKSERVICE_CHILD_H_
 
 #include "base/process_util.h"
 #include "mozilla/GeckoArgs.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef _include_ipc_glue_UtilityMediaService_h__
-#define _include_ipc_glue_UtilityMediaService_h__
+#ifndef _include_ipc_glue_UtilityMediaService_h_
+#define _include_ipc_glue_UtilityMediaService_h_
 
 #include "mozilla/dom/ChromeUtilsBinding.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"

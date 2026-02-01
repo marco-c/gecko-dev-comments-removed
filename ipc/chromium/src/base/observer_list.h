@@ -4,8 +4,8 @@
 
 
 
-#ifndef BASE_OBSERVER_LIST_H__
-#define BASE_OBSERVER_LIST_H__
+#ifndef BASE_OBSERVER_LIST_H_
+#define BASE_OBSERVER_LIST_H_
 
 #include <algorithm>
 #include <limits>

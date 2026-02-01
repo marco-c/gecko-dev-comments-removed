@@ -4,8 +4,8 @@
 
 
 
-#ifndef __IPC_GLUE_MESSAGEPUMP_H__
-#define __IPC_GLUE_MESSAGEPUMP_H__
+#ifndef IPC_GLUE_MESSAGEPUMP_H_
+#define IPC_GLUE_MESSAGEPUMP_H_
 
 #include "base/message_pump_default.h"
 #if defined(XP_WIN)

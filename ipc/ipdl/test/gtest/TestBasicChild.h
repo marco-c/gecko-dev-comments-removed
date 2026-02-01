@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla__ipdltest_TestBasicChild_h
-#define mozilla__ipdltest_TestBasicChild_h
+#ifndef mozilla_ipdltest_TestBasicChild_h
+#define mozilla_ipdltest_TestBasicChild_h
 
 #include "mozilla/_ipdltest/PTestBasicChild.h"
 

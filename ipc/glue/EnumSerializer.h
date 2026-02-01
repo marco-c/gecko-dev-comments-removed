@@ -4,8 +4,8 @@
 
 
 
-#ifndef __IPC_GLUE_ENUMSERIALIZER_H__
-#define __IPC_GLUE_ENUMSERIALIZER_H__
+#ifndef IPC_GLUE_ENUMSERIALIZER_H_
+#define IPC_GLUE_ENUMSERIALIZER_H_
 
 #include "CrashAnnotations.h"
 #include "chrome/common/ipc_message_utils.h"

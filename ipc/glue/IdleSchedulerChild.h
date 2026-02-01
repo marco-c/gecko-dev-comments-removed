@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ipc_IdleSchedulerChild_h__
-#define mozilla_ipc_IdleSchedulerChild_h__
+#ifndef mozilla_ipc_IdleSchedulerChild_h_
+#define mozilla_ipc_IdleSchedulerChild_h_
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/ipc/PIdleSchedulerChild.h"

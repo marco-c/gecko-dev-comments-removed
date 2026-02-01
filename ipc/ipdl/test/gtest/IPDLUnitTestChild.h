@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla__ipdltest_IPDLUnitTestChild_h
-#define mozilla__ipdltest_IPDLUnitTestChild_h
+#ifndef mozilla_ipdltest_IPDLUnitTestChild_h
+#define mozilla_ipdltest_IPDLUnitTestChild_h
 
 #include "mozilla/_ipdltest/PIPDLUnitTestChild.h"
 #include "nsISupportsImpl.h"

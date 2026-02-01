@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_ipc_IdleSchedulerParent_h__
-#define mozilla_ipc_IdleSchedulerParent_h__
+#ifndef mozilla_ipc_IdleSchedulerParent_h_
+#define mozilla_ipc_IdleSchedulerParent_h_
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/ipc/PIdleSchedulerParent.h"
