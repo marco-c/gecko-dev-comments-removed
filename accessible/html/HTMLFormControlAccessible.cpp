@@ -346,31 +346,6 @@ ENameValueFlag HTMLTextFieldAccessible::DirectName(nsString& aName) const {
   return eNameOK;
 }
 
-void HTMLTextFieldAccessible::Value(nsString& aValue) const {
-  aValue.Truncate();
-
-  HTMLTextAreaElement* textArea = HTMLTextAreaElement::FromNode(mContent);
-  if (textArea) {
-    MOZ_ASSERT(!(NativeState() & states::PROTECTED));
-    textArea->GetValue(aValue);
-    return;
-  }
-
-  HTMLInputElement* input = HTMLInputElement::FromNode(mContent);
-  if (input) {
-    
-    
-    input->GetValue(aValue, CallerType::NonSystem);
-
-    if (NativeState() & states::PROTECTED) {  
-      const char16_t mask = TextEditor::PasswordMask();
-      for (size_t i = 0; i < aValue.Length(); i++) {
-        aValue.SetCharAt(mask, i);
-      }
-    }
-  }
-}
-
 bool HTMLTextFieldAccessible::AttributeChangesState(nsAtom* aAttribute) {
   if (aAttribute == nsGkAtoms::readonly || aAttribute == nsGkAtoms::list ||
       aAttribute == nsGkAtoms::autocomplete) {
