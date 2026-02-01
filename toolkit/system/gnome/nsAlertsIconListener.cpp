@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode:nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsAlertsIconListener.h"
 #include "imgIContainer.h"
@@ -22,7 +22,7 @@
 #include <gdk/gdk.h>
 
 using namespace mozilla;
-extern const StaticXREAppData* gAppData;
+extern const XREAppData* gAppData;
 
 static bool gHasActions = false;
 static bool gHasCaps = false;
@@ -63,7 +63,7 @@ static void notify_nondefault_action_cb(NotifyNotification* notification,
   nsAlertsIconListener* alert = static_cast<nsAlertsIconListener*>(user_data);
   nsCString actionName(action);
 
-  // Trim the suffix
+  
   actionName.Truncate(actionName.Length() - kActionSuffix.Length());
   alert->SendActionCallback(NS_ConvertUTF8toUTF16(actionName));
 }
@@ -84,14 +84,14 @@ static void notify_closed_marshal(GClosure* closure, GValue* return_value,
 static already_AddRefed<GdkPixbuf> GetPixbufFromImage(imgIContainer* aImage) {
   int32_t width = 0, height = 0;
   const int32_t kBytesPerPixel = 4;
-  // DBUS_MAXIMUM_ARRAY_LENGTH is 64M, there is 60 bytes overhead
-  // for the hints array with only the image payload, 256 is used to give
-  // some breathing room.
+  
+  
+  
   const int32_t kMaxImageBytes = 64 * 1024 * 1024 - 256;
   aImage->GetWidth(&width);
   aImage->GetHeight(&height);
   if (width * height * kBytesPerPixel > kMaxImageBytes) {
-    // The image won't fit in a dbus array
+    
     return nullptr;
   }
 
@@ -152,7 +152,7 @@ nsAlertsIconListener::nsAlertsIconListener(
 
 nsAlertsIconListener::~nsAlertsIconListener() {
   mBackend->RemoveListener(mAlertName, this);
-  // Don't dlclose libnotify as it uses atexit().
+  
 }
 
 nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
@@ -171,9 +171,9 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
 
   NS_ADDREF(this);
   if (mAlertHasAction) {
-    // What we put as the label doesn't matter here, if the action
-    // string is "default" then that makes the entire bubble clickable
-    // rather than creating a button.
+    
+    
+    
     notify_notification_add_action(mNotification, "default", "Activate",
                                    notify_action_cb, this, nullptr);
   }
@@ -183,7 +183,7 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
     MOZ_TRY(action->GetAction(actionName));
     nsAutoCString actionNameUTF8;
     CopyUTF16toUTF8(actionName, actionNameUTF8);
-    // Add suffix to prevent potential collision with keywords like "default"
+    
     actionNameUTF8.Append(kActionSuffix);
 
     nsAutoString actionTitle;
@@ -200,17 +200,18 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
     notify_notification_set_hint(mNotification, "suppress-sound",
                                  g_variant_new_boolean(mAlertIsSilent));
 
-    // If MOZ_DESKTOP_FILE_NAME variable is set, use it as the application id,
-    // otherwise use gAppData->name
+    
+    
     if (getenv("MOZ_DESKTOP_FILE_NAME")) {
-      // Send the desktop name to identify the application
-      // The desktop-entry is the part before the .desktop
+      
+      
       notify_notification_set_hint(
           mNotification, "desktop-entry",
           g_variant_new("s", getenv("MOZ_DESKTOP_FILE_NAME")));
     } else {
-      notify_notification_set_hint(mNotification, "desktop-entry",
-                                   g_variant_new("s", gAppData->remotingName));
+      notify_notification_set_hint(
+          mNotification, "desktop-entry",
+          g_variant_new("s", (const char*)gAppData->remotingName));
     }
   }
 
@@ -219,10 +220,10 @@ nsresult nsAlertsIconListener::ShowAlert(imgIContainer* aImage) {
     notify_notification_set_timeout(mNotification, kNotifyExpiresNever);
   }
 
-  // Fedora 10 calls NotifyNotification "closed" signal handlers with a
-  // different signature, so a marshaller is used instead of a C callback to
-  // get the user_data (this) in a parseable format.  |closure| is created
-  // with a floating reference, which gets sunk by g_signal_connect_closure().
+  
+  
+  
+  
   GClosure* closure = g_closure_new_simple(sizeof(GClosure), this);
   g_closure_set_marshal(closure, notify_closed_marshal);
   mClosureHandler =
@@ -265,16 +266,16 @@ void nsAlertsIconListener::SendClosed() {
 
 void nsAlertsIconListener::Disconnect() {
   if (!mNotification) {
-    // Already disconnected
+    
     return;
   }
 
-  // We need to close any open notifications upon application exit, otherwise
-  // we will leak since libnotify holds a ref for us.
+  
+  
   g_signal_handler_disconnect(mNotification, mClosureHandler);
   g_object_unref(mNotification);
   mNotification = nullptr;
-  Release();  // equivalent to NS_RELEASE(this)
+  Release();  
 }
 
 nsresult nsAlertsIconListener::Close() {
@@ -303,7 +304,7 @@ nsresult nsAlertsIconListener::InitAlert(nsIAlertNotification* aAlert,
   if (!libNotifyHandle) return NS_ERROR_FAILURE;
 
   if (!notify_is_initted()) {
-    // Give the name of this application to libnotify
+    
     nsCOMPtr<nsIStringBundleService> bundleService =
         do_GetService(NS_STRINGBUNDLE_CONTRACTID);
 
@@ -347,20 +348,20 @@ nsresult nsAlertsIconListener::InitAlert(nsIAlertNotification* aAlert,
   }
 
   if (!gHasCaps) {
-    // if notify_get_server_caps() failed above we need to assume
-    // there is no notification-server to display anything
+    
+    
     return NS_ERROR_FAILURE;
   }
 
   nsresult rv = aAlert->GetTextClickable(&mAlertHasAction);
   NS_ENSURE_SUCCESS(rv, rv);
   if (!gHasActions && mAlertHasAction) {
-    return NS_ERROR_FAILURE;  // No good, fallback to XUL
+    return NS_ERROR_FAILURE;  
   }
 
   MOZ_TRY(aAlert->GetActions(mActions));
   if (!gHasActions && mActions.Length() > 0) {
-    return NS_ERROR_FAILURE;  // No good, fallback to XUL
+    return NS_ERROR_FAILURE;  
   }
 
   rv = aAlert->GetSilent(&mAlertIsSilent);
@@ -372,8 +373,8 @@ nsresult nsAlertsIconListener::InitAlert(nsIAlertNotification* aAlert,
   nsAutoString title;
   rv = aAlert->GetTitle(title);
   NS_ENSURE_SUCCESS(rv, rv);
-  // Workaround for a libnotify bug - blank titles aren't dealt with
-  // properly so we use a space
+  
+  
   if (title.IsEmpty()) {
     mAlertTitle = " "_ns;
   } else {
