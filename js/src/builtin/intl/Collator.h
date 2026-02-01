@@ -136,36 +136,6 @@ class CollatorObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_CompareStrings(JSContext* cx, unsigned argc,
-                                              JS::Value* vp);
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_isUpperCaseFirst(JSContext* cx, unsigned argc,
-                                                JS::Value* vp);
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_isIgnorePunctuation(JSContext* cx, unsigned argc,
-                                                   JS::Value* vp);
-
 namespace intl {
 
 
@@ -182,6 +152,11 @@ namespace intl {
 [[nodiscard]] extern CollatorObject* GetOrCreateCollator(
     JSContext* cx, JS::Handle<JS::Value> locales,
     JS::Handle<JS::Value> options);
+
+
+
+
+
 
 [[nodiscard]] extern bool CompareStrings(JSContext* cx,
                                          JS::Handle<CollatorObject*> collator,
