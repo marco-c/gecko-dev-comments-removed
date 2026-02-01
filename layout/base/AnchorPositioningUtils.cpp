@@ -44,6 +44,7 @@ bool IsScrolled(const nsIFrame* aFrame) {
 dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
                                         int8_t aCascadeOrder) {
   if (aCascadeOrder < 0) {
+    
     auto* slot = aContent.GetAssignedSlot();
     while (slot) {
       ++aCascadeOrder;
@@ -52,7 +53,13 @@ dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
       }
       slot = slot->GetAssignedSlot();
     }
-    return nullptr;
+    
+    
+    
+    
+    const int8_t for_outermost_shadow_tree = -1;
+    return aCascadeOrder == for_outermost_shadow_tree ? aContent.GetShadowRoot()
+                                                      : nullptr;
   }
 
   auto* containingShadow = aContent.GetContainingShadow();
