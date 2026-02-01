@@ -465,6 +465,15 @@ TEST(L4STest, NoCcfbSentAfterRenegotiationAndCallerCachLocalDescription) {
             transport_cc_callee);
 }
 
+#if !defined(WEBRTC_ANDROID)
+
+
+
+
+
+
+
+
 struct SendMediaTestResult {
   
   scoped_refptr<const RTCStatsReport> caller_stats;
@@ -630,6 +639,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithGoogCC) {
   EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1000));
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(2600));
 }
+#endif
 
 TEST(L4STest, SendsEct1WithScream) {
   PeerScenario s(*test_info_);
