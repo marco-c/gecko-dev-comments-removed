@@ -207,7 +207,6 @@
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/PWindowGlobalChild.h"
 #include "mozilla/dom/PageLoadEventUtils.h"
-#include "mozilla/dom/PageRevealEvent.h"
 #include "mozilla/dom/PageTransitionEvent.h"
 #include "mozilla/dom/PageTransitionEventBinding.h"
 #include "mozilla/dom/Performance.h"
@@ -1477,7 +1476,6 @@ Document::Document(const char* aContentType,
       mSuppressNotifyingDevToolsOfNodeRemovals(false),
       mHasPolicyWithRequireTrustedTypesForDirective(false),
       mClipboardCopyTriggered(false),
-      mHasBeenRevealed(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -12601,13 +12599,6 @@ void Document::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
                           nullptr);
     }
 
-    if (aPersisted) {
-      
-      
-      mHasBeenRevealed = false;
-      MaybeScheduleRenderingPhases({RenderingPhase::Reveal});
-    }
-
     nsCOMPtr<EventTarget> target = aDispatchStartTarget;
     if (!target) {
       target = do_QueryInterface(GetWindow());
@@ -17007,42 +16998,6 @@ void Document::PostVisibilityUpdateEvent() {
       "Document::UpdateVisibilityState", this, &Document::UpdateVisibilityState,
       DispatchVisibilityChange::Yes);
   Dispatch(event.forget());
-}
-
-
-void Document::Reveal() {
-  
-  if (mHasBeenRevealed) {
-    return;
-  }
-
-  
-  mHasBeenRevealed = true;
-
-  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
-    return;
-  }
-
-  RefPtr<nsGlobalWindowInner> win = nsGlobalWindowInner::Cast(GetInnerWindow());
-  if (!win) {
-    return;
-  }
-
-  
-  
-  
-
-  
-  PageRevealEventInit init;
-  
-
-  RefPtr<PageRevealEvent> event =
-      PageRevealEvent::Constructor(win, u"pagereveal"_ns, init);
-  event->SetTrusted(true);
-  win->DispatchEvent(*event);
-
-  
-  
 }
 
 void Document::MaybeActiveMediaComponents() {

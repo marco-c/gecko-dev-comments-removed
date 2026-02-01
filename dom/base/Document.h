@@ -3392,9 +3392,6 @@ class Document : public nsINode,
   
   void PostVisibilityUpdateEvent();
 
-  
-  void Reveal();
-
   bool IsSyntheticDocument() const { return mIsSyntheticDocument; }
 
   
@@ -5247,9 +5244,6 @@ class Document : public nsINode,
   
   
   bool mClipboardCopyTriggered : 1;
-
-  
-  bool mHasBeenRevealed : 1;
 
   
   
