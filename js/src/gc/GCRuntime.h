@@ -640,24 +640,6 @@ class GCRuntime {
   static void* refillFreeListInGC(Zone* zone, AllocKind thingKind);
 
   
-  WeakMapList& deferredMapsList(MarkColor color) {
-    return (color == MarkColor::Black ? blackDeferredMaps : grayDeferredMaps)
-        .ref();
-  }
-  const WeakMapList& deferredMapsList(MarkColor color) const {
-    return (color == MarkColor::Black ? blackDeferredMaps : grayDeferredMaps)
-        .ref();
-  }
-  bool hasAnyDeferredWeakMaps() const {
-    return !blackDeferredMaps.ref().isEmpty() ||
-           !grayDeferredMaps.ref().isEmpty();
-  }
-  bool hasDeferredWeakMaps(MarkColor color) const {
-    return !deferredMapsList(color).isEmpty();
-  }
-  void resetDeferredWeakMaps();
-
-  
   void delayMarkingChildren(gc::Cell* cell, MarkColor color);
   bool hasDelayedMarking() const;
   void markAllDelayedChildren(ShouldReportMarkTime reportTime);
@@ -869,6 +851,8 @@ class GCRuntime {
 
   bool reserveMarkingThreads(size_t count);
   void releaseMarkingThreads();
+
+  bool hasMarkingWork(MarkColor color) const;
 
   void drainMarkStack();
 
@@ -1272,12 +1256,6 @@ class GCRuntime {
 
   
   MainThreadData<unsigned> sweepGroupIndex;
-
-  
-  
-  
-  MainThreadOrGCTaskData<WeakMapList> blackDeferredMaps;
-  MainThreadOrGCTaskData<WeakMapList> grayDeferredMaps;
 
   
 

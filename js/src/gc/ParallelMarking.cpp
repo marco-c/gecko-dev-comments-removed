@@ -12,8 +12,6 @@
 #include "vm/HelperThreadState.h"
 #include "vm/Runtime.h"
 
-#include "gc/WeakMap-inl.h"
-
 using namespace js;
 using namespace js::gc;
 
@@ -67,7 +65,7 @@ bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
   
   
 
-  if (gc->deferredMapsList(color).isEmpty() && !anyMarkerHasEntries()) {
+  if (!hasWork(color)) {
     return true;
   }
 
@@ -111,10 +109,10 @@ bool ParallelMarker::mark(const SliceBudget& sliceBudget) {
   MOZ_ASSERT(!hasWaitingTasks());
   MOZ_ASSERT(!hasActiveTasks(lock));
 
-  return gc->deferredMapsList(color).isEmpty() && !anyMarkerHasEntries();
+  return !hasWork(color);
 }
 
-bool ParallelMarker::anyMarkerHasEntries() const {
+bool ParallelMarker::hasWork(MarkColor color) const {
   for (const auto& marker : gc->markers) {
     if (marker->hasEntries(color)) {
       return true;
@@ -164,27 +162,16 @@ void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
 
   for (;;) {
     if (hasWork()) {
-      
       if (!tryMarking(lock)) {
-        
-        break;
+        return;
       }
-    } else if (pm->hasActiveTasks(lock)) {
-      
-      if (!requestWork(lock)) {
-        break;  
-      }
-    } else if (gc->hasDeferredWeakMaps(pm->color)) {
-      
-      markDeferredWeakmaps(lock);
     } else {
-      
-      break;
+      if (!requestWork(lock)) {
+        return;
+      }
     }
   }
 
-  
-  resumeWaitingTasks(lock);
   MOZ_ASSERT(!isWaiting);
 }
 
@@ -213,22 +200,12 @@ bool ParallelMarkTask::tryMarking(AutoLockHelperThreadState& lock) {
   return finished;
 }
 
-void ParallelMarkTask::markDeferredWeakmaps(AutoLockHelperThreadState& lock) {
-  MOZ_ASSERT(!pm->hasActiveTasks(lock));
-
-  {
-    
-    AutoUnlockHelperThreadState unlock(lock);
-    marker->markDeferredWeakMapChildren(gc->deferredMapsList(pm->color));
-  }
-  if (hasWork()) {
-    pm->setTaskActive(this, lock);
-  }
-}
-
 bool ParallelMarkTask::requestWork(AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(!hasWork());
-  MOZ_ASSERT(pm->hasActiveTasks(lock));
+
+  if (!pm->hasActiveTasks(lock)) {
+    return false;  
+  }
 
   budget.forceCheck();
   if (budget.isOverBudget()) {
@@ -240,13 +217,6 @@ bool ParallelMarkTask::requestWork(AutoLockHelperThreadState& lock) {
   waitUntilResumed(lock);
 
   return true;
-}
-
-void ParallelMarkTask::resumeWaitingTasks(AutoLockHelperThreadState& lock) {
-  while (pm->hasWaitingTasks()) {
-    auto* task = pm->takeWaitingTask();
-    task->resumeOnFinish(lock);
-  }
 }
 
 void ParallelMarkTask::waitUntilResumed(AutoLockHelperThreadState& lock) {
@@ -348,6 +318,12 @@ void ParallelMarker::setTaskInactive(ParallelMarkTask* task,
   MOZ_ASSERT(id < workerCount());
   MOZ_ASSERT(activeTasks.ref()[id]);
   activeTasks.ref()[id] = false;
+
+  if (!hasActiveTasks(lock)) {
+    while (hasWaitingTasks()) {
+      takeWaitingTask()->resumeOnFinish(lock);
+    }
+  }
 }
 
 void ParallelMarkTask::donateWork() { pm->donateWorkFrom(marker); }

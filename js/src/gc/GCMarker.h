@@ -11,7 +11,6 @@
 #include "mozilla/XorShift128PlusRNG.h"
 
 #include "gc/Barrier.h"
-#include "gc/WeakMap.h"
 #include "js/HashTable.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
@@ -366,10 +365,6 @@ class GCMarker {
 
     
     
-    ParallelMarkingSingleThread,
-
-    
-    
     
     
     WeakMarking,
@@ -390,12 +385,7 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
-  bool isParallelMarking() const {
-    return state == ParallelMarking || state == ParallelMarkingSingleThread;
-  }
-  bool isParallelMarkingMultipleThreads() const {
-    return state == ParallelMarking;
-  }
+  bool isParallelMarking() const { return state == ParallelMarking; }
   bool isWeakMarking() const { return state == WeakMarking; }
 
   gc::MarkColor markColor() const { return markColor_; }
@@ -428,11 +418,6 @@ class GCMarker {
 
   
   
-  void enterSingleThreadedMode();
-  void leaveSingleThreadedMode();
-
-  
-  
   
   void abortLinearWeakMarking();
 
@@ -443,7 +428,7 @@ class GCMarker {
 
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
-  void markOneObjectForTest(JSObject* obj);
+  bool markOneObjectForTest(JSObject* obj);
 #endif
 
   bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
@@ -451,10 +436,6 @@ class GCMarker {
 
   template <uint32_t markingOptions, gc::MarkColor>
   bool markOneColor(JS::SliceBudget& budget);
-
-  
-  
-  void markDeferredWeakMapChildren(WeakMapList& deferred);
 
   static size_t moveWork(GCMarker* dst, GCMarker* src, bool allowDistribute);
 
@@ -594,9 +575,6 @@ class GCMarker {
   bool doMarking(JS::SliceBudget& budget, gc::ShouldReportMarkTime reportTime);
 
   void delayMarkingChildrenOnOOM(gc::Cell* cell);
-
-  
-  void deactivate();
 
   
 
