@@ -90,7 +90,7 @@ add_setup(async function () {
   engineName = suggestionEngine.name;
 
   
-  await Services.search.moveEngine(suggestionEngine, 0);
+  await SearchService.moveEngine(suggestionEngine, 0);
 
   
   let oldCanRecord = Services.telemetry.canRecordExtended;

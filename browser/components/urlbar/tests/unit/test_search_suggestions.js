@@ -140,9 +140,9 @@ add_setup(async function () {
   });
 
   
-  let oldDefaultEngine = await Services.search.getDefault();
+  let oldDefaultEngine = await SearchService.getDefault();
   registerCleanupFunction(async () => {
-    Services.search.setDefault(
+    SearchService.setDefault(
       oldDefaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
@@ -152,7 +152,7 @@ add_setup(async function () {
     Services.prefs.clearUserPref(TAB_TO_SEARCH_PREF);
     sandbox.restore();
   });
-  Services.search.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
+  SearchService.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
   Services.prefs.setBoolPref(PRIVATE_SEARCH_PREF, false);
   Services.prefs.setBoolPref(TRENDING_PREF, false);
   Services.prefs.setBoolPref(QUICKACTIONS_PREF, false);
@@ -1900,7 +1900,7 @@ add_task(async function formHistory() {
   
   
   
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let serpURLs = ["foobar", "fooBAR ", "food"].map(
     term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
   );
@@ -2097,7 +2097,7 @@ add_task(async function hideHeuristic_formHistory() {
   
   
   
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let serpURLs = ["foo", "food"].map(
     term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
   );
