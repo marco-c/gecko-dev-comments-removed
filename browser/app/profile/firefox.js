@@ -1868,9 +1868,6 @@ pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-b", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-c", false);
 
 
-pref("browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled", true);
-
-
 
 
 
