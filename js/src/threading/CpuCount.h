@@ -3,6 +3,9 @@
 
 
 
+#ifndef threading_CpuCount_h
+#define threading_CpuCount_h
+
 #include <inttypes.h>
 
 namespace js {
@@ -14,3 +17,5 @@ namespace js {
 uint32_t GetCPUCount();
 
 }  
+
+#endif  

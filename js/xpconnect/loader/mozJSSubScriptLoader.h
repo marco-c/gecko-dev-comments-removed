@@ -4,6 +4,9 @@
 
 
 
+#ifndef loader_mozJSSubScriptLoader_h
+#define loader_mozJSSubScriptLoader_h
+
 #include "nsCOMPtr.h"
 #include "mozIJSSubScriptLoader.h"
 
@@ -48,3 +51,5 @@ class mozJSSubScriptLoader : public mozIJSSubScriptLoader {
                                       JSContext* cx,
                                       JS::MutableHandleValue retval);
 };
+
+#endif  
