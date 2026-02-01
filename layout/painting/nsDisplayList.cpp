@@ -8715,7 +8715,7 @@ void nsDisplayFilters::PrintEffects(nsACString& aTo) {
   
   
   if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) !=
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     if (!first) {
       aTo += ", ";
     }

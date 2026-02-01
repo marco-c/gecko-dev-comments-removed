@@ -10,6 +10,7 @@
 #include "FrameProperties.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/dom/IDTracker.h"
+#include "mozilla/dom/SVGGeometryElement.h"
 #include "nsID.h"
 #include "nsIFrame.h"  
 #include "nsIMutationObserver.h"
@@ -225,13 +226,14 @@ class SVGObserverUtils {
 
   static void InvalidateRenderingObservers(nsIFrame* aFrame);
 
-  enum { INVALIDATE_REFLOW = 0x1, INVALIDATE_DESTROY = 0x2 };
+  enum class InvalidationFlag { Reflow, Destroy };
+  using InvalidationFlags = EnumSet<InvalidationFlag>;
 
-  enum ReferenceState {
+  enum class ReferenceState {
     
-    eHasNoRefs,
-    eHasRefsAllValid,
-    eHasRefsSomeInvalid,
+    HasNoRefs,
+    HasRefsAllValid,
+    HasRefsSomeInvalid,
   };
 
   
@@ -239,9 +241,9 @@ class SVGObserverUtils {
 
 
   static void InvalidateDirectRenderingObservers(Element* aElement,
-                                                 uint32_t aFlags = 0);
+                                                 InvalidationFlags aFlags = {});
   static void InvalidateDirectRenderingObservers(nsIFrame* aFrame,
-                                                 uint32_t aFlags = 0);
+                                                 InvalidationFlags aFlags = {});
 
   
 
@@ -254,8 +256,8 @@ class SVGObserverUtils {
 
 
 
-  static bool GetAndObserveMarkers(nsIFrame* aMarkedFrame,
-                                   SVGMarkerFrame* (*aFrames)[3]);
+  static bool GetAndObserveMarkers(
+      nsIFrame* aMarkedFrame, SVGMarkerFrame* (*aFrames)[SVGMark::eTypeCount]);
 
   
 

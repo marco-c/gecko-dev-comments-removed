@@ -347,7 +347,7 @@ nsRect SVGIntegrationUtils::ComputePostEffectsInkOverflowRect(
   
   nsTArray<SVGFilterFrame*> filterFrames;
   if (SVGObserverUtils::GetAndObserveFilters(firstFrame, &filterFrames) ==
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     return aPreEffectsOverflowRect;
   }
 
@@ -385,7 +385,7 @@ nsRect SVGIntegrationUtils::GetRequiredSourceForInvalidArea(
   nsTArray<SVGFilterFrame*> filterFrames;
   if (!aFrame->StyleEffects()->HasFilters() ||
       SVGObserverUtils::GetFiltersIfObserving(firstFrame, &filterFrames) ==
-          SVGObserverUtils::eHasRefsSomeInvalid) {
+          SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     return aDirtyRect;
   }
 
@@ -929,7 +929,7 @@ void SVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams,
   
   nsTArray<SVGFilterFrame*> filterFrames;
   if (SVGObserverUtils::GetAndObserveFilters(firstFrame, &filterFrames) ==
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     aCallback(aParams.ctx, aParams.imgParams, nullptr, nullptr);
     return;
   }
