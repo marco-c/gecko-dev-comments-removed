@@ -75,11 +75,11 @@ function waitForTransition(element, propertyName) {
 }
 
 function getToolboxBackgroundColor() {
-  let toolbox = document.getElementById("navigator-toolbox");
+  let body = document.body;
   
-  toolbox.style.transitionProperty = "none";
-  let color = window.getComputedStyle(toolbox).backgroundColor;
-  toolbox.style.transitionProperty = "";
+  body.style.transitionProperty = "none";
+  let color = window.getComputedStyle(body).backgroundColor;
+  body.style.transitionProperty = "";
   return color;
 }
 
