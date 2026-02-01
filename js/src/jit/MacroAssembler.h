@@ -5964,8 +5964,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
     emitProfilingInstrumentation_ = true;
   }
 
-  void instrumentProfilerCallSite();
-
  private:
   
   
