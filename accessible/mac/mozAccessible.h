@@ -90,6 +90,9 @@ enum CheckedState {
 
 - (void)maybePostValidationErrorChanged;
 
+- (void)handleAnnouncementEvent:(NSString*)announcement
+                       priority:(uint16_t)priority;
+
 
 - (id)childAt:(uint32_t)i;
 
