@@ -1,0 +1,6 @@
+use crate::NSUserDefaults;
+
+
+
+unsafe impl Send for NSUserDefaults {}
+unsafe impl Sync for NSUserDefaults {}

@@ -1,0 +1,29 @@
+use crate::MTLResourceID;
+
+impl MTLResourceID {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const unsafe fn from_raw(id: u64) -> Self {
+        Self { _impl: id }
+    }
+
+    
+    
+    
+    pub const fn to_raw(self) -> u64 {
+        self._impl
+    }
+}
