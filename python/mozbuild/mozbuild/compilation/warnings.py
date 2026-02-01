@@ -14,8 +14,7 @@ from mozbuild.util import hash_file
 
 
 
-
-RE_STRIP_COLORS = re.compile(r"\x1b\[[\d;]+m")
+RE_STRIP_COLORS = re.compile(r"\x1b\[[\d;]*[mK]")
 
 
 
