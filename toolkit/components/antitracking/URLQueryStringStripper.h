@@ -51,20 +51,27 @@ class URLQueryStringStripper final : public nsIObserver,
 
   
   
+  bool ShouldStripParam(const nsACString& aHost, const nsACString& aName);
   
-  nsresult StripForCopyOrShareInternal(nsIURI* aURI, nsIURI** strippedURI,
-                                       int& aStripCount, bool aStripNestedURIs);
+  
+  
+  
+  int TryStripValue(const nsACString& aHost, nsACString& aValue, bool aDry);
 
   
   
   
-  nsresult CanStripForCopyOrShareInternal(nsIURI* aURI, bool* aCanStrip,
-                                          bool aStripNestedURIs);
+  
+  
+  nsresult StripForCopyOrShareInternal(nsIURI* aURI, nsIURI** aStrippedURI,
+                                       int& aStripCount, bool aDry,
+                                       bool aStripNestedURIs);
 
   nsTHashSet<nsCString> mList;
   nsTHashSet<nsCString> mAllowList;
   nsCOMPtr<nsIURLQueryStrippingListService> mListService;
   nsTHashMap<nsCString, dom::StripRule> mStripOnShareMap;
+  Maybe<dom::StripRule> mStripOnShareGlobal;
   bool mIsInitialized;
   
   
