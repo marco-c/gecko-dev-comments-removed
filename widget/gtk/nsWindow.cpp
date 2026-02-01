@@ -1980,12 +1980,21 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       return true;
     }();
 
+    
+    
+    if (!popup->mPopupUseMoveToRect) {
+      popup->mPopupUseMoveToRect = useMoveToRect;
+    }
+
     LOG("  popup [%p] matches layout [%d] anchored [%d] first popup [%d] use "
         "move-to-rect %d\n",
         popup, popup->mPopupMatchesLayout, popup->mPopupAnchored,
-        popup->WaylandPopupIsFirst(), useMoveToRect);
+        popup->WaylandPopupIsFirst(), popup->mPopupUseMoveToRect);
 
-    popup->mPopupUseMoveToRect = useMoveToRect;
+    if (popup->mPopupUseMoveToRect && !popup->mPopupMatchesLayout) {
+      gfxCriticalNote << "Wayland: Positioned popup with missing anchor!";
+    }
+
     popup->WaylandPopupMoveImpl();
     popup->mPopupChanged = false;
     popup = popup->mWaylandPopupNext;
