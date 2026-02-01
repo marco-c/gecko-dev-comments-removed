@@ -828,7 +828,7 @@ this.downloads = class extends ExtensionAPIPersistent {
             return true;
           }
 
-          async function createTarget(downloadsDir) {
+          async function createTarget() {
             if (!filename) {
               let uri = Services.io.newURI(options.url);
               if (uri instanceof Ci.nsIURL) {
@@ -842,7 +842,7 @@ this.downloads = class extends ExtensionAPIPersistent {
             }
 
             let target = PathUtils.joinRelative(
-              downloadsDir,
+              await Downloads.getPreferredDownloadsDirectory(),
               filename || "download"
             );
 
@@ -976,8 +976,24 @@ this.downloads = class extends ExtensionAPIPersistent {
             });
           }
 
-          const downloadsDir = await Downloads.getPreferredDownloadsDirectory();
-          const target = await createTarget(downloadsDir);
+          const targetPromise = createTarget();
+          if (context.isBackgroundContext) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            extension.emit("background-script-idle-waituntil", {
+              promise: targetPromise,
+              reason: "downloads_saveAs",
+            });
+          }
+          const target = await targetPromise;
           const uri = Services.io.newURI(options.url);
           const cookieJarSettings = Cc[
             "@mozilla.org/cookieJarSettings;1"
