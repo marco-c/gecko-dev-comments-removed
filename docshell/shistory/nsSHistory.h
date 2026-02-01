@@ -138,7 +138,14 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
       nsISHEntry* aEntry, const std::function<void(nsISHEntry*)>& aCallback);
   
   
+  
   static void WalkContiguousEntriesInOrder(
+      nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback);
+  
+  
+  
+  
+  static void WalkClosestContiguousEntriesFrom(
       nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback);
 
   nsTArray<nsCOMPtr<nsISHEntry>>& Entries() { return mEntries; }
@@ -223,13 +230,24 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   void LogHistory();
 
-  mozilla::dom::SessionHistoryEntry* FindAdjacentContiguousEntryFor(
-      mozilla::dom::SessionHistoryEntry* aEntry, int32_t aSearchDirection);
-  void ReconstructContiguousEntryListFrom(
-      mozilla::dom::SessionHistoryEntry* aEntry);
-  void ReconstructContiguousEntryList();
-  already_AddRefed<mozilla::dom::EntryList> EntryListFor(const nsID& aID);
-  void RemoveEntryList(const nsID& aID);
+  enum class SearchDirection : int8_t { Left = -1, Right = 1 };
+
+  
+  mozilla::dom::SessionHistoryEntry* FindAdjacentEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry,
+      SearchDirection aSearchDirection);
+
+  
+  
+  mozilla::dom::SessionHistoryEntry* FindClosestAdjacentContiguousEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry,
+      SearchDirection aSearchDirection);
+
+  
+  
+  mozilla::dom::SessionHistoryEntry* FindLeftmostAdjacentContiguousEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry,
+      SearchDirection aSearchDirection);
 
   bool ContainsEntry(nsISHEntry* aEntry);
 
