@@ -217,9 +217,6 @@ function Intl_ListFormat_format(list) {
   }
 
   
-  getListFormatInternals(listFormat);
-
-  
   return intl_FormatList(listFormat, stringList,  false);
 }
 
@@ -252,9 +249,6 @@ function Intl_ListFormat_formatToParts(list) {
       ? []
       : [{ type: "element", value: stringList[0] }];
   }
-
-  
-  getListFormatInternals(listFormat);
 
   
   return intl_FormatList(listFormat, stringList,  true);
