@@ -164,7 +164,9 @@ class InputTestHelpers extends LitTestHelpers {
 
 
 
-  async testCommonInputProperties(elementName) {
+
+
+  async testCommonInputProperties(elementName, { type = "text" } = {}) {
     await this.verifyLabel(elementName);
     await this.verifyAriaLabel(elementName);
     await this.verifyAriaDescription(elementName);
@@ -176,6 +178,7 @@ class InputTestHelpers extends LitTestHelpers {
     await this.verifySupportPage(elementName);
     await this.verifyAccesskey(elementName);
     await this.verifyNoWhitespace(elementName);
+    await this.verifyType(elementName, type);
     if (this.activatedProperty) {
       await this.verifyActivated(elementName);
       await this.verifyNestedFields(elementName);
@@ -765,6 +768,12 @@ class InputTestHelpers extends LitTestHelpers {
       !containsWhitespace,
       "Label content doesn't contain any extra whitespace."
     );
+  }
+
+  async verifyType(selector, type) {
+    let renderTarget = await this.renderTemplate();
+    let firstInput = renderTarget.querySelector(selector);
+    is(firstInput.inputEl.type, type, `The input type is ${type}`);
   }
 
   async testTextBasedInputEvents(selector) {
