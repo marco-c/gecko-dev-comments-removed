@@ -6,6 +6,7 @@
 
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Printf.h"
+#include "js/Utility.h"
 
 #if defined(JS_ION_PERF) && defined(XP_UNIX)
 #  include <fcntl.h>
@@ -109,6 +110,7 @@ MOZ_RUNINIT static js::Mutex PerfMutex(mutexid::PerfSpewer);
 MOZ_RUNINIT static UniqueChars spew_dir;
 static FILE* JitDumpFilePtr = nullptr;
 static void* mmap_address = nullptr;
+static char* jitDumpBuffer = nullptr;
 static bool IsPerfProfiling() { return JitDumpFilePtr != nullptr; }
 #endif
 
@@ -218,6 +220,16 @@ static bool openJitDump() {
   if (!JitDumpFilePtr) {
     return false;
   }
+
+  
+  constexpr size_t kJitDumpBufferSize = 2 * 1024 * 1024;
+  jitDumpBuffer = js_pod_malloc<char>(kJitDumpBufferSize);
+  if (!jitDumpBuffer) {
+    fclose(JitDumpFilePtr);
+    JitDumpFilePtr = nullptr;
+    return false;
+  }
+  setvbuf(JitDumpFilePtr, jitDumpBuffer, _IOFBF, kJitDumpBufferSize);
 
 #  ifdef XP_LINUX
   
@@ -352,6 +364,8 @@ static void DisablePerfSpewer(AutoLockPerfSpewer& lock) {
   munmap(mmap_address, page_size);
   fclose(JitDumpFilePtr);
   JitDumpFilePtr = nullptr;
+  js_free(jitDumpBuffer);
+  jitDumpBuffer = nullptr;
 #endif
 }
 
