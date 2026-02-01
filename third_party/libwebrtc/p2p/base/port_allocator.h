@@ -267,10 +267,9 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   virtual void PruneAllPorts() {}
 
   sigslot::signal2<PortAllocatorSession*, PortInterface*> SignalPortReady;
-  void SubscribePortReady(absl::AnyInvocable<void(PortAllocatorSession*,
-                                                  PortInterface*)> callback) {
-    port_ready_trampoline_.Subscribe(std::move(callback));
-  }
+  
+  void SubscribePortReady(
+      absl::AnyInvocable<void(PortAllocatorSession*, PortInterface*)> callback);
   void NotifyPortReady(PortAllocatorSession* session, PortInterface* port) {
     SignalPortReady(session, port);
   }
