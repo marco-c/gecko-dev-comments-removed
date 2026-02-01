@@ -10,14 +10,12 @@ EXPORTS.mozilla.dom += [
 ]
 
 UNIFIED_SOURCES += [
-    "WindowsLocationChild.cpp",
     "WindowsLocationParent.cpp",
     "WindowsLocationProvider.cpp",
-    "WindowsRuntimeLocationChild.cpp",
 ]
 
 SOURCES += [
-    "WindowsLegacyLocationChild.cpp",  
+    "WindowsLocationChild.cpp",  
 ]
 
 IPDL_SOURCES += [
