@@ -9,6 +9,4 @@ export type GetTextOptions = Partial<{
   sufficientLength: number;
   
   justViewport: boolean;
-  
-  includeLinks: boolean;
 }>;
