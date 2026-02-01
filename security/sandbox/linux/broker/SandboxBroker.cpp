@@ -285,7 +285,7 @@ void SandboxBroker::Policy::AddAncestors(const char* aPath, int aPerms) {
   nsAutoCString path(aPath);
 
   while (true) {
-    const auto lastSlash = path.RFindCharInSet("/");
+    const auto lastSlash = path.RFindChar('/');
     if (lastSlash <= 0) {
       MOZ_ASSERT(lastSlash == 0);
       return;
@@ -293,6 +293,91 @@ void SandboxBroker::Policy::AddAncestors(const char* aPath, int aPerms) {
     path.Truncate(lastSlash);
     AddPath(aPerms, path.get());
   }
+}
+
+enum class IterationDecision : uint8_t { Continue, Break };
+
+
+
+template <typename Fn>
+void ForEachAncestorDirectoryWithTrailingSlash(const nsACString& aPath,
+                                               Fn&& aCallback) {
+  if (aPath.IsEmpty()) {
+    return;
+  }
+  nsAutoCString ancestor(aPath);
+  while (true) {
+    
+    
+    
+    if (ancestor.Last() == '/') {
+      ancestor.Truncate(ancestor.Length() - 1);
+    }
+    const auto lastSlash = ancestor.RFindChar('/');
+    if (lastSlash < 0) {
+      MOZ_ASSERT(ancestor.IsEmpty());
+      break;
+    }
+    ancestor.Truncate(lastSlash + 1);
+    if (aCallback(ancestor) == IterationDecision::Break) {
+      break;
+    }
+  }
+}
+
+struct Match {
+  size_t mPrefixLength;
+  int mPerms;
+
+  bool operator<(const Match& aOther) const {
+    
+    return mPrefixLength > aOther.mPrefixLength;
+  }
+};
+static int ComputeInheritedPerms(const Span<Match> aAncestorMatches,
+                                 bool aIncludeDeny) {
+  MOZ_ASSERT(std::is_sorted(aAncestorMatches.begin(), aAncestorMatches.end()));
+  MOZ_ASSERT(std::all_of(aAncestorMatches.begin(), aAncestorMatches.end(),
+                         [](const Match& aMatch) {
+                           return aMatch.mPerms & SandboxBroker::RECURSIVE;
+                         }));
+
+  int inheritedPerms = 0;
+  for (const Match& match : aAncestorMatches) {
+    if (match.mPerms & SandboxBroker::FORCE_DENY) {
+      
+      
+      if (aIncludeDeny) {
+        inheritedPerms |= match.mPerms & ~SandboxBroker::RECURSIVE;
+      }
+      break;
+    }
+    inheritedPerms |= match.mPerms & ~SandboxBroker::RECURSIVE;
+    
+    
+    aIncludeDeny = false;
+  }
+  MOZ_ASSERT(!(inheritedPerms & SandboxBroker::RECURSIVE));
+  return inheritedPerms;
+}
+
+
+
+
+
+
+static int ComputeInheritedPerms(const SandboxBroker::PathPermissionMap& aMap,
+                                 const nsACString& aPath, bool aIncludeDeny) {
+  AutoTArray<Match, 4> matches;
+  ForEachAncestorDirectoryWithTrailingSlash(
+      aPath, [&](const nsACString& aAncestor) {
+        const int ancestorPerms = aMap.Get(aAncestor);
+        if (ancestorPerms & SandboxBroker::RECURSIVE) {
+          matches.AppendElement(Match{aAncestor.Length(), ancestorPerms});
+        }
+        return IterationDecision::Continue;
+      });
+  return ComputeInheritedPerms(matches, aIncludeDeny);
 }
 
 void SandboxBroker::Policy::FixRecursivePermissions() {
@@ -307,40 +392,9 @@ void SandboxBroker::Policy::FixRecursivePermissions() {
 
   for (const auto& entry : oldMap) {
     const nsACString& path = entry.GetKey();
-    const int& localPerms = entry.GetData();
-    int inheritedPerms = 0;
-
-    nsAutoCString ancestor(path);
-    
-    
-    
-    while (true) {
-      
-      
-      
-      if (ancestor.Last() == '/') {
-        ancestor.Truncate(ancestor.Length() - 1);
-      }
-      const auto lastSlash = ancestor.RFindCharInSet("/");
-      if (lastSlash < 0) {
-        MOZ_ASSERT(ancestor.IsEmpty());
-        break;
-      }
-      ancestor.Truncate(lastSlash + 1);
-      const int ancestorPerms = oldMap.Get(ancestor);
-      if (ancestorPerms & RECURSIVE) {
-        
-        if ((localPerms & FORCE_DENY) == FORCE_DENY) {
-          if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-            SANDBOX_LOG("skip inheritence policy for %s: %d",
-                        PromiseFlatCString(path).get(), localPerms);
-          }
-        } else {
-          inheritedPerms |= ancestorPerms & ~RECURSIVE;
-        }
-      }
-    }
-
+    const int localPerms = entry.GetData();
+    const int inheritedPerms =
+        ComputeInheritedPerms(oldMap, path,  false);
     const int newPerms = localPerms | inheritedPerms;
     if ((newPerms & ~RECURSIVE) == inheritedPerms) {
       if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
@@ -367,29 +421,23 @@ int SandboxBroker::Policy::Lookup(const nsACString& aPath) const {
   if (perms) {
     return perms;
   }
-
   
-  if (!ValidatePath(PromiseFlatCString(aPath).get())) return 0;
-
+  if (!ValidatePath(PromiseFlatCString(aPath).get())) {
+    return 0;
+  }
   
   
-  
-  int allPerms = 0;
+  AutoTArray<Match, 4> matches;
   for (const auto& entry : mMap) {
-    const nsACString& whiteListPath = entry.GetKey();
-    const int& perms = entry.GetData();
-
-    if (!(perms & RECURSIVE)) continue;
-
-    
-    if (StringBeginsWith(aPath, whiteListPath)) {
-      allPerms |= perms;
+    if ((entry.GetData() & RECURSIVE) &&
+        StringBeginsWith(aPath, entry.GetKey())) {
+      matches.AppendElement(Match{entry.GetKey().Length(), entry.GetData()});
     }
   }
-
-  
-  
-  return allPerms & ~RECURSIVE;
+  if (matches.Length() > 1) {
+    matches.Sort();
+  }
+  return ComputeInheritedPerms(matches,  true);
 }
 
 static bool AllowOperation(int aReqFlags, int aPerms) {
