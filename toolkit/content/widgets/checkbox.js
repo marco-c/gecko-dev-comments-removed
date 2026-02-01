@@ -18,6 +18,26 @@
       `;
     }
 
+    constructor() {
+      super();
+
+      
+      
+      
+      this.addEventListener("click", event => {
+        if (event.button === 0 && !this.disabled) {
+          this.checked = !this.checked;
+        }
+      });
+      this.addEventListener("keypress", event => {
+        if (event.key == " ") {
+          this.checked = !this.checked;
+          
+          event.preventDefault();
+        }
+      });
+    }
+
     static get inheritedAttributes() {
       return {
         ".checkbox-check": "disabled,checked,native",
