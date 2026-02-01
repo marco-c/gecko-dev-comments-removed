@@ -24,6 +24,7 @@
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -130,22 +131,28 @@ class RTC_EXPORT SSLCertChain final {
 class SSLCertificateVerifier {
  public:
   virtual ~SSLCertificateVerifier() = default;
+
   
   
-  virtual bool Verify(const SSLCertificate& certificate) = 0;
+  
+  
+  virtual bool VerifyChain(const SSLCertChain& chain) {
+    if (chain.GetSize() == 0) {
+      return false;
+    }
+    return Verify(chain.Get(0));
+  }
+
+  
+  
+  
+  virtual bool Verify(const SSLCertificate& certificate) {
+    RTC_CHECK_NOTREACHED();
+    return false;
+  }
 };
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::SSLCertChain;
-using ::webrtc::SSLCertificate;
-using ::webrtc::SSLCertificateStats;
-using ::webrtc::SSLCertificateVerifier;
-}  
-#endif  
 
 #endif  
