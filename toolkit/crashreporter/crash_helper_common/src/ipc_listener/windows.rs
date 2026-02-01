@@ -41,7 +41,7 @@ pub struct IPCListener {
 impl IPCListener {
     pub(crate) fn new(server_addr: CString) -> Result<IPCListener, IPCListenerError> {
         let pipe = create_named_pipe(&server_addr,  true)
-            .map_err(IPCListenerError::PipeCreationFailure)?;
+            .map_err(IPCListenerError::CreationError)?;
 
         Ok(IPCListener {
             server_addr,
@@ -78,7 +78,7 @@ impl IPCListener {
 
     pub(crate) fn replace_pipe(&self) -> Result<IPCConnector, IPCListenerError> {
         let new_pipe = create_named_pipe(&self.server_addr,  false)
-            .map_err(IPCListenerError::PipeCreationFailure)?;
+            .map_err(IPCListenerError::AcceptError)?;
         let connected_pipe = self.handle.replace(Rc::new(new_pipe));
 
         
@@ -91,17 +91,21 @@ impl IPCListener {
     
     
     
-    pub fn serialize(&self) -> OsString {
+    pub fn serialize(&self) -> Result<OsString, IPCListenerError> {
         let raw_handle = self.handle.borrow().as_raw_handle() as usize;
-        OsString::from_str(raw_handle.to_string().as_ref()).unwrap()
+        OsString::from_str(raw_handle.to_string().as_ref())
+            .map_err(|_e| IPCListenerError::Serialize(PlatformError::InvalidString))
     }
 
     
     
     pub fn deserialize(string: &CStr, pid: Pid) -> Result<IPCListener, IPCListenerError> {
         let server_addr = server_addr(pid);
-        let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
-        let handle = usize::from_str(string).map_err(|_e| IPCError::ParseError)?;
+        let string = string
+            .to_str()
+            .map_err(|_e| IPCError::Deserialize(PlatformError::InvalidString))?;
+        let handle = usize::from_str(string)
+            .map_err(|_e| IPCError::Deserialize(PlatformError::ParseHandle))?;
         
         let handle = unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) };
 

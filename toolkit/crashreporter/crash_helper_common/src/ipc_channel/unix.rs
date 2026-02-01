@@ -25,7 +25,7 @@ impl IPCChannel {
         let listener = IPCListener::new(process::id() as Pid)?;
 
         
-        let pair = unix_socketpair().map_err(IPCChannelError::SocketPair)?;
+        let pair = unix_socketpair()?;
         let client_endpoint = IPCConnector::from_fd(pair.0)?;
         let server_endpoint = IPCConnector::from_fd_inheritable(pair.1)?;
 
@@ -36,7 +36,6 @@ impl IPCChannel {
         })
     }
 
-    
     
     
     pub fn deconstruct(self) -> (IPCListener, IPCConnector, IPCConnector) {
@@ -53,7 +52,7 @@ impl IPCClientChannel {
     
     
     pub fn new() -> Result<IPCClientChannel, IPCChannelError> {
-        let pair = unix_socketpair().map_err(IPCChannelError::SocketPair)?;
+        let pair = unix_socketpair()?;
         let client_endpoint = IPCConnector::from_fd(pair.0)?;
         let server_endpoint = IPCConnector::from_fd(pair.1)?;
 
@@ -63,7 +62,6 @@ impl IPCClientChannel {
         })
     }
 
-    
     
     
     pub fn deconstruct(self) -> (IPCConnector, IPCConnector) {
