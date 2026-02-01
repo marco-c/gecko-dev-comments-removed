@@ -3682,13 +3682,6 @@ pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
 
 
-pref("browser.ai.controls.default", "available");
-pref("browser.ai.controls.translations", "default");
-pref("browser.ai.controls.pdfjsAltText", "default");
-pref("browser.ai.controls.smartTabGroups", "default");
-pref("browser.ai.controls.linkPreviewKeyPoints", "default");
-
-
 pref("browser.ml.enable", true);
 
 pref("browser.ml.logLevel", "Error");
