@@ -10,9 +10,8 @@
 
 #include "rtc_base/proxy_server.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 
 #include "rtc_base/checks.h"
@@ -72,7 +71,8 @@ ProxyBinding::ProxyBinding(AsyncProxyServerSocket* int_socket,
       ext_socket_(ext_socket),
       connected_(false),
       out_buffer_(kBufferSize),
-      in_buffer_(kBufferSize) {
+      in_buffer_(kBufferSize),
+      destroyed_trampoline_(this) {
   int_socket_->SignalConnectRequest.connect(this,
                                             &ProxyBinding::OnConnectRequest);
   int_socket_->SignalReadEvent.connect(this, &ProxyBinding::OnInternalRead);
@@ -152,7 +152,7 @@ void ProxyBinding::Write(Socket* socket, FifoBuffer* buffer) {
 }
 
 void ProxyBinding::Destroy() {
-  SignalDestroyed(this);
+  NotifyDestroyed(this);
 }
 
 }  
