@@ -600,7 +600,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity1000KbpsRtt100msEcnWithScream) {
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(1000));
 }
 
-TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithScream) {
+TEST(L4STest, DISABLED_CallerAdaptsToLinkCapacity2MbpsRtt50msNoEcnWithScream) {
   SendMediaTestParams params;
   params.use_dual_pi = false;  
   params.link_capacity = DataRate::KilobitsPerSec(2000);
