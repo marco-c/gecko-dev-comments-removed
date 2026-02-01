@@ -118,21 +118,6 @@ class RelativeTimeFormatObject : public NativeObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_FormatRelativeTime(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
-
 namespace intl {
 
 using RelativeTimeFormatUnit =
