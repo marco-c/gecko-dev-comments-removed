@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
@@ -112,6 +113,19 @@ const SMARTBLOCK_EMBED_INFO = [
 class TrustPanel {
   #state = null;
   #secInfo = null;
+
+  
+
+
+
+  #qwac = null;
+
+  
+
+
+
+  #qwacStatusPromise = null;
+
   #host = null;
   #uri = null;
   #uriHasHost = null;
@@ -260,6 +274,24 @@ class TrustPanel {
 
   async showPopup(opts = {}) {
     this.#initializePopup();
+
+    
+    if (this.#isSecureContext && !this.#qwacStatusPromise) {
+      let qwacStatusPromise = QWACs.determineQWACStatus(
+        this.#secInfo,
+        this.#uri,
+        gBrowser.selectedBrowser.browsingContext
+      ).then(result => {
+        
+        
+        if (qwacStatusPromise == this.#qwacStatusPromise && result) {
+          this.#qwac = result;
+          this.#updateSecurityInformationSubview();
+        }
+      });
+      this.#qwacStatusPromise = qwacStatusPromise;
+    }
+
     await this.#updatePopup();
 
     this.#openingReason = opts.reason;
@@ -292,6 +324,9 @@ class TrustPanel {
     this.#uri = uri;
 
     this.#secInfo = gBrowser.securityUI.secInfo;
+    
+    this.#qwac = null;
+    this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
     this.#isSecureContext = this.#getIsSecureContext();
 
@@ -453,7 +488,7 @@ class TrustPanel {
     return this.#trackingProtectionEnabled ? "enabled" : "disabled";
   }
 
-  #openSecurityInformationSubview(event) {
+  #updateSecurityInformationSubview() {
     document.l10n.setAttributes(
       document.getElementById("trustpanel-securityInformationView"),
       "trustpanel-site-information-header",
@@ -488,7 +523,10 @@ class TrustPanel {
     document.getElementById("identity-popup-content-verifier").textContent =
       verifier;
     document.getElementById("identity-popup-content-owner").textContent = owner;
+  }
 
+  #openSecurityInformationSubview(event) {
+    this.#updateSecurityInformationSubview();
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-securityInformationView", event.target);
@@ -651,9 +689,8 @@ class TrustPanel {
 
 
 
-  #getIdentityData() {
+  #getIdentityData(cert = this.#secInfo.serverCert) {
     var result = {};
-    var cert = this.#secInfo.serverCert;
 
     
     result.subjectOrg = cert.organization;
@@ -851,6 +888,14 @@ class TrustPanel {
     return this.#uri.schemeIs("file");
   }
 
+  
+
+
+
+  get qwacStatusPromise() {
+    return this.#qwacStatusPromise;
+  }
+
   #supplementalText() {
     let supplemental = "";
     let verifier = "";
@@ -862,8 +907,9 @@ class TrustPanel {
     }
 
     
-    if (this.#isEV) {
-      let iData = this.#getIdentityData();
+    
+    if (this.#isEV || this.#qwac) {
+      let iData = this.#getIdentityData(this.#qwac || this.#secInfo.serverCert);
       owner = iData.subjectOrg;
       verifier = this.#tooltipText();
 
@@ -896,7 +942,7 @@ class TrustPanel {
 
     if (this.#uriHasHost && this.#isSecureConnection) {
       
-      if (!this._isCertUserOverridden) {
+      if (!this.#isCertUserOverridden) {
         
         tooltip = gNavigatorBundle.getFormattedString(
           "identity.identified.verifier",
@@ -905,7 +951,6 @@ class TrustPanel {
       }
     } else if (this.#isBrokenConnection) {
       if (this.#isMixedActiveContentLoaded) {
-        this._identityBox.classList.add("mixedActiveContent");
         if (
           UrlbarPrefs.getScotchBonnetPref("trimHttps") &&
           warnTextOnInsecure
@@ -917,7 +962,7 @@ class TrustPanel {
       tooltip = gNavigatorBundle.getString("identity.notSecure.tooltip");
     }
 
-    if (this._isCertUserOverridden) {
+    if (this.#isCertUserOverridden) {
       
       tooltip = gNavigatorBundle.getString(
         "identity.identified.verified_by_you"
@@ -935,6 +980,8 @@ class TrustPanel {
       connection = "extension";
     } else if (this.#isURILoadedFromFile) {
       connection = "file";
+    } else if (this.#qwac) {
+      connection = "secure-etsi";
     } else if (this.#isEV) {
       connection = "secure-ev";
     } else if (this.#isCertUserOverridden) {

@@ -145,7 +145,8 @@ add_task(async function test_2_qwac() {
 
 add_task(async function test_non_qwac() {
   let uris = [
-    "https://example.com",
+    
+    "http://example.com",
     "https://example.com",
     "data:,Hello%2C World!",
   ];
