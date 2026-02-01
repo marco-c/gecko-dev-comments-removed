@@ -3577,7 +3577,7 @@ pref("browser.ipProtection.userEnableCount", 0);
 
 pref("browser.ipProtection.panelOpenCount", 0);
 
-pref("browser.ipProtection.features.siteExceptions", false);
+pref("browser.ipProtection.features.siteExceptions", true);
 
 pref("browser.ipProtection.siteExceptionsHintsEnabled", true);
 pref("browser.ipProtection.log", false);
