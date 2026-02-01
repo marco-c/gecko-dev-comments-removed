@@ -1236,11 +1236,6 @@ nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
 
   
   
-  nsAutoCString hostToPurge(aHost);
-  nsContentUtils::MaybeFixIPv6Host(hostToPurge);
-
-  
-  
   
   
   
@@ -1259,7 +1254,7 @@ nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
   NS_ENSURE_TRUE(pattern.ToJSON(oaPatternString), NS_ERROR_FAILURE);
 
   rv = clearDataService->DeleteDataFromSiteAndOriginAttributesPatternString(
-      hostToPurge, oaPatternString, false,
+      aHost, oaPatternString, false,
       
       
       
