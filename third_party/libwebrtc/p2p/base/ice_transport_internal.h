@@ -376,14 +376,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
     candidates_removed_callback_ = std::move(callback);
   }
 
-  
-  
-  
-  
-  
-  
-  sigslot::signal2<IceTransportInternal*, const Candidate&> SignalRouteChange;
-
   void SetCandidatePairChangeCallback(
       absl::AnyInvocable<void(const CandidatePairChangeEvent&)> callback) {
     RTC_DCHECK(!candidate_pair_change_callback_);

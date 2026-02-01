@@ -1870,7 +1870,6 @@ void P2PTransportChannel::SwitchSelectedConnectionInternal(
     }
     RTC_LOG(LS_INFO) << ToString() << ": New selected connection: "
                      << selected_connection_->ToString();
-    SignalRouteChange(this, selected_connection_->remote_candidate());
     
     
     
