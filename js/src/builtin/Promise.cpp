@@ -2432,8 +2432,10 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
     JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
   MOZ_ASSERT(reaction->targetState() != JS::PromiseState::Pending);
 
-  Rooted<PromiseObject*> promiseToResolve(cx,
-                                          reaction->defaultResolvingPromise());
+  RootedTuple<PromiseObject*, Value, SavedFrame*, Value, JSObject*, JSObject*>
+      roots(cx);
+  RootedField<PromiseObject*, 0> promiseToResolve(
+      roots, reaction->defaultResolvingPromise());
 
   
   
@@ -2441,10 +2443,10 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   
   
   ResolutionMode resolutionMode = ResolveMode;
-  RootedValue handlerResult(cx, UndefinedValue());
-  Rooted<SavedFrame*> unwrappedRejectionStack(cx);
+  RootedField<Value, 1> handlerResult(roots, UndefinedValue());
+  RootedField<SavedFrame*, 2> unwrappedRejectionStack(roots);
   if (promiseToResolve->state() == JS::PromiseState::Pending) {
-    RootedValue argument(cx, reaction->handlerArg());
+    RootedField<Value, 3> argument(roots, reaction->handlerArg());
 
     
     
@@ -2466,8 +2468,8 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   }
 
   
-  RootedObject promiseObj(cx, reaction->promise());
-  RootedObject callee(cx);
+  RootedField<JSObject*, 4> promiseObj(roots, reaction->promise());
+  RootedField<JSObject*, 5> callee(roots);
   if (resolutionMode == ResolveMode) {
     callee =
         reaction->getFixedSlot(PromiseReactionRecord::Resolve).toObjectOrNull();
@@ -2531,7 +2533,10 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 
 
 static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
-  RootedObject reactionObj(cx, reactionObjIn);
+  RootedTuple<JSObject*, PromiseReactionRecord*, Value, AsyncGeneratorObject*,
+              Value, Value, SavedFrame*, JSObject*, JSObject*>
+      roots(cx);
+  RootedField<JSObject*, 0> reactionObj(roots, reactionObjIn);
   
   
   
@@ -2557,8 +2562,8 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   }
 
   
-  Handle<PromiseReactionRecord*> reaction =
-      reactionObj.as<PromiseReactionRecord>();
+  RootedField<PromiseReactionRecord*, 1> reaction(
+      roots, &reactionObj.get()->as<PromiseReactionRecord>());
   if (reaction->isDefaultResolvingHandler()) {
     return DefaultResolvingPromiseReactionJob(cx, reaction);
   }
@@ -2568,8 +2573,9 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
     return AsyncFunctionPromiseReactionJob(cx, reaction);
   }
   if (reaction->isAsyncGenerator()) {
-    RootedValue argument(cx, reaction->handlerArg());
-    Rooted<AsyncGeneratorObject*> generator(cx, reaction->asyncGenerator());
+    RootedField<Value, 2> argument(roots, reaction->handlerArg());
+    RootedField<AsyncGeneratorObject*, 3> generator(roots,
+                                                    reaction->asyncGenerator());
     auto handler = static_cast<PromiseHandler>(reaction->handler().toInt32());
     return AsyncGeneratorPromiseReactionJob(cx, handler, generator, argument);
   }
@@ -2581,14 +2587,14 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   
 
   
-  RootedValue handlerVal(cx, reaction->handler());
+  RootedField<Value, 2> handlerVal(roots, reaction->handler());
 
-  RootedValue argument(cx, reaction->handlerArg());
+  RootedField<Value, 4> argument(roots, reaction->handlerArg());
 
-  RootedValue handlerResult(cx);
+  RootedField<Value, 5> handlerResult(roots);
   ResolutionMode resolutionMode = ResolveMode;
 
-  Rooted<SavedFrame*> unwrappedRejectionStack(cx);
+  RootedField<SavedFrame*, 6> unwrappedRejectionStack(roots);
 
   
   if (handlerVal.isInt32()) {
@@ -2626,7 +2632,8 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
       
       
       
-      Rooted<JSObject*> iter(cx, reaction->asyncFromSyncIterator()->iterator());
+      RootedField<JSObject*, 8> iter(
+          roots, reaction->asyncFromSyncIterator()->iterator());
       MOZ_ALWAYS_TRUE(CloseIterOperation(cx, iter, CompletionKind::Throw));
 
       resolutionMode = RejectMode;
@@ -2671,8 +2678,8 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   }
 
   
-  RootedObject promiseObj(cx, reaction->promise());
-  RootedObject callee(cx);
+  RootedField<JSObject*, 8> promiseObj(roots, reaction->promise());
+  RootedField<JSObject*, 7> callee(roots);
   if (resolutionMode == ResolveMode) {
     callee =
         reaction->getFixedSlot(PromiseReactionRecord::Resolve).toObjectOrNull();
