@@ -251,7 +251,7 @@ nsresult GenerateRandomName(nsCString& aOutSalt, uint32_t aLength);
 
 nsresult GenerateRandomPathName(nsCString& aOutSalt, uint32_t aLength);
 
-already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(const char* aName);
+already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(StaticString aName);
 
 
 
@@ -319,6 +319,7 @@ bool ParseCodecsString(const nsAString& aCodecs,
                        nsTArray<nsString>& aOutCodecs);
 
 bool IsH264CodecString(const nsAString& aCodec);
+bool IsAllowedH264Codec(const nsAString& aCodec);
 
 bool IsH265CodecString(const nsAString& aCodec);
 

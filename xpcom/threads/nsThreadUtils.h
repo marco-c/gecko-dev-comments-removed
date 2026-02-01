@@ -1673,7 +1673,7 @@ extern "C" nsresult NS_DispatchBackgroundTask(
 
 
 extern "C" nsresult NS_CreateBackgroundTaskQueue(
-    const char* aName, nsISerialEventTarget** aTarget);
+    mozilla::StaticString aName, nsISerialEventTarget** aTarget);
 
 
 
