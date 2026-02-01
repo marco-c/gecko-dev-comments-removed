@@ -1572,6 +1572,9 @@ async function triggerCapture(browser, submitButtonSelector, fillSelectors) {
 
 
 
+
+
+
 async function add_heuristic_tests(
   patterns,
   fixturePathPrefix = "",
@@ -1619,16 +1622,32 @@ async function add_heuristic_tests(
       const sleepAfterFocus = contexts.length > 1;
 
       for (const context of contexts) {
-        await SpecialPowers.spawn(context, [], async () => {
-          const elements = Array.from(
-            content.document.querySelectorAll("input, select")
-          );
-          
-          
-          elements.forEach(element => {
-            element.focus();
-          });
-        });
+        await SpecialPowers.spawn(
+          context,
+          [testPattern.useTestYear],
+          async year => {
+            let FormAutofillHeuristics;
+            if (year) {
+              FormAutofillHeuristics = ChromeUtils.importESModule(
+                "resource://gre/modules/shared/FormAutofillHeuristics.sys.mjs"
+              ).FormAutofillHeuristics;
+              FormAutofillHeuristics.useTestYear = year;
+            }
+
+            const elements = Array.from(
+              content.document.querySelectorAll("input, select")
+            );
+            
+            
+            elements.forEach(element => {
+              element.focus();
+            });
+
+            if (year) {
+              FormAutofillHeuristics.useTestYear = null;
+            }
+          }
+        );
 
         try {
           await BrowserTestUtils.synthesizeKey("VK_ESCAPE", {}, context);
