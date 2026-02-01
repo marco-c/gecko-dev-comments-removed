@@ -16,7 +16,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/FetchBinding.h"
-#include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/File.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentPolicyUtils.h"
@@ -101,7 +100,6 @@
 #include "nsIUploadChannel2.h"
 #include "nsJSUtils.h"
 #include "nsStreamUtils.h"
-#include "nsWeakReference.h"
 
 #if defined(XP_WIN)
 #  include "mozilla/WindowsVersion.h"
@@ -1149,24 +1147,16 @@ class BeaconStreamListener final : public nsIStreamListener {
   ~BeaconStreamListener() = default;
 
  public:
-  BeaconStreamListener() : mChannelLoadGroup(nullptr), mBodyLength(0) {}
+  BeaconStreamListener() : mLoadGroup(nullptr) {}
 
-  void SetChannelLoadGroup(nsILoadGroup* aLoadGroup) {
-    mChannelLoadGroup = aLoadGroup;
-  }
-  void SetDocLoadGroup(nsILoadGroup* aLoadGroup) {
-    mDocLoadGroup = do_GetWeakReference(aLoadGroup);
-  }
-  void SetBodyLength(uint64_t aLength) { mBodyLength = aLength; }
+  void SetLoadGroup(nsILoadGroup* aLoadGroup) { mLoadGroup = aLoadGroup; }
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
 
  private:
-  nsCOMPtr<nsILoadGroup> mChannelLoadGroup;
-  nsWeakPtr mDocLoadGroup;
-  uint64_t mBodyLength;
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
 };
 
 NS_IMPL_ISUPPORTS(BeaconStreamListener, nsIStreamListener, nsIRequestObserver)
@@ -1174,20 +1164,13 @@ NS_IMPL_ISUPPORTS(BeaconStreamListener, nsIStreamListener, nsIRequestObserver)
 NS_IMETHODIMP
 BeaconStreamListener::OnStartRequest(nsIRequest* aRequest) {
   
-  mChannelLoadGroup = nullptr;
+  mLoadGroup = nullptr;
 
   return NS_ERROR_ABORT;
 }
 
 NS_IMETHODIMP
 BeaconStreamListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
-  if (mBodyLength > 0) {
-    nsCOMPtr<nsILoadGroup> docLoadGroup = do_QueryReferent(mDocLoadGroup);
-    if (docLoadGroup) {
-      FetchUtil::DecrementPendingKeepaliveRequestSize(docLoadGroup,
-                                                      mBodyLength);
-    }
-  }
   return NS_OK;
 }
 
@@ -1200,17 +1183,10 @@ BeaconStreamListener::OnDataAvailable(nsIRequest* aRequest,
 }
 
 bool Navigator::SendBeacon(const nsAString& aUrl,
-                           const Nullable<BodyInit>& aData, ErrorResult& aRv) {
+                           const Nullable<fetch::BodyInit>& aData,
+                           ErrorResult& aRv) {
   if (aData.IsNull()) {
     return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, aRv);
-  }
-
-  
-  
-  
-  if (aData.Value().IsReadableStream()) {
-    aRv.ThrowTypeError("ReadableStream body is not supported with keepalive");
-    return false;
   }
 
   if (aData.Value().IsArrayBuffer()) {
@@ -1296,28 +1272,6 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     }
   }
 
-  
-  
-  nsCOMPtr<nsILoadGroup> docLoadGroup = doc->GetDocumentLoadGroup();
-  if (docLoadGroup) {
-    
-    if (!FetchUtil::IncrementPendingKeepaliveRequestSize(docLoadGroup,
-                                                         length)) {
-      return false;
-    }
-  } else {
-    
-    if (length > FETCH_KEEPALIVE_MAX_SIZE) {
-      return false;
-    }
-  }
-  
-  auto guard = MakeScopeExit([&] {
-    if (docLoadGroup && length > 0) {
-      FetchUtil::DecrementPendingKeepaliveRequestSize(docLoadGroup, length);
-    }
-  });
-
   nsSecurityFlags securityFlags = nsILoadInfo::SEC_COOKIES_INCLUDE;
   
   
@@ -1382,19 +1336,13 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
   channel->SetLoadGroup(loadGroup);
 
   RefPtr<BeaconStreamListener> beaconListener = new BeaconStreamListener();
-  
-  beaconListener->SetDocLoadGroup(docLoadGroup);
-  beaconListener->SetBodyLength(length);
   rv = channel->AsyncOpen(beaconListener);
   
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-  guard.release();
+  NS_ENSURE_SUCCESS(rv, false);
 
   
   
-  beaconListener->SetChannelLoadGroup(loadGroup);
+  beaconListener->SetLoadGroup(loadGroup);
 
   return true;
 }
