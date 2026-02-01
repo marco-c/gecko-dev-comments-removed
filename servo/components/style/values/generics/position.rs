@@ -439,8 +439,10 @@ pub use self::GenericInset as Inset;
 pub struct GenericAnchorFunction<Percentage, Fallback> {
     
     
+    
+    
     #[animation(constant)]
-    pub target_element: DashedIdent,
+    pub target_element: TreeScoped<DashedIdent>,
     
     
     pub side: GenericAnchorSide<Percentage>,
@@ -458,7 +460,7 @@ where
         W: Write,
     {
         dest.write_str("anchor(")?;
-        if !self.target_element.is_empty() {
+        if !self.target_element.value.is_empty() {
             self.target_element.to_css(dest)?;
             dest.write_str(" ")?;
         }
