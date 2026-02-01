@@ -398,9 +398,7 @@ void UDPPort::OnReadPacket(AsyncPacketSocket* socket,
   
   if (server_addresses_.find(packet.source_address()) !=
       server_addresses_.end()) {
-    request_manager_.CheckResponse(
-        reinterpret_cast<const char*>(packet.payload().data()),
-        packet.payload().size());
+    request_manager_.CheckResponse(packet.payload());
     return;
   }
 

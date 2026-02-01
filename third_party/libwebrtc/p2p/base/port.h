@@ -450,18 +450,6 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   void OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto);
 
-  [[deprecated(
-      "Use OnReadPacket(const ReceivedIpPacket& packet, ProtocolType "
-      "proto)")]] void
-  OnReadPacket(const char* data,
-               size_t size,
-               const SocketAddress& addr,
-               ProtocolType proto) {
-    OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
-                     data, size,  -1, addr),
-                 proto);
-  }
-
   
   
   
