@@ -787,7 +787,7 @@ nsresult HTMLEditor::EnsureCaretNotAfterInvisibleBRElement(
     return NS_OK;
   }
 
-  nsIContent* previousBRElement = HTMLEditUtils::GetPreviousContent(
+  nsIContent* previousBRElement = HTMLEditUtils::GetPreviousLeafContent(
       atSelectionStart, {}, BlockInlineCheck::UseComputedDisplayStyle,
       &aEditingHost);
   if (!previousBRElement || !previousBRElement->IsHTMLElement(nsGkAtoms::br) ||
@@ -4185,8 +4185,8 @@ HTMLEditor::FormatBlockContainerWithTransaction(
       
       
       
-      if (nsCOMPtr<nsIContent> brContent = HTMLEditUtils::GetNextContent(
-              pointToInsertBlock, {WalkTreeOption::IgnoreNonEditableNode},
+      if (nsCOMPtr<nsIContent> brContent = HTMLEditUtils::GetNextLeafContent(
+              pointToInsertBlock, {LeafNodeOption::IgnoreNonEditableNode},
               BlockInlineCheck::UseComputedDisplayOutsideStyle,
               &aEditingHost)) {
         if (brContent && brContent->IsHTMLElement(nsGkAtoms::br)) {
@@ -7243,8 +7243,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
                  prevVisibleThingOfEndPoint
                      .ReachedInlineEditingHostBoundary()) {
         
-        if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
-                endPoint, {WalkTreeOption::IgnoreNonEditableNode},
+        if (nsIContent* const child = HTMLEditUtils::GetPreviousLeafContent(
+                endPoint, {LeafNodeOption::IgnoreNonEditableNode},
                 BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
           newRange.SetEnd(EditorRawDOMPoint::After(*child));
         }
@@ -7284,8 +7284,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
                  nextVisibleThingOfStartPoint
                      .ReachedInlineEditingHostBoundary()) {
         
-        if (nsIContent* child = HTMLEditUtils::GetNextContent(
-                startPoint, {WalkTreeOption::IgnoreNonEditableNode},
+        if (nsIContent* const child = HTMLEditUtils::GetNextLeafContent(
+                startPoint, {LeafNodeOption::IgnoreNonEditableNode},
                 BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
           newRange.SetStart(EditorRawDOMPoint(child));
         }
@@ -8950,8 +8950,8 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   }
 
   if (nsCOMPtr<nsIContent> previousEditableContent =
-          HTMLEditUtils::GetPreviousContent(
-              point, {WalkTreeOption::IgnoreNonEditableNode},
+          HTMLEditUtils::GetPreviousLeafContent(
+              point, {LeafNodeOption::IgnoreNonEditableNode},
               BlockInlineCheck::UseComputedDisplayStyle, editingHost)) {
     
     
