@@ -69,15 +69,31 @@ NS_IMETHODIMP IdentityCredentialStorageService::GetName(nsAString& aName) {
 NS_IMETHODIMP IdentityCredentialStorageService::BlockShutdown(
     nsIAsyncShutdownClient* aClient) {
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  {
+    MonitorAutoLock lock(mMonitor);
+    mShuttingDown.Flip();
+
+    if (mMemoryDatabaseConnection) {
+      (void)mMemoryDatabaseConnection->Close();
+      mMemoryDatabaseConnection = nullptr;
+    }
+  }
+
   nsresult rv = WaitForInitialization();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  MonitorAutoLock lock(mMonitor);
-  mShuttingDown.Flip();
-
-  if (mMemoryDatabaseConnection) {
-    (void)mMemoryDatabaseConnection->Close();
-    mMemoryDatabaseConnection = nullptr;
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    if (!mBackgroundThread) {
+      DebugOnly<nsresult> removeRv = aClient->RemoveBlocker(this);
+      MOZ_ASSERT(NS_SUCCEEDED(removeRv));
+      return NS_OK;
+    }
+    
   }
 
   RefPtr<IdentityCredentialStorageService> self = this;
