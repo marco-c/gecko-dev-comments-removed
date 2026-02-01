@@ -48,6 +48,7 @@
 #include "modules/rtp_rtcp/source/source_tracker.h"
 #include "modules/video_coding/nack_requester.h"
 #include "modules/video_coding/video_receiver2.h"
+#include "rtc_base/race_checker.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
@@ -274,6 +275,10 @@ class VideoReceiveStream2
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker decode_sequence_checker_;
 
+  
+  
+  RaceChecker decode_callback_race_checker_;
+
   TransportAdapter transport_adapter_;
   const VideoReceiveStreamInterface::Config config_;
   const int num_cpu_cores_;
@@ -363,7 +368,7 @@ class VideoReceiveStream2
       RTC_GUARDED_BY(decode_sequence_checker_);
 
   std::unique_ptr<FrameInstrumentationEvaluation> frame_evaluator_
-      RTC_GUARDED_BY(decode_sequence_checker_);
+      RTC_GUARDED_BY(decode_callback_race_checker_);
 
   
   ScopedTaskSafety task_safety_;
