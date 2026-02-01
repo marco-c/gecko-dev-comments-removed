@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NSCLIENTAUTHREMEMBER_H__
-#define __NSCLIENTAUTHREMEMBER_H__
+#ifndef NSCLIENTAUTHREMEMBER_H_
+#define NSCLIENTAUTHREMEMBER_H_
 
 #include "mozilla/DataMutex.h"
 #include "mozilla/ReentrantMonitor.h"

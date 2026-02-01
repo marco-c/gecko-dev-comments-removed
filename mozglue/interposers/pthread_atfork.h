@@ -3,8 +3,8 @@
 
 
 
-#ifndef __mozilla_pthread_atfork_h_
-#define __mozilla_pthread_atfork_h_
+#ifndef _mozilla_pthread_atfork_h_
+#define _mozilla_pthread_atfork_h_
 
 #if defined(MOZ_ENABLE_FORKSERVER)
 

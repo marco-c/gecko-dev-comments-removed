@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_AutoSelectionRestorer_h__
-#define mozilla_AutoSelectionRestorer_h__
+#ifndef mozilla_AutoSelectionRestorer_h_
+#define mozilla_AutoSelectionRestorer_h_
 
 #include "EditorBase.h"
 

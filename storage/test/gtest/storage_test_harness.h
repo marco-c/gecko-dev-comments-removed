@@ -4,8 +4,8 @@
 
 
 
-#ifndef storage_test_harness_h__
-#define storage_test_harness_h__
+#ifndef storage_test_harness_h_
+#define storage_test_harness_h_
 
 #include "gtest/gtest.h"
 

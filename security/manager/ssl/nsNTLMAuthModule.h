@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsNTLMAuthModule_h__
-#define nsNTLMAuthModule_h__
+#ifndef nsNTLMAuthModule_h_
+#define nsNTLMAuthModule_h_
 
 #include "nsIAuthModule.h"
 #include "nsString.h"

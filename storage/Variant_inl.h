@@ -8,7 +8,7 @@
 
 
 
-#ifndef mozilla_storage_Variant_h__
+#ifndef mozilla_storage_Variant_h_
 #  error "Do not include this file directly!"
 #endif
 

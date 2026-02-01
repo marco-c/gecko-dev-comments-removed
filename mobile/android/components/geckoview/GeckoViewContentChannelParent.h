@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla__net__GeckoViewContentChannelParent_h
-#define mozilla__net__GeckoViewContentChannelParent_h
+#ifndef mozilla_net_GeckoViewContentChannelParent_h
+#define mozilla_net_GeckoViewContentChannelParent_h
 
 #include "nsIInterfaceRequestor.h"
 #include "nsIParentChannel.h"

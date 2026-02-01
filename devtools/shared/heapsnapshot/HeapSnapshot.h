@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_devtools_HeapSnapshot__
-#define mozilla_devtools_HeapSnapshot__
+#ifndef mozilla_devtools_HeapSnapshot_
+#define mozilla_devtools_HeapSnapshot_
 
 #include "js/HashTable.h"
 #include "mozilla/devtools/DeserializedNode.h"

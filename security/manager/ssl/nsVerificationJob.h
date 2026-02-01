@@ -4,8 +4,8 @@
 
 
 
-#ifndef _INC_NSVERIFICATIONJOB_H
-#define _INC_NSVERIFICATIONJOB_H
+#ifndef INC_NSVERIFICATIONJOB_H
+#define INC_NSVERIFICATIONJOB_H
 
 #include "nspr.h"
 

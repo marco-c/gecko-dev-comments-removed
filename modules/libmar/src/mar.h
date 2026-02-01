@@ -4,8 +4,8 @@
 
 
 
-#ifndef MAR_H__
-#define MAR_H__
+#ifndef MAR_H_
+#define MAR_H_
 
 #include <assert.h>  
 #include <stdint.h>

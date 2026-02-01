@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPingListener_h__
-#define nsPingListener_h__
+#ifndef nsPingListener_h_
+#define nsPingListener_h_
 
 #include "nsIStreamListener.h"
 #include "nsIReferrerInfo.h"

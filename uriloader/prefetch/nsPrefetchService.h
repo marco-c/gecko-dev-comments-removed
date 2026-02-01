@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsPrefetchService_h__
-#define nsPrefetchService_h__
+#ifndef nsPrefetchService_h_
+#define nsPrefetchService_h_
 
 #include "nsIObserver.h"
 #include "nsIInterfaceRequestor.h"

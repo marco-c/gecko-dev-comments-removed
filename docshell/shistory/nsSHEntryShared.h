@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSHEntryShared_h__
-#define nsSHEntryShared_h__
+#ifndef nsSHEntryShared_h_
+#define nsSHEntryShared_h_
 
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"

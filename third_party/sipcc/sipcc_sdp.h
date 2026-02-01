@@ -2,8 +2,8 @@
 
 
 
-#ifndef _SIPCC_SDP_H_
-#define _SIPCC_SDP_H_
+#ifndef SIPCCSDP_H_
+#define SIPCCSDP_H_
 
 #include "sdp_os_defs.h"
 #include "ccsdp.h"

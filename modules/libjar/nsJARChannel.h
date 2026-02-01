@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsJARChannel_h__
-#define nsJARChannel_h__
+#ifndef nsJARChannel_h_
+#define nsJARChannel_h_
 
 #include "nsIJARChannel.h"
 #include "nsIJARURI.h"

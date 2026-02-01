@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozHunspellAllocator_h__
-#define mozHunspellAllocator_h__
+#ifndef mozHunspellAllocator_h_
+#define mozHunspellAllocator_h_
 
 #include "mozilla/CountingAllocatorBase.h"
 

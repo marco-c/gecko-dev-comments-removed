@@ -14,8 +14,8 @@
 
 
 
-#ifndef __ClearKeyCencParser_h__
-#define __ClearKeyCencParser_h__
+#ifndef ClearKeyCencParser_h_
+#define ClearKeyCencParser_h_
 
 #include <stdint.h>
 #include <vector>

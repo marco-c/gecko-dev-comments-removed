@@ -3,8 +3,8 @@
 
 
 
-#ifndef _NSPROFILERSTARTPARAMS_H_
-#define _NSPROFILERSTARTPARAMS_H_
+#ifndef NSPROFILERSTARTPARAMS_H_
+#define NSPROFILERSTARTPARAMS_H_
 
 #include "nsIProfiler.h"
 #include "nsString.h"

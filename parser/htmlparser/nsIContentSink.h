@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsIContentSink_h___
-#define nsIContentSink_h___
+#ifndef nsIContentSink_h_
+#define nsIContentSink_h_
 
 
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsJARProtocolHandler_h__
-#define nsJARProtocolHandler_h__
+#ifndef nsJARProtocolHandler_h_
+#define nsJARProtocolHandler_h_
 
 #include "mozilla/StaticPtr.h"
 #include "nsIProtocolHandler.h"

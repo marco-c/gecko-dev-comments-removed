@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsEditingSession_h__
-#define nsEditingSession_h__
+#ifndef nsEditingSession_h_
+#define nsEditingSession_h_
 
 #include "nsCOMPtr.h"               
 #include "nsISupportsImpl.h"        

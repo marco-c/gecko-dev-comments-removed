@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsWebNavigationInfo_h__
-#define nsWebNavigationInfo_h__
+#ifndef nsWebNavigationInfo_h_
+#define nsWebNavigationInfo_h_
 
 #include "nsIWebNavigationInfo.h"
 #include "nsCOMPtr.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef GeckoViewContentProtocolHandler_h__
-#define GeckoViewContentProtocolHandler_h__
+#ifndef GeckoViewContentProtocolHandler_h_
+#define GeckoViewContentProtocolHandler_h_
 
 #include "nsIProtocolHandler.h"
 #include "nsWeakReference.h"

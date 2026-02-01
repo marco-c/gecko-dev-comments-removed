@@ -2,8 +2,8 @@
 
 
 
-#ifndef PreloadHashKey_h__
-#define PreloadHashKey_h__
+#ifndef PreloadHashKey_h_
+#define PreloadHashKey_h_
 
 #include "mozilla/CORSMode.h"
 #include "mozilla/css/SheetParsingMode.h"

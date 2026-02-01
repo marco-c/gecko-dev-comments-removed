@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsOSHelperAppService_h__
-#define nsOSHelperAppService_h__
+#ifndef nsOSHelperAppService_h_
+#define nsOSHelperAppService_h_
 
 
 

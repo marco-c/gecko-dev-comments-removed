@@ -3,10 +3,10 @@
 
 
 
-#ifndef nsDocShellEditorData_h__
-#define nsDocShellEditorData_h__
+#ifndef nsDocShellEditorData_h_
+#define nsDocShellEditorData_h_
 
-#ifndef nsCOMPtr_h___
+#ifndef nsCOMPtr_h_
 #  include "nsCOMPtr.h"
 #endif
 

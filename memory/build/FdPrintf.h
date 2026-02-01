@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FdPrintf_h__
-#define __FdPrintf_h__
+#ifndef FdPrintf_h_
+#define FdPrintf_h_
 
 #include <cstdarg>
 

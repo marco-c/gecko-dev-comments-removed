@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_storage_VacuumManager_h__
-#define mozilla_storage_VacuumManager_h__
+#ifndef mozilla_storage_VacuumManager_h_
+#define mozilla_storage_VacuumManager_h_
 
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"

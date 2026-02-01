@@ -3,8 +3,8 @@
 
 
 
-#ifndef _FuzzerRegistry_h__
-#define _FuzzerRegistry_h__
+#ifndef FuzzerRegistry_h_
+#define FuzzerRegistry_h_
 
 #include <cstdint>
 #include <map>
