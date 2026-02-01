@@ -24,10 +24,16 @@ use peek_poke::PeekPoke;
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CoordinateSystemId(pub u32);
+
+impl std::fmt::Debug for CoordinateSystemId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
 
 
 
@@ -52,7 +58,7 @@ impl CoordinateSystem {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, Hash, MallocSizeOf, PartialEq, PeekPoke, Default)]
+#[derive(Copy, Clone, Eq, Hash, MallocSizeOf, PartialEq, PeekPoke, Default)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SpatialNodeIndex(pub u32);
@@ -66,6 +72,18 @@ impl SpatialNodeIndex {
     
     
     pub const UNKNOWN: SpatialNodeIndex = SpatialNodeIndex(u32::MAX - 1);
+}
+
+impl std::fmt::Debug for SpatialNodeIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if *self == Self::INVALID {
+            write!(f, "<invalid>")
+        } else if *self == Self::UNKNOWN {
+            write!(f, "<unknown>")
+        } else {
+            write!(f, "#{}", self.0)
+        }
+    }
 }
 
 
