@@ -18,6 +18,9 @@ const { TestUtils } = ChromeUtils.importESModule(
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+const { NimbusTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
 
 SearchTestUtils.init(this);
 
@@ -33,6 +36,8 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const CACHE_WORKER_URL = "resource://newtab/lib/cache.worker.js";
 const NEWTAB_RENDER_URL = "resource://newtab/data/content/newtab-render.js";
+
+NimbusTestUtils.init(this);
 
 
 
@@ -111,9 +116,12 @@ add_setup(async function () {
     { setAsDefault: true }
   );
 
+  const { cleanup: nimbusTestCleanup } = await NimbusTestUtils.setupTest();
+  registerCleanupFunction(nimbusTestCleanup);
+
   
   
-  AboutNewTab.onBrowserReady();
+  await AboutNewTab.onBrowserReady();
 
   
   
