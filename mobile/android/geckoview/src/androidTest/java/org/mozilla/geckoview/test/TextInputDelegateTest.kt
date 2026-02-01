@@ -5,13 +5,11 @@
 package org.mozilla.geckoview.test
 
 import android.content.ClipDescription
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.text.InputType
 import android.text.SpannableString
-import android.text.SpannedString
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.BaseInputConnection
@@ -311,7 +309,6 @@ class TextInputDelegateTest : BaseSessionTest() {
         })
     }
 
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun restartInput_temporaryFocus() {
         
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
@@ -600,12 +597,6 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertTextAndSelection(message, ic, expected, value, value, checkGecko)
 
     private fun setupContent(content: String) {
-        sessionRule.setPrefsUntilTestEnd(
-            mapOf(
-                "dom.select_events.textcontrols.enabled" to true,
-            ),
-        )
-
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
 
         mainSession.loadTestPath(INPUTS_PATH)
@@ -686,7 +677,6 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
     }
 
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     
     @WithDisplay(width = 512, height = 512)
     
@@ -824,7 +814,6 @@ class TextInputDelegateTest : BaseSessionTest() {
 
     @WithDisplay(width = 512, height = 512)
     
-    @Ignore("Failing frequently, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1741790")
     @Test
     fun inputConnection_selectionByArrowKey() {
         setupContent("")
@@ -1031,15 +1020,10 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     
-    @Ignore
-    
     @WithDisplay(width = 512, height = 512)
     
     @Test
     fun inputConnection_bug1133802() {
-        
-        
-        
         setupContent("")
 
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
@@ -1106,7 +1090,6 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @WithDisplay(width = 512, height = 512)
     
     @Test
