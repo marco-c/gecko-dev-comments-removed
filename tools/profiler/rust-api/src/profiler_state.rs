@@ -85,19 +85,6 @@ pub fn current_thread_is_being_profiled_for_markers() -> bool {
     false
 }
 
-#[cfg(feature = "enabled")]
-#[inline]
-pub fn can_accept_markers() -> bool {
-    is_active_and_unpaused()
-}
-
-
-#[cfg(not(feature = "enabled"))]
-#[inline]
-pub fn can_accept_markers() -> bool {
-    false
-}
-
 
 #[cfg(feature = "enabled")]
 #[inline]

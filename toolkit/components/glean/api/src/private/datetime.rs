@@ -165,7 +165,7 @@ impl DatetimeMetric {
                 match value.single() {
                     Some(d) => {
                         #[cfg(feature = "with_gecko")]
-                        if gecko_profiler::can_accept_markers() {
+                        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                             gecko_profiler::add_marker(
                                 "Datetime::set",
                                 TelemetryProfilerCategory,
@@ -183,7 +183,7 @@ impl DatetimeMetric {
                         
                         
                         #[cfg(feature = "with_gecko")]
-                        if gecko_profiler::can_accept_markers() {
+                        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                             let name = id.get_name();
                             let payload = format!(
                                 "Conversion failed for metric {}: {} {} {} {} {} {} {} {}",
@@ -226,7 +226,7 @@ impl Datetime for DatetimeMetric {
                 
                 
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     
                     match value {
                         Some(ref d) => {
