@@ -219,6 +219,10 @@ function extractTestTimings(profile) {
         status = "EXPECTED-FAIL";
       }
       
+      else if (status === "PASS" && data.expected && data.expected !== "PASS") {
+        status = "UNEXPECTED-PASS";
+      }
+      
       else if (
         ["TIMEOUT", "FAIL", "PASS"].includes(status) &&
         parallelRanges.length
@@ -264,7 +268,8 @@ function extractTestTimings(profile) {
       continue;
     }
 
-    if (!testPath || !testPath.endsWith(".js")) {
+    
+    if (!testPath || !/\.(js|html|xhtml)$/.test(testPath)) {
       continue;
     }
 
@@ -353,8 +358,10 @@ async function fetchResourceProfile(taskId, retryId = 0) {
 
 
 async function processJob(job) {
-  const taskId = job.task_id;
-  const retryId = job.retry_id || 0;
+  
+  const parts = job.task.split(".");
+  const taskId = parts[0];
+  const retryId = parts.length === 2 ? parseInt(parts[1], 10) : 0;
   const jobName = job.name;
 
   if (!taskId) {
