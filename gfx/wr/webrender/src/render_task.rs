@@ -2359,27 +2359,57 @@ impl RenderTask {
     }
 }
 
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum SubTask {
-    Clip(ClipSubTask),
+    RectangleClip(RectangleClipSubTask),
+    ImageClip(ImageClipSubTask),
 }
+
+
 
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ClipSubTask {
-    pub masked_task_id: RenderTaskId,
-    pub clip_pattern_kind: PatternKind,
-    pub render_task_address: RenderTaskAddress,
-    pub main_address: GpuBufferAddress,
-    pub prim_transform_id: GpuTransformId,
+pub struct RectangleClipSubTask {
+    
+    pub quad_address: GpuBufferAddress,
+    
     pub clip_address: GpuBufferAddress,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub clip_space: ClipSpace,
+    
+    pub quad_transform_id: GpuTransformId,
+    
     pub clip_transform_id: GpuTransformId,
+    pub quad_flags: QuadFlags,
+    pub needs_scissor_rect: bool,
+    pub rounded_rect_fast_path: bool,
+}
+
+
+
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ImageClipSubTask {
+    
+    pub quad_address: GpuBufferAddress,
+    
+    
+    pub quad_transform_id: GpuTransformId,
     pub src_task: RenderTaskId,
     pub quad_flags: QuadFlags,
-    pub edge_aa: EdgeAaSegmentMask,
-    pub clip_space: ClipSpace,
-    pub clip_needs_scissor_rect: bool,
-    pub rounded_rect_fast_path: bool,
+    pub needs_scissor_rect: bool,
 }
