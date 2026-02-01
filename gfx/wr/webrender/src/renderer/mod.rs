@@ -4833,6 +4833,9 @@ pub struct RenderResults {
     
     
     pub picture_cache_debug: PictureCacheDebugInfo,
+
+    
+    pub did_rasterize_any_tile: bool,
 }
 
 #[cfg(any(feature = "capture", feature = "replay"))]

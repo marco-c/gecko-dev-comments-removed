@@ -681,6 +681,8 @@ pub struct CompositeState {
     low_quality_pinch_zoom: bool,
     
     pub clips: FrameVec<CompositorClip>,
+    
+    pub did_rasterize_any_tile: bool,
 }
 
 impl CompositeState {
@@ -713,6 +715,7 @@ impl CompositeState {
             transforms: memory.new_vec(),
             low_quality_pinch_zoom,
             clips,
+            did_rasterize_any_tile: false,
         }
     }
 

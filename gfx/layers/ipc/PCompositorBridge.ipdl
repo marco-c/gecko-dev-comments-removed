@@ -189,6 +189,10 @@ parent:
   sync SyncWithCompositor();
 
   
+  
+  sync CheckAndClearWRDidRasterize(LayersId id) returns (bool didRasterize);
+
+  
   async PWebRenderBridge(PipelineId pipelineId, LayoutDeviceIntSize aSize, WindowKind aKind);
 
   sync CheckContentOnlyTDR(uint32_t sequenceNum)

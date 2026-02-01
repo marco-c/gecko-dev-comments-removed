@@ -171,6 +171,13 @@ class RendererOGL {
   std::unordered_map<uint64_t, wr::Epoch> mContentPipelineEpochs;
 
   RefPtr<WebRenderPipelineInfo> mLastPipelineInfo;
+
+  
+  
+  bool mLastFrameDidRasterize = false;
+
+ public:
+  bool CheckAndClearDidRasterize();
 };
 
 }  

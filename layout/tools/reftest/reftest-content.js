@@ -413,6 +413,18 @@ function shouldNotFlush(contentRootElement) {
   );
 }
 
+function shouldCheckNoWRRaster(contentRootElement) {
+  
+  return (
+    contentRootElement &&
+    contentRootElement.hasAttribute("class") &&
+    contentRootElement
+      .getAttribute("class")
+      .split(/\s+/)
+      .includes("reftest-no-wr-raster")
+  );
+}
+
 function getNoPaintElements(contentRootElement) {
   return contentRootElement.getElementsByClassName("reftest-no-paint");
 }
@@ -822,6 +834,10 @@ function WaitForTestEnd(
           for (let i = 0; i < elements.length; ++i) {
             windowUtils().checkAndClearDisplayListState(elements[i]);
           }
+          
+          if (shouldCheckNoWRRaster(contentRootElement)) {
+            windowUtils().checkAndClearWRDidRasterize();
+          }
           var notification = content.document.createEvent("Events");
           notification.initEvent("MozReftestInvalidate", true, false);
           contentRootElement.dispatchEvent(notification);
@@ -966,6 +982,12 @@ function WaitForTestEnd(
               if (!windowUtils().checkAndClearDisplayListState(elements[i])) {
                 SendFailedDisplayList();
               }
+            }
+          }
+          
+          if (shouldCheckNoWRRaster(contentRootElement)) {
+            if (windowUtils().checkAndClearWRDidRasterize()) {
+              SendFailedNoWRRaster();
             }
           }
         }
@@ -1474,6 +1496,10 @@ function SendFailedNoDisplayList() {
 
 function SendFailedDisplayList() {
   sendAsyncMessage("reftest:FailedDisplayList");
+}
+
+function SendFailedNoWRRaster() {
+  sendAsyncMessage("reftest:FailedNoWRRaster");
 }
 
 function SendFailedOpaqueLayer(why) {

@@ -1744,6 +1744,9 @@ fn prepare_tiled_picture_surface(
                 }
             } else {
                 
+                frame_state.composite_state.did_rasterize_any_tile = true;
+
+                
                 
                 
                 tile_cache.dirty_region.add_dirty_region(
