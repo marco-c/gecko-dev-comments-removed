@@ -112,6 +112,10 @@ enum class StreamCaptureBehavior : uint8_t {
 
 
 
+enum class AudioOutputConfig : bool { NotNeeded = false, Needed = true };
+
+
+
 
 enum MediaPreloadAttrValue : uint8_t {
   PRELOAD_ATTR_NONE,      
@@ -1041,9 +1045,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
+
+
+
   already_AddRefed<DOMMediaStream> CaptureStreamInternal(
       StreamCaptureBehavior aFinishBehavior,
-      StreamCaptureType aStreamCaptureType, MediaTrackGraph* aGraph);
+      StreamCaptureType aStreamCaptureType,
+      AudioOutputConfig aAudioOutputConfig, MediaTrackGraph* aGraph);
 
   
 
@@ -1973,6 +1981,16 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 #endif
 
   Maybe<DelayedScheduler<AwakeTimeStamp>> mAudioWakelockReleaseScheduler;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  AudioOutputConfig mAudioOutputConfig = AudioOutputConfig::Needed;
 };
 
 
