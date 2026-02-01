@@ -5,6 +5,7 @@ pub trait RegExp: Sized {
 
   
   
+  #[allow(clippy::result_unit_err)]
   fn parse(pattern: &str, flags: &str, force_eval: bool) -> Result<Self, ()>;
 
   
@@ -15,6 +16,8 @@ pub trait RegExp: Sized {
   
   
   fn matches<'a>(&self, text: &'a str) -> Option<Vec<Option<&'a str>>>;
+
+  fn pattern_string(&self) -> String;
 }
 
 impl RegExp for regex::Regex {
@@ -36,5 +39,9 @@ impl RegExp for regex::Regex {
       .collect();
 
     Some(captures)
+  }
+
+  fn pattern_string(&self) -> String {
+    self.as_str().to_string()
   }
 }
