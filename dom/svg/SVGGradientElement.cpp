@@ -67,10 +67,8 @@ SVGGradientElement::GradientUnits() {
 
 already_AddRefed<DOMSVGAnimatedTransformList>
 SVGGradientElement::GradientTransform() {
-  
-  
   return DOMSVGAnimatedTransformList::GetDOMWrapper(
-      GetAnimatedTransformList(DO_ALLOCATE), this);
+      GetOrCreateAnimatedTransformList(), this);
 }
 
 already_AddRefed<DOMSVGAnimatedEnumeration> SVGGradientElement::SpreadMethod() {
@@ -135,10 +133,10 @@ already_AddRefed<DOMSVGAnimatedLength> SVGLinearGradientElement::Y2() {
 
 
 
-SVGAnimatedTransformList* SVGGradientElement::GetAnimatedTransformList(
-    uint32_t aFlags) {
-  if (!mGradientTransform && (aFlags & DO_ALLOCATE)) {
-    mGradientTransform = MakeUnique<SVGAnimatedTransformList>();
+SVGAnimatedTransformList*
+SVGGradientElement::GetOrCreateAnimatedTransformList() {
+  if (!mGradientTransform) {
+    mGradientTransform = std::make_unique<SVGAnimatedTransformList>();
   }
   return mGradientTransform.get();
 }

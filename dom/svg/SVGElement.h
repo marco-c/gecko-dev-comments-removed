@@ -269,16 +269,6 @@ class SVGElement : public SVGElementBase
                         info.mInfos[aAttrEnum].mName);
   }
 
-  enum {
-    
-
-
-
-
-
-    DO_ALLOCATE = 0x1
-  };
-
   SVGAnimatedLength* GetAnimatedLength(uint8_t aAttrEnum);
   SVGAnimatedLength* GetAnimatedLength(const nsAtom* aAttrName);
   void GetAnimatedLengthValues(float* aFirst, ...);
@@ -302,14 +292,10 @@ class SVGElement : public SVGElementBase
 
 
 
-
-
-
-
-
-
-  virtual SVGAnimatedTransformList* GetAnimatedTransformList(
-      uint32_t aFlags = 0) {
+  virtual SVGAnimatedTransformList* GetExistingAnimatedTransformList() const {
+    return nullptr;
+  }
+  virtual SVGAnimatedTransformList* GetOrCreateAnimatedTransformList() {
     return nullptr;
   }
 

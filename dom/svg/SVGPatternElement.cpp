@@ -88,10 +88,8 @@ SVGPatternElement::PatternContentUnits() {
 
 already_AddRefed<DOMSVGAnimatedTransformList>
 SVGPatternElement::PatternTransform() {
-  
-  
   return DOMSVGAnimatedTransformList::GetDOMWrapper(
-      GetAnimatedTransformList(DO_ALLOCATE), this);
+      GetOrCreateAnimatedTransformList(), this);
 }
 
 already_AddRefed<DOMSVGAnimatedLength> SVGPatternElement::X() {
@@ -120,10 +118,10 @@ already_AddRefed<DOMSVGAnimatedString> SVGPatternElement::Href() {
 
 
 
-SVGAnimatedTransformList* SVGPatternElement::GetAnimatedTransformList(
-    uint32_t aFlags) {
-  if (!mPatternTransform && (aFlags & DO_ALLOCATE)) {
-    mPatternTransform = MakeUnique<SVGAnimatedTransformList>();
+SVGAnimatedTransformList*
+SVGPatternElement::GetOrCreateAnimatedTransformList() {
+  if (!mPatternTransform) {
+    mPatternTransform = std::make_unique<SVGAnimatedTransformList>();
   }
   return mPatternTransform.get();
 }
