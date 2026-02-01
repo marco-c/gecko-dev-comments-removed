@@ -5,17 +5,22 @@
 
 
 
+#ifndef mozilla_net_NeckoParent_h
+#define mozilla_net_NeckoParent_h
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "mozilla/net/NeckoCommon.h"
+#include "mozilla/MozPromise.h"
 #include "nsIAuthPrompt2.h"
 #include "nsNetUtil.h"
 
-#ifndef mozilla_net_NeckoParent_h
-#  define mozilla_net_NeckoParent_h
-
 namespace mozilla {
 namespace net {
+
+class RemoteStreamInfo;
+using RemoteStreamPromise =
+    mozilla::MozPromise<RemoteStreamInfo, nsresult, false>;
 
 
 enum PBOverrideStatus {
@@ -54,6 +59,14 @@ class NeckoParent : public PNeckoParent {
       PCookieServiceParent* aActor) override {
     return PNeckoParent::RecvPCookieServiceConstructor(aActor);
   }
+
+  
+
+
+
+  static RefPtr<RemoteStreamPromise> CreateRemoteStreamForResolvedURI(
+      nsIURI* aChildURI, const nsACString& aResolvedSpec,
+      const nsACString& aDefaultMimeType);
 
  protected:
   virtual ~NeckoParent() = default;
@@ -145,7 +158,7 @@ class NeckoParent : public PNeckoParent {
 
   mozilla::ipc::IPCResult RecvConnectBaseChannel(const uint32_t& channelId);
 
-#  ifdef MOZ_WIDGET_GTK
+#ifdef MOZ_WIDGET_GTK
   PGIOChannelParent* AllocPGIOChannelParent(
       PBrowserParent* aBrowser, const SerializedLoadContext& aSerialized,
       const GIOChannelCreationArgs& aOpenArgs);
@@ -155,8 +168,8 @@ class NeckoParent : public PNeckoParent {
       PGIOChannelParent* aActor, PBrowserParent* aBrowser,
       const SerializedLoadContext& aSerialized,
       const GIOChannelCreationArgs& aOpenArgs) override;
-#  endif
-#  ifdef MOZ_WIDGET_ANDROID
+#endif
+#ifdef MOZ_WIDGET_ANDROID
   already_AddRefed<PGeckoViewContentChannelParent>
   AllocPGeckoViewContentChannelParent(
       PBrowserParent* aBrowser, const SerializedLoadContext& aSerialized,
@@ -166,7 +179,7 @@ class NeckoParent : public PNeckoParent {
       PGeckoViewContentChannelParent* aActor, PBrowserParent* aBrowser,
       const SerializedLoadContext& aSerialized,
       const GeckoViewContentChannelArgs& args) override;
-#  endif
+#endif
 
   mozilla::ipc::IPCResult RecvNotifyFileChannelOpened(
       const FileChannelInfo& aInfo);
@@ -195,6 +208,11 @@ class NeckoParent : public PNeckoParent {
   mozilla::ipc::IPCResult RecvGetPageIconStream(
       nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
       GetPageIconStreamResolver&& aResolve);
+
+  
+  mozilla::ipc::IPCResult RecvGetMozNewTabWallpaperStream(
+      nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
+      GetMozNewTabWallpaperStreamResolver&& aResolve);
 
   mozilla::ipc::IPCResult RecvInitSocketProcessBridge(
       InitSocketProcessBridgeResolver&& aResolver);

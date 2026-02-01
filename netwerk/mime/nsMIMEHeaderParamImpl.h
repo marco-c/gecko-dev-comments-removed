@@ -3,10 +3,9 @@
 
 
 
-#include "nsIMIMEHeaderParam.h"
-
 #ifndef __nsmimeheaderparamimpl_h___
-#  define __nsmimeheaderparamimpl_h___
+#define __nsmimeheaderparamimpl_h___
+#include "nsIMIMEHeaderParam.h"
 class nsMIMEHeaderParamImpl : public nsIMIMEHeaderParam {
  public:
   NS_DECL_ISUPPORTS
@@ -41,4 +40,4 @@ class nsMIMEHeaderParamImpl : public nsIMIMEHeaderParam {
   static bool ContainsTrailingCharPastNull(const nsACString& aVal);
 };
 
-#endif
+#endif  

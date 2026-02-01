@@ -4,6 +4,9 @@
 
 
 
+#ifndef NETWERK_BASE_HTTP_SFV_SFVSERVICE_H_
+#define NETWERK_BASE_HTTP_SFV_SFVSERVICE_H_
+
 #include "nsIStructuredFieldValues.h"
 namespace mozilla {
 namespace net {
@@ -12,3 +15,5 @@ already_AddRefed<nsISFVService> GetSFVService();
 
 }  
 }  
+
+#endif  
