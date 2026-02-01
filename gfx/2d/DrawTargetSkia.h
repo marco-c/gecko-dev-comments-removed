@@ -150,7 +150,9 @@ class DrawTargetSkia : public DrawTarget {
   bool Init(RefPtr<DataSourceSurface>&& aSurface);
 
   
-  static size_t GetMaxSurfaceSize() { return 32767; }
+  static size_t GetMaxSurfaceSize() { return 65535; }
+  
+  static size_t GetMaxSurfaceArea() { return 0x7FFFFFFF; }
 
   operator std::string() const {
     std::stringstream stream;

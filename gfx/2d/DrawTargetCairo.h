@@ -185,6 +185,8 @@ class DrawTargetCairo final : public DrawTarget {
 
   
   static size_t GetMaxSurfaceSize() { return 32766; }
+  
+  static size_t GetMaxSurfaceArea() { return 0x7FFFFFFF; }
 
  private:  
   
