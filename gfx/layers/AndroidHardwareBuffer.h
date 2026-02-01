@@ -61,11 +61,7 @@ class AndroidHardwareBuffer
 
  protected:
   AndroidHardwareBuffer(AHardwareBuffer* aNativeBuffer, gfx::IntSize aSize,
-                        uint32_t aStride, gfx::SurfaceFormat aFormat,
-                        uint64_t aId);
-
-  void SetReleaseFence(UniqueFileHandle&& aFenceFd,
-                       const MonitorAutoLock& aAutoLock);
+                        uint32_t aStride, gfx::SurfaceFormat aFormat);
 
   AHardwareBuffer* mNativeBuffer;
 
@@ -73,17 +69,17 @@ class AndroidHardwareBuffer
   
   bool mIsRegistered;
 
-  
+  mutable Monitor mMonitor{"AndroidHardwareBuffer::mMonitor"};
 
   
   
   
-  UniqueFileHandle mReleaseFenceFd;
+  UniqueFileHandle mReleaseFenceFd MOZ_GUARDED_BY(mMonitor);
 
   
   
   
-  UniqueFileHandle mAcquireFenceFd;
+  UniqueFileHandle mAcquireFenceFd MOZ_GUARDED_BY(mMonitor);
 
   static uint64_t GetNextId();
 
@@ -100,22 +96,20 @@ class AndroidHardwareBufferManager {
   static void Init();
   static void Shutdown();
 
-  AndroidHardwareBufferManager();
-
   static AndroidHardwareBufferManager* Get() { return sInstance; }
 
   void Register(RefPtr<AndroidHardwareBuffer> aBuffer);
 
   void Unregister(AndroidHardwareBuffer* aBuffer);
 
-  already_AddRefed<AndroidHardwareBuffer> GetBuffer(uint64_t aBufferId);
-
-  Monitor& GetMonitor() { return mMonitor; }
+  already_AddRefed<AndroidHardwareBuffer> GetBuffer(uint64_t aBufferId) const;
 
  private:
-  Monitor mMonitor MOZ_UNANNOTATED;
+  AndroidHardwareBufferManager() = default;
+
+  mutable Monitor mMonitor{"AndroidHardwareBufferManager::mMonitor"};
   std::unordered_map<uint64_t, ThreadSafeWeakPtr<AndroidHardwareBuffer>>
-      mBuffers;
+      mBuffers MOZ_GUARDED_BY(mMonitor);
 
   static StaticAutoPtr<AndroidHardwareBufferManager> sInstance;
 };
