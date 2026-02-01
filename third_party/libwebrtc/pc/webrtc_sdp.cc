@@ -934,80 +934,15 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
                     bool include_ufrag,
                     std::string* message) {
   StringBuilder os;
-
   for (const Candidate& candidate : candidates) {
     
     
     
     
     
-    std::string type;
-    
-    if (candidate.is_local()) {
-      type = kCandidateHost;
-    } else if (candidate.is_stun()) {
-      type = kCandidateSrflx;
-    } else if (candidate.is_relay()) {
-      type = kCandidateRelay;
-    } else if (candidate.is_prflx()) {
-      type = kCandidatePrflx;
-      
-    } else {
-      RTC_DCHECK_NOTREACHED();
-      
-      continue;
-    }
-
-    InitAttrLine(kAttributeCandidate, &os);
-    os << kSdpDelimiterColon << candidate.foundation() << " "
-       << candidate.component() << " " << candidate.protocol() << " "
-       << candidate.priority() << " "
-       << (candidate.address().ipaddr().IsNil()
-               ? candidate.address().hostname()
-               : candidate.address().ipaddr().ToString())
-       << " " << candidate.address().PortAsString() << " "
-       << kAttributeCandidateTyp << " " << type << " ";
-
-    
-    if (!candidate.related_address().IsNil()) {
-      os << kAttributeCandidateRaddr << " "
-         << candidate.related_address().ipaddr().ToString() << " "
-         << kAttributeCandidateRport << " "
-         << candidate.related_address().PortAsString() << " ";
-    }
-
-    
-    
-    
-    if (candidate.protocol() == TCP_PROTOCOL_NAME &&
-        !candidate.tcptype().empty()) {
-      os << kTcpCandidateType << " " << candidate.tcptype() << " ";
-    }
-
-    
-    os << kAttributeCandidateGeneration << " " << candidate.generation();
-    if (include_ufrag && !candidate.username().empty()) {
-      os << " " << kAttributeCandidateUfrag << " " << candidate.username();
-    }
-    if (candidate.network_id() > 0) {
-      os << " " << kAttributeCandidateNetworkId << " "
-         << candidate.network_id();
-    }
-    if (candidate.network_cost() > 0) {
-      os << " " << kAttributeCandidateNetworkCost << " "
-         << candidate.network_cost();
-    }
-
-    const std::string& line = os.str();
-#if RTC_DCHECK_IS_ON
-    
-    
-    
-    std::string compare = candidate.ToCandidateAttribute(include_ufrag);
-    
-    RTC_DCHECK_EQ(line.substr(2), compare);
-#endif
-    AddLine(line, message);
+    InitLine(kLineTypeAttributes, candidate.ToCandidateAttribute(include_ufrag),
+             &os);
+    AddLine(os.str(), message);
   }
 }
 
@@ -3340,17 +3275,7 @@ std::string SdpSerializeCandidate(const IceCandidate& candidate) {
 
 
 std::string SdpSerializeCandidate(const Candidate& candidate) {
-  std::string message;
-  std::vector<Candidate> candidates(1, candidate);
-  BuildCandidate(candidates, true, &message);
-  
-  
-  RTC_DCHECK(message.find("a=") == 0);
-  message.erase(0, 2);
-  RTC_DCHECK(message.find(kLineBreak) == message.size() - 2);
-  message.resize(message.size() - 2);
-  RTC_DCHECK_EQ(candidate.ToCandidateAttribute(true), message);
-  return message;
+  return candidate.ToCandidateAttribute(true);
 }
 
 std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
