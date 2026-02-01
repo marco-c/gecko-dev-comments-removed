@@ -36,8 +36,14 @@
 #include "pc/test/fake_audio_capture_module.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fake_network.h"
+#include "rtc_base/firewall_socket_server.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/socket_server.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/virtual_socket_server.h"
+#include "system_wrappers/include/metrics.h"
+#include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -297,6 +303,68 @@ bool PeerConnectionIntegrationWrapper::Init(
 
   peer_connection_ = CreatePeerConnection(config, std::move(dependencies));
   return peer_connection_.get() != nullptr;
+}
+
+
+
+
+
+class PeerConnectionIntegrationBaseTest::ScopedSetLoggingLevel {
+ public:
+  explicit ScopedSetLoggingLevel(LoggingSeverity new_severity) {
+    LogMessage::LogToDebug(new_severity);
+  }
+  ~ScopedSetLoggingLevel() { LogMessage::LogToDebug(previous_severity_); }
+
+ private:
+  const LoggingSeverity previous_severity_ = LogMessage::GetLogToDebug();
+};
+
+PeerConnectionIntegrationBaseTest::PeerConnectionIntegrationBaseTest(
+    SdpSemantics sdp_semantics)
+    : sdp_semantics_(sdp_semantics),
+      env_(CreateTestEnvironment()),
+      ss_(new VirtualSocketServer()),
+      fss_(new FirewallSocketServer(ss_.get())),
+      network_thread_(new Thread(fss_.get())),
+      worker_thread_(Thread::Create()) {
+  network_thread_->SetName("PCNetworkThread", this);
+  worker_thread_->SetName("PCWorkerThread", this);
+  RTC_CHECK(network_thread_->Start());
+  RTC_CHECK(worker_thread_->Start());
+  metrics::Reset();
+}
+
+PeerConnectionIntegrationBaseTest::~PeerConnectionIntegrationBaseTest() {
+  
+  
+  
+  
+  
+  if (caller_) {
+    caller_->set_signaling_message_receiver(nullptr);
+    caller_->pc()->Close();
+    caller_.reset();
+  }
+  if (callee_) {
+    callee_->set_signaling_message_receiver(nullptr);
+    callee_->pc()->Close();
+    callee_.reset();
+  }
+
+  
+  
+  SendTask(network_thread(), [this] {
+    turn_servers_.clear();
+    turn_customizers_.clear();
+  });
+}
+
+void PeerConnectionIntegrationBaseTest::OverrideLoggingLevelForTest(
+    LoggingSeverity new_severity) {
+  RTC_DCHECK(!overridden_logging_level_);
+  overridden_logging_level_ =
+      std::make_unique<ScopedSetLoggingLevel>(new_severity);
 }
 
 }  
