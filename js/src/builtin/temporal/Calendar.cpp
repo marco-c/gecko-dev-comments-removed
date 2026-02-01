@@ -1842,32 +1842,8 @@ struct Month {
 static bool CalendarFieldMonth(JSContext* cx, CalendarId calendar,
                                Handle<CalendarFields> fields,
                                TemporalOverflow overflow, Month* result) {
-  MOZ_ASSERT(fields.has(CalendarField::Month) ||
-             fields.has(CalendarField::MonthCode));
-
-  
-  int32_t intMonth = 0;
-  if (fields.has(CalendarField::Month)) {
-    double month = fields.month();
-    MOZ_ASSERT(IsInteger(month) && month > 0);
-
-    if (!mozilla::NumberEqualsInt32(month, &intMonth)) {
-      intMonth = 0;
-    }
-
-    const int32_t monthsPerYear = CalendarMonthsPerYear(calendar);
-    if (intMonth < 1 || intMonth > monthsPerYear) {
-      if (overflow == TemporalOverflow::Reject) {
-        ReportCalendarFieldOverflow(cx, "month", month);
-        return false;
-      }
-      MOZ_ASSERT(overflow == TemporalOverflow::Constrain);
-
-      intMonth = monthsPerYear;
-    }
-
-    MOZ_ASSERT(intMonth > 0);
-  }
+  MOZ_ASSERT(fields.has(CalendarField::MonthCode) ||
+             fields.has(CalendarField::Month));
 
   
   MonthCode fromMonthCode;
@@ -1894,6 +1870,30 @@ static bool CalendarFieldMonth(JSContext* cx, CalendarId calendar,
                                MonthCodeString{monthCode}.toCString());
       return false;
     }
+  }
+
+  
+  int32_t intMonth = 0;
+  if (fields.has(CalendarField::Month)) {
+    double month = fields.month();
+    MOZ_ASSERT(IsInteger(month) && month > 0);
+
+    if (!mozilla::NumberEqualsInt32(month, &intMonth)) {
+      intMonth = 0;
+    }
+
+    const int32_t monthsPerYear = CalendarMonthsPerYear(calendar);
+    if (intMonth < 1 || intMonth > monthsPerYear) {
+      if (overflow == TemporalOverflow::Reject) {
+        ReportCalendarFieldOverflow(cx, "month", month);
+        return false;
+      }
+      MOZ_ASSERT(overflow == TemporalOverflow::Constrain);
+
+      intMonth = monthsPerYear;
+    }
+
+    MOZ_ASSERT(intMonth > 0);
   }
 
   *result = {fromMonthCode, intMonth};
