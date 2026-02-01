@@ -15,7 +15,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/TaskDispatcher.h"
-#include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsITargetShutdownTask.h"
 #include "nsThreadUtils.h"
@@ -27,7 +26,15 @@ namespace mozilla {
 
 typedef MozPromise<bool, bool, false> ShutdownPromise;
 
-class TaskQueueTrackerEntry;
+class TaskQueueTargetShutdownTask;
+
+
+
+
+
+
+
+
 
 
 
@@ -56,14 +63,16 @@ class TaskQueueTrackerEntry;
 
 class TaskQueue final : public AbstractThread,
                         public nsIDirectTaskDispatcher,
-                        public SupportsThreadSafeWeakPtr<TaskQueue> {
+                        public nsITargetShutdownTask {
   class EventTargetWrapper;
 
  public:
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIDIRECTTASKDISPATCHER
   MOZ_DECLARE_REFCOUNTED_TYPENAME(TaskQueue)
   NS_INLINE_DECL_STATIC_IID(MOZILLA_TASKQUEUE_IID)
+
+  void TargetShutdown() override;
 
   static RefPtr<TaskQueue> Create(already_AddRefed<nsIEventTarget> aTarget,
                                   StaticString aName,
@@ -157,12 +166,10 @@ class TaskQueue final : public AbstractThread,
   void SetObserver(Observer* aObserver);
 
  private:
-  friend class SupportsThreadSafeWeakPtr<TaskQueue>;
-
   TaskQueue(already_AddRefed<nsIEventTarget> aTarget, const char* aName,
             bool aSupportsTailDispatch);
 
-  virtual ~TaskQueue() = default;
+  virtual ~TaskQueue();
 
   
   
@@ -175,11 +182,9 @@ class TaskQueue final : public AbstractThread,
 
   void MaybeResolveShutdown();
 
-  nsCOMPtr<nsIEventTarget> mTarget MOZ_GUARDED_BY(mQueueMonitor);
+  void MaybeUnregisterTargetShutdownTask() MOZ_REQUIRES(mQueueMonitor);
 
-  
-  
-  UniquePtr<TaskQueueTrackerEntry> mTrackerEntry MOZ_GUARDED_BY(mQueueMonitor);
+  nsCOMPtr<nsIEventTarget> mTarget MOZ_GUARDED_BY(mQueueMonitor);
 
   
   
@@ -263,6 +268,9 @@ class TaskQueue final : public AbstractThread,
   TaskDispatcher* mTailDispatcher;
 
   
+  bool mIsTargetShutdownTaskRegistered MOZ_GUARDED_BY(mQueueMonitor);
+
+  
   
   bool mIsRunning MOZ_GUARDED_BY(mQueueMonitor);
 
@@ -287,35 +295,6 @@ class TaskQueue final : public AbstractThread,
    private:
     RefPtr<TaskQueue> mQueue;
   };
-};
-
-#define MOZILLA_TASKQUEUETRACKER_IID \
-  {0x765c4b56, 0xd5f6, 0x4a9f, {0x91, 0xcf, 0x51, 0x47, 0xb3, 0xc1, 0x7e, 0xa6}}
-
-
-
-
-
-
-
-
-
-class TaskQueueTracker : public nsISupports {
- public:
-  NS_INLINE_DECL_STATIC_IID(MOZILLA_TASKQUEUETRACKER_IID)
-
-  
-  
-  nsTArray<RefPtr<TaskQueue>> GetAllTrackedTaskQueues();
-
- protected:
-  virtual ~TaskQueueTracker();
-
- private:
-  friend class TaskQueueTrackerEntry;
-
-  Mutex mMutex{"TaskQueueTracker"};
-  LinkedList<TaskQueueTrackerEntry> mEntries MOZ_GUARDED_BY(mMutex);
 };
 
 }  

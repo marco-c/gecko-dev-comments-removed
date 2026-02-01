@@ -45,8 +45,7 @@ static MOZ_THREAD_LOCAL(bool) sTLSIsMainThread;
 
 bool NS_IsMainThreadTLSInitialized() { return sTLSIsMainThread.initialized(); }
 
-class BackgroundEventTarget final : public nsIEventTarget,
-                                    public TaskQueueTracker {
+class BackgroundEventTarget final : public nsIEventTarget {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
@@ -57,8 +56,7 @@ class BackgroundEventTarget final : public nsIEventTarget,
 
   already_AddRefed<TaskQueue> CreateBackgroundTaskQueue(StaticString aName);
 
-  void BeginShutdown(nsTArray<RefPtr<ShutdownPromise>>&);
-  void FinishShutdown();
+  void Shutdown();
 
  private:
   ~BackgroundEventTarget() = default;
@@ -67,7 +65,7 @@ class BackgroundEventTarget final : public nsIEventTarget,
   nsCOMPtr<nsIThreadPool> mIOPool;
 };
 
-NS_IMPL_ISUPPORTS(BackgroundEventTarget, nsIEventTarget, TaskQueueTracker)
+NS_IMPL_ISUPPORTS(BackgroundEventTarget, nsIEventTarget)
 
 nsresult BackgroundEventTarget::Init() {
   nsCOMPtr<nsIThreadPool> pool(new nsThreadPool());
@@ -155,21 +153,34 @@ BackgroundEventTarget::IsOnCurrentThread(bool* aValue) {
 NS_IMETHODIMP
 BackgroundEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                                 DispatchFlags aFlags) {
-  
-  bool mayBlock = bool(aFlags & NS_DISPATCH_EVENT_MAY_BLOCK);
-  nsCOMPtr<nsIThreadPool>& pool = mayBlock ? mIOPool : mPool;
-  DispatchFlags flags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
+  nsCOMPtr<nsIRunnable> runnable(std::move(aRunnable));
 
   
-  
-  
-  
-  
-  if (flags & NS_DISPATCH_AT_END && !pool->IsOnCurrentThread()) {
-    flags &= ~NS_DISPATCH_AT_END;
+  if (aFlags & NS_DISPATCH_EVENT_MAY_BLOCK) {
+    DispatchFlags ioPoolFlags = aFlags | ~NS_DISPATCH_EVENT_MAY_BLOCK;
+    if (ioPoolFlags & NS_DISPATCH_AT_END && !mIOPool->IsOnCurrentThread()) {
+      ioPoolFlags &= ~NS_DISPATCH_AT_END;
+    }
+
+    
+    
+    
+    
+    nsresult rv = mIOPool->Dispatch(do_AddRef(runnable),
+                                    ioPoolFlags | NS_DISPATCH_FALLIBLE);
+    if (NS_SUCCEEDED(rv)) {
+      return rv;
+    }
   }
 
-  return pool->Dispatch(std::move(aRunnable), flags);
+  DispatchFlags poolFlags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
+  if (poolFlags & NS_DISPATCH_AT_END && !mPool->IsOnCurrentThread()) {
+    poolFlags &= ~NS_DISPATCH_AT_END;
+  }
+
+  
+  
+  return mPool->Dispatch(runnable.forget(), poolFlags);
 }
 
 NS_IMETHODIMP
@@ -188,33 +199,24 @@ BackgroundEventTarget::DelayedDispatch(already_AddRefed<nsIRunnable> aRunnable,
 
 NS_IMETHODIMP
 BackgroundEventTarget::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
-  MOZ_ASSERT_UNREACHABLE(
-      "If we start to hand out direct access to"
-      "BackgroundEventTarget, we probably want to implement this.");
-  return NS_ERROR_NOT_IMPLEMENTED;
+  return mPool->RegisterShutdownTask(aTask);
 }
 
 NS_IMETHODIMP
 BackgroundEventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  return mPool->UnregisterShutdownTask(aTask);
 }
 
 nsIEventTarget::FeatureFlags BackgroundEventTarget::GetFeatures() {
+  return SUPPORTS_SHUTDOWN_TASKS | SUPPORTS_SHUTDOWN_TASK_DISPATCH;
+}
+
+void BackgroundEventTarget::Shutdown() {
   
-  return SUPPORTS_BASE;
-}
-
-void BackgroundEventTarget::BeginShutdown(
-    nsTArray<RefPtr<ShutdownPromise>>& promises) {
-  auto queues = GetAllTrackedTaskQueues();
-  for (auto& queue : queues) {
-    promises.AppendElement(queue->BeginShutdown());
-  }
-}
-
-void BackgroundEventTarget::FinishShutdown() {
-  mPool->Shutdown();
+  
+  
   mIOPool->Shutdown();
+  mPool->Shutdown();
 }
 
 already_AddRefed<TaskQueue> BackgroundEventTarget::CreateBackgroundTaskQueue(
@@ -386,26 +388,9 @@ void nsThreadManager::ShutdownNonMainThreads() {
     backgroundEventTarget = mBackgroundEventTarget;
   }
 
-  nsTArray<RefPtr<ShutdownPromise>> promises;
-  backgroundEventTarget->BeginShutdown(promises);
-
-  bool taskQueuesShutdown = false;
   
   
-  
-  ShutdownPromise::All(mMainThread, promises)->Then(mMainThread, __func__, [&] {
-    backgroundEventTarget->FinishShutdown();
-    taskQueuesShutdown = true;
-  });
-
-  
-  
-  
-  
-  
-  mozilla::SpinEventLoopUntil(
-      "nsThreadManager::Shutdown"_ns, [&]() { return taskQueuesShutdown; },
-      mMainThread);
+  backgroundEventTarget->Shutdown();
 
   {
     

@@ -15,51 +15,21 @@
 
 namespace mozilla {
 
+static LazyLogModule sTaskQueueLog("TaskQueue");
 
-
-
-class TaskQueueTrackerEntry final
-    : private LinkedListElement<TaskQueueTrackerEntry> {
- public:
-  TaskQueueTrackerEntry(TaskQueueTracker* aTracker,
-                        const RefPtr<TaskQueue>& aQueue)
-      : mTracker(aTracker), mQueue(aQueue) {
-    MutexAutoLock lock(mTracker->mMutex);
-    mTracker->mEntries.insertFront(this);
-  }
-  ~TaskQueueTrackerEntry() {
-    MutexAutoLock lock(mTracker->mMutex);
-    removeFrom(mTracker->mEntries);
-  }
-
-  TaskQueueTrackerEntry(const TaskQueueTrackerEntry&) = delete;
-  TaskQueueTrackerEntry(TaskQueueTrackerEntry&&) = delete;
-  TaskQueueTrackerEntry& operator=(const TaskQueueTrackerEntry&) = delete;
-  TaskQueueTrackerEntry& operator=(TaskQueueTrackerEntry&&) = delete;
-
-  RefPtr<TaskQueue> GetQueue() const { return RefPtr<TaskQueue>(mQueue); }
-
- private:
-  friend class LinkedList<TaskQueueTrackerEntry>;
-  friend class LinkedListElement<TaskQueueTrackerEntry>;
-
-  const RefPtr<TaskQueueTracker> mTracker;
-  const ThreadSafeWeakPtr<TaskQueue> mQueue;
-};
+#define LOG_TQ(level, msg, ...) \
+  MOZ_LOG(sTaskQueueLog, level, (msg, ##__VA_ARGS__))
 
 RefPtr<TaskQueue> TaskQueue::Create(already_AddRefed<nsIEventTarget> aTarget,
                                     StaticString aName,
                                     bool aSupportsTailDispatch) {
   nsCOMPtr<nsIEventTarget> target(std::move(aTarget));
+  LOG_TQ(LogLevel::Debug,
+         "Creating TaskQueue '%s' on target %p (supportsTailDispatch=%d)",
+         aName.get(), target.get(), aSupportsTailDispatch);
+
   RefPtr<TaskQueue> queue =
       new TaskQueue(do_AddRef(target), aName, aSupportsTailDispatch);
-
-  
-  
-  if (RefPtr<TaskQueueTracker> tracker = do_QueryObject(target)) {
-    MonitorAutoLock lock(queue->mQueueMonitor);
-    queue->mTrackerEntry = MakeUnique<TaskQueueTrackerEntry>(tracker, queue);
-  }
 
   return queue;
 }
@@ -70,17 +40,27 @@ TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
       mTarget(aTarget),
       mQueueMonitor("TaskQueue::Queue"),
       mTailDispatcher(nullptr),
+      mIsTargetShutdownTaskRegistered(false),
       mIsRunning(false),
       mIsShutdown(false),
       mName(aName) {}
 
-NS_IMPL_ADDREF_INHERITED(TaskQueue, SupportsThreadSafeWeakPtr<TaskQueue>)
-NS_IMPL_RELEASE_INHERITED(TaskQueue, SupportsThreadSafeWeakPtr<TaskQueue>)
+TaskQueue::~TaskQueue() {
+  LOG_TQ(LogLevel::Debug, "Destroying TaskQueue '%s'", mName);
+  
+  
+  
+  MOZ_ASSERT(mIsShutdown || mShutdownTasks.IsEmpty());
+}
+
+NS_IMPL_ADDREF(TaskQueue)
+NS_IMPL_RELEASE(TaskQueue)
 
 NS_INTERFACE_MAP_BEGIN(TaskQueue)
   NS_INTERFACE_MAP_ENTRY(nsIDirectTaskDispatcher)
   NS_INTERFACE_MAP_ENTRY(nsISerialEventTarget)
   NS_INTERFACE_MAP_ENTRY(nsIEventTarget)
+  NS_INTERFACE_MAP_ENTRY(nsITargetShutdownTask)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(TaskQueue)
 NS_INTERFACE_MAP_END
 
@@ -88,6 +68,24 @@ TaskDispatcher& TaskQueue::TailDispatcher() {
   MOZ_ASSERT(IsCurrentThreadIn());
   MOZ_ASSERT(mTailDispatcher);
   return *mTailDispatcher;
+}
+
+void TaskQueue::TargetShutdown() {
+  
+  
+  
+  LOG_TQ(LogLevel::Debug, "TaskQueue::TargetShutdown '%s'", mName);
+  BeginShutdown();
+}
+
+void TaskQueue::MaybeUnregisterTargetShutdownTask() {
+  if (mIsTargetShutdownTaskRegistered) {
+    mTarget->UnregisterShutdownTask(this);
+    
+    
+    
+    mIsTargetShutdownTaskRegistered = false;
+  }
 }
 
 
@@ -99,8 +97,13 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
 
   
   
-  if (mIsShutdown && !mIsRunning) {
-    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  if (mIsShutdown) {
+    LOG_TQ(LogLevel::Debug,
+           "TaskQueue::DispatchLocked '%s' %s dispatch during shutdown", mName,
+           mIsRunning ? "accepting" : "rejecting");
+    if (!mIsRunning) {
+      return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+    }
   }
 
   AbstractThread* currentThread;
@@ -135,9 +138,20 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
 nsresult TaskQueue::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
   NS_ENSURE_ARG(aTask);
 
+  LOG_TQ(LogLevel::Debug,
+         "TaskQueue::RegisterShutdownTask '%s' registering shutdown task %p",
+         mName, aTask);
   MonitorAutoLock mon(mQueueMonitor);
   if (mIsShutdown) {
     return NS_ERROR_UNEXPECTED;
+  }
+  if (!mIsTargetShutdownTaskRegistered && mShutdownTasks.IsEmpty()) {
+    FeatureFlags f = mTarget->GetFeatures();
+    if ((f & SUPPORTS_SHUTDOWN_TASKS) &&
+        (f & SUPPORTS_SHUTDOWN_TASK_DISPATCH)) {
+      MOZ_TRY(mTarget->RegisterShutdownTask(this));
+      mIsTargetShutdownTaskRegistered = true;
+    }
   }
   return mShutdownTasks.AddTask(aTask);
 }
@@ -145,8 +159,16 @@ nsresult TaskQueue::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
 nsresult TaskQueue::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   NS_ENSURE_ARG(aTask);
 
+  LOG_TQ(
+      LogLevel::Debug,
+      "TaskQueue::UnregisterShutdownTask '%s' unregistering shutdown task %p",
+      mName, aTask);
   MonitorAutoLock mon(mQueueMonitor);
-  return mShutdownTasks.RemoveTask(aTask);
+  nsresult rv = mShutdownTasks.RemoveTask(aTask);
+  if (mShutdownTasks.IsEmpty()) {
+    MaybeUnregisterTargetShutdownTask();
+  }
+  return rv;
 }
 
 nsIEventTarget::FeatureFlags TaskQueue::GetFeatures() {
@@ -181,6 +203,7 @@ void TaskQueue::AwaitIdleLocked() {
   while (mIsRunning) {
     mQueueMonitor.Wait();
   }
+  LOG_TQ(LogLevel::Debug, "TaskQueue::AwaitIdleLocked '%s' is now idle", mName);
 }
 
 void TaskQueue::AwaitShutdownAndIdle() {
@@ -198,6 +221,7 @@ void TaskQueue::AwaitShutdownAndIdle() {
 }
 
 RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
+  LOG_TQ(LogLevel::Debug, "TaskQueue::BeginShutdown '%s'", mName);
   
   
   if (AbstractThread* currentThread = AbstractThread::GetCurrent()) {
@@ -205,15 +229,21 @@ RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
   }
 
   MonitorAutoLock mon(mQueueMonitor);
-  
-  
-  TargetShutdownTaskSet::TasksArray tasks = mShutdownTasks.Extract();
-  for (auto& task : tasks) {
-    nsCOMPtr runnable{task->AsRunnable()};
-    MOZ_ALWAYS_SUCCEEDS(
-        DispatchLocked(runnable, NS_DISPATCH_NORMAL, TailDispatch));
+  if (!mIsShutdown) {
+    MaybeUnregisterTargetShutdownTask();
+    
+    
+    TargetShutdownTaskSet::TasksArray tasks = mShutdownTasks.Extract();
+    for (auto& task : tasks) {
+      LOG_TQ(LogLevel::Debug,
+             "TaskQueue::BeginShutdown '%s' dispatching shutdown task %p",
+             mName, task.get());
+      nsCOMPtr runnable{task->AsRunnable()};
+      MOZ_ALWAYS_SUCCEEDS(
+          DispatchLocked(runnable, NS_DISPATCH_NORMAL, TailDispatch));
+    }
+    mIsShutdown = true;
   }
-  mIsShutdown = true;
 
   RefPtr<ShutdownPromise> p = mShutdownPromise.Ensure(__func__);
   MaybeResolveShutdown();
@@ -224,9 +254,11 @@ RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
 void TaskQueue::MaybeResolveShutdown() {
   mQueueMonitor.AssertCurrentThreadOwns();
   if (mIsShutdown && !mIsRunning) {
+    LOG_TQ(LogLevel::Debug, "TaskQueue::MaybeResolveShutdown '%s' resolve",
+           mName);
+    MOZ_ASSERT(!mIsTargetShutdownTaskRegistered);
     mShutdownPromise.ResolveIfExists(true, __func__);
     
-    mTrackerEntry = nullptr;
     mTarget = nullptr;
     mObserver = nullptr;
   }
@@ -315,6 +347,7 @@ nsresult TaskQueue::Runner::Run() {
     MonitorAutoLock mon(mQueue->mQueueMonitor);
     mQueue->mIsRunning = false;
     mQueue->mIsShutdown = true;
+    mQueue->MaybeUnregisterTargetShutdownTask();
     mQueue->MaybeResolveShutdown();
     mon.NotifyAll();
   }
@@ -352,17 +385,6 @@ NS_IMETHODIMP TaskQueue::HaveDirectTasks(bool* aValue) {
   return NS_OK;
 }
 
-nsTArray<RefPtr<TaskQueue>> TaskQueueTracker::GetAllTrackedTaskQueues() {
-  MutexAutoLock lock(mMutex);
-  nsTArray<RefPtr<TaskQueue>> queues;
-  for (auto* entry : mEntries) {
-    if (auto queue = entry->GetQueue()) {
-      queues.AppendElement(queue);
-    }
-  }
-  return queues;
-}
-
-TaskQueueTracker::~TaskQueueTracker() = default;
+#undef LOG_TQ
 
 }  
