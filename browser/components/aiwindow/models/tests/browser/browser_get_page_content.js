@@ -24,7 +24,8 @@ add_task(async function test_get_page_content_basic() {
     </html>
   `;
 
-  const { url, GetPageContent, cleanup } = await setupGetPageContentTest(html);
+  const { url_list, GetPageContent, cleanup } =
+    await setupGetPageContentTests(html);
 
   
   
@@ -41,10 +42,14 @@ add_task(async function test_get_page_content_basic() {
   );
 
   
-  const allowedUrls = new Set([url]);
+  const allowedUrls = new Set(url_list);
 
   
-  const result = await GetPageContent.getPageContent({ url }, allowedUrls);
+  const result_array = await GetPageContent.getPageContent(
+    { url_list },
+    allowedUrls
+  );
+  const result = result_array[0];
 
   info("Extraction result: " + result);
 
