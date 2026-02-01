@@ -189,14 +189,6 @@ class MIRGenerator final {
   void spewPass(const char* name, BacktrackingAllocator* ra = nullptr);
   void spewEndFunction();
 
-  
-  
-  
-  void cleanup() {
-    tracker.reset();
-    perfSpewer().reset();
-  }
-
   CompilationDependencyTracker tracker;
 };
 

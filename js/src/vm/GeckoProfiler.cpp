@@ -123,9 +123,6 @@ void GeckoProfilerRuntime::enable(bool enabled) {
     cx->jitActivation->setLastProfilingCallSite(nullptr);
   }
 
-  
-  jit::ResetPerfSpewer(enabled);
-
   enabled_ = enabled;
 
   scriptSources_.writeLock()->clear();
