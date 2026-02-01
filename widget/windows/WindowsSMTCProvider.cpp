@@ -224,7 +224,6 @@ void WindowsSMTCProvider::ClearMetadata() {
   if (FAILED(mDisplay->ClearAll())) {
     LOG("Failed to clear SMTC display");
   }
-  mImageFetchRequest.DisconnectIfExists();
   CancelPendingStoreAsyncOperation();
   mThumbnailUrl.Truncate();
   mProcessingUrl.Truncate();
@@ -596,102 +595,46 @@ void WindowsSMTCProvider::SetPositionState(
 }
 
 void WindowsSMTCProvider::LoadThumbnail(
-    const nsTArray<mozilla::dom::MediaImage>& aArtwork) {
+    const nsTArray<mozilla::dom::MediaImageData>& aArtwork) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  mArtwork = aArtwork;
-  mNextImageIndex = 0;
+  for (const dom::MediaImageData& image : aArtwork) {
+    if (!image.mDataSurface) {
+      continue;
+    }
 
-  
-  
-  
-  if (!mProcessingUrl.IsEmpty()) {
-    LOG("Load thumbnail while image: %s is being processed",
-        NS_ConvertUTF16toUTF8(mProcessingUrl).get());
-    if (mozilla::dom::IsImageIn(mArtwork, mProcessingUrl)) {
-      LOG("No need to load thumbnail. The one being processed is in the "
-          "artwork");
+    if (mThumbnailUrl == image.mSrc) {
+      LOG("Artwork image URL did not change");
       return;
     }
-  } else if (!mThumbnailUrl.IsEmpty()) {
-    if (mozilla::dom::IsImageIn(mArtwork, mThumbnailUrl)) {
-      LOG("No need to load thumbnail. The one in use is in the artwork");
-      return;
+
+    
+    
+    
+    
+    uint32_t size = 0;
+    char* src = nullptr;
+    
+    nsCOMPtr<nsIInputStream> inputStream;
+    nsresult rv = mozilla::dom::GetEncodedImageBuffer(
+        image.mDataSurface, nsLiteralCString(IMAGE_PNG), getter_AddRefs(inputStream),
+        &size, &src);
+    if (NS_FAILED(rv) || !inputStream || size == 0 || !src) {
+      LOG("Failed to get the image buffer info. Try next image");
+      continue;
     }
+
+    
+    
+    
+    CancelPendingStoreAsyncOperation();
+    
+    ClearThumbnail();
+
+    mProcessingUrl = image.mSrc;
+    LoadImage(src, size);
+    break;
   }
-
-  
-  
-  
-  CancelPendingStoreAsyncOperation();
-  
-  ClearThumbnail();
-  
-  LoadImageAtIndex(mNextImageIndex++);
-}
-
-void WindowsSMTCProvider::LoadImageAtIndex(const size_t aIndex) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (aIndex >= mArtwork.Length()) {
-    LOG("Stop loading thumbnail. No more available images");
-    mImageFetchRequest.DisconnectIfExists();
-    mProcessingUrl.Truncate();
-    return;
-  }
-
-  const mozilla::dom::MediaImage& image = mArtwork[aIndex];
-
-  
-  
-  
-  
-
-  if (!mozilla::dom::IsValidImageUrl(image.mSrc)) {
-    LOG("Skip the image with invalid URL. Try next image");
-    mImageFetchRequest.DisconnectIfExists();
-    LoadImageAtIndex(mNextImageIndex++);
-    return;
-  }
-
-  mImageFetchRequest.DisconnectIfExists();
-  mProcessingUrl = image.mSrc;
-
-  mImageFetcher = mozilla::MakeUnique<mozilla::dom::FetchImageHelper>(image);
-  RefPtr<WindowsSMTCProvider> self = this;
-  mImageFetcher->FetchImage()
-      ->Then(
-          AbstractThread::MainThread(), __func__,
-          [this, self](const nsCOMPtr<imgIContainer>& aImage) {
-            LOG("The image is fetched successfully");
-            mImageFetchRequest.Complete();
-
-            
-            
-            
-            
-            uint32_t size = 0;
-            char* src = nullptr;
-            
-            nsCOMPtr<nsIInputStream> inputStream;
-            nsresult rv = mozilla::dom::GetEncodedImageBuffer(
-                aImage, nsLiteralCString(IMAGE_PNG),
-                getter_AddRefs(inputStream), &size, &src);
-            if (NS_FAILED(rv) || !inputStream || size == 0 || !src) {
-              LOG("Failed to get the image buffer info. Try next image");
-              LoadImageAtIndex(mNextImageIndex++);
-              return;
-            }
-
-            LoadImage(src, size);
-          },
-          [this, self](bool) {
-            LOG("Failed to fetch image. Try next image");
-            mImageFetchRequest.Complete();
-            LoadImageAtIndex(mNextImageIndex++);
-          })
-      ->Track(mImageFetchRequest);
 }
 
 void WindowsSMTCProvider::LoadImage(const char* aImageData,
