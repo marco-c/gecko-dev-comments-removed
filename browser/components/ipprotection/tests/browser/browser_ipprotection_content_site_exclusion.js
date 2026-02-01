@@ -209,6 +209,12 @@ add_task(
     let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
+    
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      MOCK_SITE_NAME
+    );
+
     let content = await openPanel({
       isSignedOut: false,
       isProtectionEnabled: true,
@@ -216,9 +222,8 @@ add_task(
         isExclusion: false,
       },
     });
-    
-    
-    
+
+    let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
 
     Assert.ok(
       BrowserTestUtils.isVisible(content),
@@ -242,8 +247,9 @@ add_task(
       window,
       DISABLE_VPN_EVENT
     );
+    let tabReloadedPromise = waitForTabReloaded(gBrowser.selectedTab);
     content.siteExclusionToggleEl.click();
-    await disableVPNEventPromise;
+    await Promise.all([disableVPNEventPromise, tabReloadedPromise]);
 
     Assert.ok(true, "Disable VPN protection for site event was dispatched");
     Assert.ok(
@@ -255,21 +261,19 @@ add_task(
       true,
       "IPPExceptionsManager.setExclusion should be called with shouldExclude=true"
     );
-
-    
-    
-    
-    
-    
-    
+    Assert.ok(
+      toolbarButton.classList.contains("ipprotection-excluded"),
+      "Toolbar icon should show the excluded status after disabling VPN for site"
+    );
 
     
     let enableVPNEventPromise = BrowserTestUtils.waitForEvent(
       window,
       ENABLE_VPN_EVENT
     );
+    tabReloadedPromise = waitForTabReloaded(gBrowser.selectedTab);
     content.siteExclusionToggleEl.click();
-    await enableVPNEventPromise;
+    await Promise.all([enableVPNEventPromise, tabReloadedPromise]);
 
     Assert.ok(true, "Enable VPN protection for site event was dispatched");
     Assert.ok(
@@ -281,16 +285,14 @@ add_task(
       false,
       "IPPExceptionsManager.setExclusion should be called with shouldExclude=false"
     );
-
-    
-    
-    
-    
-    
-    
+    Assert.ok(
+      toolbarButton.classList.contains("ipprotection-on"),
+      "Toolbar icon should show the connection status after enabling VPN for site"
+    );
 
     
     await closePanel();
+    BrowserTestUtils.removeTab(tab);
     Services.perms.removeByType(PERM_NAME);
     sandbox.restore();
   }
