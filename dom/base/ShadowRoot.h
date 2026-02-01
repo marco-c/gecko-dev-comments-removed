@@ -48,6 +48,45 @@ class OwningTrustedHTMLOrNullIsEmptyString;
 class TrustedHTMLOrString;
 class TrustedHTMLOrNullIsEmptyString;
 
+#define SHADOW_ROOT_FLAG_BIT(n_) \
+  NODE_FLAG_BIT(NODE_TYPE_SPECIFIC_BITS_OFFSET + (n_))
+
+
+enum : uint32_t {
+  
+  SHADOW_ROOT_MODE_CLOSED = SHADOW_ROOT_FLAG_BIT(0),
+
+  
+  SHADOW_ROOT_DELEGATES_FOCUS = SHADOW_ROOT_FLAG_BIT(1),
+
+  
+  SHADOW_ROOT_SLOT_ASSIGNMENT_MANUAL = SHADOW_ROOT_FLAG_BIT(2),
+
+  
+  SHADOW_ROOT_IS_DECLARATIVE = SHADOW_ROOT_FLAG_BIT(3),
+
+  
+  SHADOW_ROOT_IS_CLONABLE = SHADOW_ROOT_FLAG_BIT(4),
+
+  
+  SHADOW_ROOT_IS_SERIALIZABLE = SHADOW_ROOT_FLAG_BIT(5),
+
+  
+  SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS = SHADOW_ROOT_FLAG_BIT(6),
+
+  
+  SHADOW_ROOT_IS_DETAILS_SHADOW_TREE = SHADOW_ROOT_FLAG_BIT(7),
+
+  
+  SHADOW_ROOT_FLAGS_BITS_USED = 8
+};
+
+#undef SHADOW_ROOT_FLAG_BIT
+
+
+ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET +
+                        SHADOW_ROOT_FLAGS_BITS_USED);
+
 class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   friend class DocumentOrShadowRoot;
 
@@ -86,14 +125,19 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
     return GetHost();
   }
 
-  ShadowRootMode Mode() const { return mMode; }
-  bool DelegatesFocus() const {
-    return mDelegatesFocus == Element::DelegatesFocus::Yes;
+  ShadowRootMode Mode() const {
+    return HasFlag(SHADOW_ROOT_MODE_CLOSED) ? ShadowRootMode::Closed
+                                            : ShadowRootMode::Open;
   }
-  SlotAssignmentMode SlotAssignment() const { return mSlotAssignment; }
-  bool Clonable() const { return mIsClonable == IsClonable::Yes; }
-  bool IsClosed() const { return mMode == ShadowRootMode::Closed; }
-  bool Serializable() const { return mIsSerializable == IsSerializable::Yes; }
+  bool DelegatesFocus() const { return HasFlag(SHADOW_ROOT_DELEGATES_FOCUS); }
+  SlotAssignmentMode SlotAssignment() const {
+    return HasFlag(SHADOW_ROOT_SLOT_ASSIGNMENT_MANUAL)
+               ? SlotAssignmentMode::Manual
+               : SlotAssignmentMode::Named;
+  }
+  bool Clonable() const { return HasFlag(SHADOW_ROOT_IS_CLONABLE); }
+  bool IsClosed() const { return HasFlag(SHADOW_ROOT_MODE_CLOSED); }
+  bool Serializable() const { return HasFlag(SHADOW_ROOT_IS_SERIALIZABLE); }
 
   void RemoveSheetFromStyles(StyleSheet&);
   void RuleAdded(StyleSheet&, css::Rule&);
@@ -148,6 +192,10 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
 
   void AppendStyleSheet(StyleSheet& aSheet) {
     InsertSheetAt(SheetCount(), aSheet);
+  }
+
+  bool IsDetailsShadowTree() const {
+    return HasFlag(SHADOW_ROOT_IS_DETAILS_SHADOW_TREE);
   }
 
   
@@ -241,21 +289,25 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   }
 
   bool IsAvailableToElementInternals() const {
-    return mIsAvailableToElementInternals;
+    return HasFlag(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);
   }
 
   void SetAvailableToElementInternals() {
-    mIsAvailableToElementInternals = true;
+    SetFlags(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);
   }
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
-  bool IsDeclarative() const { return mIsDeclarative == Declarative::Yes; }
+  bool IsDeclarative() const { return HasFlag(SHADOW_ROOT_IS_DECLARATIVE); }
   void SetIsDeclarative(Declarative aIsDeclarative) {
-    mIsDeclarative = aIsDeclarative;
+    SetIsDeclarative(aIsDeclarative == Declarative::Yes);
   }
   void SetIsDeclarative(bool aIsDeclarative) {
-    mIsDeclarative = aIsDeclarative ? Declarative::Yes : Declarative::No;
+    if (aIsDeclarative) {
+      SetFlags(SHADOW_ROOT_IS_DECLARATIVE);
+    } else {
+      UnsetFlags(SHADOW_ROOT_IS_DECLARATIVE);
+    }
   }
 
   void SetHTML(const nsAString& aInnerHTML, const SetHTMLOptions& aOptions,
@@ -319,27 +371,6 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   
   
   nsTArray<const Element*> mParts;
-
-  const ShadowRootMode mMode;
-
-  Element::DelegatesFocus mDelegatesFocus;
-
-  const SlotAssignmentMode mSlotAssignment;
-
-  
-  bool mIsDetailsShadowTree : 1;
-
-  
-  bool mIsAvailableToElementInternals : 1;
-
-  
-  Declarative mIsDeclarative;
-
-  
-  const IsClonable mIsClonable;
-
-  
-  const IsSerializable mIsSerializable;
 
   RefPtr<nsAtom> mReferenceTarget;
 
