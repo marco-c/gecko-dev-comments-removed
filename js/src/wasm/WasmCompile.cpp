@@ -870,16 +870,12 @@ void CompilerEnvironment::computeParameters(const ModuleMetadata& moduleMeta) {
   
   MOZ_RELEASE_ASSERT(baselineEnabled || ionEnabled);
 
-  bool isGcModule = moduleMeta.codeMeta->types->hasGcType();
   uint32_t codeSectionSize = moduleMeta.codeMeta->codeSectionSize();
 
   
   
-  
   bool testSerialization = args_->features.testSerialization;
-  bool lazyTiering = (JS::Prefs::wasm_lazy_tiering() ||
-                      (JS::Prefs::wasm_lazy_tiering_for_gc() && isGcModule)) &&
-                     !testSerialization;
+  bool lazyTiering = JS::Prefs::wasm_lazy_tiering() && !testSerialization;
 
   if (baselineEnabled && hasSecondTier &&
       (TieringBeneficial(lazyTiering, codeSectionSize) || forceTiering) &&

@@ -307,7 +307,7 @@ bool wasm::CodeCachingAvailable(JSContext* cx) {
 #else
 
   
-  if (JS::Prefs::wasm_lazy_tiering() || JS::Prefs::wasm_lazy_tiering_for_gc()) {
+  if (JS::Prefs::wasm_lazy_tiering()) {
     return false;
   }
 
