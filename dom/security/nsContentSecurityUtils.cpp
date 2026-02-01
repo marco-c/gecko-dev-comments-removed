@@ -1398,8 +1398,7 @@ static nsLiteralCString sImgSrcHttpsAllowList[] = {
 
 
 static nsLiteralCString sImgSrcHttpAllowList[] = {
-    "about:addons"_ns,
-    "chrome://devtools/content/application/index.html"_ns,
+    "about:addons"_ns, "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
     
