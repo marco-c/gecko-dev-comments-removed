@@ -1,0 +1,15 @@
+
+
+
+
+
+#ifndef AppGroupPath_h
+#define AppGroupPath_h
+
+#include "nsError.h"
+
+class nsIFile;
+
+nsresult GetAppGroupContainerBase(nsIFile** aResult);
+
+#endif
