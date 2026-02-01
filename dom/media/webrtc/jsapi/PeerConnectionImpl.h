@@ -92,11 +92,7 @@ typedef NS_ConvertUTF8toUTF16 PCObserverString;
 }  
 }  
 
-#if defined(__cplusplus) && __cplusplus >= 201103L
 typedef struct Timecard Timecard;
-#else
-#  include "common/time_profiling/timecard.h"
-#endif
 
 
 
