@@ -35,6 +35,7 @@ namespace mozilla {
 using namespace dom;
 
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
+using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
 using ReplaceOrVoidElementOption = HTMLEditUtils::ReplaceOrVoidElementOption;
 
 
@@ -437,20 +438,22 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
   
   
   
-  constexpr HTMLEditUtils::WalkTreeOptions
-      ignoreNonEditableNodeAndStopAtBlockBoundary{
-          HTMLEditUtils::WalkTreeOption::IgnoreNonEditableNode,
-          HTMLEditUtils::WalkTreeOption::StopAtBlockBoundary};
-  for (nsIContent* previousEditableContent = HTMLEditUtils::GetPreviousContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter);
+  for (nsIContent* previousEditableContent =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter);
        previousEditableContent && previousEditableContent->GetParentNode() &&
        !HTMLEditUtils::IsVisibleBRElement(*previousEditableContent) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent,
                                       aBlockInlineCheck);
-       previousEditableContent = HTMLEditUtils::GetPreviousContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter)) {
+       previousEditableContent =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter)) {
     EditorDOMPoint atLastPreformattedNewLine =
         HTMLEditUtils::GetPreviousPreformattedNewLineInTextNode<EditorDOMPoint>(
             EditorRawDOMPoint::AtEndOf(*previousEditableContent));
@@ -464,14 +467,20 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
   
   
   
-  for (nsIContent* nearContent = HTMLEditUtils::GetPreviousContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter);
+  for (nsIContent* nearContent =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
        point.GetContainerParent();
-       nearContent = HTMLEditUtils::GetPreviousContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter)) {
+       nearContent =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter)) {
     
     
     
@@ -601,20 +610,22 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
   
   
   
-  constexpr HTMLEditUtils::WalkTreeOptions
-      ignoreNonEditableNodeAndStopAtBlockBoundary{
-          HTMLEditUtils::WalkTreeOption::IgnoreNonEditableNode,
-          HTMLEditUtils::WalkTreeOption::StopAtBlockBoundary};
-  for (nsIContent* nextEditableContent = HTMLEditUtils::GetNextContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter);
+  for (nsIContent* nextEditableContent =
+           HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter);
        nextEditableContent &&
        !HTMLEditUtils::IsBlockElement(*nextEditableContent,
                                       aBlockInlineCheck) &&
        nextEditableContent->GetParent();
-       nextEditableContent = HTMLEditUtils::GetNextContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter)) {
+       nextEditableContent =
+           HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter)) {
     EditorDOMPoint atFirstPreformattedNewLine =
         HTMLEditUtils::GetInclusiveNextPreformattedNewLineInTextNode<
             EditorDOMPoint>(EditorRawDOMPoint(nextEditableContent, 0));
@@ -658,13 +669,18 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
   
   
   
-  for (nsIContent* nearContent = HTMLEditUtils::GetNextContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           aBlockInlineCheck, &aAncestorLimiter);
+  for (nsIContent* nearContent =
+           HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+               point,
+               {LeafNodeOption::IgnoreNonEditableNode,
+                LeafNodeOption::TreatChildBlockAsLeafNode},
+               aBlockInlineCheck, &aAncestorLimiter);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
        point.GetContainerParent();
-       nearContent = HTMLEditUtils::GetNextContent(
-           point, ignoreNonEditableNodeAndStopAtBlockBoundary,
+       nearContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+           point,
+           {LeafNodeOption::IgnoreNonEditableNode,
+            LeafNodeOption::TreatChildBlockAsLeafNode},
            aBlockInlineCheck, &aAncestorLimiter)) {
     
     
