@@ -663,35 +663,38 @@ nsresult nsWebBrowserFind::OnEndSearchFrame(nsPIDOMWindowOuter* aWindow) {
 }
 
 already_AddRefed<Selection> nsWebBrowserFind::GetFrameSelection(
-    nsPIDOMWindowOuter* aWindow) {
-  RefPtr<Document> doc = aWindow->GetDoc();
-  if (!doc) {
+    nsPIDOMWindowOuter* aWindow) const {
+  MOZ_ASSERT(aWindow);
+
+  Document* const doc = aWindow->GetDoc();
+  if (MOZ_UNLIKELY(!doc)) {
     return nullptr;
   }
 
-  PresShell* presShell = doc->GetPresShell();
-  if (!presShell) {
+  PresShell* const presShell = doc->GetPresShell();
+  if (MOZ_UNLIKELY(!presShell)) {
     return nullptr;
   }
-
-  
-  
 
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
-  nsCOMPtr<nsIContent> focusedContent = nsFocusManager::GetFocusedDescendant(
-      aWindow, nsFocusManager::eOnlyCurrentWindow,
-      getter_AddRefs(focusedWindow));
-
-  nsIFrame* const frame =
-      focusedContent ? focusedContent->GetPrimaryFrame() : nullptr;
-
-  nsCOMPtr<nsISelectionController> selCon;
-  if (frame) {
-    nsISelectionController* const selCon = frame->GetSelectionController();
-    Selection* const sel =
-        selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
-    if (sel && sel->RangeCount() > 0) {
-      return do_AddRef(sel);
+  if (const nsCOMPtr<nsIContent> focusedContent =
+          nsFocusManager::GetFocusedDescendant(
+              aWindow, nsFocusManager::eOnlyCurrentWindow,
+              getter_AddRefs(focusedWindow))) {
+    nsIFrame* const focusedFrame = focusedContent->GetPrimaryFrame();
+    if (focusedFrame && focusedFrame->PresShell() == presShell) {
+      
+      
+      
+      
+      if (nsISelectionController* const selCon =
+              focusedFrame->GetSelectionController()) {
+        Selection* const sel =
+            selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
+        if (sel && sel->RangeCount() > 0) {
+          return do_AddRef(sel);
+        }
+      }
     }
   }
 
