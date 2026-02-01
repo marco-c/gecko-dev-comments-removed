@@ -7,13 +7,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class GeneralCategory {
 
+    
     static fromValue(value: GeneralCategory | string): GeneralCategory;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unassigned : GeneralCategory;

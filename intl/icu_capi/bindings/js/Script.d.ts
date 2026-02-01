@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Script {
 
+    
     static fromValue(value: Script | string): Script;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Adlam : Script;
@@ -26,6 +27,7 @@ export class Script {
     static BassaVah : Script;
     static Batak : Script;
     static Bengali : Script;
+    static BeriaErfe : Script;
     static Bhaiksuki : Script;
     static Bopomofo : Script;
     static Brahmi : Script;
@@ -38,6 +40,7 @@ export class Script {
     static Chakma : Script;
     static Cham : Script;
     static Cherokee : Script;
+    static Chisoi : Script;
     static Chorasmian : Script;
     static Common : Script;
     static Coptic : Script;
@@ -147,6 +150,7 @@ export class Script {
     static Sharada : Script;
     static Shavian : Script;
     static Siddham : Script;
+    static Sidetic : Script;
     static SignWriting : Script;
     static Sinhala : Script;
     static Sogdian : Script;
@@ -160,6 +164,7 @@ export class Script {
     static TaiLe : Script;
     static TaiTham : Script;
     static TaiViet : Script;
+    static TaiYo : Script;
     static Takri : Script;
     static Tamil : Script;
     static Tangsa : Script;
@@ -170,6 +175,7 @@ export class Script {
     static Tibetan : Script;
     static Tifinagh : Script;
     static Tirhuta : Script;
+    static TolongSiki : Script;
     static Toto : Script;
     static Ugaritic : Script;
     static Unknown : Script;

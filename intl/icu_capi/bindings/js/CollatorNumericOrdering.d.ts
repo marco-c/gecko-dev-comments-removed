@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CollatorNumericOrdering {
 
+    
     static fromValue(value: CollatorNumericOrdering | string): CollatorNumericOrdering;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Off : CollatorNumericOrdering;

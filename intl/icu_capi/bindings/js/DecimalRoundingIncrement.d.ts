@@ -8,13 +8,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DecimalRoundingIncrement {
 
+    
     static fromValue(value: DecimalRoundingIncrement | string): DecimalRoundingIncrement;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static MultiplesOf1 : DecimalRoundingIncrement;

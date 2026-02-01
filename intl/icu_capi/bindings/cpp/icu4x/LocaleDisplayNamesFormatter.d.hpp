@@ -1,5 +1,5 @@
-#ifndef icu4x_LocaleDisplayNamesFormatter_D_HPP
-#define icu4x_LocaleDisplayNamesFormatter_D_HPP
+#ifndef ICU4X_LocaleDisplayNamesFormatter_D_HPP
+#define ICU4X_LocaleDisplayNamesFormatter_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct DataProvider; }
 class DataProvider;
@@ -20,7 +19,8 @@ namespace capi { struct LocaleDisplayNamesFormatter; }
 class LocaleDisplayNamesFormatter;
 struct DisplayNamesOptionsV1;
 class DataError;
-}
+} 
+
 
 
 namespace icu4x {
@@ -33,6 +33,8 @@ namespace icu4x {
 
 
 
+
+
 class LocaleDisplayNamesFormatter {
 public:
 
@@ -41,34 +43,43 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LocaleDisplayNamesFormatter>, icu4x::DataError> create_v1(const icu4x::Locale& locale, icu4x::DisplayNamesOptionsV1 options);
+
+
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LocaleDisplayNamesFormatter>, icu4x::DataError> create_v1(const icu4x::Locale& locale, icu4x::DisplayNamesOptionsV1 options);
 
   
 
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LocaleDisplayNamesFormatter>, icu4x::DataError> create_v1_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, icu4x::DisplayNamesOptionsV1 options);
+
+
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LocaleDisplayNamesFormatter>, icu4x::DataError> create_v1_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, icu4x::DisplayNamesOptionsV1 options);
 
   
+
+
+
 
 
 
 
   inline std::string of(const icu4x::Locale& locale) const;
+  template<typename W>
+  inline void of_write(const icu4x::Locale& locale, W& writeable_output) const;
 
-  inline const icu4x::capi::LocaleDisplayNamesFormatter* AsFFI() const;
-  inline icu4x::capi::LocaleDisplayNamesFormatter* AsFFI();
-  inline static const icu4x::LocaleDisplayNamesFormatter* FromFFI(const icu4x::capi::LocaleDisplayNamesFormatter* ptr);
-  inline static icu4x::LocaleDisplayNamesFormatter* FromFFI(icu4x::capi::LocaleDisplayNamesFormatter* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::LocaleDisplayNamesFormatter* AsFFI() const;
+    inline icu4x::capi::LocaleDisplayNamesFormatter* AsFFI();
+    inline static const icu4x::LocaleDisplayNamesFormatter* FromFFI(const icu4x::capi::LocaleDisplayNamesFormatter* ptr);
+    inline static icu4x::LocaleDisplayNamesFormatter* FromFFI(icu4x::capi::LocaleDisplayNamesFormatter* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  LocaleDisplayNamesFormatter() = delete;
-  LocaleDisplayNamesFormatter(const icu4x::LocaleDisplayNamesFormatter&) = delete;
-  LocaleDisplayNamesFormatter(icu4x::LocaleDisplayNamesFormatter&&) noexcept = delete;
-  LocaleDisplayNamesFormatter operator=(const icu4x::LocaleDisplayNamesFormatter&) = delete;
-  LocaleDisplayNamesFormatter operator=(icu4x::LocaleDisplayNamesFormatter&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    LocaleDisplayNamesFormatter() = delete;
+    LocaleDisplayNamesFormatter(const icu4x::LocaleDisplayNamesFormatter&) = delete;
+    LocaleDisplayNamesFormatter(icu4x::LocaleDisplayNamesFormatter&&) noexcept = delete;
+    LocaleDisplayNamesFormatter operator=(const icu4x::LocaleDisplayNamesFormatter&) = delete;
+    LocaleDisplayNamesFormatter operator=(icu4x::LocaleDisplayNamesFormatter&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

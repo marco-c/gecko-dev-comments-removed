@@ -1,5 +1,5 @@
-#ifndef icu4x_TimeZoneAndCanonicalAndNormalized_HPP
-#define icu4x_TimeZoneAndCanonicalAndNormalized_HPP
+#ifndef ICU4X_TimeZoneAndCanonicalAndNormalized_HPP
+#define ICU4X_TimeZoneAndCanonicalAndNormalized_HPP
 
 #include "TimeZoneAndCanonicalAndNormalized.d.hpp"
 
@@ -11,33 +11,31 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
 #include "TimeZone.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
 namespace capi {
-    extern "C" {
 
-    } 
 } 
 } 
 
 
 inline icu4x::capi::TimeZoneAndCanonicalAndNormalized icu4x::TimeZoneAndCanonicalAndNormalized::AsFFI() const {
-  return icu4x::capi::TimeZoneAndCanonicalAndNormalized {
-     time_zone->AsFFI(),
-     {canonical.data(), canonical.size()},
-     {normalized.data(), normalized.size()},
-  };
+    return icu4x::capi::TimeZoneAndCanonicalAndNormalized {
+         time_zone->AsFFI(),
+         {canonical.data(), canonical.size()},
+         {normalized.data(), normalized.size()},
+    };
 }
 
 inline icu4x::TimeZoneAndCanonicalAndNormalized icu4x::TimeZoneAndCanonicalAndNormalized::FromFFI(icu4x::capi::TimeZoneAndCanonicalAndNormalized c_struct) {
-  return icu4x::TimeZoneAndCanonicalAndNormalized {
-     std::unique_ptr<icu4x::TimeZone>(icu4x::TimeZone::FromFFI(c_struct.time_zone)),
-     std::string_view(c_struct.canonical.data, c_struct.canonical.len),
-     std::string_view(c_struct.normalized.data, c_struct.normalized.len),
-  };
+    return icu4x::TimeZoneAndCanonicalAndNormalized {
+         std::unique_ptr<icu4x::TimeZone>(icu4x::TimeZone::FromFFI(c_struct.time_zone)),
+         std::string_view(c_struct.canonical.data, c_struct.canonical.len),
+         std::string_view(c_struct.normalized.data, c_struct.normalized.len),
+    };
 }
 
 

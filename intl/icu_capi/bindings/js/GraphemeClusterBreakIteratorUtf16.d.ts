@@ -6,9 +6,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class GraphemeClusterBreakIteratorUtf16 {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

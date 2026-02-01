@@ -1,5 +1,5 @@
-#ifndef icu4x_CaseMapper_D_HPP
-#define icu4x_CaseMapper_D_HPP
+#ifndef ICU4X_CaseMapper_D_HPP
+#define ICU4X_CaseMapper_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct CaseMapper; }
 class CaseMapper;
@@ -22,7 +21,8 @@ namespace capi { struct Locale; }
 class Locale;
 struct TitlecaseOptionsV1;
 class DataError;
-}
+} 
+
 
 
 namespace icu4x {
@@ -50,53 +50,43 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::CaseMapper>, icu4x::DataError> create_with_provider(const icu4x::DataProvider& provider);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::CaseMapper>, icu4x::DataError> create_with_provider(const icu4x::DataProvider& provider);
 
   
 
 
 
 
-  inline diplomat::result<std::string, diplomat::Utf8Error> lowercase(std::string_view s, const icu4x::Locale& locale) const;
+  inline icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> lowercase(std::string_view s, const icu4x::Locale& locale) const;
+  template<typename W>
+  inline icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> lowercase_write(std::string_view s, const icu4x::Locale& locale, W& writeable_output) const;
 
   
 
 
 
 
-  inline diplomat::result<std::string, diplomat::Utf8Error> uppercase(std::string_view s, const icu4x::Locale& locale) const;
+  inline icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> uppercase(std::string_view s, const icu4x::Locale& locale) const;
+  template<typename W>
+  inline icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> uppercase_write(std::string_view s, const icu4x::Locale& locale, W& writeable_output) const;
 
   
 
 
 
 
-  inline static diplomat::result<std::string, diplomat::Utf8Error> lowercase_with_compiled_data(std::string_view s, const icu4x::Locale& locale);
+  inline static icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> lowercase_with_compiled_data(std::string_view s, const icu4x::Locale& locale);
+  template<typename W>
+  inline static icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> lowercase_with_compiled_data_write(std::string_view s, const icu4x::Locale& locale, W& writeable_output);
 
   
 
 
 
 
-  inline static diplomat::result<std::string, diplomat::Utf8Error> uppercase_with_compiled_data(std::string_view s, const icu4x::Locale& locale);
-
-  
-
-
-
-
-
-
-
-
-  inline diplomat::result<std::string, diplomat::Utf8Error> titlecase_segment_with_only_case_data_v1(std::string_view s, const icu4x::Locale& locale, icu4x::TitlecaseOptionsV1 options) const;
-
-  
-
-
-
-
-  inline diplomat::result<std::string, diplomat::Utf8Error> fold(std::string_view s) const;
+  inline static icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> uppercase_with_compiled_data(std::string_view s, const icu4x::Locale& locale);
+  template<typename W>
+  inline static icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> uppercase_with_compiled_data_write(std::string_view s, const icu4x::Locale& locale, W& writeable_output);
 
   
 
@@ -104,7 +94,31 @@ public:
 
 
 
-  inline diplomat::result<std::string, diplomat::Utf8Error> fold_turkic(std::string_view s) const;
+
+
+
+  inline icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> titlecase_segment_with_only_case_data_v1(std::string_view s, const icu4x::Locale& locale, icu4x::TitlecaseOptionsV1 options) const;
+  template<typename W>
+  inline icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> titlecase_segment_with_only_case_data_v1_write(std::string_view s, const icu4x::Locale& locale, icu4x::TitlecaseOptionsV1 options, W& writeable_output) const;
+
+  
+
+
+
+
+  inline icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> fold(std::string_view s) const;
+  template<typename W>
+  inline icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> fold_write(std::string_view s, W& writeable_output) const;
+
+  
+
+
+
+
+
+  inline icu4x::diplomat::result<std::string, icu4x::diplomat::Utf8Error> fold_turkic(std::string_view s) const;
+  template<typename W>
+  inline icu4x::diplomat::result<std::monostate, icu4x::diplomat::Utf8Error> fold_turkic_write(std::string_view s, W& writeable_output) const;
 
   
 
@@ -139,11 +153,25 @@ public:
 
 
 
+  inline static char32_t simple_lowercase_with_compiled_data(char32_t ch);
+
+  
+
+
+
+
 
 
 
 
   inline char32_t simple_uppercase(char32_t ch) const;
+
+  
+
+
+
+
+  inline static char32_t simple_uppercase_with_compiled_data(char32_t ch);
 
   
 
@@ -161,10 +189,24 @@ public:
 
 
 
+  inline static char32_t simple_titlecase_with_compiled_data(char32_t ch);
+
+  
+
+
+
+
 
 
 
   inline char32_t simple_fold(char32_t ch) const;
+
+  
+
+
+
+
+  inline static char32_t simple_fold_with_compiled_data(char32_t ch);
 
   
 
@@ -176,18 +218,25 @@ public:
 
   inline char32_t simple_fold_turkic(char32_t ch) const;
 
-  inline const icu4x::capi::CaseMapper* AsFFI() const;
-  inline icu4x::capi::CaseMapper* AsFFI();
-  inline static const icu4x::CaseMapper* FromFFI(const icu4x::capi::CaseMapper* ptr);
-  inline static icu4x::CaseMapper* FromFFI(icu4x::capi::CaseMapper* ptr);
-  inline static void operator delete(void* ptr);
+  
+
+
+
+
+  inline static char32_t simple_fold_turkic_with_compiled_data(char32_t ch);
+
+    inline const icu4x::capi::CaseMapper* AsFFI() const;
+    inline icu4x::capi::CaseMapper* AsFFI();
+    inline static const icu4x::CaseMapper* FromFFI(const icu4x::capi::CaseMapper* ptr);
+    inline static icu4x::CaseMapper* FromFFI(icu4x::capi::CaseMapper* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  CaseMapper() = delete;
-  CaseMapper(const icu4x::CaseMapper&) = delete;
-  CaseMapper(icu4x::CaseMapper&&) noexcept = delete;
-  CaseMapper operator=(const icu4x::CaseMapper&) = delete;
-  CaseMapper operator=(icu4x::CaseMapper&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    CaseMapper() = delete;
+    CaseMapper(const icu4x::CaseMapper&) = delete;
+    CaseMapper(icu4x::CaseMapper&&) noexcept = delete;
+    CaseMapper operator=(const icu4x::CaseMapper&) = delete;
+    CaseMapper operator=(icu4x::CaseMapper&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

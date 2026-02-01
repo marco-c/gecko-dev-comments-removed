@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class GraphemeClusterBreak {
 
+    
     static fromValue(value: GraphemeClusterBreak | string): GraphemeClusterBreak;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Other : GraphemeClusterBreak;

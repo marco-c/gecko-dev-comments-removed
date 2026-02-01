@@ -6,9 +6,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Logger {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

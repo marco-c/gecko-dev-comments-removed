@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CollatorMaxVariable {
 
+    
     static fromValue(value: CollatorMaxVariable | string): CollatorMaxVariable;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Space : CollatorMaxVariable;

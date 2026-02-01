@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class SentenceSegmenter {
+    
     get ffiValue(): pointer;
 
 
@@ -36,6 +36,11 @@ export class SentenceSegmenter {
 
 
     segment(input: string): SentenceBreakIteratorUtf16;
+
+    
+
+
+
 
     constructor();
 }

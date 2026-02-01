@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class EastAsianWidth {
 
+    
     static fromValue(value: EastAsianWidth | string): EastAsianWidth;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Neutral : EastAsianWidth;

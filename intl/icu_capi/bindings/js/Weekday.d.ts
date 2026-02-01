@@ -3,12 +3,17 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
+
+
 export class Weekday {
 
+    
     static fromValue(value: Weekday | string): Weekday;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Monday : Weekday;

@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LocaleParseError {
 
+    
     static fromValue(value: LocaleParseError | string): LocaleParseError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : LocaleParseError;

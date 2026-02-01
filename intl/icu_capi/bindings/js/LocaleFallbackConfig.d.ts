@@ -2,15 +2,14 @@
 import type { LocaleFallbackPriority } from "./LocaleFallbackPriority"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-
-
-type LocaleFallbackConfig_obj = {
+export type LocaleFallbackConfig_obj = {
     priority: LocaleFallbackPriority;
 };
+
+
+
+
+
 
 
 
@@ -18,11 +17,12 @@ export class LocaleFallbackConfig {
     get priority(): LocaleFallbackPriority;
     set priority(value: LocaleFallbackPriority);
     
-
-
     static fromFields(structObj : LocaleFallbackConfig_obj) : LocaleFallbackConfig;
+
+    
 
 
 
     constructor(structObj: LocaleFallbackConfig_obj);
+
 }

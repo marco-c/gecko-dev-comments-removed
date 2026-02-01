@@ -11,9 +11,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class TimeZoneFormatter {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

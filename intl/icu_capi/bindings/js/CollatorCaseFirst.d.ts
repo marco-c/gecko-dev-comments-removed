@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CollatorCaseFirst {
 
+    
     static fromValue(value: CollatorCaseFirst | string): CollatorCaseFirst;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Off : CollatorCaseFirst;

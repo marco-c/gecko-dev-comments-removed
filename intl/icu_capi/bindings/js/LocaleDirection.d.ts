@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LocaleDirection {
 
+    
     static fromValue(value: LocaleDirection | string): LocaleDirection;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static LeftToRight : LocaleDirection;

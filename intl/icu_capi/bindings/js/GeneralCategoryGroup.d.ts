@@ -2,15 +2,14 @@
 import type { GeneralCategory } from "./GeneralCategory"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-
-
-type GeneralCategoryGroup_obj = {
+export type GeneralCategoryGroup_obj = {
     mask: number;
 };
+
+
+
+
+
 
 
 
@@ -18,10 +17,13 @@ export class GeneralCategoryGroup {
     get mask(): number;
     set mask(value: number);
     
-
-
     static fromFields(structObj : GeneralCategoryGroup_obj) : GeneralCategoryGroup;
 
+    
+
+
+
+    constructor(structObj: GeneralCategoryGroup_obj);
 
 
     
@@ -93,6 +95,4 @@ export class GeneralCategoryGroup {
 
 
     static symbol(): GeneralCategoryGroup;
-
-    constructor(structObj: GeneralCategoryGroup_obj);
 }

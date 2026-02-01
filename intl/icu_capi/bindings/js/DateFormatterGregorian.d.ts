@@ -13,9 +13,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DateFormatterGregorian {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -201,5 +203,5 @@ export class DateFormatterGregorian {
     
 
 
-    formatIso(date: IsoDate): string;
+    formatIso(isoDate: IsoDate): string;
 }

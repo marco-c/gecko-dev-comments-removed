@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class SegmenterWordType {
 
+    
     static fromValue(value: SegmenterWordType | string): SegmenterWordType;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static None : SegmenterWordType;

@@ -1,5 +1,5 @@
-#ifndef icu4x_IsoDate_D_HPP
-#define icu4x_IsoDate_D_HPP
+#ifndef ICU4X_IsoDate_D_HPP
+#define ICU4X_IsoDate_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct Calendar; }
 class Calendar;
@@ -22,7 +21,8 @@ struct IsoWeekOfYear;
 class CalendarError;
 class Rfc9557ParseError;
 class Weekday;
-}
+} 
+
 
 
 namespace icu4x {
@@ -45,7 +45,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::IsoDate>, icu4x::CalendarError> create(int32_t year, uint8_t month, uint8_t day);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::IsoDate>, icu4x::CalendarError> create(int32_t year, uint8_t month, uint8_t day);
 
   
 
@@ -59,7 +59,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::IsoDate>, icu4x::Rfc9557ParseError> from_string(std::string_view v);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::IsoDate>, icu4x::Rfc9557ParseError> from_string(std::string_view v);
 
   
 
@@ -154,18 +154,18 @@ public:
 
   inline uint16_t days_in_year() const;
 
-  inline const icu4x::capi::IsoDate* AsFFI() const;
-  inline icu4x::capi::IsoDate* AsFFI();
-  inline static const icu4x::IsoDate* FromFFI(const icu4x::capi::IsoDate* ptr);
-  inline static icu4x::IsoDate* FromFFI(icu4x::capi::IsoDate* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::IsoDate* AsFFI() const;
+    inline icu4x::capi::IsoDate* AsFFI();
+    inline static const icu4x::IsoDate* FromFFI(const icu4x::capi::IsoDate* ptr);
+    inline static icu4x::IsoDate* FromFFI(icu4x::capi::IsoDate* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  IsoDate() = delete;
-  IsoDate(const icu4x::IsoDate&) = delete;
-  IsoDate(icu4x::IsoDate&&) noexcept = delete;
-  IsoDate operator=(const icu4x::IsoDate&) = delete;
-  IsoDate operator=(icu4x::IsoDate&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    IsoDate() = delete;
+    IsoDate(const icu4x::IsoDate&) = delete;
+    IsoDate(icu4x::IsoDate&&) noexcept = delete;
+    IsoDate operator=(const icu4x::IsoDate&) = delete;
+    IsoDate operator=(icu4x::IsoDate&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

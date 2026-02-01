@@ -4,7 +4,6 @@
 
 #[diplomat::bridge]
 #[diplomat::abi_rename = "icu4x_{0}_mv1"]
-#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
     use alloc::boxed::Box;
 
@@ -21,12 +20,14 @@ pub mod ffi {
     #[diplomat::opaque]
     
     #[diplomat::rust_link(icu::properties::script::ScriptWithExtensionsBorrowed, Struct)]
+    #[diplomat::attr(demo_gen, disable)] 
     pub struct ScriptWithExtensionsBorrowed<'a>(
         pub icu_properties::script::ScriptWithExtensionsBorrowed<'a>,
     );
     #[diplomat::opaque]
     
     #[diplomat::rust_link(icu::properties::script::ScriptExtensionsSet, Struct)]
+    #[diplomat::attr(demo_gen, disable)] 
     pub struct ScriptExtensionsSet<'a>(pub icu_properties::script::ScriptExtensionsSet<'a>);
 
     impl ScriptWithExtensions {

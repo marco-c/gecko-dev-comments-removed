@@ -1,5 +1,5 @@
-#ifndef icu4x_TimeZoneAndCanonical_HPP
-#define icu4x_TimeZoneAndCanonical_HPP
+#ifndef ICU4X_TimeZoneAndCanonical_HPP
+#define ICU4X_TimeZoneAndCanonical_HPP
 
 #include "TimeZoneAndCanonical.d.hpp"
 
@@ -11,31 +11,29 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
 #include "TimeZone.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
 namespace capi {
-    extern "C" {
 
-    } 
 } 
 } 
 
 
 inline icu4x::capi::TimeZoneAndCanonical icu4x::TimeZoneAndCanonical::AsFFI() const {
-  return icu4x::capi::TimeZoneAndCanonical {
-     time_zone->AsFFI(),
-     {canonical.data(), canonical.size()},
-  };
+    return icu4x::capi::TimeZoneAndCanonical {
+         time_zone->AsFFI(),
+         {canonical.data(), canonical.size()},
+    };
 }
 
 inline icu4x::TimeZoneAndCanonical icu4x::TimeZoneAndCanonical::FromFFI(icu4x::capi::TimeZoneAndCanonical c_struct) {
-  return icu4x::TimeZoneAndCanonical {
-     std::unique_ptr<icu4x::TimeZone>(icu4x::TimeZone::FromFFI(c_struct.time_zone)),
-     std::string_view(c_struct.canonical.data, c_struct.canonical.len),
-  };
+    return icu4x::TimeZoneAndCanonical {
+         std::unique_ptr<icu4x::TimeZone>(icu4x::TimeZone::FromFFI(c_struct.time_zone)),
+         std::string_view(c_struct.canonical.data, c_struct.canonical.len),
+    };
 }
 
 

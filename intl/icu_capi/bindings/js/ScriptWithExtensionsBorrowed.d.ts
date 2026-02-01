@@ -10,9 +10,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ScriptWithExtensionsBorrowed {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

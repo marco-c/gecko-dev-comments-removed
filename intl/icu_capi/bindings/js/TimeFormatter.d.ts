@@ -13,8 +13,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class TimeFormatter {
+    
     get ffiValue(): pointer;
 
 
@@ -31,6 +31,13 @@ export class TimeFormatter {
 
 
     format(time: Time): string;
+
+    
+
+
+
+
+
 
     constructor(locale: Locale, length: DateTimeLength | null, timePrecision: TimePrecision | null, alignment: DateTimeAlignment | null);
 }

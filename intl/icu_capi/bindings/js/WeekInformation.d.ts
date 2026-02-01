@@ -13,8 +13,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class WeekInformation {
+    
     get ffiValue(): pointer;
 
 
@@ -43,6 +43,11 @@ export class WeekInformation {
 
 
     get weekend(): WeekdaySetIterator;
+
+    
+
+
+
 
     constructor(locale: Locale);
 }

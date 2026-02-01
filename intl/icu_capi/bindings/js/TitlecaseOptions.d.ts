@@ -3,14 +3,13 @@ import type { LeadingAdjustment } from "./LeadingAdjustment"
 import type { TrailingCase } from "./TrailingCase"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-type TitlecaseOptions_obj = {
+export type TitlecaseOptions_obj = {
     leadingAdjustment?: LeadingAdjustment | null;
     trailingCase?: TrailingCase | null;
 };
+
+
+
 
 
 
@@ -20,10 +19,11 @@ export class TitlecaseOptions {
     get trailingCase(): TrailingCase | null;
     set trailingCase(value: TrailingCase | null);
     
-
-
     static fromFields(structObj : TitlecaseOptions_obj) : TitlecaseOptions;
 
+
+
+    
 
 
     constructor();

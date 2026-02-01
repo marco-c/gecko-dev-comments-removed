@@ -11,10 +11,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class IsoDateTime {
     get date(): IsoDate;
     get time(): Time;
+    
+    constructor();
 
 
     

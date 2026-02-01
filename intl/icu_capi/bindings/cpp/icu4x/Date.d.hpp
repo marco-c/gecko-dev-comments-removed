@@ -1,5 +1,5 @@
-#ifndef icu4x_Date_D_HPP
-#define icu4x_Date_D_HPP
+#ifndef ICU4X_Date_D_HPP
+#define ICU4X_Date_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct Calendar; }
 class Calendar;
@@ -18,10 +17,14 @@ namespace capi { struct Date; }
 class Date;
 namespace capi { struct IsoDate; }
 class IsoDate;
+struct DateFields;
+struct DateFromFieldsOptions;
+class CalendarDateFromFieldsError;
 class CalendarError;
 class Rfc9557ParseError;
 class Weekday;
-}
+} 
+
 
 
 namespace icu4x {
@@ -45,7 +48,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarError> from_iso_in_calendar(int32_t year, uint8_t month, uint8_t day, const icu4x::Calendar& calendar);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarError> from_iso_in_calendar(int32_t iso_year, uint8_t iso_month, uint8_t iso_day, const icu4x::Calendar& calendar);
 
   
 
@@ -54,21 +57,30 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarError> from_codes_in_calendar(std::string_view era_code, int32_t year, std::string_view month_code, uint8_t day, const icu4x::Calendar& calendar);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarDateFromFieldsError> from_fields_in_calendar(icu4x::DateFields fields, icu4x::DateFromFieldsOptions options, const icu4x::Calendar& calendar);
 
   
 
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarError> from_rata_die(int64_t rd, const icu4x::Calendar& calendar);
+
+
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarError> from_codes_in_calendar(std::string_view era_code, int32_t year, std::string_view month_code, uint8_t day, const icu4x::Calendar& calendar);
 
   
 
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::Rfc9557ParseError> from_string(std::string_view v, const icu4x::Calendar& calendar);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::CalendarError> from_rata_die(int64_t rd, const icu4x::Calendar& calendar);
+
+  
+
+
+
+
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Date>, icu4x::Rfc9557ParseError> from_string(std::string_view v, const icu4x::Calendar& calendar);
 
   
 
@@ -134,6 +146,8 @@ public:
 
 
   inline std::string month_code() const;
+  template<typename W>
+  inline void month_code_write(W& writeable_output) const;
 
   
 
@@ -165,6 +179,10 @@ public:
 
 
 
+
+
+
+
   inline int32_t extended_year() const;
 
   
@@ -175,6 +193,8 @@ public:
 
 
   inline std::string era() const;
+  template<typename W>
+  inline void era_write(W& writeable_output) const;
 
   
 
@@ -204,18 +224,18 @@ public:
 
   inline std::unique_ptr<icu4x::Calendar> calendar() const;
 
-  inline const icu4x::capi::Date* AsFFI() const;
-  inline icu4x::capi::Date* AsFFI();
-  inline static const icu4x::Date* FromFFI(const icu4x::capi::Date* ptr);
-  inline static icu4x::Date* FromFFI(icu4x::capi::Date* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::Date* AsFFI() const;
+    inline icu4x::capi::Date* AsFFI();
+    inline static const icu4x::Date* FromFFI(const icu4x::capi::Date* ptr);
+    inline static icu4x::Date* FromFFI(icu4x::capi::Date* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  Date() = delete;
-  Date(const icu4x::Date&) = delete;
-  Date(icu4x::Date&&) noexcept = delete;
-  Date operator=(const icu4x::Date&) = delete;
-  Date operator=(icu4x::Date&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    Date() = delete;
+    Date(const icu4x::Date&) = delete;
+    Date(icu4x::Date&&) noexcept = delete;
+    Date operator=(const icu4x::Date&) = delete;
+    Date operator=(icu4x::Date&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

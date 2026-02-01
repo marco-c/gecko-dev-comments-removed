@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DataError {
 
+    
     static fromValue(value: DataError | string): DataError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : DataError;

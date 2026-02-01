@@ -1,5 +1,5 @@
-#ifndef icu4x_HangulSyllableType_D_HPP
-#define icu4x_HangulSyllableType_D_HPP
+#ifndef ICU4X_HangulSyllableType_D_HPP
+#define ICU4X_HangulSyllableType_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,11 +9,11 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 class HangulSyllableType;
-}
+} 
+
 
 
 namespace icu4x {
@@ -37,21 +37,22 @@ namespace icu4x {
 
 class HangulSyllableType {
 public:
-  enum Value {
-    NotApplicable = 0,
-    LeadingJamo = 1,
-    VowelJamo = 2,
-    TrailingJamo = 3,
-    LeadingVowelSyllable = 4,
-    LeadingVowelTrailingSyllable = 5,
-  };
+    enum Value {
+        NotApplicable = 0,
+        LeadingJamo = 1,
+        VowelJamo = 2,
+        TrailingJamo = 3,
+        LeadingVowelSyllable = 4,
+        LeadingVowelTrailingSyllable = 5,
+    };
 
-  HangulSyllableType() = default;
-  
-  constexpr HangulSyllableType(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    HangulSyllableType(): value(Value::NotApplicable) {}
+
+    
+    constexpr HangulSyllableType(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
 
   
 
@@ -72,8 +73,8 @@ public:
 
   inline static std::optional<icu4x::HangulSyllableType> from_integer_value(uint8_t other);
 
-  inline icu4x::capi::HangulSyllableType AsFFI() const;
-  inline static icu4x::HangulSyllableType FromFFI(icu4x::capi::HangulSyllableType c_enum);
+    inline icu4x::capi::HangulSyllableType AsFFI() const;
+    inline static icu4x::HangulSyllableType FromFFI(icu4x::capi::HangulSyllableType c_enum);
 private:
     Value value;
 };

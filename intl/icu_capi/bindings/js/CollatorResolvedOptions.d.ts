@@ -12,7 +12,6 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CollatorResolvedOptions {
     get strength(): CollatorStrength;
     get alternateHandling(): CollatorAlternateHandling;
@@ -20,5 +19,7 @@ export class CollatorResolvedOptions {
     get maxVariable(): CollatorMaxVariable;
     get caseLevel(): CollatorCaseLevel;
     get numeric(): CollatorNumericOrdering;
+    
+    constructor();
 
 }

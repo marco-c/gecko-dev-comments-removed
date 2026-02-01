@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class VerticalOrientation {
 
+    
     static fromValue(value: VerticalOrientation | string): VerticalOrientation;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Rotated : VerticalOrientation;

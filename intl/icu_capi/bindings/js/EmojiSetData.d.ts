@@ -16,9 +16,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class EmojiSetData {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

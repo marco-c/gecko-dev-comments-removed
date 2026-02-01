@@ -1,5 +1,5 @@
-#ifndef icu4x_TimeZoneVariant_D_HPP
-#define icu4x_TimeZoneVariant_D_HPP
+#ifndef ICU4X_TimeZoneVariant_D_HPP
+#define ICU4X_TimeZoneVariant_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,11 +9,11 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 class TimeZoneVariant;
-}
+} 
+
 
 
 namespace icu4x {
@@ -28,33 +28,38 @@ namespace capi {
 } 
 
 namespace icu4x {
-class TimeZoneVariant {
+
+
+
+
+
+class [[deprecated("type not needed anymore")]] TimeZoneVariant {
 public:
-  enum Value {
-    Standard = 0,
-    Daylight = 1,
-  };
+    enum Value {
+        Standard = 0,
+        Daylight = 1,
+    };
 
-  TimeZoneVariant() = default;
+    TimeZoneVariant(): value(Value::Standard) {}
+
+    
+    constexpr TimeZoneVariant(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
   
-  constexpr TimeZoneVariant(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
-
-  
 
 
 
 
 
 
+  [[deprecated("type not needed anymore")]]
+  inline static icu4x::TimeZoneVariant from_rearguard_isdst(bool isdst);
 
-
-  inline icu4x::TimeZoneVariant from_rearguard_isdst(bool isdst) const;
-
-  inline icu4x::capi::TimeZoneVariant AsFFI() const;
-  inline static icu4x::TimeZoneVariant FromFFI(icu4x::capi::TimeZoneVariant c_enum);
+    inline icu4x::capi::TimeZoneVariant AsFFI() const;
+    inline static icu4x::TimeZoneVariant FromFFI(icu4x::capi::TimeZoneVariant c_enum);
 private:
     Value value;
 };

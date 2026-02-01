@@ -1,5 +1,5 @@
-#ifndef icu4x_DecimalSign_D_HPP
-#define icu4x_DecimalSign_D_HPP
+#ifndef ICU4X_DecimalSign_D_HPP
+#define ICU4X_DecimalSign_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -32,21 +32,22 @@ namespace icu4x {
 
 class DecimalSign {
 public:
-  enum Value {
-    None = 0,
-    Negative = 1,
-    Positive = 2,
-  };
+    enum Value {
+        None = 0,
+        Negative = 1,
+        Positive = 2,
+    };
 
-  DecimalSign() = default;
-  
-  constexpr DecimalSign(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    DecimalSign(): value(Value::None) {}
 
-  inline icu4x::capi::DecimalSign AsFFI() const;
-  inline static icu4x::DecimalSign FromFFI(icu4x::capi::DecimalSign c_enum);
+    
+    constexpr DecimalSign(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::DecimalSign AsFFI() const;
+    inline static icu4x::DecimalSign FromFFI(icu4x::capi::DecimalSign c_enum);
 private:
     Value value;
 };

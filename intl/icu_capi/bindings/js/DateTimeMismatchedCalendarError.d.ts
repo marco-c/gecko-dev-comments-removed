@@ -2,14 +2,13 @@
 import type { CalendarKind } from "./CalendarKind"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-type DateTimeMismatchedCalendarError_obj = {
+export type DateTimeMismatchedCalendarError_obj = {
     thisKind: CalendarKind;
     dateKind?: CalendarKind | null;
 };
+
+
+
 
 
 
@@ -19,11 +18,12 @@ export class DateTimeMismatchedCalendarError {
     get dateKind(): CalendarKind | null;
     set dateKind(value: CalendarKind | null);
     
-
-
     static fromFields(structObj : DateTimeMismatchedCalendarError_obj) : DateTimeMismatchedCalendarError;
+
+    
 
 
 
     constructor(structObj: DateTimeMismatchedCalendarError_obj);
+
 }

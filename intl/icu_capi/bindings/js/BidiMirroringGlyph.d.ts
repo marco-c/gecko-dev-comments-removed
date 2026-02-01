@@ -2,15 +2,14 @@
 import type { BidiPairedBracketType } from "./BidiPairedBracketType"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-type BidiMirroringGlyph_obj = {
+export type BidiMirroringGlyph_obj = {
     mirroringGlyph?: codepoint | null;
     mirrored: boolean;
     pairedBracketType: BidiPairedBracketType;
 };
+
+
+
 
 
 
@@ -22,16 +21,17 @@ export class BidiMirroringGlyph {
     get pairedBracketType(): BidiPairedBracketType;
     set pairedBracketType(value: BidiPairedBracketType);
     
-
-
     static fromFields(structObj : BidiMirroringGlyph_obj) : BidiMirroringGlyph;
 
+    
+
+
+
+    constructor(structObj: BidiMirroringGlyph_obj);
 
 
     
 
 
     static forChar(ch: codepoint): BidiMirroringGlyph;
-
-    constructor(structObj: BidiMirroringGlyph_obj);
 }

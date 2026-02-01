@@ -9,8 +9,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Calendar {
+    
     get ffiValue(): pointer;
 
 
@@ -27,6 +27,11 @@ export class Calendar {
 
 
     get kind(): CalendarKind;
+
+    
+
+
+
 
     constructor(kind: CalendarKind);
 }

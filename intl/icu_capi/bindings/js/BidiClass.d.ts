@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class BidiClass {
 
+    
     static fromValue(value: BidiClass | string): BidiClass;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static LeftToRight : BidiClass;

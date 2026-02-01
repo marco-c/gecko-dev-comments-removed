@@ -1,10 +1,13 @@
 
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-type IsoWeekOfYear_obj = {
+export type IsoWeekOfYear_obj = {
     weekNumber: number;
     isoYear: number;
 };
+
+
+
 
 
 
@@ -14,11 +17,12 @@ export class IsoWeekOfYear {
     get isoYear(): number;
     set isoYear(value: number);
     
-
-
     static fromFields(structObj : IsoWeekOfYear_obj) : IsoWeekOfYear;
+
+    
 
 
 
     constructor(structObj: IsoWeekOfYear_obj);
+
 }

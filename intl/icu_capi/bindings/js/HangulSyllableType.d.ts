@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class HangulSyllableType {
 
+    
     static fromValue(value: HangulSyllableType | string): HangulSyllableType;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static NotApplicable : HangulSyllableType;

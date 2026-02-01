@@ -9,13 +9,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CalendarKind {
 
+    
     static fromValue(value: CalendarKind | string): CalendarKind;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Iso : CalendarKind;

@@ -7,9 +7,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class WordBreakIteratorLatin1 {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

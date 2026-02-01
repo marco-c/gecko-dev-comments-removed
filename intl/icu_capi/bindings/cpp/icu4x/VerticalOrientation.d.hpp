@@ -1,5 +1,5 @@
-#ifndef icu4x_VerticalOrientation_D_HPP
-#define icu4x_VerticalOrientation_D_HPP
+#ifndef ICU4X_VerticalOrientation_D_HPP
+#define ICU4X_VerticalOrientation_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,11 +9,11 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 class VerticalOrientation;
-}
+} 
+
 
 
 namespace icu4x {
@@ -35,19 +35,20 @@ namespace icu4x {
 
 class VerticalOrientation {
 public:
-  enum Value {
-    Rotated = 0,
-    TransformedRotated = 1,
-    TransformedUpright = 2,
-    Upright = 3,
-  };
+    enum Value {
+        Rotated = 0,
+        TransformedRotated = 1,
+        TransformedUpright = 2,
+        Upright = 3,
+    };
 
-  VerticalOrientation() = default;
-  
-  constexpr VerticalOrientation(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    VerticalOrientation(): value(Value::Rotated) {}
+
+    
+    constexpr VerticalOrientation(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
 
   
 
@@ -82,8 +83,8 @@ public:
 
   inline static std::optional<icu4x::VerticalOrientation> from_integer_value(uint8_t other);
 
-  inline icu4x::capi::VerticalOrientation AsFFI() const;
-  inline static icu4x::VerticalOrientation FromFFI(icu4x::capi::VerticalOrientation c_enum);
+    inline icu4x::capi::VerticalOrientation AsFFI() const;
+    inline static icu4x::VerticalOrientation FromFFI(icu4x::capi::VerticalOrientation c_enum);
 private:
     Value value;
 };

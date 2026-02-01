@@ -13,9 +13,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ZonedDateFormatterGregorian {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -181,5 +183,5 @@ export class ZonedDateFormatterGregorian {
     
 
 
-    formatIso(date: IsoDate, zone: TimeZoneInfo): string;
+    formatIso(isoDate: IsoDate, zone: TimeZoneInfo): string;
 }

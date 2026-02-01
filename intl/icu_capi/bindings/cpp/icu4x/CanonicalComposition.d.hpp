@@ -1,5 +1,5 @@
-#ifndef icu4x_CanonicalComposition_D_HPP
-#define icu4x_CanonicalComposition_D_HPP
+#ifndef ICU4X_CanonicalComposition_D_HPP
+#define ICU4X_CanonicalComposition_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,15 +9,15 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct CanonicalComposition; }
 class CanonicalComposition;
 namespace capi { struct DataProvider; }
 class DataProvider;
 class DataError;
-}
+} 
+
 
 
 namespace icu4x {
@@ -49,7 +49,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::CanonicalComposition>, icu4x::DataError> create_with_provider(const icu4x::DataProvider& provider);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::CanonicalComposition>, icu4x::DataError> create_with_provider(const icu4x::DataProvider& provider);
 
   
 
@@ -59,18 +59,18 @@ public:
 
   inline char32_t compose(char32_t starter, char32_t second) const;
 
-  inline const icu4x::capi::CanonicalComposition* AsFFI() const;
-  inline icu4x::capi::CanonicalComposition* AsFFI();
-  inline static const icu4x::CanonicalComposition* FromFFI(const icu4x::capi::CanonicalComposition* ptr);
-  inline static icu4x::CanonicalComposition* FromFFI(icu4x::capi::CanonicalComposition* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::CanonicalComposition* AsFFI() const;
+    inline icu4x::capi::CanonicalComposition* AsFFI();
+    inline static const icu4x::CanonicalComposition* FromFFI(const icu4x::capi::CanonicalComposition* ptr);
+    inline static icu4x::CanonicalComposition* FromFFI(icu4x::capi::CanonicalComposition* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  CanonicalComposition() = delete;
-  CanonicalComposition(const icu4x::CanonicalComposition&) = delete;
-  CanonicalComposition(icu4x::CanonicalComposition&&) noexcept = delete;
-  CanonicalComposition operator=(const icu4x::CanonicalComposition&) = delete;
-  CanonicalComposition operator=(icu4x::CanonicalComposition&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    CanonicalComposition() = delete;
+    CanonicalComposition(const icu4x::CanonicalComposition&) = delete;
+    CanonicalComposition(icu4x::CanonicalComposition&&) noexcept = delete;
+    CanonicalComposition operator=(const icu4x::CanonicalComposition&) = delete;
+    CanonicalComposition operator=(icu4x::CanonicalComposition&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

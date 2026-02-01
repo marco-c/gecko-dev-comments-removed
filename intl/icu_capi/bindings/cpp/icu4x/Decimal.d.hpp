@@ -1,5 +1,5 @@
-#ifndef icu4x_Decimal_D_HPP
-#define icu4x_Decimal_D_HPP
+#ifndef ICU4X_Decimal_D_HPP
+#define ICU4X_Decimal_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct Decimal; }
 class Decimal;
@@ -20,7 +19,8 @@ class DecimalRoundingIncrement;
 class DecimalSign;
 class DecimalSignDisplay;
 class DecimalSignedRoundingMode;
-}
+} 
+
 
 
 namespace icu4x {
@@ -71,7 +71,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_integer_precision(double f);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_integer_precision(double f);
 
   
 
@@ -80,7 +80,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_lower_magnitude(double f, int16_t magnitude);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_lower_magnitude(double f, int16_t magnitude);
 
   
 
@@ -89,7 +89,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_significant_digits(double f, uint8_t digits);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_significant_digits(double f, uint8_t digits);
 
   
 
@@ -99,14 +99,14 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_round_trip_precision(double f);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalLimitError> from_double_with_round_trip_precision(double f);
 
   
 
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalParseError> from_string(std::string_view v);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::Decimal>, icu4x::DecimalParseError> from_string(std::string_view v);
 
   
 
@@ -248,7 +248,7 @@ public:
 
 
 
-  inline diplomat::result<std::monostate, std::monostate> concatenate_end(icu4x::Decimal& other);
+  inline icu4x::diplomat::result<std::monostate, std::monostate> concatenate_end(icu4x::Decimal& other);
 
   
 
@@ -256,19 +256,21 @@ public:
 
 
   inline std::string to_string() const;
+  template<typename W>
+  inline void to_string_write(W& writeable_output) const;
 
-  inline const icu4x::capi::Decimal* AsFFI() const;
-  inline icu4x::capi::Decimal* AsFFI();
-  inline static const icu4x::Decimal* FromFFI(const icu4x::capi::Decimal* ptr);
-  inline static icu4x::Decimal* FromFFI(icu4x::capi::Decimal* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::Decimal* AsFFI() const;
+    inline icu4x::capi::Decimal* AsFFI();
+    inline static const icu4x::Decimal* FromFFI(const icu4x::capi::Decimal* ptr);
+    inline static icu4x::Decimal* FromFFI(icu4x::capi::Decimal* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  Decimal() = delete;
-  Decimal(const icu4x::Decimal&) = delete;
-  Decimal(icu4x::Decimal&&) noexcept = delete;
-  Decimal operator=(const icu4x::Decimal&) = delete;
-  Decimal operator=(icu4x::Decimal&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    Decimal() = delete;
+    Decimal(const icu4x::Decimal&) = delete;
+    Decimal(icu4x::Decimal&&) noexcept = delete;
+    Decimal operator=(const icu4x::Decimal&) = delete;
+    Decimal operator=(icu4x::Decimal&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

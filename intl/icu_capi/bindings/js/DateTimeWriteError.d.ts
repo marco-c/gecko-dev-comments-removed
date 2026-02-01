@@ -10,14 +10,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
-
 export class DateTimeWriteError {
 
+    
     static fromValue(value: DateTimeWriteError | string): DateTimeWriteError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : DateTimeWriteError;

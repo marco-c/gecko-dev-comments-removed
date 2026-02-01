@@ -12,9 +12,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class WordSegmenter {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

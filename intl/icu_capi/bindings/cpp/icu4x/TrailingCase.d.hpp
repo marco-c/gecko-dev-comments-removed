@@ -1,5 +1,5 @@
-#ifndef icu4x_TrailingCase_D_HPP
-#define icu4x_TrailingCase_D_HPP
+#ifndef ICU4X_TrailingCase_D_HPP
+#define ICU4X_TrailingCase_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -29,20 +29,21 @@ namespace icu4x {
 
 class TrailingCase {
 public:
-  enum Value {
-    Lower = 0,
-    Unchanged = 1,
-  };
+    enum Value {
+        Lower = 0,
+        Unchanged = 1,
+    };
 
-  TrailingCase() = default;
-  
-  constexpr TrailingCase(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    TrailingCase(): value(Value::Lower) {}
 
-  inline icu4x::capi::TrailingCase AsFFI() const;
-  inline static icu4x::TrailingCase FromFFI(icu4x::capi::TrailingCase c_enum);
+    
+    constexpr TrailingCase(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::TrailingCase AsFFI() const;
+    inline static icu4x::TrailingCase FromFFI(icu4x::capi::TrailingCase c_enum);
 private:
     Value value;
 };

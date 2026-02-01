@@ -10,8 +10,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CanonicalCombiningClassMap {
+    
     get ffiValue(): pointer;
 
 
@@ -28,6 +28,11 @@ export class CanonicalCombiningClassMap {
 
 
     get(ch: codepoint): number;
+
+    
+
+
+
 
     constructor();
 }

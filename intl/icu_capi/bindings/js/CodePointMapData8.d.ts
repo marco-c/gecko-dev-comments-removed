@@ -20,9 +20,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CodePointMapData8 {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

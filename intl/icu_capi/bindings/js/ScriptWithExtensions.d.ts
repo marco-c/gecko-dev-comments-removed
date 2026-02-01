@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ScriptWithExtensions {
+    
     get ffiValue(): pointer;
 
 
@@ -51,6 +51,11 @@ export class ScriptWithExtensions {
 
 
     iterRangesForScript(script: number): CodePointRangeIterator;
+
+    
+
+
+
 
     constructor();
 }

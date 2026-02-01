@@ -14,9 +14,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class PropertyValueNameToEnumMapper {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

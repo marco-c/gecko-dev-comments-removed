@@ -6,9 +6,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class SentenceBreakIteratorUtf8 {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

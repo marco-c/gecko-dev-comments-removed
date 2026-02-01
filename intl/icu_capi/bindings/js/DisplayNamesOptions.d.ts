@@ -4,15 +4,16 @@ import type { DisplayNamesStyle } from "./DisplayNamesStyle"
 import type { LanguageDisplay } from "./LanguageDisplay"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-type DisplayNamesOptions_obj = {
+export type DisplayNamesOptions_obj = {
     style?: DisplayNamesStyle | null;
     fallback?: DisplayNamesFallback | null;
     languageDisplay?: LanguageDisplay | null;
 };
+
+
+
+
+
 
 
 
@@ -24,11 +25,12 @@ export class DisplayNamesOptions {
     get languageDisplay(): LanguageDisplay | null;
     set languageDisplay(value: LanguageDisplay | null);
     
-
-
     static fromFields(structObj : DisplayNamesOptions_obj) : DisplayNamesOptions;
+
+    
 
 
 
     constructor(structObj: DisplayNamesOptions_obj);
+
 }

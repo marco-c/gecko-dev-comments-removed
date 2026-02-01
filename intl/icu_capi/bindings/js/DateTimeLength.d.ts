@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DateTimeLength {
 
+    
     static fromValue(value: DateTimeLength | string): DateTimeLength;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Long : DateTimeLength;

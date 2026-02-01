@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class WordBreak {
 
+    
     static fromValue(value: WordBreak | string): WordBreak;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Other : WordBreak;

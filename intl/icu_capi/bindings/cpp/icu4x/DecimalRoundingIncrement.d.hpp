@@ -1,5 +1,5 @@
-#ifndef icu4x_DecimalRoundingIncrement_D_HPP
-#define icu4x_DecimalRoundingIncrement_D_HPP
+#ifndef ICU4X_DecimalRoundingIncrement_D_HPP
+#define ICU4X_DecimalRoundingIncrement_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -33,22 +33,23 @@ namespace icu4x {
 
 class DecimalRoundingIncrement {
 public:
-  enum Value {
-    MultiplesOf1 = 0,
-    MultiplesOf2 = 1,
-    MultiplesOf5 = 2,
-    MultiplesOf25 = 3,
-  };
+    enum Value {
+        MultiplesOf1 = 0,
+        MultiplesOf2 = 1,
+        MultiplesOf5 = 2,
+        MultiplesOf25 = 3,
+    };
 
-  DecimalRoundingIncrement() = default;
-  
-  constexpr DecimalRoundingIncrement(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    DecimalRoundingIncrement(): value(Value::MultiplesOf1) {}
 
-  inline icu4x::capi::DecimalRoundingIncrement AsFFI() const;
-  inline static icu4x::DecimalRoundingIncrement FromFFI(icu4x::capi::DecimalRoundingIncrement c_enum);
+    
+    constexpr DecimalRoundingIncrement(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::DecimalRoundingIncrement AsFFI() const;
+    inline static icu4x::DecimalRoundingIncrement FromFFI(icu4x::capi::DecimalRoundingIncrement c_enum);
 private:
     Value value;
 };

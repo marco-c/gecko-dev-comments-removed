@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class BidiPairedBracketType {
 
+    
     static fromValue(value: BidiPairedBracketType | string): BidiPairedBracketType;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Open : BidiPairedBracketType;

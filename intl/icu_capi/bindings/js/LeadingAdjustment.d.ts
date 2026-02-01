@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LeadingAdjustment {
 
+    
     static fromValue(value: LeadingAdjustment | string): LeadingAdjustment;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Auto : LeadingAdjustment;

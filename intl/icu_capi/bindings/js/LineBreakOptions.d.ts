@@ -3,14 +3,13 @@ import type { LineBreakStrictness } from "./LineBreakStrictness"
 import type { LineBreakWordOption } from "./LineBreakWordOption"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-type LineBreakOptions_obj = {
+export type LineBreakOptions_obj = {
     strictness?: LineBreakStrictness | null;
     wordOption?: LineBreakWordOption | null;
 };
+
+
+
 
 
 
@@ -20,11 +19,12 @@ export class LineBreakOptions {
     get wordOption(): LineBreakWordOption | null;
     set wordOption(value: LineBreakWordOption | null);
     
-
-
     static fromFields(structObj : LineBreakOptions_obj) : LineBreakOptions;
+
+    
 
 
 
     constructor(structObj: LineBreakOptions_obj);
+
 }

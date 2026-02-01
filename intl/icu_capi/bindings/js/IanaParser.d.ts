@@ -15,8 +15,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class IanaParser {
+    
     get ffiValue(): pointer;
 
 
@@ -36,6 +36,11 @@ export class IanaParser {
 
 
     iter(): TimeZoneIterator;
+
+    
+
+
+
 
     constructor();
 }

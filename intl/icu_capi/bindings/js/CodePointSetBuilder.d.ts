@@ -7,8 +7,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CodePointSetBuilder {
+    
     get ffiValue(): pointer;
 
 
@@ -126,6 +126,11 @@ export class CodePointSetBuilder {
 
 
     complementSet(data: CodePointSetData): void;
+
+    
+
+
+
 
     constructor();
 }

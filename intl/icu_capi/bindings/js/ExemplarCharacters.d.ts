@@ -15,9 +15,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ExemplarCharacters {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

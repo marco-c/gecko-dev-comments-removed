@@ -13,8 +13,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class GeneralCategoryNameToGroupMapper {
+    
     get ffiValue(): pointer;
 
 
@@ -42,6 +42,11 @@ export class GeneralCategoryNameToGroupMapper {
 
 
     static createWithProvider(provider: DataProvider): GeneralCategoryNameToGroupMapper;
+
+    
+
+
+
 
     constructor();
 }

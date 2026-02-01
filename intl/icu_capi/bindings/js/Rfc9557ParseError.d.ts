@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Rfc9557ParseError {
 
+    
     static fromValue(value: Rfc9557ParseError | string): Rfc9557ParseError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : Rfc9557ParseError;

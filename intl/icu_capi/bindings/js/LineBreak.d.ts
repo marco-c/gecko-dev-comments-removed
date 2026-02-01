@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LineBreak {
 
+    
     static fromValue(value: LineBreak | string): LineBreak;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : LineBreak;
@@ -63,6 +64,7 @@ export class LineBreak {
     static AksaraStart : LineBreak;
     static ViramaFinal : LineBreak;
     static Virama : LineBreak;
+    static UnambiguousHyphen : LineBreak;
 
 
     

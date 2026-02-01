@@ -7,12 +7,15 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
 export class DisplayNamesStyle {
 
+    
     static fromValue(value: DisplayNamesStyle | string): DisplayNamesStyle;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Narrow : DisplayNamesStyle;

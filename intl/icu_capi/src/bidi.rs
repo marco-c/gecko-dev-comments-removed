@@ -4,7 +4,6 @@
 
 #[diplomat::bridge]
 #[diplomat::abi_rename = "icu4x_{0}_mv1"]
-#[diplomat::attr(auto, namespace = "icu4x")]
 pub mod ffi {
     use alloc::boxed::Box;
     use alloc::vec::Vec;
@@ -13,7 +12,12 @@ pub mod ffi {
     #[cfg(feature = "buffer_provider")]
     use crate::unstable::{errors::ffi::DataError, provider::ffi::DataProvider};
 
+    #[non_exhaustive]
+    #[diplomat::rust_link(unicode_bidi::Direction, Enum)]
     pub enum BidiDirection {
+        
+        
+        #[diplomat::attr(auto, default)]
         Ltr,
         Rtl,
         Mixed,
@@ -22,6 +26,7 @@ pub mod ffi {
     #[diplomat::opaque]
     
     #[diplomat::rust_link(icu::properties::props::BidiClass, Struct)]
+    #[diplomat::attr(demo_gen, disable)] 
     pub struct Bidi(pub icu_properties::CodePointMapData<icu_properties::props::BidiClass>);
 
     impl Bidi {
@@ -114,7 +119,7 @@ pub mod ffi {
         
         
         
-        #[diplomat::rust_link(unicode_bidi::Level::is_rtl, FnInStruct)]
+        #[diplomat::rust_link(unicode_bidi::level::Level::is_rtl, FnInStruct)]
         pub fn level_is_rtl(level: u8) -> bool {
             unicode_bidi::Level::new(level)
                 .unwrap_or_else(|_| unicode_bidi::Level::ltr())
@@ -124,7 +129,7 @@ pub mod ffi {
         
         
         
-        #[diplomat::rust_link(unicode_bidi::Level::is_ltr, FnInStruct)]
+        #[diplomat::rust_link(unicode_bidi::level::Level::is_ltr, FnInStruct)]
         pub fn level_is_ltr(level: u8) -> bool {
             unicode_bidi::Level::new(level)
                 .unwrap_or_else(|_| unicode_bidi::Level::ltr())
@@ -132,13 +137,13 @@ pub mod ffi {
         }
 
         
-        #[diplomat::rust_link(unicode_bidi::Level::rtl, FnInStruct)]
+        #[diplomat::rust_link(unicode_bidi::level::Level::rtl, FnInStruct)]
         pub fn level_rtl() -> u8 {
             unicode_bidi::Level::rtl().number()
         }
 
         
-        #[diplomat::rust_link(unicode_bidi::Level::ltr, FnInStruct)]
+        #[diplomat::rust_link(unicode_bidi::level::Level::ltr, FnInStruct)]
         pub fn level_ltr() -> u8 {
             unicode_bidi::Level::ltr().number()
         }
@@ -150,6 +155,7 @@ pub mod ffi {
     
     
     #[diplomat::opaque]
+    #[diplomat::attr(demo_gen, disable)] 
     pub struct ReorderedIndexMap(pub Vec<usize>);
 
     impl ReorderedIndexMap {
@@ -183,6 +189,7 @@ pub mod ffi {
     
     #[diplomat::rust_link(unicode_bidi::BidiInfo, Struct)]
     #[diplomat::opaque]
+    #[diplomat::attr(demo_gen, disable)] 
     pub struct BidiInfo<'text>(pub unicode_bidi::BidiInfo<'text>);
 
     impl<'text> BidiInfo<'text> {
@@ -222,6 +229,7 @@ pub mod ffi {
 
     
     #[diplomat::opaque]
+    #[diplomat::attr(demo_gen, disable)] 
     pub struct BidiParagraph<'info>(pub unicode_bidi::Paragraph<'info, 'info>);
 
     impl<'info> BidiParagraph<'info> {
@@ -267,7 +275,7 @@ pub mod ffi {
         
         
         #[diplomat::rust_link(unicode_bidi::Paragraph::level_at, FnInStruct)]
-        #[diplomat::attr(demo_gen, disable)]
+        #[diplomat::attr(demo_gen, disable)] 
         pub fn reorder_line(
             &self,
             range_start: usize,

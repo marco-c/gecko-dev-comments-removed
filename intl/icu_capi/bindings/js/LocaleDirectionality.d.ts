@@ -10,8 +10,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LocaleDirectionality {
+    
     get ffiValue(): pointer;
 
 
@@ -50,6 +50,11 @@ export class LocaleDirectionality {
 
 
     isRightToLeft(locale: Locale): boolean;
+
+    
+
+
+
 
     constructor();
 }

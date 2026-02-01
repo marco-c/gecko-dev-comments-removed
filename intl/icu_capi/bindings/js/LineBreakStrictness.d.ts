@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LineBreakStrictness {
 
+    
     static fromValue(value: LineBreakStrictness | string): LineBreakStrictness;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Loose : LineBreakStrictness;

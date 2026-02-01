@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DecimalGroupingStrategy {
 
+    
     static fromValue(value: DecimalGroupingStrategy | string): DecimalGroupingStrategy;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Auto : DecimalGroupingStrategy;

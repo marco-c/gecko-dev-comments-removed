@@ -15,10 +15,17 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DataProvider {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
+
+    
+
+
+    static fromByteSlice(blob: Uint8Array): DataProvider;
 
     
 

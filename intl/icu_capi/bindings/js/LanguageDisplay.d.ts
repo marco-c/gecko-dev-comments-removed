@@ -7,12 +7,15 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
 export class LanguageDisplay {
 
+    
     static fromValue(value: LanguageDisplay | string): LanguageDisplay;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Dialect : LanguageDisplay;

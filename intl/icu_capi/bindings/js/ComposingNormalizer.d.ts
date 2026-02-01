@@ -8,9 +8,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ComposingNormalizer {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

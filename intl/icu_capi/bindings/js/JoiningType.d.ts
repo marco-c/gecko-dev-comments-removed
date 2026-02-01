@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class JoiningType {
 
+    
     static fromValue(value: JoiningType | string): JoiningType;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static NonJoining : JoiningType;

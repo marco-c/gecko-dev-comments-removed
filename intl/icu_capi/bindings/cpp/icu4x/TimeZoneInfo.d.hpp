@@ -1,5 +1,5 @@
-#ifndef icu4x_TimeZoneInfo_D_HPP
-#define icu4x_TimeZoneInfo_D_HPP
+#ifndef ICU4X_TimeZoneInfo_D_HPP
+#define ICU4X_TimeZoneInfo_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct IsoDate; }
 class IsoDate;
@@ -26,7 +25,8 @@ namespace capi { struct VariantOffsetsCalculator; }
 class VariantOffsetsCalculator;
 struct IsoDateTime;
 class TimeZoneVariant;
-}
+} 
+
 
 
 namespace icu4x {
@@ -52,7 +52,9 @@ public:
   
 
 
-  inline static std::unique_ptr<icu4x::TimeZoneInfo> from_parts(const icu4x::TimeZone& id, const icu4x::UtcOffset* offset, std::optional<icu4x::TimeZoneVariant> variant);
+
+
+  inline static std::unique_ptr<icu4x::TimeZoneInfo> from_parts(const icu4x::TimeZone& id, const icu4x::UtcOffset* offset, std::optional<icu4x::TimeZoneVariant> _variant);
 
   
 
@@ -73,9 +75,27 @@ public:
 
 
 
+
   inline std::unique_ptr<icu4x::TimeZoneInfo> at_date_time_iso(const icu4x::IsoDate& date, const icu4x::Time& time) const;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+  inline std::unique_ptr<icu4x::TimeZoneInfo> at_timestamp(int64_t timestamp) const;
+
+  
+
+
 
 
   inline std::optional<icu4x::IsoDateTime> zone_name_date_time() const;
@@ -83,7 +103,15 @@ public:
   
 
 
-  inline std::unique_ptr<icu4x::TimeZoneInfo> with_variant(icu4x::TimeZoneVariant time_variant) const;
+
+
+  [[deprecated("returns unmodified copy")]]
+  inline std::unique_ptr<icu4x::TimeZoneInfo> with_variant(icu4x::TimeZoneVariant _time_variant) const;
+
+  
+
+
+  inline std::unique_ptr<icu4x::UtcOffset> offset() const;
 
   
 
@@ -92,27 +120,29 @@ public:
 
 
 
-
-
-  inline std::optional<std::monostate> infer_variant(const icu4x::VariantOffsetsCalculator& offset_calculator);
+  [[deprecated("does nothing")]]
+  inline std::optional<std::monostate> infer_variant(const icu4x::VariantOffsetsCalculator& _offset_calculator);
 
   
 
 
+
+
+  [[deprecated("always returns null")]]
   inline std::optional<icu4x::TimeZoneVariant> variant() const;
 
-  inline const icu4x::capi::TimeZoneInfo* AsFFI() const;
-  inline icu4x::capi::TimeZoneInfo* AsFFI();
-  inline static const icu4x::TimeZoneInfo* FromFFI(const icu4x::capi::TimeZoneInfo* ptr);
-  inline static icu4x::TimeZoneInfo* FromFFI(icu4x::capi::TimeZoneInfo* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::TimeZoneInfo* AsFFI() const;
+    inline icu4x::capi::TimeZoneInfo* AsFFI();
+    inline static const icu4x::TimeZoneInfo* FromFFI(const icu4x::capi::TimeZoneInfo* ptr);
+    inline static icu4x::TimeZoneInfo* FromFFI(icu4x::capi::TimeZoneInfo* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  TimeZoneInfo() = delete;
-  TimeZoneInfo(const icu4x::TimeZoneInfo&) = delete;
-  TimeZoneInfo(icu4x::TimeZoneInfo&&) noexcept = delete;
-  TimeZoneInfo operator=(const icu4x::TimeZoneInfo&) = delete;
-  TimeZoneInfo operator=(icu4x::TimeZoneInfo&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    TimeZoneInfo() = delete;
+    TimeZoneInfo(const icu4x::TimeZoneInfo&) = delete;
+    TimeZoneInfo(icu4x::TimeZoneInfo&&) noexcept = delete;
+    TimeZoneInfo operator=(const icu4x::TimeZoneInfo&) = delete;
+    TimeZoneInfo operator=(icu4x::TimeZoneInfo&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

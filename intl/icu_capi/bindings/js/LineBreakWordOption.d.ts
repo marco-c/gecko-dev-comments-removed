@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LineBreakWordOption {
 
+    
     static fromValue(value: LineBreakWordOption | string): LineBreakWordOption;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Normal : LineBreakWordOption;

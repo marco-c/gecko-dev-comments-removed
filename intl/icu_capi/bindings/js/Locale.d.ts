@@ -9,9 +9,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Locale {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -53,6 +55,13 @@ export class Locale {
 
 
     getUnicodeExtension(s: string): string | null;
+
+    
+
+
+
+
+    setUnicodeExtension(k: string, v: string): boolean;
 
     
 

@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DecimalParseError {
 
+    
     static fromValue(value: DecimalParseError | string): DecimalParseError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : DecimalParseError;

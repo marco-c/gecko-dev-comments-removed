@@ -7,9 +7,10 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class VariantOffsets {
     get standard(): UtcOffset;
     get daylight(): UtcOffset | null;
+    
+    constructor();
 
 }

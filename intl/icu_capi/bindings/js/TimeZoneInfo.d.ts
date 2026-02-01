@@ -13,8 +13,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class TimeZoneInfo {
+    
     get ffiValue(): pointer;
 
 
@@ -28,9 +28,10 @@ export class TimeZoneInfo {
     
 
 
-    id(): TimeZone;
+    get id(): TimeZone;
 
     
+
 
 
 
@@ -49,9 +50,28 @@ export class TimeZoneInfo {
     
 
 
-    zoneNameDateTime(): IsoDateTime | null;
+
+
+
+
+
+
+
+
+
+
+    atTimestamp(timestamp: bigint): TimeZoneInfo;
 
     
+
+
+
+
+    get zoneNameDateTime(): IsoDateTime | null;
+
+    
+
+
 
 
     withVariant(timeVariant: TimeZoneVariant): TimeZoneInfo;
@@ -59,6 +79,9 @@ export class TimeZoneInfo {
     
 
 
+    get offset(): UtcOffset | null;
+
+    
 
 
 
@@ -70,7 +93,14 @@ export class TimeZoneInfo {
     
 
 
+
+
     variant(): TimeZoneVariant | null;
+
+    
+
+
+
 
     constructor(id: TimeZone, offset: UtcOffset | null, variant: TimeZoneVariant | null);
 }

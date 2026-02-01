@@ -8,9 +8,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DecomposingNormalizer {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -66,24 +68,5 @@ export class DecomposingNormalizer {
 
 
 
-
-
-
-    isNormalizedUtf16(s: string): boolean;
-
-    
-
-
-
-
-
-
     isNormalizedUpTo(s: string): number;
-
-    
-
-
-
-
-    isNormalizedUtf16UpTo(s: string): number;
 }

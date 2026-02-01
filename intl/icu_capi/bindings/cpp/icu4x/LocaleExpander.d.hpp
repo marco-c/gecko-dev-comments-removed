@@ -1,5 +1,5 @@
-#ifndef icu4x_LocaleExpander_D_HPP
-#define icu4x_LocaleExpander_D_HPP
+#ifndef ICU4X_LocaleExpander_D_HPP
+#define ICU4X_LocaleExpander_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct DataProvider; }
 class DataProvider;
@@ -20,7 +19,8 @@ namespace capi { struct LocaleExpander; }
 class LocaleExpander;
 class DataError;
 class TransformResult;
-}
+} 
+
 
 
 namespace icu4x {
@@ -50,7 +50,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LocaleExpander>, icu4x::DataError> create_common_with_provider(const icu4x::DataProvider& provider);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LocaleExpander>, icu4x::DataError> create_common_with_provider(const icu4x::DataProvider& provider);
 
   
 
@@ -64,7 +64,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LocaleExpander>, icu4x::DataError> create_extended_with_provider(const icu4x::DataProvider& provider);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LocaleExpander>, icu4x::DataError> create_extended_with_provider(const icu4x::DataProvider& provider);
 
   
 
@@ -81,18 +81,18 @@ public:
 
   inline icu4x::TransformResult minimize_favor_script(icu4x::Locale& locale) const;
 
-  inline const icu4x::capi::LocaleExpander* AsFFI() const;
-  inline icu4x::capi::LocaleExpander* AsFFI();
-  inline static const icu4x::LocaleExpander* FromFFI(const icu4x::capi::LocaleExpander* ptr);
-  inline static icu4x::LocaleExpander* FromFFI(icu4x::capi::LocaleExpander* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::LocaleExpander* AsFFI() const;
+    inline icu4x::capi::LocaleExpander* AsFFI();
+    inline static const icu4x::LocaleExpander* FromFFI(const icu4x::capi::LocaleExpander* ptr);
+    inline static icu4x::LocaleExpander* FromFFI(icu4x::capi::LocaleExpander* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  LocaleExpander() = delete;
-  LocaleExpander(const icu4x::LocaleExpander&) = delete;
-  LocaleExpander(icu4x::LocaleExpander&&) noexcept = delete;
-  LocaleExpander operator=(const icu4x::LocaleExpander&) = delete;
-  LocaleExpander operator=(icu4x::LocaleExpander&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    LocaleExpander() = delete;
+    LocaleExpander(const icu4x::LocaleExpander&) = delete;
+    LocaleExpander(icu4x::LocaleExpander&&) noexcept = delete;
+    LocaleExpander operator=(const icu4x::LocaleExpander&) = delete;
+    LocaleExpander operator=(icu4x::LocaleExpander&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

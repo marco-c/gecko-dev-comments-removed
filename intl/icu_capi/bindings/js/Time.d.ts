@@ -10,8 +10,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Time {
+    
     get ffiValue(): pointer;
 
 
@@ -63,6 +63,11 @@ export class Time {
 
 
     get subsecond(): number;
+
+    
+
+
+
 
     constructor(hour: number, minute: number, second: number, subsecond: number);
 }

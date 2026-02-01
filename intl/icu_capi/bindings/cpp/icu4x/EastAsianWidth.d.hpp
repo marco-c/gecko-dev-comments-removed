@@ -1,5 +1,5 @@
-#ifndef icu4x_EastAsianWidth_D_HPP
-#define icu4x_EastAsianWidth_D_HPP
+#ifndef ICU4X_EastAsianWidth_D_HPP
+#define ICU4X_EastAsianWidth_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,11 +9,11 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 class EastAsianWidth;
-}
+} 
+
 
 
 namespace icu4x {
@@ -37,21 +37,22 @@ namespace icu4x {
 
 class EastAsianWidth {
 public:
-  enum Value {
-    Neutral = 0,
-    Ambiguous = 1,
-    Halfwidth = 2,
-    Fullwidth = 3,
-    Narrow = 4,
-    Wide = 5,
-  };
+    enum Value {
+        Neutral = 0,
+        Ambiguous = 1,
+        Halfwidth = 2,
+        Fullwidth = 3,
+        Narrow = 4,
+        Wide = 5,
+    };
 
-  EastAsianWidth() = default;
-  
-  constexpr EastAsianWidth(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    EastAsianWidth(): value(Value::Neutral) {}
+
+    
+    constexpr EastAsianWidth(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
 
   
 
@@ -86,8 +87,8 @@ public:
 
   inline static std::optional<icu4x::EastAsianWidth> from_integer_value(uint8_t other);
 
-  inline icu4x::capi::EastAsianWidth AsFFI() const;
-  inline static icu4x::EastAsianWidth FromFFI(icu4x::capi::EastAsianWidth c_enum);
+    inline icu4x::capi::EastAsianWidth AsFFI() const;
+    inline static icu4x::EastAsianWidth FromFFI(icu4x::capi::EastAsianWidth c_enum);
 private:
     Value value;
 };

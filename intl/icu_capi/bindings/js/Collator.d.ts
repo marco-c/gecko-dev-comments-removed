@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Collator {
+    
     get ffiValue(): pointer;
 
 
@@ -22,7 +22,7 @@ export class Collator {
 
 
 
-    static create(locale: Locale, options: CollatorOptions_obj): Collator;
+    static createWithProvider(provider: DataProvider, locale: Locale, options: CollatorOptions_obj): Collator;
 
     
 
@@ -43,5 +43,10 @@ export class Collator {
 
     get resolvedOptions(): CollatorResolvedOptions;
 
-    constructor(provider: DataProvider, locale: Locale, options: CollatorOptions_obj);
+    
+
+
+
+
+    constructor(locale: Locale, options: CollatorOptions_obj);
 }

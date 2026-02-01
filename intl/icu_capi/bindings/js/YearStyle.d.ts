@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class YearStyle {
 
+    
     static fromValue(value: YearStyle | string): YearStyle;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Auto : YearStyle;

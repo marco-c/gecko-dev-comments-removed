@@ -15,9 +15,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DateFormatter {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -203,7 +205,7 @@ export class DateFormatter {
     
 
 
-    formatIso(date: IsoDate): string;
+    formatIso(isoDate: IsoDate): string;
 
     
 

@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DateTimeFormatterLoadError {
 
+    
     static fromValue(value: DateTimeFormatterLoadError | string): DateTimeFormatterLoadError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : DateTimeFormatterLoadError;

@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LocaleCanonicalizer {
+    
     get ffiValue(): pointer;
 
 
@@ -42,6 +42,11 @@ export class LocaleCanonicalizer {
 
 
     canonicalize(locale: Locale): TransformResult;
+
+    
+
+
+
 
     constructor();
 }

@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CanonicalCombiningClass {
 
+    
     static fromValue(value: CanonicalCombiningClass | string): CanonicalCombiningClass;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static NotReordered : CanonicalCombiningClass;

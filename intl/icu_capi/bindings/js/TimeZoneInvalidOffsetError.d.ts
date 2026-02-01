@@ -5,18 +5,7 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-type TimeZoneInvalidOffsetError_obj = {
-};
-
-
 
 export class TimeZoneInvalidOffsetError {
-    
 
-
-    static fromFields(structObj : TimeZoneInvalidOffsetError_obj) : TimeZoneInvalidOffsetError;
-
-
-
-    constructor(structObj: TimeZoneInvalidOffsetError_obj);
 }

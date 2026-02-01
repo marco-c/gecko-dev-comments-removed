@@ -1,5 +1,5 @@
-#ifndef icu4x_IsoDateTime_D_HPP
-#define icu4x_IsoDateTime_D_HPP
+#ifndef ICU4X_IsoDateTime_D_HPP
+#define ICU4X_IsoDateTime_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct IsoDate; }
 class IsoDate;
@@ -18,7 +17,8 @@ namespace capi { struct Time; }
 class Time;
 struct IsoDateTime;
 class Rfc9557ParseError;
-}
+} 
+
 
 
 namespace icu4x {
@@ -40,18 +40,18 @@ namespace icu4x {
 
 
 struct IsoDateTime {
-  std::unique_ptr<icu4x::IsoDate> date;
-  std::unique_ptr<icu4x::Time> time;
+    std::unique_ptr<icu4x::IsoDate> date;
+    std::unique_ptr<icu4x::Time> time;
 
   
 
 
 
 
-  inline static diplomat::result<icu4x::IsoDateTime, icu4x::Rfc9557ParseError> from_string(std::string_view v);
+  inline static icu4x::diplomat::result<icu4x::IsoDateTime, icu4x::Rfc9557ParseError> from_string(std::string_view v);
 
-  inline icu4x::capi::IsoDateTime AsFFI() const;
-  inline static icu4x::IsoDateTime FromFFI(icu4x::capi::IsoDateTime c_struct);
+    inline icu4x::capi::IsoDateTime AsFFI() const;
+    inline static icu4x::IsoDateTime FromFFI(icu4x::capi::IsoDateTime c_struct);
 };
 
 } 

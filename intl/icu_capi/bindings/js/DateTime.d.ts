@@ -12,10 +12,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DateTime {
     get date(): Date;
     get time(): Time;
+    
+    constructor();
 
 
     

@@ -1,5 +1,5 @@
-#ifndef icu4x_LineSegmenter_D_HPP
-#define icu4x_LineSegmenter_D_HPP
+#ifndef ICU4X_LineSegmenter_D_HPP
+#define ICU4X_LineSegmenter_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct DataProvider; }
 class DataProvider;
@@ -26,7 +25,8 @@ namespace capi { struct Locale; }
 class Locale;
 struct LineBreakOptionsV2;
 class DataError;
-}
+} 
+
 
 
 namespace icu4x {
@@ -82,7 +82,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LineSegmenter>, icu4x::DataError> create_auto_with_options_v2_and_provider(const icu4x::DataProvider& provider, const icu4x::Locale* content_locale, icu4x::LineBreakOptionsV2 options);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LineSegmenter>, icu4x::DataError> create_auto_with_options_v2_and_provider(const icu4x::DataProvider& provider, const icu4x::Locale* content_locale, icu4x::LineBreakOptionsV2 options);
 
   
 
@@ -98,7 +98,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LineSegmenter>, icu4x::DataError> create_lstm_with_options_v2_and_provider(const icu4x::DataProvider& provider, const icu4x::Locale* content_locale, icu4x::LineBreakOptionsV2 options);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LineSegmenter>, icu4x::DataError> create_lstm_with_options_v2_and_provider(const icu4x::DataProvider& provider, const icu4x::Locale* content_locale, icu4x::LineBreakOptionsV2 options);
 
   
 
@@ -114,7 +114,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LineSegmenter>, icu4x::DataError> create_dictionary_with_options_v2_and_provider(const icu4x::DataProvider& provider, const icu4x::Locale* content_locale, icu4x::LineBreakOptionsV2 options);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LineSegmenter>, icu4x::DataError> create_dictionary_with_options_v2_and_provider(const icu4x::DataProvider& provider, const icu4x::Locale* content_locale, icu4x::LineBreakOptionsV2 options);
 
   
 
@@ -141,20 +141,20 @@ public:
 
 
 
-  inline std::unique_ptr<icu4x::LineBreakIteratorLatin1> segment_latin1(diplomat::span<const uint8_t> input) const;
+  inline std::unique_ptr<icu4x::LineBreakIteratorLatin1> segment_latin1(icu4x::diplomat::span<const uint8_t> input) const;
 
-  inline const icu4x::capi::LineSegmenter* AsFFI() const;
-  inline icu4x::capi::LineSegmenter* AsFFI();
-  inline static const icu4x::LineSegmenter* FromFFI(const icu4x::capi::LineSegmenter* ptr);
-  inline static icu4x::LineSegmenter* FromFFI(icu4x::capi::LineSegmenter* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::LineSegmenter* AsFFI() const;
+    inline icu4x::capi::LineSegmenter* AsFFI();
+    inline static const icu4x::LineSegmenter* FromFFI(const icu4x::capi::LineSegmenter* ptr);
+    inline static icu4x::LineSegmenter* FromFFI(icu4x::capi::LineSegmenter* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  LineSegmenter() = delete;
-  LineSegmenter(const icu4x::LineSegmenter&) = delete;
-  LineSegmenter(icu4x::LineSegmenter&&) noexcept = delete;
-  LineSegmenter operator=(const icu4x::LineSegmenter&) = delete;
-  LineSegmenter operator=(icu4x::LineSegmenter&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    LineSegmenter() = delete;
+    LineSegmenter(const icu4x::LineSegmenter&) = delete;
+    LineSegmenter(icu4x::LineSegmenter&&) noexcept = delete;
+    LineSegmenter operator=(const icu4x::LineSegmenter&) = delete;
+    LineSegmenter operator=(icu4x::LineSegmenter&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

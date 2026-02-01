@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LocaleExpander {
+    
     get ffiValue(): pointer;
 
 
@@ -52,6 +52,11 @@ export class LocaleExpander {
 
 
     minimizeFavorScript(locale: Locale): TransformResult;
+
+    
+
+
+
 
     constructor();
 }

@@ -12,10 +12,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CodePointRangeIteratorResult {
     get start(): codepoint;
     get end(): codepoint;
     get done(): boolean;
+    
+    constructor();
 
 }

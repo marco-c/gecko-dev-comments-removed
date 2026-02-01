@@ -14,8 +14,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class IsoDate {
+    
     get ffiValue(): pointer;
 
 
@@ -125,6 +125,11 @@ export class IsoDate {
 
 
     get daysInYear(): number;
+
+    
+
+
+
 
     constructor(year: number, month: number, day: number);
 }

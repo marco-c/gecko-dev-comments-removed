@@ -1,5 +1,5 @@
-#ifndef icu4x_ReorderedIndexMap_D_HPP
-#define icu4x_ReorderedIndexMap_D_HPP
+#ifndef ICU4X_ReorderedIndexMap_D_HPP
+#define ICU4X_ReorderedIndexMap_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -32,7 +32,7 @@ public:
   
 
 
-  inline diplomat::span<const size_t> as_slice() const;
+  inline icu4x::diplomat::span<const size_t> as_slice() const;
 
   
 
@@ -51,18 +51,18 @@ public:
 
   inline size_t operator[](size_t index) const;
 
-  inline const icu4x::capi::ReorderedIndexMap* AsFFI() const;
-  inline icu4x::capi::ReorderedIndexMap* AsFFI();
-  inline static const icu4x::ReorderedIndexMap* FromFFI(const icu4x::capi::ReorderedIndexMap* ptr);
-  inline static icu4x::ReorderedIndexMap* FromFFI(icu4x::capi::ReorderedIndexMap* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::ReorderedIndexMap* AsFFI() const;
+    inline icu4x::capi::ReorderedIndexMap* AsFFI();
+    inline static const icu4x::ReorderedIndexMap* FromFFI(const icu4x::capi::ReorderedIndexMap* ptr);
+    inline static icu4x::ReorderedIndexMap* FromFFI(icu4x::capi::ReorderedIndexMap* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  ReorderedIndexMap() = delete;
-  ReorderedIndexMap(const icu4x::ReorderedIndexMap&) = delete;
-  ReorderedIndexMap(icu4x::ReorderedIndexMap&&) noexcept = delete;
-  ReorderedIndexMap operator=(const icu4x::ReorderedIndexMap&) = delete;
-  ReorderedIndexMap operator=(icu4x::ReorderedIndexMap&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    ReorderedIndexMap() = delete;
+    ReorderedIndexMap(const icu4x::ReorderedIndexMap&) = delete;
+    ReorderedIndexMap(icu4x::ReorderedIndexMap&&) noexcept = delete;
+    ReorderedIndexMap operator=(const icu4x::ReorderedIndexMap&) = delete;
+    ReorderedIndexMap operator=(icu4x::ReorderedIndexMap&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

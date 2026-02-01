@@ -1,5 +1,5 @@
-#ifndef icu4x_DecimalSignDisplay_D_HPP
-#define icu4x_DecimalSignDisplay_D_HPP
+#ifndef ICU4X_DecimalSignDisplay_D_HPP
+#define ICU4X_DecimalSignDisplay_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -34,23 +34,24 @@ namespace icu4x {
 
 class DecimalSignDisplay {
 public:
-  enum Value {
-    Auto = 0,
-    Never = 1,
-    Always = 2,
-    ExceptZero = 3,
-    Negative = 4,
-  };
+    enum Value {
+        Auto = 0,
+        Never = 1,
+        Always = 2,
+        ExceptZero = 3,
+        Negative = 4,
+    };
 
-  DecimalSignDisplay() = default;
-  
-  constexpr DecimalSignDisplay(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    DecimalSignDisplay(): value(Value::Auto) {}
 
-  inline icu4x::capi::DecimalSignDisplay AsFFI() const;
-  inline static icu4x::DecimalSignDisplay FromFFI(icu4x::capi::DecimalSignDisplay c_enum);
+    
+    constexpr DecimalSignDisplay(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::DecimalSignDisplay AsFFI() const;
+    inline static icu4x::DecimalSignDisplay FromFFI(icu4x::capi::DecimalSignDisplay c_enum);
 private:
     Value value;
 };

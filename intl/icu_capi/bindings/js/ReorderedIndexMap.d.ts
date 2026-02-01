@@ -10,9 +10,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ReorderedIndexMap {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

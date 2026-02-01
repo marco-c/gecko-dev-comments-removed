@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class GraphemeClusterSegmenter {
+    
     get ffiValue(): pointer;
 
 
@@ -33,6 +33,11 @@ export class GraphemeClusterSegmenter {
 
 
     segment(input: string): GraphemeClusterBreakIteratorUtf16;
+
+    
+
+
+
 
     constructor();
 }

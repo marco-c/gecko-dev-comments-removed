@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CanonicalComposition {
+    
     get ffiValue(): pointer;
 
 
@@ -31,6 +31,11 @@ export class CanonicalComposition {
 
 
     compose(starter: codepoint, second: codepoint): codepoint;
+
+    
+
+
+
 
     constructor();
 }

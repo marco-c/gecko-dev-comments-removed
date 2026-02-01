@@ -17,9 +17,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CodePointSetData {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -740,6 +742,48 @@ export class CodePointSetData {
 
 
 
+    static idCompatMathContinueForChar(ch: codepoint): boolean;
+
+    
+
+
+
+
+    static createIdCompatMathContinue(): CodePointSetData;
+
+    
+
+
+
+
+    static createIdCompatMathContinueWithProvider(provider: DataProvider): CodePointSetData;
+
+    
+
+
+
+
+    static idCompatMathStartForChar(ch: codepoint): boolean;
+
+    
+
+
+
+
+    static createIdCompatMathStart(): CodePointSetData;
+
+    
+
+
+
+
+    static createIdCompatMathStartWithProvider(provider: DataProvider): CodePointSetData;
+
+    
+
+
+
+
     static idContinueForChar(ch: codepoint): boolean;
 
     
@@ -845,6 +889,27 @@ export class CodePointSetData {
 
 
 
+    static idsUnaryOperatorForChar(ch: codepoint): boolean;
+
+    
+
+
+
+
+    static createIdsUnaryOperator(): CodePointSetData;
+
+    
+
+
+
+
+    static createIdsUnaryOperatorWithProvider(provider: DataProvider): CodePointSetData;
+
+    
+
+
+
+
     static joinControlForChar(ch: codepoint): boolean;
 
     
@@ -923,6 +988,27 @@ export class CodePointSetData {
 
 
     static createMathWithProvider(provider: DataProvider): CodePointSetData;
+
+    
+
+
+
+
+    static modifierCombiningMarkForChar(ch: codepoint): boolean;
+
+    
+
+
+
+
+    static createModifierCombiningMark(): CodePointSetData;
+
+    
+
+
+
+
+    static createModifierCombiningMarkWithProvider(provider: DataProvider): CodePointSetData;
 
     
 

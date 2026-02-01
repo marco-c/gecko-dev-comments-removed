@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class TransformResult {
 
+    
     static fromValue(value: TransformResult | string): TransformResult;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Modified : TransformResult;

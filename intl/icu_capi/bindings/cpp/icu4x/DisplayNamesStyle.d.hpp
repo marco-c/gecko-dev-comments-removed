@@ -1,5 +1,5 @@
-#ifndef icu4x_DisplayNamesStyle_D_HPP
-#define icu4x_DisplayNamesStyle_D_HPP
+#ifndef ICU4X_DisplayNamesStyle_D_HPP
+#define ICU4X_DisplayNamesStyle_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -29,24 +29,27 @@ namespace icu4x {
 
 
 
+
+
 class DisplayNamesStyle {
 public:
-  enum Value {
-    Narrow = 0,
-    Short = 1,
-    Long = 2,
-    Menu = 3,
-  };
+    enum Value {
+        Narrow = 0,
+        Short = 1,
+        Long = 2,
+        Menu = 3,
+    };
 
-  DisplayNamesStyle() = default;
-  
-  constexpr DisplayNamesStyle(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    DisplayNamesStyle(): value(Value::Narrow) {}
 
-  inline icu4x::capi::DisplayNamesStyle AsFFI() const;
-  inline static icu4x::DisplayNamesStyle FromFFI(icu4x::capi::DisplayNamesStyle c_enum);
+    
+    constexpr DisplayNamesStyle(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::DisplayNamesStyle AsFFI() const;
+    inline static icu4x::DisplayNamesStyle FromFFI(icu4x::capi::DisplayNamesStyle c_enum);
 private:
     Value value;
 };

@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CaseMapper {
+    
     get ffiValue(): pointer;
 
 
@@ -111,11 +111,25 @@ export class CaseMapper {
 
 
 
+    static simpleLowercaseWithCompiledData(ch: codepoint): codepoint;
+
+    
+
+
+
+
 
 
 
 
     simpleUppercase(ch: codepoint): codepoint;
+
+    
+
+
+
+
+    static simpleUppercaseWithCompiledData(ch: codepoint): codepoint;
 
     
 
@@ -133,6 +147,13 @@ export class CaseMapper {
 
 
 
+    static simpleTitlecaseWithCompiledData(ch: codepoint): codepoint;
+
+    
+
+
+
+
 
 
 
@@ -143,10 +164,29 @@ export class CaseMapper {
 
 
 
+    static simpleFoldWithCompiledData(ch: codepoint): codepoint;
+
+    
+
+
+
+
 
 
 
     simpleFoldTurkic(ch: codepoint): codepoint;
+
+    
+
+
+
+
+    static simpleFoldTurkicWithCompiledData(ch: codepoint): codepoint;
+
+    
+
+
+
 
     constructor();
 }

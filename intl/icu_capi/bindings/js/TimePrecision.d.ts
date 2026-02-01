@@ -8,13 +8,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class TimePrecision {
 
+    
     static fromValue(value: TimePrecision | string): TimePrecision;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Hour : TimePrecision;

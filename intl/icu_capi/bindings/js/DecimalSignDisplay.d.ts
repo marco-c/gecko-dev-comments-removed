@@ -8,13 +8,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DecimalSignDisplay {
 
+    
     static fromValue(value: DecimalSignDisplay | string): DecimalSignDisplay;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Auto : DecimalSignDisplay;

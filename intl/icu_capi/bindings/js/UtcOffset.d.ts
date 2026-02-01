@@ -7,9 +7,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class UtcOffset {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

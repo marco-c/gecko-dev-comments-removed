@@ -1,5 +1,5 @@
-#ifndef icu4x_CollatorAlternateHandling_D_HPP
-#define icu4x_CollatorAlternateHandling_D_HPP
+#ifndef ICU4X_CollatorAlternateHandling_D_HPP
+#define ICU4X_CollatorAlternateHandling_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -29,20 +29,21 @@ namespace icu4x {
 
 class CollatorAlternateHandling {
 public:
-  enum Value {
-    NonIgnorable = 0,
-    Shifted = 1,
-  };
+    enum Value {
+        NonIgnorable = 0,
+        Shifted = 1,
+    };
 
-  CollatorAlternateHandling() = default;
-  
-  constexpr CollatorAlternateHandling(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    CollatorAlternateHandling(): value(Value::NonIgnorable) {}
 
-  inline icu4x::capi::CollatorAlternateHandling AsFFI() const;
-  inline static icu4x::CollatorAlternateHandling FromFFI(icu4x::capi::CollatorAlternateHandling c_enum);
+    
+    constexpr CollatorAlternateHandling(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::CollatorAlternateHandling AsFFI() const;
+    inline static icu4x::CollatorAlternateHandling FromFFI(icu4x::capi::CollatorAlternateHandling c_enum);
 private:
     Value value;
 };

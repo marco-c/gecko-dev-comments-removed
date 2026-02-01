@@ -13,7 +13,9 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
 export class VariantOffsetsCalculator {
+    
     get ffiValue(): pointer;
 
 
@@ -27,7 +29,17 @@ export class VariantOffsetsCalculator {
     
 
 
-    computeOffsetsFromTimeZoneAndDateTime(timeZone: TimeZone, localDate: IsoDate, localTime: Time): VariantOffsets | null;
+    computeOffsetsFromTimeZoneAndDateTime(timeZone: TimeZone, utcDate: IsoDate, utcTime: Time): VariantOffsets | null;
+
+    
+
+
+    computeOffsetsFromTimeZoneAndTimestamp(timeZone: TimeZone, timestamp: bigint): VariantOffsets | null;
+
+    
+
+
+
 
     constructor();
 }

@@ -5,16 +5,15 @@ import type { CollatorMaxVariable } from "./CollatorMaxVariable"
 import type { CollatorStrength } from "./CollatorStrength"
 import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
-
-
-
-
-type CollatorOptions_obj = {
+export type CollatorOptions_obj = {
     strength?: CollatorStrength | null;
     alternateHandling?: CollatorAlternateHandling | null;
     maxVariable?: CollatorMaxVariable | null;
     caseLevel?: CollatorCaseLevel | null;
 };
+
+
+
 
 
 
@@ -28,11 +27,12 @@ export class CollatorOptions {
     get caseLevel(): CollatorCaseLevel | null;
     set caseLevel(value: CollatorCaseLevel | null);
     
-
-
     static fromFields(structObj : CollatorOptions_obj) : CollatorOptions;
+
+    
 
 
 
     constructor(structObj: CollatorOptions_obj);
+
 }

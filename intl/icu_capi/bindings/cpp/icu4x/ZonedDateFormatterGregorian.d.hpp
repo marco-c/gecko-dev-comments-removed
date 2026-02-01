@@ -1,5 +1,5 @@
-#ifndef icu4x_ZonedDateFormatterGregorian_D_HPP
-#define icu4x_ZonedDateFormatterGregorian_D_HPP
+#ifndef ICU4X_ZonedDateFormatterGregorian_D_HPP
+#define ICU4X_ZonedDateFormatterGregorian_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct DataProvider; }
 class DataProvider;
@@ -26,7 +25,8 @@ namespace capi { struct ZonedDateFormatterGregorian; }
 class ZonedDateFormatterGregorian;
 class DateTimeFormatterLoadError;
 class DateTimeWriteError;
-}
+} 
+
 
 
 namespace icu4x {
@@ -50,7 +50,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_long(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_long(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -60,7 +60,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_long_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_long_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -70,7 +70,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_short(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_short(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -80,7 +80,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_short_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_specific_short_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -90,7 +90,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_long(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_long(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -100,7 +100,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_long_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_long_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -110,7 +110,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_short(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_short(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -120,7 +120,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_short_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_localized_offset_short_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -130,7 +130,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_long(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_long(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -140,7 +140,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_long_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_long_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -150,7 +150,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_short(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_short(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -160,7 +160,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_short_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_generic_short_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -170,7 +170,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_location(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_location(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -180,7 +180,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_location_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_location_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -190,7 +190,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_exemplar_city(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_exemplar_city(const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
@@ -200,25 +200,27 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_exemplar_city_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::ZonedDateFormatterGregorian>, icu4x::DateTimeFormatterLoadError> create_exemplar_city_with_provider(const icu4x::DataProvider& provider, const icu4x::Locale& locale, const icu4x::DateFormatterGregorian& formatter);
 
   
 
 
-  inline diplomat::result<std::string, icu4x::DateTimeWriteError> format_iso(const icu4x::IsoDate& date, const icu4x::TimeZoneInfo& zone) const;
+  inline icu4x::diplomat::result<std::string, icu4x::DateTimeWriteError> format_iso(const icu4x::IsoDate& iso_date, const icu4x::TimeZoneInfo& zone) const;
+  template<typename W>
+  inline icu4x::diplomat::result<std::monostate, icu4x::DateTimeWriteError> format_iso_write(const icu4x::IsoDate& iso_date, const icu4x::TimeZoneInfo& zone, W& writeable_output) const;
 
-  inline const icu4x::capi::ZonedDateFormatterGregorian* AsFFI() const;
-  inline icu4x::capi::ZonedDateFormatterGregorian* AsFFI();
-  inline static const icu4x::ZonedDateFormatterGregorian* FromFFI(const icu4x::capi::ZonedDateFormatterGregorian* ptr);
-  inline static icu4x::ZonedDateFormatterGregorian* FromFFI(icu4x::capi::ZonedDateFormatterGregorian* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::ZonedDateFormatterGregorian* AsFFI() const;
+    inline icu4x::capi::ZonedDateFormatterGregorian* AsFFI();
+    inline static const icu4x::ZonedDateFormatterGregorian* FromFFI(const icu4x::capi::ZonedDateFormatterGregorian* ptr);
+    inline static icu4x::ZonedDateFormatterGregorian* FromFFI(icu4x::capi::ZonedDateFormatterGregorian* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  ZonedDateFormatterGregorian() = delete;
-  ZonedDateFormatterGregorian(const icu4x::ZonedDateFormatterGregorian&) = delete;
-  ZonedDateFormatterGregorian(icu4x::ZonedDateFormatterGregorian&&) noexcept = delete;
-  ZonedDateFormatterGregorian operator=(const icu4x::ZonedDateFormatterGregorian&) = delete;
-  ZonedDateFormatterGregorian operator=(icu4x::ZonedDateFormatterGregorian&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    ZonedDateFormatterGregorian() = delete;
+    ZonedDateFormatterGregorian(const icu4x::ZonedDateFormatterGregorian&) = delete;
+    ZonedDateFormatterGregorian(icu4x::ZonedDateFormatterGregorian&&) noexcept = delete;
+    ZonedDateFormatterGregorian operator=(const icu4x::ZonedDateFormatterGregorian&) = delete;
+    ZonedDateFormatterGregorian operator=(icu4x::ZonedDateFormatterGregorian&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

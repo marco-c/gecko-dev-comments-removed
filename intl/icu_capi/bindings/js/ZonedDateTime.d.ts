@@ -15,14 +15,24 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class ZonedDateTime {
     get date(): Date;
     get time(): Time;
     get zone(): TimeZoneInfo;
+    
+    constructor();
 
 
     
+
+
+
+
+    static strictFromString(v: string, calendar: Calendar, ianaParser: IanaParser): ZonedDateTime;
+
+    
+
+
 
 
 

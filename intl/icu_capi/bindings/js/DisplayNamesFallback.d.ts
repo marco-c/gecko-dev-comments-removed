@@ -7,12 +7,15 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
 export class DisplayNamesFallback {
 
+    
     static fromValue(value: DisplayNamesFallback | string): DisplayNamesFallback;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Code : DisplayNamesFallback;

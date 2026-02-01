@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CalendarError {
 
+    
     static fromValue(value: CalendarError | string): CalendarError;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Unknown : CalendarError;

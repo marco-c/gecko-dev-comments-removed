@@ -6,13 +6,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class PluralCategory {
 
+    
     static fromValue(value: PluralCategory | string): PluralCategory;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Zero : PluralCategory;

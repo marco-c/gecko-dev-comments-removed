@@ -9,8 +9,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CaseMapCloser {
+    
     get ffiValue(): pointer;
 
 
@@ -38,6 +38,11 @@ export class CaseMapCloser {
 
 
     addStringCaseClosureTo(s: string, builder: CodePointSetBuilder): boolean;
+
+    
+
+
+
 
     constructor();
 }

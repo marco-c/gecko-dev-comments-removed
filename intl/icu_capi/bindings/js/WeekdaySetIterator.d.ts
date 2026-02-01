@@ -9,9 +9,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class WeekdaySetIterator {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     next(): IteratorResult<Weekday>;

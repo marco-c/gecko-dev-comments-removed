@@ -11,8 +11,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class TitlecaseMapper {
+    
     get ffiValue(): pointer;
 
 
@@ -40,6 +40,11 @@ export class TitlecaseMapper {
 
 
     static titlecaseSegmentWithCompiledData(s: string, locale: Locale, options: TitlecaseOptions_obj): string;
+
+    
+
+
+
 
     constructor();
 }

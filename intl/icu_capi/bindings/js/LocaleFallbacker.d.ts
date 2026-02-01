@@ -13,8 +13,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class LocaleFallbacker {
+    
     get ffiValue(): pointer;
 
 
@@ -38,6 +38,11 @@ export class LocaleFallbacker {
 
 
     forConfig(config: LocaleFallbackConfig_obj): LocaleFallbackerWithConfig;
+
+    
+
+
+
 
     constructor();
 }

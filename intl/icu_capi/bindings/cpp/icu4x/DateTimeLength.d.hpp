@@ -1,5 +1,5 @@
-#ifndef icu4x_DateTimeLength_D_HPP
-#define icu4x_DateTimeLength_D_HPP
+#ifndef ICU4X_DateTimeLength_D_HPP
+#define ICU4X_DateTimeLength_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,7 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
+#include "diplomat_runtime.hpp"
 
 
 namespace icu4x {
@@ -30,21 +30,22 @@ namespace icu4x {
 
 class DateTimeLength {
 public:
-  enum Value {
-    Long = 0,
-    Medium = 1,
-    Short = 2,
-  };
+    enum Value {
+        Long = 0,
+        Medium = 1,
+        Short = 2,
+    };
 
-  DateTimeLength() = default;
-  
-  constexpr DateTimeLength(Value v) : value(v) {}
-  constexpr operator Value() const { return value; }
-  
-  explicit operator bool() const = delete;
+    DateTimeLength(): value(Value::Medium) {}
 
-  inline icu4x::capi::DateTimeLength AsFFI() const;
-  inline static icu4x::DateTimeLength FromFFI(icu4x::capi::DateTimeLength c_enum);
+    
+    constexpr DateTimeLength(Value v) : value(v) {}
+    constexpr operator Value() const { return value; }
+    
+    explicit operator bool() const = delete;
+
+    inline icu4x::capi::DateTimeLength AsFFI() const;
+    inline static icu4x::DateTimeLength FromFFI(icu4x::capi::DateTimeLength c_enum);
 private:
     Value value;
 };

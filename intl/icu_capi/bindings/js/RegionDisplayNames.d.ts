@@ -13,11 +13,15 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
 export class RegionDisplayNames {
+    
     get ffiValue(): pointer;
 
 
     
+
+
 
 
 
@@ -31,7 +35,16 @@ export class RegionDisplayNames {
 
 
 
+
+
     of(region: string): string;
+
+    
+
+
+
+
+
 
     constructor(locale: Locale, options: DisplayNamesOptions_obj);
 }

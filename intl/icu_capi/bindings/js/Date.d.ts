@@ -1,6 +1,11 @@
 
 import type { Calendar } from "./Calendar"
+import type { CalendarDateFromFieldsError } from "./CalendarDateFromFieldsError"
 import type { CalendarError } from "./CalendarError"
+import type { DateFields } from "./DateFields"
+import type { DateFields_obj } from "./DateFields"
+import type { DateFromFieldsOptions } from "./DateFromFieldsOptions"
+import type { DateFromFieldsOptions_obj } from "./DateFromFieldsOptions"
 import type { IsoDate } from "./IsoDate"
 import type { Rfc9557ParseError } from "./Rfc9557ParseError"
 import type { Weekday } from "./Weekday"
@@ -13,9 +18,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Date {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     
@@ -24,7 +31,16 @@ export class Date {
 
 
 
-    static fromIsoInCalendar(year: number, month: number, day: number, calendar: Calendar): Date;
+    static fromIsoInCalendar(isoYear: number, isoMonth: number, isoDay: number, calendar: Calendar): Date;
+
+    
+
+
+
+
+
+
+    static fromFieldsInCalendar(fields: DateFields_obj, options: DateFromFieldsOptions_obj, calendar: Calendar): Date;
 
     
 
@@ -140,6 +156,10 @@ export class Date {
     get eraYearOrRelatedIso(): number;
 
     
+
+
+
+
 
 
 

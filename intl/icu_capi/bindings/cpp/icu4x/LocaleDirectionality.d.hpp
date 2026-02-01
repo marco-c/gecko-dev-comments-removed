@@ -1,5 +1,5 @@
-#ifndef icu4x_LocaleDirectionality_D_HPP
-#define icu4x_LocaleDirectionality_D_HPP
+#ifndef ICU4X_LocaleDirectionality_D_HPP
+#define ICU4X_LocaleDirectionality_D_HPP
 
 #include <stdio.h>
 #include <stdint.h>
@@ -9,8 +9,7 @@
 #include <functional>
 #include <optional>
 #include <cstdlib>
-#include "../diplomat_runtime.hpp"
-
+#include "diplomat_runtime.hpp"
 namespace icu4x {
 namespace capi { struct DataProvider; }
 class DataProvider;
@@ -20,7 +19,8 @@ namespace capi { struct LocaleDirectionality; }
 class LocaleDirectionality;
 class DataError;
 class LocaleDirection;
-}
+} 
+
 
 
 namespace icu4x {
@@ -48,7 +48,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LocaleDirectionality>, icu4x::DataError> create_common_with_provider(const icu4x::DataProvider& provider);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LocaleDirectionality>, icu4x::DataError> create_common_with_provider(const icu4x::DataProvider& provider);
 
   
 
@@ -62,7 +62,7 @@ public:
 
 
 
-  inline static diplomat::result<std::unique_ptr<icu4x::LocaleDirectionality>, icu4x::DataError> create_extended_with_provider(const icu4x::DataProvider& provider);
+  inline static icu4x::diplomat::result<std::unique_ptr<icu4x::LocaleDirectionality>, icu4x::DataError> create_extended_with_provider(const icu4x::DataProvider& provider);
 
   
 
@@ -79,18 +79,18 @@ public:
 
   inline bool is_right_to_left(const icu4x::Locale& locale) const;
 
-  inline const icu4x::capi::LocaleDirectionality* AsFFI() const;
-  inline icu4x::capi::LocaleDirectionality* AsFFI();
-  inline static const icu4x::LocaleDirectionality* FromFFI(const icu4x::capi::LocaleDirectionality* ptr);
-  inline static icu4x::LocaleDirectionality* FromFFI(icu4x::capi::LocaleDirectionality* ptr);
-  inline static void operator delete(void* ptr);
+    inline const icu4x::capi::LocaleDirectionality* AsFFI() const;
+    inline icu4x::capi::LocaleDirectionality* AsFFI();
+    inline static const icu4x::LocaleDirectionality* FromFFI(const icu4x::capi::LocaleDirectionality* ptr);
+    inline static icu4x::LocaleDirectionality* FromFFI(icu4x::capi::LocaleDirectionality* ptr);
+    inline static void operator delete(void* ptr);
 private:
-  LocaleDirectionality() = delete;
-  LocaleDirectionality(const icu4x::LocaleDirectionality&) = delete;
-  LocaleDirectionality(icu4x::LocaleDirectionality&&) noexcept = delete;
-  LocaleDirectionality operator=(const icu4x::LocaleDirectionality&) = delete;
-  LocaleDirectionality operator=(icu4x::LocaleDirectionality&&) noexcept = delete;
-  static void operator delete[](void*, size_t) = delete;
+    LocaleDirectionality() = delete;
+    LocaleDirectionality(const icu4x::LocaleDirectionality&) = delete;
+    LocaleDirectionality(icu4x::LocaleDirectionality&&) noexcept = delete;
+    LocaleDirectionality operator=(const icu4x::LocaleDirectionality&) = delete;
+    LocaleDirectionality operator=(icu4x::LocaleDirectionality&&) noexcept = delete;
+    static void operator delete[](void*, size_t) = delete;
 };
 
 } 

@@ -12,9 +12,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Decimal {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

@@ -14,8 +14,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class WindowsParser {
+    
     get ffiValue(): pointer;
 
 
@@ -30,6 +30,11 @@ export class WindowsParser {
 
 
     parse(value: string, region: string): TimeZone | null;
+
+    
+
+
+
 
     constructor();
 }

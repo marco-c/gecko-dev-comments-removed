@@ -8,13 +8,14 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class DecimalSignedRoundingMode {
 
+    
     static fromValue(value: DecimalSignedRoundingMode | string): DecimalSignedRoundingMode;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Expand : DecimalSignedRoundingMode;

@@ -1,0 +1,26 @@
+
+import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
+
+
+
+
+
+
+
+
+export class DateOverflow {
+
+    
+    static fromValue(value: DateOverflow | string): DateOverflow;
+
+    get value(): string;
+
+    
+    get ffiValue(): number;
+
+    static Constrain : DateOverflow;
+    static Reject : DateOverflow;
+
+
+    constructor(value: DateOverflow | string );
+}

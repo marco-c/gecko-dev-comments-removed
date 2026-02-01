@@ -3,12 +3,19 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
+
+
+
+
+
 export class TimeZoneVariant {
 
+    
     static fromValue(value: TimeZoneVariant | string): TimeZoneVariant;
 
     get value(): string;
 
+    
     get ffiValue(): number;
 
     static Standard : TimeZoneVariant;
@@ -22,9 +29,7 @@ export class TimeZoneVariant {
 
 
 
-
-
-    fromRearguardIsdst(isdst: boolean): TimeZoneVariant;
+    static fromRearguardIsdst(isdst: boolean): TimeZoneVariant;
 
     constructor(value: TimeZoneVariant | string );
 }

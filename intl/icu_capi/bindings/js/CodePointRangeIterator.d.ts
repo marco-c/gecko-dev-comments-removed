@@ -8,9 +8,11 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class CodePointRangeIterator {
+    
     get ffiValue(): pointer;
+    
+    constructor();
 
 
     

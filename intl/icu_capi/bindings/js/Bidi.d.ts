@@ -12,8 +12,8 @@ import type { pointer, codepoint } from "./diplomat-runtime.d.ts";
 
 
 
-
 export class Bidi {
+    
     get ffiValue(): pointer;
 
 
@@ -76,6 +76,9 @@ export class Bidi {
 
 
     static levelLtr(): number;
+
+    
+
 
     constructor();
 }
