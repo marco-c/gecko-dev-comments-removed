@@ -526,7 +526,7 @@ var InterventionHelpers = {
     return InterventionHelpers.matchPatternsForTLDs(base, suffix, GOOGLE_TLDS);
   },
 
-  async _registerContentScripts(scriptsToReg, typeStr, logger) {
+  async registerContentScripts(scriptsToReg, typeStr) {
     
     
     
@@ -547,14 +547,14 @@ var InterventionHelpers = {
         ({ id }) => !alreadyReggedIds.includes(id)
       );
       await browser.scripting.registerContentScripts(stillNeeded);
-      logger(
+      debugLog(
         `Registered still-not-active ${typeStr} content scripts`,
         stillNeeded
       );
     } catch (e) {
       try {
         await browser.scripting.registerContentScripts(scriptsToReg);
-        logger(
+        debugLog(
           `Registered all ${typeStr} content scripts after error registering just non-active ones`,
           scriptsToReg,
           e
