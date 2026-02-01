@@ -3564,8 +3564,6 @@ pref("browser.ipProtection.autoStartPrivateEnabled", false);
 
 pref("browser.ipProtection.userEnabled", false);
 
-pref("browser.ipProtection.variant", "");
-
 pref("browser.ipProtection.panelOpenCount", 0);
 
 pref("browser.ipProtection.features.siteExceptions", false);
