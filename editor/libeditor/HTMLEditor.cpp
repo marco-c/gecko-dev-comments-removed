@@ -100,8 +100,8 @@ using namespace widget;
 LazyLogModule gHTMLEditorFocusLog("HTMLEditorFocus");
 
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
-using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
+using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
 using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
 
@@ -1041,8 +1041,8 @@ nsresult HTMLEditor::CollapseSelectionToEndOfLastLeafNodeOfDocument() const {
   }
 
   auto pointToPutCaret = [&]() -> EditorRawDOMPoint {
-    nsCOMPtr<nsIContent> lastLeafContent = HTMLEditUtils::GetLastLeafContent(
-        *bodyOrDocumentElement, {LeafNodeType::OnlyLeafNode});
+    nsCOMPtr<nsIContent> lastLeafContent =
+        HTMLEditUtils::GetLastLeafContent(*bodyOrDocumentElement, {});
     if (!lastLeafContent) {
       return EditorRawDOMPoint::AtEndOf(*bodyOrDocumentElement);
     }
@@ -1136,11 +1136,15 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     }
   }
 
+  constexpr LeafNodeOptions leafNodeOptions = {
+      LeafNodeOption::TreatNonEditableNodeAsLeafNode,
+      LeafNodeOption::TreatChildBlockAsLeafNode,
+      
+      
+  };
   for (nsIContent* leafContent = HTMLEditUtils::GetFirstLeafContent(
-           *editingHost,
-           {LeafNodeType::LeafNodeOrNonEditableNode,
-            LeafNodeType::LeafNodeOrChildBlock},
-           BlockInlineCheck::UseComputedDisplayStyle, editingHost);
+           *editingHost, leafNodeOptions,
+           BlockInlineCheck::UseComputedDisplayStyle);
        leafContent;) {
     
     
@@ -1177,9 +1181,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
         
         
         leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-            *leafElement,
-            {LeafNodeType::LeafNodeOrNonEditableNode,
-             LeafNodeType::LeafNodeOrChildBlock},
+            *leafElement, leafNodeOptions,
             BlockInlineCheck::UseComputedDisplayStyle, editingHost);
         continue;
       }
@@ -1203,9 +1205,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       }
       
       leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *leafContent,
-          {LeafNodeType::LeafNodeOrNonEditableNode,
-           LeafNodeType::LeafNodeOrChildBlock},
+          *leafContent, leafNodeOptions,
           BlockInlineCheck::UseComputedDisplayStyle, editingHost);
       continue;
     }
@@ -1240,19 +1240,15 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
              EmptyCheckOption::TreatNonEditableContentAsInvisible}) &&
         !HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafContent)) {
       leafContent = HTMLEditUtils::GetFirstLeafContent(
-          *leafContent,
-          {LeafNodeType::LeafNodeOrNonEditableNode,
-           LeafNodeType::LeafNodeOrChildBlock},
-          BlockInlineCheck::UseComputedDisplayStyle, editingHost);
+          *leafContent, leafNodeOptions,
+          BlockInlineCheck::UseComputedDisplayStyle);
       continue;
     }
 
     
     
     leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-        *leafContent,
-        {LeafNodeType::LeafNodeOrNonEditableNode,
-         LeafNodeType::LeafNodeOrChildBlock},
+        *leafContent, leafNodeOptions,
         BlockInlineCheck::UseComputedDisplayStyle, editingHost);
   }
 
@@ -3306,7 +3302,9 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
         return nullptr;
       }
       nsIContent* firstEditableLeaf = HTMLEditUtils::GetFirstLeafContent(
-          *nextSibling, {LeafNodeType::OnlyLeafNode});
+          *nextSibling,
+          
+          {});
       if (firstEditableLeaf &&
           firstEditableLeaf->IsHTMLElement(nsGkAtoms::br)) {
         return nullptr;
