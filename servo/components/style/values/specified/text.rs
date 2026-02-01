@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::longhands::writing_mode::computed_value::T as SpecifiedWritingMode;
 use crate::values::computed;
@@ -424,10 +425,15 @@ bitflags! {
         /// Capitalize each word.
         const CAPITALIZE = 1 << 2;
         /// Automatic italicization of math variables.
+        #[cfg(feature = "gecko")]
         const MATH_AUTO = 1 << 3;
 
         /// All the case transforms, which are exclusive with each other.
+        #[cfg(feature = "gecko")]
         const CASE_TRANSFORMS = Self::UPPERCASE.0 | Self::LOWERCASE.0 | Self::CAPITALIZE.0 | Self::MATH_AUTO.0;
+        /// All the case transforms, which are exclusive with each other.
+        #[cfg(feature = "servo")]
+        const CASE_TRANSFORMS = Self::UPPERCASE.0 | Self::LOWERCASE.0 | Self::CAPITALIZE.0;
 
         /// full-width
         const FULL_WIDTH = 1 << 4;
@@ -462,6 +468,7 @@ impl TextTransform {
             Self::UPPERCASE => TextTransformCase::Uppercase,
             Self::LOWERCASE => TextTransformCase::Lowercase,
             Self::CAPITALIZE => TextTransformCase::Capitalize,
+            #[cfg(feature = "gecko")]
             Self::MATH_AUTO => TextTransformCase::MathAuto,
             _ => unreachable!("Case bits are exclusive with each other"),
         }
