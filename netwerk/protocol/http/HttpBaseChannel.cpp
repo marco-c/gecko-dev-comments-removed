@@ -5436,13 +5436,11 @@ bool HttpBaseChannel::ShouldTaintReplacementChannelOrigin(
   }
 
   
-  
-  if (IsNewChannelSameOrigin(aNewChannel)) {
-    return false;
+  if (!IsNewChannelSameOrigin(aNewChannel)) {
+    return true;
   }
 
   nsresult rv;
-
   if (mLoadInfo->GetLoadingPrincipal()) {
     bool sameOrigin = false;
     rv = mLoadInfo->GetLoadingPrincipal()->IsSameOrigin(mURI, &sameOrigin);
