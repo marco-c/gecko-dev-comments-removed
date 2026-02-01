@@ -226,10 +226,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     kIceConnectionMax,
   };
   static constexpr absl::string_view AsString(IceConnectionState state);
-  template <typename Sink>
-  void AbslStringify(Sink& sink, IceConnectionState state) {
-    sink.Append(AsString(state));
-  }
 
   
   enum TlsCertPolicy {
@@ -1230,6 +1226,11 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   
   ~PeerConnectionInterface() override = default;
 };
+template <typename Sink>
+void AbslStringify(Sink& sink,
+                   PeerConnectionInterface::IceConnectionState state) {
+  sink.Append(PeerConnectionInterface::AsString(state));
+}
 
 
 
