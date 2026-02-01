@@ -83,7 +83,6 @@ async function getFormDataSections(
       }
     }
   }
-
   return formDataSections;
 }
 
@@ -431,25 +430,26 @@ function parseQueryString(query) {
 
 
 
+
+
 function parseFormData(sections) {
-  if (!sections) {
+  if (!sections || !sections.length) {
     return [];
   }
+  const formDataParams = [];
+  const searchStr = sections
+    
+    .filter(str => /\S/.test(str))
+    .join("&");
 
-  return sections
-    .replace(/^&/, "")
-    .split("&")
-    .map(e => {
-      const firstEqualSignIndex = e.indexOf("=");
-      const paramName =
-        firstEqualSignIndex !== -1 ? e.slice(0, firstEqualSignIndex) : e;
-      const paramValue =
-        firstEqualSignIndex !== -1 ? e.slice(firstEqualSignIndex + 1) : "";
-      return {
-        name: paramName ? getUnicodeUrlPath(paramName) : "",
-        value: paramValue ? getUnicodeUrlPath(paramValue) : "",
-      };
+  const params = new URLSearchParams(searchStr);
+  for (const [key, value] of params) {
+    formDataParams.push({
+      name: getUnicodeUrlPath(key),
+      value: getUnicodeUrlPath(value),
     });
+  }
+  return formDataParams;
 }
 
 

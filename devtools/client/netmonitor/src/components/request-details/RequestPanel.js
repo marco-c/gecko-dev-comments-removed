@@ -135,19 +135,23 @@ class RequestPanel extends Component {
 
 
 
-  getProperties(arr) {
-    return arr.reduce((map, obj) => {
-      const value = map[obj.name];
-      if (value || value === "") {
-        if (typeof value !== "object") {
-          map[obj.name] = [value];
+
+
+
+
+  getProperties(arrOfKeyValuePairs) {
+    return arrOfKeyValuePairs.reduce((dict, { name, value }) => {
+      if (name in dict) {
+        const dictValue = dict[name];
+        if (!Array.isArray(dictValue)) {
+          dict[name] = [dictValue];
         }
-        map[obj.name].push(obj.value);
+        dict[name].push(value);
       } else {
-        map[obj.name] = obj.value;
+        dict[name] = value;
       }
-      return map;
-    }, {});
+      return dict;
+    }, Object.create(null));
   }
 
   toggleRawRequestPayload() {
@@ -205,10 +209,9 @@ class RequestPanel extends Component {
 
     
     if (formDataSections && formDataSections.length) {
-      const sections = formDataSections.filter(str => /\S/.test(str)).join("&");
       component = PropertiesView;
       componentProps = {
-        object: this.getProperties(parseFormData(sections)),
+        object: this.getProperties(parseFormData(formDataSections)),
         filterText,
         targetSearchResult,
         defaultSelectFirstNode: false,
