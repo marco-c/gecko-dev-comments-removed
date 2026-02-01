@@ -3,11 +3,10 @@
 
 
 
-use ffi;
-use mainloop_api;
+use crate::mainloop_api;
+use crate::ErrorCode;
+use crate::Result;
 use mainloop_api::MainloopApi;
-use ErrorCode;
-use Result;
 
 #[derive(Debug)]
 pub struct ThreadedMainloop(*mut ffi::pa_threaded_mainloop);

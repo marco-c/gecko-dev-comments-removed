@@ -3,8 +3,6 @@
 
 
 
-use ffi;
-
 #[derive(Debug)]
 pub struct Operation(*mut ffi::pa_operation);
 

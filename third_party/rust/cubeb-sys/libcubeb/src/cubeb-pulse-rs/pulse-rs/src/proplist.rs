@@ -3,7 +3,6 @@
 
 
 
-use ffi;
 use std::ffi::{CStr, CString};
 
 #[derive(Debug)]

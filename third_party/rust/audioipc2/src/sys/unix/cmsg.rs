@@ -34,7 +34,7 @@ pub fn encode_handles(cmsg: &mut BytesMut, handles: &[RawFd]) {
     
     
     
-    let zeroed = unsafe { mem::zeroed() };
+    let _zeroed = unsafe { mem::zeroed() };
     #[allow(clippy::needless_update)]
     
     #[allow(clippy::useless_conversion)]
@@ -42,7 +42,7 @@ pub fn encode_handles(cmsg: &mut BytesMut, handles: &[RawFd]) {
         cmsg_len: len(msg.len()).try_into().unwrap(),
         cmsg_level: libc::SOL_SOCKET,
         cmsg_type: libc::SCM_RIGHTS,
-        ..zeroed
+        .._zeroed
     };
 
     unsafe {

@@ -50,11 +50,12 @@ extern "C" {
     fn cubeb_write_log(fmt: *const c_char, ...);
 }
 
+include!(concat!(env!("OUT_DIR"), "/log_wrap.rs"));
 
 
 
-#[no_mangle]
-pub unsafe extern "C" fn rust_write_formatted_msg(s: *const c_char) {
+
+pub unsafe fn rust_write_formatted_msg(s: *const c_char) {
     if s.is_null() {
         
         return;

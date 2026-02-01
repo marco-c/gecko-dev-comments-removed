@@ -3,7 +3,6 @@
 
 
 
-use ffi;
 use std::mem;
 use std::os::raw::c_void;
 
