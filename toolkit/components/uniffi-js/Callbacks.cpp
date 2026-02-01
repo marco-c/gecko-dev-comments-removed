@@ -12,12 +12,57 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/UniFFIBinding.h"
 #include "mozilla/uniffi/Callbacks.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla::uniffi {
 extern mozilla::LazyLogModule gUniffiLogger;
+
+
+
+
+
+
+using HandleRefCount = Atomic<uint32_t, MemoryOrdering::ReleaseAcquire>;
+
+uint64_t CallbackHandleCreate() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  HandleRefCount* handlePointer = new HandleRefCount(1);
+  return reinterpret_cast<uint64_t>(handlePointer) | 1;
+}
+
+uint32_t CallbackHandleAddRef(uint64_t aHandle) {
+  HandleRefCount* handlePointer =
+      reinterpret_cast<HandleRefCount*>(aHandle & ~1);
+  return ++(*handlePointer);
+}
+
+uint32_t CallbackHandleRelease(uint64_t aHandle) {
+  HandleRefCount* handlePointer =
+      reinterpret_cast<HandleRefCount*>(aHandle & ~1);
+  auto refCount = --(*handlePointer);
+  if (refCount == 0) {
+    delete handlePointer;
+  }
+  return refCount;
+}
 
 void AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(
     UniquePtr<AsyncCallbackMethodHandlerBase> aHandler,

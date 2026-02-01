@@ -6,31 +6,31 @@ use super::*;
 use crate::Config;
 use std::collections::{HashMap, HashSet};
 
-pub fn pass(mut config_map: HashMap<String, Config>) -> impl FnMut(&mut Module) -> Result<()> {
-    move |module: &mut Module| {
-        module.config = config_map.remove(&module.crate_name).unwrap_or_default();
+pub fn pass(mut config_map: HashMap<String, Config>) -> impl FnMut(&mut Namespace) -> Result<()> {
+    move |namespace: &mut Namespace| {
+        namespace.config = config_map.remove(&namespace.crate_name).unwrap_or_default();
         
         
         
         
         
-        if module.name.starts_with("uniffi_bindings_tests") {
-            module.fixture = true;
+        if namespace.name.starts_with("uniffi_bindings_tests") {
+            namespace.fixture = true;
         }
 
         
-        module.string_type_node = TypeNode {
+        namespace.string_type_node = TypeNode {
             ty: Type::String,
             canonical_name: "String".to_string(),
             ..TypeNode::default()
         };
 
         
-        let config = module.config.clone();
+        let config = namespace.config.clone();
         let mut all_imports = HashSet::new();
 
         
-        module.try_visit_mut(|custom: &mut CustomType| {
+        namespace.try_visit_mut(|custom: &mut CustomType| {
             if let Some(custom_config) = config.custom_types.get(&custom.name) {
                 custom.type_name = custom_config.type_name.clone();
                 custom.lift_expr = Some(custom_config.lift.clone());
@@ -48,11 +48,11 @@ pub fn pass(mut config_map: HashMap<String, Config>) -> impl FnMut(&mut Module) 
 
         let mut imports_vec: Vec<String> = all_imports.into_iter().collect();
         imports_vec.sort(); 
-        module.imports = imports_vec;
+        namespace.imports = imports_vec;
 
         let mut saw_callback_interface = false;
-        module.visit(|_: &VTable| saw_callback_interface = true);
-        module.has_callback_interface = saw_callback_interface;
+        namespace.visit(|_: &VTable| saw_callback_interface = true);
+        namespace.has_callback_interface = saw_callback_interface;
         Ok(())
     }
 }

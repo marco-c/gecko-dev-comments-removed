@@ -39,6 +39,23 @@ void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError);
 
 
 
+uint64_t CallbackHandleCreate();
+
+
+
+
+
+uint32_t CallbackHandleAddRef(uint64_t aHandle);
+
+
+
+
+
+uint32_t CallbackHandleRelease(uint64_t aHandle);
+
+
+
+
 
 
 

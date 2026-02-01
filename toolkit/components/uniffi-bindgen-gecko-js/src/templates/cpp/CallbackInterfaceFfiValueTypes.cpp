@@ -19,9 +19,6 @@ extern "C" void {{ cbi.free_fn }}(uint64_t uniffiHandle);
 
 class {{ ffi_value_class }} {
  private:
-  
-  
-  bool mLowered = false;
   uint64_t mValue = 0;
 
  public:
@@ -43,20 +40,17 @@ class {{ ffi_value_class }} {
     }
     ReleaseHandleIfSet();
     mValue = intValue;
-    mLowered = true;
   }
 
   void Lift(JSContext* aContext, dom::OwningUniFFIScaffoldingValue* aDest,
             ErrorResult& aError) {
     aDest->SetAsDouble() = mValue;
     mValue = 0;
-    mLowered = false;
   }
 
   uint64_t IntoRust() {
     auto handle = mValue;
     mValue = 0;
-    mLowered = false;
     return handle;
   }
 
@@ -65,10 +59,9 @@ class {{ ffi_value_class }} {
   void ReleaseHandleIfSet() {
     
     
-    if (mValue != 0 && mLowered) {
+    if (mValue != 0) {
         {{ cbi.free_fn }}(mValue);
         mValue = 0;
-        mLowered = false;
     }
   }
 

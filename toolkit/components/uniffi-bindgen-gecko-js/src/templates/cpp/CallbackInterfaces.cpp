@@ -185,7 +185,7 @@ extern "C" void {{ meth.fn_name }}(
   
   
   
-  ForeignFuture *aUniffiOutForeignFuture
+  ForeignFutureDroppedCallbackStruct *aUniffiOutForeignFuture
 ) {
   UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<{{ meth.async_handler_class_name }}>(
         aUniffiHandle,
@@ -331,19 +331,27 @@ extern "C" void {{ meth.fn_name }}(
 {%- endmatch %}
 {%- endfor %}
 
-extern "C" void {{ cbi.free_fn }}(uint64_t uniffiHandle) {
+extern "C" void {{ cbi.free_fn }}(uint64_t aUniffiHandle) {
+  if (CallbackHandleRelease(aUniffiHandle) == 0) {
    
    
    AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(
-      MakeUnique<CallbackFreeHandler>("{{ cbi.name }}.uniffi_free", uniffiHandle),
+      MakeUnique<CallbackFreeHandler>("{{ cbi.name }}.uniffi_free", aUniffiHandle),
       &{{ cbi.handler_var }});
+  }
+}
+
+extern "C" uint64_t {{ cbi.clone_fn }}(uint64_t aUniffiHandle) {
+  CallbackHandleAddRef(aUniffiHandle);
+  return aUniffiHandle;
 }
 
 static {{ cbi.vtable_struct_type.type_name }} {{ cbi.vtable_var }} {
+  {{ cbi.free_fn }},
+  {{ cbi.clone_fn }},
   {%- for meth in cbi.methods %}
   {{ meth.fn_name }},
   {%- endfor %}
-  {{ cbi.free_fn }}
 };
 
 {%- endfor %}

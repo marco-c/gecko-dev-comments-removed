@@ -33,7 +33,7 @@ NS_INTERFACE_MAP_END
 
 
 already_AddRefed<UniFFIPointer> UniFFIPointer::Create(
-    void* aPtr, const UniFFIPointerType* aType) {
+    uint64_t aPtr, const UniFFIPointerType* aType) {
   RefPtr<UniFFIPointer> uniFFIPointer = new UniFFIPointer(aPtr, aType);
   return uniFFIPointer.forget();
 }
@@ -59,8 +59,7 @@ already_AddRefed<UniFFIPointer> UniFFIPointer::Read(
   }
 
   
-  
-  void* ptr = (void*)mozilla::BigEndian::readUint64(data_ptr);
+  uint64_t ptr = mozilla::BigEndian::readUint64(data_ptr);
   return UniFFIPointer::Create(ptr, aType);
 }
 
@@ -85,7 +84,7 @@ void UniFFIPointer::Write(const ArrayBuffer& aArrayBuff, uint32_t aPosition,
   
   
   
-  void* clone = ClonePtr();
+  uint64_t clone = ClonePtr();
   CheckedUint32 end = CheckedUint32(aPosition) + 8;
   if (!end.isValid() || !aArrayBuff.ProcessData([&](const Span<uint8_t>& aData,
                                                     JS::AutoCheckCannotGC&&) {
@@ -95,7 +94,7 @@ void UniFFIPointer::Write(const ArrayBuffer& aArrayBuff, uint32_t aPosition,
         
         
         const auto& data_ptr = aData.Subspan(aPosition, 8);
-        mozilla::BigEndian::writeUint64(data_ptr.Elements(), (uint64_t)clone);
+        mozilla::BigEndian::writeUint64(data_ptr.Elements(), clone);
         return true;
       })) {
     aError.ThrowRangeError("position is out of range");
@@ -103,7 +102,7 @@ void UniFFIPointer::Write(const ArrayBuffer& aArrayBuff, uint32_t aPosition,
   }
 }
 
-UniFFIPointer::UniFFIPointer(void* aPtr, const UniFFIPointerType* aType) {
+UniFFIPointer::UniFFIPointer(uint64_t aPtr, const UniFFIPointerType* aType) {
   mPtr = aPtr;
   mType = aType;
 }
@@ -113,7 +112,7 @@ JSObject* UniFFIPointer::WrapObject(JSContext* aCx,
   return dom::UniFFIPointer_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void* UniFFIPointer::ClonePtr() const {
+uint64_t UniFFIPointer::ClonePtr() const {
   MOZ_LOG(gUniffiLogger, LogLevel::Info, ("[UniFFI] Cloning raw pointer"));
   RustCallStatus status{};
   auto cloned = this->mType->clone(this->mPtr, &status);

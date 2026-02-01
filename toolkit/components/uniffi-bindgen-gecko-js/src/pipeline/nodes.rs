@@ -2,11 +2,11 @@
 
 
 
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use askama::Template;
-use uniffi_bindgen::backend::filters::to_askama_error;
+use uniffi_bindgen::to_askama_error;
 use uniffi_pipeline::Node;
 
 use crate::{ConcurrencyMode, Config};
@@ -16,7 +16,7 @@ use crate::{ConcurrencyMode, Config};
 pub struct Root {
     
     pub cdylib: Option<String>,
-    pub modules: IndexMap<String, Module>,
+    pub namespaces: IndexMap<String, Namespace>,
     pub cpp_scaffolding: CppScaffolding,
     pub module_docs: Vec<ApiModuleDocs>,
 }
@@ -77,6 +77,7 @@ pub struct PointerType {
 #[derive(Debug, Clone, Node)]
 pub struct PointerTypeTraitInterfaceInfo {
     pub free_fn: String,
+    pub clone_fn: String,
 }
 
 
@@ -101,6 +102,9 @@ pub struct CppCallbackInterface {
     
     
     pub free_fn: String,
+    
+    
+    pub clone_fn: String,
     pub vtable_struct_type: FfiTypeNode,
     pub methods: Vec<CppCallbackInterfaceMethod>,
 }
@@ -163,7 +167,7 @@ pub struct AsyncCallbackMethodHandlerBase {
 
 #[derive(Debug, Clone, Node, Template)]
 #[template(path = "js/Module.sys.mjs", escape = "none")]
-pub struct Module {
+pub struct Namespace {
     pub name: String,
     pub config: Config,
     pub js_name: String,
@@ -174,7 +178,7 @@ pub struct Module {
     pub js_docstring: String,
     pub functions: Vec<Function>,
     pub type_definitions: Vec<TypeDefinition>,
-    pub ffi_definitions: Vec<FfiDefinition>,
+    pub ffi_definitions: IndexSet<FfiDefinition>,
     pub checksums: Vec<Checksum>,
     pub ffi_rustbuffer_alloc: RustFfiFunctionName,
     pub ffi_rustbuffer_from_bytes: RustFfiFunctionName,
@@ -254,15 +258,15 @@ pub struct Callable {
 pub enum CallableKind {
     Function,
     Method {
-        interface_name: String,
+        self_type: TypeNode,
         ffi_converter: String,
     },
     Constructor {
-        interface_name: String,
+        self_type: TypeNode,
         primary: bool,
     },
     VTableMethod {
-        trait_name: String,
+        self_type: TypeNode,
         for_callback_interface: bool,
     },
 }
@@ -277,7 +281,7 @@ pub struct ThrowsType {
     pub ty: Option<TypeNode>,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct AsyncData {
     pub ffi_rust_future_poll: RustFfiFunctionName,
     pub ffi_rust_future_cancel: RustFfiFunctionName,
@@ -293,16 +297,30 @@ pub struct Argument {
     pub ty: TypeNode,
     pub by_ref: bool,
     pub optional: bool,
-    pub default: Option<LiteralNode>,
+    pub default: Option<DefaultValueNode>,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
+pub enum DefaultValue {
+    Default(TypeNode),
+    Literal(LiteralNode),
+}
+
+#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
+pub struct DefaultValueNode {
+    #[node(wraps)]
+    pub default: DefaultValue,
+    
+    pub js_lit: String,
+}
+
+#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
 pub struct LiteralNode {
     pub js_lit: String,
     pub lit: Literal,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
 pub enum Literal {
     Boolean(bool),
     String(String),
@@ -325,7 +343,7 @@ pub enum Literal {
 
 
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
 pub enum Radix {
     Decimal = 10,
     Octal = 8,
@@ -346,7 +364,7 @@ pub struct Record {
 pub struct Field {
     pub name: String,
     pub ty: TypeNode,
-    pub default: Option<LiteralNode>,
+    pub default: Option<DefaultValueNode>,
     pub docstring: Option<String>,
     pub js_docstring: String,
 }
@@ -491,12 +509,12 @@ pub struct MapType {
 
 #[derive(Debug, Clone, Node)]
 pub struct ExternalType {
-    pub module_name: String,
+    pub namespace: String,
     pub name: String,
     pub self_type: TypeNode,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, Eq, PartialEq, Hash)]
 pub struct TypeNode {
     pub ty: Type,
     
@@ -567,6 +585,19 @@ pub enum Type {
     },
 }
 
+impl Type {
+    pub fn name(&self) -> Result<&str> {
+        match &self {
+            Type::Record { name, .. }
+            | Type::Enum { name, .. }
+            | Type::Interface { name, .. }
+            | Type::CallbackInterface { name, .. }
+            | Type::Custom { name, .. } => Ok(name.as_str()),
+            _ => bail!("This type has no name"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Node)]
 pub enum ObjectImpl {
     
@@ -577,7 +608,7 @@ pub enum ObjectImpl {
     CallbackTrait,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub enum FfiDefinition {
     
     RustFunction(FfiFunction),
@@ -587,16 +618,16 @@ pub enum FfiDefinition {
     Struct(FfiStruct),
 }
 
-#[derive(Debug, Clone, Node, PartialEq, Eq)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct RustFfiFunctionName(pub String);
 
-#[derive(Debug, Clone, Node, PartialEq, Eq)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiStructName(pub String);
 
-#[derive(Debug, Clone, Node, PartialEq, Eq)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiFunctionTypeName(pub String);
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiFunction {
     pub name: RustFfiFunctionName,
     pub async_data: Option<AsyncData>,
@@ -606,7 +637,7 @@ pub struct FfiFunction {
     pub kind: FfiFunctionKind,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Node)]
+#[derive(Debug, Clone, PartialEq, Eq, Node, Hash)]
 pub enum FfiFunctionKind {
     Scaffolding,
     ObjectClone,
@@ -624,7 +655,7 @@ pub enum FfiFunctionKind {
     Checksum,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiFunctionType {
     pub name: FfiFunctionTypeName,
     pub arguments: Vec<FfiArgument>,
@@ -632,37 +663,37 @@ pub struct FfiFunctionType {
     pub has_rust_call_status_arg: bool,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiReturnType {
     pub ty: Option<FfiTypeNode>,
     pub type_name: String,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiStruct {
     pub name: FfiStructName,
     pub fields: Vec<FfiField>,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiField {
     pub name: String,
     pub ty: FfiTypeNode,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiArgument {
     pub name: String,
     pub ty: FfiTypeNode,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub struct FfiTypeNode {
     pub ty: FfiType,
     pub type_name: String,
 }
 
-#[derive(Debug, Clone, Node)]
+#[derive(Debug, Clone, Node, PartialEq, Eq, Hash)]
 pub enum FfiType {
     UInt8,
     Int8,
@@ -674,10 +705,6 @@ pub enum FfiType {
     Int64,
     Float32,
     Float64,
-    RustArcPtr {
-        module_name: String,
-        object_name: String,
-    },
     RustBuffer(Option<String>),
     ForeignBytes,
     Function(FfiFunctionTypeName),
@@ -694,8 +721,12 @@ pub enum HandleKind {
     RustFuture,
     ForeignFuture,
     ForeignFutureCallbackData,
-    CallbackInterface {
-        module_name: String,
+    StructInterface {
+        namespace: String,
+        interface_name: String,
+    },
+    TraitInterface {
+        namespace: String,
         interface_name: String,
     },
 }
@@ -729,10 +760,10 @@ impl<T> CombinedItems<T> {
     
     pub fn new<F>(root: &mut Root, mut f: F) -> Self
     where
-        F: FnMut(&mut Module, &mut CombinedItemsIdGenerator, &mut Vec<T>),
+        F: FnMut(&mut Namespace, &mut CombinedItemsIdGenerator, &mut Vec<T>),
     {
-        Self::try_new(root, |module, id_generator, items| {
-            f(module, id_generator, items);
+        Self::try_new(root, |namespace, id_generator, items| {
+            f(namespace, id_generator, items);
             Ok(())
         })
         .unwrap()
@@ -740,7 +771,7 @@ impl<T> CombinedItems<T> {
 
     pub fn try_new<F>(root: &mut Root, mut f: F) -> Result<Self>
     where
-        F: FnMut(&mut Module, &mut CombinedItemsIdGenerator, &mut Vec<T>) -> Result<()>,
+        F: FnMut(&mut Namespace, &mut CombinedItemsIdGenerator, &mut Vec<T>) -> Result<()>,
     {
         
         let mut combined_items = Self {
@@ -756,16 +787,20 @@ impl<T> CombinedItems<T> {
         
         
 
-        root.try_visit_mut(|module: &mut Module| {
-            if !module.fixture {
-                f(module, &mut id_generator, &mut combined_items.items)
+        root.try_visit_mut(|namespace: &mut Namespace| {
+            if !namespace.fixture {
+                f(namespace, &mut id_generator, &mut combined_items.items)
             } else {
                 Ok(())
             }
         })?;
-        root.try_visit_mut(|module: &mut Module| {
-            if module.fixture {
-                f(module, &mut id_generator, &mut combined_items.fixture_items)
+        root.try_visit_mut(|namespace: &mut Namespace| {
+            if namespace.fixture {
+                f(
+                    namespace,
+                    &mut id_generator,
+                    &mut combined_items.fixture_items,
+                )
             } else {
                 Ok(())
             }
@@ -862,7 +897,7 @@ pub mod filters {
     use super::*;
     use askama::Result;
 
-    pub fn class_name(ty: &TypeNode) -> Result<String> {
+    pub fn class_name(ty: &TypeNode, _: &dyn askama::Values) -> Result<String> {
         match &ty.class_name {
             Some(class_name) => Ok(class_name.clone()),
             None => Err(to_askama_error(&format!(
@@ -873,7 +908,7 @@ pub mod filters {
     }
 
     
-    pub fn field_equals(field: &Field, first_obj: &str, second_obj: &str) -> Result<String> {
+    pub fn field_equals(field: &Field, _: &dyn askama::Values, first_obj: &str, second_obj: &str) -> Result<String> {
         let name = &field.name;
         Ok(match &field.ty.ty {
             Type::Record { .. } => format!("{first_obj}.{name}.equals({second_obj}.{name})"),
@@ -884,7 +919,7 @@ pub mod filters {
     
     
     
-    pub fn remove_trailing_comma<T: std::fmt::Display>(text: T) -> Result<String> {
+    pub fn remove_trailing_comma<T: std::fmt::Display>(text: T, _: &dyn askama::Values) -> Result<String> {
         let text = text.to_string();
         let Some(last_comma) = text.rfind(',') else {
             return Ok(text.to_string());
