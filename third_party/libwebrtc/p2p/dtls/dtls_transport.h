@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -24,6 +25,7 @@
 #include "api/crypto/crypto_options.h"
 #include "api/dtls_transport_interface.h"
 #include "api/environment/environment.h"
+#include "api/field_trials_view.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
@@ -66,6 +68,14 @@ class StreamInterfaceChannel : public StreamInterface {
   bool OnPacketReceived(const char* data, size_t size);
 
   
+  
+  
+  
+  
+  void SetNextPacketOptions(const AsyncSocketPacketOptions& options);
+  void ClearNextPacketOptions();
+
+  
   StreamState GetState() const override;
   void Close() override;
   StreamResult Read(ArrayView<uint8_t> buffer,
@@ -83,6 +93,8 @@ class StreamInterfaceChannel : public StreamInterface {
       nullptr;  
   StreamState state_ RTC_GUARDED_BY(callback_sequence_);
   BufferQueue packets_ RTC_GUARDED_BY(callback_sequence_);
+  std::optional<AsyncSocketPacketOptions> next_packet_options_
+      RTC_GUARDED_BY(callback_sequence_);
 };
 
 
@@ -116,6 +128,12 @@ class StreamInterfaceChannel : public StreamInterface {
 class DtlsTransportInternalImpl : public DtlsTransportInternal {
  public:
   
+  using SslStreamFactory = std::function<std::unique_ptr<SSLStreamAdapter>(
+      std::unique_ptr<StreamInterface>,
+      absl::AnyInvocable<void(SSLHandshakeError)> handshake_error_callback,
+      const FieldTrialsView* field_trials)>;
+
+  
   
   
   
@@ -124,7 +142,8 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
       const Environment& env,
       IceTransportInternal* ice_transport,
       const CryptoOptions& crypto_options,
-      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12);
+      SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12,
+      SslStreamFactory ssl_stream_factory = nullptr);
 
   ~DtlsTransportInternalImpl() override;
 
@@ -268,6 +287,7 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
                               const ReceivedIpPacket& packet)> callback);
   void PeriodicRetransmitDtlsPacketUntilDtlsConnected();
 
+  SslStreamFactory ssl_stream_factory_;
   const Environment env_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker thread_checker_;
 
