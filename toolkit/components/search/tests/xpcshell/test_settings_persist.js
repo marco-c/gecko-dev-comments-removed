@@ -31,8 +31,8 @@ add_setup(async function () {
   
   
   let settingsFileWritten = promiseAfterSettings();
-  await Services.search.init(false);
-  Services.search.wrappedJSObject._removeObservers();
+  await SearchService.init(false);
+  SearchService.wrappedJSObject._removeObservers();
   await settingsFileWritten;
 });
 
