@@ -42,6 +42,26 @@ extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
 namespace mozilla {
 namespace safebrowsing {
 
+
+
+
+
+
+struct TableLocationOverride {
+  nsLiteralCString mTableName;
+  nsLiteralCString mDirectoryName;
+};
+
+static const TableLocationOverride kTableLocationOverrides[] = {
+    {"goog-badbinurl-proto"_ns, "google4"_ns},
+    {"goog-downloadwhite-proto"_ns, "google4"_ns},
+    {"goog-phish-proto"_ns, "google4"_ns},
+    {"googpub-phish-proto"_ns, "google4"_ns},
+    {"goog-malware-proto"_ns, "google4"_ns},
+    {"goog-unwanted-proto"_ns, "google4"_ns},
+    {"goog-harmful-proto"_ns, "google4"_ns},
+};
+
 bool Classifier::OnUpdateThread() const {
   bool onthread = false;
   if (mUpdateThread) {
@@ -84,6 +104,20 @@ nsresult Classifier::GetPrivateStoreDirectory(
     return NS_OK;
   }
 
+  
+  nsAutoCString providerDirectoryName;
+  for (const auto& override : kTableLocationOverrides) {
+    if (aTableName.Equals(override.mTableName)) {
+      providerDirectoryName.Assign(override.mDirectoryName);
+      break;
+    }
+  }
+
+  if (providerDirectoryName.IsEmpty()) {
+    
+    providerDirectoryName = aProvider;
+  }
+
   nsCOMPtr<nsIFile> providerDirectory;
 
   
@@ -91,14 +125,7 @@ nsresult Classifier::GetPrivateStoreDirectory(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (aProvider.EqualsLiteral("google5")) {
-    
-    
-    
-    rv = providerDirectory->AppendNative("google4"_ns);
-  } else {
-    rv = providerDirectory->AppendNative(aProvider);
-  }
+  rv = providerDirectory->AppendNative(providerDirectoryName);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
