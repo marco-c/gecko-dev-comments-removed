@@ -8,7 +8,12 @@
 
 
 
-const result = new Temporal.ZonedDateTime(1719923640_000_000_000n, "UTC", "islamicc");
+var result = new Temporal.ZonedDateTime(1719923640_000_000_000n, "UTC", "islamicc");
 assert.sameValue(result.calendarId, "islamic-civil", "calendar ID is canonicalized");
+
+
+
+result = new Temporal.ZonedDateTime(1719923640_000_000_000n, "UTC", "ethiopic-amete-alem");
+assert.sameValue(result.calendarId, "ethioaa", "calendar ID is canonicalized");
 
 reportCompare(0, 0);

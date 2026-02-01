@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+const item = new Temporal.PlainTime(0, 0);
+
+assert.throws(TypeError, function() {
+  item.toLocaleString("en", { dateStyle: "full", timeStyle: "full" });
+});
+
+reportCompare(0, 0);

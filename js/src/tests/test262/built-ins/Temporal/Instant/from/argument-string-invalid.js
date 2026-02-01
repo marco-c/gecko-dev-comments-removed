@@ -57,6 +57,9 @@ const invalidStrings = [
   
   "-999999-01-01T00:00Z",
   "+999999-01-01T00:00Z",
+  
+  
+  "2025-01-01T00:00:00+00:0000",
 ];
 for (const arg of invalidStrings) {
   assert.throws(

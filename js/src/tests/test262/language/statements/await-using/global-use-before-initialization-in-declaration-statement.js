@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await assert.throwsAsync(ReferenceError, async function() {
+    await using x = x + 1;
+  });
+});

@@ -51,6 +51,9 @@ const invalidStrings = [
   
   "-999999-01-01",
   "+999999-01-01",
+  
+  "2020-0101",
+  "202001-01",
 ];
 for (const arg of invalidStrings) {
   assert.throws(

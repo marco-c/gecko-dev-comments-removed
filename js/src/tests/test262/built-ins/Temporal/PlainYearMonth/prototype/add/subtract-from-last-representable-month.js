@@ -8,17 +8,11 @@
 
 
 
+
 const lastMonth = new Temporal.PlainYearMonth(275760, 9);
 
-
-
-assert.throws(RangeError, () => lastMonth.add({seconds: -1}));
-assert.throws(RangeError, () => lastMonth.add({minutes: -1}));
-assert.throws(RangeError, () => lastMonth.add({hours: -1}));
-assert.throws(RangeError, () => lastMonth.add({days: -1}));
-assert.throws(RangeError, () => lastMonth.add({weeks: -1}));
-assert.throws(RangeError, () => lastMonth.add({months: -1}));
-assert.throws(RangeError, () => lastMonth.add({years: -1}));
+TemporalHelpers.assertPlainYearMonth(lastMonth.add({ months: -1 }), 275760, 8, "M08", "-1 month");
+TemporalHelpers.assertPlainYearMonth(lastMonth.add({ years: -1 }), 275759, 9, "M09", "-1 year");
 
 
 reportCompare(0, 0);

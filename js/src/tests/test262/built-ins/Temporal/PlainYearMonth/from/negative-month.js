@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => Temporal.PlainYearMonth.from({ year: 1, month: -1 }));
+
+reportCompare(0, 0);

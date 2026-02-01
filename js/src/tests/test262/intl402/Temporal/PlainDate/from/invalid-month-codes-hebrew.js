@@ -10,8 +10,14 @@
 
 const calendar = "hebrew";
 
+
 assert.throws(RangeError, () => {
   Temporal.PlainDate.from({ year: 5779, monthCode: "M13", day: 1, calendar });
+}, "M13 should not be a valid month code");
+
+
+assert.throws(RangeError, () => {
+  Temporal.PlainDate.from({ year: 5781, monthCode: "M13", day: 1, calendar });
 }, "M13 should not be a valid month code");
 
 

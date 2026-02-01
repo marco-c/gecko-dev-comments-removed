@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue((new Temporal.PlainYearMonth(1999, 6)).month, 6);
+
+
+reportCompare(0, 0);

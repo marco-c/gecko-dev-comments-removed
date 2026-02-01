@@ -17,7 +17,6 @@
 
 
 
-
 assert.compareArray([0, 0].fill(1, undefined), [1, 1],
   '[0, 0].fill(1, undefined) must return [1, 1]'
 );
@@ -72,6 +71,14 @@ assert.compareArray([0, 0].fill(1, 1.5), [0, 1],
 
 assert.compareArray([0, 0].fill(1, 0, 1.5), [1, 0],
   '[0, 0].fill(1, 0, 1.5) must return [1, 0]'
+);
+
+assert.compareArray([0, 0].fill(1, Number.NEGATIVE_INFINITY, 1), [1, 0],
+  '[0, 0].fill(1, Number.NEGATIVE_INFINITY, 1) must return [1, 0]'
+);
+
+assert.compareArray([0, 0].fill(1, 0, Number.NEGATIVE_INFINITY), [0, 0],
+  '[0, 0].fill(1, 0, Number.NEGATIVE_INFINITY) must return [0, 0]'
 );
 
 reportCompare(0, 0);

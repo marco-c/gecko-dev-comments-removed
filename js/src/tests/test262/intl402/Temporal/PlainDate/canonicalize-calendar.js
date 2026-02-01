@@ -8,7 +8,12 @@
 
 
 
-const result = new Temporal.PlainDate(2024, 7, 2, "islamicc");
+var result = new Temporal.PlainDate(2024, 7, 2, "islamicc");
 assert.sameValue(result.calendarId, "islamic-civil", "calendar ID is canonicalized");
+
+
+
+result = new Temporal.PlainDate(2024, 7, 2, "ethiopic-amete-alem");
+assert.sameValue(result.calendarId, "ethioaa", "calendar ID is canonicalized");
 
 reportCompare(0, 0);

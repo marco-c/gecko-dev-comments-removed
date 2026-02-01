@@ -8,7 +8,12 @@
 
 
 
-const result = new Temporal.PlainMonthDay(2, 11, "islamicc", 1972);
+var result = new Temporal.PlainMonthDay(2, 11, "islamicc", 1972);
 assert.sameValue(result.calendarId, "islamic-civil", "calendar ID is canonicalized");
+
+
+
+result = new Temporal.PlainMonthDay(2, 11, "ethiopic-amete-alem");
+assert.sameValue(result.calendarId, "ethioaa", "calendar ID is canonicalized");
 
 reportCompare(0, 0);

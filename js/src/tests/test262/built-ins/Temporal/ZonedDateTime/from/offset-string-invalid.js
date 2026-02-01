@@ -8,9 +8,10 @@
 
 
 
-const bag = { year: 2024, monthCode: "M10", day: 3, timeZone: "UTC" };
 
-["garbage", "00:00", "+000:00", "-00:000", "-00:00:000", "+00:00.0", "+00:00:00.0000000000"].forEach((offset) => {
+
+
+["garbage", "00:00", "+000:00", "-00:000", "-00:00:000", "+00:00.0", "+00:00:00.0000000000", "+00:0000"].forEach((offset) => {
   assert.throws(RangeError, () => Temporal.ZonedDateTime.from({ offset, year: 2024, monthCode: "M10", day: 3, timeZone: "UTC" }),
     `UTC offset '${offset}' is not well-formed`);
 });

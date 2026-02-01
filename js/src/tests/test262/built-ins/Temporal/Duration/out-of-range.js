@@ -44,4 +44,16 @@ assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, -9007199
 assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, -9007199254740991, -999, -1000), "µs balance into seconds < min");
 assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, -9007199254740991, -999, -999, -1000), "ns balance into seconds < min");
 
+
+assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, 8998192055486252, 9007199254740991 , 0, 0), "max ms balance into s > max");
+assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, -8998192055486252, -9007199254740991, 0, 0), "min ms balance into s < min");
+
+
+assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, 9007190247541738, 0, 9007199254740991, 0), "max µs balance into s > max");
+assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, -9007190247541738, 0, -9007199254740991, 0), "min µs balance into s < min");
+
+
+assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, 9007199245733793, 0, 0, 9007199254740991), "max ns balance into s > max");
+assert.throws(RangeError, () => new Temporal.Duration(0, 0, 0, 0, 0, 0, -9007199245733793, 0, 0, -9007199254740991), "min ns balance into s < min");
+
 reportCompare(0, 0);

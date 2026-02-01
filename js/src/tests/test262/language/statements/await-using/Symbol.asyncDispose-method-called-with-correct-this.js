@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  var resource = {
+      disposed: false,
+      async [Symbol.asyncDispose]() {
+          assert.sameValue(this, resource);
+      }
+  };
+
+  {
+    await using _ = resource;
+  }
+});

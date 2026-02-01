@@ -1,0 +1,53 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  var resource = {
+    [Symbol.asyncDispose]() {
+      return {
+        then(resolve) {
+          resolve();
+        }
+      };
+    }
+  };
+
+  {
+    await using _ = resource;
+  }
+});

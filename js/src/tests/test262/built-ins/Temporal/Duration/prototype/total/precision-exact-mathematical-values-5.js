@@ -58,4 +58,31 @@ const seconds = 8692288669465520;
   );
 }
 
+{
+  const d = new Temporal.Duration(0, 0, 5, 5);
+
+  const result = d.total({ unit: "months", relativeTo: "1972-01-31" })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const expectedMonths = 1.3548387096774193;
+
+  assert.sameValue(result, expectedMonths,
+    "NudgeToCalendarUnit should implement floating-point calculation correctly for largestUnit months");
+}
+
 reportCompare(0, 0);

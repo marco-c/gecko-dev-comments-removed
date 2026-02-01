@@ -24,6 +24,10 @@
 
 
 
+
+
+
+
 const requiredCalendars = [
   "buddhist",
   "chinese",
@@ -31,21 +35,32 @@ const requiredCalendars = [
   "dangi",
   "ethioaa",
   "ethiopic",
+  
   "gregory",
   "hebrew",
   "indian",
   "islamic-civil",
   "islamic-tbla",
   "islamic-umalqura",
+  
   "iso8601",
   "japanese",
   "persian",
   "roc"
-]
+];
+
+assert.compareArray(
+  requiredCalendars,
+  requiredCalendars.slice(0).sort(),
+  "requiredCalendars is sorted"
+);
 
 const supportedCalendars = Intl.supportedValuesOf("calendar");
-for (const calendar of requiredCalendars) {
-  assert(supportedCalendars.includes(calendar), "Required calendar: " + calendar + " must be supported");
-}
+
+assert.compareArray(
+  supportedCalendars,
+  requiredCalendars,
+  "only the required calendars are supported"
+);
 
 reportCompare(0, 0);

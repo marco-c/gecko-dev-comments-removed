@@ -19,6 +19,7 @@ const badOffsets = [
   null,       
   true,       
   1000n,      
+  "+00:0000", 
 ];
 badOffsets.forEach((offset) => {
   const relativeTo = { year: 2021, month: 10, day: 28, offset, timeZone: "UTC" };

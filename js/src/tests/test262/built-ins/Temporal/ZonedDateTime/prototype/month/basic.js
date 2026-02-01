@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue((new Temporal.ZonedDateTime(0n, "UTC")).month, 1);
+
+reportCompare(0, 0);

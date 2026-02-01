@@ -42,4 +42,9 @@ actual = a.flat(depthNum);
 expected = [1, 2]
 assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
+
+actual = a.flat(undefined);
+expected = [1, 2];
+assert.compareArray(actual, expected, 'a.flat(undefined) uses default depth of 1');
+
 reportCompare(0, 0);
