@@ -101,7 +101,7 @@ impl PublicKey {
             PK11_HPKE_Serialize(
                 **self,
                 buf.as_mut_ptr(),
-                &mut len,
+                &raw mut len,
                 c_uint::try_from(buf.len())?,
             )
         })?;
@@ -148,7 +148,7 @@ impl PrivateKey {
                 PK11ObjectType::PK11_TypePrivKey,
                 (**self).cast(),
                 CK_ATTRIBUTE_TYPE::from(CKA_VALUE),
-                &mut key_item,
+                &raw mut key_item,
             )
         })?;
         let slc = unsafe { null_safe_slice(key_item.data, key_item.len) };
@@ -157,7 +157,7 @@ impl PrivateKey {
         
         
         unsafe {
-            SECITEM_FreeItem(&mut key_item, PRBool::from(false));
+            SECITEM_FreeItem(&raw mut key_item, PRBool::from(false));
         }
         Ok(key)
     }
@@ -357,6 +357,8 @@ impl RandomCache {
     const SIZE: usize = 256;
     const CUTOFF: usize = 32;
 
+    
+    
     const fn new() -> Self {
         Self {
             cache: [0; Self::SIZE],
@@ -403,10 +405,12 @@ pub fn random<const N: usize>() -> [u8; N] {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod test {
+    use std::ptr::null_mut;
+
     use test_fixture::fixture_init;
 
     use super::RandomCache;
-    use crate::random;
+    use crate::{random, PrivateKey, PublicKey};
 
     #[cfg(not(feature = "disable-random"))]
     #[test]
@@ -442,5 +446,40 @@ mod test {
                 assert_ne!(&cache.randomize(&mut buf[..len])[..len], &ZERO[..len]);
             }
         }
+    }
+
+    #[test]
+    fn key_operations() {
+        use crate::ech::generate_keys;
+
+        fixture_init();
+        let (sk, pk) = generate_keys().unwrap();
+
+        
+        assert_eq!(pk.key_data().unwrap().len(), 32);
+
+        
+        let pk_dbg = format!("{pk:?}");
+        assert_eq!(&pk_dbg[..9], "PublicKey");
+        let sk_dbg = format!("{sk:?}");
+        
+        
+        assert!(
+            sk_dbg.starts_with("PrivateKey") || sk_dbg.starts_with("Opaque"),
+            "unexpected private key debug format: {sk_dbg}"
+        );
+
+        
+        let pk2 = pk.clone();
+        let sk2 = sk.clone();
+        assert_eq!(pk.key_data().unwrap(), pk2.key_data().unwrap());
+        assert_eq!(format!("{sk:?}"), format!("{sk2:?}"));
+    }
+
+    #[test]
+    fn null_pointer_error() {
+        fixture_init();
+        assert!(PublicKey::from_ptr(null_mut()).is_err());
+        assert!(PrivateKey::from_ptr(null_mut()).is_err());
     }
 }

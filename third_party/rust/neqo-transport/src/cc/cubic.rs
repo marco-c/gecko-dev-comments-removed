@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use neqo_common::qtrace;
+use neqo_common::{qdebug, qtrace};
 
 use crate::cc::{classic_cc::WindowAdjustment, CongestionEvent};
 
@@ -27,8 +27,8 @@ pub fn convert_to_f64(v: usize) -> f64 {
     f_64
 }
 
-#[derive(Debug, Default)]
-pub struct Cubic {
+#[derive(Debug, Default, Clone)]
+pub struct State {
     
     
     
@@ -82,14 +82,29 @@ pub struct Cubic {
     reno_acked_bytes: f64,
 }
 
-impl Display for Cubic {
+impl Display for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Cubic [w_max: {}, k: {}, t_epoch: {:?}]",
+            "state [w_max: {}, k: {}, t_epoch: {:?}]",
             self.w_max, self.k, self.t_epoch
         )?;
         Ok(())
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Cubic {
+    
+    current: State,
+    
+    
+    stored: Option<State>,
+}
+
+impl Display for Cubic {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Cubic {}", self.current)
     }
 }
 
@@ -172,7 +187,7 @@ impl Cubic {
     
     
     
-    pub const FAST_CONVERGENCE_FACTOR: f64 = (1.0 + 0.7) / 2.0;
+    pub const FAST_CONVERGENCE_FACTOR: f64 = f64::midpoint(1.0, 0.7);
 
     
     
@@ -188,7 +203,7 @@ impl Cubic {
     
     
     fn calc_k(&self, cwnd_epoch: f64, max_datagram_size: f64) -> f64 {
-        ((self.w_max - cwnd_epoch) / max_datagram_size / Self::C).cbrt()
+        ((self.current.w_max - cwnd_epoch) / max_datagram_size / Self::C).cbrt()
     }
 
     
@@ -202,7 +217,7 @@ impl Cubic {
     
     
     fn w_cubic(&self, t: f64, max_datagram_size: f64) -> f64 {
-        (Self::C * (t - self.k).powi(3)).mul_add(max_datagram_size, self.w_max)
+        (Self::C * (t - self.current.k).powi(3)).mul_add(max_datagram_size, self.current.w_max)
     }
 
     
@@ -222,17 +237,17 @@ impl Cubic {
         max_datagram_size: f64,
         now: Instant,
     ) {
-        self.t_epoch = Some(now);
-        self.reno_acked_bytes = new_acked_bytes;
-        self.w_est = curr_cwnd;
+        self.current.t_epoch = Some(now);
+        self.current.reno_acked_bytes = new_acked_bytes;
+        self.current.w_est = curr_cwnd;
         
         
         
         
         
         
-        self.k = if self.w_max <= curr_cwnd {
-            self.w_max = curr_cwnd;
+        self.current.k = if self.current.w_max <= curr_cwnd {
+            self.current.w_max = curr_cwnd;
             0.0
         } else {
             self.calc_k(curr_cwnd, max_datagram_size)
@@ -242,12 +257,12 @@ impl Cubic {
 
     #[cfg(test)]
     pub const fn w_max(&self) -> f64 {
-        self.w_max
+        self.current.w_max
     }
 
     #[cfg(test)]
-    pub fn set_w_max(&mut self, w_max: f64) {
-        self.w_max = w_max;
+    pub const fn set_w_max(&mut self, w_max: f64) {
+        self.current.w_max = w_max;
     }
 }
 
@@ -269,8 +284,8 @@ impl WindowAdjustment for Cubic {
         let new_acked_bytes = convert_to_f64(new_acked_bytes);
         let max_datagram_size = convert_to_f64(max_datagram_size);
 
-        let t_epoch = if let Some(t) = self.t_epoch {
-            self.reno_acked_bytes += new_acked_bytes;
+        let t_epoch = if let Some(t) = self.current.t_epoch {
+            self.current.reno_acked_bytes += new_acked_bytes;
             t
         } else {
             
@@ -283,7 +298,8 @@ impl WindowAdjustment for Cubic {
             
             
             self.start_epoch(curr_cwnd, new_acked_bytes, max_datagram_size, now);
-            self.t_epoch
+            self.current
+                .t_epoch
                 .expect("unwrapping `None` value -- it should've been set by `start_epoch`")
         };
 
@@ -318,15 +334,15 @@ impl WindowAdjustment for Cubic {
         
 
         
-        let increase = (Self::ALPHA * self.reno_acked_bytes / curr_cwnd).floor();
+        let increase = (Self::ALPHA * self.current.reno_acked_bytes / curr_cwnd).floor();
 
         
         if increase > 0.0 {
-            self.w_est += increase * max_datagram_size;
+            self.current.w_est += increase * max_datagram_size;
             
             
             let acked_bytes_used = increase * curr_cwnd / Self::ALPHA;
-            self.reno_acked_bytes -= acked_bytes_used;
+            self.current.reno_acked_bytes -= acked_bytes_used;
         }
 
         
@@ -344,7 +360,7 @@ impl WindowAdjustment for Cubic {
         
         
         
-        let target = target_cubic.max(self.w_est);
+        let target = target_cubic.max(self.current.w_est);
 
         let cwnd_increase = target - curr_cwnd;
 
@@ -415,14 +431,15 @@ impl WindowAdjustment for Cubic {
         
         
         
-        self.w_max = if curr_cwnd_f64 + convert_to_f64(max_datagram_size) < self.w_max {
-            curr_cwnd_f64 * Self::FAST_CONVERGENCE_FACTOR
-        } else {
-            curr_cwnd_f64
-        };
+        self.current.w_max =
+            if curr_cwnd_f64 + convert_to_f64(max_datagram_size) < self.current.w_max {
+                curr_cwnd_f64 * Self::FAST_CONVERGENCE_FACTOR
+            } else {
+                curr_cwnd_f64
+            };
 
         
-        self.t_epoch = None;
+        self.current.t_epoch = None;
         let beta_dividend = if congestion_event == CongestionEvent::Ecn {
             Self::BETA_USIZE_DIVIDEND_ECN
         } else {
@@ -437,6 +454,23 @@ impl WindowAdjustment for Cubic {
     fn on_app_limited(&mut self) {
         
         
-        self.t_epoch = None;
+        self.current.t_epoch = None;
+    }
+
+    fn save_undo_state(&mut self) {
+        self.stored = Some(self.current.clone());
+    }
+
+    fn restore_undo_state(&mut self) {
+        let Some(stored) = self.stored.take() else {
+            debug_assert!(false, "couldn't restore {self} specific undo state");
+            return;
+        };
+
+        qdebug!(
+            "Spurious cong event: recovering cubic state from {} to {stored}",
+            self.current
+        );
+        self.current = stored;
     }
 }

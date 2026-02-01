@@ -119,7 +119,7 @@ impl Packet {
 
     
     
-    pub fn clear_primary_path(&mut self) {
+    pub const fn clear_primary_path(&mut self) {
         self.primary_path = false;
     }
 
@@ -153,7 +153,7 @@ impl Packet {
     }
 
     
-    pub fn declare_lost(&mut self, now: Instant) -> bool {
+    pub const fn declare_lost(&mut self, now: Instant) -> bool {
         if self.lost() {
             false
         } else {
@@ -179,7 +179,7 @@ impl Packet {
     
     
     #[must_use]
-    pub fn pto(&mut self) -> bool {
+    pub const fn pto(&mut self) -> bool {
         if self.pto || self.lost() {
             false
         } else {
@@ -249,7 +249,7 @@ impl Packets {
             
             
             
-            debug_assert!(previous_range_start.map_or(true, |s| s > *range.end()));
+            debug_assert!(previous_range_start.is_none_or(|s| s > *range.end()));
             previous_range_start = Some(*range.start());
 
             
@@ -456,5 +456,21 @@ mod tests {
         let mut pkts = Packets::default();
         pkts.track(pkt(0));
         assert!(pkts.take_ranges([1..=1]).is_empty());
+    }
+
+    #[test]
+    fn pto() {
+        let mut p = pkt(0);
+        assert!(!p.pto_fired());
+        assert!(p.pto()); 
+        assert!(p.pto_fired());
+        assert!(!p.pto()); 
+    }
+
+    #[test]
+    fn pto_after_lost() {
+        let mut p = pkt(0);
+        p.declare_lost(start_time());
+        assert!(!p.pto()); 
     }
 }
