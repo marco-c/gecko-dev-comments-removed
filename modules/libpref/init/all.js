@@ -3682,6 +3682,14 @@ pref("browser.translations.chaos.errors", false);
 pref("browser.translations.chaos.timeoutMS", 0);
 
 
+pref("browser.ai.control.default", "available");
+pref("browser.ai.control.translations", "default");
+pref("browser.ai.control.pdfjsAltText", "default");
+pref("browser.ai.control.smartTabGroups", "default");
+pref("browser.ai.control.linkPreviewKeyPoints", "default");
+pref("browser.ai.control.sidebarChatbot", "default");
+
+
 pref("browser.ml.enable", true);
 
 pref("browser.ml.logLevel", "Error");
