@@ -269,8 +269,8 @@ class WinUtils {
 
 
 
-  static void Log(const char* fmt, ...);
-  static void LogW(const wchar_t* fmt, ...);
+  static void Log(const char* fmt, ...) MOZ_FORMAT_PRINTF(1, 2);
+  static void LogW(const wchar_t* fmt, ...) MOZ_FORMAT_WPRINTF(1, 2);
 
   
 
