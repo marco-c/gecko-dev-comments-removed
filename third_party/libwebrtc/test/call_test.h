@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/audio/audio_device.h"
 #include "api/audio/audio_processing.h"
@@ -27,6 +26,7 @@
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
 #include "api/fec_controller.h"
+#include "api/field_trials.h"
 #include "api/media_types.h"
 #include "api/network_state_predictor.h"
 #include "api/rtc_event_log/rtc_event_log.h"
@@ -53,12 +53,12 @@
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "system_wrappers/include/clock.h"
+#include "test/create_test_field_trials.h"
 #include "test/fake_videorenderer.h"
 #include "test/frame_generator_capturer.h"
 #include "test/gtest.h"
 #include "test/rtp_rtcp_observer.h"
 #include "test/run_loop.h"
-#include "test/scoped_key_value_config.h"
 #include "test/test_video_capturer.h"
 #include "video/config/video_encoder_config.h"
 
@@ -69,13 +69,14 @@ class BaseTest;
 
 class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
  public:
-  explicit CallTest(absl::string_view field_trials = "");
+  explicit CallTest(FieldTrials field_trials = CreateTestFieldTrials(""));
   virtual ~CallTest();
 
   static const std::map<uint8_t, MediaType> payload_type_map_;
 
  protected:
   const Environment& env() const { return env_; }
+  FieldTrials& field_trials() { return field_trials_; }
 
   void SetSendEventLog(std::unique_ptr<RtcEventLog> event_log);
   void SetRecvEventLog(std::unique_ptr<RtcEventLog> event_log);
@@ -215,7 +216,7 @@ class CallTest : public ::testing::Test, public RtpPacketSinkInterface {
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
   test::RunLoop loop_;
-  test::ScopedKeyValueConfig field_trials_;
+  FieldTrials field_trials_;
   Environment env_;
   Environment send_env_;
   Environment recv_env_;
