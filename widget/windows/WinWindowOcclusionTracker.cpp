@@ -430,13 +430,19 @@ void WinWindowOcclusionTracker::Destroy() {
 
 
 MessageLoop* WinWindowOcclusionTracker::OcclusionCalculatorLoop() {
-  return sTracker ? sTracker->mThread->message_loop() : nullptr;
+  
+  
+  RefPtr<WinWindowOcclusionTracker> tracker = sTracker;
+  return tracker ? tracker->mThread->message_loop() : nullptr;
 }
 
 
 bool WinWindowOcclusionTracker::IsInWinWindowOcclusionThread() {
-  return sTracker &&
-         sTracker->mThread->thread_id() == PlatformThread::CurrentId();
+  
+  
+  RefPtr<WinWindowOcclusionTracker> tracker = sTracker;
+  return tracker &&
+         tracker->mThread->thread_id() == PlatformThread::CurrentId();
 }
 
 void WinWindowOcclusionTracker::Enable(nsIWidget* aWindow, HWND aHwnd) {
