@@ -3208,8 +3208,6 @@ void profiler_resume_sampling() {
 bool profiler_feature_active(uint32_t aFeature) {
   
 
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
   
   return RacyFeatures::IsActiveWithFeature(aFeature);
 }
