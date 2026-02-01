@@ -5,8 +5,8 @@ import pytest
 URL = "https://tjoy.jp/shinjuku_wald9#schedule-content"
 
 DATES_CSS = ".calendar-item"
-CARD_CSS = ".card-header"
-RESERVE_CSS = ".schedule-box-body"
+CARD_CSS = ".card-header.js-card-click"
+RESERVE_CSS = ".schedule-box-body[onclick*=reservation]"
 ZOOM_WRAPPER_CSS = ".js-zoom-in"
 MAP_CSS = ".js-map"
 
@@ -21,8 +21,12 @@ async def does_correct_zoom(client):
     
     dates = client.await_css(DATES_CSS, all=True)
     dates[1].click()
-    tomorrows_movie_card = client.await_css(CARD_CSS, is_displayed=True)
-    tomorrows_movie_card.click()
+    tomorrows_movie_cards = client.await_css(CARD_CSS, is_displayed=True, all=True)
+
+    
+    for elem in tomorrows_movie_cards[:5]:
+        elem.click()
+
     reserve = client.await_css(RESERVE_CSS, is_displayed=True)
     
     client.execute_script("arguments[0].click()", reserve)
