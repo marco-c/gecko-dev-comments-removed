@@ -455,7 +455,9 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
     if (aHostURI->SchemeIs("view-source")) {
       rv = NS_GetInnermostURIHost(aHostURI, aBaseDomain);
     } else {
-      rv = aHostURI->GetAsciiHost(aBaseDomain);
+      
+      rv =
+          nsContentUtils::GetAsciiHostOrIPv6WithBrackets(aHostURI, aBaseDomain);
     }
   }
 
