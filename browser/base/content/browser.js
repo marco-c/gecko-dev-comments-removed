@@ -4029,18 +4029,22 @@ const gRemoteControl = {
 
 
 
+
+
 function switchToTabHavingURI(
   aURI,
   aOpenNew,
   aOpenParams = {},
-  aUserContextId = null
+  aUserContextId = null,
+  aSplitView = null
 ) {
   return URILoadingHelper.switchToTabHavingURI(
     window,
     aURI,
     aOpenNew,
     aOpenParams,
-    aUserContextId
+    aUserContextId,
+    aSplitView
   );
 }
 
