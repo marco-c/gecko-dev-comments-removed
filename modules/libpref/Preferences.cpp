@@ -4654,6 +4654,16 @@ nsresult Preferences::WritePrefFile(
     nsresult rv = NS_OK;
     bool writingToCurrent = false;
 
+    
+    
+    if (!mAsyncTarget) {
+      rv = NS_CreateBackgroundTaskQueue("WritePrefFile",
+                                        getter_AddRefs(mAsyncTarget));
+      if (NS_FAILED(rv)) {
+        REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
+      }
+    }
+
     if (mCurrentFile) {
       rv = mCurrentFile->Equals(aFile, &writingToCurrent);
       if (NS_FAILED(rv)) {
@@ -4675,46 +4685,39 @@ nsresult Preferences::WritePrefFile(
 
     
     
-    nsCOMPtr<nsIEventTarget> target =
-        do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
-    if (NS_SUCCEEDED(rv)) {
-      bool async = aSaveMethod == SaveMethod::Asynchronous;
+    bool async = aSaveMethod == SaveMethod::Asynchronous;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      PreferencesWriter::sPendingWriteCount++;
-      if (async) {
-        rv = target->Dispatch(new PWRunnable(aFile, std::move(aPromiseHolder)),
-                              nsIEventTarget::DISPATCH_NORMAL);
-      } else {
-        rv = SyncRunnable::DispatchToThread(
-            target, new PWRunnable(aFile, std::move(aPromiseHolder)), true);
-      }
-      if (NS_FAILED(rv)) {
-        
-        
-        PreferencesWriter::sPendingWriteCount--;
-        
-        
-        return rv;
-      }
-      return NS_OK;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    PreferencesWriter::sPendingWriteCount++;
+
+    
+    
+    
+    if (async) {
+      rv = mAsyncTarget->Dispatch(
+          new PWRunnable(aFile, std::move(aPromiseHolder)),
+          nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
+    } else {
+      rv = SyncRunnable::DispatchToThread(
+          mAsyncTarget, new PWRunnable(aFile, std::move(aPromiseHolder)), true);
     }
-
-    
-    
-    MOZ_ASSERT(false, "failed to get the target thread for OMT pref write");
+    if (NS_FAILED(rv)) {
+      
+      
+      PreferencesWriter::sPendingWriteCount--;
+      
+      
+      return rv;
+    }
+    return NS_OK;
   }
 
   
