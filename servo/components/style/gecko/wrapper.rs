@@ -1793,7 +1793,9 @@ impl<'le> TElement for GeckoElement<'le> {
             ))
         }
         
-        if ns == structs::kNameSpaceID_MathML as i32 {
+        if !static_prefs::pref!("mathml.font_family_math.enabled")
+            && ns == structs::kNameSpaceID_MathML as i32
+        {
             if self.local_name().as_ptr() == atom!("math").as_ptr() {
                 hints.push(MATHML_LANG_RULE.clone());
             }
