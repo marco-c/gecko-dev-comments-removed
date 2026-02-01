@@ -1082,13 +1082,9 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
   }
 
   nsresult rv = aRange.SetStartAndEnd(
-      startContent ? RangeBoundary(
-                         startContent->GetParentNode(),
-                         startContent->GetPreviousSibling())  
+      startContent ? RangeBoundary::FromChild(*startContent)
                    : aRange.StartRef(),
-      endContent ? RangeBoundary(endContent->GetParentNode(),
-                                 endContent)  
-                 : aRange.EndRef());
+      endContent ? RangeBoundary::After(*endContent) : aRange.EndRef());
   if (NS_FAILED(rv)) {
     NS_WARNING("nsRange::SetStartAndEnd() failed");
     return Err(rv);
