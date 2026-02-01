@@ -31,6 +31,7 @@ struct PSIInfo {
   unsigned long full_avg60 = 0;
   unsigned long full_avg300 = 0;
   unsigned long full_total = 0;
+  bool psi_available = false;
 };
 
 
@@ -39,6 +40,9 @@ struct PSIInfo {
 
 
 nsresult GetLastPSISnapshot(PSIInfo& aResult);
+
+
+void StartNonOOMPSISampling();
 #endif
 
 

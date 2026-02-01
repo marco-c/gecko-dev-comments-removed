@@ -6,6 +6,7 @@
 #include "AvailableMemoryWatcher.h"
 #include "AvailableMemoryWatcherUtils.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "nsAppRunner.h"
@@ -20,7 +21,10 @@
 #include <cstdio>
 #if !defined(ANDROID)
 #  include "nsIPSIProvider.h"
+#  include "mozilla/glean/XpcomMetrics.h"
 #endif
+
+#define NON_OOM_DELAY_SEC 120
 
 namespace mozilla {
 
@@ -83,6 +87,8 @@ static nsresult ReadPSIFile(const char* aPSIPath, PSIInfo& aResult) {
     return NS_ERROR_FAILURE;
   }
 
+  aResult.psi_available = true;
+
   return NS_OK;
 }
 
@@ -112,6 +118,17 @@ class nsAvailableMemoryWatcher final
 
 #if !defined(ANDROID)
   NS_IMETHOD GetCachedPSIInfo(mozilla::PSIInfo& aResult) override;
+
+  void RecordNonOOMPSI(const PSIInfo& aPsi);
+  void StartNonOOMPSISampling() override {
+    MutexAutoLock lock(mMutex);
+
+    
+    
+    
+    
+    mLastOOMTime = TimeStamp::Now();
+  }
 #endif
 
  private:
@@ -129,6 +146,9 @@ class nsAvailableMemoryWatcher final
   bool mPolling MOZ_GUARDED_BY(mMutex);
   bool mUnderMemoryPressure MOZ_GUARDED_BY(mMutex);
   PSIInfo mPSIInfo MOZ_GUARDED_BY(mMutex);
+
+  
+  TimeStamp mLastOOMTime MOZ_GUARDED_BY(mMutex);
 
   
   nsCString mPSIPath MOZ_GUARDED_BY(mMutex);
@@ -156,6 +176,7 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
     : mPolling(false),
       mUnderMemoryPressure(false),
       mPSIInfo{},
+      mLastOOMTime(),
       mPSIPath(kPSIPath),
       mIsTesting(false) {}
 
@@ -185,6 +206,21 @@ nsresult GetLastPSISnapshot(PSIInfo& aResult) {
 
   return provider->GetCachedPSIInfo(aResult);
 }
+
+#if !defined(ANDROID)
+void StartNonOOMPSISampling() {
+  RefPtr<nsIAvailableMemoryWatcherBase> watcher =
+      nsAvailableMemoryWatcherBase::GetSingleton();
+  if (!watcher) {
+    return;
+  }
+
+  nsCOMPtr<nsIPSIProvider> provider = do_QueryInterface(watcher);
+  if (provider) {
+    provider->StartNonOOMPSISampling();
+  }
+}
+#endif
 
 nsresult nsAvailableMemoryWatcher::Init() {
   nsresult rv = nsAvailableMemoryWatcherBase::Init();
@@ -357,8 +393,39 @@ void nsAvailableMemoryWatcher::UpdateCrashAnnotation(const MutexAutoLock&)
       CrashReporter::Annotation::LinuxMemoryPSI, psiValues);
 }
 
+#if !defined(ANDROID)
+void nsAvailableMemoryWatcher::RecordNonOOMPSI(const mozilla::PSIInfo& aPsi) {
+  const mozilla::PSIInfo& psi = aPsi;
+
+  
+  mozilla::glean::memory_watcher::NonOomSampleExtra extra;
+  extra.psiSomeAvg10 = mozilla::Some(nsPrintfCString("%lu", psi.some_avg10));
+  extra.psiSomeAvg60 = mozilla::Some(nsPrintfCString("%lu", psi.some_avg60));
+  extra.psiFullAvg10 = mozilla::Some(nsPrintfCString("%lu", psi.full_avg10));
+  extra.psiFullAvg60 = mozilla::Some(nsPrintfCString("%lu", psi.full_avg60));
+  mozilla::glean::memory_watcher::non_oom_sample.Record(mozilla::Some(extra));
+}
+#endif
+
 void nsAvailableMemoryWatcher::UpdatePSIInfo(const MutexAutoLock&)
     MOZ_REQUIRES(mMutex) {
+#if !defined(ANDROID)
+  if ((mPSIInfo.full_avg10 || mPSIInfo.full_avg60) && !mLastOOMTime.IsNull() &&
+      (TimeStamp::Now() >
+       mLastOOMTime + TimeDuration::FromSeconds(NON_OOM_DELAY_SEC))) {
+    
+    
+    
+    
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("nsAvailableMemoryWatcher::RecordNonOOMPSI",
+                               [self = RefPtr{this}, info = mPSIInfo]() {
+                                 self->RecordNonOOMPSI(info);
+                               }));
+    mLastOOMTime = TimeStamp();
+  }
+#endif
+
   nsresult rv = ReadPSIFile(mPSIPath.get(), mPSIInfo);
   if (NS_FAILED(rv)) {
     mPSIInfo = {};
