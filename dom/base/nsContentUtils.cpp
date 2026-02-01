@@ -12569,7 +12569,22 @@ Maybe<int32_t> nsContentUtils::GetIndexInParent(const nsINode* aParent,
                 aKind == TreeKind::ShadowIncludingDOM) {
     idx = aParent->ComputeIndexOf(aNode);
   } else {
-    idx = aParent->ComputeFlatTreeIndexOf(aNode);
+    idx = [&]() -> Maybe<uint32_t> {
+      if (aNode->IsContent()) {
+        if (HTMLSlotElement* slot = aNode->AsContent()->GetAssignedSlot()) {
+          
+          
+          
+          
+          
+          if (slot->GetClosestNativeAnonymousSubtreeRootParentOrHost() ==
+              aParent) {
+            return aParent->ComputeIndexOf(aNode);
+          }
+        }
+      }
+      return aParent->ComputeFlatTreeIndexOf(aNode);
+    }();
   }
 
   if (idx) {
