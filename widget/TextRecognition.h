@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_widget_nsTextRecognition__
-#define mozilla_widget_nsTextRecognition__
+#ifndef mozilla_widget_nsTextRecognition_
+#define mozilla_widget_nsTextRecognition_
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/gfx/Point.h"

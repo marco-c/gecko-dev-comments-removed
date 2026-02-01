@@ -3,8 +3,8 @@
 
 
 
-#ifndef ToastNotificationHandler_h__
-#define ToastNotificationHandler_h__
+#ifndef ToastNotificationHandler_h_
+#define ToastNotificationHandler_h_
 
 #include <windows.ui.notifications.h>
 #include <windows.data.xml.dom.h>

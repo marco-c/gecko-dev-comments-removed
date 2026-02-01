@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsSound_h__
-#define __nsSound_h__
+#ifndef _nsSound_h_
+#define _nsSound_h_
 
 #include "nsISound.h"
 #include "nsIStreamLoader.h"

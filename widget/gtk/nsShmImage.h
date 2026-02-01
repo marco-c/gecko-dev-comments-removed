@@ -4,8 +4,8 @@
 
 
 
-#ifndef __mozilla_widget_nsShmImage_h__
-#define __mozilla_widget_nsShmImage_h__
+#ifndef _mozilla_widget_nsShmImage_h_
+#define _mozilla_widget_nsShmImage_h_
 
 #if defined(MOZ_X11)
 #  define MOZ_HAVE_SHMIMAGE

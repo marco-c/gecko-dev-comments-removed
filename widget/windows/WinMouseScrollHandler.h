@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_widget_WinMouseScrollHandler_h__
-#define mozilla_widget_WinMouseScrollHandler_h__
+#ifndef mozilla_widget_WinMouseScrollHandler_h_
+#define mozilla_widget_WinMouseScrollHandler_h_
 
 #include "nscore.h"
 #include "nsDebug.h"

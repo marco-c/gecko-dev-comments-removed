@@ -4,8 +4,8 @@
 
 
 
-#ifndef ScreenHelperAndroid_h___
-#define ScreenHelperAndroid_h___
+#ifndef ScreenHelperAndroid_h_
+#define ScreenHelperAndroid_h_
 
 #include "mozilla/widget/ScreenManager.h"
 #include "nsTHashMap.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_InitData_h__
-#define mozilla_widget_InitData_h__
+#ifndef mozilla_widget_InitData_h_
+#define mozilla_widget_InitData_h_
 
 #include <cstdint>
 #include "mozilla/TypedEnumBits.h"

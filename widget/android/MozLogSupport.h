@@ -3,8 +3,8 @@
 
 
 
-#ifndef MozLogSupport_h__
-#define MozLogSupport_h__
+#ifndef MozLogSupport_h_
+#define MozLogSupport_h_
 
 #include "mozilla/java/MozLogNatives.h"
 

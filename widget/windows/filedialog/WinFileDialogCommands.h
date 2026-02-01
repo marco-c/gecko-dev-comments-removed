@@ -4,8 +4,8 @@
 
 
 
-#ifndef widget_windows_filedialog_WinFileDialogCommands_h__
-#define widget_windows_filedialog_WinFileDialogCommands_h__
+#ifndef widget_windows_filedialog_WinFileDialogCommands_h_
+#define widget_windows_filedialog_WinFileDialogCommands_h_
 
 #include "ipc/EnumSerializer.h"
 #include "mozilla/Logging.h"

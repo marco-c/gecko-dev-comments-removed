@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsLookAndFeel
-#define __nsLookAndFeel
+#ifndef _nsLookAndFeel
+#define _nsLookAndFeel
 
 #include "X11UndefineNone.h"
 #include "nsXPLookAndFeel.h"

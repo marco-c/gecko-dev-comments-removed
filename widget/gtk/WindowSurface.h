@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_WIDGET_WINDOW_SURFACE_H
-#define _MOZILLA_WIDGET_WINDOW_SURFACE_H
+#ifndef MOZILLA_WIDGET_WINDOW_SURFACE_H
+#define MOZILLA_WIDGET_WINDOW_SURFACE_H
 
 #include "mozilla/gfx/2D.h"
 #include "Units.h"

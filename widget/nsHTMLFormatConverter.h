@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsHTMLFormatConverter_h__
-#define nsHTMLFormatConverter_h__
+#ifndef nsHTMLFormatConverter_h_
+#define nsHTMLFormatConverter_h_
 
 #include "nsCOMPtr.h"
 #include "nsIFormatConverter.h"

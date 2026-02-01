@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsAutoRollup_h__
-#define nsAutoRollup_h__
+#ifndef nsAutoRollup_h_
+#define nsAutoRollup_h_
 
 #include "mozilla/Attributes.h"  
 #include "mozilla/StaticPtr.h"   

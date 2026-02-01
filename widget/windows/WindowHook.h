@@ -4,8 +4,8 @@
 
 
 
-#ifndef __mozilla_WindowHook_h__
-#define __mozilla_WindowHook_h__
+#ifndef _mozilla_WindowHook_h_
+#define _mozilla_WindowHook_h_
 
 #include <windows.h>
 

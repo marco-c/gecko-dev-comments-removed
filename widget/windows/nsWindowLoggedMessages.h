@@ -3,8 +3,8 @@
 
 
 
-#ifndef WindowLoggedMessages_h__
-#define WindowLoggedMessages_h__
+#ifndef WindowLoggedMessages_h_
+#define WindowLoggedMessages_h_
 
 #include "minwindef.h"
 #include "wtypes.h"

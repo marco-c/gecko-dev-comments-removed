@@ -3,8 +3,8 @@
 
 
 
-#ifndef _NSDATAOBJ_H_
-#define _NSDATAOBJ_H_
+#ifndef NSDATAOBJ_H_
+#define NSDATAOBJ_H_
 
 #include <oleidl.h>
 #include <shldisp.h>

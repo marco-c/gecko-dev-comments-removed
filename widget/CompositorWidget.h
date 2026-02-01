@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_widget_CompositorWidget_h__
-#define mozilla_widget_CompositorWidget_h__
+#ifndef mozilla_widget_CompositorWidget_h_
+#define mozilla_widget_CompositorWidget_h_
 
 #include "nsISupports.h"
 #include "mozilla/RefPtr.h"

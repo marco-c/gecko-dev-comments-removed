@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsColorPicker_h__
-#define nsColorPicker_h__
+#ifndef nsColorPicker_h_
+#define nsColorPicker_h_
 
 #include <gtk/gtk.h>
 

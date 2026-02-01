@@ -3,8 +3,8 @@
 
 
 
-#ifndef MockDragServiceController_h__
-#define MockDragServiceController_h__
+#ifndef MockDragServiceController_h_
+#define MockDragServiceController_h_
 
 #include "nsIMockDragServiceController.h"
 

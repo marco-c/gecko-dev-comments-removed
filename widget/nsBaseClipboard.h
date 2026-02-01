@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBaseClipboard_h__
-#define nsBaseClipboard_h__
+#ifndef nsBaseClipboard_h_
+#define nsBaseClipboard_h_
 
 #include "mozilla/Array.h"
 #include "mozilla/dom/PContent.h"

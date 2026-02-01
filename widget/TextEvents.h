@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_TextEvents_h__
-#define mozilla_TextEvents_h__
+#ifndef mozilla_TextEvents_h_
+#define mozilla_TextEvents_h_
 
 #include <stdint.h>
 

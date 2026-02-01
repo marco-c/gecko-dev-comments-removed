@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_UIKitUtils_h__
-#define mozilla_widget_UIKitUtils_h__
+#ifndef mozilla_widget_UIKitUtils_h_
+#define mozilla_widget_UIKitUtils_h_
 
 #import <UIKit/UIKit.h>
 

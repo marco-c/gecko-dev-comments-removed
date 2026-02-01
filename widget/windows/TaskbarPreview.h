@@ -5,8 +5,8 @@
 
 
 
-#ifndef __mozilla_widget_TaskbarPreview_h__
-#define __mozilla_widget_TaskbarPreview_h__
+#ifndef _mozilla_widget_TaskbarPreview_h_
+#define _mozilla_widget_TaskbarPreview_h_
 
 #include <windows.h>
 #include <shobjidl.h>

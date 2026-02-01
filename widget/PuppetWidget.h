@@ -12,8 +12,8 @@
 
 
 
-#ifndef mozilla_widget_PuppetWidget_h__
-#define mozilla_widget_PuppetWidget_h__
+#ifndef mozilla_widget_PuppetWidget_h_
+#define mozilla_widget_PuppetWidget_h_
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"

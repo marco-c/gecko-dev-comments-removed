@@ -5,8 +5,8 @@
 
 
 
-#ifndef __mozilla_widget_TaskbarTabPreview_h__
-#define __mozilla_widget_TaskbarTabPreview_h__
+#ifndef _mozilla_widget_TaskbarTabPreview_h_
+#define _mozilla_widget_TaskbarTabPreview_h_
 
 #include "nsITaskbarTabPreview.h"
 #include "TaskbarPreview.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsSharePicker_h__
-#define nsSharePicker_h__
+#ifndef nsSharePicker_h_
+#define nsSharePicker_h_
 
 #include "nsCOMPtr.h"
 #include "nsISharePicker.h"

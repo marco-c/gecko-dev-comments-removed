@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIWidget_h__
-#define nsIWidget_h__
+#ifndef nsIWidget_h_
+#define nsIWidget_h_
 
 #include <cmath>
 #include <cstdint>

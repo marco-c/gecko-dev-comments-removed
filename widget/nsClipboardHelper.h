@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsClipboardHelper_h__
-#define nsClipboardHelper_h__
+#ifndef nsClipboardHelper_h_
+#define nsClipboardHelper_h_
 
 
 #include "nsIClipboardHelper.h"

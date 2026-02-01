@@ -4,8 +4,8 @@
 
 
 
-#ifndef widget_windows_filedialog_WinFileDialogParent_h__
-#define widget_windows_filedialog_WinFileDialogParent_h__
+#ifndef widget_windows_filedialog_WinFileDialogParent_h_
+#define widget_windows_filedialog_WinFileDialogParent_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef WidgetUtilsGtk_h__
-#define WidgetUtilsGtk_h__
+#ifndef WidgetUtilsGtk_h_
+#define WidgetUtilsGtk_h_
 
 #include "nsString.h"
 #include "nsTArray.h"

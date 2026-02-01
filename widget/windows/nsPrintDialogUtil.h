@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsFlyOwnDialog_h___
-#define nsFlyOwnDialog_h___
+#ifndef nsFlyOwnDialog_h_
+#define nsFlyOwnDialog_h_
 
 nsresult NativeShowPrintDialog(HWND aHWnd, bool aHaveSelection,
                                nsIPrintSettings* aPrintSettings);

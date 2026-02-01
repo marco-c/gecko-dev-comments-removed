@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsClipboardX11_h_
-#define __nsClipboardX11_h_
+#ifndef _nsClipboardX11_h_
+#define _nsClipboardX11_h_
 
 #include <gtk/gtk.h>
 

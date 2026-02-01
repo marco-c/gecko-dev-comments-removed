@@ -2,8 +2,8 @@
 
 
 
-#ifndef ImageDecoderSupport_h__
-#define ImageDecoderSupport_h__
+#ifndef ImageDecoderSupport_h_
+#define ImageDecoderSupport_h_
 
 #include "imgINotificationObserver.h"
 

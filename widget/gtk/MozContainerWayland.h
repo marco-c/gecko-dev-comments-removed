@@ -5,8 +5,8 @@
 
 
 
-#ifndef __MOZ_CONTAINER_WAYLAND_H__
-#define __MOZ_CONTAINER_WAYLAND_H__
+#ifndef MOZ_CONTAINER_WAYLAND_H_
+#define MOZ_CONTAINER_WAYLAND_H_
 
 #include <gtk/gtk.h>
 #include <functional>

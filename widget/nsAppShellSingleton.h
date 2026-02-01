@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAppShellSingleton_h__
-#define nsAppShellSingleton_h__
+#ifndef nsAppShellSingleton_h_
+#define nsAppShellSingleton_h_
 
 
 

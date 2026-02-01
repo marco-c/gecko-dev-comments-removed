@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_jni_Conversions_h__
-#define mozilla_jni_Conversions_h__
+#ifndef mozilla_jni_Conversions_h_
+#define mozilla_jni_Conversions_h_
 
 #include "mozilla/jni/Refs.h"
 

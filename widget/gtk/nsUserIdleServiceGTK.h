@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsUserIdleServiceGTK_h__
-#define nsUserIdleServiceGTK_h__
+#ifndef nsUserIdleServiceGTK_h_
+#define nsUserIdleServiceGTK_h_
 
 #include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef _WaylandVsyncSource_h_
-#define _WaylandVsyncSource_h_
+#ifndef WaylandVsyncSource_h_
+#define WaylandVsyncSource_h_
 
 #include "base/thread.h"
 #include "mozilla/RefPtr.h"

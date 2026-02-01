@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_WIDGET_LSB_UTILS_H
-#define _MOZILLA_WIDGET_LSB_UTILS_H
+#ifndef MOZILLA_WIDGET_LSB_UTILS_H
+#define MOZILLA_WIDGET_LSB_UTILS_H
 
 #include "nsString.h"
 

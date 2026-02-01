@@ -3,8 +3,8 @@
 
 
 
-#ifndef __JumpListBuilder_h__
-#define __JumpListBuilder_h__
+#ifndef JumpListBuilder_h_
+#define JumpListBuilder_h_
 
 #include "nsIJumpListBuilder.h"
 

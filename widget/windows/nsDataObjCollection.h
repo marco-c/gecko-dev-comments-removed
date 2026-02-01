@@ -3,8 +3,8 @@
 
 
 
-#ifndef _NSDATAOBJCOLLECTION_H_
-#define _NSDATAOBJCOLLECTION_H_
+#ifndef NSDATAOBJCOLLECTION_H_
+#define NSDATAOBJCOLLECTION_H_
 
 #include <oleidl.h>
 

@@ -3,8 +3,8 @@
 
 
 
-#ifndef DirectManipulationOwner_h__
-#define DirectManipulationOwner_h__
+#ifndef DirectManipulationOwner_h_
+#define DirectManipulationOwner_h_
 
 #include <windows.h>
 #include "Units.h"

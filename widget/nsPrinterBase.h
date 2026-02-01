@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrinterBase_h__
-#define nsPrinterBase_h__
+#ifndef nsPrinterBase_h_
+#define nsPrinterBase_h_
 
 #include "mozilla/gfx/Rect.h"
 #include "nsIPrinter.h"

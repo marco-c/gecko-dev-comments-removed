@@ -2,8 +2,8 @@
 
 
 
-#ifndef nsDeviceContextAndroid_h__
-#define nsDeviceContextAndroid_h__
+#ifndef nsDeviceContextAndroid_h_
+#define nsDeviceContextAndroid_h_
 
 #include "nsIDeviceContextSpec.h"
 #include "nsCOMPtr.h"

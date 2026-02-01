@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsUserIdleServiceAndroid_h__
-#define nsUserIdleServiceAndroid_h__
+#ifndef nsUserIdleServiceAndroid_h_
+#define nsUserIdleServiceAndroid_h_
 
 #include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"

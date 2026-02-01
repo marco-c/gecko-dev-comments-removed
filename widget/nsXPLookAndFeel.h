@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsXPLookAndFeel
-#define __nsXPLookAndFeel
+#ifndef _nsXPLookAndFeel
+#define _nsXPLookAndFeel
 
 #include "mozilla/Maybe.h"
 #include "mozilla/LookAndFeel.h"

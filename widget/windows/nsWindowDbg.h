@@ -3,8 +3,8 @@
 
 
 
-#ifndef WindowDbg_h__
-#define WindowDbg_h__
+#ifndef WindowDbg_h_
+#define WindowDbg_h_
 
 
 

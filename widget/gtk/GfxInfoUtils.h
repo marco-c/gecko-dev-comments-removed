@@ -5,10 +5,12 @@
 
 
 
-#ifndef WIDGET_GTK_GFXINFO_UTILS_h__
-#define WIDGET_GTK_GFXINFO_UTILS_h__
+#ifndef WIDGET_GTK_GFXINFO_UTILS_h_
+#define WIDGET_GTK_GFXINFO_UTILS_h_
 
 #define LOG_PIPE 2
+
+#include <cstdarg>
 
 static bool enable_logging = false;
 static void log(const char* format, ...) {

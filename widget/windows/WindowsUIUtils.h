@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_WindowsUIUtils_h__
-#define mozilla_widget_WindowsUIUtils_h__
+#ifndef mozilla_widget_WindowsUIUtils_h_
+#define mozilla_widget_WindowsUIUtils_h_
 
 #include "nsIWindowsUIUtils.h"
 #include "nsString.h"

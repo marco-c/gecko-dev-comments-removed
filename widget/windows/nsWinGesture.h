@@ -3,8 +3,8 @@
 
 
 
-#ifndef WinGesture_h__
-#define WinGesture_h__
+#ifndef WinGesture_h_
+#define WinGesture_h_
 
 
 

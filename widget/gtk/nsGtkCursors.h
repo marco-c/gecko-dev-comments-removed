@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsGtkCursors_h__
-#define nsGtkCursors_h__
+#ifndef nsGtkCursors_h_
+#define nsGtkCursors_h_
 
 typedef struct {
   const unsigned char* bits;

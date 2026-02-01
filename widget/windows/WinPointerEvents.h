@@ -3,8 +3,8 @@
 
 
 
-#ifndef WinPointerEvents_h__
-#define WinPointerEvents_h__
+#ifndef WinPointerEvents_h_
+#define WinPointerEvents_h_
 
 #include "mozilla/MouseEvents.h"
 #include "touchinjection_sdk80.h"

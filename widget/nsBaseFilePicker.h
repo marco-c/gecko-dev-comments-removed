@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsBaseFilePicker_h__
-#define nsBaseFilePicker_h__
+#ifndef nsBaseFilePicker_h_
+#define nsBaseFilePicker_h_
 
 #include "nsISupports.h"
 #include "nsIFilePicker.h"

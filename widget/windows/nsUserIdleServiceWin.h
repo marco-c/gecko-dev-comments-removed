@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsUserIdleServiceWin_h__
-#define nsUserIdleServiceWin_h__
+#ifndef nsUserIdleServiceWin_h_
+#define nsUserIdleServiceWin_h_
 
 #include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"

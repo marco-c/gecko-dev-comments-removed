@@ -3,8 +3,8 @@
 
 
 
-#ifndef AndroidBridge_h__
-#define AndroidBridge_h__
+#ifndef AndroidBridge_h_
+#define AndroidBridge_h_
 
 #include <unistd.h>  
 

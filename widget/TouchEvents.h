@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_TouchEvents_h__
-#define mozilla_TouchEvents_h__
+#ifndef mozilla_TouchEvents_h_
+#define mozilla_TouchEvents_h_
 
 #include <stdint.h>
 

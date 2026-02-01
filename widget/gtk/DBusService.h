@@ -3,8 +3,8 @@
 
 
 
-#ifndef DBusService_h__
-#define DBusService_h__
+#ifndef DBusService_h_
+#define DBusService_h_
 
 #include <glib.h>
 #include <gio/gio.h>

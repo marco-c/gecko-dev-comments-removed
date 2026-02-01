@@ -3,8 +3,8 @@
 
 
 
-#ifndef ToastNotification_h__
-#define ToastNotification_h__
+#ifndef ToastNotification_h_
+#define ToastNotification_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"

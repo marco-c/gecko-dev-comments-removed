@@ -3,8 +3,8 @@
 
 
 
-#ifndef __LookAndFeel
-#define __LookAndFeel
+#ifndef LookAndFeel_h_
+#define LookAndFeel_h_
 
 #ifndef MOZILLA_INTERNAL_API
 #  error "This header is only usable from within libxul (MOZILLA_INTERNAL_API)."

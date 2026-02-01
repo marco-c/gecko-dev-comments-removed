@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_widget_InputDeviceUtils_h__
-#define mozilla_widget_InputDeviceUtils_h__
+#ifndef mozilla_widget_InputDeviceUtils_h_
+#define mozilla_widget_InputDeviceUtils_h_
 
 #include <windows.h>
 

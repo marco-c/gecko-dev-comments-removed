@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintSettingsWin_h__
-#define nsPrintSettingsWin_h__
+#ifndef nsPrintSettingsWin_h_
+#define nsPrintSettingsWin_h_
 
 #include "nsPrintSettingsImpl.h"
 #include "nsIPrintSettingsWin.h"

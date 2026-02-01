@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsClipboardWayland_h_
-#define __nsClipboardWayland_h_
+#ifndef _nsClipboardWayland_h_
+#define _nsClipboardWayland_h_
 
 #include "mozilla/Mutex.h"
 #include "nsClipboard.h"

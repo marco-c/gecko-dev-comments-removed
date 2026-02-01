@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDeviceContextSpecWin_h___
-#define nsDeviceContextSpecWin_h___
+#ifndef nsDeviceContextSpecWin_h_
+#define nsDeviceContextSpecWin_h_
 
 #include "nsCOMPtr.h"
 #include "nsIDeviceContextSpec.h"

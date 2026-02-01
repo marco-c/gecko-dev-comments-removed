@@ -5,8 +5,8 @@
 
 
 
-#ifndef __MOZ_WAYLAND_DISPLAY_H__
-#define __MOZ_WAYLAND_DISPLAY_H__
+#ifndef MOZ_WAYLAND_DISPLAY_H_
+#define MOZ_WAYLAND_DISPLAY_H_
 
 #include "DMABufDevice.h"
 

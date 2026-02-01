@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDeviceContextSpecGTK_h___
-#define nsDeviceContextSpecGTK_h___
+#ifndef nsDeviceContextSpecGTK_h_
+#define nsDeviceContextSpecGTK_h_
 
 struct JSContext;
 

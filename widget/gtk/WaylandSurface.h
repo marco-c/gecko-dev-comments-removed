@@ -5,8 +5,8 @@
 
 
 
-#ifndef __MOZ_WAYLAND_SURFACE_H__
-#define __MOZ_WAYLAND_SURFACE_H__
+#ifndef MOZ_WAYLAND_SURFACE_H_
+#define MOZ_WAYLAND_SURFACE_H_
 
 #include "nsWaylandDisplay.h"
 #include "mozilla/Mutex.h"

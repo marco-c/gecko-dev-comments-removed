@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsToolkit_h__
-#define nsToolkit_h__
+#ifndef nsToolkit_h_
+#define nsToolkit_h_
 
 #include "nsdefs.h"
 

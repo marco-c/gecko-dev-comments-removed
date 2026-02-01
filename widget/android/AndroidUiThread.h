@@ -3,8 +3,8 @@
 
 
 
-#ifndef AndroidUiThread_h__
-#define AndroidUiThread_h__
+#ifndef AndroidUiThread_h_
+#define AndroidUiThread_h_
 
 #include <mozilla/RefPtr.h>
 #include <nsThread.h>

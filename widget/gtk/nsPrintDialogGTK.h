@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrintDialog_h__
-#define nsPrintDialog_h__
+#ifndef nsPrintDialog_h_
+#define nsPrintDialog_h_
 
 #include "nsIPrintDialogService.h"
 

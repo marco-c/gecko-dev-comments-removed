@@ -4,8 +4,8 @@
 
 
 
-#ifndef DMABufSurface_h__
-#define DMABufSurface_h__
+#ifndef DMABufSurface_h_
+#define DMABufSurface_h_
 
 #include <functional>
 #include <stdint.h>

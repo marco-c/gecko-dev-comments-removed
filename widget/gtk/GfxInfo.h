@@ -5,8 +5,8 @@
 
 
 
-#ifndef WIDGET_GTK_GFXINFO_h__
-#define WIDGET_GTK_GFXINFO_h__
+#ifndef WIDGET_GTK_GFXINFO_h_
+#define WIDGET_GTK_GFXINFO_h_
 
 #include "GfxInfoBase.h"
 #include "nsString.h"

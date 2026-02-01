@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsIRollupListener_h__
-#define __nsIRollupListener_h__
+#ifndef _nsIRollupListener_h_
+#define _nsIRollupListener_h_
 
 #include "nsTArray.h"
 #include "nsPoint.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef Base64UtilsSupport_h__
-#define Base64UtilsSupport_h__
+#ifndef Base64UtilsSupport_h_
+#define Base64UtilsSupport_h_
 
 #include "mozilla/Base64.h"
 #include "mozilla/java/Base64UtilsNatives.h"

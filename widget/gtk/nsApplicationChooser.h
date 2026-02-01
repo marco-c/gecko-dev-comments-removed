@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsApplicationChooser_h__
-#define nsApplicationChooser_h__
+#ifndef nsApplicationChooser_h_
+#define nsApplicationChooser_h_
 
 #include <gtk/gtk.h>
 #include "nsCOMPtr.h"

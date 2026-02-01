@@ -3,8 +3,8 @@
 
 
 
-#ifndef KeyboardLayout_h__
-#define KeyboardLayout_h__
+#ifndef KeyboardLayout_h_
+#define KeyboardLayout_h_
 
 #include "nscore.h"
 #include "nsString.h"

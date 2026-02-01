@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_EventForwards_h__
-#define mozilla_EventForwards_h__
+#ifndef mozilla_EventForwards_h_
+#define mozilla_EventForwards_h_
 
 #include <stdint.h>
 

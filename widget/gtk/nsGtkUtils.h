@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsGtkUtils_h__
-#define nsGtkUtils_h__
+#ifndef nsGtkUtils_h_
+#define nsGtkUtils_h_
 
 #include <glib.h>
 

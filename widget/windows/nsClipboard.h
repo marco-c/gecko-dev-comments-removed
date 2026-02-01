@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsClipboard_h__
-#define nsClipboard_h__
+#ifndef nsClipboard_h_
+#define nsClipboard_h_
 
 #include "nsBaseClipboard.h"
 #include "nsIObserver.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_MouseEvents_h__
-#define mozilla_MouseEvents_h__
+#ifndef mozilla_MouseEvents_h_
+#define mozilla_MouseEvents_h_
 
 #include <stdint.h>
 #include <math.h>

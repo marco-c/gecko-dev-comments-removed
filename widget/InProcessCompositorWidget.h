@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_widget_InProcessCompositorWidget_h__
-#define mozilla_widget_InProcessCompositorWidget_h__
+#ifndef mozilla_widget_InProcessCompositorWidget_h_
+#define mozilla_widget_InProcessCompositorWidget_h_
 
 #include "CompositorWidget.h"
 

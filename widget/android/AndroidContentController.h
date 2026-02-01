@@ -3,8 +3,8 @@
 
 
 
-#ifndef AndroidContentController_h__
-#define AndroidContentController_h__
+#ifndef AndroidContentController_h_
+#define AndroidContentController_h_
 
 #include "mozilla/layers/ChromeProcessController.h"
 #include "mozilla/EventForwards.h"  

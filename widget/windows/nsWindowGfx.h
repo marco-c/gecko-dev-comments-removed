@@ -3,8 +3,8 @@
 
 
 
-#ifndef WindowGfx_h__
-#define WindowGfx_h__
+#ifndef WindowGfx_h_
+#define WindowGfx_h_
 
 
 

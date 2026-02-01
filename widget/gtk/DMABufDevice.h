@@ -5,8 +5,8 @@
 
 
 
-#ifndef __MOZ_DMABUF_LIB_WRAPPER_H__
-#define __MOZ_DMABUF_LIB_WRAPPER_H__
+#ifndef MOZ_DMABUF_LIB_WRAPPER_H_
+#define MOZ_DMABUF_LIB_WRAPPER_H_
 
 #include "mozilla/StaticMutex.h"
 #include "mozilla/widget/DMABufFormats.h"

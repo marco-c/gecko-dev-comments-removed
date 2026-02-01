@@ -3,10 +3,8 @@
 
 
 
-#ifndef mozilla_ContentEvents_h__
-#define mozilla_ContentEvents_h__
-
-#include <stdint.h>
+#ifndef mozilla_ContentEvents_h_
+#define mozilla_ContentEvents_h_
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/dom/DataTransfer.h"

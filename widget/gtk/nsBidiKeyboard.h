@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsBidiKeyboard
-#define __nsBidiKeyboard
+#ifndef _nsBidiKeyboard
+#define _nsBidiKeyboard
 #include "nsIBidiKeyboard.h"
 
 class nsBidiKeyboard : public nsIBidiKeyboard {

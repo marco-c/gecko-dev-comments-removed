@@ -3,8 +3,8 @@
 
 
 
-#ifndef __nsLookAndFeel
-#define __nsLookAndFeel
+#ifndef _nsLookAndFeel
+#define _nsLookAndFeel
 
 #include <windows.h>
 

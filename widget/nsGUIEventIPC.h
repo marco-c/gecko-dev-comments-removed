@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsGUIEventIPC_h__
-#define nsGUIEventIPC_h__
+#ifndef nsGUIEventIPC_h_
+#define nsGUIEventIPC_h_
 
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"

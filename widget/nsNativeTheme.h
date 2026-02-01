@@ -6,8 +6,8 @@
 
 
 
-#ifndef _NSNATIVETHEME_H_
-#define _NSNATIVETHEME_H_
+#ifndef NSNATIVETHEME_H_
+#define NSNATIVETHEME_H_
 
 #include "nsAtom.h"
 #include "nsColor.h"

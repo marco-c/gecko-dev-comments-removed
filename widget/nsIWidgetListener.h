@@ -2,10 +2,8 @@
 
 
 
-#ifndef nsIWidgetListener_h__
-#define nsIWidgetListener_h__
-
-#include <stdint.h>
+#ifndef nsIWidgetListener_h_
+#define nsIWidgetListener_h_
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/LayersTypes.h"

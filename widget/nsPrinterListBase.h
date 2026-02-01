@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrinterListBase_h__
-#define nsPrinterListBase_h__
+#ifndef nsPrinterListBase_h_
+#define nsPrinterListBase_h_
 
 #include "nsIPrinterList.h"
 

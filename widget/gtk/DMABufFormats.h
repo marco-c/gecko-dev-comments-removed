@@ -5,8 +5,8 @@
 
 
 
-#ifndef __MOZ_DMABUF_FORMATS_H__
-#define __MOZ_DMABUF_FORMATS_H__
+#ifndef MOZ_DMABUF_FORMATS_H_
+#define MOZ_DMABUF_FORMATS_H_
 
 #include "nsTArray.h"
 #include "mozilla/gfx/Types.h"

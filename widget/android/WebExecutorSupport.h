@@ -3,8 +3,8 @@
 
 
 
-#ifndef WebExecutorSupport_h__
-#define WebExecutorSupport_h__
+#ifndef WebExecutorSupport_h_
+#define WebExecutorSupport_h_
 
 #include "mozilla/java/GeckoWebExecutorNatives.h"
 #include "mozilla/java/GeckoResultWrappers.h"

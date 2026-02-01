@@ -4,8 +4,8 @@
 
 
 
-#ifndef _MOZILLA_WIDGET_GTK_WINDOW_SURFACE_CAIRO_H
-#define _MOZILLA_WIDGET_GTK_WINDOW_SURFACE_CAIRO_H
+#ifndef MOZILLA_WIDGET_GTK_WINDOW_SURFACE_CAIRO_H
+#define MOZILLA_WIDGET_GTK_WINDOW_SURFACE_CAIRO_H
 
 #include "mozilla/widget/WindowSurface.h"
 #include "mozilla/gfx/Types.h"

@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrinterListCUPS_h__
-#define nsPrinterListCUPS_h__
+#ifndef nsPrinterListCUPS_h_
+#define nsPrinterListCUPS_h_
 
 #include "nsPrinterListBase.h"
 #include "nsStringFwd.h"

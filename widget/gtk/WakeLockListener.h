@@ -5,8 +5,8 @@
 
 
 
-#ifndef __WakeLockListener_h__
-#define __WakeLockListener_h__
+#ifndef WakeLockListener_h_
+#define WakeLockListener_h_
 
 #include "nsHashKeys.h"
 #include "nsRefPtrHashtable.h"

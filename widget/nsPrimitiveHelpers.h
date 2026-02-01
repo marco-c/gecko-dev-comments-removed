@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrimitiveHelpers_h___
-#define nsPrimitiveHelpers_h___
+#ifndef nsPrimitiveHelpers_h_
+#define nsPrimitiveHelpers_h_
 
 #include "nsError.h"
 #include "nscore.h"

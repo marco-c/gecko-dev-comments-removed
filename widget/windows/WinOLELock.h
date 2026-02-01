@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_WinOLELock_h__
-#define mozilla_widget_WinOLELock_h__
+#ifndef mozilla_widget_WinOLELock_h_
+#define mozilla_widget_WinOLELock_h_
 
 #include <type_traits>
 #include <minwindef.h>

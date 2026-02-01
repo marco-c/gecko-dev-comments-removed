@@ -3,8 +3,8 @@
 
 
 
-#ifndef _GTK_NSNATIVETHEMEGTK_H_
-#define _GTK_NSNATIVETHEMEGTK_H_
+#ifndef GTK_NSNATIVETHEMEGTK_H_
+#define GTK_NSNATIVETHEMEGTK_H_
 
 #include "Theme.h"
 

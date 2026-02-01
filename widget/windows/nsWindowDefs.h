@@ -3,8 +3,8 @@
 
 
 
-#ifndef WindowDefs_h__
-#define WindowDefs_h__
+#ifndef WindowDefs_h_
+#define WindowDefs_h_
 
 
 

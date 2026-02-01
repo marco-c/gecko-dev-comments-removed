@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_jni_Refs_h__
-#define mozilla_jni_Refs_h__
+#ifndef mozilla_jni_Refs_h_
+#define mozilla_jni_Refs_h_
 
 #include <jni.h>
 

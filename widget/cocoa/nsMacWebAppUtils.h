@@ -1,8 +1,8 @@
 
 
 
-#ifndef _MAC_WEB_APP_UTILS_H_
-#define _MAC_WEB_APP_UTILS_H_
+#ifndef MAC_WEB_APP_UTILS_H_
+#define MAC_WEB_APP_UTILS_H_
 
 #include "nsIMacWebAppUtils.h"
 

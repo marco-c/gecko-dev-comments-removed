@@ -4,8 +4,8 @@
 
 
 
-#ifndef __nsBidiKeyboard
-#define __nsBidiKeyboard
+#ifndef _nsBidiKeyboard
+#define _nsBidiKeyboard
 #include "nsIBidiKeyboard.h"
 #include <windows.h>
 

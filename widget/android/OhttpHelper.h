@@ -3,8 +3,8 @@
 
 
 
-#ifndef OhttpHelper_h__
-#define OhttpHelper_h__
+#ifndef OhttpHelper_h_
+#define OhttpHelper_h_
 
 #include "mozilla/java/GeckoResultWrappers.h"
 #include "mozilla/java/WebRequestWrappers.h"

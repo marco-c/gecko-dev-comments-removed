@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_AndroidAlerts_h__
-#define mozilla_widget_AndroidAlerts_h__
+#ifndef mozilla_widget_AndroidAlerts_h_
+#define mozilla_widget_AndroidAlerts_h_
 
 #include "nsTHashMap.h"
 #include "nsInterfaceHashtable.h"
@@ -28,7 +28,8 @@ class AndroidAlerts : public nsIAlertsService {
   AndroidAlerts() {}
 
   static void NotifyListener(const nsAString& aName, const char* aTopic,
-                             Maybe<nsString> aAction);
+                             Maybe<nsString> aAction,
+                             const nsACString& aOrigin);
 
  protected:
   virtual ~AndroidAlerts() = default;

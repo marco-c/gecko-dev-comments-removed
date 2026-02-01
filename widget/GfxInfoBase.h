@@ -5,8 +5,8 @@
 
 
 
-#ifndef __mozilla_widget_GfxInfoBase_h__
-#define __mozilla_widget_GfxInfoBase_h__
+#ifndef _mozilla_widget_GfxInfoBase_h_
+#define _mozilla_widget_GfxInfoBase_h_
 
 #include "GfxDriverInfo.h"
 #include "GfxInfoCollector.h"

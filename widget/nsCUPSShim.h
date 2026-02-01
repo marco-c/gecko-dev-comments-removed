@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsCUPSShim_h___
-#define nsCUPSShim_h___
+#ifndef nsCUPSShim_h_
+#define nsCUPSShim_h_
 
 #include <cups/cups.h>
 #include "mozilla/Mutex.h"

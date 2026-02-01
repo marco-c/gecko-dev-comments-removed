@@ -3,8 +3,8 @@
 
 
 
-#ifndef InputData_h__
-#define InputData_h__
+#ifndef InputData_h_
+#define InputData_h_
 
 #include "nsDebug.h"
 #include "nsPoint.h"

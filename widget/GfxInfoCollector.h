@@ -5,8 +5,8 @@
 
 
 
-#ifndef __mozilla_widget_GfxInfoCollector_h__
-#define __mozilla_widget_GfxInfoCollector_h__
+#ifndef _mozilla_widget_GfxInfoCollector_h_
+#define _mozilla_widget_GfxInfoCollector_h_
 
 #include "mozilla/Attributes.h"
 #include "nsStringFwd.h"

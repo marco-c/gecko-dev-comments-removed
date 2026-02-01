@@ -2,8 +2,8 @@
 
 
 
-#ifndef _MACFINDERPROGRESS_H_
-#define _MACFINDERPROGRESS_H_
+#ifndef MACFINDERPROGRESS_H_
+#define MACFINDERPROGRESS_H_
 
 #include "nsIMacFinderProgress.h"
 #include "nsCOMPtr.h"

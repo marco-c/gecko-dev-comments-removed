@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDragService_h__
-#define nsDragService_h__
+#ifndef nsDragService_h_
+#define nsDragService_h_
 
 #include "mozilla/RefPtr.h"
 #include "nsBaseDragService.h"

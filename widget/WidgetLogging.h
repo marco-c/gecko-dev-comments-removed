@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_WidgetLogging_h__
-#define mozilla_widget_WidgetLogging_h__
+#ifndef mozilla_widget_WidgetLogging_h_
+#define mozilla_widget_WidgetLogging_h_
 
 #include "mozilla/Logging.h"
 

@@ -9,8 +9,8 @@
 
 
 
-#ifndef __MozWayland_h_
-#define __MozWayland_h_
+#ifndef MozWayland_h_
+#define MozWayland_h_
 
 #include "mozilla/Types.h"
 #include <gtk/gtk.h>

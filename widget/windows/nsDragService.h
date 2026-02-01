@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsDragService_h__
-#define nsDragService_h__
+#ifndef nsDragService_h_
+#define nsDragService_h_
 
 #include "nsBaseDragService.h"
 #include <windows.h>

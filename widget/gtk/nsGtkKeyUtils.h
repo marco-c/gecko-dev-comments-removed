@@ -5,8 +5,8 @@
 
 
 
-#ifndef __nsGdkKeyUtils_h__
-#define __nsGdkKeyUtils_h__
+#ifndef _nsGdkKeyUtils_h_
+#define _nsGdkKeyUtils_h_
 
 #include "mozilla/EventForwards.h"
 #include "nsIWidget.h"

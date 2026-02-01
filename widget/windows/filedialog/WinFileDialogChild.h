@@ -4,8 +4,8 @@
 
 
 
-#ifndef widget_windows_filedialog_WinFileDialogChild_h__
-#define widget_windows_filedialog_WinFileDialogChild_h__
+#ifndef widget_windows_filedialog_WinFileDialogChild_h_
+#define widget_windows_filedialog_WinFileDialogChild_h_
 
 #include "mozilla/widget/filedialog/PWinFileDialogChild.h"
 

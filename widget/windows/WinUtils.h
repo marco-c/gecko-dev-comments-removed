@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_widget_WinUtils_h__
-#define mozilla_widget_WinUtils_h__
+#ifndef mozilla_widget_WinUtils_h_
+#define mozilla_widget_WinUtils_h_
 
 #include "nscore.h"
 #include <windows.h>

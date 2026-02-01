@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPrinterCUPS_h___
-#define nsPrinterCUPS_h___
+#ifndef nsPrinterCUPS_h_
+#define nsPrinterCUPS_h_
 
 #include "nsPrinterBase.h"
 #include "nsPrintSettingsImpl.h"

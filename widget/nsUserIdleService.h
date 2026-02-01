@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsUserIdleService_h__
-#define nsUserIdleService_h__
+#ifndef nsUserIdleService_h_
+#define nsUserIdleService_h_
 
 #include "nsIUserIdleServiceInternal.h"
 #include "nsCOMPtr.h"

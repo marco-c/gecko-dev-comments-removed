@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsAppShell_h__
-#define nsAppShell_h__
+#ifndef nsAppShell_h_
+#define nsAppShell_h_
 
 #include "nsBaseAppShell.h"
 #include <windows.h>

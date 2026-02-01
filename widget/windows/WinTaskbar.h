@@ -5,8 +5,8 @@
 
 
 
-#ifndef __WinTaskbar_h__
-#define __WinTaskbar_h__
+#ifndef WinTaskbar_h_
+#define WinTaskbar_h_
 
 #include <windows.h>
 #include <shobjidl.h>

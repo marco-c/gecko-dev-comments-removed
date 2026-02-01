@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsPaper_h__
-#define nsPaper_h__
+#ifndef nsPaper_h_
+#define nsPaper_h_
 
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/gfx/Point.h"

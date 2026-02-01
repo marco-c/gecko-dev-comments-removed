@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsIDeviceContextSpec_h___
-#define nsIDeviceContextSpec_h___
+#ifndef nsIDeviceContextSpec_h_
+#define nsIDeviceContextSpec_h_
 
 #include "gfxPoint.h"
 #include "nsISupports.h"

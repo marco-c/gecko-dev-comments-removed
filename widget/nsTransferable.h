@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsTransferable_h__
-#define nsTransferable_h__
+#ifndef nsTransferable_h_
+#define nsTransferable_h_
 
 #include "nsICookieJarSettings.h"
 #include "nsIFormatConverter.h"

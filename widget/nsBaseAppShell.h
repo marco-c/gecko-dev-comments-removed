@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsBaseAppShell_h__
-#define nsBaseAppShell_h__
+#ifndef nsBaseAppShell_h_
+#define nsBaseAppShell_h_
 
 #include "mozilla/Atomics.h"
 #include "nsIAppShell.h"

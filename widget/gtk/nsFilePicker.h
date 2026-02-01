@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsFilePicker_h__
-#define nsFilePicker_h__
+#ifndef nsFilePicker_h_
+#define nsFilePicker_h_
 
 #include <gtk/gtk.h>
 

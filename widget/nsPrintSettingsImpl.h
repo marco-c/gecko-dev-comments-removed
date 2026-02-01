@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsPrintSettingsImpl_h__
-#define nsPrintSettingsImpl_h__
+#ifndef nsPrintSettingsImpl_h_
+#define nsPrintSettingsImpl_h_
 
 #include "nsIPrintSettings.h"
 #include "nsIWeakReferenceUtils.h"

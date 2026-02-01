@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_MiscEvents_h__
-#define mozilla_MiscEvents_h__
+#ifndef mozilla_MiscEvents_h_
+#define mozilla_MiscEvents_h_
 
 #include <stdint.h>
 
