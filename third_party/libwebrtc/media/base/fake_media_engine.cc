@@ -568,7 +568,11 @@ FakeVoiceEngine::FakeVoiceEngine()
   
   SetCodecs({CreateAudioCodec(101, "fake_audio_codec", 8000, 1)});
 }
+
 void FakeVoiceEngine::Init() {}
+
+void FakeVoiceEngine::Terminate() {}
+
 scoped_refptr<AudioState> FakeVoiceEngine::GetAudioState() const {
   return scoped_refptr<AudioState>();
 }

@@ -92,6 +92,8 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   
   virtual void Init() = 0;
+  
+  virtual void Terminate() = 0;
 
   
   virtual scoped_refptr<AudioState> GetAudioState() const = 0;
@@ -196,7 +198,9 @@ class MediaEngineInterface {
   virtual ~MediaEngineInterface() {}
 
   
-  virtual bool Init() = 0;
+  virtual void Init() = 0;
+  
+  virtual void Terminate() = 0;
 
   virtual VoiceEngineInterface& voice() = 0;
   virtual VideoEngineInterface& video() = 0;
@@ -216,8 +220,8 @@ class CompositeMediaEngine : public MediaEngineInterface {
                        std::unique_ptr<VideoEngineInterface> video_engine);
   ~CompositeMediaEngine() override;
 
-  
-  bool Init() override;
+  void Init() override;
+  void Terminate() override;
 
   VoiceEngineInterface& voice() override;
   VideoEngineInterface& video() override;

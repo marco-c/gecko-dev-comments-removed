@@ -55,6 +55,8 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
     return sctp_factory_.get();
   }
 
+  
+  
   MediaEngineInterface* media_engine() const { return media_engine_.get(); }
 
   Thread* signaling_thread() { return signaling_thread_; }
@@ -87,6 +89,14 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   void set_use_rtx(bool use_rtx) { use_rtx_ = use_rtx; }
 
+  
+  
+  void AddRefMediaEngine();
+
+  
+  
+  void ReleaseMediaEngine();
+
  protected:
   ConnectionContext(const Environment& env,
                     PeerConnectionFactoryDependencies* dependencies);
@@ -109,6 +119,7 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   
   
   std::unique_ptr<MediaEngineInterface> media_engine_;
+  int media_engine_reference_count_ RTC_GUARDED_BY(worker_thread()) = 0;
 
   
   

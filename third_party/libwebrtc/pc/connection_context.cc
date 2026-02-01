@@ -169,18 +169,20 @@ ConnectionContext::ConnectionContext(
   worker_thread_->SetDispatchWarningMs(30);
   network_thread_->SetDispatchWarningMs(10);
 
-  if (media_engine_) {
-    
-    
-    worker_thread_->BlockingCall([&] { media_engine_->Init(); });
-  }
-
   blocking_media_engine_destruction_ =
       env.field_trials().IsEnabled("WebRTC-SynchronousDestructors");
 }
 
 ConnectionContext::~ConnectionContext() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
+
+  
+  
+  
+  
+  
+  RTC_DCHECK_EQ(media_engine_reference_count_, 0);
+
   
   if (blocking_media_engine_destruction_) {
     
@@ -203,6 +205,26 @@ ConnectionContext::~ConnectionContext() {
 
   if (wraps_current_thread_)
     ThreadManager::Instance()->UnwrapCurrentThread();
+}
+
+void ConnectionContext::AddRefMediaEngine() {
+  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK_GE(media_engine_reference_count_, 0);
+  RTC_DCHECK(media_engine_);
+  ++media_engine_reference_count_;
+  if (media_engine_reference_count_ == 1) {
+    media_engine_->Init();
+  }
+}
+
+void ConnectionContext::ReleaseMediaEngine() {
+  RTC_DCHECK_RUN_ON(worker_thread());
+  RTC_DCHECK_GT(media_engine_reference_count_, 0);
+  RTC_DCHECK(media_engine_);
+  --media_engine_reference_count_;
+  if (media_engine_reference_count_ == 0) {
+    media_engine_->Terminate();
+  }
 }
 
 }  

@@ -94,6 +94,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
 
   
   void Init() override;
+  void Terminate() override;
   scoped_refptr<AudioState> GetAudioState() const override;
 
   std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
