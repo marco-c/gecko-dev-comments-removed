@@ -30,7 +30,7 @@ def generate_data(output, template):
     )
 
     
-    DEP_EXTS = [".py", ".rs"]
+    DEP_EXTS = [".py", ".rs", ".toml"]
     deps = set()
     for path, dirs, files in os.walk(SERVO_PROP_BASE):
         for file in files:
