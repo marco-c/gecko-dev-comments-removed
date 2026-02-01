@@ -242,7 +242,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
   FillRule GetFillRule();
 
-  enum PathLengthScaleForType { eForTextPath, eForStroking };
+  enum class PathLengthScaleUsageType { TextPath, Stroking };
 
   
 
@@ -250,7 +250,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
 
 
-  float GetPathLengthScale(PathLengthScaleForType aFor);
+  float GetPathLengthScale(PathLengthScaleUsageType aFor);
 
   
   already_AddRefed<DOMSVGAnimatedNumber> PathLength();
