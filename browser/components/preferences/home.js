@@ -10,6 +10,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
 
@@ -72,7 +73,6 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
           case "blank":
             return BLANK_HOMEPAGE_URL;
           case "custom":
-            
             return setting.pref.value;
           default:
             throw new Error("No handler for this value");
@@ -82,14 +82,56 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
   );
 
   
+  
+  Preferences.addSetting({
+    id: "homepageDisplayPref",
+    pref: "browser.startup.homepage",
+  });
+
+  
   Preferences.addSetting({
     id: "homepageGoToCustomHomepageUrlPanel",
-    deps: ["homepageNewWindows"],
+    deps: ["homepageNewWindows", "homepageDisplayPref"],
     visible: ({ homepageNewWindows }) => {
       return homepageNewWindows.value === "custom";
     },
     onUserClick: () => {
       gotoPref("customHomepage");
+    },
+
+    getControlConfig(config, deps) {
+      const servicePages = [
+        "about:home",
+        "chrome://browser/content/blanktab.html",
+      ];
+      let customURLsDescription;
+
+      if (servicePages.includes(deps.homepageDisplayPref.value.trim())) {
+        
+        
+        
+        customURLsDescription = null;
+      } else {
+        
+        
+        customURLsDescription = deps.homepageDisplayPref.value
+          .split("|")
+          .map(uri =>
+            BrowserUtils.formatURIStringForDisplay(uri, {
+              onlyBaseDomain: true,
+            })
+          )
+          .filter(Boolean)
+          .join(", ");
+      }
+
+      return {
+        ...config,
+        controlAttrs: {
+          ...config.controlAttrs,
+          ".description": customURLsDescription,
+        },
+      };
     },
   });
 
