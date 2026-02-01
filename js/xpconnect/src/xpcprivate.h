@@ -65,8 +65,8 @@
 
 
 
-#ifndef xpcprivate_h___
-#define xpcprivate_h___
+#ifndef xpcprivate_h_
+#define xpcprivate_h_
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"

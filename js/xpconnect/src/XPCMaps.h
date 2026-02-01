@@ -6,8 +6,8 @@
 
 
 
-#ifndef xpcmaps_h___
-#define xpcmaps_h___
+#ifndef xpcmaps_h_
+#define xpcmaps_h_
 
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/MemoryReporting.h"

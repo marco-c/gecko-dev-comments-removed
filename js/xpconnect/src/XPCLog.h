@@ -6,8 +6,8 @@
 
 
 
-#ifndef xpclog_h___
-#define xpclog_h___
+#ifndef xpclog_h_
+#define xpclog_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Logging.h"

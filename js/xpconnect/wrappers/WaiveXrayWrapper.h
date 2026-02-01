@@ -4,8 +4,8 @@
 
 
 
-#ifndef __CrossOriginWrapper_h__
-#define __CrossOriginWrapper_h__
+#ifndef CrossOriginWrapper_h_
+#define CrossOriginWrapper_h_
 
 #include "mozilla/Maybe.h"
 

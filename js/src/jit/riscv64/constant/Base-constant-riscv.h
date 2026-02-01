@@ -1,8 +1,8 @@
 
 
 
-#ifndef jit_riscv64_constant_Base_constant_riscv__h_
-#define jit_riscv64_constant_Base_constant_riscv__h_
+#ifndef jit_riscv64_constant_Base_constant_riscv_h_
+#define jit_riscv64_constant_Base_constant_riscv_h_
 
 #include "mozilla/Assertions.h"
 

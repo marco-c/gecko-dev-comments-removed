@@ -55,8 +55,8 @@
 
 
 
-#ifndef _LEGACY_ITTNOTIFY_H_
-#define _LEGACY_ITTNOTIFY_H_
+#ifndef _LEGACYITTNOTIFY_H_
+#define _LEGACYITTNOTIFY_H_
 
 
 
@@ -277,7 +277,7 @@ extern "C" {
 
 
 
-#ifndef _ITTNOTIFY_H_
+#ifndef ITTNOTIFY_H_
 
 void ITTAPI __itt_pause(void);
 
@@ -637,7 +637,7 @@ ITT_STUBV(LIBITTAPI, void, notify_sync_releasing, (void *addr))
 
 
 
-#ifndef _ITTNOTIFY_H_
+#ifndef ITTNOTIFY_H_
 
 
 

@@ -4,8 +4,8 @@
 
 
 
-#ifndef ExecutionTracerIntegration_h__
-#define ExecutionTracerIntegration_h__
+#ifndef ExecutionTracerIntegration_h_
+#define ExecutionTracerIntegration_h_
 
 #ifdef MOZ_EXECUTION_TRACING
 

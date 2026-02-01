@@ -4,8 +4,8 @@
 
 
 
-#ifndef __SANDBOXPRIVATE_H__
-#define __SANDBOXPRIVATE_H__
+#ifndef SANDBOXPRIVATE_H_
+#define SANDBOXPRIVATE_H_
 
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_dom.h"

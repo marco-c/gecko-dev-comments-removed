@@ -4,8 +4,8 @@
 
 
 
-#ifndef SystemGlobal_h__
-#define SystemGlobal_h__
+#ifndef SystemGlobal_h_
+#define SystemGlobal_h_
 
 #include "js/loader/ModuleLoaderBase.h"
 #include "mozilla/BasePrincipal.h"

@@ -4,8 +4,8 @@
 
 
 
-#ifndef __AccessCheck_h__
-#define __AccessCheck_h__
+#ifndef AccessCheck_h_
+#define AccessCheck_h_
 
 #include "js/Id.h"
 #include "js/Wrapper.h"

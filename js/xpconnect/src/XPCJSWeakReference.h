@@ -4,8 +4,8 @@
 
 
 
-#ifndef xpcjsweakreference_h___
-#define xpcjsweakreference_h___
+#ifndef xpcjsweakreference_h_
+#define xpcjsweakreference_h_
 
 #include "xpcIJSWeakReference.h"
 #include "nsIWeakReferenceUtils.h"

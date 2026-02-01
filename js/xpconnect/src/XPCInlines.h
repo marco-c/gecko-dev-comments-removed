@@ -6,8 +6,8 @@
 
 
 
-#ifndef xpcinlines_h___
-#define xpcinlines_h___
+#ifndef xpcinlines_h_
+#define xpcinlines_h_
 
 #include <algorithm>
 

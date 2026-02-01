@@ -6,8 +6,8 @@
 
 
 
-#ifndef xpcforwards_h___
-#define xpcforwards_h___
+#ifndef xpcforwards_h_
+#define xpcforwards_h_
 
 
 

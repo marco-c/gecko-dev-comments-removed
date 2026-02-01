@@ -4,8 +4,8 @@
 
 
 
-#ifndef __FilteringWrapper_h__
-#define __FilteringWrapper_h__
+#ifndef FilteringWrapper_h_
+#define FilteringWrapper_h_
 
 #include "XrayWrapper.h"
 #include "mozilla/Maybe.h"

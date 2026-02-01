@@ -55,8 +55,8 @@
 
 
 
-#ifndef _ITTNOTIFY_H_
-#define _ITTNOTIFY_H_
+#ifndef ITTNOTIFY_H_
+#define ITTNOTIFY_H_
 
 
 

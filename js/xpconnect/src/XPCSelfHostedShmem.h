@@ -4,8 +4,8 @@
 
 
 
-#ifndef xpcselfhostedshmem_h___
-#define xpcselfhostedshmem_h___
+#ifndef xpcselfhostedshmem_h_
+#define xpcselfhostedshmem_h_
 
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"

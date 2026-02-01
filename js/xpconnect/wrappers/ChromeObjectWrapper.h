@@ -4,8 +4,8 @@
 
 
 
-#ifndef __ChromeObjectWrapper_h__
-#define __ChromeObjectWrapper_h__
+#ifndef ChromeObjectWrapper_h_
+#define ChromeObjectWrapper_h_
 
 #include "FilteringWrapper.h"
 
