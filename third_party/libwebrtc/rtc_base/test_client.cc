@@ -153,11 +153,13 @@ TestClient::Packet::Packet(const ReceivedIpPacket& received_packet)
     : addr(received_packet.source_address()),
       
       buf(received_packet.payload().data(), received_packet.payload().size()),
+      ecn(received_packet.ecn()),
       packet_time(received_packet.arrival_time()) {}
 
 TestClient::Packet::Packet(const Packet& p)
     : addr(p.addr),
       buf(p.buf.data(), p.buf.size()),
+      ecn(p.ecn),
       packet_time(p.packet_time) {}
 
 }  

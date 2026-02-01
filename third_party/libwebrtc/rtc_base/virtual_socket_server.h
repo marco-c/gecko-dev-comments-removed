@@ -21,9 +21,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "api/make_ref_counted.h"
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"
+#include "api/transport/ecn_marking.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
@@ -62,6 +64,7 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
                size_t cb,
                SocketAddress* paddr,
                int64_t* timestamp) override;
+  int RecvFrom(ReceiveBuffer& buffer) override;
   int Listen(int backlog) override;
   VirtualSocket* Accept(SocketAddress* paddr) override;
 
@@ -117,7 +120,8 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
     
     
     
-    int RecvFrom(void* buffer, size_t size, SocketAddress& addr);
+    
+    int RecvFrom(ReceiveBuffer& buffer);
 
     void Listen();
 
@@ -179,6 +183,7 @@ class VirtualSocket : public Socket, public sigslot::has_slots<> {
   void CompleteConnect(const SocketAddress& addr);
   int SendUdp(const void* pv, size_t cb, const SocketAddress& addr);
   int SendTcp(const void* pv, size_t cb);
+  int DoRecvFrom(ReceiveBuffer& buffer);
 
   void OnSocketServerReadyToSend();
 
@@ -369,6 +374,7 @@ class VirtualSocketServer : public SocketServer {
   int SendUdp(VirtualSocket* socket,
               const char* data,
               size_t data_size,
+              EcnMarking ecn,
               const SocketAddress& remote_addr);
 
   
@@ -414,7 +420,8 @@ class VirtualSocketServer : public SocketServer {
                           const char* data,
                           size_t data_size,
                           size_t header_size,
-                          bool ordered);
+                          bool ordered,
+                          EcnMarking ecn);
 
   
   
