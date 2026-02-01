@@ -2109,19 +2109,6 @@ void ReflowInput::InitConstraints(
     
     if (aContainingBlockSize.isNothing()) {
       cbSize = ComputeContainingBlockRectangle(aPresContext, cbri);
-    } else if (aPresContext->FragmentainerAwarePositioningEnabled() &&
-               mFrame->IsAbsolutelyPositioned(mStyleDisplay) &&
-               mFrame->GetPrevInFlow()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      cbSize = ComputeContainingBlockRectangle(aPresContext, cbri) +
-               cbri->ComputedLogicalPadding(wm).Size(wm);
     }
 
     

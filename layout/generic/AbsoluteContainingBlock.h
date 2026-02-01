@@ -129,6 +129,17 @@ class AbsoluteContainingBlock {
 
   void MarkAllFramesDirty();
 
+  
+
+
+
+
+
+  struct ContainingBlockRects {
+    nsRect mLocal;
+    nsRect mScrollable;
+  };
+
  protected:
   
 
@@ -175,10 +186,10 @@ class AbsoluteContainingBlock {
   void ReflowAbsoluteFrame(
       nsContainerFrame* aDelegatingFrame, nsPresContext* aPresContext,
       const ReflowInput& aReflowInput,
-      const nsRect& aOriginalContainingBlockRect,
-      const nsRect& aOriginalScrollableContainingBlockRect,
+      const ContainingBlockRects& aContainingBlockRects,
       AbsPosReflowFlags aFlags, nsIFrame* aKidFrame, nsReflowStatus& aStatus,
       OverflowAreas* aOverflowAreas,
+      const ContainingBlockRects* aFragmentedContainingBlockRects,
       mozilla::AnchorPosResolutionCache* aAnchorPosResolutionCache = nullptr);
 
   
