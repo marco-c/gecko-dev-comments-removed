@@ -482,6 +482,9 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   
   
   
+  
+  
+  
   [[nodiscard]] bool checkTopTypeMatches(ResultType expected,
                                          ValueVector* values,
                                          bool rewriteStackTypes);
@@ -1138,7 +1141,6 @@ inline bool OpIter<Policy>::checkTopTypeMatches(ResultType expected,
         if (!checkIsSubtypeOf(observed.type().valType(), expectedType)) {
           return false;
         }
-
         collectValue(observed.value());
       }
 
