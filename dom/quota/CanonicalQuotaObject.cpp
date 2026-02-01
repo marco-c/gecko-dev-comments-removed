@@ -189,93 +189,92 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   uint64_t newTemporaryStorageUsage =
       quotaManager->mTemporaryStorageUsage + delta;
 
-  if (newTemporaryStorageUsage > quotaManager->mTemporaryStorageLimit) {
-    
+  if (newTemporaryStorageUsage <= quotaManager->mTemporaryStorageLimit) {
+    mOriginInfo->mClientUsages[mClientType] = Some(newClientUsage);
 
-    AutoTArray<RefPtr<OriginDirectoryLock>, 10> locks;
-    uint64_t sizeToBeFreed;
-
-    if (::mozilla::ipc::IsOnBackgroundThread()) {
-      MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
-
-      sizeToBeFreed = quotaManager->CollectOriginsForEviction(delta, locks);
-    } else {
-      sizeToBeFreed =
-          quotaManager->LockedCollectOriginsForEviction(delta, locks);
+    mOriginInfo->mUsage = newUsage;
+    if (!mOriginInfo->LockedPersisted()) {
+      groupInfo->mUsage = newGroupUsage;
     }
+    quotaManager->mTemporaryStorageUsage = newTemporaryStorageUsage;
 
-    if (!sizeToBeFreed) {
-      uint64_t usage = quotaManager->mTemporaryStorageUsage;
-
-      MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
-
-      NotifyStoragePressure(*quotaManager, usage);
-
-      return false;
-    }
-
-    NS_ASSERTION(sizeToBeFreed >= delta, "Huh?");
-
-    {
-      MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
-
-      for (const auto& lock : locks) {
-        quotaManager->DeleteOriginDirectory(lock->OriginMetadata());
-      }
-    }
-
-    
-
-    NS_ASSERTION(mOriginInfo, "How come?!");
-
-    for (const auto& lock : locks) {
-      MOZ_ASSERT(!(lock->GetPersistenceType() == groupInfo->mPersistenceType &&
-                   lock->Origin() == mOriginInfo->mOrigin),
-                 "Deleted itself!");
-
-      quotaManager->LockedRemoveQuotaForOrigin(lock->OriginMetadata());
-    }
-
-    
-    
-
-    AssertNoUnderflow(aSize, mSize);
-    const uint64_t increase = aSize - mSize;
-
-    if (!mOriginInfo->LockedUpdateUsagesForEviction(mClientType, increase)) {
-      
-      
-
-      
-      MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
-
-      quotaManager->FinalizeOriginEviction(std::move(locks));
-      return false;
-    }
-
-    
-    
-    MOZ_ASSERT(mSize < aSize);
     mSize = aSize;
-
-    
-    
-    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
-
-    quotaManager->FinalizeOriginEviction(std::move(locks));
 
     return true;
   }
 
-  mOriginInfo->mClientUsages[mClientType] = Some(newClientUsage);
+  
 
-  mOriginInfo->mUsage = newUsage;
-  if (!mOriginInfo->LockedPersisted()) {
-    groupInfo->mUsage = newGroupUsage;
+  AutoTArray<RefPtr<OriginDirectoryLock>, 10> locks;
+  uint64_t sizeToBeFreed;
+
+  if (::mozilla::ipc::IsOnBackgroundThread()) {
+    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+
+    sizeToBeFreed = quotaManager->CollectOriginsForEviction(delta, locks);
+  } else {
+    sizeToBeFreed = quotaManager->LockedCollectOriginsForEviction(delta, locks);
   }
-  quotaManager->mTemporaryStorageUsage = newTemporaryStorageUsage;
 
+  if (!sizeToBeFreed) {
+    uint64_t usage = quotaManager->mTemporaryStorageUsage;
+
+    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+
+    NotifyStoragePressure(*quotaManager, usage);
+
+    return false;
+  }
+
+  NS_ASSERTION(sizeToBeFreed >= delta, "Huh?");
+
+  {
+    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+
+    for (const auto& lock : locks) {
+      quotaManager->DeleteOriginDirectory(lock->OriginMetadata());
+    }
+  }
+
+  
+
+  NS_ASSERTION(mOriginInfo, "How come?!");
+
+  for (const auto& lock : locks) {
+    MOZ_ASSERT(!(lock->GetPersistenceType() == groupInfo->mPersistenceType &&
+                 lock->Origin() == mOriginInfo->mOrigin),
+               "Deleted itself!");
+
+    quotaManager->LockedRemoveQuotaForOrigin(lock->OriginMetadata());
+  }
+
+  
+  
+
+  AssertNoUnderflow(aSize, mSize);
+  const uint64_t increase = aSize - mSize;
+
+  if (!mOriginInfo->LockedUpdateUsagesForEviction(mClientType, increase)) {
+    
+    
+
+    
+    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+
+    quotaManager->FinalizeOriginEviction(std::move(locks));
+    return false;
+  }
+
+  
+  
+  MOZ_ASSERT(mSize < aSize);
   mSize = aSize;
+
+  
+  
+  MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+
+  quotaManager->FinalizeOriginEviction(std::move(locks));
 
   return true;
 }
