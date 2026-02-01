@@ -116,7 +116,7 @@ void SVGGeometryFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   if (StyleDisplay()->CalcTransformPropertyDifference(
           *aOldComputedStyle->StyleDisplay())) {
-    NotifySVGChanged(TRANSFORM_CHANGED);
+    NotifySVGChanged(ChangeFlags::TransformChanged);
   }
 
   if (element->IsGeometryChangedViaCSS(*Style(), *aOldComputedStyle) ||
@@ -309,8 +309,9 @@ void SVGGeometryFrame::ReflowSVG() {
   }
 }
 
-void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
-  MOZ_ASSERT(aFlags & (TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED),
+void SVGGeometryFrame::NotifySVGChanged(EnumSet<ChangeFlags> aFlags) {
+  MOZ_ASSERT(aFlags.contains(ChangeFlags::TransformChanged) ||
+                 aFlags.contains(ChangeFlags::CoordContextChanged),
              "Invalidation logic may need adjusting");
 
   
@@ -326,7 +327,7 @@ void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
   
   
 
-  if (aFlags & COORD_CONTEXT_CHANGED) {
+  if (aFlags.contains(ChangeFlags::CoordContextChanged)) {
     auto* geom = static_cast<SVGGeometryElement*>(GetContent());
     
     
@@ -342,7 +343,8 @@ void SVGGeometryFrame::NotifySVGChanged(uint32_t aFlags) {
     }
   }
 
-  if ((aFlags & TRANSFORM_CHANGED) && StyleSVGReset()->HasNonScalingStroke()) {
+  if (aFlags.contains(ChangeFlags::TransformChanged) &&
+      StyleSVGReset()->HasNonScalingStroke()) {
     
     
     SVGUtils::ScheduleReflowSVG(this);
@@ -397,8 +399,9 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   SVGContentUtils::AutoStrokeOptions strokeOptions;
   if (getStroke) {
-    SVGContentUtils::GetStrokeOptions(&strokeOptions, element, Style(), nullptr,
-                                      SVGContentUtils::eIgnoreStrokeDashing);
+    SVGContentUtils::GetStrokeOptions(
+        &strokeOptions, element, Style(), nullptr,
+        SVGContentUtils::StrokeOptionFlag::IgnoreStrokeDashing);
   } else {
     
     
