@@ -2424,7 +2424,8 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
     
     
-    if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
+    if (contentEncoding.LowerCaseEqualsLiteral("dcb") ||
+        contentEncoding.LowerCaseEqualsLiteral("dcz")) {
       LOG_DICTIONARIES(
           ("Still had %s encoding at CallOnStartRequest, converting",
            contentEncoding.get()));
@@ -3654,10 +3655,11 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   mIsDictionaryCompressed = false;
   nsAutoCString contentEncoding;
   (void)mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
-  if (contentEncoding.Equals("dcb") || contentEncoding.Equals("dcz")) {
+  if (contentEncoding.LowerCaseEqualsLiteral("dcb") ||
+      contentEncoding.LowerCaseEqualsLiteral("dcz")) {
     mIsDictionaryCompressed = true;
-  } else if (contentEncoding.Find("dcb") != -1 ||
-             contentEncoding.Find("dcz") != -1) {
+  } else if (contentEncoding.LowerCaseFindASCII("dcb") != -1 ||
+             contentEncoding.LowerCaseFindASCII("dcz") != -1) {
     
     
     
@@ -3772,6 +3774,32 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
   }
 
   
+  
+  
+  
+  
+  if (mDictDecompress && mUsingDictionary && mShouldSuspendForDictionary &&
+      !mDictDecompress->DictionaryReady()) {
+    LOG_DICTIONARIES(
+        ("nsHttpChannel::ContinueProcessNormal2 [this=%p] Suspending before "
+         "creating decompressor, waiting for dictionary",
+         this));
+    Suspend();
+    mSuspendedForDictionary = true;
+    
+    mCallOnResume = [](nsHttpChannel* self) {
+      return self->ContinueProcessNormal3();
+    };
+    return NS_OK;
+  }
+
+  return ContinueProcessNormal3();
+}
+
+nsresult nsHttpChannel::ContinueProcessNormal3() {
+  nsresult rv = NS_OK;
+
+  
   if (mCacheEntry && !LoadCacheEntryIsReadOnly()) {
     if (mIsDictionaryCompressed || mDictSaving) {
       LOG(("Decompressing before saving into cache [channel=%p]", this));
@@ -3779,6 +3807,10 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
       if (NS_FAILED(rv)) {
         LOG_DICTIONARIES(
             ("DoInstallCacheListener FAILED: %x", static_cast<uint32_t>(rv)));
+        
+        
+        
+        CloseCacheEntry(true);
       }
     }
   }
@@ -3807,18 +3839,6 @@ nsresult nsHttpChannel::ContinueProcessNormal2(nsresult rv) {
         Cancel(NS_ERROR_ENTITY_CHANGED);
       }
     }
-  }
-
-  
-  
-  if (mDictDecompress && mUsingDictionary && mShouldSuspendForDictionary &&
-      !mDictDecompress->DictionaryReady()) {
-    LOG(
-        ("nsHttpChannel::ContinueProcessNormal [this=%p] Suspending the "
-         "transaction, waiting for dictionary",
-         this));
-    Suspend();
-    mSuspendedForDictionary = true;
   }
 
   rv = CallOnStartRequest();
