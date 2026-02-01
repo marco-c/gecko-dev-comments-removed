@@ -23,6 +23,11 @@ extern LazyLogModule gWindowsLocationProviderLog;
 #define LOGI(...) \
   MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
 
+
+static void AddFailureTelemetry(const nsACString& aReason) {
+  glean::geolocation::windows_failure.Get("legacy"_ns, aReason).Add();
+}
+
 class LocationEvent final : public ILocationEvents {
  public:
   explicit LocationEvent(WindowsLocationChild* aActor)
@@ -97,10 +102,14 @@ LocationEvent::OnStatusChanged(REFIID aReportType,
   uint16_t err;
   switch (aStatus) {
     case REPORT_ACCESS_DENIED:
+      AddFailureTelemetry("permission denied"_ns);
       err = GeolocationPositionError_Binding::PERMISSION_DENIED;
       break;
     case REPORT_NOT_SUPPORTED:
     case REPORT_ERROR:
+      AddFailureTelemetry(aStatus == REPORT_NOT_SUPPORTED
+                              ? "not supported"_ns
+                              : "geoservice error"_ns);
       err = GeolocationPositionError_Binding::POSITION_UNAVAILABLE;
       break;
     default:
@@ -173,15 +182,29 @@ WindowsLegacyLocationChild::~WindowsLegacyLocationChild() {
                                 IID_ILocation, getter_AddRefs(location)))) {
     LOGD("WindowsLegacyLocationChild(%p) failed to create ILocation", this);
     
+    AddFailureTelemetry("creation error"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
 
   IID reportTypes[] = {IID_ILatLongReport};
-  if (FAILED(location->RequestPermissions(nullptr, reportTypes, 1, FALSE))) {
-    LOGD("WindowsLegacyLocationChild(%p) failed to set ILocation permissions",
-         this);
+  auto hr = location->RequestPermissions(nullptr, reportTypes, 1, FALSE);
+  if (FAILED(hr)) {
+    LOGD(
+        "WindowsLegacyLocationChild(%p) failed to set ILocation permissions. "
+        "Error: %ld",
+        this, hr);
     
+    
+    
+    
+    if (hr == HRESULT_FROM_WIN32(ERROR_ACCESS_DENIED)) {
+      AddFailureTelemetry("requestpermissions denied"_ns);
+    } else if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+      AddFailureTelemetry("requestpermissions canceled"_ns);
+    } else {
+      AddFailureTelemetry("unexpected error"_ns);
+    }
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
@@ -207,6 +230,7 @@ WindowsLegacyLocationChild::~WindowsLegacyLocationChild() {
        mLocation.get());
 
   if (!mLocation) {
+    AddFailureTelemetry("not registered"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
@@ -220,6 +244,7 @@ WindowsLegacyLocationChild::~WindowsLegacyLocationChild() {
 
   if (NS_WARN_IF(FAILED(mLocation->SetDesiredAccuracy(IID_ILatLongReport,
                                                       desiredAccuracy)))) {
+    AddFailureTelemetry("unexpected error"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
@@ -227,6 +252,7 @@ WindowsLegacyLocationChild::~WindowsLegacyLocationChild() {
   auto event = MakeRefPtr<LocationEvent>(this);
   if (NS_WARN_IF(
           FAILED(mLocation->RegisterForReport(event, IID_ILatLongReport, 0)))) {
+    AddFailureTelemetry("failed to register"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
   }
 

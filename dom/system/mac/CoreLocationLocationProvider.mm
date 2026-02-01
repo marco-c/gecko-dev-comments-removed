@@ -101,6 +101,11 @@ static void LogLocationPermissionState() {
   LOGD("%s", [message UTF8String]);
 
   
+  nsAutoCString errorCodeStr;
+  errorCodeStr.AppendInt(static_cast<int32_t>([aError code]));
+  glean::geolocation::macos_error_code.Get(errorCodeStr).Add();
+
+  
   
   
   mProvider->CreateMLSFallbackProvider();
