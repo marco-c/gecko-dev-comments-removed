@@ -4,6 +4,9 @@
 
 
 
+#ifndef XPCOM_IO_FILEPREFERENCES_H_
+#define XPCOM_IO_FILEPREFERENCES_H_
+
 #include "nsAString.h"
 
 namespace mozilla {
@@ -38,3 +41,5 @@ bool NormalizePath(nsAString const& aPath, nsAString& aNormalized);
 
 }  
 }  
+
+#endif  

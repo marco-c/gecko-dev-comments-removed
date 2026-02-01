@@ -4,6 +4,9 @@
 
 
 
+#ifndef XPCOM_BASE_NSPRLOGMODULESPARSER_H_
+#define XPCOM_BASE_NSPRLOGMODULESPARSER_H_
+
 #include "mozilla/Logging.h"
 
 #include <functional>
@@ -22,3 +25,5 @@ void NSPRLogModulesParser(
     const std::function<void(const char*, LogLevel, int32_t)>& aCallback);
 
 }  
+
+#endif  

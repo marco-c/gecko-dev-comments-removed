@@ -2,5 +2,10 @@
 
 
 
+#ifndef XPCOM_TESTS_TESTINGATOMLIST_H_
+#define XPCOM_TESTS_TESTINGATOMLIST_H_
+
 TESTING_ATOM(foo, "foo")
 TESTING_ATOM(bar, "bar")
+
+#endif  

@@ -4,6 +4,9 @@
 
 
 
+#ifndef XPCOM_THREADS_THREADDELAY_H_
+#define XPCOM_THREADS_THREADDELAY_H_
+
 #include "mozilla/ChaosMode.h"
 
 namespace mozilla {
@@ -14,3 +17,5 @@ namespace mozilla {
 void DelayForChaosMode(ChaosFeature aFeature, const uint32_t aMicrosecondLimit);
 
 }  
+
+#endif  
