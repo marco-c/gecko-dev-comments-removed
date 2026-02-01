@@ -383,7 +383,6 @@ impl PseudoElement {
     
     pub fn enabled_in_content(&self) -> bool {
         match *self {
-            Self::Highlight(..) => pref!("dom.customHighlightAPI.enabled"),
             Self::TargetText => pref!("dom.text_fragments.enabled"),
             Self::SliderFill | Self::SliderTrack | Self::SliderThumb => {
                 pref!("layout.css.modern-range-pseudos.enabled")
