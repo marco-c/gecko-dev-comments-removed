@@ -4,6 +4,9 @@
 
 
 
+#ifndef GFX_2D_FILTERPROCESSINGSIMD_INL_H_
+#define GFX_2D_FILTERPROCESSINGSIMD_INL_H_
+
 #include "FilterProcessing.h"
 
 #include "SIMD.h"
@@ -1190,3 +1193,5 @@ static already_AddRefed<DataSourceSurface> ApplyArithmeticCombine_SIMD(
 
 }  
 }  
+
+#endif  

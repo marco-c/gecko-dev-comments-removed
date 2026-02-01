@@ -7,6 +7,9 @@
 
 
 
+#ifndef GFX_LAYERS_COMPOSITE_FONTDATA_H_
+#define GFX_LAYERS_COMPOSITE_FONTDATA_H_
+
 namespace mozilla {
 namespace layers {
 namespace normal_font {
@@ -302,3 +305,5 @@ const FontBitmapInfo sDefaultCompositorFont = {
 
 }  
 }  
+
+#endif  

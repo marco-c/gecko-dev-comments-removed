@@ -4,6 +4,9 @@
 
 
 
+#ifndef GFX_2D_PATHANALYSIS_H_
+#define GFX_2D_PATHANALYSIS_H_
+
 #include "2D.h"
 #include <vector>
 
@@ -65,3 +68,5 @@ class FlattenedPath : public PathSink {
 
 }  
 }  
+
+#endif  

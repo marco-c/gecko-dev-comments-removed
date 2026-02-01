@@ -4,6 +4,9 @@
 
 
 
+#ifndef GFX_2D_HELPERSWINFONTS_H_
+#define GFX_2D_HELPERSWINFONTS_H_
+
 namespace mozilla {
 namespace gfx {
 
@@ -31,3 +34,5 @@ static AntialiasMode GetSystemDefaultAAMode() {
 
 }  
 }  
+
+#endif  

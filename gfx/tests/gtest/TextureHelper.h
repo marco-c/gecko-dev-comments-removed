@@ -4,6 +4,9 @@
 
 
 
+#ifndef GFX_TESTS_GTEST_TEXTUREHELPER_H_
+#define GFX_TESTS_GTEST_TEXTUREHELPER_H_
+
 #include "Types.h"
 #include "gfxImageSurface.h"
 #include "gfxPlatform.h"
@@ -130,3 +133,5 @@ already_AddRefed<TextureHost> CreateTextureHostWithBackend(
 
 }  
 }  
+
+#endif  

@@ -4,6 +4,9 @@
 
 
 
+#ifndef GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_
+#define GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_
+
 #include <stdint.h>             
 #include "ImageContainer.h"     
 #include "mozilla/RefPtr.h"     
@@ -61,3 +64,5 @@ class SharedPlanarYCbCrImage : public PlanarYCbCrImage {
 }  
 
 #endif
+
+#endif  
