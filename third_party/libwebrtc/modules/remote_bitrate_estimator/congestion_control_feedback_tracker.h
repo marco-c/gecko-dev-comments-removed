@@ -39,12 +39,27 @@ class CongestionControlFeedbackTracker {
       std::vector<rtcp::CongestionControlFeedback::PacketInfo>&
           packet_feedback);
 
+  
+  
+  int64_t NumPacketsReportedAsLost() const { return num_reported_lost_; }
+
+  
+  
+  
+  int64_t NumPacketsReportedAsLostButRecovered() const {
+    return num_reported_recovered_;
+  }
+
  private:
   struct PacketInfo {
     bool received() const { return arrival_time != Timestamp::MinusInfinity(); }
 
     Timestamp arrival_time = Timestamp::MinusInfinity();
     EcnMarking ecn = EcnMarking::kNotEct;
+
+    
+    
+    bool last_reported_as_lost = false;
   };
 
   
@@ -71,6 +86,9 @@ class CongestionControlFeedbackTracker {
   
   
   int num_ignored_packets_since_last_feedback_ = 0;
+
+  int64_t num_reported_lost_ = 0;
+  int64_t num_reported_recovered_ = 0;
 };
 
 }  
