@@ -162,16 +162,24 @@ void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
 
   for (;;) {
     if (hasWork()) {
+      
       if (!tryMarking(lock)) {
-        return;
+        
+        break;
+      }
+    } else if (pm->hasActiveTasks(lock)) {
+      
+      if (!requestWork(lock)) {
+        break;  
       }
     } else {
-      if (!requestWork(lock)) {
-        return;
-      }
+      
+      break;
     }
   }
 
+  
+  resumeWaitingTasks(lock);
   MOZ_ASSERT(!isWaiting);
 }
 
@@ -202,10 +210,7 @@ bool ParallelMarkTask::tryMarking(AutoLockHelperThreadState& lock) {
 
 bool ParallelMarkTask::requestWork(AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(!hasWork());
-
-  if (!pm->hasActiveTasks(lock)) {
-    return false;  
-  }
+  MOZ_ASSERT(pm->hasActiveTasks(lock));
 
   budget.forceCheck();
   if (budget.isOverBudget()) {
@@ -217,6 +222,13 @@ bool ParallelMarkTask::requestWork(AutoLockHelperThreadState& lock) {
   waitUntilResumed(lock);
 
   return true;
+}
+
+void ParallelMarkTask::resumeWaitingTasks(AutoLockHelperThreadState& lock) {
+  while (pm->hasWaitingTasks()) {
+    auto* task = pm->takeWaitingTask();
+    task->resumeOnFinish(lock);
+  }
 }
 
 void ParallelMarkTask::waitUntilResumed(AutoLockHelperThreadState& lock) {
@@ -318,12 +330,6 @@ void ParallelMarker::setTaskInactive(ParallelMarkTask* task,
   MOZ_ASSERT(id < workerCount());
   MOZ_ASSERT(activeTasks.ref()[id]);
   activeTasks.ref()[id] = false;
-
-  if (!hasActiveTasks(lock)) {
-    while (hasWaitingTasks()) {
-      takeWaitingTask()->resumeOnFinish(lock);
-    }
-  }
 }
 
 void ParallelMarkTask::donateWork() { pm->donateWorkFrom(marker); }
