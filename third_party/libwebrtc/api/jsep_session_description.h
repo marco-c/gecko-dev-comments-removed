@@ -14,39 +14,6 @@
 #ifndef API_JSEP_SESSION_DESCRIPTION_H_
 #define API_JSEP_SESSION_DESCRIPTION_H_
 
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "absl/strings/string_view.h"
-#include "api/jsep.h"
-
-namespace webrtc {
-
-class SessionDescription;
-
-
-class JsepSessionDescription final : public SessionDescriptionInterface {
- public:
-  
-  
-  
-  [[deprecated(
-      "JsepSessionDescription needs to be initialized with a valid description "
-      "object")]]
-  explicit JsepSessionDescription(SdpType type);
-  JsepSessionDescription(SdpType type,
-                         std::unique_ptr<SessionDescription> description,
-                         absl::string_view session_id,
-                         absl::string_view session_version,
-                         std::vector<IceCandidateCollection> candidates = {});
-  ~JsepSessionDescription() override;
-
-  JsepSessionDescription(const JsepSessionDescription&) = delete;
-  JsepSessionDescription& operator=(const JsepSessionDescription&) = delete;
-};
-
-}  
+#include "api/jsep.h"  
 
 #endif  
