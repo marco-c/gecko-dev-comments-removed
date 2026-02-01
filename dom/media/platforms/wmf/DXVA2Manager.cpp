@@ -357,13 +357,15 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   HRESULT ConfigureForSize(IMFMediaType* aInputType,
                            gfx::YUVColorSpace aColorSpace,
                            gfx::ColorRange aColorRange,
-                           gfx::ColorDepth aColorDepth, uint32_t aWidth,
-                           uint32_t aHeight) override;
+                           gfx::ColorDepth aColorDepth,
+                           gfx::TransferFunction aTransferFunction,
+                           uint32_t aWidth, uint32_t aHeight) override;
   HRESULT ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
                            gfx::YUVColorSpace aColorSpace,
                            gfx::ColorRange aColorRange,
-                           gfx::ColorDepth aColorDepth, uint32_t aWidth,
-                           uint32_t aHeight) override;
+                           gfx::ColorDepth aColorDepth,
+                           gfx::TransferFunction aTransferFunction,
+                           uint32_t aWidth, uint32_t aHeight) override;
 
   bool IsD3D11() override { return true; }
 
@@ -373,9 +375,23 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   void BeforeShutdownVideoMFTDecoder() override;
 
   bool SupportsZeroCopyNV12Texture() override {
-    if (mZeroCopyUsageInfo->SupportsZeroCopyNV12Texture() &&
-        (mDevice != DeviceManagerDx::Get()->GetCompositorDevice())) {
-      mZeroCopyUsageInfo->DisableZeroCopyNV12Texture();
+    
+    
+    
+    
+    
+    
+    
+    
+    const int maxVideoFrameUsageCount = 14;
+
+    if (mZeroCopyUsageInfo->SupportsZeroCopyNV12Texture()) {
+      if (mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
+        mZeroCopyUsageInfo->DisableZeroCopyNV12Texture();
+      } else if (mZeroCopyUsageInfo->GetRefCount() > maxVideoFrameUsageCount) {
+        mZeroCopyUsageInfo->DisableZeroCopyNV12Texture(
+            ZeroCopyUsageInfo::DisableReason::UsingTooManyFrames);
+      }
     }
     return mZeroCopyUsageInfo->SupportsZeroCopyNV12Texture();
   }
@@ -423,6 +439,7 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   gfx::YUVColorSpace mYUVColorSpace;
   gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
   gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
+  gfx::TransferFunction mTransferFunction = gfx::TransferFunction::BT709;
   gfx::SurfaceFormat mSurfaceFormat;
   std::list<ThreadSafeWeakPtr<layers::IMFSampleWrapper>> mIMFSampleWrappers;
   RefPtr<layers::ZeroCopyUsageInfo> mZeroCopyUsageInfo;
@@ -575,6 +592,10 @@ bool D3D11DXVA2Manager::SupportsConfig(const VideoInfo& aInfo,
       desc.OutputFormat = DXGI_FORMAT_P010;
     } else if (subtype == MFVideoFormat_P016) {
       desc.OutputFormat = DXGI_FORMAT_P016;
+    } else if (subtype == MFVideoFormat_A2R10G10B10) {
+      desc.OutputFormat = DXGI_FORMAT_R10G10B10A2_UNORM;
+    } else if (subtype == MFVideoFormat_A16B16G16R16F) {
+      desc.OutputFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
     }
   }
 
@@ -699,6 +720,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
     return hr;
   }
 
+  
   
   
   
@@ -924,19 +946,89 @@ void D3D11DXVA2Manager::BeforeShutdownVideoMFTDecoder() {
   ReleaseAllIMFSamples();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static gfx::SurfaceFormat SurfaceFormatFromSubType(const GUID& aSubType) {
+  
+  if (aSubType == MFVideoFormat_ARGB32) {
+    return gfx::SurfaceFormat::B8G8R8A8;
+  }
+  if (aSubType == MFVideoFormat_A16B16G16R16F) {
+    return gfx::SurfaceFormat::R16G16B16A16F;
+  }
+  if (aSubType == MFVideoFormat_A2R10G10B10) {
+    return gfx::SurfaceFormat::R10G10B10X2_UINT32;
+  }
+  if (aSubType == MFVideoFormat_NV12) {
+    return gfx::SurfaceFormat::NV12;
+  }
+  if (aSubType == MFVideoFormat_YUY2) {
+    return gfx::SurfaceFormat::YUY2;
+  }
+  if (aSubType == MFVideoFormat_P010) {
+    return gfx::SurfaceFormat::P010;
+  }
+  if (aSubType == MFVideoFormat_P016) {
+    return gfx::SurfaceFormat::P016;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown subtype");
+  return gfx::SurfaceFormat::UNKNOWN;
+}
+
 HRESULT
 D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
                                     gfx::YUVColorSpace aColorSpace,
                                     gfx::ColorRange aColorRange,
                                     gfx::ColorDepth aColorDepth,
+                                    gfx::TransferFunction aTransferFunction,
                                     uint32_t aWidth, uint32_t aHeight) {
   GUID subType = {0};
   HRESULT hr = aInputType->GetGUID(MF_MT_SUBTYPE, &subType);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
+  
+  
+  
+  
+  
+
   if (subType == mInputSubType && aWidth == mWidth && aHeight == mHeight &&
       mYUVColorSpace == aColorSpace && mColorRange == aColorRange &&
-      mColorDepth == aColorDepth) {
+      mColorDepth == aColorDepth && mTransferFunction == aTransferFunction) {
     
     return S_OK;
   }
@@ -969,13 +1061,24 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
   hr = outputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  
+  if (aColorDepth > gfx::ColorDepth::COLOR_10) {
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A16B16G16R16F);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  } else if (aColorDepth > gfx::ColorDepth::COLOR_8) {
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A2R10G10B10);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  } else {
+    hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_ARGB32);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  }
 
+  
   hr = E_FAIL;
   mozilla::mscom::EnsureMTA([&]() -> void {
     hr = mTransform->SetMediaTypes(
-        inputType, outputType, [aWidth, aHeight](IMFMediaType* aOutput) {
+        inputType, outputType, MFVideoFormat_ARGB32,
+        [aWidth, aHeight](IMFMediaType* aOutput) {
           HRESULT hr = aOutput->SetUINT32(MF_MT_INTERLACE_MODE,
                                           MFVideoInterlace_Progressive);
           NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
@@ -997,19 +1100,9 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
   mYUVColorSpace = aColorSpace;
   mColorRange = aColorRange;
   mColorDepth = aColorDepth;
+  mTransferFunction = aTransferFunction;
   if (mTextureClientAllocator) {
-    mSurfaceFormat = [&]() {
-      if (subType == MFVideoFormat_NV12) {
-        return gfx::SurfaceFormat::NV12;
-      } else if (subType == MFVideoFormat_P010) {
-        return gfx::SurfaceFormat::P010;
-      } else if (subType == MFVideoFormat_P016) {
-        return gfx::SurfaceFormat::P016;
-      } else {
-        MOZ_ASSERT_UNREACHABLE("Unexpected texture type");
-        return gfx::SurfaceFormat::NV12;
-      }
-    }();
+    mSurfaceFormat = SurfaceFormatFromSubType(subType);
     mTextureClientAllocator->SetPreferredSurfaceFormat(mSurfaceFormat);
   }
   
@@ -1018,9 +1111,10 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
   }
   LOG("Configured D3D11DXVA2Manager, size=[%u,%u], colorSpace=%hhu, "
-      "colorRange=%hhu, colorDepth=%hhu",
+      "colorRange=%hhu, colorDepth=%hhu, transferFunction=%hhu",
       mWidth, mHeight, static_cast<uint8_t>(mYUVColorSpace),
-      static_cast<uint8_t>(mColorRange), static_cast<uint8_t>(mColorDepth));
+      static_cast<uint8_t>(mColorRange), static_cast<uint8_t>(mColorDepth),
+      static_cast<uint8_t>(mTransferFunction));
   return S_OK;
 }
 
@@ -1029,10 +1123,11 @@ D3D11DXVA2Manager::ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
                                     gfx::YUVColorSpace aColorSpace,
                                     gfx::ColorRange aColorRange,
                                     gfx::ColorDepth aColorDepth,
+                                    gfx::TransferFunction aTransferFunction,
                                     uint32_t aWidth, uint32_t aHeight) {
   if (aWidth == mWidth && aHeight == mHeight && mYUVColorSpace == aColorSpace &&
       mColorRange == aColorRange && aSurfaceFormat == mSurfaceFormat &&
-      mColorDepth == aColorDepth) {
+      mColorDepth == aColorDepth && mTransferFunction == aTransferFunction) {
     
     return S_OK;
   }
@@ -1044,7 +1139,13 @@ D3D11DXVA2Manager::ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
   mColorRange = aColorRange;
   mColorDepth = aColorDepth;
   mSurfaceFormat = aSurfaceFormat;
+  mTransferFunction = aTransferFunction;
   if (mTextureClientAllocator) {
+    
+    
+    
+    
+    
     mTextureClientAllocator->SetPreferredSurfaceFormat(mSurfaceFormat);
   }
   
@@ -1052,9 +1153,11 @@ D3D11DXVA2Manager::ConfigureForSize(gfx::SurfaceFormat aSurfaceFormat,
     mProcessor->Init(gfx::IntSize(mWidth, mHeight));
   }
   LOG("Configured D3D11DXVA2Manager, size=[%u,%u], colorSpace=%hhu, "
-      "colorRange=%hhu, colorDepth=%hhu, surfaceFormat=%hhd",
+      "colorRange=%hhu, colorDepth=%hhu, transferFunction=%hhu, "
+      "surfaceFormat=%hhd",
       mWidth, mHeight, static_cast<uint8_t>(mYUVColorSpace),
       static_cast<uint8_t>(mColorRange), static_cast<uint8_t>(mColorDepth),
+      static_cast<uint8_t>(mTransferFunction),
       static_cast<uint8_t>(mSurfaceFormat));
   return S_OK;
 }
@@ -1158,6 +1261,11 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
 
   D3D11_TEXTURE2D_DESC inDesc;
   aInTexture.mTexture->GetDesc(&inDesc);
+
+  LOG("CopyTextureToImage, inDesc.Format=%d, mYUVColorSpace=%d, "
+      "mColorRange=%d, mColorDepth=%d",
+      inDesc.Format, static_cast<int>(mYUVColorSpace),
+      static_cast<int>(mColorRange), static_cast<int>(mColorDepth));
 
   RefPtr<D3D11ShareHandleImage> image = new D3D11ShareHandleImage(
       gfx::IntSize(mWidth, mHeight), aInTexture.mRegion,
