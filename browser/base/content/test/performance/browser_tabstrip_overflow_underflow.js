@@ -39,8 +39,14 @@ add_task(async function () {
   
   
   
+  
+  
+  
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.toolbars.bookmarks.visibility", "never"]],
+    set: [
+      ["browser.toolbars.bookmarks.visibility", "never"],
+      ["browser.tabs.hoverPreview.enabled", false],
+    ],
   });
 
   const TAB_COUNT_FOR_OVERFLOW = computeMaxTabCount();
