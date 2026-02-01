@@ -22,6 +22,7 @@ function synthesize_idle_daily() {
 
 
 
+
 function new_db_file(name = "testVacuum") {
   let file = Services.dirsvc.get("ProfD", Ci.nsIFile);
   file.append(name + ".sqlite");
