@@ -104,7 +104,7 @@ user_pref("font.size.inflation.minTwips", 0);
 
 
 user_pref("geo.provider.testing", true);
-user_pref("geo.provider.network.logging.enabled", true);
+user_pref("geo.provider.network.loglevel", "Off");
 user_pref("geo.provider.network.scan", false);
 user_pref("geo.provider.network.timeToWaitBeforeSending", 2000);
 user_pref("geo.provider.network.url", "http://{server}/tests/dom/geolocation/test/mochitest/network_geolocation.sjs");
