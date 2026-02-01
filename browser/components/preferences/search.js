@@ -5,6 +5,9 @@
 
 
 
+
+
+
 const lazy = XPCOMUtils.declareLazy({
   AddonSearchEngine:
     "moz-src:///toolkit/components/search/AddonSearchEngine.sys.mjs",
@@ -130,7 +133,7 @@ function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
 
     observe(subject, topic, data) {
       if (topic == this.ENGINE_MODIFIED) {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
+        let engine = subject.wrappedJSObject;
 
         
         if (data == "engine-removed") {
@@ -775,16 +778,10 @@ var gSearchPane = {
         break;
       }
       case "browser-search-engine-modified": {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
-        switch (data) {
-          case "engine-default": {
-            
-            this._engineStore.browserSearchEngineModified(engine, data);
-            break;
-          }
-          default:
-            this._engineStore.browserSearchEngineModified(engine, data);
-        }
+        this._engineStore.browserSearchEngineModified(
+          subject.wrappedJSObject,
+          data
+        );
         break;
       }
     }
@@ -1032,7 +1029,6 @@ class EngineStore {
 
 
   browserSearchEngineModified(engine, data) {
-    engine.QueryInterface(Ci.nsISearchEngine);
     switch (data) {
       case "engine-added":
         this.addEngine(engine);
