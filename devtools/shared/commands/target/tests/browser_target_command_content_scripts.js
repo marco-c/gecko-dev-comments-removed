@@ -7,7 +7,7 @@
 
 const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
 
-add_task(async function () {
+add_task(async function test_contentScript() {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
@@ -131,7 +131,7 @@ add_task(async function () {
 
 
 
-add_task(async function () {
+add_task(async function test_contentScript_parentProcess_VSCode() {
   info(
     "Test TargetCommand against content scripts via multiprocess descriptor"
   );
