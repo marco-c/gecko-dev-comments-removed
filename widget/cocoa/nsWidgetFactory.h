@@ -7,6 +7,9 @@
 
 
 
+#ifndef WIDGET_COCOA_NSWIDGETFACTORY_H_
+#define WIDGET_COCOA_NSWIDGETFACTORY_H_
+
 #include "nsID.h"
 
 namespace mozilla {
@@ -42,3 +45,5 @@ nsresult nsAppShellConstructor(const nsIID&, void**);
 
 void nsWidgetCocoaModuleCtor();
 void nsWidgetCocoaModuleDtor();
+
+#endif  
