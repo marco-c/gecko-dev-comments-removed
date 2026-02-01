@@ -217,6 +217,17 @@ function resetTelemetry() {
   SERPCategorizationRecorder.testReset();
 }
 
+const DEFAULT_IMPRESSION = {
+  provider: "example",
+  tagged: "true",
+  partner_code: "ff",
+  source: "unknown",
+  is_shopping_page: "false",
+  is_private: "false",
+  shopping_tab_displayed: "false",
+  is_signed_in: "false",
+};
+
 
 
 
@@ -232,6 +243,17 @@ function assertSERPTelemetry(expectedEvents) {
   
   
   expectedEvents = JSON.parse(JSON.stringify(expectedEvents));
+
+  for (let expectedEvent of expectedEvents) {
+    if (expectedEvent.impression) {
+      expectedEvent.impression = {
+        ...DEFAULT_IMPRESSION,
+        ...expectedEvent.impression,
+      };
+    } else {
+      expectedEvent.impression = { ...DEFAULT_IMPRESSION };
+    }
+  }
 
   
   
