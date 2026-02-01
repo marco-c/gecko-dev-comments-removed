@@ -126,7 +126,6 @@ nsresult RTCDataChannel::Init() {
           
           UnsetWorkerNeedsUs();
           DontKeepAliveAnyMore();
-          mWorkerRef = nullptr;
         });
     if (NS_WARN_IF(!strongWorkerRef)) {
       DC_WARN(("%p: Could not get worker ref, breaking cycles", this));
@@ -861,11 +860,15 @@ void RTCDataChannel::DontKeepAliveAnyMore() {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   mCheckMustKeepAlive = false;
 
-  mWorkerRef = nullptr;
-
   if (mSelfRef) {
     
     ReleaseSelf();
+  }
+
+  if (mWorkerRef) {
+    
+    NS_ProxyRelease("RTCDataChannel::mWorkerRef", mEventTarget,
+                    mWorkerRef.forget(), true);
   }
 }
 
@@ -873,7 +876,8 @@ void RTCDataChannel::ReleaseSelf() {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   DC_INFO(("%p: Releasing self-ref", this));
   
-  NS_ProxyRelease("RTCDataChannel::mSelfRef", mEventTarget, mSelfRef.forget());
+  NS_ProxyRelease("RTCDataChannel::mSelfRef", mEventTarget, mSelfRef.forget(),
+                  true);
 }
 
 void RTCDataChannel::EventListenerAdded(nsAtom* aType) {
