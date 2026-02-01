@@ -39,7 +39,6 @@ class DecodedStream : public MediaSink {
                 CopyableTArray<RefPtr<ProcessedMediaTrack>> aOutputTracks,
                 AbstractCanonical<PrincipalHandle>* aCanonicalOutputPrincipal,
                 double aVolume, double aPlaybackRate, bool aPreservesPitch,
-                bool aShouldConfigAudioOutput, AudioDeviceInfo* aDevice,
                 MediaQueue<AudioData>& aAudioQueue,
                 MediaQueue<VideoData>& aVideoQueue);
 
@@ -125,10 +124,6 @@ class DecodedStream : public MediaSink {
   double mVolume;
   double mPlaybackRate;
   bool mPreservesPitch;
-
-  
-  const bool mShouldConfigAudioOutput;
-  RefPtr<AudioDeviceInfo> mDevice;
 
   media::NullableTimeUnit mStartTime;
   media::TimeUnit mLastOutputTime;

@@ -203,46 +203,20 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
 
-  
-  
-  
   MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(OutputCaptureState,
                                                      (Capture, Halt, None));
 
-  struct OutputCaptureInfo {
-    explicit OutputCaptureInfo(OutputCaptureState aState);
-
-    OutputCaptureInfo(OutputCaptureState aState, SharedDummyTrack* aDummyTrack,
-                      bool aShouldConfigAudioOutput, AudioDeviceInfo* aDevice);
-
-    OutputCaptureInfo(const OutputCaptureInfo& aOther);
-    OutputCaptureInfo& operator=(const OutputCaptureInfo& aOther);
-
-    OutputCaptureInfo(OutputCaptureInfo&& aOther) noexcept;
-    OutputCaptureInfo& operator=(OutputCaptureInfo&& aOther) noexcept;
-
-    bool operator==(const OutputCaptureInfo& aOther) const;
-    bool operator!=(const OutputCaptureInfo& aOther) const {
-      return !(*this == aOther);
-    }
-
-    ~OutputCaptureInfo();
-
-    
-    
-    OutputCaptureState mState;
-    
-    
-    
-    nsMainThreadPtrHandle<SharedDummyTrack> mDummyTrack;
-    
-    bool mShouldConfigAudioOutput;
-    RefPtr<AudioDeviceInfo> mDevice;
-  };
-
   
-  void SetOutputCaptureState(OutputCaptureInfo aInfo);
-
+  
+  
+  
+  
+  
+  
+  
+  
+  void SetOutputCaptureState(OutputCaptureState aState,
+                             SharedDummyTrack* aDummyTrack = nullptr);
   
   
   
@@ -736,8 +710,11 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  Canonical<OutputCaptureState> mOutputCaptureState;
+
   
-  Canonical<OutputCaptureInfo> mOutputCaptureInfo;
+  
+  Canonical<nsMainThreadPtrHandle<SharedDummyTrack>> mOutputDummyTrack;
 
   
   Canonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
@@ -787,8 +764,12 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   Canonical<RefPtr<VideoFrameContainer>>& CanonicalSecondaryVideoContainer() {
     return mSecondaryVideoContainer;
   }
-  Canonical<OutputCaptureInfo>& CanonicalOutputCaptureInfo() {
-    return mOutputCaptureInfo;
+  Canonical<OutputCaptureState>& CanonicalOutputCaptureState() {
+    return mOutputCaptureState;
+  }
+  Canonical<nsMainThreadPtrHandle<SharedDummyTrack>>&
+  CanonicalOutputDummyTrack() {
+    return mOutputDummyTrack;
   }
   Canonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>>&
   CanonicalOutputTracks() {

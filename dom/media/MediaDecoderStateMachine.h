@@ -539,8 +539,11 @@ class MediaDecoderStateMachine
 
   
   
+  Mirror<MediaDecoder::OutputCaptureState> mOutputCaptureState;
+
   
-  Mirror<MediaDecoder::OutputCaptureInfo> mOutputCaptureInfo;
+  
+  Mirror<nsMainThreadPtrHandle<SharedDummyTrack>> mOutputDummyTrack;
 
   
   Mirror<CopyableTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
