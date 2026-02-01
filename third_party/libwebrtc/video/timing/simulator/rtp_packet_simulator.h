@@ -15,11 +15,11 @@
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 
-namespace webrtc::video_frame_simulator {
+namespace webrtc::video_timing_simulator {
 
 class RtpPacketSimulator {
  public:
-  explicit RtpPacketSimulator(Environment env);
+  explicit RtpPacketSimulator(const Environment& env);
   ~RtpPacketSimulator() = default;
 
   RtpPacketSimulator(const RtpPacketSimulator&) = delete;
@@ -30,7 +30,7 @@ class RtpPacketSimulator {
   
   
   RtpPacketReceived SimulateRtpPacketReceived(
-      const LoggedRtpPacketIncoming& logged_packet);
+      const LoggedRtpPacketIncoming& logged_packet) const;
 
  private:
   const Environment env_;
