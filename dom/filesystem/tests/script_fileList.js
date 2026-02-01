@@ -1,5 +1,4 @@
 
-
 Cu.importGlobalProperties(["File"]);
 function createProfDFile() {
   return Services.dirsvc

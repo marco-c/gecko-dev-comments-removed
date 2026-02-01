@@ -1,6 +1,4 @@
 
-
-
 Cu.importGlobalProperties(["File"]);
 
 function createFileWithData(fileData) {

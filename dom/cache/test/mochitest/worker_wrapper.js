@@ -3,8 +3,6 @@
 
 
 
-
-
 var client;
 var context;
 

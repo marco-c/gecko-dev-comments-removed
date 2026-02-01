@@ -1,5 +1,3 @@
-
-
 let dialogObserverTopic = "common-dialog-loaded";
 
 function waitForButtonEnabledState(button) {

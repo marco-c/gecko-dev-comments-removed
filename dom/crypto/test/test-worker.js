@@ -4,8 +4,6 @@
 
 
 
-
-
 importScripts("util.js");
 importScripts("test-vectors.js");
 

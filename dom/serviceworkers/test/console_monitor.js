@@ -1,5 +1,3 @@
-
-
 let consoleListener;
 
 function ConsoleListener() {
