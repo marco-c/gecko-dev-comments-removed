@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOZHTMLACCESSIBLE_H_
+#define ACCESSIBLE_MAC_MOZHTMLACCESSIBLE_H_
+
 #import "mozAccessible.h"
 
 @interface mozHeadingAccessible : mozAccessible
@@ -49,3 +52,5 @@
 - (NSString*)moxTitle;
 
 @end
+
+#endif  

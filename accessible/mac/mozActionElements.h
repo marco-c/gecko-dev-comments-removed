@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOZACTIONELEMENTS_H_
+#define ACCESSIBLE_MAC_MOZACTIONELEMENTS_H_
+
 #import <Cocoa/Cocoa.h>
 #import "mozAccessible.h"
 
@@ -122,3 +125,5 @@
 - (NSString*)moxTitle;
 
 @end
+
+#endif  

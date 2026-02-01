@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOZROOTACCESSIBLE_H_
+#define ACCESSIBLE_MAC_MOZROOTACCESSIBLE_H_
+
 #import <Cocoa/Cocoa.h>
 #import "mozAccessible.h"
 
@@ -56,3 +59,5 @@
 - (BOOL)isRoot;
 
 @end
+
+#endif  

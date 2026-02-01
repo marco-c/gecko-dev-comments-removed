@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOZTEXTACCESSIBLE_H_
+#define ACCESSIBLE_MAC_MOZTEXTACCESSIBLE_H_
+
 #import "mozAccessible.h"
 
 @interface mozAccessible (TextField)
@@ -90,3 +93,5 @@
 - (NSValue*)moxBoundsForRange:(NSValue*)range;
 
 @end
+
+#endif  

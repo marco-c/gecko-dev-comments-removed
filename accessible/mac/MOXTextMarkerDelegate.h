@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXTEXTMARKERDELEGATE_H_
+#define ACCESSIBLE_MAC_MOXTEXTMARKERDELEGATE_H_
+
 #import <Cocoa/Cocoa.h>
 
 #import "MOXAccessibleProtocol.h"
@@ -167,3 +170,5 @@ enum AXTextSelectionGranularity {
 };
 }  
 }  
+
+#endif  

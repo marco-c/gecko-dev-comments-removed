@@ -6,6 +6,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXLANDMARKACCESSIBLES_H_
+#define ACCESSIBLE_MAC_MOXLANDMARKACCESSIBLES_H_
+
 #import "mozAccessible.h"
 
 @interface MOXLandmarkAccessible : mozAccessible
@@ -13,3 +16,5 @@
 - (NSString*)moxTitle;
 
 @end
+
+#endif  

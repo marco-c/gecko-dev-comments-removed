@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_IOS_MUIROOTACCESSIBLEPROTOCOL_H_
+#define ACCESSIBLE_IOS_MUIROOTACCESSIBLEPROTOCOL_H_
+
 #import <Foundation/Foundation.h>
 #import <UIKit/UIAccessibility.h>
 
@@ -49,3 +52,5 @@
 - (UIAccessibilityContainerType)accessibilityContainerType;
 
 @end
+
+#endif  

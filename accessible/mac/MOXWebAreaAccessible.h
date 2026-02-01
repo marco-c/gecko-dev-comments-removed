@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXWEBAREAACCESSIBLE_H_
+#define ACCESSIBLE_MAC_MOXWEBAREAACCESSIBLE_H_
+
 #import "mozAccessible.h"
 
 using namespace mozilla::a11y;
@@ -103,3 +106,5 @@ using namespace mozilla::a11y;
 - (BOOL)isExpired;
 
 @end
+
+#endif  

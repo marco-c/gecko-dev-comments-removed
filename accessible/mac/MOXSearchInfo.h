@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXSEARCHINFO_H_
+#define ACCESSIBLE_MAC_MOXSEARCHINFO_H_
+
 #import "mozAccessible.h"
 #include "Pivot.h"
 
@@ -41,3 +44,5 @@ using namespace mozilla::a11y;
 - (void)dealloc;
 
 @end
+
+#endif  

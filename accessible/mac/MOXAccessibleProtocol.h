@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXACCESSIBLEPROTOCOL_H_
+#define ACCESSIBLE_MAC_MOXACCESSIBLEPROTOCOL_H_
+
 @protocol MOXTextMarkerSupport;
 @protocol mozAccessible;
 
@@ -556,3 +559,5 @@
 - (void)moxSetSelectedTextMarkerRange:(id _Nullable)textMarkerRange;
 
 @end
+
+#endif  

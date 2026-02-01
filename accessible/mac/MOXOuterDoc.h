@@ -6,6 +6,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXOUTERDOC_H_
+#define ACCESSIBLE_MAC_MOXOUTERDOC_H_
+
 #import "mozAccessible.h"
 
 @interface MOXOuterDoc : mozAccessible
@@ -14,3 +17,5 @@
 - (NSString*)moxContents;
 
 @end
+
+#endif  

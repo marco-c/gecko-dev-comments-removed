@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_IOS_MUIROOTACCESSIBLE_H_
+#define ACCESSIBLE_IOS_MUIROOTACCESSIBLE_H_
+
 #import "MUIAccessible.h"
 
 
@@ -27,3 +30,5 @@
 - (id)representedView;
 
 @end
+
+#endif  

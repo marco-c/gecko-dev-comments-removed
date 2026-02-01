@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOZTABLEACCESSIBLE_H_
+#define ACCESSIBLE_MAC_MOZTABLEACCESSIBLE_H_
+
 #import "mozAccessible.h"
 
 @interface mozColumnContainer : MOXAccessibleBase {
@@ -175,3 +178,5 @@
 - (void)stateChanged:(uint64_t)state isEnabled:(BOOL)enabled;
 
 @end
+
+#endif  

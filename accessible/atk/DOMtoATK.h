@@ -4,8 +4,10 @@
 
 
 
+#ifndef ACCESSIBLE_ATK_DOMTOATK_H_
+#define ACCESSIBLE_ATK_DOMTOATK_H_
+
 #include <glib.h>
-#include <cstdint>
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "nsCharTraits.h"
 #include "nsString.h"
@@ -150,3 +152,5 @@ inline gunichar ATKCharacter(HyperTextAccessibleBase* aAccessible,
 
 }  
 }  
+
+#endif  

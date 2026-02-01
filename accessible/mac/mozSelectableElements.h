@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOZSELECTABLEELEMENTS_H_
+#define ACCESSIBLE_MAC_MOZSELECTABLEELEMENTS_H_
+
 #import <Cocoa/Cocoa.h>
 #import "mozAccessible.h"
 
@@ -123,3 +126,5 @@
 - (void)moxPerformPress;
 
 @end
+
+#endif  

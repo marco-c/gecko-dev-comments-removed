@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXMATHACCESSIBLES_H_
+#define ACCESSIBLE_MAC_MOXMATHACCESSIBLES_H_
+
 #import "mozAccessible.h"
 
 @interface MOXMathRootAccessible : mozAccessible
@@ -62,3 +65,5 @@
 - (id)moxMathOver;
 
 @end
+
+#endif  

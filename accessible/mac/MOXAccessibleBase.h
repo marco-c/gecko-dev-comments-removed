@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_MOXACCESSIBLEBASE_H_
+#define ACCESSIBLE_MAC_MOXACCESSIBLEBASE_H_
+
 #import <Cocoa/Cocoa.h>
 
 #import "mozAccessibleProtocol.h"
@@ -157,3 +160,5 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (void)expire;
 
 @end
+
+#endif  

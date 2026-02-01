@@ -5,6 +5,9 @@
 
 
 
+#ifndef ACCESSIBLE_MAC_ROTORRULES_H_
+#define ACCESSIBLE_MAC_ROTORRULES_H_
+
 #import "mozAccessible.h"
 #include "Pivot.h"
 
@@ -151,3 +154,5 @@ class RotorFocusableRule : public RotorRule {
 
   virtual uint16_t Match(Accessible* aAcc) override;
 };
+
+#endif  
