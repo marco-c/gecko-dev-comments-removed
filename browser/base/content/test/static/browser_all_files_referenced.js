@@ -334,16 +334,6 @@ var allowlist = [
     file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   },
   
-  
-  {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistoryScheduler.sys.mjs",
-  },
-  
-  
-  {
-    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesConversationScheduler.sys.mjs",
-  },
-  
   {
     file: "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   },
@@ -361,6 +351,10 @@ var allowlist = [
   
   {
     file: "chrome://browser/content/aiwindow/components/memories-icon-button.mjs",
+  },
+  
+  {
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
   },
 ];
 
