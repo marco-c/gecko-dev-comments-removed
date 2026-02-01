@@ -367,7 +367,7 @@ class SVGElement : public SVGElementBase
     nsStaticAtom* const mName;
     const float mDefaultValue;
     const uint8_t mDefaultUnitType;
-    const uint8_t mCtxType;
+    const SVGLength::Axis mCtxType;
   };
 
   template <typename Value, typename InfoValue>
@@ -393,10 +393,7 @@ class SVGElement : public SVGElementBase
 
   using NumberAttributesInfo = AttributesInfo<SVGAnimatedNumber, NumberInfo>;
 
-  struct NumberPairInfo {
-    nsStaticAtom* const mName;
-    const float mDefaultValue;
-  };
+  using NumberPairInfo = NumberInfo;
 
   using NumberPairAttributesInfo =
       AttributesInfo<SVGAnimatedNumberPair, NumberPairInfo>;
@@ -408,10 +405,7 @@ class SVGElement : public SVGElementBase
 
   using IntegerAttributesInfo = AttributesInfo<SVGAnimatedInteger, IntegerInfo>;
 
-  struct IntegerPairInfo {
-    nsStaticAtom* const mName;
-    const int32_t mDefaultValue;
-  };
+  using IntegerPairInfo = IntegerInfo;
 
   using IntegerPairAttributesInfo =
       AttributesInfo<SVGAnimatedIntegerPair, IntegerPairInfo>;
@@ -442,7 +436,7 @@ class SVGElement : public SVGElementBase
 
   struct LengthListInfo {
     nsStaticAtom* const mName;
-    const uint8_t mAxis;
+    const SVGLength::Axis mAxis;
     
 
 
