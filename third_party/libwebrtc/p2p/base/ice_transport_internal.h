@@ -396,9 +396,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   
-  
-  
-  sigslot::signal1<IceTransportInternal*> SignalDestroyed;
   void NotifyDestroyed(IceTransportInternal* transport) {
     SignalDestroyed(transport);
   }
@@ -461,6 +458,7 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   
   sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
   sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
+  sigslot::signal1<IceTransportInternal*> SignalDestroyed;
 
   CallbackList<IceTransportInternal*, const Candidate&>
       candidate_gathered_callbacks_;
