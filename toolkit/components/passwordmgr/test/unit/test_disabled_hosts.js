@@ -172,7 +172,7 @@ add_task(
       [origin]
     );
 
-    LoginTestUtils.clearData();
+    await LoginTestUtils.clearData();
 
     
     Services.logins.setLoginSavingEnabled(encoding, false);
@@ -184,7 +184,7 @@ add_task(
       [origin]
     );
 
-    LoginTestUtils.clearData();
+    await LoginTestUtils.clearData();
   }
 );
 
@@ -206,7 +206,7 @@ add_task(
       [encoding]
     );
 
-    LoginTestUtils.clearData();
+    await LoginTestUtils.clearData();
 
     
     Services.logins.setLoginSavingEnabled(encoding, false);
@@ -218,6 +218,6 @@ add_task(
       [encoding]
     );
 
-    LoginTestUtils.clearData();
+    await LoginTestUtils.clearData();
   }
 );

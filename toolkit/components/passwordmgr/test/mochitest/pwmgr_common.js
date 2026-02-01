@@ -838,6 +838,7 @@ function runInParent(aFunctionOrURL) {
 
 function manageLoginsInParent() {
   return runInParent(function addLoginsInParentInner() {
+    
     addMessageListener("removeAllUserFacingLogins", () => {
       Services.logins.removeAllUserFacingLogins();
     });
@@ -1010,14 +1011,14 @@ SimpleTest.registerCleanupFunction(() => {
 
   PWMGR_COMMON_PARENT.sendAsyncMessage("cleanup");
 
-  runInParent(function cleanupParent() {
+  runInParent(async function cleanupParent() {
     
     const { LoginManagerParent } = ChromeUtils.importESModule(
       "resource://gre/modules/LoginManagerParent.sys.mjs"
     );
 
     
-    Services.logins.removeAllUserFacingLogins();
+    await Services.logins.removeAllUserFacingLoginsAsync();
 
     let disabledHosts = Services.logins.getAllDisabledHosts();
     disabledHosts.forEach(host =>
