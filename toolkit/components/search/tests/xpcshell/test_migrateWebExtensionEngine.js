@@ -17,7 +17,7 @@ add_task(async function test_migrateLegacyEngine() {
   });
 
   
-  engine.wrappedJSObject._loadPath = `jar:[profile]/extensions/${kExtensionID}.xpi!/simple.xml`;
+  engine._loadPath = `jar:[profile]/extensions/${kExtensionID}.xpi!/simple.xml`;
 
   await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
@@ -32,7 +32,7 @@ add_task(async function test_migrateLegacyEngine() {
   );
 
   engine = SearchService.getEngineByName("simple");
-  Assert.equal(engine.wrappedJSObject._loadPath, "[addon]" + kExtensionID);
+  Assert.equal(engine._loadPath, "[addon]" + kExtensionID);
   Assert.equal(engine.extensionID, kExtensionID);
 
   Assert.equal(
@@ -50,7 +50,7 @@ add_task(async function test_migrateLegacyEngineDifferentName() {
   });
 
   
-  engine.wrappedJSObject._loadPath = `jar:[profile]/extensions/${kExtensionID}.xpi!/simple.xml`;
+  engine._loadPath = `jar:[profile]/extensions/${kExtensionID}.xpi!/simple.xml`;
 
   await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
@@ -69,7 +69,7 @@ add_task(async function test_migrateLegacyEngineDifferentName() {
 
   
   engine = SearchService.getEngineByName("simple search");
-  Assert.equal(engine.wrappedJSObject._loadPath, "[addon]" + kExtensionID);
+  Assert.equal(engine._loadPath, "[addon]" + kExtensionID);
   Assert.equal(engine.extensionID, kExtensionID);
 
   Assert.equal(

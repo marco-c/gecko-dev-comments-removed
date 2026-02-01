@@ -679,7 +679,7 @@ var tests = [
           previous_engine_id: defaultEngine.telemetryId,
           new_engine_id: engine.telemetryId,
           new_display_name: engine.name,
-          new_load_path: engine.wrappedJSObject._loadPath,
+          new_load_path: engine._loadPath,
           
           new_submission_url: submissionUrl.slice(0, 100),
         },

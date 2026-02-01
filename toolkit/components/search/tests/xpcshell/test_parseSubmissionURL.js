@@ -59,7 +59,7 @@ add_task(async function test_parseSubmissionURL() {
   
   let url = "https://www.google.com/search?foo=bar&q=caff%C3%A8";
   let result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "caff\u00E8");
 
   
@@ -67,14 +67,14 @@ add_task(async function test_parseSubmissionURL() {
   
   url = "https://www.google.fr/search?q=caff%E8";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine2);
+  Assert.equal(result.engine, engine2);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   
   url = "https://www.google.co.uk/search?q=caff%C3%A8";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "caff\u00E8");
 
   
@@ -86,7 +86,7 @@ add_task(async function test_parseSubmissionURL() {
   
   url = "https://www.google.com/search?q=foo+b\u00E4r";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "foo b\u00E4r");
 
   
@@ -112,7 +112,7 @@ add_task(async function test_parseSubmissionURL() {
   
   url = "https://duckduckgo.com/?foo=bar&q=caff%C3%A8";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine5);
+  Assert.equal(result.engine, engine5);
   Assert.equal(result.terms, "caff\u00E8");
 
   
@@ -120,40 +120,40 @@ add_task(async function test_parseSubmissionURL() {
   
   url = "https://duckduckgo.com?foo=bar&q=caff%C3%A8";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine5);
+  Assert.equal(result.engine, engine5);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   url = "https://www.google.com/search?q=caff%C3%A8";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "caff\u00E8");
 
   
   result = SearchService.parseSubmissionURL(
     "https://www.google.com/search?q=+with++spaces+"
   );
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, " with  spaces ");
 
   
   result = SearchService.parseSubmissionURL(
     "https://www.google.com/search?q=with%26ampersand"
   );
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "with&ampersand");
 
   
   result = SearchService.parseSubmissionURL(
     "https://www.google.com/SEARCH?q=caps"
   );
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "caps");
 
   
   url = "https://www.google.com/search?q=";
   result = SearchService.parseSubmissionURL(url);
-  Assert.equal(result.engine.wrappedJSObject, engine1);
+  Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "");
 
   
