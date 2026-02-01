@@ -18,6 +18,7 @@
 #include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/ref_count.h"
+#include "api/units/timestamp.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -40,7 +41,17 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
    public:
     virtual ~Observer() = default;
     virtual void OnCandidateGathered(const Candidate& candidate) = 0;
-    virtual void OnPacketReceived(ArrayView<const uint8_t> data) = 0;
+
+    struct PacketMetadata {
+      Timestamp receive_time;
+    };
+    virtual void OnPacketReceived(ArrayView<const uint8_t> data,
+                                  PacketMetadata metadata) {
+      OnPacketReceived(data);
+    }
+    
+    virtual void OnPacketReceived(ArrayView<const uint8_t> data) {}
+
     
     
     virtual void OnSendError() = 0;
