@@ -737,6 +737,16 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     *aDecision = ACCEPT;
     return NS_OK;
   }
+
+  
+  
+  
+  if (internalContentType ==
+      nsIContentPolicy::TYPE_INTERNAL_IMAGE_NOTIFICATION) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
   
   NS_ENSURE_TRUE(requestingWindow, NS_OK);
 
