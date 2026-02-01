@@ -1,10 +1,15 @@
 
 
 
+
+
+
+
 const { EnterprisePolicyTesting, PoliciesPrefTracker } =
   ChromeUtils.importESModule(
     "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
   );
+
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
@@ -778,13 +783,30 @@ async function waitForSettingControlChange(control) {
 
 
 
-async function waitForPaneChange(paneId) {
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
+
+async function waitForPaneChange(
+  paneId,
+  win = gBrowser.selectedBrowser.ownerGlobal
+) {
+  let event = await BrowserTestUtils.waitForEvent(win.document, "paneshown");
   let expectId = paneId.startsWith("pane")
     ? paneId
     : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
   is(event.detail.category, expectId, "Loaded the correct pane");
+}
+
+
+
+
+
+
+
+
+function getSettingControl(
+  settingId,
+  win = gBrowser.selectedBrowser.ownerGlobal
+) {
+  return win.document.getElementById(`setting-control-${settingId}`);
 }
 
 function getControl(doc, id) {
