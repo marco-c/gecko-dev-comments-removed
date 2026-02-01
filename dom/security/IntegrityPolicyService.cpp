@@ -11,11 +11,14 @@
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/IntegrityViolationReportBody.h"
 #include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/SFVService.h"
 #include "nsContentSecurityManager.h"
+#include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
 #include "nsILoadInfo.h"
 #include "nsString.h"
@@ -176,7 +179,12 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
 
   
   
-  MaybeReport(aContentLocation, aLoadInfo, *destination, contains, roContains);
+  if (contains || roContains) {
+    ReportToConsole(aContentLocation, aLoadInfo, *destination, contains,
+                    roContains);
+    ReportViolation(aContentLocation, aLoadInfo, *destination, policy, contains,
+                    roContains);
+  }
 
   
   return contains;
@@ -198,14 +206,10 @@ const char* GetReportMessageKey(bool aEnforcing,
   }
 }
 
-void IntegrityPolicyService::MaybeReport(
+void IntegrityPolicyService::ReportToConsole(
     nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
     IntegrityPolicy::DestinationType aDestination, bool aEnforce,
-    bool aReportOnly) {
-  if (!aEnforce && !aReportOnly) {
-    return;
-  }
-
+    bool aReportOnly) const {
   if (nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType())) {
     return;  
   }
@@ -228,6 +232,140 @@ void IntegrityPolicyService::MaybeReport(
       localizedMsg,
       aEnforce ? nsIScriptError::errorFlag : nsIScriptError::warningFlag,
       "Security"_ns, windowID);
+}
+
+
+void dom::IntegrityPolicyService::ReportViolation(
+    nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
+    IntegrityPolicy::DestinationType aDestination,
+    const IntegrityPolicy* aPolicy, bool aEnforce, bool aReportOnly) const {
+  
+  
+  
+  nsCOMPtr<nsISupports> loadingContext = aLoadInfo->GetLoadingContext();
+  RefPtr<Document> doc;
+  if (nsCOMPtr<nsINode> node = do_QueryInterface(loadingContext)) {
+    doc = node->OwnerDoc();
+  } else if (nsCOMPtr<nsPIDOMWindowOuter> window =
+                 do_QueryInterface(loadingContext)) {
+    doc = window->GetDoc();
+  }
+
+  if (NS_WARN_IF(!doc)) {
+    return;
+  }
+
+  nsPIDOMWindowInner* window = doc->GetInnerWindow();
+  if (NS_WARN_IF(!window)) {
+    return;
+  }
+  nsCOMPtr<nsIGlobalObject> global = window->AsGlobal();
+
+  
+
+  
+  
+  nsCOMPtr<nsIURI> uri = doc->GetDocumentURI();  
+
+  
+  
+
+  
+  if (NS_WARN_IF(!uri)) {
+    return;
+  }
+
+  
+  nsAutoCString documentURL;
+  ReportingUtils::StripURL(uri, documentURL);
+  NS_ConvertUTF8toUTF16 documentURLUTF16(documentURL);
+
+  
+  
+  nsAutoCString blockedURL;
+  ReportingUtils::StripURL(aContentLocation, blockedURL);
+
+  nsAutoCString destination;
+  switch (aDestination) {
+    case IntegrityPolicy::DestinationType::Script:
+      destination = "script"_ns;
+      break;
+    case IntegrityPolicy::DestinationType::Style:
+      destination = "style"_ns;
+      break;
+  }
+
+  nsTArray<nsCString> enforcementEndpoints;
+  nsTArray<nsCString> reportOnlyEndpoints;
+  aPolicy->Endpoints(enforcementEndpoints, reportOnlyEndpoints);
+
+  
+  if (aEnforce) {
+    for (const nsCString& endpoint : enforcementEndpoints) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      RefPtr<IntegrityViolationReportBody> body =
+          new IntegrityViolationReportBody(global, documentURL, blockedURL,
+                                           destination, false);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ReportingUtils::Report(global, nsGkAtoms::integrity_violation,
+                             NS_ConvertUTF8toUTF16(endpoint), documentURLUTF16,
+                             body);
+    }
+  }
+
+  
+  if (aReportOnly) {
+    for (const nsCString& endpoint : reportOnlyEndpoints) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      RefPtr<IntegrityViolationReportBody> reportBody =
+          new IntegrityViolationReportBody(global, documentURL, blockedURL,
+                                           destination, true);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      ReportingUtils::Report(global, nsGkAtoms::integrity_violation,
+                             NS_ConvertUTF8toUTF16(endpoint), documentURLUTF16,
+                             reportBody);
+    }
+  }
 }
 
 NS_IMPL_ISUPPORTS(IntegrityPolicyService, nsIContentPolicy)

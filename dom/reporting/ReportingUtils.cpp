@@ -14,8 +14,34 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsAtom.h"
 #include "nsIGlobalObject.h"
+#include "nsIURIMutator.h"
+#include "nsNetUtil.h"
 
 namespace mozilla::dom {
+
+
+
+void ReportingUtils::StripURL(nsIURI* aURI, nsACString& outStrippedURL) {
+  
+  if (!net::SchemeIsHttpOrHttps(aURI)) {
+    aURI->GetScheme(outStrippedURL);
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIURI> stripped;
+  if (NS_FAILED(NS_MutateURI(aURI).SetRef(""_ns).SetUserPass(""_ns).Finalize(
+          stripped))) {
+    
+    aURI->GetScheme(outStrippedURL);
+    return;
+  }
+
+  
+  stripped->GetSpec(outStrippedURL);
+}
 
 
 void ReportingUtils::Report(nsIGlobalObject* aGlobal, nsAtom* aType,
