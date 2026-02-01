@@ -438,7 +438,14 @@ class IToplevelProtocol : public IRefCountedProtocol {
 
  public:
   
-  IProtocol* Lookup(Shmem::id_t aId);
+  IProtocol* Lookup(ActorId aId);
+
+  
+  
+  [[nodiscard]] bool TryReserve(ActorId aId);
+
+  
+  void ClearReservation(ActorId aId);
 
   Shmem CreateSharedMemory(size_t aSize, bool aUnsafe);
   Shmem::Segment* LookupSharedMemory(Shmem::id_t aId);
