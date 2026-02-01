@@ -401,45 +401,13 @@ export class ContextMenuChild extends JSWindowActorChild {
   }
 
   
+  
+  
   _gatherTextUnder(root) {
-    let text = "";
-    let node = root.firstChild;
-    let depth = 1;
-    while (node && depth > 0) {
-      
-      if (node.nodeType == node.TEXT_NODE) {
-        
-        text += " " + node.data;
-      } else if (this.contentWindow.HTMLImageElement.isInstance(node)) {
-        
-        let altText = node.getAttribute("alt");
-        if (altText && altText != "") {
-          text += " " + altText;
-        }
-      }
-      
-      
-      if (node.hasChildNodes()) {
-        
-        node = node.firstChild;
-        depth++;
-      } else {
-        
-        while (depth > 0 && !node.nextSibling) {
-          node = node.parentNode;
-          depth--;
-        }
-        if (node.nextSibling) {
-          node = node.nextSibling;
-        }
-      }
-    }
-
-    
-    text = text.trim();
-    
-    text = text.replace(/\s+/g, " ");
-    return text;
+    const encoder = Cu.createDocumentEncoder("text/plain");
+    encoder.init(root.ownerDocument, "text/plain", 0);
+    encoder.setContainerNode(root);
+    return encoder.encodeToString().trim();
   }
 
   
