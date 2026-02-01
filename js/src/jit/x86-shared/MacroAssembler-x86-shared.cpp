@@ -8,8 +8,7 @@
 
 #include "mozilla/Casting.h"
 
-#include "jsmath.h"
-
+#include "builtin/Math.h"
 #include "jit/JitFrames.h"
 #include "jit/MacroAssembler.h"
 #include "js/ScalarType.h"  
@@ -704,8 +703,9 @@ CodeOffset MacroAssembler::call(Register reg) { return Assembler::call(reg); }
 
 CodeOffset MacroAssembler::call(Label* label) { return Assembler::call(label); }
 
-void MacroAssembler::call(const Address& addr) {
+CodeOffset MacroAssembler::call(const Address& addr) {
   Assembler::call(Operand(addr.base, addr.offset));
+  return CodeOffset(currentOffset());
 }
 
 CodeOffset MacroAssembler::call(wasm::SymbolicAddress target) {

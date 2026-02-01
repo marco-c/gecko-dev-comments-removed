@@ -53,7 +53,10 @@ if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
 
 
 
+
+
 SOURCES += [
+    "Math.cpp",
     "RegExp.cpp",
 ]
 

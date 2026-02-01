@@ -11,12 +11,12 @@
 #include "mozilla/SIMD.h"       
 
 #include "jslibmath.h"  
-#include "jsmath.h"     
-                        
 
 #include "builtin/Array.h"      
 #include "builtin/MapObject.h"  
                                 
+#include "builtin/Math.h"  
+                           
 #include "builtin/Number.h"   
                               
 #include "builtin/Object.h"   

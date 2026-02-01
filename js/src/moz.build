@@ -277,11 +277,6 @@ UNIFIED_SOURCES += [
 ]
 
 
-
-SOURCES += [
-    "jsmath.cpp",
-]
-
 if CONFIG["MOZ_INSTRUMENTS"]:
     OS_LIBS += ["-framework CoreFoundation"]
     SOURCES += [

@@ -18,7 +18,7 @@
 
 #include "wasm/WasmValue.h"
 
-#include "jsmath.h"
+#include "builtin/Math.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
 #include "js/Value.h"
