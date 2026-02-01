@@ -4110,6 +4110,11 @@ class AboutTranslationsTestUtils {
     
 
 
+    static EnabledStateChanged = "AboutTranslationsTest:EnabledStateChanged";
+
+    
+
+
 
 
     static DetectedLanguageUpdated =
@@ -4217,8 +4222,8 @@ class AboutTranslationsTestUtils {
 
 
 
-    static TextAreaHeightsChanged =
-      "AboutTranslationsTest:TextAreaHeightsChanged";
+    static SectionHeightsChanged =
+      "AboutTranslationsTest:SectionHeightsChanged";
 
     
 
