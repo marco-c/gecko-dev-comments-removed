@@ -1219,7 +1219,7 @@ class MockRuntime {
       
       const options = {
         transportMethod:
-            vrMojom.XRPresentationTransportMethod.SUBMIT_AS_MAILBOX_HOLDER,
+            vrMojom.XRPresentationTransportMethod.SUBMIT_AS_TEST,
         waitForTransferNotification: true,
         waitForRenderNotification: true,
         waitForGpuFence: false,
