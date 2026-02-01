@@ -50,7 +50,7 @@ Maybe<ScalarID> ScalarIdForMetric(uint32_t aId) {
     case 26: { 
       return Some(ScalarID::TELEMETRY_TEST_MIRROR_FOR_QUANTITY);
     }
-    case 29: { 
+    case 30: { 
       return Some(ScalarID::SOME_OTHER_STRING_SCALAR);
     }
     default: {
