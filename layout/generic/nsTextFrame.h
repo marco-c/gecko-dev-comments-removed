@@ -1025,9 +1025,9 @@ class nsTextFrame : public nsIFrame {
   
   
   
-  mozilla::Span<const mozilla::StyleSimpleShadow> GetSelectionTextShadow(
+  void GetSelectionTextShadow(
       SelectionType aSelectionType, nsTextPaintStyle& aTextPaintStyle,
-      nsAtom* aHighlightName = nullptr);
+      mozilla::Span<const mozilla::StyleSimpleShadow>* aShadows);
 
   
 
