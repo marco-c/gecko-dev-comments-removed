@@ -206,6 +206,14 @@ class RTC_EXPORT Candidate {
 
   std::string ToSensitiveString() const { return ToStringInternal(true); }
 
+  
+  
+  
+  
+  
+  
+  std::string ToCandidateAttribute(bool include_ufrag) const;
+
   uint32_t GetPriority(uint32_t type_preference,
                        int network_adapter_preference,
                        int relay_preference,
