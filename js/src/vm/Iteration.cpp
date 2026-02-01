@@ -44,6 +44,7 @@
 #include "gc/StoreBuffer-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/PlainObject-inl.h"  
+#include "vm/Shape-inl.h"        
 
 using namespace js;
 
@@ -1808,10 +1809,9 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
   }
 
   
-  Rooted<JSLinearString*> idStr(cx);
   IteratorProperty* cursor = ni->nextProperty();
   for (; cursor < ni->propertiesEnd(); ++cursor) {
-    idStr = cursor->asString();
+    JSLinearString* idStr = cursor->asString();
     
     if (idStr->isAtom() && str->isAtom()) {
       if (idStr != str) {
@@ -1825,27 +1825,25 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
 
     
     
-    RootedObject proto(cx);
-    if (!GetPrototype(cx, obj, &proto)) {
-      return false;
-    }
-    if (proto) {
-      RootedId id(cx);
-      RootedValue idv(cx, StringValue(idStr));
-      if (!PrimitiveValueToId<CanGC>(cx, idv, &id)) {
-        return false;
-      }
-
-      Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
-      RootedObject holder(cx);
-      if (!GetPropertyDescriptor(cx, proto, id, &desc, &holder)) {
-        return false;
-      }
-
-      
-      
-      if (desc.isSome() && desc->enumerable()) {
-        return true;
+    if (obj->hasStaticPrototype()) {
+      JSObject* proto = obj->staticPrototype();
+      if (proto) {
+        JSAtom* atom = AtomizeString(cx, str);
+        if (!atom) {
+          return false;
+        }
+        PropertyKey key = AtomToId(atom);
+        NativeObject* holder = nullptr;
+        PropertyResult prop;
+        if (LookupPropertyPure(cx, proto, key, &holder, &prop) &&
+            prop.isFound()) {
+          
+          
+          JS::PropertyAttributes attrs = GetPropertyAttributes(holder, prop);
+          if (attrs.enumerable()) {
+            return true;
+          }
+        }
       }
     }
 
