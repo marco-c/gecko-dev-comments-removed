@@ -628,9 +628,14 @@ bool GLContext::InitImpl() {
 
   
 
-  const char* glVendorString = (const char*)fGetString(LOCAL_GL_VENDOR);
-  const char* glRendererString = (const char*)fGetString(LOCAL_GL_RENDERER);
+  const char* glVendorString =
+      reinterpret_cast<const char*>(fGetString(LOCAL_GL_VENDOR));
+  const char* glRendererString =
+      reinterpret_cast<const char*>(fGetString(LOCAL_GL_RENDERER));
   if (!glVendorString || !glRendererString) return false;
+
+  mVendorString.Assign(glVendorString);
+  mRendererString.Assign(glRendererString);
 
   
   
@@ -679,7 +684,9 @@ bool GLContext::InitImpl() {
   }
 
   {
-    const auto versionStr = (const char*)fGetString(LOCAL_GL_VERSION);
+    const auto versionStr =
+        reinterpret_cast<const char*>(fGetString(LOCAL_GL_VERSION));
+    mVersionString.Assign(versionStr);
     if (strstr(versionStr, "Mesa")) {
       mIsMesa = true;
     }
@@ -1674,30 +1681,33 @@ void GLContext::DebugCallback(GLenum source, GLenum type, GLuint id,
 void GLContext::InitExtensions() {
   MOZ_GL_ASSERT(this, IsCurrent());
 
-  std::vector<nsCString> driverExtensionList;
-
   [&]() {
     if (mSymbols.fGetStringi) {
       GLuint count = 0;
       if (GetPotentialInteger(LOCAL_GL_NUM_EXTENSIONS, (GLint*)&count)) {
         for (GLuint i = 0; i < count; i++) {
           
-          const char* rawExt = (const char*)fGetStringi(LOCAL_GL_EXTENSIONS, i);
+          const char* rawExt = reinterpret_cast<const char*>(
+              fGetStringi(LOCAL_GL_EXTENSIONS, i));
 
           
           
           
           
-          driverExtensionList.push_back(nsCString(rawExt));
+          mExtensionStrings.AppendElement(nsCString(rawExt));
         }
         return;
       }
     }
 
-    const char* rawExts = (const char*)fGetString(LOCAL_GL_EXTENSIONS);
+    const char* rawExts =
+        reinterpret_cast<const char*>(fGetString(LOCAL_GL_EXTENSIONS));
     if (rawExts) {
-      nsDependentCString exts(rawExts);
-      SplitByChar(exts, ' ', &driverExtensionList);
+      for (auto extension : nsDependentCString(rawExts).Split(' ')) {
+        if (!extension.IsEmpty()) {
+          mExtensionStrings.AppendElement(extension);
+        }
+      }
     }
   }();
   const auto err = fGetError();
@@ -1706,10 +1716,10 @@ void GLContext::InitExtensions() {
   const bool shouldDumpExts = ShouldDumpExts();
   if (shouldDumpExts) {
     printf_stderr("%i GL driver extensions: (*: recognized)\n",
-                  (uint32_t)driverExtensionList.size());
+                  (uint32_t)mExtensionStrings.Length());
   }
 
-  MarkBitfieldByStrings(driverExtensionList, shouldDumpExts, sExtensionNames,
+  MarkBitfieldByStrings(mExtensionStrings, shouldDumpExts, sExtensionNames,
                         &mAvailableExtensions);
 
   if (WorkAroundDriverBugs()) {
