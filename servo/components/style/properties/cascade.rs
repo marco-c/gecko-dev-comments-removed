@@ -459,6 +459,18 @@ fn tweak_when_ignoring_colors(
         }
     }
 
+    
+    
+    
+    if context
+        .builder
+        .pseudo
+        .map_or(false, |p| p.is_color_swatch())
+        && longhand_id == LonghandId::BackgroundColor
+    {
+        return;
+    }
+
     fn alpha_channel(color: &Color, context: &computed::Context) -> f32 {
         
         color
