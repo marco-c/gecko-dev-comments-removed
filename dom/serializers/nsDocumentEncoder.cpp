@@ -1625,15 +1625,16 @@ class nsHTMLCopyEncoder final : public nsDocumentEncoder {
   NS_IMETHOD EncodeToString(nsAString& aOutputString) override;
 
  protected:
-  enum Endpoint { kStart, kEnd };
-
   nsresult PromoteRange(nsRange* inRange);
   nsresult PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
                                 uint32_t* aIOStartOffset,
                                 uint32_t* aIOEndOffset);
-  nsresult GetPromotedPoint(const Endpoint aWhere, nsINode* const aNode,
-                            const uint32_t aOffset, nsCOMPtr<nsINode>* aOutNode,
-                            uint32_t* aOutOffset, nsINode* const aCommon);
+  nsresult GetPromotedStartPoint(nsINode* const aNode, const uint32_t aOffset,
+                                 nsCOMPtr<nsINode>* aOutNode,
+                                 uint32_t* aOutOffset, nsINode* const aCommon);
+  nsresult GetPromotedEndPoint(nsINode* const aNode, const uint32_t aOffset,
+                               nsCOMPtr<nsINode>* aOutNode,
+                               uint32_t* aOutOffset, nsINode* const aCommon);
   static nsCOMPtr<nsINode> GetChildAt(nsINode* aParent, const uint32_t aOffset);
   static bool IsMozBR(Element* aNode);
   nsresult GetNodeLocation(nsINode* const aInChild,
@@ -1885,17 +1886,17 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
   uint32_t opStartOffset, opEndOffset;
 
   
-  nsresult rv =
-      GetPromotedPoint(kStart, startNode, startOffset, address_of(opStartNode),
-                       &opStartOffset, common);
+  nsresult rv = GetPromotedStartPoint(
+      startNode, startOffset, address_of(opStartNode), &opStartOffset, common);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = GetPromotedPoint(kEnd, endNode, endOffset, address_of(opEndNode),
-                        &opEndOffset, common);
+  rv = GetPromotedEndPoint(endNode, endOffset, address_of(opEndNode),
+                           &opEndOffset, common);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   
-  if (opStartNode == common && opEndNode == common) {
+  if (StaticPrefs::dom_serializer_includeCommonAncestor_enabled() &&
+      opStartNode == common && opEndNode == common) {
     rv = PromoteAncestorChain(address_of(opStartNode), &opStartOffset,
                               &opEndOffset);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1949,12 +1950,12 @@ nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
     } else {
       
       
-      rv = GetPromotedPoint(kStart, *ioNode, *aIOStartOffset,
-                            address_of(frontNode), &frontOffset, parent);
+      rv = GetPromotedStartPoint(*ioNode, *aIOStartOffset,
+                                 address_of(frontNode), &frontOffset, parent);
       NS_ENSURE_SUCCESS(rv, rv);
       
-      rv = GetPromotedPoint(kEnd, *ioNode, *aIOEndOffset, address_of(endNode),
-                            &endOffset, parent);
+      rv = GetPromotedEndPoint(*ioNode, *aIOEndOffset, address_of(endNode),
+                               &endOffset, parent);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -1972,9 +1973,11 @@ nsresult nsHTMLCopyEncoder::PromoteAncestorChain(nsCOMPtr<nsINode>* ioNode,
   return rv;
 }
 
-nsresult nsHTMLCopyEncoder::GetPromotedPoint(
-    const Endpoint aWhere, nsINode* const aNode, const uint32_t aOffset,
-    nsCOMPtr<nsINode>* aOutNode, uint32_t* aOutOffset, nsINode* const aCommon) {
+nsresult nsHTMLCopyEncoder::GetPromotedStartPoint(nsINode* const aNode,
+                                                  const uint32_t aOffset,
+                                                  nsCOMPtr<nsINode>* aOutNode,
+                                                  uint32_t* aOutOffset,
+                                                  nsINode* const aCommon) {
   MOZ_ASSERT(aOutNode);
   MOZ_ASSERT(aOutOffset);
 
@@ -1993,175 +1996,195 @@ nsresult nsHTMLCopyEncoder::GetPromotedPoint(
   Maybe<uint32_t> offsetInParent;
   bool bResetPromotion = false;
 
-  if (aWhere == kStart) {
+  
+  if (auto nodeAsText = aNode->GetAsText()) {
     
-    if (auto nodeAsText = aNode->GetAsText()) {
-      
-      if (aOffset > 0) {
-        
-        
-        
-        if (!nodeAsText->TextStartsWithOnlyWhitespace(aOffset)) {
-          return NS_OK;
-        }
-        bResetPromotion = true;
-      }
-      
-      rv = GetNodeLocation(aNode, address_of(parent), &offsetInParent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      node = aNode;
-    } else {
-      node = GetChildAt(aNode, aOffset);
-      if (node) {
-        parent = aNode;
-        offsetInParent = Some(aOffset);
-      } else {
-        
-        
-        
-        node = aNode;
-      }
-    }
-    MOZ_ASSERT(node);
-
-    
-    
-    
-    if (!IsRoot(node) && parent != aCommon) {
+    if (aOffset > 0) {
       
       
       
-      
-      rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      
-      if (!offsetInParent) {
+      if (!nodeAsText->TextStartsWithOnlyWhitespace(aOffset)) {
         return NS_OK;
       }
+      bResetPromotion = true;
+    }
+    
+    rv = GetNodeLocation(aNode, address_of(parent), &offsetInParent);
+    NS_ENSURE_SUCCESS(rv, rv);
+    node = aNode;
+  } else {
+    node = GetChildAt(aNode, aOffset);
+    if (node) {
+      parent = aNode;
+      offsetInParent = Some(aOffset);
+    } else {
+      
+      
+      
+      node = aNode;
+    }
+  }
+  MOZ_ASSERT(node);
 
-      while (IsFirstNode(node) && !IsRoot(parent) && parent != aCommon) {
-        if (bResetPromotion) {
-          nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(parent);
-          if (content && content->IsHTMLElement()) {
-            if (nsHTMLElement::IsBlock(
-                    nsHTMLTags::AtomTagToId(content->NodeInfo()->NameAtom()))) {
-              bResetPromotion = false;
-            }
-          }
-        }
+  
+  
+  
+  if (parent == aCommon || IsRoot(node)) {
+    return rv;
+  }
+  
+  
+  
+  
+  rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  if (!offsetInParent) {
+    return NS_OK;
+  }
 
-        node = parent;
-        rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
-        NS_ENSURE_SUCCESS(rv, rv);
-        
-        if (!offsetInParent) {
-          
-          parent = node;
-          offsetInParent = Some(0);
-          break;
+  while (IsFirstNode(node) && !IsRoot(parent) && parent != aCommon) {
+    if (bResetPromotion) {
+      nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(parent);
+      if (content && content->IsHTMLElement()) {
+        if (nsHTMLElement::IsBlock(
+                nsHTMLTags::AtomTagToId(content->NodeInfo()->NameAtom()))) {
+          bResetPromotion = false;
         }
       }
+    }
 
-      if (bResetPromotion) {
-        *aOutNode = aNode;
-        *aOutOffset = aOffset;
-      } else {
-        *aOutNode = parent;
-        *aOutOffset = *offsetInParent;
-      }
-      return rv;
+    node = parent;
+    rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    if (!offsetInParent) {
+      
+      parent = node;
+      offsetInParent = Some(0);
+      break;
     }
   }
 
-  if (aWhere == kEnd) {
-    
-    if (auto nodeAsText = aNode->GetAsText()) {
-      
-      uint32_t len = aNode->Length();
-      if (aOffset < len) {
-        
-        
-        
-        if (!nodeAsText->TextEndsWithOnlyWhitespace(aOffset)) {
-          return NS_OK;
-        }
-        bResetPromotion = true;
-      }
-      rv = GetNodeLocation(aNode, address_of(parent), &offsetInParent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      node = aNode;
-    } else {
-      
-      node = GetChildAt(aNode, aOffset ? aOffset - 1 : aOffset);
-      if (node) {
-        parent = aNode;
-        offsetInParent = Some(aOffset);
-      } else {
-        
-        
-        
-        node = aNode;
-      }
-    }
-    MOZ_ASSERT(node);
+  if (bResetPromotion) {
+    *aOutNode = aNode;
+    *aOutOffset = aOffset;
+  } else {
+    *aOutNode = parent;
+    *aOutOffset = *offsetInParent;
+  }
+  return rv;
+}
 
+nsresult nsHTMLCopyEncoder::GetPromotedEndPoint(nsINode* const aNode,
+                                                const uint32_t aOffset,
+                                                nsCOMPtr<nsINode>* aOutNode,
+                                                uint32_t* aOutOffset,
+                                                nsINode* const aCommon) {
+  MOZ_ASSERT(aOutNode);
+  MOZ_ASSERT(aOutOffset);
+
+  
+  *aOutNode = aNode;
+  *aOutOffset = aOffset;
+
+  if (aCommon == aNode) {
+    return NS_OK;
+  }
+
+  nsresult rv = NS_OK;
+  
+  nsCOMPtr<nsINode> node;
+  nsCOMPtr<nsINode> parent;
+  Maybe<uint32_t> offsetInParent;
+  bool bResetPromotion = false;
+
+  
+  if (auto nodeAsText = aNode->GetAsText()) {
     
-    
-    
-    if (!IsRoot(node) && parent != aCommon) {
+    uint32_t len = aNode->Length();
+    if (aOffset < len) {
       
       
       
-      
-      rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
-      NS_ENSURE_SUCCESS(rv, rv);
-      
-      if (!offsetInParent) {
+      if (!nodeAsText->TextEndsWithOnlyWhitespace(aOffset)) {
         return NS_OK;
       }
+      bResetPromotion = true;
+    }
+    rv = GetNodeLocation(aNode, address_of(parent), &offsetInParent);
+    NS_ENSURE_SUCCESS(rv, rv);
+    node = aNode;
+  } else {
+    
+    node = GetChildAt(aNode, aOffset ? aOffset - 1 : aOffset);
+    if (node) {
+      parent = aNode;
+      offsetInParent = Some(aOffset);
+    } else {
+      
+      
+      
+      node = aNode;
+    }
+  }
+  MOZ_ASSERT(node);
 
-      while (IsLastNode(node) && !IsRoot(parent) && parent != aCommon) {
-        if (bResetPromotion) {
-          nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(parent);
-          if (content && content->IsHTMLElement()) {
-            if (nsHTMLElement::IsBlock(
-                    nsHTMLTags::AtomTagToId(content->NodeInfo()->NameAtom()))) {
-              bResetPromotion = false;
-            }
-          }
-        }
+  
+  
+  
+  if (parent == aCommon || IsRoot(node)) {
+    return rv;
+  }
+  
+  
+  
+  
+  rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  if (!offsetInParent) {
+    return NS_OK;
+  }
 
-        node = parent;
-        rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        
-        
-        const bool isGeneratedContent =
-            !offsetInParent &&
-            ShadowDOMSelectionHelpers::GetShadowRoot(
-                parent, GetAllowRangeCrossShadowBoundary(mFlags)) != node;
-        
-        if (isGeneratedContent) {
-          
-          parent = node;
-          offsetInParent = Some(0);
-          break;
+  while (IsLastNode(node) && !IsRoot(parent) && parent != aCommon) {
+    if (bResetPromotion) {
+      nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(parent);
+      if (content && content->IsHTMLElement()) {
+        if (nsHTMLElement::IsBlock(
+                nsHTMLTags::AtomTagToId(content->NodeInfo()->NameAtom()))) {
+          bResetPromotion = false;
         }
       }
+    }
 
-      if (bResetPromotion) {
-        *aOutNode = aNode;
-        *aOutOffset = aOffset;
-      } else {
-        *aOutNode = parent;
-        
-        *aOutOffset = *offsetInParent + 1;
-      }
-      return rv;
+    node = parent;
+    rv = GetNodeLocation(node, address_of(parent), &offsetInParent);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    const bool isGeneratedContent =
+        !offsetInParent &&
+        ShadowDOMSelectionHelpers::GetShadowRoot(
+            parent, GetAllowRangeCrossShadowBoundary(mFlags)) != node;
+    
+    if (isGeneratedContent) {
+      
+      parent = node;
+      offsetInParent = Some(0);
+      break;
     }
   }
 
+  if (bResetPromotion) {
+    *aOutNode = aNode;
+    *aOutOffset = aOffset;
+  } else {
+    *aOutNode = parent;
+    
+    *aOutOffset = *offsetInParent + 1;
+  }
   return rv;
 }
 
