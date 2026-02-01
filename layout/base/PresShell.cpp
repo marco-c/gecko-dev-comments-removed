@@ -6914,7 +6914,10 @@ void PresShell::RecordPointerLocation(WidgetGUIEvent* aEvent) {
       
       
       
-      if (aEvent->mClass == eDragEventClass) {
+      
+      
+      if (aEvent->mMessage == eMouseEnterIntoWidget ||
+          aEvent->mClass == eDragEventClass) {
         StorePointerLocation(mouseEvent);
       }
       break;
