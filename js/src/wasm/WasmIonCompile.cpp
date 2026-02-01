@@ -1543,9 +1543,13 @@ class FunctionCompiler {
   
   
   void foldConstantPointer(MemoryAccessDesc* access, MDefinition** base) {
+    PageSize pageSize = codeMeta().memories[access->memoryIndex()].pageSize();
+    if (pageSize != PageSize::Standard) {
+      return;
+    }
+
     uint64_t offsetGuardLimit = GetMaxOffsetGuardLimit(
-        codeMeta().hugeMemoryEnabled(access->memoryIndex()),
-        codeMeta().memories[access->memoryIndex()].pageSize());
+        codeMeta().hugeMemoryEnabled(access->memoryIndex()), pageSize);
 
     if ((*base)->isConstant()) {
       uint64_t basePtr = 0;
