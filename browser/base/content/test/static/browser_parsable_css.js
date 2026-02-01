@@ -146,6 +146,10 @@ let propNameAllowlist = [
   { propName: "--panel-shadow-margin", isFromDevTools: true },
 
   
+  
+  { propName: /^--content-search-handoff-ui-/, isFromDevTools: false },
+
+  
   {
     propName: "--scale-round-x",
     isFromDevTools: false,
@@ -198,7 +202,7 @@ let propNameAllowlist = [
 
   
   
-  { propName: /--color-[a-z]+(-alpha)?-\d+/, isFromDevTools: false },
+  { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
 ];
 
 
