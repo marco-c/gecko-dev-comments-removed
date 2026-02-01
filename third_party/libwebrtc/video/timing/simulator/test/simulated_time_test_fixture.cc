@@ -8,7 +8,7 @@
 
 
 
-#include "video/timing/simulator/test_utils.h"
+#include "video/timing/simulator/test/simulated_time_test_fixture.h"
 
 #include <utility>
 
