@@ -15,7 +15,6 @@
 
 
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <optional>
 
@@ -27,48 +26,6 @@
 #include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
-
-
-
-
-
-
-
-
-
-
-
-
-
-constexpr uint16_t kMaxSctpStreams = 1024;
-constexpr uint16_t kMaxSctpSid = kMaxSctpStreams - 1;
-constexpr uint16_t kMinSctpSid = 0;
-
-constexpr uint16_t kSpecMaxSctpSid = 65535;
-
-
-
-
-
-const int kSctpDefaultPort = 5000;
-
-
-
-enum class SctpErrorCauseCode : uint16_t {
-  kInvalidStreamIdentifier = 1,
-  kMissingMandatoryParameter = 2,
-  kStaleCookieError = 3,
-  kOutOfResource = 4,
-  kUnresolvableAddress = 5,
-  kUnrecognizedChunkType = 6,
-  kInvalidMandatoryParameter = 7,
-  kUnrecognizedParameters = 8,
-  kNoUserData = 9,
-  kCookieReceivedWhileShuttingDown = 10,
-  kRestartWithNewAddresses = 11,
-  kUserInitiatedAbort = 12,
-  kProtocolViolation = 13,
-};
 
 
 
@@ -150,18 +107,5 @@ class SctpTransportInternal {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::kMaxSctpSid;
-using ::webrtc::kMaxSctpStreams;
-using ::webrtc::kMinSctpSid;
-using ::webrtc::kSctpDefaultPort;
-using ::webrtc::kSpecMaxSctpSid;
-using ::webrtc::SctpErrorCauseCode;
-using ::webrtc::SctpTransportInternal;
-}  
-#endif  
 
 #endif  

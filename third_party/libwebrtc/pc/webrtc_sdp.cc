@@ -36,13 +36,12 @@
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_direction.h"
+#include "api/sctp_transport_interface.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "media/base/rid_description.h"
 #include "media/base/rtp_utils.h"
 #include "media/base/stream_params.h"
-#include "media/sctp/sctp_transport_internal.h"
-#include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/transport_info.h"
@@ -2446,7 +2445,7 @@ bool ParseContent(absl::string_view message,
 
   
   
-  Candidates candidates_orig;
+  std::vector<Candidate> candidates_orig;
   std::string mline_id;
   
   StreamParamsVec tracks;
