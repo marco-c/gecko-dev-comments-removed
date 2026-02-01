@@ -691,21 +691,23 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
   if (aRoot && aRoot->IsElement()) {
     if ((rootFrame = aRoot->AsElement()->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
+      nsIFrame* containingBlock =
+          nsLayoutUtils::GetContainingBlockForClientRect(rootFrame);
       if (ScrollContainerFrame* scrollContainerFrame =
               do_QueryFrame(rootFrame)) {
         
         
-        rootRectRelativeToRootFrame =
+        rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
+            rootFrame,
             scrollContainerFrame
-                ->GetScrollPortRectAccountingForDynamicToolbar();
+                ->GetScrollPortRectAccountingForDynamicToolbar(),
+            containingBlock);
       } else {
         
-        rootRectRelativeToRootFrame = rootFrame->GetRectRelativeToSelf();
+        rootRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+            rootFrame, containingBlock,
+            nsLayoutUtils::GetAllInFlowRectsFlag::AccountForTransforms);
       }
-      nsIFrame* containingBlock =
-          nsLayoutUtils::GetContainingBlockForClientRect(rootFrame);
-      rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
-          rootFrame, rootRectRelativeToRootFrame, containingBlock);
     }
   } else {
     MOZ_ASSERT(!aRoot || aRoot->IsDocument());
