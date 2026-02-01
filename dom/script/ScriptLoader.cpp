@@ -2899,7 +2899,8 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   
   
   
-  size_t expectedDiskCacheSize = sourceLength * 3;
+  
+  size_t expectedDiskCacheSize = sourceLength * 5;
   int32_t diskCacheMaxSizeInKb =
       StaticPrefs::browser_cache_disk_max_entry_size();
   
