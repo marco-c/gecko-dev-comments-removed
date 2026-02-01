@@ -5099,8 +5099,8 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     
     
     if (pc_->trials().IsEnabled("WebRTC-RFC8888CongestionControlFeedback")) {
-      if (type == SdpType::kAnswer && local_description() &&
-          remote_description()) {
+      if ((type == SdpType::kAnswer || type == SdpType::kPrAnswer) &&
+          local_description() && remote_description()) {
         std::optional<RtcpFeedbackType> remote_preferred_rtcp_cc_ack_type;
         
         for (const auto& content :
