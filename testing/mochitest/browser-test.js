@@ -824,15 +824,6 @@ Tester.prototype = {
 
   async notifyProfilerOfTestEnd() {
     
-    let name = this.currentTest.path;
-    name = name.slice(name.lastIndexOf("/") + 1);
-    ChromeUtils.addProfilerMarker(
-      "browser-test",
-      { category: "Test", startTime: this.lastStartTimestamp },
-      name
-    );
-
-    
     if (this.currentTest.failCount) {
       
       
@@ -841,6 +832,8 @@ Tester.prototype = {
         !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
         Services.profiler.IsActive()
       ) {
+        let name = this.currentTest.path;
+        name = name.slice(name.lastIndexOf("/") + 1);
         let filename = `profile_${name}.json`;
         let path = Services.env.get("MOZ_UPLOAD_DIR");
         let profilePath = PathUtils.join(path, filename);
