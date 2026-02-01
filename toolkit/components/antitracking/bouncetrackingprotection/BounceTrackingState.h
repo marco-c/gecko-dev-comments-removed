@@ -14,6 +14,7 @@
 #include "nsStringFwd.h"
 #include "nsIWebProgressListener.h"
 #include "nsWeakReference.h"
+#include "fmt/format.h"
 
 class nsIChannel;
 class nsITimer;
@@ -113,9 +114,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   const OriginAttributes& OriginAttributesRef();
 
   
-  nsCString Describe();
-
-  
   
   [[nodiscard]] nsresult OnStorageAccess(nsIPrincipal* aPrincipal);
 
@@ -170,8 +168,30 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   [[nodiscard]] nsresult OnServiceWorkerActivation();
+
+  friend struct fmt::formatter<BounceTrackingState>;
 };
 
 }  
+
+template <>
+struct fmt::formatter<mozilla::BounceTrackingState>
+    : fmt::formatter<std::string_view> {
+  auto format(const mozilla::BounceTrackingState& aState,
+              fmt::format_context& aCtx) const {
+    nsAutoCString oaSuffix;
+    aState.mOriginAttributes.CreateSuffix(oaSuffix);
+
+    auto out = aCtx.out();
+    out = fmt::format_to(out, "{{ mBounceTrackingRecord: ");
+    if (aState.mBounceTrackingRecord) {
+      out = fmt::format_to(out, "{}", *aState.mBounceTrackingRecord);
+    } else {
+      out = fmt::format_to(out, "null");
+    }
+    return fmt::format_to(out, ", mOriginAttributes: {}, mBrowserId: {} }}",
+                          oaSuffix, aState.mBrowserId);
+  }
+};
 
 #endif

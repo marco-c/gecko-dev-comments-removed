@@ -69,6 +69,16 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   
   enum class EntryType : uint8_t { BounceTracker = 0, UserActivation = 1 };
 
+  static const char* EntryTypeToString(EntryType aType) {
+    switch (aType) {
+      case EntryType::BounceTracker:
+        return "BounceTracker";
+      case EntryType::UserActivation:
+        return "UserActivation";
+    }
+    return "Unknown";
+  }
+
   
   [[nodiscard]] nsresult ClearByType(
       BounceTrackingProtectionStorage::EntryType aType);
@@ -261,6 +271,10 @@ class OriginAttrsPatternMatchOASuffixSQLFunction final
 
   OriginAttributesPattern mPattern;
 };
+
+inline const char* format_as(BounceTrackingProtectionStorage::EntryType aType) {
+  return BounceTrackingProtectionStorage::EntryTypeToString(aType);
+}
 
 }  
 
