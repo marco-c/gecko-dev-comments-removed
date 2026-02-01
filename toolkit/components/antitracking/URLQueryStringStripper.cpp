@@ -235,6 +235,7 @@ nsresult URLQueryStringStripper::ManageObservers() {
     
     if (!StaticPrefs::privacy_query_stripping_strip_on_share_enabled()) {
       
+      mStripOnShareGlobal.reset();
       mStripOnShareMap.Clear();
       rv = mListService->UnregisterStripOnShareObserver(this);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -361,10 +362,19 @@ URLQueryStringStripper::OnStripOnShareUpdate(const nsTArray<nsString>& aArgs,
       
       continue;
     }
-    for (const auto& topLevelSite : rule.mTopLevelSites) {
-      mStripOnShareMap.InsertOrUpdate(topLevelSite, rule);
+    for (const auto& origin : rule.mOrigins) {
+      if (rule.mIsGlobal) {
+        
+        continue;
+      }
+
+      mStripOnShareMap.InsertOrUpdate(origin, rule);
+    }
+    if (rule.mIsGlobal) {
+      mStripOnShareGlobal = Some(rule);
     }
   }
+
   return NS_OK;
 }
 
@@ -396,19 +406,19 @@ bool URLQueryStringStripper::ShouldStripParam(const nsACString& aHost,
   ToLowerCase(aName, lowerCaseName);
 
   
-  dom::StripRule globalRule;
-  bool keyExists = mStripOnShareMap.Get("*"_ns, &globalRule);
-  
-  MOZ_ASSERT(keyExists);
+  MOZ_ASSERT(mStripOnShareGlobal.isSome());
+  const dom::StripRule& globalRule = mStripOnShareGlobal.ref();
 
   
-  for (const auto& param : globalRule.mQueryParams) {
-    if (param == lowerCaseName) {
-      return true;
+  if (mStripOnShareGlobal.isSome()) {
+    for (const auto& param : globalRule.mQueryParams) {
+      if (param == lowerCaseName) {
+        return true;
+      }
     }
   }
-
   
+  bool keyExists;
   dom::StripRule siteSpecificRule;
   keyExists = mStripOnShareMap.Get(aHost, &siteSpecificRule);
   if (keyExists) {
