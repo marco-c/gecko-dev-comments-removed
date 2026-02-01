@@ -6416,8 +6416,13 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     uint32_t expTime = 0;
     (void)GetCacheTokenExpirationTime(&expTime);
 
-    dicts->AddEntry(mURI, key, matchVal, matchDestItems, matchIdVal, Some(hash),
-                    aModified, expTime, getter_AddRefs(mDictSaving));
+    nsresult addResult = dicts->AddEntry(mURI, key, matchVal, matchDestItems,
+                                         matchIdVal, Some(hash), aModified,
+                                         expTime, getter_AddRefs(mDictSaving));
+    if (NS_FAILED(addResult)) {
+      LOG_DICTIONARIES(("AddEntry failed (origin may be disabled)"));
+      return false;
+    }
     
     
     
