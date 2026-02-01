@@ -176,11 +176,6 @@ class XREAppData {
   
 
 
-  CharPtr sourceRevision;
-
-  
-
-
   CharPtr updateURL;
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
@@ -229,7 +224,6 @@ struct StaticXREAppData {
   const char* profile;
   const char* UAName;
   const char* sourceURL;
-  const char* sourceRevision;
   const char* updateURL;
 };
 
