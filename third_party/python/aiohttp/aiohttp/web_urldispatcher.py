@@ -7,6 +7,7 @@ import html
 import inspect
 import keyword
 import os
+import platform
 import re
 import sys
 import warnings
@@ -94,6 +95,7 @@ ROUTE_RE: Final[Pattern[str]] = re.compile(
 )
 PATH_SEP: Final[str] = re.escape("/")
 
+IS_WINDOWS: Final[bool] = platform.system() == "Windows"
 
 _ExpectHandler = Callable[[Request], Awaitable[Optional[StreamResponse]]]
 _Resolve = Tuple[Optional["UrlMappingMatchInfo"], Set[str]]
@@ -194,6 +196,8 @@ class AbstractRoute(abc.ABC):
         ):
             pass
         elif inspect.isgeneratorfunction(handler):
+            if TYPE_CHECKING:
+                assert False
             warnings.warn(
                 "Bare generators are deprecated, use @coroutine wrapper",
                 DeprecationWarning,
@@ -649,7 +653,12 @@ class StaticResource(PrefixResource):
     async def resolve(self, request: Request) -> _Resolve:
         path = request.rel_url.path_safe
         method = request.method
-        if not path.startswith(self._prefix2) and path != self._prefix:
+        
+        
+        norm_path = os.path.normpath(path)
+        if IS_WINDOWS:
+            norm_path = norm_path.replace("\\", "/")
+        if not norm_path.startswith(self._prefix2) and norm_path != self._prefix:
             return None, set()
 
         allowed_methods = self._allowed_methods
@@ -666,14 +675,7 @@ class StaticResource(PrefixResource):
         return iter(self._routes.values())
 
     async def _handle(self, request: Request) -> StreamResponse:
-        rel_url = request.match_info["filename"]
-        filename = Path(rel_url)
-        if filename.anchor:
-            
-            
-            
-            raise HTTPForbidden()
-
+        filename = request.match_info["filename"]
         unresolved_path = self._directory.joinpath(filename)
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
@@ -978,7 +980,7 @@ class View(AbstractView):
         assert isinstance(ret, StreamResponse)
         return ret
 
-    def __await__(self) -> Generator[Any, None, StreamResponse]:
+    def __await__(self) -> Generator[None, None, StreamResponse]:
         return self._iter().__await__()
 
     def _raise_allowed_methods(self) -> NoReturn:
@@ -1037,6 +1039,21 @@ class UrlDispatcher(AbstractRouter, Mapping[str, AbstractResource]):
         
         
         
+        
+        
+        
+        for resource in self._matched_sub_app_resources:
+            match_dict, allowed = await resource.resolve(request)
+            if match_dict is not None:
+                return match_dict
+            else:
+                allowed_methods |= allowed
+
+        
+        
+        
+        
+        
         url_part = request.rel_url.path_safe
         while url_part:
             for candidate in resource_index.get(url_part, ()):
@@ -1048,21 +1065,6 @@ class UrlDispatcher(AbstractRouter, Mapping[str, AbstractResource]):
             if url_part == "/":
                 break
             url_part = url_part.rpartition("/")[0] or "/"
-
-        
-        
-        
-        
-        
-        
-        
-        
-        for resource in self._matched_sub_app_resources:
-            match_dict, allowed = await resource.resolve(request)
-            if match_dict is not None:
-                return match_dict
-            else:
-                allowed_methods |= allowed
 
         if allowed_methods:
             return MatchInfoError(HTTPMethodNotAllowed(request.method, allowed_methods))

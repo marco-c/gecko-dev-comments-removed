@@ -54,8 +54,8 @@ __all__ = (
     "AsyncIterablePayload",
 )
 
-TOO_LARGE_BYTES_BODY: Final[int] = 2**20  # 1 MB
-READ_SIZE: Final[int] = 2**16  # 64 KB
+TOO_LARGE_BYTES_BODY: Final[int] = 2**20  
+READ_SIZE: Final[int] = 2**16  
 _CLOSE_FUTURES: Set[asyncio.Future[None]] = set()
 
 
@@ -118,13 +118,13 @@ class PayloadRegistry:
             for factory, type_ in self._first:
                 if isinstance(data, type_):
                     return factory(data, *args, **kwargs)
-        # Try the fast lookup first
+        
         if lookup_factory := self._normal_lookup.get(type(data)):
             return lookup_factory(data, *args, **kwargs)
-        # Bail early if its already a Payload
+        
         if isinstance(data, Payload):
             return data
-        # Fallback to the slower linear search
+        
         for factory, type_ in _CHAIN(self._normal, self._last):
             if isinstance(data, type_):
                 return factory(data, *args, **kwargs)
@@ -152,8 +152,8 @@ class Payload(ABC):
 
     _default_content_type: str = "application/octet-stream"
     _size: Optional[int] = None
-    _consumed: bool = False  # Default: payload has not been consumed yet
-    _autoclose: bool = False  # Default: assume resource needs explicit closing
+    _consumed: bool = False  
+    _autoclose: bool = False  
 
     def __init__(
         self,
@@ -280,8 +280,8 @@ class Payload(ABC):
 
         """
 
-    # write_with_length is new in aiohttp 3.12
-    # it should be overridden by subclasses
+    
+    
     async def write_with_length(
         self, writer: AbstractStreamWriter, content_length: Optional[int]
     ) -> None:
@@ -301,8 +301,8 @@ class Payload(ABC):
             should override this method to implement proper length-constrained writing.
 
         """
-        # Backwards compatibility for subclasses that don't override this method
-        # and for the default implementation
+        
+        
         await self.write(writer)
 
     async def as_bytes(self, encoding: str = "utf-8", errors: str = "strict") -> bytes:
@@ -312,7 +312,7 @@ class Payload(ABC):
         This is a convenience method that calls decode() and encodes the result
         to bytes using the specified encoding.
         """
-        # Use instance encoding if available, otherwise use parameter
+        
         actual_encoding = self._encoding or encoding
         return self.decode(actual_encoding, errors).encode(actual_encoding)
 
@@ -331,8 +331,8 @@ class Payload(ABC):
         certain payload types (e.g., IOBasePayload). Calling it outside an
         event loop may raise RuntimeError.
         """
-        # This is a no-op by default, but subclasses can override it
-        # for non-blocking cleanup operations.
+        
+        
 
     async def close(self) -> None:
         """
@@ -349,8 +349,8 @@ class Payload(ABC):
 
 class BytesPayload(Payload):
     _value: bytes
-    # _consumed = False (inherited) - Bytes are immutable and can be reused
-    _autoclose = True  # No file handle, just bytes in memory
+    
+    _autoclose = True  
 
     def __init__(
         self, value: Union[bytes, bytearray, memoryview], *args: Any, **kwargs: Any
@@ -465,9 +465,9 @@ class StringIOPayload(StringPayload):
 
 class IOBasePayload(Payload):
     _value: io.IOBase
-    # _consumed = False (inherited) - File can be re-read from the same position
+    
     _start_position: Optional[int] = None
-    # _autoclose = False (inherited) - Has file handle that needs explicit closing
+    
 
     def __init__(
         self, value: IO[Any], disposition: str = "attachment", *args: Any, **kwargs: Any
@@ -486,10 +486,14 @@ class IOBasePayload(Payload):
         if self._start_position is None:
             try:
                 self._start_position = self._value.tell()
-            except OSError:
-                self._consumed = True  # Cannot seek, mark as consumed
+            except (OSError, AttributeError):
+                self._consumed = True  
             return
-        self._value.seek(self._start_position)
+        try:
+            self._value.seek(self._start_position)
+        except (OSError, AttributeError):
+            
+            self._consumed = True
 
     def _read_and_available_len(
         self, remaining_content_len: Optional[int]
@@ -512,7 +516,7 @@ class IOBasePayload(Payload):
 
         """
         self._set_or_restore_start_position()
-        size = self.size  # Call size only once since it does I/O
+        size = self.size  
         return size, self._value.read(
             min(READ_SIZE, size or READ_SIZE, remaining_content_len or READ_SIZE)
         )
@@ -533,18 +537,33 @@ class IOBasePayload(Payload):
         the initial _read_and_available_len call has been made.
 
         """
-        return self._value.read(remaining_content_len or READ_SIZE)  # type: ignore[no-any-return]
+        return self._value.read(remaining_content_len or READ_SIZE)  
 
     @property
     def size(self) -> Optional[int]:
         """
         Size of the payload in bytes.
 
-        Returns the number of bytes remaining to be read from the file.
+        Returns the total size of the payload content from the initial position.
+        This ensures consistent Content-Length for requests, including 307/308 redirects
+        where the same payload instance is reused.
+
         Returns None if the size cannot be determined (e.g., for unseekable streams).
         """
         try:
-            return os.fstat(self._value.fileno()).st_size - self._value.tell()
+            
+            
+            
+            
+            
+            
+            
+            if self._start_position is None:
+                self._start_position = self._value.tell()
+
+            
+            
+            return os.fstat(self._value.fileno()).st_size - self._start_position
         except (AttributeError, OSError):
             return None
 
@@ -593,15 +612,15 @@ class IOBasePayload(Payload):
         total_written_len = 0
         remaining_content_len = content_length
 
-        # Get initial data and available length
+        
         available_len, chunk = await loop.run_in_executor(
             None, self._read_and_available_len, remaining_content_len
         )
-        # Process data chunks until done
+        
         while chunk:
             chunk_len = len(chunk)
 
-            # Write data with or without length constraint
+            
             if remaining_content_len is None:
                 await writer.write(chunk)
             else:
@@ -610,13 +629,13 @@ class IOBasePayload(Payload):
 
             total_written_len += chunk_len
 
-            # Check if we're done writing
+            
             if self._should_stop_writing(
                 available_len, total_written_len, remaining_content_len
             ):
                 return
 
-            # Read next chunk
+            
             chunk = await loop.run_in_executor(
                 None,
                 self._read,
@@ -661,15 +680,15 @@ class IOBasePayload(Payload):
         WARNING: This method MUST be called from within an event loop.
         Calling it outside an event loop will raise RuntimeError.
         """
-        # Skip if already consumed
+        
         if self._consumed:
             return
-        self._consumed = True  # Mark as consumed to prevent further writes
-        # Schedule file closing without awaiting to prevent cancellation issues
+        self._consumed = True  
+        
         loop = asyncio.get_running_loop()
         close_future = loop.run_in_executor(None, self._value.close)
-        # Hold a strong reference to the future to prevent it from being
-        # garbage collected before it completes.
+        
+        
         _CLOSE_FUTURES.add(close_future)
         close_future.add_done_callback(_CLOSE_FUTURES.remove)
 
@@ -694,7 +713,7 @@ class IOBasePayload(Payload):
     def _read_all(self) -> bytes:
         """Read the entire file-like object and return its content as bytes."""
         self._set_or_restore_start_position()
-        # Use readlines() to ensure we get all content
+        
         return b"".join(self._value.readlines())
 
     async def as_bytes(self, encoding: str = "utf-8", errors: str = "strict") -> bytes:
@@ -711,7 +730,7 @@ class IOBasePayload(Payload):
 
 class TextIOPayload(IOBasePayload):
     _value: io.TextIOBase
-    # _autoclose = False (inherited) - Has text file handle that needs explicit closing
+    
 
     def __init__(
         self,
@@ -812,12 +831,12 @@ class TextIOPayload(IOBasePayload):
         """
         loop = asyncio.get_running_loop()
 
-        # Use instance encoding if available, otherwise use parameter
+        
         actual_encoding = self._encoding or encoding
 
         def _read_and_encode() -> bytes:
             self._set_or_restore_start_position()
-            # TextIO read() always returns the full content
+            
             return self._value.read().encode(actual_encoding, errors)
 
         return await loop.run_in_executor(None, _read_and_encode)
@@ -825,12 +844,12 @@ class TextIOPayload(IOBasePayload):
 
 class BytesIOPayload(IOBasePayload):
     _value: io.BytesIO
-    _size: int  # Always initialized in __init__
-    _autoclose = True  # BytesIO is in-memory, safe to auto-close
+    _size: int  
+    _autoclose = True  
 
     def __init__(self, value: io.BytesIO, *args: Any, **kwargs: Any) -> None:
         super().__init__(value, *args, **kwargs)
-        # Calculate size once during initialization
+        
         self._size = len(self._value.getbuffer()) - self._value.tell()
 
     @property
@@ -876,10 +895,10 @@ class BytesIOPayload(IOBasePayload):
         remaining_bytes = content_length
         while chunk := self._value.read(READ_SIZE):
             if loop_count > 0:
-                # Avoid blocking the event loop
-                # if they pass a large BytesIO object
-                # and we are not in the first iteration
-                # of the loop
+                
+                
+                
+                
                 await asyncio.sleep(0)
             if remaining_bytes is None:
                 await writer.write(chunk)
@@ -910,7 +929,7 @@ class BytesIOPayload(IOBasePayload):
 
 class BufferedReaderPayload(IOBasePayload):
     _value: io.BufferedIOBase
-    # _autoclose = False (inherited) - Has buffered file handle that needs explicit closing
+    
 
     def decode(self, encoding: str = "utf-8", errors: str = "strict") -> str:
         self._set_or_restore_start_position()
@@ -954,8 +973,8 @@ class AsyncIterablePayload(Payload):
     _iter: Optional[_AsyncIterator] = None
     _value: _AsyncIterable
     _cached_chunks: Optional[List[bytes]] = None
-    # _consumed stays False to allow reuse with cached content
-    _autoclose = True  # Iterator doesn't need explicit closing
+    
+    _autoclose = True  
 
     def __init__(self, value: _AsyncIterable, *args: Any, **kwargs: Any) -> None:
         if not isinstance(value, AsyncIterable):
@@ -1007,7 +1026,7 @@ class AsyncIterablePayload(Payload):
         4. Does NOT generate cache - that's done by as_bytes()
 
         """
-        # If we have cached chunks, use them
+        
         if self._cached_chunks is not None:
             remaining_bytes = content_length
             for chunk in self._cached_chunks:
@@ -1020,11 +1039,11 @@ class AsyncIterablePayload(Payload):
                     break
             return
 
-        # If iterator is exhausted and we don't have cached chunks, nothing to write
+        
         if self._iter is None:
             return
 
-        # Stream from the iterator
+        
         remaining_bytes = content_length
 
         try:
@@ -1035,18 +1054,18 @@ class AsyncIterablePayload(Payload):
                     chunk = await self._iter.__anext__()
                 if remaining_bytes is None:
                     await writer.write(chunk)
-                # If we have a content length limit
+                
                 elif remaining_bytes > 0:
                     await writer.write(chunk[:remaining_bytes])
                     remaining_bytes -= len(chunk)
-                # We still want to exhaust the iterator even
-                # if we have reached the content length limit
-                # since the file handle may not get closed by
-                # the iterator if we don't do this
+                
+                
+                
+                
         except StopAsyncIteration:
-            # Iterator is exhausted
+            
             self._iter = None
-            self._consumed = True  # Mark as consumed when streamed without caching
+            self._consumed = True  
 
     def decode(self, encoding: str = "utf-8", errors: str = "strict") -> str:
         """Decode the payload content as a string if cached chunks are available."""
@@ -1061,23 +1080,23 @@ class AsyncIterablePayload(Payload):
         This method reads the entire async iterable content and returns it as bytes.
         It generates and caches the chunks for future reuse.
         """
-        # If we have cached chunks, return them joined
+        
         if self._cached_chunks is not None:
             return b"".join(self._cached_chunks)
 
-        # If iterator is exhausted and no cache, return empty
+        
         if self._iter is None:
             return b""
 
-        # Read all chunks and cache them
+        
         chunks: List[bytes] = []
         async for chunk in self._iter:
             chunks.append(chunk)
 
-        # Iterator is exhausted, cache the chunks
+        
         self._iter = None
         self._cached_chunks = chunks
-        # Keep _consumed as False to allow reuse with cached chunks
+        
 
         return b"".join(chunks)
 
@@ -1096,6 +1115,6 @@ PAYLOAD_REGISTRY.register(BytesIOPayload, io.BytesIO)
 PAYLOAD_REGISTRY.register(BufferedReaderPayload, (io.BufferedReader, io.BufferedRandom))
 PAYLOAD_REGISTRY.register(IOBasePayload, io.IOBase)
 PAYLOAD_REGISTRY.register(StreamReaderPayload, StreamReader)
-# try_last for giving a chance to more specialized async interables like
-# multipart.BodyPartReaderPayload override the default
+
+
 PAYLOAD_REGISTRY.register(AsyncIterablePayload, AsyncIterable, order=Order.try_last)
