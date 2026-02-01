@@ -259,8 +259,8 @@ class SVGObserverUtils {
 
 
 
-  static bool GetAndObserveMarkers(
-      nsIFrame* aMarkedFrame, SVGMarkerFrame* (*aFrames)[SVGMark::eTypeCount]);
+  static bool GetAndObserveMarkers(nsIFrame* aMarkedFrame,
+                                   SVGMarkerFrames* aFrames);
 
   
 
