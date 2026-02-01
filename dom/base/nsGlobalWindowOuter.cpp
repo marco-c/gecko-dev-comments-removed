@@ -5184,9 +5184,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     
     
     
-    closeWindowAfterPrint = usingCachedBrowsingContext ||
-                            StaticPrefs::print_prefer_system_dialog() ||
-                            StaticPrefs::print_always_print_silent();
+    closeWindowAfterPrint =
+        usingCachedBrowsingContext || StaticPrefs::print_prefer_system_dialog();
   } else {
     
     
