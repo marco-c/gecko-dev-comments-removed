@@ -2,22 +2,17 @@
 
 
 
+import json
+from pathlib import Path
+
 from marionette_driver import Wait
 from marionette_driver.by import By
 from marionette_harness import MarionetteTestCase
-
-initial_prefs = {
-    "sidebar.revamp": False,
-    
-    
-    "browser.startup.page": 3,
-}
 
 
 class TestDefaultLauncherVisible(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)
-
         self.marionette.set_context("chrome")
 
     def tearDown(self):
@@ -32,14 +27,28 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         
         self.marionette.execute_script("window.close()")
 
-    def restart_with_prefs(self, prefs):
+    def restart_with_default_prefs(self, prefs, clean=False, in_app=True):
+        pref_path = Path(self.marionette.profile_path) / "prefs.js"
         
-        self.marionette.enforce_gecko_prefs(prefs)
+        self.marionette.quit(clean=clean, in_app=in_app)
 
         
-        self.marionette.set_context("chrome")
+        remove_prefs = [
+            f'user_pref("{name}"' for name, value in prefs.items() if value is None
+        ]
+        if len(remove_prefs) > 0:
+            with open(pref_path, encoding="utf-8") as prefs_file:
+                lines = prefs_file.readlines()
+            keep_lines = [
+                line for line in lines if not any(s in line for s in remove_prefs)
+            ]
+            with open(pref_path, "w", encoding="utf-8") as prefs_file:
+                prefs_file.writelines(keep_lines)
 
-        self.wait_for_sidebar_initialized()
+        with open(pref_path, "a") as prefs_file:
+            for name, value in prefs.items():
+                prefs_file.write(f'user_pref("{name}", {json.dumps(value)});')
+        self.marionette.start_session()
 
     def is_launcher_visible(self):
         hidden = self.marionette.execute_script(
@@ -93,6 +102,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         
         
 
+        self.restart_with_default_prefs({
+            "sidebar.revamp": False,
+            "browser.uiCustomization.state": None,
+        })
+        self.marionette.set_context("chrome")
         self.wait_for_sidebar_initialized()
 
         self.assertFalse(
@@ -105,10 +119,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         )
 
         
-        self.restart_with_prefs({
+        self.restart_with_default_prefs({
             "sidebar.revamp": True,
-            "browser.startup.page": 3,
         })
+        self.marionette.set_context("chrome")
+        self.wait_for_sidebar_initialized()
 
         self.assertTrue(
             self.is_button_visible(),
@@ -137,7 +152,16 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         )
 
     def test_new_sidebar_enabled_via_settings(self):
+        self.restart_with_default_prefs({
+            "sidebar.revamp": False,
+            "browser.uiCustomization.state": None,
+        })
+        self.marionette.set_context("chrome")
         self.wait_for_sidebar_initialized()
+        self.assertFalse(
+            self.marionette.get_pref("sidebar.revamp"),
+            "Before enabling, sidebar.revamp pref should be false",
+        )
         self.assertFalse(
             self.is_launcher_visible(),
             "Sidebar launcher is not visible",
@@ -188,6 +212,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         )
 
     def test_new_sidebar_enabled_at_runtime_via_nimbus(self):
+        self.restart_with_default_prefs({
+            "sidebar.revamp": False,
+            "browser.uiCustomization.state": None,
+        })
+        self.marionette.set_context("chrome")
         self.wait_for_sidebar_initialized()
         self.assertFalse(
             self.is_launcher_visible(),
@@ -249,15 +278,18 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
     def test_vertical_tabs_default_hidden(self):
         
         
-        self.restart_with_prefs({
+        
+        self.restart_with_default_prefs({
             "sidebar.revamp": True,
             "sidebar.verticalTabs": True,
             "sidebar.visibility": "always-show",
         })
+        self.marionette.set_context("chrome")
+        self.wait_for_sidebar_initialized()
 
-        Wait(self.marionette).until(
-            lambda _: self.is_launcher_visible(),
-            message="Sidebar launcher should be initially visible",
+        self.assertTrue(
+            self.is_launcher_visible(),
+            "Sidebar launcher should be initially visible",
         )
         tabsWidth = self.marionette.execute_script(
             """
