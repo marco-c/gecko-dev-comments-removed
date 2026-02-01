@@ -589,6 +589,7 @@ bool CreateMediaContentAnswer(
         
         if (extension.direction != RtpTransceiverDirection::kStopped) {
           local_rtp_extensions_to_reply_with.push_back(extension_with_id);
+          break;
         }
       }
     }
