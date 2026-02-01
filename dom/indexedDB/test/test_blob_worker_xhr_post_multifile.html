@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html>
 <head>
   <title>Indexed Database Property Test</title>
@@ -69,7 +69,6 @@
     is(blob.type, BLOB_TYPE, "Correct type");
 
     function workerScript() {
-      /* eslint-env worker */
       onmessage = function(event) {
         var blob = event.data;
         var compositeBlob = new Blob(["preceding string. ", blob],

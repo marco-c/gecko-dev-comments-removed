@@ -2,7 +2,6 @@
 
 
 
-
 const path = require("path");
 const webpack = require("webpack");
 const { rewriteChromeUri, rewriteMozSrcUri } = require("./moz-uri-utils.js");
@@ -31,6 +30,8 @@ module.exports = {
     `${projectRoot}/browser/components/backup/content/**/*.stories.mjs`,
     
     `${projectRoot}/browser/components/preferences/widgets/**/*.stories.mjs`,
+    
+    `${projectRoot}/browser/components/search/**/*.stories.mjs`,
     
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
     
