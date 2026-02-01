@@ -9,18 +9,24 @@
 
 
 async function test(context, commands) {
-  let rootUrl = "https://www.youtube.com/watch?v=COU5T-Wafa4";
+  let rootUrl = "https://www.youtube.com/watch?v=YE7VzlLtp-4";
   let waitTime = 20000;
 
   if (
-    (typeof context.options.browsertime !== "undefined") &
-    (typeof context.options.browsertime.waitTime !== "undefined")
+    typeof context.options.browsertime !== "undefined" &&
+    typeof context.options.browsertime.waitTime !== "undefined"
   ) {
     waitTime = context.options.browsertime.waitTime;
   }
 
   
   await commands.navigate(rootUrl);
+
+  
+  await commands.js.runAndWait(`
+    document.cookie =
+      'SOCS=CAESEwgDEgk4NTQ5OTI2NTgaAmVuIAEaBgiAlpbLBg; path=/; domain=.youtube.com; Secure; SameSite=None';
+  `);
 
   let cycles = 1;
   for (let cycle = 0; cycle < cycles; cycle++) {
@@ -36,7 +42,8 @@ async function test(context, commands) {
     }
 
     
-    await commands.click.byIdAndWait("toggleButton");
+    
+    
 
     
     const start = await commands.js.run(`return performance.now();`);
@@ -45,11 +52,11 @@ async function test(context, commands) {
     while (
       !(await commands.js.run(`
           return document.querySelector("video").ended;
-      `)) &
+      `)) &&
       !(await commands.js.run(`
           return document.querySelector("video").paused;
-      `)) &
-      ((await commands.js.run(`return performance.now();`)) - start < waitTime)
+      `)) &&
+      (await commands.js.run(`return performance.now();`)) - start < waitTime
     ) {
       
       direction = counter * 1000;
