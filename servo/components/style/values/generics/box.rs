@@ -4,6 +4,7 @@
 
 
 
+use crate::derives::*;
 use crate::values::animated::ToAnimatedZero;
 use crate::Zero;
 use std::fmt::{self, Write};
@@ -28,18 +29,24 @@ use style_traits::{CssWriter, ToCss};
 )]
 #[repr(u8)]
 #[allow(missing_docs)]
-pub enum VerticalAlignKeyword {
-    Baseline,
+pub enum BaselineShiftKeyword {
+    
+    
+    
     Sub,
+    
+    
+    
     Super,
+    
     Top,
-    TextTop,
-    Middle,
+    
+    
+    
+    
     Bottom,
-    TextBottom,
-    #[cfg(feature = "gecko")]
-    MozMiddleWithBaseline,
 }
+
 
 
 #[derive(
@@ -59,24 +66,24 @@ pub enum VerticalAlignKeyword {
     ToTyped,
 )]
 #[repr(C, u8)]
-pub enum GenericVerticalAlign<LengthPercentage> {
+pub enum GenericBaselineShift<LengthPercentage> {
     
-    Keyword(VerticalAlignKeyword),
+    Keyword(BaselineShiftKeyword),
     
     Length(LengthPercentage),
 }
 
-pub use self::GenericVerticalAlign as VerticalAlign;
+pub use self::GenericBaselineShift as BaselineShift;
 
-impl<L> VerticalAlign<L> {
+impl<L: Zero> BaselineShift<L> {
     
     #[inline]
-    pub fn baseline() -> Self {
-        VerticalAlign::Keyword(VerticalAlignKeyword::Baseline)
+    pub fn zero() -> Self {
+        BaselineShift::Length(Zero::zero())
     }
 }
 
-impl<L> ToAnimatedZero for VerticalAlign<L> {
+impl<L> ToAnimatedZero for BaselineShift<L> {
     fn to_animated_zero(&self) -> Result<Self, ()> {
         Err(())
     }

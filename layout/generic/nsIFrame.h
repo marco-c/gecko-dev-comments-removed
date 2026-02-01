@@ -4784,9 +4784,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  mozilla::StyleAlignmentBaseline AlignmentBaseline() const;
+
+  
 
 
-  Maybe<mozilla::StyleVerticalAlignKeyword> VerticalAlignEnum() const;
+
+  const mozilla::StyleBaselineShift& BaselineShift() const;
 
   
 

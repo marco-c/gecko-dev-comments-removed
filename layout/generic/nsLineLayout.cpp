@@ -2026,79 +2026,148 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
     }
 
     
-    
-    const auto& verticalAlign = frame->StyleDisplay()->mVerticalAlign;
-    Maybe<StyleVerticalAlignKeyword> verticalAlignEnum =
-        frame->VerticalAlignEnum();
+    StyleAlignmentBaseline alignmentBaseline = frame->AlignmentBaseline();
+    const StyleBaselineShift& baselineShift = frame->BaselineShift();
+    Maybe<StyleBaselineShiftKeyword> baselineShiftEnum =
+        baselineShift.IsKeyword() ? Some(baselineShift.AsKeyword()) : Nothing();
+
 #ifdef NOISY_BLOCKDIR_ALIGN
     printf("  [frame]");
     frame->ListTag(stdout);
-    printf(": verticalAlignIsKw=%d (enum == %d", verticalAlign.IsKeyword(),
-           verticalAlign.IsKeyword()
-               ? static_cast<int>(verticalAlign.AsKeyword())
-               : -1);
-    if (verticalAlignEnum) {
-      printf(", after SVG dominant-baseline conversion == %d",
-             static_cast<int>(*verticalAlignEnum));
-    }
-    printf(")\n");
+    printf(": alignmentBaseline=%d baselineShiftIsKw=%d (enum == %d)\n",
+           static_cast<int>(alignmentBaseline), baselineShiftEnum,
+           baselineShiftEnum ? static_cast<int>(*baselineShiftEnum) : -1);
 #endif
 
-    if (verticalAlignEnum) {
-      StyleVerticalAlignKeyword keyword = *verticalAlignEnum;
-      if (lineWM.IsVertical()) {
-        if (keyword == StyleVerticalAlignKeyword::Middle) {
-          
-          
-          
-          
-          if (!lineWM.IsSideways()) {
-            keyword = StyleVerticalAlignKeyword::MozMiddleWithBaseline;
-          }
-        } else if (lineWM.IsLineInverted()) {
-          
-          
-          switch (keyword) {
-            case StyleVerticalAlignKeyword::Top:
-              keyword = StyleVerticalAlignKeyword::Bottom;
+    
+    if (lineWM.IsVertical()) {
+      
+      
+      
+      
+      if (alignmentBaseline == StyleAlignmentBaseline::Middle &&
+          !lineWM.IsSideways()) {
+        alignmentBaseline = StyleAlignmentBaseline::MozMiddleWithBaseline;
+      }
+
+      
+      
+      if (lineWM.IsLineInverted()) {
+        switch (alignmentBaseline) {
+          case StyleAlignmentBaseline::TextTop:
+            alignmentBaseline = StyleAlignmentBaseline::TextBottom;
+            break;
+          case StyleAlignmentBaseline::TextBottom:
+            alignmentBaseline = StyleAlignmentBaseline::TextTop;
+            break;
+          default:
+            break;
+        }
+
+        if (baselineShiftEnum) {
+          switch (*baselineShiftEnum) {
+            case StyleBaselineShiftKeyword::Top:
+              baselineShiftEnum = Some(StyleBaselineShiftKeyword::Bottom);
               break;
-            case StyleVerticalAlignKeyword::Bottom:
-              keyword = StyleVerticalAlignKeyword::Top;
-              break;
-            case StyleVerticalAlignKeyword::TextTop:
-              keyword = StyleVerticalAlignKeyword::TextBottom;
-              break;
-            case StyleVerticalAlignKeyword::TextBottom:
-              keyword = StyleVerticalAlignKeyword::TextTop;
+            case StyleBaselineShiftKeyword::Bottom:
+              baselineShiftEnum = Some(StyleBaselineShiftKeyword::Top);
               break;
             default:
               break;
           }
         }
       }
+    }
 
-      
-      nscoord revisedBaselineBCoord = baselineBCoord;
+    
+    switch (alignmentBaseline) {
+      default:
+      case StyleAlignmentBaseline::Baseline:
+        pfd->mBounds.BStart(lineWM) = baselineBCoord - pfd->mAscent;
+        pfd->mBlockDirAlign = VALIGN_OTHER;
+        break;
 
-      
-      
-      if (keyword == StyleVerticalAlignKeyword::Sub ||
-          keyword == StyleVerticalAlignKeyword::Super) {
-        revisedBaselineBCoord += lineWM.FlowRelativeToLineRelativeFactor() *
-                                 (keyword == StyleVerticalAlignKeyword::Sub
-                                      ? fm->SubscriptOffset()
-                                      : -fm->SuperscriptOffset());
-        keyword = StyleVerticalAlignKeyword::Baseline;
+      case StyleAlignmentBaseline::Middle: {
+        
+        
+        nscoord parentXHeight =
+            lineWM.FlowRelativeToLineRelativeFactor() * fm->XHeight();
+        if (frameSpan) {
+          pfd->mBounds.BStart(lineWM) =
+              baselineBCoord - (parentXHeight + pfd->mBounds.BSize(lineWM)) / 2;
+        } else {
+          pfd->mBounds.BStart(lineWM) = baselineBCoord -
+                                        (parentXHeight + logicalBSize) / 2 +
+                                        pfd->mMargin.BStart(lineWM);
+        }
+        pfd->mBlockDirAlign = VALIGN_OTHER;
+        break;
       }
 
-      switch (keyword) {
-        default:
-        case StyleVerticalAlignKeyword::Baseline:
-          pfd->mBounds.BStart(lineWM) = revisedBaselineBCoord - pfd->mAscent;
-          pfd->mBlockDirAlign = VALIGN_OTHER;
+      case StyleAlignmentBaseline::TextTop: {
+        
+        
+        
+        
+        nscoord parentAscent =
+            lineWM.IsLineInverted() ? fm->MaxDescent() : fm->MaxAscent();
+        if (frameSpan) {
+          pfd->mBounds.BStart(lineWM) = baselineBCoord - parentAscent -
+                                        pfd->mBorderPadding.BStart(lineWM) +
+                                        frameSpan->mBStartLeading;
+        } else {
+          pfd->mBounds.BStart(lineWM) =
+              baselineBCoord - parentAscent + pfd->mMargin.BStart(lineWM);
+        }
+        pfd->mBlockDirAlign = VALIGN_OTHER;
+        break;
+      }
+
+      case StyleAlignmentBaseline::TextBottom: {
+        
+        
+        nscoord parentDescent =
+            lineWM.IsLineInverted() ? fm->MaxAscent() : fm->MaxDescent();
+        if (frameSpan) {
+          pfd->mBounds.BStart(lineWM) =
+              baselineBCoord + parentDescent - pfd->mBounds.BSize(lineWM) +
+              pfd->mBorderPadding.BEnd(lineWM) - frameSpan->mBEndLeading;
+        } else {
+          pfd->mBounds.BStart(lineWM) = baselineBCoord + parentDescent -
+                                        pfd->mBounds.BSize(lineWM) -
+                                        pfd->mMargin.BEnd(lineWM);
+        }
+        pfd->mBlockDirAlign = VALIGN_OTHER;
+        break;
+      }
+
+      case StyleAlignmentBaseline::MozMiddleWithBaseline: {
+        
+        if (frameSpan) {
+          pfd->mBounds.BStart(lineWM) =
+              baselineBCoord - pfd->mBounds.BSize(lineWM) / 2;
+        } else {
+          pfd->mBounds.BStart(lineWM) =
+              baselineBCoord - logicalBSize / 2 + pfd->mMargin.BStart(lineWM);
+        }
+        pfd->mBlockDirAlign = VALIGN_OTHER;
+        break;
+      }
+    }
+
+    
+    if (baselineShiftEnum) {
+      switch (*baselineShiftEnum) {
+        case StyleBaselineShiftKeyword::Sub:
+        case StyleBaselineShiftKeyword::Super:
+          pfd->mBounds.BStart(lineWM) +=
+              lineWM.FlowRelativeToLineRelativeFactor() *
+              (*baselineShiftEnum == StyleBaselineShiftKeyword::Sub
+                   ? fm->SubscriptOffset()
+                   : -fm->SuperscriptOffset());
           break;
 
-        case StyleVerticalAlignKeyword::Top: {
+        case StyleBaselineShiftKeyword::Top: {
           pfd->mBlockDirAlign = VALIGN_TOP;
           nscoord subtreeBSize = logicalBSize;
           if (frameSpan) {
@@ -2112,7 +2181,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
           break;
         }
 
-        case StyleVerticalAlignKeyword::Bottom: {
+        case StyleBaselineShiftKeyword::Bottom: {
           pfd->mBlockDirAlign = VALIGN_BOTTOM;
           nscoord subtreeBSize = logicalBSize;
           if (frameSpan) {
@@ -2125,78 +2194,10 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
           }
           break;
         }
-
-        case StyleVerticalAlignKeyword::Middle: {
-          
-          
-          nscoord parentXHeight =
-              lineWM.FlowRelativeToLineRelativeFactor() * fm->XHeight();
-          if (frameSpan) {
-            pfd->mBounds.BStart(lineWM) =
-                baselineBCoord -
-                (parentXHeight + pfd->mBounds.BSize(lineWM)) / 2;
-          } else {
-            pfd->mBounds.BStart(lineWM) = baselineBCoord -
-                                          (parentXHeight + logicalBSize) / 2 +
-                                          pfd->mMargin.BStart(lineWM);
-          }
-          pfd->mBlockDirAlign = VALIGN_OTHER;
-          break;
-        }
-
-        case StyleVerticalAlignKeyword::TextTop: {
-          
-          
-          
-          
-          nscoord parentAscent =
-              lineWM.IsLineInverted() ? fm->MaxDescent() : fm->MaxAscent();
-          if (frameSpan) {
-            pfd->mBounds.BStart(lineWM) = baselineBCoord - parentAscent -
-                                          pfd->mBorderPadding.BStart(lineWM) +
-                                          frameSpan->mBStartLeading;
-          } else {
-            pfd->mBounds.BStart(lineWM) =
-                baselineBCoord - parentAscent + pfd->mMargin.BStart(lineWM);
-          }
-          pfd->mBlockDirAlign = VALIGN_OTHER;
-          break;
-        }
-
-        case StyleVerticalAlignKeyword::TextBottom: {
-          
-          
-          nscoord parentDescent =
-              lineWM.IsLineInverted() ? fm->MaxAscent() : fm->MaxDescent();
-          if (frameSpan) {
-            pfd->mBounds.BStart(lineWM) =
-                baselineBCoord + parentDescent - pfd->mBounds.BSize(lineWM) +
-                pfd->mBorderPadding.BEnd(lineWM) - frameSpan->mBEndLeading;
-          } else {
-            pfd->mBounds.BStart(lineWM) = baselineBCoord + parentDescent -
-                                          pfd->mBounds.BSize(lineWM) -
-                                          pfd->mMargin.BEnd(lineWM);
-          }
-          pfd->mBlockDirAlign = VALIGN_OTHER;
-          break;
-        }
-
-        case StyleVerticalAlignKeyword::MozMiddleWithBaseline: {
-          
-          if (frameSpan) {
-            pfd->mBounds.BStart(lineWM) =
-                baselineBCoord - pfd->mBounds.BSize(lineWM) / 2;
-          } else {
-            pfd->mBounds.BStart(lineWM) =
-                baselineBCoord - logicalBSize / 2 + pfd->mMargin.BStart(lineWM);
-          }
-          pfd->mBlockDirAlign = VALIGN_OTHER;
-          break;
-        }
       }
     } else {
       
-      nscoord offset = verticalAlign.AsLength().Resolve([&] {
+      nscoord offset = baselineShift.AsLength().Resolve([&] {
         
         
         float inflation =
@@ -2212,17 +2213,8 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       
       
       
-      nscoord revisedBaselineBCoord =
-          baselineBCoord - offset * lineWM.FlowRelativeToLineRelativeFactor();
-      if (lineWM.IsCentralBaseline()) {
-        
-        
-        pfd->mBounds.BStart(lineWM) =
-            revisedBaselineBCoord - pfd->mBounds.BSize(lineWM) / 2;
-      } else {
-        pfd->mBounds.BStart(lineWM) = revisedBaselineBCoord - pfd->mAscent;
-      }
-      pfd->mBlockDirAlign = VALIGN_OTHER;
+      pfd->mBounds.BStart(lineWM) +=
+          -1 * offset * lineWM.FlowRelativeToLineRelativeFactor();
     }
 
     

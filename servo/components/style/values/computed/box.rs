@@ -4,26 +4,28 @@
 
 
 
+use crate::derives::*;
 use crate::values::animated::{Animate, Procedure, ToAnimatedValue};
 use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
 use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
-    GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin, GenericPerspective,
-    GenericVerticalAlign,
+    GenericBaselineShift, GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin,
+    GenericPerspective,
 };
 use crate::values::specified::box_ as specified;
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
 pub use crate::values::specified::box_::{
-    Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain, ContainerName,
-    ContainerType, ContentVisibility, Display, Float, Overflow, OverflowAnchor, OverscrollBehavior,
-    PositionProperty, ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness,
-    ScrollSnapType, ScrollbarGutter, TouchAction, WillChange, WritingModeProperty,
+    AlignmentBaseline, Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain,
+    ContainerName, ContainerType, ContentVisibility, Display, Float, Overflow, OverflowAnchor,
+    OverscrollBehavior, PositionProperty, ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop,
+    ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
+    WritingModeProperty,
 };
 
 
-pub type VerticalAlign = GenericVerticalAlign<LengthPercentage>;
+pub type BaselineShift = GenericBaselineShift<LengthPercentage>;
 
 
 pub type OverflowClipMargin = GenericOverflowClipMargin<NonNegativeLength>;

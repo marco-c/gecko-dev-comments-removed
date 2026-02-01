@@ -9,8 +9,8 @@ pub use crate::logical_geometry::WritingModeProperty;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{LonghandId, PropertyDeclarationId, PropertyId};
 use crate::values::generics::box_::{
-    GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin, GenericPerspective,
-    GenericVerticalAlign, OverflowClipMarginBox, VerticalAlignKeyword,
+    BaselineShiftKeyword, GenericBaselineShift, GenericContainIntrinsicSize, GenericLineClamp,
+    GenericOverflowClipMargin, GenericPerspective, OverflowClipMarginBox,
 };
 use crate::values::specified::length::{LengthPercentage, NonNegativeLength};
 use crate::values::specified::{AllowQuirks, Integer, NonNegativeNumberOrPercentage};
@@ -615,9 +615,9 @@ pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;
 pub type LineClamp = GenericLineClamp<Integer>;
 
 
-pub type VerticalAlign = GenericVerticalAlign<LengthPercentage>;
+pub type BaselineShift = GenericBaselineShift<LengthPercentage>;
 
-impl Parse for VerticalAlign {
+impl Parse for BaselineShift {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -625,13 +625,59 @@ impl Parse for VerticalAlign {
         if let Ok(lp) =
             input.try_parse(|i| LengthPercentage::parse_quirky(context, i, AllowQuirks::Yes))
         {
-            return Ok(GenericVerticalAlign::Length(lp));
+            return Ok(BaselineShift::Length(lp));
         }
 
-        Ok(GenericVerticalAlign::Keyword(VerticalAlignKeyword::parse(
-            input,
-        )?))
+        Ok(BaselineShift::Keyword(BaselineShiftKeyword::parse(input)?))
     }
+}
+
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToComputedValue,
+    ToResolvedValue,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum AlignmentBaseline {
+    
+    Baseline,
+    
+    TextBottom,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Middle,
+    
+    
+    
+    
+    
+    
+    
+    TextTop,
+    
+    #[cfg(feature = "gecko")]
+    MozMiddleWithBaseline,
 }
 
 

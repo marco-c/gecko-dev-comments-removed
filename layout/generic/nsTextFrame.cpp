@@ -1993,6 +1993,22 @@ gfx::ShapedTextFlags nsTextFrame::GetSpacingFlags() const {
                             : gfx::ShapedTextFlags();
 }
 
+
+
+static bool HasDefaultVerticalAlignment(const nsIFrame* aFrame) {
+  if (aFrame->AlignmentBaseline() != StyleAlignmentBaseline::Baseline) {
+    return false;
+  }
+
+  const auto& baselineShift = aFrame->BaselineShift();
+  if (baselineShift.IsKeyword() ||
+      !baselineShift.AsLength().IsDefinitelyZero()) {
+    return false;
+  }
+
+  return true;
+}
+
 bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
                                                        nsTextFrame* aFrame2) {
   
@@ -2036,55 +2052,50 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
       aFrame2->GetParent()->GetContent()) {
     
     
-    auto PreventCrossBoundaryShaping = [](const nsIFrame* aFrame,
-                                          const nsIFrame* aAncestor,
-                                          Side aSide) {
-      while (aFrame != aAncestor) {
-        ComputedStyle* ctx = aFrame->Style();
-        const auto anchorResolutionParams =
-            AnchorPosResolutionParams::From(aFrame);
-        
-        
-        
-        
-        
-        
-        
-        
-        const auto margin =
-            ctx->StyleMargin()->GetMargin(aSide, anchorResolutionParams);
-        if (!margin->ConvertsToLength() ||
-            margin->AsLengthPercentage().ToLength() != 0) {
-          return true;
-        }
-        const auto& padding = ctx->StylePadding()->mPadding.Get(aSide);
-        if (!padding.ConvertsToLength() || padding.ToLength() != 0) {
-          return true;
-        }
-        if (ctx->StyleBorder()->GetComputedBorderWidth(aSide) != 0) {
-          return true;
-        }
+    auto PreventCrossBoundaryShaping =
+        [](const nsIFrame* aFrame, const nsIFrame* aAncestor, Side aSide) {
+          while (aFrame != aAncestor) {
+            ComputedStyle* ctx = aFrame->Style();
+            const auto anchorResolutionParams =
+                AnchorPosResolutionParams::From(aFrame);
+            
+            
+            
+            
+            
+            
+            
+            
+            const auto margin =
+                ctx->StyleMargin()->GetMargin(aSide, anchorResolutionParams);
+            if (!margin->ConvertsToLength() ||
+                margin->AsLengthPercentage().ToLength() != 0) {
+              return true;
+            }
+            const auto& padding = ctx->StylePadding()->mPadding.Get(aSide);
+            if (!padding.ConvertsToLength() || padding.ToLength() != 0) {
+              return true;
+            }
+            if (ctx->StyleBorder()->GetComputedBorderWidth(aSide) != 0) {
+              return true;
+            }
 
-        
-        
-        
-        const auto& verticalAlign = ctx->StyleDisplay()->mVerticalAlign;
-        if (!verticalAlign.IsKeyword() ||
-            verticalAlign.AsKeyword() != StyleVerticalAlignKeyword::Baseline) {
-          return true;
-        }
+            
+            if (!HasDefaultVerticalAlignment(aFrame)) {
+              return true;
+            }
 
-        
-        const auto unicodeBidi = ctx->StyleTextReset()->mUnicodeBidi;
-        if (unicodeBidi == StyleUnicodeBidi::Isolate ||
-            unicodeBidi == StyleUnicodeBidi::IsolateOverride) {
-          return true;
-        }
+            
+            const auto unicodeBidi = ctx->StyleTextReset()->mUnicodeBidi;
+            if (unicodeBidi == StyleUnicodeBidi::Isolate ||
+                unicodeBidi == StyleUnicodeBidi::IsolateOverride) {
+              return true;
+            }
 
-        aFrame = aFrame->GetParent();
-      }
-      return false;
-    };
+            aFrame = aFrame->GetParent();
+          }
+          return false;
+        };
 
     const nsIFrame* ancestor =
         nsLayoutUtils::FindNearestCommonAncestorFrameWithinBlock(aFrame1,
@@ -5443,9 +5454,7 @@ void nsTextFrame::GetTextDecorations(
     
     if (firstBlock) {
       
-      Maybe<StyleVerticalAlignKeyword> verticalAlign =
-          fChild->VerticalAlignEnum();
-      if (verticalAlign != Some(StyleVerticalAlignKeyword::Baseline)) {
+      if (!HasDefaultVerticalAlignment(fChild)) {
         
         
         

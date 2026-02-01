@@ -568,6 +568,7 @@ class Longhand(Property):
             return False
         if self.predefined_type:
             return self.predefined_type in {
+                "AlignmentBaseline",
                 "Appearance",
                 "AnimationComposition",
                 "AnimationDirection",
@@ -989,8 +990,8 @@ class PropertyRestrictions:
                 "initial-letter",
                 
                 "-moz-osx-font-smoothing",
-                "vertical-align",
-                
+                "alignment-baseline",
+                "baseline-shift",
                 "baseline-source",
                 "line-height",
                 
@@ -1022,8 +1023,8 @@ class PropertyRestrictions:
                 "opacity",
                 
                 "-moz-osx-font-smoothing",
-                "vertical-align",
-                
+                "alignment-baseline",
+                "baseline-shift",
                 "baseline-source",
                 "line-height",
                 
