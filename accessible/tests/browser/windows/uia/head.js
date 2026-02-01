@@ -112,9 +112,13 @@ function setUpWaitForUiaPropEvent(propName, id) {
 
 
 
+
+
+
 function waitForUiaEvent() {
   return runPython(`
-    onEvent.wait()
+    global event
+    event = onEvent.wait()
   `);
 }
 
