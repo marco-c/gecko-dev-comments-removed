@@ -8,6 +8,7 @@ const ToolkitModules = {};
 
 ChromeUtils.defineESModuleGetters(ToolkitModules, {
   EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
+  NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
 
 const AlertNotification = Components.Constructor(
@@ -24,37 +25,11 @@ function Notification(context, notificationsMap, id, options) {
   this.id = id;
   this.options = options;
 
-  let imageURL;
-  if (options.iconUrl) {
-    imageURL = context.extension.baseURI.resolve(options.iconUrl);
-  }
-
   
   
   notificationsMap.set(id, this);
 
-  try {
-    let svc = Cc["@mozilla.org/alerts-service;1"].getService(
-      Ci.nsIAlertsService
-    );
-    
-    
-    
-    let alert = new AlertNotification({
-      imageURL,
-      title: options.title,
-      text: options.message,
-      textClickable: true,
-      cookie: this.id,
-      name: this.id,
-      inPrivateBrowsing: context.incognito,
-    });
-    svc.showAlert(alert, this);
-  } catch (e) {
-    
-
-    this.observe(null, "alertfinished", id);
-  }
+  this.showAlert(context);
 }
 
 Notification.prototype = {
@@ -68,6 +43,62 @@ Notification.prototype = {
       
     }
     this.notificationsMap.delete(this.id);
+  },
+
+  async showAlert(context) {
+    let imageURL;
+    if (this.options.iconUrl) {
+      imageURL = context.extension.baseURI.resolve(this.options.iconUrl);
+    }
+
+    let image;
+    try {
+      if (imageURL) {
+        let uri = ToolkitModules.NetUtil.newURI(imageURL);
+        let channel = ToolkitModules.NetUtil.newChannel({
+          uri,
+          securityFlags:
+            Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+          contentPolicyType: Ci.nsIContentPolicy.TYPE_IMAGE,
+          loadingPrincipal: context.principal,
+        });
+        image = await ChromeUtils.fetchDecodedImage(uri, channel);
+      }
+    } catch (e) {
+      console.error(`Loading image ${imageURL} for Notification failed: ${e}`);
+      imageURL = undefined;
+    }
+
+    
+    if (!this.notificationsMap.has(this.id)) {
+      this.observe(null, "alertfinished", this.id);
+      return;
+    }
+
+    try {
+      let svc = Cc["@mozilla.org/alerts-service;1"].getService(
+        Ci.nsIAlertsService
+      );
+      
+      
+      
+      let alert = new AlertNotification({
+        
+        
+        imageURL,
+        image,
+        title: this.options.title,
+        text: this.options.message,
+        textClickable: true,
+        cookie: this.id,
+        name: this.id,
+        inPrivateBrowsing: context.incognito,
+      });
+      svc.showAlert(alert, this);
+    } catch (e) {
+      
+      this.observe(null, "alertfinished", this.id);
+    }
   },
 
   observe(subject, topic, data) {
