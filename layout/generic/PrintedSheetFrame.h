@@ -110,6 +110,7 @@ class PrintedSheetFrame final : public nsContainerFrame {
   
   
   
+  
   void ComputePagesPerSheetGridMetrics(const nsSize& aSheetSize);
 
   
