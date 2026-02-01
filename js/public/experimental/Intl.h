@@ -45,6 +45,15 @@ extern JS_PUBLIC_API bool AddMozDateTimeFormatConstructor(
 extern JS_PUBLIC_API bool AddMozDisplayNamesConstructor(JSContext* cx,
                                                         Handle<JSObject*> intl);
 
+
+
+
+
+
+
+extern JS_PUBLIC_API bool AddMozGetCalendarInfo(JSContext* cx,
+                                                Handle<JSObject*> intl);
+
 }  
 
 #endif  
