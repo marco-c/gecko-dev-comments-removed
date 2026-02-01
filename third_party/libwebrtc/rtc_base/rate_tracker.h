@@ -14,6 +14,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "absl/base/macros.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+
 namespace webrtc {
 
 
@@ -27,35 +31,52 @@ class RateTracker {
   
   
   
-  double ComputeRateForInterval(int64_t interval_milliseconds) const;
-
-  
-  
-  double ComputeRate() const {
-    return ComputeRateForInterval(bucket_milliseconds_ *
-                                  static_cast<int64_t>(bucket_count_));
+  double ComputeRateForInterval(Timestamp current_time,
+                                TimeDelta interval) const;
+  [[deprecated]]
+  double ComputeRateForInterval(int64_t interval_milliseconds) const {
+    return ComputeRateForInterval(Timestamp::Millis(Time()),
+                                  TimeDelta::Millis(interval_milliseconds));
   }
 
   
   
-  double ComputeTotalRate() const;
+  double Rate(Timestamp current_time) const {
+    return ComputeRateForInterval(
+        current_time, TimeDelta::Millis(bucket_milliseconds_) * bucket_count_);
+  }
+
+  [[deprecated]]
+  double ComputeRate() const {
+    return Rate(Timestamp::Millis(Time()));
+  }
 
   
   int64_t TotalSampleCount() const;
 
   
-  
-  void AddSamples(int64_t sample_count);
+  void Update(int64_t sample_count, Timestamp now);
 
   
-  void AddSamplesAtTime(int64_t current_time_ms, int64_t sample_count);
+  
+  [[deprecated]]
+  void AddSamples(int64_t sample_count) {
+    Update(sample_count, Timestamp::Millis(Time()));
+  }
+
+  ABSL_DEPRECATE_AND_INLINE()
+  void AddSamplesAtTime(int64_t current_time_ms, int64_t sample_count) {
+    Update(sample_count, Timestamp::Millis(current_time_ms));
+  }
 
  protected:
+  
+  
   
   virtual int64_t Time() const;
 
  private:
-  void EnsureInitialized();
+  void EnsureInitialized(int64_t current_time_ms);
   size_t NextBucketIndex(size_t bucket_index) const;
 
   const int64_t bucket_milliseconds_;
@@ -69,12 +90,5 @@ class RateTracker {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::RateTracker;
-}  
-#endif  
 
 #endif  
