@@ -245,8 +245,7 @@ void XULButtonElement::ExecuteMenu(Modifiers aModifiers, int16_t aButton,
   
   bool needToFlipChecked = false;
   if (*menuType == MenuType::Checkbox ||
-      (*menuType == MenuType::Radio &&
-       !State().HasState(ElementState::CHECKED))) {
+      (*menuType == MenuType::Radio && !GetBoolAttr(nsGkAtoms::checked))) {
     needToFlipChecked = !AttrValueIs(kNameSpaceID_None, nsGkAtoms::autocheck,
                                      nsGkAtoms::_false, eCaseMatters);
   }
@@ -722,8 +721,15 @@ void XULButtonElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (aNamespaceID != kNameSpaceID_None) {
     return;
   }
-  if (aName == nsGkAtoms::checked && mCheckable) {
-    SetStates(ElementState::CHECKED, !!aValue, aNotify);
+  if (mCheckable &&
+      (aName == nsGkAtoms::checked || aName == nsGkAtoms::selected)) {
+    
+    
+    
+    const bool checked =
+        aValue || GetBoolAttr(aName == nsGkAtoms::checked ? nsGkAtoms::selected
+                                                          : nsGkAtoms::checked);
+    SetStates(ElementState::CHECKED, checked, aNotify);
   }
   if (aName == nsGkAtoms::disabled) {
     SetStates(ElementState::DISABLED, !!aValue, aNotify);
@@ -734,7 +740,7 @@ void XULButtonElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
     const bool shouldUncheckSiblings = [&] {
       if (aName == nsGkAtoms::type || aName == nsGkAtoms::name) {
         return *GetMenuType() == MenuType::Radio &&
-               State().HasState(ElementState::CHECKED);
+               GetBoolAttr(nsGkAtoms::checked);
       }
       if (aName == nsGkAtoms::checked && aValue) {
         return *GetMenuType() == MenuType::Radio;
