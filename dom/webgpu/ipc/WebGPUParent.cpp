@@ -769,7 +769,10 @@ void WebGPUParent::BufferUnmap(RawId aDeviceId, RawId aBufferId, bool aFlush) {
     const auto mapped = ffi::wgpu_server_buffer_get_mapped_range(
         mContext.get(), aDeviceId, aBufferId, offset, size,
         getRangeError.ToFFI());
-    ForwardError(getRangeError);
+    
+    
+    
+    getRangeError.GetError();
 
     if (mapped.ptr != nullptr && mapped.length >= size) {
       auto shmSize = mapData->mShmem->Size();
@@ -787,7 +790,10 @@ void WebGPUParent::BufferUnmap(RawId aDeviceId, RawId aBufferId, bool aFlush) {
   ErrorBuffer unmapError;
   ffi::wgpu_server_buffer_unmap(mContext.get(), aDeviceId, aBufferId,
                                 unmapError.ToFFI());
-  ForwardError(unmapError);
+  
+  
+  
+  unmapError.GetError();
 
   if (mapData && !mapData->mHasMapFlags) {
     
