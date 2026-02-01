@@ -236,8 +236,6 @@ interface LanguageTranslationModelFiles {
   
   
   lex?: LanguageTranslationModelFile;
-  
-  qualityModel?: LanguageTranslationModelFile;
 
   
   vocab?: LanguageTranslationModelFile;
