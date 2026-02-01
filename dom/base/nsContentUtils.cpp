@@ -3266,6 +3266,20 @@ nsresult nsContentUtils::GetInclusiveAncestorsAndOffsets(
       });
 }
 
+static inline Maybe<uint32_t> ComputeFlatTreeIndexOfForSelection(
+    const nsIContent* const aParent, const nsIContent* const aPossibleChild) {
+  MOZ_ASSERT(aParent);
+  MOZ_ASSERT(aPossibleChild);
+  if (HTMLSlotElement* slot = aPossibleChild->GetAssignedSlot()) {
+    if (const ShadowRoot* shadowRoot = slot->GetContainingShadow()) {
+      if (shadowRoot->IsUAWidget()) {
+        return aParent->ComputeIndexOf(aPossibleChild);
+      }
+    }
+  }
+  return aParent->ComputeFlatTreeIndexOf(aPossibleChild);
+}
+
 nsresult nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
     nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
     nsTArray<Maybe<uint32_t>>& aAncestorOffsets) {
@@ -3276,7 +3290,11 @@ nsresult nsContentUtils::GetFlattenedTreeAncestorsAndOffsets(
             GetParentFuncForComparison<TreeKind::Flat>(aContent));
       },
       [](nsIContent* aParent, nsIContent* aChild) {
-        return aParent->ComputeFlatTreeIndexOf(aChild);
+        
+        
+        
+        
+        return ComputeFlatTreeIndexOfForSelection(aParent, aChild);
       });
 }
 
