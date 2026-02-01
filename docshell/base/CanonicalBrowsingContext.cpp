@@ -3774,7 +3774,7 @@ void CanonicalBrowsingContext::CreateRedactedAncestorOriginsList(
     mPossiblyRedactedAncestorOriginsList = std::move(ancestorPrincipals);
     return;
   }
-  MOZ_DIAGNOSTIC_ASSERT(!parent->IsChrome());
+
   
   
   const Span<const nsCOMPtr<nsIPrincipal>> parentAncestorOriginsList =
