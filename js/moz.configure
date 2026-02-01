@@ -155,6 +155,26 @@ set_define("ENABLE_EXPLICIT_RESOURCE_MANAGEMENT", enable_explicit_resource_manag
 
 
 option(
+    "--enable-source-phase-imports",
+    default=False,
+    help="Enable experimental source phase imports support",
+)
+
+
+@depends("--enable-source-phase-imports")
+def enable_source_phase_imports(value):
+    if value:
+        return True
+
+
+set_config("ENABLE_SOURCE_PHASE_IMPORTS", enable_source_phase_imports)
+set_define("ENABLE_SOURCE_PHASE_IMPORTS", enable_source_phase_imports)
+
+
+
+
+
+option(
     "--enable-portable-baseline-interp",
     default=False,
     help="{Enable|Disable} the portable baseline interpreter",
