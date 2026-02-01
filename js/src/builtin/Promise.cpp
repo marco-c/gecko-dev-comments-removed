@@ -2883,8 +2883,11 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
     JSContext* cx, HandleValue promiseToResolve_, HandleValue thenable_,
     HandleValue thenVal) {
   
-  RootedValue promiseToResolve(cx, promiseToResolve_);
-  RootedValue thenable(cx, thenable_);
+  RootedTuple<Value, Value, JSObject*, JSObject*, JSObject*, JSObject*,
+              JSFunction*>
+      roots(cx);
+  RootedField<Value, 0> promiseToResolve(roots, promiseToResolve_);
+  RootedField<Value, 1> thenable(roots, thenable_);
 
   
   
@@ -2905,7 +2908,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   
   
-  RootedObject then(cx, &thenVal.toObject());
+  RootedField<JSObject*, 2> then(roots, &thenVal.toObject());
   AutoFunctionOrCurrentRealm ar(cx, then);
   if (then->maybeCCWRealm() != cx->realm()) {
     if (!cx->compartment()->wrap(cx, &then)) {
@@ -2925,12 +2928,12 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
 
   
   
-  RootedObject promise(cx, &promiseToResolve.toObject());
+  RootedField<JSObject*, 3> promise(roots, &promiseToResolve.toObject());
 
   if (JS::Prefs::use_js_microtask_queue()) {
-    RootedObject hostDefinedGlobalRepresentative(cx);
+    RootedField<JSObject*, 4> hostDefinedGlobalRepresentative(roots);
     {
-      RootedObject hostDefinedGlobal(cx);
+      RootedField<JSObject*, 5> hostDefinedGlobal(roots);
       if (!cx->jobQueue->getHostDefinedGlobal(cx, &hostDefinedGlobal)) {
         return false;
       }
@@ -2963,9 +2966,10 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   
   Handle<PropertyName*> funName = cx->names().empty_;
-  RootedFunction job(
-      cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
-                            gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
+  RootedField<JSFunction*, 6> job(
+      roots,
+      NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
+                        gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
   if (!job) {
     return false;
   }
