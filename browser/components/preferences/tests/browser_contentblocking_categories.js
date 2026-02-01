@@ -1,8 +1,6 @@
 
 
 
-
-
 ChromeUtils.defineESModuleGetters(this, {
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
 });
