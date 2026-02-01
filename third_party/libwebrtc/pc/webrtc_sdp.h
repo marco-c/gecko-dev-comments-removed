@@ -25,11 +25,9 @@
 
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
-#include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/rtp_parameters.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 struct SdpParseError;
@@ -50,17 +48,6 @@ absl_nullable std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
     SdpType sdp_type,
     absl::string_view sdp,
     SdpParseError* absl_nullable error = nullptr);
-
-
-
-
-
-
-
-RTC_EXPORT bool ParseCandidate(absl::string_view message,
-                               Candidate* candidate,
-                               SdpParseError* error,
-                               bool is_raw);
 
 
 
