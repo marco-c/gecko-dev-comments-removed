@@ -214,6 +214,10 @@
       window.addEventListener("TabSplitViewActivate", this);
       window.addEventListener("TabSplitViewDeactivate", this);
 
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", this);
+
       this.tabContainer.init();
       this._setupInitialBrowserAndTab();
 
@@ -1155,9 +1159,7 @@
             this._remoteSVGIconDecoding &&
             url.startsWith(this.FaviconUtils.SVG_DATA_URI_PREFIX)
           ) {
-            
-            let size = Math.floor(16 * window.devicePixelRatio);
-            url = this.FaviconUtils.getMozRemoteImageURL(url, { size });
+            url = this.#getMozRemoteImageURLForSvg(browser, url);
           }
           aTab.setAttribute("image", url);
         } else {
@@ -1171,6 +1173,48 @@
         aIconURL,
         aOriginalURL,
       ]);
+    }
+
+    
+    #maybeRefreshIcons() {
+      if (!this._remoteSVGIconDecoding) {
+        return;
+      }
+
+      for (const tab of this.tabs) {
+        let browser = this.getBrowserForTab(tab);
+        let iconURL = browser.mIconURL;
+        if (
+          !iconURL ||
+          !iconURL.startsWith(this.FaviconUtils.SVG_DATA_URI_PREFIX)
+        ) {
+          continue;
+        }
+
+        tab.setAttribute(
+          "image",
+          this.#getMozRemoteImageURLForSvg(browser, iconURL)
+        );
+      }
+    }
+
+    #getMozRemoteImageURLForSvg(browser, aUrl) {
+      let options = {
+        
+        size: Math.floor(16 * window.devicePixelRatio),
+        colorScheme: window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light",
+      };
+
+      
+      let contentParentId =
+        browser.browsingContext?.currentWindowGlobal?.contentParentId;
+      if (contentParentId !== undefined) {
+        options.contentParentId = contentParentId;
+      }
+
+      return this.FaviconUtils.getMozRemoteImageURL(aUrl, options);
     }
 
     getIcon(aTab) {
@@ -7950,6 +7994,10 @@
         
         case "deactivate":
           this.selectedTab.updateLastSeenActive();
+          break;
+        case "change":
+          
+          this.#maybeRefreshIcons();
           break;
       }
     }
