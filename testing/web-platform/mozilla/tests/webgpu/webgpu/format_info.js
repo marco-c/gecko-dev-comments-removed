@@ -2402,6 +2402,22 @@ export function isTextureFormatBlendable(device, format) {
 
 
 
+export function isTextureFormatFilterable(device, format) {
+  const type = getTextureFormatType(format);
+  switch (type) {
+    case 'float':
+      return true;
+    case 'unfilterable-float':
+      assert(is32Float(format));
+      return hasFeature(device.features, 'float32-filterable');
+    default:
+      return false;
+  }
+}
+
+
+
+
 export function getTextureFormatType(format, aspect = 'all') {
   const info = kTextureFormatInfo[format];
   let type;
