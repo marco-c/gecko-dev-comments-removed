@@ -6,6 +6,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   NewTabAttributionServiceClass:
     "resource://newtab/lib/NewTabAttributionService.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 const { HttpServer } = ChromeUtils.importESModule(
@@ -21,7 +23,7 @@ const BinaryInputStream = Components.Constructor(
 const PREF_LEADER = "toolkit.telemetry.dap.leader.url";
 const PREF_HELPER = "toolkit.telemetry.dap.helper.url";
 const TASK_ID = "DSZGMFh26hBYXNaKvhL_N4AHA3P5lDn19on1vFPBxJM";
-const MAX_CONVERSIONS = 5;
+const MAX_CONVERSIONS = 2;
 const DAY_IN_MILLI = 1000 * 60 * 60 * 24;
 const LOOKBACK_DAYS = 1;
 const MAX_LOOKBACK_DAYS = 30;
@@ -100,8 +102,52 @@ class MockServer {
   }
 }
 
+let globalSandbox;
+
 add_setup(async function () {
   do_get_profile();
+  Services.prefs.setStringPref(
+    "browser.newtabpage.activity-stream.unifiedAds.endpoint",
+    "https://test.example.com"
+  );
+  Services.prefs.setStringPref(
+    "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL",
+    "https://test.example.com/config"
+  );
+  Services.prefs.setStringPref(
+    "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL",
+    "https://test.example.com/relay"
+  );
+
+  globalSandbox = sinon.createSandbox();
+  globalSandbox.stub(ObliviousHTTP, "getOHTTPConfig").resolves({});
+  globalSandbox.stub(ObliviousHTTP, "ohttpRequest").resolves({
+    status: 200,
+    json: () => {
+      return Promise.resolve({
+        task_id: TASK_ID,
+        vdaf: "histogram",
+        bits: 1,
+        length: HISTOGRAM_SIZE,
+        time_precision: 60,
+        default_measurement: 0,
+      });
+    },
+  });
+});
+
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref(
+    "browser.newtabpage.activity-stream.unifiedAds.endpoint"
+  );
+  Services.prefs.clearUserPref(
+    "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL"
+  );
+  Services.prefs.clearUserPref(
+    "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL"
+  );
+
+  globalSandbox.restore();
 });
 
 add_task(async function testSuccessfulConversion() {
@@ -111,24 +157,16 @@ add_task(async function testSuccessfulConversion() {
   });
 
   const partnerIdentifier = "partner_identifier";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
+  const index = 1;
 
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   await privateAttribution.onAttributionEvent("click", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   await privateAttribution.onAttributionConversion(
@@ -137,23 +175,48 @@ add_task(async function testSuccessfulConversion() {
     "view"
   );
 
-  const expectedMeasurement = {
-    task: {
-      id: conversionSettings.task_id,
-      vdaf: conversionSettings.vdaf,
-      bits: conversionSettings.bits,
-      length: conversionSettings.length,
-      time_precision: conversionSettings.time_precision,
-    },
-    measurement: conversionSettings.index,
-    options: {
-      ohttp_hpke: Services.prefs.getStringPref("dap.ohttp.hpke"),
-      ohttp_relay: Services.prefs.getStringPref("dap.ohttp.relayURL"),
-    },
-  };
+  const receivedMeasurement = mockSender.receivedMeasurements.pop();
+  Assert.deepEqual(receivedMeasurement.task, {
+    task_id: TASK_ID,
+    id: TASK_ID,
+    vdaf: "histogram",
+    bits: 1,
+    length: HISTOGRAM_SIZE,
+    time_precision: 60,
+    default_measurement: 0,
+  });
+  Assert.equal(receivedMeasurement.measurement, index);
+  Assert.ok(receivedMeasurement.options.ohttp_hpke);
+  Assert.equal(receivedMeasurement.options.ohttp_hpke.length, 41);
+  Assert.equal(
+    receivedMeasurement.options.ohttp_relay,
+    Services.prefs.getStringPref("dap.ohttp.relayURL")
+  );
+  Assert.equal(mockSender.receivedMeasurements.length, 0);
+});
+
+add_task(async function testZeroIndex() {
+  const mockSender = new MockDAPSender();
+  const privateAttribution = new NewTabAttributionServiceClass({
+    dapSender: mockSender,
+  });
+
+  const partnerIdentifier = "partner_identifier_zero";
+  const index = 0;
+
+  await privateAttribution.onAttributionEvent("view", {
+    partner_id: partnerIdentifier,
+    index,
+  });
+
+  await privateAttribution.onAttributionConversion(
+    partnerIdentifier,
+    LOOKBACK_DAYS,
+    "view"
+  );
 
   const receivedMeasurement = mockSender.receivedMeasurements.pop();
-  Assert.deepEqual(receivedMeasurement, expectedMeasurement);
+  Assert.equal(receivedMeasurement.measurement, index);
   Assert.equal(mockSender.receivedMeasurements.length, 0);
 });
 
@@ -171,6 +234,17 @@ add_task(async function testConversionWithoutImpression() {
     "view"
   );
 
+  const receivedMeasurement = mockSender.receivedMeasurements.pop();
+  Assert.deepEqual(receivedMeasurement.task, {
+    task_id: TASK_ID,
+    id: TASK_ID,
+    vdaf: "histogram",
+    bits: 1,
+    length: HISTOGRAM_SIZE,
+    time_precision: 60,
+    default_measurement: 0,
+  });
+  Assert.equal(receivedMeasurement.measurement, 0);
   Assert.equal(mockSender.receivedMeasurements.length, 0);
 });
 
@@ -181,19 +255,11 @@ add_task(async function testConversionWithInvalidLookbackDays() {
   });
 
   const partnerIdentifier = "partner_identifier";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
+  const index = 1;
 
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   await privateAttribution.onAttributionConversion(
@@ -214,15 +280,6 @@ add_task(async function testSelectionByLastView() {
   });
 
   const partnerIdentifier = "partner_identifier_last_view";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
   const selectedViewIndex = 1;
   const ignoredViewIndex = 2;
   const clickIndex = 3;
@@ -230,10 +287,7 @@ add_task(async function testSelectionByLastView() {
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: ignoredViewIndex,
-    },
+    index: ignoredViewIndex,
   });
 
   
@@ -242,10 +296,7 @@ add_task(async function testSelectionByLastView() {
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: selectedViewIndex,
-    },
+    index: selectedViewIndex,
   });
 
   
@@ -254,10 +305,7 @@ add_task(async function testSelectionByLastView() {
   
   await privateAttribution.onAttributionEvent("click", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: clickIndex,
-    },
+    index: clickIndex,
   });
 
   
@@ -281,15 +329,6 @@ add_task(async function testSelectionByLastClick() {
   });
 
   const partnerIdentifier = "partner_identifier_last_click";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
   const viewIndex = 1;
   const ignoredClickIndex = 2;
   const selectedClickIndex = 3;
@@ -297,10 +336,7 @@ add_task(async function testSelectionByLastClick() {
   
   await privateAttribution.onAttributionEvent("click", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: ignoredClickIndex,
-    },
+    index: ignoredClickIndex,
   });
 
   
@@ -309,10 +345,7 @@ add_task(async function testSelectionByLastClick() {
   
   await privateAttribution.onAttributionEvent("click", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: selectedClickIndex,
-    },
+    index: selectedClickIndex,
   });
 
   
@@ -321,10 +354,7 @@ add_task(async function testSelectionByLastClick() {
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: viewIndex,
-    },
+    index: viewIndex,
   });
 
   
@@ -348,25 +378,13 @@ add_task(async function testSelectionByLastTouch() {
   });
 
   const partnerIdentifier = "partner_identifier_last_touch";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
   const viewIndex = 1;
   const clickIndex = 2;
 
   
   await privateAttribution.onAttributionEvent("click", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: clickIndex,
-    },
+    index: clickIndex,
   });
 
   
@@ -375,10 +393,7 @@ add_task(async function testSelectionByLastTouch() {
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: {
-      ...conversionSettings,
-      index: viewIndex,
-    },
+    index: viewIndex,
   });
 
   
@@ -403,25 +418,13 @@ add_task(async function testSelectionByPartnerId() {
 
   const partnerIdentifier1 = "partner_identifier_1";
   const partnerIdentifier2 = "partner_identifier_2";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
   const partner1Index = 1;
   const partner2Index = 2;
 
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier1,
-    conversion: {
-      ...conversionSettings,
-      index: partner1Index,
-    },
+    index: partner1Index,
   });
 
   
@@ -430,10 +433,7 @@ add_task(async function testSelectionByPartnerId() {
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier2,
-    conversion: {
-      ...conversionSettings,
-      index: partner2Index,
-    },
+    index: partner2Index,
   });
 
   
@@ -457,32 +457,26 @@ add_task(async function testExpiredImpressions() {
   });
 
   const partnerIdentifier = "partner_identifier";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
+  const index = 1;
+  const defaultMeasurement = 0;
 
   
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   
   mockDateProvider.add(LOOKBACK_DAYS * DAY_IN_MILLI + 1);
 
-  
   await privateAttribution.onAttributionConversion(
     partnerIdentifier,
     LOOKBACK_DAYS,
     "view"
   );
 
+  const receivedMeasurement = mockSender.receivedMeasurements.pop();
+  Assert.deepEqual(receivedMeasurement.measurement, defaultMeasurement);
   Assert.equal(mockSender.receivedMeasurements.length, 0);
 });
 
@@ -493,19 +487,12 @@ add_task(async function testConversionBudget() {
   });
 
   const partnerIdentifier = "partner_identifier_budget";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
+  const index = 1;
+  const defaultMeasurement = 0;
 
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   
@@ -517,7 +504,7 @@ add_task(async function testConversionBudget() {
     );
 
     const receivedMeasurement = mockSender.receivedMeasurements.pop();
-    Assert.deepEqual(receivedMeasurement.measurement, conversionSettings.index);
+    Assert.deepEqual(receivedMeasurement.measurement, index);
     Assert.equal(mockSender.receivedMeasurements.length, 0);
   }
 
@@ -529,10 +516,7 @@ add_task(async function testConversionBudget() {
   );
 
   const receivedMeasurement = mockSender.receivedMeasurements.pop();
-  Assert.deepEqual(
-    receivedMeasurement.measurement,
-    conversionSettings.default_measurement
-  );
+  Assert.deepEqual(receivedMeasurement.measurement, defaultMeasurement);
   Assert.equal(mockSender.receivedMeasurements.length, 0);
 });
 
@@ -543,20 +527,13 @@ add_task(async function testHistogramSize() {
   });
 
   const partnerIdentifier = "partner_identifier_bad_settings";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    
-    index: HISTOGRAM_SIZE,
-  };
+  const defaultMeasurement = 0;
+  
+  const index = HISTOGRAM_SIZE;
 
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   await privateAttribution.onAttributionConversion(
@@ -566,10 +543,7 @@ add_task(async function testHistogramSize() {
   );
 
   const receivedMeasurement = mockSender.receivedMeasurements.pop();
-  Assert.deepEqual(
-    receivedMeasurement.measurement,
-    conversionSettings.default_measurement
-  );
+  Assert.deepEqual(receivedMeasurement.measurement, defaultMeasurement);
   Assert.equal(mockSender.receivedMeasurements.length, 0);
 });
 
@@ -584,19 +558,11 @@ add_task(async function testWithRealDAPSender() {
   const privateAttribution = new NewTabAttributionServiceClass();
 
   const partnerIdentifier = "partner_identifier_real_dap";
-  const conversionSettings = {
-    task_id: TASK_ID,
-    vdaf: "histogram",
-    bits: 1,
-    length: HISTOGRAM_SIZE,
-    time_precision: 60,
-    default_measurement: 0,
-    index: 1,
-  };
+  const index = 1;
 
   await privateAttribution.onAttributionEvent("view", {
     partner_id: partnerIdentifier,
-    conversion: conversionSettings,
+    index,
   });
 
   await privateAttribution.onAttributionConversion(
