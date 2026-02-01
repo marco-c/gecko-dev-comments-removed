@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 ChromeUtils.defineESModuleGetters(this, {
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
@@ -51,8 +51,8 @@ add_setup(async function () {
     url: getRootDirectory(gTestPath) + "testEngine_chromeicon.xml",
   });
 
-  
-  
+  // Install a WebExtension based engine to allow testing passing of plain
+  // URIs (moz-extension://) to the content process.
   await SearchTestUtils.installSearchExtension({
     icons: {
       16: "favicon.ico",
@@ -60,299 +60,65 @@ add_setup(async function () {
   });
 });
 
-add_task(async function GetState() {
+add_task(async function test_GetEngine() {
   let { browser } = await addTab();
-  let statePromise = await waitForTestMsg(browser, "State");
+  let getPromise = await waitForTestMsg(browser, "Engine");
   sendEventToContent(browser, {
-    type: "GetState",
+    type: "GetEngine",
   });
-  let msg = await statePromise.donePromise;
+  let msg = await getPromise.donePromise;
 
   checkMsg(msg, {
-    type: "State",
-    data: await currentStateObj(),
+    type: "Engine",
+    data: {
+      isPrivateEngine: false,
+      engine: await constructEngineObj(await Services.search.getDefault()),
+    },
   });
-
-  ok(arrayBufferIconTested, "ArrayBuffer path for the iconData was tested");
-  ok(plainURIIconTested, "Plain URI path for the iconData was tested");
 });
 
-add_task(async function SetDefaultEngine() {
+add_task(async function test_GetHandoffSearchModePrefs() {
   let { browser } = await addTab();
-  let newDefaultEngine = await Services.search.getEngineByName("FooChromeIcon");
-  let oldDefaultEngine = await Services.search.getDefault();
-  let searchPromise = await waitForTestMsg(browser, "CurrentEngine");
+  let getPromise = await waitForTestMsg(browser, "HandoffSearchModePrefs");
   sendEventToContent(browser, {
-    type: "SetCurrentEngine",
-    data: newDefaultEngine.name,
+    type: "GetHandoffSearchModePrefs",
   });
-  let deferredPromise = new Promise(resolve => {
-    Services.obs.addObserver(function obs(subj, topic, data) {
-      info("Test observed " + data);
-      if (data == "engine-default") {
-        ok(true, "Test observed engine-default");
-        Services.obs.removeObserver(obs, "browser-search-engine-modified");
-        resolve();
-      }
-    }, "browser-search-engine-modified");
-  });
-  info("Waiting for test to observe engine-default...");
-  await deferredPromise;
-  let msg = await searchPromise.donePromise;
+  let msg = await getPromise.donePromise;
+
   checkMsg(msg, {
-    type: "CurrentEngine",
-    data: await constructEngineObj(newDefaultEngine),
+    type: "HandoffSearchModePrefs",
+    data: true,
   });
-
-  let enginePromise = await waitForTestMsg(browser, "CurrentEngine");
-  await Services.search.setDefault(
-    oldDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
-  msg = await enginePromise.donePromise;
-  checkMsg(msg, {
-    type: "CurrentEngine",
-    data: await constructEngineObj(oldDefaultEngine),
-  });
-});
-
-
-
-add_task(async function setDefaultEnginePrivate() {
-  const engine = await Services.search.getEngineByName("FooChromeIcon");
-  const { browser } = await addTab();
-  let enginePromise = await waitForTestMsg(browser, "CurrentPrivateEngine");
-  await Services.search.setDefaultPrivate(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
-  let msg = await enginePromise.donePromise;
-  checkMsg(msg, {
-    type: "CurrentPrivateEngine",
-    data: await constructEngineObj(engine),
-  });
-});
-
-add_task(async function modifyEngine() {
-  let { browser } = await addTab();
-  let engine = await Services.search.getDefault();
-  let oldAlias = engine.alias;
-  let statePromise = await waitForTestMsg(browser, "CurrentState");
-  engine.alias = "ContentSearchTest";
-  let msg = await statePromise.donePromise;
-  checkMsg(msg, {
-    type: "CurrentState",
-    data: await currentStateObj(),
-  });
-  statePromise = await waitForTestMsg(browser, "CurrentState");
-  engine.alias = oldAlias;
-  msg = await statePromise.donePromise;
-  checkMsg(msg, {
-    type: "CurrentState",
-    data: await currentStateObj(),
-  });
-});
-
-add_task(async function test_hideEngine() {
-  let { browser } = await addTab();
-  let engine = await Services.search.getEngineByName("Foo \u2661");
-  let statePromise = await waitForTestMsg(browser, "CurrentState");
-  engine.hideOneOffButton = true;
-  let msg = await statePromise.donePromise;
-  checkMsg(msg, {
-    type: "CurrentState",
-    data: await currentStateObj("Foo \u2661"),
-  });
-  statePromise = await waitForTestMsg(browser, "CurrentState");
-  engine.hideOneOffButton = false;
-  msg = await statePromise.donePromise;
-  checkMsg(msg, {
-    type: "CurrentState",
-    data: await currentStateObj(),
-  });
-});
-
-add_task(async function search() {
-  let { browser } = await addTab();
-  let engine = await Services.search.getDefault();
-  let data = {
-    engineName: engine.name,
-    searchString: "ContentSearchTest",
-    healthReportKey: "ContentSearchTest",
-    searchPurpose: "ContentSearchTest",
-  };
-  let submissionURL = engine.getSubmission(data.searchString, "").uri.spec;
-
-  await performSearch(browser, data, submissionURL);
-});
-
-add_task(async function searchInBackgroundTab() {
-  
-  
-  
-  
-  let { browser } = await addTab();
-  let engine = await Services.search.getDefault();
-  let data = {
-    engineName: engine.name,
-    searchString: "ContentSearchTest",
-    healthReportKey: "ContentSearchTest",
-    searchPurpose: "ContentSearchTest",
-  };
-  let submissionURL = engine.getSubmission(data.searchString, "").uri.spec;
-
-  let searchPromise = performSearch(browser, data, submissionURL);
-  let newTab = BrowserTestUtils.addTab(gBrowser);
-  gBrowser.selectedTab = newTab;
-
-  await searchPromise;
-  gBrowser.removeTab(newTab);
 });
 
 add_task(async function badImage() {
   let { browser } = await addTab();
-  
-  
-  
-  let [engine, currentStateMsg] = await waitForNewEngine(
+  // If the bad image URI caused an exception to be thrown within ContentSearch,
+  // then we'll hang waiting for the CurrentState responses triggered by the new
+  // engine.  That's what we're testing, and obviously it shouldn't happen.
+  let [engine, currentEngineMsg] = await waitForNewEngineAsDefault(
     browser,
     "contentSearchBadImage.xml"
   );
-  let expectedCurrentState = await currentStateObj();
-  let expectedEngine = expectedCurrentState.engines.find(
-    e => e.name == engine.name
+  let expectedCurrentState = await constructEngineObj(
+    await Services.search.getDefault()
   );
-  ok(!!expectedEngine, "Sanity check: engine should be in expected state");
   Assert.strictEqual(
-    expectedEngine.iconData,
+    expectedCurrentState.iconData,
     "chrome://browser/skin/search-engine-placeholder.png",
     "Sanity check: icon of engine in expected state should be the placeholder: " +
-      expectedEngine.iconData
+      expectedCurrentState.iconData
   );
-  checkMsg(currentStateMsg, {
-    type: "CurrentState",
+  checkMsg(currentEngineMsg, {
+    type: "CurrentEngine",
     data: expectedCurrentState,
   });
-  
-  
-  let statePromise = await waitForTestMsg(browser, "CurrentState");
+  // Removing the engine triggers a final CurrentState message.  Wait for it so
+  // it doesn't trip up subsequent tests.
+  let statePromise = await waitForTestMsg(browser, "CurrentEngine");
   await Services.search.removeEngine(engine);
   await statePromise.donePromise;
 });
-
-add_task(
-  async function GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
-    let { browser } = await addTab();
-
-    
-    let [engine] = await waitForNewEngine(
-      browser,
-      "contentSearchSuggestions.xml"
-    );
-
-    let searchStr = "browser_contentSearch.js-suggestions-";
-
-    
-    sendEventToContent(browser, {
-      type: "AddFormHistoryEntry",
-      data: {
-        value: searchStr + "form",
-        engineName: engine.name,
-      },
-    });
-    await new Promise(resolve => {
-      Services.obs.addObserver(function onAdd(subj, topic, data) {
-        if (data == "formhistory-add") {
-          Services.obs.removeObserver(onAdd, "satchel-storage-changed");
-          executeSoon(resolve);
-        }
-      }, "satchel-storage-changed");
-    });
-
-    
-    
-    let suggestionsPromise = await waitForTestMsg(browser, "Suggestions");
-    sendEventToContent(browser, {
-      type: "GetSuggestions",
-      data: {
-        engineName: engine.name,
-        searchString: searchStr,
-      },
-    });
-
-    
-    let msg = await suggestionsPromise.donePromise;
-    checkMsg(msg, {
-      type: "Suggestions",
-      data: {
-        engineName: engine.name,
-        searchString: searchStr,
-        formHistory: [searchStr + "form"],
-        remote: [searchStr + "foo", searchStr + "bar"],
-      },
-    });
-
-    
-    sendEventToContent(browser, {
-      type: "RemoveFormHistoryEntry",
-      data: searchStr + "form",
-    });
-
-    await new Promise(resolve => {
-      Services.obs.addObserver(function onRemove(subj, topic, data) {
-        if (data == "formhistory-remove") {
-          Services.obs.removeObserver(onRemove, "satchel-storage-changed");
-          executeSoon(resolve);
-        }
-      }, "satchel-storage-changed");
-    });
-
-    
-    suggestionsPromise = await waitForTestMsg(browser, "Suggestions");
-    sendEventToContent(browser, {
-      type: "GetSuggestions",
-      data: {
-        engineName: engine.name,
-        searchString: searchStr,
-      },
-    });
-
-    
-    msg = await suggestionsPromise.donePromise;
-    checkMsg(msg, {
-      type: "Suggestions",
-      data: {
-        engineName: engine.name,
-        searchString: searchStr,
-        formHistory: [],
-        remote: [searchStr + "foo", searchStr + "bar"],
-      },
-    });
-
-    
-    let statePromise = await waitForTestMsg(browser, "CurrentState");
-    await Services.search.removeEngine(engine);
-    await statePromise.donePromise;
-  }
-);
-
-async function performSearch(browser, data, expectedURL) {
-  let stoppedPromise = BrowserTestUtils.browserStopped(browser, expectedURL);
-  sendEventToContent(browser, {
-    type: "Search",
-    data,
-    expectedURL,
-  });
-
-  await stoppedPromise;
-  
-  
-  Assert.equal(
-    browser.currentURI.spec,
-    expectedURL,
-    "Correct search page loaded"
-  );
-}
 
 function buffersEqual(actualArrayBuffer, expectedArrayBuffer) {
   let expectedView = new Int8Array(expectedArrayBuffer);
@@ -396,16 +162,16 @@ function checkArrayBuffers(actual, expected) {
 function checkMsg(actualMsg, expectedMsgData) {
   SimpleTest.isDeeply(actualMsg, expectedMsgData, "Checking message");
 
-  
-  
+  // Engines contain ArrayBuffers which we have to compare byte by byte and
+  // not as Objects (like SimpleTest.isDeeply does).
   checkArrayBuffers(actualMsg, expectedMsgData);
 }
 
 async function waitForTestMsg(browser, type) {
-  
-  
-  
-  
+  // We call SpecialPowers.spawn twice because we must let the first one
+  // complete so that the listener is added before we return from this function.
+  // In the second one, we wait for the signal that the expected message has
+  // been received.
   await SpecialPowers.spawn(
     browser,
     [SERVICE_EVENT_TYPE, type],
@@ -418,8 +184,8 @@ async function waitForTestMsg(browser, type) {
         content.eventDetails = event.detail;
         content.removeEventListener(childEvent, listener, true);
       }
-      
-      
+      // Ensure any previous details are cleared, so that we don't
+      // get the wrong ones by mistake.
       content.eventDetails = undefined;
       content.addEventListener(childEvent, listener, true);
     }
@@ -438,16 +204,21 @@ async function waitForTestMsg(browser, type) {
   return { donePromise };
 }
 
-async function waitForNewEngine(browser, basename) {
+async function waitForNewEngineAsDefault(browser, basename) {
   info("Waiting for engine to be added: " + basename);
 
-  
-  
-  let statePromise = await waitForTestMsg(browser, "CurrentState");
+  // Wait for the search events triggered by adding the new engine.
+  // There are two events triggerd by engine-added and engine-loaded
+  let statePromise = await waitForTestMsg(browser, "CurrentEngine");
 
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + basename,
   });
+  await Services.search.setDefault(
+    engine,
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
+
   return [engine, await statePromise.donePromise];
 }
 
