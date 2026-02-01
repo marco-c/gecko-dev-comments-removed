@@ -414,7 +414,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       });
       Object.defineProperty(this, "window", {
         value: this.window,
-        configurable: false,
+        configurable: true,
         writable: false,
       });
       Object.defineProperty(this, "chromeEventHandler", {
@@ -805,6 +805,17 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       return;
     }
     this.destroying = true;
+
+    
+    
+    
+    if (Cu.isRemoteProxy(this.window)) {
+      Object.defineProperty(this, "window", {
+        value: null,
+        configurable: true,
+        writable: false,
+      });
+    }
 
     
     
