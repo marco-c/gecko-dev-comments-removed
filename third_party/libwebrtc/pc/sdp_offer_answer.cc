@@ -4578,6 +4578,13 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
 
   
   
+  if (pc_->configuration()->always_negotiate_data_channels &&
+      !pc_->sctp_mid()) {
+    MaybeNegotiateSctp(session_options);
+  }
+
+  
+  
   
   
   if (ConfiguredForMedia()) {
@@ -4606,28 +4613,30 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
   }
   
   
-  if (!pc_->sctp_mid() && data_channel_controller()->HasDataChannels()) {
-    
-    
-    
-    bool recycled = false;
-    for (size_t i = 0; i < session_options->media_description_options.size();
-         i++) {
-      auto media_description = session_options->media_description_options[i];
-      if (media_description.type == MediaType::DATA &&
-          media_description.stopped) {
-        session_options->media_description_options[i] =
-            GetMediaDescriptionOptionsForActiveData(media_description.mid);
-        recycled = true;
-        break;
-      }
-    }
-    if (!recycled) {
-      session_options->media_description_options.push_back(
-          GetMediaDescriptionOptionsForActiveData(
-              mid_generator_.GenerateString()));
+  if (!pc_->configuration()->always_negotiate_data_channels &&
+      !pc_->sctp_mid() && data_channel_controller()->HasDataChannels()) {
+    MaybeNegotiateSctp(session_options);
+  }
+}
+
+void SdpOfferAnswerHandler::MaybeNegotiateSctp(
+    MediaSessionOptions* session_options) {
+  
+  
+  
+  for (size_t i = 0; i < session_options->media_description_options.size();
+       i++) {
+    auto media_description = session_options->media_description_options[i];
+    if (media_description.type == MediaType::DATA &&
+        media_description.stopped) {
+      session_options->media_description_options[i] =
+          GetMediaDescriptionOptionsForActiveData(media_description.mid);
+      return;
     }
   }
+  
+  session_options->media_description_options.push_back(
+      GetMediaDescriptionOptionsForActiveData(mid_generator_.GenerateString()));
 }
 
 void SdpOfferAnswerHandler::GetOptionsForAnswer(

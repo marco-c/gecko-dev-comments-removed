@@ -692,6 +692,11 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     
     
     
+    bool always_negotiate_data_channels = false;
+
+    
+    
+    
   };
 
   

@@ -566,6 +566,10 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
   void ReportInitialSdpMunging(bool had_local_description, SdpType type);
 
   
+  void MaybeNegotiateSctp(MediaSessionOptions* session_options)
+      RTC_RUN_ON(signaling_thread());
+
+  
   
   const MediaEngineInterface* media_engine() const;
   TransceiverList* transceivers();
