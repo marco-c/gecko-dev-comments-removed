@@ -2700,7 +2700,7 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 #endif
 
 
-pref("browser.tabs.remoteSVGIconDecoding", false);
+pref("browser.tabs.remoteSVGIconDecoding", true);
 
 
 
