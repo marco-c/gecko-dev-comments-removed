@@ -58,7 +58,7 @@ SelectionManager* SelectionMgr();
 ApplicationAccessible* ApplicationAcc();
 xpcAccessibleApplication* XPCApplicationAcc();
 
-typedef LocalAccessible*(New_Accessible)(mozilla::dom::Element* aElement,
+typedef LocalAccessible*(New_Accessible)(mozilla::dom::Element * aElement,
                                          LocalAccessible* aContext);
 
 
