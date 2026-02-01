@@ -322,29 +322,24 @@ struct MOZ_RAII AutoPrepareFocusRange {
   static nsRange* FindGeneratedRangeMostDistantFromAnchor(
       const Selection& aSelection) {
     const Span ranges = aSelection.mStyledRanges.Ranges();
-    const size_t len = ranges.Length();
-    nsRange* result{nullptr};
+    
+    
+    
     if (aSelection.GetDirection() == eDirNext) {
-      for (size_t i = 0; i < len; ++i) {
-        
-        
-        
-        if (ranges[i]->AsDynamicRange()->IsGenerated()) {
-          result = ranges[i]->AsDynamicRange();
-          break;
+      for (const auto& range : ranges) {
+        if (range->AsDynamicRange()->IsGenerated()) {
+          return range->AsDynamicRange();
         }
       }
     } else {
-      size_t i = len;
-      while (i--) {
-        if (ranges[i]->AsDynamicRange()->IsGenerated()) {
-          result = ranges[i]->AsDynamicRange();
-          break;
+      for (const auto& range : Reversed(ranges)) {
+        if (range->AsDynamicRange()->IsGenerated()) {
+          return range->AsDynamicRange();
         }
       }
     }
 
-    return result;
+    return nullptr;
   }
 
   static void RemoveGeneratedRanges(Selection& aSelection) {

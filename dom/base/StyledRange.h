@@ -16,16 +16,14 @@ class nsCycleCollectionTraversalCallback;
 
 namespace mozilla::dom {
 class AbstractRange;
-}
 
 struct StyledRange {
-  explicit StyledRange(mozilla::dom::AbstractRange* aRange,
-                       mozilla::TextRangeStyle aStyle = {});
+  explicit StyledRange(AbstractRange* aRange, TextRangeStyle aStyle = {});
 
-  RefPtr<mozilla::dom::AbstractRange> mRange;
-  mozilla::TextRangeStyle mTextRangeStyle;
+  RefPtr<AbstractRange> mRange;
+  TextRangeStyle mTextRangeStyle;
 };
-namespace mozilla::dom {
+
 
 
 
@@ -87,6 +85,11 @@ class StyledRangeCollection {
   void InsertElementsAt(size_t aIndex,
                         const nsTArray<StyledRange>& aStyledRanges);
 
+  
+
+
+
+  bool RemoveElement(const AbstractRange* aRange);
   void RemoveElementAt(size_t aIndex);
   void RemoveElementsAt(size_t aStart, size_t aCount);
 
