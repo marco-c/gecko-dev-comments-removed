@@ -102,21 +102,10 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   void DeregisterReceivedPacketCallback(void* id);
 
   
-  sigslot::signal2<PacketTransportInternal*, const SentPacketInfo&>
-      SignalSentPacket;
   void NotifySentPacket(PacketTransportInternal* transport,
                         const SentPacketInfo& info) {
     SignalSentPacket(transport, info);
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void SubscribeSentPacket(
       void* tag,
       absl::AnyInvocable<void(PacketTransportInternal*, const SentPacketInfo&)>
@@ -148,6 +137,9 @@ class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
   SequenceChecker network_checker_{SequenceChecker::kDetached};
 
  private:
+  sigslot::signal2<PacketTransportInternal*, const SentPacketInfo&>
+      SignalSentPacket;
+
   sigslot::signal1<PacketTransportInternal*> SignalWritableState;
   sigslot::signal1<PacketTransportInternal*> SignalReadyToSend;
   sigslot::signal1<PacketTransportInternal*> SignalReceivingState;
