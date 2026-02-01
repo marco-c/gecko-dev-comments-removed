@@ -8428,7 +8428,9 @@ void nsTextFrame::SelectionStateChanged(uint32_t aStart, uint32_t aEnd,
     
     
     
-    if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations) {
+    
+    if (ToSelectionTypeMask(aSelectionType) & kSelectionTypesWithDecorations &&
+        !f->HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
       const bool didHaveOverflowingSelection =
           f->HasAnyStateBits(TEXT_SELECTION_UNDERLINE_OVERFLOWED);
       nsRect r(nsPoint(), GetSize());
