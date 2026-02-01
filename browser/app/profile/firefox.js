@@ -398,6 +398,9 @@ pref("browser.urlbar.focusContentDocumentOnEsc", true);
 pref("browser.urlbar.loglevel", "Error");
 
 
+pref("browser.urlbar.mentions.maxResults", 5);
+
+
 pref("browser.urlbar.maxRichResults", 10);
 
 
