@@ -208,8 +208,21 @@ async function getContext() {
   try {
     context = await navigator.ml.createContext(contextOptions);
   } catch (e) {
-    throw new AssertionError(
-        `Unable to create context for ${variant} variant. ${e}`);
+    
+    
+    
+    if (e.message.includes('WebNN service connection error.')) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      try {
+        context = await navigator.ml.createContext(contextOptions);
+      } catch (retryError) {
+        throw new AssertionError(
+            `Unable to create context for ${variant} variant on retry. ${retryError}`);
+      }
+    } else {
+      throw new AssertionError(
+          `Unable to create context for ${variant} variant. ${e}`);
+    }
   }
   return context;
 }
