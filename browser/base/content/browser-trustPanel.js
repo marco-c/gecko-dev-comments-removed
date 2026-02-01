@@ -191,13 +191,16 @@ class TrustPanel {
 
   async onContentBlockingEvent(
     event,
-    _webProgress,
+    webProgress,
     _isSimulated,
     _previousState
   ) {
-    if (!this.#enabled) {
+    
+    
+    if (!this.#enabled || webProgress.browsingContext.currentURI != this.#uri) {
       return;
     }
+
     
     
     this.anyDetected = false;
@@ -361,13 +364,9 @@ class TrustPanel {
   }
 
   async #updatePopup() {
-    if (this.#uri) {
-      this.#host = BrowserUtils.formatURIForDisplay(this.#uri, {
-        onlyBaseDomain: true,
-      });
-    } else {
-      this.#host = "";
-    }
+    this.#host = BrowserUtils.formatURIForDisplay(this.#uri, {
+      onlyBaseDomain: true,
+    });
     this.#popup.setAttribute("connection", this.#connectionState());
     this.#popup.setAttribute(
       "tracking-protection",
