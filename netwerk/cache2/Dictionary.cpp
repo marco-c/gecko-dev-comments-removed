@@ -1129,9 +1129,34 @@ void DictionaryCache::RemoveAllDictionaries() {
   RefPtr<DictionaryCache> cache = GetInstance();
 
   DICTIONARY_LOG(("Removing all dictionaries"));
+  
+  
+  
+  
+  
+  
+  AutoTArray<nsCOMPtr<nsICacheEntry>, 8> entriesToDoom;
   for (auto& origin : cache->mDictionaryCache) {
-    origin.GetData()->Clear();
+    DictionaryOrigin* originPtr = origin.GetData();
+    DICTIONARY_LOG(("*** Clearing origin %s", originPtr->mOrigin.get()));
+    originPtr->mEntries.Clear();
+    originPtr->mPendingEntries.Clear();
+    originPtr->mPendingRemove.Clear();
+    if (originPtr->mEntry) {
+      entriesToDoom.AppendElement(originPtr->mEntry);
+    }
   }
+  
+  if (!entriesToDoom.IsEmpty()) {
+    NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+        "DictionaryOrigin::ClearAll", [entries = std::move(entriesToDoom)]() {
+          DICTIONARY_LOG(("*** Dooming %zu entries", entries.Length()));
+          for (auto& entry : entries) {
+            entry->AsyncDoom(nullptr);
+          }
+        }));
+  }
+  
   cache->mDictionaryCache.Clear();
 }
 
