@@ -16,6 +16,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInternals.h"
 #include "mozilla/dom/HTMLLabelElement.h"
+#include "mozilla/dom/TreeOrderedArrayInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -76,34 +77,55 @@ RelatedAccIterator::RelatedAccIterator(DocAccessible* aDocument,
                                        nsIContent* aDependentContent,
                                        nsAtom* aRelAttr)
     : mDocument(aDocument),
-      mDependentContent(aDependentContent),
+      mDependentContentOrShadowHost(aDependentContent),
       mRelAttr(aRelAttr),
       mProviders(nullptr),
       mIndex(0),
       mIsWalkingDependentElements(false) {
-  if (!aDependentContent->IsElement()) return;
-  if (nsAtom* id = aDependentContent->GetID()) {
-    mProviders = mDocument->GetRelProviders(aDependentContent->AsElement(), id);
+  mProviders = GetIdRelProvidersFor(mDependentContentOrShadowHost);
+}
+
+DocAccessible::AttrRelProviders* RelatedAccIterator::GetIdRelProvidersFor(
+    nsIContent* aContent) {
+  if (!aContent->IsElement() || !aContent->HasID()) {
+    return nullptr;
   }
+  return mDocument->GetRelProviders(aContent->AsElement(), aContent->GetID());
 }
 
 LocalAccessible* RelatedAccIterator::Next() {
   if (!mProviders || mIndex == mProviders->Length()) {
-    if (mIsWalkingDependentElements) {
-      
-      
-      return nullptr;
-    }
-    
-    
-    mIsWalkingDependentElements = true;
     mIndex = 0;
-    if (auto providers =
-            mDocument->mDependentElementsMap.Lookup(mDependentContent)) {
-      mProviders = &providers.Data();
-    } else {
-      mProviders = nullptr;
-      return nullptr;
+    mProviders = nullptr;
+    if (!mIsWalkingDependentElements) {
+      
+      
+      mIsWalkingDependentElements = true;
+      if (auto providers = mDocument->mDependentElementsMap.Lookup(
+              mDependentContentOrShadowHost)) {
+        mProviders = &providers.Data();
+      }
+    }
+    if (!mProviders) {
+      
+      
+      dom::ShadowRoot* shadow =
+          mDependentContentOrShadowHost->GetContainingShadow();
+      dom::Element* element =
+          dom::Element::FromNodeOrNull(mDependentContentOrShadowHost);
+
+      if (shadow && element && element == shadow->GetReferenceTargetElement()) {
+        
+        mDependentContentOrShadowHost = shadow->Host();
+        mProviders = GetIdRelProvidersFor(mDependentContentOrShadowHost);
+        mIsWalkingDependentElements = false;
+
+        
+        return Next();
+      } else {
+        
+        return nullptr;
+      }
     }
   }
 
@@ -119,7 +141,7 @@ LocalAccessible* RelatedAccIterator::Next() {
     
     if (mIsWalkingDependentElements &&
         !nsCoreUtils::IsDescendantOfAnyShadowIncludingAncestor(
-            mDependentContent, provider->mContent)) {
+            mDependentContentOrShadowHost, provider->mContent)) {
       continue;
     }
     LocalAccessible* related = mDocument->GetAccessible(provider->mContent);
@@ -149,28 +171,89 @@ LocalAccessible* RelatedAccIterator::Next() {
 HTMLLabelIterator::HTMLLabelIterator(DocAccessible* aDocument,
                                      const LocalAccessible* aAccessible,
                                      LabelFilter aFilter)
-    : mRelIter(aDocument, aAccessible->GetContent(), nsGkAtoms::_for),
-      mAcc(aAccessible),
-      mLabelFilter(aFilter) {}
+    : mDocument(aDocument), mAcc(aAccessible), mLabelFilter(aFilter) {}
 
 bool HTMLLabelIterator::IsLabel(LocalAccessible* aLabel) {
   dom::HTMLLabelElement* labelEl =
       dom::HTMLLabelElement::FromNode(aLabel->GetContent());
-  return labelEl && labelEl->GetControl() == mAcc->GetContent();
+  return labelEl && labelEl->GetLabeledElementInternal() == mAcc->GetContent();
+}
+
+void HTMLLabelIterator::Initialize() {
+  
+  
+  
+  
+  
+  
+  nsIContent* content = mAcc->GetContent();
+  dom::DocumentOrShadowRoot* root =
+      content->GetUncomposedDocOrConnectedShadowRoot();
+
+  while (root) {
+    if (nsAtom* id = content->GetID()) {
+      MOZ_ASSERT(content->IsElement());
+
+      DocAccessible::AttrRelProviders* idProviders =
+          mDocument->GetRelProviders(content->AsElement(), id);
+
+      if (idProviders) {
+        for (auto& provider : *idProviders) {
+          if (provider->mRelAttr != nsGkAtoms::_for) {
+            continue;
+          }
+
+          mRelatedNodes.Insert(*provider->mContent);
+        }
+      }
+    }
+    dom::ShadowRoot* shadow = content->GetContainingShadow();
+    dom::Element* element =
+        content->IsElement() ? content->AsElement() : nullptr;
+    if (shadow && element && element == shadow->GetReferenceTargetElement()) {
+      content = shadow->Host();
+      root = content->GetUncomposedDocOrConnectedShadowRoot();
+    } else {
+      root = nullptr;
+    }
+  }
+
+  mInitialized = true;
 }
 
 LocalAccessible* HTMLLabelIterator::Next() {
+  if (!mInitialized) {
+    Initialize();
+  }
+
   
   
-  LocalAccessible* label = nullptr;
-  while ((label = mRelIter.Next())) {
-    if (IsLabel(label)) {
+  while (mNextIndex < mRelatedNodes.Length()) {
+    nsIContent* nextContent = mRelatedNodes[mNextIndex];
+    mNextIndex++;
+
+    LocalAccessible* label = mDocument->GetAccessible(nextContent);
+    if (label && IsLabel(label)) {
       return label;
     }
   }
 
   
-  if (mLabelFilter == eSkipAncestorLabel || !mAcc->IsWidget()) return nullptr;
+  if (mLabelFilter == eSkipAncestorLabel) {
+    return nullptr;
+  }
+
+  if (!mAcc->IsWidget()) {
+    nsIContent* content = mAcc->GetContent();
+    if (!content->IsElement()) {
+      return nullptr;
+    }
+    dom::Element* element = content->AsElement();
+    
+    if (!element->IsLabelable()) {
+      return nullptr;
+    }
+  }
 
   
   

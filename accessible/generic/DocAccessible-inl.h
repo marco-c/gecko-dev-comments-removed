@@ -142,6 +142,7 @@ inline DocAccessible::AttrRelProviders* DocAccessible::GetRelProviders(
 
 inline DocAccessible::AttrRelProviders* DocAccessible::GetOrCreateRelProviders(
     dom::Element* aElement, nsAtom* aID) {
+  
   dom::DocumentOrShadowRoot* docOrShadowRoot =
       aElement->GetUncomposedDocOrConnectedShadowRoot();
   DependentIDsHashtable* hash =

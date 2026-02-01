@@ -800,6 +800,7 @@ class DocAccessible : public HyperTextAccessible,
   nsTHashMap<nsIContent*, AttrRelProviders> mDependentElementsMap;
 
   friend class RelatedAccIterator;
+  friend class HTMLLabelIterator;
 
   
 
