@@ -9,6 +9,7 @@
 
 
 async function test_element(className, data) {
+  await pushPref("devtools.inspector.activeSidebar", "");
   await addTab(URL_ROOT + "doc_simple_animation.html");
   await removeAnimatedElementsExcept([className]);
   const { panel } = await openAnimationInspector();

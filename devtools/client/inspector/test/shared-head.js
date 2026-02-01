@@ -58,18 +58,20 @@ var openInspectorSidebarTab = async function (id) {
 
   info("Selecting the " + id + " sidebar");
 
-  const onSidebarSelect = inspector.sidebar.once("select");
   if (id === "layoutview") {
+    await inspector.sidebar.select(id);
+
     
-    const onBoxModelViewReady = inspector.once("boxmodel-view-updated");
-    const onGridPanelReady = inspector.once("grid-panel-updated");
-    inspector.sidebar.select(id);
-    await onBoxModelViewReady;
-    await onGridPanelReady;
+    
+    
+    await waitFor(
+      () => inspector.hasPanel("boxmodel") && inspector.hasPanel("layoutview")
+    );
+    await inspector.getPanel("boxmodel").initialized;
+    await inspector.getPanel("layoutview").gridInspector.initialized;
   } else {
-    inspector.sidebar.select(id);
+    await inspector.sidebar.select(id);
   }
-  await onSidebarSelect;
 
   return {
     toolbox,
@@ -187,8 +189,8 @@ function selectRuleView(inspector) {
 
 
 
-function selectComputedView(inspector) {
-  inspector.sidebar.select("computedview");
+async function selectComputedView(inspector) {
+  await inspector.sidebar.select("computedview");
   return inspector.getPanel("computedview").computedView;
 }
 
@@ -199,8 +201,8 @@ function selectComputedView(inspector) {
 
 
 
-function selectChangesView(inspector) {
-  inspector.sidebar.select("changesview");
+async function selectChangesView(inspector) {
+  await inspector.sidebar.select("changesview");
   return inspector.getPanel("changesview");
 }
 
@@ -210,8 +212,8 @@ function selectChangesView(inspector) {
 
 
 
-function selectLayoutView(inspector) {
-  inspector.sidebar.select("layoutview");
+async function selectLayoutView(inspector) {
+  await inspector.sidebar.select("layoutview");
   return inspector.getPanel("boxmodel");
 }
 
