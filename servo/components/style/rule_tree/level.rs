@@ -4,13 +4,10 @@
 
 #![forbid(unsafe_code)]
 
-
-
 use crate::derives::*;
 use crate::properties::Importance;
 use crate::shared_lock::{SharedRwLockReadGuard, StylesheetGuards};
 use crate::stylesheets::Origin;
-use crate::values::animated::ToAnimatedValue;
 
 
 
@@ -32,25 +29,8 @@ use crate::values::animated::ToAnimatedValue;
 
 
 
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    MallocSizeOf,
-    Ord,
-    PartialEq,
-    PartialOrd,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    Serialize,
-    Deserialize,
-)]
-#[repr(C, u8)]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub enum CascadeLevel {
     
     UANormal,
@@ -207,15 +187,6 @@ impl CascadeLevel {
             _ => false,
         }
     }
-
-    
-    #[inline]
-    pub fn is_tree(&self) -> bool {
-        matches!(
-            *self,
-            Self::AuthorImportant { .. } | Self::AuthorNormal { .. }
-        )
-    }
 }
 
 
@@ -224,24 +195,7 @@ impl CascadeLevel {
 
 
 
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    MallocSizeOf,
-    Ord,
-    PartialEq,
-    PartialOrd,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-    Serialize,
-    Deserialize,
-)]
-#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub struct ShadowCascadeOrder(i8);
 
 impl ShadowCascadeOrder {
@@ -260,7 +214,7 @@ impl ShadowCascadeOrder {
 
     
     #[inline]
-    pub fn for_same_tree() -> Self {
+    fn for_same_tree() -> Self {
         Self(0)
     }
 
@@ -297,19 +251,5 @@ impl std::ops::Neg for ShadowCascadeOrder {
     #[inline]
     fn neg(self) -> Self {
         Self(self.0.neg())
-    }
-}
-
-impl ToAnimatedValue for ShadowCascadeOrder {
-    type AnimatedValue = ShadowCascadeOrder;
-
-    #[inline]
-    fn to_animated_value(self, _: &crate::values::animated::Context) -> Self::AnimatedValue {
-        self
-    }
-
-    #[inline]
-    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        animated
     }
 }

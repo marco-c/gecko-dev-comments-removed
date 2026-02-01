@@ -20,7 +20,7 @@ use crate::values::generics::position::PositionComponent as GenericPositionCompo
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
 use crate::values::generics::position::ZIndex as GenericZIndex;
 use crate::values::generics::position::{AspectRatio as GenericAspectRatio, GenericAnchorSide};
-use crate::values::generics::position::{GenericAnchorFunction, GenericInset, TreeScoped};
+use crate::values::generics::position::{GenericAnchorFunction, GenericInset};
 use crate::values::specified;
 use crate::values::specified::align::AlignFlags;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage, NonNegativeNumber};
@@ -349,8 +349,8 @@ impl<S: Side> PositionComponent<S> {
 }
 
 
+#[repr(transparent)]
 #[derive(
-    Animate,
     Clone,
     Debug,
     MallocSizeOf,
@@ -363,22 +363,25 @@ impl<S: Side> PositionComponent<S> {
     ToTyped,
 )]
 #[css(comma)]
-#[repr(transparent)]
-pub struct AnchorNameIdent(
+pub struct AnchorName(
     #[css(iterable, if_empty = "none")]
     #[ignore_malloc_size_of = "Arc"]
-    #[animation(constant)]
     pub crate::ArcSlice<DashedIdent>,
 );
 
-impl AnchorNameIdent {
+impl AnchorName {
     
     pub fn none() -> Self {
         Self(Default::default())
     }
+
+    
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
-impl Parse for AnchorNameIdent {
+impl Parse for AnchorName {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -395,17 +398,7 @@ impl Parse for AnchorNameIdent {
         while input.try_parse(|input| input.expect_comma()).is_ok() {
             idents.push(DashedIdent::parse(context, input)?);
         }
-        Ok(AnchorNameIdent(ArcSlice::from_iter(idents.drain(..))))
-    }
-}
-
-
-pub type AnchorName = TreeScoped<AnchorNameIdent>;
-
-impl AnchorName {
-    
-    pub fn none() -> Self {
-        Self::with_default_level(AnchorNameIdent::none())
+        Ok(AnchorName(ArcSlice::from_iter(idents.drain(..))))
     }
 }
 
@@ -423,7 +416,7 @@ impl AnchorName {
     ToTyped,
 )]
 #[repr(u8)]
-pub enum AnchorScopeKeyword {
+pub enum AnchorScope {
     
     None,
     
@@ -437,14 +430,19 @@ pub enum AnchorScopeKeyword {
     ),
 }
 
-impl AnchorScopeKeyword {
+impl AnchorScope {
     
     pub fn none() -> Self {
         Self::None
     }
+
+    
+    pub fn is_none(&self) -> bool {
+        *self == Self::None
+    }
 }
 
-impl Parse for AnchorScopeKeyword {
+impl Parse for AnchorScope {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -464,19 +462,7 @@ impl Parse for AnchorScopeKeyword {
         while input.try_parse(|input| input.expect_comma()).is_ok() {
             idents.push(DashedIdent::parse(context, input)?);
         }
-        Ok(AnchorScopeKeyword::Idents(ArcSlice::from_iter(
-            idents.drain(..),
-        )))
-    }
-}
-
-
-pub type AnchorScope = TreeScoped<AnchorScopeKeyword>;
-
-impl AnchorScope {
-    
-    pub fn none() -> Self {
-        Self::with_default_level(AnchorScopeKeyword::none())
+        Ok(AnchorScope::Idents(ArcSlice::from_iter(idents.drain(..))))
     }
 }
 
@@ -495,30 +481,13 @@ impl AnchorScope {
     ToTyped,
 )]
 #[repr(u8)]
-pub enum PositionAnchorKeyword {
+pub enum PositionAnchor {
     
     None,
     
     Auto,
     
     Ident(DashedIdent),
-}
-
-impl PositionAnchorKeyword {
-    
-    pub fn none() -> Self {
-        Self::None
-    }
-}
-
-
-pub type PositionAnchor = TreeScoped<PositionAnchorKeyword>;
-
-impl PositionAnchor {
-    
-    pub fn none() -> Self {
-        Self::with_default_level(PositionAnchorKeyword::none())
-    }
 }
 
 #[derive(
@@ -1416,15 +1385,14 @@ impl PositionArea {
         
         
         
-        if self.first.axis() == PositionAreaAxis::None
-            && self.second.axis() == PositionAreaAxis::None
-            && !cb_wm.is_vertical()
-        {
-            std::mem::swap(&mut self.first, &mut self.second);
+        if self.first.axis() == PositionAreaAxis::None &&
+            self.second.axis() == PositionAreaAxis::None &&
+            !cb_wm.is_vertical() {
+          std::mem::swap(&mut self.first, &mut self.second);
         } else {
-            self.first = self.first.to_physical(cb_wm, self_wm, LogicalAxis::Block);
-            self.second = self.second.to_physical(cb_wm, self_wm, LogicalAxis::Inline);
-            self.canonicalize_order();
+          self.first = self.first.to_physical(cb_wm, self_wm, LogicalAxis::Block);
+          self.second = self.second.to_physical(cb_wm, self_wm, LogicalAxis::Inline);
+          self.canonicalize_order();
         }
         self
     }
@@ -2176,9 +2144,7 @@ impl Parse for AnchorFunction {
                 })
                 .ok();
             Ok(Self {
-                target_element: TreeScoped::with_default_level(
-                    target_element.unwrap_or_else(DashedIdent::empty),
-                ),
+                target_element: target_element.unwrap_or_else(DashedIdent::empty),
                 side,
                 fallback: fallback.into(),
             })
