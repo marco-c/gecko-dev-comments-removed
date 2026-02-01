@@ -7,6 +7,11 @@ function assert_throws_wasm(fn, message) {
     assert_not_reached(`expected to throw with ${message}`);
   } catch (e) {
     assert_true(e instanceof WebAssembly.Exception, `Error should be a WebAssembly.Exception with ${message}`);
+    
+    
+    
+    
+    assert_false(Error.isError(e), `Error.isError(WebAssembly.Exception) should be false due to lacking [[ErrorData]]`);
   }
 }
 
