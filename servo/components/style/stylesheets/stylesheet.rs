@@ -3,6 +3,7 @@
 
 
 use crate::context::QuirksMode;
+use crate::derives::*;
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
 use crate::media_queries::{Device, MediaList};
 use crate::parser::ParserContext;
@@ -552,11 +553,11 @@ impl Clone for Stylesheet {
         
         let media = self.media.read_with(&guard).clone();
         let media = Arc::new(lock.wrap(media));
-        let contents = lock.wrap(Arc::new(
+        let contents = lock.wrap(
             self.contents
                 .read_with(&guard)
-                .deep_clone_with_lock(&lock, &guard),
-        ));
+                .deep_clone(&lock, None, &guard),
+        );
 
         Stylesheet {
             contents,
