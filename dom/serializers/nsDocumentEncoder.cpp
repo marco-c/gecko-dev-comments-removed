@@ -2016,20 +2016,12 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
 
   
   ErrorResult err;
-  
-  inRange->SetStart(RawRangeBoundary(promotedStartPoint.GetContainer(),
-                                     *promotedStartPoint.Offset(
-                                         OffsetFilter::kValidOrInvalidOffsets),
-                                     RangeBoundarySetBy::Offset, TreeKind::DOM),
-                    err, GetAllowRangeCrossShadowBoundary(mFlags));
+  inRange->SetStart(promotedStartPoint.AsRangeBoundaryInDOMTree(), err,
+                    GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
   }
-  
-  inRange->SetEnd(RawRangeBoundary(promotedEndPoint.GetContainer(),
-                                   *promotedEndPoint.Offset(
-                                       OffsetFilter::kValidOrInvalidOffsets),
-                                   RangeBoundarySetBy::Offset, TreeKind::DOM),
+  inRange->SetEnd(RawRangeBoundary(promotedEndPoint.AsRangeBoundaryInDOMTree()),
                   err, GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
