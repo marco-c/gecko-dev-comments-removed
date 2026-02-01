@@ -64,9 +64,10 @@ class WGLLibrary {
     int(GLAPIENTRY* fReleasePbufferDC)(HANDLE hPbuffer, HDC dc);
     
     
-    BOOL(GLAPIENTRY* fChoosePixelFormat)
-    (HDC hdc, const int* piAttribIList, const FLOAT* pfAttribFList,
-     UINT nMaxFormats, int* piFormats, UINT* nNumFormats);
+    BOOL(GLAPIENTRY* fChoosePixelFormat)(HDC hdc, const int* piAttribIList,
+                                         const FLOAT* pfAttribFList,
+                                         UINT nMaxFormats, int* piFormats,
+                                         UINT* nNumFormats);
     
     
     
@@ -77,18 +78,18 @@ class WGLLibrary {
     HGLRC(GLAPIENTRY* fCreateContextAttribsARB)
     (HDC hdc, HGLRC hShareContext, const int* attribList);
     
-    BOOL(GLAPIENTRY* fDXSetResourceShareHandleNV)
-    (void* dxObject, HANDLE shareHandle);
+    BOOL(GLAPIENTRY* fDXSetResourceShareHandleNV)(void* dxObject,
+                                                  HANDLE shareHandle);
     HANDLE(GLAPIENTRY* fDXOpenDeviceNV)(void* dxDevice);
     BOOL(GLAPIENTRY* fDXCloseDeviceNV)(HANDLE hDevice);
     HANDLE(GLAPIENTRY* fDXRegisterObjectNV)
     (HANDLE hDevice, void* dxObject, GLuint name, GLenum type, GLenum access);
     BOOL(GLAPIENTRY* fDXUnregisterObjectNV)(HANDLE hDevice, HANDLE hObject);
     BOOL(GLAPIENTRY* fDXObjectAccessNV)(HANDLE hObject, GLenum access);
-    BOOL(GLAPIENTRY* fDXLockObjectsNV)
-    (HANDLE hDevice, GLint count, HANDLE* hObjects);
-    BOOL(GLAPIENTRY* fDXUnlockObjectsNV)
-    (HANDLE hDevice, GLint count, HANDLE* hObjects);
+    BOOL(GLAPIENTRY* fDXLockObjectsNV)(HANDLE hDevice, GLint count,
+                                       HANDLE* hObjects);
+    BOOL(GLAPIENTRY* fDXUnlockObjectsNV)(HANDLE hDevice, GLint count,
+                                         HANDLE* hObjects);
   } mSymbols = {};
 
   bool EnsureInitialized();
