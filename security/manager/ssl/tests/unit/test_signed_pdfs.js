@@ -9,6 +9,10 @@ const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
 );
 
+const nssErrors = Cc["@mozilla.org/nss_errors_service;1"].getService(
+  Ci.nsINSSErrorsService
+);
+
 
 
 
@@ -119,7 +123,6 @@ function readBinFromFile(dataName) {
 
 
 
-
 add_task(async function () {
   info("Running PDF verification service test with a correct signature");
   let pkcs7 = pkcs7FromFile("cert_correct");
@@ -131,16 +134,16 @@ add_task(async function () {
 
   equal(result.length, 1);
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
+
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
   ok(
     firstSignatureResult.signerCertificate,
     "Signer certificate should not be null/undefined"
   );
 });
-
 
 
 
@@ -158,10 +161,12 @@ add_task(async function () {
   equal(result.length, 1);
   let firstSignatureResult = result[0];
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
+
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
+
   ok(
     firstSignatureResult.signerCertificate,
     "Signer certificate should not be null/undefined"
@@ -230,7 +235,7 @@ add_task(async function () {
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
   ok(
     firstSignatureResult.signerCertificate,
@@ -240,7 +245,7 @@ add_task(async function () {
   equal(secondSignatureResult.signatureResult, Cr.NS_OK);
   equal(
     secondSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
   ok(
     secondSignatureResult.signerCertificate,
@@ -266,7 +271,7 @@ add_task(async function () {
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
   ok(
     firstSignatureResult.signerCertificate,
@@ -300,7 +305,7 @@ add_task(async function () {
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
   ok(
     firstSignatureResult.signerCertificate,
@@ -372,9 +377,10 @@ add_task(async function () {
   let firstSignatureResult = result[0];
 
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
+
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
 
   ok(
@@ -406,7 +412,7 @@ add_task(async function () {
   equal(firstSignatureResult.signatureResult, Cr.NS_OK);
   equal(
     firstSignatureResult.certificateResult,
-    Cr.NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_UNKNOWN_ISSUER)
   );
 
   ok(
@@ -425,4 +431,52 @@ add_task(async function () {
       firstSignatureResult.signerCertificate.issuerName
   );
   Assert.equal(firstSignatureResult.signerCertificate.issuerName, "CN=Test");
+});
+
+add_task(async function () {
+  info(
+    "Running PDF verification service test with a correct signature and certificate"
+  );
+  let pkcs7 = pkcs7FromFile("correct_with_ca");
+  let data = [readBinFromFile("data_correct")];
+  let signatureType = Ci.nsIX509CertDB.ADBE_PKCS7_DETACHED;
+
+  let result = await certdb.asyncVerifyPKCS7Object(pkcs7, data, signatureType);
+  let firstSignatureResult = result[0];
+
+  equal(result.length, 1);
+  equal(firstSignatureResult.signatureResult, Cr.NS_OK);
+  equal(firstSignatureResult.certificateResult, Cr.NS_OK);
+
+  ok(
+    firstSignatureResult.signerCertificate,
+    "Signer certificate should not be null/undefined"
+  );
+});
+
+
+
+
+add_task(async function () {
+  info(
+    "Running PDF verification service test with a correct signature and expired certificate"
+  );
+  let pkcs7 = pkcs7FromFile("ca_expired");
+  let data = [readBinFromFile("data_correct")];
+  let signatureType = Ci.nsIX509CertDB.ADBE_PKCS7_DETACHED;
+
+  let result = await certdb.asyncVerifyPKCS7Object(pkcs7, data, signatureType);
+  let firstSignatureResult = result[0];
+
+  equal(result.length, 1);
+  equal(firstSignatureResult.signatureResult, Cr.NS_OK);
+
+  equal(
+    firstSignatureResult.certificateResult,
+    nssErrors.getXPCOMFromNSSError(SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE)
+  );
+  ok(
+    firstSignatureResult.signerCertificate,
+    "Signer certificate should not be null/undefined"
+  );
 });
