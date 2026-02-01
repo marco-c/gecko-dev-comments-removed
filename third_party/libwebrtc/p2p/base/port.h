@@ -267,6 +267,9 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
+  void NotifyCandidateready(Port* port, const Candidate& candidate) {
+    SignalCandidateReady(port, candidate);
+  }
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
   
   const std::vector<Candidate>& Candidates() const override;
@@ -278,6 +281,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   void SubscribePortComplete(absl::AnyInvocable<void(Port*)> callback);
+  void NotifyPortComplete(Port* port) { SignalPortComplete(port); }
   sigslot::signal1<Port*> SignalPortComplete;
 
   
@@ -286,6 +290,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   void SubscribePortError(absl::AnyInvocable<void(Port*)> callback);
+  void NotifyPortError(Port* port) { SignalPortError(port); }
   
   
   
