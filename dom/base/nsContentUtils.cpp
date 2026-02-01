@@ -128,7 +128,6 @@
 #include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
-#include "mozilla/TextUtils.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ViewportUtils.h"
@@ -4480,191 +4479,6 @@ nsresult nsContentUtils::CheckQName(const nsAString& aQualifiedName,
   return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
 }
 
-static inline bool IsValidRestrictedContinuation(char16_t c) {
-  return mozilla::IsAsciiAlpha(c) || mozilla::IsAsciiDigit(c) || c == '-' ||
-         c == '.' || c == ':' || c == '_' || c >= 0x80;
-}
-
-
-
-
-
-
-
-bool nsContentUtils::IsValidElementLocalName(const nsAString& aName) {
-  if (aName.IsEmpty()) {
-    return false;
-  }
-
-  const char16_t* ptr = aName.BeginReading();
-  const char16_t* end = aName.EndReading();
-  char16_t first = *ptr;
-
-  if (mozilla::IsAsciiAlpha(first)) {
-    
-    for (++ptr; ptr < end; ++ptr) {
-      char16_t c = *ptr;
-      if (c == 0 || IsHTMLWhitespace(c) || c == '/' || c == '>') {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  if (first == ':' || first == '_' || first >= 0x80) {
-    
-    for (++ptr; ptr < end; ++ptr) {
-      if (!IsValidRestrictedContinuation(*ptr)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  
-  return false;
-}
-
-
-
-bool nsContentUtils::IsValidAttributeLocalName(const nsAString& aName) {
-  if (aName.IsEmpty()) {
-    return false;
-  }
-  for (const char16_t* ptr = aName.BeginReading(); ptr < aName.EndReading();
-       ptr++) {
-    char16_t c = *ptr;
-    if (c == 0 || IsHTMLWhitespace(c) || c == '>' || c == '/' || c == '=') {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-bool nsContentUtils::IsValidNamespacePrefix(const nsAString& aPrefix) {
-  
-  if (aPrefix.IsEmpty()) {
-    return true;
-  }
-  for (const char16_t* ptr = aPrefix.BeginReading(); ptr < aPrefix.EndReading();
-       ptr++) {
-    char16_t c = *ptr;
-    if (c == 0 || IsHTMLWhitespace(c) || c == '/' || c == '>') {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-bool nsContentUtils::IsValidDoctypeName(const nsAString& aName) {
-  
-  for (const char16_t* ptr = aName.BeginReading(); ptr < aName.EndReading();
-       ptr++) {
-    char16_t c = *ptr;
-    if (c == 0 || IsHTMLWhitespace(c) || c == '>') {
-      return false;
-    }
-  }
-  return true;
-}
-
-
-
-
-
-
-nsresult nsContentUtils::ParseQualifiedNameRelaxed(
-    const nsAString& aQualifiedName, uint16_t aNodeType,
-    const char16_t** aColon, const char16_t** aLocalNameEnd) {
-  if (aColon) {
-    *aColon = nullptr;
-  }
-  if (aLocalNameEnd) {
-    *aLocalNameEnd = nullptr;
-  }
-
-  if (aQualifiedName.IsEmpty()) {
-    return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-  }
-
-  const char16_t* begin = aQualifiedName.BeginReading();
-  const char16_t* end = aQualifiedName.EndReading();
-  const char16_t* firstColon = nullptr;
-  const char16_t* secondColon = nullptr;
-
-  
-  
-  for (const char16_t* ptr = begin; ptr < end; ptr++) {
-    if (*ptr == ':') {
-      if (!firstColon) {
-        firstColon = ptr;
-      } else if (!secondColon) {
-        secondColon = ptr;
-        break;  
-      }
-    }
-  }
-
-  if (firstColon) {
-    
-    nsDependentSubstring prefix(begin, firstColon);
-
-    
-    if (prefix.IsEmpty()) {
-      return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-    }
-
-    if (!IsValidNamespacePrefix(prefix)) {
-      return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-    }
-
-    
-    
-    const char16_t* localNameEnd = secondColon ? secondColon : end;
-    nsDependentSubstring localName(firstColon + 1, localNameEnd);
-
-    
-    if (localName.IsEmpty()) {
-      return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-    }
-
-    
-    if (aNodeType == nsINode::ATTRIBUTE_NODE) {
-      if (!IsValidAttributeLocalName(localName)) {
-        return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-      }
-    } else {
-      if (!IsValidElementLocalName(localName)) {
-        return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-      }
-    }
-
-    if (aColon) {
-      *aColon = firstColon;
-    }
-    if (aLocalNameEnd) {
-      *aLocalNameEnd = localNameEnd;
-    }
-  } else {
-    
-    if (aNodeType == nsINode::ATTRIBUTE_NODE) {
-      if (!IsValidAttributeLocalName(aQualifiedName)) {
-        return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-      }
-    } else {
-      if (!IsValidElementLocalName(aQualifiedName)) {
-        return NS_ERROR_DOM_INVALID_CHARACTER_ERR;
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
 
 nsresult nsContentUtils::SplitQName(const nsIContent* aNamespaceResolver,
                                     const nsString& aQName, int32_t* aNamespace,
@@ -4701,21 +4515,19 @@ nsresult nsContentUtils::GetNodeInfoFromQName(
     mozilla::dom::NodeInfo** aNodeInfo) {
   const nsString& qName = PromiseFlatString(aQualifiedName);
   const char16_t* colon;
-  const char16_t* localNameEnd;
-  
-  
-  nsresult rv = nsContentUtils::ParseQualifiedNameRelaxed(
-      qName, aNodeType, &colon, &localNameEnd);
+  nsresult rv = nsContentUtils::CheckQName(qName, true, &colon);
   NS_ENSURE_SUCCESS(rv, rv);
 
   int32_t nsID;
   nsNameSpaceManager::GetInstance()->RegisterNameSpace(aNamespaceURI, nsID);
   if (colon) {
+    const char16_t* end;
+    qName.EndReading(end);
+
     RefPtr<nsAtom> prefix = NS_AtomizeMainThread(Substring(qName.get(), colon));
 
-    
-    rv = aNodeInfoManager->GetNodeInfo(Substring(colon + 1, localNameEnd),
-                                       prefix, nsID, aNodeType, aNodeInfo);
+    rv = aNodeInfoManager->GetNodeInfo(Substring(colon + 1, end), prefix, nsID,
+                                       aNodeType, aNodeInfo);
   } else {
     rv = aNodeInfoManager->GetNodeInfo(aQualifiedName, nullptr, nsID, aNodeType,
                                        aNodeInfo);

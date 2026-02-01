@@ -1030,49 +1030,6 @@ class nsContentUtils {
                              bool aNamespaceAware = true,
                              const char16_t** aColon = nullptr);
 
-  
-
-
-
-
-  static bool IsValidElementLocalName(const nsAString& aName);
-
-  
-
-
-
-
-  static bool IsValidAttributeLocalName(const nsAString& aName);
-
-  
-
-
-
-
-  static bool IsValidNamespacePrefix(const nsAString& aPrefix);
-
-  
-
-
-
-
-  static bool IsValidDoctypeName(const nsAString& aName);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static nsresult ParseQualifiedNameRelaxed(
-      const nsAString& aQualifiedName, uint16_t aNodeType,
-      const char16_t** aColon, const char16_t** aLocalNameEnd = nullptr);
-
   static nsresult SplitQName(const nsIContent* aNamespaceResolver,
                              const nsString& aQName, int32_t* aNamespace,
                              nsAtom** aLocalName);

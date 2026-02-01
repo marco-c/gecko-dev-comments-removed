@@ -24,13 +24,10 @@ var TEST_DATA = [
     },
   },
   {
-    desc: "Attribute name starting with <",
+    desc: "Invalid attribute name",
     text: "x='y' <why-would-you-do-this>=\"???\"",
     expectedAttributes: {
       x: "y",
-      
-      
-      "<why-would-you-do-this": "",
     },
   },
   {
