@@ -195,10 +195,6 @@ async function testClearData(clearSiteData, clearCache) {
 }
 
 add_setup(function () {
-  SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
-
   
   
   requestLongerTimeout(2);

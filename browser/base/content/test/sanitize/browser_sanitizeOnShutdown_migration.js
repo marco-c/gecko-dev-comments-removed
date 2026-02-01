@@ -4,12 +4,6 @@
 
 
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
-});
-
 
 
 add_task(async function testMigrationForDeleteOnClose() {

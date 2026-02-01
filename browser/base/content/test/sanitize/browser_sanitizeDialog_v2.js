@@ -150,9 +150,6 @@ add_setup(async function () {
     await blankSlate();
     await PlacesTestUtils.promiseAsyncUpdates();
   });
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
 
   
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });

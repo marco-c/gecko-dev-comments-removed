@@ -56,10 +56,6 @@ async function onHistoryReady() {
   
   
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
-
   let itemsToClear = ["historyAndFormData", "downloads"];
 
   let publicList = await Downloads.getList(Downloads.PUBLIC);
