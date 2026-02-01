@@ -1,5 +1,3 @@
-
-
 var permChangedObs = {
   observe(subject, topic, data) {
     if (topic == "perm-changed") {

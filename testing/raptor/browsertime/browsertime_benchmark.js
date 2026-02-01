@@ -2,8 +2,6 @@
 
 
 
-
-
 const { logTest, logTask } = require("./utils/profiling");
 const {
   initializeMeasurements,

@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 var Cm = Components.manager;

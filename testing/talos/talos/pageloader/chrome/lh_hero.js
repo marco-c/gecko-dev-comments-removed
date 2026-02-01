@@ -2,8 +2,6 @@
 
 
 
-
-
 function _contentHeroHandler(isload) {
   var obs = null;
   var el = content.window.document.querySelector("[elementtiming]");

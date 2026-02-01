@@ -2,8 +2,6 @@
 
 
 
-
-
 addEventListener(
   "TalosContentProfilerCommand",
   e => {
