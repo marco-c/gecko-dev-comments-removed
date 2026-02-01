@@ -8,6 +8,10 @@
 
 
 
+
+
+
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -56,6 +60,17 @@ const APP_ICON_ATTR_NAME = "appHandlerIcon";
 const OPEN_EXTERNAL_LINK_NEXT_TO_ACTIVE_TAB_VALUE =
   Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT;
 
+
+
+
+
+function canShowAiFeature(featureSetting, defaultSetting) {
+  return (
+    featureSetting.value != "blocked" &&
+    !(featureSetting.value == "default" && defaultSetting.value == "blocked")
+  );
+}
+
 Preferences.addAll([
   
   { id: "browser.startup.page", type: "int" },
@@ -69,6 +84,15 @@ Preferences.addAll([
   { id: "browser.download.always_ask_before_handling_new_types", type: "bool" },
   { id: "browser.download.folderList", type: "int" },
   { id: "browser.download.dir", type: "file" },
+
+  
+  
+  { id: "browser.ai.control.default", type: "string" },
+  { id: "browser.ai.control.translations", type: "string" },
+  { id: "browser.ai.control.pdfjsAltText", type: "string" },
+  { id: "browser.ai.control.smartTabGroups", type: "string" },
+  { id: "browser.ai.control.linkPreviewKeyPoints", type: "string" },
+  { id: "browser.ai.control.sidebarChatbot", type: "string" },
 
   
 
@@ -512,8 +536,14 @@ Preferences.addSetting(
 Preferences.addSetting({
   id: "linkPreviewEnabled",
   pref: "browser.ml.linkPreview.enabled",
-  
-  visible: () => LinkPreview.canShowPreferences,
+  deps: ["aiControlDefault", "aiControlLinkPreviews"],
+  visible: ({ aiControlDefault, aiControlLinkPreviews }) => {
+    return (
+      canShowAiFeature(aiControlLinkPreviews, aiControlDefault) &&
+      
+      LinkPreview.canShowPreferences
+    );
+  },
 });
 Preferences.addSetting({
   id: "linkPreviewKeyPoints",
@@ -1845,6 +1875,32 @@ Preferences.addSetting({
 
 
 Preferences.addSetting({
+  id: "aiControlDefault",
+  pref: "browser.ai.control.default",
+});
+Preferences.addSetting({
+  id: "aiControlTranslations",
+  pref: "browser.ai.control.translations",
+});
+Preferences.addSetting({
+  id: "aiControlPdfjsAltText",
+  pref: "browser.ai.control.pdfjsAltText",
+});
+Preferences.addSetting({
+  id: "aiControlSmartTabGroups",
+  pref: "browser.ai.control.smartTabGroups",
+});
+Preferences.addSetting({
+  id: "aiControlLinkPreviews",
+  pref: "browser.ai.control.linkPreviewKeyPoints",
+});
+Preferences.addSetting({
+  id: "aiControlSidebarChatbot",
+  pref: "browser.ai.control.sidebarChatbot",
+});
+
+
+Preferences.addSetting({
   id: "tabsInteraction",
 });
 Preferences.addSetting({
@@ -1875,11 +1931,25 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "tabGroupSuggestions",
   pref: "browser.tabs.groups.smart.userEnabled",
-  deps: ["tabGroups", "smartTabGroups"],
-  visible: ({ smartTabGroups, tabGroups }) =>
-    !!tabGroups.value &&
-    !!smartTabGroups.value &&
-    Services.locale.appLocaleAsBCP47.startsWith("en"),
+  deps: [
+    "tabGroups",
+    "smartTabGroups",
+    "aiControlDefault",
+    "aiControlSmartTabGroups",
+  ],
+  visible: ({
+    smartTabGroups,
+    tabGroups,
+    aiControlDefault,
+    aiControlSmartTabGroups,
+  }) => {
+    return (
+      canShowAiFeature(aiControlSmartTabGroups, aiControlDefault) &&
+      !!tabGroups.value &&
+      !!smartTabGroups.value &&
+      Services.locale.appLocaleAsBCP47.startsWith("en")
+    );
+  },
 });
 if (AppConstants.platform === "win") {
   
