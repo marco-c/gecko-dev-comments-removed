@@ -596,14 +596,19 @@ UniquePtr<uint8_t[]> OffscreenCanvasDisplayHelper::GetImageBuffer(
   nsIPrincipal* principal = nullptr;
   nsICookieJarSettings* cookieJarSettings = nullptr;
   {
-    
-    
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(!mOffscreenCanvas);
 
     if (mCanvasElement) {
       principal = mCanvasElement->NodePrincipal();
       cookieJarSettings = mCanvasElement->OwnerDoc()->CookieJarSettings();
+    } else if (mOffscreenCanvas) {
+      principal = mOffscreenCanvas->GetParentObject()
+                      ? mOffscreenCanvas->GetParentObject()->PrincipalOrNull()
+                      : nullptr;
+      cookieJarSettings =
+          mOffscreenCanvas->GetParentObject()
+              ? mOffscreenCanvas->GetParentObject()->GetCookieJarSettings()
+              : nullptr;
     }
   }
   nsRFPService::PotentiallyDumpImage(
