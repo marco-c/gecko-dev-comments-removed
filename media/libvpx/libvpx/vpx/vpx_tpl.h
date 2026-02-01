@@ -30,7 +30,7 @@ extern "C" {
 
 
 
-#define VPX_TPL_ABI_VERSION 4 /**<\hideinitializer*/
+#define VPX_TPL_ABI_VERSION 5 /**<\hideinitializer*/
 
 
 typedef struct VpxTplBlockStats {
