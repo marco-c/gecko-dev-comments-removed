@@ -1927,6 +1927,17 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
 
   
   
+  if (themeMode == ThemeMode::Dark) {
+    BOOL dark = TRUE;
+    sDwmSetWindowAttribute(sPreXULSkeletonUIWindow,
+                           DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, &dark,
+                           sizeof(dark));
+    sDwmSetWindowAttribute(sPreXULSkeletonUIWindow,
+                           DWMWA_USE_IMMERSIVE_DARK_MODE, &dark, sizeof(dark));
+  }
+
+  
+  
   
   
   {
