@@ -97,6 +97,9 @@ class NetworkControllerInterface {
   
   ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkStateEstimate(
       NetworkStateEstimate) = 0;
+  
+  
+  virtual bool SupportsEcnAdaptation() const { return false; }
 };
 
 
