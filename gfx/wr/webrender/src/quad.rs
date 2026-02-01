@@ -3,7 +3,7 @@
 
 
 use api::{units::*, ClipMode, ColorF};
-use euclid::point2;
+use euclid::{Scale, point2};
 
 use crate::ItemUid;
 use crate::batch::{BatchKey, BatchKind, BatchTextures};
@@ -42,6 +42,7 @@ const MAX_TILES_PER_QUAD: usize = 4;
 pub struct QuadCacheKey {
     pub prim: u64,
     pub clips: [u64; 3],
+    pub spatial_node: u64,
 }
 
 
@@ -400,12 +401,33 @@ fn prepare_quad_impl(
     }
 
     let surface = &mut frame_state.surfaces[pic_context.surface_index.0];
+    let clipped_local_rect = clip_chain.pic_coverage_rect.intersection_unchecked(&surface.clipping_rect);
 
-    let Some(clipped_surface_rect) = surface.get_surface_rect(
-        &clip_chain.pic_coverage_rect, ctx.spatial_tree
-    ) else {
+    let mut clipped_raster_rect = clip_chain.pic_coverage_rect.cast_unit();
+    if surface.raster_spatial_node_index != surface.surface_spatial_node_index {
+        let pic_to_raster = SpaceMapper::new_with_target(
+            surface.raster_spatial_node_index,
+            surface.surface_spatial_node_index,
+            RasterRect::max_rect(),
+            ctx.spatial_tree,
+        );
+
+        clipped_raster_rect = pic_to_raster.map(&clipped_local_rect).unwrap();
+    }
+
+    
+    
+    let device_scale: Scale<f32, RasterPixel, DevicePixel> = Scale::new(surface.device_pixel_scale.0);
+    
+    
+    
+    
+    
+    let clipped_surface_rect = (clipped_raster_rect * device_scale).round();
+    if clipped_surface_rect.is_empty() {
         return;
-    };
+    }
+    let surface_size = clipped_surface_rect.size().to_i32();
 
     match strategy {
         QuadRenderStrategy::Direct => {}
@@ -434,7 +456,7 @@ fn prepare_quad_impl(
 
             let cache_key = cache_key.as_ref().map(|key| {
                 RenderTaskCacheKey {
-                    size: clipped_surface_rect.size(),
+                    size: surface_size,
                     kind: RenderTaskCacheKeyKind::Quad(key.clone()),
                 }
             });
@@ -446,8 +468,8 @@ fn prepare_quad_impl(
             
             let task_id = add_render_task_with_mask(
                 &pattern,
-                clipped_surface_rect.size(),
-                clipped_surface_rect.min.to_f32(),
+                surface_size,
+                clipped_surface_rect.min,
                 clip_chain.clips_range,
                 prim_spatial_node_index,
                 pic_context.raster_spatial_node_index,
@@ -464,7 +486,7 @@ fn prepare_quad_impl(
                 &mut frame_state.surface_builder,
             );
 
-            let rect = clipped_surface_rect.to_f32().to_untyped();
+            let rect = clipped_surface_rect.to_untyped();
             add_composite_prim(
                 pattern_builder.get_base_color(&ctx),
                 prim_instance_index,
@@ -483,7 +505,6 @@ fn prepare_quad_impl(
             
             let clip_coverage_rect = surface
                 .map_to_device_rect(&clip_chain.pic_coverage_rect, ctx.spatial_tree);
-            let clipped_surface_rect = clipped_surface_rect.to_f32();
 
             surface.map_local_to_picture.set_target_spatial_node(
                 prim_spatial_node_index,
@@ -854,7 +875,7 @@ fn prepare_quad_impl(
 
                     let rect = DeviceIntRect::new(point2(x0, y0), point2(x1, y1));
 
-                    let device_rect = match rect.intersection(&clipped_surface_rect) {
+                    let device_rect = match rect.intersection(&clipped_surface_rect.to_i32()) {
                         Some(rect) => rect,
                         None => {
                             continue;
@@ -1020,6 +1041,7 @@ fn get_prim_render_strategy(
 pub fn cache_key(
     prim_uid: ItemUid,
     prim_spatial_node_index: SpatialNodeIndex,
+    spatial_tree: &SpatialTree,
     clip_chain: &ClipChainInstance,
     clip_store: &ClipStore,
     interned_clips: &DataStore<ClipIntern>,
@@ -1041,9 +1063,14 @@ pub fn cache_key(
         }
     }
 
+    let spatial_uid = spatial_tree
+        .get_spatial_node(prim_spatial_node_index)
+        .uid;
+
     Some(QuadCacheKey {
         prim: prim_uid.get_uid(),
-        clips: clip_uids
+        clips: clip_uids,
+        spatial_node: spatial_uid,
     })
 }
 
