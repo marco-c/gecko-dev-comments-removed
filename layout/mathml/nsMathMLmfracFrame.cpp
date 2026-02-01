@@ -38,9 +38,9 @@ NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmfracFrame)
 
 nsMathMLmfracFrame::~nsMathMLmfracFrame() = default;
 
-eMathMLFrameType nsMathMLmfracFrame::GetMathMLFrameType() {
+MathMLFrameType nsMathMLmfracFrame::GetMathMLFrameType() {
   
-  return eMathMLFrameType_Inner;
+  return MathMLFrameType::Inner;
 }
 
 uint8_t nsMathMLmfracFrame::ScriptIncrement(nsIFrame* aFrame) {

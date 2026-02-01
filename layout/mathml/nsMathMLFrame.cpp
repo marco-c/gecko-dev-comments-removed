@@ -30,7 +30,7 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
-eMathMLFrameType nsMathMLFrame::GetMathMLFrameType() {
+MathMLFrameType nsMathMLFrame::GetMathMLFrameType() {
   
   if (mEmbellishData.coreFrame) {
     return GetMathMLFrameTypeFor(mEmbellishData.coreFrame);
@@ -42,7 +42,7 @@ eMathMLFrameType nsMathMLFrame::GetMathMLFrameType() {
   }
 
   
-  return eMathMLFrameType_Ordinary;
+  return MathMLFrameType::Ordinary;
 }
 
 NS_IMETHODIMP

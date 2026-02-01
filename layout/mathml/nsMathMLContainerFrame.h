@@ -286,7 +286,7 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   static void GetReflowAndBoundingMetricsFor(
       nsIFrame* aFrame, ReflowOutput& aReflowOutput,
       nsBoundingMetrics& aBoundingMetrics,
-      eMathMLFrameType* aMathMLFrameType = nullptr);
+      MathMLFrameType* aMathMLFrameType = nullptr);
 
   
   
