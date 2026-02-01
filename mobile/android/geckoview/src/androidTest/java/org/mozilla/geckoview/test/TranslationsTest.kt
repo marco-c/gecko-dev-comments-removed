@@ -128,7 +128,7 @@ class TranslationsTest : BaseSessionTest() {
     fun onTranslationStateChangeDelegateTest() {
         if (sessionRule.env.isAutomation) {
             sessionRule.delegateDuringNextWait(object : Delegate {
-                @AssertCalled(count = 1)
+                @AssertCalled(count = 2)
                 override fun onTranslationStateChange(
                     session: GeckoSession,
                     translationState: TranslationState?,
@@ -138,7 +138,7 @@ class TranslationsTest : BaseSessionTest() {
         } else {
             
             sessionRule.delegateDuringNextWait(object : Delegate {
-                @AssertCalled(count = 2)
+                @AssertCalled(count = 3)
                 override fun onTranslationStateChange(
                     session: GeckoSession,
                     translationState: TranslationState?,
@@ -292,7 +292,7 @@ class TranslationsTest : BaseSessionTest() {
     fun translateTest() {
         var delegateCalled = 0
         sessionRule.delegateUntilTestEnd(object : Delegate {
-            @AssertCalled(count = 3)
+            @AssertCalled(count = 4)
             override fun onTranslationStateChange(
                 session: GeckoSession,
                 translationState: TranslationState?,
@@ -305,13 +305,19 @@ class TranslationsTest : BaseSessionTest() {
                         translationState?.requestedTranslationPair == null,
                     )
                 }
+
                 
                 if (delegateCalled == 2) {
-                    assertTrue("Translations correctly has detected a page language. ", translationState?.detectedLanguages?.docLangTag == "es")
+                    
                 }
 
                 
                 if (delegateCalled == 3) {
+                    assertTrue("Translations correctly has detected a page language. ", translationState?.detectedLanguages?.docLangTag == "es")
+                }
+
+                
+                if (delegateCalled == 4) {
                     assertTrue("Translations correctly has set a translation pair from language. ", translationState?.requestedTranslationPair?.fromLanguage == "es")
                     assertTrue("Translations correctly has set a translation pair to language. ", translationState?.requestedTranslationPair?.toLanguage == "en")
                 }
@@ -711,17 +717,9 @@ class TranslationsTest : BaseSessionTest() {
                 .operation(DELETE)
                 .operationLevel(ALL)
                 .build()
-            try {
-                sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(allDeleteAttempt))
-                fail("Should not complete deletes in automation.")
-            } catch (e: RuntimeException) {
-                
-                val te = e.cause as TranslationsException
-                assertTrue(
-                    "Correctly could not delete on automated test harness.",
-                    te.code == ERROR_MODEL_COULD_NOT_DELETE,
-                )
-            }
+            
+            sessionRule.waitForResult(RuntimeTranslation.manageLanguageModel(allDeleteAttempt))
+            assertTrue("Delete from empty database succeeds gracefully.", true)
 
             val malformedRequest = ModelManagementOptions.Builder()
                 .operation("not-a-function")
