@@ -30,6 +30,8 @@ user_pref("media.navigator.streams.fake", true);
 
 user_pref("media.navigator.permission.disabled", true);
 
+user_pref("media.peerconnection.ice.obfuscate_host_addresses", false);
+
 user_pref("network.proxy.type", 0);
 
 
