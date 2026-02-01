@@ -10,6 +10,9 @@ var { AppConstants } = ChromeUtils.importESModule(
 const { SitePermissions } = ChromeUtils.importESModule(
   "resource:///modules/SitePermissions.sys.mjs"
 );
+const { PermissionUI } = ChromeUtils.importESModule(
+  "resource:///modules/PermissionUI.sys.mjs"
+);
 
 const sitePermissionsL10n = {
   "desktop-notification": {
@@ -588,6 +591,15 @@ var gSitePermissionsManager = {
     
     
     this.uninit();
+
+    
+    if (this._type === "desktop-notification") {
+      for (let group of this._permissionsToDelete.values()) {
+        Glean.webNotificationPermission.permissionRevokedPreferences.record({
+          site_category: PermissionUI.getSiteCategory(group.principal),
+        });
+      }
+    }
 
     
     for (let group of [

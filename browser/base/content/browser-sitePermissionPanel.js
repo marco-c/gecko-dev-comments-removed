@@ -2,6 +2,10 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  PermissionUI: "resource:///modules/PermissionUI.sys.mjs",
+});
+
 
 
 
@@ -899,6 +903,15 @@ var gPermissionPanel = {
         permission.id,
         browser
       );
+
+      
+      if (idNoSuffix === "desktop-notification") {
+        Glean.webNotificationPermission.permissionRevokedToolbar.record({
+          site_category: PermissionUI.getSiteCategory(
+            gBrowser.contentPrincipal
+          ),
+        });
+      }
 
       this._permissionReloadHint.hidden = false;
 
