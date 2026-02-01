@@ -130,6 +130,12 @@ interface nsIJumpListBuilder : nsISupports
 
 
 
+  void clearRecentsList();
+
+  
+
+
+
 
 
 
