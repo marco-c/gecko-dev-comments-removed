@@ -1,44 +1,38 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<title>WebAssembly.compileStreaming</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script>
-  promise_test(async function() {
-      const response = await fetch('resources/incrementer.wasm');
-      const module = await WebAssembly.compileStreaming(response);
-      assert_true(module instanceof WebAssembly.Module);
-  }, "compileStreaming using resolved response");
+
 
   promise_test(async function() {
       const response = await fetch('resources/incrementer.wasm');
-      const module = await WebAssembly.compileStreaming(response);
-      const instance = new WebAssembly.Instance(module);
+      const { instance, module } = await WebAssembly.instantiateStreaming(response);
       assert_true(instance instanceof WebAssembly.Instance);
-  }, "compileStreaming using resolved response and check instantiate");
+      assert_true(module instanceof WebAssembly.Module);
+  }, "instantiateStreaming using resolved response");
+
+  promise_test(async function() {
+      const response = await fetch('resources/incrementer.wasm');
+      const { instance } = await WebAssembly.instantiateStreaming(response);
+      assert_true(instance instanceof WebAssembly.Instance);
+  }, "instantiateStreaming using resolved response and check instantiate");
 
   promise_test(async function() {
       const result = fetch('resources/incrementer.wasm');
-      const module = await WebAssembly.compileStreaming(result);
-      const instance = new WebAssembly.Instance(module);
+      const { instance } = await WebAssembly.instantiateStreaming(result);
       assert_true(instance instanceof WebAssembly.Instance);
-  }, "compileStreaming using promise response from fetch and check instantiate");
+  }, "instantiateStreaming using promise response from fetch and check instantiate");
 
   promise_test(async function(t) {
       const result = fetch('resources/incrementer.wrong_mime_type.wasm');
-      await promise_rejects_js(t, TypeError, WebAssembly.compileStreaming(result));
-  }, "compileStreaming raise error if wrong mime type");
+      await promise_rejects_js(t, TypeError, WebAssembly.instantiateStreaming(result));
+  }, "instantiateStreaming raise error if wrong mime type");
 
   promise_test(async function(t) {
       const result = fetch('resources/incrementer.no_mime_type.wasm?pipe=header(Content-Type,)');
-      await promise_rejects_js(t, TypeError, WebAssembly.compileStreaming(result));
-  }, "compileStreaming raise error if no mime type");
+      await promise_rejects_js(t, TypeError, WebAssembly.instantiateStreaming(result));
+  }, "instantiateStreaming raise error if no mime type");
 
   promise_test(async function(t) {
       const result = fetch('webapi/status.py?status=404');
-      await promise_rejects_js(t, TypeError, WebAssembly.compileStreaming(result));
-  }, "compileStreaming raise error if 404 status");
+      await promise_rejects_js(t, TypeError, WebAssembly.instantiateStreaming(result));
+  }, "instantiateStreaming raise error if 404 status");
 
   const getWasmUrl = fileName => {
       const host_info = get_host_info();
@@ -48,22 +42,22 @@
 
   promise_test(async function() {
       const result = fetch(getWasmUrl('resources/incrementer.wasm'), {"mode": "cors"} );
-      const module = await WebAssembly.compileStreaming(result);
-      assert_true(module instanceof WebAssembly.Module);
-  }, "compileStreaming check CORS");
+      const { instance } = await WebAssembly.instantiateStreaming(result);
+      assert_true(instance instanceof WebAssembly.Instance);
+  }, "instantiateStreaming check CORS");
 
   promise_test(async function(t) {
       const result = fetch(getWasmUrl('resources/incrementer.wasm'), {"mode": "no-cors"} );
-      await promise_rejects_js(t, TypeError, WebAssembly.compileStreaming(result));
-  }, "compileStreaming raise error if no-cors");
+      await promise_rejects_js(t, TypeError, WebAssembly.instantiateStreaming(result));
+  }, "instantiateStreaming raise error if no-cors");
 
   promise_test(async function() {
       const v = await fetch('resources/incrementer.wasm');
       const buffer = await v.arrayBuffer();
       const response = new Response(buffer, { headers: { "Content-Type" : "application/wasm" }});
-      const module = await WebAssembly.compileStreaming(response);
-      assert_true(module instanceof WebAssembly.Module);
-  }, "compileStreaming receive promise with response created from ArrayBuffer");
+      const { instance } = await WebAssembly.instantiateStreaming(response);
+      assert_true(instance instanceof WebAssembly.Instance);
+  }, "instantiateStreaming receive promise with response created from ArrayBuffer");
 
   promise_test(async function() {
       const v = await fetch('resources/incrementer.wasm');
@@ -78,31 +72,32 @@
         }
       });
       const response = new Response(stream, { headers: { "Content-Type" : "application/wasm" }});
-      const module = await WebAssembly.compileStreaming(response);
-      assert_true(module instanceof WebAssembly.Module);
-  }, "compileStreaming using ReadableStream with Uint8Array chunks");
+      const { instance } = await WebAssembly.instantiateStreaming(response);
+      assert_true(instance instanceof WebAssembly.Instance);
+  }, "instantiateStreaming using ReadableStream with Uint8Array chunks");
 
   promise_test(async function(t) {
       const v = await fetch('resources/incrementer.wasm');
       const buffer = await v.arrayBuffer();
       const stream = new ReadableStream({
         start(controller) {
-          // Enqueuing an ArrayBuffer rather a Uint8Array per
-          // https://streams.spec.whatwg.org/#read-loop
+          
+          
           controller.enqueue(buffer);
           controller.close();
         }
       });
       const response = new Response(stream, { headers: { "Content-Type" : "application/wasm" }});
-      await promise_rejects_js(t, TypeError, WebAssembly.compileStreaming(response));
-  }, "compileStreaming using ReadableStream with ArrayBuffer chunk");
+      await promise_rejects_js(t, TypeError, WebAssembly.instantiateStreaming(response));
+  }, "instantiateStreaming using ReadableStream with ArrayBuffer chunk");
 
   promise_test(async function() {
       const response = await fetch('resources/incrementer.wasm');
       const blob = await response.blob();
-      const module = await WebAssembly.compileStreaming(new Response(blob, { headers: { "Content-Type" : "application/wasm" }}));
+      const { instance, module } = await WebAssembly.instantiateStreaming(new Response(blob, { headers: { "Content-Type" : "application/wasm" }}));
+      assert_true(instance instanceof WebAssembly.Instance);
       assert_true(module instanceof WebAssembly.Module);
-  }, "compileStreaming using blob");
+  }, "instantiateStreaming using blob");
 
   promise_test(async function(t) {
       const response = await fetch('resources/incrementer.wasm');
@@ -110,6 +105,5 @@
       const formData = new FormData;
       formData.append('blob', blob);
       formData.append('blob2', "Hello");
-      await promise_rejects_js(t, WebAssembly.CompileError, WebAssembly.compileStreaming(new Response(formData, { headers: { "Content-Type" : "application/wasm" }})));
-  }, "compileStreaming using FormData");
-</script>
+      await promise_rejects_js(t, WebAssembly.CompileError, WebAssembly.instantiateStreaming(new Response(formData, { headers: { "Content-Type" : "application/wasm" }})));
+  }, "instantiateStreaming using FormData");
