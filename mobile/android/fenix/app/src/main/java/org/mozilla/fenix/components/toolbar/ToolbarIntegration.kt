@@ -26,16 +26,17 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.utils.ColorUtils.getReadableTextColor
 import mozilla.components.support.utils.ColorUtils.getSecondaryReadableTextColor
 import mozilla.components.ui.tabcounter.TabCounterMenu
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.AddressToolbar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.toolbar.interactor.BrowserToolbarInteractor
 import org.mozilla.fenix.components.toolbar.ui.createShareBrowserAction
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.telemetry.ACTION_SHARE_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.theme.ThemeManager
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.GleanMetrics.Toolbar as GleanMetricsToolbar
 
 /**
  * Feature configuring the toolbar when in display mode.
@@ -45,7 +46,6 @@ abstract class ToolbarIntegration(
     private val context: Context,
     private val toolbar: BrowserToolbar,
     scrollableToolbar: ScrollableToolbar,
-    toolbarMenu: ToolbarMenu,
     private val interactor: BrowserToolbarInteractor,
     private val customTabId: String?,
     isPrivate: Boolean,
@@ -81,10 +81,6 @@ abstract class ToolbarIntegration(
     private val toolbarController = ToolbarBehaviorController(scrollableToolbar, store, customTabId)
 
     init {
-        if (!context.settings().enableMenuRedesign) {
-            toolbar.display.menuBuilder = toolbarMenu.menuBuilder
-        }
-
         toolbar.private = isPrivate
 
         if (context.settings().enableMenuRedesign && customTabId == null) {
@@ -140,7 +136,6 @@ class DefaultToolbarIntegration(
     private val context: Context,
     private val toolbar: BrowserToolbar,
     scrollableToolbar: ScrollableToolbar,
-    toolbarMenu: ToolbarMenu,
     private val lifecycleOwner: LifecycleOwner,
     customTabId: String? = null,
     private val isPrivate: Boolean,
@@ -149,7 +144,6 @@ class DefaultToolbarIntegration(
     context = context,
     toolbar = toolbar,
     scrollableToolbar = scrollableToolbar,
-    toolbarMenu = toolbarMenu,
     interactor = interactor,
     customTabId = customTabId,
     isPrivate = isPrivate,
@@ -223,7 +217,12 @@ class DefaultToolbarIntegration(
             BrowserToolbar.createShareBrowserAction(
                 context = context,
                 listener = {
-                    AddressToolbar.shareTapped.record((NoExtras()))
+                    GleanMetricsToolbar.buttonTapped.record(
+                        GleanMetricsToolbar.ButtonTappedExtra(
+                            source = SOURCE_ADDRESS_BAR,
+                            item = ACTION_SHARE_CLICKED,
+                        ),
+                    )
                     interactor.onShareActionClicked()
                 },
             ),
