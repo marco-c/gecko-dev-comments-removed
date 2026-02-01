@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 
+#include <compare>
 #include <stdint.h>
 
 #include "jstypes.h"
@@ -62,17 +63,7 @@ class Increment final {
 
   uint32_t value() const { return value_; }
 
-  bool operator==(const Increment& other) const {
-    return value_ == other.value_;
-  }
-
-  bool operator<(const Increment& other) const { return value_ < other.value_; }
-
-  
-  bool operator!=(const Increment& other) const { return !(*this == other); }
-  bool operator>(const Increment& other) const { return other < *this; }
-  bool operator<=(const Increment& other) const { return !(other < *this); }
-  bool operator>=(const Increment& other) const { return !(*this < other); }
+  constexpr auto operator<=>(const Increment&) const = default;
 };
 
 
@@ -143,20 +134,21 @@ enum class TemporalUnitKey {
 
 
 
-
 bool GetTemporalUnitValuedOption(JSContext* cx, JS::Handle<JSObject*> options,
-                                 TemporalUnitKey key,
-                                 TemporalUnitGroup unitGroup,
-                                 TemporalUnit* unit);
+                                 TemporalUnitKey key, TemporalUnit* unit);
 
 
 
 
 
 bool GetTemporalUnitValuedOption(JSContext* cx, JS::Handle<JSString*> value,
-                                 TemporalUnitKey key,
-                                 TemporalUnitGroup unitGroup,
-                                 TemporalUnit* unit);
+                                 TemporalUnitKey key, TemporalUnit* unit);
+
+
+
+
+bool ValidateTemporalUnitValue(JSContext* cx, TemporalUnitKey key,
+                               TemporalUnit unit, TemporalUnitGroup unitGroup);
 
 
 
@@ -224,11 +216,7 @@ class Precision final {
     MOZ_ASSERT(value < 10);
   }
 
-  bool operator==(const Precision& other) const {
-    return value_ == other.value_;
-  }
-
-  bool operator!=(const Precision& other) const { return !(*this == other); }
+  constexpr auto operator<=>(const Precision&) const = default;
 
   
 
@@ -258,7 +246,7 @@ bool GetTemporalFractionalSecondDigitsOption(JSContext* cx,
 
 struct SecondsStringPrecision final {
   Precision precision = Precision{0};
-  TemporalUnit unit = TemporalUnit::Auto;
+  TemporalUnit unit = TemporalUnit::Unset;
   Increment increment = Increment{1};
 };
 
@@ -354,8 +342,8 @@ inline const char* ToName(TemporalAddDuration addDuration) {
 }
 
 struct DifferenceSettings final {
-  TemporalUnit smallestUnit = TemporalUnit::Auto;
-  TemporalUnit largestUnit = TemporalUnit::Auto;
+  TemporalUnit smallestUnit = TemporalUnit::Unset;
+  TemporalUnit largestUnit = TemporalUnit::Unset;
   TemporalRoundingMode roundingMode = TemporalRoundingMode::Trunc;
   Increment roundingIncrement = Increment{1};
 };
