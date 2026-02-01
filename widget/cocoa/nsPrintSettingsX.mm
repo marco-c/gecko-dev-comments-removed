@@ -130,15 +130,8 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   
   
   
-  
-  
-  
-  
-  
-  if (!mPrinter.EqualsLiteral("Mozilla Save to PDF")) {
-    [printInfo setPrinter:[NSPrinter printerWithName:nsCocoaUtils::ToNSString(
-                                                         mPrinter)]];
-  }
+  [printInfo setPrinter:[NSPrinter printerWithName:nsCocoaUtils::ToNSString(
+                                                       mPrinter)]];
 
   
   
