@@ -520,8 +520,6 @@ class nsContentUtils {
 
 
 
-
-
   static nsresult GetFlattenedTreeAncestorsAndOffsets(
       nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>& aAncestorNodes,
       nsTArray<mozilla::Maybe<uint32_t>>& aAncestorOffsets);
