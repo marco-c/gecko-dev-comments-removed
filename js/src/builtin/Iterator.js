@@ -1987,9 +1987,53 @@ function IteratorChunks(chunkSize) {
 
 
 
-
 function* IteratorChunksGenerator(iterator, nextMethod, chunkSize) {
-  IteratorClose(iterator);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  var buffer = [];
+
+  
+  
+  for (var value of allowContentIterWithNext(iterator, nextMethod)) {
+    
+    
+    
+    DefineDataProperty(buffer, buffer.length, value);
+
+    
+    if (buffer.length === chunkSize) {
+      
+      
+      yield buffer;
+
+      
+      
+      
+      buffer = [];
+    }
+  }
+
+  
+  
+  if (buffer.length) {
+    
+    
+    
+    
+    
+    yield buffer;
+  }
+
+  
+  
 }
 
 
