@@ -26,7 +26,6 @@
 #endif  
 
 #include "jsapi.h"  
-#include "jsexn.h"
 #include "jstypes.h"
 
 #include "builtin/RegExp.h"  

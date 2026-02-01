@@ -8,9 +8,8 @@
 
 #include "js/friend/ErrorMessages.h"
 
-#include "jsexn.h"  
-
 #include "js/ErrorReport.h"  
+#include "vm/ErrorObject.h"  
 
 const JSErrorFormatString js_ErrorFormatString[JSErr_Limit] = {
 #define MSG_DEF(name, count, exception, format) \

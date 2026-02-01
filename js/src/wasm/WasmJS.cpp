@@ -24,7 +24,6 @@
 #include <cstdint>
 
 #include "jsapi.h"
-#include "jsexn.h"
 
 #include "ds/IdValuePair.h"            
 #include "frontend/FrontendContext.h"  
