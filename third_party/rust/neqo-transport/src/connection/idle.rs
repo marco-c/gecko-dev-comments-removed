@@ -59,7 +59,7 @@ impl IdleTimeout {
         t
     }
 
-    pub const fn on_packet_sent(&mut self, now: Instant) {
+    pub fn on_packet_sent(&mut self, now: Instant) {
         
         
         match self.state {
@@ -133,11 +133,11 @@ impl IdleTimeout {
         }
     }
 
-    pub const fn lost_keep_alive(&mut self) {
+    pub fn lost_keep_alive(&mut self) {
         self.keep_alive_outstanding = false;
     }
 
-    pub const fn ack_keep_alive(&mut self) {
+    pub fn ack_keep_alive(&mut self) {
         self.keep_alive_outstanding = false;
     }
 }

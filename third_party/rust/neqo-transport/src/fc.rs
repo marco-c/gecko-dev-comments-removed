@@ -129,7 +129,7 @@ where
 
     
     
-    pub const fn blocked(&mut self) {
+    pub fn blocked(&mut self) {
         if self.limit >= self.blocked_at {
             self.blocked_at = self.limit + 1;
             self.blocked_frame = true;
@@ -145,14 +145,14 @@ where
     }
 
     
-    const fn blocked_sent(&mut self) {
+    fn blocked_sent(&mut self) {
         self.blocked_frame = false;
     }
 
     
     
     
-    pub const fn frame_lost(&mut self, limit: u64) {
+    pub fn frame_lost(&mut self, limit: u64) {
         if self.blocked_at == limit + 1 {
             self.blocked_frame = true;
         }
@@ -277,7 +277,7 @@ where
 
     
     
-    pub const fn retire(&mut self, retired: u64) {
+    pub fn retire(&mut self, retired: u64) {
         if retired <= self.retired {
             return;
         }
@@ -290,7 +290,7 @@ where
 
     
     
-    pub const fn send_flowc_update(&mut self) {
+    pub fn send_flowc_update(&mut self) {
         if self.retired + self.max_active > self.max_allowed {
             self.frame_pending = true;
         }
@@ -318,18 +318,18 @@ where
         self.max_active
     }
 
-    pub const fn frame_lost(&mut self, maximum_data: u64) {
+    pub fn frame_lost(&mut self, maximum_data: u64) {
         if maximum_data == self.max_allowed {
             self.frame_pending = true;
         }
     }
 
-    const fn frame_sent(&mut self, new_max: u64) {
+    fn frame_sent(&mut self, new_max: u64) {
         self.max_allowed = new_max;
         self.frame_pending = false;
     }
 
-    pub const fn set_max_active(&mut self, max: u64) {
+    pub fn set_max_active(&mut self, max: u64) {
         
         self.frame_pending |= self.max_active < max;
         self.max_active = max;
@@ -419,29 +419,31 @@ where
         };
 
         let prev_max_active = self.max_active;
-        let new_max_active = min(
+        self.max_active = min(
             self.max_active + excess * WINDOW_INCREASE_MULTIPLIER,
             max_window,
         );
 
-        if new_max_active <= prev_max_active {
-            
-            
-            return;
-        }
+        
+        debug_assert!(
+            self.max_active >= prev_max_active,
+            "expect no decrease, self: {self:?}, now: {now:?}, rtt: {rtt:?}, max_window: {max_window}, subject: {subject}"
+        );
 
-        self.max_active = new_max_active;
-        qdebug!(
-            "Increasing max {subject} receive window by {} B, \
+        let increase = self.max_active - prev_max_active;
+        if increase > 0 {
+            qdebug!(
+                "Increasing max {subject} receive window by {} B, \
                 previous max_active: {} MiB, \
                 new max_active: {} MiB, \
                 last update: {:?}, \
                 rtt: {rtt:?}",
-            new_max_active - prev_max_active,
-            prev_max_active / 1024 / 1024,
-            self.max_active / 1024 / 1024,
-            now - max_allowed_sent_at,
-        );
+                increase,
+                prev_max_active / 1024 / 1024,
+                self.max_active / 1024 / 1024,
+                now - max_allowed_sent_at,
+            );
+        }
     }
 }
 
@@ -608,7 +610,7 @@ impl ReceiverFlowControl<StreamType> {
 
     
     
-    pub const fn add_retired(&mut self, count: u64) {
+    pub fn add_retired(&mut self, count: u64) {
         self.retired += count;
         if count > 0 {
             self.send_flowc_update();
@@ -1000,7 +1002,7 @@ mod test {
         fc[StreamType::BiDi].send_flowc_update();
         
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut tokens = recovery::Tokens::new();
         fc[StreamType::BiDi].write_frames(&mut builder, &mut tokens, &mut FrameStats::default());
         assert_eq!(tokens.len(), 1);
@@ -1108,7 +1110,7 @@ mod test {
 
     fn write_frames(fc: &mut ReceiverFlowControl<StreamId>, rtt: Duration, now: Instant) -> usize {
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut tokens = recovery::Tokens::new();
         fc.write_frames(
             &mut builder,
@@ -1369,7 +1371,7 @@ mod test {
         
         let write_conn_frames = |fc: &mut ReceiverFlowControl<()>, now: Instant| {
             let mut builder =
-                packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+                packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
             let mut tokens = recovery::Tokens::new();
             fc.write_frames(
                 &mut builder,
@@ -1409,7 +1411,7 @@ mod test {
         
         let write_conn_frames = |fc: &mut ReceiverFlowControl<()>| {
             let mut builder =
-                packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+                packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
             let mut tokens = recovery::Tokens::new();
             fc.write_frames(
                 &mut builder,
@@ -1450,34 +1452,6 @@ mod test {
         qdebug!(
             "Connection flow control window reached max: {} MiB",
             fc.max_active() / 1024 / 1024
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn auto_tune_never_decreases_large_manually_set_max_active() -> Res<()> {
-        let rtt = Duration::from_millis(40);
-        let now = test_fixture::now();
-        let mut fc = ReceiverFlowControl::new(
-            StreamId::new(0),
-            
-            MAX_LOCAL_MAX_STREAM_DATA * 10,
-        );
-        let initial_max_active = fc.max_active();
-
-        
-        
-        for _ in 1..11 {
-            let consumed = fc.set_consumed(fc.next_limit())?;
-            fc.add_retired(consumed);
-            write_frames(&mut fc, rtt, now);
-        }
-        let increased_max_active = fc.max_active();
-
-        assert!(
-            initial_max_active == increased_max_active,
-            "expect receive window auto-tuning to not decrease max_active below manually set initial value."
         );
 
         Ok(())

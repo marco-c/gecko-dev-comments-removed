@@ -158,22 +158,12 @@ impl Drop for AgentIoInputContext<'_> {
     }
 }
 
-
 #[derive(Debug)]
 struct AgentIoInput {
     
     input: *const u8,
     
     available: usize,
-}
-
-impl Default for AgentIoInput {
-    fn default() -> Self {
-        Self {
-            input: null(),
-            available: 0,
-        }
-    }
 }
 
 impl AgentIoInput {
@@ -221,7 +211,7 @@ impl Display for AgentIoInput {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct AgentIo {
     
     input: AgentIoInput,
@@ -231,6 +221,16 @@ pub struct AgentIo {
 }
 
 impl AgentIo {
+    pub const fn new() -> Self {
+        Self {
+            input: AgentIoInput {
+                input: null(),
+                available: 0,
+            },
+            output: Vec::new(),
+        }
+    }
+
     unsafe fn borrow(fd: &mut PrFd) -> &mut Self {
         (**fd).secret.cast::<Self>().as_mut().unwrap()
     }
@@ -346,7 +346,7 @@ unsafe extern "C" fn agent_available64(mut fd: PrFd) -> prio::PRInt64 {
     clippy::cast_possible_truncation,
     reason = "Cast is safe because prio::PR_AF_INET is 2."
 )]
-const unsafe extern "C" fn agent_getname(_fd: PrFd, addr: *mut prio::PRNetAddr) -> PrStatus {
+unsafe extern "C" fn agent_getname(_fd: PrFd, addr: *mut prio::PRNetAddr) -> PrStatus {
     let Some(a) = addr.as_mut() else {
         return PR_FAILURE;
     };
@@ -356,10 +356,7 @@ const unsafe extern "C" fn agent_getname(_fd: PrFd, addr: *mut prio::PRNetAddr) 
     PR_SUCCESS
 }
 
-const unsafe extern "C" fn agent_getsockopt(
-    _fd: PrFd,
-    opt: *mut prio::PRSocketOptionData,
-) -> PrStatus {
+unsafe extern "C" fn agent_getsockopt(_fd: PrFd, opt: *mut prio::PRSocketOptionData) -> PrStatus {
     if let Some(o) = opt.as_mut() {
         if o.option == prio::PRSockOption::PR_SockOpt_Nonblocking {
             o.value.non_blocking = 1;
@@ -407,60 +404,3 @@ pub const METHODS: &prio::PRIOMethods = &prio::PRIOMethods {
     reserved_fn_1: None,
     reserved_fn_0: None,
 };
-
-#[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
-mod tests {
-    use std::ptr::addr_of_mut;
-
-    use super::*;
-
-    #[test]
-    fn ingest_errors() {
-        let mut records = RecordList::default();
-        let data = [0u8];
-        unsafe {
-            assert_eq!(
-                RecordList::ingest(
-                    null_mut(),
-                    999,
-                    0x17,
-                    data.as_ptr(),
-                    1,
-                    addr_of_mut!(records).cast()
-                ),
-                ssl::SECFailure
-            );
-            assert_eq!(
-                RecordList::ingest(null_mut(), 0, 0x17, data.as_ptr(), 1, null_mut()),
-                ssl::SECFailure
-            );
-            
-            assert_eq!(
-                RecordList::ingest(
-                    null_mut(),
-                    0,
-                    256,
-                    data.as_ptr(),
-                    1,
-                    addr_of_mut!(records).cast()
-                ),
-                ssl::SECFailure
-            );
-        }
-    }
-
-    #[test]
-    fn formatting() {
-        let record = Record::new(Epoch::ApplicationData, 0x17, &[1, 2, 3]);
-        let dbg = format!("{record:?}");
-        assert_eq!(&dbg[..6], "Record");
-
-        let input = AgentIoInput::default();
-        let disp = format!("{input}");
-        assert_eq!(&disp[..12], "AgentIoInput");
-
-        let io = AgentIo::default();
-        assert_eq!(format!("{io}"), "AgentIo");
-    }
-}

@@ -147,7 +147,7 @@ impl PacketRange {
     
     
     
-    pub const fn acknowledged(&mut self, other: &Self) {
+    pub fn acknowledged(&mut self, other: &Self) {
         if (other.smallest <= self.smallest) && (other.largest >= self.largest) {
             self.ack_needed = false;
         }
@@ -245,7 +245,7 @@ impl RecvdPackets {
     }
 
     
-    pub const fn ecn_marks(&mut self) -> &mut ecn::Count {
+    pub fn ecn_marks(&mut self) -> &mut ecn::Count {
         &mut self.ecn_count
     }
 
@@ -255,7 +255,7 @@ impl RecvdPackets {
     }
 
     
-    pub const fn ack_freq(
+    pub fn ack_freq(
         &mut self,
         seqno: u64,
         tolerance: packet::Number,
@@ -646,7 +646,6 @@ mod tests {
 
     fn test_ack_range(pns: &[packet::Number], nranges: usize) {
         let mut rp = RecvdPackets::new(PacketNumberSpace::Initial); 
-        assert_eq!(rp.to_string(), "Recvd-in");
         let mut packets = HashSet::new();
 
         for pn in pns {
@@ -776,7 +775,7 @@ mod tests {
 
     fn write_frame_at(rp: &mut RecvdPackets, now: Instant) {
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         let mut stats = FrameStats::default();
         let mut tokens = recovery::Tokens::new();
         rp.write_frame(now, RTT, &mut builder, &mut tokens, &mut stats);
@@ -936,7 +935,7 @@ mod tests {
         let mut stats = Stats::default();
         let mut tracker = AckTracker::default();
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         tracker
             .get_mut(PacketNumberSpace::Initial)
             .unwrap()
@@ -1005,7 +1004,7 @@ mod tests {
             .is_some());
 
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         builder.set_limit(10);
 
         let mut stats = FrameStats::default();
@@ -1040,7 +1039,7 @@ mod tests {
             .is_some());
 
         let mut builder =
-            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+            packet::Builder::short(Encoder::new(), false, None::<&[u8]>, packet::LIMIT);
         
         
         builder.set_limit(RecvdPackets::USEFUL_ACK_LEN + 8);
@@ -1110,41 +1109,5 @@ mod tests {
             PacketNumberSpace::from(packet::Type::VersionNegotiation)
         })
         .is_err());
-    }
-
-    #[test]
-    fn packet_range_acknowledged() {
-        use super::PacketRange;
-        let mut r = PacketRange::new(5);
-        assert!(r.ack_needed());
-        assert_eq!(r.to_string(), "5->5");
-        assert_eq!(r.len(), 1);
-        assert!(r.contains(5));
-        assert!(!r.contains(4));
-        r.acknowledged(&PacketRange {
-            largest: 10,
-            smallest: 0,
-            ack_needed: false,
-        });
-        assert!(!r.ack_needed());
-
-        
-        
-        let mut r2 = PacketRange::new(5);
-        r2.add(6); 
-        assert_eq!(r2.to_string(), "6->5");
-        assert_eq!(r2.len(), 2);
-        r2.acknowledged(&PacketRange {
-            largest: 5,
-            smallest: 0,
-            ack_needed: false,
-        });
-        assert!(r2.ack_needed()); 
-    }
-
-    #[test]
-    fn useful_ack_len() {
-        
-        assert_eq!(RecvdPackets::USEFUL_ACK_LEN, 50);
     }
 }

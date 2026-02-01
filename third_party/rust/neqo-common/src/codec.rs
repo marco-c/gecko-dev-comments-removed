@@ -263,7 +263,7 @@ impl<B: Buffer> Encoder<B> {
     
     
     
-    pub fn encode<D: AsRef<[u8]>>(&mut self, data: D) -> &mut Self {
+    pub fn encode(&mut self, data: impl AsRef<[u8]>) -> &mut Self {
         self.buf
             .write_all(data.as_ref())
             .expect("Buffer has enough capacity.");
@@ -420,6 +420,12 @@ impl<B: Buffer> Encoder<B> {
 
 impl Encoder<Vec<u8>> {
     
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    
     
     
     
@@ -554,7 +560,7 @@ impl<'a> Encoder<Cursor<&'a mut [u8]>> {
     
     
     #[must_use]
-    pub const fn new_borrowed_slice(buf: &'a mut [u8]) -> Self {
+    pub fn new_borrowed_slice(buf: &'a mut [u8]) -> Self {
         Encoder {
             buf: Cursor::new(buf),
             start: 0,
@@ -704,7 +710,7 @@ impl Buffer for Cursor<&mut [u8]> {
 mod tests {
     use std::io::Cursor;
 
-    use super::{Buffer, Decoder, Encoder, MAX_VARINT};
+    use super::{Buffer, Decoder, Encoder};
 
     #[test]
     fn decode() {
@@ -911,8 +917,6 @@ mod tests {
         assert_eq!(Encoder::varint_len(0x4000), 4);
         assert_eq!(Encoder::varint_len(0x3fff_ffff), 4);
         assert_eq!(Encoder::varint_len(0x4000_0000), 8);
-        assert_eq!(Encoder::varint_len(MAX_VARINT), 8);
-        assert_eq!(MAX_VARINT, (1 << 62) - 1);
     }
 
     #[test]
@@ -1091,17 +1095,6 @@ mod tests {
         });
         let v: Vec<u8> = enc.into();
         assert_eq!(&v[..3], &[0x40, 0x41, 0xa5]);
-    }
-
-    #[test]
-    fn encode_vvec_with_30bit() {
-        let mut enc = Encoder::default();
-        enc.encode_vvec_with(|enc_inner| {
-            enc_inner.encode([0xbe; 16384]); 
-        });
-        let v: Vec<u8> = enc.into();
-        
-        assert_eq!(&v[..5], &[0x80, 0x00, 0x40, 0x00, 0xbe]);
     }
 
     
@@ -1337,10 +1330,5 @@ mod tests {
         assert_eq!(cloned.len(), 4);
         let v: Vec<u8> = cloned.into();
         assert_eq!(v, vec![0x03, 0x04, 0x05, 0x06]);
-    }
-
-    #[test]
-    fn encoder_debug() {
-        assert_eq!(format!("{:?}", Encoder::from_hex("010203")), "[3]: 010203");
     }
 }

@@ -4,8 +4,6 @@
 
 
 
-#![allow(clippy::missing_asserts_for_indexing, reason = "OK in tests")]
-
 use std::{cmp::min, fmt::Debug};
 
 use neqo_common::Encoder;

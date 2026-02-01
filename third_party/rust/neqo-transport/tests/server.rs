@@ -452,7 +452,7 @@ fn bad_client_initial() {
     payload_enc.encode([0x08, 0x02, 0x00, 0x00]); 
 
     
-    let mut header_enc = Encoder::default();
+    let mut header_enc = Encoder::new();
     header_enc
         .encode_byte(0xc1) 
         .encode_uint(4, Version::Version1.wire_version())
@@ -544,7 +544,7 @@ fn bad_client_initial_connection_close() {
     payload_enc.encode([0x1c, 0x01, 0x00, 0x00]); 
 
     
-    let mut header_enc = Encoder::default();
+    let mut header_enc = Encoder::new();
     header_enc
         .encode_byte(0xc0) 
         .encode_uint(4, Version::default().wire_version())

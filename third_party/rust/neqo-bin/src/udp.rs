@@ -8,7 +8,7 @@
 
 use std::{io, net::SocketAddr};
 
-use neqo_common::{datagram, qdebug};
+use neqo_common::{qdebug, DatagramBatch};
 use neqo_udp::{DatagramIter, RecvBuf};
 
 
@@ -80,7 +80,7 @@ impl Socket {
     }
 
     
-    pub fn send(&self, d: &datagram::Batch) -> io::Result<()> {
+    pub fn send(&self, d: &DatagramBatch) -> io::Result<()> {
         self.inner.try_io(tokio::io::Interest::WRITABLE, || {
             neqo_udp::send_inner(&self.state, (&self.inner).into(), d)
         })
