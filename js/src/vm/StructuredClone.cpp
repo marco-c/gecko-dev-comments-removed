@@ -2573,6 +2573,10 @@ JSStructuredCloneReader::JSStructuredCloneReader(
       closure(cbClosure),
       gcHeap(in.context()) {
   
+  MOZ_RELEASE_ASSERT(!(scope == JS::StructuredCloneScope::DifferentProcess &&
+                       cloneDataPolicy.areSharedMemoryObjectsAllowed()));
+
+  
   
   
   MOZ_ALWAYS_TRUE(objState.append(std::make_pair(nullptr, true)));
@@ -3447,7 +3451,6 @@ bool JSStructuredCloneReader::readHeader() {
     
     
     allowedScope = JS::StructuredCloneScope::DifferentProcess;
-    return true;
   }
 
   if (storedScope < allowedScope) {
@@ -3455,6 +3458,12 @@ bool JSStructuredCloneReader::readHeader() {
                               JSMSG_SC_BAD_SERIALIZED_DATA,
                               "incompatible structured clone scope");
     return false;
+  }
+
+  if (allowedScope == JS::StructuredCloneScope::DifferentProcess) {
+    MOZ_RELEASE_ASSERT(
+        !cloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed());
+    MOZ_RELEASE_ASSERT(!cloneDataPolicy.areSharedMemoryObjectsAllowed());
   }
 
   return true;
