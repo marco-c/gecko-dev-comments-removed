@@ -61,7 +61,7 @@ add_setup(async function () {
   });
 
   await promiseSyncReady();
-  await Services.search.init();
+  await SearchService.init();
   
   gSync.init();
   sinon

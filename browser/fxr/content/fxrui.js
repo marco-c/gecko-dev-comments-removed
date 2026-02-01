@@ -40,6 +40,9 @@ const { AppConstants } = ChromeUtils.importESModule(
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 
 
 
@@ -195,7 +198,7 @@ function setupUrlBar() {
     if (e.key == "Enter") {
       
       
-      await Services.search.init();
+      await SearchService.init();
 
       let valueToFixUp = urlInput.value;
       let flags =

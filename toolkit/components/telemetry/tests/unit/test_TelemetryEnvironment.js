@@ -16,6 +16,9 @@ const { AddonManager, AddonManagerPrivate } = ChromeUtils.importESModule(
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );
@@ -196,6 +199,18 @@ add_task(async function test_checkEnvironment() {
   );
 
   let data = TelemetryEnvironment.currentEnvironment;
+
+  
+  
+  
+  
+  
+  Assert.deepEqual(
+    data.addons.theme,
+    {},
+    "Expect active theme property to be set to an empty object"
+  );
+
   TelemetryEnvironmentTesting.checkAddonsSection(data, false, true);
 
   
@@ -1133,7 +1148,7 @@ add_task(
     
     
     
-    await Services.search.promiseInitialized;
+    await SearchService.promiseInitialized;
 
     environmentData = TelemetryEnvironment.currentEnvironment;
     TelemetryEnvironmentTesting.checkEnvironmentData(environmentData);

@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/AddonSearchEngine.sys.mjs",
   ConfigSearchEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
 
 
@@ -56,7 +57,7 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             
             if (
               !Cu.isESModuleLoaded(
-                "resource://gre/modules/SearchService.sys.mjs"
+                "moz-src:///toolkit/components/search/SearchService.sys.mjs"
               )
             ) {
               await ExtensionParent.browserPaintedPromise;
@@ -65,8 +66,8 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             if (extension.hasShutdown || Services.startup.shuttingDown) {
               return results;
             }
-            await Services.search.promiseInitialized;
-            const engines = await Services.search.getEngines();
+            await lazy.SearchService.promiseInitialized;
+            const engines = await lazy.SearchService.getEngines();
 
             for (let engine of engines) {
               if (

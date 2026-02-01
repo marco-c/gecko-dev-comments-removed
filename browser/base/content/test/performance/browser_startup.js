@@ -65,11 +65,10 @@ const startupPhases = {
         "resource://gre/modules/PageThumbs.sys.mjs",
         "resource://gre/modules/PlacesUtils.sys.mjs",
         "resource://gre/modules/Preferences.sys.mjs",
-        "resource://gre/modules/SearchService.sys.mjs",
+        "moz-src:///toolkit/components/search/SearchService.sys.mjs",
         
         
       ]),
-      services: new Set(["@mozilla.org/browser/search-service;1"]),
     },
   },
 

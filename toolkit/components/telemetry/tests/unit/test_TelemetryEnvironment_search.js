@@ -4,6 +4,9 @@
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );
@@ -51,7 +54,7 @@ const SEARCH_CONFIG = [
   },
 ];
 
-add_task(async function setup() {
+add_setup(async function setup() {
   TelemetryEnvironmentTesting.registerFakeSysInfo();
   TelemetryEnvironmentTesting.spoofGfxAdapter();
   do_get_profile();
@@ -59,16 +62,6 @@ add_task(async function setup() {
   
   Services.fog.initializeFOG();
 
-  
-  const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"]);
-  distroDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  do_get_file("system.xpi").copyTo(
-    distroDir,
-    "tel-system-xpi@tests.mozilla.org.xpi"
-  );
-  let system_addon = FileUtils.File(distroDir.path);
-  system_addon.append("tel-system-xpi@tests.mozilla.org.xpi");
-  system_addon.lastModifiedTime = SYSTEM_ADDON_INSTALL_DATE;
   await loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
 
   TelemetryEnvironmentTesting.init(gAppInfo);
@@ -79,7 +72,7 @@ add_task(async function setup() {
   
   
   await AddonTestUtils.promiseShutdownManager();
-  await AddonTestUtils.overrideBuiltIns({ system: [] });
+  await AddonTestUtils.overrideBuiltIns({ builtins: [] });
   AddonTestUtils.addonStartup.remove(true);
   await AddonTestUtils.promiseStartupManager();
 
@@ -155,9 +148,9 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
 
   
   if (reInitSearchService) {
-    Services.search.wrappedJSObject.reset();
+    SearchService.wrappedJSObject.reset();
   }
-  await Services.search.init();
+  await SearchService.init();
   await promiseNextTick();
 
   
@@ -219,21 +212,21 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
     
     
     
-    const engine = await Services.search.getEngineByName(
+    const engine = await SearchService.getEngineByName(
       "telemetrySearchIdentifier"
     );
     engine.hidden = false;
-    await Services.search.setDefault(
+    await SearchService.setDefault(
       engine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
-    await Services.search.setDefaultPrivate(
-      Services.search.getEngineByName(SEARCH_ENGINE_ID),
+    await SearchService.setDefaultPrivate(
+      SearchService.getEngineByName(SEARCH_ENGINE_ID),
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   } else {
-    await Services.search.setDefault(
-      Services.search.getEngineByName(SEARCH_ENGINE_ID),
+    await SearchService.setDefault(
+      SearchService.getEngineByName(SEARCH_ENGINE_ID),
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   }
@@ -300,8 +293,8 @@ add_task(async function test_defaultSearchEngine() {
   const SEARCH_ENGINE_ID = "telemetry_default";
   const EXPECTED_SEARCH_ENGINE = "other-" + SEARCH_ENGINE_ID;
   
-  await Services.search.setDefault(
-    Services.search.getEngineByName(SEARCH_ENGINE_ID),
+  await SearchService.setDefault(
+    SearchService.getEngineByName(SEARCH_ENGINE_ID),
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
@@ -354,8 +347,8 @@ add_task(async function test_defaultSearchEngine_paramsChanged() {
       resolve
     );
   });
-  let engine = Services.search.getEngineByName("TestEngine");
-  await Services.search.setDefault(
+  let engine = SearchService.getEngineByName("TestEngine");
+  await SearchService.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
