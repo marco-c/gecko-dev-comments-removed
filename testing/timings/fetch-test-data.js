@@ -214,6 +214,7 @@ async function processJobsWithWorkers(jobs, targetDate = null) {
 
   const jobQueue = [...jobs];
   const results = [];
+  let invalidJobCount = 0;
   const workers = [];
   let completedJobs = 0;
   let lastProgressTime = 0;
@@ -245,7 +246,14 @@ async function processJobsWithWorkers(jobs, targetDate = null) {
           completedJobs++;
 
           if (message.result) {
-            results.push(message.result);
+            if (message.result.error) {
+              
+              if (message.result.error !== "network_error") {
+                invalidJobCount++;
+              }
+            } else {
+              results.push(message.result);
+            }
           }
 
           
@@ -320,7 +328,7 @@ async function processJobsWithWorkers(jobs, targetDate = null) {
         
         workers.forEach(worker => worker.terminate());
 
-        resolve(results);
+        resolve({ results, invalidJobCount });
       }
     }
   });
@@ -984,7 +992,10 @@ async function processJobsAndCreateData(
 
   
   const jobProcessingStart = Date.now();
-  const jobResults = await processJobsWithWorkers(jobs, targetLabel);
+  const { results: jobResults, invalidJobCount } = await processJobsWithWorkers(
+    jobs,
+    targetLabel
+  );
   const jobProcessingTime = Date.now() - jobProcessingStart;
   console.log(
     `Successfully processed ${jobResults.length} jobs in ${jobProcessingTime}ms`
@@ -1102,6 +1113,7 @@ async function processJobsAndCreateData(
         generatedAt: new Date().toISOString(),
         jobCount: jobs.length,
         processedJobCount: jobResults.length,
+        invalidJobCount,
       },
       tables: dataStructure.tables,
       taskInfo: dataStructure.taskInfo,
@@ -1273,8 +1285,11 @@ async function processDateData(targetDate, forceRefetch = false) {
 
       if (timings && resources) {
         const expectedJobCount = jobs.length;
-        const actualProcessedCount = timings.metadata?.processedJobCount;
+        const actualProcessedCount =
+          timings.metadata.processedJobCount +
+          (timings.metadata.invalidJobCount || 0);
 
+        
         if (actualProcessedCount < expectedJobCount) {
           const missingJobs = expectedJobCount - actualProcessedCount;
           console.log(
