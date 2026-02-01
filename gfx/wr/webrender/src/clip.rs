@@ -1041,11 +1041,25 @@ impl ClipNodeRange {
 
 
 
+
+
+
+
+
 #[derive(Debug, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum ClipSpaceConversion {
+    
     Local,
+    
+    
+    
+    
     ScaleOffset(ScaleOffset),
+    
+    
+    
+    
     Transform(LayoutToVisTransform),
 }
 
