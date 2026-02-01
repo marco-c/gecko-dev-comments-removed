@@ -681,7 +681,9 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     return nullptr;
   }
 
-  const nsAtom* anchorName = nullptr;
+  
+  
+  ScopedNameRef anchorName{nullptr, StyleCascadeLevel::Default()};
   AnchorPosReferenceData* referencedAnchors =
       aPositionedFrame->GetProperty(nsIFrame::AnchorPosReferences());
 
@@ -694,15 +696,16 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
       continue;
     }
 
-    if (anchorName && entry.GetKey() != anchorName) {
+    const auto& anchorKey = entry.GetKey();
+    if (anchorName.mName && anchorKey != anchorName.mName) {
       
       return nullptr;
     }
 
-    anchorName = entry.GetKey();
+    anchorName.mName = anchorKey;
   }
 
-  return anchorName
+  return anchorName.mName
              ? aPresShell->GetAnchorPosAnchor(anchorName, aPositionedFrame)
              : nullptr;
 }
@@ -716,6 +719,7 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
   nsIFrame* positionedFrame = nullptr;
   const auto* styleDisp = aAnchorFrame->StyleDisplay();
   if (styleDisp->HasAnchorName()) {
+    auto treeScope = styleDisp->mAnchorName.scope;
     for (auto& name : styleDisp->mAnchorName.AsSpan()) {
       for (nsIFrame* frame : aPresShell->GetAnchorPosPositioned()) {
         
@@ -729,10 +733,10 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
           
           continue;
         }
-        const auto* data = referencedAnchors->Lookup(name.AsAtom());
+        const ScopedNameRef nameRef(name.AsAtom(), treeScope);
+        const auto* data = referencedAnchors->Lookup(nameRef);
         if (data && *data && data->ref().mOffsetData) {
-          if (aAnchorFrame ==
-              aPresShell->GetAnchorPosAnchor(name.AsAtom(), frame)) {
+          if (aAnchorFrame == aPresShell->GetAnchorPosAnchor(nameRef, frame)) {
             if (positionedFrame) {
               
               return nullptr;
