@@ -19,6 +19,8 @@ default_optimizations = (
     
     {"build": list(schedules.ALL_COMPONENTS)},
     
+    {"docs": None},
+    
     
     {"index-search": [str]},
     
@@ -43,6 +45,8 @@ default_optimizations = (
     {"reprocess-symbols": None},
     
     {"skip-unless-mozlint": voluptuous.Any(str, [str])},
+    
+    {"skip-unless-sphinx-js": None},
 )
 
 OptimizationSchema = voluptuous.Any(*default_optimizations)
