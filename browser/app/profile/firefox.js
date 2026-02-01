@@ -3575,8 +3575,6 @@ pref("browser.ipProtection.log", false);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("browser.ipProtection.added", false);
 
-pref("browser.ipProtection.bandwidth.enabled", false);
-
 
 pref("about.glean.redesign.enabled", false);
 
