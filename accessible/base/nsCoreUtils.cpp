@@ -681,8 +681,6 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     return nullptr;
   }
 
-  
-  
   ScopedNameRef anchorName{nullptr, StyleCascadeLevel::Default()};
   AnchorPosReferenceData* referencedAnchors =
       aPositionedFrame->GetProperty(nsIFrame::AnchorPosReferences());
@@ -697,12 +695,12 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     }
 
     const auto& anchorKey = entry.GetKey();
-    if (anchorName.mName && anchorKey != anchorName.mName) {
+    if (anchorName.mName && anchorKey.mName != anchorName.mName) {
       
       return nullptr;
     }
 
-    anchorName.mName = anchorKey;
+    anchorName = anchorKey;
   }
 
   return anchorName.mName
