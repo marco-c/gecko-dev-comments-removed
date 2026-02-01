@@ -1244,6 +1244,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       break;
   }
 
+  const auto* baseStyle = aKidFrame->Style();
   
   
   auto SeekFallbackTo = [&](Maybe<uint32_t> aIndex) -> bool {
@@ -1263,8 +1264,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     while (true) {
       nextFallback = &fallbacks[index];
       nextFallbackStyle = aPresContext->StyleSet()->ResolvePositionTry(
-          *aKidFrame->GetContent()->AsElement(), *aKidFrame->Style(),
-          *nextFallback);
+          *aKidFrame->GetContent()->AsElement(), *baseStyle, *nextFallback);
       if (nextFallbackStyle) {
         break;
       }
