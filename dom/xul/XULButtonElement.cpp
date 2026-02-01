@@ -40,8 +40,7 @@ XULButtonElement::XULButtonElement(
     : nsXULElement(std::move(aNodeInfo)),
       mIsAlwaysMenu(IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menulist,
                                        nsGkAtoms::menuitem)),
-      mCheckable(IsAnyOfXULElements(nsGkAtoms::menuitem,
-                                    nsGkAtoms::richlistitem, nsGkAtoms::radio,
+      mCheckable(IsAnyOfXULElements(nsGkAtoms::menuitem, nsGkAtoms::radio,
                                     nsGkAtoms::checkbox)) {}
 
 XULButtonElement::~XULButtonElement() {
@@ -717,24 +716,6 @@ void XULButtonElement::UncheckRadioSiblings() {
   }
 }
 
-nsAtom* XULButtonElement::GetCheckedStateAttribute() const {
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(mCheckable);
-  if (auto menuType = GetMenuType()) {
-    return *menuType == MenuType::Normal ? nsGkAtoms::selected
-                                         : nsGkAtoms::checked;
-  }
-  if (NodeInfo()->Equals(nsGkAtoms::radio)) {
-    return nsGkAtoms::selected;
-  }
-  return nsGkAtoms::checked;
-}
-
 void XULButtonElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                     const nsAttrValue* aValue,
                                     const nsAttrValue* aOldValue,
@@ -745,14 +726,15 @@ void XULButtonElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (aNamespaceID != kNameSpaceID_None) {
     return;
   }
-  if (mCheckable) {
-    if (aName == GetCheckedStateAttribute()) {
-      SetStates(ElementState::CHECKED, !!aValue, aNotify);
-    }
-    if (IsAlwaysMenu() && aName == nsGkAtoms::type) {
-      SetStates(ElementState::CHECKED, GetBoolAttr(GetCheckedStateAttribute()),
-                aNotify);
-    }
+  if (mCheckable &&
+      (aName == nsGkAtoms::checked || aName == nsGkAtoms::selected)) {
+    
+    
+    
+    const bool checked =
+        aValue || GetBoolAttr(aName == nsGkAtoms::checked ? nsGkAtoms::selected
+                                                          : nsGkAtoms::checked);
+    SetStates(ElementState::CHECKED, checked, aNotify);
   }
   if (aName == nsGkAtoms::disabled) {
     SetStates(ElementState::DISABLED, !!aValue, aNotify);
