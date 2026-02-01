@@ -10,6 +10,10 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /can't be sent as the connection just closed/
 );
 
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Dispatching '.*' action after panel's closing/
+);
+
 function background() {
   browser.test.onMessage.addListener(msg => {
     let code;
