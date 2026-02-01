@@ -17,6 +17,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "api/rtc_error.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/socket_address.h"
@@ -65,6 +66,14 @@ class RTC_EXPORT Candidate {
             uint16_t network_cost = 0);
   Candidate(const Candidate&);
   ~Candidate();
+
+  
+  
+  
+  
+  
+  
+  static RTCErrorOr<Candidate> ParseCandidateString(absl::string_view message);
 
   
   const std::string& id() const { return id_; }

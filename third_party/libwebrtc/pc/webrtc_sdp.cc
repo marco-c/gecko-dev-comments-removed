@@ -3323,6 +3323,48 @@ bool ParseCandidate(absl::string_view message,
   RTC_DCHECK(candidate != nullptr);
 
   
+  
+  
+  
+  
+  class VerifyResults {
+   public:
+    VerifyResults(absl::string_view message, Candidate* c, SdpParseError* e) {
+#if RTC_DCHECK_IS_ON
+      error_ = e;
+      candidate_ = c;
+      cand_ = Candidate::ParseCandidateString(message);
+#endif
+    }
+
+    ~VerifyResults() {
+#if RTC_DCHECK_IS_ON
+      if (success_) {
+        RTC_DCHECK(cand_.ok()) << cand_.error();
+        RTC_DCHECK(cand_.value().IsEquivalent(*candidate_))
+            << "*** Mismatch ***\nParsed candidate (parsed vs webrtc_sdp):\n"
+            << cand_.value().ToString() << "\n"
+            << candidate_->ToString();
+      } else {
+        RTC_DCHECK(!cand_.ok());
+        RTC_DCHECK(!absl::string_view(cand_.error().message()).empty());
+      }
+#endif
+    }
+
+    
+    void set_success() { success_ = true; }
+
+   private:
+    bool success_ = false;
+#if RTC_DCHECK_IS_ON
+    RTCErrorOr<Candidate> cand_;
+    SdpParseError* error_;
+    Candidate* candidate_;
+#endif
+  } verify(message, candidate, error);
+
+  
   absl::string_view first_line;
 
   size_t line_end = message.find(kNewLineChar);
@@ -3515,6 +3557,9 @@ bool ParseCandidate(absl::string_view message,
                          generation, foundation, network_id, network_cost);
   candidate->set_related_address(related_address);
   candidate->set_tcptype(tcptype);
+
+  verify.set_success();
+
   return true;
 }
 
