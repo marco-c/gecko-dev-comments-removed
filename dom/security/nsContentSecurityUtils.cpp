@@ -1606,6 +1606,12 @@ class ImgSrcVisitor : public AllowBuiltinSrcVisitor {
 
     
     
+    if (scheme == u"page-icon"_ns) {
+      return true;
+    }
+
+    
+    
     if (scheme == u"moz-remote-image"_ns) {
       if (CheckAllowList(sImgSrcMozRemoteImageAllowList)) {
         return true;
