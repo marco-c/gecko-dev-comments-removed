@@ -55,7 +55,7 @@ add_task(async function () {
   );
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   
   await SpecialPowers.spawn(

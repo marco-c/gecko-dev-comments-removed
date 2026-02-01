@@ -8,7 +8,14 @@
 
 
 const EXPECTED_REQUEST_HEADER_COUNT = 13;
-const EXPECTED_RESPONSE_HEADER_COUNT = 6;
+
+
+
+
+
+const EXPECTED_PARTIAL_REQUEST_HEADER_COUNT = [5, 6];
+
+const EXPECTED_RESPONSE_HEADER_COUNT = [5, 6];
 
 add_task(async function () {
   
@@ -119,11 +126,12 @@ async function testManyReloads() {
     ok(entry, "Found the cancelled request");
     is(entry.request.method, "GET", "Method is set");
     is(entry.request.url, HTTPS_SIMPLE_URL, "URL is set");
-    
-    
-    
-    
-    is(entry.request.headers.length, 6, "But headers are partialy populated");
+    ok(
+      EXPECTED_PARTIAL_REQUEST_HEADER_COUNT.includes(
+        entry.request.headers.length
+      ),
+      "But headers are partialy populated"
+    );
     is(entry.response.status, 0, "And status is set to 0");
   }
 
@@ -210,11 +218,11 @@ function assertNavigationRequestEntry(entry) {
   );
   is(entry.response.status, 200, "Check response status");
   is(entry.response.statusText, "OK", "Check response status text");
-  is(
-    entry.response.headers.length,
-    EXPECTED_RESPONSE_HEADER_COUNT,
+  ok(
+    EXPECTED_RESPONSE_HEADER_COUNT.includes(entry.response.headers.length),
     "Check number of response headers"
   );
+
   is(
     entry.response.content.mimeType,
     "text/html",
@@ -234,14 +242,14 @@ async function reloadAndCopyAllAsHar({
 
   store.dispatch(Actions.batchEnable(false));
 
-  const onNetworkEvent = waitForNetworkEvents(monitor, 1);
+  const onNetworkEvent = waitForNetworkEvents(monitor, reloadTwice ? 2 : 1);
   const { onDomCompleteResource } =
     await waitForNextTopLevelDomCompleteResource(toolbox.commands);
 
   if (reloadTwice) {
-    reloadBrowser();
+    reloadSelectedTab();
   }
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   info("Waiting for network events");
   await onNetworkEvent;

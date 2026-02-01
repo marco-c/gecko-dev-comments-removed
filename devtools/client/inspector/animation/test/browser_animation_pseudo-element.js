@@ -232,7 +232,7 @@ add_task(async function () {
   );
 
   info("Reload the page");
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   info("Waiting for expected animations to be displayed");
   

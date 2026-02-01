@@ -11,13 +11,10 @@ const TEST_URI =
 add_task(async function () {
   await pushPref("devtools.custom-formatters.enabled", true);
 
-  
-  await pushPref("javascript.options.property_error_message_fix", true);
-
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await testHeaderNotAFunction(hud);
   await testHeaderNotReturningJsonMl(hud);
@@ -153,9 +150,13 @@ async function testInvalidTagname(hud) {
 
 async function testNoPrivilegedAccess(hud) {
   info(`Test for denied access to windowUtils from hook`);
-  await testCustomFormatting(hud, {
-    messageText: `Custom formatter failed: devtoolsFormatters[17].header threw: can't access property "garbageCollect", window.windowUtils is undefined`,
+  const node = await testCustomFormatting(hud, {
+    messageText: `Custom formatter failed: devtoolsFormatters[17].header threw`,
   });
+  ok(
+    node.textContent.includes("window.windowUtils is undefined"),
+    "Access to windowUtils triggered expected error"
+  );
 }
 
 async function testCustomFormatting(hud, { messageText, source, bodyText }) {
@@ -194,4 +195,6 @@ async function testCustomFormatting(hud, { messageText, source, bodyText }) {
       "The arrow of the node has the expected class after clicking on it"
     );
   }
+
+  return headerNode;
 }

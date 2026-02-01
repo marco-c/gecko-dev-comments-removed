@@ -94,7 +94,7 @@ async function testWatchingCachedCssMessages() {
   
   
   
-  await reloadBrowser();
+  await reloadSelectedTab();
   
   await triggerCSSWarning(tab);
 

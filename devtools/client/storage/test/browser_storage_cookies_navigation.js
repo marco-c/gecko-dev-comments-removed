@@ -65,7 +65,7 @@ add_task(async function () {
   await waitUntil(() => hasCookieData("foo", "bar"));
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
   
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(() => isInTree(doc, ["cookies", "https://example.net"]));

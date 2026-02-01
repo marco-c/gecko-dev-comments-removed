@@ -39,7 +39,7 @@ async function testForGivenDir(dir) {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   const headers = document.querySelector(".requests-list-headers");

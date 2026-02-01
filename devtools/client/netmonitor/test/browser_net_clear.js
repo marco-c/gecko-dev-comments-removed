@@ -31,7 +31,7 @@ add_task(async function () {
 
   
   let wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   assertSingleRequestState();
@@ -72,7 +72,7 @@ add_task(async function () {
 
   
   wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   assertSingleRequestState();

@@ -290,7 +290,6 @@ class NetworkEventActor extends Actor {
       headersSize = this._request.rawHeaders.length;
       rawHeaders = this._createLongStringActor(this._request.rawHeaders);
     }
-
     return {
       headers: this._request.headers.map(header => ({
         name: header.name,
@@ -454,7 +453,9 @@ class NetworkEventActor extends Actor {
     }
     this._response.contentLongStringActor = new LongStringActor(
       this.conn,
-      content.text
+      
+      
+      content.text || ""
     );
     
     

@@ -14,7 +14,7 @@ add_task(async function () {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await testString(hud);
   await testNumber(hud);

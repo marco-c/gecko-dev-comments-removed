@@ -1027,7 +1027,7 @@ function deleteExpression(dbg, input) {
 
 
 async function reload(dbg, ...sources) {
-  await reloadBrowser();
+  await reloadSelectedTab();
   return waitForSources(dbg, ...sources);
 }
 

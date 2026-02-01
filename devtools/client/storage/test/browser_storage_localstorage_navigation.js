@@ -45,7 +45,7 @@ add_task(async function () {
   );
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
   
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(() => isInTree(doc, ["localStorage", "https://example.net"]));

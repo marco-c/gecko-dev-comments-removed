@@ -58,7 +58,7 @@ add_task(async function () {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   const [msgWithText, msgWithObj, msgNested] = await waitFor(() =>
     findConsoleAPIMessages(hud, "foo")

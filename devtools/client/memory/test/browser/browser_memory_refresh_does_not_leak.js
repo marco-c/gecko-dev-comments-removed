@@ -63,7 +63,7 @@ this.test = makeMemoryTest(TEST_URL, async function ({ panel }) {
   );
   is(startWindows.length, 1);
 
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   
   front = panel.panelWin.gStore.getState().front;

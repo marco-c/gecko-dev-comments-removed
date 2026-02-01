@@ -55,7 +55,7 @@ addRDMTask(TEST_URL, async function ({ ui, manager }) {
     );
 
     
-    await reloadBrowser();
+    await reloadSelectedTab();
 
     
     await testViewportZoomWidthAndHeight(

@@ -23,7 +23,7 @@ add_task(async function () {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   info("Testing column resize to fit using double-click on draggable resizer");

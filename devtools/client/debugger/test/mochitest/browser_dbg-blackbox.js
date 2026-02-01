@@ -140,7 +140,7 @@ add_task(async function testBlackBoxOnToolboxRestart() {
   await openContextMenuInDebugger(dbg, "gutterElement", 2);
   await selectBlackBoxContextMenuItem(dbg, "blackbox-line");
 
-  await reloadBrowser();
+  await reloadSelectedTab();
   
   await wait(1000);
 
@@ -159,7 +159,7 @@ add_task(async function testBlackBoxOnToolboxRestart() {
   
   
   const onBlackboxDone = waitForDispatch(dbg2.store, "BLACKBOX_SOURCE_RANGES");
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   info("Wait for the blackbox action to complete");
   await onBlackboxDone;

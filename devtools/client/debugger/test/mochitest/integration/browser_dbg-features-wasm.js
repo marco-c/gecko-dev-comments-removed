@@ -27,7 +27,7 @@ add_task(async function () {
   
   
   
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await toolbox.selectTool("jsdebugger");
   const dbg = createDebuggerContext(toolbox);

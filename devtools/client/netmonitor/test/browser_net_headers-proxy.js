@@ -13,7 +13,7 @@ add_task(async function () {
   const { document } = monitor.panelWin;
 
   const wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   
@@ -89,7 +89,7 @@ add_task(async function () {
   const { document } = monitor.panelWin;
 
   const wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   

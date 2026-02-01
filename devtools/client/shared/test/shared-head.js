@@ -609,13 +609,12 @@ async function removeTab(tab) {
 
 
 
-async function reloadBrowser({
-  browser = gBrowser.selectedBrowser,
+async function reloadSelectedTab({
   isErrorPage = false,
   waitForLoad = true,
 } = {}) {
-  return navigateTo(browser.currentURI.spec, {
-    browser,
+  return navigateTo(gBrowser.selectedBrowser.currentURI.spec, {
+    browser: gBrowser.selectedBrowser,
     isErrorPage,
     waitForLoad,
   });
@@ -669,10 +668,20 @@ async function navigateTo(
     isErrorPage
   );
 
-  
-  
   if (uri === browser.currentURI.spec) {
-    gBrowser.reloadTab(gBrowser.getTabForBrowser(browser));
+    
+    
+    is(
+      browser,
+      gBrowser.selectedBrowser,
+      "Only supports reloading the selected tab"
+    );
+
+    
+    
+    
+    
+    BrowserCommands.reload();
   } else {
     BrowserTestUtils.startLoadingURIString(browser, uri);
   }

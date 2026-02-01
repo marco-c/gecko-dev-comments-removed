@@ -127,7 +127,7 @@ add_task(async function () {
   
   info("Reloading to check unblock");
   waitForEvents = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitForEvents;
 
   

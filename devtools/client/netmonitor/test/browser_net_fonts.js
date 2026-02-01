@@ -20,7 +20,7 @@ add_task(async function () {
 
   
   const waitForRequests = waitForNetworkEvents(monitor, 3);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitForRequests;
 
   const wait = waitForDOMIfNeeded(

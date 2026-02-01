@@ -51,7 +51,7 @@ add_task(async function () {
   
 
   
-  await reloadBrowser();
+  await reloadSelectedTab();
   
   info("Checking storage tree…");
   await waitUntil(() => isInTree(doc, ["indexedDB", "https://example.net"]));
