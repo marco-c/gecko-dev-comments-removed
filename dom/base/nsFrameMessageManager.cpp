@@ -1248,9 +1248,23 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   bool isRunOnce = IsProcessScoped();
 
   
+  
+  
   nsAutoCString scheme;
   uri->GetScheme(scheme);
   bool isCacheable = !scheme.EqualsLiteral("data");
+
+  nsAutoCString cachePath;
+  scache::ResourceType resourceType;
+  if (isCacheable) {
+    rv = scache::PathifyURI(CACHE_PREFIX("script"), uri, cachePath,
+                            &resourceType);
+    if (NS_FAILED(rv) || (resourceType != scache::ResourceType::Gre &&
+                          resourceType != scache::ResourceType::App)) {
+      isCacheable = false;
+    }
+  }
+
   bool useScriptPreloader = isCacheable;
 
   
@@ -1264,10 +1278,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
 
   RefPtr<JS::Stencil> stencil;
   if (useScriptPreloader) {
-    nsAutoCString cachePath;
-    rv = scache::PathifyURI(CACHE_PREFIX("script"), uri, cachePath);
-    NS_ENSURE_SUCCESS(rv, nullptr);
-
+    MOZ_ASSERT(!cachePath.IsEmpty());
     JS::DecodeOptions decodeOptions;
     ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
     stencil = ScriptPreloader::GetChildSingleton().GetCachedStencil(
@@ -1343,9 +1354,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   MOZ_ASSERT(stencil);
 
   if (useScriptPreloader) {
-    nsAutoCString cachePath;
-    rv = scache::PathifyURI(CACHE_PREFIX("script"), uri, cachePath);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    MOZ_ASSERT(!cachePath.IsEmpty());
     ScriptPreloader::GetChildSingleton().NoteStencil(url, cachePath, stencil,
                                                      isRunOnce);
   }

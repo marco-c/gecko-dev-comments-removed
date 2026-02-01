@@ -86,13 +86,16 @@ NS_IMPL_ISUPPORTS(mozJSSubScriptLoader, mozIJSSubScriptLoader)
 
 static void SubscriptCachePath(JSContext* cx, nsIURI* uri,
                                JS::HandleObject targetObj,
-                               nsACString& cachePath) {
+                               nsACString& cachePath,
+                               scache::ResourceType* aResourceType) {
   
   
   if (!JS_IsGlobalObject(targetObj)) {
-    PathifyURI(JSSUB_CACHE_PREFIX("non-syntactic", "script"), uri, cachePath);
+    PathifyURI(JSSUB_CACHE_PREFIX("non-syntactic", "script"), uri, cachePath,
+               aResourceType);
   } else {
-    PathifyURI(JSSUB_CACHE_PREFIX("global", "script"), uri, cachePath);
+    PathifyURI(JSSUB_CACHE_PREFIX("global", "script"), uri, cachePath,
+               aResourceType);
   }
 }
 
@@ -187,7 +190,8 @@ static bool EvalStencil(JSContext* cx, HandleObject targetObj,
 
   if (script && (storeIntoStartupCache || storeIntoPreloadCache)) {
     nsAutoCString cachePath;
-    SubscriptCachePath(cx, uri, targetObj, cachePath);
+    scache::ResourceType resourceType;
+    SubscriptCachePath(cx, uri, targetObj, cachePath, &resourceType);
 
     nsCString uriStr;
     if (storeIntoPreloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
@@ -437,13 +441,21 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   StartupCache* cache = ignoreCache ? nullptr : StartupCache::GetSingleton();
 
   nsAutoCString cachePath;
-  SubscriptCachePath(cx, uri, targetObj, cachePath);
+  scache::ResourceType resourceType;
+  SubscriptCachePath(cx, uri, targetObj, cachePath, &resourceType);
 
   JS::DecodeOptions decodeOptions;
   ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
 
+  
+  
+  
+  bool shouldUseCache =
+      !options.ignoreCache && (resourceType == scache::ResourceType::Gre ||
+                               resourceType == scache::ResourceType::App);
+
   RefPtr<JS::Stencil> stencil;
-  if (!options.ignoreCache) {
+  if (shouldUseCache) {
     if (!options.wantReturnValue) {
       
       stencil = ScriptPreloader::GetSingleton().GetCachedStencil(
