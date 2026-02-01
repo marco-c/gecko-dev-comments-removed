@@ -259,6 +259,12 @@ where
     W: Write + 'b,
 {
     
+    pub fn has_written(&self) -> bool {
+        
+        self.inner.prefix.is_none()
+    }
+
+    
     #[inline]
     pub fn new(inner: &'a mut CssWriter<'b, W>, separator: &'static str) -> Self {
         if inner.prefix.is_none() {
