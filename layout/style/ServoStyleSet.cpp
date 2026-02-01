@@ -455,13 +455,12 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
   UpdateStylistIfNeeded();
   MOZ_ASSERT(PseudoStyle::IsPseudoElement(aType));
 
-  
-  
   const bool cacheable =
-      !aFunctionalPseudoParameter &&
       LazyPseudoIsCacheable(aType, aOriginatingElement, aParentStyle);
-  RefPtr<ComputedStyle> style =
-      cacheable ? aParentStyle->GetCachedLazyPseudoStyle(aType) : nullptr;
+  RefPtr<ComputedStyle> style = cacheable
+                                    ? aParentStyle->GetCachedLazyPseudoStyle(
+                                          {aType, aFunctionalPseudoParameter})
+                                    : nullptr;
 
   const bool isProbe = aIsProbe == IsProbe::Yes;
 
@@ -479,7 +478,7 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
       return nullptr;
     }
     if (cacheable) {
-      aParentStyle->SetCachedLazyPseudoStyle(style);
+      aParentStyle->SetCachedLazyPseudoStyle(style, aFunctionalPseudoParameter);
     }
   }
 

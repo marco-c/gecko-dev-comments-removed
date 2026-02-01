@@ -185,6 +185,11 @@ class ComputedStyle {
   }
 
   
+  bool UsesContainerUnits() const {
+    return bool(Flags() & Flag::USES_CONTAINER_UNITS);
+  }
+
+  
   
   
   bool RelevantLinkVisited() const {
@@ -207,18 +212,20 @@ class ComputedStyle {
   ComputedStyle* GetCachedInheritingAnonBoxStyle(
       PseudoStyleType aPseudoType) const {
     MOZ_ASSERT(PseudoStyle::IsInheritingAnonBox(aPseudoType));
-    return mCachedInheritingStyles.Lookup(aPseudoType);
+    return mCachedInheritingStyles.Lookup(PseudoStyleRequest(aPseudoType));
   }
 
   void SetCachedInheritedAnonBoxStyle(ComputedStyle* aStyle) {
     mCachedInheritingStyles.Insert(aStyle);
   }
 
-  ComputedStyle* GetCachedLazyPseudoStyle(PseudoStyleType aPseudo) const;
+  ComputedStyle* GetCachedLazyPseudoStyle(const PseudoStyleRequest&) const;
 
-  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle) {
+  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle,
+                                nsAtom* aFunctionalPseudoParameter) {
     MOZ_ASSERT(aStyle->IsPseudoElement());
-    MOZ_ASSERT(!GetCachedLazyPseudoStyle(aStyle->GetPseudoType()));
+    MOZ_ASSERT(!GetCachedLazyPseudoStyle(
+        {aStyle->GetPseudoType(), aFunctionalPseudoParameter}));
     MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
 
     
@@ -235,7 +242,13 @@ class ComputedStyle {
       return;
     }
 
-    mCachedInheritingStyles.Insert(aStyle);
+    
+    
+    if (aStyle->UsesContainerUnits()) {
+      return;
+    }
+
+    mCachedInheritingStyles.Insert(aStyle, aFunctionalPseudoParameter);
   }
 
 #define GENERATE_ACCESSOR(name_)                                         \
@@ -355,6 +368,8 @@ class ComputedStyle {
 
   ServoComputedData mSource;
 
+  
+  
   
   CachedInheritingStyles mCachedInheritingStyles;
 

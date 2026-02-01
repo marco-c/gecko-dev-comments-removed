@@ -15,8 +15,17 @@ class nsWindowSizes;
 
 namespace mozilla {
 
+struct PseudoStyleRequest;
 enum class PseudoStyleType : uint8_t;
 class ComputedStyle;
+
+
+
+struct CachedStyleEntry {
+  RefPtr<ComputedStyle> mStyle;
+  RefPtr<nsAtom> mFunctionalPseudoParameter;
+};
+
 
 
 
@@ -27,8 +36,9 @@ class ComputedStyle;
 
 class CachedInheritingStyles {
  public:
-  void Insert(ComputedStyle* aStyle);
-  ComputedStyle* Lookup(PseudoStyleType) const;
+  void Insert(ComputedStyle* aStyle,
+              nsAtom* aFunctionalPseudoParameter = nullptr);
+  ComputedStyle* Lookup(const PseudoStyleRequest& aRequest) const;
 
   CachedInheritingStyles() : mBits(0) {}
   ~CachedInheritingStyles() {
@@ -43,7 +53,7 @@ class CachedInheritingStyles {
 
  private:
   
-  typedef AutoTArray<RefPtr<ComputedStyle>, 4> IndirectCache;
+  using IndirectCache = AutoTArray<CachedStyleEntry, 4>;
 
   bool IsEmpty() const { return !mBits; }
   bool IsIndirect() const { return (mBits & 1); }
