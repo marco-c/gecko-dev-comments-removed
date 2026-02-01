@@ -10,7 +10,7 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import mozpack.path as mozpath
 from mozfile import which
@@ -423,11 +423,35 @@ class JujutsuRepository(Repository):
         `changed_files` may contain a dict of file paths and their contents,
         see `stage_changes`.
         """
-        
-        
-        
-        
+        opid = self._run(
+            "operation", "log", "-n1", "--no-graph", "-T", "id.short(16)"
+        ).rstrip()
+        try:
+            change, _ = self.prepare_try_push(commit_message, changed_files)
+            yield change
+        finally:
+            self._run("operation", "restore", opid)
+
+    def prepare_try_push(
+        self, commit_message: str, changed_files: Optional[dict[str, str]] = None
+    ) -> tuple[Optional[str], Callable]:
+        """Create a temporary try commit as a context manager.
+
+        Create a new commit using `commit_message` as the commit message. The commit
+        may be empty, for example when only including try syntax.
+
+        `changed_files` may contain a dict of file paths and their contents,
+        see `stage_changes`.
+
+        This function returns a tuple of the changeid of the new head and a
+        function that can be called to restore the repository to its original
+        state prior to this function having been run.
+        """
         self._run("debug", "snapshot")  
+        
+        
+        
+        
         opid = self._run(
             "operation", "log", "-n1", "--no-graph", "-T", "id.short(16)"
         ).rstrip()
@@ -442,9 +466,19 @@ class JujutsuRepository(Repository):
                 self.add_remove_files(p)
             
             self._snapshot()
-            yield self._resolve_to_change("@")
-        finally:
+
+            def cleanup():
+                self._run("operation", "restore", opid)
+
+            return self._resolve_to_change("@"), cleanup
+        except:
+            
+            
+            
+            
+            
             self._run("operation", "restore", opid)
+            raise
 
     def get_last_modified_time_for_file(self, path: Path) -> datetime:
         """Return last modified in VCS time for the specified file."""
