@@ -13,10 +13,20 @@
 const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
+
+const { ImageTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ImageTestUtils.sys.mjs"
+);
+
 AddonTestUtils.initMochitest(this);
 const server = AddonTestUtils.createHttpServer();
 const serverHost = server.identity.primaryHost;
 const serverPort = server.identity.primaryPort;
+
+
+const BASE64_DATA =
+  "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC";
+const DATA_URL = "data:image/png;base64," + BASE64_DATA;
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
@@ -95,14 +105,13 @@ async function testCreateNotification({ iconUrl, testOnShown }) {
 
 
 add_task(async function test_http_icon() {
-  const requestPromise = new Promise(resolve => {
-    let count = 0;
-    server.registerPathHandler("/test_http_icon.png", () => {
-      
-      
-      is(++count, 1, "Got one request to test_http_icon.png");
-      resolve();
-    });
+  let count = 0;
+  server.registerPathHandler("/test_http_icon.png", (request, response) => {
+    is(++count, 1, "Got one request to test_http_icon.png");
+
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    let body = atob(BASE64_DATA);
+    response.bodyOutputStream.write(body, body.length);
   });
 
   
@@ -111,33 +120,43 @@ add_task(async function test_http_icon() {
   await testCreateNotification({
     iconUrl: httpUrl,
     async testOnShown(alertWindow) {
-      info("Waiting for test_http_icon.png request to be detected.");
       const img = alertWindow.document.getElementById("alertImage");
-      is(img.src, httpUrl, "Got http:-URL");
-      await requestPromise;
-    },
-  });
-});
+      await ImageTestUtils.assertEqualImage(
+        alertWindow,
+        img.src,
+        DATA_URL,
+        "Got image"
+      );
 
-add_task(async function test_data_icon() {
-  
-  const dataUrl =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC";
-
-  await testCreateNotification({
-    iconUrl: dataUrl,
-    async testOnShown(alertWindow) {
-      const img = alertWindow.document.getElementById("alertImage");
-      is(img.src, dataUrl, "Got data:-URL");
-
-      info("Verifying that data:-URL can be loaded in the document.");
+      info("Verifying that http:-URL can be loaded in the document.");
       
       
       
       
 
       const testImg = alertWindow.document.createElement("img");
-      testImg.src = dataUrl;
+      testImg.src = img.src;
+      await testImg.decode();
+      is(testImg.naturalWidth, 5, "Test image was loaded successfully");
+    },
+  });
+});
+
+add_task(async function test_data_icon() {
+  await testCreateNotification({
+    iconUrl: DATA_URL,
+    async testOnShown(alertWindow) {
+      const img = alertWindow.document.getElementById("alertImage");
+      await ImageTestUtils.assertEqualImage(
+        alertWindow,
+        img.src,
+        DATA_URL,
+        "Got image"
+      );
+
+      info("Verifying that data:-URL can be loaded in the document.");
+      const testImg = alertWindow.document.createElement("img");
+      testImg.src = img.src;
       await testImg.decode();
       is(testImg.naturalWidth, 5, "Test image was loaded successfully");
     },
@@ -149,7 +168,12 @@ add_task(async function test_blob_icon() {
     iconUrl: "blob:REPLACE_WITH_REAL_URL_IN_TEST",
     async testOnShown(alertWindow) {
       const img = alertWindow.document.getElementById("alertImage");
-      ok(img.src.startsWith("blob:moz-extension"), `Got blob:-URL: ${img.src}`);
+      await ImageTestUtils.assertEqualImage(
+        alertWindow,
+        img.src,
+        DATA_URL,
+        "Got image"
+      );
 
       info("Verifying that blob:-URL can be loaded in the document.");
 
@@ -167,9 +191,11 @@ add_task(async function test_moz_extension_icon() {
     iconUrl: "moz-extension:REPLACE_WITH_REAL_URL_IN_TEST",
     async testOnShown(alertWindow) {
       const img = alertWindow.document.getElementById("alertImage");
-      ok(
-        img.src.startsWith("moz-extension:/") && img.src.endsWith("/5x5.png"),
-        `Got moz-extension:-URL: ${img.src}`
+      await ImageTestUtils.assertEqualImage(
+        alertWindow,
+        img.src,
+        DATA_URL,
+        "Got image"
       );
 
       info("Verifying that moz-extension:-URL can be loaded in the document.");

@@ -159,8 +159,8 @@ nsresult nsXULAlerts::ShowAlertImpl(nsIAlertNotification* aAlert,
   rv = aAlert->GetName(name);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsAutoString imageUrl;
-  rv = aAlert->GetImageURL(imageUrl);
+  nsCOMPtr<imgIContainer> image;
+  rv = aAlert->GetImage(getter_AddRefs(image));
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoString title;
@@ -195,16 +195,11 @@ nsresult nsXULAlerts::ShowAlertImpl(nsIAlertNotification* aAlert,
 
   nsCOMPtr<nsIMutableArray> argsArray = nsArray::Create();
 
-  
-  
-  nsCOMPtr<nsISupportsString> scriptableImageUrl(
-      do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID));
-  NS_ENSURE_TRUE(scriptableImageUrl, NS_ERROR_FAILURE);
-
-  scriptableImageUrl->SetData(imageUrl);
-  rv = argsArray->AppendElement(scriptableImageUrl);
+  rv = argsArray->AppendElement(image);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
   nsCOMPtr<nsISupportsString> scriptableAlertTitle(
       do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID));
   NS_ENSURE_TRUE(scriptableAlertTitle, NS_ERROR_FAILURE);

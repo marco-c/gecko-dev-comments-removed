@@ -1394,7 +1394,6 @@ static nsLiteralCString sImgSrcHttpsAllowList[] = {
     "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
-    "chrome://global/content/alerts/alert.xhtml"_ns,
 };
 
 
@@ -1403,7 +1402,6 @@ static nsLiteralCString sImgSrcHttpAllowList[] = {
     "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
     "chrome://devtools/content/framework/toolbox-window.xhtml"_ns,
-    "chrome://global/content/alerts/alert.xhtml"_ns,
     
 };
 

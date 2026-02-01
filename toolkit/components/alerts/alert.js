@@ -159,10 +159,29 @@ function prefillAlertInfo() {
     
     case 1:
       if (window.arguments[0]) {
+        const imgContainer = window.arguments[0];
+
+        
+        const imgTools = Cc["@mozilla.org/image/tools;1"].getService(
+          Ci.imgITools
+        );
+        const imageStream = imgTools.encodeImage(imgContainer, "image/png");
+
+        const binaryStream = Cc[
+          "@mozilla.org/binaryinputstream;1"
+        ].createInstance(Ci.nsIBinaryInputStream);
+        binaryStream.setInputStream(imageStream);
+        const available = binaryStream.available();
+
+        const buffer = new ArrayBuffer(available);
+        binaryStream.readArrayBuffer(available, buffer);
+        let array = new Uint8Array(buffer);
+
         document.getElementById("alertBox").setAttribute("hasImage", true);
+
         document
           .getElementById("alertImage")
-          .setAttribute("src", window.arguments[0]);
+          .setAttribute("src", "data:image/png;base64," + array.toBase64());
       }
     
     case 0:
