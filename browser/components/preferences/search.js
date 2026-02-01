@@ -583,6 +583,26 @@ Preferences.addSetting(
     
 
 
+
+
+
+    #localShortcutL10nNames = null;
+
+    setup() {
+      Services.obs.addObserver(
+        this.emitChange,
+        "browser-search-engine-modified"
+      );
+      return () =>
+        Services.obs.removeObserver(
+          this.emitChange,
+          "browser-search-engine-modified"
+        );
+    }
+
+    
+
+
     async getL10nNames() {
       if (this.#localShortcutL10nNames) {
         return this.#localShortcutL10nNames;
@@ -792,6 +812,12 @@ Preferences.addSetting(
       return configs;
     }
 
+    async onUserReorder(event) {
+      const { draggedElement, targetIndex } = event.detail;
+      let draggedEngineName = draggedElement.label;
+      let draggedEngine = lazy.SearchService.getEngineByName(draggedEngineName);
+      await lazy.SearchService.moveEngine(draggedEngine, targetIndex);
+    }
     async getControlConfig() {
       return {
         items: [
@@ -800,14 +826,6 @@ Preferences.addSetting(
         ],
       };
     }
-
-    
-
-
-
-
-
-    #localShortcutL10nNames = null;
   }
 );
 
