@@ -2171,17 +2171,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
           : "(None)",
       "Blocking a script load %s from file %s");
   MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
-#elif defined(EARLY_BETA_OR_EARLIER)
-  
-  
-  
-  
-  if (fileNameTypeAndDetails.second.isSome()) {
-    PossiblyCrash("js_load_1", aFilename,
-                  fileNameTypeAndDetails.second.value());
-  } else {
-    PossiblyCrash("js_load_1", aFilename, "(None)"_ns);
-  }
 #endif
 
   {
@@ -2211,15 +2200,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
         }));
   }
 
-  
-  
-  
-  
-#ifdef NIGHTLY_BUILD
   return false;
-#else
-  return true;
-#endif
 }
 
 
