@@ -230,6 +230,24 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
 
 
 
+
+  getUltimateOriginatingElement() {
+    if (!this.isPseudoElement) {
+      return null;
+    }
+    let ancestor = this.parentNode();
+    while (ancestor?.isPseudoElement) {
+      ancestor = ancestor.parentNode();
+    }
+    return ancestor;
+  }
+
+  
+
+
+
+
+
   updateMutation(change) {
     if (change.type === "attributes") {
       
