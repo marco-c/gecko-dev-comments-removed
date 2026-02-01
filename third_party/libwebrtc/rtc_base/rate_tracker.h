@@ -14,7 +14,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "absl/base/macros.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 
@@ -26,18 +25,13 @@ namespace webrtc {
 class RateTracker {
  public:
   RateTracker(int64_t bucket_milliseconds, size_t bucket_count);
-  virtual ~RateTracker();
+  ~RateTracker();
 
   
   
   
   double ComputeRateForInterval(Timestamp current_time,
                                 TimeDelta interval) const;
-  [[deprecated]]
-  double ComputeRateForInterval(int64_t interval_milliseconds) const {
-    return ComputeRateForInterval(Timestamp::Millis(Time()),
-                                  TimeDelta::Millis(interval_milliseconds));
-  }
 
   
   
@@ -46,34 +40,11 @@ class RateTracker {
         current_time, TimeDelta::Millis(bucket_milliseconds_) * bucket_count_);
   }
 
-  [[deprecated]]
-  double ComputeRate() const {
-    return Rate(Timestamp::Millis(Time()));
-  }
-
   
   int64_t TotalSampleCount() const;
 
   
   void Update(int64_t sample_count, Timestamp now);
-
-  
-  
-  [[deprecated]]
-  void AddSamples(int64_t sample_count) {
-    Update(sample_count, Timestamp::Millis(Time()));
-  }
-
-  ABSL_DEPRECATE_AND_INLINE()
-  void AddSamplesAtTime(int64_t current_time_ms, int64_t sample_count) {
-    Update(sample_count, Timestamp::Millis(current_time_ms));
-  }
-
- protected:
-  
-  
-  
-  virtual int64_t Time() const;
 
  private:
   void EnsureInitialized(int64_t current_time_ms);
