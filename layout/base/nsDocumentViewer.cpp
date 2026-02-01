@@ -337,6 +337,9 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
 
 
+
+
+
   nsresult InitInternal(nsIWidget* aParentWidget, nsISupports* aState,
                         mozilla::dom::WindowGlobalChild* aActor,
                         const LayoutDeviceIntRect& aBounds, bool aDoCreation,
@@ -353,7 +356,8 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   already_AddRefed<nsINode> GetPopupLinkNode();
   already_AddRefed<nsIImageLoadingContent> GetPopupImageNode();
 
-  void PrepareToStartLoad(void);
+  void PrepareToStartLoad();
+  bool ShouldHaveGalleyPresentation() const;
 
   nsresult SyncParentSubDocMap();
 
@@ -434,7 +438,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   int32_t mReloadEncodingSource;
   const Encoding* mReloadEncoding;
 
-  bool mIsPageMode;
   bool mInitializedForPrintPreview;
   bool mHidden;
 };
@@ -479,6 +482,20 @@ void nsDocumentViewer::PrepareToStartLoad() {
 #endif  
 }
 
+bool nsDocumentViewer::ShouldHaveGalleyPresentation() const {
+  if (!mDocument) {
+    return false;
+  }
+#ifdef NS_PRINTING
+  if (mPrintJob) {
+    
+    
+    return false;
+  }
+#endif
+  return true;
+}
+
 nsDocumentViewer::nsDocumentViewer()
     : mParentWidget(nullptr),
       mNumURLStarts(0),
@@ -495,7 +512,6 @@ nsDocumentViewer::nsDocumentViewer()
 #endif  
       mReloadEncodingSource(kCharsetUninitialized),
       mReloadEncoding(nullptr),
-      mIsPageMode(false),
       mInitializedForPrintPreview(false),
       mHidden(false) {
   PrepareToStartLoad();
@@ -657,16 +673,11 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
              "InitPresentationStuff must only be called when scripts are "
              "blocked");
-
-#ifdef NS_PRINTING
-  
-  
-  if (mPrintJob) {
-    return NS_OK;
-  }
-#endif
-
   NS_ASSERTION(!mPresShell, "Someone should have destroyed the presshell!");
+#ifdef NS_PRINTING
+  MOZ_ASSERT(!mPrintJob,
+             "Shouldn't be creating a presentation for a print job");
+#endif
 
   
   nsCOMPtr<Document> doc = mDocument;
@@ -757,10 +768,12 @@ static already_AddRefed<nsPresContext> CreatePresContext(
 
 
 
-nsresult nsDocumentViewer::InitInternal(
-    nsIWidget* aParentWidget, nsISupports* aState, WindowGlobalChild* aActor,
-    const LayoutDeviceIntRect& aBounds, bool aDoCreation,
-    bool aNeedMakeCX , bool aForceSetNewDocument ) {
+nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
+                                        nsISupports* aState,
+                                        WindowGlobalChild* aActor,
+                                        const LayoutDeviceIntRect& aBounds,
+                                        bool aDoCreation, bool aNeedMakeCX,
+                                        bool aForceSetNewDocument ) {
   
   
   
@@ -782,7 +795,7 @@ nsresult nsDocumentViewer::InitInternal(
     
     
     
-    if (!mPresContext &&
+    if (!mPresContext && ShouldHaveGalleyPresentation() &&
         (aParentWidget || containerFrame || mDocument->IsBeingUsedAsImage() ||
          (mDocument->GetDisplayDocument() &&
           mDocument->GetDisplayDocument()->GetPresShell()))) {
@@ -802,29 +815,10 @@ nsresult nsDocumentViewer::InitInternal(
 
     if (mPresContext) {
       
-
-      
       
       
       
       Hide();
-
-#ifdef NS_PRINT_PREVIEW
-      if (mIsPageMode) {
-        
-        
-        
-        
-        double pageWidth = 0, pageHeight = 0;
-        mPresContext->GetPrintSettings()->GetEffectivePageSize(&pageWidth,
-                                                               &pageHeight);
-        mPresContext->SetPageSize(
-            nsSize(mPresContext->CSSTwipsToAppUnits(NSToIntFloor(pageWidth)),
-                   mPresContext->CSSTwipsToAppUnits(NSToIntFloor(pageHeight))));
-        mPresContext->SetIsRootPaginatedDocument(true);
-        mPresContext->SetPageScale(1.0f);
-      }
-#endif
     } else {
       
       if (mPreviousViewer) {
@@ -1977,7 +1971,7 @@ nsDocumentViewer::Show() {
   
   nsCOMPtr<Document> document = mDocument;
 
-  if (mDocument && !mPresShell) {
+  if (!mPresContext && ShouldHaveGalleyPresentation()) {
     
     
     
@@ -3216,10 +3210,6 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     bool aPageMode, nsIPrintSettings* aPrintSettings) {
   
   
-  mIsPageMode = aPageMode;
-
-  
-  
   
   nsAutoScriptBlocker scriptBlocker;
 
@@ -3241,6 +3231,14 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     mPresContext->SetPaginatedScrolling(true);
     mPresContext->SetPrintSettings(aPrintSettings);
     mPresContext->Init(mDeviceContext);
+
+    double pageWidth = 0, pageHeight = 0;
+    aPrintSettings->GetEffectivePageSize(&pageWidth, &pageHeight);
+    mPresContext->SetPageSize(
+        nsSize(mPresContext->CSSTwipsToAppUnits(NSToIntFloor(pageWidth)),
+               mPresContext->CSSTwipsToAppUnits(NSToIntFloor(pageHeight))));
+    mPresContext->SetIsRootPaginatedDocument(true);
+    mPresContext->SetPageScale(1.0f);
   }
   MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, false,
                        false));
