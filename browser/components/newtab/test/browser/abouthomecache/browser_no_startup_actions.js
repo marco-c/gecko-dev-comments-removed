@@ -40,7 +40,7 @@ add_task(async function test_no_startup_actions() {
     
     
     AboutNewTab.activityStream.uninit();
-    await AboutNewTab.onBrowserReady();
+    AboutNewTab.onBrowserReady();
 
     
     

@@ -285,7 +285,7 @@ TalosPowersService.prototype = {
       
       
       
-      await AboutNewTab.onBrowserReady();
+      AboutNewTab.onBrowserReady();
       
       
       
