@@ -287,6 +287,12 @@ ALL_PROCESSES += [
 
     
     DllBlocklistEntry("explorerpatcher.amd64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("evpComponentsXE.bpl", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("FtuEngine.dll", ALL_VERSIONS),
 ]
 
 ALL_PROCESSES_TESTS += [
