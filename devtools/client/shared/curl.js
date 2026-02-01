@@ -459,6 +459,9 @@ const CurlUtils = {
       encapsChars +
       str
         
+        .replace(/\\/g, "\\\\")
+
+        
         .replace(/"/g, '\\"')
 
         
