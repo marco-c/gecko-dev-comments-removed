@@ -448,7 +448,7 @@ class Selection final : public nsSupportsWeakReference,
       return false;
     }
 
-    return mStyledRanges.mRanges[0].mRange->Collapsed();
+    return mStyledRanges.GetAbstractRangeAt(0)->Collapsed();
   }
 
   
@@ -466,7 +466,7 @@ class Selection final : public nsSupportsWeakReference,
       return true;
     }
 
-    AbstractRange* range = mStyledRanges.mRanges[0].mRange;
+    AbstractRange* range = mStyledRanges.GetAbstractRangeAt(0);
     if (range->MayCrossShadowBoundary()) {
       return range->AsDynamicRange()->CrossShadowBoundaryRangeCollapsed();
     }
@@ -971,11 +971,33 @@ class Selection final : public nsSupportsWeakReference,
     explicit StyledRanges(Selection& aSelection) : mSelection(aSelection) {}
     void Clear();
 
-    StyledRange* FindRangeData(AbstractRange* aRange);
+    TextRangeStyle* FindRangeData(AbstractRange* aRange);
 
-    using StyledRangeArray = AutoTArray<StyledRange, 1>;
+    size_t Length() const;
 
-    StyledRangeArray::size_type Length() const;
+    
+    mozilla::Span<RefPtr<AbstractRange>> Ranges() { return mRanges.Ranges(); }
+    mozilla::Span<const RefPtr<AbstractRange>> Ranges() const {
+      return mRanges.Ranges();
+    }
+
+    
+
+
+
+    AbstractRange* GetAbstractRangeAt(uint32_t aIndex) const {
+      return mRanges.GetAbstractRangeAt(aIndex);
+    }
+
+    
+
+
+
+
+
+    StyledRange GetStyledRangeAt(uint32_t aIndex) {
+      return mRanges.GetStyledRangeAt(aIndex);
+    }
 
     nsresult RemoveCollapsedRanges();
 
@@ -992,9 +1014,12 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-    template <typename PT, typename RT>
+
+
+
+    template <typename PT, typename RT, typename ArrayType>
     static size_t FindInsertionPoint(
-        const nsTArray<StyledRange>* aElementArray,
+        const ArrayType& aElementArray,
         const RangeBoundaryBase<PT, RT>& aBoundary,
         int32_t (*aComparator)(const RangeBoundaryBase<PT, RT>&,
                                const AbstractRange&));
@@ -1100,7 +1125,7 @@ class Selection final : public nsSupportsWeakReference,
     
     
     
-    StyledRangeArray mRanges;
+    StyledRangeCollection mRanges;
 
     
     
@@ -1108,7 +1133,7 @@ class Selection final : public nsSupportsWeakReference,
     
     
     
-    StyledRangeArray mInvalidStaticRanges;
+    nsTArray<StyledRange> mInvalidStaticRanges;
 
     Selection& mSelection;
 
