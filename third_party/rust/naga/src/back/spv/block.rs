@@ -8,11 +8,14 @@ use arrayvec::ArrayVec;
 use spirv::Word;
 
 use super::{
-    index::BoundsCheckResult, selection::Selection, Block, BlockContext, Dimension, Error,
-    Instruction, LocalType, LookupType, NumericType, ResultMember, WrappedFunction, Writer,
-    WriterFlags,
+    helpers::map_storage_class, index::BoundsCheckResult, selection::Selection, Block,
+    BlockContext, Dimension, Error, IdGenerator, Instruction, LocalType, LookupType, NumericType,
+    ResultMember, WrappedFunction, Writer, WriterFlags,
 };
-use crate::{arena::Handle, proc::index::GuardedIndex, Statement};
+use crate::{
+    arena::Handle, back::spv::helpers::is_uniform_matcx2_struct_member_access,
+    proc::index::GuardedIndex, Statement,
+};
 
 fn get_dimension(type_inner: &crate::TypeInner) -> Dimension {
     match *type_inner {
@@ -35,6 +38,7 @@ fn get_dimension(type_inner: &crate::TypeInner) -> Dimension {
 
 
 
+#[derive(Copy, Clone)]
 enum AccessTypeAdjustment {
     
     
@@ -70,6 +74,17 @@ enum AccessTypeAdjustment {
     
     
     IntroducePointer(spirv::StorageClass),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UseStd140CompatType,
 }
 
 
@@ -422,6 +437,276 @@ impl BlockContext<'_> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn maybe_write_uniform_matcx2_dynamic_access(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        block: &mut Block,
+    ) -> Result<Option<Word>, Error> {
+        
+        
+        
+        
+        
+        let (column_pointer, component_index) = match self.fun_info[pointer]
+            .ty
+            .inner_with(&self.ir_module.types)
+            .pointer_base_type()
+        {
+            Some(resolution) => match *resolution.inner_with(&self.ir_module.types) {
+                crate::TypeInner::Scalar(_) => match self.ir_function.expressions[pointer] {
+                    crate::Expression::Access { base, index } => {
+                        (base, Some(GuardedIndex::Expression(index)))
+                    }
+                    crate::Expression::AccessIndex { base, index } => {
+                        (base, Some(GuardedIndex::Known(index)))
+                    }
+                    _ => return Ok(None),
+                },
+                crate::TypeInner::Vector { .. } => (pointer, None),
+                _ => return Ok(None),
+            },
+            None => return Ok(None),
+        };
+
+        
+        
+        let crate::Expression::Access {
+            base: matrix_pointer,
+            index: column_index,
+        } = self.ir_function.expressions[column_pointer]
+        else {
+            return Ok(None);
+        };
+
+        
+        let crate::TypeInner::Pointer {
+            base: matrix_pointer_base_type,
+            space: crate::AddressSpace::Uniform,
+        } = *self.fun_info[matrix_pointer]
+            .ty
+            .inner_with(&self.ir_module.types)
+        else {
+            return Ok(None);
+        };
+
+        
+        let crate::TypeInner::Matrix {
+            columns,
+            rows: rows @ crate::VectorSize::Bi,
+            scalar,
+        } = self.ir_module.types[matrix_pointer_base_type].inner
+        else {
+            return Ok(None);
+        };
+
+        let matrix_type_id = self.get_numeric_type_id(NumericType::Matrix {
+            columns,
+            rows,
+            scalar,
+        });
+        let column_type_id = self.get_numeric_type_id(NumericType::Vector { size: rows, scalar });
+        let component_type_id = self.get_numeric_type_id(NumericType::Scalar(scalar));
+        let get_column_function_id = self.writer.wrapped_functions
+            [&WrappedFunction::MatCx2GetColumn {
+                r#type: matrix_pointer_base_type,
+            }];
+
+        let matrix_load_id = self.write_checked_load(
+            matrix_pointer,
+            block,
+            AccessTypeAdjustment::None,
+            matrix_type_id,
+        )?;
+
+        
+        
+        let column_index_id = match *self.fun_info[column_index]
+            .ty
+            .inner_with(&self.ir_module.types)
+        {
+            crate::TypeInner::Scalar(crate::Scalar {
+                kind: crate::ScalarKind::Uint,
+                ..
+            }) => self.cached[column_index],
+            crate::TypeInner::Scalar(crate::Scalar {
+                kind: crate::ScalarKind::Sint,
+                ..
+            }) => {
+                let cast_id = self.gen_id();
+                let u32_type_id = self.writer.get_u32_type_id();
+                block.body.push(Instruction::unary(
+                    spirv::Op::Bitcast,
+                    u32_type_id,
+                    cast_id,
+                    self.cached[column_index],
+                ));
+                cast_id
+            }
+            _ => return Err(Error::Validation("Matrix access index must be u32 or i32")),
+        };
+        let column_id = self.gen_id();
+        block.body.push(Instruction::function_call(
+            column_type_id,
+            column_id,
+            get_column_function_id,
+            &[matrix_load_id, column_index_id],
+        ));
+        let result_id = match component_index {
+            Some(index) => self.write_vector_access(
+                component_type_id,
+                column_pointer,
+                Some(column_id),
+                index,
+                block,
+            )?,
+            None => column_id,
+        };
+
+        Ok(Some(result_id))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn maybe_write_load_uniform_matcx2_struct_member(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        block: &mut Block,
+    ) -> Result<Option<Word>, Error> {
+        
+        let crate::TypeInner::Pointer {
+            base: matrix_type,
+            space: space @ crate::AddressSpace::Uniform,
+        } = *self.fun_info[pointer].ty.inner_with(&self.ir_module.types)
+        else {
+            return Ok(None);
+        };
+
+        let crate::TypeInner::Matrix {
+            columns,
+            rows: rows @ crate::VectorSize::Bi,
+            scalar,
+        } = self.ir_module.types[matrix_type].inner
+        else {
+            return Ok(None);
+        };
+
+        
+        
+        let crate::Expression::AccessIndex {
+            base: struct_pointer,
+            index: member_index,
+        } = self.ir_function.expressions[pointer]
+        else {
+            return Ok(None);
+        };
+
+        let crate::TypeInner::Pointer {
+            base: struct_type, ..
+        } = *self.fun_info[struct_pointer]
+            .ty
+            .inner_with(&self.ir_module.types)
+        else {
+            return Ok(None);
+        };
+
+        let crate::TypeInner::Struct { .. } = self.ir_module.types[struct_type].inner else {
+            return Ok(None);
+        };
+
+        let matrix_type_id = self.get_numeric_type_id(NumericType::Matrix {
+            columns,
+            rows,
+            scalar,
+        });
+        let column_type_id = self.get_numeric_type_id(NumericType::Vector { size: rows, scalar });
+        let column_pointer_type_id =
+            self.get_pointer_type_id(column_type_id, map_storage_class(space));
+        let column0_index = self.writer.std140_compat_uniform_types[&struct_type].member_indices
+            [member_index as usize];
+        let column_indices = (0..columns as u32)
+            .map(|c| self.get_index_constant(column0_index + c))
+            .collect::<ArrayVec<_, 4>>();
+
+        
+        
+        let load_mat_from_struct =
+            |struct_pointer_id: Word, id_gen: &mut IdGenerator, block: &mut Block| -> Word {
+                let mut column_ids: ArrayVec<Word, 4> = ArrayVec::new();
+                for index in &column_indices {
+                    let column_pointer_id = id_gen.next();
+                    block.body.push(Instruction::access_chain(
+                        column_pointer_type_id,
+                        column_pointer_id,
+                        struct_pointer_id,
+                        &[*index],
+                    ));
+                    let column_id = id_gen.next();
+                    block.body.push(Instruction::load(
+                        column_type_id,
+                        column_id,
+                        column_pointer_id,
+                        None,
+                    ));
+                    column_ids.push(column_id);
+                }
+                let result_id = id_gen.next();
+                block.body.push(Instruction::composite_construct(
+                    matrix_type_id,
+                    result_id,
+                    &column_ids,
+                ));
+                result_id
+            };
+
+        let result_id = match self.write_access_chain(
+            struct_pointer,
+            block,
+            AccessTypeAdjustment::UseStd140CompatType,
+        )? {
+            ExpressionPointer::Ready { pointer_id } => {
+                load_mat_from_struct(pointer_id, &mut self.writer.id_gen, block)
+            }
+            ExpressionPointer::Conditional { condition, access } => self
+                .write_conditional_indexed_load(
+                    matrix_type_id,
+                    condition,
+                    block,
+                    |id_gen, block| {
+                        let pointer_id = access.result_id.unwrap();
+                        block.body.push(access);
+                        load_mat_from_struct(pointer_id, id_gen, block)
+                    },
+                ),
+        };
+
+        Ok(Some(result_id))
+    }
+
+    
     pub(super) fn cache_expression_value(
         &mut self,
         expr_handle: Handle<crate::Expression>,
@@ -513,9 +798,13 @@ impl BlockContext<'_> {
                         self.function.spilled_accesses.insert(expr_handle);
                         self.maybe_access_spilled_composite(expr_handle, block, result_type_id)?
                     }
-                    crate::TypeInner::Vector { .. } => {
-                        self.write_vector_access(expr_handle, base, index, block)?
-                    }
+                    crate::TypeInner::Vector { .. } => self.write_vector_access(
+                        result_type_id,
+                        base,
+                        None,
+                        GuardedIndex::Expression(index),
+                        block,
+                    )?,
                     crate::TypeInner::Array { .. } | crate::TypeInner::Matrix { .. } => {
                         
                         match GuardedIndex::from_expression(
@@ -2202,6 +2491,20 @@ impl BlockContext<'_> {
                 AccessTypeAdjustment::IntroducePointer(class) => {
                     self.writer.get_resolution_pointer_id(resolution, class)
                 }
+                AccessTypeAdjustment::UseStd140CompatType => {
+                    match *resolution.inner_with(&self.ir_module.types) {
+                        crate::TypeInner::Pointer {
+                            base,
+                            space: space @ crate::AddressSpace::Uniform,
+                        } => self.writer.get_pointer_type_id(
+                            self.writer.std140_compat_uniform_types[&base].type_id,
+                            map_storage_class(space),
+                        ),
+                        _ => unreachable!(
+                            "`UseStd140CompatType` must only be used with uniform pointer types"
+                        ),
+                    }
+                }
             }
         };
 
@@ -2212,6 +2515,13 @@ impl BlockContext<'_> {
 
         
         let mut is_non_uniform_binding_array = false;
+
+        
+        
+        
+        
+        
+        let mut prev_decomposed_matrix_index = None;
 
         self.temp_list.clear();
         let root_id = loop {
@@ -2239,27 +2549,67 @@ impl BlockContext<'_> {
                     
                     
                     let mut base_ty = self.fun_info[base].ty.inner_with(&self.ir_module.types);
-                    if let crate::TypeInner::Pointer { base, .. } = *base_ty {
+                    let mut base_ty_handle = self.fun_info[base].ty.handle();
+                    let mut pointer_space = None;
+                    if let crate::TypeInner::Pointer { base, space } = *base_ty {
                         base_ty = &self.ir_module.types[base].inner;
+                        base_ty_handle = Some(base);
+                        pointer_space = Some(space);
                     }
-                    let index_id = if let crate::TypeInner::Struct { .. } = *base_ty {
-                        self.get_index_constant(index)
-                    } else {
-                        
-                        
-
+                    match *base_ty {
                         
                         
                         
-                        self.write_access_chain_index(
+                        
+                        
+                        
+                        crate::TypeInner::Struct { .. } => {
+                            let index = match base_ty_handle.and_then(|handle| {
+                                self.writer.std140_compat_uniform_types.get(&handle)
+                            }) {
+                                Some(std140_type_info)
+                                    if pointer_space == Some(crate::AddressSpace::Uniform) =>
+                                {
+                                    std140_type_info.member_indices[index as usize]
+                                        + prev_decomposed_matrix_index.take().unwrap_or(0)
+                                }
+                                _ => index,
+                            };
+                            let index_id = self.get_index_constant(index);
+                            self.temp_list.push(index_id);
+                        }
+                        
+                        
+                        
+                        
+                        
+                        
+                        _ if is_uniform_matcx2_struct_member_access(
+                            self.ir_function,
+                            self.fun_info,
+                            self.ir_module,
                             base,
-                            GuardedIndex::Known(index),
-                            &mut accumulated_checks,
-                            block,
-                        )?
-                    };
+                        ) =>
+                        {
+                            assert!(prev_decomposed_matrix_index.is_none());
+                            prev_decomposed_matrix_index = Some(index);
+                        }
+                        _ => {
+                            
+                            
 
-                    self.temp_list.push(index_id);
+                            
+                            
+                            
+                            let index_id = self.write_access_chain_index(
+                                base,
+                                GuardedIndex::Known(index),
+                                &mut accumulated_checks,
+                                block,
+                            )?;
+                            self.temp_list.push(index_id);
+                        }
+                    }
                     base
                 }
                 crate::Expression::GlobalVariable(handle) => {
@@ -2420,57 +2770,119 @@ impl BlockContext<'_> {
         access_type_adjustment: AccessTypeAdjustment,
         result_type_id: Word,
     ) -> Result<Word, Error> {
-        match self.write_access_chain(pointer, block, access_type_adjustment)? {
-            ExpressionPointer::Ready { pointer_id } => {
-                let id = self.gen_id();
-                let atomic_space =
-                    match *self.fun_info[pointer].ty.inner_with(&self.ir_module.types) {
-                        crate::TypeInner::Pointer { base, space } => {
-                            match self.ir_module.types[base].inner {
-                                crate::TypeInner::Atomic { .. } => Some(space),
-                                _ => None,
-                            }
-                        }
-                        _ => None,
-                    };
-                let instruction = if let Some(space) = atomic_space {
-                    let (semantics, scope) = space.to_spirv_semantics_and_scope();
-                    let scope_constant_id = self.get_scope_constant(scope as u32);
-                    let semantics_id = self.get_index_constant(semantics.bits());
-                    Instruction::atomic_load(
-                        result_type_id,
-                        id,
-                        pointer_id,
-                        scope_constant_id,
-                        semantics_id,
-                    )
-                } else {
-                    Instruction::load(result_type_id, id, pointer_id, None)
-                };
-                block.body.push(instruction);
-                Ok(id)
+        if let Some(result_id) = self.maybe_write_uniform_matcx2_dynamic_access(pointer, block)? {
+            Ok(result_id)
+        } else if let Some(result_id) =
+            self.maybe_write_load_uniform_matcx2_struct_member(pointer, block)?
+        {
+            Ok(result_id)
+        } else {
+            
+            
+            
+            
+            
+            struct WrappedLoad {
+                access_type_adjustment: AccessTypeAdjustment,
+                r#type: Handle<crate::Type>,
             }
-            ExpressionPointer::Conditional { condition, access } => {
-                
-                let value = self.write_conditional_indexed_load(
-                    result_type_id,
-                    condition,
-                    block,
-                    move |id_gen, block| {
-                        
-                        let pointer_id = access.result_id.unwrap();
-                        let value_id = id_gen.next();
-                        block.body.push(access);
-                        block.body.push(Instruction::load(
+            let mut wrapped_load = None;
+            if let crate::TypeInner::Pointer {
+                base: pointer_base_type,
+                space: crate::AddressSpace::Uniform,
+            } = *self.fun_info[pointer].ty.inner_with(&self.ir_module.types)
+            {
+                if self
+                    .writer
+                    .std140_compat_uniform_types
+                    .contains_key(&pointer_base_type)
+                {
+                    wrapped_load = Some(WrappedLoad {
+                        access_type_adjustment: AccessTypeAdjustment::UseStd140CompatType,
+                        r#type: pointer_base_type,
+                    });
+                };
+            };
+
+            let (load_type_id, access_type_adjustment) = match wrapped_load {
+                Some(ref wrapped_load) => (
+                    self.writer.std140_compat_uniform_types[&wrapped_load.r#type].type_id,
+                    wrapped_load.access_type_adjustment,
+                ),
+                None => (result_type_id, access_type_adjustment),
+            };
+
+            let load_id = match self.write_access_chain(pointer, block, access_type_adjustment)? {
+                ExpressionPointer::Ready { pointer_id } => {
+                    let id = self.gen_id();
+                    let atomic_space =
+                        match *self.fun_info[pointer].ty.inner_with(&self.ir_module.types) {
+                            crate::TypeInner::Pointer { base, space } => {
+                                match self.ir_module.types[base].inner {
+                                    crate::TypeInner::Atomic { .. } => Some(space),
+                                    _ => None,
+                                }
+                            }
+                            _ => None,
+                        };
+                    let instruction = if let Some(space) = atomic_space {
+                        let (semantics, scope) = space.to_spirv_semantics_and_scope();
+                        let scope_constant_id = self.get_scope_constant(scope as u32);
+                        let semantics_id = self.get_index_constant(semantics.bits());
+                        Instruction::atomic_load(
                             result_type_id,
-                            value_id,
+                            id,
                             pointer_id,
-                            None,
-                        ));
-                        value_id
-                    },
-                );
-                Ok(value)
+                            scope_constant_id,
+                            semantics_id,
+                        )
+                    } else {
+                        Instruction::load(load_type_id, id, pointer_id, None)
+                    };
+                    block.body.push(instruction);
+                    id
+                }
+                ExpressionPointer::Conditional { condition, access } => {
+                    
+                    self.write_conditional_indexed_load(
+                        load_type_id,
+                        condition,
+                        block,
+                        move |id_gen, block| {
+                            
+                            let pointer_id = access.result_id.unwrap();
+                            let value_id = id_gen.next();
+                            block.body.push(access);
+                            block.body.push(Instruction::load(
+                                load_type_id,
+                                value_id,
+                                pointer_id,
+                                None,
+                            ));
+                            value_id
+                        },
+                    )
+                }
+            };
+
+            match wrapped_load {
+                Some(ref wrapped_load) => {
+                    
+                    
+                    let result_id = self.gen_id();
+                    let function_id = self.writer.wrapped_functions
+                        [&WrappedFunction::ConvertFromStd140CompatType {
+                            r#type: wrapped_load.r#type,
+                        }];
+                    block.body.push(Instruction::function_call(
+                        result_type_id,
+                        result_id,
+                        function_id,
+                        &[load_id],
+                    ));
+                    Ok(result_id)
+                }
+                None => Ok(load_id),
             }
         }
     }
@@ -3711,42 +4123,14 @@ impl BlockContext<'_> {
                         .write_control_barrier(crate::Barrier::WORK_GROUP, &mut block.body);
                     let result_type_id = self.get_expression_type_id(&self.fun_info[result].ty);
                     
-                    match self.write_access_chain(
+                    
+                    let id = self.write_checked_load(
                         pointer,
                         &mut block,
                         AccessTypeAdjustment::None,
-                    )? {
-                        ExpressionPointer::Ready { pointer_id } => {
-                            let id = self.gen_id();
-                            block.body.push(Instruction::load(
-                                result_type_id,
-                                id,
-                                pointer_id,
-                                None,
-                            ));
-                            self.cached[result] = id;
-                        }
-                        ExpressionPointer::Conditional { condition, access } => {
-                            self.cached[result] = self.write_conditional_indexed_load(
-                                result_type_id,
-                                condition,
-                                &mut block,
-                                move |id_gen, block| {
-                                    
-                                    let pointer_id = access.result_id.unwrap();
-                                    let value_id = id_gen.next();
-                                    block.body.push(access);
-                                    block.body.push(Instruction::load(
-                                        result_type_id,
-                                        value_id,
-                                        pointer_id,
-                                        None,
-                                    ));
-                                    value_id
-                                },
-                            )
-                        }
-                    }
+                        result_type_id,
+                    )?;
+                    self.cached[result] = id;
                     self.writer
                         .write_control_barrier(crate::Barrier::WORK_GROUP, &mut block.body);
                 }

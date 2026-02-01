@@ -4,6 +4,98 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod block;
 mod f16_polyfill;
 mod helpers;
@@ -518,6 +610,12 @@ enum WrappedFunction {
         left_type_id: Word,
         right_type_id: Word,
     },
+    ConvertFromStd140CompatType {
+        r#type: Handle<crate::Type>,
+    },
+    MatCx2GetColumn {
+        r#type: Handle<crate::Type>,
+    },
 }
 
 
@@ -793,6 +891,20 @@ impl BlockContext<'_> {
     }
 }
 
+
+
+
+
+
+
+pub struct Std140CompatTypeInfo {
+    
+    type_id: Word,
+    
+    
+    member_indices: Vec<u32>,
+}
+
 pub struct Writer {
     physical_layout: PhysicalLayout,
     logical_layout: LogicalLayout,
@@ -833,6 +945,7 @@ pub struct Writer {
     constant_ids: HandleVec<crate::Expression, Word>,
     cached_constants: crate::FastHashMap<CachedConstant, Word>,
     global_variables: HandleVec<crate::GlobalVariable, GlobalVariable>,
+    std140_compat_uniform_types: crate::FastHashMap<Handle<crate::Type>, Std140CompatTypeInfo>,
     fake_missing_bindings: bool,
     binding_map: BindingMap,
 
