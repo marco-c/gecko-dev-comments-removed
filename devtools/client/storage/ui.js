@@ -435,6 +435,10 @@ class StorageUI {
     this.table.clear();
     this.hideSidebar();
     this.tree.clear();
+
+    
+    
+    this.shouldLoadMoreItems = false;
   }
 
   set animationsEnabled(value) {
