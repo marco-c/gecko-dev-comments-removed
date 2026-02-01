@@ -132,7 +132,7 @@ function checkForMiddleClick(node, event) {
   
   
   
-  if (node.getAttribute("disabled") == "true") {
+  if (node.hasAttribute("disabled")) {
     return;
   } 
 

@@ -148,7 +148,7 @@ var NewPrefDialog = {
   
   
   create: function AC_create() {
-    if (this._positiveButton.getAttribute("disabled") == "true") {
+    if (this._positiveButton.hasAttribute("disabled")) {
       return;
     }
 
