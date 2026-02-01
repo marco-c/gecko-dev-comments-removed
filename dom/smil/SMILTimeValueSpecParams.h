@@ -20,11 +20,7 @@ namespace mozilla {
 
 class SMILTimeValueSpecParams {
  public:
-  SMILTimeValueSpecParams()
-      : mType(INDEFINITE), mSyncBegin(false), mRepeatIteration(0) {}
-
-  
-  enum { OFFSET, SYNCBASE, EVENT, REPEAT, WALLCLOCK, INDEFINITE } mType;
+  SMILTimeValueSpecParams() = default;
 
   
   
@@ -45,12 +41,22 @@ class SMILTimeValueSpecParams {
 
   
   
+  uint32_t mRepeatIteration = 0;
+
   
-  bool mSyncBegin;
+  enum class Type : uint8_t {
+    Offset,
+    Syncbase,
+    Event,
+    Repeat,
+    Wallclock,
+    Indefinite
+  } mType = Type::Indefinite;
 
   
   
-  uint32_t mRepeatIteration;
+  
+  bool mSyncBegin = false;
 };
 
 }  
