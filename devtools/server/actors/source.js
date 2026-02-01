@@ -384,7 +384,13 @@ class SourceActor extends Actor {
       } catch (e) {
         
         
-        
+        try {
+          newScript = this._source.reparse( true);
+        } catch (ex) {
+          
+          
+          
+        }
       }
       if (newScript) {
         scripts = [newScript];

@@ -1,0 +1,10 @@
+import stuff from "./module-gc2.js";
+
+var x = 10;
+
+export function moduleFunction() {
+  stuff(x);
+}
+
+
+setTimeout(() => SpecialPowers.gc(), 0);
