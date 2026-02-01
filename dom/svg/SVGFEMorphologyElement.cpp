@@ -81,11 +81,11 @@ void SVGFEMorphologyElement::GetRXY(int32_t* aRX, int32_t* aRY,
   
   
   *aRX = NSToIntCeil(aInstance.GetPrimitiveNumber(
-                         SVGLength::Axis::X, &mNumberPairAttributes[RADIUS],
+                         SVGContentUtils::X, &mNumberPairAttributes[RADIUS],
                          SVGAnimatedNumberPairWhichOne::First) -
                      MORPHOLOGY_EPSILON);
   *aRY = NSToIntCeil(aInstance.GetPrimitiveNumber(
-                         SVGLength::Axis::Y, &mNumberPairAttributes[RADIUS],
+                         SVGContentUtils::Y, &mNumberPairAttributes[RADIUS],
                          SVGAnimatedNumberPairWhichOne::Second) -
                      MORPHOLOGY_EPSILON);
 }

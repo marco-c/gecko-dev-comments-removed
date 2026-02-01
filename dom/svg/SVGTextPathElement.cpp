@@ -30,10 +30,10 @@ JSObject* SVGTextPathElement::WrapNode(JSContext* aCx,
 SVGElement::LengthInfo SVGTextPathElement::sLengthInfo[2] = {
     
     {nsGkAtoms::textLength, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGLength::Axis::XY},
+     SVGContentUtils::XY},
     
     {nsGkAtoms::startOffset, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGLength::Axis::X}};
+     SVGContentUtils::X}};
 
 SVGEnumMapping SVGTextPathElement::sMethodMap[] = {
     {nsGkAtoms::align, TEXTPATH_METHODTYPE_ALIGN},
