@@ -5182,7 +5182,7 @@ TEST_F(P2PTransportChannelPingTest, TestIceRoleUpdatedOnRemovedPort) {
   
   
   std::vector<PortInterface*> ports(1, conn->PortForTest());
-  ch.allocator_session()->SignalPortsPruned(ch.allocator_session(), ports);
+  ch.allocator_session()->NotifyPortsPruned(ch.allocator_session(), ports);
   ch.SetIceRole(ICEROLE_CONTROLLED);
   EXPECT_EQ(ICEROLE_CONTROLLED, conn->PortForTest()->GetIceRole());
 }
