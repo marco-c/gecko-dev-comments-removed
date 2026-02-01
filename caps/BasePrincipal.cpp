@@ -546,7 +546,7 @@ BasePrincipal::EqualsForPermission(nsIPrincipal* aOther, bool aExactHost,
 
   
   
-  while (otherHost != ourHost) {
+  while (otherHost != ourHost && otherHost.Length() > ourHost.Length()) {
     rv = tldService->GetNextSubDomain(otherHost, otherHost);
     if (NS_FAILED(rv)) {
       if (rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
@@ -556,7 +556,7 @@ BasePrincipal::EqualsForPermission(nsIPrincipal* aOther, bool aExactHost,
     }
   }
 
-  *aResult = true;
+  *aResult = otherHost == ourHost;
   return NS_OK;
 }
 
