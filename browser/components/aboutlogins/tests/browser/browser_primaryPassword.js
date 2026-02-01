@@ -19,6 +19,12 @@ function waitForLoginCountToReach(browser, loginCount) {
 
 add_setup(async function () {
   await addLogin(TEST_LOGIN1);
+
+  
+  
+  await sinon.restore();
+  LoginHelper.setOSAuthEnabled(false);
+
   registerCleanupFunction(() => {
     Services.logins.removeAllUserFacingLogins();
     LoginTestUtils.primaryPassword.disable();
@@ -26,16 +32,9 @@ add_setup(async function () {
 });
 
 add_task(async function test() {
-  
-  
-  
-  Assert.equal(
-    Services.prefs.getStringPref(
-      "toolkit.osKeyStore.unofficialBuildOnlyLogin",
-      ""
-    ),
-    "",
-    "Pref should be set to default value of empty string to start the test"
+  ok(
+    !LoginHelper.getOSAuthEnabled(),
+    "OS auth must be disabled for PrP tests."
   );
   LoginTestUtils.primaryPassword.enable();
 
@@ -232,16 +231,9 @@ add_task(async function test() {
 });
 
 add_task(async function test_login_item_after_successful_auth() {
-  
-  
-  
-  Assert.equal(
-    Services.prefs.getStringPref(
-      "toolkit.osKeyStore.unofficialBuildOnlyLogin",
-      ""
-    ),
-    "",
-    "Pref should be set to default value of empty string to start the test"
+  ok(
+    !LoginHelper.getOSAuthEnabled(),
+    "OS auth must be disabled for PrP tests."
   );
   LoginTestUtils.primaryPassword.enable();
 
