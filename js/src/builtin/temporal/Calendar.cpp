@@ -1890,6 +1890,19 @@ static bool CalendarFieldMonth(JSContext* cx, CalendarId calendar,
       }
       MOZ_ASSERT(overflow == TemporalOverflow::Constrain);
 
+      
+      if (fields.has(CalendarField::MonthCode)) {
+        ToCStringBuf cbuf;
+        const char* monthStr = NumberToCString(&cbuf, month);
+
+        JS_ReportErrorNumberUTF8(
+            cx, GetErrorMessage, nullptr,
+            JSMSG_TEMPORAL_CALENDAR_INCOMPATIBLE_MONTHCODE,
+            MonthCodeString{fields.monthCode()}.toCString(), monthStr);
+        return false;
+      }
+
+      
       intMonth = monthsPerYear;
     }
 
