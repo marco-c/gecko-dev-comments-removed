@@ -1403,6 +1403,8 @@ function getSmallIncrementKey() {
 
 
 
+
+
 function checkRuleViewContent(view, expectedElements) {
   const elementsInView = _getRuleViewElements(view);
   is(
@@ -1525,6 +1527,13 @@ function checkRuleViewContent(view, expectedElements) {
         ruleViewPropertyElement.classList.contains("ruleview-overridden"),
         !!expectedDeclaration?.overridden,
         `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedDeclaration?.overridden ? "overridden" : "not overridden"} `
+      );
+      const expectedEnabled = expectedDeclaration?.enabled ?? true;
+      is(
+        ruleViewPropertyElement.querySelector("input.ruleview-enableproperty")
+          .checked,
+        expectedEnabled,
+        `Element #${i} ("${selector}") declaration #${j} ("${propName.innerText}: ${propValue.innerText}") is ${expectedEnabled ? "enabled" : "disabled"} `
       );
       is(
         ruleViewPropertyElement.classList.contains("inactive-css"),
