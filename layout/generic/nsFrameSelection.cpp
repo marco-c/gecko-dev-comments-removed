@@ -137,8 +137,20 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult CreateAndAddRange(
 static nsresult SelectCellElement(nsIContent* aCellElement,
                                   Selection& aNormalSelection);
 
-#ifdef XP_MACOSX
-static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel);
+
+
+
+
+
+
+
+
+#if defined(XP_MACOSX) || (defined(DEBUG) && !defined(ANDROID))
+#  define RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
+#endif
+
+#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
+static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel);
 #endif  
 
 #ifdef PRINT_RANGE
@@ -1729,14 +1741,21 @@ nsresult nsFrameSelection::RepaintSelection(SelectionType aSelectionType) {
 
 
 
-#ifdef XP_MACOSX
+
+
+
+
+#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
+  
+  
+  
   
   
   Document* doc = mPresShell->GetDocument();
   if (doc && IsInActiveTab(doc) && aSelectionType == SelectionType::eNormal) {
-    UpdateSelectionCacheOnRepaintSelection(sel);
+    MaybeUpdateSelectionCacheOnRepaintSelection(sel);
   }
-#endif
+#endif  
   return sel->Repaint(mPresShell->GetPresContext());
 }
 
@@ -3121,7 +3140,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
   }
 }
 
-#ifdef XP_MACOSX
+#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
 
 
 
@@ -3141,7 +3160,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
 
 
 
-static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
+static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
   PresShell* presShell = aSel->GetPresShell();
   if (!presShell) {
     return NS_OK;
@@ -3150,7 +3169,16 @@ static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
 
   if (aDoc && aSel && !aSel->IsCollapsed()) {
     return nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
-        aSel, aDoc, nsIClipboard::kSelectionCache, false);
+        aSel, aDoc, nsIClipboard::kSelectionCache, false,
+#  ifdef XP_MACOSX
+        
+        nsCopySupport::UpdateClipboard::Yes
+#  else
+        
+        
+        nsCopySupport::UpdateClipboard::No
+#  endif
+    );
   }
 
   return NS_OK;
