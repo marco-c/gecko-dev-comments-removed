@@ -672,8 +672,7 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu,
 
   
   
-  if (menuItem->AttrValueIs(kNameSpaceID_None, nsGkAtoms::collapsed,
-                            nsGkAtoms::_true, eCaseMatters)) {
+  if (menuItem->GetBoolAttr(nsGkAtoms::collapsed)) {
     return nil;
   }
 
