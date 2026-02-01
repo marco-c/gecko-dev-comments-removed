@@ -381,7 +381,11 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
       mIsHardwareAccelerated = aHardware;
       break;
   }
+  mUseDurationMap = aHardware;
 #else
+#  ifdef MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
+  mUseDurationMap = true;
+#  endif
   mIsHardwareAccelerated = aHardware;
 #endif
 
@@ -700,11 +704,13 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegVideoEncoder<
   } else {
     mFrame->pts = aSample->mTime.ToMicroseconds();
   }
-#  if LIBAVCODEC_VERSION_MAJOR >= 60
-  mFrame->duration = aSample->mDuration.ToMicroseconds();
+#  ifdef MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
+  if (mUseDurationMap) {
+    
+    mDurationMap.Insert(mFrame->pts, aSample->mDuration.ToMicroseconds());
+  }
 #  else
-  
-  mDurationMap.Insert(mFrame->pts, aSample->mDuration.ToMicroseconds());
+  mFrame->duration = aSample->mDuration.ToMicroseconds();
 #  endif
   Duration(mFrame) = aSample->mDuration.ToMicroseconds();
 
@@ -773,16 +779,15 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
   
   
   data->mTime = media::TimeUnit::FromMicroseconds(aPacket->pts);
-#if LIBAVCODEC_VERSION_MAJOR >= 60
-  data->mDuration = media::TimeUnit::FromMicroseconds(aPacket->duration);
-#else
+#ifdef MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
   int64_t duration;
-  if (mDurationMap.Find(aPacket->pts, duration)) {
+  if (mUseDurationMap && mDurationMap.Find(aPacket->pts, duration)) {
     data->mDuration = media::TimeUnit::FromMicroseconds(duration);
-  } else {
+  } else
+#endif
+  {
     data->mDuration = media::TimeUnit::FromMicroseconds(aPacket->duration);
   }
-#endif
   data->mTimecode = media::TimeUnit::FromMicroseconds(aPacket->dts);
 
   if (mConfig.mCodec == CodecType::AV1) {

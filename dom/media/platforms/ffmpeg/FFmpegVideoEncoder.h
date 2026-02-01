@@ -15,6 +15,10 @@
 
 #include "FFmpegLibs.h"
 
+#if LIBAVCODEC_VERSION_MAJOR < 60 || defined(MOZ_WIDGET_ANDROID)
+#  define MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
+#endif
+
 namespace mozilla {
 
 template <int V>
@@ -80,6 +84,9 @@ class FFmpegVideoEncoder<LIBAV_VER> final
   Maybe<SVCInfo> mSVCInfo{};
   
   Atomic<bool> mIsHardwareAccelerated{false};
+#ifdef MOZ_FFMPEG_ENCODER_USE_DURATION_MAP
+  bool mUseDurationMap = false;
+#endif
   
   
   
