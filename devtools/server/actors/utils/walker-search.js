@@ -229,6 +229,11 @@ class WalkerSearch {
     let [attributeName, attributeValue] = query.split("=", 2);
 
     
+    if (attributeName) {
+      attributeName = attributeName.trimStart();
+    }
+
+    
     const isExactMatch =
       attributeValue.startsWith('"') && attributeValue.endsWith('"');
     attributeValue = attributeValue?.replace(/(^")|("$)/gi, "");
