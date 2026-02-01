@@ -3,7 +3,12 @@
 
 
 
+#ifndef BROWSER_COMPONENTS_SHELL_NSSHELLSERVICE_H_
+#define BROWSER_COMPONENTS_SHELL_NSSHELLSERVICE_H_
+
 #define PREF_CHECKDEFAULTBROWSER "browser.shell.checkDefaultBrowser"
 #define PREF_DEFAULTBROWSERCHECKCOUNT "browser.shell.defaultBrowserCheckCount"
 
 #define BRAND_PROPERTIES "chrome://branding/locale/brand.properties"
+
+#endif  
