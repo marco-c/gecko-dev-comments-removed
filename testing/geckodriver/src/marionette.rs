@@ -281,7 +281,11 @@ impl WebDriverHandler<GeckoExtensionRoute> for MarionetteHandler {
                 conn.send_command(&msg).map_err(|mut err| {
                     
                     
-                    if let NewSession(_) = msg.command {
+                    let is_new_session = matches!(msg.command, NewSession(_));
+                    let invalid_session = msg.session_id.is_some()
+                        && err.error_code() == ErrorStatus::InvalidSessionId.error_code();
+
+                    if is_new_session || invalid_session {
                         err.delete_session = true;
                     }
                     err
