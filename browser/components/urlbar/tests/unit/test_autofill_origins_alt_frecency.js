@@ -31,12 +31,7 @@ add_task(async function test_autofill() {
   });
   
   const url = `https://${origin}/`;
-  await PlacesTestUtils.addVisits(
-    new Array(10).fill(url).map(u => ({
-      url: u,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    }))
-  );
+  await PlacesTestUtils.addVisits(new Array(10).fill(url));
   Assert.equal(
     await PlacesUtils.metadata.get("origin_alt_frecency_threshold", 0),
     0,
@@ -67,12 +62,7 @@ add_task(async function test_autofill_www() {
   const origin = "example.com";
   
   const url = `https://www.${origin}/`;
-  await PlacesTestUtils.addVisits(
-    new Array(10).fill(url).map(u => ({
-      url: u,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    }))
-  );
+  await PlacesTestUtils.addVisits(new Array(10).fill(url));
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   let context = createContext(origin.substring(0, 2), { isPrivate: false });
@@ -98,13 +88,7 @@ add_task(
   async function test_autofill_prefix_priority() {
     const origin = "localhost";
     const url = `https://${origin}/`;
-    await PlacesTestUtils.addVisits([
-      { url, transition: PlacesUtils.history.TRANSITION_TYPED },
-      {
-        url: `http://${origin}/`,
-        transition: PlacesUtils.history.TRANSITION_TYPED,
-      },
-    ]);
+    await PlacesTestUtils.addVisits([url, `http://${origin}/`]);
     await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
     let engine = SearchService.defaultEngine;
@@ -136,35 +120,13 @@ add_task(
 );
 
 add_task(async function test_autofill_threshold() {
-  await PlacesTestUtils.addVisits(
-    new Array(10).fill("https://example.com/").map(url => ({
-      url,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    }))
-  );
+  await PlacesTestUtils.addVisits(new Array(10).fill("https://example.com/"));
   
   await PlacesTestUtils.addVisits([
-    {
-      url: "https://example.com/2",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "https://example.com/2",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "https://example.com/3",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
-    {
-      url: "https://example.com/3",
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    },
+    "https://example.com/2",
+    "https://example.com/3",
   ]);
-  await PlacesTestUtils.addVisits({
-    url: "https://somethingelse.org/",
-    transition: PlacesUtils.history.TRANSITION_TYPED,
-  });
+  await PlacesTestUtils.addVisits("https://somethingelse.org/");
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   let threshold = await PlacesUtils.metadata.get(
@@ -207,11 +169,7 @@ add_task(async function test_autofill_cutoff() {
   
   const visitDate = new Date(Date.now() - 120 * 86400000);
   await PlacesTestUtils.addVisits(
-    new Array(10).fill("https://example.com/").map(url => ({
-      url,
-      visitDate,
-      transition: PlacesUtils.history.TRANSITION_TYPED,
-    }))
+    new Array(10).fill("https://example.com/").map(url => ({ url, visitDate }))
   );
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
@@ -246,19 +204,12 @@ add_task(async function test_autofill_threshold_www() {
   
   
   
-  await PlacesTestUtils.addVisits({
-    url: "https://example.com/",
-    transition: PlacesUtils.history.TRANSITION_TYPED,
-  });
+  await PlacesTestUtils.addVisits("https://example.com/");
   await PlacesTestUtils.addVisits(
-    new Array(10)
-      .fill("https://www.example.com/")
-      .map(url => ({ url, transition: PlacesUtils.history.TRANSITION_TYPED }))
+    new Array(10).fill("https://www.example.com/")
   );
   await PlacesTestUtils.addVisits(
-    new Array(10)
-      .fill("https://www.somethingelse.org/")
-      .map(url => ({ url, transition: PlacesUtils.history.TRANSITION_TYPED }))
+    new Array(10).fill("https://www.somethingelse.org/")
   );
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
