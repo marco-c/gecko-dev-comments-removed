@@ -17,7 +17,9 @@
 #include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/LocaleNegotiation.h"
+#include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/SharedIntlData.h"
+#include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
@@ -35,9 +37,6 @@ using namespace js;
 using namespace js::intl;
 
 using JS::AutoStableStringChars;
-
-using js::intl::ReportInternalError;
-using js::intl::SharedIntlData;
 
 const JSClassOps CollatorObject::classOps_ = {
     nullptr,                   
@@ -66,6 +65,10 @@ const JSClass& CollatorObject::protoClass_ = PlainObject::class_;
 static bool collator_supportedLocalesOf(JSContext* cx, unsigned argc,
                                         Value* vp);
 
+static bool collator_compare(JSContext* cx, unsigned argc, Value* vp);
+
+static bool collator_resolvedOptions(JSContext* cx, unsigned argc, Value* vp);
+
 static bool collator_toSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setString(cx->names().Collator);
@@ -78,13 +81,13 @@ static const JSFunctionSpec collator_static_methods[] = {
 };
 
 static const JSFunctionSpec collator_methods[] = {
-    JS_SELF_HOSTED_FN("resolvedOptions", "Intl_Collator_resolvedOptions", 0, 0),
+    JS_FN("resolvedOptions", collator_resolvedOptions, 0, 0),
     JS_FN("toSource", collator_toSource, 0, 0),
     JS_FS_END,
 };
 
 static const JSPropertySpec collator_properties[] = {
-    JS_SELF_HOSTED_GET("compare", "$Intl_Collator_compare_get", 0),
+    JS_PSG("compare", collator_compare, 0),
     JS_STRING_SYM_PS(toStringTag, "Intl.Collator", JSPROP_READONLY),
     JS_PS_END,
 };
@@ -102,6 +105,173 @@ const ClassSpec CollatorObject::classSpec_ = {
     ClassSpec::DontDefineConstructor,
 };
 
+static constexpr std::string_view UsageToString(CollatorOptions::Usage usage) {
+#ifndef USING_ENUM
+  using enum CollatorOptions::Usage;
+#else
+  USING_ENUM(CollatorOptions::Usage, Sort, Search);
+#endif
+  switch (usage) {
+    case Sort:
+      return "sort";
+    case Search:
+      return "search";
+  }
+  MOZ_CRASH("invalid collator usage");
+}
+
+static constexpr std::string_view SensitivityToString(
+    CollatorOptions::Sensitivity sensitivity) {
+#ifndef USING_ENUM
+  using enum CollatorOptions::Sensitivity;
+#else
+  USING_ENUM(CollatorOptions::Sensitivity, Base, Accent, Case, Variant);
+#endif
+  switch (sensitivity) {
+    case Base:
+      return "base";
+    case Accent:
+      return "accent";
+    case Case:
+      return "case";
+    case Variant:
+      return "variant";
+  }
+  MOZ_CRASH("invalid collator sensitivity");
+}
+
+static constexpr std::string_view CaseFirstToString(
+    CollatorOptions::CaseFirst caseFirst) {
+#ifndef USING_ENUM
+  using enum CollatorOptions::CaseFirst;
+#else
+  USING_ENUM(CollatorOptions::CaseFirst, False, Lower, Upper);
+#endif
+  switch (caseFirst) {
+    case False:
+      return "false";
+    case Lower:
+      return "lower";
+    case Upper:
+      return "upper";
+  }
+  MOZ_CRASH("invalid collator case first");
+}
+
+
+
+
+
+
+static bool InitializeCollator(JSContext* cx, Handle<CollatorObject*> collator,
+                               Handle<JS::Value> locales,
+                               Handle<JS::Value> optionsValue) {
+  
+  Rooted<LocalesList> requestedLocales(cx, cx);
+  if (!CanonicalizeLocaleList(cx, locales, &requestedLocales)) {
+    return false;
+  }
+
+  Rooted<ArrayObject*> requestedLocalesArray(
+      cx, LocalesListToArray(cx, requestedLocales));
+  if (!requestedLocalesArray) {
+    return false;
+  }
+  collator->setRequestedLocales(requestedLocalesArray);
+
+  auto colOptions = cx->make_unique<CollatorOptions>();
+  if (!colOptions) {
+    return false;
+  }
+
+  if (!optionsValue.isUndefined()) {
+    
+    Rooted<JSObject*> options(cx, JS::ToObject(cx, optionsValue));
+    if (!options) {
+      return false;
+    }
+
+    
+    static constexpr auto usages = MapOptions<UsageToString>(
+        CollatorOptions::Usage::Sort, CollatorOptions::Usage::Search);
+    if (!GetStringOption(cx, options, cx->names().usage, usages,
+                         CollatorOptions::Usage::Sort, &colOptions->usage)) {
+      return false;
+    }
+
+    
+
+    
+
+    
+
+    
+    LocaleMatcher matcher;
+    if (!GetLocaleMatcherOption(cx, options, &matcher)) {
+      return false;
+    }
+
+    
+    
+    
+    
+
+    
+    Rooted<JSLinearString*> collation(cx);
+    if (!GetUnicodeExtensionOption(cx, options, UnicodeExtensionKey::Collation,
+                                   &collation)) {
+      return false;
+    }
+    if (collation) {
+      collator->setCollation(collation);
+    }
+
+    
+    if (!GetBooleanOption(cx, options, cx->names().numeric,
+                          &colOptions->numeric)) {
+      return false;
+    }
+
+    
+    static constexpr auto caseFirsts = MapOptions<CaseFirstToString>(
+        CollatorOptions::CaseFirst::Upper, CollatorOptions::CaseFirst::Lower,
+        CollatorOptions::CaseFirst::False);
+    if (!GetStringOption(cx, options, cx->names().caseFirst, caseFirsts,
+                         &colOptions->caseFirst)) {
+      return false;
+    }
+
+    
+
+    
+
+    
+
+    
+
+    
+    static constexpr auto sensitivities =
+        MapOptions<SensitivityToString>(CollatorOptions::Sensitivity::Base,
+                                        CollatorOptions::Sensitivity::Accent,
+                                        CollatorOptions::Sensitivity::Case,
+                                        CollatorOptions::Sensitivity::Variant);
+    if (!GetStringOption(cx, options, cx->names().sensitivity, sensitivities,
+                         &colOptions->sensitivity)) {
+      return false;
+    }
+
+    
+    if (!GetBooleanOption(cx, options, cx->names().ignorePunctuation,
+                          &colOptions->ignorePunctuation)) {
+      return false;
+    }
+  }
+  collator->setOptions(colOptions.release());
+  AddCellMemory(collator, sizeof(CollatorOptions), js::MemoryUse::IntlOptions);
+
+  return true;
+}
+
 
 
 
@@ -114,7 +284,7 @@ static bool Collator(JSContext* cx, unsigned argc, Value* vp) {
   
 
   
-  RootedObject proto(cx);
+  Rooted<JSObject*> proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Collator, &proto)) {
     return false;
   }
@@ -125,15 +295,12 @@ static bool Collator(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  HandleValue locales = args.get(0);
-  HandleValue options = args.get(1);
-
   
-  if (!intl::InitializeObject(cx, collator, cx->names().InitializeCollator,
-                              locales, options)) {
+  if (!InitializeCollator(cx, collator, args.get(0), args.get(1))) {
     return false;
   }
 
+  
   args.rval().setObject(*collator);
   return true;
 }
@@ -146,11 +313,9 @@ CollatorObject* js::intl::CreateCollator(JSContext* cx, Handle<Value> locales,
     return nullptr;
   }
 
-  if (!InitializeObject(cx, collator, cx->names().InitializeCollator, locales,
-                        options)) {
+  if (!InitializeCollator(cx, collator, locales, options)) {
     return nullptr;
   }
-
   return collator;
 }
 
@@ -175,10 +340,189 @@ CollatorObject* js::intl::GetOrCreateCollator(JSContext* cx,
 }
 
 void js::CollatorObject::finalize(JS::GCContext* gcx, JSObject* obj) {
-  if (mozilla::intl::Collator* coll = obj->as<CollatorObject>().getCollator()) {
-    intl::RemoveICUCellMemory(gcx, obj, CollatorObject::EstimatedMemoryUse);
+  auto* collator = &obj->as<CollatorObject>();
+
+  if (auto* options = collator->getOptions()) {
+    gcx->delete_(obj, options, MemoryUse::IntlOptions);
+  }
+
+  if (auto* coll = collator->getCollator()) {
+    RemoveICUCellMemory(gcx, obj, CollatorObject::EstimatedMemoryUse);
     delete coll;
   }
+}
+
+
+
+
+static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
+  
+  if (collator->isLocaleResolved()) {
+    return true;
+  }
+  auto* colOptions = collator->getOptions();
+
+  Rooted<ArrayObject*> requestedLocales(
+      cx, &collator->getRequestedLocales()->as<ArrayObject>());
+
+  
+  mozilla::EnumSet<UnicodeExtensionKey> relevantExtensionKeys{
+      UnicodeExtensionKey::Collation,
+      UnicodeExtensionKey::CollationCaseFirst,
+      UnicodeExtensionKey::CollationNumeric,
+  };
+
+  
+  Rooted<LocaleOptions> localeOptions(cx);
+  if (auto* co = collator->getCollation()) {
+    localeOptions.setUnicodeExtension(UnicodeExtensionKey::Collation, co);
+  }
+  if (auto caseFirst = colOptions->caseFirst) {
+#ifndef USING_ENUM
+    using enum CollatorOptions::CaseFirst;
+#else
+    USING_ENUM(CollatorOptions::CaseFirst, False, Lower, Upper);
+#endif
+
+    JSLinearString* kf;
+    switch (*caseFirst) {
+      case Upper:
+        kf = cx->names().upper;
+        break;
+      case Lower:
+        kf = cx->names().lower;
+        break;
+      case False:
+        kf = cx->names().false_;
+        break;
+    }
+    localeOptions.setUnicodeExtension(UnicodeExtensionKey::CollationCaseFirst,
+                                      kf);
+  }
+  if (auto numeric = colOptions->numeric) {
+    JSLinearString* kn = *numeric ? cx->names().true_ : cx->names().false_;
+    localeOptions.setUnicodeExtension(UnicodeExtensionKey::CollationNumeric,
+                                      kn);
+  }
+
+  
+  
+  LocaleData localeData;
+  if (colOptions->usage == CollatorOptions::Usage::Sort) {
+    localeData = LocaleData::Default;
+  } else {
+    localeData = LocaleData::CollatorSearch;
+  }
+
+  
+  Rooted<ResolvedLocale> resolved(cx);
+  if (!ResolveLocale(cx, AvailableLocaleKind::Collator, requestedLocales,
+                     localeOptions, relevantExtensionKeys, localeData,
+                     &resolved)) {
+    return false;
+  }
+
+  if (colOptions->sensitivity.isNothing()) {
+    
+    
+    
+    colOptions->sensitivity =
+        mozilla::Some(CollatorOptions::Sensitivity::Variant);
+  }
+
+  if (colOptions->ignorePunctuation.isNothing()) {
+    
+    
+    Rooted<JSLinearString*> dataLocale(cx);
+    if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator,
+                             resolved.dataLocale(), nullptr, &dataLocale)) {
+      return false;
+    }
+    MOZ_ASSERT(dataLocale);
+
+    auto& sharedIntlData = cx->runtime()->sharedIntlData.ref();
+
+    bool ignorePunctuation;
+    if (!sharedIntlData.isIgnorePunctuation(cx, dataLocale,
+                                            &ignorePunctuation)) {
+      return false;
+    }
+    colOptions->ignorePunctuation = mozilla::Some(ignorePunctuation);
+  }
+
+  
+  auto* locale = resolved.toLocale(cx);
+  if (!locale) {
+    return false;
+  }
+  collator->setLocale(locale);
+
+  if (auto co = resolved.extension(UnicodeExtensionKey::Collation)) {
+    collator->setCollation(co);
+  } else {
+    collator->setCollation(cx->names().default_);
+  }
+
+  auto kf = resolved.extension(UnicodeExtensionKey::CollationCaseFirst);
+  MOZ_ASSERT(kf, "resolved case first is non-null");
+
+  if (StringEqualsLiteral(kf, "upper")) {
+    colOptions->caseFirst = mozilla::Some(CollatorOptions::CaseFirst::Upper);
+  } else if (StringEqualsLiteral(kf, "lower")) {
+    colOptions->caseFirst = mozilla::Some(CollatorOptions::CaseFirst::Lower);
+  } else {
+    MOZ_ASSERT(StringEqualsLiteral(kf, "false"));
+    colOptions->caseFirst = mozilla::Some(CollatorOptions::CaseFirst::False);
+  }
+
+  auto kn = resolved.extension(UnicodeExtensionKey::CollationNumeric);
+  MOZ_ASSERT(kn, "resolved numeric is non-null");
+
+  if (StringEqualsLiteral(kn, "true")) {
+    colOptions->numeric = mozilla::Some(true);
+  } else {
+    MOZ_ASSERT(StringEqualsLiteral(kn, "false"));
+    colOptions->numeric = mozilla::Some(false);
+  }
+
+  MOZ_ASSERT(collator->isLocaleResolved(), "locale successfully resolved");
+  return true;
+}
+
+static auto ToCollatorSensitivity(CollatorOptions::Sensitivity sensitivity) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::Collator::Sensitivity;
+#else
+  USING_ENUM(mozilla::intl::Collator::Sensitivity, Base, Accent, Case, Variant);
+#endif
+  switch (sensitivity) {
+    case CollatorOptions::Sensitivity::Base:
+      return Base;
+    case CollatorOptions::Sensitivity::Accent:
+      return Accent;
+    case CollatorOptions::Sensitivity::Case:
+      return Case;
+    case CollatorOptions::Sensitivity::Variant:
+      return Variant;
+  }
+  MOZ_CRASH("invalid collator sensitivity");
+}
+
+static auto ToCollatorCaseFirst(CollatorOptions::CaseFirst caseFirst) {
+#ifndef USING_ENUM
+  using enum mozilla::intl::Collator::CaseFirst;
+#else
+  USING_ENUM(mozilla::intl::Collator::CaseFirst, False, Lower, Upper);
+#endif
+  switch (caseFirst) {
+    case CollatorOptions::CaseFirst::Upper:
+      return Upper;
+    case CollatorOptions::CaseFirst::Lower:
+      return Lower;
+    case CollatorOptions::CaseFirst::False:
+      return False;
+  }
+  MOZ_CRASH("invalid collator case first");
 }
 
 
@@ -187,68 +531,24 @@ void js::CollatorObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 
 static mozilla::intl::Collator* NewIntlCollator(
     JSContext* cx, Handle<CollatorObject*> collator) {
-  RootedValue value(cx);
-  RootedObject internals(cx, intl::GetInternalsObject(cx, collator));
-  if (!internals) {
+  if (!ResolveLocale(cx, collator)) {
     return nullptr;
   }
+  auto colOptions = *collator->getOptions();
 
-  using mozilla::intl::Collator;
-
-  Collator::Options options{};
-
-  if (!GetProperty(cx, internals, internals, cx->names().usage, &value)) {
-    return nullptr;
-  }
-
-  enum class Usage { Search, Sort };
-
-  Usage usage;
-  {
-    JSLinearString* str = value.toString()->ensureLinear(cx);
-    if (!str) {
-      return nullptr;
-    }
-
-    if (StringEqualsLiteral(str, "search")) {
-      usage = Usage::Search;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(str, "sort"));
-      usage = Usage::Sort;
-    }
-  }
-
-  JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
+  JS::RootedVector<UnicodeExtensionKeyword> keywords(cx);
 
   
-  if (usage == Usage::Search) {
+  if (colOptions.usage == CollatorOptions::Usage::Search) {
     if (!keywords.emplaceBack("co", cx->names().search)) {
       return nullptr;
     }
 
     
     
-#ifdef DEBUG
-    if (!GetProperty(cx, internals, internals, cx->names().collation, &value)) {
-      return nullptr;
-    }
-
-    JSLinearString* collation = value.toString()->ensureLinear(cx);
-    if (!collation) {
-      return nullptr;
-    }
-
-    MOZ_ASSERT(StringEqualsLiteral(collation, "default"));
-#endif
+    MOZ_ASSERT(StringEqualsLiteral(collator->getCollation(), "default"));
   } else {
-    if (!GetProperty(cx, internals, internals, cx->names().collation, &value)) {
-      return nullptr;
-    }
-
-    JSLinearString* collation = value.toString()->ensureLinear(cx);
-    if (!collation) {
-      return nullptr;
-    }
+    auto* collation = collator->getCollation();
 
     
     if (!StringEqualsLiteral(collation, "default")) {
@@ -258,64 +558,20 @@ static mozilla::intl::Collator* NewIntlCollator(
     }
   }
 
-  UniqueChars locale = intl::FormatLocale(cx, internals, keywords);
+  Rooted<JSLinearString*> localeStr(cx, collator->getLocale());
+  auto locale = FormatLocale(cx, localeStr, keywords);
   if (!locale) {
     return nullptr;
   }
 
-  if (!GetProperty(cx, internals, internals, cx->names().sensitivity, &value)) {
-    return nullptr;
-  }
+  mozilla::intl::Collator::Options options = {
+      .sensitivity = ToCollatorSensitivity(*colOptions.sensitivity),
+      .caseFirst = ToCollatorCaseFirst(*colOptions.caseFirst),
+      .ignorePunctuation = *colOptions.ignorePunctuation,
+      .numeric = *colOptions.numeric,
+  };
 
-  {
-    JSLinearString* sensitivity = value.toString()->ensureLinear(cx);
-    if (!sensitivity) {
-      return nullptr;
-    }
-    if (StringEqualsLiteral(sensitivity, "base")) {
-      options.sensitivity = Collator::Sensitivity::Base;
-    } else if (StringEqualsLiteral(sensitivity, "accent")) {
-      options.sensitivity = Collator::Sensitivity::Accent;
-    } else if (StringEqualsLiteral(sensitivity, "case")) {
-      options.sensitivity = Collator::Sensitivity::Case;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(sensitivity, "variant"));
-      options.sensitivity = Collator::Sensitivity::Variant;
-    }
-  }
-
-  if (!GetProperty(cx, internals, internals, cx->names().ignorePunctuation,
-                   &value)) {
-    return nullptr;
-  }
-  options.ignorePunctuation = value.toBoolean();
-
-  if (!GetProperty(cx, internals, internals, cx->names().numeric, &value)) {
-    return nullptr;
-  }
-  if (!value.isUndefined()) {
-    options.numeric = value.toBoolean();
-  }
-
-  if (!GetProperty(cx, internals, internals, cx->names().caseFirst, &value)) {
-    return nullptr;
-  }
-  if (!value.isUndefined()) {
-    JSLinearString* caseFirst = value.toString()->ensureLinear(cx);
-    if (!caseFirst) {
-      return nullptr;
-    }
-    if (StringEqualsLiteral(caseFirst, "upper")) {
-      options.caseFirst = Collator::CaseFirst::Upper;
-    } else if (StringEqualsLiteral(caseFirst, "lower")) {
-      options.caseFirst = Collator::CaseFirst::Lower;
-    } else {
-      MOZ_ASSERT(StringEqualsLiteral(caseFirst, "false"));
-      options.caseFirst = Collator::CaseFirst::False;
-    }
-  }
-
-  auto collResult = Collator::TryCreate(locale.get());
+  auto collResult = mozilla::intl::Collator::TryCreate(locale.get());
   if (collResult.isErr()) {
     ReportInternalError(cx, collResult.unwrapErr());
     return nullptr;
@@ -327,31 +583,29 @@ static mozilla::intl::Collator* NewIntlCollator(
     ReportInternalError(cx, optResult.unwrapErr());
     return nullptr;
   }
-
   return coll.release();
 }
 
 static mozilla::intl::Collator* GetOrCreateCollator(
     JSContext* cx, Handle<CollatorObject*> collator) {
   
-  mozilla::intl::Collator* coll = collator->getCollator();
-  if (coll) {
+  if (auto* coll = collator->getCollator()) {
     return coll;
   }
 
-  coll = NewIntlCollator(cx, collator);
+  auto* coll = NewIntlCollator(cx, collator);
   if (!coll) {
     return nullptr;
   }
   collator->setCollator(coll);
 
-  intl::AddICUCellMemory(collator, CollatorObject::EstimatedMemoryUse);
+  AddICUCellMemory(collator, CollatorObject::EstimatedMemoryUse);
   return coll;
 }
 
-static bool intl_CompareStrings(JSContext* cx, mozilla::intl::Collator* coll,
-                                JSString* str1, JSString* str2,
-                                MutableHandleValue result) {
+static bool CompareStrings(JSContext* cx, mozilla::intl::Collator* coll,
+                           JSString* str1, JSString* str2,
+                           MutableHandleValue result) {
   MOZ_ASSERT(str1);
   MOZ_ASSERT(str2);
 
@@ -395,7 +649,7 @@ bool js::intl_CompareStrings(JSContext* cx, unsigned argc, Value* vp) {
   
   JSString* str1 = args[1].toString();
   JSString* str2 = args[2].toString();
-  return intl_CompareStrings(cx, coll, str1, str2, args.rval());
+  return CompareStrings(cx, coll, str1, str2, args.rval());
 }
 
 bool js::intl::CompareStrings(JSContext* cx, Handle<CollatorObject*> collator,
@@ -405,7 +659,7 @@ bool js::intl::CompareStrings(JSContext* cx, Handle<CollatorObject*> collator,
   if (!coll) {
     return false;
   }
-  return intl_CompareStrings(cx, coll, str1, str2, result);
+  return CompareStrings(cx, coll, str1, str2, result);
 }
 
 bool js::intl_isUpperCaseFirst(JSContext* cx, unsigned argc, Value* vp) {
@@ -448,6 +702,160 @@ bool js::intl_isIgnorePunctuation(JSContext* cx, unsigned argc, Value* vp) {
 
   args.rval().setBoolean(isIgnorePunctuation);
   return true;
+}
+
+static bool IsCollator(Handle<JS::Value> v) {
+  return v.isObject() && v.toObject().is<CollatorObject>();
+}
+
+static constexpr uint32_t CollatorCompareFunction_Collator = 0;
+
+
+
+
+static bool CollatorCompareFunction(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  auto* compare = &args.callee().as<JSFunction>();
+  auto collValue = compare->getExtendedSlot(CollatorCompareFunction_Collator);
+  Rooted<CollatorObject*> collator(cx,
+                                   &collValue.toObject().as<CollatorObject>());
+
+  
+  Rooted<JSString*> x(cx, JS::ToString(cx, args.get(0)));
+  if (!x) {
+    return false;
+  }
+
+  
+  Rooted<JSString*> y(cx, JS::ToString(cx, args.get(1)));
+  if (!y) {
+    return false;
+  }
+
+  
+  return CompareStrings(cx, collator, x, y, args.rval());
+}
+
+
+
+
+static bool collator_compare(JSContext* cx, const CallArgs& args) {
+  Rooted<CollatorObject*> collator(
+      cx, &args.thisv().toObject().as<CollatorObject>());
+
+  
+  auto* boundCompare = collator->getBoundCompare();
+  if (!boundCompare) {
+    Handle<PropertyName*> funName = cx->names().empty_;
+    auto* fn =
+        NewNativeFunction(cx, CollatorCompareFunction, 2, funName,
+                          gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+    if (!fn) {
+      return false;
+    }
+    fn->initExtendedSlot(CollatorCompareFunction_Collator,
+                         ObjectValue(*collator));
+
+    collator->setBoundCompare(fn);
+    boundCompare = fn;
+  }
+
+  
+  args.rval().setObject(*boundCompare);
+  return true;
+}
+
+
+
+
+static bool collator_compare(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsCollator, collator_compare>(cx, args);
+}
+
+
+
+
+static bool collator_resolvedOptions(JSContext* cx, const CallArgs& args) {
+  Rooted<CollatorObject*> collator(
+      cx, &args.thisv().toObject().as<CollatorObject>());
+
+  if (!ResolveLocale(cx, collator)) {
+    return false;
+  }
+  auto colOptions = *collator->getOptions();
+
+  
+  Rooted<IdValueVector> options(cx, cx);
+
+  
+  if (!options.emplaceBack(NameToId(cx->names().locale),
+                           StringValue(collator->getLocale()))) {
+    return false;
+  }
+
+  auto* usage = NewStringCopy<CanGC>(cx, UsageToString(colOptions.usage));
+  if (!usage) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().usage), StringValue(usage))) {
+    return false;
+  }
+
+  auto* sensitivity =
+      NewStringCopy<CanGC>(cx, SensitivityToString(*colOptions.sensitivity));
+  if (!sensitivity) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().sensitivity),
+                           StringValue(sensitivity))) {
+    return false;
+  }
+
+  if (!options.emplaceBack(NameToId(cx->names().ignorePunctuation),
+                           BooleanValue(*colOptions.ignorePunctuation))) {
+    return false;
+  }
+
+  if (!options.emplaceBack(NameToId(cx->names().collation),
+                           StringValue(collator->getCollation()))) {
+    return false;
+  }
+
+  if (!options.emplaceBack(NameToId(cx->names().numeric),
+                           BooleanValue(*colOptions.numeric))) {
+    return false;
+  }
+
+  auto* caseFirst =
+      NewStringCopy<CanGC>(cx, CaseFirstToString(*colOptions.caseFirst));
+  if (!caseFirst) {
+    return false;
+  }
+  if (!options.emplaceBack(NameToId(cx->names().caseFirst),
+                           StringValue(caseFirst))) {
+    return false;
+  }
+
+  
+  auto* result = NewPlainObjectWithUniqueNames(cx, options);
+  if (!result) {
+    return false;
+  }
+  args.rval().setObject(*result);
+  return true;
+}
+
+
+
+
+static bool collator_resolvedOptions(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsCollator, collator_resolvedOptions>(cx, args);
 }
 
 
