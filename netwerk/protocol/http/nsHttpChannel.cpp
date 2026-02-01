@@ -6599,6 +6599,7 @@ nsresult nsHttpChannel::DoInstallCacheListener(bool aSaveDecompressed,
         
         LOG_DICTIONARIES(("Forcing Content-Encoding to empty"));
         (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
+        (void)mResponseHead->SetHeaderOverride(nsHttp::Content_Length, ""_ns);
       }
     }
     
