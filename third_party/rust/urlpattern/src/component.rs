@@ -1,22 +1,22 @@
 
 
+use crate::Error;
 use crate::canonicalize_and_process::escape_pattern_string;
 use crate::matcher::InnerMatcher;
 use crate::matcher::Matcher;
+use crate::parser::FULL_WILDCARD_REGEXP_VALUE;
 use crate::parser::Options;
 use crate::parser::Part;
 use crate::parser::PartModifier;
 use crate::parser::PartType;
 use crate::parser::RegexSyntax;
-use crate::parser::FULL_WILDCARD_REGEXP_VALUE;
 use crate::regexp::RegExp;
 use crate::tokenizer::is_valid_name_codepoint;
-use crate::Error;
 use std::fmt::Write;
 
 
 #[derive(Debug)]
-pub(crate) struct Component<R: RegExp> {
+pub struct Component<R: RegExp> {
   pub pattern_string: String,
   pub regexp: Result<R, Error>,
   pub group_name_list: Vec<String>,
