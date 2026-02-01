@@ -53,9 +53,6 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"windows11-64-24h2-hw-ref",
     r"windows10-aarch64-qr",
     
-    r"linux-",  
-    r"linux1804-32",  
-    
     r"web-platform-tests.*backlog",  
     r"-ccov",
     r"-profiling-",  
