@@ -4618,7 +4618,7 @@
       if (pinned && !itemAfter?.pinned) {
         itemAfter = null;
       } else if (itemAfter?.splitview) {
-        itemAfter = itemAfter.splitview?.nextElementSibling || null;
+        itemAfter = itemAfter.splitview;
       }
       
       
