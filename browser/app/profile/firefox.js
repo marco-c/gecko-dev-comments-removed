@@ -2667,9 +2667,6 @@ pref("privacy.exposeContentTitleInWindow.pbm", true);
 pref("media.peerconnection.mtransport_process", true);
 
 
-pref("browser.tabs.context.close-duplicate.enabled", true);
-
-
 
 pref("browser.tabs.remote.warmup.enabled", true);
 
