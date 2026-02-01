@@ -82,7 +82,6 @@ using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
 using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
 using WalkTextOption = HTMLEditUtils::WalkTextOption;
 using WalkTreeDirection = HTMLEditUtils::WalkTreeDirection;
-using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
 
 
@@ -3213,9 +3212,9 @@ HTMLEditor::AutoListElementCreator::WrapContentNodesIntoNewListElements(
   
   
   if (aArrayOfContents.Length() == 1) {
-    if (Element* deepestDivBlockquoteOrListElement =
+    if (Element* const deepestDivBlockquoteOrListElement =
             HTMLEditUtils::GetInclusiveDeepestFirstChildWhichHasOneChild(
-                aArrayOfContents[0], {WalkTreeOption::IgnoreNonEditableNode},
+                aArrayOfContents[0], {LeafNodeOption::IgnoreNonEditableNode},
                 BlockInlineCheck::UseHTMLDefaultStyle, nsGkAtoms::div,
                 nsGkAtoms::blockquote, nsGkAtoms::ul, nsGkAtoms::ol,
                 nsGkAtoms::dl)) {
