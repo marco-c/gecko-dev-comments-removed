@@ -11,6 +11,7 @@
 
 
 import { type PipelineOptions } from "chrome://global/content/ml/EngineProcess.sys.mjs";
+import { MLEngine } from "./actors/MLEngineParent.sys.mjs";
 
 export type EngineStatus =
   
@@ -26,32 +27,133 @@ export type EngineStatus =
   
   | "TERMINATED";
 
-export interface EngineRunRequest {
-  
+type UntypedEngineRequest = {
+  args: unknown;
+  options: {};
+};
+
+export type EngineRequests = EnsureAllFeatures<{
+  "about-inference": UntypedEngineRequest;
+  "link-preview": UntypedEngineRequest;
+  "pdfjs-alt-text": UntypedEngineRequest;
+  "simple-text-embedder": UntypedEngineRequest;
+  "smart-intent": UntypedEngineRequest;
+  "smart-tab-embedding": UntypedEngineRequest;
+  "smart-tab-topic": UntypedEngineRequest;
+
+  "suggest-intent-classification": {
+    
+
+
+    args: string[];
+    
+
+
+    options: {};
+  };
+
+  "suggest-NER": {
+    
+
+
+    args: string[];
+    
+
+
+    options: {};
+  };
+}>;
 
 
 
-  id: string;
-
-  
 
 
+export type EngineFeatureIds =
+  | "about-inference"
+  | "link-preview"
+  | "pdfjs-alt-text"
+  | "simple-text-embedder"
+  | "smart-intent"
+  | "smart-tab-embedding"
+  | "smart-tab-topic"
+  | "suggest-intent-classification"
+  | "suggest-NER";
 
 
-  args: any[];
-
-  
 
 
+type EnsureAllFeatures<T> =
+  Exclude<EngineFeatureIds, keyof T> extends never ? T : never;
+
+type BasicEngineOptions = Partial<{
+  taskName: string;
+  featureId: EngineFeatureIds;
+  timeoutMS: number;
+  numThreads: number;
+  backend: string;
+}>;
 
 
-  options: any;
-
-  
 
 
-  data?: Uint8Array;
+export type EngineCreateOptions = EnsureAllFeatures<{
+  "about-inference": BasicEngineOptions;
+  "link-preview": BasicEngineOptions;
+  "pdfjs-alt-text": BasicEngineOptions;
+  "simple-text-embedder": BasicEngineOptions;
+  "smart-intent": BasicEngineOptions;
+  "smart-tab-embedding": BasicEngineOptions;
+  "smart-tab-topic": BasicEngineOptions;
+  "suggest-intent-classification": BasicEngineOptions;
+  "suggest-NER": BasicEngineOptions;
+}>;
+
+
+
+
+export type EngineOptions<FeatureId extends EngineFeatureIds> =
+  EngineRequests[FeatureId]["options"];
+
+type UntypedEngineResponse = {};
+
+
+
+
+interface BaseMetrics {
+  preprocessingTime: number;
+  inferenceTime: number;
+  decodingTime: number;
+  runTimestamps: Array<{ name: string; when: number }>;
 }
+
+
+
+
+interface ClassificationMetrics extends BaseMetrics {
+  tokenizingTime: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+export type EngineResponses = EnsureAllFeatures<{
+  "about-inference": UntypedEngineResponse;
+  "link-preview": UntypedEngineResponse;
+  "pdfjs-alt-text": UntypedEngineResponse;
+  "simple-text-embedder": UntypedEngineResponse;
+  "smart-intent": UntypedEngineResponse;
+  "smart-tab-embedding": UntypedEngineResponse;
+  "smart-tab-topic": UntypedEngineResponse;
+  "suggest-intent-classification": Array<{
+    label: string;
+    score: number;
+  }> & { metrics?: ClassificationMetrics };
+  "suggest-NER": Array<{
+    label: string;
+    score: number;
+    entity: string;
+    word: string;
+  }> & { metrics?: ClassificationMetrics };
+}>;
 
 
 
