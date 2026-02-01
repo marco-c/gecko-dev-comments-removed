@@ -468,8 +468,9 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   mPuppetWidget->InfallibleCreate(nullptr, LayoutDeviceIntRect(),
                                   widget::InitData());
 
-  mWebBrowser = nsWebBrowser::Create(this, mPuppetWidget, mBrowsingContext,
-                                     aInitialWindowChild, aOpenWindowInfo);
+  MOZ_TRY(nsWebBrowser::Create(this, mPuppetWidget, mBrowsingContext,
+                               aInitialWindowChild, aOpenWindowInfo,
+                               getter_AddRefs(mWebBrowser)));
   if (!mWebBrowser) {
     
     
