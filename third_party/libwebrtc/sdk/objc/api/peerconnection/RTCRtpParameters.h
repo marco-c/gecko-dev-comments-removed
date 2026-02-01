@@ -20,7 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 typedef NS_ENUM(NSInteger, RTCDegradationPreference) {
-  RTCDegradationPreferenceDisabled,
+  RTCDegradationPreferenceMaintainFramerateAndResolution,
+  
+  
+  
+  RTCDegradationPreferenceDisabled =
+      RTCDegradationPreferenceMaintainFramerateAndResolution,
   RTCDegradationPreferenceMaintainFramerate,
   RTCDegradationPreferenceMaintainResolution,
   RTCDegradationPreferenceBalanced

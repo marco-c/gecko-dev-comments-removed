@@ -125,7 +125,11 @@ enum class DtxStatus {
 enum class DegradationPreference {
   
   
-  DISABLED,
+  
+  MAINTAIN_FRAMERATE_AND_RESOLUTION,
+  
+  
+  DISABLED = MAINTAIN_FRAMERATE_AND_RESOLUTION,
   
   MAINTAIN_FRAMERATE,
   
