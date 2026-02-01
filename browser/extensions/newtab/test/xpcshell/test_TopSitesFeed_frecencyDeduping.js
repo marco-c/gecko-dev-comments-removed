@@ -86,6 +86,11 @@ async function getTopSitesFeedForTest(
     .value(frecencyBoostedSponsors);
 
   
+  sandbox
+    .stub(feed.frecencyBoostProvider, "retrieveRandomFrecencyTile")
+    .returns(null);
+
+  
   
   DEFAULT_TOP_SITES.length = 0;
   feed._readContile();
