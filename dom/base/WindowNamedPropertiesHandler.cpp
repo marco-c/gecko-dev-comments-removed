@@ -6,7 +6,6 @@
 
 #include "WindowNamedPropertiesHandler.h"
 
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/ProxyHandlerUtils.h"
 #include "mozilla/dom/WindowBinding.h"
@@ -181,17 +180,6 @@ bool WindowNamedPropertiesHandler::ownPropNames(
   if (!(flags & JSITER_HIDDEN)) {
     
     return true;
-  }
-
-  if (!StaticPrefs::
-          dom_window_named_properties_object_legacy_own_property_keys()) {
-    
-    
-    
-    
-    JS::Rooted<jsid> toStringTagId(
-        aCx, JS::GetWellKnownSymbolKey(aCx, JS::SymbolCode::toStringTag));
-    return aProps.append(toStringTagId);
   }
 
   
