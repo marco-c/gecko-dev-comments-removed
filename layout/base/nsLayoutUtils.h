@@ -1413,6 +1413,14 @@ class nsLayoutUtils {
   
 
 
+
+
+
+  static bool HasAbsolutelyPositionedDescendants(const nsIFrame* aFrame);
+
+  
+
+
   static nsBlockFrame* FindNearestBlockAncestor(nsIFrame* aFrame);
 
   

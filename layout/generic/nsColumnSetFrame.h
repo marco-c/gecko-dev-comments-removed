@@ -119,6 +119,10 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
     
     
+    bool mIsInMeasuringReflow = false;
+
+    
+    
     nscoord mKnownFeasibleBSize = NS_UNCONSTRAINEDSIZE;
 
     
