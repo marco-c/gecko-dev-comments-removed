@@ -699,7 +699,6 @@ class Selection final : public nsSupportsWeakReference,
 
   MOZ_CAN_RUN_SCRIPT void CollapseToEnd(mozilla::ErrorResult& aRv);
 
- private:
   
 
 
@@ -710,10 +709,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void ExtendInternal(nsINode& aContainer, uint32_t aOffset,
-                                         ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Extend(nsINode& aContainer, uint32_t aOffset,
+                                 ErrorResult& aRv);
 
- public:
   MOZ_CAN_RUN_SCRIPT void AddRangeAndSelectFramesAndNotifyListeners(
       nsRange& aRange, mozilla::ErrorResult& aRv);
 
@@ -872,7 +870,7 @@ class Selection final : public nsSupportsWeakReference,
   nsresult SelectionLanguageChange(bool aLangRTL);
 
  private:
-  bool HasSameRootOrSameComposedDoc(const nsINode& aNode) const;
+  bool HasSameRootOrSameComposedDoc(const nsINode& aNode);
 
   
   
@@ -897,10 +895,6 @@ class Selection final : public nsSupportsWeakReference,
                                 const RawRangeBoundary& aAnchorRef,
                                 const RawRangeBoundary& aFocusRef,
                                 ErrorResult& aRv);
-
-  static bool IsValidNodeAndOffsetForBoundary(const nsINode& aContainer,
-                                              uint32_t aOffset,
-                                              ErrorResult& aRv);
 
  public:
   SelectionType GetType() const { return mSelectionType; }

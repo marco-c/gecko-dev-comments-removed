@@ -186,8 +186,9 @@ bool AutoClonedRangeArray::AdjustRangesNotInReplacedNorVoidElements(
         
         if (aRangeInReplacedOrVoidElement ==
                 RangeInReplacedOrVoidElement::Delete ||
-            NS_WARN_IF(NS_FAILED(range->CollapseTo(
-                RawRangeBoundary::FromChild(*replacedOrVoidElementAtStart)))) ||
+            NS_WARN_IF(NS_FAILED(range->CollapseTo(RawRangeBoundary(
+                replacedOrVoidElementAtStart->GetParentNode(),
+                replacedOrVoidElementAtStart->GetPreviousSibling())))) ||
             MOZ_UNLIKELY(
                 !AutoClonedRangeArray::IsEditableRange(range, aEditingHost))) {
           mRanges.RemoveElementAt(index);
@@ -198,7 +199,8 @@ bool AutoClonedRangeArray::AdjustRangesNotInReplacedNorVoidElements(
         
         
         if (NS_WARN_IF(NS_FAILED(range->SetStartAndEnd(
-                RawRangeBoundary::After(*replacedOrVoidElementAtStart),
+                RawRangeBoundary(replacedOrVoidElementAtStart->GetParentNode(),
+                                 replacedOrVoidElementAtStart),
                 range->EndRef()))) ||
             MOZ_UNLIKELY(
                 !AutoClonedRangeArray::IsEditableRange(range, aEditingHost))) {
@@ -220,7 +222,9 @@ bool AutoClonedRangeArray::AdjustRangesNotInReplacedNorVoidElements(
         
         if (NS_WARN_IF(NS_FAILED(range->SetStartAndEnd(
                 range->StartRef(),
-                RawRangeBoundary::FromChild(*replacedOrVoidElementAtEnd)))) ||
+                RawRangeBoundary(
+                    replacedOrVoidElementAtEnd->GetParentNode(),
+                    replacedOrVoidElementAtEnd->GetPreviousSibling())))) ||
             MOZ_UNLIKELY(
                 !AutoClonedRangeArray::IsEditableRange(range, aEditingHost))) {
           mRanges.RemoveElementAt(index);

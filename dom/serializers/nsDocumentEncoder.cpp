@@ -2016,12 +2016,20 @@ nsresult nsHTMLCopyEncoder::PromoteRange(nsRange* inRange) {
 
   
   ErrorResult err;
-  inRange->SetStart(promotedStartPoint.AsRangeBoundaryInDOMTree(), err,
-                    GetAllowRangeCrossShadowBoundary(mFlags));
+  
+  inRange->SetStart(RawRangeBoundary(promotedStartPoint.GetContainer(),
+                                     *promotedStartPoint.Offset(
+                                         OffsetFilter::kValidOrInvalidOffsets),
+                                     RangeBoundarySetBy::Offset, TreeKind::DOM),
+                    err, GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
   }
-  inRange->SetEnd(RawRangeBoundary(promotedEndPoint.AsRangeBoundaryInDOMTree()),
+  
+  inRange->SetEnd(RawRangeBoundary(promotedEndPoint.GetContainer(),
+                                   *promotedEndPoint.Offset(
+                                       OffsetFilter::kValidOrInvalidOffsets),
+                                   RangeBoundarySetBy::Offset, TreeKind::DOM),
                   err, GetAllowRangeCrossShadowBoundary(mFlags));
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
@@ -2177,8 +2185,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedStartPoint(
     
     
     if (NS_WARN_IF(!parentPointOrError.inspect().IsSet())) {
-      point = RawRangeBoundary::StartOfParent(
-          *point.GetContainer(), RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
+      point = RawRangeBoundary(point.GetContainer(), nullptr, 0u,
+                               RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
       break;
     }
     point = parentPointOrError.unwrap();
@@ -2243,13 +2251,13 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
       
       
       else {
-        nsIContent* const previousSibling =
-            aPoint.GetPreviousSiblingOfChildAtOffset();
-        if (NS_WARN_IF(!previousSibling)) {
+        if (NS_WARN_IF(!*aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets))) {
           return Err(NS_ERROR_FAILURE);
         }
-        point =
-            RawRangeBoundary::FromChild(*previousSibling, aPoint.GetTreeKind());
+        point = RawRangeBoundary(
+            aPoint.GetContainer(),
+            *aPoint.Offset(OffsetFilter::kValidOrInvalidOffsets) - 1u,
+            RangeBoundarySetBy::Ref, aPoint.GetTreeKind());
       }
     }
     
@@ -2314,8 +2322,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
     if (NS_WARN_IF(!isGeneratedContent)) {
       return Err(NS_ERROR_FAILURE);
     }
-    point = RawRangeBoundary::StartOfParent(
-        *point.GetContainer(), RangeBoundarySetBy::Ref, point.GetTreeKind());
+    point =
+        RawRangeBoundary(point.GetContainer(), nullptr, point.GetTreeKind());
     break;
   }
 
@@ -2323,8 +2331,8 @@ Result<RawRangeBoundary, nsresult> nsHTMLCopyEncoder::GetPromotedEndPoint(
     return aPoint;
   }
   
-  return RawRangeBoundary::After(*point.GetChildAtOffset(),
-                                 point.GetTreeKind());
+  return RawRangeBoundary(point.GetContainer(), point.GetChildAtOffset(),
+                          point.GetTreeKind());
 }
 
 bool nsHTMLCopyEncoder::IsMozBR(Element* aElement) {
