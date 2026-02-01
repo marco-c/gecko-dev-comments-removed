@@ -1418,17 +1418,7 @@ var FullPageTranslationsPanel = new (class {
 
 
   onLocationChange(browser) {
-    if (browser !== gBrowser.selectedBrowser) {
-      
-      
-      return;
-    }
-
     if (browser.currentURI.spec.startsWith("about:reader")) {
-      
-      this.buttonElements.button.hidden = true;
-    } else if (!TranslationsParent.AIFeature.isEnabled) {
-      
       
       this.buttonElements.button.hidden = true;
     }
@@ -1582,16 +1572,14 @@ var FullPageTranslationsPanel = new (class {
 
         if (
           
-          TranslationsParent.AIFeature.isEnabled &&
+          requestedLanguagePair ||
           
-          (requestedLanguagePair ||
-            
-            
-            
-            error ||
-            
-            (hasSupportedLanguage &&
-              TranslationsParent.getIsTranslationsEngineSupported()))
+          
+          
+          error ||
+          
+          (hasSupportedLanguage &&
+            TranslationsParent.getIsTranslationsEngineSupported())
         ) {
           
           const wasButtonHidden = button.hidden;

@@ -20,39 +20,6 @@ var gBrowserInit = {
   _firstContentWindowPaintDeferred: Promise.withResolvers(),
   idleTasksFinished: Promise.withResolvers(),
 
-  
-
-
-
-  _translationsEnabledStateObserver: {
-    observe(_subject, topic, data) {
-      if (topic !== "translations:enabled-state-changed") {
-        console.warn(`received unexpected topic: ${topic}`);
-        return;
-      }
-
-      
-      XULBrowserWindow._updateElementsForContentType();
-
-      if (data === "enabled") {
-        
-        
-        
-        for (const tab of gBrowser.tabs) {
-          try {
-            
-            tab.linkedBrowser?.browsingContext?.currentWindowGlobal?.getActor(
-              "Translations"
-            );
-          } catch {
-            
-            
-          }
-        }
-      }
-    },
-  },
-
   _setupFirstContentWindowPaintPromise() {
     let lastTransactionId = window.windowUtils.lastTransactionId;
     let layerTreeListener = () => {
@@ -249,14 +216,6 @@ var gBrowserInit = {
       "TranslationsParent:OfferTranslation",
       FullPageTranslationsPanel
     );
-    gBrowser.tabContainer.addEventListener("TabSelect", () => {
-      
-      
-      
-      if (!TranslationsParent.AIFeature.isEnabled) {
-        FullPageTranslationsPanel.buttonElements.button.hidden = true;
-      }
-    });
     gBrowser.addTabsProgressListener(FullPageTranslationsPanel);
 
     window.addEventListener("AppCommand", HandleAppCommandEvent, true);
@@ -460,11 +419,6 @@ var gBrowserInit = {
     Services.obs.addObserver(gXPInstallObserver, "addon-install-confirmation");
     Services.obs.addObserver(gKeywordURIFixup, "keyword-uri-fixup");
     Services.obs.addObserver(gLocaleChangeObserver, "intl:app-locales-changed");
-    TranslationsParent.ensurePrefObservers();
-    Services.obs.addObserver(
-      this._translationsEnabledStateObserver,
-      "translations:enabled-state-changed"
-    );
 
     BrowserOffline.init();
 
@@ -1208,10 +1162,6 @@ var gBrowserInit = {
       Services.obs.removeObserver(
         gLocaleChangeObserver,
         "intl:app-locales-changed"
-      );
-      Services.obs.removeObserver(
-        this._translationsEnabledStateObserver,
-        "translations:enabled-state-changed"
       );
 
       BrowserOffline.uninit();
