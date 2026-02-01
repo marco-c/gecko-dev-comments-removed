@@ -3783,6 +3783,14 @@ bool ScriptLoader::SaveToDiskCache(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIAsyncOutputStream> output;
   nsresult rv = aLoadedScript->mCacheEntry->OpenAlternativeOutputStream(
       BytecodeMimeTypeFor(aLoadedScript),
