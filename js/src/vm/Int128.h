@@ -60,143 +60,6 @@ class alignas(16) Uint128 final {
     return u1 * v1 + w2 + (w1 >> 32);
   }
 
-  
-
-
-
-  static constexpr std::pair<Uint128, Uint128> udivdi(const Uint128& u,
-                                                      const Uint128& v) {
-    MOZ_ASSERT(v != Uint128{});
-
-    
-    if (v.high == 0) {
-      
-      if (u.high == 0) {
-        
-        return {Uint128{u.low / v.low, 0}, Uint128{u.low % v.low, 0}};
-      }
-
-      
-      if (Uint128{u.high, 0} < v) {
-        auto [q, r] = divlu(u.high, u.low, v.low);
-        return {Uint128{q, 0}, Uint128{r, 0}};
-      }
-
-      
-
-      
-      auto [q1, r1] = divlu(0, u.high, v.low);
-
-      
-      auto [q0, r0] = divlu(r1, u.low, v.low);
-
-      
-      return {Uint128{q0, q1}, Uint128{r0, 0}};
-    }
-
-    
-
-    
-    auto n = mozilla::CountLeadingZeroes64(v.high);
-
-    
-    auto v1 = (v << n).high;
-
-    
-    auto u1 = u >> 1;
-
-    
-    auto [q1, r1] = divlu(u1.high, u1.low, v1);
-
-    
-    auto q0 = (Uint128{q1, 0} << n) >> 63;
-
-    
-    if (q0 != Uint128{0}) {
-      q0 -= Uint128{1};
-    }
-
-    
-    auto r0 = u - q0 * v;
-    if (r0 >= v) {
-      q0 += Uint128{1};
-      r0 -= v;
-    }
-
-    
-    return {q0, r0};
-  }
-
-  
-
-
-
-  static constexpr std::pair<uint64_t, uint64_t> divlu(uint64_t u1, uint64_t u0,
-                                                       uint64_t v) {
-    
-    constexpr uint64_t base = 4294967296;
-
-    
-    
-    if (u1 >= v) {
-      return {UINT64_MAX, UINT64_MAX};
-    }
-
-    
-    int64_t s = mozilla::CountLeadingZeroes64(v);
-
-    
-    v = v << s;
-
-    
-    
-    
-    uint64_t vn1 = v >> 32;
-    uint64_t vn0 = uint32_t(v);
-
-    
-    
-    
-    uint64_t un32 = (u1 << s) | ((u0 >> ((64 - s) & 63)) & (-s >> 63));
-    uint64_t un10 = u0 << s;
-
-    
-    
-    
-    uint64_t un1 = un10 >> 32;
-    uint64_t un0 = uint32_t(un10);
-
-    
-    uint64_t q1 = un32 / vn1;
-    uint64_t rhat = un32 - q1 * vn1;
-    while (q1 >= base || q1 * vn0 > base * rhat + un1) {
-      q1 -= 1;
-      rhat += vn1;
-      if (rhat >= base) {
-        break;
-      }
-    }
-
-    
-    uint64_t un21 = un32 * base + un1 - q1 * v;
-
-    
-    uint64_t q0 = un21 / vn1;
-    rhat = un21 - q0 * vn1;
-    while (q0 >= base || q0 * vn0 > base * rhat + un0) {
-      q0 -= 1;
-      rhat += vn1;
-      if (rhat >= base) {
-        break;
-      }
-    }
-
-    
-    uint64_t q = q1 * base + q0;
-    uint64_t r = (un21 * base + un0 - q0 * v) >> s;
-    return {q, r};
-  }
-
   static double toDouble(const Uint128& x, bool negative);
 
  public:
@@ -217,28 +80,14 @@ class alignas(16) Uint128 final {
   explicit constexpr Uint128(unsigned long long value)
       : Uint128(uint64_t(value), uint64_t(0)) {}
 
-  constexpr bool operator==(const Uint128& other) const {
-    return low == other.low && high == other.high;
-  }
-
-  constexpr bool operator<(const Uint128& other) const {
+  constexpr auto operator<=>(const Uint128& other) const {
     if (high == other.high) {
-      return low < other.low;
+      return low <=> other.low;
     }
-    return high < other.high;
+    return high <=> other.high;
   }
 
-  
-  constexpr bool operator!=(const Uint128& other) const {
-    return !(*this == other);
-  }
-  constexpr bool operator>(const Uint128& other) const { return other < *this; }
-  constexpr bool operator<=(const Uint128& other) const {
-    return !(other < *this);
-  }
-  constexpr bool operator>=(const Uint128& other) const {
-    return !(*this < other);
-  }
+  constexpr bool operator==(const Uint128&) const = default;
 
   explicit constexpr operator bool() const { return !(*this == Uint128{}); }
 
@@ -429,6 +278,144 @@ class alignas(16) Uint128 final {
     *this = *this >> shift;
     return *this;
   }
+
+ private:
+  
+
+
+
+  static constexpr std::pair<uint64_t, uint64_t> divlu(uint64_t u1, uint64_t u0,
+                                                       uint64_t v) {
+    
+    constexpr uint64_t base = 4294967296;
+
+    
+    
+    if (u1 >= v) {
+      return {UINT64_MAX, UINT64_MAX};
+    }
+
+    
+    int64_t s = mozilla::CountLeadingZeroes64(v);
+
+    
+    v = v << s;
+
+    
+    
+    
+    uint64_t vn1 = v >> 32;
+    uint64_t vn0 = uint32_t(v);
+
+    
+    
+    
+    uint64_t un32 = (u1 << s) | ((u0 >> ((64 - s) & 63)) & (-s >> 63));
+    uint64_t un10 = u0 << s;
+
+    
+    
+    
+    uint64_t un1 = un10 >> 32;
+    uint64_t un0 = uint32_t(un10);
+
+    
+    uint64_t q1 = un32 / vn1;
+    uint64_t rhat = un32 - q1 * vn1;
+    while (q1 >= base || q1 * vn0 > base * rhat + un1) {
+      q1 -= 1;
+      rhat += vn1;
+      if (rhat >= base) {
+        break;
+      }
+    }
+
+    
+    uint64_t un21 = un32 * base + un1 - q1 * v;
+
+    
+    uint64_t q0 = un21 / vn1;
+    rhat = un21 - q0 * vn1;
+    while (q0 >= base || q0 * vn0 > base * rhat + un0) {
+      q0 -= 1;
+      rhat += vn1;
+      if (rhat >= base) {
+        break;
+      }
+    }
+
+    
+    uint64_t q = q1 * base + q0;
+    uint64_t r = (un21 * base + un0 - q0 * v) >> s;
+    return {q, r};
+  }
+
+  
+
+
+
+  static constexpr std::pair<Uint128, Uint128> udivdi(const Uint128& u,
+                                                      const Uint128& v) {
+    MOZ_ASSERT(v != Uint128{});
+
+    
+    if (v.high == 0) {
+      
+      if (u.high == 0) {
+        
+        return {Uint128{u.low / v.low, 0}, Uint128{u.low % v.low, 0}};
+      }
+
+      
+      if (Uint128{u.high, 0} < v) {
+        auto [q, r] = divlu(u.high, u.low, v.low);
+        return {Uint128{q, 0}, Uint128{r, 0}};
+      }
+
+      
+
+      
+      auto [q1, r1] = divlu(0, u.high, v.low);
+
+      
+      auto [q0, r0] = divlu(r1, u.low, v.low);
+
+      
+      return {Uint128{q0, q1}, Uint128{r0, 0}};
+    }
+
+    
+
+    
+    auto n = mozilla::CountLeadingZeroes64(v.high);
+
+    
+    auto v1 = (v << n).high;
+
+    
+    auto u1 = u >> 1;
+
+    
+    auto [q1, r1] = divlu(u1.high, u1.low, v1);
+
+    
+    auto q0 = (Uint128{q1, 0} << n) >> 63;
+
+    
+    if (q0 != Uint128{0}) {
+      q0 -= Uint128{1};
+    }
+
+    
+    auto r0 = u - q0 * v;
+    if (r0 >= v) {
+      q0 += Uint128{1};
+      r0 -= v;
+    }
+
+    
+    return {q0, r0};
+  }
 };
 
 
@@ -482,46 +469,14 @@ class alignas(16) Int128 final {
   explicit constexpr Int128(unsigned long long value)
       : Int128(uint64_t(value), uint64_t(0)) {}
 
-  
-
-
-  constexpr std::pair<Int128, Int128> divrem(const Int128& divisor) const {
-    return divdi(*this, divisor);
-  }
-
-  
-
-
-  constexpr Uint128 abs() const {
-    if (*this >= Int128{}) {
-      return Uint128{low, high};
-    }
-    auto neg = -*this;
-    return Uint128{neg.low, neg.high};
-  }
-
-  constexpr bool operator==(const Int128& other) const {
-    return low == other.low && high == other.high;
-  }
-
-  constexpr bool operator<(const Int128& other) const {
+  constexpr auto operator<=>(const Int128& other) const {
     if (high == other.high) {
-      return low < other.low;
+      return low <=> other.low;
     }
-    return int64_t(high) < int64_t(other.high);
+    return int64_t(high) <=> int64_t(other.high);
   }
 
-  
-  constexpr bool operator!=(const Int128& other) const {
-    return !(*this == other);
-  }
-  constexpr bool operator>(const Int128& other) const { return other < *this; }
-  constexpr bool operator<=(const Int128& other) const {
-    return !(other < *this);
-  }
-  constexpr bool operator>=(const Int128& other) const {
-    return !(*this < other);
-  }
+  constexpr bool operator==(const Int128&) const = default;
 
   explicit constexpr operator bool() const { return !(*this == Int128{}); }
 
@@ -539,6 +494,24 @@ class alignas(16) Int128 final {
 
   explicit operator double() const {
     return Uint128::toDouble(abs(), *this < Int128{0});
+  }
+
+  
+
+
+  constexpr std::pair<Int128, Int128> divrem(const Int128& divisor) const {
+    return divdi(*this, divisor);
+  }
+
+  
+
+
+  constexpr Uint128 abs() const {
+    if (*this >= Int128{}) {
+      return Uint128{low, high};
+    }
+    auto neg = -*this;
+    return Uint128{neg.low, neg.high};
   }
 
   constexpr Int128 operator+(const Int128& other) const {
