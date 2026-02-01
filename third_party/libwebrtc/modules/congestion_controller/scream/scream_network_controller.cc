@@ -163,10 +163,9 @@ PacerConfig ScreamNetworkController::GetPacerConfig(
   const double kPacingRateFactor = 1.5;
   
   
-  return {
-      .data_window = kPacingRateFactor * target_rate * TimeDelta::Seconds(1),
-      .time_window = TimeDelta::Seconds(1),
-  };
+  return PacerConfig::Create(env_.clock().CurrentTime(),
+                             target_rate * kPacingRateFactor,
+                             DataRate::Zero());
 }
 
 }  

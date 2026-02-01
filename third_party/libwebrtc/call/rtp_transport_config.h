@@ -11,12 +11,12 @@
 #ifndef CALL_RTP_TRANSPORT_CONFIG_H_
 #define CALL_RTP_TRANSPORT_CONFIG_H_
 
-#include <optional>
 
 #include "api/environment/environment.h"
 #include "api/network_state_predictor.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
 #include "api/units/time_delta.h"
 
 namespace webrtc {
@@ -36,7 +36,7 @@ struct RtpTransportConfig {
   NetworkControllerFactoryInterface* network_controller_factory = nullptr;
 
   
-  std::optional<TimeDelta> pacer_burst_interval;
+  TimeDelta default_pacing_time_window = PacerConfig::kDefaultTimeInterval;
 };
 }  
 

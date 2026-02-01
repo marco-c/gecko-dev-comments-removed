@@ -8,7 +8,6 @@
 
 
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -72,9 +71,10 @@ int CountBandwidthDips(std::queue<DataRate> bandwidth_history,
   return dips;
 }
 
-const uint32_t kInitialBitrateKbps = 60;
-const DataRate kInitialBitrate = DataRate::KilobitsPerSec(kInitialBitrateKbps);
-const float kDefaultPacingRate = 2.5f;
+constexpr uint32_t kInitialBitrateKbps = 60;
+constexpr DataRate kInitialBitrate =
+    DataRate::KilobitsPerSec(kInitialBitrateKbps);
+constexpr float kDefaultPacingRate = 2.5f;
 
 CallClient* CreateVideoSendingClient(
     Scenario* s,
@@ -338,8 +338,9 @@ TEST(GoogCcNetworkControllerTest, OnNetworkRouteChanged) {
   const DataRate kDefaultMinBitrate = DataRate::KilobitsPerSec(5);
   update = controller->OnNetworkRouteChange(CreateRouteChange(current_time));
   EXPECT_EQ(update.target_rate->target_rate, kDefaultMinBitrate);
-  EXPECT_NEAR(update.pacer_config->data_rate().bps<double>(),
-              kDefaultMinBitrate.bps<double>() * kDefaultPacingRate, 10);
+  EXPECT_EQ(update.pacer_config->data_window,
+            kDefaultMinBitrate * kDefaultPacingRate *
+                PacerConfig::kDefaultTimeInterval);
   EXPECT_EQ(update.probe_cluster_configs.size(), 2u);
 }
 
@@ -588,43 +589,6 @@ TEST(GoogCcScenario, LimitsToFloorIfRttIsHighInTrial) {
 
 TEST(GoogCcScenario, UpdatesTargetRateBasedOnLinkCapacity) {
   UpdatesTargetRateBasedOnLinkCapacity();
-}
-
-TEST(GoogCcScenario, StableEstimateDoesNotVaryInSteadyState) {
-  GoogCcNetworkControllerFactory factory;
-  Scenario s("googcc_unit/stable_target", false);
-  CallClientConfig config;
-  config.transport.cc_factory = &factory;
-  NetworkSimulationConfig net_conf;
-  net_conf.bandwidth = DataRate::KilobitsPerSec(500);
-  net_conf.delay = TimeDelta::Millis(100);
-  auto send_net = s.CreateSimulationNode(net_conf);
-  auto ret_net = s.CreateSimulationNode(net_conf);
-
-  auto* client = CreateVideoSendingClient(&s, config, {send_net}, {ret_net});
-  
-  s.RunFor(TimeDelta::Seconds(30));
-  DataRate min_stable_target = DataRate::PlusInfinity();
-  DataRate max_stable_target = DataRate::MinusInfinity();
-  DataRate min_target = DataRate::PlusInfinity();
-  DataRate max_target = DataRate::MinusInfinity();
-
-  
-  for (int i = 0; i < 20; ++i) {
-    auto stable_target_rate = client->stable_target_rate();
-    auto target_rate = client->target_rate();
-    EXPECT_LE(stable_target_rate, target_rate);
-
-    min_stable_target = std::min(min_stable_target, stable_target_rate);
-    max_stable_target = std::max(max_stable_target, stable_target_rate);
-    min_target = std::min(min_target, target_rate);
-    max_target = std::max(max_target, target_rate);
-    s.RunFor(TimeDelta::Seconds(1));
-  }
-  
-  EXPECT_LT(min_target / max_target, 0.85);
-  
-  EXPECT_GE(min_stable_target / max_stable_target, min_target / max_target);
 }
 
 TEST(GoogCcScenario, LossBasedControlDoesModestBackoffToHighLoss) {

@@ -133,9 +133,11 @@ TEST(TaskQueuePacedSenderTest, PacesPackets) {
   
   static constexpr size_t kPacketsToSend = 42;
   SequenceChecker sequence_checker;
-  pacer.SetPacingRates(
+  pacer.SetConfig(PacerConfig::Create(
+      time_controller.GetClock()->CurrentTime(),
+      
       DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsToSend),
-      DataRate::Zero());
+      DataRate::Zero()));
   pacer.EnsureStarted();
   pacer.EnqueuePackets(
       GeneratePackets(RtpPacketMediaType::kVideo, kPacketsToSend));
@@ -171,16 +173,15 @@ TEST(TaskQueuePacedSenderTest, PacesPacketsWithBurst) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              PacingController::kMinSleepTime,
                              TaskQueuePacedSender::kNoPacketHoldback);
-  pacer.SetSendBurstInterval(
-      
-      TimeDelta::Seconds(0.5));
 
   
   static constexpr size_t kPacketsToSend = 42;
   SequenceChecker sequence_checker;
-  pacer.SetPacingRates(
+  pacer.SetConfig(PacerConfig::Create(
+      time_controller.GetClock()->CurrentTime(),
+      
       DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsToSend),
-      DataRate::Zero());
+      DataRate::Zero(), TimeDelta::Seconds(0.5)));
   pacer.EnsureStarted();
   pacer.EnqueuePackets(
       GeneratePackets(RtpPacketMediaType::kVideo, kPacketsToSend));
@@ -222,7 +223,9 @@ TEST(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
   const size_t kPacketsPerSecond = 5;
   const DataRate kPacingRate =
       DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsPerSecond);
-  pacer.SetPacingRates(kPacingRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
 
   
@@ -247,8 +250,11 @@ TEST(TaskQueuePacedSenderTest, ReschedulesProcessOnRateChange) {
         } else if (second_packet_time.IsInfinite()) {
           second_packet_time = time_controller.GetClock()->CurrentTime();
           
-          time_controller.GetMainThread()->PostTask(
-              [&] { pacer.SetPacingRates(2 * kPacingRate, DataRate::Zero()); });
+          time_controller.GetMainThread()->PostTask([&] {
+            pacer.SetConfig(PacerConfig::Create(
+                time_controller.GetClock()->CurrentTime(),
+                2 * kPacingRate, DataRate::Zero()));
+          });
         } else {
           third_packet_time = time_controller.GetClock()->CurrentTime();
         }
@@ -273,7 +279,9 @@ TEST(TaskQueuePacedSenderTest, SendsAudioImmediately) {
 
   const DataRate kPacingDataRate = DataRate::KilobitsPerSec(125);
 
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
 
   
@@ -297,14 +305,16 @@ TEST(TaskQueuePacedSenderTest, SleepsDuringCoalscingWindow) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              kCoalescingWindow,
                              TaskQueuePacedSender::kNoPacketHoldback);
-  pacer.SetSendBurstInterval(TimeDelta::Zero());
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
   const TimeDelta kPacketPacingTime = TimeDelta::Millis(1);
   const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
 
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero(),
+                                      TimeDelta::Zero()));
   pacer.EnsureStarted();
 
   
@@ -340,7 +350,9 @@ TEST(TaskQueuePacedSenderTest, ProbingOverridesCoalescingWindow) {
   const TimeDelta kPacketPacingTime = TimeDelta::Millis(1);
   const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
 
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
 
   
@@ -370,13 +382,15 @@ TEST(TaskQueuePacedSenderTest, SchedulesProbeAtSentTime) {
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              PacingController::kMinSleepTime,
                              TaskQueuePacedSender::kNoPacketHoldback);
-  pacer.SetSendBurstInterval(TimeDelta::Zero());
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
   const TimeDelta kPacketPacingTime = TimeDelta::Millis(4);
   const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero(),
+                                      TimeDelta::Zero()));
   pacer.EnsureStarted();
   EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
     return std::vector<std::unique_ptr<RtpPacketToSend>>();
@@ -447,7 +461,9 @@ TEST(TaskQueuePacedSenderTest, NoMinSleepTimeWhenProbing) {
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
   const TimeDelta kPacketPacingTime = TimeDelta::Millis(4);
   const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
   EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
     return std::vector<std::unique_ptr<RtpPacketToSend>>();
@@ -503,7 +519,6 @@ TEST(TaskQueuePacedSenderTest, PacketBasedCoalescing) {
   FieldTrials trials = CreateTestFieldTrials();
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              kFixedCoalescingWindow, kPacketBasedHoldback);
-  pacer.SetSendBurstInterval(TimeDelta::Zero());
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -514,7 +529,10 @@ TEST(TaskQueuePacedSenderTest, PacketBasedCoalescing) {
   
   ASSERT_GE(kFixedCoalescingWindow, kExpectedHoldbackWindow);
 
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero(),
+                                      TimeDelta::Zero()));
   EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
     return std::vector<std::unique_ptr<RtpPacketToSend>>();
   });
@@ -553,7 +571,6 @@ TEST(TaskQueuePacedSenderTest, FixedHoldBackHasPriorityOverPackets) {
   FieldTrials trials = CreateTestFieldTrials();
   TaskQueuePacedSender pacer(time_controller.GetClock(), &packet_router, trials,
                              kFixedCoalescingWindow, kPacketBasedHoldback);
-  pacer.SetSendBurstInterval(TimeDelta::Zero());
 
   
   const DataSize kPacketSize = DataSize::Bytes(kDefaultPacketSize);
@@ -564,7 +581,10 @@ TEST(TaskQueuePacedSenderTest, FixedHoldBackHasPriorityOverPackets) {
   
   ASSERT_LT(kFixedCoalescingWindow, kExpectedPacketHoldbackWindow);
 
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero(),
+                                      TimeDelta::Zero()));
   EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
     return std::vector<std::unique_ptr<RtpPacketToSend>>();
   });
@@ -607,7 +627,9 @@ TEST(TaskQueuePacedSenderTest, ProbingStopDuringSendLoop) {
   const TimeDelta kPacketPacingTime = TimeDelta::Millis(1);
   const DataRate kPacingDataRate = 2 * kPacketSize / kPacketPacingTime;
 
-  pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingDataRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
 
   EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
@@ -651,7 +673,9 @@ TEST(TaskQueuePacedSenderTest, PostedPacketsNotSendFromRemovePacketsForSsrc) {
 
   static constexpr DataRate kPacingRate =
       DataRate::BytesPerSec(kDefaultPacketSize * 10);
-  pacer.SetPacingRates(kPacingRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
 
   auto encoder_queue = time_controller.GetTaskQueueFactory()->CreateTaskQueue(
@@ -694,14 +718,16 @@ TEST(TaskQueuePacedSenderTest, Stats) {
   static constexpr size_t kPacketsToSend = 200;
   static constexpr DataRate kPacingRate =
       DataRate::BytesPerSec(kDefaultPacketSize * kPacketsToSend);
-  pacer.SetPacingRates(kPacingRate, DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                      kPacingRate,
+                                      DataRate::Zero()));
   pacer.EnsureStarted();
 
   
   static constexpr size_t kAllowedPacketsDeviation = 1;
   static constexpr DataSize kAllowedQueueSizeDeviation =
       DataSize::Bytes(kDefaultPacketSize * kAllowedPacketsDeviation) +
-      kPacingRate * PacingController::kDefaultBurstInterval;
+      kPacingRate * PacerConfig::kDefaultTimeInterval;
   static constexpr TimeDelta kAllowedQueueTimeDeviation =
       kAllowedQueueSizeDeviation / kPacingRate;
 
@@ -761,8 +787,10 @@ TEST(TaskQueuePacedSenderTest,
                              PacingController::kMinSleepTime,
                              TaskQueuePacedSender::kNoPacketHoldback);
   pacer.EnsureStarted();
-  pacer.SetPacingRates(DataRate::KilobitsPerSec(500),
-                       DataRate::Zero());
+  pacer.SetConfig(PacerConfig::Create(
+      time_controller.GetClock()->CurrentTime(),
+      DataRate::KilobitsPerSec(500),
+      DataRate::Zero(), TimeDelta::Zero()));
 
   bool send_packet_stack = false;
   EXPECT_CALL(packet_router, SendPacket)
@@ -772,8 +800,11 @@ TEST(TaskQueuePacedSenderTest,
         EXPECT_FALSE(send_packet_stack);
         send_packet_stack = true;
         absl::Cleanup cleanup = [&] { send_packet_stack = false; };
-        pacer.SetPacingRates(DataRate::KilobitsPerSec(1000),
-                             DataRate::Zero());
+        pacer.SetConfig(
+            PacerConfig::Create(time_controller.GetClock()->CurrentTime(),
+                                DataRate::KilobitsPerSec(1000),
+                                DataRate::Zero(),
+                                TimeDelta::Zero()));
       });
   pacer.EnqueuePackets(
       GeneratePackets(RtpPacketMediaType::kVideo, 2));

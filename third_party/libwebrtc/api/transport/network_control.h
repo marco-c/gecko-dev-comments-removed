@@ -49,6 +49,10 @@ struct NetworkControllerConfig {
   
   
   StreamsConfig stream_based_config;
+  
+  
+  
+  TimeDelta default_pacing_time_window = PacerConfig::kDefaultTimeInterval;
 };
 
 

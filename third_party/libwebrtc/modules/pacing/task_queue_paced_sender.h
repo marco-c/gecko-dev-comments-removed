@@ -24,7 +24,6 @@
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/network_types.h"
-#include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -59,11 +58,6 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   ~TaskQueuePacedSender() override;
 
   
-  
-  
-  void SetSendBurstInterval(TimeDelta burst_interval);
-
-  
   void SetAllowProbeWithoutMediaPacket(bool allow);
 
   
@@ -92,7 +86,7 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   void SetCongested(bool congested) override;
 
   
-  void SetPacingRates(DataRate pacing_rate, DataRate padding_rate) override;
+  void SetConfig(const PacerConfig& pacer_config) override;
 
   
   

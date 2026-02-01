@@ -219,14 +219,26 @@ struct RTC_EXPORT NetworkEstimate {
 
 
 struct RTC_EXPORT PacerConfig {
+  static constexpr TimeDelta kDefaultTimeInterval = TimeDelta::Millis(40);
+  static PacerConfig Create(Timestamp at_time,
+                            DataRate send_rate,
+                            DataRate pad_rate,
+                            TimeDelta time_window = kDefaultTimeInterval);
+
   Timestamp at_time = Timestamp::PlusInfinity();
+  
+  
+  
   
   DataSize data_window = DataSize::Infinity();
   TimeDelta time_window = TimeDelta::PlusInfinity();
+  TimeDelta rate_window() const {
+    return time_window.IsZero() ? TimeDelta::Seconds(1) : time_window;
+  }
   
   DataSize pad_window = DataSize::Zero();
-  DataRate data_rate() const { return data_window / time_window; }
-  DataRate pad_rate() const { return pad_window / time_window; }
+  DataRate data_rate() const { return data_window / rate_window(); }
+  DataRate pad_rate() const { return pad_window / rate_window(); }
 };
 
 struct RTC_EXPORT ProbeClusterConfig {
