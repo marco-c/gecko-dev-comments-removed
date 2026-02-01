@@ -117,12 +117,13 @@ void SharedThreadPool::InitStatics() {
 }
 
 already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
-    const nsCString& aName, uint32_t aThreadLimit) {
+    StaticString aName, uint32_t aThreadLimit) {
   StaticMutexAutoLock lock(sPoolsMutex);
   MOZ_ASSERT(sPools);
 
+  nsCString name(aName);
   return sPools->WithEntryHandle(
-      aName, [&](auto&& entry) -> already_AddRefed<SharedThreadPool> {
+      name, [&](auto&& entry) -> already_AddRefed<SharedThreadPool> {
         RefPtr<SharedThreadPool> pool;
         if (entry) {
           pool = entry.Data();
@@ -130,7 +131,7 @@ already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
             NS_WARNING("Failed to set limits on thread pool");
           }
           STP_LOG(LogLevel::Debug, "Existing {} found for {}",
-                  fmt::ptr(pool.get()), aName);
+                  fmt::ptr(pool.get()), name);
         } else {
           sPoolsMutex.AssertCurrentThreadOwns();
           if (sPoolsShutdownStarted) {
@@ -138,18 +139,8 @@ already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
             return do_AddRef(new SharedThreadPool(nullptr));
           }
 
-          
-          
-          
-          
-          
-          
-          
-          
-          MOZ_DIAGNOSTIC_ASSERT(sPools->Count() < 100);
-
           nsCOMPtr<nsIThreadPool> threadPool(
-              CreateThreadPool(aName, aThreadLimit));
+              CreateThreadPool(name, aThreadLimit));
           if (NS_WARN_IF(!threadPool)) {
             return do_AddRef(new SharedThreadPool(nullptr));
           }
@@ -157,7 +148,7 @@ already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
           
           entry.Insert(pool.get());
           STP_LOG(LogLevel::Debug, "New {} created for {}",
-                  fmt::ptr(pool.get()), aName);
+                  fmt::ptr(pool.get()), name);
         }
 
         return pool.forget();

@@ -36,16 +36,12 @@ namespace mozilla {
 
 
 
-
-
-
-
 class SharedThreadPool final : public nsIThreadPool {
  public:
   
   
   
-  static already_AddRefed<SharedThreadPool> Get(const nsCString& aName,
+  static already_AddRefed<SharedThreadPool> Get(StaticString aName,
                                                 uint32_t aThreadLimit = 4);
 
   NS_DECL_THREADSAFE_ISUPPORTS
