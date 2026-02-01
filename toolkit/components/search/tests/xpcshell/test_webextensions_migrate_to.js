@@ -16,13 +16,13 @@ add_setup(async function () {
 
   await promiseSaveSettingsData(data);
 
-  await SearchService.init();
+  await Services.search.init();
 
   
   
   
-  let oldFunc = SearchService.wrappedJSObject.addEnginesFromExtension;
-  SearchService.wrappedJSObject.addEnginesFromExtension = () => {};
+  let oldFunc = Services.search.wrappedJSObject.addEnginesFromExtension;
+  Services.search.wrappedJSObject.addEnginesFromExtension = () => {};
 
   
   await SearchTestUtils.installSearchExtension({
@@ -31,35 +31,35 @@ add_setup(async function () {
     search_url: "https://example.com/",
   });
 
-  SearchService.wrappedJSObject.addEnginesFromExtension = oldFunc;
+  Services.search.wrappedJSObject.addEnginesFromExtension = oldFunc;
 });
 
 add_task(async function test_migrateLegacyEngineDifferentName() {
-  await SearchService.init();
+  await Services.search.init();
 
-  let engine = SearchService.getEngineByName("simple");
+  let engine = Services.search.getEngineByName("simple");
   Assert.ok(engine, "Should have the legacy add-on engine.");
 
   
   
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
-  engine = SearchService.getEngineByName("simple search");
+  engine = Services.search.getEngineByName("simple search");
   Assert.ok(engine, "Should have the WebExtension engine.");
 
-  await SearchService.runBackgroundChecks();
+  await Services.search.runBackgroundChecks();
 
-  engine = SearchService.getEngineByName("simple");
+  engine = Services.search.getEngineByName("simple");
   Assert.ok(!engine, "Should have removed the legacy add-on engine");
 
-  engine = SearchService.getEngineByName("simple search");
+  engine = Services.search.getEngineByName("simple search");
   Assert.ok(engine, "Should have kept the WebExtension engine.");
 
   Assert.equal(
-    (await SearchService.getDefault()).name,
+    (await Services.search.getDefault()).name,
     engine.name,
     "Should have switched to the WebExtension engine as default."
   );

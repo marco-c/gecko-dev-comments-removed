@@ -73,7 +73,7 @@ add_setup(async () => {
 
 add_task(async function test_remote_override() {
   
-  let defaultEngine = SearchService.defaultEngine;
+  let defaultEngine = Services.search.defaultEngine;
   Assert.equal(
     defaultEngine.id,
     "override",

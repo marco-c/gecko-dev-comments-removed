@@ -188,7 +188,7 @@ async function compareCounts(clickCallback) {
   
   
 
-  let engine = await SearchService.getDefault();
+  let engine = await Services.search.getDefault();
 
   clearSAPTelemetry();
 

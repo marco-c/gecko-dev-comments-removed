@@ -36,7 +36,7 @@ const YELP_MERINO_SINGLE = [
 
 add_setup(async function init() {
   
-  await SearchService.init();
+  await Services.search.init();
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({

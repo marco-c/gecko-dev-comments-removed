@@ -65,7 +65,7 @@ add_setup(async function () {
   
   
   SearchTestUtils.setRemoteSettingsConfig(CONFIG_V2);
-  await SearchService.init();
+  await Services.search.init();
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
     prefs: [

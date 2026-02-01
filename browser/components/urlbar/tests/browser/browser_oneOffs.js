@@ -29,7 +29,7 @@ add_setup(async function () {
   engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
   });
-  await SearchService.moveEngine(engine, 0);
+  await Services.search.moveEngine(engine, 0);
 
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -297,8 +297,8 @@ add_task(async function editedView() {
 
 add_task(async function searchWith() {
   
-  let oldDefaultEngine = await SearchService.getDefault();
-  await SearchService.setDefault(
+  let oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -316,7 +316,7 @@ add_task(async function searchWith() {
 
   Assert.equal(
     result.displayed.action,
-    "Search with " + (await SearchService.getDefault()).name,
+    "Search with " + (await Services.search.getDefault()).name,
     "Sanity check: first result's action text"
   );
 
@@ -328,7 +328,7 @@ add_task(async function searchWith() {
   let engineName = oneOffSearchButtons.selectedButton.engine.name;
   Assert.notEqual(
     engineName,
-    (await SearchService.getDefault()).name,
+    (await Services.search.getDefault()).name,
     "Sanity check: Second one-off engine should not be the current engine"
   );
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
@@ -360,7 +360,7 @@ add_task(async function searchWith() {
   engineName = oneOffSearchButtons.selectedButton.engine.name;
   Assert.notEqual(
     engineName,
-    (await SearchService.getDefault()).name,
+    (await Services.search.getDefault()).name,
     "Sanity check: Second one-off engine should not be the current engine"
   );
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
@@ -372,7 +372,7 @@ add_task(async function searchWith() {
   );
 
   await SpecialPowers.popPrefEnv();
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     oldDefaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -450,8 +450,8 @@ add_task(async function oneOffReturn() {
 add_task(async function allOneOffsHiddenExceptCurrentEngine() {
   
   
-  let defaultEngine = await SearchService.getDefault();
-  let engines = (await SearchService.getVisibleEngines()).filter(
+  let defaultEngine = await Services.search.getDefault();
+  let engines = (await Services.search.getVisibleEngines()).filter(
     e => e.name != defaultEngine.name
   );
   await SpecialPowers.pushPrefEnv({
@@ -719,12 +719,12 @@ add_task(async function avoidWillHideRace() {
   await UrlbarTestUtils.promisePopupClose(window);
 
   info("Hide all engines but the test engine.");
-  let oldDefaultEngine = await SearchService.getDefault();
-  await SearchService.setDefault(
+  let oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
-  let engines = (await SearchService.getVisibleEngines()).filter(
+  let engines = (await Services.search.getVisibleEngines()).filter(
     e => e.name != engine.name
   );
   await SpecialPowers.pushPrefEnv({
@@ -784,7 +784,7 @@ add_task(async function avoidWillHideRace() {
   await UrlbarTestUtils.promisePopupClose(window);
 
   await SpecialPowers.popPrefEnv();
-  await SearchService.setDefault(
+  await Services.search.setDefault(
     oldDefaultEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -887,7 +887,7 @@ add_task(async function allLocalShortcutsHidden() {
 
 
 add_task(async function localShortcutsShownWhenEnginesHidden() {
-  let engines = await SearchService.getVisibleEngines();
+  let engines = await Services.search.getVisibleEngines();
 
   engines.forEach(e => {
     e.hideOneOffButton = true;

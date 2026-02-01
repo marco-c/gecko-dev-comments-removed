@@ -36,13 +36,13 @@ add_task(async function run_test() {
 
   await promiseSaveSettingsData(data);
 
-  await SearchService.init();
+  await Services.search.init();
 
   
-  let engine = SearchService.getEngineByName("Test search engine");
+  let engine = Services.search.getEngineByName("Test search engine");
   Assert.notEqual(engine, null, "Should have found the engine");
 
   
-  await SearchService.removeEngine(engine);
+  await Services.search.removeEngine(engine);
   Assert.ok(!file.exists(), "Should have removed the file.");
 });

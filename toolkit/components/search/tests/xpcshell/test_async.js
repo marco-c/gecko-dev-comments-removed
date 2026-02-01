@@ -9,22 +9,22 @@ add_setup(async function () {
 });
 
 add_task(async function test_async() {
-  Assert.ok(!SearchService.isInitialized);
+  Assert.ok(!Services.search.isInitialized);
 
-  let aStatus = await SearchService.init();
+  let aStatus = await Services.search.init();
   Assert.ok(Components.isSuccessCode(aStatus));
-  Assert.ok(SearchService.isInitialized);
+  Assert.ok(Services.search.isInitialized);
 
   
-  let engines = await SearchService.getEngines();
+  let engines = await Services.search.getEngines();
   Assert.equal(engines.length, 2);
 
   
-  let engine = SearchService.getEngineByName("engine-1");
+  let engine = Services.search.getEngineByName("engine-1");
   Assert.notEqual(engine, null);
   Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
 
-  engine = SearchService.getEngineByName("engine-2");
+  engine = Services.search.getEngineByName("engine-2");
   Assert.notEqual(engine, null);
   Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
 

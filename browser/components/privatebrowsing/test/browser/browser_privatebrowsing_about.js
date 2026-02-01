@@ -3,7 +3,6 @@
 
 
 ChromeUtils.defineESModuleGetters(this, {
-  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -48,10 +47,10 @@ add_setup(async function () {
     ],
   });
 
-  const originalPrivateDefault = await SearchService.getDefaultPrivate();
+  const originalPrivateDefault = await Services.search.getDefaultPrivate();
   
-  const privateEngine = await SearchService.getEngineByName("DuckDuckGo");
-  await SearchService.setDefaultPrivate(
+  const privateEngine = await Services.search.getEngineByName("DuckDuckGo");
+  await Services.search.setDefaultPrivate(
     privateEngine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
@@ -59,7 +58,7 @@ add_setup(async function () {
   expectedIconURL = await privateEngine.getIconURL();
 
   registerCleanupFunction(async () => {
-    await SearchService.setDefaultPrivate(
+    await Services.search.setDefaultPrivate(
       originalPrivateDefault,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );

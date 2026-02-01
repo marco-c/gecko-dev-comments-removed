@@ -115,7 +115,7 @@ add_task(async function setup() {
   
   
   
-  SearchService.wrappedJSObject.errorToThrowInTest.type = "Settings";
+  Services.search.wrappedJSObject.errorToThrowInTest.type = "Settings";
 
   
   

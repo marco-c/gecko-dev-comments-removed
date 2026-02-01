@@ -4,9 +4,6 @@
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
-const { SearchService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
-);
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );
@@ -148,9 +145,9 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
 
   
   if (reInitSearchService) {
-    SearchService.wrappedJSObject.reset();
+    Services.search.wrappedJSObject.reset();
   }
-  await SearchService.init();
+  await Services.search.init();
   await promiseNextTick();
 
   
@@ -212,21 +209,21 @@ async function checkDefaultSearch(privateOn, reInitSearchService) {
     
     
     
-    const engine = await SearchService.getEngineByName(
+    const engine = await Services.search.getEngineByName(
       "telemetrySearchIdentifier"
     );
     engine.hidden = false;
-    await SearchService.setDefault(
+    await Services.search.setDefault(
       engine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
-    await SearchService.setDefaultPrivate(
-      SearchService.getEngineByName(SEARCH_ENGINE_ID),
+    await Services.search.setDefaultPrivate(
+      Services.search.getEngineByName(SEARCH_ENGINE_ID),
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   } else {
-    await SearchService.setDefault(
-      SearchService.getEngineByName(SEARCH_ENGINE_ID),
+    await Services.search.setDefault(
+      Services.search.getEngineByName(SEARCH_ENGINE_ID),
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
     );
   }
@@ -293,8 +290,8 @@ add_task(async function test_defaultSearchEngine() {
   const SEARCH_ENGINE_ID = "telemetry_default";
   const EXPECTED_SEARCH_ENGINE = "other-" + SEARCH_ENGINE_ID;
   
-  await SearchService.setDefault(
-    SearchService.getEngineByName(SEARCH_ENGINE_ID),
+  await Services.search.setDefault(
+    Services.search.getEngineByName(SEARCH_ENGINE_ID),
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
@@ -347,8 +344,8 @@ add_task(async function test_defaultSearchEngine_paramsChanged() {
       resolve
     );
   });
-  let engine = SearchService.getEngineByName("TestEngine");
-  await SearchService.setDefault(
+  let engine = Services.search.getEngineByName("TestEngine");
+  await Services.search.setDefault(
     engine,
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );

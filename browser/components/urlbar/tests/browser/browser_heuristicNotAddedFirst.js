@@ -15,7 +15,7 @@ add_task(async function slowHeuristicSelected() {
   
   
   
-  let engine = await SearchService.getDefault();
+  let engine = await Services.search.getDefault();
   let heuristicResult = new UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -73,7 +73,7 @@ add_task(async function oneOffRemainsSelected() {
   
   
   
-  let engine = await SearchService.getDefault();
+  let engine = await Services.search.getDefault();
   let heuristicResult = new UrlbarResult({
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,

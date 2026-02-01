@@ -30,7 +30,7 @@ add_setup(async function () {
     set: [["test.wait300msAfterTabSwitch", true]],
   });
   await promiseSyncReady();
-  await SearchService.init();
+  await Services.search.init();
   
   gSync.init();
   sinon

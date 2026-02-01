@@ -23,7 +23,7 @@ add_setup(async function () {
 
 add_task(async function ctrl_open() {
   let [expectedSearchUrl] = UrlbarUtils.getSearchQueryUrl(
-    SearchService.defaultEngine,
+    Services.search.defaultEngine,
     SEARCH_STRING
   );
   

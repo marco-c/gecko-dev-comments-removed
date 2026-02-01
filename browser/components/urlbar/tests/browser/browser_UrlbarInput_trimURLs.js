@@ -62,7 +62,7 @@ add_task(async function () {
 
   
   
-  await SearchService.init();
+  await Services.search.init();
 
   Services.prefs.setBoolPref(PREF_TRIM_URLS, true);
 

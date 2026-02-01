@@ -25,8 +25,8 @@ add_setup(async function () {
   });
 
   
-  let engineOneOff = SearchService.getEngineByName("MozSearch2");
-  await SearchService.moveEngine(engineOneOff, 0);
+  let engineOneOff = Services.search.getEngineByName("MozSearch2");
+  await Services.search.moveEngine(engineOneOff, 0);
 
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
