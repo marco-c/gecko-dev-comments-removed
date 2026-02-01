@@ -551,7 +551,8 @@ png_convert_from_time_t(png_timep ptime, time_t ttime)
 
 PNG_FUNCTION(png_structp,PNGAPI
 png_create_write_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
-    png_error_ptr error_fn, png_error_ptr warn_fn),PNG_ALLOCATED)
+    png_error_ptr error_fn, png_error_ptr warn_fn),
+    PNG_ALLOCATED)
 {
 #ifndef PNG_USER_MEM_SUPPORTED
    png_structrp png_ptr = png_create_png_struct(user_png_ver, error_ptr,
@@ -565,7 +566,8 @@ png_create_write_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
 PNG_FUNCTION(png_structp,PNGAPI
 png_create_write_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
     png_error_ptr error_fn, png_error_ptr warn_fn, png_voidp mem_ptr,
-    png_malloc_ptr malloc_fn, png_free_ptr free_fn),PNG_ALLOCATED)
+    png_malloc_ptr malloc_fn, png_free_ptr free_fn),
+    PNG_ALLOCATED)
 {
    png_structrp png_ptr = png_create_png_struct(user_png_ver, error_ptr,
        error_fn, warn_fn, mem_ptr, malloc_fn, free_fn);
@@ -1385,8 +1387,8 @@ png_set_write_status_fn(png_structrp png_ptr, png_write_status_ptr write_row_fn)
 
 #ifdef PNG_WRITE_USER_TRANSFORM_SUPPORTED
 void PNGAPI
-png_set_write_user_transform_fn(png_structrp png_ptr, png_user_transform_ptr
-    write_user_transform_fn)
+png_set_write_user_transform_fn(png_structrp png_ptr,
+    png_user_transform_ptr write_user_transform_fn)
 {
    png_debug(1, "in png_set_write_user_transform_fn");
 
@@ -1402,7 +1404,7 @@ png_set_write_user_transform_fn(png_structrp png_ptr, png_user_transform_ptr
 #ifdef PNG_INFO_IMAGE_SUPPORTED
 void PNGAPI
 png_write_png(png_structrp png_ptr, png_inforp info_ptr,
-    int transforms, voidp params)
+    int transforms, png_voidp params)
 {
    png_debug(1, "in png_write_png");
 
@@ -1568,17 +1570,19 @@ png_image_write_init(png_imagep image)
 typedef struct
 {
    
-   png_imagep      image;
+   png_imagep image;
    png_const_voidp buffer;
-   png_int_32      row_stride;
+   png_int_32 row_stride;
    png_const_voidp colormap;
-   int             convert_to_8bit;
+   int convert_to_8bit;
+
    
    png_const_voidp first_row;
-   ptrdiff_t       row_bytes;
-   png_voidp       local_row;
+   png_voidp local_row;
+   ptrdiff_t row_step;
+
    
-   png_bytep        memory;
+   png_bytep memory;
    png_alloc_size_t memory_bytes; 
    png_alloc_size_t output_bytes; 
 } png_image_write_control;
@@ -1685,7 +1689,7 @@ png_write_image_16bit(png_voidp argument)
       }
 
       png_write_row(png_ptr, png_voidcast(png_const_bytep, display->local_row));
-      input_row += (png_uint_16)display->row_bytes/(sizeof (png_uint_16));
+      input_row += display->row_step / 2;
    }
 
    return 1;
@@ -1811,7 +1815,7 @@ png_write_image_8bit(png_voidp argument)
 
          png_write_row(png_ptr, png_voidcast(png_const_bytep,
              display->local_row));
-         input_row += (png_uint_16)display->row_bytes/(sizeof (png_uint_16));
+         input_row += display->row_step / 2;
       } 
    }
 
@@ -1836,7 +1840,7 @@ png_write_image_8bit(png_voidp argument)
          }
 
          png_write_row(png_ptr, output_row);
-         input_row += (png_uint_16)display->row_bytes/(sizeof (png_uint_16));
+         input_row += display->row_step / 2;
       }
    }
 
@@ -2152,16 +2156,16 @@ png_image_write_main(png_voidp argument)
 
    {
       png_const_bytep row = png_voidcast(png_const_bytep, display->buffer);
-      ptrdiff_t row_bytes = display->row_stride;
+      ptrdiff_t row_step = display->row_stride;
 
       if (linear != 0)
-         row_bytes *= (sizeof (png_uint_16));
+         row_step *= 2;
 
-      if (row_bytes < 0)
-         row += (image->height-1) * (-row_bytes);
+      if (row_step < 0)
+         row += (image->height-1) * (-row_step);
 
       display->first_row = row;
-      display->row_bytes = row_bytes;
+      display->row_step = row_step;
    }
 
    
@@ -2208,13 +2212,13 @@ png_image_write_main(png_voidp argument)
    else
    {
       png_const_bytep row = png_voidcast(png_const_bytep, display->first_row);
-      ptrdiff_t row_bytes = display->row_bytes;
+      ptrdiff_t row_step = display->row_step;
       png_uint_32 y = image->height;
 
       for (; y > 0; --y)
       {
          png_write_row(png_ptr, row);
-         row += row_bytes;
+         row += row_step;
       }
    }
 

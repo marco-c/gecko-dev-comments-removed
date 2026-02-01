@@ -487,10 +487,10 @@ png_free_buffer_list(png_structrp png_ptr, png_compression_bufferp *listp)
 
 typedef struct
 {
-   png_const_bytep      input;        
-   png_alloc_size_t     input_len;    
-   png_uint_32          output_len;   
-   png_byte             output[1024]; 
+   png_const_bytep input;      
+   png_alloc_size_t input_len; 
+   png_uint_32 output_len;     
+   png_byte output[1024];      
 } compression_state;
 
 static void

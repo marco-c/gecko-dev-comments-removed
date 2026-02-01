@@ -1089,15 +1089,17 @@ extern "C" {
 
 
 #define PNG_UNEXPECTED_ZLIB_RETURN (-7)
-PNG_INTERNAL_FUNCTION(void, png_zstream_error,(png_structrp png_ptr, int ret),
+PNG_INTERNAL_FUNCTION(void, png_zstream_error,
+   (png_structrp png_ptr, int ret),
    PNG_EMPTY);
    
 
 
 
 #ifdef PNG_WRITE_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_free_buffer_list,(png_structrp png_ptr,
-   png_compression_bufferp *list),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_free_buffer_list,
+   (png_structrp png_ptr, png_compression_bufferp *list),
+   PNG_EMPTY);
    
 #endif
 
@@ -1109,22 +1111,25 @@ PNG_INTERNAL_FUNCTION(void,png_free_buffer_list,(png_structrp png_ptr,
    defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)) || \
    (defined(PNG_sCAL_SUPPORTED) && \
    defined(PNG_FLOATING_ARITHMETIC_SUPPORTED))
-PNG_INTERNAL_FUNCTION(png_fixed_point,png_fixed,(png_const_structrp png_ptr,
-   double fp, png_const_charp text),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_fixed_point, png_fixed,
+   (png_const_structrp png_ptr, double fp, png_const_charp text),
+   PNG_EMPTY);
 #endif
 
 #if defined(PNG_FLOATING_POINT_SUPPORTED) && \
    !defined(PNG_FIXED_POINT_MACRO_SUPPORTED) && \
    (defined(PNG_cLLI_SUPPORTED) || defined(PNG_mDCV_SUPPORTED))
-PNG_INTERNAL_FUNCTION(png_uint_32,png_fixed_ITU,(png_const_structrp png_ptr,
-   double fp, png_const_charp text),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_uint_32, png_fixed_ITU,
+   (png_const_structrp png_ptr, double fp, png_const_charp text),
+   PNG_EMPTY);
 #endif
 
 
 
 
-PNG_INTERNAL_FUNCTION(int,png_user_version_check,(png_structrp png_ptr,
-   png_const_charp user_png_ver),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_user_version_check,
+   (png_structrp png_ptr, png_const_charp user_png_ver),
+   PNG_EMPTY);
 
 #ifdef PNG_READ_SUPPORTED 
 
@@ -1149,24 +1154,28 @@ PNG_INTERNAL_FUNCTION(int,png_user_version_check,(png_structrp png_ptr,
 
 
 
-PNG_INTERNAL_FUNCTION(png_voidp,png_malloc_base,(png_const_structrp png_ptr,
-   png_alloc_size_t size),PNG_ALLOCATED);
+PNG_INTERNAL_FUNCTION(png_voidp, png_malloc_base,
+   (png_const_structrp png_ptr, png_alloc_size_t size),
+   PNG_ALLOCATED);
 
 #if defined(PNG_TEXT_SUPPORTED) || defined(PNG_sPLT_SUPPORTED) ||\
    defined(PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED)
 
 
 
-PNG_INTERNAL_FUNCTION(png_voidp,png_malloc_array,(png_const_structrp png_ptr,
-   int nelements, size_t element_size),PNG_ALLOCATED);
+PNG_INTERNAL_FUNCTION(png_voidp, png_malloc_array,
+   (png_const_structrp png_ptr, int nelements, size_t element_size),
+   PNG_ALLOCATED);
 
 
 
 
 
-PNG_INTERNAL_FUNCTION(png_voidp,png_realloc_array,(png_const_structrp png_ptr,
-   png_const_voidp array, int old_elements, int add_elements,
-   size_t element_size),PNG_ALLOCATED);
+PNG_INTERNAL_FUNCTION(png_voidp, png_realloc_array,
+   (png_const_structrp png_ptr,
+    png_const_voidp array, int old_elements, int add_elements,
+    size_t element_size),
+   PNG_ALLOCATED);
 #endif 
 
 
@@ -1175,84 +1184,106 @@ PNG_INTERNAL_FUNCTION(png_voidp,png_realloc_array,(png_const_structrp png_ptr,
 
 
 
-PNG_INTERNAL_FUNCTION(png_structp,png_create_png_struct,
-   (png_const_charp user_png_ver, png_voidp error_ptr, png_error_ptr error_fn,
-    png_error_ptr warn_fn, png_voidp mem_ptr, png_malloc_ptr malloc_fn,
-    png_free_ptr free_fn),PNG_ALLOCATED);
-
-
-PNG_INTERNAL_FUNCTION(void,png_destroy_png_struct,(png_structrp png_ptr),
-   PNG_EMPTY);
-
-
-PNG_INTERNAL_FUNCTION(void,png_free_jmpbuf,(png_structrp png_ptr),PNG_EMPTY);
-
-
-PNG_INTERNAL_FUNCTION(voidpf,png_zalloc,(voidpf png_ptr, uInt items, uInt size),
+PNG_INTERNAL_FUNCTION(png_structp, png_create_png_struct,
+   (png_const_charp user_png_ver,
+    png_voidp error_ptr, png_error_ptr error_fn, png_error_ptr warn_fn,
+    png_voidp mem_ptr, png_malloc_ptr malloc_fn, png_free_ptr free_fn),
    PNG_ALLOCATED);
 
 
-PNG_INTERNAL_FUNCTION(void,png_zfree,(voidpf png_ptr, voidpf ptr),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_destroy_png_struct,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+
+
+PNG_INTERNAL_FUNCTION(void, png_free_jmpbuf,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+
+
+PNG_INTERNAL_FUNCTION(voidpf, png_zalloc,
+   (voidpf png_ptr, uInt items, uInt size),
+   PNG_ALLOCATED);
+
+
+PNG_INTERNAL_FUNCTION(void, png_zfree,
+   (voidpf png_ptr, voidpf ptr),
+   PNG_EMPTY);
 
 
 
 
 
 
-PNG_INTERNAL_FUNCTION(void PNGCBAPI,png_default_read_data,(png_structp png_ptr,
-    png_bytep data, size_t length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void PNGCBAPI, png_default_read_data,
+   (png_structp png_ptr, png_bytep data, size_t length),
+   PNG_EMPTY);
 
 #ifdef PNG_PROGRESSIVE_READ_SUPPORTED
-PNG_INTERNAL_FUNCTION(void PNGCBAPI,png_push_fill_buffer,(png_structp png_ptr,
-    png_bytep buffer, size_t length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void PNGCBAPI, png_push_fill_buffer,
+   (png_structp png_ptr, png_bytep buffer, size_t length),
+   PNG_EMPTY);
 #endif
 
-PNG_INTERNAL_FUNCTION(void PNGCBAPI,png_default_write_data,(png_structp png_ptr,
-    png_bytep data, size_t length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void PNGCBAPI, png_default_write_data,
+   (png_structp png_ptr, png_bytep data, size_t length),
+   PNG_EMPTY);
 
 #ifdef PNG_WRITE_FLUSH_SUPPORTED
 #  ifdef PNG_STDIO_SUPPORTED
-PNG_INTERNAL_FUNCTION(void PNGCBAPI,png_default_flush,(png_structp png_ptr),
+PNG_INTERNAL_FUNCTION(void PNGCBAPI, png_default_flush,
+   (png_structp png_ptr),
    PNG_EMPTY);
 #  endif
 #endif
 
 
-PNG_INTERNAL_FUNCTION(void,png_reset_crc,(png_structrp png_ptr),PNG_EMPTY);
-
-
-PNG_INTERNAL_FUNCTION(void,png_write_data,(png_structrp png_ptr,
-    png_const_bytep data, size_t length),PNG_EMPTY);
-
-
-PNG_INTERNAL_FUNCTION(void,png_read_sig,(png_structrp png_ptr,
-   png_inforp info_ptr),PNG_EMPTY);
-
-
-PNG_INTERNAL_FUNCTION(png_uint_32,png_read_chunk_header,(png_structrp png_ptr),
+PNG_INTERNAL_FUNCTION(void, png_reset_crc,
+   (png_structrp png_ptr),
    PNG_EMPTY);
 
 
-PNG_INTERNAL_FUNCTION(void,png_read_data,(png_structrp png_ptr, png_bytep data,
-    size_t length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_data,
+   (png_structrp png_ptr, png_const_bytep data, size_t length),
+   PNG_EMPTY);
 
 
-PNG_INTERNAL_FUNCTION(void,png_crc_read,(png_structrp png_ptr, png_bytep buf,
-    png_uint_32 length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_sig,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
 
 
-PNG_INTERNAL_FUNCTION(int,png_crc_finish,(png_structrp png_ptr,
-   png_uint_32 skip),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_uint_32, png_read_chunk_header,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+
+
+PNG_INTERNAL_FUNCTION(void, png_read_data,
+   (png_structrp png_ptr, png_bytep data, size_t length),
+   PNG_EMPTY);
+
+
+PNG_INTERNAL_FUNCTION(void, png_crc_read,
+   (png_structrp png_ptr, png_bytep buf, png_uint_32 length),
+   PNG_EMPTY);
+
+
+PNG_INTERNAL_FUNCTION(int, png_crc_finish,
+   (png_structrp png_ptr, png_uint_32 skip),
+   PNG_EMPTY);
 
 
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_calculate_crc,(png_structrp png_ptr,
-   png_const_bytep ptr, size_t length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_calculate_crc,
+   (png_structrp png_ptr, png_const_bytep ptr, size_t length),
+   PNG_EMPTY);
 
 #ifdef PNG_WRITE_FLUSH_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_flush,(png_structrp png_ptr),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_flush,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 #endif
 
 
@@ -1260,68 +1291,86 @@ PNG_INTERNAL_FUNCTION(void,png_flush,(png_structrp png_ptr),PNG_EMPTY);
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_write_IHDR,(png_structrp png_ptr,
-   png_uint_32 width, png_uint_32 height, int bit_depth, int color_type,
-   int compression_method, int filter_method, int interlace_method),PNG_EMPTY);
-
-PNG_INTERNAL_FUNCTION(void,png_write_PLTE,(png_structrp png_ptr,
-   png_const_colorp palette, png_uint_32 num_pal),PNG_EMPTY);
-
-PNG_INTERNAL_FUNCTION(void,png_compress_IDAT,(png_structrp png_ptr,
-   png_const_bytep row_data, png_alloc_size_t row_data_length, int flush),
+PNG_INTERNAL_FUNCTION(void, png_write_IHDR,
+   (png_structrp png_ptr,
+    png_uint_32 width, png_uint_32 height, int bit_depth, int color_type,
+    int compression_method, int filter_method, int interlace_method),
    PNG_EMPTY);
 
-PNG_INTERNAL_FUNCTION(void,png_write_IEND,(png_structrp png_ptr),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_PLTE,
+   (png_structrp png_ptr,
+    png_const_colorp palette, png_uint_32 num_pal),
+   PNG_EMPTY);
+
+PNG_INTERNAL_FUNCTION(void, png_compress_IDAT,
+   (png_structrp png_ptr,
+    png_const_bytep row_data, png_alloc_size_t row_data_length, int flush),
+   PNG_EMPTY);
+
+PNG_INTERNAL_FUNCTION(void, png_write_IEND,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 
 #ifdef PNG_WRITE_gAMA_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_gAMA_fixed,(png_structrp png_ptr,
-    png_fixed_point file_gamma),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_gAMA_fixed,
+   (png_structrp png_ptr, png_fixed_point file_gamma),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_sBIT_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_sBIT,(png_structrp png_ptr,
-    png_const_color_8p sbit, int color_type),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_sBIT,
+   (png_structrp png_ptr, png_const_color_8p sbit, int color_type),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_cHRM_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_cHRM_fixed,(png_structrp png_ptr,
-    const png_xy *xy), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_cHRM_fixed,
+   (png_structrp png_ptr, const png_xy *xy),
+   PNG_EMPTY);
    
 #endif
 
 #ifdef PNG_WRITE_cICP_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_cICP,(png_structrp png_ptr,
+PNG_INTERNAL_FUNCTION(void, png_write_cICP,
+   (png_structrp png_ptr,
     png_byte colour_primaries, png_byte transfer_function,
-    png_byte matrix_coefficients, png_byte video_full_range_flag), PNG_EMPTY);
+    png_byte matrix_coefficients, png_byte video_full_range_flag),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_cLLI_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_cLLI_fixed,(png_structrp png_ptr,
-   png_uint_32 maxCLL, png_uint_32 maxFALL), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_cLLI_fixed,
+   (png_structrp png_ptr, png_uint_32 maxCLL, png_uint_32 maxFALL),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_mDCV_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_mDCV_fixed,(png_structrp png_ptr,
-   png_uint_16 red_x, png_uint_16 red_y,
-   png_uint_16 green_x, png_uint_16 green_y,
-   png_uint_16 blue_x, png_uint_16 blue_y,
-   png_uint_16 white_x, png_uint_16 white_y,
-   png_uint_32 maxDL, png_uint_32 minDL), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_mDCV_fixed,
+   (png_structrp png_ptr,
+    png_uint_16 red_x, png_uint_16 red_y,
+    png_uint_16 green_x, png_uint_16 green_y,
+    png_uint_16 blue_x, png_uint_16 blue_y,
+    png_uint_16 white_x, png_uint_16 white_y,
+    png_uint_32 maxDL, png_uint_32 minDL),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_sRGB_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_sRGB,(png_structrp png_ptr,
-    int intent),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_sRGB,
+   (png_structrp png_ptr, int intent),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_eXIf_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_eXIf,(png_structrp png_ptr,
-    png_bytep exif, int num_exif),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_eXIf,
+   (png_structrp png_ptr, png_bytep exif, int num_exif),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_iCCP_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_iCCP,(png_structrp png_ptr,
-   png_const_charp name, png_const_bytep profile, png_uint_32 proflen),
+PNG_INTERNAL_FUNCTION(void, png_write_iCCP,
+   (png_structrp png_ptr,
+    png_const_charp name, png_const_bytep profile, png_uint_32 proflen),
    PNG_EMPTY);
    
 
@@ -1329,82 +1378,106 @@ PNG_INTERNAL_FUNCTION(void,png_write_iCCP,(png_structrp png_ptr,
 #endif
 
 #ifdef PNG_WRITE_sPLT_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_sPLT,(png_structrp png_ptr,
-    png_const_sPLT_tp palette),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_sPLT,
+   (png_structrp png_ptr, png_const_sPLT_tp palette),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_tRNS_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_tRNS,(png_structrp png_ptr,
+PNG_INTERNAL_FUNCTION(void, png_write_tRNS,
+   (png_structrp png_ptr,
     png_const_bytep trans, png_const_color_16p values, int number,
-    int color_type),PNG_EMPTY);
+    int color_type),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_bKGD_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_bKGD,(png_structrp png_ptr,
-    png_const_color_16p values, int color_type),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_bKGD,
+   (png_structrp png_ptr, png_const_color_16p values, int color_type),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_hIST_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_hIST,(png_structrp png_ptr,
-    png_const_uint_16p hist, int num_hist),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_hIST,
+   (png_structrp png_ptr, png_const_uint_16p hist, int num_hist),
+   PNG_EMPTY);
 #endif
 
 
 #ifdef PNG_WRITE_tEXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_tEXt,(png_structrp png_ptr,
-   png_const_charp key, png_const_charp text, size_t text_len),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_tEXt,
+   (png_structrp png_ptr,
+    png_const_charp key, png_const_charp text, size_t text_len),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_zTXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_zTXt,(png_structrp png_ptr, png_const_charp
-    key, png_const_charp text, int compression),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_zTXt,
+   (png_structrp png_ptr,
+    png_const_charp key, png_const_charp text, int compression),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_iTXt_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_iTXt,(png_structrp png_ptr,
+PNG_INTERNAL_FUNCTION(void, png_write_iTXt,
+   (png_structrp png_ptr,
     int compression, png_const_charp key, png_const_charp lang,
-    png_const_charp lang_key, png_const_charp text),PNG_EMPTY);
+    png_const_charp lang_key, png_const_charp text),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_TEXT_SUPPORTED  
-PNG_INTERNAL_FUNCTION(int,png_set_text_2,(png_const_structrp png_ptr,
-    png_inforp info_ptr, png_const_textp text_ptr, int num_text),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_set_text_2,
+   (png_const_structrp png_ptr,
+    png_inforp info_ptr, png_const_textp text_ptr, int num_text),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_oFFs_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_oFFs,(png_structrp png_ptr,
-    png_int_32 x_offset, png_int_32 y_offset, int unit_type),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_oFFs,
+   (png_structrp png_ptr,
+    png_int_32 x_offset, png_int_32 y_offset, int unit_type),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_pCAL_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_pCAL,(png_structrp png_ptr,
-    png_charp purpose, png_int_32 X0, png_int_32 X1, int type, int nparams,
-    png_const_charp units, png_charpp params),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_pCAL,
+   (png_structrp png_ptr,
+    png_charp purpose, png_int_32 X0, png_int_32 X1,
+    int type, int nparams, png_const_charp units, png_charpp params),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_pHYs_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_pHYs,(png_structrp png_ptr,
+PNG_INTERNAL_FUNCTION(void, png_write_pHYs,
+   (png_structrp png_ptr,
     png_uint_32 x_pixels_per_unit, png_uint_32 y_pixels_per_unit,
-    int unit_type),PNG_EMPTY);
+    int unit_type),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_tIME_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_tIME,(png_structrp png_ptr,
-    png_const_timep mod_time),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_tIME,
+   (png_structrp png_ptr, png_const_timep mod_time),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_WRITE_sCAL_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_write_sCAL_s,(png_structrp png_ptr,
-    int unit, png_const_charp width, png_const_charp height),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_sCAL_s,
+   (png_structrp png_ptr,
+    int unit, png_const_charp width, png_const_charp height),
+   PNG_EMPTY);
 #endif
 
 
-PNG_INTERNAL_FUNCTION(void,png_write_finish_row,(png_structrp png_ptr),
-    PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_finish_row,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 
 
-PNG_INTERNAL_FUNCTION(void,png_write_start_row,(png_structrp png_ptr),
-    PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_start_row,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 
 
 
@@ -1432,8 +1505,9 @@ PNG_INTERNAL_FUNCTION(void,png_write_start_row,(png_structrp png_ptr),
 #ifndef PNG_USE_COMPILE_TIME_MASKS
 #  define PNG_USE_COMPILE_TIME_MASKS 1
 #endif
-PNG_INTERNAL_FUNCTION(void,png_combine_row,(png_const_structrp png_ptr,
-    png_bytep row, int display),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_combine_row,
+   (png_const_structrp png_ptr, png_bytep row, int display),
+   PNG_EMPTY);
 
 #ifdef PNG_READ_INTERLACING_SUPPORTED
 
@@ -1442,170 +1516,230 @@ PNG_INTERNAL_FUNCTION(void,png_combine_row,(png_const_structrp png_ptr,
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_do_read_interlace,(png_row_infop row_info,
-    png_bytep row, int pass, png_uint_32 transformations),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_read_interlace,
+   (png_row_infop row_info,
+    png_bytep row, int pass, png_uint_32 transformations),
+   PNG_EMPTY);
 #endif
 
 
 
 #ifdef PNG_WRITE_INTERLACING_SUPPORTED
 
-PNG_INTERNAL_FUNCTION(void,png_do_write_interlace,(png_row_infop row_info,
-    png_bytep row, int pass),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_write_interlace,
+   (png_row_infop row_info, png_bytep row, int pass),
+   PNG_EMPTY);
 #endif
 
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row,(png_structrp pp, png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row, int filter),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row,
+   (png_structrp pp, png_row_infop row_info,
+    png_bytep row, png_const_bytep prev_row, int filter),
+   PNG_EMPTY);
 
 #if PNG_ARM_NEON_OPT > 0
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_neon,(png_row_infop row_info,
-    png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_neon,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_neon,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 #if PNG_MIPS_MSA_IMPLEMENTATION == 1
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_msa,(png_row_infop row_info,
-    png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_msa,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_msa,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 #if PNG_MIPS_MMI_IMPLEMENTATION > 0
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_mmi,(png_row_infop row_info,
-    png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_mmi,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_mmi,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 #if PNG_POWERPC_VSX_OPT > 0
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_vsx,(png_row_infop row_info,
-    png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_vsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_vsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_vsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_vsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_vsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_vsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_vsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 #if PNG_INTEL_SSE_IMPLEMENTATION > 0
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_sse2,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_sse2,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_sse2,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_sse2,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_sse2,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_sse2,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_sse2,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 #if PNG_LOONGARCH_LSX_IMPLEMENTATION == 1
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_lsx,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_lsx,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 #if PNG_RISCV_RVV_IMPLEMENTATION == 1
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_up_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub3_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_sub4_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg3_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_avg4_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth3_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_filter_row_paeth4_rvv,(png_row_infop
-    row_info, png_bytep row, png_const_bytep prev_row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_up_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub3_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_sub4_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg3_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_avg4_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth3_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_filter_row_paeth4_rvv,
+   (png_row_infop row_info, png_bytep row, png_const_bytep prev_row),
+   PNG_EMPTY);
 #endif
 
 
-PNG_INTERNAL_FUNCTION(void,png_write_find_filter,(png_structrp png_ptr,
-    png_row_infop row_info),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_write_find_filter,
+   (png_structrp png_ptr, png_row_infop row_info),
+   PNG_EMPTY);
 
 #ifdef PNG_SEQUENTIAL_READ_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_read_IDAT_data,(png_structrp png_ptr,
-   png_bytep output, png_alloc_size_t avail_out),PNG_EMPTY);
-   
-
-
-
-
-PNG_INTERNAL_FUNCTION(void,png_read_finish_IDAT,(png_structrp png_ptr),
+PNG_INTERNAL_FUNCTION(void, png_read_IDAT_data,
+   (png_structrp png_ptr, png_bytep output, png_alloc_size_t avail_out),
    PNG_EMPTY);
    
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_read_finish_row,(png_structrp png_ptr),
+
+PNG_INTERNAL_FUNCTION(void, png_read_finish_IDAT,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+   
+
+
+
+PNG_INTERNAL_FUNCTION(void, png_read_finish_row,
+   (png_structrp png_ptr),
    PNG_EMPTY);
    
 #endif 
 
 
-PNG_INTERNAL_FUNCTION(void,png_read_start_row,(png_structrp png_ptr),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_start_row,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 
 #if ZLIB_VERNUM >= 0x1240
-PNG_INTERNAL_FUNCTION(int,png_zlib_inflate,(png_structrp png_ptr, int flush),
-      PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_zlib_inflate,
+   (png_structrp png_ptr, int flush),
+   PNG_EMPTY);
 #  define PNG_INFLATE(pp, flush) png_zlib_inflate(pp, flush)
 #else 
 #  define PNG_INFLATE(pp, flush) inflate(&(pp)->zstream, flush)
@@ -1613,38 +1747,44 @@ PNG_INTERNAL_FUNCTION(int,png_zlib_inflate,(png_structrp png_ptr, int flush),
 
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
 
-PNG_INTERNAL_FUNCTION(void,png_read_transform_info,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_transform_info,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
 #endif
 
 
 #if defined(PNG_WRITE_FILLER_SUPPORTED) || \
     defined(PNG_READ_STRIP_ALPHA_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_do_strip_channel,(png_row_infop row_info,
-    png_bytep row, int at_start),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_strip_channel,
+   (png_row_infop row_info, png_bytep row, int at_start),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_16BIT_SUPPORTED
 #if defined(PNG_READ_SWAP_SUPPORTED) || defined(PNG_WRITE_SWAP_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_do_swap,(png_row_infop row_info,
-    png_bytep row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_swap,
+   (png_row_infop row_info, png_bytep row),
+   PNG_EMPTY);
 #endif
 #endif
 
 #if defined(PNG_READ_PACKSWAP_SUPPORTED) || \
     defined(PNG_WRITE_PACKSWAP_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_do_packswap,(png_row_infop row_info,
-    png_bytep row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_packswap,
+   (png_row_infop row_info, png_bytep row),
+   PNG_EMPTY);
 #endif
 
 #if defined(PNG_READ_INVERT_SUPPORTED) || defined(PNG_WRITE_INVERT_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_do_invert,(png_row_infop row_info,
-    png_bytep row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_invert,
+   (png_row_infop row_info, png_bytep row),
+   PNG_EMPTY);
 #endif
 
 #if defined(PNG_READ_BGR_SUPPORTED) || defined(PNG_WRITE_BGR_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_do_bgr,(png_row_infop row_info,
-    png_bytep row),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_bgr,
+   (png_row_infop row_info, png_bytep row),
+   PNG_EMPTY);
 #endif
 
 
@@ -1665,25 +1805,27 @@ typedef enum
    handled_ok          
 } png_handle_result_code;
 
-PNG_INTERNAL_FUNCTION(png_handle_result_code,png_handle_unknown,
-    (png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length, int keep),
-    PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_handle_result_code, png_handle_unknown,
+   (png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length, int keep),
+   PNG_EMPTY);
    
 
 
 
 
 
-PNG_INTERNAL_FUNCTION(png_handle_result_code,png_handle_chunk,
-    (png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_handle_result_code, png_handle_chunk,
+   (png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length),
+   PNG_EMPTY);
    
 
 
 
 #if defined(PNG_READ_UNKNOWN_CHUNKS_SUPPORTED) ||\
     defined(PNG_HANDLE_AS_UNKNOWN_SUPPORTED)
-PNG_INTERNAL_FUNCTION(int,png_chunk_unknown_handling,
-    (png_const_structrp png_ptr, png_uint_32 chunk_name),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_chunk_unknown_handling,
+   (png_const_structrp png_ptr, png_uint_32 chunk_name),
+   PNG_EMPTY);
    
 
 
@@ -1691,46 +1833,65 @@ PNG_INTERNAL_FUNCTION(int,png_chunk_unknown_handling,
 
 
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_do_read_transformations,(png_structrp png_ptr,
-   png_row_infop row_info),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_read_transformations,
+   (png_structrp png_ptr, png_row_infop row_info),
+   PNG_EMPTY);
 #endif
 #ifdef PNG_WRITE_TRANSFORMS_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_do_write_transformations,(png_structrp png_ptr,
-   png_row_infop row_info),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_write_transformations,
+   (png_structrp png_ptr, png_row_infop row_info),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_init_read_transformations,(png_structrp png_ptr),
-    PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_init_read_transformations,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 #endif
 
 #ifdef PNG_PROGRESSIVE_READ_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_push_read_chunk,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_read_sig,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_check_crc,(png_structrp png_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_save_buffer,(png_structrp png_ptr),
-    PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_restore_buffer,(png_structrp png_ptr,
-    png_bytep buffer, size_t buffer_length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_read_IDAT,(png_structrp png_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_process_IDAT_data,(png_structrp png_ptr,
-    png_bytep buffer, size_t buffer_length),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_process_row,(png_structrp png_ptr),
-    PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_have_info,(png_structrp png_ptr,
-   png_inforp info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_have_end,(png_structrp png_ptr,
-   png_inforp info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_have_row,(png_structrp png_ptr,
-    png_bytep row),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_push_read_end,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_process_some_data,(png_structrp png_ptr,
-    png_inforp info_ptr),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_read_push_finish_row,(png_structrp png_ptr),
-    PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_read_chunk,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_read_sig,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_check_crc,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_save_buffer,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_restore_buffer,
+   (png_structrp png_ptr, png_bytep buffer, size_t buffer_length),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_read_IDAT,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_process_IDAT_data,
+   (png_structrp png_ptr, png_bytep buffer, size_t buffer_length),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_process_row,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_have_info,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_have_end,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_have_row,
+   (png_structrp png_ptr, png_bytep row),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_push_read_end,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_process_some_data,
+   (png_structrp png_ptr, png_inforp info_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_read_push_finish_row,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
 #endif 
 
 #ifdef PNG_APNG_SUPPORTED
@@ -1779,48 +1940,58 @@ PNG_INTERNAL_FUNCTION(void,png_write_reinit,(png_structp png_ptr,
 #ifdef PNG_iCCP_SUPPORTED
 
 #ifdef PNG_READ_iCCP_SUPPORTED
-PNG_INTERNAL_FUNCTION(int,png_icc_check_length,(png_const_structrp png_ptr,
-   png_const_charp name, png_uint_32 profile_length), PNG_EMPTY);
-#endif 
-PNG_INTERNAL_FUNCTION(int,png_icc_check_header,(png_const_structrp png_ptr,
-   png_const_charp name, png_uint_32 profile_length,
-   png_const_bytep profile , int color_type),
+PNG_INTERNAL_FUNCTION(int, png_icc_check_length,
+   (png_const_structrp png_ptr,
+    png_const_charp name, png_uint_32 profile_length),
    PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(int,png_icc_check_tag_table,(png_const_structrp png_ptr,
-   png_const_charp name, png_uint_32 profile_length,
-   png_const_bytep profile ), PNG_EMPTY);
+#endif 
+PNG_INTERNAL_FUNCTION(int, png_icc_check_header,
+   (png_const_structrp png_ptr,
+    png_const_charp name, png_uint_32 profile_length,
+    png_const_bytep profile , int color_type),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_icc_check_tag_table,
+   (png_const_structrp png_ptr,
+    png_const_charp name, png_uint_32 profile_length,
+    png_const_bytep profile ),
+   PNG_EMPTY);
 #endif 
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_set_rgb_coefficients, (png_structrp png_ptr),
+PNG_INTERNAL_FUNCTION(void, png_set_rgb_coefficients,
+   (png_structrp png_ptr),
    PNG_EMPTY);
    
 #endif 
 
 
-PNG_INTERNAL_FUNCTION(void,png_check_IHDR,(png_const_structrp png_ptr,
-    png_uint_32 width, png_uint_32 height, int bit_depth,
-    int color_type, int interlace_type, int compression_type,
-    int filter_type),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_check_IHDR,
+   (png_const_structrp png_ptr,
+    png_uint_32 width, png_uint_32 height, int bit_depth, int color_type,
+    int interlace_type, int compression_type, int filter_type),
+   PNG_EMPTY);
 
 
 #if defined(PNG_READ_CHECK_FOR_INVALID_INDEX_SUPPORTED) || \
     defined(PNG_WRITE_CHECK_FOR_INVALID_INDEX_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_do_check_palette_indexes,
-   (png_structrp png_ptr, png_row_infop row_info),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_do_check_palette_indexes,
+   (png_structrp png_ptr, png_row_infop row_info),
+   PNG_EMPTY);
 #endif
 
 #if defined(PNG_FLOATING_POINT_SUPPORTED) && defined(PNG_ERROR_TEXT_SUPPORTED)
-PNG_INTERNAL_FUNCTION(void,png_fixed_error,(png_const_structrp png_ptr,
-   png_const_charp name),PNG_NORETURN);
+PNG_INTERNAL_FUNCTION(void, png_fixed_error,
+   (png_const_structrp png_ptr, png_const_charp name),
+   PNG_NORETURN);
 #endif
 
 
 
 
 
-PNG_INTERNAL_FUNCTION(size_t,png_safecat,(png_charp buffer, size_t bufsize,
-   size_t pos, png_const_charp string),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(size_t, png_safecat,
+   (png_charp buffer, size_t bufsize, size_t pos, png_const_charp string),
+   PNG_EMPTY);
 
 
 
@@ -1831,8 +2002,9 @@ PNG_INTERNAL_FUNCTION(size_t,png_safecat,(png_charp buffer, size_t bufsize,
 
 
 
-PNG_INTERNAL_FUNCTION(png_charp,png_format_number,(png_const_charp start,
-   png_charp end, int format, png_alloc_size_t number),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_charp, png_format_number,
+   (png_const_charp start, png_charp end, int format, png_alloc_size_t number),
+   PNG_EMPTY);
 
 
 #define PNG_FORMAT_NUMBER(buffer,format,number) \
@@ -1864,23 +2036,26 @@ PNG_INTERNAL_FUNCTION(png_charp,png_format_number,(png_const_charp start,
 typedef char png_warning_parameters[PNG_WARNING_PARAMETER_COUNT][
    PNG_WARNING_PARAMETER_SIZE];
 
-PNG_INTERNAL_FUNCTION(void,png_warning_parameter,(png_warning_parameters p,
-   int number, png_const_charp string),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_warning_parameter,
+   (png_warning_parameters p, int number, png_const_charp string),
+   PNG_EMPTY);
    
 
 
-PNG_INTERNAL_FUNCTION(void,png_warning_parameter_unsigned,
+PNG_INTERNAL_FUNCTION(void, png_warning_parameter_unsigned,
    (png_warning_parameters p, int number, int format, png_alloc_size_t value),
    PNG_EMPTY);
    
 
 
-PNG_INTERNAL_FUNCTION(void,png_warning_parameter_signed,
+PNG_INTERNAL_FUNCTION(void, png_warning_parameter_signed,
    (png_warning_parameters p, int number, int format, png_int_32 value),
    PNG_EMPTY);
 
-PNG_INTERNAL_FUNCTION(void,png_formatted_warning,(png_const_structrp png_ptr,
-   png_warning_parameters p, png_const_charp message),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_formatted_warning,
+   (png_const_structrp png_ptr,
+    png_warning_parameters p, png_const_charp message),
+   PNG_EMPTY);
    
 
 
@@ -1902,14 +2077,16 @@ PNG_INTERNAL_FUNCTION(void,png_formatted_warning,(png_const_structrp png_ptr,
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_app_warning,(png_const_structrp png_ptr,
-   png_const_charp message),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_app_warning,
+   (png_const_structrp png_ptr, png_const_charp message),
+   PNG_EMPTY);
    
 
 
 
-PNG_INTERNAL_FUNCTION(void,png_app_error,(png_const_structrp png_ptr,
-   png_const_charp message),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_app_error,
+   (png_const_structrp png_ptr, png_const_charp message),
+   PNG_EMPTY);
    
 
 
@@ -1918,8 +2095,9 @@ PNG_INTERNAL_FUNCTION(void,png_app_error,(png_const_structrp png_ptr,
 #  define png_app_error(pp,s) png_error(pp,s)
 #endif
 
-PNG_INTERNAL_FUNCTION(void,png_chunk_report,(png_const_structrp png_ptr,
-   png_const_charp message, int error),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_chunk_report,
+   (png_const_structrp png_ptr, png_const_charp message, int error),
+   PNG_EMPTY);
    
 
 
@@ -1945,14 +2123,17 @@ PNG_INTERNAL_FUNCTION(void,png_chunk_report,(png_const_structrp png_ptr,
 #define PNG_sCAL_MAX_DIGITS (PNG_sCAL_PRECISION+1/*.*/+1/*E*/+10/*exponent*/)
 
 #ifdef PNG_FLOATING_POINT_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_ascii_from_fp,(png_const_structrp png_ptr,
-   png_charp ascii, size_t size, double fp, unsigned int precision),
+PNG_INTERNAL_FUNCTION(void, png_ascii_from_fp,
+   (png_const_structrp png_ptr,
+    png_charp ascii, size_t size, double fp, unsigned int precision),
    PNG_EMPTY);
 #endif 
 
 #ifdef PNG_FIXED_POINT_SUPPORTED
-PNG_INTERNAL_FUNCTION(void,png_ascii_from_fixed,(png_const_structrp png_ptr,
-   png_charp ascii, size_t size, png_fixed_point fp),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_ascii_from_fixed,
+   (png_const_structrp png_ptr,
+    png_charp ascii, size_t size, png_fixed_point fp),
+   PNG_EMPTY);
 #endif 
 #endif 
 
@@ -2044,8 +2225,9 @@ PNG_INTERNAL_FUNCTION(void,png_ascii_from_fixed,(png_const_structrp png_ptr,
 
 
 
-PNG_INTERNAL_FUNCTION(int,png_check_fp_number,(png_const_charp string,
-   size_t size, int *statep, size_t *whereami),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_check_fp_number,
+   (png_const_charp string, size_t size, int *statep, size_t *whereami),
+   PNG_EMPTY);
 
 
 
@@ -2053,8 +2235,9 @@ PNG_INTERNAL_FUNCTION(int,png_check_fp_number,(png_const_charp string,
 
 
 
-PNG_INTERNAL_FUNCTION(int,png_check_fp_string,(png_const_charp string,
-   size_t size),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_check_fp_string,
+   (png_const_charp string, size_t size),
+   PNG_EMPTY);
 #endif 
 
 #if defined(PNG_READ_GAMMA_SUPPORTED) ||\
@@ -2067,14 +2250,17 @@ PNG_INTERNAL_FUNCTION(int,png_check_fp_string,(png_const_charp string,
 
 
 
-PNG_INTERNAL_FUNCTION(int,png_muldiv,(png_fixed_point_p res, png_fixed_point a,
-   png_int_32 multiplied_by, png_int_32 divided_by),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_muldiv,
+   (png_fixed_point_p res, png_fixed_point a,
+    png_int_32 multiplied_by, png_int_32 divided_by),
+   PNG_EMPTY);
 
 
 
 
 
-PNG_INTERNAL_FUNCTION(png_fixed_point,png_reciprocal,(png_fixed_point a),
+PNG_INTERNAL_FUNCTION(png_fixed_point, png_reciprocal,
+   (png_fixed_point a),
    PNG_EMPTY);
 #endif
 
@@ -2083,11 +2269,13 @@ PNG_INTERNAL_FUNCTION(png_fixed_point,png_reciprocal,(png_fixed_point a),
 
 
 
-PNG_INTERNAL_FUNCTION(png_fixed_point,png_reciprocal2,(png_fixed_point a,
-   png_fixed_point b),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_fixed_point, png_reciprocal2,
+   (png_fixed_point a, png_fixed_point b),
+   PNG_EMPTY);
 
 
-PNG_INTERNAL_FUNCTION(int,png_gamma_significant,(png_fixed_point gamma_value),
+PNG_INTERNAL_FUNCTION(int, png_gamma_significant,
+   (png_fixed_point gamma_value),
    PNG_EMPTY);
 
 
@@ -2098,47 +2286,56 @@ PNG_INTERNAL_FUNCTION(int,png_gamma_significant,(png_fixed_point gamma_value),
 
 
 
-PNG_INTERNAL_FUNCTION(png_fixed_point,png_resolve_file_gamma,
-   (png_const_structrp png_ptr),PNG_EMPTY);
-
-
-
-
-
-
-
-
-PNG_INTERNAL_FUNCTION(png_uint_16,png_gamma_correct,(png_structrp png_ptr,
-   unsigned int value, png_fixed_point gamma_value),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(png_uint_16,png_gamma_16bit_correct,(unsigned int value,
-   png_fixed_point gamma_value),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(png_byte,png_gamma_8bit_correct,(unsigned int value,
-   png_fixed_point gamma_value),PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_destroy_gamma_table,(png_structrp png_ptr),
+PNG_INTERNAL_FUNCTION(png_fixed_point, png_resolve_file_gamma,
+   (png_const_structrp png_ptr),
    PNG_EMPTY);
-PNG_INTERNAL_FUNCTION(void,png_build_gamma_table,(png_structrp png_ptr,
-   int bit_depth),PNG_EMPTY);
+
+
+
+
+
+
+
+
+PNG_INTERNAL_FUNCTION(png_uint_16, png_gamma_correct,
+   (png_structrp png_ptr, unsigned int value, png_fixed_point gamma_value),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_uint_16, png_gamma_16bit_correct,
+   (unsigned int value, png_fixed_point gamma_value),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_byte, png_gamma_8bit_correct,
+   (unsigned int value, png_fixed_point gamma_value),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_destroy_gamma_table,
+   (png_structrp png_ptr),
+   PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_build_gamma_table,
+   (png_structrp png_ptr, int bit_depth),
+   PNG_EMPTY);
 #endif 
 
 #ifdef PNG_READ_RGB_TO_GRAY_SUPPORTED
 
-PNG_INTERNAL_FUNCTION(void,png_set_rgb_coefficients,(png_structrp png_ptr),
+PNG_INTERNAL_FUNCTION(void, png_set_rgb_coefficients,
+   (png_structrp png_ptr),
    PNG_EMPTY);
 #endif
 
 #if defined(PNG_cHRM_SUPPORTED) || defined(PNG_READ_RGB_TO_GRAY_SUPPORTED)
-PNG_INTERNAL_FUNCTION(int,png_XYZ_from_xy,(png_XYZ *XYZ, const png_xy *xy),
+PNG_INTERNAL_FUNCTION(int, png_XYZ_from_xy,
+   (png_XYZ *XYZ, const png_xy *xy),
    PNG_EMPTY);
 #endif 
 
 #ifdef PNG_COLORSPACE_SUPPORTED
-PNG_INTERNAL_FUNCTION(int,png_xy_from_XYZ,(png_xy *xy, const png_XYZ *XYZ),
+PNG_INTERNAL_FUNCTION(int, png_xy_from_XYZ,
+   (png_xy *xy, const png_XYZ *XYZ),
    PNG_EMPTY);
 #endif
 
 
 #if defined(PNG_SIMPLIFIED_READ_SUPPORTED) ||\
-   defined(PNG_SIMPLIFIED_WRITE_SUPPORTED)
+    defined(PNG_SIMPLIFIED_WRITE_SUPPORTED)
 
 typedef struct png_control
 {
@@ -2166,28 +2363,34 @@ typedef struct png_control
 
 
 
-PNG_INTERNAL_CALLBACK(void,png_safe_error,(png_structp png_ptr,
-   png_const_charp error_message),PNG_NORETURN);
+PNG_INTERNAL_CALLBACK(void, png_safe_error,
+   (png_structp png_ptr, png_const_charp error_message),
+   PNG_NORETURN);
 
 #ifdef PNG_WARNINGS_SUPPORTED
-PNG_INTERNAL_CALLBACK(void,png_safe_warning,(png_structp png_ptr,
-   png_const_charp warning_message),PNG_EMPTY);
+PNG_INTERNAL_CALLBACK(void, png_safe_warning,
+   (png_structp png_ptr, png_const_charp warning_message),
+   PNG_EMPTY);
 #else
 #  define png_safe_warning 0/*dummy argument*/
 #endif
 
-PNG_INTERNAL_FUNCTION(int,png_safe_execute,(png_imagep image,
-   int (*function)(png_voidp), png_voidp arg),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_safe_execute,
+   (png_imagep image, int (*function)(png_voidp), png_voidp arg),
+   PNG_EMPTY);
 
 
 
 
-PNG_INTERNAL_FUNCTION(int,png_image_error,(png_imagep image,
-   png_const_charp error_message),PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(int, png_image_error,
+   (png_imagep image, png_const_charp error_message),
+   PNG_EMPTY);
 
 #ifndef PNG_SIMPLIFIED_READ_SUPPORTED
 
-PNG_INTERNAL_FUNCTION(void, png_image_free, (png_imagep image), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, png_image_free,
+   (png_imagep image),
+   PNG_EMPTY);
 #endif 
 
 #endif 
@@ -2198,8 +2401,9 @@ PNG_INTERNAL_FUNCTION(void, png_image_free, (png_imagep image), PNG_EMPTY);
 
 
 #ifdef PNG_FILTER_OPTIMIZATIONS
-PNG_INTERNAL_FUNCTION(void, PNG_FILTER_OPTIMIZATIONS, (png_structp png_ptr,
-   unsigned int bpp), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(void, PNG_FILTER_OPTIMIZATIONS,
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
    
 #else
    
@@ -2208,37 +2412,44 @@ PNG_INTERNAL_FUNCTION(void, PNG_FILTER_OPTIMIZATIONS, (png_structp png_ptr,
 
 #  if PNG_ARM_NEON_OPT > 0
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_neon,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
 #endif
 
 #if PNG_MIPS_MSA_IMPLEMENTATION == 1
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_mips,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
 #endif
 
 #  if PNG_MIPS_MMI_IMPLEMENTATION > 0
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_mips,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
 #  endif
 
 #  if PNG_INTEL_SSE_IMPLEMENTATION > 0
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_sse2,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
 #  endif
 #endif
 
 #if PNG_LOONGARCH_LSX_OPT > 0
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_lsx,
-    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
 #endif
 
 #  if PNG_RISCV_RVV_IMPLEMENTATION == 1
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_rvv,
-   (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
+   (png_structp png_ptr, unsigned int bpp),
+   PNG_EMPTY);
 #endif
 
-PNG_INTERNAL_FUNCTION(png_uint_32, png_check_keyword, (png_structrp png_ptr,
-   png_const_charp key, png_bytep new_key), PNG_EMPTY);
+PNG_INTERNAL_FUNCTION(png_uint_32, png_check_keyword,
+   (png_structrp png_ptr, png_const_charp key, png_bytep new_key),
+   PNG_EMPTY);
 
 #if PNG_ARM_NEON_IMPLEMENTATION == 1
 PNG_INTERNAL_FUNCTION(void,
