@@ -86,14 +86,14 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
 
 
 
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+  bool EnsureDecoder(nsIChannel* aChannel, const uint8_t* aData,
                      uint32_t aDataLength, bool aEndOfStream) {
     
     if (mDecoder) {
       return true;
     }
 
-    return TrySetDecoder(aLoader, aData, aDataLength, aEndOfStream);
+    return TrySetDecoder(aChannel, aData, aDataLength, aEndOfStream);
   }
 
   
@@ -103,7 +103,7 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
 
 
 
-  bool TrySetDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+  bool TrySetDecoder(nsIChannel* aChannel, const uint8_t* aData,
                      uint32_t aDataLength, bool aEndOfStream);
 
   
@@ -115,7 +115,7 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
   nsresult MaybeDecodeSRI(uint32_t* sriLength);
 
   
-  nsresult EnsureKnownDataType(nsIIncrementalStreamLoader* aLoader);
+  nsresult EnsureKnownDataType(nsIChannel* aChannel);
 
   
   RefPtr<ScriptLoader> mScriptLoader;
