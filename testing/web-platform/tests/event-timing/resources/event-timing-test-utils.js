@@ -1,5 +1,14 @@
 function mainThreadBusy(ms) {
-  const target = performance.now() + ms;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const target = performance.now() + ms + 2;
   while (performance.now() < target);
 }
 
