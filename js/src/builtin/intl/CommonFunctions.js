@@ -88,35 +88,6 @@ function endOfUnicodeExtensions(locale, start) {
 
 
 
-function removeUnicodeExtensions(locale) {
-  assertIsValidAndCanonicalLanguageTag(
-    locale,
-    "locale with possible Unicode extension"
-  );
-
-  var start = startOfUnicodeExtensions(locale);
-  if (start < 0) {
-    return locale;
-  }
-
-  var end = endOfUnicodeExtensions(locale, start);
-
-  var left = Substring(locale, 0, start);
-  var right = Substring(locale, end, locale.length - end);
-  var combined = left + right;
-
-  assertIsValidAndCanonicalLanguageTag(combined, "the recombined locale");
-  assert(
-    startOfUnicodeExtensions(combined) < 0,
-    "recombination failed to remove all Unicode locale extension sequences"
-  );
-
-  return combined;
-}
-
-
-
-
 function getUnicodeExtensions(locale) {
   assertIsValidAndCanonicalLanguageTag(locale, "locale with Unicode extension");
 
@@ -241,42 +212,21 @@ function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
 
 
 function LookupMatcher(availableLocales, requestedLocales) {
-  
-  var result = NEW_RECORD();
+  var array = intl_LookupMatcher(availableLocales, requestedLocales);
+  assert(
+    IsPackedArray(array) && array.length === 2,
+    "intl_LookupMatcher returns a two-element array"
+  );
+  assert(typeof array[0] === "string", "array[0] is a string");
+  assert(
+    typeof array[1] === "string" || array[1] === undefined,
+    "array[1] is a string or undefined"
+  );
 
-  
-  for (var i = 0; i < requestedLocales.length; i++) {
-    var locale = requestedLocales[i];
-
-    
-    var noExtensionsLocale = removeUnicodeExtensions(locale);
-
-    
-    var availableLocale = BestAvailableLocale(
-      availableLocales,
-      noExtensionsLocale
-    );
-
-    
-    if (availableLocale !== undefined) {
-      
-      result.locale = availableLocale;
-
-      
-      if (locale !== noExtensionsLocale) {
-        result.extension = getUnicodeExtensions(locale);
-      }
-
-      
-      return result;
-    }
-  }
-
-  
-  result.locale = intl_DefaultLocale();
-
-  
-  return result;
+  return {
+    locale: array[0],
+    extension: array[1],
+  };
 }
 
 

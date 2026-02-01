@@ -8,10 +8,12 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/Locale.h"
+#include "mozilla/Range.h"
 
 #include <algorithm>
 #include <iterator>
 #include <stddef.h>
+#include <utility>
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
@@ -341,6 +343,175 @@ static bool SupportedLocales(JSContext* cx,
   
   return LookupSupportedLocales(cx, availableLocales, requestedLocales,
                                 supportedLocales);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename CharT>
+static std::pair<size_t, size_t> FindUnicodeExtensionSequence(
+    mozilla::Range<const CharT> locale) {
+  
+  
+  
+  
+  
+  if (locale.length() < (2 + 5)) {
+    return {};
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  size_t start = 0;
+  for (size_t i = 2; i <= locale.length() - 5; i++) {
+    
+    if (locale[i] == '-' && locale[i + 1] == 'u' && locale[i + 2] == '-') {
+      start = i;
+      break;
+    }
+
+    
+    
+    if (locale[i] == '-' && locale[i + 1] == 'x' && locale[i + 2] == '-') {
+      break;
+    }
+  }
+
+  
+  if (start == 0) {
+    return {};
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  for (size_t i = start + 5; i <= locale.length() - 4; i++) {
+    if (locale[i] != '-') {
+      continue;
+    }
+    if (locale[i + 2] == '-') {
+      return {start, i};
+    }
+
+    
+    
+    i += 2;
+  }
+
+  
+  
+  return {start, locale.length()};
+}
+
+static auto FindUnicodeExtensionSequence(const JSLinearString* locale) {
+  JS::AutoCheckCannotGC nogc;
+  if (locale->hasLatin1Chars()) {
+    return FindUnicodeExtensionSequence(locale->latin1Range(nogc));
+  }
+  return FindUnicodeExtensionSequence(locale->twoByteRange(nogc));
+}
+
+void js::intl::LookupMatcherResult::trace(JSTracer* trc) {
+  TraceNullableRoot(trc, &locale_, "LookupMatcherResult::locale");
+  TraceNullableRoot(trc, &extension_, "LookupMatcherResult::extension");
+}
+
+
+
+
+bool js::intl::LookupMatcher(JSContext* cx,
+                             AvailableLocaleKind availableLocales,
+                             Handle<ArrayObject*> locales,
+                             MutableHandle<LookupMatcherResult> result) {
+  MOZ_RELEASE_ASSERT(IsPackedArray(locales));
+
+  Rooted<JSLinearString*> defaultLocale(
+      cx, cx->global()->globalIntlData().defaultLocale(cx));
+  if (!defaultLocale) {
+    return false;
+  }
+
+  
+
+  
+  Rooted<JSLinearString*> locale(cx);
+  Rooted<JSLinearString*> noExtensionsLocale(cx);
+  Rooted<JSLinearString*> availableLocale(cx);
+  for (size_t i = 0, length = locales->length(); i < length; i++) {
+    locale = locales->getDenseElement(i).toString()->ensureLinear(cx);
+    if (!locale) {
+      return false;
+    }
+
+    
+    
+    
+    noExtensionsLocale =
+        NewDependentString(cx, locale, 0, BaseNameLength(locale));
+    if (!noExtensionsLocale) {
+      return false;
+    }
+
+    
+    JS_TRY_VAR_OR_RETURN_FALSE(
+        cx, availableLocale,
+        BestAvailableLocale(cx, availableLocales, noExtensionsLocale,
+                            defaultLocale));
+
+    
+    if (availableLocale) {
+      
+
+      
+      
+      
+      
+      JSLinearString* extension = nullptr;
+      if (locale->length() > noExtensionsLocale->length()) {
+        auto [startOfUnicodeExtensions, endOfUnicodeExtensions] =
+            FindUnicodeExtensionSequence(locale);
+
+        
+        if (startOfUnicodeExtensions) {
+          MOZ_ASSERT(startOfUnicodeExtensions < endOfUnicodeExtensions);
+          MOZ_ASSERT(endOfUnicodeExtensions <= locale->length());
+
+          extension = NewDependentString(
+              cx, locale, startOfUnicodeExtensions,
+              endOfUnicodeExtensions - startOfUnicodeExtensions);
+          if (!extension) {
+            return false;
+          }
+        }
+      }
+
+      
+      result.set({availableLocale, extension});
+      return true;
+    }
+  }
+
+  
+  result.set({defaultLocale, nullptr});
+  return true;
 }
 
 ArrayObject* js::intl::LocalesListToArray(JSContext* cx,
