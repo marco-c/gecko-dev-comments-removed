@@ -160,7 +160,7 @@ add_task(async function onPermissionChange() {
   );
 
   
-  doc.getElementsByAttribute("value", SitePermissions.BLOCK)[0].click();
+  doc.getElementsByAttribute("value", SitePermissions.BLOCK)[0].doCommand();
 
   Assert.equal(
     PermissionTestUtils.getPermissionObject(URI, "desktop-notification")
