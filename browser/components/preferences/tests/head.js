@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
@@ -774,13 +778,30 @@ async function waitForSettingControlChange(control) {
 
 
 
-async function waitForPaneChange(paneId) {
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
+
+async function waitForPaneChange(
+  paneId,
+  win = gBrowser.selectedBrowser.ownerGlobal
+) {
+  let event = await BrowserTestUtils.waitForEvent(win.document, "paneshown");
   let expectId = paneId.startsWith("pane")
     ? paneId
     : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
   is(event.detail.category, expectId, "Loaded the correct pane");
+}
+
+
+
+
+
+
+
+
+function getSettingControl(
+  settingId,
+  win = gBrowser.selectedBrowser.ownerGlobal
+) {
+  return win.document.getElementById(`setting-control-${settingId}`);
 }
 
 function getControl(doc, id) {
@@ -876,3 +897,17 @@ async function clickEtpBaselineCheckboxWithConfirm(
 
   return checkbox;
 }
+
+
+const initialSidebarState = { ...SidebarController.getUIState(), command: "" };
+registerCleanupFunction(async function () {
+  const { ObjectUtils } = ChromeUtils.importESModule(
+    "resource://gre/modules/ObjectUtils.sys.mjs"
+  );
+  if (
+    !ObjectUtils.deepEqual(SidebarController.getUIState(), initialSidebarState)
+  ) {
+    info("Restoring to initial sidebar state");
+    await SidebarController.initializeUIState(initialSidebarState);
+  }
+});
