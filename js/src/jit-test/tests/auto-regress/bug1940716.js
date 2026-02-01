@@ -7,7 +7,9 @@ function a(b) {
 function d(e) {
   return a(wasmTextToBinary(e));
 }
-f = [ , Number.MIN_VALUE ]
 let { refTest } = d(`(func (export "refTest") (param externref))`).exports;
+
+
+f = Array(16).fill([Number.MIN_VALUE, -Number.MIN_VALUE]).flat();
 for (h of f)
   refTest(h);
