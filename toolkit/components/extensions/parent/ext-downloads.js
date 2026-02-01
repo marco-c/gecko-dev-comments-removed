@@ -828,7 +828,7 @@ this.downloads = class extends ExtensionAPIPersistent {
             return true;
           }
 
-          async function createTarget() {
+          async function createTarget(downloadsDir) {
             if (!filename) {
               let uri = Services.io.newURI(options.url);
               if (uri instanceof Ci.nsIURL) {
@@ -842,7 +842,7 @@ this.downloads = class extends ExtensionAPIPersistent {
             }
 
             let target = PathUtils.joinRelative(
-              await Downloads.getPreferredDownloadsDirectory(),
+              downloadsDir,
               filename || "download"
             );
 
@@ -925,6 +925,10 @@ this.downloads = class extends ExtensionAPIPersistent {
               downloadLastDir.setFile(extension.baseURI, lastDir);
             }
 
+            
+            
+            
+            const window = global.windowTracker.getTopWindow().window;
             const basename = PathUtils.filename(target);
             const ext = basename.match(/\.([^.]+)$/)?.[1];
 
@@ -941,15 +945,8 @@ this.downloads = class extends ExtensionAPIPersistent {
             const picker = Cc["@mozilla.org/filepicker;1"].createInstance(
               Ci.nsIFilePicker
             );
-            
-            
-            
-            
-            
-            
-            
             picker.init(
-              context.browsingContext.topChromeWindow.browsingContext,
+              window.browsingContext,
               null,
               Ci.nsIFilePicker.modeSave
             );
@@ -979,24 +976,8 @@ this.downloads = class extends ExtensionAPIPersistent {
             });
           }
 
-          const targetPromise = createTarget();
-          if (context.isBackgroundContext) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            extension.emit("background-script-idle-waituntil", {
-              promise: targetPromise,
-              reason: "downloads_saveAs",
-            });
-          }
-          const target = await targetPromise;
+          const downloadsDir = await Downloads.getPreferredDownloadsDirectory();
+          const target = await createTarget(downloadsDir);
           const uri = Services.io.newURI(options.url);
           const cookieJarSettings = Cc[
             "@mozilla.org/cookieJarSettings;1"
