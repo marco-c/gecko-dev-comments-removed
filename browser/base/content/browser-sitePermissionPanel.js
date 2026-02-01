@@ -262,8 +262,8 @@ var gPermissionPanel = {
 
 
   updateSharingIndicator() {
-    let tab = gBrowser.selectedTab;
-    this._sharingState = tab._sharingState;
+    let browser = gBrowser.selectedBrowser;
+    this._sharingState = browser._sharingState;
 
     this._webRTCSharingIcon.removeAttribute("paused");
     this._webRTCSharingIcon.removeAttribute("sharing");
@@ -456,7 +456,7 @@ var gPermissionPanel = {
       }
     });
 
-    this._sharingState = gBrowser.selectedTab._sharingState;
+    this._sharingState = gBrowser.selectedBrowser._sharingState;
 
     if (this._sharingState?.geo) {
       let geoPermission = permissions.find(perm => perm.id === "geo");

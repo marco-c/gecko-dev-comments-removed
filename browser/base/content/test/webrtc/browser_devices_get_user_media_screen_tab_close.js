@@ -35,11 +35,15 @@ add_task(async function testScreenSharingTabClose() {
 
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+  let browser = tab.linkedBrowser;
   testSelected(tab);
 
   
-  await shareDevices(tab.linkedBrowser, false, false, SHARE_WINDOW);
-  ok(tab._sharingState.webRTC.screen, "Tab has webRTC screen sharing state");
+  await shareDevices(browser, false, false, SHARE_WINDOW);
+  ok(
+    browser._sharingState.webRTC.screen,
+    "Tab has webRTC screen sharing state"
+  );
 
   let recordingEndedPromise = expectObserverCalled(
     "recording-window-ended",
@@ -65,8 +69,8 @@ add_task(async function testScreenSharingTabClose() {
 
   
   ok(
-    !gBrowser.selectedTab._sharingState?.webRTC?.screen,
-    "Selected tab doesn't have webRTC screen sharing state"
+    !gBrowser.selectedBrowser._sharingState?.webRTC?.screen,
+    "Selected tab's browser doesn't have webRTC screen sharing state"
   );
 
   BrowserTestUtils.removeTab(initialTab);
