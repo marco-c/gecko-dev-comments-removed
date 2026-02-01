@@ -129,7 +129,7 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     
     
     
-    worker.setdefault("docker-image", {"in-tree": "debian12-amd64-build"})
+    worker.setdefault("docker-image", {"in-tree": "debian13-amd64-build"})
 
     worker.setdefault("artifacts", []).append({
         "name": "public/logs",
