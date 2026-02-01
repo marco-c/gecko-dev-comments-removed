@@ -5,9 +5,12 @@
 
 
 use super::{AbsoluteColor, ColorFlags, ColorSpace};
+use crate::color::ColorMixItemList;
+use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::color::ColorMixFlags;
 use cssparser::Parser;
+use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
 
@@ -148,37 +151,117 @@ impl ToCss for ColorInterpolationMethod {
 }
 
 
+pub struct ColorMixItem {
+    
+    pub color: AbsoluteColor,
+    
+    pub weight: f32,
+}
+
+impl ColorMixItem {
+    
+    #[inline]
+    pub fn new(color: AbsoluteColor, weight: f32) -> Self {
+        Self { color, weight }
+    }
+}
+
+
+#[inline]
 pub fn mix(
     interpolation: ColorInterpolationMethod,
     left_color: &AbsoluteColor,
-    mut left_weight: f32,
+    left_weight: f32,
     right_color: &AbsoluteColor,
-    mut right_weight: f32,
+    right_weight: f32,
     flags: ColorMixFlags,
 ) -> AbsoluteColor {
+    let items = [
+        ColorMixItem::new(*left_color, left_weight),
+        ColorMixItem::new(*right_color, right_weight),
+    ];
+
+    mix_many(interpolation, items, flags)
+}
+
+
+pub fn mix_many(
+    interpolation: ColorInterpolationMethod,
+    items: impl IntoIterator<Item = ColorMixItem>,
+    flags: ColorMixFlags,
+) -> AbsoluteColor {
+    let items = items.into_iter().collect::<ColorMixItemList<_>>();
+
     
+    if items.is_empty() {
+        return AbsoluteColor::TRANSPARENT_BLACK.to_color_space(interpolation.space);
+    }
+
+    let normalize = flags.contains(ColorMixFlags::NORMALIZE_WEIGHTS);
+    let mut weight_scale = 1.0;
     let mut alpha_multiplier = 1.0;
-    if flags.contains(ColorMixFlags::NORMALIZE_WEIGHTS) {
-        let sum = left_weight + right_weight;
-        if sum != 1.0 {
-            let scale = 1.0 / sum;
-            left_weight *= scale;
-            right_weight *= scale;
+    if normalize {
+        
+        let sum: f32 = items.iter().map(|item| item.weight).sum();
+        if sum == 0.0 {
+            return AbsoluteColor::TRANSPARENT_BLACK.to_color_space(interpolation.space);
+        }
+        if (sum - 1.0).abs() > f32::EPSILON {
+            weight_scale = 1.0 / sum;
             if sum < 1.0 {
                 alpha_multiplier = sum;
             }
         }
     }
 
-    let result = mix_in(
+    
+    let (first, rest) = items.split_first().unwrap();
+    let mut accumulated_color = convert_for_mix(&first.color, interpolation.space);
+    let mut accumulated_weight = first.weight * weight_scale;
+
+    for item in rest {
+        let weight = item.weight * weight_scale;
+        let combined = accumulated_weight + weight;
+        if combined == 0.0 {
+            
+            continue;
+        }
+        let right = convert_for_mix(&item.color, interpolation.space);
+
+        let (left_weight, right_weight) = if normalize {
+            (accumulated_weight / combined, weight / combined)
+        } else {
+            (accumulated_weight, weight)
+        };
+
+        accumulated_color = mix_with_weights(
+            &accumulated_color,
+            left_weight,
+            &right,
+            right_weight,
+            interpolation.hue,
+        );
+        accumulated_weight = combined;
+    }
+
+    let components = accumulated_color.raw_components();
+    let alpha = components[3] * alpha_multiplier;
+
+    
+    
+    
+    
+    
+    let alpha = (alpha.clamp(0.0, 1.0) * 1000.0).round() / 1000.0;
+
+    let mut result = AbsoluteColor::new(
         interpolation.space,
-        left_color,
-        left_weight,
-        right_color,
-        right_weight,
-        interpolation.hue,
-        alpha_multiplier,
+        components[0],
+        components[1],
+        components[2],
+        alpha,
     );
+    result.flags = accumulated_color.flags;
 
     if flags.contains(ColorMixFlags::RESULT_IN_MODERN_SYNTAX) {
         
@@ -189,7 +272,7 @@ pub fn mix(
         } else {
             result
         }
-    } else if left_color.is_legacy_syntax() && right_color.is_legacy_syntax() {
+    } else if items.iter().all(|item| item.color.is_legacy_syntax()) {
         
         
         result.into_srgb_legacy()
@@ -303,20 +386,16 @@ impl AbsoluteColor {
     }
 }
 
-fn mix_in(
-    color_space: ColorSpace,
-    left_color: &AbsoluteColor,
+
+fn mix_with_weights(
+    left: &AbsoluteColor,
     left_weight: f32,
-    right_color: &AbsoluteColor,
+    right: &AbsoluteColor,
     right_weight: f32,
     hue_interpolation: HueInterpolationMethod,
-    alpha_multiplier: f32,
 ) -> AbsoluteColor {
-    
-    let mut left = left_color.to_color_space(color_space);
-    left.carry_forward_analogous_missing_components(&left_color);
-    let mut right = right_color.to_color_space(color_space);
-    right.carry_forward_analogous_missing_components(&right_color);
+    debug_assert!(right.color_space == left.color_space);
+    let color_space = left.color_space;
 
     let outcomes = [
         ComponentMixOutcome::from_colors(&left, &right, ColorFlags::C0_IS_NONE),
@@ -339,24 +418,15 @@ fn mix_in(
         &outcomes,
     );
 
-    let alpha = if alpha_multiplier != 1.0 {
-        result[3] * alpha_multiplier
-    } else {
-        result[3]
-    };
-
-    
-    
-    
-    
-    
-    let alpha = (alpha * 1000.0).round() / 1000.0;
-
-    let mut result = AbsoluteColor::new(color_space, result[0], result[1], result[2], alpha);
-
+    let mut result = AbsoluteColor::new(color_space, result[0], result[1], result[2], result[3]);
     result.flags = result_flags;
-
     result
+}
+
+fn convert_for_mix(color: &AbsoluteColor, color_space: ColorSpace) -> AbsoluteColor {
+    let mut converted = color.to_color_space(color_space);
+    converted.carry_forward_analogous_missing_components(color);
+    converted
 }
 
 fn interpolate_premultiplied_component(

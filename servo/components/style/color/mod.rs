@@ -14,9 +14,16 @@ pub mod parsing;
 mod to_css;
 
 use self::parsing::ChannelKeyword;
+use crate::derives::*;
 pub use color_function::*;
 use component::ColorComponent;
 use cssparser::color::PredefinedColorSpace;
+
+
+pub const PRE_ALLOCATED_COLOR_MIX_ITEMS: usize = 3;
+
+
+pub type ColorMixItemList<T> = smallvec::SmallVec<[T; PRE_ALLOCATED_COLOR_MIX_ITEMS]>;
 
 
 #[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
