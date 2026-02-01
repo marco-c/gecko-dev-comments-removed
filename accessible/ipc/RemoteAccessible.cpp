@@ -349,11 +349,9 @@ void RemoteAccessible::Value(nsString& aValue) const {
 
     const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
     
-    if (IsTextField() ||
-        (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
+    if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
         (IsGeneric() && IsEditableRoot())) {
-      TextLeafRange::FromAccessible(const_cast<RemoteAccessible*>(this))
-          .GetFlattenedText(aValue);
+      nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
       return;
     }
 
