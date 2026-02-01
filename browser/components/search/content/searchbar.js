@@ -24,6 +24,10 @@
   
 
 
+
+  
+
+
   class MozSearchbar extends MozXULElement {
     static get inheritedAttributes() {
       return {

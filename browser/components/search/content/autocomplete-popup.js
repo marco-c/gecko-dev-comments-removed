@@ -19,6 +19,10 @@
 
 
 
+  
+
+
+
   class MozSearchAutocompleteRichlistboxPopup
     extends MozElements.MozAutocompleteRichlistboxPopup
   {
