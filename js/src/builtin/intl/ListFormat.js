@@ -5,18 +5,6 @@
 
 
 
-function listFormatLocaleData() {
-  
-  return {};
-}
-var listFormatInternalProperties = {
-  localeData: listFormatLocaleData,
-  relevantExtensionKeys: [],
-};
-
-
-
-
 
 
 function resolveListFormatInternals(lazyListFormatData) {
@@ -24,20 +12,13 @@ function resolveListFormatInternals(lazyListFormatData) {
 
   var internalProps = std_Object_create(null);
 
-  var ListFormat = listFormatInternalProperties;
-
   
 
   
-  var localeData = ListFormat.localeData;
-
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "ListFormat",
     lazyListFormatData.requestedLocales,
     lazyListFormatData.opt,
-    ListFormat.relevantExtensionKeys,
-    localeData
   );
 
   

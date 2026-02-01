@@ -12,28 +12,17 @@ function resolveCollatorInternals(lazyCollatorData) {
 
   var internalProps = std_Object_create(null);
 
-  var Collator = collatorInternalProperties;
-
   
   internalProps.usage = lazyCollatorData.usage;
 
   
-  var collatorIsSorting = lazyCollatorData.usage === "sort";
-  var localeData = collatorIsSorting
-    ? Collator.sortLocaleData
-    : Collator.searchLocaleData;
 
   
-  
-  var relevantExtensionKeys = Collator.relevantExtensionKeys;
-
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "Collator",
     lazyCollatorData.requestedLocales,
     lazyCollatorData.opt,
-    relevantExtensionKeys,
-    localeData
+    lazyCollatorData.usage === "search"
   );
 
   
@@ -249,17 +238,6 @@ function InitializeCollator(collator, locales, options) {
 
 
 
-
-
-var collatorInternalProperties = {
-  sortLocaleData: collatorSortLocaleData,
-  searchLocaleData: collatorSearchLocaleData,
-  relevantExtensionKeys: ["co", "kf", "kn"],
-};
-
-
-
-
 function collatorActualLocale(locale) {
   assert(typeof locale === "string", "locale should be string");
 
@@ -267,84 +245,6 @@ function collatorActualLocale(locale) {
   
   
   return BestAvailableLocaleIgnoringDefault("Collator", locale);
-}
-
-
-
-
-
-
-function collatorSortCaseFirst(locale) {
-  var actualLocale = collatorActualLocale(locale);
-  if (intl_isUpperCaseFirst(actualLocale)) {
-    return ["upper", "false", "lower"];
-  }
-
-  
-  return ["false", "lower", "upper"];
-}
-
-
-
-
-function collatorSortCaseFirstDefault(locale) {
-  var actualLocale = collatorActualLocale(locale);
-  if (intl_isUpperCaseFirst(actualLocale)) {
-    return "upper";
-  }
-
-  
-  return "false";
-}
-
-function collatorSortLocaleData() {
-  
-  return {
-    co: intl_availableCollations,
-    kn: function() {
-      return ["false", "true"];
-    },
-    kf: collatorSortCaseFirst,
-    default: {
-      co: function() {
-        
-        
-        return null;
-      },
-      kn: function() {
-        return "false";
-      },
-      kf: collatorSortCaseFirstDefault,
-    },
-  };
-  
-}
-
-function collatorSearchLocaleData() {
-  
-  return {
-    co: function() {
-      return [null];
-    },
-    kn: function() {
-      return ["false", "true"];
-    },
-    kf: function() {
-      return ["false", "lower", "upper"];
-    },
-    default: {
-      co: function() {
-        return null;
-      },
-      kn: function() {
-        return "false";
-      },
-      kf: function() {
-        return "false";
-      },
-    },
-  };
-  
 }
 
 

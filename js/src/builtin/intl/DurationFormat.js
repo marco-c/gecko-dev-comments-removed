@@ -5,22 +5,6 @@
 
 
 
-function durationFormatLocaleData() {
-  return {
-    nu: getNumberingSystems,
-    default: {
-      nu: intl_numberingSystem,
-    },
-  };
-}
-var durationFormatInternalProperties = {
-  localeData: durationFormatLocaleData,
-  relevantExtensionKeys: ["nu"],
-};
-
-
-
-
 
 
 function resolveDurationFormatInternals(lazyDurationFormatData) {
@@ -28,17 +12,13 @@ function resolveDurationFormatInternals(lazyDurationFormatData) {
 
   var internalProps = std_Object_create(null);
 
-  var DurationFormat = durationFormatInternalProperties;
-
   
 
   
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "DurationFormat",
     lazyDurationFormatData.requestedLocales,
     lazyDurationFormatData.opt,
-    DurationFormat.relevantExtensionKeys,
-    DurationFormat.localeData
   );
 
   

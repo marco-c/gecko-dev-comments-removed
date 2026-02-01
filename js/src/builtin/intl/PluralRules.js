@@ -9,43 +9,18 @@
 
 
 
-
-var pluralRulesInternalProperties = {
-  localeData: pluralRulesLocaleData,
-  relevantExtensionKeys: [],
-};
-
-function pluralRulesLocaleData() {
-  
-  return {};
-}
-
-
-
-
-
-
-
-
 function resolvePluralRulesInternals(lazyPluralRulesData) {
   assert(IsObject(lazyPluralRulesData), "lazy data not an object?");
 
   var internalProps = std_Object_create(null);
 
-  var PluralRules = pluralRulesInternalProperties;
-
   
 
   
-  var localeData = PluralRules.localeData;
-
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "PluralRules",
     lazyPluralRulesData.requestedLocales,
     lazyPluralRulesData.opt,
-    PluralRules.relevantExtensionKeys,
-    localeData
   );
 
   

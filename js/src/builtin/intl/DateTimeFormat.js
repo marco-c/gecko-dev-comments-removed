@@ -54,20 +54,13 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
 
   var internalProps = std_Object_create(null);
 
-  var DateTimeFormat = dateTimeFormatInternalProperties;
-
   
 
   
-  var localeData = DateTimeFormat.localeData;
-
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "DateTimeFormat",
     lazyDateTimeFormatData.requestedLocales,
     lazyDateTimeFormatData.localeOpt,
-    DateTimeFormat.relevantExtensionKeys,
-    localeData
   );
 
   
@@ -613,33 +606,6 @@ function InitializeDateTimeFormat(
   return dateTimeFormat;
 }
 
-
-
-
-
-
-
-var dateTimeFormatInternalProperties = {
-  localeData: dateTimeFormatLocaleData,
-  relevantExtensionKeys: ["ca", "hc", "nu"],
-};
-
-function dateTimeFormatLocaleData() {
-  return {
-    ca: intl_availableCalendars,
-    nu: getNumberingSystems,
-    hc: () => {
-      return [null, "h11", "h12", "h23", "h24"];
-    },
-    default: {
-      ca: intl_defaultCalendar,
-      nu: intl_numberingSystem,
-      hc: () => {
-        return null;
-      },
-    },
-  };
-}
 
 
 

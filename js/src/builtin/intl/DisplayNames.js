@@ -5,31 +5,6 @@
 
 
 
-function displayNamesLocaleData() {
-  
-  return {};
-}
-var displayNamesInternalProperties = {
-  localeData: displayNamesLocaleData,
-  relevantExtensionKeys: [],
-};
-
-function mozDisplayNamesLocaleData() {
-  return {
-    ca: intl_availableCalendars,
-    default: {
-      ca: intl_defaultCalendar,
-    },
-  };
-}
-var mozDisplayNamesInternalProperties = {
-  localeData: mozDisplayNamesLocaleData,
-  relevantExtensionKeys: ["ca"],
-};
-
-
-
-
 
 
 function resolveDisplayNamesInternals(lazyDisplayNamesData) {
@@ -39,22 +14,14 @@ function resolveDisplayNamesInternals(lazyDisplayNamesData) {
 
   var mozExtensions = lazyDisplayNamesData.mozExtensions;
 
-  var DisplayNames = mozExtensions
-    ? mozDisplayNamesInternalProperties
-    : displayNamesInternalProperties;
-
   
 
   
-  var localeData = DisplayNames.localeData;
-
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "DisplayNames",
     lazyDisplayNamesData.requestedLocales,
     lazyDisplayNamesData.opt,
-    DisplayNames.relevantExtensionKeys,
-    localeData
+    mozExtensions
   );
 
   

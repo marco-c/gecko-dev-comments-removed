@@ -5,18 +5,6 @@
 
 
 
-function segmenterLocaleData() {
-  
-  return {};
-}
-var segmenterInternalProperties = {
-  localeData: segmenterLocaleData,
-  relevantExtensionKeys: [],
-};
-
-
-
-
 
 
 function resolveSegmenterInternals(lazySegmenterData) {
@@ -24,20 +12,13 @@ function resolveSegmenterInternals(lazySegmenterData) {
 
   var internalProps = std_Object_create(null);
 
-  var Segmenter = segmenterInternalProperties;
-
   
 
   
-  var localeData = Segmenter.localeData;
-
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "Segmenter",
     lazySegmenterData.requestedLocales,
     lazySegmenterData.opt,
-    Segmenter.relevantExtensionKeys,
-    localeData
   );
 
   

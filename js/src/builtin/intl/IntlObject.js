@@ -28,11 +28,6 @@ function Intl_getCalendarInfo(locales) {
   
   var requestedLocales = CanonicalizeLocaleList(locales);
 
-  var DateTimeFormat = dateTimeFormatInternalProperties;
-
-  
-  var localeData = DateTimeFormat.localeData;
-
   
   var localeOpt = NEW_RECORD();
 
@@ -41,13 +36,10 @@ function Intl_getCalendarInfo(locales) {
 
   
   
-  
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "DateTimeFormat",
     requestedLocales,
     localeOpt,
-    DateTimeFormat.relevantExtensionKeys,
-    localeData
   );
 
   

@@ -5,39 +5,16 @@
 
 
 
-
-
-var relativeTimeFormatInternalProperties = {
-  localeData: relativeTimeFormatLocaleData,
-  relevantExtensionKeys: ["nu"],
-};
-
-function relativeTimeFormatLocaleData() {
-  return {
-    nu: getNumberingSystems,
-    default: {
-      nu: intl_numberingSystem,
-    },
-  };
-}
-
-
-
-
 function resolveRelativeTimeFormatInternals(lazyRelativeTimeFormatData) {
   assert(IsObject(lazyRelativeTimeFormatData), "lazy data not an object?");
 
   var internalProps = std_Object_create(null);
 
-  var RelativeTimeFormat = relativeTimeFormatInternalProperties;
-
   
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "RelativeTimeFormat",
     lazyRelativeTimeFormatData.requestedLocales,
     lazyRelativeTimeFormatData.opt,
-    RelativeTimeFormat.relevantExtensionKeys,
-    RelativeTimeFormat.localeData
   );
 
   

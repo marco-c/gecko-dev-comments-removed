@@ -4,21 +4,6 @@
 
 
 
-#include "NumberingSystemsGenerated.h"
-
-
-
-
-
-
-
-
-
-var numberFormatInternalProperties = {
-  localeData: numberFormatLocaleData,
-  relevantExtensionKeys: ["nu"],
-};
-
 
 
 
@@ -31,17 +16,13 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
   var internalProps = std_Object_create(null);
 
-  var NumberFormat = numberFormatInternalProperties;
-
   
 
   
-  var r = ResolveLocale(
+  var r = intl_ResolveLocale(
     "NumberFormat",
     lazyNumberFormatData.requestedLocales,
     lazyNumberFormatData.opt,
-    NumberFormat.relevantExtensionKeys,
-    NumberFormat.localeData
   );
 
   
@@ -922,28 +903,6 @@ function CurrencyDigits(currency) {
     return currencyDigits[currency];
   }
   return 2;
-}
-
-function getNumberingSystems(locale) {
-  
-  
-  
-  
-  
-  
-  
-  
-  var defaultNumberingSystem = intl_numberingSystem(locale);
-  return [defaultNumberingSystem, NUMBERING_SYSTEMS_WITH_SIMPLE_DIGIT_MAPPINGS];
-}
-
-function numberFormatLocaleData() {
-  return {
-    nu: getNumberingSystems,
-    default: {
-      nu: intl_numberingSystem,
-    },
-  };
 }
 
 
