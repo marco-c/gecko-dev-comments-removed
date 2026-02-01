@@ -5,7 +5,6 @@
 
 
 
-
 const { EnterprisePolicyTesting, PoliciesPrefTracker } =
   ChromeUtils.importESModule(
     "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
@@ -778,22 +777,13 @@ async function updateCheckBox(win, id, value) {
   await EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.ownerGlobal);
 }
 
-
-
-
-
-
-function waitForSettingChange(setting, triggerFn) {
-  let changePromise = new Promise(resolve => {
+function waitForSettingChange(setting) {
+  return new Promise(resolve => {
     setting.on("change", function handler() {
       setting.off("change", handler);
       resolve();
     });
   });
-  if (triggerFn) {
-    triggerFn();
-  }
-  return changePromise;
 }
 
 async function waitForSettingControlChange(control) {
