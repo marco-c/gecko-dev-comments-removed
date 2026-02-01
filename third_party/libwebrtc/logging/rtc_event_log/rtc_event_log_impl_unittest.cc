@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -240,6 +241,37 @@ TEST_F(RtcEventLogImplTest, RewritesAllConfigEventsOnlyOnRestart) {
   event_log_.StartLogging(std::move(output_), kOutputPeriod.ms());
   time_controller_.AdvanceTime(TimeDelta::Zero());
   Mock::VerifyAndClearExpectations(encoder_ptr_);
+}
+
+TEST_F(RtcEventLogImplTest, SetsEventTimestampOnLog) {
+  
+  EXPECT_CALL(*encoder_ptr_, EncodeLogStart);
+  EXPECT_CALL(*encoder_ptr_, EncodeLogEnd);
+  
+  
+  std::optional<Timestamp> expected_log_time;
+  EXPECT_CALL(*encoder_ptr_, OnEncode).WillOnce([&](const RtcEvent& event) {
+    
+    EXPECT_TRUE(expected_log_time.has_value());
+    EXPECT_EQ(event.timestamp(), expected_log_time);
+    return "";
+  });
+
+  event_log_.StartLogging(std::make_unique<FakeOutput>(written_data_),
+                          kOutputPeriod.ms());
+  auto event = std::make_unique<FakeEvent>();
+  
+  
+  
+  time_controller_.AdvanceTime(TimeDelta::Millis(100));
+
+  expected_log_time = time_controller_.GetClock()->CurrentTime();
+  event_log_.Log(std::move(event));
+
+  
+  bool stopped = false;
+  event_log_.StopLogging([&] { stopped = true; });
+  EXPECT_TRUE(time_controller_.Wait([&] { return stopped; }));
 }
 
 TEST_F(RtcEventLogImplTest, SchedulesWriteAfterOutputDurationPassed) {
