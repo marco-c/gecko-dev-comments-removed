@@ -1977,6 +1977,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void MaybeMarkSHEntryAsUserInteracted();
 
+  
+  bool ShouldHaveTrackSources() const;
+
 #ifdef MOZ_WMF_CDM
   
   bool mIsUsingWMFCDM = false;

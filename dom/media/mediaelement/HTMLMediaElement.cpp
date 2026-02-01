@@ -3845,6 +3845,11 @@ void HTMLMediaElement::AddOutputTrackSourceToOutputStream(
        domTrack->AsAudioStreamTrack() ? "audio" : "video", domTrack.get()));
 }
 
+bool HTMLMediaElement::ShouldHaveTrackSources() const {
+  return mTracksCaptured.Ref() && !IsPlaybackEnded() &&
+         mReadyState >= HAVE_METADATA;
+}
+
 void HTMLMediaElement::UpdateOutputTrackSources() {
   
   
@@ -3858,10 +3863,7 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   
   
   
-
-  const bool shouldHaveTrackSources = mTracksCaptured.Ref() &&
-                                      !IsPlaybackEnded() &&
-                                      mReadyState >= HAVE_METADATA;
+  const bool shouldHaveTrackSources = ShouldHaveTrackSources();
 
   
   nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
@@ -4102,6 +4104,9 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
 
   
   
+  bool shouldRemoveAudioConfig =
+      mAudioOutputConfig != aAudioOutputConfig &&
+      aAudioOutputConfig == AudioOutputConfig::NotNeeded;
   mAudioOutputConfig = (mAudioOutputConfig == AudioOutputConfig::NotNeeded ||
                         aAudioOutputConfig == AudioOutputConfig::NotNeeded)
                            ? AudioOutputConfig::NotNeeded
@@ -4117,6 +4122,19 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
     
     if (aGraph && aGraph != mTracksCaptured.Ref()->mTrack->Graph()) {
       return nullptr;
+    }
+    
+    
+    
+    if (shouldRemoveAudioConfig && (AudioTracks() || VideoTracks()) &&
+        ShouldHaveTrackSources() && mDecoder) {
+      MOZ_ASSERT(mAudioOutputConfig == AudioOutputConfig::NotNeeded);
+      LOG(LogLevel::Debug,
+          ("%p Update decoder capture state to remove audio output", this));
+      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureInfo(
+          MediaDecoder::OutputCaptureState::Capture,
+          mTracksCaptured.Ref().get(), false,
+          mSink.second));
     }
   } else {
     
