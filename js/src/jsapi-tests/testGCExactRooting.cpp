@@ -994,15 +994,6 @@ BEGIN_TEST(testRootedTuple) {
   {
     Rooted<JSObject*> obj(cx, JS_NewPlainObject(cx));
     CHECK(obj);
-    RootedTuple<JSObject*> roots(cx, obj);
-    RootedField<JSObject*> x(roots);
-    CHECK(x == obj);
-  }
-
-  
-  {
-    Rooted<JSObject*> obj(cx, JS_NewPlainObject(cx));
-    CHECK(obj);
     RootedTuple<JSObject*> roots(cx);
     RootedField<JSObject*> x(roots, obj);
     CHECK(x == obj);
