@@ -4,6 +4,9 @@
 
 
 
+#[cfg(feature = "enabled")]
+use crate::gecko_bindings::structs::ThreadProfilingFeatures;
+
 
 
 
@@ -40,17 +43,52 @@ pub fn is_active() -> bool {
 
 
 
-
-
-
 #[cfg(feature = "enabled")]
 #[inline]
-pub fn can_accept_markers() -> bool {
+pub fn is_active_and_unpaused() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
 
     let active_and_features = get_active_and_features();
     (active_and_features & detail::RacyFeatures_Active) != 0
         && (active_and_features & detail::RacyFeatures_Paused) == 0
+}
+
+
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn is_active_and_unpaused() -> bool {
+    false
+}
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "enabled")]
+#[inline]
+pub fn current_thread_is_being_profiled_for_markers() -> bool {
+    current_thread_is_being_profiled(ThreadProfilingFeatures::Markers)
+        || is_etw_collecting_markers()
+        || is_perfetto_tracing()
+}
+
+
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn current_thread_is_being_profiled_for_markers() -> bool {
+    false
+}
+
+#[cfg(feature = "enabled")]
+#[inline]
+pub fn can_accept_markers() -> bool {
+    is_active_and_unpaused()
 }
 
 
@@ -78,4 +116,39 @@ fn get_active_and_features() -> u32 {
         &*ptr.cast()
     };
     active_and_features.load(Ordering::Relaxed)
+}
+
+
+
+#[cfg(feature = "enabled")]
+#[inline]
+fn is_etw_collecting_markers() -> bool {
+    use crate::gecko_bindings::structs::mozilla::profiler::detail;
+
+    let active_and_features = get_active_and_features();
+    (active_and_features & detail::RacyFeatures_ETWCollectionEnabled) != 0
+}
+
+
+
+#[cfg(feature = "enabled")]
+#[inline]
+fn is_perfetto_tracing() -> bool {
+    use crate::gecko_bindings::structs::mozilla::profiler::detail;
+
+    let active_and_features = get_active_and_features();
+    (active_and_features & detail::RacyFeatures_PerfettoTracingEnabled) != 0
+}
+
+
+
+#[cfg(feature = "enabled")]
+#[inline]
+fn current_thread_is_being_profiled(thread_profiling_features: ThreadProfilingFeatures) -> bool {
+    if !is_active_and_unpaused() {
+        return false;
+    }
+
+    use crate::gecko_bindings::bindings;
+    unsafe { bindings::gecko_profiler_current_thread_is_registered(thread_profiling_features) }
 }

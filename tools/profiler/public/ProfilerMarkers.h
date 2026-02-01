@@ -137,6 +137,9 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
 
 
 
+
+
+
 [[nodiscard]] inline bool profiler_thread_is_being_profiled_for_markers() {
   return profiler_thread_is_being_profiled(ThreadProfilingFeatures::Markers) ||
          profiler_is_etw_collecting_markers() || profiler_is_perfetto_tracing();

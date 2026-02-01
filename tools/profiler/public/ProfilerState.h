@@ -346,11 +346,15 @@ class RacyFeatures {
            (af & PerfettoTracingEnabled);
   }
 
+  
+  
   [[nodiscard]] static bool IsETWCollecting() {
     uint32_t af = sActiveAndFeatures;  
     return (af & ETWCollectionEnabled);
   }
 
+  
+  
   [[nodiscard]] static bool IsPerfettoTracing() {
     uint32_t af = sActiveAndFeatures;  
     return (af & PerfettoTracingEnabled);
