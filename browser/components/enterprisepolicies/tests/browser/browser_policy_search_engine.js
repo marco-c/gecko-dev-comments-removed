@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
 add_task(async function test_setup() {
-  SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [["browser.search.widget.new", false]],
   });
   await gCUITestUtils.addSearchBar();
@@ -34,10 +34,18 @@ async function test_opensearch(shouldWork) {
     searchPopup,
     "popupshown"
   );
+  
+  
+  
+  
+  let promiseSearchPopupBuilt = BrowserTestUtils.waitForEvent(
+    searchPopup.oneOffButtons,
+    "rebuild"
+  );
   let searchBarButton = searchBar.querySelector(".searchbar-search-button");
 
   searchBarButton.click();
-  await promiseSearchPopupShown;
+  await Promise.all([promiseSearchPopupShown, promiseSearchPopupBuilt]);
   let oneOffsContainer = searchPopup.searchOneOffsContainer;
   let engineElement = oneOffsContainer.querySelector(
     ".searchbar-engine-one-off-add-engine"
