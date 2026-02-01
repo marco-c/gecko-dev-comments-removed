@@ -130,15 +130,23 @@ bool DoTreeScopedPropertiesOfElementApplyToContent(
 
 
 
-bool IsAnchorInScopeForPositionedElement(const nsAtom* aName,
+bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
                                          const nsIFrame* aPossibleAnchorFrame,
                                          const nsIFrame* aPositionedFrame) {
   
   const auto* positionedContainingBlockContent =
       aPositionedFrame->GetParent()->GetContent();
 
+  const nsIContent* positionedContent = aPositionedFrame->GetContent();
+
+  const auto& positionAnchorScope = aName.mTreeScope;
+
+  const dom::ShadowRoot* positionAnchorShadowRoot =
+      GetShadowRootForTreeScope(*positionedContent, positionAnchorScope);
+
   auto getAnchorPosNearestScope =
-      [&](const nsAtom* aName, const nsIFrame* aFrame) -> const nsIContent* {
+      [&](const nsAtom* aName, const nsIFrame* aFrame,
+          const dom::ShadowRoot* aShadowRoot) -> const nsIContent* {
     
     
     
@@ -160,28 +168,42 @@ bool IsAnchorInScopeForPositionedElement(const nsAtom* aName,
         return nullptr;
       }();
 
-      if (!anchorScope || anchorScope->IsNone()) {
+      if (!anchorScope || anchorScope->value.IsNone()) {
         continue;
       }
 
-      if (anchorScope->IsAll()) {
-        return cp;
+      if (anchorScope->value.IsAll()) {
+        const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
+            *cp, GetShadowCascadeOrder(anchorScope->scope));
+        if (shadowRoot == aShadowRoot) {
+          return cp;
+        }
+        continue;
       }
 
-      MOZ_ASSERT(anchorScope->IsIdents());
-      for (const StyleAtom& ident : anchorScope->AsIdents().AsSpan()) {
+      MOZ_ASSERT(anchorScope->value.IsIdents());
+      for (const StyleAtom& ident : anchorScope->value.AsIdents().AsSpan()) {
         if (aName == ident.AsAtom()) {
-          return cp;
+          const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
+              *cp, GetShadowCascadeOrder(anchorScope->scope));
+          if (shadowRoot == aShadowRoot) {
+            return cp;
+          }
         }
       }
     }
     return nullptr;
   };
 
-  const nsIContent* nearestScopeForAnchor =
-      getAnchorPosNearestScope(aName, aPossibleAnchorFrame);
-  const nsIContent* nearestScopeForPositioned =
-      getAnchorPosNearestScope(aName, aPositionedFrame);
+  const auto& possibleAnchorName =
+      aPossibleAnchorFrame->StyleDisplay()->mAnchorName;
+  const dom::ShadowRoot* possibleAnchorShadowRoot = GetShadowRootForTreeScope(
+      *aPossibleAnchorFrame->GetContent(), possibleAnchorName.scope);
+  const auto* nearestScopeForAnchor = getAnchorPosNearestScope(
+      aName.mName, aPossibleAnchorFrame, possibleAnchorShadowRoot);
+
+  const auto* nearestScopeForPositioned = getAnchorPosNearestScope(
+      aName.mName, aPositionedFrame, positionAnchorShadowRoot);
   if (!nearestScopeForAnchor) {
     
     
@@ -414,7 +436,7 @@ class LazyAncestorHolder {
 };
 
 bool IsAcceptableAnchorElement(
-    const nsIFrame* aPossibleAnchorFrame, const nsAtom* aName,
+    const nsIFrame* aPossibleAnchorFrame, const ScopedNameRef& aName,
     const nsIFrame* aPositionedFrame,
     LazyAncestorHolder& aPositionedFrameAncestorHolder) {
   MOZ_ASSERT(aPossibleAnchorFrame);
@@ -505,7 +527,7 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
     }
 
     
-    if (IsAcceptableAnchorElement(*it, aName.mName, aPositionedFrame,
+    if (IsAcceptableAnchorElement(*it, aName, aPositionedFrame,
                                   positionedFrameAncestorHolder)) {
       return *it;
     }
