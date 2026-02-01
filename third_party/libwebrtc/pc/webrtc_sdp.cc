@@ -3248,17 +3248,6 @@ std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
   return message;
 }
 
-
-
-std::string SdpSerializeCandidate(const IceCandidate& candidate) {
-  return SdpSerializeCandidate(candidate.candidate());
-}
-
-
-std::string SdpSerializeCandidate(const Candidate& candidate) {
-  return candidate.ToCandidateAttribute(true);
-}
-
 std::unique_ptr<SessionDescriptionInterface> SdpDeserialize(
     SdpType sdp_type,
     absl::string_view message,

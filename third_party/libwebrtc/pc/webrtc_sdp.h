@@ -43,14 +43,6 @@ std::string SdpSerialize(const SessionDescriptionInterface& jdesc);
 
 
 
-std::string SdpSerializeCandidate(const IceCandidate& candidate);
-
-
-
-RTC_EXPORT std::string SdpSerializeCandidate(const Candidate& candidate);
-
-
-
 
 
 
