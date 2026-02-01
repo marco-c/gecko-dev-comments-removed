@@ -36,14 +36,12 @@ class nsCopySupport {
  public:
   static nsresult ClearSelectionCache();
 
-  enum class UpdateClipboard : bool { No, Yes };
   
 
 
   static nsresult EncodeDocumentWithContextAndPutToClipboard(
       mozilla::dom::Selection* aSel, mozilla::dom::Document* aDoc,
-      nsIClipboard::ClipboardType aClipboardID, bool aWithRubyAnnotation,
-      UpdateClipboard = UpdateClipboard::Yes);
+      nsIClipboard::ClipboardType aClipboardID, bool aWithRubyAnnotation);
 
   
   

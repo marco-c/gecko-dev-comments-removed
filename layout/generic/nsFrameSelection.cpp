@@ -137,20 +137,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult CreateAndAddRange(
 static nsresult SelectCellElement(nsIContent* aCellElement,
                                   Selection& aNormalSelection);
 
-
-
-
-
-
-
-
-
-#if defined(XP_MACOS) || (defined(DEBUG) && !defined(ANDROID))
-#  define RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
-#endif
-
-#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
-static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel);
+#ifdef XP_MACOSX
+static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel);
 #endif  
 
 #ifdef PRINT_RANGE
@@ -1741,21 +1729,14 @@ nsresult nsFrameSelection::RepaintSelection(SelectionType aSelectionType) {
 
 
 
-
-
-
-
-#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
-  
-  
-  
+#ifdef XP_MACOSX
   
   
   Document* doc = mPresShell->GetDocument();
   if (doc && IsInActiveTab(doc) && aSelectionType == SelectionType::eNormal) {
-    MaybeUpdateSelectionCacheOnRepaintSelection(sel);
+    UpdateSelectionCacheOnRepaintSelection(sel);
   }
-#endif  
+#endif
   return sel->Repaint(mPresShell->GetPresContext());
 }
 
@@ -3140,7 +3121,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
   }
 }
 
-#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
+#ifdef XP_MACOSX
 
 
 
@@ -3160,7 +3141,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
 
 
 
-static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
+static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
   PresShell* presShell = aSel->GetPresShell();
   if (!presShell) {
     return NS_OK;
@@ -3169,16 +3150,7 @@ static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
 
   if (aDoc && aSel && !aSel->IsCollapsed()) {
     return nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
-        aSel, aDoc, nsIClipboard::kSelectionCache, false,
-#  ifdef XP_MACOSX
-        
-        nsCopySupport::UpdateClipboard::Yes
-#  else
-        
-        
-        nsCopySupport::UpdateClipboard::No
-#  endif
-    );
+        aSel, aDoc, nsIClipboard::kSelectionCache, false);
   }
 
   return NS_OK;
