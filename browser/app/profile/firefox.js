@@ -2092,9 +2092,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTops
 
 pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enabled", true);
 
-
-pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
-
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
 
