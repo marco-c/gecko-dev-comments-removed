@@ -581,11 +581,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity600KbpsRtt100msEcnWithScream) {
 
   SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
-  
-  
-  
-  
-  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(300));
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(350));
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(660));
 }
 
@@ -600,11 +596,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity1000KbpsRtt100msEcnWithScream) {
 
   SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
-  
-  
-  
-  
-  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(350));
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(600));
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(1000));
 }
 
@@ -636,11 +628,7 @@ TEST(L4STest, CallerAdaptsToLinkCapacity2MbpsRtt50msEcnWithScream) {
 
   SendMediaTestResult result = SendMediaInOneDirection(params);
   DataRate available_bwe = GetAvailableSendBitrate(result.caller_stats);
-  
-  
-  
-  
-  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(600));
+  EXPECT_GT(available_bwe, DataRate::KilobitsPerSec(1400));
   
   
   EXPECT_LT(available_bwe, DataRate::KilobitsPerSec(3000));

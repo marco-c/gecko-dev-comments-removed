@@ -10,6 +10,7 @@
 
 #include "modules/congestion_controller/scream/scream_network_controller.h"
 
+#include <algorithm>
 #include <optional>
 #include <utility>
 
@@ -26,6 +27,8 @@ static constexpr DataRate kDefaultStartRate = DataRate::KilobitsPerSec(300);
 
 ScreamNetworkController::ScreamNetworkController(NetworkControllerConfig config)
     : env_(config.env),
+      default_pacing_window_(config.default_pacing_time_window),
+      current_pacing_window_(config.default_pacing_time_window),
       scream_(std::in_place, env_),
       target_rate_constraints_(config.constraints) {
   if (config.constraints.min_data_rate.has_value() ||
@@ -101,8 +104,7 @@ NetworkControlUpdate ScreamNetworkController::OnReceivedPacket(
 
 NetworkControlUpdate ScreamNetworkController::OnStreamsConfig(
     StreamsConfig msg) {
-  
-  RTC_LOG_F(LS_INFO) << "Not implemented";
+  streams_config_ = msg;
   return NetworkControlUpdate();
 }
 
@@ -153,19 +155,36 @@ NetworkControlUpdate ScreamNetworkController::CreateUpdate(Timestamp now,
 
   NetworkControlUpdate update;
   update.target_rate = target_rate_msg;
-  update.pacer_config = GetPacerConfig(target_rate);
+  update.pacer_config = CreatePacerConfig(target_rate);
 
   return update;
 }
 
-PacerConfig ScreamNetworkController::GetPacerConfig(
-    DataRate target_rate) const {
-  const double kPacingRateFactor = 1.5;
+PacerConfig ScreamNetworkController::CreatePacerConfig(DataRate target_rate) {
+  constexpr double kPacingRateFactor = 1.5;
   
   
-  return PacerConfig::Create(env_.clock().CurrentTime(),
-                             target_rate * kPacingRateFactor,
-                             DataRate::Zero());
+  constexpr TimeDelta kReducedPacingWindow = TimeDelta::Millis(10);
+  
+  
+  constexpr double kL4sAlphaThreshold = 0.01;
+
+  DataRate max_needed_rate = DataRate::Zero();
+  if (streams_config_.max_total_allocated_bitrate.has_value()) {
+    max_needed_rate = *streams_config_.max_total_allocated_bitrate;
+  }
+  if (current_pacing_window_ == default_pacing_window_ &&
+      target_rate < max_needed_rate &&
+      scream_->l4s_alpha() > kL4sAlphaThreshold) {
+    
+    
+    
+    current_pacing_window_ =
+        std::min(default_pacing_window_, kReducedPacingWindow);
+  }
+  return PacerConfig::Create(
+      env_.clock().CurrentTime(), target_rate * kPacingRateFactor,
+      DataRate::Zero(), current_pacing_window_);
 }
 
 }  
