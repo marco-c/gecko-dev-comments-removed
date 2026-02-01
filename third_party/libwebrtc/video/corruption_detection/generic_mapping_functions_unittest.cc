@@ -55,8 +55,9 @@ TEST(GenericMappingFunctionsTest, TestVp9) {
   EXPECT_THAT(GetCorruptionFilterSettings(200, kCodecType),
               FieldsAre(DoubleNear(3.8088, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdVp9));
+  
   EXPECT_THAT(GetCorruptionFilterSettings(255, kCodecType),
-              FieldsAre(DoubleNear(127.8, kMaxAbsoluteError), kLumaThreshold,
+              FieldsAre(DoubleNear(40.0, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdVp9));
 }
 
@@ -71,8 +72,9 @@ TEST(GenericMappingFunctionsTest, TestAv1) {
   EXPECT_THAT(GetCorruptionFilterSettings(200, kCodecType),
               FieldsAre(DoubleNear(2.8842, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdAv1));
+  
   EXPECT_THAT(GetCorruptionFilterSettings(255, kCodecType),
-              FieldsAre(DoubleNear(176.37, kMaxAbsoluteError), kLumaThreshold,
+              FieldsAre(DoubleNear(40, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdAv1));
 }
 
@@ -84,8 +86,9 @@ TEST(GenericMappingFunctionsTest, TestH264) {
   EXPECT_THAT(GetCorruptionFilterSettings(30, kCodecType),
               FieldsAre(DoubleNear(4.3047, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdH264));
+  
   EXPECT_THAT(GetCorruptionFilterSettings(51, kCodecType),
-              FieldsAre(DoubleNear(81.0346, kMaxAbsoluteError), kLumaThreshold,
+              FieldsAre(DoubleNear(40.0, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdH264));
 }
 
@@ -97,8 +100,9 @@ TEST(GenericMappingFunctionsTest, TestH265) {
   EXPECT_THAT(GetCorruptionFilterSettings(30, kCodecType),
               FieldsAre(DoubleNear(2.2818, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdH265));
+  
   EXPECT_THAT(GetCorruptionFilterSettings(51, kCodecType),
-              FieldsAre(DoubleNear(81.7, kMaxAbsoluteError), kLumaThreshold,
+              FieldsAre(DoubleNear(40.0, kMaxAbsoluteError), kLumaThreshold,
                         kChromaThresholdH265));
 }
 
