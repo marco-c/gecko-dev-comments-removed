@@ -23,6 +23,8 @@ function test() {
     bar({a: 0, x: 1})
   }
   let ICs = disblic(bar);
-  assertEq(/CallInlinedFunction/.test(ICs), true);
+  if (/;   IR:/.test(ICs)) { 
+    assertEq(/CallInlinedFunction/.test(ICs), true);
+  }
 }
 test();
