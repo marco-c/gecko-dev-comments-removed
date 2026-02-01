@@ -2,6 +2,9 @@
 
 
 
+#ifndef INTL_UNICHARUTIL_UTIL_NSSPECIALCASINGDATA_H_
+#define INTL_UNICHARUTIL_UTIL_NSSPECIALCASINGDATA_H_
+
 #include <stdint.h>
 
 namespace mozilla {
@@ -24,3 +27,5 @@ const MultiCharMapping* SpecialTitle(uint32_t aCh);
 
 }  
 }  
+
+#endif  
