@@ -1,7 +1,17 @@
+
+
+
+
+#ifdef FREEBL_NO_DEPEND
+#include "stubs.h"
+#endif
+
 #include "blapi.h"
 
 #include "mpi.h"
 #include "mpprime.h"
+#include "secerr.h"
+#include "secmpi.h"
 
 mp_err
 mpp_random_secure(mp_int *a)
@@ -25,4 +35,42 @@ mp_err
 mpp_make_prime_secure(mp_int *start, mp_size nBits, mp_size strong)
 {
     return mpp_make_prime_ext_random(start, nBits, strong, &mpp_random_secure);
+}
+
+
+
+
+
+#define MAX_PRIME_GEN_ATTEMPTS 10
+
+SECStatus
+generate_prime(mp_int *prime, int primeLen)
+{
+    mp_err err = MP_OKAY;
+    SECStatus rv = SECSuccess;
+    int piter;
+    unsigned char *pb = NULL;
+    pb = PORT_Alloc(primeLen);
+    if (!pb) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        goto cleanup;
+    }
+    for (piter = 0; piter < MAX_PRIME_GEN_ATTEMPTS; piter++) {
+        CHECK_SEC_OK(RNG_GenerateGlobalRandomBytes(pb, primeLen));
+        pb[0] |= 0xC0;            
+        pb[primeLen - 1] |= 0x01; 
+        CHECK_MPI_OK(mp_read_unsigned_octets(prime, pb, primeLen));
+        err = mpp_make_prime_secure(prime, primeLen * 8, PR_FALSE);
+        if (err != MP_NO)
+            goto cleanup;
+        
+    }
+cleanup:
+    if (pb)
+        PORT_ZFree(pb, primeLen);
+    if (err) {
+        MP_TO_SEC_ERROR(err);
+        rv = SECFailure;
+    }
+    return rv;
 }
