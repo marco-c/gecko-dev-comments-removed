@@ -90,6 +90,12 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   
+  bool IsKnownForMessageReader(IPC::MessageReader* aReader);
+
+  
+  
+  
+  
   void AddKeepAlive();
   void RemoveKeepAlive();
 
