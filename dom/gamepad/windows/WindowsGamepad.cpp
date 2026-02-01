@@ -99,7 +99,7 @@ class WindowsGamepadService;
 
 
 WindowsGamepadService* MOZ_NON_OWNING_REF gService = nullptr;
-MOZ_RUNINIT nsCOMPtr<nsIThread> gMonitorThread = nullptr;
+constinit nsCOMPtr<nsIThread> gMonitorThread;
 static bool sIsShutdown = false;
 
 class Gamepad {
