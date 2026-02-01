@@ -537,6 +537,14 @@ SdpMungingType DetermineContentsModification(
         return SdpMungingType::kRtpHeaderExtensionModified;
       }
     }
+
+    
+    if (last_created_media_description->bandwidth() !=
+        media_description_to_set->bandwidth()) {
+      RTC_LOG(LS_WARNING) << "SDP munging: modifying bandwidth in SLD does not "
+                             "have an effect locally.";
+      return SdpMungingType::kBandwidth;
+    }
   }
   return SdpMungingType::kNoModification;
 }

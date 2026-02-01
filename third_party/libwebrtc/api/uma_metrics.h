@@ -202,6 +202,7 @@ enum SdpMungingType {
   kIceOptionsTrickle = 31,
   kIceCandidateCount = 32,
   kBundle = 33,
+  kBandwidth = 34,
   
   kRtpHeaderExtensionRemoved = 40,
   kRtpHeaderExtensionAdded = 41,
