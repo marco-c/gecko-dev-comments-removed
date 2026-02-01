@@ -68,13 +68,13 @@ class InvocableRunnable final : public nsIRunnable, public nsINamed {
 
     mName.emplace();
     if (mLocation.mFunction && fileName && mLocation.mLine) {
-      mName->AppendFmt(FMT_STRING("{} - {} ({}:{})"), mTaskQueueName,
-                       mLocation.mFunction, *fileName, mLocation.mLine);
+      mName->AppendFmt("{} - {} ({}:{})", mTaskQueueName, mLocation.mFunction,
+                       *fileName, mLocation.mLine);
     } else if (fileName && mLocation.mLine) {
-      mName->AppendFmt(FMT_STRING("{} - InvocableRunnable ({}:{})"),
-                       mTaskQueueName, *fileName, mLocation.mLine);
+      mName->AppendFmt("{} - InvocableRunnable ({}:{})", mTaskQueueName,
+                       *fileName, mLocation.mLine);
     } else {
-      mName->AppendFmt(FMT_STRING("{} - InvocableRunnable"), mTaskQueueName);
+      mName->AppendFmt("{} - InvocableRunnable", mTaskQueueName);
     }
     aName = *mName;
 
@@ -169,8 +169,19 @@ class WebrtcTaskQueueWrapper : public webrtc::TaskQueueBase {
   void PostTaskImpl(absl::AnyInvocable<void() &&> aTask,
                     const PostTaskTraits& aTraits,
                     const webrtc::Location& aLocation) override {
-    MOZ_ALWAYS_SUCCEEDS(
-        mTaskQueue->Dispatch(WrapInvocable(std::move(aTask), aLocation)));
+    if (NS_FAILED(mTaskQueue->Dispatch(
+            WrapInvocable(std::move(aTask), aLocation),
+            
+
+
+
+            NS_DISPATCH_FALLIBLE))) {
+      NS_WARNING(nsFmtCString(
+                     "TaskQueue '{}' failed to dispatch a task from {} ({}:{})",
+                     mName, aLocation.mFunction, aLocation.mFile,
+                     aLocation.mLine)
+                     .get());
+    };
   }
 
   void PostDelayedTaskImpl(absl::AnyInvocable<void() &&> aTask,
@@ -182,8 +193,14 @@ class WebrtcTaskQueueWrapper : public webrtc::TaskQueueBase {
       PostTaskImpl(std::move(aTask), PostTaskTraits{}, aLocation);
       return;
     }
-    MOZ_ALWAYS_SUCCEEDS(mTaskQueue->DelayedDispatch(
-        WrapInvocable(std::move(aTask), aLocation), aDelay.ms()));
+    if (NS_FAILED(mTaskQueue->DelayedDispatch(
+            WrapInvocable(std::move(aTask), aLocation), aDelay.ms()))) {
+      NS_WARNING(nsFmtCString("TaskQueue '{}' failed to dispatch a "
+                              "delayed task from {} ({}:{})",
+                              mName, aLocation.mFunction, aLocation.mFile,
+                              aLocation.mLine)
+                     .get());
+    }
   }
 
   

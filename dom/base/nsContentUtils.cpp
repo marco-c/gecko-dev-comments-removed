@@ -963,14 +963,14 @@ class MOZ_STACK_CLASS CommonAncestors final {
           GetClosestCommonAncestorChildIndex(aInclusiveAncestors);
       NS_WARNING(
           fmt::format(
-              FMT_STRING("The caller cannot compare the position of the child "
-                         "of the common ancestor due to not in the child list "
-                         "of the common ancestor:\n"
-                         "  {}\n"      
-                         "    + {}\n"  
-                         "{}"),  
+              "The caller cannot compare the position of the child "
+              "of the common ancestor due to not in the child list "
+              "of the common ancestor:\n"
+              "  {}\n"      
+              "    + {}\n"  
+              "{}",         
               ToString(*mClosestCommonAncestor), ToString(*child),
-              *index ? fmt::format(FMT_STRING("       + {}"),
+              *index ? fmt::format("       + {}",
                                    ToString(*aInclusiveAncestors[*index - 1]))
                      : "")
               .c_str());

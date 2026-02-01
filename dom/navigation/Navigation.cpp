@@ -442,7 +442,9 @@ void Navigation::SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
   
   
 
-  RefPtr global = GetOwnerGlobal();
+  
+  
+  nsIGlobalObject* global = GetCurrentGlobal();
   if (!global) {
     
     
@@ -1127,8 +1129,7 @@ static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
   }
 
   if (aOngoingEvent) {
-    log.AppendElement(
-        fmt::format(FMT_STRING("{}"), aOngoingEvent->NavigationType()));
+    log.AppendElement(fmt::format("{}", aOngoingEvent->NavigationType()));
 
     if (RefPtr<NavigationDestination> destination =
             aOngoingEvent->Destination()) {

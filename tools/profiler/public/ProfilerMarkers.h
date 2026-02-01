@@ -256,7 +256,7 @@ using Tracing = mozilla::baseprofiler::markers::Tracing;
   do {                                                                        \
     if (profiler_is_collecting_markers()) {                                   \
       AUTO_PROFILER_STATS(PROFILER_MARKER_TEXT);                              \
-      nsFmtCString fmt(FMT_STRING(format), ##__VA_ARGS__);                    \
+      nsFmtCString fmt(format, ##__VA_ARGS__);                                \
       profiler_add_marker(                                                    \
           markerName, ::geckoprofiler::category::categoryName, options,       \
           ::geckoprofiler::markers::TextMarker{},                             \
@@ -470,13 +470,13 @@ class MOZ_RAII AutoProfilerTextMarker {
                                  ...)                                       \
   AutoProfilerFmtMarker PROFILER_RAII(                                      \
       markerName, ::mozilla::baseprofiler::category::categoryName, options, \
-      FMT_STRING(format), __VA_ARGS__)
+      format, __VA_ARGS__)
 
 #define AUTO_PROFILER_MARKER_FMT_LONG(size, markerName, categoryName, options, \
                                       format, ...)                             \
   AutoProfilerFmtMarker<size> PROFILER_RAII(                                   \
       markerName, ::mozilla::baseprofiler::category::categoryName, options,    \
-      FMT_STRING(format), __VA_ARGS__)
+      format, __VA_ARGS__)
 
 
 

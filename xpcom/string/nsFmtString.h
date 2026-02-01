@@ -24,6 +24,10 @@
 
 
 
+
+
+
+
 template <typename T>
 class nsTFmtString : public nsTAutoStringN<T, 16> {
  public:
