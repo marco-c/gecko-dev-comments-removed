@@ -40,7 +40,7 @@ class LazyIdleThread final : public nsISerialEventTarget, public nsIObserver {
 
 
 
-  LazyIdleThread(uint32_t aIdleTimeoutMS, StaticString aName,
+  LazyIdleThread(uint32_t aIdleTimeoutMS, const char* aName,
                  ShutdownMethod aShutdownMethod = AutomaticShutdown);
 
   
