@@ -1276,6 +1276,7 @@ bool Sanitizer::AllowAttribute(
 
 bool Sanitizer::RemoveAttribute(
     const StringOrSanitizerAttributeNamespace& aAttribute) {
+  
   MaybeMaterializeDefaultConfig();
 
   
@@ -1292,10 +1293,8 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalAttribute&& aAttribute) {
     
 
     
-    if (!mAttributes->Contains(aAttribute)) {
-      
-      return false;
-    }
+    
+    bool modified = mAttributes->EnsureRemoved(aAttribute);
 
     
 
@@ -1306,8 +1305,23 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalAttribute&& aAttribute) {
         CanonicalElementAttributes& elemAttributes = iter.Data();
         
         
+        if (elemAttributes.mAttributes &&
+            elemAttributes.mAttributes->Contains(aAttribute)) {
+          
+          modified = true;
+
+          
+          elemAttributes.mAttributes->Remove(aAttribute);
+        }
+
+        
+        
         if (elemAttributes.mRemoveAttributes &&
             elemAttributes.mRemoveAttributes->Contains(aAttribute)) {
+          
+          MOZ_ASSERT(modified,
+                     "Must have removed attribute from mAttributes already");
+
           
           
           elemAttributes.mRemoveAttributes->Remove(aAttribute);
@@ -1316,10 +1330,7 @@ bool Sanitizer::RemoveAttributeCanonical(CanonicalAttribute&& aAttribute) {
     }
 
     
-    mAttributes->Remove(aAttribute);
-
-    
-    return true;
+    return modified;
   }
 
   
