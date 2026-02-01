@@ -989,17 +989,20 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
 
 
 
-static int32_t
+static constexpr uint8_t
     kInterFrameSpacingTable[MathMLFrameTypeCount][MathMLFrameTypeCount] = {
         
+  
+  
+  {  0,  0,    0,    1,    1,    0,     0      }, 
+  {  0,  0,    0,    0,    0,    0,     0      }, 
+  {  0,  0,    0,    0,    0,    0,     0      }, 
+  {  1,  0,    0,    1,    1,    1,     1      }, 
+  {  1,  0,    0,    1,    1,    1,     1      }, 
+  {  0,  0,    0,    1,    1,    0,     1      }, 
+  {  0,  0,    0,    1,    1,    1,     0      }, 
         
-         {0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00},
-         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-         {0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01},
-         {0x01, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01},
-         {0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01},
-         {0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00}};
+};
 
 static int32_t GetInterFrameSpacing(MathMLFrameType aFirstFrameType,
                                     MathMLFrameType aSecondFrameType) {
