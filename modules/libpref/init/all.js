@@ -3099,7 +3099,7 @@ pref("network.tcp.keepalive.idle_time", 600);
 
 
 
-pref("geo.provider.network.url", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%");
+pref("geo.provider.network.url", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%&solution_channel=%OS%");
 
 
 pref("geo.provider.network.timeToWaitBeforeSending", 5000);
