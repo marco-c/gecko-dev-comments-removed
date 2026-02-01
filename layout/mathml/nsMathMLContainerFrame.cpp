@@ -993,9 +993,6 @@ static int32_t
     kInterFrameSpacingTable[MathMLFrameTypeCount][MathMLFrameTypeCount] = {
         
         
-        
-
-        
          {0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00},
          {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
          {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -1004,17 +1001,13 @@ static int32_t
          {0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01},
          {0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00}};
 
-#define GET_INTERSPACE(scriptlevel_, frametype1_, frametype2_, space_)
-            \
-  if (frametype1_ == MathMLFrameType::Unknown ||                           \
-      frametype2_ == MathMLFrameType::Unknown)                             \
-    space_ = 0;                                                            \
-  else {                                                                   \
-    space_ =                                                               \
-        kInterFrameSpacingTable[size_t(frametype1_)][size_t(frametype2_)]; \
-    space_ = (scriptlevel_ > 0 && (space_ & 0xF0))                         \
-                 ? 0 /* spacing is disabled */                             \
-                 : space_ & 0x0F;                                          \
+#define GET_INTERSPACE(frametype1_, frametype2_, space_)
+               \
+  if (frametype1_ == MathMLFrameType::Unknown ||                              \
+      frametype2_ == MathMLFrameType::Unknown)                                \
+    space_ = 0;                                                               \
+  else {                                                                      \
+    return kInterFrameSpacingTable[size_t(frametype1_)][size_t(frametype2_)]; \
   }
 
 
@@ -1027,8 +1020,7 @@ static int32_t
 
 
 
-static nscoord GetInterFrameSpacing(int32_t aScriptLevel,
-                                    MathMLFrameType aFirstFrameType,
+static nscoord GetInterFrameSpacing(MathMLFrameType aFirstFrameType,
                                     MathMLFrameType aSecondFrameType,
                                     MathMLFrameType* aFromFrameType,  
                                     int32_t* aCarrySpace)             
@@ -1037,7 +1029,7 @@ static nscoord GetInterFrameSpacing(int32_t aScriptLevel,
   MathMLFrameType secondType = aSecondFrameType;
 
   int32_t space;
-  GET_INTERSPACE(aScriptLevel, firstType, secondType, space);
+  GET_INTERSPACE(firstType, secondType, space);
 
   
   if (secondType == MathMLFrameType::OperatorInvisible) {
@@ -1070,7 +1062,7 @@ static nscoord GetInterFrameSpacing(int32_t aScriptLevel,
       secondType = MathMLFrameType::OperatorUserDefined;
     }
 
-    GET_INTERSPACE(aScriptLevel, firstType, secondType, space);
+    GET_INTERSPACE(firstType, secondType, space);
 
     
     
@@ -1139,11 +1131,9 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
     InitMetricsForChild();
 
     
-    const nsStyleFont* font = mParentFrame->StyleFont();
-    nscoord space =
-        GetInterFrameSpacing(font->mMathDepth, prevFrameType, mChildFrameType,
-                             &mFromFrameType, &mCarrySpace);
-    mX += space * GetThinSpace(font);
+    nscoord space = GetInterFrameSpacing(prevFrameType, mChildFrameType,
+                                         &mFromFrameType, &mCarrySpace);
+    mX += space * GetThinSpace(mParentFrame->StyleFont());
     return *this;
   }
 
@@ -1280,8 +1270,7 @@ void nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
 
 
 
-static nscoord GetInterFrameSpacingFor(int32_t aScriptLevel,
-                                       nsIFrame* aParentFrame,
+static nscoord GetInterFrameSpacingFor(nsIFrame* aParentFrame,
                                        nsIFrame* aChildFrame) {
   nsIFrame* childFrame = aParentFrame->PrincipalChildList().FirstChild();
   if (!childFrame || aChildFrame == childFrame) {
@@ -1297,9 +1286,8 @@ static nscoord GetInterFrameSpacingFor(int32_t aScriptLevel,
   while (childFrame) {
     prevFrameType = childFrameType;
     childFrameType = nsMathMLFrame::GetMathMLFrameTypeFor(childFrame);
-    nscoord space =
-        GetInterFrameSpacing(aScriptLevel, prevFrameType, childFrameType,
-                             &fromFrameType, &carrySpace);
+    nscoord space = GetInterFrameSpacing(prevFrameType, childFrameType,
+                                         &fromFrameType, &carrySpace);
     if (aChildFrame == childFrame) {
       
       ComputedStyle* parentContext = aParentFrame->Style();
@@ -1323,8 +1311,7 @@ static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
     return 0;
   }
   if (parentContent->IsAnyOfMathMLElements(nsGkAtoms::math, nsGkAtoms::mtd)) {
-    gap = GetInterFrameSpacingFor(aFrame->StyleFont()->mMathDepth, parent,
-                                  aFrame);
+    gap = GetInterFrameSpacingFor(parent, aFrame);
     
     nscoord leftCorrection = 0, italicCorrection = 0;
     nsMathMLContainerFrame::GetItalicCorrection(
