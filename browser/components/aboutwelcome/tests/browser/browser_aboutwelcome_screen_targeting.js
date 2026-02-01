@@ -99,15 +99,16 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_default() {
   
   await test_screen_content(
     browser,
-    "doesn't render only pin, default, or import easy setup",
-    
-    ["main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"],
+    "renders easy setup with pin, default, and import checkboxes",
     
     [
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
-      "main.AW_EASY_SETUP_NEEDS_PIN",
-      "main.AW_ONLY_IMPORT",
-    ]
+      "main.AW_EASY_SETUP",
+      "#checkbox-pin",
+      "#checkbox-default",
+      "#checkbox-import",
+    ],
+    
+    []
   );
 
   await cleanup();
@@ -135,15 +136,11 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
   
   await test_screen_content(
     browser,
-    "doesn't render default and pin, only default or import easy setup",
+    "renders easy setup with only pin checkbox and import checkbox",
     
-    ["main.AW_EASY_SETUP_NEEDS_PIN"],
+    ["main.AW_EASY_SETUP", "#checkbox-pin", "#checkbox-import"],
     
-    [
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
-      "main.AW_ONLY_IMPORT",
-    ]
+    ["#checkbox-default"]
   );
 
   await cleanup();
@@ -173,15 +170,11 @@ add_task(
     
     await test_screen_content(
       browser,
-      "doesn't render pin, import and set to default",
+      "renders easy setup with only default checkbox and import checkbox",
       
-      ["main.AW_EASY_SETUP_NEEDS_DEFAULT"],
+      ["main.AW_EASY_SETUP", "#checkbox-default", "#checkbox-import"],
       
-      [
-        "main.AW_EASY_SETUP_NEEDS_PIN",
-        "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
-        "main.AW_ONLY_IMPORT",
-      ]
+      ["#checkbox-pin"]
     );
 
     await cleanup();
@@ -211,15 +204,11 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_only_import() {
   
   await test_screen_content(
     browser,
-    "doesn't render any combination of pin and default",
+    "renders easy setup with only import checkbox",
     
-    ["main.AW_EASY_SETUP_ONLY_IMPORT"],
+    ["main.AW_EASY_SETUP", "#checkbox-import"],
     
-    [
-      "main.AW_EASY_SETUP_NEEDS_PIN",
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
-    ]
+    ["#checkbox-pin", "#checkbox-default"]
   );
 
   await cleanup();
